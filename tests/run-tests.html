@@ -1,0 +1,38 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>lively-lang Tests</title>
+    <link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
+    <meta http-equiv="cache-control" content="no-cache" />
+    <meta http-equiv="pragma" content="no-cache" />
+  </head>
+  <body>
+
+    <script>
+    </script>
+
+    <div id="flowly-container"></div>
+
+    <div id="mocha"></div>
+    <script src="helper.js"></script>
+    <script src="../node_modules/expect.js/index.js"></script>
+    <script src="../node_modules/mocha/mocha.js"></script>
+    <script>
+      mocha.setup('bdd');
+      mocha.globals(["jQuery", "$", "script*"]);
+      var urls = [
+        '../collection.js',
+        'collection-test.js'
+      ];
+      loadUncached(urls, function() {
+        // loadUncached('../lib/lib.js', function() {
+        //   loadUncached('../lib/canvas.js', function() {
+            mocha.checkLeaks();
+            mocha.run();
+        //   });
+        // });
+      });
+    </script>
+
+  </body>
+</html>

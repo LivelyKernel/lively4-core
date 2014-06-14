@@ -1,0 +1,16 @@
+{
+  "name": "lively-lang",
+  "version": "0.1.0",
+  "description": "JavaScript utils providing useful abstractions for working with collections, functions, objects",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {
+    "mocha": "*",
+    "expect.js": "*"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Robert Krahn",
+  "license": "MIT"
+}
