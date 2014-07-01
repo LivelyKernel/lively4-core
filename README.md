@@ -1,0 +1,3 @@
+# js-lib
+
+JavaScript utils providing useful abstractions for working with collections, functions, objects, ...
