@@ -21,16 +21,13 @@
       mocha.setup('bdd');
       mocha.globals(["jQuery", "$", "script*"]);
       var urls = [
+        '../base.js',
         '../collection.js',
         'collection-test.js'
       ];
       loadUncached(urls, function() {
-        // loadUncached('../lib/lib.js', function() {
-        //   loadUncached('../lib/canvas.js', function() {
-            mocha.checkLeaks();
-            mocha.run();
-        //   });
-        // });
+        mocha.checkLeaks();
+        mocha.run();
       });
     </script>
 
