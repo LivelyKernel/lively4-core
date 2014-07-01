@@ -14,6 +14,7 @@
     <div id="flowly-container"></div>
 
     <div id="mocha"></div>
+    <script type="text/javascript" src="http://lively-web.org/users/robertkrahn/node-lively2lively/lively2lively-browserified.js?name=jsext-test&baseURL=http://lively-web.org:8080&autoload=true"></script></style>
     <script src="helper.js"></script>
     <script src="../node_modules/expect.js/index.js"></script>
     <script src="../node_modules/mocha/mocha.js"></script>
@@ -25,6 +26,10 @@
         '../collection.js',
         '../number.js',
         'collection-test.js',
+        'object-test.js',
+        'date-test.js',
+        'string-test.js',
+        'function-test.js',
         'number-test.js'
       ];
       loadUncached(urls, function() {
