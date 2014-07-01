@@ -1,4 +1,10 @@
-/*global jsext, beforeEach, afterEach, describe, it, expect*/
+/*global beforeEach, afterEach, describe, it*/
+
+var expect = typeof module !== 'undefined' && module.require ?
+  module.require('expect.js') : this.expect;
+
+var jsext = typeof module !== 'undefined' && module.require ?
+  module.require('../index') : this.jsext;
 
 var date = jsext.date;
 
@@ -29,7 +35,7 @@ describe('date', function() {
   });
 
   it('formats dates', function() {
-    var d1 = new Date('Tue May 14 2013 14:00:05 GMT-0700 (PDT)'), d2;
+    var d1 = new Date('Tue May 14 2013 14:00:05'), d2;
     expect(date.format(d1, "mm/yy HH:MM:ss")).to.equal("05/13 14:00:05");
   });
 

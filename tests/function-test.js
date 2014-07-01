@@ -1,4 +1,10 @@
-/*global jsext, beforeEach, afterEach, describe, it, expect, setInterval, clearInterval, setTimeout*/
+/*global beforeEach, afterEach, describe, it, setInterval, clearInterval, setTimeout*/
+
+var expect = typeof module !== 'undefined' && module.require ?
+  module.require('expect.js') : this.expect;
+
+var jsext = typeof module !== 'undefined' && module.require ?
+  module.require('../index') : this.jsext;
 
 var fun = jsext.fun;
 
@@ -13,7 +19,7 @@ describe('function', function() {
         [1,2,3,4,5,6,7,8,9,10].reduceRight(function(next, i) {
           return function() {
             fun.debounceNamed('testDebouncedCommand', 10,
-              function(i) { result = i; called++;console.log(called); }, false)(i);
+              function(i) { result = i; called++; }, false)(i);
             setTimeout(next, 0);
           }
         }, function() {})();

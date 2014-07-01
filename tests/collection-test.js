@@ -1,4 +1,10 @@
-/*global jsext, beforeEach, afterEach, describe, it, expect*/
+/*global beforeEach, afterEach, describe, it*/
+
+var expect = typeof module !== 'undefined' && module.require ?
+  module.require('expect.js') : this.expect;
+
+var jsext = typeof module !== 'undefined' && module.require ?
+  module.require('../index') : this.jsext;
 
 var arr = jsext.arr;
 
