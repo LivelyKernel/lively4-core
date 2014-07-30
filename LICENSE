@@ -35,3 +35,11 @@ Date Format 1.2.3
 MIT license
 Includes enhancements by Scott Trenda <scott.trenda.net>
 and Kris Kowal <cixar.com/~kris.kowal/>
+
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+serveral methods in lib/object.js are inspired or derived from
+Prototype JavaScript framework, version 1.6.0_rc1
+(c) 2005-2007 Sam Stephenson
+Prototype is freely distributable under the terms of an MIT-style license.
+For details, see the Prototype web site: http://www.prototypejs.org/

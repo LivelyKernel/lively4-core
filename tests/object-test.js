@@ -8,7 +8,77 @@ var jsext = typeof module !== 'undefined' && module.require ?
 
 var obj = jsext.obj;
 
-describe('object', function() {
+describe('obj', function() {
+
+  var obj1 = {
+    foo: 23, bar: [2, {x: "'test'"}],
+    get baz() { return "--baz getter--"; },
+    method: function(arg1, arg2) { return arg1 + arg2; },
+  }
+
+  var obj2 = {
+    foo: 24,
+    zork: "test",
+    method2: function(arg) { return arg + 1; },
+  }
+
+  obj1.__proto__ = obj2;
+
+  describe('accessing', function() {
+    it('enumerates keys', function() {
+      expect(obj.keys(obj1)).to.eql(['foo', 'bar', 'baz', 'method']);
+    });
+
+    it('enumerates values', function() {
+      expect(obj.values(obj1)).to.eql([obj1.foo, obj1.bar, obj1.baz, obj1.method]);
+    });
+  });
+
+  describe('extend', function() {
+    
+    it("adds and overwrites properties", function() {
+      var o = {baz: 99, bar: 66};
+      var extended = obj.extend(o, {foo: 23, bar: {x: 3}});
+      expect(extended).to.be(o, "identity issue");
+      expect(extended).to.eql({baz: 99, foo: 23, bar: {x: 3}});
+    });
+
+    it("is getter/setter aware", function() {
+      var o = obj.extend({}, {
+        get foo() { return this._foo; },
+        set foo(v) { return this._foo = v + 1; }
+      });
+      o.foo = 3;
+      expect(o.foo).to.be(4);
+    });
+
+  });
+
+  describe("inspect", function() {
+
+    it("prints object representation", function() {
+      expect(obj.inspect(obj1)).to.be(
+           "{\n"
+         + "  bar: [2,{\n"
+         + "    x: \"'test'\"\n"
+         + "  }],\n"
+         + "  baz: \"--baz getter--\",\n"
+         + "  foo: 23,\n"
+         + "  method: function(arg1,arg2) {/*...*/}\n"
+         + "}");
+    });
+
+    it("observes maxDepth when printing", function() {
+      expect(obj.inspect(obj1, {maxDepth: 1})).to.be(
+           "{\n"
+         + "  bar: [/*...*/],\n"
+         + "  baz: \"--baz getter--\",\n"
+         + "  foo: 23,\n"
+         + "  method: function(arg1,arg2) {/*...*/}\n"
+         + "}");
+    });
+
+  });
 
 });
 
