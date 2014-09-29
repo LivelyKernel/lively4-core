@@ -264,7 +264,7 @@ describe('fun', function() {
           if (!wasCalled) { setTimeout(waitForWaitFor, 20); return; }
           expect(timeout).to.be.an(Error, 'timeout param not OK: ' + timeout);
           var duration = endTime - startTime;
-          expect(duration).to.be.greaterThan(200, 'wait duration not OK: ' + duration);
+          expect(duration).to.be.greaterThan(199, 'wait duration not OK: ' + duration);
           done();
         };
       });
