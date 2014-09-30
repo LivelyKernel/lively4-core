@@ -128,6 +128,15 @@ exports.obj = {
     return destination;
   },
 
+  // -=-=-=-=-
+  // clone
+  // -=-=-=-=-
+  
+  clone: function(object) {
+      return Array.isArray(object) ?
+        Array.prototype.slice.call(object) : exports.obj.extend({}, object);
+  },
+
   // -=-=-=-=-=-
   // inspection
   // -=-=-=-=-=-

@@ -117,6 +117,26 @@ describe('obj', function() {
 
   });
 
+  describe("clone", function() {
+      it("clones objects", function() {
+        var clone = obj.clone(obj1);
+        clone.foo = 24;
+        clone.oink = "!";
+        expect(clone.foo).to.be(24);
+        expect(obj1.foo).to.be(23);
+        expect(clone.oink).to.be("!");
+        expect(obj1).to.not.have.property("oink");
+      });
+
+      it("clones arrays", function() {
+        var arr1 = [1,2,3], arr2 = obj.clone(arr1);
+        arr1.push(4);
+        arr2.push(5);
+        expect(arr1).to.eql([1,2,3,4]);
+        expect(arr2).to.eql([1,2,3,5]);
+      });
+  });
+
   describe("inspect", function() {
 
     it("prints object representation", function() {
