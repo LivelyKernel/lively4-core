@@ -54,6 +54,44 @@ exports.obj = {
     return obj && Array.isArray(obj);
   },
 
+  isElement: function(object) {
+      return object && object.nodeType == 1;
+  },
+
+  isFunction: function(object) {
+      return object instanceof Function;
+  },
+
+  isBoolean: function(object) {
+      return typeof object == "boolean";
+  },
+
+  isString: function(object) {
+      return typeof object == "string";
+  },
+
+  isNumber: function(object) {
+      return typeof object == "number";
+  },
+
+  isUndefined: function(object) {
+      return typeof object == "undefined";
+  },
+
+  isRegExp: function(object) {
+      return object instanceof RegExp;
+  },
+
+  isObject: function(object) {
+      return typeof object == "object";
+  },
+
+  isEmpty: function(object) {
+      for (var key in object)
+          if (object.hasOwnProperty(key)) return false;
+      return true;
+  },
+
   // -=-=-=-=-=-
   // accessing
   // -=-=-=-=-=-
@@ -161,57 +199,6 @@ exports.obj = {
 
 })(typeof jsext !== 'undefined' ? jsext : this);
 
-
-
-
-
-
-
-//     clone: function(object) {
-//         return Array.isArray(object) ? object.clone() : Object.extend({}, object);
-//     },
-
-//     isElement: function(object) {
-//         return object && object.nodeType == 1;
-//     },
-
-//     isArray: function(object) {
-//         return object && Array.isArray(object);
-//     },
-
-//     isFunction: function(object) {
-//         return object instanceof Function;
-//     },
-
-//     isBoolean: function(object) {
-//         return typeof object == "boolean";
-//     },
-
-//     isString: function(object) {
-//         return typeof object == "string";
-//     },
-
-//     isNumber: function(object) {
-//         return typeof object == "number";
-//     },
-
-//     isUndefined: function(object) {
-//         return typeof object == "undefined";
-//     },
-
-//     isRegExp: function(object) {
-//         return object instanceof RegExp;
-//     },
-
-//     isObject: function(object) {
-//         return typeof object == "object";
-//     },
-
-//     isEmpty: function(object) {
-//         for (var key in object)
-//             if (object.hasOwnProperty(key)) return false;
-//         return true;
-//     },
 
 //     inherit: function(obj) {
 //         var constructor = function ProtoConstructor() { return this }

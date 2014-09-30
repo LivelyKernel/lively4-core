@@ -24,6 +24,69 @@ describe('obj', function() {
 
   obj1.__proto__ = obj2;
 
+  describe('type testing', function() {
+
+    it("isElement", function() {
+      if (typeof document === "undefined") return;
+      var el = document.createElement("div");
+      expect(obj.isElement(el)).to.be(true);
+      expect(obj.isElement({})).to.be(false);
+    });
+
+    it("isArray", function() {
+      expect(obj.isArray([1,2,3])).to.be(true);  
+      expect(obj.isArray([])).to.be(true);  
+      expect(obj.isArray({})).to.be(false);
+    });
+
+    it("isFunction", function() {
+      expect(obj.isFunction(function() {})).to.be(true);
+      expect(obj.isFunction({})).to.be(false);
+    });
+
+    it("isBoolean", function() {
+      expect(obj.isBoolean(false)).to.be(true);
+      expect(obj.isBoolean({})).to.be(false);
+    });
+
+    it("isString", function() {
+      expect(obj.isString("bla bla")).to.be(true);
+      expect(obj.isString({})).to.be(false);
+    });
+
+    it("isNumber", function() {
+      expect(obj.isNumber(23)).to.be(true);
+      expect(obj.isNumber({})).to.be(false);
+    });
+
+    it("isUndefined", function() {
+      expect(obj.isUndefined(undefined)).to.be(true);
+      expect(obj.isUndefined(null)).to.be(false);
+      expect(obj.isUndefined("")).to.be(false);
+      expect(obj.isUndefined({})).to.be(false);
+    });
+
+    it("isRegExp", function() {
+      expect(obj.isRegExp(/fooo/)).to.be(true);
+      expect(obj.isRegExp({})).to.be(false);
+      expect(obj.isRegExp(function() {})).to.be(false);
+    });
+
+    it("isObject", function() {
+      expect(obj.isObject({})).to.be(true);
+      expect(obj.isObject("foo")).to.be(false);
+      expect(obj.isObject(/123/)).to.be(true);
+      expect(obj.isObject([])).to.be(true);
+      expect(obj.isObject(function() {})).to.be(false);
+    });
+
+    it("isEmpty", function() {
+      expect(obj.isEmpty({})).to.be(true);
+      expect(obj.isEmpty({fOO: 23})).to.be(false);
+    });
+
+  });
+
   describe('accessing', function() {
     it('enumerates keys', function() {
       expect(obj.keys(obj1)).to.eql(['foo', 'bar', 'baz', 'method']);
