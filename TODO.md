@@ -1,3 +1,9 @@
+# array
+
+## forEachShowingProgress
+
+describe expected interface of progress bar
+
 # numbers
 
 ## Number.prototype
@@ -327,4 +333,45 @@ delay: function(func) {
 ```
 <!---=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--->
 
+# strings
+
+## breaking changes
+
+removed String.prototype.asString
+removed String.prototype.size
+
+<!---=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--->
+
 # objects
+
+## breaking changes
+
+### removals
+
+- `JSON.prettyPrint`
+- `Object.inspect`
+- `asScriptOf`
+
+### semantics
+
+- obj.values only enumerates own properties
+
+### firefox fix
+
+// if (this.window && window.navigator && window.navigator.userAgent.match(/Firefox|Minefield/)) {
+//     // fixing the bug:	"var property is not a function" bug in Firefox
+//     Object.extend(Object, {
+//         values: function(object) {
+//             var values = [];
+//             for (var property in object)
+//                 if (object.hasOwnProperty(property))
+//                     values.push(object[property]);
+//             return values;
+//         }
+//     })
+// };
+
+# PropertyPath
+
+serializeExpr
+type
