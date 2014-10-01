@@ -119,8 +119,9 @@ exports.obj = {
       var sourceObj = source[property];
       destination[property] = sourceObj;
       if (typeof sourceObj === "function") {
-        if ((!sourceObj.name || (sourceObj.name.length == 0)) && !sourceObj.displayName) sourceObj.displayName = property;
-        // remember the module that contains the class def
+        if (!sourceObj.name && !sourceObj.displayName)
+            sourceObj.displayName = property;
+        // remember the module that contains the definition
         if (typeof lively !== 'undefined' && lively.Module && lively.Module.current)
           sourceObj.sourceModule = lively.Module.current();
       }
@@ -202,6 +203,75 @@ exports.obj = {
         endBreak = useNewLines ? '\n' + ind : '';
     if (useNewLines) printedPropsJoined = printedProps.join(',' + startBreak);
     return openBr + startBreak + printedPropsJoined + endBreak + closeBr;
+  },
+
+  merge: function(objs) {
+    // // if objs are arrays just concat them
+    // // if objs are real objs then merge properties
+    if (arguments.length > 1) {
+      return exports.obj.merge(Array.prototype.slice.call(arguments));
+    }
+
+    if (exports.obj.isArray(objs[0])) { // test for all?
+      return Array.prototype.concat.apply([], objs);
+    }
+
+    return objs.reduce(function(merged, ea) {
+      for (var name in ea)
+        if (ea.hasOwnProperty(name))
+            merged[name] = ea[name];
+      return merged;
+    }, {});
+  },
+
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  // left hof here
+  inherit: function(obj) {
+    var constructor = function ProtoConstructor() { return this }
+    constructor.prototype = obj;
+    var newInstance = new constructor();
+    newInstance.constructor = constructor;
+    return newInstance;
+  },
+
+  valuesInPropertyHierarchy: function(obj, name) {
+    // lookup all properties named name in the proto hierarchy of obj
+    // also uses Lively's class structure
+    var result = [],
+      lookupObj = obj;
+    while (true) {
+      if (lookupObj.hasOwnProperty(name)) result.push(lookupObj[name])
+      var proto = lively.Class.getPrototype(lookupObj);
+      if (!proto || proto === lookupObj) proto = lively.Class.getSuperPrototype(lookupObj);
+      if (!proto) return result.reverse();
+      lookupObj = proto;
+    }
+  },
+
+  mergePropertyInHierarchy: function(obj, propName) {
+    return this.merge(this.valuesInPropertyHierarchy(obj, propName));
+  },
+
+  protoCopy: function(obj) {
+    var protoCreator = function() { return this };
+    protoCreator.prototype = obj;
+    var protoObj = new protoCreator();
+    return protoObj;
+  },
+
+  addScript: function (object, funcOrString, optName, optMapping) {
+    var func = Function.fromString(funcOrString);
+    return func.asScriptOf(object, optName, optMapping);
+  },
+
+  deepCopy: function (obj) {
+    if (!obj || !Object.isObject(obj)) return obj;
+    var result = Array.isArray(obj) ? Array(obj.length) : {};
+    for (var key in obj) {
+      if (obj.hasOwnProperty(key))
+        result[key] = Object.deepCopy(obj[key]);
+    }
+    return result;
   }
 
 };
@@ -209,240 +279,10 @@ exports.obj = {
 })(typeof jsext !== 'undefined' ? jsext : this);
 
 
-//     inherit: function(obj) {
-//         var constructor = function ProtoConstructor() { return this }
-//         constructor.prototype = obj;
-//         var newInstance = new constructor();
-//         newInstance.constructor = constructor;
-//         return newInstance;
-//     },
-
-//     merge: function(objs) {
-//         // if objs are arrays just concat them
-//         // if objs are real objs then merge properties
-//         if (Object.isArray(objs[0])) { // test for all?
-//             return Array.prototype.concat.apply([], objs);
-//         }
-//         var result = {};
-//         for (var i = 0; i < objs.length; i++) {
-//             var obj = objs[i];
-//             for (var name in obj) {
-//                 if (obj.hasOwnProperty(name)) {
-//                     result[name] = obj[name];
-//                 }
-//             }
-//         }
-//         return result;
-//     },
-
-//     valuesInPropertyHierarchy: function(obj, name) {
-//         // lookup all properties named name in the proto hierarchy of obj
-//         // also uses Lively's class structure
-//         var result = [],
-//             lookupObj = obj;
-//         while (true) {
-//             if (lookupObj.hasOwnProperty(name)) result.push(lookupObj[name])
-//             var proto = lively.Class.getPrototype(lookupObj);
-//             if (!proto || proto === lookupObj) proto = lively.Class.getSuperPrototype(lookupObj);
-//             if (!proto) return result.reverse();
-//             lookupObj = proto;
-//         }
-//     },
-
-//     mergePropertyInHierarchy: function(obj, propName) {
-//         return this.merge(this.valuesInPropertyHierarchy(obj, propName));
-//     },
-
-//     protoCopy: function(obj) {
-//         var protoCreator = function() { return this };
-//         protoCreator.prototype = obj;
-//         var protoObj = new protoCreator();
-//         return protoObj;
-//     },
-
-//     addScript: function (object, funcOrString, optName, optMapping) {
-//         var func = Function.fromString(funcOrString);
-//         return func.asScriptOf(object, optName, optMapping);
-//     },
-
-//     deepCopy: function (obj) {
-//         if (!obj || !Object.isObject(obj)) return obj;
-//         var result = Array.isArray(obj) ? Array(obj.length) : {};
-//         for (var key in obj) {
-//             if (obj.hasOwnProperty(key))
-//                 result[key] = Object.deepCopy(obj[key]);
-//         }
-//         return result;
-//     }
-// });
-
-
-// if (this.window && window.navigator && window.navigator.userAgent.match(/Firefox|Minefield/)) {
-//     // fixing the bug:	"var property is not a function" bug in Firefox
-//     Object.extend(Object, {
-//         values: function(object) {
-//             var values = [];
-//             for (var property in object)
-//                 if (object.hasOwnProperty(property))
-//                     values.push(object[property]);
-//             return values;
-//         }
-//     })
-// };
-
-
 // ///////////////////////////////////////////////////////////////////////////////
 // // Global Helper - Objects and Properties
 // ///////////////////////////////////////////////////////////////////////////////
 
-// Global.Objects = {
-
-//     inspect: function inspect(obj, options, depth) {
-//         options = options || {};
-//         depth = depth || 0;
-//         if (!obj) { return Strings.print(obj); }
-
-//         // print function
-//         if (typeof obj === 'function') {
-//             return options.printFunctionSource ? String(obj) :
-//                 'function' + (obj.name ? ' ' + obj.name : '')
-//               + '(' + obj.argumentNames().join(',') + ') {/*...*/}';
-//         }
-
-//         // print "primitive"
-//         switch (obj.constructor) {
-//             case String:
-//             case Boolean:
-//             case RegExp:
-//             case Number: return Strings.print(obj);
-//         };
-
-//         if (typeof obj.serializeExpr === 'function') {
-//             return obj.serializeExpr();
-//         }
-
-//         var isArray = obj && Array.isArray(obj),
-//             openBr = isArray ? '[' : '{', closeBr = isArray ? ']' : '}';
-//         if (options.maxDepth && depth >= options.maxDepth) return openBr + '/*...*/' + closeBr;
-
-//         var printedProps = [];
-//         if (isArray) {
-//             printedProps = obj.map(function(ea) { return inspect(ea, options, depth); });
-//         } else {
-//             printedProps = Object.keys(obj)
-//               // .select(function(key) { return obj.hasOwnProperty(key); })
-//                 .sort(function(a, b) {
-//                     var aIsFunc = typeof obj[a] === 'function', bIsFunc = typeof obj[b] === 'function';
-//                     if (aIsFunc === bIsFunc) {
-//                         if (a < b)  return -1;
-//                         if (a > b) return 1;
-//                         return 0;
-//                     };
-//                     return aIsFunc ? 1 : -1;
-//                 })
-//                 .map(function(key, i) {
-//                     if (isArray) inspect(obj[key], options, depth + 1);
-//                     var printedVal = inspect(obj[key], options, depth + 1);
-//                     return Strings.format('%s: %s',
-//                         options.escapeKeys ? Strings.print(key) : key, printedVal);
-//                 });
-//         }
-
-//         if (printedProps.length === 0) { return openBr + closeBr; }
-
-//         var printedPropsJoined = printedProps.join(','),
-//             useNewLines = !isArray
-//                       && (!options.minLengthForNewLine
-//                         || printedPropsJoined.length >= options.minLengthForNewLine),
-//             indent = Strings.indent('', options.indent || '  ', depth),
-//             propIndent = Strings.indent('', options.indent || '  ', depth + 1),
-//             startBreak = useNewLines ? '\n' + propIndent: '',
-//             endBreak = useNewLines ? '\n' + indent : '';
-//         if (useNewLines) printedPropsJoined = printedProps.join(',' + startBreak);
-//         return openBr + startBreak + printedPropsJoined + endBreak + closeBr;
-//     },
-
-//     asObject: function(obj) {
-//         switch(typeof obj) {
-//             case 'string':
-//                 return new String(obj);
-//             case 'boolean':
-//                 return new Boolean(obj);
-//             case 'number':
-//                 return new Number(obj);
-//             default:
-//                 return obj;
-//         }
-//     },
-
-//     typeStringOf: function(obj) {
-//         if (obj === null) { return "null" }
-//         if (Object.isUndefined(obj)) { return "undefined" }
-//         return obj.constructor.name;
-//     },
-
-//     shortPrintStringOf: function(obj) {
-//         // primitive values
-//         if (!this.isMutableType(obj)) {
-//             return this.safeToString(obj);
-//         }
-
-//         // constructed objects
-//         if (obj.constructor.name != 'Object' && !Object.isArray(obj)) {
-//             if(obj.constructor.name) 
-//                 return obj.constructor.name; 
-//             return Object.prototype.toString.call(obj).split(" ")[1].split("]")[0]; 
-//         }
-
-//         // arrays or plain objects
-//         var typeString = "";
-
-//         function displayTypeAndLength(obj, collectionType, firstBracket, secondBracket) {
-//             if (obj.constructor.name === collectionType) {
-//                 typeString += firstBracket;
-//                 if (Properties.own(obj).length > 0) typeString += "...";
-//                 typeString += secondBracket;
-//             }
-//         }
-//         displayTypeAndLength(obj, "Object", "{", "}");
-//         displayTypeAndLength(obj, "Array", "[", "]");
-//         return typeString;
-//     },
-
-//     isMutableType: function(obj) {
-//         var immutableTypes = ["null", "undefined", "Boolean", "Number", "String"];
-//         return !immutableTypes.include(this.typeStringOf(obj));
-//     },
-
-//     safeToString: function(obj) {
-//         try {
-//             return (obj ? obj.toString() : String(obj)).replace('\n','');
-//         } catch (e) {
-//             return '<error printing object>';
-//         }
-//     },
-
-//     equal: function(a, b) {
-//         if (!a && !b) return true;
-//         if (!a || !b) return false;
-//         switch (a.constructor) {
-//             case String:
-//             case Date:
-//             case Boolean:
-//             case Number: return a == b;
-//         };
-//         if (Object.isFunction(a.isEqualNode)) return a.isEqualNode(b);
-//         if (Object.isFunction(a.equals)) return a.equals(b);
-//         function cmp(left, right) {
-//             for (var name in left) {
-//                 if (left[name] instanceof Function) continue;
-//         	    if (!Objects.equal(left[name], right[name])) return false;
-//             }
-//             return true;
-//         }
-//         return cmp(a, b) && cmp(b, a);
-//     }
-// };
 
 // Global.Properties = {
 //     all: function(object, predicate) {
