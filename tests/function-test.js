@@ -339,6 +339,8 @@ describe('fun', function() {
     it("composeAsyncWithError", function(done) {
       var aRun = 0, bRun = 0, cRun = 0;
 
+      console.log("Dear test runner: an error like \"Object XXX has no method 'barrr'\" is expected!");
+
       fun.composeAsync(
         function a(a,b, thenDo) { aRun++; thenDo(null, (a*b).barrr()); },
         function b(a, thenDo) { bRun++; thenDo(null, a + 1); }

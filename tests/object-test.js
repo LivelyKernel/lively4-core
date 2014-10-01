@@ -1,10 +1,9 @@
-/*global mocha, beforeEach, afterEach, describe, it*/
+/*global beforeEach, afterEach, describe, it*/
 
-var expect = typeof module !== 'undefined' && module.require ?
-  module.require('expect.js') : this.expect;
-
-var jsext = typeof module !== 'undefined' && module.require ?
-  module.require('../index') : this.jsext;
+var isNodejs = typeof module !== 'undefined' && module.require;
+var expect = isNodejs ? module.require('expect.js') : this.expect;
+var jsext = isNodejs ? module.require('../index') : this.jsext;
+var mocha = isNodejs ? module.require('mocha') : this.mocha;
 
 var obj = jsext.obj;
 
@@ -129,8 +128,8 @@ describe('obj', function() {
 
     describe("when lively present", function() {
 
-      var Global = typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : this;
-      mocha.globals(["lively"]);
+      var Global = typeof window !== "undefined" ? window : (typeof global !== "undefined" ? global : this);
+      // if (!isNodejs) mocha.globals(["lively"]);
 
       beforeEach(function() {
         Global.lively = {Module: {current: function() { return "bar"; }}};
@@ -138,7 +137,7 @@ describe('obj', function() {
 
       afterEach(function() {
         delete Global.lively;
-        mocha.options.globals.pop();
+        if (!isNodejs) mocha.options.globals.pop();
       });
 
       it("adds a sourceModule field", function() {
