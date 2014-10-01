@@ -41,6 +41,18 @@ describe('fun', function() {
 
     describe('rate limiting', function() {
 
+      beforeEach(function()  {
+        this._queues = fun._queues;
+        fun._queues = {};
+        this._debouncedByName = fun._debouncedByName;
+        fun._debouncedByName = {};
+      });
+
+      afterEach(function()  {
+        fun._queues = this._queues;
+        fun._debouncedByName = this._debouncedByName;
+      });
+
       it('debounce function is looked up by name', function(done) {
         var called = 0, result;
         [1,2,3,4,5,6,7,8,9,10].reduceRight(function(next, i) {
@@ -402,18 +414,3 @@ describe('fun', function() {
   });
 
 });
-
-// AsyncTestCase.subclass('lively.lang.tests.ExtensionTests.Function',
-// "running", {
-//     setUp: function()  {
-//         this._queues = Functions._queues;
-//         Functions._queues = {};
-//         this._debouncedByName = Functions._debouncedByName;
-//         Functions._debouncedByName = {};
-//     },
-//     tearDown: function()  {
-//         Functions._queues = this._queues;
-//         Functions._debouncedByName = this._debouncedByName;
-//     }
-// },
-
