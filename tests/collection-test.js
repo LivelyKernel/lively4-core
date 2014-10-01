@@ -457,30 +457,31 @@ describe('Grid', function() {
 describe("ArrayProjection", function() {
 
   var arr = jsext.arr;
+  var arrayProjection = jsext.arrayProjection;
 
   it("createProjection", function() {
-    var sut = lively.ArrayProjection;
+    var sut = arrayProjection;
     // array = ["A","B","C","D","E","F","G","H","I","J"]
-    var array = Array.range(65,74).map(function(i) { return String.fromCharCode(i); });
+    var array = arr.range(65,74).map(function(i) { return String.fromCharCode(i); });
     expect({array: array, from: 0, to: 3}).to.eql(sut.create(array, 3));
     expect({array: array, from: 2, to: 5}).to.eql(sut.create(array, 3, 2));
     expect({array: array, from: 7, to: 10}).to.eql(sut.create(array, 3, 9));
   });
 
   it("getProjection", function() {
-    var sut = lively.ArrayProjection;
+    var sut = arrayProjection;
     // array = ["A","B","C","D","E","F","G","H","I","J"]
-    var array = Array.range(65,74).map(function(i) { return String.fromCharCode(i); }),
-      projection = {array: array, from: 5, to: 8},
-      result = sut.toArray(projection);
-    expect(["F","G","H"]).to.equal(result);
+    var array = arr.range(65,74).map(function(i) { return String.fromCharCode(i); }),
+        projection = {array: array, from: 5, to: 8},
+        result = sut.toArray(projection);
+    expect(["F","G","H"]).to.eql(result);
   });
 
   it("projectionIndices", function() {
-    var sut = lively.ArrayProjection;
-    var array = Array.range(65,74).map(function(i) { return String.fromCharCode(i); }),
-      projection = {array: array, from: 5, to: 8},
-      result = sut.toArray(projection);
+    var sut = arrayProjection;
+    var array = arr.range(65,74).map(function(i) { return String.fromCharCode(i); }),
+        projection = {array: array, from: 5, to: 8},
+        result = sut.toArray(projection);
     expect(null).to.equal(sut.originalToProjectedIndex(projection, 2),'orig index to projected 2');
     expect(0).to.equal(sut.originalToProjectedIndex(projection, 5),'orig index to projected 5');
     expect(2).to.equal(sut.originalToProjectedIndex(projection, 7),'orig index to projected 7');
@@ -492,14 +493,16 @@ describe("ArrayProjection", function() {
   });
 
   it("moveProjectionToIncludeIndex", function() {
-    var sut = lively.ArrayProjection;
-    var array = Array.range(65,74).map(function(i) { return String.fromCharCode(i); }),
-      projection = sut.create(array, 3, 2);
+    var sut = arrayProjection;
+    var array = arr.range(65,74).map(function(i) { return String.fromCharCode(i); }),
+        projection = sut.create(array, 3, 2);
     expect(projection).to.eql(sut.transformToIncludeIndex(projection, 3));
     expect({array: array, from: 1, to: 4}).to.eql(sut.transformToIncludeIndex(projection, 1));
     // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     var array = [1,2,3,4,5], projection = sut.create(array, 3);
-    expect(array[3]).to.equal(sut.toArray(sut.transformToIncludeIndex(projection, 3)).last());
+    expect(array[3]).to.equal(
+      sut.toArray(sut.transformToIncludeIndex(projection, 3))
+        .slice(-1)[0]);
   });
 
 });

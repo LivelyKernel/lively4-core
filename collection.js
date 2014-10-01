@@ -720,115 +720,118 @@ exports.group.prototype.count = function() {
 //   }
 // }
 
-// Global.Grid = {
+var grid = exports.grid = {
 
-//   create: function(rows, columns, initialObj) {
-//     var result = new Array(rows);
-//     while (rows > 0) result[--rows] = Array.withN(columns, initialObj);
-//     return result;
-//   },
+  create: function(rows, columns, initialObj) {
+    var result = new Array(rows);
+    while (rows > 0) result[--rows] = arr.withN(columns, initialObj);
+    return result;
+  },
 
-//   mapCreate: function(rows, cols, func, context) {
-//     var result = new Array(rows);
-//     for (var i = 0; i < rows; i++) {
-//       result[i] = new Array(cols);
-//       for (var j = 0; j < cols; j ++) {
-//         result[i][j] = func.call(context || this, i, j);
-//       }
-//     }
-//     return result;
-//   },
+  mapCreate: function(rows, cols, func, context) {
+    var result = new Array(rows);
+    for (var i = 0; i < rows; i++) {
+      result[i] = new Array(cols);
+      for (var j = 0; j < cols; j ++) {
+        result[i][j] = func.call(context || this, i, j);
+      }
+    }
+    return result;
+  },
 
-//   forEach: function(grid, func, context) {
-//     grid.forEach(function(row, i) {
-//       row.forEach(function(val, j) {
-//         func.call(context || this, val, i, j);
-//       });
-//     })
-//   },
+  forEach: function(grid, func, context) {
+    grid.forEach(function(row, i) {
+      row.forEach(function(val, j) {
+        func.call(context || this, val, i, j);
+      });
+    })
+  },
 
-//   map: function(grid, func, context) {
-//     var result = new Array(grid.length);
-//     grid.forEach(function(row, i) {
-//       result[i] = new Array(row.length);
-//       row.forEach(function(val, j) {
-//         result[i][j] = func.call(context || this, val, i, j);
-//       });
-//     });
-//     return result;
-//   },
+  map: function(grid, func, context) {
+    var result = new Array(grid.length);
+    grid.forEach(function(row, i) {
+      result[i] = new Array(row.length);
+      row.forEach(function(val, j) {
+        result[i][j] = func.call(context || this, val, i, j);
+      });
+    });
+    return result;
+  },
 
-//   toObjects: function(grid) {
-//     // the first row of the grid defines the propNames
-//     // for each following row create a new object with those porperties
-//     // mapped to the cells of the row as values
-//     // Grid.toObjects([['a', 'b'],[1,2],[3,4]])
-//     //   --> [{a:1,b:2},{a:3,b:4}]
-//     var props = grid[0], objects = new Array(grid.length-1);
-//     for (var i = 1; i < grid.length; i++) {
-//       var obj = objects[i-1] = {};
-//       for (var j = 0; j < props.length; j++) obj[props[j]] = grid[i][j];
-//     }
-//     return objects;
-//   },
+  toObjects: function(grid) {
+    // the first row of the grid defines the propNames
+    // for each following row create a new object with those porperties
+    // mapped to the cells of the row as values
+    // Grid.toObjects([['a', 'b'],[1,2],[3,4]])
+    //   --> [{a:1,b:2},{a:3,b:4}]
+    var props = grid[0], objects = new Array(grid.length-1);
+    for (var i = 1; i < grid.length; i++) {
+      var obj = objects[i-1] = {};
+      for (var j = 0; j < props.length; j++) obj[props[j]] = grid[i][j];
+    }
+    return objects;
+  },
 
-//   tableFromObjects: function(objects, valueForUndefined) {
-//     // reverse of Grid.toObjects
-//     // useful to convert objectified SQL resultset into table that can be
-//     // printed via Strings.printTable. objects are key/values like [{x:1,y:2},{x:3},{z:4}]
-//     // interpret the keys as column names and add ea objects values as cell
-//     // values of a new row. For the example object this would create the
-//     // table: [["x","y","z"],[1,2,null],[3,null,null],[null,null,4]]
-//     if (!Object.isArray(objects)) objects = [objects];
-//     var table = [[]], columns = table[0],
-//       rows = objects.inject([], function(rows, ea) {
-//         return rows.concat([Object.keys(ea).inject([], function(row, col) {
-//           var colIdx = columns.indexOf(col);
-//           if (colIdx === -1) { colIdx = columns.length; columns.push(col); }
-//           row[colIdx] = ea[col];
-//           return row;
-//         })]);
-//       });
-//     valueForUndefined = arguments.length === 1 ? null : valueForUndefined;
-//     rows.forEach(function(row) {
-//       // fill cells with no value with null
-//       for (var i = 0; i < columns.length; i++) if (!row[i]) row[i] = valueForUndefined;
-//     });
-//     return table.concat(rows);
-//   },
+  tableFromObjects: function(objects, valueForUndefined) {
+    // reverse of grid.toObjects
+    // useful to convert objectified SQL resultset into table that can be
+    // printed via Strings.printTable. objects are key/values like [{x:1,y:2},{x:3},{z:4}]
+    // interpret the keys as column names and add ea objects values as cell
+    // values of a new row. For the example object this would create the
+    // table: [["x","y","z"],[1,2,null],[3,null,null],[null,null,4]]
+    if (!Array.isArray(objects)) objects = [objects];
+    var table = [[]], columns = table[0],
+      rows = objects.reduce(function(rows, ea) {
+        return rows.concat([Object.keys(ea).reduce(function(row, col) {
+          var colIdx = columns.indexOf(col);
+          if (colIdx === -1) { colIdx = columns.length; columns.push(col); }
+          row[colIdx] = ea[col];
+          return row;
+        }, [])]);
+      }, []);
+    valueForUndefined = arguments.length === 1 ? null : valueForUndefined;
+    rows.forEach(function(row) {
+      // fill cells with no value with null
+      for (var i = 0; i < columns.length; i++)
+        if (!row[i]) row[i] = valueForUndefined;
+    });
+    return table.concat(rows);
+  },
 
-//   benchmark: function() {
-//     var results = [], t;
+  benchmark: function() {
+    var results = [], t;
 
-//     var grid = Grid.create(1000, 200, 1),
-//       addNum = 0;
-//     t  = Functions.timeToRunN(function() {
-//       Grid.forEach(grid, function(n) { addNum += n; }) }, 10);
-//     results.push(Strings.format('Grid.forEach: %ims', t));
+    var g = grid.create(1000, 200, 1),
+        addNum = 0;
+        t = Functions.timeToRunN(function() {
+    grid.forEach(g, function(n) { addNum += n; }) }, 10);
+    results.push(Strings.format('grid.forEach: %ims', t));
 
+    var mapResult;
+    t  = Functions.timeToRunN(function() {
+      mapResult = grid.map(grid, function(n, i, j) {
+        return i+j + Math.round(Math.random() * 100); });
+    }, 10);
+    results.push(Strings.format('grid.map: %ims', t));
 
-//     var mapResult;
-//     t  = Functions.timeToRunN(function() {
-//       mapResult = Grid.map(grid, function(n, i, j) { return Numbers.random(i+j); });
-//     }, 10);
-//     results.push(Strings.format('Grid.map: %ims', t));
+    var mapResult2 = grid.create(1000, 2000);
+    t  = Functions.timeToRunN(function() {
+      mapResult2 = new Array(1000);
+      for (var i = 0; i < 1000; i++) mapResult2[i] = new Array(2000);
+      grid.forEach(g, function(n, i, j) { mapResult2[i][j] = i+j + Math.round(Math.random() * 100); });
+    }, 10);
 
-//     var mapResult2 = Grid.create(1000, 2000);
-//     t  = Functions.timeToRunN(function() {
-//       mapResult2 = new Array(1000);
-//       for (var i = 0; i < 1000; i++) mapResult2[i] = new Array(2000);
-//       Grid.forEach(grid, function(n, i, j) { mapResult2[i][j] = Numbers.random(i+j); });
-//     }, 10);
+    results.push('grid.map with forEach: ' + t + 'ms');
 
-//     results.push(Strings.format('Grid.map with forEach: %ims', t));
+    results.push('--= 2012-09-22 =--\n'
+          + "grid.forEach: 14.9ms\n"
+          + "grid.map: 19.8ms\n"
+          + "grid.map with forEach: 38.7ms\n");
+    return results.join('\n');
+  }
+}
 
-//     results.push('--= 2012-09-22 =--\n'
-//           + "Grid.forEach: 14.9ms\n"
-//           + "Grid.map: 19.8ms\n"
-//           + "Grid.map with forEach: 38.7ms\n")
-//     return results.join('\n');
-//   }
-// }
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 // Intervals are arrays whose first two elements are numbers and the
 // first element should be less or equal the second element, see
@@ -1046,40 +1049,40 @@ var interval = exports.interval = {
 
 // // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-// lively.ArrayProjection = {
+var arrayProjection = exports.arrayProjection = {
 
-//   create: function(array, length, optStartIndex) {
-//     var startIndex = optStartIndex || 0
-//     if (startIndex + length > array.length)
-//       startIndex -= startIndex + length - array.length;
-//     return {array: array, from: startIndex, to: startIndex+length}
-//   },
+  create: function(array, length, optStartIndex) {
+    var startIndex = optStartIndex || 0
+    if (startIndex + length > array.length)
+      startIndex -= startIndex + length - array.length;
+    return {array: array, from: startIndex, to: startIndex+length}
+  },
 
-//   toArray: function(projection) {
-//     return projection.array.slice(projection.from, projection.to);
-//   },
+  toArray: function(projection) {
+    return projection.array.slice(projection.from, projection.to);
+  },
 
-//   originalToProjectedIndex: function(projection, index) {
-//     if (index < projection.from || index >= projection.to) return null;
-//     return index - projection.from;
-//   },
+  originalToProjectedIndex: function(projection, index) {
+    if (index < projection.from || index >= projection.to) return null;
+    return index - projection.from;
+  },
 
-//   projectedToOriginalIndex: function(projection, index) {
-//     if (index < 0  || index > projection.to - projection.from) return null;
-//     return projection.from + index;
-//   },
+  projectedToOriginalIndex: function(projection, index) {
+    if (index < 0  || index > projection.to - projection.from) return null;
+    return projection.from + index;
+  },
 
-//   transformToIncludeIndex: function(projection, index) {
-//     if (!(index in projection.array)) return null;
-//     var delta = 0;
-//     if (index < projection.from) delta = -projection.from+index;
-//     if (index >= projection.to) delta = index-projection.to+1;
-//     if (delta === 0) return projection;
-//     return this.create(
-//       projection.array,
-//       projection.to-projection.from,
-//       projection.from+delta);
-//   }
-// }
+  transformToIncludeIndex: function(projection, index) {
+    if (!(index in projection.array)) return null;
+    var delta = 0;
+    if (index < projection.from) delta = -projection.from+index;
+    if (index >= projection.to) delta = index-projection.to+1;
+    if (delta === 0) return projection;
+    return arrayProjection.create(
+      projection.array,
+      projection.to-projection.from,
+      projection.from+delta);
+  }
+}
 
 })(typeof jsext !== 'undefined' ? jsext : this);
