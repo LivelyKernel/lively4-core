@@ -284,77 +284,81 @@ describe('obj', function() {
 });
 
 describe('properties', function() {
+  
+  var properties = jsext.properties;
+  var obj;
 
   beforeEach(function() {
     var Foo = function() {
       this.a = 1;
       this.aa = 1;
-      this.b = Functions.True;
+      this.b = function() { return true; };
     };
     Foo.prototype.c = 2;
     Foo.prototype.cc = 2;
-    Foo.prototype.d = Functions.False;
-    this.sut = new Foo();
+    Foo.prototype.d = function() { return true; };
+    obj = new Foo();
   });
 
   it("can access all properties", function() {
     var expected, result;
-    expected = ["a", "c"];
-    result = Properties.all(this.sut, function (name, object) {
-      return name.length == 1;
-    });
-    this.assertMatches(expected, result);
+    expected = ["a", "b", "c", "d"];
+    result = properties.all(obj, function (name, object) {
+      return name.length == 1; });
+    expect(expected).to.eql(result);
     expected = ["aa", "cc"];
-    result = Properties.all(this.sut, function (name, object) {
+    result = properties.all(obj, function (name, object) {
       return name.length == 2;
     });
-    this.assertMatches(expected, result);
+    expect(expected).to.eql(result);
   });
 
   it("can access own properties", function() {
-    var expected = ["a", "aa"];
-    var result = Properties.own(this.sut);
-    this.assertMatches(expected, result);
+    var expected = ["a", "aa", "b"];
+    var result = properties.own(obj);
+    expect(expected).to.eql(result);
   });
 
   it("allProperties again", function() {
     var expected, result;
     expected = ["a", "b", "c", "d"];
-    result = Properties.allProperties(this.sut, function (object, name) {
+    result = properties.allProperties(obj, function (object, name) {
       return name.length == 1;
     });
-    this.assertMatches(expected, result);
+    expect(expected).to.eql(result);
     expected = ["aa", "cc"];
-    result = Properties.allProperties(this.sut, function (object, name) {
+    result = properties.allProperties(obj, function (object, name) {
       return name.length == 2;
     });
-    this.assertMatches(expected, result);
+    expect(expected).to.eql(result);
   });
 
 });
 
 
-describe('properties', function() {
+describe('path', function() {
+
+  var path = jsext.path;
 
   it("parsePath", function() {
-    expect([]).to.equal(lively.PropertyPath(undefined).parts());
-    expect([]).to.equal(lively.PropertyPath('').parts());
-    expect([]).to.equal(lively.PropertyPath('.').parts());
-    expect(['foo']).to.equal(lively.PropertyPath('foo').parts());
-    expect(['foo', 'bar']).to.equal(lively.PropertyPath('foo.bar').parts());
+    expect([]).to.eql(path(undefined).parts());
+    expect([]).to.eql(path('').parts());
+    expect([]).to.eql(path('.').parts());
+    expect(['foo']).to.eql(path('foo').parts());
+    expect(['foo', 'bar']).to.eql(path('foo.bar').parts());
   });
 
   it("pathAccesor", function() {
     var obj = {foo: {bar: 42}, baz: {zork: {'x y z z y': 23}}};
-    expect(obj).to.equal(lively.PropertyPath('').get(obj));
-    expect(42).to.equal(lively.PropertyPath('foo.bar').get(obj));
-    expect(obj.baz.zork).to.equal(lively.PropertyPath('baz.zork').get(obj));
-    expect(23).to.equal(lively.PropertyPath('baz.zork.x y z z y').get(obj));
-    expect(undefined).to.equal(lively.PropertyPath('non.ex.is.tan.t').get(obj));
+    expect(obj).to.equal(path('').get(obj));
+    expect(42).to.equal(path('foo.bar').get(obj));
+    expect(obj.baz.zork).to.equal(path('baz.zork').get(obj));
+    expect(23).to.equal(path('baz.zork.x y z z y').get(obj));
+    expect(undefined).to.equal(path('non.ex.is.tan.t').get(obj));
   });
 
   it("pathIncludes", function() {
-    var base = lively.PropertyPath('foo.bar');
+    var base = path('foo.bar');
     expect(base.isParentPathOf('foo.bar')).to.be(true); // 'equal paths should be "parents"'
     expect(base.isParentPathOf(base)).to.be(true); // 'equal paths should be "parents" 2'
     expect(base.isParentPathOf('foo.bar.baz')).to.be(true); // 'foo.bar.baz'
@@ -365,44 +369,42 @@ describe('properties', function() {
   });
 
   it("relativePath", function() {
-    var base = lively.PropertyPath('foo.bar');
-    expect([]).to.equal(base.relativePathTo('foo.bar').parts(), 'foo.bar');
-    expect(['baz', 'zork']).to.equal(base.relativePathTo('foo.bar.baz.zork').parts(), 'foo.bar.baz.zork');
+    var base = path('foo.bar');
+    expect([]).to.eql(base.relativePathTo('foo.bar').parts(), 'foo.bar');
+    expect(['baz', 'zork']).to.eql(base.relativePathTo('foo.bar.baz.zork').parts(), 'foo.bar.baz.zork');
   });
 
   it("concat", function() {
-    var p1 = lively.PropertyPath('foo.bar'),
-      p2 = lively.PropertyPath('baz.zork');
-    expect('baz.zork.foo.bar').to.equal(p2.concat(p1));
-    expect('foo.bar.baz.zork').to.equal(p1.concat(p2));
+    var p1 = path('foo.bar'), p2 = path('baz.zork');
+    expect('baz.zork.foo.bar').to.equal(String(p2.concat(p1)));
+    expect('foo.bar.baz.zork').to.equal(String(p1.concat(p2)));
   });
 
   it("set", function() {
-    var obj = {foo:[{},{bar:{}}]}, p = lively.PropertyPath('foo.1.bar.baz');
+    var obj = {foo:[{},{bar:{}}]}, p = path('foo.1.bar.baz');
     p.set(obj, 3);
     expect(3).to.equal(obj.foo[1].bar.baz);
   });
 
   it("ensure", function() {
-    var obj = {}, p = lively.PropertyPath('foo.bar.baz');
+    var obj = {}, p = path('foo.bar.baz');
     p.set(obj, 3, true);
     expect(3).to.equal(obj.foo.bar.baz);
   });
 
   it("splitter", function() {
-    var obj = {}, p = lively.PropertyPath('foo/bar/baz', '/');
+    var obj = {}, p = path('foo/bar/baz', '/');
     p.set(obj, 3, true);
     expect(3).to.equal(obj.foo.bar.baz);
   });
 
   it("parentPathOf", function() {
-    var pp = lively.PropertyPath,
-        p1 = pp("a.b");
+    var pp = path, p1 = pp("a.b");
     expect(p1.isParentPathOf(p1)).to.be(true);
     expect(pp("a").isParentPathOf(p1)).to.be(true);
     expect(pp("").isParentPathOf(pp(""))).to.be(true);
-    expect(!p1.isParentPathOf(pp("a"))).to.be(false);
-    expect(!p1.isParentPathOf(pp("b.a"))).to.be(false);
+    expect(p1.isParentPathOf(pp("a"))).to.be(false);
+    expect(p1.isParentPathOf(pp("b.a"))).to.be(false);
   });
 
 });

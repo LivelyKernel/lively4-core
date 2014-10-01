@@ -323,303 +323,303 @@ var obj = exports.obj = {
 
 };
 
+// -=-=-=-=-=-
+// properties
+// -=-=-=-=-=-
+var properties = exports.properties = {
+
+  all: function(object, predicate) {
+    var a = [];
+    for (var name in object) {
+      if ((object.__lookupGetter__(name) || object[name] !== 'function')
+        && (predicate ? predicate(name, object) : true))
+        a.push(name);
+    }
+    return a;
+  },
+
+  allOwnPropertiesOrFunctions: function(obj, predicate) {
+    return Object.getOwnPropertyNames(obj).reduce(function(result, name) {
+      if (predicate ? predicate(obj, name) : true) result.push(name);
+      return result;
+    }, []);
+  },
+
+  own: function(object) {
+    var a = [];
+    for (var name in object) {
+      if (object.hasOwnProperty(name) && (object.__lookupGetter__(name)
+        || object[name] !== 'function'))
+        a.push(name);
+    }
+    return a;
+  },
+
+  forEachOwn: function(object, func, context) {
+    var result = [];
+    for (var name in object) {
+      if (!object.hasOwnProperty(name)) continue;
+      var value = object[name];
+      if (value !== 'function') {
+        result.push(func.call(context || this, name, value));
+      }
+    }
+    return result;
+  },
+
+  nameFor: function(object, value) {
+    for (var name in object) {
+      if (object[name] === value) return name;
+    }
+    return undefined;
+  },
+
+  values: function(obj) {
+    var values = [];
+    for (var name in obj) values.push(obj[name]);
+    return values;
+  },
+
+  ownValues: function(obj) {
+    var values = [];
+    for (var name in obj) {
+      if (obj.hasOwnProperty(name)) values.push(obj[name]);
+    }
+    return values;
+  },
+
+  any: function(obj, predicate) {
+    for (var name in obj) {
+      if (predicate(obj, name)) return true;
+    }
+    return false;
+  },
+
+  allProperties: function(obj, predicate) {
+    var result = [];
+    for (var name in obj) {
+      if (predicate ? predicate(obj, name) : true)
+        result.push(name);
+    }
+    return result;
+  },
+
+  hash: function(obj) {
+    return Object.keys(obj).sort().join('').hashCode();
+  }
+
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-
+  // js object path accessor
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+};
+
+var Path = exports.path = function Path(p, splitter) {
+  if (p instanceof Path) return p;
+  if (!(this instanceof Path)) return new Path(p, splitter);
+  if (splitter) this.setSplitter(splitter);
+  return this.fromPath(p);
+}
+
+obj.extend(Path, {
+  superclass: Object,
+  type: 'Path',
+  categories: {}
+});
+
+obj.extend(Path.prototype, {
+
+  isPathAccessor: true,
+  splitter: '.',
+
+  fromPath: function(path) {
+    if (obj.isString(path) && path !== '' && path !== this.splitter) {
+      this._parts = path.split(this.splitter);
+      this._path = path;
+    } else if (obj.isArray(path)) {
+      this._parts = [].concat(path);
+      this._path = path.join(this.splitter);
+    } else {
+      this._parts = [];
+      this._path = '';
+    }
+    return this;
+  },
+
+  setSplitter: function(splitter) {
+    if (splitter) this.splitter = splitter;
+    return this;
+  },
+
+  parts: function() { return this._parts; },
+
+  size: function() { return this._parts.length; },
+
+  slice: function(n, m) { return Path(this.parts().slice(n, m)); },
+
+  normalizePath: function() {
+    // FIXME: define normalization
+    return this._path;
+  },
+
+  isRoot: function(obj) { return this._parts.length === 0; },
+
+  isIn: function(obj) {
+    if (this.isRoot()) return true;
+    var parent = this.get(obj, -1);
+    return parent && parent.hasOwnProperty(this._parts[this._parts.length-1]);
+  },
+
+  equals: function(obj) {
+    return obj && obj.isPathAccessor && this.parts().equals(obj.parts());
+  },
+
+  isParentPathOf: function(otherPath) {
+    otherPath = otherPath && otherPath.isPathAccessor ?
+      otherPath : Path(otherPath);
+    var parts = this.parts(),
+        otherParts = otherPath.parts();
+    for(var i = 0; i < parts.length; i ++){
+      if (parts[i] != otherParts[i]) return false
+    }
+    return true
+  },
+
+  relativePathTo: function(otherPath) {
+    otherPath = Path(otherPath);
+    return this.isParentPathOf(otherPath) ?
+      otherPath.slice(this.size(), otherPath.size()) : undefined;
+  },
+
+  set: function(obj, val, ensure) {
+    if (this.isRoot()) return undefined;
+    var parent = obj
+    for (var i = 0; i < this._parts.length-1; i++) {
+      var part = this._parts[i];
+      if (parent.hasOwnProperty(part)) {
+        parent = parent[part];
+      } else if (ensure) {
+        parent = parent[part] = {};
+      } else {
+        return undefined;
+      }
+    }
+    return parent[this._parts[this._parts.length-1]] = val;
+  },
+
+  get: function(obj, n) {
+    var parts = n ? this._parts.slice(0, n) : this._parts;
+    return parts.reduce(function(current, pathPart) {
+      return current ? current[pathPart] : current; }, obj);
+  },
+
+  concat: function(p, splitter) {
+    return Path(this.parts().concat(Path(p, splitter).parts()));
+  },
+
+  toString: function() { return this.normalizePath(); },
+
+  serializeExpr: function() {
+    return 'Path(' + Objects.inspect(this.parts()) + ')';
+  },
+
+  watch: function(options) {
+    // options: target, haltWhenChanged, uninstall, onGet, onSet, verbose
+    if (!options || this.isRoot()) return;
+    var target = options.target,
+      parent = this.get(target, -1),
+      propName = this.parts().last(),
+      newPropName = 'propertyWatcher$' + propName,
+      watcherIsInstalled = parent && parent.hasOwnProperty(newPropName),
+      uninstall = options.uninstall,
+      haltWhenChanged = options.haltWhenChanged,
+      showStack = options.showStack,
+      getter = parent.__lookupGetter__(propName),
+      setter = parent.__lookupSetter__(propName);
+    if (!target || !propName || !parent) return;
+    if (uninstall) {
+      if (!watcherIsInstalled) return;
+      delete parent[propName];
+      parent[propName] = parent[newPropName];
+      delete parent[newPropName];
+      var msg = 'Watcher for ' + parent + '.' + propName + ' uninstalled';
+      show(msg);
+      return;
+    }
+    if (watcherIsInstalled) {
+      var msg = 'Watcher for ' + parent + '.' + propName + ' already installed';
+      show(msg);
+      return;
+    }
+    if (getter || setter) {
+      var msg = parent + '["' + propName + '"] is a getter/setter, watching not support';
+      console.log(msg);
+      if (typeof show === "undefined") show(msg);
+      return;
+    }
+    // observe slots, for debugging
+    parent[newPropName] = parent[propName];
+    parent.__defineSetter__(propName, function(v) {
+      var oldValue = parent[newPropName];
+      if (options.onSet) options.onSet(v, oldValue);
+      var msg = parent + "." + propName + " changed: " + oldValue + " -> " + v;
+      if (showStack) msg += '\n' + lively.printStack();
+      if (options.verbose) {
+        console.log(msg);
+        if (typeof show !== 'undefined') show(msg);
+      }
+      if (haltWhenChanged) debugger;
+      return parent[newPropName] = v;
+    });
+    parent.__defineGetter__(propName, function() {
+      if (options.onGet) options.onGet(parent[newPropName]);
+      return parent[newPropName];
+    });
+    var msg = 'Watcher for ' + parent + '.' + propName + ' installed';
+    console.log(msg);
+    if (typeof show !== 'undefined') show(msg);
+  },
+
+  debugFunctionWrapper: function(options) {
+    // options = {target, [haltWhenChanged, showStack, verbose, uninstall]}
+    var target = options.target,
+      parent = this.get(target, -1),
+      funcName = this.parts().last(),
+      uninstall = options.uninstall,
+      haltWhenChanged = options.haltWhenChanged === undefined ? true : options.haltWhenChanged,
+      showStack = options.showStack,
+      func = parent && funcName && parent[funcName],
+      debuggerInstalled = func && func.isDebugFunctionWrapper;
+    if (!target || !funcName || !func || !parent) return;
+    if (uninstall) {
+      if (!debuggerInstalled) return;
+      parent[funcName] = parent[funcName].debugTargetFunction;
+      var msg = 'Uninstalled debugFunctionWrapper for ' + parent + '.' + funcName;
+      console.log(msg);
+      if (typeof show !== 'undefined') show(msg);
+      show(msg);
+      return;
+    }
+    if (debuggerInstalled) {
+      var msg = 'debugFunctionWrapper for ' + parent + '.' + funcName + ' already installed';
+      console.log(msg);
+      if (typeof show !== 'undefined') show(msg);
+      return;
+    }
+    var debugFunc = parent[funcName] = func.wrap(function(proceed) {
+      var args = Array.from(arguments);
+      if (haltWhenChanged) debugger;
+      if (showStack) show(lively.printStack());
+      if (options.verbose) show(funcName + ' called');
+      return args.shift().apply(parent, args);
+    });
+    debugFunc.isDebugFunctionWrapper = true;
+    debugFunc.debugTargetFunction = func;
+    var msg = 'debugFunctionWrapper for ' + parent + '.' + funcName + ' installed';
+    console.log(msg);
+    if (typeof show !== 'undefined') show(msg);
+  }
+
+});
+
 })(typeof jsext !== 'undefined' ? jsext : this);
-
-
-// ///////////////////////////////////////////////////////////////////////////////
-// // Global Helper - Objects and Properties
-// ///////////////////////////////////////////////////////////////////////////////
-
-
-// Global.Properties = {
-//     all: function(object, predicate) {
-//         var a = [];
-//         for (var name in object) {
-//             if ((object.__lookupGetter__(name) || !Object.isFunction(object[name]))
-//               && (predicate ? predicate(name, object) : true))
-//               a.push(name);
-//         }
-//         return a;
-//     },
-
-//     allOwnPropertiesOrFunctions: function(obj, predicate) {
-//         var result = [];
-//         Object.getOwnPropertyNames(obj).forEach(function(name) {
-//             if (predicate ? predicate(obj, name) : true)
-//                 result.push(name);
-//         });
-//         return result;
-//     },
-
-//     own: function(object) {
-//         var a = [];
-//         for (var name in object) {
-//             if (object.hasOwnProperty(name) && (object.__lookupGetter__(name)
-//                 || !Object.isFunction(object[name])))
-//                 a.push(name);
-//         }
-//         return a;
-//     },
-
-//     forEachOwn: function(object, func, context) {
-//         var result = [];
-//         for (var name in object) {
-//             if (!object.hasOwnProperty(name)) continue;
-//             var value = object[name];
-//             if (!Object.isFunction(value)) {
-//                 result.push(func.call(context || this, name, value));
-//             }
-//         }
-//         return result;
-//     },
-
-//     nameFor: function(object, value) {
-//         for (var name in object) {
-//             if (object[name] === value)
-//                 return name;
-//         }
-//         return undefined;
-//     },
-
-//     values: function(obj) {
-//         var values = [];
-//         for (var name in obj)
-//             values.push(obj[name]);
-//         return values;
-//     },
-
-//     ownValues: function(obj) {
-//         var values = [];
-//         for (var name in obj) {
-//             if (obj.hasOwnProperty(name))
-//                 values.push(obj[name]);
-//         }
-//         return values;
-//     },
-
-//     printObjectSize: function(obj) {
-//         return Numbers.humanReadableByteSize(JSON.stringify(obj).length);
-//     },
-
-//     any: function(obj, predicate) {
-//         for (var name in obj) {
-//             if (predicate(obj, name))
-//                 return true;
-//         }
-//         return false;
-//     },
-
-//     allProperties: function(obj, predicate) {
-//         var result = [];
-//         for (var name in obj) {
-//             if (predicate ? predicate(obj, name) : true)
-//                 result.push(name);
-//         }
-//         return result;
-//     },
-
-//     hash: function(obj) {
-//         return Object.keys(obj).sort().join('').hashCode();
-//     }
-
-// };
-
-// Object.extend(lively, {
-//     PropertyPath: function PropertyPath(path, splitter) {
-//         if (path instanceof Global.lively.PropertyPath) return path;
-//         if (!(this instanceof Global.lively.PropertyPath)) return new Global.lively.PropertyPath(path, splitter);
-//         if (splitter) this.setSplitter(splitter);
-//         return this.fromPath(path);
-//     }
-// });
-
-// Object.extend(lively.PropertyPath, {
-//     superclass: Object,
-//     type: 'lively.PropertyPath',
-//     categories: {}
-// });
-
-// Object.extend(lively.PropertyPath.prototype, {
-
-//     isPathAccessor: true,
-//     splitter: '.',
-
-//     fromPath: function(path) {
-//         if (Object.isString(path) && path !== '' && path !== this.splitter) {
-//             this._parts = path.split(this.splitter);
-//             this._path = path;
-//         } else if (Object.isArray(path)) {
-//             this._parts = [].concat(path);
-//             this._path = path.join(this.splitter);
-//         } else {
-//             this._parts = [];
-//             this._path = '';
-//         }
-//         return this;
-//     },
-
-//     setSplitter: function(splitter) {
-//         if (splitter) this.splitter = splitter;
-//         return this;
-//     },
-
-//     parts: function() { return this._parts; },
-
-//     size: function() { return this._parts.length; },
-
-//     slice: function(n, m) { return lively.PropertyPath(this.parts().slice(n, m)); },
-
-//     normalizePath: function() {
-//         // FIXME: define normalization
-//         return this._path;
-//     },
-
-//     isRoot: function(obj) { return this._parts.length === 0; },
-
-//     isIn: function(obj) {
-//         if (this.isRoot()) return true;
-//         var parent = this.get(obj, -1);
-//         return parent && parent.hasOwnProperty(this._parts[this._parts.length-1]);
-//     },
-
-//     equals: function(obj) {
-//         return obj && obj.isPathAccessor && this.parts().equals(obj.parts());
-//     },
-
-//     isParentPathOf: function(otherPath) {
-//         otherPath = otherPath && otherPath.isPathAccessor ? otherPath : lively.PropertyPath(otherPath);
-//         var parts = this.parts(),
-//             otherParts = otherPath.parts();
-//         for(var i = 0; i < parts.length; i ++){
-//             if (parts[i] != otherParts[i]) return false
-//         }
-//         return true
-//     },
-
-//     relativePathTo: function(otherPath) {
-//         otherPath = lively.PropertyPath(otherPath);
-//         return this.isParentPathOf(otherPath) ? otherPath.slice(this.size(), otherPath.size()) : undefined;
-//     },
-
-//     set: function(obj, val, ensure) {
-//         if (this.isRoot()) return undefined;
-//         var parent = obj
-//         for (var i = 0; i < this._parts.length-1; i++) {
-//             var part = this._parts[i];
-//             if (parent.hasOwnProperty(part)) {
-//                 parent = parent[part];
-//             } else if (ensure) {
-//                 parent = parent[part] = {};
-//             } else {
-//                 return undefined;
-//             }
-//         }
-//         return parent[this._parts[this._parts.length-1]] = val;
-//     },
-
-//     get: function(obj, n) {
-//         var parts = n ? this._parts.slice(0, n) : this._parts;
-//         return parts.reduce(function(current, pathPart) {
-//             return current ? current[pathPart] : current; }, obj);
-//     },
-
-//     concat: function(path, splitter) {
-//         return lively.PropertyPath(this.parts().concat(lively.PropertyPath(path, splitter).parts()));
-//     },
-
-//     toString: function() { return this.normalizePath(); },
-
-//     serializeExpr: function() {
-//         return 'lively.PropertyPath(' + Objects.inspect(this.parts()) + ')';
-//     },
-
-//     watch: function(options) {
-//         // options: target, haltWhenChanged, uninstall, onGet, onSet, verbose
-//         if (!options || this.isRoot()) return;
-//         var target = options.target,
-//             parent = this.get(target, -1),
-//             propName = this.parts().last(),
-//             newPropName = 'livelyPropertyWatcher$' + propName,
-//             watcherIsInstalled = parent && parent.hasOwnProperty(newPropName),
-//             uninstall = options.uninstall,
-//             haltWhenChanged = options.haltWhenChanged,
-//             showStack = options.showStack,
-//             getter = parent.__lookupGetter__(propName),
-//             setter = parent.__lookupSetter__(propName);
-//         if (!target || !propName || !parent) return;
-//         if (uninstall) {
-//             if (!watcherIsInstalled) return;
-//             delete parent[propName];
-//             parent[propName] = parent[newPropName];
-//             delete parent[newPropName];
-//             var msg = Strings.format('Uninstalled watcher for %s.%s', parent, propName);
-//             show(msg);
-//             return;
-//         }
-//         if (watcherIsInstalled) {
-//             var msg = Strings.format('Watcher for %s.%s already installed.', parent, propName);
-//             show(msg);
-//             return;
-//         }
-//         if (getter || setter) {
-//             var msg = Strings.format('%s["%s"] is a getter/setter, watching not support', parent, propName);
-//             show(msg);
-//             return;
-//         }
-//         // observe slots, for debugging
-//         parent[newPropName] = parent[propName];
-//         parent.__defineSetter__(propName, function(v) {
-//             var oldValue = parent[newPropName];
-//             if (options.onSet) options.onSet(v, oldValue);
-//             var msg = Strings.format('%s.%s changed: %s -> %s',
-//                 parent, propName, oldValue, v);
-//             if (showStack) msg += '\n' + lively.printStack();
-//             if (options.verbose) show(msg);
-//             if (haltWhenChanged) debugger;
-//             return parent[newPropName] = v;
-//         });
-//         parent.__defineGetter__(propName, function() {
-//             if (options.onGet) options.onGet(parent[newPropName]);
-//             return parent[newPropName];
-//         });
-//         var msg = Strings.format('Watcher for %s.%s installed', parent, propName);
-//         show(msg);
-//     },
-
-//     debugFunctionWrapper: function(options) {
-//         // options = {target, [haltWhenChanged, showStack, verbose, uninstall]}
-//         var target = options.target,
-//             parent = this.get(target, -1),
-//             funcName = this.parts().last(),
-//             uninstall = options.uninstall,
-//             haltWhenChanged = options.haltWhenChanged === undefined ? true : options.haltWhenChanged,
-//             showStack = options.showStack,
-//             func = parent && funcName && parent[funcName],
-//             debuggerInstalled = func && func.isDebugFunctionWrapper;
-//         if (!target || !funcName || !func || !parent) return;
-//         if (uninstall) {
-//             if (!debuggerInstalled) return;
-//             parent[funcName] = parent[funcName].debugTargetFunction;
-//             var msg = Strings.format('Uninstalled debugFunctionWrapper for %s.%s', parent, funcName);
-//             show(msg);
-//             return;
-//         }
-//         if (debuggerInstalled) {
-//             var msg = Strings.format('debugFunctionWrapper for %s.%s already installed.', parent, funcName);
-//             show(msg);
-//             return;
-//         }
-//         var debugFunc = parent[funcName] = func.wrap(function(proceed) {
-//             var args = Array.from(arguments);
-//             if (haltWhenChanged) debugger;
-//             if (showStack) show(lively.printStack());
-//             if (options.verbose) show(funcName + ' called');
-//             return args.shift().apply(parent, args);
-//         });
-//         debugFunc.isDebugFunctionWrapper = true;
-//         debugFunc.debugTargetFunction = func;
-//         var msg = Strings.format('debugFunctionWrapper for %s.%s installed', parent, funcName);
-//         show(msg);
-//     }
-
-// });
