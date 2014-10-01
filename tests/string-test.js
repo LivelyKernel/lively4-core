@@ -6,19 +6,20 @@ var expect = typeof module !== 'undefined' && module.require ?
 var jsext = typeof module !== 'undefined' && module.require ?
   module.require('../index') : this.jsext;
 
-var string = jsext.string;
 
 describe('string', function() {
 
+  var string = jsext.string;
+
   it("tableize", function() {
-    expect([["a", "b", "c"], ["d", "e", "f"]]).to.eql(Strings.tableize('a b c\nd e f'));
-    expect([["a", 1, "c"], ["d", 2, "f"]]).to.eql(Strings.tableize('a 1 c\nd 2 f'));
-    expect([["Date"], [new Date('06/11/2013')]]).to.eql(Strings.tableize('Date\n06/11/2013'));
+    expect([["a", "b", "c"], ["d", "e", "f"]]).to.eql(string.tableize('a b c\nd e f'));
+    expect([["a", 1, "c"], ["d", 2, "f"]]).to.eql(string.tableize('a 1 c\nd 2 f'));
+    expect([["Date"], [new Date('06/11/2013')]]).to.eql(string.tableize('Date\n06/11/2013'));
   });
 
   it("lineLookupByIndex", function() {
-    var string = 'test\n123\nfo\nbarbaz\nzork\n';
-    var lookupFunc = Strings.lineIndexComputer(string);
+    var s = 'test\n123\nfo\nbarbaz\nzork\n';
+    var lookupFunc = string.lineIndexComputer(s);
     expect(0).to.equal(lookupFunc(0),"char pos: 0");
     expect(0).to.equal(lookupFunc(1),"char pos: 1");
     expect(0).to.equal(lookupFunc(4),"char pos: 4");
@@ -40,7 +41,7 @@ describe('string', function() {
       {string: 'a\n\n\n\nb\nc', expected: ['a', '\n\n', 'b\nc'], options: {keepEmptyLines: true}}
     ];
     tests.forEach(function(test) {
-      expect(test.expected).to.equal(Strings.paragraphs(test.string, test.options));
+      expect(test.expected).to.eql(string.paragraphs(test.string, test.options));
     });
   });
 
@@ -62,17 +63,17 @@ describe('string', function() {
       }]
     };
     var expected = "root\n"
-           + "|---a\n"
-           + "|   \\---b\n"
-           + "|      |---c\n"
-           + "|      \\---d\n"
-           + "\\---e\n"
-           + "  \\---f\n"
-           + "    |---g\n"
-           + "    \\---h";
-    var actual = Strings.printTree(tree,
+                 + "|---a\n"
+                 + "|   \\---b\n"
+                 + "|       |---c\n"
+                 + "|       \\---d\n"
+                 + "\\---e\n"
+                 + "    \\---f\n"
+                 + "        |---g\n"
+                 + "        \\---h";
+    var actual = string.printTree(tree,
         function(n) { return n.string; },
-        function(n) { return n.children; }, '   ');
+        function(n) { return n.children; }, '    ');
     expect(expected).to.equal(actual);
   });
 
@@ -84,32 +85,34 @@ describe('string', function() {
       {string: "foo bar 123 baz", pattern: "foo bar __/[0-9]+/__ baz"},
       {string: "  foo\n   123\n bla", pattern: "foo\n __/[0-9]+/__\n     bla", ignoreIndent: true}];
     sucesses.forEach(function(ea) {
-      var match = Strings.stringMatch(
+      debugger;
+      var match = string.stringMatch(
         ea.string, ea.pattern,
         {normalizeWhiteSpace: ea.normalizeWhiteSpace, ignoreIndent: ea.ignoreIndent});
-      expect(match.matched).to.equal(true,
-        'stringMatch not matching:\n' + ea.string
+      if (!match.matched) expect().fail('stringMatch not matching:\n' + ea.string
         + '\nwith:\n'+ ea.pattern
-        + '\nbecause:\n ' + Objects.inspect(match));
+        + '\nbecause:\n ' + JSON.stringify(match))
     });
+
     // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
     var failures = [
       {string: "foo bar 12x baz", pattern: "foo bar __/[0-9]+/__ baz"}];
     failures.forEach(function(ea) {
-      var match = Strings.stringMatch(
+      var match = string.stringMatch(
         ea.string, ea.pattern,
         {normalizeWhiteSpace: ea.normalizeWhiteSpace});
-      expect(!match.matched).to.equal(true,
+      if (match.matched) expect().fail(
         'stringMatch unexpectedly matched:\n' + ea.string
         + '\nwith:\n'+ ea.pattern
-        + '\nbecause:\n ' + Objects.inspect(match));
+        + '\nbecause:\n ' + JSON.stringify(match));
     });
   });
 
   it("reMatches", function() {
-    var string = 'abc def abc xyz';
+    var s = 'abc def abc xyz';
     var expected = [{start: 4, end: 11, match: "def abc"}];
-    expect(expected).to.eql(Strings.reMatches(string, /def\s[^\s]+/));
+    expect(expected).to.eql(string.reMatches(s, /def\s[^\s]+/));
   });
 
 });
