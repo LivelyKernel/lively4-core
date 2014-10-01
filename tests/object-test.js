@@ -34,8 +34,8 @@ describe('obj', function() {
     });
 
     it("isArray", function() {
-      expect(obj.isArray([1,2,3])).to.be(true);  
-      expect(obj.isArray([])).to.be(true);  
+      expect(obj.isArray([1,2,3])).to.be(true);
+      expect(obj.isArray([])).to.be(true);
       expect(obj.isArray({})).to.be(false);
     });
 
@@ -99,7 +99,7 @@ describe('obj', function() {
   });
 
   describe('extend', function() {
-    
+
     it("adds and overwrites properties", function() {
       var o = {baz: 99, bar: 66};
       var extended = obj.extend(o, {foo: 23, bar: {x: 3}});
@@ -192,27 +192,25 @@ describe('obj', function() {
     });
 
     it("merges hierarchies", function() {
-      // mergePropertyInHierarchy
-      expect(false).to.be(true);
-    });
-
-    it("can read values in hierarchies", function() {
-      // valuesInPropertyHierarchy
-      expect(false).to.be(true);
-    });
-
-    it("can merge values in hierarchies", function() {
-      // mergePropertyInHierarchy
-      expect(false).to.be(true);
+      var obj1 = {foo: {a: 23, b: 4}},
+          obj2 = {foo: {a: 24, c: 5}}
+      obj1.__proto__ = obj2;
+      var merged = obj.mergePropertyInHierarchy(obj1, "foo");
+      expect(merged).to.eql({a: 23, b: 4, c: 5});
     });
 
   });
 
   describe("inherit", function() {
 
-    it("sets prototype pointer", function() {
-      // ...
-      expect(false).to.be(true);
+    it("inherits", function() {
+      var obj1 = {baz: 25};
+      var obj2 = obj.inherit(obj1);
+      expect(obj2.hasOwnProperty("baz")).to.be(false);
+      expect(obj2.baz).to.be(25);
+      obj2.baz = 26;
+      expect(obj2.hasOwnProperty("baz")).to.be(true);
+      expect(obj2.baz).to.be(26);
     });
 
   });
@@ -239,20 +237,13 @@ describe('obj', function() {
 
     it("can deep copy", function() {
       var o = {a: 3, b: {c: [{}],d: undefined}, e: null, f: function(){}, g: "string"};
-      var copy = obj.deepCopy(obj);
-      expect(obj).to.eql(copy);
-      expect(copy).to.eql(obj);
-      expect(obj).to.not.equal(copy);
-      expect(obj.b).to.not.equal(copy.b);
-      expect(obj.b.c).to.not.equal(copy.b.c);
-      expect(obj.b.c[0]).to.not.equal(copy.b.c[0]);
-
-    });
-
-    it("can proto copy", function() {
-      // ...
-      // protoCopy
-      expect(false).to.be(true);
+      var copy = obj.deepCopy(o);
+      expect(o).to.eql(copy);
+      expect(copy).to.eql(o);
+      expect(o).to.not.equal(copy);
+      expect(o.b).to.not.equal(copy.b);
+      expect(o.b.c).to.not.equal(copy.b.c);
+      expect(o.b.c[0]).to.not.equal(copy.b.c[0]);
     });
 
   });
@@ -266,20 +257,20 @@ describe('obj', function() {
       expect(obj.typeStringOf(undefined)).to.be('undefined');
       expect(obj.typeStringOf([])).to.be('Array');
       expect(obj.typeStringOf({a: 2})).to.be('Object');
-      expect(obj.typeStringOf(new lively.morphic.Morph())).to.be('Morph');
+      // expect(obj.typeStringOf(new lively.morphic.Morph())).to.be('Morph');
     });
 
     it("shortPrintStringOf", function() {
       expect(obj.shortPrintStringOf([1,2])).to.equal( '[...]', 'filled arrays should be displayed as [...]');
       expect(obj.shortPrintStringOf([])).to.equal( '[]', 'empty arrays should be displayed as []');
       expect(obj.shortPrintStringOf(0)).to.equal( '0', 'numbers should be displayed as values');
-      expect(obj.shortPrintStringOf(new lively.morphic.Morph())).to.equal( 'Morph', 'short typestring of a morph is still Morph');
+      // expect(obj.shortPrintStringOf(new lively.morphic.Morph())).to.equal( 'Morph', 'short typestring of a morph is still Morph');
     });
 
     it("isMutableType", function() {
       expect(obj.isMutableType([1,2])).to.be(true,'arrays are mutable');
       expect(obj.isMutableType({})).to.be(true,'empty objects are mutable');
-      expect(obj.isMutableType(new lively.morphic.Morph()).to.be(true), 'complex objects are mutable');
+      // expect(obj.isMutableType(new lively.morphic.Morph()).to.be(true), 'complex objects are mutable');
       expect(obj.isMutableType(2)).to.be(false,'numbers are immutable');
     });
 
@@ -352,7 +343,7 @@ describe('properties', function() {
     expect(['foo']).to.equal(lively.PropertyPath('foo').parts());
     expect(['foo', 'bar']).to.equal(lively.PropertyPath('foo.bar').parts());
   });
-  
+
   it("pathAccesor", function() {
     var obj = {foo: {bar: 42}, baz: {zork: {'x y z z y': 23}}};
     expect(obj).to.equal(lively.PropertyPath('').get(obj));
@@ -361,7 +352,7 @@ describe('properties', function() {
     expect(23).to.equal(lively.PropertyPath('baz.zork.x y z z y').get(obj));
     expect(undefined).to.equal(lively.PropertyPath('non.ex.is.tan.t').get(obj));
   });
-  
+
   it("pathIncludes", function() {
     var base = lively.PropertyPath('foo.bar');
     expect(base.isParentPathOf('foo.bar')).to.be(true); // 'equal paths should be "parents"'
@@ -372,38 +363,38 @@ describe('properties', function() {
     expect(base.isParentPathOf('')).to.be(false); // 'empty string'
     expect(base.isParentPathOf()).to.be(false); // 'undefined'
   });
-  
+
   it("relativePath", function() {
     var base = lively.PropertyPath('foo.bar');
     expect([]).to.equal(base.relativePathTo('foo.bar').parts(), 'foo.bar');
     expect(['baz', 'zork']).to.equal(base.relativePathTo('foo.bar.baz.zork').parts(), 'foo.bar.baz.zork');
   });
-  
+
   it("concat", function() {
     var p1 = lively.PropertyPath('foo.bar'),
       p2 = lively.PropertyPath('baz.zork');
     expect('baz.zork.foo.bar').to.equal(p2.concat(p1));
     expect('foo.bar.baz.zork').to.equal(p1.concat(p2));
   });
-  
+
   it("set", function() {
     var obj = {foo:[{},{bar:{}}]}, p = lively.PropertyPath('foo.1.bar.baz');
     p.set(obj, 3);
     expect(3).to.equal(obj.foo[1].bar.baz);
   });
-  
+
   it("ensure", function() {
     var obj = {}, p = lively.PropertyPath('foo.bar.baz');
     p.set(obj, 3, true);
     expect(3).to.equal(obj.foo.bar.baz);
   });
-  
+
   it("splitter", function() {
     var obj = {}, p = lively.PropertyPath('foo/bar/baz', '/');
     p.set(obj, 3, true);
     expect(3).to.equal(obj.foo.bar.baz);
   });
-  
+
   it("parentPathOf", function() {
     var pp = lively.PropertyPath,
         p1 = pp("a.b");

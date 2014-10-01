@@ -45,7 +45,7 @@ function indent(str, indentString, depth) {
 // -=-=-
 // obj
 // -=-=-
-exports.obj = {
+var obj = exports.obj = {
 
   // -=-=-=-=-
   // testing
@@ -132,7 +132,7 @@ exports.obj = {
   // -=-=-=-=-
   // clone
   // -=-=-=-=-
-  
+
   clone: function(object) {
       return Array.isArray(object) ?
         Array.prototype.slice.call(object) : exports.obj.extend({}, object);
@@ -205,9 +205,12 @@ exports.obj = {
     return openBr + startBreak + printedPropsJoined + endBreak + closeBr;
   },
 
+  // -=-=-=-=-
+  // merging
+  // -=-=-=-=-
   merge: function(objs) {
     // // if objs are arrays just concat them
-    // // if objs are real objs then merge properties
+    // // if objs are real objs then merge propertdies
     if (arguments.length > 1) {
       return exports.obj.merge(Array.prototype.slice.call(arguments));
     }
@@ -224,10 +227,11 @@ exports.obj = {
     }, {});
   },
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // left hof here
+  // -=-=-=-=-=-=-
+  // inheritance
+  // -=-=-=-=-=-=-
   inherit: function(obj) {
-    var constructor = function ProtoConstructor() { return this }
+    var constructor = function ProtoConstructor() { return this; }
     constructor.prototype = obj;
     var newInstance = new constructor();
     newInstance.constructor = constructor;
@@ -241,10 +245,16 @@ exports.obj = {
       lookupObj = obj;
     while (true) {
       if (lookupObj.hasOwnProperty(name)) result.push(lookupObj[name])
-      var proto = lively.Class.getPrototype(lookupObj);
-      if (!proto || proto === lookupObj) proto = lively.Class.getSuperPrototype(lookupObj);
+      var proto = Object.getPrototypeOf(lookupObj);
+      var superclass = lookupObj.constructor.superclass;
+      if (!proto || proto === lookupObj) proto = superclass && Object.getPrototypeOf(superclass);
       if (!proto) return result.reverse();
       lookupObj = proto;
+    }
+
+    Object.getPrototypeOf(this)
+    function Class$getPrototype(object) {
+        return this.getConstructor(object).prototype;
     }
   },
 
@@ -252,27 +262,64 @@ exports.obj = {
     return this.merge(this.valuesInPropertyHierarchy(obj, propName));
   },
 
-  protoCopy: function(obj) {
-    var protoCreator = function() { return this };
-    protoCreator.prototype = obj;
-    var protoObj = new protoCreator();
-    return protoObj;
-  },
-
-  addScript: function (object, funcOrString, optName, optMapping) {
-    var func = Function.fromString(funcOrString);
-    return func.asScriptOf(object, optName, optMapping);
-  },
-
-  deepCopy: function (obj) {
-    if (!obj || !Object.isObject(obj)) return obj;
-    var result = Array.isArray(obj) ? Array(obj.length) : {};
-    for (var key in obj) {
-      if (obj.hasOwnProperty(key))
-        result[key] = Object.deepCopy(obj[key]);
+  deepCopy: function (o) {
+    if (!o || typeof o !== "object") return o;
+    var result = Array.isArray(o) ? Array(o.length) : {};
+    for (var key in o) {
+      if (o.hasOwnProperty(key))
+        result[key] = obj.deepCopy(o[key]);
     }
     return result;
-  }
+  },
+
+  // -=-=-=-=-=-=-=-=-
+  // stringification
+  // -=-=-=-=-=-=-=-=-
+  typeStringOf: function(obj) {
+    if (obj === null) return "null";
+    if (typeof obj === "undefined") return "undefined";
+    return obj.constructor.name;
+  },
+
+  shortPrintStringOf: function(obj) {
+    // primitive values
+    if (!this.isMutableType(obj)) return this.safeToString(obj);
+
+    // constructed objects
+    if (obj.constructor.name !== 'Object' && !Array.isArray(obj)) {
+      if(obj.constructor.name)
+        return obj.constructor.name ?
+          obj.constructor.name :
+          Object.prototype.toString.call(obj).split(" ")[1].split("]")[0];
+    }
+
+    // arrays or plain objects
+    var typeString = "";
+
+    function displayTypeAndLength(obj, collectionType, firstBracket, secondBracket) {
+      if (obj.constructor.name === collectionType) {
+        typeString += firstBracket;
+        if (obj.length || Object.keys(obj).length) typeString += "...";
+        typeString += secondBracket;
+      }
+    }
+    displayTypeAndLength(obj, "Object", "{", "}");
+    displayTypeAndLength(obj, "Array", "[", "]");
+    return typeString;
+  },
+
+  isMutableType: function(obj) {
+    var immutableTypes = ["null", "undefined", "Boolean", "Number", "String"];
+    return immutableTypes.indexOf(this.typeStringOf(obj)) === -1;
+  },
+
+  safeToString: function(obj) {
+    try {
+      return (obj ? obj.toString() : String(obj)).replace('\n','');
+    } catch (e) {
+      return '<error printing object>';
+    }
+  },
 
 };
 
@@ -303,7 +350,7 @@ exports.obj = {
 //         });
 //         return result;
 //     },
-    
+
 //     own: function(object) {
 //         var a = [];
 //         for (var name in object) {
@@ -434,7 +481,7 @@ exports.obj = {
 //         var parent = this.get(obj, -1);
 //         return parent && parent.hasOwnProperty(this._parts[this._parts.length-1]);
 //     },
-    
+
 //     equals: function(obj) {
 //         return obj && obj.isPathAccessor && this.parts().equals(obj.parts());
 //     },
