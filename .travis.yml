@@ -2,3 +2,6 @@ language: node_js
 
 node_js:
   - "0.10"
+
+notifications:
+  slack: cdglabs:fhJ0mRZkjMb0erIw3LetA9I2
