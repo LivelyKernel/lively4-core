@@ -11,11 +11,11 @@ var worker = jsext.worker;
 
 describe('worker', function() {
 
+  var libURL = document.location.toString().split('/').slice(0, -1).join('/') + "/../";
+
   describe('basics', function() {
 
-    var libURL = document.location.toString().split('/').slice(0, -1).join('/') + "/../";
-
-    it("CreateAndRunWorker", function(done) {
+    it("creates worker", function(done) {
       var messageFromWorker = null,
           w = worker.create({libURL: libURL}, function() { self.customInitRun = true; }),
           workerCode = "this.onmessage = function(evt) {\n"
@@ -30,8 +30,8 @@ describe('worker', function() {
         });
       }, 200);
     });
-    
-    it("LoadBootstrapFiles", function(done) {
+
+    it("loads other lib code", function(done) {
       var messageFromWorker = null,
           w = worker.create({libURL: libURL});
       fun.waitFor(100, function() { return worker.ready; }, function() {
@@ -45,7 +45,7 @@ describe('worker', function() {
             + "}"
             + "}).call()";
         w.postMessage({command: "eval", source: src});
-        
+
         fun.waitFor(500, function() { return !!messageFromWorker; }, function(err) {
           expect(err).to.be(undefined);
           // this.assertEquals(false, worker.errors.length > 0 && worker.errors[0], 'worker got errors');
@@ -55,12 +55,12 @@ describe('worker', function() {
       });
     });
 
-    xit("WorkerRun", function(done) {
+    it("runs", function(done) {
       var messageFromWorker = null,
-          w = worker.create();
-      worker.onMessage = function(evt) { messageFromWorker = evt.data; }
-      fun.waitFor(100, function() { return worker.ready; }, function(err) {
-        worker.run(function(a, b) { postMessage(a+b); }, 1, 2);
+          w = worker.create({libURL: libURL});
+      w.onMessage = function(evt) { messageFromWorker = evt.data; }
+      fun.waitFor(100, function() { return w.ready; }, function(err) {
+        w.run(function(a, b) { postMessage(a+b); }, 1, 2);
         fun.waitFor(100, function() { return !!messageFromWorker }, function(err) {
           expect(messageFromWorker).to.equal(3);
           done();
@@ -70,62 +70,75 @@ describe('worker', function() {
 
   });
 
-  describe('Function interface', function() {
+  describe('forking functions', function() {
 
     var previousIdleTimeOfPoolWorker;
     var originalWorkerPool;
 
     beforeEach(function() {
-      previousIdleTimeOfPoolWorker = Config.get('worker.idleTimeOfPoolWorker');
-      Config.set('worker.idleTimeOfPoolWorker', 50);
+      previousIdleTimeOfPoolWorker = worker.idleTimeOfPoolWorker;
+      worker.idleTimeOfPoolWorker = 50;
       originalWorkerPool = worker.pool;
       worker.pool = [];
     });
-  
+
     afterEach(function() {
       worker.pool = originalWorkerPool;
-      Config.set('worker.idleTimeOfPoolWorker', previousIdleTimeOfPoolWorker);
+      worker.idleTimeOfPoolWorker = previousIdleTimeOfPoolWorker;
     });
 
     it("ForkFunction", function(done) {
-      var test = this, whenDoneResult,
-        w = Functions.forkInWorker(
-          function(whenDone, a, b) { whenDone(null, '' + (a + b) + ' ' + self.isBusy); },
-          {args: [1, 2], whenDone: function(err, result) { whenDoneResult = result; }});
-      fun.waitFor(10, function() { return !!worker.ready}, function() {
-        setTimeout(function() {
-          expect(whenDoneResult).to.equal('3 true');
-          expect(worker.pool.length).to.equal(1, 'worker pool size with worker running.');
-          setTimeout(function() {
-            expect(worker.pool.length).to.equal(0, 'worker pool size with worker stopped.');
-            done();
-          }, 200);
-        }, 15);
-      });
-    });
-    
-    it("ForkLongRunningFunctionKeepsWorkerAlive", function(done) {
-      var test = this, whenDoneResult,
+      var whenDoneResult,
           w = worker.fork(
-            function(whenDone) { setTimeout(whenDone.bind(null, null, 'OK'), 300); },
-            {whenDone: function(err, result) { whenDoneResult = result; }});
+            {libURL: libURL, args: [1, 2], whenDone: function(err, result) { whenDoneResult = result; }},
+            function(a, b, thenDo) { thenDo(null, '' + (a + b) + ' ' + self.isBusy); });
 
       fun.composeAsync(
-        function(next) { fun.waitFor(function() { return !!w.ready; }, 500, function(err) { next(err); }); },
+        function(next) {
+          var start = Date.now();
+          fun.waitFor(1500,
+            function() { return !!w.ready; },
+            function(err) { next(err); });
+          },
+        function(next) { setTimeout(next, 0); },
+        function(next) { expect(worker.pool).to.have.length(1); next(); },
         function(next) { setTimeout(next, 200); },
         function(next) {
-          expect(whenDoneResult).to.be(undefined, 'result came to early');
-          expect(worker.pool).to.have.length(1, 'worker pool size with worker running.');
-          next();
-        },
-        function(next) { setTimeout(next, 200); },
-        function(next) {
-          expect(whenDoneResult).to.be('OK');
-          expect(worker.pool).to.have.length(0, 'worker pool size with worker stopped.');
+          expect(whenDoneResult).to.equal('3 true');
+          expect(worker.pool).to.have.length(0);
           next();
         }
       )(function(err) {
-        expect(err).to.be('undefined');
+        expect(err).to.be(null);
+        done();
+      });      
+
+    });
+
+    it("ForkLongRunningFunctionKeepsWorkerAlive", function(done) {
+      var whenDoneResult,
+          w = worker.fork(
+            {libURL: libURL, whenDone: function(err, result) { whenDoneResult = result; }},
+            function(whenDone) { setTimeout(function() { whenDone(null, 'OK'); }, 300); });
+
+      fun.composeAsync(
+        function(next) {
+          var start = Date.now();
+          fun.waitFor(1500, function() { return !!w.ready; }, function(err) { next(err); }); },
+        function(next) { setTimeout(next, 0); },
+        function(next) {
+          expect(whenDoneResult).to.be(undefined); // too early
+          expect(worker.pool).to.have.length(1);
+          next();
+        },
+        function(next) { setTimeout(next, 400); },
+        function(next) {
+          expect(whenDoneResult).to.be('OK');
+          expect(worker.pool).to.have.length(0);
+          next();
+        }
+      )(function(err) {
+        expect(err).to.be(null);
         done();
       });
     });

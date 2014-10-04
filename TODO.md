@@ -378,7 +378,9 @@ type
 
 # worker
 
-- create got new arg `options`
+- create + createInPool got new arg `options`
+- fork: options is first arg
+- worker fork func: args first, thenDo last
 - options.libPath, options.scriptsToLoad
 - removed init stuff: initGlobals and
 
