@@ -18,17 +18,19 @@
       mocha.globals(["jQuery", "$", "script*"]);
       var urls = [
         '../base.js',
-        '../string.js',
         '../collection.js',
         '../function.js',
+        '../string.js',
         '../number.js',
         '../date.js',
         '../object.js',
+        '../worker.js',
         'collection-test.js',
         'object-test.js',
         'date-test.js',
         'string-test.js',
         'function-test.js',
+        'worker-test.js',
         'number-test.js'
       ];
       loadUncached(urls, function() {
