@@ -32,6 +32,8 @@ ensureTimeStamp removed
 
 ## Function.prototype -> fun
 curry, delay, wrap, getOriginal
+asScript, asScriptOf, addToObject, binds, getVarMapping
+setProperty -> setLocalVarValue
 
 ## Function -> fun
 fromString
@@ -258,77 +260,6 @@ delay: function(func) {
 //         // for serializing functions
 //         return Function.fromString(this.toString());
 //     },
-
-//     asScript: function(optVarMapping) {
-//         return lively.Closure.fromFunction(this, optVarMapping).recreateFunc();
-//     },
-//     asScriptOf: function(obj, optName, optMapping) {
-//         var name = optName || this.name;
-//         if (!name) {
-//             throw Error("Function that wants to be a script needs a name: " + this);
-//         }
-//         var proto = Object.getPrototypeOf(obj),
-//             mapping = {"this": obj};
-//         if (optMapping) mapping = Object.merge([mapping, optMapping]);
-//         if (proto && proto[name]) {
-//             var superFunc = function() {
-//                 try {
-//                     // FIXME super is supposed to be static
-//                     return Object.getPrototypeOf(obj)[name].apply(obj, arguments);
-//                 } catch (e) {
-//                     if ($world)
-//                         $world.logError(e, 'Error in $super call')
-//                     else
-//                         alert('Error in $super call: ' + e + '\n' + e.stack);
-//                     return null;
-//                 }
-//             };
-//             mapping["$super"] = lively.Closure.fromFunction(superFunc, {
-//                 "obj": obj,
-//                 name: name
-//             }).recreateFunc();
-//         }
-//         return this.asScript(mapping).addToObject(obj, name);
-//     },
-
-//     addToObject: function(obj, name) {
-//         this.name = name;
-
-//         var methodConnections = obj.attributeConnections ?
-//             obj.attributeConnections.filter(function(con) { return con.getSourceAttrName() === 'update'; }) : [];
-
-//         methodConnections.invoke('disconnect');
-//         obj[name] = this;
-
-//         this.declaredObject = Objects.safeToString(obj);
-//         // suppport for tracing
-//         if (lively.Tracing && lively.Tracing.stackTracingEnabled) {
-//             lively.Tracing.instrumentMethod(obj, name, {
-//                 declaredObject: Objects.safeToString(obj)
-//             });
-//         }
-
-//         methodConnections.invoke('connect');
-
-//         return this;
-//     },
-
-//     binds: function(varMapping) {
-//         // convenience function
-//         return lively.Closure.fromFunction(this, varMapping || {}).recreateFunc()
-//     },
-
-//     setProperty: function(name, value) {
-//         this[name] = value;
-//         if (this.hasLivelyClosure) this.livelyClosure.funcProperties[name] = value
-//     },
-
-//     getVarMapping: function() {
-//         if (this.hasLivelyClosure) return this.livelyClosure.varMapping;
-//         if (this.isWrapper) return this.originalFunction.varMapping;
-//         if (this.varMapping) return this.varMapping;
-//         return {}
-//     }
 
 ```
 <!---=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--->

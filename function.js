@@ -36,6 +36,27 @@ var fun = exports.fun = {
     return a;
   },
 
+  // -=-=-=-=-=-
+  // inspection
+  // -=-=-=-=-=-
+  argumentNames: function(f) {
+    if (f.superclass) return []; // it's a class...
+    var names = f.toString().match(/^[\s\(]*function[^(]*\(([^)]*)\)/)[1]
+      .replace(/\/\/.*?[\r\n]|\/\*(?:.|[\r\n])*?\*\//g, '')
+      .replace(/\s+/g, '').split(',');
+    return names.length == 1 && !names[0] ? [] : names;
+  },
+
+  qualifiedMethodName: function(f) {
+    var objString = "";
+    if (f.declaredClass) {
+      objString += f.declaredClass + '>>';
+    } else if (f.declaredObject) {
+      objString += f.declaredObject + '.';
+    }
+    return objString + (f.methodName || f.displayNameName || f.name || "anonymous");
+  },
+
   // -=-=-=-
   // timing
   // -=-=-=-
@@ -49,6 +70,15 @@ var fun = exports.fun = {
     var startTime = Date.now();
     for (var i = 0; i < n; i++) func(arg0, arg1, arg2);
     return (Date.now() - startTime) / n;
+  },
+
+  delay: function(/*args*/) {
+    var args = Array.prototype.slice.call(arguments),
+        __method = args.shift(),
+        timeout = args.shift() * 1000;
+    return setTimeout(function delayed() {
+      return __method.apply(__method, args);
+    }, timeout);
   },
 
   // these last two methods are Underscore.js 1.3.3 and are slightly adapted
@@ -366,13 +396,456 @@ var fun = exports.fun = {
     return func;
   },
 
+  once: function(func) {
+    if (!func) return undefined;
+    var invoked = false, result;
+    return function() {
+      if (invoked) return result;
+      invoked = true;
+      return result = func.apply(this, arguments);
+    }
+  },
+
   // -=-=-=-=-
   // creation
   // -=-=-=-=-
   fromString: function(funcOrString) {
     return eval('(' + funcOrString.toString() + ')')
+  },
+
+  asScript: function(f, optVarMapping) {
+    return Closure.fromFunction(f, optVarMapping).recreateFunc();
+  },
+
+  asScriptOf: function(f, obj, optName, optMapping) {
+    var name = optName || f.name;
+    if (!name) {
+      throw Error("Function that wants to be a script needs a name: " + this);
+    }
+    var proto = Object.getPrototypeOf(obj),
+        mapping = {"this": obj};
+    if (optMapping) mapping = Object.merge([mapping, optMapping]);
+    if (proto && proto[name]) {
+      var superFunc = function() {
+        try {
+          // FIXME super is supposed to be static
+          return Object.getPrototypeOf(obj)[name].apply(obj, arguments);
+        } catch (e) {
+          if (typeof $world !== undefined) $world.logError(e, 'Error in $super call')
+          else alert('Error in $super call: ' + e + '\n' + e.stack);
+          return null;
+        }
+      };
+      mapping["$super"] = Closure.fromFunction(superFunc, {
+        "obj": obj,
+        name: name
+      }).recreateFunc();
+    }
+    return fun.addToObject(fun.asScript(f,mapping), obj, name);
+  },
+
+  // -=-=-=-=-=-=-=-=-
+  // closure related
+  // -=-=-=-=-=-=-=-=-
+  addToObject: function(f, obj, name) {
+    f.displayName = name;
+
+    var methodConnections = obj.attributeConnections ?
+      obj.attributeConnections.filter(function(con) {
+        return con.getSourceAttrName() === 'update'; }) : [];
+
+    if (methodConnections)
+      methodConnections.forEach(function(ea) { ea.disconnect(); });
+
+    obj[name] = f;
+
+    if (typeof exports.obj) f.declaredObject = exports.obj.safeToString(obj);
+
+    // suppport for tracing
+    if (typeof lively !== "undefined" && exports.obj && lively.Tracing && lively.Tracing.stackTracingEnabled) {
+      lively.Tracing.instrumentMethod(obj, name, {
+        declaredObject: exports.obj.safeToString(obj)
+      });
+    }
+
+    if (methodConnections)
+      methodConnections.forEach(function(ea) { ea.connect(); });
+
+    return this;
+  },
+
+  binds: function(f, varMapping) {
+    // convenience function
+    return Closure.fromFunction(f, varMapping || {}).recreateFunc();
+  },
+
+  setLocalVarValue: function(f, name, value) {
+    if (f.hasLivelyClosure) f.livelyClosure.funcProperties[name] = value;
+  },
+
+  getVarMapping: function(f) {
+    if (f.hasLivelyClosure) return f.livelyClosure.varMapping;
+    if (f.isWrapper) return f.originalFunction.varMapping;
+    if (f.varMapping) return f.varMapping;
+    return {};
   }
+
+
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-
+  // class related enumeration
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-
+  //     functionNames: function(filter) {
+  //         var functionNames = [];
+  
+  //         for (var name in this.prototype) {
+  //             try {
+  //                 if ((this.prototype[name] instanceof Function) && (!filter || filter(name))) {
+  //                     functionNames.push(name);
+  //                 }
+  //             } catch (er) {
+  //                 // FF can throw an exception here ...
+  //             }
+  //         }
+  
+  //         return functionNames;
+  //     },
+  
+  //     withAllFunctionNames: function(callback) {
+  //         for (var name in this.prototype) {
+  //             try {
+  //                 var value = this.prototype[name];
+  //                 if (value instanceof Function) callback(name, value, this);
+  //             } catch (er) {
+  //                 // FF can throw an exception here ...
+  //             }
+  //         }
+  //     },
+  
+  //     localFunctionNames: function() {
+  //         var sup = this.superclass || ((this === Object) ? null : Object);
+  
+  //         try {
+  //             var superNames = (sup == null) ? [] : sup.functionNames();
+  //         } catch (e) {
+  //             var superNames = [];
+  //         }
+  //         var result = [];
+  
+  //         this.withAllFunctionNames(function(name, value, target) {
+  //             if (!superNames.include(name) || target.prototype[name] !== sup.prototype[name]) result.push(name);
+  //         });
+  //         return result;
+  //     },
+
+// -=-=-=-=-=-=-=-=-=-=-
+// tracing and logging
+// -=-=-=-=-=-=-=-=-=-=-
+
+//     logErrors: function(prefix) {
+//         if (Config.ignoreAdvice) return this;
+
+//         var advice = function logErrorsAdvice(proceed /*,args*/ ) {
+//                 var args = Array.from(arguments);
+//                 args.shift();
+//                 try {
+//                     return proceed.apply(this, args);
+//                 } catch (er) {
+//                     if (Global.lively && lively.morphic && lively.morphic.World && lively.morphic.World.current()) {
+//                         lively.morphic.World.current().logError(er)
+//                         throw er;
+//                     }
+
+//                     if (prefix) console.warn("ERROR: %s.%s(%s): err: %s %s", this, prefix, args, er, er.stack || "");
+//                     else console.warn("ERROR: %s %s", er, er.stack || "");
+//                     logStack();
+//                     if (Global.printObject) console.warn("details: " + printObject(er));
+//                     // lively.lang.Execution.showStack();
+//                     throw er;
+//                 }
+//             }
+
+//         advice.methodName = "$logErrorsAdvice";
+//         var result = this.wrap(advice);
+//         result.originalFunction = this;
+//         result.methodName = "$logErrorsWrapper";
+//         return result;
+//     },
+
+//     logCompletion: function(module) {
+//         if (Config.ignoreAdvice) return this;
+
+//         var advice = function logCompletionAdvice(proceed) {
+//                 var args = Array.from(arguments);
+//                 args.shift();
+//                 try {
+//                     var result = proceed.apply(this, args);
+//                 } catch (er) {
+//                     console.warn('failed to load ' + module + ': ' + er);
+//                     lively.lang.Execution.showStack();
+//                     throw er;
+//                 }
+//                 console.log('completed ' + module);
+//                 return result;
+//             }
+
+//         advice.methodName = "$logCompletionAdvice::" + module;
+
+//         var result = this.wrap(advice);
+//         result.methodName = "$logCompletionWrapper::" + module;
+//         result.originalFunction = this;
+//         return result;
+//     },
+
+//     logCalls: function(isUrgent) {
+//         if (Config.ignoreAdvice) return this;
+
+//         var original = this,
+//             advice = function logCallsAdvice(proceed) {
+//                 var args = Array.from(arguments);
+//                 args.shift(), result = proceed.apply(this, args);
+//                 if (isUrgent) {
+//                     console.warn('%s(%s) -> %s', original.qualifiedMethodName(), args, result);
+//                 } else {
+//                     console.log('%s(%s) -> %s', original.qualifiedMethodName(), args, result);
+//                 }
+//                 return result;
+//             }
+
+//         advice.methodName = "$logCallsAdvice::" + this.qualifiedMethodName();
+
+//         var result = this.wrap(advice);
+//         result.originalFunction = this;
+//         result.methodName = "$logCallsWrapper::" + this.qualifiedMethodName();
+//         return result;
+//     },
+
+//     traceCalls: function(stack) {
+//         var advice = function traceCallsAdvice(proceed) {
+//                 var args = Array.from(arguments);
+//                 args.shift();
+//                 stack.push(args);
+//                 var result = proceed.apply(this, args);
+//                 stack.pop();
+//                 return result;
+//             };
+//         return this.wrap(advice);
+//     },
+
+//     webkitStack: function() {
+//         // this won't work in every browser
+//         try {
+//             throw new Error()
+//         } catch (e) {
+//             // remove "Error" and this function from stack, rewrite it nicely
+//             var trace = Strings.lines(e.stack).slice(2).invoke('replace', /^\s*at\s*([^\s]+).*/, '$1').join('\n');
+//             return trace;
+//         }
+//     },
 
 };
 
+
+function Closure() {
+  // represents a function and its bound values
+  this.initialize.apply(this, arguments);
+}
+
+exports.Closure = Closure;
+
+Closure.prototype.isLivelyClosure = true;
+
+// -=-=-=-=-=-=-=-
+// serialization
+// -=-=-=-=-=-=-=-
+Closure.prototype.doNotSerialize = ['originalFunc'];
+
+// -=-=-=-=-=-=-
+// initializing
+// -=-=-=-=-=-=-
+Closure.prototype.initialize = function(func, varMapping, source, funcProperties) {
+  this.originalFunc = func;
+  this.varMapping = varMapping || {};
+  this.source = source;
+  this.setFuncProperties(func || funcProperties);
+}
+
+Closure.prototype.setFuncSource = function(src) { this.source = src };
+
+Closure.prototype.getFuncSource = function() { return this.source || String(this.originalFunc); }
+
+Closure.prototype.hasFuncSource = function() { return this.source && true }
+
+Closure.prototype.getFunc = function() { return this.originalFunc || this.recreateFunc(); }
+
+Closure.prototype.getFuncProperties = function() {
+  // a function may have state attached
+  if (!this.funcProperties) this.funcProperties = {};
+  return this.funcProperties;
+}
+
+Closure.prototype.setFuncProperties = function(obj) {
+  var props = this.getFuncProperties();
+  for (var name in obj) {
+    // The AST implementation assumes that Function objects are some
+    // kind of value object. When their identity changes cached state
+    // should not be carried over to new function instances. This is a
+    // pretty intransparent way to invalidate attributes that are used
+    // for caches.
+    // @cschuster, can you please fix this by making invalidation more
+    // explicit?
+    if (obj.hasOwnProperty(name) && name != "_cachedAst") {
+      props[name] = obj[name];
+    }
+  }
+}
+
+Closure.prototype.lookup = function(name) { return this.varMapping[name]; }
+
+Closure.prototype.parameterNames = function(methodString) {
+  var parameterRegex = /function\s*\(([^\)]*)\)/,
+      regexResult = parameterRegex.exec(methodString);
+  if (!regexResult || !regexResult[1]) return [];
+  var parameterString = regexResult[1];
+  if (parameterString.length == 0) return [];
+  var parameters = parameterString.split(',').map(function(str) {
+    return Strings.removeSurroundingWhitespaces(str);
+  }, this);
+  return parameters;
+}
+
+Closure.prototype.firstParameter = function(src) {
+  return this.parameterNames(src)[0] || null;
+}
+
+// -=-=-=-=-=-=-=-=-=-
+// function creation
+// -=-=-=-=-=-=-=-=-=-
+Closure.prototype.recreateFunc = function() {
+  return this.recreateFuncFromSource(this.getFuncSource(), this.originalFunc);
+}
+
+Closure.prototype.recreateFuncFromSource = function(funcSource, optFunc) {
+  // what about objects that are copied by value, e.g. numbers?
+  // when those are modified after the originalFunc we captured
+  // varMapping then we will have divergent state
+  var closureVars = [],
+      thisFound = false,
+      specificSuperHandling = this.firstParameter(funcSource) === '$super';
+  for (var name in this.varMapping) {
+    if (!this.varMapping.hasOwnProperty(name)) continue;
+    if (name == 'this') {
+      thisFound = true;
+      continue;
+    }
+    closureVars.push(name + '=this.varMapping["' + name + '"]');
+  }
+
+  // FIXME: problem with rewriting variables when _2 is rewritten by eval below
+  // if (this.originalFunc && this.originalFunc.livelyDebuggingEnabled) {
+  //     var scopeObject = this.originalFunc._cachedScopeObject,
+  //   depth = -1,
+  //   path = ''
+  //     while (scopeObject && scopeObject != Global) {
+  //   depth++;
+  //   scopeObject = scopeObject[2]; // descend in scope
+  //     }
+  //     scopeObject = this.originalFunc._cachedScopeObject;
+  //     var path = 'this.originalFunc._cachedScopeObject';
+  //     for (var i = depth; i >= 0; i--) {
+  //   closureVars.push('_' + depth + '=' + path + '[1]');
+  //   closureVars.push('__' + depth + '=' + path);
+  //   path += '[2]';
+  //     }
+  // }
+
+  var src = closureVars.length > 0 ? 'var ' + closureVars.join(',') + ';\n' : '';
+  if (specificSuperHandling) src += '(function superWrapperForClosure() { return ';
+  src += '(' + funcSource + ')';
+  if (specificSuperHandling) src += '.apply(this, [$super.bind(this)].concat(Array.from(arguments))) })';
+
+  // FIXME!!!
+  if (typeof lively !== 'undefined' && lively.Config.get('loadRewrittenCode')) {
+      module('lively.ast.Rewriting').load(true);
+      var namespace = '[runtime]';
+      if (optFunc && optFunc.sourceModule)
+        namespace = new URL(optFunc.sourceModule.findUri()).relativePathFrom(URL.root);
+      var fnAst = lively.ast.acorn.parse(src),
+          rewrittenAst = lively.ast.Rewriting.rewrite(fnAst, lively.ast.Rewriting.getCurrentASTRegistry(), namespace),
+          retVal = rewrittenAst.body[0].block.body.last();
+
+      // FIXME: replace last ExpressionStatement with ReturnStatement
+      retVal.type = 'ReturnStatement';
+      retVal.argument = retVal.expression;
+      delete retVal.expression;
+
+      src = '(function() { ' + escodegen.generate(rewrittenAst) + '}).bind(this)();';
+  }
+
+  try {
+    var func = eval(src) || this.couldNotCreateFunc(src);
+    this.addFuncProperties(func);
+    this.originalFunc = func;
+    if (typeof lively !== 'undefined' && lively.Config.get('loadRewrittenCode')) {
+      func._cachedAst.source = funcSource;
+      // FIXME: adjust start and end of FunctionExpression (because of brackets)
+      func._cachedAst.start++;
+      func._cachedAst.end--;
+    }
+    return func;
+  } catch (e) {
+      console.error('Cannot create function ' + e + ' src: ' + src);
+      throw new Error('Cannot create function ' + e + ' src: ' + src);
+  }
+}
+
+Closure.prototype.addFuncProperties = function(func) {
+  var props = this.getFuncProperties();
+  for (var name in props) {
+    if (props.hasOwnProperty(name)) func[name] = props[name];
+  }
+  this.addClosureInformation(func);
+}
+
+Closure.prototype.couldNotCreateFunc = function(src) {
+  var msg = 'Could not recreate closure from source: \n' + src;
+  console.error(msg);
+  // alert(msg);
+  return function() { throw new Error(msg); };
+}
+
+// -=-=-=-=-=-
+// conversion
+// -=-=-=-=-=-
+Closure.prototype.asFunction = function() { return this.recreateFunc(); }
+
+// -=-=-=-=-=-=-=-=-=-=-=-
+// function modification
+// -=-=-=-=-=-=-=-=-=-=-=-
+Closure.prototype.addClosureInformation = function(f) {
+  f.hasLivelyClosure = true;
+  f.livelyClosure = this;
+  return f;
+}
+
+Closure.fromFunction = function(func, varMapping) {
+  return new Closure(func, varMapping || {});
+}
+
+Closure.fromSource = function(source, varMapping) {
+  return new Closure(null, varMapping || {}, source);
+}
+
 })(typeof jsext !== 'undefined' ? jsext : this);
+
+
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+// notYetImplemented: function() {
+// throw new Error('Not yet implemented');
+// }
+
+//     unbind: function() {
+//         // for serializing functions
+//         return Function.fromString(this.toString());
+//     },
+

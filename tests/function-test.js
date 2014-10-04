@@ -7,6 +7,7 @@ var jsext = typeof module !== 'undefined' && module.require ?
   module.require('../index') : this.jsext;
 
 var fun = jsext.fun;
+var Closure = jsext.Closure;
 
 describe('fun', function() {
 
@@ -33,6 +34,15 @@ describe('fun', function() {
     it("finds inherited functions", function() {
       // note getters are currently ignored
       expect(fun.all(obj1)).to.eql(['method1', 'method3']);
+    });
+
+  });
+
+  describe('inspection', function() {
+    
+    it("can tell its args", function() {
+      var f = function(arg1, arg2, arg4) { return arg2 + arg4; };
+      expect(fun.argumentNames(f)).to.eql(["arg1", "arg2", "arg4"]);
     });
 
   });
@@ -283,6 +293,16 @@ describe('fun', function() {
 
     });
 
+    describe("timing", function() {
+
+      it("delays", function(done) {
+        var run = false;
+        fun.delay(function() { run = true; }, .8);
+        setTimeout(function() { expect(run).to.be(false); }, 500);
+        setTimeout(function() { expect(run).to.be(true); done(); }, 820);
+      });
+
+    });
   });
 
 
@@ -407,12 +427,46 @@ describe('fun', function() {
       expect(fun.curry(orig, 2)(3)).to.be(5);
     });
 
+    it("can restrict a function to run only once", function() {
+      var c = 0;
+      function counter(arg1) { c++; return arg1 + c; }
+      var once = fun.once(counter);
+      once(22); once();
+      expect(1).to.be(c);
+      expect(23).to.be(once());
+    });
+
   });
 
   describe("function creation", function() {
+
     it("creates function from string", function() {
       expect(fun.fromString("function(x) { return x + 2; }")(1)).to.be(3);
     });
+
+    it("can create scripts for objects", function() {
+      var obj = {};
+      fun.asScriptOf(function foo() { return 23; }, obj);
+      expect(23).to.be(obj.foo());
+    });
+
+    it("scripts can call $super", function() {
+      var klass = function() {};
+      klass.prototype.foo = function() { return 3; };
+      var obj = new klass();
+      fun.asScriptOf(function foo() { return $super() + 23; }, obj);
+      expect(26).to.be(obj.foo());
+    });
+
+  })
+});
+
+describe("closure", function() {
+  
+  it("captures values", function() {
+    var f = Closure.fromFunction(function() { return y + 3 }, {y: 2})
+                   .recreateFunc()
+    expect(f()).to.be(5);
   });
 
 });
