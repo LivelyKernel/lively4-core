@@ -129,7 +129,7 @@ describe('obj', function() {
     describe("when lively present", function() {
 
       var Global = typeof window !== "undefined" ? window : (typeof global !== "undefined" ? global : this);
-      // if (!isNodejs) mocha.globals(["lively"]);
+      if (!isNodejs) mocha.globals(["lively"]);
 
       beforeEach(function() {
         Global.lively = {Module: {current: function() { return "bar"; }}};
