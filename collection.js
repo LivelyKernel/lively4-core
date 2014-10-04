@@ -288,7 +288,7 @@ var arr = exports.arr = {
   },
 
   sortByKey: function(arr, key) {
-    return exports.Array.sortBy(arr, function(ea) { return ea[key]; });
+    return exports.arr.sortBy(arr, function(ea) { return ea[key]; });
   },
 
   toArray: function(arr) { return arr; },
@@ -378,13 +378,13 @@ var arr = exports.arr = {
   },
 
   intersect: function(arr, array) {
-    return exports.Array.uniq(arr).filter(function(item) {
+    return exports.arr.uniq(arr).filter(function(item) {
       return array.indexOf(item) > -1;
     });
   },
 
   union: function(arr, array) {
-    var result = exports.Array.clone(arr);
+    var result = exports.arr.clone(arr);
     for (var i = 0; i < array.length; i++) {
       var item = array[i];
       if (result.indexOf(item) === -1) result.push(item);
@@ -404,7 +404,7 @@ var arr = exports.arr = {
 
   remove: function(arr, item) {
     var index = arr.indexOf(item);
-    if (index >= 0) exports.Array.removeAt(arr, index);
+    if (index >= 0) exports.arr.removeAt(arr, index);
     return item;
   },
 
@@ -419,7 +419,7 @@ var arr = exports.arr = {
   },
 
   pushIfNotIncluded: function(arr, item) {
-    if (!exports.Array.include(arr, item)) arr.push(item);
+    if (!exports.arr.include(arr, item)) arr.push(item);
   },
 
   replaceAt: function(arr, item, index) { arr.splice(index, 1, item); },
