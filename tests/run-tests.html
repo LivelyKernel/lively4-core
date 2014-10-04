@@ -24,14 +24,16 @@
         '../number.js',
         '../date.js',
         '../object.js',
+        '../messenger.js',
         '../worker.js',
         'collection-test.js',
         'object-test.js',
         'date-test.js',
         'string-test.js',
+        'number-test.js',
         'function-test.js',
-        'worker-test.js',
-        'number-test.js'
+        'messenger-test.js',
+        'worker-test.js'
       ];
       loadUncached(urls, function() {
         mocha.checkLeaks();
