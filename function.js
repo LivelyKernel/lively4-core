@@ -3,7 +3,7 @@
 ;(function(exports) {
 "use strict";
 
-exports.fun = {
+var fun = exports.fun = {
 
   // -=-=-=-=-=-=-=-=-
   // static functions
@@ -61,11 +61,11 @@ exports.fun = {
     // useful to calm down eagerly running updaters and such
     /* Example:
         var i = 0;
-        x = exports.fun.throttle(function() { show(++i + '-' + Date.now()) }, 500);
+        x = fun.throttle(function() { show(++i + '-' + Date.now()) }, 500);
         Array.range(0,100).forEach(function(n) { x() });
     */
     var context, args, timeout, throttling, more, result,
-        whenDone = exports.fun.debounce(wait, function() { more = throttling = false; });
+        whenDone = fun.debounce(wait, function() { more = throttling = false; });
     return function() {
       context = this; args = arguments;
       var later = function() {
@@ -106,14 +106,14 @@ exports.fun = {
 
   throttleNamed: function(name, wait, func) {
     // see comment in debounceNamed
-    var store = exports.fun._throttledByName || (exports.fun._throttledByName = {});
+    var store = fun._throttledByName || (fun._throttledByName = {});
     if (store[name]) return store[name];
     function throttleNamedWrapper() {
       // cleaning up
-      exports.fun.debounceNamed(name, wait, function() { delete store[name]; })();
+      fun.debounceNamed(name, wait, function() { delete store[name]; })();
       func.apply(this, arguments);
     }
-    return store[name] = exports.fun.throttle(throttleNamedWrapper, wait);
+    return store[name] = fun.throttle(throttleNamedWrapper, wait);
   },
 
   debounceNamed: function(name, wait, func, immediate) {
@@ -124,18 +124,18 @@ exports.fun = {
     // function again) it is a repeating task and unpractical when using anonymous
     // methods. debounceNamed() automatically maps function to ids and removes the
     // need for this housekeeping code.
-    var store = exports.fun._debouncedByName || (exports.fun._debouncedByName = {});
+    var store = fun._debouncedByName || (fun._debouncedByName = {});
     if (store[name]) return store[name];
     function debounceNamedWrapper() {
       // cleaning up
       delete store[name];
       func.apply(this, arguments);
     }
-    return store[name] = exports.fun.debounce(wait, debounceNamedWrapper, immediate);
+    return store[name] = fun.debounce(wait, debounceNamedWrapper, immediate);
   },
 
   createQueue: function(id, workerFunc) {
-    var store = exports.fun._queues || (exports.fun._queues = {});
+    var store = fun._queues || (fun._queues = {});
 
     var queue = store[id] || (store[id] = {
         _workerActive: false,
@@ -190,7 +190,7 @@ exports.fun = {
     // will "pile up" and called with the same arguments as the first
     // thenDoFunc once workerFunc is done
 
-    var store = exports.fun._queueUntilCallbacks || (exports.fun._queueUntilCallbacks = {}),
+    var store = fun._queueUntilCallbacks || (fun._queueUntilCallbacks = {}),
         queueCallbacks = store[id],
         isRunning = !!queueCallbacks;
 
@@ -250,12 +250,12 @@ exports.fun = {
   },
 
   composeAsync: function(/*functions*/) {
-    // composes functions: exports.fun.composeAsync(f,g,h)(arg1, arg2) =
+    // composes functions: fun.composeAsync(f,g,h)(arg1, arg2) =
     //   f(arg1, arg2, thenDo1) -> thenDo1(err, fResult)
     // -> g(fResult, thenDo2) -> thenDo2(err, gResult) ->
     // -> h(fResult, thenDo3) -> thenDo2(err, hResult)
     // Example:
-    // exports.fun.composeAsync(
+    // fun.composeAsync(
     //   function(a,b, thenDo) { thenDo(null, a+b); },
     //  function(x, thenDo) { thenDo(x*4); })(3,2, function(err, result) { alert(result); });
 
@@ -292,9 +292,9 @@ exports.fun = {
   },
 
   compose: function(/*functions*/) {
-    // composes functions: exports.fun.compose(f,g,h)(arg1, arg2) = h(g(f(arg1, arg2)))
+    // composes functions: fun.compose(f,g,h)(arg1, arg2) = h(g(f(arg1, arg2)))
     // Example:
-    //   exports.fun.compose(function(a,b) {return a+b}, function(x) {return x*4})(3,2)
+    //   fun.compose(function(a,b) {return a+b}, function(x) {return x*4})(3,2)
 
     var functions = Array.prototype.slice.call(arguments);
     return functions.reverse().reduce(
@@ -307,7 +307,7 @@ exports.fun = {
 
   flip: function(f) {
     // swaps the first two args
-    // exports.fun.flip(function(a, b, c) { return a + b + c; })(' World', 'Hello', '!')
+    // fun.flip(function(a, b, c) { return a + b + c; })(' World', 'Hello', '!')
     return function flipped(/*args*/) {
       var args = Array.prototype.slice.call(arguments),
         flippedArgs = [args[1], args[0]].concat(args.slice(2));
