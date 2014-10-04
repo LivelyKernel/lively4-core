@@ -5,7 +5,7 @@
 var string = exports.string = {
 
   format: function strings$format() {
-    return string.formatFromArray(Array.from(arguments));
+    return string.formatFromArray(Array.prototype.slice.call(arguments));
   },
 
   // adapted from firebug lite

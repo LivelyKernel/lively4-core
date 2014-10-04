@@ -115,4 +115,8 @@ describe('string', function() {
     expect(expected).to.eql(string.reMatches(s, /def\s[^\s]+/));
   });
 
+  it("formats", function() {
+    expect("foo bar").to.eql(string.format("foo %s", "bar"));
+  });
+
 });
