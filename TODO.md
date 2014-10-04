@@ -375,3 +375,27 @@ removed String.prototype.size
 
 serializeExpr
 type
+
+# worker
+
+- create got new arg `options`
+- options.libPath, options.scriptsToLoad
+- removed init stuff: initGlobals and
+
+```
+{
+  locationDirectory: JSLoader.currentDir(),
+  bootstrapFiles: bootstrapFiles,
+  codeBase: lively.Config.codeBase,
+  rootPath: lively.Config.rootPath,
+  nodeJSURL: lively.Config.nodeJSURL,
+  location: (function() {
+    var loc = {};
+    ["hash","host","hostname","href","origin","pathname","port","protocol","search"].forEach(function(name) {
+      loc[name] = lively.Config.location[name]; });
+    return loc;
+  })()
+}
+```
+
+
