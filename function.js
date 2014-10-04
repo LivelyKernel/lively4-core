@@ -361,6 +361,53 @@ var fun = exports.fun = {
     })();
   },
 
+  waitForAll: function(options, funcs, thenDo) {
+    if (!thenDo) { thenDo = funcs; funcs = options; options = null; }
+    options = options || {};
+
+    var results = funcs.map(function() { return null; });
+    var leftFuncs = Array.prototype.slice.call(funcs);
+
+    funcs.forEach(function(f, i) {
+      try {
+        f(function(/*err and args*/) {
+          var args = Array.prototype.slice.call(arguments);
+          var err = args.shift();
+          markAsDone(f, i, err, args);
+        });
+      } catch (e) { markAsDone(f, i, e, null); }
+    });
+
+    if (options.timeout) {
+      setTimeout(function() {
+        if (!leftFuncs.length) return;
+        var missing = results
+          .map(function(ea, i) { return ea === null && i; })
+          .filter(function(ea) { return typeof ea === 'number'; })
+          .join(', ');
+        var err = new Error("waitForAll timed out, functions at " + missing + " not done");
+        markAsDone(null, null, err, null);
+      }, options.timeout);
+    }
+
+    function markAsDone(f, i, err, result) {
+      if (!leftFuncs.length) return;
+
+      var waitForAllErr = null;
+      var fidx = leftFuncs.indexOf(f);
+      (fidx > -1) && leftFuncs.splice(fidx, 1);
+      if (err) {
+        leftFuncs.length = 0;
+        waitForAllErr = new Error("in waitForAll at"
+          + (typeof i === 'number' ? " " + i : "")
+          + ": \n" + err.stack || String(err));
+      } else if (result) results[i] = result;
+      if (!leftFuncs.length) setTimeout(function() {
+        thenDo(waitForAllErr, results);
+      }, 0);
+    }
+  },
+
   // -=-=-=-=-
   // wrapping
   // -=-=-=-=-

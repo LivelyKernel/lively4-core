@@ -405,6 +405,55 @@ describe('fun', function() {
 
   });
 
+  describe("waitForAll", function() {
+
+    it("waits for all functions to be done", function(done) {
+      fun.waitForAll([
+        function(next) { setTimeout(function() { next(null, "test", "bar")}, 10); },
+        function(next) { setTimeout(next, 4); }
+      ], function(err, results) {
+        expect(err).to.be(null);
+        expect(results).to.eql([["test", "bar"], []]);
+        done();
+      });
+    });
+
+    it("deals with sync errors", function(done) {
+      fun.waitForAll([
+        function(next) { next(null, "test", "bar"); },
+        function(next) { throw new Error("Foo"); }
+      ], function(err, results) {
+        expect(String(err)).to.match(/Error: in waitForAll at 1: \nError: Foo/i);
+        expect(results).to.eql([["test", "bar"], null]);
+        done();
+      });
+    });
+
+    it("deals with async errors", function(done) {
+      fun.waitForAll([
+        function(next) { next(null, "test", "bar"); },
+        function(next) { setTimeout(function() { next(new Error("Foo")); }, 10); }
+      ], function(err, results) {
+        expect(String(err)).to.match(/Error: in waitForAll at 1: \nError: Foo/i);
+        expect(results).to.eql([["test", "bar"], null]);
+        done();
+      });
+    });
+
+    it("times out", function(done) {
+      fun.waitForAll({timeout: 200}, [
+        function(next) { setTimeout(function() { next(null); }, 300); },
+        function(next) { next(null, "test", "bar"); },
+        function(next) { setTimeout(function() { next(null); }, 400); }
+      ], function(err, results) {
+        expect(String(err)).to.match(/waitForAll timed out, functions at 0, 2 not done/i);
+        expect(results).to.eql([null, ["test", "bar"], null]);
+        done();
+      });
+    });
+
+  });
+
   describe("function wrapping", function() {
 
     it("can flip arguments", function() {
