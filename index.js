@@ -9,5 +9,6 @@ module.exports = {
   properties: module.require('./object').properties,
   path: module.require('./object').path,
   fun: module.require('./function').fun,
-  date: module.require('./date').date
+  date: module.require('./date').date,
+  worker: module.require('./worker').worker,
 }
