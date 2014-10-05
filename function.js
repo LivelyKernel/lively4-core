@@ -884,7 +884,7 @@ Closure.fromSource = function(source, varMapping) {
   return new Closure(null, varMapping || {}, source);
 }
 
-})(typeof jsext !== 'undefined' ? jsext : this);
+})(typeof jsext !== 'undefined' ? jsext : require('./base').jsext);
 
 
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

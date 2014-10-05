@@ -1,15 +1,13 @@
 /*global beforeEach, afterEach, describe, it, setInterval, clearInterval, setTimeout*/
 
-var expect = typeof module !== 'undefined' && module.require ?
-  module.require('expect.js') : this.expect;
-
-var jsext = typeof module !== 'undefined' && module.require ?
-  module.require('../index') : this.jsext;
+var isNodejs = typeof module !== 'undefined' && module.require;
+var expect = isNodejs ? module.require('expect.js') : this.expect;
+var jsext = isNodejs ? module.require('../index') : this.jsext;
 
 var fun = jsext.fun;
 var worker = jsext.worker;
 
-describe('worker', function() {
+false && describe('worker', function() {
 
   var libURL = document.location.toString().split('/').slice(0, -1).join('/') + "/../";
 

@@ -227,4 +227,4 @@ var message = exports.message = {
 
 };
 
-})(typeof jsext !== 'undefined' ? jsext : this);
+})(typeof jsext !== 'undefined' ? jsext : require('./base').jsext);

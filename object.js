@@ -622,4 +622,4 @@ obj.extend(Path.prototype, {
 
 });
 
-})(typeof jsext !== 'undefined' ? jsext : this);
+})(typeof jsext !== 'undefined' ? jsext : require('./base').jsext);

@@ -1085,4 +1085,4 @@ var arrayProjection = exports.arrayProjection = {
   }
 }
 
-})(typeof jsext !== 'undefined' ? jsext : this);
+})(typeof jsext !== 'undefined' ? jsext : require('./base').jsext);
