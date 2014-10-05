@@ -21,19 +21,27 @@ function createMessenger(messengers, options) {
     return spec;
   }, {});
 
-  if (!spec.send) spec.send = function(msg, whenSend) {
+  if (!spec.send) spec.send = function(msg, onSendDone) {
     function doSend() {
       if (options.sendData) options.sendData.push(msg);
-      whenSend(null);
+      onSendDone();
     }
     if (typeof options.sendDelay === 'number') setTimeout(doSend, options.sendDelay);
     else doSend();
   };
 
+  if (!spec.receive) spec.receive = function(msg) {
+    function doReceive() {
+      if (options.receivedData) options.receivedData.push(msg);
+    }
+    if (typeof options.receiveDelay === 'number') setTimeout(doReceive, options.reveiveDelay);
+    else doReceive();
+  };
+
   var listening = false;
   if (!spec.listen) {
     spec.listen = function(thenDo) {
-      function doListen() { 
+      function doListen() {
         listening = true; thenDo(null); }
       if (typeof options.listenDelay === 'number') setTimeout(doListen, options.listenDelay);
       else doListen();
@@ -60,7 +68,7 @@ describe('messengers', function() {
 
   var sendData = [], messenger,
       messengers;
-  
+
   beforeEach(function() {
     messengers = [];
 
@@ -76,7 +84,7 @@ describe('messengers', function() {
   });
 
   describe("messenger attributes", function() {
-    
+
     it("have ids", function() {
       expect(messenger.id()).to.be("messengerA");
       expect(createMessenger(messengers, {}).id()).to.match(/^[a-z0-9-]+$/i);
@@ -84,7 +92,7 @@ describe('messengers', function() {
 
   });
 
-  describe("sending and receiving", function() {
+  describe("sending basics", function() {
 
     it('sends messages one by one', function(done) {
       var msg1 = {target: "foo", action: "test", data: "some data"},
@@ -154,7 +162,7 @@ describe('messengers', function() {
       var msg = {target: "foo", action: "test", data: "some data"};
 
       var sendData = [];
-      var whenSendErr;
+      var sendErr;
       var messengerB = createMessenger(messengers, {
         id: "messengerB",
         sendTimeout: 20, sendDelay: 30,
@@ -167,7 +175,7 @@ describe('messengers', function() {
           messengerB.listen();
         },
         function(_, next) {
-          messengerB.send(msg, function(err) { whenSendErr = err; });
+          messengerB.send(msg, function(err) { sendErr = err; });
           next();
         },
         function(next) { setTimeout(next, 25); },
@@ -178,7 +186,7 @@ describe('messengers', function() {
         }
       )(function(err) {
         expect(err).to.be(null);
-        expect(String(whenSendErr)).to.match(/Timeout sending message/)
+        expect(String(sendErr)).to.match(/Timeout sending message/)
         done();
       });
 
@@ -212,6 +220,10 @@ describe('messengers', function() {
 
     });
 
+  });
+
+  describe('status', function() {
+
     it('can auto reconnect', function(done) {
       var isOnline = true
       var messengerB = createMessenger(messengers, {
@@ -219,7 +231,7 @@ describe('messengers', function() {
         sendData: sendData,
         isOnline: function() { return isOnline; },
         listen: function(thenDo) { isOnline = true; thenDo(null); },
-        close: function(thenDo) { debugger; isOnline = false; thenDo(null); },
+        close: function(thenDo) { isOnline = false; thenDo(null); },
         autoReconnect: true
       });
 
@@ -233,15 +245,127 @@ describe('messengers', function() {
         function(next) { setTimeout(next, 70); },
         function(next) { expect(isOnline).to.be(true); messengerB.close(next); },
         function(next) { setTimeout(next, 70); },
-        function(next) {
-          expect(messengerB.status()).to.be('OFFLINE');
-          expect(isOnline).to.be(false); 
-          next(); }
+        function(next) { expect(isOnline).to.be(false); next(); }
       )(function(err) { expect(err).to.be(null); done(); });
 
     });
 
   });
 
+  describe('send and receive', function() {
+
+    function findMessengerForMsg(msg) {
+      if (!msg || !msg.target) throw new Error("findMessengerForMsg: msg is strange: " + jsext.obj.inspect(msg));
+      return arr.detect(messengers, function(ea) { return ea.id() === msg.target; });
+    }
+
+    function genericSend(msg, sendDone) {
+      var messenger = findMessengerForMsg(msg);
+      if (!messenger) sendDone(new Error("Target " + msg.target + " not found"));
+      else {
+        messenger.receive(msg);
+        sendDone();
+      }
+    }
+
+    var messengerB, messengerC;
+    var receivedB, receivedC;
+
+    beforeEach(function() {
+      receivedB = [];
+      messengerB = createMessenger(messengers, {
+        id: "messengerB",
+        sendDelay: 20, listenDelay: 10,
+        receivedData: receivedB,
+        send: genericSend
+      });
+      receivedC = [];
+      messengerC = createMessenger(messengers, {
+        id: "messengerC",
+        sendDelay: 20, listenDelay: 10,
+        receivedData: receivedC,
+        send: genericSend
+      });
+    });
+
+    it('sends messages between messengers', function(done) {
+      fun.composeAsync(
+        function(next) {
+          fun.waitForAll({timeout: 200}, [messengerB.whenOnline, messengerC.whenOnline], next)
+          messengerB.listen(); messengerC.listen();
+        },
+        function(_, next) {
+          messengerB.send({target: "messengerC", action: "test", data: 'foo'});
+          next();
+        },
+        function(next) {
+          expect(receivedB).to.be.empty();
+          expect(receivedC).to.have.length(1);
+          expect(receivedC[0].data).to.be("foo");
+          messengerC.answer(receivedC[0], 'baz');
+          expect(receivedB).to.have.length(1);
+          expect(receivedB[0].data).to.be("baz");
+          next();
+        }
+      )(function(err) { expect(err).to.be(null); done(); });
+
+    });
+
+    it('send callback gets triggered on answer', function(done) {
+      fun.composeAsync(
+        function(next) {
+          fun.waitForAll({timeout: 200}, [messengerB.whenOnline, messengerC.whenOnline], next)
+          messengerB.listen(); messengerC.listen();
+        },
+        function(_, next) {
+          var msg = messengerB.send({target: "messengerC", action: "test", data: 'foo'}, function(err, answer) {
+            expect(err).to.be(null);
+            expect(answer.data).to.be('baz');
+            next();
+          });
+          messengerC.answer(msg, 'baz');
+        }
+      )(function(err) { expect(err).to.be(null); done(); });
+    });
+
+    it('ignores multiple answers send without expect more flag', function(done) {
+      fun.composeAsync(
+        function(next) {
+          fun.waitForAll({timeout: 200}, [messengerB.whenOnline, messengerC.whenOnline], next)
+          messengerB.listen(); messengerC.listen();
+        },
+        function(_, next) {
+          var answerCallbackCalled = 0;
+          var msg = messengerB.send({target: "messengerC", action: "test", data: 'foo'}, function(err, answer) {
+            answerCallbackCalled++;
+          });
+          messengerC.answer(msg, 'baz1');
+          messengerC.answer(msg, 'baz2');
+          expect(answerCallbackCalled).to.be(1);
+          next();
+        }
+      )(function(err) { expect(err).to.be(null); done(); });
+    });
+
+    it('invokes answer callback multiple times when send with expect more flag', function(done) {
+      fun.composeAsync(
+        function(next) {
+          fun.waitForAll({timeout: 200}, [messengerB.whenOnline, messengerC.whenOnline], next)
+          messengerB.listen(); messengerC.listen();
+        },
+        function(_, next) {
+          var answerCallbackCalled = 0;
+          var msg = messengerB.send({target: "messengerC", action: "test", data: 'foo'}, function(err, answer) {
+            answerCallbackCalled++;
+          });
+          messengerC.answer(msg, 'baz1', true);
+          messengerC.answer(msg, 'baz2', false);
+          expect(answerCallbackCalled).to.be(2);
+          next();
+        }
+      )(function(err) { expect(err).to.be(null); done(); });
+    });
+
+  });
 });
 

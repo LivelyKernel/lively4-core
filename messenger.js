@@ -12,12 +12,21 @@ if (!fun) throw new Error("message.js needs function.js!")
 var string = exports.string;
 if (!string) throw new Error("message.js needs string.js!")
 
+var OFFLINE = 'offline';
+var ONLINE = 'online';
+var CONNECTING = 'connecting';
+
 var message = exports.message = {
   
+  OFFLINE: OFFLINE,
+  ONLINE: ONLINE,
+  CONNECTING: CONNECTING,
+
   makeMessenger: function(spec) {
 
     var expectedMethods = [
       {name: "send", args: ['msg', 'callback']},
+      {name: "receive", args: ['msg']},
       {name: "listen", args: ['callback']},
       {name: "close", args: ['callback']},
       {name: "isOnline", args: []}
@@ -36,12 +45,14 @@ var message = exports.message = {
       _outgoing: [],
       _inflight: [],
       _id: spec.id || string.newUUID(),
+      _messageCounter: 0,
+      _messageResponseCallbacks: {},
       _whenOnlineCallbacks: [],
       _statusWatcherProc: null,
       _startHeartbeatProcessProc: null,
       _listenInProgress: null,
       _heartbeatInterval: heartbeatInterval,
-      _status: 'OFFLINE',
+      _status: OFFLINE,
 
       // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
       _runWhenOnlineCallbacks: function() {
@@ -60,8 +71,8 @@ var message = exports.message = {
           if (messenger.isOnline() && messenger._whenOnlineCallbacks.length)
             messenger._runWhenOnlineCallbacks();
           var prevStatus = messenger._status;
-          messenger._status = messenger.isOnline() ? 'ONLINE' : 'OFFLINE';
-          if (messenger._status !== 'ONLINE' && messenger._statusWatcherProc) {
+          messenger._status = messenger.isOnline() ? ONLINE : OFFLINE;
+          if (messenger._status !== ONLINE && messenger._statusWatcherProc) {
             messenger.reconnect();
           }
           if (messenger._status !== prevStatus && messenger.onStatusChange) {
@@ -70,8 +81,17 @@ var message = exports.message = {
         }, 20);
       },
 
-      _queueSend: function(msg, whenSendFunc) {
-        messenger._outgoing.push([msg, whenSendFunc]);
+      _addMissingData: function(msg) {
+        if (!msg.messageId) msg.messageId = string.newUUID();
+        msg.sender = messenger.id();
+        msg.messageIndex = messenger._messageCounter++;
+        return msg;
+      },
+
+      _queueSend: function(msg, onReceiveFunc) {
+        if (onReceiveFunc && typeof onReceiveFunc !== 'function')
+          throw new Error("Expecing a when send callback, got: " + onReceiveFunc);
+        messenger._outgoing.push([msg, onReceiveFunc]);
       },
 
       _deliverMessageQueue: function() {
@@ -85,12 +105,13 @@ var message = exports.message = {
         if (!queued) return;
 
         messenger._inflight.push(queued);
-        var msg = queued[0], callback = fun.once(queued[1]);
+        var msg = queued[0], callback = queued[1];
+        if (callback)
+          messenger._messageResponseCallbacks[msg.messageId] = callback;
 
         spec.send(msg, function(err) {
-          err && console.error(err);
           arr.remove(messenger._inflight, queued);
-          callback && callback(err, msg);
+          if (err) onSendError(err);
           messenger._deliverMessageQueue();
         });
 
@@ -101,12 +122,15 @@ var message = exports.message = {
           setTimeout(function() {
             if (!messenger._inflight.indexOf(queued) === -1) return;
             arr.remove(messenger._inflight, queued);
-            var errMsg = 'Timeout sending message';
-            console.error(errMsg);
-            var err = new Error(errMsg)
-            callback && callback(err, msg);
+            onSendError(new Error('Timeout sending message'));
             messenger._deliverMessageQueue();
           }, spec.sendTimeout);
+        }
+        
+        function onSendError(err) {
+          delete messenger._messageResponseCallbacks[msg.messageId];
+          console.error(err);
+          callback && callback(err);
         }
       },
 
@@ -140,38 +164,61 @@ var message = exports.message = {
           if (messenger.heartbeatEnabled())
             messenger._startHeartbeatProcess();
         });
+        return messenger;
       },
 
       reconnect: function() {
-        if (messenger._status === 'ONLINE') return;
+        if (messenger._status === ONLINE) return;
         messenger.listen();
+        return messenger;
       },
 
-      send: function(msg, whenSendFunc) {
-        messenger._queueSend(msg, whenSendFunc);
+      send: function(msg, onReceiveFunc) {
+        messenger._addMissingData(msg);
+        messenger._queueSend(msg, onReceiveFunc);
         messenger._deliverMessageQueue();
-        return messenger;
+        return msg;
+      },
+
+      receive: function(msg) {
+        spec.receive(msg);
+        var cb = msg.inResponseTo && messenger._messageResponseCallbacks[msg.inResponseTo];
+        if (cb && !msg.expectMoreResponses) delete messenger._messageResponseCallbacks[msg.inResponseTo];
+        if (cb) cb(null, msg);
+      },
+
+      answer: function(msg, data, expectMore, whenSend) {
+        if (typeof expectMore === 'function') {
+          whenSend = expectMore; expectMore = false; }
+        var answer = {
+          target: msg.sender,
+          action: msg.action + 'Result',
+          inResponseTo: msg.messageId,
+          data: data};
+        if (expectMore) answer.expectMoreResponses = true;
+        debugger;
+        return messenger.send(answer, whenSend);
       },
 
       close: function(thenDo) {
         clearInterval(messenger._statusWatcherProc);
         messenger._statusWatcherProc = null;
         spec.close(function(err) {
-          messenger._status = 'OFFLINE';
+          messenger._status = OFFLINE;
           thenDo && thenDo(err);
         });
+        return messenger;
       },
 
       whenOnline: function(thenDo) {
         messenger._whenOnlineCallbacks.push(thenDo);
         if (messenger.isOnline()) messenger._runWhenOnlineCallbacks();
+        return messenger;
       },
 
       outgoingMessages: function() {
         return arr.pluck(messenger._inflight.concat(messenger._outgoing), 0);
-      },
-
-      status: function() { return messenger._status; }
+      }
 
     }
 
