@@ -366,6 +366,8 @@ var fun = exports.fun = {
     options = options || {};
 
     var results = funcs.map(function() { return null; });
+    if (!funcs.length) { thenDo(null, results); return; }
+
     var leftFuncs = Array.prototype.slice.call(funcs);
 
     funcs.forEach(function(f, i) {

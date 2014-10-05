@@ -452,6 +452,14 @@ describe('fun', function() {
       });
     });
 
+    it("without functions it continues immediately", function(done) {
+      fun.waitForAll([], function(err, results) {
+        expect(err).to.be(null);
+        expect(results).to.be.empty();
+        done();
+      });
+    });
+
   });
 
   describe("function wrapping", function() {
