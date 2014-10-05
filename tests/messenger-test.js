@@ -9,6 +9,7 @@ var jsext = typeof module !== 'undefined' && module.require ?
 var message = jsext.message;
 var fun = jsext.fun;
 var arr = jsext.arr;
+var events = jsext.events;
 
 function createMessenger(messengers, options) {
 
@@ -30,18 +31,11 @@ function createMessenger(messengers, options) {
     else doSend();
   };
 
-  if (!spec.receive) spec.receive = function(msg) {
-    function doReceive() {
-      if (options.receivedData) options.receivedData.push(msg);
-    }
-    if (typeof options.receiveDelay === 'number') setTimeout(doReceive, options.reveiveDelay);
-    else doReceive();
-  };
-
   var listening = false;
   if (!spec.listen) {
-    spec.listen = function(thenDo) {
+    spec.listen = function(messenger, thenDo) {
       function doListen() {
+        messengers.push(messenger);
         listening = true; thenDo(null); }
       if (typeof options.listenDelay === 'number') setTimeout(doListen, options.listenDelay);
       else doListen();
@@ -51,6 +45,7 @@ function createMessenger(messengers, options) {
   if (!spec.close) {
     spec.close = function(thenDo) {
       function doClose() {
+        arr.remove(messengers, messenger);
         listening = false; thenDo(null); }
       if (typeof options.closeDelay === 'number') setTimeout(doClose, options.closeDelay);
       else doClose();
@@ -60,7 +55,7 @@ function createMessenger(messengers, options) {
   if (!spec.isOnline) spec.isOnline = function() { return !!listening; };
 
   var messenger = message.makeMessenger(spec);
-  messengers.push(messenger);
+
   return messenger;
 }
 
@@ -230,8 +225,8 @@ describe('messengers', function() {
         id: "messengerB",
         sendData: sendData,
         isOnline: function() { return isOnline; },
-        listen: function(thenDo) { isOnline = true; thenDo(null); },
-        close: function(thenDo) { isOnline = false; thenDo(null); },
+        listen: function(messenger, thenDo) { messengers.push(messenger); isOnline = true; thenDo(null); },
+        close: function(thenDo) { arr.remove(messengers, messenger); isOnline = false; thenDo(null); },
         autoReconnect: true
       });
 
@@ -254,38 +249,36 @@ describe('messengers', function() {
 
   describe('send and receive', function() {
 
-    function findMessengerForMsg(msg) {
-      if (!msg || !msg.target) throw new Error("findMessengerForMsg: msg is strange: " + jsext.obj.inspect(msg));
-      return arr.detect(messengers, function(ea) { return ea.id() === msg.target; });
-    }
+    var messageDispatcher = events.makeEmitter({
+      dispatch: function(messengers, msg, thenDo) {
+        var messenger = findMessengerForMsg(msg);
+        if (!messenger) thenDo(new Error("Target " + msg.target + " not found"));
+        else { messenger.onMessage(msg); thenDo(null); }
 
-    function genericSend(msg, sendDone) {
-      var messenger = findMessengerForMsg(msg);
-      if (!messenger) sendDone(new Error("Target " + msg.target + " not found"));
-      else {
-        messenger.receive(msg);
-        sendDone();
+        function findMessengerForMsg(msg) {
+          if (!msg || !msg.target) throw new Error("findMessengerForMsg: msg is strange: " + jsext.obj.inspect(msg));
+          return arr.detect(messengers, function(ea) { return ea.id() === msg.target; });
+        }
       }
-    }
+    });
+
+    function genericSend(msg, thenDo) { messageDispatcher.dispatch(messengers, msg, thenDo); }
 
     var messengerB, messengerC;
     var receivedB, receivedC;
 
     beforeEach(function() {
-      receivedB = [];
       messengerB = createMessenger(messengers, {
-        id: "messengerB",
-        sendDelay: 20, listenDelay: 10,
-        receivedData: receivedB,
-        send: genericSend
+        id: "messengerB", sendDelay: 20, listenDelay: 10, send: genericSend
+      });
+      receivedB = [];
+      messengerB.on('message', function(msg) { receivedB.push(msg); });
+
+      messengerC = createMessenger(messengers, {
+        id: "messengerC", sendDelay: 20, listenDelay: 10, send: genericSend
       });
       receivedC = [];
-      messengerC = createMessenger(messengers, {
-        id: "messengerC",
-        sendDelay: 20, listenDelay: 10,
-        receivedData: receivedC,
-        send: genericSend
-      });
+      messengerC.on('message', function(msg) { receivedC.push(msg); });
     });
 
     it('sends messages between messengers', function(done) {

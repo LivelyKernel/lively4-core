@@ -4,13 +4,16 @@
 "use strict";
 
 var arr = exports.arr;
-if (!arr) throw new Error("message.js needs collection.js!")
+if (!arr) throw new Error("messenger.js needs collection.js!")
 
 var fun = exports.fun;
-if (!fun) throw new Error("message.js needs function.js!")
+if (!fun) throw new Error("messenger.js needs function.js!")
 
 var string = exports.string;
-if (!string) throw new Error("message.js needs string.js!")
+if (!string) throw new Error("messenger.js needs string.js!")
+
+var events = exports.events;
+if (!events) throw new Error("messenger.js needs events.js!")
 
 var OFFLINE = 'offline';
 var ONLINE = 'online';
@@ -26,8 +29,7 @@ var message = exports.message = {
 
     var expectedMethods = [
       {name: "send", args: ['msg', 'callback']},
-      {name: "receive", args: ['msg']},
-      {name: "listen", args: ['callback']},
+      {name: "listen", args: ['messenger', 'callback']},
       {name: "close", args: ['callback']},
       {name: "isOnline", args: []}
     ];
@@ -158,7 +160,7 @@ var message = exports.message = {
         if (messenger._listenInProgress) return;
         messenger._listenInProgress = true;
         messenger._ensureStatusWatcher();
-        return spec.listen(function(err) {
+        return spec.listen(messenger, function(err) {
           messenger._listenInProgress = null;
           thenDo && thenDo(err);
           if (messenger.heartbeatEnabled())
@@ -180,11 +182,12 @@ var message = exports.message = {
         return msg;
       },
 
-      receive: function(msg) {
-        spec.receive(msg);
+      onMessage: function(msg) {
         var cb = msg.inResponseTo && messenger._messageResponseCallbacks[msg.inResponseTo];
         if (cb && !msg.expectMoreResponses) delete messenger._messageResponseCallbacks[msg.inResponseTo];
         if (cb) cb(null, msg);
+        console.log("%s got message", messenger.id());
+        messenger.emit("message", msg);
       },
 
       answer: function(msg, data, expectMore, whenSend) {
@@ -221,6 +224,8 @@ var message = exports.message = {
       }
 
     }
+
+    events.makeEmitter(messenger);
 
     return messenger;
   }
