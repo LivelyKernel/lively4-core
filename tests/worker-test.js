@@ -87,7 +87,7 @@ describe('worker', function() {
       worker.idleTimeOfPoolWorker = previousIdleTimeOfPoolWorker;
     });
 
-    it("ForkFunction", function(done) {
+    it("forks a function to run in a worker", function(done) {
       var whenDoneResult,
           w = worker.fork(
             {libURL: libURL, args: [1, 2], whenDone: function(err, result) { whenDoneResult = result; }},
@@ -115,7 +115,7 @@ describe('worker', function() {
 
     });
 
-    it("ForkLongRunningFunctionKeepsWorkerAlive", function(done) {
+    it("forks works for long running function as well", function(done) {
       var whenDoneResult,
           w = worker.fork(
             {libURL: libURL, whenDone: function(err, result) { whenDoneResult = result; }},

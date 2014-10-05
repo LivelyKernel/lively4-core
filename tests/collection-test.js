@@ -180,14 +180,14 @@ describe('Interval', function() {
 
   var Interval = jsext.interval;
 
-  it("testIsInterval", function() {
+  it("tests for interval type", function() {
     expect(Interval.isInterval([1,2])).to.be(true);
     expect(Interval.isInterval([1,2,'some addition'])).to.be(true);
     expect(Interval.isInterval([1,1])).to.be(true);
     expect(Interval.isInterval([1,0])).to.be(false);
   })
 
-  it("testCompareInterval", function() {
+  it("compares intervals", function() {
     var inputAndExpected = [
       [1,2], [3,4], -3,
       // less and at border
@@ -231,14 +231,14 @@ describe('Interval', function() {
 
   })
 
-  it("testSortIntervals", function() {
+  it("sorts intervals", function() {
     expect([]).to.eql(Interval.sort([]));
     expect([[1,2], [2,3]]).to.eql(Interval.sort([[1, 2], [2, 3]]));
     expect([[1,2], [1,3]]).to.eql(Interval.sort([[1, 3], [1, 2]]));
     expect([[1,2], [4,6], [5,9]]).to.eql(Interval.sort([[4,6], [1,2], [5,9]]));
   })
 
-  it("testCoalesceTwoOverlappingIntervals", function() {
+  it("coalesces two overlapping intervals", function() {
     expect(null).to.eql(Interval.coalesce([1,4], [5,7]));
     expect([1, 5]).to.eql(Interval.coalesce([1,3], [2, 5]));
     expect([1, 5]).to.eql(Interval.coalesce([3, 5], [1,3]));
@@ -250,7 +250,7 @@ describe('Interval', function() {
     // this.assertEqualState([[3,6], [4,5], [3,6]], callbackArgs, 'callback');
   });
 
-  it("testCoalesceOverlappingIntervalsTest", function() {
+  it("coalesces any number of overlapping intervals", function() {
     expect([]).to.eql(Interval.coalesceOverlapping([]));
     expect([[1, 5]]).to.eql(Interval.coalesceOverlapping([[1,3], [2, 4], [2, 5]]));
     expect([[1, 3], [5, 10]]).to.eql(Interval.coalesceOverlapping([[1,3], [5,9 ], [6, 10]]));
@@ -263,11 +263,11 @@ describe('Interval', function() {
     expect([[1,5, 'ab'], [8, 10, 'c']]).to.eql(result);
   });
 
-  it("testCoalesceIdenticalIntervalsTest", function() {
+  it("coalesces identical intervals", function() {
     expect([[1,3]]).to.eql(Interval.coalesceOverlapping([[1,3], [1, 3]]));
   });
 
-  it("testFindFreeIntervalsInbetween", function() {
+  it("finds free intervals inbetween", function() {
     expect([[0,10]]).to.eql(Interval.intervalsInbetween(0, 10, []));
     expect([[5,10]]).to.eql(Interval.intervalsInbetween(0, 10, [[0, 5]]));
     expect([[0,3], [5,10]]).to.eql(Interval.intervalsInbetween(0, 10, [[3, 5]]));
@@ -278,7 +278,7 @@ describe('Interval', function() {
     expect([]).to.eql(Interval.intervalsInbetween(0, 5, [[0, 6]]));
   });
 
-  it("withIntervalsInRangeDo", function() {
+  it("enumerates intervals using withIntervalsInRangeDo", function() {
     expect([[0,2, false], [2,3, true], [3,5, false], [5,8, true], [8,10, false]]).to.eql(Interval.intervalsInRangeDo(
         0, 10, [[8, 10], [0, 2], [3, 5]],
         function(interval, isNew) { interval.push(isNew); return interval; }));
@@ -297,7 +297,7 @@ describe('Interval', function() {
         function(a, b, merged) { merged[2] = a[2] + b[2] }),"identical intervals not merged");
   });
 
-  it("testFindMatchingIntervalsDo", function() {
+  it("finds matching intervals", function() {
     var existingIntervals = [[1,4], [4,5], [5,8], [9,20]];
     var test = this, testTable = [
       {expected: [[0]],            input: [[1,4]]},
@@ -314,7 +314,7 @@ describe('Interval', function() {
     });
   });
 
-  it("testMergeOverlappingIntervals", function() {
+  it("merges overlapping intervals", function() {
     return; // WIP
     var inputsAndExpected = [
       {a: [[1,6, 'a'], [7,9, 'b']],
@@ -396,7 +396,7 @@ describe('Grid', function() {
 
   var Grid = jsext.grid;
 
-  it("createGrid", function() {
+  it("creates a grid", function() {
     var result = Grid.create(2, 3, 'foo'),
       expected = [
         ['foo', 'foo', 'foo'],
@@ -404,7 +404,7 @@ describe('Grid', function() {
     expect(expected).to.eql(result);
   });
 
-  it("createGridReturnsDistinctColumns", function() {
+  it("creates grid with distinct columns", function() {
     var result = Grid.create(2, 3, 'foo'),
       expected = [
         ['foo', 'bar', 'foo'],
@@ -413,7 +413,7 @@ describe('Grid', function() {
     expect(expected).to.eql(result);
   });
 
-  it("gridForEach", function() {
+  it("enumerates", function() {
     var result = [],
       expected = [[0,0], [0,1], [0,2],
             [1,0], [1,1], [1,2]];
@@ -422,7 +422,7 @@ describe('Grid', function() {
     expect(expected).to.eql(result);
   });
 
-  it("gridmap", function() {
+  it("maps", function() {
     var result = Grid.map(Grid.create(2, 3), function(_, row, col) {
       return row + col; }),
       expected = [[0, 1, 2],
@@ -438,11 +438,11 @@ describe('Grid', function() {
     expect(expected).to.eql(result);
   });
 
-  it("toObjects", function() {
+  it("converts toObjects", function() {
     expect([{a:1,b:2},{a:3,b:4}]).to.eql(Grid.toObjects([['a', 'b'],[1,2],[3,4]]));
   });
 
-  it("tableFromObjects", function() {
+  it("creates grid from objects", function() {
     var objects = [{x:1,y:2},{x:3},{z:4}],
       expected = [["x","y","z"],[1,2,null],[3,null,null],[null,null,4]];
     expect(expected).to.eql(Grid.tableFromObjects(objects));
@@ -459,7 +459,7 @@ describe("ArrayProjection", function() {
   var arr = jsext.arr;
   var arrayProjection = jsext.arrayProjection;
 
-  it("createProjection", function() {
+  it("creates projection", function() {
     var sut = arrayProjection;
     // array = ["A","B","C","D","E","F","G","H","I","J"]
     var array = arr.range(65,74).map(function(i) { return String.fromCharCode(i); });
@@ -468,7 +468,7 @@ describe("ArrayProjection", function() {
     expect({array: array, from: 7, to: 10}).to.eql(sut.create(array, 3, 9));
   });
 
-  it("getProjection", function() {
+  it("gets projection in range", function() {
     var sut = arrayProjection;
     // array = ["A","B","C","D","E","F","G","H","I","J"]
     var array = arr.range(65,74).map(function(i) { return String.fromCharCode(i); }),
@@ -477,7 +477,7 @@ describe("ArrayProjection", function() {
     expect(["F","G","H"]).to.eql(result);
   });
 
-  it("projectionIndices", function() {
+  it("computes projection indices", function() {
     var sut = arrayProjection;
     var array = arr.range(65,74).map(function(i) { return String.fromCharCode(i); }),
         projection = {array: array, from: 5, to: 8},
@@ -492,7 +492,7 @@ describe("ArrayProjection", function() {
     expect(null).to.equal(sut.projectedToOriginalIndex(projection, 4),'orig index to projected 4');
   });
 
-  it("moveProjectionToIncludeIndex", function() {
+  it("transforms projection to include index", function() {
     var sut = arrayProjection;
     var array = arr.range(65,74).map(function(i) { return String.fromCharCode(i); }),
         projection = sut.create(array, 3, 2);

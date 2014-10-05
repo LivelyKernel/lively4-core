@@ -308,7 +308,7 @@ describe('fun', function() {
 
   describe("function composition", function() {
 
-    it("compose", function() {
+    it("composes functions", function() {
       function mult(a,b) { return a * b; }
       function add1(a) { return a + 1; }
       var composed = fun.compose(mult, add1, String),
@@ -316,7 +316,7 @@ describe('fun', function() {
       expect("23" === result).to.be.ok('compose not OK: ' + result);
     });
 
-    it("composeAsync", function(done) {
+    it("composes async functions", function(done) {
       var result, err, test1, test2;
       function mult(a,b, thenDo) { thenDo(null, a * b); }
       function add1(a, thenDo) { thenDo(null, a + 1); }
@@ -356,7 +356,7 @@ describe('fun', function() {
 
     });
 
-    it("composeAsyncWithError", function(done) {
+    it("composes async functions with Error", function(done) {
       var aRun = 0, bRun = 0, cRun = 0;
 
       console.log("Dear test runner: an error like \"Object XXX has no method 'barrr'\" is expected!");
@@ -381,7 +381,7 @@ describe('fun', function() {
       };
     });
 
-    it("composeAsyncWithErrorDontActivateTwice", function(done) {
+    it("composes async functions with errors don't activate callbacks twice", function(done) {
       var aRun = 0, bRun = 0, cRun = 0;
       fun.composeAsync(
         function a(a,b, thenDo) { aRun++; thenDo(null, a * b);
