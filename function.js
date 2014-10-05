@@ -445,6 +445,8 @@ var fun = exports.fun = {
 
   once: function(func) {
     if (!func) return undefined;
+    if (typeof func !== 'function')
+      throw new Error("fun.once() expecting a function");
     var invoked = false, result;
     return function() {
       if (invoked) return result;
