@@ -1,4 +1,4 @@
-/*global clearTimeout, setTimeout*/
+/*global clearTimeout, setTimeout, clearInterval, setInterval*/
 
 ;(function(exports) {
 "use strict";
@@ -19,6 +19,7 @@ var message = exports.message = {
     var expectedMethods = [
       {name: "send", args: ['msg', 'callback']},
       {name: "listen", args: ['callback']},
+      {name: "close", args: ['callback']},
       {name: "isOnline", args: []}
     ];
     expectedMethods.forEach(function(exp) {
@@ -28,12 +29,19 @@ var message = exports.message = {
         throw new Error(msg);
     });
 
+    var heartbeatInterval = spec.sendHeartbeat && (spec.heartbeatInterval || 1000);
+
     var messenger = {
 
       _outgoing: [],
+      _inflight: [],
       _id: spec.id || string.newUUID(),
       _whenOnlineCallbacks: [],
-      _whenOnlineCallbackWaitProc: null,
+      _statusWatcherProc: null,
+      _startHeartbeatProcessProc: null,
+      _listenInProgress: null,
+      _heartbeatInterval: heartbeatInterval,
+      _status: 'OFFLINE',
 
       // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
       _runWhenOnlineCallbacks: function() {
@@ -46,52 +54,124 @@ var message = exports.message = {
         });
       },
 
-      _ensureToWaitForWhenOnlineCallbacks: function() {
-        if (messenger._whenOnlineCallbackWaitProc) return;
-        messenger._whenOnlineCallbackWaitProc = setInterval(function() {
-          if (!messenger.isOnline()) return;
-          clearInterval(messenger._whenOnlineCallbackWaitProc);
-          messenger._whenOnlineCallbackWaitProc = null;
-          messenger._runWhenOnlineCallbacks();
+      _ensureStatusWatcher: function() {
+        if (messenger._statusWatcherProc) return;
+        messenger._statusWatcherProc = setInterval(function() {
+          if (messenger.isOnline() && messenger._whenOnlineCallbacks.length)
+            messenger._runWhenOnlineCallbacks();
+          var prevStatus = messenger._status;
+          messenger._status = messenger.isOnline() ? 'ONLINE' : 'OFFLINE';
+          if (messenger._status !== 'ONLINE' && messenger._statusWatcherProc) {
+            messenger.reconnect();
+          }
+          if (messenger._status !== prevStatus && messenger.onStatusChange) {
+            messenger.onStatusChange();
+          }
         }, 20);
       },
-      
+
+      _queueSend: function(msg, whenSendFunc) {
+        messenger._outgoing.push([msg, whenSendFunc]);
+      },
+
+      _deliverMessageQueue: function() {
+        if (!spec.allowConcurrentSends && messenger._inflight.length) return;
+        if (!messenger.isOnline()) {
+          messenger.whenOnline(function() { messenger._deliverMessageQueue(); });
+          return;
+        }
+
+        var queued = messenger._outgoing.shift();
+        if (!queued) return;
+
+        messenger._inflight.push(queued);
+        var msg = queued[0], callback = fun.once(queued[1]);
+
+        spec.send(msg, function(err) {
+          err && console.error(err);
+          arr.remove(messenger._inflight, queued);
+          callback && callback(err, msg);
+          messenger._deliverMessageQueue();
+        });
+
+        if (spec.allowConcurrentSends && messenger._outgoing.length)
+          messenger._deliverMessageQueue();
+        
+        if (typeof spec.sendTimeout === 'number') {
+          setTimeout(function() {
+            if (!messenger._inflight.indexOf(queued) === -1) return;
+            arr.remove(messenger._inflight, queued);
+            var errMsg = 'Timeout sending message';
+            console.error(errMsg);
+            var err = new Error(errMsg)
+            callback && callback(err, msg);
+            messenger._deliverMessageQueue();
+          }, spec.sendTimeout);
+        }
+      },
+
+      _startHeartbeatProcess: function() {
+        if (messenger._startHeartbeatProcessProc) return;
+        messenger._startHeartbeatProcessProc = setTimeout(function() {
+          spec.sendHeartbeat(function(err, result) {
+            messenger._startHeartbeatProcessProc = null;
+            messenger._startHeartbeatProcess();
+          })
+        }, messenger._heartbeatInterval);
+      },
+
       // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
       id: function() { return messenger._id; },
 
       isOnline: function() { return spec.isOnline(); },
 
-      listen: function(thenDo) {
-        return spec.listen(function(err) { thenDo && thenDo(err); });
+      heartbeatEnabled: function() {
+        return typeof messenger._heartbeatInterval === 'number';
       },
 
-      send: function(msg, thenDo) {
-        if (!messenger.isOnline()) {
-          messenger.whenOnline(function() { messenger.send(msg, thenDo); });
-          // var err = new Error("Messenger " + messenger.id() + " not online");
-          // if (thenDo) thenDo(err);
-          // else throw err;
-          return;
-        }
-        messenger._outgoing.push(msg);
-        spec.send(msg, function(err) {
-          err && console.error(err);
-          arr.remove(messenger._outgoing, msg);
+      listen: function(thenDo) {
+        if (messenger._listenInProgress) return;
+        messenger._listenInProgress = true;
+        messenger._ensureStatusWatcher();
+        return spec.listen(function(err) {
+          messenger._listenInProgress = null;
+          thenDo && thenDo(err);
+          if (messenger.heartbeatEnabled())
+            messenger._startHeartbeatProcess();
+        });
+      },
+
+      reconnect: function() {
+        if (messenger._status === 'ONLINE') return;
+        messenger.listen();
+      },
+
+      send: function(msg, whenSendFunc) {
+        messenger._queueSend(msg, whenSendFunc);
+        messenger._deliverMessageQueue();
+        return messenger;
+      },
+
+      close: function(thenDo) {
+        clearInterval(messenger._statusWatcherProc);
+        messenger._statusWatcherProc = null;
+        spec.close(function(err) {
+          messenger._status = 'OFFLINE';
           thenDo && thenDo(err);
         });
-        return messenger;
       },
 
       whenOnline: function(thenDo) {
         messenger._whenOnlineCallbacks.push(thenDo);
         if (messenger.isOnline()) messenger._runWhenOnlineCallbacks();
-        else messenger._ensureToWaitForWhenOnlineCallbacks();
       },
 
-      pendingOut: function() {
-        return Array.prototype.slice.call(messenger._outgoing);
-      }
+      outgoingMessages: function() {
+        return arr.pluck(messenger._inflight.concat(messenger._outgoing), 0);
+      },
+
+      status: function() { return messenger._status; }
 
     }
 
