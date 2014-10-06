@@ -10,15 +10,15 @@ var messenger = jsext.messenger;
 
 describe('worker', function() {
 
-  var libURL = document.location.toString().split('/').slice(0, -1).join('/') + "/../";
+  var libLocation = isNodejs ? '../' : document.location.toString().split('/').slice(0, -1).join('/') + "/../";
 
   describe('basics', function() {
 
     it("creates worker and evals code in worker context", function(done) {
       var messageFromWorker = null,
-          w = worker.create({libURL: libURL});
+          w = worker.create({libLocation: libLocation});
       fun.composeAsync(
-        function(next) { w.eval("this.rememberThis = 'foo was here';", next); },
+        function(next) { debugger; w.eval("this.rememberThis = 'foo was here';", next); },
         function(_, next) { w.eval("this.rememberThis", next) },
         function(result, next) { expect(result).to.be('foo was here'); next(); }
       )(function(err) { expect(err).to.be(null); done(); });
@@ -26,7 +26,7 @@ describe('worker', function() {
 
     it("loads other lib code in worker context", function(done) {
       var messageFromWorker = null,
-          w = worker.create({libURL: libURL});
+          w = worker.create({libLocation: libLocation});
       fun.composeAsync(
         function(next) { w.eval("jsext.string.format('foo %s', 'bar');", next) },
         function(result, next) { expect(result).to.be('foo bar'); next(); }
@@ -34,7 +34,7 @@ describe('worker', function() {
     });
 
     it("calls passed functions in worker context", function(done) {
-      var workerMessenger = worker.create({libURL: libURL});
+      var workerMessenger = worker.create({libLocation: libLocation});
       fun.composeAsync(
         function(next) {
           workerMessenger.run(function(a, b, whenDone) { 
@@ -51,7 +51,7 @@ describe('worker', function() {
     it("forks a function to run in a worker", function(done) {
       var whenDoneResult,
           w = worker.fork(
-            {libURL: libURL, args: [1, 2]},
+            {libLocation: libLocation, args: [1, 2]},
             function(a, b, thenDo) { thenDo(null, '' + (a + b) + ' ' + self.isBusy); },
             function(err, result) {
               expect(err).to.be(null);

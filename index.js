@@ -8,7 +8,7 @@ module.require('./number');
 module.require('./date');
 module.require('./object');
 module.require('./messenger');
-module.require('./worker-nodejs');
+module.require('./worker');
 
 module.exports = {
   events: jsext.events,

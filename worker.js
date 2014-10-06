@@ -1,4 +1,4 @@
-/*global jsext, require, Worker*/
+/*global jsext, require, Worker, URL, webkitURL, Blob, BlobBuilder, process, require*/
 
 /*** Usage ***
 
@@ -6,7 +6,7 @@
 function resultHandler(err, result) { show(err ? String(err) : result); }
 
 // 1. Create the worker
-var worker = jsext.worker.create({libURL: baseURL});
+var worker = jsext.worker.create({libLocation: baseURL});
 
 // 2. You can evaluate arbitrary JS code
 worker.eval("1+2", function(err, result) { show(err ? String(err) : result); });
@@ -38,11 +38,156 @@ worker.close(function(err) { err && show(String(err)); alertOK("worker shutdown"
 ;(function(exports) {
 "use strict";
 
-var worker = exports.worker = {
+var isNodejs = typeof module !== 'undefined' && module.require;
 
-  isAvailable: typeof Worker !== 'undefined',
+// code in worker setup is evaluated in the context of workers, it will get to
+// workers in a stringified form(!)
+var WorkerSetup = {
 
-  _create: function(options) {
+  loadDependenciesBrowser: function loadDependenciesBrowser(options) {
+    importScripts.apply(this, options.scriptsToLoad || []);
+  },
+
+  loadDependenciesNodejs: function loadDependenciesNodejs(options) {
+    options.scriptsToLoad.forEach(function(ea) { require(ea); });
+  },
+
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  // yoshiki and robert, 05/08/13: Inserted code that sets up the lively context
+  // and globals of Lively and other required objects:
+  initBrowserGlobals: function initBrowserGlobals(options) {
+    Global = this;
+    Global.window = Global;
+    Global.console = Global.console || (function() {
+      var c = {};
+      ['log', 'error', 'warn'].forEach(function(name) {
+        c[name] = function(/*args*/) {
+          var string = arguments[0];
+          for (var i = 1; i < arguments.length; i++)
+            string = string.replace('%s', arguments[i]);
+          postMessage({
+            type: name,
+            message: ['[', name.toUpperCase(), '] ', string].join('')
+          });
+        };
+      });
+      return c;
+    })();
+  },
+
+  initBrowserInitialOnMessageHandler: function initBrowserInitialOnMessageHandler(options) {
+    remoteWorker.onmessage = function(evt) {
+      if (remoteWorker.messenger) remoteWorker.messenger.onMessage(evt.data);
+      else if (evt.data.action == "close") {
+        remoteWorker.close();
+        postMessage({type: "closed", workerReady: false});
+        return;
+      }
+    }
+  },
+
+  initWorkerInterface: function initWorkerInterface(options) {
+    remoteWorker.callStringifiedFunction = function(stringifiedFunc, args, thenDo) {
+      // runs stringified function and passing args. stringifiedFunc might
+      // be asynchronous if it takes an addaitional argument. In this case a
+      // callback to call when the work is done is passed, otherwise thenDo
+      // will be called immediatelly after creating and calling the function
+
+      try { var func = eval('(' + stringifiedFunc + ')'); } catch (e) {
+        thenDo(new Error("Cannot create function from string: " + e.stack || e));
+        return;
+      }
+
+      // when it takes one more arg then we assume that this is the callback
+      // to be called by the run func when it considers to be done
+      var usesCallback = func.length === args.length + 1;
+      var whenDone = jsext.fun.once(function(err, result) {
+        remoteWorker.isBusy = false; thenDo(err, result); })
+      remoteWorker.isBusy = true;
+
+      if (usesCallback) args.push(whenDone);
+
+      try { var result = func.apply(remoteWorker, args.concat([whenDone])); } catch (e) {
+        whenDone(e, null); return;
+      }
+
+      if (!usesCallback) whenDone(null, result);
+    }
+
+    remoteWorker.httpRequest = function (options) {
+      if (!options.url) {
+        console.log("Error, httpRequest needs url");
+        return;
+      }
+      var req = new XMLHttpRequest(),
+          method = options.method || 'GET';
+      function handleStateChange() {
+        if (req.readyState === 4) {
+          // req.status
+          options.done && options.done(req);
+        }
+      }
+      req.onreadystatechange = handleStateChange;
+      req.open(method, options.url);
+      req.send();
+    }
+
+    remoteWorker.terminateIfNotBusyIn = function(ms) {
+      setTimeout(function() {
+        if (remoteWorker.isBusy) { remoteWorker.terminateIfNotBusyIn(ms); return; }
+        remoteWorker.postMessage({type: "closed", workerReady: false});
+        remoteWorker.close();
+      }, ms);
+    }
+  },
+
+  // setting up the worker messenger interface, this is how the worker
+  // should be communicated with
+  initWorkerMessenger: function initWorkerMessenger(options) {
+    if (!options.useMessenger) return;
+    if (!jsext.messenger)
+      throw new Error("worker.create requires messenger.js to be loaded!")
+    if (!jsext.events)
+      throw new Error("worker.create requires events.js to be loaded!")
+
+    return remoteWorker.messenger = jsext.messenger.create({
+      services: {
+
+        remoteEval: function(msg, messenger) {
+          try { var result = eval(msg.data.expr); } catch (e) {
+            result = e.stack || e; }
+          messenger.answer(msg, {result: String(result)});
+        },
+
+        run: function(msg, messenger) {
+          var funcString = msg.data.func;
+          var args = msg.data.args;
+          if (!funcString) { messenger.answer(msg, {error: 'no funcString'}); return; }
+          remoteWorker.callStringifiedFunction(funcString, args, function(err, result) {
+            messenger.answer(msg, {error: err ? String(err) : null, result: result});
+          });
+        },
+        
+        close: function(msg, messenger) {
+          messenger.answer(msg, {status: "OK"});
+          postMessage({type: "closed", workerReady: false});
+          remoteWorker.close(); 
+        }
+      },
+
+      isOnline: function() { return true; },
+      send: function(msg, whenSend) { postMessage(msg); whenSend(); },
+      listen: function(messenger, whenListening) { whenListening(); },
+      close: function(messenger, whenClosed) { postMessage({type: "closed", workerReady: false}); remoteWorker.close(); }
+
+    });
+  }
+
+}
+
+var BrowserWorker = {
+
+  create: function(options) {
     // this function instantiates a browser worker object. We provide a
     // messenger-based interface to the pure Worker. Please use create to get an
     // improved interface to a worker
@@ -50,13 +195,20 @@ var worker = exports.worker = {
     options = options || {};
 
     // figure out where the other lang libs can be loaded from
-    if (!options.libURL && !options.scriptsToLoad) {
+    if (!options.libLocation && !options.scriptsToLoad) {
       var workerScript = document.querySelector("script[src$=\"worker.js\"]");
-      if (!workerScript) throw new Error("Cannot find library path to start worker. Use worker.create({libURL: \"...\"}) to explicitly define the path!");
-      options.libURL = workerScript.src.replace(/worker.js$/, '');
+      if (!workerScript) throw new Error("Cannot find library path to start worker. Use worker.create({libLocation: \"...\"}) to explicitly define the path!");
+      options.libLocation = workerScript.src.replace(/worker.js$/, '');
     }
 
-    var workerCode = '(' + String(workerSetupCode) + ')();';
+    var workerSetupCode = String(workerSetupFunction).replace("__FUNCTIONDECLARATIONS__", [
+      WorkerSetup.initBrowserGlobals,
+      WorkerSetup.loadDependenciesBrowser,
+      WorkerSetup.initBrowserInitialOnMessageHandler,
+      WorkerSetup.initWorkerInterface,
+      WorkerSetup.initWorkerMessenger
+    ].join('\n'));
+    var workerCode = '(' + workerSetupCode + ')();';
     var worker = new Worker(makeDataURI(workerCode));
     init(options, worker);
     return worker;
@@ -67,6 +219,8 @@ var worker = exports.worker = {
     // creation of the worker and sends the setup message to the worker
     // for initializing it.
     function init(options, worker) {
+      exports.events.makeEmitter(worker);
+
       if (!options.scriptsToLoad) {
         options.scriptsToLoad = [
           'base.js',
@@ -79,181 +233,51 @@ var worker = exports.worker = {
           'object.js',
           'messenger.js',
           'worker.js'].map(function(ea) {
-            return options.libURL + ea; });
+            return options.libLocation + ea; });
       }
 
       var workerOptions = Object.keys(options).reduce(function(opts, key) {
         if (typeof options[key] !== 'function') opts[key] = options[key];
         return opts;
       }, {});
-      worker.postMessage({command: 'setup', options: workerOptions});
 
       worker.onmessage = function(evt) {
-        // console.log(evt.data);
+        console.log("BrowserWorker got message\n", evt.data);
         if (evt.data.workerReady !== undefined) {
           worker.ready = !!evt.data.workerReady;
-          if (worker.ready && worker.onReady) worker.onReady(evt);
-          if (worker.onReadyStateChange) worker.onReadyStateChange(evt);
-          return;
-        }
-        if (worker.onMessage) worker.onMessage(evt);
+          if (worker.ready) worker.emit("ready");
+          else worker.emit("close");
+        } else worker.emit('message', evt.data);
       }
 
       worker.errors = [];
       worker.onerror = function(evt) {
         console.error(evt);
         worker.errors.push(evt);
-        if (worker.onError) worker.onError(evt);
+        worker.emit("error", evt)
       }
+
+      worker.postMessage({action: 'setup', options: workerOptions});
     }
 
     // This code is run inside the worker and bootstraps the messenger
     // interface. It also installs a console.log method since since this is not
     // available by default.
-    function workerSetupCode() {
-      self.onmessage = function(evt) {
-        if (evt.data.command !== "setup") {
-          throw new Error("expected setup to be first message!")
+    function workerSetupFunction() {
+      var remoteWorker = self;
+      remoteWorker.onmessage = function(evt) {
+        if (evt.data.action !== "setup") {
+          throw new Error("expected setup to be first message but got " + JSON.stringify(evt.data))
         }
         var options = evt.data.options || {};
-        initGlobals(options);
+        initBrowserGlobals(options);
+        loadDependenciesBrowser(options);
+        initBrowserInitialOnMessageHandler(options);
         initWorkerInterface(options);
         initWorkerMessenger(options);
         postMessage({workerReady: true});
       }
-
-      // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-      // yoshiki and robert, 05/08/13: Inserted code that sets up the lively context
-      // and globals of Lively:
-      function initGlobals(options) {
-        // 1) establish required objects
-        Global = this;
-        Global.window = Global;
-        Global.console = Global.console || (function() {
-          var c = {};
-          ['log', 'error', 'warn'].forEach(function(name) {
-            c[name] = function(/*args*/) {
-              var string = arguments[0];
-              for (var i = 1; i < arguments.length; i++)
-                string = string.replace('%s', arguments[i]);
-              postMessage({
-                type: name,
-                message: ['[', name.toUpperCase(), '] ', string].join('')
-              });
-            };
-          });
-          return c;
-        })();
-        // 2) Load bootstrap files
-        importScripts.apply(this, options.scriptsToLoad || []);
-      }
-
-      function initWorkerInterface(options) {
-
-        self.onmessage = function(evt) {
-          if (self.messenger) self.messenger.onMessage(evt.data);
-          else if (evt.data.command == "close") {
-            self.close();
-            postMessage({type: "closed", workerReady: false});
-            return;
-          }
-        }
-
-        self.callStringifiedFunction = function(stringifiedFunc, args, thenDo) {
-          // runs stringified function and passing args. stringifiedFunc might
-          // be asynchronous if it takes an addaitional argument. In this case a
-          // callback to call when the work is done is passed, otherwise thenDo
-          // will be called immediatelly after creating and calling the function
-
-          try { var func = eval('(' + stringifiedFunc + ')'); } catch (e) {
-            thenDo(new Error("Cannot create function from string: " + e.stack || e));
-            return;
-          }
-
-          // when it takes one more arg then we assume that this is the callback
-          // to be called by the run func when it considers to be done
-          var usesCallback = func.length === args.length + 1;
-          var whenDone = jsext.fun.once(function(err, result) {
-            self.isBusy = false; thenDo(err, result); })
-          self.isBusy = true;
-
-          if (usesCallback) args.push(whenDone);
-
-          try { var result = func.apply(self, args.concat([whenDone])); } catch (e) {
-            whenDone(e, null); return;
-          }
-
-          if (!usesCallback) whenDone(null, result);
-        }
-
-        self.httpRequest = function (options) {
-          if (!options.url) {
-            console.log("Error, httpRequest needs url");
-            return;
-          }
-          var req = new XMLHttpRequest(),
-              method = options.method || 'GET';
-          function handleStateChange() {
-            if (req.readyState === 4) {
-              // req.status
-              options.done && options.done(req);
-            }
-          }
-          req.onreadystatechange = handleStateChange;
-          req.open(method, options.url);
-          req.send();
-        }
-
-        self.terminateIfNotBusyIn = function(ms) {
-          setTimeout(function() {
-            if (self.isBusy) { self.terminateIfNotBusyIn(ms); return; }
-            self.postMessage({type: "closed", workerReady: false});
-            self.close();
-          }, ms);
-        }
-      }
-
-      // setting up the worker messenger interface, this is how the worker
-      // should be communicated with
-      function initWorkerMessenger(options) {
-        if (!options.useMessenger) return;
-        if (!jsext.messenger)
-          throw new Error("worker.create requires messenger.js to be loaded!")
-        if (!jsext.events)
-          throw new Error("worker.create requires events.js to be loaded!")
-
-        return self.messenger = jsext.messenger.create({
-          services: {
-
-            remoteEval: function(msg, messenger) {
-              try { var result = eval(msg.data.expr); } catch (e) {
-                result = e.stack || e; }
-              messenger.answer(msg, {result: String(result)});
-            },
-
-            run: function(msg, messenger) {
-              var funcString = msg.data.func;
-              var args = msg.data.args;
-              if (!funcString) { messenger.answer(msg, {error: 'no funcString'}); return; }
-              self.callStringifiedFunction(funcString, args, function(err, result) {
-                messenger.answer(msg, {error: err ? String(err) : null, result: result});
-              });
-            },
-            
-            close: function(msg, messenger) {
-              messenger.answer(msg, {status: "OK"});
-              postMessage({type: "closed", workerReady: false});
-              self.close(); 
-            }
-          },
-
-          isOnline: function() { return true; },
-          send: function(msg, whenSend) { postMessage(msg); whenSend(); },
-          listen: function(messenger, whenListening) { whenListening(); },
-          close: function(messenger, whenClosed) { postMessage({type: "closed", workerReady: false}); self.close(); }
-
-        });
-      }
+      __FUNCTIONDECLARATIONS__
     }
 
     function makeDataURI(codeToInclude) {
@@ -271,7 +295,177 @@ var worker = exports.worker = {
       return urlInterface.createObjectURL(blob);
     }
 
+  }
+
+}
+
+var NodejsWorker = {
+
+  debug: true,
+  initCodeFileCreated: false,
+
+  create: function(options) {
+    options = options || {};
+
+    // figure out where the other lang libs can be loaded from
+    // if (!options.libLocation && !options.scriptsToLoad) {
+    //   var workerScript = document.querySelector("script[src$=\"worker.js\"]");
+    //   if (!workerScript) throw new Error("Cannot find library path to start worker. Use worker.create({libLocation: \"...\"}) to explicitly define the path!");
+    //   options.libLocation = workerScript.src.replace(/worker.js$/, '');
+    // }
+
+    var workerProc;
+    var worker = exports.events.makeEmitter({
+      ready: false,
+      errors: [],
+
+      postMessage: function(msg) {
+        if (!workerProc) {
+          worker.emit("error", new Error('nodejs worker process not yet created'));
+          return;
+        }
+        if (!worker.ready) {
+          worker.emit("error", new Error('nodejs worker process not ready or already closed'));
+          return;
+        }
+        workerProc.send(msg);
+      }
+    });
+
+    NodejsWorker.startWorker(options, function(err, _workerProc) {
+      if (err) { worker.ready = false; worker.emit("error", err); return; }
+
+      workerProc = _workerProc;
+
+      workerProc.on('message', function(m) {
+        NodejsWorker.debug && console.log('[WORKER PARENT] got message:', m);
+        worker.emit("message", m);
+      });
+  
+      workerProc.on('close', function() {
+        console.log("[WORKER PARENT] worker closed");
+        worker.emit("close");
+      });
+  
+      workerProc.on('error', function(err) {
+        console.log("[WORKER PARENT] error ", err);
+        worker.errors.push(err);
+        worker.emit("error", err);
+      });
+
+      worker.ready = true;
+      worker.emit("ready");
+    });
+
+    return worker;
   },
+
+  workerSetupFunction: function workerSetupFunction() {
+    // this code is run in the context of the worker process
+    var remoteWorker = process;
+    var debug = true;
+    var close = false;
+  
+    debug && console.log("[WORKER] Starting init");
+    // process.on('message', function(m) {
+    //   debug && console.log('[WORKER] got message:', m);
+    //   if (m.action === 'ping') process.send({action: 'pong', data: m});
+    //   else if (m.action === 'close') close = true;
+    //   else if (m.action === 'setup') setup(m.data);
+    //   else console.error('[WORKER] unknown message: ', m);
+    // });
+
+    remoteWorker.on("message", function(msg) {
+      if (msg.action !== "setup") {
+        throw new Error("expected setup to be first message but got " + JSON.stringify(msg.data))
+      }
+      var options = msg.data.options || {};
+      debug && console.log("[WORKER] running setup with options", options);
+      // initBrowserGlobals(options);
+      // initBrowserInitialOnMessageHandler(options);
+      initWorkerInterface(options);
+      initWorkerMessenger(options);
+      remoteWorker.send({workerReady: true});
+    })
+    __FUNCTIONDECLARATIONS__
+  },
+
+  ensureInitCodeFile: function(options, initCode, thenDo) {
+    var path = require("path");
+    var os = require("os");
+    var fs = require("fs");
+
+    var workerTmpDir = path.join(os.tmpDir(), 'lively-nodejs-workers/');
+    var fn = path.join(workerTmpDir, 'nodejs-worker-init.js');
+
+    if (!NodejsWorker.initCodeFileCreated) NodejsWorker.createWorkerCodeFile(options, fn, initCode, thenDo);
+    else fs.exists(fn, function(exists) {
+      if (exists) thenDo(null, fn);
+      else NodejsWorker.createWorkerCodeFile(options, fn, initCode, thenDo);
+    });
+  },
+
+  createWorkerCodeFile: function(options, fileName, initCode, thenDo) {
+    var path = require("path");
+    var fs = require("fs");
+    var exec = require("child_process").exec;
+
+    exec("mkdir -p " + path.dirname(fileName), function(code, out, err) {
+      if (code) {
+        thenDo(new Error(["[WORKER PARENT] Could not create worker temp dir:", out, err].join('\n')))
+        return;
+      }
+      fs.writeFile(fileName, initCode, function(err) {
+        NodejsWorker.debug && console.log('worker code file %s created', fileName);
+        NodejsWorker.initCodeFileCreated = true;
+        thenDo(err, fileName); });
+    });
+  },
+
+  startWorker: function(options, thenDo) {
+    var util = require("util");
+    var fork = require("child_process").fork;
+
+    var workerSetupCode = String(NodejsWorker.workerSetupFunction).replace("__FUNCTIONDECLARATIONS__", [
+      // WorkerSetup.initBrowserGlobals,
+      WorkerSetup.loadDependenciesNodejs,
+      // WorkerSetup.initBrowserInitialOnMessageHandler,
+      WorkerSetup.initWorkerInterface,
+      WorkerSetup.initWorkerMessenger
+    ].join('\n'));
+
+    var initCode = util.format("(%s)();\n", workerSetupCode);
+    NodejsWorker.ensureInitCodeFile(options, initCode, function(err, codeFileName) {
+      if (err) return thenDo(err);
+      var worker = fork(codeFileName, {});
+      // worker.stdout.pipe(process.stdout);
+      // worker.stderr.pipe(process.stdout);
+      NodejsWorker.debug && console.log('worker forked');
+      worker.on('message', function(m) {
+        if (m.action === 'pong') console.log("[WORKER pong] ", m);
+        else if (m.action === 'log') console.log("[Message from WORKER] ", m.data);
+      });
+      worker.once('message', function(m) {
+        NodejsWorker.debug && console.log('worker setup done');
+        console.log('[WORKER PARENT] got message:', m);
+        thenDo(null, worker, m);
+      });
+      worker.on('close', function() {
+        console.log("[WORKER PARENT] worker closed");
+      });
+      worker.send({action: "setup", data: options});
+      global.WORKER = worker;
+    });
+  }
+
+}
+
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+// the worker interface, usable both in browser and node.js contexts
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+var worker = exports.worker = {
 
   fork: function(options, workerFunc, thenDo) {
     if (!thenDo) { thenDo = workerFunc; workerFunc = options; options = null; }
@@ -297,28 +491,39 @@ var worker = exports.worker = {
 
     var messenger = exports.messenger.create({
       sendTimeout: 500,
-      send: function(msg, whenSend) { messenger.worker.postMessage(msg); whenSend(); },
-      listen: function(messenger, whenListening) {
-        var w = messenger.worker = worker._create(options);
-        exports.events.makeEmitter(w);
-        worker.onReadyStateChange = function(evt) {
-          var ready = !!evt.data.workerReady;
-          if (ready) worker.emit("ready");
-          else worker.emit("close");
-        };
-        w.onMessage = function(evt) {
-          console.log("recevied %s", jsext.obj.inspect(evt));
-          messenger.onMessage(evt.data); }
+
+      send: function(msg, whenSend) {
+        messenger.worker.postMessage(msg);
+        whenSend();
       },
+
+      listen: function(messenger, whenListening) {
+        var w = messenger.worker = isNodejs ? NodejsWorker.create(options) : BrowserWorker.create(options);
+        w.on("message", function(msg) {
+          console.log("recevied %s", jsext.obj.inspect(msg));
+          messenger.onMessage(msg);
+        });
+        w.on('ready', function() { console.log("WORKER READY!!!"); });
+        w.on('close', function() { console.log("WORKER CLOSED...!!!") ;});
+        w.once('ready', function() { debugger; whenListening(null); });
+      },
+
       close: function(messenger, whenClosed) {
         if (!messenger.worker.ready) return whenClosed(null);
-        return messenger.sendTo(workerId, 'close',  {}, function(err, answer) {
+        return messenger.sendTo(workerId, 'close', {}, function(err, answer) {
           err = err || answer.data.error;
           err && console.error("Error in worker messenger close: " + err.stack || err);
-          whenClosed(err ? err : null);
+          if (err) whenClosed(err);
+          else {
+            var closed = false;
+            messenger.worker.once('close', function() { closed = true; });
+            exports.fun.waitFor(1000, function() { return !!closed; }, whenClosed);
+          }
         });
       },
+
       isOnline: function() { return messenger.worker && messenger.worker.ready; }
+
     });
 
     exports.obj.extend(messenger, {
