@@ -1,33 +1,52 @@
 /*global jsext, require, Worker*/
 
+/*** Usage ***
+
+// this is just a helper function
+function resultHandler(err, result) { show(err ? String(err) : result); }
+
+// 1. Create the worker
+var worker = jsext.worker.create({libURL: baseURL});
+
+// 2. You can evaluate arbitrary JS code
+worker.eval("1+2", function(err, result) { show(err ? String(err) : result); });
+
+// 3. Arbitrary functions can be called inside the worker context.
+//    Note: functions shouldn't be closures / capture local state!) and passing
+//    in arguments!
+worker.run(
+  function(a, b, thenDo) { setTimeout(function() { thenDo(null, a+b); }, 300); },
+  19, 4, resultHandler);
+
+// 4. You can also install your own messenger services...
+worker.run(
+  function(thenDo) {
+    self.messenger.addServices({
+      foo: function(msg, messenger) { messenger.answer(msg, "bar!"); }
+    });
+    thenDo(null, "Service installed!");
+  }, resultHandler);
+
+// ... and call them via the messenger interface
+worker.sendTo("worker", "foo", {}, resultHandler);
+
+// 5. afterwards: shut it down
+worker.close(function(err) { err && show(String(err)); alertOK("worker shutdown"); })
+
+ */
+
 ;(function(exports) {
 "use strict";
 
 var worker = exports.worker = {
 
-  idleTimeOfPoolWorker: 1000*10,
-
   isAvailable: typeof Worker !== 'undefined',
 
-  pool: [],
+  _create: function(options) {
+    // this function instantiates a browser worker object. We provide a
+    // messenger-based interface to the pure Worker. Please use create to get an
+    // improved interface to a worker
 
-  createInPool: function(options, customInitFunc) {
-    options = options || {};
-    var autoShutdownDelay = options.autoShutdownDelay;
-    var w = worker.create(options, customInitFunc);
-    if (autoShutdownDelay) {
-      var shutdownCode =  "self.terminateIfNotBusyIn(" + autoShutdownDelay + ");";
-      w.postMessage({command: 'eval', source: shutdownCode});
-    }
-    worker.pool.push(w);
-    w.onReadyStateChange = function(evt) {
-      if (!evt.data.workerReady)
-        worker.pool = worker.pool.filter(function(ea) { return ea !== w; });
-    };
-    return w;
-  },
-
-  create: function(options, customInitFunc) {
     options = options || {};
 
     // figure out where the other lang libs can be loaded from
@@ -38,10 +57,6 @@ var worker = exports.worker = {
     }
 
     var workerCode = '(' + String(workerSetupCode) + ')();';
-    if (customInitFunc) {
-      var code = '(' + String(customInitFunc) + ')();';
-      workerCode += '\n' + code;
-    }
     var worker = new Worker(makeDataURI(workerCode));
     init(options, worker);
     return worker;
@@ -83,41 +98,30 @@ var worker = exports.worker = {
         }
         if (worker.onMessage) worker.onMessage(evt);
       }
+
       worker.errors = [];
       worker.onerror = function(evt) {
         console.error(evt);
         worker.errors.push(evt);
         if (worker.onError) worker.onError(evt);
       }
-      worker.run = function(/*func, args*/) {
-        var args = Array.prototype.slice.call(arguments),
-            doFunc = args.shift(),
-            code = '(' + doFunc + ').apply(self, evt.data.args);';
-        this.basicRun({func: doFunc, args: args, useWhenDone: false});
-      }
-      worker.basicRun = function(options) {
-        // options = {
-        //   func: FUNCTION,
-        //   args: ARRAY,  /*transported to worker and applied to func*/
-        //   useWhenDone: BOOL
-        /* If true, func receives a callback as first parameter that should be called
-          with two arguments: (error, result) to indicate worker func is done. */
-        var func = options.func,
-            args = options.args,
-            passInWhenDoneCallback = !!options.useWhenDone,
-            codeTemplate = passInWhenDoneCallback ?
-              'self.isBusy = true;\n'
-            + 'function whenDone(err, result) { self.isBusy = false; postMessage({type: "runResponse", error: err, result: result}); }\n'
-            + '(%s).apply(self, evt.data.args.concat([whenDone]));' :
-              ';(%s).apply(self, evt.data.args);',
-            code = codeTemplate.replace("%s", String(func));
-        worker.postMessage({command: 'eval', silent: true, source: code, args: args || []});
-      }
     }
 
-    // This code is run inside the worker and initializes it. It installs
-    // a console.log method since since this is not available by default.
+    // This code is run inside the worker and bootstraps the messenger
+    // interface. It also installs a console.log method since since this is not
+    // available by default.
     function workerSetupCode() {
+      self.onmessage = function(evt) {
+        if (evt.data.command !== "setup") {
+          throw new Error("expected setup to be first message!")
+        }
+        var options = evt.data.options || {};
+        initGlobals(options);
+        initWorkerInterface(options);
+        initWorkerMessenger(options);
+        postMessage({workerReady: true});
+      }
+
       // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
       // yoshiki and robert, 05/08/13: Inserted code that sets up the lively context
       // and globals of Lively:
@@ -144,49 +148,44 @@ var worker = exports.worker = {
         importScripts.apply(this, options.scriptsToLoad || []);
       }
 
-      function initWorkerMessenger(options) {
-        if (!options.useMessenger) return;
+      function initWorkerInterface(options) {
 
-        if (!jsext.messenger)
-          throw new Error("worker.createMessenger requires messenger.js to be loaded!")
-        if (!jsext.events)
-          throw new Error("worker.createMessenger requires events.js to be loaded!")
-
-        return self.messenger = jsext.messenger.create({
-          services: {
-            remoteEval: function(msg, messenger) {
-              try { var result = eval(msg.data.expr); } catch (e) {
-                result = e.stack || e; }
-              messenger.answer(msg, {result: String(result)});
-            }
-          },
-          send: function(msg, whenSend) { postMessage(msg); whenSend(); },
-          listen: function(messenger, whenListening) { whenListening(); },
-          close: function(messenger, whenClosed) {
+        self.onmessage = function(evt) {
+          if (self.messenger) self.messenger.onMessage(evt.data);
+          else if (evt.data.command == "close") {
             self.close();
             postMessage({type: "closed", workerReady: false});
-          },
-          isOnline: function() { return true; }
-        });
-      }
-
-      self.onmessage = function(evt) {
-        if (self.messenger) self.messenger.onMessage(evt.data);
-        else if (evt.data.command == "eval") {
-          var result;
-          // console.log(evt.data.source);
-          try { result = eval(evt.data.source); } catch (e) { result = e.stack || e; }
-          if (!evt.data.silent) postMessage({type: "evalResponse", value: String(result)});
-          return;
-        } else if (evt.data.command == "close") {
-          self.close();
-          postMessage({type: "closed", workerReady: false});
-          return;
+            return;
+          }
         }
-        if (evt.data.command !== "setup") return;
-        var options = evt.data.options || {};
-        initGlobals(options);
-        initWorkerMessenger(options);
+
+        self.callStringifiedFunction = function(stringifiedFunc, args, thenDo) {
+          // runs stringified function and passing args. stringifiedFunc might
+          // be asynchronous if it takes an addaitional argument. In this case a
+          // callback to call when the work is done is passed, otherwise thenDo
+          // will be called immediatelly after creating and calling the function
+
+          try { var func = eval('(' + stringifiedFunc + ')'); } catch (e) {
+            thenDo(new Error("Cannot create function from string: " + e.stack || e));
+            return;
+          }
+
+          // when it takes one more arg then we assume that this is the callback
+          // to be called by the run func when it considers to be done
+          var usesCallback = func.length === args.length + 1;
+          var whenDone = jsext.fun.once(function(err, result) {
+            self.isBusy = false; thenDo(err, result); })
+          self.isBusy = true;
+
+          if (usesCallback) args.push(whenDone);
+
+          try { var result = func.apply(self, args.concat([whenDone])); } catch (e) {
+            whenDone(e, null); return;
+          }
+
+          if (!usesCallback) whenDone(null, result);
+        }
+
         self.httpRequest = function (options) {
           if (!options.url) {
             console.log("Error, httpRequest needs url");
@@ -212,8 +211,48 @@ var worker = exports.worker = {
             self.close();
           }, ms);
         }
+      }
 
-        postMessage({workerReady: true});
+      // setting up the worker messenger interface, this is how the worker
+      // should be communicated with
+      function initWorkerMessenger(options) {
+        if (!options.useMessenger) return;
+        if (!jsext.messenger)
+          throw new Error("worker.create requires messenger.js to be loaded!")
+        if (!jsext.events)
+          throw new Error("worker.create requires events.js to be loaded!")
+
+        return self.messenger = jsext.messenger.create({
+          services: {
+
+            remoteEval: function(msg, messenger) {
+              try { var result = eval(msg.data.expr); } catch (e) {
+                result = e.stack || e; }
+              messenger.answer(msg, {result: String(result)});
+            },
+
+            run: function(msg, messenger) {
+              var funcString = msg.data.func;
+              var args = msg.data.args;
+              if (!funcString) { messenger.answer(msg, {error: 'no funcString'}); return; }
+              self.callStringifiedFunction(funcString, args, function(err, result) {
+                messenger.answer(msg, {error: err ? String(err) : null, result: result});
+              });
+            },
+            
+            close: function(msg, messenger) {
+              messenger.answer(msg, {status: "OK"});
+              postMessage({type: "closed", workerReady: false});
+              self.close(); 
+            }
+          },
+
+          isOnline: function() { return true; },
+          send: function(msg, whenSend) { postMessage(msg); whenSend(); },
+          listen: function(messenger, whenListening) { whenListening(); },
+          close: function(messenger, whenClosed) { postMessage({type: "closed", workerReady: false}); self.close(); }
+
+        });
       }
     }
 
@@ -234,48 +273,33 @@ var worker = exports.worker = {
 
   },
 
-  fork: function(options, workerFunc) {
-    if (!workerFunc) { workerFunc = options; options = null; }
+  fork: function(options, workerFunc, thenDo) {
+    if (!thenDo) { thenDo = workerFunc; workerFunc = options; options = null; }
     options = options || {};
-    options.autoShutdownDelay = options.autoShutdownDelay || worker.idleTimeOfPoolWorker;
-    var w = worker.createInPool(options);
-    w.onMessage = function(evt) {
-      switch (evt.data.type) {
-        case 'log': case 'error': case 'warn':
-          console[evt.data.type]("[WORKER] %s", evt.data.message);
-          break;
-        case 'runResponse':
-          options.whenDone && options.whenDone(evt.data.error, evt.data.result);
-          break;
-        case 'evalResponse':
-          console.log("[WORKER evalResponse] %s", evt.data.value);
-          break;
-        default:
-          console.log("[WORKER unknown message] %s", evt.data.type || evt.data);
-      }
-    }
-    w.basicRun({
-      func: workerFunc,
-      args: options.args || [],
-      useWhenDone: true
-    });
+    var args = options.args || [];
+    var w = worker.create(options);
+    w.run.apply(w, [workerFunc].concat(args).concat(thenDo));
     return w;
   },
 
-  createMessenger: function(options) {
+  create: function(options) {
     options = options || {};
     options.useMessenger = true;
 
     if (!exports.messenger)
-      throw new Error("worker.createMessenger requires messenger.js to be loaded!")
+      throw new Error("worker.create requires messenger.js to be loaded!")
     if (!exports.events)
-      throw new Error("worker.createMessenger requires events.js to be loaded!")
+      throw new Error("worker.create requires events.js to be loaded!")
+    if (!exports.obj)
+      throw new Error("worker.create requires object.js to be loaded!")
+
+    var workerId = options.workerId || exports.string.newUUID();
 
     var messenger = exports.messenger.create({
       sendTimeout: 500,
       send: function(msg, whenSend) { messenger.worker.postMessage(msg); whenSend(); },
       listen: function(messenger, whenListening) {
-        var w = messenger.worker = worker.create(options);
+        var w = messenger.worker = worker._create(options);
         exports.events.makeEmitter(w);
         worker.onReadyStateChange = function(evt) {
           var ready = !!evt.data.workerReady;
@@ -287,34 +311,42 @@ var worker = exports.worker = {
           messenger.onMessage(evt.data); }
       },
       close: function(messenger, whenClosed) {
-         messenger.worker.once("close", whenClosed);
-         messenger.worker.postMessage({command: "close"});
+        if (!messenger.worker.ready) return whenClosed(null);
+        return messenger.sendTo(workerId, 'close',  {}, function(err, answer) {
+          err = err || answer.data.error;
+          err && console.error("Error in worker messenger close: " + err.stack || err);
+          whenClosed(err ? err : null);
+        });
       },
       isOnline: function() { return messenger.worker && messenger.worker.ready; }
     });
+
+    exports.obj.extend(messenger, {
+
+      eval: function(code, thenDo) {
+        messenger.sendTo(workerId, "remoteEval", {expr: code}, function(err, answer) {
+          thenDo(err, answer ? answer.data.result : null);
+        });
+      },
+
+      run: function(/*runFunc, arg1, ... argN, thenDo*/) {
+        var args = Array.prototype.slice.call(arguments),
+            workerFunc = args.shift(),
+            thenDo = args.pop();
+        if (typeof workerFunc !== "function") throw new Error("run: no function that should run in worker passed");
+        if (typeof thenDo !== "function") throw new Error("run: no callback passed");
+
+        return messenger.sendTo(workerId, 'run',  {func: String(workerFunc), args: args}, function(err, answer) {
+          thenDo(err || answer.data.error, answer ? answer.data.result : null);
+        });
+      }
+
+    });
+
+    messenger.listen();
+
     return messenger;
   }
 }
 
 })(typeof jsext !== 'undefined' ? jsext : require('./base').jsext);
-
-// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-// //////////////////////////////////////////////////////////
-// // Simplyfying the usage of the browser's Worker object //
-// //////////////////////////////////////////////////////////
-
-// /*** Usage ***
-// var worker = lively.Worker.create(function() {
-//   // code inside this function is run in the worker context
-//   // when the worker is created
-//   setInterval(function() {
-//     self.postMessage('Worker is still running...');
-//   }, 1000);
-//   self.postMessage("Init done!");
-// });
-// worker.onMessage = function(evt) { show(evt.data); }
-// worker.postMessage({command: "eval", source: "3+4"}); // direct eval
-// worker.run(function(a, b) { postMessage(a+b); }, 1, 2); // run with arguments
-// (function() { worker.postMessage({command: "close"}); }).delay(5);
-// */
