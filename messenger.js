@@ -193,6 +193,11 @@ var message = exports.message = {
         return msg;
       },
 
+      sendTo: function(target, action, data, onReceiveFunc) {
+        var msg = {target: target, action: action, data: data};
+        return messenger.send(msg, onReceiveFunc);
+      },
+
       onMessage: function(msg) {
         var cb = msg.inResponseTo && messenger._messageResponseCallbacks[msg.inResponseTo];
         if (cb && !msg.expectMoreResponses) delete messenger._messageResponseCallbacks[msg.inResponseTo];
