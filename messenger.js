@@ -15,22 +15,25 @@ if (!string) throw new Error("messenger.js needs string.js!")
 var events = exports.events;
 if (!events) throw new Error("messenger.js needs events.js!")
 
+var obj = exports.obj;
+if (!obj) throw new Error("messenger.js needs object.js!")
+
 var OFFLINE = 'offline';
 var ONLINE = 'online';
 var CONNECTING = 'connecting';
 
-var message = exports.message = {
+var messenger = exports.messenger = {
   
   OFFLINE: OFFLINE,
   ONLINE: ONLINE,
   CONNECTING: CONNECTING,
 
-  makeMessenger: function(spec) {
+  create: function(spec) {
 
     var expectedMethods = [
       {name: "send", args: ['msg', 'callback']},
       {name: "listen", args: ['messenger', 'callback']},
-      {name: "close", args: ['callback']},
+      {name: "close", args: ['messenger', 'callback']},
       {name: "isOnline", args: []}
     ];
     expectedMethods.forEach(function(exp) {
@@ -41,12 +44,15 @@ var message = exports.message = {
     });
 
     var heartbeatInterval = spec.sendHeartbeat && (spec.heartbeatInterval || 1000);
+    var ignoreUnknownMessages = spec.hasOwnProperty("ignoreUnknownMessages") ? spec.ignoreUnknownMessages : false;
 
     var messenger = {
 
       _outgoing: [],
       _inflight: [],
       _id: spec.id || string.newUUID(),
+      _ignoreUnknownMessages: ignoreUnknownMessages,
+      _services: {},
       _messageCounter: 0,
       _messageResponseCallbacks: {},
       _whenOnlineCallbacks: [],
@@ -84,6 +90,9 @@ var message = exports.message = {
       },
 
       _addMissingData: function(msg) {
+        if (!msg.target) throw new Error("Message needs target!");
+        if (!msg.action) throw new Error("Message needs action!");
+        if (!msg.data) msg.data = null;
         if (!msg.messageId) msg.messageId = string.newUUID();
         msg.sender = messenger.id();
         msg.messageIndex = messenger._messageCounter++;
@@ -98,10 +107,6 @@ var message = exports.message = {
 
       _deliverMessageQueue: function() {
         if (!spec.allowConcurrentSends && messenger._inflight.length) return;
-        if (!messenger.isOnline()) {
-          messenger.whenOnline(function() { messenger._deliverMessageQueue(); });
-          return;
-        }
 
         var queued = messenger._outgoing.shift();
         if (!queued) return;
@@ -199,11 +204,25 @@ var message = exports.message = {
       },
 
       onMessage: function(msg) {
-        var cb = msg.inResponseTo && messenger._messageResponseCallbacks[msg.inResponseTo];
-        if (cb && !msg.expectMoreResponses) delete messenger._messageResponseCallbacks[msg.inResponseTo];
-        if (cb) cb(null, msg);
-        console.log("%s got message", messenger.id());
         messenger.emit("message", msg);
+        if (msg.inResponseTo) {
+          var cb = messenger._messageResponseCallbacks[msg.inResponseTo];
+          if (cb && !msg.expectMoreResponses) delete messenger._messageResponseCallbacks[msg.inResponseTo];
+          if (cb) cb(null, msg);
+        } else {
+          var action = messenger._services[msg.action];
+          if (action) {
+            try {
+              action.call(null, msg, messenger);
+            } catch (e) {
+              console.error("Error invoking service: " + e);
+              messenger.answer(msg, {error: String(e)});
+            }
+          } else if (!messenger._ignoreUnknownMessages) {
+            var err = new Error("messageNotUnderstood: " + msg.action);
+            messenger.answer(msg, {error: String(err)});
+          }
+        }
       },
 
       answer: function(msg, data, expectMore, whenSend) {
@@ -215,14 +234,13 @@ var message = exports.message = {
           inResponseTo: msg.messageId,
           data: data};
         if (expectMore) answer.expectMoreResponses = true;
-        debugger;
         return messenger.send(answer, whenSend);
       },
 
       close: function(thenDo) {
         clearInterval(messenger._statusWatcherProc);
         messenger._statusWatcherProc = null;
-        spec.close(function(err) {
+        spec.close(messenger, function(err) {
           messenger._status = OFFLINE;
           thenDo && thenDo(err);
         });
@@ -237,10 +255,15 @@ var message = exports.message = {
 
       outgoingMessages: function() {
         return arr.pluck(messenger._inflight.concat(messenger._outgoing), 0);
-      }
+      },
 
+      addServices: function(serviceSpec) {
+        obj.extend(messenger._services, serviceSpec);
+        return messenger;
+      }
     }
 
+    if (spec.services) messenger.addServices(spec.services);
     events.makeEmitter(messenger);
 
     return messenger;

@@ -6,16 +6,20 @@ var expect = typeof module !== 'undefined' && module.require ?
 var jsext = typeof module !== 'undefined' && module.require ?
   module.require('../index') : this.jsext;
 
-var message = jsext.message;
+var m = jsext.messenger;
 var fun = jsext.fun;
 var arr = jsext.arr;
 var events = jsext.events;
 
+// -=-=-=-=-=-=-
+// some helper
+// -=-=-=-=-=-=-
 function createMessenger(messengers, options) {
 
   var keys = ['id', 'send', 'listen', 'isOnline', 'close',
               'allowConcurrentSends', 'sendTimeout',
-              'sendHeartbeat', 'heartbeatInterval'];
+              'sendHeartbeat', 'heartbeatInterval',
+              'services', 'ignoreUnknownMessages'];
 
   var spec = keys.reduce(function(spec, k) {
     if (options[k]) spec[k] = options[k];
@@ -43,7 +47,7 @@ function createMessenger(messengers, options) {
   }
 
   if (!spec.close) {
-    spec.close = function(thenDo) {
+    spec.close = function(messenger, thenDo) {
       function doClose() {
         arr.remove(messengers, messenger);
         listening = false; thenDo(null); }
@@ -54,10 +58,28 @@ function createMessenger(messengers, options) {
 
   if (!spec.isOnline) spec.isOnline = function() { return !!listening; };
 
-  var messenger = message.makeMessenger(spec);
-
+  var messenger = m.create(spec);
   return messenger;
 }
+
+var messageDispatcher = events.makeEmitter({
+  dispatch: function(messengers, msg, thenDo) {
+    var messenger = findMessengerForMsg(msg);
+    if (!messenger) thenDo(new Error("Target " + msg.target + " not found"));
+    else { messenger.onMessage(msg); thenDo(null); }
+
+    function findMessengerForMsg(msg) {
+      if (!msg || !msg.target) throw new Error("findMessengerForMsg: msg is strange: " + jsext.obj.inspect(msg));
+      return arr.detect(messengers, function(ea) { return ea.id() === msg.target; });
+    }
+  }
+});
+
+function genericSend(messengers, msg, thenDo) { messageDispatcher.dispatch(messengers, msg, thenDo); }
+
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+// here come the tests
+// -=-=-=-=-=-=-=-=-=-=-
 
 describe('messengers', function() {
 
@@ -256,7 +278,7 @@ describe('messengers', function() {
         sendData: sendData,
         isOnline: function() { return isOnline; },
         listen: function(messenger, thenDo) { messengers.push(messenger); isOnline = true; thenDo(null); },
-        close: function(thenDo) { arr.remove(messengers, messenger); isOnline = false; thenDo(null); },
+        close: function(messenger, thenDo) { arr.remove(messengers, messenger); isOnline = false; thenDo(null); },
         autoReconnect: true
       });
 
@@ -279,33 +301,22 @@ describe('messengers', function() {
 
   describe('send and receive', function() {
 
-    var messageDispatcher = events.makeEmitter({
-      dispatch: function(messengers, msg, thenDo) {
-        var messenger = findMessengerForMsg(msg);
-        if (!messenger) thenDo(new Error("Target " + msg.target + " not found"));
-        else { messenger.onMessage(msg); thenDo(null); }
-
-        function findMessengerForMsg(msg) {
-          if (!msg || !msg.target) throw new Error("findMessengerForMsg: msg is strange: " + jsext.obj.inspect(msg));
-          return arr.detect(messengers, function(ea) { return ea.id() === msg.target; });
-        }
-      }
-    });
-
-    function genericSend(msg, thenDo) { messageDispatcher.dispatch(messengers, msg, thenDo); }
-
     var messengerB, messengerC;
     var receivedB, receivedC;
 
     beforeEach(function() {
       messengerB = createMessenger(messengers, {
-        id: "messengerB", sendDelay: 20, listenDelay: 10, send: genericSend
+        id: "messengerB", sendDelay: 20, listenDelay: 10,
+        send: genericSend.bind(null, messengers),
+        ignoreUnknownMessages: true
       });
       receivedB = [];
       messengerB.on('message', function(msg) { receivedB.push(msg); });
 
       messengerC = createMessenger(messengers, {
-        id: "messengerC", sendDelay: 20, listenDelay: 10, send: genericSend
+        id: "messengerC", sendDelay: 20, listenDelay: 10,
+        send: genericSend.bind(null, messengers),
+        ignoreUnknownMessages: true
       });
       receivedC = [];
       messengerC.on('message', function(msg) { receivedC.push(msg); });
@@ -387,6 +398,78 @@ describe('messengers', function() {
           next();
         }
       )(function(err) { expect(err).to.be(null); done(); });
+    });
+
+  });
+
+  describe('services', function() {
+
+    var messengerB, messengerC;
+    var receivedB, receivedC;
+
+    beforeEach(function() {
+      messengerB = createMessenger(messengers, {
+        id: "messengerB", sendDelay: 20, send: genericSend.bind(null, messengers)
+      });
+      receivedB = [];
+      messengerB.on('message', function(msg) { receivedB.push(msg); });
+
+      messengerC = createMessenger(messengers, {
+        id: "messengerC", sendDelay: 20, send: genericSend.bind(null, messengers)
+      });
+      receivedC = [];
+      messengerC.on('message', function(msg) { receivedC.push(msg); });
+    });
+
+    it('can add services', function(done) {
+      fun.composeAsync(
+        function(next) {
+          messengerC.addServices({
+            test: function(msg, messenger) {
+              messenger.answer(msg, msg.data + "bar");
+            }
+          });
+          next();
+        },
+        function(next) { messengerB.listen(); messengerC.listen(); next(); },
+        function(next) {
+          messengerB.send({target: "messengerC", action: "test", data: 'foo'}, function(err, answer) {
+            expect(answer.data).to.be("foobar");
+            next();
+          });
+        }
+      )(function(err) { expect(err).to.be(null); done(); });
+
+    });
+
+    it('services can error', function(done) {
+      fun.composeAsync(
+        function(next) {
+          messengerC.addServices({
+            test: function(msg, messenger) { throw new Error("foo bar"); }
+          });
+          next();
+        },
+        function(next) { messengerB.listen(); messengerC.listen(); next(); },
+        function(next) {
+          messengerB.send({target: "messengerC", action: "test", data: 'foo'}, function(err, answer) {
+            expect(answer.data.error).to.be("Error: foo bar"); next();
+          });
+        }
+      )(function(err) { expect(err).to.be(null); done(); });
+
+    });
+
+    it('non existing service results in messageNotUnderstood error', function(done) {
+      fun.composeAsync(
+        function(next) { messengerB.listen(); messengerC.listen(); next(); },
+        function(next) {
+          messengerB.send({target: "messengerC", action: "test", data: 'foo'}, function(err, answer) {
+            expect(answer.data.error).to.be("Error: messageNotUnderstood: test"); next();
+          });
+        }
+      )(function(err) { expect(err).to.be(null); done(); });
+
     });
 
   });
