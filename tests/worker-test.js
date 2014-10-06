@@ -6,8 +6,9 @@ var jsext = isNodejs ? module.require('../index') : this.jsext;
 
 var fun = jsext.fun;
 var worker = jsext.worker;
+var messenger = jsext.messenger;
 
-false && describe('worker', function() {
+describe('worker', function() {
 
   var libURL = document.location.toString().split('/').slice(0, -1).join('/') + "/../";
 
@@ -113,7 +114,7 @@ false && describe('worker', function() {
 
     });
 
-    it("forks works for long running function as well", function(done) {
+    it("fork works for long running function as well", function(done) {
       var whenDoneResult,
           w = worker.fork(
             {libURL: libURL, whenDone: function(err, result) { whenDoneResult = result; }},
@@ -139,6 +140,27 @@ false && describe('worker', function() {
         expect(err).to.be(null);
         done();
       });
+    });
+
+  });
+
+  describe("worker messenger", function() {
+
+    it("sends and receives messages via messenger interface", function(done) {
+      var workerMessenger = worker.createMessenger({libURL: libURL});
+      fun.composeAsync(
+        function(next) {
+          fun.waitForAll([workerMessenger.whenOnline], next);
+          workerMessenger.listen();
+        },
+        function(_, next) {
+          workerMessenger.sendTo("test-worker", "remoteEval", {expr: "3 + 4"}, next);
+        },
+        function(answer, next) {
+          expect(answer.data).to.eql({result: 7});
+          next();
+        }
+      )(function(err) { expect(err).to.be(null); done(); })
     });
 
   });

@@ -1,4 +1,4 @@
-/*global*/
+/*global jsext, require, Worker*/
 
 ;(function(exports) {
 "use strict";
@@ -53,14 +53,17 @@ var worker = exports.worker = {
     // for initializing it.
     function init(options, worker) {
       if (!options.scriptsToLoad) {
-        options.scriptsToLoad = ["base.js",
-          "object.js",
-          "string.js",
-          "function.js",
-          "number.js",
-          "collection.js",
-          "date.js",
-          "worker.js"].map(function(ea) {
+        options.scriptsToLoad = [
+          'base.js',
+          'events.js',
+          'collection.js',
+          'function.js',
+          'string.js',
+          'number.js',
+          'date.js',
+          'object.js',
+          'messenger.js',
+          'worker.js'].map(function(ea) {
             return options.libURL + ea; });
       }
 
@@ -141,8 +144,35 @@ var worker = exports.worker = {
         importScripts.apply(this, options.scriptsToLoad || []);
       }
 
+      function initWorkerMessenger(options) {
+        if (!options.useMessenger) return;
+
+        if (!jsext.messenger)
+          throw new Error("worker.createMessenger requires messenger.js to be loaded!")
+        if (!jsext.events)
+          throw new Error("worker.createMessenger requires events.js to be loaded!")
+
+        return self.messenger = jsext.messenger.create({
+          services: {
+            remoteEval: function(msg, messenger) {
+              try { var result = eval(msg.data.expr); } catch (e) {
+                result = e.stack || e; }
+              messenger.answer(msg, {result: String(result)});
+            }
+          },
+          send: function(msg, whenSend) { postMessage(msg); whenSend(); },
+          listen: function(messenger, whenListening) { whenListening(); },
+          close: function(messenger, whenClosed) {
+            self.close();
+            postMessage({type: "closed", workerReady: false});
+          },
+          isOnline: function() { return true; }
+        });
+      }
+
       self.onmessage = function(evt) {
-        if (evt.data.command == "eval") {
+        if (self.messenger) self.messenger.onMessage(evt.data);
+        else if (evt.data.command == "eval") {
           var result;
           // console.log(evt.data.source);
           try { result = eval(evt.data.source); } catch (e) { result = e.stack || e; }
@@ -156,6 +186,7 @@ var worker = exports.worker = {
         if (evt.data.command !== "setup") return;
         var options = evt.data.options || {};
         initGlobals(options);
+        initWorkerMessenger(options);
         self.httpRequest = function (options) {
           if (!options.url) {
             console.log("Error, httpRequest needs url");
@@ -231,8 +262,39 @@ var worker = exports.worker = {
     return w;
   },
 
-}
+  createMessenger: function(options) {
+    options = options || {};
+    options.useMessenger = true;
 
+    if (!exports.messenger)
+      throw new Error("worker.createMessenger requires messenger.js to be loaded!")
+    if (!exports.events)
+      throw new Error("worker.createMessenger requires events.js to be loaded!")
+
+    var messenger = exports.messenger.create({
+      sendTimeout: 500,
+      send: function(msg, whenSend) { messenger.worker.postMessage(msg); whenSend(); },
+      listen: function(messenger, whenListening) {
+        var w = messenger.worker = worker.create(options);
+        exports.events.makeEmitter(w);
+        worker.onReadyStateChange = function(evt) {
+          var ready = !!evt.data.workerReady;
+          if (ready) worker.emit("ready");
+          else worker.emit("close");
+        };
+        w.onMessage = function(evt) {
+          console.log("recevied %s", jsext.obj.inspect(evt));
+          messenger.onMessage(evt.data); }
+      },
+      close: function(messenger, whenClosed) {
+         messenger.worker.once("close", whenClosed);
+         messenger.worker.postMessage({command: "close"});
+      },
+      isOnline: function() { return messenger.worker && messenger.worker.ready; }
+    });
+    return messenger;
+  }
+}
 
 })(typeof jsext !== 'undefined' ? jsext : require('./base').jsext);
 
