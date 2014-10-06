@@ -107,29 +107,40 @@ var message = exports.message = {
         if (!queued) return;
 
         messenger._inflight.push(queued);
-        var msg = queued[0], callback = queued[1];
-        if (callback)
-          messenger._messageResponseCallbacks[msg.messageId] = callback;
-
-        spec.send(msg, function(err) {
-          arr.remove(messenger._inflight, queued);
-          if (err) onSendError(err);
-          messenger._deliverMessageQueue();
-        });
+        if (messenger.isOnline()) deliver(queued);
+        else messenger.whenOnline(function() { deliver(queued); });
+        startTimeoutProc(queued);
 
         if (spec.allowConcurrentSends && messenger._outgoing.length)
           messenger._deliverMessageQueue();
-        
-        if (typeof spec.sendTimeout === 'number') {
-          setTimeout(function() {
-            if (!messenger._inflight.indexOf(queued) === -1) return;
+
+        // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+        function deliver(queued) {
+          if (messenger._inflight.indexOf(queued) === -1) return; // timed out
+          var msg = queued[0], callback = queued[1];
+          if (callback)
+            messenger._messageResponseCallbacks[msg.messageId] = callback;
+
+          spec.send(msg, function(err) {
             arr.remove(messenger._inflight, queued);
-            onSendError(new Error('Timeout sending message'));
+            if (err) onSendError(err, queued);
+            messenger._deliverMessageQueue();
+          });
+        }
+
+        function startTimeoutProc(queued) {
+          if (typeof spec.sendTimeout !== 'number') return;
+          setTimeout(function() {
+            if (messenger._inflight.indexOf(queued) === -1) return; // delivered
+            arr.remove(messenger._inflight, queued);
+            onSendError(new Error('Timeout sending message'), queued);
             messenger._deliverMessageQueue();
           }, spec.sendTimeout);
         }
-        
-        function onSendError(err) {
+
+        function onSendError(err, queued) {
+          var msg = queued[0], callback = queued[1];
           delete messenger._messageResponseCallbacks[msg.messageId];
           console.error(err);
           callback && callback(err);

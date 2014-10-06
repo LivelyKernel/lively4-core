@@ -187,6 +187,36 @@ describe('messengers', function() {
 
     });
 
+    it('sends can time out when not listening', function(done) {
+      var msg = {target: "foo", action: "test", data: "some data"};
+      var sendData = [];
+      var sendErr;
+      var messengerB = createMessenger(messengers, {
+        id: "messengerB",
+        sendTimeout: 20, sendDelay: 0, listenDelay: 50,
+        sendData: sendData
+      });
+
+      fun.composeAsync(
+        function(next) { messengerB.listen(); next(); },
+        function(next) {
+          messengerB.send(msg, function(err) { sendErr = err; });
+          next();
+        },
+        function(next) { setTimeout(next, 25); },
+        function(next) {
+          expect(sendData).to.be.empty();
+          expect(messengerB.outgoingMessages()).to.be.empty();
+          next();
+        }
+      )(function(err) {
+        expect(err).to.be(null);
+        expect(String(sendErr)).to.match(/Timeout sending message/)
+        done();
+      });
+
+    });
+
     it('can send heartbeat messages', function(done) {
       var sendData = [], heartbeats = [];
       var messengerB = createMessenger(messengers, {
