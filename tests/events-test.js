@@ -62,6 +62,15 @@ describe('events', function() {
     expect(emittedData2).to.be("Hello");
   });
 
+  it('multiple makeEmitter calls have no unwanted effect', function() {
+    var obj = events.makeEmitter({});
+    var emittedData = "";
+    obj.on("test", function(evt) { emittedData += evt; });
+    events.makeEmitter(obj);
+    obj.emit("test", "Hello");
+    expect(emittedData).to.be("Hello");
+  });
+
   // it('invokes identical handler only once even if added multiple times', function() {
   //   var obj = events.makeEmitter({});
   //   var emittedData = "";
