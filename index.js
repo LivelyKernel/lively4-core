@@ -24,6 +24,6 @@ module.exports = {
   obj: jsext.obj,
   path: jsext.path,
   properties: jsext.properties,
-  message: jsext.message,
+  messenger: jsext.messenger,
   worker: jsext.worker
 }
