@@ -49,13 +49,14 @@ var WorkerSetup = {
   },
 
   loadDependenciesNodejs: function loadDependenciesNodejs(options) {
-    options.scriptsToLoad.forEach(function(ea) { require(ea); });
+    global.jsext = require(require("path").join(options.libLocation, "index"));
   },
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // yoshiki and robert, 05/08/13: Inserted code that sets up the lively context
   // and globals of Lively and other required objects:
   initBrowserGlobals: function initBrowserGlobals(options) {
+    remoteWorker.send = function(msg) { postMessage(msg); };
     Global = this;
     Global.window = Global;
     Global.console = Global.console || (function() {
@@ -65,7 +66,7 @@ var WorkerSetup = {
           var string = arguments[0];
           for (var i = 1; i < arguments.length; i++)
             string = string.replace('%s', arguments[i]);
-          postMessage({
+          remoteWorker.send({
             type: name,
             message: ['[', name.toUpperCase(), '] ', string].join('')
           });
@@ -75,12 +76,16 @@ var WorkerSetup = {
     })();
   },
 
-  initBrowserInitialOnMessageHandler: function initBrowserInitialOnMessageHandler(options) {
-    remoteWorker.onmessage = function(evt) {
-      if (remoteWorker.messenger) remoteWorker.messenger.onMessage(evt.data);
-      else if (evt.data.action == "close") {
+  initOnMessageHandler: function initOnMessageHandler(options) {
+    if (remoteWorker.on) remoteWorker.on('message', onMessage);
+    else remoteWorker.onmessage = onMessage;
+    
+    function onMessage(msg) {
+      msg = msg.data.data ? msg.data : msg;
+      if (remoteWorker.messenger) remoteWorker.messenger.onMessage(msg);
+      else if (msg.action == "close") {
+        remoteWorker.send({type: "closed", workerReady: false});
         remoteWorker.close();
-        postMessage({type: "closed", workerReady: false});
         return;
       }
     }
@@ -135,7 +140,7 @@ var WorkerSetup = {
     remoteWorker.terminateIfNotBusyIn = function(ms) {
       setTimeout(function() {
         if (remoteWorker.isBusy) { remoteWorker.terminateIfNotBusyIn(ms); return; }
-        remoteWorker.postMessage({type: "closed", workerReady: false});
+        remoteWorker.send({type: "closed", workerReady: false});
         remoteWorker.close();
       }, ms);
     }
@@ -170,15 +175,15 @@ var WorkerSetup = {
         
         close: function(msg, messenger) {
           messenger.answer(msg, {status: "OK"});
-          postMessage({type: "closed", workerReady: false});
+          remoteWorker.send({type: "closed", workerReady: false});
           remoteWorker.close(); 
         }
       },
 
       isOnline: function() { return true; },
-      send: function(msg, whenSend) { postMessage(msg); whenSend(); },
+      send: function(msg, whenSend) { remoteWorker.send(msg); whenSend(); },
       listen: function(messenger, whenListening) { whenListening(); },
-      close: function(messenger, whenClosed) { postMessage({type: "closed", workerReady: false}); remoteWorker.close(); }
+      close: function(messenger, whenClosed) { remoteWorker.send({type: "closed", workerReady: false}); remoteWorker.close(); }
 
     });
   }
@@ -204,7 +209,7 @@ var BrowserWorker = {
     var workerSetupCode = String(workerSetupFunction).replace("__FUNCTIONDECLARATIONS__", [
       WorkerSetup.initBrowserGlobals,
       WorkerSetup.loadDependenciesBrowser,
-      WorkerSetup.initBrowserInitialOnMessageHandler,
+      WorkerSetup.initOnMessageHandler,
       WorkerSetup.initWorkerInterface,
       WorkerSetup.initWorkerMessenger
     ].join('\n'));
@@ -242,7 +247,7 @@ var BrowserWorker = {
       }, {});
 
       worker.onmessage = function(evt) {
-        console.log("BrowserWorker got message\n", evt.data);
+        // console.log("BrowserWorker got message\n", evt.data);
         if (evt.data.workerReady !== undefined) {
           worker.ready = !!evt.data.workerReady;
           if (worker.ready) worker.emit("ready");
@@ -272,7 +277,7 @@ var BrowserWorker = {
         var options = evt.data.options || {};
         initBrowserGlobals(options);
         loadDependenciesBrowser(options);
-        initBrowserInitialOnMessageHandler(options);
+        initOnMessageHandler(options);
         initWorkerInterface(options);
         initWorkerMessenger(options);
         postMessage({workerReady: true});
@@ -301,7 +306,7 @@ var BrowserWorker = {
 
 var NodejsWorker = {
 
-  debug: true,
+  debug: false,
   initCodeFileCreated: false,
 
   create: function(options) {
@@ -363,7 +368,7 @@ var NodejsWorker = {
   workerSetupFunction: function workerSetupFunction() {
     // this code is run in the context of the worker process
     var remoteWorker = process;
-    var debug = true;
+    var debug = false;
     var close = false;
   
     debug && console.log("[WORKER] Starting init");
@@ -379,10 +384,11 @@ var NodejsWorker = {
       if (msg.action !== "setup") {
         throw new Error("expected setup to be first message but got " + JSON.stringify(msg.data))
       }
+      remoteWorker.removeAllListeners("message");
       var options = msg.data.options || {};
       debug && console.log("[WORKER] running setup with options", options);
-      // initBrowserGlobals(options);
-      // initBrowserInitialOnMessageHandler(options);
+      loadDependenciesNodejs(options);
+      initOnMessageHandler(options);
       initWorkerInterface(options);
       initWorkerMessenger(options);
       remoteWorker.send({workerReady: true});
@@ -429,7 +435,7 @@ var NodejsWorker = {
     var workerSetupCode = String(NodejsWorker.workerSetupFunction).replace("__FUNCTIONDECLARATIONS__", [
       // WorkerSetup.initBrowserGlobals,
       WorkerSetup.loadDependenciesNodejs,
-      // WorkerSetup.initBrowserInitialOnMessageHandler,
+      WorkerSetup.initOnMessageHandler,
       WorkerSetup.initWorkerInterface,
       WorkerSetup.initWorkerMessenger
     ].join('\n'));
@@ -447,13 +453,12 @@ var NodejsWorker = {
       });
       worker.once('message', function(m) {
         NodejsWorker.debug && console.log('worker setup done');
-        console.log('[WORKER PARENT] got message:', m);
         thenDo(null, worker, m);
       });
       worker.on('close', function() {
-        console.log("[WORKER PARENT] worker closed");
+        NodejsWorker.debug && console.log("[WORKER PARENT] worker closed");
       });
-      worker.send({action: "setup", data: options});
+      worker.send({action: "setup", data: {options: options}});
       global.WORKER = worker;
     });
   }
@@ -499,13 +504,10 @@ var worker = exports.worker = {
 
       listen: function(messenger, whenListening) {
         var w = messenger.worker = isNodejs ? NodejsWorker.create(options) : BrowserWorker.create(options);
-        w.on("message", function(msg) {
-          console.log("recevied %s", jsext.obj.inspect(msg));
-          messenger.onMessage(msg);
-        });
-        w.on('ready', function() { console.log("WORKER READY!!!"); });
-        w.on('close', function() { console.log("WORKER CLOSED...!!!") ;});
-        w.once('ready', function() { debugger; whenListening(null); });
+        w.on("message", function(msg) { messenger.onMessage(msg); });
+        w.on('ready', function() { NodejsWorker.debug && console.log("WORKER READY!!!"); });
+        w.on('close', function() { NodejsWorker.debug && console.log("WORKER CLOSED...!!!") ;});
+        w.once('ready', whenListening);
       },
 
       close: function(messenger, whenClosed) {

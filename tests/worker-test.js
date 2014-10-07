@@ -10,7 +10,10 @@ var messenger = jsext.messenger;
 
 describe('worker', function() {
 
-  var libLocation = isNodejs ? '../' : document.location.toString().split('/').slice(0, -1).join('/') + "/../";
+  var libLocation = isNodejs ? (function() {
+    var path = require('path');
+    return path.dirname(require.resolve(path.join("..", 'index')));
+  })() : document.location.toString().split('/').slice(0, -1).join('/') + "/../";
 
   describe('basics', function() {
 
@@ -52,7 +55,7 @@ describe('worker', function() {
       var whenDoneResult,
           w = worker.fork(
             {libLocation: libLocation, args: [1, 2]},
-            function(a, b, thenDo) { thenDo(null, '' + (a + b) + ' ' + self.isBusy); },
+            function(a, b, thenDo) { thenDo(null, '' + (a + b) + ' ' + remoteWorker.isBusy); },
             function(err, result) {
               expect(err).to.be(null);
               expect(result).to.equal('3 true');
