@@ -67,7 +67,7 @@ describe('fun', function() {
         var called = 0, result;
         [1,2,3,4,5,6,7,8,9,10].reduceRight(function(next, i) {
           return function() {
-            fun.debounceNamed('testDebouncedCommand', 10,
+            fun.debounceNamed('testDebouncedCommand', 20,
               function(i) { result = i; called++; }, false)(i);
             setTimeout(next, 0);
           }

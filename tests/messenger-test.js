@@ -126,13 +126,13 @@ describe('messengers', function() {
           expect(messenger.outgoingMessages()).to.eql([msg1, msg2]);
           next();
         },
-        function(next) { setTimeout(next, 25); },
+        function(next) { setTimeout(next, 22); },
         function(next) {
           expect(sendData).to.eql([msg1]);
           expect(messenger.outgoingMessages()).to.eql([msg2]);
           next();
         },
-        function(next) { setTimeout(next, 25); },
+        function(next) { setTimeout(next, 22); },
         function(next) {
           expect(sendData).to.eql([msg1, msg2]);
           expect(messenger.outgoingMessages()).to.have.length(0);

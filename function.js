@@ -402,7 +402,7 @@ var fun = exports.fun = {
         leftFuncs.length = 0;
         waitForAllErr = new Error("in waitForAll at"
           + (typeof i === 'number' ? " " + i : "")
-          + ": \n" + err.stack || String(err));
+          + ": \n" + (err.stack || String(err)));
       } else if (result) results[i] = result;
       if (!leftFuncs.length) setTimeout(function() {
         thenDo(waitForAllErr, results);
