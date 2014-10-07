@@ -28,8 +28,6 @@ ensureTimeStamp removed
 
 # functions
 
-- add license for debounce / throttle
-
 ## Function.prototype -> fun
 curry, delay, wrap, getOriginal
 asScript, asScriptOf, addToObject, binds, getVarMapping
