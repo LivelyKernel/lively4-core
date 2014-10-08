@@ -2,13 +2,18 @@
 
 ;(function(exports) {
 
+// String utility methods for printing, parsing, and converting strings
 var string = exports.string = {
 
   format: function strings$format() {
+    // Takes a variable number of arguments. The first argument is the format
+    // string. Placeholders in the format string are marked with `"%s"`.
+    // Example:
+    //   jsext.string.format("Hello %s!", "Lively User"); // => "Hello Lively User!"
+    
     return string.formatFromArray(Array.prototype.slice.call(arguments));
   },
 
-  // adapted from firebug lite
   formatFromArray: function strings$formatFromArray(objects) {
     var self = objects.shift();
     if (!self) { console.log("Error in Strings>>formatFromArray, first arg is undefined"); };
@@ -63,17 +68,22 @@ var string = exports.string = {
   },
 
   withDecimalPrecision: function(str, precision) {
+    // Example: string.withDecimalPrecision("1.12345678", 3) // => "1.123"
     var floatValue = parseFloat(str);
     return isNaN(floatValue) ? str : floatValue.toFixed(precision);
   },
 
   indent: function (str, indentString, depth) {
+    // Example: 
+    //   string.indent("Hello", "  ", 2) // => "    Hello"
     if (!depth || depth <= 0) return str;
     while (depth > 0) { depth--; str = indentString + str; }
     return str;
   },
 
   removeSurroundingWhitespaces: function(str) {
+    // Example:
+    //   string.removeSurroundingWhitespaces("  hello\n  world  ") // => "hello\nworld"
     function removeTrailingWhitespace(s) {
       while (s.length > 0 && /\s|\n|\r/.test(s[s.length - 1]))
         s = s.substring(0, s.length - 1);
@@ -86,6 +96,9 @@ var string = exports.string = {
   },
 
   print: function print(obj) {
+    // Example:
+    //   string.print([[1,2,3], "string", {foo: 23}])
+    //      // => [[1,2,3],"string",[object Object]]
     if (obj && Array.isArray(obj)) return '[' + obj.map(print) + ']';
     if (typeof obj !== "string") return String(obj);
     var result = String(obj);
@@ -95,9 +108,7 @@ var string = exports.string = {
     return result;
   },
 
-  lines: function(str) {
-    return str.split(/\n\r?/);
-  },
+  lines: function(str) { return str.split(/\n\r?/); },
 
   paragraphs: function(string, options) {
     // string.paragraphs('foo\n\nbar')
@@ -460,7 +471,7 @@ var string = exports.string = {
   // function add32(a, b) {
   //  return (a + b) & 0xFFFFFFFF;
   // }
-  // 
+  //
   // if (hex(md51("hello")) != "5d41402abc4b2a76b9719d911017c592") {
 			function add32(x, y) {
 				var lsw = (x & 0xFFFF) + (y & 0xFFFF),
