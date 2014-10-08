@@ -1,7 +1,7 @@
 ;(function(exports) {
 "use strict";
 
-exports.num = {
+var num = exports.num = {
 
   random: function(min, max) {
     // both min and max are included

@@ -13,14 +13,10 @@
 // internal helper
 // -=-=-=-=-=-=-=-=-
 
-function print(obj) {
-  if (obj && Array.isArray(obj)) {
-    return '[' + obj.map(function(ea) { return print(ea); }) + ']';
-  }
-  if (typeof obj !== "string") {
-    return String(obj);
-  }
-  var result = String(obj);
+function print(object) {
+  if (object && obj.isArray(object)) { return '[' + object.map(print) + ']'; }
+  if (typeof object !== "string") { return String(object); }
+  var result = String(object);
   result = result.replace(/\n/g, '\\n\\\n');
   result = result.replace(/(")/g, '\\$1');
   result = '\"' + result + '\"';
@@ -42,49 +38,30 @@ function indent(str, indentString, depth) {
 }
 
 
-// -=-=-
-// obj
-// -=-=-
 var obj = exports.obj = {
 
   // -=-=-=-=-
   // testing
   // -=-=-=-=-
-  isArray: function(obj) {
-    return obj && Array.isArray(obj);
-  },
 
-  isElement: function(object) {
-      return object && object.nodeType == 1;
-  },
 
-  isFunction: function(object) {
-      return object instanceof Function;
-  },
+  isArray: function(obj) { return obj && Array.isArray(obj); },
 
-  isBoolean: function(object) {
-      return typeof object == "boolean";
-  },
+  isElement: function(object) { return object && object.nodeType == 1; },
 
-  isString: function(object) {
-      return typeof object == "string";
-  },
+  isFunction: function(object) { return object instanceof Function; },
 
-  isNumber: function(object) {
-      return typeof object == "number";
-  },
+  isBoolean: function(object) { return typeof object == "boolean"; },
 
-  isUndefined: function(object) {
-      return typeof object == "undefined";
-  },
+  isString: function(object) { return typeof object == "string"; },
 
-  isRegExp: function(object) {
-      return object instanceof RegExp;
-  },
+  isNumber: function(object) { return typeof object == "number"; },
 
-  isObject: function(object) {
-      return typeof object == "object";
-  },
+  isUndefined: function(object) { return typeof object == "undefined"; },
+
+  isRegExp: function(object) { return object instanceof RegExp; },
+
+  isObject: function(object) { return typeof object == "object"; },
 
   isEmpty: function(object) {
       for (var key in object)
@@ -408,13 +385,12 @@ var properties = exports.properties = {
     return Object.keys(obj).sort().join('').hashCode();
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // js object path accessor
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-
-
 };
 
-var Path = exports.path = function Path(p, splitter) {
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-
+// js object path accessor
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-
+var Path = exports.Path = function Path(p, splitter) {
   if (p instanceof Path) return p;
   if (!(this instanceof Path)) return new Path(p, splitter);
   if (splitter) this.setSplitter(splitter);

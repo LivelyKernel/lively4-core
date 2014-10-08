@@ -335,29 +335,29 @@ describe('properties', function() {
 });
 
 
-describe('path', function() {
+describe('Path', function() {
 
-  var path = jsext.path;
+  var Path = jsext.Path;
 
   it("parsePath", function() {
-    expect([]).to.eql(path(undefined).parts());
-    expect([]).to.eql(path('').parts());
-    expect([]).to.eql(path('.').parts());
-    expect(['foo']).to.eql(path('foo').parts());
-    expect(['foo', 'bar']).to.eql(path('foo.bar').parts());
+    expect([]).to.eql(Path(undefined).parts());
+    expect([]).to.eql(Path('').parts());
+    expect([]).to.eql(Path('.').parts());
+    expect(['foo']).to.eql(Path('foo').parts());
+    expect(['foo', 'bar']).to.eql(Path('foo.bar').parts());
   });
 
   it("pathAccesor", function() {
     var obj = {foo: {bar: 42}, baz: {zork: {'x y z z y': 23}}};
-    expect(obj).to.equal(path('').get(obj));
-    expect(42).to.equal(path('foo.bar').get(obj));
-    expect(obj.baz.zork).to.equal(path('baz.zork').get(obj));
-    expect(23).to.equal(path('baz.zork.x y z z y').get(obj));
-    expect(undefined).to.equal(path('non.ex.is.tan.t').get(obj));
+    expect(obj).to.equal(Path('').get(obj));
+    expect(42).to.equal(Path('foo.bar').get(obj));
+    expect(obj.baz.zork).to.equal(Path('baz.zork').get(obj));
+    expect(23).to.equal(Path('baz.zork.x y z z y').get(obj));
+    expect(undefined).to.equal(Path('non.ex.is.tan.t').get(obj));
   });
 
   it("pathIncludes", function() {
-    var base = path('foo.bar');
+    var base = Path('foo.bar');
     expect(base.isParentPathOf('foo.bar')).to.be(true); // 'equal paths should be "parents"'
     expect(base.isParentPathOf(base)).to.be(true); // 'equal paths should be "parents" 2'
     expect(base.isParentPathOf('foo.bar.baz')).to.be(true); // 'foo.bar.baz'
@@ -368,37 +368,37 @@ describe('path', function() {
   });
 
   it("relativePath", function() {
-    var base = path('foo.bar');
+    var base = Path('foo.bar');
     expect([]).to.eql(base.relativePathTo('foo.bar').parts(), 'foo.bar');
     expect(['baz', 'zork']).to.eql(base.relativePathTo('foo.bar.baz.zork').parts(), 'foo.bar.baz.zork');
   });
 
   it("concat", function() {
-    var p1 = path('foo.bar'), p2 = path('baz.zork');
+    var p1 = Path('foo.bar'), p2 = Path('baz.zork');
     expect('baz.zork.foo.bar').to.equal(String(p2.concat(p1)));
     expect('foo.bar.baz.zork').to.equal(String(p1.concat(p2)));
   });
 
   it("set", function() {
-    var obj = {foo:[{},{bar:{}}]}, p = path('foo.1.bar.baz');
+    var obj = {foo:[{},{bar:{}}]}, p = Path('foo.1.bar.baz');
     p.set(obj, 3);
     expect(3).to.equal(obj.foo[1].bar.baz);
   });
 
   it("ensure", function() {
-    var obj = {}, p = path('foo.bar.baz');
+    var obj = {}, p = Path('foo.bar.baz');
     p.set(obj, 3, true);
     expect(3).to.equal(obj.foo.bar.baz);
   });
 
   it("splitter", function() {
-    var obj = {}, p = path('foo/bar/baz', '/');
+    var obj = {}, p = Path('foo/bar/baz', '/');
     p.set(obj, 3, true);
     expect(3).to.equal(obj.foo.bar.baz);
   });
 
   it("parentPathOf", function() {
-    var pp = path, p1 = pp("a.b");
+    var pp = Path, p1 = pp("a.b");
     expect(p1.isParentPathOf(p1)).to.be(true);
     expect(pp("a").isParentPathOf(p1)).to.be(true);
     expect(pp("").isParentPathOf(pp(""))).to.be(true);
