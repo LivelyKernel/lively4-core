@@ -22,7 +22,7 @@ module.exports = {
   num: jsext.num,
   date: jsext.date,
   obj: jsext.obj,
-  path: jsext.path,
+  Path: jsext.Path,
   properties: jsext.properties,
   messenger: jsext.messenger,
   worker: jsext.worker
