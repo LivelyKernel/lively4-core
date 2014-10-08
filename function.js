@@ -39,6 +39,7 @@ var fun = exports.fun = {
   // -=-=-=-=-=-
   // inspection
   // -=-=-=-=-=-
+
   argumentNames: function(f) {
     if (f.superclass) return []; // it's a class...
     var names = f.toString().match(/^[\s\(]*function[^(]*\(([^)]*)\)/)[1]
@@ -57,9 +58,24 @@ var fun = exports.fun = {
     return objString + (f.methodName || f.displayNameName || f.name || "anonymous");
   },
 
+  extractBody: function(func) {
+    // returns the body of func as string, removing outer function code and
+    // superflous indent
+    var codeString = String(func)
+        .replace(/^function[^\{]+\{\s*/, '')
+        .replace(/\}$/, '')
+        .trim();
+    var indent = codeString.split(/\n|\r/)
+        .map(function(line) { var m = line.match(/^\s*/); return m && m[0]; })
+        .filter(function(ea) { return !!ea; })
+        .reduce(function(indent, ea) { return ea.length < indent.length ? ea : indent; });
+    return codeString.replace(new RegExp("^" + indent, 'gm'), '');
+  },
+
   // -=-=-=-
   // timing
   // -=-=-=-
+
   timeToRun: function(func) {
     var startTime = Date.now();
     func();

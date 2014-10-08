@@ -45,6 +45,14 @@ describe('fun', function() {
       expect(fun.argumentNames(f)).to.eql(["arg1", "arg2", "arg4"]);
     });
 
+    it("can extract a function body a string", function() {
+      var f = function(arg1, arg2, arg4) {
+        var x = 33;
+        return x + arg2 + arg4;
+      };
+      expect(fun.extractBody(f)).to.eql('var x = 33;\nreturn x + arg2 + arg4;');
+    });
+
   });
 
   describe('async', function() {
