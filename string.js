@@ -6,6 +6,7 @@
 var string = exports.string = {
 
   format: function strings$format() {
+    // String+ -> String
     // Takes a variable number of arguments. The first argument is the format
     // string. Placeholders in the format string are marked with `"%s"`.
     // Example:
@@ -68,12 +69,14 @@ var string = exports.string = {
   },
 
   withDecimalPrecision: function(str, precision) {
+    // String -> Number -> String
     // Example: string.withDecimalPrecision("1.12345678", 3) // => "1.123"
     var floatValue = parseFloat(str);
     return isNaN(floatValue) ? str : floatValue.toFixed(precision);
   },
 
   indent: function (str, indentString, depth) {
+    // String -> String -> String? -> String
     // Example: 
     //   string.indent("Hello", "  ", 2) // => "    Hello"
     if (!depth || depth <= 0) return str;
@@ -108,11 +111,15 @@ var string = exports.string = {
     return result;
   },
 
-  lines: function(str) { return str.split(/\n\r?/); },
+  lines: function(str) {
+    // Example: string.lines("foo\nbar\n\rbaz") // => ["foo","bar","baz"]
+    return str.split(/\n\r?/);
+  },
 
   paragraphs: function(string, options) {
-    // string.paragraphs('foo\n\nbar')
-    // string.paragraphs('foo\n\n\n\n\nbar', {keepEmptyLines: true})
+    // Examples:
+    // string.paragraphs('foo\n\nbar') // => ["foo","bar"]
+    // string.paragraphs('foo\n\n\n\n\nbar', {keepEmptyLines: true}) // ["foo","\n\n\n","bar"]
     var sep = options ? options.sep : '\n\n';
     if (!options || !options.keepEmptyLines) return string.split(new RegExp(sep + '+'));
     function isWhiteSpace(s) { return (/^\s*$/).test(s); }
@@ -128,12 +135,13 @@ var string = exports.string = {
   },
 
   nonEmptyLines: function(str) {
+    // Example: string.nonEmptyLines("foo\n\nbar\n") // => ["foo","bar"]
     return string.lines(str).compact();
   },
 
   tokens: function(str, regex) {
-    // string.tokens(' a b c')
-    // => ['a', 'b', 'c']
+    // Example:
+    // string.tokens(' a b c') => ['a', 'b', 'c']
     return str.split(regex || /\s+/).filter(function(tok) {
       return !(/^\s*$/).test(tok); });
   },
@@ -152,23 +160,37 @@ var string = exports.string = {
   },
 
   camelCaseString: function(s) {
+    // Example: string.camelCaseString("foo bar baz") // => "FooBarBaz"
     return s.split(" ").invoke('capitalize').join("")
   },
 
   tableize: function(s, options) {
-    // string => array
+    // String -> Object? -> Array
+    // Takes a String representing a "table" and parses it into a 2D-Array (as
+    // accepted by the `collection.Grid` methods or `string.printTable`)
+    // ```js
+    // options = {
+    //     convertTypes: BOOLEAN, // automatically convert to Numbers, Dates, ...?
+    //     cellSplitter: REGEXP // how to recognize "cells", by default just spaces
+    // }
+    // ```
+    // Examples:
     // string.tableize('a b c\nd e f')
-    //   => [[a, b, c], [d, e, f]]
-    // can also parse csv like
-    // csv = '"Symbol","Name","LastSale",\n'
-    //   + '"FLWS","1-800 FLOWERS.COM, Inc.","5.65",\n'
-    //   + '"FCTY","1st Century Bancshares, Inc","5.65",'
-    // csvTable = string.tableize(companiesCSV, /^\s*"|","|",?\s*$/g)
+    // // => [["a","b","c"],["d","e","f"]]
+    // // can also parse csv like
+    // var csv = '"Symbol","Name","LastSale",\n'
+    //         + '"FLWS","1-800 FLOWERS.COM, Inc.","5.65",\n'
+    //         + '"FCTY","1st Century Bancshares, Inc","5.65",'
+    // string.tableize(csv, {cellSplitter: /^\s*"|","|",?\s*$/g})
+    // // => [["Symbol","Name","LastSale"],
+    // //     ["FLWS","1-800 FLOWERS.COM, Inc.",5.65],
+    // //     ["FCTY","1st Century Bancshares, Inc",5.65]]
+
     options = options || {};
     var splitter = options.cellSplitter || /\s+/,
-      emptyStringRe = /^\s*$/,
-      convertTypes = options.hasOwnProperty('convertTypes') ? !!options.convertTypes : true,
-      lines = string.lines(s), table = [];
+        emptyStringRe = /^\s*$/,
+        convertTypes = options.hasOwnProperty('convertTypes') ? !!options.convertTypes : true,
+        lines = string.lines(s), table = [];
     for (var i = 0; i < lines.length; i++) {
       var tokens = string.tokens(lines[i], splitter);
       if (convertTypes) {
@@ -187,12 +209,19 @@ var string = exports.string = {
   },
 
   pad: function(string, n, left) {
+    // Examples:
+    // string.pad("Foo", 2) // => "Foo  "
+    // string.pad("Foo", 2, true) // => "  Foo"
     return left ? ' '.times(n) + string : string + ' '.times(n);
   },
 
   printTable: function(tableArray, options) {
-    // array => string
-    // string.printTable([[a, b, c], [d, e, f]]) => 'a b c\nd e f'
+    // Array -> Object? -> String
+    // Takes a 2D Array and prints a table string. Kind of the reverse
+    // operation to `strings.tableize`
+    // Example:
+    //   string.printTable([["aaa", "b", "c"], ["d", "e","f"]])
+    //    // => "aaa b c\n\// d   e f"
     var columnWidths = [],
       separator = (options && options.separator) || ' ',
       alignLeftAll = !options || !options.align || options.align === 'left',
