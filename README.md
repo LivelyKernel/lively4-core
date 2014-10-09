@@ -67,26 +67,44 @@ TODO
 
 - [string](#string)
   - [format](#string-format)
-  - [withDecimalPrecision](#string-withDecimalPrecision)
   - [indent](#string-indent)
   - [removeSurroundingWhitespaces](#string-removeSurroundingWhitespaces)
+  - [quote](#string-quote)
   - [print](#string-print)
+  - [printNested](#string-printNested)
+  - [pad](#string-pad)
+  - [printTable](#string-printTable)
+  - [printTree](#string-printTree)
+  - [toArray](#string-toArray)
   - [lines](#string-lines)
   - [paragraphs](#string-paragraphs)
   - [nonEmptyLines](#string-nonEmptyLines)
   - [tokens](#string-tokens)
-  - [camelCaseString](#string-camelCaseString)
   - [tableize](#string-tableize)
-  - [pad](#string-pad)
-  - [printTable](#string-printTable)
-  - [newUUID](#string-newUUID)
   - [unescapeCharacterEntities](#string-unescapeCharacterEntities)
+  - [toQueryParams](#string-toQueryParams)
+  - [newUUID](#string-newUUID)
   - [createDataURI](#string-createDataURI)
-  - [md5](#string-md5)
-  - [stringMatch](#string-stringMatch)
-  - [lineIndexComputer](#string-lineIndexComputer)
-  - [regExpEscape](#string-regExpEscape)
   - [hashCode](#string-hashCode)
+  - [md5](#string-md5)
+  - [reMatches](#string-reMatches)
+  - [stringMatch](#string-stringMatch)
+  - [peekRight](#string-peekRight)
+  - [peekLeft](#string-peekLeft)
+  - [lineIndexComputer](#string-lineIndexComputer)
+  - [empty](#string-empty)
+  - [include](#string-include)
+  - [startsWith](#string-startsWith)
+  - [startsWithVowel](#string-startsWithVowel)
+  - [endsWith](#string-endsWith)
+  - [withDecimalPrecision](#string-withDecimalPrecision)
+  - [capitalize](#string-capitalize)
+  - [camelCaseString](#string-camelCaseString)
+  - [camelize](#string-camelize)
+  - [truncate](#string-truncate)
+  - [regExpEscape](#string-regExpEscape)
+  - [succ](#string-succ)
+  - [times](#string-times)
 
 #### number.js
 
@@ -185,7 +203,7 @@ TODO
 
 #### <a name="string-format"></a>string.format()
 
- String+ -> String
+`String+ -> String`
  Takes a variable number of arguments. The first argument is the format
  string. Placeholders in the format string are marked with `"%s"`.
  
@@ -194,18 +212,9 @@ TODO
 jsext.string.format("Hello %s!", "Lively User"); // => "Hello Lively User!"
 ```
 
-#### <a name="string-withDecimalPrecision"></a>string.withDecimalPrecision(str, precision)
-
-` String -> Number -> String`
- 
-
-```js
-string.withDecimalPrecision("1.12345678", 3) // => "1.123"
-```
-
 #### <a name="string-indent"></a>string.indent(str, indentString, depth)
 
-` String -> String -> String? -> String`
+`String -> String -> String? -> String`
  
 
 ```js
@@ -220,6 +229,14 @@ string.indent("Hello", "  ", 2) // => "    Hello"
 string.removeSurroundingWhitespaces("  hello\n  world  ") // => "hello\nworld"
 ```
 
+#### <a name="string-quote"></a>string.quote(str)
+
+ 
+
+```js
+string.print("fo\"o") // => "\"fo\\\"o\""
+```
+
 #### <a name="string-print"></a>string.print(obj)
 
  
@@ -227,6 +244,65 @@ string.removeSurroundingWhitespaces("  hello\n  world  ") // => "hello\nworld"
 ```js
 string.print([[1,2,3], "string", {foo: 23}])
 // => [[1,2,3],"string",[object Object]]
+```
+
+#### <a name="string-printNested"></a>string.printNested(list, depth)
+
+ 
+
+```js
+string.printNested([1,2,[3,4,5]]) // => "1\n2\n  3\n  4\n  5\n"
+```
+
+#### <a name="string-pad"></a>string.pad(string, n, left)
+
+ 
+
+```js
+string.pad("Foo", 2) // => "Foo  "
+string.pad("Foo", 2, true) // => "  Foo"
+```
+
+#### <a name="string-printTable"></a>string.printTable(tableArray, options)
+
+`Array -> Object? -> String`
+ Takes a 2D Array and prints a table string. Kind of the reverse
+ operation to `strings.tableize`
+ 
+
+```js
+string.printTable([["aaa", "b", "c"], ["d", "e","f"]])
+// =>
+// aaa b c
+// d   e f
+```
+
+#### <a name="string-printTree"></a>string.printTree(rootNode, nodePrinter, childGetter, indent)
+
+`Object -> Function -> Function -> Number? -> String`
+ A generic function to print a tree representation from a nested data structure.
+ Receives three arguments:
+ - `rootNode` an object representing the root node of the tree
+ - `nodePrinter` is a function that gets a tree node and should return stringified version of it
+ - `childGetter` is a function that gets a tree node and should return a list of child nodes
+ 
+
+```js
+var root = {name: "a", subs: [{name: "b", subs: [{name: "c"}]}, {name: "d"}]};
+string.printTree(root, function(n) { return n.name; }, function(n) { return n.subs; });
+// =>
+// a
+// |-b
+// | \-c
+// \-d
+```
+
+#### <a name="string-toArray"></a>string.toArray(s)
+
+ 
+
+```js
+string.toArray("fooo") // => ["f","o","o","o"]
 ```
 
 #### <a name="string-lines"></a>string.lines(str)
@@ -262,17 +338,9 @@ string.nonEmptyLines("foo\n\nbar\n") // => ["foo","bar"]
 string.tokens(' a b c') => ['a', 'b', 'c']
 ```
 
-#### <a name="string-camelCaseString"></a>string.camelCaseString(s)
-
- 
-
-```js
-string.camelCaseString("foo bar baz") // => "FooBarBaz"
-```
-
 #### <a name="string-tableize"></a>string.tableize(s, options)
 
-` String -> Object? -> Array`
+`String -> Object? -> Array`
  Takes a String representing a "table" and parses it into a 2D-Array (as
  accepted by the `collection.Grid` methods or `string.printTable`)
  ```js
@@ -296,42 +364,62 @@ string.tableize(csv, {cellSplitter: /^\s*"|","|",?\s*$/g})
 //     ["FCTY","1st Century Bancshares, Inc",5.65]]
 ```
 
-#### <a name="string-pad"></a>string.pad(string, n, left)
+#### <a name="string-unescapeCharacterEntities"></a>string.unescapeCharacterEntities(s)
 
+ Converts [character entities](http://dev.w3.org/html5/html-author/charref)
+ into utf-8 strings
  
 
 ```js
-string.pad("Foo", 2) // => "Foo  "
-string.pad("Foo", 2, true) // => "  Foo"
+string.unescapeCharacterEntities("foo &amp;&amp; bar") // => "foo && bar"
 ```
 
-#### <a name="string-printTable"></a>string.printTable(tableArray, options)
+#### <a name="string-toQueryParams"></a>string.toQueryParams(s, separator)
 
-` Array -> Object? -> String`
- Takes a 2D Array and prints a table string. Kind of the reverse
- operation to `strings.tableize`
  
 
 ```js
-string.printTable([["aaa", "b", "c"], ["d", "e","f"]])
-// => "aaa b c\n\// d   e f"
+string.toQueryParams("http://example.com?foo=23&bar=test")
+// => {bar: "test", foo: "23"}
 ```
 
 #### <a name="string-newUUID"></a>string.newUUID()
 
- copied from Martin's UUID class
+ 
 
-#### <a name="string-unescapeCharacterEntities"></a>string.unescapeCharacterEntities(s)
-
- like &uml;
+```js
+string.newUUID() // => "3B3E74D0-85EA-45F2-901C-23ECF3EAB9FB"
+```
 
 #### <a name="string-createDataURI"></a>string.createDataURI(content, mimeType)
 
- window.open(string.createDataURI('<h1>test</h1>', 'text/html'));
+`String -> String -> String`
+ Takes some string representing content and a mime type.
+ For a list of mime types see: [http://www.iana.org/assignments/media-types/media-types.xhtml]()
+ More about data URIs: [https://developer.mozilla.org/en-US/docs/Web/HTTP/data_URIs]()
+ 
+
+```js
+window.open(string.createDataURI('<h1>test</h1>', 'text/html'));
+```
+
+#### <a name="string-hashCode"></a>string.hashCode(s)
+
+ [http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/]()
+ 
+
+```js
+string.hashCode("foo") // => 101574
+```
 
 #### <a name="string-md5"></a>string.md5(string)
 
- http://www.myersdaily.org/joseph/javascript/md5-text.html
+ © Joseph Myers [http://www.myersdaily.org/joseph/javascript/md5-text.html]()
+ 
+
+```js
+string.md5("foo") // => "acbd18db4cc2f85cedef654fccc4a4d8"
+```
 
 #### <a name="string-md5"></a>string.md5(string)
 
@@ -372,17 +460,66 @@ string.printTable([["aaa", "b", "c"], ["d", "e","f"]])
 
  }
 
+#### <a name="string-reMatches"></a>string.reMatches(string, re)
+
+ Different to the native `match` function this method returns an object
+ with `start`, `end`, and `match` fields
+ 
+
+```js
+string.reMatches("Hello World", /o/g)
+// => [{start: 4, end: 5, match: "o"},{start: 7, end: 8, match: "o"}]
+```
+
 #### <a name="string-stringMatch"></a>string.stringMatch(s, patternString, options)
 
- example: string.stringMatch("foo 123 bar", "foo __/[0-9]+/__ bar")
- returns {matched: true} if success otherwise
- {matched: false, error: EXPLANATION, pattern: STRING|RE, pos: NUMBER}
+ returns `{matched: true}` if success otherwise
+ `{matched: false, error: EXPLANATION, pattern: STRING|RE, pos: NUMBER}`
+ 
+
+```js
+string.stringMatch("foo 123 bar", "foo __/[0-9]+/__ bar") // => {matched: true}
+string.stringMatch("foo aaa bar", "foo __/[0-9]+/__ bar")
+// => {
+//   error: "foo <--UNMATCHED-->aaa bar",
+//   matched: false,
+//   pattern: /[0-9]+/,
+//   pos: 4
+// }
+```
+
+#### <a name="string-peekRight"></a>string.peekRight(s, start, needle)
+
+ Finds the next occurence of `needle` (String or RegExp). Returns delta
+ index.
+ 
+
+```js
+string.peekRight("Hello World", 0, /o/g) // => 4
+string.peekRight("Hello World", 5, /o/) // => 2
+```
+
+#### <a name="string-peekLeft"></a>string.peekLeft(s, start, needle)
+
+ Similar to `peekRight`
 
 #### <a name="string-lineIndexComputer"></a>string.lineIndexComputer(s)
 
- returns a function that will accept a character position and return
- its line number in string. If the char pos is outside of the line
- ranges -1 is returned
+`String -> Function`
+ For converting character positions to line numbers.
+ Returns a function accepting char positions. If the char pos is outside
+ of the line ranges -1 is returned.
+ 
+
+```js
+var idxComp = string.lineIndexComputer("Hello\nWorld\n\nfoo");
+idxComp(3) // => 0 (index 3 is "l")
+idxComp(6) // => 1 (index 6 is "W")
+idxComp(12) // => 2 (index 12 is "\n")
+```
+
+#### <a name="string-lineIndexComputer"></a>string.lineIndexComputer(s)
+
  -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
  line ranges: list of numbers, each line has two entries:
  i -> start of line, i+1 -> end of line
@@ -391,13 +528,111 @@ string.printTable([["aaa", "b", "c"], ["d", "e","f"]])
 
  FIXME, this is O(n). Make cumputation more efficient, binary lookup?
 
+#### <a name="string-empty"></a>string.empty(s)
+
+
+
+#### <a name="string-include"></a>string.include(s, pattern)
+
+ 
+
+```js
+string.include("fooo!", "oo") // => true
+```
+
+#### <a name="string-startsWith"></a>string.startsWith(s, pattern)
+
+ 
+
+```js
+string.startsWith("fooo!", "foo") // => true
+```
+
+#### <a name="string-startsWithVowel"></a>string.startsWithVowel(s)
+
+
+
+#### <a name="string-endsWith"></a>string.endsWith(s, pattern)
+
+ 
+
+```js
+string.endsWith("fooo!", "o!") // => true
+```
+
+#### <a name="string-withDecimalPrecision"></a>string.withDecimalPrecision(str, precision)
+
+`String -> Number -> String`
+ 
+
+```js
+string.withDecimalPrecision("1.12345678", 3) // => "1.123"
+```
+
+#### <a name="string-capitalize"></a>string.capitalize(s)
+
+ 
+
+```js
+string.capitalize("foo bar") // => "Foo bar"
+```
+
+#### <a name="string-camelCaseString"></a>string.camelCaseString(s)
+
+ Spaces to camels, including first char
+ 
+
+```js
+string.camelCaseString("foo bar baz") // => "FooBarBaz"
+```
+
+#### <a name="string-camelize"></a>string.camelize(s)
+
+ Dashes to camels, excluding first char
+ 
+
+```js
+string.camelize("foo-bar-baz") // => "fooBarBaz"
+```
+
+#### <a name="string-truncate"></a>string.truncate(s, length, truncation)
+
+ Enforces that s is not more then `length` characters long.
+ 
+
+```js
+string.truncate("123456789", 5) // => "12..."
+```
+
 #### <a name="string-regExpEscape"></a>string.regExpEscape(s)
 
-from google' closure library
+ For creating RegExps from strings and not worrying about proper escaping
+ of RegExp special characters to literally match those.
+ 
 
-#### <a name="string-hashCode"></a>string.hashCode(s)
+```js
+var re = new RegExp(string.regExpEscape("fooo{20}"));
+re.test("fooo") // => false
+re.test("fooo{20}") // => true
+```
 
- http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
+#### <a name="string-succ"></a>string.succ(s)
+
+ Uses char code.
+ 
+
+```js
+string.succ("a") // => "b"
+string.succ("Z") // => "["
+```
+
+#### <a name="string-times"></a>string.times(s, count)
+
+ 
+
+```js
+string.times("test", 3) // => "testtesttest"
+```
 
 <--- -=-=-=-=-=-=-=-=-=-=-=-=- ---><!---=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--->
 <!--- in file number.js --->

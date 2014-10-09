@@ -5,13 +5,16 @@
 // String utility methods for printing, parsing, and converting strings
 var string = exports.string = {
 
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  // printing and formatting strings
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
   format: function strings$format() {
     // String+ -> String
     // Takes a variable number of arguments. The first argument is the format
     // string. Placeholders in the format string are marked with `"%s"`.
     // Example:
     //   jsext.string.format("Hello %s!", "Lively User"); // => "Hello Lively User!"
-    
     return string.formatFromArray(Array.prototype.slice.call(arguments));
   },
 
@@ -68,13 +71,6 @@ var string = exports.string = {
     return str;
   },
 
-  withDecimalPrecision: function(str, precision) {
-    // String -> Number -> String
-    // Example: string.withDecimalPrecision("1.12345678", 3) // => "1.123"
-    var floatValue = parseFloat(str);
-    return isNaN(floatValue) ? str : floatValue.toFixed(precision);
-  },
-
   indent: function (str, indentString, depth) {
     // String -> String -> String? -> String
     // Example: 
@@ -98,6 +94,12 @@ var string = exports.string = {
     return removeLeadingWhitespace(removeTrailingWhitespace(str));
   },
 
+  quote: function(str) {
+    // Example:
+    //   string.print("fo\"o") // => "\"fo\\\"o\""
+    return '"' + str.replace(/"/g, '\\"') + '"';
+  },
+
   print: function print(obj) {
     // Example:
     //   string.print([[1,2,3], "string", {foo: 23}])
@@ -110,6 +112,134 @@ var string = exports.string = {
     result = '\"' + result + '\"';
     return result;
   },
+
+  printNested: function(list, depth) {
+    // Example:
+    //   string.printNested([1,2,[3,4,5]]) // => "1\n2\n  3\n  4\n  5\n"
+    depth = depth || 0;
+    var s = ""
+    list.forEach(function(ea) {
+      if (ea instanceof Array) {
+        s += string.printNested(ea, depth + 1)
+      } else {
+        s +=  string.indent(ea +"\n", '  ', depth);
+      }
+    })
+    return s
+  },
+
+  pad: function(string, n, left) {
+    // Examples:
+    // string.pad("Foo", 2) // => "Foo  "
+    // string.pad("Foo", 2, true) // => "  Foo"
+    return left ? ' '.times(n) + string : string + ' '.times(n);
+  },
+
+  printTable: function(tableArray, options) {
+    // Array -> Object? -> String
+    // Takes a 2D Array and prints a table string. Kind of the reverse
+    // operation to `strings.tableize`
+    // Example:
+    //   string.printTable([["aaa", "b", "c"], ["d", "e","f"]])
+    //    // =>
+    //    // aaa b c
+    //    // d   e f
+    var columnWidths = [],
+      separator = (options && options.separator) || ' ',
+      alignLeftAll = !options || !options.align || options.align === 'left',
+      alignRightAll = options && options.align === 'right';
+    function alignRight(columnIndex) {
+      if (alignLeftAll) return false;
+      if (alignRightAll) return true;
+      return options
+        && Object.isArray(options.align)
+        && options.align[columnIndex] === 'right';
+    }
+    tableArray.forEach(function(row) {
+      row.forEach(function(cellVal, i) {
+        if (columnWidths[i] === undefined) columnWidths[i] = 0;
+        columnWidths[i] = Math.max(columnWidths[i], String(cellVal).length);
+      });
+    });
+    return tableArray.collect(function(row) {
+      return row.collect(function(cellVal, i) {
+        var cellString = String(cellVal);
+        return string.pad(cellString,
+                   columnWidths[i] - cellString.length,
+                   alignRight(i));
+      }).join(separator);
+    }).join('\n');
+  },
+
+  printTree: function(rootNode, nodePrinter, childGetter, indent) {
+    // Object -> Function -> Function -> Number? -> String
+    // A generic function to print a tree representation from a nested data structure.
+    // Receives three arguments:
+    // - `rootNode` an object representing the root node of the tree
+    // - `nodePrinter` is a function that gets a tree node and should return stringified version of it
+    // - `childGetter` is a function that gets a tree node and should return a list of child nodes
+    // Example:
+    // var root = {name: "a", subs: [{name: "b", subs: [{name: "c"}]}, {name: "d"}]};
+    // string.printTree(root, function(n) { return n.name; }, function(n) { return n.subs; });
+    // // =>
+    // // a
+    // // |-b
+    // // | \-c
+    // // \-d
+
+    var nodeList = [];
+    indent = indent || '  ';
+    iterator(0, 0, rootNode);
+    return nodeList.join('\n');
+    // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    function iterator(depth, index, node) {
+      // 1. Create stringified representation of node
+      nodeList[index] = (string.times(indent, depth)) + nodePrinter(node, depth);
+      var children = childGetter(node, depth),
+        childIndex = index + 1;
+      if (!children || !children.length) return childIndex;
+      // 2. If there are children then assemble those linear inside nodeList
+      // The childIndex is the pointer of the current items of childList into
+      // nodeList.
+      var lastIndex = childIndex,
+        lastI = children.length - 1;
+      children.forEach(function(ea, i) {
+        childIndex = iterator(depth+1, childIndex, ea);
+        // 3. When we have printed the recursive version then augment the
+        // printed version of the direct children with horizontal slashes
+        // directly in front of the represented representation
+        var isLast = lastI === i,
+          cs = nodeList[lastIndex].split(''),
+          fromSlash = (depth*indent.length)+1,
+          toSlash = (depth*indent.length)+indent.length;
+        for (var i = fromSlash; i < toSlash; i++) cs[i] = '-';
+        if (isLast) cs[depth*indent.length] = '\\';
+        nodeList[lastIndex] = cs.join('');
+        // 4. For all children (direct and indirect) except for the
+        // last one (itself and all its children) add vertical bars in
+        // front of each at position of the current nodes depth. This
+        // makes is much easier to see which child node belongs to which
+        // parent
+        if (!isLast)
+          nodeList.slice(lastIndex, childIndex).forEach(function(ea, i) {
+            var cs2 = ea.split('');
+            cs2[depth*indent.length] = '|';
+            nodeList[lastIndex+i] = cs2.join(''); });
+        lastIndex = childIndex;
+      });
+      return childIndex;
+    }
+  },
+
+  toArray: function(s) {
+    // Example:
+    // string.toArray("fooo") // => ["f","o","o","o"]
+    return s.split('');
+  },
+
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  // parsing strings into other entities
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   lines: function(str) {
     // Example: string.lines("foo\nbar\n\rbaz") // => ["foo","bar","baz"]
@@ -144,24 +274,6 @@ var string = exports.string = {
     // string.tokens(' a b c') => ['a', 'b', 'c']
     return str.split(regex || /\s+/).filter(function(tok) {
       return !(/^\s*$/).test(tok); });
-  },
-
-  printNested: function(list, depth) {
-    depth = depth || 0;
-    var s = ""
-    list.forEach(function(ea) {
-      if (ea instanceof Array) {
-        s += string.printNested(ea, depth + 1)
-      } else {
-        s +=  string.indent(ea +"\n", '  ', depth);
-      }
-    })
-    return s
-  },
-
-  camelCaseString: function(s) {
-    // Example: string.camelCaseString("foo bar baz") // => "FooBarBaz"
-    return s.split(" ").invoke('capitalize').join("")
   },
 
   tableize: function(s, options) {
@@ -208,94 +320,51 @@ var string = exports.string = {
     return table;
   },
 
-  pad: function(string, n, left) {
-    // Examples:
-    // string.pad("Foo", 2) // => "Foo  "
-    // string.pad("Foo", 2, true) // => "  Foo"
-    return left ? ' '.times(n) + string : string + ' '.times(n);
-  },
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  // (un)escape / encoding / decoding
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  printTable: function(tableArray, options) {
-    // Array -> Object? -> String
-    // Takes a 2D Array and prints a table string. Kind of the reverse
-    // operation to `strings.tableize`
+  unescapeCharacterEntities: function(s) {
+    // Converts [character entities](http://dev.w3.org/html5/html-author/charref)
+    // into utf-8 strings
     // Example:
-    //   string.printTable([["aaa", "b", "c"], ["d", "e","f"]])
-    //    // => "aaa b c\n\// d   e f"
-    var columnWidths = [],
-      separator = (options && options.separator) || ' ',
-      alignLeftAll = !options || !options.align || options.align === 'left',
-      alignRightAll = options && options.align === 'right';
-    function alignRight(columnIndex) {
-      if (alignLeftAll) return false;
-      if (alignRightAll) return true;
-      return options
-        && Object.isArray(options.align)
-        && options.align[columnIndex] === 'right';
-    }
-    tableArray.forEach(function(row) {
-      row.forEach(function(cellVal, i) {
-        if (columnWidths[i] === undefined) columnWidths[i] = 0;
-        columnWidths[i] = Math.max(columnWidths[i], String(cellVal).length);
-      });
-    });
-    return tableArray.collect(function(row) {
-      return row.collect(function(cellVal, i) {
-        var cellString = String(cellVal);
-        return string.pad(cellString,
-                   columnWidths[i] - cellString.length,
-                   alignRight(i));
-      }).join(separator);
-    }).join('\n');
+    //   string.unescapeCharacterEntities("foo &amp;&amp; bar") // => "foo && bar"
+    if (typeof document === 'undefined') throw new Error("Cannot unescapeCharacterEntities");
+    var div = document.createElement('div');
+    div.innerHTML = s;
+    return div.textContent;
   },
 
-  printTree: function(rootNode, nodePrinter, childGetter, indent) {
-    var nodeList = [];
-    indent = indent || '  ';
-    iterator(0, 0, rootNode);
-    return nodeList.join('\n');
-    // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    function iterator(depth, index, node) {
-      // 1. Create stringified representation of node
-      nodeList[index] = (string.times(indent, depth)) + nodePrinter(node, depth);
-      var children = childGetter(node, depth),
-        childIndex = index + 1;
-      if (!children || !children.length) return childIndex;
-      // 2. If there are children then assemble those linear inside nodeList
-      // The childIndex is the pointer of the current items of childList into
-      // nodeList.
-      var lastIndex = childIndex,
-        lastI = children.length - 1;
-      children.forEach(function(ea, i) {
-        childIndex = iterator(depth+1, childIndex, ea);
-        // 3. When we have printed the recursive version then augment the
-        // printed version of the direct children with horizontal slashes
-        // directly in front of the represented representation
-        var isLast = lastI === i,
-          cs = nodeList[lastIndex].split(''),
-          fromSlash = (depth*indent.length)+1,
-          toSlash = (depth*indent.length)+indent.length;
-        for (var i = fromSlash; i < toSlash; i++) cs[i] = '-';
-        if (isLast) cs[depth*indent.length] = '\\';
-        nodeList[lastIndex] = cs.join('');
-        // 4. For all children (direct and indirect) except for the
-        // last one (itself and all its children) add vertical bars in
-        // front of each at position of the current nodes depth. This
-        // makes is much easier to see which child node belongs to which
-        // parent
-        if (!isLast)
-          nodeList.slice(lastIndex, childIndex).forEach(function(ea, i) {
-            var cs2 = ea.split('');
-            cs2[depth*indent.length] = '|';
-            nodeList[lastIndex+i] = cs2.join(''); });
-        lastIndex = childIndex;
-      });
-      return childIndex;
-    }
+  toQueryParams: function(s, separator) {
+    // Example:
+    // string.toQueryParams("http://example.com?foo=23&bar=test")
+    //   // => {bar: "test", foo: "23"}
+    var match = s.strip().match(/([^?#]*)(#.*)?$/);
+    if (!match) return {};
+
+    var hash = match[1].split(separator || '&').inject({}, function(hash, pair) {
+      if ((pair = pair.split('='))[0]) {
+        var key = decodeURIComponent(pair.shift());
+        var value = pair.length > 1 ? pair.join('=') : pair[0];
+        if (value != undefined) value = decodeURIComponent(value);
+
+        if (key in hash) {
+          if (!Array.isArray(hash[key])) hash[key] = [hash[key]];
+          hash[key].push(value);
+        } else hash[key] = value;
+      }
+      return hash;
+    });
+    return hash;
   },
+
+  // -=-=-=-=-=-=-=-=-
+  // ids and hashing
+  // -=-=-=-=-=-=-=-=-
 
   newUUID: function() {
-    // copied from Martin's UUID class
+    // Example:
+    //   string.newUUID() // => "3B3E74D0-85EA-45F2-901C-23ECF3EAB9FB"
     var id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
       return v.toString(16);
@@ -303,32 +372,40 @@ var string = exports.string = {
     return id;
   },
 
-  unescapeCharacterEntities: function(s) {
-    // like &uml;
-    var div = XHTMLNS.create('div');
-    div.innerHTML = s;
-    return div.textContent;
-  },
-
   createDataURI: function(content, mimeType) {
-    // window.open(string.createDataURI('<h1>test</h1>', 'text/html'));
+    // String -> String -> String
+    // Takes some string representing content and a mime type.
+    // For a list of mime types see: [http://www.iana.org/assignments/media-types/media-types.xhtml]()
+    // More about data URIs: [https://developer.mozilla.org/en-US/docs/Web/HTTP/data_URIs]()
+    // Example:
+    //   window.open(string.createDataURI('<h1>test</h1>', 'text/html'));
     mimeType = mimeType || "text/plain";
     return "data:" + mimeType
        + ";base64," + btoa(content);
   },
 
-  quote: function(str) {
-    return '"' + str.replace(/"/g, '\\"') + '"';
+  hashCode: function(s) {
+    // [http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/]()
+    // Example: string.hashCode("foo") // => 101574
+    var hash = 0, len = s.length;
+    if (len == 0) return hash;
+    for (var i = 0; i < len; i++) {
+      var c = s.charCodeAt(i);
+      hash = ((hash<<5)-hash) + c;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash;
   },
 
   md5: function (string) {
-    // http://www.myersdaily.org/joseph/javascript/md5-text.html
+    // © Joseph Myers [http://www.myersdaily.org/joseph/javascript/md5-text.html]()
+    // Example:
+    //   string.md5("foo") // => "acbd18db4cc2f85cedef654fccc4a4d8"
 
   	function cmn(q, a, b, x, s, t) {
 			a = add32(add32(a, q), add32(x, t));
 			return add32((a << s) | (a >>> (32 - s)), b);
 		}
-
 
 		function ff(a, b, c, d, x, s, t) {
 			return cmn((b & c) | ((~b) & d), a, b, x, s, t);
@@ -512,7 +589,16 @@ var string = exports.string = {
 		return hex(md51(string));
 	},
 
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-
+  // matching strings / regexps
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-
+
   reMatches: function(string, re) {
+    // Different to the native `match` function this method returns an object
+    // with `start`, `end`, and `match` fields
+    // Example:
+    //   string.reMatches("Hello World", /o/g)
+    //   // => [{start: 4, end: 5, match: "o"},{start: 7, end: 8, match: "o"}]
     var matches = [];
     string.replace(re, function(match, idx) {
       matches.push({match: match, start: idx, end: idx + match.length}); });
@@ -520,9 +606,17 @@ var string = exports.string = {
   },
 
   stringMatch: function(s, patternString, options) {
-    // example: string.stringMatch("foo 123 bar", "foo __/[0-9]+/__ bar")
-    // returns {matched: true} if success otherwise
-    // {matched: false, error: EXPLANATION, pattern: STRING|RE, pos: NUMBER}
+    // returns `{matched: true}` if success otherwise
+    // `{matched: false, error: EXPLANATION, pattern: STRING|RE, pos: NUMBER}`
+    // Example:
+    //   string.stringMatch("foo 123 bar", "foo __/[0-9]+/__ bar") // => {matched: true}
+    //   string.stringMatch("foo aaa bar", "foo __/[0-9]+/__ bar")
+    //     // => {
+    //     //   error: "foo <--UNMATCHED-->aaa bar",
+    //     //   matched: false,
+    //     //   pattern: /[0-9]+/,
+    //     //   pos: 4
+    //     // }
     options = options || {};
     if (!!options.normalizeWhiteSpace) s = s.replace(/\s+/g, ' ');
     if (!!options.ignoreIndent) {
@@ -625,6 +719,11 @@ var string = exports.string = {
   },
 
   peekRight: function(s, start, needle) {
+    // Finds the next occurence of `needle` (String or RegExp). Returns delta
+    // index.
+    // Example:
+    // string.peekRight("Hello World", 0, /o/g) // => 4
+    // string.peekRight("Hello World", 5, /o/) // => 2
     s = s.slice(start);
     if (typeof needle === 'string') {
       var idx = s.indexOf(needle);
@@ -637,6 +736,7 @@ var string = exports.string = {
   },
 
   peekLeft: function(s, start, needle) {
+    // Similar to `peekRight`
     s = s.slice(0, start);
     if (typeof needle === 'string') {
       var idx = s.lastIndexOf(needle);
@@ -649,9 +749,16 @@ var string = exports.string = {
   },
 
   lineIndexComputer: function(s) {
-    // returns a function that will accept a character position and return
-    // its line number in string. If the char pos is outside of the line
-    // ranges -1 is returned
+    // String -> Function
+    // For converting character positions to line numbers.
+    // Returns a function accepting char positions. If the char pos is outside
+    // of the line ranges -1 is returned.
+    // Example:
+    // var idxComp = string.lineIndexComputer("Hello\nWorld\n\nfoo");
+    // idxComp(3) // => 0 (index 3 is "l")
+    // idxComp(6) // => 1 (index 6 is "W")
+    // idxComp(12) // => 2 (index 12 is "\n")
+
     // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     // line ranges: list of numbers, each line has two entries:
     // i -> start of line, i+1 -> end of line
@@ -668,59 +775,76 @@ var string = exports.string = {
     }
   },
 
+  // -=-=-=-=-
+  // diffing
+  // -=-=-=-=-
+
   diff: function(s1, s2) {
     if (typeof JsDiff === "undefined") return 'diff not supported';
     return JsDiff.convertChangesToXML(JsDiff.diffWordsWithSpace(s1, s2));
   },
 
-  // was at String.prototype:
+  // -=-=-=-=-
+  // testing
+  // -=-=-=-=-
 
   empty: function(s) {
+    // show-in-doc
     return s == '';
   },
 
-  blank: function(s) {
-    return /^\s*$/.test(s);
-  },
-
   include: function(s, pattern) {
+    // Example:
+    // string.include("fooo!", "oo") // => true
     return s.indexOf(pattern) > -1;
   },
 
   startsWith: function(s, pattern) {
+    // Example:
+    // string.startsWith("fooo!", "foo") // => true
     return s.indexOf(pattern) === 0;
   },
 
   startsWithVowel: function(s) {
+    // show-in-doc
     var c = s[0];
     return c === 'A' || c === 'E' || c === 'I' || c === 'O' || c === 'U'
       || c === 'a' || c === 'e' || c === 'i' || c === 'o' || c === 'u' || false;
   },
 
   endsWith: function(s, pattern) {
+    // Example:
+    // string.endsWith("fooo!", "o!") // => true
     var d = s.length - pattern.length;
     return d >= 0 && s.lastIndexOf(pattern) === d;
   },
 
-  truncate: function(s, length, truncation) {
-    length = length || 30;
-    truncation = truncation === undefined ? '...' : truncation;
-    return s.length > length ?
-      s.slice(0, length - truncation.length) + truncation : String(s);
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  // string conversion and manipulation
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+  withDecimalPrecision: function(str, precision) {
+    // String -> Number -> String
+    // Example: string.withDecimalPrecision("1.12345678", 3) // => "1.123"
+    var floatValue = parseFloat(str);
+    return isNaN(floatValue) ? str : floatValue.toFixed(precision);
   },
 
-  regExpEscape: function(s) {
-    //from google' closure library
-    return s.replace(/([-()\[\]{}+?*.$\^|,:#<!\\])/g, '\\$1')
-            .replace(/\x08/g, '\\x08');
+  capitalize: function(s) {
+    // Example:
+    // string.capitalize("foo bar") // => "Foo bar"
+    return s.length ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   },
 
-  strip: function(s) {
-    return s.replace(/^\s+/, '')
-            .replace(/\s+$/, '');
+  camelCaseString: function(s) {
+    // Spaces to camels, including first char
+    // Example: string.camelCaseString("foo bar baz") // => "FooBarBaz"
+    return s.split(" ").invoke('capitalize').join("")
   },
 
   camelize: function(s) {
+    // Dashes to camels, excluding first char
+    // Example: string.camelize("foo-bar-baz") // => "fooBarBaz"
     var parts = s.split('-'),
         len = parts.length;
     if (len == 1) return parts[0];
@@ -732,52 +856,39 @@ var string = exports.string = {
     return camelized;
   },
 
-  capitalize: function(s) {
-    return s.length ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  truncate: function(s, length, truncation) {
+    // Enforces that s is not more then `length` characters long.
+    // Example:
+    // string.truncate("123456789", 5) // => "12..."
+    length = length || 30;
+    truncation = truncation === undefined ? '...' : truncation;
+    return s.length > length ?
+      s.slice(0, length - truncation.length) + truncation : String(s);
   },
 
-  toQueryParams: function(s, separator) {
-    var match = s.strip().match(/([^?#]*)(#.*)?$/);
-    if (!match) return {};
-
-    var hash = match[1].split(separator || '&').inject({}, function(hash, pair) {
-      if ((pair = pair.split('='))[0]) {
-        var key = decodeURIComponent(pair.shift());
-        var value = pair.length > 1 ? pair.join('=') : pair[0];
-        if (value != undefined) value = decodeURIComponent(value);
-
-        if (key in hash) {
-          if (!Array.isArray(hash[key])) hash[key] = [hash[key]];
-          hash[key].push(value);
-        } else hash[key] = value;
-      }
-      return hash;
-    });
-    return hash;
-  },
-
-  toArray: function(s) {
-    return s.split('');
+  regExpEscape: function(s) {
+    // For creating RegExps from strings and not worrying about proper escaping
+    // of RegExp special characters to literally match those.
+    // Example:
+    // var re = new RegExp(string.regExpEscape("fooo{20}"));
+    // re.test("fooo") // => false
+    // re.test("fooo{20}") // => true
+    return s.replace(/([-()\[\]{}+?*.$\^|,:#<!\\])/g, '\\$1')
+            .replace(/\x08/g, '\\x08');
   },
 
   succ: function(s) {
+    // Uses char code.
+    // Example:
+    // string.succ("a") // => "b"
+    // string.succ("Z") // => "["
     return s.slice(0, s.length - 1) + String.fromCharCode(s.charCodeAt(s.length - 1) + 1);
   },
 
   times: function(s, count) {
+    // Example:
+    // string.times("test", 3) // => "testtesttest"
     return count < 1 ? '' : new Array(count + 1).join(s);
-  },
-
-  hashCode: function(s) {
-    // http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
-    var hash = 0, len = s.length;
-    if (len == 0) return hash;
-    for (var i = 0; i < len; i++) {
-      var c = s.charCodeAt(i);
-      hash = ((hash<<5)-hash) + c;
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    return hash;
   }
 
 }
