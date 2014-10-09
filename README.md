@@ -1,8 +1,4 @@
-<style>
-.test {
-}
-</style>
-
+# *THIS DOCUMENTATION IS CURRENTLY WORK IN PROGRESS!*
 
 # lively.lang [![Build Status](https://travis-ci.org/LivelyKernel/lively.lang.svg?branch=master)](https://travis-ci.org/LivelyKernel/lively.lang)
 
@@ -91,6 +87,7 @@ TODO
   - [lineIndexComputer](#string-lineIndexComputer)
   - [regExpEscape](#string-regExpEscape)
   - [hashCode](#string-hashCode)
+
 #### number.js
 
 - [num](#num)
@@ -99,7 +96,9 @@ TODO
   - [parseLength](#num-parseLength)
   - [roundTo](#num-roundTo)
   - [detent](#num-detent)
+
 #### date.js
+
 #### collection.js
 
 - [arrNative](#arrNative)
@@ -124,6 +123,7 @@ TODO
   - [forEachShowingProgress](#arr-forEachShowingProgress)
   - [batchify](#arr-batchify)
   - [mask](#arr-mask)
+
 #### function.js
 
 - [fun](#fun)
@@ -145,11 +145,10 @@ TODO
 - [queue](#queue)
   - [handleError](#queue-handleError)
 - [Closure](#Closure)
-  -
+
 #### object.js
 
 - [properties](#properties)
-  - 
 - [obj](#obj)
   - [inspect](#obj-inspect)
   - [merge](#obj-merge)
@@ -159,12 +158,14 @@ TODO
   - [normalizePath](#Path.prototype-normalizePath)
   - [watch](#Path.prototype-watch)
   - [debugFunctionWrapper](#Path.prototype-debugFunctionWrapper)
+
 #### events.js
+
 #### messenger.js
+
 #### worker.js
 
 - [WorkerSetup](#WorkerSetup)
-  - 
 - [BrowserWorker](#BrowserWorker)
   - [create](#BrowserWorker-create)
 - [NodejsWorker](#NodejsWorker)
