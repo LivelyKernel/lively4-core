@@ -91,6 +91,7 @@ var arrNative = exports.arrNative = {
 
 };
 
+// variety of functions for Arrays
 var arr = exports.arr = {
 
   // -=-=-=-=-=-=-=-
@@ -870,28 +871,15 @@ var arr = exports.arr = {
 
 }
 
-// // alias
-// Object.extend(Array.prototype, {
-
-//   each: Array.prototype.forEach || NativeArrayFunctions.forEach,
-
-//   all: Array.prototype.every || NativeArrayFunctions.every,
-
-//   any: Array.prototype.some || NativeArrayFunctions.some,
-
-//   collect: Array.prototype.map || NativeArrayFunctions.map,
-
-//   findAll: Array.prototype.filter || NativeArrayFunctions.filter,
-
-// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-// Grouping
-// A Grouping is created by Array>>groupBy and maps keys
-// to Arrays
-var Group = exports.Group = function Group(array, hashFunc, context) {}
+// A Grouping is created by arr.groupBy and maps keys to Arrays.
+var Group = exports.Group = function Group() {}
 
 Group.by = exports.arr.groupBy;
 
 Group.fromArray = function(array, hashFunc, context) {
+  // Example:
+  // Group.fromArray([1,2,3,4,5,6], function(n) { return n % 2; })
+  // // => {"0": [2,4,6], "1": [1,3,5]}
   var grouping = new Group();
   for (var i = 0, len = array.length; i < len; i++) {
     var hash = hashFunc.call(context, array[i], i);
@@ -902,20 +890,24 @@ Group.fromArray = function(array, hashFunc, context) {
 }
 
 Group.prototype.toArray = function() {
+  // Example:
+  // var group = arr.groupBy([1,2,3,4,5], function(n) { return n % 2; })
+  // group.toArray(); // => [[2,4],[1,3,5]]
   return this.reduceGroups(function(all, _, group) {
     return all.concat([group]); }, []);
 }
 
-
 Group.prototype.forEach = function(iterator, context) {
+  // Iteration for each item in each group, called like `iterator(groupKey, groupItem)`
   var groups = this;
   Object.keys(groups).forEach(function(groupName) {
-    groups[groupName].forEach(iterator.curry(groupName, context));
+    groups[groupName].forEach(iterator.bind(context, groupName));
   });
   return groups;
 }
 
 Group.prototype.forEachGroup = function(iterator, context) {
+  // Iteration for each group, called like `iterator(groupKey, group)`
   var groups = this;
   Object.keys(groups).forEach(function(groupName) {
     iterator.call(context, groupName, groups[groupName]);
@@ -924,6 +916,7 @@ Group.prototype.forEachGroup = function(iterator, context) {
 }
 
 Group.prototype.map = function(iterator, context) {
+  // Map for each item in each group, called like `iterator(groupKey, group)`
   var result = new Group();
   this.forEachGroup(function(groupName, group) {
     result[groupName] = group.map(iterator.bind(context, groupName));
@@ -932,6 +925,7 @@ Group.prototype.map = function(iterator, context) {
 }
 
 Group.prototype.mapGroups = function(iterator, context) {
+  // Map for each group, called like `iterator(groupKey, group)`
   var result = new Group();
   this.forEachGroup(function(groupName, group) {
     result[groupName] = iterator.call(context, groupName, group);
@@ -939,41 +933,44 @@ Group.prototype.mapGroups = function(iterator, context) {
   return result;
 }
 
-Group.prototype.keys = function() { return Object.keys(this); }
+Group.prototype.keys = function() {
+  // show-in-docs
+  return Object.keys(this);
+}
 
 Group.prototype.reduceGroups = function(iterator, carryOver, context) {
+  // Reduce/fold for each group, called like `iterator(carryOver, groupKey, group)`  
   this.forEachGroup(function(groupName, group) {
     carryOver = iterator.call(context, carryOver, groupName, group); });
   return carryOver;
 }
 
 Group.prototype.count = function() {
+  // counts the elements of each group
   return this.reduceGroups(function(groupCount, groupName, group) {
     groupCount[groupName] = group.length;
     return groupCount;
   }, {});
 }
 
-// ///////////////////////////////////////////////////////////////////////////////
-// // Global Helper - Arrays
-// ///////////////////////////////////////////////////////////////////////////////
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-// Global.Arrays = {
-//   equal: function(firstArray, secondArray) {
-//     // deprecated, use anArray.equals
-//     return firstArray.equals(secondArray);
-//   }
-// }
-
+// A grid is just a two-dimaensional array, representing a table-like data
 var grid = exports.grid = {
 
   create: function(rows, columns, initialObj) {
+    // Example:
+    // grid.create(3, 2, "empty")
+    // // => [["empty","empty"],
+    // //     ["empty","empty"],
+    // //     ["empty","empty"]]
     var result = new Array(rows);
     while (rows > 0) result[--rows] = arr.withN(columns, initialObj);
     return result;
   },
 
   mapCreate: function(rows, cols, func, context) {
+    // like `grid.create` but takes generator function for cells
     var result = new Array(rows);
     for (var i = 0; i < rows; i++) {
       result[i] = new Array(cols);
@@ -985,6 +982,7 @@ var grid = exports.grid = {
   },
 
   forEach: function(grid, func, context) {
+    // iterate, `func` is called as `func(cellValue, i, j)`
     grid.forEach(function(row, i) {
       row.forEach(function(val, j) {
         func.call(context || this, val, i, j);
@@ -993,6 +991,7 @@ var grid = exports.grid = {
   },
 
   map: function(grid, func, context) {
+    // map, `func` is called as `func(cellValue, i, j)`
     var result = new Array(grid.length);
     grid.forEach(function(row, i) {
       result[i] = new Array(row.length);
@@ -1004,11 +1003,12 @@ var grid = exports.grid = {
   },
 
   toObjects: function(grid) {
-    // the first row of the grid defines the propNames
+    // The first row of the grid defines the propNames
     // for each following row create a new object with those porperties
     // mapped to the cells of the row as values
-    // Grid.toObjects([['a', 'b'],[1,2],[3,4]])
-    //   --> [{a:1,b:2},{a:3,b:4}]
+    // Example:
+    // grid.toObjects([['a', 'b'],[1,2],[3,4]])
+    // // => [{a:1,b:2},{a:3,b:4}]
     var props = grid[0], objects = new Array(grid.length-1);
     for (var i = 1; i < grid.length; i++) {
       var obj = objects[i-1] = {};
@@ -1018,12 +1018,17 @@ var grid = exports.grid = {
   },
 
   tableFromObjects: function(objects, valueForUndefined) {
-    // reverse of grid.toObjects
-    // useful to convert objectified SQL resultset into table that can be
-    // printed via Strings.printTable. objects are key/values like [{x:1,y:2},{x:3},{z:4}]
-    // interpret the keys as column names and add ea objects values as cell
-    // values of a new row. For the example object this would create the
-    // table: [["x","y","z"],[1,2,null],[3,null,null],[null,null,4]]
+    // Reverse operation to `grid.toObjects`. Useful for example to convert objectified
+    // SQL result sets into tables that can be printed via Strings.printTable.
+    // Objects are key/values like [{x:1,y:2},{x:3},{z:4}]. Keys are interpreted as
+    // column names and objects as rows.
+    // Example:
+    // grid.tableFromObjects([{x:1,y:2},{x:3},{z:4}])
+    // // => [["x","y","z"],
+    // //    [1,2,null],
+    // //    [3,null,null],
+    // //    [null,null,4]]
+
     if (!Array.isArray(objects)) objects = [objects];
     var table = [[]], columns = table[0],
       rows = objects.reduce(function(rows, ea) {
@@ -1044,6 +1049,7 @@ var grid = exports.grid = {
   },
 
   benchmark: function() {
+    // ignore-in-doc
     var results = [], t;
 
     var g = grid.create(1000, 200, 1),
@@ -1080,15 +1086,29 @@ var grid = exports.grid = {
 
 // Intervals are arrays whose first two elements are numbers and the
 // first element should be less or equal the second element, see
-// #isInterval
+// [`interval.isInterval`](). This abstraction is useful when working with text
+// ranges in rich text, for example.
 var interval = exports.interval = {
 
   isInterval: function(object) {
-    return Array.isArray(object) && object.length >= 2 && object[0] <= object[1];
+    // Example:
+    // interval.isInterval([1,12]) // => true
+    // interval.isInterval([1,12, {property: 23}]) // => true
+    // interval.isInterval([1]) // => false
+    // interval.isInterval([12, 1]) // => false
+    return Array.isArray(object)
+        && object.length >= 2
+        && object[0] <= object[1];
+  },
+
+  sort: function(intervals) {
+    // Sorts intervals according to rules defined in [`interval.compare`]().
+    return intervals.sort(interval.compare);
   },
 
   compare: function(a, b) {
-    // we assume that a[0] <= a[1] and b[0] <= b[1]
+    // How [`interval.sort`]() compares.
+    // We assume that a[0] <= a[1] and b[0] <= b[1]
     // -3: a < b and non-overlapping, e.g [1,2] and [3,4]
     // -2: a < b and intervals border at each other, e.g [1,3] and [3,4]
     // -1: a < b and overlapping, e.g, [1,3] and [2,4] or [1,3] and [1,4]
@@ -1109,16 +1129,15 @@ var interval = exports.interval = {
     return -1 * interval.compare(b, a);
   },
 
-  sort: function(intervals) { return intervals.sort(interval.compare); },
-
   coalesce: function(interval1, interval2, optMergeCallback) {
-    // turns two arrays into one iff compare(interval1, interval2) ∈ [-2, -1,0,1, 2]
-    // otherwise returns null
-    // optionally uses merge function
-    // [1,4], [5,7] => null
-    // [1,2], [1,2] => [1,2]
-    // [1,4], [3,6] => [1,6]
-    // [3,6], [4,5] => [3,6]
+    // Turns two interval into one iff compare(interval1, interval2) ∈ [-2,
+    // -1,0,1, 2] (see [`inerval.compare`]()).
+    // Otherwise returns null. Optionally uses merge function.
+    // Examples:
+    //   interval.coalesce([1,4], [5,7]) // => null
+    //   interval.coalesce([1,2], [1,2]) // => [1,2]
+    //   interval.coalesce([1,4], [3,6]) // => [1,6]
+    //   interval.coalesce([3,6], [4,5]) // => [3,6]
     var cmpResult = this.compare(interval1, interval2);
     switch (cmpResult) {
       case -3:
@@ -1138,8 +1157,10 @@ var interval = exports.interval = {
   },
 
   coalesceOverlapping: function(intervals, mergeFunc) {
-    // accepts an array of intervals
-    // [[9,10], [1,8], [3, 7], [15, 20], [14, 21]] => [[1, 8], [9, 10], [14, 21]]
+    // Like `coalesce` but accepts an array of intervals.
+    // Example:
+    //   interval.coalesceOverlapping([[9,10], [1,8], [3, 7], [15, 20], [14, 21]])
+    //   // => [[1,8],[9,10],[14,21]]
     var condensed = [], len = intervals.length;
     while (len > 0) {
       var ival = intervals.shift(); len--;
@@ -1176,14 +1197,15 @@ var interval = exports.interval = {
   },
 
   intervalsInRangeDo: function(start, end, intervals, iterator, mergeFunc, context) {
-    /*
-      * merges and iterates through sorted intervals. Will "fill up" intervals, example:
-      Strings.print(interval.intervalsInRangeDo(
-              2, 10, [[0, 1], [5,8], [2,4]],
-              function(i, isNew) { i.push(isNew); return i; }));
-      *  => "[[2,4,false],[4,5,true],[5,8,false],[8,10,true]]"
-      * this is currently used for computing text chunks in lively.morphic.TextCore
-      */
+      // Merges and iterates through sorted intervals. Will "fill up"
+      // intervals. This is currently used for computing text chunks in
+      // lively.morphic.TextCore.
+      // Example:
+      // interval.intervalsInRangeDo(
+      //   2, 10, [[0, 1], [5,8], [2,4]],
+      //   function(i, isNew) { i.push(isNew); return i; })
+      // // => [[2,4,false],[4,5,true],[5,8,false],[8,10,true]]
+      
     context = context || typeof window !== 'undefined' ? window : global;
     // need to be sorted for the algorithm below
     intervals = this.sort(intervals);
@@ -1222,10 +1244,11 @@ var interval = exports.interval = {
   },
 
   intervalsInbetween: function(start, end, intervals) {
-    // computes "free" intervals between the intervals given in range start - end
+    // Computes "free" intervals between the intervals given in range start - end
     // currently used for computing text chunks in lively.morphic.TextCore
-    // start = 0, end = 10, intervals = [[1,4], [5,8]]
-    // => [[0,1], [4, 5], [8, 10]]
+    // Example:
+    // interval.intervalsInbetween(0, 10,[[1,4], [5,8]])
+    // // => [[0,1],[4,5],[8,10]]
     return interval
       .intervalsInRangeDo(start, end,
         interval.coalesceOverlapping(Array.prototype.slice.call(intervals)),
@@ -1234,10 +1257,11 @@ var interval = exports.interval = {
   },
 
   mapToMatchingIndexes:  function(intervals, intervalsToFind) {
-    // returns an array of indexes of the items in intervals that match
-    // items in intervalsToFind
-    // Note: we expect intervals and intervals to be sorted according to interval.compare!
+    // Returns an array of indexes of the items in intervals that match
+    // items in `intervalsToFind`.
+    // Note: We expect intervals and intervals to be sorted according to [`interval.compare`]()!
     // This is the optimized version of:
+    // ```
     // return intervalsToFind.collect(function findOne(toFind) {
     //    var startIdx, endIdx;
     //    var start = intervals.detect(function(ea, i) {
@@ -1248,6 +1272,7 @@ var interval = exports.interval = {
     //    if (end === undefined) return [];
     //    return Array.range(startIdx, endIdx);
     // });
+    // ```
 
     var startIntervalIndex = 0, endIntervalIndex, currentInterval;
     return intervalsToFind.map(function(toFind) {
@@ -1270,6 +1295,7 @@ var interval = exports.interval = {
   },
 
   benchmark: function() {
+    // ignore-in-doc
     // Used for developing the code above. If you change the code, please
     // make sure that you don't worsen the performance!
     // See also lively.lang.tests.ExtensionTests.IntervallTest
@@ -1292,11 +1318,18 @@ var interval = exports.interval = {
   }
 }
 
-// // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+// Accessor to sub-ranges of arrays. This is used, for example, for rendering
+// large lists or tables in which only a part of the items should be used for
+// processing or rendering. An array projection provides convenient access and
+// can apply operations to sub-ranges.
 var arrayProjection = exports.arrayProjection = {
 
   create: function(array, length, optStartIndex) {
+    // Example:
+    // arrayProjection.create([1,2,3,4,5,6,7,8,9], 4, 1)
+    // // => { array: [/*...*/], from: 1, to: 5 }
     var startIndex = optStartIndex || 0
     if (startIndex + length > array.length)
       startIndex -= startIndex + length - array.length;
@@ -1304,20 +1337,37 @@ var arrayProjection = exports.arrayProjection = {
   },
 
   toArray: function(projection) {
+    // show-in-doc
     return projection.array.slice(projection.from, projection.to);
   },
 
   originalToProjectedIndex: function(projection, index) {
+    // Maps index from original Array to projection.
+    // Example:
+    //   var proj = arrayProjection.create([1,2,3,4,5,6,7,8,9], 4, 3);
+    //   arrayProjection.originalToProjectedIndex(proj, 1) // => null
+    //   arrayProjection.originalToProjectedIndex(proj, 3) // => 0
+    //   arrayProjection.originalToProjectedIndex(proj, 5) // => 2
     if (index < projection.from || index >= projection.to) return null;
     return index - projection.from;
   },
 
   projectedToOriginalIndex: function(projection, index) {
+    // Inverse to `originalToProjectedIndex`.
+    // Example:
+    //   var proj = arrayProjection.create([1,2,3,4,5,6,7,8,9], 4, 3);
+    //   arrayProjection.projectedToOriginalIndex(proj, 1) // => 4
     if (index < 0  || index > projection.to - projection.from) return null;
     return projection.from + index;
   },
 
   transformToIncludeIndex: function(projection, index) {
+    // Computes how the projection needs to shift minimally (think "scroll"
+    // down or up) so that index becomes "visible" in projection.
+    // Example:
+    // var proj = arrayProjection.create([1,2,3,4,5,6,7,8,9], 4, 3);
+    // arrayProjection.transformToIncludeIndex(proj, 1)
+    // // => { array: [/*...*/], from: 1, to: 5 }
     if (!(index in projection.array)) return null;
     var delta = 0;
     if (index < projection.from) delta = -projection.from+index;

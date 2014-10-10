@@ -124,6 +124,7 @@ TODO
 
 #### date.js
 
+- [dateFormat](#dateFormat)
 - [exports.date](#exports.date)
   - [format](#exports.date-format)
   - [equals](#exports.date-equals)
@@ -140,17 +141,6 @@ TODO
   - [map](#arrNative-map)
   - [reduce](#arrNative-reduce)
   - [reduceRight](#arrNative-reduceRight)
-- [grid](#grid)
-  - [toObjects](#grid-toObjects)
-  - [tableFromObjects](#grid-tableFromObjects)
-- [interval](#interval)
-  - [compare](#interval-compare)
-  - [coalesce](#interval-coalesce)
-  - [coalesceOverlapping](#interval-coalesceOverlapping)
-  - [intervalsInRangeDo](#interval-intervalsInRangeDo)
-  - [intervalsInbetween](#interval-intervalsInbetween)
-  - [mapToMatchingIndexes](#interval-mapToMatchingIndexes)
-  - [benchmark](#interval-benchmark)
 - [arr](#arr)
   - [range](#arr-range)
   - [from](#arr-from)
@@ -210,6 +200,40 @@ TODO
   - [min](#arr-min)
   - [sum](#arr-sum)
   - [clone](#arr-clone)
+- [thresholds](#thresholds)
+- [Group](#Group)
+  - [fromArray](#Group-fromArray)
+- [Group.prototype](#Group.prototype)
+  - [toArray](#Group.prototype-toArray)
+  - [forEach](#Group.prototype-forEach)
+  - [forEachGroup](#Group.prototype-forEachGroup)
+  - [map](#Group.prototype-map)
+  - [mapGroups](#Group.prototype-mapGroups)
+  - [keys](#Group.prototype-keys)
+  - [reduceGroups](#Group.prototype-reduceGroups)
+  - [count](#Group.prototype-count)
+- [grid](#grid)
+  - [create](#grid-create)
+  - [mapCreate](#grid-mapCreate)
+  - [forEach](#grid-forEach)
+  - [map](#grid-map)
+  - [toObjects](#grid-toObjects)
+  - [tableFromObjects](#grid-tableFromObjects)
+- [interval](#interval)
+  - [isInterval](#interval-isInterval)
+  - [sort](#interval-sort)
+  - [compare](#interval-compare)
+  - [coalesce](#interval-coalesce)
+  - [coalesceOverlapping](#interval-coalesceOverlapping)
+  - [intervalsInRangeDo](#interval-intervalsInRangeDo)
+  - [intervalsInbetween](#interval-intervalsInbetween)
+  - [mapToMatchingIndexes](#interval-mapToMatchingIndexes)
+- [arrayProjection](#arrayProjection)
+  - [create](#arrayProjection-create)
+  - [toArray](#arrayProjection-toArray)
+  - [originalToProjectedIndex](#arrayProjection-originalToProjectedIndex)
+  - [projectedToOriginalIndex](#arrayProjection-projectedToOriginalIndex)
+  - [transformToIncludeIndex](#arrayProjection-transformToIncludeIndex)
 
 #### function.js
 
@@ -232,15 +256,20 @@ TODO
 - [queue](#queue)
   - [handleError](#queue-handleError)
 - [Closure](#Closure)
+- [Closure.prototype](#Closure.prototype)
+  - [getFuncProperties](#Closure.prototype-getFuncProperties)
+  - [recreateFuncFromSource](#Closure.prototype-recreateFuncFromSource)
+  - [couldNotCreateFunc](#Closure.prototype-couldNotCreateFunc)
 
 #### object.js
 
-- [properties](#properties)
 - [obj](#obj)
   - [inspect](#obj-inspect)
   - [merge](#obj-merge)
   - [valuesInPropertyHierarchy](#obj-valuesInPropertyHierarchy)
   - [shortPrintStringOf](#obj-shortPrintStringOf)
+- [properties](#properties)
+- [Path](#Path)
 - [Path.prototype](#Path.prototype)
   - [normalizePath](#Path.prototype-normalizePath)
   - [watch](#Path.prototype-watch)
@@ -248,25 +277,31 @@ TODO
 
 #### events.js
 
+- [obj](#obj)
+  - [once](#obj-once)
+
 #### messenger.js
 
 #### worker.js
 
 - [WorkerSetup](#WorkerSetup)
+- [remoteWorker](#remoteWorker)
+  - [callStringifiedFunction](#remoteWorker-callStringifiedFunction)
 - [BrowserWorker](#BrowserWorker)
   - [create](#BrowserWorker-create)
+- [worker](#worker)
+  - [onmessage](#worker-onmessage)
+  - [create](#worker-create)
 - [NodejsWorker](#NodejsWorker)
   - [create](#NodejsWorker-create)
   - [workerSetupFunction](#NodejsWorker-workerSetupFunction)
   - [startWorker](#NodejsWorker-startWorker)
-- [worker](#worker)
-  - [create](#worker-create)
 
 
 
 ## string.js
 
-### string
+### <a name="string"></a>string
 
  String utility methods for printing, parsing, and converting strings
 
@@ -762,6 +797,10 @@ num.toRadians(180) // => 3.141592653589793
 
 ## date.js
 
+### <a name="dateFormat"></a>dateFormat
+
+ http://blog.stevenlevithan.com/archives/date-time-format
+
 #### <a name="exports.date-format"></a>exports.date.format(date, mask, utc)
 
  Custom date / time stringifier. Provides default masks:
@@ -808,24 +847,9 @@ date.relativeTo(new Date("10/11/2014"), new Date("10/12/2014")) // => "1 day"
 
 ## collection.js
 
-### arrNative
+### <a name="arrNative"></a>arrNative
 
  pure JS implementations of native Array methods
-
-### grid
-
- Global.Arrays = {
-   equal: function(firstArray, secondArray) {
-     // deprecated, use anArray.equals
-     return firstArray.equals(secondArray);
-   }
- }
-
-### interval
-
- Intervals are arrays whose first two elements are numbers and the
- first element should be less or equal the second element, see
- #isInterval
 
 #### <a name="arrNative-sort"></a>arrNative.sort(sortFunc)
 
@@ -858,6 +882,10 @@ date.relativeTo(new Date("10/11/2014"), new Date("10/12/2014")) // => "1 day"
 #### <a name="arrNative-reduceRight"></a>arrNative.reduceRight(iterator, memo, context)
 
 
+
+### <a name="arr"></a>arr
+
+ variety of functions for Arrays
 
 #### <a name="arr-range"></a>arr.range(begin, end, step)
 
@@ -1198,6 +1226,7 @@ arr.rotate([1,2,3]) // => [2,3,1]
  Applies `iterator` to each element in `array`, and puts the return value
  into a collection (the group) associated to it's stringified representation
  (the "hash").
+ See [`Group.prototype`] for available operations on groups.
  
 
 ```js
@@ -1309,30 +1338,147 @@ arr.max(array, function(ea) { return ea.x; }) // => {x: 5, y: 1}
 
 
 
+### <a name="thresholds"></a>thresholds
+
+ bins specifies n threshold values that will create n-1 bins.
+ Each data value d is placed inside a bin i if:
+ threshold[i] >= d && threshold[i+1] < d
+
 #### <a name="arr-clone"></a>arr.clone(array)
 
  shallow copy
 
+### <a name="Group"></a>Group
+
+ A Grouping is created by arr.groupBy and maps keys to Arrays.
+
+#### <a name="Group-fromArray"></a>Group.fromArray(array, hashFunc, context)
+
+ 
+
+```js
+Group.fromArray([1,2,3,4,5,6], function(n) { return n % 2; })
+// => {"0": [2,4,6], "1": [1,3,5]}
+```
+
+#### <a name="Group.prototype-toArray"></a>Group>>toArray()
+
+ 
+
+```js
+var group = arr.groupBy([1,2,3,4,5], function(n) { return n % 2; })
+group.toArray(); // => [[2,4],[1,3,5]]
+```
+
+#### <a name="Group.prototype-forEach"></a>Group>>forEach(iterator, context)
+
+ Iteration for each item in each group, called like `iterator(groupKey, groupItem)`
+
+#### <a name="Group.prototype-forEachGroup"></a>Group>>forEachGroup(iterator, context)
+
+ Iteration for each group, called like `iterator(groupKey, group)`
+
+#### <a name="Group.prototype-map"></a>Group>>map(iterator, context)
+
+ Map for each item in each group, called like `iterator(groupKey, group)`
+
+#### <a name="Group.prototype-mapGroups"></a>Group>>mapGroups(iterator, context)
+
+ Map for each group, called like `iterator(groupKey, group)`
+
+#### <a name="Group.prototype-keys"></a>Group>>keys()
+
+ show-in-docs
+
+#### <a name="Group.prototype-reduceGroups"></a>Group>>reduceGroups(iterator, carryOver, context)
+
+ Reduce/fold for each group, called like `iterator(carryOver, groupKey, group)`  
+
+#### <a name="Group.prototype-count"></a>Group>>count()
+
+ counts the elements of each group
+
+### <a name="grid"></a>grid
+
+ A grid is just a two-dimaensional array, representing a table-like data
+
+#### <a name="grid-create"></a>grid.create(rows, columns, initialObj)
+
+ 
+
+```js
+grid.create(3, 2, "empty")
+// => [["empty","empty"],
+//     ["empty","empty"],
+//     ["empty","empty"]]
+```
+
+#### <a name="grid-mapCreate"></a>grid.mapCreate(rows, cols, func, context)
+
+ like `grid.create` but takes generator function for cells
+
+#### <a name="grid-forEach"></a>grid.forEach(grid, func, context)
+
+ iterate, `func` is called as `func(cellValue, i, j)`
+
+#### <a name="grid-map"></a>grid.map(grid, func, context)
+
+ map, `func` is called as `func(cellValue, i, j)`
+
 #### <a name="grid-toObjects"></a>grid.toObjects(grid)
 
- the first row of the grid defines the propNames
+ The first row of the grid defines the propNames
  for each following row create a new object with those porperties
  mapped to the cells of the row as values
- Grid.toObjects([['a', 'b'],[1,2],[3,4]])
-   --> [{a:1,b:2},{a:3,b:4}]
+ 
+
+```js
+grid.toObjects([['a', 'b'],[1,2],[3,4]])
+// => [{a:1,b:2},{a:3,b:4}]
+```
 
 #### <a name="grid-tableFromObjects"></a>grid.tableFromObjects(objects, valueForUndefined)
 
- reverse of grid.toObjects
- useful to convert objectified SQL resultset into table that can be
- printed via Strings.printTable. objects are key/values like [{x:1,y:2},{x:3},{z:4}]
- interpret the keys as column names and add ea objects values as cell
- values of a new row. For the example object this would create the
- table: [["x","y","z"],[1,2,null],[3,null,null],[null,null,4]]
+ Reverse operation to `grid.toObjects`. Useful for example to convert objectified
+ SQL result sets into tables that can be printed via Strings.printTable.
+ Objects are key/values like [{x:1,y:2},{x:3},{z:4}]. Keys are interpreted as
+ column names and objects as rows.
+ 
+
+```js
+grid.tableFromObjects([{x:1,y:2},{x:3},{z:4}])
+// => [["x","y","z"],
+//    [1,2,null],
+//    [3,null,null],
+//    [null,null,4]]
+```
+
+### <a name="interval"></a>interval
+
+ Intervals are arrays whose first two elements are numbers and the
+ first element should be less or equal the second element, see
+ [`interval.isInterval`](). This abstraction is useful when working with text
+ ranges in rich text, for example.
+
+#### <a name="interval-isInterval"></a>interval.isInterval(object)
+
+ 
+
+```js
+interval.isInterval([1,12]) // => true
+interval.isInterval([1,12, {property: 23}]) // => true
+interval.isInterval([1]) // => false
+interval.isInterval([12, 1]) // => false
+```
+
+#### <a name="interval-sort"></a>interval.sort(intervals)
+
+ Sorts intervals according to rules defined in [`interval.compare`]().
 
 #### <a name="interval-compare"></a>interval.compare(a, b)
 
- we assume that a[0] <= a[1] and b[0] <= b[1]
+ How [`interval.sort`]() compares.
+ We assume that a[0] <= a[1] and b[0] <= b[1]
  -3: a < b and non-overlapping, e.g [1,2] and [3,4]
  -2: a < b and intervals border at each other, e.g [1,3] and [3,4]
  -1: a < b and overlapping, e.g, [1,3] and [2,4] or [1,3] and [1,4]
@@ -1343,43 +1489,60 @@ arr.max(array, function(ea) { return ea.x; }) // => {x: 5, y: 1}
 
 #### <a name="interval-coalesce"></a>interval.coalesce(interval1, interval2, optMergeCallback)
 
- turns two arrays into one iff compare(interval1, interval2) ∈ [-2, -1,0,1, 2]
- otherwise returns null
- optionally uses merge function
- [1,4], [5,7] => null
- [1,2], [1,2] => [1,2]
- [1,4], [3,6] => [1,6]
- [3,6], [4,5] => [3,6]
+ Turns two interval into one iff compare(interval1, interval2) ∈ [-2,
+ -1,0,1, 2] (see [`inerval.compare`]()).
+ Otherwise returns null. Optionally uses merge function.
+ 
+
+```js
+interval.coalesce([1,4], [5,7]) // => null
+interval.coalesce([1,2], [1,2]) // => [1,2]
+interval.coalesce([1,4], [3,6]) // => [1,6]
+interval.coalesce([3,6], [4,5]) // => [3,6]
+```
 
 #### <a name="interval-coalesceOverlapping"></a>interval.coalesceOverlapping(intervals, mergeFunc)
 
- accepts an array of intervals
- [[9,10], [1,8], [3, 7], [15, 20], [14, 21]] => [[1, 8], [9, 10], [14, 21]]
+ Like `coalesce` but accepts an array of intervals.
+ 
+
+```js
+interval.coalesceOverlapping([[9,10], [1,8], [3, 7], [15, 20], [14, 21]])
+// => [[1,8],[9,10],[14,21]]
+```
 
 #### <a name="interval-intervalsInRangeDo"></a>interval.intervalsInRangeDo(start, end, intervals, iterator, mergeFunc, context)
 
+ Merges and iterates through sorted intervals. Will "fill up"
+ intervals. This is currently used for computing text chunks in
+ lively.morphic.TextCore.
+ 
 
-      * merges and iterates through sorted intervals. Will "fill up" intervals, example:
-      Strings.print(interval.intervalsInRangeDo(
-              2, 10, [[0, 1], [5,8], [2,4]],
-              function(i, isNew) { i.push(isNew); return i; }));
-      *  => "[[2,4,false],[4,5,true],[5,8,false],[8,10,true]]"
-      * this is currently used for computing text chunks in lively.morphic.TextCore
-      
+```js
+interval.intervalsInRangeDo(
+2, 10, [[0, 1], [5,8], [2,4]],
+function(i, isNew) { i.push(isNew); return i; })
+// => [[2,4,false],[4,5,true],[5,8,false],[8,10,true]]
+```
 
 #### <a name="interval-intervalsInbetween"></a>interval.intervalsInbetween(start, end, intervals)
 
- computes "free" intervals between the intervals given in range start - end
+ Computes "free" intervals between the intervals given in range start - end
  currently used for computing text chunks in lively.morphic.TextCore
- start = 0, end = 10, intervals = [[1,4], [5,8]]
- => [[0,1], [4, 5], [8, 10]]
+ 
+
+```js
+interval.intervalsInbetween(0, 10,[[1,4], [5,8]])
+// => [[0,1],[4,5],[8,10]]
+```
 
 #### <a name="interval-mapToMatchingIndexes"></a>interval.mapToMatchingIndexes(intervals, intervalsToFind)
 
- returns an array of indexes of the items in intervals that match
- items in intervalsToFind
- Note: we expect intervals and intervals to be sorted according to interval.compare!
+ Returns an array of indexes of the items in intervals that match
+ items in `intervalsToFind`.
+ Note: We expect intervals and intervals to be sorted according to [`interval.compare`]()!
  This is the optimized version of:
+ ```
  return intervalsToFind.collect(function findOne(toFind) {
     var startIdx, endIdx;
     var start = intervals.detect(function(ea, i) {
@@ -1390,12 +1553,61 @@ arr.max(array, function(ea) { return ea.x; }) // => {x: 5, y: 1}
     if (end === undefined) return [];
     return Array.range(startIdx, endIdx);
  });
+ ```
 
-#### <a name="interval-benchmark"></a>interval.benchmark()
+### <a name="arrayProjection"></a>arrayProjection
 
- Used for developing the code above. If you change the code, please
- make sure that you don't worsen the performance!
- See also lively.lang.tests.ExtensionTests.IntervallTest
+ Accessor to sub-ranges of arrays. This is used, for example, for rendering
+ large lists or tables in which only a part of the items should be used for
+ processing or rendering. An array projection provides convenient access and
+ can apply operations to sub-ranges.
+
+#### <a name="arrayProjection-create"></a>arrayProjection.create(array, length, optStartIndex)
+
+ 
+
+```js
+arrayProjection.create([1,2,3,4,5,6,7,8,9], 4, 1)
+// => { array: [/*...*/], from: 1, to: 5 }
+```
+
+#### <a name="arrayProjection-toArray"></a>arrayProjection.toArray(projection)
+
+
+
+#### <a name="arrayProjection-originalToProjectedIndex"></a>arrayProjection.originalToProjectedIndex(projection, index)
+
+ Maps index from original Array to projection.
+ 
+
+```js
+var proj = arrayProjection.create([1,2,3,4,5,6,7,8,9], 4, 3);
+arrayProjection.originalToProjectedIndex(proj, 1) // => null
+arrayProjection.originalToProjectedIndex(proj, 3) // => 0
+arrayProjection.originalToProjectedIndex(proj, 5) // => 2
+```
+
+#### <a name="arrayProjection-projectedToOriginalIndex"></a>arrayProjection.projectedToOriginalIndex(projection, index)
+
+ Inverse to `originalToProjectedIndex`.
+ 
+
+```js
+var proj = arrayProjection.create([1,2,3,4,5,6,7,8,9], 4, 3);
+arrayProjection.projectedToOriginalIndex(proj, 1) // => 4
+```
+
+#### <a name="arrayProjection-transformToIncludeIndex"></a>arrayProjection.transformToIncludeIndex(projection, index)
+
+ Computes how the projection needs to shift minimally (think "scroll"
+ down or up) so that index becomes "visible" in projection.
+ 
+
+```js
+var proj = arrayProjection.create([1,2,3,4,5,6,7,8,9], 4, 3);
+arrayProjection.transformToIncludeIndex(proj, 1)
+// => { array: [/*...*/], from: 1, to: 5 }
+```
 
 
 
@@ -1506,19 +1718,27 @@ fun.compose(function(a,b) {return a+b}, function(x) {return x*4})(3,2)
 
  convenience function
 
-#### <a name="undefined-Closure"></a>Closure()
+#### <a name="Closure"></a>Closure()
 
  represents a function and its bound values
+
+#### <a name="Closure.prototype-getFuncProperties"></a>Closure>>getFuncProperties()
+
+ a function may have state attached
+
+#### <a name="Closure.prototype-recreateFuncFromSource"></a>Closure>>recreateFuncFromSource(funcSource, optFunc)
+
+ what about objects that are copied by value, e.g. numbers?
+ when those are modified after the originalFunc we captured
+ varMapping then we will have divergent state
+
+#### <a name="Closure.prototype-couldNotCreateFunc"></a>Closure>>couldNotCreateFunc(src)
+
+ alert(msg);
 
 
 
 ## object.js
-
-### properties
-
- -=-=-=-=-=-
- properties
- -=-=-=-=-=-
 
 #### <a name="obj-inspect"></a>obj.inspect(obj, options, depth)
 
@@ -1538,6 +1758,18 @@ fun.compose(function(a,b) {return a+b}, function(x) {return x*4})(3,2)
 
  primitive values
 
+### <a name="properties"></a>properties
+
+ -=-=-=-=-=-
+ properties
+ -=-=-=-=-=-
+
+### <a name="Path"></a>Path
+
+ -=-=-=-=-=-=-=-=-=-=-=-=-=-
+ js object path accessor
+ -=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 #### <a name="Path.prototype-normalizePath"></a>Path>>normalizePath()
 
  FIXME: define normalization
@@ -1554,7 +1786,9 @@ fun.compose(function(a,b) {return a+b}, function(x) {return x*4})(3,2)
 
 ## events.js
 
+#### <a name="obj-once"></a>obj.once(type, handler)
 
+args
 
 
 
@@ -1566,12 +1800,19 @@ fun.compose(function(a,b) {return a+b}, function(x) {return x*4})(3,2)
 
 ## worker.js
 
-### WorkerSetup
+### <a name="WorkerSetup"></a>WorkerSetup
 
  code in worker setup is evaluated in the context of workers, it will get to
  workers in a stringified form(!)
 
-### BrowserWorker
+#### <a name="remoteWorker-callStringifiedFunction"></a>remoteWorker.callStringifiedFunction(stringifiedFunc, args, thenDo)
+
+ runs stringified function and passing args. stringifiedFunc might
+ be asynchronous if it takes an addaitional argument. In this case a
+ callback to call when the work is done is passed, otherwise thenDo
+ will be called immediatelly after creating and calling the function
+
+### <a name="BrowserWorker"></a>BrowserWorker
 
  setting up the worker messenger interface, this is how the worker
  should be communicated with
@@ -1581,6 +1822,10 @@ fun.compose(function(a,b) {return a+b}, function(x) {return x*4})(3,2)
  this function instantiates a browser worker object. We provide a
  messenger-based interface to the pure Worker. Please use create to get an
  improved interface to a worker
+
+#### <a name="worker-onmessage"></a>worker.onmessage(evt)
+
+ console.log("BrowserWorker got message\n", evt.data);
 
 #### <a name="NodejsWorker-create"></a>NodejsWorker.create(options)
 
@@ -1598,6 +1843,13 @@ fun.compose(function(a,b) {return a+b}, function(x) {return x*4})(3,2)
 #### <a name="NodejsWorker-startWorker"></a>NodejsWorker.startWorker(options, thenDo)
 
  WorkerSetup.initBrowserGlobals,
+
+### <a name="worker"></a>worker
+
+ -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+ -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+ the worker interface, usable both in browser and node.js contexts
+ -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 #### <a name="worker-create"></a>worker.create(options)
 
