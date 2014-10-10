@@ -1108,7 +1108,8 @@ var interval = exports.interval = {
 
   compare: function(a, b) {
     // How [`interval.sort`]() compares.
-    // We assume that a[0] <= a[1] and b[0] <= b[1]
+    // We assume that `a[0] <= a[1] and b[0] <= b[1]` according to `isInterval`
+    // ```
     // -3: a < b and non-overlapping, e.g [1,2] and [3,4]
     // -2: a < b and intervals border at each other, e.g [1,3] and [3,4]
     // -1: a < b and overlapping, e.g, [1,3] and [2,4] or [1,3] and [1,4]
@@ -1116,6 +1117,7 @@ var interval = exports.interval = {
     //  1: a > b and overlapping, e.g. [2,4] and [1,3]
     //  2: a > b and share border, e.g [1,4] and [0,1]
     //  3: a > b and non-overlapping, e.g [2,4] and [0,1]
+    // ```
     if (a[0] < b[0]) { // -3 || -2 || -1
       if (a[1] < b[0]) return -3;
       if (a[1] === b[0]) return -2;

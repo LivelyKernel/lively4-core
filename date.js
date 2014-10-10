@@ -134,20 +134,22 @@ exports.date = {
 
   format: (function(date, mask, utc) {
     // Custom date / time stringifier. Provides default masks:
+    // 
     // Mask           | Pattern
-    // --------------------------------------------
-    // "default"      | "ddd mmm dd yyyy HH:MM:ss",
-    // shortDate      | "m/d/yy",
-    // mediumDate     | "mmm d, yyyy",
-    // longDate       | "mmmm d, yyyy",
-    // fullDate       | "dddd, mmmm d, yyyy",
-    // shortTime      | "h:MM TT",
-    // mediumTime     | "h:MM:ss TT",
-    // longTime       | "h:MM:ss TT Z",
-    // isoDate        | "yyyy-mm-dd",
-    // isoTime        | "HH:MM:ss",
-    // isoDateTime    | "yyyy-mm-dd'T'HH:MM:ss",
-    // isoUtcDateTime | "UTC:yyyy-mm-dd'T'HH:MM:ss'Z'"
+    // ---------------|--------------------------------
+    // default        | `"ddd mmm dd yyyy HH:MM:ss"`
+    // shortDate      | `"m/d/yy"`
+    // mediumDate     | `"mmm d, yyyy"`
+    // longDate       | `"mmmm d, yyyy"`
+    // fullDate       | `"dddd, mmmm d, yyyy"`
+    // shortTime      | `"h:MM TT"`
+    // mediumTime     | `"h:MM:ss TT"`
+    // longTime       | `"h:MM:ss TT Z"`
+    // isoDate        | `"yyyy-mm-dd"`
+    // isoTime        | `"HH:MM:ss"`
+    // isoDateTime    | `"yyyy-mm-dd'T'HH:MM:ss"`
+    // isoUtcDateTime | `"UTC:yyyy-mm-dd'T'HH:MM:ss'Z'"`
+    // 
     // and internationalized strings via `date.format.i18n.dayNames`
     // and `date.format.i18n.dayNames`
     // Examples:

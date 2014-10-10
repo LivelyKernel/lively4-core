@@ -277,10 +277,13 @@ TODO
 
 #### events.js
 
+- [events](#events)
 - [obj](#obj)
   - [once](#obj-once)
 
 #### messenger.js
+
+- [messenger](#messenger)
 
 #### worker.js
 
@@ -804,20 +807,22 @@ num.toRadians(180) // => 3.141592653589793
 #### <a name="exports.date-format"></a>exports.date.format(date, mask, utc)
 
  Custom date / time stringifier. Provides default masks:
+ 
  Mask           | Pattern
- --------------------------------------------
- "default"      | "ddd mmm dd yyyy HH:MM:ss",
- shortDate      | "m/d/yy",
- mediumDate     | "mmm d, yyyy",
- longDate       | "mmmm d, yyyy",
- fullDate       | "dddd, mmmm d, yyyy",
- shortTime      | "h:MM TT",
- mediumTime     | "h:MM:ss TT",
- longTime       | "h:MM:ss TT Z",
- isoDate        | "yyyy-mm-dd",
- isoTime        | "HH:MM:ss",
- isoDateTime    | "yyyy-mm-dd'T'HH:MM:ss",
- isoUtcDateTime | "UTC:yyyy-mm-dd'T'HH:MM:ss'Z'"
+ ---------------|--------------------------------
+ default        | `"ddd mmm dd yyyy HH:MM:ss"`
+ shortDate      | `"m/d/yy"`
+ mediumDate     | `"mmm d, yyyy"`
+ longDate       | `"mmmm d, yyyy"`
+ fullDate       | `"dddd, mmmm d, yyyy"`
+ shortTime      | `"h:MM TT"`
+ mediumTime     | `"h:MM:ss TT"`
+ longTime       | `"h:MM:ss TT Z"`
+ isoDate        | `"yyyy-mm-dd"`
+ isoTime        | `"HH:MM:ss"`
+ isoDateTime    | `"yyyy-mm-dd'T'HH:MM:ss"`
+ isoUtcDateTime | `"UTC:yyyy-mm-dd'T'HH:MM:ss'Z'"`
+ 
  and internationalized strings via `date.format.i18n.dayNames`
  and `date.format.i18n.dayNames`
  
@@ -920,20 +925,20 @@ arr.genN(3, num.random) // => [46,77,95]
 
 #### <a name="arr-filter"></a>arr.filter(array, iterator, context)
 
- [a] -> (a -> Boolean) -> c? -> [a]
+ `[a] -> (a -> Boolean) -> c? -> [a]`
  Calls `iterator` for each element in `array` and returns a subset of it
  including the elements for which `iterator` returned a truthy value.
  Like `Array.prototype.filter`.
 
 #### <a name="arr-detect"></a>arr.detect(arr, iterator, context)
 
- [a] -> (a -> Boolean) -> c? -> a
+ `[a] -> (a -> Boolean) -> c? -> a`
  returns the first occurrence of an element in `arr` for which iterator
  returns a truthy value
 
 #### <a name="arr-filterByKey"></a>arr.filterByKey(arr, key)
 
- [a] -> String -> [a]
+ `[a] -> String -> [a]`
  
 
 ```js
@@ -1011,7 +1016,7 @@ arr.compact([1,2,undefined,4,0]) // => [1,2,4]
 
 #### <a name="arr-forEach"></a>arr.forEach(array, iterator, context)
 
- [a] -> (a -> Undefined) -> c? -> Undefined
+ `[a] -> (a -> Undefined) -> c? -> Undefined`
  `iterator` is called on each element in `array` for side effects. Like
  `Array.prototype.forEach`.
 
@@ -1037,7 +1042,7 @@ arr.flatten([1, [2, [3,4,5], [6]], 7,8])
 
 #### <a name="arr-map"></a>arr.map(array, iterator, context)
 
- [a] -> (a -> b) -> c? -> [b]
+ `[a] -> (a -> b) -> c? -> [b]`
  Applies `iterator` to each element of `array` and returns a new Array
  with the results of those calls. Like `Array.prototype.some`.
 
@@ -1081,13 +1086,13 @@ arr.include([1,2,3], 2) // => true
 
 #### <a name="arr-some"></a>arr.some(array, iterator, context)
 
- [a] -> (a -> Boolean) -> c? -> Boolean
+ `[a] -> (a -> Boolean) -> c? -> Boolean`
  Returns true if there is at least one abject in `array` for which
  `iterator` returns a truthy result. Like `Array.prototype.some`.
 
 #### <a name="arr-every"></a>arr.every(array, iterator, context)
 
- [a] -> (a -> Boolean) -> c? -> Boolean
+ `[a] -> (a -> Boolean) -> c? -> Boolean`
  Returns true if for all abjects in `array` `iterator` returns a truthy
  result. Like `Array.prototype.every`.
 
@@ -1098,7 +1103,7 @@ arr.include([1,2,3], 2) // => true
 
 #### <a name="arr-sort"></a>arr.sort(array, sortFunc)
 
- [a] -> (a -> Number)? -> [a]
+ `[a] -> (a -> Number)? -> [a]`
  Just `Array.prototype.sort`
 
 #### <a name="arr-sortBy"></a>arr.sortBy(array, iterator, context)
@@ -1478,7 +1483,8 @@ interval.isInterval([12, 1]) // => false
 #### <a name="interval-compare"></a>interval.compare(a, b)
 
  How [`interval.sort`]() compares.
- We assume that a[0] <= a[1] and b[0] <= b[1]
+ We assume that `a[0] <= a[1] and b[0] <= b[1]` accoring to `isInterval`
+ ```
  -3: a < b and non-overlapping, e.g [1,2] and [3,4]
  -2: a < b and intervals border at each other, e.g [1,3] and [3,4]
  -1: a < b and overlapping, e.g, [1,3] and [2,4] or [1,3] and [1,4]
@@ -1486,6 +1492,7 @@ interval.isInterval([12, 1]) // => false
   1: a > b and overlapping, e.g. [2,4] and [1,3]
   2: a > b and share border, e.g [1,4] and [0,1]
   3: a > b and non-overlapping, e.g [2,4] and [0,1]
+ ```
 
 #### <a name="interval-coalesce"></a>interval.coalesce(interval1, interval2, optMergeCallback)
 
@@ -1786,6 +1793,10 @@ fun.compose(function(a,b) {return a+b}, function(x) {return x*4})(3,2)
 
 ## events.js
 
+### <a name="events"></a>events
+
+ A simple node.js-like cross-platform event emitter implementations.
+
 #### <a name="obj-once"></a>obj.once(type, handler)
 
 args
@@ -1794,7 +1805,113 @@ args
 
 ## messenger.js
 
+### <a name="messenger"></a>messenger
 
+
+
+Messengers are interfaces that provide methods for asynchronous
+message-based communication. This allows to give heterogeneous objects that are
+communicating asynchronous (for example web workers, XHR requests, WebSockets,
+node.js forked processes, ...) a unified interface.
+
+This particular module allows users to create messengers and tie them to a
+particular implementation by only providing a minimal set of functionality:
+`send`, `listen`, `close`, and `isOnline`.
+
+This is a minimal example for a messenger that only sends messages to the
+console and receives nothing. (See below for a more sophisticated example.)
+
+```js
+var msger = jsext.messenger.create({
+  send: function(msg, onSendDone) { console.log(msg); onSendDone(); },
+  listen: function(messenger, thenDo) { thenDo(); },
+  close: function(messenger, thenDo) { thenDo(); },
+  isOnline: function() { return true }
+});
+```
+
+#### Messenger interface
+
+The interface methods are build to enable an user to send and receive
+messages. Each messenger provides the following methods:
+
+##### msger.id()
+
+Each msger has an id that can either be defined by the user when the
+msger is created or is automatically assigned.
+
+##### msger.isOnline()
+
+Can the msger send and receive messages right now?
+
+##### msger.heartbeatEnabled()
+
+Does the msger send automated heartbeat messages?
+
+##### msger.listen(optionalCallback)
+
+Brings the messenger "online": Starts listening for messages and brings it
+into a state to send messages. `optionalCallback` is a function that is called
+when listening begins. It should accept one argument `error` that is null if no
+error occured when listening was started, an Error object otherwise.
+
+##### msger.send(msg, onReceiveFunc)
+
+Sends a message. The message should be structured according to the [message
+protocol](#TODO). `onReceiveFunc` is triggered when the `msg` is being
+answered. `onReceiveFunc` should take two arguments: `error` and `answer`.
+`answer` is itself a message object.
+
+##### msger.sendTo(target, action, data, onReceiveFunc)
+
+A simpler `send`, the `msg` object is automatically assembled. `target`
+should be an id of the receiver and `action` a string naming the service that
+should be triggered on the receiver.
+
+##### msger.answer(msg, data, expectMore, whenSend)
+
+Assembles an answer message for `msg` that includes `data`. `expectMore`
+should be truthy when multiple answers should be send (a streaming response,
+see the [messaging protocol](#TODO)).
+
+##### msger.close(thenDo)
+
+Stops listening.
+
+##### msger.whenOnline
+
+Registers a callback that is triggered as soon as a listen attempt succeeds
+(or when the messenger is listening already then it succeeds immediately).
+
+##### msger.outgoingMessages()
+
+Returns the messages that are currently inflight or not yet send.
+
+##### msger.addServices(serviceSpec)
+
+Add services to the messenger. `serviceSpec` should be  JS object whose keys
+correspond to message actions.
+
+
+```js
+```js
+msg.addServices({
+helloWorld: function(msg, messenger) {
+messenger.answer(msg, "received a message!");
+}
+});
+```
+See the examples below for more information.
+##### *event` msger.on("message")
+To allow users to receive messages that were not initiated by a send,
+messengers are [event emitters](events.js) that emit `"message"` events
+whenever they receive a new message.
+The messenger object is used to create new messenger interfaces and ties
+them to a specific implementation. Please see [worker.js]() for examples of
+how web workers and node.js processes are wrapped to provide a cross-platform
+interface to a worker abstraction.
+
+```
 
 
 

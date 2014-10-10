@@ -5,9 +5,26 @@
 
 var isNode = typeof process !== 'undefined' && process.versions && process.versions.node;
 
+// A simple node.js-like cross-platform event emitter implementations. Emitters
+// support the methods: `on(eventName, handlerFunc)`, 
+// `once(eventName, handlerFunc)`, `emit(eventName, eventData)`,
+// `removeListener(eventName, handlerFunc)`, `removeAllListeners(eventName)`
 var events = exports.events = {
 
   makeEmitter: isNode ? function(obj) {
+    // Turns `obj` into an event emitter.
+    // Example:
+    //   var emitter = events.makeEmitter({});
+    //   var log = [];
+    //   emitter.on("test", function() { log.push("listener1"); });
+    //   emitter.once("test", function() { log.push("listener2"); });
+    //   emitter.emit("test");
+    //   emitter.emit("test");
+    //   log // => ["listener1","listener2","listener1"]
+    //   emitter.removeAllListeners("test");
+    //   emitter.emit("test");
+    //   log // => is still ["listener1","listener2","listener1"]
+    
     if (obj.on && obj.removeListener) return obj;
     var events = require("events");
     require("util")._extend(obj, events.EventEmitter.prototype);

@@ -22,6 +22,114 @@ var OFFLINE = 'offline';
 var ONLINE = 'online';
 var CONNECTING = 'connecting';
 
+/*
+
+Messengers are interfaces that provide methods for asynchronous
+message-based communication. This allows to give heterogeneous objects that are
+communicating asynchronous (for example web workers, XHR requests, WebSockets,
+node.js forked processes, ...) a unified interface.
+
+This particular module allows users to create messengers and tie them to a
+particular implementation by only providing a minimal set of functionality:
+`send`, `listen`, `close`, and `isOnline`.
+
+This is a minimal example for a messenger that only sends messages to the
+console and receives nothing. (See below for a more sophisticated example.)
+
+```js
+var msger = jsext.messenger.create({
+  send: function(msg, onSendDone) { console.log(msg); onSendDone(); },
+  listen: function(messenger, thenDo) { thenDo(); },
+  close: function(messenger, thenDo) { thenDo(); },
+  isOnline: function() { return true }
+});
+```
+
+#### Messenger interface
+
+The interface methods are build to enable an user to send and receive
+messages. Each messenger provides the following methods:
+
+##### msger.id()
+
+Each msger has an id that can either be defined by the user when the
+msger is created or is automatically assigned.
+
+##### msger.isOnline()
+
+Can the msger send and receive messages right now?
+
+##### msger.heartbeatEnabled()
+
+Does the msger send automated heartbeat messages?
+
+##### msger.listen(optionalCallback)
+
+Brings the messenger "online": Starts listening for messages and brings it
+into a state to send messages. `optionalCallback` is a function that is called
+when listening begins. It should accept one argument `error` that is null if no
+error occured when listening was started, an Error object otherwise.
+
+##### msger.send(msg, onReceiveFunc)
+
+Sends a message. The message should be structured according to the [message
+protocol](#TODO). `onReceiveFunc` is triggered when the `msg` is being
+answered. `onReceiveFunc` should take two arguments: `error` and `answer`.
+`answer` is itself a message object.
+
+##### msger.sendTo(target, action, data, onReceiveFunc)
+
+A simpler `send`, the `msg` object is automatically assembled. `target`
+should be an id of the receiver and `action` a string naming the service that
+should be triggered on the receiver.
+
+##### msger.answer(msg, data, expectMore, whenSend)
+
+Assembles an answer message for `msg` that includes `data`. `expectMore`
+should be truthy when multiple answers should be send (a streaming response,
+see the [messaging protocol](#TODO)).
+
+##### msger.close(thenDo)
+
+Stops listening.
+
+##### msger.whenOnline(thenDo)
+
+Registers a callback that is triggered as soon as a listen attempt succeeds
+(or when the messenger is listening already then it succeeds immediately).
+
+##### msger.outgoingMessages()
+
+Returns the messages that are currently inflight or not yet send.
+
+##### msger.addServices(serviceSpec)
+
+Add services to the messenger. `serviceSpec` should be  JS object whose keys
+correspond to message actions.
+Example:
+
+```js
+msg.addServices({
+  helloWorld: function(msg, messenger) {
+    messenger.answer(msg, "received a message!");
+  }
+});
+```
+
+See the examples below for more information.
+
+##### *event` msger.on("message")
+
+To allow users to receive messages that were not initiated by a send,
+messengers are [event emitters](events.js) that emit `"message"` events
+whenever they receive a new message.
+
+The messenger object is used to create new messenger interfaces and ties
+them to a specific implementation. Please see [worker.js]() for examples of
+how web workers and node.js processes are wrapped to provide a cross-platform
+interface to a worker abstraction.
+
+*/
 var messenger = exports.messenger = {
   
   OFFLINE: OFFLINE,
