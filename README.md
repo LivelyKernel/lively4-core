@@ -654,10 +654,6 @@ num.parseLength('3cm', "in") // => 1.1811023622047243
 
  `quantum` is something like 0.01,
 
-#### <a name="num-roundTo"></a>num.roundTo(n, quantum)
-
- for JS rounding to work we need the reciprocal
-
 #### <a name="num-detent"></a>num.detent(n, detent, grid, snap)
 
  This function is useful to implement smooth transitions and snapping.
@@ -683,23 +679,6 @@ num.detent(0.39,  0.2, 0.5) // => 0.4833334
 num.detent(0.4,  0.2, 0.5) // => 0.5
 num.detent(0.6,  0.2, 0.5) // => 0.5
 ```
-
-#### <a name="num-detent"></a>num.detent(n, detent, grid, snap)
-
- Nearest multiple of grid
-
-#### <a name="num-detent"></a>num.detent(n, detent, grid, snap)
-
- Snap to that multiple...
-
-#### <a name="num-detent"></a>num.detent(n, detent, grid, snap)
-
- ...and return n
- or compute nearest end of dead zone
-
-#### <a name="num-detent"></a>num.detent(n, detent, grid, snap)
-
- and scale values between dead zones to fill range between multiples
 
 #### <a name="num-toDegrees"></a>num.toDegrees(n)
 
@@ -790,14 +769,6 @@ morphs.mask(morphs.reMatches(/code/i))
 
  init args
 
-#### <a name="arr-forEachShowingProgress"></a>arr.forEachShowingProgress()
-
- init progressbar
-
-#### <a name="arr-forEachShowingProgress"></a>arr.forEachShowingProgress()
-
- nest functions so that the iterator calls the next after a delay
-
 #### <a name="arr-batchify"></a>arr.batchify(arr, constrainedFunc, context)
 
  takes elements and fits them into subarrays (=batches) so that for
@@ -843,10 +814,6 @@ morphs.mask(morphs.reMatches(/code/i))
   2: a > b and share border, e.g [1,4] and [0,1]
   3: a > b and non-overlapping, e.g [2,4] and [0,1]
 
-#### <a name="interval-compare"></a>interval.compare(a, b)
-
- we know a[0] > b[0], 1 || 2 || 3
-
 #### <a name="interval-coalesce"></a>interval.coalesce(interval1, interval2, optMergeCallback)
 
  turns two arrays into one iff compare(interval1, interval2) ∈ [-2, -1,0,1, 2]
@@ -856,10 +823,6 @@ morphs.mask(morphs.reMatches(/code/i))
  [1,2], [1,2] => [1,2]
  [1,4], [3,6] => [1,6]
  [3,6], [4,5] => [3,6]
-
-#### <a name="interval-coalesce"></a>interval.coalesce(interval1, interval2, optMergeCallback)
-
- swap
 
 #### <a name="interval-coalesceOverlapping"></a>interval.coalesceOverlapping(intervals, mergeFunc)
 
@@ -876,14 +839,6 @@ morphs.mask(morphs.reMatches(/code/i))
       *  => "[[2,4,false],[4,5,true],[5,8,false],[8,10,true]]"
       * this is currently used for computing text chunks in lively.morphic.TextCore
       
-
-#### <a name="interval-intervalsInRangeDo"></a>interval.intervalsInRangeDo(start, end, intervals, iterator, mergeFunc, context)
-
- need to be sorted for the algorithm below
-
-#### <a name="interval-intervalsInRangeDo"></a>interval.intervalsInRangeDo(start, end, intervals, iterator, mergeFunc, context)
-
- merged intervals are already sorted, simply "negate" the interval array;
 
 #### <a name="interval-intervalsInbetween"></a>interval.intervalsInbetween(start, end, intervals)
 
@@ -933,17 +888,6 @@ morphs.mask(morphs.reMatches(/code/i))
  exec func at most once every wait ms even when called more often
  useful to calm down eagerly running updaters and such
 
-#### <a name="fun-throttle"></a>fun.throttle(func, wait)
-
- 
-
-```js
-var i = 0;
-x = fun.throttle(function() { show(++i + '-' + Date.now()) }, 500);
-Array.range(0,100).forEach(function(n) { x() });
-
-```
-
 #### <a name="fun-debounce"></a>fun.debounce(wait, func, immediate)
 
  Execute func after wait milliseconds elapsed since invocation.
@@ -988,18 +932,6 @@ Array.range(0,100).forEach(function(n) { x() });
  will "pile up" and called with the same arguments as the first
  thenDoFunc once workerFunc is done
 
-#### <a name="fun-workerWithCallbackQueue"></a>fun.workerWithCallbackQueue(id, workerFunc, optTimeout)
-
- timeout
-
-#### <a name="fun-workerWithCallbackQueue"></a>fun.workerWithCallbackQueue(id, workerFunc, optTimeout)
-
- init the store
-
-#### <a name="fun-workerWithCallbackQueue"></a>fun.workerWithCallbackQueue(id, workerFunc, optTimeout)
-
- call worker, but delay so we can immediately return
-
 #### <a name="fun-composeAsync"></a>fun.composeAsync()
 
  composes functions: fun.composeAsync(f,g,h)(arg1, arg2) =
@@ -1027,10 +959,6 @@ fun.compose(function(a,b) {return a+b}, function(x) {return x*4})(3,2)
 
  swaps the first two args
  fun.flip(function(a, b, c) { return a + b + c; })(' World', 'Hello', '!')
-
-#### <a name="fun-flip"></a>fun.flip(f)
-
-args
 
 #### <a name="fun-waitFor"></a>fun.waitFor(timeoutMs, waitTesterFunc, thenDo)
 
@@ -1069,10 +997,6 @@ args
 
  print function
 
-#### <a name="obj-inspect"></a>obj.inspect(obj, options, depth)
-
- print "primitive"
-
 #### <a name="obj-merge"></a>obj.merge(objs)
 
  // if objs are arrays just concat them
@@ -1087,14 +1011,6 @@ args
 
  primitive values
 
-#### <a name="obj-shortPrintStringOf"></a>obj.shortPrintStringOf(obj)
-
- constructed objects
-
-#### <a name="obj-shortPrintStringOf"></a>obj.shortPrintStringOf(obj)
-
- arrays or plain objects
-
 #### <a name="Path.prototype-normalizePath"></a>Path>>normalizePath()
 
  FIXME: define normalization
@@ -1102,10 +1018,6 @@ args
 #### <a name="Path.prototype-watch"></a>Path>>watch(options)
 
  options: target, haltWhenChanged, uninstall, onGet, onSet, verbose
-
-#### <a name="Path.prototype-watch"></a>Path>>watch(options)
-
- observe slots, for debugging
 
 #### <a name="Path.prototype-debugFunctionWrapper"></a>Path>>debugFunctionWrapper(options)
 
@@ -1143,22 +1055,6 @@ args
  messenger-based interface to the pure Worker. Please use create to get an
  improved interface to a worker
 
-#### <a name="BrowserWorker-create"></a>BrowserWorker.create(options)
-
- figure out where the other lang libs can be loaded from
-
-#### <a name="BrowserWorker-create"></a>BrowserWorker.create(options)
-
- This code is triggered in the UI process directly after the
- creation of the worker and sends the setup message to the worker
- for initializing it.
-
-#### <a name="BrowserWorker-create"></a>BrowserWorker.create(options)
-
- This code is run inside the worker and bootstraps the messenger
- interface. It also installs a console.log method since since this is not
- available by default.
-
 #### <a name="NodejsWorker-create"></a>NodejsWorker.create(options)
 
  figure out where the other lang libs can be loaded from
@@ -1171,16 +1067,6 @@ args
 #### <a name="NodejsWorker-workerSetupFunction"></a>NodejsWorker.workerSetupFunction()
 
  this code is run in the context of the worker process
-
-#### <a name="NodejsWorker-workerSetupFunction"></a>NodejsWorker.workerSetupFunction()
-
- process.on('message', function(m) {
-   debug && console.log('[WORKER] got message:', m);
-   if (m.action === 'ping') process.send({action: 'pong', data: m});
-   else if (m.action === 'close') close = true;
-   else if (m.action === 'setup') setup(m.data);
-   else console.error('[WORKER] unknown message: ', m);
- });
 
 #### <a name="NodejsWorker-startWorker"></a>NodejsWorker.startWorker(options, thenDo)
 
