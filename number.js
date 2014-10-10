@@ -4,15 +4,15 @@
 var num = exports.num = {
 
   random: function(min, max) {
-    // both min and max are included
+    // random number between (and including) `min` and `max`
     min = min || 0;
     max  = max || 100;
     return Math.round(Math.random() * (max-min) + min)
   },
 
   normalRandom: (function(mean, stdDev) {
-    // var stdNormalDist = Numbers.random(-1,1) + Numbers.random(-1,1) + Numbers.random(-1,1);
-    // return Math.round(stdNormalDist * stdDev + mean);
+    // returns randomized numbers in a normal distribution that can be
+    // controlled ising the `mean` and `stdDev` parameters
     var spare, isSpareReady = false;
     return function(mean, stdDev) {
       if (isSpareReady) {
@@ -34,6 +34,9 @@ var num = exports.num = {
   })(),
 
   humanReadableByteSize: function(n) {
+    // interpret `n` as byte size and print a more readable version
+    // Example:
+    //   num.humanReadableByteSize(Math.pow(2,32)) // => "4096MB"
     function round(n) { return Math.round(n * 100) / 100 }
     if (n < 1000) return String(round(n)) + 'B'
     n = n / 1024;
@@ -43,10 +46,12 @@ var num = exports.num = {
   },
 
   average: function(numbers) {
+    // show-in-doc
     return numbers.reduce(function(sum, n) { return sum + n; }, 0) / numbers.length;
   },
 
   median: function(numbers) {
+    // show-in-doc
     var sorted = numbers.sort(function(a,b) { return b - a; }),
         len = numbers.length;
     return len % 2 === 0 ?
@@ -55,7 +60,7 @@ var num = exports.num = {
   },
 
   between: function(x, a, b, eps) {
-    // is a <= x <= y?
+    // is `a` <= `x` <= `y`?
     eps = eps || 0;
     var min, max;
     if (a < b) { min = a, max = b }
@@ -64,13 +69,16 @@ var num = exports.num = {
   },
 
   sort: function(arr) {
+    // numerical sort, JavaScript native `sort` function is lexical by default.
     return arr.sort(function(a,b) { return a-b; });
   },
 
   parseLength: function(string, toUnit) {
-    // num.parseLength('3cm')
-    // This converts the length value to pixels or the specified toUnit.
-    // Supported units are: mm, cm, in, px, pt, pc
+    // This converts the length value to pixels or the specified `toUnit`.
+    // length converstion, supported units are: mm, cm, in, px, pt, pc
+    // Examples:
+    // num.parseLength('3cm') // => 113.38582677165354
+    // num.parseLength('3cm', "in") // => 1.1811023622047243
     toUnit = toUnit || 'px'
     var match = string.match(/([0-9\.]+)\s*(.*)/);
     if (!match || !match[1]) return undefined;
@@ -80,6 +88,7 @@ var num = exports.num = {
   },
 
   convertLength: (function() {
+    // ignore-in-doc
     // num.convertLength(20, 'px', 'pt').roundTo(0.01)
     function toCm(n, unit) {
       // as defined in http://www.w3.org/TR/css3-values/#absolute-lengths
@@ -99,19 +108,34 @@ var num = exports.num = {
   })(),
 
   roundTo: function(n, quantum) {
-    // quantum is something like 0.01,
-    // however for JS rounding to work we need the reciprocal
+    // `quantum` is something like 0.01,
+
+    // for JS rounding to work we need the reciprocal
     quantum = 1 / quantum;
     return Math.round(n * quantum) / quantum;
   },
 
   detent: function(n, detent, grid, snap) {
+    // This function is useful to implement smooth transitions and snapping.
     // Map all values that are within detent/2 of any multiple of grid to
     // that multiple. Otherwise, if snap is true, return self, meaning that
     // the values in the dead zone will never be returned. If snap is
     // false, then expand the range between dead zone so that it covers the
     // range between multiples of the grid, and scale the value by that
     // factor.
+    // Examples:
+    // // With snapping:
+    // num.detent(0.11, 0.2, 0.5, true) // => 0.11
+    // num.detent(0.39, 0.2, 0.5, true) // => 0.39
+    // num.detent(0.55, 0.2, 0.5, true)  // => 0.5
+    // num.detent(0.61, 0.2, 0.5, true)   // => 0.61
+    // // Smooth transitions without snapping:
+    // num.detent(0.1,  0.2, 0.5) // => 0
+    // num.detent(0.11,  0.2, 0.5) // => 0.0166666
+    // num.detent(0.34,  0.2, 0.5)  // => 0.4
+    // num.detent(0.39,  0.2, 0.5) // => 0.4833334
+    // num.detent(0.4,  0.2, 0.5) // => 0.5
+    // num.detent(0.6,  0.2, 0.5) // => 0.5
     var r1 = exports.num.roundTo(n, grid); // Nearest multiple of grid
     if (Math.abs(n - r1) < detent / 2) return r1; // Snap to that multiple...
     if (snap) return n // ...and return n
@@ -122,10 +146,14 @@ var num = exports.num = {
   },
 
   toDegrees: function(n) {
+    // Example:
+    // num.toDegrees(Math.PI/2) // => 90
     return (n * 180 / Math.PI) % 360;
   },
 
   toRadians: function(n) {
+    // Example:
+    // num.toRadians(180) // => 3.141592653589793
     return n / 180 * Math.PI;
   }
 
