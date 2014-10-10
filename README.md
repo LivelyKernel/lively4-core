@@ -124,10 +124,22 @@ TODO
 
 #### date.js
 
+- [exports.date](#exports.date)
+  - [format](#exports.date-format)
+  - [equals](#exports.date-equals)
+  - [relativeTo](#exports.date-relativeTo)
+
 #### collection.js
 
 - [arrNative](#arrNative)
+  - [sort](#arrNative-sort)
+  - [filter](#arrNative-filter)
+  - [forEach](#arrNative-forEach)
+  - [some](#arrNative-some)
+  - [every](#arrNative-every)
   - [map](#arrNative-map)
+  - [reduce](#arrNative-reduce)
+  - [reduceRight](#arrNative-reduceRight)
 - [grid](#grid)
   - [toObjects](#grid-toObjects)
   - [tableFromObjects](#grid-tableFromObjects)
@@ -140,14 +152,64 @@ TODO
   - [mapToMatchingIndexes](#interval-mapToMatchingIndexes)
   - [benchmark](#interval-benchmark)
 - [arr](#arr)
-  - [reMatches](#arr-reMatches)
-  - [mutableCompact](#arr-mutableCompact)
-  - [uniqBy](#arr-uniqBy)
-  - [nestedDelay](#arr-nestedDelay)
-  - [doAndContinue](#arr-doAndContinue)
-  - [forEachShowingProgress](#arr-forEachShowingProgress)
-  - [batchify](#arr-batchify)
+  - [range](#arr-range)
+  - [from](#arr-from)
+  - [withN](#arr-withN)
+  - [genN](#arr-genN)
+  - [filter](#arr-filter)
+  - [detect](#arr-detect)
+  - [filterByKey](#arr-filterByKey)
+  - [grep](#arr-grep)
   - [mask](#arr-mask)
+  - [reject](#arr-reject)
+  - [rejectByKey](#arr-rejectByKey)
+  - [without](#arr-without)
+  - [withoutAll](#arr-withoutAll)
+  - [uniq](#arr-uniq)
+  - [uniqBy](#arr-uniqBy)
+  - [compact](#arr-compact)
+  - [mutableCompact](#arr-mutableCompact)
+  - [forEach](#arr-forEach)
+  - [zip](#arr-zip)
+  - [flatten](#arr-flatten)
+  - [map](#arr-map)
+  - [invoke](#arr-invoke)
+  - [pluck](#arr-pluck)
+  - [reduce](#arr-reduce)
+  - [reduceRight](#arr-reduceRight)
+  - [include](#arr-include)
+  - [some](#arr-some)
+  - [every](#arr-every)
+  - [equals](#arr-equals)
+  - [sort](#arr-sort)
+  - [sortBy](#arr-sortBy)
+  - [sortByKey](#arr-sortByKey)
+  - [reMatches](#arr-reMatches)
+  - [intersect](#arr-intersect)
+  - [union](#arr-union)
+  - [pushAt](#arr-pushAt)
+  - [removeAt](#arr-removeAt)
+  - [remove](#arr-remove)
+  - [pushAll](#arr-pushAll)
+  - [pushAllAt](#arr-pushAllAt)
+  - [pushIfNotIncluded](#arr-pushIfNotIncluded)
+  - [replaceAt](#arr-replaceAt)
+  - [clear](#arr-clear)
+  - [doAndContinue](#arr-doAndContinue)
+  - [nestedDelay](#arr-nestedDelay)
+  - [forEachShowingProgress](#arr-forEachShowingProgress)
+  - [swap](#arr-swap)
+  - [rotate](#arr-rotate)
+  - [groupBy](#arr-groupBy)
+  - [groupByKey](#arr-groupByKey)
+  - [partition](#arr-partition)
+  - [batchify](#arr-batchify)
+  - [toTuples](#arr-toTuples)
+  - [shuffle](#arr-shuffle)
+  - [max](#arr-max)
+  - [min](#arr-min)
+  - [sum](#arr-sum)
+  - [clone](#arr-clone)
 
 #### function.js
 
@@ -210,7 +272,7 @@ TODO
 
 #### <a name="string-format"></a>string.format()
 
-`String+ -> String`
+ String+ -> String
  Takes a variable number of arguments. The first argument is the format
  string. Placeholders in the format string are marked with `"%s"`.
  
@@ -221,7 +283,7 @@ jsext.string.format("Hello %s!", "Lively User"); // => "Hello Lively User!"
 
 #### <a name="string-indent"></a>string.indent(str, indentString, depth)
 
-`String -> String -> String? -> String`
+ `String -> String -> String? -> String`
  
 
 ```js
@@ -274,7 +336,7 @@ string.pad("Foo", 2, true) // => "  Foo"
 
 #### <a name="string-printTable"></a>string.printTable(tableArray, options)
 
-`Array -> Object? -> String`
+ `Array -> Object? -> String`
  Takes a 2D Array and prints a table string. Kind of the reverse
  operation to `strings.tableize`
  
@@ -288,7 +350,7 @@ string.printTable([["aaa", "b", "c"], ["d", "e","f"]])
 
 #### <a name="string-printTree"></a>string.printTree(rootNode, nodePrinter, childGetter, indent)
 
-`Object -> Function -> Function -> Number? -> String`
+ `Object -> Function -> Function -> Number? -> String`
  A generic function to print a tree representation from a nested data structure.
  Receives three arguments:
  - `rootNode` an object representing the root node of the tree
@@ -356,7 +418,7 @@ string.tokens(' a b c') => ['a', 'b', 'c']
 
 #### <a name="string-tableize"></a>string.tableize(s, options)
 
-`String -> Object? -> Array`
+ `String -> Object? -> Array`
  Takes a String representing a "table" and parses it into a 2D-Array (as
  accepted by the `collection.Grid` methods or `string.printTable`)
  ```js
@@ -409,7 +471,7 @@ string.newUUID() // => "3B3E74D0-85EA-45F2-901C-23ECF3EAB9FB"
 
 #### <a name="string-createDataURI"></a>string.createDataURI(content, mimeType)
 
-`String -> String -> String`
+ `String -> String -> String`
  Takes some string representing content and a mime type.
  For a list of mime types see: [http://www.iana.org/assignments/media-types/media-types.xhtml]()
  More about data URIs: [https://developer.mozilla.org/en-US/docs/Web/HTTP/data_URIs]()
@@ -482,7 +544,7 @@ string.peekRight("Hello World", 5, /o/) // => 2
 
 #### <a name="string-lineIndexComputer"></a>string.lineIndexComputer(s)
 
-`String -> Function`
+ `String -> Function`
  For converting character positions to line numbers.
  Returns a function accepting char positions. If the char pos is outside
  of the line ranges -1 is returned.
@@ -529,7 +591,7 @@ string.endsWith("fooo!", "o!") // => true
 
 #### <a name="string-withDecimalPrecision"></a>string.withDecimalPrecision(str, precision)
 
-`String -> Number -> String`
+ `String -> Number -> String`
  
 
 ```js
@@ -700,7 +762,47 @@ num.toRadians(180) // => 3.141592653589793
 
 ## date.js
 
+#### <a name="exports.date-format"></a>exports.date.format(date, mask, utc)
 
+ Custom date / time stringifier. Provides default masks:
+ Mask           | Pattern
+ --------------------------------------------
+ "default"      | "ddd mmm dd yyyy HH:MM:ss",
+ shortDate      | "m/d/yy",
+ mediumDate     | "mmm d, yyyy",
+ longDate       | "mmmm d, yyyy",
+ fullDate       | "dddd, mmmm d, yyyy",
+ shortTime      | "h:MM TT",
+ mediumTime     | "h:MM:ss TT",
+ longTime       | "h:MM:ss TT Z",
+ isoDate        | "yyyy-mm-dd",
+ isoTime        | "HH:MM:ss",
+ isoDateTime    | "yyyy-mm-dd'T'HH:MM:ss",
+ isoUtcDateTime | "UTC:yyyy-mm-dd'T'HH:MM:ss'Z'"
+ and internationalized strings via `date.format.i18n.dayNames`
+ and `date.format.i18n.dayNames`
+ 
+
+```js
+date.format(new Date(), date.format.masks.longTime) // => "7:13:31 PM PDT"
+date.format(new Date(), "yyyy/mm/dd") // => "2014/10/09"
+```
+
+#### <a name="exports.date-equals"></a>exports.date.equals(date, otherDate)
+
+
+
+#### <a name="exports.date-relativeTo"></a>exports.date.relativeTo(date, otherDate)
+
+ Prints a human readable difference of two Date objects. The older date
+ goes first.
+ 
+
+```js
+var now = new Date();
+date.relativeTo(new Date(now-2000), now) // => "2 secs"
+date.relativeTo(new Date("10/11/2014"), new Date("10/12/2014")) // => "1 day"
+```
 
 
 
@@ -708,9 +810,7 @@ num.toRadians(180) // => 3.141592653589793
 
 ### arrNative
 
- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
  pure JS implementations of native Array methods
- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 ### grid
 
@@ -727,10 +827,269 @@ num.toRadians(180) // => 3.141592653589793
  first element should be less or equal the second element, see
  #isInterval
 
+#### <a name="arrNative-sort"></a>arrNative.sort(sortFunc)
+
+
+
+#### <a name="arrNative-filter"></a>arrNative.filter(iterator, context)
+
+
+
+#### <a name="arrNative-forEach"></a>arrNative.forEach(iterator, context)
+
+
+
+#### <a name="arrNative-some"></a>arrNative.some(iterator, context)
+
+
+
+#### <a name="arrNative-every"></a>arrNative.every(iterator, context)
+
+
+
 #### <a name="arrNative-map"></a>arrNative.map(iterator, context)
 
- if (typeof iterator !== 'function')
- throw new TypeError(arguments[0] + ' is not a function');
+
+
+#### <a name="arrNative-reduce"></a>arrNative.reduce(iterator, memo, context)
+
+
+
+#### <a name="arrNative-reduceRight"></a>arrNative.reduceRight(iterator, memo, context)
+
+
+
+#### <a name="arr-range"></a>arr.range(begin, end, step)
+
+ 
+
+```js
+arr.range(0,5) // => [0,1,2,3,4,5]
+arr.range(0,10,2) // => [0,2,4,6,8,10]
+```
+
+#### <a name="arr-from"></a>arr.from(iterable)
+
+ Makes JS arrays out of array like objects like `arguments` or DOM `childNodes`
+
+#### <a name="arr-withN"></a>arr.withN(n, obj)
+
+ 
+
+```js
+arr.withN(3, "Hello") // => ["Hello","Hello","Hello"]
+```
+
+#### <a name="arr-genN"></a>arr.genN(n, generator)
+
+ `Number -> Function -> Array`
+ Takes a generator function that is called for each `n`.
+ 
+
+```js
+arr.genN(3, num.random) // => [46,77,95]
+```
+
+#### <a name="arr-filter"></a>arr.filter(array, iterator, context)
+
+ [a] -> (a -> Boolean) -> c? -> [a]
+ Calls `iterator` for each element in `array` and returns a subset of it
+ including the elements for which `iterator` returned a truthy value.
+ Like `Array.prototype.filter`.
+
+#### <a name="arr-detect"></a>arr.detect(arr, iterator, context)
+
+ [a] -> (a -> Boolean) -> c? -> a
+ returns the first occurrence of an element in `arr` for which iterator
+ returns a truthy value
+
+#### <a name="arr-filterByKey"></a>arr.filterByKey(arr, key)
+
+ [a] -> String -> [a]
+ 
+
+```js
+var objects = [{x: 3}, {y: 4}, {x:5}]
+arr.filterByKey(objects, "x") // => [{x: 3},{x: 5}]
+```
+
+#### <a name="arr-grep"></a>arr.grep(arr, filter, context)
+
+ [a] -> String|RegExp -> [a]
+ `filter` can be a String or RegExp. Will stringify each element in
+ 
+
+```js
+
+```
+
+#### <a name="arr-mask"></a>arr.mask(array, mask)
+
+ select every element in array for which array's element is truthy
+ 
+
+```js
+[1,2,3].mask([false, true, false]) => [2]
+```
+
+#### <a name="arr-reject"></a>arr.reject(array, func, context)
+
+
+
+#### <a name="arr-rejectByKey"></a>arr.rejectByKey(array, key)
+
+
+
+#### <a name="arr-without"></a>arr.without(array, elem)
+
+ non-mutating
+ 
+
+```js
+arr.without([1,2,3,4,5,6], 3) // => [1,2,4,5,6]
+```
+
+#### <a name="arr-withoutAll"></a>arr.withoutAll(array, otherArr)
+
+ non-mutating
+ 
+
+```js
+arr.withoutAll([1,2,3,4,5,6], [3,4]) // => [1,2,5,6]
+```
+
+#### <a name="arr-uniq"></a>arr.uniq(array, sorted)
+
+ non-mutating
+ Removes duplicates from array.
+
+#### <a name="arr-uniqBy"></a>arr.uniqBy(array, comparator, context)
+
+ like `arr.uniq` but with custom equality: `comparator(a,b)` returns
+ BOOL. True if a and be should be regarded equal, false otherwise.
+
+#### <a name="arr-compact"></a>arr.compact(array)
+
+ removes falsy values
+ 
+
+```js
+arr.compact([1,2,undefined,4,0]) // => [1,2,4]
+```
+
+#### <a name="arr-mutableCompact"></a>arr.mutableCompact(array)
+
+ fix gaps that were created with 'delete'
+
+#### <a name="arr-forEach"></a>arr.forEach(array, iterator, context)
+
+ [a] -> (a -> Undefined) -> c? -> Undefined
+ `iterator` is called on each element in `array` for side effects. Like
+ `Array.prototype.forEach`.
+
+#### <a name="arr-zip"></a>arr.zip()
+
+ Takes any number of lists as arguments. Combines them elment-wise.
+ 
+
+```js
+arr.zip([1,2,3], ["a", "b", "c"], ["A", "B"])
+// // => [[1,"a","A"],[2,"b","B"],[3,"c",undefined]]
+```
+
+#### <a name="arr-flatten"></a>arr.flatten(array)
+
+ Turns a nested collection into a flat one.
+ 
+
+```js
+arr.flatten([1, [2, [3,4,5], [6]], 7,8])
+// => [1,2,3,4,5,6,7,8]
+```
+
+#### <a name="arr-map"></a>arr.map(array, iterator, context)
+
+ [a] -> (a -> b) -> c? -> [b]
+ Applies `iterator` to each element of `array` and returns a new Array
+ with the results of those calls. Like `Array.prototype.some`.
+
+#### <a name="arr-invoke"></a>arr.invoke(array, method, arg1, arg2, arg3, arg4, arg5, arg6)
+
+ Calls `method` on each element in `array`, passing all arguments. Often
+ a handy way to avoid verbose `map` calls.
+ 
+
+```js
+arr.invoke(["hello", "world"], "toUpperCase") // => ["HELLO","WORLD"]
+```
+
+#### <a name="arr-pluck"></a>arr.pluck(array, property)
+
+ Returns `property` or undefined from each element of array. For quick
+ `map`s and similar to `invoke`.
+ 
+
+```js
+arr.pluck(["hello", "world"], 0) // => ["h","w"]
+```
+
+#### <a name="arr-reduce"></a>arr.reduce(array, iterator, memo, context)
+
+ `Array -> Function -> Object? -> Object? -> Object?`
+ Applies `iterator` to each element of `array` and returns a new Array
+ with the results of those calls. Like `Array.prototype.some`.
+
+#### <a name="arr-reduceRight"></a>arr.reduceRight(array, iterator, memo, context)
+
+
+
+#### <a name="arr-include"></a>arr.include(array, object)
+
+ 
+
+```js
+arr.include([1,2,3], 2) // => true
+```
+
+#### <a name="arr-some"></a>arr.some(array, iterator, context)
+
+ [a] -> (a -> Boolean) -> c? -> Boolean
+ Returns true if there is at least one abject in `array` for which
+ `iterator` returns a truthy result. Like `Array.prototype.some`.
+
+#### <a name="arr-every"></a>arr.every(array, iterator, context)
+
+ [a] -> (a -> Boolean) -> c? -> Boolean
+ Returns true if for all abjects in `array` `iterator` returns a truthy
+ result. Like `Array.prototype.every`.
+
+#### <a name="arr-equals"></a>arr.equals(array, otherArray)
+
+ Returns true iff each element in `array` is equal (`==`) to its
+ corresponding element in `otherArray`
+
+#### <a name="arr-sort"></a>arr.sort(array, sortFunc)
+
+ [a] -> (a -> Number)? -> [a]
+ Just `Array.prototype.sort`
+
+#### <a name="arr-sortBy"></a>arr.sortBy(array, iterator, context)
+
+ 
+
+```js
+arr.sortBy(["Hello", "Lively", "User"], function(ea) {
+return ea.charCodeAt(ea.length-1); }) // => ["Hello","User","Lively"]
+```
+
+#### <a name="arr-sortByKey"></a>arr.sortByKey(array, key)
+
+ 
+
+```js
+jsext.arr.sortByKey([{x: 3}, {x: 2}, {x: 8}], "x")
+// => [{x: 2},{x: 3},{x: 8}]
+```
 
 #### <a name="arr-reMatches"></a>arr.reMatches(arr, re, stringifier)
 
@@ -743,48 +1102,216 @@ var morphs = $world.withAllSubmorphsDo(function(x) { return x; ;
 morphs.mask(morphs.reMatches(/code/i))
 ```
 
-#### <a name="arr-mutableCompact"></a>arr.mutableCompact(arr)
+#### <a name="arr-intersect"></a>arr.intersect(array1, array2)
 
- fix gaps that were created with 'delete'
+ set-like intersection
 
-#### <a name="arr-uniqBy"></a>arr.uniqBy(arr, comparator, context)
+#### <a name="arr-union"></a>arr.union(array1, array2)
 
- comparator(a,b) returns BOOL. True if a and be should be regarded
- equal, false otherwise
+ set-like union
 
-#### <a name="arr-nestedDelay"></a>arr.nestedDelay(arr, iterator, waitSecs, endFunc, context, optSynchronChunks)
+#### <a name="arr-pushAt"></a>arr.pushAt(array, item, index)
 
- calls iterator for every element in arr and waits between iterator
- calls waitSecs. eventually endFunc is called. When passing a number n
- as optSynchronChunks, only every nth iteration is delayed
+ inserts `item` at `index`, mutating
 
-#### <a name="arr-doAndContinue"></a>arr.doAndContinue(arr, iterator, endFunc, context)
+#### <a name="arr-removeAt"></a>arr.removeAt(array, index)
 
- iterates over arr but instead of consecutively calling iterator,
+ inserts item at `index`, mutating
+
+#### <a name="arr-remove"></a>arr.remove(array, item)
+
+ removes first occurrence of item in `array`, mutating
+
+#### <a name="arr-pushAll"></a>arr.pushAll(array, items)
+
+ appends all `items`, mutating
+
+#### <a name="arr-pushAllAt"></a>arr.pushAllAt(array, items, idx)
+
+ inserts all `items` at `idx`, mutating
+
+#### <a name="arr-pushIfNotIncluded"></a>arr.pushIfNotIncluded(array, item)
+
+ only appends `item` if its not already in `array`, mutating
+
+#### <a name="arr-replaceAt"></a>arr.replaceAt(array, item, index)
+
+ mutating
+
+#### <a name="arr-clear"></a>arr.clear(array)
+
+ removes all items, mutating
+
+#### <a name="arr-doAndContinue"></a>arr.doAndContinue(array, iterator, endFunc, context)
+
+ Iterates over array but instead of consecutively calling iterator,
  iterator gets passed in the invocation for the next iteration step
  as a function as first parameter. This allows to wait arbitrarily
- between operation steps, great for synchronous dependent steps
+ between operation steps, great for managing dependencies between tasks.
+ Related is [`fun.composeAsync`]().
+ 
+
+```js
+arr.doAndContinue([1,2,3,4], function(next, n) {
+alert("At " + n);
+setTimeout(next, 100);
+}, function() { alert("Done"); })
+// If the elements are functions you can leave out the iterator:
+arr.doAndContinue([
+function(next) { alert("At " + 1); next(); },
+function(next) { alert("At " + 2); next(); }
+], null, function() { alert("Done"); });
+```
+
+#### <a name="arr-nestedDelay"></a>arr.nestedDelay(array, iterator, waitSecs, endFunc, context, optSynchronChunks)
+
+ Calls `iterator` for every element in `array` and waits between iterator
+ calls `waitSecs`. Eventually `endFunc` is called. When passing a number n
+ as `optSynchronChunks`, only every nth iteration is delayed.
 
 #### <a name="arr-forEachShowingProgress"></a>arr.forEachShowingProgress()
 
  init args
 
-#### <a name="arr-batchify"></a>arr.batchify(arr, constrainedFunc, context)
+#### <a name="arr-swap"></a>arr.swap(array, index1, index2)
 
- takes elements and fits them into subarrays (=batches) so that for
- each batch constrainedFunc returns true. Note that contrained func
- should at least produce 1-length batches, otherwise an error is raised
- see [$world.browseCode("lively.lang.tests.ExtensionTests.ArrayTest", "testBatchify", "lively.lang.tests.ExtensionTests")]
- for an example
-
-#### <a name="arr-mask"></a>arr.mask(arr, mask)
-
- select every element in arr for which arr's element is truthy
+ mutating
  
 
 ```js
-[1,2,3].mask([false, true, false]) => [2]
+var a = [1,2,3,4];
+arr.swap(a, 3, 1);
+a // => [1,4,3,2]
 ```
+
+#### <a name="arr-rotate"></a>arr.rotate(array, times)
+
+ non-mutating
+ 
+
+```js
+arr.rotate([1,2,3]) // => [2,3,1]
+```
+
+#### <a name="arr-groupBy"></a>arr.groupBy(array, iterator, context)
+
+ Applies `iterator` to each element in `array`, and puts the return value
+ into a collection (the group) associated to it's stringified representation
+ (the "hash").
+ 
+
+```js
+Example 1: Groups characters by how often they occur in a string:
+var chars = arr.from("Hello World");
+arr.groupBy(arr.uniq(chars), function(c) {
+return arr.count(chars, c); })
+// => {
+//   "1": ["H","e"," ","W","r","d"],
+//   "2": ["o"],
+//   "3": ["l"]
+// }
+// Example 2: Group numbers by a custom qualifier:
+arr.groupBy([3,4,1,7,4,3,8,4], function(n) {
+if (n <= 3) return "small";
+if (n <= 7) return "medium";
+return "large";
+});
+// => {
+//   large: [8],
+//   medium: [4,7,4,4],
+//   small: [3,1,3]
+// }
+```
+
+#### <a name="arr-groupByKey"></a>arr.groupByKey(array, key)
+
+ var objects = [{x: }]
+ arr.groupBy(arr.uniq(chars), function(c) {
+   return arr.count(chars, c); })
+ // => {
+ //   "1": ["H","e"," ","W","r","d"],
+ //   "2": ["o"],
+ //   "3": ["l"]
+ // }
+
+#### <a name="arr-partition"></a>arr.partition(array, iterator, context)
+
+ 
+
+```js
+var array = [1,2,3,4,5,6];
+arr.partition(array, function(ea) { return ea > 3; })
+// => [[1,2,3,4],[5,6]]
+```
+
+#### <a name="arr-batchify"></a>arr.batchify(array, constrainedFunc, context)
+
+ Takes elements and fits them into subarrays (= batches) so that for
+ each batch constrainedFunc returns true. Note that contrained func
+ should at least produce 1-length batches, otherwise an error is raised
+ 
+
+```js
+// Assume you have list of things that have different sizes and you want to
+// create sub-arrays of these things, with each sub-array having if possible
+// less than a `batchMaxSize` of combined things in it:
+var sizes = [
+Math.pow(2, 15), // 32KB
+Math.pow(2, 29), // 512MB
+Math.pow(2, 29), // 512MB
+Math.pow(2, 27), // 128MB
+Math.pow(2, 26), // 64MB
+Math.pow(2, 26), // 64MB
+Math.pow(2, 24), // 16MB
+Math.pow(2, 26)] // 64MB
+var batchMaxSize = Math.pow(2, 28)/*256MB*/;
+function batchConstrained(batch) {
+return batch.length == 1 || batch.sum() < batchMaxSize;
+}
+var batches = sizes.batchify(batchConstrained);
+batches.pluck('length') // => [4,1,1,2]
+batches.map(arr.sum).map(num.humanReadableByteSize) // => ["208.03MB","512MB","512MB","128MB"]
+```
+
+#### <a name="arr-toTuples"></a>arr.toTuples(array, tupleLength)
+
+ Creates sub-arrays with length `tupleLength`
+ 
+
+```js
+arr.toTuples(["H","e","l","l","o"," ","W","o","r","l","d"], 4)
+// => [["H","e","l","l"],["o"," ","W","o"],["r","l","d"]]
+```
+
+#### <a name="arr-shuffle"></a>arr.shuffle(array)
+
+ Ramdomize the order of elements of array. Does not mutate array.
+ 
+
+```js
+arr.shuffle([1,2,3,4,5]) // => [3,1,2,5,4]
+```
+
+#### <a name="arr-max"></a>arr.max(array, iterator, context)
+
+ 
+
+```js
+var array = [{x:3,y:2}, {x:5,y:1}, {x:1,y:5}];
+arr.max(array, function(ea) { return ea.x; }) // => {x: 5, y: 1}
+```
+
+#### <a name="arr-min"></a>arr.min(array, iterator, context)
+
+ Similar to `arr.max`.
+
+#### <a name="arr-sum"></a>arr.sum(array)
+
+
+
+#### <a name="arr-clone"></a>arr.clone(array)
+
+ shallow copy
 
 #### <a name="grid-toObjects"></a>grid.toObjects(grid)
 

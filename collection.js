@@ -1,13 +1,12 @@
 ;(function(exports) {
 "use strict";
 
-// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-// pure JS implementations of native Array methods
-// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+// pure JS implementations of native Array methods
 var arrNative = exports.arrNative = {
 
   sort: function(sortFunc) {
+    // show-in-doc
     if (!sortFunc) {
       sortFunc = function(x,y) {
         if (x < y) return -1;
@@ -32,6 +31,7 @@ var arrNative = exports.arrNative = {
   },
 
   filter: function(iterator, context) {
+    // show-in-doc
     var results = [];
     for (var i = 0; i < this.length; i++) {
       if (!this.hasOwnProperty(i)) continue;
@@ -42,15 +42,18 @@ var arrNative = exports.arrNative = {
   },
 
   forEach: function(iterator, context) {
+    // show-in-doc
     for (var i = 0, len = this.length; i < len; i++) {
       iterator.call(context, this[i], i, this); }
   },
 
   some: function(iterator, context) {
+    // show-in-doc
     return this.detect(iterator, context) !== undefined;
   },
 
   every: function(iterator, context) {
+    // show-in-doc
     var result = true;
     for (var i = 0, len = this.length; i < len; i++) {
       result = result && !! iterator.call(context, this[i], i);
@@ -60,8 +63,7 @@ var arrNative = exports.arrNative = {
   },
 
   map: function(iterator, context) {
-    // if (typeof iterator !== 'function')
-      // throw new TypeError(arguments[0] + ' is not a function');
+    // show-in-doc
     var results = [];
     this.forEach(function(value, index) {
       results.push(iterator.call(context, value, index));
@@ -70,6 +72,7 @@ var arrNative = exports.arrNative = {
   },
 
   reduce: function(iterator, memo, context) {
+    // show-in-doc
     var start = 0;
     if (!arguments.hasOwnProperty(1)) { start = 1; memo = this[0]; }
     for (var i = start; i < this.length; i++)
@@ -78,6 +81,7 @@ var arrNative = exports.arrNative = {
   },
 
   reduceRight: function(iterator, memo, context) {
+    // show-in-doc
     var start = this.length-1;
     if (!arguments.hasOwnProperty(1)) { start--; memo = this[this.length-1]; }
     for (var i = start; i >= 0; i--)
@@ -89,15 +93,14 @@ var arrNative = exports.arrNative = {
 
 var arr = exports.arr = {
 
-  isArray: function(val) {
-    return val && val.constructor.name === 'Array';
-  },
-
   // -=-=-=-=-=-=-=-
   // array creations
   // -=-=-=-=-=-=-=-
 
   range: function(begin, end, step) {
+    // Examples:
+    //   arr.range(0,5) // => [0,1,2,3,4,5]
+    //   arr.range(0,10,2) // => [0,2,4,6,8,10]
     step = step || 1
     var result = [];
     for (var i = begin; i <= end; i += step)
@@ -106,6 +109,7 @@ var arr = exports.arr = {
   },
 
   from: function(iterable) {
+    // Makes JS arrays out of array like objects like `arguments` or DOM `childNodes`
     if (!iterable) return [];
     if (iterable.toArray) return iterable.toArray();
     var length = iterable.length,
@@ -115,78 +119,39 @@ var arr = exports.arr = {
   },
 
   withN: function(n, obj) {
+    // Example:
+    //   arr.withN(3, "Hello") // => ["Hello","Hello","Hello"]
     var result = new Array(n);
     while (n > 0) result[--n] = obj;
     return result;
   },
 
   genN: function(n, generator) {
+    // Number -> Function -> Array
+    // Takes a generator function that is called for each `n`.
+    // Example:
+    //   arr.genN(3, num.random) // => [46,77,95]
     var result = new Array(n);
     while (n > 0) result[--n] = generator(n);
     return result;
   },
 
-  // -=-=-=-=-=-=-=-
-  // array methods
-  // -=-=-=-=-=-=-=-
+  // -=-=-=-=-
+  // filtering
+  // -=-=-=-=-
 
-  sort: function(arr, sortFunc) {
-    return arr.sort(sortFunc);
+  filter: function(array, iterator, context) {
+    // [a] -> (a -> Boolean) -> c? -> [a]
+    // Calls `iterator` for each element in `array` and returns a subset of it
+    // including the elements for which `iterator` returned a truthy value.
+    // Like `Array.prototype.filter`.
+    return array.filter(iterator, context);
   },
 
-  filter: function(arr, iterator, context) {
-    return arr.filter(iterator, context);
-  },
-
-  forEach: function(arr, iterator, context) {
-    return arr.forEach(iterator, context);
-  },
-
-  some: function(arr, iterator, context) {
-    return arr.some(iterator, context);
-  },
-
-  every: function(arr, iterator, context) {
-    return arr.every(iterator, context);
-  },
-
-  map: function(arr, iterator, context) {
-    return arr.map(iterator, context);
-  },
-
-  reduce: function(arr, iterator, memo, context) {
-    return arr.reduce(iterator, memo, context);
-  },
-
-  reduceRight: function(arr, iterator, memo, context) {
-    return arr.reduceRight(iterator, memo, context);
-  },
-
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-  each: function(arr, iterator, context) {
-    return arr.forEach(iterator, context);
-  },
-
-  all: function(arr, iterator, context) {
-    return arr.every(iterator, context);
-  },
-
-  any: function(arr, iterator, context) {
-    return arr.some(iterator, context);
-  },
-
-  collect: function(arr, iterator, context) {
-    return arr.map(iterator, context);
-  },
-
-  findAll: function(arr, iterator, context) {
-    return arr.filter(iterator, context);
-  },
-
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-  detect: function(arr,iterator, context) {
+  detect: function(arr, iterator, context) {
+    // [a] -> (a -> Boolean) -> c? -> a
+    // returns the first occurrence of an element in `arr` for which iterator
+    // returns a truthy value
     for (var value, i = 0, len = arr.length; i < len; i++) {
       value = arr[i];
       if (iterator.call(context, value, i)) return value;
@@ -195,18 +160,253 @@ var arr = exports.arr = {
   },
 
   filterByKey: function(arr, key) {
+    // [a] -> String -> [a]
+    // Example:
+    //   var objects = [{x: 3}, {y: 4}, {x:5}]
+    //   arr.filterByKey(objects, "x") // => [{x: 3},{x: 5}]
     return arr.filter(function(ea) { return !!ea[key]; });
   },
 
-  grep: function(arr, filter, iterator, context) {
-    iterator = iterator || function(x) { return x; };
-    var results = [];
+  grep: function(arr, filter, context) {
+    // [a] -> String|RegExp -> [a]
+    // `filter` can be a String or RegExp. Will stringify each element in
+    // Example:
+      ["Hello", "World", "Lively", "User"].grep("")
     if (Object.isString(filter)) filter = new RegExp(filter, 'i');
-    arr.forEach(function(value, index) {
-      if (filter.test(value)) results.push(iterator.call(context, value, index));
-    });
-    return results;
+    return arr.filter(filter.test.bind(filter))
   },
+
+  mask: function(array, mask) {
+    // select every element in array for which array's element is truthy
+    // Example: [1,2,3].mask([false, true, false]) => [2]
+    return array.filter(function(_, i) { return !!mask[i]; });
+  },
+
+  reject: function(array, func, context) {
+    // show-in-doc
+    function iterator(val, i) { return !func.call(context, val, i); }
+    return array.filter(iterator);
+  },
+
+  rejectByKey: function(array, key) {
+    // show-in-doc
+    return array.filter(function(ea) { return !ea[key]; });
+  },
+
+  without: function(array, elem) {
+    // non-mutating
+    // Example:
+    // arr.without([1,2,3,4,5,6], 3) // => [1,2,4,5,6]
+    return array.filter(function(value) { return value !== elem; });
+  },
+
+  withoutAll: function(array, otherArr) {
+    // non-mutating
+    // Example:
+    // arr.withoutAll([1,2,3,4,5,6], [3,4]) // => [1,2,5,6]
+    return array.filter(function(value) {
+      return otherArr.indexOf(value) === -1;
+    });
+  },
+
+  uniq: function(array, sorted) {
+    // non-mutating
+    // Removes duplicates from array.
+    return array.inject([], function(a, value, index) {
+      if (0 === index || (sorted ? a.last() != value : !a.include(value)))
+        a.push(value);
+      return a;
+    });
+  },
+
+  uniqBy: function(array, comparator, context) {
+    // like `arr.uniq` but with custom equality: `comparator(a,b)` returns
+    // BOOL. True if a and be should be regarded equal, false otherwise.
+    var result = arr.clone(array);
+    for (var i = 0; i < result.length; i++) {
+      var item = array[i];
+      for (var j = i+1; j < result.length; j++) {
+        if (comparator.call(context, item, result[j])) {
+          arr.removeAt(result, j); j--;
+        }
+      }
+    }
+    return result;
+  },
+
+  compact: function(array) {
+    // removes falsy values
+    // Example:
+    // arr.compact([1,2,undefined,4,0]) // => [1,2,4]
+    return array.filter(function(ea) { return !!ea; });
+  },
+
+  mutableCompact: function(array) {
+    // fix gaps that were created with 'delete'
+    var i = 0, j = 0, len = array.length;
+    while (i < len) {
+      if (array.hasOwnProperty(i)) array[j++] = array[i];
+      i++;
+    }
+    while (j++ < len) array.pop();
+    return array;
+  },
+
+  // -=-=-=-=-
+  // iteration
+  // -=-=-=-=-
+
+  forEach: function(array, iterator, context) {
+    // [a] -> (a -> Undefined) -> c? -> Undefined
+    // `iterator` is called on each element in `array` for side effects. Like
+    // `Array.prototype.forEach`.
+    return array.forEach(iterator, context);
+  },
+
+  zip: function(/*arr, arr2, arr3*/) {
+    // Takes any number of lists as arguments. Combines them elment-wise.
+    // Example:
+    // arr.zip([1,2,3], ["a", "b", "c"], ["A", "B"])
+    // // // => [[1,"a","A"],[2,"b","B"],[3,"c",undefined]]
+    var iterator = function(x) { return x; },
+        args = Array.from(arguments),
+        arr = args.shift();
+    if (Object.isFunction(args.last())) iterator = args.pop();
+    var collections = [arr].concat(args).map(Array.from);
+    return arr.map(function(value, index) {
+      return iterator(collections.pluck(index)); });
+  },
+
+  flatten: function flatten(array) {
+    // Turns a nested collection into a flat one.
+    // Example:
+    // arr.flatten([1, [2, [3,4,5], [6]], 7,8])
+    // // => [1,2,3,4,5,6,7,8]
+    return array.reduce(function(flattened, value) {
+      return flattened.concat(Array.isArray(value) ?
+        flatten(value) : [value]);
+    }, []);
+  },
+
+  // -=-=-=-=-
+  // mapping
+  // -=-=-=-=-
+
+  map: function(array, iterator, context) {
+    // [a] -> (a -> b) -> c? -> [b]
+    // Applies `iterator` to each element of `array` and returns a new Array
+    // with the results of those calls. Like `Array.prototype.some`.
+    return array.map(iterator, context);
+  },
+
+  invoke: function(array, method, arg1, arg2, arg3, arg4, arg5, arg6) {
+    // Calls `method` on each element in `array`, passing all arguments. Often
+    // a handy way to avoid verbose `map` calls.
+    // Example: arr.invoke(["hello", "world"], "toUpperCase") // => ["HELLO","WORLD"]
+    return array.map(function(ea) {
+      return ea[method](arg1, arg2, arg3, arg4, arg5, arg6);
+    });
+  },
+
+  pluck: function(array, property) {
+    // Returns `property` or undefined from each element of array. For quick
+    // `map`s and similar to `invoke`.
+    // Example: arr.pluck(["hello", "world"], 0) // => ["h","w"]
+    return array.map(function(ea) { return ea[property]; });
+  },
+
+  // -=-=-=-=-
+  // folding
+  // -=-=-=-=-
+
+  reduce: function(array, iterator, memo, context) {
+    // Array -> Function -> Object? -> Object? -> Object?
+    // Applies `iterator` to each element of `array` and returns a new Array
+    // with the results of those calls. Like `Array.prototype.some`.
+    return array.reduce(iterator, memo, context);
+  },
+
+  reduceRight: function(array, iterator, memo, context) {
+    // show-in-doc
+    return array.reduceRight(iterator, memo, context);
+  },
+
+  // -=-=-=-=-
+  // testing
+  // -=-=-=-=-
+
+  include: function(array, object) {
+    // Example: arr.include([1,2,3], 2) // => true
+    return array.indexOf(object) !== -1;
+  },
+
+  some: function(array, iterator, context) {
+    // [a] -> (a -> Boolean) -> c? -> Boolean
+    // Returns true if there is at least one abject in `array` for which
+    // `iterator` returns a truthy result. Like `Array.prototype.some`.
+    return array.some(iterator, context);
+  },
+
+  every: function(array, iterator, context) {
+    // [a] -> (a -> Boolean) -> c? -> Boolean
+    // Returns true if for all abjects in `array` `iterator` returns a truthy
+    // result. Like `Array.prototype.every`.
+    return array.every(iterator, context);
+  },
+
+  equals: function(array, otherArray) {
+    // Returns true iff each element in `array` is equal (`==`) to its
+    // corresponding element in `otherArray`
+    var len = array.length;
+    if (!otherArray || len !== otherArray.length) return false;
+    for (var i = 0; i < len; i++) {
+      if (array[i] && otherArray[i] && array[i].equals && otherArray[i].equals) {
+        if (!array[i].equals(otherArray[i])) {
+          return false;
+        } else {
+          continue;
+        }
+      }
+      if (array[i] != otherArray[i]) return false;
+    }
+    return true;
+  },
+
+  // -=-=-=-=-
+  // sorting
+  // -=-=-=-=-
+
+  sort: function(array, sortFunc) {
+    // [a] -> (a -> Number)? -> [a]
+    // Just `Array.prototype.sort`
+    return array.sort(sortFunc);
+  },
+
+  sortBy: function(array, iterator, context) {
+    // Example:
+    // arr.sortBy(["Hello", "Lively", "User"], function(ea) {
+    //   return ea.charCodeAt(ea.length-1); }) // => ["Hello","User","Lively"]
+    return array.map(function(value, index) {
+      return {
+        value: value,
+        criteria: iterator.call(context, value, index)
+      };
+    }).sort(function(left, right) {
+      var a = left.criteria, b = right.criteria;
+      return a < b ? -1 : a > b ? 1 : 0;
+    }).pluck('value');
+  },
+
+  sortByKey: function(array, key) {
+    // Example:
+    // jsext.arr.sortByKey([{x: 3}, {x: 2}, {x: 8}], "x")
+    // // => [{x: 2},{x: 3},{x: 8}]
+    return arr.sortBy(array, function(ea) { return ea[key]; });
+  },
+
+  // -=-=-=-=-=-=-=-=-=-=-=-=-
+  // RegExp / String matching
+  // -=-=-=-=-=-=-=-=-=-=-=-=-
 
   reMatches: function(arr, re, stringifier) {
     // convert each element in arr into a string and apply re to match it.
@@ -218,218 +418,110 @@ var arr = exports.arr = {
     return arr.map(function(ea) { return stringifier(ea).match(re); });
   },
 
-  include: function(arr, object) { return arr.indexOf(object) !== -1 },
+  // -=-=-=-=-=-
+  // accessors
+  // -=-=-=-=-=-
 
-  inject: function(arr, memo, iterator, context) {
-    if (context) iterator = iterator.bind(context);
-    return arr.reduce(iterator, memo);
+  first: function(array) { return array[0]; },
+
+  last: function(array) { return array[array.length - 1]; },
+
+  // -=-=-=-=-=-=-=-
+  // Set operations
+  // -=-=-=-=-=-=-=-
+
+  intersect: function(array1, array2) {
+    // set-like intersection
+    return arr.uniq(array1).filter(function(item) {
+      return array2.indexOf(item) > -1; });
   },
 
-  invoke: function(arr, method, arg1, arg2, arg3, arg4, arg5, arg6) {
-    var result = new Array(arr.length);
-    for (var i = 0, len = arr.length; i < len; i++) {
-      result[i] = arr[i][method].call(arr[i], arg1, arg2, arg3, arg4, arg5, arg6);
-    }
-    return result;
-  },
-
-  max: function(a, iterator, context) {
-    iterator = iterator || function(x) { return x; };
-    var result;
-    a.reduce(function(max, ea, i) {
-      var val = iterator.call(context, ea, i);
-      if (typeof val !== "number" || val <= max) return max;
-      result = ea; return val;
-    }, -Infinity);
-    return result;
-  },
-
-  min: function(a, iterator, context) {
-    iterator = iterator || function(x) { return x; };
-    return arr.max(a, function(ea, i) {
-      return -iterator.call(context, ea, i); });
-  },
-
-  partition: function(arr, iterator, context) {
-    iterator = iterator || function(x) { return x; };
-    var trues = [], falses = [];
-    arr.forEach(function(value, index) {
-      (iterator.call(context, index) ? trues : falses).push(value);
-    });
-    return [trues, falses];
-  },
-
-  pluck: function(arr, property) {
-    var result = new Array(arr.length);
-    for (var i = 0; i < arr.length; i++) {
-      result[i] = arr[i][property]; }
-    return result;
-  },
-
-  reject: function(arr, func, context) {
-    function iterator(val, i) { return !func.call(context, val, i); }
-    return arr.filter(iterator);
-  },
-
-  rejectByKey: function(arr, key) {
-    return arr.filter(function(ea) { return !ea[key]; });
-  },
-
-  sortBy: function(arr, iterator, context) {
-    return arr.map(function(value, index) {
-      return {
-        value: value,
-        criteria: iterator.call(context, value, index)
-      };
-    }).sort(function(left, right) {
-      var a = left.criteria, b = right.criteria;
-      return a < b ? -1 : a > b ? 1 : 0;
-    }).pluck('value');
-  },
-
-  sortByKey: function(arr, key) {
-    return exports.arr.sortBy(arr, function(ea) { return ea[key]; });
-  },
-
-  toArray: function(arr) { return arr; },
-
-  zip: function(/*arr, arr2, arr3*/) {
-    var iterator = function(x) { return x; },
-      args = Array.from(arguments),
-      arr = args.shift();
-    if (Object.isFunction(args.last())) iterator = args.pop();
-    var collections = [arr].concat(args).map(Array.from);
-    return arr.map(function(value, index) {
-      return iterator(collections.pluck(index)); });
-  },
-
-  clear: function(arr) { arr.length = 0; return arr; },
-
-  first: function(arr) { return arr[0]; },
-
-  last: function(arr) { return arr[arr.length - 1]; },
-
-  compact: function(arr) { return arr.filter(function(ea) { return !!ea; }); },
-
-  mutableCompact: function(arr) {
-    // fix gaps that were created with 'delete'
-    var i = 0, j = 0, len = arr.length;
-    while (i < len) {
-      if (arr.hasOwnProperty(i)) arr[j++] = arr[i];
-      i++;
-    }
-    while (j++ < len) arr.pop();
-    return arr;
-  },
-
-  flatten: function flatten(array) {
-    return array.reduce(function(flattened, value) {
-      return flattened.concat(arr.isArray(value) ?
-        flatten(value) : [value]);
-    }, []);
-  },
-
-  without: function(arr, elem) {
-    return arr.filter(function(value) { return value !== elem; });
-  },
-
-  withoutAll: function(arr, otherArr) {
-    return arr.filter(function(value) {
-      return otherArr.indexOf(value) === -1;
-    });
-  },
-
-  uniq: function(arr, sorted) {
-    return arr.inject([], function(array, value, index) {
-      if (0 === index || (sorted ? array.last() != value : !array.include(value))) array.push(value);
-      return array;
-    });
-  },
-
-  uniqBy: function(arr, comparator, context) {
-    // comparator(a,b) returns BOOL. True if a and be should be regarded
-    // equal, false otherwise
-    var result = exports.arr.clone(arr);
-    for (var i = 0; i < result.length; i++) {
-      var item = arr[i];
-      for (var j = i+1; j < result.length; j++) {
-        if (comparator.call(context, item, result[j])) {
-          exports.arr.removeAt(result, j); j--;
-        }
-      }
-    }
-    return result;
-  },
-
-  equals: function(arr, otherArray) {
-    var len = arr.length;
-    if (!otherArray || len !== otherArray.length) return false;
-    for (var i = 0; i < len; i++) {
-      if (arr[i] && otherArray[i] && arr[i].equals && otherArray[i].equals) {
-        if (!arr[i].equals(otherArray[i])) {
-          return false;
-        } else {
-          continue;
-        }
-      }
-      if (arr[i] != otherArray[i]) return false;
-    }
-    return true;
-  },
-
-  intersect: function(arr, array) {
-    return exports.arr.uniq(arr).filter(function(item) {
-      return array.indexOf(item) > -1;
-    });
-  },
-
-  union: function(arr, array) {
-    var result = exports.arr.clone(arr);
-    for (var i = 0; i < array.length; i++) {
-      var item = array[i];
+  union: function(array1, array2) {
+    // set-like union
+    var result = arr.clone(array1);
+    for (var i = 0; i < array2.length; i++) {
+      var item = array2[i];
       if (result.indexOf(item) === -1) result.push(item);
     }
     return result;
   },
 
-  clone: function(arr) { return [].concat(arr); },
-
-  pushAt: function(arr, item, index) {
-    arr.splice(index, 0, item);
+  pushAt: function(array, item, index) {
+    // inserts `item` at `index`, mutating
+    array.splice(index, 0, item);
   },
 
-  removeAt: function(arr, index) {
-    arr.splice(index, 1);
+  removeAt: function(array, index) {
+    // inserts item at `index`, mutating
+    array.splice(index, 1);
   },
 
-  remove: function(arr, item) {
-    var index = arr.indexOf(item);
-    if (index >= 0) exports.arr.removeAt(arr, index);
+  remove: function(array, item) {
+    // removes first occurrence of item in `array`, mutating
+    var index = array.indexOf(item);
+    if (index >= 0) arr.removeAt(array, index);
     return item;
   },
 
-  pushAll: function(arr, items) {
+  pushAll: function(array, items) {
+    // appends all `items`, mutating
     for (var i = 0; i < items.length; i++)
-    arr.push(items[i]);
-    return arr;
+      array.push(items[i]);
+    return array;
   },
 
-  pushAllAt: function(arr, items, idx) {
-    arr.splice.apply(arr, [idx, 0].concat(items))
+  pushAllAt: function(array, items, idx) {
+    // inserts all `items` at `idx`, mutating
+    array.splice.apply(array, [idx, 0].concat(items))
   },
 
-  pushIfNotIncluded: function(arr, item) {
-    if (!exports.arr.include(arr, item)) arr.push(item);
+  pushIfNotIncluded: function(array, item) {
+    // only appends `item` if its not already in `array`, mutating
+    if (!arr.include(array, item)) array.push(item);
   },
 
-  replaceAt: function(arr, item, index) { arr.splice(index, 1, item); },
+  replaceAt: function(array, item, index) {
+    // mutating
+    array.splice(index, 1, item); },
 
-  nestedDelay: function(arr, iterator, waitSecs, endFunc, context, optSynchronChunks) {
-    // calls iterator for every element in arr and waits between iterator
-    // calls waitSecs. eventually endFunc is called. When passing a number n
-    // as optSynchronChunks, only every nth iteration is delayed
+  clear: function(array) {
+    // removes all items, mutating
+    array.length = 0; return array;
+  },
+
+  // -=-=-=-=-=-=-=-=-=-=-=-
+  // asynchronous iteration
+  // -=-=-=-=-=-=-=-=-=-=-=-
+  doAndContinue: function(array, iterator, endFunc, context) {
+    // Iterates over array but instead of consecutively calling iterator,
+    // iterator gets passed in the invocation for the next iteration step
+    // as a function as first parameter. This allows to wait arbitrarily
+    // between operation steps, great for managing dependencies between tasks.
+    // Related is [`fun.composeAsync`]().
+    // Example:
+    // arr.doAndContinue([1,2,3,4], function(next, n) {
+    //   alert("At " + n);
+    //   setTimeout(next, 100);
+    // }, function() { alert("Done"); })
+    // // If the elements are functions you can leave out the iterator:
+    // arr.doAndContinue([
+    //   function(next) { alert("At " + 1); next(); },
+    //   function(next) { alert("At " + 2); next(); }
+    // ], null, function() { alert("Done"); });
+    endFunc = endFunc || Functions.Null;
+    context = context || typeof window !== 'undefined' ? window : global;
+    iterator = iterator || function(next, ea, idx) { ea.call(context, next, idx); };
+    return array.reduceRight(function(nextFunc, ea, idx) {
+      return function() { iterator.call(context, nextFunc, ea, idx); }
+    }, endFunc)();
+  },
+
+  nestedDelay: function(array, iterator, waitSecs, endFunc, context, optSynchronChunks) {
+    // Calls `iterator` for every element in `array` and waits between iterator
+    // calls `waitSecs`. Eventually `endFunc` is called. When passing a number n
+    // as `optSynchronChunks`, only every nth iteration is delayed.
     endFunc = endFunc || function() {};
-    return arr.clone().reverse().inject(endFunc, function(nextFunc, ea, idx) {
+    return array.clone().reverse().inject(endFunc, function(nextFunc, ea, idx) {
       return function() {
         iterator.call(context || typeof window !== 'undefined' ? window : global, ea, idx);
         // only really delay every n'th call optionally
@@ -442,23 +534,11 @@ var arr = exports.arr = {
     })();
   },
 
-  doAndContinue: function(arr, iterator, endFunc, context) {
-    // iterates over arr but instead of consecutively calling iterator,
-    // iterator gets passed in the invocation for the next iteration step
-    // as a function as first parameter. This allows to wait arbitrarily
-    // between operation steps, great for synchronous dependent steps
-    endFunc = endFunc || Functions.Null;
-    context = context || typeof window !== 'undefined' ? window : global;
-    iterator = iterator || function(next, ea, idx) { ea.call(context, next, idx); };
-    return arr.reduceRight(function(nextFunc, ea, idx) {
-      return function() { iterator.call(context, nextFunc, ea, idx); }
-    }, endFunc)();
-  },
-
-  forEachShowingProgress: function(/*arr, progressBar, iterator, labelFunc, whenDoneFunc, context or spec*/) {
+  forEachShowingProgress: function(/*array, progressBar, iterator, labelFunc, whenDoneFunc, context or spec*/) {
+    // ignore-in-doc
     var args = Array.from(arguments),
-      arr = args.shift(),
-      steps = arr.length,
+      array = args.shift(),
+      steps = array.length,
       progressBar, iterator, labelFunc, whenDoneFunc, context,
       progressBarAdded = false;
 
@@ -493,7 +573,7 @@ var arr = exports.arr = {
     progressBar.setValue(0);
 
     // nest functions so that the iterator calls the next after a delay
-    (arr.reduceRight(function(nextFunc, item, idx) {
+    (array.reduceRight(function(nextFunc, item, idx) {
       return function() {
         try {
           progressBar.setValue(idx / steps);
@@ -512,16 +592,15 @@ var arr = exports.arr = {
       if (whenDoneFunc) whenDoneFunc.call(context);
     }))();
 
-    return arr;
-  },
-
-  sum: function(arr) {
-    var sum = 0;
-    for (var i = 0; i < arr.length; i++) sum += arr[i];
-    return sum;
+    return array;
   },
 
   swap: function(array, index1, index2) {
+    // mutating
+    // Example:
+    // var a = [1,2,3,4];
+    // arr.swap(a, 3, 1);
+    // a // => [1,4,3,2]
     if (index1 < 0) index1 = array.length + index1;
     if (index2 < 0) index2 = array.length + index2;
     var temp = array[index1];
@@ -530,25 +609,100 @@ var arr = exports.arr = {
     return array;
   },
 
-  rotate: function(arr, times) {
+  rotate: function(array, times) {
+    // non-mutating
+    // Example:
+    // arr.rotate([1,2,3]) // => [2,3,1]
     times = times || 1;
-    return arr.slice(times).concat(arr.slice(0,times));
+    return array.slice(times).concat(array.slice(0,times));
   },
 
-  groupBy: function(arr, iterator, context) {
-    return exports.group.fromArray(arr, iterator, context);
+  // -=-=-=-=-
+  // grouping
+  // -=-=-=-=-
+
+  groupBy: function(array, iterator, context) {
+    // Applies `iterator` to each element in `array`, and puts the return value
+    // into a collection (the group) associated to it's stringified representation
+    // (the "hash").
+    // See [`Group.prototype`] for available operations on groups.
+    // Example:
+    // Example 1: Groups characters by how often they occur in a string:
+    // var chars = arr.from("Hello World");
+    // arr.groupBy(arr.uniq(chars), function(c) {
+    //   return arr.count(chars, c); })
+    // // => {
+    // //   "1": ["H","e"," ","W","r","d"],
+    // //   "2": ["o"],
+    // //   "3": ["l"]
+    // // }
+    // // Example 2: Group numbers by a custom qualifier:
+    // arr.groupBy([3,4,1,7,4,3,8,4], function(n) {
+    //   if (n <= 3) return "small";
+    //   if (n <= 7) return "medium";
+    //   return "large";
+    // });
+    // // => {
+    // //   large: [8],
+    // //   medium: [4,7,4,4],
+    // //   small: [3,1,3]
+    // // }
+    return Group.fromArray(array, iterator, context);
   },
 
-  groupByKey: function(arr, key) {
-    return exports.arr.groupBy(arr, function(ea) { return ea[key]; });
+  groupByKey: function(array, key) {
+    // var objects = [{x: }]
+    // arr.groupBy(arr.uniq(chars), function(c) {
+    //   return arr.count(chars, c); })
+    // // => {
+    // //   "1": ["H","e"," ","W","r","d"],
+    // //   "2": ["o"],
+    // //   "3": ["l"]
+    // // }
+    return arr.groupBy(array, function(ea) { return ea[key]; });
   },
 
-  batchify: function(arr, constrainedFunc, context) {
-    // takes elements and fits them into subarrays (=batches) so that for
+  partition: function(array, iterator, context) {
+    // Example:
+    // var array = [1,2,3,4,5,6];
+    // arr.partition(array, function(ea) { return ea > 3; })
+    // // => [[1,2,3,4],[5,6]]
+    iterator = iterator || function(x) { return x; };
+    var trues = [], falses = [];
+    array.forEach(function(value, index) {
+      (iterator.call(context, index) ? trues : falses).push(value);
+    });
+    return [trues, falses];
+  },
+
+  batchify: function(array, constrainedFunc, context) {
+    // Takes elements and fits them into subarrays (= batches) so that for
     // each batch constrainedFunc returns true. Note that contrained func
     // should at least produce 1-length batches, otherwise an error is raised
-    // see [$world.browseCode("lively.lang.tests.ExtensionTests.ArrayTest", "testBatchify", "lively.lang.tests.ExtensionTests")]
-    // for an example
+    // Example:
+    // // Assume you have list of things that have different sizes and you want to
+    // // create sub-arrays of these things, with each sub-array having if possible
+    // // less than a `batchMaxSize` of combined things in it:
+    // var sizes = [
+    //   Math.pow(2, 15), // 32KB
+    //   Math.pow(2, 29), // 512MB
+    //   Math.pow(2, 29), // 512MB
+    //   Math.pow(2, 27), // 128MB
+    //   Math.pow(2, 26), // 64MB
+    //   Math.pow(2, 26), // 64MB
+    //   Math.pow(2, 24), // 16MB
+    //   Math.pow(2, 26)] // 64MB
+    // var batchMaxSize = Math.pow(2, 28)/*256MB*/;
+    // function batchConstrained(batch) {
+    //   return batch.length == 1 || batch.sum() < batchMaxSize;
+    // }
+    // var batches = sizes.batchify(batchConstrained);
+    // batches.pluck('length') // => [4,1,1,2]
+    // batches.map(arr.sum).map(num.humanReadableByteSize) // => ["208.03MB","512MB","512MB","128MB"]
+
+    return findBatches([], array);
+
+    // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     function extractBatch(batch, sizes) {
       // Array -> Array -> Array[Array,Array]
       // case 1: no sizes to distribute, we are done
@@ -562,6 +716,7 @@ var arr = exports.arr = {
       var batchAndSizes = extractBatch(batch, rest);
       return [batchAndSizes[0], [first].concat(batchAndSizes[1])];
     }
+
     function findBatches(batches, sizes) {
       if (!sizes.length) return batches;
       var extracted = extractBatch([], sizes);
@@ -570,40 +725,86 @@ var arr = exports.arr = {
                 + 'of at least one item per batch!');
       return findBatches(batches.concat([extracted[0]]), extracted[1]);
     }
-    return findBatches([], arr);
   },
 
-  mask: function(arr, mask) {
-    // select every element in arr for which arr's element is truthy
-    // Example: [1,2,3].mask([false, true, false]) => [2]
-    return arr.filter(function(_, i) { return !!mask[i]; });
-  },
-
-  toTuples: function(arr, tupleLength) {
+  toTuples: function(array, tupleLength) {
+    // Creates sub-arrays with length `tupleLength`
+    // Example:
+    // arr.toTuples(["H","e","l","l","o"," ","W","o","r","l","d"], 4)
+    // // => [["H","e","l","l"],["o"," ","W","o"],["r","l","d"]]
     tupleLength = tupleLength || 1;
-    return exports.arr.range(0,Math.ceil(arr.length/tupleLength)-1).map(function(n) {
-      return arr.slice(n*tupleLength, n*tupleLength+tupleLength);
-    }, arr);
+    return arr.range(0,Math.ceil(array.length/tupleLength)-1).map(function(n) {
+      return array.slice(n*tupleLength, n*tupleLength+tupleLength);
+    }, array);
   },
 
-  shuffle: function(arr) {
-    var unusedIndexes = exports.arr.range(0, arr.length-1);
-    return arr.reduce(function(shuffled, ea, i) {
+  // -=-=-=-=-=-
+  // randomness
+  // -=-=-=-=-=-
+
+  shuffle: function(array) {
+    // Ramdomize the order of elements of array. Does not mutate array.
+    // Example:
+    // arr.shuffle([1,2,3,4,5]) // => [3,1,2,5,4]
+    var unusedIndexes = arr.range(0, array.length-1);
+    return array.reduce(function(shuffled, ea, i) {
       var shuffledIndex = unusedIndexes.splice(Math.round(Math.random() * (unusedIndexes.length-1)), 1);
       shuffled[shuffledIndex] = ea;
       return shuffled;
-    }, Array(arr.length));
+    }, Array(array.length));
   },
 
-  histogram: function(arr, binSpec) {
-    var data = arr;
+  // -=-=-=-=-=-=-=-
+  // Number related
+  // -=-=-=-=-=-=-=-
 
+  max: function(array, iterator, context) {
+    // Example:
+    //   var array = [{x:3,y:2}, {x:5,y:1}, {x:1,y:5}];
+    //   arr.max(array, function(ea) { return ea.x; }) // => {x: 5, y: 1}
+    iterator = iterator || function(x) { return x; };
+    var result;
+    array.reduce(function(max, ea, i) {
+      var val = iterator.call(context, ea, i);
+      if (typeof val !== "number" || val <= max) return max;
+      result = ea; return val;
+    }, -Infinity);
+    return result;
+  },
+
+  min: function(array, iterator, context) {
+    // Similar to `arr.max`.
+    iterator = iterator || function(x) { return x; };
+    return arr.max(array, function(ea, i) {
+      return -iterator.call(context, ea, i); });
+  },
+
+  sum: function(array) {
+    // show-in-doc
+    var sum = 0;
+    for (var i = 0; i < array.length; i++) sum += array[i];
+    return sum;
+  },
+
+  count: function(array, item) {
+    return array.reduce(function(count, ea) {
+      return ea === item ? count + 1 : count; }, 0);
+  },
+
+  histogram: function(data, binSpec) {
+    // ignore-in-doc
+    // Without a `binSpec` argument partition the data 
+    // var numbers = arr.genN(10, num.random);
+    // var numbers = arr.withN(10, "a");
+    // => [65,73,34,94,92,31,27,55,95,48]
+    // => [[65,73],[34,94],[92,31],[27,55],[95,48]]
+    // => [[82,50,16],[25,43,77],[40,64,31],[51,39,13],[17,34,87],[51,33,30]]
     if (typeof binSpec === 'undefined' || typeof binSpec === 'number') {
       var binNumber = binSpec || (function sturge() {
         return Math.ceil(Math.log(data.length) / Math.log(2) + 1);
       })(data);
       var binSize = Math.ceil(Math.round(data.length / binNumber));
-      return exports.arr.range(0, binNumber-1).map(function(i) {
+      return arr.range(0, binNumber-1).map(function(i) {
         return data.slice(i*binSize, (i+1)*binSize);
       });
     } else if (binSpec instanceof Array) {
@@ -619,8 +820,52 @@ var arr = exports.arr = {
           }
         }
         throw new Error(Strings.format('Histogram creation: Cannot group data %s into thresholds %o', d, thresholds));
-      }, exports.arr.range(1,thresholds.length).map(function() { return []; }))
+      }, arr.range(1,thresholds.length).map(function() { return []; }))
     }
+  },
+
+  // -=-=-=-=-
+  // Copying
+  // -=-=-=-=-
+
+  clone: function(array) {
+    // shallow copy
+    return [].concat(array);
+  },
+
+  // -=-=-=-=-=-
+  // conversion
+  // -=-=-=-=-=-
+
+  toArray: function(array) { return arr.from(array); },
+
+  // -=-=-=-=-=-
+  // DEPRECATED
+  // -=-=-=-=-=-
+
+  each: function(arr, iterator, context) {
+    return arr.forEach(iterator, context);
+  },
+
+  all: function(arr, iterator, context) {
+    return arr.every(iterator, context);
+  },
+
+  any: function(arr, iterator, context) {
+    return arr.some(iterator, context);
+  },
+
+  collect: function(arr, iterator, context) {
+    return arr.map(iterator, context);
+  },
+
+  findAll: function(arr, iterator, context) {
+    return arr.filter(iterator, context);
+  },
+
+  inject: function(array, memo, iterator, context) {
+    if (context) iterator = iterator.bind(context);
+    return array.reduce(iterator, memo);
   }
 
 }
@@ -642,27 +887,27 @@ var arr = exports.arr = {
 // Grouping
 // A Grouping is created by Array>>groupBy and maps keys
 // to Arrays
-exports.group = function Group(arr, hashFunc, context) {}
+var Group = exports.Group = function Group(array, hashFunc, context) {}
 
-exports.group.by = exports.arr.groupBy;
+Group.by = exports.arr.groupBy;
 
-exports.group.fromArray = function(arr, hashFunc, context) {
-  var grouping = new exports.group();
-  for (var i = 0, len = arr.length; i < len; i++) {
-    var hash = hashFunc.call(context, arr[i], i);
+Group.fromArray = function(array, hashFunc, context) {
+  var grouping = new Group();
+  for (var i = 0, len = array.length; i < len; i++) {
+    var hash = hashFunc.call(context, array[i], i);
     if (!grouping[hash]) grouping[hash] = [];
-    grouping[hash].push(arr[i]);
+    grouping[hash].push(array[i]);
   }
   return grouping;
 }
 
-exports.group.prototype.toArray = function() {
+Group.prototype.toArray = function() {
   return this.reduceGroups(function(all, _, group) {
     return all.concat([group]); }, []);
 }
 
 
-exports.group.prototype.forEach = function(iterator, context) {
+Group.prototype.forEach = function(iterator, context) {
   var groups = this;
   Object.keys(groups).forEach(function(groupName) {
     groups[groupName].forEach(iterator.curry(groupName, context));
@@ -670,7 +915,7 @@ exports.group.prototype.forEach = function(iterator, context) {
   return groups;
 }
 
-exports.group.prototype.forEachGroup = function(iterator, context) {
+Group.prototype.forEachGroup = function(iterator, context) {
   var groups = this;
   Object.keys(groups).forEach(function(groupName) {
     iterator.call(context, groupName, groups[groupName]);
@@ -678,31 +923,31 @@ exports.group.prototype.forEachGroup = function(iterator, context) {
   return groups;
 }
 
-exports.group.prototype.map = function(iterator, context) {
-  var result = new exports.group();
+Group.prototype.map = function(iterator, context) {
+  var result = new Group();
   this.forEachGroup(function(groupName, group) {
     result[groupName] = group.map(iterator.bind(context, groupName));
   });
   return result;
 }
 
-exports.group.prototype.mapGroups = function(iterator, context) {
-  var result = new exports.group();
+Group.prototype.mapGroups = function(iterator, context) {
+  var result = new Group();
   this.forEachGroup(function(groupName, group) {
     result[groupName] = iterator.call(context, groupName, group);
   });
   return result;
 }
 
-exports.group.prototype.keys = function() { return Object.keys(this); }
+Group.prototype.keys = function() { return Object.keys(this); }
 
-exports.group.prototype.reduceGroups = function(iterator, carryOver, context) {
+Group.prototype.reduceGroups = function(iterator, carryOver, context) {
   this.forEachGroup(function(groupName, group) {
     carryOver = iterator.call(context, carryOver, groupName, group); });
   return carryOver;
 }
 
-exports.group.prototype.count = function() {
+Group.prototype.count = function() {
   return this.reduceGroups(function(groupCount, groupName, group) {
     groupCount[groupName] = group.length;
     return groupCount;

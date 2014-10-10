@@ -275,7 +275,7 @@ describe('fun', function() {
           if (!wasCalled) { setTimeout(waitForWaitFor, 20); return; }
           expect(timeout).to.be(undefined, 'timout param not OK: ' + timeout);
           var duration = endTime - startTime;
-          expect(duration).to.be.greaterThan(100,'wait duration not OK: ' + duration);
+          expect(duration).to.be.greaterThan(99,'wait duration not OK: ' + duration);
           done();
         };
 
