@@ -53,7 +53,10 @@ messages. Each messenger provides the following methods:
 ##### msger.id()
 
 Each msger has an id that can either be defined by the user when the
-msger is created or is automatically assigned.
+msger is created or is automatically assigned. The id should be unique for each
+messenger in a messenger network. It is used as the `target` attribute to
+address messages and internally in the messaging implementation for routing.
+See the [message protocol](#messenger-message-protocol) description for more info.
 
 ##### msger.isOnline()
 
@@ -73,7 +76,7 @@ error occured when listening was started, an Error object otherwise.
 ##### msger.send(msg, onReceiveFunc)
 
 Sends a message. The message should be structured according to the [message
-protocol](#TODO). `onReceiveFunc` is triggered when the `msg` is being
+protocol](#messenger-message-protocol). `onReceiveFunc` is triggered when the `msg` is being
 answered. `onReceiveFunc` should take two arguments: `error` and `answer`.
 `answer` is itself a message object.
 
@@ -87,7 +90,7 @@ should be triggered on the receiver.
 
 Assembles an answer message for `msg` that includes `data`. `expectMore`
 should be truthy when multiple answers should be send (a streaming response,
-see the [messaging protocol](#TODO)).
+see the [messaging protocol](#messenger-message-protocol)).
 
 ##### msger.close(thenDo)
 
@@ -105,8 +108,7 @@ Returns the messages that are currently inflight or not yet send.
 ##### msger.addServices(serviceSpec)
 
 Add services to the messenger. `serviceSpec` should be  JS object whose keys
-correspond to message actions.
-Example:
+correspond to message actions:
 
 ```js
 msg.addServices({
@@ -128,6 +130,50 @@ The messenger object is used to create new messenger interfaces and ties
 them to a specific implementation. Please see [worker.js]() for examples of
 how web workers and node.js processes are wrapped to provide a cross-platform
 interface to a worker abstraction.
+
+
+#### <a name="messenger-message-protocol"></a>Message protocol
+
+A message is a JSON object with the following fields:
+
+```js
+var messageSchema = {
+
+    // REQUIRED selector for service lookup. By convention action gets
+    // postfixed with "Result" for response messages
+    action: STRING,
+
+    // REQUIRED target of the message, the id of the receiver
+    target: UUID,
+
+    // OPTIONAL arguments
+    data: OBJECT,
+
+    // OPTIONAL identifier of the message, will be provided if not set by user
+    messageId: UUID,
+
+    // OPTIONAL sender of the message, will be provided if not set by user
+    sender: UUID,
+
+    // OPTIONAL identifier of a message that this message answers, will be provided
+    inResponseTo: UUID,
+
+    // OPTIONAL if message is an answer. Can be interpreted by the receiver as
+    // a streaming response. Lively participants (tracker and clients) will
+    // trigger data bindings and fire callbacks for a message for every streaming
+    // response
+    expectMoreResponses: BOOL,
+
+    // EXPERIMENTAL UUIDs of trackers/sessions handlers that forwarded this
+    // message
+    route: ARRAY
+}
+```
+
+The `sendTo` and `answer` methods of messengers will automatically create these
+messages. If the user invokes the `send` method then a JS object according to
+the schema above should be passed as the first argument.
+
 
 */
 var messenger = exports.messenger = {
