@@ -1,66 +1,4 @@
-# *THIS DOCUMENTATION IS CURRENTLY WORK IN PROGRESS!*
-
-# lively.lang [![Build Status](https://travis-ci.org/LivelyKernel/lively.lang.svg?branch=master)](https://travis-ci.org/LivelyKernel/lively.lang)
-
-*What?* This project packages abstractions for JavaScript that proved to be useful in
-the [Lively Web](http://lively-web.org) project. On first glance it might seem
-to be just another underscore.js library but apart from extensions to existing
-JavaScript objects and classes it also provides abstractions for asynchronous
-code, new object representations, and functions for inspecting JavaScript
-objects.
-
-*Why?* Make it easy to reuse abstractions we found helpful in all kinds of
-contexts. All features can be used in browser environments and in node.js.
-Actually, one motivation for this library was to have unified interfaces across
-JavaScript environments.
-
-*How?* By default the library is non-invasive, i.e. no global objects are
-modified. To use provided functions you can either
-
-1. call them directly,
-2. use underscore.js-like chain/value wrapping,
-3. or install extension methods explicitly in global objects.
-
-## Summary
-
-JavaScript objects and classes that are extended:
-
-- Array
-- String
-- Number
-- Object
-- Function
-- Date
-
-Abstractions usually not included by default in JavaScript runtimes:
-
-- node.js-like event emitter interface (uses event module on node.js)
-- Path (property access in nested objects / arrays)
-- Interval
-- Grid
-- ArrayProjection
-- Closure
-- Messengers (generic interface for remote-messaging)
-- Workers based on the messenger interface
-
-
-## "Installation"
-TODO
-
-### Browsers
-TODO
-
-### node.js
-TODO
-
-
-## Usage
-TODO
-
-
-## API
-
-<!---API_GENERATED_START--->
+# Lively Web [![Build Statu
 ### Contents
 
 #### string.js
@@ -238,8 +176,18 @@ TODO
 #### function.js
 
 - [fun](#fun)
+  - [Empty](#fun-Empty)
+  - [K](#fun-K)
+  - [Null](#fun-Null)
+  - [False](#fun-False)
+  - [True](#fun-True)
+  - [all](#fun-all)
+  - [own](#fun-own)
   - [argumentNames](#fun-argumentNames)
   - [extractBody](#fun-extractBody)
+  - [timeToRun](#fun-timeToRun)
+  - [timeToRunN](#fun-timeToRunN)
+  - [delay](#fun-delay)
   - [throttle](#fun-throttle)
   - [debounce](#fun-debounce)
   - [throttleNamed](#fun-throttleNamed)
@@ -250,7 +198,11 @@ TODO
   - [compose](#fun-compose)
   - [flip](#fun-flip)
   - [waitFor](#fun-waitFor)
+  - [waitForAll](#fun-waitForAll)
+  - [curry](#fun-curry)
   - [getOriginal](#fun-getOriginal)
+  - [either](#fun-either)
+  - [eitherNamed](#fun-eitherNamed)
   - [addToObject](#fun-addToObject)
   - [binds](#fun-binds)
 - [queue](#queue)
@@ -310,7 +262,7 @@ TODO
 
 #### <a name="string-format"></a>string.format()
 
- String+ -> String
+ `String+ -> String`
  Takes a variable number of arguments. The first argument is the format
  string. Placeholders in the format string are marked with `"%s"`.
  
@@ -1483,7 +1435,7 @@ interval.isInterval([12, 1]) // => false
 #### <a name="interval-compare"></a>interval.compare(a, b)
 
  How [`interval.sort`]() compares.
- We assume that `a[0] <= a[1] and b[0] <= b[1]` accoring to `isInterval`
+ We assume that `a[0] <= a[1] and b[0] <= b[1]` according to `isInterval`
  ```
  -3: a < b and non-overlapping, e.g [1,2] and [3,4]
  -2: a < b and intervals border at each other, e.g [1,3] and [3,4]
@@ -1620,45 +1572,172 @@ arrayProjection.transformToIncludeIndex(proj, 1)
 
 ## function.js
 
+#### <a name="fun-Empty"></a>fun.Empty()
+
+`function() {}`
+
+#### <a name="fun-K"></a>fun.K()
+
+`function(arg) { return arg; }`
+
+#### <a name="fun-Null"></a>fun.Null()
+
+`function() { return null; }`
+
+#### <a name="fun-False"></a>fun.False()
+
+`function() { return false; }`
+
+#### <a name="fun-True"></a>fun.True()
+
+`function() { return true; }`
+
+#### <a name="fun-all"></a>fun.all(object)
+
+ Returns all property names of `object` that reference a function.
+ 
+
+```js
+var obj = {foo: 23, bar: function() { return 42; }};
+fun.all(obj) // => ["bar"]
+```
+
+#### <a name="fun-own"></a>fun.own(object)
+
+ Returns all local (non-prototype) property names of `object` that
+ reference a function.
+ 
+
+```js
+var obj1 = {foo: 23, bar: function() { return 42; }};
+var obj2 = {baz: function() { return 43; }};
+obj2.__proto__ = obj1
+fun.own(obj2) // => ["baz"]
+/*vs.*/ fun.all(obj2) // => ["baz","bar"]
+```
+
 #### <a name="fun-argumentNames"></a>fun.argumentNames(f)
 
- it's a class...
+ 
+
+```js
+fun.argumentNames(function(arg1, arg2) {}) // => ["arg1","arg2"]
+fun.argumentNames(function(/*var args*/) {}) // => []
+```
 
 #### <a name="fun-extractBody"></a>fun.extractBody(func)
 
- returns the body of func as string, removing outer function code and
- superflous indent
+ Returns the body of func as string, removing outer function code and
+ superflous indent. Useful when you have to stringify code but not want
+ to construct strings by hand.
+ 
+
+```js
+fun.extractBody(function(arg) {
+var x = 34;
+alert(2 + arg);
+}) => "var x = 34;\nalert(2 + arg);"
+```
+
+#### <a name="fun-timeToRun"></a>fun.timeToRun(func)
+
+ returns synchronous runtime of calling `func` in ms
+ 
+
+```js
+fun.timeToRun(function() { new WebResource("http://google.de").beSync().get() });
+// => 278 (or something else...)
+```
+
+#### <a name="fun-timeToRunN"></a>fun.timeToRunN(func, n)
+
+ Like `timeToRun` but calls function `n` times instead of once. Returns
+ the average runtime of a call in ms.
+
+#### <a name="fun-delay"></a>fun.delay(func, timeout)
+
+ Delays calling `func` for `timeout` seconds(!).
+ 
+
+```js
+(function() { alert("Run in the future!"); }).delay(1);
+```
 
 #### <a name="fun-throttle"></a>fun.throttle(func, wait)
 
- exec func at most once every wait ms even when called more often
- useful to calm down eagerly running updaters and such
+ Exec func at most once every wait ms even when called more often
+ useful to calm down eagerly running updaters and such.
+ 
+
+```js
+var i = 0;
+var throttled = fun.throttle(function() { alert(++i + '-' + Date.now()) }, 500);
+Array.range(0,100).forEach(function(n) { throttled() });
+```
 
 #### <a name="fun-debounce"></a>fun.debounce(wait, func, immediate)
 
- Execute func after wait milliseconds elapsed since invocation.
- E.g. to exec something after receiving an input stream
- with immediate truthy exec immediately but when called before
+ Call `func` after `wait` milliseconds elapsed since the last invocation.
+ Unlike `throttle` an invocation will restart the wait period. This is
+ useful if you have a stream of events that you want to wait for to finish
+ and run a subsequent function afterwards. When you pass arguments to the
+ debounced functions then the arguments from the last call will be use for
+ the invocation.
+ 
+ With `immediate` set to true, immediately call `func` but when called again during `wait` before
  wait ms are done nothing happens. E.g. to not exec a user invoked
- action twice accidentally
+ action twice accidentally.
+ 
+
+```js
+var start = Date.now();
+var f = fun.debounce(200, function(arg1) {
+alert("running after " + (Date.now()-start) + "ms with arg " + arg1);
+});
+f("call1");
+fun.delay(f.curry("call2"), 0.1);
+fun.delay(f.curry("call3"), 0.15);
+// => Will eventually output: "running after 352ms with arg call3"
+```
 
 #### <a name="fun-throttleNamed"></a>fun.throttleNamed(name, wait, func)
 
- see comment in debounceNamed
+ Like `throttle` but remembers the throttled function once created and
+ repeated calls to `throttleNamed` with the identical name will use the same
+ throttled function. This allows to throttle functions in a central place
+ that might be called various times in different contexts without having to
+ manually store the throttled function.
 
 #### <a name="fun-debounceNamed"></a>fun.debounceNamed(name, wait, func, immediate)
 
- debounce is based on the identity of the function called. When you call the
- identical method using debounce, multiple calls that happen between the first
- invocation and wait time will only cause execution once. However, wrapping a
- function with debounce and then storing (to be able to call the exact same
- function again) it is a repeating task and unpractical when using anonymous
- methods. debounceNamed() automatically maps function to ids and removes the
- need for this housekeeping code.
+ Like `debounce` but remembers the debounced function once created and
+ repeated calls to `debounceNamed` with the identical name will use the same
+ debounced function. This allows to debounce functions in a central place
+ that might be called various times in different contexts without having to
+ manually store the debounced function.
 
 #### <a name="fun-createQueue"></a>fun.createQueue(id, workerFunc)
 
- can be overwritten by a function
+ A simple queue with an attached asynchronous `workerFunc` to process
+ queued tasks. Calling `createQueue` will return an object with the
+ following interface:
+ ```js
+ {
+   push: function(task) {/**/},
+   pushAll: function(tasks) {/**/},
+   handleError: function(err) {}, // Overwrite to handle errors
+   dran: function() {}, // Overwrite to react when the queue empties
+ }
+ 
+
+```js
+var sum = 0;
+var q = fun.createQueue("example-queue", function(arg, thenDo) { sum += arg; thenDo(); });
+q.pushAll([1,2,3]);
+queues will be remembered by their name
+fun.createQueue("example-queue").push(4);
+sum // => 6
+```
 
 #### <a name="queue-handleError"></a>queue.handleError(err)
 
@@ -1668,54 +1747,155 @@ arrayProjection.transformToIncludeIndex(proj, 1)
 
  This functions helps when you have a long running computation that
  multiple call sites (independent from each other) depend on. This
- function does the houskeeping to start the long running computation
+ function does the housekeeping to start the long running computation
  just once and returns an object that allows to schedule callbacks
- once the workerFunc is done
- this is how it works:
- if id does not exist, workerFunc is called, otherwise ignored.
- workerFunc is expected to call thenDoFunc with arguments: error, arg1, ..., argN
- if called subsequently before workerFunc is done, the other thenDoFunc
- will "pile up" and called with the same arguments as the first
- thenDoFunc once workerFunc is done
+ once the workerFunc is done.
+ 
+
+```js
+var worker = fun.workerWithCallbackQueue("example",
+function slowFunction(thenDo) {
+var theAnswer = 42;
+setTimeout(function() { thenDo(null, theAnswer); });
+});
+// all "call sites" depend on `slowFunction` but don't have to know about
+// each other
+worker.whenDone(function callsite1(err, theAnswer) { alert("callback1: " + theAnswer); })
+worker.whenDone(function callsite2(err, theAnswer) { alert("callback2: " + theAnswer); })
+fun.workerWithCallbackQueue("example").whenDone(function callsite3(err, theAnswer) { alert("callback3: " + theAnswer); })
+// => Will eventually show: callback1: 42, callback2: 42 and callback3: 42
+This is how it works:
+If `id` does not exist, workerFunc is called, otherwise ignored.
+workerFunc is expected to call thenDoFunc with arguments: error, arg1, ..., argN
+if called subsequently before workerFunc is done, the other thenDoFunc
+will "pile up" and called with the same arguments as the first
+thenDoFunc once workerFunc is done
+```
 
 #### <a name="fun-composeAsync"></a>fun.composeAsync()
 
- composes functions: fun.composeAsync(f,g,h)(arg1, arg2) =
-   f(arg1, arg2, thenDo1) -> thenDo1(err, fResult)
- -> g(fResult, thenDo2) -> thenDo2(err, gResult) ->
- -> h(fResult, thenDo3) -> thenDo2(err, hResult)
+ Composes functions that are asynchronous and expecting continuations to
+ be called in node.js callback style (error is first argument, real
+ arguments follow).
+ A call like `fun.composeAsync(f,g,h)(arg1, arg2)` has a flow of control like:
+  `f(arg1, arg2, thenDo1)` -> `thenDo1(err, fResult)`
+ -> `g(fResult, thenDo2)` -> `thenDo2(err, gResult)` ->
+ -> `h(fResult, thenDo3)` -> `thenDo2(err, hResult)`
  
 
 ```js
 fun.composeAsync(
 function(a,b, thenDo) { thenDo(null, a+b); },
-function(x, thenDo) { thenDo(x*4); })(3,2, function(err, result) { alert(result); });
+function(x, thenDo) { thenDo(x*4); }
+)(3,2, function(err, result) { alert(result); });
 ```
 
 #### <a name="fun-compose"></a>fun.compose()
 
- composes functions: fun.compose(f,g,h)(arg1, arg2) = h(g(f(arg1, arg2)))
+ Composes synchronousefunctions:
+ `fun.compose(f,g,h)(arg1, arg2)` = `h(g(f(arg1, arg2)))`
  
 
 ```js
-fun.compose(function(a,b) {return a+b}, function(x) {return x*4})(3,2)
+fun.compose(
+function(a,b) { return a+b; },
+function(x) {return x*4}
+)(3,2) // => 20
 ```
 
 #### <a name="fun-flip"></a>fun.flip(f)
 
- swaps the first two args
- fun.flip(function(a, b, c) { return a + b + c; })(' World', 'Hello', '!')
+ Swaps the first two args
+ 
+
+```js
+fun.flip(function(a, b, c) {
+return a + b + c; })(' World', 'Hello', '!') // => "Hello World!"
+```
 
 #### <a name="fun-waitFor"></a>fun.waitFor(timeoutMs, waitTesterFunc, thenDo)
 
- wait for waitTesterFunc to return true, then run thenDo, passing
+ Wait for waitTesterFunc to return true, then run thenDo, passing
  failure/timout err as first parameter. A timout occurs after
  timeoutMs. During the wait period waitTesterFunc might be called
- multiple times
+ multiple times.
+
+#### <a name="fun-waitForAll"></a>fun.waitForAll(options, funcs, thenDo)
+
+ Wait for multiple asynchronous functions. Once all have called the
+ continuation, call `thenDo`.
+ options can be: `{timeout: NUMBER}` (how long to wait in milliseconds).
+
+#### <a name="fun-curry"></a>fun.curry(func, arg1, arg2, argN)
+
+ Return a version of `func` with args applied.
+ 
+
+```js
+var add1 = (function(a, b) { return a + b; }).curry(1);
+add1(3) // => 4
+```
 
 #### <a name="fun-getOriginal"></a>fun.getOriginal(func)
 
  get the original 'unwrapped' function, traversing as many wrappers as necessary.
+
+#### <a name="fun-either"></a>fun.either()
+
+ Accepts multiple functions and returns an array of wrapped
+ functions. Those wrapped functions ensure that only one of the original
+ function is run (the first on to be invoked).
+ 
+ This is useful if you have multiple asynchronous choices of how the
+ control flow might continue but want to ensure that a continuation
+ is  only triggered once, like in a timeout situation:
+ 
+ ```js
+ function outerFunction(callback) {
+   function timeoutAction() { callback(new Error('timeout!')); }
+   function otherAction() { callback(null, "All OK"); }
+   setTimeout(timeoutAction, 200);
+   doSomethingAsync(otherAction);
+ }
+ ```
+ 
+ To ensure that `callback` only runs once you would normally have to write boilerplate like this:
+ 
+ ```js
+ var ran = false;
+ function timeoutAction() { if (ran) return; ran = true; callback(new Error('timeout!')); }
+ function otherAction() { if (ran) return; ran = true; callback(null, "All OK"); }
+ ```
+ 
+ Since this can get tedious an error prone, especially if more than two choices are involved, `either` can be used like this:
+ 
+
+```js
+function outerFunction(callback) {
+var actions = fun.either(
+function() { callback(new Error('timeout!')); },
+function() { callback(null, "All OK"); });
+setTimeout(actions[0], 200);
+doSomethingAsync(actions[1]);
+}
+```
+
+#### <a name="fun-eitherNamed"></a>fun.eitherNamed(name, func)
+
+ Works like [`either`](#) but usage does not require to wrap all
+ functions at once:
+ 
+
+```js
+var log = "", name = "either-example-" + Date.now();
+function a() { log += "aRun"; };
+function b() { log += "bRun"; };
+function c() { log += "cRun"; };
+setTimeout(fun.eitherNamed(name, a), 100);
+setTimeout(fun.eitherNamed(name, b), 40);
+setTimeout(fun.eitherNamed(name, c), 80);
+setTimeout(function() { alert(log); /* => "bRun" */ }, 150);
+```
 
 #### <a name="fun-addToObject"></a>fun.addToObject(f, obj, name)
 
@@ -1795,7 +1975,10 @@ fun.compose(function(a,b) {return a+b}, function(x) {return x*4})(3,2)
 
 ### <a name="events"></a>events
 
- A simple node.js-like cross-platform event emitter implementations.
+ A simple node.js-like cross-platform event emitter implementations. Emitters
+ support the methods: `on(eventName, handlerFunc)`, 
+ `once(eventName, handlerFunc)`, `emit(eventName, eventData)`,
+ `removeListener(eventName, handlerFunc)`, `removeAllListeners(eventName)`
 
 #### <a name="obj-once"></a>obj.once(type, handler)
 
@@ -1838,7 +2021,10 @@ messages. Each messenger provides the following methods:
 ##### msger.id()
 
 Each msger has an id that can either be defined by the user when the
-msger is created or is automatically assigned.
+msger is created or is automatically assigned. The id should be unique for each
+messenger in a messenger network. It is used as the `target` attribute to
+address messages and internally in the messaging implementation for routing.
+See the [message protocol](#messenger-message-protocol) description for more info.
 
 ##### msger.isOnline()
 
@@ -1858,7 +2044,7 @@ error occured when listening was started, an Error object otherwise.
 ##### msger.send(msg, onReceiveFunc)
 
 Sends a message. The message should be structured according to the [message
-protocol](#TODO). `onReceiveFunc` is triggered when the `msg` is being
+protocol](#messenger-message-protocol). `onReceiveFunc` is triggered when the `msg` is being
 answered. `onReceiveFunc` should take two arguments: `error` and `answer`.
 `answer` is itself a message object.
 
@@ -1872,13 +2058,13 @@ should be triggered on the receiver.
 
 Assembles an answer message for `msg` that includes `data`. `expectMore`
 should be truthy when multiple answers should be send (a streaming response,
-see the [messaging protocol](#TODO)).
+see the [messaging protocol](#messenger-message-protocol)).
 
 ##### msger.close(thenDo)
 
 Stops listening.
 
-##### msger.whenOnline
+##### msger.whenOnline(thenDo)
 
 Registers a callback that is triggered as soon as a listen attempt succeeds
 (or when the messenger is listening already then it succeeds immediately).
@@ -1890,28 +2076,74 @@ Returns the messages that are currently inflight or not yet send.
 ##### msger.addServices(serviceSpec)
 
 Add services to the messenger. `serviceSpec` should be  JS object whose keys
-correspond to message actions.
+correspond to message actions:
 
-
-```js
 ```js
 msg.addServices({
-helloWorld: function(msg, messenger) {
-messenger.answer(msg, "received a message!");
-}
+  helloWorld: function(msg, messenger) {
+    messenger.answer(msg, "received a message!");
+  }
 });
 ```
+
 See the examples below for more information.
+
 ##### *event` msger.on("message")
+
 To allow users to receive messages that were not initiated by a send,
 messengers are [event emitters](events.js) that emit `"message"` events
 whenever they receive a new message.
+
 The messenger object is used to create new messenger interfaces and ties
 them to a specific implementation. Please see [worker.js]() for examples of
 how web workers and node.js processes are wrapped to provide a cross-platform
 interface to a worker abstraction.
 
+
+#### <a name="messenger-message-protocol"></a>Message protocol
+
+A message is a JSON object with the following fields:
+
+```js
+var messageSchema = {
+
+    // REQUIRED selector for service lookup. By convention action gets
+    // postfixed with "Result" for response messages
+    action: STRING,
+
+    // REQUIRED target of the message, the id of the receiver
+    target: UUID,
+
+    // OPTIONAL arguments
+    data: OBJECT,
+
+    // OPTIONAL identifier of the message, will be provided if not set by user
+    messageId: UUID,
+
+    // OPTIONAL sender of the message, will be provided if not set by user
+    sender: UUID,
+
+    // OPTIONAL identifier of a message that this message answers, will be provided
+    inResponseTo: UUID,
+
+    // OPTIONAL if message is an answer. Can be interpreted by the receiver as
+    // a streaming response. Lively participants (tracker and clients) will
+    // trigger data bindings and fire callbacks for a message for every streaming
+    // response
+    expectMoreResponses: BOOL,
+
+    // EXPERIMENTAL UUIDs of trackers/sessions handlers that forwarded this
+    // message
+    route: ARRAY
+}
 ```
+
+The `sendTo` and `answer` methods of messengers will automatically create these
+messages. If the user invokes the `send` method then a JS object according to
+the schema above should be passed as the first argument.
+
+
+
 
 
 
@@ -1971,29 +2203,4 @@ interface to a worker abstraction.
 #### <a name="worker-create"></a>worker.create(options)
 
 runFunc, arg1, ... argN, thenDo
-<!---API_GENERATED_END--->
 
-## License
-
-[MIT License](LICENSE)
-
-### methods throttle and debounce in function.js
-
-adapted from Underscore.js 1.3.3
-© 2009-2012 Jeremy Ashkenas, DocumentCloud Inc.
-Underscore is distributed under the MIT license.
-
-### dateFormat in date.js
-
-Date Format 1.2.3
-© 2007-2009 Steven Levithan <stevenlevithan.com>
-MIT license
-Includes enhancements by Scott Trenda <scott.trenda.net>
-and Kris Kowal <cixar.com/~kris.kowal/>
-
-### serveral methods in object.js including `subclass()`
-
-are inspired or derived from Prototype JavaScript framework, version 1.6.0_rc1
-© 2005-2007 Sam Stephenson
-Prototype is freely distributable under the terms of an MIT-style license.
-For details, see the Prototype web site: http://www.prototypejs.org/

@@ -501,6 +501,34 @@ describe('fun', function() {
       expect(23).to.be(once());
     });
 
+    it("can restrict that only one of multiple a function is run", function(done) {
+      var log = "";
+      var either = fun.either(
+        function() { log += "aRun"; },
+        function() { log += "bRun"; },
+        function() { log += "cRun"; });
+      setTimeout(either[0], 100);
+      setTimeout(either[1], 40);
+      setTimeout(either[2], 80);
+      setTimeout(function() { expect(log).to.be("bRun"); done(); }, 150)
+    });
+
+    it("can restrict that only one of multiple a function is run via names", function(done) {
+      var log = "", name = "either-test-" + Date.now();
+      function a() { log += "aRun"; };
+      function b() { log += "bRun"; };
+      function c() { log += "cRun"; };
+      setTimeout(fun.eitherNamed(name, a), 100);
+      setTimeout(fun.eitherNamed(name, b), 40);
+      setTimeout(fun.eitherNamed(name, c), 80);
+      setTimeout(function() {
+        expect(log).to.be("bRun");
+        expect(fun).to.have.property("_eitherNameRegistry");
+        expect(fun._eitherNameRegistry).to.not.have.property(name);
+        done();
+      }, 150)
+    });
+
   });
 
   describe("function creation", function() {
