@@ -306,7 +306,9 @@ var fun = exports.fun = {
     // worker.whenDone(function callsite2(err, theAnswer) { alert("callback2: " + theAnswer); })
     // fun.workerWithCallbackQueue("example").whenDone(function callsite3(err, theAnswer) { alert("callback3: " + theAnswer); })
     // // => Will eventually show: callback1: 42, callback2: 42 and callback3: 42
-    
+
+
+    // ignore-in-doc
     // This is how it works:
     // If `id` does not exist, workerFunc is called, otherwise ignored.
     // workerFunc is expected to call thenDoFunc with arguments: error, arg1, ..., argN
@@ -905,27 +907,26 @@ var fun = exports.fun = {
 
 };
 
-// A `Closure` is a representation of a JavaScript function that controls what
-// values are bound to out-of-scope variables. By default JavaScript has no
-// reflection capabilities over closed values in functions. When needing to
-// serialize execution or when behavior should become part of the state of a
-// system it is often necessary to have first-class control over this language
-// aspect.
-//
-// Typically closures aren't created directly but with the help of [`asScriptOf`](#)
-// 
-// Example:
-// function func(a) { return a + b; }
-// var closureFunc = Closure.fromFunction(func, {b: 3}).recreateFunc();
-// closureFunc(4) // => 7
-// var closure = closureFunc.livelyClosure // => {
-// //   varMapping: { b: 3 },
-// //   originalFunc: function func(a) {/*...*/}
-// // }
-// closure.lookup("b") // => 3
-// closure.getFuncSource() // => "function func(a) { return a + b; }"
-
 function Closure() {
+  // A `Closure` is a representation of a JavaScript function that controls what
+  // values are bound to out-of-scope variables. By default JavaScript has no
+  // reflection capabilities over closed values in functions. When needing to
+  // serialize execution or when behavior should become part of the state of a
+  // system it is often necessary to have first-class control over this language
+  // aspect.
+  //
+  // Typically closures aren't created directly but with the help of [`asScriptOf`](#)
+  // 
+  // Example:
+  // function func(a) { return a + b; }
+  // var closureFunc = Closure.fromFunction(func, {b: 3}).recreateFunc();
+  // closureFunc(4) // => 7
+  // var closure = closureFunc.livelyClosure // => {
+  // //   varMapping: { b: 3 },
+  // //   originalFunc: function func(a) {/*...*/}
+  // // }
+  // closure.lookup("b") // => 3
+  // closure.getFuncSource() // => "function func(a) { return a + b; }"
   this.initialize.apply(this, arguments);
 }
 

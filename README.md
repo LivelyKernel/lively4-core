@@ -211,6 +211,9 @@
   - [addToObject](#fun-addToObject)
 - [queue](#queue)
   - [handleError](#queue-handleError)
+- [Closure](#Closure)
+  - [fromFunction](#Closure-fromFunction)
+  - [fromSource](#Closure-fromSource)
 - [Closure.prototype](#Closure.prototype)
   - [setFuncSource](#Closure.prototype-setFuncSource)
   - [getFuncSource](#Closure.prototype-getFuncSource)
@@ -219,9 +222,6 @@
   - [lookup](#Closure.prototype-lookup)
   - [recreateFunc](#Closure.prototype-recreateFunc)
   - [recreateFuncFromSource](#Closure.prototype-recreateFuncFromSource)
-- [Closure](#Closure)
-  - [fromFunction](#Closure-fromFunction)
-  - [fromSource](#Closure-fromSource)
 
 #### object.js
 
@@ -272,7 +272,7 @@
 
 #### <a name="string-format"></a>string.format()
 
- `String+ -> String`
+
  Takes a variable number of arguments. The first argument is the format
  string. Placeholders in the format string are marked with `"%s"`.
  
@@ -283,7 +283,7 @@ jsext.string.format("Hello %s!", "Lively User"); // => "Hello Lively User!"
 
 #### <a name="string-indent"></a>string.indent(str, indentString, depth)
 
- `String -> String -> String? -> String`
+
  
 
 ```js
@@ -314,7 +314,7 @@ string.print("fo\"o") // => "\"fo\\\"o\""
 
 ```js
 string.print([[1,2,3], "string", {foo: 23}])
-// => [[1,2,3],"string",[object Object]]
+     // => [[1,2,3],"string",[object Object]]
 ```
 
 #### <a name="string-printNested"></a>string.printNested(list, depth)
@@ -336,21 +336,21 @@ string.pad("Foo", 2, true) // => "  Foo"
 
 #### <a name="string-printTable"></a>string.printTable(tableArray, options)
 
- `Array -> Object? -> String`
+
  Takes a 2D Array and prints a table string. Kind of the reverse
  operation to `strings.tableize`
  
 
 ```js
 string.printTable([["aaa", "b", "c"], ["d", "e","f"]])
-// =>
-// aaa b c
-// d   e f
+   // =>
+   // aaa b c
+   // d   e f
 ```
 
 #### <a name="string-printTree"></a>string.printTree(rootNode, nodePrinter, childGetter, indent)
 
- `Object -> Function -> Function -> Number? -> String`
+
  A generic function to print a tree representation from a nested data structure.
  Receives three arguments:
  - `rootNode` an object representing the root node of the tree
@@ -390,14 +390,14 @@ string.lines("foo\nbar\n\rbaz") // => ["foo","bar","baz"]
 
 ```js
 var text = "Hello, this is a pretty long sentence\nthat even includes new lines."
-+ "\n\n\nThis is a sentence in  a new paragraph.";
+        + "\n\n\nThis is a sentence in  a new paragraph.";
 string.paragraphs(text) // => [
-// "Hello, this is a pretty long sentence\nthat even includes new lines.",
-// "This is a sentence in  a new paragraph."]
+  // "Hello, this is a pretty long sentence\nthat even includes new lines.",
+  // "This is a sentence in  a new paragraph."]
 string.paragraphs(text, {keepEmptyLines: true}) // => [
-// "Hello, this is a pretty long sentence\n that even includes new lines.",
-// "\n ",
-// "This is a sentence in  a new paragraph."]
+  // "Hello, this is a pretty long sentence\n that even includes new lines.",
+  // "\n ",
+  // "This is a sentence in  a new paragraph."]
 ```
 
 #### <a name="string-nonEmptyLines"></a>string.nonEmptyLines(str)
@@ -418,7 +418,7 @@ string.tokens(' a b c') => ['a', 'b', 'c']
 
 #### <a name="string-tableize"></a>string.tableize(s, options)
 
- `String -> Object? -> Array`
+
  Takes a String representing a "table" and parses it into a 2D-Array (as
  accepted by the `collection.Grid` methods or `string.printTable`)
  ```js
@@ -434,8 +434,8 @@ string.tableize('a b c\nd e f')
 // => [["a","b","c"],["d","e","f"]]
 // can also parse csv like
 var csv = '"Symbol","Name","LastSale",\n'
-+ '"FLWS","1-800 FLOWERS.COM, Inc.","5.65",\n'
-+ '"FCTY","1st Century Bancshares, Inc","5.65",'
+        + '"FLWS","1-800 FLOWERS.COM, Inc.","5.65",\n'
+        + '"FCTY","1st Century Bancshares, Inc","5.65",'
 string.tableize(csv, {cellSplitter: /^\s*"|","|",?\s*$/g})
 // => [["Symbol","Name","LastSale"],
 //     ["FLWS","1-800 FLOWERS.COM, Inc.",5.65],
@@ -458,7 +458,7 @@ string.unescapeCharacterEntities("foo &amp;&amp; bar") // => "foo && bar"
 
 ```js
 string.toQueryParams("http://example.com?foo=23&bar=test")
-// => {bar: "test", foo: "23"}
+  // => {bar: "test", foo: "23"}
 ```
 
 #### <a name="string-newUUID"></a>string.newUUID()
@@ -471,7 +471,7 @@ string.newUUID() // => "3B3E74D0-85EA-45F2-901C-23ECF3EAB9FB"
 
 #### <a name="string-createDataURI"></a>string.createDataURI(content, mimeType)
 
- `String -> String -> String`
+
  Takes some string representing content and a mime type.
  For a list of mime types see: [http://www.iana.org/assignments/media-types/media-types.xhtml]()
  More about data URIs: [https://developer.mozilla.org/en-US/docs/Web/HTTP/data_URIs]()
@@ -507,7 +507,7 @@ string.md5("foo") // => "acbd18db4cc2f85cedef654fccc4a4d8"
 
 ```js
 string.reMatches("Hello World", /o/g)
-// => [{start: 4, end: 5, match: "o"},{start: 7, end: 8, match: "o"}]
+  // => [{start: 4, end: 5, match: "o"},{start: 7, end: 8, match: "o"}]
 ```
 
 #### <a name="string-stringMatch"></a>string.stringMatch(s, patternString, options)
@@ -518,13 +518,13 @@ string.reMatches("Hello World", /o/g)
 
 ```js
 string.stringMatch("foo 123 bar", "foo __/[0-9]+/__ bar") // => {matched: true}
-string.stringMatch("foo aaa bar", "foo __/[0-9]+/__ bar")
-// => {
-//   error: "foo <--UNMATCHED-->aaa bar",
-//   matched: false,
-//   pattern: /[0-9]+/,
-//   pos: 4
-// }
+  string.stringMatch("foo aaa bar", "foo __/[0-9]+/__ bar")
+    // => {
+    //   error: "foo <--UNMATCHED-->aaa bar",
+    //   matched: false,
+    //   pattern: /[0-9]+/,
+    //   pos: 4
+    // }
 ```
 
 #### <a name="string-peekRight"></a>string.peekRight(s, start, needle)
@@ -544,7 +544,7 @@ string.peekRight("Hello World", 5, /o/) // => 2
 
 #### <a name="string-lineIndexComputer"></a>string.lineIndexComputer(s)
 
- `String -> Function`
+
  For converting character positions to line numbers.
  Returns a function accepting char positions. If the char pos is outside
  of the line ranges -1 is returned.
@@ -591,7 +591,7 @@ string.endsWith("fooo!", "o!") // => true
 
 #### <a name="string-withDecimalPrecision"></a>string.withDecimalPrecision(str, precision)
 
- `String -> Number -> String`
+
  
 
 ```js
@@ -791,7 +791,7 @@ num.toRadians(180) // => 3.141592653589793
 
 ```js
 date.format(new Date(), date.format.masks.longTime) // => "7:13:31 PM PDT"
-date.format(new Date(), "yyyy/mm/dd") // => "2014/10/09"
+  date.format(new Date(), "yyyy/mm/dd") // => "2014/10/09"
 ```
 
 #### <a name="exports.date-equals"></a>exports.date.equals(date, otherDate)
@@ -806,8 +806,8 @@ date.format(new Date(), "yyyy/mm/dd") // => "2014/10/09"
 
 ```js
 var now = new Date();
-date.relativeTo(new Date(now-2000), now) // => "2 secs"
-date.relativeTo(new Date("10/11/2014"), new Date("10/12/2014")) // => "1 day"
+  date.relativeTo(new Date(now-2000), now) // => "2 secs"
+  date.relativeTo(new Date("10/11/2014"), new Date("10/12/2014")) // => "1 day"
 ```
 
 
@@ -860,7 +860,7 @@ date.relativeTo(new Date("10/11/2014"), new Date("10/12/2014")) // => "1 day"
 
 ```js
 arr.range(0,5) // => [0,1,2,3,4,5]
-arr.range(0,10,2) // => [0,2,4,6,8,10]
+  arr.range(0,10,2) // => [0,2,4,6,8,10]
 ```
 
 #### <a name="arr-from"></a>arr.from(iterable)
@@ -877,7 +877,7 @@ arr.withN(3, "Hello") // => ["Hello","Hello","Hello"]
 
 #### <a name="arr-genN"></a>arr.genN(n, generator)
 
- `Number -> Function -> Array`
+
  Takes a generator function that is called for each `n`.
  
 
@@ -887,25 +887,25 @@ arr.genN(3, num.random) // => [46,77,95]
 
 #### <a name="arr-filter"></a>arr.filter(array, iterator, context)
 
- `[a] -> (a -> Boolean) -> c? -> [a]`
+
  Calls `iterator` for each element in `array` and returns a subset of it
  including the elements for which `iterator` returned a truthy value.
  Like `Array.prototype.filter`.
 
 #### <a name="arr-detect"></a>arr.detect(arr, iterator, context)
 
- `[a] -> (a -> Boolean) -> c? -> a`
+
  returns the first occurrence of an element in `arr` for which iterator
  returns a truthy value
 
 #### <a name="arr-filterByKey"></a>arr.filterByKey(arr, key)
 
- `[a] -> String -> [a]`
+
  
 
 ```js
 var objects = [{x: 3}, {y: 4}, {x:5}]
-arr.filterByKey(objects, "x") // => [{x: 3},{x: 5}]
+  arr.filterByKey(objects, "x") // => [{x: 3},{x: 5}]
 ```
 
 #### <a name="arr-grep"></a>arr.grep(arr, filter, context)
@@ -978,7 +978,7 @@ arr.compact([1,2,undefined,4,0]) // => [1,2,4]
 
 #### <a name="arr-forEach"></a>arr.forEach(array, iterator, context)
 
- `[a] -> (a -> Undefined) -> c? -> Undefined`
+
  `iterator` is called on each element in `array` for side effects. Like
  `Array.prototype.forEach`.
 
@@ -989,7 +989,7 @@ arr.compact([1,2,undefined,4,0]) // => [1,2,4]
 
 ```js
 arr.zip([1,2,3], ["a", "b", "c"], ["A", "B"])
-// // => [[1,"a","A"],[2,"b","B"],[3,"c",undefined]]
+// => [[1,"a","A"],[2,"b","B"],[3,"c",undefined]]
 ```
 
 #### <a name="arr-flatten"></a>arr.flatten(array)
@@ -1004,7 +1004,7 @@ arr.flatten([1, [2, [3,4,5], [6]], 7,8])
 
 #### <a name="arr-map"></a>arr.map(array, iterator, context)
 
- `[a] -> (a -> b) -> c? -> [b]`
+
  Applies `iterator` to each element of `array` and returns a new Array
  with the results of those calls. Like `Array.prototype.some`.
 
@@ -1030,7 +1030,7 @@ arr.pluck(["hello", "world"], 0) // => ["h","w"]
 
 #### <a name="arr-reduce"></a>arr.reduce(array, iterator, memo, context)
 
- `Array -> Function -> Object? -> Object? -> Object?`
+
  Applies `iterator` to each element of `array` and returns a new Array
  with the results of those calls. Like `Array.prototype.some`.
 
@@ -1048,13 +1048,13 @@ arr.include([1,2,3], 2) // => true
 
 #### <a name="arr-some"></a>arr.some(array, iterator, context)
 
- `[a] -> (a -> Boolean) -> c? -> Boolean`
+
  Returns true if there is at least one abject in `array` for which
  `iterator` returns a truthy result. Like `Array.prototype.some`.
 
 #### <a name="arr-every"></a>arr.every(array, iterator, context)
 
- `[a] -> (a -> Boolean) -> c? -> Boolean`
+
  Returns true if for all abjects in `array` `iterator` returns a truthy
  result. Like `Array.prototype.every`.
 
@@ -1065,7 +1065,7 @@ arr.include([1,2,3], 2) // => true
 
 #### <a name="arr-sort"></a>arr.sort(array, sortFunc)
 
- `[a] -> (a -> Number)? -> [a]`
+
  Just `Array.prototype.sort`
 
 #### <a name="arr-sortBy"></a>arr.sortBy(array, iterator, context)
@@ -1074,7 +1074,7 @@ arr.include([1,2,3], 2) // => true
 
 ```js
 arr.sortBy(["Hello", "Lively", "User"], function(ea) {
-return ea.charCodeAt(ea.length-1); }) // => ["Hello","User","Lively"]
+  return ea.charCodeAt(ea.length-1); }) // => ["Hello","User","Lively"]
 ```
 
 #### <a name="arr-sortByKey"></a>arr.sortByKey(array, key)
@@ -1094,7 +1094,7 @@ jsext.arr.sortByKey([{x: 3}, {x: 2}, {x: 8}], "x")
 
 ```js
 var morphs = $world.withAllSubmorphsDo(function(x) { return x; ;
-morphs.mask(morphs.reMatches(/code/i))
+  morphs.mask(morphs.reMatches(/code/i))
 ```
 
 #### <a name="arr-intersect"></a>arr.intersect(array1, array2)
@@ -1148,13 +1148,13 @@ morphs.mask(morphs.reMatches(/code/i))
 
 ```js
 arr.doAndContinue([1,2,3,4], function(next, n) {
-alert("At " + n);
-setTimeout(next, 100);
+  alert("At " + n);
+  setTimeout(next, 100);
 }, function() { alert("Done"); })
 // If the elements are functions you can leave out the iterator:
 arr.doAndContinue([
-function(next) { alert("At " + 1); next(); },
-function(next) { alert("At " + 2); next(); }
+  function(next) { alert("At " + 1); next(); },
+  function(next) { alert("At " + 2); next(); }
 ], null, function() { alert("Done"); });
 ```
 
@@ -1200,7 +1200,7 @@ arr.rotate([1,2,3]) // => [2,3,1]
 Example 1: Groups characters by how often they occur in a string:
 var chars = arr.from("Hello World");
 arr.groupBy(arr.uniq(chars), function(c) {
-return arr.count(chars, c); })
+  return arr.count(chars, c); })
 // => {
 //   "1": ["H","e"," ","W","r","d"],
 //   "2": ["o"],
@@ -1208,9 +1208,9 @@ return arr.count(chars, c); })
 // }
 // Example 2: Group numbers by a custom qualifier:
 arr.groupBy([3,4,1,7,4,3,8,4], function(n) {
-if (n <= 3) return "small";
-if (n <= 7) return "medium";
-return "large";
+  if (n <= 3) return "small";
+  if (n <= 7) return "medium";
+  return "large";
 });
 // => {
 //   large: [8],
@@ -1252,17 +1252,17 @@ arr.partition(array, function(ea) { return ea > 3; })
 // create sub-arrays of these things, with each sub-array having if possible
 // less than a `batchMaxSize` of combined things in it:
 var sizes = [
-Math.pow(2, 15), // 32KB
-Math.pow(2, 29), // 512MB
-Math.pow(2, 29), // 512MB
-Math.pow(2, 27), // 128MB
-Math.pow(2, 26), // 64MB
-Math.pow(2, 26), // 64MB
-Math.pow(2, 24), // 16MB
-Math.pow(2, 26)] // 64MB
+  Math.pow(2, 15), // 32KB
+  Math.pow(2, 29), // 512MB
+  Math.pow(2, 29), // 512MB
+  Math.pow(2, 27), // 128MB
+  Math.pow(2, 26), // 64MB
+  Math.pow(2, 26), // 64MB
+  Math.pow(2, 24), // 16MB
+  Math.pow(2, 26)] // 64MB
 var batchMaxSize = Math.pow(2, 28)/*256MB*/;
 function batchConstrained(batch) {
-return batch.length == 1 || batch.sum() < batchMaxSize;
+  return batch.length == 1 || batch.sum() < batchMaxSize;
 }
 var batches = sizes.batchify(batchConstrained);
 batches.pluck('length') // => [4,1,1,2]
@@ -1294,7 +1294,7 @@ arr.shuffle([1,2,3,4,5]) // => [3,1,2,5,4]
 
 ```js
 var array = [{x:3,y:2}, {x:5,y:1}, {x:1,y:5}];
-arr.max(array, function(ea) { return ea.x; }) // => {x: 5, y: 1}
+  arr.max(array, function(ea) { return ea.x; }) // => {x: 5, y: 1}
 ```
 
 #### <a name="arr-min"></a>arr.min(array, iterator, context)
@@ -1465,9 +1465,9 @@ interval.isInterval([12, 1]) // => false
 
 ```js
 interval.coalesce([1,4], [5,7]) // => null
-interval.coalesce([1,2], [1,2]) // => [1,2]
-interval.coalesce([1,4], [3,6]) // => [1,6]
-interval.coalesce([3,6], [4,5]) // => [3,6]
+  interval.coalesce([1,2], [1,2]) // => [1,2]
+  interval.coalesce([1,4], [3,6]) // => [1,6]
+  interval.coalesce([3,6], [4,5]) // => [3,6]
 ```
 
 #### <a name="interval-coalesceOverlapping"></a>interval.coalesceOverlapping(intervals, mergeFunc)
@@ -1477,7 +1477,7 @@ interval.coalesce([3,6], [4,5]) // => [3,6]
 
 ```js
 interval.coalesceOverlapping([[9,10], [1,8], [3, 7], [15, 20], [14, 21]])
-// => [[1,8],[9,10],[14,21]]
+  // => [[1,8],[9,10],[14,21]]
 ```
 
 #### <a name="interval-intervalsInRangeDo"></a>interval.intervalsInRangeDo(start, end, intervals, iterator, mergeFunc, context)
@@ -1489,8 +1489,8 @@ interval.coalesceOverlapping([[9,10], [1,8], [3, 7], [15, 20], [14, 21]])
 
 ```js
 interval.intervalsInRangeDo(
-2, 10, [[0, 1], [5,8], [2,4]],
-function(i, isNew) { i.push(isNew); return i; })
+  2, 10, [[0, 1], [5,8], [2,4]],
+  function(i, isNew) { i.push(isNew); return i; })
 // => [[2,4,false],[4,5,true],[5,8,false],[8,10,true]]
 ```
 
@@ -1551,9 +1551,9 @@ arrayProjection.create([1,2,3,4,5,6,7,8,9], 4, 1)
 
 ```js
 var proj = arrayProjection.create([1,2,3,4,5,6,7,8,9], 4, 3);
-arrayProjection.originalToProjectedIndex(proj, 1) // => null
-arrayProjection.originalToProjectedIndex(proj, 3) // => 0
-arrayProjection.originalToProjectedIndex(proj, 5) // => 2
+  arrayProjection.originalToProjectedIndex(proj, 1) // => null
+  arrayProjection.originalToProjectedIndex(proj, 3) // => 0
+  arrayProjection.originalToProjectedIndex(proj, 5) // => 2
 ```
 
 #### <a name="arrayProjection-projectedToOriginalIndex"></a>arrayProjection.projectedToOriginalIndex(projection, index)
@@ -1563,7 +1563,7 @@ arrayProjection.originalToProjectedIndex(proj, 5) // => 2
 
 ```js
 var proj = arrayProjection.create([1,2,3,4,5,6,7,8,9], 4, 3);
-arrayProjection.projectedToOriginalIndex(proj, 1) // => 4
+  arrayProjection.projectedToOriginalIndex(proj, 1) // => 4
 ```
 
 #### <a name="arrayProjection-transformToIncludeIndex"></a>arrayProjection.transformToIncludeIndex(projection, index)
@@ -1644,8 +1644,8 @@ fun.argumentNames(function(/*var args*/) {}) // => []
 
 ```js
 fun.extractBody(function(arg) {
-var x = 34;
-alert(2 + arg);
+  var x = 34;
+  alert(2 + arg);
 }) => "var x = 34;\nalert(2 + arg);"
 ```
 
@@ -1702,7 +1702,7 @@ Array.range(0,100).forEach(function(n) { throttled() });
 ```js
 var start = Date.now();
 var f = fun.debounce(200, function(arg1) {
-alert("running after " + (Date.now()-start) + "ms with arg " + arg1);
+  alert("running after " + (Date.now()-start) + "ms with arg " + arg1);
 });
 f("call1");
 fun.delay(f.curry("call2"), 0.1);
@@ -1764,22 +1764,16 @@ sum // => 6
 
 ```js
 var worker = fun.workerWithCallbackQueue("example",
-function slowFunction(thenDo) {
-var theAnswer = 42;
-setTimeout(function() { thenDo(null, theAnswer); });
-});
+  function slowFunction(thenDo) {
+    var theAnswer = 42;
+    setTimeout(function() { thenDo(null, theAnswer); });
+  });
 // all "call sites" depend on `slowFunction` but don't have to know about
 // each other
 worker.whenDone(function callsite1(err, theAnswer) { alert("callback1: " + theAnswer); })
 worker.whenDone(function callsite2(err, theAnswer) { alert("callback2: " + theAnswer); })
 fun.workerWithCallbackQueue("example").whenDone(function callsite3(err, theAnswer) { alert("callback3: " + theAnswer); })
 // => Will eventually show: callback1: 42, callback2: 42 and callback3: 42
-This is how it works:
-If `id` does not exist, workerFunc is called, otherwise ignored.
-workerFunc is expected to call thenDoFunc with arguments: error, arg1, ..., argN
-if called subsequently before workerFunc is done, the other thenDoFunc
-will "pile up" and called with the same arguments as the first
-thenDoFunc once workerFunc is done
 ```
 
 #### <a name="fun-composeAsync"></a>fun.composeAsync()
@@ -1795,9 +1789,9 @@ thenDoFunc once workerFunc is done
 
 ```js
 fun.composeAsync(
-function(a,b, thenDo) { thenDo(null, a+b); },
-function(x, thenDo) { thenDo(x*4); }
-)(3,2, function(err, result) { alert(result); });
+  function(a,b, thenDo) { thenDo(null, a+b); },
+  function(x, thenDo) { thenDo(x*4); }
+ )(3,2, function(err, result) { alert(result); });
 ```
 
 #### <a name="fun-compose"></a>fun.compose()
@@ -1808,8 +1802,8 @@ function(x, thenDo) { thenDo(x*4); }
 
 ```js
 fun.compose(
-function(a,b) { return a+b; },
-function(x) {return x*4}
+  function(a,b) { return a+b; },
+  function(x) {return x*4}
 )(3,2) // => 20
 ```
 
@@ -1820,7 +1814,7 @@ function(x) {return x*4}
 
 ```js
 fun.flip(function(a, b, c) {
-return a + b + c; })(' World', 'Hello', '!') // => "Hello World!"
+  return a + b + c; })(' World', 'Hello', '!') // => "Hello World!"
 ```
 
 #### <a name="fun-waitFor"></a>fun.waitFor(timeoutMs, waitTesterFunc, thenDo)
@@ -1856,8 +1850,8 @@ add1(3) // => 4
 ```js
 function original(a, b) { return a+b }
 var wrapped = fun.wrap(original, function logWrapper(proceed, a, b) {
-alert("original called with " + a + "and " + b);
-return proceed(a, b);
+  alert("original called with " + a + "and " + b);
+  return proceed(a, b);
 })
 wrapped(3,4) // => 7 and a message will pop up
 ```
@@ -1904,11 +1898,11 @@ wrapped(3,4) // => 7 and a message will pop up
 
 ```js
 function outerFunction(callback) {
-var actions = fun.either(
-function() { callback(new Error('timeout!')); },
-function() { callback(null, "All OK"); });
-setTimeout(actions[0], 200);
-doSomethingAsync(actions[1]);
+  var actions = fun.either(
+    function() { callback(new Error('timeout!')); },
+    function() { callback(null, "All OK"); });
+  setTimeout(actions[0], 200);
+  doSomethingAsync(actions[1]);
 }
 ```
 
@@ -1953,6 +1947,31 @@ fun.fromString("function() { return 3; }")() // => 3
 #### <a name="fun-addToObject"></a>fun.addToObject(f, obj, name)
 
  suppport for tracing
+
+#### <a name="Closure"></a>Closure()
+
+ A `Closure` is a representation of a JavaScript function that controls what
+ values are bound to out-of-scope variables. By default JavaScript has no
+ reflection capabilities over closed values in functions. When needing to
+ serialize execution or when behavior should become part of the state of a
+ system it is often necessary to have first-class control over this language
+ aspect.
+
+ Typically closures aren't created directly but with the help of [`asScriptOf`](#)
+ 
+ 
+
+```js
+function func(a) { return a + b; }
+var closureFunc = Closure.fromFunction(func, {b: 3}).recreateFunc();
+closureFunc(4) // => 7
+var closure = closureFunc.livelyClosure // => {
+//   varMapping: { b: 3 },
+//   originalFunc: function func(a) {/*...*/}
+// }
+closure.lookup("b") // => 3
+closure.getFuncSource() // => "function func(a) { return a + b; }"
+```
 
 #### <a name="Closure.prototype-setFuncSource"></a>Closure>>setFuncSource(src)
 

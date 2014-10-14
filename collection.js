@@ -268,7 +268,7 @@ var arr = exports.arr = {
     // Takes any number of lists as arguments. Combines them elment-wise.
     // Example:
     // arr.zip([1,2,3], ["a", "b", "c"], ["A", "B"])
-    // // // => [[1,"a","A"],[2,"b","B"],[3,"c",undefined]]
+    // // => [[1,"a","A"],[2,"b","B"],[3,"c",undefined]]
     var iterator = function(x) { return x; },
         args = Array.from(arguments),
         arr = args.shift();
