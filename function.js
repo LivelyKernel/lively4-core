@@ -539,6 +539,16 @@ var fun = exports.fun = {
   },
 
   wrap: function(func, wrapper) {
+    // A `wrapper` is another function that is being called with the arguments
+    // of `func` and a proceed function that, when called, runs the originally
+    // wrapped function.
+    // Example:
+    // function original(a, b) { return a+b }
+    // var wrapped = fun.wrap(original, function logWrapper(proceed, a, b) {
+    //   alert("original called with " + a + "and " + b);
+    //   return proceed(a, b);
+    // })
+    // wrapped(3,4) // => 7 and a message will pop up
     var __method = func;
     var wrappedFunc = function wrapped() {
       var wrapperArgs = wrapper.isWrapper ?
@@ -552,12 +562,15 @@ var fun = exports.fun = {
   },
 
   getOriginal: function(func) {
-    // get the original 'unwrapped' function, traversing as many wrappers as necessary.
+    // Get the original function that was augmented by `wrap`. `getOriginal`
+    // will traversed as many wrappers as necessary.
     while (func.originalFunction) func = func.originalFunction;
     return func;
   },
 
   once: function(func) {
+    // Ensure that `func` is only executed once. Multiple calls will not call
+    // `func` again but will return the original result.
     if (!func) return undefined;
     if (typeof func !== 'function')
       throw new Error("fun.once() expecting a function");
@@ -645,14 +658,23 @@ var fun = exports.fun = {
   // creation
   // -=-=-=-=-
   fromString: function(funcOrString) {
+    // Example:
+    // fun.fromString("function() { return 3; }")() // => 3
     return eval('(' + funcOrString.toString() + ')')
   },
 
-  asScript: function(f, optVarMapping) {
-    return Closure.fromFunction(f, optVarMapping).recreateFunc();
+  asScript: function(func, optVarMapping) {
+    // Lifts `func` to become a `Closure`, that is that free variables referenced
+    // in `func` will be bound to the values of an object that can be passed in as
+    // the second parameter. Keys of this object are mapped to the free variables.
+    //
+    // Please see [`Closure`](#) for a more detailed explanation and examples.
+    return Closure.fromFunction(func, optVarMapping).recreateFunc();
   },
 
   asScriptOf: function(f, obj, optName, optMapping) {
+    // Like `asScript` but makes `f` a method of `obj` as `optName` or the name
+    // of the function.
     var name = optName || f.name;
     if (!name) {
       throw Error("Function that wants to be a script needs a name: " + this);
@@ -683,6 +705,7 @@ var fun = exports.fun = {
   // closure related
   // -=-=-=-=-=-=-=-=-
   addToObject: function(f, obj, name) {
+    // ignore-in-doc
     f.displayName = name;
 
     var methodConnections = obj.attributeConnections ?
@@ -710,15 +733,18 @@ var fun = exports.fun = {
   },
 
   binds: function(f, varMapping) {
+    // ignore-in-doc
     // convenience function
     return Closure.fromFunction(f, varMapping || {}).recreateFunc();
   },
 
   setLocalVarValue: function(f, name, value) {
+    // ignore-in-doc
     if (f.hasLivelyClosure) f.livelyClosure.funcProperties[name] = value;
   },
 
   getVarMapping: function(f) {
+    // ignore-in-doc
     if (f.hasLivelyClosure) return f.livelyClosure.varMapping;
     if (f.isWrapper) return f.originalFunction.varMapping;
     if (f.varMapping) return f.varMapping;
@@ -879,9 +905,27 @@ var fun = exports.fun = {
 
 };
 
+// A `Closure` is a representation of a JavaScript function that controls what
+// values are bound to out-of-scope variables. By default JavaScript has no
+// reflection capabilities over closed values in functions. When needing to
+// serialize execution or when behavior should become part of the state of a
+// system it is often necessary to have first-class control over this language
+// aspect.
+//
+// Typically closures aren't created directly but with the help of [`asScriptOf`](#)
+// 
+// Example:
+// function func(a) { return a + b; }
+// var closureFunc = Closure.fromFunction(func, {b: 3}).recreateFunc();
+// closureFunc(4) // => 7
+// var closure = closureFunc.livelyClosure // => {
+// //   varMapping: { b: 3 },
+// //   originalFunc: function func(a) {/*...*/}
+// // }
+// closure.lookup("b") // => 3
+// closure.getFuncSource() // => "function func(a) { return a + b; }"
 
 function Closure() {
-  // represents a function and its bound values
   this.initialize.apply(this, arguments);
 }
 
@@ -904,21 +948,23 @@ Closure.prototype.initialize = function(func, varMapping, source, funcProperties
   this.setFuncProperties(func || funcProperties);
 }
 
-Closure.prototype.setFuncSource = function(src) { this.source = src };
+Closure.prototype.setFuncSource = function(src) { /*show-in-doc*/ this.source = src };
 
-Closure.prototype.getFuncSource = function() { return this.source || String(this.originalFunc); }
+Closure.prototype.getFuncSource = function() { /*show-in-doc*/ return this.source || String(this.originalFunc); }
 
-Closure.prototype.hasFuncSource = function() { return this.source && true }
+Closure.prototype.hasFuncSource = function() { /*show-in-doc*/ return this.source && true }
 
-Closure.prototype.getFunc = function() { return this.originalFunc || this.recreateFunc(); }
+Closure.prototype.getFunc = function() { /*show-in-doc*/ return this.originalFunc || this.recreateFunc(); }
 
 Closure.prototype.getFuncProperties = function() {
+  // ignore-in-doc
   // a function may have state attached
   if (!this.funcProperties) this.funcProperties = {};
   return this.funcProperties;
 }
 
 Closure.prototype.setFuncProperties = function(obj) {
+  // ignore-in-doc
   var props = this.getFuncProperties();
   for (var name in obj) {
     // The AST implementation assumes that Function objects are some
@@ -934,9 +980,10 @@ Closure.prototype.setFuncProperties = function(obj) {
   }
 }
 
-Closure.prototype.lookup = function(name) { return this.varMapping[name]; }
+Closure.prototype.lookup = function(name) { /*show-in-doc*/ return this.varMapping[name]; }
 
 Closure.prototype.parameterNames = function(methodString) {
+  // ignore-in-doc
   var parameterRegex = /function\s*\(([^\)]*)\)/,
       regexResult = parameterRegex.exec(methodString);
   if (!regexResult || !regexResult[1]) return [];
@@ -949,6 +996,7 @@ Closure.prototype.parameterNames = function(methodString) {
 }
 
 Closure.prototype.firstParameter = function(src) {
+  // ignore-in-doc
   return this.parameterNames(src)[0] || null;
 }
 
@@ -956,10 +1004,12 @@ Closure.prototype.firstParameter = function(src) {
 // function creation
 // -=-=-=-=-=-=-=-=-=-
 Closure.prototype.recreateFunc = function() {
+  // Creates a real function object
   return this.recreateFuncFromSource(this.getFuncSource(), this.originalFunc);
 }
 
 Closure.prototype.recreateFuncFromSource = function(funcSource, optFunc) {
+  // ignore-in-doc
   // what about objects that are copied by value, e.g. numbers?
   // when those are modified after the originalFunc we captured
   // varMapping then we will have divergent state
@@ -1034,6 +1084,7 @@ Closure.prototype.recreateFuncFromSource = function(funcSource, optFunc) {
 }
 
 Closure.prototype.addFuncProperties = function(func) {
+  // ignore-in-doc
   var props = this.getFuncProperties();
   for (var name in props) {
     if (props.hasOwnProperty(name)) func[name] = props[name];
@@ -1042,31 +1093,34 @@ Closure.prototype.addFuncProperties = function(func) {
 }
 
 Closure.prototype.couldNotCreateFunc = function(src) {
+  // ignore-in-doc
   var msg = 'Could not recreate closure from source: \n' + src;
   console.error(msg);
-  // alert(msg);
   return function() { throw new Error(msg); };
 }
 
 // -=-=-=-=-=-
 // conversion
 // -=-=-=-=-=-
-Closure.prototype.asFunction = function() { return this.recreateFunc(); }
+Closure.prototype.asFunction = function() { /*ignore-in-doc*/ return this.recreateFunc(); }
 
 // -=-=-=-=-=-=-=-=-=-=-=-
 // function modification
 // -=-=-=-=-=-=-=-=-=-=-=-
 Closure.prototype.addClosureInformation = function(f) {
+  /*ignore-in-doc-in-doc*/
   f.hasLivelyClosure = true;
   f.livelyClosure = this;
   return f;
 }
 
 Closure.fromFunction = function(func, varMapping) {
+  /*show-in-doc*/
   return new Closure(func, varMapping || {});
 }
 
 Closure.fromSource = function(source, varMapping) {
+  /*show-in-doc*/
   return new Closure(null, varMapping || {}, source);
 }
 

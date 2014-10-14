@@ -5,9 +5,10 @@
   "main": "index.js",
   "dependencies": {},
   "devDependencies": {
+    "expect.js": "*",
+    "http-server": "^0.7.2",
     "mocha": "*",
-    "mocha-phantomjs": "*",
-    "expect.js": "*"
+    "mocha-phantomjs": "*"
   },
   "scripts": {
     "test": "node_modules/mocha/bin/mocha tests/*-test.js && node_modules/mocha-phantomjs/bin/mocha-phantomjs tests/run-tests.html"

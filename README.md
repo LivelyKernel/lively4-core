@@ -200,18 +200,28 @@
   - [waitFor](#fun-waitFor)
   - [waitForAll](#fun-waitForAll)
   - [curry](#fun-curry)
+  - [wrap](#fun-wrap)
   - [getOriginal](#fun-getOriginal)
+  - [once](#fun-once)
   - [either](#fun-either)
   - [eitherNamed](#fun-eitherNamed)
+  - [fromString](#fun-fromString)
+  - [asScript](#fun-asScript)
+  - [asScriptOf](#fun-asScriptOf)
   - [addToObject](#fun-addToObject)
-  - [binds](#fun-binds)
 - [queue](#queue)
   - [handleError](#queue-handleError)
-- [Closure](#Closure)
 - [Closure.prototype](#Closure.prototype)
-  - [getFuncProperties](#Closure.prototype-getFuncProperties)
+  - [setFuncSource](#Closure.prototype-setFuncSource)
+  - [getFuncSource](#Closure.prototype-getFuncSource)
+  - [hasFuncSource](#Closure.prototype-hasFuncSource)
+  - [getFunc](#Closure.prototype-getFunc)
+  - [lookup](#Closure.prototype-lookup)
+  - [recreateFunc](#Closure.prototype-recreateFunc)
   - [recreateFuncFromSource](#Closure.prototype-recreateFuncFromSource)
-  - [couldNotCreateFunc](#Closure.prototype-couldNotCreateFunc)
+- [Closure](#Closure)
+  - [fromFunction](#Closure-fromFunction)
+  - [fromSource](#Closure-fromSource)
 
 #### object.js
 
@@ -1836,9 +1846,31 @@ var add1 = (function(a, b) { return a + b; }).curry(1);
 add1(3) // => 4
 ```
 
+#### <a name="fun-wrap"></a>fun.wrap(func, wrapper)
+
+ A `wrapper` is another function that is being called with the arguments
+ of `func` and a proceed function that, when called, runs the originally
+ wrapped function.
+ 
+
+```js
+function original(a, b) { return a+b }
+var wrapped = fun.wrap(original, function logWrapper(proceed, a, b) {
+alert("original called with " + a + "and " + b);
+return proceed(a, b);
+})
+wrapped(3,4) // => 7 and a message will pop up
+```
+
 #### <a name="fun-getOriginal"></a>fun.getOriginal(func)
 
- get the original 'unwrapped' function, traversing as many wrappers as necessary.
+ Get the original function that was augmented by `wrap`. `getOriginal`
+ will traversed as many wrappers as necessary.
+
+#### <a name="fun-once"></a>fun.once(func)
+
+ Ensure that `func` is only executed once. Multiple calls will not call
+ `func` again but will return the original result.
 
 #### <a name="fun-either"></a>fun.either()
 
@@ -1897,31 +1929,82 @@ setTimeout(fun.eitherNamed(name, c), 80);
 setTimeout(function() { alert(log); /* => "bRun" */ }, 150);
 ```
 
+#### <a name="fun-fromString"></a>fun.fromString(funcOrString)
+
+ 
+
+```js
+fun.fromString("function() { return 3; }")() // => 3
+```
+
+#### <a name="fun-asScript"></a>fun.asScript(func, optVarMapping)
+
+ Lifts `func` to become a `Closure`, that is that free variables referenced
+ in `func` will be bound to the values of an object that can be passed in as
+ the second parameter. Keys of this object are mapped to the free variables.
+
+ Please see [`Closure`](#) for a more detailed explanation and examples.
+
+#### <a name="fun-asScriptOf"></a>fun.asScriptOf(f, obj, optName, optMapping)
+
+ Like `asScript` but makes `f` a method of `obj` as `optName` or the name
+ of the function.
+
 #### <a name="fun-addToObject"></a>fun.addToObject(f, obj, name)
 
  suppport for tracing
 
-#### <a name="fun-binds"></a>fun.binds(f, varMapping)
+#### <a name="Closure.prototype-setFuncSource"></a>Closure>>setFuncSource(src)
 
- convenience function
 
-#### <a name="Closure"></a>Closure()
 
- represents a function and its bound values
+#### <a name="Closure.prototype-getFuncSource"></a>Closure>>getFuncSource()
 
-#### <a name="Closure.prototype-getFuncProperties"></a>Closure>>getFuncProperties()
 
- a function may have state attached
+
+#### <a name="Closure.prototype-hasFuncSource"></a>Closure>>hasFuncSource()
+
+
+
+#### <a name="Closure.prototype-getFunc"></a>Closure>>getFunc()
+
+
+
+#### <a name="Closure.prototype-lookup"></a>Closure>>lookup(name)
+
+
+
+#### <a name="Closure.prototype-recreateFunc"></a>Closure>>recreateFunc()
+
+ Creates a real function object
 
 #### <a name="Closure.prototype-recreateFuncFromSource"></a>Closure>>recreateFuncFromSource(funcSource, optFunc)
 
- what about objects that are copied by value, e.g. numbers?
- when those are modified after the originalFunc we captured
- varMapping then we will have divergent state
+ FIXME: problem with rewriting variables when _2 is rewritten by eval below
+ if (this.originalFunc && this.originalFunc.livelyDebuggingEnabled) {
+     var scopeObject = this.originalFunc._cachedScopeObject,
+   depth = -1,
+   path = ''
+     while (scopeObject && scopeObject != Global) {
+   depth++;
+   scopeObject = scopeObject[2]; // descend in scope
+     }
+     scopeObject = this.originalFunc._cachedScopeObject;
+     var path = 'this.originalFunc._cachedScopeObject';
+     for (var i = depth; i >= 0; i--) {
+   closureVars.push('_' + depth + '=' + path + '[1]');
+   closureVars.push('__' + depth + '=' + path);
+   path += '[2]';
+     }
+ }
 
-#### <a name="Closure.prototype-couldNotCreateFunc"></a>Closure>>couldNotCreateFunc(src)
+#### <a name="Closure-fromFunction"></a>Closure.fromFunction(func, varMapping)
 
- alert(msg);
+
+
+#### <a name="Closure-fromSource"></a>Closure.fromSource(source, varMapping)
+
+
 
 
 
