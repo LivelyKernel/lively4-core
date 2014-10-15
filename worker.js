@@ -182,8 +182,8 @@ var WorkerSetup = {
 
       isOnline: function() { return true; },
       send: function(msg, whenSend) { remoteWorker.send(msg); whenSend(); },
-      listen: function(messenger, whenListening) { whenListening(); },
-      close: function(messenger, whenClosed) { remoteWorker.send({type: "closed", workerReady: false}); remoteWorker.close(); }
+      listen: function(whenListening) { whenListening(); },
+      close: function(whenClosed) { remoteWorker.send({type: "closed", workerReady: false}); remoteWorker.close(); }
 
     });
   }
@@ -502,7 +502,7 @@ var worker = exports.worker = {
         whenSend();
       },
 
-      listen: function(messenger, whenListening) {
+      listen: function(whenListening) {
         var w = messenger.worker = isNodejs ? NodejsWorker.create(options) : BrowserWorker.create(options);
         w.on("message", function(msg) { messenger.onMessage(msg); });
         w.on('ready', function() { NodejsWorker.debug && console.log("WORKER READY!!!"); });
@@ -510,7 +510,7 @@ var worker = exports.worker = {
         w.once('ready', whenListening);
       },
 
-      close: function(messenger, whenClosed) {
+      close: function(whenClosed) {
         if (!messenger.worker.ready) return whenClosed(null);
         return messenger.sendTo(workerId, 'close', {}, function(err, answer) {
           err = err || answer.data.error;

@@ -246,7 +246,7 @@
   - [shortPrintStringOf](#obj-shortPrintStringOf)
   - [isMutableType](#obj-isMutableType)
   - [safeToString](#obj-safeToString)
-- [p](#p)
+- [Path](#Path)
 - [Path.prototype](#Path.prototype)
   - [parts](#Path.prototype-parts)
   - [size](#Path.prototype-size)
@@ -2158,18 +2158,13 @@ obj.mergePropertyInHierarchy(o3, "x");
 
  Like `toString` but catches errors.
 
-### <a name="p"></a>p
+### <a name="Path"></a>Path
 
  A `Path` is an objectified chain of property names (kind of a "complex"
  getter and setter). Path objects can make access and writes into deeply nested
  structures more convenient. `Path` provide "safe" get and set operations and
  can be used for debugging by providing a hook that allows users to find out
  when get/set operations happen.
- 
-
-```js
-
-```
 
 #### <a name="Path.prototype-parts"></a>Path>>parts()
 
@@ -2243,7 +2238,7 @@ o2 // => {foo: {bar: {baz: 43}}}
 
 #### <a name="Path.prototype-watch"></a>Path>>watch(options)
 
- options:
+ React or be notified on reads or writes to a path in a `target`. Options:
  ```js
  {
    target: OBJECT,
@@ -2256,7 +2251,7 @@ o2 // => {foo: {bar: {baz: 43}}}
  
 
 ```js
-Quite useful for debugging to find out what call-sites change an object:
+// Quite useful for debugging to find out what call-sites change an object.
 var o = {foo: {bar: 23}};
 Path("foo.bar").watch({target: o, verbose: true});
 o.foo.bar = 24; // => You should see: "[object Object].bar changed: 23 -> 24"
@@ -2295,13 +2290,13 @@ particular implementation by only providing a minimal set of functionality:
 `send`, `listen`, `close`, and `isOnline`.
 
 This is a minimal example for a messenger that only sends messages to the
-console and receives nothing. (See below for a more sophisticated example.)
+console and receives nothing. (See below for a [more sophisticated example](#messenger-example).)
 
 ```js
 var msger = jsext.messenger.create({
   send: function(msg, onSendDone) { console.log(msg); onSendDone(); },
-  listen: function(messenger, thenDo) { thenDo(); },
-  close: function(messenger, thenDo) { thenDo(); },
+  listen: function(thenDo) { thenDo(); },
+  close: function(thenDo) { thenDo(); },
   isOnline: function() { return true }
 });
 ```
@@ -2435,6 +2430,58 @@ The `sendTo` and `answer` methods of messengers will automatically create these
 messages. If the user invokes the `send` method then a JS object according to
 the schema above should be passed as the first argument.
 
+#### <a name="messenger-example"></a>Messenger examples
+
+The following code implements what is needed to use a messenger to communicate
+between any number of JavaScript objects. Note that the `messangerCentral`
+actually does the heavy lifting here because it provides the mechanism to route
+the messages. In the real world you will mostly use an existing networking /
+messaging mechanism...
+
+See the [worker](#) and [its implementation](worker.js) for a real use case in
+which forking processes in the browser using Web Workers and in node.js using
+child_process.fork is unified.
+
+```js
+// The `messangerCentral` is just a made up simple registry for JS objects. In
+// a real world a delivery and "online" mechanism would for example be implemented
+// using WebSockers, Workers, XMLHttpRequests, ...
+var messangerCentral = {
+  messengers: [],
+  register: function(msger) { arr.pushIfNotIncluded(this.messengers, msger); },
+  unregister: function(msger) { arr.remove(this.messengers, msger); },
+  knows: function(msger) { return arr.include(this.messengers, msger); },
+  deliver: function(msg, thenDo) {
+    var recv = arr.detect(this.messengers, function(ea) { return ea.id() === msg.target; });
+    show(msg);
+    recv && recv.onMessage(msg);
+    thenDo(null);
+  }
+}
+
+// spec to create messengers that interoperate with messangerCentral.
+var localMessengerSpec = {
+  send: function(msg, onSendDone) { messangerCentral.deliver(msg, onSendDone); },
+  listen: function(thenDo) { messangerCentral.register(this, thenDo()); },
+  close: function(thenDo) { messangerCentral.unregister(this, thenDo()); },
+  isOnline: function() { return messangerCentral.knows(this); }
+};
+
+// Create the messengers and add a simple "servive"
+var msger1 = messenger.create(localMessengerSpec);
+var msger2 = messenger.create(localMessengerSpec);
+msger2.addServices({
+  add: function(msg, msger) { msger.answer(msg, {result: msg.data.a + msg.data.b}); }
+});
+
+// turn'em on...
+msger1.listen();
+msger2.listen();
+
+// ...and action!
+msger1.sendTo(msger2.id(), 'add', {a: 3, b: 4},
+  function(err, answer) { alert(answer.data.result); });
+```
 
 
 

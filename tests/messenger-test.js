@@ -37,7 +37,7 @@ function createMessenger(messengers, options) {
 
   var listening = false;
   if (!spec.listen) {
-    spec.listen = function(messenger, thenDo) {
+    spec.listen = function(thenDo) {
       function doListen() {
         messengers.push(messenger);
         listening = true; thenDo(null); }
@@ -47,7 +47,7 @@ function createMessenger(messengers, options) {
   }
 
   if (!spec.close) {
-    spec.close = function(messenger, thenDo) {
+    spec.close = function(thenDo) {
       function doClose() {
         arr.remove(messengers, messenger);
         listening = false; thenDo(null); }
@@ -277,8 +277,8 @@ describe('messengers', function() {
         id: "messengerB",
         sendData: sendData,
         isOnline: function() { return isOnline; },
-        listen: function(messenger, thenDo) { messengers.push(messenger); isOnline = true; thenDo(null); },
-        close: function(messenger, thenDo) { arr.remove(messengers, messenger); isOnline = false; thenDo(null); },
+        listen: function(thenDo) { messengers.push(this); isOnline = true; thenDo(null); },
+        close: function(thenDo) { arr.remove(messengers, this); isOnline = false; thenDo(null); },
         autoReconnect: true
       });
 
