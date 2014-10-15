@@ -445,15 +445,6 @@ var properties = exports.properties = {
 // structures more convenient. `Path` provide "safe" get and set operations and
 // can be used for debugging by providing a hook that allows users to find out
 // when get/set operations happen.
-// Example:
-var p = Path("foo[1]bar.baz");
-
-var obj1 = {foo: [1, {bar: {baz: 42}}]};
-p.get(obj1)
-p
-
-var p = Path("foo.1.bar.baz");
-
 var Path = exports.Path = function Path(p, splitter) {
   if (p instanceof Path) return p;
   if (!(this instanceof Path)) return new Path(p, splitter);
@@ -594,6 +585,7 @@ obj.extend(Path.prototype, {
 
   watch: function(options) {
     // options:
+    // 
     // ```js
     // {
     //   target: OBJECT,
