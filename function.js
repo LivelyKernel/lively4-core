@@ -3,6 +3,7 @@
 ;(function(exports) {
 "use strict";
 
+// show-in-doc
 var fun = exports.fun = {
 
   // -=-=-=-=-=-=-=-=-
@@ -1026,6 +1027,7 @@ Closure.prototype.recreateFuncFromSource = function(funcSource, optFunc) {
     closureVars.push(name + '=this.varMapping["' + name + '"]');
   }
 
+  // ignore-in-doc
   // FIXME: problem with rewriting variables when _2 is rewritten by eval below
   // if (this.originalFunc && this.originalFunc.livelyDebuggingEnabled) {
   //     var scopeObject = this.originalFunc._cachedScopeObject,
@@ -1049,6 +1051,7 @@ Closure.prototype.recreateFuncFromSource = function(funcSource, optFunc) {
   src += '(' + funcSource + ')';
   if (specificSuperHandling) src += '.apply(this, [$super.bind(this)].concat(Array.from(arguments))) })';
 
+  // ignore-in-doc
   // FIXME!!!
   if (typeof lively !== 'undefined' && lively.Config.get('loadRewrittenCode')) {
       module('lively.ast.Rewriting').load(true);
@@ -1059,6 +1062,7 @@ Closure.prototype.recreateFuncFromSource = function(funcSource, optFunc) {
           rewrittenAst = lively.ast.Rewriting.rewrite(fnAst, lively.ast.Rewriting.getCurrentASTRegistry(), namespace),
           retVal = rewrittenAst.body[0].block.body.last();
 
+      // ignore-in-doc
       // FIXME: replace last ExpressionStatement with ReturnStatement
       retVal.type = 'ReturnStatement';
       retVal.argument = retVal.expression;

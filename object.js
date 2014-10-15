@@ -37,7 +37,7 @@ function indent(str, indentString, depth) {
   return str;
 }
 
-
+// show-in-doc
 var obj = exports.obj = {
 
   // -=-=-=-=-
@@ -45,28 +45,29 @@ var obj = exports.obj = {
   // -=-=-=-=-
 
 
-  isArray: function(obj) { return obj && Array.isArray(obj); },
+  isArray: function(obj) { /*show-in-doc*/ return obj && Array.isArray(obj); },
 
-  isElement: function(object) { return object && object.nodeType == 1; },
+  isElement: function(object) { /*show-in-doc*/ return object && object.nodeType == 1; },
 
-  isFunction: function(object) { return object instanceof Function; },
+  isFunction: function(object) { /*show-in-doc*/ return object instanceof Function; },
 
-  isBoolean: function(object) { return typeof object == "boolean"; },
+  isBoolean: function(object) { /*show-in-doc*/ return typeof object == "boolean"; },
 
-  isString: function(object) { return typeof object == "string"; },
+  isString: function(object) { /*show-in-doc*/ return typeof object == "string"; },
 
-  isNumber: function(object) { return typeof object == "number"; },
+  isNumber: function(object) { /*show-in-doc*/ return typeof object == "number"; },
 
-  isUndefined: function(object) { return typeof object == "undefined"; },
+  isUndefined: function(object) { /*show-in-doc*/ return typeof object == "undefined"; },
 
-  isRegExp: function(object) { return object instanceof RegExp; },
+  isRegExp: function(object) { /*show-in-doc*/ return object instanceof RegExp; },
 
-  isObject: function(object) { return typeof object == "object"; },
+  isObject: function(object) { /*show-in-doc*/ return typeof object == "object"; },
 
   isEmpty: function(object) {
-      for (var key in object)
-          if (object.hasOwnProperty(key)) return false;
-      return true;
+    /*show-in-doc*/
+    for (var key in object)
+      if (object.hasOwnProperty(key)) return false;
+    return true;
   },
 
   // -=-=-=-=-=-
@@ -74,12 +75,18 @@ var obj = exports.obj = {
   // -=-=-=-=-=-
 
   keys: Object.keys || function(object) {
+    // like Object.keys
     var keys = [];
     for (var property in object) keys.push(property);
     return keys;
   },
 
   values: function(object) {
+    // Example:
+    // var obj1 = {x: 22}, obj2 = {x: 23, y: {z: 3}};
+    // obj2.__proto__ = obj1;
+    // obj.values(obj1) // => [22]
+    // obj.values(obj2) // => [23,{z: 3}]
     return Object.keys(object).map(function(k) { return object[k]; });
   },
 
@@ -87,6 +94,11 @@ var obj = exports.obj = {
   // mutation
   // -=-=-=-=-
   extend: function(destination, source) {
+    // Add all properties of `source` to `destination`.
+    // Example:
+    // var dest = {x: 22}, src = {x: 23, y: 24}
+    // obj.extend(dest, src);
+    // dest // => {x: 23,y: 24}
     for (var property in source) {
       var getter = source.__lookupGetter__(property),
           setter = source.__lookupSetter__(property);
@@ -111,58 +123,67 @@ var obj = exports.obj = {
   // -=-=-=-=-
 
   clone: function(object) {
-      return Array.isArray(object) ?
-        Array.prototype.slice.call(object) : exports.obj.extend({}, object);
+    // Shallow copy
+    return Array.isArray(object) ?
+      Array.prototype.slice.call(object) : exports.obj.extend({}, object);
   },
 
   // -=-=-=-=-=-
   // inspection
   // -=-=-=-=-=-
-  inspect: function inspect(obj, options, depth) {
+  inspect: function inspect(object, options, depth) {
+    // Prints a human-readable representation of `obj`. The printed
+    // representation will be syntactically correct JavaScript but will not
+    // necessarily evaluate to a structurally identical object. `inspect` is
+    // meant to be used while interactivively exploring JavaScript programs and
+    // state.
+    //
+    // `options` can be {printFunctionSource: BOOLEAN, escapeKeys: BOOLEAN, maxDepth: NUMBER}
     options = options || {};
     depth = depth || 0;
-    if (!obj) return print(obj);
+    if (!object) return print(object);
 
     // print function
-    if (typeof obj === 'function') {
-      return options.printFunctionSource ? String(obj) :
-        'function' + (obj.name ? ' ' + obj.name : '')
-        + '(' + argumentNames(obj).join(',') + ') {/*...*/}';
+    if (typeof object === 'function') {
+      return options.printFunctionSource ? String(object) :
+        'function' + (object.name ? ' ' + object.name : '')
+        + '(' + argumentNames(object).join(',') + ') {/*...*/}';
     }
 
     // print "primitive"
-    switch (obj.constructor) {
+    switch (object.constructor) {
       case String:
       case Boolean:
       case RegExp:
-      case Number: return print(obj);
+      case Number: return print(object);
     };
 
-    if (typeof obj.serializeExpr === 'function')
-      return obj.serializeExpr();
+    if (typeof object.serializeExpr === 'function')
+      return object.serializeExpr();
 
-    var isArray = obj && Array.isArray(obj),
-      openBr = isArray ? '[' : '{', closeBr = isArray ? ']' : '}';
-    if (options.maxDepth && depth >= options.maxDepth) return openBr + '/*...*/' + closeBr;
+    var isArray = object && Array.isArray(object),
+        openBr = isArray ? '[' : '{', closeBr = isArray ? ']' : '}';
+    if (options.maxDepth && depth >= options.maxDepth)
+      return openBr + '/*...*/' + closeBr;
 
     var printedProps = [];
     if (isArray) {
-      printedProps = obj.map(function(ea) { return inspect(ea, options, depth); });
+      printedProps = object.map(function(ea) { return inspect(ea, options, depth); });
     } else {
-      printedProps = Object.keys(obj)
+      printedProps = Object.keys(object)
         .sort(function(a, b) {
-          var aIsFunc = typeof obj[a] === 'function',
-              bIsFunc = typeof obj[b] === 'function';
+          var aIsFunc = typeof object[a] === 'function',
+              bIsFunc = typeof object[b] === 'function';
           if (aIsFunc === bIsFunc) {
-            if (a < b)  return -1;
+            if (a < b) return -1;
             if (a > b) return 1;
             return 0;
-          };
+          }
           return aIsFunc ? 1 : -1;
         })
         .map(function(key, i) {
-          if (isArray) inspect(obj[key], options, depth + 1);
-          var printedVal = inspect(obj[key], options, depth + 1);
+          if (isArray) inspect(object[key], options, depth + 1);
+          var printedVal = inspect(object[key], options, depth + 1);
           return options.escapeKeys ?
             Strings.print(key) : key + ": " + printedVal;
         });
@@ -186,13 +207,19 @@ var obj = exports.obj = {
   // merging
   // -=-=-=-=-
   merge: function(objs) {
-    // // if objs are arrays just concat them
-    // // if objs are real objs then merge propertdies
+    // `objs` can be a list of objects. The return value will be a new object,
+    // containing all properties of all objects. If the same property exist in
+    // multiple objects, the right-most property takes precedence.
+    //
+    // Like `extend` but will not mutate objects in `objs`.
+
+    // if objs are arrays just concat them
+    // if objs are real objs then merge propertdies
     if (arguments.length > 1) {
-      return exports.obj.merge(Array.prototype.slice.call(arguments));
+      return obj.merge(Array.prototype.slice.call(arguments));
     }
 
-    if (exports.obj.isArray(objs[0])) { // test for all?
+    if (Array.isArray(objs[0])) { // test for all?
       return Array.prototype.concat.apply([], objs);
     }
 
@@ -216,7 +243,7 @@ var obj = exports.obj = {
   },
 
   valuesInPropertyHierarchy: function(obj, name) {
-    // lookup all properties named name in the proto hierarchy of obj
+    // Lookup all properties named name in the proto hierarchy of obj
     // also uses Lively's class structure
     var result = [],
       lookupObj = obj;
@@ -236,15 +263,23 @@ var obj = exports.obj = {
   },
 
   mergePropertyInHierarchy: function(obj, propName) {
+    // like `merge` but automatically gets all definitions of the value in the
+    // prototype chain and merges those.
+    // Example:
+    // var o1 = {x: {foo: 23}}, o2 = {x: {foo: 24, bar: 15}}, o3 = {x: {baz: "zork"}};
+    // o2.__proto__ = o1; o3.__proto__ = o2;
+    // obj.mergePropertyInHierarchy(o3, "x");
+    // // => {bar: 15, baz: "zork",foo: 24}
     return this.merge(this.valuesInPropertyHierarchy(obj, propName));
   },
 
-  deepCopy: function (o) {
-    if (!o || typeof o !== "object") return o;
-    var result = Array.isArray(o) ? Array(o.length) : {};
-    for (var key in o) {
-      if (o.hasOwnProperty(key))
-        result[key] = obj.deepCopy(o[key]);
+  deepCopy: function (object) {
+    // Recursively traverses `object` and its properties to create a copy.
+    if (!object || typeof object !== "object") return object;
+    var result = Array.isArray(object) ? Array(object.length) : {};
+    for (var key in object) {
+      if (object.hasOwnProperty(key))
+        result[key] = obj.deepCopy(object[key]);
     }
     return result;
   },
@@ -253,12 +288,14 @@ var obj = exports.obj = {
   // stringification
   // -=-=-=-=-=-=-=-=-
   typeStringOf: function(obj) {
+    // ignore-in-doc
     if (obj === null) return "null";
     if (typeof obj === "undefined") return "undefined";
     return obj.constructor.name;
   },
 
   shortPrintStringOf: function(obj) {
+    // ignore-in-doc
     // primitive values
     if (!this.isMutableType(obj)) return this.safeToString(obj);
 
@@ -286,26 +323,28 @@ var obj = exports.obj = {
   },
 
   isMutableType: function(obj) {
+    // Is `obj` a value or mutable type?
     var immutableTypes = ["null", "undefined", "Boolean", "Number", "String"];
     return immutableTypes.indexOf(this.typeStringOf(obj)) === -1;
   },
 
   safeToString: function(obj) {
+    // Like `toString` but catches errors.
     try {
       return (obj ? obj.toString() : String(obj)).replace('\n','');
-    } catch (e) {
-      return '<error printing object>';
-    }
+    } catch (e) { return '<error printing object>'; }
   },
 
 };
 
+// ignore-in-doc
 // -=-=-=-=-=-
 // properties
 // -=-=-=-=-=-
 var properties = exports.properties = {
 
   all: function(object, predicate) {
+    // ignore-in-doc
     var a = [];
     for (var name in object) {
       if ((object.__lookupGetter__(name) || object[name] !== 'function')
@@ -316,6 +355,7 @@ var properties = exports.properties = {
   },
 
   allOwnPropertiesOrFunctions: function(obj, predicate) {
+    // ignore-in-doc
     return Object.getOwnPropertyNames(obj).reduce(function(result, name) {
       if (predicate ? predicate(obj, name) : true) result.push(name);
       return result;
@@ -323,6 +363,7 @@ var properties = exports.properties = {
   },
 
   own: function(object) {
+    // ignore-in-doc
     var a = [];
     for (var name in object) {
       if (object.hasOwnProperty(name) && (object.__lookupGetter__(name)
@@ -333,6 +374,7 @@ var properties = exports.properties = {
   },
 
   forEachOwn: function(object, func, context) {
+    // ignore-in-doc
     var result = [];
     for (var name in object) {
       if (!object.hasOwnProperty(name)) continue;
@@ -345,6 +387,7 @@ var properties = exports.properties = {
   },
 
   nameFor: function(object, value) {
+    // ignore-in-doc
     for (var name in object) {
       if (object[name] === value) return name;
     }
@@ -352,12 +395,14 @@ var properties = exports.properties = {
   },
 
   values: function(obj) {
+    // ignore-in-doc
     var values = [];
     for (var name in obj) values.push(obj[name]);
     return values;
   },
 
   ownValues: function(obj) {
+    // ignore-in-doc
     var values = [];
     for (var name in obj) {
       if (obj.hasOwnProperty(name)) values.push(obj[name]);
@@ -366,6 +411,7 @@ var properties = exports.properties = {
   },
 
   any: function(obj, predicate) {
+    // ignore-in-doc
     for (var name in obj) {
       if (predicate(obj, name)) return true;
     }
@@ -373,6 +419,7 @@ var properties = exports.properties = {
   },
 
   allProperties: function(obj, predicate) {
+    // ignore-in-doc
     var result = [];
     for (var name in obj) {
       if (predicate ? predicate(obj, name) : true)
@@ -382,6 +429,8 @@ var properties = exports.properties = {
   },
 
   hash: function(obj) {
+    // ignore-in-doc
+    // Using the property names of `obj` to generate a hash value.
     return Object.keys(obj).sort().join('').hashCode();
   }
 
@@ -390,6 +439,21 @@ var properties = exports.properties = {
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-
 // js object path accessor
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+// A `Path` is an objectified chain of property names (kind of a "complex"
+// getter and setter). Path objects can make access and writes into deeply nested
+// structures more convenient. `Path` provide "safe" get and set operations and
+// can be used for debugging by providing a hook that allows users to find out
+// when get/set operations happen.
+// Example:
+var p = Path("foo[1]bar.baz");
+
+var obj1 = {foo: [1, {bar: {baz: 42}}]};
+p.get(obj1)
+p
+
+var p = Path("foo.1.bar.baz");
+
 var Path = exports.Path = function Path(p, splitter) {
   if (p instanceof Path) return p;
   if (!(this instanceof Path)) return new Path(p, splitter);
@@ -409,6 +473,7 @@ obj.extend(Path.prototype, {
   splitter: '.',
 
   fromPath: function(path) {
+    // ignore-in-doc
     if (obj.isString(path) && path !== '' && path !== this.splitter) {
       this._parts = path.split(this.splitter);
       this._path = path;
@@ -423,17 +488,19 @@ obj.extend(Path.prototype, {
   },
 
   setSplitter: function(splitter) {
+    // ignore-in-doc
     if (splitter) this.splitter = splitter;
     return this;
   },
 
-  parts: function() { return this._parts; },
+  parts: function() { /*key names as array*/ return this._parts; },
 
-  size: function() { return this._parts.length; },
+  size: function() { /*show-in-doc*/ return this._parts.length; },
 
-  slice: function(n, m) { return Path(this.parts().slice(n, m)); },
+  slice: function(n, m) { /*show-in-doc*/ return Path(this.parts().slice(n, m)); },
 
   normalizePath: function() {
+    // ignore-in-doc
     // FIXME: define normalization
     return this._path;
   },
@@ -441,33 +508,56 @@ obj.extend(Path.prototype, {
   isRoot: function(obj) { return this._parts.length === 0; },
 
   isIn: function(obj) {
+    // Does the Path resolve to a value when applied to `obj`?
     if (this.isRoot()) return true;
     var parent = this.get(obj, -1);
     return parent && parent.hasOwnProperty(this._parts[this._parts.length-1]);
   },
 
   equals: function(obj) {
+    // Example:
+    // var p1 = Path("foo.1.bar.baz"), p2 = Path(["foo", 1, "bar", "baz"]);
+    // // Path's can be both created via strings or pre-parsed with keys in a list.
+    // p1.equals(p2) // => true
     return obj && obj.isPathAccessor && this.parts().equals(obj.parts());
   },
 
   isParentPathOf: function(otherPath) {
+    // Example:
+    // var p1 = Path("foo.1.bar.baz"), p2 = Path("foo.1.bar");
+    // p2.isParentPathOf(p1) // => true
+    // p1.isParentPathOf(p2) // => false
     otherPath = otherPath && otherPath.isPathAccessor ?
       otherPath : Path(otherPath);
     var parts = this.parts(),
         otherParts = otherPath.parts();
-    for(var i = 0; i < parts.length; i ++){
+    for(var i = 0; i < parts.length; i ++) {
       if (parts[i] != otherParts[i]) return false
     }
     return true
   },
 
   relativePathTo: function(otherPath) {
+    // Example:
+    // var p1 = Path("foo.1.bar.baz"), p2 = Path("foo.1");
+    // p2.relativePathTo(p1) // => Path(["bar","baz"])
+    // p1.relativePathTo(p2) // => undefined
     otherPath = Path(otherPath);
     return this.isParentPathOf(otherPath) ?
       otherPath.slice(this.size(), otherPath.size()) : undefined;
   },
 
   set: function(obj, val, ensure) {
+    // Deeply resolve path in `obj` and set the resulting property to `val`. If
+    // `ensure` is true, create nested structure in between as necessary.
+    // Example:
+    // var o1 = {foo: {bar: {baz: 42}}};
+    // var path = Path("foo.bar.baz");
+    // path.set(o1, 43)
+    // o1 // => {foo: {bar: {baz: 43}}}
+    // var o2 = {foo: {}};
+    // path.set(o2, 43, true)
+    // o2 // => {foo: {bar: {baz: 43}}}
     if (this.isRoot()) return undefined;
     var parent = obj
     for (var i = 0; i < this._parts.length-1; i++) {
@@ -484,23 +574,40 @@ obj.extend(Path.prototype, {
   },
 
   get: function(obj, n) {
+    // show-in-doc
     var parts = n ? this._parts.slice(0, n) : this._parts;
     return parts.reduce(function(current, pathPart) {
       return current ? current[pathPart] : current; }, obj);
   },
 
   concat: function(p, splitter) {
+    // show-in-doc
     return Path(this.parts().concat(Path(p, splitter).parts()));
   },
 
   toString: function() { return this.normalizePath(); },
 
   serializeExpr: function() {
+    // ignore-in-doc
     return 'Path(' + Objects.inspect(this.parts()) + ')';
   },
 
   watch: function(options) {
-    // options: target, haltWhenChanged, uninstall, onGet, onSet, verbose
+    // options:
+    // ```js
+    // {
+    //   target: OBJECT,
+    //   uninstall: BOOLEAN,
+    //   onGet: FUNCTION,
+    //   onSet: FUNCTION,
+    //   haltWhenChanged: BOOLEAN,
+    //   verbose: BOOLEAN
+    // }
+    // Example:
+    // Quite useful for debugging to find out what call-sites change an object:
+    // var o = {foo: {bar: 23}};
+    // Path("foo.bar").watch({target: o, verbose: true});
+    // o.foo.bar = 24; // => You should see: "[object Object].bar changed: 23 -> 24"
     if (!options || this.isRoot()) return;
     var target = options.target,
       parent = this.get(target, -1),
@@ -557,6 +664,7 @@ obj.extend(Path.prototype, {
   },
 
   debugFunctionWrapper: function(options) {
+    // ignore-in-doc
     // options = {target, [haltWhenChanged, showStack, verbose, uninstall]}
     var target = options.target,
       parent = this.get(target, -1),
