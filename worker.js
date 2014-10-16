@@ -482,6 +482,7 @@ var worker = exports.worker = {
     //   libLocation: STRING, // optional, path to where the lively.lang lib is located. Worker will try to find it automatically if not provided.
     //   scriptsToLoad: ARRAY // optional, list of path/urls to load. Overwrites `libLocation`
     // }
+    // ```
     // 
     // Example:
     // // this is just a helper function

@@ -9,22 +9,21 @@ var isNode = typeof process !== 'undefined' && process.versions && process.versi
 // support the methods: `on(eventName, handlerFunc)`, 
 // `once(eventName, handlerFunc)`, `emit(eventName, eventData)`,
 // `removeListener(eventName, handlerFunc)`, `removeAllListeners(eventName)`
+// Example:
+// var emitter = events.makeEmitter({});
+// var log = [];
+// emitter.on("test", function() { log.push("listener1"); });
+// emitter.once("test", function() { log.push("listener2"); });
+// emitter.emit("test");
+// emitter.emit("test");
+// log // => ["listener1","listener2","listener1"]
+// emitter.removeAllListeners("test");
+// emitter.emit("test");
+// log // => is still ["listener1","listener2","listener1"]
+
 var events = exports.events = {
 
   makeEmitter: isNode ? function(obj) {
-    // Turns `obj` into an event emitter.
-    // Example:
-    //   var emitter = events.makeEmitter({});
-    //   var log = [];
-    //   emitter.on("test", function() { log.push("listener1"); });
-    //   emitter.once("test", function() { log.push("listener2"); });
-    //   emitter.emit("test");
-    //   emitter.emit("test");
-    //   log // => ["listener1","listener2","listener1"]
-    //   emitter.removeAllListeners("test");
-    //   emitter.emit("test");
-    //   log // => is still ["listener1","listener2","listener1"]
-    
     if (obj.on && obj.removeListener) return obj;
     var events = require("events");
     require("util")._extend(obj, events.EventEmitter.prototype);
@@ -43,7 +42,7 @@ var events = exports.events = {
 
     obj.once = function(type, handler) {
       if (!handler) return;
-      function onceHandler(/*args*/) {
+      function onceHandler(/*ignore-in-docs args*/) {
         obj.removeListener(type, onceHandler);
         handler.apply(this, arguments);
       }

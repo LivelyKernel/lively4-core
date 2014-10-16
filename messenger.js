@@ -24,17 +24,13 @@ var CONNECTING = 'connecting';
 
 /*
 
-Messengers are interfaces that provide methods for asynchronous
-message-based communication. This allows to give heterogeneous objects that are
-communicating asynchronous (for example web workers, XHR requests, WebSockets,
-node.js forked processes, ...) a unified interface.
+A messenger is an object that provides a common, message-based interface. Messengers expect you to provide an implementation of a small number of methods: `send`, `listen`, `close`, and `isOnline`. A messenger will then provide a unified interface for sending and receiving messages. Common boilerplate functionality such as queuing messages, error handling, dealing with instable connections, heartbeats, etc. is handled by the messenger object automatically (and can be parameterized).
 
-This particular module allows users to create messengers and tie them to a
-particular implementation by only providing a minimal set of functionality:
-`send`, `listen`, `close`, and `isOnline`.
+This allows to use a single interface across a range of heterogeneous objects without having to implement every detail of the abstraction repeatedly. This is especially valuable when dealing with asynchronous or remote communication (web workers, XHR requests, WebSockets, node.js processes, ...).
 
-This is a minimal example for a messenger that only sends messages to the
-console and receives nothing. (See below for a [more sophisticated example](#messenger-example).)
+To see a minimal example of how to use messengers for the local communication between JavaScript objects [see this example](#messenger-example).
+
+A more sophisticated example of messengers is [the worker implementation](worker.js) which provides an actor-like worker interface that uses web workers in web browsers and child_process.fork in node.js.
 
 ```js
 var msger = jsext.messenger.create({
@@ -177,7 +173,7 @@ the schema above should be passed as the first argument.
 #### <a name="messenger-example"></a>Messenger examples
 
 The following code implements what is needed to use a messenger to communicate
-between any number of JavaScript objects. Instead of dispatching methods using
+between any number of local JavaScript objects. Instead of dispatching methods using
 a local list of messengers you will most likely use an existing networking /
 messaging mechanism.
 
@@ -201,7 +197,7 @@ var messengerSpec = {
   isOnline: function() { return arr.include(messengers, this); }
 };
 
-// Create the messengers and add a simple "servive"
+// Create the messengers and add a simple "service"
 var msger1 = messenger.create(messengerSpec);
 var msger2 = messenger.create(messengerSpec);
 msger2.addServices({
