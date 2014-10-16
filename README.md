@@ -272,17 +272,13 @@
 
 #### worker.js
 
-- [WorkerSetup](#WorkerSetup)
-- [remoteWorker](#remoteWorker)
-  - [callStringifiedFunction](#remoteWorker-callStringifiedFunction)
 - [BrowserWorker](#BrowserWorker)
   - [create](#BrowserWorker-create)
 - [worker](#worker)
   - [onmessage](#worker-onmessage)
+  - [fork](#worker-fork)
   - [create](#worker-create)
 - [NodejsWorker](#NodejsWorker)
-  - [create](#NodejsWorker-create)
-  - [workerSetupFunction](#NodejsWorker-workerSetupFunction)
   - [startWorker](#NodejsWorker-startWorker)
 
 
@@ -2248,6 +2244,7 @@ o2 // => {foo: {bar: {baz: 43}}}
    haltWhenChanged: BOOLEAN,
    verbose: BOOLEAN
  }
+ ```
  
 
 ```js
@@ -2376,7 +2373,7 @@ msg.addServices({
 
 See the examples below for more information.
 
-##### *event` msger.on("message")
+##### *[event]* msger.on("message")
 
 To allow users to receive messages that were not initiated by a send,
 messengers are [event emitters](events.js) that emit `"message"` events
@@ -2433,43 +2430,33 @@ the schema above should be passed as the first argument.
 #### <a name="messenger-example"></a>Messenger examples
 
 The following code implements what is needed to use a messenger to communicate
-between any number of JavaScript objects. Note that the `messangerCentral`
-actually does the heavy lifting here because it provides the mechanism to route
-the messages. In the real world you will mostly use an existing networking /
-messaging mechanism...
+between any number of JavaScript objects. Instead of dispatching methods using
+a local list of messengers you will most likely use an existing networking /
+messaging mechanism.
 
 See the [worker](#) and [its implementation](worker.js) for a real use case in
 which forking processes in the browser using Web Workers and in node.js using
 child_process.fork is unified.
 
 ```js
-// The `messangerCentral` is just a made up simple registry for JS objects. In
-// a real world a delivery and "online" mechanism would for example be implemented
-// using WebSockers, Workers, XMLHttpRequests, ...
-var messangerCentral = {
-  messengers: [],
-  register: function(msger) { arr.pushIfNotIncluded(this.messengers, msger); },
-  unregister: function(msger) { arr.remove(this.messengers, msger); },
-  knows: function(msger) { return arr.include(this.messengers, msger); },
-  deliver: function(msg, thenDo) {
-    var recv = arr.detect(this.messengers, function(ea) { return ea.id() === msg.target; });
-    show(msg);
-    recv && recv.onMessage(msg);
-    thenDo(null);
-  }
-}
-
-// spec to create messengers that interoperate with messangerCentral.
-var localMessengerSpec = {
-  send: function(msg, onSendDone) { messangerCentral.deliver(msg, onSendDone); },
-  listen: function(thenDo) { messangerCentral.register(this, thenDo()); },
-  close: function(thenDo) { messangerCentral.unregister(this, thenDo()); },
-  isOnline: function() { return messangerCentral.knows(this); }
+// spec that defines message sending in terms of receivers in the messengers list
+var messengers = [];
+var messengerSpec = {
+  send: function(msg, onSendDone) {
+    var err = null, recv = arr.detect(messengers, function(ea) {
+          return ea.id() === msg.target; });
+    if (recv) recv.onMessage(msg);
+    else err = new Error("Could not find receiver " + msg.target);
+    onSendDone(err);
+  },
+  listen: function(thenDo) { arr.pushIfNotIncluded(messengers, this); },
+  close: function(thenDo) { arr.remove(messengers, this); },
+  isOnline: function() { return arr.include(messengers, this); }
 };
 
 // Create the messengers and add a simple "servive"
-var msger1 = messenger.create(localMessengerSpec);
-var msger2 = messenger.create(localMessengerSpec);
+var msger1 = messenger.create(messengerSpec);
+var msger2 = messenger.create(messengerSpec);
 msger2.addServices({
   add: function(msg, msger) { msger.answer(msg, {result: msg.data.a + msg.data.b}); }
 });
@@ -2489,23 +2476,6 @@ msger1.sendTo(msger2.id(), 'add', {a: 3, b: 4},
 
 ## worker.js
 
-### <a name="WorkerSetup"></a>WorkerSetup
-
- code in worker setup is evaluated in the context of workers, it will get to
- workers in a stringified form(!)
-
-#### <a name="remoteWorker-callStringifiedFunction"></a>remoteWorker.callStringifiedFunction(stringifiedFunc, args, thenDo)
-
- runs stringified function and passing args. stringifiedFunc might
- be asynchronous if it takes an addaitional argument. In this case a
- callback to call when the work is done is passed, otherwise thenDo
- will be called immediatelly after creating and calling the function
-
-### <a name="BrowserWorker"></a>BrowserWorker
-
- setting up the worker messenger interface, this is how the worker
- should be communicated with
-
 #### <a name="BrowserWorker-create"></a>BrowserWorker.create(options)
 
  this function instantiates a browser worker object. We provide a
@@ -2516,31 +2486,85 @@ msger1.sendTo(msger2.id(), 'add', {a: 3, b: 4},
 
  console.log("BrowserWorker got message\n", evt.data);
 
-#### <a name="NodejsWorker-create"></a>NodejsWorker.create(options)
-
- figure out where the other lang libs can be loaded from
- if (!options.libLocation && !options.scriptsToLoad) {
-   var workerScript = document.querySelector("script[src$=\"worker.js\"]");
-   if (!workerScript) throw new Error("Cannot find library path to start worker. Use worker.create({libLocation: \"...\"}) to explicitly define the path!");
-   options.libLocation = workerScript.src.replace(/worker.js$/, '');
- }
-
-#### <a name="NodejsWorker-workerSetupFunction"></a>NodejsWorker.workerSetupFunction()
-
- this code is run in the context of the worker process
-
 #### <a name="NodejsWorker-startWorker"></a>NodejsWorker.startWorker(options, thenDo)
 
  WorkerSetup.initBrowserGlobals,
 
 ### <a name="worker"></a>worker
 
- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
- the worker interface, usable both in browser and node.js contexts
- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Worker objects allow to fork processes in both Web and node.js JavaScript
+environments. They provide this mechanism using web workers in the browser and
+node.js child processes in node.js. The interface is unified for all platforms.
+ 
+
+#### <a name="worker-fork"></a>worker.fork(options, workerFunc, thenDo)
+
+ Fork automatically starts a worker and calls `workerFunc`. `workerFunc`
+ gets as a last paramter a callback, that, when invoked with an error and
+ result object, ends the worker execution.
+ 
+ Options are the same as in `create` except for an `args` property that
+ can be an array of objects. These objects will be passed to `workerFunc`
+ as arguments.
+ 
+ Note: `workerFunc` will not be able to capture outside variables (create a
+ closure).
+ 
+ 
+
+```js
+// When running this inside a browser: Note how the UI does not block.
+worker.fork({args: [40]},
+  function(n, thenDo) {
+    function fib(n) { return n <= 1 ? n : fib(n-1) + fib(n-2); }
+    thenDo(null, fib(n));
+  },
+  function(err, result) { show(err ? err.stack : result); })
+```
 
 #### <a name="worker-create"></a>worker.create(options)
 
-runFunc, arg1, ... argN, thenDo
+ Explicitly creates a first-class worker. Options:
+ ```js
+ {
+   workerId: STRING, // optional, id for worker, will be auto assigned if not provided
+   libLocation: STRING, // optional, path to where the lively.lang lib is located. Worker will try to find it automatically if not provided.
+   scriptsToLoad: ARRAY // optional, list of path/urls to load. Overwrites `libLocation`
+ }
+ 
+ 
+
+```js
+// this is just a helper function
+function resultHandler(err, result) { alert(err ? String(err) : result); }
+
+// 1. Create the worker
+var worker = jsext.worker.create({libLocation: baseURL});
+
+// 2. You can evaluate arbitrary JS code
+worker.eval("1+2", function(err, result) { show(err ? String(err) : result); });
+
+// 3. Arbitrary functions can be called inside the worker context.
+//    Note: functions shouldn't be closures / capture local state!) and passing
+//    in arguments!
+worker.run(
+  function(a, b, thenDo) { setTimeout(function() { thenDo(null, a+b); }, 300); },
+  19, 4, resultHandler);
+
+// 4. You can also install your own messenger services...
+worker.run(
+  function(thenDo) {
+    self.messenger.addServices({
+      foo: function(msg, messenger) { messenger.answer(msg, "bar!"); }
+    });
+    thenDo(null, "Service installed!");
+  }, resultHandler);
+
+// ... and call them via the messenger interface
+worker.sendTo("worker", "foo", {}, resultHandler);
+
+// 5. afterwards: shut it down
+worker.close(function(err) { err && show(String(err)); alertOK("worker shutdown"); })
+```
 

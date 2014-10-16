@@ -1,45 +1,11 @@
 /*global jsext, require, Worker, URL, webkitURL, Blob, BlobBuilder, process, require*/
 
-/*** Usage ***
-
-// this is just a helper function
-function resultHandler(err, result) { show(err ? String(err) : result); }
-
-// 1. Create the worker
-var worker = jsext.worker.create({libLocation: baseURL});
-
-// 2. You can evaluate arbitrary JS code
-worker.eval("1+2", function(err, result) { show(err ? String(err) : result); });
-
-// 3. Arbitrary functions can be called inside the worker context.
-//    Note: functions shouldn't be closures / capture local state!) and passing
-//    in arguments!
-worker.run(
-  function(a, b, thenDo) { setTimeout(function() { thenDo(null, a+b); }, 300); },
-  19, 4, resultHandler);
-
-// 4. You can also install your own messenger services...
-worker.run(
-  function(thenDo) {
-    self.messenger.addServices({
-      foo: function(msg, messenger) { messenger.answer(msg, "bar!"); }
-    });
-    thenDo(null, "Service installed!");
-  }, resultHandler);
-
-// ... and call them via the messenger interface
-worker.sendTo("worker", "foo", {}, resultHandler);
-
-// 5. afterwards: shut it down
-worker.close(function(err) { err && show(String(err)); alertOK("worker shutdown"); })
-
- */
-
 ;(function(exports) {
 "use strict";
 
 var isNodejs = typeof module !== 'undefined' && module.require;
 
+// ignore-in-doc
 // code in worker setup is evaluated in the context of workers, it will get to
 // workers in a stringified form(!)
 var WorkerSetup = {
@@ -93,6 +59,7 @@ var WorkerSetup = {
 
   initWorkerInterface: function initWorkerInterface(options) {
     remoteWorker.callStringifiedFunction = function(stringifiedFunc, args, thenDo) {
+      // ignore-in-doc
       // runs stringified function and passing args. stringifiedFunc might
       // be asynchronous if it takes an addaitional argument. In this case a
       // callback to call when the work is done is passed, otherwise thenDo
@@ -103,6 +70,7 @@ var WorkerSetup = {
         return;
       }
 
+      // ignore-in-doc
       // when it takes one more arg then we assume that this is the callback
       // to be called by the run func when it considers to be done
       var usesCallback = func.length === args.length + 1;
@@ -146,6 +114,7 @@ var WorkerSetup = {
     }
   },
 
+  // ignore-in-doc
   // setting up the worker messenger interface, this is how the worker
   // should be communicated with
   initWorkerMessenger: function initWorkerMessenger(options) {
@@ -312,6 +281,7 @@ var NodejsWorker = {
   create: function(options) {
     options = options || {};
 
+    // ignore-in-doc
     // figure out where the other lang libs can be loaded from
     // if (!options.libLocation && !options.scriptsToLoad) {
     //   var workerScript = document.querySelector("script[src$=\"worker.js\"]");
@@ -365,13 +335,14 @@ var NodejsWorker = {
     return worker;
   },
 
+  // this code is run in the context of the worker process
   workerSetupFunction: function workerSetupFunction() {
-    // this code is run in the context of the worker process
     var remoteWorker = process;
-    var debug = false;
+    var debug = true;
     var close = false;
   
     debug && console.log("[WORKER] Starting init");
+    // ignore-in-doc
     // process.on('message', function(m) {
     //   debug && console.log('[WORKER] got message:', m);
     //   if (m.action === 'ping') process.send({action: 'pong', data: m});
@@ -444,8 +415,6 @@ var NodejsWorker = {
     NodejsWorker.ensureInitCodeFile(options, initCode, function(err, codeFileName) {
       if (err) return thenDo(err);
       var worker = fork(codeFileName, {});
-      // worker.stdout.pipe(process.stdout);
-      // worker.stderr.pipe(process.stdout);
       NodejsWorker.debug && console.log('worker forked');
       worker.on('message', function(m) {
         if (m.action === 'pong') console.log("[WORKER pong] ", m);
@@ -466,13 +435,37 @@ var NodejsWorker = {
 }
 
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 // the worker interface, usable both in browser and node.js contexts
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+/*
+Worker objects allow to fork processes in both Web and node.js JavaScript
+environments. They provide this mechanism using web workers in the browser and
+node.js child processes in node.js. The interface is unified for all platforms.
+ */
 var worker = exports.worker = {
 
   fork: function(options, workerFunc, thenDo) {
+    // Fork automatically starts a worker and calls `workerFunc`. `workerFunc`
+    // gets as a last paramter a callback, that, when invoked with an error and
+    // result object, ends the worker execution.
+    // 
+    // Options are the same as in `create` except for an `args` property that
+    // can be an array of objects. These objects will be passed to `workerFunc`
+    // as arguments.
+    // 
+    // Note: `workerFunc` will not be able to capture outside variables (create a
+    // closure).
+    // 
+    // Example:
+    // // When running this inside a browser: Note how the UI does not block.
+    // worker.fork({args: [40]},
+    //   function(n, thenDo) {
+    //     function fib(n) { return n <= 1 ? n : fib(n-1) + fib(n-2); }
+    //     thenDo(null, fib(n));
+    //   },
+    //   function(err, result) { show(err ? err.stack : result); })
+
     if (!thenDo) { thenDo = workerFunc; workerFunc = options; options = null; }
     options = options || {};
     var args = options.args || [];
@@ -482,6 +475,46 @@ var worker = exports.worker = {
   },
 
   create: function(options) {
+    // Explicitly creates a first-class worker. Options:
+    // ```js
+    // {
+    //   workerId: STRING, // optional, id for worker, will be auto assigned if not provided
+    //   libLocation: STRING, // optional, path to where the lively.lang lib is located. Worker will try to find it automatically if not provided.
+    //   scriptsToLoad: ARRAY // optional, list of path/urls to load. Overwrites `libLocation`
+    // }
+    // 
+    // Example:
+    // // this is just a helper function
+    // function resultHandler(err, result) { alert(err ? String(err) : result); }
+    // 
+    // // 1. Create the worker
+    // var worker = jsext.worker.create({libLocation: baseURL});
+    // 
+    // // 2. You can evaluate arbitrary JS code
+    // worker.eval("1+2", function(err, result) { show(err ? String(err) : result); });
+    // 
+    // // 3. Arbitrary functions can be called inside the worker context.
+    // //    Note: functions shouldn't be closures / capture local state!) and passing
+    // //    in arguments!
+    // worker.run(
+    //   function(a, b, thenDo) { setTimeout(function() { thenDo(null, a+b); }, 300); },
+    //   19, 4, resultHandler);
+    // 
+    // // 4. You can also install your own messenger services...
+    // worker.run(
+    //   function(thenDo) {
+    //     self.messenger.addServices({
+    //       foo: function(msg, messenger) { messenger.answer(msg, "bar!"); }
+    //     });
+    //     thenDo(null, "Service installed!");
+    //   }, resultHandler);
+    // 
+    // // ... and call them via the messenger interface
+    // worker.sendTo("worker", "foo", {}, resultHandler);
+    // 
+    // // 5. afterwards: shut it down
+    // worker.close(function(err) { err && show(String(err)); alertOK("worker shutdown"); })
+
     options = options || {};
     options.useMessenger = true;
 

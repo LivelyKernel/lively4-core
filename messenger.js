@@ -120,7 +120,7 @@ msg.addServices({
 
 See the examples below for more information.
 
-##### *event` msger.on("message")
+##### *[event]* msger.on("message")
 
 To allow users to receive messages that were not initiated by a send,
 messengers are [event emitters](events.js) that emit `"message"` events
@@ -177,43 +177,33 @@ the schema above should be passed as the first argument.
 #### <a name="messenger-example"></a>Messenger examples
 
 The following code implements what is needed to use a messenger to communicate
-between any number of JavaScript objects. Note that the `messangerCentral`
-actually does the heavy lifting here because it provides the mechanism to route
-the messages. In the real world you will mostly use an existing networking /
-messaging mechanism...
+between any number of JavaScript objects. Instead of dispatching methods using
+a local list of messengers you will most likely use an existing networking /
+messaging mechanism.
 
 See the [worker](#) and [its implementation](worker.js) for a real use case in
 which forking processes in the browser using Web Workers and in node.js using
 child_process.fork is unified.
 
 ```js
-// The `messangerCentral` is just a made up simple registry for JS objects. In
-// a real world a delivery and "online" mechanism would for example be implemented
-// using WebSockers, Workers, XMLHttpRequests, ...
-var messangerCentral = {
-  messengers: [],
-  register: function(msger) { arr.pushIfNotIncluded(this.messengers, msger); },
-  unregister: function(msger) { arr.remove(this.messengers, msger); },
-  knows: function(msger) { return arr.include(this.messengers, msger); },
-  deliver: function(msg, thenDo) {
-    var recv = arr.detect(this.messengers, function(ea) { return ea.id() === msg.target; });
-    show(msg);
-    recv && recv.onMessage(msg);
-    thenDo(null);
-  }
-}
-
-// spec to create messengers that interoperate with messangerCentral.
-var localMessengerSpec = {
-  send: function(msg, onSendDone) { messangerCentral.deliver(msg, onSendDone); },
-  listen: function(thenDo) { messangerCentral.register(this, thenDo()); },
-  close: function(thenDo) { messangerCentral.unregister(this, thenDo()); },
-  isOnline: function() { return messangerCentral.knows(this); }
+// spec that defines message sending in terms of receivers in the messengers list
+var messengers = [];
+var messengerSpec = {
+  send: function(msg, onSendDone) {
+    var err = null, recv = arr.detect(messengers, function(ea) {
+          return ea.id() === msg.target; });
+    if (recv) recv.onMessage(msg);
+    else err = new Error("Could not find receiver " + msg.target);
+    onSendDone(err);
+  },
+  listen: function(thenDo) { arr.pushIfNotIncluded(messengers, this); },
+  close: function(thenDo) { arr.remove(messengers, this); },
+  isOnline: function() { return arr.include(messengers, this); }
 };
 
 // Create the messengers and add a simple "servive"
-var msger1 = messenger.create(localMessengerSpec);
-var msger2 = messenger.create(localMessengerSpec);
+var msger1 = messenger.create(messengerSpec);
+var msger2 = messenger.create(messengerSpec);
 msger2.addServices({
   add: function(msg, msger) { msger.answer(msg, {result: msg.data.a + msg.data.b}); }
 });

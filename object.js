@@ -594,6 +594,7 @@ obj.extend(Path.prototype, {
     //   haltWhenChanged: BOOLEAN,
     //   verbose: BOOLEAN
     // }
+    // ```
     // Example:
     // // Quite useful for debugging to find out what call-sites change an object.
     // var o = {foo: {bar: 23}};
