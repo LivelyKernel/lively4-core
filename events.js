@@ -36,11 +36,13 @@ var events = exports.events = {
     obj.listeners = {};
 
     obj.on = function(type, handler) {
+      if (!handler) return;
       if (!obj.listeners[type]) obj.listeners[type] = [];
       obj.listeners[type].push(handler);
     }
 
     obj.once = function(type, handler) {
+      if (!handler) return;
       function onceHandler(/*args*/) {
         obj.removeListener(type, onceHandler);
         handler.apply(this, arguments);
@@ -76,4 +78,3 @@ var events = exports.events = {
 };
 
 })(typeof jsext !== 'undefined' ? jsext : require('./base').jsext);
-
