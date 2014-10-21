@@ -1,12 +1,15 @@
 /*global process, jsext, require*/
 
+/*
+ * A simple node.js-like cross-platform event emitter implementation.
+ */
 ;(function(exports) {
 "use strict";
 
 var isNode = typeof process !== 'undefined' && process.versions && process.versions.node;
 
-// A simple node.js-like cross-platform event emitter implementations. Emitters
-// support the methods: `on(eventName, handlerFunc)`, 
+// A simple node.js-like cross-platform event emitter implementation that can
+// be used as a mixin. Emitters support the methods: `on(eventName, handlerFunc)`, 
 // `once(eventName, handlerFunc)`, `emit(eventName, eventData)`,
 // `removeListener(eventName, handlerFunc)`, `removeAllListeners(eventName)`
 // Example:

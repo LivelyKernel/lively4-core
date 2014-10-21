@@ -1,8 +1,13 @@
+
+/*
+ * Methods to make working with arrays more convenient and collection-like
+ * abstractions for groups, intervals, grids.
+ */
 ;(function(exports) {
 "use strict";
 
 
-// pure JS implementations of native Array methods
+// Pure JS implementations of native Array methods.
 var arrNative = exports.arrNative = {
 
   sort: function(sortFunc) {

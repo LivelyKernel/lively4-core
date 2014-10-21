@@ -1,5 +1,11 @@
 /*global clearTimeout, setTimeout*/
 
+/*
+ * Abstractions around first class functions like augmenting and inspecting
+ * functions as well as to control function calls like dealing with asynchronous
+ * control flows.
+ */
+
 ;(function(exports) {
 "use strict";
 

@@ -1,8 +1,9 @@
 /*global*/
 
+// String utility methods for printing, parsing, and converting strings.
 ;(function(exports) {
 
-// String utility methods for printing, parsing, and converting strings
+// show-in-doc
 var string = exports.string = {
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

@@ -1,5 +1,10 @@
 /*global clearTimeout, setTimeout, clearInterval, setInterval*/
 
+/*
+ * A pluggable interface to provide asynchronous, actor-like message
+ * communication between JavaScript systems. Provides a unified message protocol
+ * and send / receive methods.
+ */
 ;(function(exports) {
 "use strict";
 

@@ -1,13 +1,17 @@
 /*global jsext, require, Worker, URL, webkitURL, Blob, BlobBuilder, process, require*/
 
+/*
+ * A platform-independent worker interface that will spawn new processes per
+ * worker (if the platform you use it on supports it).
+ */
 ;(function(exports) {
 "use strict";
 
 var isNodejs = typeof module !== 'undefined' && module.require;
 
 // ignore-in-doc
-// code in worker setup is evaluated in the context of workers, it will get to
-// workers in a stringified form(!)
+// Code in worker setup is evaluated in the context of workers, it will get to
+// workers in a stringified form(!).
 var WorkerSetup = {
 
   loadDependenciesBrowser: function loadDependenciesBrowser(options) {
@@ -162,6 +166,7 @@ var WorkerSetup = {
 var BrowserWorker = {
 
   create: function(options) {
+    // ignore-in-doc
     // this function instantiates a browser worker object. We provide a
     // messenger-based interface to the pure Worker. Please use create to get an
     // improved interface to a worker
@@ -216,7 +221,6 @@ var BrowserWorker = {
       }, {});
 
       worker.onmessage = function(evt) {
-        // console.log("BrowserWorker got message\n", evt.data);
         if (evt.data.workerReady !== undefined) {
           worker.ready = !!evt.data.workerReady;
           if (worker.ready) worker.emit("ready");
@@ -404,7 +408,6 @@ var NodejsWorker = {
     var fork = require("child_process").fork;
 
     var workerSetupCode = String(NodejsWorker.workerSetupFunction).replace("__FUNCTIONDECLARATIONS__", [
-      // WorkerSetup.initBrowserGlobals,
       WorkerSetup.loadDependenciesNodejs,
       WorkerSetup.initOnMessageHandler,
       WorkerSetup.initWorkerInterface,

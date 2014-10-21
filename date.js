@@ -1,3 +1,6 @@
+/*
+ * Util functions to print and work with JS date objects.
+ */
 ;(function(exports) {
 "use strict";
 

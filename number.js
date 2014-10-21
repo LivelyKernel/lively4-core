@@ -1,3 +1,6 @@
+/*
+ * Utility functions for JS Numbers.
+ */
 ;(function(exports) {
 "use strict";
 

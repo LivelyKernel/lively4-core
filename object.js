@@ -1,17 +1,20 @@
 /*global*/
 
-// serveral methods in lib/object.js are inspired or derived from
-// Prototype JavaScript framework, version 1.6.0_rc1
-// (c) 2005-2007 Sam Stephenson
-// Prototype is freely distributable under the terms of an MIT-style license.
-// For details, see the Prototype web site: http://www.prototypejs.org/
-
+/*
+ * Utility functions that help to inspect, enumerate, and create JS objects
+ */
 ;(function(exports) {
 "use strict";
 
 // -=-=-=-=-=-=-=-=-
 // internal helper
 // -=-=-=-=-=-=-=-=-
+
+// serveral methods in lib/object.js are inspired or derived from
+// Prototype JavaScript framework, version 1.6.0_rc1
+// (c) 2005-2007 Sam Stephenson
+// Prototype is freely distributable under the terms of an MIT-style license.
+// For details, see the Prototype web site: http://www.prototypejs.org/
 
 function print(object) {
   if (object && obj.isArray(object)) { return '[' + object.map(print) + ']'; }
