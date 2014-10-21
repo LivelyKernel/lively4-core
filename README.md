@@ -63,27 +63,27 @@ TODO
 Please see the individual [doc files](doc/) for detailed information.
 
 <!---API_GENERATED_START--->
-### [string.js]()
+### [string.js](doc/string.md)
 
 String utility methods for printing, parsing, and converting strings.
 
 
 
-### [number.js]()
+### [number.js](doc/number.md)
 
 Utility functions for JS Numbers.
 
 
 
 
-### [date.js]()
+### [date.js](doc/date.md)
 
 Util functions to print and work with JS date objects.
 
 
 
 
-### [collection.js]()
+### [collection.js](doc/collection.md)
 
 Methods to make working with arrays more convenient and collection-like
 abstractions for groups, intervals, grids.
@@ -91,7 +91,7 @@ abstractions for groups, intervals, grids.
 
 
 
-### [function.js]()
+### [function.js](doc/function.md)
 
 Abstractions around first class functions like augmenting and inspecting
 functions as well as to control function calls like dealing with asynchronous
@@ -100,21 +100,21 @@ control flows.
 
 
 
-### [object.js]()
+### [object.js](doc/object.md)
 
 Utility functions that help to inspect, enumerate, and create JS objects
 
 
 
 
-### [events.js]()
+### [events.js](doc/events.md)
 
 A simple node.js-like cross-platform event emitter implementation.
 
 
 
 
-### [messenger.js]()
+### [messenger.js](doc/messenger.md)
 
 A pluggable interface to provide asynchronous, actor-like message
 communication between JavaScript systems. Provides a unified message protocol
@@ -123,7 +123,7 @@ and send / receive methods.
 
 
 
-### [worker.js]()
+### [worker.js](doc/worker.md)
 
 A platform-independent worker interface that will spawn new processes per
 worker (if the platform you use it on supports it).
