@@ -60,6 +60,8 @@ TODO
 
 ## API
 
+Please see the individual [doc files](doc/) for detailed information.
+
 <!---API_GENERATED_START--->
 ### [string.js]()
 
