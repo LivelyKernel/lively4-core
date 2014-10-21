@@ -173,6 +173,7 @@ var BrowserWorker = {
 
     options = options || {};
 
+    // ignore-in-doc
     // figure out where the other lang libs can be loaded from
     if (!options.libLocation && !options.scriptsToLoad) {
       var workerScript = document.querySelector("script[src$=\"worker.js\"]");
@@ -194,6 +195,7 @@ var BrowserWorker = {
 
     // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+    // ignore-in-doc
     // This code is triggered in the UI process directly after the
     // creation of the worker and sends the setup message to the worker
     // for initializing it.
@@ -238,6 +240,7 @@ var BrowserWorker = {
       worker.postMessage({action: 'setup', options: workerOptions});
     }
 
+    // ignore-in-doc
     // This code is run inside the worker and bootstraps the messenger
     // interface. It also installs a console.log method since since this is not
     // available by default.
@@ -259,11 +262,12 @@ var BrowserWorker = {
     }
 
     function makeDataURI(codeToInclude) {
+      // ignore-in-doc
       // see http://stackoverflow.com/questions/10343913/how-to-create-a-web-worker-from-a-string
       var blob;
       try {
         blob = new Blob([codeToInclude]);
-      } catch (e) { // Backwards-compatibility
+      } catch (e) { /* ignore-in-doc Backwards-compatibility*/
         window.BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder;
         blob = new BlobBuilder();
         blob.append(codeToInclude);

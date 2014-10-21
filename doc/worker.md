@@ -4,15 +4,9 @@ A platform-independent worker interface that will spawn new processes per
 worker (if the platform you use it on supports it).
 
 
-- [BrowserWorker](#BrowserWorker)
-  - [create](#BrowserWorker-create)
 - [worker](#worker)
   - [fork](#worker-fork)
   - [create](#worker-create)
-
-#### <a name="BrowserWorker-create"></a>BrowserWorker.create(options)
-
- figure out where the other lang libs can be loaded from
 
 ### <a name="worker"></a>worker
 
