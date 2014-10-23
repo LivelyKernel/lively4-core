@@ -41,24 +41,7 @@ Abstractions usually not included by default in JavaScript runtimes:
 - ArrayProjection
 - Closure
 - Messengers (generic interface for remote-messaging)
-- Workers based on the messenger interface
-
-
-## "Installation"
-TODO
-
-### Browsers
-TODO
-
-### node.js
-TODO
-
-
-## Usage
-TODO
-
-
-## API
+- Workers based on messengers
 
 Please see the individual [doc files](doc/) for detailed information.
 
@@ -131,6 +114,15 @@ worker (if the platform you use it on supports it).
 
 
 <!---API_GENERATED_END--->
+
+## Usage
+TODO
+
+### Browsers
+TODO
+
+### node.js
+TODO
 
 ## License
 

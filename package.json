@@ -14,5 +14,20 @@
     "test": "node_modules/mocha/bin/mocha tests/*-test.js && node_modules/mocha-phantomjs/bin/mocha-phantomjs tests/run-tests.html"
   },
   "author": "Robert Krahn",
-  "license": "MIT"
+  "license": "MIT",
+  "directories": {
+    "doc": "doc",
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LivelyKernel/lively.lang"
+  },
+  "keywords": [
+    "utilities"
+  ],
+  "bugs": {
+    "url": "https://github.com/LivelyKernel/lively.lang/issues"
+  },
+  "homepage": "https://github.com/LivelyKernel/lively.lang"
 }
