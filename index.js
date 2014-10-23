@@ -10,20 +10,4 @@ module.require('./object');
 module.require('./messenger');
 module.require('./worker');
 
-module.exports = {
-  events: jsext.events,
-  arr: jsext.arr,
-  grid: jsext.grid,
-  interval: jsext.interval,
-  arrayProjection: jsext.arrayProjection,
-  fun: jsext.fun,
-  Closure: jsext.Closure,
-  string: jsext.string,
-  num: jsext.num,
-  date: jsext.date,
-  obj: jsext.obj,
-  Path: jsext.Path,
-  properties: jsext.properties,
-  messenger: jsext.messenger,
-  worker: jsext.worker
-}
+module.exports = jsext
