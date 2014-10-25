@@ -32,6 +32,7 @@ control flows.
   - [curry](#fun-curry)
   - [wrap](#fun-wrap)
   - [getOriginal](#fun-getOriginal)
+  - [wrapperChain](#fun-wrapperChain)
   - [once](#fun-once)
   - [either](#fun-either)
   - [eitherNamed](#fun-eitherNamed)
@@ -39,6 +40,9 @@ control flows.
   - [asScript](#fun-asScript)
   - [asScriptOf](#fun-asScriptOf)
   - [addToObject](#fun-addToObject)
+  - [functionNames](#fun-functionNames)
+  - [logErrors](#fun-logErrors)
+  - [webkitStack](#fun-webkitStack)
 - [queue](#queue)
   - [handleError](#queue-handleError)
 - [Closure](#Closure)
@@ -335,6 +339,15 @@ wrapped(3,4) // => 7 and a message will pop up
  Get the original function that was augmented by `wrap`. `getOriginal`
  will traversed as many wrappers as necessary.
 
+#### <a name="fun-wrapperChain"></a>fun.wrapperChain(method)
+
+ Function wrappers used for wrapping, cop, and other method
+ manipulations attach a property "originalFunction" to the wrapper. By
+ convention this property references the wrapped method like wrapper
+ -> cop wrapper -> real method.
+ tThis method gives access to the linked list starting with the outmost
+ wrapper.
+
 #### <a name="fun-once"></a>fun.once(func)
 
  Ensure that `func` is only executed once. Multiple calls will not call
@@ -421,6 +434,27 @@ fun.fromString("function() { return 3; }")() // => 3
 #### <a name="fun-addToObject"></a>fun.addToObject(f, obj, name)
 
  suppport for tracing
+
+#### <a name="fun-functionNames"></a>fun.functionNames(klass)
+
+ Treats passed function as class (constructor).
+ 
+
+```js
+var Klass1 = function() {}
+Klass1.prototype.foo = function(a, b) { return a + b; };
+Klass1.prototype.bar = function(a) { return this.foo(a, 3); };
+Klass1.prototype.baz = 23;
+fun.functionNames(Klass1); // => ["bar","foo"]
+```
+
+#### <a name="fun-logErrors"></a>fun.logErrors(func, prefix)
+
+,args
+
+#### <a name="fun-webkitStack"></a>fun.webkitStack()
+
+ this won't work in every browser
 
 #### <a name="Closure"></a>Closure()
 

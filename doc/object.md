@@ -14,6 +14,7 @@ Utility functions that help to inspect, enumerate, and create JS objects
   - [isRegExp](#obj-isRegExp)
   - [isObject](#obj-isObject)
   - [isEmpty](#obj-isEmpty)
+  - [equals](#obj-equals)
   - [values](#obj-values)
   - [extend](#obj-extend)
   - [clone](#obj-clone)
@@ -83,6 +84,10 @@ Utility functions that help to inspect, enumerate, and create JS objects
 
 
 
+#### <a name="obj-equals"></a>obj.equals(a, b)
+
+ Is object `a` structurally equivalent to object `b`? Deep comparison.
+
 #### <a name="obj-values"></a>obj.values(object)
 
  
@@ -129,8 +134,14 @@ dest // => {x: 23,y: 24}
 
 #### <a name="obj-valuesInPropertyHierarchy"></a>obj.valuesInPropertyHierarchy(obj, name)
 
- Lookup all properties named name in the proto hierarchy of obj
- also uses Lively's class structure
+ Lookup all properties named name in the proto hierarchy of obj.
+ 
+
+```js
+var a = {foo: 3}, b = Object.create(a), c = Object.create(b);
+c.foo = 4;
+obj.valuesInPropertyHierarchy(c, "foo") // => [3,4]
+```
 
 #### <a name="obj-mergePropertyInHierarchy"></a>obj.mergePropertyInHierarchy(obj, propName)
 

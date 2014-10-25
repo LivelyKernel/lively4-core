@@ -72,7 +72,6 @@ abstractions for groups, intervals, grids.
   - [min](#arr-min)
   - [sum](#arr-sum)
   - [clone](#arr-clone)
-- [thresholds](#thresholds)
 - [Group](#Group)
   - [fromArray](#Group-fromArray)
 - [Group.prototype](#Group.prototype)
@@ -597,12 +596,6 @@ var array = [{x:3,y:2}, {x:5,y:1}, {x:1,y:5}];
 #### <a name="arr-sum"></a>arr.sum(array)
 
 
-
-### <a name="thresholds"></a>thresholds
-
- bins specifies n threshold values that will create n-1 bins.
- Each data value d is placed inside a bin i if:
- threshold[i] >= d && threshold[i+1] < d
 
 #### <a name="arr-clone"></a>arr.clone(array)
 
