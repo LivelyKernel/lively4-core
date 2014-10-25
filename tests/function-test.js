@@ -551,7 +551,28 @@ describe('fun', function() {
       expect(26).to.be(obj.foo());
     });
 
-  })
+  });
+
+  describe("class realted method access", function() {
+
+    var Klass1 = function() {}
+    Klass1.prototype.foo = function(a, b) { return a + b; };
+    Klass1.prototype.bar = function(a) { return this.foo(a, 3); };
+    Klass1.prototype.baz = 23
+    var Klass2 = function() {}
+    Klass2.prototype = Object.create(Klass1.prototype);
+    Klass2.prototype.zork = function() { return 23; };
+    Klass2.prototype.bar = function(a) { return this.foo(a, 4); };
+
+    it("finds method names of class", function() {
+      expect(fun.functionNames(Klass2)).to.eql(["foo", "bar", "zork"]);
+    });
+
+    it("finds local method names of class", function() {
+      expect(fun.localFunctionNames(Klass2)).to.eql(["zork", "bar"]);
+    });
+
+  });
 });
 
 describe("closure", function() {

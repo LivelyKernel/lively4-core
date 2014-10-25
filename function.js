@@ -21,6 +21,7 @@ var fun = exports.fun = {
   get Null() { /*`function() { return null; }`*/ return function() { return null; }; },
   get False() { /*`function() { return false; }`*/ return function() { return false; }; },
   get True() { /*`function() { return true; }`*/ return function() { return true; }; },
+  get notYetImplemented() { return function() { throw new Error('Not yet implemented'); }; },
 
   // -=-=-=-=-=-
   // accessing
@@ -577,6 +578,21 @@ var fun = exports.fun = {
     return func;
   },
 
+  wrapperChain: function(method) {
+      // Function wrappers used for wrapping, cop, and other method
+      // manipulations attach a property "originalFunction" to the wrapper. By
+      // convention this property references the wrapped method like wrapper
+      // -> cop wrapper -> real method.
+      // tThis method gives access to the linked list starting with the outmost
+      // wrapper.
+      var result = [];
+      do {
+          result.push(method);
+          method = method.originalFunction;
+      } while (method);
+      return result;
+  },
+
   once: function(func) {
     // Ensure that `func` is only executed once. Multiple calls will not call
     // `func` again but will return the original result.
@@ -758,161 +774,141 @@ var fun = exports.fun = {
     if (f.isWrapper) return f.originalFunction.varMapping;
     if (f.varMapping) return f.varMapping;
     return {};
+  },
+
+  // -=-=-=-=-=-=-=-=-=-=-=-=-
+  // class-related functions
+  // -=-=-=-=-=-=-=-=-=-=-=-=-
+  functionNames: function(klass) {
+    // Treats passed function as class (constructor).
+    // Example:
+    // var Klass1 = function() {}
+    // Klass1.prototype.foo = function(a, b) { return a + b; };
+    // Klass1.prototype.bar = function(a) { return this.foo(a, 3); };
+    // Klass1.prototype.baz = 23;
+    // fun.functionNames(Klass1); // => ["bar","foo"]
+
+    var result = [], lookupObj = klass.prototype;
+    while (lookupObj) {
+      result = Object.keys(lookupObj).reduce(function(result, name) {
+        if (typeof lookupObj[name] === 'function' && result.indexOf(name) === -1)
+          result.unshift(name);
+        return result;
+      }, result);
+      lookupObj = Object.getPrototypeOf(lookupObj);
+    }
+    return result;
+  },
+
+  localFunctionNames: function(func) {
+    return Object.keys(func.prototype)
+      .filter(function(name) { return typeof func.prototype[name] === 'function'; });
+  },
+
+  // -=-=-=-=-=-=-=-=-=-=-
+  // tracing and logging
+  // -=-=-=-=-=-=-=-=-=-=-
+
+  logErrors: function(func, prefix) {
+    var advice = function logErrorsAdvice(proceed /*,args*/ ) {
+        var args = Array.prototype.slice.call(arguments);
+        args.shift();
+        try {
+          return proceed.apply(func, args);
+        } catch (er) {
+          if (typeof lively !== "undefined" && lively.morphic && lively.morphic.World && lively.morphic.World.current()) {
+            lively.morphic.World.current().logError(er)
+            throw er;
+          }
+
+          if (prefix) console.warn("ERROR: %s.%s(%s): err: %s %s", func, prefix, args, er, er.stack || "");
+          else console.warn("ERROR: %s %s", er, er.stack || "");
+          if (typeof logStack !== "undefined") logStack();
+          if (typeof printObject !== "undefined") console.warn("details: " + printObject(er));
+          throw er;
+        }
+      }
+
+    advice.methodName = "$logErrorsAdvice";
+    var result = fun.wrap(func, advice);
+    result.originalFunction = func;
+    result.methodName = "$logErrorsWrapper";
+    return result;
+  },
+
+  logCompletion: function(func, module) {
+    var advice = function logCompletionAdvice(proceed) {
+        var args = Array.prototype.slice.call(arguments);
+        args.shift();
+        try {
+          var result = proceed.apply(func, args);
+        } catch (er) {
+          console.warn('failed to load ' + module + ': ' + er);
+          if (typeof lively !== 'undefined' && lively.lang.Execution)
+            lively.lang.Execution.showStack();
+          throw er;
+        }
+        console.log('completed ' + module);
+        return result;
+      }
+
+    advice.methodName = "$logCompletionAdvice::" + module;
+
+    var result = fun.wrap(func, advice);
+    result.methodName = "$logCompletionWrapper::" + module;
+    result.originalFunction = func;
+    return result;
+  },
+
+  logCalls: function(func, isUrgent) {
+    var original = func,
+      advice = function logCallsAdvice(proceed) {
+        var args = Array.prototype.slice.call(arguments);
+        args.shift(), result = proceed.apply(func, args);
+        if (isUrgent) {
+          console.warn('%s(%s) -> %s', fun.qualifiedMethodName(original), args, result);
+        } else {
+          console.log('%s(%s) -> %s', fun.qualifiedMethodName(original), args, result);
+        }
+        return result;
+      }
+
+    advice.methodName = "$logCallsAdvice::" + fun.qualifiedMethodName(func);
+
+    var result = fun.wrap(func, advice);
+    result.originalFunction = func;
+    result.methodName = "$logCallsWrapper::" + fun.qualifiedMethodName(func);
+    return result;
+  },
+
+  traceCalls: function(func, stack) {
+    var advice = function traceCallsAdvice(proceed) {
+        var args = Array.prototype.slice.call(arguments);
+        args.shift();
+        stack.push(args);
+        var result = proceed.apply(func, args);
+        stack.pop();
+        return result;
+      };
+    return fun.wrap(func, advice);
+  },
+
+  webkitStack: function() {
+    // this won't work in every browser
+    try {
+      throw new Error()
+    } catch (e) {
+      // remove "Error" and this function from stack, rewrite it nicely
+      return String(e.stack)
+        .split(/\n/)
+        .slice(2)
+        .map(function(line) { return line.replace(/^\s*at\s*([^\s]+).*/, '$1'); })
+        .join('\n');
+    }
   }
 
-
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // class related enumeration
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-
-  //     functionNames: function(filter) {
-  //         var functionNames = [];
-  
-  //         for (var name in this.prototype) {
-  //             try {
-  //                 if ((this.prototype[name] instanceof Function) && (!filter || filter(name))) {
-  //                     functionNames.push(name);
-  //                 }
-  //             } catch (er) {
-  //                 // FF can throw an exception here ...
-  //             }
-  //         }
-  
-  //         return functionNames;
-  //     },
-  
-  //     withAllFunctionNames: function(callback) {
-  //         for (var name in this.prototype) {
-  //             try {
-  //                 var value = this.prototype[name];
-  //                 if (value instanceof Function) callback(name, value, this);
-  //             } catch (er) {
-  //                 // FF can throw an exception here ...
-  //             }
-  //         }
-  //     },
-  
-  //     localFunctionNames: function() {
-  //         var sup = this.superclass || ((this === Object) ? null : Object);
-  
-  //         try {
-  //             var superNames = (sup == null) ? [] : sup.functionNames();
-  //         } catch (e) {
-  //             var superNames = [];
-  //         }
-  //         var result = [];
-  
-  //         this.withAllFunctionNames(function(name, value, target) {
-  //             if (!superNames.include(name) || target.prototype[name] !== sup.prototype[name]) result.push(name);
-  //         });
-  //         return result;
-  //     },
-
-// -=-=-=-=-=-=-=-=-=-=-
-// tracing and logging
-// -=-=-=-=-=-=-=-=-=-=-
-
-//     logErrors: function(prefix) {
-//         if (Config.ignoreAdvice) return this;
-
-//         var advice = function logErrorsAdvice(proceed /*,args*/ ) {
-//                 var args = Array.from(arguments);
-//                 args.shift();
-//                 try {
-//                     return proceed.apply(this, args);
-//                 } catch (er) {
-//                     if (Global.lively && lively.morphic && lively.morphic.World && lively.morphic.World.current()) {
-//                         lively.morphic.World.current().logError(er)
-//                         throw er;
-//                     }
-
-//                     if (prefix) console.warn("ERROR: %s.%s(%s): err: %s %s", this, prefix, args, er, er.stack || "");
-//                     else console.warn("ERROR: %s %s", er, er.stack || "");
-//                     logStack();
-//                     if (Global.printObject) console.warn("details: " + printObject(er));
-//                     // lively.lang.Execution.showStack();
-//                     throw er;
-//                 }
-//             }
-
-//         advice.methodName = "$logErrorsAdvice";
-//         var result = this.wrap(advice);
-//         result.originalFunction = this;
-//         result.methodName = "$logErrorsWrapper";
-//         return result;
-//     },
-
-//     logCompletion: function(module) {
-//         if (Config.ignoreAdvice) return this;
-
-//         var advice = function logCompletionAdvice(proceed) {
-//                 var args = Array.from(arguments);
-//                 args.shift();
-//                 try {
-//                     var result = proceed.apply(this, args);
-//                 } catch (er) {
-//                     console.warn('failed to load ' + module + ': ' + er);
-//                     lively.lang.Execution.showStack();
-//                     throw er;
-//                 }
-//                 console.log('completed ' + module);
-//                 return result;
-//             }
-
-//         advice.methodName = "$logCompletionAdvice::" + module;
-
-//         var result = this.wrap(advice);
-//         result.methodName = "$logCompletionWrapper::" + module;
-//         result.originalFunction = this;
-//         return result;
-//     },
-
-//     logCalls: function(isUrgent) {
-//         if (Config.ignoreAdvice) return this;
-
-//         var original = this,
-//             advice = function logCallsAdvice(proceed) {
-//                 var args = Array.from(arguments);
-//                 args.shift(), result = proceed.apply(this, args);
-//                 if (isUrgent) {
-//                     console.warn('%s(%s) -> %s', original.qualifiedMethodName(), args, result);
-//                 } else {
-//                     console.log('%s(%s) -> %s', original.qualifiedMethodName(), args, result);
-//                 }
-//                 return result;
-//             }
-
-//         advice.methodName = "$logCallsAdvice::" + this.qualifiedMethodName();
-
-//         var result = this.wrap(advice);
-//         result.originalFunction = this;
-//         result.methodName = "$logCallsWrapper::" + this.qualifiedMethodName();
-//         return result;
-//     },
-
-//     traceCalls: function(stack) {
-//         var advice = function traceCallsAdvice(proceed) {
-//                 var args = Array.from(arguments);
-//                 args.shift();
-//                 stack.push(args);
-//                 var result = proceed.apply(this, args);
-//                 stack.pop();
-//                 return result;
-//             };
-//         return this.wrap(advice);
-//     },
-
-//     webkitStack: function() {
-//         // this won't work in every browser
-//         try {
-//             throw new Error()
-//         } catch (e) {
-//             // remove "Error" and this function from stack, rewrite it nicely
-//             var trace = Strings.lines(e.stack).slice(2).invoke('replace', /^\s*at\s*([^\s]+).*/, '$1').join('\n');
-//             return trace;
-//         }
-//     },
-
 };
+
 
 function Closure() {
   // A `Closure` is a representation of a JavaScript function that controls what
@@ -1136,16 +1132,3 @@ Closure.fromSource = function(source, varMapping) {
 }
 
 })(typeof jsext !== 'undefined' ? jsext : require('./base').jsext);
-
-
-// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-// notYetImplemented: function() {
-// throw new Error('Not yet implemented');
-// }
-
-//     unbind: function() {
-//         // for serializing functions
-//         return Function.fromString(this.toString());
-//     },
-
