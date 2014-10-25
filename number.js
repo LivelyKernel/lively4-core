@@ -36,6 +36,8 @@ var num = exports.num = {
     }
   })(),
 
+  randomSmallerInteger: function (n) { return Math.floor(Math.random() * n); },
+
   humanReadableByteSize: function(n) {
     // interpret `n` as byte size and print a more readable version
     // Example:
