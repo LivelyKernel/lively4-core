@@ -541,6 +541,18 @@ obj.extend(Path.prototype, {
       otherPath.slice(this.size(), otherPath.size()) : undefined;
   },
 
+  del: function(obj) {
+    if (this.isRoot()) return false;
+    var parent = obj
+    for (var i = 0; i < this._parts.length-1; i++) {
+      var part = this._parts[i];
+      if (parent.hasOwnProperty(part)) {
+        parent = parent[part];
+      } else return false;
+    }
+    return delete parent[this._parts[this._parts.length-1]];
+  },
+
   set: function(obj, val, ensure) {
     // Deeply resolve path in `obj` and set the resulting property to `val`. If
     // `ensure` is true, create nested structure in between as necessary.
