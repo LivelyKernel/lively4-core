@@ -888,6 +888,11 @@ var string = exports.string = {
     return s.slice(0, s.length - 1) + String.fromCharCode(s.charCodeAt(s.length - 1) + 1);
   },
 
+  digitValue: function() {
+    // ignore-in-doc
+    return this.charCodeAt(0) - "0".charCodeAt(0);
+  },
+
   times: function(s, count) {
     // Example:
     // string.times("test", 3) // => "testtesttest"
