@@ -294,6 +294,13 @@ var arr = exports.arr = {
     }, []);
   },
 
+  delimWith: function(array, delim) {
+    return array.reduce(function(xs, x) {
+      if (xs.length > 0) xs.push(delim)
+      xs.push(x); return xs;
+    }, []);
+  },
+
   // -=-=-=-=-
   // mapping
   // -=-=-=-=-
@@ -814,6 +821,7 @@ var arr = exports.arr = {
         return data.slice(i*binSize, (i+1)*binSize);
       });
     } else if (binSpec instanceof Array) {
+      // ignore-in-doc
       // bins specifies n threshold values that will create n-1 bins.
       // Each data value d is placed inside a bin i if:
       // threshold[i] >= d && threshold[i+1] < d

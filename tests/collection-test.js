@@ -156,6 +156,10 @@ describe('arr', function() {
       .to.throwError('batchify endless recursion?');
   });
 
+  it("delimWith", function() {
+    expect(arr.delimWith(["test", "abc", 444], "aha")).to.eql(["test","aha","abc","aha",444]);
+  });
+
   it('histogram', function() {
     var data = [0,1,2,3,7,2,1,3,9];
   
