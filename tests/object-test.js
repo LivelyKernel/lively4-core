@@ -87,6 +87,21 @@ describe('obj', function() {
 
   });
 
+  describe("equality", function() {
+    
+    it("compares structures of objects", function() {
+      var a = {foo: {bar: {baz: 23, m: function() { return 23; }}}},
+          b = {foo: {bar: {baz: 23, m: function() { return 23; }}}},
+          c = {foo: {bar: {baz: 24, m: function() { return 23; }}}};
+      expect(obj.equals(a,a)).to.be(true);
+      expect(obj.equals(a,b)).to.be(true);
+      expect(obj.equals(a,c)).to.be(false);
+      expect(obj.equals(b,c)).to.be(false);
+      expect(obj.equals(c,c)).to.be(true);
+    });
+
+  });
+
   describe('accessing', function() {
     it('enumerates keys', function() {
       expect(obj.keys(obj1)).to.eql(['foo', 'bar', 'baz', 'method']);

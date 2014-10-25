@@ -73,6 +73,31 @@ var obj = exports.obj = {
     return true;
   },
 
+  equals: function(a, b) {
+    // Is object `a` structurally equivalent to object `b`? Deep comparison.
+    if (!a && !b) return true;
+    if (!a || !b) return false;
+    switch (a.constructor) {
+      case String:
+      case Date:
+      case Boolean:
+      case Number: return a == b;
+    };
+    if (typeof a.isEqualNode === "function") return a.isEqualNode(b);
+    if (typeof a.equals === "function") return a.equals(b);
+    return cmp(a, b) && cmp(b, a);
+
+    // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+    function cmp(left, right) {
+      for (var name in left) {
+        if (typeof left[name] === "function") continue;
+         if (!obj.equals(left[name], right[name])) return false;
+      }
+      return true;
+    }
+  },
+
   // -=-=-=-=-=-
   // accessing
   // -=-=-=-=-=-
