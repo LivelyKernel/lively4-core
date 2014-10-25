@@ -1,13 +1,13 @@
-var jsext = module.require('./base').jsext;
+var jsext = module.require('./lib/base').jsext;
 
-module.require('./events');
-module.require('./collection');
-module.require('./function');
-module.require('./string');
-module.require('./number');
-module.require('./date');
-module.require('./object');
-module.require('./messenger');
-module.require('./worker');
+module.require('./lib/events');
+module.require('./lib/collection');
+module.require('./lib/function');
+module.require('./lib/string');
+module.require('./lib/number');
+module.require('./lib/date');
+module.require('./lib/object');
+module.require('./lib/messenger');
+module.require('./lib/worker');
 
 module.exports = jsext

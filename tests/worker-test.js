@@ -1,4 +1,4 @@
-/*global beforeEach, afterEach, describe, it, setInterval, clearInterval, setTimeout*/
+/*global require, beforeEach, afterEach, describe, it, setInterval, clearInterval, setTimeout*/
 
 var isNodejs = typeof module !== 'undefined' && module.require;
 var expect = isNodejs ? module.require('expect.js') : this.expect;
@@ -13,7 +13,7 @@ describe('worker', function() {
   var libLocation = isNodejs ? (function() {
     var path = require('path');
     return path.dirname(require.resolve(path.join("..", 'index')));
-  })() : document.location.toString().split('/').slice(0, -1).join('/') + "/../";
+  })() : document.location.toString().split('/').slice(0, -1).join('/') + "/../lib/";
 
   describe('basics', function() {
 
