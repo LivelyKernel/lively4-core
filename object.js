@@ -93,6 +93,11 @@ var obj = exports.obj = {
     return Object.keys(object).map(function(k) { return object[k]; });
   },
 
+  addScript: function (object, funcOrString, optName, optMapping) {
+    var func = exports.fun.fromString(funcOrString);
+    return exports.fun.asScriptOf(func, object, optName, optMapping);
+  },
+
   // -=-=-=-=-
   // mutation
   // -=-=-=-=-
@@ -237,32 +242,20 @@ var obj = exports.obj = {
   // -=-=-=-=-=-=-
   // inheritance
   // -=-=-=-=-=-=-
-  inherit: function(obj) {
-    var constructor = function ProtoConstructor() { return this; }
-    constructor.prototype = obj;
-    var newInstance = new constructor();
-    newInstance.constructor = constructor;
-    return newInstance;
-  },
+  inherit: function(obj) { return Object.create(obj); },
 
   valuesInPropertyHierarchy: function(obj, name) {
-    // Lookup all properties named name in the proto hierarchy of obj
-    // also uses Lively's class structure
-    var result = [],
-      lookupObj = obj;
-    while (true) {
-      if (lookupObj.hasOwnProperty(name)) result.push(lookupObj[name])
-      var proto = Object.getPrototypeOf(lookupObj);
-      var superclass = lookupObj.constructor.superclass;
-      if (!proto || proto === lookupObj) proto = superclass && Object.getPrototypeOf(superclass);
-      if (!proto) return result.reverse();
-      lookupObj = proto;
+    // Lookup all properties named name in the proto hierarchy of obj.
+    // Example:
+    // var a = {foo: 3}, b = Object.create(a), c = Object.create(b);
+    // c.foo = 4;
+    // obj.valuesInPropertyHierarchy(c, "foo") // => [3,4]
+    var result = [], lookupObj = obj;
+    while (lookupObj) {
+      if (lookupObj.hasOwnProperty(name)) result.unshift(lookupObj[name])
+      lookupObj = Object.getPrototypeOf(lookupObj);
     }
-
-    Object.getPrototypeOf(this)
-    function Class$getPrototype(object) {
-        return this.getConstructor(object).prototype;
-    }
+    return result;
   },
 
   mergePropertyInHierarchy: function(obj, propName) {
