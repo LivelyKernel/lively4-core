@@ -95,9 +95,18 @@ describe("usage", function() {
 
     it("adds methods to global objects", function() {
       jsext.installGlobals();
-      var d = new Date("Thu Oct 23 2014 10:29:55 GMT-0700 (PDT)");
-      expect(d.format("yyyy")).to.be("2014");
-      jsext.uninstallGlobals();
+      try {
+        var d = new Date("Thu Oct 23 2014 10:29:55 GMT-0700 (PDT)");
+        expect(d.format("yyyy")).to.be("2014");
+        expect(("foo bar").startsWith("foo")).to.be(true);
+      } finally { jsext.uninstallGlobals(); }
+    });
+
+    it("install aliases to global objects", function() {
+      jsext.installGlobals();
+      try {
+        expect([1,2,3,4,5].select(function(n) { return n % 2 === 0})).to.eql([2,4]);
+      } finally { jsext.uninstallGlobals(); }
     });
   
     it("creates new global objects", function() {
