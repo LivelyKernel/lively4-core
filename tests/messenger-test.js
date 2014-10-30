@@ -91,7 +91,7 @@ describe('messengers', function() {
 
     sendData = [], messenger = createMessenger(messengers, {
       id: "messengerA",
-      sendDelay: 20, listenDelay: 10,
+      sendDelay: 100, listenDelay: 10,
       sendData: sendData
     });
   });
@@ -126,13 +126,13 @@ describe('messengers', function() {
           expect(messenger.outgoingMessages()).to.eql([msg1, msg2]);
           next();
         },
-        function(next) { setTimeout(next, 22); },
+        jsext.chain(setTimeout).flip().curry(150).value(),
         function(next) {
           expect(sendData).to.eql([msg1]);
           expect(messenger.outgoingMessages()).to.eql([msg2]);
           next();
         },
-        function(next) { setTimeout(next, 22); },
+        jsext.chain(setTimeout).flip().curry(100).value(),
         function(next) {
           expect(sendData).to.eql([msg1, msg2]);
           expect(messenger.outgoingMessages()).to.have.length(0);
@@ -150,7 +150,7 @@ describe('messengers', function() {
       var messengerB = createMessenger(messengers, {
         id: "messengerB",
         allowConcurrentSends: true,
-        sendDelay: 20, listenDelay: 10,
+        sendDelay: 100, listenDelay: 10,
         sendData: sendData
       });
 
@@ -165,7 +165,7 @@ describe('messengers', function() {
           expect(messengerB.outgoingMessages()).to.eql([msg1, msg2]);
           next();
         },
-        function(next) { setTimeout(next, 25); },
+        function(next) { setTimeout(next, 125); },
         function(next) {
           expect(sendData).to.eql([msg1, msg2]);
           expect(messengerB.outgoingMessages()).to.have.length(0);
@@ -182,7 +182,7 @@ describe('messengers', function() {
       var sendErr;
       var messengerB = createMessenger(messengers, {
         id: "messengerB",
-        sendTimeout: 20, sendDelay: 30,
+        sendTimeout: 100, sendDelay: 200,
         sendData: sendData
       });
 
@@ -195,9 +195,9 @@ describe('messengers', function() {
           messengerB.send(msg, function(err) { sendErr = err; });
           next();
         },
-        function(next) { setTimeout(next, 25); },
+        jsext.chain(setTimeout).flip().curry(300).value(),
         function(next) {
-          expect(sendData).to.be.empty();
+          expect(sendData).to.eql([msg]);
           expect(messengerB.outgoingMessages()).to.be.empty();
           next();
         }
