@@ -47,10 +47,13 @@ describe('fun', function() {
 
     it("can extract a function body a string", function() {
       var f = function(arg1, arg2, arg4) {
-        var x = 33;
-        return x + arg2 + arg4;
+        var x = {
+          n: 33
+        };
+
+        return x.n + arg2 + arg4;
       };
-      expect(fun.extractBody(f)).to.eql('var x = 33;\nreturn x + arg2 + arg4;');
+      expect(fun.extractBody(f)).to.eql('var x = {\n    n: 33\n};\n\nreturn x.n + arg2 + arg4;');
     });
 
   });

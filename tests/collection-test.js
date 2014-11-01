@@ -177,6 +177,10 @@ describe('arr', function() {
     expect([[1,2],[3,4],[]]).to.eql(hist);
   });
 
+  it("zips", function() {
+    expect(arr.zip([1,2,3], [4,5,6])).to.eql([[1,4],[2,5],[3,6]]);
+  });
+
 });
 
 
