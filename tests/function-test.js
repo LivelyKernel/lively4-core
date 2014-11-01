@@ -53,7 +53,7 @@ describe('fun', function() {
 
         return x.n + arg2 + arg4;
       };
-      expect(fun.extractBody(f)).to.eql('var x = {\n    n: 33\n};\n\nreturn x.n + arg2 + arg4;');
+      expect(fun.extractBody(f)).to.equal('var x = {\n  n: 33\n};\n\nreturn x.n + arg2 + arg4;');
     });
 
   });
