@@ -490,9 +490,25 @@ describe('fun', function() {
       expect(wrapped.originalFunction(3,4)).to.be(7);
     });
 
+    it("wrap binds this", function() {
+      // correctly bind this
+      var o = {
+        x: 3, y: 4,
+        f: fun.wrap(
+          function() { return this.x; },
+          function(proceed) { return proceed() + this.y; })};
+      expect(o.f()).to.be(7);
+    });
+
     it("curries arguments", function() {
       function orig(arg1, arg2) { return arg1 + arg2; }
       expect(fun.curry(orig, 2)(3)).to.be(5);
+    });
+
+    it("curry binds this", function() {
+      // correctly bind this
+      var o = {x: 3, f: fun.curry(function(a) { return this.x + a; }, 2)};
+      expect(o.f()).to.be(5);
     });
 
     it("can restrict a function to run only once", function() {
