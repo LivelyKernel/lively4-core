@@ -316,7 +316,7 @@ describe('properties', function() {
 
   it("can access all properties", function() {
     var expected, result;
-    expected = ["a", "b", "c", "d"];
+    expected = ["a", "c"];
     result = properties.all(obj, function (name, object) {
       return name.length == 1; });
     expect(expected).to.eql(result);
@@ -419,6 +419,13 @@ describe('Path', function() {
     expect(pp("").isParentPathOf(pp(""))).to.be(true);
     expect(p1.isParentPathOf(pp("a"))).to.be(false);
     expect(p1.isParentPathOf(pp("b.a"))).to.be(false);
+  });
+
+  it("overwrites string", function() {
+    var obj = {foo: "b a r"},
+        p = Path('foo.b a r.baz');
+    p.set(obj, 3, true);
+    expect(obj).to.eql({foo: {"b a r": {baz: 3}}});
   });
 
 });
