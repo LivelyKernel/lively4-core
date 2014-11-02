@@ -302,6 +302,26 @@ describe('fun', function() {
         };
       });
 
+      it("waits without timeout", function(done) {
+        var x = 0, wasCalled, startTime = Date.now(), endTime, timeout;
+
+        fun.waitFor(
+          function() { return x === 1; },
+          function (_timeout) {
+            wasCalled = true; timeout = _timeout; endTime = Date.now(); });
+
+        setTimeout(function() { x = 1; }, 400);
+        waitForWaitFor();
+
+        function waitForWaitFor() {
+          if (!wasCalled) { setTimeout(waitForWaitFor, 20); return; }
+          expect(timeout).to.be(undefined);
+          var duration = endTime - startTime;
+          expect(duration).to.be.greaterThan(399, 'wait duration not OK: ' + duration);
+          done();
+        }
+      });
+
     });
 
     describe("timing", function() {
@@ -584,7 +604,7 @@ describe('fun', function() {
     Klass2.prototype.bar = function(a) { return this.foo(a, 4); };
 
     it("finds method names of class", function() {
-      expect(fun.functionNames(Klass2)).to.eql(["foo", "bar", "zork"]);
+      expect(fun.functionNames(Klass2)).to.eql(["foo", "bar", "zork"].reverse());
     });
 
     it("finds local method names of class", function() {
