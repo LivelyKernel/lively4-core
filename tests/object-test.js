@@ -161,7 +161,19 @@ describe('obj', function() {
       });
     });
 
-
+    it("sets categories", function() {
+      var dest = {};
+      obj.extend(dest,
+      "cat1", {
+        m1: function() { return 3; },
+        m2: function() { return 4; },
+      },
+      "cat2", {
+        foo: 33
+      });
+      expect(dest.categories).to.eql({cat1: ["m1","m2"],cat2: ["foo"]});
+    });
+    
   });
 
   describe("inspect", function() {
