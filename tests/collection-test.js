@@ -80,6 +80,10 @@ describe('arr', function() {
     expect(a).to.eql(['d', 'e', 'a', 'b', 'c']);
   });
 
+  it('partition', function() {
+  	expect(arr.partition(arr.range(0,10), function(n) { return n % 2 === 0 }))
+    .to.eql([[0,2,4,6,8,10], [1,3,5,7,9]]);
+  });
   it('groupBy', function() {
     var elts = [{a: 'foo', b: 1},
                 {a: 'bar', b: 2},
