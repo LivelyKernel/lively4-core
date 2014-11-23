@@ -1,11 +1,8 @@
 /*global process, beforeEach, afterEach, describe, it*/
 
-var isNode = typeof process !== 'undefined' && process.versions && process.versions.node;
-
-var expect = isNode ? module.require('expect.js') : this.expect;
-var jsext = isNode ? module.require('../index') : this.jsext;
-
-var events = jsext.events;
+var expect = this.expect || module.require('expect.js');
+var lively = this.lively || {}; lively.lang = lively.lang || module.require('../index');
+var events = lively.lang.events;
 
 describe('events', function() {
 

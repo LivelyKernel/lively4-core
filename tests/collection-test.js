@@ -1,15 +1,11 @@
 /*global beforeEach, afterEach, describe, it*/
 
-var expect = typeof module !== 'undefined' && module.require ?
-  module.require('expect.js') : this.expect;
-
-var jsext = typeof module !== 'undefined' && module.require ?
-  module.require('../index') : this.jsext;
-
+var expect = this.expect ||  module.require('expect.js');
+var lively = this.lively || {}; lively.lang = lively.lang || module.require('../index');
 
 describe('arr', function() {
 
-  var arr = jsext.arr;
+  var arr = lively.lang.arr;
 
   it('forEach', function() {
     var result = '';
@@ -39,7 +35,7 @@ describe('arr', function() {
     expect(4).to.eql(arr.min(arr.pluck(a, 'y')));
     expect({x:2,y:12}).to.eql(arr.min(a, function(ea) { return ea.x }));
     expect({x:9,y:4}).to.eql(arr.min(a, function(ea) { return ea.y }));
-  
+
     expect(2).to.eql(arr.min([5,3,2,6,4,3,2]));
     expect(-10).to.eql(arr.min([-3,-3,-5,-10]));
     expect(-10).to.eql(arr.min([-3,-3,-5,-10]));
@@ -54,7 +50,7 @@ describe('arr', function() {
     expect(12).to.equal(arr.max(arr.pluck(a, 'y')));
     expect({x:9,y:4}).to.eql(arr.max(a, function(ea) { return ea.x }));
     expect({x:2,y:12}).to.eql(arr.max(a, function(ea) { return ea.y }));
-  
+
     expect(6).to.equal(arr.max([5,3,2,6,4,-3,2]));
     expect(-1).to.equal(arr.max([-3,-2,-1,-10]));
     expect(-2).to.equal(arr.max([-3,-2,null,-10]));
@@ -166,16 +162,16 @@ describe('arr', function() {
 
   it('histogram', function() {
     var data = [0,1,2,3,7,2,1,3,9];
-  
+
     var hist = arr.histogram(data);
     expect([[0,1], [2,3], [7,2], [1,3], [9]]).to.eql(hist);
-  
+
     var hist = arr.histogram(data, 3); // 3 bins
     expect([[0,1,2],[3,7,2],[1,3,9]]).to.eql(hist);
-  
+
     var hist = arr.histogram(data, [0,3,6]); // 3 bins
     expect([[0,1,2,2,1],[3,3],[7,9]]).to.eql(hist);
-  
+
     var data = [1,2,3,4];
     var hist = arr.histogram(data, [0,3,6]); // 3 bins
     expect([[1,2],[3,4],[]]).to.eql(hist);
@@ -190,7 +186,7 @@ describe('arr', function() {
 
 describe('Interval', function() {
 
-  var Interval = jsext.interval;
+  var Interval = lively.lang.interval;
 
   it("tests for interval type", function() {
     expect(Interval.isInterval([1,2])).to.be(true);
@@ -406,7 +402,7 @@ describe('Interval', function() {
 
 describe('Grid', function() {
 
-  var Grid = jsext.grid;
+  var Grid = lively.lang.grid;
 
   it("creates a grid", function() {
     var result = Grid.create(2, 3, 'foo'),
@@ -468,8 +464,8 @@ describe('Grid', function() {
 
 describe("ArrayProjection", function() {
 
-  var arr = jsext.arr;
-  var arrayProjection = jsext.arrayProjection;
+  var arr = lively.lang.arr;
+  var arrayProjection = lively.lang.arrayProjection;
 
   it("creates projection", function() {
     var sut = arrayProjection;

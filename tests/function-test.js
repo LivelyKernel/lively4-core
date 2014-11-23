@@ -1,13 +1,10 @@
 /*global beforeEach, afterEach, describe, it, setInterval, clearInterval, setTimeout*/
 
-var expect = typeof module !== 'undefined' && module.require ?
-  module.require('expect.js') : this.expect;
+var expect = this.expect || module.require('expect.js');
+var lively = this.lively || {}; lively.lang = lively.lang || module.require('../index');
 
-var jsext = typeof module !== 'undefined' && module.require ?
-  module.require('../index') : this.jsext;
-
-var fun = jsext.fun;
-var Closure = jsext.Closure;
+var fun = lively.lang.fun;
+var Closure = lively.lang.Closure;
 
 describe('fun', function() {
 
@@ -39,7 +36,7 @@ describe('fun', function() {
   });
 
   describe('inspection', function() {
-    
+
     it("can tell its args", function() {
       var f = function(arg1, arg2, arg4) { return arg2 + arg4; };
       expect(fun.argumentNames(f)).to.eql(["arg1", "arg2", "arg4"]);
@@ -615,7 +612,7 @@ describe('fun', function() {
 });
 
 describe("closure", function() {
-  
+
   it("captures values", function() {
     var f = Closure.fromFunction(function() { return y + 3 }, {y: 2})
                    .recreateFunc()

@@ -1,4 +1,4 @@
-var jsext = module.require('./lib/base').jsext;
+var livelyLang = module.require('./lib/base');
 
 module.require('./lib/events');
 module.require('./lib/object');
@@ -10,4 +10,4 @@ module.require('./lib/date');
 module.require('./lib/messenger');
 module.require('./lib/worker');
 
-module.exports = jsext
+module.exports = livelyLang;

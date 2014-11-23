@@ -1,19 +1,20 @@
+<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
     <title>lively-lang Tests</title>
-    <link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
+    <link type="text/css" rel="stylesheet" href="../node_modules/mocha/mocha.css" />
     <meta http-equiv="cache-control" content="no-cache" />
     <meta http-equiv="pragma" content="no-cache" />
-    
+
   </head>
   <body>
     <div id="mocha"></div>
     <!--<script type="text/javascript" src="http://lively-web.org/users/robertkrahn/node-lively2lively/lively2lively-browserified.js?name=jsext-test&baseURL=http://lively-web.org:8080&autoload=true"></script></style>-->
-    <script src="helper.js"></script>
-    <script src="../node_modules/expect.js/index.js"></script>
-    <script src="../node_modules/mocha/mocha.js"></script>
-    <script>
+    <script type="text/javascript" src="helper.js"></script>
+    <script type="text/javascript" src="../node_modules/expect.js/index.js"></script>
+    <script type="text/javascript" src="../node_modules/mocha/mocha.js"></script>
+    <script type="text/javascript" >
       // mocha.setup({ui: 'bdd', grep: "messengers sending basics sends messages one by one"});
       // mocha.setup({ui: 'bdd', grep: /^(messengers|fun|worker)/});
       mocha.setup("bdd");
@@ -42,7 +43,7 @@
       ];
       loadUncached(urls, function() {
         mocha.checkLeaks();
-      if (window.mochaPhantomJS) { mochaPhantomJS.run(); }
+        if (window.mochaPhantomJS) { mochaPhantomJS.run(); }
         else { mocha.run(); }
       });
     </script>

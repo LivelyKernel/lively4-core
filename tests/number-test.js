@@ -1,11 +1,9 @@
 /*global module, beforeEach, afterEach, describe, it*/
 
-var expect = typeof module !== 'undefined' && module.require ?
-  module.require('expect.js') : this.expect;
+var expect = this.expect || module.require('expect.js');
+var lively = this.lively || {}; lively.lang = lively.lang || module.require('../index');
 
-var jsext = typeof module !== 'undefined' && module.require ?
-  module.require('../index') : this.jsext;
-var num = jsext.num;
+var num = lively.lang.num;
 
 describe('number', function() {
 
@@ -49,15 +47,15 @@ describe('number', function() {
       expect(num.parseLength('2cm')).to.be.within(75.59-eps, 75.59+eps);
       expect(num.parseLength('20px', 'pt')).to.be.within(15-eps, 15+eps);
     });
-  
+
     it('convertLength', function() {
       var eps = 0.01;
       expect(num.convertLength(2, 'cm', 'px')).to.be.within(75.59-eps, 75.59+eps);
       expect(num.convertLength(75.59, 'px', 'cm')).to.be.within(2-eps, 2+eps);
     });
-    
+
   });
-  
+
   describe('detent', function() {
 
     it('linearly distributes values between grid points', function() {

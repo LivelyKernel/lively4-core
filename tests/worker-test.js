@@ -1,12 +1,12 @@
 /*global require, beforeEach, afterEach, describe, it, setInterval, clearInterval, setTimeout*/
 
 var isNodejs = typeof module !== 'undefined' && module.require;
-var expect = isNodejs ? module.require('expect.js') : this.expect;
-var jsext = isNodejs ? module.require('../index') : this.jsext;
+var expect = this.expect || module.require('expect.js');
+var lively = this.lively || {}; lively.lang = lively.lang || module.require('../index');
 
-var fun = jsext.fun;
-var worker = jsext.worker;
-var messenger = jsext.messenger;
+var fun = lively.lang.fun;
+var worker = lively.lang.worker;
+var messenger = lively.lang.messenger;
 
 describe('worker', function() {
 
@@ -31,7 +31,7 @@ describe('worker', function() {
       var messageFromWorker = null,
           w = worker.create({libLocation: libLocation});
       fun.composeAsync(
-        function(next) { w.eval("jsext.string.format('foo %s', 'bar');", next) },
+        function(next) { w.eval("lively.lang.string.format('foo %s', 'bar');", next) },
         function(result, next) { expect(result).to.be('foo bar'); next(); }
       )(function(err) { expect(err).to.be(null); done(); });
     });
@@ -40,7 +40,7 @@ describe('worker', function() {
       var workerMessenger = worker.create({libLocation: libLocation});
       fun.composeAsync(
         function(next) {
-          workerMessenger.run(function(a, b, whenDone) { 
+          workerMessenger.run(function(a, b, whenDone) {
             setTimeout(function() { whenDone(null, a+b); }, 60);
           }, 1, 2, next);
         },

@@ -1,12 +1,8 @@
 /*global beforeEach, afterEach, describe, it*/
 
-var expect = typeof module !== 'undefined' && module.require ?
-  module.require('expect.js') : this.expect;
-
-var jsext = typeof module !== 'undefined' && module.require ?
-  module.require('../index') : this.jsext;
-
-var date = jsext.date;
+var expect = this.expect || module.require('expect.js');
+var lively = this.lively || {}; lively.lang = lively.lang || module.require('../index');
+var date = lively.lang.date;
 
 describe('date', function() {
 

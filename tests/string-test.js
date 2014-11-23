@@ -1,15 +1,11 @@
 /*global beforeEach, afterEach, describe, it*/
 
-var expect = typeof module !== 'undefined' && module.require ?
-  module.require('expect.js') : this.expect;
-
-var jsext = typeof module !== 'undefined' && module.require ?
-  module.require('../index') : this.jsext;
-
+var expect = this.expect || module.require('expect.js');
+var lively = this.lively || {}; lively.lang = lively.lang || module.require('../index');
 
 describe('string', function() {
 
-  var string = jsext.string;
+  var string = lively.lang.string;
 
   it("tableize", function() {
     expect([["a", "b", "c"], ["d", "e", "f"]]).to.eql(string.tableize('a b c\nd e f'));

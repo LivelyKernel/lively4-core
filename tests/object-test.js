@@ -1,24 +1,24 @@
 /*global beforeEach, afterEach, describe, it*/
 
 var isNodejs = typeof module !== 'undefined' && module.require;
-var expect = isNodejs ? module.require('expect.js') : this.expect;
-var jsext = isNodejs ? module.require('../index') : this.jsext;
-var mocha = isNodejs ? module.require('mocha') : this.mocha;
+var expect = this.expect || module.require('expect.js');
+var mocha = this.mocha || module.require('mocha');
+var lively = this.lively || {}; lively.lang = lively.lang || module.require('../index');
 
-var obj = jsext.obj;
+var obj = lively.lang.obj;
 
 describe('obj', function() {
 
   var obj1 = {
     foo: 23, bar: [2, {x: "'test'"}],
     get baz() { return "--baz getter--"; },
-    method: function(arg1, arg2) { return arg1 + arg2; },
+    method: function(arg1, arg2) { return arg1 + arg2; }
   }
 
   var obj2 = {
     foo: 24,
     zork: "test",
-    method2: function(arg) { return arg + 1; },
+    method2: function(arg) { return arg + 1; }
   }
 
   obj1.__proto__ = obj2;
@@ -88,7 +88,7 @@ describe('obj', function() {
   });
 
   describe("equality", function() {
-    
+
     it("compares structures of objects", function() {
       var a = {foo: {bar: {baz: 23, m: function() { return 23; }}}},
           b = {foo: {bar: {baz: 23, m: function() { return 23; }}}},
@@ -141,17 +141,23 @@ describe('obj', function() {
       expect(o.foo).to.not.have.property("displayName");
     });
 
-    describe("when lively present", function() {
+    describe("when lively.Module present", function() {
 
       var Global = typeof window !== "undefined" ? window : (typeof global !== "undefined" ? global : this);
       if (!isNodejs) mocha.globals(["lively"]);
 
+      var lv, RealModule, FakeModule = {current: function() { return "bar"; }};
       beforeEach(function() {
-        Global.lively = {Module: {current: function() { return "bar"; }}};
+        lv = lively;
+        RealModule = lv.Module;
+        if (!Global.lively) Global.lively = {};
+        if (!Global.lively.Module) Global.lively.Module = FakeModule;
       });
 
       afterEach(function() {
-        delete Global.lively;
+        if (lv) Global.lively = lv;
+        if (RealModule) lv.Module = RealModule
+        else delete lv.Module;
         if (!isNodejs) mocha.options.globals.pop();
       });
 
@@ -173,7 +179,7 @@ describe('obj', function() {
       });
       expect(dest.categories).to.eql({cat1: ["m1","m2"],cat2: ["foo"]});
     });
-    
+
   });
 
   describe("inspect", function() {
@@ -310,8 +316,8 @@ describe('obj', function() {
 });
 
 describe('properties', function() {
-  
-  var properties = jsext.properties;
+
+  var properties = lively.lang.properties;
   var obj;
 
   beforeEach(function() {
@@ -364,7 +370,7 @@ describe('properties', function() {
 
 describe('Path', function() {
 
-  var Path = jsext.Path;
+  var Path = lively.lang.Path;
 
   it("parsePath", function() {
     expect([]).to.eql(Path(undefined).parts());

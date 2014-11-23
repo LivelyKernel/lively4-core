@@ -1,15 +1,12 @@
 /*global beforeEach, afterEach, describe, it, setTimeout*/
 
-var expect = typeof module !== 'undefined' && module.require ?
-  module.require('expect.js') : this.expect;
+var expect = this.expect || module.require('expect.js');
+var lively = this.lively || {}; lively.lang = lively.lang || module.require('../index');
 
-var jsext = typeof module !== 'undefined' && module.require ?
-  module.require('../index') : this.jsext;
-
-var m = jsext.messenger;
-var fun = jsext.fun;
-var arr = jsext.arr;
-var events = jsext.events;
+var m = lively.lang.messenger;
+var fun = lively.lang.fun;
+var arr = lively.lang.arr;
+var events = lively.lang.events;
 
 // -=-=-=-=-=-=-
 // some helper
@@ -69,7 +66,7 @@ var messageDispatcher = events.makeEmitter({
     else { messenger.onMessage(msg); thenDo(null); }
 
     function findMessengerForMsg(msg) {
-      if (!msg || !msg.target) throw new Error("findMessengerForMsg: msg is strange: " + jsext.obj.inspect(msg));
+      if (!msg || !msg.target) throw new Error("findMessengerForMsg: msg is strange: " + lively.lang.obj.inspect(msg));
       return arr.detect(messengers, function(ea) { return ea.id() === msg.target; });
     }
   }
@@ -97,7 +94,7 @@ describe('messengers', function() {
   });
 
   afterEach(function(done) {
-    fun.waitForAll(jsext.arr.pluck(messengers, 'close'), done);
+    fun.waitForAll(arr.pluck(messengers, 'close'), done);
   });
 
   describe("messenger attributes", function() {
@@ -126,13 +123,13 @@ describe('messengers', function() {
           expect(messenger.outgoingMessages()).to.eql([msg1, msg2]);
           next();
         },
-        jsext.chain(setTimeout).flip().curry(150).value(),
+        lively.lang.chain(setTimeout).flip().curry(150).value(),
         function(next) {
           expect(sendData).to.eql([msg1]);
           expect(messenger.outgoingMessages()).to.eql([msg2]);
           next();
         },
-        jsext.chain(setTimeout).flip().curry(100).value(),
+        lively.lang.chain(setTimeout).flip().curry(100).value(),
         function(next) {
           expect(sendData).to.eql([msg1, msg2]);
           expect(messenger.outgoingMessages()).to.have.length(0);
@@ -195,7 +192,7 @@ describe('messengers', function() {
           messengerB.send(msg, function(err) { sendErr = err; });
           next();
         },
-        jsext.chain(setTimeout).flip().curry(300).value(),
+        lively.lang.chain(setTimeout).flip().curry(300).value(),
         function(next) {
           expect(sendData).to.eql([msg]);
           expect(messengerB.outgoingMessages()).to.be.empty();
