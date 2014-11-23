@@ -85,7 +85,7 @@ describe("usage", function() {
     it("removes lively.lang object but returns reference", function() {
       var Global = typeof window !== "undefined" ? window : global;
       var ref = lively.lang.noConflict();
-      expect(typeof lively).to.be("undefined");
+      expect(typeof Global.lively).to.be("undefined");
       expect(ref).to.be(lv.lang);
     });
 

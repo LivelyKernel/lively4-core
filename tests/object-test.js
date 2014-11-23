@@ -144,20 +144,20 @@ describe('obj', function() {
     describe("when lively.Module present", function() {
 
       var Global = typeof window !== "undefined" ? window : (typeof global !== "undefined" ? global : this);
+      var hasGlobalLively = !!Global.lively;
       if (!isNodejs) mocha.globals(["lively"]);
 
-      var lv, RealModule, FakeModule = {current: function() { return "bar"; }};
+      var RealModule, FakeModule = {current: function() { return "bar"; }};
       beforeEach(function() {
-        lv = lively;
-        RealModule = lv.Module;
-        if (!Global.lively) Global.lively = {};
-        if (!Global.lively.Module) Global.lively.Module = FakeModule;
+        if (!hasGlobalLively) Global.lively = {}
+        RealModule = Global.lively.Module;
+        Global.lively.Module = FakeModule;
       });
 
       afterEach(function() {
-        if (lv) Global.lively = lv;
-        if (RealModule) lv.Module = RealModule
-        else delete lv.Module;
+        if (RealModule) Global.lively.Module = RealModule
+        else delete Global.lively.Module;
+        if (!hasGlobalLively) delete Global.lively;
         if (!isNodejs) mocha.options.globals.pop();
       });
 
@@ -172,7 +172,7 @@ describe('obj', function() {
       obj.extend(dest,
       "cat1", {
         m1: function() { return 3; },
-        m2: function() { return 4; },
+        m2: function() { return 4; }
       },
       "cat2", {
         foo: 33
