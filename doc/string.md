@@ -1,4 +1,4 @@
-## string.js
+## lib/string.js
 
 String utility methods for printing, parsing, and converting strings.
 
@@ -55,7 +55,7 @@ String utility methods for printing, parsing, and converting strings.
  
 
 ```js
-jsext.string.format("Hello %s!", "Lively User"); // => "Hello Lively User!"
+lively.lang.string.format("Hello %s!", "Lively User"); // => "Hello Lively User!"
 ```
 
 #### <a name="string-indent"></a>string.indent(str, indentString, depth)

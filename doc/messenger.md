@@ -1,4 +1,4 @@
-## messenger.js
+## lib/messenger.js
 
 A pluggable interface to provide asynchronous, actor-like message
 communication between JavaScript systems. Provides a unified message protocol
@@ -20,7 +20,7 @@ To see a minimal example of how to use messengers for the local communication be
 A more sophisticated example of messengers is [the worker implementation](worker.js) which provides an actor-like worker interface that uses web workers in web browsers and child_process.fork in node.js.
 
 ```js
-var msger = jsext.messenger.create({
+var msger = lively.lang.messenger.create({
   send: function(msg, onSendDone) { console.log(msg); onSendDone(); },
   listen: function(thenDo) { thenDo(); },
   close: function(thenDo) { thenDo(); },

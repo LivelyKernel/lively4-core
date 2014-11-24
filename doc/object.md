@@ -1,4 +1,4 @@
-## object.js
+## lib/object.js
 
 Utility functions that help to inspect, enumerate, and create JS objects
 

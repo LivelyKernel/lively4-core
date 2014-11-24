@@ -1,4 +1,4 @@
-## collection.js
+## lib/collection.js
 
 Methods to make working with arrays more convenient and collection-like
 abstractions for groups, intervals, grids.
@@ -207,7 +207,7 @@ var objects = [{x: 3}, {y: 4}, {x:5}]
  
 
 ```js
-
+["Hello", "World", "Lively", "User"].grep("l") // => ["Hello","World","Lively"]
 ```
 
 #### <a name="arr-mask"></a>arr.mask(array, mask)
@@ -374,7 +374,7 @@ arr.sortBy(["Hello", "Lively", "User"], function(ea) {
  
 
 ```js
-jsext.arr.sortByKey([{x: 3}, {x: 2}, {x: 8}], "x")
+lively.lang.arr.sortByKey([{x: 3}, {x: 2}, {x: 8}], "x")
 // => [{x: 2},{x: 3},{x: 8}]
 ```
 
@@ -645,7 +645,7 @@ group.toArray(); // => [[2,4],[1,3,5]]
 
 #### <a name="Group.prototype-reduceGroups"></a>Group>>reduceGroups(iterator, carryOver, context)
 
- Reduce/fold for each group, called like `iterator(carryOver, groupKey, group)`  
+ Reduce/fold for each group, called like `iterator(carryOver, groupKey, group)`
 
 #### <a name="Group.prototype-count"></a>Group>>count()
 

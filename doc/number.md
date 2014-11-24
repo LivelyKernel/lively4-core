@@ -1,4 +1,4 @@
-## number.js
+## lib/number.js
 
 Utility functions for JS Numbers.
 

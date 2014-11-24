@@ -1,4 +1,4 @@
-## events.js
+## lib/events.js
 
 A simple node.js-like cross-platform event emitter implementation.
 
@@ -8,7 +8,7 @@ A simple node.js-like cross-platform event emitter implementation.
 ### <a name="events"></a>events
 
  A simple node.js-like cross-platform event emitter implementation that can
- be used as a mixin. Emitters support the methods: `on(eventName, handlerFunc)`, 
+ be used as a mixin. Emitters support the methods: `on(eventName, handlerFunc)`,
  `once(eventName, handlerFunc)`, `emit(eventName, eventData)`,
  `removeListener(eventName, handlerFunc)`, `removeAllListeners(eventName)`
  

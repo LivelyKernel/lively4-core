@@ -1,4 +1,4 @@
-## date.js
+## lib/date.js
 
 Util functions to print and work with JS date objects.
 
@@ -16,7 +16,7 @@ Util functions to print and work with JS date objects.
 #### <a name="exports.date-format"></a>exports.date.format(date, mask, utc)
 
  Custom date / time stringifier. Provides default masks:
- 
+
  Mask           | Pattern
  ---------------|--------------------------------
  default        | `"ddd mmm dd yyyy HH:MM:ss"`
@@ -31,7 +31,7 @@ Util functions to print and work with JS date objects.
  isoTime        | `"HH:MM:ss"`
  isoDateTime    | `"yyyy-mm-dd'T'HH:MM:ss"`
  isoUtcDateTime | `"UTC:yyyy-mm-dd'T'HH:MM:ss'Z'"`
- 
+
  and internationalized strings via `date.format.i18n.dayNames`
  and `date.format.i18n.dayNames`
  
