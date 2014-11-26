@@ -90,6 +90,12 @@ Utility functions that help to inspect, enumerate, and create JS objects
 
 
 
+### [class.js](doc/class.md)
+
+
+
+
+
 ### [events.js](doc/events.md)
 
 A simple node.js-like cross-platform event emitter implementation.
