@@ -21,7 +21,7 @@ describe('worker', function() {
       var messageFromWorker = null,
           w = worker.create({libLocation: libLocation});
       fun.composeAsync(
-        function(next) { debugger; w.eval("this.rememberThis = 'foo was here';", next); },
+        function(next) { w.eval("this.rememberThis = 'foo was here';", next); },
         function(_, next) { w.eval("this.rememberThis", next) },
         function(result, next) { expect(result).to.be('foo was here'); next(); }
       )(function(err) { expect(err).to.be(null); done(); });
