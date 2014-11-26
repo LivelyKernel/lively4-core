@@ -1,5 +1,3 @@
-# *THIS DOCUMENTATION IS CURRENTLY WORK IN PROGRESS!*
-
 # lively.lang [![Build Status](https://travis-ci.org/LivelyKernel/lively.lang.svg?branch=master)](https://travis-ci.org/LivelyKernel/lively.lang)
 
 *What?* This project packages abstractions for JavaScript that proved to be useful in
@@ -40,6 +38,7 @@ Abstractions usually not included by default in JavaScript runtimes:
 - Grid
 - ArrayProjection
 - Closure
+- Class system that allows to change classes at runtime
 - Messengers (generic interface for remote-messaging)
 - Workers based on messengers
 
@@ -92,6 +91,7 @@ Utility functions that help to inspect, enumerate, and create JS objects
 
 ### [class.js](doc/class.md)
 
+A lightweight class system that allows change classes at runtime.
 
 
 

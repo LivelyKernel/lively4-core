@@ -1,5 +1,6 @@
 ## lib/class.js
 
+A lightweight class system that allows change classes at runtime.
 
 
 - [exports.class](#exports.class)
