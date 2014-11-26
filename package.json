@@ -1,6 +1,6 @@
 {
   "name": "lively.lang",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "JavaScript utils providing useful abstractions for working with collections, functions, objects",
   "main": "index.js",
   "dependencies": {},
@@ -15,16 +15,12 @@
   },
   "author": "Robert Krahn",
   "license": "MIT",
-  "directories": {
-    "doc": "doc",
-    "test": "tests"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/LivelyKernel/lively.lang"
   },
   "keywords": [
-    "utilities"
+    "utilities", "LivelyWeb", "LivelyKernel"
   ],
   "bugs": {
     "url": "https://github.com/LivelyKernel/lively.lang/issues"
