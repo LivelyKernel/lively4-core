@@ -181,6 +181,95 @@ describe('arr', function() {
     expect(arr.zip([1,2,3], [4,5,6])).to.eql([[1,4],[2,5],[3,6]]);
   });
 
+  describe("async", function() {
+
+    var numbers = lively.lang.arr.range(1,10);
+    var rand = lively.lang.num.random;
+
+    describe("mapAsyncSeries()", function() {
+
+      it("iterates in order", function(done) {
+        lively.lang.arr.mapAsyncSeries(numbers, function(n, i, next) {
+          setTimeout(function() { next(null, i+1); }, rand(0,100));
+        }, function(err, result) {
+          expect(result).to.eql(numbers);
+          done();
+        });
+      });
+
+      it("catches errors", function(done) {
+        lively.lang.arr.mapAsyncSeries(numbers, function(n, i, next) {
+          if (i === 2) throw new Error("FOO!"); next();
+        }, function(err, result) {
+          expect(err.message).to.eql("FOO!");
+          done();
+        });
+      });
+
+      it("does not invoke callbacks multiple times", function(done) {
+        lively.lang.arr.mapAsyncSeries(numbers, function(n, i, next) {
+          if (i === 2) next(null, n);
+          setTimeout(lively.lang.fun.curry(next, null, n), 10);
+        }, function(err, result) {
+          expect(result).to.eql(numbers);
+          done();
+        });
+      });
+
+    });
+
+    describe("mapAsync()", function() {
+
+      it("maps asynchronously", function(done) {
+        lively.lang.arr.mapAsync(numbers,
+          function(n, i, next) { setTimeout(function() { next(null, n); }, rand(0,100)); },
+          function(err, result) {
+            expect(result).to.eql(numbers);
+            done();
+          });
+      });
+
+      it("does not invoke callbacks twice", function(done) {
+        lively.lang.arr.mapAsync(numbers,
+          function(n, i, next) {
+            setTimeout(function() { next(null, n); }, rand(0,100));
+            if (i == 2) next(null, n);
+          },
+          function(err, result) {
+            expect(result).to.eql(numbers);
+            done();
+          });
+      });
+
+      it("catches errors", function(done) {
+        lively.lang.arr.mapAsync(numbers,
+          function(n, i, next) {
+            if (i == 2) throw new Error("FOO!");
+            setTimeout(function() { next(null, n); }, rand(0,100));
+          },
+          function(err, result) {
+            expect(err.message).to.be("FOO!");
+            done();
+          });
+      });
+
+      it("can control the number of parallel iterator invocations", function(done) {
+        var maxInvocations = 0, invocations = 0;
+        lively.lang.arr.mapAsync(numbers, {parallel: 3},
+          function(n, i, next) {
+            invocations++;
+            maxInvocations = Math.max(maxInvocations, invocations);
+            setTimeout(function() { invocations--; next(null, n); }, rand(0,100));
+          },
+          function(err, result) {
+            expect(maxInvocations).to.be(3);
+            done();
+          });
+      })
+    });
+
+  });
+
 });
 
 
