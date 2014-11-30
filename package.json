@@ -1,11 +1,14 @@
 {
   "name": "lively.lang",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "JavaScript utils providing useful abstractions for working with collections, functions, objects",
   "main": "index.js",
   "dependencies": {},
   "devDependencies": {
     "expect.js": "*",
+    "grunt": "^0.4.5",
+    "grunt-contrib-concat": "^0.5.0",
+    "grunt-contrib-uglify": "^0.6.0",
     "http-server": "^0.7.2",
     "mocha": "*",
     "mocha-phantomjs": "*"
@@ -20,7 +23,9 @@
     "url": "https://github.com/LivelyKernel/lively.lang"
   },
   "keywords": [
-    "utilities", "LivelyWeb", "LivelyKernel"
+    "utilities",
+    "LivelyWeb",
+    "LivelyKernel"
   ],
   "bugs": {
     "url": "https://github.com/LivelyKernel/lively.lang/issues"
