@@ -138,4 +138,19 @@ describe('string', function() {
       });
     })
   });
+
+  describe("join paths", function() {
+    it("adds slash if necessary", function() {
+      expect(string.joinPath("foo", "bar")).to.equal("foo/bar");
+      expect(string.joinPath("foo", "bar", "baz")).to.equal("foo/bar/baz");
+      expect(string.joinPath("foo", "bar", "/baz")).to.equal("foo/bar/baz");
+      expect(string.joinPath("foo", "bar/", "/baz")).to.equal("foo/bar/baz");
+      expect(string.joinPath("/foo/", "/bar/", "/baz/")).to.equal("/foo/bar/baz/");
+    });
+
+    it("normalizes slashes", function() {
+      expect(string.joinPath("foo//", "///bar")).to.equal("foo/bar");
+    });
+  });
+
 });
