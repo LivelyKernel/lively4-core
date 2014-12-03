@@ -14,6 +14,7 @@ module.exports = function(grunt) {
               'lib/events.js',
               'lib/object.js',
               'lib/collection.js',
+              'lib/tree.js',
               'lib/function.js',
               'lib/string.js',
               'lib/number.js',
