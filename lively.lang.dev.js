@@ -172,7 +172,7 @@
     livelyLang.Path.type = livelyLang.PropertyPath;
     livelyLang.Path.prototype.serializeExpr = function () {
       // ignore-in-doc
-      return 'lively.PropertyPath(' + Objects.inspect(this.parts()) + ')';
+      return 'lively.PropertyPath(' + livelyLang.obj.inspect(this.parts()) + ')';
     }
 
     livelyLang.Closure.type = "lively.Closure";
@@ -2192,16 +2192,16 @@ var grid = exports.grid = {
 
     var g = grid.create(1000, 200, 1),
         addNum = 0;
-        t = Functions.timeToRunN(function() {
+        t = lively.lang.fun.timeToRunN(function() {
     grid.forEach(g, function(n) { addNum += n; }) }, 10);
-    results.push(Strings.format('grid.forEach: %ims', t));
+    results.push(exports.string.format('grid.forEach: %ims', t));
 
     var mapResult;
     t  = Functions.timeToRunN(function() {
       mapResult = grid.map(grid, function(n, i, j) {
         return i+j + Math.round(Math.random() * 100); });
     }, 10);
-    results.push(Strings.format('grid.map: %ims', t));
+    results.push(exports.string.format('grid.map: %ims', t));
 
     var mapResult2 = grid.create(1000, 2000);
     t  = Functions.timeToRunN(function() {
@@ -3285,7 +3285,7 @@ var fun = exports.fun = {
     }
     var proto = Object.getPrototypeOf(obj),
         mapping = {"this": obj};
-    if (optMapping) mapping = Object.merge([mapping, optMapping]);
+    if (optMapping) mapping = exports.obj.merge([mapping, optMapping]);
     if (proto && proto[name]) {
       var superFunc = function() {
         try {
@@ -3584,7 +3584,7 @@ Closure.prototype.parameterNames = function(methodString) {
   var parameterString = regexResult[1];
   if (parameterString.length == 0) return [];
   var parameters = parameterString.split(',').map(function(str) {
-    return Strings.removeSurroundingWhitespaces(str);
+    return exports.string.removeSurroundingWhitespaces(str);
   }, this);
   return parameters;
 }
@@ -3760,7 +3760,7 @@ var string = exports.string = {
       else return value.toString();
     }
 
-    function appendObject(value, string) { return Objects.inspect(value); }
+    function appendObject(value, string) { return exports.obj.inspect(value); }
 
     var appenderMap = {s: appendText, d: appendInteger, i: appendInteger, f: appendFloat, o: appendObject};
     var reg = /((^%|[^\\]%)(\d+)?(\.)([a-zA-Z]))|((^%|[^\\]%)([a-zA-Z]))/;
@@ -4445,7 +4445,7 @@ var string = exports.string = {
             consumed += splitted[1].length + 3 + 3;
           }
         } catch(e) {
-          throw new Error("Cannot create pattern re from: " + Objects.inspect(splitted))
+          throw new Error("Cannot create pattern re from: " + exports.obj.inspect(splitted))
         }
         if (splitted[2].length) { patterns.push(splitted[2]); }
         return patterns;
@@ -4487,7 +4487,7 @@ var string = exports.string = {
       return idx === -1 ? null : idx;
     } else if (needle.constructor === RegExp) {
       var matches = string.reMatches(s, needle);
-      return matches.last() ? matches.last().start : null;
+      return exports.arr.last(matches) ? exports.arr.last(matches).start : null;
     }
     return null;
   },
