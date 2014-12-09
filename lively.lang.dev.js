@@ -1208,7 +1208,7 @@ var arr = exports.arr = {
     // `filter` can be a String or RegExp. Will stringify each element in
     // Example:
     // ["Hello", "World", "Lively", "User"].grep("l") // => ["Hello","World","Lively"]
-    if (Object.isString(filter)) filter = new RegExp(filter, 'i');
+    if (typeof filter === 'string') filter = new RegExp(filter, 'i');
     return arr.filter(filter.test.bind(filter))
   },
 
