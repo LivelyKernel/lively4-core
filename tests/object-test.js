@@ -182,6 +182,23 @@ describe('obj', function() {
 
   });
 
+  describe("extract", function() {
+    it("it creates a new object from a list of properties", function() {
+      var obj1 = {foo: 23, bar: {x: 24}};
+      var obj2 = obj.extract(["foo", "bar", "baz"], obj1);
+      expect(obj1).to.not.equal(obj2);
+      expect(obj1).to.eql(obj2);
+      expect(obj2).to.not.have.property("baz");
+    });
+
+    it("it can map properties", function() {
+      var obj1 = {foo: 23, bar: {x: 24}};
+      var obj2 = obj.extract(["foo", "baz"],
+        obj1, function(k, val) { return val + 1; });
+      expect(obj2).to.eql({foo: 24});
+    });
+  });
+
   describe("inspect", function() {
     it("prints object representation", function() {
       expect(obj.inspect(obj1)).to.be(

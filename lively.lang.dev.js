@@ -443,6 +443,16 @@ var obj = exports.obj = {
       Array.prototype.slice.call(object) : exports.obj.extend({}, object);
   },
 
+  extract: function(properties, object, mapFunc) {
+    return properties.reduce(function(extracted, name) {
+      if (object.hasOwnProperty(name)) {
+        var val = mapFunc ? mapFunc(name, object[name]) : object[name];
+        extracted[name] = val;
+      }
+      return extracted;
+    }, {});
+  },
+
   // -=-=-=-=-=-
   // inspection
   // -=-=-=-=-=-
