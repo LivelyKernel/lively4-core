@@ -565,6 +565,19 @@ describe('fun', function() {
       }, 150)
     });
 
+    it("can replace a function for one call", function() {
+      var log = [],
+          orig = function() { log.push("orig"); },
+          replacement = function() { log.push("replacement"); },
+          obj = {m: orig};
+      fun.replaceMethodForOneCall(obj, "m", replacement);
+      obj.m();
+      obj.m();
+      obj.m();
+      expect(log).to.eql(["replacement", "orig", "orig"]);
+      expect(obj.m).to.equal(orig);
+    });
+
   });
 
   describe("function creation", function() {
