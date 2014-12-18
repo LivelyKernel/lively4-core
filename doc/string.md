@@ -20,6 +20,7 @@ String utility methods for printing, parsing, and converting strings.
   - [tableize](#string-tableize)
   - [unescapeCharacterEntities](#string-unescapeCharacterEntities)
   - [toQueryParams](#string-toQueryParams)
+  - [joinPath](#string-joinPath)
   - [newUUID](#string-newUUID)
   - [createDataURI](#string-createDataURI)
   - [hashCode](#string-hashCode)
@@ -236,6 +237,16 @@ string.unescapeCharacterEntities("foo &amp;&amp; bar") // => "foo && bar"
 ```js
 string.toQueryParams("http://example.com?foo=23&bar=test")
   // => {bar: "test", foo: "23"}
+```
+
+#### <a name="string-joinPath"></a>string.joinPath()
+
+ Joins the strings passed as paramters together so that ea string is
+ connected via a single "/".
+ 
+
+```js
+string.joinPath("foo", "bar") // => "foo/bar";
 ```
 
 #### <a name="string-newUUID"></a>string.newUUID()

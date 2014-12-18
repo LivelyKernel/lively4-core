@@ -72,6 +72,8 @@ abstractions for groups, intervals, grids.
   - [min](#arr-min)
   - [sum](#arr-sum)
   - [clone](#arr-clone)
+  - [mapAsyncSeries](#arr-mapAsyncSeries)
+  - [mapAsync](#arr-mapAsync)
 - [Group](#Group)
   - [fromArray](#Group-fromArray)
 - [Group.prototype](#Group.prototype)
@@ -600,6 +602,26 @@ var array = [{x:3,y:2}, {x:5,y:1}, {x:1,y:5}];
 #### <a name="arr-clone"></a>arr.clone(array)
 
  shallow copy
+
+#### <a name="arr-mapAsyncSeries"></a>arr.mapAsyncSeries(array, iterator, callback)
+
+ Apply `iterator` over `array`. Unlike `mapAsync` the invocation of
+ the iterator happens step by step in the order of the items of the array
+ and not concurrently.
+
+#### <a name="arr-mapAsync"></a>arr.mapAsync(array, options, iterator, callback)
+
+ Apply `iterator` over `array`. In each iterator gets a callback as third
+ argument that should be called when the iteration is done. After all
+ iterators have called their callbacks, the main `callback` function is
+ invoked with the result array.
+ 
+
+```js
+lively.lang.arr.mapAsync([1,2,3,4],
+  function(n, i, next) { setTimeout(function() { next(null, n + i); }, 20); },
+  function(err, result) { /* result => [1,3,5,7] */ });
+```
 
 ### <a name="Group"></a>Group
 

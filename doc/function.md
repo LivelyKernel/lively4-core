@@ -33,6 +33,7 @@ control flows.
   - [wrap](#fun-wrap)
   - [getOriginal](#fun-getOriginal)
   - [wrapperChain](#fun-wrapperChain)
+  - [replaceMethodForOneCall](#fun-replaceMethodForOneCall)
   - [once](#fun-once)
   - [either](#fun-either)
   - [eitherNamed](#fun-eitherNamed)
@@ -347,6 +348,18 @@ wrapped(3,4) // => 7 and a message will pop up
  -> cop wrapper -> real method.
  tThis method gives access to the linked list starting with the outmost
  wrapper.
+
+#### <a name="fun-replaceMethodForOneCall"></a>fun.replaceMethodForOneCall(obj, methodName, replacement)
+
+ Change an objects method for a single invocation.
+ 
+
+```js
+var obj = {foo: function() { return "foo"}};
+lively.lang.fun.replaceMethodForOneCall(obj, "foo", function() { return "bar"; });
+obj.foo(); // => "bar"
+obj.foo(); // => "foo"
+```
 
 #### <a name="fun-once"></a>fun.once(func)
 
