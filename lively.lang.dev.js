@@ -1441,15 +1441,13 @@ var arr = exports.arr = {
     // Example:
     // arr.sortBy(["Hello", "Lively", "User"], function(ea) {
     //   return ea.charCodeAt(ea.length-1); }) // => ["Hello","User","Lively"]
-    return array.map(function(value, index) {
-      return {
-        value: value,
-        criteria: iterator.call(context, value, index)
-      };
-    }).sort(function(left, right) {
-      var a = left.criteria, b = right.criteria;
-      return a < b ? -1 : a > b ? 1 : 0;
-    }).pluck('value');
+    return arr.pluck(
+      array.map(function(value, index) {
+        return {value: value,criteria: iterator.call(context, value, index)};
+      }).sort(function(left, right) {
+        var a = left.criteria, b = right.criteria;
+        return a < b ? -1 : a > b ? 1 : 0;
+      }), 'value');
   },
 
   sortByKey: function(array, key) {
@@ -1458,6 +1456,10 @@ var arr = exports.arr = {
     // // => [{x: 2},{x: 3},{x: 8}]
     return arr.sortBy(array, function(ea) { return ea[key]; });
   },
+
+  reverse: function(array) { return array.reverse(); },
+
+  reversed: function(array) { return arr.clone(array).reverse(); },
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-
   // RegExp / String matching
