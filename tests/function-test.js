@@ -431,6 +431,15 @@ describe('fun', function() {
       };
     });
 
+    it("compose async does not need end callback", function(done) {
+      var aNext;
+      fun.composeAsync(
+        function a(next) { aNext = next; next(); }
+      )(undefined);
+      expect(aNext).to.be.a("function");
+      done();
+    });
+
   });
 
   describe("waitForAll", function() {
