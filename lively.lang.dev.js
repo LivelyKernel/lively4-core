@@ -2542,6 +2542,18 @@ var arrayProjection = exports.arrayProjection = {
 
 var tree = exports.tree = {
 
+  prewalk: function(treeNode, iterator, childGetter) {
+    iterator(treeNode);
+    (childGetter(treeNode) || []).forEach(function(ea) {
+      tree.prewalk(ea, iterator, childGetter); });
+  },
+
+  postwalk: function(treeNode, iterator, childGetter) {
+    (childGetter(treeNode) || []).forEach(function(ea) {
+      tree.postwalk(ea, iterator, childGetter); });
+    iterator(treeNode);
+  },
+
   detect: function(treeNode, testFunc, childGetter) {
     // Traverses a `treeNode` recursively and returns the first node for which
     // `testFunc` returns true. `childGetter` is a function to retrieve the
@@ -2572,8 +2584,17 @@ var tree = exports.tree = {
     return result.concat(
       exports.arr.flatten((childGetter(treeNode) || []).map(function(n) {
         return tree.map(n, mapFunc, childGetter); })));
-  }
+  },
 
+  
+  mapTree: function(treeNode, mapFunc, childGetter) {
+    // Traverses the tree and creates a structurally identical tree but with
+    // mapped nodes
+    var mappedNodes = (childGetter(treeNode) || []).map(function(n) {
+      return tree.mapTree(n, mapFunc, childGetter);
+    })
+    return mapFunc(treeNode, mappedNodes);
+  },
 }
 
 })(typeof lively !== 'undefined' && lively.lang ? lively.lang : require('./base'));
@@ -2758,7 +2779,7 @@ var fun = exports.fun = {
     // and run a subsequent function afterwards. When you pass arguments to the
     // debounced functions then the arguments from the last call will be use for
     // the invocation.
-    // 
+    //
     // With `immediate` set to true, immediately call `func` but when called again during `wait` before
     // wait ms are done nothing happens. E.g. to not exec a user invoked
     // action twice accidentally.
@@ -2985,7 +3006,17 @@ var fun = exports.fun = {
       var nextActivated = false;
       return function() {
         var args = toArray.call(arguments);
-        if (!endCallback) endCallback = args.length === 0 ? function() {} : args.pop();
+
+        // ignore-in-doc
+        // the last arg needs to be function, discard all non-args
+        // following it. This allows to have an optional callback func that can
+        // even be `undefined`, e.g. when calling this func from a callsite
+        // using var args;
+        if (!endCallback) {
+          while (args.length && typeof args[args.length-1] !== 'function') args.pop();
+          endCallback = typeof args[args.length-1] === 'function' ?
+            args.pop() : function() {};
+        }
 
         function next(/*err and args*/) {
           nextActivated = true;
@@ -3001,7 +3032,7 @@ var fun = exports.fun = {
           console.error('composeAsync: ', e.stack || e);
           !nextActivated && endCallback && endCallback(e);
         }
-      }
+      };
     }, function() {
       endCallback.apply(
         null,
@@ -3125,7 +3156,7 @@ var fun = exports.fun = {
     // Example:
     // var add1 = (function(a, b) { return a + b; }).curry(1);
     // add1(3) // => 4
-    
+
     if (arguments.length <= 1) return arguments[0];
     var args = Array.prototype.slice.call(arguments),
         func = args.shift();
@@ -3217,11 +3248,11 @@ var fun = exports.fun = {
     // Accepts multiple functions and returns an array of wrapped
     // functions. Those wrapped functions ensure that only one of the original
     // function is run (the first on to be invoked).
-    // 
+    //
     // This is useful if you have multiple asynchronous choices of how the
     // control flow might continue but want to ensure that a continuation
     // is  only triggered once, like in a timeout situation:
-    // 
+    //
     // ```js
     // function outerFunction(callback) {
     //   function timeoutAction() { callback(new Error('timeout!')); }
@@ -3230,15 +3261,15 @@ var fun = exports.fun = {
     //   doSomethingAsync(otherAction);
     // }
     // ```
-    // 
+    //
     // To ensure that `callback` only runs once you would normally have to write boilerplate like this:
-    // 
+    //
     // ```js
     // var ran = false;
     // function timeoutAction() { if (ran) return; ran = true; callback(new Error('timeout!')); }
     // function otherAction() { if (ran) return; ran = true; callback(null, "All OK"); }
     // ```
-    // 
+    //
     // Since this can get tedious an error prone, especially if more than two choices are involved, `either` can be used like this:
     // Example:
     // function outerFunction(callback) {
@@ -3532,7 +3563,7 @@ function Closure() {
   // aspect.
   //
   // Typically closures aren't created directly but with the help of [`asScriptOf`](#)
-  // 
+  //
   // Example:
   // function func(a) { return a + b; }
   // var closureFunc = Closure.fromFunction(func, {b: 3}).recreateFunc();
