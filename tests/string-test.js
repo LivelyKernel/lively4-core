@@ -28,6 +28,12 @@ describe('string', function() {
     expect(-1).to.equal(lookupFunc(99),"char pos: 9");
   });
 
+  it("finds index range for line", function() {
+    var s = 'test\n123\nfo\nbarbaz\nzork\n';
+    var lookupFunc = string.lineNumberToIndexesComputer(s);
+    expect(lookupFunc(1)).to.eql([5,9]);
+  });
+
   it("findParagraphs", function() {
     var tests = [
       {string: 'foo', expected: ['foo']},
