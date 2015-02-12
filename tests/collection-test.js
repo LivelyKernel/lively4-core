@@ -80,6 +80,7 @@ describe('arr', function() {
   	expect(arr.partition(arr.range(0,10), function(n) { return n % 2 === 0 }))
     .to.eql([[0,2,4,6,8,10], [1,3,5,7,9]]);
   });
+
   it('groupBy', function() {
     var elts = [{a: 'foo', b: 1},
                 {a: 'bar', b: 2},
@@ -158,6 +159,11 @@ describe('arr', function() {
 
   it("delimWith", function() {
     expect(arr.delimWith(["test", "abc", 444], "aha")).to.eql(["test","aha","abc","aha",444]);
+  });
+  
+  it("flatmaps", function() {
+    var result = arr.flatmap([1,2,3], function(ea, i) { return lively.lang.arr.withN(i+1, ea) });
+    expect(result).to.eql([1,2,2,3,3,3]);
   });
 
   it('histogram', function() {

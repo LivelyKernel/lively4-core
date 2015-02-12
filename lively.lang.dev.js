@@ -1334,11 +1334,24 @@ var arr = exports.arr = {
     }, []);
   },
 
-  delimWith: function(array, delim) {
+  flatmap: function(array, it, ctx) {
+    return Array.prototype.concat.apply([], array.map(it, ctx));
+  },
+
+  interpose: function(array, delim) {
+    // Injects delim between elements of array
+    // Example:
+    // lively.lang.arr.interpose(["test", "abc", 444], "aha"));
+    // // => ["test","aha","abc","aha",444]
     return array.reduce(function(xs, x) {
       if (xs.length > 0) xs.push(delim)
       xs.push(x); return xs;
     }, []);
+  },
+
+  delimWith: function(array, delim) {
+    // ignore-in-doc
+    return arr.interpose(array, delim);
   },
 
   // -=-=-=-=-
