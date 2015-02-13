@@ -2695,7 +2695,7 @@ var fun = exports.fun = {
     } else if (f.declaredObject) {
       objString += f.declaredObject + '.';
     }
-    return objString + (f.methodName || f.displayNameName || f.name || "anonymous");
+    return objString + (f.methodName || f.displayName || f.name || "anonymous");
   },
 
   extractBody: function(func) {
