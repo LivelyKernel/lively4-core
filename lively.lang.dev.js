@@ -265,7 +265,10 @@ var events = exports.events = {
   }
 };
 
-})(typeof lively !== 'undefined' && lively.lang ? lively.lang : require('./base'));
+})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+  require('./base') :
+  (typeof lively !== "undefined" && lively.lang ?
+     lively.lang : {}));
 ;/*global*/
 
 /*
@@ -1036,7 +1039,10 @@ obj.extend(Path.prototype, {
 
 });
 
-})(typeof lively !== 'undefined' && lively.lang ? lively.lang : require('./base'));
+})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+  require('./base') :
+  (typeof lively !== "undefined" && lively.lang ?
+     lively.lang : {}));
 ;
 /*
  * Methods to make working with arrays more convenient and collection-like
@@ -2545,7 +2551,10 @@ var arrayProjection = exports.arrayProjection = {
   }
 }
 
-})(typeof lively !== 'undefined' && lively.lang ? lively.lang : require('./base'));
+})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+  require('./base') :
+  (typeof lively !== "undefined" && lively.lang ?
+     lively.lang : {}));
 ;
 /*
  * Methods for traversing and transforming tree structures.
@@ -2610,7 +2619,10 @@ var tree = exports.tree = {
   },
 }
 
-})(typeof lively !== 'undefined' && lively.lang ? lively.lang : require('./base'));
+})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+  require('./base') :
+  (typeof lively !== "undefined" && lively.lang ?
+     lively.lang : {}));
 ;/*global clearTimeout, setTimeout*/
 
 /*
@@ -3798,7 +3810,10 @@ Closure.fromSource = function(source, varMapping) {
   return new Closure(null, varMapping || {}, source);
 }
 
-})(typeof lively !== 'undefined' && lively.lang ? lively.lang : require('./base'));
+})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+  require('./base') :
+  (typeof lively !== "undefined" && lively.lang ?
+     lively.lang : {}));
 ;/*global*/
 
 // String utility methods for printing, parsing, and converting strings.
@@ -4733,7 +4748,10 @@ var string = exports.string = {
 
 }
 
-})(typeof lively !== 'undefined' && lively.lang ? lively.lang : require('./base'));
+})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+  require('./base') :
+  (typeof lively !== "undefined" && lively.lang ?
+     lively.lang : {}));
 ;/*
  * Utility functions for JS Numbers.
  */
@@ -4900,7 +4918,10 @@ var num = exports.num = {
 
 }
 
-})(typeof lively !== 'undefined' && lively.lang ? lively.lang : require('./base'));
+})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+  require('./base') :
+  (typeof lively !== "undefined" && lively.lang ?
+     lively.lang : {}));
 ;/*
  * Util functions to print and work with JS date objects.
  */
@@ -5117,7 +5138,10 @@ exports.date = {
 
 };
 
-})(typeof lively !== 'undefined' && lively.lang ? lively.lang : require('./base'));
+})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+  require('./base') :
+  (typeof lively !== "undefined" && lively.lang ?
+     lively.lang : {}));
 ;/*global process, global*/
 
 /*
@@ -5557,7 +5581,10 @@ exports.class
   }
 }
 
-})(typeof lively !== 'undefined' && lively.lang ? lively.lang : require('./base'));
+})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+  require('./base') :
+  (typeof lively !== "undefined" && lively.lang ?
+     lively.lang : {}));
 ;/*global clearTimeout, setTimeout, clearInterval, setInterval*/
 
 /*
@@ -6030,7 +6057,10 @@ var messenger = exports.messenger = {
 
 };
 
-})(typeof lively !== 'undefined' && lively.lang ? lively.lang : require('./base'));
+})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+  require('./base') :
+  (typeof lively !== "undefined" && lively.lang ?
+     lively.lang : {}));
 ;/*global require, Worker, URL, webkitURL, Blob, BlobBuilder, process, require*/
 
 /*
@@ -6633,6 +6663,9 @@ var worker = exports.worker = {
   }
 }
 
-})(typeof lively !== 'undefined' && lively.lang ? lively.lang : require('./base'));
+})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+  require('./base') :
+  (typeof lively !== "undefined" && lively.lang ?
+     lively.lang : {}));
 
 //# sourceMappingURL=lively.lang.dev.js.map
