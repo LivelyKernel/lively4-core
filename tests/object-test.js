@@ -203,9 +203,9 @@ describe('obj', function() {
     it("prints object representation", function() {
       expect(obj.inspect(obj1)).to.be(
            "{\n"
-         + "  bar: [2,{\n"
-         + "    x: \"'test'\"\n"
-         + "  }],\n"
+         + "  bar: [2, {\n"
+         + "      x: \"'test'\"\n"
+         + "    }],\n"
          + "  baz: \"--baz getter--\",\n"
          + "  foo: 23,\n"
          + "  method: function(arg1,arg2) {/*...*/}\n"
