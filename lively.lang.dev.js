@@ -1999,6 +1999,9 @@ var arr = exports.arr = {
       options = null;
     }
     options = options || {};
+    
+    if (!array.length) return callback && callback(null, []);
+    
     if (!options.parallel) options.parallel = Infinity;
 
     var results = [], completed = [],
