@@ -244,6 +244,12 @@ describe('arr', function() {
           });
       });
 
+      it("maps asynchronously empty list", function(done) {
+        lively.lang.arr.mapAsync([],
+          function(n, i, next) { setTimeout(function() { next(null, n); }, rand(0,100)); },
+          function(err, result) { expect(result).to.eql([]); done(); });
+      });
+
       it("does not invoke callbacks twice", function(done) {
         lively.lang.arr.mapAsync(numbers,
           function(n, i, next) {

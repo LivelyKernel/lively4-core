@@ -496,7 +496,7 @@ var obj = exports.obj = {
 
     var printedProps = [];
     if (isArray) {
-      printedProps = object.map(function(ea) { return inspect(ea, options, depth); });
+      printedProps = object.map(function(ea) { return inspect(ea, options, depth + 1); });
     } else {
       printedProps = Object.keys(object)
         .sort(function(a, b) {
@@ -519,15 +519,16 @@ var obj = exports.obj = {
 
     if (printedProps.length === 0) { return openBr + closeBr; }
 
-    var printedPropsJoined = printedProps.join(','),
-        useNewLines = !isArray
+    var printedPropsJoined = printedProps.join(', '),
+        useNewLines = (!isArray || options.newLineInArrays)
           && (!options.minLengthForNewLine
           || printedPropsJoined.length >= options.minLengthForNewLine),
         ind = indent('', options.indent || '  ', depth),
         propIndent = indent('', options.indent || '  ', depth + 1),
-        startBreak = useNewLines ? '\n' + propIndent: '',
-        endBreak = useNewLines ? '\n' + ind : '';
-    if (useNewLines) printedPropsJoined = printedProps.join(',' + startBreak);
+        startBreak = useNewLines && !isArray ? '\n' + propIndent : '',
+        eachBreak = useNewLines ? '\n' + propIndent : '',
+        endBreak = useNewLines && !isArray ? '\n' + ind : '';
+    if (useNewLines) printedPropsJoined = printedProps.join(',' + eachBreak);
     return openBr + startBreak + printedPropsJoined + endBreak + closeBr;
   },
 
