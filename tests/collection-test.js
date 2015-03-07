@@ -235,6 +235,15 @@ describe('arr', function() {
           });
       });
 
+      it("maps asynchronously one elem", function(done) {
+        lively.lang.arr.mapAsync([1],
+          function(n, i, next) { setTimeout(function() { next(null, n); }, rand(0,100)); },
+          function(err, result) {
+            expect(result).to.eql([1]);
+            done();
+          });
+      });
+
       it("does not invoke callbacks twice", function(done) {
         lively.lang.arr.mapAsync(numbers,
           function(n, i, next) {

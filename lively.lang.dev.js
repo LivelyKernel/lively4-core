@@ -1998,7 +1998,7 @@ var arr = exports.arr = {
       options = null;
     }
     options = options || {};
-    if (!options.parallel) options.parallel = array.length-1;
+    if (!options.parallel) options.parallel = Infinity;
 
     var results = [], completed = [],
         callbackTriggered = false,
