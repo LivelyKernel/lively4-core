@@ -121,6 +121,7 @@ worker (if the platform you use it on supports it).
 
 <!---API_GENERATED_END--->
 
+<!---
 ## Usage
 TODO
 
@@ -129,6 +130,7 @@ TODO
 
 ### node.js
 TODO
+--->
 
 ## License
 
