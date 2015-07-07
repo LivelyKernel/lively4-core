@@ -1,4 +1,4 @@
-define(function module(foo, bar) {
+define(function module() {
 
   var NumExpr = function() { this.initialize.apply(this, arguments); };
 
