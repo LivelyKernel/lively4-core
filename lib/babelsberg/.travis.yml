@@ -1,0 +1,20 @@
+language: node_js
+
+env:
+  matrix:
+    - TYPE=Lively
+    - TYPE=Standalone
+    - TYPE=lint
+
+node_js:
+  - "0.10"
+
+before_install:
+  - "chromium-browser --version"
+  - "sudo chmod 1777 /dev/shm"
+
+before_script:
+  - "nvm use v0.10"
+  - "chmod +x $TRAVIS_BUILD_DIR/travis.sh"
+
+script: "$TRAVIS_BUILD_DIR/travis.sh"

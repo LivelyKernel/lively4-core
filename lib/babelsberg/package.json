@@ -1,0 +1,22 @@
+{
+    "author": "The Babelsberg Team",
+    "name": "babelsberg-js",
+    "description": "The JavaScript implementation of Babelsberg",
+    "version": "0.1.0",
+    "homepage": "https://babelsberg.github.io/babelsberg-js",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/babelsberg/babelsberg-js.git"
+    },
+    "main": "core/lively/bootstrap.js",
+    "dependencies": {},
+    "scripts": {
+        "test": "bin/test.sh",
+        "start": "bin/start.sh"
+    },
+    "devDependencies": {
+        "jsdoc": "<=3.3.0",
+        "zombie": "<3.0"
+    },
+    "optionalDependencies": {}
+}

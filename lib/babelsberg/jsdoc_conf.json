@@ -1,0 +1,37 @@
+{
+	"source": {
+		"include": [
+			"babelsberg",
+			"csp",
+			"layout",
+			"standalone"
+		],
+		"exclude": [
+			"cassowary",
+			"cop",
+			"csp/underscore-min.js",
+			"deltablue",
+			"jsinterpreter",
+			"layout/sinon.js",
+			"ohshima",
+			"ometa",
+			"PartsBin",
+			"standalone/prototype.js",
+			"standalone/examples/cassowary/fabric.js",
+			"standalone/examples/csp/d3.v3.min.js",
+			"standalone/examples/csp/queue.v1.min.js",
+			"z3"
+		],
+		"includePattern": ".+\\.js$"
+	},
+	"plugins": [ "plugins/markdown" ],
+	"markdown": {
+		"parser": "gfm",
+		"hardwrap": true
+	},
+	"opts": {
+		"recurse": true,
+		"tutorials": "tutorials"
+	}
+}
+

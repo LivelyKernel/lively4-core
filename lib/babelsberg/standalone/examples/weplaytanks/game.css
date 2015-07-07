@@ -1,0 +1,30 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+
+html,body {
+    background-color: #080808;
+    color: #fff;
+    font-family: helvetica, arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    font-size: 14pt;
+}
+
+canvas {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    margin: auto;
+    border: 1px solid #333;
+    -webkit-transition: all 0.3s;
+    -moz-transition: all 0.3s;
+    box-sizing: content-box !important;
+}
+
+#bloobCanvas.borderHidden{
+    border: 0px solid #333;
+}
