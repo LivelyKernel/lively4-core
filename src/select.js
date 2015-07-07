@@ -2,6 +2,7 @@ define(function module(require) {
 
 var pushIfMissing = require('./utils').pushIfMissing;
 var removeIfExisting = require('./utils').removeIfExisting;
+var Stack = require('./utils').Stack;
 
 cop.create('SelectionLayer')
     .refineObject(users.timfelgentreff.jsinterpreter, {
@@ -101,21 +102,6 @@ users.timfelgentreff.jsinterpreter.InterpreterVisitor.subclass('SelectionInterpr
         return typeof(fn.forInterpretation) == 'function';
     }
 });
-
-var Stack = function() {
-    this.arr = [];
-};
-Stack.prototype.push = function(el) {
-    this.arr.push(el);
-};
-
-Stack.prototype.pop = function() {
-    this.arr.length--;
-};
-
-Stack.prototype.top = function() {
-    return this.arr.last();
-};
 
 var Selection = function() { this.initialize.apply(this, arguments); };
 

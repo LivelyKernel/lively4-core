@@ -29,9 +29,25 @@ var removeIfExisting = function(array, item) {
     return false;
 };
 
+var Stack = function() {
+    this.arr = [];
+};
+Stack.prototype.push = function(el) {
+    this.arr.push(el);
+};
+
+Stack.prototype.pop = function() {
+    this.arr.length--;
+};
+
+Stack.prototype.top = function() {
+    return this.arr.last();
+};
+
 return {
     pushIfMissing: pushIfMissing,
-    removeIfExisting: removeIfExisting
+    removeIfExisting: removeIfExisting,
+    Stack: Stack
 };
 
 });
