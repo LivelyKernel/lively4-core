@@ -14,12 +14,9 @@ define(function module(require) { "use strict"
     // explicitly adding or removing objects to the set
     addToBaseSet: function(item) {
       return this.safeAdd(item);
-      return pushIfMissing(this.items, item);
-      return this.set.add(item);
     },
     removeFromBaseSet: function(item) {
       return this.safeRemove(item);
-      return this.set.delete(item);
     },
 
     safeAdd: function(item) {
@@ -35,6 +32,12 @@ define(function module(require) { "use strict"
         console.log('removed from selection', item);
         this.downstream.forEach(function(ea) { ea.destroyItemFromUpstream(item); });
       }
+    },
+    /**
+     *  Get persistent version of the current state of the Selection.
+     */
+    now: function() {
+      return this.items.slice();
     }
   });
 

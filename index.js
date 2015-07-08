@@ -15,21 +15,25 @@ define(function module(require) { "use strict"
 
   withLogging.call(AddExpr);
 
+  var seventeen = new NumExpr(17);
+  var adExpr = new AddExpr(
+    new NegExpr(
+      seventeen
+    ),
+    new NumExpr(42)
+  )
+
   var threshold = 10;
   var selection = select(AddExpr, function(expr) {
     return expr.result() > threshold;
   });
 
+  errorIfFalse(selection.size() === 1);
+
   var five = new NumExpr(5);
-  var seventeen = new NumExpr(17);
   var expr = new AddExpr(
     five,
-    new AddExpr(
-      new NegExpr(
-        seventeen
-      ),
-      new NumExpr(42)
-    )
+    adExpr
   );
   errorIfFalse(expr.result() === 30);
   errorIfFalse(selection.size() === 2);

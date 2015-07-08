@@ -125,16 +125,27 @@ users.timfelgentreff.jsinterpreter.InterpreterVisitor.subclass('SelectionInterpr
     }
 });
 
+/**
+ * each Selection has a incoming slot of items and an outgoing slot of items.
+ * () => ()
+ * by defining functions in between, we could achieve maps, filters and so on.
+ */
 BaseSet.subclass('Selection', {
     initialize: function($super, baseSet, expression, context) {
         $super();
 
-        //this.baseSet = baseSet;
-        baseSet.downstream.push(this);
         this.expression = expression;
         this.expression.varMapping = context;
 
         this.selectionItems = [];
+
+        this.initializeUsingUpstreamSet(baseSet);
+    },
+    initializeUsingUpstreamSet: function(baseSet) {
+        baseSet.downstream.push(this);
+        baseSet.now().forEach(function(item) {
+            this.newItemFromUpstream(item);
+        }, this);
     },
     newItemFromUpstream: function(item) {
         this.trackItem(item);
@@ -143,6 +154,12 @@ BaseSet.subclass('Selection', {
         if(this.expression(item)) {
             this.safeAdd(item);
         }
+
+        if(this.selectionItems.any(function(selectionItem) {
+            return selectionItem.item === item;
+        })) {
+            throw Error('Item already tracked', item);
+        };
 
         var selectionItem = new SelectionItem(this, item);
 
