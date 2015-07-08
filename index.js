@@ -63,4 +63,9 @@ define(function module(require) { "use strict"
   console.log('Size of Selection', selection.size());
   errorIfFalse(expr2.result() === 11);
   errorIfFalse(selection.size() === 1);
+
+  expr2.destroy();
+  expr2.destroy();
+  console.log('Size of Selection', selection.size());
+  errorIfFalse(selection.size() === 0);
 });

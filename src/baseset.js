@@ -7,12 +7,12 @@ define(function module(require) { "use strict"
       this.set = new Set();
       this.downstream = [];
     },
-    add: function(item) {
-      this.downstream.forEach(function(ea) { ea.newItem(item); });
+    addToBaseSet: function(item) {
+      this.downstream.forEach(function(ea) { ea.newItemFromUpstream(item); });
       return this.set.add(item);
     },
-    delete: function(item) {
-      this.downstream.forEach(function(ea) { ea.destroyItem(item); });
+    removeFromBaseSet: function(item) {
+      this.downstream.forEach(function(ea) { ea.destroyItemFromUpstream(item); });
       return this.set.delete(item);
     }
   });

@@ -131,33 +131,48 @@ Object.subclass('Selection', {
         this.expression.varMapping = context;
 
         this.items = [];
-        this.selectionItems = new Set();
+        this.selectionItems = [];
     },
-    newItem: function(item) {
+    newItemFromUpstream: function(item) {
         this.trackItem(item);
     },
     trackItem: function(item) {
         if(this.expression(item)) {
-            this.items.push(item);
+            this.safeAdd(item);
         }
 
         var selectionItem = new SelectionItem(this, item);
 
-        this.selectionItems.add(selectionItem);
+        this.selectionItems.push(selectionItem);
 
         selectionItem.installListeners();
     },
-    destroyItem: function(item) { /* TODO */ },
+    destroyItemFromUpstream: function(item) {
+        var selectionItem = this.selectionItems.find(function(selectionItem) {
+            return selectionItem.item === item;
+        });
 
+        if(!selectionItem) {
+            console.warn('remove non-existing item from upstream', item, this);
+            return;
+        }
+
+        selectionItem.removeListeners();
+
+        var gotRemoved = removeIfExisting(this.selectionItems, selectionItem);
+        if(gotRemoved) { console.log('removed via baseset', item); }
+
+        this.safeRemove(selectionItem.item);
+    },
     safeAdd: function(item) {
         var wasNewItem = pushIfMissing(this.items, item);
         /* TODO: push changes downstream if necessary */
-        if(wasNewItem) { console.log('added', item); }
+        if(wasNewItem) { console.log('added to selection', item); }
     },
     safeRemove: function(item) {
         var gotRemoved = removeIfExisting(this.items, item);
         /* TODO: push changes downstream if necessary */
-        if(gotRemoved) { console.log('removed', item); }
+        if(gotRemoved) { console.log('removed from selection', item); }
     },
     size: function() { return this.items.length; }
 });
@@ -207,7 +222,7 @@ Object.subclass('SelectionItem', {
     }
 });
 
-    var select = function(Class, expression, context) {
+var select = function(Class, expression, context) {
     return new Selection(Class.__livingSet__, expression, context);
 };
 
