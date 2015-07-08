@@ -123,48 +123,48 @@ users.timfelgentreff.jsinterpreter.InterpreterVisitor.subclass('SelectionInterpr
     }
 });
 
-var Selection = function() { this.initialize.apply(this, arguments); };
+Object.subclass('Selection', {
+    initialize: function(baseSet, expression, context) {
+        //this.baseSet = baseSet;
+        baseSet.downstream.push(this);
+        this.expression = expression;
+        this.expression.varMapping = context;
+
+        this.items = [];
+        this.selectionItems = new Set();
+    },
+    newItem: function(item) {
+        this.trackItem(item);
+    },
+    trackItem: function(item) {
+        if(this.expression(item)) {
+            this.items.push(item);
+        }
+
+        var selectionItem = new SelectionItem(this, item);
+
+        this.selectionItems.add(selectionItem);
+
+        selectionItem.installListeners();
+    },
+    destroyItem: function(item) { /* TODO */ },
+
+    safeAdd: function(item) {
+        var wasNewItem = pushIfMissing(this.items, item);
+        /* TODO: push changes downstream if necessary */
+        if(wasNewItem) { console.log('added', item); }
+    },
+    safeRemove: function(item) {
+        var gotRemoved = removeIfExisting(this.items, item);
+        /* TODO: push changes downstream if necessary */
+        if(gotRemoved) { console.log('removed', item); }
+    },
+    size: function() { return this.items.length; }
+});
 
 Selection.stack = new Stack();
 Selection.current = function() { return Selection.stack.top(); };
-
-Selection.prototype.initialize = function(baseSet, expression, context) {
-    //this.baseSet = baseSet;
-    baseSet.downstream.push(this);
-    this.expression = expression;
-    this.expression.varMapping = context;
-
-    this.items = [];
-    this.selectionItems = new Set();
-};
-Selection.prototype.newItem = function(item) {
-    this.trackItem(item);
-};
-Selection.prototype.trackItem = function(item) {
-    if(this.expression(item)) {
-        this.items.push(item);
-    }
-
-    var selectionItem = new SelectionItem(this, item);
-
-    this.selectionItems.add(selectionItem);
-
-    selectionItem.installListeners();
-};
-Selection.prototype.destroyItem = function(item) { /* TODO */ };
-
-Selection.prototype.safeAdd = function(item) {
-    var wasNewItem = pushIfMissing(this.items, item);
-    /* TODO: push changes downstream if necessary */
-    if(wasNewItem) { console.log('added', item); }
-};
-Selection.prototype.safeRemove = function(item) {
-    var gotRemoved = removeIfExisting(this.items, item);
-    /* TODO: push changes downstream if necessary */
-    if(gotRemoved) { console.log('removed', item); }
-};
-Selection.prototype.size = function() { return this.items.length; };
-Selection.prototype.withOnStack = function(el, callback, context) {
+Selection.withOnStack = function(el, callback, context) {
     Selection.stack.push(el);
     try {
         callback.call(context);
@@ -173,39 +173,41 @@ Selection.prototype.withOnStack = function(el, callback, context) {
     }
 };
 
-SelectionItem = function(selection, item) {
-    this.selection = selection;
+Object.subclass('SelectionItem', {
+    initialize: function(selection, item) {
+        this.selection = selection;
 
-    this.callback = (function() {
-        console.log('check');
-        if(this.expression(item)) {
-            this.safeAdd(item);
-        } else {
-            this.safeRemove(item);
-        }
-    }).bind(selection);
+        this.callback = (function() {
+            console.log('check');
+            if(this.expression(item)) {
+                this.safeAdd(item);
+            } else {
+                this.safeRemove(item);
+            }
+        }).bind(selection);
 
-    this.item = item;
-    this.propertyAccessors = new Set();
-};
+        this.item = item;
+        this.propertyAccessors = new Set();
+    },
 
-SelectionItem.prototype.installListeners = function() {
-    var item = this.item;
-    this.selection.withOnStack(this, function() {
-        cop.withLayers([SelectionLayer], (function() {
-            this.expression.forInterpretation().apply(null, [item]);
-        }).bind(this));
-    }, this.selection);
-};
+    installListeners: function() {
+        var item = this.item;
+        Selection.withOnStack(this, function() {
+            cop.withLayers([SelectionLayer], (function() {
+                this.expression.forInterpretation().apply(null, [item]);
+            }).bind(this));
+        }, this.selection);
+    },
 
-SelectionItem.prototype.removeListeners = function() {
-    this.propertyAccessors.forEach(function(propertyAccessor) {
-        propertyAccessor.selectionItems.delete(this);
-    }, this);
-    this.propertyAccessors.clear();
-};
+    removeListeners: function() {
+        this.propertyAccessors.forEach(function(propertyAccessor) {
+            propertyAccessor.selectionItems.delete(this);
+        }, this);
+        this.propertyAccessors.clear();
+    }
+});
 
-var select = function(Class, expression, context) {
+    var select = function(Class, expression, context) {
     return new Selection(Class.__livingSet__, expression, context);
 };
 

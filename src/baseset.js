@@ -3,7 +3,7 @@ define(function module(require) { "use strict"
   var withAdvice = require('./../lib/flight/advice').withAdvice;
 
   var BaseSet = Object.subclass('BaseSet', {
-    initialize: function(val) {
+    initialize: function() {
       this.set = new Set();
       this.downstream = [];
     },
