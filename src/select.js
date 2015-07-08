@@ -3,6 +3,7 @@ define(function module(require) {
 var pushIfMissing = require('./utils').pushIfMissing;
 var removeIfExisting = require('./utils').removeIfExisting;
 var Stack = require('./utils').Stack;
+var isPrimitive = require('./utils').isPrimitive;
 
 cop.create('SelectionLayer')
     .refineObject(users.timfelgentreff.jsinterpreter, {
@@ -14,7 +15,7 @@ cop.create('SelectionLayer')
 var PROPERTY_ACCESSOR_NAME = 'wrappedValue';
 var PropertyAccessor = Object.subclass('whjfqggkewgdkewgfiuewgfeldigdk3v3m', {
     initialize: function(obj, propName) {
-        this.callbacks = [];
+        this.selectionItems = new Set();
 
         this.safeOldAccessors(obj, propName);
 
@@ -33,6 +34,9 @@ var PropertyAccessor = Object.subclass('whjfqggkewgdkewgfiuewgfeldigdk3v3m', {
         obj.__defineSetter__(propName, function(newValue) {
             var returnValue = this[PROPERTY_ACCESSOR_NAME] = newValue;
             console.log('newValue for', obj, propName, newValue);
+            if(!isPrimitive(newValue)) {
+                this.recalculate();
+            }
             this.applyCallbacks();
             return returnValue;
         }.bind(this));
@@ -56,10 +60,28 @@ var PropertyAccessor = Object.subclass('whjfqggkewgdkewgfiuewgfeldigdk3v3m', {
         }
     },
 
-    addCallback: function(callback) { this.callbacks.push(callback); },
+    addCallback: function(selectionItem) {
+        this.selectionItems.add(selectionItem);
+        selectionItem.propertyAccessors.add(this);
+    },
     applyCallbacks: function() {
-        this.callbacks.forEach(function(callback) {
-            callback();
+        this.selectionItems.forEach(function(selectionItem) {
+            selectionItem.callback();
+        });
+    },
+    recalculate: function() {
+        console.log('should recalculate');
+
+        var selectionItems = [];
+        this.selectionItems.forEach(function(selectionItem) {
+            selectionItems.push(selectionItem);
+        });
+
+        selectionItems.forEach(function(selectionItem) {
+            selectionItem.removeListeners();
+        });
+        selectionItems.forEach(function(selectionItem) {
+            selectionItem.installListeners();
         });
     }
 });
@@ -88,8 +110,6 @@ users.timfelgentreff.jsinterpreter.InterpreterVisitor.subclass('SelectionInterpr
         var obj = this.visit(node.obj),
             propName = this.visit(node.slotName);
 
-        //console.log('visitGetSlot', obj, propName, obj[propName]);
-
         PropertyAccessor
             .wrapProperties(obj, propName)
             .addCallback(Selection.current());
@@ -115,6 +135,7 @@ Selection.prototype.initialize = function(baseSet, expression, context) {
     this.expression.varMapping = context;
 
     this.items = [];
+    this.selectionItems = new Set();
 };
 Selection.prototype.newItem = function(item) {
     this.trackItem(item);
@@ -124,18 +145,11 @@ Selection.prototype.trackItem = function(item) {
         this.items.push(item);
     }
 
-    this.withOnStack((function(item) {
-        console.log('check');
-        if(this.expression(item)) {
-            this.safeAdd(item);
-        } else {
-            this.safeRemove(item);
-        }
-    }).bind(this, item), function() {
-        cop.withLayers([SelectionLayer], (function() {
-            this.expression.forInterpretation().apply(null, [item]);
-        }).bind(this));
-    }, this);
+    var selectionItem = new SelectionItem(this, item);
+
+    this.selectionItems.add(selectionItem);
+
+    selectionItem.installListeners();
 };
 Selection.prototype.destroyItem = function(item) { /* TODO */ };
 
@@ -157,7 +171,39 @@ Selection.prototype.withOnStack = function(el, callback, context) {
     } finally {
         Selection.stack.pop();
     }
-}
+};
+
+SelectionItem = function(selection, item) {
+    this.selection = selection;
+
+    this.callback = (function() {
+        console.log('check');
+        if(this.expression(item)) {
+            this.safeAdd(item);
+        } else {
+            this.safeRemove(item);
+        }
+    }).bind(selection);
+
+    this.item = item;
+    this.propertyAccessors = new Set();
+};
+
+SelectionItem.prototype.installListeners = function() {
+    var item = this.item;
+    this.selection.withOnStack(this, function() {
+        cop.withLayers([SelectionLayer], (function() {
+            this.expression.forInterpretation().apply(null, [item]);
+        }).bind(this));
+    }, this.selection);
+};
+
+SelectionItem.prototype.removeListeners = function() {
+    this.propertyAccessors.forEach(function(propertyAccessor) {
+        propertyAccessor.selectionItems.delete(this);
+    }, this);
+    this.propertyAccessors.clear();
+};
 
 var select = function(Class, expression, context) {
     return new Selection(Class.__livingSet__, expression, context);

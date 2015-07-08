@@ -44,10 +44,26 @@ Stack.prototype.top = function() {
     return this.arr.last();
 };
 
+var isPrimitive = function(elem) {
+    var getType = function (elem) {
+        return Object.prototype.toString.call(elem).slice(8, -1);
+    };
+
+    var type = getType(elem);
+
+    return type === 'String' ||
+        type === 'RegExp' ||
+        type === 'Boolean' ||
+        type === 'Number' ||
+        type === 'Null' ||
+        type === 'Undefined';
+};
+
 return {
     pushIfMissing: pushIfMissing,
     removeIfExisting: removeIfExisting,
-    Stack: Stack
+    Stack: Stack,
+    isPrimitive: isPrimitive
 };
 
 });
