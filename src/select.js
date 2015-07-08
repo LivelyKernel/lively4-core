@@ -1,5 +1,7 @@
 define(function module(require) {
 
+var BaseSet = require('./baseset');
+
 var pushIfMissing = require('./utils').pushIfMissing;
 var removeIfExisting = require('./utils').removeIfExisting;
 var Stack = require('./utils').Stack;
@@ -123,14 +125,15 @@ users.timfelgentreff.jsinterpreter.InterpreterVisitor.subclass('SelectionInterpr
     }
 });
 
-Object.subclass('Selection', {
-    initialize: function(baseSet, expression, context) {
+BaseSet.subclass('Selection', {
+    initialize: function($super, baseSet, expression, context) {
+        $super();
+
         //this.baseSet = baseSet;
         baseSet.downstream.push(this);
         this.expression = expression;
         this.expression.varMapping = context;
 
-        this.items = [];
         this.selectionItems = [];
     },
     newItemFromUpstream: function(item) {
@@ -164,17 +167,10 @@ Object.subclass('Selection', {
 
         this.safeRemove(selectionItem.item);
     },
-    safeAdd: function(item) {
-        var wasNewItem = pushIfMissing(this.items, item);
-        /* TODO: push changes downstream if necessary */
-        if(wasNewItem) { console.log('added to selection', item); }
-    },
-    safeRemove: function(item) {
-        var gotRemoved = removeIfExisting(this.items, item);
-        /* TODO: push changes downstream if necessary */
-        if(gotRemoved) { console.log('removed from selection', item); }
-    },
-    size: function() { return this.items.length; }
+    size: function() { return this.items.length; },
+
+    addToBaseSet: function() { throw new Error('Method "addToBaseSet" only available to class "BaseSet".'); },
+    removeFromBaseSet: function() { throw new Error('Method "removeFromBaseSet" only available to class "BaseSet".'); }
 });
 
 Selection.stack = new Stack();
