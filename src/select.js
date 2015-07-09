@@ -131,8 +131,8 @@ users.timfelgentreff.jsinterpreter.InterpreterVisitor.subclass('SelectionInterpr
  * by defining functions in between, we could achieve maps, filters and so on.
  */
 BaseSet.subclass('Selection', {
-    initialize: function($super, baseSet, expression, context) {
-        $super();
+    initialize: function($super, mapFunc, baseSet, expression, context) {
+        $super(mapFunc);
 
         this.expression = expression;
         this.expression.varMapping = context;
@@ -184,10 +184,18 @@ BaseSet.subclass('Selection', {
 
         this.safeRemove(selectionItem.item);
     },
-    size: function() { return this.items.length; },
 
     addToBaseSet: function() { throw new Error('Method "addToBaseSet" only available to class "BaseSet".'); },
-    removeFromBaseSet: function() { throw new Error('Method "removeFromBaseSet" only available to class "BaseSet".'); }
+    removeFromBaseSet: function() { throw new Error('Method "removeFromBaseSet" only available to class "BaseSet".'); },
+
+    map: function(mapFunction) {
+        return new Selection(
+            mapFunction,
+            this,
+            function() { return true; },
+            {}
+        );
+    }
 });
 
 Selection.stack = new Stack();
@@ -236,7 +244,7 @@ Object.subclass('SelectionItem', {
 });
 
 var select = function(Class, expression, context) {
-    return new Selection(Class.__livingSet__, expression, context);
+    return new Selection(undefined, Class.__livingSet__, expression, context);
 };
 
 return select;

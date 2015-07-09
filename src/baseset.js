@@ -4,8 +4,10 @@ define(function module(require) { "use strict"
   var removeIfExisting = require('./utils').removeIfExisting;
 
   var BaseSet = Object.subclass('BaseSet', {
-    initialize: function() {
+    initialize: function(mapFunction) {
+      this.mapFunction = mapFunction || function identity(x) { return x; };
       this.items = [];
+      this.outputItemsByItems = new Map();
       this.downstream = [];
       this.enterCallbacks = [];
       this.exitCallbacks = [];
@@ -22,25 +24,35 @@ define(function module(require) { "use strict"
     safeAdd: function(item) {
       var wasNewItem = pushIfMissing(this.items, item);
       if(wasNewItem) {
-        console.log('added to selection', item);
-        this.enterCallbacks.forEach(function(enterCallback) { enterCallback(item); });
-        this.downstream.forEach(function(ea) { ea.newItemFromUpstream(item); });
+        var outputItem = this.mapFunction(item);
+        this.outputItemsByItems.set(item, outputItem);
+        console.log('added to selection', outputItem);
+        this.enterCallbacks.forEach(function(enterCallback) { enterCallback(outputItem); });
+        this.downstream.forEach(function(ea) { ea.newItemFromUpstream(outputItem); });
       }
     },
     safeRemove: function(item) {
       var gotRemoved = removeIfExisting(this.items, item);
       if(gotRemoved) {
-        console.log('removed from selection', item);
-        this.exitCallbacks.forEach(function(exitCallback) { exitCallback(item); });
-        this.downstream.forEach(function(ea) { ea.destroyItemFromUpstream(item); });
+        var outputItem = this.outputItemsByItems.get(item);
+        this.outputItemsByItems.delete(item);
+        console.log('removed from selection', outputItem);
+        this.exitCallbacks.forEach(function(exitCallback) { exitCallback(outputItem); });
+        this.downstream.forEach(function(ea) { ea.destroyItemFromUpstream(outputItem); });
       }
     },
     /**
      *  Get persistent version of the current state of the Selection.
      */
     now: function() {
-      return this.items.slice();
+      var arr = [];
+      this.outputItemsByItems.forEach(function(outputItems) {
+        arr.push(outputItems);
+      });
+
+      return arr;
     },
+    size: function() { return this.now().length; },
     /**
      *  Specify callbacks that are executed everytime an object is added/removed from the set
      */
