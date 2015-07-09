@@ -1,7 +1,5 @@
 define(function module(require) { "use strict"
 
-  var withAdvice = require('./../lib/flight/advice').withAdvice;
-
   var pushIfMissing = require('./utils').pushIfMissing;
   var removeIfExisting = require('./utils').removeIfExisting;
 
@@ -9,6 +7,8 @@ define(function module(require) { "use strict"
     initialize: function() {
       this.items = [];
       this.downstream = [];
+      this.enterCallbacks = [];
+      this.exitCallbacks = [];
     },
 
     // explicitly adding or removing objects to the set
@@ -23,6 +23,7 @@ define(function module(require) { "use strict"
       var wasNewItem = pushIfMissing(this.items, item);
       if(wasNewItem) {
         console.log('added to selection', item);
+        this.enterCallbacks.forEach(function(enterCallback) { enterCallback(item); });
         this.downstream.forEach(function(ea) { ea.newItemFromUpstream(item); });
       }
     },
@@ -30,6 +31,7 @@ define(function module(require) { "use strict"
       var gotRemoved = removeIfExisting(this.items, item);
       if(gotRemoved) {
         console.log('removed from selection', item);
+        this.exitCallbacks.forEach(function(exitCallback) { exitCallback(item); });
         this.downstream.forEach(function(ea) { ea.destroyItemFromUpstream(item); });
       }
     },
@@ -38,6 +40,20 @@ define(function module(require) { "use strict"
      */
     now: function() {
       return this.items.slice();
+    },
+    /**
+     *  Specify callbacks that are executed everytime an object is added/removed from the set
+     */
+    enter: function(callback) {
+        this.enterCallbacks.push(callback);
+        this.now().forEach(function(item) {  callback(item); });
+
+        return this;
+    },
+    exit: function(callback) {
+        this.exitCallbacks.push(callback);
+
+        return this;
     }
   });
 

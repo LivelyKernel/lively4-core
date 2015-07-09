@@ -30,6 +30,17 @@ define(function module(require) { "use strict"
 
   errorIfFalse(selection.size() === 1);
 
+  var manualSelectionSize = 0;
+  selection
+    .enter(function(item) {
+      manualSelectionSize++;
+    })
+    .exit(function(item) {
+      manualSelectionSize--;
+    });
+
+  errorIfFalse(manualSelectionSize === 1);
+
   var five = new NumExpr(5);
   var expr = new AddExpr(
     five,
@@ -37,14 +48,17 @@ define(function module(require) { "use strict"
   );
   errorIfFalse(expr.result() === 30);
   errorIfFalse(selection.size() === 2);
+  errorIfFalse(manualSelectionSize === 2);
 
   five.val = -30;
   errorIfFalse(expr.result() === -5);
   errorIfFalse(selection.size() === 1);
+  errorIfFalse(manualSelectionSize === 1);
 
   seventeen.val = 70;
   errorIfFalse(expr.result() === -58);
   errorIfFalse(selection.size() === 0);
+  errorIfFalse(manualSelectionSize === 0);
 
   var eleven = new NegExpr(
     new NegExpr(
@@ -57,19 +71,23 @@ define(function module(require) { "use strict"
   );
   errorIfFalse(expr2.result() === 11);
   errorIfFalse(selection.size() === 1);
+  errorIfFalse(manualSelectionSize === 1);
 
   var newFive = new NumExpr(5)
   eleven.expr = newFive;
   errorIfFalse(expr2.result() === -5);
   errorIfFalse(selection.size() === 0);
+  errorIfFalse(manualSelectionSize === 0);
 
   newFive.val = -11;
   console.log('Size of Selection', selection.size());
   errorIfFalse(expr2.result() === 11);
   errorIfFalse(selection.size() === 1);
+  errorIfFalse(manualSelectionSize === 1);
 
   expr2.destroy();
   expr2.destroy();
   console.log('Size of Selection', selection.size());
   errorIfFalse(selection.size() === 0);
+  errorIfFalse(manualSelectionSize === 0);
 });
