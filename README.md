@@ -56,4 +56,4 @@ The `select` method return a reactive object set that supports the following met
 * `size`: Returns the current number of objects the set contains.
 
 ### Questions?
-If you are interested or have any questions, simply write to @onsetsu.
+If you are interested or have any questions, simply write to [@onsetsu](https://github.com/onsetsu).
