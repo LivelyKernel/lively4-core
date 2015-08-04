@@ -2,6 +2,6 @@
 
 import Human from './human.js'
 
-let bob = new Human("Bob", "Morane");
+let foo = new Human("Foo", "Bar");
 
-document.querySelector("h1").innerHTML = `Hello ${bob.toString()}`;
+document.querySelector("h1").innerHTML = `Hello ${foo.toString()}`;
