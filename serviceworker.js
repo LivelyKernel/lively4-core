@@ -38,6 +38,9 @@ importScripts('serviceworker-cache-polyfill.js');
 //importScripts('babelsberg/babelsberg/uglify.js');
 //importScripts('babelsberg/babelsberg/src_transform.js');
 
+importScripts('transformer/identity.js');
+importScripts('transformer/logappend.js');
+
 console.log('Service Worker: File Start');
 
 self.addEventListener('install', function(event) {
@@ -69,7 +72,7 @@ function applyLoaders(request) {
 
     if(request.url.match(evalRegex)) {
         console.log('starting eval');
-        var s = request.url.replace(evalRegex, '');
+        let s = request.url.replace(evalRegex, '');
         console.log('eval', s);
         try {
             console.log('eval try', s);
@@ -90,29 +93,17 @@ function applyLoaders(request) {
 function applyTransformers(response) {
     console.log('Service Worker: Transformer', response, response.url);
 
-    if (!response.url.endsWith('.js')) {
-        return response;
-    }
-
     console.log('Start Transform');
-
-    console.log('For Transformation');
-//    var clone = response.clone();
-//    var clone2 = clone.clone();
-//    var transformPromise = clone.text().then(function(txt) {
-        //console.log('TRANSFORM', txt);
-//        return new Response(txt + '\n console.log("FOOOOOOOOOOOOO");');
-//    }).catch(function(error) {
-//        console.log('ERROR DURING TRANBSFORM', error);
-//        return response;
-//    });
-
-    //var srcTransform = new BabelsbergSrcTransform();
-    //var src = srcTransform.transform(callback.toString());
 
     console.log('End Transform');
 
-    return response;
+    var log = new LogAppend();
+
+    if(log.match(response)) {
+        return log.transform(response);
+    }
+
+    return (new Identity()).transform(response);
 }
 
 console.log('Service Worker: File End');
