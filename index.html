@@ -7,34 +7,12 @@
 <body>
 <h1></h1>
 
+<script src="bootworker.js"></script>
+
 <!-- http://k33g.github.io/2015/05/02/ES6.html -->
 <script src="babel-core/browser.js"></script>
 <script src="es6-module-loader/es6-module-loader-dev.src.js"></script>
 
-<script src="boot.js"></script>
-
-<script>
-    System.transpiler = 'babel';
-
-    // load app.js
-    System.import('test-app/app.js').then(function(module) {
-        console.log('app.js loaded', module);
-    }).catch(function (e) {
-        console.error(e);
-    });
-
-    System.import('https://code.jquery.com/jquery-2.1.4.js').then(function(module) {
-        console.log('$', module);
-
-        $.ajax({
-            url: "https://eval/3+4",
-            type: "get",
-            success: function(d) { console.log(d)}
-        })
-    }).catch(function (e) {
-        console.error('$', e);
-    });
-
-</script>
+<script src="test-app/load.js"></script>
 </body>
 </html>
