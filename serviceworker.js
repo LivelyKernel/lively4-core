@@ -62,14 +62,14 @@ function parseEvent(event) {
 }
 
 function applyLoaders(request) {
+    console.log('Service Worker: Loader', request.url);
     var evalRegex = /^(https:\/\/eval\/)/;
-    console.log('matching', event.request.url.match(evalRegex));
 
     var response;
 
     if(request.url.match(evalRegex)) {
         console.log('starting eval');
-        var s = request.url.replace("https://eval/","");
+        var s = request.url.replace(evalRegex, '');
         console.log('eval', s);
         try {
             console.log('eval try', s);
@@ -88,7 +88,7 @@ function applyLoaders(request) {
 }
 
 function applyTransformers(response) {
-    console.log('Service Worker: Response', response, response.url);
+    console.log('Service Worker: Transformer', response, response.url);
 
     if (!response.url.endsWith('.js')) {
         return response;
