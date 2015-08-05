@@ -38,6 +38,11 @@ importScripts('serviceworker-cache-polyfill.js');
 //importScripts('babelsberg/babelsberg/uglify.js');
 //importScripts('babelsberg/babelsberg/src_transform.js');
 
+// Loaders
+importScripts('loader/default.js');
+importScripts('loader/eval.js');
+
+// Transformers
 importScripts('transformer/identity.js');
 importScripts('transformer/logappend.js');
 
@@ -58,7 +63,6 @@ self.addEventListener('fetch', function(event) {
 });
 
 function parseEvent(event) {
-    // TODO: rename push
     return new Promise(function(resolve, reject) {
         resolve(event.request);
     });
@@ -66,25 +70,14 @@ function parseEvent(event) {
 
 function applyLoaders(request) {
     console.log('Service Worker: Loader', request.url);
-    var evalRegex = /^(https:\/\/eval\/)/;
 
     var response;
 
-    if(request.url.match(evalRegex)) {
-        console.log('starting eval');
-        let s = request.url.replace(evalRegex, '');
-        console.log('eval', s);
-        try {
-            console.log('eval try', s);
-            var result = eval(s);
-        } catch(e) {
-            console.log('eval catch', s);
-            result = "Error: " + e;
-        }
-        console.log('eval result', result);
-        response = new Response(s + " is " + result);
+    var evalScript = new EvalLoader();
+    if(evalScript.match(request)) {
+        response = evalScript.transform(request);
     } else {
-        response = fetch(request).then(applyTransformers);
+        response = (new DefaultLoader()).transform(request);
     }
 
     return response;
@@ -93,12 +86,7 @@ function applyLoaders(request) {
 function applyTransformers(response) {
     console.log('Service Worker: Transformer', response, response.url);
 
-    console.log('Start Transform');
-
-    console.log('End Transform');
-
     var log = new LogAppend();
-
     if(log.match(response)) {
         return log.transform(response);
     }
