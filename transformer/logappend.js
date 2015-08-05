@@ -8,6 +8,24 @@ class LogAppend {
     transform(response) {
         console.log('LogAppend Transformer');
 
+        // TODO: NEXT: actually modify the source code in the response!
+/*
+        return response.text().then(function(txt) {
+            console.log('LogAppend on', txt.split('\n')[0]);
+            var blob = new Blob(txt + new Blob('\n console.log("FOOOOOOOOOOOOO");'));
+
+            var reader = new FileReader();
+            reader.addEventListener("loadend", function() {
+                // reader.result contains the contents of blob as a typed array
+            });
+            reader.readAsArrayBuffer(blob);
+
+            return new Response(blob, { headers: response.headers });
+        });
+
+        var clone = response.clone();
+*/
+
         var clone = response.clone();
         var transformPromise = clone.text().then(function(txt) {
             console.log('LogAppend on', txt.split('\n')[0]);
