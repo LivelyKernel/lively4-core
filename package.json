@@ -8,20 +8,20 @@
     "url": "https://github.com/onsetsu/lively4-core/issues",
     "email": "todo@todo.com"
   },
-  "license": "MIT",
+  "license": "MIT TODO: ref file",
   "contributors": [
     {
-      "name" : "Stefan Lehmann",
-      "email" : "stefan.lehmann@student.hpi.uni-potsdam.de",
-      "url" : "https://github.com/onsetsu"
+      "name": "Stefan Lehmann",
+      "email": "stefan.lehmann@student.hpi.uni-potsdam.de",
+      "url": "https://github.com/onsetsu"
     },
     {
-      "name" : "Jens Lincke",
-      "email" : "jens.lincke@hpi.uni-potsdam.de"
+      "name": "Jens Lincke",
+      "email": "jens.lincke@hpi.uni-potsdam.de"
     },
     {
-      "name" : "Tim Felgentreff",
-      "email" : "tim.felgentreff@hpi.uni-potsdam.de"
+      "name": "Tim Felgentreff",
+      "email": "tim.felgentreff@hpi.uni-potsdam.de"
     }
   ],
   "files": [
@@ -35,22 +35,25 @@
     "lib": "src"
   },
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/onsetsu/lively4-core.git"
+    "type": "git",
+    "url": "https://github.com/onsetsu/lively4-core.git"
   },
   "scripts": {
     "test": "karma start karma.conf.js --single-run"
   },
-  "dependencies": {
-
-  },
+  "dependencies": {},
   "devDependencies": {
     "browserify": "^11.0.0",
+    "chai": "^1.9.1",
     "karma": "^0.13.1",
     "karma-chrome-launcher": "^0.1.10",
+    "karma-chai": "^0.1.0",
     "karma-mocha": "^0.2.0",
     "karma-mocha-reporter": "^1.0.2",
-    "mocha": "^2.2.5"
+    "karma-requirejs": "^0.2.2",
+    "mocha": "^2.2.5",
+    "requirejs": "^2.1.20",
+    "sinon-chai": "^2.8.0"
   },
   "engines": {
     "node": ">= 0.12.4",
