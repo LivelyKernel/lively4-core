@@ -1,0 +1,59 @@
+{
+  "name": "lively4-core",
+  "version": "0.0.1",
+  "description": "TODO: some description",
+  "keywords": "TODO",
+  "homepage": "TODO",
+  "bugs": {
+    "url": "https://github.com/onsetsu/lively4-core/issues",
+    "email": "todo@todo.com"
+  },
+  "license": "MIT",
+  "contributors": [
+    {
+      "name" : "Stefan Lehmann",
+      "email" : "stefan.lehmann@student.hpi.uni-potsdam.de",
+      "url" : "https://github.com/onsetsu"
+    },
+    {
+      "name" : "Jens Lincke",
+      "email" : "jens.lincke@hpi.uni-potsdam.de"
+    },
+    {
+      "name" : "Tim Felgentreff",
+      "email" : "tim.felgentreff@hpi.uni-potsdam.de"
+    }
+  ],
+  "files": [
+    "bootworker.js",
+    "TODO"
+  ],
+  "main": "bootworker.js",
+  "bin": "TODO",
+  "man": "TODO",
+  "directories": {
+    "lib": "src"
+  },
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/onsetsu/lively4-core.git"
+  },
+  "scripts": {
+    "test": "karma start karma.conf.js --single-run"
+  },
+  "dependencies": {
+
+  },
+  "devDependencies": {
+    "browserify": "^11.0.0",
+    "karma": "^0.13.1",
+    "karma-chrome-launcher": "^0.1.10",
+    "karma-mocha": "^0.2.0",
+    "karma-mocha-reporter": "^1.0.2",
+    "mocha": "^2.2.5"
+  },
+  "engines": {
+    "node": ">= 0.12.4",
+    "npm": "~2.10.1"
+  }
+}
