@@ -1,14 +1,14 @@
 {
   "name": "lively4-core",
   "version": "0.0.1",
-  "description": "TODO: some description",
-  "keywords": "TODO",
-  "homepage": "TODO",
+  "description": "An extensible module loader to load data and scripts from various locations and optionally perform transformations on this data. Powered by Service Worker.",
+  "keywords": ["lively", "lively4", "module", "modules", "loader", "compiler"],
+  "homepage": "https://github.com/onsetsu/lively4-core/",
   "bugs": {
     "url": "https://github.com/onsetsu/lively4-core/issues",
     "email": "todo@todo.com"
   },
-  "license": "MIT TODO: ref file",
+  "license": "MIT",
   "contributors": [
     {
       "name": "Stefan Lehmann",
