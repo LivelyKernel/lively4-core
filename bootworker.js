@@ -1,7 +1,5 @@
 'use strict';
 
-console.log('App: File Start');
-
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/serviceworker.js', {
         scope: "http://localhost:8080/"
@@ -13,5 +11,3 @@ if ('serviceWorker' in navigator) {
         console.log('ServiceWorker registration failed: ', err);
     });
 }
-
-console.log('App: File End');
