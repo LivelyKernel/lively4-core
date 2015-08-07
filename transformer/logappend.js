@@ -6,35 +6,39 @@ class LogAppend {
     }
 
     transform(response) {
-        console.log('LogAppend Transformer');
+        console.log('LogAppend Transformer V8');
 
-        // TODO: NEXT: actually modify the source code in the response!
-/*
-        return response.text().then(function(txt) {
-            console.log('LogAppend on', txt.split('\n')[0]);
-            var blob = new Blob(txt + new Blob('\n console.log("FOOOOOOOOOOOOO");'));
+        return response.clone().blob()
+            .then(function(blob) {
+                console.log('blob');
 
-            var reader = new FileReader();
-            reader.addEventListener("loadend", function() {
-                // reader.result contains the contents of blob as a typed array
+                // create new Blob
+                console.log('BlobType', blob.type);
+
+                return new Promise(function(resolve, reject) {
+                    var reader = new FileReader();
+                    reader.addEventListener("load", function() {
+                        console.log('Result Text', reader.result);
+
+                        var newContent = reader.result + '\nconsole.log(12345);';
+
+                        var newBlob = new Blob([newContent], {
+                            type: blob.type
+                        });
+                        resolve(newBlob);
+                    });
+                    reader.readAsBinaryString(blob);
+                });
+            })
+            .then(function packNewResponse(newBlob) {
+                console.log('pack response');
+                // pack new Response from a Blob and the given Response
+                return new Response(newBlob, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: response.headers
+                });
             });
-            reader.readAsArrayBuffer(blob);
-
-            return new Response(blob, { headers: response.headers });
-        });
-
-        var clone = response.clone();
-*/
-
-        var clone = response.clone();
-        var transformPromise = clone.text().then(function(txt) {
-            console.log('LogAppend on', txt.split('\n')[0]);
-            //return new Response(txt + '\n console.log("FOOOOOOOOOOOOO");');
-            return response.clone();
-            return new Response(txt);
-            return response;
-        });
-        return transformPromise;
     }
 }
 
