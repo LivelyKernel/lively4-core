@@ -17,12 +17,22 @@ module.exports = function(config) {
     files: [
       'test-main.js',
       {pattern: 'src/**/*.js', included: false},
+      {pattern: 'loader/**/*.js', included: false},
+      {pattern: 'transformer/**/*.js', included: false},
+      {pattern: 'bootworker*', included: false},
+      {pattern: 'serviceworker*', included: false},
       {pattern: 'test/**/*-test.js', included: false}
     ],
 
     proxies: {
       '/src/': '/base/src/',
-      '/test/': '/base/test/'
+      '/test/': '/base/test/',
+      '/serviceworker.js': '/base/serviceworker.js',
+      '/serviceworker-cache-polyfill.js': '/base/serviceworker-cache-polyfill.js',
+      '/bootworker.js': '/base/bootworker.js',
+      '/bootworker.html': '/base/bootworker.html',
+      '/loader/': '/base/loader/',
+      '/transformer/': '/base/transformer/'
     },
 
 
@@ -76,7 +86,7 @@ module.exports = function(config) {
     singleRun: false
   });
 
-  if(process.env.TRAVIS){
+  if(process.env.TRAVIS) {
     config.browsers = ['Chrome_Travis_CI'];
   }
 
