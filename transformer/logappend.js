@@ -6,7 +6,7 @@ class LogAppend {
     }
 
     transform(response) {
-        console.log('LogAppend Transformer V8');
+        console.log('LogAppend Transformer V9');
 
         return response.clone().blob()
             .then(function(blob) {
@@ -15,20 +15,30 @@ class LogAppend {
                 // create new Blob
                 console.log('BlobType', blob.type);
 
-                return new Promise(function(resolve, reject) {
-                    var reader = new FileReader();
-                    reader.addEventListener("load", function() {
-                        console.log('Result Text', reader.result);
+                function readBlob(blob) {
+                    return new Promise(function(resolve, reject) {
+                        var reader = new FileReader();
 
-                        var newContent = reader.result + '\nconsole.log(12345);';
+                        reader.addEventListener("load", function() {
+                            resolve(reader.result);
+                        });
+                        reader.addEventListener("error", function(err) {
+                            reject(err, 'Error during reading Blob');
+                        });
 
-                        var newBlob = new Blob([newContent], {
+                        reader.readAsBinaryString(blob);
+                    });
+                }
+
+                return readBlob(blob)
+                    .then(function srcTransform(content) {
+                        return content + '\nconsole.log(123456);';
+                    })
+                    .then(function packNewBlob(newContent) {
+                        return new Blob([newContent], {
                             type: blob.type
                         });
-                        resolve(newBlob);
                     });
-                    reader.readAsBinaryString(blob);
-                });
             })
             .then(function packNewResponse(newBlob) {
                 console.log('pack response');
@@ -41,16 +51,6 @@ class LogAppend {
             });
     }
 }
-
-//    var clone = response.clone();
-//    var clone2 = clone.clone();
-//    var transformPromise = clone.text().then(function(txt) {
-//console.log('TRANSFORM', txt);
-//        return new Response(txt + '\n console.log("FOOOOOOOOOOOOO");');
-//    }).catch(function(error) {
-//        console.log('ERROR DURING TRANBSFORM', error);
-//        return response;
-//    });
 
 //var srcTransform = new BabelsbergSrcTransform();
 //var src = srcTransform.transform(callback.toString());
