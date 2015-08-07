@@ -52,6 +52,11 @@ self.addEventListener('install', function(event) {
     console.log('Service Worker: Install');
 });
 
+self.addEventListener('activate', function(event) {
+    console.log('Service Worker: Activate');
+    self.clients.claim();
+});
+
 self.addEventListener('fetch', function(event) {
     console.log('Service Worker: Fetch', event.request, event.request.url);
 
