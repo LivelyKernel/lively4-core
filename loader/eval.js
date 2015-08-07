@@ -23,6 +23,6 @@ class EvalLoader {
         }
         console.log('eval result', result);
 
-        return new Response(s + " is " + result);
+        return new Response(result);
     }
 }
