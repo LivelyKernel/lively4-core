@@ -6,16 +6,10 @@ class LogAppend {
     }
 
     transform(response) {
-        console.log('LogAppend Transformer V9');
-
         return response.clone().blob()
             .then(function(blob) {
-                console.log('blob');
-
-                // create new Blob
-                console.log('BlobType', blob.type);
-
                 function readBlob(blob) {
+                    console.log('Read blob of type ' + blob.type);
                     return new Promise(function(resolve, reject) {
                         var reader = new FileReader();
 
@@ -32,7 +26,7 @@ class LogAppend {
 
                 return readBlob(blob)
                     .then(function srcTransform(content) {
-                        return content + '\nconsole.log(123456);';
+                        return content + '\nconsole.log(1234567);';
                     })
                     .then(function packNewBlob(newContent) {
                         return new Blob([newContent], {
@@ -41,7 +35,6 @@ class LogAppend {
                     });
             })
             .then(function packNewResponse(newBlob) {
-                console.log('pack response');
                 // pack new Response from a Blob and the given Response
                 return new Response(newBlob, {
                     status: response.status,
