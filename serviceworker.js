@@ -1,7 +1,7 @@
 'use strict';
 
-importScripts('babel-core/browser-polyfill.js');
 importScripts('babel-core/browser.js');
+importScripts('babel-core/browser-polyfill.js');
 
 importScripts('serviceworker-cache-polyfill.js');
 
