@@ -16,6 +16,7 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       'test-main.js',
+      {pattern: 'babel-core/**/*.js', included: false},
       {pattern: 'src/**/*.js', included: false},
       {pattern: 'loader/**/*.js', included: false},
       {pattern: 'transformer/**/*.js', included: false},
@@ -25,6 +26,7 @@ module.exports = function(config) {
     ],
 
     proxies: {
+      '/babel-core/': '/base/babel-core/',
       '/src/': '/base/src/',
       '/test/': '/base/test/',
       '/serviceworker.js': '/base/serviceworker.js',
@@ -72,13 +74,17 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome'],
+    browsers: ['ChromeCanary'],
 
     customLaunchers: {
       Chrome_Travis_CI: {
         base: 'Chrome',
         flags: ['--no-sandbox']
-      }
+      },
+      ChromeCanary_Travis_CI: {
+        base: 'ChromeCanary',
+        flags: ['--no-sandbox']
+      },
     },
 
     // Continuous Integration mode
@@ -87,7 +93,7 @@ module.exports = function(config) {
   });
 
   if(process.env.TRAVIS) {
-    config.browsers = ['Chrome_Travis_CI'];
+    config.browsers = ['ChromeCanary_Travis_CI'];
   }
 
 };
