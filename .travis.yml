@@ -2,7 +2,7 @@ language: node_js
 node_js:
 - '0.11'
 
-before_script:
+before_install:
 - export CHROME_URL=https://storage.googleapis.com/chromium-browser-snapshots/Linux_x64
 - export CHROME_REV=$(curl -s ${CHROME_URL}/LAST_CHANGE)
 - curl ${CHROME_URL}/${CHROME_REV}/chrome-linux.zip --create-dirs -o out/chrome-linux.zip
