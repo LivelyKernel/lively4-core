@@ -9,11 +9,12 @@ Object.keys(window.__karma__.files).forEach(function(file) {
     // then do not normalize the paths
     var normalizedTestModule = file.replace(/^\/base\/|\.js$/g, '');
     allTestFiles.push(normalizedTestModule);
+    console.log('Loaded Test: ' + normalizedTestModule);
   }
 });
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/serviceworker.js', {
+  navigator.serviceWorker.register('/serviceworker-loader.js', {
     scope: "http://localhost:9876/"
   }).then(function(registration) {
     // Registration was successful
@@ -24,15 +25,23 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-require.config({
-  // Karma serves files under /base, which is the basePath from your config file
-  baseUrl: '/base',
+navigator.serviceWorker.ready.then(function() {
+  "use strict";
 
-  // dynamically load all test files
-  deps: allTestFiles,
+  navigator.serviceWorker.onmessage = function(event) {
+    if (event.data.msg == 'log') {
+      console.log(event.data.data);
+    }
+  };
 
-  // we have to kickoff jasmine, as it is asynchronous
-  callback: function() {
-    navigator.serviceWorker.ready.then(window.__karma__.start);
-  }
+  require.config({
+    // Karma serves files under /base, which is the basePath from your config file
+    baseUrl: '/base',
+
+    // dynamically load all test files
+    deps: allTestFiles,
+
+    // we have to kickoff jasmine, as it is asynchronous
+    callback: window.__karma__.start
+  });
 });
