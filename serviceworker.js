@@ -1,5 +1,21 @@
 'use strict';
 
+var broadCastMessage = function(data) {
+    self.clients.matchAll().then(function(clients) {
+        clients.forEach(function(client) {
+            client.postMessage({
+                msg: 'log',
+                data: data
+            });
+        });
+    });
+};
+
+broadCastMessage('HELLO CLIENT');
+broadCastMessage('U HEAR ME');
+
+//importScripts('bundle.js');
+
 importScripts('babel-core/browser.js');
 importScripts('babel-core/browser-polyfill.js');
 
@@ -11,7 +27,60 @@ importScripts('loader/eval.js');
 
 // Transformers
 importScripts('transformer/identity.js');
-importScripts('transformer/logappend.js');
+
+'use strict';
+
+class LogAppend {
+    match(response) {
+        return response.url.indexOf('.js') > -1 &&
+            response.url.indexOf('node_modules') === -1;
+    }
+
+    transform(response) {
+        return response.clone().blob()
+            .then(function(blob) {
+                function readBlob(blob) {
+                    console.log('Read blob of type ' + blob.type);
+                    return new Promise(function(resolve, reject) {
+                        var reader = new FileReader();
+
+                        reader.addEventListener("load", function() {
+                            resolve(reader.result);
+                        });
+                        reader.addEventListener("error", function(err) {
+                            reject(err, 'Error during reading Blob');
+                        });
+
+                        reader.readAsBinaryString(blob);
+                    });
+                }
+
+                return readBlob(blob)
+                    .then(function srcTransform(content) {
+                        console.log("BEFORE TRANSFORM");
+                        console.log(content);
+                        console.log("AFTER TRANSFORM");
+                        var transformed = babel.transform(content).code;
+                        console.log(transformed);
+
+                        return transformed;
+                    })
+                    .then(function packNewBlob(newContent) {
+                        return new Blob([newContent], {
+                            type: blob.type
+                        });
+                    });
+            })
+            .then(function packNewResponse(newBlob) {
+                // pack new Response from a Blob and the given Response
+                return new Response(newBlob, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: response.headers
+                });
+            });
+    }
+}
 
 console.log('Service Worker: File Start');
 
@@ -26,6 +95,7 @@ self.addEventListener('activate', function(event) {
 
 self.addEventListener('fetch', function(event) {
     console.log('Service Worker: Fetch', event.request, event.request.url);
+    broadCastMessage('FETCHING THIS STUFF: ' + event.request.url);
 
     var response = parseEvent(event)
         .then(applyLoaders)
@@ -34,7 +104,9 @@ self.addEventListener('fetch', function(event) {
     event.respondWith(response);
 });
 
+
 function parseEvent(event) {
+    console.log(event.request.url);
     return new Promise(function(resolve, reject) {
         resolve(event.request);
     });
