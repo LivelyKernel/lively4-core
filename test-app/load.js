@@ -1,5 +1,7 @@
 System.transpiler = 'babel';
 
+console.log(2 ** 3);
+
 // load app.js
 System.import('test-app/app.js').then(function(module) {
     console.log('app.js loaded', module);
