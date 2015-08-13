@@ -1,7 +1,7 @@
 'use strict';
 
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/serviceworker.js', {
+    navigator.serviceWorker.register('/serviceworker-loader.js', {
         scope: "http://localhost:8080/"
     }).then(function(registration) {
         // Registration was successful
