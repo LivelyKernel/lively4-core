@@ -60,7 +60,9 @@ class LogAppend {
                         console.log("BEFORE TRANSFORM");
                         console.log(content);
                         console.log("AFTER TRANSFORM");
-                        var transformed = babel.transform(content).code;
+                        var transformed = babel.transform(content, {
+                            modules: 'amd'
+                        }).code;
                         console.log(transformed);
 
                         return transformed;
