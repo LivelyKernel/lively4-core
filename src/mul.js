@@ -1,7 +1,7 @@
 define(function(require, exports, module) {
     "use strict";
 
-    var add = require('./add');
+    var add = require('./add.js');
 
     module.exports = function mul(a, b) {
         "use strict";

@@ -15,6 +15,9 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
+      'babel-core/browser.js',
+      'es6-module-loader/es6-module-loader-dev.src.js',
+      'system.src.js',
       'test-main.js',
       {pattern: 'babel-core/**/*.js', included: false},
       {pattern: 'src/**/*.js', included: false},
@@ -27,6 +30,7 @@ module.exports = function(config) {
 
     proxies: {
       '/babel-core/': '/base/babel-core/',
+      '/es6-module-loader/': '/base/es6-module-loader/',
       '/src/': '/base/src/',
       '/test/': '/base/test/',
       '/serviceworker-loader.js': '/base/serviceworker-loader.js',
@@ -34,6 +38,8 @@ module.exports = function(config) {
       '/serviceworker-cache-polyfill.js': '/base/serviceworker-cache-polyfill.js',
       '/bootworker.js': '/base/bootworker.js',
       '/bootworker.html': '/base/bootworker.html',
+      '/bootworker.html': '/base/bootworker.html',
+      '/system.src.js': '/base/system.src.js',
       '/loader/': '/base/loader/',
       '/transformer/': '/base/transformer/'
     },

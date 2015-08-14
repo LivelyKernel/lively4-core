@@ -34,6 +34,17 @@ navigator.serviceWorker.ready.then(function() {
     }
   };
 
+  Promise.all(allTestFiles.map(function (file) {
+    return System.import('base/' + file + '.js');
+  })).then(function() {
+    console.log("STAAAAAAAAAAAAAARRRRRRRRRRTTTTT!!!!!!");
+    window.__karma__.start();
+    console.log("EEEEEEENNNNNNNNNNNNNNNNNNNDDDD!!!!!!");
+  });
+
+  return;
+
+
   require.config({
     // Karma serves files under /base, which is the basePath from your config file
     baseUrl: '/base',
