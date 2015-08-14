@@ -32,8 +32,22 @@ importScripts('transformer/identity.js');
 
 class LogAppend {
     match(response) {
-        return response.url.indexOf('.js') > -1 &&
-            response.url.indexOf('node_modules') === -1;
+        var blackList = [
+            'babel-core/browser.js',
+            'es6-module-loader/es6-module-loader-dev.src.js',
+            'bootworker.js',
+            'serviceworker.js',
+            'system-polyfills.src.js',
+            'system.src.js',
+            'serviceworker-loader.js'
+        ];
+
+        var isJS = response.url.indexOf('.js') > -1;
+        var inBlackList = false;
+        for(var i = 0; i < blackList.length; i++) {
+            inBlackList = inBlackList || response.url.indexOf(blackList[i]) > -1;
+        }
+        return isJS && !inBlackList;
     }
 
     transform(response) {
@@ -58,12 +72,12 @@ class LogAppend {
                 return readBlob(blob)
                     .then(function srcTransform(content) {
                         console.log("BEFORE TRANSFORM");
-                        console.log(content);
+                        //console.log(content);
                         console.log("AFTER TRANSFORM");
                         var transformed = babel.transform(content, {
-                            modules: 'amd'
+                            modules: 'system'
                         }).code;
-                        console.log(transformed);
+                        //console.log(transformed);
 
                         return transformed;
                     })
