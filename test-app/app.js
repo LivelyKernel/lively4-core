@@ -1,6 +1,6 @@
 // es6 application code
 
-import Human from './human.js'
+import Human from './human'
 
 let foo = new Human("Foo", "Bar");
 
