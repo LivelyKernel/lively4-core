@@ -1,7 +1,7 @@
 define(function(require) {
     "use strict";
 
-    var mul = require('../src/mul');
+    var mul = require('../src/mul.js');
     var expect = chai.expect;
 
     describe('Mul', function() {

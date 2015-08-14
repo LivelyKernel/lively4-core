@@ -1,7 +1,7 @@
 define(function(require) {
     "use strict";
 
-    var add = require('../src/add');
+    var add = require('../src/add.js');
     var expect = chai.expect;
 
     describe('Add', function() {
