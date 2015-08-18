@@ -75,7 +75,7 @@ class LogAppend {
                         //console.log(content);
                         console.log("AFTER TRANSFORM");
                         var transformed = babel.transform(content, {
-                            modules: 'system'
+                            //modules: 'system'
                         }).code;
                         //console.log(transformed);
 
