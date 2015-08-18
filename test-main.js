@@ -35,6 +35,7 @@ navigator.serviceWorker.ready.then(function() {
   };
 
   Promise.all(allTestFiles.map(function (file) {
+    console.log('Load Test File: ' + file);
     return System.import('base/' + file + '.js');
   })).then(function() {
     console.log("STAAAAAAAAAAAAAARRRRRRRRRRTTTTT!!!!!!");
