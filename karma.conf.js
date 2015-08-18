@@ -15,8 +15,8 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'babel-core/browser.js',
-      'es6-module-loader/es6-module-loader-dev.src.js',
+      //'babel-core/browser.js',
+      //'es6-module-loader/es6-module-loader-dev.src.js',
       'system.src.js',
       'test-main.js',
       {pattern: 'babel-core/**/*.js', included: false},
