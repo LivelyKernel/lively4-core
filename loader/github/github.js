@@ -10,8 +10,10 @@
  *            http://substance.io/michael/github
  */
 
-(function() {
+(function(that) {
+  console.log(this, that)
   'use strict';
+  var window = window || self;
   
   // Initial Setup
   // -------------
@@ -106,7 +108,7 @@
 
           var links = (xhr.getResponseHeader('link') || '').split(/\s*,\s*/g),
               next = null;
-          links.forEach(function(link) { 
+          links.forEach(function(link) {
             next = /rel="next"/.test(link) ? link : next;
           });
 
@@ -275,7 +277,7 @@
           if (err) {
             return cb(err);
           }
-          
+
           cb(null, res.object.sha);
         });
       };
@@ -324,7 +326,7 @@
           if (err) {
             return cb(err);
           }
-          
+
           cb(null, tags);
         });
       };
@@ -366,7 +368,7 @@
         _request("GET", repoPath + "/git/refs/heads", null, function(err, heads) {
           if (err) return cb(err);
           cb(null, heads.map(function(head) {
-              var headParts = head.ref.split('/'); 
+              var headParts = head.ref.split('/');
               return headParts[headParts.length - 1];
           }));
         });
@@ -860,4 +862,4 @@
   } else {
     window.Github = Github;
   }
-}).call(this);
+}).call(this || self);
