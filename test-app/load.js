@@ -12,6 +12,15 @@ System.import('test-app/app.js').then(function(module) {
 System.import('https://code.jquery.com/jquery-2.1.4.js').then(function(module) {
     console.log('$', module);
 
+    /*
+    // TODO: make this work
+    $.ajax({
+        url: "https://github.com/onsetsu/codemine/blob/master/index.js",
+        type: "get",
+        success: function(d) { console.log(d)}
+    });
+    */
+
     $.ajax({
         url: "https://eval/3+4",
         type: "get",
