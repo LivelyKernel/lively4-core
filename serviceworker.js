@@ -12,7 +12,7 @@ var broadCastMessage = function(data) {
 };
 
 broadCastMessage('HELLO CLIENT');
-broadCastMessage('U HEAR ME');
+broadCastMessage('U HEAR ME?');
 
 //importScripts('bundle.js');
 
@@ -21,14 +21,87 @@ importScripts('babel-core/browser-polyfill.js');
 
 importScripts('serviceworker-cache-polyfill.js');
 
+// --------------------------------------------------------------------
 // Loaders
+// --------------------------------------------------------------------
 importScripts('loader/default.js');
 importScripts('loader/eval.js');
 
-// Transformers
-importScripts('transformer/identity.js');
+(function() {
+    var headers = new Headers();
+    //headers.append();
 
-'use strict';
+    var request = new Request('https://code.jquery.com/jquery-2.1.4.js', {
+        method: 'GET',
+        headers: headers
+    });
+
+    fetch(request).then(function(response) {
+        console.log('#############################################################');
+        console.log(response);
+    }).catch(function(error) {
+        console.log('#############################################################');
+        console.log(error);
+    });
+})();
+
+importScripts('loader/github/github.js');
+importScripts('loader/github/credentials.js');
+
+var github = new Github(GITHUB_CREDENTIALS),
+    repo = github.getRepo('jquery', 'jquery');
+
+repo.show(function showRepoCallback(err, repo) {
+    console.log('----------------------------------------------------------');
+    if(err) { console.log('ERROR', err); }
+    console.log(repo);
+    console.log('----------------------------------------------------------');
+});
+
+// TODO: deleting repositories currently not possible
+repo.deleteRepo(function(err, res) {
+    if(err) {
+        console.log(err);
+    } else {
+        console.log(res);
+    }
+});
+repo.fork(function(err, res) {
+    console.log(err);
+    console.log(res);
+});
+(new Github(GITHUB_CREDENTIALS))
+    .getRepo('onsetsu', 'repotodelete')
+    .read('master', 'README.md', function(err, data) {
+        console.log(err, data);
+    });
+(new Github(GITHUB_CREDENTIALS))
+    .getRepo('onsetsu', 'repotodelete')
+    .write('master', 'README.md', `# repotodelete
+A repository to be deleted by Lively4.
+THIS IS NEW!
+`,
+    'autocommitted by Lively4',
+    function(err, data) {
+        console.log(err, data);
+    });
+
+(new Github(GITHUB_CREDENTIALS))
+    .getUser()
+    .show('onsetsu', function(err, data) {
+        console.log('Onsetsu\'s User Profile', err, data);
+    });
+
+(new Github(GITHUB_CREDENTIALS))
+    .getUser()
+    .userRepos('onsetsu', function(err, data) {
+        console.log('Onsetsu\'s Repos', err, data);
+    });
+
+// --------------------------------------------------------------------
+// Transformers
+// --------------------------------------------------------------------
+importScripts('transformer/identity.js');
 
 class LogAppend {
     match(response) {
@@ -133,6 +206,13 @@ function applyLoaders(request) {
 
     var response;
 
+    /*
+    if(githubLoader.match(request)) {
+        response = githubLoader.transform(request);
+        return response;
+    }
+    */
+
     var evalScript = new EvalLoader();
     if(evalScript.match(request)) {
         response = evalScript.transform(request);
@@ -153,5 +233,15 @@ function applyTransformers(response) {
 
     return (new Identity()).transform(response);
 }
+
+/*
+l4.task('github*', str => {
+    l4.start(str)
+        .then(loader(l4-github.request))
+        .then(transform(l4_babel))
+        .then(transform(l4_bbb))
+        .then(l4_write())
+});
+*/
 
 console.log('Service Worker: File End');
