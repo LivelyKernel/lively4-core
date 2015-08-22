@@ -58,41 +58,60 @@
         return url + '&' + (new Date()).getTime();
       }
 
-      var xhr = new XMLHttpRequest();
+      //var xhr = new XMLHttpRequest();
 
-
-      xhr.open(method, getURL(), !sync);
-      if (!sync) {
-        xhr.onreadystatechange = function () {
-          if (this.readyState === 4) {
-            if (this.status >= 200 && this.status < 300 || this.status === 304) {
-              cb(null, raw ? this.responseText : this.responseText ? JSON.parse(this.responseText) : true, this);
-            } else {
-              cb({path: path, request: this, error: this.status});
-            }
-          }
-        };
-      }
-
+      var headers = new Headers();
       if (!raw) {
-        xhr.dataType = 'json';
-        xhr.setRequestHeader('Accept','application/vnd.github.v3+json');
+        // TODO: xhr.dataType = 'json';
+        //xhr.setRequestHeader('Accept','application/vnd.github.v3+json');
+        headers.append('Accept','application/vnd.github.v3+json');
       } else {
-        xhr.setRequestHeader('Accept','application/vnd.github.v3.raw+json');
+        //xhr.setRequestHeader('Accept','application/vnd.github.v3.raw+json');
+        headers.append('Accept','application/vnd.github.v3.raw+json');
       }
 
-      xhr.setRequestHeader('Content-Type','application/json;charset=UTF-8');
+      //xhr.setRequestHeader('Content-Type','application/json;charset=UTF-8');
+      headers.append('Content-Type','application/json;charset=UTF-8');
+
       if ((options.token) || (options.username && options.password)) {
         var authorization = options.token ? 'token ' + options.token : 'Basic ' + btoa(options.username + ':' + options.password);
-        xhr.setRequestHeader('Authorization', authorization);
+        //xhr.setRequestHeader('Authorization', authorization);
+        headers.append('Authorization', authorization);
       }
-      if (data) {
-        xhr.send(JSON.stringify(data));
-      } else {
-        xhr.send();
+
+
+      var request = new Request(getURL(), {
+        method: method,
+        headers: headers,
+        body: data ? JSON.stringify(data) : undefined
+      });
+
+      //xhr.open(method, getURL(), !sync);
+      var foo = fetch(request);
+      if (!sync) {
+        foo.then(function(response) {
+          if (response.status >= 200 && response.status < 300 || response.status === 304) {
+            response.text().then(function(string) {
+              cb(null, raw ? string : string ? JSON.parse(string) : true, response);
+            });
+          } else {
+            cb({path: path, request: request, error: response.statusText});
+          }
+        }).catch(function (error) {
+          console.log('ERROR ON FETCHING', error);
+        });
       }
+
+      //if (data) {
+        //xhr.send(JSON.stringify(data));
+      //} else {
+        //xhr.send();
+      //}
+
       if (sync) {
-        return xhr.response;
+        // return xhr.response;
+        console.log('SYNCHRONIOUS REQUEST');
+        return foo;
       }
     }
 
@@ -106,6 +125,8 @@
 
           results.push.apply(results, res);
 
+          console.log(xhr);
+          debugger
           var links = (xhr.getResponseHeader('link') || '').split(/\s*,\s*/g),
               next = null;
           links.forEach(function(link) {
@@ -181,9 +202,12 @@
 
       this.userRepos = function(username, cb) {
         // Github does not always honor the 1000 limit so we want to iterate over the data set.
-        _requestAllPages('/users/' + username + '/repos?type=all&per_page=1000&sort=updated', function(err, res) {
+        _request('GET', '/users/' + username + '/repos?type=all&per_page=1000&sort=updated', null, function(err, res) {
           cb(err, res);
         });
+        //_requestAllPages('/users/' + username + '/repos?type=all&per_page=1000&sort=updated', function(err, res) {
+        //  cb(err, res);
+        //});
       };
 
       // List a user's gists
