@@ -25,7 +25,7 @@ lively.require("lively.lang.Runtime").toRun(function() {
         function(fileContents, next) {
           lively.lang.arr.mapAsyncSeries(fileContents,
             function(ea,_,n) {
-              r.Project.processChange(
+              lively.lang.Runtime.Project.processChange(
                 project, lively.lang.string.joinPath(project.rootDir, ea.name),
                 ea.content, n);
             },
@@ -75,7 +75,11 @@ lively.require("lively.lang.Runtime").toRun(function() {
               lively.lang.fun.waitFor(3000, function() { return typeof expect !== "undefined" && expect !== chai.expect; }, next);
             },
             function(next) {
-              evalCode(change.newSource, {expect: expect, lively: lively}, change.resourceId);
+              evalCode(change.newSource, {
+                mocha: Global.mocha,
+                expect: Global.expect,
+                lively: lively
+              }, change.resourceId);
               next();
             }
           )(function(err) {
