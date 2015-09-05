@@ -39,5 +39,9 @@ module.exports = function(grunt) {
 
   });
 
-  grunt.registerTask('build', ['concat', 'uglify']);
+  grunt.task.registerTask('generateDoc', function() {
+    require("./generate-doc").generateDoc(this.async());
+  });
+
+  grunt.registerTask('build', ['generateDoc', 'concat', 'uglify']);
 };
