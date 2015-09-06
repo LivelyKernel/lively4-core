@@ -47,16 +47,18 @@ function generateDoc(thenDo) {
   var commentData = {};
 
   var files = [
-    "lib/string.js",
-    "lib/number.js",
-    "lib/date.js",
+    "lib/class.js",
     "lib/collection.js",
-    "lib/function.js",
-    "lib/object.js",
+    "lib/date.js",
     "lib/events.js",
+    "lib/function.js",
+    "lib/graph.js",
     "lib/messenger.js",
-    "lib/worker.js",
-    "lib/class.js"
+    "lib/number.js",
+    "lib/object.js",
+    "lib/string.js",
+    "lib/tree.js",
+    "lib/worker.js"
     ];
 
   // var files = ["lib/function.js"];
