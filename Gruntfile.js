@@ -15,6 +15,7 @@ module.exports = function(grunt) {
               'lib/object.js',
               'lib/collection.js',
               'lib/tree.js',
+              'lib/graph.js',
               'lib/function.js',
               'lib/string.js',
               'lib/number.js',
