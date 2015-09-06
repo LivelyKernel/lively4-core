@@ -34,6 +34,7 @@ abstractions for groups, intervals, grids.
   - [forEach](#arr-forEach)
   - [zip](#arr-zip)
   - [flatten](#arr-flatten)
+  - [interpose](#arr-interpose)
   - [map](#arr-map)
   - [invoke](#arr-invoke)
   - [pluck](#arr-pluck)
@@ -294,6 +295,16 @@ arr.zip([1,2,3], ["a", "b", "c"], ["A", "B"])
 ```js
 arr.flatten([1, [2, [3,4,5], [6]], 7,8])
 // => [1,2,3,4,5,6,7,8]
+```
+
+#### <a name="arr-interpose"></a>arr.interpose(array, delim)
+
+ Injects delim between elements of array
+ 
+
+```js
+lively.lang.arr.interpose(["test", "abc", 444], "aha"));
+// => ["test","aha","abc","aha",444]
 ```
 
 #### <a name="arr-map"></a>arr.map(array, iterator, context)

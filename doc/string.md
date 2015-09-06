@@ -30,6 +30,7 @@ String utility methods for printing, parsing, and converting strings.
   - [peekRight](#string-peekRight)
   - [peekLeft](#string-peekLeft)
   - [lineIndexComputer](#string-lineIndexComputer)
+  - [lineNumberToIndexesComputer](#string-lineNumberToIndexesComputer)
   - [empty](#string-empty)
   - [include](#string-include)
   - [startsWith](#string-startsWith)
@@ -343,6 +344,17 @@ var idxComp = string.lineIndexComputer("Hello\nWorld\n\nfoo");
 idxComp(3) // => 0 (index 3 is "l")
 idxComp(6) // => 1 (index 6 is "W")
 idxComp(12) // => 2 (index 12 is "\n")
+```
+
+#### <a name="string-lineNumberToIndexesComputer"></a>string.lineNumberToIndexesComputer(s)
+
+
+ For converting line numbers to [startIndex, endIndex]
+ 
+
+```js
+var idxComp = string.lineNumberToIndexesComputer("Hello\nWorld\n\nfoo");
+idxComp(1) // => [6,12]
 ```
 
 #### <a name="string-empty"></a>string.empty(s)

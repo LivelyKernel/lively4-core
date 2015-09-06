@@ -172,7 +172,7 @@ Array.range(0,100).forEach(function(n) { throttled() });
  and run a subsequent function afterwards. When you pass arguments to the
  debounced functions then the arguments from the last call will be use for
  the invocation.
- 
+
  With `immediate` set to true, immediately call `func` but when called again during `wait` before
  wait ms are done nothing happens. E.g. to not exec a user invoked
  action twice accidentally.
@@ -371,11 +371,11 @@ obj.foo(); // => "foo"
  Accepts multiple functions and returns an array of wrapped
  functions. Those wrapped functions ensure that only one of the original
  function is run (the first on to be invoked).
- 
+
  This is useful if you have multiple asynchronous choices of how the
  control flow might continue but want to ensure that a continuation
  is  only triggered once, like in a timeout situation:
- 
+
  ```js
  function outerFunction(callback) {
    function timeoutAction() { callback(new Error('timeout!')); }
@@ -384,15 +384,15 @@ obj.foo(); // => "foo"
    doSomethingAsync(otherAction);
  }
  ```
- 
+
  To ensure that `callback` only runs once you would normally have to write boilerplate like this:
- 
+
  ```js
  var ran = false;
  function timeoutAction() { if (ran) return; ran = true; callback(new Error('timeout!')); }
  function otherAction() { if (ran) return; ran = true; callback(null, "All OK"); }
  ```
- 
+
  Since this can get tedious an error prone, especially if more than two choices are involved, `either` can be used like this:
  
 
@@ -479,7 +479,7 @@ fun.functionNames(Klass1); // => ["bar","foo"]
  aspect.
 
  Typically closures aren't created directly but with the help of [`asScriptOf`](#)
- 
+
  
 
 ```js

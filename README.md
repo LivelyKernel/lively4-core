@@ -45,15 +45,17 @@ Abstractions usually not included by default in JavaScript runtimes:
 Please see the individual [doc files](doc/) for detailed information.
 
 <!---API_GENERATED_START--->
-### [string.js](doc/string.md)
+### [class.js](doc/class.md)
 
-String utility methods for printing, parsing, and converting strings.
+A lightweight class system that allows change classes at runtime.
 
 
 
-### [number.js](doc/number.md)
 
-Utility functions for JS Numbers.
+### [collection.js](doc/collection.md)
+
+Methods to make working with arrays more convenient and collection-like
+abstractions for groups, intervals, grids.
 
 
 
@@ -65,10 +67,9 @@ Util functions to print and work with JS date objects.
 
 
 
-### [collection.js](doc/collection.md)
+### [events.js](doc/events.md)
 
-Methods to make working with arrays more convenient and collection-like
-abstractions for groups, intervals, grids.
+A simple node.js-like cross-platform event emitter implementation.
 
 
 
@@ -82,23 +83,20 @@ control flows.
 
 
 
-### [object.js](doc/object.md)
+### [graph.js](doc/graph.md)
 
-Utility functions that help to inspect, enumerate, and create JS objects
-
-
-
-
-### [class.js](doc/class.md)
-
-A lightweight class system that allows change classes at runtime.
-
-
-
-
-### [events.js](doc/events.md)
-
-A simple node.js-like cross-platform event emitter implementation.
+Computation over graphs. Unless otherwise specified a graph is a simple JS
+object whose properties are interpreted as nodes that refer to arrays whose
+elements describe edges. Example:
+```js
+var testGraph = {
+"a": ["b", "c"],
+"b": ["c", "d", "e", "f"],
+"d": ["c", "f"],
+"e": ["a", "f"],
+"f": []
+}
+```
 
 
 
@@ -108,6 +106,33 @@ A simple node.js-like cross-platform event emitter implementation.
 A pluggable interface to provide asynchronous, actor-like message
 communication between JavaScript systems. Provides a unified message protocol
 and send / receive methods.
+
+
+
+
+### [number.js](doc/number.md)
+
+Utility functions for JS Numbers.
+
+
+
+
+### [object.js](doc/object.md)
+
+Utility functions that help to inspect, enumerate, and create JS objects
+
+
+
+
+### [string.js](doc/string.md)
+
+String utility methods for printing, parsing, and converting strings.
+
+
+
+### [tree.js](doc/tree.md)
+
+Methods for traversing and transforming tree structures.
 
 
 
