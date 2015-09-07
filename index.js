@@ -4,6 +4,7 @@ module.require('./lib/events');
 module.require('./lib/object');
 module.require('./lib/collection');
 module.require('./lib/tree');
+module.require('./lib/graph');
 module.require('./lib/function');
 module.require('./lib/string');
 module.require('./lib/number');
