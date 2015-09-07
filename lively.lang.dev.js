@@ -446,14 +446,16 @@ var obj = exports.obj = {
       Array.prototype.slice.call(object) : exports.obj.extend({}, object);
   },
 
-  extract: function(properties, object, mapFunc) {
-    return properties.reduce(function(extracted, name) {
-      if (object.hasOwnProperty(name)) {
-        var val = mapFunc ? mapFunc(name, object[name]) : object[name];
-        extracted[name] = val;
-      }
-      return extracted;
-    }, {});
+  extract: function(object, properties, mapFunc) {
+    // Takes a list of properties and returns a new object with those
+    // properties shallow-copied from object
+    var copied = {};
+    for (var i = 0; i < properties.length; i++) {
+      if (properties[i] in object)
+        copied[properties[i]] = mapFunc ?
+          mapFunc(properties[i], object[properties[i]]) : object[properties[i]];
+    }
+    return copied;
   },
 
   // -=-=-=-=-=-

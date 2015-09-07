@@ -18,6 +18,7 @@ Utility functions that help to inspect, enumerate, and create JS objects
   - [values](#obj-values)
   - [extend](#obj-extend)
   - [clone](#obj-clone)
+  - [extract](#obj-extract)
   - [inspect](#obj-inspect)
   - [merge](#obj-merge)
   - [valuesInPropertyHierarchy](#obj-valuesInPropertyHierarchy)
@@ -113,6 +114,11 @@ dest // => {x: 23,y: 24}
 #### <a name="obj-clone"></a>obj.clone(object)
 
  Shallow copy
+
+#### <a name="obj-extract"></a>obj.extract(object, properties, mapFunc)
+
+ Takes a list of properties and returns a new object with those
+ properties shallow-copied from object
 
 #### <a name="obj-inspect"></a>obj.inspect(object, options, depth)
 
