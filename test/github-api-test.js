@@ -2,9 +2,10 @@ define(function(require) {
     "use strict";
 
     var expect = chai.expect;
-    var $ = require('https://code.jquery.com/jquery-2.1.4.js');
+    //var $ = require('https://code.jquery.com/jquery-2.1.4.js');
 
     describe('Github API', function() {
+/*
         it('should DO THINGS', function(done) {
             $.ajax({
                 url: "https://eval/3+4",
@@ -15,6 +16,10 @@ define(function(require) {
                     done();
                 }
             });
+        });
+*/
+        it('should add two numbers', function() {
+            expect(add(17, 25)).to.equal(42);
         });
     });
 });
