@@ -71,13 +71,13 @@ repo.fork(function(err, res) {
     console.log(res);
 });
 (new Github(GITHUB_CREDENTIALS))
-    .getRepo('onsetsu', 'repotodelete')
+    .getRepo('Lively4', 'manuallycreated')
     .read('master', 'README.md', function(err, data) {
         console.log(err, data);
     });
 (new Github(GITHUB_CREDENTIALS))
-    .getRepo('onsetsu', 'repotodelete')
-    .write('master', 'README.md', `# repotodelete
+    .getRepo('Lively4', 'manuallycreated')
+    .write('master', 'README.md', `# manuallycreated
 A repository to be deleted by Lively4.
 THIS IS NEW!
 `,
@@ -88,14 +88,38 @@ THIS IS NEW!
 
 (new Github(GITHUB_CREDENTIALS))
     .getUser()
-    .show('onsetsu', function(err, data) {
-        console.log('Onsetsu\'s User Profile', err, data);
+    .show('Lively4', function(err, data) {
+        console.log('Lively4\'s User Profile', err, data);
     });
 
 (new Github(GITHUB_CREDENTIALS))
     .getUser()
-    .userRepos('onsetsu', function(err, data) {
-        console.log('Onsetsu\'s Repos', err, data);
+    .userRepos('Lively4', function(err, data) {
+        console.log('Lively4\'s Repos', err, data);
+    });
+
+(new Github(GITHUB_CREDENTIALS))
+    .getUser()
+    .createRepo({
+        name: 'autorepo',
+        description: 'This repo is auto-generated',
+        "private": false,
+        "has_issues": true,
+        "has_wiki": true,
+        "has_downloads": true,
+        auto_init: true
+    }, function(err, data) {
+        console.log('POSSIBLY CREATED A REPO', err, data);
+        repo = github.getRepo('Lively4', 'autorepo');
+        repo.deleteRepo(function(err, res) {
+            if(err) {
+                console.log('ERROR ON DELETING A REPO!!!!');
+                console.log(err);
+            } else {
+                console.log('DELETED A REPO!!!!');
+                console.log(res);
+            }
+        });
     });
 
 // --------------------------------------------------------------------
@@ -234,7 +258,55 @@ function applyTransformers(response) {
     return (new Identity()).transform(response);
 }
 
+
 /*
+ TODO: broker/service locator for core modules
+ make them interchangable
+ var modules;
+
+ var broker = function broker(name) {
+ return (modules && modules[name]) || broker.defaults[name]();
+ };
+
+ broker.defaults = {
+ runner: function() {
+ return require('./lib/runner');
+ },
+ test: function() {
+ return require('./lib/test') ;
+ }
+ };
+
+ broker.init = function init(opts) {
+ modules = opts;
+ return broker;
+ });
+
+ module.exports = broker;
+
+ then calling:
+ require('broker').init(modules);
+ require('broker')('runner');
+ */
+
+/*
+ TODO: plugin architecture
+ chai.use(require('some-chai-plugin'));
+ mocha.use(require('plugin-module')(opts));
+ */
+
+/*
+TODO: configuration via code, not json as code is more powerful, e.g.
+// karma.conf.js
+module.exports = function(karma) {
+  karma.set({
+     browsers: [process.env.TRAVIS ? 'Firefox' : 'Chrome']
+   });
+ }
+ */
+
+/*
+ // TODO: gulp-like stream processing of requests
 l4.task('github*', str => {
     l4.start(str)
         .then(loader(l4-github.request))
