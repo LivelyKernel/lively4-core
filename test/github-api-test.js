@@ -18,7 +18,7 @@ define(function(require) {
             });
         });
 */
-        it('should add two numbers', function() {
+        it('should DO IT', function() {
             expect(add(17, 25)).to.equal(42);
         });
     });
