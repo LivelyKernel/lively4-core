@@ -2,7 +2,7 @@ define(function(require) {
     "use strict";
 
     var expect = chai.expect;
-    //var $ = require('https://code.jquery.com/jquery-2.1.4.js');
+    var $ = require('https://code.jquery.com/jquery-2.1.4.js');
 
     describe('Github API', function() {
 /*
