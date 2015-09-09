@@ -45,6 +45,7 @@ importScripts('loader/eval.js');
     });
 })();
 
+/*
 importScripts('loader/github/github.js');
 importScripts('loader/github/credentials.js');
 
@@ -58,14 +59,6 @@ repo.show(function showRepoCallback(err, repo) {
     console.log('----------------------------------------------------------');
 });
 
-// TODO: deleting repositories currently not possible
-repo.deleteRepo(function(err, res) {
-    if(err) {
-        console.log(err);
-    } else {
-        console.log(res);
-    }
-});
 repo.fork(function(err, res) {
     console.log(err);
     console.log(res);
@@ -100,6 +93,13 @@ THIS IS NEW!
 
 (new Github(GITHUB_CREDENTIALS))
     .getUser()
+    .userRepos('Lively4', function(err, data) {
+        console.log('Lively4\'s Repos #####################################');
+        console.log(err, data);
+    });
+
+(new Github(GITHUB_CREDENTIALS))
+    .getUser()
     .createRepo({
         name: 'autorepo',
         description: 'This repo is auto-generated',
@@ -121,13 +121,14 @@ THIS IS NEW!
             }
         });
     });
+*/
 
 // --------------------------------------------------------------------
 // Transformers
 // --------------------------------------------------------------------
 importScripts('transformer/identity.js');
 
-class LogAppend {
+class ApplySourceTransformation {
     match(response) {
         var blackList = [
             'babel-core/browser.js',
@@ -250,7 +251,7 @@ function applyLoaders(request) {
 function applyTransformers(response) {
     console.log('Service Worker: Transformer', response, response.url);
 
-    var log = new LogAppend();
+    var log = new ApplySourceTransformation();
     if(log.match(response)) {
         return log.transform(response);
     }
