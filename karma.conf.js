@@ -5,7 +5,7 @@ module.exports = function(config) {
   config.set({
 
     // base path that will be used to resolve all patterns (eg. files, exclude)
-    basePath: '',
+    basePath: '../',
 
 
     // frameworks to use
@@ -18,14 +18,14 @@ module.exports = function(config) {
       //'babel-core/browser.js',
       //'es6-module-loader/es6-module-loader-dev.src.js',
       'system.src.js',
-      'test-main.js',
       {pattern: 'babel-core/**/*.js', included: false},
       {pattern: 'src/**/*.js', included: false},
       {pattern: 'loader/**/*.js', included: false},
       {pattern: 'transformer/**/*.js', included: false},
       {pattern: 'bootworker*', included: false},
       {pattern: 'serviceworker*', included: false},
-      {pattern: 'test/**/*-test.js', included: false}
+      {pattern: 'test/**/*-test.js', included: false},
+      'test-main.js',
     ],
 
     proxies: {
