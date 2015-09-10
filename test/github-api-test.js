@@ -3,7 +3,7 @@ define(function(require) {
 
     var expect = chai.expect;
     require('https://code.jquery.com/jquery-2.1.4.js');
-    var github = require('../client/github/github-client.js');
+    var Github = require('../client/github/github-client.js');
 
     describe('Github API', function() {
         it('should load appropriately', function(done) {
@@ -12,7 +12,7 @@ define(function(require) {
                 type: "get",
                 success: function(d) {
                     expect('7').to.equal(d);
-                    expect(github.answer).to.equal(42);
+                    expect(Github.answer).to.equal(42);
                     done();
                 }
             });

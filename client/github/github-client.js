@@ -1,5 +1,7 @@
 define(function(require, exports, module) {
     "use strict";
 
-    exports.answer = 42;
+    module.exports = {
+        answer: 42
+    };
 });
