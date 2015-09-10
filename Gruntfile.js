@@ -41,7 +41,20 @@ module.exports = function(grunt) {
   });
 
   grunt.task.registerTask('generateDoc', function() {
-    require("./generate-doc").generateDoc(this.async());
+    var files = [
+      "lib/class.js",
+      "lib/collection.js",
+      "lib/date.js",
+      "lib/events.js",
+      "lib/function.js",
+      "lib/graph.js",
+      "lib/messenger.js",
+      "lib/number.js",
+      "lib/object.js",
+      "lib/string.js",
+      "lib/tree.js",
+      "lib/worker.js"];
+    require("./generate-doc").generateDoc({files: files}, this.async());
   });
 
   grunt.registerTask('build', ['generateDoc', 'concat', 'uglify']);

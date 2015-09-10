@@ -62,6 +62,10 @@ num.parseLength('3cm') // => 113.38582677165354
 num.parseLength('3cm', "in") // => 1.1811023622047243
 ```
 
+#### <a name="toCm"></a>toCm(n, unit)
+
+ as defined in http://www.w3.org/TR/css3-values/#absolute-lengths
+
 #### <a name="num-roundTo"></a>num.roundTo(n, quantum)
 
  `quantum` is something like 0.01,

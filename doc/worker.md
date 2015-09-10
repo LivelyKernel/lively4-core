@@ -8,14 +8,6 @@ worker (if the platform you use it on supports it).
   - [fork](#worker-fork)
   - [create](#worker-create)
 
-### <a name="worker"></a>worker
-
-
-Worker objects allow to fork processes in both Web and node.js JavaScript
-environments. They provide this mechanism using web workers in the browser and
-node.js child processes in node.js. The interface is unified for all platforms.
- 
-
 #### <a name="worker-fork"></a>worker.fork(options, workerFunc, thenDo)
 
  Fork automatically starts a worker and calls `workerFunc`. `workerFunc`

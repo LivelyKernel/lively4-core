@@ -44,7 +44,7 @@ Abstractions usually not included by default in JavaScript runtimes:
 
 Please see the individual [doc files](doc/) for detailed information.
 
-<!---API_GENERATED_START--->
+<!---DOC_GENERATED_START--->
 ### [class.js](doc/class.md)
 
 A lightweight class system that allows change classes at runtime.
@@ -144,7 +144,7 @@ worker (if the platform you use it on supports it).
 
 
 
-<!---API_GENERATED_END--->
+<!---DOC_GENERATED_END--->
 
 <!---
 ## Usage

@@ -47,8 +47,7 @@ graph.hull(testGraph, "e", ["b"]) // =? ["a", "f", "c"]
 
 #### <a name="graph-subgraphReachableBy"></a>graph.subgraphReachableBy(graphMap, id, ignore, maxDepth)
 
- show-in-doc
- Like hull but returns subgraph map of `graphMap`
+Like hull but returns subgraph map of `graphMap`
  
 
 ```js

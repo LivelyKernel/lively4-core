@@ -40,7 +40,6 @@ control flows.
   - [fromString](#fun-fromString)
   - [asScript](#fun-asScript)
   - [asScriptOf](#fun-asScriptOf)
-  - [addToObject](#fun-addToObject)
   - [functionNames](#fun-functionNames)
   - [logErrors](#fun-logErrors)
   - [webkitStack](#fun-webkitStack)
@@ -443,10 +442,6 @@ fun.fromString("function() { return 3; }")() // => 3
 
  Like `asScript` but makes `f` a method of `obj` as `optName` or the name
  of the function.
-
-#### <a name="fun-addToObject"></a>fun.addToObject(f, obj, name)
-
- suppport for tracing
 
 #### <a name="fun-functionNames"></a>fun.functionNames(klass)
 

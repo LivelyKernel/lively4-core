@@ -3,15 +3,10 @@
 Util functions to print and work with JS date objects.
 
 
-- [dateFormat](#dateFormat)
 - [exports.date](#exports.date)
   - [format](#exports.date-format)
   - [equals](#exports.date-equals)
   - [relativeTo](#exports.date-relativeTo)
-
-### <a name="dateFormat"></a>dateFormat
-
- http://blog.stevenlevithan.com/archives/date-time-format
 
 #### <a name="exports.date-format"></a>exports.date.format(date, mask, utc)
 

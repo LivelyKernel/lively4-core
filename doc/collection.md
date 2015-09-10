@@ -60,7 +60,6 @@ abstractions for groups, intervals, grids.
   - [clear](#arr-clear)
   - [doAndContinue](#arr-doAndContinue)
   - [nestedDelay](#arr-nestedDelay)
-  - [forEachShowingProgress](#arr-forEachShowingProgress)
   - [swap](#arr-swap)
   - [rotate](#arr-rotate)
   - [groupBy](#arr-groupBy)
@@ -469,10 +468,6 @@ arr.doAndContinue([
  calls `waitSecs`. Eventually `endFunc` is called. When passing a number n
  as `optSynchronChunks`, only every nth iteration is delayed.
 
-#### <a name="arr-forEachShowingProgress"></a>arr.forEachShowingProgress()
-
- init args
-
 #### <a name="arr-swap"></a>arr.swap(array, index1, index2)
 
  mutating
@@ -636,7 +631,7 @@ lively.lang.arr.mapAsync([1,2,3,4],
 
 ### <a name="Group"></a>Group
 
- A Grouping is created by arr.groupBy and maps keys to Arrays.
+A Grouping is created by arr.groupBy and maps keys to Arrays.
 
 #### <a name="Group-fromArray"></a>Group.fromArray(array, hashFunc, context)
 
@@ -674,7 +669,7 @@ group.toArray(); // => [[2,4],[1,3,5]]
 
 #### <a name="Group.prototype-keys"></a>Group>>keys()
 
- show-in-docs
+
 
 #### <a name="Group.prototype-reduceGroups"></a>Group>>reduceGroups(iterator, carryOver, context)
 
@@ -686,7 +681,7 @@ group.toArray(); // => [[2,4],[1,3,5]]
 
 ### <a name="grid"></a>grid
 
- A grid is just a two-dimaensional array, representing a table-like data
+A grid is a two-dimaensional array, representing a table-like data
 
 #### <a name="grid-create"></a>grid.create(rows, columns, initialObj)
 
@@ -741,7 +736,7 @@ grid.tableFromObjects([{x:1,y:2},{x:3},{z:4}])
 
 ### <a name="interval"></a>interval
 
- Intervals are arrays whose first two elements are numbers and the
+Intervals are arrays whose first two elements are numbers and the
  first element should be less or equal the second element, see
  [`interval.isInterval`](). This abstraction is useful when working with text
  ranges in rich text, for example.
@@ -845,7 +840,7 @@ interval.intervalsInbetween(0, 10,[[1,4], [5,8]])
 
 ### <a name="arrayProjection"></a>arrayProjection
 
- Accessor to sub-ranges of arrays. This is used, for example, for rendering
+Accessor to sub-ranges of arrays. This is used, for example, for rendering
  large lists or tables in which only a part of the items should be used for
  processing or rendering. An array projection provides convenient access and
  can apply operations to sub-ranges.

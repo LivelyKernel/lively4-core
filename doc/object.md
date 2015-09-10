@@ -24,7 +24,6 @@ Utility functions that help to inspect, enumerate, and create JS objects
   - [valuesInPropertyHierarchy](#obj-valuesInPropertyHierarchy)
   - [mergePropertyInHierarchy](#obj-mergePropertyInHierarchy)
   - [deepCopy](#obj-deepCopy)
-  - [shortPrintStringOf](#obj-shortPrintStringOf)
   - [isMutableType](#obj-isMutableType)
   - [safeToString](#obj-safeToString)
 - [Path](#Path)
@@ -166,10 +165,6 @@ obj.mergePropertyInHierarchy(o3, "x");
 
  Recursively traverses `object` and its properties to create a copy.
 
-#### <a name="obj-shortPrintStringOf"></a>obj.shortPrintStringOf(obj)
-
- constructed objects
-
 #### <a name="obj-isMutableType"></a>obj.isMutableType(obj)
 
  Is `obj` a value or mutable type?
@@ -180,7 +175,7 @@ obj.mergePropertyInHierarchy(o3, "x");
 
 ### <a name="Path"></a>Path
 
- A `Path` is an objectified chain of property names (kind of a "complex"
+A `Path` is an objectified chain of property names (kind of a "complex"
  getter and setter). Path objects can make access and writes into deeply nested
  structures more convenient. `Path` provide "safe" get and set operations and
  can be used for debugging by providing a hook that allows users to find out
