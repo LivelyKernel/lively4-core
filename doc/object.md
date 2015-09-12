@@ -13,6 +13,7 @@ Utility functions that help to inspect, enumerate, and create JS objects
   - [isUndefined](#obj-isUndefined)
   - [isRegExp](#obj-isRegExp)
   - [isObject](#obj-isObject)
+  - [isPrimitive](#obj-isPrimitive)
   - [isEmpty](#obj-isEmpty)
   - [equals](#obj-equals)
   - [values](#obj-values)
@@ -77,6 +78,10 @@ Utility functions that help to inspect, enumerate, and create JS objects
 
 
 #### <a name="obj-isObject"></a>obj.isObject(object)
+
+
+
+#### <a name="obj-isPrimitive"></a>obj.isPrimitive(obj)
 
 
 

@@ -318,7 +318,6 @@ var obj = exports.obj = {
   // testing
   // -=-=-=-=-
 
-
   isArray: function(obj) { /*show-in-doc*/ return obj && Array.isArray(obj); },
 
   isElement: function(object) { /*show-in-doc*/ return object && object.nodeType == 1; },
@@ -336,6 +335,17 @@ var obj = exports.obj = {
   isRegExp: function(object) { /*show-in-doc*/ return object instanceof RegExp; },
 
   isObject: function(object) { /*show-in-doc*/ return typeof object == "object"; },
+
+  isPrimitive: function(obj) {
+    // show-in-doc
+    if (!obj) return true;
+    switch (typeof obj) {
+      case "string":
+      case "number":
+      case "boolean": return true;
+    }
+    return false;
+  },
 
   isEmpty: function(object) {
     /*show-in-doc*/
@@ -442,8 +452,14 @@ var obj = exports.obj = {
 
   clone: function(object) {
     // Shallow copy
-    return Array.isArray(object) ?
-      Array.prototype.slice.call(object) : exports.obj.extend({}, object);
+    if (obj.isPrimitive(object)) return object;
+    if (Array.isArray(object)) return Array.prototype.slice.call(object);
+    var clone = {};
+    for (var key in object) {
+      if (object.hasOwnProperty(key))
+        clone[key] = object[key];
+    }
+    return clone;
   },
 
   extract: function(object, properties, mapFunc) {
