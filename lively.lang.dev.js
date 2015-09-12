@@ -771,6 +771,7 @@ var properties = exports.properties = {
 // js object path accessor
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+// show-in-doc
 // A `Path` is an objectified chain of property names (kind of a "complex"
 // getter and setter). Path objects can make access and writes into deeply nested
 // structures more convenient. `Path` provide "safe" get and set operations and
@@ -1783,6 +1784,7 @@ var arr = exports.arr = {
 
     // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     function extractBatch(batch, sizes) {
+      // ignore-in-doc
       // Array -> Array -> Array[Array,Array]
       // case 1: no sizes to distribute, we are done
       if (!sizes.length) return [batch, []];
@@ -2046,6 +2048,7 @@ var arr = exports.arr = {
   },
 }
 
+// show-in-doc
 // A Grouping is created by arr.groupBy and maps keys to Arrays.
 var Group = exports.Group = function Group() {}
 
@@ -2130,7 +2133,8 @@ Group.prototype.count = function() {
 
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-// A grid is just a two-dimaensional array, representing a table-like data
+// show-in-doc
+// A grid is a two-dimaensional array, representing a table-like data
 var grid = exports.grid = {
 
   create: function(rows, columns, initialObj) {
@@ -2259,6 +2263,7 @@ var grid = exports.grid = {
 
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+// show-in-doc
 // Intervals are arrays whose first two elements are numbers and the
 // first element should be less or equal the second element, see
 // [`interval.isInterval`](). This abstraction is useful when working with text
@@ -2497,6 +2502,7 @@ var interval = exports.interval = {
 
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+// show-in-doc
 // Accessor to sub-ranges of arrays. This is used, for example, for rendering
 // large lists or tables in which only a part of the items should be used for
 // processing or rendering. An array projection provides convenient access and
@@ -2653,16 +2659,27 @@ var testGraph = {
 var obj = exports.obj;
 var arr = exports.arr;
 
-function _hull(graphMap, id, ignore, result, depth, maxDepth) {
-  if (depth >= maxDepth || result[id] || ignore.indexOf(id) > -1) return;
-  var refs = arr.withoutAll(graphMap[id] || [], ignore);
-  if (!refs) return;
-  result[id] = refs;
-  refs.forEach(function(id) { _hull(graphMap, id, ignore, result, depth+1, maxDepth); });
-}
-
 // show-in-doc
 var graph = exports.graph = {
+
+  clone: function(graph) {
+    // return a copy of graph map
+    var cloned = {};
+    for (var id in graph)
+      cloned[id] = graph[id].slice();
+    return cloned;
+  },
+
+  without: function(graph, ids) {
+    // return a copy of graph map with ids removed
+    var cloned = {};
+    for (var id in graph) {
+      if (ids.indexOf(id) > -1) continue;
+      cloned[id] = graph[id].filter(function(id) {
+        return ids.indexOf(id) === -1; });
+    }
+    return cloned;
+  },
 
   hull: function(graphMap, id, ignore, maxDepth) {
     // Takes a graph in object format and a start id and then traverses the
@@ -2695,12 +2712,16 @@ var graph = exports.graph = {
     // Example:
     // graph.subgraphReachableBy(testGraph, "e", [], 2);
     // // => {e: [ 'a', 'f' ], a: [ 'b', 'c' ], f: []}
-    var result = {};
-    _hull(graphMap, id,
-      arr.without(ignore || [], id),
-      result, 0,
-      obj.isNumber(maxDepth) ? maxDepth : 10);
-    return result;
+    maxDepth = maxDepth || 10;
+    if (ignore) graphMap = graph.without(graphMap, ignore);
+    var ids = [id], step = 0, subgraph = {};
+    while (ids.length && step++ < maxDepth) {
+      ids = ids.reduce(function(ids, id) {
+        return subgraph[id] ?
+          ids : ids.concat(subgraph[id] = graphMap[id] || []);
+      }, []);
+    }
+    return subgraph;
   }
 };
 
@@ -2924,7 +2945,7 @@ var fun = exports.fun = {
     var store = fun._throttledByName || (fun._throttledByName = {});
     if (store[name]) return store[name];
     function throttleNamedWrapper() {
-      // cleaning up
+      // ignore-in-doc, cleaning up
       fun.debounceNamed(name, wait, function() { delete store[name]; })();
       func.apply(this, arguments);
     }
@@ -2940,7 +2961,7 @@ var fun = exports.fun = {
     var store = fun._debouncedByName || (fun._debouncedByName = {});
     if (store[name]) return store[name];
     function debounceNamedWrapper() {
-      // cleaning up
+      // ignore-in-doc, cleaning up
       delete store[name];
       func.apply(this, arguments);
     }
@@ -4097,6 +4118,7 @@ var string = exports.string = {
     return nodeList.join('\n');
     // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     function iterator(depth, index, node) {
+      // ignore-in-doc
       // 1. Create stringified representation of node
       nodeList[index] = (string.times(indent, depth)) + nodePrinter(node, depth);
       var children = childGetter(node, depth),
@@ -4478,7 +4500,9 @@ var string = exports.string = {
 		 * providing access to strings as preformed UTF-8
 		 * 8-bit unsigned value arrays.
 		 */
-		function md5blk(s) { 		/* I figured global was faster.   */
+		function md5blk(s) {
+		  // ignore-in-doc
+		  /* I figured global was faster.   */
 			var md5blks = [], i; 	/* Andy King said do it this way. */
 			for (i=0; i<64; i+=4) {
 			md5blks[i>>2] = s.charCodeAt(i)
@@ -4546,6 +4570,7 @@ var string = exports.string = {
 
     // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     function splitInThree(string, start, end, startGap, endGap) {
+      // ignore-in-doc
       // split string at start and end
       // return (0, start), (start, end), (end, ...)
       startGap = startGap || 0; endGap = endGap || 0;
@@ -4555,6 +4580,7 @@ var string = exports.string = {
     }
 
     function matchStringForward(s, pattern) {
+      // ignore-in-doc
       // try to match pattern at beginning of string. if matched, return
       // result object with {
       //   match: STRING,
@@ -4578,6 +4604,7 @@ var string = exports.string = {
     }
 
     function matchStringForwardWithAllPatterns(s, patterns) {
+      // ignore-in-doc
       // like matchStringForward, just apply list of patterns
       var pos = 0;
       for (var i = 0; i < patterns.length; i++) {
@@ -4627,6 +4654,7 @@ var string = exports.string = {
     }
 
     function embeddedReMatch(s, patternString) {
+      // ignore-in-doc
       // the main match func
       var patterns = splitIntoPatterns(patternString)
       var result = matchStringForwardWithAllPatterns(s, patterns);
@@ -5993,6 +6021,7 @@ var messenger = exports.messenger = {
         // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
         function deliver(queued) {
+          // ignore-in-doc
           if (messenger._inflight.indexOf(queued) === -1) return; // timed out
           var msg = queued[0], callback = queued[1];
           if (callback)
