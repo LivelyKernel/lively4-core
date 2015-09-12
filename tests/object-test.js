@@ -268,6 +268,7 @@ describe('obj', function() {
 
     it("clones objects", function() {
       var clone = obj.clone(obj1);
+      expect(clone).to.not.equal(obj1);
       clone.foo = 24;
       clone.oink = "!";
       expect(clone.foo).to.be(24);
