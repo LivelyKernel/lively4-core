@@ -15,12 +15,22 @@ var testGraph = {
 
 
 - [graph](#graph)
+  - [clone](#graph-clone)
+  - [without](#graph-without)
   - [hull](#graph-hull)
   - [subgraphReachableBy](#graph-subgraphReachableBy)
 
 ### <a name="graph"></a>graph
 
 
+
+#### <a name="graph-clone"></a>graph.clone(graph)
+
+ return a copy of graph map
+
+#### <a name="graph-without"></a>graph.without(graph, ids)
+
+ return a copy of graph map with ids removed
 
 #### <a name="graph-hull"></a>graph.hull(graphMap, id, ignore, maxDepth)
 

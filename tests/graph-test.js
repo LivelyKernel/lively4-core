@@ -28,10 +28,12 @@ describe('graph', function() {
     });
 
     it("reachable subgraph", function() {
-      expect(graph.subgraphReachableBy(testGraph, "d"))
-        .to.eql({"d": ["c", "f"], "c": [], "f": []})
+      expect(graph.subgraphReachableBy(testGraph, "d", []))
+        .to.eql({"d": ["c", "f"], "c": [], "f": []});
       expect(graph.subgraphReachableBy(testGraph, "e", [], 2))
-        .to.eql({e: [ 'a', 'f' ], a: [ 'b', 'c' ], f: []})
+        .to.eql({e: [ 'a', 'f' ], a: [ 'b', 'c' ], f: []});
+      expect(graph.subgraphReachableBy(testGraph, "e", ["a"], 2))
+        .to.eql({e: ['f' ], f: []});
     });
 
   });

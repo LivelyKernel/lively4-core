@@ -200,8 +200,3 @@ msger1.sendTo(msger2.id(), 'add', {a: 3, b: 4},
   function(err, answer) { alert(answer.data.result); });
 ```
 
-
-
-#### <a name="deliver"></a>deliver(queued)
-
- timed out
