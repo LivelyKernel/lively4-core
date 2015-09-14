@@ -98,7 +98,11 @@
     globalInterfaceSpec.forEach(function(ea) {
       if (ea.action === "installMethods") {
         var targetPath = livelyLang.Path(ea.target);
-        if (!targetPath.isIn(Global)) targetPath.set(Global, {}, true);
+        if (!targetPath.isIn(Global)) {
+          targetPath.defineProperty(Global,
+            {value: {}, writable: true, enumerable: false, configurable: true},
+            true);
+        }
         var sourcePath = livelyLang.Path(ea.sources[0]);
         ea.methods.forEach(function(name) {
           installProperty(
@@ -115,8 +119,9 @@
       } else if (ea.action === "installObject") {
         var targetPath = livelyLang.Path(ea.target);
         var source = livelyLang.Path(ea.source).get(livelyLang);
-        targetPath.set(Global, source, true);
-
+        targetPath.defineProperty(Global,
+            {value: source, writable: true, enumerable: false, configurable: true},
+            true);
       } else throw new Error("Cannot deal with global setup action: " + ea.action);
     });
   }
@@ -138,7 +143,9 @@
       };
       prop.toString = function() { return origFunc.toString(); };
     }
-    targetPath.set(Global, prop, true);
+    targetPath.defineProperty(Global,
+      {value: prop, writable: true, enumerable: false, configurable: true},
+      true);
   }
 
   function uninstallGlobals() {
@@ -898,6 +905,26 @@ obj.extend(Path.prototype, {
     return delete parent[this._parts[this._parts.length-1]];
   },
 
+  withParentAndKeyDo: function(obj, ensure, doFunc) {
+    // Deeply resolve path in `obj`, not fully, however, only to the parent
+    // element of the last part of path. Take the parent, the key (the last
+    // part of path) and pass it to `doFunc`. When `ensure` is true, create
+    // objects along path it path does not resolve
+    if (this.isRoot()) return doFunc(null, null);
+    var parent = obj;
+    for (var i = 0; i < this._parts.length-1; i++) {
+      var part = this._parts[i];
+      if (parent.hasOwnProperty(part) && (typeof parent[part] === "object" || typeof parent[part] === "function")) {
+        parent = parent[part];
+      } else if (ensure) {
+        parent = parent[part] = {};
+      } else {
+        return doFunc(null, part);
+      }
+    }
+    return doFunc(parent, this._parts[this._parts.length-1]);
+  },
+
   set: function(obj, val, ensure) {
     // Deeply resolve path in `obj` and set the resulting property to `val`. If
     // `ensure` is true, create nested structure in between as necessary.
@@ -909,19 +936,18 @@ obj.extend(Path.prototype, {
     // var o2 = {foo: {}};
     // path.set(o2, 43, true)
     // o2 // => {foo: {bar: {baz: 43}}}
-    if (this.isRoot()) return undefined;
-    var parent = obj
-    for (var i = 0; i < this._parts.length-1; i++) {
-      var part = this._parts[i];
-      if (parent.hasOwnProperty(part) && (typeof parent[part] === "object" || typeof parent[part] === "function")) {
-        parent = parent[part];
-      } else if (ensure) {
-        parent = parent[part] = {};
-      } else {
-        return undefined;
-      }
-    }
-    return parent[this._parts[this._parts.length-1]] = val;
+    return this.withParentAndKeyDo(obj, ensure,
+      function(parent, key) { return parent ? parent[key] = val : undefined; });
+  },
+
+  defineProperty: function(obj, propertySpec, ensure) {
+    // like `Path>>set`, however uses Objeect.defineProperty
+    return this.withParentAndKeyDo(obj, ensure,
+      function(parent, key) {
+        return parent ?
+          Object.defineProperty(parent, key, propertySpec) :
+          undefined;
+      });
   },
 
   get: function(obj, n) {

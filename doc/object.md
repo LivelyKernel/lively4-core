@@ -36,7 +36,9 @@ Utility functions that help to inspect, enumerate, and create JS objects
   - [equals](#Path.prototype-equals)
   - [isParentPathOf](#Path.prototype-isParentPathOf)
   - [relativePathTo](#Path.prototype-relativePathTo)
+  - [withParentAndKeyDo](#Path.prototype-withParentAndKeyDo)
   - [set](#Path.prototype-set)
+  - [defineProperty](#Path.prototype-defineProperty)
   - [get](#Path.prototype-get)
   - [concat](#Path.prototype-concat)
   - [watch](#Path.prototype-watch)
@@ -232,6 +234,13 @@ p2.relativePathTo(p1) // => Path(["bar","baz"])
 p1.relativePathTo(p2) // => undefined
 ```
 
+#### <a name="Path.prototype-withParentAndKeyDo"></a>Path>>withParentAndKeyDo(obj, ensure, doFunc)
+
+ Deeply resolve path in `obj`, not fully, however, only to the parent
+ element of the last part of path. Take the parent, the key (the last
+ part of path) and pass it to `doFunc`. When `ensure` is true, create
+ objects along path it path does not resolve
+
 #### <a name="Path.prototype-set"></a>Path>>set(obj, val, ensure)
 
  Deeply resolve path in `obj` and set the resulting property to `val`. If
@@ -247,6 +256,10 @@ var o2 = {foo: {}};
 path.set(o2, 43, true)
 o2 // => {foo: {bar: {baz: 43}}}
 ```
+
+#### <a name="Path.prototype-defineProperty"></a>Path>>defineProperty(obj, propertySpec, ensure)
+
+ like `Path>>set`, however uses Objeect.defineProperty
 
 #### <a name="Path.prototype-get"></a>Path>>get(obj, n)
 
