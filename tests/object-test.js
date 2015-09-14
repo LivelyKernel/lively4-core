@@ -457,6 +457,23 @@ describe('Path', function() {
     expect(p1.isParentPathOf(pp("b.a"))).to.be(false);
   });
 
+  it("withParentAndKeyDo", function() {
+    var p1 = lively.lang.Path("a.b.c"),
+        o = {a: {b: {c: {foo: 23}}}};
+    p1.withParentAndKeyDo(o, false, function(parent, key) {
+      expect(key).equal("c");
+      expect(parent).eql({c: {foo: 23}});
+    });
+  });
+
+  it("defineProperty", function() {
+    var p1 = lively.lang.Path("a.b.c"),
+        o = {a: {b: {}}};
+    p1.defineProperty(o, {value: 37, writable: true, enumerable: false, configurable: true});
+    expect(o.a.b.c).equal(37);
+    expect(Object.keys(o.a.b)).eql([]);
+  });
+
   it("overwrites string", function() {
     var obj = {foo: "b a r"},
         p = Path('foo.b a r.baz');
