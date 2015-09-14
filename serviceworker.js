@@ -14,6 +14,33 @@ var broadCastMessage = function(data) {
 broadCastMessage('HELLO CLIENT');
 broadCastMessage('U HEAR ME?');
 
+function hasPort(e) {
+    return e.ports;
+}
+
+self.addEventListener('message', function(event) {
+    if(hasPort(event)) {
+       return;
+    }
+    console.log('# # # # ## # # # # # # # # # # # # # # #');
+    console.log('GOT A MESSAGE1');
+    console.log('# # # # ## # # # # # # # # # # # # # # #');
+    console.log(event.data, event.source);
+    debugger;
+});
+
+self.addEventListener('message', function(event) {
+    if(!hasPort(event)) {
+        return;
+    }
+    console.log('# # # # ## # # # # # # # # # # # # # # #');
+    console.log('GOT A MESSAGE2');
+    console.log('# # # # ## # # # # # # # # # # # # # # #');
+    console.log(event.data, event.source);
+
+    event.ports[0].postMessage('Sending Back a Message');
+});
+
 //importScripts('bundle.js');
 
 importScripts('babel-core/browser.js');
@@ -207,13 +234,34 @@ self.addEventListener('activate', function(event) {
     self.clients.claim();
 });
 
+function useGithub(event) {
+    function getDataObject(url) {
+        var obj = {};
+        url.split('?')[1]
+            .split('&')
+            .forEach(function(datum) {
+                var keyValue = datum.split('=');
+                obj[keyValue[0]] = keyValue[1];
+            });
+        return obj;
+    }
+
+    // TODO: process request and call appropriate github functionality
+    // Or use communication between Broswer and Worker to make this work
+    console.log(' # # # # # # # ## # # # # # # #');
+    console.log(event.request);
+    return fetch(event.request);
+}
+
 self.addEventListener('fetch', function(event) {
     console.log('Service Worker: Fetch', event.request, event.request.url);
     broadCastMessage('FETCHING THIS STUFF: ' + event.request.url);
 
-    var response = parseEvent(event)
-        .then(applyLoaders)
-        .then(applyTransformers);
+    var response = event.request.url.match(/^(https:\/\/githubapi\/)/) ?
+        useGithub(event) :
+        parseEvent(event)
+            .then(applyLoaders)
+            .then(applyTransformers);
 
     event.respondWith(response);
 });
@@ -262,6 +310,7 @@ function applyTransformers(response) {
 
 /*
  TODO: broker/service locator for core modules
+ https://github.com/mochajs/mocha/issues/1457
  make them interchangable
  var modules;
 
@@ -294,6 +343,9 @@ function applyTransformers(response) {
  TODO: plugin architecture
  chai.use(require('some-chai-plugin'));
  mocha.use(require('plugin-module')(opts));
+
+ thenable plugins
+ l4.use().then();
  */
 
 /*
