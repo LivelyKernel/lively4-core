@@ -3,14 +3,14 @@
 //--------------------- BEGIN OF MESSAGING ------------------------------
 //-----------------------------------------------------------------------
 
-l4.broadCastMessage = function(data) {
+l4.broadCastMessage = function(message) {
     self.clients.matchAll().then(function(clients) {
         clients.forEach(function(client) {
             client.postMessage({
                 meta: {
                     type: 'broadcast'
                 },
-                data: data
+                message: message
             });
         });
     });
@@ -87,6 +87,15 @@ l4.onCall = function onCall(match, react) {
     });
 };
 
+/*
+ * Message Design
+ * ---
+ * event
+ * -> data
+ *   -> meta (meta data for the current message)
+ *     -> type
+ *   -> message (the actual message)
+ */
 // TODO: 2 use cases: access github API + message test
 // usage
 l4.onCall(function match(event) {
@@ -99,9 +108,7 @@ l4.onCall(function match(event) {
             type: 'msg send back',
             receivedMessage: event.data
         },
-        data: {
-            msg: 'Sending Back a Message'
-        }
+        message: 'Sending Back a Message'
     });
 
     return true;
