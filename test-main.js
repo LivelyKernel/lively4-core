@@ -29,8 +29,8 @@ navigator.serviceWorker.ready.then(function() {
   "use strict";
 
   navigator.serviceWorker.onmessage = function(event) {
-    if (event.data.meta && event.data.meta.msg == 'broadcast') {
-      console.log(event.data.data);
+    if (event.data.meta && event.data.meta.type == 'broadcast') {
+      console.log(event.data.message);
     }
   };
 /*

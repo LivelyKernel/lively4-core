@@ -10,7 +10,7 @@ define(function(require) {
 
             messaging.postMessage({
                 meta: 'foo',
-                data: message
+                message: message
             })
                 .then(function(event) {
                     console.log('INSIDE PROMISE!!!!!!!!!!!!!!!!!!!!!!!');
@@ -20,6 +20,7 @@ define(function(require) {
                     console.log(event.data.meta.receivedMessage);
                     console.log(event.data.meta.receivedMessage.meta);
                     expect(event.data.meta.receivedMessage.meta).to.equal('foo');
+                    expect(event.data.meta.receivedMessage.message).to.equal(message);
                 })
                 .then(done);
         });
