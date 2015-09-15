@@ -14,6 +14,11 @@ define(function(require, exports, module) {
     };
 
     module.exports = {
+        /**
+         * Send a message to the ServiceWorker and waits for an answer
+         * @param message
+         * @returns {Promise} A Promise resolving with the answer from the ServiceWorker
+         */
         postMessage: function(message) {
             return new Promise(function(resolve, reject) {
                 var channel = new MessageChannel();
@@ -21,8 +26,11 @@ define(function(require, exports, module) {
                     console.log(e);
                     console.log('WHHHHHHAAAAAAAAAATTTTT???????');
                     resolve(e);
-                };
+                }
 
+                also(window, 'onerror', function(error) {
+                    console.error(error);
+                });
                 also(window, 'onmessage', handleMessage);
                 also(navigator.serviceWorker, 'onmessage', handleMessage);
                 also(channel.port1, 'onmessage', handleMessage);

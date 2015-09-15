@@ -29,7 +29,7 @@ navigator.serviceWorker.ready.then(function() {
   "use strict";
 
   navigator.serviceWorker.onmessage = function(event) {
-    if (event.data.msg == 'log') {
+    if (event.data.meta && event.data.meta.msg == 'broadcast') {
       console.log(event.data.data);
     }
   };
