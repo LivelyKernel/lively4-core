@@ -6,6 +6,7 @@ if ('serviceWorker' in navigator) {
     }).then(function(registration) {
         // Registration was successful
         console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        /*
         var activeWorker = registration.active;
         activeWorker.addEventListener('message', function(e) {
             console.log('# # # # ## # # # # # # # # # # # # # # #');
@@ -23,6 +24,7 @@ if ('serviceWorker' in navigator) {
 
         activeWorker.postMessage('U HEAR THIS?', [channel.port2]);
         window.sWorker = activeWorker;
+        */
     }).catch(function(err) {
         // registration failed
         console.log('ServiceWorker registration failed: ', err);

@@ -13,7 +13,7 @@ define(function(require) {
                 console.log(event);
                 console.log(event.data);
                 console.log(event);
-                expect(event.data.sendedMessage).to.equal(message);
+                expect(event.data.data.sendedMessage).to.equal(message);
                 done();
             });
         });
