@@ -101,7 +101,8 @@ l4.onCall = function onCall(match, react) {
 l4.onCall(function match(event) {
     return hasPort(event) &&
         event.data &&
-        event.data.meta === 'foo';
+        event.data.meta &&
+        event.data.meta.type === 'foo';
 }, function react(event) {
     getSource(event).postMessage({
         meta: {

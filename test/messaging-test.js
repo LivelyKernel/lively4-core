@@ -9,7 +9,9 @@ define(function(require) {
             var message = 'expected message';
 
             messaging.postMessage({
-                meta: 'foo',
+                meta: {
+                    type: 'foo'
+                },
                 message: message
             })
                 .then(function(event) {
@@ -19,7 +21,8 @@ define(function(require) {
                     console.log(event.data.meta);
                     console.log(event.data.meta.receivedMessage);
                     console.log(event.data.meta.receivedMessage.meta);
-                    expect(event.data.meta.receivedMessage.meta).to.equal('foo');
+                    console.log(event.data.meta.receivedMessage.meta.type);
+                    expect(event.data.meta.receivedMessage.meta.type).to.equal('foo');
                     expect(event.data.meta.receivedMessage.message).to.equal(message);
                 })
                 .then(done);
