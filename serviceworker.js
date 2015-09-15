@@ -33,12 +33,20 @@ self.addEventListener('message', function(event) {
     if(!hasPort(event)) {
         return;
     }
+    //broadCastMessage('# # # # ## # # # # # # # # # # # # # # #');
+    //broadCastMessage('GOT A MESSAGE3');
+    //broadCastMessage(event.data);
+    //broadCastMessage(event.ports[0]);
     console.log('# # # # ## # # # # # # # # # # # # # # #');
     console.log('GOT A MESSAGE2');
     console.log('# # # # ## # # # # # # # # # # # # # # #');
-    console.log(event.data, event.source);
+    //console.log(event.data, event.source);
 
-    event.ports[0].postMessage('Sending Back a Message');
+    event.ports[0].postMessage({
+        type: 'msg send back',
+        meta: 'Sending Back a Message',
+        sendedMessage: event.data
+    });
 });
 
 //importScripts('bundle.js');
