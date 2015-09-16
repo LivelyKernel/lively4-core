@@ -5,11 +5,11 @@ class EvalLoader {
         return /^(https:\/\/eval\/)/;
     }
 
-    match(request) {
+    static match(request) {
         return request.url.match(EvalLoader.getExpression());
     }
 
-    transform(request) {
+    static transform(request) {
         console.log('Eval Loader', request.url);
 
         console.log('starting eval');
