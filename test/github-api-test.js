@@ -3,7 +3,6 @@ define(function(require) {
 
     var expect = chai.expect;
     require('https://code.jquery.com/jquery-2.1.4.js');
-    var Github = require('../client/github/github-client.js');
     var messaging = require('./../src/client/messaging.js');
 
     describe('Github API', function() {
