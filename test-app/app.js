@@ -19,11 +19,27 @@ messaging.postMessage({
     console.log(e.data);
 });
 
-Github.getRepo((result) => {
+messaging.postMessage({
+    meta: {
+        type: 'github api'
+    },
+    message: {
+        // TODO: use .config file for such parametrization
+        credentials: {
+            token: 'f468386a26986cbe44a80584fd478da86be3d546',
+            auth: 'oauth'
+        },
+        topLevelAPI: 'getRepo',
+        topLevelArguments: ['Lively4', 'manuallycreated'],
+        method: 'read',
+        args: ['master', 'README.md']
+    }
+}).then(e => {
     "use strict";
-    console.log('# # # # # # # # # # # # # # # # # # # # # ');
-    console.log(result);
-    console.log(Github);
+
+    console.log('+ + + ++  ++ + + + + + + + + + + + +');
+    console.log(e.data.message);
 });
+
 
 document.querySelector("h1").innerHTML = `Hello ${foo.toString()}`;
