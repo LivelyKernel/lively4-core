@@ -9,7 +9,7 @@ define(function(require) {
     describe('Github API', function() {
         // credentials for test user Lively4
         var GITHUB_CREDENTIALS = {
-            token: 'fb41373b467f5a06f253def6d44fa9f73345a375',
+            token: 'ecb44601ffef3f90382f5ff8ef177ee87d809374',
             auth: 'oauth'
         };
 
@@ -28,20 +28,14 @@ define(function(require) {
             }).then(function(event) {
                 console.log('--------------------------------');
                 console.log(event.data.message);
-                expect(event.data.message).to.match(/^# manuallycreated/);
+                try {
+                    expect(event.data.message).to.match(/^# manuallycreated/);
+                } catch(e) {
+                    console.error(e);
+                    throw e;
+                }
                 done();
             });
-            /*
-             $.ajax({
-             url: "https://eval/3+4",
-             type: "get",
-             success: function(d) {
-             expect('7').to.equal(d);
-             expect(Github.answer).to.equal(42);
-             done();
-             }
-             });
-             */
         });
 
         it('should show the jquery repository', function(done) {
@@ -66,5 +60,41 @@ define(function(require) {
                 done();
             });
         });
+
+        /*
+        it('should show how to debug failed tests', function(done) {
+            messaging.postMessage({
+                meta: {
+                    type: 'github api'
+                },
+                message: {
+                    credentials: GITHUB_CREDENTIALS,
+                    topLevelAPI: 'getRepo',
+                    topLevelArguments: ['Lively4', 'manuallycreated'],
+                    method: 'read',
+                    args: ['master', 'README.md']
+                }
+            }).then(function(event) {
+                console.log('--------------------------------');
+                console.log(event.data.message);
+                try {
+                    expect(event.data.message).to.match(/^# manuallycreated/);
+                } catch(e) {
+                    console.error(e);
+                    throw e;
+                }
+                done();
+            });
+             //$.ajax({
+             //url: "https://eval/3+4",
+             //type: "get",
+             //success: function(d) {
+             //expect('7').to.equal(d);
+             //expect(Github.answer).to.equal(42);
+             //done();
+             //}
+             //});
+        });
+        */
     });
 });
