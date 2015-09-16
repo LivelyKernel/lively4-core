@@ -35,9 +35,48 @@ importScripts('loader/eval.js');
     });
 })();
 
-/*
 importScripts('loader/github/github.js');
 importScripts('loader/github/credentials.js');
+
+l4.onCall(function match(event) {
+    return hasPort(event) &&
+        event.data &&
+        event.data.meta &&
+        event.data.meta.type === 'github api';
+}, function react(event) {
+    var topLevelAPIMapping = {
+        getIssues: 'getIssues',
+        getRepo: 'getRepo',
+        getUser: 'getUser',
+        getGist: 'getGist'
+    };
+
+    var callback = function(err, data) {
+        console.log(err, data);
+
+        getSource(event).postMessage({
+            meta: {
+                type: 'github api response',
+                receivedMessage: event.data
+            },
+            message: data
+        });
+    };
+
+    var message = event.data.message,
+        credentials = message.credentials || GITHUB_CREDENTIALS,
+        github = new Github(credentials),
+        topLevelAPIName = topLevelAPIMapping[message.topLevelAPI],
+        topLevelAPIFunction = github[topLevelAPIName],
+        apiObject = topLevelAPIFunction.apply(github, message.topLevelArguments),
+        methodName = message.method,
+        methodFunction = apiObject[methodName],
+        args = message.args.concat(callback);
+
+    methodFunction.apply(apiObject, args);
+
+    return true;
+});
 
 var github = new Github(GITHUB_CREDENTIALS),
     repo = github.getRepo('jquery', 'jquery');
@@ -48,6 +87,7 @@ repo.show(function showRepoCallback(err, repo) {
     console.log(repo);
     console.log('----------------------------------------------------------');
 });
+/*
 
 repo.fork(function(err, res) {
     console.log(err);
