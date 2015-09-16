@@ -36,7 +36,7 @@ importScripts('loader/eval.js');
 })();
 
 importScripts('loader/github/github.js');
-importScripts('loader/github/credentials.js');
+//importScripts('loader/github/credentials.js');
 
 l4.onCall(function match(event) {
     return hasPort(event) &&
@@ -54,6 +54,9 @@ l4.onCall(function match(event) {
     var callback = function(err, data) {
         console.log(err, data);
 
+        if(err) {
+            l4.broadCastMessage(err);
+        }
         getSource(event).postMessage({
             meta: {
                 type: 'github api response',
@@ -78,6 +81,7 @@ l4.onCall(function match(event) {
     return true;
 });
 
+/*
 var github = new Github(GITHUB_CREDENTIALS),
     repo = github.getRepo('jquery', 'jquery');
 
@@ -87,7 +91,6 @@ repo.show(function showRepoCallback(err, repo) {
     console.log(repo);
     console.log('----------------------------------------------------------');
 });
-/*
 
 repo.fork(function(err, res) {
     console.log(err);
