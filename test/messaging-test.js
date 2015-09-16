@@ -15,13 +15,6 @@ define(function(require) {
                 message: message
             })
                 .then(function(event) {
-                    //console.log('INSIDE PROMISE!!!!!!!!!!!!!!!!!!!!!!!');
-                    //console.log(event);
-                    //console.log(event.data);
-                    //console.log(event.data.meta);
-                    //console.log(event.data.meta.receivedMessage);
-                    //console.log(event.data.meta.receivedMessage.meta);
-                    //console.log(event.data.meta.receivedMessage.meta.type);
                     expect(event.data.meta.receivedMessage.meta.type).to.equal('foo');
                     expect(event.data.meta.receivedMessage.message).to.equal(message);
                 })
