@@ -9,7 +9,7 @@ define(function(require) {
     describe('Github API', function() {
         // credentials for test user Lively4
         var GITHUB_CREDENTIALS = {
-            token: 'ecb44601ffef3f90382f5ff8ef177ee87d809374',
+            token: '0b68b7cff49ae9d3716c94174fe2dcd3625b227a',
             auth: 'oauth'
         };
 

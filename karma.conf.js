@@ -47,9 +47,8 @@ module.exports = function(config) {
 
 
     // list of files to exclude
-    exclude: [
-    ],
-
+    // TODO: call github api from travis ci
+    exclude: process.env.TRAVIS ? ['test/github-api-test.js'] : [],
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
