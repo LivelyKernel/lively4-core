@@ -21,8 +21,6 @@ define(function(require) {
                 .then(done);
         });
 
-        var messageId = 0;
-
         it('should resolve the correct Promise when answering messages', function(done) {
             var answers = [];
 
