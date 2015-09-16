@@ -1,6 +1,16 @@
 'use strict';
 
-self.l4 = {};
+self.l4 = {
+    identity: function identity(x) {
+        return x;
+    },
+    through: function through(callback) {
+        return function(x) {
+            callback(x);
+            return x;
+        }
+    }
+};
 
 importScripts('src/sw/messaging.js');
 
@@ -40,29 +50,37 @@ importScripts('src/sw/github-api.js');
 // --------------------------------------------------------------------
 // Transformers
 // --------------------------------------------------------------------
-importScripts('transformer/identity.js');
+//importScripts('transformer/identity.js');
 
-class ApplySourceTransformation {
-    match(response) {
-        var blackList = [
-            'babel-core/browser.js',
-            'es6-module-loader/es6-module-loader-dev.src.js',
-            'bootworker.js',
-            'serviceworker.js',
-            'system-polyfills.src.js',
-            'system.src.js',
-            'serviceworker-loader.js'
-        ];
+function applySourceTransformationMatch(response) {
+    var blackList = [
+        'babel-core/browser.js',
+        'es6-module-loader/es6-module-loader-dev.src.js',
+        'bootworker.js',
+        'serviceworker.js',
+        'system-polyfills.src.js',
+        'system.src.js',
+        'serviceworker-loader.js'
+    ];
 
-        var isJS = response.url.indexOf('.js') > -1;
-        var inBlackList = false;
-        for(var i = 0; i < blackList.length; i++) {
-            inBlackList = inBlackList || response.url.indexOf(blackList[i]) > -1;
-        }
-        return isJS && !inBlackList;
+    var isJS = response.url.indexOf('.js') > -1;
+    var inBlackList = false;
+    for(var i = 0; i < blackList.length; i++) {
+        inBlackList = inBlackList || response.url.indexOf(blackList[i]) > -1;
     }
+    return isJS && !inBlackList;
+}
 
-    transform(response) {
+/**
+ * Takes a variable number of source transforming functions and returns
+ * a function that consumes a response object and applies the given
+ * transformations on the response.
+ * @returns {Function}
+ */
+function transform() {
+    var transformers = Array.prototype.slice.call(arguments);
+
+    return function applyTransformationsOn(response) {
         return response.clone().blob()
             .then(function(blob) {
                 function readBlob(blob) {
@@ -86,12 +104,14 @@ class ApplySourceTransformation {
                         console.log("BEFORE TRANSFORM");
                         //console.log(content);
                         console.log("AFTER TRANSFORM");
-                        var transformed = babel.transform(content, {
-                            //modules: 'system'
-                        }).code;
+                        //var transformed = babelTransform(content);
+                        // TODO: transformers should be able to return Promises
+                        transformers.forEach(function(transformer) {
+                            content = transformer(content);
+                        });
                         //console.log(transformed);
 
-                        return transformed;
+                        return content;
                     })
                     .then(function packNewBlob(newContent) {
                         return new Blob([newContent], {
@@ -110,6 +130,12 @@ class ApplySourceTransformation {
     }
 }
 
+function babelTransform(content) {
+    return babel.transform(content, {
+        //modules: 'system'
+    }).code;
+}
+
 console.log('Service Worker: File Start');
 
 self.addEventListener('install', function(event) {
@@ -121,34 +147,16 @@ self.addEventListener('activate', function(event) {
     self.clients.claim();
 });
 
-function useGithub(event) {
-    function getDataObject(url) {
-        var obj = {};
-        url.split('?')[1]
-            .split('&')
-            .forEach(function(datum) {
-                var keyValue = datum.split('=');
-                obj[keyValue[0]] = keyValue[1];
-            });
-        return obj;
-    }
-
-    // TODO: process request and call appropriate github functionality
-    // Or use communication between Broswer and Worker to make this work
-    console.log(' # # # # # # # ## # # # # # # #');
-    console.log(event.request);
-    return fetch(event.request);
-}
-
 self.addEventListener('fetch', function(event) {
     console.log('Service Worker: Fetch', event.request, event.request.url);
     l4.broadCastMessage('FETCHING THIS STUFF2: ' + event.request.url);
 
-    var response = event.request.url.match(/^(https:\/\/githubapi\/)/) ?
-        useGithub(event) :
-        parseEvent(event)
-            .then(applyLoaders)
-            .then(applyTransformers);
+    var response = parseEvent(event)
+        .then(l4.through(function(request) {
+
+        }))
+        .then(applyLoaders)
+        .then(applyTransformers);
 
     event.respondWith(response);
 });
@@ -156,22 +164,13 @@ self.addEventListener('fetch', function(event) {
 
 function parseEvent(event) {
     console.log(event.request.url);
-    return new Promise(function(resolve, reject) {
-        resolve(event.request);
-    });
+    return Promise.resolve(event.request);
 }
 
 function applyLoaders(request) {
     console.log('Service Worker: Loader', request.url);
 
     var response;
-
-    /*
-    if(githubLoader.match(request)) {
-        response = githubLoader.transform(request);
-        return response;
-    }
-    */
 
     var evalScript = new EvalLoader();
     if(evalScript.match(request)) {
@@ -184,14 +183,9 @@ function applyLoaders(request) {
 }
 
 function applyTransformers(response) {
-    console.log('Service Worker: Transformer', response, response.url);
-
-    var log = new ApplySourceTransformation();
-    if(log.match(response)) {
-        return log.transform(response);
-    }
-
-    return (new Identity()).transform(response);
+    return applySourceTransformationMatch(response) ?
+        transform(babelTransform)(response) :
+        l4.identity(response);
 }
 
 
