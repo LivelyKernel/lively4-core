@@ -7,7 +7,12 @@ import messaging from './../src/client/messaging.js'
 
 let foo = new Human("Foo", "Bar");
 
-messaging.postMessage('HELLO?????').then(e => {
+messaging.postMessage({
+    meta: {
+        type: 'foo'
+    },
+    message: 'HELLOOO?'
+}).then(e => {
     "use strict";
 
     console.log('+ + + ++  ++ + + + + + + + + + + + +');
