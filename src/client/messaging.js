@@ -24,7 +24,7 @@ define(function(require, exports, module) {
     var waitingForResponse = new Map();
 
     function handleMessage(e) {
-        console.log('Received Message from ServiceWorker', e.data);
+        console.log('Received Message from ServiceWorker', e.data, e.data.meta);
 
         var id = e.data.meta &&
             e.data.meta.receivedMessage &&
@@ -60,7 +60,6 @@ define(function(require, exports, module) {
 
                 also(channel.port1, 'onmessage', handleMessage);
 
-                // TODO: get to run resolve(e)
                 waitingForResponse.set(id, resolve);
                 message.meta.id = id;
 
