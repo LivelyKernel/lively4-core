@@ -24,7 +24,6 @@ importScripts('serviceworker-cache-polyfill.js');
 // --------------------------------------------------------------------
 // Loaders
 // --------------------------------------------------------------------
-importScripts('loader/default.js');
 importScripts('loader/eval.js');
 
 (function() {
@@ -170,16 +169,9 @@ function parseEvent(event) {
 function applyLoaders(request) {
     console.log('Service Worker: Loader', request.url);
 
-    var response;
-
-    var evalScript = new EvalLoader();
-    if(evalScript.match(request)) {
-        response = evalScript.transform(request);
-    } else {
-        response = (new DefaultLoader()).transform(request);
-    }
-
-    return response;
+    return (EvalLoader.match(request)) ?
+        EvalLoader.transform(request) :
+        fetch(request);
 }
 
 function applyTransformers(response) {
@@ -187,7 +179,6 @@ function applyTransformers(response) {
         transform(babelTransform)(response) :
         l4.identity(response);
 }
-
 
 /*
  TODO: broker/service locator for core modules
