@@ -1,7 +1,7 @@
 // --------------------------------------------------------------------
 // Transformers
 // --------------------------------------------------------------------
-//importScripts('transformer/identity.js');
+//l4.importScripts('transformer/identity.js');
 
 function applySourceTransformationMatch(response) {
     var blackList = [

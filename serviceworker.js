@@ -1,23 +1,48 @@
 'use strict';
 
-importScripts('src/sw/core.js');
+self.l4 = {
+    importScripts: (function () {
+        var files = new Set();
+        return function() {
+            Array.prototype.forEach.call(arguments, function(fileName) {
+                if(!files.has(fileName)) {
+                    files.add(fileName);
+                    importScripts(fileName);
+                }
+            })
+        }
+    })()
+};
 
-importScripts('src/sw/messaging.js');
+l4.importScripts('src/sw/core.js');
 
-//importScripts('bundle.js');
+l4.importScripts('src/sw/messaging.js');
 
-importScripts('babel-core/browser.js');
-importScripts('babel-core/browser-polyfill.js');
+//l4.importScripts('bundle.js');
 
-importScripts('serviceworker-cache-polyfill.js');
+l4.importScripts('babel-core/browser.js');
+l4.importScripts('babel-core/browser-polyfill.js');
+
+l4.importScripts('serviceworker-cache-polyfill.js');
 
 // --------------------------------------------------------------------
 // Loaders
 // --------------------------------------------------------------------
+/*
+require({
+        baseUrl: "./"
+    },
+    ['babel-core/browser.js', 'babel-core/browser-polyfill.js', "src/sw/wat", "src/sw/the"],
+    function(wat, the) {
+        console.log('YEAH!');
+    }
+);
+*/
+//l4.importScripts('src/sw/wat.js');
 
-importScripts('src/sw/github-api.js');
+l4.importScripts('src/sw/github-api.js');
 
-importScripts('src/sw/transform.js');
+l4.importScripts('src/sw/transform.js');
 
 console.log('Service Worker: File Start');
 
@@ -30,7 +55,8 @@ self.addEventListener('activate', function(event) {
     self.clients.claim();
 });
 
-importScripts('src/sw/fetch.js');
+l4.importScripts('src/sw/fetch.js');
+l4.importScripts('src/sw/fetch.js');
 
 l4.fetchTask('babel src transform', applySourceTransformationMatch, function(event) {
     return l4.parseEvent(event)
@@ -43,14 +69,13 @@ l4.fetchTask('babel src transform', applySourceTransformationMatch, function(eve
 });
 
 (function() {
+    var expression = /^(https:\/\/eval\/)/;
     var evaluator = {
-        expression: /^(https:\/\/eval\/)/,
-
         transform: function(request) {
             console.log('Eval Loader', request.url);
 
             console.log('starting eval');
-            var s = request.url.replace(evaluator.expression, '');
+            var s = request.url.replace(expression, '');
 
             try {
                 console.log('eval try', s);
@@ -65,7 +90,7 @@ l4.fetchTask('babel src transform', applySourceTransformationMatch, function(eve
         }
     };
 
-    l4.fetchTask('eval', l4.urlMatch(evaluator.expression), function(event) {
+    l4.fetchTask('eval', l4.urlMatch(expression), function(event) {
         return l4.parseEvent(event)
             .then(evaluator.transform);
     });
