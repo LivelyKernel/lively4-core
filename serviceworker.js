@@ -49,16 +49,8 @@ function parseEvent(event) {
     return Promise.resolve(event.request);
 }
 
-function applyLoaders(request) {
-    console.log('Service Worker: Loader', request.url);
-
-    return fetch(request);
-}
-
 function applyTransformers(response) {
-    return applySourceTransformationMatch(response) ?
-        transform(babelTransform)(response) :
-        l4.identity(response);
+    return transform(babelTransform)(response);
 }
 
 l4.urlMatch = function(regex) {
@@ -90,16 +82,16 @@ l4.fetchTask = function(name, matcher, processor) {
 
 l4.fetchTask('default', function() { return true; }, function(event) {
     return parseEvent(event)
-        .then(applyLoaders);
+        .then(fetch);
 });
 
-l4.fetchTask('src transform', applySourceTransformationMatch, function(event) {
+l4.fetchTask('babel src transform', applySourceTransformationMatch, function(event) {
     return parseEvent(event)
         .then(l4.through(function(request) {
             console.log('#+#+##+#+#+++#+#+#+##+#+#+#+#+#+#+#+#+#+#+##++##+#+#+#+');
             console.log('src transform');
         }))
-        .then(applyLoaders)
+        .then(fetch)
         .then(applyTransformers);
 });
 
