@@ -86,3 +86,4 @@ function babelTransform(content) {
         //modules: 'system'
     }).code;
 }
+

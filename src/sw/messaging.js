@@ -16,9 +16,6 @@ l4.broadCastMessage = function(message) {
     });
 };
 
-//l4.broadCastMessage('HELLO CLIENT');
-//l4.broadCastMessage('U HEAR ME?');
-
 function hasPort(e) {
     return e.ports;
 }
