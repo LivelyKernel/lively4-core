@@ -1,3 +1,5 @@
+console.log('BARBARBARBARBAR');
+
 (function() {
     "use strict";
 
@@ -12,9 +14,9 @@
         }
     };
 
-    l4.THETASKS = [];
+    var fetchTasks = [];
     l4.fetchTask = function(name, matcher, processor) {
-        l4.THETASKS.unshift({
+        fetchTasks.unshift({
             name: name,
             matcher: matcher,
             processor: processor
@@ -26,9 +28,9 @@
         l4.broadCastMessage('FETCHING THIS STUFF2: ' + event.request.url);
 
         var chosenTask = null;
-        l4.THETASKS.some(function(THETASK) {
-            console.log('trying', THETASK.name);
-            return THETASK.matcher(event.request) && (chosenTask = THETASK.processor);
+        fetchTasks.some(function(task) {
+            console.log('trying', task.name);
+            return task.matcher(event.request) && (chosenTask = task.processor);
         });
 
         event.respondWith(chosenTask(event));

@@ -1,5 +1,5 @@
-importScripts('loader/github/github.js');
-//importScripts('loader/github/credentials.js');
+l4.importScripts('loader/github/github.js');
+//l4.importScripts('loader/github/credentials.js');
 
 l4.onCall(function match(event) {
     return hasPort(event) &&

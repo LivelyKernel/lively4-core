@@ -19,6 +19,7 @@ module.exports = function(config) {
       //'es6-module-loader/es6-module-loader-dev.src.js',
       'system.src.js',
       {pattern: 'babel-core/**/*.js', included: false},
+      {pattern: 'es6-module-loader/**/*.js', included: false},
       {pattern: 'client/**/*.js', included: false},
       {pattern: 'src/**/*.js', included: false},
       {pattern: 'loader/**/*.js', included: false},
