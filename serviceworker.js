@@ -30,101 +30,46 @@ self.addEventListener('activate', function(event) {
     self.clients.claim();
 });
 
-self.addEventListener('fetch', function(event) {
-    console.log('Service Worker: Fetch', event.request, event.request.url);
-    l4.broadCastMessage('FETCHING THIS STUFF2: ' + event.request.url);
-
-    var chosenTask = null;
-    l4.THETASKS.some(function(THETASK) {
-        console.log('trying', THETASK.name);
-        return THETASK.matcher(event.request) && (chosenTask = THETASK.processor);
-    });
-
-    event.respondWith(chosenTask(event));
-});
-
-
-function parseEvent(event) {
-    console.log(event.request.url);
-    return Promise.resolve(event.request);
-}
-
-function applyTransformers(response) {
-    return transform(babelTransform)(response);
-}
-
-l4.urlMatch = function(regex) {
-    return function(request) {
-        return request.url.match(regex);
-    }
-};
-
-l4.THETASKS = [];
-l4.fetchTask = function(name, matcher, processor) {
-    l4.THETASKS.unshift({
-        name: name,
-        matcher: matcher,
-        processor: processor
-    });
-};
-
-/*
- // TODO: gulp-like stream processing of requests and/or messages
- // what is a task?
- l4.task('github*', str => {
- l4.start(str)
- .then(loader(l4-github.request))
- .then(transform(l4_babel))
- .then(transform(l4_bbb))
- .then(l4_write())
- });
- */
-
-l4.fetchTask('default', function() { return true; }, function(event) {
-    return parseEvent(event)
-        .then(fetch);
-});
+importScripts('src/sw/fetch.js');
 
 l4.fetchTask('babel src transform', applySourceTransformationMatch, function(event) {
-    return parseEvent(event)
+    return l4.parseEvent(event)
         .then(l4.through(function(request) {
             console.log('#+#+##+#+#+++#+#+#+##+#+#+#+#+#+#+#+#+#+#+##++##+#+#+#+');
             console.log('src transform');
         }))
         .then(fetch)
-        .then(applyTransformers);
+        .then(transform(babelTransform));
 });
 
-var evaluator = {
-    expression: /^(https:\/\/eval\/)/,
+(function() {
+    var evaluator = {
+        expression: /^(https:\/\/eval\/)/,
 
-    match: function(request) {
-        return request.url.match(evaluator.expression);
-    },
+        transform: function(request) {
+            console.log('Eval Loader', request.url);
 
-    transform: function(request) {
-        console.log('Eval Loader', request.url);
+            console.log('starting eval');
+            var s = request.url.replace(evaluator.expression, '');
 
-        console.log('starting eval');
-        var s = request.url.replace(evaluator.expression, '');
+            try {
+                console.log('eval try', s);
+                var result = eval(s);
+            } catch(e) {
+                console.log('eval catch', s);
+                result = "Error: " + e;
+            }
+            console.log('eval result', result);
 
-        try {
-            console.log('eval try', s);
-            var result = eval(s);
-        } catch(e) {
-            console.log('eval catch', s);
-            result = "Error: " + e;
+            return new Response(result);
         }
-        console.log('eval result', result);
+    };
 
-        return new Response(result);
-    }
-};
-
-l4.fetchTask('eval', l4.urlMatch(evaluator.expression), function(event) {
-    return parseEvent(event)
-        .then(evaluator.transform);
-});
+    l4.fetchTask('eval', l4.urlMatch(evaluator.expression), function(event) {
+        return l4.parseEvent(event)
+            .then(evaluator.transform);
+    });
+})();
 
 /*
  TODO: broker/servicelocator for core modules
