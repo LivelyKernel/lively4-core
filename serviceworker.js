@@ -20,9 +20,6 @@ l4.importScripts('src/sw/messaging.js');
 
 //l4.importScripts('bundle.js');
 
-l4.importScripts('babel-core/browser.js');
-l4.importScripts('babel-core/browser-polyfill.js');
-
 l4.importScripts('serviceworker-cache-polyfill.js');
 
 // --------------------------------------------------------------------
@@ -30,8 +27,6 @@ l4.importScripts('serviceworker-cache-polyfill.js');
 // --------------------------------------------------------------------
 
 l4.importScripts('src/sw/github-api.js');
-
-l4.importScripts('src/sw/transform.js');
 
 console.log('Service Worker: File Start');
 
@@ -46,17 +41,8 @@ self.addEventListener('activate', function(event) {
 
 l4.importScripts('src/sw/fetch.js');
 
-l4.fetchTask('babel src transform', applySourceTransformationMatch, function(event) {
-    return l4.parseEvent(event)
-        .then(l4.through(function(request) {
-            console.log('#+#+##+#+#+++#+#+#+##+#+#+#+#+#+#+#+#+#+#+##++##+#+#+#+');
-            console.log('src transform');
-        }))
-        .then(fetch)
-        .then(transform(babelTransform));
-});
-
 l4.importScripts('src/sw/fetch-tasks/eval.js');
+l4.importScripts('src/sw/fetch-tasks/babel.js');
 
 /*
  TODO: broker/servicelocator for core modules

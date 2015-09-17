@@ -1,28 +1,3 @@
-// --------------------------------------------------------------------
-// Transformers
-// --------------------------------------------------------------------
-//l4.importScripts('transformer/identity.js');
-
-function applySourceTransformationMatch(response) {
-    var blackList = [
-        'babel-core/browser.js',
-        'es6-module-loader/es6-module-loader-dev.src.js',
-        'bootworker.js',
-        'serviceworker.js',
-        'system-polyfills.src.js',
-        'system.src.js',
-        'serviceworker-loader.js',
-        'https://code.jquery.com/jquery-2.1.4.js'
-    ];
-
-    var isJS = response.url.indexOf('.js') > -1;
-    var inBlackList = false;
-    for(var i = 0; i < blackList.length; i++) {
-        inBlackList = inBlackList || response.url.indexOf(blackList[i]) > -1;
-    }
-    return isJS && !inBlackList;
-}
-
 /**
  * Takes a variable number of source transforming functions and returns
  * a function that consumes a Response object and applies the given
@@ -81,10 +56,3 @@ function transform() {
             });
     }
 }
-
-function babelTransform(content) {
-    return babel.transform(content, {
-        //modules: 'system'
-    }).code;
-}
-
