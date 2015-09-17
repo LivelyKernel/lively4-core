@@ -1,6 +1,6 @@
 'use strict';
 
-self.l4 = {
+var l4 = {
     importScripts: (function () {
         var files = new Set();
         return function() {
@@ -56,33 +56,7 @@ l4.fetchTask('babel src transform', applySourceTransformationMatch, function(eve
         .then(transform(babelTransform));
 });
 
-(function() {
-    var expression = /^(https:\/\/eval\/)/;
-    var evaluator = {
-        transform: function(request) {
-            console.log('Eval Loader', request.url);
-
-            console.log('starting eval');
-            var s = request.url.replace(expression, '');
-
-            try {
-                console.log('eval try', s);
-                var result = eval(s);
-            } catch(e) {
-                console.log('eval catch', s);
-                result = "Error: " + e;
-            }
-            console.log('eval result', result);
-
-            return new Response(result);
-        }
-    };
-
-    l4.fetchTask('eval', l4.urlMatch(expression), function(event) {
-        return l4.parseEvent(event)
-            .then(evaluator.transform);
-    });
-})();
+l4.importScripts('src/sw/fetch-tasks/eval.js');
 
 /*
  TODO: broker/servicelocator for core modules
