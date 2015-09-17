@@ -25,7 +25,7 @@ function applySourceTransformationMatch(response) {
 
 /**
  * Takes a variable number of source transforming functions and returns
- * a function that consumes a response object and applies the given
+ * a function that consumes a Response object and applies the given
  * transformations on the response.
  * @returns {Function}
  */
