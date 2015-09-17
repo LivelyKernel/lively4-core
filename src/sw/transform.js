@@ -11,7 +11,8 @@ function applySourceTransformationMatch(response) {
         'serviceworker.js',
         'system-polyfills.src.js',
         'system.src.js',
-        'serviceworker-loader.js'
+        'serviceworker-loader.js',
+        'https://code.jquery.com/jquery-2.1.4.js'
     ];
 
     var isJS = response.url.indexOf('.js') > -1;
