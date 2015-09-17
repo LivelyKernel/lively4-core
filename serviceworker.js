@@ -28,17 +28,6 @@ l4.importScripts('serviceworker-cache-polyfill.js');
 // --------------------------------------------------------------------
 // Loaders
 // --------------------------------------------------------------------
-/*
-require({
-        baseUrl: "./"
-    },
-    ['babel-core/browser.js', 'babel-core/browser-polyfill.js', "src/sw/wat", "src/sw/the"],
-    function(wat, the) {
-        console.log('YEAH!');
-    }
-);
-*/
-//l4.importScripts('src/sw/wat.js');
 
 l4.importScripts('src/sw/github-api.js');
 
@@ -55,7 +44,6 @@ self.addEventListener('activate', function(event) {
     self.clients.claim();
 });
 
-l4.importScripts('src/sw/fetch.js');
 l4.importScripts('src/sw/fetch.js');
 
 l4.fetchTask('babel src transform', applySourceTransformationMatch, function(event) {

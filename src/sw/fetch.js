@@ -1,5 +1,3 @@
-console.log('BARBARBARBARBAR');
-
 (function() {
     "use strict";
 
@@ -8,6 +6,13 @@ console.log('BARBARBARBARBAR');
         return Promise.resolve(event.request);
     };
 
+    /**
+     * Takes a regular expression and returns a function.
+     * The returned function consumes a Request object and returns true iff
+     * the its url matches the regular expression.
+     * @param {Regex} regex
+     * @returns {Function}
+     */
     l4.urlMatch = function(regex) {
         return function(request) {
             return request.url.match(regex);
@@ -15,6 +20,13 @@ console.log('BARBARBARBARBAR');
     };
 
     var fetchTasks = [];
+
+    /**
+     *
+     * @param {String} name
+     * @param {Function} matcher
+     * @param {Function} processor
+     */
     l4.fetchTask = function(name, matcher, processor) {
         fetchTasks.unshift({
             name: name,
