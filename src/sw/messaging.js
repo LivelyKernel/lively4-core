@@ -77,8 +77,9 @@ self.addEventListener('message', function(event) {
 });
 
 l4.calls = [];
-l4.onCall = function onCall(match, react) {
+l4.messageTask = function onCall(name, match, react) {
     l4.calls.push({
+        name: name,
         match: match,
         react: react
     });
@@ -95,7 +96,7 @@ l4.onCall = function onCall(match, react) {
  */
 // TODO: 2 use cases: access github API + message test
 // usage
-l4.onCall(function match(event) {
+l4.messageTask('test send back', function match(event) {
     return hasPort(event) &&
         event.data &&
         event.data.meta &&
