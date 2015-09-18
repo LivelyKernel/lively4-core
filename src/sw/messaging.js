@@ -67,23 +67,26 @@ function justReceive(event) {
     debugger;
 }
 
-self.addEventListener('message', function(event) {
-    justReceive(event);
-    l4.calls.some(function(cb) {
-        "use strict";
-        //l4.broadCastMessage('AAAAAHHHAAAHHHHAAAAAARRRRGGG' + cb.match);
-        return cb.match(event) && cb.react(event);
-    })
-});
+(function() {
+    var messageTasks = [];
 
-l4.calls = [];
-l4.messageTask = function onCall(name, match, react) {
-    l4.calls.push({
-        name: name,
-        match: match,
-        react: react
+    self.addEventListener('message', function(event) {
+        justReceive(event);
+        messageTasks.some(function(cb) {
+            "use strict";
+            //l4.broadCastMessage('AAAAAHHHAAAHHHHAAAAAARRRRGGG' + cb.match);
+            return cb.match(event) && cb.react(event);
+        })
     });
-};
+
+    l4.messageTask = function onCall(name, match, react) {
+        messageTasks.push({
+            name: name,
+            match: match,
+            react: react
+        });
+    };
+})();
 
 /*
  * Message Design
