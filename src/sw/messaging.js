@@ -1,8 +1,3 @@
-
-//-----------------------------------------------------------------------
-//--------------------- BEGIN OF MESSAGING ------------------------------
-//-----------------------------------------------------------------------
-
 l4.broadCastMessage = function(message) {
     self.clients.matchAll().then(function(clients) {
         clients.forEach(function(client) {
@@ -86,19 +81,18 @@ function justReceive(event) {
             react: react
         });
     };
+
+    /*
+     * Message Design
+     * ---
+     * event
+     * -> data
+     *   -> meta (meta data for the current message)
+     *     -> type
+     *   -> message (the actual message)
+     */
 })();
 
-/*
- * Message Design
- * ---
- * event
- * -> data
- *   -> meta (meta data for the current message)
- *     -> type
- *   -> message (the actual message)
- */
-// TODO: 2 use cases: access github API + message test
-// usage
 l4.messageTask('test send back', function match(event) {
     return hasPort(event) &&
         event.data &&
@@ -115,7 +109,3 @@ l4.messageTask('test send back', function match(event) {
 
     return true;
 });
-
-//-----------------------------------------------------------------------
-//----------------------- END OF MESSAGING ------------------------------
-//-----------------------------------------------------------------------
