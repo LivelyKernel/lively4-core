@@ -72,10 +72,10 @@ function justReceive(event) {
 
     self.addEventListener('message', function(event) {
         justReceive(event);
-        messageTasks.some(function(cb) {
+        messageTasks.some(function(task) {
             "use strict";
             //l4.broadCastMessage('AAAAAHHHAAAHHHHAAAAAARRRRGGG' + cb.match);
-            return cb.match(event) && cb.react(event);
+            return task.match(event) && task.react(event);
         })
     });
 
