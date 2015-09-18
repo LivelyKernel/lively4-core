@@ -41,8 +41,14 @@
 
         var chosenTask = null;
         fetchTasks.some(function(task) {
-            console.log('trying', task.name);
-            return task.matcher(event.request) && (chosenTask = task.processor);
+            var useTask = task.matcher(event.request);
+
+            if(useTask) {
+                console.log('use ' + task.name + ' for ' + event.request.url);
+                chosenTask = task.processor;
+            }
+
+            return useTask;
         });
 
         event.respondWith(chosenTask(event));
