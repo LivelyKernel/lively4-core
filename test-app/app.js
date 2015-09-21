@@ -85,8 +85,8 @@ $(document).ready(function() {
             }).then(e => {
                 "use strict";
 
-                if(method.val()) {
-                    args3.text(e.data.message);
+                if(method.val() === 'read') {
+                    args3.val(e.data.message);
                 }
             });
         }
