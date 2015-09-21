@@ -1,5 +1,5 @@
-l4.importScripts('loader/github/github.js');
-//l4.importScripts('loader/github/credentials.js');
+l4.importScripts('src/sw/messaging-tasks/github/github.js');
+//l4.importScripts('src/sw/messaging-tasks/github/credentials.js');
 
 l4.messageTask('github api', function match(event) {
     return hasPort(event) &&
