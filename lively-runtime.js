@@ -1,37 +1,14 @@
 lively.require("lively.lang.Runtime").toRun(function() {
 
-  var r = lively.lang.Runtime.Registry;
-  r.addProject(r.default(), {
+  lively.lang.Runtime.Registry.addProject({
     name: "lively.lang",
-    rootDir: "/Users/robert/Lively/lively.lang",
 
     reloadAll: function(project, thenDo) {
-      // var project = r.default().projects["lively.lang"];
-      // project.reloadAll(project, function(err) { err ? show(err.stack || String(err)) : alertOK("reloaded!"); })
       var files = [
-        "lib/base.js","lib/class.js","lib/collection.js","lib/date.js","lib/events.js","lib/function.js",
+        "lib/base.js","lib/class.js","lib/collection.js", "lib/sequence.js","lib/date.js","lib/events.js","lib/function.js",
         "lib/messenger.js","lib/number.js","lib/object.js","lib/string.js","lib/tree.js","lib/worker.js"
       ];
-
-      lively.lang.fun.composeAsync(
-        function deps(n) { lively.requires("lively.MochaTests").toRun(function() { n(); }); },
-        function readFiles(n) {
-          lively.lang.arr.mapAsyncSeries(files,
-            function(fn,_,n) {
-              lively.shell.cat(fn, {cwd: project.rootDir},
-              function(err, c) { n(err, {name: fn, content: c}); });
-            }, n);
-        },
-        function(fileContents, next) {
-          lively.lang.arr.mapAsyncSeries(fileContents,
-            function(ea,_,n) {
-              lively.lang.Runtime.Project.processChange(
-                project, lively.lang.string.joinPath(project.rootDir, ea.name),
-                ea.content, n);
-            },
-            next);
-        }
-      )(thenDo);
+      lively.lang.Runtime.loadFiles(project, files, thenDo);
     },
 
     resources: {
@@ -43,10 +20,10 @@ lively.require("lively.lang.Runtime").toRun(function() {
       // String,Array,...
 
       "base.js": {
-        matches: /lively.lang\/lib\/base\.js$/,
+        matches: /lib\/base\.js$/,
         changeHandler: function(change, project, resource) {
   				var state = {window: {}};
-  				evalCode(change.newSource, state, change.resourceId);
+  				lively.lang.Runtime.evalCode(project, change.newSource, state, change.resourceId);
   				var lang = state.window.lively && state.window.lively.lang
   				if (!lang) return;
 				  Object.keys(lively.lang)
@@ -57,14 +34,14 @@ lively.require("lively.lang.Runtime").toRun(function() {
       },
 
       "lib code": {
-        matches: /lively.lang\/lib\/.*.js$/,
+        matches: /lib\/.*.js$/,
         changeHandler: function(change, project, resource) {
-          evalCode(change.newSource, {lively: {lang: lively.lang}}, change.resourceId);
+          lively.lang.Runtime.evalCode(project, change.newSource, {lively: {lang: lively.lang}}, change.resourceId);
         }
       },
 
       "tests": {
-        matches: /lively.lang\/tests\/.*.js$/,
+        matches: /tests\/.*.js$/,
         changeHandler: function(change, project, resource) {
           lively.lang.fun.composeAsync(
             function(next) {
@@ -75,7 +52,7 @@ lively.require("lively.lang.Runtime").toRun(function() {
               lively.lang.fun.waitFor(3000, function() { return typeof expect !== "undefined" && expect !== chai.expect; }, next);
             },
             function(next) {
-              evalCode(change.newSource, {
+              lively.lang.Runtime.evalCode(project, change.newSource, {
                 mocha: Global.mocha,
                 expect: Global.expect,
                 lively: lively
@@ -92,14 +69,4 @@ lively.require("lively.lang.Runtime").toRun(function() {
     }
   });
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-  function evalCode(code, state, resourceName) {
-    lively.lang.VM.runEval(code,
-      {topLevelVarRecorder: state, context: state, sourceURL: resourceName},
-      function(err, result) {
-    		err && show("error when updating the runtime for " + resourceName + "\n" + (err.stack || err));
-    		!err && alertOK("runtime updated for " + resourceName);
-    	});
-  }
 });
