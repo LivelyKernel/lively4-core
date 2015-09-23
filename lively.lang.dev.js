@@ -1,5 +1,6 @@
 /*global window, process, global*/
 
+
 ;(function(Global) {
 
   var globalInterfaceSpec = [
@@ -98,11 +99,7 @@
     globalInterfaceSpec.forEach(function(ea) {
       if (ea.action === "installMethods") {
         var targetPath = livelyLang.Path(ea.target);
-        if (!targetPath.isIn(Global)) {
-          targetPath.defineProperty(Global,
-            {value: {}, writable: true, enumerable: false, configurable: true},
-            true);
-        }
+        if (!targetPath.isIn(Global)) targetPath.set(Global, {}, true);
         var sourcePath = livelyLang.Path(ea.sources[0]);
         ea.methods.forEach(function(name) {
           installProperty(
@@ -119,9 +116,8 @@
       } else if (ea.action === "installObject") {
         var targetPath = livelyLang.Path(ea.target);
         var source = livelyLang.Path(ea.source).get(livelyLang);
-        targetPath.defineProperty(Global,
-            {value: source, writable: true, enumerable: false, configurable: true},
-            true);
+        targetPath.set(Global, source, true);
+
       } else throw new Error("Cannot deal with global setup action: " + ea.action);
     });
   }
@@ -143,20 +139,23 @@
       };
       prop.toString = function() { return origFunc.toString(); };
     }
-    targetPath.defineProperty(Global,
-      {value: prop, writable: true, enumerable: false, configurable: true},
-      true);
+    targetPath.set(Global, prop, true);
   }
 
   function uninstallGlobals() {
     globalInterfaceSpec.forEach(function(ea) {
       if (ea.action === "installMethods") {
         var p = livelyLang.Path(ea.target)
+        var source = livelyLang.Path(ea.source).get(livelyLang);
         var target = p.get(Global);
         if (!target) return;
-        ea.methods.forEach(function(name) { delete target[name]; });
+        ea.methods
+          .filter(function(name) { return source === target[name]; })
+          .forEach(function(name) { delete target[name]; });
         if (ea.alias)
-          ea.alias.forEach(function(mapping) { delete target[mapping[0]]; });
+          ea.alias
+            .filter(function(name) { return source === target[name]; })
+            .forEach(function(mapping) { delete target[mapping[0]]; });
 
       } else if (ea.action === "installObject") {
         var p = livelyLang.Path(ea.target);
