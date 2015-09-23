@@ -3,6 +3,7 @@ var livelyLang = module.require('./lib/base');
 module.require('./lib/events');
 module.require('./lib/object');
 module.require('./lib/collection');
+module.require('./lib/sequence');
 module.require('./lib/tree');
 module.require('./lib/graph');
 module.require('./lib/function');
