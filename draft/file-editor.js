@@ -1,27 +1,45 @@
 'use strict';
 
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('https://livelykernel.github.io/lively4-core/serviceworker-loader.js', {
-        scope: "https://livelykernel.github.io/lively4-core/draft/"
-    }).then(function(registration) {
-        // Registration was successful
-        alert('ServiceWorker registration successful with scope: ', registration.scope);
-        navigator.serviceWorker.ready.then(function() {
-        	alert('READY');
-		});
-    }).catch(function(err) {
-        // registration failed
-        alert('ServiceWorker registration failed: ', err);
-    });
-}
 
 function currentEditor() {
 	 return ace.edit("editor");
 }
 
 
+function readFile(path) {
+	 var messaging = require('./../src/client/messaging.js');
+	 
+	messaging.postMessage({
+    meta: {
+        type: 'github api'
+    },
+    message: {
+        credentials: GITHUB_CREDENTIALS,
+        topLevelAPI: 'getRepo',
+        topLevelArguments: ['Lively4', 'manuallycreated'],
+        method: 'read',
+        args: ['master', 'README.md']
+    }
+}).then(function(event) {
+    console.log('--------------------------------');
+    console.log(event.data.message);
+    try {
+        expect(event.data.message).to.match(/^# manuallycreated/);
+    } catch(e) {
+        console.error(e);
+        throw e;
+    }
+    done();
+});
+
+
+}
+
+
 function loadfile(){
-	alert("load file")
+
+	var filename = $('#filename').val()
+	console.log("load " + filename)
 
 	currentEditor().setValue("Hello World")
 }
