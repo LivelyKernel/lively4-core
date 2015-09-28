@@ -21,7 +21,7 @@ messaging.postMessage({
 });
 
 var GITHUB_CREDENTIALS = {
-    token: 'd1ca84a85c7629b8148ed9a0d5cb28fe2725f544',
+    token: '50f776ee972e746a695e35c16abeff38c6019d0d',
     auth: 'oauth'
 };
 
