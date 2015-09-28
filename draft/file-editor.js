@@ -2,7 +2,7 @@
 
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('../serviceworker-loader.js', {
-        scope: "https.livelykernel.github.io/lively4-core"
+        scope: "https://livelykernel.github.io/lively4-core"
     }).then(function(registration) {
         // Registration was successful
         alert('ServiceWorker registration successful with scope: ', registration.scope);
