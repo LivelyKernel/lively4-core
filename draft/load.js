@@ -8,6 +8,7 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then(function() {
         	alert('READY');
             System.import("file-editor.js")
+            // #TODO continue here... loadFile is not in global scope (yet)
 		});
     }).catch(function(err) {
         // registration failed
