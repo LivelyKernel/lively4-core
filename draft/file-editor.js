@@ -6,9 +6,9 @@ function currentEditor() {
 }
 
 
-function readFile(path) {
+export function readFile(path) {
 	 var messaging = require('./../src/client/messaging.js');
-	 
+
 	messaging.postMessage({
     meta: {
         type: 'github api'
@@ -36,7 +36,7 @@ function readFile(path) {
 }
 
 
-function loadfile(){
+export function loadfile(){
 
 	var filename = $('#filename').val()
 	console.log("load " + filename)
