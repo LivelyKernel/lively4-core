@@ -706,7 +706,7 @@
               content: btoa(content),
               branch: branch
           }, cb);    
-          if (!(err && err.error !== 404) {
+          if (!(err && err.error !== 404)) {
             // try to create new file
               options.sha = sha
           } 
