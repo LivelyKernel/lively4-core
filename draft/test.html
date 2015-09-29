@@ -53,10 +53,11 @@ $<input type="text" id="commandline" value="">
     $('#commandline').keyup(function(e){
     if(e.keyCode == 13)
     {
-        var src = this.text()
+        var src = $('#commandline').val()
         try { var result = eval(src) } catch(e) { result = "Error:" +e}
         log("eval " + src + " -> " + result)
     }
+    })
 });
 
 </script>
