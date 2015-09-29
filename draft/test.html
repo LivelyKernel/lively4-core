@@ -51,14 +51,13 @@ $<input type="text" id="commandline" value="">
     System.import("load.js").then(log);
 
     $('#commandline').keyup(function(e){
-    if(e.keyCode == 13)
-    {
-        var src = $('#commandline').val()
-        try { var result = eval(src) } catch(e) { result = "Error:" +e}
-        log("eval " + src + " -> " + result)
-    }
+        if(e.keyCode == 13)
+        {
+            var src = $('#commandline').val()
+            try { var result = eval(src) } catch(e) { result = "Error:" +e}
+            log("eval " + src + " -> " + result)
+        }
     })
-});
 
 </script>
 
