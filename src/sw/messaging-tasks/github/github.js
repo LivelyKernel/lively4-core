@@ -704,8 +704,8 @@
         _request("PUT", repoPath + "/contents/" + encodeURI(path), {
           message: message,
           content: btoa(content),
-          branch: branch,
-          sha: sha
+          branch: branch
+          // ,sha: sha
         }, cb);
       };
 
