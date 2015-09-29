@@ -9,7 +9,7 @@ if ('serviceWorker' in navigator) {
         	log('READY');
             System.import("file-editor.js").then(function(module) {
                 window.fileEditor = module
-                log("fileEditor loaded")
+                log("fileEditor loaded 2")
             })
             // #TODO continue here... loadFile is not in global scope (yet)
 		});
