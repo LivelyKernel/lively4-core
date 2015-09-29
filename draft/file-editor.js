@@ -49,7 +49,7 @@ function writeFile(path, content) {
 	        topLevelAPI: 'getRepo',
 	        topLevelArguments: ['livelykernel', 'lively4-core'],
 	        method: 'write',
-	        args: ['gh-pages', path, content]
+	        args: ['gh-pages', path, content, 'auto commit']
 	    }
 	}).then(function(event) {
 		return event;
