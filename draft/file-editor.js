@@ -13,7 +13,7 @@ function readFile(path) {
 	    },
 	    message: {
 	        credentials: {
-	        	token: "8f82ede5bfa2128fbe1da3812b7e37c422884916",
+	        	token: localStorage.GithubToken,
 	        	auth: 'oauth' 
 	        },
 	        topLevelAPI: 'getRepo',
