@@ -43,20 +43,24 @@
 </script>
 
 <pre id="console"></pre>
-<script>
-    function log(s) {
-        $('#console').text($('#console').text() + "\n" + s)
-    }
-    System.import("load.js").then(log);
-</script>
-
 $<input type="text" id="commandline" value="">
 <script>
     function log(s) {
         $('#console').text($('#console').text() + "\n" + s)
     }
     System.import("load.js").then(log);
+
+    $('#commandline').keyup(function(e){
+    if(e.keyCode == 13)
+    {
+        var src = this.text()
+        try { var result = eval(src) } catch(e) { result = "Error:" +e}
+        log("eval " + src + " -> " + result)
+    }
+});
+
 </script>
+
 
 
 </body>
