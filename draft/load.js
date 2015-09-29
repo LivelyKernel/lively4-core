@@ -7,7 +7,7 @@ if ('serviceWorker' in navigator) {
         log('ServiceWorker registration successful with scope: ', registration.scope);
         navigator.serviceWorker.ready.then(function() {
         	log('READY');
-            System.import("file-editor.js")
+            fileEditor = System.import("file-editor.js")
             // #TODO continue here... loadFile is not in global scope (yet)
 		});
     }).catch(function(err) {
