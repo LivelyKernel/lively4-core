@@ -705,12 +705,12 @@
               message: message,
               content: btoa(content),
               branch: branch
-          }, cb);    
+          }    
           if (!(err && err.error !== 404)) {
             // try to create new file
               options.sha = sha
           } 
-          _request("PUT", repoPath + "/contents/" + encodeURI(path), options)
+          _request("PUT", repoPath + "/contents/" + encodeURI(path), options, cb);
         });
       };
 
