@@ -12,6 +12,16 @@
 <script src="../babel-core/browser.js" type="text/javascript" charset="utf-8"></script>
 <script src="../babel-core/browser-polyfill.js" type="text/javascript" charset="utf-8"></script>
 <script src="../system.src.js" type="text/javascript" charset="utf-8"></script>
+<script>
+  System.config({
+    // or 'traceur' or 'typescript'
+    transpiler: 'babel',
+    // or traceurOptions or typescriptOptions
+    babelOptions: {
+
+    }
+  });
+</script>
 </head>
 <body>
 <h1>Hello Lively4 -- The Beginnings</h1>
