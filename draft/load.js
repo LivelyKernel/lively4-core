@@ -1,7 +1,4 @@
 
-
-log("2**3="+ 2**3)
-
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('https://livelykernel.github.io/lively4-core/serviceworker-loader.js', {
         scope: "https://livelykernel.github.io/lively4-core/draft/"
