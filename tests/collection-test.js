@@ -534,7 +534,7 @@ describe('Grid', function() {
   it("enumerates", function() {
     var result = [],
       expected = [[0,0], [0,1], [0,2],
-            [1,0], [1,1], [1,2]];
+                  [1,0], [1,1], [1,2]];
     Grid.forEach(Grid.create(2, 3), function(_, row, col) {
       result.push([row, col]); });
     expect(expected).to.eql(result);
@@ -569,6 +569,37 @@ describe('Grid', function() {
     var object = {x:1,y:2},
       expected = [["x","y"],[1,2]];
     expect(expected).to.eql(Grid.tableFromObjects(object));
+  });
+
+  it("index access", function() {
+    var g = Grid.mapCreate(3,3, function(i,j) { return [i,j]; });
+    expect(Grid.get(g, 0, 0)).eql([0,0]);
+    expect(Grid.get(g, 0, 1)).eql([0,1]);
+    expect(Grid.get(g, 2, 2)).eql([2,2]);
+    expect(Grid.get(g, 2, 3)).equal(undefined);
+    expect(Grid.get(g, 3, 2)).equal(undefined);
+    Grid.set(g, 0, 1, "foo");
+    expect(Grid.get(g, 0, 1)).equal("foo");
+  });
+
+  it("row access", function() {
+    var g = Grid.mapCreate(3,3, function(i,j) { return [i,j]; });
+    expect(Grid.getRow(g, 1)).eql([[1,0], [1,1], [1,2]]);
+    Grid.setRow(g, 1, [1,2,3])
+    expect(g).eql([
+      [[0, 0], [0, 1], [0, 2]],
+      [1,2,3],
+      [[2, 0], [2, 1], [2, 2]]]);
+  });
+
+  it("col access", function() {
+    var g = Grid.mapCreate(3,3, function(i,j) { return [i,j]; });
+    expect(Grid.getCol(g, 1)).eql([[0,1], [1,1], [2,1]]);
+    Grid.setCol(g, 1, [1,2,3])
+    expect(g).eql([
+      [[0, 0], 1, [0, 2]],
+      [[1, 0], 2, [1, 2]],
+      [[2, 0], 3, [2, 2]]]);
   });
 });
 
