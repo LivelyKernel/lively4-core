@@ -52,7 +52,7 @@ function writeFile(path, content) {
 	        args: ['gh-pages', path, content]
 	    }
 	}).then(function(event) {
-		return event.data.message;
+		return event;
 	});
 }
 
@@ -61,7 +61,7 @@ export function savefile(){
 	log("save " + filename)
 
 	writeFile(filename, currentEditor().getValue()).then(function(text) {
-		log("file " + filename + " written.")
+		log("file " + filename + " written.", text)
 	});
 }
 
