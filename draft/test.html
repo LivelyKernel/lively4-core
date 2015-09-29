@@ -18,9 +18,8 @@
 </pre>
 <script>
     function log(s) {
-        $('#console').val($('#console').val() + "\n" + s)
+        $('#console').text($('#console').text() + "\n" + s)
     }
-    log("Hello log")
 </script>
 
 <button onclick="loadfile()">load</button>
