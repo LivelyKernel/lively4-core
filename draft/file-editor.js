@@ -36,7 +36,32 @@ export function loadfile(){
 	})
 }
 
+function writeFile(path, content) {
+	return messaging.postMessage({
+	    meta: {
+	        type: 'github api'
+	    },
+	    message: {
+	        credentials: {
+	        	token: localStorage.GithubToken,
+	        	auth: 'oauth'
+	        },
+	        topLevelAPI: 'getRepo',
+	        topLevelArguments: ['livelykernel', 'lively4-core'],
+	        method: 'write',
+	        args: ['gh-pages', path, content]
+	    }
+	}).then(function(event) {
+		return event.data.message;
+	});
+}
+
 export function savefile(){
-	log("Text: " + 	currentEditor().getValue())
+	var filename = $('#filename').val()
+	log("save " + filename)
+
+	writeFile(filename, currentEditor().getValue()).then(function(text) {
+		log("file " + filename + " written.")
+	});
 }
 
