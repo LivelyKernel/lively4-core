@@ -13,14 +13,7 @@
 </head>
 <body>
 <h1>Hello Lively4 -- The Beginnings</h1>
-<pre id="console">
 
-</pre>
-<script>
-    function log(s) {
-        $('#console').text($('#console').text() + "\n" + s)
-    }
-</script>
 
 <button onclick="loadfile()">load</button>
 <button onclick="savefile()">save</button>
@@ -30,15 +23,21 @@
     return x;
 }</div>
 
-
-
-    
 <script src="ace.js" type="text/javascript" charset="utf-8"></script>
 <script>
     var editor = ace.edit("editor");
     //editor.setTheme("ace/theme/monokai");
     //editor.getSession().setMode("ace/mode/javascript");
 </script>
+
+<pre id="console"></pre>
+<script>
+    function log(s) {
+        $('#console').text($('#console').text() + "\n" + s)
+    }
+</script>
+
+
 <script src="load.js" type="text/javascript" charset="utf-8"></script>
 
 
