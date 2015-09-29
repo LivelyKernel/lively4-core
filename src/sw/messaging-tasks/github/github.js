@@ -711,7 +711,7 @@
 
      this.write = function(branch, path, content, message, cb) {
         that.getSha(branch, encodeURI(path), function(err, sha) {
-          var optopms = {
+          var options = {
               message: message,
               content: btoa(content),
               branch: branch
