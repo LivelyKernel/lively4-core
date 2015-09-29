@@ -50,6 +50,13 @@
     System.import("load.js").then(log);
 </script>
 
+$<input type="text" id="commandline" value="">
+<script>
+    function log(s) {
+        $('#console').text($('#console').text() + "\n" + s)
+    }
+    System.import("load.js").then(log);
+</script>
 
 
 </body>
