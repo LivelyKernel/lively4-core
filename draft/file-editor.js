@@ -1,51 +1,42 @@
 'use strict';
 
+var messaging = require('./../src/client/messaging.js');
 
 function currentEditor() {
 	 return ace.edit("editor");
 }
 
-
-export function readFile(path) {
-	 var messaging = require('./../src/client/messaging.js');
-
-	messaging.postMessage({
-    meta: {
-        type: 'github api'
-    },
-    message: {
-        credentials: GITHUB_CREDENTIALS,
-        topLevelAPI: 'getRepo',
-        topLevelArguments: ['Lively4', 'manuallycreated'],
-        method: 'read',
-        args: ['master', 'README.md']
-    }
-}).then(function(event) {
-    console.log('--------------------------------');
-    console.log(event.data.message);
-    try {
-        expect(event.data.message).to.match(/^# manuallycreated/);
-    } catch(e) {
-        console.error(e);
-        throw e;
-    }
-    done();
-});
-
-
+function readFile(path) {
+	return messaging.postMessage({
+	    meta: {
+	        type: 'github api'
+	    },
+	    message: {
+	        credentials: {
+	        	token: "8f82ede5bfa2128fbe1da3812b7e37c422884916",
+	        	auth: 'oauth' 
+	        },
+	        topLevelAPI: 'getRepo',
+	        topLevelArguments: ['livelykernel', 'lively4-core'],
+	        method: 'read',
+	        args: ['gh-pages', path]
+	    }
+	}).then(function(event) {
+		return event.data.message;
+	});
 }
-
 
 export function loadfile(){
-
 	var filename = $('#filename').val()
-	console.log("load " + filename)
+	log("load " + filename)
 
-	currentEditor().setValue("Hello World")
+	readFile(filename).then(function(text) {
+		currentEditor().setValue(text)
+		log("file " + filename + " read.")
+	})
 }
 
-
-function savefile(){
-	alert("Text: " + 	currentEditor().getValue())
+export function savefile(){
+	log("Text: " + 	currentEditor().getValue())
 }
 
