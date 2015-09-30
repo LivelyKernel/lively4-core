@@ -10,7 +10,7 @@
 
     #console { 
         width: 800px;
-        height: auto;
+        height: 300px];
         max-height: 200px;
         overflow: auto;
         background-color: #eeeeee;
@@ -63,7 +63,7 @@ $<input type="text" id="commandline" value="">
 <script>
     function log(s) {
         $('#console').text($('#console').text() + "\n" + s)
-        $('#console').scrollTop($('#console').scrollHeight);
+        $('#console').scrollTop($('#console')[0].scrollHeight);
     }
     System.import("load.js").then(log);
 
