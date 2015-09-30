@@ -13,3 +13,7 @@ Core functionality for Lively4 module management
     focalStorage.setItem("githubToken", localStorage.GithubToken)
 
 focalStorage.getItem("githubToken").then(function(data) { log("data" + data) })
+
+
+focalStorage.setItem("a", 3)
+focalStorage.getItem("a").then(function(a) { console.log("a:" +a)})
