@@ -1,6 +1,6 @@
 
 
-var nativeLog = console.nativeLog
+var nativeLog = console.log
 
 console.log = function(s) {
     nativeLog.apply(console, arguments)    
