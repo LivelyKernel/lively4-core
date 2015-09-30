@@ -76,6 +76,24 @@ $<input type="text" id="commandline" value="">
         }
     })
 
+    // print = function(a) {
+    //     var s = ""; 
+    //     for (i in a) {s += i + ": " + a[i] +"\n"}; 
+    //     return "{" +s + "}"
+    // };
+
+    // Log also messages from the service worker
+
+    // receive messages
+    navigator.serviceWorker.onmessage = function(event) {
+        if (event.data.message.name == 'log') {
+            log(event.data.message.data)
+        } else {
+            self.get("Log").log(JSON.stringify(event.data))
+        }
+    }
+
+
 </script>
 
 
