@@ -20,7 +20,7 @@ l4.importScripts('src/sw/core.js');
 
 //l4.importScripts('bundle.js');
 
-l4.importScripts('serviceworker-cache-polyfill.js');
+// l4.importScripts('serviceworker-cache-polyfill.js');
 
 // --------------------------------------------------------------------
 // Loaders
