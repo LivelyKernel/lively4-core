@@ -8,10 +8,10 @@ define(function(require) {
     describe('Github API', function() {
         // credentials for test user Lively4
         var GITHUB_CREDENTIALS = {
-            token: 'd1ca84a85c7629b8148ed9a0d5cb28fe2725f544',
+            token: '50f776ee972e746a695e35c16abeff38c6019d0d',
             auth: 'oauth'
         };
-
+/*
         it('should show the content of README.md', function(done) {
             messaging.postMessage({
                 meta: {
@@ -59,8 +59,9 @@ define(function(require) {
                 done();
             });
         });
-
+*/
         /*
+        // debug facilities
         it('should show how to debug failed tests', function(done) {
             messaging.postMessage({
                 meta: {
