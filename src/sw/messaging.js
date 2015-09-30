@@ -1,13 +1,17 @@
-l4.broadCastMessage = function(message) {
+l4.broadCastMessagePlain = function(message) {
     self.clients.matchAll().then(function(clients) {
         clients.forEach(function(client) {
-            client.postMessage({
-                meta: {
-                    type: 'broadcast'
-                },
-                message: message
-            });
+            client.postMessage(message);
         });
+    });
+};
+
+l4.broadCastMessage = function(message) {   
+    l4.broadCastMessagePlain({
+        meta: {
+            type: 'broadcast'
+        },
+        message: message
     });
 };
 
