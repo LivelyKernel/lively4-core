@@ -11,3 +11,5 @@ Core functionality for Lively4 module management
 
     a = $.get("https://github.lively4/repo/livelykernel/lively4-core/gh-pages/README.md")
     focalStorage.setItem("githubToken", localStorage.GithubToken)
+
+focalStorage.getItem("githubToken").then(function(data) { log("data" + data) })
