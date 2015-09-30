@@ -4,3 +4,4 @@ server.py
 babelsberg
 .idea
 loader/github/credentials.js
+test-main.js
