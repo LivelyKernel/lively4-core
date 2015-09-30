@@ -68,7 +68,7 @@ l4.importScripts('src/external/focalStorage.js');
                 topLevelAPIFunction = github[topLevelAPIName],
                 apiObject = topLevelAPIFunction.apply(github, message.topLevelArguments),
                 methodName = message.method,
-                methodFunction = apiObject[methodName],;
+                methodFunction = apiObject[methodName],
                 args = message.args.concat(callback);
 
             methodFunction.apply(apiObject, args);
