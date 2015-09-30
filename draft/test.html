@@ -88,9 +88,7 @@ $<input type="text" id="commandline" value="">
     navigator.serviceWorker.onmessage = function(event) {
         if (event.data.message.name == 'log') {
             log(event.data.message.data)
-        } else {
-            self.get("Log").log(JSON.stringify(event.data))
-        }
+        } 
     }
 
 
