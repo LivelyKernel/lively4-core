@@ -13,6 +13,7 @@ l4.importScripts('src/external/focalStorage.js');
     var expression = /^(https:\/\/github.lively4\/)/;
 
     l4.fetchTask('fetch github', l4.urlMatch(expression), function(event) {
+        var request = event.request
 
         console.log('Eval Loader', request.url);
 
