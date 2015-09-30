@@ -50,8 +50,6 @@ l4.importScripts('src/external/focalStorage.js');
                     args: [branch, path]
                 }
 
-
-
                 var topLevelAPIMapping = {
                     issues: 'getIssues',
                     repo: 'getRepo',
