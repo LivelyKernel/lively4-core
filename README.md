@@ -17,3 +17,5 @@ focalStorage.getItem("githubToken").then(function(data) { log("data" + data) })
 
 focalStorage.setItem("a", 3)
 focalStorage.getItem("a").then(function(a) { console.log("a:" +a)})
+
+$.get("https://github.lively4/repo/livelykernel/lively4-core/gh-pages/README.md",, function(d){ log(d) })
