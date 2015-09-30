@@ -63,6 +63,7 @@ $<input type="text" id="commandline" value="">
 <script>
     function log(s) {
         $('#console').text($('#console').text() + "\n" + s)
+        $('#console').scrollTop($('#console').scrollHeight);
     }
     System.import("load.js").then(log);
 
