@@ -15,14 +15,13 @@ l4.importScripts('src/external/focalStorage.js');
     l4.fetchTask('fetch github', l4.urlMatch(expression), function(event) {
         var request = event.request
 
-        console.log('Eval Loader', request.url);
+        console.log('GitHub fetch: ', request.url);
 
         return focalStorage.getItem("githubToken").then(function(githubToken) {
             if (! githubToken) {
                 console.log("githubToken not found")
                 return new Response("No GitHub access token available.", { "status" : 404 , "statusText" : "Not found." })
             }
-
 
             console.log('got githubCredentials');
 
@@ -58,7 +57,7 @@ l4.importScripts('src/external/focalStorage.js');
                     l4.broadCastMessage(err);
                     event.respondWith(new Response("Error" + err))
                 }  else {
-                    event.respondWith(new Response(result))
+                    event.respondWith(new Response(data))
                 }
             };
 
