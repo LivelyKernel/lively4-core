@@ -34,13 +34,23 @@ l4.importScripts('src/external/focalStorage.js');
                 var exp = new RegExp("([^/]*)/([^/]*)/([^/]*)/([^/]*)/(.*)")
                 var match = exp.exec(s)
 
+
+
                 // Example: https://github.lively4/repo/livelykernel/lively4-core/gh-pages/README.md
+                                
+                var username = match[2],
+                    reponame = match[3],
+                    branch = match[4],
+                    path = match[5]
+                
                 var message = {
                     topLevelAPI: match[1],
-                    topLevelArguments: [match[2], match[3]],
+                    topLevelArguments: [username, reponame],
                     method: 'read',
-                    args: [match[4], match[5]]
+                    args: [branch, path]
                 }
+
+
 
                 var topLevelAPIMapping = {
                     issues: 'getIssues',
