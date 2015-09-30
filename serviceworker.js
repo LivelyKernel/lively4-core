@@ -29,7 +29,6 @@ l4.importScripts('serviceworker-cache-polyfill.js');
 l4.importScripts('src/sw/messaging.js');
 l4.importScripts('src/sw/logging.js');
 l4.importScripts('src/sw/messaging-tasks/github/github-api.js');
-l4.importScripts('src/sw/github.js');
 
 console.log('Service Worker: File Start');
 
@@ -46,6 +45,7 @@ l4.importScripts('src/sw/fetch.js');
 
 l4.importScripts('src/sw/fetch-tasks/eval.js');
 l4.importScripts('src/sw/fetch-tasks/babel.js');
+l4.importScripts('src/sw/fetch-tasks/github.js');
 
 /*
  TODO: broker/servicelocator for core modules
