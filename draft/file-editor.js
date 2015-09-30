@@ -1,6 +1,8 @@
 'use strict';
 
 var messaging = require('./../src/client/messaging.js');
+var focalStorage = require('./../src/external/focalStorage.js');
+
 
 function currentEditor() {
 	 return ace.edit("editor");
