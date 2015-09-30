@@ -7,7 +7,7 @@ var l4 = {
             Array.prototype.forEach.call(arguments, function(fileName) {
                 if(!files.has(fileName)) {
                     files.add(fileName);
-                    importScripts(fileName);
+                    importScripts(fileName + "?" + Date.now());
                 }
             })
         }
