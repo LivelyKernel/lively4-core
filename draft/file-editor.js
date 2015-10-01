@@ -2,7 +2,7 @@
 
 var messaging = require('./../src/client/messaging.js');
 var focalStorage = require('./../src/external/focalStorage.js');
-
+var githubAuth = require('./authgithub.js');
 
 function currentEditor() {
 	 return ace.edit("editor");
