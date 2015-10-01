@@ -37,7 +37,7 @@ function popup(url) {
 function challengeForAuth() {
     var appInfo = getAppInfo();
     var url =
-        "https://www.dropbox.com/1/oauth2/authorize" +
+        "https://github.com/login/oauth/authorize/" +
         "?client_id=" + appInfo.clientId +
         "&response_type=token" +
         // "&state=" + uuid +
