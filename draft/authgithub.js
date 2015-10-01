@@ -34,7 +34,7 @@ function popup(url) {
     popup.focus();
 }
 
-function challengeForAuth() {
+challengeForAuth =  function challengeForAuth() {
     var appInfo = getAppInfo();
     var url =
         "https://github.com/login/oauth/authorize/" +
