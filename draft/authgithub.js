@@ -1,11 +1,8 @@
- function getAppInfo() {
-          var clientId = "1774dvkirby4490";
-          var redirectUri = new URL(thisModule.uri()).getDirectory().withFilename("callbacks/dropbox.html");
-          var appInfo = {
-            "clientId": clientId,
-            "redirectUri": redirectUri
+        function getAppInfo() {
+          return {
+            "clientId": "21b67bb82b7af444a7ef",
+            "redirectUri": "https://livelykernel.github.io/lively4-core/oauth/github.html"
           };
-          return appInfo;
         }
 
         function challengeForAuth() {
