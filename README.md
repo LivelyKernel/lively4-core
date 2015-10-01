@@ -9,6 +9,8 @@ Core functionality for Lively4 module management
 
 draft/test.html
 
+http://livelykernel.github.io/lively4-core/draft/testImage.html
+
 
 # Snippets
 
