@@ -15,7 +15,6 @@ before_install:
 - export CHROME_CANARY_BIN=$PWD/out/chrome-linux/chrome
 - export DISPLAY=:99.0
 - sh -e /etc/init.d/xvfb start
-- echo -e "focalStorage.setItem(\"githubToken\", \"$GithubToken\" ).then(function({" "`cat test-main.js`" "})" >> test-main.js
 
 #- export CHROME_BIN=chromium-browser
 #- export DISPLAY=:99.0
