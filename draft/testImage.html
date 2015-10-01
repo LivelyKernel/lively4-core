@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>ACE in Action</title>
+
+<script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
+<script src="../system.src.js" type="text/javascript" charset="utf-8"></script>
+<script>
+  System.config({
+    // or 'traceur' or 'typescript'
+    transpiler: 'babel',
+    // or traceurOptions or typescriptOptions
+    babelOptions: {
+        //modules: "amd"
+    },
+    map: {
+        babel: '../babel-core/browser.js'
+    }
+  });
+</script>
+</head>
+<body>
+<h1>Test Github Fetch with Image</h1>
+<img src="http://" id="image">no meta  image</img>
+
+<script>
+    System.import("load.js").then(log);
+</script>
+
+
+</body>
+</html>
