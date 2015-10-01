@@ -14,6 +14,8 @@ draft/test.html
 http://livelykernel.github.io/lively4-core/draft/testImage.html
 
 
+
+
 # Snippets
 
     a = $.get("https://github.lively4/repo/livelykernel/lively4-core/gh-pages/README.md")
@@ -30,3 +32,8 @@ $.get("https://github.lively4/repo/livelykernel/lively4-core/gh-pages/README.md"
 $('#console').text("")
 
 $('#image').attr('src', 'https://github.lively4/repo/livelykernel/lively4-core/gh-pages/media/meta.png')
+
+System.import("file-editor.js").then(function(module) { window.githubauth = module}) 
+
+
+
