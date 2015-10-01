@@ -33,7 +33,7 @@ $('#console').text("")
 
 $('#image').attr('src', 'https://github.lively4/repo/livelykernel/lively4-core/gh-pages/media/meta.png')
 
-System.import("file-editor.js").then(function(module) { window.githubauth = module}) 
+System.import("authgithub.js").then(function(module) { window.githubauth = module}) 
 
 
 
