@@ -32,7 +32,8 @@ function onAuthCallback() {
     }, 
     function(data, status, xhr) {
     	// we should be redirected.... 
-    })
+    },
+    "application/json")
 
 }
 
