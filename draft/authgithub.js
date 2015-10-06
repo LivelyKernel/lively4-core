@@ -1,9 +1,10 @@
 'use strict';
 
-export function onAuthenticated(windowUuid, token, uuid, otherWindow) {
+export function onAuthenticated(windowUuid, token, authInfo) {
 
 	alert("yes, we are authenticated " + token)
 
+	window.lastAuthInfo
 }
 	
 export function challengeForAuth() {
