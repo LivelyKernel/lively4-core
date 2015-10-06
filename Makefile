@@ -4,4 +4,4 @@ all:
 
 
 sync:
-		git pull --no-edit; git commit -m "draft ace editor" .; git push
+		git pull --no-edit; git commit -m "draft ace editor" .; git push origin gh-pages
