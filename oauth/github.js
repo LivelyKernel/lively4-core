@@ -15,7 +15,12 @@ function onAuthCallback() {
 	}
 
     var codeInfo = getCodeFromUrl();
-    
+    if (!codeInfo) {
+    	alert("failed to receive auth code (the token to get the token)");
+    	return 
+  	}
+
+
     var code = codeInfo["code"]
 
     jQuery.post("https://github.com/login/oauth/access_token",{
@@ -39,9 +44,6 @@ function getCodeFromUrl() {
       function(key, value) { return key === "" ? value : decodeURIComponent(value); });
     return authInfo;
   }
-  else {
-    alert("failed to receive auth code (the token to get the token)");
-  }
 }
 
 
@@ -52,8 +54,5 @@ function getAuthInfoFromUrl() {
       '{"' + authResponse.replace(/&/g, '","').replace(/=/g, '":"') + '"}',
       function(key, value) { return key === "" ? value : decodeURIComponent(value); });
     return authInfo;
-  }
-  else {
-    alert("failed to receive auth token");
   }
 }
