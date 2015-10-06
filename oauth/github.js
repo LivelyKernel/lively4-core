@@ -6,6 +6,7 @@ function onAuthCallback() {
     localStorage.GithubToken = token
     focalStorage.setItem("githubToken", token).then(function() {
     	window.opener.githubAuth.onAuthenticated(window.uuid, token, uuid, window);
+    	window.close()
     })
 }
 
