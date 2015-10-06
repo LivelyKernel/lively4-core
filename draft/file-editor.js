@@ -4,6 +4,8 @@ var messaging = require('./../src/client/messaging.js');
 var focalStorage = require('./../src/external/focalStorage.js');
 var githubAuth = require('./authgithub.js');
 
+window.githubAuth = githubAuth // make it global, so the callback can reach it...
+
 function currentEditor() {
 	 return ace.edit("editor");
 }
