@@ -1,11 +1,10 @@
 function onAuthCallback() {
     var authInfo = getAuthInfoFromUrl();
-    var token = authInfo["access_token"],
-        uuid = authInfo["state"];
+    var token = authInfo["code"];
 
     localStorage.GithubToken = token
     focalStorage.setItem("githubToken", token).then(function() {
-    	window.opener.githubAuth.onAuthenticated(window.uuid, token, authInfo);
+    	window.opener.githubAuth.onAuthenticated(window.uuid, token);
     	// window.close()
     })
 }
