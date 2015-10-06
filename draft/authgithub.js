@@ -1,12 +1,9 @@
 'use strict';
 
-window.githubAuth = {
-
-	onAuthenticated:  function(windowUuid, authInfo) {
-
-		alert("yes, we are authenticated " + JSON.stringify(authInfo))
-	}
+export function onAuthenticated(windowUuid, authInfo) {
+	alert("yes, we are authenticated " + JSON.stringify(authInfo))
 }
+
 	
 export function challengeForAuth() {
 	function popup(url) {
