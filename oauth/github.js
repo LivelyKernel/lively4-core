@@ -11,8 +11,8 @@ function onAuthCallback() {
 }
 
 function getAuthInfoFromUrl() {
-  if (window.location.hash) {
-    var authResponse = window.location.hash.substring(1);
+  if (window.location.search) {
+    var authResponse = window.location.search.substring(1);
     var authInfo = JSON.parse(
       '{"' + authResponse.replace(/&/g, '","').replace(/=/g, '":"') + '"}',
       function(key, value) { return key === "" ? value : decodeURIComponent(value); });
