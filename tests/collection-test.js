@@ -301,6 +301,28 @@ describe('arr', function() {
 
   });
 
+  describe("dropping and taking", function() {
+
+    it("take", function() {
+      expect(lively.lang.arr.take([1,2,3,4,5], 3)).to.eql([1,2,3]);
+    });
+
+    it("drop", function() {
+      expect(lively.lang.arr.drop([1,2,3,4,5], 3)).to.eql([4,5]);
+    });
+
+    it("takeWhile", function() {
+      expect(lively.lang.arr.takeWhile([1,2,3,4,5], function(n) { return n < 3; })).to.eql([1,2]);
+      expect(lively.lang.arr.takeWhile([1,2,3,4,5], function(n) { return true; })).to.eql([1,2,3,4,5]);
+      expect(lively.lang.arr.takeWhile([1,2,3,4,5], function(n) { return false; })).to.eql([]);
+    });
+
+    it("dropWhile", function() {
+      expect(lively.lang.arr.dropWhile([1,2,3,4,5], function(n) { return n < 3; })).to.eql([3, 4,5]);
+      expect(lively.lang.arr.dropWhile([1,2,3,4,5], function(n) { return true; })).to.eql([]);
+      expect(lively.lang.arr.dropWhile([1,2,3,4,5], function(n) { return false; })).to.eql([1,2,3,4,5]);
+    });
+  })
 });
 
 
