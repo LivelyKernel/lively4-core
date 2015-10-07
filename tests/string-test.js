@@ -159,4 +159,23 @@ describe('string', function() {
     });
   });
 
+  describe("insertion and removal change", function() {
+
+    var baseString = "hello\n  world";
+
+    it("inserts line", function() {
+      expect(string.applyChange(baseString, {action: "insert", start: 3, lines: ["3 + 4"]}))
+        .equal("hel3 + 4lo\n  world");
+    });
+
+    it("inserts lines", function() {
+      expect(string.applyChange(baseString, {action: "insert", start: 3, lines: ["3 + 4", " oioioi"]}))
+        .equal("hel3 + 4\n oioioilo\n  world");
+    });
+
+    it("remove lines", function() {
+      expect(string.applyChange(baseString, {action: "remove", start: 3, end: 9}))
+        .equal("helorld");
+    });
+  });
 });
