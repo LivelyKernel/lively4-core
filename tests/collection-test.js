@@ -160,10 +160,20 @@ describe('arr', function() {
   it("delimWith", function() {
     expect(arr.delimWith(["test", "abc", 444], "aha")).to.eql(["test","aha","abc","aha",444]);
   });
-  
-  it("flatmaps", function() {
-    var result = arr.flatmap([1,2,3], function(ea, i) { return lively.lang.arr.withN(i+1, ea) });
-    expect(result).to.eql([1,2,2,3,3,3]);
+
+  describe("flatmap", function() {
+
+    it("flatmaps", function() {
+      var result = arr.flatmap([1,2,3], function(ea, i) { return lively.lang.arr.withN(i+1, ea) });
+      expect(result).to.eql([1,2,2,3,3,3]);
+    });
+
+    it("flatmaps big time", function() {
+      // old flatmap version threw stack overlflow errors
+      var result = lively.lang.arr.flatmap(lively.lang.arr.range(1,800000), function(ea, i) { return [ea, i] });
+      expect(result.length).to.eql(800000*2);
+    });
+
   });
 
   it('histogram', function() {
