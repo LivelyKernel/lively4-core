@@ -3944,7 +3944,7 @@ Closure.prototype.recreateFuncFromSource = function(funcSource, optFunc) {
 
   // ignore-in-doc
   // FIXME!!!
-  if (typeof lively !== 'undefined' && lively.Config && lively.Config.get('loadRewrittenCode')) {
+  if (typeof lively !== 'undefined' && lively.Config && lively.Config.loadRewrittenCode) {
       module('lively.ast.Rewriting').load(true);
       var namespace = '[runtime]';
       if (optFunc && optFunc.sourceModule)
@@ -3966,7 +3966,7 @@ Closure.prototype.recreateFuncFromSource = function(funcSource, optFunc) {
     var func = fun.evalJS.call(this, src) || this.couldNotCreateFunc(src);
     this.addFuncProperties(func);
     this.originalFunc = func;
-    if (typeof lively !== 'undefined' && lively.Config && lively.Config.get('loadRewrittenCode')) {
+    if (typeof lively !== 'undefined' && lively.Config && lively.Config.loadRewrittenCode) {
       func._cachedAst.source = funcSource;
       // FIXME: adjust start and end of FunctionExpression (because of brackets)
       func._cachedAst.start++;
