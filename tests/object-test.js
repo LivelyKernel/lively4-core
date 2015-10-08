@@ -221,6 +221,17 @@ describe('obj', function() {
          + "  method: function(arg1,arg2) {/*...*/}\n"
          + "}");
     });
+    
+    it("uses custom printer", function() {
+      function customPrinter(val, ignore) { return typeof val === "number" ? val + 1 : ignore; }
+      expect(obj.inspect(obj1, {maxDepth: 1, customPrinter: customPrinter})).equal(
+           "{\n"
+         + "  bar: [/*...*/],\n"
+         + "  baz: \"--baz getter--\",\n"
+         + "  foo: 24,\n"
+         + "  method: function(arg1,arg2) {/*...*/}\n"
+         + "}")
+    });
   });
 
   describe("merge", function() {
