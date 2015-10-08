@@ -34,6 +34,7 @@ abstractions for groups, intervals, grids.
   - [forEach](#arr-forEach)
   - [zip](#arr-zip)
   - [flatten](#arr-flatten)
+  - [flatmap](#arr-flatmap)
   - [interpose](#arr-interpose)
   - [map](#arr-map)
   - [invoke](#arr-invoke)
@@ -295,6 +296,12 @@ arr.zip([1,2,3], ["a", "b", "c"], ["A", "B"])
 arr.flatten([1, [2, [3,4,5], [6]], 7,8])
 // => [1,2,3,4,5,6,7,8]
 ```
+
+#### <a name="arr-flatmap"></a>arr.flatmap(array, it, ctx)
+
+ the simple version
+ Array.prototype.concat.apply([], array.map(it, ctx));
+ causes stack overflows with really big arrays
 
 #### <a name="arr-interpose"></a>arr.interpose(array, delim)
 

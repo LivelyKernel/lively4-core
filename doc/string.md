@@ -44,6 +44,7 @@ String utility methods for printing, parsing, and converting strings.
   - [regExpEscape](#string-regExpEscape)
   - [succ](#string-succ)
   - [times](#string-times)
+  - [applyChange](#string-applyChange)
 
 ### <a name="string"></a>string
 
@@ -462,3 +463,8 @@ string.succ("Z") // => "["
 ```js
 string.times("test", 3) // => "testtesttest"
 ```
+
+#### <a name="string-applyChange"></a>string.applyChange(string, change)
+
+ change is of the form
+ `{start: Number, end: Number, lines: [String], action: "insert"|"remove"}`

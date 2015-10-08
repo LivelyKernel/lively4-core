@@ -134,7 +134,12 @@ dest // => {x: 23,y: 24}
  meant to be used while interactivively exploring JavaScript programs and
  state.
 
- `options` can be {printFunctionSource: BOOLEAN, escapeKeys: BOOLEAN, maxDepth: NUMBER}
+ `options` can be {
+   printFunctionSource: BOOLEAN,
+   escapeKeys: BOOLEAN,
+   maxDepth: NUMBER,
+   customPrinter: FUNCTION 
+ }
 
 #### <a name="obj-merge"></a>obj.merge(objs)
 
