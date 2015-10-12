@@ -32,7 +32,7 @@ function getCodeFromUrl() {
 }
 
 
-function getAuthInfoFromUrl() {
+function parseAuthInfoFromUrl() {
   if (window.location.hash) {
     var authResponse = window.location.hash.substring(1);
     var authInfo = JSON.parse(
