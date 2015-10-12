@@ -7,7 +7,7 @@ export function onAuthenticated(windowUuid, authInfo) {
 	var state = authInfo.state
 	var token = authInfo.access_token
 
-	if (!state) { alert("authinfo: " + authinfo)}
+	if (!state) { alert("authinfo: " + authInfo)}
 
 	localStorage.GithubToken = token
 	focalStorage.setItem("githubToken", localStorage.GithubToken).then(function() {
