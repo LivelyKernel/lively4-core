@@ -11,6 +11,7 @@ function onAuthCallback() {
     jQuery.get("https://lively-kernel.org/lively4-auth/github_accesstoken?code=" + code,
               function(data, status, xhr) {
                 var authInfo = parseAuthInfoFromUrl(data)
+                authInfo.state = codeInfo.state // shortcut 
                 window.opener.githubAuth.onAuthenticated(window.uuid, authInfo);
                 window.close()
               }
