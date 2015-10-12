@@ -58,6 +58,7 @@ export function challengeForAuth(uuid, cb) {
         "https://github.com/login/oauth/authorize/" +
         "?client_id=" + appInfo.clientId +
         "&response_type=token" +
+       	"&scope=repo" +
         "&state=" + uuid +
         "&redirect_uri=" + encodeURIComponent(appInfo.redirectUri);
     popup(url);
