@@ -9,12 +9,16 @@ function onAuthCallback() {
     }
 
     var code = codeInfo["code"]
+    alert("code: " + code)
     jQuery.get("https://lively-kernel.org/lively4-auth/github_accesstoken?code=" + code,
-               function(data, status, xhr) {
-                   var authInfo = parseAuthInfoFromUrl(data)
-                   window.opener.githubAuth.onAuthenticated(window.uuid, authInfo);
-                   window.close()
-               })
+              function(data, status, xhr) {
+                var authInfo = parseAuthInfoFromUrl(data)
+                window.opener.githubAuth.onAuthenticated(window.uuid, authInfo);
+                window.close()
+              },
+              ).fail(function(err) {
+                alert("Getting the key from Github failed: " + err)
+              })
 
 
 }
