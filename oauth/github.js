@@ -15,7 +15,7 @@ function onAuthCallback() {
                 var authInfo = parseAuthInfoFromUrl(data)
                 window.opener.githubAuth.onAuthenticated(window.uuid, authInfo);
                 window.close()
-              },
+              }
               ).fail(function(err) {
                 alert("Getting the key from Github failed: " + err)
               })
