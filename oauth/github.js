@@ -1,6 +1,4 @@
 function onAuthCallback() {
-
-    var code = codeInfo["code"]
  
     var codeInfo = getCodeFromUrl();
     if (!codeInfo) {
