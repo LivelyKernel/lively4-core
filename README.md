@@ -2,6 +2,8 @@
 
 yea
 
+
+foo
 [![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
 
 
