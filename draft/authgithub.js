@@ -1,11 +1,24 @@
 'use strict';
 
+var onAuthenticatedCallbacks = {}
+
 export function onAuthenticated(windowUuid, authInfo) {
-	alert("yes, we are authenticated " + JSON.stringify(authInfo))
+
+	var state = authInfo.state
+	var token = authInfo.access_token
+
+	localStorage.GithubToken = token
+	focalStorage.setItem("githubToken", localStorage.GithubToken).then(function() {
+		var cb = onAuthenticatedCallbacks[state]
+		if (cb) {cb(token)}
+	})
 }
 
 	
-export function challengeForAuth() {
+export function challengeForAuth(uuid, cb) {
+	if (uuid && cb) {
+		onAuthenticatedCallbacks[uuid] = cd
+	}
 	function popup(url) {
 	    var width = 525,
 	        height = 525,
@@ -38,13 +51,12 @@ export function challengeForAuth() {
     var appInfo = {
 	        "clientId": "21b67bb82b7af444a7ef",
 	        "redirectUri": "https://livelykernel.github.io/lively4-core/oauth/github.html"
-	        // "redirectUri": "https://lively-kernel.org/lively4-auth/oauth/github.html"
 	 };
     var url =
         "https://github.com/login/oauth/authorize/" +
         "?client_id=" + appInfo.clientId +
         "&response_type=token" +
-        // "&state=" + uuid +
+        "&state=" + uuid +
         "&redirect_uri=" + encodeURIComponent(appInfo.redirectUri);
     popup(url);
 }
