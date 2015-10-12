@@ -19,7 +19,7 @@ export function onAuthenticated(windowUuid, authInfo) {
 	
 export function challengeForAuth(uuid, cb) {
 	if (uuid && cb) {
-		onAuthenticatedCallbacks[uuid] = cd
+		onAuthenticatedCallbacks[uuid] = cb
 	}
 	function popup(url) {
 	    var width = 525,
