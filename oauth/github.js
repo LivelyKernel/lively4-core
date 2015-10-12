@@ -32,12 +32,9 @@ function getCodeFromUrl() {
 }
 
 
-function parseAuthInfoFromUrl() {
-  if (window.location.hash) {
-    var authResponse = window.location.hash.substring(1);
-    var authInfo = JSON.parse(
-      '{"' + authResponse.replace(/&/g, '","').replace(/=/g, '":"') + '"}',
-      function(key, value) { return key === "" ? value : decodeURIComponent(value); });
-    return authInfo;
-  }
+function parseAuthInfoFromUrl(data) {
+  var authInfo = JSON.parse(
+    '{"' + data.replace(/&/g, '","').replace(/=/g, '":"') + '"}',
+    function(key, value) { return key === "" ? value : decodeURIComponent(value); });
+  return authInfo;
 }
