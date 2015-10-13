@@ -2,6 +2,8 @@
 
 var onAuthenticatedCallbacks = {}
 
+log("load githubAuth")
+
 export function onAuthenticated(windowUuid, authInfo) {
 
 	var state = authInfo.state
