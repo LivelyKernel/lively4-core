@@ -1,4 +1,11 @@
 
+    function log(s) {
+        Array.prototype.forEach.call(arguments, function(s) {
+           $('#console').text($('#console').text() + "\n" + s)
+        })
+        $('#console').scrollTop($('#console')[0].scrollHeight);
+    }
+
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('https://livelykernel.github.io/lively4-core/serviceworker-loader.js', {
         scope: "https://livelykernel.github.io/lively4-core/draft/"
