@@ -9,7 +9,7 @@ l4.broadCastMessage = function(message) {
                     message: message
                 });
             } catch(e) {  
-                if (message && name.name == "log") { 
+                if (message && message.name == "log") { 
                     throw e // we are screwed
                 } else {
                     console.log("Error during broadcasting a message: " + e)
