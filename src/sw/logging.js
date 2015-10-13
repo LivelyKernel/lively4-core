@@ -4,8 +4,9 @@
 if (!console.log.isWrapped) {
 	var nativeLog = console.log
 
-	console.log = function(s) {
-	    nativeLog.apply(console, arguments)    
+	console.log = function() {
+	    nativeLog.apply(console, arguments)
+	    var s = Array.prototype.map.call(arguments, function(ea) { return "" + ea }).join("\n")
 	    l4.broadCastMessage({name: 'log', data: '' + s})
 	}
 
