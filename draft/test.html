@@ -40,9 +40,13 @@
 <button onclick="fileEditor.loadfile()">load</button>
 <button onclick="fileEditor.savefile()">save</button>
 <input type="text" id="filename" value="README.md">
+
+<!-- <button onclick="">reload service worker </button> -->
+
 <button onclick="githubAuth.challengeForAuth(Date.now(), function(token){
     alert('We are authenticated with the Token: ' + token)
 })">github </button>
+
 <div id="editor">This is no content!</div>
 
 <script src="ace.js" type="text/javascript" charset="utf-8"></script>
