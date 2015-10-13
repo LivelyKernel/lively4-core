@@ -1,5 +1,7 @@
 'use strict';
 
+// This is a test
+
 var l4 = {
     importScripts: (function () {
         var files = new Set();
@@ -30,7 +32,7 @@ l4.importScripts('src/sw/messaging.js');
 l4.importScripts('src/sw/logging.js');
 l4.importScripts('src/sw/messaging-tasks/github/github-api.js');
 
-console.log('Service Worker: File Start!');
+console.log('Service Worker: File Start');
 
 self.addEventListener('install', function(event) {
     console.log('Service Worker: Install');
