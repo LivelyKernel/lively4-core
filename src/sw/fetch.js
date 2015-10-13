@@ -36,9 +36,8 @@
     };
 
     self.addEventListener('fetch', function applyTasks(event) {
-        console.log('Service Worker: Fetch', event.request, event.request.url);
-        l4.broadCastMessage('FETCHING THIS STUFF2: ' + event.request.url);
-
+        console.log('Service Worker: Fetch ' + event.request.method + " "+ event.request.url);
+        
         var chosenTask = null;
         fetchTasks.some(function(task) {
             var useTask = task.matcher(event.request);
