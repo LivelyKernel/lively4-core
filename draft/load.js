@@ -12,16 +12,17 @@ if ('serviceWorker' in navigator) {
     }).then(function(registration) {
         // Registration was successful
         log('ServiceWorker registration successful with scope: ', registration.scope);
-        navigator.serviceWorker.ready.then(function() {
-        	log('READY');
+    }).catch(function(err) {
+        // registration failed
+        log('ServiceWorker registration failed: ', err);
+    });
+
+    navigator.serviceWorker.ready.then(function(registration) {
+            log('READY');
             System.import("file-editor.js").then(function(module) {
                 window.fileEditor = module
                 log("fileEditor loaded")
             })
             // #TODO continue here... loadFile is not in global scope (yet)
-		});
-    }).catch(function(err) {
-        // registration failed
-        log('ServiceWorker registration failed: ', err);
-    });
+    })
 }
