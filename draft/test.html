@@ -7,7 +7,6 @@
         height: 400px;
         width: 800px;
     }
-
     #console { 
         width: 800px;
         height: 300px;
@@ -18,22 +17,16 @@
         word-wrap: normal !important;
         white-space: pre !important;   
     }
-
     #commandline { 
         width: 800px;
     }
-
 </style>
 <script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
 <script src="../system.src.js" type="text/javascript" charset="utf-8"></script>
 <script>
   System.config({
-    // or 'traceur' or 'typescript'
     transpiler: 'babel',
-    // or traceurOptions or typescriptOptions
-    babelOptions: {
-        //modules: "amd"
-    },
+    babelOptions: { },
     map: {
         babel: '../babel-core/browser.js'
     }
@@ -42,63 +35,24 @@
 </head>
 <body>
 <h1>Hello Lively4 -- The Beginnings!</h1>
-<img id="image">no meta  image</img>
 
 <button onclick="fileEditor.loadfile()">load</button>
 <button onclick="fileEditor.savefile()">save</button>
 <input type="text" id="filename" value="README.md">
-<div id="editor">function foo(items) {
-    var x = "All this is syntax highlighted";
-    return x;
-}</div>
-<button onclick="githubAuth.challengeForAuth('123', function(token){
-    alert('yes, we are authenticated ' + token)
+<button onclick="githubAuth.challengeForAuth(Date.now(), function(token){
+    alert('We are authenticated with the Token: ' + token)
 })">github </button>
+<div id="editor">This is no content!</div>
 
 <script src="ace.js" type="text/javascript" charset="utf-8"></script>
-<script>
-    var editor = ace.edit("editor");
-    //editor.setTheme("ace/theme/monokai");
-    //editor.getSession().setMode("ace/mode/javascript");
-</script>
+<script>ace.edit("editor");</script>
 
 <pre id="console"></pre>
 $<input type="text" id="commandline" value="">
 <script>
-    function log(s) {
-        $('#console').text($('#console').text() + "\n" + s)
-        $('#console').scrollTop($('#console')[0].scrollHeight);
-    }
-    System.import("load.js").then(log);
-
-    $('#commandline').keyup(function(e){
-        if(e.keyCode == 13)
-        {
-            var src = $('#commandline').val()
-            try { var result = eval(src) } catch(e) { result = "Error:" +e}
-            log("eval " + src + " -> " + result)
-        }
-    })
-
-    // print = function(a) {
-    //     var s = ""; 
-    //     for (i in a) {s += i + ": " + a[i] +"\n"}; 
-    //     return "{" +s + "}"
-    // };
-
-    // Log also messages from the service worker
-
-    // receive messages
-    navigator.serviceWorker.onmessage = function(event) {
-        if (event.data.message.name == 'log') {
-            log(event.data.message.data)
-        } 
-    }
-
-
+    System.import("load.js").then(log).catch(function(err) { alert("load Lively4 failed")})
+    System.import("commandline.js")
+    System.import("debug-serviceworker.js")    
 </script>
-
-
-
 </body>
 </html>
