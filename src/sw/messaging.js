@@ -12,7 +12,8 @@ l4.broadCastMessage = function(message) {
                 if (message && message.name == "log") { 
                     throw e // we are screwed
                 } else {
-                    console.log("Error during broadcasting a message: " + e)
+                    try { var s = JSON.stringify(message)} catch(e) {}
+                    console.log("Error during broadcasting a message: " + s + " error:" + e)
                 }
             } 
         });
