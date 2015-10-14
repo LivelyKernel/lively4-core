@@ -39,7 +39,7 @@ l4.importScripts('src/sw/transform.js');
                 console.log('#+#+##+#+#+++#+#+#+##+#+#+#+#+#+#+#+#+#+#+##++##+#+#+#+');
                 console.log('src transform');
             }))
-            .then(fetch)
+            .then(fetch) // #TODO why let babel retrieve the source here? Should't this happen in the pipline before #JensLincke
             .then(transform(babelTransform));
     });
 })();
