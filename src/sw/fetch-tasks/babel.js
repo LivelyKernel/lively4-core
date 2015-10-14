@@ -32,6 +32,7 @@ l4.importScripts('src/sw/transform.js');
             //modules: 'system'
         }).code;
     }
+    
 
     l4.fetchTask('babel src transform', notBlacklisted, function(event) {
         return l4.parseEvent(event)
