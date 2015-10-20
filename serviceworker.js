@@ -48,7 +48,7 @@ l4.importScripts('src/sw/fetch.js');
 l4.importScripts('src/sw/fetch-tasks/eval.js');
 l4.importScripts('src/sw/fetch-tasks/babel.js');
 l4.importScripts('src/sw/fetch-tasks/github.js');
-
+l4.importScripts('src/sw/fetch-tasks/openwindow.js');
 
 /*
  TODO: broker/servicelocator for core modules
