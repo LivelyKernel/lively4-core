@@ -18,6 +18,7 @@ l4.importScripts('src/external/focalStorage.js');
         console.log('GitHub fetch: ', request.url);
 
         return focalStorage.getItem("githubToken").then(function(githubToken) {
+
             if (! githubToken) {
                 console.log("githubToken not found")
                 return new Response("No GitHub access token available.", { "status" : 404 , "statusText" : "Not found." })
