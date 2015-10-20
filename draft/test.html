@@ -37,8 +37,10 @@
 <h1>Hello Lively4 -- The Beginnings! Yeah!</h1>
 
 
-<button onclick="fileEditor.loadfile()">load</button>
-<button onclick="fileEditor.savefile()">save</button>
+<button onclick="fileEditor.loadfile()">load (Message API)</button>
+<button onclick="fileEditor.savefile()">save (Message API)</button>
+<button onclick="fileEditor.loadfileFetch()">load (Rest API)</button>
+<button onclick="fileEditor.savefileFetch()">save (Rest API)</button>
 <input type="text" id="filename" value="README.md">
 
 <!-- <button onclick="">reload service worker </button> -->
@@ -61,7 +63,7 @@ $<input type="text" id="commandline" value="">
 
 
         testOpenWindow = function() {
-            $.get("https://openWindow/")
+            $.get("https://openwindow/")
         }
     }).catch(function(err) { alert("load Lively4 failed")})
 </script>
