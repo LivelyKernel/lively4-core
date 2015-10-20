@@ -40,6 +40,20 @@ export function loadfile(){
 	})
 }
 
+
+export function loadfileFetch(){
+	var filename = $('#filename').val()
+	log("load " + filename)
+
+
+	$.get("https://github.lively4/repo/livelykernel/lively4-core/gh-pages/" + filename, null, function(text) {
+		currentEditor().setValue(text)
+		log("file " + filename + " read.")
+	}).fail(function() {
+    	log('could not load ' + file); // or whatever
+	});
+}
+
 function writeFile(path, content) {
 	return messaging.postMessage({
 	    meta: {
@@ -67,5 +81,23 @@ export function savefile(){
 	writeFile(filename, currentEditor().getValue()).then(function(text) {
 		log("file " + filename + " written.", text)
 	});
+}
+
+export function savefileFetch(){
+	var filename = $('#filename').val()
+	log("save " + filename)
+
+	$.ajax({
+	    url: "https://github.lively4/repo/livelykernel/lively4-core/gh-pages/" + filename,
+	    type: 'PUT',
+	    data: currentEditor().getValue(),
+	    success: function(text) {
+			log("file " + filename + " written.")
+		},
+		error: function(xhr, status, error) {
+			log("could not write " + filename + ": " + error)
+		}
+	});
+
 }
 
