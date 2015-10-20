@@ -58,7 +58,13 @@ $<input type="text" id="commandline" value="">
     System.import("load.js").then(function(){
         System.import("commandline.js")
         System.import("debug-serviceworker.js")    
+
+
+        testOpenWindow = function() {
+            $.get("https://openWindow/")
+        }
     }).catch(function(err) { alert("load Lively4 failed")})
 </script>
+<button onclick="testOpenWindow()">test</button>
 </body>
 </html>
