@@ -4,6 +4,7 @@ var onAuthenticatedCallbacks = {}
 
 log("load githubAuth")
 
+
 export function onAuthenticated(windowUuid, authInfo) {
 
 	var state = authInfo.state
@@ -16,6 +17,11 @@ export function onAuthenticated(windowUuid, authInfo) {
 		var cb = onAuthenticatedCallbacks[state]
 		if (cb) {cb(token)}
 	})
+}
+
+export function logout(cb) {
+	localStorage.GithubToken = null
+	focalStorage.setItem("githubToken", null).then(cb)
 }
 
 	
