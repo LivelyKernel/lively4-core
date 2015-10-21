@@ -45,8 +45,6 @@ l4.importScripts('src/external/focalStorage.js');
                     var exp = new RegExp("([^/]*)/([^/]*)/([^/]*)/([^/]*)/(.*)")
                     var match = exp.exec(s)
 
-
-
                     // Example: https://github.lively4/repo/livelykernel/lively4-core/gh-pages/README.md
                                     
                     var username = match[2],
