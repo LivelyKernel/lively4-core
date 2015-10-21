@@ -24,7 +24,14 @@ export function logout(cb) {
 	focalStorage.setItem("githubToken", null).then(cb)
 }
 
-	
+function parseAuthInfoFromUrl(data) {
+  var authInfo = JSON.parse(
+    '{"' + data.replace(/&/g, '","').replace(/=/g, '":"') + '"}',
+    function(key, value) { return key === "" ? value : decodeURIComponent(value); });
+  return authInfo;
+}
+
+
 export function challengeForAuth(uuid, cb) {
 	if (uuid && cb) {
 		onAuthenticatedCallbacks[uuid] = cb
@@ -65,7 +72,7 @@ export function challengeForAuth(uuid, cb) {
 
 	$.get("https://lively-kernel.org/lively4-auth/open_github_accesstoken?state="+uuid, null, function(data){
 	    alert("challenge got a token, too: " + data)
-	    var authInfo = JSON.parse(data)
+	    var authInfo = parseAuthInfoFromUrl(data)
 	    onAuthenticated(uuid, authInfo)
 	})
 
