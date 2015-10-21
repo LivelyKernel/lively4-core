@@ -19,7 +19,12 @@ export function onAuthenticated(windowUuid, authInfo) {
 	localStorage.GithubToken = token
 	focalStorage.setItem("githubToken", localStorage.GithubToken).then(function() {
 		var cb = onAuthenticatedCallbacks[state]
-		if (cb) {cb(token)}
+		if (cb) {
+			console.log("running onAuthenticated callback: " + cb)
+			cb(token)
+		} else {
+			console.log("no callback found for" + state)
+		}
 	})
 }
 
@@ -67,7 +72,7 @@ export function challengeForAuth(uuid, cb) {
 	              "height=" + height,
 	              "top=" + top,
 	              "left=" + left,
-	              
+
 	              "status=no",
 	              "resizable=yes",
 	              "toolbar=no",
