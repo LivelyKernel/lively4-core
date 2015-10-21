@@ -29,7 +29,7 @@ l4.importScripts('src/external/focalStorage.js');
                             console.log("ask client for github token")
                             clients[0].postMessage({
                                 name: "githubAuthTokenRequired",
-                                callbackID: cbId}
+                                callbackID: cbId
                             });
                         })
                     }
