@@ -99,4 +99,5 @@ l4.importScripts('src/external/focalStorage.js');
                     console.log("focalStorage Error: " + err)
                     return // Error ??
             });
+    })
 })();
