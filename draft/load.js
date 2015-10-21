@@ -25,7 +25,7 @@ if ('serviceWorker' in navigator) {
             })
             // #TODO continue here... loadFile is not in global scope (yet)
     })
-
+}
 
 
 document.addEventListener('DOMContentLoaded', function () {
