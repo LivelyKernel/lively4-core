@@ -30,7 +30,9 @@ l4.importScripts('src/sw/core.js');
 
 l4.importScripts('src/sw/messaging.js');
 l4.importScripts('src/sw/logging.js');
+
 l4.importScripts('src/sw/messaging-tasks/github/github-api.js');
+l4.importScripts('src/sw/messaging-tasks/github/callbacks.js'); // #TODO Refactor #JensLincke
 
 console.log('Service Worker: File Start');
 
