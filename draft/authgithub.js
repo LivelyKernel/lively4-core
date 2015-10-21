@@ -35,6 +35,17 @@ function parseAuthInfoFromUrl(data) {
   return authInfo;
 }
 
+function notifyMe(title, text, cb) {
+  if (Notification.permission !== "granted")
+    Notification.requestPermission();
+  else {
+    var notification = new Notification(title, {
+      icon: 'https://assets-cdn.github.com/images/modules/logos_page/GitHub-Mark.png',
+      body: text,
+    });
+    notification.onclick = db
+  }
+}
 
 export function challengeForAuth(uuid, cb) {
 	if (uuid && cb) {
@@ -63,7 +74,10 @@ export function challengeForAuth(uuid, cb) {
 	              "scrollbars=yes"];
 	    popup = window.open(url, "oauth", features.join(","));
 	    if (!popup) {
-	        alert("failed to pop up auth window");
+	    	notifyMe("Github Authenfication required", "click here to authenticate", function() {
+				window.open(url, "oauth", features.join(","))
+	    	})
+	        // alert("failed to pop up auth window");
 	    }
 	    // popup.uuid = lively.net.CloudStorage.addPendingRequest(req);
 	    popup.focus();
@@ -95,6 +109,17 @@ navigator.serviceWorker.addEventListener("message", function(event) {
     if (event.data.name == 'githubAuthTokenRequired') {
     	console.log("goth auth token required")
     	var callbackId = event.data.callbackId
+    	$('#uploadPic').dialog({
+		         autoOpen: false,
+		         modal: true,
+		         draggable: true,
+		         title: "Upload Picture",
+		         open: function(type, data) {
+		             $(this).parent().appendTo("form");
+		         }
+		     });
+		 }
+    	var foo = confirm('foobar')
     	challengeForAuth(Date.now(), function(token) {
     		messaging.postMessage({
 	        	type: 'callback',
