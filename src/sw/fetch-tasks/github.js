@@ -18,6 +18,7 @@ l4.importScripts('src/external/focalStorage.js');
         console.log('GitHub fetch: ', request.url);
         var fetchWithToken = function(githubToken) {
                 return new Promise(function(resolve, reject) {
+                    console.log("fetchWithToken " + githubToken)
                     if (! githubToken) {
                         
                         console.log("githubToken not found")
@@ -32,6 +33,7 @@ l4.importScripts('src/external/focalStorage.js');
                                 callbackID: cbId
                             });
                         })
+                        return 
                     }
                     console.log('got githubCredentials');
 
