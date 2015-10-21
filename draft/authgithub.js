@@ -67,6 +67,7 @@ export function challengeForAuth(uuid, cb) {
 	              "height=" + height,
 	              "top=" + top,
 	              "left=" + left,
+	              
 	              "status=no",
 	              "resizable=yes",
 	              "toolbar=no",
