@@ -109,17 +109,6 @@ navigator.serviceWorker.addEventListener("message", function(event) {
     if (event.data.name == 'githubAuthTokenRequired') {
     	console.log("goth auth token required")
     	var callbackId = event.data.callbackId
-    	$('#uploadPic').dialog({
-		         autoOpen: false,
-		         modal: true,
-		         draggable: true,
-		         title: "Upload Picture",
-		         open: function(type, data) {
-		             $(this).parent().appendTo("form");
-		         }
-		     });
-		 }
-    	var foo = confirm('foobar')
     	challengeForAuth(Date.now(), function(token) {
     		messaging.postMessage({
 	        	type: 'callback',
