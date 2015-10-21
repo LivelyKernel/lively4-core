@@ -49,8 +49,8 @@ export function loadfileFetch(){
 	$.get("https://github.lively4/repo/livelykernel/lively4-core/gh-pages/" + filename, null, function(text) {
 		currentEditor().setValue(text)
 		log("file " + filename + " read.")
-	}).fail(function() {
-    	log('could not load ' + file); // or whatever
+	}).fail(function(e) {
+    	log('could not load ' + filename + ": " + e); // or whatever
 	});
 }
 
