@@ -62,6 +62,13 @@ export function challengeForAuth(uuid, cb) {
 	        "clientId": "21b67bb82b7af444a7ef",
 	        "redirectUri": "https://livelykernel.github.io/lively4-core/oauth/github.html"
 	 };
+
+	$.get("https://lively-kernel.org/lively4-auth/open_github_accesstoken?state="+uuid, null, function(data){
+	    alert("challenge got a token, too: " + data)
+	    var authInfo = JSON.parse(data)
+	    onAuthenticated(uuid, authInfo)
+	})
+
     var url =
         "https://github.com/login/oauth/authorize/" +
         "?client_id=" + appInfo.clientId +
