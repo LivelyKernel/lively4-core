@@ -76,11 +76,8 @@ export function challengeForAuth(uuid, cb) {
 	    if (!popup) {
 	    	notifyMe("Github Authenfication required", "click here to authenticate", function() {
 	    		console.log("try to open window")
-				// window.open(url)
-				window.open("https://www.google.com/")
-
+				window.open(url, "oauth", features.join(","));
 	    	})
-	        // alert("failed to pop up auth window");
 	    } else {
 	    	// popup.uuid = lively.net.CloudStorage.addPendingRequest(req);
 	    	popup.focus();
