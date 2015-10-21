@@ -5,6 +5,10 @@ var onAuthenticatedCallbacks = {}
 log("load githubAuth")
 
 
+window.addEventListener('error', function(error) {
+        console.error(error);
+});
+
 export function onAuthenticated(windowUuid, authInfo) {
 
 	var state = authInfo.state
@@ -85,4 +89,12 @@ export function challengeForAuth(uuid, cb) {
         "&redirect_uri=" + encodeURIComponent(appInfo.redirectUri);
     popup(url);
 }
+
+// receive messages
+navigator.serviceWorker.addEventListener("message", function(event) {
+    if (event.data.message.tyoe == 'githubAuthTokenRequired') {
+    	console.log("goth auth token required")
+       debugger
+    } 
+})
 
