@@ -27,7 +27,6 @@ if ('serviceWorker' in navigator) {
     })
 }
 
-
 document.addEventListener('DOMContentLoaded', function () {
   if (Notification.permission !== "granted")
     Notification.requestPermission();
