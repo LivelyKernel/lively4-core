@@ -43,7 +43,7 @@ function notifyMe(title, text, cb) {
       icon: 'https://assets-cdn.github.com/images/modules/logos_page/GitHub-Mark.png',
       body: text,
     });
-    notification.onclick = db
+    notification.onclick = cb
   }
 }
 
@@ -81,9 +81,10 @@ export function challengeForAuth(uuid, cb) {
 
 	    	})
 	        // alert("failed to pop up auth window");
+	    } else {
+	    	// popup.uuid = lively.net.CloudStorage.addPendingRequest(req);
+	    	popup.focus();
 	    }
-	    // popup.uuid = lively.net.CloudStorage.addPendingRequest(req);
-	    popup.focus();
 	}
 
     var appInfo = {
