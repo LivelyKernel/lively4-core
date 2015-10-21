@@ -92,9 +92,16 @@ export function challengeForAuth(uuid, cb) {
 
 // receive messages
 navigator.serviceWorker.addEventListener("message", function(event) {
-    if (event.data.message.tyoe == 'githubAuthTokenRequired') {
+    if (event.data.name == 'githubAuthTokenRequired') {
     	console.log("goth auth token required")
-       debugger
+    	var callbackId = event.data.callbackId
+    	challengeForAuth(Date.now(), function(token) {
+    		messaging.postMessage({
+	        	type: 'callback',
+	    		callbackId: callbackId,
+	    		args: [token]
+			})
+    	})
     } 
 })
 

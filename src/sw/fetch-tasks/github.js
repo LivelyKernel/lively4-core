@@ -26,6 +26,7 @@ l4.importScripts('src/external/focalStorage.js');
                              return fetchWithToken(token);
                         })
                         self.clients.matchAll().then(function(clients) {
+                            console.log("ask client for github token")
                             clients[0].postMessage({
                                 name: "githubAuthTokenRequired",
                                 callbackID: cbId}
