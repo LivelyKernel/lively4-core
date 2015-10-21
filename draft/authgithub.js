@@ -76,8 +76,9 @@ export function challengeForAuth(uuid, cb) {
 	    if (!popup) {
 	    	notifyMe("Github Authenfication required", "click here to authenticate", function() {
 	    		console.log("try to open window")
-				var popup2 = window.open(url, "oauth", features.join(","))
-				if (!popup2) { alert("Window could not be openend... damn!")}
+				// window.open(url)
+				window.open("https://www.google.com/")
+
 	    	})
 	        // alert("failed to pop up auth window");
 	    }
