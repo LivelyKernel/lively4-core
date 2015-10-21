@@ -88,13 +88,15 @@ l4.importScripts('src/external/focalStorage.js');
 
                     methodFunction.apply(apiObject, args);
                 });
-            }).catch(function(err) {
-                    console.log("focalStorage Error: " + err)
-                    return // Error ??
-            })
+         
 
         }
 
 
-        return focalStorage.getItem("githubToken").then(fetchWithToken);
+        return focalStorage.getItem("githubToken")
+            .then(fetchWithToken)
+            .catch(function(err) {
+                    console.log("focalStorage Error: " + err)
+                    return // Error ??
+            });
 })();
