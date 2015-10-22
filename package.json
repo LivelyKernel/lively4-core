@@ -1,6 +1,6 @@
 {
   "name": "lively.lang",
-  "version": "0.4.11",
+  "version": "0.4.12",
   "description": "JavaScript utils providing useful abstractions for working with collections, functions, objects.",
   "main": "index.js",
   "dependencies": {},

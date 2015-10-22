@@ -161,6 +161,18 @@ describe('arr', function() {
     expect(arr.delimWith(["test", "abc", 444], "aha")).to.eql(["test","aha","abc","aha",444]);
   });
 
+  describe("flatten", function() {
+
+    it("un-nest arrays", function() {
+      expect(arr.flatten([1, [2], [3, [4, [[[5]]]]]])).to.eql([1,2,3,4,5]);
+    });
+
+    it("un-nest arrays to a certain depth", function() {
+      expect(arr.flatten([1, [2], [3, [4, [[[5]]]]]], 2)).to.eql([1,2,3,4,[[[5]]]]);
+    });
+
+  });
+
   describe("flatmap", function() {
 
     it("flatmaps", function() {
