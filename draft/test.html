@@ -22,7 +22,6 @@
     }
 </style>
 <script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
-<script src="https://code.jquery.com/ui/1.11.4/jquery-ui.js" type="text/javascript" charset="utf-8"></script>
 
 <script src="../system.src.js" type="text/javascript" charset="utf-8"></script>
 <script>
@@ -48,7 +47,7 @@
 <!-- <button onclick="">reload service worker </button> -->
 
 <button onclick="githubAuth.challengeForAuth(Date.now(), function(token){
-    alert('We are authenticated with the Token: ' + token)
+    console.log('We are authenticated with the Token: ' + token)
 })">login github </button>
 
 <button onclick="githubAuth.logout()">logout github </button>
