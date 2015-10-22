@@ -1,5 +1,7 @@
 'use strict';
 
+var messaging = require('./../src/client/messaging.js');
+
 var onAuthenticatedCallbacks = {}
 
 log("load githubAuth")
@@ -14,7 +16,7 @@ export function onAuthenticated(windowUuid, authInfo) {
 	var state = authInfo.state
 	var token = authInfo.access_token
 
-	if (!state) { alert("authinfo: " + JSON.stringify(authInfo))}
+	if (!state) { console.log("not state! authinfo: " + JSON.stringify(authInfo))}
 
 	localStorage.GithubToken = token
 	focalStorage.setItem("githubToken", localStorage.GithubToken).then(function() {
@@ -96,7 +98,7 @@ export function challengeForAuth(uuid, cb) {
 	 };
 
 	$.get("https://lively-kernel.org/lively4-auth/open_github_accesstoken?state="+uuid, null, function(data){
-	    alert("challenge got a token, too: " + data)
+	    console.log("challenge got a token, too: " + data)
 	    var authInfo = parseAuthInfoFromUrl(data)
 	    onAuthenticated(uuid, authInfo)
 	})
@@ -114,7 +116,7 @@ export function challengeForAuth(uuid, cb) {
 // receive messages
 navigator.serviceWorker.addEventListener("message", function(event) {
     if (event.data.name == 'githubAuthTokenRequired') {
-    	console.log("goth auth token required")
+    	console.log("goth auth token required: " + JSON.stringify(event.data))
     	var callbackId = event.data.callbackId
     	challengeForAuth(Date.now(), function(token) {
     		messaging.postMessage({
