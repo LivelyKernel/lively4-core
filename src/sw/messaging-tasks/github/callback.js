@@ -19,7 +19,7 @@ l4.messageTask('callbacks', function match(event) {
         delete l4.callbacks[message.callbackId] 
         cb.apply(self, message.args)
     } else{
-        console.log("no callback found")
+        console.log("no callback found for: " + JSON.stringify(message))
     }
 
     return true;
