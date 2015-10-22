@@ -7,8 +7,10 @@
     }
 
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('https://livelykernel.github.io/lively4-core/serviceworker-loader.js', {
-        scope: "https://livelykernel.github.io/lively4-core/draft/"
+    var root  = ("" + window.location).replace(/[^\/]*$/,'../')
+
+    navigator.serviceWorker.register(root + 'serviceworker-loader.js', {
+        scope: root + "draft/"
     }).then(function(registration) {
         // Registration was successful
         log('ServiceWorker registration successful with scope: ', registration.scope);
