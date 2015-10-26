@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Lively 4 Our First Page</title>
+<style type="text/css" media="screen">
+    #editor { 
+        height: 400px;
+        width: 800px;
+    }
+    #console { 
+        width: 800px;
+        height: 300px;
+        max-height: 200px;
+        overflow: auto;
+        background-color: #eeeeee;
+        word-break: normal !important;
+        word-wrap: normal !important;
+        white-space: pre !important;   
+    }
+    #commandline { 
+        width: 800px;
+    }
+</style>
+<script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
+
+<script src="../system.src.js" type="text/javascript" charset="utf-8"></script>
+<script>
+  System.config({
+    transpiler: 'babel',
+    babelOptions: { },
+    map: {
+        babel: '../babel-core/browser.js'
+    }
+  });
+</script>
+</head>
+<body>
+<h1>Hello Lively4 -- The Beginnings! Yeah!</h1>
+<div id='dialog'></div>
+
+<button onclick="fileEditor.loadfile()">load (Message API)</button>
+<button onclick="fileEditor.savefile()">save (Message API)</button>
+<button onclick="fileEditor.loadfileFetch()">load (Rest API)</button>
+<button onclick="fileEditor.savefileFetch()">save (Rest API)</button>
+<button onclick="console.log(ace.edit('editor').getValue())">Exec</button>
+<input type="text" id="filename" value="README.md">
+
+<!-- <button onclick="">reload service worker </button> -->
+
+<button onclick="githubAuth.challengeForAuth(Date.now(), function(token){
+    console.log('We are authenticated with the Token: ' + token)
+})">login github </button>
+
+<button onclick="githubAuth.logout()">logout github </button>
+
+
+<div id="editor">This is no content!</div>
+
+<script src="ace.js" type="text/javascript" charset="utf-8"></script>
+<script>ace.edit("editor");</script>
+
+<pre id="console"></pre>
+$<input type="text" id="commandline" value="">
+<script>
+    System.import("load.js").then(function(){
+        System.import("commandline.js")
+        System.import("debug-serviceworker.js")    
+
+
+        testOpenWindow = function() {
+            $.get("https://openwindow/")
+        }
+    }).catch(function(err) { alert("load Lively4 failed")})
+</script>
+<button onclick="testOpenWindow()">test</button>
+</body>
+</html>
