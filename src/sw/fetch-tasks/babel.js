@@ -10,7 +10,6 @@ l4.importScripts('src/sw/transform.js');
     function notBlacklisted(response) {
         var blackList = [
             'babel-core/browser.js',
-            'es6-module-loader/es6-module-loader-dev.src.js',
             'bootworker.js',
             'serviceworker.js',
             'src/external/system.src.js',
