@@ -37,7 +37,7 @@
 
 
 	./system-polyfills.src.js
-	./system.src.js
+	./src/external/system.src.js
 
 
 	./es6-module-loader
