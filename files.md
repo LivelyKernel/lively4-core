@@ -35,6 +35,11 @@
 
 # Babel and Co
 
+
+	./system-polyfills.src.js
+	./system.src.js
+
+
 	./es6-module-loader
 	./es6-module-loader/es6-module-loader-dev.js
 	./es6-module-loader/es6-module-loader.src.js
@@ -66,7 +71,7 @@
 
 # Source
 
-./src
+	./src
 
 ## Copies of external libraries
 
@@ -93,8 +98,3 @@
 
 	./src/client
 	./src/client/messaging.js
-
-# Bootstrap Lively 4
-
-	./system-polyfills.src.js
-	./system.src.js
