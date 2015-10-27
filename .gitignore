@@ -1,4 +1,5 @@
 bin/
+Makefile
 COMMIT
 node_modules
 *.log
