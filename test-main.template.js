@@ -47,6 +47,13 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
     return;
   */
 
+    try {
+      console.log("REQUIRE=" + require)
+    
+    } catch(e) {
+      console.log("ERROR:", e)
+    }
+
     require.config({
       // Karma serves files under /base, which is the basePath from your config file
       baseUrl: '/base',
