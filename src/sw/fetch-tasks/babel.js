@@ -2,7 +2,6 @@ l4.importScripts('src/sw/core.js');
 l4.importScripts('src/sw/fetch.js');
 
 l4.importScripts('babel-core/browser.js');
-// l4.importScripts('babel-core/browser-polyfill.js');
 
 l4.importScripts('src/sw/transform.js');
 
