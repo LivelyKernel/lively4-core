@@ -1,3 +1,4 @@
+bin/
 COMMIT
 node_modules
 *.log
