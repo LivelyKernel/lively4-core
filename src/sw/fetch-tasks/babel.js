@@ -13,7 +13,7 @@ l4.importScripts('src/sw/transform.js');
             'es6-module-loader/es6-module-loader-dev.src.js',
             'bootworker.js',
             'serviceworker.js',
-            'system.src.js',
+            'src/external/system.src.js',
             'serviceworker-loader.js',
             'https://code.jquery.com/jquery-2.1.4.js'
         ];
