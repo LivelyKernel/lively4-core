@@ -1,14 +1,14 @@
 l4.importScripts('src/sw/core.js');
 l4.importScripts('src/sw/fetch.js');
 
-l4.importScripts('babel-core/browser.js');
+l4.importScripts('src/external/babel-browser.js');
 
 l4.importScripts('src/sw/transform.js');
 
 (function() {
     function notBlacklisted(response) {
         var blackList = [
-            'babel-core/browser.js',
+            'src/external/babel-browser.js',
             'bootworker.js',
             'serviceworker.js',
             'src/external/system.src.js',

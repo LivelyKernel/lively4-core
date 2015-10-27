@@ -35,9 +35,7 @@
 # Babel and Co
 
 	./src/external/system.src.js
-
-
-	./babel-core/browser.js
+	./src/external/babel-browser.js
 
 
 # Lively 4 The Beginnings:
