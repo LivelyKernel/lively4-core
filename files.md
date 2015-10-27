@@ -1,18 +1,29 @@
-.
-./LICENSE
-./package.json
-./oauth
-./media
-./media/meta.png
-./require.js
-./require-start.js
+# Files in lively4-core
+
+	./LICENSE
+	./package.json
+	./oauth
+	./media
+	./media/meta.png
+
+## This is for the tests?
+
+Sombody brave has to move this file:
+
+	./require.js
+
+## For local development... should not be the main approach...
+
 ./bin
 ./bin/startweb
 ./bin/connect_lively4-jens
+
 ./serviceworker-loader.js
+
 ./transformer
 ./transformer/logappend.js
 ./transformer/identity.js
+
 ./test-main.js
 ./serviceworker-cache-polyfill.js
 ./draft
