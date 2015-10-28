@@ -33,11 +33,8 @@
 
 # Lively 4 The Beginnings:
 
-	./draft/load.js
 	./draft/testImage.html
 	./draft/test.html
-	./draft/file-editor.js
-	./draft/debug-serviceworker.js
 	./draft/commandline.js
 
 # Source
@@ -68,3 +65,6 @@
 ## Client Code (ES6)
 
 	./src/client/messaging.js
+	./src/client/load.js
+	./src/client/file-editor.js
+	./src/client/debug-serviceworker.js
