@@ -6,6 +6,8 @@
         $('#console').scrollTop($('#console')[0].scrollHeight);
     }
 
+// console.log("A squared: " + 2**4)
+
 // guard againsst wrapping twice and ending in endless recursion
 if (!console.log.isWrapped) {
     var nativeLog = console.log
@@ -20,10 +22,12 @@ if (!console.log.isWrapped) {
 
 
 if ('serviceWorker' in navigator) {
-    var root  = ("" + window.location).replace(/[^\/]*$/,'../')
+    var root = ("" + window.location).replace(/[^\/]*$/,'../')
 
     navigator.serviceWorker.register(root + 'serviceworker-loader.js', {
-        scope: root + "draft/"
+    // navigator.serviceWorker.register('../../serviceworker-loader.js', {
+        // scope: root + "draft/"
+        scope: root 
     }).then(function(registration) {
         // Registration was successful
         log('ServiceWorker registration successful with scope: ', registration.scope);
