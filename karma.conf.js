@@ -36,7 +36,6 @@ module.exports = function(config) {
       '/test/': '/base/test/',
       '/serviceworker-loader.js': '/base/serviceworker-loader.js',
       '/serviceworker.js': '/base/serviceworker.js',
-      '/serviceworker-cache-polyfill.js': '/base/serviceworker-cache-polyfill.js',
       '/bootworker.js': '/base/bootworker.js',
       '/bootworker.html': '/base/bootworker.html',
       '/loader/': '/base/loader/',

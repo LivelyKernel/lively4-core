@@ -12,7 +12,7 @@
 
 	./karma.conf.js
 
-## Sombody brave has to move this file:
+## Somebody brave has to move this file:
 
 	./require.js
 
@@ -30,13 +30,6 @@
 
 	./serviceworker-loader.js
 	./serviceworker.js
-	./serviceworker-cache-polyfill.js
-
-# Babel and Co
-
-	./src/external/system.src.js
-	./src/external/babel-browser.js
-
 
 # Lively 4 The Beginnings:
 
@@ -48,18 +41,17 @@
 	./draft/debug-serviceworker.js
 	./draft/commandline.js
 
-
 # Source
 
 ## Copies of external libraries
 
-	./src/external
 	./src/external/focalStorage.js
 	./src/external/jquery-1.11.3.js
+	./src/external/system.src.js
+	./src/external/babel-browser.js
 
 ## Service Worker Code (mostly ES5)
 
-	./src/sw
 	./src/sw/messaging-tasks
 	./src/sw/messaging.js
 	./src/sw/transform.js
@@ -74,5 +66,4 @@
 
 ## Client Code (ES6)
 
-	./src/client
 	./src/client/messaging.js
