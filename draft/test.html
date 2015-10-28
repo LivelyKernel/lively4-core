@@ -21,18 +21,23 @@
         width: 800px;
     }
 </style>
+
 <script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
 
-<script src="../src/external/system.src.js" type="text/javascript" charset="utf-8"></script>
+
+<!-- BEGIN SYSTEM.JS: should go away, until then we use a "static" global source --> 
+<script src="https://livelykernel.github.io/lively4-core/src/external/system.src.js" type="text/javascript" charset="utf-8"></script>
 <script>
   System.config({
     transpiler: 'babel',
     babelOptions: { },
     map: {
-        babel: '../src/external/babel-browser.js'
+        babel: 'https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
     }
   });
 </script>
+<!-- END SYSTEM.JS-->
+
 </head>
 <body>
 <h1>Hello Lively4 -- The Beginnings! Yeah!</h1>
@@ -52,18 +57,18 @@
 
 <button onclick="githubAuth.logout()">logout github </button>
 
-
 <div id="editor">This is no content!</div>
-
-<script src="../src/external/ace.js" type="text/javascript" charset="utf-8"></script>
-<script>ace.edit("editor");</script>
 
 <pre id="console"></pre>
 $<input type="text" id="commandline" value="">
 <script>
-    System.import("../src/client/load.js").then(function(){
+    var lively4url = "https://lively-kernel.org/lively4-jens/" // computeURL()
+    System.import(lively4url + "/src/client/load.js").then(function(){
         System.import("commandline.js")
-        System.import("../src/client/debug-serviceworker.js")    
+        System.import(lively4url + "src/external/ace.js").then(function(){
+            ace.edit("editor")
+        })
+        System.import(lively4url + "src/client/debug-serviceworker.js")    
 
 
         testOpenWindow = function() {
