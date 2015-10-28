@@ -1,8 +1,10 @@
 'use strict';
 
-var messaging = require('./../src/client/messaging.js');
-var focalStorage = require('./../src/external/focalStorage.js');
-var githubAuth = require('./authgithub.js');
+// var a = 2**3
+
+var messaging = require('./messaging.js');
+var focalStorage = require('../external/focalStorage.js');
+var githubAuth = require('./auth-github.js');
 
 window.githubAuth = githubAuth // make it global, so the callback can reach it...
 

@@ -61,9 +61,9 @@
 <pre id="console"></pre>
 $<input type="text" id="commandline" value="">
 <script>
-    System.import("load.js").then(function(){
+    System.import("../src/client/load.js").then(function(){
         System.import("commandline.js")
-        System.import("debug-serviceworker.js")    
+        System.import("../src/client/debug-serviceworker.js")    
 
 
         testOpenWindow = function() {

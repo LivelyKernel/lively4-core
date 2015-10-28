@@ -35,7 +35,6 @@
 
 	./draft/load.js
 	./draft/testImage.html
-	./draft/ace.js
 	./draft/test.html
 	./draft/file-editor.js
 	./draft/debug-serviceworker.js
@@ -49,6 +48,8 @@
 	./src/external/jquery-1.11.3.js
 	./src/external/system.src.js
 	./src/external/babel-browser.js
+	./src/external/ace.js
+
 
 ## Service Worker Code (mostly ES5)
 

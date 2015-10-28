@@ -1,6 +1,6 @@
 'use strict';
 
-var messaging = require('./../src/client/messaging.js');
+var messaging = require('./messaging.js');
 
 var onAuthenticatedCallbacks = {}
 
