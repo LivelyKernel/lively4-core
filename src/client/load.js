@@ -34,7 +34,7 @@ if ('serviceWorker' in navigator) {
 
     navigator.serviceWorker.ready.then(function(registration) {
             log('READY');
-            System.import("file-editor.js").then(function(module) {
+            System.import("../src/client/file-editor.js").then(function(module) {
                 window.fileEditor = module
                 log("fileEditor loaded")
             })
