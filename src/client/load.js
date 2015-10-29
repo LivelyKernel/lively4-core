@@ -43,6 +43,10 @@ if ('serviceWorker' in navigator) {
                 log("fileEditor loaded")
             })
             // #TODO continue here... loadFile is not in global scope (yet)
+            System.import("../src/client/script-manager.js").then(function(module) {
+                window.scriptManager = module;
+                log("scriptManager loaded");
+            });
     })
 }
 
