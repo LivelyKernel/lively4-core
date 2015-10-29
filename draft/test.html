@@ -62,7 +62,7 @@
 <pre id="console"></pre>
 $<input type="text" id="commandline" value="">
 <script>
-    var lively4url = "https://lively-kernel.org/lively4-jens/" // computeURL()
+    var lively4url =  window.location.origin;
     System.import(lively4url + "/src/client/load.js").then(function(){
         System.import("commandline.js")
         System.import(lively4url + "src/external/ace.js").then(function(){
