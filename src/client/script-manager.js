@@ -1,5 +1,7 @@
 'use strict';
 
+var messaging = require('./messaging.js');
+
 function functionFromString(funcOrString) {
     if (typeof funcOrString === 'function') {
         return funcOrString;
@@ -11,6 +13,38 @@ function persistToDOM(object, funcString, data) {
     data = data || {};
     data.type = "lively4script";
     $("<script>").attr(data).text(funcString).appendTo(object);
+
+    var world = $("html").clone();
+    world.find("#editor").empty();
+    world.find("#console").empty();
+    var s = new XMLSerializer();
+    var content = "<!DOCTYPE html>" + s.serializeToString(world[0]);
+
+    var url = document.URL;
+    var r = /https:\/\/([\w-]+)\.github\.io\/([\w-]+)\/(.+)/i;
+    var results = url.match(r);
+
+    writeFile(results[2], results[3], results[1], content);
+}
+
+function writeFile(repo, path, user, content) {
+    return messaging.postMessage({
+        meta: {
+            type: 'github api'
+        },
+        message: {
+            credentials: {
+                token: localStorage.GithubToken,
+                auth: 'oauth'
+            },
+            topLevelAPI: 'getRepo',
+            topLevelArguments: [user, repo],
+            method: 'write',
+            args: ['gh-pages', path, content, 'auto commit']
+        }
+    }).then(function(event) {
+        return event;
+    });
 }
 
 export function addScript(object, funcOrString, opts) {
