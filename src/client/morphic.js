@@ -3,10 +3,6 @@ export function initMorphicTools() {
 	initMagnifier();
 }
 
-function initDragBehaviour() {
-
-}
-
 function initMagnifier() {
 	$("body").on("click", (e) => {
 		if (e.ctrlKey) {
@@ -18,4 +14,10 @@ function initMagnifier() {
 
 function getTargetElementFromEvent(e) {
 	return e.target;
+}
+
+function initDragBehaviour() {
+	$("body").on("click", function(evt) {
+		
+	});
 }
