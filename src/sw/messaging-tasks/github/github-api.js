@@ -17,8 +17,8 @@ l4.messageTask('github api', function match(event) {
     var callback = function(err, data) {
         console.log(err, data);
 
-        if(err) {
-            console.log("GithubError: " +  JSON.serialize(err));
+        if(err) { 
+           console.log("GithubError: " +  JSON.stringify(err));
         }
         getSource(event).postMessage({
             meta: {
