@@ -18,7 +18,7 @@ l4.messageTask('github api', function match(event) {
         console.log(err, data);
 
         if(err) {
-            l4.broadCastMessage(err);
+            console.log("GithubError: " +  JSON.serialize(err));
         }
         getSource(event).postMessage({
             meta: {

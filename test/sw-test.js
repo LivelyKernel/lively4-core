@@ -1,7 +1,7 @@
 define(function(require) {
     "use strict";
 
-    require('../src/external/jquery-1.11.3.js');
+    require('https://code.jquery.com/jquery-2.1.4.js');
     var expect = chai.expect;
 
     describe('Eval', function() {
