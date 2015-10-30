@@ -81,7 +81,11 @@
     System.import(lively4url + "/src/client/load.js").then(function(){
         System.import("commandline.js")
         System.import(lively4url + "src/client/debug-serviceworker.js")    
-    }).catch(function(err) { alert("load Lively4 failed")})
+    }).catch(function(err) { alert("load Lively4 failed")});
+
+    System.import(lively4url + "/src/client/morphic.js").then(morphic => {
+        morphic.initMorphicTools();
+    }).catch(function(err) { alert("load morphic failed"); });
 </script>
 </body>
 </html>
