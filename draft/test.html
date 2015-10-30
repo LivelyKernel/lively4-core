@@ -62,15 +62,24 @@
 <pre id="console"></pre>
 <input type="text" id="commandline" value="">
 
-<script src="https://livelykernel.github.io/lively4-core/src/external/ace.js" type="text/javascript" charset="utf-8"></script>
+<!-- BEGIN ACE -->
+<!-- We also have to load ace "locally", because loading it remotely ends in a race condition -->
+<script src="../src/external/ace.js" type="text/javascript" charset="utf-8"></script>
 <script>ace.edit("editor");</script>
+<!-- END ACE -->
+
+
 <script>
     var lively4url =  "../" // or any abosolute path to lively4 ? Any idea for computeRoot() ? #JensLincke #OpenQuestion
+
+    //// #TODO The ace editor tries to be very clever, so it cannot be loaded through "import" at the moment 
+    //// (e.g. AMD promise error)
+    // System.import(lively4url + "src/external/ace.js").then(function(){
+    //         ace.edit("editor")
+    // })
+        
     System.import(lively4url + "/src/client/load.js").then(function(){
         System.import("commandline.js")
-        // System.import(lively4url + "src/external/ace.js").then(function(){
-        //     ace.edit("editor")
-        // })
         System.import(lively4url + "src/client/debug-serviceworker.js")    
     }).catch(function(err) { alert("load Lively4 failed")})
 </script>
