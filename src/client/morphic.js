@@ -1,3 +1,9 @@
 export function initMorphicTools() {
-	alert("juhuu");
+	initDragBehaviour();
+}
+
+function initDragBehaviour() {
+	$("body").on("click", function(evt) {
+		
+	});
 }
