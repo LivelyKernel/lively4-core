@@ -1,12 +1,21 @@
 l4.broadCastMessage = function(message) {
     self.clients.matchAll().then(function(clients) {
         clients.forEach(function(client) {
-            client.postMessage({
-                meta: {
-                    type: 'broadcast'
-                },
-                message: message
-            });
+            try {
+                client.postMessage({
+                    meta: {
+                        type: 'broadcast'
+                    },
+                    message: message
+                });
+            } catch(e) {  
+                if (message && message.name == "log") { 
+                    throw e // we are screwed
+                } else {
+                    try { var s = JSON.stringify(message)} catch(e) {}
+                    console.log("Error during broadcasting a message: " + s + " error:" + e)
+                }
+            } 
         });
     });
 };

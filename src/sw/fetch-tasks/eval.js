@@ -17,7 +17,7 @@ l4.importScripts('src/sw/fetch.js');
                 console.log('eval catch', s);
                 result = "Error: " + e;
             }
-            console.log('eval result', result);
+            console.log('eval result:' +  result);
 
             return new Response(result);
         }
@@ -25,6 +25,13 @@ l4.importScripts('src/sw/fetch.js');
 
     l4.fetchTask('eval', l4.urlMatch(expression), function(event) {
         return l4.parseEvent(event)
-            .then(evaluator.transform);
+            .then(evaluator.transform)
+                // .then(function(result){
+                // return new Promise(function(resolve, reject) {
+                //     fetch(new Request('index.html')).then(function() {
+                //         resolve(new Response("Weiss ich auch nicht!"))
+                //     });
+                // })
+                //});
     });
 })();

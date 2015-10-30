@@ -1,20 +1,17 @@
 l4.importScripts('src/sw/core.js');
 l4.importScripts('src/sw/fetch.js');
 
-l4.importScripts('babel-core/browser.js');
-l4.importScripts('babel-core/browser-polyfill.js');
+l4.importScripts('src/external/babel-browser.js');
 
 l4.importScripts('src/sw/transform.js');
 
 (function() {
     function notBlacklisted(response) {
         var blackList = [
-            'babel-core/browser.js',
-            'es6-module-loader/es6-module-loader-dev.src.js',
+            'src/external/babel-browser.js',
             'bootworker.js',
             'serviceworker.js',
-            'system-polyfills.src.js',
-            'system.src.js',
+            'src/external/system.src.js',
             'serviceworker-loader.js',
             'https://code.jquery.com/jquery-2.1.4.js'
         ];
@@ -32,6 +29,7 @@ l4.importScripts('src/sw/transform.js');
             //modules: 'system'
         }).code;
     }
+    
 
     l4.fetchTask('babel src transform', notBlacklisted, function(event) {
         return l4.parseEvent(event)
@@ -39,7 +37,7 @@ l4.importScripts('src/sw/transform.js');
                 console.log('#+#+##+#+#+++#+#+#+##+#+#+#+#+#+#+#+#+#+#+##++##+#+#+#+');
                 console.log('src transform');
             }))
-            .then(fetch)
+            .then(fetch) // #TODO why let babel retrieve the source here? Should't this happen in the pipline before #JensLincke
             .then(transform(babelTransform));
     });
 })();

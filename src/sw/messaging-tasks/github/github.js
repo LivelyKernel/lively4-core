@@ -699,15 +699,21 @@
 
       // Write file contents to a given branch and path
       // -------
-
-      this.write = function(branch, path, content, message, cb) {
-        _request("PUT", repoPath + "/contents/" + encodeURI(path), {
-          message: message,
-          content: btoa(content),
-          branch: branch,
-          sha: sha
-        }, cb);
+     this.write = function(branch, path, content, message, cb) {
+        that.getSha(branch, encodeURI(path), function(err, sha) {
+          var options = {
+              message: message,
+              content: btoa(content),
+              branch: branch
+          }    
+          if (!(err && err.error !== 404)) {
+            // try to create new file
+              options.sha = sha
+          } 
+          _request("PUT", repoPath + "/contents/" + encodeURI(path), options, cb);
+        });
       };
+
 
       // List commits on a repository. Takes an object of optional paramaters:
       // sha: SHA or branch to start listing commits from

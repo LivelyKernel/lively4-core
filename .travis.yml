@@ -1,3 +1,8 @@
+branches:
+  only:
+    - gh-pages
+    - /.*/
+
 language: node_js
 node_js:
 - '0.11'
@@ -20,6 +25,7 @@ before_install:
 # - './generateWrappedZ3.sh'
 
 script: 'npm test'
+
 
 #after_success: 'npm run benchmark'
 
