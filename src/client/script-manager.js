@@ -7,6 +7,12 @@ function functionFromString(funcOrString) {
     return eval('(' + funcOrString.toString() + ')');
 }
 
+function persistToDOM(object, funcString, data) {
+    data = data || {};
+    data.type = "lively4script";
+    $("<script>").attr(data).text(funcString).appendTo(object);
+}
+
 export function addScript(object, funcOrString, opts) {
     if (object instanceof jQuery) {
         jQuery.each(object, function(k, v) {
@@ -35,6 +41,8 @@ export function addScript(object, funcOrString, opts) {
     }
 
     object.__scripts__[name] = object[name] = func.bind(object);
+
+    persistToDOM(object, func.toString(), {"data-name": name});
 }
 
 export function callScript(object, name) {
