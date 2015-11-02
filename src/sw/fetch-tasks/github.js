@@ -56,43 +56,62 @@ l4.importScripts('src/external/focalStorage.js');
                     reponame = match[3],
                     branch = match[4],
                     path = match[5]
-                
-                var message = {
-                    topLevelAPI: match[1],
-                    topLevelArguments: [username, reponame],
-                    method: 'read',
-                    args: [branch, path]
+
+                var method = request.method,
+                    isPut = method === 'PUT';
+
+                console.log('#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+');
+                console.log('+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#');
+                console.log('#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+');
+                console.log(isPut);
+                console.log('#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+');
+                console.log('+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#');
+                console.log('#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+');
+
+                function sendGithubRequest(contentToWrite) {
+                    var message = {
+                        topLevelAPI: match[1],
+                        topLevelArguments: [username, reponame],
+                        method: isPut ? 'write' : 'read',
+                        args: isPut ? [branch, path, contentToWrite, 'auto commit'] : [branch, path]
+                    }
+
+                    var topLevelAPIMapping = {
+                        issues: 'getIssues',
+                        repo: 'getRepo',
+                        user: 'getUser',
+                        gist: 'getGist'
+                    };
+
+                    var callback = function(err, data) {
+                        console.log("resolve: " + resolve + " error:" + reject)
+                        console.log("Github API response (fetch): ", err, data);
+
+                        if(err) {
+                            l4.broadCastMessage("Github error: " + JSON.stringify(err));
+                            resolve(new Response("Error" + err))
+                        }  else {
+                            resolve(new Response(data))
+                        }
+                    };
+
+                    var credentials = githubCredentials,
+                        github = new Github(credentials),
+                        topLevelAPIName = topLevelAPIMapping[message.topLevelAPI],
+                        topLevelAPIFunction = github[topLevelAPIName],
+                        apiObject = topLevelAPIFunction.apply(github, message.topLevelArguments),
+                        methodName = message.method,
+                        methodFunction = apiObject[methodName],
+                        args = message.args.concat(callback);
+
+                    methodFunction.apply(apiObject, args);
                 }
 
-                var topLevelAPIMapping = {
-                    issues: 'getIssues',
-                    repo: 'getRepo',
-                    user: 'getUser',
-                    gist: 'getGist'
-                };
-
-                var callback = function(err, data) {
-                    console.log("resolve: " + resolve + " error:" + reject)
-                    console.log("Github API response (fetch): ", err, data);
-
-                    if(err) {
-                        l4.broadCastMessage("Github error: " + JSON.stringify(err));
-                        resolve(new Response("Error" + err))
-                    }  else {
-                        resolve(new Response(data))
-                    }
-                };
-
-                var credentials = githubCredentials,
-                    github = new Github(credentials),
-                    topLevelAPIName = topLevelAPIMapping[message.topLevelAPI],
-                    topLevelAPIFunction = github[topLevelAPIName],
-                    apiObject = topLevelAPIFunction.apply(github, message.topLevelArguments),
-                    methodName = message.method,
-                    methodFunction = apiObject[methodName],
-                    args = message.args.concat(callback);
-
-                methodFunction.apply(apiObject, args);
+                if(isPut) {
+                    request.text().then(sendGithubRequest);
+                } else {
+                    sendGithubRequest();
+                }
             });
         }
 
