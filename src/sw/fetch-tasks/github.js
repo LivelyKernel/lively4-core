@@ -82,7 +82,8 @@ l4.importScripts('src/external/focalStorage.js');
 
                         if(err) {
                             l4.broadCastMessage("Github error: " + JSON.stringify(err));
-                            resolve(new Response("Error" + err))
+                            resolve(new Response("Github Error:" + err, 
+                                {status: 404, statusText: "Resource not found!"}))
                         }  else {
                             resolve(new Response(data))
                         }
