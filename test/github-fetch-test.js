@@ -20,7 +20,6 @@ define(function(require) {
         it('fetches a file with a xmlhttp get request from github', function(done) {
             $.get("https://github.lively4/repo/livelykernel/lively4-core/gh-pages/README.md", undefined,
                 function(result) {
-                    console.log("CONTENT: " + result)
                     expect(result).to.exist                
                     done()
                 }).fail(function(err, status) {
@@ -36,6 +35,25 @@ define(function(require) {
                     done()
                 })
         });
-
+        it('writes new contents of a file with a xmlhttp put request from github', function(done) {
+            var newcontent = "Last write: " + new Date()
+            var url = "https://github.lively4/repo/livelykernel/lively4-dummy/master/writetest.txt"
+            $.ajax({
+                method: "PUT", 
+                url: url,
+                data: newcontent,
+                success: function(result) {
+                    $.get(url, null, function(result) {
+                        expect(result).to.be.equal(newcontent)
+                        done()
+                    }).fail(function(err, status) {
+                        done(new Error("Github Error" + JSON.stringify(err))) 
+                    })
+                },
+                error: function(err, status) {
+                    done(new Error("Github Error" + JSON.stringify(err)))
+                }
+            })
+        });
     });
 });
