@@ -78,7 +78,6 @@ function justReceive(event) {
         justReceive(event);
         messageTasks.some(function(task) {
             "use strict";
-            //l4.broadCastMessage('AAAAAHHHAAAHHHHAAAAAARRRRGGG' + cb.match);
             return task.match(event) && task.react(event);
         })
     });

@@ -3,6 +3,9 @@
 <head>
 <title>Lively 4 Our First Page</title>
 <style type="text/css" media="screen">
+    #baseurl { 
+        width: 800px;
+    }
     #editor { 
         height: 400px;
         width: 800px;
@@ -42,6 +45,8 @@
 </head>
 <body>
 <h1>Lively 4 -- Bootstrapping Test Page</h1>
+
+<p><input type="text" id="baseurl" value="https://github.lively4/repo/livelykernel/lively4-core/gh-pages/"></p>
 
 <button onclick="fileEditor.loadFile()">load</button>
 <button onclick="fileEditor.saveFile()">save</button>
