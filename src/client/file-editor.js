@@ -12,38 +12,7 @@ function currentEditor() {
 	 return ace.edit("editor");
 }
 
-function readFile(path) {
-	return messaging.postMessage({
-	    meta: {
-	        type: 'github api'
-	    },
-	    message: {
-	        credentials: {
-	        	token: localStorage.GithubToken,
-	        	auth: 'oauth' 
-	        },
-	        topLevelAPI: 'getRepo',
-	        topLevelArguments: ['livelykernel', 'lively4-core'],
-	        method: 'read',
-	        args: ['gh-pages', path]
-	    }
-	}).then(function(event) {
-		return event.data.message;
-	});
-}
-
-export function loadfile(){
-	var filename = $('#filename').val()
-	log("load " + filename)
-
-	readFile(filename).then(function(text) {
-		currentEditor().setValue(text)
-		log("file " + filename + " read.")
-	})
-}
-
-
-export function loadfileFetch(){
+export function loadFile(){
 	var filename = $('#filename').val()
 	log("load " + filename)
 
@@ -56,36 +25,7 @@ export function loadfileFetch(){
 	});
 }
 
-function writeFile(path, content) {
-	return messaging.postMessage({
-	    meta: {
-	        type: 'github api'
-	    },
-	    message: {
-	        credentials: {
-	        	token: localStorage.GithubToken,
-	        	auth: 'oauth'
-	        },
-	        topLevelAPI: 'getRepo',
-	        topLevelArguments: ['livelykernel', 'lively4-core'],
-	        method: 'write',
-	        args: ['gh-pages', path, content, 'auto commit']
-	    }
-	}).then(function(event) {
-		return event;
-	});
-}
-
-export function savefile(){
-	var filename = $('#filename').val()
-	log("save " + filename)
-
-	writeFile(filename, currentEditor().getValue()).then(function(text) {
-		log("file " + filename + " written.", text)
-	});
-}
-
-export function savefileFetch(){
+export function saveFile(){
 	var filename = $('#filename').val()
 	log("save " + filename)
 
