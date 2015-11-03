@@ -9,6 +9,12 @@ function functionFromString(funcOrString) {
     return eval('(' + funcOrString.toString() + ')');
 }
 
+function getURL(){
+    var baseurl = $('#baseurl').val() // How to abstract from UI? #TODO #JensLincke
+    var filename = $('#filename').val()
+    return new URL(baseurl + filename)
+}
+
 function persistToDOM(object, funcString, data) {
     data = data || {};
     data.type = "lively4script";
@@ -20,30 +26,22 @@ function persistToDOM(object, funcString, data) {
     var s = new XMLSerializer();
     var content = "<!DOCTYPE html>" + s.serializeToString(world[0]);
 
-    var url = document.URL;
-    var r = /https:\/\/([\w-]+)\.github\.io\/([\w-]+)\/(.+)/i;
-    var results = url.match(r);
-
-    writeFile(results[2], results[3], results[1], content);
+    writeFile(content);
 }
 
-function writeFile(repo, path, user, content) {
-    return messaging.postMessage({
-        meta: {
-            type: 'github api'
+function writeFile(content) {
+    var url = getURL()
+    console.log("[script-manager] save " + url)
+    $.ajax({
+        url: url,
+        type: 'PUT',
+        data: currentEditor().getValue(),
+        success: function(text) {
+            console.log("[script-manager] file " + url + " written.")
         },
-        message: {
-            credentials: {
-                token: localStorage.GithubToken,
-                auth: 'oauth'
-            },
-            topLevelAPI: 'getRepo',
-            topLevelArguments: [user, repo],
-            method: 'write',
-            args: ['gh-pages', path, content, 'auto commit']
+        error: function(xhr, status, error) {
+            console.log("[script-manager] could not write " + url + ": " + error)
         }
-    }).then(function(event) {
-        return event;
     });
 }
 
