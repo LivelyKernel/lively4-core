@@ -3,6 +3,9 @@
 <head>
 <title>Lively 4 Our First Page</title>
 <style type="text/css" media="screen">
+    #baseurl { 
+        width: 800px;
+    }
     #editor { 
         height: 400px;
         width: 800px;
@@ -43,19 +46,19 @@
 <body>
 <h1>Lively 4 -- Bootstrapping Test Page</h1>
 
-<button onclick="fileEditor.loadfile()">load (Message API)</button>
-<button onclick="fileEditor.savefile()">save (Message API)</button>
-<button onclick="fileEditor.loadfileFetch()">load (Rest API)</button>
-<button onclick="fileEditor.savefileFetch()">save (Rest API)</button>
+<p><input type="text" id="baseurl" value="https://github.lively4/repo/livelykernel/lively4-core/gh-pages/"></p>
+
+<button onclick="fileEditor.loadFile()">load</button>
+<button onclick="fileEditor.saveFile()">save</button>
 <input type="text" id="filename" value="README.md">
 
 <!-- <button onclick="">reload service worker </button> -->
 
 <button onclick="githubAuth.challengeForAuth(Date.now(), function(token){
     console.log('We are authenticated with the Token: ' + token)
-})">login github </button>
+})">login</button>
 
-<button onclick="githubAuth.logout()">logout github </button>
+<button onclick="githubAuth.logout(); console.log('logged out of github')">logout</button>
 
 <div id="editor">This is no content!</div>
 
