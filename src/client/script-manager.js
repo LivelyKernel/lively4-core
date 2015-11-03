@@ -18,6 +18,9 @@ function findLively4Script(parent) {
             if (typeof func !== 'function') {
                 throw 'no valid function provided!';
             }
+            if (typeof parent.__scripts__ === 'undefined') {
+                parent.__scripts__ = {};
+            }
             parent.__scripts__[name] = parent[name] = func.bind(parent);
         }
         else findLively4Script(child);
