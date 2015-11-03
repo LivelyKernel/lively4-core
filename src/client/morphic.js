@@ -7,7 +7,7 @@ function initMagnifier() {
 	$("body").on("click", (e) => {
 		if (e.ctrlKey) {
 			let target = getTargetElementFromEvent(e);
-			console.log("Current element:" ,target);
+			console.log("Current element:", target, "with id:", $(target).attr("id"));
 		}
 	});
 }
