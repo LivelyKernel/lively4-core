@@ -23,6 +23,8 @@ function persistToDOM(object, funcString, data) {
     var world = $("html").clone();
     world.find("#editor").empty();
     world.find("#console").empty();
+    world.find("#ace_editor\\.css").remove();
+    world.find("#ace-tm").remove();
     var s = new XMLSerializer();
     var content = "<!DOCTYPE html>" + s.serializeToString(world[0]);
 
