@@ -9,6 +9,26 @@ function functionFromString(funcOrString) {
     return eval('(' + funcOrString.toString() + ')');
 }
 
+function findLively4Script(parent) {
+    for (var i = 0; i < parent.children.length; ++i) {
+        var child = parent.children[i];
+        if (child.tagName.toLocaleLowerCase() == "script" && child.type == "lively4script") {
+            var name = child.dataset.name;
+            var func = functionFromString(child.textContent);
+            if (typeof func !== 'function') {
+                throw 'no valid function provided!';
+            }
+            parent.__scripts__[name] = parent[name] = func.bind(parent);
+        }
+        else findLively4Script(child);
+    }
+}
+
+
+function loadScriptsFromDOM() {
+    findLively4Script(document);
+}
+
 function persistToDOM(object, funcString, data) {
     data = data || {};
     data.type = "lively4script";
