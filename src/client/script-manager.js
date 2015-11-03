@@ -25,7 +25,7 @@ function findLively4Script(parent) {
 }
 
 
-function loadScriptsFromDOM() {
+export function loadScriptsFromDOM() {
     findLively4Script(document);
 }
 
