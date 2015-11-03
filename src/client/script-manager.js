@@ -35,7 +35,7 @@ function writeFile(content) {
     $.ajax({
         url: url,
         type: 'PUT',
-        data: currentEditor().getValue(),
+        data: content,
         success: function(text) {
             console.log("[script-manager] file " + url + " written.")
         },
