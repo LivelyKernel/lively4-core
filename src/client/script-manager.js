@@ -9,42 +9,9 @@ function functionFromString(funcOrString) {
     return eval('(' + funcOrString.toString() + ')');
 }
 
-function getURL(){
-    var baseurl = $('#baseurl').val() // How to abstract from UI? #TODO #JensLincke
-    var filename = $('#filename').val()
-    return new URL(baseurl + filename)
-}
-
-function persistToDOM(object, funcString, data) {
-    data = data || {};
+function persistToDOM(object, funcString, data={}) {
     data.type = "lively4script";
-    $("<script>").attr(data).text(funcString).appendTo(object);
-
-    var world = $("html").clone();
-    world.find("#editor").empty();
-    world.find("#console").empty();
-    world.find("#ace_editor\\.css").remove();
-    world.find("#ace-tm").remove();
-    var s = new XMLSerializer();
-    var content = "<!DOCTYPE html>" + s.serializeToString(world[0]);
-
-    writeFile(content);
-}
-
-function writeFile(content) {
-    var url = getURL()
-    console.log("[script-manager] save " + url)
-    $.ajax({
-        url: url,
-        type: 'PUT',
-        data: content,
-        success: function(text) {
-            console.log("[script-manager] file " + url + " written.")
-        },
-        error: function(xhr, status, error) {
-            console.log("[script-manager] could not write " + url + ": " + error)
-        }
-    });
+    $("<script>").attr(data).text(funcString).appendTo(object);    
 }
 
 export function addScript(object, funcOrString, opts) {
