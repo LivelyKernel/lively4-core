@@ -32,6 +32,7 @@ function saveDOM() {
     world.find("#console").empty();
     world.find("#ace_editor\\.css").remove();
     world.find("#ace-tm").remove();
+    world.find("style").filter((i,e) => /\s*\.error_widget_wrapper+/.test(e.textContent)).remove();
     var s = new XMLSerializer();
     var content = "<!DOCTYPE html>" + s.serializeToString(world[0]);
 
