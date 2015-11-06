@@ -1,45 +1,5 @@
 export function initMorphicTools() {
-	initStylesheet();
 	initDragBehaviour();
-	initMagnifier();
-}
-
-function initStylesheet() {
-	$("<link/>", {
-	   rel: "stylesheet",
-	   type: "text/css",
-	   href: "/src/client/css/morphic.css"
-	}).appendTo("head");
-}
-
-function initMagnifier() {
-	$("body").on("click", (e) => {
-		if (e.ctrlKey) {
-			onMagnify(e);
-		} else {
-			if (window.that) {
-				$(window.that).removeClass("red-border");
-			}
-		}
-	});
-}
-
-function onMagnify(e) {
-	var target = e.target;
-	var that = window.that;
-	var $that = $(that)
-	if (that && (target === that || $.contains(that, target))) {
-		parent = $that.parent();
-		if (!parent.is("html")) {
-			target = parent.get(0);
-		}
-	}
-	if (target !== that) {
-		$that.removeClass("red-border")
-		$(target).addClass("red-border");
-	}
-	window.that = target;
-	console.log("Current element:", target, "with id:", $(target).attr("id"));
 }
 
 function initDragBehaviour() {

@@ -86,6 +86,10 @@
     System.import(lively4url + "/src/client/morphic.js").then(morphic => {
         morphic.initMorphicTools();
     }).catch(function(err) { debugger; alert("load morphic failed"); });
+
+    System.import(lively4url + "/src/client/morphic-toolbox.js").then(toolbox => {
+        document.body.appendChild(toolbox.createMorphicToolbox());
+    }).catch(function(err) { debugger; alert("load morphic-toolbox failed"); });
 </script>
 </body>
 </html>

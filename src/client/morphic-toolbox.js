@@ -18,7 +18,11 @@ export function createMorphicToolbox() {
 		radio.id = id;
 		radio.value = ea.name;
 		$(radio).on("focus", ea.onActivate);
-		$(radio).on("blur", ea.onDeactivate);
+		$(radio).on("blur", function (e) {
+			if (!radio.checked) {
+				ea.onDeactivate;
+			}
+		});
 		if (ea.default) {
 			radio.checked = true;
 		}
@@ -31,6 +35,8 @@ export function createMorphicToolbox() {
 		form.appendChild(label);
 		form.appendChild(document.createElement("br"));
 	});
+
+	initStylesheet();
 
 	return container;
 }
@@ -53,16 +59,24 @@ var tools = [{
 	onDeactivate: deactivateDragging
 }]
 
+function initStylesheet() {
+	$("<link/>", {
+	   rel: "stylesheet",
+	   type: "text/css",
+	   href: "/src/client/css/morphic.css"
+	}).appendTo("head");
+}
+
 function clearTools() {
 	console.log("clear tools");
 }
 
 function activateInspector() {
-	console.log("using Inspector");
+	$("body").on("click", handleInspect);
 }
 
 function deactivateInspector() {
-	console.log("deactivate Inspector");
+	$("body").off("click", handleInspect);
 }
 
 function activateGrabbing() {
@@ -79,4 +93,33 @@ function activateDragging() {
 
 function deactivateDragging() {
 	console.log("deactivate Dragging");
+}
+
+function handleInspect(e) {
+	console.log("handle", e)
+	if (e.ctrlKey) {
+		onMagnify(e);
+	} else {
+		if (window.that) {
+			$(window.that).removeClass("red-border");
+		}
+	}
+}
+
+function onMagnify(e) {
+	var target = e.target;
+	var that = window.that;
+	var $that = $(that)
+	if (that && (target === that || $.contains(that, target))) {
+		parent = $that.parent();
+		if (!parent.is("html")) {
+			target = parent.get(0);
+		}
+	}
+	if (target !== that) {
+		$that.removeClass("red-border")
+		$(target).addClass("red-border");
+	}
+	window.that = target;
+	console.log("Current element:", target, "with id:", $(target).attr("id"));
 }
