@@ -3,3 +3,10 @@
 	border-style: solid;
 	border-color: red;
 }
+
+#morphic-toolbox {
+	width: 120px;
+	background-color: #eeeeee;
+	padding: 5px;
+	border-radius: 5px;
+}

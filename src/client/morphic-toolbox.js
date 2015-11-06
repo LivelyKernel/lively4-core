@@ -1,49 +1,5 @@
-export function createMorphicToolbox() {
-	var container = document.createElement("div");
-	container.name = "toolbox";
-	container.id = "morphic-toolbox";
-	container.style.width = "120px";
-	container.style.borderRadius = "5px";
-	container.style.background = "#eeeeee";
-	container.style.padding = "5px";
-
-	var form = document.createElement("form");
-	container.appendChild(form);
-	
-	tools.forEach(function(ea) {
-		var radio = document.createElement("input");
-		var id = "radio-button-" + ea.name;
-		radio.type = "radio";
-		radio.name = "tool-selection";
-		radio.id = id;
-		radio.value = ea.name;
-		$(radio).on("focus", ea.onActivate);
-		$(radio).on("blur", function (e) {
-			if (!radio.checked) {
-				ea.onDeactivate;
-			}
-		});
-		if (ea.default) {
-			radio.checked = true;
-		}
-
-		var label = document.createElement("label");
-		label.for = id;
-		label.innerHTML = ea.name;
-
-		form.appendChild(radio);
-		form.appendChild(label);
-		form.appendChild(document.createElement("br"));
-	});
-
-	initStylesheet();
-
-	return container;
-}
-
 var tools = [{
 	name: "none",
-	onActivate: clearTools,
 	default: true
 }, {
 	name: "Inspector",
@@ -59,6 +15,59 @@ var tools = [{
 	onDeactivate: deactivateDragging
 }]
 
+export function createMorphicToolbox() {
+	initStylesheet();
+
+	var container = document.createElement("div");
+	container.name = "toolbox";
+	container.id = "morphic-toolbox"
+
+	var form = document.createElement("form");
+	container.appendChild(form);
+
+	$(form).on("change", function(evt) {
+		// deactivate the current tool, if it has a deactivation function
+		var deactivate = container.currentTool.onDeactivate;
+		if (typeof deactivate === "function") {
+			deactivate();
+		}
+		// activate the new tool, if it has an activation function
+		var activate = evt.target.tool.onActivate;
+		if (typeof activate === "function") {
+			activate();
+		}
+
+		container.currentTool = evt.target.tool;
+	});
+	
+	// create a radio button for each tool
+	tools.forEach(function(ea) {
+		var radio = document.createElement("input");
+		var id = "radio-button-" + ea.name;
+		radio.type = "radio";
+		radio.name = "tool-selection";
+		radio.id = id;
+		radio.value = ea.name;
+		radio.tool = ea;
+		
+		if (ea.default) {
+			radio.checked = true;
+			container.currentTool = ea;
+		}
+
+		var label = document.createElement("label");
+		label.for = id;
+		label.innerHTML = ea.name;
+
+		form.appendChild(radio);
+		form.appendChild(label);
+		form.appendChild(document.createElement("br"));
+	});
+
+	return container;
+}
+
+
 function initStylesheet() {
 	$("<link/>", {
 	   rel: "stylesheet",
@@ -67,20 +76,19 @@ function initStylesheet() {
 	}).appendTo("head");
 }
 
-function clearTools() {
-	console.log("clear tools");
-}
-
 function activateInspector() {
+	console.log("using Inspector");
 	$("body").on("click", handleInspect);
 }
 
 function deactivateInspector() {
+	console.log("deactivate Inspector");
 	$("body").off("click", handleInspect);
 }
 
 function activateGrabbing() {
 	console.log("using Grabbing");
+	console.log("- not implemented -");
 }
 
 function deactivateGrabbing() {
@@ -89,6 +97,7 @@ function deactivateGrabbing() {
 
 function activateDragging() {
 	console.log("using Dragging");
+	console.log("- not implemented -");
 }
 
 function deactivateDragging() {
@@ -96,7 +105,6 @@ function deactivateDragging() {
 }
 
 function handleInspect(e) {
-	console.log("handle", e)
 	if (e.ctrlKey) {
 		onMagnify(e);
 	} else {
@@ -109,7 +117,7 @@ function handleInspect(e) {
 function onMagnify(e) {
 	var target = e.target;
 	var that = window.that;
-	var $that = $(that)
+	var $that = $(that);
 	if (that && (target === that || $.contains(that, target))) {
 		parent = $that.parent();
 		if (!parent.is("html")) {
