@@ -81,7 +81,9 @@ export function createMorphFromSubtree(rootElement, tagName) {
 
 export  function createTemplate(rootElement, name) {
 	var template = document.createElement("template");
-	template.id = name;
+	template.id = name + "-template";
+
+	var fragment = template.content;
 
 	// collect styles
 	var combinedStyle = collectAppliedCssRules(rootElement);
@@ -89,12 +91,12 @@ export  function createTemplate(rootElement, name) {
 	// apply style
 	var styleElement = document.createElement("style");
 	styleElement.innerHTML = combinedStyle;
-	template.appendChild(styleElement);
+	fragment.appendChild(styleElement);
 
 	// clone subtree from root
-	// its might be duplicated, if we have ids in the node at some point
+	// ids might be duplicated, if we have ids in the node at some point
 	var clone = rootElement.cloneNode(true);
-	template.appendChild(clone);
+	fragment.appendChild(clone);
 
 	return template;
 }
@@ -104,7 +106,7 @@ export function createElementFromTemplate(template, name) {
 
 	// called when a new element is constructed
 	proto.createdCallback = function() {
-		var clone = document.importNode(template, true);
+		var clone = document.importNode(template.content, true);
 		var shadow = this.createShadowRoot();
 		$(clone.children).each(function(idx) {
 			shadow.appendChild(this);
@@ -119,6 +121,35 @@ export function createElementFromTemplate(template, name) {
 	});
 
 	return element;
+}
+
+export function loadPart(partId, onSuccess, onError) {
+	loadExternalTemplate(partId + "-template", function(status, template) {
+		if (!template) {
+			if (typeof onError === "function") { 
+				onError(status);
+			}
+		} else {
+			var part = createElementFromTemplate(template, partId);
+			if (typeof onSuccess === "function") {
+				onSuccess(part);
+			}
+		}
+	});
+}
+
+function loadExternalTemplate(templateId, onComplete) {
+	var $tempLoader = $(document.createElement("div"));
+	$tempLoader.load("../templates/morphic-templates.html #" + templateId, function(responseText, status) {
+		if (typeof onComplete === "function") {
+			var templates = $tempLoader.children("template");
+			if (templates.length === 0) {
+				onComplete("template not found");
+			} else {
+				onComplete(status, templates[0]);
+			}
+		}
+	});
 }
 
 function collectAppliedCssRules(rootElement) {
