@@ -77,18 +77,16 @@
     // System.import(lively4url + "src/external/ace.js").then(function(){
     //         ace.edit("editor")
     // })
-        
+
     System.import(lively4url + "/src/client/load.js").then(function(){
         System.import("commandline.js")
         System.import(lively4url + "src/client/debug-serviceworker.js")    
     }).catch(function(err) { alert("load Lively4 failed")});
-
-    var morphic;
-    System.import(lively4url + "/src/client/morphic.js").then(m => {
-        morphic = m;
+        
+    System.import(lively4url + "/src/client/morphic.js").then(morphic => {
         morphic.initMorphicTools();
-    }).catch(function(err) { debugger; alert("load morphic failed"); });
-
+    }).catch(function(err) { alert("load morphic failed"); });
+    
     System.import(lively4url + "/src/client/morphic-toolbox.js").then(toolbox => {
         document.body.appendChild(toolbox.createMorphicToolbox());
     }).catch(function(err) { debugger; alert("load morphic-toolbox failed"); });
