@@ -111,6 +111,14 @@ export function createElementFromTemplate(template, name) {
 		$(clone.children).each(function(idx) {
 			shadow.appendChild(this);
 		});
+		
+		var _this = this;
+		// call the init script (still have to check for script name)
+		$(template.content).children("[type=lively4script]").each(function(idx) {
+			var fun = new Function(this.innerHTML);
+			// run script in context of newly created element
+			fun.call(_this);
+		});
 
 		// methods and attributes could be added here to 'this', 
 		// maybe by querying the template for lively4scripts?
@@ -125,7 +133,7 @@ export function createElementFromTemplate(template, name) {
 
 export function loadPart(partId, onSuccess, onError) {
 	loadExternalTemplate(partId + "-template", function(status, template) {
-		if (!template) {
+		if (status !== "success") {
 			if (typeof onError === "function") { 
 				onError(status);
 			}
@@ -139,15 +147,17 @@ export function loadPart(partId, onSuccess, onError) {
 }
 
 function loadExternalTemplate(templateId, onComplete) {
+	if (typeof onComplete !== "function") {
+		return;
+	}
+
 	var $tempLoader = $(document.createElement("div"));
-	$tempLoader.load("../templates/morphic-templates.html #" + templateId, function(responseText, status) {
-		if (typeof onComplete === "function") {
-			var templates = $tempLoader.children("template");
-			if (templates.length === 0) {
-				onComplete("template not found");
-			} else {
-				onComplete(status, templates[0]);
-			}
+	$tempLoader.load("/templates/morphic-templates.html #" + templateId, function(responseText, status) {
+		var templates = $tempLoader.children("template");
+		if (templates.length === 0) {
+			onComplete("template not found");
+		} else {
+			onComplete(status, templates[0]);
 		}
 	});
 }
