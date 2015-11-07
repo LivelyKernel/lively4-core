@@ -1,5 +1,21 @@
+var morphProto = Object.create(HTMLElement.prototype);
+
+// morphic interface goes here...
+morphProto.setExtent = function(x, y) {
+	console.log("set extent");
+}
+morphProto.setName = function(name) {
+	console.log("set name");
+	this.name = name;
+}
+morphProto.getName = function() {
+	console.log("get name");
+	return this.name;
+}
+// ...
+
 export function initMorphicTools() {
-	initDragBehaviour();
+	// initDragBehaviour();
 }
 
 function initDragBehaviour() {
@@ -26,6 +42,8 @@ export function makePart(partRoot) {
 	// shadow dom elements.
 	
 	// collect styles
+	// Maybe we should not filter rules due to dynamically
+	// assigned classes?
 	var combinedStyle = collectAppliedCssRules(partRoot);
 
 	// apply style
@@ -86,6 +104,8 @@ export  function createTemplate(rootElement, name) {
 	var fragment = template.content;
 
 	// collect styles
+	// Maybe we should not filter rules due to dynamically
+	// assigned classes?
 	var combinedStyle = collectAppliedCssRules(rootElement);
 
 	// apply style
@@ -102,7 +122,7 @@ export  function createTemplate(rootElement, name) {
 }
 
 export function createElementFromTemplate(template, name) {
-	var proto = Object.create(HTMLElement.prototype);
+	var proto = Object.create(morphProto);
 
 	// called when a new element is constructed
 	proto.createdCallback = function() {
@@ -113,14 +133,14 @@ export function createElementFromTemplate(template, name) {
 		});
 		
 		var _this = this;
-		// call the init script (still have to check for script name)
-		$(template.content).children("[type=lively4script]").each(function(idx) {
+		// call the initialize script
+		$(template.content).children("script[type=lively4script][name=initialize]").each(function(idx) {
 			var fun = new Function(this.innerHTML);
 			// run script in context of newly created element
 			fun.call(_this);
 		});
 
-		// methods and attributes could be added here to 'this', 
+		// scripts and attributes could be added here to 'this', 
 		// maybe by querying the template for lively4scripts?
 	}
 

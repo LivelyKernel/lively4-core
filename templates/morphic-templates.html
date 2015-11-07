@@ -10,7 +10,7 @@
 <div id="morphic-toolbox" class="">
     <form class=""></form>
 </div>
-<script type="lively4script" name="init">
+<script type="lively4script" name="initialize">
 console.log("initializing toolbox");
 
 this.tools = [{
@@ -133,5 +133,25 @@ function onMagnify(e) {
 
 
 this.createMorphicToolbox();
+</script>
+</template>
+
+<template id="blue-rect-template">
+<style>
+.blue-rect {
+    background-color: blue;
+    position: absolute;
+    width: 100px;
+    height: 100px;
+}
+p {
+    color: white;
+}
+</style>
+<div class="blue-rect">
+    <p>Blue Rect</p>
+</div>
+<script type="lively4script" name="initialize">
+    console.log("initializing rectangle");
 </script>
 </template>
