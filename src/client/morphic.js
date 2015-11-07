@@ -1,6 +1,7 @@
 var morphProto = Object.create(HTMLElement.prototype);
 
 // morphic interface goes here...
+// These are dummy methods!
 morphProto.setExtent = function(x, y) {
 	console.log("set extent");
 }
@@ -14,14 +15,24 @@ morphProto.getName = function() {
 }
 // ...
 
+
 export function initMorphicTools() {
 	// initDragBehaviour();
+	initStylesheet();
 }
 
 function initDragBehaviour() {
 	$("body").on("click", function(evt) {
 		
 	});
+}
+
+function initStylesheet() {
+	$("<link/>", {
+	   rel: "stylesheet",
+	   type: "text/css",
+	   href: "/src/client/css/morphic.css"
+	}).appendTo("head");
 }
 
 export function makePart(partRoot) {
@@ -127,17 +138,17 @@ export function createElementFromTemplate(template, name) {
 	// called when a new element is constructed
 	proto.createdCallback = function() {
 		var clone = document.importNode(template.content, true);
-		var shadow = this.createShadowRoot();
+		// var shadow = this.createShadowRoot();
+		var parent = this;
 		$(clone.children).each(function(idx) {
-			shadow.appendChild(this);
+			parent.appendChild(this);
 		});
 		
-		var _this = this;
 		// call the initialize script
 		$(template.content).children("script[type=lively4script][name=initialize]").each(function(idx) {
 			var fun = new Function(this.innerHTML);
 			// run script in context of newly created element
-			fun.call(_this);
+			fun.call(parent);
 		});
 
 		// scripts and attributes could be added here to 'this', 

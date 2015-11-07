@@ -34,7 +34,8 @@ this.createMorphicToolbox = function() {
     console.log("creating toolbox");
 
     // we need better functions to access own subelements!
-    var container = $(this.shadowRoot).children("#morphic-toolbox")[0];
+    // var container = $(this.shadowRoot).children("#morphic-toolbox")[0];
+    var container = $(this).children("#morphic-toolbox")[0];
     var form = container.children[0];
 
     
