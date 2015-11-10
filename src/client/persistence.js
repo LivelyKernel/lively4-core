@@ -3,8 +3,8 @@
 export function babeldummy() {};
 
 function initialize(){
-	var observer = new MutationObserver(function(mutations, observer) {
-      	mutations.forEach(function(record) {
+	var observer = new MutationObserver((mutations, observer) => {
+      	mutations.forEach(record => {
       		if (record.target.id == 'console'
       			|| record.target.id == 'editor') return;
       		if (record.type == 'childList') {
@@ -46,10 +46,10 @@ function writeFile(content) {
         url: url,
         type: 'PUT',
         data: content,
-        success: function(text) {
+        success: text => {
             console.log("[persistence] file " + url + " written.")
         },
-        error: function(xhr, status, error) {
+        error: (xhr, status, error) => {
             console.log("[persistence] could not write " + url + ": " + error)
         }
     });
