@@ -32,42 +32,15 @@ export function loadScriptsFromDOM() {
     findLively4Script(document);
 }
 
-function persistToDOM(object, funcString, data) {
-    data = data || {};
+function persistToDOM(object, funcString, data={}) {
     data.type = "lively4script";
-    $("<script>").attr(data).text(funcString).appendTo(object);
-
-    var world = $("html").clone();
-    world.find("#editor").empty();
-    world.find("#console").empty();
-    var s = new XMLSerializer();
-    var content = "<!DOCTYPE html>" + s.serializeToString(world[0]);
-
-    var url = document.URL;
-    var r = /https:\/\/([\w-]+)\.github\.io\/([\w-]+)\/(.+)/i;
-    var results = url.match(r);
-
-    writeFile(results[2], results[3], results[1], content);
+    $("<script>").attr(data).text(funcString).appendTo(object);    
 }
 
-function writeFile(repo, path, user, content) {
-    return messaging.postMessage({
-        meta: {
-            type: 'github api'
-        },
-        message: {
-            credentials: {
-                token: localStorage.GithubToken,
-                auth: 'oauth'
-            },
-            topLevelAPI: 'getRepo',
-            topLevelArguments: [user, repo],
-            method: 'write',
-            args: ['gh-pages', path, content, 'auto commit']
-        }
-    }).then(function(event) {
-        return event;
-    });
+function removeFromDOM(object, name) {
+    children = $(object).children("script[type='lively4script'][data-name='" + name + "']");
+    if (children.size() != 1)  throw 'multiple children detected ' + children;
+    children.remove();
 }
 
 export function addScript(object, funcOrString, opts) {
@@ -100,6 +73,23 @@ export function addScript(object, funcOrString, opts) {
     object.__scripts__[name] = object[name] = func.bind(object);
 
     persistToDOM(object, func.toString(), {"data-name": name});
+}
+
+export function removeScript(object, name) {
+    if (object instanceof jQuery) {
+        jQuery.each(object, function(k, v) {
+            removeScript(v, name);
+        });
+        return;
+    }
+    
+    if (typeof object.__scripts__ === 'undefined'
+        || typeof object.__scripts__[name] === 'undefined') {
+        throw 'script name "' + name + '" does not exist!';
+    }
+
+    delete object.__scripts__[name];
+    removeFromDOM(object, name);
 }
 
 export function callScript(object, name) {
