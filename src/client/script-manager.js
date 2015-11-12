@@ -38,7 +38,7 @@ function persistToDOM(object, funcString, data={}) {
 }
 
 function removeFromDOM(object, name) {
-    children = $(object).children("script[type='lively4script'][data-name='" + name + "']");
+    var children = $(object).children("script[type='lively4script'][data-name='" + name + "']");
     if (children.size() != 1)  throw 'multiple children detected ' + children;
     children.remove();
 }

@@ -14,21 +14,6 @@ function initialize(){
             		return node.tagName.toLocaleLowerCase() == 'script'
                         && node.type == 'lively4script'
                 })
-            	/*var shouldSave = false;
-                for (var i = 0, node; node = record.addedNodes[i]; i++) {
-                    if (node.tagName.toLocaleLowerCase() == 'script'
-                        && node.type == 'lively4script') {
-                        shouldSave = true;
-                        break;
-                    }
-                }
-                for (var i = 0, node; node = record.removedNodes[i]; i++) {
-                    if (node.tagName.toLocaleLowerCase() == 'script'
-                        && node.type == 'lively4script') {
-                        shouldSave = true;
-                        break;
-                    }
-                }*/
                 if (shouldSave) saveDOM();
             }
         })
