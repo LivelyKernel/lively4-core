@@ -3,26 +3,60 @@
 export function babeldummy() {};
 
 function initialize(){
-	var observer = new MutationObserver((mutations, observer) => {
-      	mutations.forEach(record => {
-      		if (record.target.id == 'console'
-      			|| record.target.id == 'editor') return;
-      		if (record.type == 'childList') {
-	      		for (var i = 0, node; node = record.addedNodes[i]; i++) {
-	      			if (node.tagName.toLocaleLowerCase() == 'script'
-	      				&& node.type == 'lively4script') {
-	      				saveDOM();
-	      				break;
-	      			}
-	      		}
-	      	}
-      	})
-      }).observe(document, {childList: true, subtree: true});
+    var observer = new MutationObserver((mutations, observer) => {
+        mutations.forEach(record => {
+            if (record.target.id == 'console'
+                || record.target.id == 'editor') return;
+            if (record.type == 'childList') {
+            	var nodes = [...record.addedNodes];
+            	nodes = nodes.concat([...record.removedNodes]);
+            	var shouldSave = nodes.some(node => {
+            		return node.tagName.toLocaleLowerCase() == 'script'
+                        && node.type == 'lively4script'
+                })
+            	/*var shouldSave = false;
+                for (var i = 0, node; node = record.addedNodes[i]; i++) {
+                    if (node.tagName.toLocaleLowerCase() == 'script'
+                        && node.type == 'lively4script') {
+                        shouldSave = true;
+                        break;
+                    }
+                }
+                for (var i = 0, node; node = record.removedNodes[i]; i++) {
+                    if (node.tagName.toLocaleLowerCase() == 'script'
+                        && node.type == 'lively4script') {
+                        shouldSave = true;
+                        break;
+                    }
+                }*/
+                if (shouldSave) saveDOM();
+            }
+        })
+    }).observe(document, {childList: true, subtree: true});
 }
 
 function getURL(){
     var baseurl = $('#baseurl').val() // How to abstract from UI? #TODO #JensLincke
     var filename = $('#filename').val()
+
+    var url = document.URL;
+    var r = /https:\/\/([\w-]+)\.github\.io\/([\w-]+)\/(.+)/i;
+    var results = url.match(r);
+
+    if (results)
+    {
+    	   filename = results[3];
+    }
+    else
+    {
+        r = /localhost:8080\/(.+)/i;
+        results = url.match(r);
+        if (results)
+        {
+            filename = results[1];
+        }
+    }
+
     return new URL(baseurl + filename)
 }
 

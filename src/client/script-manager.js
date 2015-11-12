@@ -14,6 +14,12 @@ function persistToDOM(object, funcString, data={}) {
     $("<script>").attr(data).text(funcString).appendTo(object);    
 }
 
+function removeFromDOM(object, name) {
+    children = $(object).children("script[type='lively4script'][data-name='" + name + "']");
+    if (children.size() != 1)  throw 'multiple children detected ' + children;
+    children.remove();
+}
+
 export function addScript(object, funcOrString, opts) {
     if (object instanceof jQuery) {
         jQuery.each(object, function(k, v) {
@@ -44,6 +50,23 @@ export function addScript(object, funcOrString, opts) {
     object.__scripts__[name] = object[name] = func.bind(object);
 
     persistToDOM(object, func.toString(), {"data-name": name});
+}
+
+export function removeScript(object, name) {
+    if (object instanceof jQuery) {
+        jQuery.each(object, function(k, v) {
+            removeScript(v, name);
+        });
+        return;
+    }
+    
+    if (typeof object.__scripts__ === 'undefined'
+        || typeof object.__scripts__[name] === 'undefined') {
+        throw 'script name "' + name + '" does not exist!';
+    }
+
+    delete object.__scripts__[name];
+    removeFromDOM(object, name);
 }
 
 export function callScript(object, name) {
