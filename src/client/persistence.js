@@ -2,17 +2,20 @@
 
 export function babeldummy() {};
 
+function isLively4Script(node) {
+    return node.tagName.toLocaleLowerCase() == 'script'
+        && node.type == 'lively4script'
+}
+
 function initialize(){
     var observer = new MutationObserver((mutations, observer) => {
         mutations.forEach(record => {
             if (record.target.id == 'console'
                 || record.target.id == 'editor') return;
             if (record.type == 'childList') {
-            	var nodes = [...record.addedNodes];
-            	nodes = nodes.concat([...record.removedNodes]);
-            	var shouldSave = nodes.some(node => {
-            		return node.tagName.toLocaleLowerCase() == 'script'
-                        && node.type == 'lively4script'
+                var nodes = [...record.addedNodes].concat([...record.removedNodes]);
+                var shouldSave = nodes.some(node => {
+                    return isLively4Script(node);
                 })
                 if (shouldSave) saveDOM();
             }
@@ -30,7 +33,7 @@ function getURL(){
 
     if (results)
     {
-    	   filename = results[3];
+        filename = results[3];
     }
     else
     {
