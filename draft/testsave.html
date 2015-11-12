@@ -84,4 +84,4 @@
     }).catch(function(err) { alert("load Lively4 failed")})
 </script>
 
-</body></html>
+<div id="BouncingBall" style="position: absolute; left: 800px; top: 200px; width: 50px; height: 50px; border-radius: 25px; background-color: red;"><script data-name="bounce" type="lively4script">function bounce() {var y = Math.abs(Math.sin((new Date().getTime() % 10000) / 10000 * 3.14)) * 150; $(this).css({transform: "translate3d(0, -" + y + "px, 0)"}); window.requestAnimationFrame(this.bounce)}</script></div></body></html>
