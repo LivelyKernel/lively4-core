@@ -31,7 +31,7 @@ function initStylesheet() {
 	$("<link/>", {
 	   rel: "stylesheet",
 	   type: "text/css",
-	   href: "/src/client/css/morphic.css"
+	   href: "/lively4-core/src/client/css/morphic.css"
 	}).appendTo("head");
 }
 
@@ -183,7 +183,7 @@ function loadExternalTemplate(templateId, onComplete) {
 	}
 
 	var $tempLoader = $(document.createElement("div"));
-	$tempLoader.load("/templates/morphic-templates.html #" + templateId, function(responseText, status) {
+	$tempLoader.load("/lively4-core/templates/morphic-templates.html #" + templateId, function(responseText, status) {
 		var templates = $tempLoader.children("template");
 		if (templates.length === 0) {
 			onComplete("template not found");

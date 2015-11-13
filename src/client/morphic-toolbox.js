@@ -72,7 +72,7 @@ function initStylesheet() {
 	$("<link/>", {
 	   rel: "stylesheet",
 	   type: "text/css",
-	   href: "/src/client/css/morphic.css"
+	   href: "/lively4-core/src/client/css/morphic.css"
 	}).appendTo("head");
 }
 
