@@ -88,11 +88,16 @@ function deactivateInspector() {
 
 function activateGrabbing() {
 	console.log("using Grabbing");
-	console.log("- not implemented -");
+	$("body").on("mousedown", grab);
+	$("body").on("mousemove", moveGrabbed);
+	$("body").on("mouseup", drop);
 }
 
 function deactivateGrabbing() {
 	console.log("deactivate Grabbing");
+	$("body").off("mousedown", grab);
+	$("body").off("mousemove", moveGrabbed);
+	$("body").off("mouseup", drop);
 }
 
 function activateDragging() {
@@ -104,6 +109,9 @@ function deactivateDragging() {
 	console.log("deactivate Dragging");
 }
 
+var target;
+var isGrabbing = false;
+
 function handleInspect(e) {
 	if (e.ctrlKey) {
 		onMagnify(e);
@@ -111,6 +119,50 @@ function handleInspect(e) {
 		if (window.that) {
 			$(window.that).removeClass("red-border");
 		}
+	}
+}
+
+function grab(e) {
+	var elementsUnterCursor = document.elementsFromPoint(e.pageX, e.pageY);
+	target = elementsUnterCursor[0];
+	e.preventDefault();
+}
+
+function moveGrabbed(e) {
+	if (target) {
+		isGrabbing = true;
+	}
+	if (isGrabbing) {
+		var elementsUnterCursor = document.elementsFromPoint(e.pageX, e.pageY);
+		var droptarget = elementsUnterCursor[0] == target ?
+				elementsUnterCursor[1] :
+				elementsUnterCursor[0] ;
+		var children = droptarget.childNodes;
+		var nextChildren = []; 
+		$(children).each(function (idx, child) {
+			if (child.nodeType === 1) {
+				var childTop = $(child).offset().top;
+				var childLeft = $(child).offset().left;
+				var childBottom = childTop + $(child).height();
+				var childRight = childLeft + $(child).width();
+				var toTheRight = childTop <= e.pageY <= childBottom
+						&& childLeft > e.pageX;
+				var below = childTop > e.pageY
+				if (toTheRight || below) {
+					nextChildren.push(child);
+				}					
+			}
+		})
+		droptarget.insertBefore(target, nextChildren[0]);
+		e.preventDefault();
+	}
+}
+
+function drop(e) {
+	if (isGrabbing) {
+		e.preventDefault();
+		isGrabbing = false;
+		target = null;			
 	}
 }
 
