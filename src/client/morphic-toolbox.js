@@ -110,7 +110,7 @@ function deactivateDragging() {
 }
 
 function handleInspect(e) {
-	if (e.ctrlKey) {
+	if (e.ctrlKey || e.metaKey) {
 		onMagnify(e);
 	} else {
 		if (window.that) {
