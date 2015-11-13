@@ -1,11 +1,3 @@
-# lively4-core 
-
-[![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
-
-Core functionality for Lively4 module management
-
-
-
-
-
-
+# lively4-dummy
+A dummy repository to test read/write access from Lively4
+foo
