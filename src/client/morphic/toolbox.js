@@ -1,5 +1,5 @@
-import * as dragging from './morphic-dragging.js';
-import * as grabbing from './morphic-grabbing.js';
+import * as dragging from './dragging.js';
+import * as grabbing from './grabbing.js';
 
 var tools = [{
 	name: "none",
@@ -75,7 +75,7 @@ function initStylesheet() {
 	$("<link/>", {
 	   rel: "stylesheet",
 	   type: "text/css",
-	   href: "/lively4-core/src/client/css/morphic.css"
+	   href: "../src/client/css/morphic.css"
 	}).appendTo("head");
 }
 

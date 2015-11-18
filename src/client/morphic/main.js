@@ -17,21 +17,14 @@ morphProto.getName = function() {
 
 
 export function initMorphicTools() {
-	// initDragBehaviour();
 	initStylesheet();
-}
-
-function initDragBehaviour() {
-	$("body").on("click", function(evt) {
-		
-	});
 }
 
 function initStylesheet() {
 	$("<link/>", {
 	   rel: "stylesheet",
 	   type: "text/css",
-	   href: "/lively4-core/src/client/css/morphic.css"
+	   href: "../src/client/css/morphic.css"
 	}).appendTo("head");
 }
 

@@ -1,4 +1,4 @@
-import * as positioning from './morphic-positioning.js';
+import * as positioning from './positioning.js';
 
 var grabTarget;
 var isGrabbing = false;
