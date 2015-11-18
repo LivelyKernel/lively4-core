@@ -1,3 +1,6 @@
+import * as dragging from './morphic-dragging.js';
+import * as grabbing from './morphic-grabbing.js';
+
 var tools = [{
 	name: "none",
 	default: true
@@ -88,30 +91,30 @@ function deactivateInspector() {
 
 function activateGrabbing() {
 	console.log("using Grabbing");
-	$("body").on("mousedown", grab);
-	$("body").on("mousemove", moveGrabbed);
-	$("body").on("mouseup", drop);
+	$("body").on("mousedown", grabbing.start);
+	$("body").on("mousemove", grabbing.move);
+	$("body").on("mouseup", grabbing.stop);
 }
 
 function deactivateGrabbing() {
 	console.log("deactivate Grabbing");
-	$("body").off("mousedown", grab);
-	$("body").off("mousemove", moveGrabbed);
-	$("body").off("mouseup", drop);
+	$("body").off("mousedown", grabbing.start);
+	$("body").off("mousemove", grabbing.move);
+	$("body").off("mouseup", grabbing.stop);
 }
 
 function activateDragging() {
 	console.log("using Dragging");
-	$("body").on("mousedown", startDragging);
-	$("body").on("mousemove", drag);
-	$("body").on("mouseup", stopDragging);
+	$("body").on("mousedown", dragging.start);
+	$("body").on("mousemove", dragging.move);
+	$("body").on("mouseup", dragging.stop);
 }
 
 function deactivateDragging() {
 	console.log("deactivate Dragging");
-	$("body").off("mousedown", startDragging);
-	$("body").off("mousemove", drag);
-	$("body").off("mouseup", stopDragging);
+	$("body").off("mousedown", dragging.start);
+	$("body").off("mousemove", dragging.move);
+	$("body").off("mouseup", dragging.stop);
 }
 
 function globalMousePosition(e) {
@@ -141,49 +144,6 @@ function globalPositionOfNode(node) {
 	}
 }
 
-var dragTarget;
-var dragOffset;
-var isDragging = false;
-
-function startDragging(e) {
-	dragTarget = elementsUnderMouseEvent(e)[0];
-	dragTarget = document.body === dragTarget ? null : dragTarget;
-	if (dragTarget) {
-		dragOffset = {
-			x: e.offsetX,
-			y: e.offsetY
-		}		
-	}
-	e.preventDefault();
-}
-
-function setNodePosition(node, pos) {
-	node.style.left = '' + pos.x + 'px';
-	node.style.top = '' + pos.y + 'px';
-}
-
-function drag(e) {
-	if (dragTarget) {
-		dragTarget.style.position = 'absolute';
-		isDragging = true;
-	}
-
-	if (isDragging) {
-		var newPosition = {
-			x: globalMousePosition(e).x - globalPositionOfNode(dragTarget.offsetParent).x - dragOffset.x,
-			y: globalMousePosition(e).y - globalPositionOfNode(dragTarget.offsetParent).y - dragOffset.y
-		}
-		setNodePosition(dragTarget, newPosition);
-		e.preventDefault();
-	}
-}
-
-function stopDragging(e) {
-	dragTarget = null;
-	isDragging = false;
-	e.preventDefault();
-}
-
 function handleInspect(e) {
 	if (e.ctrlKey || e.metaKey) {
 		onMagnify(e);
@@ -191,56 +151,6 @@ function handleInspect(e) {
 		if (window.that) {
 			$(window.that).removeClass("red-border");
 		}
-	}
-}
-
-var grabTarget;
-var isGrabbing = false;
-
-function grab(e) {
-	grabTarget = elementsUnderMouseEvent(e)[0];
-	grabTarget = document.body === grabTarget ? null : grabTarget;
-	e.preventDefault();
-}
-
-function moveGrabbed(e) {
-	if (grabTarget) {
-		grabTarget.style.removeProperty('position');
-		grabTarget.style.removeProperty('top');
-		grabTarget.style.removeProperty('left');
-		isGrabbing = true;
-	}
-	if (isGrabbing) {
-		var elementsUnterCursor = elementsUnderMouseEvent(e);
-		var droptarget = elementsUnterCursor[0] == grabTarget ?
-				elementsUnterCursor[1] :
-				elementsUnterCursor[0] ;
-		var children = droptarget.childNodes;
-		var nextChildren = []; 
-		$(children).each(function (idx, child) {
-			if (child.nodeType === 1) {
-				var childTop = $(child).offset().top;
-				var childLeft = $(child).offset().left;
-				var childBottom = childTop + $(child).height();
-				var childRight = childLeft + $(child).width();
-				var toTheRight = childTop <= e.pageY <= childBottom
-						&& childLeft > e.pageX;
-				var below = childTop > e.pageY
-				if (toTheRight || below) {
-					nextChildren.push(child);
-				}					
-			}
-		})
-		droptarget.insertBefore(grabTarget, nextChildren[0]);
-		e.preventDefault();
-	}
-}
-
-function drop(e) {
-	if (isGrabbing) {
-		e.preventDefault();
-		isGrabbing = false;
-		grabTarget = null;
 	}
 }
 
