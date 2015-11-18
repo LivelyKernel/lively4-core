@@ -102,11 +102,86 @@ function deactivateGrabbing() {
 
 function activateDragging() {
 	console.log("using Dragging");
-	console.log("- not implemented -");
+	$("body").on("mousedown", startDragging);
+	$("body").on("mousemove", drag);
+	$("body").on("mouseup", stopDragging);
 }
 
 function deactivateDragging() {
 	console.log("deactivate Dragging");
+	$("body").off("mousedown", startDragging);
+	$("body").off("mousemove", drag);
+	$("body").off("mouseup", stopDragging);
+}
+
+function globalMousePosition(e) {
+	var targetPos = globalPositionOfNode(e.target);
+	return {
+		x: e.offsetX + targetPos.x,
+		y: e.offsetY + targetPos.y
+	}
+}
+
+function elementsUnderMouseEvent(e) {
+	var pos = globalMousePosition(e);
+	return document.elementsFromPoint(e.clientX, e.clientY);
+}
+
+function globalPositionOfNode(node) {
+	var left = 0;
+	var top = 0;
+	while (node && node !== document.body) {
+		left += node.offsetLeft;
+		top += node.offsetTop;
+		node = node.offsetParent;
+	}
+	return {
+		x: left,
+		y: top
+	}
+}
+
+var dragTarget;
+var dragOffset;
+var isDragging = false;
+
+function startDragging(e) {
+	dragTarget = elementsUnderMouseEvent(e)[0];
+	dragTarget = document.body === dragTarget ? null : dragTarget;
+	if (dragTarget) {
+		dragOffset = {
+			x: e.offsetX,
+			y: e.offsetY
+		}		
+	}
+	e.preventDefault();
+}
+
+function setNodePosition(node, pos) {
+	node.style.left = '' + pos.x + 'px';
+	node.style.top = '' + pos.y + 'px';
+}
+
+function drag(e) {
+	if (dragTarget) {
+		dragTarget.style.position = 'absolute';
+		isDragging = true;
+	}
+
+	if (isDragging) {
+		var newPosition = {
+			x: globalMousePosition(e).x - globalPositionOfNode(dragTarget.offsetParent).x - dragOffset.x,
+			y: globalMousePosition(e).y - globalPositionOfNode(dragTarget.offsetParent).y - dragOffset.y
+		}
+		setNodePosition(dragTarget, newPosition);
+		e.preventDefault();
+	}
+}
+
+function stopDragging(e) {
+	dragTarget = null;
+	isDragging = false;
+	e.preventDefault();
 }
 
 function handleInspect(e) {
@@ -119,22 +194,25 @@ function handleInspect(e) {
 	}
 }
 
-var target;
+var grabTarget;
 var isGrabbing = false;
 
 function grab(e) {
-	var elementsUnterCursor = document.elementsFromPoint(e.pageX, e.pageY);
-	target = elementsUnterCursor[0];
+	grabTarget = elementsUnderMouseEvent(e)[0];
+	grabTarget = document.body === grabTarget ? null : grabTarget;
 	e.preventDefault();
 }
 
 function moveGrabbed(e) {
-	if (target) {
+	if (grabTarget) {
+		grabTarget.style.removeProperty('position');
+		grabTarget.style.removeProperty('top');
+		grabTarget.style.removeProperty('left');
 		isGrabbing = true;
 	}
 	if (isGrabbing) {
-		var elementsUnterCursor = document.elementsFromPoint(e.pageX, e.pageY);
-		var droptarget = elementsUnterCursor[0] == target ?
+		var elementsUnterCursor = elementsUnderMouseEvent(e);
+		var droptarget = elementsUnterCursor[0] == grabTarget ?
 				elementsUnterCursor[1] :
 				elementsUnterCursor[0] ;
 		var children = droptarget.childNodes;
@@ -153,7 +231,7 @@ function moveGrabbed(e) {
 				}					
 			}
 		})
-		droptarget.insertBefore(target, nextChildren[0]);
+		droptarget.insertBefore(grabTarget, nextChildren[0]);
 		e.preventDefault();
 	}
 }
@@ -162,24 +240,24 @@ function drop(e) {
 	if (isGrabbing) {
 		e.preventDefault();
 		isGrabbing = false;
-		target = null;			
+		grabTarget = null;
 	}
 }
 
 function onMagnify(e) {
-	var target = e.target;
+	var grabTarget = e.target;
 	var that = window.that;
 	var $that = $(that);
-	if (that && (target === that || $.contains(that, target))) {
+	if (that && (grabTarget === that || $.contains(that, grabTarget))) {
 		parent = $that.parent();
 		if (!parent.is("html")) {
-			target = parent.get(0);
+			grabTarget = parent.get(0);
 		}
 	}
-	if (target !== that) {
+	if (grabTarget !== that) {
 		$that.removeClass("red-border")
-		$(target).addClass("red-border");
+		$(grabTarget).addClass("red-border");
 	}
-	window.that = target;
-	console.log("Current element:", target, "with id:", $(target).attr("id"));
+	window.that = grabTarget;
+	console.log("Current element:", grabTarget, "with id:", $(grabTarget).attr("id"));
 }
