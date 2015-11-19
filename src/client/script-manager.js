@@ -43,7 +43,7 @@ function removeFromDOM(object, name) {
     children.remove();
 }
 
-export function addScript(object, funcOrString, opts) {
+export function updateScript(object, funcOrString, opts={}) {
     if (object instanceof jQuery) {
         jQuery.each(object, function(k, v) {
             addScript(v, funcOrString, opts);
@@ -51,7 +51,28 @@ export function addScript(object, funcOrString, opts) {
         return;
     }
 
-    opts = opts || {};
+    var func = functionFromString(funcOrString);
+    if (typeof func !== 'function') {
+        throw 'no valid function provided!';
+    }
+
+    var name = func.name || opts.name;
+    if (!name) {
+        throw 'cannot update script without name!';
+    }
+
+    removeScript(object, name);
+    addScript(object, funcOrString, opts)
+}
+
+export function addScript(object, funcOrString, opts={}) {
+    if (object instanceof jQuery) {
+        jQuery.each(object, function(k, v) {
+            addScript(v, funcOrString, opts);
+        });
+        return;
+    }
+
     if (typeof object.__scripts__ === 'undefined') {
         object.__scripts__ = {};
     }
@@ -89,6 +110,7 @@ export function removeScript(object, name) {
     }
 
     delete object.__scripts__[name];
+    delete object[name];
     removeFromDOM(object, name);
 }
 

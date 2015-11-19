@@ -327,7 +327,7 @@ export class ObjectEditor extends HTMLDivElement {
   saveButtonClicked(e) {
     if (this.target && this.scriptList.selectedIndex >= 0) {
       var scriptName = this.scriptList.selectedOptions[0].value;
-      scriptManager.addScript(this.target, this.editor.value, { update: true });
+      scriptManager.updateScript(this.target, this.editor.value, { name: scriptName });
     }
   }
 
