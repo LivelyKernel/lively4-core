@@ -77,11 +77,12 @@
 <button onclick="githubAuth.logout(); console.log('logged out of github')">logout</button>
 
 <button id="loadScriptsFromDOM" onclick="window.scriptManager.loadScriptsFromDOM()">load lively4 scripts</button>
+<input type="checkbox" id="persistToGithub" />persist changes to github
 
 <div id="console"></div>
 
 <div id="object-inspector">
-    <input id="object-selector" value="h1" placeholder="Selector" />
+    <input id="object-selector" value="" placeholder="Selector" />
     <select id="object-selector-list" size="10"><option>[object HTMLHeadingElement]</option></select>
     <button id="object-inspect">Inspect</button>
     <br />
