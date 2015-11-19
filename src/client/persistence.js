@@ -3,7 +3,8 @@
 export function babeldummy() {};
 
 function isLively4Script(node) {
-    return node.tagName.toLocaleLowerCase() == 'script'
+    return node.tagName
+        && node.tagName.toLocaleLowerCase() == 'script'
         && node.type == 'lively4script'
 }
 

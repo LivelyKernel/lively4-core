@@ -317,7 +317,7 @@ export class ObjectEditor extends HTMLDivElement {
     if (this.target) {
       let scriptName = this.scriptList.value;
       if (scriptName) {
-        delete this.target.__scripts__[scriptName];
+        scriptManager.removeScript(this.target, scriptName);
       }
       this.editor.value = '';
       this.scriptList.removeChild(this.scriptList.querySelector('option[value="' + scriptName + '"]'));

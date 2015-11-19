@@ -47,6 +47,7 @@
 
 <button onclick="fileEditor.loadFile()">load</button>
 <button onclick="fileEditor.saveFile()">save</button>
+
 <input type="text" id="filename" value="README.md" />
 
 <!-- <button onclick="">reload service worker </button> -->
@@ -56,6 +57,8 @@
 })">login</button>
 
 <button onclick="githubAuth.logout(); console.log('logged out of github')">logout</button>
+
+<button id="loadScriptsFromDOM" onclick="window.scriptManager.loadScriptsFromDOM()">load lively4 scripts</button>
 
 <div id="editor" class=" ace_editor ace-tm" draggable="false"></div>
 

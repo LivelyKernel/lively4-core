@@ -69,9 +69,6 @@
 
 <p><input type="text" id="baseurl" value="https://github.lively4/repo/livelykernel/lively4-core/persistence/" /></p>
 
-<button onclick="fileEditor.loadFile()">load</button>
-<button onclick="fileEditor.saveFile()">save</button>
-<input type="text" id="filename" value="README.md" />
 
 <!-- <button onclick="">reload service worker </button> -->
 
@@ -81,10 +78,12 @@
 
 <button onclick="githubAuth.logout(); console.log('logged out of github')">logout</button>
 
+<button id="loadScriptsFromDOM" onclick="window.scriptManager.loadScriptsFromDOM()">load lively4 scripts</button>
+
 <div id="console"></div>
 
 <div id="object-inspector">
-    <input id="object-selector" value="" placeholder="Selector" />
+    <input id="object-selector" value="h1" placeholder="Selector" />
     <select id="object-selector-list" size="10"><option>[object HTMLHeadingElement]</option></select>
     <button id="object-inspect">Inspect</button>
     <br />
@@ -115,51 +114,7 @@
 </script>
 
 
-<script>
-
-$('#inject').click(function()  {
-    scriptManager.addScript($('h1'),
-function alertText() {
-    alert(this.innerText);
-});
-});
-
-var $currentSelector = null;
-var currentElement = null;
-var unsavedChanges = false;
-
-$('#object-selector').on('input', function() {
-    $currentSelector = $($(this).val());
-    currentElement = null;
-    updateObjectEditor();
-});
-
-$('#object-selector-list').change(function() {
-    var idx = $('option:selected', this).index();
-    currentElement = $currentSelector[idx];
-});
-
-$('#object-inspect').click(function() {
-    if (currentElement) {
-        var objectEditor = document.createElement('lively-object-editor');
-        var win = document.createElement('lively-window');
-        objectEditor.target = currentElement;
-        win.title = currentElement.tagName;
-        $(win).append(objectEditor);
-        $('body').append(win);
-        win.centerInWindow();
-    }
-});
-
-function updateObjectEditor() {
-    // update selector list
-    $('#object-selector-list').html('');
-    $currentSelector.each(function(k, v) {
-        $('#object-selector-list').append('&lt;option&gt;' + v + '&lt;/option&gt;');
-    });
-}
-
-</script>
+<script src="./object_editor.js" type="text/javascript" charset="utf-8">function</script>
 
 
 <lively-window style="top: calc(50% - 208.883px); left: calc(50% - 206.391px);"><lively-object-editor title="H1"></lively-object-editor></lively-window></body></html>
