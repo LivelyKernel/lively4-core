@@ -1,3 +1,5 @@
+import * as scriptManager from  "../script-manager.js";
+
 export function register(componentName, template) {
   var proto = Object.create(HTMLElement.prototype);
 
@@ -9,13 +11,17 @@ export function register(componentName, template) {
     root.appendChild(clone);
 
     var component = this;
-    // run the initialize script
-    // TO BE MOVED
-    $(root).children("script[type=lively4-script][name=initialize]").each(function(idx) {
-      var fun = new Function(this.innerHTML);
-      // run script in context of newly created element
-      fun.call(component);
+
+    $(root).children("script[type=lively4script]").each(function(idx) {
+      scriptManager.addScript(component, new Function(this.innerHTML), {name: this.getAttribute('data-name')});
     });
+
+    // call the initialize script
+    try {
+      scriptManager.callScript(component, "initialize");
+    } catch (e) {
+      console.log("There is no initialize script to be called");
+    }
   }
 
   document.registerElement(componentName, {
