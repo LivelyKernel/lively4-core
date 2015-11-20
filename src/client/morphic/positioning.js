@@ -29,3 +29,22 @@ export function globalPositionOfNode(node) {
 		y: top
 	}
 }
+
+export function getMode(node) {
+	return node.style.position;
+}
+
+export function setMode(node, aModeString) {
+	switch(aModeString) {
+		case 'relative': {
+			node.style.removeProperty('position');
+			node.style.removeProperty('top');
+			node.style.removeProperty('left');
+			break;
+		}
+		case 'absolute': {
+			node.style.position = 'absolute';
+			break;
+		}
+	}
+}

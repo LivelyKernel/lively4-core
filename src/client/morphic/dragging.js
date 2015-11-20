@@ -32,7 +32,7 @@ function start(e) {
 
 function move(e) {
 	if (dragTarget) {
-		dragTarget.style.position = 'absolute';
+		positioning.setMode(dragTarget, 'absolute');
 		isDragging = true;
 	}
 
