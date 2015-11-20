@@ -1,7 +1,11 @@
-import * as positioning from './positioning.js';
+import * as nodes from './node-helpers.js';
+import * as events from './event-helpers.js';
+
+// todo: put in config file
+var dragOffset = 30;
 
 var dragTarget;
-var dragOffset;
+var dragStartOffset;
 var isDragging = false;
 var dragStartPosition;
 
@@ -20,31 +24,31 @@ export function deactivate() {
 }
 
 function start(e) {
-  dragTarget = positioning.elementsUnderMouseEvent(e)[0];
+  dragTarget = events.elementsUnder(e)[0];
   dragTarget = document.body === dragTarget ? null : dragTarget;
   if (dragTarget) {
-    dragOffset = {
+    dragStartOffset = {
       x: e.offsetX,
       y: e.offsetY
     }
   }
-  dragStartPosition = positioning.globalMousePosition(e);
+  dragStartPosition = events.globalPosition(e);
   e.preventDefault();
 }
 
 function move(e) {
-  var eventPosition = positioning.globalMousePosition(e);
-  if (dragTarget && !isDragging && positioning.exceedsOffset(dragStartPosition, eventPosition)) {
-    positioning.setMode(dragTarget, 'absolute');
+  var eventPosition = events.globalPosition(e);
+  if (dragTarget && !isDragging && events.distanceTo(e, dragStartPosition) > dragOffset) {
+    nodes.setPositionMode(dragTarget, 'absolute');
     isDragging = true;
   }
 
   if (isDragging) {
     var newPosition = {
-      x: positioning.globalMousePosition(e).x - positioning.globalPositionOfNode(dragTarget.offsetParent).x - dragOffset.x,
-      y: positioning.globalMousePosition(e).y - positioning.globalPositionOfNode(dragTarget.offsetParent).y - dragOffset.y
+      x: events.globalPosition(e).x - nodes.globalPosition(dragTarget.offsetParent).x - dragStartOffset.x,
+      y: events.globalPosition(e).y - nodes.globalPosition(dragTarget.offsetParent).y - dragStartOffset.y
     }
-    positioning.setNodePosition(dragTarget, newPosition);
+    nodes.setPosition(dragTarget, newPosition);
     e.preventDefault();
   }
 }

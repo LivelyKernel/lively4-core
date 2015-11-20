@@ -1,4 +1,7 @@
-import * as positioning from './positioning.js';
+import * as events from './event-helpers.js';
+import * as nodes from './node-helpers.js';
+
+var grabOffset = 30;
 
 var grabTarget;
 var grabStartPosition;
@@ -19,20 +22,20 @@ export function deactivate() {
 }
 
 function start(e) {
-  grabTarget = positioning.elementsUnderMouseEvent(e)[0];
+  grabTarget = events.elementsUnder(e)[0];
   grabTarget = document.body === grabTarget ? null : grabTarget;
-  grabStartPosition = positioning.globalMousePosition(e);
+  grabStartPosition = events.globalPosition(e);
   e.preventDefault();
 }
 
 function move(e) {
-  var eventPosition = positioning.globalMousePosition(e);
-  if (grabTarget && !isGrabbing && positioning.exceedsOffset(grabStartPosition, eventPosition)) {
-    positioning.setMode(grabTarget, 'relative');
+  var eventPosition = events.globalPosition(e);
+  if (grabTarget && !isGrabbing && events.distanceTo(e, grabStartPosition) > grabOffset) {
+    nodes.setPositionMode(grabTarget, 'relative');
     isGrabbing = true;
   }
   if (isGrabbing) {
-    var elementsUnterCursor = positioning.elementsUnderMouseEvent(e);
+    var elementsUnterCursor = events.elementsUnder(e);
     var droptarget = elementsUnterCursor[0] == grabTarget ?
         elementsUnterCursor[1] :
         elementsUnterCursor[0] ;
