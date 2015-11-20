@@ -21,9 +21,9 @@ function initialize(){
                     return isLively4Script(node);
                 })
                 if (shouldSave) {
-                    sessionStorage["lively.scriptMutationsDetected"] = true;
-                    if (isSaveDOMAllowed()) {
-                        saveDOM()
+                    sessionStorage["lively.scriptMutationsDetected"] = 'true';
+                    if (isSaveDOMAllowed() && !persistenceTimerInterval) {
+                        saveDOM();
                     } else {
                         console.log("Persist to github not checked. Changes will not be pushed.");
                     }
@@ -31,6 +31,8 @@ function initialize(){
             }
         })
     }).observe(document, {childList: true, subtree: true});
+
+    resetPersistenceSessionStore();
 }
 
 function getURL(){
@@ -64,10 +66,15 @@ export function startPersistenceTimerInterval() {
 
 export function stopPersistenceTimerInterval() {
     clearInterval(persistenceTimerInterval);
+    persistenceTimerInterval = undefined;
+}
+
+function resetPersistenceSessionStore() {
+    sessionStorage["lively.scriptMutationsDetected"] = 'false';
 }
 
 function checkForMutationsToSave() {
-    if (isSaveDOMAllowed()) {
+    if (isSaveDOMAllowed() && sessionStorage["lively.scriptMutationsDetected"] === 'true') {
         console.log("[persistence] timer-based mutations detected, saving DOM...")
         saveDOM();
     }
@@ -94,7 +101,7 @@ function saveDOM() {
     var s = new XMLSerializer();
     var content = "<!DOCTYPE html>" + s.serializeToString(world[0]);
 
-    sessionStorage["lively.scriptMutationsDetected"] = false;
+    resetPersistenceSessionStore()
 
     writeFile(content);
 }
