@@ -87,11 +87,11 @@
     }).catch(function(err) { alert("load Lively4 failed")});
 
     var morphic;
-    System.import(lively4url + "/src/client/morphic/main.js").then(m => {
+    System.import(lively4url + "/src/client/morphic/morphic.js").then(m => {
         morphic = m;
         morphic.initMorphicTools();
     }).catch(function(err) {
-        debugger; alert("load morphic/main failed");
+        debugger; alert("load morphic failed");
     });
 
     System.import(lively4url + "/src/client/morphic/toolbox.js").then(toolbox => {
