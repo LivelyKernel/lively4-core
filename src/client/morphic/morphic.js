@@ -1,3 +1,11 @@
+document.componentLoader = {
+	register: function(template) {
+		console.log("register ");
+		console.log(template);
+	}
+}
+
+
 var morphProto = Object.create(HTMLElement.prototype);
 
 // morphic interface goes here...
@@ -125,19 +133,24 @@ export  function createTemplate(rootElement, name) {
 }
 
 export function saveTemplate(template) {
+	var registrationScript = document.createElement("script");
+	registrationScript.innerHTML = "var loader = require('./component-loader.js',(loader) => {loader.register($('template[id=" + template.id + "]')[0]});"
 	var url = location.protocol + "//" + location.host + "/lively4-core/templates/" + template.id + ".html";
 	console.log("export " + template.id + " to " + url);
-	$.ajax({
-	    url: url,
-	    type: 'PUT',
-	    data: $(template).html(),
-	    success: function() {
-        console.log("file " + url + " written.");
-		},
-		error: function(xhr, status, error) {
-			console.log("could not write " + url + ": " + error);
-		}
-	});
+	var completeHTML = '' + template.outerHTML + registrationScript.outerHTML;
+	console.log(completeHTML);
+	return completeHTML;
+	// $.ajax({
+	//     url: url,
+	//     type: 'PUT',
+	//     data: template.outerHtml,
+	//     success: function() {
+ //        console.log("file " + url + " written.");
+	// 	},
+	// 	error: function(xhr, status, error) {
+	// 		console.log("could not write " + url + ": " + error);
+	// 	}
+	// });
 }
 
 export function createElementFromTemplate(template, name) {

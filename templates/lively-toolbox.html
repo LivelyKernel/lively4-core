@@ -1,0 +1,39 @@
+<template id="lively-toolbox">
+    <style>
+    #morphic-toolbox {
+        width: 120px;
+        padding: 5px;
+        border-radius: 5px;
+        background-color: rgb(238, 238, 238);
+    }
+    </style>
+    <div id="morphic-toolbox">
+        <form>
+            <input type="radio" name="tool-selection" id="radio-button-none" value="none">
+            <label>none</label>
+            <br>
+            <input type="radio" name="tool-selection" id="radio-button-Inspector" value="Inspector">
+            <label>Inspector</label>
+            <br>
+            <input type="radio" name="tool-selection" id="radio-button-Grabbing" value="Grabbing">
+            <label>Grabbing</label>
+            <br>
+            <input type="radio" name="tool-selection" id="radio-button-Dragging" value="Dragging">
+            <label>Dragging</label>
+            <br>
+            <input type="radio" name="tool-selection" id="radio-button-Deleting" value="Deleting">
+            <label>Deleting</label>
+            <br>
+            <input type="radio" name="tool-selection" id="radio-button-Copying" value="Copying">
+            <label>Copying</label>
+            <br>
+        </form>
+    </div>
+</template>
+<script class="registrationScript">
+(function() {
+  var template = document.currentScript.ownerDocument.querySelector('#lively-toolbox');
+  var clone = document.importNode(template.content, true);
+  System.import('/lively4-core/src/client/morphic/component-loader.js').then(loader => { loader.register('lively-toolbox', clone); });
+})();
+</script>
