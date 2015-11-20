@@ -1,6 +1,5 @@
 import * as positioning from './positioning.js';
 
-var grabOffset = 30;
 var grabTarget;
 var grabStartPosition;
 var isGrabbing = false;
@@ -27,7 +26,8 @@ function start(e) {
 }
 
 function move(e) {
-	if (grabTarget && !isGrabbing && exceedsGrabOffset(e)) {
+	var eventPosition = positioning.globalMousePosition(e);
+	if (grabTarget && !isGrabbing && positioning.exceedsOffset(grabStartPosition, eventPosition)) {
 		positioning.setMode(grabTarget, 'relative');
 		isGrabbing = true;
 	}
@@ -52,20 +52,6 @@ function stop(e) {
 	}
 	grabTarget = null;
 	grabStartPosition = null;
-}
-
-function exceedsGrabOffset(e) {
-	if (!grabStartPosition) {
-		return false;
-	} else {
-		return distanceBetween(grabStartPosition, positioning.globalMousePosition(e)) > grabOffset;
-	}
-}
-
-function distanceBetween(pos1, pos2) {
-	var yDist = Math.abs(pos1.y - pos2.y);
-	var xDist = Math.abs(pos1.x - pos2.x);
-	return Math.sqrt((xDist * xDist) + (yDist * yDist))
 }
 
 function moveNodeToTargetAtPosition(node, targetNode, pos) {

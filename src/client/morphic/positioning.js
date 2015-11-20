@@ -1,3 +1,5 @@
+var offset = 30;
+
 export function setNodePosition(node, pos) {
 	node.style.left = '' + pos.x + 'px';
 	node.style.top = '' + pos.y + 'px';
@@ -46,5 +48,15 @@ export function setMode(node, aModeString) {
 			node.style.position = 'absolute';
 			break;
 		}
+	}
+}
+export function exceedsOffset(startPosition, eventPosition) {
+	if (!startPosition) {
+		return false;
+	} else {
+		var yDist = Math.abs(startPosition.y - eventPosition.y);
+		var xDist = Math.abs(startPosition.x - eventPosition.x);
+		var distance = Math.sqrt((xDist * xDist) + (yDist * yDist))
+		return distance > offset;
 	}
 }

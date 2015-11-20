@@ -3,6 +3,7 @@ import * as positioning from './positioning.js';
 var dragTarget;
 var dragOffset;
 var isDragging = false;
+var dragStartPosition;
 
 export function activate() {
 	console.log("using Dragging");
@@ -27,11 +28,13 @@ function start(e) {
 			y: e.offsetY
 		}		
 	}
+	dragStartPosition = positioning.globalMousePosition(e);
 	e.preventDefault();
 }
 
 function move(e) {
-	if (dragTarget) {
+	var eventPosition = positioning.globalMousePosition(e);
+	if (dragTarget && !isDragging && positioning.exceedsOffset(dragStartPosition, eventPosition)) {
 		positioning.setMode(dragTarget, 'absolute');
 		isDragging = true;
 	}
@@ -47,7 +50,10 @@ function move(e) {
 }
 
 function stop(e) {
+	if (isDragging) {
+		e.preventDefault();
+		isDragging = false;
+	}
 	dragTarget = null;
-	isDragging = false;
-	e.preventDefault();
+	dragStartPosition = null;
 }
