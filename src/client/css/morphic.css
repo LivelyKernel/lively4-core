@@ -1,12 +1,13 @@
-.red-border { 
-	border-width: 1px;
-	border-style: solid;
-	border-color: red;
+.red-border {
+  border-width: 1px;
+  border-style: solid;
+  border-color: red;
+  box-sizing: border-box;
 }
 
 #morphic-toolbox {
-	width: 120px;
-	background-color: #eeeeee;
-	padding: 5px;
-	border-radius: 5px;
+  width: 120px;
+  background-color: #eeeeee;
+  padding: 5px;
+  border-radius: 5px;
 }

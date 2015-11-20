@@ -22,13 +22,13 @@ function onMagnify(e) {
 	var grabTarget = e.target;
 	var that = window.that;
 	var $that = $(that);
-	if (that && (grabTarget === that || $.contains(that, grabTarget))) {
+	if (that && $that.hasClass("red-border") && (grabTarget === that || $.contains(that, grabTarget))) {
 		parent = $that.parent();
 		if (!parent.is("html")) {
 			grabTarget = parent.get(0);
 		}
 	}
-	if (grabTarget !== that) {
+	if (grabTarget !== that || !$that.hasClass("red-border")) {
 		$that.removeClass("red-border")
 		$(grabTarget).addClass("red-border");
 	}

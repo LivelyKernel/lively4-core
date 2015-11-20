@@ -1,6 +1,7 @@
 import * as dragging from './dragging.js';
 import * as grabbing from './grabbing.js';
 import * as inspecting from './inspecting.js';
+import * as deleting from './deleting.js';
 
 var tools = [{
 	name: "none",
@@ -17,6 +18,10 @@ var tools = [{
 	name: "Dragging",
 	onActivate: dragging.activate,
 	onDeactivate: dragging.deactivate
+}, {
+  name: "Deleting",
+  onActivate: deleting.activate,
+  onDeactivate: deleting.deactivate
 }]
 
 export function createMorphicToolbox() {
@@ -43,7 +48,7 @@ export function createMorphicToolbox() {
 
 		container.currentTool = evt.target.tool;
 	});
-	
+
 	// create a radio button for each tool
 	tools.forEach(function(ea) {
 		var radio = document.createElement("input");
@@ -53,7 +58,7 @@ export function createMorphicToolbox() {
 		radio.id = id;
 		radio.value = ea.name;
 		radio.tool = ea;
-		
+
 		if (ea.default) {
 			radio.checked = true;
 			container.currentTool = ea;
