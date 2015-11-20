@@ -2,6 +2,7 @@ import * as dragging from './dragging.js';
 import * as grabbing from './grabbing.js';
 import * as inspecting from './inspecting.js';
 import * as deleting from './deleting.js';
+import * as copying from './copying.js';
 
 var tools = [{
 	name: "none",
@@ -22,6 +23,10 @@ var tools = [{
   name: "Deleting",
   onActivate: deleting.activate,
   onDeactivate: deleting.deactivate
+}, {
+  name: "Copying",
+  onActivate: copying.activate,
+  onDeactivate: copying.deactivate
 }]
 
 export function createMorphicToolbox() {
