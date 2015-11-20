@@ -51,11 +51,11 @@ function getURL(){
 
 function saveDOM() {
     var check = $("#persistToGithub");
-    if (check && check.size() > 0) {
-        if (!check[0].checked) {
-            console.log("Persist to github not checked. Changes will not be pushed.");
-            return;
-        }
+    if (!check) return;
+    
+    if (check.size() > 0 && !check[0].checked) {
+        console.log("Persist to github not checked. Changes will not be pushed.");
+        return;
     }
 
     var world = $("html").clone();
