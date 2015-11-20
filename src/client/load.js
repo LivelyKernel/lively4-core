@@ -47,6 +47,10 @@ if ('serviceWorker' in navigator) {
                 window.scriptManager = module;
                 log("scriptManager loaded");
             });
+            System.import("../src/client/persistence.js").then(function(module) {
+                window.persistence = module;
+                log("persistence loaded");
+            });
     })
 }
 
