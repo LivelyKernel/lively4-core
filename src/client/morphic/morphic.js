@@ -103,7 +103,7 @@ export function createMorphFromSubtree(rootElement, tagName) {
 
 export  function createTemplate(rootElement, name) {
 	var template = document.createElement("template");
-	template.id = name + "-template";
+	template.id = "lively-" + name;
 
 	var fragment = template.content;
 
@@ -118,11 +118,26 @@ export  function createTemplate(rootElement, name) {
 	fragment.appendChild(styleElement);
 
 	// clone subtree from root
-	// ids might be duplicated, if we have ids in the node at some point
 	var clone = rootElement.cloneNode(true);
 	fragment.appendChild(clone);
 
 	return template;
+}
+
+export function saveTemplate(template) {
+	var url = location.protocol + "//" + location.host + "/lively4-core/templates/" + template.id + ".html";
+	console.log("export " + template.id + " to " + url);
+	$.ajax({
+	    url: url,
+	    type: 'PUT',
+	    data: $(template).html(),
+	    success: function() {
+        console.log("file " + url + " written.");
+		},
+		error: function(xhr, status, error) {
+			console.log("could not write " + url + ": " + error);
+		}
+	});
 }
 
 export function createElementFromTemplate(template, name) {
