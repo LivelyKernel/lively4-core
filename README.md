@@ -160,6 +160,7 @@
     
 }</script><script data-name="foo" type="lively4script">function anonymous() {
 
+      // this is just a test of another script
       console.log("hello script");
     
 }</script><script data-name="initialize" type="lively4script">function anonymous() {
@@ -274,6 +275,7 @@
     
 }</script><script data-name="foo" type="lively4script">function anonymous() {
 
+      // this is just a test of another script
       console.log("hello script");
     
 }</script></lively-toolbox>
