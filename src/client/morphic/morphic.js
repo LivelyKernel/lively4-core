@@ -1,11 +1,3 @@
-document.componentLoader = {
-	register: function(template) {
-		console.log("register ");
-		console.log(template);
-	}
-}
-
-
 var morphProto = Object.create(HTMLElement.prototype);
 
 // morphic interface goes here...

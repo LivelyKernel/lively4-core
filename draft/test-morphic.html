@@ -50,7 +50,7 @@
 
 
 
-<lively-toolbox>
+<lively-toolbox></lively-toolbox>
 
 
 
@@ -103,7 +103,7 @@
     });
 
     System.import(lively4url + "/src/client/morphic/toolbox.js").then(toolbox => {
-        document.body.appendChild(toolbox.createMorphicToolbox());
+        //document.body.appendChild(toolbox.createMorphicToolbox());
     }).catch(function(err) {
         debugger; alert("load morphic/toolbox failed");
     });
