@@ -4,7 +4,21 @@ var dragTarget;
 var dragOffset;
 var isDragging = false;
 
-export function start(e) {
+export function activate() {
+	console.log("using Dragging");
+	$("body").on("mousedown", start);
+	$("body").on("mousemove", move);
+	$("body").on("mouseup", stop);
+}
+
+export function deactivate() {
+	console.log("deactivate Dragging");
+	$("body").off("mousedown", start);
+	$("body").off("mousemove", move);
+	$("body").off("mouseup", stop);
+}
+
+function start(e) {
 	dragTarget = positioning.elementsUnderMouseEvent(e)[0];
 	dragTarget = document.body === dragTarget ? null : dragTarget;
 	if (dragTarget) {
@@ -16,7 +30,7 @@ export function start(e) {
 	e.preventDefault();
 }
 
-export function move(e) {
+function move(e) {
 	if (dragTarget) {
 		dragTarget.style.position = 'absolute';
 		isDragging = true;
@@ -32,7 +46,7 @@ export function move(e) {
 	}
 }
 
-export function stop(e) {
+function stop(e) {
 	dragTarget = null;
 	isDragging = false;
 	e.preventDefault();

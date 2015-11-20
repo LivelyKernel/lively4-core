@@ -3,13 +3,27 @@ import * as positioning from './positioning.js';
 var grabTarget;
 var isGrabbing = false;
 
-export function start(e) {
+export function activate() {
+	console.log("using Grabbing");
+	$("body").on("mousedown", start);
+	$("body").on("mousemove", move);
+	$("body").on("mouseup", stop);
+}
+
+export function deactivate() {
+	console.log("deactivate Grabbing");
+	$("body").off("mousedown", start);
+	$("body").off("mousemove", move);
+	$("body").off("mouseup", stop);
+}
+
+function start(e) {
 	grabTarget = positioning.elementsUnderMouseEvent(e)[0];
 	grabTarget = document.body === grabTarget ? null : grabTarget;
 	e.preventDefault();
 }
 
-export function move(e) {
+function move(e) {
 	if (grabTarget) {
 		grabTarget.style.removeProperty('position');
 		grabTarget.style.removeProperty('top');
@@ -42,7 +56,7 @@ export function move(e) {
 	}
 }
 
-export function stop(e) {
+function stop(e) {
 	if (isGrabbing) {
 		e.preventDefault();
 		isGrabbing = false;
