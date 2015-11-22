@@ -79,25 +79,13 @@
 <button id="inject">inject</button>
 
 <script>
-
-
-    //// #TODO The ace editor tries to be very clever, so it cannot be loaded through "import" at the moment
-    //// (e.g. AMD promise error)
-    // System.import(lively4url + "src/external/ace.js").then(function(){
-    //         ace.edit("editor")
-    // })
-
-    var ObjectEditor;
-
     System.import(lively4url + "/src/client/load.js").then(function(){
         System.import("commandline.js")
         System.import(lively4url + "src/client/debug-serviceworker.js")
-        System.import(lively4url + "src/client/object-editor.js") .then(function(module) {
-            ObjectEditor = module.ObjectEditor;
-        });
-    }).catch(function(err) { alert("load Lively4 failed")})
+    }).catch(function(err) { alert("load Lively4 failed")});
 </script>
 
+<link rel="import" href="../templates/object-editor.html">
 
 <script>
 

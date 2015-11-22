@@ -1,0 +1,183 @@
+<template id="template">
+	<style>
+		:host {
+		display: block;
+		position: relative;
+		background: white;
+		width: 400px;
+		/*height: 300px;*/
+		}
+		.main-content {
+			width: 100%;
+			display: flex;
+		}
+		#script-list {
+			width: 20%;
+			min-width: 100px;
+			padding-right: 2px;
+		}
+		#script-list select {
+			width: 100%;
+			height: 100%;
+		}
+		textarea {
+			width: 80%;
+		}
+		.toolbar {
+			margin-top: 0.4rem;
+		}
+		.toolbar .bar-left {
+			display: inline-block;
+			text-align: left;
+		}
+		.toolbar .bar-right {
+			float: right;
+			display: inline-block;
+			text-align: right;
+		}
+	</style>
+	
+	<div class="main-content">
+		<div id="script-list">
+			<select size="20"></select>
+		</div>
+		<textarea id="editor"></textarea>
+	</div>
+	<div class="toolbar">
+	<div class="bar-left">
+		<button id="add-script">Add</button>
+		<button id="remove-script">Remove</button>
+	</div>
+	<div class="bar-right">
+		<button id="save-script">Save</button>
+	</div>
+	</div>
+</template>
+
+<script>
+	'use strict';
+
+	var template;
+	(function() {
+		template = document.currentScript.ownerDocument.querySelector('#template');
+	})();
+
+	class ObjectEditor extends HTMLDivElement {
+
+		get target() {
+			return this._target;
+		}
+		
+		set target(val) {
+			this._target = val;
+			this.title = val.tagName;
+			this.render();
+		}
+		
+		createdCallback() {
+			console.log('editor createdCallback!');
+			this.createShadowRoot().innerHTML = template.innerHTML;
+		}
+		
+		attachedCallback() {
+			console.log('editor attachedCallback!');
+			this.attached = true;
+		
+			this.scriptList = this.shadowRoot.querySelector('#script-list select');
+			this.editor = this.shadowRoot.querySelector('#editor');
+			this.addButton = this.shadowRoot.querySelector('#add-script');
+			this.removeButton = this.shadowRoot.querySelector('#remove-script');
+			this.saveButton = this.shadowRoot.querySelector('#save-script');
+		
+			this.scriptList.addEventListener('change', (e) => { this.scriptChanged(e) });
+			this.addButton.addEventListener('click', (e) => { this.addButtonClicked(e) });
+			this.removeButton.addEventListener('click', (e) => { this.removeButtonClicked(e) });
+			this.saveButton.addEventListener('click', (e) => { this.saveButtonClicked(e) });
+		
+			this.render();
+		}
+		
+		render() {
+			console.log('editor render!');
+			if (!this.attached) {
+				return;
+			}
+		
+			// Scripts
+			this.updateScripts();
+		}
+		
+		addButtonClicked(e) {
+			if (!this.target) {
+				return;
+			}
+		
+			if (typeof this.target.__scripts__ === 'undefined') {
+				this.target.__scripts__ = {};
+			}
+		
+			var scriptName = prompt('Please enter a new script name', '');
+			if (!scriptName || scriptName.length <= 0) {
+				return;
+			}
+		
+			if (typeof this.target.__scripts__[scriptName] !== 'undefined') {
+				alert('Script name already in use.');
+				return;
+			}
+		
+			scriptManager.addScript(this.target, 'function ' + scriptName + '() {\n  \n}');
+			this.updateScripts();
+			this.scriptList.selectedIndex = Object.keys(this.target.__scripts__).length - 1;
+			this.scriptChanged();
+		}
+		
+		removeButtonClicked(e) {
+			if (this.target) {
+				let scriptName = this.scriptList.value;
+				if (scriptName) {
+					scriptManager.removeScript(this.target, scriptName);
+				}
+				this.editor.value = '';
+				this.scriptList.removeChild(this.scriptList.querySelector('option[value="' + scriptName + '"]'));
+			}
+		}
+		
+		saveButtonClicked(e) {
+			if (this.target && this.scriptList.selectedIndex >= 0) {
+				var scriptName = this.scriptList.selectedOptions[0].value;
+				scriptManager.updateScript(this.target, this.editor.value, { name: scriptName });
+			}
+		}
+		
+		scriptChanged(e) {
+			let scriptList = this.shadowRoot.querySelector('#script-list select');
+			if (scriptList.selectedIndex >= 0) {
+				var scriptName = scriptList.selectedOptions[0].value;
+				this.loadScript(scriptName);
+			}
+		}
+		
+		loadScript(scriptName) {
+			if (typeof this.target.__scripts__ === 'undefined' ||
+				typeof this.target.__scripts__[scriptName] === 'undefined') {
+				return;
+			}
+		
+			// this.editor.innerText = this.target.__scripts__[scriptName];
+			this.shadowRoot.querySelector('#editor').value = this.target.__scripts__[scriptName];
+		}
+		
+		updateScripts() {
+			let scriptHtml = '';
+			if (this.target && typeof this.target.__scripts__ !== 'undefined') {
+				for (let scriptName in this.target.__scripts__) {
+					scriptHtml += '<option value="' + scriptName + '">' + scriptName + '</option>';
+				}
+			}
+			this.shadowRoot.querySelector('#script-list select').innerHTML = scriptHtml;
+		}
+	}
+
+	document.registerElement('lively-object-editor', ObjectEditor);
+</script>
