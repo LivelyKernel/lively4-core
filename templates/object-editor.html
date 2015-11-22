@@ -57,11 +57,6 @@
 <script>
 	'use strict';
 
-	var template;
-	(function() {
-		template = document.currentScript.ownerDocument.querySelector('#template');
-	})();
-
 	class ObjectEditor extends HTMLDivElement {
 
 		get target() {
@@ -76,7 +71,7 @@
 		
 		createdCallback() {
 			console.log('editor createdCallback!');
-			this.createShadowRoot().innerHTML = template.innerHTML;
+			this.createShadowRoot().innerHTML = ObjectEditor.template.innerHTML;
 		}
 		
 		attachedCallback() {
@@ -180,4 +175,8 @@
 	}
 
 	document.registerElement('lively-object-editor', ObjectEditor);
+	
+	(function() {
+		ObjectEditor.template = document.currentScript.ownerDocument.querySelector('#template');
+	})();
 </script>
