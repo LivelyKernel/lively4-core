@@ -1,0 +1,105 @@
+<template id="template">
+	<style>
+	:host {
+		box-sizing: border-box;
+		border: 1px solid #999999;
+	}
+	:host * {
+		box-sizing: border-box;
+	}
+	
+	::content ul {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		width: 100%;
+		font-size: inherit;
+	}
+	::content li {
+		position: relative;
+		font-size: inherit;
+		padding: 2px 0px 2px 8px;
+		cursor: pointer;
+		vertical-align: middle;
+		line-height: 1rem;
+		color: #333;
+
+		-webkit-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+	}
+	::content li.node {
+		padding-left: 12px;
+	}
+	::content .node.collapsed > ul {
+		display: none;
+	}
+	::content .node .leaf {
+		position: relative;
+	}
+	::content .node > .leaf::before {
+		position: absolute;
+		content: '\25b8';
+		transform: rotate(90deg);
+		left: -7px;
+		transition: transform 200ms;
+	}
+	::content .node.collapsed > .leaf::before {
+		transform: rotate(0deg);
+	}
+	
+	::content .active {
+		font-weight: bold;
+		color: #000;
+	}
+	</style>
+
+	<content></content>
+</template>
+
+<script>
+	'use strict';
+
+	class LivelyTreeview extends HTMLDivElement {
+		attachedCallback() {
+			var that = this;
+
+			this.activeLeaf = null;
+
+			// expand/collapse subtrees
+			$(this).on('click', '.node > .leaf', function() {
+				$(this).parent().toggleClass('collapsed');
+			});
+			
+			// activate/deactivate leaves
+			$(this).on('click', 'li:not(.node) .leaf', function() {
+				var active = !$(this).hasClass('active');
+				$('.active', that).removeClass('active');
+				$(this).toggleClass('active', active);
+				
+				that.activeLeaf = active ? this : null;
+				
+				// fire change event
+				var event = new Event('change');
+				that.dispatchEvent(event);
+			});
+		}
+		
+		selectLeaf(target) {
+			$('.active', this).removeClass('active');
+			$(target).click();
+		}
+		
+		removeLeaf(target) {
+			$(target).parent().remove();
+		}
+	}
+
+	(function() {
+		var template = document.currentScript.ownerDocument.querySelector('#template');
+		var clone = document.importNode(template.content, true);
+		var proto = Object.create(LivelyTreeview.prototype);
+		
+		System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-treeview', clone, proto); });
+	})();
+</script>
