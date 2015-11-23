@@ -1,14 +1,21 @@
 <template id="template">
 	<style>
 		:host {
-		display: block;
-		position: relative;
-		background: white;
-		width: 400px;
-		/*height: 300px;*/
+			display: block;
+			position: relative;
+			background: white;
+			width: 400px;
+			height: 300px;
+		}
+		#wrapper {
+			display: flex;
+    		flex-direction: column;
+			width: 100%;
+			height: 100%;
 		}
 		.main-content {
 			width: 100%;
+			flex-grow: 1;
 			display: flex;
 		}
 		#script-list {
@@ -37,20 +44,22 @@
 		}
 	</style>
 	
-	<div class="main-content">
-		<div id="script-list">
-			<select size="20"></select>
+	<div id="wrapper">
+		<div class="main-content">
+			<div id="script-list">
+				<select size="20"></select>
+			</div>
+			<textarea id="editor"></textarea>
 		</div>
-		<textarea id="editor"></textarea>
-	</div>
-	<div class="toolbar">
-	<div class="bar-left">
-		<button id="add-script">Add</button>
-		<button id="remove-script">Remove</button>
-	</div>
-	<div class="bar-right">
-		<button id="save-script">Save</button>
-	</div>
+		<div class="toolbar">
+			<div class="bar-left">
+				<button id="add-script">Add</button>
+				<button id="remove-script">Remove</button>
+			</div>
+			<div class="bar-right">
+				<button id="save-script">Save</button>
+			</div>
+		</div>
 	</div>
 </template>
 

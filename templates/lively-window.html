@@ -3,20 +3,45 @@
 	:host {
 		position: fixed;
 		z-index: 100;
+		width: 300px;
+    	height: 200px;
 	}
 	:host * {
 		box-sizing: border-box;
 	}
+	
+	::content {
+		display: flex;
+		flex-direction: column;
+		flex-grow: 1;
+	}
+	::content > * {
+		position: absolute;
+		height: 100%;
+		width: 100%;
+	}
+	
 	.window {
-		width: auto;
-		height: auto;
-		display: block;
+		width: 100%;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
 		background-color: #ffffff;
 		box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3);
+	}
+	.window.dragging  *, .window.resizing  * {
+		-webkit-touch-callout: none;
+		-webkit-user-select: none;
+		-khtml-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
 	}
 	.window-titlebar {
 		position: relative;
 		display: flex;
+		flex-grow: 0;
+    	height: 2em;
 		width: 100%;
 		padding: 0.3em 0.4em;
 		border: none;
@@ -51,12 +76,20 @@
 		background-color: #cde6f7;
 		color: #2a8dd4;
 	}
+	.window-resize {
+		position: absolute;
+		right: -2px;
+		bottom: -2px;
+		font-size: 0.8em;
+		cursor: se-resize;
+		font-weight: 800;
+	}
 	.window-content {
-		display: block;
 		position: relative;
-		padding: 0.4em;
-		width: 100%;
+		width: auto;
 		height: auto;
+		margin: 0.4em;
+		flex: 1;
 	}
 	</style>
 
@@ -72,6 +105,7 @@
 		<div class="window-content" id="window-content">
 			<content></content>
 		</div>
+		<span class="window-resize">&there4;</span>
 	</div>
 </template>
 
@@ -96,6 +130,7 @@
 			this.titleSpan = this.shadowRoot.querySelector('.window-title span');
 			this.minButton = this.shadowRoot.querySelector('.window-min');
 			this.maxButton = this.shadowRoot.querySelector('.window-max');
+			this.resizeButton = this.shadowRoot.querySelector('.window-resize');
 			this.closeButton = this.shadowRoot.querySelector('.window-close');
 			this.contentBlock = this.shadowRoot.querySelector('#window-content');
 		
@@ -104,7 +139,9 @@
 			this.closeButton.addEventListener('click', (e) => { this.closeButtonClicked(e) });
 			this.minButton.addEventListener('click', (e) => { this.minButtonClicked(e) });
 			this.maxButton.addEventListener('click', (e) => { this.maxButtonClicked(e) });
+			this.resizeButton.addEventListener('mousedown', (e) => { this.resizeMouseDown(e) });
 			this.shadowRoot.querySelector('.window-title').addEventListener('mousedown', (e) => { this.titleMouseDown(e) });
+			
 			document.body.addEventListener('mousemove', (e) => { this.windowMouseMove(e) });
 			document.body.addEventListener('mouseup', (e) => { this.windowMouseUp(e) });
 		
@@ -139,18 +176,36 @@
 				left: e.pageX - offsetWindow.left,
 				top: e.pageY - offsetWindow.top
 			};
+			$('.window', this.shadowRoot).addClass('dragging');
+		}
+		
+		resizeMouseDown(e) {
+			let offsetWindow = $(this).offset();
+		
+			this.resizing = {
+				left: offsetWindow.left,
+				top: offsetWindow.top
+			};
+			$('.window', this.shadowRoot).addClass('resizing');
 		}
 		
 		windowMouseUp(e) {
 			this.dragging = false;
+			this.resizing = false;
+			$('.window', this.shadowRoot).removeClass('dragging').removeClass('resizing');
 		}
 		
 		windowMouseMove(e) {
 			if (this.dragging) {
-			$(this).css({
-				left: e.pageX - this.dragging.left,
-				top: e.pageY - this.dragging.top
-			});
+				$(this).css({
+					left: e.pageX - this.dragging.left,
+					top: e.pageY - this.dragging.top
+				});
+			} else if (this.resizing) {
+				$(this).css({
+					width: e.pageX - this.resizing.left,
+					height: e.pageY - this.resizing.top
+				});
 			}
 		}
 		
