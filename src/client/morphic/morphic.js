@@ -121,17 +121,32 @@ export  function createTemplate(rootElement, name) {
 	var clone = rootElement.cloneNode(true);
 	fragment.appendChild(clone);
 
+	saveTemplate(template);
+
 	return template;
 }
 
 export function saveTemplate(template) {
 	var registrationScript = document.createElement("script");
-	registrationScript.innerHTML = "var loader = require('./component-loader.js',(loader) => {loader.register($('template[id=" + template.id + "]')[0]});"
+	registrationScript.innerHTML = 	"(function() { \
+		var template = document.currentScript.ownerDocument.querySelector('#" + template.id + "'); \
+		var clone = document.importNode(template.content, true); \
+		System.import('/lively4-core/src/client/morphic/component-loader.js') \
+			.then(loader => { \
+				loader.register('" + template.id + "', clone); \
+			}); \
+	})();";
+
+
+
 	var url = location.protocol + "//" + location.host + "/lively4-core/templates/" + template.id + ".html";
 	console.log("export " + template.id + " to " + url);
-	var completeHTML = '' + template.outerHTML + registrationScript.outerHTML;
-	console.log(completeHTML);
-	return completeHTML;
+	// $('<div>').append($(template.outerHTML).clone()).html(); 
+	var completeHTML = $('<div>').append($(template.outerHTML).clone()).html() + $('<div>').append($(registrationScript.outerHTML).clone()).html();
+
+	// make it easy to copy the source to clipboard
+  window.prompt("Copy source to clipboard: Ctrl+C, Enter", completeHTML);
+
 	// $.ajax({
 	//     url: url,
 	//     type: 'PUT',
