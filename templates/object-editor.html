@@ -21,7 +21,7 @@
 			display: flex;
 			max-height: 100%;
 		}
-		#script-list {
+		#property-list {
 			width: 30%;
 			min-width: 100px;
 			margin-right: 2px;
@@ -47,22 +47,19 @@
 	
 	<div id="wrapper">
 		<div class="main-content">
-			<lively-treeview id="script-list">
+			<lively-treeview id="property-list">
 				<ul>
-					<li class="node collapsed">
-						<span class="leaf">Properties</span>
-						<ul id="property-nodes">
-							<!--<li><span class="leaf">Property 1</span></li>
-							<li><span class="leaf">Property 2</span></li>
-							<li><span class="leaf">Property 3</span></li>
-							<li><span class="leaf">Property 4</span></li>-->
-						</ul>
-					</li>
 					<li class="node">
 						<span class="leaf">Scripts</span>
-						<ul id="script-nodes">
-							
-						</ul>
+						<ul id="script-nodes"></ul>
+					</li>
+					<li class="node">
+						<span class="leaf">Attributes</span>
+						<ul id="attribute-nodes"></ul>
+					</li>
+					<li class="node collapsed">
+						<span class="leaf">Properties</span>
+						<ul id="property-nodes"></ul>
 					</li>
 				</ul>
 			</lively-treeview>
@@ -99,13 +96,13 @@
 			console.log('editor attachedCallback!');
 			this.attached = true;
 		
-			this.scriptList = this.shadowRoot.querySelector('#script-list');
+			this.propertyList = this.shadowRoot.querySelector('#property-list');
 			this.editor = this.shadowRoot.querySelector('#editor');
 			this.addButton = this.shadowRoot.querySelector('#add-script');
 			this.removeButton = this.shadowRoot.querySelector('#remove-script');
 			this.saveButton = this.shadowRoot.querySelector('#save-script');
 		
-			this.scriptList.addEventListener('change', (e) => { this.scriptChanged(e) });
+			this.propertyList.addEventListener('change', (e) => { this.listChanged(e) });
 			this.addButton.addEventListener('click', (e) => { this.addButtonClicked(e) });
 			this.removeButton.addEventListener('click', (e) => { this.removeButtonClicked(e) });
 			this.saveButton.addEventListener('click', (e) => { this.saveButtonClicked(e) });
@@ -119,8 +116,7 @@
 				return;
 			}
 		
-			// Scripts
-			this.updateScripts();
+			this.updateList();
 		}
 		
 		addButtonClicked(e) {
@@ -144,14 +140,14 @@
 		
 			scriptManager.addScript(this.target, 'function ' + scriptName + '() {\n  \n}');
 			this.updateScripts();
-			this.scriptList.selectLeaf(this.scriptList.querySelector('.leaf[data-script-name="'+scriptName+'"]'));
-			this.scriptChanged();
+			this.propertyList.selectLeaf(this.propertyList.querySelector('.leaf[data-script-name="'+scriptName+'"]'));
+			this.listChanged();
 		}
 		
 		removeButtonClicked(e) {
 			if (this.target) {
-				if (this.scriptList.activeLeaf !== null) {
-					let scriptName = this.scriptList.activeLeaf.dataset['scriptName'];
+				if (this.propertyList.activeLeaf !== null) {
+					let scriptName = this.propertyList.activeLeaf.dataset['scriptName'];
 					scriptManager.removeScript(this.target, scriptName);
 				}
 				this.editor.value = '';
@@ -160,16 +156,21 @@
 		}
 		
 		saveButtonClicked(e) {
-			if (this.target && this.scriptList.activeLeaf !== null) {
-				let scriptName = this.scriptList.activeLeaf.dataset['scriptName'];
+			if (this.target && this.propertyList.activeLeaf !== null) {
+				let scriptName = this.propertyList.activeLeaf.dataset['scriptName'];
 				scriptManager.updateScript(this.target, this.editor.value, { name: scriptName });
 			}
 		}
 		
-		scriptChanged(e) {
-			if (this.scriptList.activeLeaf !== null) {
-				var scriptName = this.scriptList.activeLeaf.dataset['scriptName'];
-				this.loadScript(scriptName);
+		listChanged(e) {
+			if (this.propertyList.activeLeaf !== null) {
+				let data = this.propertyList.activeLeaf.dataset;
+				
+				if (typeof data['scriptName'] !== 'undefined') {
+					this.loadScript(data['scriptName']);
+				} else if (typeof data['attributeName'] !== 'undefined') {
+					this.loadAttribute(data['attributeName']);
+				}
 			} else {
 				this.editor.value = '';
 			}
@@ -182,7 +183,16 @@
 			}
 			this.shadowRoot.querySelector('#editor').value = this.target.__scripts__[scriptName];
 		}
-		
+		loadAttribute(attributeName) {
+			this.editor.value = this.target.attributes[attributeName].value;
+		}
+
+		updateList() {
+			this.updateScripts();
+			this.updateAttributes();
+			// this.updateProperties();
+		}
+
 		updateScripts() {
 			let scriptHtml = '';
 			if (this.target && typeof this.target.__scripts__ !== 'undefined') {
@@ -191,6 +201,16 @@
 				}
 			}
 			this.shadowRoot.querySelector('#script-nodes').innerHTML = scriptHtml;
+		}
+		updateAttributes() {
+			let html = '';
+			if (this.target) {
+				for (let i = 0; i < this.target.attributes.length; i++) {
+					let attr = this.target.attributes[i];
+					html += '<li><span class="leaf" data-attribute-name="' + attr.name + '">' + attr.name + '</span></li>';
+				}
+			}
+			this.shadowRoot.querySelector('#attribute-nodes').innerHTML = html;
 		}
 	}
 

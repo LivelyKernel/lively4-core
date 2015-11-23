@@ -18,6 +18,8 @@ function handleInspect(e) {
   }
 }
 
+var objectEditor = null;
+
 function onMagnify(e) {
   var grabTarget = e.target;
   var that = window.that;
@@ -34,4 +36,19 @@ function onMagnify(e) {
   }
   window.that = grabTarget;
   console.log("Current element:", grabTarget, "with id:", $(grabTarget).attr("id"));
+  
+  // remove previous object editor
+  if (objectEditor !== null) {
+    $(objectEditor).remove();
+  }
+  
+  // open object editor for new target
+  var editor = document.createElement('lively-object-editor');
+  editor.target = window.that;
+  objectEditor = document.createElement('lively-window');
+  objectEditor.title = window.that.tagName;
+  $(objectEditor).append(editor);
+  
+  $('body').append(objectEditor);
+  objectEditor.centerInWindow();
 }

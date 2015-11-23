@@ -211,7 +211,7 @@ function loadExternalTemplate(templateId, onComplete) {
 	}
 
 	var $tempLoader = $(document.createElement("div"));
-	$tempLoader.load("/lively4-core/templates/morphic-templates.html #" + templateId, function(responseText, status) {
+	$tempLoader.load("../../templates/morphic-templates.html #" + templateId, function(responseText, status) {
 		var templates = $tempLoader.children("template");
 		if (templates.length === 0) {
 			onComplete("template not found");

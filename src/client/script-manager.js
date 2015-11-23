@@ -7,8 +7,14 @@ function functionFromString(funcOrString) {
         return funcOrString;
     }
 
-    // we evaluate it to a valid function here
-    return eval('(' + funcOrString.toString() + ')');
+    // this makes sure we always create a function
+    try {
+        // this fails if it has no `function ()` header
+        return eval('(' + funcOrString.toString() + ')');    
+    } catch(err) {
+        // this works with just a block of code (for lively4script)
+        return new Function(funcOrString.toString());   
+    }
 }
 
 function findLively4Script(parent, shadow) {
