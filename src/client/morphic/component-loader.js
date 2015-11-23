@@ -1,7 +1,7 @@
 import * as scriptManager from  "../script-manager.js";
 
-export function register(componentName, template) {
-  var proto = Object.create(HTMLElement.prototype);
+export function register(componentName, template, prototype) {
+  var proto = prototype || Object.create(HTMLElement.prototype);
 
   proto.createdCallback = function() {
     var root = this.createShadowRoot();
@@ -10,17 +10,11 @@ export function register(componentName, template) {
     var clone = document.importNode(template, true)
     root.appendChild(clone);
 
-    var component = this;
-
-    $(root).children("script[type=lively4script]").each(function(idx) {
-      scriptManager.addScript(component, new Function(this.innerHTML), {name: this.getAttribute('data-name')});
-    });
-
-    // call the initialize script
-    try {
-      scriptManager.callScript(component, "initialize");
-    } catch (e) {
-      console.log("There is no initialize script to be called");
+    // attach lively4scripts from the shadow root to this
+    scriptManager.attachScriptsFromShadowDOM(this);
+    // call the initialize script, if it exists
+    if (typeof this.initialize === "function") {
+      this.initialize();
     }
   }
 

@@ -6,12 +6,24 @@ function functionFromString(funcOrString) {
     if (typeof funcOrString === 'function') {
         return funcOrString;
     }
-    return eval('(' + funcOrString.toString() + ')');
+
+    // this makes sure we always create a function
+    try {
+        // this fails if funcOrString looks like
+        // "function() {...}"
+        return new Function(funcOrString.toString());
+    } catch(err) {
+        // we evaluate it to a valid function here
+        return eval('(' + funcOrString.toString() + ')');
+    }
 }
 
-function findLively4Script(parent) {
-    for (var i = 0; i < parent.children.length; ++i) {
-        var child = parent.children[i];
+function findLively4Script(parent, shadow) {
+    // if shadow is set, look for the scripts in the shadow root
+    var children = shadow ? parent.shadowRoot.children : parent.children;
+
+    for (var i = 0; i < children.length; ++i) {
+        var child = children[i];
         if (child.tagName.toLocaleLowerCase() == "script" && child.type == "lively4script") {
             var name = child.dataset.name;
             var func = functionFromString(child.textContent);
@@ -22,14 +34,20 @@ function findLively4Script(parent) {
                 parent.__scripts__ = {};
             }
             parent.__scripts__[name] = parent[name] = func.bind(parent);
+        } else {
+            // do never look into the shadow dom of child elements
+            findLively4Script(child, false);
         }
-        else findLively4Script(child);
     }
 }
 
 
 export function loadScriptsFromDOM() {
     findLively4Script(document);
+}
+
+export function attachScriptsFromShadowDOM(root) {
+    findLively4Script(root, true);
 }
 
 function persistToDOM(object, funcString, data={}) {
@@ -91,7 +109,9 @@ export function addScript(object, funcOrString, opts={}) {
         throw 'script name "' + name + '" is already reserved!';
     }
 
-    object.__scripts__[name] = object[name] = func.bind(object);
+    object[name] = func.bind(object);
+    object[name].isScript = true;
+    object.__scripts__[name] = funcOrString.toString();
 
     persistToDOM(object, func.toString(), {"data-name": name});
 }
