@@ -6,8 +6,16 @@ function functionFromString(funcOrString) {
     if (typeof funcOrString === 'function') {
         return funcOrString;
     }
-    // return eval('(' + funcOrString.toString() + ')');
-    return new Function(funcOrString.toString());
+
+    // this makes sure we always create a function
+    try {
+        // this fails if funcOrString looks like
+        // "function() {...}"
+        return new Function(funcOrString.toString());
+    } catch(err) {
+        // we evaluate it to a valid function here
+        return eval('(' + funcOrString.toString() + ')');
+    }
 }
 
 function findLively4Script(parent, shadow) {
