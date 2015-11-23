@@ -1,14 +1,21 @@
 <template id="template">
 	<style>
 		:host {
-		display: block;
-		position: relative;
-		background: white;
-		width: 400px;
-		/*height: 300px;*/
+			display: block;
+			position: relative;
+			background: white;
+			width: 400px;
+			height: 300px;
+		}
+		#wrapper {
+			display: flex;
+    		flex-direction: column;
+			width: 100%;
+			height: 100%;
 		}
 		.main-content {
 			width: 100%;
+			flex-grow: 1;
 			display: flex;
 		}
 		#script-list {
@@ -37,20 +44,22 @@
 		}
 	</style>
 	
-	<div class="main-content">
-		<div id="script-list">
-			<select size="20"></select>
+	<div id="wrapper">
+		<div class="main-content">
+			<div id="script-list">
+				<select size="20"></select>
+			</div>
+			<textarea id="editor"></textarea>
 		</div>
-		<textarea id="editor"></textarea>
-	</div>
-	<div class="toolbar">
-	<div class="bar-left">
-		<button id="add-script">Add</button>
-		<button id="remove-script">Remove</button>
-	</div>
-	<div class="bar-right">
-		<button id="save-script">Save</button>
-	</div>
+		<div class="toolbar">
+			<div class="bar-left">
+				<button id="add-script">Add</button>
+				<button id="remove-script">Remove</button>
+			</div>
+			<div class="bar-right">
+				<button id="save-script">Save</button>
+			</div>
+		</div>
 	</div>
 </template>
 
@@ -67,11 +76,6 @@
 			this._target = val;
 			this.title = val.tagName;
 			this.render();
-		}
-		
-		createdCallback() {
-			console.log('editor createdCallback!');
-			this.createShadowRoot().innerHTML = ObjectEditor.template.innerHTML;
 		}
 		
 		attachedCallback() {
@@ -174,9 +178,11 @@
 		}
 	}
 
-	document.registerElement('lively-object-editor', ObjectEditor);
-	
 	(function() {
 		ObjectEditor.template = document.currentScript.ownerDocument.querySelector('#template');
+		var clone = document.importNode(ObjectEditor.template.content, true);
+		var prototype = Object.create(ObjectEditor.prototype);
+		
+		System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-object-editor', clone, prototype); });
 	})();
 </script>

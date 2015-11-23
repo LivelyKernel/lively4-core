@@ -1,7 +1,7 @@
 import * as scriptManager from  "../script-manager.js";
 
-export function register(componentName, template) {
-  var proto = Object.create(HTMLElement.prototype);
+export function register(componentName, template, prototype) {
+  var proto = prototype || Object.create(HTMLElement.prototype);
 
   proto.createdCallback = function() {
     var root = this.createShadowRoot();
