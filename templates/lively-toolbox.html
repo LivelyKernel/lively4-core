@@ -131,6 +131,6 @@
   var template = document.currentScript.ownerDocument.querySelector('#lively-toolbox');
   var clone = document.importNode(template.content, true);
 
-  System.import('/lively4-core/src/client/morphic/component-loader.js').then(loader => { loader.register('lively-toolbox', clone); });
+  System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-toolbox', clone); });
 })();
 </script>
