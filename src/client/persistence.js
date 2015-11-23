@@ -2,6 +2,8 @@
 
 export function babeldummy() {};
 
+var persistenceTimerInterval;
+
 function isLively4Script(node) {
     return node.tagName
         && node.tagName.toLocaleLowerCase() == 'script'
@@ -18,10 +20,23 @@ function initialize(){
                 var shouldSave = nodes.some(node => {
                     return isLively4Script(node);
                 })
-                if (shouldSave) saveDOM();
+                if (shouldSave) {
+                    sessionStorage["lively.scriptMutationsDetected"] = 'true';
+                    if (isPersistOnIntervalActive()) {
+                        restartPersistenceTimerInterval();
+                    } else {
+                        if (isSaveDOMAllowed()) {
+                            saveDOM();
+                        } else {
+                            console.log("Persist to github not checked. Changes will not be pushed.");
+                        }
+                    }
+                }
             }
         })
     }).observe(document, {childList: true, subtree: true});
+
+    resetPersistenceSessionStore();
 }
 
 function getURL(){
@@ -49,15 +64,54 @@ function getURL(){
     return new URL(baseurl + filename)
 }
 
-function saveDOM() {
+export function startPersistenceTimerInterval() {
+    persistenceTimerInterval = setInterval(checkForMutationsToSave, 5000);
+}
+
+export function stopPersistenceTimerInterval() {
+    clearInterval(persistenceTimerInterval);
+    persistenceTimerInterval = undefined;
+}
+
+function restartPersistenceTimerInterval() {
+    stopPersistenceTimerInterval();
+    startPersistenceTimerInterval();
+}
+
+function resetPersistenceSessionStore() {
+    sessionStorage["lively.scriptMutationsDetected"] = 'false';
+}
+
+function checkForMutationsToSave() {
+    if (isSaveDOMAllowed() && sessionStorage["lively.scriptMutationsDetected"] === 'true') {
+        console.log("[persistence] timer-based mutations detected, saving DOM...")
+        saveDOM();
+    }
+}
+
+function isSaveDOMAllowed() {
     var check = $("#persistToGithub");
-    if (!check) return;
+    if (!check) return false;
     
     if (check.size() > 0 && !check[0].checked) {
-        console.log("Persist to github not checked. Changes will not be pushed.");
-        return;
+        return false;
     }
 
+    return true;
+}
+
+function isPersistOnIntervalActive() {
+    var check = $("#persistOnInterval");
+    if (!check) return false;
+
+    if (check.size() > 0 && !check[0].checked) {
+        return false;
+    }
+
+    return true;
+}
+
+function saveDOM() {
     var world = $("html").clone();
     world.find("#editor").empty();
     world.find("#console").empty();
@@ -66,6 +120,8 @@ function saveDOM() {
     world.find("style").filter((i,e) => /\s*\.error_widget_wrapper+/.test(e.textContent)).remove();
     var s = new XMLSerializer();
     var content = "<!DOCTYPE html>" + s.serializeToString(world[0]);
+
+    resetPersistenceSessionStore()
 
     writeFile(content);
 }
