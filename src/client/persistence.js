@@ -22,10 +22,14 @@ function initialize(){
                 })
                 if (shouldSave) {
                     sessionStorage["lively.scriptMutationsDetected"] = 'true';
-                    if (isSaveDOMAllowed() && !persistenceTimerInterval) {
-                        saveDOM();
+                    if (isPersistOnIntervalActive()) {
+                        restartPersistenceTimerInterval();
                     } else {
-                        console.log("Persist to github not checked. Changes will not be pushed.");
+                        if (isSaveDOMAllowed()) {
+                            saveDOM();
+                        } else {
+                            console.log("Persist to github not checked. Changes will not be pushed.");
+                        }
                     }
                 }
             }
@@ -69,6 +73,11 @@ export function stopPersistenceTimerInterval() {
     persistenceTimerInterval = undefined;
 }
 
+function restartPersistenceTimerInterval() {
+    stopPersistenceTimerInterval();
+    startPersistenceTimerInterval();
+}
+
 function resetPersistenceSessionStore() {
     sessionStorage["lively.scriptMutationsDetected"] = 'false';
 }
@@ -84,6 +93,17 @@ function isSaveDOMAllowed() {
     var check = $("#persistToGithub");
     if (!check) return false;
     
+    if (check.size() > 0 && !check[0].checked) {
+        return false;
+    }
+
+    return true;
+}
+
+function isPersistOnIntervalActive() {
+    var check = $("#persistOnInterval");
+    if (!check) return false;
+
     if (check.size() > 0 && !check[0].checked) {
         return false;
     }
