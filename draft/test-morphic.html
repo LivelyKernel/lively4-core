@@ -97,14 +97,14 @@
     }).catch(function(err) { alert("load Lively4 failed")});
 
     var morphic;
-    System.import(lively4url + "/src/client/morphic/morphic.js").then(m =&gt; {
+    System.import(lively4url + "/src/client/morphic/morphic.js").then(m => {
         morphic = m;
         morphic.initMorphicTools();
     }).catch(function(err) {
         debugger; alert("load morphic failed");
     });
 
-    System.import(lively4url + "/src/client/morphic/toolbox.js").then(toolbox =&gt; {
+    System.import(lively4url + "/src/client/morphic/toolbox.js").then(toolbox => {
         //document.body.appendChild(toolbox.createMorphicToolbox());
     }).catch(function(err) {
         debugger; alert("load morphic/toolbox failed");
@@ -112,5 +112,4 @@
 
 </script>
 
-
-<lively-window style="top: 113.5px; left: 719px;"><lively-object-editor title="INPUT"></lively-object-editor></lively-window></body></html>
+</body></html>
