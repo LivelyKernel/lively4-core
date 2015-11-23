@@ -1,3 +1,5 @@
+<link rel="import" href="lively-treeview.html">
+
 <template id="template">
 	<style>
 		:host {
@@ -17,18 +19,17 @@
 			width: 100%;
 			flex-grow: 1;
 			display: flex;
+			max-height: 100%;
 		}
 		#script-list {
-			width: 20%;
+			width: 30%;
 			min-width: 100px;
-			padding-right: 2px;
-		}
-		#script-list select {
-			width: 100%;
-			height: 100%;
+			margin-right: 2px;
+			font-size: 12px;
+			overflow-x: scroll;
 		}
 		textarea {
-			width: 80%;
+			width: 70%;
 		}
 		.toolbar {
 			margin-top: 0.4rem;
@@ -46,9 +47,25 @@
 	
 	<div id="wrapper">
 		<div class="main-content">
-			<div id="script-list">
-				<select size="20"></select>
-			</div>
+			<lively-treeview id="script-list">
+				<ul>
+					<li class="node collapsed">
+						<span class="leaf">Properties</span>
+						<ul id="property-nodes">
+							<!--<li><span class="leaf">Property 1</span></li>
+							<li><span class="leaf">Property 2</span></li>
+							<li><span class="leaf">Property 3</span></li>
+							<li><span class="leaf">Property 4</span></li>-->
+						</ul>
+					</li>
+					<li class="node">
+						<span class="leaf">Scripts</span>
+						<ul id="script-nodes">
+							
+						</ul>
+					</li>
+				</ul>
+			</lively-treeview>
 			<textarea id="editor"></textarea>
 		</div>
 		<div class="toolbar">
@@ -82,7 +99,7 @@
 			console.log('editor attachedCallback!');
 			this.attached = true;
 		
-			this.scriptList = this.shadowRoot.querySelector('#script-list select');
+			this.scriptList = this.shadowRoot.querySelector('#script-list');
 			this.editor = this.shadowRoot.querySelector('#editor');
 			this.addButton = this.shadowRoot.querySelector('#add-script');
 			this.removeButton = this.shadowRoot.querySelector('#remove-script');
@@ -127,33 +144,34 @@
 		
 			scriptManager.addScript(this.target, 'function ' + scriptName + '() {\n  \n}');
 			this.updateScripts();
-			this.scriptList.selectedIndex = Object.keys(this.target.__scripts__).length - 1;
+			this.scriptList.selectLeaf(this.scriptList.querySelector('.leaf[data-script-name="'+scriptName+'"]'));
 			this.scriptChanged();
 		}
 		
 		removeButtonClicked(e) {
 			if (this.target) {
-				let scriptName = this.scriptList.value;
-				if (scriptName) {
+				if (this.scriptList.activeLeaf !== null) {
+					let scriptName = this.scriptList.activeLeaf.dataset['scriptName'];
 					scriptManager.removeScript(this.target, scriptName);
 				}
 				this.editor.value = '';
-				this.scriptList.removeChild(this.scriptList.querySelector('option[value="' + scriptName + '"]'));
+				this.updateScripts();
 			}
 		}
 		
 		saveButtonClicked(e) {
-			if (this.target && this.scriptList.selectedIndex >= 0) {
-				var scriptName = this.scriptList.selectedOptions[0].value;
+			if (this.target && this.scriptList.activeLeaf !== null) {
+				let scriptName = this.scriptList.activeLeaf.dataset['scriptName'];
 				scriptManager.updateScript(this.target, this.editor.value, { name: scriptName });
 			}
 		}
 		
 		scriptChanged(e) {
-			let scriptList = this.shadowRoot.querySelector('#script-list select');
-			if (scriptList.selectedIndex >= 0) {
-				var scriptName = scriptList.selectedOptions[0].value;
+			if (this.scriptList.activeLeaf !== null) {
+				var scriptName = this.scriptList.activeLeaf.dataset['scriptName'];
 				this.loadScript(scriptName);
+			} else {
+				this.editor.value = '';
 			}
 		}
 		
@@ -162,8 +180,6 @@
 				typeof this.target.__scripts__[scriptName] === 'undefined') {
 				return;
 			}
-		
-			// this.editor.innerText = this.target.__scripts__[scriptName];
 			this.shadowRoot.querySelector('#editor').value = this.target.__scripts__[scriptName];
 		}
 		
@@ -171,10 +187,10 @@
 			let scriptHtml = '';
 			if (this.target && typeof this.target.__scripts__ !== 'undefined') {
 				for (let scriptName in this.target.__scripts__) {
-					scriptHtml += '<option value="' + scriptName + '">' + scriptName + '</option>';
+					scriptHtml += '<li><span class="leaf" data-script-name="' + scriptName + '">' + scriptName + '</span></li>';
 				}
 			}
-			this.shadowRoot.querySelector('#script-list select').innerHTML = scriptHtml;
+			this.shadowRoot.querySelector('#script-nodes').innerHTML = scriptHtml;
 		}
 	}
 
