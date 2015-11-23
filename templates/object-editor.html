@@ -99,6 +99,20 @@
 			this.removeButton.addEventListener('click', (e) => { this.removeButtonClicked(e) });
 			this.saveButton.addEventListener('click', (e) => { this.saveButtonClicked(e) });
 
+			if (this.attributes['target']) {
+				let target = this.attributes['target'].value;
+				if (target[0] !== '#') {
+					console.warn('ObjectEditor: Invalid target. Currently, only #IDs are supported.');
+				} else {
+					let el = document.getElementById(target.substr(1));
+					if (el) {
+						this.target = el;
+						return;
+					}
+					console.warn('ObjectEditor: Could not find target ' + target);
+				}
+			}
+
 			this.render();
 		}
 		
@@ -125,6 +139,10 @@
 			
 			if (typeof this.target.__scripts__ === 'undefined') {
 				this.target.__scripts__ = {};
+			}
+			
+			if (this.target.id.length > 0) {
+				$(this).attr('target', '#' + this.target.id);
 			}
 			
 			this.createObservers();
