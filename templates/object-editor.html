@@ -69,11 +69,6 @@
 			this.render();
 		}
 		
-		createdCallback() {
-			console.log('editor createdCallback!');
-			this.createShadowRoot().innerHTML = ObjectEditor.template.innerHTML;
-		}
-		
 		attachedCallback() {
 			console.log('editor attachedCallback!');
 			this.attached = true;
@@ -174,9 +169,11 @@
 		}
 	}
 
-	document.registerElement('lively-object-editor', ObjectEditor);
-	
 	(function() {
 		ObjectEditor.template = document.currentScript.ownerDocument.querySelector('#template');
+		var clone = document.importNode(ObjectEditor.template.content, true);
+		var prototype = Object.create(ObjectEditor.prototype);
+		
+		System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-object-editor', clone, prototype); });
 	})();
 </script>

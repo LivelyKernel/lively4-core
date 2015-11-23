@@ -89,11 +89,8 @@
 			this.render();
 		}
 		
-		// called when element is created
-		createdCallback() {
-			console.log('window createdCallback!');
-
-			this.createShadowRoot().innerHTML = LivelyWindow.template.innerHTML;
+		attachedCallback() {
+			console.log('window attachedCallback!');
 		
 			// define shortcut variables
 			this.titleSpan = this.shadowRoot.querySelector('.window-title span');
@@ -113,10 +110,6 @@
 		
 			this.created = true;
 			this.render();
-		}
-		
-		attachedCallback() {
-			console.log('window attachedCallback!');
 		}
 		
 		// (re)render the element
@@ -168,9 +161,12 @@
 			this.style.left = 'calc(50% - ' + (rect.width / 2) + 'px)';
 		}
 	}
-	document.registerElement('lively-window', LivelyWindow);
 	
 	(function() {
 		LivelyWindow.template = document.currentScript.ownerDocument.querySelector('#template');
+		var clone = document.importNode(LivelyWindow.template.content, true);
+		var prototype = Object.create(LivelyWindow.prototype);
+		
+		System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-window', clone, prototype); });
 	})();
 </script>
