@@ -19,7 +19,6 @@
 		position: relative;
 		font-size: inherit;
 		padding: 2px 0px 2px 8px;
-		cursor: pointer;
 		vertical-align: middle;
 		line-height: 1rem;
 		color: #333;
@@ -34,8 +33,14 @@
 	::content .node.collapsed > ul {
 		display: none;
 	}
+	::content .leaf {
+		cursor: pointer;
+	}
 	::content .node .leaf {
 		position: relative;
+	}
+	::content .node > .leaf {
+		font-weight: bold;
 	}
 	::content .node > .leaf::before {
 		position: absolute;

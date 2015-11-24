@@ -21,7 +21,7 @@
 			display: flex;
 			max-height: 100%;
 		}
-		#script-list {
+		#property-list {
 			width: 30%;
 			min-width: 100px;
 			margin-right: 2px;
@@ -44,25 +44,22 @@
 			text-align: right;
 		}
 	</style>
-	
+
 	<div id="wrapper">
 		<div class="main-content">
-			<lively-treeview id="script-list">
+			<lively-treeview id="property-list">
 				<ul>
-					<li class="node collapsed">
-						<span class="leaf">Properties</span>
-						<ul id="property-nodes">
-							<!--<li><span class="leaf">Property 1</span></li>
-							<li><span class="leaf">Property 2</span></li>
-							<li><span class="leaf">Property 3</span></li>
-							<li><span class="leaf">Property 4</span></li>-->
-						</ul>
-					</li>
 					<li class="node">
 						<span class="leaf">Scripts</span>
-						<ul id="script-nodes">
-							
-						</ul>
+						<ul id="script-nodes"></ul>
+					</li>
+					<li class="node">
+						<span class="leaf">Attributes</span>
+						<ul id="attribute-nodes"></ul>
+					</li>
+					<li class="node collapsed">
+						<span class="leaf">Properties</span>
+						<ul id="property-nodes"></ul>
 					</li>
 				</ul>
 			</lively-treeview>
@@ -84,97 +81,169 @@
 	'use strict';
 
 	class ObjectEditor extends HTMLDivElement {
-
-		get target() {
-			return this._target;
-		}
-		
-		set target(val) {
-			this._target = val;
-			this.title = val.tagName;
-			this.render();
-		}
-		
+		/* 
+		 * HTMLElement callbacks 
+		 */
 		attachedCallback() {
 			console.log('editor attachedCallback!');
 			this.attached = true;
-		
-			this.scriptList = this.shadowRoot.querySelector('#script-list');
+
+			this.propertyList = this.shadowRoot.querySelector('#property-list');
 			this.editor = this.shadowRoot.querySelector('#editor');
 			this.addButton = this.shadowRoot.querySelector('#add-script');
 			this.removeButton = this.shadowRoot.querySelector('#remove-script');
 			this.saveButton = this.shadowRoot.querySelector('#save-script');
-		
-			this.scriptList.addEventListener('change', (e) => { this.scriptChanged(e) });
+
+			this.propertyList.addEventListener('change', (e) => { this.listChanged(e) });
 			this.addButton.addEventListener('click', (e) => { this.addButtonClicked(e) });
 			this.removeButton.addEventListener('click', (e) => { this.removeButtonClicked(e) });
 			this.saveButton.addEventListener('click', (e) => { this.saveButtonClicked(e) });
-		
+
+			if (this.attributes['target']) {
+				let target = this.attributes['target'].value;
+				if (target[0] !== '#') {
+					console.warn('ObjectEditor: Invalid target. Currently, only #IDs are supported.');
+				} else {
+					let el = document.getElementById(target.substr(1));
+					if (el) {
+						this.target = el;
+						return;
+					}
+					console.warn('ObjectEditor: Could not find target ' + target);
+				}
+			}
+
 			this.render();
 		}
 		
+		detachedCallback() {
+			console.log('editor detachedCallback');
+			if (this.target) {
+				this.destroyObservers();
+			}
+		}
+
+		// Target element
+		get target() {
+			return this._target;
+		}
+
+		set target(val) {
+			if (this.target) {
+				this.destroyObservers();
+			}
+			
+			this._target = val;
+			this.title = val.tagName;
+			this.render();
+			
+			if (typeof this.target.__scripts__ === 'undefined') {
+				this.target.__scripts__ = {};
+			}
+			
+			if (this.target.id.length > 0) {
+				$(this).attr('target', '#' + this.target.id);
+			}
+			
+			this.createObservers();
+		}
+		
+		/*
+		 * Observers for attributes, scripts, etc.
+		 */
+		createObservers() {
+			this.scriptsObserverWrapper = this.scriptsObserver.bind(this);
+			Object.observe(this.target.__scripts__, this.scriptsObserverWrapper);
+			
+			this.domObserver = new MutationObserver((changes) => { this.attributesObserver(changes) });
+			this.domObserver.observe(this.target, {
+				attributes: true
+			});
+		}
+		destroyObservers() {
+			Object.unobserve(this.target.__scripts__, this.scriptsObserverWrapper);
+			this.domObserver.disconnect();
+		}
+		
+		attributesObserver(changes) {
+			/*changes.forEach(function(change, i) {
+				console.log(change);
+			});*/
+			this.updateAttributes();
+		}
+		scriptsObserver(changes) {
+			/*changes.forEach(function(change, i) {
+				console.log(change);
+			});*/
+			this.updateScripts();
+		}
+
 		render() {
 			console.log('editor render!');
 			if (!this.attached) {
 				return;
 			}
-		
-			// Scripts
-			this.updateScripts();
+
+			this.updateList();
 		}
-		
+
 		addButtonClicked(e) {
 			if (!this.target) {
 				return;
 			}
-		
+
 			if (typeof this.target.__scripts__ === 'undefined') {
 				this.target.__scripts__ = {};
 			}
-		
+
 			var scriptName = prompt('Please enter a new script name', '');
 			if (!scriptName || scriptName.length <= 0) {
 				return;
 			}
-		
+
 			if (typeof this.target.__scripts__[scriptName] !== 'undefined') {
 				alert('Script name already in use.');
 				return;
 			}
-		
+
 			scriptManager.addScript(this.target, 'function ' + scriptName + '() {\n  \n}');
 			this.updateScripts();
-			this.scriptList.selectLeaf(this.scriptList.querySelector('.leaf[data-script-name="'+scriptName+'"]'));
-			this.scriptChanged();
+			this.propertyList.selectLeaf(this.propertyList.querySelector('.leaf[data-script-name="'+scriptName+'"]'));
+			this.listChanged();
 		}
-		
+
 		removeButtonClicked(e) {
 			if (this.target) {
-				if (this.scriptList.activeLeaf !== null) {
-					let scriptName = this.scriptList.activeLeaf.dataset['scriptName'];
+				if (this.propertyList.activeLeaf !== null) {
+					let scriptName = this.propertyList.activeLeaf.dataset['scriptName'];
 					scriptManager.removeScript(this.target, scriptName);
 				}
 				this.editor.value = '';
 				this.updateScripts();
 			}
 		}
-		
+
 		saveButtonClicked(e) {
-			if (this.target && this.scriptList.activeLeaf !== null) {
-				let scriptName = this.scriptList.activeLeaf.dataset['scriptName'];
+			if (this.target && this.propertyList.activeLeaf !== null) {
+				let scriptName = this.propertyList.activeLeaf.dataset['scriptName'];
 				scriptManager.updateScript(this.target, this.editor.value, { name: scriptName });
 			}
 		}
-		
-		scriptChanged(e) {
-			if (this.scriptList.activeLeaf !== null) {
-				var scriptName = this.scriptList.activeLeaf.dataset['scriptName'];
-				this.loadScript(scriptName);
+
+		listChanged(e) {
+			if (this.propertyList.activeLeaf !== null) {
+				let data = this.propertyList.activeLeaf.dataset;
+
+				if (typeof data['scriptName'] !== 'undefined') {
+					this.loadScript(data['scriptName']);
+				} else if (typeof data['attributeName'] !== 'undefined') {
+					this.loadAttribute(data['attributeName']);
+				}
 			} else {
 				this.editor.value = '';
 			}
 		}
-		
+
 		loadScript(scriptName) {
 			if (typeof this.target.__scripts__ === 'undefined' ||
 				typeof this.target.__scripts__[scriptName] === 'undefined') {
@@ -182,7 +251,16 @@
 			}
 			this.shadowRoot.querySelector('#editor').value = this.target.__scripts__[scriptName];
 		}
-		
+		loadAttribute(attributeName) {
+			this.editor.value = this.target.attributes[attributeName].value;
+		}
+
+		updateList() {
+			this.updateScripts();
+			this.updateAttributes();
+			// this.updateProperties();
+		}
+
 		updateScripts() {
 			let scriptHtml = '';
 			if (this.target && typeof this.target.__scripts__ !== 'undefined') {
@@ -192,13 +270,23 @@
 			}
 			this.shadowRoot.querySelector('#script-nodes').innerHTML = scriptHtml;
 		}
+		updateAttributes() {
+			let html = '';
+			if (this.target) {
+				for (let i = 0; i < this.target.attributes.length; i++) {
+					let attr = this.target.attributes[i];
+					html += '<li><span class="leaf" data-attribute-name="' + attr.name + '">' + attr.name + '</span></li>';
+				}
+			}
+			this.shadowRoot.querySelector('#attribute-nodes').innerHTML = html;
+		}
 	}
 
 	(function() {
 		ObjectEditor.template = document.currentScript.ownerDocument.querySelector('#template');
 		var clone = document.importNode(ObjectEditor.template.content, true);
 		var prototype = Object.create(ObjectEditor.prototype);
-		
+
 		System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-object-editor', clone, prototype); });
 	})();
 </script>
