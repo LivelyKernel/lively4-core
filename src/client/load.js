@@ -1,9 +1,12 @@
 
     function log(/* varargs */) {
+        var c = $('#console')
+        if (c.length == 0)  return 
+
         Array.prototype.forEach.call(arguments, function(s) {
-           $('#console').text($('#console').text() + "\n" + s)
+           c.text(c.text() + "\n" + s)
         })
-        $('#console').scrollTop($('#console')[0].scrollHeight);
+        c.scrollTop(c[0].scrollHeight);
     }
 
 // console.log("A squared: " + 2**4)
