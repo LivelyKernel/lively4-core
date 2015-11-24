@@ -2,22 +2,10 @@
  * Pseudo-HTTP github project access.
  */
 
-export function read(path) {
-    console.log('HTTP read: ' + path)
+import { Base } from './base.jsx'
 
-    return fetch(path).then((response) => {
-        if(response.ok) {
-            response.text()
-        } else {
-            throw new Error(`HTTPFS error: ${response.status} ${response.statusText}`)
-        }
-    })
-}
-
-export function list(path) {
-
-}
-
-export function stat(path) {
-
+export class Filesystem extends Base {
+    read(path) {
+        return Promise.resolve(path)
+    }
 }
