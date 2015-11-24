@@ -79,6 +79,8 @@
 
 <script>
 	'use strict';
+	
+	var generateUUID;
 
 	class ObjectEditor extends HTMLDivElement {
 		/* 
@@ -143,6 +145,8 @@
 			
 			if (this.target.id.length > 0) {
 				$(this).attr('target', '#' + this.target.id);
+			} else {
+				$(this.target).attr('data-lively-id', generateUUID());
 			}
 			
 			this.createObservers();
@@ -287,6 +291,10 @@
 		var clone = document.importNode(ObjectEditor.template.content, true);
 		var prototype = Object.create(ObjectEditor.prototype);
 
+		System.import('../src/client/uuid.js').then(uuid => {
+			console.log('uuid:', uuid);
+			generateUUID = uuid.generateUUID;
+		});
 		System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-object-editor', clone, prototype); });
 	})();
 </script>

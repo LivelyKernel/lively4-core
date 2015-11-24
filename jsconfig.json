@@ -1,0 +1,12 @@
+{
+	"compilerOptions": {
+		"target": "ES6",
+		"module": "commonjs"
+	},
+	"files": [
+		"draft/",
+		"src/",
+		"templates/",
+		"src/client/"
+	]
+}
