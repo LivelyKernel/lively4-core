@@ -25,6 +25,8 @@ self.addEventListener('install', function(event) {
         self.skipWaiting(),
         swx().then(function(swx) {
             return swx.install(event)
+        }).catch(function(err) {
+            console.error(err)
         })
     ]))
 })
@@ -36,6 +38,8 @@ self.addEventListener('activate', function(event) {
         self.clients.claim(),
         swx().then(function(swx) {
             return swx.activate(event)
+        }).catch(function(err) {
+            console.error(err)
         })
     ]))
 })
@@ -43,11 +47,15 @@ self.addEventListener('activate', function(event) {
 self.addEventListener('fetch', function(event) {
     swx().then(function(sw) {
         return sw.fetch(event)
+    }).catch(function(err) {
+        console.error(err)
     })
 })
 
 self.addEventListener('message', function(event) {
     swx().then(function(sw) {
         return sw.message(event)
+    }).catch(function(err) {
+        console.error(err)
     })
 })
