@@ -41,10 +41,7 @@ if ('serviceWorker' in navigator) {
 
     navigator.serviceWorker.ready.then(function(registration) {
             log('READY');
-            System.import("../src/client/file-editor.js").then(function(module) {
-                window.fileEditor = module
-                log("fileEditor loaded")
-            })
+
             // #TODO continue here... loadFile is not in global scope (yet)
             System.import("../src/client/script-manager.js").then(function(module) {
                 window.scriptManager = module;
