@@ -82,6 +82,10 @@
     // })
         
     System.import(lively4url + "/src/client/load.js").then(function(){
+        System.import("../src/client/file-editor.js").then(function(module) {
+            window.fileEditor = module
+            log("fileEditor loaded")
+        })
         System.import("commandline.js")
         System.import(lively4url + "src/client/debug-serviceworker.js")    
     }).catch(function(err) { alert("load Lively4 failed")})
