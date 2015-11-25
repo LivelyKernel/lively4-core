@@ -58,7 +58,7 @@
 
 <button onclick="githubAuth.logout(); console.log('logged out of github')">logout</button>
 
-<div id="editor" class=" ace_editor ace-tm"></div>
+<div id="editor" class=" ace_editor ace-tm" draggable="false"></div>
 
 <pre id="console"></pre>
 <input type="text" id="commandline" value="" />
