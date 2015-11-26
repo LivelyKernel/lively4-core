@@ -99,13 +99,9 @@ function checkForMutationsToSave() {
 
 function isSaveDOMAllowed() {
     var check = $("#persistToGithub");
-    if (!check) return false;
-    
-    if (check.size() > 0 && !check[0].checked) {
-        return false;
-    }
+    if (!check || check.size() != 1) return false;
 
-    return true;
+    return check[0].checked;
 }
 
 function isPersistOnIntervalActive() {
