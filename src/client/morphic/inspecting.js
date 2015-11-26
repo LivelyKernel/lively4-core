@@ -36,19 +36,14 @@ function onMagnify(e) {
   }
   window.that = grabTarget;
   console.log("Current element:", grabTarget, "with id:", $(grabTarget).attr("id"));
-  
-  // remove previous object editor
-  if (objectEditorWindow !== null) {
-    $(objectEditorWindow).remove();
-  }
-  
+
   // open object editor for new target
   var editor = document.createElement('lively-object-editor');
   editor.targetElement = window.that;
   objectEditorWindow = document.createElement('lively-window');
   objectEditorWindow.title = window.that.tagName;
   $(objectEditorWindow).append(editor);
-  
+
   $('body').append(objectEditorWindow);
   objectEditorWindow.centerInWindow();
 }
