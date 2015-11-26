@@ -47,7 +47,7 @@
 
 <link rel="import" href="../templates/lively-toolbox.html" />
 <link rel="import" href="../templates/lively-window.html" />
-<link rel="import" href="../templates/object-editor.html" />
+<link rel="import" href="../templates/lively-object-editor.html" />
 
 <link rel="import" href="../templates/lively-menu.html"/>
 
@@ -83,31 +83,31 @@
         MyApp = {
             getMenuItems: function(){
                 return [
-                    ["Workspace", function() { 
+                    ["Workspace", function() {
                         var container  = document.createElement("lively-window")
-                        $('body')[0].appendChild(container) 
+                        $('body')[0].appendChild(container)
                         var text  = document.createElement("juicy-ace-editor")
-                        container.appendChild(text) 
-                        
-                    }], 
-                    ["File Editor", function() { 
+                        container.appendChild(text)
+
+                    }],
+                    ["File Editor", function() {
                         var container  = document.createElement("lively-window")
-                        $('body')[0].appendChild(container) 
+                        $('body')[0].appendChild(container)
                         var text  = document.createElement("lively-editor")
-                        container.appendChild(text) 
-                        
-                    }], 
-                    ["Text", function() { 
+                        container.appendChild(text)
+
+                    }],
+                    ["Text", function() {
                             var text  = document.createElement("p")
                             text.innerHTML = "Hello"
-                            $('body')[0].appendChild(text) 
-                    }], 
+                            $('body')[0].appendChild(text)
+                    }],
                     ["Rectangle", function() {
                         var morph  = document.createElement("div")
                         morph.style.height = "100px"
                         morph.style.width = "200px"
                         morph.style.backgroundColor = "blue"
-                        $('body')[0].appendChild(morph)  
+                        $('body')[0].appendChild(morph)
                     }]
                 ]
             }
@@ -115,9 +115,9 @@
 
 
         var menu = document.createElement("lively-menu")
-        menu.addEventListener("initialized", function() { 
+        menu.addEventListener("initialized", function() {
             menu.openOn(MyApp)
-            $('body')[0].appendChild(menu) 
+            $('body')[0].appendChild(menu)
         })
 
     }).catch(function(err) { alert("load Lively4 failed")});

@@ -4,13 +4,20 @@
     .container {
         width: 100%;
         height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .toolbar {
+        flex: 0;
     }
     #editor {
+        flex: 1;
         width: 100%;
         height: 90%; // actucally I want calc(100% - 10px)
     }
     </style>
     <div class="container">
+        <div class="toolbar">
         <button id="loadButton">load</button>
         <button id="saveButton">save</button>
         <input type="text" id="filename" value="README.md">
@@ -20,13 +27,14 @@
         <button id="loginButton">login</button>
 
         <button id="logoutButton">logout</button>
+    </div>
 
         <juicy-ace-editor id="editor"></juicy-ace-editor>
     </div>
-    
-    <script type="lively4script" data-name="initialize"> 
+
+    <script type="lively4script" data-name="initialize">
       var container = $(this.shadowRoot).find(".container")[0];
- 
+
       // var messaging = require('../src/client/messaging.js');
       // var focalStorage = require('../src/external/focalStorage.js');
       // var githubAuth = require('../src/client/auth-github.js');
@@ -39,10 +47,10 @@
       System.import('../src/external/focalStorage.js').then(function(mod) {
         focalStorage = mod
       })
-        
+
       System.import('../src/client/auth-github.js').then(function(mod) {
         githubAuth = mod
-        window.githubAuth = githubAuth // make it global, so the callback can reach it...        
+        window.githubAuth = githubAuth // make it global, so the callback can reach it...
       })
 
     function currentEditor() {
