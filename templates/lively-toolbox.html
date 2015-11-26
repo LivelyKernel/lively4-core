@@ -16,10 +16,10 @@
       var baseUrl = "../src/client/morphic/";
 
       Promise.all([
-        "dragging.js", 
-        "grabbing.js", 
-        "inspecting.js", 
-        "deleting.js", 
+        "dragging.js",
+        "grabbing.js",
+        "inspecting.js",
+        "deleting.js",
         "copying.js"
       ]
       .map(name => { return System.import(baseUrl + name); }))
@@ -68,7 +68,7 @@
 
         var form = $(this.shadowRoot).find("form")[0];
         container.appendChild(form);
-        
+
         $(form).on("change", function(evt) {
           // deactivate the current tool, if it has a deactivation function
           var deactivate = container.currentTool.onDeactivate;
@@ -100,7 +100,7 @@
           }
 
           var label = document.createElement("label");
-          label.for = id;
+          label.setAttribute('for', id);
           label.innerHTML = ea.name;
 
           form.appendChild(radio);
