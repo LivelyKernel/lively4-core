@@ -1,0 +1,52 @@
+<template id="lively-menu">
+    <style>
+    .container {
+        width: 120px;
+        padding: 5px;
+        border-radius: 5px;
+        background-color: rgb(238, 238, 238);
+    }
+
+    li:hover {
+        background-color: rgb(150, 150, 150);      
+    }
+
+    li {
+        list-style-type: none;
+    }
+    </style>
+    <ul class="container">
+    </ul>
+    <script type="lively4script" data-name="initialize">  
+        this.openOn = function(target) {
+          var menu = $(this.shadowRoot).find(".container")[0];
+          
+          menu.innerHTML = "" // clear
+          // create a radio button for each tool
+          if (!target.getMenuItems) return;
+          menuItems = target.getMenuItems() 
+          menuItems.forEach(function(ea) {
+            var item = document.createElement("li");
+            item.innerHTML = ea[0]
+
+            $(item).on("click",function() {
+              if (ea[1] && ea[1] instanceof Function) {
+                ea[1](target)              
+              }
+            });
+
+            menu.appendChild(item);
+          });
+        }
+        $(this.shadowRoot).find(".container")[0].dispatchEvent(new Event("initialized"))
+    </script>
+</template>
+<script class="registrationScript">
+// This ugly piece of code will be auto generated, when exporting a template. Puh.
+(function() {
+  var template = document.currentScript.ownerDocument.querySelector('#lively-menu');
+  var clone = document.importNode(template.content, true);
+
+  System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-menu', clone); });
+})();
+</script>

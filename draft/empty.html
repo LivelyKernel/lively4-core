@@ -1,0 +1,143 @@
+<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+<title>Lively 4 Our First Page</title>
+<style type="text/css" media="screen">
+    #baseurl {
+        width: 800px;
+    }
+    #console {
+        width: 800px;
+        height: 300px;
+        max-height: 200px;
+        overflow: auto;
+        background-color: #eeeeee;
+        word-break: normal !important;
+        word-wrap: normal !important;
+        white-space: pre !important;
+    }
+    #commandline {
+        width: 800px;
+    }
+
+    body {
+        font-family: sans-serif;
+    }
+
+    h1 {
+        color: #2B65EC;
+    }
+
+</style>
+
+<script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
+
+
+<!-- BEGIN SYSTEM.JS: should go away, until then we use a "static" global source -->
+<script src="https://livelykernel.github.io/lively4-core/src/external/system.src.js" type="text/javascript" charset="utf-8"></script>
+<script>
+  System.paths['babel'] ='https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
+  System.config({
+    transpiler: 'babel',
+    babelOptions: { },
+    map: {
+        babel: 'https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
+    }
+  });
+</script>
+<!-- END SYSTEM.JS-->
+
+<link rel="import" href="../templates/lively-toolbox.html" />
+<link rel="import" href="../templates/lively-window.html" />
+<link rel="import" href="../templates/object-editor.html" />
+
+<link rel="import" href="../templates/lively-menu.html"/>
+
+<link rel="import" href="../templates/lively-editor.html"/>
+<link rel="import" href="../templates/juicy-ace-editor.html"/>
+
+<link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" />
+
+</head>
+<body>
+<h1>Lively 4</h1>
+
+
+
+<!-- BEGIN ACE -->
+<!-- We also have to load ace "locally", because loading it remotely ends in a race condition -->
+
+
+<script>
+    var lively4url =  "../" // or any abosolute path to lively4 ? Any idea for computeRoot() ? #JensLincke #OpenQuestion
+
+    //// #TODO The ace editor tries to be very clever, so it cannot be loaded through "import" at the moment
+    //// (e.g. AMD promise error)
+    // System.import(lively4url + "src/external/ace.js").then(function(){
+    //         ace.edit("editor")
+    // })
+
+    System.import(lively4url + "/src/client/load.js").then(function(){
+        // System.import("commandline.js")
+        // System.import(lively4url + "src/client/debug-serviceworker.js")
+
+        // <lively-menu ></lively-menu>
+        MyApp = {
+            getMenuItems: function(){
+                return [
+                    ["Workspace", function() { 
+                        var container  = document.createElement("lively-window")
+                        $('body')[0].appendChild(container) 
+                        var text  = document.createElement("juicy-ace-editor")
+                        container.appendChild(text) 
+                        
+                    }], 
+                    ["File Editor", function() { 
+                        var container  = document.createElement("lively-window")
+                        $('body')[0].appendChild(container) 
+                        var text  = document.createElement("lively-editor")
+                        container.appendChild(text) 
+                        
+                    }], 
+                    ["Text", function() { 
+                            var text  = document.createElement("p")
+                            text.innerHTML = "Hello"
+                            $('body')[0].appendChild(text) 
+                    }], 
+                    ["Rectangle", function() {
+                        var morph  = document.createElement("div")
+                        morph.style.height = "100px"
+                        morph.style.width = "200px"
+                        morph.style.backgroundColor = "blue"
+                        $('body')[0].appendChild(morph)  
+                    }]
+                ]
+            }
+        }
+
+
+        var menu = document.createElement("lively-menu")
+        menu.addEventListener("initialized", function() { 
+            menu.openOn(MyApp)
+            $('body')[0].appendChild(menu) 
+        })
+
+    }).catch(function(err) { alert("load Lively4 failed")});
+
+    var morphic;
+    System.import(lively4url + "/src/client/morphic/morphic.js").then(m => {
+        morphic = m;
+        morphic.initMorphicTools();
+    }).catch(function(err) {
+        debugger; alert("load morphic failed");
+    });
+
+    System.import(lively4url + "/src/client/morphic/toolbox.js").then(toolbox => {
+        //document.body.appendChild(toolbox.createMorphicToolbox());
+    }).catch(function(err) {
+        debugger; alert("load morphic/toolbox failed");
+    });
+
+</script>
+
+
+</body>
+</html>
