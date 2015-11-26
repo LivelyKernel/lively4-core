@@ -15,26 +15,34 @@ function initialize(){
         mutations.forEach(record => {
             if (record.target.id == 'console'
                 || record.target.id == 'editor') return;
+            var shouldSave = false;
             if (record.type == 'childList') {
                 var nodes = [...record.addedNodes].concat([...record.removedNodes]);
-                var shouldSave = nodes.some(node => {
+                shouldSave = nodes.some(node => {
                     return isLively4Script(node);
-                })
-                if (shouldSave) {
-                    sessionStorage["lively.scriptMutationsDetected"] = 'true';
-                    if (isPersistOnIntervalActive()) {
-                        restartPersistenceTimerInterval();
+                });
+            }
+            else if (record.type == 'characterData') {
+                shouldSave = true;
+            }
+            else if (record.type == 'attributes') {
+                // do not save atm
+            }
+
+            if (shouldSave) {
+                sessionStorage["lively.scriptMutationsDetected"] = 'true';
+                if (isPersistOnIntervalActive()) {
+                    restartPersistenceTimerInterval();
+                } else {
+                    if (isSaveDOMAllowed()) {
+                        saveDOM();
                     } else {
-                        if (isSaveDOMAllowed()) {
-                            saveDOM();
-                        } else {
-                            console.log("Persist to github not checked. Changes will not be pushed.");
-                        }
+                        console.log("Persist to github not checked. Changes will not be pushed.");
                     }
                 }
             }
         })
-    }).observe(document, {childList: true, subtree: true});
+    }).observe(document, {childList: true, subtree: true, characterData: true, attributes: true});
 
     resetPersistenceSessionStore();
 }

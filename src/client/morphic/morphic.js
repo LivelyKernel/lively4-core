@@ -128,6 +128,7 @@ export  function createTemplate(rootElement, name) {
 
 export function saveTemplate(template) {
 	var registrationScript = document.createElement("script");
+	// MAKE SURE TO USE THE UP TO DATE VERSION WHEN FINALLY IMPLEMENTING THIS!!
 	registrationScript.innerHTML = 	"(function() { \
 		var template = document.currentScript.ownerDocument.querySelector('#" + template.id + "'); \
 		var clone = document.importNode(template.content, true); \

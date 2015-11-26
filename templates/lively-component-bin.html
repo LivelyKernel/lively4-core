@@ -1,0 +1,63 @@
+<template id="lively-component-bin">
+<style>
+  .component-bin-container {
+    display: inline-block;
+    padding: 5px;
+    border-radius: 5px;
+    background-color: rgb(238, 238, 238);
+  }
+  .button-list {
+    list-style-type: none;
+    padding: 0px;
+    margin: 0px;
+  }
+  .list-button {
+    margin-top: 3px;
+    margin-bottom: 3px;
+    width: 100%;
+  }
+</style>
+<div class="component-bin-container">
+  <ul class="button-list">
+  </ul>
+</div>
+<script type="lively4script" data-name="initialize">
+  var items = [{
+    name: "Toolbox",
+    tag: "lively-toolbox"
+  }, {
+    name: "Window",
+    tag: "lively-window"
+  }, {
+    name: "Object Editor",
+    tag: "lively-object-editor"
+  }]
+
+  var list = $(this.shadowRoot).find(".button-list")[0];
+  var bin = this;
+  items.forEach(item => {
+    var li = document.createElement("li");
+    var button = document.createElement("button");
+    button.className = "list-button";
+    button.innerHTML = item.name;
+    button.addEventListener("click", addComponent.bind(bin, item.tag));
+
+    function addComponent(tag, evt) {
+      var component = document.createElement(tag);
+      this.parentElement.insertBefore(component, this.nextSibling);
+    }
+
+    li.appendChild(button);
+    list.appendChild(li);
+  });
+</script>
+</template>
+<script class="registrationScript">
+// This ugly piece of code will be auto generated, when exporting a template. Puh.
+(function() {
+  var template = document.currentScript.ownerDocument.querySelector('#lively-component-bin');
+  var clone = document.importNode(template.content, true);
+
+  System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-component-bin', clone); });
+})();
+</script>
