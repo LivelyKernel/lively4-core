@@ -30,7 +30,7 @@
     tag: "lively-window"
   }, {
     name: "Object Editor",
-    tag: "object-editor"
+    tag: "lively-object-editor"
   }]
 
   var list = $(this.shadowRoot).find(".button-list")[0];
@@ -41,7 +41,7 @@
     button.className = "list-button";
     button.innerHTML = item.name;
     button.addEventListener("click", addComponent.bind(bin, item.tag));
-    
+
     function addComponent(tag, evt) {
       var component = document.createElement(tag);
       this.parentElement.insertBefore(component, this.nextSibling);
