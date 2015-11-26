@@ -51,6 +51,10 @@ if ('serviceWorker' in navigator) {
                 window.persistence = module;
                 log("persistence loaded");
             });
+            System.import("../src/client/serializer.js").then(function(module) {
+                window.serializer = module;
+                log("serializer loaded");
+            });
     })
 }
 
