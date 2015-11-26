@@ -1,0 +1,55 @@
+<template id="lively-key-value-input">
+  <span id="key"></span>: <span id="value" contenteditable="true"></span>
+</template>
+
+<script>
+  'use strict';
+
+  class LivelyKeyValueInput extends HTMLDivElement {
+    attachedCallback() {
+      console.log("attached", this.shadowRoot.querySelector('span#key'));
+      this.keyElement = this.shadowRoot.querySelector('span#key');
+      this.valueElement = this.shadowRoot.querySelector('span#value');
+
+      this.valueElement.addEventListener('keyup', (e) => { this.changeEventHandler(); });
+      this.valueElement.addEventListener('paste', (e) => { this.changeEventHandler(); });
+      this.valueElement.addEventListener('blur', (e) => { this.changeEventHandler(); });
+    }
+
+    changeEventHandler() {
+      let changeEvent = new CustomEvent('change', {
+        bubbles: true,
+        detail: {
+          key: this.key,
+          value: this.value  
+        }        
+      });
+
+      this.dispatchEvent(changeEvent);
+    }
+
+    get key() {
+      return this.keyElement.innerHTML;
+    }
+
+    set key(key) {
+      this.keyElement.innerHTML = key;
+    }
+
+    get value() {
+      return this.valueElement.innerHTML;
+    }
+
+    set value(value) {
+      this.valueElement.innerHTML = value;
+    }
+  }
+
+  (function() {
+    LivelyKeyValueInput.template = document.currentScript.ownerDocument.querySelector('#lively-key-value-input');
+    var clone = document.importNode(LivelyKeyValueInput.template.content, true);
+    var prototype = Object.create(LivelyKeyValueInput.prototype);
+
+    System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-key-value-input', clone, prototype); });
+  })();
+</script>
