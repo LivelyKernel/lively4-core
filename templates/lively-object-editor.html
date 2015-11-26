@@ -281,8 +281,17 @@
 
 		saveButtonClicked(e) {
 			if (this.targetElement && this.propertyList.activeLeaf !== null) {
-				let scriptName = this.propertyList.activeLeaf.dataset['scriptName'];
-				scriptManager.updateScript(this.targetElement, this.editor.value, { name: scriptName });
+				let data = this.propertyList.activeLeaf.dataset;
+				
+				if (typeof data['scriptName'] !== 'undefined') {
+					scriptManager.updateScript(
+						this.targetElement, 
+						this.editor.value, 
+						{ name: data['scriptName'] }
+					);
+				} else if (typeof data['attributeName'] !== 'undefined') {
+					this.saveAttribute(data['attributeName']);
+				}
 			}
 		}
 
@@ -311,6 +320,10 @@
 			this.editor.value = this.targetElement.attributes[attributeName].value;
 		}
 
+		saveAttribute(attributeName) {
+			this.targetElement.setAttribute(attributeName, this.editor.value);	
+		}
+
 		updateList() {
 			this.updateScripts();
 			this.updateAttributes();
@@ -318,20 +331,36 @@
 		}
 
 		updateScripts() {
+			var activeLeaf = null;
+			if (this.propertyList.activeLeaf) {
+				let activeLeafData = this.propertyList.activeLeaf.dataset;
+				if(activeLeafData.scriptName)
+					activeLeaf = activeLeafData.scriptName;
+			}
+
 			let scriptHtml = '';
 			if (this.targetElement && typeof this.targetElement.__scripts__ !== 'undefined') {
 				for (let scriptName in this.targetElement.__scripts__) {
-					scriptHtml += '<li><span class="leaf" data-script-name="' + scriptName + '">' + scriptName + '</span></li>';
+					let isActive = scriptName == activeLeaf;
+					scriptHtml += '<li><span class="leaf' + (isActive ? ' active' : '') + '" data-script-name="' + scriptName + '">' + scriptName + '</span></li>';
 				}
 			}
 			this.shadowRoot.querySelector('#script-nodes').innerHTML = scriptHtml;
 		}
 		updateAttributes() {
+			var activeLeaf = null;
+			if (this.propertyList.activeLeaf) {
+				let activeLeafData = this.propertyList.activeLeaf.dataset;
+				if(activeLeafData.attributeName)
+					activeLeaf = activeLeafData.attributeName;
+			}
+
 			let html = '';
 			if (this.targetElement) {
 				for (let i = 0; i < this.targetElement.attributes.length; i++) {
 					let attr = this.targetElement.attributes[i];
-					html += '<li><span class="leaf" data-attribute-name="' + attr.name + '">' + attr.name + '</span></li>';
+					let isActive = attr.name == activeLeaf;
+					html += '<li><span class="leaf' + (isActive ? ' active' : '') + '" data-attribute-name="' + attr.name + '">' + attr.name + '</span></li>';
 				}
 			}
 			this.shadowRoot.querySelector('#attribute-nodes').innerHTML = html;
