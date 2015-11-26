@@ -41,8 +41,16 @@ function onMagnify(e) {
   var editor = document.createElement('lively-object-editor');
   editor.targetElement = window.that;
   objectEditorWindow = document.createElement('lively-window');
-  objectEditorWindow.title = window.that.tagName;
   $(objectEditorWindow).append(editor);
+
+  var title = '';
+  if (window.that.name) {
+      title = window.that.name;
+  } else if (window.that.id) {
+      title = '#'+ window.that.id;
+  }
+  title += ' <small>' + window.that.tagName.toLowerCase() + '</small>';
+  objectEditorWindow.setAttribute('title', title);
 
   $('body').append(objectEditorWindow);
   objectEditorWindow.centerInWindow();

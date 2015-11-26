@@ -9,7 +9,7 @@
 	:host * {
 		box-sizing: border-box;
 	}
-	
+
 	::content {
 		display: flex;
 		flex-direction: column;
@@ -20,7 +20,7 @@
 		height: 100%;
 		width: 100%;
 	}
-	
+
 	.window {
 		width: 100%;
 		height: 100%;
@@ -58,6 +58,10 @@
 		font-size: 1.1em;
 		line-height: 1.5rem;
 	}
+    .window-title span small {
+        font-style: italic;
+        color: #333;
+    }
 	.window-controls {
 		flex-grow: 0;
 	}
@@ -113,7 +117,7 @@
 	'use strict';
 
 	class LivelyWindow extends HTMLDivElement {
-	
+
 		// window title
 		get title() {
 			return this._title;
@@ -122,10 +126,10 @@
 			this._title =  val;
 			this.render();
 		}
-		
+
 		attachedCallback() {
 			console.log('window attachedCallback!');
-		
+
 			// define shortcut variables
 			this.titleSpan = this.shadowRoot.querySelector('.window-title span');
 			this.minButton = this.shadowRoot.querySelector('.window-min');
@@ -133,7 +137,7 @@
 			this.resizeButton = this.shadowRoot.querySelector('.window-resize');
 			this.closeButton = this.shadowRoot.querySelector('.window-close');
 			this.contentBlock = this.shadowRoot.querySelector('#window-content');
-		
+
 			// bind events for window behavior
 			this.dragging = false;
 			this.closeButton.addEventListener('click', (e) => { this.closeButtonClicked(e) });
@@ -141,10 +145,10 @@
 			this.maxButton.addEventListener('click', (e) => { this.maxButtonClicked(e) });
 			this.resizeButton.addEventListener('mousedown', (e) => { this.resizeMouseDown(e) });
 			this.shadowRoot.querySelector('.window-title').addEventListener('mousedown', (e) => { this.titleMouseDown(e) });
-			
+
 			document.body.addEventListener('mousemove', (e) => { this.windowMouseMove(e) });
 			document.body.addEventListener('mouseup', (e) => { this.windowMouseUp(e) });
-		
+
 			this.created = true;
 			this.render();
 		}
@@ -158,55 +162,55 @@
 					//
 			}
 		}
-		
+
 		// (re)render the element
 		render() {
 			console.log('window render!');
 			if (this.created) {
 				if(this.attributes['title']) {
-					this.titleSpan.innerText = this.attributes['title'].value;	
+					this.titleSpan.innerHTML = this.attributes['title'].value;
 				}
 			}
 		}
-		
+
 		minButtonClicked(e) {
 			// TODO
 		}
-		
+
 		maxButtonClicked(e) {
 			// TODO
 		}
-		
+
 		closeButtonClicked(e) {
 			this.parentNode.removeChild(this);
 		}
-		
+
 		titleMouseDown(e) {
 			let offsetWindow = $(this).offset();
-		
+
 			this.dragging = {
 				left: e.pageX - offsetWindow.left,
 				top: e.pageY - offsetWindow.top
 			};
 			$('.window', this.shadowRoot).addClass('dragging');
 		}
-		
+
 		resizeMouseDown(e) {
 			let offsetWindow = $(this).offset();
-		
+
 			this.resizing = {
 				left: offsetWindow.left,
 				top: offsetWindow.top
 			};
 			$('.window', this.shadowRoot).addClass('resizing');
 		}
-		
+
 		windowMouseUp(e) {
 			this.dragging = false;
 			this.resizing = false;
 			$('.window', this.shadowRoot).removeClass('dragging').removeClass('resizing');
 		}
-		
+
 		windowMouseMove(e) {
 			if (this.dragging) {
 				$(this).css({
@@ -220,7 +224,7 @@
 				});
 			}
 		}
-		
+
 		// Public interface
 		centerInWindow() {
 			let rect = this.getBoundingClientRect();
@@ -228,12 +232,12 @@
 			this.style.left = 'calc(50% - ' + (rect.width / 2) + 'px)';
 		}
 	}
-	
+
 	(function() {
 		LivelyWindow.template = document.currentScript.ownerDocument.querySelector('#template');
 		var clone = document.importNode(LivelyWindow.template.content, true);
 		var prototype = Object.create(LivelyWindow.prototype);
-		
+
 		System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-window', clone, prototype); });
 	})();
 </script>
