@@ -148,12 +148,24 @@
 			this.created = true;
 			this.render();
 		}
+
+		attributeChangedCallback(attrName, oldValue, newValue) {
+			switch(attrName) {
+				case 'title':
+					this.render();
+					break;
+				default:
+					//
+			}
+		}
 		
 		// (re)render the element
 		render() {
 			console.log('window render!');
 			if (this.created) {
-				this.titleSpan.innerText = this.title;
+				if(this.attributes['title']) {
+					this.titleSpan.innerText = this.attributes['title'].value;	
+				}
 			}
 		}
 		
