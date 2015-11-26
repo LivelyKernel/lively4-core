@@ -186,6 +186,8 @@
 		}
 
 		titleMouseDown(e) {
+			e.preventDefault();
+			
 			let offsetWindow = $(this).offset();
 
 			this.dragging = {
@@ -196,6 +198,8 @@
 		}
 
 		resizeMouseDown(e) {
+			e.preventDefault();
+
 			let offsetWindow = $(this).offset();
 
 			this.resizing = {
@@ -206,12 +210,16 @@
 		}
 
 		windowMouseUp(e) {
+			e.preventDefault();
+
 			this.dragging = false;
 			this.resizing = false;
 			$('.window', this.shadowRoot).removeClass('dragging').removeClass('resizing');
 		}
 
 		windowMouseMove(e) {
+			e.preventDefault();
+
 			if (this.dragging) {
 				$(this).css({
 					left: e.pageX - this.dragging.left,
