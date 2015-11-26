@@ -101,55 +101,86 @@
 			this.removeButton.addEventListener('click', (e) => { this.removeButtonClicked(e) });
 			this.saveButton.addEventListener('click', (e) => { this.saveButtonClicked(e) });
 
-			if (this.attributes['target']) {
-				let target = this.attributes['target'].value;
-				if (target[0] !== '#') {
-					console.warn('ObjectEditor: Invalid target. Currently, only #IDs are supported.');
-				} else {
-					let el = document.getElementById(target.substr(1));
-					if (el) {
-						this.target = el;
-						return;
-					}
-					console.warn('ObjectEditor: Could not find target ' + target);
-				}
-			}
-
 			this.render();
+
+			for (let i = 0; i < this.attributes.length; i++) {
+				var attribute = this.attributes[i];
+				console.log('Initializing attribute ' + attribute);
+
+				this.attributeChangedCallback(attribute.name, null, attribute.value);
+			}
 		}
 		
 		detachedCallback() {
+			this.attached = false;
+
 			console.log('editor detachedCallback');
-			if (this.target) {
-				this.destroyObservers();
+			if (this.targetElement) {
+				this.releaseTarget();
+			}
+		}
+
+		attributeChangedCallback(attrName, oldValue, newValue) {
+			console.log('Attribute changed ' + attrName);
+
+			switch(attrName) {
+				case 'target':
+					var selector = newValue
+					,	element  = null;
+
+					if(!selector) {
+						break;
+					}
+
+					if (selector[0] === '$') {
+						this.targetElement = document.querySelector('[data-lively-id="' + selector.substr(1) + '"]');
+					} else {
+						this.targetElement = document.querySelector(selector);
+					}
+
+					break;
+				default:
+					//
 			}
 		}
 
 		// Target element
-		get target() {
-			return this._target;
+		get targetElement() {
+			return this._targetElement;
 		}
 
-		set target(val) {
-			if (this.target) {
-				this.destroyObservers();
+		set targetElement(val) {
+			if(val == this.targetElement)
+				return;
+
+			if (this.targetElement) {
+				this.releaseTarget();
 			}
 			
-			this._target = val;
-			this.title = val.tagName;
+			this._targetElement = val;
 			this.render();
 			
-			if (typeof this.target.__scripts__ === 'undefined') {
-				this.target.__scripts__ = {};
+			if (typeof this.targetElement.__scripts__ === 'undefined') {
+				this.targetElement.__scripts__ = {};
 			}
 			
-			if (this.target.id.length > 0) {
-				$(this).attr('target', '#' + this.target.id);
-			} else {
-				$(this.target).attr('data-lively-id', generateUUID());
+			if (!this.targetElement.dataset['livelyId']) {
+				var uuid = generateUUID();
+
+				$(this.targetElement).attr('data-lively-id', uuid);
+				this.setAttribute('target', '$' + uuid);
 			}
 			
 			this.createObservers();
+		}
+
+		releaseTarget() {
+			if(!this.targetElement) {
+				return;
+			}
+
+			this.destroyObservers();
+			this.destroyUUID();
 		}
 		
 		/*
@@ -157,15 +188,21 @@
 		 */
 		createObservers() {
 			this.scriptsObserverWrapper = this.scriptsObserver.bind(this);
-			Object.observe(this.target.__scripts__, this.scriptsObserverWrapper);
+			Object.observe(this.targetElement.__scripts__, this.scriptsObserverWrapper);
+
+			console.log('Creating observer..');
+			console.log(this.scriptsObserverWrapper);
 			
 			this.domObserver = new MutationObserver((changes) => { this.attributesObserver(changes) });
-			this.domObserver.observe(this.target, {
+			this.domObserver.observe(this.targetElement, {
 				attributes: true
 			});
 		}
+
 		destroyObservers() {
-			Object.unobserve(this.target.__scripts__, this.scriptsObserverWrapper);
+			console.log('destroyObservers');
+			console.log(this.scriptsObserverWrapper);
+			Object.unobserve(this.targetElement.__scripts__, this.scriptsObserverWrapper);
 			this.domObserver.disconnect();
 		}
 		
@@ -182,6 +219,21 @@
 			this.updateScripts();
 		}
 
+		destroyUUID() {
+			var uuid = this.targetElement.dataset.livelyId;
+			if(!uuid) {
+				return;
+			}
+
+			var expectedTargetCount = this.attached ? 1 : 0;
+
+			if(document.querySelectorAll('[target="$' + uuid + '"]').length > expectedTargetCount) {
+				return;
+			}
+
+			delete this.targetElement.dataset.livelyId;
+		}
+
 		render() {
 			console.log('editor render!');
 			if (!this.attached) {
@@ -192,12 +244,12 @@
 		}
 
 		addButtonClicked(e) {
-			if (!this.target) {
+			if (!this.targetElement) {
 				return;
 			}
 
-			if (typeof this.target.__scripts__ === 'undefined') {
-				this.target.__scripts__ = {};
+			if (typeof this.targetElement.__scripts__ === 'undefined') {
+				this.targetElement.__scripts__ = {};
 			}
 
 			var scriptName = prompt('Please enter a new script name', '');
@@ -205,22 +257,22 @@
 				return;
 			}
 
-			if (typeof this.target.__scripts__[scriptName] !== 'undefined') {
+			if (typeof this.targetElement.__scripts__[scriptName] !== 'undefined') {
 				alert('Script name already in use.');
 				return;
 			}
 
-			scriptManager.addScript(this.target, 'function ' + scriptName + '() {\n  \n}');
+			scriptManager.addScript(this.targetElement, 'function ' + scriptName + '() {\n  \n}');
 			this.updateScripts();
 			this.propertyList.selectLeaf(this.propertyList.querySelector('.leaf[data-script-name="'+scriptName+'"]'));
 			this.listChanged();
 		}
 
 		removeButtonClicked(e) {
-			if (this.target) {
+			if (this.targetElement) {
 				if (this.propertyList.activeLeaf !== null) {
 					let scriptName = this.propertyList.activeLeaf.dataset['scriptName'];
-					scriptManager.removeScript(this.target, scriptName);
+					scriptManager.removeScript(this.targetElement, scriptName);
 				}
 				this.editor.value = '';
 				this.updateScripts();
@@ -228,9 +280,9 @@
 		}
 
 		saveButtonClicked(e) {
-			if (this.target && this.propertyList.activeLeaf !== null) {
+			if (this.targetElement && this.propertyList.activeLeaf !== null) {
 				let scriptName = this.propertyList.activeLeaf.dataset['scriptName'];
-				scriptManager.updateScript(this.target, this.editor.value, { name: scriptName });
+				scriptManager.updateScript(this.targetElement, this.editor.value, { name: scriptName });
 			}
 		}
 
@@ -249,14 +301,14 @@
 		}
 
 		loadScript(scriptName) {
-			if (typeof this.target.__scripts__ === 'undefined' ||
-				typeof this.target.__scripts__[scriptName] === 'undefined') {
+			if (typeof this.targetElement.__scripts__ === 'undefined' ||
+				typeof this.targetElement.__scripts__[scriptName] === 'undefined') {
 				return;
 			}
-			this.shadowRoot.querySelector('#editor').value = this.target.__scripts__[scriptName];
+			this.shadowRoot.querySelector('#editor').value = this.targetElement.__scripts__[scriptName];
 		}
 		loadAttribute(attributeName) {
-			this.editor.value = this.target.attributes[attributeName].value;
+			this.editor.value = this.targetElement.attributes[attributeName].value;
 		}
 
 		updateList() {
@@ -267,8 +319,8 @@
 
 		updateScripts() {
 			let scriptHtml = '';
-			if (this.target && typeof this.target.__scripts__ !== 'undefined') {
-				for (let scriptName in this.target.__scripts__) {
+			if (this.targetElement && typeof this.targetElement.__scripts__ !== 'undefined') {
+				for (let scriptName in this.targetElement.__scripts__) {
 					scriptHtml += '<li><span class="leaf" data-script-name="' + scriptName + '">' + scriptName + '</span></li>';
 				}
 			}
@@ -276,9 +328,9 @@
 		}
 		updateAttributes() {
 			let html = '';
-			if (this.target) {
-				for (let i = 0; i < this.target.attributes.length; i++) {
-					let attr = this.target.attributes[i];
+			if (this.targetElement) {
+				for (let i = 0; i < this.targetElement.attributes.length; i++) {
+					let attr = this.targetElement.attributes[i];
 					html += '<li><span class="leaf" data-attribute-name="' + attr.name + '">' + attr.name + '</span></li>';
 				}
 			}
