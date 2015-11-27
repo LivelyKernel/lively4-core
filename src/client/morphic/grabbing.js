@@ -35,17 +35,21 @@ function move(e) {
     isGrabbing = true;
   }
   if (isGrabbing) {
-    var elementsUnterCursor = events.elementsUnder(e);
-    var droptarget = elementsUnterCursor[0] == grabTarget ?
-        elementsUnterCursor[1] :
-        elementsUnterCursor[0] ;
-    var pos = {
-      x: e.pageX,
-      y: e.pageY
-    }
-    moveNodeToTargetAtPosition(grabTarget, droptarget, pos);
+    dropAtEvent(grabTarget, e);
     e.preventDefault();
   }
+}
+
+function dropAtEvent(node, e) {
+  var elementsUnterCursor = events.elementsUnder(e);
+  var droptarget = elementsUnterCursor[0] == node ?
+      elementsUnterCursor[1] :
+      elementsUnterCursor[0] ;
+  var pos = {
+    x: e.pageX,
+    y: e.pageY
+  }
+  moveNodeToTargetAtPosition(node, droptarget, pos);
 }
 
 function stop(e) {
