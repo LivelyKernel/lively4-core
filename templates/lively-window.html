@@ -124,7 +124,7 @@
 	]).then(modules => {
 		var Window = modules[0];
 		var Loader = modules[1];
-		Loader.register('lively-window', clone, Object.create(Window.prototype));
+		Loader.register('lively-window', clone, Object.create(Window.prototype || Window.default.prototype));
 	});
 })();
 </script>

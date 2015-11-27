@@ -73,7 +73,7 @@
 		]).then(modules => {
 			var Treeview = modules[0];
 			var Loader = modules[1];
-			Loader.register('lively-treeview', clone, Object.create(Treeview.prototype));
+			Loader.register('lively-treeview', clone, Object.create(Treeview.prototype || Treeview.default.prototype));
 		});
 })();
 </script>
