@@ -1,3 +1,5 @@
+'use strict'
+
 export default class Morph extends HTMLDivElement {
   getName() {
     return this.name;

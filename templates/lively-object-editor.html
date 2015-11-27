@@ -88,7 +88,7 @@
 		]).then(modules => {
 			var ObjectEditor = modules[0];
 			var Loader = modules[1];
-			Loader.register('lively-object-editor', clone, ObjectEditor.prototype);
+			Loader.register('lively-object-editor', clone, Object.create(ObjectEditor.prototype));
 		});
 	})();
 </script>

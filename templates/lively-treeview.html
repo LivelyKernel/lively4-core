@@ -63,48 +63,17 @@
 </template>
 
 <script>
-	'use strict';
+(function() {
+	var template = document.currentScript.ownerDocument.querySelector('#template');
+	var clone = document.importNode(template.content, true);
 
-	class LivelyTreeview extends HTMLDivElement {
-		attachedCallback() {
-			var that = this;
-
-			this.activeLeaf = null;
-
-			// expand/collapse subtrees
-			$(this).on('click', '.node > .leaf', function() {
-				$(this).parent().toggleClass('collapsed');
-			});
-			
-			// activate/deactivate leaves
-			$(this).on('click', 'li:not(.node) .leaf', function() {
-				var active = !$(this).hasClass('active');
-				$('.active', that).removeClass('active');
-				$(this).toggleClass('active', active);
-				
-				that.activeLeaf = active ? this : null;
-				
-				// fire change event
-				var event = new Event('change');
-				that.dispatchEvent(event);
-			});
-		}
-		
-		selectLeaf(target) {
-			$('.active', this).removeClass('active');
-			$(target).click();
-		}
-		
-		removeLeaf(target) {
-			$(target).parent().remove();
-		}
-	}
-
-	(function() {
-		var template = document.currentScript.ownerDocument.querySelector('#template');
-		var clone = document.importNode(template.content, true);
-		var proto = Object.create(LivelyTreeview.prototype);
-		
-		System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-treeview', clone, proto); });
-	})();
+	Promise.all([
+			System.import('../templates/classes/Treeview.js'), 
+			System.import('../src/client/morphic/component-loader.js')
+		]).then(modules => {
+			var Treeview = modules[0];
+			var Loader = modules[1];
+			Loader.register('lively-treeview', clone, Object.create(Treeview.prototype));
+		});
+})();
 </script>
