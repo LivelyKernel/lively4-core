@@ -7,11 +7,6 @@ var grabOffset = config.GRAB_OFFSET || 0;
 var grabTarget;
 var grabStartPosition;
 var isGrabbing = false;
-var droppingBlacklist;
-
-$.getJSON(config.SCRIPT_LOCATION + 'droppingBlacklist.json', function(json) {
-    droppingBlacklist = json;
-});
 
 export function activate() {
   console.log("using Grabbing");
@@ -59,8 +54,8 @@ function dropAtEvent(node, e) {
 
 function canDropInto(node, targetNode) {
   return node !== targetNode &&
-    $.inArray(targetNode.tagName.toLowerCase(), droppingBlacklist[node.tagName.toLowerCase()] || []) < 0 &&
-    $.inArray(targetNode.tagName.toLowerCase(), droppingBlacklist['*'] || []) < 0
+    $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist[node.tagName.toLowerCase()] || []) < 0 &&
+    $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist['*'] || []) < 0
 }
 
 function droptargetAtEvent(node, e) {
