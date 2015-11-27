@@ -26,19 +26,7 @@
 <script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
 
 
-<!-- BEGIN SYSTEM.JS: should go away, until then we use a "static" global source -->
-<script src="https://livelykernel.github.io/lively4-core/src/external/system.src.js" type="text/javascript" charset="utf-8"></script>
-<script>
-  System.paths['babel'] ='https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
-  System.config({
-    transpiler: 'babel',
-    babelOptions: { },
-    map: {
-        babel: 'https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
-    }
-  });
-</script>
-<!-- END SYSTEM.JS-->
+<link rel="import" href="../src/client/babel-system.html" />
 
 <link rel="import" href="../templates/lively-toolbox.html" />
 <link rel="import" href="../templates/lively-window.html" />
