@@ -1,8 +1,8 @@
 import * as nodes from './node-helpers.js';
 import * as events from './event-helpers.js';
+import * as config from './config.js';
 
-// todo: put in config file
-var dragOffset = 30;
+var dragOffset = config.DRAG_OFFSET || 0;
 
 var dragTarget;
 var dragStartOffset;

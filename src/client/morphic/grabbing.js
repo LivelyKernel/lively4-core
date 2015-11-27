@@ -1,7 +1,8 @@
 import * as events from './event-helpers.js';
 import * as nodes from './node-helpers.js';
+import * as config from './config.js';
 
-var grabOffset = 30;
+var grabOffset = config.GRAB_OFFSET || 0;
 
 var grabTarget;
 var grabStartPosition;
@@ -35,16 +36,35 @@ function move(e) {
     isGrabbing = true;
   }
   if (isGrabbing) {
-    var elementsUnterCursor = events.elementsUnder(e);
-    var droptarget = elementsUnterCursor[0] == grabTarget ?
-        elementsUnterCursor[1] :
-        elementsUnterCursor[0] ;
+    dropAtEvent(grabTarget, e);
+    e.preventDefault();
+  }
+}
+
+function dropAtEvent(node, e) {
+  var droptarget = droptargetAtEvent(node, e);
+  if (droptarget) {
     var pos = {
       x: e.pageX,
       y: e.pageY
     }
-    moveNodeToTargetAtPosition(grabTarget, droptarget, pos);
-    e.preventDefault();
+    moveNodeToTargetAtPosition(node, droptarget, pos);
+  }
+}
+
+function canDropInto(node, targetNode) {
+  return node !== targetNode &&
+    $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist[node.tagName.toLowerCase()] || []) < 0 &&
+    $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist['*'] || []) < 0
+}
+
+function droptargetAtEvent(node, e) {
+  var elementsUnderCursor = events.elementsUnder(e);
+  for (var i = 0; i < elementsUnderCursor.length; i++) {
+    var targetNode = elementsUnderCursor[i];
+    if (canDropInto(node, targetNode)) {
+      return targetNode;
+    }
   }
 }
 
