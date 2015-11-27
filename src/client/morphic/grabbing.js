@@ -7,6 +7,11 @@ var grabOffset = config.GRAB_OFFSET || 0;
 var grabTarget;
 var grabStartPosition;
 var isGrabbing = false;
+var droppingBlacklist;
+
+$.getJSON(config.SCRIPT_LOCATION + 'droppingBlacklist.json', function(json) {
+    droppingBlacklist = json;
+});
 
 export function activate() {
   console.log("using Grabbing");
@@ -42,15 +47,30 @@ function move(e) {
 }
 
 function dropAtEvent(node, e) {
-  var elementsUnterCursor = events.elementsUnder(e);
-  var droptarget = elementsUnterCursor[0] == node ?
-      elementsUnterCursor[1] :
-      elementsUnterCursor[0] ;
-  var pos = {
-    x: e.pageX,
-    y: e.pageY
+  var droptarget = droptargetAtEvent(node, e);
+  if (droptarget) {
+    var pos = {
+      x: e.pageX,
+      y: e.pageY
+    }
+    moveNodeToTargetAtPosition(node, droptarget, pos);
   }
-  moveNodeToTargetAtPosition(node, droptarget, pos);
+}
+
+function canDropInto(node, targetNode) {
+  return node !== targetNode &&
+    $.inArray(targetNode.tagName.toLowerCase(), droppingBlacklist[node.tagName.toLowerCase()] || []) < 0 &&
+    $.inArray(targetNode.tagName.toLowerCase(), droppingBlacklist['*'] || []) < 0
+}
+
+function droptargetAtEvent(node, e) {
+  var elementsUnderCursor = events.elementsUnder(e);
+  for (var i = 0; i < elementsUnderCursor.length; i++) {
+    var targetNode = elementsUnderCursor[i];
+    if (canDropInto(node, targetNode)) {
+      return targetNode;
+    }
+  }
 }
 
 function stop(e) {
