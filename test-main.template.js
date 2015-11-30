@@ -1,3 +1,5 @@
+"use strict";
+
 focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   var allTestFiles = [];
   var TEST_REGEXP = /(spec|test)\.js$/i;
@@ -27,7 +29,6 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   }
 
   navigator.serviceWorker.ready.then(function() {
-    "use strict";
 
     navigator.serviceWorker.onmessage = function(event) {
       if (event.data.meta && event.data.meta.type == 'broadcast') {
@@ -39,33 +40,7 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
       console.log('Load Test File: ' + file);
       return System.import('base/' + file + '.js');
     })).then(function() {
-      console.log("STAAAAAAAAAAAAAARRRRRRRRRRTTTTT!!!!!!");
       window.__karma__.start();
-      console.log("EEEEEEENNNNNNNNNNNNNNNNNNNDDDD!!!!!!");
-    });
-
-    return;
-
-    /*
-    try {
-      console.log("REQUIRE=" + require)
-
-    } catch(e) {
-      console.log("ERROR:", e)
-    }
-    */
-
-    console.log('ALL_TEST_FILES', allTestFiles);
-
-    require.config({
-      // Karma serves files under /base, which is the basePath from your config file
-      baseUrl: '/base',
-
-      // dynamically load all test files
-      deps: allTestFiles,
-
-      // we have to kickoff jasmine, as it is asynchronous
-      callback: window.__karma__.start
     });
   });
-})
+});
