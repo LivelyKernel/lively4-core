@@ -8,14 +8,14 @@ l4.broadCastMessage = function(message) {
                     },
                     message: message
                 });
-            } catch(e) {  
-                if (message && message.name == "log") { 
+            } catch(e) {
+                if (message && message.name == "log") {
                     throw e // we are screwed
                 } else {
                     try { var s = JSON.stringify(message)} catch(e) {}
                     console.log("Error during broadcasting a message: " + s + " error:" + e)
                 }
-            } 
+            }
         });
     });
 };
@@ -102,18 +102,44 @@ function justReceive(event) {
 })();
 
 l4.messageTask('test send back', function match(event) {
-    return hasPort(event) &&
-        event.data &&
-        event.data.meta &&
-        event.data.meta.type === 'foo';
+  return hasPort(event) &&
+    event.data &&
+    event.data.meta &&
+    event.data.meta.type === 'foo';
 }, function react(event) {
-    getSource(event).postMessage({
-        meta: {
-            type: 'msg send back',
-            receivedMessage: event.data
-        },
-        message: 'Sending Back a Message'
-    });
+  getSource(event).postMessage({
+    meta: {
+      type: 'msg send back',
+      receivedMessage: event.data
+    },
+    message: 'Sending Back a Message'
+  });
 
-    return true;
+  return true;
+});
+
+l4.messageTask('run test', function match(event) {
+  return hasPort(event) &&
+    event.data &&
+    event.data.meta &&
+    event.data.meta.type === 'bar';
+}, function react(event) {
+  try {
+    var result = eval(event.data.message)
+  } catch(e) {
+    var error = e;
+  } finally {
+    getSource(event).postMessage({
+      meta: {
+        type: 'test results',
+        receivedMessage: event.data
+      },
+      message: {
+        error: error ? error.toString() : undefined,
+        result: result ? result.toString() : undefined
+      }
+    });
+  }
+
+  return true;
 });
