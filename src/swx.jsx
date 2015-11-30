@@ -11,14 +11,24 @@ class ServiceWorker {
     }
 
     fetch(event) {
-        let request = event.request;
-        let url     = new URL(request.url);
+        let request = event.request,
+            url     = new URL(request.url),
+            promise = undefined
 
-        if(url.hostname === 'lively4') { // Pseudo root node
-            this.filesystem.handle(url.pathname)
-        } else {
+        if(url.hostname !== 'lively4')
             return self.fetch(event.request)
-        }
+
+        event.respondWith(this.filesystem
+            .handle(request, url)
+            .then((result) => {
+                if(result instanceof Response) {
+                    return result
+                } else {
+                    return new Response(result)
+                }
+            }).catch(() => {
+                return new Response('', {status: 500})
+            }))
     }
 
     message(event) {

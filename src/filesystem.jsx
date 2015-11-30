@@ -24,26 +24,26 @@ export class Filesystem {
         this.mounts.set(path, new type(path, options))
     }
 
-    handle(request) {
-        let path = request.pathname,
+    handle(request, url) {
+        let path = url.pathname,
             base = undefined,
             fs   = undefined
 
         for(let [mount, fsys] of this.mounts) {
-            if(path.startsWith(mount) && mount.length > fs.path.length) {
+            if(path.startsWith(mount) && (typeof base === 'undefined' || mount.length > base.length)) {
                 fs   = fsys
                 base = mount
             }
         }
 
-        path = path.substring(fs.path.length)
+        path = path.substring(base.length)
 
         if(request.method === 'GET')
-            return mount.fs.read(path)
+            return fs.read(path, request)
         if(request.method === 'PUT')
-            return mount.fs.write(path, request.text())
+            return fs.write(path, request.text(), request)
         if(request.method === 'OPTIONS')
-            return mount.fs.stat(path)
+            return fs.stat(path, request)
 
         // TODO: respond with 400 / 404?
     }

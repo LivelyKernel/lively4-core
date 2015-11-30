@@ -2,6 +2,10 @@
  * Basic file system base class.
  */
 export class Base {
+    constructor(path, options) {
+        this.path = path
+    }
+
     /**
      * Return stats about object at given path.
      *
