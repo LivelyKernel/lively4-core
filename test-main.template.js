@@ -34,7 +34,7 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
         console.log(event.data.message);
       }
     };
-  /*
+
     Promise.all(allTestFiles.map(function (file) {
       console.log('Load Test File: ' + file);
       return System.import('base/' + file + '.js');
@@ -45,14 +45,17 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
     });
 
     return;
-  */
 
+    /*
     try {
       console.log("REQUIRE=" + require)
-    
+
     } catch(e) {
       console.log("ERROR:", e)
     }
+    */
+
+    console.log('ALL_TEST_FILES', allTestFiles);
 
     require.config({
       // Karma serves files under /base, which is the basePath from your config file
