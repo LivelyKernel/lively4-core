@@ -1,5 +1,3 @@
-"use strict";
-
 focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   var allTestFiles = [];
   var TEST_REGEXP = /(spec|test)\.js$/i;
@@ -29,10 +27,11 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   }
 
   navigator.serviceWorker.ready.then(function() {
+    "use strict";
 
     navigator.serviceWorker.onmessage = function(event) {
       if (event.data.meta && event.data.meta.type == 'broadcast') {
-        console.log(event.data.message);
+        //console.log(event.data.message);
       }
     };
 
