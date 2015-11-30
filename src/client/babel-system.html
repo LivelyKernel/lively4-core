@@ -1,13 +1,7 @@
 <!-- BEGIN SYSTEM.JS: should go away, until then we use a "static" global source -->
+<script src="https://livelykernel.github.io/lively4-core/src/external/babel-browser.js" type="text/javascript" charset="utf-8"></script>
 <script src="https://livelykernel.github.io/lively4-core/src/external/system.src.js" type="text/javascript" charset="utf-8"></script>
 <script>
-  System.paths['babel'] ='https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
-  System.config({
-    transpiler: 'babel',
-    babelOptions: { },
-    map: {
-      babel: 'https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
-    }
-  });
+  System.transpiler = 'babel';
 </script>
 <!-- END SYSTEM.JS-->
