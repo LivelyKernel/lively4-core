@@ -9,7 +9,9 @@ function functionFromString(funcOrString) {
         return funcOrString;
     }
 
-    funcOrString = babel.transform(funcOrString).code;
+    // TODO: babel does not support this kind of function declaration apparently
+    // this will be transpiled to undefined!
+    // funcOrString = babel.transform(funcOrString).code;
 
     // this makes sure we always create a function
     try {
