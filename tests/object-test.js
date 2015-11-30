@@ -89,6 +89,8 @@ describe('obj', function() {
 
   describe("equality", function() {
 
+    var G = typeof global !== "undefined" ? global : window;
+
     it("compares structures of objects", function() {
       var a = {foo: {bar: {baz: 23, m: function() { return 23; }}}},
           b = {foo: {bar: {baz: 23, m: function() { return 23; }}}},
@@ -98,6 +100,7 @@ describe('obj', function() {
       expect(obj.equals(a,c)).to.be(false);
       expect(obj.equals(b,c)).to.be(false);
       expect(obj.equals(c,c)).to.be(true);
+      expect(obj.equals(G,G)).to.be(true);
     });
 
   });
