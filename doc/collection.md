@@ -287,7 +287,7 @@ arr.zip([1,2,3], ["a", "b", "c"], ["A", "B"])
 // => [[1,"a","A"],[2,"b","B"],[3,"c",undefined]]
 ```
 
-#### <a name="arr-flatten"></a>arr.flatten(array)
+#### <a name="arr-flatten"></a>arr.flatten(array, optDepth)
 
  Turns a nested collection into a flat one.
  

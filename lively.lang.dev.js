@@ -362,6 +362,7 @@ var obj = exports.obj = {
 
   equals: function(a, b) {
     // Is object `a` structurally equivalent to object `b`? Deep comparison.
+    if (a === b) return true;
     if (!a && !b) return true;
     if (!a || !b) return false;
     switch (a.constructor) {
@@ -1385,14 +1386,18 @@ var arr = exports.arr = {
       return iterator(arr.pluck(collections, index), index); });
   },
 
-  flatten: function flatten(array) {
+  flatten: function flatten(array, optDepth) {
     // Turns a nested collection into a flat one.
     // Example:
     // arr.flatten([1, [2, [3,4,5], [6]], 7,8])
     // // => [1,2,3,4,5,6,7,8]
+    if (typeof optDepth === "number") {
+      if (optDepth <= 0) return array;
+      optDepth--;
+    }
     return array.reduce(function(flattened, value) {
       return flattened.concat(Array.isArray(value) ?
-        flatten(value) : [value]);
+        flatten(value, optDepth) : [value]);
     }, []);
   },
 
@@ -1881,7 +1886,7 @@ var arr = exports.arr = {
   take: function(arr, n) { return arr.slice(0, n); },
 
   drop: function(arr, n) { return arr.slice(n); },
-  
+
   takeWhile: function(arr, fun, context) {
     var i = 0;;
     for (; i < arr.length; i++)
@@ -2080,9 +2085,9 @@ var arr = exports.arr = {
       options = null;
     }
     options = options || {};
-    
+
     if (!array.length) return callback && callback(null, []);
-    
+
     if (!options.parallel) options.parallel = Infinity;
 
     var results = [], completed = [],
