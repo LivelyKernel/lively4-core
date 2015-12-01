@@ -150,7 +150,7 @@ describe('arr', function() {
       // the sum of each batch should be < 256MB or batch shoudl just have single item
       expect(batches.every(batchConstrained)).to.be(true);
     });
-    
+
     it('needs to consume', function() {
       function batchConstrained(batch) { return arr.sum(batch) < batchMaxSize; }
       var batchMaxSize = 3,
@@ -199,7 +199,7 @@ describe('arr', function() {
   });
 
   describe("sorting", function() {
-    
+
     it("isSorted", function() {
       expect(arr.isSorted([2,4,7,9])).to.be.true;
       expect(arr.isSorted([2,4,3,9])).to.be.false;
@@ -211,6 +211,21 @@ describe('arr', function() {
     });
   });
 
+  describe("combinations", function() {
+
+    it("combines all elements of lists", function() {
+      expect(arr.combinations([['a', 'b', 'c'], [1, 2]]))
+        .to.eql([["a", 1], ["a", 2], ["b", 1], ["b", 2], ["c", 1], ["c", 2]]);
+    });
+
+    it("retrieves a specific combination", function() {
+      var searchSpace = [["a", "b", "c"], [1,2]];
+      expect(arr.combinationsPick(searchSpace, [0,1])).to.eql([["a",2], [1,0]]);
+      expect(arr.combinationsPick(searchSpace, [1,0])).to.eql([["b",1], [1,1]]);
+      expect(arr.combinationsPick(searchSpace, [2,1])).to.eql([["c",2], undefined]);
+    });
+
+  });
   it('histogram', function() {
     var data = [0,1,2,3,7,2,1,3,9];
 
