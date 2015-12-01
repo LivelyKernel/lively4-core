@@ -16,13 +16,13 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
       // then do not normalize the paths
       let normalizedTestModule = file.replace(/^\/base\/|\.js$/g, '');
       allClientTestFiles.push(normalizedTestModule);
-      console.log('Loaded Test: ' + normalizedTestModule);
+      console.log('Test to load: ' + normalizedTestModule);
     }
 
     if (TEST_SW_REGEXP.test(file)) {
-      let normalizedTestModule = file.replace(/^\/base\/|\.js$/g, '');
+      let normalizedTestModule = file//.replace(/^\/base\/|\.js$/g, '');
       allSWTestFiles.push(normalizedTestModule);
-      console.log('Loaded SW Test: ' + normalizedTestModule);
+      console.log('SW Test to load: ' + normalizedTestModule);
     }
   });
 
@@ -52,11 +52,51 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
       return System.import(/*'base/' + */file + '.js');
     }))
       .then(() => {
-        console.log('# # #');
-        console.log(messaging);
+        // run sw tests
+        return messaging.postMessage({
+          meta: {
+            type: 'run sw tests'
+          },
+          message: allSWTestFiles
+        })
+          .then(function(event) {
+            console.log('SW RESULTS');
+            console.log(event.data.message);
+            console.log(event.data.message.error);
+            console.log(event.data.message.results);
+
+            function createMockTestcase(testResult) {
+              var suiteName = testResult.fullName.split('---')[0];
+              var testcaseName = testResult.fullName.split('---')[1];
+              describe(suiteName, () => {
+                it(testcaseName, () => {
+                  switch (testResult.result) {
+                    case 'pass':
+                          break;
+                    case 'pending':
+                          throw new Error('Pending Testcases not yet supported');
+                          break;
+                    case 'fail':
+                          let error = new Error(testResult.name + ': ' + testResult.message);
+                          error.stack = testResult.stack;
+                          throw error;
+                          break;
+                  }
+                })
+              })
+            }
+
+            event.data.message.results.forEach(createMockTestcase);
+          })
       })
       .then(function() {
         window.__karma__.start();
+      })
+      .catch(error => {
+        console.error(error);
+        console.error(error.stack);
+        console.error(error.toString());
+        throw(error);
       });
   });
 });
