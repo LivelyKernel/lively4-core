@@ -69,20 +69,21 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
               var suiteName = testResult.fullName.split('---')[0];
               var testcaseName = testResult.fullName.split('---')[1];
               describe(suiteName, () => {
-                it(testcaseName, () => {
-                  switch (testResult.result) {
-                    case 'pass':
-                          break;
-                    case 'pending':
-                          throw new Error('Pending Testcases not yet supported');
-                          break;
-                    case 'fail':
-                          let error = new Error(testResult.name + ': ' + testResult.message);
-                          error.stack = testResult.stack;
-                          throw error;
-                          break;
-                  }
-                })
+                switch (testResult.result) {
+                  case 'pass':
+                    it(testcaseName, () => {});
+                    break;
+                  case 'pending':
+                    it(testcaseName, (done) => {});
+                    break;
+                  case 'fail':
+                    it(testcaseName, () => {
+                      let error = new Error(testResult.name + ': ' + testResult.message);
+                      error.stack = testResult.stack;
+                      throw error;
+                    });
+                    break;
+                }
               })
             }
 
