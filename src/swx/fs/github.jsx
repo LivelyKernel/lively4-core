@@ -1,5 +1,5 @@
 /*
- * Pseudo-HTTP github project access.
+ * HTTP GitHub project access.
  */
 
 import { Base } from './base.jsx'
@@ -17,7 +17,13 @@ export class Filesystem extends Base {
 
     read(path) {
         return self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path)
-            .then(Response.ok)
+            .then((response) => {
+                if(response.status >= 200 && response.status < 300) {
+                    return response
+                } else {
+                    throw new Error(response.statusText)
+                }
+            })
             .then((result) => result.json())
             .then((json) => {
                 if(json instanceof Array) {
