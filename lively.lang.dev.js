@@ -1518,6 +1518,14 @@ var arr = exports.arr = {
   // sorting
   // -=-=-=-=-
 
+  isSorted: function(array, descending) {
+    var isSorted = true;
+    for (var i = 1; i < array.length; i++) {
+      if (!descending && arr[i-1] > arr[i]) return false;
+      else if (descending && arr[i-1] < arr[i]) return false;
+    }
+  },
+
   sort: function(array, sortFunc) {
     // [a] -> (a -> Number)? -> [a]
     // Just `Array.prototype.sort`
@@ -1881,6 +1889,60 @@ var arr = exports.arr = {
     return arr.range(0,Math.ceil(array.length/tupleLength)-1).map(function(n) {
       return array.slice(n*tupleLength, n*tupleLength+tupleLength);
     }, array);
+  },
+
+  permutations: (function() {
+    function computePermutations(restArray, values) {
+      return !restArray.length ? [values] :
+        arr.flatmap(restArray, function(ea, i) {
+          return computePermutations(
+            restArray.slice(0, i).concat(restArray.slice(i+1)),
+            values.concat([ea]));
+        });
+    }
+    return function(array) { return computePermutations(array, []); }
+  })(),
+
+  combinationsPick: function(listOfListsOfValues, pickIndices) {
+    // Given a "listOfListsOfValues" in the form of an array of arrays and
+    // `pickIndices` list with the size of the number of arrays which indicates what
+    // values to pick from each of the arrays, return a list with two values:
+    // 1. values picked from each of the arrays, 2. the next pickIndices or null if at end
+    // Example:
+    //  var searchSpace = [["a", "b", "c"], [1,2]];
+    //  arr.combinationsPick(searchSpace, [0,1]);
+    //    // => [["a",2], [1,0]]
+    //  arr.combinationsPick(searchSpace, [1,0]);
+    //    // => [["b",1], [1,1]]
+    var values = listOfListsOfValues.map(function(subspace, i) {
+          return subspace[pickIndices[i]]; }),
+        nextState = pickIndices.slice();
+    for (var i = listOfListsOfValues.length; i--; i >= 0) {
+      var subspace = listOfListsOfValues[i], nextIndex = nextState[i] + 1;
+      if (subspace[nextIndex]) { nextState[i] = nextIndex; break; }
+      else if (i === 0) { nextState = undefined; break; }
+      else { nextState[i] = 0; }
+    }
+    return [values, nextState];
+  },
+
+  combinations: function(listOfListsOfValues) {
+    // Given a "listOfListsOfValues" in the form of an array of arrays,
+    // retrieve all the combinations by picking one item from each array.
+    // This basically creates a search tree, traverses it and gathers all node
+    // values whenever a leaf node is reached.
+    // Example:
+    //   lively.lang.arr.combinations([['a', 'b', 'c'], [1, 2]])
+    //    // => [["a", 1], ["a", 2], ["b", 1], ["b", 2], ["c", 1], ["c", 2]]
+    var size = listOfListsOfValues.reduce(function(prod, space) { return prod * space.length; }, 1),
+        searchState = listOfListsOfValues.map(function(_) { return 0; }),
+        results = new Array(size);
+    for (var i = 0; i < size; i++) {
+      var result = arr.combinationsPick(listOfListsOfValues, searchState);
+      results[i] = result[0];
+      searchState = result[1];
+    }
+    return results;
   },
 
   take: function(arr, n) { return arr.slice(0, n); },
@@ -2733,7 +2795,6 @@ var tree = exports.tree = {
         return tree.map(n, mapFunc, childGetter); })));
   },
 
-  
   mapTree: function(treeNode, mapFunc, childGetter) {
     // Traverses the tree and creates a structurally identical tree but with
     // mapped nodes
@@ -2741,7 +2802,8 @@ var tree = exports.tree = {
       return tree.mapTree(n, mapFunc, childGetter);
     })
     return mapFunc(treeNode, mappedNodes);
-  },
+  }
+
 }
 
 })(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?

@@ -68,6 +68,8 @@ abstractions for groups, intervals, grids.
   - [partition](#arr-partition)
   - [batchify](#arr-batchify)
   - [toTuples](#arr-toTuples)
+  - [combinationsPick](#arr-combinationsPick)
+  - [combinations](#arr-combinations)
   - [shuffle](#arr-shuffle)
   - [max](#arr-max)
   - [min](#arr-min)
@@ -584,6 +586,35 @@ batches.map(arr.sum).map(num.humanReadableByteSize) // => ["208.03MB","512MB","5
 ```js
 arr.toTuples(["H","e","l","l","o"," ","W","o","r","l","d"], 4)
 // => [["H","e","l","l"],["o"," ","W","o"],["r","l","d"]]
+```
+
+#### <a name="arr-combinationsPick"></a>arr.combinationsPick(listOfListsOfValues, pickIndices)
+
+ Given a "listOfListsOfValues" in the form of an array of arrays and
+ `pickIndices` list with the size of the number of arrays which indicates what
+ values to pick from each of the arrays, return a list with two values:
+ 1. values picked from each of the arrays, 2. the next pickIndices or null if at end
+ 
+
+```js
+var searchSpace = [["a", "b", "c"], [1,2]];
+ arr.combinationsPick(searchSpace, [0,1]);
+   // => [["a",2], [1,0]]
+ arr.combinationsPick(searchSpace, [1,0]);
+   // => [["b",1], [1,1]]
+```
+
+#### <a name="arr-combinations"></a>arr.combinations(listOfListsOfValues)
+
+ Given a "listOfListsOfValues" in the form of an array of arrays,
+ retrieve all the combinations by picking one item from each array.
+ This basically creates a search tree, traverses it and gathers all node
+ values whenever a leaf node is reached.
+ 
+
+```js
+lively.lang.arr.combinations([['a', 'b', 'c'], [1, 2]])
+   // => [["a", 1], ["a", 2], ["b", 1], ["b", 2], ["c", 1], ["c", 2]]
 ```
 
 #### <a name="arr-shuffle"></a>arr.shuffle(array)
