@@ -118,6 +118,25 @@ l4.messageTask('test send back', function match(event) {
   return true;
 });
 
+//l4.importScripts('./../external/babel-browser.js');
+//l4.importScripts('./../external/system.src.js');
+l4.importScripts('./../../node_modules/chai/chai.js');
+
+setTimeout(function() {
+  try {
+    l4.importScripts('./../../node_modules/mocha/mocha.js');
+  } catch(e) {
+    console.log(e)
+    setTimeout(()=>l4.broadCastMessage(e.toString()),1000);
+  } finally {
+    console.log('#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+')
+    setTimeout(()=>l4.broadCastMessage(`#+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+#
+#+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+#
+#+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+#
+#+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+#`),1000);
+  }
+}, 1000);
+
 l4.messageTask('run test', function match(event) {
   return hasPort(event) &&
     event.data &&
@@ -125,7 +144,8 @@ l4.messageTask('run test', function match(event) {
     event.data.meta.type === 'bar';
 }, function react(event) {
   try {
-    var result = eval(event.data.message)
+    var result = eval(event.data.message);
+    chai.expect(42).to.equal(21+21);
   } catch(e) {
     var error = e;
   } finally {
