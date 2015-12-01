@@ -8,7 +8,7 @@
     }
 
     li:hover {
-        background-color: rgb(150, 150, 150);      
+        background-color: rgb(150, 150, 150);
     }
 
     li {
@@ -17,21 +17,22 @@
     </style>
     <ul class="container">
     </ul>
-    <script type="lively4script" data-name="initialize">  
+    <script type="lively4script" data-name="initialize">
         this.openOn = function(target) {
           var menu = $(this.shadowRoot).find(".container")[0];
-          
+
           menu.innerHTML = "" // clear
           // create a radio button for each tool
           if (!target.getMenuItems) return;
-          menuItems = target.getMenuItems() 
+          var menuItems = target.getMenuItems()
           menuItems.forEach(function(ea) {
             var item = document.createElement("li");
             item.innerHTML = ea[0]
+            console.log(2**3, 'from babel transpile')
 
             $(item).on("click",function() {
               if (ea[1] && ea[1] instanceof Function) {
-                ea[1](target)              
+                ea[1](target)
               }
             });
 
