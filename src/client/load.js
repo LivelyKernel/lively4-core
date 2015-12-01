@@ -61,31 +61,22 @@ if ('serviceWorker' in navigator) {
             event.ports[0].postMessage({error: err})
         }
 
-        console.log('Client RPC received', event.data);
+        console.log('RPC client received', event.data);
 
         switch(event.data.name) {
-            case 'swx:requestQuota':
-                console.log("Service worker requested file system quota", event.data);
-                var requestedQuota = event.data.requestedQuota || 1024 * 1024 * 10
-
-                navigator.webkitPersistentStorage.requestQuota(requestedQuota, function(grantedQuota) {
-                    event.ports[0].postMessage({grantedQuota: grantedQuota})
-                }, reject)
-
-                break
             case 'swx:readFile':
                 fs.then((fs) => {
-                    debugger
-                    fs.root.getFile(event.data.file, function(file) {
-                        var reader = new FileReader()
+                    fs.root.getFile(event.data.file, undefined, function(fileEntry) {
+                        fileEntry.file(function(file) {
+                            var reader = new FileReader()
 
-                        reader.onloadend = function(e) {
-                            console.log('Read complete', e)
+                            reader.onloadend = function(e) {
+                                console.log('[LFS] read complete', e)
+                                event.ports[0].postMessage({content: reader.result})
+                            }
 
-                            event.ports[0].postMessage({content: this.result})
-                        }
-
-                        reader.readAsText(file)
+                            reader.readAsText(file)
+                        })
                     }, reject)
                 }).catch(reject)
 
@@ -95,7 +86,7 @@ if ('serviceWorker' in navigator) {
                     fs.root.getFile(event.data.file, {create: true, exclusive: false}, function(file) {
                         file.createWriter(function (writer) {
                             writer.onwriteend = function(e) {
-                                console.log("Write complete", e)
+                                console.log("[LFS] write complete", e)
 
                                 event.ports[0].postMessage({
                                     content: event.data.content
