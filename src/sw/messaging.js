@@ -124,12 +124,11 @@ function describe(name, callback) {
   l4.describeName = name;
   l4.testResults[l4.describeName] = {};
 
-  try {
-    callback();
-  } catch(e) {}
+  callback();
 }
 
 function it(name, callback) {
+  l4.testResults.push({fullName:'SOMETHING'})
   var fullName = l4.describeName + '---' + name;
 
   // TODO: async tests
@@ -148,12 +147,17 @@ function it(name, callback) {
     l4.testResults.push({
       fullName: fullName,
       result: 'fail',
-
-      name: e.name,
-      message: e.message,
-      stack: e.stack
+      error: packError(e)
     });
   }
+}
+
+function packError(error) {
+  return {
+    name: error.name,
+    message: error.message,
+    stack: error.stack
+  };
 }
 
 function setupTestEnvironment(testFiles) {
@@ -180,7 +184,7 @@ l4.messageTask('run test', function match(event) {
         receivedMessage: event.data
       },
       message: {
-        error: error ? error.toString() + error.stack : undefined,
+        error: error ? packError(error) : undefined,
         results: results ? results : undefined
       }
     });
