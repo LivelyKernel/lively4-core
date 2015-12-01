@@ -20,14 +20,9 @@ module.exports = function(config) {
       'src/external/babel-browser.js',
       {pattern: 'node_modules/chai/chai.js', included: false},
       {pattern: 'node_modules/mocha/mocha.js', included: false},
-      {pattern: 'babel-core/**/*.js', included: false},
-      {pattern: 'client/**/*.js', included: false},
       {pattern: 'src/**/*.js', included: false},
-      {pattern: 'loader/**/*.js', included: false},
-      {pattern: 'transformer/**/*.js', included: false},
-      {pattern: 'bootworker*', included: false},
       {pattern: 'serviceworker*', included: false},
-      {pattern: 'test/**/*-test.js', included: false},
+      {pattern: 'test/**/*.js', included: false},
       {pattern: 'test-main.js', included: false},
       'src/external/focalStorage.js',
       'test-loader.js'
@@ -36,16 +31,10 @@ module.exports = function(config) {
     proxies: {
       '/node_modules/chai/chai.js': '/base/node_modules/chai/chai.js',
       '/node_modules/mocha/mocha.js': '/base/node_modules/mocha/mocha.js',
-      '/babel-core/': '/base/babel-core/',
-      '/client/': '/base/client/',
       '/src/': '/base/src/',
       '/test/': '/base/test/',
       '/serviceworker-loader.js': '/base/serviceworker-loader.js',
-      '/serviceworker.js': '/base/serviceworker.js',
-      '/bootworker.js': '/base/bootworker.js',
-      '/bootworker.html': '/base/bootworker.html',
-      '/loader/': '/base/loader/',
-      '/transformer/': '/base/transformer/'
+      '/serviceworker.js': '/base/serviceworker.js'
     },
 
 
