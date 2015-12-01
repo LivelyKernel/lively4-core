@@ -131,30 +131,40 @@ describe('arr', function() {
         {'0': 'ork', index: 1, input: 'zork'}]).to.eql(result);
   });
 
-  it('batchify', function() {
-    function batchConstrained(batch) { return batch.length == 1 || arr.sum(batch) < batchMaxSize; }
-    var batchMaxSize = Math.pow(2, 28)/*256MB*/,
-        sizes = [
-            Math.pow(2, 15), // 32KB
-            Math.pow(2, 29), // 512MB
-            Math.pow(2, 29), // 512MB
-            Math.pow(2, 27), // 128MB
-            Math.pow(2, 26), // 64MB
-            Math.pow(2, 26), // 64MB
-            Math.pow(2, 24), // 16MB
-            Math.pow(2, 26)],// 64MB
-        batches = arr.batchify(sizes, batchConstrained);
-    expect(arr.flatten(batches)).to.have.length(sizes.length, 'not all batches included?');
-    // the sum of each batch should be < 256MB or batch shoudl just have single item
-    expect(batches.every(batchConstrained)).to.be(true);
+  describe("batchify", function() {
+
+    it('splits array ccording to constraint', function() {
+      function batchConstrained(batch) { return batch.length == 1 || arr.sum(batch) < batchMaxSize; }
+      var batchMaxSize = Math.pow(2, 28)/*256MB*/,
+          sizes = [
+              Math.pow(2, 15), // 32KB
+              Math.pow(2, 29), // 512MB
+              Math.pow(2, 29), // 512MB
+              Math.pow(2, 27), // 128MB
+              Math.pow(2, 26), // 64MB
+              Math.pow(2, 26), // 64MB
+              Math.pow(2, 24), // 16MB
+              Math.pow(2, 26)],// 64MB
+          batches = arr.batchify(sizes, batchConstrained);
+      expect(arr.flatten(batches)).to.have.length(sizes.length, 'not all batches included?');
+      // the sum of each batch should be < 256MB or batch shoudl just have single item
+      expect(batches.every(batchConstrained)).to.be(true);
+    });
+    
+    it('needs to consume', function() {
+      function batchConstrained(batch) { return arr.sum(batch) < batchMaxSize; }
+      var batchMaxSize = 3,
+          sizes = [1,4,2,3];
+      expect(function() { sizes.batchify(batchConstrained); })
+        .to.throwError('batchify endless recursion?');
+    });
   });
 
-  it('batchifyNeedstoConsume', function() {
-    function batchConstrained(batch) { return arr.sum(batch) < batchMaxSize; }
-    var batchMaxSize = 3,
-        sizes = [1,4,2,3];
-    expect(function() { sizes.batchify(batchConstrained); })
-      .to.throwError('batchify endless recursion?');
+  describe("permutations", function() {
+    it("creates them", function() {
+      expect(arr.permutations([3,1,2])).to.eql(
+        [[3, 1, 2], [3, 2, 1], [1, 3, 2], [1, 2, 3], [2, 3, 1], [2, 1, 3]])
+    })
   });
 
   it("delimWith", function() {
