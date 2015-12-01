@@ -4,6 +4,7 @@
 
 import * as Path from 'src/swx/path.jsx'
 import * as Http from 'src/swx/fs/http.jsx'
+import * as Html5 from 'src/swx/fs/html5.jsx'
 import * as Github from 'src/swx/fs/github.jsx'
 
 /**
@@ -16,6 +17,7 @@ export class Filesystem {
     constructor() {
         this.mounts = new Map()
         this.mount('/', Github.Filesystem, {repo: 'LivelyKernel/lively4-core'})
+        this.mount('/local', Html5.Filesystem)
     }
 
     mount(path, type, options = {}) {

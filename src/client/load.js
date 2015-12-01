@@ -24,10 +24,10 @@ if (!console.log.isWrapped) {
 if ('serviceWorker' in navigator) {
     var root = ("" + window.location).replace(/[^\/]*$/,'../')
 
-    navigator.serviceWorker.register(root + 'serviceworker-loader.js', {
+    navigator.serviceWorker.register(root + 'swx-loader.js', {
     // navigator.serviceWorker.register('../../serviceworker-loader.js', {
         // scope: root + "draft/"
-        scope: root 
+        scope: root
     }).then(function(registration) {
         // Registration was successful
         log('ServiceWorker registration successful with scope: ', registration.scope);
@@ -47,6 +47,20 @@ if ('serviceWorker' in navigator) {
                 window.scriptManager = module;
                 log("scriptManager loaded");
             });
+    })
+
+    navigator.serviceWorker.addEventListener("message", (event) => {
+        if(event.data.name === 'swx:requestQuota') {
+            console.log("Service worker requested file system quota", event.data);
+
+            var requestedQuota = event.data.requestedQuota || 1024 * 1024 * 10
+
+            navigator.webkitPersistentStorage.requestQuota(requestedQuota, function(grantedQuota) {
+                event.ports[0].postMessage({grantedQuota: grantedQuota})
+            }, function(err) {
+                event.ports[0].postMessage({error: err})
+            })
+        }
     })
 }
 
