@@ -132,8 +132,12 @@ function describe(name, callback) {
 function it(name, callback) {
   var fullName = l4.describeName + '---' + name;
 
+  // TODO: async tests
+  if(callback.length > 0) {
+    throw new Error('Async testcases not yet supported');
+  }
+
   try{
-    // TODO: async tests
     callback();
 
     l4.testResults.push({
@@ -155,7 +159,7 @@ function it(name, callback) {
 function setupTestEnvironment(testFiles) {
     importScripts('./src/external/es6-module-loader-dev.js');
     System.baseURL = '/base/';
-    System.paths['babel'] = 'src/external/babel-browser2.js';
+    System.paths['babel'] = 'src/external/babel-browser.js';
     System.transpiler = 'babel';
 
     System.babelOptions = { experimental: true };
@@ -186,7 +190,7 @@ l4.messageTask('run test', function match(event) {
   var testFiles = eval(event.data.message);
 
   setupTestEnvironment(testFiles)
-    .then((module) => {
+    .then(() => {
       sendTestResults(undefined, l4.testResults);
     })
     .catch(sendTestResults);
