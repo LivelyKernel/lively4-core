@@ -9,16 +9,16 @@
 // console.log("A squared: " + 2**4)
 
 // guard againsst wrapping twice and ending in endless recursion
-if (!console.log.isWrapped) {
-    var nativeLog = console.log
+// if (!console.log.isWrapped) {
+//     var nativeLog = console.log
 
-    console.log = function() {
-        nativeLog.apply(console, arguments)
-        log.apply(undefined, arguments)
-    }
+//     console.log = function() {
+//         nativeLog.apply(console, arguments)
+//         log.apply(undefined, arguments)
+//     }
 
-    console.log.isWrapped = true
-}
+//     console.log.isWrapped = true
+// }
 
 
 if ('serviceWorker' in navigator) {
@@ -49,17 +49,66 @@ if ('serviceWorker' in navigator) {
             });
     })
 
+    var fs = new Promise(function(resolve, reject) {
+        navigator.webkitPersistentStorage.requestQuota(1024 * 1024 * 10, function(grantedQuota) {
+            self.webkitRequestFileSystem(PERSISTENT, grantedQuota, resolve, reject)
+        }, reject)
+    })
+
     navigator.serviceWorker.addEventListener("message", (event) => {
-        if(event.data.name === 'swx:requestQuota') {
-            console.log("Service worker requested file system quota", event.data);
+        var reject = function(err) {
+            console.log('RPC client error', err)
+            event.ports[0].postMessage({error: err})
+        }
 
-            var requestedQuota = event.data.requestedQuota || 1024 * 1024 * 10
+        console.log('Client RPC received', event.data);
 
-            navigator.webkitPersistentStorage.requestQuota(requestedQuota, function(grantedQuota) {
-                event.ports[0].postMessage({grantedQuota: grantedQuota})
-            }, function(err) {
-                event.ports[0].postMessage({error: err})
-            })
+        switch(event.data.name) {
+            case 'swx:requestQuota':
+                console.log("Service worker requested file system quota", event.data);
+                var requestedQuota = event.data.requestedQuota || 1024 * 1024 * 10
+
+                navigator.webkitPersistentStorage.requestQuota(requestedQuota, function(grantedQuota) {
+                    event.ports[0].postMessage({grantedQuota: grantedQuota})
+                }, reject)
+
+                break
+            case 'swx:readFile':
+                fs.then((fs) => {
+                    debugger
+                    fs.root.getFile(event.data.file, function(file) {
+                        var reader = new FileReader()
+
+                        reader.onloadend = function(e) {
+                            console.log('Read complete', e)
+
+                            event.ports[0].postMessage({content: this.result})
+                        }
+
+                        reader.readAsText(file)
+                    }, reject)
+                }).catch(reject)
+
+                break
+            case 'swx:writeFile':
+                fs.then((fs) => {
+                    fs.root.getFile(event.data.file, {create: true, exclusive: false}, function(file) {
+                        file.createWriter(function (writer) {
+                            writer.onwriteend = function(e) {
+                                console.log("Write complete", e)
+
+                                event.ports[0].postMessage({
+                                    content: event.data.content
+                                })
+                            }
+
+                            writer.onerror = reject
+                            writer.write(new Blob([event.data.content], {type: 'text/plain'}))
+                        }, reject)
+                    }, reject)
+                }).catch(reject)
+
+                break
         }
     })
 }

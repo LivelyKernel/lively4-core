@@ -15,6 +15,8 @@ class ServiceWorker {
             url     = new URL(request.url),
             promise = undefined
 
+        console.log('Handle fetch', event)
+
         if(url.hostname !== 'lively4')
             return self.fetch(event.request)
 
@@ -26,7 +28,8 @@ class ServiceWorker {
                 } else {
                     return new Response(result)
                 }
-            }).catch(() => {
+            }).catch((err) => {
+                console.error('Error while processing fetch event:', err)
                 return new Response('', {status: 500})
             }))
     }

@@ -10,27 +10,28 @@ export class Filesystem extends Base {
 
         this.quota = options.quota || 1024*1024*10;
 
-        this.fs = new Promise((resolve, reject) => {
-            self.clients.matchAll().then((clients) => {
-                let channel = new MessageChannel()
-                let client  = clients[0]
+        // this.grantedQuota = this._rpc({name: 'swx:requestQuota'}).then((event) => event.data.grantedQuota)
+        // this.fs = new Promise((resolve, reject) => {
+        //     self.clients.matchAll().then((clients) => {
+        //         let channel = new MessageChannel()
+        //         let client  = clients[0]
 
-                channel.port1.onmessage = function(event) {
-                    console.log('Got quota request response', event.data)
+        //         channel.port1.onmessage = function(event) {
+        //             console.log('Got quota request response', event.data)
 
-                    let grantedQuota = event.data.grantedQuota
+        //             let grantedQuota = event.data.grantedQuota
 
-                    self.webkitRequestFileSystem(PERSISTENT, grantedQuota, resolve, reject)
-                    // debugger
-                }
+        //             self.webkitRequestFileSystem(PERSISTENT, grantedQuota, resolve, reject)
+        //             // debugger
+        //         }
 
-                client.postMessage({name: 'swx:requestQuota'}, [channel.port2])
-                // debugger
-            })
+        //         client.postMessage({name: 'swx:requestQuota'}, [channel.port2])
+        //         // debugger
+        //     })
 
-            // debugger
-            // self.webkitRequestFileSystem(TEMPORARY, this.quota, resolve, reject)
-        })
+        //     // debugger
+        //     // self.webkitRequestFileSystem(TEMPORARY, this.quota, resolve, reject)
+        // })
     }
 
     stat(path) {
@@ -38,42 +39,43 @@ export class Filesystem extends Base {
     }
 
     read(file) {
-        return this.fs.then((fs) => {
-            return new Promise((resolve, reject) => {
-                fs.root.getFile(file, function(file) {
-                    let reader = new FileReader()
-
-                    reader.onloadend = function(e) {
-                        console.log('Read complete', e)
-                        resolve(this.result)
-                    }
-
-                    reader.readAsText(file)
-                }, reject)
-            })
-        })
+        // return this.grantedQuota.then((grantedQuota) => {
+            return this._rpc({name: 'swx:readFile', file: file})
+                .then((event) => event.data.content)
+        // })
     }
 
     write(file, content) {
-        return this.fs.then((fs) => {
-            return new Promise((resolve, reject) => {
-                fs.root.getFile(file, {create: true, exclusive: false}, function(file) {
-                    file.createWriter(function (writer) {
+        // return this.grantedQuota.then((grantedQuota) => {
+            return content.then((actualContent) => {
+                return this._rpc({
+                    name: 'swx:writeFile',
+                    file: file,
+                    content: actualContent
+                }).then((event) => event.data.content)
+            }.bind(this))
+        // })
+    }
 
-                        writer.onwriteend = function(e) {
-                            console.log("Write complete", e)
-                            resolve()
-                        }
+    _rpc(data) {
+        return new Promise((resolve, reject) => {
+            console.log('RPC request:', data)
+            self.clients.matchAll().then((clients) => {
+                let channel = new MessageChannel()
+                let client  = clients[0]
 
-                        writer.onerror = reject
-
-                        let bb = new BlobBuilder()
-                        bb.append(content)
-
-                        writer.write(bb.getBlob('text/plain'))
-                    }, reject)
-                }, reject)
+                channel.port1.onmessage = resolve
+                client.postMessage(data, [channel.port2])
             })
+        }).then((event) => {
+            console.log('RPC response:', event.data)
+            return event
+        }).then((event) => {
+            if(event.data.error) {
+                throw new Error(event.data.error)
+            } else {
+                return event
+            }
         })
     }
 }
