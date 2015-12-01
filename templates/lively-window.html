@@ -187,7 +187,7 @@
 
 		titleMouseDown(e) {
 			e.preventDefault();
-			
+
 			let offsetWindow = $(this).offset();
 
 			this.dragging = {
@@ -219,11 +219,10 @@
 
 		windowMouseMove(e) {
 			e.preventDefault();
-
 			if (this.dragging) {
 				$(this).css({
-					left: e.pageX - this.dragging.left,
-					top: e.pageY - this.dragging.top
+					left: e.clientX - this.dragging.left,
+					top: e.clientY - this.dragging.top
 				});
 			} else if (this.resizing) {
 				$(this).css({
