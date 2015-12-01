@@ -20,7 +20,7 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
     }
 
     if (TEST_SW_REGEXP.test(file)) {
-      let normalizedTestModule = file//.replace(/^\/base\/|\.js$/g, '');
+      let normalizedTestModule = file;
       allSWTestFiles.push(normalizedTestModule);
       console.log('SW Test to load: ' + normalizedTestModule);
     }
@@ -65,6 +65,16 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
             console.log(event.data.message.error);
             console.log(event.data.message.results);
 
+            function unpackError(errorDescription) {
+              var error = new Error(errorDescription.name + ': ' + errorDescription.message);
+              error.stack = errorDescription.stack;
+              return error;
+            }
+
+            if(event.data.message.error) {
+              throw unpackError(event.data.message.error);
+            }
+
             function createMockTestcase(testResult) {
               var suiteName = testResult.fullName.split('---')[0];
               var testcaseName = testResult.fullName.split('---')[1];
@@ -78,9 +88,7 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
                     break;
                   case 'fail':
                     it(testcaseName, () => {
-                      let error = new Error(testResult.name + ': ' + testResult.message);
-                      error.stack = testResult.stack;
-                      throw error;
+                      throw unpackError(testResult.error);
                     });
                     break;
                 }
