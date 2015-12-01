@@ -118,48 +118,78 @@ l4.messageTask('test send back', function match(event) {
   return true;
 });
 
-//l4.importScripts('./../external/babel-browser.js');
-//l4.importScripts('./../external/system.src.js');
 l4.importScripts('./../../node_modules/chai/chai.js');
 
-setTimeout(function() {
+function describe(name, callback) {
+  l4.describeName = name;
+  l4.testResults[l4.describeName] = {};
+
   try {
-    l4.importScripts('./../../node_modules/mocha/mocha.js');
+    callback();
+  } catch(e) {}
+}
+
+function it(name, callback) {
+  var fullName = l4.describeName + '---' + name;
+
+  try{
+    // TODO: async tests
+    callback();
+
+    l4.testResults.push({
+      fullName: fullName,
+      result: 'pass'
+    });
   } catch(e) {
-    console.log(e)
-    setTimeout(()=>l4.broadCastMessage(e.toString()),1000);
-  } finally {
-    console.log('#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+#*+')
-    setTimeout(()=>l4.broadCastMessage(`#+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+#
-#+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+#
-#+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+#
-#+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+##+#`),1000);
+    l4.testResults.push({
+      fullName: fullName,
+      result: 'fail',
+
+      name: e.name,
+      message: e.message,
+      stack: e.stack
+    });
   }
-}, 1000);
+}
+
+function setupTestEnvironment(testFiles) {
+    importScripts('./src/external/es6-module-loader-dev.js');
+    System.baseURL = '/base/';
+    System.paths['babel'] = 'src/external/babel-browser2.js';
+    System.transpiler = 'babel';
+
+    System.babelOptions = { experimental: true };
+
+    return System.import(testFiles[0]);
+}
 
 l4.messageTask('run test', function match(event) {
   return hasPort(event) &&
     event.data &&
     event.data.meta &&
-    event.data.meta.type === 'bar';
+    event.data.meta.type === 'run sw tests';
 }, function react(event) {
-  try {
-    var result = eval(event.data.message);
-    chai.expect(42).to.equal(21+21);
-  } catch(e) {
-    var error = e;
-  } finally {
+  function sendTestResults(error, results) {
     getSource(event).postMessage({
       meta: {
         type: 'test results',
         receivedMessage: event.data
       },
       message: {
-        error: error ? error.toString() : undefined,
-        result: result ? result.toString() : undefined
+        error: error ? error.toString() + error.stack : undefined,
+        results: results ? results : undefined
       }
     });
   }
+
+  l4.testResults = [];
+  var testFiles = eval(event.data.message);
+
+  setupTestEnvironment(testFiles)
+    .then((module) => {
+      sendTestResults(undefined, l4.testResults);
+    })
+    .catch(sendTestResults);
 
   return true;
 });
