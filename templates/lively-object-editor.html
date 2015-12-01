@@ -43,6 +43,19 @@
 			display: inline-block;
 			text-align: right;
 		}
+
+    #attributesContent {
+      width: 100%;
+      margin-left: 5px;
+      overflow-y: scroll;
+    }
+    #attributesContent lively-key-value-input {
+      display: flex;
+    }
+
+    .main-content .hidden {
+      display: none;
+    }
 	</style>
 
 	<div id="wrapper">
@@ -53,17 +66,21 @@
 						<span class="leaf">Scripts</span>
 						<ul id="script-nodes"></ul>
 					</li>
-					<li class="node">
-						<span class="leaf">Attributes</span>
-						<ul id="attribute-nodes"></ul>
+					<li>
+						<span id="attributes-leaf" class="leaf">Attributes</span>
 					</li>
-					<li class="node collapsed">
-						<span class="leaf">Properties</span>
-						<ul id="property-nodes"></ul>
+					<li>
+						<span id="properties-leaf" class="leaf">Properties</span>
 					</li>
 				</ul>
 			</lively-treeview>
-			<textarea id="editor"></textarea>
+
+      <!-- possible content elements -->
+			<textarea class="hidden" id="editor"></textarea>
+      <div class="hidden" id="attributesContent">
+        <lively-key-value-map id="attributesMap"></lively-key-value-map>
+      </div>
+      <!-- / -->
 		</div>
 		<div class="toolbar">
 			<div class="bar-left">
@@ -83,7 +100,7 @@
 		var clone = document.importNode(template.content, true);
 
 		Promise.all([
-			System.import('../templates/classes/ObjectEditor.js'), 
+			System.import('../templates/classes/ObjectEditor.js'),
 			System.import('../src/client/morphic/component-loader.js')
 		]).then(modules => {
 			var ObjectEditor = modules[0];

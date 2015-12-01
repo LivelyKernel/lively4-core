@@ -1,5 +1,15 @@
 <template id="lively-key-value-input">
-  <span id="key"></span>: <span id="value" contenteditable="true"></span>
+  <style>
+  #value {
+    flex: 1;
+    margin-left: 0.5em;
+  }
+  #value:focus {
+    outline: none;
+  }
+  </style>
+  <span id="key"></span>:
+  <input id="value" value="">
 </template>
 
 <script>
@@ -7,13 +17,14 @@
 
   class LivelyKeyValueInput extends HTMLDivElement {
     attachedCallback() {
-      console.log("attached", this.shadowRoot.querySelector('span#key'));
-      this.keyElement = this.shadowRoot.querySelector('span#key');
-      this.valueElement = this.shadowRoot.querySelector('span#value');
+      console.log("attached", this.shadowRoot.querySelector('#key'));
+      this.keyElement = this.shadowRoot.querySelector('#key');
+      this.valueElement = this.shadowRoot.querySelector('#value');
 
       this.valueElement.addEventListener('keyup', (e) => { this.changeEventHandler(); });
       this.valueElement.addEventListener('paste', (e) => { this.changeEventHandler(); });
       this.valueElement.addEventListener('blur', (e) => { this.changeEventHandler(); });
+      this.valueElement.addEventListener('focus', (e) => { this.gotFocus(e); });
     }
 
     changeEventHandler() {
@@ -21,11 +32,16 @@
         bubbles: true,
         detail: {
           key: this.key,
-          value: this.value  
-        }        
+          value: this.value
+        }
       });
 
       this.dispatchEvent(changeEvent);
+    }
+
+    gotFocus(e) {
+      // select the whole content
+      this.valueElement.setSelectionRange(0, this.value.length);
     }
 
     get key() {
@@ -37,11 +53,11 @@
     }
 
     get value() {
-      return this.valueElement.innerHTML;
+      return this.valueElement.value;
     }
 
     set value(value) {
-      this.valueElement.innerHTML = value;
+      this.valueElement.value = value;
     }
   }
 
