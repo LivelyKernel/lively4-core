@@ -192,10 +192,23 @@ describe('arr', function() {
 
     it("flatmaps big time", function() {
       // old flatmap version threw stack overlflow errors
-      var result = lively.lang.arr.flatmap(lively.lang.arr.range(1,800000), function(ea, i) { return [ea, i] });
+      var result = arr.flatmap(lively.lang.arr.range(1,800000), function(ea, i) { return [ea, i] });
       expect(result.length).to.eql(800000*2);
     });
 
+  });
+
+  describe("sorting", function() {
+    
+    it("isSorted", function() {
+      expect(arr.isSorted([2,4,7,9])).to.be.true;
+      expect(arr.isSorted([2,4,3,9])).to.be.false;
+    });
+
+    it("isSorted descending", function() {
+      expect(arr.isSorted([4,2,1], true)).to.be.true;
+      expect(arr.isSorted([4,5,1])).to.be.false;
+    });
   });
 
   it('histogram', function() {
