@@ -7,3 +7,5 @@ describe('Babel', function() {
     expect(2 ** 3).to.equal(8);
   });
 });
+
+export function foo() {}
