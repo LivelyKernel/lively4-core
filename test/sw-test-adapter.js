@@ -16,8 +16,7 @@ function createMockTestcase(testResult) {
         });
         break;
       case 'pending':
-        it(testcaseName, (done) => {
-        });
+        it(testcaseName, (done) => {});
         break;
       case 'fail':
         it(testcaseName, () => {
