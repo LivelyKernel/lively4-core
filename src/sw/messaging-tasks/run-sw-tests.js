@@ -35,8 +35,6 @@ function describe(name, callback) {
 
 describe.run = function(description) {
   l4.describeName = description.name;
-  l4.testResults[l4.describeName] = {};
-
   description.callback();
 };
 
@@ -78,7 +76,7 @@ it.run = function(description) {
       l4.testResults.push({
         fullName: fullName,
         result: 'fail',
-        error: packError(e)
+        error: packError(error)
       });
     });
 };
@@ -105,7 +103,8 @@ l4.messageTask('run test', function match(event) {
   l4.describes = [];
   l4.its = [];
   l4.testResults = [];
-  var testFiles = eval(event.data.message);
+
+  var testFiles = event.data.message;
 
   setupTestEnvironment(testFiles)
     .then(l4.runTests)
