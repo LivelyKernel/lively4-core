@@ -47,13 +47,7 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
 
     Promise.all(allClientTestFiles.map(function (file) {
       console.log('Load Test File: ' + file);
-      return System.import(/*'base/' + */file + '.js').catch(e => {
-        console.log('TEST FILE LOADING ERROR');
-        console.log(e);
-        console.log(e.name);
-        console.log(e.message);
-        console.log(e.stack);
-      });
+      return System.import(/*'base/' + */file + '.js');
     }))
       .then(loadTestEnvironment)
       .then(() => {
