@@ -6,9 +6,11 @@ function unpackError(errorDescription) {
   return error;
 }
 
+// convert a test result description to a mocha test case
 function createMockTestcase(testResult) {
   var suiteName = testResult.fullName.split('---')[0];
   var testcaseName = testResult.fullName.split('---')[1];
+
   describe(suiteName, () => {
     switch (testResult.result) {
       case 'pass':
@@ -27,6 +29,9 @@ function createMockTestcase(testResult) {
   })
 }
 
+// execute the given files on ServiceWorker
+// receive test result from ServiceWorker
+// create real test cases with result from ServiceWorker
 export function runSWTests(allSWTestFiles) {
   // run sw tests
   return messaging.postMessage({
@@ -37,6 +42,7 @@ export function runSWTests(allSWTestFiles) {
   })
     .then(event => {
       if (event.data.message.error) {
+        console.log('Running SW tests failed');
         console.log(event.data.message.error);
         throw unpackError(event.data.message.error);
       }
@@ -45,6 +51,7 @@ export function runSWTests(allSWTestFiles) {
     })
 }
 
+// command the ServiceWorker to load its testing environment
 export function loadTestEnvironment() {
   return messaging.postMessage({
     meta: {
@@ -57,7 +64,7 @@ export function loadTestEnvironment() {
     .then(event => {
       var message = event.data.message;
       if(message.error) {
-        console.log('Error in importScripts message');
+        console.log('Error during importScripts message');
         console.log(message.error);
       }
     })
