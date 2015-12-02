@@ -8,4 +8,5 @@ describe('Babel', function() {
   });
 });
 
+// include this to force transpilation
 export function foo() {}
