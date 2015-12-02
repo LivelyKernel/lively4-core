@@ -1,4 +1,5 @@
 l4.isIncluded = 42;
+l4.importScripts('./../../../src/external/bluebird.js');
 l4.importScripts('./../../../node_modules/chai/chai.js');
 
 function describe(name, callback) {
@@ -15,6 +16,8 @@ function it(name, callback) {
   if(callback.length > 0) {
     throw new Error('Async testcases not yet supported');
   }
+
+  Promise.resolve().spread(()=>{'works'});
 
   try{
     callback();
@@ -48,7 +51,7 @@ function setupTestEnvironment(testFiles) {
 
   System.babelOptions = { experimental: true };
 
-  return System.import(testFiles[0]);
+  return Promise.all(testFiles.map(testFile => System.import(testFile)));
 }
 
 l4.messageTask('run test', function match(event) {
