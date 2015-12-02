@@ -1,6 +1,6 @@
 "use strict";
 
-import * as messaging from './src/client/messaging.js';
+import { runSWTests, loadTestEnvironment } from './test/sw-test-adapter.js';
 
 focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   var allClientTestFiles = [];
@@ -43,7 +43,8 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
 
     navigator.serviceWorker.onmessage = function(event) {
       if (event.data.meta && event.data.meta.type == 'broadcast') {
-        //console.log(event.data.message);
+        let message = event.data.message;
+        //console.log(message);
       }
     };
 
@@ -51,52 +52,9 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
       console.log('Load Test File: ' + file);
       return System.import(/*'base/' + */file + '.js');
     }))
+      .then(loadTestEnvironment)
       .then(() => {
-        // run sw tests
-        return messaging.postMessage({
-          meta: {
-            type: 'run sw tests'
-          },
-          message: allSWTestFiles
-        })
-          .then(function(event) {
-            console.log('SW RESULTS');
-            console.log(event.data.message);
-            console.log(event.data.message.error);
-            console.log(event.data.message.results);
-
-            function unpackError(errorDescription) {
-              var error = new Error(errorDescription.name + ': ' + errorDescription.message);
-              error.stack = errorDescription.stack;
-              return error;
-            }
-
-            if(event.data.message.error) {
-              throw unpackError(event.data.message.error);
-            }
-
-            function createMockTestcase(testResult) {
-              var suiteName = testResult.fullName.split('---')[0];
-              var testcaseName = testResult.fullName.split('---')[1];
-              describe(suiteName, () => {
-                switch (testResult.result) {
-                  case 'pass':
-                    it(testcaseName, () => {});
-                    break;
-                  case 'pending':
-                    it(testcaseName, (done) => {});
-                    break;
-                  case 'fail':
-                    it(testcaseName, () => {
-                      throw unpackError(testResult.error);
-                    });
-                    break;
-                }
-              })
-            }
-
-            event.data.message.results.forEach(createMockTestcase);
-          })
+        return runSWTests(allSWTestFiles);
       })
       .then(function() {
         window.__karma__.start();

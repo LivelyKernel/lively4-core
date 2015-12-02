@@ -5,4 +5,11 @@ System.config({
     babel: 'src/external/babel-browser.js'
   }
 });
-System.import('test-main.js');
+System.import('test-main.js')
+  .catch(e => console.log(
+    e,
+    e.name,
+    e.message,
+    e.stack
+  )
+);

@@ -9,9 +9,3 @@ describe('SIMPLE TEST', function() {
     expect(42).to.equal(9 * 6)
   })
 });
-
-export class Foo {
-  constructor() {
-    2**3
-  }
-}
