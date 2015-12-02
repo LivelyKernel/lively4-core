@@ -11,9 +11,6 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   // Get a list of all the test files to include
   Object.keys(window.__karma__.files).forEach(file => {
     if (TEST_CLIENT_REGEXP.test(file)) {
-      // Normalize paths to RequireJS module names.
-      // If you require sub-dependencies of test files to be loaded as-is (requiring file extension)
-      // then do not normalize the paths
       let normalizedTestModule = file.replace(/^\/base\/|\.js$/g, '');
       allClientTestFiles.push(normalizedTestModule);
       console.log('Test to load: ' + normalizedTestModule);
@@ -50,7 +47,13 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
 
     Promise.all(allClientTestFiles.map(function (file) {
       console.log('Load Test File: ' + file);
-      return System.import(/*'base/' + */file + '.js');
+      return System.import(/*'base/' + */file + '.js').catch(e => {
+        console.log('TEST FILE LOADING ERROR');
+        console.log(e);
+        console.log(e.name);
+        console.log(e.message);
+        console.log(e.stack);
+      });
     }))
       .then(loadTestEnvironment)
       .then(() => {
