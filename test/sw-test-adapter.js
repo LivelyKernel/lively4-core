@@ -38,7 +38,7 @@ export function runSWTests(allSWTestFiles) {
   })
     .then(event => {
       if (event.data.message.error) {
-        console.log(event.data.message.error)
+        console.log(event.data.message.error);
         throw unpackError(event.data.message.error);
       }
 
@@ -52,13 +52,14 @@ export function loadTestEnvironment() {
       type: 'import script'
     },
     message: {
-      scriptName: 'FIXME'
+      scriptName: './src/sw/messaging-tasks/run-sw-tests.js'
     }
   })
     .then(event => {
       var message = event.data.message;
-      console.log('IMPORT SCRIPT');
-      console.log(message.error);
-      console.log(message.isIncluded);
+      if(message.error) {
+        console.log('Error in importScripts message');
+        console.log(message.error);
+      }
     })
 }

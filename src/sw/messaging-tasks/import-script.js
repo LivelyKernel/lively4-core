@@ -7,7 +7,7 @@ l4.messageTask('import script', function match(event) {
   var scriptName = event.data.message.scriptName;
   var error;
   try {
-    l4.importScripts('./src/sw/messaging-tasks/run-sw-tests.js');
+    l4.importScripts(scriptName);
   } catch(e) {
     error = e;
   }
@@ -18,7 +18,6 @@ l4.messageTask('import script', function match(event) {
       receivedMessage: event.data
     },
     message: {
-      isIncluded: l4.isIncluded,
       error: error ? error.toString() : undefined
     }
   });
