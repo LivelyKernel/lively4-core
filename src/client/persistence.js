@@ -1,6 +1,6 @@
 'use strict';
 
-var serializer = require('./serializer.js');
+export function babeldummy() {};
 
 var persistenceTimerInterval;
 
