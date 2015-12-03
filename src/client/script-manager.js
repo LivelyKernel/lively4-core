@@ -10,9 +10,11 @@ function functionFromString(funcOrString) {
     }
 
     // lets trick babel to allow the usage of 'this' in outermost context
-    var innerWrap = '(function() {' + funcOrString + '}).call(temp)',
+    var innerWrap = '(function() { return (' + funcOrString + ')()}).call(temp)',
         transpiled = babel.transform(innerWrap).code,
-        outerWrap = '(function(temp) { ' + transpiled + '})';
+        transpiled2 = transpiled.replace(/^\s*"use strict";/, '"use strict"; return (') + ')',
+        transpiled3 = transpiled2.replace(/;\s*\)$/, ')'),
+        outerWrap = '(function(temp) {' + transpiled3 + '})';
 
     // this makes sure we always create a function
     try {
@@ -119,7 +121,7 @@ export function addScript(object, funcOrString, opts={}) {
     object[name].isScript = true;
     object.__scripts__[name] = funcOrString.toString();
 
-    persistToDOM(object, func.toString(), {"data-name": name});
+    persistToDOM(object, funcOrString.toString(), {"data-name": name});
 }
 
 export function removeScript(object, name) {
