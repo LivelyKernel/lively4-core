@@ -11,22 +11,23 @@ function functionFromString(funcOrString) {
 
     // lets trick babel to allow the usage of 'this' in outermost context
     var innerWrap = '(function() { return (' + funcOrString + ').apply(this, args)}).call(temp)',
-        transpiled = babel.transform(innerWrap).code,
-        transpiled2 = transpiled.replace(/^\s*('|")use strict('|");/, '"use strict"; return (') + ')',
-        transpiled3 = transpiled2.replace(/;\s*\)$/, ')'),
-        outerWrap = '(function(temp) {' + transpiled3 + '})',
-        outerWrap2 = `(function() {
+        transpiled = (babel.transform(innerWrap).code
+          .replace(/^\s*('|")use strict('|");/, '"use strict"; return (') + ')')
+          .replace(/;\s*\)$/, ')'),
+        outerWrap = `(function() {
   var args = arguments;
-  return (` + outerWrap + `)(this);
+  return (function(temp) {` +
+          transpiled +
+  `})(this);
 })`;
 
     // this makes sure we always create a function
     try {
         // this fails if it has no `function ()` header
-        return eval('(' + outerWrap2.toString() + ')');
+        return eval('(' + outerWrap.toString() + ')');
     } catch(err) {
         // this works with just a block of code (for lively4script)
-        return new Function(outerWrap2.toString());
+        return new Function(outerWrap.toString());
     }
 }
 
