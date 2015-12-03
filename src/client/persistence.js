@@ -123,7 +123,7 @@ function saveDOM() {
     world.find("#ace-tm").remove();
     world.find("style").filter((i,e) => /\s*\.error_widget_wrapper+/.test(e.textContent)).remove();
     
-    var content = "<!DOCTYPE html>" + serializer.serializeToHTML(world[0]);
+    var content = "<!DOCTYPE html>\n" + world[0].outerHTML;
 
     resetPersistenceSessionStore();
 
