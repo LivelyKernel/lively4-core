@@ -101,66 +101,6 @@ export function createMorphFromSubtree(rootElement, tagName) {
 	}
 }
 
-export  function createTemplate(rootElement, name) {
-	var template = document.createElement("template");
-	template.id = "lively-" + name;
-
-	var fragment = template.content;
-
-	// collect styles
-	// Maybe we should not filter rules due to dynamically
-	// assigned classes?
-	var combinedStyle = collectAppliedCssRules(rootElement);
-
-	// apply style
-	var styleElement = document.createElement("style");
-	styleElement.innerHTML = combinedStyle;
-	fragment.appendChild(styleElement);
-
-	// clone subtree from root
-	var clone = rootElement.cloneNode(true);
-	fragment.appendChild(clone);
-
-	saveTemplate(template);
-
-	return template;
-}
-
-export function saveTemplate(template) {
-	var registrationScript = document.createElement("script");
-	// MAKE SURE TO USE THE UP TO DATE VERSION WHEN FINALLY IMPLEMENTING THIS!!
-	registrationScript.innerHTML = 	"(function() { \
-		var template = document.currentScript.ownerDocument.querySelector('#" + template.id + "'); \
-		var clone = document.importNode(template.content, true); \
-		System.import('/lively4-core/src/client/morphic/component-loader.js') \
-			.then(loader => { \
-				loader.register('" + template.id + "', clone); \
-			}); \
-	})();";
-
-
-
-	var url = location.protocol + "//" + location.host + "/lively4-core/templates/" + template.id + ".html";
-	console.log("export " + template.id + " to " + url);
-	// $('<div>').append($(template.outerHTML).clone()).html(); 
-	var completeHTML = $('<div>').append($(template.outerHTML).clone()).html() + $('<div>').append($(registrationScript.outerHTML).clone()).html();
-
-	// make it easy to copy the source to clipboard
-  window.prompt("Copy source to clipboard: Ctrl+C, Enter", completeHTML);
-
-	// $.ajax({
-	//     url: url,
-	//     type: 'PUT',
-	//     data: template.outerHtml,
-	//     success: function() {
- //        console.log("file " + url + " written.");
-	// 	},
-	// 	error: function(xhr, status, error) {
-	// 		console.log("could not write " + url + ": " + error);
-	// 	}
-	// });
-}
-
 export function createElementFromTemplate(template, name) {
 	var proto = Object.create(morphProto);
 
@@ -189,21 +129,6 @@ export function createElementFromTemplate(template, name) {
 	});
 
 	return element;
-}
-
-export function loadPart(partId, onSuccess, onError) {
-	loadExternalTemplate(partId + "-template", function(status, template) {
-		if (status !== "success") {
-			if (typeof onError === "function") { 
-				onError(status);
-			}
-		} else {
-			var part = createElementFromTemplate(template, partId);
-			if (typeof onSuccess === "function") {
-				onSuccess(part);
-			}
-		}
-	});
 }
 
 function loadExternalTemplate(templateId, onComplete) {
