@@ -150,14 +150,6 @@
         System.import(lively4url + "/src/client/debug-serviceworker.js")
     }).catch(function(err) { alert("load Lively4 failed")});
 
-    var morphic;
-    System.import(lively4url + "/src/client/morphic/morphic.js").then(m => {
-        morphic = m;
-        morphic.initMorphicTools();
-    }).catch(function(err) {
-        debugger; alert("load morphic failed");
-    });
-
     var creator;
     System.import(lively4url + "/src/client/morphic/component-creator.js").then(m => {
         creator = m;

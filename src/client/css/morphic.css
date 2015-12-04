@@ -4,14 +4,3 @@
   border-color: red;
   box-sizing: border-box;
 }
-
-#morphic-toolbox {
-  :host {
-    display: inline-block;
-  };
-
-  width: 120px;
-  background-color: #eeeeee;
-  padding: 5px;
-  border-radius: 5px;
-}
