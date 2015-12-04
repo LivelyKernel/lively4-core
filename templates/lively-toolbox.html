@@ -16,7 +16,7 @@
     </div>
     <script type="lively4script" data-name="initialize">
     () => {
-      var dragging, grabbing, inspecting, deleting, copying;
+      var dragging, grabbing, inspecting, deleting, copying, exporting;
       var baseUrl = "../src/client/morphic/";
 
       Promise.all([
@@ -25,6 +25,7 @@
         "inspecting.js",
         "deleting.js",
         "copying.js",
+        "component-creator.js",
         "selecting.js"
       ]
       .map(name => { return System.import(baseUrl + name); }))
@@ -34,6 +35,7 @@
         inspecting = modules[2];
         deleting = modules[3];
         copying = modules[4];
+        exporting = modules[5];
 
         this.createMorphicToolbox();
       }).catch(err => {
@@ -62,6 +64,9 @@
         }, {
           name: "Copy",
           handle: copying.handle
+        }, {
+          name: "Export",
+          handle: exporting.handle
         }]
 
         initStylesheet();
