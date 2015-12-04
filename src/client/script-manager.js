@@ -12,7 +12,7 @@ function functionFromString(funcOrString) {
     // lets trick babel to allow the usage of 'this' in outermost context
     var innerWrap = '(function() { return (' + funcOrString + ')()}).call(temp)',
         transpiled = babel.transform(innerWrap).code,
-        transpiled2 = transpiled.replace(/^\s*"use strict";/, '"use strict"; return (') + ')',
+        transpiled2 = transpiled.replace(/^\s*['"]use strict['"];/, '"use strict"; return (') + ')',
         transpiled3 = transpiled2.replace(/;\s*\)$/, ')'),
         outerWrap = '(function(temp) {' + transpiled3 + '})';
 
