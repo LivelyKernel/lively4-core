@@ -56,6 +56,7 @@
 <link rel="import" href="../templates/lively-object-editor.html" />
 <link rel="import" href="../templates/lively-component-bin.html" />
 <link rel="import" href="../templates/lively-test.html" />
+<link rel="import" href="../templates/lively-rectangle.html" />
 
 <link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /></head>
 <body>
@@ -67,44 +68,6 @@
 
 <lively-test></lively-test>
 
-<!-- <div id="comp-test">
-  <div class="component-bin-container">
-    <ul class="button-list">
-    </ul>
-  </div>
-  <script type="lively4script" data-name="initialize">
-  () => {
-    var items = [{
-      name: "Toolbox",
-      tag: "lively-toolbox"
-    }, {
-      name: "Window",
-      tag: "lively-window"
-    }, {
-      name: "Object Editor",
-      tag: "lively-object-editor"
-    }]
-
-    var list = $(this.shadowRoot).find(".button-list")[0];
-    var bin = this;
-    items.forEach(item => {
-      var li = document.createElement("li");
-      var button = document.createElement("button");
-      button.className = "list-button";
-      button.innerHTML = item.name;
-      button.addEventListener("click", addComponent.bind(bin, item.tag));
-
-      function addComponent(tag, evt) {
-        var component = document.createElement(tag);
-        this.parentElement.insertBefore(component, this.nextSibling);
-      }
-
-      li.appendChild(button);
-      list.appendChild(li);
-    });
-  }
-  </script>
-</div> -->
 
 
 

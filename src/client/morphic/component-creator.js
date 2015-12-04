@@ -93,9 +93,9 @@ export function unpackShadowDOM(subtreeRoot) {
   });
 
   // remove all remaining child nodes
-  $(shadow.children).each(function(idx) {
-    shadow.removeChild(this);
-  });
+  // $(shadow.children).each(function(idx) {
+  //   shadow.removeChild(this);
+  // });
 
   // We cannot remove the shadow root, so to make the content visible,
   // add a content node to the shadow dom. This should be equivalent to having
