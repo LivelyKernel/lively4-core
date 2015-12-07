@@ -1,0 +1,148 @@
+'    <style>
+    :host {
+      display: inline-block;
+    }
+    .container {
+        width: 120px;
+        padding: 5px;
+        border-radius: 5px;
+        background-color: rgb(238, 238, 238);
+    }
+    </style>
+    <div class="container">
+        <form>
+        </form>
+    </div>
+    <script type="lively4script" data-name="initialize">
+    () => {
+      var dragging, grabbing, inspecting, deleting, copying, exporting;
+      var baseUrl = "../src/client/morphic/";
+
+      Promise.all([
+        "dragging.js",
+        "grabbing.js",
+        "inspecting.js",
+        "deleting.js",
+        "copying.js",
+        "component-creator.js",
+        "selecting.js"
+      ]
+      .map(name => { return System.import(baseUrl + name); }))
+      .then((modules) => {
+        dragging = modules[0];
+        grabbing = modules[1];
+        inspecting = modules[2];
+        deleting = modules[3];
+        copying = modules[4];
+        exporting = modules[5];
+
+        this.createMorphicToolbox();
+      }).catch(err => {
+        console.log(err);
+      });
+
+
+      this.createMorphicToolbox = function() {
+        var tools = [{
+          name: "none",
+          default: true
+        }, {
+          name: "Inspect",
+          handle: inspecting.handle
+        }, {
+          name: "Grabbing",
+          onActivate: grabbing.activate,
+          onDeactivate: grabbing.deactivate
+        }, {
+          name: "Dragging",
+          onActivate: dragging.activate,
+          onDeactivate: dragging.deactivate
+        }, {
+          name: "Delete",
+          handle: deleting.handle
+        }, {
+          name: "Copy",
+          handle: copying.handle
+        }, {
+          name: "Export",
+          handle: exporting.handle
+        }]
+
+        initStylesheet();
+
+        var container = $(this.shadowRoot).find(".container")[0];
+
+        var form = $(this.shadowRoot).find("form")[0];
+        container.appendChild(form);
+
+        $(form).on("change click", function(evt) {
+          if (evt.target.tool) {
+            // deactivate the current tool, if it has a deactivation function
+            var deactivate = container.currentTool.onDeactivate;
+            if (typeof deactivate === "function") {
+              deactivate();
+            }
+            // activate the new tool, if it has an activation function
+            var activate = evt.target.tool.onActivate;
+            if (typeof activate === "function") {
+              activate();
+            }
+            // activate the new tool, if it has a handle function
+            var handle = evt.target.tool.handle;
+            if (typeof handle === "function" && window.that) {
+              handle(window.that);
+            }
+
+            container.currentTool = evt.target.tool;
+          }
+        });
+
+        // create a radio button for each tool
+        tools.forEach(function(ea) {
+          var toolType = typeof ea.handle === "function" ? "button" : "radio";
+          var el = document.createElement("input");
+          var id = toolType + "-" + ea.name;
+          el.type = toolType;
+          el.name = "tool-selection";
+          el.id = id;
+          el.value = ea.name;
+          el.tool = ea;
+
+          if (ea.default) {
+            el.checked = true;
+            container.currentTool = ea;
+          }
+
+          form.appendChild(el);
+
+          // append a label to radio buttons
+          if (toolType === "radio") {
+            var label = document.createElement("label");
+            label.setAttribute("for", id);
+            label.innerHTML = ea.name;
+            form.appendChild(label);
+          }
+
+          form.appendChild(document.createElement("br"));
+        });
+
+        return container;
+      }
+
+
+      function initStylesheet() {
+        $("<link/>", {
+           rel: "stylesheet",
+           type: "text/css",
+           href: "../src/client/css/morphic.css"
+        }).appendTo("head");
+      }
+    }
+    </script>
+    <script type="lively4script" data-name="foo">
+      () => {
+        // this is just a test of another script
+        console.log("hello script");
+      }
+    </script>
+'
