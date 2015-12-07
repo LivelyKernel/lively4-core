@@ -1,6 +1,6 @@
 'use strict';
 
-var messaging = require('./messaging.js');
+import * as messaging from './messaging.js';
 
 var onAuthenticatedCallbacks = {}
 
@@ -68,7 +68,7 @@ export function challengeForAuth(uuid, cb) {
 
 	    var left = screenX + Math.max(outerWidth - width, 0) / 2;
 	    var top = screenY + Math.max(outerHeight - height, 0) / 2;
-	    
+
 	    var features = [
 	              "width=" + width,
 	              "height=" + height,
@@ -125,6 +125,6 @@ navigator.serviceWorker.addEventListener("message", function(event) {
 	    		args: [token]
 			})
     	})
-    } 
+    }
 })
 

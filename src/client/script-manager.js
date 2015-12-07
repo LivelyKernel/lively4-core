@@ -1,8 +1,6 @@
+import * as messaging from './messaging.js';
+
 'use strict';
-
-
-
-var messaging = require('./messaging.js');
 
 function functionFromString(funcOrString) {
     if (typeof funcOrString === 'function') {
