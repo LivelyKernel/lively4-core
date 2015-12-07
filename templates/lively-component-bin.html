@@ -22,6 +22,7 @@
   </ul>
 </div>
 <script type="lively4script" data-name="initialize">
+() => {
   var items = [{
     name: "Toolbox",
     tag: "lively-toolbox"
@@ -31,6 +32,9 @@
   }, {
     name: "Object Editor",
     tag: "lively-object-editor"
+  },{
+    name: "Rectangle",
+    tag: "lively-rectangle"
   }]
 
   var list = $(this.shadowRoot).find(".button-list")[0];
@@ -50,6 +54,7 @@
     li.appendChild(button);
     list.appendChild(li);
   });
+}
 </script>
 </template>
 <script class="registrationScript">

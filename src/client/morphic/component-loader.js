@@ -23,3 +23,22 @@ export function register(componentName, template, prototype) {
     prototype: proto
   });
 }
+
+export function createRegistrationScript(componentId) {
+  var script = document.createElement("script");
+  script.className = "registrationScript";
+
+  script.innerHTML = "(function() { \n \
+    var template = document.currentScript.ownerDocument.querySelector('#" + componentId + "'); \n \
+    var clone = document.importNode(template.content, true); \n \
+    \n \
+    Promise.all([ \n \
+      System.import('../src/client/morphic/component-loader.js') \n \
+    ]).then(modules => { \n \
+      var Loader = modules[0]; \n \
+      Loader.register('" + componentId + "', clone); \n \
+    }); \n \
+  })();";
+
+  return script;
+}

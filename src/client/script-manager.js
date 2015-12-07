@@ -10,9 +10,16 @@ function functionFromString(funcOrString) {
     }
 
     // lets trick babel to allow the usage of 'this' in outermost context
-    var innerWrap = '(function() {' + funcOrString + '}).call(temp)',
-        transpiled = babel.transform(innerWrap).code,
-        outerWrap = '(function(temp) { ' + transpiled + '})';
+    var innerWrap = '(function() { return (' + funcOrString + ').apply(this, args)}).call(temp)',
+        transpiled = (babel.transform(innerWrap).code
+          .replace(/^\s*('|")use strict('|");/, '"use strict"; return (') + ')')
+          .replace(/;\s*\)$/, ')'),
+        outerWrap = `(function() {
+  var args = arguments;
+  return (function(temp) {` +
+          transpiled +
+  `})(this);
+})`;
 
     // this makes sure we always create a function
     try {
@@ -39,7 +46,7 @@ function findLively4Script(parent, shadow) {
             if (typeof parent.__scripts__ === 'undefined') {
                 parent.__scripts__ = {};
             }
-            parent.__scripts__[name] = parent[name] = func.bind(undefined, parent);
+            parent.__scripts__[name] = parent[name] = func;
         } else {
             // do never look into the shadow dom of child elements
             findLively4Script(child, false);
@@ -119,7 +126,7 @@ export function addScript(object, funcOrString, opts={}) {
     object[name].isScript = true;
     object.__scripts__[name] = funcOrString.toString();
 
-    persistToDOM(object, func.toString(), {"data-name": name});
+    persistToDOM(object, funcOrString.toString(), {"data-name": name});
 }
 
 export function removeScript(object, name) {
