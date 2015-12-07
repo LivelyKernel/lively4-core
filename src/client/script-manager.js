@@ -9,13 +9,18 @@ function functionFromString(funcOrString) {
         return funcOrString;
     }
 
+    // lets trick babel to allow the usage of 'this' in outermost context
+    var innerWrap = '(function() {' + funcOrString + '}).call(temp)',
+        transpiled = babel.transform(innerWrap).code,
+        outerWrap = '(function(temp) { ' + transpiled + '})';
+
     // this makes sure we always create a function
     try {
         // this fails if it has no `function ()` header
-        return eval('(' + funcOrString.toString() + ')');    
+        return eval('(' + outerWrap.toString() + ')');
     } catch(err) {
         // this works with just a block of code (for lively4script)
-        return new Function(funcOrString.toString());   
+        return new Function(outerWrap.toString());
     }
 }
 
@@ -34,7 +39,7 @@ function findLively4Script(parent, shadow) {
             if (typeof parent.__scripts__ === 'undefined') {
                 parent.__scripts__ = {};
             }
-            parent.__scripts__[name] = parent[name] = func.bind(parent);
+            parent.__scripts__[name] = parent[name] = func.bind(undefined, parent);
         } else {
             // do never look into the shadow dom of child elements
             findLively4Script(child, false);
@@ -53,7 +58,7 @@ export function attachScriptsFromShadowDOM(root) {
 
 function persistToDOM(object, funcString, data={}) {
     data.type = "lively4script";
-    $("<script>").attr(data).text(funcString).appendTo(object);    
+    $("<script>").attr(data).text(funcString).appendTo(object);
 }
 
 function removeFromDOM(object, name) {
@@ -124,7 +129,7 @@ export function removeScript(object, name) {
         });
         return;
     }
-    
+
     if (typeof object.__scripts__ === 'undefined'
         || typeof object.__scripts__[name] === 'undefined') {
         throw 'script name "' + name + '" does not exist!';

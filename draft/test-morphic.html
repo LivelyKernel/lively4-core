@@ -26,19 +26,7 @@
 <script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
 
 
-<!-- BEGIN SYSTEM.JS: should go away, until then we use a "static" global source -->
-<script src="https://livelykernel.github.io/lively4-core/src/external/system.src.js" type="text/javascript" charset="utf-8"></script>
-<script>
-  System.paths['babel'] ='https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
-  System.config({
-    transpiler: 'babel',
-    babelOptions: { },
-    map: {
-        babel: 'https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
-    }
-  });
-</script>
-<!-- END SYSTEM.JS-->
+<link rel="import" href="../src/client/babel-system.html" />
 
 <link rel="import" href="../templates/lively-toolbox.html" />
 <link rel="import" href="../templates/lively-window.html" />
@@ -84,7 +72,7 @@
 
 
 <script>
-    var lively4url =  "../" // or any abosolute path to lively4 ? Any idea for computeRoot() ? #JensLincke #OpenQuestion
+    var lively4url =  ".." // or any abosolute path to lively4 ? Any idea for computeRoot() ? #JensLincke #OpenQuestion
 
     //// #TODO The ace editor tries to be very clever, so it cannot be loaded through "import" at the moment
     //// (e.g. AMD promise error)
@@ -94,7 +82,7 @@
 
     System.import(lively4url + "/src/client/load.js").then(function(){
         System.import("commandline.js")
-        System.import(lively4url + "src/client/debug-serviceworker.js")
+        System.import(lively4url + "/src/client/debug-serviceworker.js")
     }).catch(function(err) { alert("load Lively4 failed")});
 
     var morphic;
@@ -103,12 +91,6 @@
         morphic.initMorphicTools();
     }).catch(function(err) {
         debugger; alert("load morphic failed");
-    });
-
-    System.import(lively4url + "/src/client/morphic/toolbox.js").then(toolbox => {
-        //document.body.appendChild(toolbox.createMorphicToolbox());
-    }).catch(function(err) {
-        debugger; alert("load morphic/toolbox failed");
     });
 
 </script>
