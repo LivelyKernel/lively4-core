@@ -4,13 +4,13 @@ import Morph from './Morph.js';
 import generateUUID from '../../src/client/uuid.js';
 
 export default class ObjectEditor extends Morph {
-  /* 
-   * HTMLElement callbacks 
+  /*
+   * HTMLElement callbacks
    */
   attachedCallback() {
     console.log('editor attachedCallback!');
     this.attached = true;
-    
+
     this.propertyList = this.shadowRoot.querySelector('#property-list');
     this.editor = this.shadowRoot.querySelector('#editor');
     this.addButton = this.shadowRoot.querySelector('#add-script');
@@ -31,7 +31,7 @@ export default class ObjectEditor extends Morph {
       this.attributeChangedCallback(attribute.name, null, attribute.value);
     }
   }
-  
+
   detachedCallback() {
     this.attached = false;
 
@@ -77,21 +77,21 @@ export default class ObjectEditor extends Morph {
     if (this.targetElement) {
       this.releaseTarget();
     }
-    
+
     this._targetElement = val;
     this.render();
-    
+
     if (typeof this.targetElement.__scripts__ === 'undefined') {
       this.targetElement.__scripts__ = {};
     }
-    
+
     if (!this.targetElement.dataset['livelyId']) {
       var uuid = generateUUID();
 
       $(this.targetElement).attr('data-lively-id', uuid);
       this.setAttribute('target', '$' + uuid);
     }
-    
+
     this.createObservers();
   }
 
@@ -103,7 +103,7 @@ export default class ObjectEditor extends Morph {
     this.destroyObservers();
     this.destroyUUID();
   }
-  
+
   /*
    * Observers for attributes, scripts, etc.
    */
@@ -113,7 +113,7 @@ export default class ObjectEditor extends Morph {
 
     console.log('Creating observer..');
     console.log(this.scriptsObserverWrapper);
-    
+
     this.domObserver = new MutationObserver((changes) => { this.attributesObserver(changes) });
     this.domObserver.observe(this.targetElement, {
       attributes: true
@@ -126,17 +126,11 @@ export default class ObjectEditor extends Morph {
     Object.unobserve(this.targetElement.__scripts__, this.scriptsObserverWrapper);
     this.domObserver.disconnect();
   }
-  
+
   attributesObserver(changes) {
-    /*changes.forEach(function(change, i) {
-      console.log(change);
-    });*/
     this.updateAttributes();
   }
   scriptsObserver(changes) {
-    /*changes.forEach(function(change, i) {
-      console.log(change);
-    });*/
     this.updateScripts();
   }
 
@@ -183,7 +177,7 @@ export default class ObjectEditor extends Morph {
       return;
     }
 
-    scriptManager.addScript(this.targetElement, 'function ' + scriptName + '() {\n  \n}');
+    scriptManager.addScript(this.targetElement, eval('(function ' + scriptName + '() {\n  \n})'));
     this.updateScripts();
     this.propertyList.selectLeaf(this.propertyList.querySelector('.leaf[data-script-name="'+scriptName+'"]'));
     this.listChanged();
@@ -203,11 +197,11 @@ export default class ObjectEditor extends Morph {
   saveButtonClicked(e) {
     if (this.targetElement && this.propertyList.activeLeaf !== null) {
       let data = this.propertyList.activeLeaf.dataset;
-      
+
       if (typeof data['scriptName'] !== 'undefined') {
         scriptManager.updateScript(
-          this.targetElement, 
-          this.editor.value, 
+          this.targetElement,
+          eval('(' + this.editor.value + ')'),
           { name: data['scriptName'] }
         );
       } else if (typeof data['attributeName'] !== 'undefined') {
@@ -242,7 +236,7 @@ export default class ObjectEditor extends Morph {
   }
 
   saveAttribute(attributeName) {
-    this.targetElement.setAttribute(attributeName, this.editor.value);  
+    this.targetElement.setAttribute(attributeName, this.editor.value);
   }
 
   updateList() {
