@@ -47,6 +47,7 @@ export class Filesystem {
         if(request.method === 'OPTIONS')
             return fs.stat(path, request)
 
+        return new Response(null, {status: 400})
         // TODO: respond with 400 / 404?
     }
 }
