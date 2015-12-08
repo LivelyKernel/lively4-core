@@ -5,6 +5,10 @@
 import { Base } from './base.jsx'
 
 export class Filesystem extends Base {
+    constructor(path, options) {
+        super('html5fs', path, options)
+    }
+
     read(file) {
         return this._rpc({name: 'swx:readFile', file: file})
             .then((event) => event.data.content)

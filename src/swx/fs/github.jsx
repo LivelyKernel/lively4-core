@@ -7,7 +7,7 @@ import * as util from '../util.jsx'
 
 export class Filesystem extends Base {
     constructor(path, options) {
-        super(path, options)
+        super('githubfs', path, options)
 
         if(options.repo) {
             this.repo = options.repo
@@ -69,3 +69,5 @@ export class Filesystem extends Base {
             })
     }
 }
+
+// class GHFile extends File
