@@ -3,6 +3,7 @@
  */
 
 import { Base } from './base.jsx'
+import * as util from '../util.jsx'
 
 export class Filesystem extends Base {
     constructor(path, options) {
@@ -15,23 +16,50 @@ export class Filesystem extends Base {
         }
     }
 
+    _file_stat(json) {
+        delete json['content']
+        delete json['encoding']
+
+        return {
+            type: json['type'],
+            name: json['name'],
+            size: json['size'],
+            vendor: json
+        }
+    }
+
+    stat(path) {
+        return self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path)
+            .then(util.responseOk)
+            .then(util.responseToJson)
+            .then((json) => {
+                let headers = new Headers()
+                var json
+
+                headers.append('Allow', 'GET,OPTIONS')
+
+                if(json instanceof Array) {
+                    json = JSON.stringify({
+                        type: 'directory',
+                        contents: json.map((item) => this._file_stat(item))
+                    }, null, '\t')
+                } else {
+                    json = JSON.stringify(this._file_stat(json), null, '\t')
+                }
+
+                return new Response(json, {status: 200, headers: headers})
+            })
+    }
+
     read(path) {
         return self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path)
-            .then((response) => {
-                if(response.status >= 200 && response.status < 300) {
-                    return response
-                } else {
-                    throw new Error(response.statusText)
-                }
-            })
-            .then((result) => result.json())
+            .then(util.responseOk)
+            .then(util.responseToJson)
             .then((json) => {
                 if(json instanceof Array) {
-                    return JSON.stringify({
-                        contents: json.map((item) => {
-                            return {name: item['name']}
-                        })
-                    })
+                    let headers = new Headers()
+                    headers.append('Allow', 'OPTIONS')
+                    return new Response(null, {status: 405, statusMessage: 'EISDIR', headers: headers})
                 } else {
                     return atob(json['content'])
                 }

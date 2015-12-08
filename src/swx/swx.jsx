@@ -20,18 +20,20 @@ class ServiceWorker {
         if(url.hostname !== 'lively4')
             return self.fetch(event.request)
 
-        event.respondWith(this.filesystem
-            .handle(request, url)
-            .then((result) => {
-                if(result instanceof Response) {
-                    return result
-                } else {
-                    return new Response(result)
-                }
-            }).catch((err) => {
-                console.error('Error while processing fetch event:', err)
-                return new Response('', {status: 500})
-            }))
+        let response = this.filesystem.handle(request, url)
+
+        response = response.then((result) => {
+            if(result instanceof Response) {
+                return result
+            } else {
+                return new Response(result)
+            }
+        }).catch((err) => {
+            console.error('Error while processing fetch event:', err)
+            return new Response('', {status: 500})
+        })
+
+        event.respondWith(response)
     }
 
     message(event) {
