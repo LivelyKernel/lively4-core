@@ -1,0 +1,143 @@
+<template id="template">
+	<style>
+  @import url('https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css');
+
+	:host {
+		position: absolute;
+		z-index: 100;
+		width: 400px;
+    height: 300px;
+	}
+  :host(.window-fixed) {
+    position: fixed;
+  }
+	:host * {
+		box-sizing: border-box;
+	}
+
+	::content {
+		display: flex;
+		flex-direction: column;
+		flex-grow: 1;
+	}
+	::content > * {
+		position: absolute;
+		height: 100%;
+		width: 100%;
+	}
+
+	.window {
+		width: 100%;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		background-color: #ffffff;
+		box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3);
+	}
+	.window.dragging  *, .window.resizing  * {
+		-webkit-touch-callout: none;
+		-webkit-user-select: none;
+		-khtml-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+	}
+	.window-titlebar {
+		position: relative;
+		display: flex;
+		flex-grow: 0;
+    	height: 2em;
+		width: 100%;
+		padding: 0.3em 0.4em;
+		border: none;
+		border-bottom: 1px #e9e9e9 solid;
+	}
+	.window-title {
+		flex-grow: 1;
+		font-weight: 600;
+		vertical-align: middle;
+		cursor: move;
+	}
+	.window-title span {
+		vertical-align: middle;
+		font-size: 1.1em;
+		line-height: 1.5rem;
+	}
+  .window-title span small {
+      font-style: italic;
+      color: #333;
+  }
+	.window-controls {
+		flex-grow: 0;
+	}
+	.window-button {
+		display: inline-block;
+		color: #777777;
+		background-color: #ffffff;
+		width: 1.5rem;
+		text-align: center;
+		margin-left: 1px;
+		font-weight: 700;
+		cursor: pointer;
+		line-height: 1.5rem;
+	}
+	.window-button:hover, .window-button.active {
+		background-color: #cde6f7;
+		color: #2a8dd4;
+	}
+  .window-pin i {
+    transform: rotate(90deg);
+    transition: transform 300ms;
+  }
+  .window-pin.active i {
+    transform: rotate(0);
+  }
+	.window-resize {
+		position: absolute;
+		right: -2px;
+		bottom: -2px;
+		font-size: 0.8em;
+		cursor: se-resize;
+		font-weight: 800;
+	}
+	.window-content {
+		position: relative;
+		width: auto;
+		height: auto;
+		margin: 0.4em;
+		flex: 1;
+	}
+	</style>
+
+	<div class="window">
+		<div class="window-titlebar">
+			<div class="window-title"><span></span></div>
+			<div class="window-controls">
+        <span class="window-button window-pin"><i class="fa fa-thumb-tack"></i></span>
+				<span class="window-button window-min">&lowbar;</span>
+				<span class="window-button window-max">&#9634;</span>
+				<span class="window-button window-close">&#10005;</span>
+			</div>
+		</div>
+		<div class="window-content" id="window-content">
+			<content></content>
+		</div>
+		<span class="window-resize">&there4;</span>
+	</div>
+</template>
+
+<script>
+(function() {
+	var template = document.currentScript.ownerDocument.querySelector('#template');
+	var clone = document.importNode(template.content, true);
+
+	Promise.all([
+		System.import('../templates/classes/Window.js'),
+		System.import('../src/client/morphic/component-loader.js')
+	]).then(modules => {
+		var Window = modules[0];
+		var Loader = modules[1];
+		Loader.register('lively-window', clone, Object.create(Window.prototype || Window.default.prototype));
+	});
+})();
+</script>

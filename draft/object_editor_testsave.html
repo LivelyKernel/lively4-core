@@ -1,0 +1,111 @@
+<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+<title>Lively 4 Our First Page</title>
+<style type="text/css" media="screen">
+    #baseurl {
+        width: 800px;
+    }
+    #editor {
+        height: 400px;
+        width: 500px;
+        display: inline-block;
+    }
+    #console {
+        width: 800px;
+        height: 300px;
+        max-height: 200px;
+        overflow: auto;
+        background-color: #eeeeee;
+        word-break: normal !important;
+        word-wrap: normal !important;
+        white-space: pre !important;
+    }
+    #commandline {
+        width: 800px;
+    }
+    #object-inspector {
+        display: inline-block;
+        width: 300px;
+        height: 400px;
+        vertical-align: top;
+    }
+    #object-selector, #object-inspector select {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .__current-element {
+        outline: 2px dashed #BD0B0B;
+    }
+</style>
+
+<script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
+
+<script>
+    var lively4url =  "../" // or any abosolute path to lively4 ? Any idea for computeRoot() ? #JensLincke #OpenQuestion
+
+</script>
+
+<link rel="import" href="../src/client/babel-system.html" />
+
+</head>
+<body>
+<h1>Lively 4 -- Bootstrapping Test Page<script data-name="alertText" type="lively4script">function alertText() {
+    alert(this.innerText);
+}</script><script data-name="script3" type="lively4script">function () { alert("asd4") }</script></h1>
+
+<p><input type="text" id="baseurl" value="https://github.lively4/repo/livelykernel/lively4-core/persistence-dummy/" /></p>
+
+
+<!-- <button onclick="">reload service worker </button> -->
+
+<button onclick="githubAuth.challengeForAuth(Date.now(), function(token){
+    console.log('We are authenticated with the Token: ' + token)
+})">login</button>
+
+<button onclick="githubAuth.logout(); console.log('logged out of github')">logout</button>
+
+<button id="loadScriptsFromDOM" onclick="window.scriptManager.loadScriptsFromDOM()">load lively4 scripts</button>
+
+<input type="checkbox" id="persistToGithub">persist changes to github</input>
+<input type="checkbox" id="persistOnInterval">persist every x seconds only</input>
+
+<div id="console"></div>
+
+<p><input type="text" id="text-dummy" value="Änder mich!" /></p>
+<p><div contenteditable="true" id="text-dummy2">Änder mich!</div></p>
+
+<div id="object-inspector">
+    <input id="object-selector" value="" placeholder="Selector" />
+    <select id="object-selector-list" size="10"><option>[object HTMLHeadingElement]</option></select>
+    <button id="object-inspect">Inspect</button>
+    <br />
+</div>
+
+
+<br />
+<button id="inject">inject</button>
+
+<script>
+
+
+    //// #TODO The ace editor tries to be very clever, so it cannot be loaded through "import" at the moment
+    //// (e.g. AMD promise error)
+    // System.import(lively4url + "src/external/ace.js").then(function(){
+    //         ace.edit("editor")
+    // })
+
+    var ObjectEditor;
+
+    System.import(lively4url + "/src/client/load.js").then(function(){
+        System.import("commandline.js")
+        System.import(lively4url + "src/client/debug-serviceworker.js")
+        System.import(lively4url + "src/client/object-editor.js") .then(function(module) {
+            ObjectEditor = module.ObjectEditor;
+        });
+    }).catch(function(err) { alert("load Lively4 failed")})
+</script>
+
+
+<script src="./object_editor.js" type="text/javascript" charset="utf-8">function</script>
+
+</body></html>

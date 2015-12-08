@@ -1,14 +1,20 @@
 <!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
 <title>Lively 4 Our First Page</title>
 <style type="text/css" media="screen">
-    #baseurl { 
+    body {
+      margin: 0;
+    }
+    body > h1 {
+      margin-top: 0;
+    }
+    #baseurl {
         width: 800px;
     }
-    #editor { 
+    #editor {
         height: 400px;
         width: 800px;
     }
-    #console { 
+    #console {
         width: 800px;
         height: 300px;
         max-height: 200px;
@@ -16,17 +22,17 @@
         background-color: #eeeeee;
         word-break: normal !important;
         word-wrap: normal !important;
-        white-space: pre !important;   
+        white-space: pre !important;
     }
-    #commandline { 
+    #commandline {
         width: 800px;
     }
 </style>
 
 <script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
 
-
-<!-- BEGIN SYSTEM.JS: should go away, until then we use a "static" global source --> 
+<!--<link rel="import" href="../src/client/babel-system.html" /> -->
+<!-- BEGIN SYSTEM.JS: should go away, until then we use a "static" global source -->
 <script src="https://livelykernel.github.io/lively4-core/src/external/system.src.js" type="text/javascript" charset="utf-8"></script>
 <script>
   System.paths['babel'] ='https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
@@ -40,11 +46,24 @@
 </script>
 <!-- END SYSTEM.JS-->
 
-</head>
+<link rel="import" href="../templates/lively-toolbox.html" />
+<link rel="import" href="../templates/lively-window.html" />
+<link rel="import" href="../templates/lively-object-editor.html" />
+<link rel="import" href="../templates/lively-component-bin.html" />
+
+<link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /></head>
 <body>
 <h1>Lively 4 -- Bootstrapping Test Page</h1>
 
-<p><input type="text" id="baseurl" value="https://github.lively4/repo/livelykernel/lively4-core/gh-pages/" /></p>
+
+
+<lively-component-bin></lively-component-bin>
+
+
+
+<p><input type="text" id="baseurl" value="https://github.lively4/repo/livelykernel/lively4-core/gh-pages/" class=""><script data-name="foo" type="lively4script">function foo() {
+  alert("hello");
+}</script></input></p>
 
 <button onclick="fileEditor.loadFile()">load</button>
 <button onclick="fileEditor.saveFile()">save</button>
@@ -58,7 +77,7 @@
 
 <button onclick="githubAuth.logout(); console.log('logged out of github')">logout</button>
 
-<div id="editor" class=" ace_editor ace-tm" draggable="false"></div>
+<div id="editor" class=" ace_editor ace-tm"></div>
 
 <pre id="console"></pre>
 <input type="text" id="commandline" value="" />
@@ -71,22 +90,19 @@
 
 
 <script>
-    var lively4url =  "../" // or any abosolute path to lively4 ? Any idea for computeRoot() ? #JensLincke #OpenQuestion
+    var lively4url =  ".." // or any abosolute path to lively4 ? Any idea for computeRoot() ? #JensLincke #OpenQuestion
 
-    //// #TODO The ace editor tries to be very clever, so it cannot be loaded through "import" at the moment 
+    //// #TODO The ace editor tries to be very clever, so it cannot be loaded through "import" at the moment
     //// (e.g. AMD promise error)
     // System.import(lively4url + "src/external/ace.js").then(function(){
     //         ace.edit("editor")
     // })
-        
+
     System.import(lively4url + "/src/client/load.js").then(function(){
-        System.import("../src/client/file-editor.js").then(function(module) {
-            window.fileEditor = module
-            log("fileEditor loaded")
-        })
         System.import("commandline.js")
-        System.import(lively4url + "src/client/debug-serviceworker.js")    
-    }).catch(function(err) { alert("load Lively4 failed")})
+        System.import(lively4url + "/src/client/debug-serviceworker.js")
+    }).catch(function(err) { alert("load Lively4 failed")});
+
 </script>
 
 </body></html>

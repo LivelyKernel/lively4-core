@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
 <title>Lively 4 Our First Page</title>
 <style type="text/css" media="screen">
     #baseurl {
@@ -29,17 +27,16 @@
 
 
 <link rel="import" href="../src/client/babel-system.html" />
-
 </head>
 <body>
-<h1>Lively 4 -- Bootstrapping Test Page</h1>
+<h1 style="color: purple;">Lively 4 -- Bootstrapping Test Page</h1>
 
-<p><input type="text" id="baseurl" value="https://lively4/"></p>
+<p><input type="text" id="baseurl" value="https://github.lively4/repo/numberpi/lively4-core/gh-pages/" /></p>
 
 <button onclick="fileEditor.loadFile()">load</button>
 <button onclick="fileEditor.saveFile()">save</button>
-<button onclick="fileEditor.statFile()">stat</button>
-<input type="text" id="filename" value="README.md">
+
+<input type="text" id="filename" value="README.md" />
 
 <!-- <button onclick="">reload service worker </button> -->
 
@@ -49,10 +46,12 @@
 
 <button onclick="githubAuth.logout(); console.log('logged out of github')">logout</button>
 
-<div id="editor">This is no content!</div>
+<button id="loadScriptsFromDOM" onclick="window.scriptManager.loadScriptsFromDOM()">load lively4 scripts</button>
+
+<div id="editor" class=" ace_editor ace-tm" draggable="false"></div>
 
 <pre id="console"></pre>
-<input type="text" id="commandline" value="">
+<input type="text" id="commandline" value="" />
 
 <!-- BEGIN ACE -->
 <!-- We also have to load ace "locally", because loading it remotely ends in a race condition -->
@@ -71,13 +70,9 @@
     // })
 
     System.import(lively4url + "/src/client/load.js").then(function(){
-        System.import("../src/client/file-editor.js").then(function(module) {
-            window.fileEditor = module
-            log("fileEditor loaded")
-        })
         System.import("commandline.js")
         System.import(lively4url + "src/client/debug-serviceworker.js")
     }).catch(function(err) { alert("load Lively4 failed")})
 </script>
-</body>
-</html>
+
+<div id="BouncingBall" style="position: absolute; left: 800px; top: 200px; width: 50px; height: 50px; border-radius: 25px; background-color: red;"><script data-name="bounce" type="lively4script">function bounce() {var y = Math.abs(Math.sin((new Date().getTime() % 10000) / 10000 * 3.14)) * 150; $(this).css({transform: "translate3d(0, -" + y + "px, 0)"}); window.requestAnimationFrame(this.bounce)}</script></div></body></html>

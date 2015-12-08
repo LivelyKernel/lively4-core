@@ -1,9 +1,12 @@
 
     function log(/* varargs */) {
+        var c = $('#console')
+        if (c.length == 0)  return 
+
         Array.prototype.forEach.call(arguments, function(s) {
-           $('#console').text($('#console').text() + "\n" + s)
+           c.text(c.text() + "\n" + s)
         })
-        $('#console').scrollTop($('#console')[0].scrollHeight);
+        c.scrollTop(c[0].scrollHeight);
     }
 
 // console.log("A squared: " + 2**4)
@@ -38,14 +41,15 @@ if ('serviceWorker' in navigator) {
 
     navigator.serviceWorker.ready.then(function(registration) {
             log('READY');
-            System.import("../src/client/file-editor.js").then(function(module) {
-                window.fileEditor = module
-                log("fileEditor loaded")
-            })
+
             // #TODO continue here... loadFile is not in global scope (yet)
             System.import("../src/client/script-manager.js").then(function(module) {
                 window.scriptManager = module;
                 log("scriptManager loaded");
+            });
+            System.import("../src/client/persistence.js").then(function(module) {
+                window.persistence = module;
+                log("persistence loaded");
             });
     })
 
