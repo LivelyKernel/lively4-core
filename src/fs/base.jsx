@@ -13,7 +13,7 @@ export class Base {
      * @return {Promise}
      */
     stat(path) {
-
+        return Promise.resolve(new Response(null, {status: 405}))
     }
 
     /**
@@ -23,7 +23,7 @@ export class Base {
      * @return {Promise}
      */
     read(path) {
-
+        return Promise.resolve(new Response(null, {status: 405}))
     }
 
     /**
@@ -34,6 +34,6 @@ export class Base {
      * @return {Promise}
      */
     write(path, content) {
-
+        return Promise.resolve(new Response(null, {status: 405}))
     }
 }
