@@ -1,11 +1,16 @@
 <template id="template">
 	<style>
+  @import url('https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css');
+
 	:host {
-		position: fixed;
+		position: absolute;
 		z-index: 100;
 		width: 400px;
-    	height: 300px;
+    height: 300px;
 	}
+  :host(.window-fixed) {
+    position: fixed;
+  }
 	:host * {
 		box-sizing: border-box;
 	}
@@ -58,14 +63,14 @@
 		font-size: 1.1em;
 		line-height: 1.5rem;
 	}
-    .window-title span small {
-        font-style: italic;
-        color: #333;
-    }
+  .window-title span small {
+      font-style: italic;
+      color: #333;
+  }
 	.window-controls {
 		flex-grow: 0;
 	}
-	.window-min, .window-max, .window-close {
+	.window-button {
 		display: inline-block;
 		color: #777777;
 		background-color: #ffffff;
@@ -76,10 +81,17 @@
 		cursor: pointer;
 		line-height: 1.5rem;
 	}
-	.window-min:hover, .window-max:hover, .window-close:hover {
+	.window-button:hover, .window-button.active {
 		background-color: #cde6f7;
 		color: #2a8dd4;
 	}
+  .window-pin i {
+    transform: rotate(90deg);
+    transition: transform 300ms;
+  }
+  .window-pin.active i {
+    transform: rotate(0);
+  }
 	.window-resize {
 		position: absolute;
 		right: -2px;
@@ -101,9 +113,10 @@
 		<div class="window-titlebar">
 			<div class="window-title"><span></span></div>
 			<div class="window-controls">
-				<span class="window-min">&lowbar;</span>
-				<span class="window-max">&#9634;</span>
-				<span class="window-close">&#10005;</span>
+        <span class="window-button window-pin"><i class="fa fa-thumb-tack"></i></span>
+				<span class="window-button window-min">&lowbar;</span>
+				<span class="window-button window-max">&#9634;</span>
+				<span class="window-button window-close">&#10005;</span>
 			</div>
 		</div>
 		<div class="window-content" id="window-content">

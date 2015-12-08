@@ -13,6 +13,10 @@ export default class Window extends Morph {
     this.render();
   }
 
+  get isFixed() {
+    return this.hasAttribute('fixed');
+  }
+
   attachedCallback() {
     console.log('window attachedCallback!');
 
@@ -20,6 +24,7 @@ export default class Window extends Morph {
     this.titleSpan = this.shadowRoot.querySelector('.window-title span');
     this.minButton = this.shadowRoot.querySelector('.window-min');
     this.maxButton = this.shadowRoot.querySelector('.window-max');
+    this.pinButton = this.shadowRoot.querySelector('.window-pin');
     this.resizeButton = this.shadowRoot.querySelector('.window-resize');
     this.closeButton = this.shadowRoot.querySelector('.window-close');
     this.contentBlock = this.shadowRoot.querySelector('#window-content');
@@ -29,6 +34,7 @@ export default class Window extends Morph {
     this.closeButton.addEventListener('click', (e) => { this.closeButtonClicked(e) });
     this.minButton.addEventListener('click', (e) => { this.minButtonClicked(e) });
     this.maxButton.addEventListener('click', (e) => { this.maxButtonClicked(e) });
+    this.pinButton.addEventListener('click', (e) => { this.pinButtonClicked(e) });
     this.resizeButton.addEventListener('mousedown', (e) => { this.resizeMouseDown(e) });
     this.shadowRoot.querySelector('.window-title').addEventListener('mousedown', (e) => { this.titleMouseDown(e) });
 
@@ -43,6 +49,9 @@ export default class Window extends Morph {
     switch(attrName) {
       case 'title':
         this.render();
+        break;
+      case 'fixed':
+        this.reposition();
         break;
       default:
         //
@@ -59,6 +68,24 @@ export default class Window extends Morph {
     }
   }
 
+  reposition() {
+    let rect = this.getBoundingClientRect();
+    let scrollX = document.scrollingElement.scrollLeft || 0;
+    let scrollY = document.scrollingElement.scrollTop || 0;
+
+    if (this.isFixed) {
+      this.style.left = rect.left + 'px';
+      this.style.top = rect.top + 'px';
+      this.classList.add('window-fixed');
+      this.pinButton.classList.add('active');
+    } else {
+      this.style.left = (rect.left + scrollX) + 'px';
+      this.style.top = (rect.top + scrollY) + 'px';
+      this.classList.remove('window-fixed');
+      this.pinButton.classList.remove('active');
+    }
+  }
+
   minButtonClicked(e) {
     // TODO
   }
@@ -67,19 +94,35 @@ export default class Window extends Morph {
     // TODO
   }
 
+  pinButtonClicked(e) {
+    let isPinned = this.pinButton.classList.toggle('active');
+    if (isPinned) {
+      this.setAttribute('fixed', '');
+    } else {
+      this.removeAttribute('fixed');
+    }
+  }
+
   closeButtonClicked(e) {
     this.parentNode.removeChild(this);
   }
 
   titleMouseDown(e) {
     e.preventDefault();
-    
+
     let offsetWindow = $(this).offset();
 
-    this.dragging = {
-      left: e.pageX - offsetWindow.left,
-      top: e.pageY - offsetWindow.top
-    };
+    if (this.isFixed) {
+      this.dragging = {
+        left: e.pageX - offsetWindow.left,
+        top: e.pageY - offsetWindow.top
+      };
+    } else {
+      this.dragging = {
+        left: e.clientX - offsetWindow.left,
+        top: e.clientY - offsetWindow.top
+      };
+    }
     $('.window', this.shadowRoot).addClass('dragging');
   }
 
@@ -107,10 +150,19 @@ export default class Window extends Morph {
     e.preventDefault();
 
     if (this.dragging) {
-      $(this).css({
-        left: e.pageX - this.dragging.left,
-        top: e.pageY - this.dragging.top
-      });
+      if (this.isFixed) {
+        $(this).css({
+          left: e.clientX - this.dragging.left,
+          top: e.clientY - this.dragging.top
+        });
+      } else {
+        let scrollX = document.scrollingElement.scrollLeft || 0;
+        let scrollY = document.scrollingElement.scrollTop || 0;
+        $(this).css({
+          left: e.pageX - this.dragging.left - scrollX,
+          top: e.pageY - this.dragging.top - scrollY
+        });
+      }
     } else if (this.resizing) {
       $(this).css({
         width: e.pageX - this.resizing.left,
