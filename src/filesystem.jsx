@@ -18,14 +18,16 @@ export class Filesystem {
     constructor() {
         this.mounts = new Map()
         this.mount('/', Github.Filesystem, {repo: 'LivelyKernel/lively4-core'})
-        this.mount('/sys', Sys.Filesystem, {system: this})
+        this.mount('/sys', Sys.Filesystem, {}, this)
         this.mount('/local', Html5.Filesystem)
+
+        this.reqcount = 0
     }
 
-    mount(path, type, options = {}) {
+    mount(path, type, ...args) {
         path = Path.normalize(path)
 
-        this.mounts.set(path, new type(path, options))
+        this.mounts.set(path, new type(path, ...args))
     }
 
     handle(request, url) {
@@ -41,6 +43,8 @@ export class Filesystem {
         }
 
         path = path.substring(base.length)
+
+        this.reqcount++
 
         if(request.method === 'GET')
             return fs.read(path, request)
