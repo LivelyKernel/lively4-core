@@ -2,8 +2,10 @@
  * Basic file system base class.
  */
 export class Base {
-    constructor(path, options) {
+    constructor(name, path, options) {
         this.path = path
+        this.name = name
+        this.options = options
     }
 
     /**
