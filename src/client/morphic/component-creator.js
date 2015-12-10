@@ -1,5 +1,12 @@
 import { createRegistrationScript } from "./component-loader.js";
 
+export function handle(el) {
+  name = window.prompt("What should be the name of the component you want to export?")
+  if (name) {
+    createTemplate(el, name);
+  }
+}
+
 export  function createTemplate(rootElement, name) {
   var template = document.createElement("template");
   template.id = "lively-" + name;
@@ -16,16 +23,14 @@ export  function createTemplate(rootElement, name) {
   styleElement.innerHTML = combinedStyle;
   fragment.appendChild(styleElement);
 
-  // clone subtree from root
-  $(rootElement.children).each(function(idx) {
-    var clone = this.cloneNode(true);
-    fragment.appendChild(clone);
-  });
+  // clone root
+  var clone = rootElement.cloneNode(true);
+  fragment.appendChild(clone);
 
   return saveTemplate(template);
 }
 
-export function saveTemplate(template) {
+function saveTemplate(template) {
   var serializer = new XMLSerializer();
   var registrationScript = createRegistrationScript(template.id);
 
@@ -54,9 +59,9 @@ export function packShadowDOM(subtreeRoot) {
   }
 
   // We need to bring the styles into the shadow root,
-  // because otherwise they will not be applied to the 
+  // because otherwise they will not be applied to the
   // shadow dom elements.
-  
+
   // collect styles
   // Maybe we should not filter rules due to dynamically
   // assigned classes?
@@ -67,7 +72,7 @@ export function packShadowDOM(subtreeRoot) {
   styleElement.innerHTML = combinedStyle;
   shadow.appendChild(styleElement);
 
-  // make a shallow copy of the children object, 
+  // make a shallow copy of the children object,
   // since subtreeRoot.children changes in the following loop
   var children = $.extend({}, subtreeRoot.children);
   // append all children to the shadow dom
@@ -88,12 +93,12 @@ export function unpackShadowDOM(subtreeRoot) {
   });
 
   // remove all remaining child nodes
-  $(shadow.children).each(function(idx) {
-    shadow.removeChild(this);
-  });
+  // $(shadow.children).each(function(idx) {
+  //   shadow.removeChild(this);
+  // });
 
   // We cannot remove the shadow root, so to make the content visible,
-  // add a content node to the shadow dom. This should be equivalent to having 
+  // add a content node to the shadow dom. This should be equivalent to having
   // no shadow dom at all.
   shadow.appendChild(document.createElement("content"));
 }
@@ -108,7 +113,7 @@ function collectAppliedCssRules(rootElement) {
       var selector = rule.selectorText;
       // just add those rule that match an element in the subtree
       if (selectorMatchesTree(selector, rootElement)) {
-        combinedStyle += rule.cssText + "\n";       
+        combinedStyle += rule.cssText + "\n";
       }
     }
   }
@@ -117,8 +122,8 @@ function collectAppliedCssRules(rootElement) {
 }
 
 function selectorMatchesTree(selector, rootElement) {
-  // collect everything for now
-  return true;
+  // conservative css rule collection for now
+  // return true;
   // if root matches selector, we are done
   if (rootElement.matches(selector)) {
     return true;
