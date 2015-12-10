@@ -88,6 +88,7 @@
 		]).then(modules => {
 			var ObjectEditor = modules[0];
 			var Loader = modules[1];
+			// var [ObjectEditor, Loader] = modules;
 			Loader.register('lively-object-editor', clone, Object.create(ObjectEditor.prototype || ObjectEditor.default.prototype));
 		});
 	})();

@@ -1,4 +1,5 @@
-<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
 <title>Lively 4 Our First Page</title>
 <style type="text/css" media="screen">
     #baseurl {
@@ -26,16 +27,22 @@
 <script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
 
 
-<link rel="import" href="../src/client/babel-system.html" />
+<link rel="import" href="../src/client/babel-system.html">
 
-<link rel="import" href="../templates/lively-toolbox.html" />
-<link rel="import" href="../templates/lively-window.html" />
-<link rel="import" href="../templates/lively-object-editor.html" />
-<link rel="import" href="../templates/lively-component-bin.html" />
+<link rel="import" href="../templates/lively-toolbox.html">
+<link rel="import" href="../templates/lively-window.html">
+<link rel="import" href="../templates/lively-object-editor.html">
+<link rel="import" href="../templates/lively-component-bin.html">
 
-<link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /></head>
+<link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css"><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css"><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css"><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css"><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css"></head>
 <body>
-<h1>Lively 4 -- Bootstrapping Test Page</h1>
+<h1>Lively 4 -- Bootstrapping Test Page
+  <script data-name="testx" type="lively4script">() => 1 < 2</script>
+  <script data-name="testy" type="lively4script">() => this.testx()</script>
+  <script data-name="testAdd" type="lively4script">(x, y) => x + y * 3</script>
+  <script data-name="testSetColor" type="lively4script">() => this.style.color = "#00f"</script>
+</h1>
+<h2>Another Title</h2>
 
 
 
@@ -45,11 +52,11 @@
 
 <p><input type="text" id="baseurl" value="https://github.lively4/repo/livelykernel/lively4-core/gh-pages/" class=""><script data-name="foo" type="lively4script">function foo() {
   alert("hello");
-}</script></input></p>
+}</script></p>
 
 <button onclick="fileEditor.loadFile()">load</button>
 <button onclick="fileEditor.saveFile()">save</button>
-<input type="text" id="filename" value="README.md" />
+<input type="text" id="filename" value="README.md">
 
 <!-- <button onclick="">reload service worker </button> -->
 
@@ -61,13 +68,13 @@
 
 <button id="loadScriptsFromDOM" onclick="window.scriptManager.loadScriptsFromDOM()">load lively4 scripts</button>
 
-<input type="checkbox" id="persistToGithub">persist changes to github</input>
-<input type="checkbox" id="persistOnInterval">persist every x seconds only</input>
+<input type="checkbox" id="persistToGithub">persist changes to github
+<input type="checkbox" id="persistOnInterval">persist every x seconds only
 
 <div id="editor" class=" ace_editor ace-tm"></div>
 
 <pre id="console"></pre>
-<input type="text" id="commandline" value="" />
+<input type="text" id="commandline" value="">
 
 <!-- BEGIN ACE -->
 <!-- We also have to load ace "locally", because loading it remotely ends in a race condition -->
@@ -90,14 +97,7 @@
         System.import(lively4url + "/src/client/debug-serviceworker.js")
     }).catch(function(err) { alert("load Lively4 failed")});
 
-    var morphic;
-    System.import(lively4url + "/src/client/morphic/morphic.js").then(m => {
-        morphic = m;
-        morphic.initMorphicTools();
-    }).catch(function(err) {
-        debugger; alert("load morphic failed");
-    });
-
 </script>
+
 
 </body></html>

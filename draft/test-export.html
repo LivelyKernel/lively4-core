@@ -23,27 +23,39 @@
     }
 </style>
 
+
+<style>
+  .component-bin-container {
+    display: inline-block;
+    padding: 5px;
+    border-radius: 5px;
+    background-color: rgb(238, 238, 238);
+  }
+  .button-list {
+    list-style-type: none;
+    padding: 0px;
+    margin: 0px;
+  }
+  .list-button {
+    margin-top: 3px;
+    margin-bottom: 3px;
+    width: 100%;
+  }
+</style>
+
+
+
+
 <script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
 
-<!--<link rel="import" href="../src/client/babel-system.html" /> -->
-<!-- BEGIN SYSTEM.JS: should go away, until then we use a "static" global source -->
-<script src="https://livelykernel.github.io/lively4-core/src/external/system.src.js" type="text/javascript" charset="utf-8"></script>
-<script>
-  System.paths['babel'] ='https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
-  System.config({
-    transpiler: 'babel',
-    babelOptions: { },
-    map: {
-        babel: 'https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
-    }
-  });
-</script>
-<!-- END SYSTEM.JS-->
+
+<link rel="import" href="../src/client/babel-system.html" />
 
 <link rel="import" href="../templates/lively-toolbox.html" />
 <link rel="import" href="../templates/lively-window.html" />
 <link rel="import" href="../templates/lively-object-editor.html" />
 <link rel="import" href="../templates/lively-component-bin.html" />
+<link rel="import" href="../templates/lively-test.html" />
 
 <link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /></head>
 <body>
@@ -52,6 +64,47 @@
 
 
 <lively-component-bin></lively-component-bin>
+
+<lively-test></lively-test>
+
+<!-- <div id="comp-test">
+  <div class="component-bin-container">
+    <ul class="button-list">
+    </ul>
+  </div>
+  <script type="lively4script" data-name="initialize">
+  () => {
+    var items = [{
+      name: "Toolbox",
+      tag: "lively-toolbox"
+    }, {
+      name: "Window",
+      tag: "lively-window"
+    }, {
+      name: "Object Editor",
+      tag: "lively-object-editor"
+    }]
+
+    var list = $(this.shadowRoot).find(".button-list")[0];
+    var bin = this;
+    items.forEach(item => {
+      var li = document.createElement("li");
+      var button = document.createElement("button");
+      button.className = "list-button";
+      button.innerHTML = item.name;
+      button.addEventListener("click", addComponent.bind(bin, item.tag));
+
+      function addComponent(tag, evt) {
+        var component = document.createElement(tag);
+        this.parentElement.insertBefore(component, this.nextSibling);
+      }
+
+      li.appendChild(button);
+      list.appendChild(li);
+    });
+  }
+  </script>
+</div> -->
 
 
 
@@ -96,6 +149,13 @@
         System.import("commandline.js")
         System.import(lively4url + "/src/client/debug-serviceworker.js")
     }).catch(function(err) { alert("load Lively4 failed")});
+
+    var creator;
+    System.import(lively4url + "/src/client/morphic/component-creator.js").then(m => {
+        creator = m;
+    }).catch(function(err) {
+        debugger; alert("load component-creator failed");
+    });
 
 </script>
 
