@@ -1,7 +1,7 @@
 
     function log(/* varargs */) {
         var c = $('#console')
-        if (c.length == 0)  return 
+        if (c.length == 0)  return
 
         Array.prototype.forEach.call(arguments, function(s) {
            c.text(c.text() + "\n" + s)
@@ -61,11 +61,8 @@ if ('serviceWorker' in navigator) {
 
     navigator.serviceWorker.addEventListener("message", (event) => {
         var reject = function(err) {
-            console.log('RPC client error', err)
             event.ports[0].postMessage({error: err})
         }
-
-        console.log('RPC client received', event.data);
 
         switch(event.data.name) {
             case 'swx:readFile':
