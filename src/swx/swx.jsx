@@ -15,8 +15,6 @@ class ServiceWorker {
             url     = new URL(request.url),
             promise = undefined
 
-        console.log('Handle fetch', event)
-
         if(url.hostname !== 'lively4')
             return self.fetch(event.request)
 

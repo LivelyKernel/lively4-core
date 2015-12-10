@@ -20,11 +20,15 @@ export class Filesystem extends Base {
         delete json['content']
         delete json['encoding']
 
+        let type = 'file'
+
+        if(json['type'] === 'dir')
+            type = 'directory'
+
         return {
-            type: json['type'],
+            type: type,
             name: json['name'],
-            size: json['size'],
-            vendor: json
+            size: json['size']
         }
     }
 

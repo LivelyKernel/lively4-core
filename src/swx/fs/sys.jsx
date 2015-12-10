@@ -5,11 +5,13 @@
 import { Base } from './base.jsx'
 
 export class Filesystem extends Base {
-    constructor(path, options) {
-        let {system, ...rest} = options
-        super('sysfs', path, rest)
+    constructor(path, options, system) {
+        super('sysfs', path, options)
 
-        this.tree = new SysDir(null, [
+        let name = path.split(/\/+/)
+        name = name[name.length - 1]
+
+        this.tree = new SysDir(name, [
             new SysFile('mounts', function() {
                 let json = []
 
@@ -22,7 +24,12 @@ export class Filesystem extends Base {
                 }
 
                 return json
-            })
+            }),
+            new SysDir('swx', [
+                new SysFile('reqcount', function() {
+                    return system.reqcount
+                })
+            ])
         ])
     }
 
@@ -31,43 +38,11 @@ export class Filesystem extends Base {
     }
 
     stat(path) {
-        return this.resolve().then((node) => node.stat())
-
-        // return this._resolve(path).then((object) => {
-        //     if(typeof object === 'function') {
-        //         let json = {
-        //             type: 'file',
-        //             name: ''
-        //         }
-
-        //         return JSON.stringify(json, null, '\t')
-        //     } else {
-        //         let json = {
-        //             type: 'directory',
-        //             contents:
-        //         }
-
-        //         return JSON.stringify(json, null, '\t')
-        //     }
-        // }).catch(() => {
-        //     return new Response(null, {status: 404})
-        // })
+        return this.resolve(path).then((node) => node.stat())
     }
 
     read(path) {
-        return this.resolve().then((node) => node.read())
-
-        // return this._resolve(path).then((object) => {
-        //     if(typeof object === 'function') {
-        //         return object()
-        //     } else {
-        //         let headers = new Headers()
-        //         headers.append('Allow', 'OPTIONS')
-        //         return new Response(null, {status: 405, statusMessage: 'EISDIR', headers: headers})
-        //     }
-        // }).catch(() => {
-        //     return new Response(null, {status: 404})
-        // })
+        return this.resolve(path).then((node) => node.read())
     }
 }
 
@@ -84,8 +59,23 @@ class Inode {
         return this._notImplemented()
     }
 
-    stat() {
+    statinfo() {
         throw Error("Not implemented but required")
+    }
+
+    stat(...args) {
+        return this.statinfo(...args).then((info) => {
+            let headers = new Headers()
+            headers.append('Allow', 'OPTIONS')
+
+            if(this.access().read)
+                headers.append('Allow', 'GET')
+            if(this.access().write)
+                headers.append('Allow', 'PUT')
+
+            let body = JSON.stringify(info, null, '\t')
+            return new Response(body)
+        })
     }
 
     access() {
@@ -111,77 +101,56 @@ class Inode {
 }
 
 class Directory extends Inode {
-    stat({contents = true} = {}) {
-        let json = {
-            type: 'directory',
-            name: this.name
-        }
+    statinfo({contents = true} = {}) {
+        let cts = Promise.resolve(null)
 
         if(contents) {
-            let children = this.children()
-
-            json['contents'] = []
-
-            for(let child in children) {
-                let cstat = child.stat({
-                    contents: false
-                })
-
-                json['contents'].push(stat)
-            }
+            cts = this.children().then((children) => {
+                return Promise.all(children.map((child) => {
+                    return child.statinfo({contents: false})
+                }))
+            })
         }
 
-        let headers = new Headers()
-        headers.append('Allow', 'OPTIONS')
+        return cts.then((content) => {
+            let cjson
 
-        let content = JSON.stringify(json, null, '\t'),
-            response = new Response(content, {headers: headers})
+            if(content)
+                cjson = {contents: content}
 
-        return Promise.resolve(response)
+            return Object.assign({}, cjson, {
+                type: 'directory',
+                name: this.name
+            })
+        })
     }
 }
 
 class File extends Inode {
     statinfo() {
-        return {}
-    }
-
-    stat() {
-        let info = this.statinfo()
-        let json = Object.assign({}, info, {
-                type: 'file',
-                name: this.name
-            })
-
-        let headers = new Headers()
-        let content = JSON.stringify(json, null, '\t')
-
-        headers.append('Allow', 'OPTIONS')
-
-        if(this.access().read)
-            headers.append('Allow', 'GET')
-        if(this.access().write)
-            headers.append('Allow', 'PUT')
-
-        let response = new Response(content, {headers: headers})
-
-        return Promise.resolve(response)
+        return Promise.resolve({
+            type: 'file',
+            name: this.name
+        })
     }
 }
 
 class SysDir extends Directory {
     constructor(name, children) {
         super(name)
-        this.children = children
+        this._children = children
     }
 
     children() {
-        return this.children
+        return Promise.resolve(this._children)
     }
 
     resolve(path) {
+        if(path.length == 0)
+            return Promise.resolve(this);
+
         let [name, rest] = path.split(/\/+/, 2)
-        let node = children.find((child) => child.name === name)
+        let node = this._children.find((child) => child.name === name)
 
         if(rest) {
             if(node instanceof SysDir) {
@@ -189,8 +158,10 @@ class SysDir extends Directory {
             } else {
                 return Promise.reject(new Error('ENOTDIR'))
             }
+        } else if(node) {
+            return Promise.resolve(node)
         } else {
-            return Promise.reolve(tree)
+            return Promise.reject(new Error('ENOTFOUND'))
         }
     }
 }
