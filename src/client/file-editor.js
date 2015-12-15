@@ -51,6 +51,21 @@ export function saveFile(){
 			console.log("could not write " + url + ": " + error)
 		}
 	});
+}
 
+export function statFile(){
+	var url = getURL()
+	console.log("stat " + url)
+	$.ajax({
+	    url: url,
+	    type: 'OPTIONS',
+	    success: function(text) {
+			console.log("file " + url + " stated.")
+			currentEditor().setValue(text)
+		},
+		error: function(xhr, status, error) {
+			console.log("could not stat " + url + ": " + error)
+		}
+	});
 }
 

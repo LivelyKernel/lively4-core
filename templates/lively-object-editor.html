@@ -1,48 +1,49 @@
 <link rel="import" href="lively-treeview.html">
+<link rel="import" href="juicy-ace-editor.html">
 
 <template id="template">
-	<style>
-		:host {
-			display: block;
-			position: relative;
-			background: white;
-			width: 400px;
-			height: 300px;
-		}
-		#wrapper {
-			display: flex;
-    		flex-direction: column;
-			width: 100%;
-			height: 100%;
-		}
-		.main-content {
-			width: 100%;
-			flex-grow: 1;
-			display: flex;
-			max-height: 100%;
-		}
-		#property-list {
-			width: 30%;
-			min-width: 100px;
-			margin-right: 2px;
-			font-size: 12px;
-			overflow-x: scroll;
-		}
-		textarea {
-			width: 70%;
-		}
-		.toolbar {
-			margin-top: 0.4rem;
-		}
-		.toolbar .bar-left {
-			display: inline-block;
-			text-align: left;
-		}
-		.toolbar .bar-right {
-			float: right;
-			display: inline-block;
-			text-align: right;
-		}
+    <style>
+        :host {
+            display: block;
+            position: relative;
+            background: white;
+            width: 400px;
+            height: 300px;
+        }
+        #wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+        }
+        .main-content {
+            width: 100%;
+            flex-grow: 1;
+            display: flex;
+            max-height: 100%;
+        }
+        #property-list {
+            width: 30%;
+            min-width: 100px;
+            margin-right: 2px;
+            font-size: 12px;
+            overflow-x: scroll;
+        }
+        textarea, juicy-ace-editor {
+            width: 70%;
+        }
+        .toolbar {
+            margin-top: 0.4rem;
+        }
+        .toolbar .bar-left {
+            display: inline-block;
+            text-align: left;
+        }
+        .toolbar .bar-right {
+            float: right;
+            display: inline-block;
+            text-align: right;
+        }
 
     #attributesContent {
       width: 100%;
@@ -56,56 +57,56 @@
     .main-content .hidden {
       display: none;
     }
-	</style>
+    </style>
 
-	<div id="wrapper">
-		<div class="main-content">
-			<lively-treeview id="property-list">
-				<ul>
-					<li class="node">
-						<span class="leaf">Scripts</span>
-						<ul id="script-nodes"></ul>
-					</li>
-					<li>
-						<span id="attributes-leaf" class="leaf">Attributes</span>
-					</li>
-					<li>
-						<span id="properties-leaf" class="leaf">Properties</span>
-					</li>
-				</ul>
-			</lively-treeview>
-
+    <div id="wrapper">
+        <div class="main-content">
+            <lively-treeview id="property-list">
+                <ul>
+                    <li>
+                        <span id="attributes-leaf" class="leaf">Attributes</span>
+                    </li>
+                    <li class="node">
+                        <span class="leaf">Scripts</span>
+                        <ul id="script-nodes"></ul>
+                    </li>
+                    <!-- <li>
+                        <span id="properties-leaf" class="leaf">Properties</span>
+                    </li> -->
+                </ul>
+            </lively-treeview>
       <!-- possible content elements -->
-			<textarea class="hidden" id="editor"></textarea>
-      <div class="hidden" id="attributesContent">
-        <lively-key-value-map id="attributesMap"></lively-key-value-map>
-      </div>
+            <juicy-ace-editor id="editor"></juicy-ace-editor>
+            <div class="hidden" id="attributesContent">
+                <lively-key-value-map id="attributesMap"></lively-key-value-map>
+            </div>
       <!-- / -->
-		</div>
-		<div class="toolbar">
-			<div class="bar-left">
-				<button id="add-script">Add</button>
-				<button id="remove-script">Remove</button>
-			</div>
-			<div class="bar-right">
-				<button id="save-script">Save</button>
-			</div>
-		</div>
-	</div>
+        </div>
+        <div class="toolbar">
+            <div class="bar-left">
+                <button id="add-script">Add</button>
+                <button id="remove-script">Remove</button>
+            </div>
+            <div class="bar-right">
+                <button id="save-script">Save</button>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
-	(function() {
-		var template = document.currentScript.ownerDocument.querySelector('#template');
-		var clone = document.importNode(template.content, true);
+    (function() {
+        var template = document.currentScript.ownerDocument.querySelector('#template');
+        var clone = document.importNode(template.content, true);
 
-		Promise.all([
-			System.import('../templates/classes/ObjectEditor.js'),
-			System.import('../src/client/morphic/component-loader.js')
-		]).then(modules => {
-			var ObjectEditor = modules[0];
-			var Loader = modules[1];
-			Loader.register('lively-object-editor', clone, ObjectEditor.prototype);
-		});
-	})();
+        Promise.all([
+            System.import('../templates/classes/ObjectEditor.js'),
+            System.import('../src/client/morphic/component-loader.js')
+        ]).then(modules => {
+            var ObjectEditor = modules[0];
+            var Loader = modules[1];
+            // var [ObjectEditor, Loader] = modules;
+            Loader.register('lively-object-editor', clone, Object.create(ObjectEditor.prototype || ObjectEditor.default.prototype));
+        });
+    })();
 </script>

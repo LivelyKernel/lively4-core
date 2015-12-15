@@ -1,5 +1,8 @@
 <template id="lively-toolbox">
     <style>
+    :host {
+      display: inline-block;
+    }
     .container {
         width: 120px;
         padding: 5px;
@@ -12,7 +15,8 @@
         </form>
     </div>
     <script type="lively4script" data-name="initialize">
-      var dragging, grabbing, inspecting, deleting, copying;
+    () => {
+      var dragging, grabbing, inspecting, deleting, copying, exporting;
       var baseUrl = "../src/client/morphic/";
 
       Promise.all([
@@ -20,7 +24,9 @@
         "grabbing.js",
         "inspecting.js",
         "deleting.js",
-        "copying.js"
+        "copying.js",
+        "component-creator.js",
+        "selecting.js"
       ]
       .map(name => { return System.import(baseUrl + name); }))
       .then((modules) => {
@@ -29,6 +35,7 @@
         inspecting = modules[2];
         deleting = modules[3];
         copying = modules[4];
+        exporting = modules[5];
 
         this.createMorphicToolbox();
       }).catch(err => {
@@ -41,9 +48,8 @@
           name: "none",
           default: true
         }, {
-          name: "Inspector",
-          onActivate: inspecting.activate,
-          onDeactivate: inspecting.deactivate
+          name: "Inspect",
+          handle: inspecting.handle
         }, {
           name: "Grabbing",
           onActivate: grabbing.activate,
@@ -53,13 +59,14 @@
           onActivate: dragging.activate,
           onDeactivate: dragging.deactivate
         }, {
-          name: "Deleting",
-          onActivate: deleting.activate,
-          onDeactivate: deleting.deactivate
+          name: "Delete",
+          handle: deleting.handle
         }, {
-          name: "Copying",
-          onActivate: copying.activate,
-          onDeactivate: copying.deactivate
+          name: "Copy",
+          handle: copying.handle
+        }, {
+          name: "Export",
+          handle: exporting.handle
         }]
 
         initStylesheet();
@@ -69,42 +76,54 @@
         var form = $(this.shadowRoot).find("form")[0];
         container.appendChild(form);
 
-        $(form).on("change", function(evt) {
-          // deactivate the current tool, if it has a deactivation function
-          var deactivate = container.currentTool.onDeactivate;
-          if (typeof deactivate === "function") {
-            deactivate();
-          }
-          // activate the new tool, if it has an activation function
-          var activate = evt.target.tool.onActivate;
-          if (typeof activate === "function") {
-            activate();
-          }
+        $(form).on("change click", function(evt) {
+          if (evt.target.tool) {
+            // deactivate the current tool, if it has a deactivation function
+            var deactivate = container.currentTool.onDeactivate;
+            if (typeof deactivate === "function") {
+              deactivate();
+            }
+            // activate the new tool, if it has an activation function
+            var activate = evt.target.tool.onActivate;
+            if (typeof activate === "function") {
+              activate();
+            }
+            // activate the new tool, if it has a handle function
+            var handle = evt.target.tool.handle;
+            if (typeof handle === "function" && window.that) {
+              handle(window.that);
+            }
 
-          container.currentTool = evt.target.tool;
+            container.currentTool = evt.target.tool;
+          }
         });
 
         // create a radio button for each tool
         tools.forEach(function(ea) {
-          var radio = document.createElement("input");
-          var id = "radio-button-" + ea.name;
-          radio.type = "radio";
-          radio.name = "tool-selection";
-          radio.id = id;
-          radio.value = ea.name;
-          radio.tool = ea;
+          var toolType = typeof ea.handle === "function" ? "button" : "radio";
+          var el = document.createElement("input");
+          var id = toolType + "-" + ea.name;
+          el.type = toolType;
+          el.name = "tool-selection";
+          el.id = id;
+          el.value = ea.name;
+          el.tool = ea;
 
           if (ea.default) {
-            radio.checked = true;
+            el.checked = true;
             container.currentTool = ea;
           }
 
-          var label = document.createElement("label");
-          label.setAttribute('for', id);
-          label.innerHTML = ea.name;
+          form.appendChild(el);
 
-          form.appendChild(radio);
-          form.appendChild(label);
+          // append a label to radio buttons
+          if (toolType === "radio") {
+            var label = document.createElement("label");
+            label.setAttribute('for', id);
+            label.innerHTML = ea.name;
+            form.appendChild(label);
+          }
+
           form.appendChild(document.createElement("br"));
         });
 
@@ -119,10 +138,13 @@
            href: "../src/client/css/morphic.css"
         }).appendTo("head");
       }
+    }
     </script>
     <script type="lively4script" data-name="foo">
-      // this is just a test of another script
-      console.log("hello script");
+      () => {
+        // this is just a test of another script
+        console.log("hello script");
+      }
     </script>
 </template>
 <script class="registrationScript">

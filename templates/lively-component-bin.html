@@ -22,6 +22,7 @@
   </ul>
 </div>
 <script type="lively4script" data-name="initialize">
+() => {
   var items = [{
     name: "Toolbox",
     tag: "lively-toolbox"
@@ -31,6 +32,9 @@
   }, {
     name: "Object Editor",
     tag: "lively-object-editor"
+  },{
+    name: "Rectangle",
+    tag: "lively-rectangle"
   }]
 
   var list = $(this.shadowRoot).find(".button-list")[0];
@@ -50,18 +54,19 @@
     li.appendChild(button);
     list.appendChild(li);
   });
+}
 </script>
 </template>
 <script class="registrationScript">
-// This ugly piece of code will be auto generated, when exporting a template. Puh.
 (function() {
   var template = document.currentScript.ownerDocument.querySelector('#lively-component-bin');
   var clone = document.importNode(template.content, true);
 
-  System.import('../templates/classes/Morph.js')
-  .then(Morph => {
+  Promise.all([
     System.import('../src/client/morphic/component-loader.js')
-    .then(loader => { loader.register('lively-component-bin', clone, Morph.prototype); });
+  ]).then(modules => {
+    var Loader = modules[0];
+    Loader.register('lively-component-bin', clone);
   });
 })();
 </script>

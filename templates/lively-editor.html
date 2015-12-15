@@ -33,6 +33,7 @@
     </div>
 
     <script type="lively4script" data-name="initialize">
+    () => {
       var container = $(this.shadowRoot).find(".container")[0];
 
       // var messaging = require('../src/client/messaging.js');
@@ -53,7 +54,7 @@
         window.githubAuth = githubAuth // make it global, so the callback can reach it...
       })
 
-    function currentEditor() {
+      function currentEditor() {
          return ace.edit($('#editor')[0]);
       }
 
@@ -106,6 +107,7 @@
         })
 
       container.dispatchEvent(new Event("initialized"))
+    }
     </script>
 </template>
 
