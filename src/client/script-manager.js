@@ -73,7 +73,7 @@ function removeFromDOM(object, name) {
 export function updateScript(object, funcOrString, opts={}) {
     if (object instanceof jQuery) {
         jQuery.each(object, function(k, v) {
-            addScript(v, funcOrString, opts);
+            updateScript(v, funcOrString, opts);
         });
         return;
     }
