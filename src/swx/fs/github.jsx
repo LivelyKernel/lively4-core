@@ -5,9 +5,9 @@
 import { Base } from './base.jsx'
 import * as util from '../util.jsx'
 
-export class Filesystem extends Base {
-    constructor(path, options) {
-        super('githubfs', path, options)
+export default class Filesystem extends Base {
+    constructor(path, fs, options) {
+        super('githubfs', path, fs, options)
 
         if(options.repo) {
             this.repo = options.repo
