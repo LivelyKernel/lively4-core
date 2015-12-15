@@ -5,7 +5,7 @@
 
 import { Base } from './base.jsx'
 
-export class Filesystem extends Base {
+export default class Filesystem extends Base {
     read(path) {
         return fetch(path).then((response) => {
             if(response.ok) {

@@ -4,9 +4,9 @@
 
 import { Base } from './base.jsx'
 
-export class Filesystem extends Base {
-    constructor(path, options, system) {
-        super('sysfs', path, options)
+export default class Filesystem extends Base {
+    constructor(path, fs, options) {
+        super('sysfs', path, fs, options)
 
         let name = path.split(/\/+/)
         name = name[name.length - 1]
@@ -15,7 +15,7 @@ export class Filesystem extends Base {
             new SysFile('mounts', function() {
                 let json = []
 
-                for(let [path, mount] of system.mounts) {
+                for(let [path, mount] of fs.mounts) {
                     json.push({
                         path: path,
                         name: mount.name,
@@ -27,7 +27,7 @@ export class Filesystem extends Base {
             }),
             new SysDir('swx', [
                 new SysFile('reqcount', function() {
-                    return system.reqcount
+                    return fs.reqcount
                 })
             ])
         ])
