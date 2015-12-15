@@ -1,12 +1,5 @@
-/*
- *
- */
 
-import * as Sys from 'src/swx/fs/sys.jsx'
 import * as Path from 'src/swx/path.jsx'
-import * as Http from 'src/swx/fs/http.jsx'
-import * as Html5 from 'src/swx/fs/html5.jsx'
-import * as Github from 'src/swx/fs/github.jsx'
 
 /**
  * Global file system subsystem.
@@ -17,17 +10,12 @@ import * as Github from 'src/swx/fs/github.jsx'
 export class Filesystem {
     constructor() {
         this.mounts = new Map()
-        this.mount('/', Github.Filesystem, {repo: 'LivelyKernel/lively4-core'})
-        this.mount('/sys', Sys.Filesystem, {}, this)
-        this.mount('/local', Html5.Filesystem)
-
         this.reqcount = 0
     }
 
     mount(path, type, ...args) {
         path = Path.normalize(path)
-
-        this.mounts.set(path, new type(path, ...args))
+        this.mounts.set(path, new type(path, this, ...args))
     }
 
     handle(request, url) {
