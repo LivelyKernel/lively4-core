@@ -12,7 +12,9 @@ function swx() {
 
         importScripts('./vendor/babel-browser.js')
         importScripts('./vendor/es6-module-loader-dev.js')
+
         System.transpiler = 'babel'
+        System.babelOptions = {stage: 0, optional: ['es7.doExpressions']}
     }
 
     return System.import('src/swx/swx.jsx')
