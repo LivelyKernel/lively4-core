@@ -1,4 +1,5 @@
 <link rel="import" href="lively-treeview.html">
+<link rel="import" href="juicy-ace-editor.html">
 
 <template id="template">
 	<style>
@@ -28,7 +29,7 @@
 			font-size: 12px;
 			overflow-x: scroll;
 		}
-		textarea {
+		textarea, juicy-ace-editor {
 			width: 70%;
 		}
 		.toolbar {
@@ -63,7 +64,7 @@
 					</li>
 				</ul>
 			</lively-treeview>
-			<textarea id="editor"></textarea>
+      <juicy-ace-editor id="editor"></juicy-ace-editor>
 		</div>
 		<div class="toolbar">
 			<div class="bar-left">
@@ -83,7 +84,7 @@
 		var clone = document.importNode(template.content, true);
 
 		Promise.all([
-			System.import('../templates/classes/ObjectEditor.js'), 
+			System.import('../templates/classes/ObjectEditor.js'),
 			System.import('../src/client/morphic/component-loader.js')
 		]).then(modules => {
 			var ObjectEditor = modules[0];
