@@ -17,6 +17,10 @@
     }
 
     set map(map) {
+      while (this.firstChild) {
+        this.removeChild(this.firstChild);
+      }
+
       for(let key in map) {
         let value = map[key];
 

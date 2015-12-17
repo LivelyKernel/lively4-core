@@ -1,5 +1,12 @@
 <template id="lively-key-value-input">
   <style>
+  #key {
+    font-weight: bold;
+    width: 120px;
+  }
+  #key.changed {
+    font-style: italic;
+  }
   #value {
     flex: 1;
     margin-left: 0.5em;
@@ -8,8 +15,7 @@
     outline: none;
   }
   </style>
-  <span id="key"></span>:
-  <input id="value" value="">
+  <content></content>
 </template>
 
 <script>
@@ -17,17 +23,38 @@
 
   class LivelyKeyValueInput extends HTMLDivElement {
     attachedCallback() {
-      console.log("attached", this.shadowRoot.querySelector('#key'));
-      this.keyElement = this.shadowRoot.querySelector('#key');
-      this.valueElement = this.shadowRoot.querySelector('#value');
+      console.log("attached", this.querySelector('#key'));
 
-      this.valueElement.addEventListener('keyup', (e) => { this.changeEventHandler(); });
-      this.valueElement.addEventListener('paste', (e) => { this.changeEventHandler(); });
+      this.innerHTML = '<span id="key"></span><input id="value" value="">';
+      this.keyElement = this.querySelector('#key');
+      this.valueElement = this.querySelector('#value');
+
+      this.valueElement.addEventListener('keyup', (e) => { this.keyUpHandler(e); });
+      this.valueElement.addEventListener('paste', (e) => { this.changeEventHandler(e); });
+      this.valueElement.addEventListener('input', (e) => { this.changeEventHandler(e); });
+      this.valueElement.addEventListener('change', (e) => { this.changeEventHandler(e); });
       this.valueElement.addEventListener('blur', (e) => { this.changeEventHandler(); });
       this.valueElement.addEventListener('focus', (e) => { this.gotFocus(e); });
     }
 
-    changeEventHandler() {
+    keyUpHandler(e) {
+      if (e.keyCode == 30) {
+        // Enter pressed
+        let ev = new CustomEvent('commit', {
+          bubbles: true,
+          detail: {
+            key: this.key,
+            value: this.value
+          },
+          targetElement: this
+        });
+
+        this.dispatchEvent(ev);
+      }
+    }
+
+    changeEventHandler(e) {
+      console.log(e);
       let changeEvent = new CustomEvent('change', {
         bubbles: true,
         detail: {
@@ -36,7 +63,7 @@
         }
       });
 
-      this.dispatchEvent(changeEvent);
+      // this.dispatchEvent(changeEvent);
     }
 
     gotFocus(e) {
