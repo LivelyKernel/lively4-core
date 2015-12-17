@@ -16,18 +16,3 @@ export function globalPosition(node) {
     y: top
   }
 }
-
-export function setPositionMode(node, aModeString) {
-  switch(aModeString) {
-    case 'relative': {
-      node.style.removeProperty('position');
-      node.style.removeProperty('top');
-      node.style.removeProperty('left');
-      break;
-    }
-    case 'absolute': {
-      node.style.position = 'absolute';
-      break;
-    }
-  }
-}

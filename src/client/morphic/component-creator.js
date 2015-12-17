@@ -1,5 +1,10 @@
 import { createRegistrationScript } from "./component-loader.js";
 
+var htmlBeautify;
+System.import("../src/external/beautify-html.js").then(function(obj){
+    htmlBeautify = obj.html_beautify;
+});
+
 export function handle(el) {
   name = window.prompt("What should be the name of the component you want to export?")
   if (name) {
@@ -38,6 +43,11 @@ function saveTemplate(template) {
   var regScriptString = serializer.serializeToString(registrationScript);
   // fix some bad escaping
   var completeHTML = (templateString + regScriptString).replace(new RegExp("&lt;", "g"),"<").replace(new RegExp("&gt;", "g") ,">");
+
+  // beautify
+  if (typeof htmlBeautify === "function") {
+    completeHTML = htmlBeautify(completeHTML);
+  }
 
   ace.edit("editor").setValue(completeHTML);
 
@@ -104,7 +114,7 @@ export function unpackShadowDOM(subtreeRoot) {
 }
 
 function collectAppliedCssRules(rootElement) {
-  var combinedStyle = "";
+  var combinedStyle = [];
   var styles = document.styleSheets;
   for (var i = 0; i < styles.length; i++) {
     var styleSheet = styles[i];
@@ -113,12 +123,14 @@ function collectAppliedCssRules(rootElement) {
       var selector = rule.selectorText;
       // just add those rule that match an element in the subtree
       if (selectorMatchesTree(selector, rootElement)) {
-        combinedStyle += rule.cssText + "\n";
+        if (combinedStyle.indexOf(rule.cssText) == -1) {
+          combinedStyle.push(rule.cssText);
+        }
       }
     }
   }
 
-  return combinedStyle;
+  return combinedStyle.join("\n");
 }
 
 function selectorMatchesTree(selector, rootElement) {
