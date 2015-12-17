@@ -17,8 +17,8 @@
   height: 5px;
   width: 5px;
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 1px;
+  right: 1px;
   background: transparent;
   border-bottom-left-radius: 50%;
 }
