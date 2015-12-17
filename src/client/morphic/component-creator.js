@@ -1,8 +1,9 @@
 import { createRegistrationScript } from "./component-loader.js";
 
-// Y NO WORKS?
-// var htmlBeautify = require('/src/external/beautify-html.js');
-// console.log(htmlBeautify)
+var htmlBeautify;
+System.import("../src/external/beautify-html.js").then(function(obj){
+    htmlBeautify = obj.html_beautify;
+});
 
 export function handle(el) {
   name = window.prompt("What should be the name of the component you want to export?")
@@ -44,8 +45,8 @@ function saveTemplate(template) {
   var completeHTML = (templateString + regScriptString).replace(new RegExp("&lt;", "g"),"<").replace(new RegExp("&gt;", "g") ,">");
 
   // beautify
-  if (typeof html_beautify === "function") {
-    completeHTML = html_beautify(completeHTML);
+  if (typeof htmlBeautify === "function") {
+    completeHTML = htmlBeautify(completeHTML);
   }
 
   ace.edit("editor").setValue(completeHTML);
