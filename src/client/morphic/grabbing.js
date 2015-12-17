@@ -4,7 +4,9 @@ import * as config from './config.js';
 
 var grabTarget;
 var grabStartEventPosition;
+var grabOffset;
 var isGrabbing = false;
+var grabShadow;
 
 export function activate() {
   console.log("using Grabbing");
@@ -44,28 +46,54 @@ function stop(e) {
 
 function initGrabbingAtEvent(anEvent) {
   grabStartEventPosition = events.globalPosition(anEvent);
+  grabOffset = {
+    x: events.globalPosition(anEvent).x - nodes.globalPosition(grabTarget).x,
+    y: events.globalPosition(anEvent).y - nodes.globalPosition(grabTarget).y
+  }
   anEvent.preventDefault();
 }
 
 function startOffsetGrabbing(anEvent) {
   if (!isGrabbing && events.noticableDistanceTo(anEvent, grabStartEventPosition)) {
-    grabTarget.style.position = 'relative';
-    grabTarget.style.removeProperty('top');
-    grabTarget.style.removeProperty('left');
+    initGrabShadow();
+    prepareGrabTarget();
     isGrabbing = true;
   }
 }
 
+function prepareGrabTarget() {
+  grabTarget.style.position = 'absolute';
+  grabTarget.style.removeProperty('top');
+  grabTarget.style.removeProperty('left');
+}
+
+function initGrabShadow() {
+  grabShadow = grabTarget.cloneNode(true);
+  grabShadow.style.opacity = '0.5';
+  grabShadow.style.position = 'relative';
+}
+
 function moveGrabbedNodeToEvent(anEvent) {
-  dropAtEvent(grabTarget, anEvent);
+  var eventPosition = events.globalPosition(anEvent);
+  dropAtEvent(grabShadow, anEvent);
+  nodes.setPosition(grabTarget, {
+    x: eventPosition.x - grabOffset.x,
+    y: eventPosition.y - grabOffset.y
+  })
   anEvent.preventDefault();
 }
 
 function stopGrabbingAtEvent(anEvent) {
+  dropAtEvent(grabTarget, anEvent);
+  grabTarget.style.position = 'relative';
+  grabTarget.style.removeProperty('top');
+  grabTarget.style.removeProperty('left');
   anEvent.preventDefault();
   isGrabbing = false;
   grabTarget = null;
   grabStartEventPosition = null;
+  grabShadow.parentNode.removeChild(grabShadow);
+  grabShadow = null;
 }
 
 function dropAtEvent(node, e) {
