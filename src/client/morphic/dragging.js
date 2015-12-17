@@ -1,8 +1,5 @@
 import * as nodes from './node-helpers.js';
 import * as events from './event-helpers.js';
-import * as config from './config.js';
-
-var dragOffset = config.DRAG_OFFSET || 0;
 
 var dragTarget;
 var dragStartEventPosition;

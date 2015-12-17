@@ -2,8 +2,6 @@ import * as events from './event-helpers.js';
 import * as nodes from './node-helpers.js';
 import * as config from './config.js';
 
-var grabOffset = config.GRAB_OFFSET || 0;
-
 var grabTarget;
 var grabStartEventPosition;
 var isGrabbing = false;

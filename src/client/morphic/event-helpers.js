@@ -1,11 +1,12 @@
 import * as nodes from './node-helpers.js'
+import * as config from './config.js';
 
 // todo: export class wrappers
 /**
 Event(e).globalPosition();
 */
 
-var offset = 30;
+var offset = config.MOUSE_MOVE_OFFSET || 0;
 
 export function globalPosition(e) {
   var targetPos = nodes.globalPosition(e.target);
