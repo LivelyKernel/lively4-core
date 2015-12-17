@@ -1,31 +1,31 @@
 <template id="lively-key-value-input">
   <style>
-  ::content #key {
+  ::content .lively-key-value-input-key {
     font-weight: bold;
     width: 120px;
   }
-  ::content #key.changed {
+  ::content .lively-key-value-input-key.changed {
     font-style: italic;
   }
-  ::content #value {
+  ::content .lively-key-value-input-value {
     flex: 1;
     margin-left: 0.5em;
   }
-  ::content #value:focus {
+  ::content .lively-key-value-input-value:focus {
     outline: none;
   }
-  ::content #status {
+  ::content .lively-key-value-input-status {
     height: 5px;
     width: 5px;
-    margin-left: 5px;
+    margin-left: -5px;
     background: white;
     border-bottom-left-radius: 50%;
   }
-  ::content #status.ok {
+  ::content .lively-key-value-input-status.ok {
     background: green;
   }
-  ::content #status.changed {
-    background: red;
+  ::content .lively-key-value-input-status.changed {
+    background: orange;
   }
   </style>
   <content></content>
@@ -36,12 +36,10 @@
 
   class LivelyKeyValueInput extends HTMLDivElement {
     attachedCallback() {
-      console.log("attached", this.querySelector('#key'));
-
-      this.innerHTML = '<span id="key"></span><input id="value" value=""><span id="status" class="ok"></span>';
-      this.keyElement = this.querySelector('#key');
-      this.valueElement = this.querySelector('#value');
-      this.statusElement = this.querySelector('#status');
+      this.innerHTML = '<span class="lively-key-value-input-key"></span><input class="lively-key-value-input-value" value=""><span class="lively-key-value-input-status ok"></span>';
+      this.keyElement = this.querySelector('.lively-key-value-input-key');
+      this.valueElement = this.querySelector('.lively-key-value-input-value');
+      this.statusElement = this.querySelector('.lively-key-value-input-status');
 
       this.valueElement.addEventListener('keyup', (e) => { this.keyUpHandler(e); });
       this.valueElement.addEventListener('input', (e) => { this.inputEventHandler(e); });
@@ -79,17 +77,18 @@
     }
 
     commit() {
-      this.oldValue = this.valueElement.value;
-      this.updateStatus();
-
       let ev = new CustomEvent('commit', {
         bubbles: true,
         detail: {
           key: this._key,
-          value: this.valueElement.value
+          value: this.valueElement.value,
+          oldValue: this.oldValue
         },
         targetElement: this
       });
+
+      this.oldValue = this.valueElement.value;
+      this.updateStatus();
 
       this.dispatchEvent(ev);
     }
