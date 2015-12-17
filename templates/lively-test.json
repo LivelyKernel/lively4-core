@@ -7,5 +7,5 @@
   "categories": ["basic", "random"],
   "tags": ["awesome", "foo", "bar", "test"],
   "template": "lively-test.html",
-  "thumbnail": "lively-test.png"
+  "thumbnail": "thumbnails/lively-test.png"
 }
