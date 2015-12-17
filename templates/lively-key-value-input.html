@@ -1,6 +1,7 @@
 <template id="lively-key-value-input">
   <style type="text/css">
     :host {
+      display: flex;
       position: relative;
     }
   </style>
@@ -34,6 +35,7 @@
           break;
         case(27): //esc
           this.valueElement.value = this.oldValue;
+          this.updateStatus();
           break;
 
         default:
