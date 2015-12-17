@@ -114,7 +114,7 @@ export function unpackShadowDOM(subtreeRoot) {
 }
 
 function collectAppliedCssRules(rootElement) {
-  var combinedStyle = "";
+  var combinedStyle = [];
   var styles = document.styleSheets;
   for (var i = 0; i < styles.length; i++) {
     var styleSheet = styles[i];
@@ -123,12 +123,14 @@ function collectAppliedCssRules(rootElement) {
       var selector = rule.selectorText;
       // just add those rule that match an element in the subtree
       if (selectorMatchesTree(selector, rootElement)) {
-        combinedStyle += rule.cssText + "\n";
+        if (combinedStyle.indexOf(rule.cssText) == -1) {
+          combinedStyle.push(rule.cssText);
+        }
       }
     }
   }
 
-  return combinedStyle;
+  return combinedStyle.join("\n");
 }
 
 function selectorMatchesTree(selector, rootElement) {
