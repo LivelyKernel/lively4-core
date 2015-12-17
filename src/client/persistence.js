@@ -1,7 +1,5 @@
 'use strict';
 
-export function babeldummy() {};
-
 var persistenceTimerInterval;
 
 function isLively4Script(node) {
