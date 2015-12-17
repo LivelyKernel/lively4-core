@@ -205,16 +205,29 @@ export default class ObjectEditor extends Morph {
     let editableProperties = [
       "dir",
       "draggable",
-      
-      "innerHTML",
-      "outerHTML",
-      "value",
-      "scrollTop",
+      "hidden",
+      "lang",
+
       "offsetHeight",
       "offsetWidth",
       "offsetParent",
       "offsetTop",
-      "offsetLeft"
+      "offsetLeft",
+
+      "clientHeight",
+      "clientLeft",
+      "clientTop",
+      "clientWidth",
+
+      "style",
+      "tabIndex",
+
+      "innerHTML",
+      "outerHTML",
+      "value",
+
+      "scrollTop",
+      "scrollLeft",
     ];
     let properties = {};
     for(let i = 0; i < editableProperties.length; i++) {
