@@ -15,16 +15,17 @@ function initialize(){
                 || record.target.id == 'editor') return;
             var shouldSave = false;
             if (record.type == 'childList') {
-                var nodes = [...record.addedNodes].concat([...record.removedNodes]);
+                /*var nodes = [...record.addedNodes].concat([...record.removedNodes]);
                 shouldSave = nodes.some(node => {
                     return isLively4Script(node);
-                });
+                });*/
+                shouldSave = true;
             }
             else if (record.type == 'characterData') {
                 shouldSave = true;
             }
             else if (record.type == 'attributes') {
-                // do not save atm
+                shouldSave = true;
             }
 
             if (shouldSave) {
