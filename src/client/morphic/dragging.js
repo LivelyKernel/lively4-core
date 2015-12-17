@@ -5,7 +5,6 @@ import * as config from './config.js';
 var dragOffset = config.DRAG_OFFSET || 0;
 
 var dragTarget;
-var dragStartOffset;
 var dragStartEventPosition;
 var dragStartNodePosition;
 var isDragging = false;
@@ -25,45 +24,64 @@ export function deactivate() {
 }
 
 function start(e) {
-  dragTarget = events.elementsUnder(e)[0];
-  dragTarget = document.body === dragTarget ? null : dragTarget;
+  dragTarget = getDragTargetFromEvent(e);
   if (dragTarget) {
-    dragStartOffset = {
-      x: e.offsetX,
-      y: e.offsetY
-    }
-    dragStartNodePosition = {
-      x: parseInt(dragTarget.style.left) || 0,
-      y: parseInt(dragTarget.style.top) || 0
-    }
+    initDragging(e);
   }
-  dragStartEventPosition = events.globalPosition(e);
-  e.preventDefault();
 }
 
 function move(e) {
-  var eventPosition = events.globalPosition(e);
-  if (dragTarget && !isDragging && events.distanceTo(e, dragStartEventPosition) > dragOffset) {
-    dragTarget.style.position = 'relative';
-    isDragging = true;
+  if (dragTarget) {
+    startOffsetDragging(e);
   }
-
   if (isDragging) {
-    var newPosition = {
-      x: events.globalPosition(e).x - dragStartEventPosition.x + dragStartNodePosition.x,
-      y: events.globalPosition(e).y - dragStartEventPosition.y + dragStartNodePosition.y
-    }
-    nodes.setPosition(dragTarget, newPosition);
-    e.preventDefault();
+    dragTo(e);
   }
 }
 
 function stop(e) {
   if (isDragging) {
-    e.preventDefault();
-    isDragging = false;
+    stopDraggingAtEvent(e);
   }
+}
+
+function getDragTargetFromEvent(anEvent) {
+  dragTarget = events.elementsUnder(anEvent)[0];
+  return document.body === dragTarget ? null : dragTarget;
+}
+
+function initDragging(anEvent) {
+  dragStartNodePosition = nodes.getPosition(dragTarget);
+  dragStartEventPosition = events.globalPosition(anEvent);
+  anEvent.preventDefault();
+}
+
+function startOffsetDragging(anEvent) {
+  var eventPosition = events.globalPosition(anEvent);
+  if (!isDragging && exceedsDragOffset(anEvent, dragStartEventPosition)) {
+    dragTarget.style.position = 'relative';
+    isDragging = true;
+  }
+}
+
+function exceedsDragOffset(anEvent, aPosition) {
+  return events.distanceTo(anEvent, aPosition) > dragOffset
+}
+
+function dragTo(anEvent) {
+  var eventPosition = events.globalPosition(anEvent);
+  var newPosition = {
+    x: eventPosition.x - dragStartEventPosition.x + dragStartNodePosition.x,
+    y: eventPosition.y - dragStartEventPosition.y + dragStartNodePosition.y
+  }
+  nodes.setPosition(dragTarget, newPosition);
+  anEvent.preventDefault();
+}
+
+function stopDraggingAtEvent(anEvent) {
+  isDragging = false;
   dragTarget = null;
   dragStartEventPosition = null;
   dragStartNodePosition = null;
+  anEvent.preventDefault();
 }
