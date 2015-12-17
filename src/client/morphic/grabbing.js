@@ -32,7 +32,9 @@ function start(e) {
 function move(e) {
   var eventPosition = events.globalPosition(e);
   if (grabTarget && !isGrabbing && events.distanceTo(e, grabStartPosition) > grabOffset) {
-    nodes.setPositionMode(grabTarget, 'relative');
+    grabTarget.style.position = 'relative';
+    grabTarget.style.removeProperty('top');
+    grabTarget.style.removeProperty('left');
     isGrabbing = true;
   }
   if (isGrabbing) {

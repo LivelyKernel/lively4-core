@@ -1,5 +1,9 @@
 import { createRegistrationScript } from "./component-loader.js";
 
+// Y NO WORKS?
+// var htmlBeautify = require('/src/external/beautify-html.js');
+// console.log(htmlBeautify)
+
 export function handle(el) {
   name = window.prompt("What should be the name of the component you want to export?")
   if (name) {
@@ -38,6 +42,11 @@ function saveTemplate(template) {
   var regScriptString = serializer.serializeToString(registrationScript);
   // fix some bad escaping
   var completeHTML = (templateString + regScriptString).replace(new RegExp("&lt;", "g"),"<").replace(new RegExp("&gt;", "g") ,">");
+
+  // beautify
+  if (typeof html_beautify === "function") {
+    completeHTML = html_beautify(completeHTML);
+  }
 
   ace.edit("editor").setValue(completeHTML);
 

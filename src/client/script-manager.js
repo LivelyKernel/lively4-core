@@ -1,5 +1,3 @@
-import * as messaging from './messaging.js';
-
 'use strict';
 
 function functionFromString(funcOrString) {
