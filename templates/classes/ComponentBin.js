@@ -2,6 +2,7 @@
 
 import Morph from './Morph.js';
 import { statFile } from '../../src/client/file-editor.js';
+import * as componentLoader from '../../src/client/morphic/component-loader.js';
 
 export default class ComponentBin extends Morph {
   attachedCallback() {
@@ -24,6 +25,7 @@ export default class ComponentBin extends Morph {
           var tag = file.name.substring(0, file.name.length-5);
           var component = document.createElement(tag);
           this.parentElement.insertBefore(component, this.nextSibling);
+          componentLoader.loadUnresolved(document.body);
         });
       });
     });
