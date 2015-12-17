@@ -6,8 +6,9 @@ var dragOffset = config.DRAG_OFFSET || 0;
 
 var dragTarget;
 var dragStartOffset;
+var dragStartEventPosition;
+var dragStartNodePosition;
 var isDragging = false;
-var dragStartPosition;
 
 export function activate() {
   console.log("using Dragging");
@@ -31,22 +32,26 @@ function start(e) {
       x: e.offsetX,
       y: e.offsetY
     }
+    dragStartNodePosition = {
+      x: parseInt(dragTarget.style.left) || 0,
+      y: parseInt(dragTarget.style.top) || 0
+    }
   }
-  dragStartPosition = events.globalPosition(e);
+  dragStartEventPosition = events.globalPosition(e);
   e.preventDefault();
 }
 
 function move(e) {
   var eventPosition = events.globalPosition(e);
-  if (dragTarget && !isDragging && events.distanceTo(e, dragStartPosition) > dragOffset) {
-    nodes.setPositionMode(dragTarget, 'absolute');
+  if (dragTarget && !isDragging && events.distanceTo(e, dragStartEventPosition) > dragOffset) {
+    dragTarget.style.position = 'relative';
     isDragging = true;
   }
 
   if (isDragging) {
     var newPosition = {
-      x: events.globalPosition(e).x - nodes.globalPosition(dragTarget.offsetParent).x - dragStartOffset.x,
-      y: events.globalPosition(e).y - nodes.globalPosition(dragTarget.offsetParent).y - dragStartOffset.y
+      x: events.globalPosition(e).x - dragStartEventPosition.x + dragStartNodePosition.x,
+      y: events.globalPosition(e).y - dragStartEventPosition.y + dragStartNodePosition.y
     }
     nodes.setPosition(dragTarget, newPosition);
     e.preventDefault();
@@ -59,5 +64,6 @@ function stop(e) {
     isDragging = false;
   }
   dragTarget = null;
-  dragStartPosition = null;
+  dragStartEventPosition = null;
+  dragStartNodePosition = null;
 }
