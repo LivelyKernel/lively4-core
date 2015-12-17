@@ -24,9 +24,9 @@ export function deactivate() {
 }
 
 function start(e) {
-  dragTarget = getDragTargetFromEvent(e);
+  dragTarget = events.getTargetNode(e);
   if (dragTarget) {
-    initDragging(e);
+    initGrabbingAtEvent(e);
   }
 }
 
@@ -45,27 +45,17 @@ function stop(e) {
   }
 }
 
-function getDragTargetFromEvent(anEvent) {
-  dragTarget = events.elementsUnder(anEvent)[0];
-  return document.body === dragTarget ? null : dragTarget;
-}
-
-function initDragging(anEvent) {
+function initGrabbingAtEvent(anEvent) {
   dragStartNodePosition = nodes.getPosition(dragTarget);
   dragStartEventPosition = events.globalPosition(anEvent);
   anEvent.preventDefault();
 }
 
 function startOffsetDragging(anEvent) {
-  var eventPosition = events.globalPosition(anEvent);
-  if (!isDragging && exceedsDragOffset(anEvent, dragStartEventPosition)) {
+  if (!isDragging && events.noticableDistanceTo(anEvent, dragStartEventPosition)) {
     dragTarget.style.position = 'relative';
     isDragging = true;
   }
-}
-
-function exceedsDragOffset(anEvent, aPosition) {
-  return events.distanceTo(anEvent, aPosition) > dragOffset
 }
 
 function dragTo(anEvent) {

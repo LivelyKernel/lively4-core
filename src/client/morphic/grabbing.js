@@ -5,7 +5,7 @@ import * as config from './config.js';
 var grabOffset = config.GRAB_OFFSET || 0;
 
 var grabTarget;
-var grabStartPosition;
+var grabStartEventPosition;
 var isGrabbing = false;
 
 export function activate() {
@@ -23,24 +23,51 @@ export function deactivate() {
 }
 
 function start(e) {
-  grabTarget = events.elementsUnder(e)[0];
-  grabTarget = document.body === grabTarget ? null : grabTarget;
-  grabStartPosition = events.globalPosition(e);
-  e.preventDefault();
+  grabTarget = events.getTargetNode(e);
+  if (grabTarget) {
+    initGrabbingAtEvent(e);
+  }
 }
 
 function move(e) {
-  var eventPosition = events.globalPosition(e);
-  if (grabTarget && !isGrabbing && events.distanceTo(e, grabStartPosition) > grabOffset) {
+  if (grabTarget) {
+    startOffsetGrabbing(e);
+  }
+  if (isGrabbing) {
+    moveGrabbedNodeToEvent(e);
+  }
+}
+
+function stop(e) {
+  if (isGrabbing) {
+    stopGrabbingAtEvent(e);
+  }
+}
+
+function initGrabbingAtEvent(anEvent) {
+  grabStartEventPosition = events.globalPosition(anEvent);
+  anEvent.preventDefault();
+}
+
+function startOffsetGrabbing(anEvent) {
+  if (!isGrabbing && events.noticableDistanceTo(anEvent, grabStartEventPosition)) {
     grabTarget.style.position = 'relative';
     grabTarget.style.removeProperty('top');
     grabTarget.style.removeProperty('left');
     isGrabbing = true;
   }
-  if (isGrabbing) {
-    dropAtEvent(grabTarget, e);
-    e.preventDefault();
-  }
+}
+
+function moveGrabbedNodeToEvent(anEvent) {
+  dropAtEvent(grabTarget, anEvent);
+  anEvent.preventDefault();
+}
+
+function stopGrabbingAtEvent(anEvent) {
+  anEvent.preventDefault();
+  isGrabbing = false;
+  grabTarget = null;
+  grabStartEventPosition = null;
 }
 
 function dropAtEvent(node, e) {
@@ -54,12 +81,6 @@ function dropAtEvent(node, e) {
   }
 }
 
-function canDropInto(node, targetNode) {
-  return node !== targetNode &&
-    $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist[node.tagName.toLowerCase()] || []) < 0 &&
-    $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist['*'] || []) < 0
-}
-
 function droptargetAtEvent(node, e) {
   var elementsUnderCursor = events.elementsUnder(e);
   for (var i = 0; i < elementsUnderCursor.length; i++) {
@@ -70,21 +91,18 @@ function droptargetAtEvent(node, e) {
   }
 }
 
-function stop(e) {
-  if (isGrabbing) {
-    e.preventDefault();
-    isGrabbing = false;
-  }
-  grabTarget = null;
-  grabStartPosition = null;
-}
-
 function moveNodeToTargetAtPosition(node, targetNode, pos) {
   var children = targetNode.childNodes;
   var nextChild = Array.from(children).find(child => {
     return child.nodeType === 1 && nodeComesBehind(child, pos);
   });
   targetNode.insertBefore(node, nextChild);
+}
+
+function canDropInto(node, targetNode) {
+  return node !== targetNode &&
+    $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist[node.tagName.toLowerCase()] || []) < 0 &&
+    $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist['*'] || []) < 0
 }
 
 function nodeComesBehind(node, pos) {
