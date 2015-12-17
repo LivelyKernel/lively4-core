@@ -1,32 +1,8 @@
 <template id="lively-key-value-input">
-  <style>
-  ::content .lively-key-value-input-key {
-    font-weight: bold;
-    width: 120px;
-  }
-  ::content .lively-key-value-input-key.changed {
-    font-style: italic;
-  }
-  ::content .lively-key-value-input-value {
-    flex: 1;
-    margin-left: 0.5em;
-  }
-  ::content .lively-key-value-input-value:focus {
-    outline: none;
-  }
-  ::content .lively-key-value-input-status {
-    height: 5px;
-    width: 5px;
-    margin-left: -5px;
-    background: white;
-    border-bottom-left-radius: 50%;
-  }
-  ::content .lively-key-value-input-status.ok {
-    background: green;
-  }
-  ::content .lively-key-value-input-status.changed {
-    background: orange;
-  }
+  <style type="text/css">
+    :host {
+      position: relative;
+    }
   </style>
   <content></content>
 </template>
@@ -36,7 +12,11 @@
 
   class LivelyKeyValueInput extends HTMLDivElement {
     attachedCallback() {
-      this.innerHTML = '<span class="lively-key-value-input-key"></span><input class="lively-key-value-input-value" value=""><span class="lively-key-value-input-status ok"></span>';
+
+      console.log('current URI: ', this.baseURI);
+
+      let body = '<span class="lively-key-value-input-key"></span><input class="lively-key-value-input-value" value=""><span class="lively-key-value-input-status ok"></span>';
+      this.innerHTML = body;
       this.keyElement = this.querySelector('.lively-key-value-input-key');
       this.valueElement = this.querySelector('.lively-key-value-input-value');
       this.statusElement = this.querySelector('.lively-key-value-input-status');
@@ -126,8 +106,11 @@
 
   (function() {
     LivelyKeyValueInput.template = document.currentScript.ownerDocument.querySelector('#lively-key-value-input');
+    LivelyKeyValueInput.baseURI = document.currentScript.baseURI;
     var clone = document.importNode(LivelyKeyValueInput.template.content, true);
     var prototype = Object.create(LivelyKeyValueInput.prototype);
+
+    clone.querySelector('style').innerHTML = '@import url("' + document.currentScript.baseURI.replace('lively-key-value-input.html', 'style/lively-key-value-input.css') + '");' + clone.querySelector('style').innerHTML;
 
     System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-key-value-input', clone, prototype); });
   })();

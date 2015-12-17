@@ -1,0 +1,30 @@
+::content .lively-key-value-input-key {
+  font-weight: bold;
+  width: 120px;
+}
+::content .lively-key-value-input-key.changed {
+  font-style: italic;
+}
+::content .lively-key-value-input-value {
+  position: relative;
+  flex: 1;
+  margin-left: 0.5em;
+}
+::content .lively-key-value-input-value:focus {
+  outline: none;
+}
+::content .lively-key-value-input-status {
+  height: 5px;
+  width: 5px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: transparent;
+  border-bottom-left-radius: 50%;
+}
+::content .lively-key-value-input-status.ok {
+  background: green;
+}
+::content .lively-key-value-input-status.changed {
+  background: orange;
+}
