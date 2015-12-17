@@ -20,6 +20,8 @@ export default class ObjectEditor extends Morph {
     this.propertiesLeaf = this.shadowRoot.querySelector('#properties-leaf');
     this.attributesMap = this.shadowRoot.querySelector('#attributesMap');
     this.attributesContent = this.shadowRoot.querySelector('#attributesContent');
+    this.propertiesMap = this.shadowRoot.querySelector('#propertiesMap');
+    this.propertiesContent = this.shadowRoot.querySelector('#propertiesContent');
 
     this.propertyList.addEventListener('change', (e) => { this.listChanged(e) });
     this.addButton.addEventListener('click', (e) => { this.addButtonClicked(e) });
@@ -27,7 +29,7 @@ export default class ObjectEditor extends Morph {
     this.saveButton.addEventListener('click', (e) => { this.saveButtonClicked(e) });
 
     this.attributesLeaf.addEventListener('click', (e) => { this.showAttributes() });
-    // this.propertiesLeaf.addEventListener('click', (e) => { this.showProperties() });
+    this.propertiesLeaf.addEventListener('click', (e) => { this.showProperties() });
 
     this.attributesMap.addEventListener('commit', (e) => { this.attributeChanged(e) });
 
@@ -168,8 +170,15 @@ export default class ObjectEditor extends Morph {
     this.updateList();
   }
 
-  showAttributes() {
+  hideAllPanes() {
     this.editor.classList.add('hidden');
+    this.attributesContent.classList.add('hidden');
+    this.propertiesContent.classList.add('hidden');
+  }
+
+  showAttributes() {
+    console.log("attr clicked");
+    this.hideAllPanes();
     this.attributesContent.classList.remove('hidden');
 
     if (!this.targetElement) {
@@ -181,6 +190,39 @@ export default class ObjectEditor extends Morph {
       attributes[this.targetElement.attributes[i].name] = this.targetElement.attributes[i].value;
     }
     this.shadowRoot.querySelector("#attributesMap").map = attributes;
+  }
+  showProperties() {
+    console.log("prop clicked");
+    // this.hideAllPanes();
+    this.editor.classList.add('hidden');
+    this.attributesContent.classList.add('hidden');
+    this.propertiesContent.classList.remove('hidden');
+
+    if (!this.targetElement) {
+      return;
+    }
+
+    let editableProperties = [
+      "dir",
+      "draggable",
+      
+      "innerHTML",
+      "outerHTML",
+      "value",
+      "scrollTop",
+      "offsetHeight",
+      "offsetWidth",
+      "offsetParent",
+      "offsetTop",
+      "offsetLeft"
+    ];
+    let properties = {};
+    for(let i = 0; i < editableProperties.length; i++) {
+      let propertyName = editableProperties[i];
+      properties[propertyName] = this.targetElement[propertyName];
+    }
+
+    this.propertiesMap.map = properties;
   }
 
   addButtonClicked(e) {
@@ -238,11 +280,6 @@ export default class ObjectEditor extends Morph {
   listChanged(e) {
     if (this.propertyList.activeLeaf !== null) {
       let data = this.propertyList.activeLeaf.dataset;
-
-      if (this.propertyList.activeLeaf.id == 'properties-leaf') {
-        this.showAttributes();
-        return;
-      }
 
       if (typeof data['scriptName'] !== 'undefined') {
         this.loadScript(data['scriptName']);
@@ -313,6 +350,14 @@ export default class ObjectEditor extends Morph {
   }
 
   attributeChanged(e) {
-    console.log('propertyChanged', e);
+    let attribute = e.detail;
+
+    this.targetElement.setAttribute(attribute.key, attribute.value);
+  }
+
+  propertyChanged(e) {
+    let property = e.detail;
+
+    console.log("Property changed: " + property);
   }
 }
