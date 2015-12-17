@@ -25,8 +25,8 @@ function getURL(){
 	return new URL(baseurl + filename)
 }
 
-export function loadFile(){
-	var url = getURL()
+export function loadFile(urlString){
+	var url = urlString ? new URL(urlString) : getURL();
 	console.log("load " + url)
 
 	$.get(url, null, function(text) {
@@ -37,8 +37,8 @@ export function loadFile(){
 	});
 }
 
-export function saveFile(){
-	var url = getURL()
+export function saveFile(urlString){
+	var url = urlString ? new URL(urlString) : getURL();
 	console.log("save " + url)
 	$.ajax({
 	    url: url,
@@ -53,19 +53,24 @@ export function saveFile(){
 	});
 }
 
-export function statFile(){
-	var url = getURL()
+export function statFile(urlString){
+	var url = urlString ? new URL(urlString) : getURL();
 	console.log("stat " + url)
-	$.ajax({
+
+	return new Promise(function(resolve, reject) {
+		$.ajax({
 	    url: url,
 	    type: 'OPTIONS',
 	    success: function(text) {
-			console.log("file " + url + " stated.")
-			currentEditor().setValue(text)
-		},
-		error: function(xhr, status, error) {
-			console.log("could not stat " + url + ": " + error)
-		}
-	});
+				console.log("file " + url + " stated.")
+				currentEditor().setValue(text)
+				resolve(text);
+			},
+			error: function(xhr, status, error) {
+				console.log("could not stat " + url + ": " + error)
+				reject(error);
+			}
+		});
+	})
 }
 
