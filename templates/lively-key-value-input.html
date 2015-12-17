@@ -14,6 +14,19 @@
   ::content #value:focus {
     outline: none;
   }
+  ::content #status {
+    height: 5px;
+    width: 5px;
+    margin-left: 5px;
+    background: white;
+    border-bottom-left-radius: 50%;
+  }
+  ::content #status.ok {
+    background: green;
+  }
+  ::content #status.changed {
+    background: red;
+  }
   </style>
   <content></content>
 </template>
@@ -25,45 +38,39 @@
     attachedCallback() {
       console.log("attached", this.querySelector('#key'));
 
-      this.innerHTML = '<span id="key"></span><input id="value" value="">';
+      this.innerHTML = '<span id="key"></span><input id="value" value=""><span id="status" class="ok"></span>';
       this.keyElement = this.querySelector('#key');
       this.valueElement = this.querySelector('#value');
+      this.statusElement = this.querySelector('#status');
 
       this.valueElement.addEventListener('keyup', (e) => { this.keyUpHandler(e); });
-      this.valueElement.addEventListener('paste', (e) => { this.changeEventHandler(e); });
-      this.valueElement.addEventListener('input', (e) => { this.changeEventHandler(e); });
+      this.valueElement.addEventListener('input', (e) => { this.inputEventHandler(e); });
       this.valueElement.addEventListener('change', (e) => { this.changeEventHandler(e); });
-      this.valueElement.addEventListener('blur', (e) => { this.changeEventHandler(); });
       this.valueElement.addEventListener('focus', (e) => { this.gotFocus(e); });
     }
 
     keyUpHandler(e) {
-      if (e.keyCode == 30) {
-        // Enter pressed
-        let ev = new CustomEvent('commit', {
-          bubbles: true,
-          detail: {
-            key: this.key,
-            value: this.value
-          },
-          targetElement: this
-        });
+      switch(e.keyCode) {
+        case(13): //enter
+          this.commit();
+          break;
+        case(27): //esc
+          this.valueElement.value = this.oldValue;
+          break;
 
-        this.dispatchEvent(ev);
+        default:
+          break;
       }
     }
 
-    changeEventHandler(e) {
-      console.log(e);
-      let changeEvent = new CustomEvent('change', {
-        bubbles: true,
-        detail: {
-          key: this.key,
-          value: this.value
-        }
-      });
+    inputEventHandler(e) {
+      // change status LED
+      this.updateStatus();
+    }
 
-      // this.dispatchEvent(changeEvent);
+    changeEventHandler(e) {
+      // save event
+      this.commit();
     }
 
     gotFocus(e) {
@@ -71,11 +78,40 @@
       this.valueElement.setSelectionRange(0, this.value.length);
     }
 
+    commit() {
+      this.oldValue = this.valueElement.value;
+      this.updateStatus();
+
+      let ev = new CustomEvent('commit', {
+        bubbles: true,
+        detail: {
+          key: this._key,
+          value: this.valueElement.value
+        },
+        targetElement: this
+      });
+
+      this.dispatchEvent(ev);
+    }
+
+    updateStatus() {
+      var classList = this.statusElement.classList;
+      classList.remove("ok");
+      classList.remove("changed");
+
+      if(this.valueElement.value == this.oldValue) {
+        classList.add("ok");
+      } else {
+        classList.add("changed");
+      }
+    }
+
     get key() {
-      return this.keyElement.innerHTML;
+      return this._key;
     }
 
     set key(key) {
+      this._key = key;
       this.keyElement.innerHTML = key;
     }
 
@@ -84,6 +120,7 @@
     }
 
     set value(value) {
+      this.oldValue = value;
       this.valueElement.value = value;
     }
   }

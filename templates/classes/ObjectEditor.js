@@ -29,7 +29,7 @@ export default class ObjectEditor extends Morph {
     this.attributesLeaf.addEventListener('click', (e) => { this.showAttributes() });
     // this.propertiesLeaf.addEventListener('click', (e) => { this.showProperties() });
 
-    // this.attributesMap.addEventListener('change', (e) => { this.propertyChanged(e) });
+    this.attributesMap.addEventListener('commit', (e) => { this.attributeChanged(e) });
 
     this.render();
 
@@ -312,7 +312,7 @@ export default class ObjectEditor extends Morph {
     this.shadowRoot.querySelector('#attribute-nodes').innerHTML = html;
   }
 
-  propertyChanged(e) {
+  attributeChanged(e) {
     console.log('propertyChanged', e);
   }
 }
