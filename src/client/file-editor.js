@@ -29,11 +29,14 @@ export function loadFile(urlString){
 	var url = urlString ? new URL(urlString) : getURL();
 	console.log("load " + url)
 
-	$.get(url, null, function(text) {
-		currentEditor().setValue(text)
-		console.log("file " + url + " read.")
-	}).fail(function(e) {
-    	console.log('could not load ' + url + ": " + e); // or whatever
+	return new Promise((resolve, reject) => {
+		$.get(url, null, function(text) {
+			currentEditor().setValue(text)
+			console.log("file " + url + " read.")
+			resolve(text);
+		}).fail(function(e) {
+	    	console.log('could not load ' + url + ": " + e); // or whatever
+		});
 	});
 }
 

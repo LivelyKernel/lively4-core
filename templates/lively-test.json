@@ -1,9 +1,11 @@
 {
   "name": "Test Component",
+  "html-tag": "lively-test",
   "description": "This component was created to test some things. Bla bla bla",
   "author": "Felix Wolff",
   "date-changed": "2015-12-17",
   "categories": ["basic", "random"],
   "tags": ["awesome", "foo", "bar", "test"],
-  "template": "lively-test.html"
+  "template": "lively-test.html",
+  "thumbnail": "lively-test.png"
 }
