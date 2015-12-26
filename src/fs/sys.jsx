@@ -148,7 +148,11 @@ class SysDir extends Directory {
     }
 
     async children() {
-        return this._children
+        if(typeof this._children === 'function') {
+            return this._children()
+        } else {
+            return this._children
+        }
     }
 
     async resolve(path) {
