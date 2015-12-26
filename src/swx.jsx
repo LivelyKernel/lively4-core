@@ -14,7 +14,7 @@ class ServiceWorker {
     constructor() {
         this.filesystem = new fs.Filesystem()
         this.filesystem.mount('/', githubfs, {repo: 'LivelyKernel/lively4-core'})
-        this.filesystem.mount('/sys', sysfs, {})
+        this.filesystem.mount('/sys', sysfs)
         this.filesystem.mount('/local', html5fs)
     }
 
@@ -52,7 +52,7 @@ class ServiceWorker {
  */
 
 var __instance__
-function instance() {
+export function instance() {
     if(typeof __instance__ === 'undefined') {
         __instance__ = new ServiceWorker()
     }
