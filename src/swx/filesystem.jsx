@@ -15,7 +15,7 @@ export class Filesystem {
 
     mount(path, type, ...args) {
         path = Path.normalize(path)
-        this.mounts.set(path, new type(path, this, ...args))
+        this.mounts.set(path, new type(path, ...args))
     }
 
     handle(request, url) {
