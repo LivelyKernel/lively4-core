@@ -45,6 +45,10 @@ export default class Filesystem extends Base {
     read(path) {
         return this.resolve(path).then((node) => node.read())
     }
+
+    write(path, content) {
+        return this.resolve(path).then((node) => node.write(content))
+    }
 }
 
 class Inode {
