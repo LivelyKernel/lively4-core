@@ -42,16 +42,19 @@ export default class Filesystem extends Base {
         return this.tree.resolve(path.substring(1))
     }
 
-    stat(path) {
-        return this.resolve(path).then((node) => node.stat())
+    async stat(path) {
+        let node = await this.resolve(path)
+        return node.stat()
     }
 
-    read(path) {
-        return this.resolve(path).then((node) => node.read())
+    async read(path) {
+        let node = await this.resolve(path)
+        return node.read()
     }
 
-    write(path, content) {
-        return this.resolve(path).then((node) => node.write(content))
+    async write(path, content) {
+        let node = await this.resolve(path)
+        return node.write(content)
     }
 }
 
@@ -60,34 +63,34 @@ class Inode {
         this.name = name
     }
 
-    read() {
+    async read() {
         return this._notImplemented()
     }
 
-    write() {
+    async write() {
         return this._notImplemented()
     }
 
-    statinfo() {
+    async statinfo() {
         throw Error("Not implemented but required")
     }
 
-    stat(...args) {
-        return this.statinfo(...args).then((info) => {
-            let headers = new Headers()
-            headers.append('Allow', 'OPTIONS')
+    async stat(...args) {
+        let info = await this.statinfo()
 
-            if(this.access().read)
-                headers.append('Allow', 'GET')
-            if(this.access().write)
-                headers.append('Allow', 'PUT')
+        let headers = new Headers()
+        headers.append('Allow', 'OPTIONS')
 
-            let body = JSON.stringify(info, null, '\t')
-            return new Response(body)
-        })
+        if(this.access().read)
+            headers.append('Allow', 'GET')
+        if(this.access().write)
+            headers.append('Allow', 'PUT')
+
+        let body = JSON.stringify(info, null, '\t')
+        return new Response(body)
     }
 
-    access() {
+    async access() {
         return {read: false, write: false}
     }
 
@@ -105,42 +108,36 @@ class Inode {
             headers: headers
         })
 
-        return Promise.resolve(response)
+        return response
     }
 }
 
 class Directory extends Inode {
-    statinfo({contents = true} = {}) {
-        let cts = Promise.resolve(null)
-
-        if(contents) {
-            cts = this.children().then((children) => {
-                return Promise.all(children.map((child) => {
-                    return child.statinfo({contents: false})
-                }))
-            })
+    async statinfo({contents = true} = {}) {
+        let info = {
+            type: 'directory',
+            name: this.name
         }
 
-        return cts.then((content) => {
-            let cjson
+        if(contents) {
+            let children = await this.children()
+            let contents = await* [
+                for(child of children) child.statinfo({contents: false})
+            ]
 
-            if(content)
-                cjson = {contents: content}
+            Object.assign(info, {contents: contents})
+        }
 
-            return Object.assign({}, cjson, {
-                type: 'directory',
-                name: this.name
-            })
-        })
+        return info
     }
 }
 
 class File extends Inode {
-    statinfo() {
-        return Promise.resolve({
+    async statinfo() {
+        return {
             type: 'file',
             name: this.name
-        })
+        }
     }
 }
 
@@ -150,27 +147,29 @@ class SysDir extends Directory {
         this._children = children
     }
 
-    children() {
-        return Promise.resolve(this._children)
+    async children() {
+        return this._children
     }
 
-    resolve(path) {
+    async resolve(path) {
         if(path.length == 0)
-            return Promise.resolve(this);
+            return this
 
         let [name, rest] = path.split(/\/+/, 2)
-        let node = this._children.find((child) => child.name === name)
+
+        let children = await this.children()
+        let node     = children.find((child) => child.name === name)
 
         if(rest) {
             if(node instanceof SysDir) {
                 return node.resolve(rest)
             } else {
-                return Promise.reject(new Error('ENOTDIR'))
+                throw new Error('ENOTDIR')
             }
         } else if(node) {
-            return Promise.resolve(node)
+            return node
         } else {
-            return Promise.reject(new Error('ENOTFOUND'))
+            throw new Error('ENOTFOUND')
         }
     }
 }
@@ -190,25 +189,25 @@ class SysFile extends File {
         }
     }
 
-    read() {
+    async read() {
         if(typeof this.rfn === 'function') {
-            let json     = this.rfn()
+            let json     = await this.rfn()
             let content  = JSON.stringify(json, null, '\t')
             let response = new Response(content)
 
-            return Promise.resolve(response)
+            return response
         } else {
             return super.read()
         }
     }
 
-    write(content) {
+    async write(content) {
         if(typeof this.wfn === 'function') {
-            let json     = this.wfn()
+            let json     = await this.wfn()
             let content  = JSON.stringify(json, null, '\t')
             let response = new Response(content)
 
-            return Promise.resolve(response)
+            return response
         } else {
             return super.write(content)
         }
