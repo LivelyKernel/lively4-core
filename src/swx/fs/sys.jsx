@@ -155,12 +155,17 @@ class SysDir extends Directory {
         if(path.length == 0)
             return this
 
-        let [name, rest] = path.split(/\/+/, 2)
+        let [name, ...rest] = do {
+            typeof path === 'string' ? path.split(/\/+/) : path
+        }
+
+        if(name === '')
+            return this
 
         let children = await this.children()
         let node     = children.find((child) => child.name === name)
 
-        if(rest) {
+        if(rest.length > 0) {
             if(node instanceof SysDir) {
                 return node.resolve(rest)
             } else {
