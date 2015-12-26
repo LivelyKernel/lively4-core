@@ -206,15 +206,15 @@ class SysFile extends File {
         }
     }
 
-    async write(content) {
+    async write(blob) {
         if(typeof this.wfn === 'function') {
-            let json     = await this.wfn()
+            let json     = await this.wfn(blob)
             let content  = JSON.stringify(json, null, '\t')
             let response = new Response(content)
 
             return response
         } else {
-            return super.write(content)
+            return super.write(blob)
         }
     }
 }
