@@ -1,10 +1,11 @@
 'use strict';
 
-function swx() {
+var swx = self.__swx_refresh__ = function swx() {
     var options = arguments[0] || {}
 
     if(typeof System === 'undefined' || options.force) {
         if(options.force) {
+            delete self.System
             console.log('SWL: force reload')
         } else {
             console.log('SWL: reload')
