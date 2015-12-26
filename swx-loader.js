@@ -10,6 +10,7 @@ function swx() {
             console.log('SWL: reload')
         }
 
+        importScripts('./vendor/regenerator-runtime.js')
         importScripts('./vendor/babel-browser.js')
         importScripts('./vendor/es6-module-loader-dev.js')
 
