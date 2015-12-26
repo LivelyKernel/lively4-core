@@ -39,12 +39,12 @@ export default class Filesystem extends Base {
             throw new Error(response.statusText)
         }
 
-        let json    = response.json()
+        let json    = await response.json()
         let content = do {
             if(Array.isArray(json)) {
                 JSON.stringify({
                     type: 'directory',
-                    contents: [await this.statinfo(item) for(item of json)]
+                    contents: await* [for(item of json) this.statinfo(item)]
                 }, null, '\t')
             } else {
                 JSON.stringify(this.statinfo(json), null, '\t')
