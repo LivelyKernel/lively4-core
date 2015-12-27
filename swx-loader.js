@@ -57,9 +57,13 @@ self.addEventListener('fetch', function(event) {
 })
 
 self.addEventListener('message', function(event) {
-    swx().then(function(sw) {
-        return sw.message(event)
-    }).catch(function(err) {
-        console.error(err)
-    })
+    if(event.data === 'swx-loader:force-reload') {
+        swx({force: true})
+    } else {
+        swx().then(function(sw) {
+            return sw.message(event)
+        }).catch(function(err) {
+            console.error(err)
+        })
+    }
 })
