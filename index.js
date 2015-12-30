@@ -132,4 +132,43 @@ define(function module(require) { "use strict"
   errorIfFalse(manualSelectionSize === 0);
 
   errorIfFalse(mappedSelection.size() === 0);
+
+  var Person = require('./src/person').Person;
+
+  withLogging.call(Person);
+
+  var jenkinsName = 'Jenkins';
+  var travisName = 'Travis';
+  var jenkins = new Person(jenkinsName);
+  var travis = new Person(travisName, Person.Dr);
+
+  console.log(jenkins, travis);
+
+  var drRefinement = {
+    getName: function() {
+      return Person.Dr + ' ' + cop.proceed();
+    }
+  };
+
+  var TestLayer = new Layer('WHAT?')
+      .refineObject(travis, drRefinement);
+  console.log(TestLayer);
+  //TestLayer.beGlobal();
+  var doctors = select(Person, function(p) {
+    return p.title === Person.Dr;
+  })
+      .layer(drRefinement);
+
+  errorIfFalse(jenkins.getName() === jenkinsName);
+  errorIfFalse(travis.getName() === Person.Dr + ' ' + travisName);
+  console.log(travis.getName());
+  travis.setTitle(Person.NoTitle);
+  errorIfFalse(travis.getName() === travisName);
+  console.log(travis.getName());
+
+  var herukoName = 'Heruko';
+  var heruko = new Person(herukoName, Person.Dr);
+
+  console.log(heruko);
+  errorIfFalse(heruko.getName() === Person.Dr + ' ' + herukoName);
 });
