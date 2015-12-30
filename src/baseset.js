@@ -11,6 +11,8 @@ define(function module(require) { "use strict"
       this.downstream = [];
       this.enterCallbacks = [];
       this.exitCallbacks = [];
+
+      this.layersByItem = new Map();
     },
 
     // explicitly adding or removing objects to the set
@@ -64,6 +66,35 @@ define(function module(require) { "use strict"
     },
     exit: function(callback) {
         this.exitCallbacks.push(callback);
+
+        return this;
+    },
+    /**
+     * Define partial behavior attached to each object while it is contained in the set.
+     * @param partialBehavior
+     * @returns {BaseSet} The callee of this method. This is done for method chaining.
+     */
+    layer: function(partialBehavior) {
+        var layersByItem = this.layersByItem;
+
+        this.enter(function(item) {
+          // lazy initialization
+          if(!layersByItem.has(item)) {
+            layersByItem.set(item, new Layer().refineObject(item, partialBehavior));
+          }
+
+          var layerForItem = layersByItem.get(item);
+          if(!layerForItem.isGlobal()) {
+            layerForItem.beGlobal();
+          }
+        });
+
+        this.exit(function(item) {
+          var layerForItem = layersByItem.get(item);
+          if(layerForItem && layerForItem.isGlobal()) {
+            layerForItem.beNotGlobal();
+          }
+        });
 
         return this;
     }
