@@ -133,6 +133,9 @@ define(function module(require) { "use strict"
 
   errorIfFalse(mappedSelection.size() === 0);
 
+  /**
+   * .layer test
+   */
   var Person = require('./src/person').Person;
 
   withLogging.call(Person);
