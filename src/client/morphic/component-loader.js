@@ -1,4 +1,5 @@
 import * as scriptManager from  "../script-manager.js";
+import * as persistence from  "../persistence.js";
 import Morph from "../../../templates/classes/Morph.js";
 
 export function register(componentName, template, prototype) {
@@ -15,7 +16,9 @@ export function register(componentName, template, prototype) {
     scriptManager.attachScriptsFromShadowDOM(this);
     // call the initialize script, if it exists
     if (typeof this.initialize === "function") {
-      this.initialize();
+      if (!persistence.isCurrentlyCloning()) {
+        this.initialize();
+      }
     }
   }
 
