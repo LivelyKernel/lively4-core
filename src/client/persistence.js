@@ -9,6 +9,8 @@ function isLively4Script(node) {
 }
 
 function initialize(){
+    resetPersistenceSessionStore();
+
     var observer = new MutationObserver((mutations, observer) => {
         mutations.forEach(record => {
             if (record.target.id == 'console'
@@ -42,8 +44,6 @@ function initialize(){
             }
         })
     }).observe(document, {childList: true, subtree: true, characterData: true, attributes: true});
-
-    resetPersistenceSessionStore();
 }
 
 function getURL(){
@@ -87,6 +87,7 @@ function restartPersistenceTimerInterval() {
 
 function resetPersistenceSessionStore() {
     sessionStorage["lively.scriptMutationsDetected"] = 'false';
+    sessionStorage["lively.persistenceCurrentlyCloning"] = 'false';
 }
 
 function checkForMutationsToSave() {
@@ -114,8 +115,20 @@ function isPersistOnIntervalActive() {
     return true;
 }
 
+export function isCurrentlyCloning() {
+    return sessionStorage["lively.persistenceCurrentlyCloning"] === 'true';
+}
+
 function saveDOM() {
-    var world = $("html").clone();
+    var world;
+    sessionStorage["lively.persistenceCurrentlyCloning"] = 'true';
+    try {
+        world = $("html").clone();
+    }
+    finally {
+        sessionStorage["lively.persistenceCurrentlyCloning"] = 'false';
+    }
+
     world.find("[data-lively4-donotpersist='children']").empty();
     world.find("[data-lively4-donotpersist='all']").remove();
     world.find("#editor").empty();
