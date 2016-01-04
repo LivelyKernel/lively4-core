@@ -116,6 +116,8 @@ function isPersistOnIntervalActive() {
 
 function saveDOM() {
     var world = $("html").clone();
+    world.find("[data-lively4-donotpersist='children']").empty();
+    world.find("[data-lively4-donotpersist='all']").remove();
     world.find("#editor").empty();
     world.find("#console").empty();
     world.find("#ace_editor\\.css").remove();
