@@ -64,7 +64,7 @@ export default class Filesystem extends Base {
             throw new Error(response.statusText)
         }
 
-        let json = response.json()
+        let json = await response.json()
 
         if(Array.isArray(json)) {
             return new Response(null, {
