@@ -6,8 +6,8 @@ import { Base } from './base.jsx'
 import * as util from '../util.jsx'
 
 export default class Filesystem extends Base {
-    constructor(path, fs, options) {
-        super('githubfs', path, fs, options)
+    constructor(path, options) {
+        super('githubfs', path, options)
 
         if(options.repo) {
             this.repo = options.repo
@@ -16,7 +16,7 @@ export default class Filesystem extends Base {
         }
     }
 
-    _file_stat(json) {
+    async statinfo(json) {
         delete json['content']
         delete json['encoding']
 
@@ -32,45 +32,51 @@ export default class Filesystem extends Base {
         }
     }
 
-    stat(path) {
-        return self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path)
-            .then(util.responseOk)
-            .then(util.responseToJson)
-            .then((json) => {
-                let headers = new Headers()
-                var json
+    async stat(path) {
+        let response = await self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path)
 
-                headers.append('Allow', 'GET,OPTIONS')
+        if(response.status < 200 && response.status >= 300) {
+            throw new Error(response.statusText)
+        }
 
-                if(json instanceof Array) {
-                    json = JSON.stringify({
-                        type: 'directory',
-                        contents: json.map((item) => this._file_stat(item))
-                    }, null, '\t')
-                } else {
-                    json = JSON.stringify(this._file_stat(json), null, '\t')
-                }
+        let json    = await response.json()
+        let content = do {
+            if(Array.isArray(json)) {
+                JSON.stringify({
+                    type: 'directory',
+                    contents: await* [for(item of json) this.statinfo(item)]
+                }, null, '\t')
+            } else {
+                JSON.stringify(this.statinfo(json), null, '\t')
+            }
+        }
 
-                return new Response(json, {status: 200, headers: headers})
-            })
+        return new Response(content, {
+            status: 200,
+            headers: {'Allow': 'GET,OPTIONS'}
+        })
     }
 
-    read(path) {
-        return self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path)
-            .then(util.responseOk)
-            .then(util.responseToJson)
-            .then((json) => {
-                if(json instanceof Array) {
-                    let headers = new Headers()
-                    headers.append('Allow', 'OPTIONS')
-                    return new Response(null, {status: 405, statusMessage: 'EISDIR', headers: headers})
-                } else {
-                    return atob(json['content'])
-                }
-            }).catch((err) => {
-                console.error(err)
-                return new Response(err, {status: 500})
+    async read(path) {
+        let response = await self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path)
+
+        if(response.status < 200 && response.status >= 300) {
+            throw new Error(response.statusText)
+        }
+
+        let json = await response.json()
+
+        if(Array.isArray(json)) {
+            return new Response(null, {
+                status: 405,
+                statusMessage: 'EISDIR',
+                headers: {'Allow': 'OPTIONS'}
             })
+        } else {
+            return new Response(atob(json['content']), {
+                status: 200
+            })
+        }
     }
 }
 
