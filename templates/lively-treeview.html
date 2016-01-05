@@ -1,4 +1,4 @@
-<template id="template">
+<template id="lively-treeview">
 	<style>
 	:host {
 		box-sizing: border-box;
@@ -64,7 +64,7 @@
 
 <script>
 (function() {
-	var template = document.currentScript.ownerDocument.querySelector('#template');
+	var template = document.currentScript.ownerDocument.querySelector('#lively-treeview');
 	var clone = document.importNode(template.content, true);
 
 	Promise.all([

@@ -1,6 +1,8 @@
 import * as scriptManager from  "../script-manager.js";
 import Morph from "../../../templates/classes/Morph.js";
 
+// this function registers a custom element,
+// it is called from the bootstap code in the component templates
 export function register(componentName, template, prototype) {
   var proto = prototype || Object.create(Morph.prototype);
 
@@ -17,6 +19,9 @@ export function register(componentName, template, prototype) {
     if (typeof this.initialize === "function") {
       this.initialize();
     }
+
+    // load any unknown elements this component might introduce
+    loadUnresolved(this, true);
   }
 
   document.registerElement(componentName, {
@@ -24,6 +29,7 @@ export function register(componentName, template, prototype) {
   });
 }
 
+// this function creates the bootstrap script for the component templates
 export function createRegistrationScript(componentId) {
   var script = document.createElement("script");
   script.className = "registrationScript";
@@ -41,4 +47,30 @@ export function createRegistrationScript(componentId) {
   })();";
 
   return script;
+}
+
+// this function loads all unregistered elements, starts looking in root,
+// if deep is set, it also looks into shadow roots
+export function loadUnresolved(root, deep) {
+  var selector = deep ? "html /deep/ :unresolved" : ":unresolved";
+  // helper set to filter for unique tags
+  var unique = new Set();
+  
+  $(root.querySelectorAll(selector)).map(function() {
+    return this.nodeName.toLowerCase();
+  }).filter(function() {
+    // filter for unique tags
+    return !unique.has(this) && unique.add(this);
+  }).each(function() {
+    loadByName(this);
+  });
+}
+
+// this function loads a component by adding a link tag to the head
+export function loadByName(name) {
+  var link = document.createElement("link");
+  link.rel = "import";
+  link.href = "../templates/" + name + ".html";
+
+  document.head.appendChild(link);
 }
