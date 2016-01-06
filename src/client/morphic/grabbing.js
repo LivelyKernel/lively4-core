@@ -23,6 +23,7 @@ export function deactivate() {
 }
 
 function start(e) {
+  if (isGrabbing) return;
   grabTarget = events.getTargetNode(e);
   if (grabTarget) {
     initGrabbingAtEvent(e);
@@ -62,6 +63,7 @@ function startOffsetGrabbing(anEvent) {
 }
 
 function prepareGrabTarget() {
+  document.body.appendChild(grabTarget);
   grabTarget.style.position = 'absolute';
   grabTarget.style.removeProperty('top');
   grabTarget.style.removeProperty('left');
@@ -84,8 +86,8 @@ function moveGrabbedNodeToEvent(anEvent) {
 }
 
 function stopGrabbingAtEvent(anEvent) {
+  insertGrabTargetBeforeShadow();
   removeGrabShadow();
-  replaceGrabShadowWithNode();
   grabTarget.style.position = 'relative';
   grabTarget.style.removeProperty('top');
   grabTarget.style.removeProperty('left');
@@ -107,13 +109,13 @@ function dropAtEvent(node, e) {
       x: e.pageX,
       y: e.pageY
     }
-    moveNodeToTargetAtPosition(node, droptarget, pos);
+    moveGrabShadowToTargetAtPosition(droptarget, pos);
   }
 }
 
-function replaceGrabShadowWithNode() {
+function insertGrabTargetBeforeShadow() {
   if (grabShadow && grabTarget) {
-    grabShadow.parentNode.replaceChild(grabTarget, grabShadow);
+    grabShadow.parentNode.insertBefore(grabTarget, grabShadow);
   }
 }
 
@@ -121,22 +123,24 @@ function droptargetAtEvent(node, e) {
   var elementsUnderCursor = events.elementsUnder(e);
   for (var i = 0; i < elementsUnderCursor.length; i++) {
     var targetNode = elementsUnderCursor[i];
-    if (canDropInto(node, targetNode)) {
+    if (canDropInto(node, targetNode) ) {
       return targetNode;
     }
   }
 }
 
-function moveNodeToTargetAtPosition(node, targetNode, pos) {
+function moveGrabShadowToTargetAtPosition(targetNode, pos) {
   var children = targetNode.childNodes;
   var nextChild = Array.from(children).find(child => {
-    return child !== node && child.nodeType === 1 && nodeComesBehind(child, pos);
+    return child !== grabShadow && child !== grabTarget &&
+      child.nodeType === 1 && nodeComesBehind(child, pos);
   });
-  targetNode.insertBefore(node, nextChild);
+  targetNode.insertBefore(grabShadow, nextChild);
 }
 
 function canDropInto(node, targetNode) {
   return node !== targetNode &&
+    !Array.from(targetNode.getElementsByTagName('*')).includes(node) &&
     $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist[node.tagName.toLowerCase()] || []) < 0 &&
     $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist['*'] || []) < 0
 }
