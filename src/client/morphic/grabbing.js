@@ -120,13 +120,16 @@ function insertGrabTargetBeforeShadow() {
 }
 
 function droptargetAtEvent(node, e) {
-  var elementsUnderCursor = events.elementsUnder(e);
+  var elementsUnderCursor = Array.from(events.elementsUnder(e)).filter(function (elementUnder) {
+    return elementUnder !== grabTarget && elementUnder !== grabShadow;
+  });
   for (var i = 0; i < elementsUnderCursor.length; i++) {
     var targetNode = elementsUnderCursor[i];
     if (canDropInto(node, targetNode) ) {
       return targetNode;
     }
   }
+  return document.body;
 }
 
 function moveGrabShadowToTargetAtPosition(targetNode, pos) {
@@ -141,6 +144,7 @@ function moveGrabShadowToTargetAtPosition(targetNode, pos) {
 function canDropInto(node, targetNode) {
   return node !== targetNode &&
     !Array.from(targetNode.getElementsByTagName('*')).includes(node) &&
+    !Array.from(node.getElementsByTagName('*')).includes(targetNode) &&
     $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist[node.tagName.toLowerCase()] || []) < 0 &&
     $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist['*'] || []) < 0
 }
