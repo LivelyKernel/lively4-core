@@ -40,6 +40,9 @@ function stop(e) {
   if (isDragging) {
     stopDraggingAtEvent(e);
   }
+  dragTarget = null;
+  dragStartEventPosition = null;
+  dragStartNodePosition = null;
 }
 
 function initGrabbingAtEvent(anEvent) {
@@ -67,8 +70,5 @@ function dragTo(anEvent) {
 
 function stopDraggingAtEvent(anEvent) {
   isDragging = false;
-  dragTarget = null;
-  dragStartEventPosition = null;
-  dragStartNodePosition = null;
   anEvent.preventDefault();
 }

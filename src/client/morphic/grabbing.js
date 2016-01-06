@@ -43,6 +43,9 @@ function stop(e) {
   if (isGrabbing) {
     stopGrabbingAtEvent(e);
   }
+  grabTarget = null;
+  grabStartEventPosition = null;
+  grabShadow = null;
 }
 
 function initGrabbingAtEvent(anEvent) {
@@ -93,13 +96,10 @@ function stopGrabbingAtEvent(anEvent) {
   grabTarget.style.removeProperty('left');
   anEvent.preventDefault();
   isGrabbing = false;
-  grabTarget = null;
-  grabStartEventPosition = null;
 }
 
 function removeGrabShadow() {
   grabShadow.parentNode.removeChild(grabShadow);
-  grabShadow = null;
 }
 
 function dropAtEvent(node, e) {
