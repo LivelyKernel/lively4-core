@@ -34,7 +34,8 @@
 <link rel="import" href="../templates/lively-object-editor.html">
 <link rel="import" href="../templates/lively-component-bin.html">
 
-<link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css"><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css"><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css"><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css"><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css"></head>
+<link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css">
+</head>
 <body>
 <h1>Lively 4 -- Bootstrapping Test Page
   <script data-name="testx" type="lively4script">() => 1 < 2</script>
@@ -63,8 +64,6 @@
 })">login</button>
 
 <button onclick="githubAuth.logout(); console.log('logged out of github')">logout</button>
-
-<button id="loadScriptsFromDOM" onclick="window.scriptManager.loadScriptsFromDOM()">load lively4 scripts</button>
 
 <input type="checkbox" id="persistOnInterval">persist every 5 seconds
 
