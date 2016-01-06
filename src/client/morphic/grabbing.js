@@ -84,7 +84,8 @@ function moveGrabbedNodeToEvent(anEvent) {
 }
 
 function stopGrabbingAtEvent(anEvent) {
-  dropAtEvent(grabTarget, anEvent);
+  removeGrabShadow();
+  replaceGrabShadowWithNode();
   grabTarget.style.position = 'relative';
   grabTarget.style.removeProperty('top');
   grabTarget.style.removeProperty('left');
@@ -92,6 +93,9 @@ function stopGrabbingAtEvent(anEvent) {
   isGrabbing = false;
   grabTarget = null;
   grabStartEventPosition = null;
+}
+
+function removeGrabShadow() {
   grabShadow.parentNode.removeChild(grabShadow);
   grabShadow = null;
 }
@@ -104,6 +108,12 @@ function dropAtEvent(node, e) {
       y: e.pageY
     }
     moveNodeToTargetAtPosition(node, droptarget, pos);
+  }
+}
+
+function replaceGrabShadowWithNode() {
+  if (grabShadow && grabTarget) {
+    grabShadow.parentNode.replaceChild(grabTarget, grabShadow);
   }
 }
 
@@ -120,7 +130,7 @@ function droptargetAtEvent(node, e) {
 function moveNodeToTargetAtPosition(node, targetNode, pos) {
   var children = targetNode.childNodes;
   var nextChild = Array.from(children).find(child => {
-    return child.nodeType === 1 && nodeComesBehind(child, pos);
+    return child !== node && child.nodeType === 1 && nodeComesBehind(child, pos);
   });
   targetNode.insertBefore(node, nextChild);
 }
