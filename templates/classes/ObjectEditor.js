@@ -37,9 +37,9 @@ export default class ObjectEditor extends Morph {
 
   addElementEvents() {
     this.propertyList.addEventListener('change', (e) => { this.listChanged(e) });
-    // this.addButton.addEventListener('click', (e) => { this.addButtonClicked(e) });
-    // this.removeButton.addEventListener('click', (e) => { this.removeButtonClicked(e) });
-    // this.saveButton.addEventListener('click', (e) => { this.saveButtonClicked(e) });
+    this.addButton.addEventListener('click', (e) => { this.addButtonClicked(e) });
+    this.removeButton.addEventListener('click', (e) => { this.removeButtonClicked(e) });
+    this.saveButton.addEventListener('click', (e) => { this.saveButtonClicked(e) });
 
     this.attributesMap.addEventListener('commit', (e) => { this.attributeChanged(e) });
 
@@ -158,7 +158,7 @@ export default class ObjectEditor extends Morph {
   }
 
   attributesObserver(changes) {
-    this.updateAttributes();
+    //this.updateAttributes();
   }
   scriptsObserver(changes) {
     this.updateScripts();

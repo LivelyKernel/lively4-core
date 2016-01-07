@@ -8,7 +8,6 @@ export default class TabView extends Morph {
    */
   attachedCallback() {
     this.tabBar = this.shadowRoot.querySelector('#tab-bar');
-    this.tabContent = this.shadowRoot.querySelector('#tab-content');
 
     this.tabList = [];
     this.initObserver();
@@ -115,10 +114,10 @@ export default class TabView extends Morph {
   }
 
   hideElement(element) {
-    element.style.display = 'none';
+    element.classList.add("tab-view-inactive");
   }
 
   showElement(element) {
-    element.style.display = 'block';
+    element.classList.remove("tab-view-inactive");
   }
 }

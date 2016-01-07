@@ -62,22 +62,46 @@
     .main-content .hidden {
       display: none;
     }
+
+    .script-wrapper {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+    }
+
+    .script-wrapper .content-top {
+        display: flex;
+        flex: 1;
+    }
+
+    .script-wrapper .toolbar {
+        flex: 0;
+    }
     </style>
 
     <div id="wrapper">
         <div class="main-content">
       <!-- possible content elements -->
         <lively-tab-view id="tabView">
-            <div id="scriptsContent" title="Scripts">
-                <lively-treeview id="property-list">
-                    <ul>
-                        <li class="node">
-                            <span class="leaf">Scripts</span>
-                            <ul id="script-nodes"></ul>
-                        </li>
-                    </ul>
-                </lively-treeview>
-                <juicy-ace-editor id="editor"></juicy-ace-editor>
+            <div id="scriptsContent" class="script-wrapper" title="Scripts">
+                <div class="content-top">
+                    <lively-treeview id="property-list">
+                        <ul id="script-nodes">
+                        </ul>
+                    </lively-treeview>
+
+                    <juicy-ace-editor id="editor"></juicy-ace-editor>
+                </div>
+
+                <div class="toolbar">
+                    <div class="bar-left">
+                        <button id="add-script">Add</button>
+                        <button id="remove-script">Remove</button>
+                    </div>
+                    <div class="bar-right">
+                        <button id="save-script">Save</button>
+                    </div>
+                </div>
             </div>
             
             <div id="attributesContent" title="Attributes">
@@ -89,15 +113,6 @@
         </lively-tab-view>
       <!-- / -->
         </div>
-<!--         <div class="toolbar">
-            <div class="bar-left">
-                <button id="add-script">Add</button>
-                <button id="remove-script">Remove</button>
-            </div>
-            <div class="bar-right">
-                <button id="save-script">Save</button>
-            </div>
-        </div> -->
     </div>
 </template>
 
