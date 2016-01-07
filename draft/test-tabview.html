@@ -66,7 +66,7 @@
     <h1 title="Tab 4">Tab 4</h1>
 </lively-tab-view>
 
-<lively-component-bin></lively-component-bin>
+<!-- <lively-component-bin></lively-component-bin> -->
 
 
 
@@ -111,6 +111,13 @@
         System.import("commandline.js")
         System.import(lively4url + "/src/client/debug-serviceworker.js")
     }).catch(function(err) { alert("load Lively4 failed")});
+
+    var loader;
+    System.import(lively4url + "/src/client/morphic/component-loader.js").then(m => {
+        loader = m;
+    }).catch(function(err) {
+        debugger; alert("load component-loader failed");
+    });
 
 </script>
 
