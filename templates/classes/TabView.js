@@ -67,8 +67,16 @@ export default class TabView extends Morph {
   showContent(i) {
     let tab = this.tabList[i];
 
-    this.hideAllContents();
+    for (let n = 0; n < this.tabBar.children.length; n++) {
+      if (n === i) {
+        this.tabBar.children[n].classList.add('active');
+      } else {
+        this.tabBar.children[n].classList.remove('active');
+      }
+    }
+    this.tabBar.querySelector(':nth-child('+i+')')
 
+    this.hideAllContents();
     this.showElement(tab.view);
   }
 
