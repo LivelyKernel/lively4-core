@@ -13,9 +13,9 @@ export default class ObjectEditor extends Morph {
 
     this.propertyList = this.shadowRoot.querySelector('#property-list');
     this.editor = this.shadowRoot.querySelector('#editor');
-    this.addButton = this.shadowRoot.querySelector('#add-script');
-    this.removeButton = this.shadowRoot.querySelector('#remove-script');
-    this.saveButton = this.shadowRoot.querySelector('#save-script');
+    // this.addButton = this.shadowRoot.querySelector('#add-script');
+    // this.removeButton = this.shadowRoot.querySelector('#remove-script');
+    // this.saveButton = this.shadowRoot.querySelector('#save-script');
     this.attributesLeaf = this.shadowRoot.querySelector('#attributes-leaf');
     this.propertiesLeaf = this.shadowRoot.querySelector('#properties-leaf');
     this.attributesMap = this.shadowRoot.querySelector('#attributesMap');
@@ -25,9 +25,9 @@ export default class ObjectEditor extends Morph {
     this.tabView = this.shadowRoot.querySelector('#tabView');
 
     this.propertyList.addEventListener('change', (e) => { this.listChanged(e) });
-    this.addButton.addEventListener('click', (e) => { this.addButtonClicked(e) });
-    this.removeButton.addEventListener('click', (e) => { this.removeButtonClicked(e) });
-    this.saveButton.addEventListener('click', (e) => { this.saveButtonClicked(e) });
+    // this.addButton.addEventListener('click', (e) => { this.addButtonClicked(e) });
+    // this.removeButton.addEventListener('click', (e) => { this.removeButtonClicked(e) });
+    // this.saveButton.addEventListener('click', (e) => { this.saveButtonClicked(e) });
 
     this.attributesMap.addEventListener('commit', (e) => { this.attributeChanged(e) });
 
