@@ -10,17 +10,32 @@ export default class ObjectEditor extends Morph {
   attachedCallback() {
     this.attached = true;
 
+    this.saveElementReferences();
+    this.addElementEvents();
+
+    this.render();
+
+    this.initializeAttributes();
+  }
+
+  saveElementReferences() {
+    this.tabView = this.shadowRoot.querySelector('#tabView');
+
     this.propertyList = this.shadowRoot.querySelector('#property-list');
     this.editor = this.shadowRoot.querySelector('#editor');
+
+    this.attributesMap = this.shadowRoot.querySelector('#attributesMap');
+    this.attributesContent = this.shadowRoot.querySelector('#attributesContent');
+
+    this.propertiesMap = this.shadowRoot.querySelector('#propertiesMap');
+    this.propertiesContent = this.shadowRoot.querySelector('#propertiesContent');
+
     this.addButton = this.shadowRoot.querySelector('#add-script');
     this.removeButton = this.shadowRoot.querySelector('#remove-script');
     this.saveButton = this.shadowRoot.querySelector('#save-script');
-    this.attributesMap = this.shadowRoot.querySelector('#attributesMap');
-    this.attributesContent = this.shadowRoot.querySelector('#attributesContent');
-    this.propertiesMap = this.shadowRoot.querySelector('#propertiesMap');
-    this.propertiesContent = this.shadowRoot.querySelector('#propertiesContent');
-    this.tabView = this.shadowRoot.querySelector('#tabView');
+  }
 
+  addElementEvents() {
     this.propertyList.addEventListener('change', (e) => { this.listChanged(e) });
     this.addButton.addEventListener('click', (e) => { this.addButtonClicked(e) });
     this.removeButton.addEventListener('click', (e) => { this.removeButtonClicked(e) });
@@ -42,12 +57,11 @@ export default class ObjectEditor extends Morph {
           //
       }
     });
+  }
 
-    this.render();
-
+  initializeAttributes() {
     for (let i = 0; i < this.attributes.length; i++) {
       var attribute = this.attributes[i];
-      console.log('Initializing attribute ' + attribute);
 
       this.attributeChangedCallback(attribute.name, null, attribute.value);
     }
