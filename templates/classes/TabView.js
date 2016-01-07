@@ -19,7 +19,9 @@ export default class TabView extends Morph {
   }
 
   detachedCallback() {
-    
+    if (this.contentObserver) {
+      this.contentObserver.disconnect();
+    }
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
@@ -32,8 +34,6 @@ export default class TabView extends Morph {
   }
 
   observerCallback(mutationRecord) {
-    console.log('mutation:', mutationRecord);
-
     this.renderTabBar();
     this.hideAllContents();
     this.showDefaultContent();
