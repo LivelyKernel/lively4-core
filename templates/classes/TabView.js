@@ -57,7 +57,6 @@ export default class TabView extends Morph {
 
       if(view.hasAttribute('title')) {
         title = view.getAttribute('title');
-        console.log(view.getAttribute('title'));
       } else {
         title = "TAB[" + i + "]";
       }

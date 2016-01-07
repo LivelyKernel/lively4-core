@@ -13,9 +13,6 @@
 
   class LivelyKeyValueInput extends HTMLDivElement {
     attachedCallback() {
-
-      console.log('current URI: ', this.baseURI);
-
       let body = '<span class="lively-key-value-input-key"></span><input class="lively-key-value-input-value" value=""><span class="lively-key-value-input-status ok"></span>';
       this.innerHTML = body;
       this.keyElement = this.querySelector('.lively-key-value-input-key');
