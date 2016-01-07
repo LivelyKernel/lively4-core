@@ -11,6 +11,7 @@ export default class TabView extends Morph {
     this.tabContent = this.shadowRoot.querySelector('#tab-content');
 
     this.tabList = [];
+    this.initObserver();
 
     this.renderTabBar();
     this.hideAllContents();
@@ -18,11 +19,24 @@ export default class TabView extends Morph {
   }
 
   detachedCallback() {
-    
+    if (this.contentObserver) {
+      this.contentObserver.disconnect();
+    }
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
     
+  }
+
+  initObserver() {
+    this.contentObserver = new MutationObserver((record) => this.observerCallback(record));
+    this.contentObserver.observe(this, {childList: true});
+  }
+
+  observerCallback(mutationRecord) {
+    this.renderTabBar();
+    this.hideAllContents();
+    this.showDefaultContent();
   }
 
   renderTabBar() {
@@ -75,8 +89,16 @@ export default class TabView extends Morph {
   showContent(i) {
     let tab = this.tabList[i];
 
-    this.hideAllContents();
+    for (let n = 0; n < this.tabBar.children.length; n++) {
+      if (n === i) {
+        this.tabBar.children[n].classList.add('active');
+      } else {
+        this.tabBar.children[n].classList.remove('active');
+      }
+    }
+    this.tabBar.querySelector(':nth-child('+i+')')
 
+    this.hideAllContents();
     this.showElement(tab.view);
   }
 

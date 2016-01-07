@@ -1,5 +1,25 @@
 <template id="lively-tab-view">
 	<style>
+	:host {
+		display: block;
+	}
+
+	#tab-bar {
+		height: 2em;
+    	line-height: 2em;
+    	vertical-align: middle;
+    	border: 1px solid #555;
+	}
+
+	#tab-bar span {
+		cursor: pointer;
+		padding-left: 10px;
+		padding-right: 10px;
+	}
+	#tab-bar span.active {
+		font-weight: bold;
+	}
+
 	</style>
 
 	<div id="tab-bar">
