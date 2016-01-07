@@ -33,6 +33,7 @@ export default class ObjectEditor extends Morph {
     this.addButton = this.shadowRoot.querySelector('#add-script');
     this.removeButton = this.shadowRoot.querySelector('#remove-script');
     this.saveButton = this.shadowRoot.querySelector('#save-script');
+    this.runButton = this.shadowRoot.querySelector('#run-script');
   }
 
   addElementEvents() {
@@ -40,6 +41,7 @@ export default class ObjectEditor extends Morph {
     this.addButton.addEventListener('click', (e) => { this.addButtonClicked(e) });
     this.removeButton.addEventListener('click', (e) => { this.removeButtonClicked(e) });
     this.saveButton.addEventListener('click', (e) => { this.saveButtonClicked(e) });
+    this.runButton.addEventListener('click', (e) => { this.runButtonClicked(e) });
 
     this.attributesMap.addEventListener('commit', (e) => { this.attributeChanged(e) });
 
@@ -303,6 +305,15 @@ export default class ObjectEditor extends Morph {
       } else if (typeof data['attributeName'] !== 'undefined') {
         this.saveAttribute(data['attributeName']);
       }
+    }
+  }
+
+  runButtonClicked(e) {
+    if (this.targetElement && this.propertyList.activeLeaf !== null) {
+      let data = this.propertyList.activeLeaf.dataset;
+      let func = eval('(' + this.editor.value + ')');
+      
+      func.apply(this.targetElement);
     }
   }
 
