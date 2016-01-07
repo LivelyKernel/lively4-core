@@ -11,6 +11,7 @@ export default class TabView extends Morph {
     this.tabContent = this.shadowRoot.querySelector('#tab-content');
 
     this.tabList = [];
+    this.initObserver();
 
     this.renderTabBar();
     this.hideAllContents();
@@ -23,6 +24,19 @@ export default class TabView extends Morph {
 
   attributeChangedCallback(attrName, oldValue, newValue) {
     
+  }
+
+  initObserver() {
+    this.contentObserver = new MutationObserver((record) => this.observerCallback(record));
+    this.contentObserver.observe(this, {childList: true});
+  }
+
+  observerCallback(mutationRecord) {
+    console.log('mutation:', mutationRecord);
+
+    this.renderTabBar();
+    this.hideAllContents();
+    this.showDefaultContent();
   }
 
   renderTabBar() {
