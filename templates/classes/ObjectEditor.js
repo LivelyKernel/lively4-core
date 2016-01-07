@@ -22,16 +22,30 @@ export default class ObjectEditor extends Morph {
     this.attributesContent = this.shadowRoot.querySelector('#attributesContent');
     this.propertiesMap = this.shadowRoot.querySelector('#propertiesMap');
     this.propertiesContent = this.shadowRoot.querySelector('#propertiesContent');
+    this.tabView = this.shadowRoot.querySelector('#tabView');
 
     this.propertyList.addEventListener('change', (e) => { this.listChanged(e) });
     this.addButton.addEventListener('click', (e) => { this.addButtonClicked(e) });
     this.removeButton.addEventListener('click', (e) => { this.removeButtonClicked(e) });
     this.saveButton.addEventListener('click', (e) => { this.saveButtonClicked(e) });
 
-    this.attributesLeaf.addEventListener('click', (e) => { this.showAttributes() });
-    this.propertiesLeaf.addEventListener('click', (e) => { this.showProperties() });
-
     this.attributesMap.addEventListener('commit', (e) => { this.attributeChanged(e) });
+
+    this.tabView.addEventListener('tabChange', (e) => {
+      console.log("event", e);
+      switch(e.detail.id) {
+        case("scriptsContent"):
+          break;
+        case("attributesContent"):
+          this.showAttributes();
+          break;
+        case("propertiesContent"):
+          this.showProperties();
+          break;
+        default:
+          //
+      }
+    });
 
     this.render();
 
@@ -170,16 +184,8 @@ export default class ObjectEditor extends Morph {
     this.updateList();
   }
 
-  hideAllPanes() {
-    this.editor.classList.add('hidden');
-    this.attributesContent.classList.add('hidden');
-    this.propertiesContent.classList.add('hidden');
-  }
-
   showAttributes() {
     console.log("attr clicked");
-    this.hideAllPanes();
-    this.attributesContent.classList.remove('hidden');
 
     if (!this.targetElement) {
       return;
@@ -193,10 +199,6 @@ export default class ObjectEditor extends Morph {
   }
   showProperties() {
     console.log("prop clicked");
-    // this.hideAllPanes();
-    this.editor.classList.add('hidden');
-    this.attributesContent.classList.add('hidden');
-    this.propertiesContent.classList.remove('hidden');
 
     if (!this.targetElement) {
       return;
@@ -229,6 +231,7 @@ export default class ObjectEditor extends Morph {
       "scrollTop",
       "scrollLeft",
     ];
+
     let properties = {};
     for(let i = 0; i < editableProperties.length; i++) {
       let propertyName = editableProperties[i];

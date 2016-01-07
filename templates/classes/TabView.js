@@ -58,6 +58,14 @@ export default class TabView extends Morph {
       barTitle.innerHTML = title;
       barTitle.addEventListener('click', (e) => {
         this.showContent(i);
+
+        let changeEvent = new CustomEvent("tabChange", {
+          detail: {
+            title: title,
+            id: view.id
+          }
+        });
+        this.dispatchEvent(changeEvent);
       });
 
       this.tabBar.appendChild(barTitle);

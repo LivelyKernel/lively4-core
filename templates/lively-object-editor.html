@@ -58,28 +58,27 @@
 
     <div id="wrapper">
         <div class="main-content">
-            <lively-treeview id="property-list">
-                <ul>
-                    <li>
-                        <span id="attributes-leaf" class="leaf">Attributes</span>
-                    </li>
-                    <li class="node">
-                        <span class="leaf">Scripts</span>
-                        <ul id="script-nodes"></ul>
-                    </li>
-                    <li>
-                        <span id="properties-leaf" class="leaf">Properties</span>
-                    </li>
-                </ul>
-            </lively-treeview>
       <!-- possible content elements -->
-            <juicy-ace-editor id="editor"></juicy-ace-editor>
-            <div class="hidden" id="attributesContent">
+        <lively-tab-view id="tabView">
+            <div id="scriptsContent">
+                <lively-treeview id="property-list">
+                    <ul>
+                        <li class="node">
+                            <span class="leaf">Scripts</span>
+                            <ul id="script-nodes"></ul>
+                        </li>
+                    </ul>
+                </lively-treeview>
+                <juicy-ace-editor id="editor"></juicy-ace-editor>
+            </div>
+            
+            <div id="attributesContent">
                 <lively-key-value-map id="attributesMap"></lively-key-value-map>
             </div>
-            <div class="hidden" id="propertiesContent">
+            <div id="propertiesContent">
                 <lively-key-value-map id="propertiesMap"></lively-key-value-map>
             </div>
+        </lively-tab-view>
       <!-- / -->
         </div>
         <div class="toolbar">
