@@ -2,11 +2,11 @@ import * as events from './event-helpers.js';
 import * as nodes from './node-helpers.js';
 import * as config from './config.js';
 
-var grabOffset = config.GRAB_OFFSET || 0;
-
 var grabTarget;
-var grabStartPosition;
+var grabStartEventPosition;
+var grabOffset;
 var isGrabbing = false;
+var grabShadow;
 
 export function activate() {
   console.log("using Grabbing");
@@ -23,24 +23,83 @@ export function deactivate() {
 }
 
 function start(e) {
-  grabTarget = events.elementsUnder(e)[0];
-  grabTarget = document.body === grabTarget ? null : grabTarget;
-  grabStartPosition = events.globalPosition(e);
-  e.preventDefault();
+  if (isGrabbing) return;
+  grabTarget = events.getTargetNode(e);
+  if (grabTarget) {
+    initGrabbingAtEvent(e);
+  }
 }
 
 function move(e) {
-  var eventPosition = events.globalPosition(e);
-  if (grabTarget && !isGrabbing && events.distanceTo(e, grabStartPosition) > grabOffset) {
-    grabTarget.style.position = 'relative';
-    grabTarget.style.removeProperty('top');
-    grabTarget.style.removeProperty('left');
-    isGrabbing = true;
+  if (grabTarget) {
+    startOffsetGrabbing(e);
   }
   if (isGrabbing) {
-    dropAtEvent(grabTarget, e);
-    e.preventDefault();
+    moveGrabbedNodeToEvent(e);
   }
+}
+
+function stop(e) {
+  if (isGrabbing) {
+    stopGrabbingAtEvent(e);
+  }
+  grabTarget = null;
+  grabStartEventPosition = null;
+  grabShadow = null;
+}
+
+function initGrabbingAtEvent(anEvent) {
+  grabStartEventPosition = events.globalPosition(anEvent);
+  grabOffset = {
+    x: events.globalPosition(anEvent).x - nodes.globalPosition(grabTarget).x,
+    y: events.globalPosition(anEvent).y - nodes.globalPosition(grabTarget).y
+  }
+  anEvent.preventDefault();
+}
+
+function startOffsetGrabbing(anEvent) {
+  if (!isGrabbing && events.noticableDistanceTo(anEvent, grabStartEventPosition)) {
+    initGrabShadow();
+    prepareGrabTarget();
+    isGrabbing = true;
+  }
+}
+
+function prepareGrabTarget() {
+  document.body.appendChild(grabTarget);
+  grabTarget.style.position = 'absolute';
+  grabTarget.style.removeProperty('top');
+  grabTarget.style.removeProperty('left');
+}
+
+function initGrabShadow() {
+  grabShadow = grabTarget.cloneNode(true);
+  grabShadow.style.opacity = '0.5';
+  grabShadow.style.position = 'relative';
+}
+
+function moveGrabbedNodeToEvent(anEvent) {
+  var eventPosition = events.globalPosition(anEvent);
+  dropAtEvent(grabShadow, anEvent);
+  nodes.setPosition(grabTarget, {
+    x: eventPosition.x - grabOffset.x,
+    y: eventPosition.y - grabOffset.y
+  })
+  anEvent.preventDefault();
+}
+
+function stopGrabbingAtEvent(anEvent) {
+  insertGrabTargetBeforeShadow();
+  removeGrabShadow();
+  grabTarget.style.position = 'relative';
+  grabTarget.style.removeProperty('top');
+  grabTarget.style.removeProperty('left');
+  anEvent.preventDefault();
+  isGrabbing = false;
+}
+
+function removeGrabShadow() {
+  grabShadow.parentNode.removeChild(grabShadow);
 }
 
 function dropAtEvent(node, e) {
@@ -50,41 +109,44 @@ function dropAtEvent(node, e) {
       x: e.pageX,
       y: e.pageY
     }
-    moveNodeToTargetAtPosition(node, droptarget, pos);
+    moveGrabShadowToTargetAtPosition(droptarget, pos);
   }
+}
+
+function insertGrabTargetBeforeShadow() {
+  if (grabShadow && grabTarget) {
+    grabShadow.parentNode.insertBefore(grabTarget, grabShadow);
+  }
+}
+
+function droptargetAtEvent(node, e) {
+  var elementsUnderCursor = Array.from(events.elementsUnder(e)).filter(function (elementUnder) {
+    return elementUnder !== grabTarget && elementUnder !== grabShadow;
+  });
+  for (var i = 0; i < elementsUnderCursor.length; i++) {
+    var targetNode = elementsUnderCursor[i];
+    if (canDropInto(node, targetNode) ) {
+      return targetNode;
+    }
+  }
+  return document.body;
+}
+
+function moveGrabShadowToTargetAtPosition(targetNode, pos) {
+  var children = targetNode.childNodes;
+  var nextChild = Array.from(children).find(child => {
+    return child !== grabShadow && child !== grabTarget &&
+      child.nodeType === 1 && nodeComesBehind(child, pos);
+  });
+  targetNode.insertBefore(grabShadow, nextChild);
 }
 
 function canDropInto(node, targetNode) {
   return node !== targetNode &&
+    !Array.from(targetNode.getElementsByTagName('*')).includes(node) &&
+    !Array.from(node.getElementsByTagName('*')).includes(targetNode) &&
     $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist[node.tagName.toLowerCase()] || []) < 0 &&
     $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist['*'] || []) < 0
-}
-
-function droptargetAtEvent(node, e) {
-  var elementsUnderCursor = events.elementsUnder(e);
-  for (var i = 0; i < elementsUnderCursor.length; i++) {
-    var targetNode = elementsUnderCursor[i];
-    if (canDropInto(node, targetNode)) {
-      return targetNode;
-    }
-  }
-}
-
-function stop(e) {
-  if (isGrabbing) {
-    e.preventDefault();
-    isGrabbing = false;
-  }
-  grabTarget = null;
-  grabStartPosition = null;
-}
-
-function moveNodeToTargetAtPosition(node, targetNode, pos) {
-  var children = targetNode.childNodes;
-  var nextChild = Array.from(children).find(child => {
-    return child.nodeType === 1 && nodeComesBehind(child, pos);
-  });
-  targetNode.insertBefore(node, nextChild);
 }
 
 function nodeComesBehind(node, pos) {

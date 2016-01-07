@@ -34,7 +34,8 @@
 <link rel="import" href="../templates/lively-object-editor.html">
 <link rel="import" href="../templates/lively-component-bin.html">
 
-<link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css"><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css"><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css"><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css"><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css"></head>
+<link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css">
+</head>
 <body>
 <h1>Lively 4 -- Bootstrapping Test Page
   <script data-name="testx" type="lively4script">() => 1 < 2</script>
@@ -50,9 +51,7 @@
 
 
 
-<p><input type="text" id="baseurl" value="https://github.lively4/repo/livelykernel/lively4-core/gh-pages/" class=""><script data-name="foo" type="lively4script">function foo() {
-  alert("hello");
-}</script></p>
+<p><input type="text" id="baseurl" value="http://localhost:8080/" class=""></p>
 
 <button onclick="fileEditor.loadFile()">load</button>
 <button onclick="fileEditor.saveFile()">save</button>
@@ -66,10 +65,7 @@
 
 <button onclick="githubAuth.logout(); console.log('logged out of github')">logout</button>
 
-<button id="loadScriptsFromDOM" onclick="window.scriptManager.loadScriptsFromDOM()">load lively4 scripts</button>
-
-<input type="checkbox" id="persistToGithub">persist changes to github
-<input type="checkbox" id="persistOnInterval">persist every x seconds only
+<input type="checkbox" id="persistOnInterval">persist every 5 seconds
 
 <div id="editor" class=" ace_editor ace-tm"></div>
 

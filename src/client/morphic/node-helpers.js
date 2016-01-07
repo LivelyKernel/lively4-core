@@ -3,6 +3,13 @@ export function setPosition(node, pos) {
   node.style.top = '' + pos.y + 'px';
 }
 
+export function getPosition(node, pos) {
+  return {
+    x: parseInt(node.style.left) || 0,
+    y: parseInt(node.style.top) || 0
+  }
+}
+
 export function globalPosition(node) {
   var left = 0;
   var top = 0;

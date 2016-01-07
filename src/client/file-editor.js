@@ -9,9 +9,9 @@
 
 // This should become an editor object... with loadFile and saveFile as methods. #TODO #PartsBin
 
-var messaging = require('./messaging.js');
-var focalStorage = require('../external/focalStorage.js');
-var githubAuth = require('./auth-github.js');
+import * as messaging from './messaging.js';
+import * as focalStorage from '../external/focalStorage.js';
+import * as githubAuth from './auth-github.js';
 
 window.githubAuth = githubAuth // make it global, so the callback can reach it...
 

@@ -1,11 +1,7 @@
 import * as nodes from './node-helpers.js';
 import * as events from './event-helpers.js';
-import * as config from './config.js';
-
-var dragOffset = config.DRAG_OFFSET || 0;
 
 var dragTarget;
-var dragStartOffset;
 var dragStartEventPosition;
 var dragStartNodePosition;
 var isDragging = false;
@@ -25,45 +21,54 @@ export function deactivate() {
 }
 
 function start(e) {
-  dragTarget = events.elementsUnder(e)[0];
-  dragTarget = document.body === dragTarget ? null : dragTarget;
+  dragTarget = events.getTargetNode(e);
   if (dragTarget) {
-    dragStartOffset = {
-      x: e.offsetX,
-      y: e.offsetY
-    }
-    dragStartNodePosition = {
-      x: parseInt(dragTarget.style.left) || 0,
-      y: parseInt(dragTarget.style.top) || 0
-    }
+    initGrabbingAtEvent(e);
   }
-  dragStartEventPosition = events.globalPosition(e);
-  e.preventDefault();
 }
 
 function move(e) {
-  var eventPosition = events.globalPosition(e);
-  if (dragTarget && !isDragging && events.distanceTo(e, dragStartEventPosition) > dragOffset) {
-    dragTarget.style.position = 'relative';
-    isDragging = true;
+  if (dragTarget) {
+    startOffsetDragging(e);
   }
-
   if (isDragging) {
-    var newPosition = {
-      x: events.globalPosition(e).x - dragStartEventPosition.x + dragStartNodePosition.x,
-      y: events.globalPosition(e).y - dragStartEventPosition.y + dragStartNodePosition.y
-    }
-    nodes.setPosition(dragTarget, newPosition);
-    e.preventDefault();
+    dragTo(e);
   }
 }
 
 function stop(e) {
   if (isDragging) {
-    e.preventDefault();
-    isDragging = false;
+    stopDraggingAtEvent(e);
   }
   dragTarget = null;
   dragStartEventPosition = null;
   dragStartNodePosition = null;
+}
+
+function initGrabbingAtEvent(anEvent) {
+  dragStartNodePosition = nodes.getPosition(dragTarget);
+  dragStartEventPosition = events.globalPosition(anEvent);
+  anEvent.preventDefault();
+}
+
+function startOffsetDragging(anEvent) {
+  if (!isDragging && events.noticableDistanceTo(anEvent, dragStartEventPosition)) {
+    dragTarget.style.position = 'relative';
+    isDragging = true;
+  }
+}
+
+function dragTo(anEvent) {
+  var eventPosition = events.globalPosition(anEvent);
+  var newPosition = {
+    x: eventPosition.x - dragStartEventPosition.x + dragStartNodePosition.x,
+    y: eventPosition.y - dragStartEventPosition.y + dragStartNodePosition.y
+  }
+  nodes.setPosition(dragTarget, newPosition);
+  anEvent.preventDefault();
+}
+
+function stopDraggingAtEvent(anEvent) {
+  isDragging = false;
+  anEvent.preventDefault();
 }

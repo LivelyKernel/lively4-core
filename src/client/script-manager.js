@@ -1,5 +1,7 @@
 'use strict';
 
+loadScriptsFromDOM();
+
 function functionFromString(funcOrString) {
     if (typeof funcOrString === 'function') {
         return funcOrString;

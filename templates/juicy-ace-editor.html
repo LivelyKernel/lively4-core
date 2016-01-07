@@ -112,6 +112,9 @@
             text && observer.observe(text, { characterData: true });
         // container.appendChild(text);
         this._attached = true;
+
+        // editor.resize()
+        window.setTimeout(function() { editor.resize()}, 10) // #Hack #Resize #RaceCondition
     };
 
     // Fires when an instance was removed from the document

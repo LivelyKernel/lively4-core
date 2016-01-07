@@ -1,6 +1,7 @@
 'use strict';
 
 import * as messaging from './messaging.js';
+import {log} from './load.js';
 
 var onAuthenticatedCallbacks = {}
 
