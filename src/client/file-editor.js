@@ -9,9 +9,9 @@
 
 // This should become an editor object... with loadFile and saveFile as methods. #TODO #PartsBin
 
-var messaging = require('./messaging.js');
-var focalStorage = require('../external/focalStorage.js');
-var githubAuth = require('./auth-github.js');
+import * as messaging from './messaging.js';
+import * as focalStorage from '../external/focalStorage.js';
+import * as githubAuth from './auth-github.js';
 
 window.githubAuth = githubAuth // make it global, so the callback can reach it...
 
@@ -25,20 +25,23 @@ function getURL(){
 	return new URL(baseurl + filename)
 }
 
-export function loadFile(){
-	var url = getURL()
+export function loadFile(urlString){
+	var url = urlString ? new URL(urlString) : getURL();
 	console.log("load " + url)
 
-	$.get(url, null, function(text) {
-		currentEditor().setValue(text)
-		console.log("file " + url + " read.")
-	}).fail(function(e) {
-    	console.log('could not load ' + url + ": " + e); // or whatever
+	return new Promise((resolve, reject) => {
+		$.get(url, null, function(text) {
+			currentEditor().setValue(text)
+			console.log("file " + url + " read.")
+			resolve(text);
+		}).fail(function(e) {
+	    	console.log('could not load ' + url + ": " + e); // or whatever
+		});
 	});
 }
 
-export function saveFile(){
-	var url = getURL()
+export function saveFile(urlString){
+	var url = urlString ? new URL(urlString) : getURL();
 	console.log("save " + url)
 	$.ajax({
 	    url: url,
@@ -53,19 +56,24 @@ export function saveFile(){
 	});
 }
 
-export function statFile(){
-	var url = getURL()
+export function statFile(urlString){
+	var url = urlString ? new URL(urlString) : getURL();
 	console.log("stat " + url)
-	$.ajax({
+
+	return new Promise(function(resolve, reject) {
+		$.ajax({
 	    url: url,
 	    type: 'OPTIONS',
 	    success: function(text) {
-			console.log("file " + url + " stated.")
-			currentEditor().setValue(text)
-		},
-		error: function(xhr, status, error) {
-			console.log("could not stat " + url + ": " + error)
-		}
-	});
+				console.log("file " + url + " stated.")
+				currentEditor().setValue(text)
+				resolve(text);
+			},
+			error: function(xhr, status, error) {
+				console.log("could not stat " + url + ": " + error)
+				reject(error);
+			}
+		});
+	})
 }
 

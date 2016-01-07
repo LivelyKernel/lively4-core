@@ -1,40 +1,51 @@
-<link rel="import" href="../templates/juicy-ace-editor.html"/>
 <template id="lively-editor">
     <style>
     .container {
         width: 100%;
         height: 100%;
+        /* 
+        box-sizing: border-box;
+        padding-top: 25px; */
         display: flex;
-        flex-direction: column;
+        flex-direction: column; 
     }
     .toolbar {
-        flex: 0;
+        /* position: absolute;
+        left: 0px;
+        top: 0px;
+        width: 100%; */
+        height: 25px;
+        flex: 0; 
     }
     #editor {
-        flex: 1;
+        /* box-sizing: border-box; */
         width: 100%;
-        height: 90%; // actucally I want calc(100% - 10px)
+        height: 100%;
+        flex: 1;   /* ACE does not display right with "flex" */
+        
     }
     </style>
     <div class="container">
         <div class="toolbar">
-        <button id="loadButton">load</button>
-        <button id="saveButton">save</button>
-        <input type="text" id="filename" value="README.md">
-
-        <!-- <button onclick="">reload service worker </button> -->
-
-        <button id="loginButton">login</button>
-
-        <button id="logoutButton">logout</button>
-    </div>
+          <button id="loadButton">load</button>
+          <button id="saveButton">save</button>
+          <input type="text" id="filename" value="https://lively4/README.md">
+          <button id="loginButton">login</button>
+          <button id="logoutButton">logout</button>
+      </div>
 
         <juicy-ace-editor id="editor"></juicy-ace-editor>
     </div>
 
     <script type="lively4script" data-name="initialize">
     () => {
+      console.log("initialize lively editor")
+      
       var container = $(this.shadowRoot).find(".container")[0];
+      // #Jens #TODO #Generalize
+      function get(selector) {
+          return $(container.querySelector(selector))
+      }
 
       // var messaging = require('../src/client/messaging.js');
       // var focalStorage = require('../src/external/focalStorage.js');
@@ -55,13 +66,14 @@
       })
 
       function currentEditor() {
-         return ace.edit($('#editor')[0]);
+        return get('juicy-ace-editor')[0].editor;
       }
 
+
+
       function getURL(){
-        var baseurl = $('#baseurl').val() // How to abstract from UI? #TODO #JensLincke
-        var filename = $('#filename').val()
-        return new URL(baseurl + filename)
+        var filename = get('#filename').val()
+        return new URL(filename)
       }
 
       function loadFile(){
@@ -70,7 +82,9 @@
 
         $.get(url, null, function(text) {
           currentEditor().setValue(text)
+          currentEditor().resize()
           console.log("file " + url + " read.")
+          console.log("content: " + text)
         }).fail(function(e) {
             console.log('could not load ' + url + ": " + e); // or whatever
         });
@@ -93,20 +107,21 @@
 
       }
 
-        $('#saveButton').click(saveFile)
-        $('#loadButton').click(loadFile)
-
-        $('#loadButton').click(function() {
-          githubAuth.challengeForAuth(Date.now(), function(token){
-              console.log('We are authenticated with the Token: ' + token)
-          })
+      get('#saveButton').click(saveFile)
+      get('#loadButton').click(loadFile)
+      get('#loginButton').click(function() {
+        console.log("login")
+        githubAuth.challengeForAuth(Date.now(), function(token){
+            console.log('We are authenticated with the Token: ' + token)
         })
-
-        $('#logoutButton').click(function(){
-          githubAuth.logout(); console.log('logged out of github')
-        })
+      })
+      get('#logoutButton').click(function(){
+        githubAuth.logout(); console.log('logged out of github')
+      })
 
       container.dispatchEvent(new Event("initialized"))
+
+      
     }
     </script>
 </template>

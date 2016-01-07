@@ -64,6 +64,8 @@
     // })
 
     System.import(lively4url + "/src/client/load.js").then(function(){
+        console.log("lively loaded!")
+
         // System.import("commandline.js")
         // System.import(lively4url + "src/client/debug-serviceworker.js")
 
@@ -103,10 +105,18 @@
 
 
         var menu = document.createElement("lively-menu")
-        menu.addEventListener("initialized", function() {
+        var cb = function() {
+            console.log("menu initialized")
             menu.openOn(MyApp)
-            $('body')[0].appendChild(menu)
-        })
+        }
+        if (menu.initialize) {
+            console.log("initialze directly")
+            cb()
+        } else {
+            console.log("register initialized callback")
+            menu.addEventListener("initialized", cb)
+        }
+        $('body')[0].appendChild(menu)
 
     }).catch(function(err) { alert("load Lively4 failed")});
 

@@ -1,0 +1,10 @@
+{
+  "name": "Toolbox",
+  "html-tag": "lively-toolbox",
+  "description": "Bla bla bla",
+  "author": "Felix Wolff",
+  "date-changed": "2015-12-17",
+  "categories": ["basic"],
+  "tags": [],
+  "template": "lively-toolbox.html"
+}

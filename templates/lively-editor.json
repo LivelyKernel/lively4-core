@@ -1,0 +1,10 @@
+{
+  "name": "Editor",
+  "html-tag": "lively-editor",
+  "description": "Bla bla bla",
+  "author": "Felix Wolff",
+  "date-changed": "2015-12-17",
+  "categories": ["basic"],
+  "tags": [],
+  "template": "lively-editor.html"
+}

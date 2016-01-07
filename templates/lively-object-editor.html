@@ -1,49 +1,49 @@
 <link rel="import" href="lively-treeview.html">
 <link rel="import" href="juicy-ace-editor.html">
 
-<template id="template">
-    <style>
-        :host {
-            display: block;
-            position: relative;
-            background: white;
-            width: 400px;
-            height: 300px;
-        }
-        #wrapper {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            height: 100%;
-        }
-        .main-content {
-            width: 100%;
-            flex-grow: 1;
-            display: flex;
-            max-height: 100%;
-        }
-        #property-list {
-            width: 30%;
-            min-width: 100px;
-            margin-right: 2px;
-            font-size: 12px;
-            overflow-x: scroll;
-        }
-        textarea, juicy-ace-editor {
-            width: 70%;
-        }
-        .toolbar {
-            margin-top: 0.4rem;
-        }
-        .toolbar .bar-left {
-            display: inline-block;
-            text-align: left;
-        }
-        .toolbar .bar-right {
-            float: right;
-            display: inline-block;
-            text-align: right;
-        }
+<template id="lively-object-editor">
+	<style>
+		:host {
+			display: block;
+			position: relative;
+			background: white;
+			width: 400px;
+			height: 300px;
+		}
+		#wrapper {
+			display: flex;
+    		flex-direction: column;
+			width: 100%;
+			height: 100%;
+		}
+		.main-content {
+			width: 100%;
+			flex-grow: 1;
+			display: flex;
+			max-height: 100%;
+		}
+		#property-list {
+			width: 30%;
+			min-width: 100px;
+			margin-right: 2px;
+			font-size: 12px;
+			overflow-x: scroll;
+		}
+		textarea, juicy-ace-editor {
+			width: 70%;
+		}
+		.toolbar {
+			margin-top: 0.4rem;
+		}
+		.toolbar .bar-left {
+			display: inline-block;
+			text-align: left;
+		}
+		.toolbar .bar-right {
+			float: right;
+			display: inline-block;
+			text-align: right;
+		}
 
     #attributesContent, #propertiesContent {
       width: 100%;
@@ -95,9 +95,9 @@
 </template>
 
 <script>
-    (function() {
-        var template = document.currentScript.ownerDocument.querySelector('#template');
-        var clone = document.importNode(template.content, true);
+	(function() {
+		var template = document.currentScript.ownerDocument.querySelector('#lively-object-editor');
+		var clone = document.importNode(template.content, true);
 
         Promise.all([
             System.import('../templates/classes/ObjectEditor.js'),

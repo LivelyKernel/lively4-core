@@ -5,14 +5,31 @@
 
 import { Base } from './base.jsx'
 
-export class Filesystem extends Base {
-    read(path) {
-        return fetch(path).then((response) => {
-            if(response.ok) {
-                response.text()
-            } else {
-                throw new Error(`httpfs error: ${response.status} ${response.statusText}`)
-            }
-        })
+export default class Filesystem extends Base {
+    constructor(path, options) {
+        super('httpfs', path, options)
+
+        if(!options.base)
+            throw new Error('Option `base` required.')
+
+        this.base = options.base
+    }
+
+    read(path, request) {
+        let req = new Request(this.base + '/' + path, request)
+
+        return fetch(req)
+    }
+
+    write(path, _, request) {
+        let req = new Request(this.base + '/' + path, request)
+
+        return fetch(req)
+    }
+
+    stat(path, request) {
+        let req = new Request(this.base + '/' + path, request)
+
+        return fetch(req)
     }
 }

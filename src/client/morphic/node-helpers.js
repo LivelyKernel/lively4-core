@@ -3,6 +3,13 @@ export function setPosition(node, pos) {
   node.style.top = '' + pos.y + 'px';
 }
 
+export function getPosition(node, pos) {
+  return {
+    x: parseInt(node.style.left) || 0,
+    y: parseInt(node.style.top) || 0
+  }
+}
+
 export function globalPosition(node) {
   var left = 0;
   var top = 0;
@@ -14,20 +21,5 @@ export function globalPosition(node) {
   return {
     x: left,
     y: top
-  }
-}
-
-export function setPositionMode(node, aModeString) {
-  switch(aModeString) {
-    case 'relative': {
-      node.style.removeProperty('position');
-      node.style.removeProperty('top');
-      node.style.removeProperty('left');
-      break;
-    }
-    case 'absolute': {
-      node.style.position = 'absolute';
-      break;
-    }
   }
 }

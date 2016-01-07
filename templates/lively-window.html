@@ -1,12 +1,12 @@
-<template id="template">
+<template id="lively-window">
 	<style>
   @import url('https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css');
 
 	:host {
 		position: absolute;
 		z-index: 100;
-		width: 400px;
-    height: 300px;
+		width: 600px;
+    	height: 400px;
 	}
   :host(.window-fixed) {
     position: fixed;
@@ -128,7 +128,7 @@
 
 <script>
 (function() {
-	var template = document.currentScript.ownerDocument.querySelector('#template');
+	var template = document.currentScript.ownerDocument.querySelector('#lively-window');
 	var clone = document.importNode(template.content, true);
 
 	Promise.all([
