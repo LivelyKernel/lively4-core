@@ -49,14 +49,17 @@ export function createRegistrationScript(componentId) {
   return script;
 }
 
-// this function loads all unregistered elements, starts looking in root,
+// this function loads all unregistered elements, starts looking in lookupRoot,
+// if lookupRoot is not set, it looks in the whole document.body,
 // if deep is set, it also looks into shadow roots
-export function loadUnresolved(root, deep) {
+export function loadUnresolved(lookupRoot, deep) {
+  lookupRoot = lookupRoot || document.body;
+
   var selector = deep ? "html /deep/ :unresolved" : ":unresolved";
   // helper set to filter for unique tags
   var unique = new Set();
   
-  $(root.querySelectorAll(selector)).map(function() {
+  $(lookupRoot.querySelectorAll(selector)).map(function() {
     return this.nodeName.toLowerCase();
   }).filter(function() {
     // filter for unique tags

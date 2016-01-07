@@ -41,7 +41,7 @@ export default class ComponentBin extends Morph {
       this.appendTile(compInfo, () => {
         var component = document.createElement(compInfo["html-tag"]);
         this.parentElement.insertBefore(component, this.nextSibling);
-        componentLoader.loadUnresolved(document.body);
+        componentLoader.loadUnresolved();
       });
     });
     
