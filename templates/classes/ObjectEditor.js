@@ -8,22 +8,34 @@ export default class ObjectEditor extends Morph {
    * HTMLElement callbacks
    */
   attachedCallback() {
-    console.log('editor attachedCallback!');
     this.attached = true;
+
+    this.saveElementReferences();
+    this.addElementEvents();
+
+    this.render();
+
+    this.initializeAttributes();
+  }
+
+  saveElementReferences() {
+    this.tabView = this.shadowRoot.querySelector('#tabView');
 
     this.propertyList = this.shadowRoot.querySelector('#property-list');
     this.editor = this.shadowRoot.querySelector('#editor');
-    // this.addButton = this.shadowRoot.querySelector('#add-script');
-    // this.removeButton = this.shadowRoot.querySelector('#remove-script');
-    // this.saveButton = this.shadowRoot.querySelector('#save-script');
-    this.attributesLeaf = this.shadowRoot.querySelector('#attributes-leaf');
-    this.propertiesLeaf = this.shadowRoot.querySelector('#properties-leaf');
+
     this.attributesMap = this.shadowRoot.querySelector('#attributesMap');
     this.attributesContent = this.shadowRoot.querySelector('#attributesContent');
+
     this.propertiesMap = this.shadowRoot.querySelector('#propertiesMap');
     this.propertiesContent = this.shadowRoot.querySelector('#propertiesContent');
-    this.tabView = this.shadowRoot.querySelector('#tabView');
 
+    this.addButton = this.shadowRoot.querySelector('#add-script');
+    this.removeButton = this.shadowRoot.querySelector('#remove-script');
+    this.saveButton = this.shadowRoot.querySelector('#save-script');
+  }
+
+  addElementEvents() {
     this.propertyList.addEventListener('change', (e) => { this.listChanged(e) });
     // this.addButton.addEventListener('click', (e) => { this.addButtonClicked(e) });
     // this.removeButton.addEventListener('click', (e) => { this.removeButtonClicked(e) });
@@ -32,7 +44,6 @@ export default class ObjectEditor extends Morph {
     this.attributesMap.addEventListener('commit', (e) => { this.attributeChanged(e) });
 
     this.tabView.addEventListener('tabChange', (e) => {
-      console.log("event", e);
       switch(e.detail.id) {
         case("scriptsContent"):
           break;
@@ -46,12 +57,11 @@ export default class ObjectEditor extends Morph {
           //
       }
     });
+  }
 
-    this.render();
-
+  initializeAttributes() {
     for (let i = 0; i < this.attributes.length; i++) {
       var attribute = this.attributes[i];
-      console.log('Initializing attribute ' + attribute);
 
       this.attributeChangedCallback(attribute.name, null, attribute.value);
     }
@@ -60,15 +70,12 @@ export default class ObjectEditor extends Morph {
   detachedCallback() {
     this.attached = false;
 
-    console.log('editor detachedCallback');
     if (this.targetElement) {
       this.releaseTarget();
     }
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
-    console.log('Attribute changed ' + attrName);
-
     switch(attrName) {
       case 'target':
         var selector = newValue
@@ -138,8 +145,6 @@ export default class ObjectEditor extends Morph {
     //   attributes: true
     // });
 
-    console.log(this.scriptsObserver);
-
     this.domObserver = new MutationObserver((changes) => { this.attributesObserver(changes) });
     this.domObserver.observe(this.targetElement, {
       attributes: true
@@ -153,7 +158,6 @@ export default class ObjectEditor extends Morph {
   }
 
   attributesObserver(changes) {
-    console.log(changes);
     this.updateAttributes();
   }
   scriptsObserver(changes) {
@@ -176,7 +180,6 @@ export default class ObjectEditor extends Morph {
   }
 
   render() {
-    console.log('editor render!');
     if (!this.attached) {
       return;
     }
@@ -185,8 +188,6 @@ export default class ObjectEditor extends Morph {
   }
 
   showAttributes() {
-    console.log("attr clicked");
-
     if (!this.targetElement) {
       return;
     }
@@ -197,9 +198,16 @@ export default class ObjectEditor extends Morph {
     }
     this.shadowRoot.querySelector("#attributesMap").map = attributes;
   }
-  showProperties() {
-    console.log("prop clicked");
+  saveAttribute(attributeName) {
+    this.targetElement.setAttribute(attributeName, this.editor.value);
+  }
+  attributeChanged(e) {
+    let attribute = e.detail;
 
+    this.targetElement.setAttribute(attribute.key, attribute.value);
+  }
+
+  showProperties() {
     if (!this.targetElement) {
       return;
     }
@@ -239,6 +247,11 @@ export default class ObjectEditor extends Morph {
     }
 
     this.propertiesMap.map = properties;
+  }
+  propertyChanged(e) {
+    let property = e.detail;
+
+    console.log("Property changed: " + property);
   }
 
   addButtonClicked(e) {
@@ -299,8 +312,6 @@ export default class ObjectEditor extends Morph {
 
       if (typeof data['scriptName'] !== 'undefined') {
         this.loadScript(data['scriptName']);
-      } else if (typeof data['attributeName'] !== 'undefined') {
-        this.loadAttribute(data['attributeName']);
       }
     } else {
       this.editor.value = '';
@@ -312,20 +323,11 @@ export default class ObjectEditor extends Morph {
       typeof this.targetElement.__scripts__[scriptName] === 'undefined') {
       return;
     }
-    this.shadowRoot.querySelector('#editor').value = this.targetElement.__scripts__[scriptName];
-  }
-  loadAttribute(attributeName) {
-    this.editor.value = this.targetElement.attributes[attributeName].value;
-  }
-
-  saveAttribute(attributeName) {
-    this.targetElement.setAttribute(attributeName, this.editor.value);
+    this.editor.value = this.targetElement.__scripts__[scriptName];
   }
 
   updateList() {
     this.updateScripts();
-    this.updateAttributes();
-    // this.updateProperties();
   }
 
   updateScripts() {
@@ -344,36 +346,5 @@ export default class ObjectEditor extends Morph {
       }
     }
     this.shadowRoot.querySelector('#script-nodes').innerHTML = scriptHtml;
-  }
-  updateAttributes() {
-    return;
-    var activeLeaf = null;
-    if (this.propertyList.activeLeaf) {
-      let activeLeafData = this.propertyList.activeLeaf.dataset;
-      if(activeLeafData.attributeName)
-        activeLeaf = activeLeafData.attributeName;
-    }
-
-    let html = '';
-    if (this.targetElement) {
-      for (let i = 0; i < this.targetElement.attributes.length; i++) {
-        let attr = this.targetElement.attributes[i];
-        let isActive = attr.name == activeLeaf;
-        html += '<li><span class="leaf' + (isActive ? ' active' : '') + '" data-attribute-name="' + attr.name + '">' + attr.name + '</span></li>';
-      }
-    }
-    this.shadowRoot.querySelector('#attribute-nodes').innerHTML = html;
-  }
-
-  attributeChanged(e) {
-    let attribute = e.detail;
-
-    this.targetElement.setAttribute(attribute.key, attribute.value);
-  }
-
-  propertyChanged(e) {
-    let property = e.detail;
-
-    console.log("Property changed: " + property);
   }
 }
