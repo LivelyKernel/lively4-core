@@ -1,15 +1,26 @@
 var lively4Url =  'http://localhost:8081/';
-loadTemplate('lively-toolbox');
+loadTemplates('lively-toolbox', 'lively-window', 'lively-object-editor', 'lively-treeview', 'lively-editor', 'juicy-ace-editor');
 
-function loadTemplate (templateIdentifier) {
+function loadTemplates () {
+  var identifiers = Array.from(arguments);
   loadJQuery();
   loadSystem();
   setTimeout(function () {
     loadBabel();
     loadLively4();
-    loadPart(templateIdentifier);
-    mountPart(templateIdentifier);
+    loadAce();
+    identifiers.forEach(function(templateIdentifier) {
+      loadPart(templateIdentifier);
+    })
+    mountPart(identifiers[0]);
   }, 1000)
+}
+
+function loadAce() {
+  var aceNode = document.createElement('script');
+  aceNode.setAttribute('type', 'text/javascript');
+  aceNode.setAttribute('src', lively4Url + 'src/external/ace.js');
+  document.head.appendChild(aceNode);
 }
 
 function loadJQuery () {
@@ -49,6 +60,14 @@ function loadLively4 () {
     System.import("commandline.js")
     System.import(lively4Url + "src/client/debug-serviceworker.js")
   }).catch(function(err) { alert("load Lively4 failed")});
+  System.import(lively4Url + "src/client/script-manager.js").then(function(module) {
+      window.scriptManager = module;
+      log("scriptManager loaded");
+  });
+  System.import(lively4Url + "src/client/persistence.js").then(function(module) {
+      window.persistence = module;
+      log("persistence loaded");
+  });
 }
 
 function loadPart (partIdentifierString) {
@@ -57,13 +76,19 @@ function loadPart (partIdentifierString) {
     data = data.replace('../src/client/css/morphic.css',  lively4Url + 'src/client/css/morphic.css');
     var parserNode = document.createElement('div');
     parserNode.innerHTML = data;
-    var templateNode = parserNode.children[0];
-    var scriptNode = parserNode.children[1];
-    var scriptString = scriptNode.innerHTML;
-    document.head.appendChild(templateNode);
-    scriptString = scriptString.replace('document.currentScript.ownerDocument', 'document');
-    scriptString = scriptString.replace("System.import('../", "System.import('" + lively4Url);
-    eval(scriptString);
+    document.head.appendChild(parserNode.getElementsByTagName('template')[0]);
+    Array.from(parserNode.getElementsByTagName('script')).forEach(function(scriptNode) {
+      if (scriptNode.getAttribute('src')) {
+        document.head.appendChild(scriptNode);
+      } else {
+        var scriptString = scriptNode.innerHTML;
+        scriptString = scriptString.replace(/document.currentScript.ownerDocument/g, 'document');
+        scriptString = scriptString.replace(/\(document._currentScript \|\| document.currentScript\).ownerDocument/g, 'document');
+        scriptString = scriptString.replace(/System.import\('..\//g, "System.import('" + lively4Url);
+        scriptString = scriptString.replace(/System.import\("..\//g, 'System.import("' + lively4Url);
+        eval(scriptString);
+      }
+    })
   });
 }
 
