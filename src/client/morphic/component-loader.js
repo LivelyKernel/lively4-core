@@ -74,6 +74,7 @@ export function loadUnresolved(lookupRoot, deep) {
 
 // this function loads a component by adding a link tag to the head
 export function loadByName(name) {
+  console.log("loading Component " + name);
   var link = document.createElement("link");
   link.rel = "import";
   link.href = "../templates/" + name + ".html";

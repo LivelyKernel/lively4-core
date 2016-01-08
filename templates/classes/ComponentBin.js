@@ -16,18 +16,30 @@ export default class ComponentBin extends Morph {
 
   loadComponentList() {
     return new Promise((resolve, reject) => {
-      statFile("https://lively4/templates").then(response => {
-        response = JSON.parse(response);
-        // just consider html-files being templates
+      var templatesUrl = window.location.hostname === "localhost" ? "http://localhost:8080/lively4-core/templates/" : "https://lively4/templates/";
+      statFile(templatesUrl).then(response => {
+        try {
+          // depending in the content type, the response is either parsed or not,
+          // github always returns text/plain
+          response = JSON.parse(response);
+        } catch (e) {
+          //it was already json
+        }
+
         var infoFilesPromises = response.contents.filter(file => {
           return file.type === "file" && file.name.slice(-5) === ".json";
         }).map(file => {
-          return loadFile("https://lively4/templates/" + file.name)
+          return loadFile(templatesUrl + file.name)
         });
 
         Promise.all(infoFilesPromises).then(files => {
           // save the parsed list
-          var componentList = files.map(JSON.parse);
+          var componentList;
+          try {
+            componentList = files.map(JSON.parse);
+          } catch (e) {
+            componentList = files;
+          }
           resolve(componentList);
         });
       }).catch(err => {
@@ -43,15 +55,8 @@ export default class ComponentBin extends Morph {
         this.parentElement.insertBefore(component, this.nextSibling);
         componentLoader.loadUnresolved();
       });
-    });
-    
+    }); 
   }
-
-
-    //   }).catch(err => {
-    //     console.log(err);
-    //   });
-    // });
 
   appendTile(config, callback) {
     var list = this.getSubmorph(".button-list");

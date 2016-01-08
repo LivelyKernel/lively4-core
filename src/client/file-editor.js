@@ -31,11 +31,13 @@ export function loadFile(urlString){
 
 	return new Promise((resolve, reject) => {
 		$.get(url, null, function(text) {
-			currentEditor().setValue(text)
+			// this should not be done here! - Felix
+			// currentEditor().setValue(text)
 			console.log("file " + url + " read.")
 			resolve(text);
 		}).fail(function(e) {
 	    	console.log('could not load ' + url + ": " + e); // or whatever
+	    	reject();
 		});
 	});
 }
@@ -66,7 +68,8 @@ export function statFile(urlString){
 	    type: 'OPTIONS',
 	    success: function(text) {
 				console.log("file " + url + " stated.")
-				currentEditor().setValue(text)
+				// this should not be done here! - Felix
+				// currentEditor().setValue(text)
 				resolve(text);
 			},
 			error: function(xhr, status, error) {
