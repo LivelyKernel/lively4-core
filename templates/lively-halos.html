@@ -1,0 +1,77 @@
+<link rel="import" href="../templates/halos/remove-halo.html" />
+<template id="lively-halos">
+    <style>
+    :host {
+      position: absolute;
+    }
+    .container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: space-between;
+      flex-direction: column;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+    }
+    .halo {
+      z-index: 9999;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      background-color: #ccc;
+      background-position: 50% 50%;
+      background-size: 20px 20px;
+      background-repeat: no-repeat;
+    }
+    </style>
+    <div class="container">
+      <div class="row" id="row1">
+        <div class="halo">1</div>
+        <div class="halo">2</div>
+        <remove-halo class="halo"></remove-halo>
+      </div>
+      <div class="row" id="row2">
+        <div class="halo">4</div>
+        <div class="halo">5</div>
+      </div>
+      <div class="row" id="row3">
+        <div class="halo">6</div>
+        <div class="halo">7</div>
+        <div class="halo">8</div>
+      </div>
+    </div>
+    <script type="lively4script" data-name="initialize">
+    () => {
+      var $halos = $("lively-halos")
+      $halos.hide();
+      window.HaloService = {
+        showHalos: function (target) {
+          var $target = $(target);
+          var offset = $target.offset();
+          var width = $target.outerWidth();
+          var height = $target.outerHeight();
+          $halos.show();
+          $halos.offset(offset);
+          $halos.outerWidth(width);
+          $halos.outerHeight(height);
+        },
+
+        hideHalos: function () {
+          $halos.offset({left:0, top: 0});
+          $halos.hide();
+        }
+      }
+    }
+    </script>
+</template>
+<script class="registrationScript">
+// This ugly piece of code will be auto generated, when exporting a template. Puh.
+(function() {
+  var template = document.currentScript.ownerDocument.querySelector('#lively-halos');
+  var clone = document.importNode(template.content, true);
+
+  System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-halos', clone); });
+})();
+</script>

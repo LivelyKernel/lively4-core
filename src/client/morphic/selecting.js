@@ -6,6 +6,7 @@ function handleSelect(e) {
   } else {
     if (window.that && !$(e.target).is("lively-toolbox")) {
       $(window.that).removeClass("red-border");
+      hideHalos()
     }
   }
 }
@@ -26,4 +27,14 @@ function onMagnify(e) {
   }
   window.that = grabTarget;
   console.log("Current element:", grabTarget, "with id:", $(grabTarget).attr("id"));
+
+  showHalos(grabTarget)
+}
+
+function showHalos(el) {
+  HaloService.showHalos(el);
+}
+
+function hideHalos() {
+  HaloService.hideHalos();
 }

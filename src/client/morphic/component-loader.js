@@ -61,7 +61,7 @@ export function loadUnresolved(lookupRoot, deep) {
   var selector = deep ? "html /deep/ :unresolved" : ":unresolved";
   // helper set to filter for unique tags
   var unique = new Set();
-  
+
   $(lookupRoot.querySelectorAll(selector)).map(function() {
     return this.nodeName.toLowerCase();
   }).filter(function() {
