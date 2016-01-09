@@ -7,7 +7,7 @@ import * as componentLoader from '../../src/client/morphic/component-loader.js';
 export default class ComponentBin extends Morph {
   attachedCallback() {
     console.log("ComponentBin attached!!!");
-    
+
     this.loadComponentList().then(componentList => {
       this.componentList = componentList;
       this.createTiles(componentList);
@@ -16,14 +16,14 @@ export default class ComponentBin extends Morph {
 
   loadComponentList() {
     return new Promise((resolve, reject) => {
-      var templatesUrl = window.location.hostname === "localhost" ? "http://localhost:8080/lively4-core/templates/" : "https://lively4/templates/";
+      var templatesUrl = window.location.hostname === "localhost" ? "http://localhost:" + window.location.port + "/lively4-core/templates/" : "https://lively4/templates/";
       statFile(templatesUrl).then(response => {
         try {
           // depending in the content type, the response is either parsed or not,
           // github always returns text/plain
           response = JSON.parse(response);
         } catch (e) {
-          //it was already json
+          // it was already json
         }
 
         var infoFilesPromises = response.contents.filter(file => {
@@ -44,7 +44,7 @@ export default class ComponentBin extends Morph {
         });
       }).catch(err => {
         console.log(err);
-      });      
+      });
     });
   }
 
@@ -55,17 +55,19 @@ export default class ComponentBin extends Morph {
         this.parentElement.insertBefore(component, this.nextSibling);
         componentLoader.loadUnresolved();
       });
-    }); 
+    });
   }
 
   appendTile(config, callback) {
-    var list = this.getSubmorph(".button-list");
-    var button = document.createElement("button");
-    button.className = "tile";
-    button.innerHTML = config["name"];
-    button.style.backgroundImage = "url(/lively4-core/templates/" + (config["thumbnail"] || "thumbnails/default-placeholder.png") + ")";
-    button.addEventListener("click", callback);
+    var tile = document.createElement("lively-component-bin-tile");
+    tile.setBin(this);
+    tile.configure(config);
 
-    list.appendChild(button);
+    var list = this.getSubmorph(".tile-pane");
+    list.appendChild(tile);
+  }
+
+  open(component) {
+    this.parentElement.insertBefore(component, this.nextSibling);
   }
 }
