@@ -67,6 +67,7 @@ export default class TabView extends Morph {
       };
 
       let barTitle = document.createElement('span');
+      let tab = document.createElement('li');
       barTitle.innerHTML = title;
       barTitle.addEventListener('click', (e) => {
         this.showContent(i);
@@ -79,8 +80,8 @@ export default class TabView extends Morph {
         });
         this.dispatchEvent(changeEvent);
       });
-
-      this.tabBar.appendChild(barTitle);
+      tab.appendChild(barTitle);
+      this.tabBar.appendChild(tab);
     }
   }
 
