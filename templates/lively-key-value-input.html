@@ -4,6 +4,37 @@
       display: flex;
       position: relative;
     }
+
+    ::content .lively-key-value-input-key {
+      font-weight: bold;
+      width: 120px;
+    }
+    ::content .lively-key-value-input-key.changed {
+      font-style: italic;
+    }
+    ::content .lively-key-value-input-value {
+      position: relative;
+      flex: 1;
+      margin-left: 0.5em;
+    }
+    ::content .lively-key-value-input-value:focus {
+      outline: none;
+    }
+    ::content .lively-key-value-input-status {
+      height: 5px;
+      width: 5px;
+      position: absolute;
+      top: 1px;
+      right: 1px;
+      background: transparent;
+      border-bottom-left-radius: 50%;
+    }
+    ::content .lively-key-value-input-status.ok {
+      background: green;
+    }
+    ::content .lively-key-value-input-status.changed {
+      background: orange;
+    }
   </style>
   <content></content>
 </template>
@@ -131,11 +162,11 @@
 
   (function() {
     LivelyKeyValueInput.template = document.currentScript.ownerDocument.querySelector('#lively-key-value-input');
-    LivelyKeyValueInput.baseURI = document.currentScript.baseURI;
+    // LivelyKeyValueInput.baseURI = document.currentScript.baseURI;
     var clone = document.importNode(LivelyKeyValueInput.template.content, true);
     var prototype = Object.create(LivelyKeyValueInput.prototype);
 
-    clone.querySelector('style').innerHTML = '@import url("' + document.currentScript.baseURI.replace('lively-key-value-input.html', 'style/lively-key-value-input.css') + '");' + clone.querySelector('style').innerHTML;
+    // clone.querySelector('style').innerHTML = '@import url("' + document.currentScript.baseURI.replace('lively-key-value-input.html', 'style/lively-key-value-input.css') + '");' + clone.querySelector('style').innerHTML;
 
     System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-key-value-input', clone, prototype); });
   })();
