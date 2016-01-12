@@ -44,6 +44,7 @@ export default class ObjectEditor extends Morph {
     this.runButton.addEventListener('click', (e) => { this.runButtonClicked(e) });
 
     this.attributesMap.addEventListener('commit', (e) => { this.attributeChanged(e) });
+    this.propertiesMap.addEventListener('commit', (e) => { this.propertyChanged(e) });
 
     this.tabView.addEventListener('tabChange', (e) => {
       switch(e.detail.id) {
@@ -253,8 +254,9 @@ export default class ObjectEditor extends Morph {
   }
   propertyChanged(e) {
     let property = e.detail;
-
     console.log("Property changed: " + property);
+
+    this.targetElement[property.key] = property.value;
   }
 
   addButtonClicked(e) {

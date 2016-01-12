@@ -35,6 +35,12 @@
     font-weight: bold;
   }
 
+  #tab-content {
+    display: flex;
+    overflow-y: scroll;
+    flex: 1;
+  }
+
   ::content .tab-view-inactive {
     display: none;
   }
@@ -44,7 +50,9 @@
   <ul id="tab-bar">
   </ul>
 
-  <content></content>
+  <div id="tab-content">
+    <content></content>
+  </div>
 </template>
 
 <script>
