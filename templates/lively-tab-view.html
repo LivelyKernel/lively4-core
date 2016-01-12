@@ -1,65 +1,65 @@
 <template id="lively-tab-view">
-	<style>
-	:host {
-        display: flex;
-        width: 100%;
-        flex: 1;
-        flex-direction: column;
-	}
+  <style>
+  :host {
+    display: flex;
+    width: 100%;
+    flex: 1;
+    flex-direction: column;
+  }
 
-	#tab-bar {
-		display: flex;
-		flex: 0;
-		height: 2em;
-    	line-height: 2em;
-    	margin: 0;
-    	padding: 0;
-    	vertical-align: middle;
-    	list-style: none inside;
-    	border-bottom: 2px #1ba1e2 solid;
-	}
+  #tab-bar {
+    display: flex;
+    flex: 0;
+    height: 2em;
+    line-height: 2em;
+    margin: 0;
+    padding: 0;
+    vertical-align: middle;
+    list-style: none inside;
+    border-bottom: 2px #1ba1e2 solid;
+  }
 
-	#tab-bar li {
-		display: block;
-		cursor: pointer;
-		padding-left: 5px;
-		padding-right: 5px;
-	}
-	#tab-bar li.active span {
-		background-color: #1ba1e2;
-    	color: #ffffff;
-	}
+  #tab-bar li {
+    display: block;
+    cursor: pointer;
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+  #tab-bar li.active span {
+    background-color: #1ba1e2;
+    color: #ffffff;
+  }
 
-	#tab-bar li span {
-		padding: 8px 24px;
-		font-weight: bold;
-	}
+  #tab-bar li span {
+    padding: 8px 24px;
+    font-weight: bold;
+  }
 
-	::content .tab-view-inactive {
-		display: none;
-	}
+  ::content .tab-view-inactive {
+    display: none;
+  }
 
-	</style>
+  </style>
 
-	<ul id="tab-bar">
-	</ul>
+  <ul id="tab-bar">
+  </ul>
 
-	<content></content>
+  <content></content>
 </template>
 
 <script>
-	(function() {
-		var template = document.currentScript.ownerDocument.querySelector('#lively-tab-view');
-		var clone = document.importNode(template.content, true);
+  (function() {
+    var template = document.currentScript.ownerDocument.querySelector('#lively-tab-view');
+    var clone = document.importNode(template.content, true);
 
-        Promise.all([
-            System.import('../templates/classes/TabView.js'),
-            System.import('../src/client/morphic/component-loader.js')
-        ]).then(modules => {
-            var TabView = modules[0];
-            var Loader = modules[1];
-            
-            Loader.register('lively-tab-view', clone, Object.create(TabView.prototype || TabView.default.prototype));
-        });
-    })();
+    Promise.all([
+      System.import('../templates/classes/TabView.js'),
+      System.import('../src/client/morphic/component-loader.js')
+    ]).then(modules => {
+      var TabView = modules[0];
+      var Loader = modules[1];
+      
+      Loader.register('lively-tab-view', clone, Object.create(TabView.prototype || TabView.default.prototype));
+    });
+  })();
 </script>
