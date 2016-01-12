@@ -28,7 +28,13 @@
         this.appendChild(input);
 
         input.key = key;
-        input.value = value;
+        if (typeof value == 'object' && typeof value.value != 'undefined') {
+          input.value = value.value;
+          input.type = value.type;
+        } else {
+          input.value = value;
+          input.type = 'string';
+        }
       }
 
       this._map = map;

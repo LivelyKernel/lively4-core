@@ -42,10 +42,12 @@
 
     inputEventHandler(e) {
       // change status LED
+      console.log('input');
       this.updateStatus();
     }
 
     changeEventHandler(e) {
+      console.log('change');
       // save event
       this.commit();
     }
@@ -84,6 +86,21 @@
       }
     }
 
+    updateType() {
+      console.log(this.key + ':', this.type);
+      switch (this.type) {
+        case 'number':
+          this.valueElement.setAttribute('type', 'number');
+          break;
+        case 'boolean':
+          this.valueElement.setAttribute('type', 'checkbox');
+          break;
+        case 'string':
+        default:
+          break;
+      }
+    }
+
     get key() {
       return this._key;
     }
@@ -100,6 +117,15 @@
     set value(value) {
       this.oldValue = value;
       this.valueElement.value = value;
+    }
+
+    get type() {
+      return this._type;
+    }
+
+    set type(value) {
+      this._type = value;
+      this.updateType();
     }
   }
 

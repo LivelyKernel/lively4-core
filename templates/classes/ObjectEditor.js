@@ -215,37 +215,38 @@ export default class ObjectEditor extends Morph {
     }
 
     let editableProperties = [
-      "dir",
-      "draggable",
-      "hidden",
-      "lang",
+      { name: 'dir', type: 'string' },
+      { name: 'draggable', type: 'boolean' },
+      { name: 'hidden', type: 'boolean' },
+      { name: 'lang', type: 'string' },
 
-      "offsetHeight",
-      "offsetWidth",
-      "offsetParent",
-      "offsetTop",
-      "offsetLeft",
+      { name: 'offsetHeight', type: 'number' },
+      { name: 'offsetWidth', type: 'number' },
+      { name: 'offsetTop', type: 'number' },
+      { name: 'offsetLeft', type: 'number' },
 
-      "clientHeight",
-      "clientLeft",
-      "clientTop",
-      "clientWidth",
+      { name: 'clientHeight', type: 'number' },
+      { name: 'clientLeft', type: 'number' },
+      { name: 'clientTop', type: 'number' },
+      { name: 'clientWidth', type: 'number' },
 
-      "style",
-      "tabIndex",
+      { name: 'tabIndex', type: 'number' },
 
-      "innerHTML",
-      "outerHTML",
-      "value",
+      { name: 'innerHTML', type: 'string' },
+      { name: 'outerHTML', type: 'string' },
+      { name: 'value', type: 'string' },
 
-      "scrollTop",
-      "scrollLeft",
+      { name: 'scrollTop', type: 'number' },
+      { name: 'scrollLeft', type: 'number' }
     ];
 
     let properties = {};
     for(let i = 0; i < editableProperties.length; i++) {
-      let propertyName = editableProperties[i];
-      properties[propertyName] = this.targetElement[propertyName];
+      let property = editableProperties[i];
+      properties[property.name] = {
+        value: this.targetElement[property.name],
+        type: property.type
+      }
     }
 
     this.propertiesMap.map = properties;
