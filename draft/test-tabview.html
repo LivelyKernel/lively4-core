@@ -46,25 +46,30 @@
 </script>
 <!-- END SYSTEM.JS-->
 
-<link rel="import" href="../templates/lively-toolbox.html" />
 <link rel="import" href="../templates/lively-window.html" />
 <link rel="import" href="../templates/lively-object-editor.html" />
-<link rel="import" href="../templates/lively-component-bin.html" />
+<link rel="import" href="../templates/lively-toolbox.html" />
+<link rel="import" href="../templates/lively-tab-view.html" />
 
 <link rel="import" href="../templates/lively-key-value-input.html" />
 <link rel="import" href="../templates/lively-key-value-map.html" />
-
-<link rel="import" href="../templates/lively-tab-view.html" />
 
 <link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /></head>
 <body>
 <h1>Lively 4 -- Bootstrapping Test Page</h1>
 
-<lively-key-value-map id="kvmap"></lively-key-value-map>
 
-<lively-component-bin></lively-component-bin>
+<lively-tab-view>
+    <h1 title="Tab 1">Tab 1</h1>
+    <h1 title="Tab 2">Tab 2</h1>
+    <h1 title="Tab 3">Tab 3</h1>
+    <h1 title="Tab 4">Tab 4</h1>
+</lively-tab-view>
+
+<!-- <lively-component-bin></lively-component-bin> -->
 
 
+<lively-toolbox></lively-toolbox>
 
 <p><input type="text" id="baseurl" value="https://github.lively4/repo/livelykernel/lively4-core/gh-pages/" class=""><script data-name="foo" type="lively4script">function foo() {
   alert("hello");
@@ -107,6 +112,13 @@
         System.import("commandline.js")
         System.import(lively4url + "/src/client/debug-serviceworker.js")
     }).catch(function(err) { alert("load Lively4 failed")});
+
+    var loader;
+    System.import(lively4url + "/src/client/morphic/component-loader.js").then(m => {
+        loader = m;
+    }).catch(function(err) {
+        debugger; alert("load component-loader failed");
+    });
 
 </script>
 
