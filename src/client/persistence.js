@@ -34,12 +34,6 @@ function initialize(){
                 sessionStorage["lively.scriptMutationsDetected"] = 'true';
                 if (isPersistOnIntervalActive()) {
                     restartPersistenceTimerInterval();
-                } else {
-                    if (isSaveDOMAllowed()) {
-                        saveDOM();
-                    } else {
-                        console.log("Persist to github not checked. Changes will not be pushed.");
-                    }
                 }
             }
         })
@@ -103,13 +97,9 @@ function isSaveDOMAllowed() {
 
 function isPersistOnIntervalActive() {
     var check = $("#persistOnInterval");
-    if (!check) return false;
+    if (!check || check.size() == 0) return false;
 
-    if (check.size() > 0 && !check[0].checked) {
-        return false;
-    }
-
-    return true;
+    return check[0].checked;
 }
 
 export function isCurrentlyCloning() {
