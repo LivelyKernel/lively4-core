@@ -8,14 +8,19 @@ export default class ComponentBin extends Morph {
   attachedCallback() {
     console.log("ComponentBin attached!!!");
 
-    this.loadComponentList().then(componentList => {
-      this.componentList = componentList;
-      this.createTiles(componentList);
+    this.loadComponentList().then((compList) => {
+      this.createTiles(compList);
+      this.showTiles(this.componentList);
     });
+
+    this.searchField = this.getSubmorph("#search-field");
+    this.searchField.addEventListener('keyup', (e) => { this.searchFieldChanged(e) });
+    this.searchField.addEventListener('focus', (e) => { e.target.select(); });
   }
 
   loadComponentList() {
     return new Promise((resolve, reject) => {
+      // ugly as sh*t!
       var templatesUrl = window.location.hostname === "localhost" ? "http://localhost:" + window.location.port + "/lively4-core/templates/" : "https://lively4/templates/";
       statFile(templatesUrl).then(response => {
         try {
@@ -35,6 +40,7 @@ export default class ComponentBin extends Morph {
         Promise.all(infoFilesPromises).then(files => {
           // save the parsed list
           var componentList;
+          // same issue as above with content type...
           try {
             componentList = files.map(JSON.parse);
           } catch (e) {
@@ -48,26 +54,44 @@ export default class ComponentBin extends Morph {
     });
   }
 
-  createTiles(componentList) {
-    componentList.forEach(compInfo => {
-      this.appendTile(compInfo, () => {
-        var component = document.createElement(compInfo["html-tag"]);
-        this.parentElement.insertBefore(component, this.nextSibling);
-        componentLoader.loadUnresolved();
-      });
+  createTiles(compList) {
+    this.componentList = compList.map((compInfo) => {
+      var tile = document.createElement("lively-component-bin-tile");
+      tile.setBin(this);
+      tile.configure(compInfo);
+
+      compInfo.tile = tile;
+
+      return compInfo;
     });
   }
 
-  appendTile(config, callback) {
-    var tile = document.createElement("lively-component-bin-tile");
-    tile.setBin(this);
-    tile.configure(config);
-
+  showTiles(filteredCompList) {
     var list = this.getSubmorph(".tile-pane");
-    list.appendChild(tile);
+
+    // remove all tiles
+    while (list.firstChild) {
+      list.removeChild(list.firstChild);
+    }
+
+    filteredCompList.forEach((compInfo) => {
+      list.appendChild(compInfo.tile);
+    });
   }
 
   open(component) {
-    this.parentElement.insertBefore(component, this.nextSibling);
+    // called by a tile to add a component to the page
+    // this.parentElement.insertBefore(component, this.nextSibling);
+    document.body.insertBefore(component, document.body.firstChild);
+  }
+
+  searchFieldChanged(evt) {
+    this.showTiles(this.findByName(this.searchField.value));
+  }
+
+  findByName(string) {
+    return this.componentList.filter((comp) => {
+      return comp.name.toLowerCase().indexOf(string.toLowerCase()) >= 0;
+    });
   }
 }
