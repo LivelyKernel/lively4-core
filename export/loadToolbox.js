@@ -1,5 +1,5 @@
 var lively4Url =  'http://localhost:8081/';
-loadTemplates('lively-toolbox', 'lively-window', 'lively-object-editor', 'lively-treeview', 'lively-editor', 'juicy-ace-editor');
+loadTemplates('lively-toolbox', 'lively-window', 'lively-object-editor', 'lively-treeview', 'lively-editor', 'juicy-ace-editor', 'lively-tab-view', 'lively-key-value-map', 'lively-key-value-input');
 
 function loadTemplates () {
   var identifiers = Array.from(arguments);
@@ -96,4 +96,5 @@ function mountPart(partIdentifierString) {
   var aToolbox = document.createElement(partIdentifierString);
   document.body.insertBefore(aToolbox, document.body.firstChild);
   aToolbox.style.setProperty('position', 'fixed');
+  aToolbox.style.setProperty('z-index', 10000);
 }
