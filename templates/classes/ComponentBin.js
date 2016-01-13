@@ -10,7 +10,7 @@ export default class ComponentBin extends Morph {
 
     this.loadComponentList().then((compList) => {
       this.createTiles(compList);
-      this.showTiles(this.componentList);
+      this.showTiles(this.sortAlphabetically(this.componentList));
     });
 
     this.searchField = this.getSubmorph("#search-field");
@@ -86,7 +86,20 @@ export default class ComponentBin extends Morph {
   }
 
   searchFieldChanged(evt) {
-    this.showTiles(this.findByName(this.searchField.value));
+    var subList = this.findByName(this.searchField.value);
+    subList = this.sortAlphabetically(subList);
+
+    this.showTiles(subList);
+  }
+
+  sortAlphabetically(compList) {
+    return compList.sort((a, b) => {
+      a = a.name.toLowerCase();
+      b = b.name.toLowerCase();
+      if (a < b) return -1;
+      if (a > b) return 1;
+      return 0;
+    });
   }
 
   findByName(string) {
