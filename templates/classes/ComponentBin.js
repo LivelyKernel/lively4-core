@@ -5,9 +5,7 @@ import { statFile, loadFile } from '../../src/client/file-editor.js';
 import * as componentLoader from '../../src/client/morphic/component-loader.js';
 
 export default class ComponentBin extends Morph {
-  attachedCallback() {
-    console.log("ComponentBin attached!!!");
-
+  initialize() {
     this.loadComponentList().then((compList) => {
       this.createTiles(compList);
       this.showTiles(this.sortAlphabetically(this.componentList));

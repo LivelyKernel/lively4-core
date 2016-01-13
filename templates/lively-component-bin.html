@@ -24,13 +24,16 @@
 #search-field {
   width: 95%;
   max-width: 500px;
+  margin: 5px;
 }
 
 </style>
 <div class="container">
-  <input type="text" id="search-field"/>
-  <ul class="tile-pane">
-  </ul>
+  <input type="text" id="search-field" placeholder="search..."/>
+  <lively-tab-view>
+    <ul class="tile-pane" title="Components"></ul>
+    <div title="Shapes">Hello</div>
+  </lively-tab-view>
 </div>
 </template>
 <script xmlns="http://www.w3.org/1999/xhtml" class="registrationScript">

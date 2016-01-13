@@ -4,10 +4,8 @@ import Morph from './Morph.js';
 import * as componentLoader from '../../src/client/morphic/component-loader.js';
 
 export default class ComponentBinTile extends Morph {
-  attachedCallback() {
-    this.getSubmorph('img').onclick = (evt) => {
-      this.createComponent();
-    }
+  initialize() {
+    this.addEventListener('click', (evt) => { this.createComponent(); });
   }
 
   configure(config) {
