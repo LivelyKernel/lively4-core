@@ -1,11 +1,18 @@
 'use strict';
 
 var persistenceTimerInterval;
+var persistenceEnabled = true;
+var persistenceInterval = 5000;
+var persistenceTarget = 'http://localhost:8080/';
 
-function isLively4Script(node) {
-    return node.tagName
-        && node.tagName.toLocaleLowerCase() == 'script'
-        && node.type == 'lively4script'
+function isDoNotPersistTag(node) {
+    return node.attributes
+        && node.attributes.hasOwnProperty('data-lively4-donotpersist')
+        && node.dataset.lively4Donotpersist == 'all'
+}
+
+function hasParentTag(node) {
+    return node.parentElement != null;
 }
 
 function initialize(){
@@ -17,11 +24,9 @@ function initialize(){
                 || record.target.id == 'editor') return;
             var shouldSave = false;
             if (record.type == 'childList') {
-                /*var nodes = [...record.addedNodes].concat([...record.removedNodes]);
-                shouldSave = nodes.some(node => {
-                    return isLively4Script(node);
-                });*/
-                shouldSave = true;
+                var nodes = [...record.addedNodes].concat([...record.removedNodes]);
+                shouldSave = !nodes.every(isDoNotPersistTag)
+                    && nodes.some(hasParentTag);
             }
             else if (record.type == 'characterData') {
                 shouldSave = true;
@@ -32,17 +37,16 @@ function initialize(){
 
             if (shouldSave) {
                 sessionStorage["lively.scriptMutationsDetected"] = 'true';
-                if (isPersistOnIntervalActive()) {
-                    restartPersistenceTimerInterval();
-                }
+                restartPersistenceTimerInterval();
             }
         })
     }).observe(document, {childList: true, subtree: true, characterData: true, attributes: true});
 }
 
+
 function getURL(){
-    var baseurl = $('#baseurl').val() // How to abstract from UI? #TODO #JensLincke
-    var filename = $('#filename').val()
+    var baseurl = getPersistenceTarget();
+    var filename;
 
     var url = document.URL;
     var r = /https:\/\/([\w-]+)\.github\.io\/([\w-]+)\/(.+)/i;
@@ -66,12 +70,22 @@ function getURL(){
 }
 
 export function startPersistenceTimerInterval() {
-    persistenceTimerInterval = setInterval(checkForMutationsToSave, 5000);
+    persistenceTimerInterval = setInterval(checkForMutationsToSave, persistenceInterval);
 }
 
 export function stopPersistenceTimerInterval() {
     clearInterval(persistenceTimerInterval);
     persistenceTimerInterval = undefined;
+}
+
+export function getPersistenceInterval() {
+    return persistenceInterval;
+}
+
+export function setPersistenceInterval(interval) {
+    console.log("setting pers interval: " + interval + ' ' + (typeof interval));
+    persistenceInterval = interval;
+    restartPersistenceTimerInterval();
 }
 
 function restartPersistenceTimerInterval() {
@@ -85,21 +99,26 @@ function resetPersistenceSessionStore() {
 }
 
 function checkForMutationsToSave() {
-    if (isSaveDOMAllowed() && sessionStorage["lively.scriptMutationsDetected"] === 'true') {
+    if (isPersistenceEnabled() && sessionStorage["lively.scriptMutationsDetected"] === 'true') {
         console.log("[persistence] timer-based mutations detected, saving DOM...")
         saveDOM();
     }
 }
 
-function isSaveDOMAllowed() {
-    return isPersistOnIntervalActive();
+export function isPersistenceEnabled() {
+    return persistenceEnabled;
 }
 
-function isPersistOnIntervalActive() {
-    var check = $("#persistOnInterval");
-    if (!check || check.size() == 0) return false;
+export function setPersistenceEnabled(enabled) {
+    persistenceEnabled = enabled;
+}
 
-    return check[0].checked;
+export function getPersistenceTarget() {
+    return persistenceTarget;
+}
+
+export function setPersistenceTarget(target) {
+    persistenceTarget = target;
 }
 
 export function isCurrentlyCloning() {

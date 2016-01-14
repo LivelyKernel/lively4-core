@@ -137,10 +137,11 @@
 
 
       function initStylesheet() {
-        $("<link/>", {
+        $("<link />", {
            rel: "stylesheet",
            type: "text/css",
-           href: "../src/client/css/morphic.css"
+           href: "../src/client/css/morphic.css",
+           'data-lively4-donotpersist': 'all'
         }).appendTo("head");
       }
     }
