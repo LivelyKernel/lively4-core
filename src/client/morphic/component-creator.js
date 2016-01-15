@@ -58,6 +58,7 @@ function saveTemplate(template) {
   var editor = compBin.createComponent("editor");
   compBin.openInWindow(editor).then((editor) => {
     // editor.getSubmorph("juicy-ace-editor").editor.setValue(completeHTML);
+    editor.setURL(window.location.origin + "/lively4-core/templates/" + template.id + ".html");
     editor.setText(completeHTML);
   });
 
