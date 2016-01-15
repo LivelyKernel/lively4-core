@@ -24,9 +24,10 @@ export function register(componentName, template, prototype) {
     }
 
     // load any unknown elements this component might introduce
-    loadUnresolved(this, true);
+    loadUnresolved(this, true).then(() => {
+      this.dispatchEvent(new Event("created"));
+    });
 
-    this.dispatchEvent(new Event("created"));
   }
 
   document.registerElement(componentName, {
@@ -64,22 +65,30 @@ export function loadUnresolved(lookupRoot, deep) {
   // helper set to filter for unique tags
   var unique = new Set();
 
-  $(lookupRoot.querySelectorAll(selector)).map(function() {
-    return this.nodeName.toLowerCase();
-  }).filter(function() {
+  var promises = Array.from(lookupRoot.querySelectorAll(selector)).map(function(el) {
+    return el.nodeName.toLowerCase();
+  }).filter(function(el) {
     // filter for unique tags
-    return !unique.has(this) && unique.add(this);
-  }).each(function() {
-    loadByName(this);
+    return !unique.has(el) && unique.add(el);
+  }).map(function(el) {
+    return loadByName(el);
   });
+
+  return Promise.all(promises);
 }
 
 // this function loads a component by adding a link tag to the head
 export function loadByName(name) {
   console.log("loading Component " + name);
-  var link = document.createElement("link");
-  link.rel = "import";
-  link.href = "../templates/" + name + ".html";
 
-  document.head.appendChild(link);
+  return new Promise((resolve, reject) => {
+    var link = document.createElement("link");
+    link.rel = "import";
+    link.href = "../templates/" + name + ".html";
+
+    link.addEventListener("load", resolve);
+    link.addEventListener("error", reject);
+
+    document.head.appendChild(link);
+  });
 }
