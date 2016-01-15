@@ -86,24 +86,40 @@ export default class ComponentBin extends Morph {
 
   open(component) {
     // called by a tile to add a component to the page
+    component.addEventListener("created", (e) => {
+      console.log(e.target.getSubmorph("#property-list").getSubmorph);
+    });
+
     var inWindow = this.getSubmorph("#open-in-checkbox").checked;
     if (inWindow) {
-      this.openInWindow(component);
+      return this.openInWindow(component);
     } else {
-      this.openInBody(component);
+      return this.openInBody(component);
     }
   }
 
   openInBody(component) {
-    document.body.insertBefore(component, document.body.firstChild);
-    componentLoader.loadUnresolved();
+    return new Promise((resolve, reject) => {
+      component.addEventListener("created", (e) => {
+        resolve(e.target);
+      });
+
+      document.body.insertBefore(component, document.body.firstChild);
+      componentLoader.loadUnresolved();
+    });
   }
 
   openInWindow(component) {
-    var w = this.createComponent("window");
-    w.appendChild(component);
+    return new Promise((resolve, reject) => {
+      component.addEventListener("created", (e) => {
+        resolve(e.target);
+      });
 
-    this.openInBody(w);
+      var w = this.createComponent("window");
+      w.appendChild(component);
+
+      this.openInBody(w);
+    });
   }
 
   searchFieldChanged(evt) {

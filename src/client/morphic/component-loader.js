@@ -25,6 +25,8 @@ export function register(componentName, template, prototype) {
 
     // load any unknown elements this component might introduce
     loadUnresolved(this, true);
+
+    this.dispatchEvent(new Event("created"));
   }
 
   document.registerElement(componentName, {
