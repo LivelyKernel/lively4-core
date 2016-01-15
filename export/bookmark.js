@@ -1,1 +1,1 @@
-javascript: (function%20()%20%7B%0A%09var%20node%20=%20document.createElement('script');%0A%09node.setAttribute('type',%20'text/javascript');%0A%09node.setAttribute('src',%20'http://localhost:8081/export/loadToolbox.js');%0A%09document.head.appendChild(node);%0A%7D)()
+javascript: (function%20()%20%7B%0A%09var%20node%20=%20document.createElement('script');%0A%09node.setAttribute('type',%20'text/javascript');%0A%09node.setAttribute('src',%20'http://localhost:8081/lively4-core/export/loadToolbox.js');%0A%09document.head.appendChild(node);%0A%7D)()

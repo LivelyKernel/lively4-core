@@ -1,4 +1,4 @@
-var lively4Url =  'http://localhost:8081/';
+var lively4Url =  'http://localhost:8081/lively4-core/';
 loadTemplates('lively-toolbox', 'lively-window', 'lively-object-editor', 'lively-treeview', 'lively-editor', 'juicy-ace-editor', 'lively-tab-view', 'lively-key-value-map', 'lively-key-value-input');
 
 function loadTemplates () {
