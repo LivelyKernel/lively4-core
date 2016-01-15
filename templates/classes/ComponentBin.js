@@ -19,7 +19,8 @@ export default class ComponentBin extends Morph {
   loadComponentList() {
     return new Promise((resolve, reject) => {
       // ugly as sh*t!
-      var templatesUrl = window.location.hostname === "localhost" ? "http://localhost:" + window.location.port + "/lively4-core/templates/" : "https://lively4/templates/";
+      var currentLocation = window.lively4Url || (window.location.hostname === "localhost" ? "http://localhost:" + window.location.port + "/" : "https://lively4/");
+      var templatesUrl = currentLocation + "templates/";
       statFile(templatesUrl).then(response => {
         try {
           // depending in the content type, the response is either parsed or not,

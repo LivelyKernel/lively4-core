@@ -84,7 +84,7 @@ export function loadByName(name) {
   return new Promise((resolve, reject) => {
     var link = document.createElement("link");
     link.rel = "import";
-    link.href = "../templates/" + name + ".html";
+    link.href = (window.lively4Url || "../") + "templates/" + name + ".html";
 
     link.addEventListener("load", resolve);
     link.addEventListener("error", reject);

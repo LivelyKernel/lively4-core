@@ -140,7 +140,7 @@
         $("<link/>", {
            rel: "stylesheet",
            type: "text/css",
-           href: "../src/client/css/morphic.css"
+           href: (window.lively4Url || "../") + "src/client/css/morphic.css"
         }).appendTo("head");
       }
     }
