@@ -61,7 +61,6 @@ export function loadUnresolved(lookupRoot, deep) {
   var selector = deep ? "html /deep/ :unresolved" : ":unresolved";
   // helper set to filter for unique tags
   var unique = new Set();
-
   $(lookupRoot.querySelectorAll(selector)).map(function() {
     return this.nodeName.toLowerCase();
   }).filter(function() {
@@ -77,7 +76,7 @@ export function loadByName(name) {
   console.log("loading Component " + name);
   var link = document.createElement("link");
   link.rel = "import";
-  link.href = "../templates/" + name + ".html";
+  link.href = (window.lively4Url || "../") + "templates/" + name + ".html";
 
   document.head.appendChild(link);
 }
