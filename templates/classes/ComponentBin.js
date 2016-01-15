@@ -77,10 +77,33 @@ export default class ComponentBin extends Morph {
     });
   }
 
+  createComponent(name) {
+    // take the first one that is found, could be improved
+    var compInfo = this.findByName(name)[0];
+
+    return compInfo.tile.createComponent();
+  }
+
   open(component) {
     // called by a tile to add a component to the page
-    // this.parentElement.insertBefore(component, this.nextSibling);
+    var inWindow = this.getSubmorph("#open-in-checkbox").checked;
+    if (inWindow) {
+      this.openInWindow(component);
+    } else {
+      this.openInBody(component);
+    }
+  }
+
+  openInBody(component) {
     document.body.insertBefore(component, document.body.firstChild);
+    componentLoader.loadUnresolved();
+  }
+
+  openInWindow(component) {
+    var w = this.createComponent("window");
+    w.appendChild(component);
+
+    this.openInBody(w);
   }
 
   searchFieldChanged(evt) {

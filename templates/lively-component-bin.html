@@ -22,14 +22,18 @@
 }
 
 #search-field {
-  width: 95%;
+  width: 70%;
   max-width: 500px;
   margin: 5px;
 }
 
 </style>
 <div class="container">
-  <input type="text" id="search-field" placeholder="search..."/>
+  <label for="open-in-checkbox">
+    <input type="text" id="search-field" placeholder="search..."/>
+    open in window
+  </label>
+  <input type="checkbox" id="open-in-checkbox">
   <lively-tab-view>
     <ul class="tile-pane" title="Components"></ul>
     <div title="Shapes">Hello</div>

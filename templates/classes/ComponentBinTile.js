@@ -5,7 +5,10 @@ import * as componentLoader from '../../src/client/morphic/component-loader.js';
 
 export default class ComponentBinTile extends Morph {
   initialize() {
-    this.addEventListener('click', (evt) => { this.createComponent(); });
+    this.addEventListener('click', (evt) => {
+      var comp = this.createComponent();
+      this.componentBin.open(comp);
+    });
   }
 
   configure(config) {
@@ -37,7 +40,9 @@ export default class ComponentBinTile extends Morph {
 
   createComponent() {
     var comp = document.createElement(this.htmlTag);
-    this.componentBin.open(comp);
-    componentLoader.loadUnresolved();
+    // this.componentBin.openInBody(comp);
+    // componentLoader.loadUnresolved();
+
+    return comp;
   }
 }
