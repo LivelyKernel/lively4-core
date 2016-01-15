@@ -85,6 +85,7 @@ export function loadByName(name) {
     var link = document.createElement("link");
     link.rel = "import";
     link.href = (window.lively4Url || "../") + "templates/" + name + ".html";
+    // link.href = "../templates/" + name + ".html";
 
     link.addEventListener("load", resolve);
     link.addEventListener("error", reject);
