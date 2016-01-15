@@ -6,7 +6,6 @@ function loadTemplate (partName, url) {
   lively4Url = url;
   loadJQuery();
   loadSystem();
-  loadMorphicCSS();
   setTimeout(function () {
     loadBabel();
     loadLively4();
@@ -28,14 +27,6 @@ function mountPart(partIdentifierString) {
   document.body.insertBefore(aToolbox, document.body.firstChild);
   aToolbox.style.setProperty('position', 'fixed');
   aToolbox.style.setProperty('z-index', 10000);
-}
-
-function loadMorphicCSS () {
-  $("<link/>", {
-     rel: "stylesheet",
-     type: "text/css",
-     href: lively4Url + "/src/client/css/morphic.css"
-  }).appendTo("head");
 }
 
 function loadAce() {
