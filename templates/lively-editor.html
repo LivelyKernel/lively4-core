@@ -102,6 +102,14 @@
       }
     </script>
 
+
+
+    <script type="lively4script" data-name="setText">
+      function(text) {
+        this.getSubmorph("juicy-ace-editor").editor.setValue(text);
+      }
+    </script>
+
     <script type="lively4script" data-name="loadFile">
       function() {
         var url = this.getURL();

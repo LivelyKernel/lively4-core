@@ -50,7 +50,6 @@ function saveTemplate(template) {
   }
 
   var compBin = document.querySelector("lively-component-bin");
-
   if (!compBin) {
     // right now, we expect a component bin in the page
     throw new Error("no component bin found in page");
@@ -58,7 +57,8 @@ function saveTemplate(template) {
 
   var editor = compBin.createComponent("editor");
   compBin.openInWindow(editor).then((editor) => {
-    editor.getSubmorph("juicy-ace-editor").editor.setValue(completeHTML);
+    // editor.getSubmorph("juicy-ace-editor").editor.setValue(completeHTML);
+    editor.setText(completeHTML);
   });
 
   // ace.edit("editor").setValue(completeHTML);

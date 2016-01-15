@@ -87,11 +87,8 @@ export default class ComponentBin extends Morph {
   }
 
   open(component) {
-    // called by a tile to add a component to the page
-    component.addEventListener("created", (e) => {
-      console.log(e.target.getSubmorph("#property-list").getSubmorph);
-    });
-
+    // returns a promise that is resolved, once the component
+    // and all its subcomponents are loaded and created
     var inWindow = this.getSubmorph("#open-in-checkbox").checked;
     if (inWindow) {
       return this.openInWindow(component);
