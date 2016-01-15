@@ -65,48 +65,6 @@
         window.githubAuth = githubAuth // make it global, so the callback can reach it...
       })
 
-      // function currentEditor() {
-      //   return get('juicy-ace-editor')[0].editor;
-      // }
-
-
-
-      // function getURL(){
-      //   var filename = get('#filename').val()
-      //   return new URL(filename)
-      // }
-
-      // function loadFile(){
-      //   var url = getURL()
-      //   console.log("load " + url)
-
-      //   $.get(url, null, function(text) {
-      //     currentEditor().setValue(text)
-      //     currentEditor().resize()
-      //     console.log("file " + url + " read.")
-      //     console.log("content: " + text)
-      //   }).fail(function(e) {
-      //       console.log('could not load ' + url + ": " + e); // or whatever
-      //   });
-      // }
-
-      // function saveFile(){
-      //   var url = getURL()
-      //   console.log("save " + url)
-      //   $.ajax({
-      //       url: url,
-      //       type: 'PUT',
-      //       data: currentEditor().getValue(),
-      //       success: function(text) {
-      //       console.log("file " + url + " written.")
-      //     },
-      //     error: function(xhr, status, error) {
-      //       console.log("could not write " + url + ": " + error)
-      //     }
-      //   });
-
-      // }
-
       $(this.getSubmorph('#saveButton')).click(this.saveFile.bind(this))
       $(this.getSubmorph('#loadButton')).click(this.loadFile.bind(this))
       $(this.getSubmorph('#loginButton')).click(function() {
@@ -119,9 +77,8 @@
         githubAuth.logout(); console.log('logged out of github')
       })
 
+
       container.dispatchEvent(new Event("initialized"))
-
-
     }
     </script>
 
@@ -135,6 +92,13 @@
       function() {
         var filename = $(this.getSubmorph('#filename')).val();
         return new URL(filename);
+      }
+    </script>
+
+    <script type="lively4script" data-name="setURL">
+      function(urlString) {
+        var url = new URL(urlString);
+        this.getSubmorph("#filename").value = url.href;
       }
     </script>
 
