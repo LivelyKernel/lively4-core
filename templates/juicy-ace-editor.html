@@ -6,11 +6,12 @@
 -->
 <script src="../src/external/ace.js" type="text/javascript" charset="utf-8"></script>
 
-<template>
+<template id="juicy-ace-editor">
     <style>
         :host{
             display: block;
             position: relative;
+            min-height: 100px;
         }
         #juicy-ace-editor-container{
             width: 100%;
@@ -32,7 +33,7 @@
     var thisDoc = (document._currentScript || document.currentScript).ownerDocument;
 
     // Gets content from <template>
-    var template = thisDoc.querySelector('template').content;
+    var template = thisDoc.querySelector('#juicy-ace-editor').content;
 
     // Creates an object based in the HTML Element prototype
     var TomalecAceEditorPrototype = Object.create(HTMLElement.prototype);

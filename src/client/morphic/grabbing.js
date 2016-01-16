@@ -143,7 +143,7 @@ function moveGrabShadowToTargetAtPosition(targetNode, pos) {
 
 function canDropInto(node, targetNode) {
   return node !== targetNode &&
-    !Array.from(targetNode.getElementsByTagName('*')).includes(node) &&
+    // !Array.from(targetNode.getElementsByTagName('*')).includes(node) &&
     !Array.from(node.getElementsByTagName('*')).includes(targetNode) &&
     $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist[node.tagName.toLowerCase()] || []) < 0 &&
     $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist['*'] || []) < 0

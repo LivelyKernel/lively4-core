@@ -16,7 +16,7 @@
     </div>
     <script type="lively4script" data-name="initialize">
     () => {
-      var dragging, grabbing, inspecting, deleting, copying, exporting;
+      var dragging, grabbing, inspecting, deleting, copying, exporting, resizing;
       var baseUrl = "../src/client/morphic/";
 
       Promise.all([
@@ -26,7 +26,9 @@
         "deleting.js",
         "copying.js",
         "component-creator.js",
-        "selecting.js"
+        "selecting.js",
+        "resizing.js"
+
       ]
       .map(name => { return System.import(baseUrl + name); }))
       .then((modules) => {
@@ -36,12 +38,11 @@
         deleting = modules[3];
         copying = modules[4];
         exporting = modules[5];
-
+        resizing = modules[7];
         this.createMorphicToolbox();
       }).catch(err => {
         console.log(err);
       });
-
 
       this.createMorphicToolbox = function() {
         var tools = [{
@@ -58,6 +59,10 @@
           name: "Dragging",
           onActivate: dragging.activate,
           onDeactivate: dragging.deactivate
+        }, {
+          name: "Resizing",
+          onActivate: resizing.activate,
+          onDeactivate: resizing.deactivate
         }, {
           name: "Delete",
           handle: deleting.handle
@@ -135,7 +140,7 @@
         $("<link/>", {
            rel: "stylesheet",
            type: "text/css",
-           href: "../src/client/css/morphic.css"
+           href: (window.lively4Url || "../") + "src/client/css/morphic.css"
         }).appendTo("head");
       }
     }

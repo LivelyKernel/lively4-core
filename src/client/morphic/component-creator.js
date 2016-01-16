@@ -49,7 +49,20 @@ function saveTemplate(template) {
     completeHTML = htmlBeautify(completeHTML);
   }
 
-  ace.edit("editor").setValue(completeHTML);
+  var compBin = document.querySelector("lively-component-bin");
+  if (!compBin) {
+    // right now, we expect a component bin in the page
+    throw new Error("no component bin found in page");
+  }
+
+  var editor = compBin.createComponent("editor");
+  compBin.openInWindow(editor).then((editor) => {
+    // editor.getSubmorph("juicy-ace-editor").editor.setValue(completeHTML);
+    editor.setURL(window.location.origin + "/lively4-core/templates/" + template.id + ".html");
+    editor.setText(completeHTML);
+  });
+
+  // ace.edit("editor").setValue(completeHTML);
 
   return completeHTML;
 }
