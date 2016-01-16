@@ -85,7 +85,14 @@
     System.import(lively4url + "/src/client/morphic/component-creator.js").then(m => {
         creator = m;
     }).catch(function(err) {
-        debugger; alert("load component-creator failed");
+        alert("load component-creator failed");
+    });
+
+    var loader;
+    System.import(lively4url + "/src/client/morphic/component-loader.js").then(m => {
+        loader = m;
+    }).catch(function(err) {
+        alert("load component-loader failed");
     });
 
 </script>
