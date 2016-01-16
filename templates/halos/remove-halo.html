@@ -1,13 +1,17 @@
 <template id="remove-halo">
     <style>
     :host {
-      background-image: url(../src/client/media/close.svg);
+      background-image: url(../src/client/media/delete.svg);
     }
     </style>
     <script type="lively4script" data-name="initialize">
     () => {
-      console.log("remove halo")
-      //$("remove-halo").on
+      System.import("../src/client/morphic/deleting.js").then( function(deleting) {
+        $("body /deep/ remove-halo").off("click").on("click", function() {
+          deleting.handle(window.that);
+          window.HaloService.hideHalos();
+        });
+      });
     }
     </script>
 </template>

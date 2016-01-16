@@ -1,8 +1,13 @@
 <link rel="import" href="../templates/halos/remove-halo.html" />
+<link rel="import" href="../templates/halos/copy-halo.html" />
+<link rel="import" href="../templates/halos/inspect-halo.html" />
+<link rel="import" href="../templates/halos/drag-halo.html" />
+<link rel="import" href="../templates/halos/grab-halo.html" />
 <template id="lively-halos">
     <style>
     :host {
       position: absolute;
+      pointer-events: none;
     }
     .container {
       width: 100%;
@@ -16,6 +21,7 @@
       justify-content: space-between;
     }
     .halo {
+      pointer-events: all;
       z-index: 9999;
       border-radius: 50%;
       width: 30px;
@@ -28,13 +34,13 @@
     </style>
     <div class="container">
       <div class="row" id="row1">
-        <div class="halo">1</div>
-        <div class="halo">2</div>
+        <grab-halo class="halo"></grab-halo>
+        <drag-halo class="halo"></drag-halo>
         <remove-halo class="halo"></remove-halo>
       </div>
       <div class="row" id="row2">
-        <div class="halo">4</div>
-        <div class="halo">5</div>
+        <copy-halo class="halo"></copy-halo>
+        <inspect-halo class="halo"></inspect-halo>
       </div>
       <div class="row" id="row3">
         <div class="halo">6</div>
