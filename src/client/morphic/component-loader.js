@@ -93,3 +93,40 @@ export function loadByName(name) {
     document.head.appendChild(link);
   });
 }
+
+export function createComponent(tagString) {
+  var comp = document.createElement(tagString);
+
+  return comp;
+}
+
+export function openInBody(component) {
+  return new Promise((resolve, reject) => {
+    component.addEventListener("created", (e) => {
+      resolve(e.target);
+    });
+
+    document.body.insertBefore(component, document.body.firstChild);
+    loadUnresolved();
+  });
+}
+
+export function openInWindow(component) {
+  var compPromise = new Promise((resolve, reject) => {
+    component.addEventListener("created", (e) => {
+      resolve(e.target);
+    });
+  });
+
+  var w = createComponent("lively-window");
+  w.appendChild(component);
+
+  var winPromise = openInBody(w);
+
+  return Promise.all([compPromise, winPromise]);
+}
+
+export function openComponentBin() {
+  var bin = createComponent("lively-component-bin");
+  openInWindow(bin);
+}
