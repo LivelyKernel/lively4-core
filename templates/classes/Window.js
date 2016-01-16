@@ -31,6 +31,7 @@ export default class Window extends Morph {
 
     // bind events for window behavior
     this.dragging = false;
+    this.addEventListener('mousedown', (e) => { this.focus(); });
     this.closeButton.addEventListener('click', (e) => { this.closeButtonClicked(e) });
     this.minButton.addEventListener('click', (e) => { this.minButtonClicked(e) });
     this.maxButton.addEventListener('click', (e) => { this.maxButtonClicked(e) });
@@ -43,6 +44,7 @@ export default class Window extends Morph {
 
     this.created = true;
     this.render();
+    this.focus();
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
@@ -84,6 +86,16 @@ export default class Window extends Morph {
       this.classList.remove('window-fixed');
       this.pinButton.classList.remove('active');
     }
+  }
+
+  focus(e) {
+    var allWindows = Array.from(document.querySelectorAll('lively-window'));
+    allWindows.forEach((w) => {
+      w.style['z-index'] = 0;
+      $(w.getSubmorph('.window')).removeClass('focused');
+    });
+    this.style['z-index'] = 10;
+    $(this.getSubmorph('.window')).addClass('focused');
   }
 
   minButtonClicked(e) {
