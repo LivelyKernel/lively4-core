@@ -50,6 +50,8 @@
     </div>
     <script type="lively4script" data-name="initialize">
     () => {
+      System.import("../src/client/morphic/selecting.js")
+
       var $halos = $("lively-halos")
       $halos.hide();
       window.HaloService = {
