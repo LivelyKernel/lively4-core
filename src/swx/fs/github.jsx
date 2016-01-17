@@ -47,7 +47,7 @@ export default class Filesystem extends Base {
                     contents: await* [for(item of json) this.statinfo(item)]
                 }, null, '\t')
             } else {
-                JSON.stringify(this.statinfo(json), null, '\t')
+                JSON.stringify(await this.statinfo(json), null, '\t')
             }
         }
 
