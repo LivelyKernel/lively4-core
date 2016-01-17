@@ -9,6 +9,7 @@ import sysfs from 'src/swx/fs/sys.jsx'
 import httpfs from 'src/swx/fs/http.jsx'
 import html5fs from 'src/swx/fs/html5.jsx'
 import githubfs from 'src/swx/fs/github.jsx'
+import dropboxfs from 'src/swx/fs/dropbox.jsx'
 
 class ServiceWorker {
     constructor() {
