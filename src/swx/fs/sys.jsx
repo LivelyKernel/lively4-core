@@ -41,8 +41,24 @@ export default class Filesystem extends Base {
         ])
     }
 
-    _sysFsMount(content) {
-        console.log(content)
+    async _sysFsMount(content) {
+        let json = JSON.parse(await content)
+
+        let path = json['path']
+        let name = json['name']
+        let opts = json['options'] || {}
+
+        if(!path)
+            throw new Error('<path> is missing')
+
+        if(!name)
+            throw new Error('<name> is missing')
+
+        let fs = await System.import('src/swx/fs/' + name + '.jsx')
+
+        swx.instance().filesystem.mount(path, fs.default, opts)
+
+        return json
     }
 
     resolve(path) {
