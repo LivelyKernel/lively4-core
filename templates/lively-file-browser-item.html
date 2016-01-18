@@ -1,0 +1,83 @@
+<template id="lively-file-browser-item">
+  <style>
+    #item-icon svg {
+      width: 70%;
+      height: 70%;
+      margin: 5px auto;
+      display: block;
+    }
+
+    #item-icon svg .icon {
+      fill: #999;
+    }
+
+    #item-name {
+      font-size: 80%;
+      text-align: center;
+      word-break: break-all;
+    }
+  </style>
+  <div id="container">
+    <div id="item-icon"></div>
+    <div id="item-name"></div>
+  </div>
+</template>
+
+<svg viewBox="0 0 24 24" id="icon-folder">
+    <path class="icon" d="M10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6H12L10,4Z" />
+</svg>
+
+<svg viewBox="0 0 24 24" id="icon-file">
+    <path class="icon" d="M13,9V3.5L18.5,9M6,2C4.89,2 4,2.89 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2H6Z" />
+</svg>
+
+<script>
+  (function() {
+    'use strict';
+
+    const doc = document.currentScript.ownerDocument
+
+    const fileSymbol   = doc.querySelector('#icon-file')
+    const folderSymbol = doc.querySelector('#icon-folder')
+
+    class FileBrowserItem extends HTMLElement {
+      set name(value) {
+        let node = this._query('#item-name')
+        if(node)
+          node.innerHTML = value
+      }
+
+      set type(value) {
+        switch(value) {
+          case 'directory':
+            this._setIcon(folderSymbol)
+            break
+          default:
+            this._setIcon(fileSymbol)
+        }
+      }
+
+      _setIcon(icon) {
+        let node = this._query('#item-icon')
+
+        while(node.firstChild)
+          node.removeChild(node.firstChild)
+
+        node.appendChild(icon.cloneNode(true))
+      }
+
+      _query(selector) {
+        return this.shadowRoot.querySelector(selector)
+      }
+    }
+
+    let template = document.currentScript.ownerDocument.querySelector('#lively-file-browser-item');
+    let clone    = document.importNode(template.content, true);
+
+    System
+      .import('../src/client/morphic/component-loader.js')
+      .then((Loader) => {
+        Loader.register('lively-file-browser-item', clone, FileBrowserItem.prototype);
+      })
+  })();
+</script>
