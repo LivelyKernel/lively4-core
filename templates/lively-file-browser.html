@@ -117,6 +117,11 @@
             <path class="content" d="M12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22M12,7L7,12H10V16H14V12H17L12,7Z" />
           </svg>
         </button>
+        <button id="home">
+          <svg viewBox="0 0 24 24">
+            <path class="content"  d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" />
+          </svg>
+        </button>
       </div>
       <div class="group fluid">
         <input name="location" id="location" />
@@ -151,6 +156,11 @@
         this._query('#up').addEventListener('click', (event) => {
           event.preventDefault()
           this.path = this.path + '/..'
+        })
+
+        this._query('#home').addEventListener('click', (event) => {
+          event.preventDefault()
+          this.path = '/'
         })
       }
 
