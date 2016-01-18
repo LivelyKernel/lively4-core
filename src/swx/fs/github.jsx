@@ -35,8 +35,8 @@ export default class Filesystem extends Base {
     async stat(path) {
         let response = await self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path)
 
-        if(response.status < 200 && response.status >= 300) {
-            throw new Error(response.statusText)
+        if(response.status < 200 || response.status >= 300) {
+            return response
         }
 
         let json    = await response.json()
@@ -60,7 +60,7 @@ export default class Filesystem extends Base {
     async read(path) {
         let response = await self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path)
 
-        if(response.status < 200 && response.status >= 300) {
+        if(response.status < 200 || response.status >= 300) {
             throw new Error(response.statusText)
         }
 
