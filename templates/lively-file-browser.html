@@ -124,6 +124,22 @@
       color: white;
     }
 
+    #error {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: none;
+
+      font-size: 0.9rem;
+    }
+
+    #error.visible {
+      display: block;
+      padding: 4px;
+      background-color: #FFC8C8;
+    }
+
   </style>
   <div id="container">
     <nav id="toolbar">
@@ -148,8 +164,8 @@
       </div>
       -->
     </nav>
-    <div id="contents">
-    </div>
+    <div id="contents"></div>
+    <div id="error"></div>
   </div>
 </template>
 
@@ -215,12 +231,22 @@
         let path = this.path
 
         this._query('#location').value = path
+        this._query('#error').classList.remove('visible')
 
         fetch('https://lively4' + path, {method: 'OPTIONS'}).then((response) => {
           if(response.ok) {
             return response.json()
           } else {
-            throw new Error('Request failed: ' + response.status + ' ' + response.statusText)
+            return response.json()
+              .catch((err) => {
+                throw new Error(response.statusText + ' (' + response.status + ')')
+              })
+              .then((json) => {
+                if(json['message'])
+                  throw new Error(json['message'])
+                else
+                  throw new Error(response.statusText + ' (' + response.status + ')')
+              })
           }
         }).then((json) => {
           if(Array.isArray(json['contents']) && json['type'] === 'directory') {
@@ -231,6 +257,11 @@
           }
         }).then((json) => {
           let contents = this.shadowRoot.querySelector('#contents')
+
+          if(path !== this.path) {
+            console.log('Path already changed. Skip update.')
+            return
+          }
 
           while(contents.firstChild)
             contents.removeChild(contents.firstChild)
@@ -256,10 +287,12 @@
               }
             })
 
-
-
             contents.appendChild(item)
           })
+        }).catch((err) => {
+          console.error(err)
+          this._query('#error').innerHTML = err.toString()
+          this._query('#error').classList.add('visible')
         })
       }
     }
