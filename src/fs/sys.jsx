@@ -31,7 +31,7 @@ export default class Filesystem extends Base {
                     return swx.instance().filesystem.reqcount
                 }),
                 new SysFile('reload', null, function() {
-                    self.__swx_refresh__({force: true})
+                    self.__reload__({force: true})
                     return ""
                 })
             ])
