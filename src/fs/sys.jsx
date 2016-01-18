@@ -219,11 +219,21 @@ class SysFile extends File {
 
     async write(blob) {
         if(typeof this.wfn === 'function') {
-            let json     = await this.wfn(blob)
-            let content  = JSON.stringify(json, null, '\t')
-            let response = new Response(content)
+            try {
+                let json     = await this.wfn(blob)
+                let content  = JSON.stringify(json, null, '\t')
+                let response = new Response(content)
 
-            return response
+                return response
+            } catch(err) {
+                let message  = err.toString()
+                let content  = JSON.stringify(message, null, '\t')
+                let response = new Response(content, {status: 400, statusText: message})
+
+                console.error(err)
+
+                return response
+            }
         } else {
             return super.write(blob)
         }
