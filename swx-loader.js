@@ -1,16 +1,7 @@
 'use strict';
 
-var swx = self.__reload__ = function swx() {
-    var options = arguments[0] || {}
-
-    if(typeof System === 'undefined' || options.force) {
-        if(options.force) {
-            delete self.System
-            console.log('SWL: force reload')
-        } else {
-            console.log('SWL: reload')
-        }
-
+function swx() {
+    if(typeof System === 'undefined') {
         importScripts('./vendor/regenerator-runtime.js')
         importScripts('./vendor/babel-browser.js')
         importScripts('./vendor/es6-module-loader-dev.js')
@@ -30,6 +21,11 @@ var swx = self.__reload__ = function swx() {
     }
 
     return System.import('src/swx/swx.jsx')
+}
+
+function __reload__() {
+    delete self.System
+    swx()
 }
 
 self.addEventListener('install', function(event) {
@@ -68,7 +64,7 @@ self.addEventListener('fetch', function(event) {
 
 self.addEventListener('message', function(event) {
     if(event.data === 'swx-loader:force-reload') {
-        swx({force: true})
+        __reload__()
     } else {
         swx().then(function(sw) {
             return sw.message(event)
