@@ -34,8 +34,15 @@ export default class Filesystem extends Base {
                     self.__reload__({force: true})
                     return ""
                 })
+            ]),
+            new SysDir('fs', [
+                new SysFile('mount', null, ::this._sysFsMount)
             ])
         ])
+    }
+
+    _sysFsMount(content) {
+        console.log(content)
     }
 
     resolve(path) {
