@@ -100,7 +100,12 @@
     }
 
     #contents lively-file-browser-item:hover {
-      background-color: #eee;
+      background-color: #cde6f7;
+    }
+
+    #contents lively-file-browser-item:active {
+      background: #2a8dd4;
+      color: white;
     }
 
   </style>
@@ -172,6 +177,10 @@
         return '/' + this._path.join('/')
       }
 
+      get url() {
+        return 'https://lively4' + this.path
+      }
+
       _query(selector) {
         return this.shadowRoot.querySelector(selector)
       }
@@ -207,11 +216,21 @@
             item.name = file['name']
             item.size = file['size']
 
-            if(file['type'] === 'directory') {
-              item.addEventListener('dblclick', (event) => {
+            item.addEventListener('click', (event) => {
+              if(file['type'] === 'directory') {
                 this.path = this.path + '/' + file['name']
-              })
-            }
+              } else {
+                let event = new Event("file-select")
+                event.file = Object.assign({}, file, {
+                  path: path + '/' + file['name'],
+                  url: new URL('https://lively4' + path + '/' + file['name'])
+                })
+
+                this.dispatchEvent(event)
+              }
+            })
+
+
 
             contents.appendChild(item)
           })

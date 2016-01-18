@@ -89,10 +89,21 @@
 
                     }],
                     ["File Browser", function() {
-                        var container  = document.createElement("lively-window")
-                        $('body')[0].appendChild(container)
+                        var appctx = document.createElement("lively-window")
                         var browser = document.createElement("lively-file-browser")
-                        container.appendChild(browser)
+                        browser.addEventListener('file-select', (event) => {
+                            var appctx = document.createElement("lively-window")
+                            var editor = document.createElement("lively-editor")
+
+                            editor.setURL(event.file.url)
+                            editor.loadFile()
+
+                            appctx.appendChild(editor)
+                            document.body.appendChild(appctx)
+                        })
+
+                        appctx.appendChild(browser)
+                        document.body.appendChild(appctx)
 
                     }],
                     ["Text", function() {
