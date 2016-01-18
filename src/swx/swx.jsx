@@ -37,7 +37,11 @@ class ServiceWorker {
             }
         }).catch((err) => {
             console.error('Error while processing fetch event:', err)
-            return new Response('', {status: 500})
+
+            let message = err.toString()
+            let content = JSON.stringify({message: message})
+
+            return new Response(content, {status: 500, statusText: message})
         })
 
         event.respondWith(response)
