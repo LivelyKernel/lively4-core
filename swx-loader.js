@@ -1,6 +1,6 @@
 'use strict';
 
-var swx = self.__swx_refresh__ = function swx() {
+var swx = self.__reload__ = function swx() {
     var options = arguments[0] || {}
 
     if(typeof System === 'undefined' || options.force) {
@@ -17,6 +17,16 @@ var swx = self.__swx_refresh__ = function swx() {
 
         System.transpiler = 'babel'
         System.babelOptions = {stage: 0, optional: ['es7.doExpressions']}
+
+        System.fetch = function(load) {
+            return fetch(load.address, {cache: 'no-cache'})
+                .then((response) => {
+                    if(response.ok)
+                        return response.text()
+                    else
+                        throw new Error('')
+                })
+        }
     }
 
     return System.import('src/swx/swx.jsx')
