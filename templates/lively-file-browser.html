@@ -33,7 +33,7 @@
     }
 
     nav button {
-      border: none;
+      border: 1px solid transparent;
       background: transparent;
       padding: 4px;
       margin: 0;
@@ -52,14 +52,29 @@
       fill: #777777;
     }
 
-    nav button:hover, nav button:focus {
-      background: #cde6f7;
+    nav button:focus {
+      border-color: #cde6f7;
       outline: none;
     }
 
-    nav button:hover svg path,
-    nav button:focus svg path {
+    nav button:hover {
+      background: #cde6f7;
+      border-color: #cde6f7;
+      outline: none;
+    }
+
+    nav button:active {
+      background: #2a8dd4;
+      border-color: #2a8dd4;
+      outline: none;
+    }
+
+    nav button:hover svg path {
       fill: #2a8dd4;
+    }
+
+    nav button:active svg path {
+      fill: #FFF;
     }
 
     nav input {
