@@ -14,7 +14,7 @@ import dropboxfs from 'src/swx/fs/dropbox.jsx'
 class ServiceWorker {
     constructor() {
         this.filesystem = new fs.Filesystem()
-        this.filesystem.mount('/', githubfs, {repo: 'LivelyKernel/lively4-core'})
+        this.filesystem.mount('/', githubfs, {repo: 'LivelyKernel/lively4-core', branch: 'gh-pages'})
         this.filesystem.mount('/sys', sysfs)
         this.filesystem.mount('/local', html5fs)
     }
