@@ -18,6 +18,10 @@ export default class Filesystem extends Base {
         if(options.token) {
             this.token = options.token
         }
+
+        if(options.branch) {
+            this.branch = options.branch
+        }
     }
 
     async statinfo(json) {
@@ -37,7 +41,12 @@ export default class Filesystem extends Base {
     }
 
     async stat(path) {
-        let response = await self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path)
+        let branchParam = ''
+        if (this.branch) {
+            branchParam = '?ref=' + this.branch
+        }
+
+        let response = await self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path + branchParam)
 
         if(response.status < 200 || response.status >= 300) {
             return response
@@ -62,7 +71,12 @@ export default class Filesystem extends Base {
     }
 
     async read(path) {
-        let response = await self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path)
+        let branchParam = ''
+        if (this.branch) {
+            branchParam = '?ref=' + this.branch
+        }
+
+        let response = await self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path + branchParam)
 
         if(response.status < 200 || response.status >= 300) {
             throw new Error(response.statusText)
@@ -106,7 +120,12 @@ export default class Filesystem extends Base {
         let request = {
             message: 'Update file ' + path + ' with webclient file backend', 
             sha: getJson['sha'], 
-            content: btoa(await fileContent)}
+            content: btoa(await fileContent)
+        }
+
+        if (this.branch) {
+            request['branch'] = this.branch
+        }
 
         let response = await self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path, {
             headers: githubHeaders,
