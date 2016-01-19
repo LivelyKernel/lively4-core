@@ -12,6 +12,8 @@ export function register(componentName, template, prototype) {
   var proto = prototype || Object.create(Morph.prototype);
 
   proto.createdCallback = function() {
+    if (persistence.isCurrentlyCloning()) return;
+
     var root = this.createShadowRoot();
     // clone the template again, so when more elements are created,
     // they get their own elements from the template
@@ -22,9 +24,7 @@ export function register(componentName, template, prototype) {
     scriptManager.attachScriptsFromShadowDOM(this);
     // call the initialize script, if it exists
     if (typeof this.initialize === "function") {
-      if (!persistence.isCurrentlyCloning()) {
         this.initialize();
-      }
     }
 
     // load any unknown elements this component might introduce
@@ -109,6 +109,7 @@ export function loadByName(name) {
     var link = document.createElement("link");
     link.rel = "import";
     link.href = (window.lively4Url || "../") + "templates/" + name + ".html";
+    link.dataset.lively4Donotpersist = 'all';
     // link.href = "../templates/" + name + ".html";
 
     link.addEventListener("load", (e) => {

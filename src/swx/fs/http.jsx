@@ -7,7 +7,7 @@ import { Base } from './base.jsx'
 
 export default class Filesystem extends Base {
     constructor(path, options) {
-        super('httpfs', path, options)
+        super('http', path, options)
 
         if(!options.base)
             throw new Error('Option `base` required.')

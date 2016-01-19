@@ -51,6 +51,10 @@ if ('serviceWorker' in navigator) {
                 window.persistence = module;
                 log("persistence loaded");
             });
+            System.import("../src/client/morphic/component-loader.js").then(function(module) {
+                module.loadUnresolved();
+                log("component-loader unresolved tags loaded");
+            });
     })
 
     var fs = new Promise(function(resolve, reject) {
