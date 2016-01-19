@@ -67,12 +67,17 @@ export function createRegistrationScript(componentId) {
 export function loadUnresolved(lookupRoot, deep) {
   lookupRoot = lookupRoot || document.body;
 
-  var selector = deep ? "html /deep/ :unresolved" : ":unresolved";
+  var selector = ":unresolved";
+
+  var unresolved = Array.from(lookupRoot.querySelectorAll(selector));
+  if (deep) {
+    unresolved = unresolved.concat(Array.from(lookupRoot.shadowRoot.querySelectorAll(selector)));
+  }
 
   // helper set to filter for unique tags
   var unique = new Set();
 
-  var promises = Array.from(lookupRoot.querySelectorAll(selector)).filter(function(el) {
+  var promises = unresolved.filter(function(el) {
     // filter for unique tag names
     var name = el.nodeName.toLowerCase();
     return !loadedTemplates[name] && !unique.has(name) && unique.add(name);
@@ -82,7 +87,7 @@ export function loadUnresolved(lookupRoot, deep) {
         // if (el.nodeName.toLowerCase() === "lively-object-editor") {
         //   debugger;
         // }
-        debugger;
+        // debugger;
         console.log("!!! received created event from " + el.nodeName.toLowerCase());
         resolve(e);
       });
@@ -152,14 +157,23 @@ export function openInWindow(component) {
     });
   });
 
+
   var w = createComponent("lively-window");
   w.appendChild(component);
+
+  var helperPromise = new Promise((resolve, reject) => {
+    loadUnresolved(w, true).then((args) => {
+      resolve(component);
+    });
+
+  });
 
   var winPromise = openInBody(w);
 
   // Promise is resolved once the component and the window fire
   // their created event
-  return Promise.all([compPromise, winPromise]);
+  // return Promise.all([compPromise, winPromise, helperPromise]);
+  return helperPromise;
 }
 
 export function openComponentBin() {
