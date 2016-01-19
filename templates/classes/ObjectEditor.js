@@ -30,10 +30,16 @@ export default class ObjectEditor extends Morph {
     this.propertiesMap = this.shadowRoot.querySelector('#propertiesMap');
     this.propertiesContent = this.shadowRoot.querySelector('#propertiesContent');
 
+    this.connectionsContent = this.shadowRoot.querySelector('#connectionsContent');
+
     this.addButton = this.shadowRoot.querySelector('#add-script');
     this.removeButton = this.shadowRoot.querySelector('#remove-script');
     this.saveButton = this.shadowRoot.querySelector('#save-script');
     this.runButton = this.shadowRoot.querySelector('#run-script');
+
+    this.addConnectionButton = this.shadowRoot.querySelector('#addConnectionButton');
+    this.removeConnectionButton = this.shadowRoot.querySelector('#removeConnectionButton');
+    this.connectionList = this.shadowRoot.querySelector('#connectionList');
   }
 
   addElementEvents() {
@@ -42,6 +48,8 @@ export default class ObjectEditor extends Morph {
     this.removeButton.addEventListener('click', (e) => { this.removeButtonClicked(e) });
     this.saveButton.addEventListener('click', (e) => { this.saveButtonClicked(e) });
     this.runButton.addEventListener('click', (e) => { this.runButtonClicked(e) });
+    this.addConnectionButton.addEventListener('click', (e) => { this.addConnectionButtonClicked(e) });
+    this.removeConnectionButton.addEventListener('click', (e) => { this.removeConnectionButtonClicked(e) });
 
     this.attributesMap.addEventListener('commit', (e) => { this.attributeChanged(e) });
     this.propertiesMap.addEventListener('commit', (e) => { this.propertyChanged(e) });
@@ -55,6 +63,9 @@ export default class ObjectEditor extends Morph {
           break;
         case("propertiesContent"):
           this.showProperties();
+          break;
+        case("connectionsContent"):
+          this.showConnections();
           break;
         default:
           //
@@ -257,6 +268,73 @@ export default class ObjectEditor extends Morph {
     console.log("Property changed: " + property);
 
     this.targetElement[property.key] = property.value;
+  }
+
+  showConnections() {
+    if (!this.targetElement) {
+      return;
+    }
+    if (!this.targetElement.__connections__) {
+      this.targetElement.__connections__ = [];
+    }
+
+    let values = '';
+    this.targetElement.__connections__.forEach(function(conn) {
+      values += '<option>' + conn.name + '</option>';
+    });
+
+    this.connectionList.innerHTML = values;
+  }
+
+  addConnectionButtonClicked(e) {
+    if (!this.targetElement) {
+      return;
+    }
+    if (!this.targetElement.__connections__) {
+      this.targetElement.__connections__ = [];
+    }
+
+    var eventName = prompt('Please enter the event to be connected', '');
+    if (!eventName || eventName.length == 0) {
+      return;
+    }
+
+    var scriptName = prompt('Please enter the name of the script to be executed', '');
+    if (!scriptName || scriptName.length == 0) {
+      return;
+    }
+
+    if (typeof this.targetElement[scriptName] === 'undefined') {
+      alert('Could not find that script on the target element!');
+      return;
+    }
+
+    // connect it
+    let listener = this.targetElement[scriptName];
+    this.targetElement.addEventListener(eventName, listener);
+    this.targetElement.__connections__.push({
+      eventName: eventName,
+      listener: listener,
+      name: eventName + ' >> ' + scriptName
+    });
+
+    this.showConnections();
+  }
+
+  removeConnectionButtonClicked(e) {
+    if (!this.targetElement) {
+      return;
+    }
+    if (!this.targetElement.__connections__) {
+      this.targetElement.__connections__ = [];
+    }
+
+    if (this.connectionList.selectedIndex < 0) {
+      return;
+    }
+
+    this.targetElement.__connections__ = this.targetElement.__connections__.splice(this.connectionList.selectedIndex);
+    this.showConnections();
   }
 
   addButtonClicked(e) {
