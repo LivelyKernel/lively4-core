@@ -5,10 +5,6 @@
     #baseurl {
         width: 800px;
     }
-    #editor {
-        height: 400px;
-        width: 800px;
-    }
     #console {
         width: 800px;
         height: 300px;
@@ -26,15 +22,8 @@
 
 <script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
 
-
 <link rel="import" href="../src/client/babel-system.html">
 
-<link rel="import" href="../templates/lively-toolbox.html">
-<link rel="import" href="../templates/lively-window.html">
-<link rel="import" href="../templates/lively-object-editor.html">
-<link rel="import" href="../templates/lively-component-bin.html">
-
-<link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css">
 </head>
 <body>
 <h1>Lively 4 -- Bootstrapping Test Page
@@ -45,38 +34,10 @@
 </h1>
 <h2>Another Title</h2>
 
-
-
 <lively-component-bin></lively-component-bin>
-
-
-
-<p><input type="text" id="baseurl" value="http://localhost:8080/" class=""></p>
-
-<button onclick="fileEditor.loadFile()">load</button>
-<button onclick="fileEditor.saveFile()">save</button>
-<input type="text" id="filename" value="README.md">
-
-<!-- <button onclick="">reload service worker </button> -->
-
-<button onclick="githubAuth.challengeForAuth(Date.now(), function(token){
-    console.log('We are authenticated with the Token: ' + token)
-})">login</button>
-
-<button onclick="githubAuth.logout(); console.log('logged out of github')">logout</button>
-
-<input type="checkbox" id="persistOnInterval">persist every 5 seconds
-
-<div id="editor" class=" ace_editor ace-tm"></div>
 
 <pre id="console"></pre>
 <input type="text" id="commandline" value="">
-
-<!-- BEGIN ACE -->
-<!-- We also have to load ace "locally", because loading it remotely ends in a race condition -->
-<script src="../src/external/ace.js" type="text/javascript" charset="utf-8"></script>
-<script>ace.edit("editor");</script>
-<!-- END ACE -->
 
 
 <script>
