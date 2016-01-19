@@ -9,11 +9,13 @@ import sysfs from 'src/swx/fs/sys.jsx'
 import httpfs from 'src/swx/fs/http.jsx'
 import html5fs from 'src/swx/fs/html5.jsx'
 import githubfs from 'src/swx/fs/github.jsx'
+import dropboxfs from 'src/swx/fs/dropbox.jsx'
 
 class ServiceWorker {
     constructor() {
         this.filesystem = new fs.Filesystem()
-        this.filesystem.mount('/', githubfs, {repo: 'LivelyKernel/lively4-core'})
+        this.filesystem.mount('/', githubfs, {repo: 'LivelyKernel/lively4-core', token: 'eaed974f5ba073f87ce71737d10f45d57b7f9897'})
+        this.filesystem.mount('/dropbox', dropboxfs, {bearer_token: 'pVWJ_WeRzzAAAAAAAAAAB65ltL-tVtHVAs7adSU0yLkHIqZWjc1E8GzNcri80bRN'})
         this.filesystem.mount('/sys', sysfs)
         this.filesystem.mount('/local', html5fs)
     }
@@ -36,7 +38,11 @@ class ServiceWorker {
             }
         }).catch((err) => {
             console.error('Error while processing fetch event:', err)
-            return new Response('', {status: 500})
+
+            let message = err.toString()
+            let content = JSON.stringify({message: message})
+
+            return new Response(content, {status: 500, statusText: message})
         })
 
         event.respondWith(response)

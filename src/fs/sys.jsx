@@ -31,11 +31,34 @@ export default class Filesystem extends Base {
                     return swx.instance().filesystem.reqcount
                 }),
                 new SysFile('reload', null, function() {
-                    self.__swx_refresh__({force: true})
+                    self.__reload__({force: true})
                     return ""
                 })
+            ]),
+            new SysDir('fs', [
+                new SysFile('mount', null, ::this._sysFsMount)
             ])
         ])
+    }
+
+    async _sysFsMount(content) {
+        let json = JSON.parse(await content)
+
+        let path = json['path']
+        let name = json['name']
+        let opts = json['options'] || {}
+
+        if(!path)
+            throw new Error('<path> is missing')
+
+        if(!name)
+            throw new Error('<name> is missing')
+
+        let fs = await System.import('src/swx/fs/' + name + '.jsx')
+
+        swx.instance().filesystem.mount(path, fs.default, opts)
+
+        return json
     }
 
     resolve(path) {
@@ -212,11 +235,21 @@ class SysFile extends File {
 
     async write(blob) {
         if(typeof this.wfn === 'function') {
-            let json     = await this.wfn(blob)
-            let content  = JSON.stringify(json, null, '\t')
-            let response = new Response(content)
+            try {
+                let json     = await this.wfn(blob)
+                let content  = JSON.stringify(json, null, '\t')
+                let response = new Response(content)
 
-            return response
+                return response
+            } catch(err) {
+                let message  = err.toString()
+                let content  = JSON.stringify(message, null, '\t')
+                let response = new Response(content, {status: 400, statusText: message})
+
+                console.error(err)
+
+                return response
+            }
         } else {
             return super.write(blob)
         }
