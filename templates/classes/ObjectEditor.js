@@ -51,6 +51,8 @@ export default class ObjectEditor extends Morph {
     this.addConnectionButton.addEventListener('click', (e) => { this.addConnectionButtonClicked(e) });
     this.removeConnectionButton.addEventListener('click', (e) => { this.removeConnectionButtonClicked(e) });
 
+    this.editor.addEventListener('keydown', (e) => { this.editorKeyDown(e) });
+
     this.attributesMap.addEventListener('commit', (e) => { this.attributeChanged(e) });
     this.propertiesMap.addEventListener('commit', (e) => { this.propertyChanged(e) });
 
@@ -387,6 +389,7 @@ export default class ObjectEditor extends Morph {
           eval('(' + this.editor.value + ')'),
           { name: data['scriptName'] }
         );
+        console.log('saved!');
       } else if (typeof data['attributeName'] !== 'undefined') {
         this.saveAttribute(data['attributeName']);
       }
@@ -399,6 +402,13 @@ export default class ObjectEditor extends Morph {
       let func = eval('(' + this.editor.value + ')');
       
       func.apply(this.targetElement);
+    }
+  }
+
+  editorKeyDown(e) {
+    if (e.metaKey && e.keyCode === 83) {
+      this.saveButtonClicked();
+      e.preventDefault();
     }
   }
 
