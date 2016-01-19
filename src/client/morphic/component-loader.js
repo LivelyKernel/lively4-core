@@ -2,18 +2,12 @@ import * as scriptManager from  "../script-manager.js";
 import * as persistence from  "../persistence.js";
 import Morph from "../../../templates/classes/Morph.js";
 
-// contains template - Promise map indicating their loading status
-// e.g. "lively-window": Promise {...: "resolved", ...}
-export var loadedTemplates = {};
-
 // this function registers a custom element,
 // it is called from the bootstap code in the component templates
 export function register(componentName, template, prototype) {
   var proto = prototype || Object.create(Morph.prototype);
 
   proto.createdCallback = function() {
-    if (persistence.isCurrentlyCloning()) return;
-
     var root = this.createShadowRoot();
     // clone the template again, so when more elements are created,
     // they get their own elements from the template
@@ -24,7 +18,9 @@ export function register(componentName, template, prototype) {
     scriptManager.attachScriptsFromShadowDOM(this);
     // call the initialize script, if it exists
     if (typeof this.initialize === "function") {
+      if (!persistence.isCurrentlyCloning()) {
         this.initialize();
+      }
     }
 
     // load any unknown elements this component might introduce
@@ -68,6 +64,7 @@ export function loadUnresolved(lookupRoot, deep) {
 
   var selector = ":unresolved";
 
+  // find all unresolved elements looking downwards from lookupRoot
   var unresolved = Array.from(lookupRoot.querySelectorAll(selector));
   if (deep && lookupRoot.shadowRoot) {
     unresolved = unresolved.concat(Array.from(lookupRoot.shadowRoot.querySelectorAll(selector)));
@@ -76,51 +73,37 @@ export function loadUnresolved(lookupRoot, deep) {
   // helper set to filter for unique tags
   var unique = new Set();
 
-  var promises = unresolved.filter(function(el) {
+  var promises = unresolved.filter((el) => {
     // filter for unique tag names
     var name = el.nodeName.toLowerCase();
-    return !loadedTemplates[name] && !unique.has(name) && unique.add(name);
-  }).map(function(el) {
+    return !unique.has(name) && unique.add(name);
+  }).map((el) => {
+    // create a promise that resolves once el is completely created
     var createdPromise = new Promise((resolve, reject) => {
-      el.addEventListener("created", (e) => {
-        e.stopPropagation();
-        console.log("received created event from " + el.nodeName.toLowerCase());
-        resolve(e);
+      el.addEventListener("created", (evt) => {
+        evt.stopPropagation();
+        resolve(evt);
       });
     });
 
+    // thigger loading the template of the unresolved element
     loadByName(el.nodeName.toLowerCase());
 
     return createdPromise;
   });
 
-
+  // return a promise that resolves once all unresolved elements from the unresolved-array
+  // are completely created
   return Promise.all(promises);
 }
 
 // this function loads a component by adding a link tag to the head
 export function loadByName(name) {
-  if (loadedTemplates[name]) {
-    console.log(name + " already loaded or currently loading");
-    return loadedTemplates[name];
-  }
-
-  loadedTemplates[name] = new Promise((resolve, reject) => {
     var link = document.createElement("link");
     link.rel = "import";
     link.href = (window.lively4Url || "../") + "templates/" + name + ".html";
-    link.dataset.lively4Donotpersist = 'all';
-    // link.href = "../templates/" + name + ".html";
-
-    link.addEventListener("load", (e) => {
-      resolve(e);
-    });
-    link.addEventListener("error", reject);
 
     document.head.appendChild(link);
-  });
-
-  return loadedTemplates[name];
 }
 
 export function createComponent(tagString) {
@@ -132,42 +115,37 @@ export function createComponent(tagString) {
 export function openInBody(component) {
   var compPromise = new Promise((resolve, reject) => {
     component.addEventListener("created", (e) => {
-      console.log(component.nodeName + " created!");
+      e.stopPropagation();
       resolve(e.target);
     });
   });
 
   // adding it here might result in flickering, since it loads afterwards
   document.body.insertBefore(component, document.body.firstChild);
-  var loadPromise = loadByName(component.nodeName.toLowerCase());
+  loadByName(component.nodeName.toLowerCase());
 
-  // return Promise.all([compPromise, loadPromise]);
   return compPromise;
 }
 
 export function openInWindow(component) {
-  var compPromise = new Promise((resolve, reject) => {
-    component.addEventListener("created", (e) => {
-      resolve(e.target);
-    });
-  });
-
+  // this will call the window's createdCallback before
+  // we append the child, if the window template is already
+  // loaded
   var w = createComponent("lively-window");
   w.appendChild(component);
 
-  var helperPromise = new Promise((resolve, reject) => {
-    loadUnresolved(w, true).then((args) => {
+  // therefore, we need to call loadUnresolved again after
+  // adding the child, so that it finds it and resolves it,
+  // if it is currently unresolved
+  var windowPromise = new Promise((resolve, reject) => {
+    loadUnresolved(w, true).then(() => {
       resolve(component);
     });
-
   });
 
-  var winPromise = openInBody(w);
+  openInBody(w);
 
-  // Promise is resolved once the component and the window fire
-  // their created event
-  // return Promise.all([compPromise, winPromise, helperPromise]);
-  return helperPromise;
+  return windowPromise;
 }
 
 export function openComponentBin() {
