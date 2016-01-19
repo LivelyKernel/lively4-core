@@ -73,12 +73,10 @@
 
     inputEventHandler(e) {
       // change status LED
-      console.log('input');
       this.updateStatus();
     }
 
     changeEventHandler(e) {
-      console.log('change');
       // save event
       this.commit();
     }
@@ -118,7 +116,6 @@
     }
 
     updateType() {
-      console.log(this.key + ':', this.type);
       switch (this.type) {
         case 'number':
           this.valueElement.setAttribute('type', 'number');
