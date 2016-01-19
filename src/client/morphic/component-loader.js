@@ -12,7 +12,6 @@ export function register(componentName, template, prototype) {
   var proto = prototype || Object.create(Morph.prototype);
 
   proto.createdCallback = function() {
-    console.log(this.nodeName + " createdCallback");
     var root = this.createShadowRoot();
     // clone the template again, so when more elements are created,
     // they get their own elements from the template
@@ -67,29 +66,31 @@ export function createRegistrationScript(componentId) {
 export function loadUnresolved(lookupRoot, deep) {
   lookupRoot = lookupRoot || document.body;
 
-  var selector = deep ? "html /deep/ :unresolved" : ":unresolved";
+  var selector = ":unresolved";
+
+  var unresolved = Array.from(lookupRoot.querySelectorAll(selector));
+  if (deep && lookupRoot.shadowRoot) {
+    unresolved = unresolved.concat(Array.from(lookupRoot.shadowRoot.querySelectorAll(selector)));
+  }
 
   // helper set to filter for unique tags
   var unique = new Set();
 
-  var promises = Array.from(lookupRoot.querySelectorAll(selector)).filter(function(el) {
+  var promises = unresolved.filter(function(el) {
     // filter for unique tag names
     var name = el.nodeName.toLowerCase();
     return !loadedTemplates[name] && !unique.has(name) && unique.add(name);
   }).map(function(el) {
     var createdPromise = new Promise((resolve, reject) => {
       el.addEventListener("created", (e) => {
-        // if (el.nodeName.toLowerCase() === "lively-object-editor") {
-        //   debugger;
-        // }
-        debugger;
-        console.log("!!! received created event from " + el.nodeName.toLowerCase());
+        e.stopPropagation();
+        console.log("received created event from " + el.nodeName.toLowerCase());
         resolve(e);
       });
     });
-    var loadPromise = loadByName(el.nodeName.toLowerCase());
 
-    // return Promise.all([loadPromise, createdPromise]);
+    loadByName(el.nodeName.toLowerCase());
+
     return createdPromise;
   });
 
@@ -104,7 +105,6 @@ export function loadByName(name) {
     return loadedTemplates[name];
   }
 
-  console.log("loading " + name + "...");
   loadedTemplates[name] = new Promise((resolve, reject) => {
     var link = document.createElement("link");
     link.rel = "import";
@@ -112,7 +112,6 @@ export function loadByName(name) {
     // link.href = "../templates/" + name + ".html";
 
     link.addEventListener("load", (e) => {
-      console.log("...loaded " + name);
       resolve(e);
     });
     link.addEventListener("error", reject);
@@ -155,11 +154,19 @@ export function openInWindow(component) {
   var w = createComponent("lively-window");
   w.appendChild(component);
 
+  var helperPromise = new Promise((resolve, reject) => {
+    loadUnresolved(w, true).then((args) => {
+      resolve(component);
+    });
+
+  });
+
   var winPromise = openInBody(w);
 
   // Promise is resolved once the component and the window fire
   // their created event
-  return Promise.all([compPromise, winPromise]);
+  // return Promise.all([compPromise, winPromise, helperPromise]);
+  return helperPromise;
 }
 
 export function openComponentBin() {

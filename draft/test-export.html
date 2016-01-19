@@ -51,7 +51,7 @@
 
 <link rel="import" href="../src/client/babel-system.html" />
 
-<!-- <link rel="import" href="../templates/lively-window.html" /> -->
+<link rel="import" href="../templates/lively-window.html" />
 <link rel="import" href="../templates/lively-halos.html" />
 
 <link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" />
@@ -63,15 +63,16 @@
 
 <lively-halos></lively-halos>
 
-<!-- <lively-window>
-  <lively-object-editor></lively-object-editor>
-</lively-window> -->
+<lively-window>
+  <!-- <lively-object-editor></lively-object-editor> -->
+  <lively-component-bin></lively-component-bin>
+</lively-window>
 
 
 <pre id="console"></pre>
 <input type="text" id="commandline" value="" />
 
-
+<script src="../src/external/ace.js" type="text/javascript" charset="utf-8"></script>
 
 <script>
     var lively4url =  "..";
