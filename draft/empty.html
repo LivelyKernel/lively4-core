@@ -36,6 +36,7 @@
 <link rel="import" href="../templates/lively-toolbox.html" />
 <link rel="import" href="../templates/lively-window.html" />
 <link rel="import" href="../templates/lively-object-editor.html" />
+<link rel="import" href="../templates/lively-file-browser.html" />
 
 <link rel="import" href="../templates/lively-menu.html"/>
 
@@ -85,6 +86,24 @@
                         $('body')[0].appendChild(container)
                         var text  = document.createElement("lively-editor")
                         container.appendChild(text)
+
+                    }],
+                    ["File Browser", function() {
+                        var appctx = document.createElement("lively-window")
+                        var browser = document.createElement("lively-file-browser")
+                        browser.addEventListener('file-select', (event) => {
+                            var appctx = document.createElement("lively-window")
+                            var editor = document.createElement("lively-editor")
+
+                            editor.setURL(event.file.url)
+                            editor.loadFile()
+
+                            appctx.appendChild(editor)
+                            document.body.appendChild(appctx)
+                        })
+
+                        appctx.appendChild(browser)
+                        document.body.appendChild(appctx)
 
                     }],
                     ["Text", function() {
