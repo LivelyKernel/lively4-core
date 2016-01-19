@@ -227,26 +227,29 @@ export default class ObjectEditor extends Morph {
     }
 
     let editableProperties = [
-      { name: 'dir', type: 'string' },
-      { name: 'draggable', type: 'boolean' },
-      { name: 'hidden', type: 'boolean' },
+      { name: 'dir', type: 'string', readonly: true },
       { name: 'lang', type: 'string' },
+      { name: 'className', type: 'string' },
+      { name: 'contentEditable', type: 'string' },
+      { name: 'id', type: 'string' },
 
-      { name: 'offsetHeight', type: 'number' },
-      { name: 'offsetWidth', type: 'number' },
-      { name: 'offsetTop', type: 'number' },
-      { name: 'offsetLeft', type: 'number' },
+      { name: 'offsetHeight', type: 'number', readonly: true },
+      { name: 'offsetWidth', type: 'number', readonly: true },
+      { name: 'offsetTop', type: 'number', readonly: true },
+      { name: 'offsetLeft', type: 'number', readonly: true },
 
-      { name: 'clientHeight', type: 'number' },
-      { name: 'clientLeft', type: 'number' },
-      { name: 'clientTop', type: 'number' },
-      { name: 'clientWidth', type: 'number' },
+      { name: 'clientHeight', type: 'number', readonly: true },
+      { name: 'clientLeft', type: 'number', readonly: true },
+      { name: 'clientTop', type: 'number', readonly: true },
+      { name: 'clientWidth', type: 'number', readonly: true },
 
       { name: 'tabIndex', type: 'number' },
 
       { name: 'innerHTML', type: 'string' },
-      { name: 'outerHTML', type: 'string' },
+      { name: 'outerHTML', type: 'string', readonly: true },
       { name: 'value', type: 'string' },
+      { name: 'title', type: 'string' },
+      { name: 'tagName', type: 'string', readonly: true },
 
       { name: 'scrollTop', type: 'number' },
       { name: 'scrollLeft', type: 'number' }
@@ -257,7 +260,8 @@ export default class ObjectEditor extends Morph {
       let property = editableProperties[i];
       properties[property.name] = {
         value: this.targetElement[property.name],
-        type: property.type
+        type: property.type,
+        readonly: property.readonly
       }
     }
 

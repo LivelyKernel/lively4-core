@@ -81,9 +81,14 @@
       this.commit();
     }
 
+    clickHandler(e) {
+      this.valueElement.setSelectionRange();
+    }
+
     gotFocus(e) {
       // select the whole content
-      this.valueElement.setSelectionRange(0, this.value.length);
+      // this.valueElement.setSelectionRange(0, this.value.length);
+      this.valueElement.select();
     }
 
     commit() {
@@ -127,6 +132,10 @@
         default:
           break;
       }
+
+      if (this.readonly) {
+        this.valueElement.setAttribute('readonly', 'readonly');
+      }
     }
 
     get key() {
@@ -153,6 +162,14 @@
 
     set type(value) {
       this._type = value;
+      this.updateType();
+    }
+
+    get readonly() {
+      return this._readonly;
+    }
+    set readonly(value) {
+      this._readonly = value;
       this.updateType();
     }
   }
