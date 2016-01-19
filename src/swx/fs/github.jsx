@@ -7,7 +7,7 @@ import * as util from '../util.jsx'
 
 export default class Filesystem extends Base {
     constructor(path, options) {
-        super('githubfs', path, options)
+        super('github', path, options)
 
         if(options.repo) {
             this.repo = options.repo
@@ -128,8 +128,8 @@ export default class Filesystem extends Base {
         }
 
         let request = {
-            message: 'Update file ' + path + ' with webclient file backend', 
-            sha: getJson['sha'], 
+            message: 'Update file ' + path + ' with webclient file backend',
+            sha: getJson['sha'],
             content: btoa(await fileContent)
         }
 

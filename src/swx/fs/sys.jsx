@@ -7,7 +7,7 @@ import * as swx from '../swx.jsx'
 
 export default class Filesystem extends Base {
     constructor(path, options) {
-        super('sysfs', path, options)
+        super('sys', path, options)
 
         let name = path.split(/\/+/)
         name = name[name.length - 1]

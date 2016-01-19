@@ -7,7 +7,7 @@ import * as util from '../util.jsx'
 
 export default class Filesystem extends Base {
     constructor(path, options) {
-        super('dropboxfs', path, options)
+        super('dropbox', path, options)
 
         if(options.bearer_token) {
             this.bearer_token = options.bearer_token
@@ -54,7 +54,7 @@ export default class Filesystem extends Base {
                 JSON.stringify(await this.statinfo(json), null, '\t')
             }
         }
-        
+
         return new Response(content, {
             status: 200,
             headers: {'Allow': 'GET,OPTIONS'}
