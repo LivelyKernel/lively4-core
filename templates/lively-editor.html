@@ -67,14 +67,56 @@
 
       $(this.getSubmorph('#saveButton')).click(this.saveFile.bind(this))
       $(this.getSubmorph('#loadButton')).click(this.loadFile.bind(this))
+
+      var mountURL = "https://lively4/sys/fs/mount"
       $(this.getSubmorph('#loginButton')).click(function() {
         console.log("login")
         githubAuth.challengeForAuth(Date.now(), function(token){
             console.log('We are authenticated with the Token: ' + token)
+            var mountGithub = {
+              "path": "/",
+              "name": "github",
+              "options": {
+                "repo": "LivelyKernel/lively4-core",
+                "branch": "gh-pages",
+                "token": token
+              }
+            }
+            $.ajax({
+              url: mountURL,
+              type: 'PUT',
+              data: JSON.stringify(mountGithub),
+              success: function(text) {
+                console.log("mounted github")
+              },
+              error: function(xhr, status, error) {
+                console.log("could not mount gitub " + error)
+              }
+            });
         })
       })
       $(this.getSubmorph('#logoutButton')).click(function(){
         githubAuth.logout(); console.log('logged out of github')
+        var unmountGithub = {
+              "path": "/",
+              "name": "github",
+              "options": {
+                "repo": "LivelyKernel/lively4-core",
+                "branch": "gh-pages"
+                 // No token, so we mount it read-only
+              }
+            }
+            $.ajax({
+              url: mountURL,
+              type: 'PUT',
+              data: JSON.stringify(unmountGithub),
+              success: function(text) {
+                console.log("unmounted github")
+              },
+              error: function(xhr, status, error) {
+                console.log("could not unmount gitub " + error)
+              }
+            });
       })
 
 
