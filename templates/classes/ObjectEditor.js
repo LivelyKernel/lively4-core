@@ -172,7 +172,7 @@ export default class ObjectEditor extends Morph {
   }
 
   attributesObserver(changes) {
-    //this.updateAttributes();
+    this.showAttributes();
   }
   scriptsObserver(changes) {
     this.updateScripts();
