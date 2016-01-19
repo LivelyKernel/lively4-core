@@ -41,12 +41,17 @@ export default class Filesystem extends Base {
     }
 
     async stat(path) {
+        let githubHeaders = new Headers()
+        if (this.token) {
+            githubHeaders.append('Authorization', 'token ' + this.token)
+        }
+
         let branchParam = ''
         if (this.branch) {
             branchParam = '?ref=' + this.branch
         }
 
-        let response = await self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path + branchParam)
+        let response = await self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path + branchParam, {headers: githubHeaders})
 
         if(response.status < 200 || response.status >= 300) {
             return response
@@ -71,12 +76,17 @@ export default class Filesystem extends Base {
     }
 
     async read(path) {
+        let githubHeaders = new Headers()
+        if (this.token) {
+            githubHeaders.append('Authorization', 'token ' + this.token)
+        }
+
         let branchParam = ''
         if (this.branch) {
             branchParam = '?ref=' + this.branch
         }
 
-        let response = await self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path + branchParam)
+        let response = await self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path + branchParam, {headers: githubHeaders})
 
         if(response.status < 200 || response.status >= 300) {
             throw new Error(response.statusText)
@@ -99,8 +109,8 @@ export default class Filesystem extends Base {
 
     async write(path, fileContent) {
         let githubHeaders = new Headers()
-
         githubHeaders.append('Authorization', 'token ' + this.token)
+
         let getResponse = await self.fetch('https://api.github.com/repos/' + this.repo + '/contents' + path, {headers: githubHeaders})
 
         if (getResponse.status != 200) {
