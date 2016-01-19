@@ -1,6 +1,6 @@
 'use strict';
 
-// This is a file editor! 
+// This is a file editor!
 // Since, it heavily interacts with an HTML page, it should be bundled with it....
 // .. because we cannot test it from JavaScript (Karma)
 

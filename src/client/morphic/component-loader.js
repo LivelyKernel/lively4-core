@@ -12,7 +12,6 @@ export function register(componentName, template, prototype) {
   var proto = prototype || Object.create(Morph.prototype);
 
   proto.createdCallback = function() {
-    console.log(this.nodeName + " createdCallback");
     var root = this.createShadowRoot();
     // clone the template again, so when more elements are created,
     // they get their own elements from the template
@@ -70,7 +69,7 @@ export function loadUnresolved(lookupRoot, deep) {
   var selector = ":unresolved";
 
   var unresolved = Array.from(lookupRoot.querySelectorAll(selector));
-  if (deep) {
+  if (deep && lookupRoot.shadowRoot) {
     unresolved = unresolved.concat(Array.from(lookupRoot.shadowRoot.querySelectorAll(selector)));
   }
 
@@ -84,17 +83,14 @@ export function loadUnresolved(lookupRoot, deep) {
   }).map(function(el) {
     var createdPromise = new Promise((resolve, reject) => {
       el.addEventListener("created", (e) => {
-        // if (el.nodeName.toLowerCase() === "lively-object-editor") {
-        //   debugger;
-        // }
-        // debugger;
-        console.log("!!! received created event from " + el.nodeName.toLowerCase());
+        e.stopPropagation();
+        console.log("received created event from " + el.nodeName.toLowerCase());
         resolve(e);
       });
     });
-    var loadPromise = loadByName(el.nodeName.toLowerCase());
 
-    // return Promise.all([loadPromise, createdPromise]);
+    loadByName(el.nodeName.toLowerCase());
+
     return createdPromise;
   });
 
@@ -109,7 +105,6 @@ export function loadByName(name) {
     return loadedTemplates[name];
   }
 
-  console.log("loading " + name + "...");
   loadedTemplates[name] = new Promise((resolve, reject) => {
     var link = document.createElement("link");
     link.rel = "import";
@@ -117,7 +112,6 @@ export function loadByName(name) {
     // link.href = "../templates/" + name + ".html";
 
     link.addEventListener("load", (e) => {
-      console.log("...loaded " + name);
       resolve(e);
     });
     link.addEventListener("error", reject);
@@ -156,7 +150,6 @@ export function openInWindow(component) {
       resolve(e.target);
     });
   });
-
 
   var w = createComponent("lively-window");
   w.appendChild(component);

@@ -55,10 +55,8 @@ function saveTemplate(template) {
   //   throw new Error("no component bin found in page");
   // }
 
-  var editor = componentLoader.createComponent("editor");
+  var editor = componentLoader.createComponent("lively-editor");
   componentLoader.openInWindow(editor).then((editor) => {
-    debugger;
-    // editor.getSubmorph("juicy-ace-editor").editor.setValue(completeHTML);
     editor.setURL(window.location.origin + "/lively4-core/templates/" + template.id + ".html");
     editor.setText(completeHTML);
   });
