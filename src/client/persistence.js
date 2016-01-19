@@ -3,7 +3,7 @@
 var persistenceTimerInterval;
 var persistenceEnabled = true;
 var persistenceInterval = 5000;
-var persistenceTarget = 'http://localhost:8080/';
+var persistenceTarget = 'http://lively4/';
 
 function isDoNotPersistTag(node) {
     return node.attributes
