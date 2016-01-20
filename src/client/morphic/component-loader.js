@@ -16,16 +16,16 @@ export function register(componentName, template, prototype) {
 
     // attach lively4scripts from the shadow root to this
     scriptManager.attachScriptsFromShadowDOM(this);
-    // call the initialize script, if it exists
-    if (typeof this.initialize === "function") {
-      if (!persistence.isCurrentlyCloning()) {
-        this.initialize();
-      }
-    }
 
     // load any unknown elements this component might introduce
     loadUnresolved(this, true).then((args) => {
-      console.log(this.nodeName + " created event");
+      // call the initialize script, if it exists
+      if (typeof this.initialize === "function") {
+        if (!persistence.isCurrentlyCloning()) {
+          this.initialize();
+        }
+      }
+
       this.dispatchEvent(new Event("created"));
     });
 

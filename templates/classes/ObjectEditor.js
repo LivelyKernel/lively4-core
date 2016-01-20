@@ -400,7 +400,7 @@ export default class ObjectEditor extends Morph {
     if (this.targetElement && this.propertyList.activeLeaf !== null) {
       let data = this.propertyList.activeLeaf.dataset;
       let func = eval('(' + this.editor.value + ')');
-      
+
       func.apply(this.targetElement);
     }
   }
