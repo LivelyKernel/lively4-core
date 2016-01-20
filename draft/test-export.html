@@ -21,6 +21,9 @@
     #commandline {
         width: 800px;
     }
+    body {
+      min-height: 1000px;
+    }
 </style>
 
 
@@ -81,6 +84,10 @@
         System.import("commandline.js")
         System.import(lively4url + "/src/client/debug-serviceworker.js")
     }).catch(function(err) { alert("load Lively4 failed")});
+
+    System.import(lively4url + "/src/client/shortcuts.js").then(m => {
+      m.registerShortcuts();
+    });
 
     var creator;
     System.import(lively4url + "/src/client/morphic/component-creator.js").then(m => {
