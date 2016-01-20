@@ -56,7 +56,7 @@ function saveTemplate(template) {
   // }
 
   var editor = componentLoader.createComponent("lively-editor");
-  componentLoader.openInWindow(editor).then((editor) => {
+  componentLoader.openInWindow(editor).then(() => {
     editor.setURL(window.location.origin + "/lively4-core/templates/" + template.id + ".html");
     editor.setText(completeHTML);
   });

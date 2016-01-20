@@ -139,7 +139,7 @@ export function openInWindow(component) {
   // if it is currently unresolved
   var windowPromise = new Promise((resolve, reject) => {
     loadUnresolved(w, true).then(() => {
-      resolve(component);
+      resolve(w);
     });
   });
 
