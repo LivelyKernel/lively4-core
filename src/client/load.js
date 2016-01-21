@@ -113,9 +113,11 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 
-
+window.onbeforeunload = function(e) {
+  return 'Do you really want to leave this page?';
+};
 // disable backspace navigation
-    document.body.addEventListener("keydown", (evt) => {
+    /*document.body.addEventListener("keydown", (evt) => {
         if (evt.keyCode == 8) { // backspace
             console.log("prevent  backspace navigation:")
             // #TODO refactor this into a general lively error logging / notifications?
@@ -123,4 +125,4 @@ document.addEventListener('DOMContentLoaded', function () {
             setTimeout(n.close.bind(n), 3000);
             evt.preventDefault();
         }
-    });
+    });*/
