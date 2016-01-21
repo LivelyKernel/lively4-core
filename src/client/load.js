@@ -106,14 +106,21 @@ if ('serviceWorker' in navigator) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  if (Notification.permission !== "granted")
-    Notification.requestPermission();
+    if (Notification.permission !== "granted")
+        Notification.requestPermission();
 
-    // disable backspace navigation
-    // document.body.addEventListener("keydown", (evt) => {
-    //     if (evt.keyCode == 8) { // backspace
-    //         evt.preventDefault();
-    //     }
-    // });
+
 });
 
+
+
+// disable backspace navigation
+    document.body.addEventListener("keydown", (evt) => {
+        if (evt.keyCode == 8) { // backspace
+            console.log("prevent  backspace navigation:")
+            // #TODO refactor this into a general lively error logging / notifications?
+            var n = new Notification("WARNING:", {body: "prevent  backspace navigation",});
+            setTimeout(n.close.bind(n), 3000);
+            evt.preventDefault();
+        }
+    });
