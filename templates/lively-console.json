@@ -1,0 +1,10 @@
+{
+  "name": "Console",
+  "html-tag": "lively-console",
+  "description": "Bla bla bla",
+  "author": "Felix Wolff",
+  "date-changed": "2015-12-17",
+  "categories": ["tools"],
+  "tags": [],
+  "template": "lively-console.html"
+}

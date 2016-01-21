@@ -1,0 +1,84 @@
+<template id="lively-console">
+    <style>
+    .container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    #console {
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        flex: 1;
+        margin: 0px;
+        padding: 0px;
+    }
+    #commandlineholder {
+        margin: 2px;
+        height: 20px;
+        width: 100%;     
+        display: flex;
+        flex-direction: row;
+    }
+    #commandline {  
+        margin-left: 2px;    
+        margin-right: 2px;    
+        font-family: monospace;
+        flex: 1;
+    }
+    #evalbutton {
+    }
+    </style>
+    <div class="container">
+      <pre id="console"></pre>
+      <div id="commandlineholder">
+        <button id="evalbutton">eval</button>
+        <input type="text" id="commandline" value="">
+      </div>
+    </div>
+
+
+
+    <script type="lively4script" data-name="initialize">
+    () => {
+      var container = $(this.shadowRoot).find(".container")[0];
+      $(this.getSubmorph('#commandline')).keyup((evt) => { 
+        if(evt.keyCode == 13) { this.evalInput() }})
+      $(this.getSubmorph('#evalbutton')).click( (evt) => {this.evalInput()})
+    }
+    </script>
+
+
+    <script type="lively4script" data-name="evalInput">
+      function() {
+          var src = $(this.getSubmorph('#commandline')).val()
+          try { var result = eval(src) } catch(e) { result = "ERROR:" + e }
+          this.log("> " + src)
+          this.log("< " + result)
+
+      }
+    </script>
+
+    <script type="lively4script" data-name="log">
+      function(/* varargs */) {
+        var c = $(this.getSubmorph('#console'))
+        Array.prototype.forEach.call(arguments, function(s) {
+           c.text(c.text() + "\n" + s)
+        })
+        c.scrollTop(c[0].scrollHeight);
+      }
+    </script>
+
+
+</template>
+
+<script class="registrationScript">
+// This ugly piece of code will be auto generated, when exporting a template. Puh.
+(function() {
+  var template = document.currentScript.ownerDocument.querySelector('#lively-console');
+  var clone = document.importNode(template.content, true);
+
+  System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-console', clone); });
+})();
+</script>
