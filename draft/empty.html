@@ -40,6 +40,7 @@
 
 <link rel="import" href="../templates/lively-menu.html"/>
 
+<link rel="import" href="../templates/lively-console.html"/>
 <link rel="import" href="../templates/lively-editor.html"/>
 <link rel="import" href="../templates/juicy-ace-editor.html"/>
 
@@ -104,6 +105,13 @@
 
                         appctx.appendChild(browser)
                         document.body.appendChild(appctx)
+
+                    }],
+                    ["Console", function() {
+                        var container  = document.createElement("lively-window")
+                        $('body')[0].appendChild(container)
+                        var text  = document.createElement("lively-console")
+                        container.appendChild(text)
 
                     }],
                     ["Text", function() {

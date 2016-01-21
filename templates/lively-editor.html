@@ -42,6 +42,8 @@
       console.log("initialize lively editor")
 
       var container = $(this.shadowRoot).find(".container")[0];
+
+
       // #Jens #TODO #Generalize
       // function get(selector) {
       //     return $(container.querySelector(selector))
@@ -65,9 +67,12 @@
         window.githubAuth = githubAuth // make it global, so the callback can reach it...
       })
 
+      // #TODO refactor to "connections"
       $(this.getSubmorph('#saveButton')).click(this.saveFile.bind(this))
       $(this.getSubmorph('#loadButton')).click(this.loadFile.bind(this))
 
+
+      // #TODO refactor to methods
       var mountURL = "https://lively4/sys/fs/mount"
       $(this.getSubmorph('#loginButton')).click(function() {
         console.log("login")

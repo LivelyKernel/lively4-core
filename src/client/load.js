@@ -1,12 +1,7 @@
 
-    function log(/* varargs */) {
-        var c = $('#console')
-        if (c.length == 0)  return
 
-        Array.prototype.forEach.call(arguments, function(s) {
-           c.text(c.text() + "\n" + s)
-        })
-        c.scrollTop(c[0].scrollHeight);
+    function log(/* varargs */) {
+        $('lively-console').each(function() { this.log.apply(this, arguments)})
     }
 
 // console.log("A squared: " + 2**4)
