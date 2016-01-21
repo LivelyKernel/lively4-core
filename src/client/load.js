@@ -1,22 +1,23 @@
 
 
     function log(/* varargs */) {
-        $('lively-console').each(function() { this.log.apply(this, arguments)})
+        var args = arguments
+        $('lively-console').each(function() { this.log.apply(this, args)})
     }
 
 // console.log("A squared: " + 2**4)
 
 // guard againsst wrapping twice and ending in endless recursion
-// if (!console.log.isWrapped) {
-//     var nativeLog = console.log
+if (!console.log.isWrapped) {
+    var nativeLog = console.log
 
-//     console.log = function() {
-//         nativeLog.apply(console, arguments)
-//         log.apply(undefined, arguments)
-//     }
+    console.log = function() {
+        nativeLog.apply(console, arguments)
+        log.apply(undefined, arguments)
+    }
 
-//     console.log.isWrapped = true
-// }
+    console.log.isWrapped = true
+}
 
 
 if ('serviceWorker' in navigator) {
@@ -107,5 +108,12 @@ if ('serviceWorker' in navigator) {
 document.addEventListener('DOMContentLoaded', function () {
   if (Notification.permission !== "granted")
     Notification.requestPermission();
+
+    // disable backspace navigation
+    // document.body.addEventListener("keydown", (evt) => {
+    //     if (evt.keyCode == 8) { // backspace
+    //         evt.preventDefault();
+    //     }
+    // });
 });
 
