@@ -73,19 +73,22 @@
 
     inputEventHandler(e) {
       // change status LED
-      console.log('input');
       this.updateStatus();
     }
 
     changeEventHandler(e) {
-      console.log('change');
       // save event
       this.commit();
     }
 
+    clickHandler(e) {
+      this.valueElement.setSelectionRange();
+    }
+
     gotFocus(e) {
       // select the whole content
-      this.valueElement.setSelectionRange(0, this.value.length);
+      // this.valueElement.setSelectionRange(0, this.value.length);
+      this.valueElement.select();
     }
 
     commit() {
@@ -118,7 +121,6 @@
     }
 
     updateType() {
-      console.log(this.key + ':', this.type);
       switch (this.type) {
         case 'number':
           this.valueElement.setAttribute('type', 'number');
@@ -129,6 +131,11 @@
         case 'string':
         default:
           break;
+      }
+
+      if (this.readonly) {
+        this.valueElement.setAttribute('readonly', 'readonly');
+        this.valueElement.setAttribute('disabled', 'disabled');
       }
     }
 
@@ -156,6 +163,14 @@
 
     set type(value) {
       this._type = value;
+      this.updateType();
+    }
+
+    get readonly() {
+      return this._readonly;
+    }
+    set readonly(value) {
+      this._readonly = value;
       this.updateType();
     }
   }

@@ -1,0 +1,39 @@
+<template id="drag-halo">
+    <style>
+    :host {
+      background-image: url(../src/client/media/drag.svg);
+    }
+    </style>
+    <script type="lively4script" data-name="initialize">
+    () => {
+      System.import("../src/client/morphic/dragging.js").then( function(dragging) {
+        $("body /deep/ drag-halo").off("mousedown").on("mousedown", function(e) {
+          dragging.start(e);
+
+          // attach mousemove handler to body only after mousedown occured
+          $("body").off("mousemove.drag").on("mousemove.drag", function(e) {
+            dragging.move(e);
+
+            // update position of halos on mousemove
+            HaloService.showHalos(window.that);
+          });
+        });
+
+        $("body").off("mouseup.drag").on("mouseup.drag", function(e) {
+          dragging.stop(e);
+          // detach mousemove handler from body
+          $("body").off("mousemove.drag");
+        });
+      });
+    }
+    </script>
+</template>
+<script class="registrationScript">
+// This ugly piece of code will be auto generated, when exporting a template. Puh.
+(function() {
+  var template = document.currentScript.ownerDocument.querySelector('#drag-halo');
+  var clone = document.importNode(template.content, true);
+
+  System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('drag-halo', clone); });
+})();
+</script>

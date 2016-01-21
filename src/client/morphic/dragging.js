@@ -20,14 +20,14 @@ export function deactivate() {
   $("body").off("mouseup", stop);
 }
 
-function start(e) {
-  dragTarget = events.getTargetNode(e);
+export function start(e) {
+  dragTarget = window.that;
   if (dragTarget) {
     initDraggingAtEvent(e);
   }
 }
 
-function move(e) {
+export function move(e) {
   if (dragTarget) {
     startOffsetDragging(e);
   }
@@ -36,7 +36,7 @@ function move(e) {
   }
 }
 
-function stop(e) {
+export function stop(e) {
   if (isDragging) {
     stopDraggingAtEvent(e);
   }

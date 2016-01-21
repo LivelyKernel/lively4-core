@@ -3,14 +3,16 @@
 <template xmlns="http://www.w3.org/1999/xhtml" id="lively-component-bin">
 <style>
 .container {
-  background-color: rgb(238, 238, 238);
+  background-color: white;
   width: 100%;
   height: 100%;
 }
 .tile-pane {
     list-style-type: none;
+    background-color: white;
     padding: 2px;
     margin: 0px;
+    height: 100%;
 }
 .tile {
   margin-top: 3px;
@@ -22,15 +24,22 @@
 }
 
 #search-field {
-  width: 95%;
+  width: 70%;
   max-width: 500px;
+  margin: 5px;
 }
 
 </style>
 <div class="container">
-  <input type="text" id="search-field"/>
-  <ul class="tile-pane">
-  </ul>
+  <label for="open-in-checkbox">
+    <input type="text" id="search-field" placeholder="search ..."/>
+    open in window
+  </label>
+  <input type="checkbox" id="open-in-checkbox" checked="true">
+  <lively-tab-view>
+    <ul class="tile-pane" title="Components"></ul>
+    <div title="Shapes">Hello</div>
+  </lively-tab-view>
 </div>
 </template>
 <script xmlns="http://www.w3.org/1999/xhtml" class="registrationScript">

@@ -1,7 +1,7 @@
 'use strict';
 
 var persistenceTimerInterval;
-var persistenceEnabled = true;
+var persistenceEnabled = false;
 var persistenceInterval = 5000;
 var persistenceTarget = 'http://lively4/';
 

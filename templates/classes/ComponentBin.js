@@ -5,12 +5,10 @@ import { statFile, loadFile } from '../../src/client/file-editor.js';
 import * as componentLoader from '../../src/client/morphic/component-loader.js';
 
 export default class ComponentBin extends Morph {
-  attachedCallback() {
-    console.log("ComponentBin attached!!!");
-
+  initialize() {
     this.loadComponentList().then((compList) => {
       this.createTiles(compList);
-      this.showTiles(this.componentList);
+      this.showTiles(this.sortAlphabetically(this.componentList));
     });
 
     this.searchField = this.getSubmorph("#search-field");
@@ -21,7 +19,9 @@ export default class ComponentBin extends Morph {
   loadComponentList() {
     return new Promise((resolve, reject) => {
       // ugly as sh*t!
-      var templatesUrl = window.location.hostname === "localhost" ? "http://localhost:" + window.location.port + "/lively4-core/templates/" : "https://lively4/templates/";
+      // var currentLocation = window.lively4Url || (window.location.hostname === "localhost" ? "http://localhost:" + window.location.port + "/" : "https://lively4/");
+      var currentLocation = window.location.hostname === "localhost" ? "http://localhost:" + window.location.port + "/lively4-core/" : "https://lively4/";
+      var templatesUrl = currentLocation + "templates/";
       statFile(templatesUrl).then(response => {
         try {
           // depending in the content type, the response is either parsed or not,
@@ -79,14 +79,25 @@ export default class ComponentBin extends Morph {
     });
   }
 
-  open(component) {
-    // called by a tile to add a component to the page
-    // this.parentElement.insertBefore(component, this.nextSibling);
-    document.body.insertBefore(component, document.body.firstChild);
+  inWindow() {
+    return this.getSubmorph("#open-in-checkbox").checked;
   }
 
   searchFieldChanged(evt) {
-    this.showTiles(this.findByName(this.searchField.value));
+    var subList = this.findByName(this.searchField.value);
+    subList = this.sortAlphabetically(subList);
+
+    this.showTiles(subList);
+  }
+
+  sortAlphabetically(compList) {
+    return compList.sort((a, b) => {
+      a = a.name.toLowerCase();
+      b = b.name.toLowerCase();
+      if (a < b) return -1;
+      if (a > b) return 1;
+      return 0;
+    });
   }
 
   findByName(string) {

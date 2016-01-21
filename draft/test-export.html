@@ -21,6 +21,9 @@
     #commandline {
         width: 800px;
     }
+    body {
+      min-height: 1000px;
+    }
 </style>
 
 
@@ -51,67 +54,53 @@
 
 <link rel="import" href="../src/client/babel-system.html" />
 
-<!-- <link rel="import" href="../templates/lively-component-bin.html" /> -->
-<link rel="import" href="../templates/lively-window.html" />
+<!-- <link rel="import" href="../templates/lively-window.html" /> -->
+<link rel="import" href="../templates/lively-halos.html" />
 
-<link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /><link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" /></head>
+<link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" />
+
+</head>
+
 <body>
 <h1>Lively 4 -- Bootstrapping Test Page</h1>
 
+<lively-halos></lively-halos>
 
-<lively-window>
-  <lively-component-bin></lively-component-bin>
-</lively-window>
+<!-- <lively-window> -->
+  <!-- <lively-object-editor></lively-object-editor> -->
+  <!-- <lively-component-bin></lively-component-bin> -->
+<!-- </lively-window> -->
 
-
-
-<p><input type="text" id="baseurl" value="https://github.lively4/repo/livelykernel/lively4-core/gh-pages/" class=""><script data-name="foo" type="lively4script">function foo() {
-  alert("hello");
-}</script></input></p>
-
-<button onclick="fileEditor.loadFile()">load</button>
-<button onclick="fileEditor.saveFile()">save</button>
-<input type="text" id="filename" value="README.md" />
-
-<!-- <button onclick="">reload service worker </button> -->
-
-<button onclick="githubAuth.challengeForAuth(Date.now(), function(token){
-    console.log('We are authenticated with the Token: ' + token)
-})">login</button>
-
-<button onclick="githubAuth.logout(); console.log('logged out of github')">logout</button>
-
-<div id="editor" class=" ace_editor ace-tm"></div>
 
 <pre id="console"></pre>
 <input type="text" id="commandline" value="" />
 
-<!-- BEGIN ACE -->
-<!-- We also have to load ace "locally", because loading it remotely ends in a race condition -->
 <script src="../src/external/ace.js" type="text/javascript" charset="utf-8"></script>
-<script>ace.edit("editor");</script>
-<!-- END ACE -->
-
 
 <script>
-    var lively4url =  ".." // or any abosolute path to lively4 ? Any idea for computeRoot() ? #JensLincke #OpenQuestion
-
-    //// #TODO The ace editor tries to be very clever, so it cannot be loaded through "import" at the moment
-    //// (e.g. AMD promise error)
-    // System.import(lively4url + "src/external/ace.js").then(function(){
-    //         ace.edit("editor")
-    // })
+    var lively4url =  "..";
 
     System.import(lively4url + "/src/client/load.js").then(function(){
         System.import("commandline.js")
         System.import(lively4url + "/src/client/debug-serviceworker.js")
     }).catch(function(err) { alert("load Lively4 failed")});
 
+    System.import(lively4url + "/src/client/shortcuts.js").then(m => {
+      m.registerShortcuts();
+    });
+
     var creator;
     System.import(lively4url + "/src/client/morphic/component-creator.js").then(m => {
         creator = m;
     }).catch(function(err) {
-        debugger; alert("load component-creator failed");
+        alert("load component-creator failed");
+    });
+
+    var loader;
+    System.import(lively4url + "/src/client/morphic/component-loader.js").then(m => {
+        loader = m;
+    }).catch(function(err) {
+        alert("load component-loader failed");
     });
 
 </script>
