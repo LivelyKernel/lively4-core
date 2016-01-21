@@ -6,8 +6,12 @@ import * as componentLoader from '../../src/client/morphic/component-loader.js';
 export default class ComponentBinTile extends Morph {
   initialize() {
     this.addEventListener('click', (evt) => {
-      var comp = this.createComponent();
-      this.componentBin.open(comp);
+      var comp = componentLoader.createComponent(this.htmlTag);
+      if (this.componentBin.inWindow()) {
+        componentLoader.openInWindow(comp);
+      } else {
+        componentLoader.openInBody(comp);
+      }
     });
   }
 
@@ -36,13 +40,5 @@ export default class ComponentBinTile extends Morph {
 
   setBin(componentBin) {
     this.componentBin = componentBin;
-  }
-
-  createComponent() {
-    var comp = document.createElement(this.htmlTag);
-    // this.componentBin.openInBody(comp);
-    // componentLoader.loadUnresolved();
-
-    return comp;
   }
 }

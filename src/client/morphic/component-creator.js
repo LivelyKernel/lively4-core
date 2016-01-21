@@ -1,4 +1,4 @@
-import { createRegistrationScript } from "./component-loader.js";
+import * as componentLoader from "./component-loader.js";
 
 var htmlBeautify;
 System.import("../src/external/beautify-html.js").then(function(obj){
@@ -37,7 +37,7 @@ export  function createTemplate(rootElement, name) {
 
 function saveTemplate(template) {
   var serializer = new XMLSerializer();
-  var registrationScript = createRegistrationScript(template.id);
+  var registrationScript = componentLoader.createRegistrationScript(template.id);
 
   var templateString = serializer.serializeToString(template);
   var regScriptString = serializer.serializeToString(registrationScript);
@@ -49,15 +49,14 @@ function saveTemplate(template) {
     completeHTML = htmlBeautify(completeHTML);
   }
 
-  var compBin = document.querySelector("lively-component-bin");
-  if (!compBin) {
-    // right now, we expect a component bin in the page
-    throw new Error("no component bin found in page");
-  }
+  // var compBin = document.querySelector("lively-component-bin");
+  // if (!compBin) {
+  //   // right now, we expect a component bin in the page
+  //   throw new Error("no component bin found in page");
+  // }
 
-  var editor = compBin.createComponent("editor");
-  compBin.openInWindow(editor).then((editor) => {
-    // editor.getSubmorph("juicy-ace-editor").editor.setValue(completeHTML);
+  var editor = componentLoader.createComponent("lively-editor");
+  componentLoader.openInWindow(editor).then(() => {
     editor.setURL(window.location.origin + "/lively4-core/templates/" + template.id + ".html");
     editor.setText(completeHTML);
   });

@@ -21,6 +21,9 @@
     #commandline {
         width: 800px;
     }
+    body {
+      min-height: 1000px;
+    }
 </style>
 
 
@@ -51,7 +54,7 @@
 
 <link rel="import" href="../src/client/babel-system.html" />
 
-<link rel="import" href="../templates/lively-window.html" />
+<!-- <link rel="import" href="../templates/lively-window.html" /> -->
 <link rel="import" href="../templates/lively-halos.html" />
 
 <link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" />
@@ -63,15 +66,16 @@
 
 <lively-halos></lively-halos>
 
-<lively-window>
-  <lively-component-bin></lively-component-bin>
-</lively-window>
+<!-- <lively-window> -->
+  <!-- <lively-object-editor></lively-object-editor> -->
+  <!-- <lively-component-bin></lively-component-bin> -->
+<!-- </lively-window> -->
 
 
 <pre id="console"></pre>
 <input type="text" id="commandline" value="" />
 
-
+<script src="../src/external/ace.js" type="text/javascript" charset="utf-8"></script>
 
 <script>
     var lively4url =  "..";
@@ -80,6 +84,10 @@
         System.import("commandline.js")
         System.import(lively4url + "/src/client/debug-serviceworker.js")
     }).catch(function(err) { alert("load Lively4 failed")});
+
+    System.import(lively4url + "/src/client/shortcuts.js").then(m => {
+      m.registerShortcuts();
+    });
 
     var creator;
     System.import(lively4url + "/src/client/morphic/component-creator.js").then(m => {
