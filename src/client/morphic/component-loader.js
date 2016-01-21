@@ -8,6 +8,9 @@ export function register(componentName, template, prototype) {
   var proto = prototype || Object.create(Morph.prototype);
 
   proto.createdCallback = function() {
+    if (persistence.isCurrentlyCloning())
+      return;
+    
     var root = this.createShadowRoot();
     // clone the template again, so when more elements are created,
     // they get their own elements from the template
@@ -21,9 +24,7 @@ export function register(componentName, template, prototype) {
     loadUnresolved(this, true).then((args) => {
       // call the initialize script, if it exists
       if (typeof this.initialize === "function") {
-        if (!persistence.isCurrentlyCloning()) {
-          this.initialize();
-        }
+        this.initialize();
       }
 
       this.dispatchEvent(new Event("created"));
@@ -102,6 +103,7 @@ export function loadByName(name) {
     var link = document.createElement("link");
     link.rel = "import";
     link.href = (window.lively4Url || "../") + "templates/" + name + ".html";
+    link.dataset.lively4Donotpersist = "all";
 
     document.head.appendChild(link);
 }
