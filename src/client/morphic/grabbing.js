@@ -22,15 +22,15 @@ export function deactivate() {
   $("body").off("mouseup", stop);
 }
 
-function start(e) {
+export function start(e) {
   if (isGrabbing) return;
-  grabTarget = events.getTargetNode(e);
+  grabTarget = window.that;
   if (grabTarget) {
     initGrabbingAtEvent(e);
   }
 }
 
-function move(e) {
+export function move(e) {
   if (grabTarget) {
     startOffsetGrabbing(e);
   }
@@ -39,7 +39,7 @@ function move(e) {
   }
 }
 
-function stop(e) {
+export function stop(e) {
   if (isGrabbing) {
     stopGrabbingAtEvent(e);
   }

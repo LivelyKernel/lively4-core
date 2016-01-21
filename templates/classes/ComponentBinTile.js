@@ -4,10 +4,15 @@ import Morph from './Morph.js';
 import * as componentLoader from '../../src/client/morphic/component-loader.js';
 
 export default class ComponentBinTile extends Morph {
-  attachedCallback() {
-    this.getSubmorph('img').onclick = (evt) => {
-      this.createComponent();
-    }
+  initialize() {
+    this.addEventListener('click', (evt) => {
+      var comp = componentLoader.createComponent(this.htmlTag);
+      if (this.componentBin.inWindow()) {
+        componentLoader.openInWindow(comp);
+      } else {
+        componentLoader.openInBody(comp);
+      }
+    });
   }
 
   configure(config) {
@@ -35,11 +40,5 @@ export default class ComponentBinTile extends Morph {
 
   setBin(componentBin) {
     this.componentBin = componentBin;
-  }
-
-  createComponent() {
-    var comp = document.createElement(this.htmlTag);
-    this.componentBin.open(comp);
-    componentLoader.loadUnresolved();
   }
 }

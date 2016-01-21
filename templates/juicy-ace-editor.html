@@ -11,6 +11,7 @@
         :host{
             display: block;
             position: relative;
+            min-height: 100px;
         }
         #juicy-ace-editor-container{
             width: 100%;
@@ -57,6 +58,8 @@
         var clone = thatDoc.importNode(template, true);
         this.container = clone.getElementById("juicy-ace-editor-container");
         shadowRoot.appendChild(clone);
+
+        this.dispatchEvent(new Event("created"));
     };
 
     // Fires when an instance was inserted into the document

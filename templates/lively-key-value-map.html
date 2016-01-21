@@ -35,6 +35,10 @@
           input.value = value;
           input.type = 'string';
         }
+
+        if (value.readonly) {
+          input.readonly = true;
+        }
       }
 
       this._map = map;

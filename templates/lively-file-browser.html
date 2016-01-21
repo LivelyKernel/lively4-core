@@ -1,0 +1,324 @@
+<link rel="import" href="../templates/lively-file-browser-item.html" />
+<template id="lively-file-browser">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    #container {
+      backgorund-color: black;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    nav {
+      display: table;
+      width: 100%;
+      border-bottom: 1px solid #ddd;
+      height: 40px;
+    }
+
+    nav .group {
+      display: table-cell;
+      padding: 1px 0 5px 0;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    nav .group:not(:first-child) {
+      padding-left: 10px;
+    }
+
+    nav .group.fluid {
+      width: 100%;
+    }
+
+    nav button {
+      border: 1px solid transparent;
+      background: transparent;
+      padding: 4px;
+      margin: 0;
+      display: inline-block;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    nav button svg {
+      width: 24px;
+      height: 24px;
+      display: block;
+    }
+
+    nav button svg path {
+      fill: #777777;
+    }
+
+    nav button:focus {
+      border-color: #cde6f7;
+      outline: none;
+    }
+
+    nav button:hover {
+      background: #cde6f7;
+      border-color: #cde6f7;
+      outline: none;
+    }
+
+    nav button:active {
+      background: #2a8dd4;
+      border-color: #2a8dd4;
+      outline: none;
+    }
+
+    nav button:hover svg path {
+      fill: #2a8dd4;
+    }
+
+    nav button:active svg path {
+      fill: #FFF;
+    }
+
+    nav input {
+      padding: 4px 5px;
+      border: 1px solid #aaa;
+      border-radius: 2px
+    }
+
+    nav input:focus {
+      border-color: #86A9C1;
+      background: #F0F9FF;
+      outline: none;
+    }
+
+    #location {
+      width: 100%;
+    }
+
+    #contents {
+      height: calc(100% - 40px);
+      width: 100%;
+      padding: 0;
+      margin: 0;
+      overflow: auto;
+
+      font-size: 85%;
+    }
+
+    #contents::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #contents::-webkit-scrollbar-thumb {
+      border-radius: 3px;
+      background-color: #aaa;
+    }
+
+    #contents::-webkit-scrollbar-button {
+      height: 2px;
+    }
+
+    #contents lively-file-browser-item {
+      display: block;
+      float: left;
+      width: 85px;
+      height: 105px;
+      margin: 4px;
+      border-radius: 8px;
+      padding: 5px;
+      cursor: default;
+    }
+
+    #contents lively-file-browser-item:hover {
+      background-color: #cde6f7;
+    }
+
+    #contents lively-file-browser-item:active {
+      background: #2a8dd4;
+      color: white;
+    }
+
+    #error {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: none;
+
+      font-size: 0.9rem;
+    }
+
+    #error.visible {
+      display: block;
+      padding: 4px;
+      background-color: #FFC8C8;
+    }
+
+  </style>
+  <div id="container">
+    <nav id="toolbar">
+      <div class="group">
+        <button id="up">
+          <svg viewBox="0 0 24 24">
+            <path class="content" d="M12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22M12,7L7,12H10V16H14V12H17L12,7Z" />
+          </svg>
+        </button>
+        <button id="home">
+          <svg viewBox="0 0 24 24">
+            <path class="content" d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" />
+          </svg>
+        </button>
+      </div>
+      <div class="group fluid">
+        <input name="location" id="location" />
+      </div>
+      <div class="group">
+        <button id="prefs">
+          <svg viewBox="0 0 24 24">
+            <path class="content" d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" />
+          </svg>
+        </button>
+      </div>
+    </nav>
+    <div id="contents"></div>
+    <div id="error"></div>
+  </div>
+</template>
+
+<script>
+  (function() {
+    'use strict';
+
+    class FileBrowser extends HTMLElement {
+      initialize() {
+        this.path = '/'
+
+        let location = this._query('#location')
+        location.addEventListener('keypress', (event) => {
+          if(event.keyCode !== 13)
+            return
+
+          this.path = event.target.value
+        })
+
+        this._query('#up').addEventListener('click', (event) => {
+          event.preventDefault()
+          this.path = this.path + '/..'
+        })
+
+        this._query('#home').addEventListener('click', (event) => {
+          event.preventDefault()
+          this.path = '/'
+        })
+      }
+
+      set path(value) {
+        let source = value.split(/\/+/).filter((str) => str.length > 0)
+        let target = []
+
+        if(value.charAt(0) !== '/')
+          target = target.concat(this._path)
+
+        for(let token of source) {
+          if(token === '..') {
+            target.pop()
+          } else if(target !== '' && target !== '.') {
+            target.push(token)
+          }
+        }
+
+        this._path = target
+        this._update()
+      }
+
+      get path() {
+        return '/' + this._path.join('/')
+      }
+
+      get url() {
+        return 'https://lively4' + this.path
+      }
+
+      _query(selector) {
+        return this.shadowRoot.querySelector(selector)
+      }
+
+      _update() {
+        let path = this.path
+
+        this._query('#location').value = path
+        this._query('#error').classList.remove('visible')
+
+        fetch('https://lively4' + path, {method: 'OPTIONS'}).then((response) => {
+          if(response.ok) {
+            return response.json()
+          } else {
+            return response.json()
+              .catch((err) => {
+                throw new Error(response.statusText + ' (' + response.status + ')')
+              })
+              .then((json) => {
+                if(json['message'])
+                  throw new Error(json['message'])
+                else
+                  throw new Error(response.statusText + ' (' + response.status + ')')
+              })
+          }
+        }).then((json) => {
+          if(Array.isArray(json['contents']) && json['type'] === 'directory') {
+            return json
+          } else {
+            console.log(json)
+            throw new Error('Invalid JSON response content. Not a directory?')
+          }
+        }).then((json) => {
+          let contents = this.shadowRoot.querySelector('#contents')
+
+          if(path !== this.path) {
+            console.log('Path already changed. Skip update.')
+            return
+          }
+
+          while(contents.firstChild)
+            contents.removeChild(contents.firstChild)
+
+          json['contents'].forEach((file) => {
+            let item = document.createElement('lively-file-browser-item')
+
+            item.type = file['type']
+            item.name = file['name']
+            item.size = file['size']
+
+            item.addEventListener('click', (event) => {
+              if(file['type'] === 'directory') {
+                this.path = this.path + '/' + file['name']
+              } else {
+                let event = new Event("file-select")
+                event.file = Object.assign({}, file, {
+                  path: path + '/' + file['name'],
+                  url: new URL('https://lively4' + path + '/' + file['name'])
+                })
+
+                this.dispatchEvent(event)
+              }
+            })
+
+            contents.appendChild(item)
+          })
+        }).catch((err) => {
+          console.error(err)
+          this._query('#error').innerHTML = err.toString()
+          this._query('#error').classList.add('visible')
+        })
+      }
+    }
+
+    let template = document.currentScript.ownerDocument.querySelector('#lively-file-browser');
+    let clone    = document.importNode(template.content, true);
+
+    System
+      .import('../src/client/morphic/component-loader.js')
+      .then((Loader) => {
+        Loader.register('lively-file-browser', clone, FileBrowser.prototype);
+      })
+  })();
+</script>
