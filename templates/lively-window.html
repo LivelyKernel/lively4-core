@@ -122,10 +122,10 @@
     position: relative;
     width: auto;
     height: auto;
-    margin: 1px;
-    padding-top: 1px;
+    margin: 0px; /* otherwise there is a scrollbar */
+    padding-top: 0px;
     flex: 1;
-    overflow: auto;
+    overflow: hidden; /* when the users wants scrollable content, they should do it themselves */
     background-color: white;
   }
   </style>
