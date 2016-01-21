@@ -6,15 +6,37 @@ System.import("../src/external/beautify-html.js").then(function(obj){
 });
 
 export function handle(el) {
-  name = window.prompt("What should be the name of the component you want to export?")
-  if (name) {
-    createTemplate(el, name);
+  // collect information about the component
+  var info = {};
+  info["name"] = window.prompt("unique name (may contain spaces):");
+  if (!info["name"]) {
+    return;
   }
+
+  // create html-tag by replacing spaces with '-' and lowercasing
+  info["html-tag"] = "lively-" + info["name"].replace(/\s/g, "-").toLowerCase();
+  info["description"] = window.prompt("Description:") || "";
+  info["author"] = window.prompt("Author:") || "";
+  var now = new Date();
+  // note that getMonth() returns value [0..11]
+  info["date-changed"] = now.getFullYear() + "-" + (now.getMonth() + 1) + "-" + now.getDate();
+
+  var categories = window.prompt("Categories (comma separated):") || "";
+  // split by ',' and remove leading and trailing white-spaces
+  info["categories"] = categories.split(",").map((cat) => { return cat.trim().toLowerCase(); });
+
+  var tags = window.prompt("Tags (comma separated):") || "";
+  // split by ',' and remove leading and trailing white-spaces
+  info["tags"] = tags.split(",").map((tag) => { return tag.trim().toLowerCase(); });
+
+  info["template"] = info["html-tag"] + ".html";
+
+  createTemplate(el, info);
 }
 
-export  function createTemplate(rootElement, name) {
+export  function createTemplate(rootElement, info) {
   var template = document.createElement("template");
-  template.id = "lively-" + name;
+  template.id = info["html-tag"];
 
   var fragment = template.content;
 
@@ -32,10 +54,10 @@ export  function createTemplate(rootElement, name) {
   var clone = rootElement.cloneNode(true);
   fragment.appendChild(clone);
 
-  return saveTemplate(template);
+  return saveTemplate(template, info);
 }
 
-function saveTemplate(template) {
+function saveTemplate(template, info) {
   var serializer = new XMLSerializer();
   var registrationScript = componentLoader.createRegistrationScript(template.id);
 
@@ -55,10 +77,16 @@ function saveTemplate(template) {
   //   throw new Error("no component bin found in page");
   // }
 
-  var editor = componentLoader.createComponent("lively-editor");
-  componentLoader.openInWindow(editor).then(() => {
-    editor.setURL(window.location.origin + "/lively4-core/templates/" + template.id + ".html");
-    editor.setText(completeHTML);
+  var templateEditor = componentLoader.createComponent("lively-editor");
+  componentLoader.openInWindow(templateEditor).then(() => {
+    templateEditor.setURL(window.location.origin + "/lively4-core/templates/" + template.id + ".html");
+    templateEditor.setText(completeHTML);
+  });
+
+  var jsonEditor = componentLoader.createComponent("lively-editor");
+  componentLoader.openInWindow(jsonEditor).then(() => {
+    jsonEditor.setURL(window.location.origin + "/lively4-core/templates/" + template.id + ".json");
+    jsonEditor.setText(JSON.stringify(info));
   });
 
   // ace.edit("editor").setValue(completeHTML);
@@ -113,11 +141,6 @@ export function unpackShadowDOM(subtreeRoot) {
   $(shadow.children).filter(":not(style)").each(function(idx) {
     subtreeRoot.appendChild(this);
   });
-
-  // remove all remaining child nodes
-  // $(shadow.children).each(function(idx) {
-  //   shadow.removeChild(this);
-  // });
 
   // We cannot remove the shadow root, so to make the content visible,
   // add a content node to the shadow dom. This should be equivalent to having
