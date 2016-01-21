@@ -130,6 +130,9 @@ function collectAppliedCssRules(rootElement) {
   var styles = document.styleSheets;
   for (var i = 0; i < styles.length; i++) {
     var styleSheet = styles[i];
+    if (!styleSheet.cssRules) {
+      continue;
+    }
     for (var j = 0; j < styleSheet.cssRules.length; j++) {
       var rule = styleSheet.cssRules[j];
       var selector = rule.selectorText;
