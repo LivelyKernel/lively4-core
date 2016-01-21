@@ -18,15 +18,37 @@ function hasParentTag(node) {
 function initialize(){
     resetPersistenceSessionStore();
 
+    var orphans = new Set();
+
+    $(window).unload(saveOnLeave);
+
     var observer = new MutationObserver((mutations, observer) => {
         mutations.forEach(record => {
             if (record.target.id == 'console'
                 || record.target.id == 'editor') return;
             var shouldSave = false;
             if (record.type == 'childList') {
-                var nodes = [...record.addedNodes].concat([...record.removedNodes]);
+                let addedNodes = [...record.addedNodes],
+                    removedNodes = [...record.removedNodes],
+                    nodes = addedNodes.concat(removedNodes);
+
+                //removed nodes never have a parent, so remeber orphans when they are created
+                for (let node of addedNodes) {
+                    if (hasParentTag(node) == false) {
+                        orphans.add(node);
+                    }
+                }
+                
                 shouldSave = !nodes.every(isDoNotPersistTag)
-                    && nodes.some(hasParentTag);
+                    && (addedNodes.length <= 0 || addedNodes.some(hasParentTag))
+                    && (removedNodes.length <= 0 || !removedNodes.every(n => orphans.has(n)))
+
+                //remove removed orphan nodes from orphan set
+                for (let node of removedNodes) {
+                    if (orphans.has(node) == true) {
+                        orphans.delete(node);
+                    }
+                }
             }
             else if (record.type == 'characterData') {
                 shouldSave = true;
@@ -43,6 +65,13 @@ function initialize(){
     }).observe(document, {childList: true, subtree: true, characterData: true, attributes: true});
 }
 
+function saveOnLeave() {
+    stopPersistenceTimerInterval();
+    if (isPersistenceEnabled() && sessionStorage["lively.scriptMutationsDetected"] === 'true') {
+        console.log("[persistence] window-closed mutations detected, saving DOM...")
+        saveDOM(false);
+    }
+};
 
 function getURL(){
     var baseurl = getPersistenceTarget();
@@ -125,7 +154,7 @@ export function isCurrentlyCloning() {
     return sessionStorage["lively.persistenceCurrentlyCloning"] === 'true';
 }
 
-function saveDOM() {
+function saveDOM(async = true) {
     var world;
     sessionStorage["lively.persistenceCurrentlyCloning"] = 'true';
     try {
@@ -147,15 +176,16 @@ function saveDOM() {
 
     resetPersistenceSessionStore();
 
-    writeFile(content);
+    writeFile(content, async);
 }
 
-function writeFile(content) {
+function writeFile(content, async = true) {
     var url = getURL()
     console.log("[persistence] save " + url)
     $.ajax({
         url: url,
         type: 'PUT',
+        async: async,
         data: content,
         success: text => {
             console.log("[persistence] file " + url + " written.")
