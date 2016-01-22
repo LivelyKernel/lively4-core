@@ -42,9 +42,10 @@ export default class Window extends Morph {
     document.body.addEventListener('mousemove', (e) => { this.windowMouseMove(e) });
     document.body.addEventListener('mouseup', (e) => { this.windowMouseUp(e); });
 
+    this.addEventListener('created', (e) => { this.focus() });
+
     this.created = true;
     this.render();
-    this.focus();
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
