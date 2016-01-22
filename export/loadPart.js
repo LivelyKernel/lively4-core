@@ -1,5 +1,5 @@
 loadTemplate(
-  prompt('Which template(s) do you want to load?', 'lively-halos (lively-key-value-map, lively-key-value-input)'),
+  prompt('Which template(s) do you want to load?', 'lively-halos'),
   prompt('Where does your server run?', 'http://localhost:8081/lively4-core/'));
 
 function loadTemplate (partNamesString, url) {
@@ -18,9 +18,15 @@ function loadTemplate (partNamesString, url) {
 }
 
 function templateNamesFromString(templateNamesString) {
-  return templateNamesString.match(/\((.*)\)/)[1].split(', ').map(function (templateNameString) {
-    return templateNameString.trim();
-  })
+  // allows loading (not mounting) additional modules with "temlateName (requiredTemplate1, requiredTemplate2)"
+  var templatesNamesMatches = templateNamesString.match(/\((.*)\)/);
+  if (templatesNamesMatches && templatesNamesMatches.length > 0) {
+    return [1].split(', ').map(function (templateNameString) {
+      return templateNameString.trim();
+    })
+  } else {
+    return [];
+  }
 }
 
 function loadPartsViaLinkTag (partNames) {
