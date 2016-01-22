@@ -116,6 +116,7 @@ export function loadByName(name) {
     var link = document.createElement("link");
     link.rel = "import";
     link.href = (window.lively4Url || "../") + "templates/" + name + ".html";
+    link.dataset.lively4Donotpersist = "all";
 
     document.head.appendChild(link);
 }

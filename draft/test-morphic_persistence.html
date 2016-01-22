@@ -23,11 +23,10 @@
 <script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
 
 <link rel="import" href="../src/client/babel-system.html">
-<link rel="import" href="../templates/lively-halos.html" />
 
 </head>
-<body>
-<h1>Lively 4 -- Bootstrapping Test Page
+<body><lively-persistence-settings data-persistence-target="http://localhost:8080/" data-persistence-interval="4000" data-persistence-enabled="true"></lively-persistence-settings>
+<h1>Lively 4 -- Persistence Test-page
   <script data-name="testx" type="lively4script">() => 1 < 2</script>
   <script data-name="testy" type="lively4script">() => this.testx()</script>
   <script data-name="testAdd" type="lively4script">(x, y) => x + y * 3</script>
@@ -37,6 +36,7 @@
 
 <lively-component-bin></lively-component-bin>
 <lively-halos></lively-halos>
+
 
 <pre id="console"></pre>
 <input type="text" id="commandline" value="">
@@ -57,6 +57,7 @@
     }).catch(function(err) { alert("load Lively4 failed")});
 
 </script>
+
 
 
 </body></html>
