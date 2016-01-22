@@ -40,7 +40,7 @@ export default class Window extends Morph {
     this.shadowRoot.querySelector('.window-title').addEventListener('mousedown', (e) => { this.titleMouseDown(e) });
 
     document.body.addEventListener('mousemove', (e) => { this.windowMouseMove(e) });
-    document.body.addEventListener('mouseup', (e) => { this.windowMouseUp(e) });
+    document.body.addEventListener('mouseup', (e) => { this.windowMouseUp(e); });
 
     this.created = true;
     this.render();

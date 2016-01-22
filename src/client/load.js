@@ -1,27 +1,23 @@
 
-    function log(/* varargs */) {
-        var c = $('#console')
-        if (c.length == 0)  return
 
-        Array.prototype.forEach.call(arguments, function(s) {
-           c.text(c.text() + "\n" + s)
-        })
-        c.scrollTop(c[0].scrollHeight);
+    function log(/* varargs */) {
+        var args = arguments
+        $('lively-console').each(function() { this.log.apply(this, args)})
     }
 
 // console.log("A squared: " + 2**4)
 
 // guard againsst wrapping twice and ending in endless recursion
-// if (!console.log.isWrapped) {
-//     var nativeLog = console.log
+if (!console.log.isWrapped) {
+    var nativeLog = console.log
 
-//     console.log = function() {
-//         nativeLog.apply(console, arguments)
-//         log.apply(undefined, arguments)
-//     }
+    console.log = function() {
+        nativeLog.apply(console, arguments)
+        log.apply(undefined, arguments)
+    }
 
-//     console.log.isWrapped = true
-// }
+    console.log.isWrapped = true
+}
 
 
 if ('serviceWorker' in navigator) {
@@ -110,7 +106,23 @@ if ('serviceWorker' in navigator) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  if (Notification.permission !== "granted")
-    Notification.requestPermission();
+    if (Notification.permission !== "granted")
+        Notification.requestPermission();
+
+
 });
 
+
+window.onbeforeunload = function(e) {
+  return 'Do you really want to leave this page?';
+};
+// disable backspace navigation
+    /*document.body.addEventListener("keydown", (evt) => {
+        if (evt.keyCode == 8) { // backspace
+            console.log("prevent  backspace navigation:")
+            // #TODO refactor this into a general lively error logging / notifications?
+            var n = new Notification("WARNING:", {body: "prevent  backspace navigation",});
+            setTimeout(n.close.bind(n), 3000);
+            evt.preventDefault();
+        }
+    });*/

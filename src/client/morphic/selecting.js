@@ -4,7 +4,7 @@ function handleSelect(e) {
   if (e.ctrlKey || e.metaKey) {
     onMagnify(e);
   } else {
-    if (window.that && !$(e.target).is("lively-toolbox") && !$(e.target).is("lively-halos")) {
+    if (window.that && !$(e.target).is("lively-halos")) {
       $(window.that).removeClass("red-border");
       hideHalos()
     }

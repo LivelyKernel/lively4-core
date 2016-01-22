@@ -8,6 +8,9 @@ export function register(componentName, template, prototype) {
   var proto = prototype || Object.create(Morph.prototype);
 
   proto.createdCallback = function() {
+    if (persistence.isCurrentlyCloning())
+      return;
+    
     var root = this.createShadowRoot();
     // clone the template again, so when more elements are created,
     // they get their own elements from the template
@@ -16,16 +19,14 @@ export function register(componentName, template, prototype) {
 
     // attach lively4scripts from the shadow root to this
     scriptManager.attachScriptsFromShadowDOM(this);
-    // call the initialize script, if it exists
-    if (typeof this.initialize === "function") {
-      if (!persistence.isCurrentlyCloning()) {
-        this.initialize();
-      }
-    }
 
     // load any unknown elements this component might introduce
     loadUnresolved(this, true).then((args) => {
-      console.log(this.nodeName + " created event");
+      // call the initialize script, if it exists
+      if (typeof this.initialize === "function") {
+        this.initialize();
+      }
+
       this.dispatchEvent(new Event("created"));
     });
 
@@ -102,6 +103,7 @@ export function loadByName(name) {
     var link = document.createElement("link");
     link.rel = "import";
     link.href = (window.lively4Url || "../") + "templates/" + name + ".html";
+    link.dataset.lively4Donotpersist = "all";
 
     document.head.appendChild(link);
 }
@@ -139,7 +141,7 @@ export function openInWindow(component) {
   // if it is currently unresolved
   var windowPromise = new Promise((resolve, reject) => {
     loadUnresolved(w, true).then(() => {
-      resolve(component);
+      resolve(w);
     });
   });
 
