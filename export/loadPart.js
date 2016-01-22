@@ -1,8 +1,8 @@
 loadTemplate(
-  prompt('Which template(s) do you want to load?', 'lively-halos'),
+  prompt('Which template(s) do you want to load?', 'lively-halos (lively-key-value-map, lively-key-value-input)'),
   prompt('Where does your server run?', 'http://localhost:8081/lively4-core/'));
 
-function loadTemplate (partName, url) {
+function loadTemplate (partNamesString, url) {
   lively4Url = url;
   loadJQuery();
   loadSystem();
@@ -10,16 +10,26 @@ function loadTemplate (partName, url) {
     loadBabel();
     loadLively4();
     loadAce();
-    loadPartViaLinkTag(partName);
+    var partName = partNamesString.split(' ')[0];
+    var requiredTemplates = [partName].concat(templateNamesFromString(partNamesString));
+    loadPartsViaLinkTag(requiredTemplates);
     mountPart(partName);
   }, 1000)
 }
 
-function loadPartViaLinkTag (partName) {
-  var linkTag = document.createElement('link');
-  linkTag.setAttribute('rel', 'import');
-  linkTag.setAttribute('href', lively4Url + 'templates/' + partName + '.html');
-  document.head.appendChild(linkTag);
+function templateNamesFromString(templateNamesString) {
+  return templateNamesString.match(/\((.*)\)/)[1].split(', ').map(function (templateNameString) {
+    return templateNameString.trim();
+  })
+}
+
+function loadPartsViaLinkTag (partNames) {
+  partNames.forEach(function (partName) {
+    var linkTag = document.createElement('link');
+    linkTag.setAttribute('rel', 'import');
+    linkTag.setAttribute('href', lively4Url + 'templates/' + partName + '.html');
+    document.head.appendChild(linkTag);
+  })
 }
 
 function mountPart(partIdentifierString) {
