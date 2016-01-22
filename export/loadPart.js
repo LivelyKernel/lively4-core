@@ -1,5 +1,5 @@
 loadTemplate(
-  prompt('Which template do you want to load?', 'lively-toolbox'),
+  prompt('Which template(s) do you want to load?', 'lively-halos'),
   prompt('Where does your server run?', 'http://localhost:8081/lively4-core/'));
 
 function loadTemplate (partName, url) {
@@ -47,7 +47,7 @@ function loadSystem () {
   $.get(lively4Url + 'src/external/system.src.js', function(data) {
     data = data.replace(
       'var baseURIObj = new URL(baseURI);',
-      'var baseURIObj = new URL("' + lively4Url + '");' );
+      'var baseURIObj = new URL("' + lively4Url + 'draft/");' );
     var systemScriptNode = document.createElement('script');
     systemScriptNode.setAttribute('type', 'text/javascript');
     systemScriptNode.innerHTML = data;
