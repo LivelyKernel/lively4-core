@@ -20,7 +20,7 @@ function bootstrap() {(function(__global) {
     }
     return -1;
   };
-  
+
   var defineProperty;
   (function () {
     try {
@@ -54,7 +54,7 @@ function bootstrap() {(function(__global) {
     else {
       newErr = err + '\n\t' + msg;
     }
-      
+
     return newErr;
   }
 
@@ -629,7 +629,7 @@ function logloads(loads) {
     var loader = linkSet.loader;
     var requests;
 
-    checkError: 
+    checkError:
     if (load) {
       if (linkSet.loads[0].name == load.name) {
         exc = addToError(exc, 'Error loading ' + load.name);
@@ -1189,10 +1189,10 @@ var __exec;
 
     return load.source
         // adds the sourceURL comment if not already present
-        + (load.source.substr(lastLineIndex, 15) != '\n//# sourceURL=' 
+        + (load.source.substr(lastLineIndex, 15) != '\n//# sourceURL='
           ? '\n//# sourceURL=' + load.address + (load.metadata.sourceMap ? '!transpiled' : '') : '')
         // add sourceMappingURL if load.metadata.sourceMap is set
-        + (load.metadata.sourceMap && hasBtoa && 
+        + (load.metadata.sourceMap && hasBtoa &&
           '\n//# sourceMappingURL=data:application/json;base64,' + btoa(unescape(encodeURIComponent(load.metadata.sourceMap))) || '')
   }
 
@@ -1378,12 +1378,13 @@ hookConstructor(function(constructor) {
   defines the `normalizeSync` function and normalizes everything into
   a URL.
 
-  The final normalization 
+  The final normalization
  */
 hook('normalize', function() {
   return function(name, parentName) {
     // relative URL-normalization
     if (name[0] == '.' || name[0] == '/')
+      // return new URL(name, parentName || (baseURIObj.href + "/")).href
       return new URL(name, parentName || baseURIObj).href;
     return name;
   };
@@ -1391,7 +1392,7 @@ hook('normalize', function() {
 
 /*
   __useDefault
-  
+
   When a module object looks like:
   newModule(
     __useDefault: true,
@@ -1490,8 +1491,8 @@ SystemJSLoader.prototype.config = function(cfg) {
         // if a package main, revert it
         var pkgMatch = '';
         for (var pkg in this.packages) {
-          if (normalized.substr(0, pkg.length) == pkg 
-              && (!normalized[pkg.length] || normalized[pkg.length] == '/') 
+          if (normalized.substr(0, pkg.length) == pkg
+              && (!normalized[pkg.length] || normalized[pkg.length] == '/')
               && pkgMatch.split('/').length < pkg.split('/').length)
             pkgMatch = pkg;
         }
@@ -1671,7 +1672,7 @@ SystemJSLoader.prototype.config = function(cfg) {
  *
  *
  * The code here replicates the ES6 linking groups algorithm to ensure that
- * circular ES6 compiled into System.register can work alongside circular AMD 
+ * circular ES6 compiled into System.register can work alongside circular AMD
  * and CommonJS, identically to the actual ES6 loader.
  *
  */
@@ -1691,7 +1692,7 @@ SystemJSLoader.prototype.config = function(cfg) {
    *    see https://github.com/ModuleLoader/es6-module-loader/wiki/System.register-Explained
    *
    * 2. System.registerDynamic for dynamic modules (3-4 params) - System.registerDynamic([name, ]deps, executingRequire, execute)
-   * the true or false statement 
+   * the true or false statement
    *
    * this extension implements the linking algorithm for the two variations identical to the spec
    * allowing compiled ES6 circular references to work alongside AMD and CJS circular references.
@@ -1704,13 +1705,13 @@ SystemJSLoader.prototype.config = function(cfg) {
 
     // named register
     if (name) {
-      // ideally wouldn't apply map config to bundle names but 
+      // ideally wouldn't apply map config to bundle names but
       // dependencies go through map regardless so we can't restrict
       // could reconsider in shift to new spec
       name = (loader.normalizeSync || loader.normalize).call(loader, name);
       register.name = name;
       if (!(name in loader.defined))
-        loader.defined[name] = register; 
+        loader.defined[name] = register;
     }
     // anonymous register
     else {
@@ -1757,7 +1758,7 @@ SystemJSLoader.prototype.config = function(cfg) {
    * Registry side table - loader.defined
    * Registry Entry Contains:
    *    - name
-   *    - deps 
+   *    - deps
    *    - declare for declarative modules
    *    - execute for dynamic modules, different to declarative execute on module
    *    - executingRequire indicates require drives execution for circularity of dynamic modules
@@ -1774,7 +1775,7 @@ SystemJSLoader.prototype.config = function(cfg) {
    *
    *    For dynamic we track the es module with:
    *    - esModule actual es module value
-   *      
+   *
    *    Then for declarative only we track dynamic bindings with the 'module' records:
    *      - name
    *      - exports
@@ -1824,17 +1825,17 @@ SystemJSLoader.prototype.config = function(cfg) {
     for (var i = 0, l = entry.normalizedDeps.length; i < l; i++) {
       var depName = entry.normalizedDeps[i];
       var depEntry = loader.defined[depName];
-      
+
       // not in the registry means already linked / ES6
       if (!depEntry || depEntry.evaluated)
         continue;
-      
+
       // now we know the entry is in our unlinked linkage group
       var depGroupIndex = entry.groupIndex + (depEntry.declarative != entry.declarative);
 
       // the group index of an entry is always the maximum
       if (depEntry.groupIndex === undefined || depEntry.groupIndex < depGroupIndex) {
-        
+
         // if already in a group, remove from the old group
         if (depEntry.groupIndex !== undefined) {
           groups[depEntry.groupIndex].splice(indexOf.call(groups[depEntry.groupIndex], depEntry), 1);
@@ -1876,7 +1877,7 @@ SystemJSLoader.prototype.config = function(cfg) {
         else
           linkDynamicModule(entry, loader);
       }
-      curGroupDeclarative = !curGroupDeclarative; 
+      curGroupDeclarative = !curGroupDeclarative;
     }
   }
 
@@ -1928,7 +1929,7 @@ SystemJSLoader.prototype.config = function(cfg) {
       module.locked = false;
       return value;
     });
-    
+
     module.setters = declaration.setters;
     module.execute = declaration.execute;
 
@@ -1971,7 +1972,7 @@ SystemJSLoader.prototype.config = function(cfg) {
       else {
         module.dependencies.push(null);
       }
-      
+
       // run setters for all entries with the matching dependency name
       var originalIndices = entry.originalIndices[i];
       for (var j = 0, len = originalIndices.length; j < len; ++j) {
@@ -1997,7 +1998,7 @@ SystemJSLoader.prototype.config = function(cfg) {
     else {
       if (entry.declarative)
         ensureEvaluated(name, [], loader);
-    
+
       else if (!entry.evaluated)
         linkDynamicModule(entry, loader);
 
@@ -2006,7 +2007,7 @@ SystemJSLoader.prototype.config = function(cfg) {
 
     if ((!entry || entry.declarative) && exports && exports.__useDefault)
       return exports['default'];
-    
+
     return exports;
   }
 
@@ -2039,7 +2040,7 @@ SystemJSLoader.prototype.config = function(cfg) {
       }
       throw new TypeError('Module ' + name + ' not declared as a dependency.');
     }, exports, module);
-    
+
     if (output)
       module.exports = output;
 
@@ -2081,7 +2082,7 @@ SystemJSLoader.prototype.config = function(cfg) {
    *  (unless one is a circular dependency already in the list of seen
    *  modules, in which case we execute it)
    *
-   * Then we evaluate the module itself depth-first left to right 
+   * Then we evaluate the module itself depth-first left to right
    * execution to match ES6 modules
    */
   function ensureEvaluated(moduleName, seen, loader) {
@@ -2129,17 +2130,17 @@ SystemJSLoader.prototype.config = function(cfg) {
         load.metadata.format = 'defined';
         return '';
       }
-      
+
       // this is the synchronous chain for onScriptLoad
       anonRegister = null;
       calledRegister = false;
-      
+
       if (load.metadata.format == 'register')
         load.metadata.scriptLoad = true;
 
       // NB remove when "deps " is deprecated
       load.metadata.deps = load.metadata.deps || [];
-      
+
       return fetch.call(this, load);
     };
   });
@@ -2221,9 +2222,9 @@ SystemJSLoader.prototype.config = function(cfg) {
 
       // place this module onto defined for circular references
       loader.defined[load.name] = entry;
-      
+
       var grouped = group(entry.deps);
-      
+
       entry.deps = grouped.names;
       entry.originalIndices = grouped.indices;
       entry.name = load.name;
@@ -2240,7 +2241,7 @@ SystemJSLoader.prototype.config = function(cfg) {
         return {
           deps: entry.deps,
           execute: function() {
-            // recursively ensure that the module and all its 
+            // recursively ensure that the module and all its
             // dependencies are linked (with dependency group handling)
             link(load.name, loader);
 
@@ -2376,8 +2377,8 @@ hook('fetch', function(fetch) {
 
     // A global with exports, no globals and no deps
     // can be loaded via a script tag
-    if (load.metadata.format == 'global' 
-        && load.metadata.exports && !load.metadata.globals 
+    if (load.metadata.format == 'global'
+        && load.metadata.exports && !load.metadata.globals
         && (!load.metadata.deps || load.metadata.deps.length == 0))
       load.metadata.scriptLoad = true;
 
@@ -2423,7 +2424,7 @@ hook('instantiate', function(instantiate) {
           for (var g in load.metadata.globals)
             globals[g] = require(load.metadata.globals[g]);
         }
-        
+
         var exportName = load.metadata.exports;
 
         if (exportName)
@@ -2480,7 +2481,7 @@ hookConstructor(function(constructor) {
       prepareGlobal: function(moduleName, exportName, globals) {
         // disable module detection
         var curDefine = __global.define;
-        
+
         __global.define = undefined;
         __global.exports = undefined;
         if (__global.module && __global.module.exports)
@@ -2677,7 +2678,7 @@ hookConstructor(function(constructor) {
     var cjsRequirePost = "\\s*\\(\\s*(\"([^\"]+)\"|'([^']+)')\\s*\\)";
     var fnBracketRegEx = /\(([^\)]*)\)/;
     var wsRegEx = /^\s+|\s+$/g;
-    
+
     var requireRegExs = {};
 
     function getCJSDeps(source, requireIndex) {
@@ -2759,9 +2760,9 @@ hookConstructor(function(constructor) {
 
       // remove system dependencies
       var requireIndex, exportsIndex, moduleIndex;
-      
+
       if ((requireIndex = indexOf.call(deps, 'require')) != -1) {
-        
+
         deps.splice(requireIndex, 1);
 
         // only trace cjs requires for non-named
@@ -2772,7 +2773,7 @@ hookConstructor(function(constructor) {
 
       if ((exportsIndex = indexOf.call(deps, 'exports')) != -1)
         deps.splice(exportsIndex, 1);
-      
+
       if ((moduleIndex = indexOf.call(deps, 'module')) != -1)
         deps.splice(moduleIndex, 1);
 
@@ -2792,10 +2793,10 @@ hookConstructor(function(constructor) {
           // add back in system dependencies
           if (moduleIndex != -1)
             depValues.splice(moduleIndex, 0, module);
-          
+
           if (exportsIndex != -1)
             depValues.splice(exportsIndex, 0, exports);
-          
+
           if (requireIndex != -1) {
             function contextualRequire(names, callback, errback) {
               if (typeof names == 'string' && typeof callback != 'function')
@@ -2838,7 +2839,7 @@ hookConstructor(function(constructor) {
       }
       // named define
       else {
-        // if we don't have any other defines, 
+        // if we don't have any other defines,
         // then let this be an anonymous define
         // this is just to support single modules of the form:
         // define('jquery')
@@ -2946,10 +2947,10 @@ hookConstructor(function(constructor) {
   hook('instantiate', function(instantiate) {
     return function(load) {
       var loader = this;
-      
+
       if (load.metadata.format == 'amd' || !load.metadata.format && load.source.match(amdRegEx)) {
         load.metadata.format = 'amd';
-        
+
         if (!loader.builder && loader.execute !== false) {
           var removeDefine = this.get('@@amd-helpers').createDefine(loader);
 
@@ -2986,7 +2987,7 @@ hookConstructor(function(constructor) {
 })();
 /*
   SystemJS map support
-  
+
   Provides map configuration through
     System.map['jquery'] = 'some/module/map'
 
@@ -3024,13 +3025,13 @@ hook('normalize', function(normalize) {
       if (bestMatch)
         name = this.map[bestMatch] + name.substr(bestMatch.length);
     }
-    
+
     return normalize.call(this, name, parentName, parentAddress);
   };
 });
 /*
  * Paths extension
- * 
+ *
  * Applies paths and normalizes to a full URL
  */
 hook('normalize', function(normalize) {
@@ -3118,7 +3119,7 @@ hook('normalize', function(normalize) {
  *
  * In addition, the following meta properties will be allowed to be package
  * -relative as well in the package meta config:
- *   
+ *
  *   - loader
  *   - alias
  *
@@ -3141,7 +3142,7 @@ hook('normalize', function(normalize) {
 
   function applyMap(map, name) {
     var bestMatch, bestMatchLength = 0;
-    
+
     for (var p in map) {
       if (name.substr(0, p.length) == p && (name.length == p.length || name[p.length] == '/')) {
         var curMatchLength = p.split('/').length;
@@ -3186,8 +3187,8 @@ hook('normalize', function(normalize) {
     return function(name, parentName) {
       // apply contextual package map first
       if (parentName) {
-        var parentPackage = getPackage.call(this, parentName) || 
-            this.defaultJSExtensions && parentName.substr(parentName.length - 3, 3) == '.js' && 
+        var parentPackage = getPackage.call(this, parentName) ||
+            this.defaultJSExtensions && parentName.substr(parentName.length - 3, 3) == '.js' &&
             getPackage.call(this, parentName.substr(0, parentName.length - 3));
       }
 
@@ -3270,7 +3271,7 @@ hook('normalize', function(normalize) {
           return normalized;
         });
       }
-      
+
       // add back defaultJSExtension if not a package
       if (defaultJSExtension)
         normalized += '.js';
@@ -3297,7 +3298,7 @@ hook('normalize', function(normalize) {
         var pkgName = getPackage.call(loader, load.name);
         if (pkgName) {
           var pkg = loader.packages[pkgName];
-          
+
           // format
           if (pkg.format)
             load.metadata.format = load.metadata.format || pkg.format;
@@ -3340,7 +3341,7 @@ hook('normalize', function(normalize) {
               meta.alias = pkgName + meta.alias.substr(1);
             if (meta.loader && meta.loader.substr(0, 2) == './')
               meta.loader = pkgName + meta.loader.substr(1);
-            
+
             extendMeta(load.metadata, meta);
           }
         }
@@ -3611,16 +3612,16 @@ hook('normalize', function(normalize) {
  *   'my/module': { deps: ['jquery'] }
  *   'my/*': { format: 'amd' }
  * });
- * 
+ *
  * Which in turn populates loader.metadata.
  *
  * load.metadata.deps and load.metadata.format will then be set
  * for 'my/module'
  *
  * The same meta could be set with a my/module.js file containing:
- * 
+ *
  * my/module.js
- *   "format amd"; 
+ *   "format amd";
  *   "deps[] jquery";
  *   "globals.some value"
  *   console.log('this is my/module');
@@ -3636,7 +3637,7 @@ hook('normalize', function(normalize) {
  * loader.meta({ './app': { format: 'cjs' } });
  *
  * Instead of needing to set against the absolute URL (https://site.com/app.js)
- * 
+ *
  */
 
 (function() {
@@ -3711,7 +3712,7 @@ hook('normalize', function(normalize) {
           var firstChar = curPart.substr(0, 1);
           if (curPart.substr(len - 1, 1) == ';')
             len--;
-        
+
           if (firstChar != '"' && firstChar != "'")
             continue;
 
@@ -3737,14 +3738,14 @@ hook('normalize', function(normalize) {
           }
         }
       }
-      
+
       return translate.call(this, load);
     };
   });
 })();/*
   System bundles
 
-  Allows a bundle module to be specified which will be dynamically 
+  Allows a bundle module to be specified which will be dynamically
   loaded before trying to load a given module.
 
   For example:
@@ -3797,7 +3798,7 @@ hook('normalize', function(normalize) {
       var loader = this;
       if (loader.trace)
         return fetch.call(loader, load);
-      
+
       // if already defined, no need to load a bundle
       if (load.name in loader.defined)
         return '';
@@ -3820,10 +3821,10 @@ hook('normalize', function(normalize) {
 })();
 /*
  * Dependency Tree Cache
- * 
- * Allows a build to pre-populate a dependency trace tree on the loader of 
+ *
+ * Allows a build to pre-populate a dependency trace tree on the loader of
  * the expected dependency tree, to be loaded upfront when requesting the
- * module, avoinding the n round trips latency of module loading, where 
+ * module, avoinding the n round trips latency of module loading, where
  * n is the dependency tree depth.
  *
  * eg:
@@ -3832,8 +3833,8 @@ hook('normalize', function(normalize) {
  *  'normalized': ['another'],
  *  'deps': ['tree']
  * };
- * 
- * System.import('app') 
+ *
+ * System.import('app')
  * // simultaneously starts loading all of:
  * // 'normalized', 'deps', 'another', 'tree'
  * // before "app" source is even loaded
@@ -3860,7 +3861,7 @@ hook('normalize', function(normalize) {
     };
   });
 })();
-  
+
 /*
  * Conditions Extension
  *
@@ -3868,13 +3869,13 @@ hook('normalize', function(normalize) {
  *
  *     import $ from 'jquery/#{browser}';
  *
- *   Will first load the module 'browser' via `System.import('browser')` and 
+ *   Will first load the module 'browser' via `System.import('browser')` and
  *   take the default export of that module.
  *   If the default export is not a string, an error is thrown.
- * 
+ *
  *   We then substitute the string into the require to get the conditional resolution
  *   enabling environment-specific variations like:
- * 
+ *
  *     import $ from 'jquery/ie'
  *     import $ from 'jquery/firefox'
  *     import $ from 'jquery/chrome'
@@ -3920,7 +3921,7 @@ hook('normalize', function(normalize) {
       var conditionalMatch = name.match(conditionalRegEx);
       if (conditionalMatch) {
         var substitution = conditionalMatch[0][1] != '?';
-        
+
         var conditionModule = substitution ? conditionalMatch[0].substr(2, conditionalMatch[0].length - 3) : conditionalMatch[0].substr(2);
 
         if (conditionModule[0] == '.' || conditionModule.indexOf('/') != -1)
@@ -3938,7 +3939,7 @@ hook('normalize', function(normalize) {
           conditionModule = conditionModule.substr(1);
 
         var pluginLoader = loader.pluginLoader || loader;
-        
+
         return pluginLoader['import'](conditionModule, parentName, parentAddress)
         .then(function(m) {
           if (conditionExport === undefined) {
@@ -3948,7 +3949,7 @@ hook('normalize', function(normalize) {
             else
               return m['default'];
           }
-          
+
           return readMemberExpression(conditionExport, m);
         })
         .then(function(conditionValue) {
