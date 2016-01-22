@@ -2,15 +2,21 @@ import * as scriptManager from  "../script-manager.js";
 import * as persistence from  "../persistence.js";
 import Morph from "../../../templates/classes/Morph.js";
 
+// save template names, where loading is triggered
+export var loadingTriggered = [];
+
 // this function registers a custom element,
 // it is called from the bootstap code in the component templates
 export function register(componentName, template, prototype) {
   var proto = prototype || Object.create(Morph.prototype);
 
+  // TODO: we should check here, if the prototype already has a createdCallback,
+  // if that's the case, we should wrap it and call it in our createdCallback
   proto.createdCallback = function() {
-    if (persistence.isCurrentlyCloning())
+    if (persistence.isCurrentlyCloning()) {
       return;
-    
+    }
+
     var root = this.createShadowRoot();
     // clone the template again, so when more elements are created,
     // they get their own elements from the template
@@ -77,7 +83,7 @@ export function loadUnresolved(lookupRoot, deep) {
   var promises = unresolved.filter((el) => {
     // filter for unique tag names
     var name = el.nodeName.toLowerCase();
-    return !unique.has(name) && unique.add(name);
+    return !unique.has(name) && unique.add(name) && (loadingTriggered.indexOf(name) < 0);
   }).map((el) => {
     // create a promise that resolves once el is completely created
     var createdPromise = new Promise((resolve, reject) => {
@@ -100,10 +106,10 @@ export function loadUnresolved(lookupRoot, deep) {
 
 // this function loads a component by adding a link tag to the head
 export function loadByName(name) {
+    loadingTriggered.push(name);
     var link = document.createElement("link");
     link.rel = "import";
     link.href = (window.lively4Url || "../") + "templates/" + name + ".html";
-    link.dataset.lively4Donotpersist = "all";
 
     document.head.appendChild(link);
 }
@@ -124,7 +130,9 @@ export function openInBody(component) {
 
   // adding it here might result in flickering, since it loads afterwards
   document.body.insertBefore(component, document.body.firstChild);
-  loadByName(component.nodeName.toLowerCase());
+  // TODO: should be replace by loadUnresolved!!
+  // loadByName(component.nodeName.toLowerCase());
+  loadUnresolved();
 
   return compPromise;
 }
