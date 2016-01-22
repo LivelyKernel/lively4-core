@@ -1384,8 +1384,8 @@ hook('normalize', function() {
   return function(name, parentName) {
     // relative URL-normalization
     if (name[0] == '.' || name[0] == '/')
-      return new URL(name, parentName || (baseURIObj.href + "/")).href
-      // return new URL(name, parentName || baseURIObj).href;
+      // return new URL(name, parentName || (baseURIObj.href + "/")).href
+      return new URL(name, parentName || baseURIObj).href;
     return name;
   };
 });
