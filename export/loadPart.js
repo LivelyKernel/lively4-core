@@ -1,6 +1,6 @@
 loadTemplate(
-  prompt('Which template do you want to load?', 'lively-halos'),
-  prompt('Where does your server run?', 'http://localhost:8081/'));
+  prompt('Which template do you want to load?', 'lively-toolbox'),
+  prompt('Where does your server run?', 'http://localhost:8081/lively4-core/'));
 
 function loadTemplate (partName, url) {
   lively4Url = url;
