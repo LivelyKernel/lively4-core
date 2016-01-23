@@ -3,7 +3,7 @@ import * as persistence from  "../persistence.js";
 import Morph from "../../../templates/classes/Morph.js";
 
 // save template names, where loading is triggered
-export var loadingTriggered = [];
+export var loadingPromises = {};
 
 // this function registers a custom element,
 // it is called from the bootstap code in the component templates
@@ -83,8 +83,14 @@ export function loadUnresolved(lookupRoot, deep) {
   var promises = unresolved.filter((el) => {
     // filter for unique tag names
     var name = el.nodeName.toLowerCase();
-    return !unique.has(name) && unique.add(name) && (loadingTriggered.indexOf(name) < 0);
+    return !unique.has(name) && unique.add(name);
   }).map((el) => {
+    var name = el.nodeName.toLowerCase();
+    if (loadingPromises[name]) {
+      // the loading was already triggered
+      return loadingPromises[name];
+    }
+
     // create a promise that resolves once el is completely created
     var createdPromise = new Promise((resolve, reject) => {
       el.addEventListener("created", (evt) => {
@@ -93,8 +99,9 @@ export function loadUnresolved(lookupRoot, deep) {
       });
     });
 
-    // thigger loading the template of the unresolved element
-    loadByName(el.nodeName.toLowerCase());
+    // trigger loading the template of the unresolved element
+    loadingPromises[name] = createdPromise;
+    loadByName(name);
 
     return createdPromise;
   });
@@ -106,7 +113,6 @@ export function loadUnresolved(lookupRoot, deep) {
 
 // this function loads a component by adding a link tag to the head
 export function loadByName(name) {
-    loadingTriggered.push(name);
     var link = document.createElement("link");
     link.rel = "import";
     link.href = (window.lively4Url || "../") + "templates/" + name + ".html";
