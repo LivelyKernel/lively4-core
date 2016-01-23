@@ -1,5 +1,7 @@
 'use strict';
 
+import * as preferences from './preferences.js';
+
 var persistenceTimerInterval;
 var persistenceEnabled = false;
 var persistenceInterval = 5000;
@@ -35,6 +37,7 @@ function checkRemovedNodes(nodes) {
 
 function initialize(){
     resetPersistenceSessionStore();
+    loadPreferences();
 
     var orphans = new Set();
 
@@ -76,6 +79,12 @@ function initialize(){
         })
     });
     observer.observe(document, {childList: true, subtree: true, characterData: true, attributes: true});
+}
+
+function loadPreferences() {
+    persistenceInterval = parseInt(preferences.read('persistenceInterval'));
+    persistenceTarget = preferences.read('persistenceTarget');
+    persistenceEnabled = preferences.read('persistenceEnabled') == 'true';
 }
 
 function saveOnLeave() {
@@ -128,10 +137,7 @@ export function setPersistenceInterval(interval) {
     if (interval == persistenceInterval) return;
 
     persistenceInterval = interval;
-
-    let evt = $.Event('persistenceInterval');
-    evt.persistenceInterval = interval;
-    $(window).trigger(evt);
+    preferences.write('persistenceInterval', interval);
 
     restartPersistenceTimerInterval();
 }
@@ -161,10 +167,7 @@ export function setPersistenceEnabled(enabled) {
     if (enabled == persistenceEnabled) return;
 
     persistenceEnabled = enabled;
-
-    let evt = $.Event('persistenceEnabled');
-    evt.persistenceEnabled = enabled;
-    $(window).trigger(evt);
+    preferences.write('persistenceEnabled', enabled);
 }
 
 export function getPersistenceTarget() {
@@ -175,17 +178,14 @@ export function setPersistenceTarget(target) {
     if (target == persistenceTarget) return;
 
     persistenceTarget = target;
-
-    let evt = $.Event('persistenceTarget');
-    evt.persistenceTarget = target;
-    $(window).trigger(evt);
+    preferences.write('persistenceTarget', target);
 }
 
 export function isCurrentlyCloning() {
     return sessionStorage["lively.persistenceCurrentlyCloning"] === 'true';
 }
 
-function saveDOM(async = true) {
+export function saveDOM(async = true) {
     var world;
     sessionStorage["lively.persistenceCurrentlyCloning"] = 'true';
     try {
