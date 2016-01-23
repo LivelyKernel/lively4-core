@@ -16,14 +16,14 @@ function hasDoNotPersistTag(node, checkForChildrenValueToo = false) {
 }
 
 function hasParentTag(node) {
-    return node.parentElement != null;
+    return node.parentNode != null;
 }
 
 function checkAddedNodes(nodes, isParent = false) {
     let parents = new Set();
     for (let node of nodes) {
         if (!hasDoNotPersistTag(node, isParent) && hasParentTag(node)) {
-            parents.add(node.parentElement)
+            parents.add(node.parentNode);
         }
     }
     if (parents.size == 0) return false;
