@@ -94,7 +94,6 @@ function saveTemplate(template, info) {
   return completeHTML;
 }
 
-
 export function packShadowDOM(subtreeRoot) {
   var shadow;
   // if there is a shadow root already,

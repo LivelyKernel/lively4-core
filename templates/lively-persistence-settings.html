@@ -26,12 +26,39 @@
     var persistence;
     var that = this;
 
+    $(window).on('persistenceEnabled', function (e) {
+      if (that.dataset.persistenceEnabled == e.persistenceEnabled) return;
+
+      that.dataset.persistenceEnabled = e.persistenceEnabled;
+    });
+
+    $(window).on('persistenceInterval', function (e) {
+      if (that.dataset.persistenceInterval == e.persistenceInterval) return;
+
+      that.dataset.persistenceInterval = e.persistenceInterval;
+    });
+
+    $(window).on('persistenceTarget', function (e) {
+      if (that.dataset.persistenceTarget == e.persistenceTarget) return;
+
+      that.dataset.persistenceTarget = e.persistenceTarget;
+    });
+
     System.import('../src/client/persistence.js').then(function(module) {
       persistence = module;
       afterPersistenceLoaded();
     });
 
     function afterPersistenceLoaded() {
+      if (that.dataset.persistenceEnabled)
+        persistence.setPersistenceEnabled(that.dataset.persistenceEnabled);
+
+      if (that.dataset.persistenceInterval)
+        persistence.setPersistenceInterval(that.dataset.persistenceInterval);
+
+      if (that.dataset.persistenceTarget)
+        persistence.setPersistenceTarget(that.dataset.persistenceTarget);
+
       var checkbox = $(that.shadowRoot).find("#lively-enable-persistence")[0];
       checkbox.checked = persistence.isPersistenceEnabled();
       checkbox.onchange = () => {

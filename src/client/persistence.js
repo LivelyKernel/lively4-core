@@ -108,8 +108,14 @@ export function getPersistenceInterval() {
 }
 
 export function setPersistenceInterval(interval) {
-    console.log("setting pers interval: " + interval + ' ' + (typeof interval));
+    if (interval == persistenceInterval) return;
+
     persistenceInterval = interval;
+
+    let evt = $.Event('persistenceInterval');
+    evt.persistenceInterval = interval;
+    $(window).trigger(evt);
+
     restartPersistenceTimerInterval();
 }
 
@@ -135,7 +141,13 @@ export function isPersistenceEnabled() {
 }
 
 export function setPersistenceEnabled(enabled) {
+    if (enabled == persistenceEnabled) return;
+
     persistenceEnabled = enabled;
+
+    let evt = $.Event('persistenceEnabled');
+    evt.persistenceEnabled = enabled;
+    $(window).trigger(evt);
 }
 
 export function getPersistenceTarget() {
@@ -143,7 +155,13 @@ export function getPersistenceTarget() {
 }
 
 export function setPersistenceTarget(target) {
+    if (target == persistenceTarget) return;
+
     persistenceTarget = target;
+
+    let evt = $.Event('persistenceTarget');
+    evt.persistenceTarget = target;
+    $(window).trigger(evt);
 }
 
 export function isCurrentlyCloning() {
