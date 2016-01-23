@@ -61,7 +61,7 @@ function initialize(){
                     }
                 }
                 
-                shouldSave = checkAddedNodeTrees(addedNodes) || checkRemovedNodes(removedNodes);
+                shouldSave = checkAddedNodes(addedNodes) || checkRemovedNodes(removedNodes);
 
                 //remove removed orphan nodes from orphan set
                 for (let node of removedNodes) {
