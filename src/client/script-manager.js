@@ -120,7 +120,7 @@ export function addScript(object, funcOrString, opts={}) {
     object[name].isScript = true;
     object.__scripts__[name] = funcOrString.toString();
 
-    if (!opts.hasOwnProperty("persist") || opts.persist != true)
+    if (!opts.hasOwnProperty("persist") || opts.persist == true)
         persistToDOM(object, funcOrString.toString(), {"data-name": name});
 }
 
