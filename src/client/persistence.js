@@ -28,11 +28,11 @@ function checkAddedNodes(nodes, isParent = false) {
     }
     if (parents.size == 0) return false;
     if (parents.has(document)) return true;
-    return checkTreeForDoNotPersistTag(parents, true);
+    return checkAddedNodes(parents, true);
 }
 
-function checkRemovedNodes(nodes) {
-    return !nodes.every(hasDoNotPersistTag) && !nodes.every(orphans.has)
+function checkRemovedNodes(nodes, orphans) {
+    return !nodes.every(hasDoNotPersistTag) && !nodes.every(n => orphans.has(n))
 }
 
 function initialize(){
@@ -61,7 +61,7 @@ function initialize(){
                     }
                 }
                 
-                shouldSave = checkAddedNodeTrees(addedNodes) || checkRemovedNodes(removedNodes);
+                shouldSave = checkAddedNodes(addedNodes) || checkRemovedNodes(removedNodes, orphans);
 
                 //remove removed orphan nodes from orphan set
                 for (let node of removedNodes) {
@@ -72,7 +72,6 @@ function initialize(){
             }
 
             if (shouldSave) {
-                debugger;
                 sessionStorage["lively.scriptMutationsDetected"] = 'true';
                 restartPersistenceTimerInterval();
             }
