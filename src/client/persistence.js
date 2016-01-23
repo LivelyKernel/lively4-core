@@ -5,14 +5,32 @@ var persistenceEnabled = false;
 var persistenceInterval = 5000;
 var persistenceTarget = 'http://lively4/';
 
-function isDoNotPersistTag(node) {
+function hasDoNotPersistTag(node, checkForChildrenValueToo = false) {
     return node.attributes
         && node.attributes.hasOwnProperty('data-lively4-donotpersist')
-        && node.dataset.lively4Donotpersist == 'all'
+        && (checkForChildrenValueToo ?
+            node.dataset.lively4Donotpersist == 'children' || node.dataset.lively4Donotpersist == 'all' :
+            node.dataset.lively4Donotpersist == 'all');
 }
 
 function hasParentTag(node) {
     return node.parentElement != null;
+}
+
+function checkAddedNodes(nodes, isParent = false) {
+    let parents = new Set();
+    for (let node of nodes) {
+        if (!hasDoNotPersistTag(node, isParent) && hasParentTag(node)) {
+            parents.add(node.parentElement)
+        }
+    }
+    if (parents.size == 0) return false;
+    if (parents.has(document)) return true;
+    return checkTreeForDoNotPersistTag(parents, true);
+}
+
+function checkRemovedNodes(nodes) {
+    return !nodes.every(hasDoNotPersistTag) && !nodes.every(orphans.has)
 }
 
 function initialize(){
@@ -40,9 +58,7 @@ function initialize(){
                     }
                 }
                 
-                shouldSave = !nodes.every(isDoNotPersistTag)
-                    && (addedNodes.length <= 0 || addedNodes.some(hasParentTag))
-                    && (removedNodes.length <= 0 || !removedNodes.every(n => orphans.has(n)))
+                shouldSave = checkAddedNodeTrees(addedNodes) || checkRemovedNodes(removedNodes);
 
                 //remove removed orphan nodes from orphan set
                 for (let node of removedNodes) {
@@ -53,6 +69,7 @@ function initialize(){
             }
 
             if (shouldSave) {
+                debugger;
                 sessionStorage["lively.scriptMutationsDetected"] = 'true';
                 restartPersistenceTimerInterval();
             }
