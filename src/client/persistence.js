@@ -22,11 +22,12 @@ function initialize(){
 
     $(window).unload(saveOnLeave);
 
-    var observer = new MutationObserver((mutations, observer) => {
+    let observer = new MutationObserver((mutations, observer) => {
         mutations.forEach(record => {
             if (record.target.id == 'console'
                 || record.target.id == 'editor') return;
-            var shouldSave = false;
+
+            let shouldSave = true;
             if (record.type == 'childList') {
                 let addedNodes = [...record.addedNodes],
                     removedNodes = [...record.removedNodes],
@@ -45,16 +46,10 @@ function initialize(){
 
                 //remove removed orphan nodes from orphan set
                 for (let node of removedNodes) {
-                    if (orphans.has(node) == true) {
+                    if (orphans.has(node)) {
                         orphans.delete(node);
                     }
                 }
-            }
-            else if (record.type == 'characterData') {
-                shouldSave = true;
-            }
-            else if (record.type == 'attributes') {
-                shouldSave = true;
             }
 
             if (shouldSave) {
@@ -62,7 +57,8 @@ function initialize(){
                 restartPersistenceTimerInterval();
             }
         })
-    }).observe(document, {childList: true, subtree: true, characterData: true, attributes: true});
+    });
+    observer.observe(document, {childList: true, subtree: true, characterData: true, attributes: true});
 }
 
 function saveOnLeave() {
