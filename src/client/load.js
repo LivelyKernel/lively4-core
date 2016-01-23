@@ -43,6 +43,10 @@ if ('serviceWorker' in navigator) {
                 window.scriptManager = module;
                 log("scriptManager loaded");
             });
+            System.import("../src/client/preferences.js").then(function(module) {
+                window.preferences = module;
+                log("preferences loaded");
+            });
             System.import("../src/client/persistence.js").then(function(module) {
                 window.persistence = module;
                 log("persistence loaded");
