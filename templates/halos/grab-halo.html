@@ -20,9 +20,12 @@
         });
 
         $("body").off("mouseup.grab").on("mouseup.grab", function(e) {
-          grabbing.stop(e);
-          // detach mousemove handler from body
-          $("body").off("mousemove.grab");
+          if (grabbing.isGrabbing) {
+            grabbing.stop(e);
+            // detach mousemove handler from body
+            $("body").off("mousemove.grab");
+            HaloService.showHalos(window.that);
+          }
         });
       });
     }

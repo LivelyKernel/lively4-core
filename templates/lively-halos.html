@@ -3,6 +3,8 @@
 <link rel="import" href="../templates/halos/inspect-halo.html" />
 <link rel="import" href="../templates/halos/drag-halo.html" />
 <link rel="import" href="../templates/halos/grab-halo.html" />
+<link rel="import" href="../templates/halos/export-halo.html" />
+<link rel="import" href="../templates/halos/resize-halo.html" />
 <template id="lively-halos">
     <style>
     :host {
@@ -43,9 +45,8 @@
         <inspect-halo class="halo"></inspect-halo>
       </div>
       <div class="row" id="row3">
-        <div class="halo">6</div>
-        <div class="halo">7</div>
-        <div class="halo">8</div>
+        <export-halo class="halo"></export-halo>
+        <resize-halo class="halo"></resize-halo>
       </div>
     </div>
     <script type="lively4script" data-name="initialize">

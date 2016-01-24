@@ -5,7 +5,7 @@ import * as config from './config.js';
 var grabTarget;
 var grabStartEventPosition;
 var grabOffset;
-var isGrabbing = false;
+export var isGrabbing = false;
 var grabShadow;
 
 export function activate() {
