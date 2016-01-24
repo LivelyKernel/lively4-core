@@ -76,6 +76,8 @@ function initGrabShadow() {
   grabShadow = grabTarget.cloneNode(true);
   grabShadow.style.opacity = '0.5';
   grabShadow.style.position = 'relative';
+  grabShadow.style.removeProperty('top');
+  grabShadow.style.removeProperty('left');
 }
 
 function moveGrabbedNodeToEvent(anEvent) {

@@ -23,10 +23,10 @@
 
 <script type="lively4script" data-name="initialize">
   () => {
-    var persistence;
-    var that = this;
+    let persistence;
+    let that = this;
 
-    System.import('../src/client/persistence.js').then(function(module) {
+    System.import('../src/client/persistence.js').then((module) => {
       persistence = module;
       afterPersistenceLoaded();
     });
@@ -36,6 +36,9 @@
       checkbox.checked = persistence.isPersistenceEnabled();
       checkbox.onchange = () => {
         persistence.setPersistenceEnabled(checkbox.checked);
+        if (!persistence.isPersistenceEnabled()) {
+          confirmSave();
+        }
       };
 
       var input = $(that.shadowRoot).find("#lively-persistence-interval")[0];
@@ -49,6 +52,14 @@
       targetInput.onchange = () => {
         persistence.setPersistenceTarget(targetInput.value);
       };
+    };
+
+    function confirmSave() {
+      var result = confirm("You disabled the auto-persistence. Do you want to save this setting?\nPress 'OK' to save one last time.\nPress 'Cancel' otherwise, so that persistence is enabled again on page-reload.");
+
+      if (result == true) {
+          persistence.saveDOM();
+      }
     }
   }
 </script>

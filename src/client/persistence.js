@@ -1,32 +1,54 @@
 'use strict';
 
+import * as preferences from './preferences.js';
+
 var persistenceTimerInterval;
 var persistenceEnabled = false;
 var persistenceInterval = 5000;
 var persistenceTarget = 'http://lively4/';
 
-function isDoNotPersistTag(node) {
+function hasDoNotPersistTag(node, checkForChildrenValueToo = false) {
     return node.attributes
         && node.attributes.hasOwnProperty('data-lively4-donotpersist')
-        && node.dataset.lively4Donotpersist == 'all'
+        && (checkForChildrenValueToo ?
+            node.dataset.lively4Donotpersist == 'children' || node.dataset.lively4Donotpersist == 'all' :
+            node.dataset.lively4Donotpersist == 'all');
 }
 
 function hasParentTag(node) {
-    return node.parentElement != null;
+    return node.parentNode != null;
+}
+
+function checkAddedNodes(nodes, isParent = false) {
+    let parents = new Set();
+    for (let node of nodes) {
+        if (!hasDoNotPersistTag(node, isParent) && hasParentTag(node)) {
+            parents.add(node.parentNode);
+        }
+    }
+    if (parents.size == 0) return false;
+    if (parents.has(document)) return true;
+    return checkAddedNodes(parents, true);
+}
+
+function checkRemovedNodes(nodes, orphans) {
+    return !nodes.every(hasDoNotPersistTag) && !nodes.every(n => orphans.has(n))
 }
 
 function initialize(){
     resetPersistenceSessionStore();
+    loadPreferences();
 
     var orphans = new Set();
 
     $(window).unload(saveOnLeave);
 
-    var observer = new MutationObserver((mutations, observer) => {
+    let observer = new MutationObserver((mutations, observer) => {
         mutations.forEach(record => {
             if (record.target.id == 'console'
                 || record.target.id == 'editor') return;
-            var shouldSave = false;
+
+            let shouldSave = true;
             if (record.type == 'childList') {
                 let addedNodes = [...record.addedNodes],
                     removedNodes = [...record.removedNodes],
@@ -39,22 +61,14 @@ function initialize(){
                     }
                 }
                 
-                shouldSave = !nodes.every(isDoNotPersistTag)
-                    && (addedNodes.length <= 0 || addedNodes.some(hasParentTag))
-                    && (removedNodes.length <= 0 || !removedNodes.every(n => orphans.has(n)))
+                shouldSave = checkAddedNodes(addedNodes) || checkRemovedNodes(removedNodes, orphans);
 
                 //remove removed orphan nodes from orphan set
                 for (let node of removedNodes) {
-                    if (orphans.has(node) == true) {
+                    if (orphans.has(node)) {
                         orphans.delete(node);
                     }
                 }
-            }
-            else if (record.type == 'characterData') {
-                shouldSave = true;
-            }
-            else if (record.type == 'attributes') {
-                shouldSave = true;
             }
 
             if (shouldSave) {
@@ -62,7 +76,14 @@ function initialize(){
                 restartPersistenceTimerInterval();
             }
         })
-    }).observe(document, {childList: true, subtree: true, characterData: true, attributes: true});
+    });
+    observer.observe(document, {childList: true, subtree: true, characterData: true, attributes: true});
+}
+
+function loadPreferences() {
+    persistenceInterval = parseInt(preferences.read('persistenceInterval'));
+    persistenceTarget = preferences.read('persistenceTarget');
+    persistenceEnabled = preferences.read('persistenceEnabled') == 'true';
 }
 
 function saveOnLeave() {
@@ -112,8 +133,11 @@ export function getPersistenceInterval() {
 }
 
 export function setPersistenceInterval(interval) {
-    console.log("setting pers interval: " + interval + ' ' + (typeof interval));
+    if (interval == persistenceInterval) return;
+
     persistenceInterval = interval;
+    preferences.write('persistenceInterval', interval);
+
     restartPersistenceTimerInterval();
 }
 
@@ -139,7 +163,10 @@ export function isPersistenceEnabled() {
 }
 
 export function setPersistenceEnabled(enabled) {
+    if (enabled == persistenceEnabled) return;
+
     persistenceEnabled = enabled;
+    preferences.write('persistenceEnabled', enabled);
 }
 
 export function getPersistenceTarget() {
@@ -147,14 +174,17 @@ export function getPersistenceTarget() {
 }
 
 export function setPersistenceTarget(target) {
+    if (target == persistenceTarget) return;
+
     persistenceTarget = target;
+    preferences.write('persistenceTarget', target);
 }
 
 export function isCurrentlyCloning() {
     return sessionStorage["lively.persistenceCurrentlyCloning"] === 'true';
 }
 
-function saveDOM(async = true) {
+export function saveDOM(async = true) {
     var world;
     sessionStorage["lively.persistenceCurrentlyCloning"] = 'true';
     try {

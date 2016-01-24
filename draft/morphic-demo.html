@@ -1,0 +1,87 @@
+<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+<title>Lively 4 Our First Page</title>
+<style>
+  body {
+    min-height: 1000px;
+  }
+
+  h2 {
+    margin: 0px;
+  }
+
+  #playground {
+    width: 1000px;
+    height: 600px;
+    /*background-color: #eee8d5;*/
+    border-style: dashed;
+    border-color: #073642;
+    border-width: 2px;
+    border-radius: 7px;
+    padding: 7px;
+  }
+
+  .large-rect {
+    width: 300px;
+    height: 200px;
+    background-color: #2aa198;
+  }
+
+  .small-rect {
+    width: 100px;
+    height: 100px;
+    background-color: #073642;
+  }
+
+</style>
+
+<script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
+
+<link rel="import" href="../src/client/babel-system.html" />
+<link rel="import" href="../templates/lively-halos.html" />
+
+<link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" />
+
+</head>
+
+<body>
+<h1>Lively 4 -- Morphic Demo Page</h1>
+<lively-halos></lively-halos>
+
+
+<div id="playground">
+  <h2>Some text</h2>
+  <div class="large-rect"></div>
+  <div class="small-rect"></div>
+  <input type="text">
+  <button>click!</button>
+</div>
+
+<script>
+  var lively4url =  "..";
+
+  System.import(lively4url + "/src/client/load.js").then(function(){
+    System.import("commandline.js")
+    System.import(lively4url + "/src/client/debug-serviceworker.js")
+  }).catch(function(err) { alert("load Lively4 failed")});
+
+  System.import(lively4url + "/src/client/shortcuts.js").then(m => {
+    m.registerShortcuts();
+  });
+
+  var creator;
+  System.import(lively4url + "/src/client/morphic/component-creator.js").then(m => {
+    creator = m;
+  }).catch(function(err) {
+    alert("load component-creator failed");
+  });
+
+  var loader;
+  System.import(lively4url + "/src/client/morphic/component-loader.js").then(m => {
+    loader = m;
+  }).catch(function(err) {
+    alert("load component-loader failed");
+  });
+
+</script>
+
+</body></html>

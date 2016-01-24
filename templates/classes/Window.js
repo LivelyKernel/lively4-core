@@ -42,9 +42,10 @@ export default class Window extends Morph {
     document.body.addEventListener('mousemove', (e) => { this.windowMouseMove(e) });
     document.body.addEventListener('mouseup', (e) => { this.windowMouseUp(e); });
 
+    this.addEventListener('created', (e) => { this.focus() });
+
     this.created = true;
     this.render();
-    this.focus();
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
@@ -89,12 +90,23 @@ export default class Window extends Morph {
   }
 
   focus(e) {
-    var allWindows = Array.from(document.querySelectorAll('lively-window'));
-    allWindows.forEach((w) => {
-      w.style['z-index'] = 0;
-      $(w.getSubmorph('.window')).removeClass('focused');
+    var minZIndex = 100;
+    // find all windows but this one
+    var allWindowsButThis = Array.from(document.querySelectorAll('lively-window'));
+    var thisIdx = allWindowsButThis.indexOf(this);
+    allWindowsButThis.splice(thisIdx, 1);
+
+    // sort ascending by z-index
+    allWindowsButThis.sort((a, b) => {
+      return parseInt(a.style["z-index"]) - parseInt(b.style["z-index"]);
     });
-    this.style['z-index'] = 10;
+
+    // assign new z-index
+    allWindowsButThis.forEach((win, idx) => {
+      win.style["z-index"] = minZIndex + idx;
+      $(win.getSubmorph('.window')).removeClass('focused');
+    });
+    this.style["z-index"] = minZIndex + allWindowsButThis.length;
     $(this.getSubmorph('.window')).addClass('focused');
   }
 

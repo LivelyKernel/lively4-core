@@ -2,15 +2,21 @@ import * as scriptManager from  "../script-manager.js";
 import * as persistence from  "../persistence.js";
 import Morph from "../../../templates/classes/Morph.js";
 
+// save template names, where loading is triggered
+export var loadingPromises = {};
+
 // this function registers a custom element,
 // it is called from the bootstap code in the component templates
 export function register(componentName, template, prototype) {
   var proto = prototype || Object.create(Morph.prototype);
 
+  // TODO: we should check here, if the prototype already has a createdCallback,
+  // if that's the case, we should wrap it and call it in our createdCallback
   proto.createdCallback = function() {
-    if (persistence.isCurrentlyCloning())
+    if (persistence.isCurrentlyCloning()) {
       return;
-    
+    }
+
     var root = this.createShadowRoot();
     // clone the template again, so when more elements are created,
     // they get their own elements from the template
@@ -79,6 +85,12 @@ export function loadUnresolved(lookupRoot, deep) {
     var name = el.nodeName.toLowerCase();
     return !unique.has(name) && unique.add(name);
   }).map((el) => {
+    var name = el.nodeName.toLowerCase();
+    if (loadingPromises[name]) {
+      // the loading was already triggered
+      return loadingPromises[name];
+    }
+
     // create a promise that resolves once el is completely created
     var createdPromise = new Promise((resolve, reject) => {
       el.addEventListener("created", (evt) => {
@@ -87,8 +99,9 @@ export function loadUnresolved(lookupRoot, deep) {
       });
     });
 
-    // thigger loading the template of the unresolved element
-    loadByName(el.nodeName.toLowerCase());
+    // trigger loading the template of the unresolved element
+    loadingPromises[name] = createdPromise;
+    loadByName(name);
 
     return createdPromise;
   });
@@ -124,7 +137,9 @@ export function openInBody(component) {
 
   // adding it here might result in flickering, since it loads afterwards
   document.body.insertBefore(component, document.body.firstChild);
-  loadByName(component.nodeName.toLowerCase());
+  // TODO: should be replace by loadUnresolved!!
+  // loadByName(component.nodeName.toLowerCase());
+  loadUnresolved();
 
   return compPromise;
 }
