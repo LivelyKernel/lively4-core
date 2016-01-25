@@ -18,5 +18,9 @@ export function normalize(path) {
 }
 
 export function join(a, b) {
-  return normalize(a + '/' + b)
+  if(b[0] === '/') {
+    return normalize(b)
+  } else {
+    return normalize(a + '/' + b)
+  }
 }
