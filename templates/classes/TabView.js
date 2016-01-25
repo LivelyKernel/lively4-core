@@ -73,37 +73,40 @@ export default class TabView extends Morph {
     }
 
     for(let i = 0; i < contentViews.length; i++) {
-      let view = contentViews[i];
-      let title = "";
-
-      if(view.hasAttribute('title')) {
-        title = view.getAttribute('title');
-      } else {
-        title = "TAB[" + i + "]";
-      }
-
-      this.tabList[i] = {
-        title: title,
-        view: view
-      };
-
-      let barTitle = document.createElement('span');
-      let tab = document.createElement('li');
-      barTitle.innerHTML = title;
-      barTitle.addEventListener('click', (e) => {
-        this.showContent(i);
-
-        let changeEvent = new CustomEvent("tabChange", {
-          detail: {
-            title: title,
-            id: view.id
-          }
-        });
-        this.dispatchEvent(changeEvent);
-      });
-      tab.appendChild(barTitle);
-      this.tabBar.appendChild(tab);
+      this.renderContentViewIntoTab(contentViews[i], i);
     }
+  }
+
+  renderContentViewIntoTab(view, id) {
+    let title = "";
+
+    if(view.hasAttribute('title')) {
+      title = view.getAttribute('title');
+    } else {
+      title = "TAB[" + id + "]";
+    }
+
+    this.tabList[id] = {
+      title: title,
+      view: view
+    };
+
+    let barTitle = document.createElement('span');
+    let tab = document.createElement('li');
+    barTitle.innerHTML = title;
+    barTitle.addEventListener('click', (e) => {
+      this.showContent(id);
+
+      let changeEvent = new CustomEvent("tabChange", {
+        detail: {
+          title: title,
+          id: view.id
+        }
+      });
+      this.dispatchEvent(changeEvent);
+    });
+    tab.appendChild(barTitle);
+    this.tabBar.appendChild(tab);
   }
 
   showContent(i) {
