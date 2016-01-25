@@ -74,7 +74,7 @@ class Shell {
             this.stdout.write('\r\n')
 
             let command = input
-                .match(/('(\\'|[^'])*'|"(\\"|[^"])*"|\/(\\\/|[^\/])*\/|(\\ |[^ ])+|[\w-]+)/g)
+                .match(/('(\\'|[^'])*'|"(\\"|[^"])*"|(\\ |[^ ])+|[\w-]+)/g)
                 .map((str) => {
                     let match = str.match(/(^"(.*)"$)|(^'(.*)'$)/)
 
@@ -116,6 +116,7 @@ class Shell {
             this.pwd = pathname
         } catch(err) {
             this.stdout.write('Error: ' + err + '\r\n')
+            console.log(err)
         }
     }
 
@@ -131,10 +132,12 @@ class Shell {
                 return await app.default(env, command)
             } catch(err) {
                 this.stdout.write('Error: ' + err + '\r\n')
+                console.log(err)
             }
 
         } catch(err) {
             this.stdout.write('Command not found: ' + command[0] + '\r\n')
+            console.log(err)
         }
     }
 }
