@@ -38,6 +38,10 @@ function findLively4Script(parent, shadow) {
         if (child.tagName.toLocaleLowerCase() == "script" && child.type == "lively4script") {
             try {
                 addScript(parent, child.textContent, {name: child.dataset.name, persist: false});
+
+                if(child.dataset.name == 'initialize') {
+                    parent[child.dataset.name]();
+                }                
             } catch (e) { 
                 console.log("couldn't add function " + child.dataset.name + " to " + parent)
             }
