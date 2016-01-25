@@ -18,7 +18,7 @@
         .blue-button {
             background-color: #1ba1e2;
             border-color: #1ba1e2;
-            text: white;
+            color: white;
             
             -webkit-appearance: caret;
         }
@@ -29,11 +29,15 @@
             width: 100%;
 
             border-top: 1px solid gray;
-            padding-bottom: 25px;
+            padding-top: 5px;
+            padding-bottom: 5px;
         }
 
         .footer #about {
             float: right;
+
+            height: 40px;
+            margin-right: 5px;
         }
     </style>
 
@@ -124,25 +128,25 @@
         <div title="Welcome">
             <h1>Welcome to the Object Editor Demo Page!</h1>
             <br>
-            <button>Make me blue!</button>
+            <button>Make me blue</button>
         </div>
         <div title="Properties">
             <h1>Change the content of the button.</h1>
             <br>
-            <button>Change me!</button>
+            <button class="blue-button">Change me</button>
         </div>
         <div title="Scripts">
             <h1>Use a script to get to the next tab content.</h1>
             <br>
-            <button>Guide me to the next page!</button>
+            <button class="blue-button">Guide me to the next page</button>
         </div>
         <div title="Connections" id="connections-tab">
-            <h1>Program the "About" button!</h1>
+            <h1>Program the "About" button.</h1>
         </div>
     </lively-tab-view>
 </div>
 <div class="footer">
-    <button id="about">About
+    <button id="about" class="blue-button">About
         <script data-name="showAboutWindow" type="lively4script">function showAboutWindow() {
   let window = document.createElement('lively-window');
   window.setAttribute('title', 'About Object Editor');
