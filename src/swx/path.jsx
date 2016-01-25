@@ -16,3 +16,7 @@ export function normalize(path) {
     else
         return target.join('/')
 }
+
+export function join(a, b) {
+  return normalize(a + '/' + b)
+}

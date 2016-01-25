@@ -18,6 +18,7 @@
 <!--<link rel="import" href="../src/client/babel-system.html" /> -->
 <!-- BEGIN SYSTEM.JS: should go away, until then we use a "static" global source -->
 <script src="https://livelykernel.github.io/lively4-core/src/external/system.src.js" type="text/javascript" charset="utf-8"></script>
+<script src="https://livelykernel.github.io/lively4-core/vendor/regenerator-runtime.js" type="text/javascript" charset="utf-8"></script>
 <script>
   System.paths['babel'] ='https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
   System.config({
@@ -33,6 +34,7 @@
 <link rel="import" href="../templates/lively-window.html" />
 <link rel="import" href="../templates/lively-object-editor.html" />
 <link rel="import" href="../templates/lively-file-browser.html" />
+<link rel="import" href="../templates/lively-terminal.html" />
 
 <link rel="import" href="../templates/lively-menu.html"/>
 
@@ -100,6 +102,13 @@
 
                         appctx.appendChild(browser)
                         document.body.appendChild(appctx)
+
+                    }],
+                    ["Terminal", function() {
+                        var container  = document.createElement("lively-window")
+                        $('body')[0].appendChild(container)
+                        var text  = document.createElement("lively-terminal")
+                        container.appendChild(text)
 
                     }],
                     ["Console", function() {
