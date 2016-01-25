@@ -81,6 +81,10 @@
       margin-bottom: 5px;
     }
 
+    #addAttributeButton, #addPropertyButton {
+      margin-top: 15px;
+    }
+
     .main-content .hidden {
       display: none;
     }
@@ -128,9 +132,11 @@
 
             <div id="attributesContent" title="Attributes">
                 <lively-key-value-map id="attributesMap"></lively-key-value-map>
+                <button id="addAttributeButton">Add Attribute</button>
             </div>
             <div id="propertiesContent" title="Properties">
                 <lively-key-value-map id="propertiesMap"></lively-key-value-map>
+                <button id="addPropertyButton">Add Property</button>
             </div>
             <div id="connectionsContent" title="Connections">
               <select size="100" id="connectionList"></select>

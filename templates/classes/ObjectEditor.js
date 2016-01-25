@@ -40,6 +40,9 @@ export default class ObjectEditor extends Morph {
     this.addConnectionButton = this.shadowRoot.querySelector('#addConnectionButton');
     this.removeConnectionButton = this.shadowRoot.querySelector('#removeConnectionButton');
     this.connectionList = this.shadowRoot.querySelector('#connectionList');
+
+    this.addAttributeButton = this.shadowRoot.querySelector('#addAttributeButton');
+    this.addPropertyButton = this.shadowRoot.querySelector('#addPropertyButton');
   }
 
   addElementEvents() {
@@ -50,6 +53,8 @@ export default class ObjectEditor extends Morph {
     this.runButton.addEventListener('click', (e) => { this.runButtonClicked(e) });
     this.addConnectionButton.addEventListener('click', (e) => { this.addConnectionButtonClicked(e) });
     this.removeConnectionButton.addEventListener('click', (e) => { this.removeConnectionButtonClicked(e) });
+    this.addPropertyButton.addEventListener('click', (e) => { this.addPropertyButtonClicked(e) });
+    this.addAttributeButton.addEventListener('click', (e) => { this.addAttributeButtonClicked(e) });
 
     this.editor.addEventListener('keydown', (e) => { this.editorKeyDown(e) });
 
@@ -121,6 +126,8 @@ export default class ObjectEditor extends Morph {
   set targetElement(val) {
     if(val == this.targetElement)
       return;
+
+    console.log('new target element:', val);
 
     if (this.targetElement) {
       this.releaseTarget();
@@ -295,6 +302,44 @@ export default class ObjectEditor extends Morph {
     console.log("Property changed: " + property);
 
     this.targetElement[property.key] = property.value;
+  }
+
+  addPropertyButtonClicked(e) {
+    if (!this.targetElement) {
+      return;
+    }
+
+    var propertyName = prompt('Please enter the name of the property', '');
+    if (!propertyName || propertyName.length == 0) {
+      return;
+    }
+
+    var propertyValue = prompt('Please enter the (new) value', '');
+    if (!propertyValue || propertyValue.length == 0) {
+      return;
+    }
+
+    this.targetElement[propertyName] = propertyValue;
+
+    this.showProperties();
+  }
+
+  addAttributeButtonClicked(e) {
+    if (!this.targetElement) {
+      return;
+    }
+
+    var attributeName = prompt('Please enter the name of the attribute', '');
+    if (!attributeName || attributeName.length == 0) {
+      return;
+    }
+
+    var attributeValue = prompt('Please enter the (new) value', '');
+    if (!attributeValue || attributeValue.length == 0) {
+      return;
+    }
+
+    this.targetElement.setAttribute(attributeName, attributeValue);
   }
 
   showConnections() {
