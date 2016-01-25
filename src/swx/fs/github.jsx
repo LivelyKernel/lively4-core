@@ -9,6 +9,9 @@ export default class Filesystem extends Base {
     constructor(path, options) {
         super('github', path, options)
 
+        if(!options.repo && options.base)
+            options.repo = options.base
+
         if(options.repo) {
             this.repo = options.repo
         } else {
