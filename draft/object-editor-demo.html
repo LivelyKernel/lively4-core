@@ -71,13 +71,45 @@
 
 <h1>Object Editor Demo Page
 <script data-name="randomColor" type="lively4script">function randomColor() {
-  var r = Math.floor((Math.random() * 255));
-  var g = Math.floor((Math.random() * 255));
-  var b = Math.floor((Math.random() * 255));
-  var color = 'rgb(' + [r,g,b].join() + ')';
+  let colors = (['r','g','b']).map(function() {
+    return Math.floor((Math.random() * 255));
+  });
+  let color = 'rgb(' + colors.join() + ')';
+  
+  let complementaryColors = colors.map(function(color) {
+    return 255 - color;
+  })
+  let complementaryColor = 'rgb(' + complementaryColors.join() + ')';
 
   this.style.backgroundColor = color;
   this.style.borderColor = color;
+  this.style.color = complementaryColor;
+}</script>
+<script data-name="initialize" type="lively4script">function initialize() {
+  if(this.initialized) {
+    return;
+  }
+
+  if(!this.__connections__) {
+    this.__connections__ = [];
+  }
+
+  let events = {
+    'mouseover': 'randomColor'
+  };
+
+  for(let eventName in events) {
+    let scriptName = events[eventName];
+    let callback =  (e) => {this[scriptName](e);}
+
+    this.addEventListener(eventName, callback);  
+
+    this.__connections__.push({
+      eventName: eventName,
+      listener: callback,
+      name: eventName + ' >> ' + scriptName
+    });
+  }
 }</script>
 </h1>
 
