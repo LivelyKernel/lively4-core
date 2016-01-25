@@ -29,13 +29,34 @@ export default class TabView extends Morph {
 
   initObserver() {
     this.contentObserver = new MutationObserver((record) => this.observerCallback(record));
-    this.contentObserver.observe(this, {childList: true});
+
+    //observe for added/removed tab elements
+    this.contentObserver.observe(this, {
+      childList: true
+    });
+
+    //observe each tab element for title changes
+    for(let i = 0; i < this.children.length; i++) {
+      let child = this.children[i];
+
+      this.contentObserver.observe(child, {
+        attributes: true,
+        attributeFilter: ['title']
+      });
+    }
+  }
+
+  reInitObserver() {
+    this.contentObserver.disconnect();
+    this.initObserver();
   }
 
   observerCallback(mutationRecord) {
     this.renderTabBar();
     this.hideAllContents();
     this.showDefaultContent();
+
+    this.reInitObserver();
   }
 
   renderTabBar() {
