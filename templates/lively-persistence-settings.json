@@ -1,0 +1,10 @@
+{
+  "name": "Persistence settings",
+  "html-tag": "lively-persistence-settings",
+  "description": "Settings for persistence module",
+  "author": "Daniel Stolpe",
+  "date-changed": "2016-01-14",
+  "categories": ["basic"],
+  "tags": [],
+  "template": "lively-persistence-settings.html"
+}

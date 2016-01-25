@@ -1,0 +1,25 @@
+<template id="copy-halo">
+    <style>
+    :host {
+      background-image: url(http://livelykernel.github.io/lively4-core/src/client/media/copy.svg);
+    }
+    </style>
+    <script type="lively4script" data-name="initialize">
+    () => {
+      System.import("../src/client/morphic/copying.js").then( function(copying) {
+        $("body /deep/ copy-halo").off("click").on("click", function() {
+          copying.handle(window.that);
+        });
+      });
+    }
+    </script>
+</template>
+<script class="registrationScript">
+// This ugly piece of code will be auto generated, when exporting a template. Puh.
+(function() {
+  var template = document.currentScript.ownerDocument.querySelector('#copy-halo');
+  var clone = document.importNode(template.content, true);
+
+  System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('copy-halo', clone); });
+})();
+</script>

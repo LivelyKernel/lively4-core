@@ -20,14 +20,14 @@ export function deactivate() {
   $("body").off("mouseup", stop);
 }
 
-function start(e) {
-  dragTarget = events.getTargetNode(e);
+export function start(e) {
+  dragTarget = window.that;
   if (dragTarget) {
-    initGrabbingAtEvent(e);
+    initDraggingAtEvent(e);
   }
 }
 
-function move(e) {
+export function move(e) {
   if (dragTarget) {
     startOffsetDragging(e);
   }
@@ -36,16 +36,20 @@ function move(e) {
   }
 }
 
-function stop(e) {
+export function stop(e) {
   if (isDragging) {
     stopDraggingAtEvent(e);
   }
+  tearDownDragging();
+}
+
+function tearDownDragging() {
   dragTarget = null;
   dragStartEventPosition = null;
   dragStartNodePosition = null;
 }
 
-function initGrabbingAtEvent(anEvent) {
+function initDraggingAtEvent(anEvent) {
   dragStartNodePosition = nodes.getPosition(dragTarget);
   dragStartEventPosition = events.globalPosition(anEvent);
   anEvent.preventDefault();

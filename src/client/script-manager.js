@@ -36,15 +36,11 @@ function findLively4Script(parent, shadow) {
     for (var i = 0; i < children.length; ++i) {
         var child = children[i];
         if (child.tagName.toLocaleLowerCase() == "script" && child.type == "lively4script") {
-            var name = child.dataset.name;
-            var func = functionFromString(child.textContent);
-            if (typeof func !== 'function') {
-                throw 'no valid function provided!';
+            try {
+                addScript(parent, child.textContent, {name: child.dataset.name, persist: false});
+            } catch (e) { 
+                console.log("couldn't add function " + child.dataset.name + " to " + parent)
             }
-            if (typeof parent.__scripts__ === 'undefined') {
-                parent.__scripts__ = {};
-            }
-            parent.__scripts__[name] = parent[name] = func;
         } else {
             // do never look into the shadow dom of child elements
             findLively4Script(child, false);
@@ -124,7 +120,8 @@ export function addScript(object, funcOrString, opts={}) {
     object[name].isScript = true;
     object.__scripts__[name] = funcOrString.toString();
 
-    persistToDOM(object, funcOrString.toString(), {"data-name": name});
+    if (!opts.hasOwnProperty("persist") || opts.persist == true)
+        persistToDOM(object, funcOrString.toString(), {"data-name": name});
 }
 
 export function removeScript(object, name) {

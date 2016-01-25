@@ -1,4 +1,4 @@
-import { createRegistrationScript } from "./component-loader.js";
+import * as componentLoader from "./component-loader.js";
 
 var htmlBeautify;
 System.import("../src/external/beautify-html.js").then(function(obj){
@@ -6,15 +6,37 @@ System.import("../src/external/beautify-html.js").then(function(obj){
 });
 
 export function handle(el) {
-  name = window.prompt("What should be the name of the component you want to export?")
-  if (name) {
-    createTemplate(el, name);
+  // collect information about the component
+  var info = {};
+  info["name"] = window.prompt("unique name (may contain spaces):");
+  if (!info["name"]) {
+    return;
   }
+
+  // create html-tag by replacing spaces with '-' and lowercasing
+  info["html-tag"] = "lively-" + info["name"].replace(/\s/g, "-").toLowerCase();
+  info["description"] = window.prompt("Description:") || "";
+  info["author"] = window.prompt("Author:") || "";
+  var now = new Date();
+  // note that getMonth() returns value [0..11]
+  info["date-changed"] = now.getFullYear() + "-" + (now.getMonth() + 1) + "-" + now.getDate();
+
+  var categories = window.prompt("Categories (comma separated):") || "";
+  // split by ',' and remove leading and trailing white-spaces
+  info["categories"] = categories.split(",").map((cat) => { return cat.trim().toLowerCase(); });
+
+  var tags = window.prompt("Tags (comma separated):") || "";
+  // split by ',' and remove leading and trailing white-spaces
+  info["tags"] = tags.split(",").map((tag) => { return tag.trim().toLowerCase(); });
+
+  info["template"] = info["html-tag"] + ".html";
+
+  createTemplate(el, info);
 }
 
-export  function createTemplate(rootElement, name) {
+export  function createTemplate(rootElement, info) {
   var template = document.createElement("template");
-  template.id = "lively-" + name;
+  template.id = info["html-tag"];
 
   var fragment = template.content;
 
@@ -32,12 +54,12 @@ export  function createTemplate(rootElement, name) {
   var clone = rootElement.cloneNode(true);
   fragment.appendChild(clone);
 
-  return saveTemplate(template);
+  return saveTemplate(template, info);
 }
 
-function saveTemplate(template) {
+function saveTemplate(template, info) {
   var serializer = new XMLSerializer();
-  var registrationScript = createRegistrationScript(template.id);
+  var registrationScript = componentLoader.createRegistrationScript(template.id);
 
   var templateString = serializer.serializeToString(template);
   var regScriptString = serializer.serializeToString(registrationScript);
@@ -49,11 +71,28 @@ function saveTemplate(template) {
     completeHTML = htmlBeautify(completeHTML);
   }
 
-  ace.edit("editor").setValue(completeHTML);
+  // var compBin = document.querySelector("lively-component-bin");
+  // if (!compBin) {
+  //   // right now, we expect a component bin in the page
+  //   throw new Error("no component bin found in page");
+  // }
+
+  var templateEditor = componentLoader.createComponent("lively-editor");
+  componentLoader.openInWindow(templateEditor).then(() => {
+    templateEditor.setURL(window.location.origin + "/lively4-core/templates/" + template.id + ".html");
+    templateEditor.setText(completeHTML);
+  });
+
+  var jsonEditor = componentLoader.createComponent("lively-editor");
+  componentLoader.openInWindow(jsonEditor).then(() => {
+    jsonEditor.setURL(window.location.origin + "/lively4-core/templates/" + template.id + ".json");
+    jsonEditor.setText(JSON.stringify(info));
+  });
+
+  // ace.edit("editor").setValue(completeHTML);
 
   return completeHTML;
 }
-
 
 export function packShadowDOM(subtreeRoot) {
   var shadow;
@@ -102,11 +141,6 @@ export function unpackShadowDOM(subtreeRoot) {
     subtreeRoot.appendChild(this);
   });
 
-  // remove all remaining child nodes
-  // $(shadow.children).each(function(idx) {
-  //   shadow.removeChild(this);
-  // });
-
   // We cannot remove the shadow root, so to make the content visible,
   // add a content node to the shadow dom. This should be equivalent to having
   // no shadow dom at all.
@@ -118,9 +152,16 @@ function collectAppliedCssRules(rootElement) {
   var styles = document.styleSheets;
   for (var i = 0; i < styles.length; i++) {
     var styleSheet = styles[i];
+    if (!styleSheet.cssRules) {
+      continue;
+    }
     for (var j = 0; j < styleSheet.cssRules.length; j++) {
       var rule = styleSheet.cssRules[j];
       var selector = rule.selectorText;
+      if (selector === ".red-border") {
+        // dont collect red-border style, since it is just temporarily attached
+        continue;
+      }
       // just add those rule that match an element in the subtree
       if (selectorMatchesTree(selector, rootElement)) {
         if (combinedStyle.indexOf(rule.cssText) == -1) {
@@ -135,7 +176,7 @@ function collectAppliedCssRules(rootElement) {
 
 function selectorMatchesTree(selector, rootElement) {
   // conservative css rule collection for now
-  // return true;
+
   // if root matches selector, we are done
   if (rootElement.matches(selector)) {
     return true;

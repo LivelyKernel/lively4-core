@@ -1,0 +1,96 @@
+<template id="template">
+
+	<div contenteditable="true" class="wiki">
+	</div>
+</template>
+
+<script>
+	'use strict';
+
+	class LivelyMarkupField extends HTMLDivElement {
+
+		attachedCallback() {
+			console.log('Markup Field attachedCallback!');
+		
+			// define shortcut variables
+			/*this.titleSpan = this.shadowRoot.querySelector('.window-title span');
+			this.minButton = this.shadowRoot.querySelector('.window-min');
+			this.maxButton = this.shadowRoot.querySelector('.window-max');
+			this.resizeButton = this.shadowRoot.querySelector('.window-resize');
+			this.closeButton = this.shadowRoot.querySelector('.window-close');
+			this.contentBlock = this.shadowRoot.querySelector('#window-content');
+		
+			// bind events for window behavior
+			this.dragging = false;
+			this.closeButton.addEventListener('click', (e) => { this.closeButtonClicked(e) });
+			this.minButton.addEventListener('click', (e) => { this.minButtonClicked(e) });
+			this.maxButton.addEventListener('click', (e) => { this.maxButtonClicked(e) });
+			this.resizeButton.addEventListener('mousedown', (e) => { this.resizeMouseDown(e) });
+			this.shadowRoot.querySelector('.window-title').addEventListener('mousedown', (e) => { this.titleMouseDown(e) });
+		
+			this.created = true;
+			this.render();*/
+			this.addEventListener('focus', (e) => this.showEditMode());
+			this.addEventListener('blur', (e) => this.showViewMode());
+			var root = this.shadowRoot.children[0];
+			var markup = $(this).text();
+			var content = this.parse(markup);
+			$(root).html(content);
+		}
+
+		escapeHtml(string) {
+			var entityMap = {
+			    "&": "&amp;",
+			    "<": "&lt;",
+			    ">": "&gt;",
+			    '"': '&quot;',
+			    "'": '&#39;',
+			    "/": '&#x2F;'
+		  	};
+		  	return string.replace(/[&<>"'\/]/g, function (s) {
+				return entityMap[s];
+			});
+		}
+
+		parse(s) {
+			var escaped = this.escapeHtml(s);
+			return escaped.replace(/==(.*)==/g, "<h2>$1</h2>")
+				.replace(/(^\s*\*.*\n)+/gm , function(m,p){return "<ul>\n" + m.replace(/\s*\*\s*(.*)\n/g, "<li>$1</li>\n") + "</ul>\n"})
+				.replace(/\n\n/g, "<br>")
+				.replace(/\/\//g, "<br>");
+		}
+
+		serialize(s = "") {
+			return s.replace(/<h2>(.*)<\/h2>/gi, "==$1==")
+				.replace(/<br\/?>/gi, "<br>\n")
+				.replace(/<ul>([^]*?)<\/ul>/gi, function(m,p){return p.replace(/<li>\s*(.*)<\/li>/gi, "* $1")})
+				.split("\n").map(function(e){return e + "<br>"}).join("");
+		}
+
+		showEditMode() {
+			console.log("Show edit mode");
+			var jThis = $(this.shadowRoot.children[0]);
+			var content = this.serialize(jThis.html());
+			console.log(content);
+			jThis.html(content);
+		}
+
+		showViewMode() {
+			var root = this.shadowRoot.children[0];
+			var childLines = root.childNodes;
+			var markup = jQuery.map(childLines, function(e){ return (e.tagName && e.tagName == "BR") ? "\n" : e.textContent}).join("");
+			var content = this.parse(markup);
+			$(root).html(content);
+			$(this)[0].childNodes[0].textContent = markup;
+		}    
+	}
+
+
+	(function() {
+		LivelyMarkupField.template = document.currentScript.ownerDocument.querySelector('#template');
+		var clone = document.importNode(LivelyMarkupField.template.content, true);
+		var prototype = Object.create(LivelyMarkupField.prototype);
+		
+		System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-markup-field', clone, prototype); });
+	})();
+</script>

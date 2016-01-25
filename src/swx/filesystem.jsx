@@ -19,7 +19,7 @@ export class Filesystem {
     }
 
     handle(request, url) {
-        let path = url.pathname,
+        let path = Path.normalize(url.pathname),
             base = undefined,
             fs   = undefined
 

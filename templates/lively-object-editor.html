@@ -1,5 +1,5 @@
-<link rel="import" href="lively-treeview.html">
-<link rel="import" href="juicy-ace-editor.html">
+<!-- <link rel="import" href="lively-treeview.html">
+<link rel="import" href="juicy-ace-editor.html"> -->
 
 <template id="lively-object-editor">
   <style>
@@ -45,6 +45,12 @@
       text-align: right;
     }
 
+    fieldset {
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
     #tabView {
       display: flex;
       width: 100%;
@@ -53,7 +59,7 @@
       overflow-y: scroll;
     }
 
-    #attributesContent, #propertiesContent {
+    #attributesContent, #propertiesContent, #connectionsContents {
       width: 100%;
       padding-left: 5px;
       margin-top: 8px;
@@ -62,6 +68,15 @@
 
     #scriptsContent {
       margin-top: 8px;
+    }
+
+    #connectionsContent {
+      display: flex;
+      flex-direction: column;
+    }
+    #connectionList {
+      flex: 1;
+      margin-bottom: 5px;
     }
 
     .main-content .hidden {
@@ -91,8 +106,7 @@
             <div id="scriptsContent" class="script-wrapper" title="Scripts">
                 <div class="content-top">
                     <lively-treeview id="property-list">
-                        <ul id="script-nodes">
-                        </ul>
+                        <ul id="script-nodes"></ul>
                     </lively-treeview>
 
                     <juicy-ace-editor id="editor"></juicy-ace-editor>
@@ -109,12 +123,19 @@
                     </div>
                 </div>
             </div>
-            
+
             <div id="attributesContent" title="Attributes">
                 <lively-key-value-map id="attributesMap"></lively-key-value-map>
             </div>
             <div id="propertiesContent" title="Properties">
                 <lively-key-value-map id="propertiesMap"></lively-key-value-map>
+            </div>
+            <div id="connectionsContent" title="Connections">
+              <select size="100" id="connectionList"></select>
+              <fieldset>
+                <button id="addConnectionButton">Add Connection</button><br/>
+                <button id="removeConnectionButton">Remove Connection</button>
+              </fieldset>
             </div>
         </lively-tab-view>
       <!-- / -->

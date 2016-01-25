@@ -1,0 +1,74 @@
+<template xmlns="http://www.w3.org/1999/xhtml" id="lively-component-bin-tile">
+<style>
+:host {
+  display: inline-block;
+  width: 120px;
+  height: 120px;
+  margin: 6px;
+  cursor: pointer;
+}
+
+:host(:hover) > .container {
+  background-color: #1ba1e2;
+}
+
+:host(:hover) > .container > .name-container > p {
+  color: white;
+}
+
+.container {
+  background-color: lightgray;
+  border-radius: 5px;
+  width: 120px;
+  height: 120px;
+  padding: 2px;
+  overflow: hidden;
+}
+
+img {
+  width: auto;
+  max-width: 100px;
+  height: auto;
+  max-height: 100px;
+  display: block;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.name-container {
+  height: 2em;
+  overflow: hidden;
+}
+
+p {
+  text-align: center;
+  margin: 0px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+</style>
+
+<div class="container">
+  <div class="name-container">
+    <p>name</p>
+  </div>
+  <img src="/lively4-core/templates/thumbnails/default-placeholder.png">
+</div>
+
+</template>
+<script xmlns="http://www.w3.org/1999/xhtml" class="registrationScript">
+(function() {
+  var template = document.currentScript.ownerDocument.querySelector('#lively-component-bin-tile');
+  var clone = document.importNode(template.content, true);
+
+  Promise.all([
+    System.import('../templates/classes/ComponentBinTile.js'),
+    System.import('../src/client/morphic/component-loader.js'),
+  ]).then(modules => {
+    var ComponentBinTile = modules[0];
+    var Loader = modules[1];
+    Loader.register('lively-component-bin-tile', clone, Object.create(ComponentBinTile.prototype || ComponentBinTile.default.prototype));
+  });
+})();
+</script>

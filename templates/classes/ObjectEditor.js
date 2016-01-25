@@ -30,10 +30,16 @@ export default class ObjectEditor extends Morph {
     this.propertiesMap = this.shadowRoot.querySelector('#propertiesMap');
     this.propertiesContent = this.shadowRoot.querySelector('#propertiesContent');
 
+    this.connectionsContent = this.shadowRoot.querySelector('#connectionsContent');
+
     this.addButton = this.shadowRoot.querySelector('#add-script');
     this.removeButton = this.shadowRoot.querySelector('#remove-script');
     this.saveButton = this.shadowRoot.querySelector('#save-script');
     this.runButton = this.shadowRoot.querySelector('#run-script');
+
+    this.addConnectionButton = this.shadowRoot.querySelector('#addConnectionButton');
+    this.removeConnectionButton = this.shadowRoot.querySelector('#removeConnectionButton');
+    this.connectionList = this.shadowRoot.querySelector('#connectionList');
   }
 
   addElementEvents() {
@@ -42,6 +48,10 @@ export default class ObjectEditor extends Morph {
     this.removeButton.addEventListener('click', (e) => { this.removeButtonClicked(e) });
     this.saveButton.addEventListener('click', (e) => { this.saveButtonClicked(e) });
     this.runButton.addEventListener('click', (e) => { this.runButtonClicked(e) });
+    this.addConnectionButton.addEventListener('click', (e) => { this.addConnectionButtonClicked(e) });
+    this.removeConnectionButton.addEventListener('click', (e) => { this.removeConnectionButtonClicked(e) });
+
+    this.editor.addEventListener('keydown', (e) => { this.editorKeyDown(e) });
 
     this.attributesMap.addEventListener('commit', (e) => { this.attributeChanged(e) });
     this.propertiesMap.addEventListener('commit', (e) => { this.propertyChanged(e) });
@@ -55,6 +65,9 @@ export default class ObjectEditor extends Morph {
           break;
         case("propertiesContent"):
           this.showProperties();
+          break;
+        case("connectionsContent"):
+          this.showConnections();
           break;
         default:
           //
@@ -161,7 +174,7 @@ export default class ObjectEditor extends Morph {
   }
 
   attributesObserver(changes) {
-    //this.updateAttributes();
+    this.showAttributes();
   }
   scriptsObserver(changes) {
     this.updateScripts();
@@ -237,26 +250,29 @@ export default class ObjectEditor extends Morph {
     }
 
     let editableProperties = [
-      { name: 'dir', type: 'string' },
-      { name: 'draggable', type: 'boolean' },
-      { name: 'hidden', type: 'boolean' },
+      { name: 'dir', type: 'string', readonly: true },
       { name: 'lang', type: 'string' },
+      { name: 'className', type: 'string' },
+      { name: 'contentEditable', type: 'string' },
+      { name: 'id', type: 'string' },
 
-      { name: 'offsetHeight', type: 'number' },
-      { name: 'offsetWidth', type: 'number' },
-      { name: 'offsetTop', type: 'number' },
-      { name: 'offsetLeft', type: 'number' },
+      { name: 'offsetHeight', type: 'number', readonly: true },
+      { name: 'offsetWidth', type: 'number', readonly: true },
+      { name: 'offsetTop', type: 'number', readonly: true },
+      { name: 'offsetLeft', type: 'number', readonly: true },
 
-      { name: 'clientHeight', type: 'number' },
-      { name: 'clientLeft', type: 'number' },
-      { name: 'clientTop', type: 'number' },
-      { name: 'clientWidth', type: 'number' },
+      { name: 'clientHeight', type: 'number', readonly: true },
+      { name: 'clientLeft', type: 'number', readonly: true },
+      { name: 'clientTop', type: 'number', readonly: true },
+      { name: 'clientWidth', type: 'number', readonly: true },
 
       { name: 'tabIndex', type: 'number' },
 
       { name: 'innerHTML', type: 'string' },
-      { name: 'outerHTML', type: 'string' },
+      { name: 'outerHTML', type: 'string', readonly: true },
       { name: 'value', type: 'string' },
+      { name: 'title', type: 'string' },
+      { name: 'tagName', type: 'string', readonly: true },
 
       { name: 'scrollTop', type: 'number' },
       { name: 'scrollLeft', type: 'number' }
@@ -267,7 +283,8 @@ export default class ObjectEditor extends Morph {
       let property = editableProperties[i];
       properties[property.name] = {
         value: this.targetElement[property.name],
-        type: property.type
+        type: property.type,
+        readonly: property.readonly
       }
     }
 
@@ -278,6 +295,73 @@ export default class ObjectEditor extends Morph {
     console.log("Property changed: " + property);
 
     this.targetElement[property.key] = property.value;
+  }
+
+  showConnections() {
+    if (!this.targetElement) {
+      return;
+    }
+    if (!this.targetElement.__connections__) {
+      this.targetElement.__connections__ = [];
+    }
+
+    let values = '';
+    this.targetElement.__connections__.forEach(function(conn) {
+      values += '<option>' + conn.name + '</option>';
+    });
+
+    this.connectionList.innerHTML = values;
+  }
+
+  addConnectionButtonClicked(e) {
+    if (!this.targetElement) {
+      return;
+    }
+    if (!this.targetElement.__connections__) {
+      this.targetElement.__connections__ = [];
+    }
+
+    var eventName = prompt('Please enter the event to be connected', '');
+    if (!eventName || eventName.length == 0) {
+      return;
+    }
+
+    var scriptName = prompt('Please enter the name of the script to be executed', '');
+    if (!scriptName || scriptName.length == 0) {
+      return;
+    }
+
+    if (typeof this.targetElement[scriptName] === 'undefined') {
+      alert('Could not find that script on the target element!');
+      return;
+    }
+
+    // connect it
+    let listener = this.targetElement[scriptName];
+    this.targetElement.addEventListener(eventName, listener);
+    this.targetElement.__connections__.push({
+      eventName: eventName,
+      listener: listener,
+      name: eventName + ' >> ' + scriptName
+    });
+
+    this.showConnections();
+  }
+
+  removeConnectionButtonClicked(e) {
+    if (!this.targetElement) {
+      return;
+    }
+    if (!this.targetElement.__connections__) {
+      this.targetElement.__connections__ = [];
+    }
+
+    if (this.connectionList.selectedIndex < 0) {
+      return;
+    }
+
+    this.targetElement.__connections__ = this.targetElement.__connections__.splice(this.connectionList.selectedIndex);
+    this.showConnections();
   }
 
   addButtonClicked(e) {
@@ -326,6 +410,7 @@ export default class ObjectEditor extends Morph {
           eval('(' + this.editor.value + ')'),
           { name: data['scriptName'] }
         );
+        console.log('saved!');
       } else if (typeof data['attributeName'] !== 'undefined') {
         this.saveAttribute(data['attributeName']);
       }
@@ -336,8 +421,15 @@ export default class ObjectEditor extends Morph {
     if (this.targetElement && this.propertyList.activeLeaf !== null) {
       let data = this.propertyList.activeLeaf.dataset;
       let func = eval('(' + this.editor.value + ')');
-      
+
       func.apply(this.targetElement);
+    }
+  }
+
+  editorKeyDown(e) {
+    if (e.metaKey && e.keyCode === 83) {
+      this.saveButtonClicked();
+      e.preventDefault();
     }
   }
 

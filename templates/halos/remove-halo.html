@@ -1,0 +1,26 @@
+<template id="remove-halo">
+    <style>
+    :host {
+      background-image: url(http://livelykernel.github.io/lively4-core/src/client/media/delete.svg);
+    }
+    </style>
+    <script type="lively4script" data-name="initialize">
+    () => {
+      System.import("../src/client/morphic/deleting.js").then( function(deleting) {
+        $("body /deep/ remove-halo").off("click").on("click", function() {
+          deleting.handle(window.that);
+          window.HaloService.hideHalos();
+        });
+      });
+    }
+    </script>
+</template>
+<script class="registrationScript">
+// This ugly piece of code will be auto generated, when exporting a template. Puh.
+(function() {
+  var template = document.currentScript.ownerDocument.querySelector('#remove-halo');
+  var clone = document.importNode(template.content, true);
+
+  System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('remove-halo', clone); });
+})();
+</script>

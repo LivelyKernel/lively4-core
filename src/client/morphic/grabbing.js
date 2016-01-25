@@ -5,7 +5,7 @@ import * as config from './config.js';
 var grabTarget;
 var grabStartEventPosition;
 var grabOffset;
-var isGrabbing = false;
+export var isGrabbing = false;
 var grabShadow;
 
 export function activate() {
@@ -22,15 +22,15 @@ export function deactivate() {
   $("body").off("mouseup", stop);
 }
 
-function start(e) {
+export function start(e) {
   if (isGrabbing) return;
-  grabTarget = events.getTargetNode(e);
+  grabTarget = window.that;
   if (grabTarget) {
     initGrabbingAtEvent(e);
   }
 }
 
-function move(e) {
+export function move(e) {
   if (grabTarget) {
     startOffsetGrabbing(e);
   }
@@ -39,7 +39,7 @@ function move(e) {
   }
 }
 
-function stop(e) {
+export function stop(e) {
   if (isGrabbing) {
     stopGrabbingAtEvent(e);
   }
@@ -76,6 +76,8 @@ function initGrabShadow() {
   grabShadow = grabTarget.cloneNode(true);
   grabShadow.style.opacity = '0.5';
   grabShadow.style.position = 'relative';
+  grabShadow.style.removeProperty('top');
+  grabShadow.style.removeProperty('left');
 }
 
 function moveGrabbedNodeToEvent(anEvent) {
@@ -143,7 +145,7 @@ function moveGrabShadowToTargetAtPosition(targetNode, pos) {
 
 function canDropInto(node, targetNode) {
   return node !== targetNode &&
-    !Array.from(targetNode.getElementsByTagName('*')).includes(node) &&
+    // !Array.from(targetNode.getElementsByTagName('*')).includes(node) &&
     !Array.from(node.getElementsByTagName('*')).includes(targetNode) &&
     $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist[node.tagName.toLowerCase()] || []) < 0 &&
     $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist['*'] || []) < 0

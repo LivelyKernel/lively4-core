@@ -1,0 +1,80 @@
+<template id="lively-persistence-settings">
+<style>
+  ul {
+    list-style-type: none;
+  }
+  input {
+    margin-left: 8px;
+  }
+</style>
+  <div class="lively-settings">
+    <ul>
+      <li>
+        Enable auto-save<input id="lively-enable-persistence" type="checkbox" name="enable-persistence" />
+      </li>
+      <li>
+        Auto-save interval (seconds)<input id="lively-persistence-interval" type="number" min="1" max="6000" name="interval-persistence" />
+      </li>
+      <li>
+        Save target<input id="lively-persistence-target" name="target-persistence" />
+      </li>
+    </ul>
+  </div>
+
+<script type="lively4script" data-name="initialize">
+  () => {
+    let persistence;
+    let that = this;
+
+    System.import('../src/client/persistence.js').then((module) => {
+      persistence = module;
+      afterPersistenceLoaded();
+    });
+
+    function afterPersistenceLoaded() {
+      var checkbox = $(that.shadowRoot).find("#lively-enable-persistence")[0];
+      checkbox.checked = persistence.isPersistenceEnabled();
+      checkbox.onchange = () => {
+        persistence.setPersistenceEnabled(checkbox.checked);
+        if (!persistence.isPersistenceEnabled()) {
+          confirmSave();
+        }
+      };
+
+      var input = $(that.shadowRoot).find("#lively-persistence-interval")[0];
+      input.value = persistence.getPersistenceInterval() / 1000;
+      input.onchange = () => {
+        persistence.setPersistenceInterval(input.value * 1000);
+      };
+
+      var targetInput = $(that.shadowRoot).find("#lively-persistence-target")[0];
+      targetInput.value = persistence.getPersistenceTarget();
+      targetInput.onchange = () => {
+        persistence.setPersistenceTarget(targetInput.value);
+      };
+    };
+
+    function confirmSave() {
+      var result = confirm("You disabled the auto-persistence. Do you want to save this setting?\nPress 'OK' to save one last time.\nPress 'Cancel' otherwise, so that persistence is enabled again on page-reload.");
+
+      if (result == true) {
+          persistence.saveDOM();
+      }
+    }
+  }
+</script>
+
+</template>
+<script class="registrationScript">
+  (function() { 
+     var template = document.currentScript.ownerDocument.querySelector('#lively-persistence-settings'); 
+     var clone = document.importNode(template.content, true); 
+     
+     Promise.all([ 
+       System.import('../src/client/morphic/component-loader.js') 
+     ]).then(modules => { 
+       var Loader = modules[0]; 
+       Loader.register('lively-persistence-settings', clone); 
+     }); 
+   })();
+</script>
