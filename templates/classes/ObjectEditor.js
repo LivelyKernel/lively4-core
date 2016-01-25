@@ -188,6 +188,27 @@ export default class ObjectEditor extends Morph {
     }
 
     this.updateList();
+    this.setWindowTitle();
+  }
+
+  setWindowTitle() {
+    if(this.parentElement.tagName != 'LIVELY-WINDOW') {
+      //parent is not a window, so cannot set title
+      return;
+    }
+
+    let windowElement = this.parentElement;
+    let title = '';
+
+    if (this.targetElement.name) {
+        title = this.targetElement.name;
+    } else if (this.targetElement.id) {
+        title = '#'+ this.targetElement.id;
+    }
+
+    title += ' <small>' + this.targetElement.tagName.toLowerCase() + '</small>';
+
+    windowElement.setAttribute('title', title);
   }
 
   showAttributes() {
