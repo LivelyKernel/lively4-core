@@ -73,7 +73,17 @@ class Shell {
 
             this.stdout.write('\r\n')
 
-            let command = input.split(/\s+/)
+            let command = input
+                .match(/('(\\'|[^'])*'|"(\\"|[^"])*"|\/(\\\/|[^\/])*\/|(\\ |[^ ])+|[\w-]+)/g)
+                .map((str) => {
+                    let match = str.match(/(^"(.*)"$)|(^'(.*)'$)/)
+
+                    if(match) {
+                        return match[4] || match[2]
+                    }
+
+                    return str
+                })
 
             switch(command[0]) {
                 case '':
