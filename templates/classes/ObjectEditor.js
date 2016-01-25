@@ -382,7 +382,11 @@ export default class ObjectEditor extends Morph {
     }
 
     // connect it
-    let listener = this.targetElement[scriptName];
+    var target = this.targetElement;
+    var listener = function(e) {
+      target[scriptName](e);
+    };
+
     this.targetElement.addEventListener(eventName, listener);
     this.targetElement.__connections__.push({
       eventName: eventName,
@@ -405,7 +409,11 @@ export default class ObjectEditor extends Morph {
       return;
     }
 
-    this.targetElement.__connections__ = this.targetElement.__connections__.splice(this.connectionList.selectedIndex);
+    let removedConnection = this.targetElement.__connections__[this.connectionList.selectedIndex];
+    console.log('removing connection', removedConnection);
+    this.targetElement.removeEventListener(removedConnection.eventName, removedConnection.listener);
+    this.targetElement.__connections__.splice(this.connectionList.selectedIndex);
+
     this.showConnections();
   }
 
