@@ -7,7 +7,7 @@ import { Base } from './base.jsx'
 
 export default class Filesystem extends Base {
     constructor(path, options) {
-        super('httpfs', path, options)
+        super('http', path, options)
 
         if(!options.base)
             throw new Error('Option `base` required.')
@@ -15,21 +15,33 @@ export default class Filesystem extends Base {
         this.base = options.base
     }
 
-    read(path, request) {
-        let req = new Request(this.base + '/' + path, request)
-
-        return fetch(req)
+    async read(path, request) {
+        return fetch(await this.createProxyRequest(path, request))
     }
 
-    write(path, _, request) {
-        let req = new Request(this.base + '/' + path, request)
-
-        return fetch(req)
+    async write(path, content, request) {
+        return fetch(await this.createProxyRequest(path, request, content))
     }
 
-    stat(path, request) {
-        let req = new Request(this.base + '/' + path, request)
+    async stat(path, request) {
+        return fetch(await this.createProxyRequest(path, request))
+    }
 
-        return fetch(req)
+    async createProxyRequest(path, request, content) {
+        let init = {
+            mode: request.mode,
+            cache: request.cache,
+            method: request.method,
+            headers: request.headers,
+            redirect: request.redirect,
+            referrer: request.referrer,
+            credentials: request.credentials
+        }
+
+        if(request.method !== 'HEAD' && request.method !== 'GET' && typeof content !== 'undefined') {
+            init.body = await content;
+        }
+
+        return new Request(this.base + '/' + path, init)
     }
 }

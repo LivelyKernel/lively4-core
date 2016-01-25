@@ -6,7 +6,7 @@ import { Base } from './base.jsx'
 
 export default class Filesystem extends Base {
     constructor(path, options) {
-        super('html5fs', path, options)
+        super('html5', path, options)
     }
 
     read(file) {
