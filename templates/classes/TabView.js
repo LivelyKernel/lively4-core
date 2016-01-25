@@ -88,7 +88,8 @@ export default class TabView extends Morph {
 
     this.tabList[id] = {
       title: title,
-      view: view
+      view: view,
+      id: view.id
     };
 
     let barTitle = document.createElement('span');
@@ -109,8 +110,11 @@ export default class TabView extends Morph {
     this.tabBar.appendChild(tab);
   }
 
-  showContent(i) {
+  showContentFromTabList(i) {
     let tab = this.tabList[i];
+    if(typeof tab === 'undefined') {
+      return false;
+    }
 
     for (let n = 0; n < this.tabBar.children.length; n++) {
       if (n === i) {
@@ -119,10 +123,23 @@ export default class TabView extends Morph {
         this.tabBar.children[n].classList.remove('active');
       }
     }
-    this.tabBar.querySelector(':nth-child('+i+')')
 
     this.hideAllContents();
     this.showElement(tab.view);
+  }
+
+  showContent(identifier) {
+    this.showContentFromTabList(identifier);
+
+    //in case this identifier is a node id
+    //we need to run through our tab list 
+    for(let tabKey in this.tabList) {
+      let tab = this.tabList[tabKey];
+
+      if(tab.id && tab.id == identifier) {
+        this.showContentFromTabList(parseInt(tabKey));
+      }
+    }
   }
 
   hideAllContents() {
