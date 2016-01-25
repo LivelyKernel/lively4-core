@@ -31,9 +31,6 @@ class Stream {
         return new Promise((resolve, reject) => {
             let buffer = ''
             let fn = (data) => {
-                if(cb)
-                    cb(data)
-
                 if(data == "\x0a" || data == "\x0d") {
                     this.fd.off('data', fn)
                     resolve(buffer)
@@ -41,10 +38,13 @@ class Stream {
                 }
 
                 if(data == "\b" || data == "\x7f") {
-                    buffer = buffer.slice(0, buffer.length - 2)
+                    buffer = buffer.slice(0, buffer.length - 1)
                 } else {
                     buffer += data
                 }
+
+                if(cb)
+                    cb(buffer)
             }
 
             this.fd.on('data', fn)
@@ -64,9 +64,13 @@ class Shell {
 
     async run() {
         while(true) {
+            this.stdout.write('\r\n')
             this.stdout.write(this.pwd + ' $ ')
 
-            let input = await this.stdin.readLine((data) => this.stdout.write(data))
+            let input = await this.stdin.readLine((buf) => {
+                this.stdout.write('\x1b[2K\r' + this.pwd + ' $ ' + buf)
+            })
+
             this.stdout.write('\r\n')
 
             let command = input.split(/\s+/)
@@ -110,7 +114,11 @@ class Shell {
             let app = await System.import('https://lively4/bin/' + command[0] + '.js')
 
             try {
-                return await app.default(Object.assign({}, this.env, { pwd: this.pwd }), command)
+                let env = Object.assign({}, this.env, {
+                    pwd: this.pwd
+                })
+
+                return await app.default(env, command)
             } catch(err) {
                 this.stdout.write('Error: ' + err + '\r\n')
             }
