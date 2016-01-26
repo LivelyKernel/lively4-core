@@ -1,7 +1,7 @@
 import * as path from '/src/swx/path.jsx'
 
 export default async function cat(env, args) {
-    let file = path.join(env.pwd, args[1])
+    let file = path.join(env.ENV.PWD, args[1])
 
     let response = await fetch('https://lively4/' + file)
 

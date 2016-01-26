@@ -66,10 +66,19 @@
             this.stdout = new EventEmitter()
             this.stdout.on('data', (data) => { this.term.write(data) })
 
-            executable.default([], {
-              fd: [this.stdin, this.stdout, this.stdout]
-            }).then((retcode) => {
+            let argv = []
+            let env  = {
+              fd: [this.stdin, this.stdout, this.stdout],
+              ENV: {
+                PWD: '/'
+              }
+            }
+
+            executable.default(env,argv).then((retcode) => {
               this.term.write("\r\nExit code: " + retcode)
+            }).catch((err) => {
+              this.term.write("\r\nSEGFAULT: " + err)
+              console.error(err)
             })
           })
         }

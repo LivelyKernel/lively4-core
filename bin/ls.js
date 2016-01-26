@@ -32,7 +32,7 @@ function format(child) {
 }
 
 export default async function ls(env, args) {
-    let pathname = path.join(env.pwd, args[1] || '')
+    let pathname = path.join(env.ENV.PWD, args[1] || '')
 
     let response = await fetch('https://lively4/' + pathname, {method: 'OPTIONS'})
 
