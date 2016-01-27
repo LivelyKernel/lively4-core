@@ -160,7 +160,7 @@ class Shell {
       return await app.default(env, argv)
     } catch(err) {
       this.stdout.write('Error: ' + err + '\r\n')
-      console.log(err)
+      console.error(err)
     }
   }
 
