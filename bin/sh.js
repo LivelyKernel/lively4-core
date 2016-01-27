@@ -160,7 +160,7 @@ class Shell {
 
   async _lookupPath(binary) {
     if(binary.indexOf('/') >= 0) {
-      return await System.import(binary)
+      return await System.import('https://lively4' + path.normalize('/' + binary))
     } else {
       if(this.hash && this.hash[binary]) {
         return this.hash[binary];
@@ -169,7 +169,7 @@ class Shell {
       let imports = this.env.ENV.PATH
         .split(this.env.ENV.PATH_SEPARATOR)
         .filter((str) => str.length > 0)
-        .map((str) => path.join(str, binary + '.js'))
+        .map((str) => 'https://lively4' + path.normalize('/' + path.join(str, binary + '.js')))
         .map((str) => System.import(str).catch((err) => undefined))
 
       let matches = await Promise.all(imports)
