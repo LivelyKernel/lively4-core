@@ -90,10 +90,8 @@
       function() {
           var src = this.getSubmorph('#commandline').editor.getValue()
           try { var result = eval(src) } catch(e) { result = "ERROR:" + e }
-          this.log("> " + src)
-          this.log("< " + result)
-         
-
+          this.log("" + src)
+          this.log("// " + result)
       }
     </script>
 

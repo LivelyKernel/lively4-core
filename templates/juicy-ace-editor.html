@@ -116,6 +116,9 @@
         // container.appendChild(text);
         this._attached = true;
 
+        this.customizeEditor();
+
+
         // editor.resize()
         window.setTimeout(function() { editor.resize()}, 10) // #Hack #Resize #RaceCondition
     };
@@ -180,8 +183,64 @@
         return s;
     }
 
+    
+
+    // CUSTOMIZATION
+
+    // var editor = editor = $("lively-editor")[0].shadowRoot.querySelector("#editor").editor;
+
+    TomalecAceEditorPrototype.customizeEditor = function() {
+        var editor = this.editor;
+
+        editor.currentSelectionOrLine = function() {
+            var sel =  this.getSelectionRange();
+            if (sel.start.row == sel.end.row && sel.start.column == sel.end.column) {
+                var currline = this.getSelectionRange().start.row;
+                text = this.session.getLine(currline);
+            } else {
+                text = this.getCopyText()
+            };
+            return text
+        }
+
+        editor.commands.addCommand({
+            name: "doIt",
+            bindKey: {win: "Ctrl-D", mac: "Command-D"},
+            exec: function(editor) {
+                var text = editor.currentSelectionOrLine()
+                try {
+                    // console.log("doit: " + text);
+                    var result = eval(text);
+                    console.log("" + result)
+                } catch(e){
+                    console.log("Error evaluating: " + text)
+                }
+            }
+        })
+
+        editor.commands.addCommand({
+            name: "printIt",
+            bindKey: {win: "Ctrl-P", mac: "Command-P"},
+            exec: function(editor) {
+                var text = editor.currentSelectionOrLine()
+                try {
+                    var result = " " + eval(text)
+                    var fromSel =  editor.getSelectionRange().end;
+                    editor.selection.selectToPosition(fromSel) // don't replace existing selection
+                    editor.insert(result)
+                    var toSel =  editor.getSelectionRange().start;
+                    editor.selection.moveCursorToPosition(fromSel)
+                    editor.selection.selectToPosition(toSel)
+                } catch(e){
+                    console.log("Error: " + e)
+                }
+            }
+        });
+    };
+
     document.registerElement('juicy-ace-editor', {
         prototype: TomalecAceEditorPrototype
     });
+
 }(window, document));
 </script>

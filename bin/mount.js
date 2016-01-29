@@ -14,7 +14,7 @@ export default async function mount(env, args) {
     let url  = new URL(args[1])
     let type = url.protocol.slice(0, url.protocol.length - 1)
     let base = url.pathname.match(/^\/*(.*)$/)[1]
-    let mp   = path.join(env.pwd, args[2])
+    let mp   = path.join(env.ENV.PWD, args[2])
     let options = {}
 
     url.search.slice(1).split('&').forEach((each) => {

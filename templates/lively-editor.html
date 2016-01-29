@@ -71,12 +71,22 @@
       $(this.getSubmorph('#saveButton')).click(this.saveFile.bind(this))
       $(this.getSubmorph('#loadButton')).click(this.loadFile.bind(this))
 
+      $(this.getSubmorph('#loginButton')).click(() => { this.loginGitHub()})
+      $(this.getSubmorph('#logoutButton')).click(() => { this.logoutGitHub()})
 
-      // #TODO refactor to methods
-      var mountURL = "https://lively4/sys/fs/mount"
-      $(this.getSubmorph('#loginButton')).click(function() {
+      container.dispatchEvent(new Event("initialized"))
+    }
+    </script>
+    <script type="lively4script" data-name="getMountURL">
+    function() { 
+      return "https://lively4/sys/fs/mount"
+    }
+    </script>
+
+    <script type="lively4script" data-name="loginGitHub">
+     function() {
         console.log("login")
-        githubAuth.challengeForAuth(Date.now(), function(token){
+        githubAuth.challengeForAuth(Date.now(), (token) => {
             console.log('We are authenticated with the Token: ' + token)
             var mountGithub = {
               "path": "/",
@@ -87,10 +97,11 @@
                 "token": token
               }
             }
+            console.log("mouont: " + mountGithub)
             $.ajax({
-              url: mountURL,
+              url: this.getMountURL(),
               type: 'PUT',
-              data: JSON.stringify(mountGithub),
+              data: JSON.stringify(this.getMountURL()),
               success: function(text) {
                 console.log("mounted github")
               },
@@ -99,9 +110,12 @@
               }
             });
         })
-      })
-      $(this.getSubmorph('#logoutButton')).click(function(){
-        githubAuth.logout(); console.log('logged out of github')
+      }
+    </script>
+    <script type="lively4script" data-name="logoutGitHub">
+      function(){
+        githubAuth.logout(); 
+        console.log('logged out of github')
         var unmountGithub = {
               "path": "/",
               "name": "github",
@@ -112,7 +126,7 @@
               }
             }
             $.ajax({
-              url: mountURL,
+              url: this.getMountURL(),
               type: 'PUT',
               data: JSON.stringify(unmountGithub),
               success: function(text) {
@@ -122,11 +136,7 @@
                 console.log("could not unmount gitub " + error)
               }
             });
-      })
-
-
-      container.dispatchEvent(new Event("initialized"))
-    }
+      }
     </script>
 
     <script type="lively4script" data-name="currentEditor">
