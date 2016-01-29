@@ -11,7 +11,7 @@
           dragging.start(e);
 
           // attach mousemove handler to body only after mousedown occured
-          $("body").off("mousemove.drag").on("mousemove.drag", function(e) {
+          $(document).off("mousemove.drag").on("mousemove.drag", function(e) {
             dragging.move(e);
 
             // update position of halos on mousemove
@@ -19,10 +19,10 @@
           });
         });
 
-        $("body").off("mouseup.drag").on("mouseup.drag", function(e) {
+        $(document).off("mouseup.drag").on("mouseup.drag", function(e) {
           dragging.stop(e);
           // detach mousemove handler from body
-          $("body").off("mousemove.drag");
+          $(document).off("mousemove.drag");
         });
       });
     }

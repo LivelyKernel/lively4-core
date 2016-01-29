@@ -9,10 +9,9 @@ Event(e).globalPosition();
 var offset = config.MOUSE_MOVE_OFFSET || 0;
 
 export function globalPosition(e) {
-  var targetPos = nodes.globalPosition(e.target);
   return {
-    x: e.offsetX + targetPos.x,
-    y: e.offsetY + targetPos.y
+    x: e.pageX,
+    y: e.pageY
   }
 }
 
