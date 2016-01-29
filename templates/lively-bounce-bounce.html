@@ -1,0 +1,46 @@
+<template xmlns="http://www.w3.org/1999/xhtml" id="lively-bounce-bounce"><style>h2 { margin: 0px; }
+.large-rect { width: 300px; height: 200px; background-color: rgb(42, 161, 152); }
+.ball { border-radius: 50%; width: 100px; height: 100px; background-image: url("/lively4-core/images/ball.png"); background-color: rgb(7, 54, 66); background-size: 100%; }</style><div class="large-rect red-border" style="max-width: none; max-height: none; width: 301px; height: 408px;"><h2 class="" style="position: relative;">v = -0.24525000000000027</h2><div class="ball" style="position: relative; left: 34px; top: 0px;"><script data-name="startFalling" type="lively4script">function startFalling() {
+  this.v = 0;
+  this.fall();
+}</script><script data-name="stopFalling" type="lively4script">function stopFalling() {
+  clearTimeout(this.timeout);
+}</script><script data-name="fall" type="lively4script">function fall() {
+  this.v += 9.81 * 0.005;
+  this.parentElement.querySelector("h2").innerHTML = "v = " + this.v;
+  var bottom = this.parentElement.clientHeight;
+  var y = parseFloat(this.style.top);
+    if (y < bottom - this.clientHeight) {
+      $(this).css('top', y+this.v);
+      this.timeout = setTimeout(this.fall, 5);
+    } else {
+      this.bump();
+    }
+}</script><script data-name="bump" type="lively4script">function bump() {
+  this.v -= 9.81 * 0.005;
+  this.parentElement.querySelector("h2").innerHTML = "v = -" + this.v;
+  var bottom = this.parentElement.clientHeight;
+  var y = parseFloat(this.style.top);
+    if (this.v > 0) {
+      $(this).css('top', y-this.v);
+      this.timeout = setTimeout(this.bump, 5);
+    } else {
+      this.fall();
+    }
+}</script></div><button onclick="this.doit()" class="" style="position: relative; left: 223px; top: 71px;">Start<script data-name="doit" type="lively4script">function doit() {
+  this.parentElement.querySelector(".ball").startFalling();
+}</script></button><button onclick="this.doit()" class="" style="position: relative; left: 172px; top: 110px;">Stop<script data-name="doit" type="lively4script">function doit() {
+  this.parentElement.querySelector(".ball").stopFalling();
+}</script></button><button onclick="this.doit()" class="" style="position: relative; left: 127px; top: 173px;">Reset<script data-name="doit" type="lively4script">function doit() {
+	$(this.parentElement.querySelector(".ball")).css('top', 0);
+}</script></button></div></template><script xmlns="http://www.w3.org/1999/xhtml" class="registrationScript">(function() { 
+     var template = document.currentScript.ownerDocument.querySelector('#lively-bounce-bounce'); 
+     var clone = document.importNode(template.content, true); 
+     
+     Promise.all([ 
+       System.import('../src/client/morphic/component-loader.js') 
+     ]).then(modules => { 
+       var Loader = modules[0]; 
+       Loader.register('lively-bounce-bounce', clone); 
+     }); 
+   })();</script>
