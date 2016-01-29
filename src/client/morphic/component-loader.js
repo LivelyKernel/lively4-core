@@ -69,12 +69,33 @@ export function createRegistrationScript(componentId) {
 export function loadUnresolved(lookupRoot, deep) {
   lookupRoot = lookupRoot || document.body;
 
-  var selector = ":unresolved";
+  var selector = deep ? lookupRoot.nodeName.toLowerCase() + " /deep/ :unresolved" : ":unresolved";
+  // var selector = ":unresolved";
 
   // find all unresolved elements looking downwards from lookupRoot
   var unresolved = Array.from(lookupRoot.querySelectorAll(selector));
-  if (deep && lookupRoot.shadowRoot) {
-    unresolved = unresolved.concat(Array.from(lookupRoot.shadowRoot.querySelectorAll(selector)));
+  debugger;
+  // if (deep && lookupRoot.shadowRoot) {
+  //   unresolved = unresolved.concat(Array.from(lookupRoot.shadowRoot.querySelectorAll(selector)));
+  // }
+
+  // if (deep) {
+  //   unresolved.concat(findUnresolvedDeep(lookupRoot));
+  // }
+
+  function findUnresolvedDeep(root) {
+    var shadow = root.shadowRoot;
+    if (!shadow) {
+      return [];
+    }
+
+    var result = Array.from(shadow.querySelectorAll(selector));
+
+    Array.from(shadow.children).forEach((child) => {
+      result.concat(findUnresolvedDeep(child));
+    });
+
+    return result;
   }
 
   // helper set to filter for unique tags
