@@ -12,6 +12,8 @@ export function register(componentName, template, prototype) {
 
   // TODO: we should check here, if the prototype already has a createdCallback,
   // if that's the case, we should wrap it and call it in our createdCallback
+  // TODO: should we dispatch event 'created' also in attached callback???
+  // And what about initizalize call? Actually I think yes.
   proto.createdCallback = function() {
     if (persistence.isCurrentlyCloning()) {
       return;
@@ -69,12 +71,35 @@ export function createRegistrationScript(componentId) {
 export function loadUnresolved(lookupRoot, deep) {
   lookupRoot = lookupRoot || document.body;
 
+  // var selector = deep ? lookupRoot.nodeName.toLowerCase() + " /deep/ :unresolved" : ":unresolved";
   var selector = ":unresolved";
 
   // find all unresolved elements looking downwards from lookupRoot
   var unresolved = Array.from(lookupRoot.querySelectorAll(selector));
-  if (deep && lookupRoot.shadowRoot) {
-    unresolved = unresolved.concat(Array.from(lookupRoot.shadowRoot.querySelectorAll(selector)));
+
+  // if (deep && lookupRoot.shadowRoot) {
+  //   unresolved = unresolved.concat(Array.from(lookupRoot.shadowRoot.querySelectorAll(selector)));
+  // }
+
+  if (deep) {
+    var deepUnresolved = findUnresolvedDeep(lookupRoot);
+    unresolved = unresolved.concat(deepUnresolved);
+  }
+
+  function findUnresolvedDeep(root) {
+    var shadow = root.shadowRoot;
+    if (!shadow) {
+      return [];
+    }
+
+    var result = Array.from(shadow.querySelectorAll(selector));
+    // result = result.concat(root.querySelectorAll(selector));
+
+    Array.from(shadow.children).forEach((child) => {
+      result = result.concat(findUnresolvedDeep(child));
+    });
+
+    return result;
   }
 
   // helper set to filter for unique tags
@@ -127,7 +152,7 @@ export function createComponent(tagString) {
   return comp;
 }
 
-export function openInBody(component) {
+export function openIn(parent, component, beginning) {
   var compPromise = new Promise((resolve, reject) => {
     component.addEventListener("created", (e) => {
       e.stopPropagation();
@@ -135,13 +160,18 @@ export function openInBody(component) {
     });
   });
 
-  // adding it here might result in flickering, since it loads afterwards
-  document.body.insertBefore(component, document.body.firstChild);
-  // TODO: should be replace by loadUnresolved!!
-  // loadByName(component.nodeName.toLowerCase());
-  loadUnresolved();
+  if (beginning) {
+    parent.insertBefore(component, parent.firstChild);
+  } else {
+    parent.appendChild(component);
+  }
+  loadUnresolved(document.body, true);
 
   return compPromise;
+}
+
+export function openInBody(component) {
+  return openIn(document.body, component, true);
 }
 
 export function openInWindow(component) {
