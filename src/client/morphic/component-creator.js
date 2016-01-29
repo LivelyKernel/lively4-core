@@ -45,6 +45,9 @@ export  function createTemplate(rootElement, info) {
   // assigned classes?
   var combinedStyle = collectAppliedCssRules(rootElement);
 
+  // the host should be displayed as inline-block to have the correct width and height
+  combinedStyle += "\n:host {display: inline-block;}"
+
   // apply style
   var styleElement = document.createElement("style");
   styleElement.innerHTML = combinedStyle;
