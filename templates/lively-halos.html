@@ -61,8 +61,28 @@
         showHalos: function (target) {
           var $target = $(target);
           var offset = $target.offset();
-          var width = $target.outerWidth();
-          var height = $target.outerHeight();
+
+          // viewport coordinates
+          var scrollTop = Math.abs($(document).scrollTop());
+          var scrollLeft = Math.abs($(document).scrollLeft());
+
+          // make sure halo respects left and top viewport boundary
+          var offsetTop = Math.max(offset.top - 30, scrollTop);
+          var offsetLeft = Math.max(offset.left - 30, scrollLeft);
+          var offsetTopDiff = offsetTop - offset.top;
+          var offsetLeftDiff = offsetLeft - offset.left;
+          offset.top = offsetTop;
+          offset.left = offsetLeft;
+
+          // make sure halo respects right and bottom viewport boundary
+          var width = $target.outerWidth() - offsetLeftDiff + 30;
+          var height = $target.outerHeight() - offsetTopDiff + 30;
+          var offsetBottom = Math.min(offset.top + height, scrollTop + $(window).height());
+          var offsetRight = Math.min(offset.left + width, scrollLeft + $(window).width());
+          width = offsetRight - offsetLeft;
+          height = offsetBottom - offsetTop;
+
+          // set position and dimensions of halo
           $halos.show();
           $halos.offset(offset);
           $halos.outerWidth(width);
