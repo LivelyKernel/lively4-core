@@ -1,4 +1,5 @@
-<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
 <title>Lively 4 Our First Page</title>
 <style>
   body {
@@ -12,7 +13,6 @@
   #playground {
     width: 1000px;
     height: 600px;
-    /*background-color: #eee8d5;*/
     border-style: dashed;
     border-color: #073642;
     border-width: 2px;
@@ -26,7 +26,10 @@
     background-color: #2aa198;
   }
 
-  .small-rect {
+  .ball {
+    border-radius: 50%;
+    background-image: url(/lively4-core/images/ball.png);
+    background-size: 100%;
     width: 100px;
     height: 100px;
     background-color: #073642;
@@ -36,24 +39,32 @@
 
 <script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
 
-<link rel="import" href="../src/client/babel-system.html" />
-<link rel="import" href="../templates/lively-halos.html" />
+<link rel="import" href="../src/client/babel-system.html">
+<link rel="import" href="../templates/lively-halos.html">
 
-<link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" />
+<link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css">
 
 </head>
 
-<body>
+<body><lively-window style="z-index: 100; left: 1165px; top: 77.4375px;"><lively-editor></lively-editor></lively-window>
 <h1>Lively 4 -- Morphic Demo Page</h1>
-<lively-halos></lively-halos>
+<h3>http://localhost:8002/lively4-core/morphic-demo/ball-scripts.js</h3>
+<lively-halos style="display: none; top: 0px; left: 0px; width: 300px; height: 200px;"></lively-halos>
 
 
 <div id="playground">
-  <h2>Some text</h2>
+  <h2>v = ??</h2>
   <div class="large-rect"></div>
-  <div class="small-rect"></div>
-  <input type="text">
-  <button>click!</button>
+  <div class="ball"></div>
+  <button onclick="this.doit()" class="">Start<script data-name="doit" type="lively4script">function doit() {
+  this.parentElement.querySelector(".ball").startFalling();
+}</script></button>
+  <button onclick="this.doit()" class="">Stop<script data-name="doit" type="lively4script">function doit() {
+  this.parentElement.querySelector(".ball").stopFalling();
+}</script></button>
+  <button onclick="this.doit()" class="">Reset<script data-name="doit" type="lively4script">function doit() {
+  $(this.parentElement.querySelector(".ball")).css('top', 0);
+}</script></button>
 </div>
 
 <script>
@@ -84,4 +95,5 @@
 
 </script>
 
-</body></html>
+
+<lively-preferences data-persistence-target="http://localhost:8002/lively4-core/draft/morphic-demo-auto.html" data-persistence-interval="5000" data-persistence-enabled="false"></lively-preferences></body></html>
