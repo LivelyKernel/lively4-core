@@ -3,7 +3,6 @@ export function handle(el) {
   if (isAllowedToBeCopied(copyTarget)) {
     var copy = $(copyTarget).clone();
     $(copyTarget).after(copy);
-    $(copy).removeClass("red-border");
   }
 }
 

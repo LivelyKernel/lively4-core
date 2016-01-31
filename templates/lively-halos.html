@@ -94,6 +94,10 @@
         hideHalos: function () {
           $halos.offset({left:0, top: 0});
           $halos.hide();
+        },
+
+        areHalosActive: function () {
+          return $halos.is(":visible");
         }
       }
     }

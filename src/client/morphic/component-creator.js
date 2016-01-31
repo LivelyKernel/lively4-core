@@ -161,10 +161,6 @@ function collectAppliedCssRules(rootElement) {
     for (var j = 0; j < styleSheet.cssRules.length; j++) {
       var rule = styleSheet.cssRules[j];
       var selector = rule.selectorText;
-      if (selector === ".red-border") {
-        // dont collect red-border style, since it is just temporarily attached
-        continue;
-      }
       // just add those rule that match an element in the subtree
       if (selectorMatchesTree(selector, rootElement)) {
         if (combinedStyle.indexOf(rule.cssText) == -1) {
