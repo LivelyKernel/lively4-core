@@ -4,7 +4,7 @@ import * as events from './event-helpers.js';
 var dragTarget;
 var dragStartEventPosition;
 var dragStartNodePosition;
-var isDragging = false;
+export var isDragging = false;
 
 export function activate() {
   console.log("using Dragging");

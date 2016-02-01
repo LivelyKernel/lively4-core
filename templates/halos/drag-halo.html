@@ -20,9 +20,13 @@
         });
 
         $(document).off("mouseup.drag").on("mouseup.drag", function(e) {
-          dragging.stop(e);
-          // detach mousemove handler from body
-          $(document).off("mousemove.drag");
+          if (dragging.isDragging) {
+            dragging.stop(e);
+            // detach mousemove handler from body
+            $(document).off("mousemove.drag");
+            HaloService.showHalos(window.that);
+            e.stopPropagation();
+          }
         });
       });
     }

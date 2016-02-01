@@ -1,9 +1,16 @@
 $("body").on("click", handleSelect);
+$("body").on("mouseup", handleMouseUp);
 
 function handleSelect(e) {
   if (e.ctrlKey || e.metaKey) {
     onMagnify(e);
-  } else {
+    e.stopPropagation();
+  }
+}
+
+function handleMouseUp(e) {
+  // hide halos if the user clicks somewhere else
+  if (!(e.ctrlKey || e.metaKey)) {
     if (window.that && !$(e.target).is("lively-halos")) {
       hideHalos()
     }
@@ -22,7 +29,6 @@ function onMagnify(e) {
   }
 
   window.that = grabTarget;
-  console.log("Current element:", grabTarget, "with id:", $(grabTarget).attr("id"));
 
   showHalos(grabTarget)
 }
