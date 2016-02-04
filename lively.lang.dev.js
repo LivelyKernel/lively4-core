@@ -6130,6 +6130,12 @@ var messenger = exports.messenger = {
       {name: "close", args: ['messenger', 'callback']},
       {name: "isOnline", args: []}
     ];
+
+    var ignoredAttributes = expectedMethods
+      .map(function(ea) { return ea.name; })
+      .concat(["id", "sendHeartbeat", "heartbeatInterval", "ignoreUnknownMessages",
+        "allowConcurrentSends","sendTimeout","services"]);
+
     expectedMethods.forEach(function(exp) {
       if (spec[exp.name]) return;
         var msg = "message implementation needs function "
@@ -6310,8 +6316,9 @@ var messenger = exports.messenger = {
             try {
               action.call(null, msg, messenger);
             } catch (e) {
-              console.error("Error invoking service: " + e);
-              messenger.answer(msg, {error: String(e)});
+              var errmMsg = String(e.stack || e);
+              console.error("Error invoking service: " + errmMsg);
+              messenger.answer(msg, {error: errmMsg});
             }
           } else if (!messenger._ignoreUnknownMessages) {
             var err = new Error("messageNotUnderstood: " + msg.action);
@@ -6360,6 +6367,12 @@ var messenger = exports.messenger = {
 
     if (spec.services) messenger.addServices(spec.services);
     events.makeEmitter(messenger);
+
+    for (var name in spec) {
+      if (ignoredAttributes.indexOf(name) === -1 && spec.hasOwnProperty(name)) {
+        messenger[name] = spec[name];
+      }
+    }
 
     return messenger;
   }
