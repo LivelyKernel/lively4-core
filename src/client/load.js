@@ -52,6 +52,7 @@ if ('serviceWorker' in navigator) {
                 log("persistence loaded");
             });
             System.import("../src/client/morphic/component-loader.js").then(function(module) {
+                initializeHalos();
                 module.loadUnresolved();
                 log("component-loader unresolved tags loaded");
             });
@@ -130,3 +131,11 @@ window.onbeforeunload = function(e) {
             evt.preventDefault();
         }
     });*/
+
+function initializeHalos() {
+    if ($('lively-halos').size() == 0) {
+        $('<lively-halos>')
+            .attr('data-lively4-donotpersist', 'all')
+            .appendTo($('body'));
+    }
+}
