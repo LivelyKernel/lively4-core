@@ -108,11 +108,13 @@ function getURL(){
     }
     else
     {
-        r = /localhost:8080\/(.+)/i;
+        r = /^(?:(https?):\/\/)?(?:(\w+)(?:\:(\w+))?\@)?([\w\.\-\~]+)+(?:\:(\d+))?(?:\/([\w\.\-\~\/\%]+))?(?:\?([\w\=\&]+))?(?:\#(\w+))?$/;
         results = url.match(r);
         if (results)
         {
-            filename = results[1];
+            filename = results[6];
+        } else {
+            throw "Could not parse URL to persist changes!";
         }
     }
 
