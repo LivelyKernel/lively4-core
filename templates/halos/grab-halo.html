@@ -25,6 +25,7 @@
             // detach mousemove handler from body
             $("body").off("mousemove.grab");
             HaloService.showHalos(window.that);
+            e.stopPropagation();
           }
         });
       });
