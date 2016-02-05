@@ -1,10 +1,11 @@
 /*global beforeEach, afterEach, describe, it*/
 
-var isNodejs = typeof module !== 'undefined' && module.require;
+var isNodejs = typeof module !== 'undefined' && typeof require !== 'undefined';
+var Global = typeof window !== 'undefined' ? window : global;
 var Global = isNodejs ? global : window;
-var expect = this.expect || module.require('expect.js');
-var mocha = this.mocha || module.require('mocha');
-var lively = this.lively || {}; lively.lang = lively.lang || module.require('../index');
+var expect = Global.expect || require('expect.js');
+var mocha = Global.mocha || require('mocha');
+var lively = Global.lively || {}; lively.lang = lively.lang || require('../index');
 
 var graph = lively.lang.graph;
 

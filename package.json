@@ -8,6 +8,7 @@
     "lib/object.js",
     "lib/class.js",
     "lib/collection.js",
+    "lib/sequence.js",
     "lib/tree.js",
     "lib/function.js",
     "lib/string.js",

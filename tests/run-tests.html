@@ -14,25 +14,45 @@
     <script type="text/javascript" src="helper.js"></script>
     <script type="text/javascript" src="../node_modules/expect.js/index.js"></script>
     <script type="text/javascript" src="../node_modules/mocha/mocha.js"></script>
+    <!--<script type="text/javascript" src="../dist/lively.lang.dev.js"></script>-->
     <script type="text/javascript" >
       mocha.setup("bdd");
       mocha.globals(["jQuery", "$", "script*", "BlobBuilder"]);
       if (typeof initMochaPhantomJS === 'function') initMochaPhantomJS();
       var urls = [
-        '../dist/lively.lang.dev.js',
-        'events-test.js',
-        'collection-test.js',
-        'tree-test.js',
-        'object-test.js',
-        'date-test.js',
-        'graph-test.js',
-        'class-test.js',
-        'string-test.js',
-        'number-test.js',
-        'function-test.js',
-        'messenger-test.js',
-        'worker-test.js',
-        'usage-test.js'
+        // "../dist/lively.lang.dev.js",
+        
+        "../lib/base.js",
+        "../lib/object.js",
+        "../lib/class.js",
+        "../lib/collection.js",
+        "../lib/sequence.js",
+        "../lib/tree.js",
+        "../lib/function.js",
+        "../lib/string.js",
+        "../lib/number.js",
+        "../lib/date.js",
+        "../lib/promise.js",
+        "../lib/events.js",
+        "../lib/graph.js",
+        "../lib/messenger.js",
+        "../lib/worker.js",
+
+        "class-test.js",
+        "collection-test.js",
+        "date-test.js",
+        "events-test.js",
+        "function-test.js",
+        "graph-test.js",
+        "messenger-test.js",
+        "number-test.js",
+        "object-test.js",
+        "promise-test.js",
+        // "sequence-test.js",
+        "string-test.js",
+        "tree-test.js",
+        "usage-test.js",
+        "worker-test.js"
       ];
       loadUncached(urls, function() {
         mocha.checkLeaks();

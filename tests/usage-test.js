@@ -1,8 +1,10 @@
 /*global beforeEach, afterEach, describe, it*/
 
-var isNodejs = typeof module !== 'undefined' && module.require;
-var expect =  this.expect || module.require('expect.js');
-var lively = this.lively || {}; lively.lang = lively.lang || module.require('../index');
+var isNodejs = typeof module !== 'undefined' && typeof require !== 'undefined';
+var Global = typeof window !== 'undefined' ? window : global;
+var expect =  Global.expect || require('expect.js');
+var lively = Global.lively || {};
+lively.lang = lively.lang || require('../index');
 
 describe("usage", function() {
 

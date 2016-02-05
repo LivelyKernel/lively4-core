@@ -1,7 +1,8 @@
 /*global beforeEach, afterEach, describe, it, setTimeout*/
 
-var expect = this.expect || module.require('expect.js');
-var lively = this.lively || {}; lively.lang = lively.lang || module.require('../index');
+var Global = typeof window !== 'undefined' ? window : global;
+var expect = Global.expect || require('expect.js');
+var lively = Global.lively || {}; lively.lang = lively.lang || require('../index');
 
 var m = lively.lang.messenger;
 var fun = lively.lang.fun;
@@ -452,7 +453,7 @@ describe('messengers', function() {
           messengerB.send(
             {target: "messengerC", action: "test", data: 'foo'},
             function(err, answer) {
-              expect(answer.data.error).to.match(/Error:.*foo bar/);
+              expect(answer.data.error).to.match(/(Error:.*foo bar)|(at test.*messenger-test.js)/);
               next();
             });
         }

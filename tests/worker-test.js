@@ -1,8 +1,9 @@
 /*global require, beforeEach, afterEach, describe, it, setInterval, clearInterval, setTimeout*/
 
-var isNodejs = typeof module !== 'undefined' && module.require;
-var expect = this.expect || module.require('expect.js');
-var lively = this.lively || {}; lively.lang = lively.lang || module.require('../index');
+var isNodejs = typeof module !== 'undefined' && typeof require !== 'undefined';
+var Global = typeof window !== 'undefined' ? window : global;
+var expect = Global.expect || require('expect.js');
+var lively = Global.lively || {}; lively.lang = lively.lang || require('../index');
 
 var fun = lively.lang.fun;
 var worker = lively.lang.worker;
@@ -21,8 +22,8 @@ describe('worker', function() {
       var messageFromWorker = null,
           w = worker.create({libLocation: libLocation});
       fun.composeAsync(
-        function(next) { w.eval("this.rememberThis = 'foo was here';", next); },
-        function(_, next) { w.eval("this.rememberThis", next) },
+        function(next) { w.eval("self.rememberThis = 'foo was here';", next); },
+        function(_, next) { w.eval("self.rememberThis", next) },
         function(result, next) { expect(result).to.be('foo was here'); next(); }
       )(function(err) { expect(err).to.be(null); done(); });
     });

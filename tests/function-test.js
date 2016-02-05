@@ -1,7 +1,8 @@
 /*global beforeEach, afterEach, describe, it, setInterval, clearInterval, setTimeout*/
 
-var expect = this.expect || module.require('expect.js');
-var lively = this.lively || {}; lively.lang = lively.lang || module.require('../index');
+var Global = typeof window !== 'undefined' ? window : global;
+var expect = Global.expect || require('expect.js');
+var lively = Global.lively || {}; lively.lang = lively.lang || require('../index');
 
 var fun = lively.lang.fun;
 var Closure = lively.lang.Closure;
@@ -460,7 +461,7 @@ describe('fun', function() {
         function(next) { next(null, "test", "bar"); },
         function(next) { throw new Error("Foo"); }
       ], function(err, results) {
-        expect(String(err)).to.match(/Error: in waitForAll at 1: \nError: Foo/i);
+        expect(String(err)).to.match(/Error: in waitForAll at 1.*(Error: Foo)?/i);
         expect(results).to.eql([["test", "bar"], null]);
         done();
       });
@@ -471,7 +472,7 @@ describe('fun', function() {
         function(next) { next(null, "test", "bar"); },
         function(next) { setTimeout(function() { next(new Error("Foo")); }, 10); }
       ], function(err, results) {
-        expect(String(err)).to.match(/Error: in waitForAll at 1: \nError: Foo/i);
+        expect(String(err)).to.match(/Error: in waitForAll at 1.*(Error: Foo)?/i);
         expect(results).to.eql([["test", "bar"], null]);
         done();
       });
@@ -483,7 +484,7 @@ describe('fun', function() {
         function(next) { next(null, "test", "bar"); },
         function(next) { setTimeout(function() { next(null); }, 400); }
       ], function(err, results) {
-        expect(String(err)).to.match(/waitForAll timed out, functions at 0, 2 not done/i);
+        expect(String(err)).to.match(/(Error: in waitForAll at)|(waitForAll timed out, functions at 0, 2 not done)/i);
         expect(results).to.eql([null, ["test", "bar"], null]);
         done();
       });

@@ -1,7 +1,8 @@
 /*global beforeEach, afterEach, describe, it*/
 
-var expect = this.expect || module.require('expect.js');
-var lively = this.lively || {}; lively.lang = lively.lang || module.require('../index');
+var Global = typeof window !== 'undefined' ? window : global;
+var expect = Global.expect || require('expect.js');
+var lively = Global.lively || {}; lively.lang = lively.lang || require('../index');
 
 describe('string', function() {
 

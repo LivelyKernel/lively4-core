@@ -11,8 +11,8 @@ var exec        = require("child_process").exec;
 var fun         = require("./index").fun;
 var arr         = require("./index").arr;
 var target      = "./dist/lively.lang.dev.js";
-var targetES5   = target.replace(/\.js$/,".es5.js");
-var targetMin   = target.replace(/\.js$/,".min.js");
+var targetES5   = target.replace(/\.dev\.js$/,".es5.js");
+var targetMin   = target.replace(/\.dev\.js$/,".min.js");
 var packageJson = JSON.parse(fs.readFileSync('./package.json'));
 
 fun.composeAsync(

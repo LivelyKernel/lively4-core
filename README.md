@@ -67,6 +67,13 @@ abstractions for groups, intervals, grids.
 
 
 
+### [sequence.js](doc/sequence.md)
+
+Generator-based sequences
+
+
+
+
 ### [tree.js](doc/tree.md)
 
 Methods for traversing and transforming tree structures.
