@@ -385,98 +385,141 @@ describe('fun', function() {
 
     });
 
-    it("composes async functions with Error", function(done) {
-      var aRun = 0, bRun = 0, cRun = 0;
+    describe("composeAsync", () => {
 
-      console.log("Dear test runner: an error like \"Object XXX has no method 'barrr'\" is expected!");
+      it("works with Error", function(done) {
+        var aRun = 0, bRun = 0, cRun = 0;
 
-      fun.composeAsync(
-        function a(a,b, thenDo) { aRun++; thenDo(null, (a*b).barrr()); },
-        function b(a, thenDo) { bRun++; thenDo(null, a + 1); }
-      )(3,4, function(err, result) {
-        cRun++;
-        expect(1).to.equal(aRun,'aRun');
-        expect(0).to.equal(bRun,'bRun');
-        expect(1).to.equal(cRun,'cRun');
-        expect(!result).to.be.ok('result? ' + result);
-        expect(err instanceof TypeError).to.be.ok('error? ' + err);
+        console.log("Dear test runner: an error like \"Object XXX has no method 'barrr'\" is expected!");
+
+        fun.composeAsync(
+          function a(a,b, thenDo) { aRun++; thenDo(null, (a*b).barrr()); },
+          function b(a, thenDo) { bRun++; thenDo(null, a + 1); }
+        )(3,4, function(err, result) {
+          cRun++;
+          expect(1).to.equal(aRun,'aRun');
+          expect(0).to.equal(bRun,'bRun');
+          expect(1).to.equal(cRun,'cRun');
+          expect(!result).to.be.ok('result? ' + result);
+          expect(err instanceof TypeError).to.be.ok('error? ' + err);
+        });
+
+        waitFor();
+
+        function waitFor() {
+          if (!cRun) { setTimeout(waitFor, 10); return; }
+          done();
+        };
       });
 
-      waitFor();
+      it("works with errors don't activate callbacks twice", function(done) {
+        var aRun = 0, bRun = 0, cRun = 0;
+        fun.composeAsync(
+          function a(a,b, thenDo) { aRun++; thenDo(null, a * b);
+              throw new Error('afterthought'); /*throwing this error should not invoke the end handler*/},
+          function b(a, thenDo) { bRun++; thenDo(null, a + 1); }
+        )(4,5, function(err, result) {
+          cRun++;
+          expect(1).to.equal(aRun,'aRun');
+          expect(1).to.equal(bRun,'bRun');
+          expect(1).to.equal(cRun,'cRun');
+          expect(21).to.equal(result,'result? ' + result);
+          expect(!err).to.be.ok('err? ' + err);
+        });
+        waitFor();
 
-      function waitFor() {
-        if (!cRun) { setTimeout(waitFor, 10); return; }
+        function waitFor() {
+          if (!cRun) { setTimeout(waitFor, 30); return; }
+          done();
+        };
+      });
+
+      it("does not need end callback", function(done) {
+        var aNext;
+        fun.composeAsync(
+          function a(next) { aNext = next; next(); }
+        )(undefined);
+        expect(aNext).to.be.a("function");
         done();
-      };
-    });
-
-    it("composes async functions with errors don't activate callbacks twice", function(done) {
-      var aRun = 0, bRun = 0, cRun = 0;
-      fun.composeAsync(
-        function a(a,b, thenDo) { aRun++; thenDo(null, a * b);
-            throw new Error('afterthought'); /*throwing this error should not invoke the end handler*/},
-        function b(a, thenDo) { bRun++; thenDo(null, a + 1); }
-      )(4,5, function(err, result) {
-        cRun++;
-        expect(1).to.equal(aRun,'aRun');
-        expect(1).to.equal(bRun,'bRun');
-        expect(1).to.equal(cRun,'cRun');
-        expect(21).to.equal(result,'result? ' + result);
-        expect(!err).to.be.ok('err? ' + err);
       });
-      waitFor();
 
-      function waitFor() {
-        if (!cRun) { setTimeout(waitFor, 30); return; }
-        done();
-      };
-    });
+      describe("and promises", function() {
 
-    it("compose async does not need end callback", function(done) {
-      var aNext;
-      fun.composeAsync(
-        function a(next) { aNext = next; next(); }
-      )(undefined);
-      expect(aNext).to.be.a("function");
-      done();
-    });
-
-    describe("compose async and promises", function() {
-
-      it("can mix promises and functions", function(done) {
-        fun.composeAsync(
-          Promise.resolve(23),
-          function a(val, n) { n(null, val + 2); }
-        )(function(err, value) {
-          expect(err).to.equal(null);
-          expect(value).to.equal(25);
-          done();
+        it("can mix promises and functions", function(done) {
+          fun.composeAsync(
+            Promise.resolve(23),
+            function a(val, n) { n(null, val + 2); }
+          )(function(err, value) {
+            expect(err).to.equal(null);
+            expect(value).to.equal(25);
+            done();
+          });
         });
-      });
 
-      it("can mix promises and functions 2", function(done) {
-        fun.composeAsync(
-          function a(n) { n(null, 23); },
-          Promise.resolve(23)
-        )(function(err, value) {
-          expect(err).to.equal(null);
-          expect(value).to.equal(23);
-          done();
+        it("can mix promises and functions 2", function(done) {
+          fun.composeAsync(
+            function a(n) { n(null, 23); },
+            Promise.resolve(23)
+          )(function(err, value) {
+            expect(err).to.equal(null);
+            expect(value).to.equal(23);
+            done();
+          });
         });
-      });
 
-      it("can deal with promise errors", function(done) {
-        fun.composeAsync(
-          Promise.reject("Test Error"),
-          function a(val, n) { n(null, val + 2); }
-        )(function(err, value) {
-          expect(String(err)).to.match(/Test Error/i);
-          done();
+        it("can deal with promise errors", function(done) {
+          fun.composeAsync(
+            Promise.reject("Test Error"),
+            function a(val, n) { n(null, val + 2); }
+          )(function(err, value) {
+            expect(String(err)).to.match(/Test Error/i);
+            done();
+          });
         });
+
+        it("can return promise instead of calling next", function(done) {
+          fun.composeAsync(
+            function a() { return Promise.resolve(23); },
+            function a(val, n) { n(null, val + 3); },
+            function a(val) { return Promise.resolve(val + 2); }
+          )(function(err, value) {
+            expect(value).to.equal(28);
+            done();
+          });
+        });
+
+        it("can return failing promise", function(done) {
+          fun.composeAsync(
+            function a() { return Promise.reject("Fooo"); }
+          )(function(err) {
+            expect(err).to.match(/Foo/i);
+            done();
+          });
+        });
+
+        it("is itself a promise", function() {
+          return Promise.all([
+            fun.composeAsync(function a(n) { n(null, 23); })()
+              .then(function(value) { expect(value).to.equal(23); }),
+            fun.composeAsync(function a() { return Promise.resolve(42); })()
+              .then(function(value) { expect(value).to.equal(42); }),
+            fun.composeAsync(Promise.resolve(99))()
+              .then(function(value) { expect(value).to.equal(99); })
+          ]);
+        });
+
+        it("is itself a promise that catches", function() {
+          return Promise.all([
+            fun.composeAsync(function a(n) { n(new Error("Foo")); })()
+              .catch(function(err) { expect(err).to.match(/Foo/i); }),
+            fun.composeAsync(Promise.reject(new Error("Bar")))()
+              .catch(function(err) { expect(err).to.match(/Bar/i); })
+          ]);
+        });
+
       });
 
     });
-
 
   });
 
