@@ -440,35 +440,24 @@ describe('messengers', function() {
       )(function(err) { expect(err).to.be(null); done(); });
     });
 
-    it.only('services can error', function(done) {
+    it('services can error', function(done) {
       fun.composeAsync(
         function(next) {
-          console.log(1);
           messengerC.addServices({
             test: function(msg, messenger) { throw new Error("foo bar"); }
           });
           next();
         },
+        function(next) { messengerB.listen(); messengerC.listen(); next(); },
         function(next) {
-          console.log(2);
-          messengerB.listen(); messengerC.listen(); next(); },
-        function(next) {
-          console.log(3);
           messengerB.send(
             {target: "messengerC", action: "test", data: 'foo'},
             function(err, answer) {
-              console.log(answer.data.error);
-              expect(answer.data.error).to.match(/(Error:.*foo bar)|(at test.*messenger-test.js)/);
+              expect(answer.data.error).to.match(/(Error:.*foo bar)|(at test.*messenger-test.js)|(test@.*messenger-test.js)/);
               next();
             });
         }
-      )(function(err) {
-        console.log(4);
-        if (err) console.log(err);
-        expect(err).to.be(null);
-        done();
-        console.log(5);
-      });
+      )(function(err) { expect(err).to.be(null); done(); });
     });
 
     it('non existing service results in messageNotUnderstood error', function(done) {
