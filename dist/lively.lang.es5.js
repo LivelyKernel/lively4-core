@@ -1483,7 +1483,11 @@ return otherDate && otherDate instanceof Date && otherDate.getTime() === date.ge
 //   date.relativeTo(new Date("10/11/2014"), new Date("10/12/2014")) // => "1 day"
 if(!(otherDate instanceof Date))return '';if(otherDate < date)return '';if(otherDate === date)return 'now';var minuteString='min',secondString='sec',hourString='hour',dayString='day',diff=otherDate - date,totalSecs=Math.round(diff / 1000),secs=totalSecs % 60,mins=Math.floor(totalSecs / 60) % 60,hours=Math.floor(totalSecs / 60 / 60) % 24,days=Math.floor(totalSecs / 60 / 60 / 24),parts=[];if(days > 0){parts.push(days);if(days > 1)dayString += 's';parts.push(dayString);}if(hours > 0 && days < 2){parts.push(hours);if(hours > 1)hourString += 's';parts.push(hourString);}if(mins > 0 && hours < 3 && days === 0){parts.push(mins);if(mins > 1)minuteString += 's';parts.push(minuteString);}if(secs > 0 && mins < 3 && hours === 0 && days === 0){parts.push(secs);if(secs > 1)secondString += 's';parts.push(secondString);}return parts.join(' ');}};})(typeof module !== "undefined" && module.require && typeof process !== "undefined"?require('./base'):typeof lively !== "undefined" && lively.lang?lively.lang:{}); /*global require, process, Promise*/ /*
  * Methods helping with promises (Promise/A+ model). Not a promise shim.
- */;(function(exports){"use strict";var arr=exports.arr;var promise=exports.promise = {convertCallbackFun:function convertCallbackFun(func){ // Takes a function that accepts a nodejs-style callback function as a last
+ */;(function(exports){"use strict";var arr=exports.arr;var promise=exports.promise = {deferred:function deferred(){ // returns an object
+// `{resolve: FUNCTION, reject: FUNCTION, promise: PROMISE}`
+// that separates the resolve/reject handling from the promise itself
+// Similar to the deprecated `Promise.defer()`
+var resolve,reject,promise=new Promise(function(_resolve,_reject){resolve = _resolve;reject = _reject;});return {resolve:resolve,reject:reject,promise:promise};},convertCallbackFun:function convertCallbackFun(func){ // Takes a function that accepts a nodejs-style callback function as a last
 // parameter and converts it to a function *not* taking the callback but
 // producing a promise instead. The promise will be resolved with the
 // *first* non-error argument.

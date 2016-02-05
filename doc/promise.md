@@ -4,8 +4,16 @@ Methods helping with promises (Promise/A+ model). Not a promise shim.
 
 
 - [promise](#promise)
+  - [deferred](#promise-deferred)
   - [convertCallbackFun](#promise-convertCallbackFun)
   - [convertCallbackFunWithManyArgs](#promise-convertCallbackFunWithManyArgs)
+
+#### <a name="promise-deferred"></a>promise.deferred()
+
+ returns an object
+ `{resolve: FUNCTION, reject: FUNCTION, promise: PROMISE}`
+ that separates the resolve/reject handling from the promise itself
+ Similar to the deprecated `Promise.defer()`
 
 #### <a name="promise-convertCallbackFun"></a>promise.convertCallbackFun(func)
 

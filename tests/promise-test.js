@@ -26,7 +26,21 @@ describe('promise', () => {
 
     it("deals with n args", () => 
       p.convertCallbackFunWithManyArgs(function(a, b, thenDo) { thenDo(null, b, a); })(2,3)
-        .then(result => expect(result).to.eql([3, 2])))
+        .then(result => expect(result).to.eql([3, 2])));
+
   });
 
+  describe("promise creation", () => {
+    it("creates promise and resolve function", () => {
+      var deferred = p.deferred();
+      setTimeout(deferred.resolve, 100, 23);
+      return deferred.promise.then(val => expect(val).to.equal(23));
+    });
+
+    it("creates promise and reject function", () => {
+      var deferred = p.deferred();
+      setTimeout(deferred.reject, 100, new Error("Foo"));
+      return deferred.promise.catch(err => expect(err).to.match(/Foo/i));
+    });
+  });
 });
