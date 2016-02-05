@@ -443,13 +443,17 @@ describe('messengers', function() {
     it('services can error', function(done) {
       fun.composeAsync(
         function(next) {
+          console.log(1);
           messengerC.addServices({
             test: function(msg, messenger) { throw new Error("foo bar"); }
           });
           next();
         },
-        function(next) { messengerB.listen(); messengerC.listen(); next(); },
         function(next) {
+          console.log(2);
+          messengerB.listen(); messengerC.listen(); next(); },
+        function(next) {
+          console.log(3);
           messengerB.send(
             {target: "messengerC", action: "test", data: 'foo'},
             function(err, answer) {
@@ -457,8 +461,13 @@ describe('messengers', function() {
               next();
             });
         }
-      )(function(err) { expect(err).to.be(null); done(); });
-
+      )(function(err) {
+        console.log(4);
+        if (err) console.error(err);
+        expect(err).to.be(null);
+        done();
+        console.log(5);
+      });
     });
 
     it('non existing service results in messageNotUnderstood error', function(done) {
