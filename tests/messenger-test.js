@@ -440,7 +440,7 @@ describe('messengers', function() {
       )(function(err) { expect(err).to.be(null); done(); });
     });
 
-    it('services can error', function(done) {
+    it.only('services can error', function(done) {
       fun.composeAsync(
         function(next) {
           console.log(1);
