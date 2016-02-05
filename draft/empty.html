@@ -40,6 +40,8 @@
 
 <link rel="import" href="../templates/lively-console.html"/>
 <link rel="import" href="../templates/lively-editor.html"/>
+<link rel="import" href="../templates/lively-filesystems.html"/>
+
 <link rel="import" href="../templates/juicy-ace-editor.html"/>
 
 <link rel="import" href="../templates/lively-tab-view.html" />
@@ -99,6 +101,13 @@
 
                         appctx.appendChild(browser)
                         document.body.appendChild(appctx)
+
+                    }],
+                    ["Filesystems", function() {
+                        var container  = document.createElement("lively-window")
+                        $('body')[0].appendChild(container)
+                        var text  = document.createElement("lively-filesystems")
+                        container.appendChild(text)
 
                     }],
                     ["Terminal", function() {
