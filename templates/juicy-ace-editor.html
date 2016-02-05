@@ -24,6 +24,7 @@
     <div id="juicy-ace-editor-container"></div>
     <content></content>
 </template>
+
 <script>
 (function(window, document, undefined) {
     // Refers to the "importer", which is index.html
@@ -206,37 +207,52 @@
         editor.commands.addCommand({
             name: "doIt",
             bindKey: {win: "Ctrl-D", mac: "Command-D"},
-            exec: function(editor) {
+            exec: (editor) => {
                 var text = editor.currentSelectionOrLine()
-                try {
-                    // console.log("doit: " + text);
-                    var result = eval(text);
-                    console.log("" + result)
-                } catch(e){
-                    console.log("Error evaluating: " + text)
-                }
+                var result = this.tryBoundEval(text);
+                console.log("" + result)
             }
         })
 
         editor.commands.addCommand({
             name: "printIt",
             bindKey: {win: "Ctrl-P", mac: "Command-P"},
-            exec: function(editor) {
+            exec: (editor) => {
                 var text = editor.currentSelectionOrLine()
-                try {
-                    var result = " " + eval(text)
-                    var fromSel =  editor.getSelectionRange().end;
-                    editor.selection.selectToPosition(fromSel) // don't replace existing selection
-                    editor.insert(result)
-                    var toSel =  editor.getSelectionRange().start;
-                    editor.selection.moveCursorToPosition(fromSel)
-                    editor.selection.selectToPosition(toSel)
-                } catch(e){
-                    console.log("Error: " + e)
-                }
+                var result = this.tryBoundEval(text, true);
             }
         });
     };
+
+    TomalecAceEditorPrototype.getDoitContext =  function () { 
+        return this.doitContext 
+    }
+    TomalecAceEditorPrototype.boundEval =  function (str) {
+        var ctx = this.getDoitContext() || this,
+            interactiveEval = function(text) { return eval(text) };
+        return interactiveEval.call(ctx, str);
+    }
+
+    TomalecAceEditorPrototype.tryBoundEval = function (str, printResult) {
+        var result;
+        try { result =  this.boundEval(str) } 
+        catch(e) {
+            document.LastError = e
+            console.log("Error: " + e) 
+            result = e
+        }
+        if (printResult) {
+            var editor = this.editor;
+            var text = " " + result
+            var fromSel =  editor.getSelectionRange().end;
+            editor.selection.selectToPosition(fromSel) // don't replace existing selection
+            editor.insert(text)
+            var toSel =  editor.getSelectionRange().start;
+            editor.selection.moveCursorToPosition(fromSel)
+            editor.selection.selectToPosition(toSel)
+        }
+        return result
+    }
 
     document.registerElement('juicy-ace-editor', {
         prototype: TomalecAceEditorPrototype
