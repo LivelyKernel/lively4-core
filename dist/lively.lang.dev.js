@@ -3592,6 +3592,11 @@ var fun = exports.fun = {
     return queueCallbacks;
   },
 
+  _composeAsyncDefaultEndCallback: function _composeAsyncDefaultEndCallback(err/*err + args*/) {
+    console.warn("lively.lang.fun.composeAsync called without end callback");
+    if (err) console.error("lively.lang.fun.composeAsync error", err);
+  },
+
   composeAsync: function(/*functions*/) {
     // Composes functions that are asynchronous and expecting continuations to
     // be called in node.js callback style (error is first argument, real
@@ -3608,9 +3613,12 @@ var fun = exports.fun = {
 
     var toArray = Array.prototype.slice,
         functions = toArray.call(arguments),
-        endCallback, intermediateResult;
+        defaultEndCb = fun._composeAsyncDefaultEndCallback,
+        endCallback = defaultEndCb,
+        intermediateResult;
 
-    return functions.reverse().reduce(function(prevFunc, func) {
+    return functions.reverse().reduce(function(prevFunc, funcOrPromise) {
+
       var nextActivated = false;
       return function() {
         var args = toArray.call(arguments);
@@ -3620,7 +3628,7 @@ var fun = exports.fun = {
         // following it. This allows to have an optional callback func that can
         // even be `undefined`, e.g. when calling this func from a callsite
         // using var args;
-        if (!endCallback) {
+        if (endCallback === defaultEndCb) {
           while (args.length && typeof args[args.length-1] !== 'function') args.pop();
           endCallback = typeof args[args.length-1] === 'function' ?
             args.pop() : function() {};
@@ -3630,17 +3638,25 @@ var fun = exports.fun = {
           nextActivated = true;
           var args = toArray.call(arguments),
               err = args.shift();
-          if (err) endCallback && endCallback(err);
+          if (err) endCallback(err);
           else prevFunc.apply(null, args);
         }
 
-        try {
-          func.apply(this, args.concat([next]));
-        } catch (e) {
-          console.error('composeAsync: ', e.stack || e);
-          !nextActivated && endCallback && endCallback(e);
+        if (typeof funcOrPromise === "function") {
+          try {
+            funcOrPromise.apply(this, args.concat([next]));
+          } catch (e) {
+            console.error('composeAsync: ', e.stack || e);
+            !nextActivated && endCallback(e);
+          }
+        } else if (funcOrPromise && funcOrPromise.then && funcOrPromise.catch) {
+          funcOrPromise
+            .then(function(value) { next(null, value); })
+            .catch(function(err) { next(err); })
+        } else {
+          endCallback(new Error("Invalid argument to composeAsync: " + funcOrPromise));
         }
-      };
+      }
     }, function() {
       endCallback.apply(
         null,
@@ -6508,7 +6524,8 @@ var isNodejs = typeof module !== 'undefined' && module.require;
 var WorkerSetup = {
 
   loadDependenciesBrowser: function loadDependenciesBrowser(options) {
-    importScripts.apply(self, options.scriptsToLoad || []);
+    var me = typeof self !== "undefined" ? self : this;
+    importScripts.apply(me, options.scriptsToLoad || []);
   },
 
   loadDependenciesNodejs: function loadDependenciesNodejs(options) {
@@ -6521,7 +6538,8 @@ var WorkerSetup = {
   // and globals of Lively and other required objects:
   initBrowserGlobals: function initBrowserGlobals(options) {
     remoteWorker.send = function(msg) { postMessage(msg); };
-    var Global = self.Global = self;
+    var me = typeof self !== "undefined" ? self : this;
+    var Global = me.Global = me;
     Global.window = Global;
     Global.console = Global.console || (function() {
       var c = {};

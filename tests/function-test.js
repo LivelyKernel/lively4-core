@@ -441,6 +441,43 @@ describe('fun', function() {
       done();
     });
 
+    describe("compose async and promises", function() {
+
+      it("can mix promises and functions", function(done) {
+        fun.composeAsync(
+          Promise.resolve(23),
+          function a(val, n) { n(null, val + 2); }
+        )(function(err, value) {
+          expect(err).to.equal(null);
+          expect(value).to.equal(25);
+          done();
+        });
+      });
+
+      it("can mix promises and functions 2", function(done) {
+        fun.composeAsync(
+          function a(n) { n(null, 23); },
+          Promise.resolve(23)
+        )(function(err, value) {
+          expect(err).to.equal(null);
+          expect(value).to.equal(23);
+          done();
+        });
+      });
+
+      it("can deal with promise errors", function(done) {
+        fun.composeAsync(
+          Promise.reject("Test Error"),
+          function a(val, n) { n(null, val + 2); }
+        )(function(err, value) {
+          expect(String(err)).to.match(/Test Error/i);
+          done();
+        });
+      });
+
+    });
+
+
   });
 
   describe("waitForAll", function() {
