@@ -1,17 +1,19 @@
+/*global require*/
 var livelyLang = module.require('./lib/base');
 
-module.require('./lib/events');
-module.require('./lib/object');
-module.require('./lib/collection');
-module.require('./lib/sequence');
-module.require('./lib/tree');
-module.require('./lib/graph');
-module.require('./lib/function');
-module.require('./lib/string');
-module.require('./lib/number');
-module.require('./lib/date');
-module.require('./lib/class');
-module.require('./lib/messenger');
-module.require('./lib/worker');
+require("./lib/object");
+require("./lib/class");
+require("./lib/collection");
+require("./lib/sequence");
+require("./lib/tree");
+require("./lib/function");
+require("./lib/string");
+require("./lib/number");
+require("./lib/date");
+require("./lib/promise");
+require("./lib/events");
+require("./lib/graph");
+require("./lib/messenger");
+require("./lib/worker");
 
 module.exports = livelyLang;
