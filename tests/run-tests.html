@@ -15,24 +15,11 @@
     <script type="text/javascript" src="../node_modules/expect.js/index.js"></script>
     <script type="text/javascript" src="../node_modules/mocha/mocha.js"></script>
     <script type="text/javascript" >
-      // mocha.setup({ui: 'bdd', grep: "messengers sending basics sends messages one by one"});
-      // mocha.setup({ui: 'bdd', grep: /^(messengers|fun|worker)/});
       mocha.setup("bdd");
       mocha.globals(["jQuery", "$", "script*", "BlobBuilder"]);
+      if (typeof initMochaPhantomJS === 'function') initMochaPhantomJS();
       var urls = [
-        '../lib/base.js',
-        '../lib/events.js',
-        '../lib/object.js',
-        '../lib/collection.js',
-        '../lib/tree.js',
-        '../lib/function.js',
-        '../lib/string.js',
-        '../lib/number.js',
-        '../lib/date.js',
-        '../lib/graph.js',
-        '../lib/class.js',
-        '../lib/messenger.js',
-        '../lib/worker.js',
+        '../dist/lively.lang.dev.js',
         'events-test.js',
         'collection-test.js',
         'tree-test.js',
@@ -49,8 +36,7 @@
       ];
       loadUncached(urls, function() {
         mocha.checkLeaks();
-        if (window.mochaPhantomJS) { mochaPhantomJS.run(); }
-        else { mocha.run(); }
+        mocha.run();
       });
     </script>
 

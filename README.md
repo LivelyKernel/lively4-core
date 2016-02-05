@@ -45,6 +45,13 @@ Abstractions usually not included by default in JavaScript runtimes:
 Please see the individual [doc files](doc/) for detailed information.
 
 <!---DOC_GENERATED_START--->
+### [object.js](doc/object.md)
+
+Utility functions that help to inspect, enumerate, and create JS objects
+
+
+
+
 ### [class.js](doc/class.md)
 
 A lightweight class system that allows change classes at runtime.
@@ -60,16 +67,9 @@ abstractions for groups, intervals, grids.
 
 
 
-### [date.js](doc/date.md)
+### [tree.js](doc/tree.md)
 
-Util functions to print and work with JS date objects.
-
-
-
-
-### [events.js](doc/events.md)
-
-A simple node.js-like cross-platform event emitter implementation.
+Methods for traversing and transforming tree structures.
 
 
 
@@ -79,6 +79,40 @@ A simple node.js-like cross-platform event emitter implementation.
 Abstractions around first class functions like augmenting and inspecting
 functions as well as to control function calls like dealing with asynchronous
 control flows.
+
+
+
+
+### [string.js](doc/string.md)
+
+String utility methods for printing, parsing, and converting strings.
+
+
+
+### [number.js](doc/number.md)
+
+Utility functions for JS Numbers.
+
+
+
+
+### [date.js](doc/date.md)
+
+Util functions to print and work with JS date objects.
+
+
+
+
+### [promise.js](doc/promise.md)
+
+Methods helping with promises (Promise/A+ model). Not a promise shim.
+
+
+
+
+### [events.js](doc/events.md)
+
+A simple node.js-like cross-platform event emitter implementation.
 
 
 
@@ -106,33 +140,6 @@ var testGraph = {
 A pluggable interface to provide asynchronous, actor-like message
 communication between JavaScript systems. Provides a unified message protocol
 and send / receive methods.
-
-
-
-
-### [number.js](doc/number.md)
-
-Utility functions for JS Numbers.
-
-
-
-
-### [object.js](doc/object.md)
-
-Utility functions that help to inspect, enumerate, and create JS objects
-
-
-
-
-### [string.js](doc/string.md)
-
-String utility methods for printing, parsing, and converting strings.
-
-
-
-### [tree.js](doc/tree.md)
-
-Methods for traversing and transforming tree structures.
 
 
 
