@@ -457,13 +457,14 @@ describe('messengers', function() {
           messengerB.send(
             {target: "messengerC", action: "test", data: 'foo'},
             function(err, answer) {
+              console.log(answer.data.error);
               expect(answer.data.error).to.match(/(Error:.*foo bar)|(at test.*messenger-test.js)/);
               next();
             });
         }
       )(function(err) {
         console.log(4);
-        if (err) console.error(err);
+        if (err) console.log(err);
         expect(err).to.be(null);
         done();
         console.log(5);
