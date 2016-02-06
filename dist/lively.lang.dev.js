@@ -3703,6 +3703,19 @@ var fun = exports.fun = {
     }
   },
 
+  withNull: function(func) {
+    // returns a modified version of func that will have `null` always curried
+    // as first arg. Usful e.g. to make a nodejs-style callback work with a
+    // then-able:
+    // Example:
+    // promise.then(fun.withNull(cb)).catch(cb);
+    func = func || function() {};
+    return function(/*args*/) {
+      var args = lively.lang.arr.from(arguments);
+      func.apply(null, [null].concat(args))
+    }
+  },
+
   waitFor: function(timeoutMs, waitTesterFunc, thenDo) {
     // Wait for waitTesterFunc to return true, then run thenDo, passing
     // failure/timout err as first parameter. A timout occurs after
@@ -5793,9 +5806,16 @@ exports.date = {
 ;(function(exports) {
 "use strict";
 
-var arr = exports.arr;
+var arr = exports.arr,
+    obj = exports.obj;
 
-var promise = exports.promise = {
+function promise(obj) {
+  return typeof obj === "function" ?
+    promise.convertCallbackFun(obj) :
+    Promise.resolve(obj);
+}
+
+obj.extend(promise, {
 
   deferred: function() {
     // returns an object
@@ -5846,7 +5866,9 @@ var promise = exports.promise = {
     };
   }
 
-}
+});
+
+exports.promise = promise;
 
 })(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
   require('./base') : (typeof lively !== "undefined" && lively.lang ? lively.lang : {}));
