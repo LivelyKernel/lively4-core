@@ -4,11 +4,16 @@ lively.require("lively.lang.Runtime").toRun(function() {
     name: "lively.lang",
 
     reloadAll: function(project, thenDo) {
-      var files = [
-        "lib/base.js","lib/class.js","lib/collection.js", "lib/sequence.js","lib/date.js","lib/events.js","lib/function.js",
-        "lib/messenger.js","lib/number.js","lib/object.js","lib/string.js","lib/tree.js","lib/worker.js"
-      ];
-      lively.lang.Runtime.loadFiles(project, files, thenDo);
+      // var project = lively.lang.Runtime.Registry.current().projects["lively.lang"]
+      // lively.lang.Runtime.Registry.current().projects["lively.lang"].reloadAll(project, thenDo)
+      var file = lively.lang.string.joinPath(project.rootDir, "package.json");
+      return lively.lang.promise(lively.shell.cat)(file)
+        .then(JSON.parse)
+        .then(jso => jso.files)
+        .then(files => lively.lang.promise(lively.lang.Runtime.loadFiles)(project, files))
+        .then(lively.lang.fun.withNull(thenDo))
+        .then(show.curry("Reloaded"))
+        .catch(thenDo);
     },
 
     resources: {
