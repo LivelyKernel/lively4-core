@@ -5809,13 +5809,21 @@ exports.date = {
 var arr = exports.arr,
     obj = exports.obj;
 
-function promise(obj) {
-  return typeof obj === "function" ?
+exports.promise = function promise(obj) {
+  // Promise object / function converter
+  // Example:
+  // promise("foo");
+  //   // => Promise({state: "fullfilled", value: "foo"})
+  // lively.lang.promise({then: (resolve, reject) => resolve(23)})
+  //   // => Promise({state: "fullfilled", value: 23})
+  // lively.lang.promise(function(val, thenDo) { thenDo(null, val + 1) })(3)
+  //   // => Promise({state: "fullfilled", value: 4})
+  return (typeof obj === "function") ?
     promise.convertCallbackFun(obj) :
     Promise.resolve(obj);
 }
 
-obj.extend(promise, {
+obj.extend(exports.promise, {
 
   deferred: function() {
     // returns an object
@@ -5867,8 +5875,6 @@ obj.extend(promise, {
   }
 
 });
-
-exports.promise = promise;
 
 })(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
   require('./base') : (typeof lively !== "undefined" && lively.lang ? lively.lang : {}));

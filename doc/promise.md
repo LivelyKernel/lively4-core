@@ -3,19 +3,35 @@
 Methods helping with promises (Promise/A+ model). Not a promise shim.
 
 
-- [promise](#promise)
-  - [deferred](#promise-deferred)
-  - [convertCallbackFun](#promise-convertCallbackFun)
-  - [convertCallbackFunWithManyArgs](#promise-convertCallbackFunWithManyArgs)
+- [exports](#exports)
+  - [promise](#exports-promise)
+- [exports.promise](#exports.promise)
+  - [deferred](#exports.promise-deferred)
+  - [convertCallbackFun](#exports.promise-convertCallbackFun)
+  - [convertCallbackFunWithManyArgs](#exports.promise-convertCallbackFunWithManyArgs)
 
-#### <a name="promise-deferred"></a>promise.deferred()
+#### <a name="exports-promise"></a>exports.promise(obj)
+
+ Promise object / function converter
+ 
+
+```js
+promise("foo");
+  // => Promise({state: "fullfilled", value: "foo"})
+lively.lang.promise({then: (resolve, reject) => resolve(23)})
+  // => Promise({state: "fullfilled", value: 23})
+lively.lang.promise(function(val, thenDo) { thenDo(null, val + 1) })(3)
+  // => Promise({state: "fullfilled", value: 4})
+```
+
+#### <a name="exports.promise-deferred"></a>exports.promise.deferred()
 
  returns an object
  `{resolve: FUNCTION, reject: FUNCTION, promise: PROMISE}`
  that separates the resolve/reject handling from the promise itself
  Similar to the deprecated `Promise.defer()`
 
-#### <a name="promise-convertCallbackFun"></a>promise.convertCallbackFun(func)
+#### <a name="exports.promise-convertCallbackFun"></a>exports.promise.convertCallbackFun(func)
 
  Takes a function that accepts a nodejs-style callback function as a last
  parameter and converts it to a function *not* taking the callback but
@@ -33,7 +49,7 @@ readFile("./some-file.txt")
   .catch(err => console.error("Could not read file!", err));
 ```
 
-#### <a name="promise-convertCallbackFunWithManyArgs"></a>promise.convertCallbackFunWithManyArgs(func)
+#### <a name="exports.promise-convertCallbackFunWithManyArgs"></a>exports.promise.convertCallbackFunWithManyArgs(func)
 
  like convertCallbackFun but the promise will be resolved with the
  all non-error arguments wrapped in an array.

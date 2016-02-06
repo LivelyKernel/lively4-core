@@ -912,7 +912,12 @@ var functions=Array.prototype.slice.call(arguments);return functions.reverse().r
 // Example:
 // fun.flip(function(a, b, c) {
 //   return a + b + c; })(' World', 'Hello', '!') // => "Hello World!"
-return function flipped() /*args*/{var args=Array.prototype.slice.call(arguments),flippedArgs=[args[1],args[0]].concat(args.slice(2));return f.apply(null,flippedArgs);};},waitFor:function waitFor(timeoutMs,waitTesterFunc,thenDo){ // Wait for waitTesterFunc to return true, then run thenDo, passing
+return function flipped() /*args*/{var args=Array.prototype.slice.call(arguments),flippedArgs=[args[1],args[0]].concat(args.slice(2));return f.apply(null,flippedArgs);};},withNull:function withNull(func){ // returns a modified version of func that will have `null` always curried
+// as first arg. Usful e.g. to make a nodejs-style callback work with a
+// then-able:
+// Example:
+// promise.then(fun.withNull(cb)).catch(cb);
+func = func || function(){};return function() /*args*/{var args=lively.lang.arr.from(arguments);func.apply(null,[null].concat(args));};},waitFor:function waitFor(timeoutMs,waitTesterFunc,thenDo){ // Wait for waitTesterFunc to return true, then run thenDo, passing
 // failure/timout err as first parameter. A timout occurs after
 // timeoutMs. During the wait period waitTesterFunc might be called
 // multiple times.
@@ -1483,7 +1488,15 @@ return otherDate && otherDate instanceof Date && otherDate.getTime() === date.ge
 //   date.relativeTo(new Date("10/11/2014"), new Date("10/12/2014")) // => "1 day"
 if(!(otherDate instanceof Date))return '';if(otherDate < date)return '';if(otherDate === date)return 'now';var minuteString='min',secondString='sec',hourString='hour',dayString='day',diff=otherDate - date,totalSecs=Math.round(diff / 1000),secs=totalSecs % 60,mins=Math.floor(totalSecs / 60) % 60,hours=Math.floor(totalSecs / 60 / 60) % 24,days=Math.floor(totalSecs / 60 / 60 / 24),parts=[];if(days > 0){parts.push(days);if(days > 1)dayString += 's';parts.push(dayString);}if(hours > 0 && days < 2){parts.push(hours);if(hours > 1)hourString += 's';parts.push(hourString);}if(mins > 0 && hours < 3 && days === 0){parts.push(mins);if(mins > 1)minuteString += 's';parts.push(minuteString);}if(secs > 0 && mins < 3 && hours === 0 && days === 0){parts.push(secs);if(secs > 1)secondString += 's';parts.push(secondString);}return parts.join(' ');}};})(typeof module !== "undefined" && module.require && typeof process !== "undefined"?require('./base'):typeof lively !== "undefined" && lively.lang?lively.lang:{}); /*global require, process, Promise*/ /*
  * Methods helping with promises (Promise/A+ model). Not a promise shim.
- */;(function(exports){"use strict";var arr=exports.arr;var promise=exports.promise = {deferred:function deferred(){ // returns an object
+ */;(function(exports){"use strict";var arr=exports.arr,obj=exports.obj;exports.promise = function promise(obj){ // Promise object / function converter
+// Example:
+// promise("foo");
+//   // => Promise({state: "fullfilled", value: "foo"})
+// lively.lang.promise({then: (resolve, reject) => resolve(23)})
+//   // => Promise({state: "fullfilled", value: 23})
+// lively.lang.promise(function(val, thenDo) { thenDo(null, val + 1) })(3)
+//   // => Promise({state: "fullfilled", value: 4})
+return typeof obj === "function"?promise.convertCallbackFun(obj):Promise.resolve(obj);};obj.extend(exports.promise,{deferred:function deferred(){ // returns an object
 // `{resolve: FUNCTION, reject: FUNCTION, promise: PROMISE}`
 // that separates the resolve/reject handling from the promise itself
 // Similar to the deprecated `Promise.defer()`
@@ -1501,7 +1514,7 @@ var resolve,reject,promise=new Promise(function(_resolve,_reject){resolve = _res
 //   .catch(err => console.error("Could not read file!", err));
 return function promiseGenerator() /*args*/{var _this=this;var args=arr.from(arguments);return new Promise(function(resolve,reject){args.push(function(err,result){return err?reject(err):resolve(result);});func.apply(_this,args);});};},convertCallbackFunWithManyArgs:function convertCallbackFunWithManyArgs(func){ // like convertCallbackFun but the promise will be resolved with the
 // all non-error arguments wrapped in an array.
-return function promiseGenerator() /*args*/{var _this2=this;var args=arr.from(arguments);return new Promise(function(resolve,reject){args.push(function() /*err + args*/{var args=arr.from(arguments),err=args.shift();return err?reject(err):resolve(args);});func.apply(_this2,args);});};}};})(typeof module !== "undefined" && module.require && typeof process !== "undefined"?require('./base'):typeof lively !== "undefined" && lively.lang?lively.lang:{}); /*global process, require*/ /*
+return function promiseGenerator() /*args*/{var _this2=this;var args=arr.from(arguments);return new Promise(function(resolve,reject){args.push(function() /*err + args*/{var args=arr.from(arguments),err=args.shift();return err?reject(err):resolve(args);});func.apply(_this2,args);});};}});})(typeof module !== "undefined" && module.require && typeof process !== "undefined"?require('./base'):typeof lively !== "undefined" && lively.lang?lively.lang:{}); /*global process, require*/ /*
  * A simple node.js-like cross-platform event emitter implementation.
  */;(function(exports){"use strict";var isNode=typeof process !== 'undefined' && process.versions && process.versions.node; // A simple node.js-like cross-platform event emitter implementation that can
 // be used as a mixin. Emitters support the methods: `on(eventName, handlerFunc)`,

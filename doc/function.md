@@ -27,6 +27,7 @@ control flows.
   - [composeAsync](#fun-composeAsync)
   - [compose](#fun-compose)
   - [flip](#fun-flip)
+  - [withNull](#fun-withNull)
   - [waitFor](#fun-waitFor)
   - [waitForAll](#fun-waitForAll)
   - [curry](#fun-curry)
@@ -293,6 +294,17 @@ fun.compose(
 ```js
 fun.flip(function(a, b, c) {
   return a + b + c; })(' World', 'Hello', '!') // => "Hello World!"
+```
+
+#### <a name="fun-withNull"></a>fun.withNull(func)
+
+ returns a modified version of func that will have `null` always curried
+ as first arg. Usful e.g. to make a nodejs-style callback work with a
+ then-able:
+ 
+
+```js
+promise.then(fun.withNull(cb)).catch(cb);
 ```
 
 #### <a name="fun-waitFor"></a>fun.waitFor(timeoutMs, waitTesterFunc, thenDo)
