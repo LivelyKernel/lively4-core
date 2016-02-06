@@ -30,7 +30,7 @@
   },
   "scripts": {
     "test": "node_modules/mocha/bin/mocha tests/*-test.js && phantomjs node_modules/mocha-phantomjs-core/mocha-phantomjs-core.js tests/run-tests.html spec '{\"useColors\":false}'",
-    "doc": "node -e \"require('doc-comments')({intoFiles: true, files: JSON.parse(require('fs').readFileSync('./package.json')).files.filter(ea => ea !== 'lib/base.js')})\"",
+    "doc": "node -e \"require('doc-comments')({intoFiles: true, files: JSON.parse(require('fs').readFileSync('./package.json')).libFiles.filter(ea => ea !== 'lib/base.js')})\"",
     "build": "node build.js"
   },
   "author": "Robert Krahn",

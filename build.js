@@ -24,7 +24,7 @@ fun.composeAsync(
   n => fs.unlink(targetMin, (err) => n()),
   // n => fs.mkdir("dist", (err) => n()),
   log("3. write " + target),
-  n => arr.mapAsync(packageJson.files, (f, _, n) => fs.readFile(f, n), n),
+  n => arr.mapAsync(packageJson.libFiles, (f, _, n) => fs.readFile(f, n), n),
   (contents, n) => n(null, contents.map(String).join("\n\n")),
   (code, n) => fs.writeFile(target, code, err => n(err, code)),
   log("4. write " + targetES5),
