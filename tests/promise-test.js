@@ -43,4 +43,38 @@ describe('promise', () => {
       return deferred.promise.catch(err => expect(err).to.match(/Foo/i));
     });
   });
+  
+  describe("chain", () => {
+
+    it("runs promises consecutively", () => {
+      var order = [], prevResults = [];
+      return lively.lang.promise.chain([
+        (prevResult, state) => { state.first = 1; order.push(1); prevResults.push(prevResult); return new Promise(resolve => setTimeout(() => resolve(1), 100)); },
+        (prevResult, state) => { state.second = 2; order.push(2); prevResults.push(prevResult); return new Promise(resolve => setTimeout(() => resolve(2), 10)); },
+        (prevResult, state) => { state.third = 3; order.push(3); prevResults.push(prevResult); return new Promise(resolve => setTimeout(() => resolve(state), 50)); },
+      ]).then(result => {
+        expect(order).to.eql([1,2,3]);
+        expect(result).to.eql({first: 1, second: 2, third: 3});
+        expect(prevResults).to.eql([undefined, 1,2]);
+      });
+    });
+
+    it("deals with errors in chain funcs", () =>
+      lively.lang.promise.chain([
+        () => new Promise(resolve => setTimeout(() => resolve(1), 10)),
+        () => { throw new Error("Foo"); }
+      ]).catch(err => expect(err).to.match(/Foo/i)));
+
+    it("deals with rejections", () =>
+      lively.lang.promise.chain([
+        () => Promise.reject(new Error("Bar")),
+        () => { throw new Error("Foo"); }
+      ]).catch(err => expect(err).to.match(/Bar/i)));
+
+    it("chain function results are coerced into promises", () =>
+      lively.lang.promise.chain([() => 23, (val) => 23+2])
+        .then(results => expect(results).to.equal(25)));
+
+  });
+
 });
