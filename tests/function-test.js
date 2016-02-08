@@ -435,11 +435,13 @@ describe('fun', function() {
       });
 
       it("does not need end callback", function(done) {
-        var aNext;
+        var bNext, bArg;
         fun.composeAsync(
-          function a(next) { aNext = next; next(); }
+          function a(next) { next(null, 23); },
+          function b(arg, next) { bArg = arg; bNext = next; next(); }
         )(undefined);
-        expect(aNext).to.be.a("function");
+        expect(bArg).to.equal(23);
+        expect(bNext).to.be.a("function");
         done();
       });
 
