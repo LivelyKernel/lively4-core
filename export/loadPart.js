@@ -96,15 +96,12 @@ function loadBabel () {
 }
 
 function loadLively4 () {
-  System.import(lively4Url + "src/client/load.js").then(function(){
-
-  }).catch(function(err) { alert("load Lively4 failed")});
   System.import(lively4Url + "src/client/script-manager.js").then(function(module) {
       window.scriptManager = module;
-      log("scriptManager loaded");
+      console.log("scriptManager loaded");
   });
   System.import(lively4Url + "src/client/persistence.js").then(function(module) {
       window.persistence = module;
-      log("persistence loaded");
+      console.log("persistence loaded");
   });
 }
