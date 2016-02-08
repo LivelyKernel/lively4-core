@@ -222,6 +222,15 @@
                 var result = this.tryBoundEval(text, true);
             }
         });
+
+        editor.commands.addCommand({
+            name: "inspectIt",
+            bindKey: {win: "Ctrl-I", mac: "Command-I"},
+            exec: (editor) => {
+                var text = editor.currentSelectionOrLine()
+                var result = this.inspectIt(text, true);
+            }
+        });
     };
 
     TomalecAceEditorPrototype.getDoitContext =  function () { 
@@ -230,7 +239,20 @@
     TomalecAceEditorPrototype.boundEval =  function (str) {
         var ctx = this.getDoitContext() || this,
             interactiveEval = function(text) { return eval(text) };
-        return interactiveEval.call(ctx, str);
+        var transpiledSource = babel.transform(str).code
+        // #TODO alt: babel.run
+        return interactiveEval.call(ctx, transpiledSource);
+    }
+
+    TomalecAceEditorPrototype.printResult = function (result) {
+        var editor = this.editor;
+        var text = result
+        var fromSel =  editor.getSelectionRange().end;
+        editor.selection.selectToPosition(fromSel) // don't replace existing selection
+        editor.insert(text)
+        var toSel =  editor.getSelectionRange().start;
+        editor.selection.moveCursorToPosition(fromSel)
+        editor.selection.selectToPosition(toSel)
     }
 
     TomalecAceEditorPrototype.tryBoundEval = function (str, printResult) {
@@ -242,15 +264,29 @@
             result = e
         }
         if (printResult) {
-            var editor = this.editor;
-            var text = " " + result
-            var fromSel =  editor.getSelectionRange().end;
-            editor.selection.selectToPosition(fromSel) // don't replace existing selection
-            editor.insert(text)
-            var toSel =  editor.getSelectionRange().start;
-            editor.selection.moveCursorToPosition(fromSel)
-            editor.selection.selectToPosition(toSel)
+            this.printResult(" " +result)
         }
+        return result
+    }
+    
+    TomalecAceEditorPrototype.printObject = function (obj) {
+        var result = ""
+        Object.keys(that).forEach((name) => {
+            result += "\n   " +name + ": " + obj[name]
+        }) 
+        return result
+    }
+
+    TomalecAceEditorPrototype.inspectIt = function (str) {
+        var result;
+        try { result =  this.boundEval(str) } 
+        catch(e) {
+            document.LastError = e
+            console.log("Error: " + e) 
+            result = e
+        }
+        var result = this.printObject(result)
+        this.printResult("" + result)
         return result
     }
 
