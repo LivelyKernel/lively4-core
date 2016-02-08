@@ -1,19 +1,25 @@
+var scriptNode = document.getElementById('lively4-chrome-loader');
+var extensionLocation = scriptNode && scriptNode.getAttribute('data-location');
+var extensionComponent = scriptNode && scriptNode.getAttribute('data-component');
+
 loadTemplate(
-  prompt('Which template(s) do you want to load?', 'lively-halos'),
-  prompt('Where does your server run?', 'http://localhost:8081/lively4-core/'));
+  extensionComponent || prompt('Which template(s) do you want to load?', 'lively-halos'),
+  extensionLocation || prompt('Where does your server run?', 'http://localhost:8081/lively4-core/'));
 
 function loadTemplate (partNamesString, url) {
   lively4Url = url;
   loadJQuery();
-  loadSystem();
-  setTimeout(function () {
-    loadBabel();
-    loadLively4();
-    loadAce();
-    var partName = partNamesString.split(' ')[0];
-    var requiredTemplates = [partName].concat(templateNamesFromString(partNamesString));
-    loadPartsViaLinkTag(requiredTemplates);
-    mountPart(partName);
+  setTimeout(function() {
+    loadSystem();
+    setTimeout(function () {
+      loadBabel();
+      loadLively4();
+      loadAce();
+      var partName = partNamesString.split(' ')[0];
+      var requiredTemplates = [partName].concat(templateNamesFromString(partNamesString));
+      loadPartsViaLinkTag(requiredTemplates);
+      mountPart(partName);
+    }, 1000)
   }, 1000)
 }
 
