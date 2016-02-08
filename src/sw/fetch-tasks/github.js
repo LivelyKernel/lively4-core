@@ -3,7 +3,7 @@ l4.importScripts('src/sw/fetch.js');
 
 l4.importScripts('src/sw/messaging-tasks/github/github.js');
 
-l4.importScripts('src/external/focalStorage.js');
+// l4.importScripts('src/external/focalStorage.js');
 
 //l4.importScripts('src/sw/messaging-tasks/github/credentials.js');
 
@@ -109,12 +109,12 @@ l4.importScripts('src/external/focalStorage.js');
             });
         }
 
-        return focalStorage.getItem("githubToken")
-            .then(ensureToken)
-            .then(fetchWithToken)
-            .catch(function(err) {
-                console.log("focalStorage Error: " + err)
-                return // Error ??
-            });
+        // return focalStorage.getItem("githubToken")
+        //     .then(ensureToken)
+        //     .then(fetchWithToken)
+        //     .catch(function(err) {
+        //         console.log("focalStorage Error: " + err)
+        //         return // Error ??
+        //     });
     })
 })();

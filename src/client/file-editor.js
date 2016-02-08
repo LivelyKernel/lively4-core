@@ -10,7 +10,6 @@
 // This should become an editor object... with loadFile and saveFile as methods. #TODO #PartsBin
 
 import * as messaging from './messaging.js';
-import * as focalStorage from '../external/focalStorage.js';
 import * as githubAuth from './auth-github.js';
 
 window.githubAuth = githubAuth // make it global, so the callback can reach it...

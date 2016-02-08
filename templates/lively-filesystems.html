@@ -27,22 +27,36 @@
     </style>
     <div class="container">
       <p>Github
-      <button id="loginButton">login</button>
-      <button id="logoutButton">logout</button>
+        <button id="githubLoginButton">login</button>
+        <button id="githubLogoutButton">logout</button>
+      </p>
+      <p>Dropbox
+        <button id="dropboxLoginButton">login</button>
+        <button id="dropboxLogoutButton">logout</button>
       </p>
     </div>
 
+    <!-- SYNTAX EXPERIMENTS
+    <script type="lively4component">
+      import messaging from "../src/client/messaging.js"
+      class {
+        initialize() {
+        }
+      }
+    </script>
+    -->
+
     <script type="lively4script" data-name="initialize">
     () => {
-      console.log("initialize lively editor")
-
       var container = $(this.shadowRoot).find(".container")[0];
 
-      var messaging, focalStorage, githubAuth;
+      var messaging, focalStorage, githubAuth, dropboxAuth;
+
+      // #TODO why not?:
+      // import messaging from "../src/client/messaging.js"
       System.import('../src/client/messaging.js').then(function(mod) {
         messaging = mod;
       })
-
       System.import('../src/external/focalStorage.js').then(function(mod) {
         focalStorage = mod
       })
@@ -52,10 +66,22 @@
         window.githubAuth = githubAuth // make it global, so the callback can reach it...
       })
 
+      System.import('../src/client/auth-dropbox.js').then(function(mod) {
+        dropboxAuth = mod
+        window.dropboxAuth = dropboxAuth // make it global, so the callback can reach it...
+      })
+
       // #TODO refactor to "connections"
 
-      $(this.getSubmorph('#loginButton')).click(() => { this.loginGitHub()})
-      $(this.getSubmorph('#logoutButton')).click(() => { this.logoutGitHub()})
+      $(this.getSubmorph('#githubLoginButton')).click(() => { 
+        this.loginGitHub()})
+      $(this.getSubmorph('#githubLogoutButton')).click(() => { 
+        this.logoutGitHub()})
+
+      $(this.getSubmorph('#dropboxLoginButton')).click(() => { 
+        this.loginDropbox()})
+      $(this.getSubmorph('#dropboxLogoutButton')).click(() => { 
+        this.logoutDropbox()})
 
       container.dispatchEvent(new Event("initialized"))
     }
@@ -122,8 +148,61 @@
       }
     </script>
 
-  
+    <script type="lively4script" data-name="loginDropbox">
+     function() {
+        console.log("login dropbox")
+        dropboxAuth.challengeForAuth(Date.now(), (token) => {
+            console.log('We are authenticated with the Token: ' + token)
+            var mountGithub = {
+              "path": "/dropbox",
+              "name": "dropbox",
+              "options": {
+                "token": token,
+                "subfolder": "/Lively"
+              }
+            }
+            console.log("mount: " + this.getMountURL())
+            $.ajax({
+              url: this.getMountURL(),
+              type: 'PUT',
+              data: JSON.stringify(mountGithub),
+              success: function(text) {
+                console.log("mounted github")
+              },
+              error: function(xhr, status, error) {
+                console.log("could not mount gitub " + error)
+              }
+            });
+        })
+      
+}    </script>
+    <script type="lively4script" data-name="logoutDropbox">
+      function(){
+        dropboxAuth.logout(); 
+        console.log('logged out of dropbox')
+        alert("not supprt")
+        var unmountGithub = {
+              "path": "/dropbox",
+              "name": "????",
+              "options": {
+                 // No token, so we mount it read-only
+              }
+            }
+            $.ajax({
+              url: this.getMountURL(),
+              type: 'PUT',
+              data: JSON.stringify(unmountGithub),
+              success: function(text) {
+                console.log("unmounted github")
+              },
+              error: function(xhr, status, error) {
+                console.log("could not unmount gitub " + error)
+              }
+            });
+      }
+    </script>
 
+  
 </template>
 
 <script class="registrationScript">

@@ -11,12 +11,20 @@ import html5fs from 'src/swx/fs/html5.jsx'
 import githubfs from 'src/swx/fs/github.jsx'
 import dropboxfs from 'src/swx/fs/dropbox.jsx'
 
+import focalStorage from 'src/external/focalStorage.js';
+
+
 class ServiceWorker {
     constructor() {
         this.filesystem = new fs.Filesystem()
         this.filesystem.mount('/', githubfs, {repo: 'LivelyKernel/lively4-core', branch: 'gh-pages'})
         this.filesystem.mount('/sys', sysfs)
+        
         this.filesystem.mount('/local', html5fs)
+        
+        console.log("focalStorage: " + focalStorage)
+
+        // here we should remount previous filesystem (remembered in focalStorage)
     }
 
     fetch(event) {
