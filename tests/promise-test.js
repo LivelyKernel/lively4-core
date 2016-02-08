@@ -9,22 +9,22 @@ describe('promise', () => {
   var p = lively.lang.promise;
 
   describe("cb convertions", () => {
-    
-    it("resolves", () => 
+
+    it("resolves", () =>
       p.convertCallbackFun(function(a, b, thenDo) { thenDo(null, a + b); })(2,3)
         .then(result => expect(result).to.equal(5)));
 
-    it("rejects", () => 
+    it("rejects", () =>
       p.convertCallbackFun(function(a, b, thenDo) { thenDo(new Error("Foo"), a + b); })(2,3)
         .then(result => expect().fail("should end in catch"))
         .catch(err => expect(err).to.match(/error.*foo/i)));
 
-    it("rejects when cb throws", () => 
+    it("rejects when cb throws", () =>
       p.convertCallbackFun(function(a, b, thenDo) { throw(new Error("Foo")); })(2,3)
         .then(result => expect().fail("should end in catch"))
         .catch(err => expect(err).to.match(/error.*foo/i)));
 
-    it("deals with n args", () => 
+    it("deals with n args", () =>
       p.convertCallbackFunWithManyArgs(function(a, b, thenDo) { thenDo(null, b, a); })(2,3)
         .then(result => expect(result).to.eql([3, 2])));
 
@@ -43,7 +43,7 @@ describe('promise', () => {
       return deferred.promise.catch(err => expect(err).to.match(/Foo/i));
     });
   });
-  
+
   describe("chain", () => {
 
     it("runs promises consecutively", () => {
@@ -77,4 +77,34 @@ describe('promise', () => {
 
   });
 
+  describe("delay", () => {
+
+    it("resolves later", () => {
+      var start = new Date();
+      return p.delay(300, 3).then(val => {
+        expect(val).to.equal(3);
+        expect(Date.now()-start).to.be.above(200);
+      });
+    });
+
+    it("rejects later", () => {
+      var start = new Date();
+      return p.delayReject(300, new Error("Foo")).catch(err => {
+        expect(err).to.match(/foo/i);
+        expect(Date.now()-start).to.be.above(200);
+      });
+    });
+
+  });
+
+  describe("timeout", () => {
+
+    it("takes a promise and let's it resolve when it's fast enough", () =>
+      p.timeout(300, p.delay(100, 3))
+        .then(val => expect(val).to.equal(3)));
+
+    it("takes a promise and makes it timeout when it's not fast enough", () =>
+      p.timeout(100, p.delay(300, 3))
+        .catch(err => expect(err).to.match(/timed out/i)));
+  });
 });
