@@ -1496,7 +1496,7 @@ if(!(otherDate instanceof Date))return '';if(otherDate < date)return '';if(other
 //   // => Promise({state: "fullfilled", value: 23})
 // lively.lang.promise(function(val, thenDo) { thenDo(null, val + 1) })(3)
 //   // => Promise({state: "fullfilled", value: 4})
-return typeof obj === "function"?promise.convertCallbackFun(obj):Promise.resolve(obj);};obj.extend(exports.promise,{deferred:function deferred(){ // returns an object
+return typeof obj === "function"?promise.convertCallbackFun(obj):Promise.resolve(obj);};obj.extend(exports.promise,{delay:function delay(ms,resolveVal){return new Promise(function(resolve){setTimeout(resolve,ms,resolveVal);});},delayReject:function delayReject(ms,rejectVal){return new Promise(function(_,reject){setTimeout(reject,ms,rejectVal);});},timeout:function timeout(ms,promise){return new Promise(function(resolve,reject){var done=false;setTimeout(function(){if(!done){done = true;reject(new Error("Promise timed out"));}},ms);promise.then(function(val){if(!done){done = true;resolve(val);}})["catch"](function(err){if(done){done = true;reject(err);}});});},deferred:function deferred(){ // returns an object
 // `{resolve: FUNCTION, reject: FUNCTION, promise: PROMISE}`
 // that separates the resolve/reject handling from the promise itself
 // Similar to the deprecated `Promise.defer()`

@@ -5825,6 +5825,28 @@ exports.promise = function promise(obj) {
 
 obj.extend(exports.promise, {
 
+  delay: function(ms, resolveVal) {
+    return new Promise(resolve => {
+      setTimeout(resolve, ms, resolveVal); });
+  },
+
+  delayReject: function(ms, rejectVal) {
+    return new Promise((_, reject) => {
+      setTimeout(reject, ms, rejectVal); });
+  },
+
+  timeout: function(ms, promise) {
+    return new Promise((resolve, reject) => {
+      var done = false;
+      setTimeout(() => {
+        if (!done) { done = true; reject(new Error("Promise timed out")); }
+      }, ms);
+      promise
+        .then(val => { if (!done) { done = true; resolve(val); } })
+        .catch(err => { if (done) { done = true; reject(err); } })
+    });
+  },
+
   deferred: function() {
     // returns an object
     // `{resolve: FUNCTION, reject: FUNCTION, promise: PROMISE}`
