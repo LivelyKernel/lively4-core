@@ -99,6 +99,7 @@
       $(this.getSubmorph('#updateMountList')).click(() => { 
         this.updateMountList()})
 
+      this.updateMountList()
 
       container.dispatchEvent(new Event("initialized"))
     }
@@ -260,7 +261,7 @@
           list.innerHTML = ""          
           mounts.forEach(ea => {
             let listItem = document.createElement("li")
-            listItem.innerHTML = ea.path + " (" + ea.name +")"
+            listItem.innerHTML = ea.path + " (" + ea.name +") "
 
             let button = document.createElement("button")
             button.innerHTML="umount"

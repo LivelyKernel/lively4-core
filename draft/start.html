@@ -1,0 +1,45 @@
+<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+<title>Lively 4 -- Start Page</title>
+
+
+<script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
+
+<!--<link rel="import" href="../src/client/babel-system.html" /> -->
+<!-- BEGIN SYSTEM.JS: should go away, until then we use a "static" global source -->
+<script src="https://livelykernel.github.io/lively4-core/src/external/system.src.js" type="text/javascript" charset="utf-8"></script>
+<script src="https://livelykernel.github.io/lively4-core/vendor/regenerator-runtime.js" type="text/javascript" charset="utf-8"></script>
+
+
+<script>
+  System.paths['babel'] ='https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
+  System.config({
+    transpiler: 'babel',
+    babelOptions: { },
+    map: {
+        babel: 'https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
+    }
+  });
+</script>
+<!-- END SYSTEM.JS-->
+</head>
+<body>
+
+<script>
+    var lively4url =  "../" // or any abosolute path to lively4 ? Any idea for computeRoot() ? #JensLincke #OpenQuestion
+
+    System.import(lively4url + "src/client/load.js").then(function(){
+        console.log("lively loaded!")
+
+
+        alert("here we could load any lively page")
+
+
+    }).catch(function(err) {
+        console.log("Lively Loaging failed", err)
+        alert("load Lively4 failed:" + err)
+    });
+
+</script>
+
+</body>
+</html>
