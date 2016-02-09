@@ -33,6 +33,8 @@
       <p>Dropbox
         <button id="dropboxLoginButton">login</button>
         <button id="dropboxLogoutButton">logout</button>
+        from: <input id="dropboxSubfolder" value="/Lively" />
+        to: <input id="dropboxMountPath" value="/dropbox" />
       </p>
     </div>
 
@@ -142,7 +144,7 @@
                 console.log("unmounted github")
               },
               error: function(xhr, status, error) {
-                console.log("could not unmount gitub " + error)
+                console.log("could not unmount github " + error)
               }
             });
       }
@@ -151,26 +153,31 @@
     <script type="lively4script" data-name="loginDropbox">
      function() {
         console.log("login dropbox")
+
+        // #FutureWork -> make object lookup look nicer
+        var mountPath = this.shadowRoot.querySelector('#dropboxMountPath').value
+        var subfolder = this.shadowRoot.querySelector('#dropboxSubfolder').value
+
         dropboxAuth.challengeForAuth(Date.now(), (token) => {
             console.log('We are authenticated with the Token: ' + token)
-            var mountGithub = {
-              "path": "/dropbox",
+            var mount = {
+              "path": mountPath,
               "name": "dropbox",
               "options": {
                 "token": token,
-                "subfolder": "/Lively"
+                "subfolder": subfolder
               }
             }
             console.log("mount: " + this.getMountURL())
             $.ajax({
               url: this.getMountURL(),
               type: 'PUT',
-              data: JSON.stringify(mountGithub),
+              data: JSON.stringify(mount),
               success: function(text) {
-                console.log("mounted github")
+                console.log("mounted dropbox")
               },
               error: function(xhr, status, error) {
-                console.log("could not mount gitub " + error)
+                console.log("could not mount dropbox " + error)
               }
             });
         })
