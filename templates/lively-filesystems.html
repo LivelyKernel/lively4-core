@@ -36,6 +36,12 @@
         from: <input id="dropboxSubfolder" value="/Lively" />
         to: <input id="dropboxMountPath" value="/dropbox" />
       </p>
+      <p>      
+        <button id="updateMountList">update</button>
+        <ol id="listOfMountPoints"></ol>
+      </p>
+
+
     </div>
 
     <!-- SYNTAX EXPERIMENTS
@@ -52,7 +58,7 @@
     () => {
       var container = $(this.shadowRoot).find(".container")[0];
 
-      var messaging, focalStorage, githubAuth, dropboxAuth;
+      var messaging, focalStorage, githubAuth, dropboxAuth, componentLoader;
 
       // #TODO why not?:
       // import messaging from "../src/client/messaging.js"
@@ -73,6 +79,12 @@
         window.dropboxAuth = dropboxAuth // make it global, so the callback can reach it...
       })
 
+      System.import('../src/client/morphic/component-loader.js').then(function(mod) {
+        componentLoader = mod
+        window.componentLoader = mod // #TODO how can we define it in the lexical scope of the script? #Design #FutureWork
+      })
+
+
       // #TODO refactor to "connections"
 
       $(this.getSubmorph('#githubLoginButton')).click(() => { 
@@ -84,6 +96,9 @@
         this.loginDropbox()})
       $(this.getSubmorph('#dropboxLogoutButton')).click(() => { 
         this.logoutDropbox()})
+      $(this.getSubmorph('#updateMountList')).click(() => { 
+        this.updateMountList()})
+
 
       container.dispatchEvent(new Event("initialized"))
     }
@@ -140,8 +155,9 @@
               url: this.getMountURL(),
               type: 'PUT',
               data: JSON.stringify(unmountGithub),
-              success: function(text) {
+              success: (text) => {
                 console.log("unmounted github")
+                this.updateMountList()
               },
               error: function(xhr, status, error) {
                 console.log("could not unmount github " + error)
@@ -173,8 +189,9 @@
               url: this.getMountURL(),
               type: 'PUT',
               data: JSON.stringify(mount),
-              success: function(text) {
+              success: (text) => {
                 console.log("mounted dropbox")
+                this.updateMountList()
               },
               error: function(xhr, status, error) {
                 console.log("could not mount dropbox " + error)
@@ -207,6 +224,66 @@
               }
             });
       }
+    </script>
+    <script type="lively4script" data-name="umountPath">
+    function(path) {
+      console.log("umountPath: " + path)
+       $.ajax({
+              url: "https://lively4/sys/fs/umount",
+              type: 'PUT',
+              data: JSON.stringify({path: path}),
+              success: (text) => {
+                console.log("unmounted path: " + path)
+                this.updateMountList()
+              },
+              error: function(xhr, status, error) {
+                alert("could not unmount path: "  + path, error)
+              }
+            });
+
+
+
+
+    }
+    </script>
+    <script type="lively4script" data-name="updateMountList">
+    function() {
+      $.ajax({
+        url: "https://lively4/sys/mounts",
+        type: 'GET',
+        success: (text) => {
+          console.log("show mounts...")
+          var list = this.shadowRoot.querySelector('#listOfMountPoints')
+          var mounts = JSON.parse(text)
+          console.log(mounts)
+
+          list.innerHTML = ""          
+          mounts.forEach(ea => {
+            let listItem = document.createElement("li")
+            listItem.innerHTML = ea.path + " (" + ea.name +")"
+
+            let button = document.createElement("button")
+            button.innerHTML="umount"
+            button.onclick = () => { this.umountPath(ea.path)}
+            listItem.appendChild(button)
+
+            let browseButton = document.createElement("button")
+            browseButton.innerHTML="browse"
+            browseButton.onclick = () => {
+              var browser = componentLoader.createComponent("lively-file-browser");
+              componentLoader.openInWindow(browser).then(() => {
+                browser.path = ea.path
+              });
+            }
+            listItem.appendChild(browseButton)
+            list.appendChild(listItem)
+          })
+        },
+        error: function(xhr, status, error) {
+          console.log("could not get list of mounts: " + error)
+        }
+      });
+    }
     </script>
 
   

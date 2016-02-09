@@ -7,15 +7,9 @@ import focalStorage from '../external/focalStorage.js';
 
 var onAuthenticatedCallbacks = {}
 
-
 console.log("focalStorage: ", focalStorage)
 
-log("load githubAuth")
-
-
-window.addEventListener('error', function(error) {
-        console.error(error);
-});
+console.log("load githubAuth")
 
 export function onAuthenticated(windowUuid, authInfo) {
 
