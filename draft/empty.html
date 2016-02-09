@@ -41,6 +41,8 @@
 <link rel="import" href="../templates/lively-console.html"/>
 <link rel="import" href="../templates/lively-editor.html"/>
 <link rel="import" href="../templates/lively-filesystems.html"/>
+<link rel="import" href="../templates/lively-component-bin.html"/>
+<link rel="import" href="../templates/lively-persistence-settings.html"/>
 
 <link rel="import" href="../templates/juicy-ace-editor.html"/>
 
@@ -111,6 +113,22 @@
                         $('body')[0].appendChild(container)
                         var text  = document.createElement("lively-console")
                         container.appendChild(text)
+
+                    }],
+                    ["Component Bin", function() {
+                        var container  = document.createElement("lively-window")
+                        $('body')[0].appendChild(container)
+                        var text  = document.createElement("lively-component-bin")
+                        container.appendChild(text)
+
+                    }],
+                    ["Persistens Settings", function() {
+                        var container  = document.createElement("lively-window")
+                        $('body')[0].appendChild(container)
+                        var text  = document.createElement("lively-persistence-settings")
+                        container.appendChild(text)
+                        container.style.height = "150px"
+                        container.style.width = "400px"
 
                     }],
                     ["Text", function() {
