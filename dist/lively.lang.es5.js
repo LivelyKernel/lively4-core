@@ -1496,7 +1496,13 @@ if(!(otherDate instanceof Date))return '';if(otherDate < date)return '';if(other
 //   // => Promise({state: "fullfilled", value: 23})
 // lively.lang.promise(function(val, thenDo) { thenDo(null, val + 1) })(3)
 //   // => Promise({state: "fullfilled", value: 4})
-return typeof obj === "function"?promise.convertCallbackFun(obj):Promise.resolve(obj);};obj.extend(exports.promise,{delay:function delay(ms,resolveVal){return new Promise(function(resolve){setTimeout(resolve,ms,resolveVal);});},delayReject:function delayReject(ms,rejectVal){return new Promise(function(_,reject){setTimeout(reject,ms,rejectVal);});},timeout:function timeout(ms,promise){return new Promise(function(resolve,reject){var done=false;setTimeout(function(){if(!done){done = true;reject(new Error("Promise timed out"));}},ms);promise.then(function(val){if(!done){done = true;resolve(val);}})["catch"](function(err){if(done){done = true;reject(err);}});});},deferred:function deferred(){ // returns an object
+return typeof obj === "function"?promise.convertCallbackFun(obj):Promise.resolve(obj);};obj.extend(exports.promise,{delay:function delay(ms,resolveVal){ // Like `Promise.resolve(resolveVal)` but waits for `ms` milliseconds
+// before resolving
+return new Promise(function(resolve){setTimeout(resolve,ms,resolveVal);});},delayReject:function delayReject(ms,rejectVal){ // like `promise.delay` but rejects
+return new Promise(function(_,reject){setTimeout(reject,ms,rejectVal);});},timeout:function timeout(ms,promise){ // Takes a promise and either resolves to the value of the original promise
+// when it succeeds before `ms` milliseconds passed or fails with a timeout
+// error
+return new Promise(function(resolve,reject){var done=false;setTimeout(function(){if(!done){done = true;reject(new Error("Promise timed out"));}},ms);promise.then(function(val){if(!done){done = true;resolve(val);}})["catch"](function(err){if(done){done = true;reject(err);}});});},deferred:function deferred(){ // returns an object
 // `{resolve: FUNCTION, reject: FUNCTION, promise: PROMISE}`
 // that separates the resolve/reject handling from the promise itself
 // Similar to the deprecated `Promise.defer()`
@@ -1514,7 +1520,21 @@ var resolve,reject,promise=new Promise(function(_resolve,_reject){resolve = _res
 //   .catch(err => console.error("Could not read file!", err));
 return function promiseGenerator() /*args*/{var _this=this;var args=arr.from(arguments);return new Promise(function(resolve,reject){args.push(function(err,result){return err?reject(err):resolve(result);});func.apply(_this,args);});};},convertCallbackFunWithManyArgs:function convertCallbackFunWithManyArgs(func){ // like convertCallbackFun but the promise will be resolved with the
 // all non-error arguments wrapped in an array.
-return function promiseGenerator() /*args*/{var _this2=this;var args=arr.from(arguments);return new Promise(function(resolve,reject){args.push(function() /*err + args*/{var args=arr.from(arguments),err=args.shift();return err?reject(err):resolve(args);});func.apply(_this2,args);});};},_chainResolveNext:function resolveNext(promiseFuncs,prevResult,akku,resolve,reject){var next=promiseFuncs.shift();if(!next)resolve(prevResult);else {try{Promise.resolve(next(prevResult,akku)).then(function(result){resolveNext(promiseFuncs,result,akku,resolve,reject);})["catch"](function(err){return reject(err);});}catch(err) {reject(err);}}},chain:function chain(promiseFuncs){return new Promise(function(resolve,reject){exports.promise._chainResolveNext(promiseFuncs.slice(),undefined,{},resolve,reject);});}});})(typeof module !== "undefined" && module.require && typeof process !== "undefined"?require('./base'):typeof lively !== "undefined" && lively.lang?lively.lang:{}); /*global process, require*/ /*
+return function promiseGenerator() /*args*/{var _this2=this;var args=arr.from(arguments);return new Promise(function(resolve,reject){args.push(function() /*err + args*/{var args=arr.from(arguments),err=args.shift();return err?reject(err):resolve(args);});func.apply(_this2,args);});};},_chainResolveNext:function resolveNext(promiseFuncs,prevResult,akku,resolve,reject){var next=promiseFuncs.shift();if(!next)resolve(prevResult);else {try{Promise.resolve(next(prevResult,akku)).then(function(result){resolveNext(promiseFuncs,result,akku,resolve,reject);})["catch"](function(err){return reject(err);});}catch(err) {reject(err);}}},chain:function chain(promiseFuncs){ // Similar to Promise.all but takes a list of promise-producing functions
+// (instead of Promises directly) that are run sequentially. Each function
+// gets the result of the previous promise and a shared "state" object passed
+// in. The function should return either a value or a promise. The result of
+// the entire chain call is a promise itself that either resolves to the last
+// returned value or rejects with an error that appeared somewhere in the
+// promise chain. In case of an error the chain stops at that point.
+// Example:
+// lively.lang.promise.chain([
+//   () => Promise.resolve(23),
+//   (prevVal, state) => { state.first = prevVal; return prevVal + 2 },
+//   (prevVal, state) => { state.second = prevVal; return state }
+// ]).then(result => console.log(result));
+// // => prints {first: 23,second: 25}
+return new Promise(function(resolve,reject){exports.promise._chainResolveNext(promiseFuncs.slice(),undefined,{},resolve,reject);});}});})(typeof module !== "undefined" && module.require && typeof process !== "undefined"?require('./base'):typeof lively !== "undefined" && lively.lang?lively.lang:{}); /*global process, require*/ /*
  * A simple node.js-like cross-platform event emitter implementation.
  */;(function(exports){"use strict";var isNode=typeof process !== 'undefined' && process.versions && process.versions.node; // A simple node.js-like cross-platform event emitter implementation that can
 // be used as a mixin. Emitters support the methods: `on(eventName, handlerFunc)`,
