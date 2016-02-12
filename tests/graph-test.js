@@ -38,4 +38,13 @@ describe('graph', function() {
     });
 
   });
+  
+  describe("invert", (arg) => {
+    it("inverts references", () => {
+      var g = {"a": ["b", "c"], "b": ["c"], "c": ["a"]},
+          expected = {"a": ["c"], "b": ["a"], "c": ["a", "b"]};
+      expect(graph.invert(g)).to.eql(expected);
+    });
+  });
+
 });

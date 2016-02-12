@@ -19,6 +19,7 @@ var testGraph = {
   - [without](#graph-without)
   - [hull](#graph-hull)
   - [subgraphReachableBy](#graph-subgraphReachableBy)
+  - [invert](#graph-invert)
 
 ### <a name="graph"></a>graph
 
@@ -63,4 +64,14 @@ Like hull but returns subgraph map of `graphMap`
 ```js
 graph.subgraphReachableBy(testGraph, "e", [], 2);
 // => {e: [ 'a', 'f' ], a: [ 'b', 'c' ], f: []}
+```
+
+#### <a name="graph-invert"></a>graph.invert(g)
+
+ inverts the references of graph object `g`.
+ 
+
+```js
+graph.invert({a: ["b"], b: ["a", "c"]})
+  // => {a: ["b"], b: ["a"], c: ["b"]}
 ```

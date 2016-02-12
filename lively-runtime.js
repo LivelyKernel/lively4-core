@@ -11,6 +11,7 @@ lively.require("lively.lang.Runtime").toRun(function() {
         .then(JSON.parse)
         .then(jso => jso.libFiles)
         .then(files => lively.lang.promise(lively.lang.Runtime.loadFiles)(project, files))
+        .then(() => lively.lang.deprecatedLivelyPatches())
         .then(lively.lang.fun.withNull(thenDo))
         .then(show.curry("Reloaded"))
         .catch(thenDo);

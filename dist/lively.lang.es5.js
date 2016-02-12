@@ -1590,7 +1590,11 @@ return arr.uniq(arr.flatten(obj.values(graph.subgraphReachableBy(graphMap,id,ign
 // Example:
 // graph.subgraphReachableBy(testGraph, "e", [], 2);
 // // => {e: [ 'a', 'f' ], a: [ 'b', 'c' ], f: []}
-maxDepth = maxDepth || 10;if(ignore)graphMap = graph.without(graphMap,ignore);var ids=[id],step=0,subgraph={};while(ids.length && step++ < maxDepth) {ids = ids.reduce(function(ids,id){return subgraph[id]?ids:ids.concat(subgraph[id] = graphMap[id] || []);},[]);}return subgraph;}};})(typeof module !== "undefined" && module.require && typeof process !== "undefined"?require('./base'):typeof lively !== "undefined" && lively.lang?lively.lang:{}); /*global clearTimeout, setTimeout, clearInterval, setInterval*/ /*
+maxDepth = maxDepth || 10;if(ignore)graphMap = graph.without(graphMap,ignore);var ids=[id],step=0,subgraph={};while(ids.length && step++ < maxDepth) {ids = ids.reduce(function(ids,id){return subgraph[id]?ids:ids.concat(subgraph[id] = graphMap[id] || []);},[]);}return subgraph;},invert:function invert(g){ // inverts the references of graph object `g`.
+// Example:
+// graph.invert({a: ["b"], b: ["a", "c"]})
+//   // => {a: ["b"], b: ["a"], c: ["b"]}
+return Object.keys(g).reduce(function(inverted,k){g[k].forEach(function(k2){if(!inverted[k2])inverted[k2] = [k];else inverted[k2].push(k);});return inverted;},{});}};})(typeof module !== "undefined" && module.require && typeof process !== "undefined"?require('./base'):typeof lively !== "undefined" && lively.lang?lively.lang:{}); /*global clearTimeout, setTimeout, clearInterval, setInterval*/ /*
  * A pluggable interface to provide asynchronous, actor-like message
  * communication between JavaScript systems. Provides a unified message protocol
  * and send / receive methods.
