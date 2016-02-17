@@ -1502,7 +1502,7 @@ return new Promise(function(resolve){setTimeout(resolve,ms,resolveVal);});},dela
 return new Promise(function(_,reject){setTimeout(reject,ms,rejectVal);});},timeout:function timeout(ms,promise){ // Takes a promise and either resolves to the value of the original promise
 // when it succeeds before `ms` milliseconds passed or fails with a timeout
 // error
-return new Promise(function(resolve,reject){var done=false;setTimeout(function(){if(!done){done = true;reject(new Error("Promise timed out"));}},ms);promise.then(function(val){if(!done){done = true;resolve(val);}})["catch"](function(err){if(done){done = true;reject(err);}});});},deferred:function deferred(){ // returns an object
+return new Promise(function(resolve,reject){var done=false;setTimeout(function(){return !done && (done = true) && reject(new Error("Promise timed out"));},ms);promise.then(function(val){return !done && (done = true) && resolve(val);})["catch"](function(err){return !done && (done = true) && reject(err);});});},deferred:function deferred(){ // returns an object
 // `{resolve: FUNCTION, reject: FUNCTION, promise: PROMISE}`
 // that separates the resolve/reject handling from the promise itself
 // Similar to the deprecated `Promise.defer()`

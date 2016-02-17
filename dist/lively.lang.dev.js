@@ -5844,12 +5844,10 @@ obj.extend(exports.promise, {
     // error
     return new Promise((resolve, reject) => {
       var done = false;
-      setTimeout(() => {
-        if (!done) { done = true; reject(new Error("Promise timed out")); }
-      }, ms);
+      setTimeout(() => !done && (done = true) && reject(new Error("Promise timed out")), ms);
       promise
-        .then(val => { if (!done) { done = true; resolve(val); } })
-        .catch(err => { if (done) { done = true; reject(err); } })
+        .then(val => !done && (done = true) && resolve(val))
+        .catch(err => !done && (done = true) && reject(err));
     });
   },
 

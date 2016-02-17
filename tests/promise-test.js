@@ -106,5 +106,9 @@ describe('promise', () => {
     it("takes a promise and makes it timeout when it's not fast enough", () =>
       p.timeout(100, p.delay(300, 3))
         .catch(err => expect(err).to.match(/timed out/i)));
+
+    it("with error", () =>
+      p.timeout(100, new Promise((resolve, reject) => reject(new Error("foo"))))
+        .catch(err => expect(err).to.match(/foo/i)));
   });
 });
