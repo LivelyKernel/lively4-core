@@ -1,20 +1,5 @@
 /* Load Lively */
 
-function log(/* varargs */) {
-    var args = arguments
-    $('lively-console').each(function() { this.log.apply(this, args)})
-}
-
-// guard againsst wrapping twice and ending in endless recursion
-if (!console.log.isWrapped) {
-    var nativeLog = console.log
-    console.log = function() {
-        nativeLog.apply(console, arguments)
-        log.apply(undefined, arguments)
-    }
-    console.log.isWrapped = true
-}
-
 
 var loadCallbacks = []
 export function whenLoaded(cb) {
@@ -31,10 +16,10 @@ if ('serviceWorker' in navigator) {
         scope: root
     }).then(function(registration) {
         // Registration was successful
-        log('ServiceWorker registration successful with scope: ', registration.scope);
+        console.log('ServiceWorker registration successful with scope: ', registration.scope);
     }).catch(function(err) {
         // registration failed
-        log('ServiceWorker registration failed: ', err);
+        console.log('ServiceWorker registration failed: ', err);
     });
 
     navigator.serviceWorker.ready.then(function(registration) {
