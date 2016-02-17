@@ -1,22 +1,24 @@
+/* Load Lively */
 
-
-    function log(/* varargs */) {
-        var args = arguments
-        $('lively-console').each(function() { this.log.apply(this, args)})
-    }
-
-// console.log("A squared: " + 2**4)
+function log(/* varargs */) {
+    var args = arguments
+    $('lively-console').each(function() { this.log.apply(this, args)})
+}
 
 // guard againsst wrapping twice and ending in endless recursion
 if (!console.log.isWrapped) {
     var nativeLog = console.log
-
     console.log = function() {
         nativeLog.apply(console, arguments)
         log.apply(undefined, arguments)
     }
-
     console.log.isWrapped = true
+}
+
+
+var loadCallbacks = []
+export function whenLoaded(cb) {
+    loadCallbacks.push(cb)
 }
 
 
@@ -24,7 +26,7 @@ if ('serviceWorker' in navigator) {
     var root = ("" + window.location).replace(/[^\/]*$/,'../')
 
     navigator.serviceWorker.register(root + 'swx-loader.js', {
-    // navigator.serviceWorker.register('../../serviceworker-loader.js', {
+        // navigator.serviceWorker.register('../../serviceworker-loader.js', {
         // scope: root + "draft/"
         scope: root
     }).then(function(registration) {
@@ -36,26 +38,21 @@ if ('serviceWorker' in navigator) {
     });
 
     navigator.serviceWorker.ready.then(function(registration) {
-            log('READY');
-
-            // #TODO continue here... loadFile is not in global scope (yet)
-            System.import("../src/client/script-manager.js").then(function(module) {
-                window.scriptManager = module;
-                log("scriptManager loaded");
+        // Lively has all the dependencies
+        System.import("../src/client/lively.js").then(function(lively) {
+            window.lively = lively
+            initializeHalos();
+            lively.components.loadUnresolved();  
+            console.log("running on load callbacks:");
+            loadCallbacks.forEach(function(cb){ 
+                try { 
+                   cb()
+                } catch(e) {
+                    console.log("Error running on load callback: "  + cb + " error: " + e)
+                }
             });
-            System.import("../src/client/preferences.js").then(function(module) {
-                window.preferences = module;
-                log("preferences loaded");
-            });
-            System.import("../src/client/persistence.js").then(function(module) {
-                window.persistence = module;
-                log("persistence loaded");
-            });
-            System.import("../src/client/morphic/component-loader.js").then(function(module) {
-                initializeHalos();
-                module.loadUnresolved();
-                log("component-loader unresolved tags loaded");
-            });
+            console.log("lively loaded");
+        })
     })
 
     var fs = new Promise(function(resolve, reject) {
