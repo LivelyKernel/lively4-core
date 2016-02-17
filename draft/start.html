@@ -23,15 +23,21 @@
 <!-- END SYSTEM.JS-->
 </head>
 <body>
-
+<lively-container></lively-container>
 <script>
-    var lively4url =  "../" // or any abosolute path to lively4 ? Any idea for computeRoot() ? #JensLincke #OpenQuestion
+    var lively4yourself = /\/draft\/.*\.html/ // ADAPT THIS
+    // some little reflection... help to find your inner self!
+    var lively4url = window.location.origin + window.location.pathname.replace(lively4yourself,"")
 
-    System.import(lively4url + "src/client/load.js").then(function(load){
-        load.whenLoaded(function() {    
-            console.log("Lively4 loaded!")
+    System.import(lively4url + "/src/client/load.js").then(function(load){load.whenLoaded(() => {   
+        lively.components.loadUnresolved().then(() => {
+            var path = lively.preferences.getURLParameter("load")
+            if (path) {
+                $('lively-container')[0].setPath(path)
+            }
+            console.log("Finally loaded!")
         })
-    }).catch(function(err) {
+    })}).catch(function(err) {
         console.log("Lively Loaging failed", err)
         alert("load Lively4 failed:" + err)
     });

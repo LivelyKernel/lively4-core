@@ -2,6 +2,12 @@
 
 var prefsNode;
 
+
+var _baseURL	= window.lively4url || (window.location.origin + "/lively4-NOTHTING/") // gets overridden... but this is a sane default
+
+export function getBaseURL() { return _baseURL}
+export function setBaseURL(val) { _baseURL = val}
+
 initialize();
 
 function initialize() {
@@ -35,3 +41,6 @@ export function getURLParameter(theParameter) {
   }
   return false;
 }
+
+
+console.log("loaded preferences")

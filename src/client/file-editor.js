@@ -79,3 +79,4 @@ export function statFile(urlString){
 	})
 }
 
+console.log("loaded file-editor")

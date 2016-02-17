@@ -2,6 +2,7 @@
 
 import Morph from './Morph.js';
 import * as componentLoader from '../../src/client/morphic/component-loader.js';
+import * as preferences from '../../src/client/preferences.js';
 
 export default class ComponentBinTile extends Morph {
   initialize() {
@@ -17,7 +18,7 @@ export default class ComponentBinTile extends Morph {
 
   configure(config) {
     this.setComponentName(config.name);
-    this.setThumbnail("/lively4-core/templates/" + (config.thumbnail || "thumbnails/default-placeholder.png"));
+    this.setThumbnail(preferences.getBaseURL() + "/templates/" + (config.thumbnail || "thumbnails/default-placeholder.png"));
     this.setTooltip(config.description);
 
     this.htmlTag = config["html-tag"];

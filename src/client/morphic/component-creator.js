@@ -1,4 +1,5 @@
 import * as componentLoader from "./component-loader.js";
+import * as preferences from '../preferences.js';
 
 var htmlBeautify;
 System.import("../src/external/beautify-html.js").then(function(obj){
@@ -82,13 +83,13 @@ function saveTemplate(template, info) {
 
   var templateEditor = componentLoader.createComponent("lively-editor");
   componentLoader.openInWindow(templateEditor).then(() => {
-    templateEditor.setURL(window.location.origin + "/lively4-core/templates/" + template.id + ".html");
+    templateEditor.setURL(preferences.getBaseURL() + "/templates/" + template.id + ".html");
     templateEditor.setText(completeHTML);
   });
 
   var jsonEditor = componentLoader.createComponent("lively-editor");
   componentLoader.openInWindow(jsonEditor).then(() => {
-    jsonEditor.setURL(window.location.origin + "/lively4-core/templates/" + template.id + ".json");
+    jsonEditor.setURL(preferences.getBaseURL() + "/templates/" + template.id + ".json");
     jsonEditor.setText(JSON.stringify(info));
   });
 

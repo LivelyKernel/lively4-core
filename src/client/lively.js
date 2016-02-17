@@ -9,10 +9,16 @@ import * as persistence from './persistence.js';
 import * as components from './morphic/component-loader.js';
 
 
-
 export { scripts }
 export { messaging }
 export { preferences } 
 export { persistence } 
 export { components } 
 
+export function openContextMenu(container) {
+	System.import(preferences.getBaseURL() + "/src/client/contextmenu.js").then(function(contextmenu) {
+		contextmenu.openIn(container)	
+    })
+}
+
+console.log("loaded lively")
