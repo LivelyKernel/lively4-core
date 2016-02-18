@@ -88,21 +88,27 @@
     }
     </script>
     <script type="lively4script" data-name="setPath">
-    (path) => {
+    function (path) {
       this.setAttribute("data-path", path)
       this.clear()
-      $.get("https://lively4/" + path, (content) => {
+      var url = "https://lively4/" + path
+      console.log("set url: " + url)
+      $.get(url, (content) => {
         var format = path.replace(/.*\./,"")
         if (format == "html")  {
           this.appendHtml(content)
         } else if (format == "md") {
           this.appendMarkdown(content)
+        } else if (format == "png") {
+          this.appendHtml("<img src='" + url +"'>")
+        } else if (format == "pdf") {
+          this.appendHtml('<object style="width:21cm;height:29cm" data="'
+            + url +'" type="application/pdf"></object>')
         } else {
           this.appendHtml("<pre>" + content +"</pre>")
         }
-
       }).fail(function(err){
-          console.log("Could not load: " + path)
+          console.log("Could not load: " + path + " because of: " + err)
       })
     }
     </script>
