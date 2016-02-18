@@ -17,12 +17,14 @@ import focalStorage from 'src/external/focalStorage.js';
 class ServiceWorker {
     constructor() {
         this.filesystem = new fs.Filesystem()
+
+        // default file system
         this.filesystem.mount('/', githubfs, {repo: 'LivelyKernel/lively4-core', branch: 'gh-pages'})
         this.filesystem.mount('/sys', sysfs)
-        
         this.filesystem.mount('/local', html5fs)
-        
-        console.log("focalStorage: " + focalStorage)
+
+        this.filesystem.loadMounts();
+
 
         // here we should remount previous filesystem (remembered in focalStorage)
     }
@@ -82,4 +84,9 @@ export function fetch(event) {
 
 export function message(event) {
     return instance().message(event)
+}
+
+
+export {
+  focalStorage
 }
