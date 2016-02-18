@@ -72,7 +72,7 @@ function saveTemplate(template, info) {
 
   // beautify
   if (typeof htmlBeautify === "function") {
-    // completeHTML = htmlBeautify(completeHTML);
+    completeHTML = htmlBeautify(completeHTML);
   }
 
   // var compBin = document.querySelector("lively-component-bin");
