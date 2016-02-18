@@ -3,6 +3,15 @@
     <script type="lively4script" data-name="initialize">
     () => {
     
+      window.onpopstate = (event) => {
+        alert("popstate")
+        debugger
+        var state = event.state
+        if (state && state.followInline) {
+          console.log("follow " + state.path)
+          this.setPath(state.path)
+        }
+      };
     }
     </script>
     <script type="lively4script" data-name="clear">
@@ -11,15 +20,12 @@
     }
     </script>
 
-
-
   
     <script type="lively4script" data-name="appendMarkdown">
     (content) => {
       var fixLinks = (nodes) => {
         if (! nodes) return
         Array.prototype.forEach.call(nodes, node => {
-          console.log("fix " + node)
           if (node.getAttribute) {
             var href = node.getAttribute("href")
             if (href && href.match(/[A-Za-z]*\.md/)) {
@@ -27,16 +33,20 @@
               // #TODO load inplace....
               var path
               if (href.match(/^\//)) {
+                debugger
                   path = href
               } else if (!href.match(/!([A-Za-z]+):\/\/.+/)) {
                   path = this.getDir() + href
               }
               if (path) {
+                console.log("fix "  + path)
                 $(node).click(() => { this.followPath(path); return false; });
 
                 // ALTERNATIVE to navigate it inline, but the link will not be followed....
                 // var link = lively4url + "/draft/start.html?load=" + path
                 // node.setAttribute("href", link)
+              } else {
+                console.log("ignore " + href)
               }
             }
             fixLinks(node.childNodes)
@@ -69,7 +79,7 @@
     </script>
     <script type="lively4script" data-name="followPath">
     (path) => {
-        window.history.pushState({ path: path }, 'view ' + path, window.location.pathname + "?load="+path);
+        window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?load="+path);
         this.setPath(path)
     }
     </script>

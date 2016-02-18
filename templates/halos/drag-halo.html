@@ -20,10 +20,14 @@
         });
 
         $(document).off("mouseup.drag").on("mouseup.drag", function(e) {
-          if (dragging.isDragging) {
-            dragging.stop(e);
-            // detach mousemove handler from body
-            $(document).off("mousemove.drag");
+          // save this as dragging.stop will overwrite the current value
+          var wasDragging = dragging.isDragging;
+
+          dragging.stop(e);
+          // detach mousemove handler from body
+          $(document).off("mousemove.drag");
+
+          if (wasDragging) {
             HaloService.showHalos(window.that);
             e.stopPropagation();
           }
