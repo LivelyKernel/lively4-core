@@ -34,7 +34,7 @@
     // some little reflection... help to find your inner self!
     var lively4url = window.location.origin + window.location.pathname.replace(lively4yourself,"")
 
-    System.import(lively4url + "/src/client/load.js").then(function(load){load.whenLoaded(() => {   
+    System.import(lively4url + "/src/client/load.js").then(function(load){load.whenLoaded(() => {
         lively.components.loadUnresolved().then(() => {
             var path = lively.preferences.getURLParameter("load")
             if (path) {
@@ -44,6 +44,10 @@
                 evt.preventDefault();
                 lively.openContextMenu($('body')[0], evt)
                 return false;
+            }, false);
+
+            document.addEventListener('click', function(evt) {
+                lively.hideContextMenu()
             }, false);
 
             console.log("Finally loaded!")

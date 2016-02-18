@@ -5,7 +5,7 @@
       top: "200px";
       left: "200px";
       border: 20px;
-
+      z-index: 200;
     }
     .container {
         width: 120px;
@@ -46,6 +46,7 @@
 
           menu.appendChild(item);
         });
+
         cb(this) // #TODO #RefactorToPromise
       }
       $(this.shadowRoot).find(".container")[0].dispatchEvent(new Event("initialized"))
