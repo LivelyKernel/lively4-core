@@ -72,7 +72,9 @@
 </div>
 
 <script>
-  var lively4url =  "..";
+  var lively4yourself = /\/draft\/.*\.html/ // ADAPT THIS
+  // some little reflection... help to find your inner self!
+  var lively4url = window.location.origin + window.location.pathname.replace(lively4yourself,"");
 
   System.import(lively4url + "/src/client/load.js").then(function(){
     System.import("commandline.js")
@@ -97,6 +99,7 @@
     alert("load component-loader failed");
   });
 
+  lively4url = null;
 </script>
 
 
