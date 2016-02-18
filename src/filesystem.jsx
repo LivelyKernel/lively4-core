@@ -18,6 +18,11 @@ export class Filesystem {
         this.mounts.set(path, new type(path, ...args))
     }
 
+    umount(path) {
+        path = Path.normalize(path)
+        this.mounts.delete(path)
+    }
+
     handle(request, url) {
         let path = Path.normalize(url.pathname),
             base = undefined,

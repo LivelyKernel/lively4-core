@@ -36,7 +36,8 @@ export default class Filesystem extends Base {
                 })
             ]),
             new SysDir('fs', [
-                new SysFile('mount', null, ::this._sysFsMount)
+                new SysFile('mount', null, ::this._sysFsMount),
+                new SysFile('umount', null, ::this._sysFsUmount) 
             ])
         ])
     }
@@ -57,6 +58,18 @@ export default class Filesystem extends Base {
         let fs = await System.import('src/swx/fs/' + name + '.jsx')
 
         swx.instance().filesystem.mount(path, fs.default, opts)
+
+        return json
+    }
+
+    async _sysFsUmount(content) {
+        let json = JSON.parse(await content)
+        let path = json['path']
+
+        if(!path)
+            throw new Error('<path> is missing')
+
+        swx.instance().filesystem.umount(path)
 
         return json
     }
