@@ -20,10 +20,14 @@
         });
 
         $("body").off("mouseup.grab").on("mouseup.grab", function(e) {
-          if (grabbing.isGrabbing) {
-            grabbing.stop(e);
-            // detach mousemove handler from body
-            $("body").off("mousemove.grab");
+          // save this as grabbing.stop will overwrite the current value
+          var wasGrabbing = grabbing.isGrabbing;
+
+          grabbing.stop(e);
+          // detach mousemove handler from body
+          $("body").off("mousemove.grab");
+
+          if (wasGrabbing) {
             HaloService.showHalos(window.that);
             e.stopPropagation();
           }
