@@ -39,8 +39,8 @@ export default class Window extends Morph {
     this.resizeButton.addEventListener('mousedown', (e) => { this.resizeMouseDown(e) });
     this.shadowRoot.querySelector('.window-title').addEventListener('mousedown', (e) => { this.titleMouseDown(e) });
 
-    document.body.addEventListener('mousemove', (e) => { this.windowMouseMove(e) });
-    document.body.addEventListener('mouseup', (e) => { this.windowMouseUp(e); });
+    document.addEventListener('mousemove', (e) => { this.windowMouseMove(e) });
+    document.addEventListener('mouseup', (e) => { this.windowMouseUp(e); });
 
     this.addEventListener('created', (e) => { this.focus() });
 

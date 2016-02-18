@@ -499,7 +499,7 @@
                 } else if (tag_check === 'script' &&
                     (tag_complete.search('type') === -1 ||
                         (tag_complete.search('type') > -1 &&
-                            tag_complete.search(/\b(text|application)\/(x-)?(javascript|ecmascript|jscript|livescript|(ld\+)?json)/) > -1))) {
+                            tag_complete.search(/lively4script|\b(text|application)\/(x-)?(javascript|ecmascript|jscript|livescript|(ld\+)?json)/) > -1))) {
                     if (!peek) {
                         this.record_tag(tag_check);
                         this.tag_type = 'SCRIPT';

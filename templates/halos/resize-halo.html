@@ -11,7 +11,7 @@
           resizing.start(e);
 
           // attach mousemove handler to body only after mousedown occured
-          $("body").off("mousemove.resize").on("mousemove.resize", function(e) {
+          $(document).off("mousemove.resize").on("mousemove.resize", function(e) {
             resizing.move(e);
 
             // update position of halos on mousemove
@@ -23,7 +23,7 @@
           if (resizing.resizing) {
             resizing.stop(e);
             // detach mousemove handler from body
-            $("body").off("mousemove.resize");
+            $(document).off("mousemove.resize");
           }
         });
       });
