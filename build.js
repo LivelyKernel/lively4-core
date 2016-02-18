@@ -15,6 +15,7 @@ var targetES5   = target.replace(/\.dev\.js$/,".es5.js");
 var targetMin   = target.replace(/\.dev\.js$/,".min.js");
 var packageJson = JSON.parse(fs.readFileSync('./package.json'));
 
+console.log("--------------");
 fun.composeAsync(
   log("1. Generating doc"),
   n => exec("npm run doc", (code, out, err) => n(code ? out+err : null)),

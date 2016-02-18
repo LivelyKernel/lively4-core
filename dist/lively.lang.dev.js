@@ -36,16 +36,16 @@
             && process.versions && process.versions.node;
 
   var livelyLang = createLivelyLangObject();
-  if (isNode) module.exports = livelyLang;
-  else {
-    livelyLang._prevLivelyGlobal = Global.lively;
-    if (!Global.lively) Global.lively = {};
-    if (!Global.lively.lang) Global.lively.lang = livelyLang;
-    else {
-      for (var name in livelyLang)
-        Global.lively.lang[name] = livelyLang[name];
-    }
-  }
+  if (isNode) { module.exports = livelyLang; return; }
+  
+  livelyLang._prevLivelyGlobal = Global.lively;
+  if (!Global.lively) Global.lively = {};
+  if (!Global.lively.lang) Global.lively.lang = livelyLang;
+  else
+    for (var name in livelyLang)
+      Global.lively.lang[name] = livelyLang[name];
+
+  return;
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -3274,12 +3274,18 @@ var fun = exports.fun = {
     // fun.argumentNames(function(arg1, arg2) {}) // => ["arg1","arg2"]
     // fun.argumentNames(function(/*var args*/) {}) // => []
     if (f.superclass) return []; // it's a class...
-    var headerMatch = f.toString().match(/^[\s\(]*function[^(]*\(([^)]*)\)/);
-    if (!headerMatch || !headerMatch[1]) return [];
-    var names = headerMatch[1]
-      .replace(/\/\/.*?[\r\n]|\/\*(?:.|[\r\n])*?\*\//g, '')
-      .replace(/\s+/g, '').split(',');
-    return names.length == 1 && !names[0] ? [] : names;
+    var src = f.toString(), names = "",
+        arrowMatch = src.match(/(?:\(([^\)]*)\)|([^\(\)-+!]+))\s*=>/);
+    if (arrowMatch) names = arrowMatch[1] || arrowMatch[2] || "";
+    else {
+      var headerMatch = src.match(/^[\s\(]*function[^(]*\(([^)]*)\)/);
+      console.log(headerMatch);
+      if (headerMatch && headerMatch[1]) names = headerMatch[1];
+    }
+    return names.replace(/\/\/.*?[\r\n]|\/\*(?:.|[\r\n])*?\*\//g, '')
+                .replace(/\s+/g, '').split(',')
+                .map(function(ea) { return ea.trim(); })
+                .filter(function(name) { return !!name; });
   },
 
   qualifiedMethodName: function(f) {

@@ -39,8 +39,16 @@ describe('fun', function() {
   describe('inspection', function() {
 
     it("can tell its args", function() {
-      var f = function(arg1, arg2, arg4) { return arg2 + arg4; };
-      expect(fun.argumentNames(f)).to.eql(["arg1", "arg2", "arg4"]);
+      expect(fun.argumentNames(function(arg1, arg2, arg4) { return arg2 + arg4; }))
+        .to.eql(["arg1", "arg2", "arg4"]);
+      expect(fun.argumentNames(function() { return 23; })) .to.eql([]);
+      expect(fun.argumentNames(function(/*...*/) { return 23; })).to.eql([]);
+    });
+
+    it("can tell args of arrow function", function() {
+      expect(fun.argumentNames((arg1, arg2, arg4) => { return arg2 + arg4; })).to.eql(["arg1", "arg2", "arg4"]);
+      expect(fun.argumentNames(foo => 23)).to.eql(["foo"]);
+      expect(fun.argumentNames(() => 23)).to.eql([]);
     });
 
     it("can extract a function body a string", function() {
