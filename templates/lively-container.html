@@ -1,0 +1,87 @@
+<template id="lively-container">
+    <content></content>
+    <script type="lively4script" data-name="initialize">
+    () => {
+    
+    }
+    </script>
+    <script type="lively4script" data-name="clear">
+    () => {
+        this.innerHTML = ''
+    }
+    </script>
+
+  
+    <script type="lively4script" data-name="appendMarkdown">
+    (content) => {
+      var fixLinks = function(nodes) {
+        if (! nodes) return
+        Array.prototype.forEach.call(nodes, node => {
+          console.log("fix " + node)
+          if (node.getAttribute) {
+            var href = node.getAttribute("href")
+            if (href && href.match(/[A-Za-z]*\.md/)) {
+              console.log("fix " + href)
+              // #TODO load inplace....
+              node.setAttribute("href", lively4url + "/draft/start.html?load=/draft/"+href)
+            }
+            fixLinks(node.childNodes)
+          }
+        })
+      }
+      System.import('../src/external/showdown.js').then((showdown) => { 
+        var converter = new showdown.Converter();
+        var htmlSource = converter.makeHtml(content)
+        var html = $.parseHTML(htmlSource)
+        fixLinks(html)
+        console.log("html", html)
+        html.forEach((ea) => this.appendChild(ea))
+      })
+    }
+    </script>
+     <script type="lively4script" data-name="appendHtml">
+    (content) => {
+      try {
+        $.parseHTML(content).forEach((ea) => this.appendChild(ea))
+      } catch(e) {
+        console.log("Could not append html:" + content)
+      }
+      
+    }
+    </script>
+
+    <script type="lively4script" data-name="setPath">
+    (path) => {
+      this.setAttribute("data-path", path)
+      $.get("https://lively4/" + path, (content) => {
+        var format = path.replace(/.*\./,"")
+        if (format == "html")  {
+          this.appendHtml(content) 
+        } else if (format == "md") { 
+          this.appendMarkdown(content)
+        } else {
+          this.appendHtml("<pre>" + content +"</pre>")
+        }
+
+      }).fail(function(err){
+          console.log("Could not load: " + path)
+      })
+    }
+    </script>
+     <script type="lively4script" data-name="appendHTML">
+    (content) => {
+        $.parseHTML(content).forEach((ea) => this.appendChild(ea))
+    }
+    </script>
+
+
+</template>
+<script class="registrationScript">
+// This ugly piece of code will be auto generated, when exporting a template. Puh.
+(function() {
+  var template = document.currentScript.ownerDocument.querySelector('#lively-container');
+  var clone = document.importNode(template.content, true);
+
+  System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-container', clone); });
+})();
+</script>

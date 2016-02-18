@@ -1,0 +1,301 @@
+<template id="lively-filesystems">
+    <style>
+    .container {
+        width: 100%;
+        height: 100%;
+        /*
+        box-sizing: border-box;
+        padding-top: 25px; */
+        display: flex;
+        flex-direction: column;
+    }
+    .toolbar {
+        /* position: absolute;
+        left: 0px;
+        top: 0px;
+        width: 100%; */
+        height: 25px;
+        /*flex: 0;*/
+    }
+    #editor {
+        /* box-sizing: border-box; */
+        width: 100%;
+        height: 100%;
+        flex: 1;   /* ACE does not display right with "flex" */
+
+    }
+    </style>
+    <div class="container">
+      <p>Github
+        <button id="githubLoginButton">login</button>
+        <button id="githubLogoutButton">logout</button>
+      </p>
+      <p>Dropbox
+        <button id="dropboxLoginButton">login</button>
+        <button id="dropboxLogoutButton">logout</button>
+        from: <input id="dropboxSubfolder" value="/Lively" />
+        to: <input id="dropboxMountPath" value="/dropbox" />
+      </p>
+      <p>      
+        <button id="updateMountList">update</button>
+        <ol id="listOfMountPoints"></ol>
+      </p>
+
+
+    </div>
+
+    <!-- SYNTAX EXPERIMENTS
+    <script type="lively4component">
+      import messaging from "../src/client/messaging.js"
+      class {
+        initialize() {
+        }
+      }
+    </script>
+    -->
+
+    <script type="lively4script" data-name="initialize">
+    () => {
+      var container = $(this.shadowRoot).find(".container")[0];
+
+      var messaging, focalStorage, githubAuth, dropboxAuth, componentLoader;
+
+      // #TODO why not?:
+      // import messaging from "../src/client/messaging.js"
+      System.import('../src/client/messaging.js').then(function(mod) {
+        messaging = mod;
+      })
+      System.import('../src/external/focalStorage.js').then(function(mod) {
+        focalStorage = mod
+      })
+
+      System.import('../src/client/auth-github.js').then(function(mod) {
+        githubAuth = mod
+        window.githubAuth = githubAuth // make it global, so the callback can reach it...
+      })
+
+      System.import('../src/client/auth-dropbox.js').then(function(mod) {
+        dropboxAuth = mod
+        window.dropboxAuth = dropboxAuth // make it global, so the callback can reach it...
+      })
+
+      System.import('../src/client/morphic/component-loader.js').then(function(mod) {
+        componentLoader = mod
+        window.componentLoader = mod // #TODO how can we define it in the lexical scope of the script? #Design #FutureWork
+      })
+
+
+      // #TODO refactor to "connections"
+
+      $(this.getSubmorph('#githubLoginButton')).click(() => { 
+        this.loginGitHub()})
+      $(this.getSubmorph('#githubLogoutButton')).click(() => { 
+        this.logoutGitHub()})
+
+      $(this.getSubmorph('#dropboxLoginButton')).click(() => { 
+        this.loginDropbox()})
+      $(this.getSubmorph('#dropboxLogoutButton')).click(() => { 
+        this.logoutDropbox()})
+      $(this.getSubmorph('#updateMountList')).click(() => { 
+        this.updateMountList()})
+
+      this.updateMountList()
+
+      container.dispatchEvent(new Event("initialized"))
+    }
+    </script>
+    <script type="lively4script" data-name="getMountURL">
+    function() { 
+      return "https://lively4/sys/fs/mount"
+    }
+    </script>
+
+    <script type="lively4script" data-name="loginGitHub">
+     function() {
+        console.log("login")
+        githubAuth.challengeForAuth(Date.now(), (token) => {
+            console.log('We are authenticated with the Token: ' + token)
+            var mountGithub = {
+              "path": "/",
+              "name": "github",
+              "options": {
+                "repo": "LivelyKernel/lively4-core",
+                "branch": "gh-pages",
+                "token": token
+              }
+            }
+            console.log("mount: " + this.getMountURL())
+            $.ajax({
+              url: this.getMountURL(),
+              type: 'PUT',
+              data: JSON.stringify(mountGithub),
+              success: function(text) {
+                console.log("mounted github")
+              },
+              error: function(xhr, status, error) {
+                console.log("could not mount gitub " + error)
+              }
+            });
+        })
+      }
+    </script>
+    <script type="lively4script" data-name="logoutGitHub">
+      function(){
+        githubAuth.logout(); 
+        console.log('logged out of github')
+        var unmountGithub = {
+              "path": "/",
+              "name": "github",
+              "options": {
+                "repo": "LivelyKernel/lively4-core",
+                "branch": "gh-pages"
+                 // No token, so we mount it read-only
+              }
+            }
+            $.ajax({
+              url: this.getMountURL(),
+              type: 'PUT',
+              data: JSON.stringify(unmountGithub),
+              success: (text) => {
+                console.log("unmounted github")
+                this.updateMountList()
+              },
+              error: function(xhr, status, error) {
+                console.log("could not unmount github " + error)
+              }
+            });
+      }
+    </script>
+
+    <script type="lively4script" data-name="loginDropbox">
+     function() {
+        console.log("login dropbox")
+
+        // #FutureWork -> make object lookup look nicer
+        var mountPath = this.shadowRoot.querySelector('#dropboxMountPath').value
+        var subfolder = this.shadowRoot.querySelector('#dropboxSubfolder').value
+
+        dropboxAuth.challengeForAuth(Date.now(), (token) => {
+            console.log('We are authenticated with the Token: ' + token)
+            var mount = {
+              "path": mountPath,
+              "name": "dropbox",
+              "options": {
+                "token": token,
+                "subfolder": subfolder
+              }
+            }
+            console.log("mount: " + this.getMountURL())
+            $.ajax({
+              url: this.getMountURL(),
+              type: 'PUT',
+              data: JSON.stringify(mount),
+              success: (text) => {
+                console.log("mounted dropbox")
+                this.updateMountList()
+              },
+              error: function(xhr, status, error) {
+                console.log("could not mount dropbox " + error)
+              }
+            });
+        })
+      
+}    </script>
+    <script type="lively4script" data-name="logoutDropbox">
+      function(){
+        dropboxAuth.logout(); 
+        console.log('logged out of dropbox')
+        alert("not supprt")
+        var unmountGithub = {
+              "path": "/dropbox",
+              "name": "????",
+              "options": {
+                 // No token, so we mount it read-only
+              }
+            }
+            $.ajax({
+              url: this.getMountURL(),
+              type: 'PUT',
+              data: JSON.stringify(unmountGithub),
+              success: function(text) {
+                console.log("unmounted github")
+              },
+              error: function(xhr, status, error) {
+                console.log("could not unmount gitub " + error)
+              }
+            });
+      }
+    </script>
+    <script type="lively4script" data-name="umountPath">
+    function(path) {
+      console.log("umountPath: " + path)
+       $.ajax({
+              url: "https://lively4/sys/fs/umount",
+              type: 'PUT',
+              data: JSON.stringify({path: path}),
+              success: (text) => {
+                console.log("unmounted path: " + path)
+                this.updateMountList()
+              },
+              error: function(xhr, status, error) {
+                alert("could not unmount path: "  + path, error)
+              }
+            });
+
+
+
+
+    }
+    </script>
+    <script type="lively4script" data-name="updateMountList">
+    function() {
+      $.ajax({
+        url: "https://lively4/sys/mounts",
+        type: 'GET',
+        success: (text) => {
+          console.log("show mounts...")
+          var list = this.shadowRoot.querySelector('#listOfMountPoints')
+          var mounts = JSON.parse(text)
+          console.log(mounts)
+
+          list.innerHTML = ""          
+          mounts.forEach(ea => {
+            let listItem = document.createElement("li")
+            listItem.innerHTML = ea.path + " (" + ea.name +") "
+
+            let button = document.createElement("button")
+            button.innerHTML="umount"
+            button.onclick = () => { this.umountPath(ea.path)}
+            listItem.appendChild(button)
+
+            let browseButton = document.createElement("button")
+            browseButton.innerHTML="browse"
+            browseButton.onclick = () => {
+              var browser = componentLoader.createComponent("lively-file-browser");
+              componentLoader.openInWindow(browser).then(() => {
+                browser.path = ea.path
+              });
+            }
+            listItem.appendChild(browseButton)
+            list.appendChild(listItem)
+          })
+        },
+        error: function(xhr, status, error) {
+          console.log("could not get list of mounts: " + error)
+        }
+      });
+    }
+    </script>
+
+  
+</template>
+
+<script class="registrationScript">
+// This ugly piece of code will be auto generated, when exporting a template. Puh.
+(function() {
+  var template = document.currentScript.ownerDocument.querySelector('#lively-filesystems');
+  var clone = document.importNode(template.content, true);
+
+  System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-filesystems', clone); });
+})();
+</script>

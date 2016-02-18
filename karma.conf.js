@@ -24,7 +24,7 @@ module.exports = function(config) {
       {pattern: 'serviceworker*', included: false},
       {pattern: 'test/**/*.js', included: false},
       {pattern: 'test-main.js', included: false},
-      'src/external/focalStorage.js',
+      // 'src/external/focalStorage.js',
       'test-loader.js'
     ],
 

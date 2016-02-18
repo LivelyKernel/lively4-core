@@ -16,13 +16,19 @@
         width: 100%; */
         height: 25px;
         /*flex: 0;*/
+        display: flex;
+        flex-direction: row;
     }
+
+    #filename {
+        width: 100%;
+        flex: 1;   
+    }    
     #editor {
         /* box-sizing: border-box; */
         width: 100%;
         height: 100%;
         flex: 1;   /* ACE does not display right with "flex" */
-
     }
     </style>
     <div class="container">
@@ -30,8 +36,6 @@
           <button id="loadButton">load</button>
           <button id="saveButton">save</button>
           <input type="text" id="filename" value="https://lively4/README.md">
-          <button id="loginButton">login</button>
-          <button id="logoutButton">logout</button>
       </div>
 
         <juicy-ace-editor id="editor"></juicy-ace-editor>
@@ -71,9 +75,6 @@
       $(this.getSubmorph('#saveButton')).click(this.saveFile.bind(this))
       $(this.getSubmorph('#loadButton')).click(this.loadFile.bind(this))
 
-      $(this.getSubmorph('#loginButton')).click(() => { this.loginGitHub()})
-      $(this.getSubmorph('#logoutButton')).click(() => { this.logoutGitHub()})
-
       container.dispatchEvent(new Event("initialized"))
     }
     </script>
@@ -81,62 +82,6 @@
     function() { 
       return "https://lively4/sys/fs/mount"
     }
-    </script>
-
-    <script type="lively4script" data-name="loginGitHub">
-     function() {
-        console.log("login")
-        githubAuth.challengeForAuth(Date.now(), (token) => {
-            console.log('We are authenticated with the Token: ' + token)
-            var mountGithub = {
-              "path": "/",
-              "name": "github",
-              "options": {
-                "repo": "LivelyKernel/lively4-core",
-                "branch": "gh-pages",
-                "token": token
-              }
-            }
-            console.log("mouont: " + mountGithub)
-            $.ajax({
-              url: this.getMountURL(),
-              type: 'PUT',
-              data: JSON.stringify(this.getMountURL()),
-              success: function(text) {
-                console.log("mounted github")
-              },
-              error: function(xhr, status, error) {
-                console.log("could not mount gitub " + error)
-              }
-            });
-        })
-      }
-    </script>
-    <script type="lively4script" data-name="logoutGitHub">
-      function(){
-        githubAuth.logout(); 
-        console.log('logged out of github')
-        var unmountGithub = {
-              "path": "/",
-              "name": "github",
-              "options": {
-                "repo": "LivelyKernel/lively4-core",
-                "branch": "gh-pages"
-                 // No token, so we mount it read-only
-              }
-            }
-            $.ajax({
-              url: this.getMountURL(),
-              type: 'PUT',
-              data: JSON.stringify(unmountGithub),
-              success: function(text) {
-                console.log("unmounted github")
-              },
-              error: function(xhr, status, error) {
-                console.log("could not unmount gitub " + error)
-              }
-            });
-      }
     </script>
 
     <script type="lively4script" data-name="currentEditor">

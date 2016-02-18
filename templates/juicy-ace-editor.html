@@ -24,6 +24,7 @@
     <div id="juicy-ace-editor-container"></div>
     <content></content>
 </template>
+
 <script>
 (function(window, document, undefined) {
     // Refers to the "importer", which is index.html
@@ -206,37 +207,88 @@
         editor.commands.addCommand({
             name: "doIt",
             bindKey: {win: "Ctrl-D", mac: "Command-D"},
-            exec: function(editor) {
+            exec: (editor) => {
                 var text = editor.currentSelectionOrLine()
-                try {
-                    // console.log("doit: " + text);
-                    var result = eval(text);
-                    console.log("" + result)
-                } catch(e){
-                    console.log("Error evaluating: " + text)
-                }
+                var result = this.tryBoundEval(text);
+                console.log("" + result)
             }
         })
 
         editor.commands.addCommand({
             name: "printIt",
             bindKey: {win: "Ctrl-P", mac: "Command-P"},
-            exec: function(editor) {
+            exec: (editor) => {
                 var text = editor.currentSelectionOrLine()
-                try {
-                    var result = " " + eval(text)
-                    var fromSel =  editor.getSelectionRange().end;
-                    editor.selection.selectToPosition(fromSel) // don't replace existing selection
-                    editor.insert(result)
-                    var toSel =  editor.getSelectionRange().start;
-                    editor.selection.moveCursorToPosition(fromSel)
-                    editor.selection.selectToPosition(toSel)
-                } catch(e){
-                    console.log("Error: " + e)
-                }
+                var result = this.tryBoundEval(text, true);
+            }
+        });
+
+        editor.commands.addCommand({
+            name: "inspectIt",
+            bindKey: {win: "Ctrl-I", mac: "Command-I"},
+            exec: (editor) => {
+                var text = editor.currentSelectionOrLine()
+                var result = this.inspectIt(text, true);
             }
         });
     };
+
+    TomalecAceEditorPrototype.getDoitContext =  function () { 
+        return this.doitContext 
+    }
+    TomalecAceEditorPrototype.boundEval =  function (str) {
+        var ctx = this.getDoitContext() || this,
+            interactiveEval = function(text) { return eval(text) };
+        var transpiledSource = babel.transform(str).code
+        // #TODO alt: babel.run
+        return interactiveEval.call(ctx, transpiledSource);
+    }
+
+    TomalecAceEditorPrototype.printResult = function (result) {
+        var editor = this.editor;
+        var text = result
+        var fromSel =  editor.getSelectionRange().end;
+        editor.selection.selectToPosition(fromSel) // don't replace existing selection
+        editor.insert(text)
+        var toSel =  editor.getSelectionRange().start;
+        editor.selection.moveCursorToPosition(fromSel)
+        editor.selection.selectToPosition(toSel)
+    }
+
+    TomalecAceEditorPrototype.tryBoundEval = function (str, printResult) {
+        var result;
+        try { result =  this.boundEval(str) } 
+        catch(e) {
+            document.LastError = e
+            console.log("Error: " + e) 
+            result = e
+        }
+        if (printResult) {
+            this.printResult(" " +result)
+        }
+        return result
+    }
+    
+    TomalecAceEditorPrototype.printObject = function (obj) {
+        var result = ""
+        Object.keys(that).forEach((name) => {
+            result += "\n   " +name + ": " + obj[name]
+        }) 
+        return result
+    }
+
+    TomalecAceEditorPrototype.inspectIt = function (str) {
+        var result;
+        try { result =  this.boundEval(str) } 
+        catch(e) {
+            document.LastError = e
+            console.log("Error: " + e) 
+            result = e
+        }
+        var result = this.printObject(result)
+        this.printResult("" + result)
+        return result
+    }
 
     document.registerElement('juicy-ace-editor', {
         prototype: TomalecAceEditorPrototype

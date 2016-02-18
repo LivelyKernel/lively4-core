@@ -6,20 +6,18 @@ import {log} from './load.js';
 import focalStorage from '../external/focalStorage.js';
 
 var onAuthenticatedCallbacks = {}
-
 console.log("focalStorage: ", focalStorage)
+console.log("load dropboxAuth")
 
-console.log("load githubAuth")
 
 export function onAuthenticated(windowUuid, authInfo) {
 
 	var state = authInfo.state
-	var token = authInfo.access_token
+	var token = authInfo.token
 
 	if (!state) { console.log("not state! authinfo: " + JSON.stringify(authInfo))}
-
-	localStorage.GithubToken = token // #TODO refactor / remove it
-	focalStorage.setItem("githubToken", localStorage.GithubToken).then(function() {
+	console.log("authInfo: ", authInfo)
+	focalStorage.setItem("dropboxToken", token).then(function() {
 		var cb = onAuthenticatedCallbacks[state]
 		if (cb) {
 			console.log("running onAuthenticated callback: " + cb)
@@ -31,8 +29,7 @@ export function onAuthenticated(windowUuid, authInfo) {
 }
 
 export function logout(cb) {
-	localStorage.GithubToken = null
-	focalStorage.setItem("githubToken", null).then(cb)
+	focalStorage.setItem("dropboxToken", null).then(cb)
 }
 
 function parseAuthInfoFromUrl(data) {
@@ -47,7 +44,7 @@ function notifyMe(title, text, cb) {
     Notification.requestPermission();
   else {
     var notification = new Notification(title, {
-      icon: 'https://assets-cdn.github.com/images/modules/logos_page/GitHub-Mark.png',
+      icon: 'https://cf.dropboxstatic.com/static/images/brand/glyph-vflK-Wlfk.png',
       body: text,
     });
     notification.onclick = cb
@@ -82,7 +79,7 @@ export function challengeForAuth(uuid, cb) {
 	              "scrollbars=yes"];
 	    popup = window.open(url, "oauth", features.join(","));
 	    if (!popup) {
-	    	notifyMe("Github Authenfication required", "click here to authenticate", function() {
+	    	notifyMe("Dropbox Authenfication required", "click here to authenticate", function() {
 	    		console.log("try to open window")
 				window.open(url, "oauth", features.join(","));
 	    	})
@@ -93,23 +90,25 @@ export function challengeForAuth(uuid, cb) {
 	}
 
     var appInfo = {
-	        "clientId": "21b67bb82b7af444a7ef",
-	        "redirectUri": "https://lively-kernel.org/lively4-auth/oauth/github.html"
+	        "clientId": "1774dvkirby4490",
+	        "redirectUri": "https://lively-kernel.org/lively4-auth/oauth/dropbox.html"
 	 };
 
-	$.get("https://lively-kernel.org/lively4-auth/open_github_accesstoken?state="+uuid, null, function(data){
+	$.get("https://lively-kernel.org/lively4-auth/open_dropbox_accesstoken?state="+uuid, null, function(data){
 	    console.log("challenge got a token, too: " + data)
 	    var authInfo = parseAuthInfoFromUrl(data)
 	    onAuthenticated(uuid, authInfo)
 	})
 
     var url =
-        "https://github.com/login/oauth/authorize/" +
-        "?client_id=" + appInfo.clientId +
-        "&response_type=token" +
-       	"&scope=repo" +
-        "&state=" + uuid +
-        "&redirect_uri=" + encodeURIComponent(appInfo.redirectUri);
+            "https://www.dropbox.com/1/oauth2/authorize" +
+            "?client_id=" + appInfo.clientId +
+            "&response_type=token" +
+            "&state=" + uuid +
+            "&redirect_uri=" + encodeURIComponent(appInfo.redirectUri);
+
+    console.log("query dropbox")
+        
     popup(url);
 }
 
