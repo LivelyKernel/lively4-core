@@ -28,11 +28,11 @@
               var path
               if (href.match(/^\//)) {
                   path = href
-              } else if (href.match(/^[A-Za-z]/)) {
+              } else if (!href.match(/!([A-Za-z]+):\/\/.+/)) {
                   path = this.getDir() + href
               }
               if (path) {
-                $(node).click(() => { this.setPath(path); return false; });
+                $(node).click(() => { this.followPath(path); return false; });
 
                 // ALTERNATIVE to navigate it inline, but the link will not be followed....
                 // var link = lively4url + "/draft/start.html?load=" + path
@@ -65,6 +65,12 @@
     <script type="lively4script" data-name="getDir">
     () => {
          return this.getPath().replace(/[^/]*$/,"")
+    }
+    </script>
+    <script type="lively4script" data-name="followPath">
+    (path) => {
+        window.history.pushState({ path: path }, 'view ' + path, window.location.pathname + "?load="+path);
+        this.setPath(path)
     }
     </script>
     <script type="lively4script" data-name="getPath">
