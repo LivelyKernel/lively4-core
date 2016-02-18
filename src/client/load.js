@@ -6,7 +6,6 @@ export function whenLoaded(cb) {
     loadCallbacks.push(cb)
 }
 
-
 if ('serviceWorker' in navigator) {
     var root = ("" + window.location).replace(/[^\/]*$/,'../')
 

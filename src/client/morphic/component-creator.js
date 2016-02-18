@@ -82,15 +82,19 @@ function saveTemplate(template, info) {
   // }
 
   var templateEditor = componentLoader.createComponent("lively-editor");
-  componentLoader.openInWindow(templateEditor).then(() => {
-    templateEditor.setURL(preferences.getBaseURL() + "/templates/" + template.id + ".html");
+  componentLoader.openInWindow(templateEditor).then((w) => {
+    templateEditor.setURL(preferences.getBaseURL() + "templates/" + template.id + ".html");
     templateEditor.setText(completeHTML);
+    w.style.left = "0px";
+    w.style.top = "0px";
   });
 
   var jsonEditor = componentLoader.createComponent("lively-editor");
-  componentLoader.openInWindow(jsonEditor).then(() => {
-    jsonEditor.setURL(preferences.getBaseURL() + "/templates/" + template.id + ".json");
+  componentLoader.openInWindow(jsonEditor).then((w) => {
+    jsonEditor.setURL(preferences.getBaseURL() + "templates/" + template.id + ".json");
     jsonEditor.setText(JSON.stringify(info));
+    w.style.left = "100px";
+    w.style.top =  "100px";
   });
 
   // ace.edit("editor").setValue(completeHTML);
