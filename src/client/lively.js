@@ -16,9 +16,29 @@ export { preferences }
 export { persistence } 
 export { components } 
 
-export function openContextMenu(container) {
+var worldmenu
+
+
+export function pt(x,y) {
+    return {x: x, y: y}
+}
+
+export function setPosition(obj, point) {
+    obj.style.position = "absolute"
+    obj.style.left = ""+  point.x + "px"
+    obj.style.top = "" + point.y + "px"    
+}
+
+export function openContextMenu(container, evt) {
+    console.log("open context menu")
+    if (worldmenu) {
+        $(worldmenu).remove()
+        worldmenu = null 
+    }
 	System.import(preferences.getBaseURL() + "/src/client/contextmenu.js").then(function(contextmenu) {
-		contextmenu.openIn(container)	
+		 contextmenu.openIn(container, evt, (menu) => {
+            worldmenu = menu
+        })	
     })
 }
 

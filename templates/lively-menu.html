@@ -1,5 +1,12 @@
 <template id="lively-menu">
     <style>
+    :host {
+      position: absolute;
+      top: "200px";
+      left: "200px";
+      border: 20px;
+
+    }
     .container {
         width: 120px;
         padding: 5px;
@@ -19,7 +26,7 @@
     </ul>
     <script type="lively4script" data-name="initialize">
     () => {
-      this.openOn = function(target) {
+      this.openOn = function(target, cb) {
         var menu = $(this.shadowRoot).find(".container")[0];
 
         menu.innerHTML = "" // clear
@@ -39,6 +46,7 @@
 
           menu.appendChild(item);
         });
+        cb(this) // #TODO #RefactorToPromise
       }
       $(this.shadowRoot).find(".container")[0].dispatchEvent(new Event("initialized"))
     }
