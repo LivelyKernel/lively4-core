@@ -8,20 +8,6 @@ var grabOffset;
 export var isGrabbing = false;
 var grabShadow;
 
-export function activate() {
-  console.log("using Grabbing");
-  $("body").on("mousedown", start);
-  $("body").on("mousemove", move);
-  $("body").on("mouseup", stop);
-}
-
-export function deactivate() {
-  console.log("deactivate Grabbing");
-  $("body").off("mousedown", start);
-  $("body").off("mousemove", move);
-  $("body").off("mouseup", stop);
-}
-
 export function start(e) {
   if (isGrabbing) return;
   grabTarget = window.that;

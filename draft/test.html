@@ -63,7 +63,9 @@
 
 
 <script>
-    var lively4url =  "../" // or any abosolute path to lively4 ? Any idea for computeRoot() ? #JensLincke #OpenQuestion
+    var lively4yourself = /\/draft\/.*\.html/ // ADAPT THIS
+    // some little reflection... help to find your inner self!
+    var lively4url = window.location.origin + window.location.pathname.replace(lively4yourself,"");
 
     //// #TODO The ace editor tries to be very clever, so it cannot be loaded through "import" at the moment
     //// (e.g. AMD promise error)

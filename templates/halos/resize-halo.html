@@ -6,7 +6,7 @@
     </style>
     <script type="lively4script" data-name="initialize">
     () => {
-      System.import("../src/client/morphic/resizing-using-handle.js").then( function(resizing) {
+      System.import("../src/client/morphic/resizing.js").then( function(resizing) {
         $("body /deep/ resize-halo").off("mousedown").on("mousedown", function(e) {
           resizing.start(e);
 
@@ -24,7 +24,6 @@
             resizing.stop(e);
             // detach mousemove handler from body
             $("body").off("mousemove.resize");
-            //setTimeout(function () { HaloService.showHalos(window.that) }, 1);
           }
         });
       });

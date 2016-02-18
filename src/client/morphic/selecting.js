@@ -28,6 +28,7 @@ function onMagnify(e) {
     }
   }
 
+  // if there was no suitable parent, cycle back to the clicked element itself
   window.that = grabTarget;
 
   showHalos(grabTarget)
