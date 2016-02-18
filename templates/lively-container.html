@@ -1,11 +1,12 @@
 <template id="lively-container">
     <content></content>
+    <style>
+
+    </style>
     <script type="lively4script" data-name="initialize">
     () => {
-    
+
       window.onpopstate = (event) => {
-        alert("popstate")
-        debugger
         var state = event.state
         if (state && state.followInline) {
           console.log("follow " + state.path)
@@ -20,7 +21,6 @@
     }
     </script>
 
-  
     <script type="lively4script" data-name="appendMarkdown">
     (content) => {
       var fixLinks = (nodes) => {
@@ -28,15 +28,14 @@
         Array.prototype.forEach.call(nodes, node => {
           if (node.getAttribute) {
             var href = node.getAttribute("href")
-            if (href && href.match(/[A-Za-z]*\.md/)) {
+            if (href) {
               console.log("fix " + href)
               // #TODO load inplace....
               var path
               if (href.match(/^\//)) {
-                debugger
-                  path = href
-              } else if (!href.match(/!([A-Za-z]+):\/\/.+/)) {
-                  path = this.getDir() + href
+                  path = href // ABSOLTUE paths
+              } else if (!href.match(/!([A-Za-z]+):\/\/.+/)) { // ignore FULL URLS
+                  path = this.getDir() + href // that leaves us RELATIVE paths
               }
               if (path) {
                 console.log("fix "  + path)
@@ -53,7 +52,7 @@
           }
         })
       }
-      System.import('../src/external/showdown.js').then((showdown) => { 
+      System.import('../src/external/showdown.js').then((showdown) => {
         var converter = new showdown.Converter();
         var htmlSource = converter.makeHtml(content)
         var html = $.parseHTML(htmlSource)
@@ -95,8 +94,8 @@
       $.get("https://lively4/" + path, (content) => {
         var format = path.replace(/.*\./,"")
         if (format == "html")  {
-          this.appendHtml(content) 
-        } else if (format == "md") { 
+          this.appendHtml(content)
+        } else if (format == "md") {
           this.appendMarkdown(content)
         } else {
           this.appendHtml("<pre>" + content +"</pre>")

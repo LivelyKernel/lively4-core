@@ -5,6 +5,15 @@
 <script src="../src/external/system.src.js" type="text/javascript" charset="utf-8"></script>
 <script src="../vendor/regenerator-runtime.js" type="text/javascript" charset="utf-8"></script>
 
+<style type="text/css" media="screen">
+    body {
+        font-family: sans-serif;
+    }
+
+    h1 {
+        color: #2B65EC;
+    }
+</style>
 
 <script>
   System.paths['babel'] ='https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
@@ -31,6 +40,12 @@
             if (path) {
                 $('lively-container')[0].setPath(path)
             }
+            document.addEventListener('contextmenu', function(evt) {
+                evt.preventDefault();
+                lively.openContextMenu($('body')[0], evt)
+                return false;
+            }, false);
+
             console.log("Finally loaded!")
         })
     })}).catch(function(err) {
