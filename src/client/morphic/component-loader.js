@@ -2,7 +2,7 @@ import * as scriptManager from  "../script-manager.js";
 import * as persistence from  "../persistence.js";
 import Morph from "../../../templates/classes/Morph.js";
 
-// save template names, where loading is triggered
+// store promises of loaded and currently loading templates
 export var loadingPromises = {};
 
 // this function registers a custom element,
@@ -13,22 +13,22 @@ export function register(componentName, template, prototype) {
   // TODO: we should check here, if the prototype already has a createdCallback,
   // if that's the case, we should wrap it and call it in our createdCallback
   // TODO: should we dispatch event 'created' also in attached callback???
-  // And what about initizalize call? Actually I think yes.
+  // And what about initizalize call? Actually I think yes. - Felix
   proto.createdCallback = function() {
     if (persistence.isCurrentlyCloning()) {
       return;
     }
 
-    var root = this.createShadowRoot();
+    var shadow = this.createShadowRoot();
     // clone the template again, so when more elements are created,
-    // they get their own elements from the template
+    // they get their own copy of elements
     var clone = document.importNode(template, true);
-    root.appendChild(clone);
+    shadow.appendChild(clone);
 
     // attach lively4scripts from the shadow root to this
     scriptManager.attachScriptsFromShadowDOM(this);
 
-    // load any unknown elements this component might introduce
+    // load any unknown elements, which this component might introduce
     loadUnresolved(this, true).then((args) => {
       // call the initialize script, if it exists
       if (typeof this.initialize === "function") {
@@ -71,15 +71,10 @@ export function createRegistrationScript(componentId) {
 export function loadUnresolved(lookupRoot, deep) {
   lookupRoot = lookupRoot || document.body;
 
-  // var selector = deep ? lookupRoot.nodeName.toLowerCase() + " /deep/ :unresolved" : ":unresolved";
   var selector = ":unresolved";
 
   // find all unresolved elements looking downwards from lookupRoot
   var unresolved = Array.from(lookupRoot.querySelectorAll(selector));
-
-  // if (deep && lookupRoot.shadowRoot) {
-  //   unresolved = unresolved.concat(Array.from(lookupRoot.shadowRoot.querySelectorAll(selector)));
-  // }
 
   if (deep) {
     var deepUnresolved = findUnresolvedDeep(lookupRoot);
@@ -93,7 +88,6 @@ export function loadUnresolved(lookupRoot, deep) {
     }
 
     var result = Array.from(shadow.querySelectorAll(selector));
-    // result = result.concat(root.querySelectorAll(selector));
 
     Array.from(shadow.children).forEach((child) => {
       result = result.concat(findUnresolvedDeep(child));

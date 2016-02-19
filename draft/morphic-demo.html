@@ -50,7 +50,6 @@
 </head>
 
 <body><lively-window style="z-index: 100; left: 1165px; top: 77.4375px;"><lively-editor></lively-editor></lively-window>
-<lively-window title="Workflow"><img id="workflow-image" src="morphic-demo/workflow.png"/></lively-window>
 <h1>Lively 4 -- Morphic Demo Page</h1>
 <p>http://localhost:8002/lively4-core/draft/morphic-demo/ball-scripts.js</p>
 <lively-halos style="display: none; top: 0px; left: 0px; width: 300px; height: 200px;"></lively-halos>
@@ -76,6 +75,7 @@
   // some little reflection... help to find your inner self!
   var lively4url = window.location.origin + window.location.pathname.replace(lively4yourself,"");
 
+
   System.import(lively4url + "/src/client/load.js").then(function(){
     System.import("commandline.js")
     System.import(lively4url + "/src/client/debug-serviceworker.js")
@@ -98,8 +98,6 @@
   }).catch(function(err) {
     alert("load component-loader failed");
   });
-
-  lively4url = null;
 </script>
 
 

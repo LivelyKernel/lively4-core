@@ -75,15 +75,9 @@ function saveTemplate(template, info) {
     completeHTML = htmlBeautify(completeHTML);
   }
 
-  // var compBin = document.querySelector("lively-component-bin");
-  // if (!compBin) {
-  //   // right now, we expect a component bin in the page
-  //   throw new Error("no component bin found in page");
-  // }
-
   var templateEditor = componentLoader.createComponent("lively-editor");
   componentLoader.openInWindow(templateEditor).then((w) => {
-    templateEditor.setURL(preferences.getBaseURL() + "templates/" + template.id + ".html");
+    templateEditor.setURL(preferences.getBaseURL() + "/templates/" + template.id + ".html");
     templateEditor.setText(completeHTML);
     w.style.left = "0px";
     w.style.top = "0px";
@@ -91,13 +85,11 @@ function saveTemplate(template, info) {
 
   var jsonEditor = componentLoader.createComponent("lively-editor");
   componentLoader.openInWindow(jsonEditor).then((w) => {
-    jsonEditor.setURL(preferences.getBaseURL() + "templates/" + template.id + ".json");
+    jsonEditor.setURL(preferences.getBaseURL() + "/templates/" + template.id + ".json");
     jsonEditor.setText(JSON.stringify(info));
     w.style.left = "100px";
     w.style.top =  "100px";
   });
-
-  // ace.edit("editor").setValue(completeHTML);
 
   return completeHTML;
 }
@@ -196,4 +188,3 @@ function selectorMatchesTree(selector, rootElement) {
   // if we reach this, none of the tree nodes matches the selector
   return false;
 }
-
