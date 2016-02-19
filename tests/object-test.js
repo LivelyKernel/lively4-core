@@ -104,6 +104,21 @@ describe('obj', function() {
       expect(obj.equals(G,G)).to.be(true);
     });
 
+    it("works with arrays", function() {
+      var a = {foo: [{bar: 23}]},
+          b = {foo: [{bar: 23}]},
+          c = {foo: [{bar: 24}]};
+      expect(obj.equals(a,a)).to.be(true);
+      expect(obj.equals(a,b)).to.be(true);
+      expect(obj.equals(a,c)).to.be(false);
+      expect(obj.equals(b,c)).to.be(false);
+      expect(obj.equals(c,c)).to.be(true);
+    });
+
+    it("works with objects nested in arrays", function() {
+      expect(obj.equals([{}], [{}])).to.be(true);
+    });
+
   });
 
   describe('accessing', function() {
