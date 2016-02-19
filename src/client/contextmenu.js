@@ -1,11 +1,19 @@
 import * as lively from  "./lively.js";
 
-function openComponentInWindow(name) {
-    var comp  = document.createElement(name)
-    return lively.components.openInWindow(comp)
-}
- 
-export function openIn(container) {
+
+export function openIn(container, evt, cb) {
+
+    var menu
+
+    function openComponentInWindow(name) {
+        var comp  = document.createElement(name)
+        if (menu) $(menu).remove()
+        return lively.components.openInWindow(comp).then((container) => {
+            lively.setPosition(container, lively.pt(evt.clientX, evt.clientY))
+        })
+    }
+
+
     var MyApp = {
         getMenuItems: function(){
             return [
@@ -17,21 +25,26 @@ export function openIn(container) {
                 ["Console",         () => openComponentInWindow("lively-console")],
                 ["Component Bin",   () => openComponentInWindow("lively-component-bin")],
                 ["Persistens Settings", () => {
-                    var comp = openComponentInWindow("lively-persistence-settings")
-                    comp.style.height = "150px"
-                    comp.style.width = "400px"
+                    openComponentInWindow("lively-persistence-settings").then((container) => {
+                        container.style.height = "150px"
+                        container.style.width = "400px"
+                    })
                 }],
                 ["Text", function() {
                         var text  = document.createElement("p")
                         text.innerHTML = "Hello"
                         $('body')[0].appendChild(text)
+                         lively.setPosition(text, lively.pt(evt.clientX, evt.clientY))
+                        if (menu) $(menu).remove()
                 }],
                 ["Rectangle", function() {
                     var morph  = document.createElement("div")
-                    morph.style.height = "100px"
                     morph.style.width = "200px"
+                    morph.style.height = "100px"
+                    lively.setPosition(morph, lively.pt(evt.clientX, evt.clientY))
                     morph.style.backgroundColor = "blue"
                     $('body')[0].appendChild(morph)
+                    if (menu) $(menu).remove()
                 }]
             ]
         }
@@ -39,20 +52,24 @@ export function openIn(container) {
 
     lively.components.loadByName("lively-menu")
 
-    var menu = document.createElement("lively-menu")
-    var cb = function() {
+    menu = document.createElement("lively-menu")
+    var openMenuCB = function() {
         console.log("menu initialized")
-        menu.openOn(MyApp)
+        menu.openOn(MyApp, (menu) => {
+            if (evt)  lively.setPosition(menu, lively.pt(evt.clientX, evt.clientY))
+            cb(menu)
+        })
     }
     if (menu.openOn) {
         console.log("initialze directly")
-        cb()
+        openMenuCB()
     } else {
         console.log("register initialized callback")
-        menu.addEventListener("initialized", cb)
+        menu.addEventListener("initialized", openMenuCB)
     }
     container.appendChild(menu)
     lively.components.loadUnresolved()
+    return menu
 }
 
 console.log("loaded context-menu")

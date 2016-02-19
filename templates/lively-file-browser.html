@@ -209,16 +209,8 @@
           event.preventDefault()
           this.path = '/'
         })
-
         this.addEventListener('file-select', (event) => {
-          var appctx = document.createElement("lively-window")
-          var editor = document.createElement("lively-editor")
-
-          editor.setURL(event.file.url)
-          editor.loadFile()
-
-          appctx.appendChild(editor)
-          document.body.appendChild(appctx)
+          lively.openFile(event.file.url)
         })
       }
 
