@@ -220,14 +220,6 @@ function print(object) {
   return result;
 }
 
-function argumentNames(func) {
-  if (func.superclass) return [];
-  var names = func.toString().match(/^[\s\(]*function[^(]*\(([^)]*)\)/)[1].
-      replace(/\/\/.*?[\r\n]|\/\*(?:.|[\r\n])*?\*\//g, '').
-      replace(/\s+/g, '').split(',');
-  return names.length == 1 && !names[0] ? [] : names;
-}
-
 function indent(str, indentString, depth) {
   if (!depth || depth <= 0) return str;
   while (depth > 0) { depth--; str = indentString + str; }
@@ -282,6 +274,7 @@ var obj = exports.obj = {
     if (a === b) return true;
     if (!a && !b) return true;
     if (!a || !b) return false;
+    if (Array.isArray(a)) return exports.arr.deepEquals(a, b);
     switch (a.constructor) {
       case String:
       case Date:
@@ -428,7 +421,7 @@ var obj = exports.obj = {
     if (typeof object === 'function') {
       return options.printFunctionSource ? String(object) :
         'function' + (object.name ? ' ' + object.name : '')
-        + '(' + argumentNames(object).join(',') + ') {/*...*/}';
+        + '(' + exports.fun.argumentNames(object).join(',') + ') {/*...*/}';
     }
 
     // print "primitive"
@@ -1878,6 +1871,17 @@ var arr = exports.arr = {
     return true;
   },
 
+  deepEquals: function(array, otherArray) {
+    // Returns true iff each element in `array` is structurally equal
+    // (`lang.obj.equals`) to its corresponding element in `otherArray`
+    var len = array.length;
+    if (!otherArray || len !== otherArray.length) return false;
+    for (var i = 0; i < len; i++) {
+      if (!exports.obj.equals(array[i], otherArray[i])) return false;
+    }
+    return true;
+  },
+
   // -=-=-=-=-
   // sorting
   // -=-=-=-=-
@@ -3279,7 +3283,6 @@ var fun = exports.fun = {
     if (arrowMatch) names = arrowMatch[1] || arrowMatch[2] || "";
     else {
       var headerMatch = src.match(/^[\s\(]*function[^(]*\(([^)]*)\)/);
-      console.log(headerMatch);
       if (headerMatch && headerMatch[1]) names = headerMatch[1];
     }
     return names.replace(/\/\/.*?[\r\n]|\/\*(?:.|[\r\n])*?\*\//g, '')

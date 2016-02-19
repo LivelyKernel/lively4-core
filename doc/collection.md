@@ -45,6 +45,7 @@ abstractions for groups, intervals, grids.
   - [some](#arr-some)
   - [every](#arr-every)
   - [equals](#arr-equals)
+  - [deepEquals](#arr-deepEquals)
   - [sort](#arr-sort)
   - [sortBy](#arr-sortBy)
   - [sortByKey](#arr-sortByKey)
@@ -375,6 +376,11 @@ arr.include([1,2,3], 2) // => true
 
  Returns true iff each element in `array` is equal (`==`) to its
  corresponding element in `otherArray`
+
+#### <a name="arr-deepEquals"></a>arr.deepEquals(array, otherArray)
+
+ Returns true iff each element in `array` is structurally equal
+ (`lang.obj.equals`) to its corresponding element in `otherArray`
 
 #### <a name="arr-sort"></a>arr.sort(array, sortFunc)
 
