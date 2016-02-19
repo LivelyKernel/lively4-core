@@ -86,7 +86,7 @@ function saveTemplate(template, info) {
   var jsonEditor = componentLoader.createComponent("lively-editor");
   componentLoader.openInWindow(jsonEditor).then((w) => {
     jsonEditor.setURL(preferences.getBaseURL() + "/templates/" + template.id + ".json");
-    jsonEditor.setText(JSON.stringify(info));
+    jsonEditor.setText(JSON.stringify(info, null, 2));
     w.style.left = "100px";
     w.style.top =  "100px";
   });
