@@ -5,6 +5,9 @@ import generateUUID from '../../src/client/uuid.js';
 import * as scriptManager from  "../../src/client/script-manager.js";
 
 export default class ObjectEditor extends Morph {
+  initialize() {
+    this.getSubmorph("#editor").changeMode("javascript");
+  }
   /*
    * HTMLElement callbacks
    */

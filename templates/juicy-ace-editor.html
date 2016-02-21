@@ -134,10 +134,11 @@
         var _this = this;
         window.setTimeout(function() {
           editor.resize();
+          // we also use this timeout hack, but we should get rid of it!!
           new ResizeSensor($(_this.container), function() {
             editor.resize();
           });
-        }, 10) // #Hack #Resize #RaceCondition
+        }, 50) // #Hack #Resize #RaceCondition
     };
 
     // Fires when an instance was removed from the document
