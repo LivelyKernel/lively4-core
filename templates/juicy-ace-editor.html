@@ -5,6 +5,7 @@
     @demo index.html
 -->
 <script src="../src/external/ace.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript" src="../src/external/ResizeSensor.js"></script>
 
 <template id="juicy-ace-editor">
     <style>
@@ -121,7 +122,13 @@
 
 
         // editor.resize()
-        window.setTimeout(function() { editor.resize()}, 10) // #Hack #Resize #RaceCondition
+        var _this = this;
+        window.setTimeout(function() {
+          editor.resize();
+          new ResizeSensor($(_this.container), function() {
+            editor.resize();
+          });
+        }, 10) // #Hack #Resize #RaceCondition
     };
 
     // Fires when an instance was removed from the document
@@ -184,7 +191,7 @@
         return s;
     }
 
-    
+
 
     // CUSTOMIZATION
 
@@ -233,8 +240,8 @@
         });
     };
 
-    TomalecAceEditorPrototype.getDoitContext =  function () { 
-        return this.doitContext 
+    TomalecAceEditorPrototype.getDoitContext =  function () {
+        return this.doitContext
     }
     TomalecAceEditorPrototype.boundEval =  function (str) {
         var ctx = this.getDoitContext() || this,
@@ -257,10 +264,10 @@
 
     TomalecAceEditorPrototype.tryBoundEval = function (str, printResult) {
         var result;
-        try { result =  this.boundEval(str) } 
+        try { result =  this.boundEval(str) }
         catch(e) {
             document.LastError = e
-            console.log("Error: " + e) 
+            console.log("Error: " + e)
             result = e
         }
         if (printResult) {
@@ -268,26 +275,31 @@
         }
         return result
     }
-    
+
     TomalecAceEditorPrototype.printObject = function (obj) {
         var result = ""
         Object.keys(that).forEach((name) => {
             result += "\n   " +name + ": " + obj[name]
-        }) 
+        })
         return result
     }
 
     TomalecAceEditorPrototype.inspectIt = function (str) {
         var result;
-        try { result =  this.boundEval(str) } 
+        try { result =  this.boundEval(str) }
         catch(e) {
             document.LastError = e
-            console.log("Error: " + e) 
+            console.log("Error: " + e)
             result = e
         }
         var result = this.printObject(result)
         this.printResult("" + result)
         return result
+    }
+
+    TomalecAceEditorPrototype.onResize = function() {
+      this.editor.resize();
+      console.log("resizing");
     }
 
     document.registerElement('juicy-ace-editor', {
