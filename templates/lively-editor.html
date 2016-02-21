@@ -22,8 +22,8 @@
 
     #filename {
         width: 100%;
-        flex: 1;   
-    }    
+        flex: 1;
+    }
     #editor {
         /* box-sizing: border-box; */
         width: 100%;
@@ -79,7 +79,7 @@
     }
     </script>
     <script type="lively4script" data-name="getMountURL">
-    function() { 
+    function() {
       return "https://lively4/sys/fs/mount"
     }
     </script>
@@ -118,6 +118,24 @@
         console.log("load " + url);
 
         $.get(url, null, (text) => {
+          // extract file extension
+          var editorComp = this.getSubmorph("juicy-ace-editor");
+          var extension = url.toString().match(/\.[0-9a-z]+$/i)[0];
+          switch (extension) {
+            case ".html":
+              editorComp.changeMode("html");
+              break;
+            case ".js":
+            case ".jsx":
+              editorComp.changeMode("javascript");
+              break;
+            case ".md":
+              editorComp.changeMode("markdown");
+              break;
+            default:
+              editorComp.changeMode("text");
+          }
+
           this.currentEditor().setValue(text);
           this.currentEditor().resize();
           console.log("file " + url + " read.");
