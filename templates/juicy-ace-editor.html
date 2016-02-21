@@ -7,6 +7,15 @@
 <script src="../src/external/ace.js" type="text/javascript" charset="utf-8"></script>
 <script type="text/javascript" src="../src/external/ResizeSensor.js"></script>
 
+<!-- modes -->
+<script src="../src/external/ace-modes/mode-text.js" type="text/javascript" charset="utf-8"></script>
+<script src="../src/external/ace-modes/mode-javascript.js" type="text/javascript" charset="utf-8"></script>
+<script src="../src/external/ace-modes/mode-html.js" type="text/javascript" charset="utf-8"></script>
+<script src="../src/external/ace-modes/mode-markdown.js" type="text/javascript" charset="utf-8"></script>
+<!-- themes -->
+<script src="../src/external/ace-themes/theme-monokai.js" type="text/javascript" charset="utf-8"></script>
+<script src="../src/external/ace-themes/theme-solarized_light.js" type="text/javascript" charset="utf-8"></script>
+
 <template id="juicy-ace-editor">
     <style>
         :host{
@@ -194,6 +203,15 @@
 
 
     // CUSTOMIZATION
+
+    TomalecAceEditorPrototype.changeMode = function(mode) {
+      var Mode = ace.require("ace/mode/" + mode).Mode;
+      editor.session.setMode(new Mode());
+    }
+
+    TomalecAceEditorPrototype.changeTheme = function(theme) {
+      this.editor.setTheme("ace/theme/" + theme);
+    }
 
     // var editor = editor = $("lively-editor")[0].shadowRoot.querySelector("#editor").editor;
 
