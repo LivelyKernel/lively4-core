@@ -32,44 +32,20 @@
     }
     </style>
     <div class="container">
-        <div class="toolbar">
+
+        <juicy-ace-editor id="editor"></juicy-ace-editor>
+        <div class="toolbar" id="toolbar">
           <button id="loadButton">load</button>
           <button id="saveButton">save</button>
           <input type="text" id="filename" value="https://lively4/README.md">
-      </div>
-
-        <juicy-ace-editor id="editor"></juicy-ace-editor>
+        </div>
     </div>
+
 
     <script type="lively4script" data-name="initialize">
     () => {
       console.log("initialize lively editor")
-
       var container = $(this.shadowRoot).find(".container")[0];
-
-
-      // #Jens #TODO #Generalize
-      // function get(selector) {
-      //     return $(container.querySelector(selector))
-      // }
-
-      // var messaging = require('../src/client/messaging.js');
-      // var focalStorage = require('../src/external/focalStorage.js');
-      // var githubAuth = require('../src/client/auth-github.js');
-
-      var messaging, focalStorage, githubAuth;
-      System.import('../src/client/messaging.js').then(function(mod) {
-        messaging = mod;
-      })
-
-      System.import('../src/external/focalStorage.js').then(function(mod) {
-        focalStorage = mod
-      })
-
-      System.import('../src/client/auth-github.js').then(function(mod) {
-        githubAuth = mod
-        window.githubAuth = githubAuth // make it global, so the callback can reach it...
-      })
 
       // #TODO refactor to "connections"
       $(this.getSubmorph('#saveButton')).click(this.saveFile.bind(this))
@@ -148,21 +124,33 @@
 
     <script type="lively4script" data-name="saveFile">
       function() {
-        var url = this.getURL();
-        console.log("save " + url)
-        $.ajax({
-            url: url,
-            type: 'PUT',
-            data: this.currentEditor().getValue(),
-            success: function(text) {
-              console.log("file " + url + " written.")
-            },
-            error: function(xhr, status, error) {
-              console.log("could not write " + url + ": " + error)
-            }
-        });
+        return new Promise((resolve, reject) => {
+          var url = this.getURL();
+          console.log("save " + url)
+          var data = this.currentEditor().getValue()
+          $.ajax({
+              url: url,
+              type: 'PUT',
+              data: data,
+              success: function(text) {
+                console.log("file " + url + " written.")
+                resolve(data)
+              },
+              error: function(xhr, status, error) {
+                console.log("could not write " + url + ": " + error)
+                reject()
+              }
+          });
+        })
       }
     </script>
+
+    <script type="lively4script" data-name="hideToolbar">
+    function() {
+       this.getSubmorph("#toolbar").style.visibility = "hidden"
+    }
+    </script>
+
 
 </template>
 

@@ -1,8 +1,21 @@
 <template id="lively-container">
-    <content></content>
     <style>
+    #cancel, #save {
+      visibility: hidden;
+    }
 
     </style>
+    <div id="container-navigation">
+      <button id="edit">edit</button>
+      <input type="text" id="container-path" value="">
+      <button id="cancel">cancel</button>
+      <button id="save">save</button>
+    </div>
+    <div id="container-content">
+      <!-- by default the content is hidden-->
+    </div>
+    <content></content>
+
     <script type="lively4script" data-name="initialize">
     () => {
 
@@ -13,14 +26,55 @@
           this.setPath(state.path)
         }
       };
+      this.registerButtons()
+    }
+    </script>
+    <script type="lively4script" data-name="registerButtons">
+    (names) => {
+      Array.prototype.forEach.call(this.shadowRoot.querySelectorAll("button"), node => {
+        var name = node.id
+        console.log("register button " + name)
+        $(node).click(() => {
+          var funcName = name.replace(/^./, c => "on"+ c.toUpperCase())
+          var func = this[funcName]
+          if (func) {
+            func.call(this)
+          } else {
+            alert("No callback: " +  funcName)
+          }
+        })
+      })
+    }
+    </script>
+    <script type="lively4script" data-name="onEdit">
+    () => {
+      this.getSubmorph("#cancel").style.visibility = "visible"
+      this.getSubmorph("#save").style.visibility = "visible"
+      this.editFile()
+    }
+    </script>
+       <script type="lively4script" data-name="onCancel">
+    () => {
+      this.getSubmorph("#cancel").style.visibility = "visible"
+      this.getSubmorph("#save").style.visibility = "visible"
+      this.setPath(this.getPath())
+    }
+    </script>
+    <script type="lively4script" data-name="onSave">
+    () => {
+      this.getSubmorph("#cancel").style.visibility = "visible"
+      this.getSubmorph("#save").style.visibility = "visible"
+      this.getSubmorph("#editor").saveFile().then( sourceCode => {
+        this.setPath(this.getPath());
+      })
+
     }
     </script>
     <script type="lively4script" data-name="clear">
     () => {
-        this.innerHTML = ''
+      this.getSubmorph('#container-content').innerHTML = ''
     }
     </script>
-
     <script type="lively4script" data-name="appendMarkdown">
     (content) => {
       var fixLinks = (nodes) => {
@@ -58,14 +112,14 @@
         var html = $.parseHTML(htmlSource)
         fixLinks(html)
         console.log("html", html)
-        html.forEach((ea) => this.appendChild(ea))
+        html.forEach((ea) => this.getSubmorph('#container-content').appendChild(ea))
       })
     }
     </script>
      <script type="lively4script" data-name="appendHtml">
     (content) => {
       try {
-        $.parseHTML(content).forEach((ea) => this.appendChild(ea))
+        $.parseHTML(content).forEach((ea) =>  this.getSubmorph('#container-content').appendChild(ea))
       } catch(e) {
         console.log("Could not append html:" + content)
       }
@@ -91,13 +145,17 @@
     function (path) {
       this.setAttribute("data-path", path)
       this.clear()
+      this.getSubmorph('#container-path').value = path
       var url = "https://lively4/" + path
       console.log("set url: " + url)
+      this.sourceContent = "NOT EDITABLE"
       $.get(url, (content) => {
         var format = path.replace(/.*\./,"")
         if (format == "html")  {
+          this.sourceContent = content
           this.appendHtml(content)
         } else if (format == "md") {
+          this.sourceContent = content
           this.appendMarkdown(content)
         } else if (format == "png") {
           this.appendHtml("<img src='" + url +"'>")
@@ -112,11 +170,28 @@
       })
     }
     </script>
-     <script type="lively4script" data-name="appendHTML">
-    (content) => {
-        $.parseHTML(content).forEach((ea) => this.appendChild(ea))
+    <script type="lively4script" data-name="editFile">
+    () => {
+      this.clear()
+      var container=  this.getSubmorph('#container-content')
+      lively.components.openIn(container,
+        lively.components.createComponent("lively-editor")).then( comp => {
+          console.log("comp: " + comp)
+
+          container.style.width = "600px"
+          container.style.height = "400px"
+          comp.hideToolbar()
+          comp.id = "editor"
+
+          comp.setURL("https://lively4/" + this.getPath())
+          comp.setText(this.sourceContent); // directly setting the source we got
+          // comp.loadFile() // ALT: Load the file again?
+      })
+      lively.components.loadUnresolved(container)
     }
     </script>
+
+
 
 
 </template>
