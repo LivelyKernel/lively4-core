@@ -42,19 +42,25 @@ export function loadFile(urlString){
 }
 
 export function saveFile(urlString){
-	var url = urlString ? new URL(urlString) : getURL();
-	console.log("save " + url)
-	$.ajax({
-	    url: url,
-	    type: 'PUT',
-	    data: currentEditor().getValue(),
-	    success: function(text) {
-			console.log("file " + url + " written.")
-		},
-		error: function(xhr, status, error) {
-			console.log("could not write " + url + ": " + error)
-		}
-	});
+  return new Promise((resolve, reject) => {
+  	var url = urlString ? new URL(urlString) : getURL();
+  	console.log("save " + url)
+    var data = currentEditor().getValue();
+  	$.ajax({
+  	    url: url,
+  	    type: 'PUT',
+  	    data: data,
+  	    success: function(text) {
+  			 console.log("file " + url + " written."
+          resolve(data)
+        )
+  		},
+  		error: function(xhr, status, error) {
+  			console.log("could not write " + url + ": " + error)
+        reject(error)
+  		}
+  	});
+  })
 }
 
 export function statFile(urlString){
