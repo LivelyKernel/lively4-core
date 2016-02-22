@@ -96,21 +96,22 @@
         $.get(url, null, (text) => {
           // extract file extension
           var editorComp = this.getSubmorph("juicy-ace-editor");
-          var extension = url.toString().match(/\.[0-9a-z]+$/i)[0];
-          switch (extension) {
-            case ".html":
-              editorComp.changeMode("html");
-              break;
-            case ".js":
-            case ".jsx":
-              editorComp.changeMode("javascript");
-              break;
-            case ".md":
-              editorComp.changeMode("markdown");
-              break;
-            default:
-              editorComp.changeMode("text");
-          }
+          editorComp.changeModeForFile(url.pathname);
+          // var extension = url.toString().match(/\.[0-9a-z]+$/i)[0];
+          // switch (extension) {
+          //   case ".html":
+          //     editorComp.changeMode("html");
+          //     break;
+          //   case ".js":
+          //   case ".jsx":
+          //     editorComp.changeMode("javascript");
+          //     break;
+          //   case ".md":
+          //     editorComp.changeMode("markdown");
+          //     break;
+          //   default:
+          //     editorComp.changeMode("text");
+          // }
 
           this.currentEditor().setValue(text);
           this.currentEditor().resize();

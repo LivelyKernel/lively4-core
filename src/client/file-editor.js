@@ -47,20 +47,19 @@ export function saveFile(urlString){
   	console.log("save " + url)
     var data = currentEditor().getValue();
   	$.ajax({
-  	    url: url,
-  	    type: 'PUT',
-  	    data: data,
-  	    success: function(text) {
-  			 console.log("file " + url + " written."
-          resolve(data)
-        )
-  		},
+	    url: url,
+	    type: 'PUT',
+	    data: data,
+	    success: function(text) {
+        console.log("file " + url + " written.");
+        resolve(data);
+      },
   		error: function(xhr, status, error) {
   			console.log("could not write " + url + ": " + error)
         reject(error)
   		}
   	});
-  })
+  });
 }
 
 export function statFile(urlString){

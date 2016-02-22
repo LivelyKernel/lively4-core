@@ -5,6 +5,7 @@
     @demo index.html
 -->
 <script src="../src/external/ace.js" type="text/javascript" charset="utf-8"></script>
+<script src="../src/external/ace/ext-modelist.js" type="text/javascript" charset="utf-8"></script>
 <script type="text/javascript" src="../src/external/ResizeSensor.js"></script>
 
 <!-- modes -->
@@ -204,6 +205,15 @@
 
 
     // CUSTOMIZATION
+
+    TomalecAceEditorPrototype.changeModeForFile = function(filename) {
+      var modelist = ace.require("ace/ext/modelist");
+      var mode = modelist.getModeForPath(filename).name;
+
+      console.log(filename + " -> " + mode);
+
+      this.changeMode(mode);
+    }
 
     TomalecAceEditorPrototype.changeMode = function(mode) {
       var Mode;
