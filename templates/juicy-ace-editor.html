@@ -8,13 +8,13 @@
 <script type="text/javascript" src="../src/external/ResizeSensor.js"></script>
 
 <!-- modes -->
-<script src="../src/external/ace-modes/mode-text.js" type="text/javascript" charset="utf-8"></script>
+<!-- <script src="../src/external/ace-modes/mode-text.js" type="text/javascript" charset="utf-8"></script>
 <script src="../src/external/ace-modes/mode-javascript.js" type="text/javascript" charset="utf-8"></script>
 <script src="../src/external/ace-modes/mode-html.js" type="text/javascript" charset="utf-8"></script>
-<script src="../src/external/ace-modes/mode-markdown.js" type="text/javascript" charset="utf-8"></script>
+<script src="../src/external/ace-modes/mode-markdown.js" type="text/javascript" charset="utf-8"></script> -->
 <!-- themes -->
-<script src="../src/external/ace-themes/theme-monokai.js" type="text/javascript" charset="utf-8"></script>
-<script src="../src/external/ace-themes/theme-solarized_light.js" type="text/javascript" charset="utf-8"></script>
+<!-- <script src="../src/external/ace-themes/theme-monokai.js" type="text/javascript" charset="utf-8"></script>
+<script src="../src/external/ace-themes/theme-solarized_light.js" type="text/javascript" charset="utf-8"></script> -->
 
 <template id="juicy-ace-editor">
     <style>
@@ -206,18 +206,46 @@
     // CUSTOMIZATION
 
     TomalecAceEditorPrototype.changeMode = function(mode) {
-      var Mode = ace.require("ace/mode/" + mode).Mode;
-      editor.session.setMode(new Mode());
+      var Mode;
+      try {
+        Mode = ace.require("ace/mode/" + mode).Mode;
+        editor.session.setMode(new Mode());
+      } catch (e) {
+        // mode is not loaded, so try to load it,
+        // there must be a way to make ace do all this stuff as with themes... :(
+        var script = document.createElement("Script");
+        script.type = "text/javascript";
+        script.src = "https://lively4/src/external/ace/modes/mode-" + mode + ".js";
+        script.onerror = loadError;
+        script.onload = function() {
+          Mode = ace.require("ace/mode/" + mode).Mode;
+          editor.session.setMode(new Mode());
+        }
+
+        document.head.appendChild(script);
+      }
     }
 
     TomalecAceEditorPrototype.changeTheme = function(theme) {
-      this.editor.setTheme("ace/theme/" + theme);
+        this.editor.setTheme("ace/theme/" + theme);
+    }
+
+    function loadError(err) {
+      throw new URIError("Ace config " + err.target.src + " not found. ");
     }
 
     // var editor = editor = $("lively-editor")[0].shadowRoot.querySelector("#editor").editor;
 
     TomalecAceEditorPrototype.customizeEditor = function() {
         var editor = this.editor;
+
+        editor.getSession().setUseWorker(false);
+        var basePath = ace.config.get("basePath");
+        ace.config.set("themePath", basePath + "/ace/themes");
+        // for some reason, none of this works for loading modes,
+        // therefore we need to do lots of stuff in changeMode()
+        // ace.config.set("modePath", basePath + "/ace/modes");
+        // ace.config.set("basePath", basePath + "/ace");
 
         editor.currentSelectionOrLine = function() {
             var sel =  this.getSelectionRange();
