@@ -131,14 +131,14 @@ Operator.subclass('IdentityOperator', {
         this.downstream = downstream;
         upstream.downstream.push(this);
         upstream.now().forEach(function(item) {
-            downstream.newItemFromUpstream(item);
+            downstream.safeAdd(item);
         });
     },
     newItemFromUpstream: function(item) {
-        this.downstream.newItemFromUpstream(item);
+        this.downstream.safeAdd(item);
     },
     destroyItemFromUpstream: function(item) {
-        this.downstream.destroyItemFromUpstream(item);
+        this.downstream.safeRemove(item);
     }
 });
 
@@ -155,19 +155,12 @@ Operator.subclass('IdentityOperator', {
                 this.newItemFromUpstream(item);
             }, this);
         },
-        // TODO: SelectionItem calls those methods, refactor
-        safeAdd: function(item) {
-            this.downstream.newItemFromUpstream(item);
-        },
-        safeRemove: function(item) {
-            this.downstream.destroyItemFromUpstream(item);
-        },
         newItemFromUpstream: function(item) {
             this.trackItem(item);
         },
         trackItem: function(item) {
             if(this.expression(item)) {
-                this.downstream.newItemFromUpstream(item);
+                this.downstream.safeAdd(item);
             }
 
             if(this.selectionItems.any(function(selectionItem) {
@@ -185,10 +178,16 @@ Operator.subclass('IdentityOperator', {
         onChangeCallback: function(item) {
             console.log('check');
             if(this.expression(item)) {
-                this.safeAdd(item);
+                this.addDueToFilterExpression(item);
             } else {
-                this.safeRemove(item);
+                this.removeDueToFilterExpression(item);
             }
+        },
+        addDueToFilterExpression: function(item) {
+            this.downstream.safeAdd(item);
+        },
+        removeDueToFilterExpression: function(item) {
+            this.downstream.safeRemove(item);
         },
         destroyItemFromUpstream: function(item) {
             var selectionItem = this.selectionItems.find(function(selectionItem) {
@@ -205,7 +204,7 @@ Operator.subclass('IdentityOperator', {
             var gotRemoved = removeIfExisting(this.selectionItems, selectionItem);
             if(gotRemoved) { console.log('removed via baseset', item); }
 
-            this.downstream.destroyItemFromUpstream(selectionItem.item);
+            this.downstream.safeRemove(selectionItem.item);
         }
     });
 
@@ -227,7 +226,7 @@ Operator.subclass('IdentityOperator', {
             if(wasNewItem) {
                 var outputItem = this.mapFunction(item);
                 this.outputItemsByItems.set(item, outputItem);
-                this.downstream.newItemFromUpstream(outputItem);
+                this.downstream.safeAdd(outputItem);
             }
         },
         destroyItemFromUpstream: function(item) {
@@ -235,19 +234,12 @@ Operator.subclass('IdentityOperator', {
             if(gotRemoved) {
                 var outputItem = this.outputItemsByItems.get(item);
                 this.outputItemsByItems.delete(item);
-                this.downstream.destroyItemFromUpstream(outputItem);
+                this.downstream.safeRemove(outputItem);
             }
         }
     });
 
 Object.extend(View.prototype, {
-    newItemFromUpstream: function(item) {
-        this.safeAdd(item);
-    },
-    destroyItemFromUpstream: function(item) {
-        this.safeRemove(item);
-    },
-
     filter: function(filterFunction, context) {
         var newSelection = new View();
 
