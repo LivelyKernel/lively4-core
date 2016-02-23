@@ -1,7 +1,7 @@
 define(function module(require) { "use strict";
 
   var withAdvice = require('./../lib/flight/advice').withAdvice;
-  var View = require('./baseset');
+  var View = require('./view');
 
   function withLogging() {
     withAdvice.call(this.prototype);

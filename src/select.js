@@ -1,6 +1,6 @@
 define(function module(require) {
 
-var View = require('./baseset');
+var View = require('./view');
 
 var pushIfMissing = require('./utils').pushIfMissing;
 var removeIfExisting = require('./utils').removeIfExisting;
@@ -176,11 +176,19 @@ Operator.subclass('IdentityOperator', {
                 throw Error('Item already tracked', item);
             }
 
-            var selectionItem = new SelectionItem(this, item);
+            var selectionItem = new SelectionItem(this, item, this.onChangeCallback.bind(this, item));
 
             this.selectionItems.push(selectionItem);
 
             selectionItem.installListeners();
+        },
+        onChangeCallback: function(item) {
+            console.log('check');
+            if(this.expression(item)) {
+                this.safeAdd(item);
+            } else {
+                this.safeRemove(item);
+            }
         },
         destroyItemFromUpstream: function(item) {
             var selectionItem = this.selectionItems.find(function(selectionItem) {
@@ -268,19 +276,11 @@ Object.extend(View.prototype, {
 };
 
 Object.subclass('SelectionItem', {
-    initialize: function(selection, item) {
+    initialize: function(selection, item, callback) {
         this.selection = selection;
-
-        this.callback = function() {
-            console.log('check');
-            if(selection.expression(item)) {
-                selection.safeAdd(item);
-            } else {
-                selection.safeRemove(item);
-            }
-        };
-
         this.item = item;
+        this.callback = callback;
+
         this.propertyAccessors = new Set();
     },
 
