@@ -42,8 +42,9 @@
   if (!Global.lively) Global.lively = {};
   if (!Global.lively.lang) Global.lively.lang = livelyLang;
   else
-    for (var name in livelyLang)
+    for (var name in livelyLang) {
       Global.lively.lang[name] = livelyLang[name];
+    }
 
   return;
 

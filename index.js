@@ -16,7 +16,4 @@ require("./lib/graph");
 require("./lib/messenger");
 require("./lib/worker");
 
-for (var name in livelyLang) {
-  if (livelyLang.hasOwnProperty(name))
-    exports[name] = livelyLang[name];
-}
+module.exports = livelyLang;
