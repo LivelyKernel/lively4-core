@@ -21,7 +21,7 @@ define(function module(require) { "use strict"
       seventeen
     ),
     new NumExpr(42)
-  )
+  );
 
   var threshold = 10;
   var selection = select(AddExpr, function(expr) {
@@ -174,4 +174,28 @@ define(function module(require) { "use strict"
 
   console.log(heruko);
   errorIfFalse(heruko.getName() === Person.Dr + ' ' + herukoName);
+
+  // ----
+
+  var DataHolder = require('./src/expr').DataHolder;
+  withLogging.call(DataHolder);
+  var range = {
+    min: 0,
+    max: 20
+  };
+  var positiveData = select(DataHolder, function(data) {
+    return data.value > range.min;
+  });
+  var d1 = new DataHolder(17);
+  var d2 = new DataHolder(33);
+  var smallData = positiveData.filter(function(data) {
+    return data.value < range.max;
+  });
+  errorIfFalse(smallData.now().length === 1);
+  range.max = 50;
+  errorIfFalse(smallData.now().length === 2);
+  var d3 = new DataHolder(42);
+  errorIfFalse(smallData.now().length === 3);
+  range.min = 40;
+  errorIfFalse(smallData.now().length === 1);
 });

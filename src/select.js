@@ -203,6 +203,9 @@ BaseSet.subclass('Selection', {
     addToBaseSet: function() { throw new Error('Method "addToBaseSet" only available to class "BaseSet".'); },
     removeFromBaseSet: function() { throw new Error('Method "removeFromBaseSet" only available to class "BaseSet".'); },
 
+    filter: function(filterFunction, context) {
+        return new Selection(undefined, this, filterFunction, context);
+    },
     map: function(mapFunction) {
         return new Selection(
             mapFunction,

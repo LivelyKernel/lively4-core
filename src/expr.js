@@ -39,9 +39,16 @@ define(function module() {
     return result1 + result2;
   };
 
+  var DataHolder = function() { this.initialize.apply(this, arguments); };
+
+  DataHolder.prototype.initialize = function(value) {
+    this.value = value;
+  };
+
   return {
     NumExpr: NumExpr,
     NegExpr: NegExpr,
-    AddExpr: AddExpr
+    AddExpr: AddExpr,
+    DataHolder: DataHolder
   };
 });
