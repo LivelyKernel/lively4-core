@@ -232,22 +232,13 @@ Operator.subclass('IdentityOperator', {
         }
     });
 
-
-    /**
- * each Selection has a incoming slot of items and an outgoing slot of items.
- * () => ()
- * by defining functions in between, we could achieve maps, filters and so on.
- */
-BaseSet.subclass('Selection', {
+Object.extend(BaseSet.prototype, {
     newItemFromUpstream: function(item) {
         this.safeAdd(item);
     },
     destroyItemFromUpstream: function(item) {
         this.safeRemove(item);
     },
-
-    addToBaseSet: function() { throw new Error('Method "addToBaseSet" only available to class "BaseSet".'); },
-    removeFromBaseSet: function() { throw new Error('Method "removeFromBaseSet" only available to class "BaseSet".'); },
 
     filter: function(filterFunction, context) {
         var newSelection = new Selection();
@@ -264,6 +255,7 @@ BaseSet.subclass('Selection', {
         return newSelection;
     }
 });
+var Selection = BaseSet;
 
 Selection.stack = new Stack();
 Selection.current = function() { return Selection.stack.top(); };
