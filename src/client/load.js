@@ -8,7 +8,7 @@ export function whenLoaded(cb) {
 
 if ('serviceWorker' in navigator) {
     // var root = ("" + window.location).replace(/[^\/]*$/,'../')
-    var root = lively4url;
+    var root = lively4url + "/draft/";
     navigator.serviceWorker.register(root + 'swx-loader.js', {
         // navigator.serviceWorker.register('../../serviceworker-loader.js', {
         // scope: root + "draft/"
