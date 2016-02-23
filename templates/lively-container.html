@@ -26,11 +26,20 @@
           this.setPath(state.path)
         }
       };
+
+      // #TODO very ugly... I want to hide that level of JavaScript and just connect "onEnter" of the input field with my code
+      var input = this.getSubmorph("#container-path")
+      $(input).keyup(event => {
+        if (event.keyCode == 13) { // ENTER
+          this.onPathEntered(input.value);
+        }
+      });
       this.registerButtons()
     }
     </script>
     <script type="lively4script" data-name="registerButtons">
     (names) => {
+      // Just an experiment for having to write lesser code.... which ended up in having more code here ;-) #Jens
       Array.prototype.forEach.call(this.shadowRoot.querySelectorAll("button"), node => {
         var name = node.id
         console.log("register button " + name)
@@ -44,6 +53,11 @@
           }
         })
       })
+    }
+    </script>
+    <script type="lively4script" data-name="onPathEntered">
+    (path) => {
+      this.followPath(path)
     }
     </script>
     <script type="lively4script" data-name="onEdit">
