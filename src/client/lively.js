@@ -6,15 +6,19 @@ import * as scripts from './script-manager.js'
 import * as messaging from './messaging.js';
 import * as preferences from './preferences.js';
 import * as persistence from './persistence.js';
+import * as files from './files.js';
+
 import * as components from './morphic/component-loader.js';
-import * as jquery from '../external/jquery.js';
 import focalStorage from '../external/focalStorage.js';
 
+import * as jquery from '../external/jquery.js';
 
 export { scripts }
 export { messaging }
 export { preferences }
 export { persistence }
+export { files }
+
 export { components }
 export { focalStorage }
 

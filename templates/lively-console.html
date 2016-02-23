@@ -17,13 +17,13 @@
     #commandlineholder {
         margin: 2px;
         height: 20px;
-        width: 100%;     
+        width: 100%;
         display: flex;
         flex-direction: row;
     }
-    #commandline {  
-        margin-left: 2px;    
-        margin-right: 2px;    
+    #commandline {
+        margin-left: 2px;
+        margin-right: 2px;
         font-family: monospace;
         flex: 1;
     }
@@ -79,7 +79,7 @@
       });
       this.getSubmorph('#console').editor.renderer.$cursorLayer.element.style.opacity=0
 
-      $(this.getSubmorph('#commandline')).keyup((evt) => { 
+      $(this.getSubmorph('#commandline')).keyup((evt) => {
         if(evt.keyCode == 13) { this.evalInput() }})
       $(this.getSubmorph('#evalbutton')).click( (evt) => {this.evalInput()})
     }
@@ -99,6 +99,7 @@
       function(/* varargs */) {
         var c = this.getSubmorph('#console')
         var editor  = c.editor
+        if (!editor || !editor.session ) return
         Array.prototype.forEach.call(arguments, function(s) {
           // c.editor.setValue(c.editor.getValue() + "\n" + s, 1)
           var session = editor.session

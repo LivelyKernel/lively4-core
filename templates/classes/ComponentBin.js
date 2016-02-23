@@ -1,7 +1,7 @@
 'use strict'
 
 import Morph from './Morph.js';
-import { statFile, loadFile } from '../../src/client/file-editor.js';
+import { statFile, loadFile } from '../../src/client/files.js';
 import * as componentLoader from '../../src/client/morphic/component-loader.js';
 
 export default class ComponentBin extends Morph {
