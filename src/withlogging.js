@@ -1,4 +1,4 @@
-define(function module(require) { "use strict"
+define(function module(require) { "use strict";
 
   var withAdvice = require('./../lib/flight/advice').withAdvice;
   var BaseSet = require('./baseset');

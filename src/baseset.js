@@ -1,11 +1,12 @@
-define(function module(require) { "use strict"
+define(function module(require) { "use strict";
 
   var pushIfMissing = require('./utils').pushIfMissing;
   var removeIfExisting = require('./utils').removeIfExisting;
+  var identity = require('./utils').identity;
 
   var BaseSet = Object.subclass('BaseSet', {
     initialize: function(mapFunction) {
-      this.mapFunction = mapFunction || function identity(x) { return x; };
+      this.mapFunction = mapFunction || identity;
       this.items = [];
       this.outputItemsByItems = new Map();
       this.downstream = [];

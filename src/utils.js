@@ -8,7 +8,7 @@ var pushIfMissing = function(array, item) {
         if(array[i] == item) {
             exists = true;
             break;
-        };
+        }
 
     // do not add an already existing item
     if (!exists) {
@@ -63,7 +63,8 @@ return {
     pushIfMissing: pushIfMissing,
     removeIfExisting: removeIfExisting,
     Stack: Stack,
-    isPrimitive: isPrimitive
+    isPrimitive: isPrimitive,
+    identity: function identity(x) { return x; }
 };
 
 });

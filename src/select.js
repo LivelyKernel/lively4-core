@@ -125,6 +125,24 @@ users.timfelgentreff.jsinterpreter.InterpreterVisitor.subclass('SelectionInterpr
     }
 });
 
+BaseSet.subclass('Operator', {});
+Operator.subclass('IdentityOperator', {
+    initialize: function(upstream, downstream) {
+        this.downstream = downstream;
+        upstream.downstream.push(this);
+        upstream.now().forEach(function(item) {
+            downstream.newItemFromUpstream(item);
+        });
+    },
+    newItemFromUpstream: function(item) {
+        this.downstream.newItemFromUpstream(item);
+    },
+    destroyItemFromUpstream: function(item) {
+        this.downstream.destroyItemFromUpstream(item);
+    }
+});
+
+
 /**
  * each Selection has a incoming slot of items and an outgoing slot of items.
  * () => ()
@@ -142,10 +160,7 @@ BaseSet.subclass('Selection', {
         this.initializeUsingUpstreamSet(baseSet);
     },
     initializeUsingUpstreamSet: function(baseSet) {
-        baseSet.downstream.push(this);
-        baseSet.now().forEach(function(item) {
-            this.newItemFromUpstream(item);
-        }, this);
+        new IdentityOperator(baseSet, this);
     },
     newItemFromUpstream: function(item) {
         this.trackItem(item);
@@ -159,7 +174,7 @@ BaseSet.subclass('Selection', {
             return selectionItem.item === item;
         })) {
             throw Error('Item already tracked', item);
-        };
+        }
 
         var selectionItem = new SelectionItem(this, item);
 
