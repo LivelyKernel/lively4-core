@@ -5,10 +5,8 @@ define(function module(require) { "use strict";
   var identity = require('./utils').identity;
 
   var BaseSet = Object.subclass('BaseSet', {
-    initialize: function(mapFunction) {
-      this.mapFunction = mapFunction || identity;
+    initialize: function() {
       this.items = [];
-      this.outputItemsByItems = new Map();
       this.downstream = [];
       this.enterCallbacks = [];
       this.exitCallbacks = [];
@@ -27,21 +25,17 @@ define(function module(require) { "use strict";
     safeAdd: function(item) {
       var wasNewItem = pushIfMissing(this.items, item);
       if(wasNewItem) {
-        var outputItem = this.mapFunction(item);
-        this.outputItemsByItems.set(item, outputItem);
-        console.log('added to selection', outputItem);
-        this.enterCallbacks.forEach(function(enterCallback) { enterCallback(outputItem); });
-        this.downstream.forEach(function(ea) { ea.newItemFromUpstream(outputItem); });
+        console.log('added to selection', item);
+        this.enterCallbacks.forEach(function(enterCallback) { enterCallback(item); });
+        this.downstream.forEach(function(ea) { ea.newItemFromUpstream(item); });
       }
     },
     safeRemove: function(item) {
       var gotRemoved = removeIfExisting(this.items, item);
       if(gotRemoved) {
-        var outputItem = this.outputItemsByItems.get(item);
-        this.outputItemsByItems.delete(item);
-        console.log('removed from selection', outputItem);
-        this.exitCallbacks.forEach(function(exitCallback) { exitCallback(outputItem); });
-        this.downstream.forEach(function(ea) { ea.destroyItemFromUpstream(outputItem); });
+        console.log('removed from selection', item);
+        this.exitCallbacks.forEach(function(exitCallback) { exitCallback(item); });
+        this.downstream.forEach(function(ea) { ea.destroyItemFromUpstream(item); });
       }
     },
     /**
@@ -49,8 +43,8 @@ define(function module(require) { "use strict";
      */
     now: function() {
       var arr = [];
-      this.outputItemsByItems.forEach(function(outputItems) {
-        arr.push(outputItems);
+      this.items.forEach(function(item) {
+        arr.push(item);
       });
 
       return arr;

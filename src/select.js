@@ -205,6 +205,8 @@ Operator.subclass('IdentityOperator', {
     IdentityOperator.subclass('MapOperator', {
         initialize: function($super, upstream, downstream, mapFunction) {
             this.mapFunction = mapFunction || identity;
+            this.items = [];
+            this.outputItemsByItems = new Map();
 
             this.downstream = downstream;
             upstream.downstream.push(this);
@@ -213,10 +215,20 @@ Operator.subclass('IdentityOperator', {
             }, this);
         },
         newItemFromUpstream: function(item) {
-
+            var wasNewItem = pushIfMissing(this.items, item);
+            if(wasNewItem) {
+                var outputItem = this.mapFunction(item);
+                this.outputItemsByItems.set(item, outputItem);
+                this.downstream.newItemFromUpstream(outputItem);
+            }
         },
         destroyItemFromUpstream: function(item) {
-
+            var gotRemoved = removeIfExisting(this.items, item);
+            if(gotRemoved) {
+                var outputItem = this.outputItemsByItems.get(item);
+                this.outputItemsByItems.delete(item);
+                this.downstream.destroyItemFromUpstream(outputItem);
+            }
         }
     });
 
@@ -238,16 +250,16 @@ BaseSet.subclass('Selection', {
     removeFromBaseSet: function() { throw new Error('Method "removeFromBaseSet" only available to class "BaseSet".'); },
 
     filter: function(filterFunction, context) {
-        var newSelection = new Selection(undefined);
+        var newSelection = new Selection();
 
         new FilterOperator(this, newSelection, filterFunction, context);
 
         return newSelection;
     },
     map: function(mapFunction) {
-        var newSelection = new Selection(mapFunction);
+        var newSelection = new Selection();
 
-        new FilterOperator(this, newSelection, function() { return true; }, {});
+        new MapOperator(this, newSelection, mapFunction);
 
         return newSelection;
     }
@@ -268,14 +280,14 @@ Object.subclass('SelectionItem', {
     initialize: function(selection, item) {
         this.selection = selection;
 
-        this.callback = (function() {
+        this.callback = function() {
             console.log('check');
-            if(this.expression(item)) {
-                this.safeAdd(item);
+            if(selection.expression(item)) {
+                selection.safeAdd(item);
             } else {
-                this.safeRemove(item);
+                selection.safeRemove(item);
             }
-        }).bind(selection);
+        };
 
         this.item = item;
         this.propertyAccessors = new Set();
@@ -299,7 +311,7 @@ Object.subclass('SelectionItem', {
 });
 
 var select = function(Class, expression, context) {
-    var newSelection = new Selection(undefined);
+    var newSelection = new Selection();
 
     new FilterOperator(Class.__livingSet__, newSelection, expression, context);
 
