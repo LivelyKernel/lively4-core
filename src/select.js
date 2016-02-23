@@ -143,18 +143,60 @@ Operator.subclass('IdentityOperator', {
 });
 
     IdentityOperator.subclass('FilterOperator', {
-        initialize: function($super, upstream, downstream, filterFunction, context) {
+        initialize: function($super, upstream, downstream, expression, context) {
+            this.expression = expression;
+            this.expression.varMapping = context;
+
+            this.selectionItems = [];
+
             this.downstream = downstream;
             upstream.downstream.push(this);
             upstream.now().forEach(function(item) {
-                downstream.newItemFromUpstream(item);
-            });
+                this.newItemFromUpstream(item);
+            }, this);
         },
-        newItemFromUpstream: function(item) {
+        safeAdd: function(item) {
             this.downstream.newItemFromUpstream(item);
         },
-        destroyItemFromUpstream: function(item) {
+        safeRemove: function(item) {
             this.downstream.destroyItemFromUpstream(item);
+        },
+        newItemFromUpstream: function(item) {
+            this.trackItem(item);
+        },
+        trackItem: function(item) {
+            if(this.expression(item)) {
+                this.downstream.newItemFromUpstream(item);
+            }
+
+            if(this.selectionItems.any(function(selectionItem) {
+                    return selectionItem.item === item;
+                })) {
+                throw Error('Item already tracked', item);
+            }
+
+            var selectionItem = new SelectionItem(this, item);
+
+            this.selectionItems.push(selectionItem);
+
+            selectionItem.installListeners();
+        },
+        destroyItemFromUpstream: function(item) {
+            var selectionItem = this.selectionItems.find(function(selectionItem) {
+                return selectionItem.item === item;
+            });
+
+            if(!selectionItem) {
+                console.warn('remove non-existing item from upstream', item, this);
+                return;
+            }
+
+            selectionItem.removeListeners();
+
+            var gotRemoved = removeIfExisting(this.selectionItems, selectionItem);
+            if(gotRemoved) { console.log('removed via baseset', item); }
+
+            this.downstream.destroyItemFromUpstream(selectionItem.item);
         }
     });
 
@@ -168,49 +210,13 @@ BaseSet.subclass('Selection', {
     initialize: function($super, mapFunc, baseSet, expression, context) {
         $super(mapFunc);
 
-        this.expression = expression;
-        this.expression.varMapping = context;
-
-        this.selectionItems = [];
-
-        new FilterOperator(baseSet, this);
+        new FilterOperator(baseSet, this, expression, context);
     },
     newItemFromUpstream: function(item) {
-        this.trackItem(item);
-    },
-    trackItem: function(item) {
-        if(this.expression(item)) {
-            this.safeAdd(item);
-        }
-
-        if(this.selectionItems.any(function(selectionItem) {
-            return selectionItem.item === item;
-        })) {
-            throw Error('Item already tracked', item);
-        }
-
-        var selectionItem = new SelectionItem(this, item);
-
-        this.selectionItems.push(selectionItem);
-
-        selectionItem.installListeners();
+        this.safeAdd(item);
     },
     destroyItemFromUpstream: function(item) {
-        var selectionItem = this.selectionItems.find(function(selectionItem) {
-            return selectionItem.item === item;
-        });
-
-        if(!selectionItem) {
-            console.warn('remove non-existing item from upstream', item, this);
-            return;
-        }
-
-        selectionItem.removeListeners();
-
-        var gotRemoved = removeIfExisting(this.selectionItems, selectionItem);
-        if(gotRemoved) { console.log('removed via baseset', item); }
-
-        this.safeRemove(selectionItem.item);
+        this.safeRemove(item);
     },
 
     addToBaseSet: function() { throw new Error('Method "addToBaseSet" only available to class "BaseSet".'); },
