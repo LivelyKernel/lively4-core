@@ -142,6 +142,22 @@ Operator.subclass('IdentityOperator', {
     }
 });
 
+    IdentityOperator.subclass('FilterOperator', {
+        initialize: function($super, upstream, downstream, filterFunction, context) {
+            this.downstream = downstream;
+            upstream.downstream.push(this);
+            upstream.now().forEach(function(item) {
+                downstream.newItemFromUpstream(item);
+            });
+        },
+        newItemFromUpstream: function(item) {
+            this.downstream.newItemFromUpstream(item);
+        },
+        destroyItemFromUpstream: function(item) {
+            this.downstream.destroyItemFromUpstream(item);
+        }
+    });
+
 
 /**
  * each Selection has a incoming slot of items and an outgoing slot of items.
@@ -157,9 +173,6 @@ BaseSet.subclass('Selection', {
 
         this.selectionItems = [];
 
-        this.initializeUsingUpstreamSet(baseSet);
-    },
-    initializeUsingUpstreamSet: function(baseSet) {
         new IdentityOperator(baseSet, this);
     },
     newItemFromUpstream: function(item) {
