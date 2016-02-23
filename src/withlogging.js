@@ -1,12 +1,12 @@
 define(function module(require) { "use strict";
 
   var withAdvice = require('./../lib/flight/advice').withAdvice;
-  var BaseSet = require('./baseset');
+  var View = require('./baseset');
 
   function withLogging() {
     withAdvice.call(this.prototype);
     var Class = this;
-    Class.__livingSet__ = new BaseSet();
+    Class.__livingSet__ = new View();
 
     this.prototype.after('initialize', function() {
       console.log('Created', this);

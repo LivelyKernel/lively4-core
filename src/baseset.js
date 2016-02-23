@@ -4,7 +4,7 @@ define(function module(require) { "use strict";
   var removeIfExisting = require('./utils').removeIfExisting;
   var identity = require('./utils').identity;
 
-  var BaseSet = Object.subclass('BaseSet', {
+  var View = Object.subclass('View', {
     initialize: function() {
       this.items = [];
       this.downstream = [];
@@ -67,7 +67,7 @@ define(function module(require) { "use strict";
     /**
      * Define partial behavior attached to each object while it is contained in the set.
      * @param partialBehavior
-     * @returns {BaseSet} The callee of this method. This is done for method chaining.
+     * @returns {View} The callee of this method. This is done for method chaining.
      */
     // TODO: is this currently limited to 1 layer per item-view combination?
     layer: function(partialBehavior) {
@@ -96,5 +96,5 @@ define(function module(require) { "use strict";
     }
   });
 
-  return BaseSet;
+  return View;
 });

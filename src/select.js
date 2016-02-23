@@ -1,6 +1,6 @@
 define(function module(require) {
 
-var BaseSet = require('./baseset');
+var View = require('./baseset');
 
 var pushIfMissing = require('./utils').pushIfMissing;
 var removeIfExisting = require('./utils').removeIfExisting;
@@ -125,7 +125,7 @@ users.timfelgentreff.jsinterpreter.InterpreterVisitor.subclass('SelectionInterpr
     }
 });
 
-BaseSet.subclass('Operator', {});
+Object.subclass('Operator', {});
 Operator.subclass('IdentityOperator', {
     initialize: function(upstream, downstream) {
         this.downstream = downstream;
@@ -232,7 +232,7 @@ Operator.subclass('IdentityOperator', {
         }
     });
 
-Object.extend(BaseSet.prototype, {
+Object.extend(View.prototype, {
     newItemFromUpstream: function(item) {
         this.safeAdd(item);
     },
@@ -255,7 +255,7 @@ Object.extend(BaseSet.prototype, {
         return newSelection;
     }
 });
-var Selection = BaseSet;
+var Selection = View;
 
 Selection.stack = new Stack();
 Selection.current = function() { return Selection.stack.top(); };
