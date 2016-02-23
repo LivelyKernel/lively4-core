@@ -10,11 +10,11 @@ define(function module(require) { "use strict";
 
     this.prototype.after('initialize', function() {
       console.log('Created', this);
-      Class.__livingSet__.addToBaseSet(this);
+      Class.__livingSet__.safeAdd(this);
     });
     this.prototype.before('destroy', function() {
       console.log('Destroy', this);
-      Class.__livingSet__.removeFromBaseSet(this);
+      Class.__livingSet__.safeRemove(this);
     });
   }
   return withLogging;

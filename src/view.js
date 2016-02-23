@@ -14,14 +14,6 @@ define(function module(require) { "use strict";
       this.layersByItem = new Map();
     },
 
-    // explicitly adding or removing objects to the set
-    addToBaseSet: function(item) {
-      return this.safeAdd(item);
-    },
-    removeFromBaseSet: function(item) {
-      return this.safeRemove(item);
-    },
-
     safeAdd: function(item) {
       var wasNewItem = pushIfMissing(this.items, item);
       if(wasNewItem) {
