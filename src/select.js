@@ -114,7 +114,7 @@ users.timfelgentreff.jsinterpreter.InterpreterVisitor.subclass('SelectionInterpr
 
         PropertyAccessor
             .wrapProperties(obj, propName)
-            .addCallback(Selection.current());
+            .addCallback(View.current());
 
         return $super(node);
     },
@@ -241,30 +241,29 @@ Object.extend(View.prototype, {
     },
 
     filter: function(filterFunction, context) {
-        var newSelection = new Selection();
+        var newSelection = new View();
 
         new FilterOperator(this, newSelection, filterFunction, context);
 
         return newSelection;
     },
     map: function(mapFunction) {
-        var newSelection = new Selection();
+        var newSelection = new View();
 
         new MapOperator(this, newSelection, mapFunction);
 
         return newSelection;
     }
 });
-var Selection = View;
 
-Selection.stack = new Stack();
-Selection.current = function() { return Selection.stack.top(); };
-Selection.withOnStack = function(el, callback, context) {
-    Selection.stack.push(el);
+    View.stack = new Stack();
+    View.current = function() { return View.stack.top(); };
+    View.withOnStack = function(el, callback, context) {
+        View.stack.push(el);
     try {
         callback.call(context);
     } finally {
-        Selection.stack.pop();
+        View.stack.pop();
     }
 };
 
@@ -287,7 +286,7 @@ Object.subclass('SelectionItem', {
 
     installListeners: function() {
         var item = this.item;
-        Selection.withOnStack(this, function() {
+        View.withOnStack(this, function() {
             cop.withLayers([SelectionLayer], (function() {
                 this.expression.forInterpretation().apply(null, [item]);
             }).bind(this));
@@ -303,7 +302,7 @@ Object.subclass('SelectionItem', {
 });
 
 var select = function(Class, expression, context) {
-    var newSelection = new Selection();
+    var newSelection = new View();
 
     new FilterOperator(Class.__livingSet__, newSelection, expression, context);
 
