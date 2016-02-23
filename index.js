@@ -1,5 +1,5 @@
-/*global require*/
-var livelyLang = module.require('./lib/base');
+/*global require, exports*/
+var livelyLang = require('./lib/base');
 
 require("./lib/object");
 require("./lib/class");
@@ -16,4 +16,7 @@ require("./lib/graph");
 require("./lib/messenger");
 require("./lib/worker");
 
-module.exports = livelyLang;
+for (var name in livelyLang) {
+  if (livelyLang.hasOwnProperty(name))
+    exports[name] = livelyLang[name];
+}

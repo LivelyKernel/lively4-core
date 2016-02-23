@@ -56,7 +56,8 @@
       installGlobals: installGlobals,
       uninstallGlobals: uninstallGlobals,
       globalInterfaceSpec: globalInterfaceSpec,
-      deprecatedLivelyPatches: deprecatedLivelyPatches
+      deprecatedLivelyPatches: deprecatedLivelyPatches,
+      toString: function() { return "[object lively.lang]"; }
     };
   }
 
@@ -910,7 +911,7 @@ obj.extend(Path.prototype, {
     if (!options || this.isRoot()) return;
     var target = options.target,
         parent = this.get(target, -1),
-        propName = exports.arr.last(this.parts()),
+        propName = this.parts().slice(-1)[0],
         newPropName = 'propertyWatcher$' + propName,
         watcherIsInstalled = parent && parent.hasOwnProperty(newPropName),
         uninstall = options.uninstall,
@@ -968,7 +969,7 @@ obj.extend(Path.prototype, {
     // options = {target, [haltWhenChanged, showStack, verbose, uninstall]}
     var target = options.target,
       parent = this.get(target, -1),
-      funcName = this.parts().last(),
+      funcName = this.parts().slice(-1)[0],
       uninstall = options.uninstall,
       haltWhenChanged = options.haltWhenChanged === undefined ? true : options.haltWhenChanged,
       showStack = options.showStack,
