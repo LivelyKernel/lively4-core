@@ -173,7 +173,7 @@ BaseSet.subclass('Selection', {
 
         this.selectionItems = [];
 
-        new IdentityOperator(baseSet, this);
+        new FilterOperator(baseSet, this);
     },
     newItemFromUpstream: function(item) {
         this.trackItem(item);
