@@ -9,6 +9,7 @@ page load and to access all the files the service worker makes available to us, 
 page. 
 
 
+
 One should be able to browse all kind of content. Such as basic HTML
 ```
 https://livelykernel.github.io/lively4-core/draft/start.html?load=/draft/hello.html
