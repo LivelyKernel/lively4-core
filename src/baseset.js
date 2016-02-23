@@ -75,6 +75,7 @@ define(function module(require) { "use strict";
      * @param partialBehavior
      * @returns {BaseSet} The callee of this method. This is done for method chaining.
      */
+    // TODO: is this currently limited to 1 layer per item-view combination?
     layer: function(partialBehavior) {
         var layersByItem = this.layersByItem;
 

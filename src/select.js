@@ -155,6 +155,7 @@ Operator.subclass('IdentityOperator', {
                 this.newItemFromUpstream(item);
             }, this);
         },
+        // TODO: SelectionItem calls those methods, refactor
         safeAdd: function(item) {
             this.downstream.newItemFromUpstream(item);
         },
@@ -200,18 +201,32 @@ Operator.subclass('IdentityOperator', {
         }
     });
 
+    var identity = require('./utils').identity;
+    IdentityOperator.subclass('MapOperator', {
+        initialize: function($super, upstream, downstream, mapFunction) {
+            this.mapFunction = mapFunction || identity;
 
-/**
+            this.downstream = downstream;
+            upstream.downstream.push(this);
+            upstream.now().forEach(function(item) {
+                this.newItemFromUpstream(item);
+            }, this);
+        },
+        newItemFromUpstream: function(item) {
+
+        },
+        destroyItemFromUpstream: function(item) {
+
+        }
+    });
+
+
+    /**
  * each Selection has a incoming slot of items and an outgoing slot of items.
  * () => ()
  * by defining functions in between, we could achieve maps, filters and so on.
  */
 BaseSet.subclass('Selection', {
-    initialize: function($super, mapFunc, baseSet, expression, context) {
-        $super(mapFunc);
-
-        new FilterOperator(baseSet, this, expression, context);
-    },
     newItemFromUpstream: function(item) {
         this.safeAdd(item);
     },
@@ -223,15 +238,18 @@ BaseSet.subclass('Selection', {
     removeFromBaseSet: function() { throw new Error('Method "removeFromBaseSet" only available to class "BaseSet".'); },
 
     filter: function(filterFunction, context) {
-        return new Selection(undefined, this, filterFunction, context);
+        var newSelection = new Selection(undefined);
+
+        new FilterOperator(this, newSelection, filterFunction, context);
+
+        return newSelection;
     },
     map: function(mapFunction) {
-        return new Selection(
-            mapFunction,
-            this,
-            function() { return true; },
-            {}
-        );
+        var newSelection = new Selection(mapFunction);
+
+        new FilterOperator(this, newSelection, function() { return true; }, {});
+
+        return newSelection;
     }
 });
 
@@ -281,7 +299,11 @@ Object.subclass('SelectionItem', {
 });
 
 var select = function(Class, expression, context) {
-    return new Selection(undefined, Class.__livingSet__, expression, context);
+    var newSelection = new Selection(undefined);
+
+    new FilterOperator(Class.__livingSet__, newSelection, expression, context);
+
+    return newSelection;
 };
 
 return select;
