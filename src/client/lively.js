@@ -84,6 +84,16 @@ function log(/* varargs */) {
     $('lively-console').each(function() { this.log.apply(this, args)})
 }
 
+export function notify(title, text, timout) {
+    var notification = new Notification(title || "", {
+      icon: 'https://www.lively-kernel.org/media/livelylogo-small.png',
+      body: text || "",
+    });
+    setTimeout(() => notification.close(), timout || 3000);
+    // notification.onclick = cb
+}
+
+
 // guard againsst wrapping twice and ending in endless recursion
 if (!console.log.isWrapped) {
     var nativeLog = console.log
@@ -92,6 +102,10 @@ if (!console.log.isWrapped) {
         log.apply(undefined, arguments)
     }
     console.log.isWrapped = true
+}
+
+export function array(anyList){
+  return Array.prototype.slice.call(anyList)
 }
 
 
