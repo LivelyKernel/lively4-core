@@ -5,14 +5,21 @@ import Morph from "../../../templates/classes/Morph.js";
 // store promises of loaded and currently loading templates
 export var loadingPromises = {};
 
+export var templates = {}
+export var prototypes = {}
+
 // this function registers a custom element,
 // it is called from the bootstap code in the component templates
 export function register(componentName, template, prototype) {
   var proto = prototype || Object.create(Morph.prototype);
 
-  // TODO: we should check here, if the prototype already has a createdCallback,
+  // For reflection and debugging
+  templates[componentName] = template;
+  prototypes[componentName] = prototype;
+
+  // #TODO: we should check here, if the prototype already has a createdCallback,
   // if that's the case, we should wrap it and call it in our createdCallback
-  // TODO: should we dispatch event 'created' also in attached callback???
+  // #TODO: should we dispatch event 'created' also in attached callback???
   // And what about initizalize call? Actually I think yes. - Felix
   proto.createdCallback = function() {
     if (persistence.isCurrentlyCloning()) {
@@ -20,9 +27,14 @@ export function register(componentName, template, prototype) {
     }
 
     var shadow = this.createShadowRoot();
+
     // clone the template again, so when more elements are created,
     // they get their own copy of elements
     var clone = document.importNode(template, true);
+    // #TODO replace the "template" reference with an indirection that can be changed from the outside,
+    // e.g. var clone = document.importNode(templates[componentName], true);
+    // but beeing able to modify it, because we have a reference should suffice at the moment...
+
     shadow.appendChild(clone);
 
     // attach lively4scripts from the shadow root to this

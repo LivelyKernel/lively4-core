@@ -295,6 +295,14 @@
                 var result = this.inspectIt(text, true);
             }
         });
+
+        editor.commands.addCommand({
+            name: "doSave",
+            bindKey: {win: "Ctrl-S", mac: "Command-S"},
+            exec: (editor) => {
+                this.doSave(this.editor.getValue());
+            }
+        });
     };
 
     TomalecAceEditorPrototype.getDoitContext =  function () {
@@ -303,7 +311,8 @@
     TomalecAceEditorPrototype.boundEval =  function (str) {
         var ctx = this.getDoitContext() || this,
             interactiveEval = function(text) { return eval(text) };
-        var transpiledSource = babel.transform(str).code
+        // #TODO binding "this" does not work yet, this is needed to build interactive debuggers... and cool workspaces
+        var transpiledSource = babel.transform(str, {stage: 0}).code
         // #TODO alt: babel.run
         return interactiveEval.call(ctx, transpiledSource);
     }
@@ -352,6 +361,10 @@
         var result = this.printObject(result)
         this.printResult("" + result)
         return result
+    }
+
+    TomalecAceEditorPrototype.doSave = function (text) {
+        this.tryBoundEval(text) // just a default implementation...
     }
 
     TomalecAceEditorPrototype.onResize = function() {

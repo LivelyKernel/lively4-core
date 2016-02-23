@@ -60,26 +60,37 @@
       this.followPath(path)
     }
     </script>
-    <script type="lively4script" data-name="onEdit">
+
+    <script type="lively4script" data-name="hideCancelAndSave">
+    () => {
+      this.getSubmorph("#cancel").style.visibility = "hidden"
+      this.getSubmorph("#save").style.visibility = "hidden"
+    }
+    </script>
+    <script type="lively4script" data-name="showCancelAndSave">
     () => {
       this.getSubmorph("#cancel").style.visibility = "visible"
       this.getSubmorph("#save").style.visibility = "visible"
+    }
+    </script>
+    <script type="lively4script" data-name="onEdit">
+    () => {
+      this.showCancelAndSave()
       this.editFile()
     }
     </script>
        <script type="lively4script" data-name="onCancel">
     () => {
-      this.getSubmorph("#cancel").style.visibility = "visible"
-      this.getSubmorph("#save").style.visibility = "visible"
       this.setPath(this.getPath())
+      this.hideCancelAndSave()
     }
     </script>
     <script type="lively4script" data-name="onSave">
     () => {
-      this.getSubmorph("#cancel").style.visibility = "visible"
-      this.getSubmorph("#save").style.visibility = "visible"
       this.getSubmorph("#editor").saveFile().then( sourceCode => {
         this.setPath(this.getPath());
+        this.hideCancelAndSave();
+        lively.notify("saved page",this.getPath())
       })
 
     }
@@ -196,6 +207,9 @@
           container.style.height = "400px"
           comp.hideToolbar()
           comp.id = "editor"
+          comp.doSave = text => {
+            this.onSave()
+          }
 
           comp.setURL("https://lively4/" + this.getPath())
           comp.setText(this.sourceContent); // directly setting the source we got
