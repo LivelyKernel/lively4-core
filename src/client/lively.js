@@ -85,7 +85,13 @@ export function openContextMenu(container, evt) {
 
 function log(/* varargs */) {
     var args = arguments
-    $('lively-console').each(function() { this.log.apply(this, args)})
+    $('lively-console').each(function() {
+      try{
+        if (this.log) this.log.apply(this, args)
+      }catch(e) {
+        // ignore...
+      }
+    })
 }
 
 export function notify(title, text, timout) {

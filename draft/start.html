@@ -17,12 +17,18 @@
 <script src="../src/external/system.src.js" type="text/javascript" charset="utf-8"></script>
 <script src="../vendor/regenerator-runtime.js" type="text/javascript" charset="utf-8"></script>
 <script>
-  System.paths['babel'] ='https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
+  var lively4yourself = /\/draft\/.*\.html/ // ADAPT THIS
+    // some little reflection... help to find your inner self!
+  var lively4url = window.location.origin + window.location.pathname.replace(lively4yourself,"")
+
+
+  System.paths['babel'] =lively4url + '/src/external/babel-browser.js'
+  // System.defaultJSExtensions = true;
   System.config({
     transpiler: 'babel',
     babelOptions: { },
     map: {
-        babel: 'https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
+        babel: lively4url + '/src/external/babel-browser.js'
     }
   });
 </script>
@@ -31,9 +37,6 @@
 <body>
 <lively-container></lively-container>
 <script>
-    var lively4yourself = /\/draft\/.*\.html/ // ADAPT THIS
-    // some little reflection... help to find your inner self!
-    var lively4url = window.location.origin + window.location.pathname.replace(lively4yourself,"")
 
     console.log("lively4url: " + lively4url)
     System.import(lively4url + "/src/client/load.js").then(function(load){

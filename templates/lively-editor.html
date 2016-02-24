@@ -125,24 +125,14 @@
 
     <script type="lively4script" data-name="saveFile">
       function() {
-        return new Promise((resolve, reject) => {
-          var url = this.getURL();
-          console.log("save " + url)
-          var data = this.currentEditor().getValue()
-          $.ajax({
-              url: url,
-              type: 'PUT',
-              data: data,
-              success: function(text) {
-                console.log("file " + url + " written.")
-                resolve(data)
-              },
-              error: function(xhr, status, error) {
-                console.log("could not write " + url + ": " + error)
-                reject()
-              }
-          });
-        })
+        var url = this.getURL();
+        console.log("save " + url + "!")
+        var data = this.currentEditor().getValue()
+        return lively.files.saveFile(url, data).then(() => {
+            console.log("edited file " + url + " written.")
+          }).catch((xhr, status, error) => {
+            console.log("could not write " + url + ": " + error)
+          })
       }
     </script>
 
