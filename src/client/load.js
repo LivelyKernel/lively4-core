@@ -10,7 +10,10 @@ export function whenLoaded(cb) {
 if ('serviceWorker' in navigator) {
     // var root = ("" + window.location).replace(/[^\/]*$/,'../')
     var root = "" + lively4url + "/";
+    var serviceworkerReady = false
+
     var onReady = function() {
+        serviceworkerReady = true;
         // Lively has all the dependencies
         System.import("../src/client/lively.js").then(function(lively) {
             window.lively = lively
@@ -37,6 +40,7 @@ if ('serviceWorker' in navigator) {
       // we don't have to do anything here... the service worker is already there
       onReady()
     } else {
+
       navigator.serviceWorker.register(root + 'swx-loader.js', {
           // navigator.serviceWorker.register('../../serviceworker-loader.js', {
           // scope: root + "draft/"

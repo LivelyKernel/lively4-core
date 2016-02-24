@@ -38,41 +38,9 @@
 
 <script>
 (function(window, document, undefined) {
-    // Refers to the "importer", which is index.html
-    var thatDoc = document;
-
-    // Refers to the "importee", which is juicy-ace-editor.html
-    var thisDoc = (document._currentScript || document.currentScript).ownerDocument;
-
-    // Gets content from <template>
-    var template = thisDoc.querySelector('#juicy-ace-editor').content;
 
     // Creates an object based in the HTML Element prototype
     var TomalecAceEditorPrototype = Object.create(HTMLElement.prototype);
-
-    // Fires when an instance of the element is created
-    TomalecAceEditorPrototype.createdCallback = function() {
-        var value = "";
-        Object.defineProperty(this, "value", {
-            set: function(val){
-                this.editor && this.editor.setValue( val );
-                value = val;
-            },
-            get: function(){
-                value = this.editor && this.editor.getValue() || value;
-                return value;
-            }
-        });
-
-        // Creates the shadow root
-        var shadowRoot = this.createShadowRoot();
-        // Adds a template clone into shadow root
-        var clone = thatDoc.importNode(template, true);
-        this.container = clone.getElementById("juicy-ace-editor-container");
-        shadowRoot.appendChild(clone);
-
-        this.dispatchEvent(new Event("created"));
-    };
 
     // Fires when an instance was inserted into the document
     TomalecAceEditorPrototype.attachedCallback = function() {
@@ -372,8 +340,52 @@
       console.log("resizing");
     }
 
-    document.registerElement('juicy-ace-editor', {
-        prototype: TomalecAceEditorPrototype
+    // document.registerElement('juicy-ace-editor', {
+    //     prototype: TomalecAceEditorPrototype
+    // });
+
+
+    // Fires when an instance of the element is created
+    TomalecAceEditorPrototype.createdCallback = function() {
+        console.log("TomalecAceEditorPrototype.createdCallback")
+        var value = "";
+        Object.defineProperty(this, "value", {
+            set: function(val){
+                this.editor && this.editor.setValue( val );
+                value = val;
+            },
+            get: function(){
+                value = this.editor && this.editor.getValue() || value;
+                return value;
+            }
+        });
+
+        // Creates the shadow root
+        // var shadowRoot = this.createShadowRoot();
+
+        // Adds a template clone into shadow root
+        // var clone = thatDoc.importNode(template, true);
+        this.container = this.shadowRoot.getElementById("juicy-ace-editor-container");
+        // shadowRoot.appendChild(clone);
+
+        // this.dispatchEvent(new Event("created")); // already taken care...
+    };
+
+
+   // Refers to the "importer", which is index.html
+    var thatDoc = document;
+
+    // Refers to the "importee", which is juicy-ace-editor.html
+    var thisDoc = (document._currentScript || document.currentScript).ownerDocument;
+
+    // Gets content from <template>
+    // var template = thisDoc.querySelector('#juicy-ace-editor').content;
+
+    var template = document.currentScript.ownerDocument.querySelector('#juicy-ace-editor');
+    var clone = document.importNode(template.content, true);
+
+    System.import('../src/client/morphic/component-loader.js').then(loader => {
+      loader.register('juicy-ace-editor', clone, TomalecAceEditorPrototype);
     });
 
 }(window, document));

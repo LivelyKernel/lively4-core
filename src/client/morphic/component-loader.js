@@ -11,6 +11,7 @@ export var prototypes = {}
 // this function registers a custom element,
 // it is called from the bootstap code in the component templates
 export function register(componentName, template, prototype) {
+  console.log("register " + componentName)
   var proto = prototype || Object.create(Morph.prototype);
 
   // For reflection and debugging
@@ -19,6 +20,8 @@ export function register(componentName, template, prototype) {
 
   // #TODO: we should check here, if the prototype already has a createdCallback,
   // if that's the case, we should wrap it and call it in our createdCallback
+  var previousCreatedCallback = proto.createdCallback;
+
   // #TODO: should we dispatch event 'created' also in attached callback???
   // And what about initizalize call? Actually I think yes. - Felix
   proto.createdCallback = function() {
@@ -40,6 +43,10 @@ export function register(componentName, template, prototype) {
     // attach lively4scripts from the shadow root to this
     scriptManager.attachScriptsFromShadowDOM(this);
 
+    if (this.createdCallback.previousCreatedCallback) {
+      this.createdCallback.previousCreatedCallback.call(this)
+    }
+
     // load any unknown elements, which this component might introduce
     loadUnresolved(this, true).then((args) => {
       // call the initialize script, if it exists
@@ -47,10 +54,13 @@ export function register(componentName, template, prototype) {
         this.initialize();
       }
 
+
+
       this.dispatchEvent(new Event("created"));
     });
-
   }
+  // don't store it just in a lexical scope, but make it available for runtime development
+  proto.createdCallback.previousCreatedCallback = previousCreatedCallback;
 
   document.registerElement(componentName, {
     prototype: proto

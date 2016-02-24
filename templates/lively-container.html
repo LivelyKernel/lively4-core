@@ -1,6 +1,6 @@
 <template id="lively-container">
     <style>
-    #cancel, #save {
+    #cancel, #save, #accept {
       visibility: hidden;
     }
 
@@ -10,6 +10,7 @@
       <input type="text" id="container-path" value="">
       <button id="cancel">cancel</button>
       <button id="save">save</button>
+      <button id="accept">accept</button>
     </div>
     <div id="container-content">
       <!-- by default the content is hidden-->
@@ -65,12 +66,15 @@
     () => {
       this.getSubmorph("#cancel").style.visibility = "hidden"
       this.getSubmorph("#save").style.visibility = "hidden"
+      this.getSubmorph("#accept").style.visibility = "hidden"
+
     }
     </script>
     <script type="lively4script" data-name="showCancelAndSave">
     () => {
       this.getSubmorph("#cancel").style.visibility = "visible"
       this.getSubmorph("#save").style.visibility = "visible"
+      this.getSubmorph("#accept").style.visibility = "visible"
     }
     </script>
     <script type="lively4script" data-name="onEdit">
@@ -86,13 +90,21 @@
     }
     </script>
     <script type="lively4script" data-name="onSave">
+    (doNotQuit) => {
+      return this.getSubmorph("#editor").saveFile().then( sourceCode => {
+        lively.notify("saved page",this.getPath())
+      }).catch(error => {
+        console.log('failed to save', error)
+        lively.notify("Could not saved page",this.getPath() +"\nMaybe next time you are more lucky?")
+      })
+    }
+    </script>
+    <script type="lively4script" data-name="onAccept">
     () => {
-      this.getSubmorph("#editor").saveFile().then( sourceCode => {
+      this.onSave().then( sourceCode => {
         this.setPath(this.getPath());
         this.hideCancelAndSave();
-        lively.notify("saved page",this.getPath())
       })
-
     }
     </script>
     <script type="lively4script" data-name="clear">
@@ -207,7 +219,9 @@
           container.style.height = "400px"
           comp.hideToolbar()
           comp.id = "editor"
-          comp.doSave = text => {
+
+
+          comp.shadowRoot.querySelector('juicy-ace-editor').doSave = text => {
             this.onSave()
           }
 
