@@ -45,10 +45,17 @@ define(function module() {
     this.value = value;
   };
 
+  var ValueHolder = function() { this.initialize.apply(this, arguments); };
+
+  ValueHolder.prototype.initialize = function(value) {
+    this.value = value;
+  };
+
   return {
     NumExpr: NumExpr,
     NegExpr: NegExpr,
     AddExpr: AddExpr,
-    DataHolder: DataHolder
+    DataHolder: DataHolder,
+    ValueHolder: ValueHolder
   };
 });

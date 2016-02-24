@@ -175,7 +175,7 @@ define(function module(require) { "use strict"
   console.log(heruko);
   errorIfFalse(heruko.getName() === Person.Dr + ' ' + herukoName);
 
-  // ----
+  // ---- filter ----
 
   var DataHolder = require('./src/expr').DataHolder;
   withLogging.call(DataHolder);
@@ -198,4 +198,62 @@ define(function module(require) { "use strict"
   errorIfFalse(smallData.now().length === 3);
   range.min = 40;
   errorIfFalse(smallData.now().length === 1);
+
+  // ---- union ----
+
+  var ValueHolder = require('./src/expr').ValueHolder;
+  withLogging.call(ValueHolder);
+  var range1 = {
+    min: 0,
+    max: 25
+  };
+  var range2 = {
+    min: 15,
+    max: 50
+  };
+  var view1 = select(ValueHolder, function(data) {
+    return range1.min <= data.value && data.value <= range1.max;
+  });
+  var view2 = select(ValueHolder, function(data) {
+    return range2.min <= data.value && data.value <= range2.max;
+  });
+  var v1 = new ValueHolder(10);
+  var v2 = new ValueHolder(20);
+  var v3 = new ValueHolder(30);
+  var union = view1.union(view2);
+  errorIfFalse(union.now().length === 3);
+  errorIfFalse(union.now().includes(v1));
+  errorIfFalse(union.now().includes(v2));
+  errorIfFalse(union.now().includes(v3));
+
+  // remove a value that is contained in only one upstream
+  v1.value = -1;
+  errorIfFalse(union.now().length === 2);
+  errorIfFalse(union.now().includes(v2));
+  errorIfFalse(union.now().includes(v3));
+
+  // remove a value from both upstreams
+  v2.value = -1;
+  errorIfFalse(union.now().length === 1);
+  errorIfFalse(union.now().includes(v3));
+
+  // add a value to one upstream
+  v1.value = 10;
+  errorIfFalse(union.now().length === 2);
+  errorIfFalse(union.now().includes(v1));
+  errorIfFalse(union.now().includes(v3));
+
+  // add a value to both upstreams
+  var v4 = new ValueHolder(20);
+  errorIfFalse(union.now().length === 3);
+  errorIfFalse(union.now().includes(v1));
+  errorIfFalse(union.now().includes(v3));
+  errorIfFalse(union.now().includes(v4));
+
+  // remove multiple values at once
+  range1.max = 15;
+  range2.min = 35;
+
+  errorIfFalse(union.now().length === 1);
+  errorIfFalse(union.now().includes(v1));
 });

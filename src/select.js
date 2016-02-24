@@ -239,6 +239,32 @@ define(function module(require) {
         }
     });
 
+    IdentityOperator.subclass('UnionOperator', {
+        initialize: function($super, upstream1, upstream2, downstream) {
+            this.upstream1 = upstream1;
+            this.upstream2 = upstream2;
+            this.downstream = downstream;
+            upstream1.downstream.push(this);
+            upstream2.downstream.push(this);
+
+            upstream1.now().concat(upstream2.now()).forEach(function(item) {
+                this.newItemFromUpstream(item);
+            }, this);
+        },
+        newItemFromUpstream: function(item) {
+            var itemAlreadyExists = this.downstream.now().includes(item);
+            if(!itemAlreadyExists) {
+                this.downstream.safeAdd(item);
+            }
+        },
+        destroyItemFromUpstream: function(item) {
+            var itemStillExists = this.upstream1.now().includes(item) || this.upstream2.now().include(item);
+            if(!itemStillExists) {
+                this.downstream.safeRemove(item);
+            }
+        }
+    });
+
     Object.extend(View.prototype, {
         /**
          * Takes an additional filter function and returns a reactive object set. That set only contains the objects of the original set that also match the given filter function.
@@ -263,6 +289,19 @@ define(function module(require) {
             var newSelection = new View();
 
             new MapOperator(this, newSelection, iterator);
+
+            return newSelection;
+        },
+        /**
+         * Create a new {@link View} containing all elements of the callee and the argument.
+         * @function View#union
+         * @param {View} otherView {@link View}
+         * @return {View} Contains every object of both input Views.
+         */
+        union: function(otherView) {
+            var newSelection = new View();
+
+            new UnionOperator(this, otherView, newSelection);
 
             return newSelection;
         }
