@@ -35,7 +35,7 @@
 <!-- END SYSTEM.JS-->
 </head>
 <body>
-<lively-container></lively-container>
+<lively-container load="auto"></lively-container>
 <script>
 
     console.log("lively4url: " + lively4url)
@@ -45,19 +45,7 @@
         console.log("load lively 2/3")
         lively.components.loadUnresolved().then(function() {
           console.log("load lively 3/3")
-            var path = lively.preferences.getURLParameter("load")
-            if (path) {
-                $('lively-container')[0].setPath(path)
-            }
-            document.addEventListener('contextmenu', function(evt) {
-                evt.preventDefault();
-                lively.openContextMenu($('body')[0], evt)
-                return false;
-            }, false);
-
-            document.addEventListener('click', function(evt){lively.hideContextMenu(evt)}, false);
-            document.addEventListener('keyup', function(evt){lively.keys.handle(evt)}, false);
-
+            lively.initializeDocument(document)
             console.log("Finally loaded!")
         })
     })}).catch(function(err) {

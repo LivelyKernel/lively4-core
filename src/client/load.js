@@ -122,17 +122,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 
-// disable backspace navigation
-    /*document.body.addEventListener("keydown", (evt) => {
-        if (evt.keyCode == 8) { // backspace
-            console.log("prevent  backspace navigation:")
-            // #TODO refactor this into a general lively error logging / notifications?
-            var n = new Notification("WARNING:", {body: "prevent  backspace navigation",});
-            setTimeout(n.close.bind(n), 3000);
-            evt.preventDefault();
-        }
-    });*/
-
 function initializeHalos() {
     if ($('lively-halos').size() == 0) {
         $('<lively-halos>')

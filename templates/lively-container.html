@@ -30,6 +30,16 @@
     <script type="lively4script" data-name="initialize">
     () => {
 
+      if (this.getAttribute("load") == "auto") {
+        var path = lively.preferences.getURLParameter("load")
+        if (path) {
+            this.setPath(path)
+        } else {
+            path = lively.preferences.getURLParameter("edit")
+            this.setPath(path, true).then(() => this.editFile())
+        }
+      }
+
       window.onpopstate = (event) => {
         var state = event.state
         if (state && state.followInline) {
@@ -194,28 +204,29 @@
     }
     </script>
     <script type="lively4script" data-name="setPath">
-    function (path) {
+    function (path, donotrender) {
       this.setAttribute("data-path", path)
       this.clear()
       this.getSubmorph('#container-path').value = path
       var url = this.getURL()
       console.log("set url: " + url)
       this.sourceContent = "NOT EDITABLE"
+      var render = !donotrender
       return lively.files.loadFile(url).then((content) => {
         var format = path.replace(/.*\./,"")
         if (format == "html")  {
           this.sourceContent = content
-          this.appendHtml(content)
+          if (render) this.appendHtml(content)
         } else if (format == "md") {
           this.sourceContent = content
-          this.appendMarkdown(content)
+          if (render) this.appendMarkdown(content)
         } else if (format == "png") {
-          this.appendHtml("<img src='" + url +"'>")
+          if (render) this.appendHtml("<img src='" + url +"'>")
         } else if (format == "pdf") {
-          this.appendHtml('<object style="width:21cm;height:29cm" data="'
+          if (render) this.appendHtml('<object style="width:21cm;height:29cm" data="'
             + url +'" type="application/pdf"></object>')
         } else {
-          this.appendHtml("<pre>" + content +"</pre>")
+          if (render) this.appendHtml("<pre>" + content +"</pre>")
         }
       }).catch(function(err){
         lively.notify("ERROR: Could not set path: " + path,  "because of: " + err)

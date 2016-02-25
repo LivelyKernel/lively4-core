@@ -11,7 +11,8 @@ import * as components from './morphic/component-loader.js';
 
 import * as jquery from '../external/jquery.js';
 
-// Special shorthands for interactive development
+// a) Special shorthands for interactive development
+// b) this is the only reasonable way to use modules in template scripts, due to no shared lexical scope #TODO
 var exportmodules = [
   "scripts",
   "messaging",
@@ -136,6 +137,17 @@ var lively = class Lively {
     // notification.onclick = cb
   }
 
+  static initializeDocument(doc) {
+
+    doc.addEventListener('contextmenu', function(evt) {
+        evt.preventDefault();
+        lively.openContextMenu($('body')[0], evt)
+        return false;
+    }, false);
+
+    doc.addEventListener('click', function(evt){lively.hideContextMenu(evt)}, false);
+    doc.addEventListener('keyup', function(evt){lively.keys.handle(evt)}, false);
+  }
 }
 
 export default lively
