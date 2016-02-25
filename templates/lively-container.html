@@ -223,7 +223,37 @@
     </script>
     <script type="lively4script" data-name="setPath">
     function (path, donotrender) {
-      this.setAttribute("data-path", path)
+	function normalize(path) {
+	    let source = path.split(/\/+/)
+	    let target = []
+	
+	    for(let token of source) {
+	      if(token === '..') {
+	        target.pop()
+	      } else if(token !== '' && token !== '.') {
+	        target.push(token)
+	      }
+	    }
+	
+	    if(path.charAt(0) === '/')
+	        return '/' + target.join('/')
+	    else
+	        return target.join('/')
+	}
+	function join(a, b) {
+	  if(b[0] === '/') {
+	    return normalize(b)
+	  } else {
+	    return normalize(a + '/' + b)
+	  }
+	}
+	  
+	  var isdir= path.match(/.\/$/) 
+	  path = normalize(path) 
+	  if (isdir && path != "/" ) path += "/" 
+	  
+	  
+	  this.setAttribute("data-path", path)
       this.clear()
       this.getSubmorph('#container-path').value = path
       var url = this.getURL()
@@ -231,13 +261,14 @@
       this.sourceContent = "NOT EDITABLE"
       var render = !donotrender
       // Handling directories
-      if (path.match(/\/$/)) {
+      if (isdir) {
         return lively.files.statFile(url).then((content) => {
           this.sourceContent = content
           var html = "<ul>" +
             "<li><a href='../'>..</a></li>" +
             JSON.parse(content).contents.map( ea =>
-              "<li><a href='"+ea.name + "''>" + ea.name+ "</a></li>").join("\n")+"</ul>"
+              "<li><a href='"+ea.name + (ea.type == "directory" ? "/" : "")+"''>" + 
+              ea.name+ "</a></li>").join("\n")+"</ul>"
           if (render) this.appendHtml(html)
         }).catch(function(err){
           lively.notify("ERROR: Could not set path: " + path,  "because of: " + err)
