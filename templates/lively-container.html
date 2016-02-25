@@ -3,6 +3,11 @@
     #cancel, #save, #accept {
       visibility: hidden;
     }
+
+    #container-path {
+      width: 400px;
+    }
+
     /*
     :host {
       width: 800px;
@@ -188,7 +193,11 @@
       this.setAttribute("data-path", path)
       this.clear()
       this.getSubmorph('#container-path').value = path
-      var url = "https://lively4/" + path
+      if (path.match(/^https?:\/\//)) {
+        var url = path
+      } else {
+        url = "https://lively4/" + path
+      }
       console.log("set url: " + url)
       this.sourceContent = "NOT EDITABLE"
       $.get(url, (content) => {
