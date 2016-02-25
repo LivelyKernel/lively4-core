@@ -36,7 +36,10 @@
             this.setPath(path)
         } else {
             path = lively.preferences.getURLParameter("edit")
-            this.setPath(path, true).then(() => this.editFile())
+            this.setPath(path, true).then(() => {
+              this.editFile()
+              this.showCancelAndSave()
+            })
         }
       }
 
@@ -241,8 +244,8 @@
         lively.components.createComponent("lively-editor")).then( comp => {
           console.log("comp: " + comp)
 
-          container.style.width = "600px"
-          container.style.height = "400px"
+          container.style.width = "650px"
+          container.style.height = "800px"
           comp.hideToolbar()
           comp.id = "editor"
           comp.shadowRoot.querySelector('juicy-ace-editor').doSave = text => {

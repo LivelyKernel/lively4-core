@@ -23,7 +23,7 @@ export default class Keys {
   static handle(evt) {
     try {
       var char = this.getChar(evt)
-      this.logEvent(evt)
+      // this.logEvent(evt)
       if (evt.ctrlKey && char == "K") {
         lively.openWorkspace()
         evt.preventDefault()
