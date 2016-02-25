@@ -38,7 +38,6 @@
             path = lively.preferences.getURLParameter("edit")
             this.setPath(path, true).then(() => {
               this.editFile()
-              this.showCancelAndSave()
             })
         }
       }
@@ -130,10 +129,9 @@
       this.getSubmorph('#container-content').innerHTML = ''
     }
     </script>
-    <script type="lively4script" data-name="appendMarkdown">
-    (content) => {
-      var fixLinks = (nodes) => {
-        if (! nodes) return
+    <script type="lively4script" data-name="fixLinks">
+    (nodes) => {
+      if (! nodes) return
         Array.prototype.forEach.call(nodes, node => {
           if (node.getAttribute) {
             var href = node.getAttribute("href")
@@ -157,15 +155,18 @@
                 console.log("ignore " + href)
               }
             }
-            fixLinks(node.childNodes)
+            this.fixLinks(node.childNodes)
           }
         })
-      }
+    }
+    </script>
+    <script type="lively4script" data-name="appendMarkdown">
+    (content) => {
       System.import('../src/external/showdown.js').then((showdown) => {
         var converter = new showdown.Converter();
         var htmlSource = converter.makeHtml(content)
         var html = $.parseHTML(htmlSource)
-        fixLinks(html)
+        this.fixLinks(html)
         console.log("html", html)
         html.forEach((ea) => this.getSubmorph('#container-content').appendChild(ea))
       })
@@ -174,7 +175,11 @@
      <script type="lively4script" data-name="appendHtml">
     (content) => {
       try {
-        $.parseHTML(content).forEach((ea) =>  this.getSubmorph('#container-content').appendChild(ea))
+        var nodes = $.parseHTML(content)
+        this.fixLinks(nodes)
+        nodes.forEach((ea) => {
+          this.getSubmorph('#container-content').appendChild(ea)
+        })
       } catch(e) {
         console.log("Could not append html:" + content)
       }
@@ -187,8 +192,18 @@
     </script>
     <script type="lively4script" data-name="followPath">
     (path) => {
+      if (this.isEditing()) {
+        window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?edit="+path);
+        this.setPath(path, true).then(() => this.editFile())
+      } else {
         window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?load="+path);
         this.setPath(path)
+      }
+    }
+    </script>
+    <script type="lively4script" data-name="isEditing">
+    () => {
+      return this.getSubmorph('#container-content').querySelector("lively-editor") && true
     }
     </script>
     <script type="lively4script" data-name="getURL">
@@ -215,12 +230,26 @@
       console.log("set url: " + url)
       this.sourceContent = "NOT EDITABLE"
       var render = !donotrender
+      // Handling directories
+      if (path.match(/\/$/)) {
+        return lively.files.statFile(url).then((content) => {
+          this.sourceContent = content
+          var html = "<ul>" +
+            "<li><a href='../'>..</a></li>" +
+            JSON.parse(content).contents.map( ea =>
+              "<li><a href='"+ea.name + "''>" + ea.name+ "</a></li>").join("\n")+"</ul>"
+          if (render) this.appendHtml(html)
+        }).catch(function(err){
+          lively.notify("ERROR: Could not set path: " + path,  "because of: " + err)
+        })
+      }
+      // Handling files
       return lively.files.loadFile(url).then((content) => {
         var format = path.replace(/.*\./,"")
         if (format == "html")  {
           this.sourceContent = content
           if (render) this.appendHtml(content)
-        } else if (format == "md") {
+        } else if (format.match(/(md)/)) {
           this.sourceContent = content
           if (render) this.appendMarkdown(content)
         } else if (format == "png") {
@@ -229,6 +258,7 @@
           if (render) this.appendHtml('<object style="width:21cm;height:29cm" data="'
             + url +'" type="application/pdf"></object>')
         } else {
+          this.sourceContent = content
           if (render) this.appendHtml("<pre>" + content +"</pre>")
         }
       }).catch(function(err){
@@ -244,15 +274,21 @@
         lively.components.createComponent("lively-editor")).then( comp => {
           console.log("comp: " + comp)
 
-          container.style.width = "650px"
+          container.style.width = "850px"
           container.style.height = "800px"
           comp.hideToolbar()
           comp.id = "editor"
-          comp.shadowRoot.querySelector('juicy-ace-editor').doSave = text => {
+          var aceComp = comp.shadowRoot.querySelector('juicy-ace-editor')
+          aceComp.doSave = text => {
             this.onSave()
           }
-          comp.setURL(this.getURL())
+          var url = this.getURL()
+          comp.setURL(url)
+          aceComp.changeModeForFile(url.pathname);
+          // NOTE: we don't user loadFile directly... because we don't want to edit PNG binaries etc...
           comp.setText(this.sourceContent); // directly setting the source we got
+
+          this.showCancelAndSave()
           // comp.loadFile() // ALT: Load the file again?
       })
       lively.components.loadUnresolved(container)
