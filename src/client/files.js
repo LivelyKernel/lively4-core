@@ -11,7 +11,7 @@ export function loadFile(urlString){
 			resolve(text);
 		}).fail(function(e) {
 	    	console.log('could not load ' + url + ": " + e); // or whatever
-	    	reject();
+	    	reject(e);
 		});
 	});
 }

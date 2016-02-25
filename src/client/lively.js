@@ -11,6 +11,7 @@ import * as components from './morphic/component-loader.js';
 
 import * as jquery from '../external/jquery.js';
 
+// Special shorthands for interactive development
 var exportmodules = [
   "scripts",
   "messaging",
@@ -24,12 +25,26 @@ var exportmodules = [
 // #LiveProgramming #Syntax #ES6Modules #Experiment #Jens
 // By structuring our modules differently, we still can act as es6 module to the outside but develop at runtime
 // #IDEA: I refactored from "static module and function style" to "dynamic object" style
-var lively = {
-  worldmenu: null,
-  array: function(anyList){
+var lively = class Lively {
+  static loaded() {
+      // guard againsst wrapping twice and ending in endless recursion
+      if (!console.log.isWrapped) {
+          var nativeLog = console.log
+          console.log = function() {
+              nativeLog.apply(console, arguments)
+              lively.log.apply(undefined, arguments)
+          }
+          console.log.isWrapped = true
+          console.log.nativeLog = nativeLog // #TODO use generic Wrapper mechanism here
+      }
+      exportmodules.forEach(name => lively[name] = eval(name)) // oh... this seems uglier than expected
+  }
+
+  static array(anyList){
     return Array.prototype.slice.call(anyList)
-  },
-  openWorkspace: function (string, pos) {
+  }
+
+  static openWorkspace(string, pos) {
     var name = "juicy-ace-editor"
     var comp  = document.createElement(name)
     lively.components.openInWindow(comp).then((container) => {
@@ -38,23 +53,27 @@ var lively = {
     }).then( () => {
       comp.editor.focus();
     })
-  },
-  boundEval: function (str, ctx) {
+  }
+
+  static boundEval(str, ctx) {
     var interactiveEval = function(text) { return eval(text) };
     var transpiledSource = babel.transform(str).code
     // #TODO alt: babel.run
     // #TODO context does not seem to work!
     return interactiveEval.call(ctx, transpiledSource);
-  },
-  pt: function (x,y) {
+  }
+
+  static pt(x,y) {
     return {x: x, y: y}
-  },
-  setPosition: function (obj, point) {
+  }
+
+  static setPosition(obj, point) {
       obj.style.position = "absolute"
       obj.style.left = ""+  point.x + "px"
       obj.style.top = "" + point.y + "px"
-  },
-  openFile: function (url) {
+  }
+
+  static openFile(url) {
     if (url.hostname == "lively4"){
       var container  = $('lively-container')[0];
       if (container) {
@@ -66,16 +85,18 @@ var lively = {
     } else {
       editFile(url)
     }
-  },
-  editFile: function (url) {
+  }
+
+  static editFile(url) {
     var editor  = document.createElement("lively-editor")
     lively.components.openInWindow(editor).then((container) => {
         lively.setPosition(container, lively.pt(100, 100))
         editor.setURL(url)
         editor.loadFile()
     })
-  },
-  getContextMenu: function() {
+  }
+
+  static getContextMenu() {
     // lazy module loading
     return new Promise(function(resolve){
       if (lively.contextmenu) resolve(lively.contextmenu)
@@ -83,17 +104,18 @@ var lively = {
         .then( module => {lively.contextmenu = module.default})
         .then( () => resolve(lively.contextmenu))
     })
-  },
-  hideContextMenu: function() {
-    this.getContextMenu().then(m => m.hide())
-  },
+  }
 
-  openContextMenu: function (container, evt) {
+  static hideContextMenu() {
+    this.getContextMenu().then(m => m.hide())
+  }
+
+  static openContextMenu(container, evt) {
     console.log("open context menu")
     this.getContextMenu().then(m => m.openIn(container, evt))
-  },
+  }
 
-  log: function (/* varargs */) {
+  static log(/* varargs */) {
       var args = arguments
       $('lively-console').each(function() {
         try{
@@ -102,32 +124,20 @@ var lively = {
           // ignore...
         }
       })
-  },
-  notify: function (title, text, timout) {
-      var notification = new Notification(title || "", {
-        icon: 'https://www.lively-kernel.org/media/livelylogo-small.png',
-        body: text || "",
-      });
-      setTimeout(() => notification.close(), timout || 3000);
-      // notification.onclick = cb
-  },
-  initialize: function() {
-    // guard againsst wrapping twice and ending in endless recursion
-    if (!console.log.isWrapped) {
-        var nativeLog = console.log
-        console.log = function() {
-            nativeLog.apply(console, arguments)
-            lively.log.apply(undefined, arguments)
-        }
-        console.log.isWrapped = true
-        console.log.nativeLog = nativeLog // #TODO use generic Wrapper mechanism here
-    }
   }
+
+  static notify(title, text, timout) {
+    console.log("NOTE: " + title  + " (" + text + ")")
+    var notification = new Notification(title || "", {
+      icon: 'https://www.lively-kernel.org/media/livelylogo-small.png',
+      body: text || "",
+    });
+    setTimeout(() => notification.close(), timout || 3000);
+    // notification.onclick = cb
+  }
+
 }
+
 export default lively
-
-exportmodules.forEach(name => lively[name] = eval(name)) // oh... this seems uglier than expected
-
-
-lively.initialize()
+lively.loaded()
 console.log("loaded lively")

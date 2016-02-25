@@ -101,17 +101,12 @@
     </script>
     <script type="lively4script" data-name="onSave">
     (doNotQuit) => {
-      return this.getSubmorph("#editor").saveFile().then( sourceCode => {
-        lively.notify("saved page",this.getPath())
-      }).catch(error => {
-        console.log('failed to save', error)
-        lively.notify("Could not saved page",this.getPath() +"\nMaybe next time you are more lucky?")
-      })
+      return this.getSubmorph("#editor").saveFile()
     }
     </script>
     <script type="lively4script" data-name="onAccept">
     () => {
-      this.onSave().then( sourceCode => {
+      this.onSave().then((sourceCode) => {
         this.setPath(this.getPath());
         this.hideCancelAndSave();
       })
@@ -183,6 +178,16 @@
         this.setPath(path)
     }
     </script>
+    <script type="lively4script" data-name="getURL">
+    () => {
+      var path = this.getAttribute("data-path")
+      if (path && path.match(/^https?:\/\//)) {
+        return new URL(path)
+      } else {
+        return new URL("https://lively4/" + path)
+      }
+    }
+    </script>
     <script type="lively4script" data-name="getPath">
     () => {
          return this.getAttribute("data-path")
@@ -193,14 +198,10 @@
       this.setAttribute("data-path", path)
       this.clear()
       this.getSubmorph('#container-path').value = path
-      if (path.match(/^https?:\/\//)) {
-        var url = path
-      } else {
-        url = "https://lively4/" + path
-      }
+      var url = this.getURL()
       console.log("set url: " + url)
       this.sourceContent = "NOT EDITABLE"
-      $.get(url, (content) => {
+      return lively.files.loadFile(url).then((content) => {
         var format = path.replace(/.*\./,"")
         if (format == "html")  {
           this.sourceContent = content
@@ -216,8 +217,8 @@
         } else {
           this.appendHtml("<pre>" + content +"</pre>")
         }
-      }).fail(function(err){
-          console.log("Could not load: " + path + " because of: " + err)
+      }).catch(function(err){
+        lively.notify("ERROR: Could not set path: " + path,  "because of: " + err)
       })
     }
     </script>
@@ -233,13 +234,10 @@
           container.style.height = "400px"
           comp.hideToolbar()
           comp.id = "editor"
-
-
           comp.shadowRoot.querySelector('juicy-ace-editor').doSave = text => {
             this.onSave()
           }
-
-          comp.setURL("https://lively4/" + this.getPath())
+          comp.setURL(this.getURL())
           comp.setText(this.sourceContent); // directly setting the source we got
           // comp.loadFile() // ALT: Load the file again?
       })

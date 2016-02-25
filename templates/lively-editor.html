@@ -130,9 +130,14 @@
         var data = this.currentEditor().getValue()
         return lively.files.saveFile(url, data).then(() => {
             console.log("edited file " + url + " written.")
-          }).catch((xhr, status, error) => {
-            console.log("could not write " + url + ": " + error)
-          })
+          }).then( (sourceCode, err) => {
+            if (!err) {
+              console.log("saved page",this.getPath())
+              lively.notify("saved page",this.getPath())
+            } else {
+               lively.notify("Could not saved page",this.getPath() +"\nMaybe next time you are more lucky?")
+            }
+          }) // don't catch here... so we can get the error later as needed...
       }
     </script>
 
