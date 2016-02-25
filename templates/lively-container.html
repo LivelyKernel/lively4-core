@@ -29,7 +29,8 @@
 
     <script type="lively4script" data-name="initialize">
     () => {
-
+    	
+	  
       if (this.getAttribute("load") == "auto") {
         var path = lively.preferences.getURLParameter("load")
         if (path) {
@@ -40,6 +41,11 @@
               this.editFile()
             })
         }
+      } else {
+      	var src = this.getAttribute("src")
+      	if (src) {
+      		this.setPath(src)
+      	}
       }
 
       window.onpopstate = (event) => {
