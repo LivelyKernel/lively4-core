@@ -6,7 +6,6 @@ export function whenLoaded(cb) {
     loadCallbacks.push(cb)
 }
 
-
 if ('serviceWorker' in navigator) {
     // var root = ("" + window.location).replace(/[^\/]*$/,'../')
     var root = "" + lively4url + "/";
@@ -15,8 +14,8 @@ if ('serviceWorker' in navigator) {
     var onReady = function() {
         serviceworkerReady = true;
         // Lively has all the dependencies
-        System.import("../src/client/lively.js").then(function(lively) {
-            window.lively = lively
+        System.import("../src/client/lively.js").then(function(module) {
+            window.lively = module.default
             initializeHalos();
             lively.components.loadUnresolved();
             console.log("running on load callbacks:");
