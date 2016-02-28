@@ -38,41 +38,9 @@
 
 <script>
 (function(window, document, undefined) {
-    // Refers to the "importer", which is index.html
-    var thatDoc = document;
-
-    // Refers to the "importee", which is juicy-ace-editor.html
-    var thisDoc = (document._currentScript || document.currentScript).ownerDocument;
-
-    // Gets content from <template>
-    var template = thisDoc.querySelector('#juicy-ace-editor').content;
 
     // Creates an object based in the HTML Element prototype
     var TomalecAceEditorPrototype = Object.create(HTMLElement.prototype);
-
-    // Fires when an instance of the element is created
-    TomalecAceEditorPrototype.createdCallback = function() {
-        var value = "";
-        Object.defineProperty(this, "value", {
-            set: function(val){
-                this.editor && this.editor.setValue( val );
-                value = val;
-            },
-            get: function(){
-                value = this.editor && this.editor.getValue() || value;
-                return value;
-            }
-        });
-
-        // Creates the shadow root
-        var shadowRoot = this.createShadowRoot();
-        // Adds a template clone into shadow root
-        var clone = thatDoc.importNode(template, true);
-        this.container = clone.getElementById("juicy-ace-editor-container");
-        shadowRoot.appendChild(clone);
-
-        this.dispatchEvent(new Event("created"));
-    };
 
     // Fires when an instance was inserted into the document
     TomalecAceEditorPrototype.attachedCallback = function() {
@@ -273,18 +241,38 @@
                 var result = this.inspectIt(text, true);
             }
         });
+
+        editor.commands.addCommand({
+            name: "doSave",
+            bindKey: {win: "Ctrl-S", mac: "Command-S"},
+            exec: (editor) => {
+                this.doSave(this.editor.getValue());
+            }
+        });
     };
 
     TomalecAceEditorPrototype.getDoitContext =  function () {
         return this.doitContext
     }
+
     TomalecAceEditorPrototype.boundEval =  function (str) {
-        var ctx = this.getDoitContext() || this,
-            interactiveEval = function(text) { return eval(text) };
-        var transpiledSource = babel.transform(str).code
-        // #TODO alt: babel.run
-        return interactiveEval.call(ctx, transpiledSource);
-    }
+      // just a hack... to get rid of some async....
+      // #TODO make this more general
+      // works: await new Promise((r) => r(3))
+      // does not work yet: console.log(await new Promise((r) => r(3)))
+      if (str.match(/^await /)) {
+        str = "(async () => window._ = " + str +")()"
+      }
+
+      var ctx = this.getDoitContext() || this,
+          interactiveEval = function(text) { return eval(text) };
+      // #TODO binding "this" does not work yet, this is needed to build interactive debuggers... and cool workspaces
+      var transpiledSource = babel.transform(str, {stage: 0}).code
+      // #TODO alt: babel.run
+      var result =  interactiveEval.call(ctx, transpiledSource);
+
+      return result
+  }
 
     TomalecAceEditorPrototype.printResult = function (result) {
         var editor = this.editor;
@@ -306,14 +294,19 @@
             result = e
         }
         if (printResult) {
-            this.printResult(" " +result)
+            if (str.match(/^await/) && result.then) {
+              // we will definitly return a promise on which we can wait here
+              result.then( result => this.printResult("" +result))
+            } else {
+              this.printResult(" " +result)
+            }
         }
         return result
     }
 
     TomalecAceEditorPrototype.printObject = function (obj) {
         var result = ""
-        Object.keys(that).forEach((name) => {
+        Object.keys(obj).forEach((name) => {
             result += "\n   " +name + ": " + obj[name]
         })
         return result
@@ -332,13 +325,61 @@
         return result
     }
 
+    TomalecAceEditorPrototype.doSave = function (text) {
+        this.tryBoundEval(text) // just a default implementation...
+    }
+
     TomalecAceEditorPrototype.onResize = function() {
       this.editor.resize();
       console.log("resizing");
     }
 
-    document.registerElement('juicy-ace-editor', {
-        prototype: TomalecAceEditorPrototype
+    // document.registerElement('juicy-ace-editor', {
+    //     prototype: TomalecAceEditorPrototype
+    // });
+
+
+    // Fires when an instance of the element is created
+    TomalecAceEditorPrototype.createdCallback = function() {
+        console.log("TomalecAceEditorPrototype.createdCallback")
+        var value = "";
+        Object.defineProperty(this, "value", {
+            set: function(val){
+                this.editor && this.editor.setValue( val );
+                value = val;
+            },
+            get: function(){
+                value = this.editor && this.editor.getValue() || value;
+                return value;
+            }
+        });
+
+        // Creates the shadow root
+        // var shadowRoot = this.createShadowRoot();
+
+        // Adds a template clone into shadow root
+        // var clone = thatDoc.importNode(template, true);
+        this.container = this.shadowRoot.getElementById("juicy-ace-editor-container");
+        // shadowRoot.appendChild(clone);
+
+        // this.dispatchEvent(new Event("created")); // already taken care...
+    };
+
+
+   // Refers to the "importer", which is index.html
+    var thatDoc = document;
+
+    // Refers to the "importee", which is juicy-ace-editor.html
+    var thisDoc = (document._currentScript || document.currentScript).ownerDocument;
+
+    // Gets content from <template>
+    // var template = thisDoc.querySelector('#juicy-ace-editor').content;
+
+    var template = document.currentScript.ownerDocument.querySelector('#juicy-ace-editor');
+    var clone = document.importNode(template.content, true);
+
+    System.import('../src/client/morphic/component-loader.js').then(loader => {
+      loader.register('juicy-ace-editor', clone, TomalecAceEditorPrototype);
     });
 
 }(window, document));

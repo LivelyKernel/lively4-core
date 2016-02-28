@@ -1,10 +1,5 @@
 <!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
 <title>Lively 4 -- Start Page</title>
-
-<!-- BEGIN SYSTEM.JS: should go away, until then we use a "static" global source -->
-<script src="../src/external/system.src.js" type="text/javascript" charset="utf-8"></script>
-<script src="../vendor/regenerator-runtime.js" type="text/javascript" charset="utf-8"></script>
-
 <style type="text/css" media="screen">
     body {
         font-family: sans-serif;
@@ -15,41 +10,42 @@
     }
 </style>
 
+
+<script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
+
+<!-- BEGIN SYSTEM.JS: should go away, until then we use a "static" global source -->
+<script src="../src/external/system.src.js" type="text/javascript" charset="utf-8"></script>
+<script src="../vendor/regenerator-runtime.js" type="text/javascript" charset="utf-8"></script>
 <script>
-  System.paths['babel'] ='https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
+  var lively4yourself = /\/draft\/.*\.html/ // ADAPT THIS
+    // some little reflection... help to find your inner self!
+  var lively4url = window.location.origin + window.location.pathname.replace(lively4yourself,"")
+
+
+  System.paths['babel'] =lively4url + '/src/external/babel-browser.js'
+  // System.defaultJSExtensions = true;
   System.config({
     transpiler: 'babel',
     babelOptions: { },
     map: {
-        babel: 'https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
+        babel: lively4url + '/src/external/babel-browser.js'
     }
   });
 </script>
 <!-- END SYSTEM.JS-->
 </head>
 <body>
-<lively-container></lively-container>
+<lively-container load="auto"></lively-container>
 <script>
-    var lively4yourself = /\/draft\/.*\.html/ // ADAPT THIS
-    // some little reflection... help to find your inner self!
-    var lively4url = window.location.origin + window.location.pathname.replace(lively4yourself,"")
 
-    System.import(lively4url + "/src/client/load.js").then(function(load){load.whenLoaded(() => {
-        lively.components.loadUnresolved().then(() => {
-            var path = lively.preferences.getURLParameter("load")
-            if (path) {
-                $('lively-container')[0].setPath(path)
-            }
-            document.addEventListener('contextmenu', function(evt) {
-                evt.preventDefault();
-                lively.openContextMenu($('body')[0], evt)
-                return false;
-            }, false);
-
-            document.addEventListener('click', function(evt) {
-                lively.hideContextMenu()
-            }, false);
-
+    console.log("lively4url: " + lively4url)
+    System.import(lively4url + "/src/client/load.js").then(function(load){
+      console.log("load lively 1/3")
+      load.whenLoaded(function(){
+        console.log("load lively 2/3")
+        lively.components.loadUnresolved().then(function() {
+          console.log("load lively 3/3")
+            lively.initializeDocument(document)
             console.log("Finally loaded!")
         })
     })}).catch(function(err) {

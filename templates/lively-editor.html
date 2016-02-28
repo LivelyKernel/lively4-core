@@ -33,7 +33,7 @@
     </style>
     <div class="container">
 
-        <juicy-ace-editor id="editor"></juicy-ace-editor>
+        <juicy-ace-editor id="editor" wrapmode="true"></juicy-ace-editor>
         <div class="toolbar" id="toolbar">
           <button id="loadButton">load</button>
           <button id="saveButton">save</button>
@@ -117,24 +117,17 @@
 
     <script type="lively4script" data-name="saveFile">
       function() {
-        return new Promise((resolve, reject) => {
-          var url = this.getURL();
-          console.log("save " + url)
-          var data = this.currentEditor().getValue()
-          $.ajax({
-              url: url,
-              type: 'PUT',
-              data: data,
-              success: function(text) {
-                console.log("file " + url + " written.")
-                resolve(data)
-              },
-              error: function(xhr, status, error) {
-                console.log("could not write " + url + ": " + error)
-                reject()
-              }
-          });
-        })
+        var url = this.getURL();
+        console.log("save " + url + "!")
+        var data = this.currentEditor().getValue()
+        return lively.files.saveFile(url, data).then(() => {
+            console.log("edited file " + url + " written.")
+          }).then( (sourceCode) => {
+              lively.notify("saved file", url )
+            }, (err) => {
+               lively.notify("Could not saved page",this.getPath() +"\nMaybe next time you are more lucky?")
+            }
+          ) // don't catch here... so we can get the error later as needed...
       }
     </script>
 

@@ -7,37 +7,60 @@ export function whenLoaded(cb) {
 }
 
 if ('serviceWorker' in navigator) {
-    var root = ("" + window.location).replace(/[^\/]*$/,'../')
+    // var root = ("" + window.location).replace(/[^\/]*$/,'../')
+    var root = "" + lively4url + "/";
+    var serviceworkerReady = false
 
-    navigator.serviceWorker.register(root + 'swx-loader.js', {
-        // navigator.serviceWorker.register('../../serviceworker-loader.js', {
-        // scope: root + "draft/"
-        scope: root
-    }).then(function(registration) {
-        // Registration was successful
-        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-    }).catch(function(err) {
-        // registration failed
-        console.log('ServiceWorker registration failed: ', err);
-    });
-
-    navigator.serviceWorker.ready.then(function(registration) {
+    var onReady = function() {
+        serviceworkerReady = true;
         // Lively has all the dependencies
-        System.import("../src/client/lively.js").then(function(lively) {
-            window.lively = lively
+        System.import("../src/client/lively.js").then(function(module) {
+            window.lively = module.default
             initializeHalos();
-            lively.components.loadUnresolved();  
+            lively.components.loadUnresolved();
             console.log("running on load callbacks:");
-            loadCallbacks.forEach(function(cb){ 
-                try { 
+            loadCallbacks.forEach(function(cb){
+                try {
                    cb()
                 } catch(e) {
                     console.log("Error running on load callback: "  + cb + " error: " + e)
                 }
             });
+
+            window.onbeforeunload = function(e) {
+              return 'Do you really want to leave this page?';
+            };
             console.log("lively loaded");
         })
-    })
+    }
+
+    if (navigator.serviceWorker.controller) {
+      console.log("Use existing service worker")
+      // we don't have to do anything here... the service worker is already there
+      onReady()
+    } else {
+
+      navigator.serviceWorker.register(root + 'swx-loader.js', {
+          // navigator.serviceWorker.register('../../serviceworker-loader.js', {
+          // scope: root + "draft/"
+          scope: root
+      }).then(function(registration) {
+          // Registration was successful
+          console.log('ServiceWorker registration successful with scope: ', registration.scope);
+
+          // so now we have to reload!
+
+          console.log("Lively4 ServiceWorker installed! Reboot needed! ;-)")
+          window.location = window.location
+
+      }).catch(function(err) {
+          // registration failed
+          console.log('ServiceWorker registration failed: ', err);
+      });
+      navigator.serviceWorker.ready.then(onReady)
+    }
+
+
 
     var fs = new Promise(function(resolve, reject) {
         navigator.webkitPersistentStorage.requestQuota(1024 * 1024 * 10, function(grantedQuota) {
@@ -98,20 +121,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 });
 
-
-window.onbeforeunload = function(e) {
-  return 'Do you really want to leave this page?';
-};
-// disable backspace navigation
-    /*document.body.addEventListener("keydown", (evt) => {
-        if (evt.keyCode == 8) { // backspace
-            console.log("prevent  backspace navigation:")
-            // #TODO refactor this into a general lively error logging / notifications?
-            var n = new Notification("WARNING:", {body: "prevent  backspace navigation",});
-            setTimeout(n.close.bind(n), 3000);
-            evt.preventDefault();
-        }
-    });*/
 
 function initializeHalos() {
     if ($('lively-halos').size() == 0) {
