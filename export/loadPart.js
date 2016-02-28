@@ -54,7 +54,7 @@ function mountPart(partIdentifierString) {
 function loadAce() {
   var aceNode = document.createElement('script');
   aceNode.setAttribute('type', 'text/javascript');
-  aceNode.setAttribute('src', lively4Url + 'src/external/ace.js');
+  aceNode.setAttribute('src', lively4Url + 'src/external/ace/ace.js');
   document.head.appendChild(aceNode);
 }
 
