@@ -3,6 +3,7 @@
 import * as preferences from './preferences.js';
 
 var persistenceTimerInterval;
+var persistenceTimerEnforceSaveInterval;
 var persistenceEnabled = false;
 var persistenceInterval = 5000;
 var persistenceTarget = 'http://lively4/';
@@ -91,7 +92,7 @@ function loadPreferences() {
 }
 
 function saveOnLeave() {
-    stopPersistenceTimerInterval();
+    stopPersistenceTimerInterval(true);
     if (isPersistenceEnabled() && sessionStorage["lively.scriptMutationsDetected"] === 'true') {
         console.log("[persistence] window-closed mutations detected, saving DOM...")
         saveDOM(false);
@@ -127,11 +128,21 @@ function getURL(){
 
 export function startPersistenceTimerInterval() {
     persistenceTimerInterval = setInterval(checkForMutationsToSave, persistenceInterval);
+    if (persistenceTimerEnforceSaveInterval == undefined)
+        persistenceTimerEnforceSaveInterval = setInterval(checkForMutationsToSave, persistenceInterval * 10);
 }
 
-export function stopPersistenceTimerInterval() {
+export function stopPersistenceTimerInterval(stopEnforceSave = false) {
     clearInterval(persistenceTimerInterval);
     persistenceTimerInterval = undefined;
+    if (stopEnforceSave) {
+        stopPersistenceTimerEnforceSaveInterval()
+    }
+}
+
+export function stopPersistenceTimerEnforceSaveInterval() {
+    clearInterval(persistenceTimerEnforceSaveInterval);
+    persistenceTimerEnforceSaveInterval = undefined;
 }
 
 export function getPersistenceInterval() {
@@ -213,6 +224,7 @@ export function saveDOM(async = true) {
     resetPersistenceSessionStore();
 
     writeFile(content, async);
+    stopPersistenceTimerEnforceSaveInterval();
 }
 
 function writeFile(content, async = true) {
