@@ -4,13 +4,13 @@ Core functionality for Lively4 module management
 
 # Example Lively4 Sites
 
-- https://livelykernel.github.io/lively4-core/draft/start.html?load=/README.md 
+- [https://livelykernel.github.io/lively4-core/draft/start.html?load=/README.md](https://livelykernel.github.io/lively4-core/draft/start.html?load=/README.md)
 	- HEAD of Lively4 core repository
 	- served by github.io
 	- no CORS (not usable by lively4 chromeplugin as backend)
 	- edits go to github but take time, login to github using filesystem component
 	
-- https://lively-kernel.org/lively4/draft/start.html?load=/README.md 
+- [https://lively-kernel.org/lively4/draft/start.html?load=/README.md](https://livelykernel.github.io/lively4-core/draft/start.html?load=/README.md) 
 	- served with lively4-server
 	- manually updated
 	- CORS support, default server for lively4 chrome extension
