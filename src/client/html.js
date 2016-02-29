@@ -22,7 +22,7 @@ export default class HTML {
               path = dir + href // that leaves us RELATIVE paths
           }
           if (path) {
-            console.log("fix "  + path)
+            console.log("fix "  + href + " to " + path + "(dir " + dir + ")")
             $(node).click(() => { followPath(path); return false; });
 
             // ALTERNATIVE to navigate it inline, but the link will not be followed....

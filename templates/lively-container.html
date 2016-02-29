@@ -206,11 +206,20 @@
 
 	  var isdir= path.match(/.\/$/)
 
+    if (path.match(/^https?:\/\//)) {
+      var url = new URL(path)
+      url.pathname = lively.paths.normalize(url.pathname)
+      path = "" + url + (isdir ? "/" : "")
+    } else {
+      path = lively.paths.normalize(path)
+    }
+
+
 	  this.setAttribute("data-path", path)
       this.clear()
       this.getSubmorph('#container-path').value = path
       var url = this.getURL()
-      url.pathname = lively.paths.normalize(url.pathname)
+
 
       console.log("set url: " + url)
       this.sourceContent = "NOT EDITABLE"
