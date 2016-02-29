@@ -1,7 +1,11 @@
 <template id="inspect-halo">
     <style>
     :host {
-      background-image: url(https://livelykernel.github.io/lively4-core/src/client/media/inspect.svg);
+      /* https://livelykernel.github.io/lively4-core vs. ".."
+         #TODO how to customize this, becaus when working without internet ... or github died this urls changes... but we need it for running Lively4 at other hosts.
+         @Astrid, I guess that is why you made them absoltue? #Jens
+      */
+      background-image: url(../src/client/media/inspect.svg);
     }
     </style>
     <script type="lively4script" data-name="initialize">

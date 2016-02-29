@@ -193,7 +193,7 @@
         // there must be a way to make ace do all this stuff as with themes... :(
         var script = document.createElement("Script");
         script.type = "text/javascript";
-        script.src = "https://lively4/src/external/ace/modes/mode-" + mode + ".js";
+        script.src = lively4url + "/src/external/ace/modes/mode-" + mode + ".js";
         script.onerror = loadError;
         script.onload = function() {
           Mode = ace.require("ace/mode/" + mode).Mode;

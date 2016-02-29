@@ -1,11 +1,12 @@
 <template id="copy-halo">
-    <style>
+    <style id="mycss">
     :host {
-      background-image: url(https://livelykernel.github.io/lively4-core/src/client/media/copy.svg);
+      background-image: url(../src/client/media/copy.svg);
     }
     </style>
     <script type="lively4script" data-name="initialize">
     () => {
+      // this.style.backgroundImage = new URL( lively4url + "/src/client/media/copy.svg")
       System.import("../src/client/morphic/copying.js").then( function(copying) {
         $("body /deep/ copy-halo").off("click").on("click", function() {
           copying.handle(window.that);
