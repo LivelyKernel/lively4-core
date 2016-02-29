@@ -1,16 +1,15 @@
 <template id="inspect-halo">
     <style>
     :host {
-      /* https://livelykernel.github.io/lively4-core vs. ".."
-         #TODO how to customize this, becaus when working without internet ... or github died this urls changes... but we need it for running Lively4 at other hosts.
-         @Astrid, I guess that is why you made them absoltue? #Jens
-      */
-      background-image: url(../src/client/media/inspect.svg);
     }
     </style>
     <script type="lively4script" data-name="initialize">
     () => {
+
+
       System.import("../src/client/morphic/inspecting.js").then( function(inspecting) {
+        $("body /deep/ inspect-halo")[0].style.backgroundImage =
+          'url(' +lively4url + "/src/client/media/inspect.svg)"
         $("body /deep/ inspect-halo").off("click").on("click", function() {
           inspecting.handle(window.that);
           window.HaloService.hideHalos();

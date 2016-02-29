@@ -1,12 +1,16 @@
 <template id="unpack-halo">
     <style>
     :host {
-      background-image: url(../src/client/media/unpack.png);
+
     }
     </style>
     <script type="lively4script" data-name="initialize">
     () => {
+
       System.import("../src/client/morphic/component-creator.js").then( function(unpacking) {
+        $("body /deep/ unpack-halo")[0].style.backgroundImage =
+          'url(' +lively4url + "/src/client/media/unpack.png)"
+
         $("body /deep/ unpack-halo").off("click").on("click", function() {
           unpacking.unpackShadowDOM(window.that);
           window.HaloService.hideHalos();

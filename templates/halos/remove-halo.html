@@ -1,12 +1,14 @@
 <template id="remove-halo">
     <style>
     :host {
-      background-image: url(../src/client/media/delete.svg);
+
     }
     </style>
     <script type="lively4script" data-name="initialize">
     () => {
       System.import("../src/client/morphic/deleting.js").then( function(deleting) {
+        $("body /deep/ remove-halo")[0].style.backgroundImage =
+          'url(' +lively4url + "/src/client/media/delete.svg)"
         $("body /deep/ remove-halo").off("click").on("click", function() {
           deleting.handle(window.that);
           window.HaloService.hideHalos();

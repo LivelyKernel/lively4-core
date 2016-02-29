@@ -1,12 +1,13 @@
 <template id="resize-halo">
     <style>
     :host {
-      background-image: url(../src/client/media/resize.svg);
     }
     </style>
     <script type="lively4script" data-name="initialize">
     () => {
       System.import("../src/client/morphic/resizing.js").then( function(resizing) {
+        $("body /deep/ resize-halo")[0].style.backgroundImage =
+          'url(' +lively4url + "/src/client/media/resize.svg)"
         $("body /deep/ resize-halo").off("mousedown").on("mousedown", function(e) {
           resizing.start(e);
 
