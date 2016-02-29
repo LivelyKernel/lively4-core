@@ -1,0 +1,151 @@
+<template id="lively-editor">
+    <style>
+    .container {
+        width: 100%;
+        height: 100%;
+        /*
+        box-sizing: border-box;
+        padding-top: 25px; */
+        display: flex;
+        flex-direction: column;
+    }
+    .toolbar {
+        /* position: absolute;
+        left: 0px;
+        top: 0px;
+        width: 100%; */
+        height: 25px;
+        /*flex: 0;*/
+        display: flex;
+        flex-direction: row;
+    }
+
+    #filename {
+        width: 100%;
+        flex: 1;
+    }
+    #editor {
+        /* box-sizing: border-box; */
+        width: 100%;
+        height: 100%;
+        flex: 1;   /* ACE does not display right with "flex" */
+    }
+    </style>
+    <div class="container">
+
+        <juicy-ace-editor id="editor" wrapmode="true"></juicy-ace-editor>
+        <div class="toolbar" id="toolbar">
+          <button id="loadButton">load</button>
+          <button id="saveButton">save</button>
+          <input type="text" id="filename" value="https://lively4/README.md">
+        </div>
+    </div>
+
+
+    <script type="lively4script" data-name="initialize">
+    () => {
+      console.log("initialize lively editor")
+      var container = $(this.shadowRoot).find(".container")[0];
+
+      // #TODO refactor to "connections"
+      $(this.getSubmorph('#saveButton')).click(this.saveFile.bind(this))
+      $(this.getSubmorph('#loadButton')).click(this.loadFile.bind(this))
+
+      container.dispatchEvent(new Event("initialized"))
+    }
+    </script>
+    <script type="lively4script" data-name="getMountURL">
+    function() {
+      return "https://lively4/sys/fs/mount"
+    }
+    </script>
+
+    <script type="lively4script" data-name="currentEditor">
+      function() {
+        return this.getSubmorph('juicy-ace-editor').editor;
+      }
+    </script>
+
+    <script type="lively4script" data-name="getURL">
+      function() {
+        var filename = $(this.getSubmorph('#filename')).val();
+        return new URL(filename);
+      }
+    </script>
+
+    <script type="lively4script" data-name="setURL">
+      function(urlString) {
+        var url = new URL(urlString);
+        this.getSubmorph("#filename").value = url.href;
+      }
+    </script>
+
+
+
+    <script type="lively4script" data-name="setText">
+      function(text) {
+        this.getSubmorph("juicy-ace-editor").editor.setValue(text);
+        this.updateAceMode();
+      }
+    </script>
+
+    <script type="lively4script" data-name="updateAceMode">
+      function() {
+        var url = this.getURL();
+        var editorComp = this.getSubmorph("juicy-ace-editor");
+        editorComp.changeModeForFile(url.pathname);
+      }
+    </script>
+
+    <script type="lively4script" data-name="loadFile">
+      function() {
+        var url = this.getURL();
+        console.log("load " + url);
+        this.updateAceMode();
+
+        $.get(url, null, (text) => {
+
+          this.currentEditor().setValue(text);
+          this.currentEditor().resize();
+          console.log("file " + url + " read.");
+          console.log("content: " + text);
+        }).fail(function(e) {
+            console.log('could not load ' + url + ": " + e); // or whatever
+        });
+      }
+    </script>
+
+    <script type="lively4script" data-name="saveFile">
+      function() {
+        var url = this.getURL();
+        console.log("save " + url + "!")
+        var data = this.currentEditor().getValue()
+        return lively.files.saveFile(url, data).then(() => {
+            console.log("edited file " + url + " written.")
+          }).then( (sourceCode) => {
+              lively.notify("saved file", url )
+            }, (err) => {
+               lively.notify("Could not saved page",this.getPath() +"\nMaybe next time you are more lucky?")
+            }
+          ) // don't catch here... so we can get the error later as needed...
+      }
+    </script>
+
+    <script type="lively4script" data-name="hideToolbar">
+    function() {
+       this.getSubmorph("#toolbar").style.visibility = "hidden"
+    }
+    </script>
+
+
+</template>
+
+<script class="registrationScript">
+// This ugly piece of code will be auto generated, when exporting a template. Puh.
+(function() {
+  var template = document.currentScript.ownerDocument.querySelector('#lively-editor');
+  var clone = document.importNode(template.content, true);
+
+  System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-editor', clone); });
+})();
+</script>

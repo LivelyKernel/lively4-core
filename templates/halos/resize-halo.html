@@ -1,0 +1,42 @@
+<template id="resize-halo">
+    <style>
+    :host {
+    }
+    </style>
+    <script type="lively4script" data-name="initialize">
+    () => {
+      System.import("../src/client/morphic/resizing.js").then( function(resizing) {
+        $("body /deep/ resize-halo")[0].style.backgroundImage =
+          'url(' +lively4url + "/src/client/media/resize.svg)"
+        $("body /deep/ resize-halo").off("mousedown").on("mousedown", function(e) {
+          resizing.start(e);
+
+          // attach mousemove handler to body only after mousedown occured
+          $(document).off("mousemove.resize").on("mousemove.resize", function(e) {
+            resizing.move(e);
+
+            // update position of halos on mousemove
+            HaloService.showHalos(window.that);
+          });
+        });
+
+        $("body").off("mouseup.resize").on("mouseup.resize", function(e) {
+          if (resizing.resizing) {
+            resizing.stop(e);
+            // detach mousemove handler from body
+            $(document).off("mousemove.resize");
+          }
+        });
+      });
+    }
+    </script>
+</template>
+<script class="registrationScript">
+// This ugly piece of code will be auto generated, when exporting a template. Puh.
+(function() {
+  var template = document.currentScript.ownerDocument.querySelector('#resize-halo');
+  var clone = document.importNode(template.content, true);
+
+  System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('resize-halo', clone); });
+})();
+</script>

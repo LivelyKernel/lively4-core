@@ -1,0 +1,10 @@
+{
+  "name": "Juicy ace editor",
+  "html-tag": "juicy-ace-editor",
+  "description": "bla bla",
+  "author": "Felix Wolff",
+  "date-changed": "2015-12-17",
+  "categories": ["basic"],
+  "tags": [],
+  "template": "juicy-ace-editor.html"
+}

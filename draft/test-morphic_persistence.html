@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+<title>Lively 4 Our First Page</title>
+<style type="text/css" media="screen">
+    #baseurl {
+        width: 800px;
+    }
+    #console {
+        width: 800px;
+        height: 200px;
+        max-height: 200px;
+        overflow: auto;
+        background-color: #eeeeee;
+        word-break: normal !important;
+        word-wrap: normal !important;
+        white-space: pre !important;
+    }
+    #commandline {
+        width: 800px;
+    }
+</style>
+
+<script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
+
+<link rel="import" href="../src/client/babel-system.html">
+
+</head>
+<body>
+<h1>Lively 4 -- Persistence Test-page
+  <script data-name="testx" type="lively4script">() => 1 < 2</script>
+  <script data-name="testy" type="lively4script">() => this.testx()</script>
+  <script data-name="testAdd" type="lively4script">(x, y) => x + y * 3</script>
+  <script data-name="testSetColor" type="lively4script">() => this.style.color = "#00f"</script>
+</h1>
+<h2>Another Title</h2>
+
+<lively-component-bin></lively-component-bin>
+
+
+<script>
+    var lively4yourself = /\/draft\/.*\.html/ // ADAPT THIS
+    // some little reflection... help to find your inner self!
+    var lively4url = window.location.origin + window.location.pathname.replace(lively4yourself,"");
+
+    //// #TODO The ace editor tries to be very clever, so it cannot be loaded through "import" at the moment
+    //// (e.g. AMD promise error)
+    // System.import(lively4url + "src/external/ace/ace.js").then(function(){
+    //         ace.edit("editor")
+    // })
+
+    System.import(lively4url + "/src/client/load.js").then(function(){
+        System.import("commandline.js")
+        System.import(lively4url + "/src/client/debug-serviceworker.js")
+    }).catch(function(err) { alert("load Lively4 failed")});
+
+</script>
+
+<lively-preferences data-persistence-target="http://localhost:8080/" data-persistence-interval="4000" data-persistence-enabled="false">
+
+</body></html>

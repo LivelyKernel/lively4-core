@@ -1,0 +1,162 @@
+<!-- <link rel="import" href="lively-treeview.html">
+<link rel="import" href="juicy-ace-editor.html"> -->
+<link rel="import" href="lively-key-value-map.html" />
+
+<template id="lively-object-editor">
+  <style>
+    :host {
+      display: block;
+      position: relative;
+      background: white;
+      width: 400px;
+      height: 300px;
+    }
+    #wrapper {
+      display: flex;
+        flex-direction: column;
+      width: 100%;
+      height: 100%;
+    }
+    .main-content {
+      width: 100%;
+      flex-grow: 1;
+      display: flex;
+      max-height: 100%;
+    }
+    #property-list {
+      width: 30%;
+      min-width: 100px;
+      margin-right: 2px;
+      font-size: 12px;
+      overflow-x: scroll;
+    }
+    textarea, juicy-ace-editor {
+      width: 70%;
+    }
+    .toolbar {
+      margin-top: 0.4rem;
+    }
+    .toolbar .bar-left {
+      display: inline-block;
+      text-align: left;
+    }
+    .toolbar .bar-right {
+      float: right;
+      display: inline-block;
+      text-align: right;
+    }
+
+    fieldset {
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
+    #tabView {
+      display: flex;
+      width: 100%;
+      flex: 1;
+      flex-direction: column;
+      overflow-y: scroll;
+    }
+
+    #attributesContent, #propertiesContent, #connectionsContents {
+      width: 100%;
+      padding-left: 5px;
+      margin-top: 8px;
+      box-sizing: border-box;
+    }
+
+    #scriptsContent {
+      margin-top: 8px;
+    }
+
+    #connectionsContent {
+      display: flex;
+      flex-direction: column;
+    }
+    #connectionList {
+      flex: 1;
+      margin-bottom: 5px;
+    }
+
+    .main-content .hidden {
+      display: none;
+    }
+
+    .script-wrapper {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+    }
+
+    .script-wrapper .content-top {
+      display: flex;
+      flex: 1;
+    }
+
+    .script-wrapper .toolbar {
+      flex: 0;
+    }
+    </style>
+
+    <div id="wrapper">
+        <div class="main-content">
+      <!-- possible content elements -->
+        <lively-tab-view id="tabView">
+            <div id="scriptsContent" class="script-wrapper" title="Scripts">
+                <div class="content-top">
+                    <lively-treeview id="property-list">
+                        <ul id="script-nodes"></ul>
+                    </lively-treeview>
+
+                    <juicy-ace-editor id="editor"></juicy-ace-editor>
+                </div>
+
+                <div class="toolbar">
+                    <div class="bar-left">
+                        <button id="add-script">Add</button>
+                        <button id="remove-script">Remove</button>
+                    </div>
+                    <div class="bar-right">
+                        <button id="run-script">Run</button>
+                        <button id="save-script">Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="attributesContent" title="Attributes">
+                <lively-key-value-map id="attributesMap"></lively-key-value-map>
+            </div>
+            <div id="propertiesContent" title="Properties">
+                <lively-key-value-map id="propertiesMap"></lively-key-value-map>
+            </div>
+            <div id="connectionsContent" title="Connections">
+              <select size="100" id="connectionList"></select>
+              <fieldset>
+                <button id="addConnectionButton">Add Connection</button><br/>
+                <button id="removeConnectionButton">Remove Connection</button>
+              </fieldset>
+            </div>
+        </lively-tab-view>
+      <!-- / -->
+        </div>
+    </div>
+</template>
+
+<script>
+  (function() {
+    var template = document.currentScript.ownerDocument.querySelector('#lively-object-editor');
+    var clone = document.importNode(template.content, true);
+
+        Promise.all([
+            System.import('../templates/classes/ObjectEditor.js'),
+            System.import('../src/client/morphic/component-loader.js')
+        ]).then(modules => {
+            var ObjectEditor = modules[0];
+            var Loader = modules[1];
+            // var [ObjectEditor, Loader] = modules;
+            Loader.register('lively-object-editor', clone, Object.create(ObjectEditor.prototype || ObjectEditor.default.prototype));
+        });
+    })();
+</script>

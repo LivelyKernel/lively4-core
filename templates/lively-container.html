@@ -1,0 +1,305 @@
+<template id="lively-container">
+    <style>
+    #cancel, #save, #accept {
+      visibility: hidden;
+    }
+
+    #container-path {
+      width: 400px;
+    }
+
+    /*
+    :host {
+      width: 800px;
+      height: 600px;
+    }
+    */
+    </style>
+    <div id="container-navigation">
+      <button id="edit">edit</button>
+      <input type="text" id="container-path" value="">
+      <button id="cancel">cancel</button>
+      <button id="save">save</button>
+      <button id="accept">accept</button>
+    </div>
+    <div id="container-content">
+      <!-- by default the content is hidden-->
+    </div>
+    <content></content>
+
+    <script type="lively4script" data-name="initialize">
+    () => {
+
+
+      if (this.getAttribute("load") == "auto") {
+        var path = lively.preferences.getURLParameter("load")
+        if (path) {
+            this.setPath(path)
+        } else {
+            path = lively.preferences.getURLParameter("edit")
+            this.setPath(path, true).then(() => {
+              this.editFile()
+            })
+        }
+      } else {
+      	var src = this.getAttribute("src")
+      	if (src) {
+      		this.setPath(src)
+      	}
+      }
+
+      window.onpopstate = (event) => {
+        var state = event.state
+        if (state && state.followInline) {
+          console.log("follow " + state.path)
+          this.setPath(state.path)
+        }
+      };
+
+      // #TODO very ugly... I want to hide that level of JavaScript and just connect "onEnter" of the input field with my code
+      var input = this.getSubmorph("#container-path")
+      $(input).keyup(event => {
+        if (event.keyCode == 13) { // ENTER
+          this.onPathEntered(input.value);
+        }
+      });
+      this.registerButtons()
+    }
+    </script>
+    <script type="lively4script" data-name="registerButtons">
+    (names) => {
+      // Just an experiment for having to write lesser code.... which ended up in having more code here ;-) #Jens
+      Array.prototype.forEach.call(this.shadowRoot.querySelectorAll("button"), node => {
+        var name = node.id
+        console.log("register button " + name)
+        $(node).click(() => {
+          var funcName = name.replace(/^./, c => "on"+ c.toUpperCase())
+          var func = this[funcName]
+          if (func) {
+            func.call(this)
+          } else {
+            alert("No callback: " +  funcName)
+          }
+        })
+      })
+    }
+    </script>
+    <script type="lively4script" data-name="onPathEntered">
+    (path) => {
+      this.followPath(path)
+    }
+    </script>
+
+    <script type="lively4script" data-name="hideCancelAndSave">
+    () => {
+      this.getSubmorph("#cancel").style.visibility = "hidden"
+      this.getSubmorph("#save").style.visibility = "hidden"
+      this.getSubmorph("#accept").style.visibility = "hidden"
+
+    }
+    </script>
+    <script type="lively4script" data-name="showCancelAndSave">
+    () => {
+      this.getSubmorph("#cancel").style.visibility = "visible"
+      this.getSubmorph("#save").style.visibility = "visible"
+      this.getSubmorph("#accept").style.visibility = "visible"
+    }
+    </script>
+    <script type="lively4script" data-name="onEdit">
+    () => {
+      this.showCancelAndSave()
+      this.editFile()
+    }
+    </script>
+       <script type="lively4script" data-name="onCancel">
+    () => {
+      this.setPath(this.getPath())
+      this.hideCancelAndSave()
+    }
+    </script>
+    <script type="lively4script" data-name="onSave">
+    (doNotQuit) => {
+      return this.getSubmorph("#editor").saveFile()
+    }
+    </script>
+    <script type="lively4script" data-name="onAccept">
+    () => {
+      this.onSave().then((sourceCode) => {
+        this.setPath(this.getPath());
+        this.hideCancelAndSave();
+      })
+    }
+    </script>
+    <script type="lively4script" data-name="clear">
+    () => {
+      this.getSubmorph('#container-content').innerHTML = ''
+    }
+    </script>
+    <script type="lively4script" data-name="appendMarkdown">
+    (content) => {
+      System.import('../src/external/showdown.js').then((showdown) => {
+        var converter = new showdown.Converter();
+        var htmlSource = converter.makeHtml(content)
+        var html = $.parseHTML(htmlSource)
+        lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path))
+        console.log("html", html)
+        html.forEach((ea) => this.getSubmorph('#container-content').appendChild(ea))
+      })
+    }
+    </script>
+     <script type="lively4script" data-name="appendHtml">
+    (content) => {
+      try {
+        var nodes = $.parseHTML(content)
+        lively.html.fixLinks(nodes, this.getDir(), (path) => this.followPath(path))
+        nodes.forEach((ea) => {
+          this.getSubmorph('#container-content').appendChild(ea)
+        })
+      } catch(e) {
+        console.log("Could not append html:" + content)
+      }
+    }
+    </script>
+    <script type="lively4script" data-name="getDir">
+    () => {
+         return this.getPath().replace(/[^/]*$/,"")
+    }
+    </script>
+    <script type="lively4script" data-name="followPath">
+    (path) => {
+      if (this.isEditing()) {
+        window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?edit="+path);
+        this.setPath(path, true).then(() => this.editFile())
+      } else {
+        window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?load="+path);
+        this.setPath(path)
+      }
+    }
+    </script>
+    <script type="lively4script" data-name="isEditing">
+    () => {
+      return this.getSubmorph('#container-content').querySelector("lively-editor") && true
+    }
+    </script>
+    <script type="lively4script" data-name="getURL">
+    () => {
+      var path = this.getAttribute("data-path")
+      if (path && path.match(/^https?:\/\//)) {
+        return new URL(path)
+      } else {
+        return new URL("https://lively4/" + path)
+      }
+    }
+    </script>
+    <script type="lively4script" data-name="getPath">
+    () => {
+         return this.getAttribute("data-path")
+    }
+    </script>
+    <script type="lively4script" data-name="setPath">
+    function (path, donotrender) {
+      if (!path) {
+          path = ""
+      }
+
+
+
+	  var isdir= path.match(/.\/$/)
+
+    if (path.match(/^https?:\/\//)) {
+      var url = new URL(path)
+      url.pathname = lively.paths.normalize(url.pathname)
+      path = "" + url + (isdir ? "/" : "")
+    } else {
+      path = lively.paths.normalize(path)
+    }
+
+
+	  this.setAttribute("data-path", path)
+      this.clear()
+      this.getSubmorph('#container-path').value = path
+      var url = this.getURL()
+
+
+      console.log("set url: " + url)
+      this.sourceContent = "NOT EDITABLE"
+      var render = !donotrender
+      // Handling directories
+      if (isdir) {
+        return lively.files.statFile(url).then((content) => {
+          this.sourceContent = content
+          var html = "<ul>" +
+            "<li><a href='../'>..</a></li>" +
+            JSON.parse(content).contents.map( ea =>
+              "<li><a href='"+ea.name + (ea.type == "directory" ? "/" : "")+"''>" +
+              ea.name+ "</a></li>").join("\n")+"</ul>"
+          if (render) this.appendHtml(html)
+        }).catch(function(err){
+          lively.notify("ERROR: Could not set path: " + path,  "because of: " + err)
+        })
+      }
+      // Handling files
+      return lively.files.loadFile(url).then((content) => {
+        var format = path.replace(/.*\./,"")
+        if (format == "html")  {
+          this.sourceContent = content
+          if (render) this.appendHtml(content)
+        } else if (format.match(/(md)/)) {
+          this.sourceContent = content
+          if (render) this.appendMarkdown(content)
+        } else if (format == "png") {
+          if (render) this.appendHtml("<img src='" + url +"'>")
+        } else if (format == "pdf") {
+          if (render) this.appendHtml('<object style="width:21cm;height:29cm" data="'
+            + url +'" type="application/pdf"></object>')
+        } else {
+          this.sourceContent = content
+          if (render) this.appendHtml("<pre>" + content +"</pre>")
+        }
+      }).catch(function(err){
+        lively.notify("ERROR: Could not set path: " + path,  "because of: " + err)
+      })
+    }
+    </script>
+    <script type="lively4script" data-name="editFile">
+    () => {
+      this.clear()
+      var container=  this.getSubmorph('#container-content')
+      lively.components.openIn(container,
+        lively.components.createComponent("lively-editor")).then( comp => {
+          console.log("comp: " + comp)
+
+          container.style.width = "850px"
+          container.style.height = "800px"
+          comp.hideToolbar()
+          comp.id = "editor"
+          var aceComp = comp.shadowRoot.querySelector('juicy-ace-editor')
+          aceComp.doSave = text => {
+            this.onSave()
+          }
+          var url = this.getURL()
+          comp.setURL(url)
+          aceComp.changeModeForFile(url.pathname);
+          // NOTE: we don't user loadFile directly... because we don't want to edit PNG binaries etc...
+          comp.setText(this.sourceContent); // directly setting the source we got
+
+          this.showCancelAndSave()
+          // comp.loadFile() // ALT: Load the file again?
+      })
+      lively.components.loadUnresolved(container)
+    }
+    </script>
+
+
+
+
+</template>
+<script class="registrationScript">
+// This ugly piece of code will be auto generated, when exporting a template. Puh.
+(function() {
+  var template = document.currentScript.ownerDocument.querySelector('#lively-container');
+  var clone = document.importNode(template.content, true);
+
+  System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-container', clone); });
+})();
+</script>

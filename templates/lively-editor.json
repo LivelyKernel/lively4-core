@@ -1,0 +1,10 @@
+{
+  "name": "Editor",
+  "html-tag": "lively-editor",
+  "description": "A file editor.",
+  "author": "Jens Lincke",
+  "date-changed": "2015-12-17",
+  "categories": ["tools"],
+  "tags": [],
+  "template": "lively-editor.html"
+}

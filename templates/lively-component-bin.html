@@ -1,0 +1,61 @@
+<link rel="import" href="../templates/lively-component-bin-tile.html" />
+
+<template xmlns="http://www.w3.org/1999/xhtml" id="lively-component-bin">
+<style>
+.container {
+  background-color: white;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.tile-pane {
+    list-style-type: none;
+    background-color: white;
+    padding: 2px;
+    margin: 0px;
+    height: 100%;
+}
+.tile {
+  margin-top: 3px;
+  margin-bottom: 3px;
+  width: 100px;
+  height: 100px;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+#search-field {
+  width: 70%;
+  max-width: 500px;
+  margin: 5px;
+}
+
+</style>
+<div class="container">
+  <label for="open-in-checkbox">
+    <input type="text" id="search-field" placeholder="search ..."/>
+    open in window
+    <input type="checkbox" id="open-in-checkbox" checked="true">
+  </label>
+  <lively-tab-view>
+    <ul class="tile-pane" title="Components"></ul>
+    <div title="Shapes">Hello</div>
+  </lively-tab-view>
+</div>
+</template>
+<script xmlns="http://www.w3.org/1999/xhtml" class="registrationScript">
+(function() {
+  var template = document.currentScript.ownerDocument.querySelector('#lively-component-bin');
+  var clone = document.importNode(template.content, true);
+
+  Promise.all([
+    System.import('../templates/classes/ComponentBin.js'),
+    System.import('../src/client/morphic/component-loader.js'),
+  ]).then(modules => {
+    var ComponentBin = modules[0];
+    var Loader = modules[1];
+    Loader.register('lively-component-bin', clone, Object.create(ComponentBin.prototype || ComponentBin.default.prototype));
+  });
+})();
+</script>

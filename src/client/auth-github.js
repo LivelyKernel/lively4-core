@@ -1,15 +1,15 @@
 'use strict';
 
-var messaging = require('./messaging.js');
+import * as messaging from './messaging.js';
+import {log} from './load.js';
+
+import focalStorage from '../external/focalStorage.js';
 
 var onAuthenticatedCallbacks = {}
 
-log("load githubAuth")
+console.log("focalStorage: ", focalStorage)
 
-
-window.addEventListener('error', function(error) {
-        console.error(error);
-});
+console.log("load githubAuth")
 
 export function onAuthenticated(windowUuid, authInfo) {
 
@@ -18,7 +18,7 @@ export function onAuthenticated(windowUuid, authInfo) {
 
 	if (!state) { console.log("not state! authinfo: " + JSON.stringify(authInfo))}
 
-	localStorage.GithubToken = token
+	localStorage.GithubToken = token // #TODO refactor / remove it
 	focalStorage.setItem("githubToken", localStorage.GithubToken).then(function() {
 		var cb = onAuthenticatedCallbacks[state]
 		if (cb) {
@@ -68,7 +68,7 @@ export function challengeForAuth(uuid, cb) {
 
 	    var left = screenX + Math.max(outerWidth - width, 0) / 2;
 	    var top = screenY + Math.max(outerHeight - height, 0) / 2;
-	    
+
 	    var features = [
 	              "width=" + width,
 	              "height=" + height,
@@ -125,6 +125,6 @@ navigator.serviceWorker.addEventListener("message", function(event) {
 	    		args: [token]
 			})
     	})
-    } 
+    }
 })
 

@@ -1,6 +1,5 @@
 # Files in lively4-core
 
-
 # Some Meta files
 
 	./LICENSE
@@ -45,7 +44,7 @@
 	./src/external/jquery-1.11.3.js
 	./src/external/system.src.js
 	./src/external/babel-browser.js
-	./src/external/ace.js
+	./src/external/ace/ace.js
 
 
 ## Service Worker Code (mostly ES5)
