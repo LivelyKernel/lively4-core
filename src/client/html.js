@@ -13,13 +13,15 @@ export default class HTML {
       if (node.getAttribute) {
         var href = node.getAttribute("href")
         if (href) {
-          console.log("fix " + href)
           // #TODO load inplace....
           var path
-          if (href.match(/^\//)) {
-              path = href // ABSOLTUE paths
-          } else if (!href.match(/!([A-Za-z]+):\/\/.+/)) { // ignore FULL URLS
-              path = dir + href // that leaves us RELATIVE paths
+          if (href.match(/([A-Za-z]+):\/\/.+/)) {
+            // ignore FULL URLS
+            console.log("ignore "  + href)
+          } else if (href.match(/^\//)) {
+            path = href // ABSOLTUE paths
+          } else {
+            path = dir + href // that leaves us RELATIVE paths
           }
           if (path) {
             console.log("fix "  + href + " to " + path + "(dir " + dir + ")")
