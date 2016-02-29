@@ -2,8 +2,7 @@
 <html>
     <head>
         <script type="text/javascript">
-            window.location.pathname = 
-	       window.location.pathname.replace("index.html", "") + 
+            window.location= ("" + window.location).replace(/index\.html.*/, "") + 
 	       "draft/start.html?load=/README.md"
         </script>
         <title>Page Redirection</title>
