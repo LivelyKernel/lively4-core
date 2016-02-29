@@ -2,6 +2,12 @@
 
 Core functionality for Lively4 module management
 
+# Example Lively4 Sites
+
+* https://livelykernel.github.io/lively4-core/draft/start.html?load=/README.md (HEAD of Lively4 core repository, served by github.io, no CORS, edits go to github but take time)
+* https://lively-kernel.org/lively4/draft/start.html?load=/README.md (served with lively4-server, manually updated, CORS)
+
+
 # start.html
 
 We, are not clear how we want to navigate from lively page to lively page. To not "boot" lively on every
