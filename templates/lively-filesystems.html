@@ -29,6 +29,9 @@
       <p>Github
         <button id="githubLoginButton">login</button>
         <button id="githubLogoutButton">logout</button>
+        repo: <input id="githubRepo" value="LivelyKernel/lively4-core" />
+        branch: <input id="githubBranch" value="gh-pages" />
+        to: <input id="githubMount" value="/github" />
       </p>
       <p>Dropbox
         <button id="dropboxLoginButton">login</button>
@@ -36,7 +39,7 @@
         from: <input id="dropboxSubfolder" value="/Lively" />
         to: <input id="dropboxMountPath" value="/dropbox" />
       </p>
-      <p>      
+      <p>
         <button id="updateMountList">update</button>
         <ol id="listOfMountPoints"></ol>
       </p>
@@ -87,16 +90,16 @@
 
       // #TODO refactor to "connections"
 
-      $(this.getSubmorph('#githubLoginButton')).click(() => { 
+      $(this.getSubmorph('#githubLoginButton')).click(() => {
         this.loginGitHub()})
-      $(this.getSubmorph('#githubLogoutButton')).click(() => { 
+      $(this.getSubmorph('#githubLogoutButton')).click(() => {
         this.logoutGitHub()})
 
-      $(this.getSubmorph('#dropboxLoginButton')).click(() => { 
+      $(this.getSubmorph('#dropboxLoginButton')).click(() => {
         this.loginDropbox()})
-      $(this.getSubmorph('#dropboxLogoutButton')).click(() => { 
+      $(this.getSubmorph('#dropboxLogoutButton')).click(() => {
         this.logoutDropbox()})
-      $(this.getSubmorph('#updateMountList')).click(() => { 
+      $(this.getSubmorph('#updateMountList')).click(() => {
         this.updateMountList()})
 
       this.updateMountList()
@@ -105,7 +108,7 @@
     }
     </script>
     <script type="lively4script" data-name="getMountURL">
-    function() { 
+    function() {
       return "https://lively4/sys/fs/mount"
     }
     </script>
@@ -113,14 +116,18 @@
     <script type="lively4script" data-name="loginGitHub">
      function() {
         console.log("login")
+        var mountPath = this.shadowRoot.querySelector('#githubMount').value
+        var repo = this.shadowRoot.querySelector('#githubRepo').value
+        var branch = this.shadowRoot.querySelector('#githubBranch').value
+
         githubAuth.challengeForAuth(Date.now(), (token) => {
             console.log('We are authenticated with the Token: ' + token)
             var mountGithub = {
-              "path": "/",
+              "path": mountPath,
               "name": "github",
               "options": {
-                "repo": "LivelyKernel/lively4-core",
-                "branch": "gh-pages",
+                "repo":  repo,
+                "branch": branch,
                 "token": token
               }
             }
@@ -141,7 +148,7 @@
     </script>
     <script type="lively4script" data-name="logoutGitHub">
       function(){
-        githubAuth.logout(); 
+        githubAuth.logout();
         console.log('logged out of github')
         var unmountGithub = {
               "path": "/",
@@ -199,11 +206,11 @@
               }
             });
         })
-      
+
 }    </script>
     <script type="lively4script" data-name="logoutDropbox">
       function(){
-        dropboxAuth.logout(); 
+        dropboxAuth.logout();
         console.log('logged out of dropbox')
         alert("not supprt")
         var unmountGithub = {
@@ -258,7 +265,7 @@
           var mounts = JSON.parse(text)
           console.log(mounts)
 
-          list.innerHTML = ""          
+          list.innerHTML = ""
           mounts.forEach(ea => {
             let listItem = document.createElement("li")
             listItem.innerHTML = ea.path + " (" + ea.name +") "
@@ -287,7 +294,7 @@
     }
     </script>
 
-  
+
 </template>
 
 <script class="registrationScript">
