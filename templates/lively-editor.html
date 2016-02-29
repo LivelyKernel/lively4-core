@@ -85,6 +85,15 @@
     <script type="lively4script" data-name="setText">
       function(text) {
         this.getSubmorph("juicy-ace-editor").editor.setValue(text);
+        this.updateAceMode();
+      }
+    </script>
+
+    <script type="lively4script" data-name="updateAceMode">
+      function() {
+        var url = this.getURL();
+        var editorComp = this.getSubmorph("juicy-ace-editor");
+        editorComp.changeModeForFile(url.pathname);
       }
     </script>
 
@@ -92,26 +101,9 @@
       function() {
         var url = this.getURL();
         console.log("load " + url);
+        this.updateAceMode();
 
         $.get(url, null, (text) => {
-          // extract file extension
-          var editorComp = this.getSubmorph("juicy-ace-editor");
-          editorComp.changeModeForFile(url.pathname);
-          // var extension = url.toString().match(/\.[0-9a-z]+$/i)[0];
-          // switch (extension) {
-          //   case ".html":
-          //     editorComp.changeMode("html");
-          //     break;
-          //   case ".js":
-          //   case ".jsx":
-          //     editorComp.changeMode("javascript");
-          //     break;
-          //   case ".md":
-          //     editorComp.changeMode("markdown");
-          //     break;
-          //   default:
-          //     editorComp.changeMode("text");
-          // }
 
           this.currentEditor().setValue(text);
           this.currentEditor().resize();

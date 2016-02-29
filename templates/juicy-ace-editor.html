@@ -4,7 +4,7 @@
     version: 1.1.1
     @demo index.html
 -->
-<script src="../src/external/ace.js" type="text/javascript" charset="utf-8"></script>
+<script src="../src/external/ace/ace.js" type="text/javascript" charset="utf-8"></script>
 <script src="../src/external/ace/ext-modelist.js" type="text/javascript" charset="utf-8"></script>
 <script type="text/javascript" src="../src/external/ResizeSensor.js"></script>
 
@@ -100,14 +100,17 @@
 
 
         // editor.resize()
-        var _this = this;
         window.setTimeout(function() {
           editor.resize();
+        }, 50) // #Hack #Resize #RaceCondition
+
+        var _this = this;
+        window.setTimeout(function() {
           // we also use this timeout hack, but we should get rid of it!!
           new ResizeSensor($(_this.container), function() {
             editor.resize();
           });
-        }, 50) // #Hack #Resize #RaceCondition
+        }, 500);
     };
 
     // Fires when an instance was removed from the document
@@ -177,10 +180,10 @@
     TomalecAceEditorPrototype.changeModeForFile = function(filename) {
       var modelist = ace.require("ace/ext/modelist");
       var mode = modelist.getModeForPath(filename).name;
-
       console.log(filename + " -> " + mode);
 
       this.changeMode(mode);
+
     }
 
     TomalecAceEditorPrototype.changeMode = function(mode) {
@@ -216,14 +219,6 @@
 
     TomalecAceEditorPrototype.customizeEditor = function() {
         var editor = this.editor;
-
-        editor.getSession().setUseWorker(false);
-        var basePath = ace.config.get("basePath");
-        ace.config.set("themePath", basePath + "/ace/themes");
-        // for some reason, none of this works for loading modes,
-        // therefore we need to do lots of stuff in changeMode()
-        // ace.config.set("modePath", basePath + "/ace/modes");
-        // ace.config.set("basePath", basePath + "/ace");
 
         editor.currentSelectionOrLine = function() {
             var sel =  this.getSelectionRange();
