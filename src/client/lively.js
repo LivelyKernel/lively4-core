@@ -4,6 +4,9 @@ import * as messaging from './messaging.js';
 import * as preferences from './preferences.js';
 import * as persistence from './persistence.js';
 import files from './files.js';
+import html from './html.js';
+import paths from './paths.js';
+
 
 import keys from './keys.js';
 import focalStorage from '../external/focalStorage.js';
@@ -20,6 +23,8 @@ var exportmodules = [
   "persistence",
   "files",
   "keys",
+  "paths",
+  "html",
   "components",
   "focalStorage"]
 

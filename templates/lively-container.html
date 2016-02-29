@@ -29,8 +29,8 @@
 
     <script type="lively4script" data-name="initialize">
     () => {
-    	
-	  
+
+
       if (this.getAttribute("load") == "auto") {
         var path = lively.preferences.getURLParameter("load")
         if (path) {
@@ -135,44 +135,13 @@
       this.getSubmorph('#container-content').innerHTML = ''
     }
     </script>
-    <script type="lively4script" data-name="fixLinks">
-    (nodes) => {
-      if (! nodes) return
-        Array.prototype.forEach.call(nodes, node => {
-          if (node.getAttribute) {
-            var href = node.getAttribute("href")
-            if (href) {
-              console.log("fix " + href)
-              // #TODO load inplace....
-              var path
-              if (href.match(/^\//)) {
-                  path = href // ABSOLTUE paths
-              } else if (!href.match(/!([A-Za-z]+):\/\/.+/)) { // ignore FULL URLS
-                  path = this.getDir() + href // that leaves us RELATIVE paths
-              }
-              if (path) {
-                console.log("fix "  + path)
-                $(node).click(() => { this.followPath(path); return false; });
-
-                // ALTERNATIVE to navigate it inline, but the link will not be followed....
-                // var link = lively4url + "/draft/start.html?load=" + path
-                // node.setAttribute("href", link)
-              } else {
-                console.log("ignore " + href)
-              }
-            }
-            this.fixLinks(node.childNodes)
-          }
-        })
-    }
-    </script>
     <script type="lively4script" data-name="appendMarkdown">
     (content) => {
       System.import('../src/external/showdown.js').then((showdown) => {
         var converter = new showdown.Converter();
         var htmlSource = converter.makeHtml(content)
         var html = $.parseHTML(htmlSource)
-        this.fixLinks(html)
+        lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path))
         console.log("html", html)
         html.forEach((ea) => this.getSubmorph('#container-content').appendChild(ea))
       })
@@ -182,7 +151,7 @@
     (content) => {
       try {
         var nodes = $.parseHTML(content)
-        this.fixLinks(nodes)
+        lively.html.fixLinks(nodes, this.getDir(), (path) => this.followPath(path))
         nodes.forEach((ea) => {
           this.getSubmorph('#container-content').appendChild(ea)
         })
@@ -229,40 +198,20 @@
     </script>
     <script type="lively4script" data-name="setPath">
     function (path, donotrender) {
-	function normalize(path) {
-	    let source = path.split(/\/+/)
-	    let target = []
-	
-	    for(let token of source) {
-	      if(token === '..') {
-	        target.pop()
-	      } else if(token !== '' && token !== '.') {
-	        target.push(token)
-	      }
-	    }
-	
-	    if(path.charAt(0) === '/')
-	        return '/' + target.join('/')
-	    else
-	        return target.join('/')
-	}
-	function join(a, b) {
-	  if(b[0] === '/') {
-	    return normalize(b)
-	  } else {
-	    return normalize(a + '/' + b)
-	  }
-	}
-	  
-	  var isdir= path.match(/.\/$/) 
-	  path = normalize(path) 
-	  if (isdir && path != "/" ) path += "/" 
-	  
-	  
+      if (!path) {
+          path = ""
+      }
+
+
+
+	  var isdir= path.match(/.\/$/)
+
 	  this.setAttribute("data-path", path)
       this.clear()
       this.getSubmorph('#container-path').value = path
       var url = this.getURL()
+      url.pathname = lively.paths.normalize(url.pathname)
+
       console.log("set url: " + url)
       this.sourceContent = "NOT EDITABLE"
       var render = !donotrender
@@ -273,7 +222,7 @@
           var html = "<ul>" +
             "<li><a href='../'>..</a></li>" +
             JSON.parse(content).contents.map( ea =>
-              "<li><a href='"+ea.name + (ea.type == "directory" ? "/" : "")+"''>" + 
+              "<li><a href='"+ea.name + (ea.type == "directory" ? "/" : "")+"''>" +
               ea.name+ "</a></li>").join("\n")+"</ul>"
           if (render) this.appendHtml(html)
         }).catch(function(err){
