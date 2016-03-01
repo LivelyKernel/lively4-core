@@ -32,8 +32,7 @@
     {action: "installObject", target: "lively.Class",           source: "classHelper"}
   ];
 
-  var isNode = typeof process !== 'undefined'
-            && process.versions && process.versions.node;
+  var isNode = typeof require !== 'undefined' && typeof exports !== 'undefined';
 
   var livelyLang = createLivelyLangObject();
   if (isNode) { module.exports = livelyLang; return; }
@@ -1008,10 +1007,8 @@ obj.extend(Path.prototype, {
 
 });
 
-})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
-  require('./base') :
-  (typeof lively !== "undefined" && lively.lang ?
-     lively.lang : {}));
+})(typeof require !== "undefined" && typeof exports !== "undefined" ?
+  require('./base') : (typeof lively !== "undefined" && lively.lang ? lively.lang : {}));
 
 
 /*global process, global*/
@@ -1453,7 +1450,7 @@ exports.class
   }
 }
 
-})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+})(typeof require !== "undefined" && typeof exports !== "undefined" ?
   require('./base') :
   (typeof lively !== "undefined" && lively.lang ?
      lively.lang : {}));
@@ -3108,7 +3105,7 @@ var arrayProjection = exports.arrayProjection = {
   }
 }
 
-})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+})(typeof require !== "undefined" && typeof exports !== "undefined" ?
   require('./base') :
   (typeof lively !== "undefined" && lively.lang ?
      lively.lang : {}));
@@ -3136,7 +3133,7 @@ var seq = exports.seq = {
 
 }
 
-})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+})(typeof require !== "undefined" && typeof exports !== "undefined" ?
   require('./base') :
   (typeof lively !== "undefined" && lively.lang ?
      lively.lang : {}));
@@ -3206,7 +3203,7 @@ var tree = exports.tree = {
 
 }
 
-})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+})(typeof require !== "undefined" && typeof exports !== "undefined" ?
   require('./base') :
   (typeof lively !== "undefined" && lively.lang ?
      lively.lang : {}));
@@ -3314,14 +3311,15 @@ var fun = exports.fun = {
     //   alert(2 + arg);
     // }) => "var x = 34;\nalert(2 + arg);"
     var codeString = String(func)
-        .replace(/^function[^\{]+\{\s*/, '')
-        .replace(/\}$/, '')
-        .trim();
-    var indent = codeString.split(/\n|\r/)
-        .map(function(line) { var m = line.match(/^\s*/); return m && m[0]; })
-        .filter(function(ea) { return !!ea; })
-        .reduce(function(indent, ea) { return ea.length < indent.length ? ea : indent; });
-    return codeString.replace(new RegExp("^" + indent, 'gm'), '');
+                      .replace(/^function[^\{]+\{\s*/, '')
+                      .replace(/\}$/, '')
+                      .trim(),
+        lines = codeString.split(/\n|\r/), indent = undefined;
+    for (var i = 0; i < lines.length; i++) {
+      var m = lines[i].match(/^(\s+)[^\s]/);
+      if (m && (indent === undefined || m[1].length < indent.length)) indent = m[1];
+    }
+    return indent ? codeString.replace(new RegExp("^" + indent, 'gm'), '') : codeString;
   },
 
   // -=-=-=-
@@ -4442,7 +4440,7 @@ Closure.fromSource = function(source, varMapping) {
   return new Closure(null, varMapping || {}, source);
 }
 
-})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+})(typeof require !== "undefined" && typeof exports !== "undefined" ?
   require('./base') :
   (typeof lively !== "undefined" && lively.lang ?
      lively.lang : {}));
@@ -5409,7 +5407,7 @@ var string = exports.string = {
 
 }
 
-})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+})(typeof require !== "undefined" && typeof exports !== "undefined" ?
   require('./base') :
   (typeof lively !== "undefined" && lively.lang ?
      lively.lang : {}));
@@ -5581,7 +5579,7 @@ var num = exports.num = {
 
 }
 
-})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+})(typeof require !== "undefined" && typeof exports !== "undefined" ?
   require('./base') :
   (typeof lively !== "undefined" && lively.lang ?
      lively.lang : {}));
@@ -5803,7 +5801,7 @@ exports.date = {
 
 };
 
-})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+})(typeof require !== "undefined" && typeof exports !== "undefined" ?
   require('./base') :
   (typeof lively !== "undefined" && lively.lang ?
      lively.lang : {}));
@@ -5947,7 +5945,7 @@ obj.extend(exports.promise, {
 
 });
 
-})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+})(typeof require !== "undefined" && typeof exports !== "undefined" ?
   require('./base') : (typeof lively !== "undefined" && lively.lang ? lively.lang : {}));
 
 
@@ -6032,7 +6030,7 @@ var events = exports.events = {
   }
 };
 
-})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+})(typeof require !== "undefined" && typeof exports !== "undefined" ?
   require('./base') :
   (typeof lively !== "undefined" && lively.lang ?
      lively.lang : {}));
@@ -6143,7 +6141,7 @@ var graph = exports.graph = {
 
 };
 
-})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+})(typeof require !== "undefined" && typeof exports !== "undefined" ?
   require('./base') :
   (typeof lively !== "undefined" && lively.lang ?
      lively.lang : {}));
@@ -6635,7 +6633,7 @@ var messenger = exports.messenger = {
 
 };
 
-})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+})(typeof require !== "undefined" && typeof exports !== "undefined" ?
   require('./base') :
   (typeof lively !== "undefined" && lively.lang ?
      lively.lang : {}));
@@ -6650,7 +6648,7 @@ var messenger = exports.messenger = {
 ;(function(exports) {
 "use strict";
 
-var isNodejs = typeof module !== 'undefined' && module.require;
+var isNodejs = typeof require !== 'undefined' && typeof process !== 'undefined';
 
 // ignore-in-doc
 // Code in worker setup is evaluated in the context of workers, it will get to
@@ -7245,7 +7243,7 @@ var worker = exports.worker = {
   }
 }
 
-})(typeof module !== "undefined" && module.require && typeof process !== "undefined" ?
+})(typeof require !== "undefined" && typeof exports !== "undefined" ?
   require('./base') :
   (typeof lively !== "undefined" && lively.lang ?
      lively.lang : {}));
