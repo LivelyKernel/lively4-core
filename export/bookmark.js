@@ -1,1 +1,0 @@
-javascript: (function () %7B%0A%09var node = document.createElement('script');%0A%09node.setAttribute('type', 'text/javascript');%0A%09node.setAttribute('src', 'http://localhost:8081/lively4-core/export/loadPart.js');%0A%09document.head.appendChild(node);%0A%7D)()
