@@ -6,7 +6,9 @@ export function whenLoaded(cb) {
     loadCallbacks.push(cb)
 }
 
-if ('serviceWorker' in navigator) {
+
+if ('serviceWorker' in navigator && ! window.lively4noserviceworker) {
+    console.log("boot lively4 service worker")
     // var root = ("" + window.location).replace(/[^\/]*$/,'../')
     var root = "" + lively4url + "/";
     var serviceworkerReady = false
@@ -16,7 +18,7 @@ if ('serviceWorker' in navigator) {
         // Lively has all the dependencies
         System.import("../src/client/lively.js").then(function(module) {
             window.lively = module.default
-            initializeHalos();
+            lively.initializeHalos();
             lively.components.loadUnresolved();
             console.log("running on load callbacks:");
             loadCallbacks.forEach(function(cb){
@@ -112,6 +114,8 @@ if ('serviceWorker' in navigator) {
                 break
         }
     })
+} else {
+  console.log("ignoring service worker... we try without.")
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -121,11 +125,3 @@ document.addEventListener('DOMContentLoaded', function () {
 
 });
 
-
-function initializeHalos() {
-    if ($('lively-halos').size() == 0) {
-        $('<lively-halos>')
-            .attr('data-lively4-donotpersist', 'all')
-            .appendTo($('body'));
-    }
-}

@@ -19,7 +19,7 @@ export default class ComponentBin extends Morph {
   loadComponentList() {
     return new Promise((resolve, reject) => {
       // ugly as sh*t!
-      // var currentLocation = window.lively4Url || (window.location.hostname === "localhost" ? "http://localhost:" + window.location.port + "/" : "https://lively4/");
+      // var currentLocation = window.lively4url || (window.location.hostname === "localhost" ? "http://localhost:" + window.location.port + "/" : "https://lively4/");
       var currentLocation = window.location.hostname === "localhost" ? "http://localhost:" + window.location.port + "/lively4-core/" : "https://lively4/";
       var templatesUrl = currentLocation + "templates/";
       files.statFile(templatesUrl).then(response => {

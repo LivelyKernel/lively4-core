@@ -142,16 +142,39 @@ var lively = class Lively {
     // notification.onclick = cb
   }
 
-  static initializeDocument(doc) {
-
-    doc.addEventListener('contextmenu', function(evt) {
+  static initializeDocument(doc, loadedAsExtension) {
+    console.log("Lively4 initializeDocument")
+    if (loadedAsExtension) {
+      doc.addEventListener('contextmenu', function(evt) {
+          if (evt.ctrlKey) {
+            evt.preventDefault();
+            lively.openContextMenu($('body')[0], evt)
+            return false;
+          }
+      }, false);
+      alert("Lively4 extension loaded!\n" +
+        "  CTRL+LeftClick  ... open halo\n" +
+        "  CTRL+RightClick ... open menu")
+    } else {
+      doc.addEventListener('contextmenu', function(evt) {
         evt.preventDefault();
         lively.openContextMenu($('body')[0], evt)
         return false;
-    }, false);
+      }, false);
+    }
+
 
     doc.addEventListener('click', function(evt){lively.hideContextMenu(evt)}, false);
     doc.addEventListener('keyup', function(evt){lively.keys.handle(evt)}, false);
+  }
+
+  static initializeHalos() {
+    if ($('lively-halos').size() == 0) {
+        $('<lively-halos>')
+            .attr('data-lively4-donotpersist', 'all')
+            .appendTo($('body'));
+    }
+    lively.components.loadUnresolved();
   }
 }
 
