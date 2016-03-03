@@ -209,11 +209,11 @@
     if (path.match(/^https?:\/\//)) {
       var url = new URL(path)
       url.pathname = lively.paths.normalize(url.pathname)
-      path = "" + url + (isdir ? "/" : "")
+      path = "" + url
     } else {
       path = lively.paths.normalize(path)
     }
-
+    path =  path + (isdir ? "/" : "")
 
 	  this.setAttribute("data-path", path)
       this.clear()
