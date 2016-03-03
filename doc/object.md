@@ -22,6 +22,7 @@ Utility functions that help to inspect, enumerate, and create JS objects
   - [extract](#obj-extract)
   - [inspect](#obj-inspect)
   - [merge](#obj-merge)
+  - [deepMerge](#obj-deepMerge)
   - [valuesInPropertyHierarchy](#obj-valuesInPropertyHierarchy)
   - [mergePropertyInHierarchy](#obj-mergePropertyInHierarchy)
   - [deepCopy](#obj-deepCopy)
@@ -142,6 +143,14 @@ dest // => {x: 23,y: 24}
  }
 
 #### <a name="obj-merge"></a>obj.merge(objs)
+
+ `objs` can be a list of objects. The return value will be a new object,
+ containing all properties of all objects. If the same property exist in
+ multiple objects, the right-most property takes precedence.
+
+ Like `extend` but will not mutate objects in `objs`.
+
+#### <a name="obj-deepMerge"></a>obj.deepMerge(objA, objB)
 
  `objs` can be a list of objects. The return value will be a new object,
  containing all properties of all objects. If the same property exist in

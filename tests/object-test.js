@@ -279,6 +279,43 @@ describe('obj', function() {
 
   });
 
+  describe("deep merge", function() {
+
+    it("combines objects", function() {
+      expect(obj.deepMerge({a: 23, b: {x: 2}},
+                           {a: 24, b: {y: 3}}))
+        .to.eql({a: 24, b: {x: 2, y: 3}});
+    });
+
+    it("combines arrays", function() {
+      expect(obj.deepMerge([{a: 23}, {b: {x: 2}}],
+                           [{a: 24}, {b: {y: 3}}, {c: 3}]))
+        .to.eql([{a: 24}, {b: {x: 2, y: 3}}, {c: 3}]);
+    });
+
+    it("identical", function() {
+      expect(obj.deepMerge({a: [1,2,3], c: 3}, {a: [1,2,3], c: 3}))
+        .to.eql({a: [1,2,3], c: 3});
+    });
+
+    it("merges non obj props left to right", function() {
+      expect(obj.deepMerge({a: [{},2,3], b: 3, c: {}}, {a: [1,{},3], b: {}, c: 4}))
+        .to.eql({a: [1,{},3], b: 3, c: 4});
+    });
+
+    it("doesnt merge array and obj", function() {
+      expect(obj.deepMerge({a: [1,2,3]}, {a: {"0": "x", "1": "y"}}))
+        .to.eql({a: {"0": "x", "1": "y"}});
+    });
+
+    it("cannot deal with circular refs", function() {
+      var obj1 = {}, obj2 = {};
+      obj1.ref = obj2; obj2.ref = obj1;
+      expect(function() { obj.deepMerge(obj1, obj2) }).to.throwError();
+    });
+
+  });
+
   describe("inherit", function() {
 
     it("inherits", function() {

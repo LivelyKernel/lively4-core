@@ -73,7 +73,14 @@ merge:function merge(objs){ // `objs` can be a list of objects. The return value
 // if objs are arrays just concat them
 // if objs are real objs then merge propertdies
 if(arguments.length > 1){return obj.merge(Array.prototype.slice.call(arguments));}if(Array.isArray(objs[0])){ // test for all?
-return Array.prototype.concat.apply([],objs);}return objs.reduce(function(merged,ea){for(var name in ea) if(ea.hasOwnProperty(name))merged[name] = ea[name];return merged;},{});}, // -=-=-=-=-=-=-
+return Array.prototype.concat.apply([],objs);}return objs.reduce(function(merged,ea){for(var name in ea) if(ea.hasOwnProperty(name))merged[name] = ea[name];return merged;},{});},deepMerge:function deepMerge(objA,objB){ // `objs` can be a list of objects. The return value will be a new object,
+// containing all properties of all objects. If the same property exist in
+// multiple objects, the right-most property takes precedence.
+//
+// Like `extend` but will not mutate objects in `objs`.
+// if objs are arrays just concat them
+// if objs are real objs then merge propertdies
+if(!objA)return objB;if(!objB)return objA;if(Array.isArray(objA)){if(!Array.isArray(objB))return objB;var merged=objA.map(function(ea,i){return obj.deepMerge(ea,objB[i]);});if(objB.length > objA.length)merged = merged.concat(objB.slice(objA.length));return merged;}if(typeof objA !== "object" || typeof objB !== "object")return objB;return Object.keys(objA).concat(Object.keys(objB)).reduce(function(merged,name){if(!objA[name])merged[name] = objB[name];else if(!objB[name])merged[name] = objA[name];else if(typeof objA[name] !== "object" || typeof objB[name] !== "object")merged[name] = objB[name];else merged[name] = obj.deepMerge(objA[name],objB[name]);return merged;},{});}, // -=-=-=-=-=-=-
 // inheritance
 // -=-=-=-=-=-=-
 inherit:function inherit(obj){return Object.create(obj);},valuesInPropertyHierarchy:function valuesInPropertyHierarchy(obj,name){ // Lookup all properties named name in the proto hierarchy of obj.
