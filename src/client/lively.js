@@ -133,6 +133,9 @@ var lively = class Lively {
   }
 
   static notify(title, text, timout) {
+    // just in case...
+    if (Notification.permission !== "granted") Notification.requestPermission();
+
     console.log("NOTE: " + title  + " (" + text + ")")
     var notification = new Notification(title || "", {
       icon: 'https://www.lively-kernel.org/media/livelylogo-small.png',
@@ -152,7 +155,7 @@ var lively = class Lively {
             return false;
           }
       }, false);
-      alert("Lively4 extension loaded!\n" +
+      lively.notify("Lively4 extension loaded!",
         "  CTRL+LeftClick  ... open halo\n" +
         "  CTRL+RightClick ... open menu")
     } else {
@@ -175,6 +178,10 @@ var lively = class Lively {
             .appendTo($('body'));
     }
     lively.components.loadUnresolved();
+  }
+
+   static unload() {
+      lively.notify("unloading Lively is not supported yet! Please reload page....")
   }
 }
 

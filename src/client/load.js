@@ -7,8 +7,8 @@ export function whenLoaded(cb) {
 }
 
 
-if ('serviceWorker' in navigator && ! window.lively4noserviceworker) {
-    console.log("boot lively4 service worker")
+if ('serviceWorker' in navigator) {
+    console.log("LOAD Lively4: boot lively4 service worker")
     // var root = ("" + window.location).replace(/[^\/]*$/,'../')
     var root = "" + lively4url + "/";
     var serviceworkerReady = false
@@ -114,14 +114,10 @@ if ('serviceWorker' in navigator && ! window.lively4noserviceworker) {
                 break
         }
     })
-} else {
-  console.log("ignoring service worker... we try without.")
 }
 
 document.addEventListener('DOMContentLoaded', function () {
     if (Notification.permission !== "granted")
         Notification.requestPermission();
-
-
 });
 
