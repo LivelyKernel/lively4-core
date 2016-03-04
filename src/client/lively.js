@@ -13,6 +13,7 @@ import focalStorage from '../external/focalStorage.js';
 import * as components from './morphic/component-loader.js';
 
 import * as jquery from '../external/jquery.js';
+import * as _ from '../external/underscore.js';
 
 // a) Special shorthands for interactive development
 // b) this is the only reasonable way to use modules in template scripts, due to no shared lexical scope #TODO
@@ -55,6 +56,10 @@ var lively = class Lively {
     var comp  = document.createElement(name)
     lively.components.openInWindow(comp).then((container) => {
       pos = pos || lively.pt(100,100)
+
+      comp.changeMode("javascript")
+      comp.enableAutocompletion()
+
       lively.setPosition(container,pos)
     }).then( () => {
       comp.editor.focus();

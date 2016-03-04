@@ -269,11 +269,13 @@
         lively.components.createComponent("lively-editor")).then( comp => {
           console.log("comp: " + comp)
 
-          container.style.width = "850px"
+          container.style.width = "580px"
           container.style.height = "800px"
           comp.hideToolbar()
           comp.id = "editor"
           var aceComp = comp.shadowRoot.querySelector('juicy-ace-editor')
+          aceComp.enableAutocompletion()
+
           aceComp.doSave = text => {
             this.onSave()
           }

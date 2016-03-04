@@ -82,6 +82,11 @@
             session.setUseWrapMode( this.hasAttribute("wrapmode") );
 
 
+        // prevent error message when CTRL+P
+        editor.$blockScrolling = Infinity
+
+
+
         // Observe input textNode changes
         // Could be buggy as editor was also added to Light DOM;
             var observer = new MutationObserver(function(mutations) {
@@ -176,6 +181,15 @@
 
 
     // CUSTOMIZATION
+    TomalecAceEditorPrototype.enableAutocompletion = function(filename) {
+      return this.aceRequire("ace/ext/language_tools").then( module => {
+        this.editor.setOptions({
+            enableBasicAutocompletion: true,
+            enableSnippets: true,
+            enableLiveAutocompletion: false
+        });
+      })
+    }
 
     TomalecAceEditorPrototype.changeModeForFile = function(filename) {
       var modelist = ace.require("ace/ext/modelist");
@@ -206,6 +220,28 @@
 
         document.head.appendChild(script);
       }
+    }
+
+    TomalecAceEditorPrototype.aceRequire = function(modulePath) {
+      return new Promise(function(resolve, fail) {
+        var module = ace.require(modulePath);
+        if (module) {
+          resolve(module)
+        } else {
+          var realPath = modulePath.replace(/^(ace\/[a-z]+)\//,"$1-")
+          var script = document.createElement("Script");
+          script.type = "text/javascript";
+          script.src = lively4url + "/src/external/" + realPath + ".js";
+          script.onload = function() {
+            var module = ace.require(modulePath);
+            if(module)
+              resolve(module)
+            else
+              fail("ace-editor: could not load " + modulePath + " ("+ realPath +")" )
+          }
+          document.head.appendChild(script);
+        }
+      })
     }
 
     TomalecAceEditorPrototype.changeTheme = function(theme) {
