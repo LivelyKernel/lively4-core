@@ -188,6 +188,28 @@
             enableSnippets: true,
             enableLiveAutocompletion: false
         });
+        this.editor.completers[3] =  {
+          getCompletions: function(editor, session, pos, prefix, callback) {
+              // console.log("getCompletions: " + pos + " prefix " + prefix)
+              var curLine = session.getDocument().getLine(pos.row);
+              var curTokens = curLine.slice(0, pos.column).split(/\s+/);
+              var curCmd = _.last(curTokens);
+              // console.log("line : " + curLine + " curTokens: " + curTokens + " curCmd:" + curCmd)
+              if (!curCmd) return;
+              try {
+                var wordList = [];
+              curCmd = curCmd.replace(/\.[^.]*$/,"")
+              var obj = eval(curCmd);
+              wordList = _.allKeys(obj);
+              // console.log("complete: " + curCmd +"\n" + wordList)
+                callback(null, wordList.map(function(ea) {
+                  return {name: ea, value: ea, score: 300, meta: "eval"};
+                  }));
+              } catch(err) {
+                console.log("Could not complete: " + curCmd +", because of:" + err)
+              }
+            }
+          }
       })
     }
 
