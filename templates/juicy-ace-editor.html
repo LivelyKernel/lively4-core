@@ -354,7 +354,8 @@
         var editor = this.editor;
         var text = result
         var fromSel =  editor.getSelectionRange().end;
-        editor.selection.selectToPosition(fromSel) // don't replace existing selection
+        editor.selection.moveCursorToPosition(fromSel)
+        editor.selection.clearSelection() // don't replace existing selection
         editor.insert(text)
         var toSel =  editor.getSelectionRange().start;
         editor.selection.moveCursorToPosition(fromSel)
