@@ -119,7 +119,10 @@
     </script>
     <script type="lively4script" data-name="onSave">
     (doNotQuit) => {
-      return this.getSubmorph("#editor").saveFile()
+      return this.getSubmorph("#editor").saveFile().then( () => {
+          var sourceCode = this.getSubmorph("#editor").currentEditor().getValue()
+          lively.updateTemplate(sourceCode)
+      })
     }
     </script>
     <script type="lively4script" data-name="onAccept">

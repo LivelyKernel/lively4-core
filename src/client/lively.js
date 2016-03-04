@@ -191,6 +191,30 @@ var lively = class Lively {
    static unload() {
       lively.notify("unloading Lively is not supported yet! Please reload page....")
   }
+
+
+
+  static updateTemplate(html) {
+    var node =  $.parseHTML(html)[0]
+    if (!node) return;
+
+    var tagName = node.id
+    if (!tagName) return;
+
+    components.reloadComponent(html)
+
+    _.each($(tagName), function(oldInstance) {
+
+      var owner = oldInstance.parentElement;
+      var newInstance = document.createElement("lively-inspector")
+
+      owner.replaceChild(newInstance, oldInstance)
+      _.each(oldInstance.childNodes, function(ea) {
+        newInstance.appendChild(ea)
+      })
+    })
+  }
+
 }
 
 export default lively

@@ -33,7 +33,7 @@ export function register(componentName, template, prototype) {
 
     // clone the template again, so when more elements are created,
     // they get their own copy of elements
-    var clone = document.importNode(template, true);
+    var clone = document.importNode(templates[componentName], true);
     // #TODO replace the "template" reference with an indirection that can be changed from the outside,
     // e.g. var clone = document.importNode(templates[componentName], true);
     // but beeing able to modify it, because we have a reference should suffice at the moment...
@@ -214,4 +214,11 @@ export function openInWindow(component) {
 export function openComponentBin() {
   var bin = createComponent("lively-component-bin");
   openInWindow(bin);
+}
+
+export function reloadComponent(source) {
+  var template = $.parseHTML(source)[0]
+  var name = template.id
+  var templateClone = document.importNode(template.content, true);
+  lively.components.templates[name] = templateClone
 }
