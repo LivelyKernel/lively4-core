@@ -381,14 +381,6 @@
         return result
     }
 
-    TomalecAceEditorPrototype.printObject = function (obj) {
-        var result = ""
-        Object.keys(obj).forEach((name) => {
-            result += "\n   " +name + ": " + obj[name]
-        })
-        return result
-    }
-
     TomalecAceEditorPrototype.inspectIt = function (str) {
         var result;
         try { result =  this.boundEval(str) }
@@ -397,8 +389,7 @@
             console.log("Error: " + e)
             result = e
         }
-        var result = this.printObject(result)
-        this.printResult("" + result)
+        var result = lively.inspector.openInspector(result)
         return result
     }
 

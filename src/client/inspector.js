@@ -1,7 +1,7 @@
 
 'use strict';
 
-export default class Inspector {
+export default class Inspector extends HTMLDivElement {
 
   static printObject(object, depth, name) {
     var printStr = ""
@@ -35,7 +35,7 @@ export default class Inspector {
 
   static openInspector(obj) {
     return new Promise(resolve => {
-      var comp = lively.components.createComponent("TreeView")
+      var comp = lively.components.createComponent("lively-inspector")
       comp.id = "Inspector"
       comp.style.overflow = "scroll"
       lively.components.openInWindow(comp).then(w => {

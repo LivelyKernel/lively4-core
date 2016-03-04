@@ -7,6 +7,8 @@ import files from './files.js';
 import html from './html.js';
 import paths from './paths.js';
 
+import inspector from './inspector.js';
+
 
 import keys from './keys.js';
 import focalStorage from '../external/focalStorage.js';
@@ -27,6 +29,7 @@ var exportmodules = [
   "paths",
   "html",
   "components",
+  "inspector",
   "focalStorage"]
 
 // #LiveProgramming #Syntax #ES6Modules #Experiment #Jens
