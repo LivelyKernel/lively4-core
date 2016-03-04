@@ -40,8 +40,6 @@
       </div>
     </div>
 
-
-
     <script type="lively4script" data-name="initialize">
     () => {
       var container = $(this.shadowRoot).find(".container")[0];
@@ -108,6 +106,7 @@
              column: 0
           }, "\n" + s)
         })
+        this.getSubmorph('#console').editor.scrollToRow(1000000000000)
       }
     </script>
 

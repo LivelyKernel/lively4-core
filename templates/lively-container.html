@@ -17,6 +17,7 @@
     </style>
     <div id="container-navigation">
       <button id="edit">edit</button>
+      <button id="up">up</button>
       <input type="text" id="container-path" value="">
       <button id="cancel">cancel</button>
       <button id="save">save</button>
@@ -27,10 +28,9 @@
     </div>
     <content></content>
 
+
     <script type="lively4script" data-name="initialize">
     () => {
-
-
       if (this.getAttribute("load") == "auto") {
         var path = lively.preferences.getURLParameter("load")
         if (path) {
@@ -117,6 +117,11 @@
       this.hideCancelAndSave()
     }
     </script>
+    <script type="lively4script" data-name="onUp">
+    () => {
+    	this.followPath(this.getPath().replace(/(\/[^/]+$)|([^/]+\/$)/,"/"))
+    }
+    </script>
     <script type="lively4script" data-name="onSave">
     (doNotQuit) => {
       return this.getSubmorph("#editor").saveFile().then( () => {
@@ -154,6 +159,10 @@
     (content) => {
       try {
         var nodes = $.parseHTML(content)
+        if (nodes[0] && nodes[0].localName == 'template') {
+        	lively.notify("append template " + nodes[0].id)
+			return this.appendTemplate(nodes[0].id)
+        }
         lively.html.fixLinks(nodes, this.getDir(), (path) => this.followPath(path))
         nodes.forEach((ea) => {
           this.getSubmorph('#container-content').appendChild(ea)
@@ -163,6 +172,18 @@
       }
     }
     </script>
+    <script type="lively4script" data-name="appendTemplate">
+    (name) => {
+      try {
+      	var node = lively.components.createComponent(name)
+      	this.getSubmorph('#container-content').appendChild(node)
+		lively.components.loadByName(name)
+      } catch(e) {
+        console.log("Could not append html:" + content)
+      }
+    }
+    </script>
+
     <script type="lively4script" data-name="getDir">
     () => {
          return this.getPath().replace(/[^/]*$/,"")
@@ -186,7 +207,7 @@
     </script>
     <script type="lively4script" data-name="getURL">
     () => {
-      var path = this.getAttribute("data-path")
+      var path = this.getPath()
       if (path && path.match(/^https?:\/\//)) {
         return new URL(path)
       } else {
@@ -196,7 +217,7 @@
     </script>
     <script type="lively4script" data-name="getPath">
     () => {
-         return this.getAttribute("data-path")
+         return this.getAttribute("src")
     }
     </script>
     <script type="lively4script" data-name="setPath">
@@ -204,9 +225,6 @@
       if (!path) {
           path = ""
       }
-
-
-
 	  var isdir= path.match(/.\/$/)
 
     if (path.match(/^https?:\/\//)) {
@@ -218,7 +236,7 @@
     }
     path =  path + (isdir ? "/" : "")
 
-	  this.setAttribute("data-path", path)
+	  this.setAttribute("src", path)
       this.clear()
       this.getSubmorph('#container-path').value = path
       var url = this.getURL()
@@ -294,9 +312,6 @@
       lively.components.loadUnresolved(container)
     }
     </script>
-
-
-
 
 </template>
 <script class="registrationScript">

@@ -204,13 +204,24 @@ var lively = class Lively {
     components.reloadComponent(html)
 
     _.each($(tagName), function(oldInstance) {
+      if (oldInstance.__ingoreUpdates) return
 
       var owner = oldInstance.parentElement;
-      var newInstance = document.createElement("lively-inspector")
+      var newInstance = document.createElement(tagName)
 
       owner.replaceChild(newInstance, oldInstance)
       _.each(oldInstance.childNodes, function(ea) {
         newInstance.appendChild(ea)
+        console.log("append old child: " + ea)
+
+      })
+      _.each(oldInstance.attributes, function(ea) {
+        console.log("set old attribute " + ea.name + " to: " + ea.value)
+        newInstance.setAttribute(ea.name, ea.value)
+
+      })
+      _.each(_.keys(oldInstance), function(ea) {
+        console.log("ignore properties: " + newInstance[ea] + " <-- " + oldInstance[ea])
       })
     })
   }

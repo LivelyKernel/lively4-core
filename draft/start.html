@@ -42,6 +42,7 @@
         console.log("load lively 2/3")
         lively.components.loadUnresolved().then(function() {
           console.log("load lively 3/3")
+            $('lively-container')[0].__ingoreUpdates = true // a hack... since I am missing DevLayers...
             lively.initializeDocument(document)
             console.log("Finally loaded!")
         })
