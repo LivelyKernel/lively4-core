@@ -15,7 +15,7 @@
     {action: "installMethods", target: "Object",             sources: ["obj"],    methods: ["addScript","clone","deepCopy","extend","inherit","isArray","isBoolean","isElement","isEmpty","isFunction","isNumber","isObject","isRegExp","isString","isUndefined","merge","mergePropertyInHierarchy","values","valuesInPropertyHierarchy"]},
     {action: "installMethods", target: "Object.prototype",   sources: ["obj"],    methods: []},
     {action: "installMethods", target: "String.prototype",   sources: ["string"], methods: ["camelize","capitalize","digitValue","empty","endsWith","hashCode","include","pad","regExpEscape","startsWith","startsWithVowel","succ","times","toArray","toQueryParams","truncate"]},
-    {action: "installMethods", target: "Function.prototype", sources: ["class"],  methods: ["create","addMethods","isSubclassOf","superclasses","categoryNameFor","remove"], alias: [["subclass", "create"]]},
+    {action: "installMethods", target: "Function.prototype", sources: ["klass"],  methods: ["create","addMethods","isSubclassOf","superclasses","categoryNameFor","remove"], alias: [["subclass", "create"]]},
 
     {action: "installObject", target: "Numbers",                source: "num",        methods: ["average","between","convertLength","humanReadableByteSize","median","normalRandom","parseLength","random","sort"]},
     {action: "installObject", target: "Properties",             source: "properties", methods: ["all","allOwnPropertiesOrFunctions","allProperties","any","forEachOwn","hash","nameFor","own","ownValues","values"]},
@@ -1236,8 +1236,7 @@ var classHelper = exports.classHelper = {
 };
 
 // Methods for creating and modifying class objects.
-exports.class
-= {
+exports.klass = exports.class = {
 
   create: function(/*... */) {
     // Main method of the class system.
@@ -1317,7 +1316,7 @@ exports.class
     };
 
     // the remaining args should be category strings or source objects
-    exports.class.addMethods.apply(Global, [klass].concat(args));
+    exports.klass.addMethods.apply(Global, [klass].concat(args));
 
     if (!klass.prototype.initialize)
       klass.prototype.initialize = function() {};
@@ -1342,7 +1341,7 @@ exports.class
         // we apply traits afterwards because they can override behavior
         traits.push(args[i]);
       } else {
-        exports.class.addCategorizedMethods(klass, category,
+        exports.klass.addCategorizedMethods(klass, category,
           args[i] instanceof Function ? (args[i])() : args[i]);
       }
     }
@@ -1454,14 +1453,14 @@ exports.class
 
   isSubclassOf: function(klassA, klassB) {
     // Is `klassA` a descendent of klassB?
-    return exports.class.superclasses(klassA).indexOf(klassB) > -1;
+    return exports.klass.superclasses(klassA).indexOf(klassB) > -1;
   },
 
   superclasses: function(klass) {
     // show-in-doc
     if (!klass.superclass) return [];
     if (klass.superclass === Object) return [Object];
-    return exports.class.superclasses(klass.superclass).concat([klass.superclass]);
+    return exports.klass.superclasses(klass.superclass).concat([klass.superclass]);
   },
 
   categoryNameFor: function(klass, propName) {
