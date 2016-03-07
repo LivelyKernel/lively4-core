@@ -1,5 +1,5 @@
 'use strict';
-import * as scripts from './script-manager.js'
+import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
 import * as preferences from './preferences.js';
 import * as persistence from './persistence.js';
@@ -17,6 +17,11 @@ import * as components from './morphic/component-loader.js';
 import * as jquery from '../external/jquery.js';
 import * as _ from '../external/underscore.js';
 
+
+let $ = window.$,
+  babel = window.babel,
+  System = window.System; // known global variables.
+
 // a) Special shorthands for interactive development
 // b) this is the only reasonable way to use modules in template scripts, due to no shared lexical scope #TODO
 var exportmodules = [
@@ -30,7 +35,7 @@ var exportmodules = [
   "html",
   "components",
   "inspector",
-  "focalStorage"]
+  "focalStorage"];
 
 // #LiveProgramming #Syntax #ES6Modules #Experiment #Jens
 // By structuring our modules differently, we still can act as es6 module to the outside but develop at runtime
@@ -39,112 +44,110 @@ var lively = class Lively {
   static loaded() {
       // guard againsst wrapping twice and ending in endless recursion
       if (!console.log.isWrapped) {
-          var nativeLog = console.log
+          var nativeLog = console.log;
           console.log = function() {
-              nativeLog.apply(console, arguments)
-              lively.log.apply(undefined, arguments)
-          }
-          console.log.isWrapped = true
-          console.log.nativeLog = nativeLog // #TODO use generic Wrapper mechanism here
+              nativeLog.apply(console, arguments);
+              lively.log.apply(undefined, arguments);
+          };
+          console.log.isWrapped = true;
+          console.log.nativeLog = nativeLog; // #TODO use generic Wrapper mechanism here
       }
-      exportmodules.forEach(name => lively[name] = eval(name)) // oh... this seems uglier than expected
+      exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expected
   }
 
   static array(anyList){
-    return Array.prototype.slice.call(anyList)
+    return Array.prototype.slice.call(anyList);
   }
 
   static openWorkspace(string, pos) {
-    var name = "juicy-ace-editor"
-    var comp  = document.createElement(name)
+    var name = "juicy-ace-editor";
+    var comp  = document.createElement(name);
     lively.components.openInWindow(comp).then((container) => {
-      pos = pos || lively.pt(100,100)
-
-      comp.changeMode("javascript")
-      comp.enableAutocompletion()
-
-      lively.setPosition(container,pos)
+      pos = pos || lively.pt(100,100);
+      comp.changeMode("javascript");
+      comp.enableAutocompletion();
+      lively.setPosition(container,pos);
     }).then( () => {
       comp.editor.focus();
-    })
+    });
   }
 
   static boundEval(str, ctx) {
     var interactiveEval = function(text) { return eval(text) };
-    var transpiledSource = babel.transform(str).code
+    var transpiledSource = babel.transform(str).code;
     // #TODO alt: babel.run
     // #TODO context does not seem to work!
     return interactiveEval.call(ctx, transpiledSource);
   }
 
   static pt(x,y) {
-    return {x: x, y: y}
+    return {x: x, y: y};
   }
 
   static setPosition(obj, point) {
-      obj.style.position = "absolute"
-      obj.style.left = ""+  point.x + "px"
-      obj.style.top = "" + point.y + "px"
+      obj.style.position = "absolute";
+      obj.style.left = ""+  point.x + "px";
+      obj.style.top = "" + point.y + "px";
   }
 
   static openFile(url) {
     if (url.hostname == "lively4"){
       var container  = $('lively-container')[0];
       if (container) {
-        container.followPath(url.pathname)
+        container.followPath(url.pathname);
       } else {
-        console.log("fall back on editor: "+ url)
-        editFile(url)
+        console.log("fall back on editor: "+ url);
+        this.editFile(url);
       }
     } else {
-      editFile(url)
+      this.editFile(url);
     }
   }
 
   static editFile(url) {
-    var editor  = document.createElement("lively-editor")
+    var editor  = document.createElement("lively-editor");
     lively.components.openInWindow(editor).then((container) => {
-        lively.setPosition(container, lively.pt(100, 100))
-        editor.setURL(url)
-        editor.loadFile()
-    })
+        lively.setPosition(container, lively.pt(100, 100));
+        editor.setURL(url);
+        editor.loadFile();
+    });
   }
 
   static getContextMenu() {
     // lazy module loading
     return new Promise(function(resolve){
-      if (lively.contextmenu) resolve(lively.contextmenu)
+      if (lively.contextmenu) resolve(lively.contextmenu);
       else System.import(preferences.getBaseURL() + "/src/client/contextmenu.js")
         .then( module => {lively.contextmenu = module.default})
-        .then( () => resolve(lively.contextmenu))
-    })
+        .then( () => resolve(lively.contextmenu));
+    });
   }
 
   static hideContextMenu() {
-    this.getContextMenu().then(m => m.hide())
+    this.getContextMenu().then(m => m.hide());
   }
 
   static openContextMenu(container, evt) {
-    console.log("open context menu")
-    this.getContextMenu().then(m => m.openIn(container, evt))
+    console.log("open context menu");
+    this.getContextMenu().then(m => m.openIn(container, evt));
   }
 
   static log(/* varargs */) {
-      var args = arguments
+      var args = arguments;
       $('lively-console').each(function() {
         try{
-          if (this.log) this.log.apply(this, args)
+          if (this.log) this.log.apply(this, args);
         }catch(e) {
           // ignore...
         }
-      })
+      });
   }
 
   static notify(title, text, timout) {
     // just in case...
     if (Notification.permission !== "granted") Notification.requestPermission();
 
-    console.log("NOTE: " + title  + " (" + text + ")")
+    console.log("NOTE: " + title  + " (" + text + ")");
     var notification = new Notification(title || "", {
       icon: 'https://www.lively-kernel.org/media/livelylogo-small.png',
       body: text || "",
@@ -154,22 +157,22 @@ var lively = class Lively {
   }
 
   static initializeDocument(doc, loadedAsExtension) {
-    console.log("Lively4 initializeDocument")
+    console.log("Lively4 initializeDocument");
     if (loadedAsExtension) {
       doc.addEventListener('contextmenu', function(evt) {
           if (evt.ctrlKey) {
             evt.preventDefault();
-            lively.openContextMenu($('body')[0], evt)
+            lively.openContextMenu($('body')[0], evt);
             return false;
           }
       }, false);
       lively.notify("Lively4 extension loaded!",
         "  CTRL+LeftClick  ... open halo\n" +
-        "  CTRL+RightClick ... open menu")
+        "  CTRL+RightClick ... open menu");
     } else {
       doc.addEventListener('contextmenu', function(evt) {
         evt.preventDefault();
-        lively.openContextMenu($('body')[0], evt)
+        lively.openContextMenu($('body')[0], evt);
         return false;
       }, false);
     }
@@ -180,7 +183,7 @@ var lively = class Lively {
   }
 
   static initializeHalos() {
-    if ($('lively-halos').size() == 0) {
+    if ($('lively-halos').size() === 0) {
         $('<lively-halos>')
             .attr('data-lively4-donotpersist', 'all')
             .appendTo($('body'));
@@ -189,45 +192,45 @@ var lively = class Lively {
   }
 
    static unload() {
-      lively.notify("unloading Lively is not supported yet! Please reload page....")
+      lively.notify("unloading Lively is not supported yet! Please reload page....");
   }
 
 
 
   static updateTemplate(html) {
-    var node =  $.parseHTML(html)[0]
+    var node =  $.parseHTML(html)[0];
     if (!node) return;
 
-    var tagName = node.id
+    var tagName = node.id;
     if (!tagName) return;
 
-    components.reloadComponent(html)
+    components.reloadComponent(html);
 
     _.each($(tagName), function(oldInstance) {
-      if (oldInstance.__ingoreUpdates) return
+      if (oldInstance.__ingoreUpdates) return;
 
       var owner = oldInstance.parentElement;
-      var newInstance = document.createElement(tagName)
+      var newInstance = document.createElement(tagName);
 
-      owner.replaceChild(newInstance, oldInstance)
+      owner.replaceChild(newInstance, oldInstance);
       _.each(oldInstance.childNodes, function(ea) {
-        newInstance.appendChild(ea)
-        console.log("append old child: " + ea)
+        newInstance.appendChild(ea);
+        console.log("append old child: " + ea);
 
-      })
+      });
       _.each(oldInstance.attributes, function(ea) {
-        console.log("set old attribute " + ea.name + " to: " + ea.value)
-        newInstance.setAttribute(ea.name, ea.value)
+        console.log("set old attribute " + ea.name + " to: " + ea.value);
+        newInstance.setAttribute(ea.name, ea.value);
 
-      })
+      });
       _.each(_.keys(oldInstance), function(ea) {
-        console.log("ignore properties: " + newInstance[ea] + " <-- " + oldInstance[ea])
-      })
-    })
+        console.log("ignore properties: " + newInstance[ea] + " <-- " + oldInstance[ea]);
+      });
+    });
   }
 
-}
+};
 
-export default lively
-lively.loaded()
-console.log("loaded lively")
+export default lively;
+lively.loaded();
+console.log("loaded lively");
