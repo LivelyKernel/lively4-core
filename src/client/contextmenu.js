@@ -10,6 +10,7 @@ var contextmenu = {
     this.hide()
     return lively.components.openInWindow(comp).then((w) => {
         lively.setPosition(w, lively.pt(evt.clientX, evt.clientY))
+        return comp
     })
   },
   // idea: expose items as structure rather then as computation, should led itself to customization
@@ -19,6 +20,11 @@ var contextmenu = {
       contextmenu.hide()
       lively.openWorkspace("", lively.pt(evt.clientX, evt.clientY))
     }],
+    ["Browser",     (evt) => {
+      contextmenu.openComponentInWindow("lively-container", evt).then(comp => {
+        comp.followPath(lively4url +"/")
+    })
+    }],
     ["File Editor",     (evt) => contextmenu.openComponentInWindow("lively-editor", evt)],
     ["File Browser",    (evt) => contextmenu.openComponentInWindow("lively-file-browser", evt)],
     ["Filesystems",     (evt) => contextmenu.openComponentInWindow("lively-filesystems", evt)],
@@ -26,9 +32,9 @@ var contextmenu = {
     ["Console",         (evt) => contextmenu.openComponentInWindow("lively-console", evt)],
     ["Component Bin",   (evt) => contextmenu.openComponentInWindow("lively-component-bin", evt)],
     ["Persistens Settings", (evt) => {
-        contextmenu.openComponentInWindow("lively-persistence-settings").then((container) => {
-            container.style.height = "150px"
-            container.style.width = "400px"
+        contextmenu.openComponentInWindow("lively-persistence-settings", evt).then((comp) => {
+            comp.parentElement.style.height = "150px"
+            comp.parentElement.style.width = "400px"
         })
     }],
     ["Text", function(evt) {
