@@ -2,19 +2,15 @@
 
 export default class Files {
 
-  static loadFile(urlString){
-  	var url = new URL(urlString);
-  	return new Promise((resolve, reject) => {
-  		$.get(url, null, function(text) {
-  			// this should not be done here! - Felix
-  			// currentEditor().setValue(text)
-  			console.log("file " + url + " read.")
-  			resolve(text);
-  		}).fail(function(e) {
-  	    	console.log('could not load ' + url + ": " + e); // or whatever
-  	    	reject(e);
-  		});
-  	});
+  static  loadFile(urlString) {
+    var url = new URL(urlString);
+    return fetch(url).then(function (response, err) {
+      if (err) {
+        console.log("Err: ",  err)
+      }
+      console.log("file " + url + " read.");
+      return response.text();
+    })
   }
 
   static saveFile(urlString, data){
