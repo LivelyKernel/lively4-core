@@ -296,7 +296,7 @@
             exec: (editor) => {
                 var text = editor.currentSelectionOrLine()
                 var result = this.tryBoundEval(text);
-                console.log("" + result)
+                lively.notify("" + result)
             }
         })
 

@@ -3,6 +3,8 @@ import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
 import * as preferences from './preferences.js';
 import * as persistence from './persistence.js';
+
+
 import files from './files.js';
 import html from './html.js';
 import paths from './paths.js';
@@ -11,9 +13,11 @@ import inspector from './inspector.js';
 
 
 import keys from './keys.js';
-import focalStorage from '../external/focalStorage.js';
 import * as components from './morphic/component-loader.js';
 
+/* expose external modules */
+import * as color from '../external/tinycolor.js';
+import focalStorage from '../external/focalStorage.js';
 import * as jquery from '../external/jquery.js';
 import * as _ from '../external/underscore.js';
 
@@ -35,34 +39,51 @@ var exportmodules = [
   "html",
   "components",
   "inspector",
+  "color",
   "focalStorage"];
+
+
 
 // #LiveProgramming #Syntax #ES6Modules #Experiment #Jens
 // By structuring our modules differently, we still can act as es6 module to the outside but develop at runtime
 // #IDEA: I refactored from "static module and function style" to "dynamic object" style
 var lively = class Lively {
 
+
+
   static import(moduleName, path) {
+    if (!path) path = this.defaultPath(moduleName)
+    if (!path) throw Error("Could not imoport " + moduleName + ", not path specified!")
+
     if (this[moduleName])
       return new Promise(function(resolve) { resolve(this[moduleName])})
     return System.import(path).then( module => {
       console.log("lively: load "+ moduleName)
-      this[moduleName] = module.default
+      this[moduleName] = module.default || module
     })
   }
 
+  static defaultPath(moduleName) {
+    return ({
+      math: lively4url + "/src/external/math.js",
+    })[moduleName]
+  }
+
+
   static loaded() {
-      // guard againsst wrapping twice and ending in endless recursion
-      if (!console.log.isWrapped) {
-          var nativeLog = console.log;
-          console.log = function() {
-              nativeLog.apply(console, arguments);
-              lively.log.apply(undefined, arguments);
-          };
-          console.log.isWrapped = true;
-          console.log.nativeLog = nativeLog; // #TODO use generic Wrapper mechanism here
-      }
-      exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expected
+
+
+    // guard againsst wrapping twice and ending in endless recursion
+    if (!console.log.isWrapped) {
+        var nativeLog = console.log;
+        console.log = function() {
+            nativeLog.apply(console, arguments);
+            lively.log.apply(undefined, arguments);
+        };
+        console.log.isWrapped = true;
+        console.log.nativeLog = nativeLog; // #TODO use generic Wrapper mechanism here
+    }
+    exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expected
   }
 
   static array(anyList){
