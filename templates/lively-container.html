@@ -271,7 +271,8 @@
               ea.name+ "</a></li>").join("\n")+"</ul>"
           if (render) this.appendHtml(html)
         }).catch(function(err){
-          lively.notify("ERROR: Could not set path: " + path,  "because of: " + err)
+          console.log("Error: ", err)
+          lively.notify("ERROR: Could not set path: " + path,  "because of: ",  err)
         })
       }
       // Handling files
@@ -293,7 +294,8 @@
           if (render) this.appendHtml("<pre>" + content +"</pre>")
         }
       }).catch(function(err){
-        lively.notify("ERROR: Could not set path: " + path,  "because of: " + err)
+        console.log("Error: ", err)
+        lively.notify("ERROR: Could not set path: " + path,  "because of: ", err)
       })
     }
     </script>
