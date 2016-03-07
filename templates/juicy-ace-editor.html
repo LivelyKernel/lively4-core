@@ -200,10 +200,10 @@
                 var wordList = [];
               curCmd = curCmd.replace(/\.[^.]*$/,"")
               var obj = eval(curCmd);
-              wordList = _.allKeys(obj);
+              wordList = lively.allProperties(obj);
               // console.log("complete: " + curCmd +"\n" + wordList)
-                callback(null, wordList.map(function(ea) {
-                  return {name: ea, value: ea, score: 300, meta: "eval"};
+                callback(null, _.keys(wordList).map(function(ea) {
+                  return {name: ea, value: ea, score: 300, meta: wordList[ea]};
                   }));
               } catch(err) {
                 console.log("Could not complete: " + curCmd +", because of:" + err)
@@ -212,7 +212,6 @@
           }
       })
     }
-
     TomalecAceEditorPrototype.changeModeForFile = function(filename) {
       var modelist = ace.require("ace/ext/modelist");
       var mode = modelist.getModeForPath(filename).name;

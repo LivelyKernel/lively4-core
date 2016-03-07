@@ -302,7 +302,18 @@ var lively = class Lively {
     setTimeout( () => $(comp).remove(), timeout || 3000)
     return comp
   }
+
+  static allProperties(obj, result) {
+    result = result || {};
+    Object.getOwnPropertyNames(obj).forEach( name => {result[name] = obj.constructor.name})
+    if (obj.__proto__) {
+      lively.allProperties(obj.__proto__, result);
+    }
+    return result
+  }
 }
+
+
 
 export default lively;
 lively.loaded();
