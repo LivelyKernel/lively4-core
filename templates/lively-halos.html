@@ -62,9 +62,13 @@
       var $halos = $("lively-halos")
       $halos.hide();
       window.HaloService = {
-        showHalos: function (target) {
+        showHalos: function (target, path) {
+
           var $target = $(target);
-          var offset = $target.offset();
+          // var offset = $target.offset();
+
+          var bounds = target.getBoundingClientRect()
+          var offset = {top: bounds.top, left: bounds.left}
 
           // viewport coordinates
           var scrollTop = Math.abs($(document).scrollTop());

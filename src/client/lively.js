@@ -41,6 +41,16 @@ var exportmodules = [
 // By structuring our modules differently, we still can act as es6 module to the outside but develop at runtime
 // #IDEA: I refactored from "static module and function style" to "dynamic object" style
 var lively = class Lively {
+
+  static import(moduleName, path) {
+    if (this[moduleName])
+      return new Promise(function(resolve) { resolve(this[moduleName])})
+    return System.import(path).then( module => {
+      console.log("lively: load "+ moduleName)
+      this[moduleName] = module.default
+    })
+  }
+
   static loaded() {
       // guard againsst wrapping twice and ending in endless recursion
       if (!console.log.isWrapped) {
@@ -229,7 +239,49 @@ var lively = class Lively {
     });
   }
 
-};
+  static showPoint(point) {
+    var comp = document.createElement("div")
+    comp.style['pointer-events'] = "none"
+    comp.style.width = "5px"
+    comp.style.height = "5px"
+    comp.style.padding = "1px"
+    comp.style.backgroundColor = "red"
+    document.body.appendChild(comp)
+    lively.setPosition(comp, point)
+    comp.setAttribute("data-is-meta", "true")
+
+    setTimeout( () => $(comp).remove(), 3000)
+    // ea.getBoundingClientRect
+
+  }
+
+  static showElement(elem, timeout) {
+    var comp = document.createElement("div")
+    var bounds = elem.getBoundingClientRect()
+    var pos = lively.pt(
+      bounds.left +  $(document).scrollLeft(),
+      bounds.top +  $(document).scrollTop())
+
+    comp.style.width = bounds.width +"px"
+    comp.style.height = bounds.height +"px"
+    comp.style['pointer-events'] = "none"
+    // comp.style.height = "0px"
+    comp.style["z-index"] = 1000;
+    comp.style.border = "1px solid red";
+    document.body.appendChild(comp)
+    lively.setPosition(comp, pos)
+    comp.setAttribute("data-is-meta", "true")
+
+    comp.innerHTML = "<pre data-is-meta='true' style='position: relative; top: -8px; width: 200px; background: rgba(255,255,255,0.8); color: red; font-size: 8pt'>" +
+        elem.tagName +": " + elem.id + "\n" +
+        elem.getAttribute("class") +"\n"
+
+      + "</pre>"
+
+    setTimeout( () => $(comp).remove(), timeout || 3000)
+    return comp
+  }
+}
 
 export default lively;
 lively.loaded();
