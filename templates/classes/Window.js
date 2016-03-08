@@ -5,7 +5,7 @@ import Morph from './Morph.js';
 export default class Window extends Morph {
 
   static hello() {
-    return "world"
+    return "world!"
   }
 
   // window title
@@ -94,6 +94,7 @@ export default class Window extends Morph {
   }
 
   focus(e) {
+    this.style.backgroundColor = livle.color.random()
     var minZIndex = 100;
     // find all windows but this one
     var allWindowsButThis = Array.from(document.querySelectorAll('lively-window'));

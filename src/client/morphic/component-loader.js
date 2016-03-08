@@ -27,7 +27,20 @@ export default class ComponentLoader {
   static get proxies() {
     return proxies
   }
-
+  
+  static protypeToComponentName(prototype) {
+    return _.detect(_.keys(this.prototypes), 
+      name => this.prototypes[name] ==  prototype)
+  }
+  
+  static updatePrototype(prototype) {
+    var componentName = this.protypeToComponentName(prototype)
+    if (componentName) {
+      this.prototypes[componentName] = prototype
+      this.proxies[componentName].__proto__ = prototype
+    }
+  }
+  
   // this function registers a custom element,
   // it is called from the bootstap code in the component templates
   static register(componentName, template, prototype) {
