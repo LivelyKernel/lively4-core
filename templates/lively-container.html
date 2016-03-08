@@ -204,7 +204,9 @@
         var html = $.parseHTML(htmlSource)
         lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path))
         console.log("html", html)
-        html.forEach((ea) => this.getSubmorph('#container-content').appendChild(ea))
+        var root = this.getSubmorph('#container-content');
+        html.forEach((ea) => root.appendChild(ea))
+        lively.components.loadUnresolved(root)
       })
     }
     </script>
@@ -214,9 +216,10 @@
         var nodes = $.parseHTML(content)
         if (nodes[0] && nodes[0].localName == 'template') {
         	lively.notify("append template " + nodes[0].id)
-			return this.appendTemplate(nodes[0].id)
+			    return this.appendTemplate(nodes[0].id)
         }
-        lively.html.fixLinks(nodes, this.getDir(), (path) => this.followPath(path))
+        lively.html.fixLinks(nodes, this.getDir(), 
+          (path) => this.followPath(path))
         nodes.forEach((ea) => {
           this.getSubmorph('#container-content').appendChild(ea)
         })
