@@ -13,6 +13,7 @@ export default class Window extends Morph {
     this.render();
   }
 
+
   get isFixed() {
     return this.hasAttribute('fixed');
   }
