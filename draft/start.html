@@ -42,10 +42,10 @@
         console.log("load lively 2/3")
         lively.components.loadUnresolved().then(function() {
           console.log("load lively 3/3")
+            lively.initializeDocument(document)
             $('lively-container')[0].__ingoreUpdates = true // a hack... since I am missing DevLayers...
             $('lively-container')[0].shadowRoot
-              .querySelector('container').style.overflow = "visible"
-            lively.initializeDocument(document)
+              .querySelector('#container-content').style.overflow = "visible"
             console.log("Finally loaded!")
         })
     })}).catch(function(err) {
