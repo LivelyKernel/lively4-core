@@ -49,6 +49,9 @@ var exportmodules = [
 // #IDEA: I refactored from "static module and function style" to "dynamic object" style
 var lively = class Lively {
 
+  static hello() {
+    return "world"
+  }
 
 
   static import(moduleName, path, forceLoad) {
