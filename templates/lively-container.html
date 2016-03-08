@@ -175,6 +175,7 @@
     }
     </script>
     
+
     <script type="lively4script" data-name="onSave">
     (doNotQuit) => {
       return this.getSubmorph("#editor").saveFile().then( () => {
@@ -257,6 +258,7 @@
          return this.getPath().replace(/[^/]*$/,"")
     }
     </script>
+    
     <script type="lively4script" data-name="followPath">
     (path) => {
       if (_.last(this.history()) !== path)
@@ -273,11 +275,13 @@
       }
     }
     </script>
+    
     <script type="lively4script" data-name="isEditing">
     () => {
       return this.getAttribute("mode") == "edit"
     }
     </script>
+    
     <script type="lively4script" data-name="getURL">
     () => {
       var path = this.getPath()
@@ -288,18 +292,20 @@
       }
     }
     </script>
+    
     <script type="lively4script" data-name="getPath">
     () => {
          return this.getAttribute("src")
     }
     </script>
+    
     <script type="lively4script" data-name="setPath">
     function (path, donotrender) {
       if (!path) {
           path = ""
       }
 	  var isdir= path.match(/.\/$/)
-
+	  
     if (path.match(/^https?:\/\//)) {
       var url = new URL(path)
       url.pathname = lively.paths.normalize(url.pathname)
@@ -313,9 +319,7 @@
       this.clear()
       this.getSubmorph('#container-path').value = path
       var url = this.getURL()
-
-
-      console.log("set url: " + url)
+      // console.log("set url: " + url)
       this.sourceContent = "NOT EDITABLE"
       var render = !donotrender
       // Handling directories
@@ -357,20 +361,18 @@
       })
     }
     </script>
+    
+    <!-- EDIT FILE -->
     <script type="lively4script" data-name="editFile">
     () => {
-      // window.comp = that.shadowRoot.querySelector("lively-editor")
-	  // window.aceComp = comp.shadowRoot.querySelector('juicy-ace-editor')
-
-
       this.clear()
       var container=  this.getSubmorph('#container-content')
       lively.components.openIn(container,
         lively.components.createComponent("lively-editor")).then( comp => {
           console.log("comp: " + comp)
 
-          container.style.width = "580px"
-          container.style.height = "800px"
+          container.style.width = "100%"
+          container.style.height = "100%"
           comp.hideToolbar()
           comp.id = "editor"
           var aceComp = comp.shadowRoot.querySelector('juicy-ace-editor')

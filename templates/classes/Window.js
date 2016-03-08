@@ -22,9 +22,7 @@ export default class Window extends Morph {
     return this.hasAttribute('fixed');
   }
 
-  attachedCallback() {
-    console.log('window attachedCallback!');
-
+  setup() {
     // define shortcut variables
     this.titleSpan = this.shadowRoot.querySelector('.window-title span');
     this.minButton = this.shadowRoot.querySelector('.window-min');
@@ -48,6 +46,12 @@ export default class Window extends Morph {
     document.addEventListener('mouseup', (e) => { this.windowMouseUp(e); });
 
     this.addEventListener('created', (e) => { this.focus() });
+  }
+
+  attachedCallback() {
+    console.log('window attachedCallback!');
+
+    this.setup()
 
     this.created = true;
     this.render();

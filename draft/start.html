@@ -44,6 +44,8 @@
           console.log("load lively 3/3")
             lively.initializeDocument(document)
             $('lively-container')[0].__ingoreUpdates = true // a hack... since I am missing DevLayers...
+            $('lively-container')[0].style.width = "700px"
+            $('lively-container')[0].style.height = "800px"
             $('lively-container')[0].shadowRoot
               .querySelector('#container-content').style.overflow = "visible"
             console.log("Finally loaded!")
