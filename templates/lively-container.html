@@ -308,20 +308,25 @@
       if (!path) {
           path = ""
       }
-	  var isdir= path.match(/.\/$/)
-	  
-    if (path.match(/^https?:\/\//)) {
-      var url = new URL(path)
-      url.pathname = lively.paths.normalize(url.pathname)
-      path = "" + url
-    } else {
-      path = lively.paths.normalize(path)
-    }
-    path =  path + (isdir ? "/" : "")
-
-	  this.setAttribute("src", path)
+  	  var isdir= path.match(/.\/$/)
+  	  
+      if (path.match(/^https?:\/\//)) {
+        var url = new URL(path)
+        url.pathname = lively.paths.normalize(url.pathname)
+        path = "" + url
+      } else {
+        path = lively.paths.normalize(path)
+      }
+      path =  path + (isdir ? "/" : "")
+  
+      var container=  this.getSubmorph('#container-content')
+  	  
+  	  this.setAttribute("src", path)
       this.clear()
       this.getSubmorph('#container-path').value = path
+      container.style.overflow = "auto";
+
+      
       var url = this.getURL()
       // console.log("set url: " + url)
       this.sourceContent = "NOT EDITABLE"
@@ -375,8 +380,8 @@
         lively.components.createComponent("lively-editor")).then( comp => {
           console.log("comp: " + comp)
 
-          container.style.width = "100%"
-          container.style.height = "100%"
+          container.style.overflow = "hidden";
+          
           comp.hideToolbar()
           comp.id = "editor"
           var aceComp = comp.shadowRoot.querySelector('juicy-ace-editor')
