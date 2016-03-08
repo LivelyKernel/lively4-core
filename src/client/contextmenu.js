@@ -30,6 +30,7 @@ var contextmenu = {
     ["Filesystems",     (evt) => contextmenu.openComponentInWindow("lively-filesystems", evt)],
     ["Terminal",        (evt) => contextmenu.openComponentInWindow("lively-terminal", evt)],
     ["Console",         (evt) => contextmenu.openComponentInWindow("lively-console", evt)],
+     ["Math Workspace",         (evt) => contextmenu.openComponentInWindow("lively-math", evt)],
     ["Component Bin",   (evt) => contextmenu.openComponentInWindow("lively-component-bin", evt)],
     ["Persistens Settings", (evt) => {
         contextmenu.openComponentInWindow("lively-persistence-settings", evt).then((comp) => {

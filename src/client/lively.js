@@ -56,7 +56,7 @@ var lively = class Lively {
     if (!path) throw Error("Could not imoport " + moduleName + ", not path specified!")
 
     if (this[moduleName])
-      return new Promise(function(resolve) { resolve(this[moduleName])})
+      return new Promise((resolve) => { resolve(this[moduleName])})
     return System.import(path).then( module => {
       console.log("lively: load "+ moduleName)
       this[moduleName] = module.default || module
