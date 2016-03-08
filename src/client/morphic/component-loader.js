@@ -9,6 +9,8 @@ export var templates = {}
 export var prototypes = {}
 export var proxies = {}
 
+// ... #TODO export default class ComponentLoader
+
 // this function registers a custom element,
 // it is called from the bootstap code in the component templates
 export function register(componentName, template, prototype) {

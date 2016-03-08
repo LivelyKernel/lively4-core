@@ -4,6 +4,10 @@ import Morph from './Morph.js';
 
 export default class Window extends Morph {
 
+  static hello() {
+    return "world"
+  }
+
   // window title
   get title() {
     return this._title;
@@ -12,7 +16,6 @@ export default class Window extends Morph {
     this._title =  val;
     this.render();
   }
-
 
   get isFixed() {
     return this.hasAttribute('fixed');
