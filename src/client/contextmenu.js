@@ -18,26 +18,31 @@ export default class ContextMenu {
   static items () {
     return [
     ["Workspace", (evt) => {
-      contextmenu.hide()
+      this.hide()
       lively.openWorkspace("", lively.pt(evt.clientX, evt.clientY))
     }],
     ["Browser",     (evt) => {
-      contextmenu.openComponentInWindow("lively-container", evt).then(comp => {
+      this.openComponentInWindow("lively-container", evt).then(comp => {
         comp.followPath(lively4url +"/")
     })
     }],
-    ["File Editor",     (evt) => contextmenu.openComponentInWindow("lively-editor", evt)],
-    ["File Browser",    (evt) => contextmenu.openComponentInWindow("lively-file-browser", evt)],
-    ["Filesystems",     (evt) => contextmenu.openComponentInWindow("lively-filesystems", evt)],
-    ["Terminal",        (evt) => contextmenu.openComponentInWindow("lively-terminal", evt)],
-    ["Console",         (evt) => contextmenu.openComponentInWindow("lively-console", evt)],
-     ["Math Workspace",         (evt) => contextmenu.openComponentInWindow("lively-math", evt)],
-    ["Component Bin",   (evt) => contextmenu.openComponentInWindow("lively-component-bin", evt)],
+    ["File Editor",     (evt) => this.openComponentInWindow("lively-editor", evt)],
+    ["File Browser",    (evt) => this.openComponentInWindow("lively-file-browser", evt)],
+    ["Filesystems",     (evt) => this.openComponentInWindow("lively-filesystems", evt)],
+    ["Terminal",        (evt) => this.openComponentInWindow("lively-terminal", evt)],
+    ["Console",         (evt) => this.openComponentInWindow("lively-console", evt)],
+     ["Math Workspace",         (evt) => this.openComponentInWindow("lively-math", evt)],
+    ["Component Bin",   (evt) => this.openComponentInWindow("lively-component-bin", evt)],
     ["Persistens Settings", (evt) => {
-        contextmenu.openComponentInWindow("lively-persistence-settings", evt).then((comp) => {
+        this.openComponentInWindow("lively-persistence-settings", evt).then((comp) => {
             comp.parentElement.style.height = "150px"
             comp.parentElement.style.width = "400px"
         })
+    }],
+    ["Wiki",     (evt) => {
+      this.openComponentInWindow("lively-container", evt).then(comp => {
+        comp.followPath("https://lively-kernel.org/lively4/Wiki/Home.md")
+    })
     }],
     ["Text", function(evt) {
             var text  = document.createElement("p")
