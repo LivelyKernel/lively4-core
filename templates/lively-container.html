@@ -140,10 +140,16 @@
     </script>
     <script type="lively4script" data-name="onBack">
     () => {
+      if (this.history().length < 2) {
+        lively.notify("No history to go back!")
+        return 
+      }
       var url = this.history().pop()
+    lively.notify("follow " + url)
       if (url) {
+        var last = _.last(this.history())
         this.forwardHistory().push(url)
-      	this.followPath(url)
+      	this.followPath()
       } else {
         lively.notify("Could not navigate back")
       }
