@@ -4,7 +4,7 @@
 export default class HTML {
   
   static hello () {
-    return "world"
+    return "World!"
   }
 
   static fixLinks(nodes, dir, followPath) {

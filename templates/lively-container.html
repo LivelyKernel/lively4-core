@@ -184,12 +184,11 @@
         var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/)
         if (moduleName) {
           moduleName = moduleName[1]
-          lively.import(moduleName, url, true).then( (module, err) => {
-            if (err) {
-              lively.notify("Error loading module " + moduleName, err)
-            } else {
+          lively.import(moduleName, url, true).then( module => {
               lively.notify("Module " + moduleName + " reloaded!")
-            }
+          }, err => {
+              window.LastError = err
+              lively.notify("Error loading module " + moduleName, err)
           })
         }
       })
