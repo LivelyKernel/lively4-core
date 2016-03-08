@@ -1,35 +1,33 @@
 <template id="lively-container">
     <style>
-    #cancel, #save, #accept {
-      visibility: hidden;
-    }
-
-    #container-path {
-      width: 400px;
-    }
-
-	#container-content {
-        width: 100%;
-        height: 100%;
-        overflow: auto;
-        flex: 1;
-        margin: 0px;
-        padding: 0px;
-	}
-
-    :host {
-      width: 100%;
-      height: 100%;
-      
+      #cancel, #save, #accept {
+        visibility: hidden;
+      }
+  
+      #container-path {
+        width: 400px;
+      }
+  
+    	#container-content {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            flex: 1;
+            margin: 0px;
+            padding: 0px;
+    	}
+  
+      :host {
         width: 100%;
         height: 100%;
         display: flex;
         flex-direction: column;
-    }
-    
+      }
     </style>
     <div id="container-navigation">
       <button id="edit">Edit</button>
+      <button id="back">&lt;</button>
+      <button id="forward">&gt;</button>
       <button id="up">^</button>
       <input type="text" id="container-path" value="">
       <button id="cancel">cancel</button>
@@ -38,11 +36,8 @@
     </div>
     <div id="container-content">
       <!-- by default the content is hidden-->
-    <content></content>
-
+      <content></content>
     </div>
-
-
     <script type="lively4script" data-name="initialize">
     () => {
       if (this.useBrowserHistory()) {
@@ -143,6 +138,40 @@
     	this.followPath(this.getPath().replace(/(\/[^/]+$)|([^/]+\/$)/,"/"))
     }
     </script>
+    <script type="lively4script" data-name="onBack">
+    () => {
+      var url = this.history().pop()
+      if (url) {
+        this.forwardHistory().push(url)
+      	this.followPath(url)
+      } else {
+        lively.notify("Could not navigate back")
+      }
+    }
+    </script>
+    <script type="lively4script" data-name="onForward">
+    () => {
+      var url = this.forwardHistory().pop()
+      if (url) {
+        this.followPath(url)
+      } else {
+        lively.notify("Could not navigate forward")
+      }
+    }
+    </script>
+    <script type="lively4script" data-name="history">
+    () => {
+      if (!this._history) this._history = []
+      return this._history
+    }
+    </script>
+    <script type="lively4script" data-name="forwardHistory">
+    () => {
+      if (!this._forwardHistory) this._forwardHistory = []
+      return this._forwardHistory
+    }
+    </script>
+    
     <script type="lively4script" data-name="onSave">
     (doNotQuit) => {
       return this.getSubmorph("#editor").saveFile().then( () => {
@@ -213,6 +242,9 @@
     </script>
     <script type="lively4script" data-name="followPath">
     (path) => {
+      if (_.last(this.history()) !== path)
+        this.history().push(path)
+      
       if (this.isEditing() && !path.match(/\/$/)) {
         if (this.useBrowserHistory())
           window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?edit="+path);
