@@ -1,5 +1,9 @@
 #!/bin/bash
-cd ~/lively4-core
+
+if [$1]; then
+    cd "$1"
+fi
+
 git status --porcelain | grep  "??" | sed 's/^?? /git add /' | bash
 echo -n "SYNC " > COMMIT ; 
 git status --porcelain | grep -v "??" | tr "\n" ";">> COMMIT;
