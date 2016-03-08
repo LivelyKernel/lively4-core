@@ -2,6 +2,10 @@
 'use strict';
 
 export default class HTML {
+  
+  static hello () {
+    return "world"
+  }
 
   static fixLinks(nodes, dir, followPath) {
     if (! followPath) {
