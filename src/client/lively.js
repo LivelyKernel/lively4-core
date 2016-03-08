@@ -13,7 +13,7 @@ import inspector from './inspector.js';
 
 
 import keys from './keys.js';
-import * as components from './morphic/component-loader.js';
+import components from './morphic/component-loader.js';
 
 /* expose external modules */
 import color from '../external/tinycolor.js';
