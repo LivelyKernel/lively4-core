@@ -39,9 +39,15 @@ export default class ContextMenu {
             comp.parentElement.style.width = "400px"
         })
     }],
+    // #TODO use sub menues here
     ["Wiki",     (evt) => {
       this.openComponentInWindow("lively-container", evt).then(comp => {
         comp.followPath("https://lively-kernel.org/lively4/Wiki/Home.md")
+    })
+    }],
+    ["Journal",     (evt) => {
+      this.openComponentInWindow("lively-container", evt).then(comp => {
+        comp.followPath("https://lively-kernel.org/lively4/Wiki/Journal.md")
     })
     }],
     ["Text", function(evt) {
