@@ -7,6 +7,7 @@ export default class Window extends Morph {
   static hello() {
     return "world!"
   }
+  
 
   // window title
   get title() {
@@ -94,7 +95,7 @@ export default class Window extends Morph {
   }
 
   focus(e) {
-    this.style.backgroundColor = livle.color.random()
+    // this.style.backgroundColor = livle.color.random()
     var minZIndex = 100;
     // find all windows but this one
     var allWindowsButThis = Array.from(document.querySelectorAll('lively-window'));

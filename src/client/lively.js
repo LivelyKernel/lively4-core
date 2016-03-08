@@ -69,6 +69,9 @@ var lively = class Lively {
       } else {
         console.log("lively: load "+ moduleName)
         this[moduleName] = module.default || module
+        if (lively.components)               
+          lively.components.updatePrototype(this[moduleName].prototype)
+
       }
     })
   }
