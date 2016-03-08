@@ -10,4 +10,4 @@ git status --porcelain | grep -v "??" | tr "\n" ";">> COMMIT;
 cat COMMIT 
 git commit -F COMMIT .; 
 git pull --no-edit; 
-git push origin gh-pages
+git push
