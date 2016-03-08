@@ -16,7 +16,7 @@ import keys from './keys.js';
 import * as components from './morphic/component-loader.js';
 
 /* expose external modules */
-import * as color from '../external/tinycolor.js';
+import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
 import * as jquery from '../external/jquery.js';
 import * as _ from '../external/underscore.js';
@@ -51,7 +51,26 @@ var lively = class Lively {
 
 
 
-  static import(moduleName, path) {
+  static import(moduleName, path, forceLoad) {
+    if (!path) path = this.defaultPath(moduleName)
+    if (!path) throw Error("Could not imoport " + moduleName + ", not path specified!")
+
+    if (this[moduleName] && !forceLoad)
+      return new Promise((resolve) => { resolve(this[moduleName])})
+    if (forceLoad) {
+      path += "?" + Date.now()
+    }
+    return System.import(path).then( (module, err) => {
+      if (err) {
+        lively.notify("Could not load module " + moduleName, err)
+      } else {
+        console.log("lively: load "+ moduleName)
+        this[moduleName] = module.default || module
+      }
+    })
+  }
+  
+  static reloadModule(path, optSource) {
     if (!path) path = this.defaultPath(moduleName)
     if (!path) throw Error("Could not imoport " + moduleName + ", not path specified!")
 
@@ -68,11 +87,8 @@ var lively = class Lively {
       math: lively4url + "/src/external/math.js",
     })[moduleName]
   }
-
-
+  
   static loaded() {
-
-
     // guard againsst wrapping twice and ending in endless recursion
     if (!console.log.isWrapped) {
         var nativeLog = console.log;
