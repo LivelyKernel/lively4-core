@@ -41,6 +41,13 @@
     <script type="lively4script" data-name="initialize">
     () => {
       if (this.useBrowserHistory()) {
+      window.onpopstate = (event) => {
+        var state = event.state
+        if (state && state.followInline) {
+          console.log("follow " + state.path)
+          this.setPath(state.path)
+        }
+      };
         var path = lively.preferences.getURLParameter("load")
         if (path) {
             this.setPath(path)
@@ -57,13 +64,7 @@
       	}
       }
 
-      window.onpopstate = (event) => {
-        var state = event.state
-        if (state && state.followInline) {
-          console.log("follow " + state.path)
-          this.setPath(state.path)
-        }
-      };
+
 
       // #TODO very ugly... I want to hide that level of JavaScript and just connect "onEnter" of the input field with my code
       var input = this.getSubmorph("#container-path")
