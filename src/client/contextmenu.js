@@ -1,21 +1,22 @@
 import lively from "./lively.js";
 
-var contextmenu = {
-  menu: null, // since, we don't have local multi-user interaction in the browser anyway, we can keep it simple...
-  hide: function() {
+export default class ContextMenu {
+  
+  static hide() {
     if (this.menu) $(this.menu).remove()
-  },
-  openComponentInWindow: function (name, evt) {
+  }
+  
+  static openComponentInWindow (name, evt) {
     var comp  = document.createElement(name)
     this.hide()
     return lively.components.openInWindow(comp).then((w) => {
         lively.setPosition(w, lively.pt(evt.clientX, evt.clientY))
         return comp
     })
-  },
-  // idea: expose items as structure rather then as computation, should led itself to customization
-  // without having to use dynamic behavioral adaptations such as COP.
-  items: [
+  }
+  
+  static items () {
+    return [
     ["Workspace", (evt) => {
       contextmenu.hide()
       lively.openWorkspace("", lively.pt(evt.clientX, evt.clientY))
@@ -54,20 +55,21 @@ var contextmenu = {
         $('body')[0].appendChild(morph)
         contextmenu.hide()
     }]
-  ],
-  openIn: function(container, evt) {
+  ]
+    
+  }
+  
+  static openIn(container, evt) {
     this.hide()
     var menu = lively.components.createComponent("lively-menu")
     return lively.components.openIn(container, menu).then(() => {
       this.menu = menu
-      menu.openOn(contextmenu.items).then(() => {
+      menu.openOn(this.items()).then(() => {
             if (evt) lively.setPosition(menu, lively.pt(evt.clientX, evt.clientY))
       })
       return menu
     })
   }
 }
-
-export default contextmenu
 
 console.log("loaded contextmenu")

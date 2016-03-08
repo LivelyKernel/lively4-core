@@ -145,14 +145,10 @@
         return 
       }
       var url = this.history().pop()
-    lively.notify("follow " + url)
-      if (url) {
-        var last = _.last(this.history())
-        this.forwardHistory().push(url)
-      	this.followPath()
-      } else {
-        lively.notify("Could not navigate back")
-      }
+      var last = _.last(this.history())
+      // lively.notify("follow " + url)
+      this.forwardHistory().push(url)
+      this.followPath(last)
     }
     </script>
     <script type="lively4script" data-name="onForward">
