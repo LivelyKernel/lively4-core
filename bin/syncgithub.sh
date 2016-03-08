@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [$1]; then
+if [-e $1]; then
     cd "$1"
 fi
 
