@@ -46,7 +46,7 @@ var exportmodules = [
 // #LiveProgramming #Syntax #ES6Modules #Experiment #Jens
 // By structuring our modules differently, we still can act as es6 module to the outside but develop at runtime
 // #IDEA: I refactored from "static module and function style" to "dynamic object" style
-var lively = class Lively {
+export default class Lively {
 
 
   static import(moduleName, path, forceLoad) {
@@ -172,13 +172,13 @@ var lively = class Lively {
     });
   }
 
-  static hideContextMenu() {
-    console.log("hide context menu")
+  static hideContextMenu(evt) {
+    console.log("hide context menu", evt)
     this.import("contextmenu").then(m => m.hide());
   }
 
   static openContextMenu(container, evt, target) {
-    console.log("open context menu: " + target);
+    console.log("open context menu2: " + target);
     this.import("contextmenu").then(m => m.openIn(container, evt, target));
   }
 
@@ -226,7 +226,6 @@ var lively = class Lively {
         return false;
       }, false);
     }
-
 
     doc.addEventListener('click', function(evt){lively.hideContextMenu(evt)}, false);
     doc.addEventListener('keyup', function(evt){lively.keys.handle(evt)}, false);
@@ -343,8 +342,6 @@ var lively = class Lively {
   }
 }
 
+Lively.loaded();
 
-
-export default lively;
-lively.loaded();
 console.log("loaded lively");
