@@ -176,8 +176,9 @@ export default class Lively {
   }
 
   static hideContextMenu(evt) {
-    debugger
-    console.log("hide context menu", evt)
+    // console.log("hide: " + (evt.path[0] === document.body))
+    if (evt.path[0] !== document.body) return
+    console.log("hide context menu:" + evt)
     this.import("contextmenu").then(m => m.hide());
   }
 
@@ -298,11 +299,12 @@ export default class Lively {
 
   }
   
-  static showSource(object) {
+  static showSource(object, evt) {
     if (object instanceof HTMLElement) {
-      this.openComponentInWindow("lively-container", evt).then(comp => {
-            comp.followPath(lively4url +"/")
-      })
+        var comp  = document.createElement("lively-container");
+        lively.components.openInWindow(comp).then((container) => {
+                comp.followPath(lively4url +"/")
+        })
     } else {
       lively.notify("Could not show source for: " + object)
     }

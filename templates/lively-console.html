@@ -99,6 +99,9 @@
         var editor  = c.editor
         if (!editor || !editor.session ) return
         Array.prototype.forEach.call(arguments, function(s) {
+          if (s.message) s = s.message 
+          if (s.stack) s += s.stack
+          
           // c.editor.setValue(c.editor.getValue() + "\n" + s, 1)
           var session = editor.session
           session.insert({
