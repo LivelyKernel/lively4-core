@@ -1,4 +1,5 @@
-import lively from "./lively.js";
+// import lively from "./lively.js";
+// #TODO this will fetch an old version of the lively module... 
 
 export default class ContextMenu {
   
@@ -24,7 +25,7 @@ export default class ContextMenu {
         }],
         ["show source", (evt) => {
            this.hide()
-           lively.showSource(target)
+           lively.showSource(target, evt)
         }]
       ]  
     } else {

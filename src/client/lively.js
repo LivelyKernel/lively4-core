@@ -303,7 +303,8 @@ export default class Lively {
     if (object instanceof HTMLElement) {
         var comp  = document.createElement("lively-container");
         lively.components.openInWindow(comp).then((container) => {
-                comp.followPath(lively4url +"/")
+          comp.followPath(lively4url +"/templates/" + object.localName + ".html")
+                
         })
     } else {
       lively.notify("Could not show source for: " + object)
