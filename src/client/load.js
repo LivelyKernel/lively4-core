@@ -17,7 +17,6 @@ if ('serviceWorker' in navigator) {
         serviceworkerReady = true;
         // Lively has all the dependencies
         System.import("../src/client/lively.js").then(function(module) {
-            window.lively = module.default
             lively.initializeHalos();
             lively.components.loadUnresolved();
             console.log("running on load callbacks:");

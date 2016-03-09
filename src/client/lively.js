@@ -1,4 +1,7 @@
 'use strict';
+
+window.lively = this;
+
 import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
 import * as preferences from './preferences.js';
@@ -173,6 +176,7 @@ export default class Lively {
   }
 
   static hideContextMenu(evt) {
+    debugger
     console.log("hide context menu", evt)
     this.import("contextmenu").then(m => m.hide());
   }
@@ -342,6 +346,7 @@ export default class Lively {
   }
 }
 
+window.lively = Lively
 Lively.loaded();
-
+            
 console.log("loaded lively");
