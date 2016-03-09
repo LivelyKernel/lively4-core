@@ -16,10 +16,12 @@ export default class ContextMenu {
   }
   
   static items (target) {
+    
     if (target) {
       return [
-        ["random color", (evt) => {
-          target.style.backgroundColor = lively.color.random()
+        ["show", (evt) => {
+           this.hide()
+           lively.showElement(target)
         }]
       ]  
     } else {
@@ -77,6 +79,7 @@ export default class ContextMenu {
   }
   
   static openIn(container, evt,target) {
+    
     this.hide()
     var menu = lively.components.createComponent("lively-menu")
     return lively.components.openIn(container, menu).then(() => {

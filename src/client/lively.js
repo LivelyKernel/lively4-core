@@ -8,7 +8,7 @@ import * as persistence from './persistence.js';
 import files from './files.js';
 import html from './html.js';
 import paths from './paths.js';
-import contextmenu from './contextmenu.js';
+
 
 
 import inspector from './inspector.js';
@@ -42,7 +42,6 @@ var exportmodules = [
   "components",
   "inspector",
   "color",
-  "contextmenu",
   "focalStorage"];
 
 
@@ -100,6 +99,7 @@ var lively = class Lively {
   static defaultPath(moduleName) {
     return ({
       math: lively4url + "/src/external/math.js",
+      contextmenu: './contextmenu.js'
     })[moduleName]
   }
   
@@ -181,7 +181,7 @@ var lively = class Lively {
 
   static openContextMenu(container, evt, target) {
     console.log("open context menu: " + target);
-    this.contextmenu.then(m => m.openIn(container, evt));
+    this.import("contextmenu").then(m => m.openIn(container, evt, target));
   }
 
   static log(/* varargs */) {
