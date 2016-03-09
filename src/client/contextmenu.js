@@ -22,6 +22,10 @@ export default class ContextMenu {
         ["show", (evt) => {
            this.hide()
            lively.showElement(target)
+        }],
+        ["show source", (evt) => {
+           this.hide()
+           lively.showSource(target)
         }]
       ]  
     } else {
