@@ -52,10 +52,6 @@ var exportmodules = [
 // #IDEA: I refactored from "static module and function style" to "dynamic object" style
 var lively = class Lively {
 
-  static hello() {
-    return "world"
-  }
-
 
   static import(moduleName, path, forceLoad) {
     if (!path) path = this.defaultPath(moduleName)
@@ -71,8 +67,18 @@ var lively = class Lively {
         lively.notify("Could not load module " + moduleName, err)
       } else {
         console.log("lively: load "+ moduleName)
-        this[moduleName] = module.default || module
-        if (lively.components)               
+        
+        if (moduleName == "lively") {
+          this.notify("migrate lively.js")
+          var oldLively = window.lively;
+          window.lively =module.default || module
+          this["previous"] = oldLively
+          this.components = oldLively.components // components have important state
+        } else {
+          this[moduleName] = module.default || module
+        }
+        
+        if (lively.components && this[moduleName])               
           lively.components.updatePrototype(this[moduleName].prototype)
 
       }
@@ -169,23 +175,13 @@ var lively = class Lively {
     });
   }
 
-  static getContextMenu(target) {
-    // lazy module loading
-    return new Promise(function(resolve){
-      if (lively.contextmenu) resolve(lively.contextmenu);
-      else System.import(preferences.getBaseURL() + "/src/client/contextmenu.js")
-        .then( module => {lively.contextmenu = module.default})
-        .then( () => resolve(lively.contextmenu));
-    });
-  }
-
   static hideContextMenu() {
     this.getContextMenu().then(m => m.hide());
   }
 
   static openContextMenu(container, evt, target) {
-    console.log("open context menu");
-    this.getContextMenu(target).then(m => m.openIn(container, evt));
+    console.log("open context menu: " + target);
+    this.contextmenu.then(m => m.openIn(container, evt));
   }
 
   static log(/* varargs */) {
