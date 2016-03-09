@@ -42,6 +42,7 @@ var exportmodules = [
   "components",
   "inspector",
   "color",
+  "contextmenu",
   "focalStorage"];
 
 
