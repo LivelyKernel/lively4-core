@@ -8,6 +8,8 @@ import * as persistence from './persistence.js';
 import files from './files.js';
 import html from './html.js';
 import paths from './paths.js';
+import contextmenu from './contextmenu.js';
+
 
 import inspector from './inspector.js';
 
@@ -166,7 +168,7 @@ var lively = class Lively {
     });
   }
 
-  static getContextMenu() {
+  static getContextMenu(target) {
     // lazy module loading
     return new Promise(function(resolve){
       if (lively.contextmenu) resolve(lively.contextmenu);
@@ -180,9 +182,9 @@ var lively = class Lively {
     this.getContextMenu().then(m => m.hide());
   }
 
-  static openContextMenu(container, evt) {
+  static openContextMenu(container, evt, target) {
     console.log("open context menu");
-    this.getContextMenu().then(m => m.openIn(container, evt));
+    this.getContextMenu(target).then(m => m.openIn(container, evt));
   }
 
   static log(/* varargs */) {

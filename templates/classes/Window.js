@@ -22,6 +22,8 @@ export default class Window extends Morph {
     return this.hasAttribute('fixed');
   }
 
+  
+
   setup() {
     // define shortcut variables
     this.titleSpan = this.shadowRoot.querySelector('.window-title span');
@@ -30,6 +32,10 @@ export default class Window extends Morph {
     this.pinButton = this.shadowRoot.querySelector('.window-pin');
     this.resizeButton = this.shadowRoot.querySelector('.window-resize');
     this.closeButton = this.shadowRoot.querySelector('.window-close');
+    
+    this.getSubmorph('.window-menu').addEventListener('click', (e) => { 
+      this.menuButtonClicked(e) });
+    
     this.contentBlock = this.shadowRoot.querySelector('#window-content');
 
     // bind events for window behavior
@@ -139,6 +145,10 @@ export default class Window extends Morph {
 
   closeButtonClicked(e) {
     this.parentNode.removeChild(this);
+  }
+  
+  menuButtonClicked(e) {
+    lively.openContextMenu(this, evt)
   }
 
   titleMouseDown(e) {
