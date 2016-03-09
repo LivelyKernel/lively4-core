@@ -22,8 +22,6 @@ export default class Window extends Morph {
     return this.hasAttribute('fixed');
   }
 
-  
-
   setup() {
     // define shortcut variables
     this.titleSpan = this.shadowRoot.querySelector('.window-title span');
@@ -34,7 +32,8 @@ export default class Window extends Morph {
     this.closeButton = this.shadowRoot.querySelector('.window-close');
     
     this.getSubmorph('.window-menu').addEventListener('click', (e) => { 
-      this.menuButtonClicked(e) });
+      this.menuButtonClicked(e) 
+    });
     
     this.contentBlock = this.shadowRoot.querySelector('#window-content');
 

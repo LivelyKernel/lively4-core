@@ -173,6 +173,7 @@ var lively = class Lively {
   }
 
   static hideContextMenu() {
+    console.log("hide context menu")
     this.import("contextmenu").then(m => m.hide());
   }
 
