@@ -9,10 +9,7 @@ import files from './files.js';
 import html from './html.js';
 import paths from './paths.js';
 
-
-
 import inspector from './inspector.js';
-
 
 import keys from './keys.js';
 import components from './morphic/component-loader.js';
@@ -99,7 +96,7 @@ var lively = class Lively {
   static defaultPath(moduleName) {
     return ({
       math: lively4url + "/src/external/math.js",
-      contextmenu: './contextmenu.js'
+      contextmenu: lively4url + '/src/client/contextmenu.js'
     })[moduleName]
   }
   
@@ -176,7 +173,7 @@ var lively = class Lively {
   }
 
   static hideContextMenu() {
-    this.getContextMenu().then(m => m.hide());
+    this.import("contextmenu").then(m => m.hide());
   }
 
   static openContextMenu(container, evt, target) {
@@ -296,6 +293,17 @@ var lively = class Lively {
     // ea.getBoundingClientRect
 
   }
+  
+  static showSource(object) {
+    if (object instanceof HTMLElement) {
+      this.openComponentInWindow("lively-container", evt).then(comp => {
+            comp.followPath(lively4url +"/")
+      })
+    } else {
+      lively.notify("Could not show source for: " + object)
+    }
+  }
+  
 
   static showElement(elem, timeout) {
     var comp = document.createElement("div")
