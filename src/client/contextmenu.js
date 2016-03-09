@@ -82,16 +82,13 @@ export default class ContextMenu {
     ]}
   }
   
-  static openIn(container, evt,target) {
-    
+  static openIn(container, evt, target) {
     this.hide()
     var menu = lively.components.createComponent("lively-menu")
     return lively.components.openIn(container, menu).then(() => {
       this.menu = menu
       menu.openOn(this.items(target)).then(() => {
-            menu.style["z-index"] = 1000
-            debugger
-            if (evt) lively.setPosition(menu, lively.pt(evt.clientX, evt.clientY))
+          if (evt) lively.setPosition(menu, lively.pt(evt.clientX, evt.clientY))
       })
       return menu
     })
