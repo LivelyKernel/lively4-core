@@ -16,7 +16,6 @@ export default class ContextMenu {
   }
   
   static items (target) {
-    
     if (target) {
       return [
         ["show", (evt) => {
@@ -37,6 +36,7 @@ export default class ContextMenu {
       ["Browser",     (evt) => {
         this.openComponentInWindow("lively-container", evt).then(comp => {
           comp.followPath(lively4url +"/")
+          comp.parentElement.style.width = "700px"
       })
       }],
       ["File Editor",     (evt) => this.openComponentInWindow("lively-editor", evt)],
@@ -89,6 +89,8 @@ export default class ContextMenu {
     return lively.components.openIn(container, menu).then(() => {
       this.menu = menu
       menu.openOn(this.items(target)).then(() => {
+            menu.style["z-index"] = 1000
+            debugger
             if (evt) lively.setPosition(menu, lively.pt(evt.clientX, evt.clientY))
       })
       return menu
