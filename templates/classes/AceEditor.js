@@ -470,6 +470,9 @@ export default class AceEditor extends HTMLElement {
         if (!this.contents_modified) {
         	return;
         }
+
+        console.log("spell check!")
+
         this.currently_spellchecking = true;
         var session = this.editor.getSession();
 
@@ -482,6 +485,7 @@ export default class AceEditor extends HTMLElement {
         try {
       	  var Range = ace.require('ace/range').Range
       	  var lines = session.getDocument().getAllLines();
+      	  console.log("lines: " + lines)
       	  for (var i in lines) {
       	  	// Clear the gutter.
       	    session.removeGutterDecoration(i, "misspelled");
