@@ -80,6 +80,7 @@ export default class Lively {
         if (lively.components && this[moduleName])               
           lively.components.updatePrototype(this[moduleName].prototype)
 
+        return module.default || module
       }
     })
   }
