@@ -64,8 +64,8 @@ export default class AceEditor extends HTMLElement {
 
         this.customizeEditor();
 
-        this.loadSpellcheck()
-        this.enableSpellcheck()
+        // this.loadSpellcheck()
+        // this.enableSpellcheck()
 
 
         // editor.resize()
@@ -465,6 +465,7 @@ export default class AceEditor extends HTMLElement {
     }
     
     clearSpellCheckMarkers () {
+        var session = this.editor.getSession();
         for (var i in this.markers_present) {
           session.removeMarker(this.markers_present[i]);
         }
