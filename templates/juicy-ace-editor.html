@@ -429,7 +429,6 @@
         // this.dispatchEvent(new Event("created")); // already taken care...
     };
 
-
     TomalecAceEditorPrototype.enableSpellcheck = function() {
             
       // You should configure these classes.
@@ -437,10 +436,6 @@
       var lang = "en_US";
       var dicPath = lively4url + "/src/external/dictionaries/en_US/en_US.dic";
       var affPath = lively4url + "/src/external/typo/dictionaries/en_US/en_US.aff";
-      
-      // Make red underline for gutter and words.
-      $(").appendTo("head");
-      $("<style type='text/css'>.misspelled { border-bottom: 1px solid red; margin-bottom: -1px; }</style>").appendTo("head");
       
       // Load the dictionary.
       // We have to load the dictionary files sequentially to ensure 
