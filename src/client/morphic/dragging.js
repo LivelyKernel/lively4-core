@@ -43,7 +43,7 @@ function initDraggingAtEvent(anEvent) {
 
 function startOffsetDragging(anEvent) {
   if (!isDragging && events.noticableDistanceTo(anEvent, dragStartEventPosition)) {
-    dragTarget.style.position = 'relative';
+    dragTarget.style.position = 'absolut';
     isDragging = true;
   }
 }

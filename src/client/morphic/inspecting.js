@@ -1,4 +1,4 @@
-import * as componentLoader from "./component-loader.js";
+import componentLoader from "./component-loader.js";
 
 export function handle(el) {
   var inspectTarget = el;
