@@ -1,13 +1,6 @@
 <script src="../src/external/ace/ace.js" type="text/javascript" charset="utf-8"></script>
 <script src="../src/external/ace/ext-modelist.js" type="text/javascript" charset="utf-8"></script>
 <script type="text/javascript" src="../src/external/ResizeSensor.js"></script>
-<style type='text/css'>
-  .ace_marker-layer .misspelled {
-    position: absolute; z-index: -2; border-bottom: 1px solid red; margin-bottom: -1px;
-  }
-  .misspelled { border-bottom: 1px solid red; margin-bottom: -1px; }
-</style>
-
 <template id="juicy-ace-editor">
     <style>
         :host{
@@ -21,6 +14,14 @@
             display: block;
 
             position: absolute;
+        }
+        
+        .ace_marker-layer .misspelled {
+          position: absolute; z-index: -2; border-bottom: 1px solid red; margin-bottom: -1px;
+        }
+        .misspelled { 
+          border-bottom: 1px solid red; 
+          margin-bottom: -1px; 
         }
     </style>
     <div id="juicy-ace-editor-container"></div>
