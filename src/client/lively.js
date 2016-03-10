@@ -218,7 +218,6 @@ export default class Lively {
 
   static initializeDocument(doc, loadedAsExtension) {
     console.log("Lively4 initializeDocument");
-    if (loadedAsExtension) {
       doc.addEventListener('contextmenu', function(evt) {
           if (evt.ctrlKey) {
             evt.preventDefault();
@@ -226,15 +225,17 @@ export default class Lively {
             return false;
           }
       }, false);
+    
+    if (loadedAsExtension) {
       lively.notify("Lively4 extension loaded!",
         "  CTRL+LeftClick  ... open halo\n" +
         "  CTRL+RightClick ... open menu");
     } else {
-      doc.addEventListener('contextmenu', function(evt) {
-        evt.preventDefault();
-        lively.openContextMenu($('body')[0], evt);
-        return false;
-      }, false);
+      // doc.addEventListener('contextmenu', function(evt) {
+      //   evt.preventDefault();
+      //   lively.openContextMenu($('body')[0], evt);
+      //   return false;
+      // }, false);
     }
 
     doc.addEventListener('click', function(evt){lively.hideContextMenu(evt)}, false);
