@@ -485,7 +485,6 @@ export default class AceEditor extends HTMLElement {
         try {
       	  var Range = ace.require('ace/range').Range
       	  var lines = session.getDocument().getAllLines();
-      	  console.log("lines: " + lines)
       	  for (var i in lines) {
       	  	// Clear the gutter.
       	    session.removeGutterDecoration(i, "misspelled");
@@ -498,6 +497,8 @@ export default class AceEditor extends HTMLElement {
       	    }
       	    for (var j in misspellings) {
       	      var range = new Range(i, misspellings[j][0], i, misspellings[j][1]);
+      	      // console.log("missspell: ", misspellings[j])
+      	  
       	      this.markers_present[this.markers_present.length] =
       	        session.addMarker(range, "misspelled", "typo", true);
       	    }
