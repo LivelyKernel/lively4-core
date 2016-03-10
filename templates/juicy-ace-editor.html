@@ -435,7 +435,7 @@
       var editor = "editor"; // This should be the id of your editor element.
       var lang = "en_US";
       var dicPath = lively4url + "/src/external/dictionaries/en_US/en_US.dic";
-      var affPath = lively4url + "/src/external/typo/dictionaries/en_US/en_US.aff";
+      var affPath = lively4url + "/src/external/dictionaries/en_US/en_US.aff";
       
       // Load the dictionary.
       // We have to load the dictionary files sequentially to ensure 
@@ -523,7 +523,7 @@
       }
       
       function enable_spellcheck() {
-        ace.edit(editor).getSession().on('change', function(e) {
+        this.editor.getSession().on('change', function(e) {
         	contents_modified = true;
       	});
       	setInterval(spell_check, 500);
