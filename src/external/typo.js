@@ -31,7 +31,7 @@
  * @returns {Typo} A Typo object.
  */
 
-var Typo = function (dictionary, affData, wordsData, settings) {
+export default var Typo = function (dictionary, affData, wordsData, settings) {
 	settings = settings || {};
 	
 	this.dictionary = null;
@@ -161,6 +161,7 @@ Typo.prototype = {
 		}
 		else if (typeof require !== 'undefined') {
 			// Node.js
+		
 			var fs = require("fs");
 			
 			try {
@@ -784,6 +785,8 @@ Typo.prototype = {
 };
 
 // Support for use as a node.js module.
-if (typeof module !== 'undefined') {
-	module.exports = Typo;
-}
+// if (typeof module !== 'undefined') {
+// 	module.exports = Typo;
+// }
+
+
