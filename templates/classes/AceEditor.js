@@ -459,8 +459,9 @@ export default class AceEditor extends HTMLElement {
         this.isSpellChecking = true;
     }
 
-    disavleSpellcheck () {
+    disableSpellcheck () {
         this.isSpellChecking = false;
+        this.clearSpellCheckMarkers()
         // how to remove
     }
     
@@ -470,6 +471,14 @@ export default class AceEditor extends HTMLElement {
           session.removeMarker(this.markers_present[i]);
         }
         this.markers_present = [];
+        
+        // clear the gutter    
+        var lines = session.getDocument().getAllLines();
+    	  for (var i in lines) {
+    	  	// Clear the gutter.
+    	    session.removeGutterDecoration(i, "misspelled");
+    	  }
+    
     }
 
 
@@ -502,8 +511,6 @@ export default class AceEditor extends HTMLElement {
       	  var Range = ace.require('ace/range').Range
       	  var lines = session.getDocument().getAllLines();
       	  for (var i in lines) {
-      	  	// Clear the gutter.
-      	    session.removeGutterDecoration(i, "misspelled");
       	    // Check spelling of this line.
       	    var misspellings = this.misspelled(lines[i]);
 
