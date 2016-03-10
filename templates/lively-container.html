@@ -3,15 +3,15 @@
       #cancel, #save, #accept {
         visibility: hidden;
       }
-  
+
       #container-path {
         width: 400px;
       }
-      
+
       #container-navigation {
         flex: 0;
       }
-  
+
     	#container-content {
         width: 100%;
         height: 100%;
@@ -20,7 +20,7 @@
         margin: 0px;
         padding: 10px;
     	}
-  
+
       #container-editor {
         width: 100%;
         height: 100%;
@@ -30,21 +30,21 @@
         padding: 0px;
     	  display: block;
       }
-  
+
       :host {
         width: 100%;
         height: 100%;
         display: flex;
         flex-direction: column;
       }
-      
+
 
       h1,h2,h3,h4 {
         color: #2B65EC;
-        
+
       }
-    
-      
+
+
     </style>
     <div id="container-navigation">
       <button id="edit">Edit</button>
@@ -167,7 +167,7 @@
     () => {
       if (this.history().length < 2) {
         lively.notify("No history to go back!")
-        return 
+        return
       }
       var url = this.history().pop()
       var last = _.last(this.history())
@@ -198,7 +198,7 @@
       return this._forwardHistory
     }
     </script>
-    
+
 
     <script type="lively4script" data-name="onSave">
     (doNotQuit) => {
@@ -233,7 +233,7 @@
       this.getSubmorph('#container-content').innerHTML = ''
       this.getSubmorph('#container-editor').innerHTML = ''
     }
-    
+
     </script>
     <script type="lively4script" data-name="appendMarkdown">
     (content) => {
@@ -257,7 +257,7 @@
         	lively.notify("append template " + nodes[0].id)
 			    return this.appendTemplate(nodes[0].id)
         }
-        lively.html.fixLinks(nodes, this.getDir(), 
+        lively.html.fixLinks(nodes, this.getDir(),
           (path) => this.followPath(path))
         nodes.forEach((ea) => {
           this.getSubmorph('#container-content').appendChild(ea)
@@ -284,12 +284,12 @@
          return this.getPath().replace(/[^/]*$/,"")
     }
     </script>
-    
+
     <script type="lively4script" data-name="followPath">
     (path) => {
       if (_.last(this.history()) !== path)
         this.history().push(path)
-      
+
       if (this.isEditing() && !path.match(/\/$/)) {
         if (this.useBrowserHistory())
           window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?edit="+path);
@@ -301,13 +301,13 @@
       }
     }
     </script>
-    
+
     <script type="lively4script" data-name="isEditing">
     () => {
       return this.getAttribute("mode") == "edit"
     }
     </script>
-    
+
     <script type="lively4script" data-name="getURL">
     () => {
       var path = this.getPath()
@@ -318,25 +318,25 @@
       }
     }
     </script>
-    
+
     <script type="lively4script" data-name="getPath">
     () => {
          return this.getAttribute("src")
     }
     </script>
-    
-    
+
+
     <script type="lively4script" data-name="setPath">
     function (path, donotrender) {
       this.getSubmorph('#container-content').style.display = "block"
       this.getSubmorph('#container-editor').style.display = "none"
-        
-      
+
+
       if (!path) {
           path = ""
       }
   	  var isdir= path.match(/.\/$/)
-  	  
+
       if (path.match(/^https?:\/\//)) {
         var url = new URL(path)
         url.pathname = lively.paths.normalize(url.pathname)
@@ -345,15 +345,15 @@
         path = lively.paths.normalize(path)
       }
       path =  path + (isdir ? "/" : "")
-  
+
       var container=  this.getSubmorph('#container-content')
-  	  
+
   	  this.setAttribute("src", path)
       this.clear()
       this.getSubmorph('#container-path').value = path
       container.style.overflow = "auto";
 
-      
+
       var url = this.getURL()
       // console.log("set url: " + url)
       this.sourceContent = "NOT EDITABLE"
@@ -397,19 +397,19 @@
       })
     }
     </script>
-    
+
     <!-- EDIT FILE -->
     <script type="lively4script" data-name="editFile">
     async (path) => {
       if (path) await this.setPath(path)
-      
+
       this.clear()
       var containerContent=  this.getSubmorph('#container-content')
       containerContent.style.display = "none"
       var containerEditor =  this.getSubmorph('#container-editor')
       containerEditor.style.display = "block"
-      
-      
+
+
       lively.components.openIn(containerEditor,
         lively.components.createComponent("lively-editor")).then( comp => {
           console.log("comp: " + comp)
@@ -428,7 +428,7 @@
           comp.setURL(url)
           aceComp.changeModeForFile(url.pathname);
 
-          editor.session.setOptions({
+          aceComp.editor.session.setOptions({
       			mode: "ace/mode/javascript",
           		tabSize: 2,
           		useSoftTabs: true

@@ -1,18 +1,16 @@
 
 
+
 export default class AceEditor extends HTMLElement {
-  
-   // Creates an object based in the HTML Element prototype
-    var TomalecAceEditorPrototype = Object.create(HTMLElement.prototype);
 
     // Fires when an instance was inserted into the document
-    TomalecAceEditorPrototype.attachedCallback = function() {
+    attachedCallback() {
         var text = this.childNodes[0];
         var container = this.container;
         var element = this;
 
         if(this.editor){
-            editor = this.editor;
+            var editor = this.editor;
             this.value = text.textContent || this.value;
         } else {
             // container.appendChild(text);
@@ -66,31 +64,31 @@ export default class AceEditor extends HTMLElement {
 
         this.customizeEditor();
 
-        this.loadDictionaries()
+        this.loadSpellcheck()
         this.enableSpellcheck()
-      
+
 
         // editor.resize()
-        window.setTimeout(function() {
-          editor.resize();
+        window.setTimeout(() => {
+          this.editor.resize();
         }, 50) // #Hack #Resize #RaceCondition
 
         var _this = this;
-        window.setTimeout(function() {
+        window.setTimeout(() => {
           // we also use this timeout hack, but we should get rid of it!!
-          new ResizeSensor($(_this.container), function() {
-            editor.resize();
+          new ResizeSensor($(_this.container), () => {
+            this.editor.resize();
           });
         }, 500);
     };
 
     // Fires when an instance was removed from the document
-    TomalecAceEditorPrototype.detachedCallback = function() {
+    detachedCallback() {
         this._attached = false;
     };
 
     // Fires when an attribute was added, removed, or updated
-    TomalecAceEditorPrototype.attributeChangedCallback = function(attr, oldVal, newVal) {
+    attributeChangedCallback(attr, oldVal, newVal) {
         if(!this._attached){
             return false;
         }
@@ -121,7 +119,7 @@ export default class AceEditor extends HTMLElement {
     };
 
 
-    TomalecAceEditorPrototype.onThemeLoaded = function(e){
+    onThemeLoaded(e){
         var themeId = "#" + e.theme.cssClass;
         this.injectTheme(themeId);
         // Workaround Chrome stable bug, force repaint
@@ -131,23 +129,24 @@ export default class AceEditor extends HTMLElement {
     };
 
     // inject the style tag of a theme to the element
-    TomalecAceEditorPrototype.injectTheme = function(themeId){
+    injectTheme(themeId){
+
+        //helper function to clone a style
+        function cloneStyle(style) {
+            var s = document.createElement('style');
+            s.id = style.id;
+            s.textContent = style.textContent;
+            return s;
+        }
+
         var n = document.querySelector(themeId);
         this.shadowRoot.appendChild(cloneStyle(n));
     };
 
-    //helper function to clone a style
-    function cloneStyle(style) {
-        var s = document.createElement('style');
-        s.id = style.id;
-        s.textContent = style.textContent;
-        return s;
-    }
-
 
 
     // CUSTOMIZATION
-    TomalecAceEditorPrototype.enableAutocompletion = function(filename) {
+    enableAutocompletion(filename) {
       return this.aceRequire("ace/ext/language_tools").then( module => {
         this.editor.setOptions({
             enableBasicAutocompletion: true,
@@ -178,7 +177,7 @@ export default class AceEditor extends HTMLElement {
           }
       })
     }
-    TomalecAceEditorPrototype.changeModeForFile = function(filename) {
+    changeModeForFile(filename) {
       var modelist = ace.require("ace/ext/modelist");
       var mode = modelist.getModeForPath(filename).name;
       console.log(filename + " -> " + mode);
@@ -187,11 +186,11 @@ export default class AceEditor extends HTMLElement {
 
     }
 
-    TomalecAceEditorPrototype.changeMode = function(mode) {
+    changeMode(mode) {
       var Mode;
       try {
         Mode = ace.require("ace/mode/" + mode).Mode;
-        editor.session.setMode(new Mode());
+        this.editor.session.setMode(new Mode());
       } catch (e) {
         console.log("ace-editor: lazy load ace mode " + mode)
         // mode is not loaded, so try to load it,
@@ -199,17 +198,19 @@ export default class AceEditor extends HTMLElement {
         var script = document.createElement("Script");
         script.type = "text/javascript";
         script.src = lively4url + "/src/external/ace/mode-" + mode + ".js";
-        script.onerror = loadError;
-        script.onload = function() {
+        script.onerror = function loadError(err) {
+          throw new URIError("Ace config " + err.target.src + " not found. ");
+        };
+        script.onload = () => {
           Mode = ace.require("ace/mode/" + mode).Mode;
-          editor.session.setMode(new Mode());
+          this.editor.session.setMode(new Mode());
         }
 
         document.head.appendChild(script);
       }
     }
 
-    TomalecAceEditorPrototype.aceRequire = function(modulePath) {
+    aceRequire(modulePath) {
       return new Promise(function(resolve, fail) {
         var module = ace.require(modulePath);
         if (module) {
@@ -231,21 +232,17 @@ export default class AceEditor extends HTMLElement {
       })
     }
 
-    TomalecAceEditorPrototype.changeTheme = function(theme) {
+    changeTheme(theme) {
         this.editor.setTheme("ace/theme/" + theme);
     }
 
-    function loadError(err) {
-      throw new URIError("Ace config " + err.target.src + " not found. ");
-    }
-
     // var editor = editor = $("lively-editor")[0].shadowRoot.querySelector("#editor").editor;
-
-    TomalecAceEditorPrototype.customizeEditor = function() {
+    customizeEditor() {
         var editor = this.editor;
 
         editor.currentSelectionOrLine = function() {
-            var sel =  this.getSelectionRange();
+            let text,
+                sel =  this.getSelectionRange();
             if (sel.start.row == sel.end.row && sel.start.column == sel.end.column) {
                 var currline = this.getSelectionRange().start.row;
                 text = this.session.getLine(currline);
@@ -259,8 +256,8 @@ export default class AceEditor extends HTMLElement {
             name: "doIt",
             bindKey: {win: "Ctrl-D", mac: "Command-D"},
             exec: (editor) => {
-                var text = editor.currentSelectionOrLine()
-                var result = this.tryBoundEval(text);
+                let text = editor.currentSelectionOrLine()
+                let result = this.tryBoundEval(text);
                 lively.notify("" + result)
             }
         })
@@ -269,8 +266,8 @@ export default class AceEditor extends HTMLElement {
             name: "printIt",
             bindKey: {win: "Ctrl-P", mac: "Command-P"},
             exec: (editor) => {
-                var text = editor.currentSelectionOrLine()
-                var result = this.tryBoundEval(text, true);
+                let text = editor.currentSelectionOrLine()
+                let result = this.tryBoundEval(text, true);
             }
         });
 
@@ -278,8 +275,8 @@ export default class AceEditor extends HTMLElement {
             name: "inspectIt",
             bindKey: {win: "Ctrl-I", mac: "Command-I"},
             exec: (editor) => {
-                var text = editor.currentSelectionOrLine()
-                var result = this.inspectIt(text, true);
+                let text = editor.currentSelectionOrLine()
+                let result = this.inspectIt(text, true);
             }
         });
 
@@ -292,11 +289,11 @@ export default class AceEditor extends HTMLElement {
         });
     };
 
-    TomalecAceEditorPrototype.getDoitContext =  function () {
+    getDoitContext() {
         return this.doitContext
     }
 
-    TomalecAceEditorPrototype.boundEval =  function (str) {
+    boundEval(str) {
       // just a hack... to get rid of some async....
       // #TODO make this more general
       // works: await new Promise((r) => r(3))
@@ -313,9 +310,9 @@ export default class AceEditor extends HTMLElement {
       var result =  interactiveEval.call(ctx, transpiledSource);
 
       return result
-  }
+    }
 
-    TomalecAceEditorPrototype.printResult = function (result) {
+    printResult(result) {
         var editor = this.editor;
         var text = result
         var fromSel =  editor.getSelectionRange().end;
@@ -327,7 +324,7 @@ export default class AceEditor extends HTMLElement {
         editor.selection.selectToPosition(toSel)
     }
 
-    TomalecAceEditorPrototype.tryBoundEval = function (str, printResult) {
+    tryBoundEval(str, printResult) {
         var result;
         try { result =  this.boundEval(str) }
         catch(e) {
@@ -346,7 +343,7 @@ export default class AceEditor extends HTMLElement {
         return result
     }
 
-    TomalecAceEditorPrototype.inspectIt = function (str) {
+    inspectIt(str) {
         var result;
         try { result =  this.boundEval(str) }
         catch(e) {
@@ -358,11 +355,11 @@ export default class AceEditor extends HTMLElement {
         return result
     }
 
-    TomalecAceEditorPrototype.doSave = function (text) {
+    doSave(text) {
         this.tryBoundEval(text) // just a default implementation...
     }
 
-    TomalecAceEditorPrototype.onResize = function() {
+    onResize() {
       this.editor.resize();
       console.log("resizing");
     }
@@ -373,8 +370,8 @@ export default class AceEditor extends HTMLElement {
 
 
     // Fires when an instance of the element is created
-    TomalecAceEditorPrototype.createdCallback = function() {
-        console.log("TomalecAceEditorPrototype.createdCallback")
+    createdCallback() {
+        console.log("createdCallback")
         var value = "";
         Object.defineProperty(this, "value", {
             set: function(val){
@@ -398,82 +395,90 @@ export default class AceEditor extends HTMLElement {
         // this.dispatchEvent(new Event("created")); // already taken care...
     };
 
-    var contents_modified = true;
-    var currently_spellchecking = false;
-    var markers_present = [];
 
-    var lang = "en_US";
-    var dicPath = lively4url + "/src/external/dictionaries/en_US/en_US.dic";
-    var affPath = lively4url + "/src/external/dictionaries/en_US/en_US.aff";
-    
-    var dictionary = null;
-    
-    
-    TomalecAceEditorPrototype.loadSpellcheck = function() {
+
+
+    loadSpellcheck() {
+      this.contents_modified = true;
+      this.currently_spellchecking = false;
+      this.markers_present = [];
+
+      this.dictionary = null;
+
+
+
+      var lang = "en_US";
+      var dicPath = lively4url + "/src/external/dictionaries/en_US/en_US.dic";
+      var affPath = lively4url + "/src/external/dictionaries/en_US/en_US.aff";
+
+      var affData;
+      var dicData;
+
       // Load the dictionary.
-      // We have to load the dictionary files sequentially to ensure 
+      // We have to load the dictionary files sequentially to ensure
       lively.import("typo").then(() => {
-        $.get(dicPath, function(data) {
+        $.get(dicPath, (data) => {
         	dicData = data;
-        }).done(function() {
-          $.get(affPath, function(data) {
+        }).done(() => {
+          $.get(affPath, (data) =>{
         	  affData = data;
-          }).done(function() {
+          }).done(() => {
           	console.log("Dictionary loaded");
-            dictionary = new lively.typo(lang, affData, dicData);
+            this.dictionary = new lively.typo(lang, affData, dicData);
             this.enableSpellcheck();
-            spell_check();
+            this.spellCheck();
           });
         });
       })
     };
-    
+
     // Check the spelling of a line, and return [start, end]-pairs for misspelled words.
-    TomalecAceEditorPrototype.misspelled = function (line) {
+    misspelled (line) {
       	var words = line.split(' ');
       	var i = 0;
       	var bads = [];
+        var word;
       	for (word in words) {
       	  var x = words[word] + "";
       	  var checkWord = x.replace(/[^a-zA-Z']/g, '');
-      	  if (!dictionary.check(checkWord)) {
+      	  if (!this.dictionary.check(checkWord)) {
       	    bads[bads.length] = [i, i + words[word].length];
       	  }
       	  i += words[word].length + 1;
         }
         return bads;
       }
-    
-    TomalecAceEditorPrototype.enableSpellcheck = function () {
-        this.editor.getSession().on('change', function(e) {
-        	contents_modified = true;
+
+    enableSpellcheck () {
+        this.editor.getSession().on('change', (e) => {
+        	this.contents_modified = true;
       	});
       	setInterval(() => { this.spellCheck()}, 500);
       }
-      
+
     // Spell check the Ace editor contents.
-    TomalecAceEditorPrototype.spellCheck = function() {
+    spellCheck() {
         // Wait for the dictionary to be loaded.
-        if (dictionary == null) {
+        if (this.dictionary == null) {
           return;
         }
-      
-        if (currently_spellchecking) {
+
+        if (this.currently_spellchecking) {
         	return;
         }
-      
-        if (!contents_modified) {
+
+        if (!this.contents_modified) {
         	return;
         }
-        currently_spellchecking = true;
+        this.currently_spellchecking = true;
         var session = this.editor.getSession();
-      
+
         // Clear the markers.
-        for (var i in markers_present) {
-          session.removeMarker(markers_present[i]);
+        for (var i in this.markers_present) {
+          session.removeMarker(this.markers_present[i]);
         }
-        markers_present = [];
-      
+        this.markers_present = [];
+
         try {
       	  var Range = ace.require('ace/range').Range
       	  var lines = session.getDocument().getAllLines();
@@ -482,23 +487,21 @@ export default class AceEditor extends HTMLElement {
       	    session.removeGutterDecoration(i, "misspelled");
       	    // Check spelling of this line.
       	    var misspellings = this.misspelled(lines[i]);
-      	    
+
       	    // Add markers and gutter markings.
       	    if (misspellings.length > 0) {
       	      session.addGutterDecoration(i, "misspelled");
       	    }
       	    for (var j in misspellings) {
       	      var range = new Range(i, misspellings[j][0], i, misspellings[j][1]);
-      	      markers_present[markers_present.length] = 
+      	      this.markers_present[this.markers_present.length] =
       	        session.addMarker(range, "misspelled", "typo", true);
       	    }
       	  }
       	} finally {
-      		currently_spellchecking = false;
-      		contents_modified = false;
+      		this.currently_spellchecking = false;
+      		this.contents_modified = false;
       	}
       }
-  
-  
-} 
+}
 
