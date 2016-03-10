@@ -475,9 +475,7 @@
       }
       
       var contents_modified = true;
-      
       var currently_spellchecking = false;
-      
       var markers_present = [];
       
       // Spell check the Ace editor contents.
@@ -495,7 +493,7 @@
         	return;
         }
         currently_spellchecking = true;
-        var session = ace.edit(editor).getSession();
+        var session = this.editor.getSession();
       
         // Clear the markers.
         for (var i in markers_present) {
