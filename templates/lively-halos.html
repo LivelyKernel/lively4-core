@@ -98,7 +98,8 @@
         },
 
         hideHalos: function () {
-          this.halosHidden = Date.now()
+          if (this.areHalosActive())
+            this.halosHidden = Date.now()
           $halos.offset({left:0, top: 0});
           $halos.hide();
         },
