@@ -450,14 +450,32 @@ export default class AceEditor extends HTMLElement {
       }
 
     enableSpellcheck () {
+      
         this.editor.getSession().on('change', (e) => {
         	this.contents_modified = true;
       	});
       	setInterval(() => { this.spellCheck()}, 500);
-      }
+
+        this.isSpellChecking = true;
+    }
+
+    disavleSpellcheck () {
+        this.isSpellChecking = false;
+        // how to remove
+    }
+    
+    clearSpellCheckMarkers () {
+        for (var i in this.markers_present) {
+          session.removeMarker(this.markers_present[i]);
+        }
+        this.markers_present = [];
+    }
+
 
     // Spell check the Ace editor contents.
     spellCheck() {
+        if (!this.isSpellChecking) return
+      
         // Wait for the dictionary to be loaded.
         if (this.dictionary == null) {
           return;
@@ -476,11 +494,8 @@ export default class AceEditor extends HTMLElement {
         this.currently_spellchecking = true;
         var session = this.editor.getSession();
 
-        // Clear the markers.
-        for (var i in this.markers_present) {
-          session.removeMarker(this.markers_present[i]);
-        }
-        this.markers_present = [];
+        
+        this.clearSpellCheckMarkers()
 
         try {
       	  var Range = ace.require('ace/range').Range
