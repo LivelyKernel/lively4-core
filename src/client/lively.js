@@ -100,6 +100,7 @@ export default class Lively {
   static defaultPath(moduleName) {
     return ({
       math: lively4url + "/src/external/math.js",
+      typo: lively4url + "/src/external/typo.js",
       contextmenu: lively4url + '/src/client/contextmenu.js'
     })[moduleName]
   }

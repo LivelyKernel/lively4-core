@@ -30,8 +30,7 @@
  *
  * @returns {Typo} A Typo object.
  */
-
-export default var Typo = function (dictionary, affData, wordsData, settings) {
+var Typo = function (dictionary, affData, wordsData, settings) {
 	settings = settings || {};
 	
 	this.dictionary = null;
@@ -783,6 +782,9 @@ Typo.prototype = {
 		return correct(word);
 	}
 };
+
+
+export default Typo
 
 // Support for use as a node.js module.
 // if (typeof module !== 'undefined') {

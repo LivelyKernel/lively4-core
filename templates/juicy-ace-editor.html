@@ -430,28 +430,33 @@
     };
 
     TomalecAceEditorPrototype.enableSpellcheck = function() {
-            
+      
+      
       // You should configure these classes.
       var editor = "editor"; // This should be the id of your editor element.
       var lang = "en_US";
       var dicPath = lively4url + "/src/external/dictionaries/en_US/en_US.dic";
       var affPath = lively4url + "/src/external/dictionaries/en_US/en_US.aff";
       
+      
       // Load the dictionary.
       // We have to load the dictionary files sequentially to ensure 
       var dictionary = null;
-      $.get(dicPath, function(data) {
-      	dicData = data;
-      }).done(function() {
-        $.get(affPath, function(data) {
-      	  affData = data;
+      lively.import("typo").then(() => {
+        $.get(dicPath, function(data) {
+        	dicData = data;
         }).done(function() {
-        	console.log("Dictionary loaded");
-          dictionary = new Typo(lang, affData, dicData);
-          enable_spellcheck();
-          spell_check();
+          $.get(affPath, function(data) {
+        	  affData = data;
+          }).done(function() {
+          	console.log("Dictionary loaded");
+            dictionary = new lively.typo(lang, affData, dicData);
+            enable_spellcheck();
+            spell_check();
+          });
         });
-      });
+      })
+
       
       // Check the spelling of a line, and return [start, end]-pairs for misspelled words.
       function misspelled(line) {
@@ -513,7 +518,8 @@
       	    }
       	    for (var j in misspellings) {
       	      var range = new Range(i, misspellings[j][0], i, misspellings[j][1]);
-      	      markers_present[markers_present.length] = session.addMarker(range, "misspelled", "typo", true);
+      	      markers_present[markers_present.length] = 
+      	        session.addMarker(range, "misspelled", "typo", true);
       	    }
       	  }
       	} finally {
