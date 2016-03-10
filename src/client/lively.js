@@ -150,8 +150,15 @@ export default class Lively {
 
   static setPosition(obj, point) {
       obj.style.position = "absolute";
+     
+      // var bounds = that.getBoundingClientRect().top
+      //var deltax = point.x - bounds.left
+      // var deltay = point.y - bounds.top
+      
+      // obj.style.left = ""+  ((obj.style.left || 0) - deltax) + "px";
+      // obj.style.top = "" + ((obj.style.top || 0) - deltay) + "px";
       obj.style.left = ""+  point.x + "px";
-      obj.style.top = "" + point.y + "px";
+      obj.style.top = "" +  point.y + "px";
   }
 
   static openFile(url) {
