@@ -1,42 +1,8 @@
-<!--
-    Custom Element with Ace code editor
-    http://juicy.github.io/juicy-ace-editor/
-    version: 1.1.1
-    @demo index.html
--->
-<script src="../src/external/ace/ace.js" type="text/javascript" charset="utf-8"></script>
-<script src="../src/external/ace/ext-modelist.js" type="text/javascript" charset="utf-8"></script>
-<script type="text/javascript" src="../src/external/ResizeSensor.js"></script>
-<style type='text/css'>
-  .ace_marker-layer .misspelled { 
-    position: absolute; z-index: -2; border-bottom: 1px solid red; margin-bottom: -1px; 
-  }
-  .misspelled { border-bottom: 1px solid red; margin-bottom: -1px; }
-</style>
 
-<template id="juicy-ace-editor">
-    <style>
-        :host{
-            display: block;
-            position: relative;
-            min-height: 100px;
-        }
-        #juicy-ace-editor-container{
-            width: 100%;
-            height: 100%;
-            display: block;
 
-            position: absolute;
-        }
-    </style>
-    <div id="juicy-ace-editor-container"></div>
-    <content></content>
-</template>
-
-<script>
-(function(window, document, undefined) {
-
-    // Creates an object based in the HTML Element prototype
+export default class AceEditor extends HTMLElement {
+  
+   // Creates an object based in the HTML Element prototype
     var TomalecAceEditorPrototype = Object.create(HTMLElement.prototype);
 
     // Fires when an instance was inserted into the document
@@ -532,22 +498,7 @@
       		contents_modified = false;
       	}
       }
+  
+  
+} 
 
-   // Refers to the "importer", which is index.html
-    var thatDoc = document;
-
-    // Refers to the "importee", which is juicy-ace-editor.html
-    var thisDoc = (document._currentScript || document.currentScript).ownerDocument;
-
-    // Gets content from <template>
-    // var template = thisDoc.querySelector('#juicy-ace-editor').content;
-
-    var template = document.currentScript.ownerDocument.querySelector('#juicy-ace-editor');
-    var clone = document.importNode(template.content, true);
-
-    System.import('../src/client/morphic/component-loader.js').then(loader => {
-      loader.register('juicy-ace-editor', clone, TomalecAceEditorPrototype);
-    });
-
-}(window, document));
-</script>
