@@ -66,7 +66,7 @@ export default class Lively {
         lively.notify("Could not load module " + moduleName, err)
       } else {
         console.log("lively: load "+ moduleName)
-        
+
         if (moduleName == "lively") {
           this.notify("migrate lively.js")
           var oldLively = window.lively;
@@ -76,15 +76,15 @@ export default class Lively {
         } else {
           this[moduleName] = module.default || module
         }
-        
-        if (lively.components && this[moduleName])               
+
+        if (lively.components && this[moduleName])
           lively.components.updatePrototype(this[moduleName].prototype)
 
         return module.default || module
       }
     })
   }
-  
+
   static reloadModule(path, optSource) {
     if (!path) path = this.defaultPath(moduleName)
     if (!path) throw Error("Could not imoport " + moduleName + ", not path specified!")
@@ -104,7 +104,7 @@ export default class Lively {
       contextmenu: lively4url + '/src/client/contextmenu.js'
     })[moduleName]
   }
-  
+
   static loaded() {
     // guard againsst wrapping twice and ending in endless recursion
     if (!console.log.isWrapped) {
@@ -185,12 +185,13 @@ export default class Lively {
   }
 
   static openContextMenu(container, evt, target) {
-    if (HaloService.halosHidden && ((Date.now() - HaloService.halosHidden) < 500)) {
+    if (HaloService.areHalosActive() ||
+      (HaloService.halosHidden && ((Date.now() - HaloService.halosHidden) < 500))) {
       target = that
-    } 
+    }
     console.log("open context menu: " + target);
     this.import("contextmenu").then(m => m.openIn(container, evt, target));
-    
+
   }
 
   static log(/* varargs */) {
@@ -226,7 +227,7 @@ export default class Lively {
             return false;
           }
       }, false);
-    
+
     if (loadedAsExtension) {
       lively.notify("Lively4 extension loaded!",
         "  CTRL+LeftClick  ... open halo\n" +
@@ -305,7 +306,7 @@ export default class Lively {
     // ea.getBoundingClientRect
 
   }
-  
+
   static showSource(object, evt) {
     if (object instanceof HTMLElement) {
         var comp  = document.createElement("lively-container");
@@ -316,7 +317,7 @@ export default class Lively {
       lively.notify("Could not show source for: " + object)
     }
   }
-  
+
   static showElement(elem, timeout) {
     var comp = document.createElement("div")
     var bounds = elem.getBoundingClientRect()
@@ -356,5 +357,5 @@ export default class Lively {
 
 window.lively = Lively
 Lively.loaded();
-            
+
 console.log("loaded lively");
