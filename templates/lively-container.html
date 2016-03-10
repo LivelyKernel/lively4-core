@@ -400,7 +400,9 @@
     
     <!-- EDIT FILE -->
     <script type="lively4script" data-name="editFile">
-    () => {
+    async (path) => {
+      if (path) await this.setPath(path)
+      
       this.clear()
       var containerContent=  this.getSubmorph('#container-content')
       containerContent.style.display = "none"

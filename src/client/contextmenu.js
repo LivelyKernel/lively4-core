@@ -64,21 +64,22 @@ export default class ContextMenu {
           comp.followPath("https://lively-kernel.org/lively4/Wiki/Journal.md")
       })
       }],
-      ["Text", function(evt) {
+      ["Text", (evt) => {
               var text  = document.createElement("p")
               text.innerHTML = "Hello"
+              text.contentEditable = true
               $('body')[0].appendChild(text)
               lively.setPosition(text, lively.pt(evt.clientX, evt.clientY))
-              if (menu) $(menu).remove()
+              this.hide()
       }],
-      ["Rectangle", function(evt) {
+      ["Rectangle", (evt) => {
           var morph  = document.createElement("div")
           morph.style.width = "200px"
           morph.style.height = "100px"
           lively.setPosition(morph, lively.pt(evt.clientX, evt.clientY))
           morph.style.backgroundColor = "blue"
           $('body')[0].appendChild(morph)
-          contextmenu.hide()
+          this.hide()
       }]
     ]}
   }
@@ -88,8 +89,8 @@ export default class ContextMenu {
     var menu = lively.components.createComponent("lively-menu")
     return lively.components.openIn(container, menu).then(() => {
       this.menu = menu
-      menu.openOn(this.items(target)).then(() => {
-          if (evt) lively.setPosition(menu, lively.pt(evt.clientX, evt.clientY))
+      menu.openOn(this.items(target), evt).then(() => {
+          
       })
       return menu
     })

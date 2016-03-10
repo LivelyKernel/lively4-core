@@ -25,7 +25,7 @@
     <ul class="container">
     </ul>
     <script type="lively4script" data-name="openOn">
-    (items) => {
+    (items, openEvt) => {
       return new Promise((resolve, reject) => {
         var menu = $(this.shadowRoot).find(".container")[0];
         menu.innerHTML = "" // clear
@@ -42,12 +42,15 @@
 
           $(item).on("click",function(evt) {
             if (ea[1] && ea[1] instanceof Function) {
-              ea[1](evt)
+              ea[1](openEvt)
             }
           });
           menu.appendChild(item);
           resolve(menu)
         });
+        
+        if (openEvt) lively.setPosition(menu, 
+          lively.pt(openEvt.clientX, openEvt.clientY))
       })
     }
     </script>
