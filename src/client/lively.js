@@ -184,8 +184,12 @@ export default class Lively {
   }
 
   static openContextMenu(container, evt, target) {
-    console.log("open context menu2: " + target);
+    if (HaloService.areHalosActive()) {
+      target = that
+    } 
+    console.log("open context menu: " + target);
     this.import("contextmenu").then(m => m.openIn(container, evt, target));
+    
   }
 
   static log(/* varargs */) {
