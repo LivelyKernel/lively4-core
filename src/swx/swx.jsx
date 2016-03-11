@@ -36,6 +36,7 @@ class ServiceWorker {
 
         if(url.hostname !== 'lively4') {
             self.fetch(request).then((response) => {
+              console.log(response)
               if (response.headers) {
                 delete response.headers["X-Frame-Options"]
               }

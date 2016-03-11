@@ -278,8 +278,8 @@
             let browseButton = document.createElement("button")
             browseButton.innerHTML="browse"
             browseButton.onclick = () => {
-              var browser = componentLoader.createComponent("lively-file-browser");
-              componentLoader.openInWindow(browser).then(() => {
+              var browser = lively.components.createComponent("lively-file-browser");
+              lively.components.openInWindow(browser).then(() => {
                 browser.path = ea.path
               });
             }
