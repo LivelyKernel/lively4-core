@@ -35,13 +35,13 @@ class ServiceWorker {
             promise = undefined
 
         if(url.hostname !== 'lively4') {
-            self.fetch(request.clone()).then((response) => {
+            event.respondWith(self.fetch(request.clone()).then((response) => {
               console.log(response)
               if (response.headers) {
                 delete response.headers["X-Frame-Options"]
               }
-              event.respondWith(response);
-            });
+              return response;
+            }));
         } else {
           let response = this.filesystem.handle(request, url)
   
