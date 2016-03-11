@@ -34,27 +34,33 @@ class ServiceWorker {
             url     = new URL(request.url),
             promise = undefined
 
-        if(url.hostname !== 'lively4')
-            return self.fetch(event.request)
-
-        let response = this.filesystem.handle(request, url)
-
-        response = response.then((result) => {
-            if(result instanceof Response) {
-                return result
-            } else {
-                return new Response(result)
-            }
-        }).catch((err) => {
-            console.error('Error while processing fetch event:', err)
-
-            let message = err.toString()
-            let content = JSON.stringify({message: message})
-
-            return new Response(content, {status: 500, statusText: message})
-        })
-
-        event.respondWith(response)
+        if(url.hostname !== 'lively4') {
+            self.fetch(request).then((response) => {
+              if (response.headers) {
+                delete response.headers["X-Frame-Options"]
+              }
+              event.respondWith(response);
+            });
+        } else {
+          let response = this.filesystem.handle(request, url)
+  
+          response = response.then((result) => {
+              if(result instanceof Response) {
+                  return result
+              } else {
+                  return new Response(result)
+              }
+          }).catch((err) => {
+              console.error('Error while processing fetch event:', err)
+  
+              let message = err.toString()
+              let content = JSON.stringify({message: message})
+  
+              return new Response(content, {status: 500, statusText: message})
+          })
+  
+          event.respondWith(response)
+        }
     }
 
     message(event) {
