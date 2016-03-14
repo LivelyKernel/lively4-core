@@ -265,6 +265,46 @@ define(function module(require) {
         }
     });
 
+    // TODO: add .destroyItemFromUpstream
+    // TODO: make this reusable
+    Object.subclass('FlowToFunction', {
+        initialize: function(upstream, callback) {
+            this.callback = callback;
+            upstream.downstream.push(this);
+        },
+        newItemFromUpstream: function(item) {
+            this.callback(item);
+        }
+    });
+
+    // TODO: implement CrossOperator
+    IdentityOperator.subclass('CrossOperator', {
+        initialize: function($super, upstream1, upstream2, downstream) {
+            this.upstream1 = upstream1;
+            this.upstream2 = upstream2;
+            this.downstream = downstream;
+
+            new FlowToFunction(upstream1, this.newItemFromUpstream1.bind(this));
+            new FlowToFunction(upstream2, this.newItemFromUpstream2.bind(this));
+            upstream2.now().forEach(this.newItemFromUpstream1.bind(this));
+            upstream2.now().forEach(this.newItemFromUpstream2.bind(this));
+        },
+        newItemFromUpstream1: function(item) {},
+        newItemFromUpstream2: function(item) {},
+        newItemFromUpstream: function(item) {
+            var itemAlreadyExists = this.downstream.now().includes(item);
+            if(!itemAlreadyExists) {
+                this.downstream.safeAdd(item);
+            }
+        },
+        destroyItemFromUpstream: function(item) {
+            var itemStillExists = this.upstream1.now().includes(item) || this.upstream2.now().include(item);
+            if(!itemStillExists) {
+                this.downstream.safeRemove(item);
+            }
+        }
+    });
+
     Object.extend(View.prototype, {
         /**
          * Takes an additional filter function and returns a reactive object set. That set only contains the objects of the original set that also match the given filter function.
@@ -302,6 +342,19 @@ define(function module(require) {
             var newSelection = new View();
 
             new UnionOperator(this, otherView, newSelection);
+
+            return newSelection;
+        },
+        /**
+         * Create a new {@link View} containing all elements of the cartesian product of the callee and the argument.
+         * @function View#cross
+         * @param {View} otherView {@link View}
+         * @return {View} Contains every combination of both input Views as two-element Array.
+         */
+        cross: function(otherView) {
+            var newSelection = new View();
+
+            new CrossOperator(this, otherView, newSelection);
 
             return newSelection;
         }
