@@ -256,4 +256,52 @@ define(function module(require) { "use strict"
 
   errorIfFalse(union.now().length === 1);
   errorIfFalse(union.now().includes(v1));
+
+
+  var OtherClass = require('./src/expr').OtherClass;
+  withLogging.call(OtherClass);
+
+  var otherInstance1 = new OtherClass(42);
+  var baseView = select(OtherClass, function(data) {
+    return data.value === 42;
+  });
+  var otherInstance2 = new OtherClass(42);
+  var delayedView = baseView.delay(1000);
+  var otherInstance3 = new OtherClass(42);
+  var otherInstance4;
+
+  errorIfFalse(delayedView.now().length === 0);
+
+  setTimeout(function() {
+    otherInstance4 = new OtherClass(42);
+    otherInstance3.value = 17;
+  }, 300);
+
+  setTimeout(function() {
+    otherInstance3.value = 42;
+  }, 700);
+
+  setTimeout(function() {
+    errorIfFalse(delayedView.now().length === 2);
+    errorIfFalse(delayedView.now().includes(otherInstance1));
+    errorIfFalse(delayedView.now().includes(otherInstance2));
+
+    otherInstance1.value = 17;
+
+    errorIfFalse(delayedView.now().length === 1);
+    errorIfFalse(delayedView.now().includes(otherInstance2));
+  }, 1100);
+
+  setTimeout(function() {
+    errorIfFalse(delayedView.now().length === 2);
+    errorIfFalse(delayedView.now().includes(otherInstance2));
+    errorIfFalse(delayedView.now().includes(otherInstance4));
+  }, 1500);
+
+  setTimeout(function() {
+    errorIfFalse(delayedView.now().length === 3);
+    errorIfFalse(delayedView.now().includes(otherInstance2));
+    errorIfFalse(delayedView.now().includes(otherInstance3));
+    errorIfFalse(delayedView.now().includes(otherInstance4));
+  }, 2000);
 });

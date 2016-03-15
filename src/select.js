@@ -305,6 +305,35 @@ define(function module(require) {
         }
     });
 
+    IdentityOperator.subclass('DelayOperator', {
+        initialize: function($super, upstream, downstream, delayTime) {
+            this.upstream = upstream;
+            this.downstream = downstream;
+            this.delayTime = delayTime;
+            upstream.downstream.push(this);
+
+            this.delays = new Map();
+
+            upstream.now().forEach(function(item) {
+                this.newItemFromUpstream(item);
+            }, this);
+        },
+        newItemFromUpstream: function(item) {
+            if(!this.delays.has(item)) {
+                this.delays.set(item, setInterval((function() {
+                    this.downstream.safeAdd(item);
+                }).bind(this), this.delayTime));
+            }
+        },
+        destroyItemFromUpstream: function(item) {
+            this.downstream.safeRemove(item);
+            if(this.delays.has(item)) {
+                clearTimeout(this.delays.get(item));
+                this.delays.delete(item);
+            }
+        }
+    });
+
     Object.extend(View.prototype, {
         /**
          * Takes an additional filter function and returns a reactive object set. That set only contains the objects of the original set that also match the given filter function.
@@ -355,6 +384,14 @@ define(function module(require) {
             var newSelection = new View();
 
             new CrossOperator(this, otherView, newSelection);
+
+            return newSelection;
+        },
+
+        delay: function(milliSeconds) {
+            var newSelection = new View();
+
+            new DelayOperator(this, newSelection, milliSeconds);
 
             return newSelection;
         }

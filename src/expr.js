@@ -51,11 +51,18 @@ define(function module() {
     this.value = value;
   };
 
+  var OtherClass = function() { this.initialize.apply(this, arguments); };
+
+  OtherClass.prototype.initialize = function(value) {
+    this.value = value;
+  };
+
   return {
     NumExpr: NumExpr,
     NegExpr: NegExpr,
     AddExpr: AddExpr,
     DataHolder: DataHolder,
-    ValueHolder: ValueHolder
+    ValueHolder: ValueHolder,
+    OtherClass: OtherClass
   };
 });
