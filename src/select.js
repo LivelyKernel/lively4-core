@@ -388,10 +388,18 @@ define(function module(require) {
             return newSelection;
         },
 
-        delay: function(milliSeconds) {
+        /**
+         * Delays the propagation of items of the callee.
+         * Items are propagated to the returned {@link View} in {@link View#delay.delayTime} milliseconds,
+         * if they are not removed from the callee before the timeout.
+         * @function View#delay
+         * @param delayTime - the time to delay given in milliSeconds.
+         * @returns {View}
+         */
+        delay: function(delayTime) {
             var newSelection = new View();
 
-            new DelayOperator(this, newSelection, milliSeconds);
+            new DelayOperator(this, newSelection, delayTime);
 
             return newSelection;
         }
