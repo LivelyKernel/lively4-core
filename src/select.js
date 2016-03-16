@@ -334,6 +334,24 @@ define(function module(require) {
         }
     });
 
+    IdentityOperator.subclass('ReduceOperator', {
+        initialize: function($super, upstream, callback, reducer, initialValue) {
+            this.callback = callback;
+            this.reducer = reducer;
+            this.initialValue = initialValue;
+            this.upstream = upstream;
+            upstream.downstream.push(this);
+
+            this.newItemFromUpstream();
+        },
+        newItemFromUpstream: function() {
+            this.callback(this.upstream.now().reduce(this.reducer, this.initialValue));
+        },
+        destroyItemFromUpstream: function() {
+            this.newItemFromUpstream();
+        }
+    });
+
     Object.extend(View.prototype, {
         /**
          * Takes an additional filter function and returns a reactive object set. That set only contains the objects of the original set that also match the given filter function.
@@ -402,6 +420,12 @@ define(function module(require) {
             new DelayOperator(this, newSelection, delayTime);
 
             return newSelection;
+        },
+
+        reduce: function(callback, reducer, initialValue) {
+            new ReduceOperator(this, callback, reducer, initialValue);
+
+            return this;
         }
     });
 
