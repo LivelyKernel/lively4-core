@@ -1,4 +1,4 @@
-### Prototype of Reactive Object Set Queries in JavaScript
+### Prototype of Reactive Object Set Queries in JavaScript [![Build Status](https://travis-ci.org/onsetsu/active-collection-prototype.svg?branch=master)](https://travis-ci.org/onsetsu/active-collection-prototype)
 Object Set Queries allow you to glob your program for specific objects. To do so, the `select` method returns an object set containing all objects that match a given condition.
 Note, that the object set is automatically updated, i.e. objects are added or removed from the set in case of new objects being constructed or certain objects no longer match the specified condition.
 As a result, the object set represents a persistent materialized view on your program at any given point in time.
