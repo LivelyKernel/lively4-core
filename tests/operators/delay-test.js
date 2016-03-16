@@ -4,6 +4,8 @@ define(function module(require) { "use strict";
 
     describe('.delay operator', function() {
         it('OtherClass example', function(done) {
+            this.timeout(10000);
+
             var OtherClass = require('../../src/expr').OtherClass;
             withLogging.call(OtherClass);
 
