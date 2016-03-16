@@ -90,7 +90,12 @@
     <script type="text/javascript" >
       mocha.setup("bdd");
       var urls = [
-        'tests/simple-test.js'
+        'tests/select-test.js',
+        'tests/event-test.js',
+        'tests/operators/delay-test.js',
+        'tests/operators/filter-test.js',
+        'tests/operators/layer-test.js',
+        'tests/operators/map-test.js'
       ];
       require(urls, function() {
         mocha.checkLeaks();
