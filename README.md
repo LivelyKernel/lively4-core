@@ -55,5 +55,7 @@ The `select` method return a reactive object set that supports the following met
 * `now`: Returns an Array of the objects that are currently in the set. This Array does not update automatically.
 * `size`: Returns the current number of objects the set contains.
 
+For more information, please use the [jsdoc documentation](https://onsetsu.github.io/active-collection-prototype/docs/index.html).
+
 ### Questions?
 If you are interested or have any questions, simply write to [@onsetsu](https://github.com/onsetsu).
