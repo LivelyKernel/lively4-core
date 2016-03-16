@@ -18,7 +18,7 @@ define(function module(require) { "use strict";
             var otherInstance3 = new OtherClass(42);
             var otherInstance4;
 
-            expect(delayedView.now().length).to.equal(0);
+            expect(delayedView.now()).to.have.lengthOf(0);
 
             setTimeout(function() {
                 otherInstance4 = new OtherClass(42);
@@ -30,24 +30,24 @@ define(function module(require) { "use strict";
             }, 350);
 
             setTimeout(function() {
-                expect(delayedView.now().length).to.equal(2);
+                expect(delayedView.now()).to.have.lengthOf(2);
                 expect(delayedView.now()).to.include(otherInstance1);
                 expect(delayedView.now()).to.include(otherInstance2);
 
                 otherInstance1.value = 17;
 
-                expect(delayedView.now().length).to.equal(1);
+                expect(delayedView.now()).to.have.lengthOf(1);
                 expect(delayedView.now()).to.include(otherInstance2);
             }, 550);
 
             setTimeout(function() {
-                expect(delayedView.now().length).to.equal(2);
+                expect(delayedView.now()).to.have.lengthOf(2);
                 expect(delayedView.now()).to.include(otherInstance2);
                 expect(delayedView.now()).to.include(otherInstance4);
             }, 750);
 
             setTimeout(function() {
-                expect(delayedView.now().length).to.equal(3);
+                expect(delayedView.now()).to.have.lengthOf(3);
                 expect(delayedView.now()).to.include(otherInstance2);
                 expect(delayedView.now()).to.include(otherInstance3);
                 expect(delayedView.now()).to.include(otherInstance4);

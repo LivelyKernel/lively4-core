@@ -18,13 +18,13 @@ define(function module(require) { "use strict";
             var smallData = positiveData.filter(function(data) {
                 return data.value < range.max;
             });
-            expect(smallData.now().length).to.equal(1);
+            expect(smallData.now()).to.have.lengthOf(1);
             range.max = 50;
-            expect(smallData.now().length).to.equal(2);
+            expect(smallData.now()).to.have.lengthOf(2);
             var d3 = new DataHolder(42);
-            expect(smallData.now().length).to.equal(3);
+            expect(smallData.now()).to.have.lengthOf(3);
             range.min = 40;
-            expect(smallData.now().length).to.equal(1);
+            expect(smallData.now()).to.have.lengthOf(1);
 
         });
     });
