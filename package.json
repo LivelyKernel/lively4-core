@@ -1,6 +1,6 @@
 {
   "name": "object-queries",
-  "version": "1.0.0",
+  "version": "2.1.2",
   "description": "A JavaScript Prototype of Reactive Object Queries",
   "main": "src/select.js",
   "scripts": {
@@ -12,7 +12,11 @@
   },
   "keywords": [
     "reactive",
-    "view"
+    "view",
+    "query",
+    "dataflow",
+    "declarative",
+    "events"
   ],
   "author": "Stefan Lehmann <stefan.lehmann@hpi.de>",
   "license": "MIT",
