@@ -422,6 +422,14 @@ define(function module(require) {
             return newSelection;
         },
 
+        /**
+         * Whenever the callee is modified, this calls the given callback with the reduced value.
+         * @function View#delay
+         * @param {View~reduceCallback} callback
+         * @param {View~reducer} reducer
+         * @param initialValue - the initial value passed to the {@View~reducer}.
+         * @returns {View} the callee
+         */
         reduce: function(callback, reducer, initialValue) {
             new ReduceOperator(this, callback, reducer, initialValue);
 
@@ -441,6 +449,19 @@ define(function module(require) {
      * @callback View~mapIterator
      * @param {Object} item - item from the original {@link View}.
      * @return {Object} mapped item
+     */
+
+    /**
+     * The callback that is invoked when the {@link View} changes.
+     * @callback View~reduceCallback
+     */
+
+    /**
+     * The callback that computes the aggregation of the modified {@link View}.
+     * @callback View~reducer
+     * @param {Object} accumulator
+     * @param {Object} item
+     * @return {Object}
      */
 
     View.stack = new Stack();
