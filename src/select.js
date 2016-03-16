@@ -265,43 +265,85 @@ define(function module(require) {
         }
     });
 
-    // TODO: add .destroyItemFromUpstream
     // TODO: make this reusable
     Object.subclass('FlowToFunction', {
-        initialize: function(upstream, callback) {
-            this.callback = callback;
+        initialize: function(upstream, create, destroy) {
+            this.create = create;
+            this.destroy = destroy;
             upstream.downstream.push(this);
         },
         newItemFromUpstream: function(item) {
-            this.callback(item);
+            this.create(item);
+        },
+        destroyItemFromUpstream: function(item) {
+            this.destroy(item);
         }
     });
 
-    // TODO: implement CrossOperator
+    /**
+     *
+     * @class Pair
+     * @classdesc This is used by the {@link View#cross} operator.
+     * @property {Object} first
+     * @property {Object} second
+     */
+    Object.subclass('Pair', {
+        initialize: function(first, second) {
+            this.first = first;
+            this.second = second;
+        }
+    });
+
     IdentityOperator.subclass('CrossOperator', {
         initialize: function($super, upstream1, upstream2, downstream) {
             this.upstream1 = upstream1;
             this.upstream2 = upstream2;
             this.downstream = downstream;
 
-            new FlowToFunction(upstream1, this.newItemFromUpstream1.bind(this));
-            new FlowToFunction(upstream2, this.newItemFromUpstream2.bind(this));
-            upstream2.now().forEach(this.newItemFromUpstream1.bind(this));
-            upstream2.now().forEach(this.newItemFromUpstream2.bind(this));
+            this.trackedItems = [[], []];
+            this.pairs = new Map();
+
+            new FlowToFunction(upstream1, this.newItemFromUpstream.bind(this, 0), this.destroyItemFromUpstream.bind(this, 0));
+            new FlowToFunction(upstream2, this.newItemFromUpstream.bind(this, 1), this.destroyItemFromUpstream.bind(this, 1));
+            upstream1.now().forEach(this.newItemFromUpstream.bind(this, 0));
+            upstream2.now().forEach(this.newItemFromUpstream.bind(this, 1));
         },
-        newItemFromUpstream1: function(item) {},
-        newItemFromUpstream2: function(item) {},
-        newItemFromUpstream: function(item) {
-            var itemAlreadyExists = this.downstream.now().includes(item);
-            if(!itemAlreadyExists) {
-                this.downstream.safeAdd(item);
+        newItemFromUpstream: function(index, item) {
+            var wasNewItem = pushIfMissing(this.trackedItems[index], item);
+            if(wasNewItem) {
+                this.forEachPairWithDo(index, item, function(pair) {
+                    this.downstream.safeAdd(pair);
+                });
             }
         },
-        destroyItemFromUpstream: function(item) {
-            var itemStillExists = this.upstream1.now().includes(item) || this.upstream2.now().include(item);
-            if(!itemStillExists) {
-                this.downstream.safeRemove(item);
+        destroyItemFromUpstream: function(index, item) {
+            var gotRemoved = removeIfExisting(this.trackedItems[index], item);
+            if(gotRemoved) {
+                this.forEachPairWithDo(index, item, function(pair) {
+                    this.downstream.safeRemove(pair);
+                });
             }
+        },
+        forEachPairWithDo: function(index, item, callback) {
+            var zeroes = index === 0 ? [item] : this.trackedItems[0];
+            var ones = index === 1 ? [item] : this.trackedItems[1];
+
+            zeroes.forEach(function(zeroElement) {
+                ones.forEach(function(oneElement) {
+                    var pair = this.getOrCreatePairForCombination(zeroElement, oneElement);
+                    callback.call(this, pair);
+                }, this);
+            }, this);
+        },
+        getOrCreatePairForCombination: function(zero, one) {
+            if(!this.pairs.has(zero)) {
+                this.pairs.set(zero, new Map());
+            }
+            var map = this.pairs.get(zero);
+            if(!map.has(one)) {
+                map.set(one, new Pair(zero, one));
+            }
+            return map.get(one);
         }
     });
 
@@ -393,7 +435,7 @@ define(function module(require) {
             return newSelection;
         },
         /**
-         * Create a new {@link View} containing all elements of the cartesian product of the callee and the argument.
+         * Create a new {@link View} containing all elements of the cartesian product of the callee and the argument as {@link Pair}.
          * @function View#cross
          * @param {View} otherView {@link View}
          * @return {View} Contains every combination of both input Views as two-element Array.
@@ -411,7 +453,7 @@ define(function module(require) {
          * Items are propagated to the returned {@link View} in {@link View#delay.delayTime} milliseconds,
          * if they are not removed from the callee before the timeout.
          * @function View#delay
-         * @param delayTime - the time to delay given in milliSeconds.
+         * @param {Number} delayTime - the time to delay given in milliSeconds.
          * @returns {View}
          */
         delay: function(delayTime) {
