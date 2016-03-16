@@ -4,7 +4,7 @@ define(function module(require) { "use strict";
 
     describe('.layer operators', function() {
         it('Person layer example', function() {
-            var Person = require('../../src/person').Person;
+            var Person = require('../fixtures/person').Person;
 
             withLogging.call(Person);
 

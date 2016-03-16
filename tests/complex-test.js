@@ -4,9 +4,9 @@ define(function module(require) { "use strict";
 
     describe('complex example', function() {
         it('runs an empty program', function() {
-            var AddExpr = require('../src/expr').AddExpr;
-            var NegExpr = require('../src/expr').NegExpr;
-            var NumExpr = require('../src/expr').NumExpr;
+            var AddExpr = require('./fixtures/expr').AddExpr;
+            var NegExpr = require('./fixtures/expr').NegExpr;
+            var NumExpr = require('./fixtures/expr').NumExpr;
 
             withLogging.call(AddExpr);
 
@@ -23,7 +23,7 @@ define(function module(require) { "use strict";
                 return expr.result() > threshold;
             });
 
-            expect(selection.size()).to.equal(1);
+            expect(selection.now()).to.have.lengthOf(1);
 
             var manualSelectionSize = 0;
             selection
@@ -44,7 +44,7 @@ define(function module(require) { "use strict";
                 });
 
 
-            expect(mappedSelection.size()).to.equal(1);
+            expect(mappedSelection.now()).to.have.lengthOf(1);
             mappedSelection.now().forEach(function(numExpr) {
                 expect(numExpr.result()).to.equal(25);
             });
@@ -55,10 +55,10 @@ define(function module(require) { "use strict";
                 adExpr
             );
             expect(expr.result()).to.equal(30);
-            expect(selection.size()).to.equal(2);
+            expect(selection.now()).to.have.lengthOf(2);
             expect(manualSelectionSize).to.equal(2);
 
-            expect(mappedSelection.size()).to.equal(2);
+            expect(mappedSelection.now()).to.have.lengthOf(2);
             mappedSelection.now().forEach(function(numExpr) {
                 expect(
                     numExpr.result() === 25 ||
@@ -68,20 +68,20 @@ define(function module(require) { "use strict";
 
             five.val = -30;
             expect(expr.result()).to.equal(-5);
-            expect(selection.size()).to.equal(1);
+            expect(selection.now()).to.have.lengthOf(1);
             expect(manualSelectionSize).to.equal(1);
 
-            expect(mappedSelection.size()).to.equal(1);
+            expect(mappedSelection.now()).to.have.lengthOf(1);
             mappedSelection.now().forEach(function(numExpr) {
                 expect(numExpr.result()).to.equal(25);
             });
 
             seventeen.val = 70;
             expect(expr.result()).to.equal(-58);
-            expect(selection.size()).to.equal(0);
+            expect(selection.now()).to.have.lengthOf(0);
             expect(manualSelectionSize).to.equal(0);
 
-            expect(mappedSelection.size()).to.equal(0);
+            expect(mappedSelection.now()).to.have.lengthOf(0);
 
             var eleven = new NegExpr(
                 new NegExpr(
@@ -93,10 +93,10 @@ define(function module(require) { "use strict";
                 new NumExpr(0)
             );
             expect(expr2.result()).to.equal(11);
-            expect(selection.size()).to.equal(1);
+            expect(selection.now()).to.have.lengthOf(1);
             expect(manualSelectionSize).to.equal(1);
 
-            expect(mappedSelection.size()).to.equal(1);
+            expect(mappedSelection.now()).to.have.lengthOf(1);
             mappedSelection.now().forEach(function(numExpr) {
                 expect(numExpr.result()).to.equal(11);
             });
@@ -104,18 +104,18 @@ define(function module(require) { "use strict";
             var newFive = new NumExpr(5);
             eleven.expr = newFive;
             expect(expr2.result()).to.equal(-5);
-            expect(selection.size()).to.equal(0);
+            expect(selection.now()).to.have.lengthOf(0);
             expect(manualSelectionSize).to.equal(0);
 
-            expect(mappedSelection.size()).to.equal(0);
+            expect(mappedSelection.now()).to.have.lengthOf(0);
 
             newFive.val = -11;
             console.log('Size of Selection', selection.size());
             expect(expr2.result()).to.equal(11);
-            expect(selection.size()).to.equal(1);
+            expect(selection.now()).to.have.lengthOf(1);
             expect(manualSelectionSize).to.equal(1);
 
-            expect(mappedSelection.size()).to.equal(1);
+            expect(mappedSelection.now()).to.have.lengthOf(1);
             mappedSelection.now().forEach(function(numExpr) {
                 expect(numExpr.result()).to.equal(11);
             });
@@ -123,10 +123,10 @@ define(function module(require) { "use strict";
             expr2.destroy();
             expr2.destroy();
             console.log('Size of Selection', selection.size());
-            expect(selection.size()).to.equal(0);
+            expect(selection.now()).to.have.lengthOf(0);
             expect(manualSelectionSize).to.equal(0);
 
-            expect(mappedSelection.size()).to.equal(0);
+            expect(mappedSelection.now()).to.have.lengthOf(0);
         });
     });
 });

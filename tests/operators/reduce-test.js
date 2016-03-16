@@ -3,11 +3,7 @@ define(function module(require) { "use strict";
     var select = require('../../src/select');
 
     describe('.reduce operator', function() {
-        var AValueClass = function() { this.initialize.apply(this, arguments); };
-
-        AValueClass.prototype.initialize = function(value) {
-            this.value = value;
-        };
+        var AValueClass = require('../fixtures/class-factory').getValueClass();
 
         it('Example', function() {
             this.timeout(10000);

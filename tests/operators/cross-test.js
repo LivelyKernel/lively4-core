@@ -3,7 +3,7 @@ define(function module(require) { "use strict";
     var select = require('../../src/select');
 
     describe('.cross operator', function() {
-        var valueClassFactory = require('./fixtures').getValueClass,
+        var valueClassFactory = require('../fixtures/class-factory').getValueClass,
         ValueClassA = valueClassFactory(),
         ValueClassB = valueClassFactory();
 

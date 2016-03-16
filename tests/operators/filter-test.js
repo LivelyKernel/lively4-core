@@ -4,7 +4,7 @@ define(function module(require) { "use strict";
 
     describe('.filter operator', function() {
         it('DataHolder example', function() {
-            var DataHolder = require('../../src/expr').DataHolder;
+            var DataHolder = require('../fixtures/class-factory').getValueClass();
             withLogging.call(DataHolder);
             var range = {
                 min: 0,

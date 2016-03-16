@@ -6,7 +6,7 @@ define(function module(require) { "use strict";
         it('ValueHolder example', function() {
             this.timeout(10000);
 
-            var ValueHolder = require('../../src/expr').ValueHolder;
+            var ValueHolder = require('../fixtures/class-factory').getValueClass();
             withLogging.call(ValueHolder);
             var range1 = {
                 min: 0,

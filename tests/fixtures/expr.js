@@ -39,30 +39,9 @@ define(function module() {
     return result1 + result2;
   };
 
-  var DataHolder = function() { this.initialize.apply(this, arguments); };
-
-  DataHolder.prototype.initialize = function(value) {
-    this.value = value;
-  };
-
-  var ValueHolder = function() { this.initialize.apply(this, arguments); };
-
-  ValueHolder.prototype.initialize = function(value) {
-    this.value = value;
-  };
-
-  var OtherClass = function() { this.initialize.apply(this, arguments); };
-
-  OtherClass.prototype.initialize = function(value) {
-    this.value = value;
-  };
-
   return {
     NumExpr: NumExpr,
     NegExpr: NegExpr,
-    AddExpr: AddExpr,
-    DataHolder: DataHolder,
-    ValueHolder: ValueHolder,
-    OtherClass: OtherClass
+    AddExpr: AddExpr
   };
 });

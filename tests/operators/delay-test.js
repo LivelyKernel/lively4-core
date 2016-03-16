@@ -6,7 +6,7 @@ define(function module(require) { "use strict";
         it('OtherClass example', function(done) {
             this.timeout(10000);
 
-            var OtherClass = require('../../src/expr').OtherClass;
+            var OtherClass = require('../fixtures/class-factory').getValueClass();
             withLogging.call(OtherClass);
 
             var otherInstance1 = new OtherClass(42);
