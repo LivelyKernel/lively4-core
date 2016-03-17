@@ -22,6 +22,11 @@ To run the same tests automatically in a test suite:
 npm test
 ```
 
+### Update Documentation
+```
+jsdoc src/select.js src/view.js src/withlogging.js
+```
+
 ### Contributing
 
 The project is structured as follows:
