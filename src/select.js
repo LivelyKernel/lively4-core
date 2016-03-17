@@ -466,7 +466,7 @@ define(function module(require) {
 
         /**
          * Whenever the callee is modified, this calls the given callback with the reduced value.
-         * @function View#delay
+         * @function View#reduce
          * @param {View~reduceCallback} callback
          * @param {View~reducer} reducer
          * @param initialValue - the initial value passed to the {@View~reducer}.

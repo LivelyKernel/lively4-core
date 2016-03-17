@@ -1,6 +1,6 @@
 {
   "name": "object-queries",
-  "version": "2.1.2",
+  "version": "2.2.3",
   "description": "A JavaScript Prototype of Reactive Object Queries",
   "main": "src/select.js",
   "scripts": {
