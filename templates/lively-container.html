@@ -65,21 +65,23 @@
     <script type="lively4script" data-name="initialize">
     () => {
       if (this.useBrowserHistory()) {
-      window.onpopstate = (event) => {
-        var state = event.state
-        if (state && state.followInline) {
-          console.log("follow " + state.path)
-          this.setPath(state.path)
-        }
-      };
+        window.onpopstate = (event) => {
+          var state = event.state
+          if (state && state.followInline) {
+            console.log("follow " + state.path)
+            this.setPath(state.path)
+          }
+        };
         var path = lively.preferences.getURLParameter("load")
+        var edit = lively.preferences.getURLParameter("edit")
         if (path) {
             this.setPath(path)
-        } else {
-            path = lively.preferences.getURLParameter("edit")
-            this.setPath(path, true).then(() => {
+        } else if (edit) {
+            this.setPath(edit, true).then(() => {
               this.editFile()
             })
+        } else {
+          this.setPath(lively4url +"/")
         }
       } else {
       	var src = this.getAttribute("src")
