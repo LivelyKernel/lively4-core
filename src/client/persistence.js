@@ -6,7 +6,7 @@ var persistenceTimerInterval;
 var persistenceTimerEnforceSaveInterval;
 var persistenceEnabled = false;
 var persistenceInterval = 5000;
-var persistenceTarget = 'http://lively4/';
+var persistenceTarget = window.location.protocol + '//lively4/';
 
 function hasDoNotPersistTag(node, checkForChildrenValueToo = false) {
     return node.attributes
