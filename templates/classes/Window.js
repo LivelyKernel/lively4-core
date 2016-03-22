@@ -2,19 +2,20 @@
 
 import Morph from './Morph.js';
 
+function getScroll() {
+  return {
+    x: document.scrollingElement.scrollLeft || 0,
+    y: document.scrollingElement.scrollTop || 0
+  };
+}
+
 export default class Window extends Morph {
 
-  static hello() {
-    return "world!"
-  }
-  
-
-  // window title
   get title() {
     return this._title;
   }
   set title(val) {
-    this._title =  val;
+    this._title = val;
     this.render();
   }
 
@@ -22,48 +23,63 @@ export default class Window extends Morph {
     return this.hasAttribute('fixed');
   }
 
-  setup() {
-    // define shortcut variables
+  setPosition(top, left) {
+    this.style.top = top + 'px';
+    this.style.left = left + 'px';
+  }
+
+  setSize(width, height) {
+    this.style.width = width + 'px';
+    this.style.height = height + 'px';
+  }
+
+  defineShortcuts() {
+    this.window = this.shadowRoot.querySelector('.window');
     this.titleSpan = this.shadowRoot.querySelector('.window-title span');
+
+    this.menuButton = this.shadowRoot.querySelector('.window-menu');
     this.minButton = this.shadowRoot.querySelector('.window-min');
     this.maxButton = this.shadowRoot.querySelector('.window-max');
     this.pinButton = this.shadowRoot.querySelector('.window-pin');
     this.resizeButton = this.shadowRoot.querySelector('.window-resize');
     this.closeButton = this.shadowRoot.querySelector('.window-close');
-    
-    this.getSubmorph('.window-menu').addEventListener('click', (e) => { 
-      this.menuButtonClicked(e) 
-    });
-    
+
     this.contentBlock = this.shadowRoot.querySelector('#window-content');
+  }
 
-    // bind events for window behavior
-    this.dragging = false;
+  bindEvents() {
     this.addEventListener('mousedown', (e) => { this.focus(); });
-    this.closeButton.addEventListener('click', (e) => { this.closeButtonClicked(e) });
-    this.minButton.addEventListener('click', (e) => { this.minButtonClicked(e) });
-    this.maxButton.addEventListener('click', (e) => { this.maxButtonClicked(e) });
-    this.pinButton.addEventListener('click', (e) => { this.pinButtonClicked(e) });
-    this.resizeButton.addEventListener('mousedown', (e) => { this.resizeMouseDown(e) });
-    this.shadowRoot.querySelector('.window-title').addEventListener('mousedown', (e) => { this.titleMouseDown(e) });
-
-    document.addEventListener('mousemove', (e) => { this.windowMouseMove(e) });
+    this.addEventListener('created', (e) => { this.focus(); });
+    document.addEventListener('mousemove', (e) => { this.windowMouseMove(e); });
     document.addEventListener('mouseup', (e) => { this.windowMouseUp(e); });
 
-    this.addEventListener('created', (e) => { this.focus() });
+    this.shadowRoot.querySelector('.window-title')
+     .addEventListener('mousedown', (e) => { this.titleMouseDown(e); });
+
+    this.menuButton.addEventListener('click', (e) => { this.menuButtonClicked(e); });
+    this.minButton.addEventListener('click', (e) => { this.minButtonClicked(e); });
+    this.maxButton.addEventListener('click', (e) => { this.maxButtonClicked(e); });
+    this.pinButton.addEventListener('click', (e) => { this.pinButtonClicked(e); });
+    this.resizeButton.addEventListener('mousedown', (e) => { this.resizeMouseDown(e); });
+    this.closeButton.addEventListener('click', (e) => { this.closeButtonClicked(e); });
+  }
+
+  setup() {
+    this.dragging = false;
+
+    this.defineShortcuts();
+    this.bindEvents();
   }
 
   attachedCallback() {
-    console.log('window attachedCallback!');
-
-    this.setup()
+    this.setup();
 
     this.created = true;
     this.render();
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
-    switch(attrName) {
+    switch (attrName) {
       case 'title':
         this.render();
         break;
@@ -75,11 +91,9 @@ export default class Window extends Morph {
     }
   }
 
-  // (re)render the element
   render() {
-    console.log('window render!');
     if (this.created) {
-      if(this.attributes['title']) {
+      if (this.attributes['title']) {
         this.titleSpan.innerHTML = this.attributes['title'].value;
       }
     }
@@ -87,42 +101,48 @@ export default class Window extends Morph {
 
   reposition() {
     let rect = this.getBoundingClientRect();
-    let scrollX = document.scrollingElement.scrollLeft || 0;
-    let scrollY = document.scrollingElement.scrollTop || 0;
 
     if (this.isFixed) {
-      this.style.left = rect.left + 'px';
-      this.style.top = rect.top + 'px';
+      this.setPosition(
+        rect.top,
+        rect.left
+      );
+
       this.classList.add('window-fixed');
       this.pinButton.classList.add('active');
     } else {
-      this.style.left = (rect.left + scrollX) + 'px';
-      this.style.top = (rect.top + scrollY) + 'px';
+      let scroll = getScroll();
+
+      this.setPosition(
+        rect.top + scroll.y,
+        rect.left + scroll.x
+      );
+
       this.classList.remove('window-fixed');
       this.pinButton.classList.remove('active');
     }
   }
 
   focus(e) {
-    // this.style.backgroundColor = livle.color.random()
-    var minZIndex = 100;
-    // find all windows but this one
-    var allWindowsButThis = Array.from(document.querySelectorAll('lively-window'));
-    var thisIdx = allWindowsButThis.indexOf(this);
+    let minZIndex = 100;
+
+    let allWindows = Array.from(document.querySelectorAll('lively-window'));
+    let thisIdx = allWindows.indexOf(this);
+
+    let allWindowsButThis = allWindows;
     allWindowsButThis.splice(thisIdx, 1);
 
-    // sort ascending by z-index
     allWindowsButThis.sort((a, b) => {
-      return parseInt(a.style["z-index"]) - parseInt(b.style["z-index"]);
+      return parseInt(a.style['z-index']) - parseInt(b.style['z-index']);
     });
 
-    // assign new z-index
-    allWindowsButThis.forEach((win, idx) => {
-      win.style["z-index"] = minZIndex + idx;
-      $(win.getSubmorph('.window')).removeClass('focused');
+    allWindowsButThis.forEach((win, index) => {
+      win.style['z-index'] = minZIndex + index;
+      win.window.classList.remove('focused');
     });
-    this.style["z-index"] = minZIndex + allWindowsButThis.length;
-    $(this.getSubmorph('.window')).addClass('focused');
+
+    this.style['z-index'] = minZIndex + allWindowsButThis.length;
+    this.window.classList.add('focused');
   }
 
   minButtonClicked(e) {
@@ -145,9 +165,9 @@ export default class Window extends Morph {
   closeButtonClicked(e) {
     this.parentNode.removeChild(this);
   }
-  
+
   menuButtonClicked(e) {
-    lively.openContextMenu(document.body, e, this.childNodes[0])
+    lively.openContextMenu(document.body, e, this.childNodes[0]);
   }
 
   titleMouseDown(e) {
@@ -166,7 +186,8 @@ export default class Window extends Morph {
         top: e.clientY - offsetWindow.top
       };
     }
-    $('.window', this.shadowRoot).addClass('dragging');
+
+    this.window.classList.add('dragging');
   }
 
   resizeMouseDown(e) {
@@ -178,7 +199,8 @@ export default class Window extends Morph {
       left: offsetWindow.left,
       top: offsetWindow.top
     };
-    $('.window', this.shadowRoot).addClass('resizing');
+
+    this.window.classList.add('resizing');
   }
 
   windowMouseUp(e) {
@@ -186,7 +208,9 @@ export default class Window extends Morph {
 
     this.dragging = false;
     this.resizing = false;
-    $('.window', this.shadowRoot).removeClass('dragging').removeClass('resizing');
+
+    this.window.classList.remove('dragging');
+    this.window.classList.remove('resizing');
   }
 
   windowMouseMove(e) {
@@ -194,23 +218,23 @@ export default class Window extends Morph {
 
     if (this.dragging) {
       if (this.isFixed) {
-        $(this).css({
-          left: e.clientX - this.dragging.left,
-          top: e.clientY - this.dragging.top
-        });
+        this.setPosition(
+          e.clientY - this.dragging.top,
+          e.clientX - this.dragging.left
+        );
       } else {
-        let scrollX = document.scrollingElement.scrollLeft || 0;
-        let scrollY = document.scrollingElement.scrollTop || 0;
-        $(this).css({
-          left: e.pageX - this.dragging.left - scrollX,
-          top: e.pageY - this.dragging.top - scrollY
-        });
+        let scroll = getScroll();
+
+        this.setPosition(
+          e.pageY - this.dragging.top - scroll.y,
+          e.pageX - this.dragging.left - scroll.x
+        );
       }
     } else if (this.resizing) {
-      $(this).css({
-        width: e.pageX - this.resizing.left,
-        height: e.pageY - this.resizing.top
-      });
+      this.setSize(
+        e.pageX - this.resizing.left,
+        e.pageY - this.resizing.top        
+      );
     }
   }
 
