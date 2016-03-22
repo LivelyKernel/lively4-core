@@ -9,6 +9,9 @@ export default class Filesystem extends Base {
     constructor(path, options) {
         super('github', path, options)
 
+        if(!options.repo && options.base)
+            options.repo = options.base
+
         if(options.repo) {
             this.repo = options.repo
         } else {
@@ -108,6 +111,13 @@ export default class Filesystem extends Base {
     }
 
     async write(path, fileContent) {
+        if(!this.token) {
+            return new Response(null, {
+                status: 401,
+                statusMessage: 'TOKEN REQUIRED',
+                headers: {'Allow': 'GET,OPTIONS'}
+            })
+        }
         let githubHeaders = new Headers()
         githubHeaders.append('Authorization', 'token ' + this.token)
 
