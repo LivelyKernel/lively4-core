@@ -16,3 +16,11 @@ export function normalize(path) {
     else
         return target.join('/')
 }
+
+export function join(a, b) {
+  if(b[0] === '/') {
+    return normalize(b)
+  } else {
+    return normalize(a + '/' + b)
+  }
+}

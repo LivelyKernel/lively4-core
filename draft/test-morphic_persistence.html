@@ -35,19 +35,16 @@
 <h2>Another Title</h2>
 
 <lively-component-bin></lively-component-bin>
-<lively-halos></lively-halos>
-
-
-<pre id="console"></pre>
-<input type="text" id="commandline" value="">
 
 
 <script>
-    var lively4url =  ".." // or any abosolute path to lively4 ? Any idea for computeRoot() ? #JensLincke #OpenQuestion
+    var lively4yourself = /\/draft\/.*\.html/ // ADAPT THIS
+    // some little reflection... help to find your inner self!
+    var lively4url = window.location.origin + window.location.pathname.replace(lively4yourself,"");
 
     //// #TODO The ace editor tries to be very clever, so it cannot be loaded through "import" at the moment
     //// (e.g. AMD promise error)
-    // System.import(lively4url + "src/external/ace.js").then(function(){
+    // System.import(lively4url + "src/external/ace/ace.js").then(function(){
     //         ace.edit("editor")
     // })
 
@@ -58,6 +55,6 @@
 
 </script>
 
-<lively-preferences data-persistence-target="http://localhost:8080/" data-persistence-interval="4000" data-persistence-enabled="true">
+<lively-preferences data-persistence-target="http://localhost:8080/" data-persistence-interval="4000" data-persistence-enabled="false">
 
 </body></html>

@@ -1,46 +1,71 @@
 <template id="lively-menu">
     <style>
+    :host {
+      position: absolute;
+      top: "200px";
+      left: "200px";
+      border: 20px;
+      z-index: 200;
+    }
     .container {
         width: 120px;
         padding: 5px;
-        border-radius: 5px;
-        background-color: rgb(238, 238, 238);
+        // border-radius: 5px;
+        // background-color: rgb(238, 238, 238);
+        background-color: white;
+        border: 0.7px solid gray;
+        margin: 0;
+        padding: 0px;
+    }
+    ul {
+      margin: 0;
     }
 
     li:hover {
-        background-color: rgb(150, 150, 150);
+        background-color: #2B65EC;
+        color: white;
     }
 
     li {
-        list-style-type: none;
+      font-size: 10pt;
+      padding: 10px 5px 5px 10px;
+      
+      margin: 0;
+      list-style-type: none;
+      color:  #1a1a1a;
     }
     </style>
     <ul class="container">
     </ul>
-    <script type="lively4script" data-name="initialize">
-    () => {
-      this.openOn = function(target) {
+    <script type="lively4script" data-name="openOn">
+    (items, openEvt) => {
+      return new Promise((resolve, reject) => {
+        
         var menu = $(this.shadowRoot).find(".container")[0];
-
         menu.innerHTML = "" // clear
+        
         // create a radio button for each tool
-        if (!target.getMenuItems) return;
-        var menuItems = target.getMenuItems()
-        menuItems.forEach(function(ea) {
+        if (!items) {
+          console.log("WARNING: no items to open")
+          resolve()
+          return;
+        }
+        items.forEach((ea) => {
           var item = document.createElement("li");
           item.innerHTML = ea[0]
           console.log(2**3, 'from babel transpile')
 
-          $(item).on("click",function() {
+          $(item).on("click",function(evt) {
             if (ea[1] && ea[1] instanceof Function) {
-              ea[1](target)
+              ea[1](openEvt)
             }
           });
-
           menu.appendChild(item);
+          resolve(menu)
         });
-      }
-      $(this.shadowRoot).find(".container")[0].dispatchEvent(new Event("initialized"))
+        
+      
+      })
     }
     </script>
 </template>

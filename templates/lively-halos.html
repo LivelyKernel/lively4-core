@@ -5,15 +5,19 @@
 <link rel="import" href="../templates/halos/grab-halo.html" />
 <link rel="import" href="../templates/halos/export-halo.html" />
 <link rel="import" href="../templates/halos/resize-halo.html" />
+<link rel="import" href="../templates/halos/unpack-halo.html" />
 <template id="lively-halos">
     <style>
     :host {
       position: absolute;
       pointer-events: none;
+      min-width: 90px;
     }
     .container {
       width: 100%;
       height: 100%;
+      min-width: 90px;
+      min-height: 90px;
       display: flex;
       justify-content: space-between;
       flex-direction: column;
@@ -26,6 +30,7 @@
       pointer-events: all;
       z-index: 9999;
       border-radius: 50%;
+      min-width: 30px;
       width: 30px;
       height: 30px;
       background-color: #ccc;
@@ -46,6 +51,7 @@
       </div>
       <div class="row" id="row3">
         <export-halo class="halo"></export-halo>
+        <unpack-halo class="halo"></unpack-halo>
         <resize-halo class="halo"></resize-halo>
       </div>
     </div>
@@ -56,11 +62,35 @@
       var $halos = $("lively-halos")
       $halos.hide();
       window.HaloService = {
-        showHalos: function (target) {
+        showHalos: function (target, path) {
+
           var $target = $(target);
-          var offset = $target.offset();
-          var width = $target.outerWidth();
-          var height = $target.outerHeight();
+          // var offset = $target.offset();
+
+          var bounds = target.getBoundingClientRect()
+          var offset = {top: bounds.top, left: bounds.left}
+
+          // viewport coordinates
+          var scrollTop = Math.abs($(document).scrollTop());
+          var scrollLeft = Math.abs($(document).scrollLeft());
+
+          // make sure halo respects left and top viewport boundary
+          var offsetTop = Math.max(offset.top - 30, scrollTop);
+          var offsetLeft = Math.max(offset.left - 30, scrollLeft);
+          var offsetTopDiff = offsetTop - offset.top;
+          var offsetLeftDiff = offsetLeft - offset.left;
+          offset.top = offsetTop;
+          offset.left = offsetLeft;
+
+          // make sure halo respects right and bottom viewport boundary
+          var width = $target.outerWidth() - offsetLeftDiff + 30;
+          var height = $target.outerHeight() - offsetTopDiff + 30;
+          var offsetBottom = Math.min(offset.top + height, scrollTop + $(window).height());
+          var offsetRight = Math.min(offset.left + width, scrollLeft + $(window).width());
+          width = offsetRight - offsetLeft;
+          height = offsetBottom - offsetTop;
+
+          // set position and dimensions of halo
           $halos.show();
           $halos.offset(offset);
           $halos.outerWidth(width);
@@ -68,8 +98,14 @@
         },
 
         hideHalos: function () {
+          if (this.areHalosActive())
+            this.halosHidden = Date.now()
           $halos.offset({left:0, top: 0});
           $halos.hide();
+        },
+
+        areHalosActive: function () {
+          return $halos.is(":visible");
         }
       }
     }

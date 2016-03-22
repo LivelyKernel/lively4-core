@@ -1,5 +1,7 @@
 
 import * as Path from 'src/swx/path.jsx'
+import focalStorage from 'src/external/focalStorage.js'
+
 
 /**
  * Global file system subsystem.
@@ -16,6 +18,11 @@ export class Filesystem {
     mount(path, type, ...args) {
         path = Path.normalize(path)
         this.mounts.set(path, new type(path, ...args))
+    }
+
+    umount(path) {
+        path = Path.normalize(path)
+        this.mounts.delete(path)
     }
 
     handle(request, url) {
@@ -44,6 +51,41 @@ export class Filesystem {
         return new Response(null, {status: 400})
         // TODO: respond with 400 / 404?
     }
+
+    mountsAsJso() {
+      let jso = []
+      for(let [path, mount] of this.mounts) {
+          jso.push({
+              path: path,
+              name: mount.name,
+              options: mount.options
+          })
+      }
+      return jso
+    }
+
+    persistMounts() {
+      var mounts = this.mountsAsJso()
+      console.log("persist mounts: " + mounts)
+      focalStorage.setItem("lively4mounts", mounts)
+    }
+
+    // #TODO refactor to "async/await style"
+    loadMounts(){
+      focalStorage.getItem("lively4mounts").then((mounts) => {
+        try {
+          mounts.forEach(mount => {
+            console.log("mount ", mount)
+            System.import('src/swx/fs/' + mount.name + '.jsx').then(fs => {
+              this.mount(mount.path, fs.default, mount.options)
+            })
+          })
+        } catch(e) {
+          console.log("error loading mounts: " + e)
+        }
+      })
+    }
+
 }
 
 export class File {

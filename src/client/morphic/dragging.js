@@ -4,21 +4,7 @@ import * as events from './event-helpers.js';
 var dragTarget;
 var dragStartEventPosition;
 var dragStartNodePosition;
-var isDragging = false;
-
-export function activate() {
-  console.log("using Dragging");
-  $("body").on("mousedown", start);
-  $("body").on("mousemove", move);
-  $("body").on("mouseup", stop);
-}
-
-export function deactivate() {
-  console.log("deactivate Dragging");
-  $("body").off("mousedown", start);
-  $("body").off("mousemove", move);
-  $("body").off("mouseup", stop);
-}
+export var isDragging = false;
 
 export function start(e) {
   dragTarget = window.that;
@@ -57,7 +43,7 @@ function initDraggingAtEvent(anEvent) {
 
 function startOffsetDragging(anEvent) {
   if (!isDragging && events.noticableDistanceTo(anEvent, dragStartEventPosition)) {
-    dragTarget.style.position = 'relative';
+    dragTarget.style.position = 'absolut';
     isDragging = true;
   }
 }

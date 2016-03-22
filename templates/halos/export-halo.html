@@ -1,12 +1,14 @@
 <template id="export-halo">
     <style>
     :host {
-      background-image: url(http://livelykernel.github.io/lively4-core/src/client/media/export.svg);
+
     }
     </style>
     <script type="lively4script" data-name="initialize">
     () => {
       System.import("../src/client/morphic/component-creator.js").then( function(exporting) {
+        $("body /deep/ export-halo")[0].style.backgroundImage =
+          'url(' +lively4url + "/src/client/media/export.svg)"
         $("body /deep/ export-halo").off("click").on("click", function() {
           exporting.handle(window.that);
           window.HaloService.hideHalos();

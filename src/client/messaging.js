@@ -1,7 +1,7 @@
 "use strict";
 
 window.addEventListener('error', function(error) {
-    console.error(error);
+    console.log("Error:",  error);
 });
 
 /**

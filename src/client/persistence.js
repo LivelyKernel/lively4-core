@@ -3,9 +3,10 @@
 import * as preferences from './preferences.js';
 
 var persistenceTimerInterval;
+var persistenceTimerEnforceSaveInterval;
 var persistenceEnabled = false;
 var persistenceInterval = 5000;
-var persistenceTarget = 'http://lively4/';
+var persistenceTarget = window.location.protocol + '//lively4/';
 
 function hasDoNotPersistTag(node, checkForChildrenValueToo = false) {
     return node.attributes
@@ -19,7 +20,7 @@ function hasParentTag(node) {
     return node.parentNode != null;
 }
 
-function checkAddedNodes(nodes, isParent = false) {
+function hasNoDonotpersistFlagInherited(nodes, isParent = false) {
     let parents = new Set();
     for (let node of nodes) {
         if (!hasDoNotPersistTag(node, isParent) && hasParentTag(node)) {
@@ -28,7 +29,7 @@ function checkAddedNodes(nodes, isParent = false) {
     }
     if (parents.size == 0) return false;
     if (parents.has(document)) return true;
-    return checkAddedNodes(parents, true);
+    return hasNoDonotpersistFlagInherited(parents, true);
 }
 
 function checkRemovedNodes(nodes, orphans) {
@@ -61,7 +62,7 @@ function initialize(){
                     }
                 }
                 
-                shouldSave = checkAddedNodes(addedNodes) || checkRemovedNodes(removedNodes, orphans);
+                shouldSave = hasNoDonotpersistFlagInherited(addedNodes) || checkRemovedNodes(removedNodes, orphans);
 
                 //remove removed orphan nodes from orphan set
                 for (let node of removedNodes) {
@@ -69,6 +70,10 @@ function initialize(){
                         orphans.delete(node);
                     }
                 }
+            }
+            else if (record.type == 'attributes'
+                || record.type == 'characterData') {
+                shouldSave = hasNoDonotpersistFlagInherited([record.target]);
             }
 
             if (shouldSave) {
@@ -87,7 +92,7 @@ function loadPreferences() {
 }
 
 function saveOnLeave() {
-    stopPersistenceTimerInterval();
+    stopPersistenceTimerInterval(true);
     if (isPersistenceEnabled() && sessionStorage["lively.scriptMutationsDetected"] === 'true') {
         console.log("[persistence] window-closed mutations detected, saving DOM...")
         saveDOM(false);
@@ -108,11 +113,13 @@ function getURL(){
     }
     else
     {
-        r = /localhost:8080\/(.+)/i;
+        r = /^(?:(https?):\/\/)?(?:(\w+)(?:\:(\w+))?\@)?([\w\.\-\~]+)+(?:\:(\d+))?(?:\/([\w\.\-\~\/\%]+))?(?:\?([\w\=\&]+))?(?:\#(\w+))?$/;
         results = url.match(r);
         if (results)
         {
-            filename = results[1];
+            filename = results[6];
+        } else {
+            throw "Could not parse URL to persist changes!";
         }
     }
 
@@ -121,11 +128,21 @@ function getURL(){
 
 export function startPersistenceTimerInterval() {
     persistenceTimerInterval = setInterval(checkForMutationsToSave, persistenceInterval);
+    if (persistenceTimerEnforceSaveInterval == undefined)
+        persistenceTimerEnforceSaveInterval = setInterval(checkForMutationsToSave, persistenceInterval * 10);
 }
 
-export function stopPersistenceTimerInterval() {
+export function stopPersistenceTimerInterval(stopEnforceSave = false) {
     clearInterval(persistenceTimerInterval);
     persistenceTimerInterval = undefined;
+    if (stopEnforceSave) {
+        stopPersistenceTimerEnforceSaveInterval()
+    }
+}
+
+export function stopPersistenceTimerEnforceSaveInterval() {
+    clearInterval(persistenceTimerEnforceSaveInterval);
+    persistenceTimerEnforceSaveInterval = undefined;
 }
 
 export function getPersistenceInterval() {
@@ -207,6 +224,7 @@ export function saveDOM(async = true) {
     resetPersistenceSessionStore();
 
     writeFile(content, async);
+    stopPersistenceTimerEnforceSaveInterval();
 }
 
 function writeFile(content, async = true) {

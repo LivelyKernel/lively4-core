@@ -1,4 +1,5 @@
 import * as componentLoader from "./component-loader.js";
+import * as preferences from '../preferences.js';
 
 var htmlBeautify;
 System.import("../src/external/beautify-html.js").then(function(obj){
@@ -45,6 +46,9 @@ export  function createTemplate(rootElement, info) {
   // assigned classes?
   var combinedStyle = collectAppliedCssRules(rootElement);
 
+  // the host should be displayed as inline-block to have the correct width and height
+  combinedStyle += "\n:host {display: inline-block;}"
+
   // apply style
   var styleElement = document.createElement("style");
   styleElement.innerHTML = combinedStyle;
@@ -71,25 +75,21 @@ function saveTemplate(template, info) {
     completeHTML = htmlBeautify(completeHTML);
   }
 
-  // var compBin = document.querySelector("lively-component-bin");
-  // if (!compBin) {
-  //   // right now, we expect a component bin in the page
-  //   throw new Error("no component bin found in page");
-  // }
-
   var templateEditor = componentLoader.createComponent("lively-editor");
-  componentLoader.openInWindow(templateEditor).then(() => {
-    templateEditor.setURL(window.location.origin + "/lively4-core/templates/" + template.id + ".html");
+  componentLoader.openInWindow(templateEditor).then((w) => {
+    templateEditor.setURL(preferences.getBaseURL() + "/templates/" + template.id + ".html");
     templateEditor.setText(completeHTML);
+    w.style.left = "0px";
+    w.style.top = "0px";
   });
 
   var jsonEditor = componentLoader.createComponent("lively-editor");
-  componentLoader.openInWindow(jsonEditor).then(() => {
-    jsonEditor.setURL(window.location.origin + "/lively4-core/templates/" + template.id + ".json");
-    jsonEditor.setText(JSON.stringify(info));
+  componentLoader.openInWindow(jsonEditor).then((w) => {
+    jsonEditor.setURL(preferences.getBaseURL() + "/templates/" + template.id + ".json");
+    jsonEditor.setText(JSON.stringify(info, null, 2));
+    w.style.left = "100px";
+    w.style.top =  "100px";
   });
-
-  // ace.edit("editor").setValue(completeHTML);
 
   return completeHTML;
 }
@@ -158,10 +158,6 @@ function collectAppliedCssRules(rootElement) {
     for (var j = 0; j < styleSheet.cssRules.length; j++) {
       var rule = styleSheet.cssRules[j];
       var selector = rule.selectorText;
-      if (selector === ".red-border") {
-        // dont collect red-border style, since it is just temporarily attached
-        continue;
-      }
       // just add those rule that match an element in the subtree
       if (selectorMatchesTree(selector, rootElement)) {
         if (combinedStyle.indexOf(rule.cssText) == -1) {
@@ -192,4 +188,3 @@ function selectorMatchesTree(selector, rootElement) {
   // if we reach this, none of the tree nodes matches the selector
   return false;
 }
-

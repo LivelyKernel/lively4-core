@@ -1,7 +1,7 @@
 'use strict'
 
 import Morph from './Morph.js';
-import { statFile, loadFile } from '../../src/client/file-editor.js';
+import files from '../../src/client/files.js';
 import * as componentLoader from '../../src/client/morphic/component-loader.js';
 
 export default class ComponentBin extends Morph {
@@ -19,10 +19,10 @@ export default class ComponentBin extends Morph {
   loadComponentList() {
     return new Promise((resolve, reject) => {
       // ugly as sh*t!
-      // var currentLocation = window.lively4Url || (window.location.hostname === "localhost" ? "http://localhost:" + window.location.port + "/" : "https://lively4/");
+      // var currentLocation = window.lively4url || (window.location.hostname === "localhost" ? "http://localhost:" + window.location.port + "/" : "https://lively4/");
       var currentLocation = window.location.hostname === "localhost" ? "http://localhost:" + window.location.port + "/lively4-core/" : "https://lively4/";
       var templatesUrl = currentLocation + "templates/";
-      statFile(templatesUrl).then(response => {
+      files.statFile(templatesUrl).then(response => {
         try {
           // depending in the content type, the response is either parsed or not,
           // github always returns text/plain
@@ -34,7 +34,7 @@ export default class ComponentBin extends Morph {
         var infoFilesPromises = response.contents.filter(file => {
           return file.type === "file" && file.name.slice(-5) === ".json";
         }).map(file => {
-          return loadFile(templatesUrl + file.name)
+          return files.loadFile(templatesUrl + file.name)
         });
 
         Promise.all(infoFilesPromises).then(files => {

@@ -1,40 +1,86 @@
-$("body").on("click", handleSelect);
 
-function handleSelect(e) {
-  if (e.ctrlKey || e.metaKey) {
-    onMagnify(e);
-  } else {
-    if (window.that && !$(e.target).is("lively-halos")) {
-      $(window.that).removeClass("red-border");
-      hideHalos()
+
+// DEBUG: lively.import("selecting", "../src/client/morphic/selecting.js")
+export default class Selecting {
+
+  static load() {
+    // use capture to prevent the default behavior...
+    $("body")[0].addEventListener('mousedown', (evt) => this.handleMouseDown(evt),true)
+    $("body")[0].addEventListener('mouseup', (evt) => this.handleMouseUp(evt),true)
+    $("body")[0].addEventListener('click', (evt) => this.handleSelect(evt),true)
+  }
+
+  static handleSelect(e) {
+    if (e.ctrlKey || e.metaKey) {
+      if (e.target.getAttribute("data-is-meta") === "true") {
+
+          return
+      }
+      console.log("click " + e.path[0])
+
+      this.onMagnify(e);
+      e.stopPropagation();
+      e.preventDefault();
     }
   }
-}
 
-function onMagnify(e) {
-  var grabTarget = e.target;
-  var that = window.that;
-  var $that = $(that);
-  if (that && $that.hasClass("red-border") && (grabTarget === that || $.contains(that, grabTarget))) {
-    parent = $that.parent();
-    if (!parent.is("html")) {
-      grabTarget = parent.get(0);
+  static handleMouseDown(e) {
+    if (e.ctrlKey || e.metaKey) {
+      console.log("mouse down " + e.target.tagName)
+      e.stopPropagation()
+      e.preventDefault();
     }
   }
-  if (grabTarget !== that || !$that.hasClass("red-border")) {
-    $that.removeClass("red-border")
-    $(grabTarget).addClass("red-border");
+
+  static handleMouseUp(e) {
+    if (e.ctrlKey || e.metaKey) {
+      console.log("mouse up " + e.target.tagName)
+      e.stopPropagation()
+      e.preventDefault();
+
+    } else {
+      // hide halos if the user clicks somewhere else
+      if (window.that && !$(e.target).is("lively-halos")) {
+        this.hideHalos()
+      }
+    }
   }
-  window.that = grabTarget;
-  console.log("Current element:", grabTarget, "with id:", $(grabTarget).attr("id"));
 
-  showHalos(grabTarget)
+  static onMagnify(e) {
+    var grabTarget = e.target;
+    if (e.shiftKey)
+        grabTarget = e.path[0]
+    var that = window.that;
+    var $that = $(that);
+    if (that && this.areHalosActive() && (grabTarget === that || $.contains(that, grabTarget))) {
+      parent = $that.parent();
+      if (!parent.is("html")) {
+        grabTarget = parent.get(0);
+      }
+    }
+
+    // if there was no suitable parent, cycle back to the clicked element itself
+    window.that = grabTarget;
+
+    this.showHalos(grabTarget, e.path)
+  }
+
+
+
+  static showHalos(el, path) {
+    if (this.lastIndicator) $(this.lastIndicator).remove()
+
+    this.lastIndicator = lively.showElement(el)
+    HaloService.showHalos(el, path);
+  }
+
+  static hideHalos() {
+    HaloService.hideHalos();
+  }
+
+  static areHalosActive() {
+    return HaloService.areHalosActive();
+  }
 }
 
-function showHalos(el) {
-  HaloService.showHalos(el);
-}
-
-function hideHalos() {
-  HaloService.hideHalos();
-}
+Selecting.load()

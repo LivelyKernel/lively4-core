@@ -4,6 +4,11 @@ import Morph from './Morph.js';
 
 export default class Window extends Morph {
 
+  static hello() {
+    return "world!"
+  }
+  
+
   // window title
   get title() {
     return this._title;
@@ -17,9 +22,7 @@ export default class Window extends Morph {
     return this.hasAttribute('fixed');
   }
 
-  attachedCallback() {
-    console.log('window attachedCallback!');
-
+  setup() {
     // define shortcut variables
     this.titleSpan = this.shadowRoot.querySelector('.window-title span');
     this.minButton = this.shadowRoot.querySelector('.window-min');
@@ -27,6 +30,11 @@ export default class Window extends Morph {
     this.pinButton = this.shadowRoot.querySelector('.window-pin');
     this.resizeButton = this.shadowRoot.querySelector('.window-resize');
     this.closeButton = this.shadowRoot.querySelector('.window-close');
+    
+    this.getSubmorph('.window-menu').addEventListener('click', (e) => { 
+      this.menuButtonClicked(e) 
+    });
+    
     this.contentBlock = this.shadowRoot.querySelector('#window-content');
 
     // bind events for window behavior
@@ -39,10 +47,16 @@ export default class Window extends Morph {
     this.resizeButton.addEventListener('mousedown', (e) => { this.resizeMouseDown(e) });
     this.shadowRoot.querySelector('.window-title').addEventListener('mousedown', (e) => { this.titleMouseDown(e) });
 
-    document.body.addEventListener('mousemove', (e) => { this.windowMouseMove(e) });
-    document.body.addEventListener('mouseup', (e) => { this.windowMouseUp(e); });
+    document.addEventListener('mousemove', (e) => { this.windowMouseMove(e) });
+    document.addEventListener('mouseup', (e) => { this.windowMouseUp(e); });
 
     this.addEventListener('created', (e) => { this.focus() });
+  }
+
+  attachedCallback() {
+    console.log('window attachedCallback!');
+
+    this.setup()
 
     this.created = true;
     this.render();
@@ -90,6 +104,7 @@ export default class Window extends Morph {
   }
 
   focus(e) {
+    // this.style.backgroundColor = livle.color.random()
     var minZIndex = 100;
     // find all windows but this one
     var allWindowsButThis = Array.from(document.querySelectorAll('lively-window'));
@@ -129,6 +144,10 @@ export default class Window extends Morph {
 
   closeButtonClicked(e) {
     this.parentNode.removeChild(this);
+  }
+  
+  menuButtonClicked(e) {
+    lively.openContextMenu(document.body, e, this.childNodes[0])
   }
 
   titleMouseDown(e) {

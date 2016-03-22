@@ -1,0 +1,90 @@
+<template id="lively-terminal">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    #terminal {
+      background-color: #000;
+      overflow: auto;
+      width: 100%;
+      height: 100%;
+      font-family: Consolas, Monospace, monospaced;
+      font-size: 12px;
+      padding: 2px;
+    }
+
+  </style>
+  <div id="terminal">
+    <content />
+  </div>
+</template>
+
+<script>
+  (function() {
+    'use strict';
+
+    const template = document.currentScript.ownerDocument.querySelector('#lively-terminal');
+    const clone    = document.importNode(template.content, true);
+
+    Promise.all([
+      System.import('../vendor/term.js'),
+      System.import('../vendor/eventemitter3.js'),
+      System.import('../src/client/morphic/component-loader.js')
+    ]).then((imports) => {
+      const Term = imports[0];
+      const EventEmitter = imports[1];
+      const Loader = imports[2];
+
+      class Terminal extends HTMLElement {
+        initialize() {
+          this.term = new Term({
+            cols: 80,
+            rows: 24,
+            useStyle: true,
+            screenKeys: true,
+            cursorBlink: true,
+            useFocus: true
+          });
+
+          this.term.open(this);
+
+          this.term.on('data', (data) => {
+            if(this.stdin)
+              this.stdin.emit('data', data)
+          });
+
+          this.executable = "https://lively4/bin/sh.js";
+        }
+
+        set executable(path) {
+          this.stdin = null
+          this.stdout = null
+
+          System.import(path).then((executable) => {
+            this.stdin  = new EventEmitter()
+            this.stdout = new EventEmitter()
+            this.stdout.on('data', (data) => { this.term.write(data) })
+
+            let argv = []
+            let env  = {
+              fd: [this.stdin, this.stdout, this.stdout],
+              ENV: {
+                PWD: '/'
+              }
+            }
+
+            executable.default(env,argv).then((retcode) => {
+              this.term.write("\r\nExit code: " + retcode)
+            }).catch((err) => {
+              this.term.write("\r\nSEGFAULT: " + err)
+              console.error(err)
+            })
+          })
+        }
+      };
+
+      Loader.register('lively-terminal', clone, Terminal.prototype);
+    })
+  })();
+</script>

@@ -317,8 +317,4 @@ var DEFAULT_SETTINGS = {
 
 focalStorage.settings = DEFAULT_SETTINGS;
 
-try {
-    Global.focalStorage = focalStorage;
-} catch(e){};
-
-// export default focalStorage;
+export default focalStorage;

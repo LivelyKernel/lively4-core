@@ -14,17 +14,7 @@ export default class Filesystem extends Base {
 
         this.tree = new SysDir(name, [
             new SysFile('mounts', function() {
-                let json = []
-
-                for(let [path, mount] of swx.instance().filesystem.mounts) {
-                    json.push({
-                        path: path,
-                        name: mount.name,
-                        options: mount.options
-                    })
-                }
-
-                return json
+                return swx.instance().filesystem.mountsAsJso()
             }),
             new SysDir('swx', [
                 new SysFile('reqcount', function() {
@@ -36,10 +26,13 @@ export default class Filesystem extends Base {
                 })
             ]),
             new SysDir('fs', [
-                new SysFile('mount', null, ::this._sysFsMount)
+                new SysFile('mount', null, ::this._sysFsMount),
+                new SysFile('umount', null, ::this._sysFsUmount)
             ])
         ])
     }
+
+
 
     async _sysFsMount(content) {
         let json = JSON.parse(await content)
@@ -57,6 +50,20 @@ export default class Filesystem extends Base {
         let fs = await System.import('src/swx/fs/' + name + '.jsx')
 
         swx.instance().filesystem.mount(path, fs.default, opts)
+
+        swx.instance().filesystem.persistMounts()
+
+        return json
+    }
+
+    async _sysFsUmount(content) {
+        let json = JSON.parse(await content)
+        let path = json['path']
+
+        if(!path)
+            throw new Error('<path> is missing')
+
+        swx.instance().filesystem.umount(path)
 
         return json
     }

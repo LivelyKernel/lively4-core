@@ -1,0 +1,3 @@
+# Lively4 @ lively-kernel.org
+
+This [Lively4 page](https://lively-kernel.org/lively4/draft/start.html?edit=https://lively-kernel.org/lively4/draft/Lively4AtLivelyKernel.md) can be used as an alternative to github pages. It is served by ower own quick and dirty node.js server and allows to put back files into the file system. Using it as a wiki is unadvisable, but we can use it for experimental purposes such as serving  files for our chrome extension... 

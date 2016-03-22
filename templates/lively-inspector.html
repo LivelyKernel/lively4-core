@@ -1,0 +1,26 @@
+<template id="lively-inspector">
+    <style>
+    </style>
+<h1>Inspector</h1>
+    <div class="container">
+    <content></content>
+    </div>
+
+</template>
+
+<script class="registrationScript">
+// This ugly piece of code will be auto generated, when exporting a template. Puh.
+(function() {
+  var template = document.currentScript.ownerDocument.querySelector('#lively-inspector');
+  var clone = document.importNode(template.content, true);
+
+  Promise.all([
+    System.import('../src/client/inspector.js'),
+    System.import('../src/client/morphic/component-loader.js'),
+  ]).then(modules => {
+    var module = modules[0];
+    var Loader = modules[1];
+    Loader.register('lively-inspector', clone, Object.create(module.default.prototype));
+  });
+})();
+</script>

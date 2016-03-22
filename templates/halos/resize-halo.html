@@ -1,17 +1,18 @@
 <template id="resize-halo">
     <style>
     :host {
-      background-image: url(http://livelykernel.github.io/lively4-core/src/client/media/resize.svg);
     }
     </style>
     <script type="lively4script" data-name="initialize">
     () => {
-      System.import("../src/client/morphic/resizing-using-handle.js").then( function(resizing) {
+      System.import("../src/client/morphic/resizing.js").then( function(resizing) {
+        $("body /deep/ resize-halo")[0].style.backgroundImage =
+          'url(' +lively4url + "/src/client/media/resize.svg)"
         $("body /deep/ resize-halo").off("mousedown").on("mousedown", function(e) {
           resizing.start(e);
 
           // attach mousemove handler to body only after mousedown occured
-          $("body").off("mousemove.resize").on("mousemove.resize", function(e) {
+          $(document).off("mousemove.resize").on("mousemove.resize", function(e) {
             resizing.move(e);
 
             // update position of halos on mousemove
@@ -23,8 +24,7 @@
           if (resizing.resizing) {
             resizing.stop(e);
             // detach mousemove handler from body
-            $("body").off("mousemove.resize");
-            //setTimeout(function () { HaloService.showHalos(window.that) }, 1);
+            $(document).off("mousemove.resize");
           }
         });
       });

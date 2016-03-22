@@ -24,7 +24,7 @@ export default class TabView extends Morph {
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
-    
+
   }
 
   initObserver() {
@@ -150,7 +150,7 @@ export default class TabView extends Morph {
 
   showDefaultContent() {
     if(this.tabList.length > 0) {
-      this.showContent(0);  
+      this.showContent(0);
     }
   }
 

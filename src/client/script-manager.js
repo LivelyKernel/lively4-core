@@ -43,7 +43,7 @@ function findLively4Script(parent, shadow) {
                     parent[child.dataset.name]();
                 }                
             } catch (e) { 
-                console.log("couldn't add function " + child.dataset.name + " to " + parent)
+                console.log("couldn't add function " + child.dataset.name + " to " + parent + ", because of: ", e)
             }
         } else {
             // do never look into the shadow dom of child elements

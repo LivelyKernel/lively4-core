@@ -1,13 +1,14 @@
 <template id="grab-halo">
     <style>
     :host {
-      background-image: url(http://livelykernel.github.io/lively4-core/src/client/media/grab.svg);
     }
     </style>
     <script type="lively4script" data-name="initialize">
     () => {
       System.import("../src/client/morphic/grabbing.js").then( function(grabbing) {
-        $("body /deep/ grab-halo").off("mousedown").on("mousedown", function(e) {
+        $("body /deep/ grab-halo")[0].style.backgroundImage =
+          'url(' +lively4url + "/src/client/media/grab.svg)"
+         $("body /deep/ grab-halo").off("mousedown").on("mousedown", function(e) {
           grabbing.start(e);
 
           // attach mousemove handler to body only after mousedown occured
@@ -20,11 +21,16 @@
         });
 
         $("body").off("mouseup.grab").on("mouseup.grab", function(e) {
-          if (grabbing.isGrabbing) {
-            grabbing.stop(e);
-            // detach mousemove handler from body
-            $("body").off("mousemove.grab");
+          // save this as grabbing.stop will overwrite the current value
+          var wasGrabbing = grabbing.isGrabbing;
+
+          grabbing.stop(e);
+          // detach mousemove handler from body
+          $("body").off("mousemove.grab");
+
+          if (wasGrabbing) {
             HaloService.showHalos(window.that);
+            e.stopPropagation();
           }
         });
       });

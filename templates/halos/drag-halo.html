@@ -1,17 +1,19 @@
 <template id="drag-halo">
     <style>
     :host {
-      background-image: url(http://livelykernel.github.io/lively4-core/src/client/media/drag.svg);
+
     }
     </style>
     <script type="lively4script" data-name="initialize">
     () => {
       System.import("../src/client/morphic/dragging.js").then( function(dragging) {
+        $("body /deep/ drag-halo")[0].style.backgroundImage =
+          'url(' +lively4url + "/src/client/media/drag.svg)"
         $("body /deep/ drag-halo").off("mousedown").on("mousedown", function(e) {
           dragging.start(e);
 
           // attach mousemove handler to body only after mousedown occured
-          $("body").off("mousemove.drag").on("mousemove.drag", function(e) {
+          $(document).off("mousemove.drag").on("mousemove.drag", function(e) {
             dragging.move(e);
 
             // update position of halos on mousemove
@@ -19,10 +21,18 @@
           });
         });
 
-        $("body").off("mouseup.drag").on("mouseup.drag", function(e) {
+        $(document).off("mouseup.drag").on("mouseup.drag", function(e) {
+          // save this as dragging.stop will overwrite the current value
+          var wasDragging = dragging.isDragging;
+
           dragging.stop(e);
           // detach mousemove handler from body
-          $("body").off("mousemove.drag");
+          $(document).off("mousemove.drag");
+
+          if (wasDragging) {
+            HaloService.showHalos(window.that);
+            e.stopPropagation();
+          }
         });
       });
     }
