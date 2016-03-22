@@ -29,29 +29,39 @@ function functionFromString(funcOrString) {
     }
 }
 
+function isLively4Script(object) {
+    return 
+        object.tagName.toLocaleLowerCase() == "script" && 
+        object.type == "lively4script";
+}
+
 function findLively4Script(parent, shadow) {
     // if shadow is set, look for the scripts in the shadow root
     var children = shadow ? parent.shadowRoot.children : parent.children;
 
-    for (var i = 0; i < children.length; ++i) {
-        var child = children[i];
-        if (child.tagName.toLocaleLowerCase() == "script" && child.type == "lively4script") {
+    _.each(children, function(child) {
+        if (isLively4Script(child)) {
             try {
-                addScript(parent, child.textContent, {name: child.dataset.name, persist: false});
+                var scriptName = child.dataset.name;
+
+                addScript(parent, child.textContent, {
+                    name: scriptName,
+                    persist: false
+                });
 
                 if(child.dataset.name == 'initialize') {
-                    parent[child.dataset.name]();
-                }                
-            } catch (e) { 
-                console.log("couldn't add function " + child.dataset.name + " to " + parent + ", because of: ", e)
+                    parent[scriptName]();
+                }
+            } catch(e) {
+                console.error('Error while adding function ' + scriptName + ' to object:');
+                console.error($(parent));
+                console.error(e);
             }
         } else {
-            // do never look into the shadow dom of child elements
             findLively4Script(child, false);
         }
-    }
+    });
 }
-
 
 export function loadScriptsFromDOM() {
     findLively4Script(document);
@@ -62,102 +72,131 @@ export function attachScriptsFromShadowDOM(root) {
 }
 
 function persistToDOM(object, funcString, data={}) {
-    data.type = "lively4script";
-    $("<script>").attr(data).text(funcString).appendTo(object);
+    var DOMScript = $('<script>', _.extend(data, {
+        type: 'lively4script',
+        text: funcOrString
+    });
+    object.append(DOMScript);
 }
 
 function removeFromDOM(object, name) {
-    var children = $(object).children("script[type='lively4script'][data-name='" + name + "']");
-    if (children.size() != 1)  throw 'multiple children detected ' + children;
+    var children = $(object).children('script[type="lively4script"][data-name="' + name + '"]');
+
+    if (children.size() != 1) {
+        throw 'multiple children detected ' + children;
+    }
+
     children.remove();
 }
 
-export function updateScript(object, funcOrString, opts={}) {
+function asCollection(object) {
     if (object instanceof jQuery) {
-        jQuery.each(object, function(k, v) {
-            updateScript(v, funcOrString, opts);
-        });
-        return;
+        return object;
     }
 
+    return [object];
+}
+
+function prepareFunction(function, options) {
     var func = functionFromString(funcOrString);
     if (typeof func !== 'function') {
         throw 'no valid function provided!';
     }
 
-    var name = func.name || opts.name;
+    var name = func.name || options.name;
     if (!name) {
         throw 'cannot update script without name!';
     }
 
-    removeScript(object, name);
-    addScript(object, funcOrString, opts)
+    return {
+        executable: func,
+        name: name
+    };
 }
 
-export function addScript(object, funcOrString, opts={}) {
-    if (object instanceof jQuery) {
-        jQuery.each(object, function(k, v) {
-            addScript(v, funcOrString, opts);
-        });
-        return;
-    }
-
-    if (typeof object.__scripts__ === 'undefined') {
-        object.__scripts__ = {};
-    }
-
-    var func = functionFromString(funcOrString);
-    if (typeof func !== 'function') {
-        throw 'no valid function provided!';
-    }
-
-    var name = func.name || opts.name;
-    if (!name) {
-        throw 'cannot add script without name!';
-    }
-
-    if (typeof object[name] !== 'undefined') {
-        throw 'script name "' + name + '" is already reserved!';
-    }
+function bindFunctionToObject(object, func, options) {
+    var name = func.name;
+    var executable = func.func;
 
     object[name] = func.bind(object);
     object[name].isScript = true;
-    object.__scripts__[name] = funcOrString.toString();
+}
 
-    if (!opts.hasOwnProperty("persist") || opts.persist == true)
+function initializeScriptsMap(object) {
+    if (typeof object.__scripts__ === 'undefined') {
+        object.__scripts__ = {};
+    }
+}
+
+function scriptExists(object, name) {
+    return
+        typeof object.__scripts__ !== 'undefined' && 
+        typeof object.__scripts__[name] !== 'undefined';
+}
+
+function addFunctionToScriptsMap(object, name, funcOrString) {
+    object.__scripts__[name] = funcOrString.toString();
+}
+
+function persistScript(object, name, funcOrString) {
+    if (!options.hasOwnProperty("persist") || options.persist == true) {
         persistToDOM(object, funcOrString.toString(), {"data-name": name});
+    }
+}
+
+export function updateScript(object, funcOrString, options={}) {
+    var objects = asCollection(object);
+
+    _.each(objects, function(object) {
+        var func = prepareFunction(funcOrString, options);
+
+        removeScript(object, func.name);
+        addScript(object, func.executable, options);
+    });
+}
+
+export function addScript(object, funcOrString, options={}) {
+    var objects = asCollection(object);
+
+    _.each(objects, function(object) {
+        var func = prepareFunction(funcOrString, options);
+        initializeScriptsMap(object);
+
+        if(scriptExists(object, func.name)) {
+            throw 'script name "' + func.name + '" is already reserved!';
+        }
+
+        bindFunctionToObject(object, func, options);
+        addFunctionToScriptsMap(object, func.name, funcOrString);
+        persistScript(object, func.name, funcOrString);
+    });
 }
 
 export function removeScript(object, name) {
-    if (object instanceof jQuery) {
-        jQuery.each(object, function(k, v) {
-            removeScript(v, name);
-        });
-        return;
-    }
+    var objects = asCollection(object);
 
-    if (typeof object.__scripts__ === 'undefined'
-        || typeof object.__scripts__[name] === 'undefined') {
-        throw 'script name "' + name + '" does not exist!';
-    }
+    _.each(objects, function(object) {
+        if(!scriptExists(object, name)) {
+            throw 'script name "' + name + '" does not exist!';
+        }
 
-    delete object.__scripts__[name];
-    delete object[name];
-    removeFromDOM(object, name);
+        delete object.__scripts__[name];
+        delete object[name];
+        removeFromDOM(object, name);
+    });
 }
 
 export function callScript(object, name) {
     var optionalArgs = [].splice.call(arguments, 2);
-    if (object instanceof jQuery) {
-        jQuery.each(object, function(k, v) {
-            var args = [v, name];
-            args = args.concat(optionalArgs);
-            callScript.apply(this, args);
-        });
-        return;
-    }
-    if (typeof object.__scripts__ !== 'undefined' && typeof object.__scripts__[name] !== 'undefined') {
-        return object[name].apply(object, optionalArgs);
-    }
-    throw 'unknown script "' + name +'"!'
+    var objects = asCollection(object);
+
+    _.each(objects, function(object) {
+        if(!scriptExists(object, name)) {
+            throw 'unknown script "' + name +'"!';
+        }
+
+        var returnValue = object[name].apply(object, optionalArgs);        
+    });
+
+    return returnValue;    
 }
