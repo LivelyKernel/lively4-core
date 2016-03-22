@@ -42,7 +42,7 @@ function findLively4Script(parent, shadow) {
 
     _.each(children, function(child) {
         if (isLively4Script(child)) {
-            //try {
+            try {
                 var scriptName = child.dataset.name;
 
                 addScript(parent, child.textContent, {
@@ -53,11 +53,11 @@ function findLively4Script(parent, shadow) {
                 if(child.dataset.name == 'initialize') {
                     parent[scriptName]();
                 }
-            // } catch(e) {
-            //     console.error('Error while adding function ' + scriptName + ' to object:');
-            //     console.error($(parent));
-            //     console.error(e);
-            // }
+            } catch(e) {
+                console.error('Error while adding function ' + scriptName + ' to object:');
+                console.error($(parent));
+                console.error(e);
+            }
         } else {
             findLively4Script(child, false);
         }
