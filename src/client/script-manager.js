@@ -1,5 +1,7 @@
 'use strict';
 
+import * as _ from '../external/underscore.js';
+
 loadScriptsFromDOM();
 
 function functionFromString(funcOrString) {
@@ -30,9 +32,8 @@ function functionFromString(funcOrString) {
 }
 
 function isLively4Script(object) {
-    return 
-        object.tagName.toLocaleLowerCase() == "script" && 
-        object.type == "lively4script";
+    return object.tagName.toLocaleLowerCase() == "script" && 
+        object.type == 'lively4script';
 }
 
 function findLively4Script(parent, shadow) {
@@ -41,7 +42,7 @@ function findLively4Script(parent, shadow) {
 
     _.each(children, function(child) {
         if (isLively4Script(child)) {
-            try {
+            //try {
                 var scriptName = child.dataset.name;
 
                 addScript(parent, child.textContent, {
@@ -52,11 +53,11 @@ function findLively4Script(parent, shadow) {
                 if(child.dataset.name == 'initialize') {
                     parent[scriptName]();
                 }
-            } catch(e) {
-                console.error('Error while adding function ' + scriptName + ' to object:');
-                console.error($(parent));
-                console.error(e);
-            }
+            // } catch(e) {
+            //     console.error('Error while adding function ' + scriptName + ' to object:');
+            //     console.error($(parent));
+            //     console.error(e);
+            // }
         } else {
             findLively4Script(child, false);
         }
@@ -74,8 +75,8 @@ export function attachScriptsFromShadowDOM(root) {
 function persistToDOM(object, funcString, data={}) {
     var DOMScript = $('<script>', _.extend(data, {
         type: 'lively4script',
-        text: funcOrString
-    });
+        text: funcString
+    }));
     object.append(DOMScript);
 }
 
@@ -97,7 +98,7 @@ function asCollection(object) {
     return [object];
 }
 
-function prepareFunction(function, options) {
+function prepareFunction(funcOrString, options) {
     var func = functionFromString(funcOrString);
     if (typeof func !== 'function') {
         throw 'no valid function provided!';
@@ -115,11 +116,8 @@ function prepareFunction(function, options) {
 }
 
 function bindFunctionToObject(object, func, options) {
-    var name = func.name;
-    var executable = func.func;
-
-    object[name] = func.bind(object);
-    object[name].isScript = true;
+    object[func.name] = func.executable.bind(object);
+    object[func.name].isScript = true;
 }
 
 function initializeScriptsMap(object) {
@@ -129,8 +127,7 @@ function initializeScriptsMap(object) {
 }
 
 function scriptExists(object, name) {
-    return
-        typeof object.__scripts__ !== 'undefined' && 
+    return typeof object.__scripts__ !== 'undefined' && 
         typeof object.__scripts__[name] !== 'undefined';
 }
 
@@ -138,7 +135,7 @@ function addFunctionToScriptsMap(object, name, funcOrString) {
     object.__scripts__[name] = funcOrString.toString();
 }
 
-function persistScript(object, name, funcOrString) {
+function persistScript(object, name, funcOrString, options) {
     if (!options.hasOwnProperty("persist") || options.persist == true) {
         persistToDOM(object, funcOrString.toString(), {"data-name": name});
     }
@@ -168,7 +165,7 @@ export function addScript(object, funcOrString, options={}) {
 
         bindFunctionToObject(object, func, options);
         addFunctionToScriptsMap(object, func.name, funcOrString);
-        persistScript(object, func.name, funcOrString);
+        persistScript(object, func.name, funcOrString, options);
     });
 }
 
