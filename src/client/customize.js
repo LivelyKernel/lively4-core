@@ -4,7 +4,8 @@
 export default class Customize {
   
   static openCustomizeWorkspace(evt) {
-    lively.openWorkspace(localStorage["customLivelyCode"], evt).then( comp => {
+    var code = localStorage["customLivelyCode"] || "// costomize all pages of domain here"
+    lively.openWorkspace(code, evt).then( comp => {
       comp.doSave = function doSave(text) {
           lively.notify("store custom workspace")
           localStorage["customLivelyCode"] = text
