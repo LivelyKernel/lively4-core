@@ -4,7 +4,7 @@
 export default class Customize {
   
   static openCustomizeWorkspace(evt) {
-    lively.openWorkspace("hello", evt)
+    lively.openWorkspace(localStorage["customLivelyCode"], evt)
     
     
   }
