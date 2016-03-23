@@ -11,7 +11,7 @@ export default class ContextMenu {
     var comp  = document.createElement(name)
     this.hide()
     return lively.components.openInWindow(comp).then((w) => {
-        lively.setPosition(w, lively.pt(evt.clientX, evt.clientY))
+        lively.setPosition(w, lively.pt(evt.pageX, evt.pageY))
         return comp
     })
   }
