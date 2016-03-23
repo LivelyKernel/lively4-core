@@ -86,8 +86,8 @@ export default class Window extends Morph {
       .addEventListener('mousedown', (e) => { this.titleMouseDown(e); });
 
     this.menuButton.addEventListener('click', (e) => { this.menuButtonClicked(e); });
-    this.minButton.addEventListener('click', (e) => { this.minButtonClicked(e); });
-    this.maxButton.addEventListener('click', (e) => { this.maxButtonClicked(e); });
+    // this.minButton.addEventListener('click', (e) => { this.minButtonClicked(e); });
+    // this.maxButton.addEventListener('click', (e) => { this.maxButtonClicked(e); });
     this.pinButton.addEventListener('click', (e) => { this.pinButtonClicked(e); });
     this.resizeButton.addEventListener('mousedown', (e) => { this.resizeMouseDown(e); });
     this.closeButton.addEventListener('click', (e) => { this.closeButtonClicked(e); });
