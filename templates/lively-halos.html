@@ -68,12 +68,15 @@
           // var offset = $target.offset();
 
           var bounds = target.getBoundingClientRect()
-          var offset = {top: bounds.top, left: bounds.left}
+          var offset = {
+            top: bounds.top +  $(document).scrollTop(), 
+            left: bounds.left +  $(document).scrollLeft()}
 
           // viewport coordinates
           var scrollTop = Math.abs($(document).scrollTop());
           var scrollLeft = Math.abs($(document).scrollLeft());
 
+          debugger
           // make sure halo respects left and top viewport boundary
           var offsetTop = Math.max(offset.top - 30, scrollTop);
           var offsetLeft = Math.max(offset.left - 30, scrollLeft);
