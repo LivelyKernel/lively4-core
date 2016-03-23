@@ -47,8 +47,10 @@ export default class ContextMenu {
       ["Console",         (evt) => this.openComponentInWindow("lively-console", evt)],
        ["Math Workspace",         (evt) => this.openComponentInWindow("lively-math", evt)],
       ["Component Bin",   (evt) => this.openComponentInWindow("lively-component-bin", evt)],
-      ["Customize Page",   (evt) => 
-        lively.import("customize").then(c => c.openCustomizeWorkspace())],
+      ["Customize Page",   (evt) => {
+        this.hide()
+        lively.import("customize").then(c => c.openCustomizeWorkspace(evt))
+      }],
       ["Persistens Settings", (evt) => {
           this.openComponentInWindow("lively-persistence-settings", evt).then((comp) => {
               comp.parentElement.style.height = "150px"

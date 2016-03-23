@@ -3,10 +3,14 @@
 
 export default class Customize {
   
-  static openCustomizeWorkspace(evt) {
-    lively.openWorkspace(localStorage["customLivelyCode"], evt)
-    
-    
+  static async openCustomizeWorkspace(evt) {
+    var comp = await lively.openWorkspace(localStorage["customLivelyCode"], evt)
+    comp.doSave = function doSave(text) {
+        lively.notify("store custom workspace")
+        localStorage["customLivelyCode"] = text
+        this.tryBoundEval(text); // just a default implementation...
+    }
+    window.comp = that
   }
  
   static customizePage() {
