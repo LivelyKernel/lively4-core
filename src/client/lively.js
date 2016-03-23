@@ -101,7 +101,8 @@ export default class Lively {
     return ({
       math: lively4url + "/src/external/math.js",
       typo: lively4url + "/src/external/typo.js",
-      contextmenu: lively4url + '/src/client/contextmenu.js'
+      contextmenu: lively4url + '/src/client/contextmenu.js',
+      customize: lively4url + '/src/client/customize.js',
     })[moduleName]
   }
 
@@ -236,6 +237,9 @@ export default class Lively {
       }, false);
 
     if (loadedAsExtension) {
+      this.import("customize").then(customize => {
+          customize.customizePage()
+      })
       lively.notify("Lively4 extension loaded!",
         "  CTRL+LeftClick  ... open halo\n" +
         "  CTRL+RightClick ... open menu");

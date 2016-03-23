@@ -3,6 +3,11 @@
 
 export default class Customize {
   
+  static openCustomizeWorkspace(evt) {
+    lively.openWorkspace(evt)
+    
+    
+  }
  
   static customizePage() {
     var code = localStorage["customLivelyCode"]
