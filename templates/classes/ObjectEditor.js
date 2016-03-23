@@ -8,6 +8,7 @@ export default class ObjectEditor extends Morph {
   initialize() {
     this.getSubmorph("#editor").changeMode("javascript");
   }
+
   /*
    * HTMLElement callbacks
    */
@@ -22,6 +23,37 @@ export default class ObjectEditor extends Morph {
     this.initializeAttributes();
   }
 
+  detachedCallback() {
+    this.attached = false;
+
+    if (this.targetElement) {
+      this.releaseTarget();
+    }
+  }
+
+  attributeChangedCallback(attrName, oldValue, newValue) {
+    switch(attrName) {
+      case 'target':
+        var selector = newValue, element  = null;
+
+        if(!selector) {
+          break;
+        }
+
+        // target attribute changed, find new target element
+        if (selector[0] === '$') {
+          this.targetElement = document.querySelector('[data-lively-id="' + selector.substr(1) + '"]');
+        } else {
+          this.targetElement = document.querySelector(selector);
+        }
+
+        break;
+    }
+  }
+
+  /*
+   * ObjectEditor methods
+   */
   saveElementReferences() {
     this.tabView = this.shadowRoot.querySelector('#tabView');
 
@@ -92,46 +124,15 @@ export default class ObjectEditor extends Morph {
     }
   }
 
-  detachedCallback() {
-    this.attached = false;
-
-    if (this.targetElement) {
-      this.releaseTarget();
-    }
-  }
-
-  attributeChangedCallback(attrName, oldValue, newValue) {
-    switch(attrName) {
-      case 'target':
-        var selector = newValue
-        , element  = null;
-
-        if(!selector) {
-          break;
-        }
-
-        if (selector[0] === '$') {
-          this.targetElement = document.querySelector('[data-lively-id="' + selector.substr(1) + '"]');
-        } else {
-          this.targetElement = document.querySelector(selector);
-        }
-
-        break;
-      default:
-        //
-    }
-  }
-
   // Target element
   get targetElement() {
     return this._targetElement;
   }
 
   set targetElement(val) {
-    if(val == this.targetElement)
+    if(val == this.targetElement) {
       return;
-
-    console.log('new target element:', val);
+    }
 
     if (this.targetElement) {
       this.releaseTarget();
@@ -167,6 +168,7 @@ export default class ObjectEditor extends Morph {
    * Observers for attributes, scripts, etc.
    */
   createObservers() {
+    // NOTE: We need to wait for Google to bring Proxy to V8
     // this.scriptsObserver = new MutationObserver((changes) => { this.scriptsObserver(changes) });
     // this.scriptsObserver.observe(this.targetElement.__scripts__, {
     //   attributes: true
@@ -179,8 +181,6 @@ export default class ObjectEditor extends Morph {
   }
 
   destroyObservers() {
-    // Object.unobserve(this.targetElement.__scripts__, this.scriptsObserverWrapper);
-    // this.scriptsObserver.disconnect();
     this.domObserver.disconnect();
   }
 
@@ -217,7 +217,7 @@ export default class ObjectEditor extends Morph {
 
   setWindowTitle() {
     if(this.parentElement.tagName != 'LIVELY-WINDOW') {
-      //parent is not a window, so cannot set title
+      // parent is not a window, so cannot set title
       return;
     }
 
@@ -235,6 +235,9 @@ export default class ObjectEditor extends Morph {
     windowElement.setAttribute('title', title);
   }
 
+  /* 
+   * Attributes Tab
+   */
   showAttributes() {
     if (!this.targetElement) {
       return;
@@ -246,15 +249,20 @@ export default class ObjectEditor extends Morph {
     }
     this.shadowRoot.querySelector("#attributesMap").map = attributes;
   }
+
   saveAttribute(attributeName) {
     this.targetElement.setAttribute(attributeName, this.editor.value);
   }
+
   attributeChanged(e) {
     let attribute = e.detail;
 
     this.targetElement.setAttribute(attribute.key, attribute.value);
   }
 
+  /*
+   * Properties Tab
+   */
   showProperties() {
     if (!this.targetElement) {
       return;
@@ -290,7 +298,7 @@ export default class ObjectEditor extends Morph {
     ];
 
     let properties = {};
-    for(let i = 0; i < editableProperties.length; i++) {
+    for (let i = 0; i < editableProperties.length; i++) {
       let property = editableProperties[i];
       properties[property.name] = {
         value: this.targetElement[property.name],
@@ -301,9 +309,9 @@ export default class ObjectEditor extends Morph {
 
     this.propertiesMap.map = properties;
   }
+
   propertyChanged(e) {
     let property = e.detail;
-    console.log("Property changed: " + property);
 
     this.targetElement[property.key] = property.value;
   }
@@ -346,6 +354,9 @@ export default class ObjectEditor extends Morph {
     this.targetElement.setAttribute(attributeName, attributeValue);
   }
 
+  /*
+   * Connections Tab
+   */
   showConnections() {
     if (!this.targetElement) {
       return;
@@ -414,13 +425,15 @@ export default class ObjectEditor extends Morph {
     }
 
     let removedConnection = this.targetElement.__connections__[this.connectionList.selectedIndex];
-    console.log('removing connection', removedConnection);
     this.targetElement.removeEventListener(removedConnection.eventName, removedConnection.listener);
     this.targetElement.__connections__.splice(this.connectionList.selectedIndex);
 
     this.showConnections();
   }
 
+  /*
+   * Scripts Tab
+   */
   addButtonClicked(e) {
     if (!this.targetElement) {
       return;
@@ -467,7 +480,6 @@ export default class ObjectEditor extends Morph {
           eval('(' + this.editor.value + ')'),
           { name: data['scriptName'] }
         );
-        console.log('saved!');
       } else if (typeof data['attributeName'] !== 'undefined') {
         this.saveAttribute(data['attributeName']);
       }

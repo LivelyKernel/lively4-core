@@ -11,6 +11,9 @@ function getScroll() {
 
 export default class Window extends Morph {
 
+  /*
+   * Getters/Setters
+   */
   get title() {
     return this._title;
   }
@@ -33,6 +36,32 @@ export default class Window extends Morph {
     this.style.height = height + 'px';
   }
 
+  /*
+   * HTMLElement callbacks
+   */
+  attachedCallback() {
+    this.setup();
+
+    this.created = true;
+    this.render();
+  }
+
+  attributeChangedCallback(attrName, oldValue, newValue) {
+    switch (attrName) {
+      case 'title':
+        this.render();
+        break;
+      case 'fixed':
+        this.reposition();
+        break;
+      default:
+        //
+    }
+  }
+
+  /*
+   * Initialization
+   */
   defineShortcuts() {
     this.window = this.shadowRoot.querySelector('.window');
     this.titleSpan = this.shadowRoot.querySelector('.window-title span');
@@ -54,7 +83,7 @@ export default class Window extends Morph {
     document.addEventListener('mouseup', (e) => { this.windowMouseUp(e); });
 
     this.shadowRoot.querySelector('.window-title')
-     .addEventListener('mousedown', (e) => { this.titleMouseDown(e); });
+      .addEventListener('mousedown', (e) => { this.titleMouseDown(e); });
 
     this.menuButton.addEventListener('click', (e) => { this.menuButtonClicked(e); });
     this.minButton.addEventListener('click', (e) => { this.minButtonClicked(e); });
@@ -71,26 +100,9 @@ export default class Window extends Morph {
     this.bindEvents();
   }
 
-  attachedCallback() {
-    this.setup();
-
-    this.created = true;
-    this.render();
-  }
-
-  attributeChangedCallback(attrName, oldValue, newValue) {
-    switch (attrName) {
-      case 'title':
-        this.render();
-        break;
-      case 'fixed':
-        this.reposition();
-        break;
-      default:
-        //
-    }
-  }
-
+  /*
+   * Window methods
+   */
   render() {
     if (this.created) {
       if (this.attributes['title']) {
@@ -146,11 +158,11 @@ export default class Window extends Morph {
   }
 
   minButtonClicked(e) {
-    // TODO
+    // NotImplemented
   }
 
   maxButtonClicked(e) {
-    // TODO
+    // NotImplemented
   }
 
   pinButtonClicked(e) {
@@ -238,7 +250,9 @@ export default class Window extends Morph {
     }
   }
 
-  // Public interface
+  /*
+   * Public interface
+   */
   centerInWindow() {
     let rect = this.getBoundingClientRect();
     this.style.top = 'calc(50% - ' + (rect.height / 2) + 'px)';
