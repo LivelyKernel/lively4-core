@@ -11,7 +11,6 @@ export default class ContextMenu {
     var comp  = document.createElement(name)
     this.hide()
     return lively.components.openInWindow(comp).then((w) => {
-       debugger
         lively.setPosition(w, lively.pt(evt.pageX, evt.pageY))
         return comp
     })
@@ -33,7 +32,7 @@ export default class ContextMenu {
       return [
       ["Workspace", (evt) => {
         this.hide()
-        lively.openWorkspace("", lively.pt(evt.clientX, evt.clientY))
+        lively.openWorkspace("", lively.pt(evt.pageX, evt.pageY))
       }],
       ["Browser",     (evt) => {
         this.openComponentInWindow("lively-container", evt).then(comp => {
@@ -70,14 +69,14 @@ export default class ContextMenu {
               text.innerHTML = "Hello"
               text.contentEditable = true
               $('body')[0].appendChild(text)
-              lively.setPosition(text, lively.pt(evt.clientX, evt.clientY))
+              lively.setPosition(text, lively.pt(evt.pageX, evt.pageY))
               this.hide()
       }],
       ["Rectangle", (evt) => {
           var morph  = document.createElement("div")
           morph.style.width = "200px"
           morph.style.height = "100px"
-          lively.setPosition(morph, lively.pt(evt.clientX, evt.clientY))
+          lively.setPosition(morph, lively.pt(evt.pageX, evt.pageY))
           morph.style.backgroundColor = "blue"
           $('body')[0].appendChild(morph)
           this.hide()
