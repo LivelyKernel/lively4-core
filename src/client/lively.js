@@ -127,7 +127,7 @@ export default class Lively {
   static openWorkspace(string, pos) {
     var name = "juicy-ace-editor";
     var comp  = document.createElement(name);
-    lively.components.openInWindow(comp).then((container) => {
+    return lively.components.openInWindow(comp).then((container) => {
       pos = pos || lively.pt(100,100);
       comp.changeMode("javascript");
       comp.enableAutocompletion();
@@ -135,6 +135,7 @@ export default class Lively {
       lively.setPosition(container,pos);
     }).then( () => {
       comp.editor.focus();
+      return comp
     });
   }
 
