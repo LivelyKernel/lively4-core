@@ -44,8 +44,10 @@ self.addEventListener('install', function(event) {
 self.addEventListener('activate', function(event) {
     console.log('SWL: activate')
 
+    self.clients.claim()
+
     event.waitUntil(Promise.all([
-        self.clients.claim(),
+        // self.clients.claim(), // TEST IF circular dependency
         swx().then(function(swx) {
             return swx.activate(event)
         }).catch(function(err) {
