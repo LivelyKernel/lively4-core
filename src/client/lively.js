@@ -101,7 +101,8 @@ export default class Lively {
     return ({
       math: lively4url + "/src/external/math.js",
       typo: lively4url + "/src/external/typo.js",
-      contextmenu: lively4url + '/src/client/contextmenu.js'
+      contextmenu: lively4url + '/src/client/contextmenu.js',
+      customize: lively4url + '/src/client/customize.js',
     })[moduleName]
   }
 
@@ -126,13 +127,15 @@ export default class Lively {
   static openWorkspace(string, pos) {
     var name = "juicy-ace-editor";
     var comp  = document.createElement(name);
-    lively.components.openInWindow(comp).then((container) => {
+    return lively.components.openInWindow(comp).then((container) => {
       pos = pos || lively.pt(100,100);
       comp.changeMode("javascript");
       comp.enableAutocompletion();
+      comp.editor.setValue(string)
       lively.setPosition(container,pos);
     }).then( () => {
       comp.editor.focus();
+      return comp
     });
   }
 
@@ -236,6 +239,9 @@ export default class Lively {
       }, false);
 
     if (loadedAsExtension) {
+      this.import("customize").then(customize => {
+          customize.customizePage()
+      })
       lively.notify("Lively4 extension loaded!",
         "  CTRL+LeftClick  ... open halo\n" +
         "  CTRL+RightClick ... open menu");
