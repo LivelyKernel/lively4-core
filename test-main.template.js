@@ -1,6 +1,7 @@
 "use strict";
 
 import { runSWTests, loadTestEnvironment } from './test/sw-test-adapter.js';
+import focalStorage from './src/external/focalStorage.js'
 
 focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   var allClientTestFiles = [];
