@@ -77,7 +77,7 @@ function persistToDOM(object, funcString, data={}) {
         type: 'lively4script',
         text: funcString
     }));
-    object.append(DOMScript);
+    $(object).append(DOMScript);
 }
 
 function removeFromDOM(object, name) {
