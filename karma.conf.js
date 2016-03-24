@@ -20,9 +20,11 @@ module.exports = function(config) {
       'src/external/babel-browser.js',
       {pattern: 'node_modules/chai/chai.js', included: false},
       {pattern: 'node_modules/mocha/mocha.js', included: false},
-      {pattern: 'src/**/*.js', included: false},
-      {pattern: 'serviceworker*', included: false},
+      {pattern: 'src/**/*.js*', included: false},
+      {pattern: 'swx-loader.js', included: false},
       {pattern: 'test/**/*.js', included: false},
+      {pattern: 'vendor/**/*.js', included: false},
+      {pattern: 'templates/**/*', included: false},
       {pattern: 'test-main.js', included: false},
       {pattern: 'src/external/focalStorage.js', included: false},
       'test-loader.js'
@@ -33,8 +35,9 @@ module.exports = function(config) {
       '/node_modules/mocha/mocha.js': '/base/node_modules/mocha/mocha.js',
       '/src/': '/base/src/',
       '/test/': '/base/test/',
-      '/serviceworker-loader.js': '/base/serviceworker-loader.js',
-      '/serviceworker.js': '/base/serviceworker.js'
+      '/templates/': '/base/templates/',
+      '/vendor/': '/base/vendor/',
+      '/swx-loader.js': '/base/swx-loader.js',
     },
 
 

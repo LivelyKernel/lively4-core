@@ -28,9 +28,11 @@ if ('serviceWorker' in navigator) {
                 }
             });
 
-            window.onbeforeunload = function(e) {
-              return 'Do you really want to leave this page?';
-            };
+            if (!window.__karma__) {
+              window.onbeforeunload = function(e) {
+                return 'Do you really want to leave this page?';
+              };
+            }
             console.log("lively loaded");
         })
     }
@@ -51,8 +53,10 @@ if ('serviceWorker' in navigator) {
 
           // so now we have to reload!
 
-          console.log("Lively4 ServiceWorker installed! Reboot needed! ;-)")
-          window.location = window.location
+
+          console.log("ok... lets WAIT WAIT WAIT!!!!")
+          // console.log("Lively4 ServiceWorker installed! Reboot needed! ;-)")
+          // window.location = window.location
 
       }).catch(function(err) {
           // registration failed

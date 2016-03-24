@@ -24,44 +24,45 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
     }
   });
 
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/serviceworker-loader.js', {
-      scope: "http://localhost:9876/"
-    }).then(function(registration) {
-      // Registration was successful
-      console.log('ServiceWorker registration successful with scope: ', registration.scope);
-    }).catch(function(err) {
-      // registration failed
-      console.log('ServiceWorker registration failed: ', err);
-    });
+  window.lively4url = "http://localhost:9876"
+
+
+  var runTests = ()=> {
+     Promise.all(allClientTestFiles.map(function (file) {
+        console.log('Load Test File: ' + file);
+        return System.import(/*'base/' + */file + '.js');
+      }))
+        // .then(loadTestEnvironment)
+        // .then(() => {
+        //   return runSWTests(allSWTestFiles);
+        // })
+        .then(function() {
+          window.__karma__.start();
+        })
+        .catch(error => {
+          console.error(error);
+          console.error(error.stack);
+          console.error(error.toString());
+          throw(error);
+        });
   }
 
-  navigator.serviceWorker.ready.then(function() {
-    "use strict";
-
-    navigator.serviceWorker.onmessage = function(event) {
-      if (event.data.meta && event.data.meta.type == 'broadcast') {
-        let message = event.data.message;
-        //console.log(message);
-      }
-    };
-
-    Promise.all(allClientTestFiles.map(function (file) {
-      console.log('Load Test File: ' + file);
-      return System.import(/*'base/' + */file + '.js');
-    }))
-      .then(loadTestEnvironment)
-      .then(() => {
-        return runSWTests(allSWTestFiles);
+  console.log("lively4url: " + lively4url)
+  System.import(lively4url + "/src/client/load.js").then(function(load){
+    console.log("load lively 1/3")
+    load.whenLoaded(function(){
+      console.log("load lively 2/3")
+      lively.components.loadUnresolved().then(function() {
+        console.log("load lively 3/3")
+          lively.initializeDocument(document)
+          console.log("Finally loaded!")
+          runTests()
       })
-      .then(function() {
-        window.__karma__.start();
-      })
-      .catch(error => {
-        console.error(error);
-        console.error(error.stack);
-        console.error(error.toString());
-        throw(error);
-      });
+  })}).catch(function(err) {
+      console.log("Lively Loaging failed", err)
+      alert("load Lively4 failed:" + err)
   });
+
+
+
 });
