@@ -1,7 +1,5 @@
 <template id="lively-window">
   <style>
-  /*@import url('https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css');*/
-
   :host {
     position: absolute;
     z-index: 100;
@@ -132,7 +130,6 @@
   .window-max {
   	display: none;
   }
-  
   .window-min {
   	display: none;
   }
@@ -140,18 +137,20 @@
 
   <div class="window">
     <div class="window-titlebar">
-      
-      <span class="window-button window-menu">Menu</span>
+      <span class="window-button window-menu">&#x2630;</span>
       
       <div class="window-title"><span></span></div>
       <div class="window-controls">
         <span class="window-button window-pin"><i class="fa fa-thumb-tack"></i></span>
+        <!--
         <span class="window-button window-min">&lowbar;</span>
-        <span class="window-button window-max">&#9634;</span>
+        <span class="window-button window-max">&#9634;</span> 
+        -->
 
         <span class="window-button window-close">&#10005;</span>
       </div>
     </div>
+
     <div class="window-content" id="window-content">
       <content></content>
     </div>

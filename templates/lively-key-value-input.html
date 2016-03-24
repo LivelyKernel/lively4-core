@@ -87,7 +87,6 @@
 
     gotFocus(e) {
       // select the whole content
-      // this.valueElement.setSelectionRange(0, this.value.length);
       this.valueElement.select();
     }
 
@@ -177,11 +176,8 @@
 
   (function() {
     LivelyKeyValueInput.template = document.currentScript.ownerDocument.querySelector('#lively-key-value-input');
-    // LivelyKeyValueInput.baseURI = document.currentScript.baseURI;
     var clone = document.importNode(LivelyKeyValueInput.template.content, true);
     var prototype = Object.create(LivelyKeyValueInput.prototype);
-
-    // clone.querySelector('style').innerHTML = '@import url("' + document.currentScript.baseURI.replace('lively-key-value-input.html', 'style/lively-key-value-input.css') + '");' + clone.querySelector('style').innerHTML;
 
     System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-key-value-input', clone, prototype); });
   })();

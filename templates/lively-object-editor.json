@@ -1,9 +1,9 @@
 {
   "name": "Object Editor",
   "html-tag": "lively-object-editor",
-  "description": "Bla bla bla",
-  "author": "Felix Wolff",
-  "date-changed": "2015-12-17",
+  "description": "System tool to inspect a Morph or HTML element",
+  "author": "Timo Dj\u00fcrken, Philipp Pajak",
+  "date-changed": "2016-03-23",
   "categories": ["basic"],
   "tags": [],
   "template": "lively-object-editor.html"

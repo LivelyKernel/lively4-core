@@ -8,6 +8,7 @@ export default class ObjectEditor extends Morph {
   initialize() {
     this.getSubmorph("#editor").changeMode("javascript");
   }
+
   /*
    * HTMLElement callbacks
    */
@@ -22,6 +23,37 @@ export default class ObjectEditor extends Morph {
     this.initializeAttributes();
   }
 
+  detachedCallback() {
+    this.attached = false;
+
+    if (this.targetElement) {
+      this.releaseTarget();
+    }
+  }
+
+  attributeChangedCallback(attrName, oldValue, newValue) {
+    switch(attrName) {
+      case 'target':
+        var selector = newValue, element  = null;
+
+        if(!selector) {
+          break;
+        }
+
+        // target attribute changed, find new target element
+        if (selector[0] === '$') {
+          this.targetElement = document.querySelector('[data-lively-id="' + selector.substr(1) + '"]');
+        } else {
+          this.targetElement = document.querySelector(selector);
+        }
+
+        break;
+    }
+  }
+
+  /*
+   * ObjectEditor methods
+   */
   saveElementReferences() {
     this.tabView = this.shadowRoot.querySelector('#tabView');
 
@@ -44,6 +76,9 @@ export default class ObjectEditor extends Morph {
     this.addConnectionButton = this.shadowRoot.querySelector('#addConnectionButton');
     this.removeConnectionButton = this.shadowRoot.querySelector('#removeConnectionButton');
     this.connectionList = this.shadowRoot.querySelector('#connectionList');
+
+    this.addAttributeButton = this.shadowRoot.querySelector('#addAttributeButton');
+    this.addPropertyButton = this.shadowRoot.querySelector('#addPropertyButton');
   }
 
   addElementEvents() {
@@ -54,6 +89,8 @@ export default class ObjectEditor extends Morph {
     this.runButton.addEventListener('click', (e) => { this.runButtonClicked(e) });
     this.addConnectionButton.addEventListener('click', (e) => { this.addConnectionButtonClicked(e) });
     this.removeConnectionButton.addEventListener('click', (e) => { this.removeConnectionButtonClicked(e) });
+    this.addPropertyButton.addEventListener('click', (e) => { this.addPropertyButtonClicked(e) });
+    this.addAttributeButton.addEventListener('click', (e) => { this.addAttributeButtonClicked(e) });
 
     this.editor.addEventListener('keydown', (e) => { this.editorKeyDown(e) });
 
@@ -87,44 +124,15 @@ export default class ObjectEditor extends Morph {
     }
   }
 
-  detachedCallback() {
-    this.attached = false;
-
-    if (this.targetElement) {
-      this.releaseTarget();
-    }
-  }
-
-  attributeChangedCallback(attrName, oldValue, newValue) {
-    switch(attrName) {
-      case 'target':
-        var selector = newValue
-        , element  = null;
-
-        if(!selector) {
-          break;
-        }
-
-        if (selector[0] === '$') {
-          this.targetElement = document.querySelector('[data-lively-id="' + selector.substr(1) + '"]');
-        } else {
-          this.targetElement = document.querySelector(selector);
-        }
-
-        break;
-      default:
-        //
-    }
-  }
-
   // Target element
   get targetElement() {
     return this._targetElement;
   }
 
   set targetElement(val) {
-    if(val == this.targetElement)
+    if(val == this.targetElement) {
       return;
+    }
 
     if (this.targetElement) {
       this.releaseTarget();
@@ -160,6 +168,7 @@ export default class ObjectEditor extends Morph {
    * Observers for attributes, scripts, etc.
    */
   createObservers() {
+    // NOTE: We need to wait for Google to bring Proxy to V8
     // this.scriptsObserver = new MutationObserver((changes) => { this.scriptsObserver(changes) });
     // this.scriptsObserver.observe(this.targetElement.__scripts__, {
     //   attributes: true
@@ -172,8 +181,6 @@ export default class ObjectEditor extends Morph {
   }
 
   destroyObservers() {
-    // Object.unobserve(this.targetElement.__scripts__, this.scriptsObserverWrapper);
-    // this.scriptsObserver.disconnect();
     this.domObserver.disconnect();
   }
 
@@ -205,8 +212,32 @@ export default class ObjectEditor extends Morph {
     }
 
     this.updateList();
+    this.setWindowTitle();
   }
 
+  setWindowTitle() {
+    if(this.parentElement.tagName != 'LIVELY-WINDOW') {
+      // parent is not a window, so cannot set title
+      return;
+    }
+
+    let windowElement = this.parentElement;
+    let title = '';
+
+    if (this.targetElement.name) {
+        title = this.targetElement.name;
+    } else if (this.targetElement.id) {
+        title = '#'+ this.targetElement.id;
+    }
+
+    title += ' <small>' + this.targetElement.tagName.toLowerCase() + '</small>';
+
+    windowElement.setAttribute('title', title);
+  }
+
+  /* 
+   * Attributes Tab
+   */
   showAttributes() {
     if (!this.targetElement) {
       return;
@@ -218,15 +249,20 @@ export default class ObjectEditor extends Morph {
     }
     this.shadowRoot.querySelector("#attributesMap").map = attributes;
   }
+
   saveAttribute(attributeName) {
     this.targetElement.setAttribute(attributeName, this.editor.value);
   }
+
   attributeChanged(e) {
     let attribute = e.detail;
 
     this.targetElement.setAttribute(attribute.key, attribute.value);
   }
 
+  /*
+   * Properties Tab
+   */
   showProperties() {
     if (!this.targetElement) {
       return;
@@ -262,7 +298,7 @@ export default class ObjectEditor extends Morph {
     ];
 
     let properties = {};
-    for(let i = 0; i < editableProperties.length; i++) {
+    for (let i = 0; i < editableProperties.length; i++) {
       let property = editableProperties[i];
       properties[property.name] = {
         value: this.targetElement[property.name],
@@ -273,13 +309,54 @@ export default class ObjectEditor extends Morph {
 
     this.propertiesMap.map = properties;
   }
+
   propertyChanged(e) {
     let property = e.detail;
-    console.log("Property changed: " + property);
 
     this.targetElement[property.key] = property.value;
   }
 
+  addPropertyButtonClicked(e) {
+    if (!this.targetElement) {
+      return;
+    }
+
+    var propertyName = prompt('Please enter the name of the property', '');
+    if (!propertyName || propertyName.length == 0) {
+      return;
+    }
+
+    var propertyValue = prompt('Please enter the (new) value', '');
+    if (!propertyValue || propertyValue.length == 0) {
+      return;
+    }
+
+    this.targetElement[propertyName] = propertyValue;
+
+    this.showProperties();
+  }
+
+  addAttributeButtonClicked(e) {
+    if (!this.targetElement) {
+      return;
+    }
+
+    var attributeName = prompt('Please enter the name of the attribute', '');
+    if (!attributeName || attributeName.length == 0) {
+      return;
+    }
+
+    var attributeValue = prompt('Please enter the (new) value', '');
+    if (!attributeValue || attributeValue.length == 0) {
+      return;
+    }
+
+    this.targetElement.setAttribute(attributeName, attributeValue);
+  }
+
+  /*
+   * Connections Tab
+   */
   showConnections() {
     if (!this.targetElement) {
       return;
@@ -320,7 +397,11 @@ export default class ObjectEditor extends Morph {
     }
 
     // connect it
-    let listener = this.targetElement[scriptName];
+    var target = this.targetElement;
+    var listener = function(e) {
+      target[scriptName](e);
+    };
+
     this.targetElement.addEventListener(eventName, listener);
     this.targetElement.__connections__.push({
       eventName: eventName,
@@ -343,10 +424,16 @@ export default class ObjectEditor extends Morph {
       return;
     }
 
-    this.targetElement.__connections__ = this.targetElement.__connections__.splice(this.connectionList.selectedIndex);
+    let removedConnection = this.targetElement.__connections__[this.connectionList.selectedIndex];
+    this.targetElement.removeEventListener(removedConnection.eventName, removedConnection.listener);
+    this.targetElement.__connections__.splice(this.connectionList.selectedIndex);
+
     this.showConnections();
   }
 
+  /*
+   * Scripts Tab
+   */
   addButtonClicked(e) {
     if (!this.targetElement) {
       return;
@@ -393,7 +480,6 @@ export default class ObjectEditor extends Morph {
           eval('(' + this.editor.value + ')'),
           { name: data['scriptName'] }
         );
-        console.log('saved!');
       } else if (typeof data['attributeName'] !== 'undefined') {
         this.saveAttribute(data['attributeName']);
       }

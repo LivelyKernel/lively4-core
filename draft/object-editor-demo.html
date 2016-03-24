@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <title>Object Editor Demo Page</title>
+    <style type="text/css" media="screen">
+        body, html {
+          width: 100%;
+          height: 100%;
+
+          font-family: Helvetica, sans-serif;
+        }
+        body {
+          margin: 0;
+        }
+        body > h1 {
+          margin-top: 0;
+        }
+
+        lively-tab-view > * {
+            margin-left: 10px;
+        }
+
+        .blue-button {
+            background-color: #1ba1e2;
+            border-color: #1ba1e2;
+            color: white;
+            
+            -webkit-appearance: caret;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+
+            border-top: 1px solid gray;
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+
+        .footer #about {
+            float: right;
+
+            height: 40px;
+            margin-right: 5px;
+        }
+    </style>
+
+    <script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript" charset="utf-8"></script>
+
+    <!--<link rel="import" href="../src/client/babel-system.html" /> -->
+    <!-- BEGIN SYSTEM.JS: should go away, until then we use a "static" global source -->
+    <script src="https://livelykernel.github.io/lively4-core/src/external/system.src.js" type="text/javascript" charset="utf-8"></script>
+    <script>
+      System.paths['babel'] ='https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
+      System.config({
+        transpiler: 'babel',
+        babelOptions: { },
+        map: {
+            babel: 'https://livelykernel.github.io/lively4-core/src/external/babel-browser.js'
+        }
+      });
+    </script>
+    <!-- END SYSTEM.JS-->
+
+    <!-- BEGIN ACE -->
+    <!-- We also have to load ace "locally", because loading it remotely ends in a race condition -->
+    <script src="../src/external/ace.js" type="text/javascript" charset="utf-8"></script>
+    <!-- END ACE -->
+
+
+    <link rel="import" href="../templates/lively-window.html" />
+    <link rel="import" href="../templates/lively-object-editor.html" />
+    <link rel="import" href="../templates/lively-tab-view.html" />
+    <link rel="import" href="../templates/lively-halos.html" />
+
+    <link rel="import" href="../templates/lively-key-value-input.html" />
+    <link rel="import" href="../templates/lively-key-value-map.html" />
+
+    <link rel="stylesheet" type="text/css" href="../src/client/css/morphic.css" />
+</head>
+
+<body>
+
+<h1>Object Editor Demo Page
+<script data-name="randomColor" type="lively4script">function randomColor() {
+  let colors = (['r','g','b']).map(function() {
+    return Math.floor((Math.random() * 255));
+  });
+  let color = 'rgb(' + colors.join() + ')';
+  
+  let complementaryColors = colors.map(function(color) {
+    return 255 - color;
+  })
+  let complementaryColor = 'rgb(' + complementaryColors.join() + ')';
+
+  this.style.backgroundColor = color;
+  this.style.borderColor = color;
+  this.style.color = complementaryColor;
+}</script>
+<script data-name="initialize" type="lively4script">function initialize() {
+  if(this.initialized) {
+    return;
+  }
+
+  if(!this.__connections__) {
+    this.__connections__ = [];
+  }
+
+  let events = {
+    'mouseover': 'randomColor'
+  };
+
+  for(let eventName in events) {
+    let scriptName = events[eventName];
+    let callback =  (e) => {this[scriptName](e);}
+
+    this.addEventListener(eventName, callback);  
+
+    this.__connections__.push({
+      eventName: eventName,
+      listener: callback,
+      name: eventName + ' >> ' + scriptName
+    });
+  }
+}</script>
+</h1>
+
+<lively-halos></lively-halos>
+
+<div class="content">
+    <lively-tab-view id="tabView">
+        <div title="Welcome">
+            <h1>Welcome to the Object Editor Demo Page!</h1>
+            <br>
+            <button>Make me blue</button>
+        </div>
+        <div title="Properties">
+            <h1>Change the content of the button.</h1>
+            <br>
+            <button class="blue-button">Change me</button>
+        </div>
+        <div title="Scripts">
+            <h1>Use a script to get to the next tab content.</h1>
+            <br>
+            <button class="blue-button">Guide me to the next page</button>
+        </div>
+        <div title="Connections" id="connections-tab">
+            <h1>Program the "About" button.</h1>
+        </div>
+    </lively-tab-view>
+</div>
+<div class="footer">
+    <button id="about" class="blue-button">About
+        <script data-name="showAboutWindow" type="lively4script">function showAboutWindow() {
+  let window = document.createElement('lively-window');
+  window.setAttribute('title', 'About Object Editor');
+  
+  let aboutText = this.createAboutText();
+  window.appendChild(aboutText);
+  
+  document.body.appendChild(window);
+}</script>
+        <script data-name="createAboutText" type="lively4script">function createAboutText() {
+  var node = document.createElement('p');
+  node.innerHTML = 'Object Editor presented to you by Timo Djuerken and Philipp Pajak. <br><h2>Thank you for your attention!</h2>';
+  
+  return node;
+}</script>
+    </button>
+</div>
+
+<script>
+    var lively4url =  ".." // or any abosolute path to lively4 ? Any idea for computeRoot() ? #JensLincke #OpenQuestion
+
+    System.import(lively4url + "/src/client/load.js").then(function(){
+        System.import("commandline.js")
+        System.import(lively4url + "/src/client/debug-serviceworker.js")
+    }).catch(function(err) { alert("load Lively4 failed")});
+
+    var loader;
+    System.import(lively4url + "/src/client/morphic/component-loader.js").then(m => {
+        loader = m;
+    }).catch(function(err) {
+        debugger; alert("load component-loader failed");
+    });
+</script>
+
+</body>
+</html>
