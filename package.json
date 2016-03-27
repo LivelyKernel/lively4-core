@@ -3,6 +3,39 @@
   "version": "0.5.17",
   "description": "JavaScript utils providing useful abstractions for working with collections, functions, objects.",
   "main": "index.js",
+  "systemjs": {
+    "main": "index.js",
+    "meta": {
+      "format": "cjs",
+      "defaultJSExtensions": true
+    },
+    "map": {
+      "path": {
+        "node": "@node/path",
+        "~node": "@empty"
+      },
+      "fs": {
+        "node": "@node/fs",
+        "~node": "@empty"
+      },
+      "events": {
+        "node": "@node/events",
+        "~node": "@empty"
+      },
+      "util": {
+        "node": "@node/util",
+        "~node": "@empty"
+      },
+      "os": {
+        "node": "@node/os",
+        "~node": "@empty"
+      },
+      "child_process": {
+        "node": "@node/child_process",
+        "~node": "@empty"
+      }
+    }
+  },
   "libFiles": [
     "lib/base.js",
     "lib/object.js",
@@ -18,7 +51,8 @@
     "lib/events.js",
     "lib/graph.js",
     "lib/messenger.js",
-    "lib/worker.js"],
+    "lib/worker.js"
+  ],
   "dependencies": {},
   "devDependencies": {
     "doc-comments": "^0.1.2",
