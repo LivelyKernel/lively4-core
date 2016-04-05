@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 import Morph from './Morph.js';
 import generateUUID from '../../src/client/uuid.js';

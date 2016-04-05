@@ -9,7 +9,7 @@
     background: white;
     width: 400px;
     height: 300px;
-  
+  }
   #wrapper {
     display: flex;
       flex-direction: column;
@@ -61,7 +61,7 @@
     overflow-y: scroll;
   }
 
-  .tabContent {
+  #attributesContent, #propertiesContent, #connectionsContents, #styleContent {
     width: 100%;
     padding-left: 5px;
     margin-top: 8px;
@@ -131,19 +131,19 @@
         </div>
 
         <!-- Attributes Tab -->
-        <div id="attributesContent" class="tabContent" title="Attributes">
+        <div id="attributesContent" title="Attributes">
           <lively-key-value-map id="attributesMap"></lively-key-value-map>
           <button id="addAttributeButton">Add Attribute</button>
         </div>
 
         <!-- Properties Tab -->
-        <div id="propertiesContent" class="tabContent" title="Properties">
+        <div id="propertiesContent" title="Properties">
           <lively-key-value-map id="propertiesMap"></lively-key-value-map>
           <button id="addPropertyButton">Add Property</button>
         </div>
 
         <!-- Connections Tab -->
-        <div id="connectionsContent" class="tabContent" title="Connections">
+        <div id="connectionsContent" title="Connections">
           <select size="100" id="connectionList"></select>
           <fieldset>
             <button id="addConnectionButton">Add Connection</button><br/>
@@ -152,7 +152,8 @@
         </div>
         
         <!-- Style Tab -->
-        <div id="styleContent" class="tabContent" title="Style">
+        <div id="styleContent" title="Style">
+          <input type='color'>
         </div>
       </lively-tab-view>
     </div>
