@@ -159,11 +159,22 @@
     </div>
   </div>
   
-  <script type="lively4script" data-name="setBackgroundColor">
+  <script type="lively4script" data-name="initialize">
     () => {
-      $("#background-color")
+      this.backgroundColorInput = this.shadowRoot.querySelector("#background-color");
+      this.backgroundColorInput.addEventListener(
+        'change',
+        (e) => { this.updateBackgroundColor(); }
+      );
     }
-    </script>
+  </script>
+  
+  <script type="lively4script" data-name="updateBackgroundColor">
+    () => {
+      var color = this.shadowRoot.querySelector("#background-color").value;
+      this.targetElement.style.backgroundColor = color;
+    }
+  </script>
 </template>
 
 <script class="registrationScript">

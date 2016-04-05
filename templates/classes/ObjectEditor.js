@@ -7,6 +7,8 @@ import * as scriptManager from  "../../src/client/script-manager.js";
 export default class ObjectEditor extends Morph {
   initialize() {
     this.getSubmorph("#editor").changeMode("javascript");
+    var aceComp = this.shadowRoot.querySelector('juicy-ace-editor');
+    aceComp.enableAutocompletion();
   }
 
   /*
