@@ -153,11 +153,17 @@
         
         <!-- Style Tab -->
         <div id="styleContent" title="Style">
-          <input type='color'>
+          <input type='color' id="background-color">
         </div>
       </lively-tab-view>
     </div>
   </div>
+  
+  <script type="lively4script" data-name="setBackgroundColor">
+    () => {
+      $("#background-color")
+    }
+    </script>
 </template>
 
 <script class="registrationScript">
