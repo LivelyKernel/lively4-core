@@ -251,9 +251,12 @@ export default class ComponentLoader {
   }
   
   static reloadComponent(source) {
-    var template = $.parseHTML(source)[0]
-    var name = template.id
+    var template =  $($.parseHTML(source)).filter("template")[0];
+    if (!template) return;
+    var name = template.id;
+    if (!name) return;
     var templateClone = document.importNode(template.content, true);
-    lively.components.templates[name] = templateClone
+    lively.components.templates[name] = templateClone;
+    return name;
   }
 }

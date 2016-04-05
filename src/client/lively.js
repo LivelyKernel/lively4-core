@@ -273,14 +273,8 @@ export default class Lively {
 
 
   static updateTemplate(html) {
-    var node =  $($.parseHTML(html)).filter("template")[0];
-    
-    if (!node) return;
-
-    var tagName = node.id;
+    var tagName = components.reloadComponent(html);
     if (!tagName) return;
-
-    components.reloadComponent(html);
 
     _.each($(tagName), function(oldInstance) {
       if (oldInstance.__ingoreUpdates) return;
