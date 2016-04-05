@@ -16,9 +16,9 @@ if ('serviceWorker' in navigator) {
     var onReady = function() {
         serviceworkerReady = true;
         // Lively has all the dependencies
-        if (window.location.host == " livelykernel.github.io") {
+        if (window.location.host == "livelykernel.github.io") {
           // #Experiment #Jens
-          lively4url = "https://lively4/"
+          window.lively4url = "https://lively4/"
         }
         System.import(lively4url + "/src/client/lively.js").then(function(module) {
             lively.initializeHalos();
