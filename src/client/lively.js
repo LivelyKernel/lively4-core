@@ -273,7 +273,8 @@ export default class Lively {
 
 
   static updateTemplate(html) {
-    var node =  $.parseHTML(html)[0];
+    var node =  $($.parseHTML(html)).filter("template")[0];
+    
     if (!node) return;
 
     var tagName = node.id;
