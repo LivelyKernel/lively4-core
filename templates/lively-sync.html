@@ -86,7 +86,6 @@
     <script type="lively4script" data-name="logout">
     () => {
     	lively.focalStorage.setItem("githubToken", null)    
-      lively.focalStorage.setItem("githubUsername", null)
       this.updateLoginStatus()
       this.log("")
     }
