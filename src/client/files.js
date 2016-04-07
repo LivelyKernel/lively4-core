@@ -62,6 +62,16 @@ export default class Files {
   		});
   	})
   }
+  
+  static syncRepository(lively4serverUrl, gitrepository, gitusername, gitpasssword) {
+    return fetch(lively4serverUrl + "/_git/sync", {
+      headers: new Headers({ 
+    	  "gitrepository": gitrepository, // "Lively4.wiki"
+        "gitusername" : gitusername, // "jens.lincke"
+        "gitpassword" : gitpasssword // "f777a0fa178bc855c28f89b402786b36f8b..."
+      })
+    }).then(r => r.text()).then(console.log)
+  }
 }
 
 console.log("loaded file-editor.js")
