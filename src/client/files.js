@@ -70,7 +70,10 @@ export default class Files {
         "gitusername" : gitusername, // "jens.lincke"
         "gitpassword" : gitpasssword // "f777a0fa178bc855c28f89b402786b36f8b..."
       })
-    }).then(r => r.text()).then(console.log)
+    }).then(r => r.text()).then(r => {
+      console.log(r); 
+      return r
+    })
   }
 }
 
