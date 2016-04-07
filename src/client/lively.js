@@ -102,7 +102,7 @@ export default class Lively {
       math: lively4url + "/src/external/math.js",
       typo: lively4url + "/src/external/typo.js",
       contextmenu: lively4url + '/src/client/contextmenu.js',
-      customize: lively4url + '/src/client/customize.js',
+      customize: lively4url + '/src/client/customize.js'
     })[moduleName]
   }
 
@@ -118,6 +118,9 @@ export default class Lively {
         console.log.nativeLog = nativeLog; // #TODO use generic Wrapper mechanism here
     }
     exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expected
+    
+    this.import("authGithub", lively4url + '/src/client/auth-github.js')
+    this.import("authDropbox", lively4url + '/src/client/auth-dropbox.js')
   }
 
   static array(anyList){
@@ -360,6 +363,12 @@ export default class Lively {
       lively.allProperties(obj.__proto__, result);
     }
     return result
+  }
+  
+  static registerTemplate() {
+    var template = document.currentScript.ownerDocument.querySelector('template');
+    var clone = document.importNode(template.content, true);
+    System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register(template.id, clone); });
   }
 }
 

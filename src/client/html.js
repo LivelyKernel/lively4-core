@@ -6,7 +6,24 @@ export default class HTML {
   static hello () {
     return "Hello World!"
   }
-
+  
+  static registerButtons(parent) {
+    // Just an experiment for having to write lesser code.... which ended up in having more code here ;-) #Jens
+    Array.prototype.forEach.call(parent.shadowRoot.querySelectorAll("button"), node => {
+      var name = node.id
+      console.log("register button " + name)
+      $(node).click(() => {
+        var funcName = name.replace(/^./, c => "on"+ c.toUpperCase())
+        var func = parent[funcName]
+        if (func) {
+          func.call(parent)
+        } else {
+          alert("No callback: " +  funcName)
+        }
+      })
+    })
+  }
+  
   static fixLinks(nodes, dir, followPath) {
     if (! followPath) {
       throw new Error("argument followPath missing");

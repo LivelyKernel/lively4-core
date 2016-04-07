@@ -61,33 +61,6 @@
     () => {
       var container = $(this.shadowRoot).find(".container")[0];
 
-      var messaging, focalStorage, githubAuth, dropboxAuth, componentLoader;
-
-      // #TODO why not?:
-      // import messaging from "../src/client/messaging.js"
-      System.import('../src/client/messaging.js').then(function(mod) {
-        messaging = mod;
-      })
-      System.import('../src/external/focalStorage.js').then(function(mod) {
-        focalStorage = mod
-      })
-
-      System.import('../src/client/auth-github.js').then(function(mod) {
-        githubAuth = mod
-        window.githubAuth = githubAuth // make it global, so the callback can reach it...
-      })
-
-      System.import('../src/client/auth-dropbox.js').then(function(mod) {
-        dropboxAuth = mod
-        window.dropboxAuth = dropboxAuth // make it global, so the callback can reach it...
-      })
-
-      System.import('../src/client/morphic/component-loader.js').then(function(mod) {
-        componentLoader = mod
-        window.componentLoader = mod // #TODO how can we define it in the lexical scope of the script? #Design #FutureWork
-      })
-
-
       // #TODO refactor to "connections"
 
       $(this.getSubmorph('#githubLoginButton')).click(() => {
@@ -120,7 +93,7 @@
         var repo = this.shadowRoot.querySelector('#githubRepo').value
         var branch = this.shadowRoot.querySelector('#githubBranch').value
 
-        githubAuth.challengeForAuth(Date.now(), (token) => {
+        lively.authGithub.challengeForAuth(Date.now(), (token) => {
             console.log('We are authenticated with the Token: ' + token)
             var mountGithub = {
               "path": mountPath,
@@ -148,7 +121,7 @@
     </script>
     <script type="lively4script" data-name="logoutGitHub">
       function(){
-        githubAuth.logout();
+        lively.authGithub.logout();
         console.log('logged out of github')
         var unmountGithub = {
               "path": "/",
@@ -182,7 +155,7 @@
         var mountPath = this.shadowRoot.querySelector('#dropboxMountPath').value
         var subfolder = this.shadowRoot.querySelector('#dropboxSubfolder').value
 
-        dropboxAuth.challengeForAuth(Date.now(), (token) => {
+        lively.authDropbox.challengeForAuth(Date.now(), (token) => {
             console.log('We are authenticated with the Token: ' + token)
             var mount = {
               "path": mountPath,
@@ -210,7 +183,7 @@
 }    </script>
     <script type="lively4script" data-name="logoutDropbox">
       function(){
-        dropboxAuth.logout();
+        lively.authDropbox.logout();
         console.log('logged out of dropbox')
         alert("not supprt")
         var unmountGithub = {
@@ -248,10 +221,6 @@
                 alert("could not unmount path: "  + path, error)
               }
             });
-
-
-
-
     }
     </script>
     <script type="lively4script" data-name="updateMountList">

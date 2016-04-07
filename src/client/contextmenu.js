@@ -40,10 +40,11 @@ export default class ContextMenu {
           comp.parentElement.style.width = "700px"
       })
       }],
-      ["File Editor",     (evt) => this.openComponentInWindow("lively-editor", evt)],
-      ["File Browser",    (evt) => this.openComponentInWindow("lively-file-browser", evt)],
-      ["Filesystems",     (evt) => this.openComponentInWindow("lively-filesystems", evt)],
-      ["Terminal",        (evt) => this.openComponentInWindow("lively-terminal", evt)],
+      // ["File Editor",     (evt) => this.openComponentInWindow("lively-editor", evt)],
+      // ["File Browser",    (evt) => this.openComponentInWindow("lively-file-browser", evt)],
+      ["Mount",     (evt) => this.openComponentInWindow("lively-filesystems", evt)],
+      ["Sync",     (evt) => this.openComponentInWindow("lively-sync", evt)],
+      // ["Terminal",        (evt) => this.openComponentInWindow("lively-terminal", evt)],
       ["Console",         (evt) => this.openComponentInWindow("lively-console", evt)],
        ["Math Workspace",         (evt) => this.openComponentInWindow("lively-math", evt)],
       ["Component Bin",   (evt) => this.openComponentInWindow("lively-component-bin", evt)],
@@ -51,12 +52,12 @@ export default class ContextMenu {
         this.hide()
         lively.import("customize").then(c => c.openCustomizeWorkspace(evt))
       }],
-      ["Persistens Settings", (evt) => {
-          this.openComponentInWindow("lively-persistence-settings", evt).then((comp) => {
-              comp.parentElement.style.height = "150px"
-              comp.parentElement.style.width = "400px"
-          })
-      }],
+      // ["Persistens Settings", (evt) => {
+      //    this.openComponentInWindow("lively-persistence-settings", evt).then((comp) => {
+      //        comp.parentElement.style.height = "150px"
+      //        comp.parentElement.style.width = "400px"
+      //    })
+      // }],
       // #TODO use sub menues here
       ["Wiki",     (evt) => {
         this.openComponentInWindow("lively-container", evt).then(comp => {
