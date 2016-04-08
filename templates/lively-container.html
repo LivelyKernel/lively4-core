@@ -501,7 +501,8 @@
 
     <script type="lively4script" data-name="navigateToName">
     (name) => {
-      this.getAceEditor().editor.find("data-name=\""+name+'"')
+      lively.notify("navigate to " + name)
+      this.getAceEditor().editor.find(name)
     }
     </script>
     
@@ -524,26 +525,41 @@
       
       if (this.isEditing()) {
         var navbar = this.clearNavbar()
-        // that.showNavbar()
-        var template = $($.parseHTML(this.sourceContent)).filter("template")[0];
-        if (!template) {
-          console.log("showNavbar: no template found");
-          return
+        if (this.getPath().match(/templates\/.*html$/)) {
+          var template = $($.parseHTML(this.sourceContent)).filter("template")[0];
+          if (!template) {
+            console.log("showNavbar: no template found");
+            return
+          }
+          // fill navbar with list of script
+          lively.array(template.content.querySelectorAll("script")).forEach((ea) => {
+    	      var element = document.createElement("li");
+    	      element.innerHTML = ea.getAttribute('data-name');
+    	      element.onclick = () => {
+    	        this.navigateToName(
+    	          "data-name=\""+ea.getAttribute('data-name')+'"')
+    	      };
+    	      navbar.appendChild(element) ;
+          })
+        } else if (this.getPath().match(/\.js$/)) {
+          var defRegEx = / *(static [A-Za-z0-9]+)\(.*\) *{/g
+          var m
+          var links = {}
+          while (m = defRegEx.exec(this.sourceContent)) {
+            links[m[1]] = m[0]
+          }
+          _.keys(links).forEach( name => {
+            var element = document.createElement("li");
+      	    element.innerHTML = name
+      	    element.onclick = () => {
+      	        this.navigateToName(name)
+      	    };
+      	    navbar.appendChild(element) ;
+          })
         }
-        // fill navbar with list of script
-        lively.array(template.content.querySelectorAll("script")).forEach((ea) => {
-  	      var element = document.createElement("li");
-  	      element.innerHTML = ea.getAttribute('data-name');
-  	      element.onclick = () => {
-  	        this.navigateToName(ea.getAttribute('data-name'))
-  	      };
-  	      navbar.appendChild(element) ;
-        })
       } else {
         var root = ("" + this.getURL()).replace(/\/[^\/]*$/,"/")
         if (this.currentDir && this.currentDir.match(new RegExp("^" + root + "$","i"))) return
-        
-        
         this.currentDir = root
         var navbar = this.clearNavbar()
         
