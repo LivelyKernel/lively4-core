@@ -29,9 +29,11 @@ export default class ComponentLoader {
   }
   
   static protypeToComponentName(prototype) {
+    var prototypeName =  prototype.constructor.name
     return _.detect(_.keys(this.prototypes), 
-      name => this.prototypes[name].constructor.name 
-        ===  prototype.constructor.name)
+      name => {
+        var constructor = this.prototypes[name].constructor;
+        return constructor && (constructor.name ===  prototypeName)})
   }
   
   static updatePrototype(prototype) {
