@@ -46,8 +46,6 @@
         color: #2B65EC;
 
       }
-
-
     </style>
     <div id="container-navigation">
       <button id="edit">Edit</button>
@@ -140,12 +138,12 @@
       }
       var serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1]
       console.log("server url: " + serverURL)
-      if (!that.getPath().match(serverURL)) {
+      if (!this.getPath().match(serverURL)) {
         return lively.notify("can only sync on our repositories")
       }
-      var repo =  that.getPath().replace(serverURL, "").replace(/\.*/,"")
-      console.log("repo: " + repo)
-      // lively.files.syncRepository(serverURL, repo, username, token).then(this.log)
+      var repo =  this.getPath().replace(serverURL +"/", "").replace(/\/.*/,"")
+      lively.files.syncRepository(serverURL, repo, username, token).then((r) =>
+        lively.notify("Synced " + repo, r, 10, () => lively.openWorkspace(r)))
       }
     </script>
 
