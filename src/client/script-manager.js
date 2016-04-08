@@ -122,7 +122,7 @@ export default class ScriptManager {
             } catch(e) {
                 debugger
                 lively.notify('Error adding function: ' + scriptName + ' to object: ' + parent, 
-                ""+e + "\nSOURCE:" + child.textContent , 20000)
+                ""+e , 20, () => lively.openWorkspace("" + e + "Source: " + child.textContent));
                 console.error('Error while adding function ' + scriptName + ' to object:');
                 console.error($(parent));
                 console.error(e);
@@ -132,7 +132,8 @@ export default class ScriptManager {
         }
     });
     
-    if(parent.initialize) parent.initialize() // initialize only after all scripts are there.
+    // dont do it here...
+    // if(parent.initialize) parent.initialize() // initialize only after all scripts are there.
   }
   
   
@@ -183,7 +184,6 @@ export default class ScriptManager {
           if(!scriptExists(object, name)) {
               throw 'script name "' + name + '" does not exist!';
           }
-  
           delete object.__scripts__[name];
           delete object[name];
           removeFromDOM(object, name);

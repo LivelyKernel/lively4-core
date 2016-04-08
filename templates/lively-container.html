@@ -73,6 +73,7 @@
     </script>
     <script type="lively4script" data-name="initialize">
     () => {
+      console.log("Initialize Container")
       if (this.useBrowserHistory()) {
         window.onpopstate = (event) => {
           var state = event.state
@@ -98,8 +99,6 @@
       		this.setPath(src)
       	}
       }
-
-
 
       // #TODO very ugly... I want to hide that level of JavaScript and just connect "onEnter" of the input field with my code
       var input = this.getSubmorph("#container-path")
@@ -131,7 +130,6 @@
     }
     </script>
     <script type="lively4script" data-name="onSync">
-    () => {
     async (evt) => {
       var username = await lively.focalStorage.getItem("githubUsername")
       var token = await lively.focalStorage.getItem("githubToken")
@@ -231,7 +229,6 @@
     }
     </script>
 
-
     <script type="lively4script" data-name="onSave">
     (doNotQuit) => {
       return this.getSubmorph("#editor").saveFile().then( () => {
@@ -319,6 +316,7 @@
 
     <script type="lively4script" data-name="followPath">
     (path) => {
+      console.log("follow path: " + path)
       if (_.last(this.history()) !== path)
         this.history().push(path)
 

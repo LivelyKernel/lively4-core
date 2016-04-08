@@ -218,7 +218,7 @@ export default class Lively {
       });
   }
 
-  static notify(title, text, timout, cb) {
+  static notify(title, text, timeout, cb) {
     // just in case...
     if (Notification.permission !== "granted") Notification.requestPermission();
 
@@ -227,9 +227,9 @@ export default class Lively {
       icon: 'https://www.lively-kernel.org/media/livelylogo-small.png',
       body: text || "",
     });
-    if (cb) nofification.onclick = cb
+    if (cb) notification.onclick = cb
     if (timeout === undefined) timeout = 3 
-    setTimeout(() => notification.close(), timout * 1000);
+    setTimeout(() => notification.close(), timeout * 1000);
     // notification.onclick = cb
   }
 
