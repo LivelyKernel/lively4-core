@@ -148,6 +148,7 @@ export default class AceEditor extends HTMLElement {
     // CUSTOMIZATION
     enableAutocompletion(filename) {
       return this.aceRequire("ace/ext/language_tools").then( module => {
+        if (!this.editor) return;
         this.editor.setOptions({
             enableBasicAutocompletion: true,
             enableSnippets: true,
@@ -258,7 +259,7 @@ export default class AceEditor extends HTMLElement {
             exec: (editor) => {
                 let text = editor.currentSelectionOrLine()
                 let result = this.tryBoundEval(text);
-                lively.notify("" + result)
+                // lively.notify("" + result)
             }
         })
 
@@ -328,7 +329,7 @@ export default class AceEditor extends HTMLElement {
         var result;
         try { result =  this.boundEval(str) }
         catch(e) {
-            document.LastError = e
+            lively.LastError = e
             console.log("Error: " + e)
             result = e
         }
@@ -342,7 +343,6 @@ export default class AceEditor extends HTMLElement {
         }
         return result
     }
-
     inspectIt(str) {
         var result;
         try { result =  this.boundEval(str) }

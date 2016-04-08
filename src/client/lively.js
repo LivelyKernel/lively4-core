@@ -106,6 +106,14 @@ export default class Lively {
     })[moduleName]
   }
 
+
+  static handleError(error) {
+    lively.LastError = error
+   lively.notify("Error: ", error.message, 20, () => 
+    		  lively.openWorkspace("Error:" + error.message + "\nLine:" + error.lineno + " Col: " + error.colno+"\nSource:" + error.source + "\nError:" + error.stack))
+  }
+  
+
   static loaded() {
     // #Refactor with #ContextJS
     // guard againsst wrapping twice and ending in endless recursion
@@ -129,10 +137,13 @@ export default class Lively {
     // General Error Handling
     if (window.onerror === null) {
       window.onerror  = function(message, source, lineno, colno, error) {
-    	  window.LastError = error
-    	  lively.notify("Error: ", message, 20, () => 
-    		  lively.openWorkspace("Error:" + message + "\nLine:" + lineno + " Col: " + colno+"\nSource:" + source + "\nError:" + error.stack))
+    	  lively.handleError(error)
       }
+    }
+    // do it just once
+    if (!window.unhandledRejectionEventLister) {
+      window.unhandledRejectionEventLister = function(evt) {lively.handleError(evt.reason)} ;
+      window.addEventListener('unhandledrejection', unhandledRejectionEventLister);
     }
     
     exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expected
