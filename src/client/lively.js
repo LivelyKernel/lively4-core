@@ -109,23 +109,21 @@ export default class Lively {
   static loaded() {
     // #Refactor with #ContextJS
     // guard againsst wrapping twice and ending in endless recursion
-    if (!console.log.isWrapped) {
+    if (!console.log.originalFunction) {
         var nativeLog = console.log;
         console.log = function() {
             nativeLog.apply(console, arguments);
             lively.log.apply(undefined, arguments);
         };
-        console.log.isWrapped = true;
-        console.log.nativeLog = nativeLog; // #TODO use generic Wrapper mechanism here
+        console.log.originalFunction = nativeLog; // #TODO use generic Wrapper mechanism here
     }
-    if (!console.error.isWrapped) {
-        var nativeLog = console.log;
+    if (!console.error.originalFunction) {
+        var nativeError = console.error;
         console.error = function() {
-            nativeLog.apply(console, arguments);
+            nativeError.apply(console, arguments);
             lively.log.apply(undefined, arguments);
         };
-        console.error.isWrapped = true;
-        console.error.nativeLog = nativeLog; // #TODO use generic Wrapper mechanism here
+        console.error.originalFunction = nativeError; // #TODO use generic Wrapper mechanism here
     }
     
     // General Error Handling
