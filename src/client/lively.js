@@ -63,7 +63,7 @@ export default class Lively {
     }
     return System.import(path).then( (module, err) => {
       if (err) {
-        lively.notify("Could not load module " + moduleName, err)
+        lively.notify("Could not load module " + moduleName, err);
       } else {
         console.log("lively: load "+ moduleName)
 
@@ -78,7 +78,7 @@ export default class Lively {
         }
 
         if (lively.components && this[moduleName])
-          lively.components.updatePrototype(this[moduleName].prototype)
+          lively.components.updatePrototype(this[moduleName].prototype);
 
         return module.default || module
       }
@@ -107,6 +107,7 @@ export default class Lively {
   }
 
   static loaded() {
+    // #Refactor with #ContextJS
     // guard againsst wrapping twice and ending in endless recursion
     if (!console.log.isWrapped) {
         var nativeLog = console.log;
@@ -117,6 +118,25 @@ export default class Lively {
         console.log.isWrapped = true;
         console.log.nativeLog = nativeLog; // #TODO use generic Wrapper mechanism here
     }
+    if (!console.error.isWrapped) {
+        var nativeLog = console.log;
+        console.error = function() {
+            nativeLog.apply(console, arguments);
+            lively.log.apply(undefined, arguments);
+        };
+        console.error.isWrapped = true;
+        console.error.nativeLog = nativeLog; // #TODO use generic Wrapper mechanism here
+    }
+    
+    // General Error Handling
+    if (window.onerror === null) {
+      window.onerror  = function(message, source, lineno, colno, error) {
+    	  window.LastError = error
+    	  lively.notify("Error: ", message, 20, () => 
+    		  lively.openWorkspace("Error:" + message + "\nLine:" + lineno + " Col: " + colno+"\nSource:" + source + "\nError:" + error.stack))
+      }
+    }
+    
     exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expected
     
     this.import("authGithub", lively4url + '/src/client/auth-github.js')
@@ -345,7 +365,7 @@ export default class Lively {
     comp.style["z-index"] = 1000;
     comp.style.border = "1px solid red";
     document.body.appendChild(comp)
-    lively.setPosition(comp, pos)
+    lively.setPosition(comp, pos);
     comp.setAttribute("data-is-meta", "true")
 
     comp.innerHTML = "<pre data-is-meta='true' style='position: relative; top: -8px; width: 200px; background: rgba(255,255,255,0.8); color: red; font-size: 8pt'>" +
