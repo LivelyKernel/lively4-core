@@ -1,4 +1,4 @@
-import * as scriptManager from  "../script-manager.js";
+import scriptManager from  "../script-manager.js";
 import * as persistence from  "../persistence.js";
 import Morph from "../../../templates/classes/Morph.js";
 

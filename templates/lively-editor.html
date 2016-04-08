@@ -48,8 +48,8 @@
       var container = $(this.shadowRoot).find(".container")[0];
 
       // #TODO refactor to "connections"
-      $(this.getSubmorph('#saveButton')).click(this.saveFile.bind(this))
-      $(this.getSubmorph('#loadButton')).click(this.loadFile.bind(this))
+      $(this.getSubmorph('#saveButton')).click(() => this.saveFile())
+      $(this.getSubmorph('#loadButton')).click(() => this.loadFile())
 
       container.dispatchEvent(new Event("initialized"))
     }

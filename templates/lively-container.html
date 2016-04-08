@@ -1,11 +1,11 @@
 <template id="lively-container">
     <style>
-      #cancel, #save, #accept {
+      #cancel, #save, #accept, #sync {
         visibility: hidden;
       }
 
       #container-path {
-        width: 400px;
+        width: 440px;
       }
 
       #container-navigation {
@@ -37,7 +37,10 @@
         display: flex;
         flex-direction: column;
       }
-
+      button {
+        padding: 0;
+        
+      }
 
       h1,h2,h3,h4 {
         color: #2B65EC;
@@ -54,6 +57,7 @@
       <input type="text" id="container-path" value="">
       <button id="cancel">cancel</button>
       <button id="save">save</button>
+      <button id="sync">sync</button>
       <button id="accept">accept</button>
     </div>
     <div id="container-content">
@@ -62,6 +66,11 @@
     </div>
     <div id="container-editor">
     </div>
+    <script type="lively4script" data-name="useBrowserHistory">
+    () => {
+      return this.getAttribute("load") == "auto"
+    }
+    </script>
     <script type="lively4script" data-name="initialize">
     () => {
       if (this.useBrowserHistory()) {
@@ -102,11 +111,7 @@
       this.registerButtons()
     }
     </script>
-    <script type="lively4script" data-name="useBrowserHistory">
-    () => {
-      return this.getAttribute("load") == "auto"
-    }
-    </script>
+
     <script type="lively4script" data-name="registerButtons">
     (names) => {
       // Just an experiment for having to write lesser code.... which ended up in having more code here ;-) #Jens
@@ -125,6 +130,27 @@
       })
     }
     </script>
+    <script type="lively4script" data-name="onSync">
+    () => {
+    async (evt) => {
+      var username = await lively.focalStorage.getItem("githubUsername")
+      var token = await lively.focalStorage.getItem("githubToken")
+      if (!token) {
+        lively.components.openInWindow(comp).then((w) => {
+          lively.setPosition(w, lively.pt(evt.pageX, evt.pageY))
+        })
+      }
+      var serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1]
+      console.log("server url: " + serverURL)
+      if (!that.getPath().match(serverURL)) {
+        return lively.notify("can only sync on our repositories")
+      }
+      var repo =  that.getPath().replace(serverURL, "").replace(/\.*/,"")
+      console.log("repo: " + repo)
+      // lively.files.syncRepository(serverURL, repo, username, token).then(this.log)
+      }
+    </script>
+
     <script type="lively4script" data-name="onPathEntered">
     (path) => {
       this.followPath(path)
@@ -136,6 +162,8 @@
       this.getSubmorph("#cancel").style.visibility = "hidden"
       this.getSubmorph("#save").style.visibility = "hidden"
       this.getSubmorph("#accept").style.visibility = "hidden"
+      this.getSubmorph("#sync").style.visibility = "hidden"
+
 
     }
     </script>
@@ -144,6 +172,8 @@
       this.getSubmorph("#cancel").style.visibility = "visible"
       this.getSubmorph("#save").style.visibility = "visible"
       this.getSubmorph("#accept").style.visibility = "visible"
+      this.getSubmorph("#sync").style.visibility = "visible"
+
     }
     </script>
     <script type="lively4script" data-name="onEdit">
