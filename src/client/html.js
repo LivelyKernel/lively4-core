@@ -36,7 +36,10 @@ export default class HTML {
         if (href) {
           // #TODO load inplace....
           var path;
-          if (href.match(/([A-Za-z]+):\/\/.+/)) {
+          var m
+          if (m = href.match(/javascript:visitPath\('webwerkstatt\/(.*)'\)/)) {
+            path = "/Thesis/" + m[1]
+          } else if (href.match(/([A-Za-z]+):\/\/.+/)) {
             // ignore FULL URLS
             console.log("ignore "  + href);
           } else if (href.match(/^\//)) {

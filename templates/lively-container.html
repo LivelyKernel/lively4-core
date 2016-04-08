@@ -46,7 +46,7 @@
 
 
       #container-leftpane {
-        width: 100px;
+        width: 150px;
         margin: 0;
         overflow: auto;
         overflow-x: hidden;
@@ -60,7 +60,7 @@
         padding: 0;
       }
       #container-leftpane ul li {
-        width: 100px;
+  
         margin: 0px;
         padding: 2px;
         font-size: 7pt;
@@ -327,6 +327,20 @@
       })
     }
     </script>
+    <script type="lively4script" data-name="appendLivelyMD">
+    (content) => {
+        content = content.replace(/@World.*/g,"")
+        content = content.replace(/@+Text: name="Title".*\n/g,"# ")
+        content = content.replace(/@+Text: name="Text.*\n/g,"\n")
+        content = content.replace(/@+Text: name="Content.*\n/g,"\n")
+        content = content.replace(/@+Box: name="SteppingWordCounter".*\n/g,"\n")
+        content = content.replace(/@+Text: name="MetaNoteText".*\n(.*)\n\n/g,  "<i style='color:orange'>$1</i>\n\n")
+        content = content.replace(/@+Text: name="WordsText".*\n.*/g,"\n")
+      
+        this.appendMarkdown(content)
+    }
+    </script>
+    
      <script type="lively4script" data-name="appendHtml">
     (content) => {
       try {
@@ -409,7 +423,10 @@
     function (path, donotrender) {
       this.getSubmorph('#container-content').style.display = "block"
       this.getSubmorph('#container-editor').style.display = "none"
-      this.getSubmorph('#container-leftpane').style.display = "none"
+    
+      // this.getSubmorph('#container-leftpane').style.display = "none"
+      this.showNavbar()
+    
     
 
       if (!path) {
@@ -459,9 +476,12 @@
         if (format == "html")  {
           this.sourceContent = content
           if (render) this.appendHtml(content)
-        } else if (format.match(/(md)/)) {
+        } else if (format == "md") {
           this.sourceContent = content
           if (render) this.appendMarkdown(content)
+        } else if (format == "livelymd") {
+          this.sourceContent = content
+          if (render) this.appendLivelyMD(content)
         } else if (format == "png") {
           if (render) this.appendHtml("<img src='" + url +"'>")
         } else if (format == "pdf") {
@@ -485,38 +505,69 @@
     }
     </script>
     
-    <script type="lively4script" data-name="showNavbar">
+    <script type="lively4script" data-name="clearNavbar">
     () => {
-      
-      // that.showNavbar()
-      var template = $($.parseHTML(this.sourceContent)).filter("template")[0]
-      if (!template) {
-        console.log("showNavbar: no template found")
-        return;
-      }
-      // var navbar = this.shadowRoot.querySelector('#navbar')
-      
+      var container = this.getSubmorph('#container-leftpane');
+      container.style.display = "block";
 
-
-      var container =  this.getSubmorph('#container-leftpane')
-      container.style.display = "block"
-
-      container.innerHTML= ""
-      var navbar = document.createElement("ul")
-      navbar.id = "navbar"
-      container.appendChild(navbar)
-      
-      // fill navbar with list of script
-      lively.array(template.content.querySelectorAll("script")).forEach((ea) => {
-	      var element = document.createElement("li")
-	      // element.innerHTML = "<a>"+ ea.getAttribute('data-name') +"</a>"
-	      element.innerHTML = ea.getAttribute('data-name')
-	      element.onclick = () => {
-	        this.navigateToName(ea.getAttribute('data-name'))
-	      }
-	      navbar.appendChild(element) 
-      })
+      container.innerHTML= "";
+      var navbar = document.createElement("ul");
+      navbar.id = "navbar";
+      container.appendChild(navbar);
       return navbar
+    }
+    </script>
+    
+    <script type="lively4script" data-name="showNavbar">
+     () => {
+      
+      
+      if (this.isEditing()) {
+        var navbar = this.clearNavbar()
+        // that.showNavbar()
+        var template = $($.parseHTML(this.sourceContent)).filter("template")[0];
+        if (!template) {
+          console.log("showNavbar: no template found");
+          return
+        }
+        // fill navbar with list of script
+        lively.array(template.content.querySelectorAll("script")).forEach((ea) => {
+  	      var element = document.createElement("li");
+  	      element.innerHTML = ea.getAttribute('data-name');
+  	      element.onclick = () => {
+  	        this.navigateToName(ea.getAttribute('data-name'))
+  	      };
+  	      navbar.appendChild(element) ;
+        })
+      } else {
+        var root = ("" + this.getURL()).replace(/\/[^\/]*$/,"/")
+        if (this.currentDir && this.currentDir.match(new RegExp("^" + root + "$","i"))) return
+        
+        
+        this.currentDir = root
+        var navbar = this.clearNavbar()
+        
+        lively.files.statFile(root).then( (text) => {
+          var stats = JSON.parse(text)
+          var names = {}
+          stats.contents.forEach(ea => names[ea.name] = ea)
+          stats.contents.forEach((ea) => {
+            
+            // if there is an Markdown File, ignore the rest
+            var m = ea.name.match(/(.*)\.(.*)/)
+            if (m && m[2] != "md" && names[m[1]+".md"]) return
+            if (m && m[2] != "livelymd" && names[m[1]+".livelymd"]) return
+            
+            
+    	      var element = document.createElement("li");
+    	      element.innerHTML = ea.name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"");;
+    	      element.onclick = () => {
+    	        this.followPath(root + ea.name);
+    	      }
+    	      navbar.appendChild(element) ;
+          })
+        })
+      }
     }
     </script>
 
