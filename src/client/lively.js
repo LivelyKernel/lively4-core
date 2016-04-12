@@ -248,10 +248,19 @@ export default class Lively {
   }
 
   static notify(title, text, timeout, cb) {
+    // lively.notify("hello","",3)
     // just in case...
     if (Notification.permission !== "granted") Notification.requestPermission();
 
+    var time = Date.now()
+    if (lively.lastNotificationTime && (time - lively.lastNotificationTime) < 500) {
+      return console.log("SILENT NOTE: " + title  + " (" + text + ")");
+    }
+    
+    lively.lastNotificationTime = time
     console.log("NOTE: " + title  + " (" + text + ")");
+    
+    
     var notification = new Notification(title || "", {
       icon: 'https://www.lively-kernel.org/media/livelylogo-small.png',
       body: text || "",
