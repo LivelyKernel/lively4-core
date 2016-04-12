@@ -66,7 +66,7 @@
         font-size: 10pt;
       }
       #container-leftpane ul li a {
-       width: 100%;
+       width: 200px;
        display: box;
       }
       
@@ -83,6 +83,7 @@
       }
 
       #container-leftpane ul li ul li {
+        width: 400px;
         padding-left: 10px;
       }
 
@@ -537,6 +538,63 @@
     }
     </script>
     
+    <script type="lively4script" data-name="showNavbarSublist">
+    (targetItem) => {
+      var subList = document.createElement("ul")
+      targetItem.appendChild(subList)
+      
+      if (this.getPath().match(/templates\/.*html$/)) {
+        var template = $($.parseHTML(this.sourceContent)).filter("template")[0];
+        if (!template) {
+          console.log("showNavbar: no template found");
+          return
+        }
+        // fill navbar with list of script
+        lively.array(template.content.querySelectorAll("script")).forEach((ea) => {
+  	      var element = document.createElement("li");
+  	      element.innerHTML = ea.getAttribute('data-name');
+  	      element.onclick = () => {
+  	        this.navigateToName(
+  	          "data-name=\""+ea.getAttribute('data-name')+'"')
+  	      };
+  	      subList.appendChild(element) ;
+        })
+      } else if (this.getPath().match(/\.js$/)) {
+        var defRegEx = / *(static [A-Za-z0-9]+)\(.*\) *{/g
+        var m
+        var links = {}
+        while (m = defRegEx.exec(this.sourceContent)) {
+          links[m[1]] = m[0]
+        }
+        _.keys(links).forEach( name => {
+          var element = document.createElement("li");
+    	    element.innerHTML = name
+    	    element.setAttribute("class", "link")
+    	    element.onclick = () => {
+    	        this.navigateToName(name)
+    	    };
+    	    subList.appendChild(element) ;
+        })
+      } else if (this.getPath().match(/\.md$/)) {
+        var defRegEx = /(?:^|\n)(# ?.*)/g
+        var m
+        var links = {}
+        while (m = defRegEx.exec(this.sourceContent)) {
+          links[m[1]] = m[0]
+        }
+        _.keys(links).forEach( name => {
+          var element = document.createElement("li");
+    	    element.innerHTML = name
+    	    element.setAttribute("class", "link")
+    	    element.onclick = () => {
+    	        this.navigateToName(name)
+    	    };
+    	    subList.appendChild(element) ;
+        })
+      }
+    }
+    </script>
+    
     <script type="lively4script" data-name="showNavbar">
      () => {
         var filename = ("" + this.getURL()).replace(/.*\//,"")
@@ -586,42 +644,8 @@
           })
           
           if (this.isEditing() && targetItem) {
-            var subList = document.createElement("ul")
-            targetItem.appendChild(subList)
+            this.showNavbarSublist(targetItem)
             
-            if (this.getPath().match(/templates\/.*html$/)) {
-              var template = $($.parseHTML(this.sourceContent)).filter("template")[0];
-              if (!template) {
-                console.log("showNavbar: no template found");
-                return
-              }
-              // fill navbar with list of script
-              lively.array(template.content.querySelectorAll("script")).forEach((ea) => {
-        	      var element = document.createElement("li");
-        	      element.innerHTML = ea.getAttribute('data-name');
-        	      element.onclick = () => {
-        	        this.navigateToName(
-        	          "data-name=\""+ea.getAttribute('data-name')+'"')
-        	      };
-        	      subList.appendChild(element) ;
-              })
-            } else if (this.getPath().match(/\.js$/)) {
-              var defRegEx = / *(static [A-Za-z0-9]+)\(.*\) *{/g
-              var m
-              var links = {}
-              while (m = defRegEx.exec(this.sourceContent)) {
-                links[m[1]] = m[0]
-              }
-              _.keys(links).forEach( name => {
-                var element = document.createElement("li");
-          	    element.innerHTML = name
-          	    element.setAttribute("class", "link")
-          	    element.onclick = () => {
-          	        this.navigateToName(name)
-          	    };
-          	    subList.appendChild(element) ;
-              })
-            }
           } 
         })
     }
