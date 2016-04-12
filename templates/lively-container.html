@@ -63,13 +63,30 @@
   
         margin: 0px;
         padding: 2px;
-        font-size: 7pt;
+        font-size: 10pt;
       }
       #container-leftpane ul li a {
        width: 100%;
+       display: box;
       }
       
-      #container-leftpane ul li:hover {
+      #container-leftpane ul li a:hover {
+        background-color: gray;
+        color: white;
+        cursor: pointer
+      }
+      
+      #container-leftpane ul li a:hover {
+        background-color: gray;
+        color: white;
+        cursor: pointer
+      }
+
+      #container-leftpane ul li ul li {
+        padding-left: 10px;
+      }
+
+      #container-leftpane ul li ul li:hover{
         background-color: gray;
         color: white;
         cursor: pointer
@@ -425,8 +442,7 @@
       this.getSubmorph('#container-editor').style.display = "none"
     
       // this.getSubmorph('#container-leftpane').style.display = "none"
-      this.showNavbar()
-    
+      
     
 
       if (!path) {
@@ -452,23 +468,25 @@
 
 
       var url = this.getURL()
+      this.showNavbar()
       // console.log("set url: " + url)
       this.sourceContent = "NOT EDITABLE"
       var render = !donotrender
       // Handling directories
       if (isdir) {
-        return lively.files.statFile(url).then((content) => {
-          this.sourceContent = content
-          var html = "<ul>" +
-            "<li><a href='../'>..</a></li>" +
-            JSON.parse(content).contents.map( ea =>
-              "<li><a href='"+ea.name + (ea.type == "directory" ? "/" : "")+"''>" +
-              ea.name+ "</a></li>").join("\n")+"</ul>"
-          if (render) this.appendHtml(html)
-        }).catch(function(err){
-          console.log("Error: ", err)
-          lively.notify("ERROR: Could not set path: " + path,  "because of: ",  err)
-        })
+        return 
+        // return lively.files.statFile(url).then((content) => {
+        //   this.sourceContent = content
+        //   var html = "<ul>" +
+        //     "<li><a href='../'>..</a></li>" +
+        //     JSON.parse(content).contents.map( ea =>
+        //       "<li><a href='"+ea.name + (ea.type == "directory" ? "/" : "")+"''>" +
+        //       ea.name+ "</a></li>").join("\n")+"</ul>"
+        //   if (render) this.appendHtml(html)
+        // }).catch(function(err){
+        //   console.log("Error: ", err)
+        //   lively.notify("ERROR: Could not set path: " + path,  "because of: ",  err)
+        // })
       }
       // Handling files
       return lively.files.loadFile(url).then((content) => {
@@ -521,69 +539,91 @@
     
     <script type="lively4script" data-name="showNavbar">
      () => {
-      
-      
-      if (this.isEditing()) {
-        var navbar = this.clearNavbar()
-        if (this.getPath().match(/templates\/.*html$/)) {
-          var template = $($.parseHTML(this.sourceContent)).filter("template")[0];
-          if (!template) {
-            console.log("showNavbar: no template found");
-            return
-          }
-          // fill navbar with list of script
-          lively.array(template.content.querySelectorAll("script")).forEach((ea) => {
-    	      var element = document.createElement("li");
-    	      element.innerHTML = ea.getAttribute('data-name');
-    	      element.onclick = () => {
-    	        this.navigateToName(
-    	          "data-name=\""+ea.getAttribute('data-name')+'"')
-    	      };
-    	      navbar.appendChild(element) ;
-          })
-        } else if (this.getPath().match(/\.js$/)) {
-          var defRegEx = / *(static [A-Za-z0-9]+)\(.*\) *{/g
-          var m
-          var links = {}
-          while (m = defRegEx.exec(this.sourceContent)) {
-            links[m[1]] = m[0]
-          }
-          _.keys(links).forEach( name => {
-            var element = document.createElement("li");
-      	    element.innerHTML = name
-      	    element.onclick = () => {
-      	        this.navigateToName(name)
-      	    };
-      	    navbar.appendChild(element) ;
-          })
-        }
-      } else {
-        var root = ("" + this.getURL()).replace(/\/[^\/]*$/,"/")
-        if (this.currentDir && this.currentDir.match(new RegExp("^" + root + "$","i"))) return
+        var filename = ("" + this.getURL()).replace(/.*\//,"")
+        debugger
+        var root =("" + this.getURL()).replace(/\/[^\/]+$/,"/")
         this.currentDir = root
-        var navbar = this.clearNavbar()
-        
         lively.files.statFile(root).then( (text) => {
+          var navbar = this.clearNavbar()
+          var targetItem;
+        
           var stats = JSON.parse(text)
           var names = {}
           stats.contents.forEach(ea => names[ea.name] = ea)
-          stats.contents.forEach((ea) => {
+          "hello" <= "world"
+          var files = stats.contents
+            .sort((a, b) => {
+              if (a.type > b.type) {
+                return 1;
+              }
+              if (a.type < b.type) {
+                return -1;
+              }
+              return (a.name <= b.name) ? 1 : -1;
+            })
+            .filter( ea => ! ea.name.match(/^\./))
             
+          files.unshift({name: "..", type: "directory"})
+          files.forEach((ea) => {
+             
             // if there is an Markdown File, ignore the rest
             var m = ea.name.match(/(.*)\.(.*)/)
             if (m && m[2] != "md" && names[m[1]+".md"]) return
             if (m && m[2] != "livelymd" && names[m[1]+".livelymd"]) return
             
-            
     	      var element = document.createElement("li");
-    	      element.innerHTML = ea.name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"");;
-    	      element.onclick = () => {
-    	        this.followPath(root + ea.name);
+    	      if (ea.name == filename) targetItem = element;
+    	      var name = ea.name + (ea.type == "directory" ? "/" : "")
+    	      var link = document.createElement("a");
+    	      link.innerHTML = name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"");
+    	      link.href = ea.name
+    	      link.onclick = () => {
+    	        this.followPath(root + name);
+    	        return false
     	      }
+    	      element.appendChild(link)
     	      navbar.appendChild(element) ;
           })
+          
+          if (this.isEditing() && targetItem) {
+            var subList = document.createElement("ul")
+            targetItem.appendChild(subList)
+            
+            if (this.getPath().match(/templates\/.*html$/)) {
+              var template = $($.parseHTML(this.sourceContent)).filter("template")[0];
+              if (!template) {
+                console.log("showNavbar: no template found");
+                return
+              }
+              // fill navbar with list of script
+              lively.array(template.content.querySelectorAll("script")).forEach((ea) => {
+        	      var element = document.createElement("li");
+        	      element.innerHTML = ea.getAttribute('data-name');
+        	      element.onclick = () => {
+        	        this.navigateToName(
+        	          "data-name=\""+ea.getAttribute('data-name')+'"')
+        	      };
+        	      subList.appendChild(element) ;
+              })
+            } else if (this.getPath().match(/\.js$/)) {
+              var defRegEx = / *(static [A-Za-z0-9]+)\(.*\) *{/g
+              var m
+              var links = {}
+              while (m = defRegEx.exec(this.sourceContent)) {
+                links[m[1]] = m[0]
+              }
+              _.keys(links).forEach( name => {
+                var element = document.createElement("li");
+          	    element.innerHTML = name
+          	    element.setAttribute("class", "link")
+          	    element.onclick = () => {
+          	        this.navigateToName(name)
+          	    };
+          	    subList.appendChild(element) ;
+              })
+            }
+          } 
         })
-      }
     }
     </script>
 

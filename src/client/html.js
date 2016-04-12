@@ -41,7 +41,7 @@ export default class HTML {
             path = "/Thesis/" + m[1]
           } else if (href.match(/([A-Za-z]+):\/\/.+/)) {
             // ignore FULL URLS
-            console.log("ignore "  + href);
+            // console.log("ignore "  + href);
           } else if (href.match(/^\//)) {
             path = href; // ABSOLTUE paths
           } else {
@@ -55,14 +55,14 @@ export default class HTML {
               console.log("assume Markdown for "+ path)
             }
             
-            console.log("fix "  + href + " to " + path + "(dir " + dir + ")")
+            // console.log("fix "  + href + " to " + path + "(dir " + dir + ")")
             $(node).click(() => { followPath(path); return false; });
 
             // ALTERNATIVE to navigate it inline, but the link will not be followed....
             // var link = lively4url + "/draft/start.html?load=" + path
             // node.setAttribute("href", link)
           } else {
-            console.log("ignore " + href)
+            // console.log("ignore " + href)
           }
         } else if (node.getAttribute('src')) {
           // image tag
@@ -73,7 +73,7 @@ export default class HTML {
           // TODO: remove duplucated logic
           if (src.match(/([A-Za-z]+):\/\/.+/)) {
             // ignore FULL URLS
-            console.log("ignore "  + src);
+            // console.log("ignore "  + src);
           } else if (src.match(/^\//)) {
             path = src; // ABSOLTUE paths
           } else {
@@ -82,7 +82,7 @@ export default class HTML {
           if (path) {
             node.setAttribute('src', path);
           } else {
-            console.log("ignore image " + href)
+            // console.log("ignore image " + href)
           }
         }
         this.fixLinks(node.childNodes, dir, followPath)
