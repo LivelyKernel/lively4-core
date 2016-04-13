@@ -46,6 +46,7 @@
     </script>
     <script type="lively4script" data-name="onSyncButton">
     async () => {
+      this.clearLog()
       var username = await lively.focalStorage.getItem("githubUsername")
       var email = await lively.focalStorage.getItem("githubEmail")
       var token = await lively.focalStorage.getItem("githubToken")
@@ -55,10 +56,17 @@
     }
     </script>
     
-    <script type="lively4script" data-name="log">
+     <script type="lively4script" data-name="clearLog">
     (s) => {
       // this.shadowRoot.querySelector("#log").innerHTML = "" + s
-      this.shadowRoot.querySelector("#log").editor.setValue(s)
+      this.shadowRoot.querySelector("#log").editor.setValue("")
+    }
+    </script>
+    
+    <script type="lively4script" data-name="log">
+    (s) => {
+      var editor = this.shadowRoot.querySelector("#log").editor 
+      editor.setValue(editor.getValue() + "\n" + s)
     }
     </script>
     
@@ -78,6 +86,7 @@
     </script>
     <script type="lively4script" data-name="onLoginButton">
     async () => {
+      this.clearLog()
       if (await lively.focalStorage.getItem("githubToken")) { 
         this.logout() 
       } else { 
@@ -107,6 +116,7 @@
     </script>
     <script type="lively4script" data-name="onStatusButton">
     () => {
+      this.clearLog()
       fetch("https://lively-kernel.org/lively4/_git/status", {
         headers: new Headers({ 
         	"gitrepository": this.shadowRoot.querySelector("#gitrepository").value,
@@ -118,6 +128,7 @@
     </script>
     <script type="lively4script" data-name="onDiffButton">
     () => {
+      this.clearLog()
       fetch("https://lively-kernel.org/lively4/_git/diff", {
         headers: new Headers({ 
         	"gitrepository": this.shadowRoot.querySelector("#gitrepository").value,
