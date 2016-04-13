@@ -18,9 +18,10 @@
     var context;
     var hits = 0
     var start = Date.now()
-    var molecules = _.range(0,10).map( i => { return {
-      dx: Math.random() * 2, dy: Math.random() *4, y: 150, x: 10
-     }})
+    var molecules = _.range(0,100).map( i => { return {
+      dx: Math.random() * 2, dy: Math.random() *4, y: 150, x: 10,
+      color: lively.color.random()
+    }})
     
     var draw = () => {
       context = $(this.shadowRoot).find("#gastank")[0].getContext('2d');
@@ -28,7 +29,8 @@
       
       molecules.forEach(molecule => {
           context.beginPath();
-          context.fillStyle = "gray";
+          // context.fillStyle = molecule.color;
+          context.fillStyle = 'gray';
           context.arc(molecule.x, molecule.y, 10, 0, Math.PI*2, true);
           context.closePath();
           context.fill();

@@ -18,7 +18,9 @@ export default class ContextMenu {
   
   static items (target) {
     if (target) {
-      return [
+      var wasEditable = (target.contentEditable == "true");
+      var wasDisabled = (target.disabled == "true");
+      var menu = [
         ["show", (evt) => {
            this.hide()
            lively.showElement(target)
@@ -26,8 +28,17 @@ export default class ContextMenu {
         ["show source", (evt) => {
            this.hide()
            lively.showSource(target, evt)
+        }],
+        [wasEditable ? "make uneditable" : "make editable", (evt) => {
+           this.hide()
+           target.contentEditable = !wasEditable;
+        }],
+        [wasDisabled ? "enable" : "disable", (evt) => {
+           this.hide()
+           target.disabled = !wasDisabled;
         }]
-      ]  
+      ];
+      return menu;
     } else {
       return [
       ["Workspace", (evt) => {
