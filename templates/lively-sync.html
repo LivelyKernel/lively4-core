@@ -27,7 +27,11 @@
     </style>
     <div class="container">
       <h2>Sync Github</h2>
-        <p><button id="loginButton">not initialize</button> username: <input id="gitusername" value="" /></p>
+        <p>
+          <button id="loginButton">not initialize</button> 
+          username: <input id="gitusername" value="" />
+          email: <input id="gitemail" value="" />
+        </p>
         <p><button id="syncButton">sync</button> repository: <input id="gitrepository" value="lively4-core" /></p>
         <p><button id="cloneButton">clone</button> url <input id="gitrepositoryurl" value="https://github.com/LivelyKernel/lively4-core.git" /> into: <input id="gitrepositorytarget" value="lively4-test" /></p>
         <p><button id="statusButton">status</button> <button id="diffButton">diff</button></p>
@@ -44,10 +48,11 @@
     <script type="lively4script" data-name="onSyncButton">
     async () => {
       var username = await lively.focalStorage.getItem("githubUsername")
+      var email = await lively.focalStorage.getItem("githubEmail")
       var token = await lively.focalStorage.getItem("githubToken")
       var serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1]
       var repo =  this.shadowRoot.querySelector("#gitrepository").value
-      lively.files.syncRepository(serverURL, repo, username, token).then(this.log)
+      lively.files.syncRepository(serverURL, repo, username, token, email).then(this.log)
     }
     </script>
     
@@ -67,6 +72,9 @@
         token ? false : true;
       this.shadowRoot.querySelector("#gitusername").value = 
        await lively.focalStorage.getItem("githubUsername")
+      this.shadowRoot.querySelector("#gitemail").value = 
+       await lively.focalStorage.getItem("githubEmail")
+
     }
     </script>
     <script type="lively4script" data-name="onLoginButton">
@@ -86,6 +94,8 @@
           lively.authGithub.challengeForAuth(Date.now(), (token) => {  
         	  lively.focalStorage.setItem("githubUsername", 
         	    this.shadowRoot.querySelector("#gitusername").value)
+        	  lively.focalStorage.setItem("githubEmail", 
+        	    this.shadowRoot.querySelector("#gitemail").value)   
         	  lively.focalStorage.setItem("githubToken", token)
         	  this.updateLoginStatus()
         	  resolve(token)

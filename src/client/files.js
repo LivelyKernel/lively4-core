@@ -63,12 +63,13 @@ export default class Files {
   	})
   }
   
-  static syncRepository(lively4serverUrl, gitrepository, gitusername, gitpasssword) {
+  static syncRepository(lively4serverUrl, gitrepository, gitusername, gitpasssword, gitemail) {
     return fetch(lively4serverUrl + "/_git/sync", {
       headers: new Headers({ 
     	  "gitrepository": gitrepository, // "Lively4.wiki"
         "gitusername" : gitusername, // "jens.lincke"
-        "gitpassword" : gitpasssword // "f777a0fa178bc855c28f89b402786b36f8b..."
+        "gitpassword" : gitpasssword, // "f777a0fa178bc855c28f89b402786b36f8b..."
+        "gitemail" : gitemail
       })
     }).then(r => r.text()).then(r => {
       console.log(r); 
