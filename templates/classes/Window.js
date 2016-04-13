@@ -160,8 +160,12 @@ export default class Window extends Morph {
   minButtonClicked(e) {
     // NotImplemented
     lively.notify("min window")
-    this.shadowRoot('#window-content')
-    // that.shadowRoot.querySelector('#window-content').style.visibility = "hidden"
+    var content = this.shadowRoot.querySelector('#window-content')
+    if (content.style.visibility == "hidden") {
+     content.style.visibility = "visible" 
+    } else {
+      content.style.visibility = "hidden"
+    }
   }
 
   maxButtonClicked(e) {
