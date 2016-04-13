@@ -12,6 +12,10 @@
       margin-bottom: 5px;      
     }
     
+    #gitrepositoryurl {
+      width: 300px; 
+    }
+    
     #log {
       flex: 1;
       width: 95%;
@@ -25,6 +29,7 @@
       <h2>Sync Github</h2>
         <p><button id="loginButton">not initialize</button> username: <input id="gitusername" value="" /></p>
         <p><button id="syncButton">sync</button> repository: <input id="gitrepository" value="lively4-core" /></p>
+        <p><button id="cloneButton">clone</button> url <input id="gitrepositoryurl" value="https://github.com/LivelyKernel/lively4-core.git" /> into: <input id="gitrepositorytarget" value="lively4-test" /></p>
         <p><button id="statusButton">status</button> <button id="diffButton">diff</button></p>
         <juicy-ace-editor id="log"></juicy-ace-editor>  
     </div>
@@ -110,6 +115,18 @@
         })
       }).then(r => r.text()).then((token) => {
         this.log("DIFF:\n" + token)
+      })
+    }
+    </script>
+    <script type="lively4script" data-name="onCloneButton">
+    () => {
+      fetch("https://lively-kernel.org/lively4/_git/clone", {
+        headers: new Headers({ 
+           "gitrepositoryurl": this.shadowRoot.querySelector("#gitrepositoryurl").value,
+        	"gitrepository": this.shadowRoot.querySelector("#gitrepositorytarget").value,
+        })
+      }).then(r => r.text()).then((token) => {
+        this.log("CLONE:\n" + token)
       })
     }
     </script>
