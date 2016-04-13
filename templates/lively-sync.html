@@ -17,7 +17,7 @@
       <h2>Sync Github</h2>
         <p><button id="loginButton">not initialize</button> username: <input id="gitusername" value="" /></p>
         <p><button id="syncButton">sync</button> repository: <input id="gitrepository" value="lively4-core" /></p>
-
+        <p><button id="statusButton">status</button>
         <pre id="log"></pre>  
     </div>
 
@@ -79,6 +79,17 @@
         })
       }).then((token) => {
         this.log("TOKEN: " + token)
+      })
+    }
+    </script>
+    <script type="lively4script" data-name="onStatusButton">
+    () => {
+      fetch("https://lively-kernel.org/lively4/_git/status", {
+        headers: new Headers({ 
+        	"gitrepository": this.shadowRoot.querySelector("#gitrepository").value,
+        })
+      }).then(r => r.text()).then((token) => {
+        this.log("STATUS:\n" + token)
       })
     }
     </script>
