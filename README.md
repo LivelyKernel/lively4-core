@@ -4,7 +4,7 @@
 Core functionality for Lively4 module management.
 
 
-# Example Lively4 Sites
+# Example Lively4 Sites (just examples)
 
 - [https://livelykernel.github.io/lively4-core/draft/start.html?load=/README.md](https://livelykernel.github.io/lively4-core/draft/start.html?load=/README.md)
 	- HEAD of Lively4 core repository
