@@ -4,6 +4,9 @@
 
 // Experiments for more late bound modules... that way the expots won't get frozen!
 // idea
+
+// #Duplication with shortcuts.js #TODO
+
 export default class Keys {
 
   static getChar(evt) {
@@ -21,11 +24,20 @@ export default class Keys {
   }
 
   static handle(evt) {
+    // lively.notify("handle " + this.getChar(evt))
     try {
       var char = this.getChar(evt)
       // this.logEvent(evt)
       if (evt.ctrlKey && char == "K") {
-        lively.openWorkspace()
+        lively.openWorkspace("")
+        evt.preventDefault()
+      } else if (evt.ctrlKey && char == "D") {
+        var str = window.getSelection().toLocaleString()
+        try {
+          lively.boundEval(str)
+        } catch(e) {
+          lively.handleError(e)
+        }
         evt.preventDefault()
       }
     } catch (err) {

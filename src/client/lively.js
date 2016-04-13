@@ -297,7 +297,7 @@ export default class Lively {
     }
 
     doc.addEventListener('click', function(evt){lively.hideContextMenu(evt)}, false);
-    doc.addEventListener('keyup', function(evt){lively.keys.handle(evt)}, false);
+    doc.addEventListener('keydown', function(evt){lively.keys.handle(evt)}, false);
   }
 
   static initializeHalos() {
