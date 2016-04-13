@@ -11,14 +11,22 @@
       margin-top: 5px;
       margin-bottom: 5px;      
     }
+    
+    #log {
+      flex: 1;
+      width: 95%;
+      margin-bottom: 10px;
+    }
+    
+    
     }
     </style>
     <div class="container">
       <h2>Sync Github</h2>
         <p><button id="loginButton">not initialize</button> username: <input id="gitusername" value="" /></p>
         <p><button id="syncButton">sync</button> repository: <input id="gitrepository" value="lively4-core" /></p>
-        <p><button id="statusButton">status</button>
-        <pre id="log"></pre>  
+        <p><button id="statusButton">status</button> <button id="diffButton">diff</button></p>
+        <juicy-ace-editor id="log"></juicy-ace-editor>  
     </div>
 
     <script type="lively4script" data-name="initialize">
@@ -40,7 +48,8 @@
     
     <script type="lively4script" data-name="log">
     (s) => {
-      this.shadowRoot.querySelector("#log").innerHTML = "" + s
+      // this.shadowRoot.querySelector("#log").innerHTML = "" + s
+      this.shadowRoot.querySelector("#log").editor.setValue(s)
     }
     </script>
     
@@ -90,6 +99,17 @@
         })
       }).then(r => r.text()).then((token) => {
         this.log("STATUS:\n" + token)
+      })
+    }
+    </script>
+    <script type="lively4script" data-name="onDiffButton">
+    () => {
+      fetch("https://lively-kernel.org/lively4/_git/diff", {
+        headers: new Headers({ 
+        	"gitrepository": this.shadowRoot.querySelector("#gitrepository").value,
+        })
+      }).then(r => r.text()).then((token) => {
+        this.log("DIFF:\n" + token)
       })
     }
     </script>
