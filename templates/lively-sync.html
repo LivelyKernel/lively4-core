@@ -59,14 +59,15 @@
      <script type="lively4script" data-name="clearLog">
     (s) => {
       // this.shadowRoot.querySelector("#log").innerHTML = "" + s
-      this.shadowRoot.querySelector("#log").editor.setValue("")
+      var editor= this.shadowRoot.querySelector("#log").editor
+      if (editor) editor.setValue("")
     }
     </script>
     
     <script type="lively4script" data-name="log">
     (s) => {
-      var editor = this.shadowRoot.querySelector("#log").editor 
-      editor.setValue(editor.getValue() + "\n" + s)
+      var editor = this.shadowRoot.querySelector("#log").editor
+      if (editor) editor.setValue(editor.getValue() + "\n" + s)
     }
     </script>
     
