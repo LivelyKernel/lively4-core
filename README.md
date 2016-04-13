@@ -18,7 +18,7 @@ Core functionality for Lively4 module management.
 	- CORS support, default server for lively4 chrome extension
 	- directly edit source code (not version and will end in file system, but not githbub yet)
 
-# Chrome Extension (hehe)
+# Chrome Extension
 
 - install [Chrom Extension](https://chrome.google.com/webstore/detail/lively4-loader/nolpicfdelklinibcdldjhajakffhhom) to load Lively4 into any webpage and start adapting your website while you visit it.... 
 
