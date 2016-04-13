@@ -233,9 +233,10 @@ export default class Window extends Morph {
   }
 
   windowMouseMove(e) {
-    e.preventDefault();
 
     if (this.dragging) {
+      e.preventDefault();
+
       if (this.isFixed) {
         this.setPosition(
           e.clientY - this.dragging.top,
@@ -250,6 +251,7 @@ export default class Window extends Morph {
         );
       }
     } else if (this.resizing) {
+      e.preventDefault();
       this.setSize(
         e.pageX - this.resizing.left,
         e.pageY - this.resizing.top        
