@@ -405,10 +405,17 @@ export default class Lively {
     return result
   }
 
-  static registerTemplate() {
+  static async registerTemplate() {
     var template = document.currentScript.ownerDocument.querySelector('template');
     var clone = document.importNode(template.content, true);
-    System.import(lively4url + '/src/client/morphic/component-loader.js').then(loader => { loader.register(template.id, clone); });
+    var proto;
+    var className = template.getAttribute("data-class")
+    if (className) {
+      
+      var module= await System.import(lively4url +'/templates/classes/ComponentBin.js');
+      proto =  Object.create(module.prototype || module.default.prototype)
+    }
+    lively.components.register(template.id, clone, proto);
   }
 }
 
