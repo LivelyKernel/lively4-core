@@ -18,10 +18,7 @@ export default class ComponentBin extends Morph {
 
   loadComponentList() {
     return new Promise((resolve, reject) => {
-      // ugly as sh*t!
-      // var currentLocation = window.lively4url || (window.location.hostname === "localhost" ? "http://localhost:" + window.location.port + "/" : "https://lively4/");
-      var currentLocation = window.location.hostname === "localhost" ? "http://localhost:" + window.location.port + "/lively4-core/" : "https://lively4/";
-      var templatesUrl = currentLocation + "templates/";
+      var templatesUrl = lively4url + "/templates/";
       files.statFile(templatesUrl).then(response => {
         try {
           // depending in the content type, the response is either parsed or not,
@@ -31,26 +28,21 @@ export default class ComponentBin extends Morph {
           // it was already json
         }
 
-        var infoFilesPromises = response.contents.filter(file => {
-          return file.type === "file" && file.name.slice(-5) === ".json";
-        }).map(file => {
-          return files.loadFile(templatesUrl + file.name)
-        });
-
-        Promise.all(infoFilesPromises).then(files => {
-          // save the parsed list
-          var componentList;
-          // same issue as above with content type...
-          try {
-            componentList = files.map(JSON.parse);
-          } catch (e) {
-            componentList = files;
-          }
-          resolve(componentList);
-        });
-      }).catch(err => {
-        console.log(err);
-      });
+        resolve(response.contents.filter(file => {
+            return file.type === "file" && file.name.match(/\.html$/);
+          }).map(file => {
+                    return {
+            "name": file.name.replace(/\.html$/,"")
+              .replace(/lively-/,"").replace(/-/g," "),
+            "html-tag": file.name.replace(/\.html$/,""),
+            "description": "",
+            "author": "",
+            "date-changed": "",
+            "categories": ["default"],
+            "tags": [],
+            "template": file.name}
+          }));
+      })
     });
   }
 
