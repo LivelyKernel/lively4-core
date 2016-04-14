@@ -109,10 +109,10 @@ export default class Lively {
 
   static handleError(error) {
     lively.LastError = error
-   lively.notify("Error: ", error.message, 20, () => 
+   lively.notify("Error: ", error.message, 20, () =>
     		  lively.openWorkspace("Error:" + error.message + "\nLine:" + error.lineno + " Col: " + error.colno+"\nSource:" + error.source + "\nError:" + error.stack))
   }
-  
+
 
   static loaded() {
     // #Refactor with #ContextJS
@@ -133,7 +133,7 @@ export default class Lively {
         };
         console.error.originalFunction = nativeError; // #TODO use generic Wrapper mechanism here
     }
-    
+
     // General Error Handling
     if (window.onerror === null) {
       window.onerror  = function(message, source, lineno, colno, error) {
@@ -145,9 +145,9 @@ export default class Lively {
       window.unhandledRejectionEventLister = function(evt) {lively.handleError(evt.reason)} ;
       window.addEventListener('unhandledrejection', unhandledRejectionEventLister);
     }
-    
+
     exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expected
-    
+
     this.import("authGithub", lively4url + '/src/client/auth-github.js')
     this.import("authDropbox", lively4url + '/src/client/auth-dropbox.js')
   }
@@ -185,11 +185,11 @@ export default class Lively {
 
   static setPosition(obj, point) {
       obj.style.position = "absolute";
-     
+
       // var bounds = that.getBoundingClientRect().top
       //var deltax = point.x - bounds.left
       // var deltay = point.y - bounds.top
-      
+
       // obj.style.left = ""+  ((obj.style.left || 0) - deltax) + "px";
       // obj.style.top = "" + ((obj.style.top || 0) - deltay) + "px";
       obj.style.left = ""+  point.x + "px";
@@ -256,17 +256,17 @@ export default class Lively {
     if (lively.lastNotificationTime && (time - lively.lastNotificationTime) < 500) {
       return console.log("SILENT NOTE: " + title  + " (" + text + ")");
     }
-    
+
     lively.lastNotificationTime = time
     console.log("NOTE: " + title  + " (" + text + ")");
-    
-    
+
+
     var notification = new Notification(title || "", {
       icon: 'https://www.lively-kernel.org/media/livelylogo-small.png',
       body: text || "",
     });
     if (cb) notification.onclick = cb
-    if (timeout === undefined) timeout = 3 
+    if (timeout === undefined) timeout = 3
     setTimeout(() => notification.close(), timeout * 1000);
     // notification.onclick = cb
   }
@@ -404,11 +404,11 @@ export default class Lively {
     }
     return result
   }
-  
+
   static registerTemplate() {
     var template = document.currentScript.ownerDocument.querySelector('template');
     var clone = document.importNode(template.content, true);
-    System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register(template.id, clone); });
+    System.import(lively4url + '/src/client/morphic/component-loader.js').then(loader => { loader.register(template.id, clone); });
   }
 }
 
