@@ -1,4 +1,4 @@
-<template id="lively-treeview">
+<template id="lively-treeview" data-class="TreeView">
 	<style>
 	:host {
 		box-sizing: border-box;
@@ -62,18 +62,5 @@
 	<content></content>
 </template>
 
-<script>
-(function() {
-	var template = document.currentScript.ownerDocument.querySelector('#lively-treeview');
-	var clone = document.importNode(template.content, true);
+<script class="registrationScript">lively.registerTemplate()</script>
 
-	Promise.all([
-			System.import('../templates/classes/Treeview.js'), 
-			System.import('../src/client/morphic/component-loader.js')
-		]).then(modules => {
-			var Treeview = modules[0];
-			var Loader = modules[1];
-			Loader.register('lively-treeview', clone, Object.create(Treeview.prototype || Treeview.default.prototype));
-		});
-})();
-</script>

@@ -1,4 +1,4 @@
-<template id="lively-window">
+<template id="lively-window" data-class="Window">
   <style>
   :host {
     position: absolute;
@@ -154,19 +154,5 @@
     <span class="window-resize">&there4;</span>
   </div>
 </template>
+<script class="registrationScript">lively.registerTemplate()</script>
 
-<script>
-(function() {
-  var template = document.currentScript.ownerDocument.querySelector('#lively-window');
-  var clone = document.importNode(template.content, true);
-
-  Promise.all([
-    System.import('../templates/classes/Window.js'),
-    System.import('../src/client/morphic/component-loader.js')
-  ]).then(modules => {
-    var Window = modules[0];
-    var Loader = modules[1];
-    Loader.register('lively-window', clone, Object.create(Window.prototype || Window.default.prototype));
-  });
-})();
-</script>

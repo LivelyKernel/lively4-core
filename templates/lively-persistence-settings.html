@@ -65,16 +65,4 @@
 </script>
 
 </template>
-<script class="registrationScript">
-  (function() { 
-     var template = document.currentScript.ownerDocument.querySelector('#lively-persistence-settings'); 
-     var clone = document.importNode(template.content, true); 
-     
-     Promise.all([ 
-       System.import('../src/client/morphic/component-loader.js') 
-     ]).then(modules => { 
-       var Loader = modules[0]; 
-       Loader.register('lively-persistence-settings', clone); 
-     }); 
-   })();
-</script>
+<script class="registrationScript">lively.registerTemplate()</script>

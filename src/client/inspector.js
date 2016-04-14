@@ -1,7 +1,7 @@
 
 'use strict';
 
-export default class Inspector extends HTMLDivElement {
+export default class Inspector  {
 
   static printObject(object, depth, name) {
     var printStr = ""

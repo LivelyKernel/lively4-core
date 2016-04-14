@@ -1,13 +1,13 @@
 <template id="lively-bouncing-ball">
 <style type="text/css">
-
-#bouncing-ball { 
-  background:white; 
-  border:1px solid #cbcbcb; 
-  
-}
+  #bouncing-ball { 
+    background:white; 
+    border:1px solid #cbcbcb; 
+    
+  }
 </style>
-<p id="hits">nothing</p>
+
+<p id="hits"></p>
 <div id="container">
   <canvas id="bouncing-ball" width="300" height="300"></canvas>
 </div>
@@ -51,7 +51,5 @@
 </script>
 
 </template>
-<script class="registrationScript">
-lively.registerTemplate()
-</script>
+<script class="registrationScript">lively.registerTemplate()</script>
 

@@ -1,7 +1,6 @@
-
 <link rel="import" href="lively-key-value-map.html" />
 
-<template id="lively-object-editor">
+<template id="lively-object-editor" data-class="ObjectEditor">
   <style>
   :host {
     display: block;
@@ -176,19 +175,5 @@
     }
   </script>
 </template>
+<script class="registrationScript">lively.registerTemplate()</script>
 
-<script class="registrationScript">
-(function() {
-  var template = document.currentScript.ownerDocument.querySelector('#lively-object-editor');
-  var clone = document.importNode(template.content, true);
-
-  Promise.all([
-    System.import('../templates/classes/ObjectEditor.js'),
-    System.import('../src/client/morphic/component-loader.js')
-  ]).then(modules => {
-    var ObjectEditor = modules[0];
-    var Loader = modules[1];
-    Loader.register('lively-object-editor', clone, Object.create(ObjectEditor.prototype || ObjectEditor.default.prototype));
-  });
-})();
-</script>

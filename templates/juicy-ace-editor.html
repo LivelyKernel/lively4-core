@@ -1,21 +1,21 @@
 <script src="../src/external/ace/ace.js" type="text/javascript" charset="utf-8"></script>
 <script src="../src/external/ace/ext-modelist.js" type="text/javascript" charset="utf-8"></script>
 <script type="text/javascript" src="../src/external/ResizeSensor.js"></script>
-<template id="juicy-ace-editor">
+
+<template id="juicy-ace-editor" data-class="AceEditor">
     <style>
-        :host{
+        :host {
             display: block;
             position: relative;
             min-height: 100px;
         }
-        #juicy-ace-editor-container{
+        #juicy-ace-editor-container {
             width: 100%;
             height: 100%;
             display: block;
 
             position: absolute;
         }
-
         .ace_marker-layer .misspelled {
           position: absolute; z-index: -2; border-bottom: 1px solid red; margin-bottom: -1px;
         }
@@ -27,21 +27,5 @@
     <div id="juicy-ace-editor-container"></div>
     <content></content>
 </template>
+<script class="registrationScript">lively.registerTemplate()</script>
 
-<script>
-(function(window, document, undefined) {
-
-  var template = document.currentScript.ownerDocument.querySelector('#juicy-ace-editor');
-  var clone = document.importNode(template.content, true);
-
-  Promise.all([
-    System.import(lively4url + '/templates/classes/AceEditor.js'),
-    System.import(lively4url +'/src/client/morphic/component-loader.js')
-  ]).then(modules => {
-    var AceEditor = modules[0];
-    var Loader = modules[1];
-    Loader.register('juicy-ace-editor', clone, Object.create(AceEditor.prototype || AceEditor.default.prototype));
-  });
-
-}(window, document));
-</script>

@@ -412,7 +412,7 @@ export default class Lively {
     var className = template.getAttribute("data-class")
     if (className) {
       
-      var module= await System.import(lively4url +'/templates/classes/ComponentBin.js');
+      var module= await System.import(lively4url +'/templates/classes/' + className +".js");
       proto =  Object.create(module.prototype || module.default.prototype)
     }
     lively.components.register(template.id, clone, proto);

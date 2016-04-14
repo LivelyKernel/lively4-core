@@ -139,13 +139,5 @@
 
 
 </template>
+<script class="registrationScript">lively.registerTemplate()</script>
 
-<script class="registrationScript">
-// This ugly piece of code will be auto generated, when exporting a template. Puh.
-(function() {
-  var template = document.currentScript.ownerDocument.querySelector('#lively-editor');
-  var clone = document.importNode(template.content, true);
-
-  System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-editor', clone); });
-})();
-</script>

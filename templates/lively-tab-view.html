@@ -1,4 +1,4 @@
-<template id="lively-tab-view">
+ <template id="lively-tab-view" data-class="TabView">
   <style>
   :host {
     display: flex;
@@ -56,19 +56,4 @@
   </div>
 </template>
 
-<script>
-  (function() {
-    var template = document.currentScript.ownerDocument.querySelector('#lively-tab-view');
-    var clone = document.importNode(template.content, true);
-
-    Promise.all([
-      System.import('../templates/classes/TabView.js'),
-      System.import('../src/client/morphic/component-loader.js')
-    ]).then(modules => {
-      var TabView = modules[0];
-      var Loader = modules[1];
-
-      Loader.register('lively-tab-view', clone, Object.create(TabView.prototype || TabView.default.prototype));
-    });
-  })();
-</script>
+<script class="registrationScript">lively.registerTemplate()</script>

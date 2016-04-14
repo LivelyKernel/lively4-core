@@ -319,7 +319,7 @@
     let clone    = document.importNode(template.content, true);
 
     System
-      .import('../src/client/morphic/component-loader.js')
+      .import(lively4url + '/src/client/morphic/component-loader.js')
       .then((Loader) => {
         Loader.register('lively-file-browser', clone, FileBrowser.prototype);
       })

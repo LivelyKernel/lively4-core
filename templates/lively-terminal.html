@@ -28,9 +28,9 @@
     const clone    = document.importNode(template.content, true);
 
     Promise.all([
-      System.import('../vendor/term.js'),
-      System.import('../vendor/eventemitter3.js'),
-      System.import('../src/client/morphic/component-loader.js')
+      System.import(lively4url + '/vendor/term.js'),
+      System.import(lively4url + '/vendor/eventemitter3.js'),
+      System.import(lively4url + '/src/client/morphic/component-loader.js')
     ]).then((imports) => {
       const Term = imports[0];
       const EventEmitter = imports[1];

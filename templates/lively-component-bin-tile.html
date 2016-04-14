@@ -1,4 +1,4 @@
-<template xmlns="http://www.w3.org/1999/xhtml" id="lively-component-bin-tile">
+<template id="lively-component-bin-tile" data-class="ComponentBinTile">
 <style>
 :host {
   display: inline-block;
@@ -57,18 +57,5 @@ p {
 </div>
 
 </template>
-<script xmlns="http://www.w3.org/1999/xhtml" class="registrationScript">
-(function() {
-  var template = document.currentScript.ownerDocument.querySelector('#lively-component-bin-tile');
-  var clone = document.importNode(template.content, true);
+<script class="registrationScript">lively.registerTemplate()</script>
 
-  Promise.all([
-    System.import('../templates/classes/ComponentBinTile.js'),
-    System.import('../src/client/morphic/component-loader.js'),
-  ]).then(modules => {
-    var ComponentBinTile = modules[0];
-    var Loader = modules[1];
-    Loader.register('lively-component-bin-tile', clone, Object.create(ComponentBinTile.prototype || ComponentBinTile.default.prototype));
-  });
-})();
-</script>

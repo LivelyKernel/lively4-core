@@ -1,5 +1,10 @@
-<template id="template">
+<!--
 
+  What is this? Is it still used? #Jens
+  
+-->
+
+<template id="template">
 	<div contenteditable="true" class="wiki">
 	</div>
 </template>
@@ -91,6 +96,6 @@
 		var clone = document.importNode(LivelyMarkupField.template.content, true);
 		var prototype = Object.create(LivelyMarkupField.prototype);
 		
-		System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-markup-field', clone, prototype); });
+		System.import(lively4url + '/src/client/morphic/component-loader.js').then(loader => { loader.register('lively-markup-field', clone, prototype); });
 	})();
 </script>

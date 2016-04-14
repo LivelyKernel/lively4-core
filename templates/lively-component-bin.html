@@ -1,6 +1,6 @@
 <link rel="import" href="../templates/lively-component-bin-tile.html" />
 
-<template xmlns="http://www.w3.org/1999/xhtml" id="lively-component-bin">
+<template id="lively-component-bin" data-class="ComponentBin">
 <style>
 .container {
   background-color: white;
@@ -44,18 +44,6 @@
   </lively-tab-view>
 </div>
 </template>
-<script xmlns="http://www.w3.org/1999/xhtml" class="registrationScript">
-(function() {
-  var template = document.currentScript.ownerDocument.querySelector('#lively-component-bin');
-  var clone = document.importNode(template.content, true);
 
-  Promise.all([
-    System.import('../templates/classes/ComponentBin.js'),
-    System.import('../src/client/morphic/component-loader.js'),
-  ]).then(modules => {
-    var ComponentBin = modules[0];
-    var Loader = modules[1];
-    Loader.register('lively-component-bin', clone, Object.create(ComponentBin.prototype || ComponentBin.default.prototype));
-  });
-})();
-</script>
+<script class="registrationScript">lively.registerTemplate()</script>
+
