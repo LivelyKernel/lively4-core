@@ -598,7 +598,6 @@
     <script type="lively4script" data-name="showNavbar">
      () => {
         var filename = ("" + this.getURL()).replace(/.*\//,"")
-        debugger
         var root =("" + this.getURL()).replace(/\/[^\/]+$/,"/")
         this.currentDir = root
         lively.files.statFile(root).then( (text) => {
