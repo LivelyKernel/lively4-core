@@ -5,7 +5,7 @@
     </style>
     <script type="lively4script" data-name="initialize">
     () => {
-      System.import("../src/client/morphic/resizing.js").then( function(resizing) {
+      System.import(lively4url +"/src/client/morphic/resizing.js").then( function(resizing) {
         $("body /deep/ resize-halo")[0].style.backgroundImage =
           'url(' +lively4url + "/src/client/media/resize.svg)"
         $("body /deep/ resize-halo").off("mousedown").on("mousedown", function(e) {
@@ -32,11 +32,5 @@
     </script>
 </template>
 <script class="registrationScript">
-// This ugly piece of code will be auto generated, when exporting a template. Puh.
-(function() {
-  var template = document.currentScript.ownerDocument.querySelector('#resize-halo');
-  var clone = document.importNode(template.content, true);
-
-  System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('resize-halo', clone); });
-})();
+  lively.registerTemplate()
 </script>

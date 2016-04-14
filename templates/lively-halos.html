@@ -57,7 +57,7 @@
     </div>
     <script type="lively4script" data-name="initialize">
     () => {
-      System.import("../src/client/morphic/selecting.js")
+      System.import(lively4url + "/src/client/morphic/selecting.js")
 
       var $halos = $("lively-halos")
       $halos.hide();
@@ -119,6 +119,6 @@
   var template = document.currentScript.ownerDocument.querySelector('#lively-halos');
   var clone = document.importNode(template.content, true);
 
-  System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-halos', clone); });
+  System.import(lively4url + '/src/client/morphic/component-loader.js').then(loader => { loader.register('lively-halos', clone); });
 })();
 </script>
