@@ -11,7 +11,7 @@
       #container-navigation {
         flex: 0;
       }
-      
+
       #layout-center {
         width: 100%;
         height: 100%;
@@ -39,7 +39,7 @@
         padding: 0px;
         display: block;
     	}
-      
+
       lively-editor {
         margin: 0px;
       }
@@ -50,17 +50,17 @@
         margin: 0;
         overflow: auto;
         overflow-x: hidden;
-       
+
       }
 
       #container-leftpane ul {
-         
+
         margin:0;
         list-style-type: none;
         padding: 0;
       }
       #container-leftpane ul li {
-  
+
         margin: 0px;
         padding: 2px;
         font-size: 10pt;
@@ -69,13 +69,13 @@
        width: 200px;
        display: box;
       }
-      
+
       #container-leftpane ul li a:hover {
         background-color: gray;
         color: white;
         cursor: pointer
       }
-      
+
       #container-leftpane ul li a:hover {
         background-color: gray;
         color: white;
@@ -119,19 +119,19 @@
       <button id="sync">sync</button>
       <button id="accept">accept</button>
     </div>
-         
-        
+
+
     <div id="layout-center">
      <div id="container-leftpane">
     </div>
     <div id="container-content">
         <!-- by default the content is hidden-->
         <content></content>
-  
+
       </div>
       <div id="container-editor"></div>
     </div>
-        
+
 
     <script type="lively4script" data-name="useBrowserHistory">
     () => {
@@ -354,11 +354,11 @@
         content = content.replace(/@+Box: name="SteppingWordCounter".*\n/g,"\n")
         content = content.replace(/@+Text: name="MetaNoteText".*\n(.*)\n\n/g,  "<i style='color:orange'>$1</i>\n\n")
         content = content.replace(/@+Text: name="WordsText".*\n.*/g,"\n")
-      
+
         this.appendMarkdown(content)
     }
     </script>
-    
+
      <script type="lively4script" data-name="appendHtml">
     (content) => {
       try {
@@ -441,10 +441,10 @@
     function (path, donotrender) {
       this.getSubmorph('#container-content').style.display = "block"
       this.getSubmorph('#container-editor').style.display = "none"
-    
+
       // this.getSubmorph('#container-leftpane').style.display = "none"
-      
-    
+
+
 
       if (!path) {
           path = ""
@@ -475,7 +475,7 @@
       var render = !donotrender
       // Handling directories
       if (isdir) {
-        return 
+        return
         // return lively.files.statFile(url).then((content) => {
         //   this.sourceContent = content
         //   var html = "<ul>" +
@@ -524,7 +524,7 @@
       this.getAceEditor().editor.find(name)
     }
     </script>
-    
+
     <script type="lively4script" data-name="clearNavbar">
     () => {
       var container = this.getSubmorph('#container-leftpane');
@@ -537,12 +537,12 @@
       return navbar
     }
     </script>
-    
+
     <script type="lively4script" data-name="showNavbarSublist">
     (targetItem) => {
       var subList = document.createElement("ul")
       targetItem.appendChild(subList)
-      
+
       if (this.getPath().match(/templates\/.*html$/)) {
         var template = $($.parseHTML(this.sourceContent)).filter("template")[0];
         if (!template) {
@@ -594,7 +594,7 @@
       }
     }
     </script>
-    
+
     <script type="lively4script" data-name="showNavbar">
      () => {
         var filename = ("" + this.getURL()).replace(/.*\//,"")
@@ -604,7 +604,7 @@
         lively.files.statFile(root).then( (text) => {
           var navbar = this.clearNavbar()
           var targetItem;
-        
+
           var stats = JSON.parse(text)
           var names = {}
           stats.contents.forEach(ea => names[ea.name] = ea)
@@ -620,15 +620,15 @@
               return (a.name >= b.name) ? 1 : -1;
             })
             .filter( ea => ! ea.name.match(/^\./))
-            
+
           files.unshift({name: "..", type: "directory"})
           files.forEach((ea) => {
-             
+
             // if there is an Markdown File, ignore the rest
             var m = ea.name.match(/(.*)\.(.*)/)
             if (m && m[2] != "md" && names[m[1]+".md"]) return
             if (m && m[2] != "livelymd" && names[m[1]+".livelymd"]) return
-            
+
     	      var element = document.createElement("li");
     	      if (ea.name == filename) targetItem = element;
     	      var name = ea.name + (ea.type == "directory" ? "/" : "")
@@ -642,11 +642,11 @@
     	      element.appendChild(link)
     	      navbar.appendChild(element) ;
           })
-          
+
           if (this.isEditing() && targetItem) {
             this.showNavbarSublist(targetItem)
-            
-          } 
+
+          }
         })
     }
     </script>
@@ -658,7 +658,7 @@
       return livelyEditor.shadowRoot.querySelector('juicy-ace-editor')
     }
     </script>
-  
+
 
     <!-- EDIT FILE -->
     <script type="lively4script" data-name="editFile">
@@ -671,7 +671,7 @@
       var containerEditor =  this.getSubmorph('#container-editor')
       containerEditor.style.display = "block"
 
-      
+
 
       var livelyEditor = lively.components.createComponent("lively-editor");
       lively.components.openIn(containerEditor,livelyEditor).then( comp => {
@@ -702,8 +702,8 @@
 
           this.showCancelAndSave()
           // comp.loadFile() // ALT: Load the file again?
-          
-          
+
+
       })
       this.showNavbar()
       lively.components.loadUnresolved(containerEditor)
@@ -711,12 +711,4 @@
     </script>
 
 </template>
-<script class="registrationScript">
-// This ugly piece of code will be auto generated, when exporting a template. Puh.
-(function() {
-  var template = document.currentScript.ownerDocument.querySelector('#lively-container');
-  var clone = document.importNode(template.content, true);
-
-  System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-container', clone); });
-})();
-</script>
+<script class="registrationScript">lively.registerTemplate()</script>

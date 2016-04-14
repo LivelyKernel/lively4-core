@@ -99,9 +99,9 @@
         var editor  = c.editor
         if (!editor || !editor.session ) return
         Array.prototype.forEach.call(arguments, function(s) {
-          if (s.message) s = s.message 
+          if (s.message) s = s.message
           if (s.stack) s += s.stack
-          
+
           // c.editor.setValue(c.editor.getValue() + "\n" + s, 1)
           var session = editor.session
           session.insert({
@@ -116,12 +116,4 @@
 
 </template>
 
-<script class="registrationScript">
-// This ugly piece of code will be auto generated, when exporting a template. Puh.
-(function() {
-  var template = document.currentScript.ownerDocument.querySelector('#lively-console');
-  var clone = document.importNode(template.content, true);
-
-  System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-console', clone); });
-})();
-</script>
+<script class="registrationScript">lively.registerTemplate()</script>

@@ -8,16 +8,4 @@
 </script>
 
 </template>
-<script class="registrationScript">
-  (function() { 
-     var template = document.currentScript.ownerDocument.querySelector('#lively-preferences'); 
-     var clone = document.importNode(template.content, true); 
-     
-     Promise.all([ 
-       System.import('../src/client/morphic/component-loader.js') 
-     ]).then(modules => { 
-       var Loader = modules[0]; 
-       Loader.register('lively-preferences', clone); 
-     }); 
-   })();
-</script>
+<script class="registrationScript">lively.registerTemplate()</script>
