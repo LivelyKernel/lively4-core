@@ -1,7 +1,7 @@
 'use strict'
 
 import Morph from './Morph.js';
-import * as componentLoader from '../../src/client/morphic/component-loader.js';
+import componentLoader from '../../src/client/morphic/component-loader.js';
 import * as preferences from '../../src/client/preferences.js';
 
 export default class ComponentBinTile extends Morph {

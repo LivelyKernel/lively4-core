@@ -2,8 +2,8 @@
 <style>
 :host {
   display: inline-block;
-  width: 120px;
-  height: 120px;
+  width: 180px;
+  height: 20px;
   margin: 6px;
   cursor: pointer;
 }
@@ -19,10 +19,15 @@
 .container {
   background-color: lightgray;
   border-radius: 5px;
-  width: 120px;
-  height: 120px;
+  width: 100%;
+  height: 100%;
   padding: 2px;
   overflow: hidden;
+}
+
+#thumbnail {
+  display: none;
+  
 }
 
 img {
@@ -53,7 +58,8 @@ p {
   <div class="name-container">
     <p>name</p>
   </div>
-  <img src="../templates/thumbnails/default-placeholder.png">
+
+    <img id="thumbnail" src="../templates/thumbnails/default-placeholder.png">
 </div>
 
 </template>
