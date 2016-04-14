@@ -18,15 +18,12 @@
     var context;
     var hits = 0
     var start = Date.now()
-    var balls = _.range(0,10).map( i => { return {
-      dx: Math.random() * 2, dy: Math.random() *4, y: 150, x: 10
-     }})
-    
-  
+    var balls =  [{dx: 2, dy: 4, y: 150, x: 10}]
+
     var draw = () => {
       context = $(this.shadowRoot).find("#bouncing-ball")[0].getContext('2d');
       context.clearRect(0, 0, 300, 300);
-      
+
       balls.forEach(ball => {
           context.beginPath();
           context.fillStyle = "gray";
@@ -36,7 +33,7 @@
           if( ball.x<0 || ball.x>300) {
             ball.dx =- ball.dx;
             hits++
-          } 
+          }
           if( ball.y<0 || ball.y>300) {
             ball.dy =- ball.dy;
             hits++

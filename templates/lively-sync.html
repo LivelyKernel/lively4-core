@@ -32,8 +32,17 @@
           email: <input id="gitemail" value="" />
         </p>
         <p><button id="syncButton">sync</button> repository: <input id="gitrepository" value="lively4-core" /></p>
-        <p><button id="cloneButton">clone</button> url <input id="gitrepositoryurl" value="https://github.com/LivelyKernel/lively4-core.git" /> into: <input id="gitrepositorytarget" value="lively4-test" /></p>
-        <p><button id="statusButton">status</button> <button id="diffButton">diff</button></p>
+        <p>
+          <button id="cloneButton">clone</button> 
+          url <input id="gitrepositoryurl" value="https://github.com/LivelyKernel/lively4-core.git" /> 
+          branch <input id="gitrepositorybranch" value="gh-pages" /> 
+          into: <input id="gitrepositorytarget" value="lively4-test" />
+        </p>
+        <p>
+          <button id="statusButton">status</button> 
+          <button id="diffButton">diff</button>
+          <button id="resolveButton">resolve</button>
+        </p>
         <juicy-ace-editor id="log"></juicy-ace-editor>  
     </div>
 
@@ -141,6 +150,7 @@
     </script>
     <script type="lively4script" data-name="onCloneButton">
     () => {
+      this.clearLog()
       fetch("https://lively-kernel.org/lively4/_git/clone", {
         headers: new Headers({ 
            "gitrepositoryurl": this.shadowRoot.querySelector("#gitrepositoryurl").value,
@@ -151,8 +161,21 @@
       })
     }
     </script>
+     <script type="lively4script" data-name="onResolveButton">
+    () => {
+      this.clearLog()
+      fetch("https://lively-kernel.org/lively4/_git/resolve", {
+        headers: new Headers({
+          "gitrepository": this.shadowRoot.querySelector("#gitrepository").value,
+        })
+      }).then(r => r.text()).then((token) => {
+        this.log("RESOLVE:\n" + token)
+      })
+    }
+    </script>
     <script type="lively4script" data-name="logout">
     () => {
+      this.clearLog()
     	lively.focalStorage.setItem("githubToken", null)    
       this.updateLoginStatus()
       this.log("")
