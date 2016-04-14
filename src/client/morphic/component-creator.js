@@ -2,7 +2,7 @@ import * as componentLoader from "./component-loader.js";
 import * as preferences from '../preferences.js';
 
 var htmlBeautify;
-System.import("../src/external/beautify-html.js").then(function(obj){
+System.import(lively4url + "/src/external/beautify-html.js").then(function(obj){
     htmlBeautify = obj.html_beautify;
 });
 
