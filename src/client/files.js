@@ -2,6 +2,28 @@
 
 export default class Files {
 
+  static  fetchChunks(fetchPromise, eachChunkCB, doneCB) {
+    fetchPromise.then(function(response) {
+        var reader = response.body.getReader();
+        var decoder = new TextDecoder();
+        var all = "";
+        (function read() {
+          reader.read().then(function(result) {
+            var text = decoder.decode(result.value || new Uint8Array, {
+              stream: !result.done
+            });
+            all += text
+            if (eachChunkCB) eachChunkCB(text, result)
+            if (result.done) {
+              if (doneCB) doneCB(all, result)
+            } else {
+              read() // fetch next chunk
+            }
+          })
+        })()
+      })
+  }
+
   static  loadFile(urlString) {
     var url = new URL(urlString);
     return fetch(url).then(function (response, err) {

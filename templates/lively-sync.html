@@ -42,6 +42,7 @@
           <button id="statusButton">status</button> 
           <button id="diffButton">diff</button>
           <button id="resolveButton">resolve</button>
+          <button id="changelogButton">changelog</button>
         </p>
         <juicy-ace-editor id="log"></juicy-ace-editor>  
     </div>
@@ -151,14 +152,15 @@
     <script type="lively4script" data-name="onCloneButton">
     () => {
       this.clearLog()
-      fetch("https://lively-kernel.org/lively4/_git/clone", {
-        headers: new Headers({ 
-           "gitrepositoryurl": this.shadowRoot.querySelector("#gitrepositoryurl").value,
-        	"gitrepository": this.shadowRoot.querySelector("#gitrepositorytarget").value,
-        })
-      }).then(r => r.text()).then((token) => {
-        this.log("CLONE:\n" + token)
-      })
+      lively.files.fetchChunks(
+        fetch("https://lively-kernel.org/lively4/_git/clone", {
+          headers: new Headers({ 
+             "gitrepositoryurl": this.shadowRoot.querySelector("#gitrepositoryurl").value,
+          	"gitrepository": this.shadowRoot.querySelector("#gitrepositorytarget").value,
+          })
+        }), (eaChunk) => {
+          this.log("" + eaChunk)
+      }, (done) => {})
     }
     </script>
      <script type="lively4script" data-name="onResolveButton">
@@ -171,6 +173,19 @@
       }).then(r => r.text()).then((token) => {
         this.log("RESOLVE:\n" + token)
       })
+    }
+    </script>
+    <script type="lively4script" data-name="onChangelogButton">
+    () => {
+      this.clearLog()
+      lively.files.fetchChunks(
+        fetch("https://lively-kernel.org/lively4/_git/log", {
+          headers: new Headers({
+            "gitrepository": this.shadowRoot.querySelector("#gitrepository").value,
+          })
+        }), (eaChunk) => {
+          this.log("" + eaChunk)
+        }, (done) => {})
     }
     </script>
     <script type="lively4script" data-name="logout">
