@@ -30,17 +30,16 @@ class ServiceWorker {
     }
 
     fetch(event) {
-        let request = event.request,
-            url     = new URL(request.url),
+        let request = event.request;
+        if (!request) return
+        let    url     = new URL(request.url),
             promise = undefined
 
         if(url.hostname !== 'lively4') {
-            return self.fetch(request.clone()).then((response) => {
-              if (response.headers) {
-                delete response.headers["X-Frame-Options"]
-              }
-              return response;
-            });
+            if (url.pathname.match(/_git\/clone/)) {
+              return // do nothing... ?
+            }
+            return fetch(request);
         } else {
           let response = this.filesystem.handle(request, url)
   
