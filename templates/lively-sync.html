@@ -118,7 +118,9 @@
                 "gitrepository": this.shadowRoot.querySelector("#gitrepository").value, 
                 "gitusername":  this.shadowRoot.querySelector("#gitusername").value,
                 "gitpassword":  await lively.focalStorage.getItem("githubToken"), 
-                "gitemail": this.shadowRoot.querySelector("#gitemail").value
+                "gitemail": this.shadowRoot.querySelector("#gitemail").value,
+                "gitrepositoryurl": this.shadowRoot.querySelector("#gitrepositoryurl").value,
+          	    "gitrepositorytarget": this.shadowRoot.querySelector("#gitrepositorytarget").value,
               })
     }
     </script>
@@ -152,71 +154,34 @@
     </script>
     <script type="lively4script" data-name="onStatusButton">
     () => {
-     this.gitControl("status")  
+      this.gitControl("status")  
     }
     </script>
     <script type="lively4script" data-name="onDiffButton">
     () => {
-      this.clearLog()
-      fetch("https://lively-kernel.org/lively4/_git/diff", {
-        headers: new Headers({ 
-        	"gitrepository": this.shadowRoot.querySelector("#gitrepository").value,
-        })
-      }).then(r => r.text()).then((token) => {
-        this.log("DIFF:\n" + token)
-      })
+      this.gitControl("diff")  
     }
     </script>
     <script type="lively4script" data-name="onCloneButton">
     () => {
-      this.clearLog()
-      lively.files.fetchChunks(
-        fetch("https://lively-kernel.org/lively4/_git/clone", {
-          headers: new Headers({ 
-            "gitrepositoryurl": this.shadowRoot.querySelector("#gitrepositoryurl").value,
-          	"gitrepository": this.shadowRoot.querySelector("#gitrepositorytarget").value,
-          })
-        }), (eaChunk) => {
-          this.log("" + eaChunk)
-      }, (done) => {})
+      this.gitControl("clone")
+      this.shadowRoot.querySelector("#gitrepository").value =  this.shadowRoot.querySelector("#gitrepositorytarget").value
+       
     }
     </script>
     <script type="lively4script" data-name="onNpmInstallButton">
     () => {
-      this.clearLog()
-      lively.files.fetchChunks(
-        fetch("https://lively-kernel.org/lively4/_git/npm", {
-          headers: new Headers({ 
-          	"gitrepository": this.shadowRoot.querySelector("#gitrepository").value,
-          })
-        }), (eaChunk) => {
-          this.log("" + eaChunk)
-      }, (done) => {})
+      this.gitControl("npminstall")
     }
     </script>
      <script type="lively4script" data-name="onResolveButton">
     () => {
-      this.clearLog()
-      fetch("https://lively-kernel.org/lively4/_git/resolve", {
-        headers: new Headers({
-          "gitrepository": this.shadowRoot.querySelector("#gitrepository").value,
-        })
-      }).then(r => r.text()).then((token) => {
-        this.log("RESOLVE:\n" + token)
-      })
+      this.gitControl("resolve")
     }
     </script>
     <script type="lively4script" data-name="onChangelogButton">
     () => {
-      this.clearLog()
-      lively.files.fetchChunks(
-        fetch("https://lively-kernel.org/lively4/_git/log", {
-          headers: new Headers({
-            "gitrepository": this.shadowRoot.querySelector("#gitrepository").value,
-          })
-        }), (eaChunk) => {
-          this.log("" + eaChunk)
-        }, (done) => {})
+     this.gitControl("log")
     }
     </script>
     <script type="lively4script" data-name="logout">
