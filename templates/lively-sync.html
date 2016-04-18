@@ -122,18 +122,24 @@
               })
     }
     </script>
-    
-    <script type="lively4script" data-name="onSyncButton">
-    async () => {
+    <script type="lively4script" data-name="gitControl">
+    async (cmd) => {
       this.clearLog()
       var serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1]
-       lively.files.fetchChunks(fetch(serverURL +"/_git/sync", {
+       lively.files.fetchChunks(fetch(serverURL +"/_git/" + cmd, {
               headers: await this.getHeaders()
             }), (eaChunk) => {
           this.log("" + eaChunk)
         }, (done) => {
           
         })
+      
+    }
+    </script>
+    <script type="lively4script" data-name="onSyncButton">
+    () => {
+      debugger
+      this.gitControl("sync")  
     }
     </script>
     
