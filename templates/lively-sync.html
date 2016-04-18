@@ -71,11 +71,11 @@
                 "gitpassword":  await lively.focalStorage.getItem("githubToken"), 
                 "gitemail": await lively.focalStorage.getItem("githubEmail")
               })
-            }, (eaChunk) => {
+            }), (eaChunk) => {
           this.log("" + eaChunk)
         }, (done) => {
           
-        }))
+        })
     }
     </script>
     
