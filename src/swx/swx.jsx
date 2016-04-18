@@ -37,6 +37,8 @@ class ServiceWorker {
 
         if(url.hostname !== 'lively4') {
             if (url.pathname.match(/_git\/clone/)) {
+              console.log("fetch: irgnore " + url)
+
               return // do nothing... ?
             }
             return fetch(request);
