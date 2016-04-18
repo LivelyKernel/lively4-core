@@ -329,7 +329,7 @@
     </script>
     <script type="lively4script" data-name="appendMarkdown">
     (content) => {
-      System.import('../src/external/showdown.js').then((showdown) => {
+      System.import(lively4url + '/src/external/showdown.js').then((showdown) => {
         var converter = new showdown.Converter();
         var htmlSource = converter.makeHtml(content)
         var html = $.parseHTML(htmlSource)

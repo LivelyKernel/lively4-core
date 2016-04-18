@@ -32,7 +32,8 @@ export default class ComponentLoader {
     var prototypeName =  prototype.constructor.name
     return _.detect(_.keys(this.prototypes),
       name => {
-        var constructor = this.prototypes[name].constructor;
+        var otherProto = this.prototypes[name]
+        var constructor = otherProto && otherProto.constructor;
         return constructor && (constructor.name ===  prototypeName)})
   }
 
