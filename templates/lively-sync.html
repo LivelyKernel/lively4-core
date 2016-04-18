@@ -131,9 +131,7 @@
             }), (eaChunk) => {
           this.log("" + eaChunk)
         }, (done) => {
-          
         })
-      
     }
     </script>
     <script type="lively4script" data-name="onSyncButton">
@@ -154,14 +152,7 @@
     </script>
     <script type="lively4script" data-name="onStatusButton">
     () => {
-      this.clearLog()
-      fetch("https://lively-kernel.org/lively4/_git/status", {
-        headers: new Headers({ 
-        	"gitrepository": this.shadowRoot.querySelector("#gitrepository").value,
-        })
-      }).then(r => r.text()).then((token) => {
-        this.log("STATUS:\n" + token)
-      })
+     this.gitControl("status")  
     }
     </script>
     <script type="lively4script" data-name="onDiffButton">
