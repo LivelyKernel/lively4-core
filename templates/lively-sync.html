@@ -31,7 +31,8 @@
           username: <input id="gitusername" value="" />
           email: <input id="gitemail" value="" />
         </p>
-        <p><button id="syncButton">sync</button> repository: <input id="gitrepository" value="lively4-core" /></p>
+        <p><button id="syncButton">sync</button> 
+          repository: <input id="gitrepository" value="lively4-core" /></p>
         <p>
           <button id="cloneButton">clone</button> 
           url <input id="gitrepositoryurl" value="https://github.com/LivelyKernel/lively4-core.git" /> 
@@ -55,30 +56,7 @@
       this.updateLoginStatus()
     }
     </script>
-    <script type="lively4script" data-name="getHeaders">
-    async () => {
-
-    }
-    </script>
-    <script type="lively4script" data-name="onSyncButton">
-    async () => {
-      this.clearLog()
-      var serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1]
-       lively.files.fetchChunks(fetch(serverURL +"/_git/sync", {
-              headers: new Headers({
-                "gitrepository": this.shadowRoot.querySelector("#gitrepository").value, 
-                "gitusername":  await lively.focalStorage.getItem("githubUsername"),
-                "gitpassword":  await lively.focalStorage.getItem("githubToken"), 
-                "gitemail": await lively.focalStorage.getItem("githubEmail")
-              })
-            }), (eaChunk) => {
-          this.log("" + eaChunk)
-        }, (done) => {
-          
-        })
-    }
-    </script>
-    
+   
      <script type="lively4script" data-name="clearLog">
     (s) => {
       // this.shadowRoot.querySelector("#log").innerHTML = "" + s
@@ -102,24 +80,18 @@
       this.shadowRoot.querySelector("#syncButton").disabled = 
         token ? false : true;
       this.shadowRoot.querySelector("#gitusername").value = 
-       await lively.focalStorage.getItem("githubUsername")
+        await lively.focalStorage.getItem("githubUsername")
       this.shadowRoot.querySelector("#gitemail").value = 
-       await lively.focalStorage.getItem("githubEmail")
-      this.shadowRoot.querySelector("#gitrepository").value = 
-       await lively.focalStorage.getItem("githubRepository")
-
+        await lively.focalStorage.getItem("githubEmail")
+      
+      
+      var value =await lively.focalStorage.getItem("githubRepository") 
+      if (value)
+        this.shadowRoot.querySelector("#gitrepository").value = value
+        
     }
     </script>
-    <script type="lively4script" data-name="onLoginButton">
-    async () => {
-      this.clearLog()
-      if (await lively.focalStorage.getItem("githubToken")) { 
-        this.logout() 
-      } else { 
-        this.login()
-      }
-    }
-    </script>
+    
     <script type="lively4script" data-name="login">
     () => {
       lively.focalStorage.getItem("githubToken").then((result) => {
@@ -138,6 +110,41 @@
       }).then((token) => {
         this.log("TOKEN: " + token)
       })
+    }
+    </script>
+     <script type="lively4script" data-name="getHeaders">
+    async () => {
+      return new Headers({
+                "gitrepository": this.shadowRoot.querySelector("#gitrepository").value, 
+                "gitusername":  this.shadowRoot.querySelector("#gitusername").value,
+                "gitpassword":  await lively.focalStorage.getItem("githubToken"), 
+                "gitemail": this.shadowRoot.querySelector("#gitemail").value
+              })
+    }
+    </script>
+    
+    <script type="lively4script" data-name="onSyncButton">
+    async () => {
+      this.clearLog()
+      var serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1]
+       lively.files.fetchChunks(fetch(serverURL +"/_git/sync", {
+              headers: await this.getHeaders()
+            }), (eaChunk) => {
+          this.log("" + eaChunk)
+        }, (done) => {
+          
+        })
+    }
+    </script>
+    
+    <script type="lively4script" data-name="onLoginButton">
+    async () => {
+      this.clearLog()
+      if (await lively.focalStorage.getItem("githubToken")) { 
+        this.logout() 
+      } else { 
+        this.login()
+      }
     }
     </script>
     <script type="lively4script" data-name="onStatusButton">
