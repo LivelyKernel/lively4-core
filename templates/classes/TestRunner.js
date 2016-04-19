@@ -15,7 +15,7 @@ export default class TestRunner extends HTMLDivElement {
       link.id="mochaCSS"
       link.type="text/css"
       link.rel="stylesheet"
-      link.href="../node_modules/mocha/mocha.css"
+      link.href=lively4url + "/node_modules/mocha/mocha.css"
       document.head.appendChild(link)
     }
   }
