@@ -18,6 +18,26 @@ export default class TestRunner extends HTMLDivElement {
       link.href=lively4url + "/node_modules/mocha/mocha.css"
       document.head.appendChild(link)
     }
+
+    if(document.querySelector("#mochaScript")) {
+        document.querySelector("#mochaScript").remove()
+    }
+    
+      var script = document.createElement("script")
+      script.id="mochaScript"
+      script.type="text/javascript"
+      script.src=lively4url + "/src/external/mocha.js" + "?" + Date.now()
+      script.onload = function() {
+        mocha.setup("bdd")
+      }
+      document.head.appendChild(script)
+  
+  
+    
+    // <script src="" type="text/javascript" charset="utf-8"></script>
+    // <script>mocha.setup("bdd")</script>
+
+    
   }
 
   async findTestFilesInDir(dir) {
@@ -50,11 +70,12 @@ export default class TestRunner extends HTMLDivElement {
   async onRunButton() {
     mocha.suite.suites.length = 0; // hihi #Holzhammer
     this.querySelector("#mocha").innerHTML= "";
-    (await this.findTestFiles()).forEach(async (url) => {
-      var name = url.replace(/.*\//,"").replace(/\..*/,"");
-      await lively.import(name, url, true).then( module => {
-        mocha.run();
-      });
-    }); 
+    await Promise.all(
+      (await this.findTestFiles()).map((url) => {
+        var name = url.replace(/.*\//,"").replace(/\..*/,"");
+        return lively.import(name, url, true)
+      }));
+    console.log("RUN")
+    mocha.run();
   }
 }
