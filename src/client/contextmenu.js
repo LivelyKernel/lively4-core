@@ -57,7 +57,8 @@ export default class ContextMenu {
       ["Sync",     (evt) => this.openComponentInWindow("lively-sync", evt)],
       // ["Terminal",        (evt) => this.openComponentInWindow("lively-terminal", evt)],
       ["Console",         (evt) => this.openComponentInWindow("lively-console", evt)],
-       ["Math Workspace",         (evt) => this.openComponentInWindow("lively-math", evt)],
+      ["Math Workspace",         (evt) => this.openComponentInWindow("lively-math", evt)],
+      ["TestRunner",         (evt) => this.openComponentInWindow("lively-testrunner", evt)],
       ["Component Bin",   (evt) => this.openComponentInWindow("lively-component-bin", evt)],
       ["Customize Page",   (evt) => {
         this.hide()

@@ -29,6 +29,7 @@ export default class ComponentLoader {
   }
 
   static protypeToComponentName(prototype) {
+    if (!prototype || !prototype.constructor) return
     var prototypeName =  prototype.constructor.name
     return _.detect(_.keys(this.prototypes),
       name => {

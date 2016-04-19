@@ -1,3 +1,5 @@
+<script src="../node_modules/mocha/mocha.js" type="text/javascript" charset="utf-8"></script>
+<script>mocha.setup("bdd")</script>
 <template id="lively-testrunner" data-class="TestRunner">
     <style>
     .container {
@@ -11,18 +13,19 @@
       margin-top: 5px;
       margin-bottom: 5px;      
     }
-    #log {
-      flex: 1;
-      width: 95%;
-      margin-bottom: 10px;
+    #content {
+      overflow: auto;
     }
+    
     </style>
     <div class="container">
       <h2>TestRunner</h2>
         <p>
           <button id="runButton">run</button> 
         </p>
-        <juicy-ace-editor id="log"></juicy-ace-editor>  
+        <div id="content">
+        <content></content>
+        </div>
     </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

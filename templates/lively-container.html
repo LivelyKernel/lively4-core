@@ -302,6 +302,11 @@
           var sourceCode = this.getSubmorph("#editor").currentEditor().getValue()
           lively.updateTemplate(sourceCode)
         var url = this.getURL();
+        if (this.getURL().pathname.match(/\/test\/.*([^/]+)\.js$/)) {
+          console.log("ignore test: " + this.getURL())
+          return
+        }
+        
         var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/)
         if (moduleName) {
           moduleName = moduleName[1]
