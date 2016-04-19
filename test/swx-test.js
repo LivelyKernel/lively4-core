@@ -1,15 +1,14 @@
 "use strict";
-
-var expect = chai.expect;
+import {expect} from '../node_modules/chai/chai.js'
 
 describe('SWX Lively4 FS API', function() {
-  it('should return all mounts for http://lively4/ magic url', function(done) {
-    fetch("http://lively4/sys/mounts").then(r => r.text()).then( (text, err) => {
-      if (err) done(err)
+  it('should return all mounts for http://lively4/ magic url', async () => {
+    var text = await fetch("http://lively4/sys/mounts").then(r => r.text())
+    try {
       var mounts = JSON.parse(text)
-      console.log("mounts: ", mounts)
-      expect(mounts).to.have.property("0") // find yourself!
-      done()
-    }).catch(done)
+    } catch(e) {
+      throw new Error("Could not parse: " + text)
+    }
+    expect(mounts).to.have.property("0") // find yourself!
   });
 });
