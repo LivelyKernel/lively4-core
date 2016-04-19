@@ -7,9 +7,9 @@ export default class HTML {
     // Just an experiment for having to write lesser code.... which ended up in having more code here ;-) #Jens
     Array.prototype.forEach.call(parent.shadowRoot.querySelectorAll("button"), node => {
       var name = node.id
+      var funcName = name.replace(/^./, c => "on"+ c.toUpperCase())
       console.log("register button " + name)
       $(node).click(() => {
-        var funcName = name.replace(/^./, c => "on"+ c.toUpperCase())
         var func = parent[funcName]
         if (func) {
           func.call(parent)
@@ -19,6 +19,26 @@ export default class HTML {
       })
     })
   }
+  
+  // static registerInputs(parent) {
+  //   Array.prototype.forEach.call(parent.shadowRoot.querySelectorAll("input"), node => {
+  //     var name = node.id
+  //     var funcName = name.replace(/^./, function (c) {
+  //           return "on" + c.toUpperCase() ;
+  //         }) + "Changed";
+  //     console.log("register input " + name)
+  //       node.addEventListener("input", function(evt) {
+  //         var value = node.value
+  //         var func = parent[funcName];
+  //         if (func) {
+  //           func.call(parent, value);
+  //         } else {
+  //           alert("No callback: " + funcName);
+  //         }
+  //       });
+  //     })
+  // }
+  
   
   static fixLinks(nodes, dir, followPath) {
     if (! followPath) {

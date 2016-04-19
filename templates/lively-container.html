@@ -294,6 +294,10 @@
 
     <script type="lively4script" data-name="onSave">
     (doNotQuit) => {
+      if (this.getPath().match(/\/$/)) {
+        lively.files.saveFile(this.getURL(),"") 
+        return
+      }
       return this.getSubmorph("#editor").saveFile().then( () => {
           var sourceCode = this.getSubmorph("#editor").currentEditor().getValue()
           lively.updateTemplate(sourceCode)

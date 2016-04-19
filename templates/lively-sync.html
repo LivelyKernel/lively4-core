@@ -28,16 +28,16 @@
       <h2>Sync Github</h2>
         <p>
           <button id="loginButton">not initialize</button> 
-          username: <input id="gitusername" value="" />
-          email: <input id="gitemail" value="" />
+          username: <input class="persistent" id="gitusername" value="" />
+          email: <input class="persistent" id="gitemail" value="" />
         </p>
         <p><button id="syncButton">sync</button> 
           repository: <input id="gitrepository" value="lively4-core" /></p>
         <p>
           <button id="cloneButton">clone</button> 
-          url <input id="gitrepositoryurl" value="https://github.com/LivelyKernel/lively4-core.git" /> 
-          branch <input id="gitrepositorybranch" value="gh-pages" /> 
-          into: <input id="gitrepositorytarget" value="lively4-test" />
+          url <input class="persistent" id="gitrepositoryurl" value="https://github.com/LivelyKernel/lively4-core.git" /> 
+          branch <input class="persistent" id="gitrepositorybranch" value="gh-pages" /> 
+          into: <input class="persistent" id="gitrepositorytarget" value="lively4-test" />
         </p>
         <p>
           <button id="statusButton">status</button> 
@@ -51,4 +51,3 @@
     
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
-
