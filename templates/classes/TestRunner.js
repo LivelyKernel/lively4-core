@@ -73,7 +73,8 @@ export default class TestRunner extends HTMLDivElement {
     await Promise.all(
       (await this.findTestFiles()).map((url) => {
         var name = url.replace(/.*\//,"").replace(/\..*/,"");
-        return lively.import(name, url, true)
+          return lively.import(name, url, true)
+          // mocha.addFile(url.replace(/.*\//,"").replace(/\..*/,""))
       }));
     console.log("RUN")
     mocha.run();

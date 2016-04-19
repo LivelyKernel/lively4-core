@@ -2361,7 +2361,6 @@ var statsTemplate = '<ul id="mocha-stats">'
  * @param {Runner} runner
  */
 function HTML(runner) {
-  debugger
   console.log("Init RUNNER")
   Base.call(this, runner);
 
