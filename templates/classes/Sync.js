@@ -116,6 +116,18 @@ export default class Sync extends HTMLDivElement {
    this.gitControl("log")
   }
   
+  get storagePrefix() {
+    return "LivelySyntax_"
+  }
+  
+  async storeValue(key, value) {
+    return  lively.focalStorage.setItem(this.storagePrefix + key)
+  }
+  
+  async loadValue(key) {
+    return await lively.focalStorage.getItem(this.storagePrefix + key)
+  }
+
   logout() {
     this.clearLog()
   	lively.focalStorage.setItem("githubToken", null)    

@@ -1,27 +1,15 @@
 import Sync from '../../templates/classes/Sync.js'
-import * as chai from '../../node_modules/chai/chai.js'
+import {expect} from '../../node_modules/chai/chai.js'
 
-window.chai = chai
-
-
+// window.chai = chai
+debugger
 describe("Sync Tool", () => {
-  it("should succeed", () => {
-    chai.expect(true).to.be.equal(true)
+  it("should load stored value", async () => {
+    var that = document.createElement("lively-sync");
+
+    await that.storeValue("_test_tmp_key", "hello");
+  
+    expect(await that.loadValue("_test_tmp_key")).to.be.equal("hello");
+
   })
-  
-  it("should fail", () => {
-    chai.expect(true).to.be.equal(false)
-  })
-  
-  it("should succeed again", () => {
-    chai.expect(true).to.be.equal(true)
-  })
-  
-  
-  
-  // it("should store value", () => {
-  //   var sut = new Sync()
-  //   sut.storeValue("hello", "world")
-  // })
 })
-console.log("I really did this!!!!!")
