@@ -411,7 +411,6 @@ export default class Lively {
     var proto;
     var className = template.getAttribute("data-class")
     if (className) {
-      
       var module= await System.import(lively4url +'/templates/classes/' + className +".js");
       proto =  Object.create(module.prototype || module.default.prototype)
     }

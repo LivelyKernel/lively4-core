@@ -1,4 +1,4 @@
-<template id="lively-sync">
+<template id="lively-sync" data-class="Sync">
     <style>
     .container {
         width: 100%;
@@ -137,61 +137,9 @@
     }
     </script>
     
-    <script type="lively4script" data-name="onSyncButton">
-    () => {
-      this.gitControl("sync")  
-    }
-    </script>
-    <script type="lively4script" data-name="onLoginButton">
-    async () => {
-      this.clearLog()
-      if (await lively.focalStorage.getItem("githubToken")) { 
-        this.logout() 
-      } else { 
-        this.login()
-      }
-    }
-    </script>
-    <script type="lively4script" data-name="onStatusButton">
-    () => {
-      this.gitControl("status")  
-    }
-    </script>
-    <script type="lively4script" data-name="onDiffButton">
-    () => {
-      this.gitControl("diff")  
-    }
-    </script>
-    <script type="lively4script" data-name="onCloneButton">
-    () => {
-      this.gitControl("clone")
-      this.shadowRoot.querySelector("#gitrepository").value =  this.shadowRoot.querySelector("#gitrepositorytarget").value
-    }
-    </script>
-    <script type="lively4script" data-name="onNpmInstallButton">
-    () => {
-      this.gitControl("npminstall")
-    }
-    </script>
-     <script type="lively4script" data-name="onResolveButton">
-    () => {
-      this.gitControl("resolve")
-    }
-    </script>
-    <script type="lively4script" data-name="onChangelogButton">
-    () => {
-     this.gitControl("log")
-    }
+   
+
     
-    </script>
-    <script type="lively4script" data-name="logout">
-    () => {
-      this.clearLog()
-    	lively.focalStorage.setItem("githubToken", null)    
-      this.updateLoginStatus()
-      this.log("")
-    }
-    </script>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 
