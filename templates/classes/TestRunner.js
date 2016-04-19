@@ -20,30 +20,41 @@ export default class TestRunner extends HTMLDivElement {
     }
   }
 
-  async findTestFiles() {
-    var dir = lively4url + "/test/"
-    var json = await lively.files.statFile(dir)
+  async findTestFilesInDir(dir) {
+    var dir = lively4url + dir;
+    var json = await lively.files.statFile(dir).then(JSON.parse)
     return json.contents.map(ea => ea.name )
       .filter(ea => ea.match(/-test\.js$/))
       .map(ea => dir + ea)
-    // return [lively4url + "/test/templates/lively-sync-test.js"]
   }
   
-  // debugger
+  // [1,2,3].reduce((s,ea) => s + ea, 0 )
+  async findTestFiles() {
+    var files = []
+    var list = ["/test/", "/test/templates/"]
+    for(var i in list) {
+      files = files.concat(await this.findTestFilesInDir(list[i]))
+    };
+    return files
+    // #WhyNotThis #ContinueHere
+    // return ["/test/", "/test/templates/"].reduce(async (sum, ea) => {
+    //     return sum.concat(await this.findTestFilesInDir(ea))
+    // }, [])
+  }
+// await that.findTestFilesInDir( "/test/templates/")
+  
+    // debugger
   // it('sds',()=>{})
   // window.it
   
-  
   async onRunButton() {
-    mocha.suite.suites.length = 0 // hihi #Holzhammer
-    this.querySelector("#mocha").innerHTML= ""
-    
-    this.findTestFiles().forEach(async (url) => {
-      var name = url.replace(/.*\//,"").replace(/\..*/,"")
+    mocha.suite.suites.length = 0; // hihi #Holzhammer
+    this.querySelector("#mocha").innerHTML= "";
+    (await this.findTestFiles()).forEach(async (url) => {
+      var name = url.replace(/.*\//,"").replace(/\..*/,"");
       await lively.import(name, url, true).then( module => {
-        mocha.run()
-      })
-    }) 
-    lively.notify("run tests")
+        mocha.run();
+      });
+    }); 
   }
 }
