@@ -20,8 +20,13 @@ export default class TestRunner extends HTMLDivElement {
     }
   }
 
-  findTestFiles() {
-    return [lively4url + "/test/templates/lively-sync-test.js"]
+  async findTestFiles() {
+    var dir = lively4url + "/test/"
+    var json = await lively.files.statFile(dir)
+    return json.contents.map(ea => ea.name )
+      .filter(ea => ea.match(/-test\.js$/))
+      .map(ea => dir + ea)
+    // return [lively4url + "/test/templates/lively-sync-test.js"]
   }
   
   // debugger

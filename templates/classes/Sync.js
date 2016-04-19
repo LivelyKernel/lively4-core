@@ -121,11 +121,11 @@ export default class Sync extends HTMLDivElement {
   }
   
   async storeValue(key, value) {
-    return  lively.focalStorage.setItem(this.storagePrefix + key)
+    return  lively.focalStorage.setItem(this.storagePrefix + key, value)
   }
   
   async loadValue(key) {
-    return await lively.focalStorage.getItem(this.storagePrefix + key)
+    return lively.focalStorage.getItem(this.storagePrefix + key)
   }
 
   logout() {
