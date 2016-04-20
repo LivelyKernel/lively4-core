@@ -3,16 +3,20 @@
 import Morph from './Morph.js';
 
 export default class Sync extends Morph {
-   initialize() {
-     this.windowTitle = "Github Sync"
-
+  initialize() {
+    this.windowTitle = "Github Sync"
     var container = $(this.shadowRoot).find(".container")[0];
     lively.html.registerButtons(this)
     this.updateLoginStatus()
     console.log("install..")
+    
+    var travis = this.shadowRoot.querySelector("#travisLink")
+    travis.onclick = () => {
+      window.open(travis.getAttribute("href"))
+      return false
+    } 
+    
   }
-  
-
   clearLog(s) {
     // this.shadowRoot.querySelector("#log").innerHTML = "" + s
     var editor= this.shadowRoot.querySelector("#log").editor

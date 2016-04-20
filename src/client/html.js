@@ -8,7 +8,7 @@ export default class HTML {
     Array.prototype.forEach.call(parent.shadowRoot.querySelectorAll("button"), node => {
       var name = node.id
       var funcName = name.replace(/^./, c => "on"+ c.toUpperCase())
-      console.log("register button " + name)
+      // console.log("register button " + name)
       $(node).click(() => {
         var func = parent[funcName]
         if (func) {
