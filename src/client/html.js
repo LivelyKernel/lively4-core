@@ -40,7 +40,6 @@ export default class HTML {
   //     })
   // }
   
-  
   static fixLinks(nodes, dir, followPath) {
     if (! followPath) {
       throw new Error("argument followPath missing");
