@@ -1,7 +1,8 @@
 <template id="lively-container">
     <style>
-      #cancel, #save, #accept, #sync {
+      .edit {
         visibility: hidden;
+        display: none;
       }
 
       #container-path {
@@ -43,7 +44,6 @@
         margin: 0px;
       }
 
-
       #container-leftpane {
         width: 150px;
         margin: 0;
@@ -53,17 +53,16 @@
       }
 
       #container-leftpane ul {
-
         margin:0;
         list-style-type: none;
         padding: 0;
       }
       #container-leftpane ul li {
-
         margin: 0px;
         padding: 2px;
         font-size: 10pt;
       }
+      
       #container-leftpane ul li a {
        width: 200px;
        display: box;
@@ -98,25 +97,48 @@
         display: flex;
         flex-direction: column;
       }
+      
       button {
-        padding: 0;
+        padding: 2;
+        border: 1px solid  #d5d5d5;
+        background: linear-gradient(#fcfcfc, #eee);
+        border-radius: 2px;
+        font-weight: bold;
+        font-size: 13px;
+        color: #404040 ;
+      }
+
+      button:hover {
+        background: linear-gradient(#eee, #ddd);
       }
 
       h1,h2,h3,h4 {
         color: #2B65EC;
-
       }
+      
+      #delete {
+        color: #b33630;
+      }
+
+      #delete:hover {
+        background:  linear-gradient(#dc5f59, #b33630);;
+        color: white;
+        border: 0px
+      }
+      
+      
     </style>
     <div id="container-navigation">
-      <button id="edit">Edit</button>
       <button id="back">&lt;</button>
       <button id="forward">&gt;</button>
       <button id="up">^</button>
       <input type="text" id="container-path" value="">
-      <button id="cancel">cancel</button>
-      <button id="save">save</button>
-      <button id="sync">sync</button>
-      <button id="accept">accept</button>
+      <button class="browse" id="edit">Edit</button>
+      <button class="edit" id="cancel">cancel</button>
+      <button class="edit" id="save">save</button>
+      <button class="edit" id="sync">sync</button>
+      <button class="edit" id="accept">accept</button>
+      <button class="edit" id="delete">delete</button>
     </div>
 
     <div id="layout-center">
@@ -159,7 +181,11 @@
       } else {
       	var src = this.getAttribute("src")
       	if (src) {
-      		this.setPath(src)
+      		this.setPath(src).then(() => {
+            if (this.getAttribute("mode") == "edit") {
+              this.editFile()
+        		}
+          })
       	}
       }
 
@@ -217,23 +243,30 @@
       this.followPath(path)
     }
     </script>
-
     <script type="lively4script" data-name="hideCancelAndSave">
     () => {
-      this.getSubmorph("#cancel").style.visibility = "hidden"
-      this.getSubmorph("#save").style.visibility = "hidden"
-      this.getSubmorph("#accept").style.visibility = "hidden"
-      this.getSubmorph("#sync").style.visibility = "hidden"
+      _.each(this.shadowRoot.querySelectorAll("button.edit"), (ea) => {
+        ea.style.visibility = "hidden"
+        ea.style.display = "none"
 
-
+      });
+      _.each(this.shadowRoot.querySelectorAll("button.browse"), (ea) => {
+        ea.style.visibility = "visible"
+        ea.style.display = "inline-block"
+      })
     }
     </script>
     <script type="lively4script" data-name="showCancelAndSave">
     () => {
-      this.getSubmorph("#cancel").style.visibility = "visible"
-      this.getSubmorph("#save").style.visibility = "visible"
-      this.getSubmorph("#accept").style.visibility = "visible"
-      this.getSubmorph("#sync").style.visibility = "visible"
+      _.each(this.shadowRoot.querySelectorAll("button.edit"), (ea) => {
+        ea.style.visibility = "visible";
+        ea.style.display = "inline-block"
+      });
+      
+      _.each(this.shadowRoot.querySelectorAll("button.browse"), (ea) => {
+        ea.style.visibility = "hidden";
+        ea.style.display = "none"
+      })
 
     }
     </script>
@@ -318,6 +351,17 @@
           })
         }
       })
+    }
+    </script>
+    <script type="lively4script" data-name="onDelete">
+    async () => {
+      var url = this.getURL() +""
+      if (window.confirm("delete " + url)) {
+        var result = await fetch(url, {method: 'DELETE'})
+          .then(r => r.text())
+        this.setPath(url.replace(/[^/]*$/, ""))
+        lively.notify("deleted " + url, result)
+      }
     }
     </script>
     <script type="lively4script" data-name="onAccept">
