@@ -149,7 +149,7 @@
       // lively.files.loadFile(lively4url + "/templates/livelystyle.css").then(css => {
       //   this.shadowRoot.querySelector("#livelyStyle").innerHTML = css
       // })
-    
+      this.windowTitle = "Browser"
 
       console.log("Initialize Container")
       if (this.useBrowserHistory()) {
@@ -189,28 +189,11 @@
           this.onPathEntered(input.value);
         }
       });
-      this.registerButtons()
+      lively.html.registerButtons(this)
     }
     </script>
 
-    <script type="lively4script" data-name="registerButtons">
-    (names) => {
-      // Just an experiment for having to write lesser code.... which ended up in having more code here ;-) #Jens
-      Array.prototype.forEach.call(this.shadowRoot.querySelectorAll("button"), node => {
-        var name = node.id
-        console.log("register button " + name)
-        $(node).click(() => {
-          var funcName = name.replace(/^./, c => "on"+ c.toUpperCase())
-          var func = this[funcName]
-          if (func) {
-            func.call(this)
-          } else {
-            alert("No callback: " +  funcName)
-          }
-        })
-      })
-    }
-    </script>
+
     <script type="lively4script" data-name="onSync">
     async (evt) => {
       var username = await lively.focalStorage.getItem("githubUsername")

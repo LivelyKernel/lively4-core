@@ -7,6 +7,7 @@
         /*
         box-sizing: border-box;
         padding-top: 25px; */
+        margin-left: 10px;
         display: flex;
         flex-direction: column;
     }
@@ -25,43 +26,49 @@
         flex: 1;   /* ACE does not display right with "flex" */
 
     }
+    #listOfMountPoints li {
+      width: 100%; 
+    }
+    
+    .browse, .umount {
+       float: right;
+    } 
+    p {
+      margin: 2px;
+    }
+    #listOfMountPoints {
+      padding: 5px;
+      background-color: #E0E0E0;
+      width: 90%;      
+      overflow: auto;
+    }
     </style>
     <div class="container">
-      <p>Github
-        <button id="githubLoginButton">login</button>
-        <button id="githubLogoutButton">logout</button>
+      <h3>Github  <button id="githubLoginButton">login</button>
+        <button id="githubLogoutButton">logout</button></h3>
+      <p>
+       
         repo: <input id="githubRepo" value="LivelyKernel/lively4-core" />
         branch: <input id="githubBranch" value="gh-pages" />
         to: <input id="githubMount" value="/github" />
       </p>
-      <p>Dropbox
-        <button id="dropboxLoginButton">login</button>
-        <button id="dropboxLogoutButton">logout</button>
+      <h3>Dropbox <button id="dropboxLoginButton">login</button> <button id="dropboxLogoutButton">logout</button></h3>
+      <p>
+        
+       
         from: <input id="dropboxSubfolder" value="/Lively" />
         to: <input id="dropboxMountPath" value="/dropbox" />
       </p>
-      <p>
-        <button id="updateMountList">update</button>
+      <h3>Mounts <button id="updateMountList">update</button>
+        </h3>
         <ol id="listOfMountPoints"></ol>
-      </p>
-
-
     </div>
-
-    <!-- SYNTAX EXPERIMENTS
-    <script type="lively4component">
-      import messaging from "../src/client/messaging.js"
-      class {
-        initialize() {
-        }
-      }
-    </script>
-    -->
 
     <script type="lively4script" data-name="initialize">
     () => {
       var container = $(this.shadowRoot).find(".container")[0];
 
+      this.windowTitle = "Lively Mounts"
       // #TODO refactor to "connections"
 
       $(this.getSubmorph('#githubLoginButton')).click(() => {
@@ -243,6 +250,7 @@
             let button = document.createElement("button")
             button.innerHTML="umount"
             button.onclick = () => { this.umountPath(ea.path)}
+            button.setAttribute("class","umount")
             listItem.appendChild(button)
 
             let browseButton = document.createElement("button")
@@ -253,6 +261,7 @@
                 browser.path = ea.path
               });
             }
+            browseButton.setAttribute("class","browse")
             listItem.appendChild(browseButton)
             list.appendChild(listItem)
           })

@@ -18,6 +18,18 @@ export default class Morph extends HTMLDivElement {
     return morph;
   }
 
+  set windowTitle(string){
+    this._windowTitle = string
+    // #TOTO replace with connections
+    if (this.parentElement.titleSpan) { // check for window?
+      this.parentElement.setAttribute("title", string)
+    }
+  }
+  
+  get windowTitle(){
+    return this._windowTitle
+  }
+
   getAllSubmorphs(selector) {
     var morphs = this.querySelectorAll(selector);
     if (this.shadowRoot) {

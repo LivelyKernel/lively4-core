@@ -42,6 +42,7 @@
 
     <script type="lively4script" data-name="initialize">
     () => {
+      this.windowTitle = "Console"
       var container = $(this.shadowRoot).find(".container")[0];
       var editor = this.getSubmorph('#console').editor
 
@@ -81,11 +82,9 @@
       $(this.getSubmorph('#commandline')).keyup((evt) => {
         if(evt.keyCode == 13) { this.evalInput() }})
         
-
       lively.html.registerButtons(this)
     }
     </script>
-
 
     <script type="lively4script" data-name="onClear">
     () => {

@@ -12,7 +12,7 @@ export default class ContextMenu {
     this.hide()
     return lively.components.openInWindow(comp).then((w) => {
         lively.setPosition(w, lively.pt(evt.pageX, evt.pageY))
-        if (comp.windowTitle) w.setAttribute("title", comp.windowTitle())
+        if (comp.windowTitle) w.setAttribute("title", "" + comp.windowTitle)
         return comp
     })
   }

@@ -1,8 +1,10 @@
 'use strict';
 
-export default class Sync extends HTMLDivElement {
+import Morph from './Morph.js';
+
+export default class Sync extends Morph {
    initialize() {
-   
+     this.windowTitle = "Github Sync"
 
     var container = $(this.shadowRoot).find(".container")[0];
     lively.html.registerButtons(this)
@@ -10,6 +12,7 @@ export default class Sync extends HTMLDivElement {
     console.log("install..")
   }
   
+
   clearLog(s) {
     // this.shadowRoot.querySelector("#log").innerHTML = "" + s
     var editor= this.shadowRoot.querySelector("#log").editor
