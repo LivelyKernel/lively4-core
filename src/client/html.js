@@ -87,7 +87,7 @@ export default class HTML {
           // image tag
           let src = node.getAttribute('src'),
               // TODO: remove duplicate
-              swAwareBasePath = 'https://lively4/',
+              swAwareBasePath = '', //https://lively4/
               path;
           // TODO: remove duplucated logic
           if (src.match(/([A-Za-z]+):\/\/.+/)) {
