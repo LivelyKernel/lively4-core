@@ -137,7 +137,8 @@ export default class Lively {
       math: lively4url + "/src/external/math.js",
       typo: lively4url + "/src/external/typo.js",
       contextmenu: lively4url + '/src/client/contextmenu.js',
-      customize: lively4url + '/src/client/customize.js'
+      customize: lively4url + '/src/client/customize.js',
+      selecting: lively4url + '/src/client/morphic/selecting.js'
     })[moduleName]
   }
 
@@ -185,6 +186,7 @@ export default class Lively {
 
     this.import("authGithub", lively4url + '/src/client/auth-github.js')
     this.import("authDropbox", lively4url + '/src/client/auth-dropbox.js')
+   
   }
 
   static array(anyList){
@@ -447,6 +449,33 @@ export default class Lively {
       proto =  Object.create(module.prototype || module.default.prototype)
     }
     lively.components.register(template.id, clone, proto);
+  }
+
+  static get eventListeners() {
+    if (!window.livelyEventListeners) {
+      window.livelyEventListeners = []
+    }
+    return window.livelyEventListeners
+  }  
+  
+  static set eventListeners(list) {
+      window.livelyEventListeners = list
+  }  
+  
+  static addEventListener(target, type, listener, domain) {
+    this.eventListeners.push(
+      {target: target, type: type, listener: listener, domain: domain})      
+    target.addEventListener(type, listener)
+  }
+  
+  static removeEventListener(target, type, listener, domain) {
+    this.eventListeners = this.eventListeners.filter(ea => {
+      //  
+      return (!target  || ea.target !== target) 
+        && (!type  || ea.type != type) 
+        && (!listener  || ea.listener !== listener) 
+        && (!domain  || ea.domain != domain);
+    })
   }
 }
 
