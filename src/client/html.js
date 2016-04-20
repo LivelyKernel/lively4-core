@@ -20,6 +20,8 @@ export default class HTML {
     })
   }
   
+  
+  
   // static registerInputs(parent) {
   //   Array.prototype.forEach.call(parent.shadowRoot.querySelectorAll("input"), node => {
   //     var name = node.id
@@ -38,7 +40,6 @@ export default class HTML {
   //       });
   //     })
   // }
-  
   
   static fixLinks(nodes, dir, followPath) {
     if (! followPath) {
@@ -86,7 +87,7 @@ export default class HTML {
           // image tag
           let src = node.getAttribute('src'),
               // TODO: remove duplicate
-              swAwareBasePath = 'https://lively4/',
+              swAwareBasePath = '', //https://lively4/
               path;
           // TODO: remove duplucated logic
           if (src.match(/([A-Za-z]+):\/\/.+/)) {
