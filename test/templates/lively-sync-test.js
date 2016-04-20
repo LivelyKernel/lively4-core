@@ -1,10 +1,11 @@
 import Sync from '../../templates/classes/Sync.js'
 import {expect} from '../../node_modules/chai/chai.js'
 
-describe("Sync Tool", () => {
+describe("Sync Tool",  () => {
   var that
   
-  before("load", async () => {
+  before("load", async function(){
+    // this.timeout(15000);
     that = lively.components.createComponent("lively-sync");
     lively.components.loadByName("lively-sync")
     await new Promise(resolve => {
