@@ -27,15 +27,24 @@ describe('Register Event Listeners', function() {
     lively.eventListeners = [];
     lively.addEventListener(target, type, listener, domain) ;
     expect(lively.eventListeners).property("length").to.be.equal(1);
+    
+    
   });
   
   it('should unregister events of a domain',  () => {
+    var removedCalled = false
     lively.eventListeners = [];
-    lively.addEventListener(target, type, listener, domain);
-    lively.addEventListener(target, type, listener, "domain2");
+    var target1 = document.createElement("div");
+    target1.removeEventListener = () => {
+      removedCalled = true
+    }
+    
+    lively.addEventListener(target1, type, listener, domain);
+    lively.addEventListener(target2, type, listener, "domain2");
     expect(lively.eventListeners).property("length").to.be.equal(2);
     lively.removeEventListener(undefined, undefined, undefined, domain); 
     expect(lively.eventListeners).property("length").to.be.equal(1);
+    expect(removedCalled).to.be.true()
   });
 
   it('should unregister events of a target',  () => {
