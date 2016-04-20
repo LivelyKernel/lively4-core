@@ -31,6 +31,12 @@ class Stream {
     return new Promise((resolve, reject) => {
       let buffer = ''
       let fn = (data) => {
+        if(data[0] === '\x1b') {
+          // Control sequence
+          // Ignore for now
+          return
+        }
+
         if(data == "\x0a" || data == "\x0d") {
           this.fd.off('data', fn)
           resolve(buffer)
@@ -154,7 +160,7 @@ class Shell {
       return await app.default(env, argv)
     } catch(err) {
       this.stdout.write('Error: ' + err + '\r\n')
-      console.log(err)
+      console.error(err)
     }
   }
 
