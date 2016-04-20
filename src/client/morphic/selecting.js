@@ -1,16 +1,11 @@
 
-
 // DEBUG: lively.import("selecting", "../src/client/morphic/selecting.js")
 export default class Selecting {
 
   static load() {
     // use capture to prevent the default behavior...
-    // $("body")[0].addEventListener('mousedown', (evt) => this.handleMouseDown(evt),true)
-    // $("body")[0].addEventListener('mouseup', (evt) => this.handleMouseUp(evt),true)
-    // $("body")[0].addEventListener('click', (evt) => this.handleSelect(evt),true)
-    // $("body")[0].addEventListener('click', (evt) => this.handleSelect(evt),true)
-
     lively.removeEventListener("selecting") // in case of a reload
+    // #UseCase #COP get rid of the explict "selecting" context/domain and replace it with the context of the module "Selecting.js"
     lively.addEventListener("selecting", document.body, 'mousedown', 
       (evt) => this.handleMouseDown(evt), true)
     lively.addEventListener("selecting", document.body, 'mouseup', 
