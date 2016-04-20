@@ -10,12 +10,15 @@ export default class Selecting {
     // $("body")[0].addEventListener('click', (evt) => this.handleSelect(evt),true)
     // $("body")[0].addEventListener('click', (evt) => this.handleSelect(evt),true)
 
-    lively.addEventListener("selecting", document.body, 'mousedown', (evt) => this.handleMouseDown(evt), true)
-    $("body")[0].addEventListener('mouseup', (evt) => this.handleMouseUp(evt),true)
-    $("body")[0].addEventListener('click', (evt) => this.handleSelect(evt),true)
-    $("body")[0].addEventListener('click', (evt) => this.handleSelect(evt),true)
-  
     
+    lively.removeEventListener("selecting") // in case of a reload
+
+    lively.addEventListener("selecting", document.body, 'mousedown', 
+      (evt) => this.handleMouseDown(evt), true)
+    lively.addEventListener("selecting", document.body, 'mouseup', 
+      (evt) => this.handleMouseUp(evt), true)
+    lively.addEventListener("selecting", document.body, 'click', 
+      (evt) => this.handleSelect(evt), true)
   }
 
   static handleSelect(e) {
