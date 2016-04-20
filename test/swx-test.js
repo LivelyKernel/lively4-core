@@ -3,9 +3,6 @@ import {expect} from '../node_modules/chai/chai.js'
 
 describe('SWX Lively4 FS API', function() {
   it('should return all mounts for http://lively4/ magic url',  (done) => {
-    console.log("run swx")
-    
-    
     fetch(document.location.protocol + "//lively4/sys/mounts").then(r => r.text()).then( text => {
       try {
         var mounts = JSON.parse(text)
