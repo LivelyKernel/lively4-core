@@ -517,7 +517,7 @@
       var render = !donotrender
       // Handling directories
       if (isdir) {
-        return
+        return new Promise((resolve) => { resolve("") })
         // return lively.files.statFile(url).then((content) => {
         //   this.sourceContent = content
         //   var html = "<ul>" +

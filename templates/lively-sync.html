@@ -1,4 +1,4 @@
-<template id="lively-sync" data-class="Sync">
+<template id="lively-sync" data-class="Sync" data-title="Sync Github">
     <style data-src="/templates/livelystyle.css"></style>
     <style>
     .container {
@@ -24,10 +24,6 @@
     }
     </style>
     <div class="container">
-      <h2>Sync Github</h2>
-        <a href="https://travis-ci.org/LivelyKernel/lively4-core">
-          <img src='https://travis-ci.org/LivelyKernel/lively4-core.svg'>
-        </a>
         <p>
           <button id="loginButton">not initialize</button> 
           username: <input class="persistent" id="gitusername" value="" />
@@ -35,6 +31,9 @@
         </p>
         <p><button id="syncButton">sync</button> 
           repository: <input id="gitrepository" value="lively4-core" /></p>
+        <a href="https://travis-ci.org/LivelyKernel/lively4-core">
+          <img src='https://travis-ci.org/LivelyKernel/lively4-core.svg'>
+        </a>
         <p>
           <button id="cloneButton">clone</button> 
           url <input class="persistent" id="gitrepositoryurl" value="https://github.com/LivelyKernel/lively4-core.git" /> 
