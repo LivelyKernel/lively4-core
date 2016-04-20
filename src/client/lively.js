@@ -77,9 +77,9 @@ export default class Lively {
           this[moduleName] = module.default || module
         }
 
-        if (lively.components && this[moduleName])
+        if (lively.components && this[moduleName]) {
           lively.components.updatePrototype(this[moduleName].prototype);
-
+        }
         return module.default || module
       }
     })
@@ -89,11 +89,32 @@ export default class Lively {
     if (!path) path = this.defaultPath(moduleName)
     if (!path) throw Error("Could not imoport " + moduleName + ", not path specified!")
 
-    if (this[moduleName])
-      return new Promise((resolve) => { resolve(this[moduleName])})
+    if (this[moduleName]) {
+      return new Promise((resolve) => { resolve(this[moduleName])});
+    }
     return System.import(path).then( module => {
-      console.log("lively: load "+ moduleName)
-      this[moduleName] = module.default || module
+      console.log("lively: load "+ moduleName);
+      this[moduleName] = module.default || module;
+    });
+  }
+  
+  static loadJavaScriptThroughDOM(name, src, force) {
+    return new Promise((resolve) => {
+      var mochaNode = document.querySelector("#mochaScript");
+      if (mochaNode) { 
+        mochaNode.remove();
+      }
+      var script = document.createElement("script");
+      script.id="mochaScript";
+      script.type="text/javascript";
+      if (force) {
+        src += + "?" + Date.now();
+      }
+      script.src= src;
+      script.onload = function() {
+        resolve();
+      };
+      document.head.appendChild(script);
     })
   }
 
@@ -313,8 +334,6 @@ export default class Lively {
       lively.notify("unloading Lively is not supported yet! Please reload page....");
   }
 
-
-
   static updateTemplate(html) {
     var tagName = components.reloadComponent(html);
     if (!tagName) return;
@@ -344,18 +363,17 @@ export default class Lively {
 
   static showPoint(point) {
     var comp = document.createElement("div")
-    comp.style['pointer-events'] = "none"
-    comp.style.width = "5px"
-    comp.style.height = "5px"
-    comp.style.padding = "1px"
-    comp.style.backgroundColor = "red"
-    document.body.appendChild(comp)
-    lively.setPosition(comp, point)
-    comp.setAttribute("data-is-meta", "true")
+    comp.style['pointer-events'] = "none";
+    comp.style.width = "5px";
+    comp.style.height = "5px";
+    comp.style.padding = "1px";
+    comp.style.backgroundColor = "red";
+    document.body.appendChild(comp);
+    lively.setPosition(comp, point);
+    comp.setAttribute("data-is-meta", "true");
 
-    setTimeout( () => $(comp).remove(), 3000)
+    setTimeout( () => $(comp).remove(), 3000);
     // ea.getBoundingClientRect
-
   }
 
   static showSource(object, evt) {
