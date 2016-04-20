@@ -18,7 +18,7 @@ module.exports = function(config) {
     files: [
       'src/external/system.src.js',
       'src/external/babel-browser.js',
-      'src/vendor/regenerator-runtime.js',
+      'vendor/regenerator-runtime.js',
       {pattern: 'node_modules/chai/chai.js', included: false},
       {pattern: 'node_modules/mocha/mocha.js', included: false},
       {pattern: 'src/**/*.js*', included: false},
