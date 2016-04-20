@@ -5,9 +5,17 @@ export default class Selecting {
 
   static load() {
     // use capture to prevent the default behavior...
-    $("body")[0].addEventListener('mousedown', (evt) => this.handleMouseDown(evt),true)
+    // $("body")[0].addEventListener('mousedown', (evt) => this.handleMouseDown(evt),true)
+    // $("body")[0].addEventListener('mouseup', (evt) => this.handleMouseUp(evt),true)
+    // $("body")[0].addEventListener('click', (evt) => this.handleSelect(evt),true)
+    // $("body")[0].addEventListener('click', (evt) => this.handleSelect(evt),true)
+
+    lively.addEventListener("selecting", document.body, 'mousedown', (evt) => this.handleMouseDown(evt), true)
     $("body")[0].addEventListener('mouseup', (evt) => this.handleMouseUp(evt),true)
     $("body")[0].addEventListener('click', (evt) => this.handleSelect(evt),true)
+    $("body")[0].addEventListener('click', (evt) => this.handleSelect(evt),true)
+  
+    
   }
 
   static handleSelect(e) {

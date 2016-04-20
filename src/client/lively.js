@@ -463,23 +463,23 @@ export default class Lively {
   }  
   
   // Registration and deregistration of eventlisteners for run-time programming...
-  static addEventListener(target, type, listener, domain) {
+  static addEventListener(domain, target, type, listener, options) {
     this.eventListeners.push(
       {target: target, type: type, listener: listener, domain: domain})      
-    target.addEventListener(type, listener)
+    target.addEventListener(type, listener, options)
   }
   
-  static removeEventListener(target, type, listener, domain) {
+  static removeEventListener(domain, target, type, listener) {
     this.eventListeners = this.eventListeners.filter(ea => {
-      if ((!target  || ea.target !== target) 
-        && (!type  || ea.type != type) 
-        && (!listener  || ea.listener !== listener) 
-        && (!domain  || ea.domain != domain)) {
-        return true    
-      } else {
+      if ((!target      || (ea.target   === target)) 
+          && (!type     || (ea.type     ==  type)) 
+          && (!listener || (ea.listener === listener)) 
+          && (!domain   || (ea.domain   ==  domain))) {
         // actually removing the event listener
         ea.target.removeEventListener(target, type, listener)
-        return false
+        return false   
+      } else {
+        return true
       }
     })
   }

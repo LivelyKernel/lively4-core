@@ -25,7 +25,7 @@ describe('Register Event Listeners', function() {
 
   it('should register events when adding events',  () => {
     lively.eventListeners = [];
-    lively.addEventListener(target, type, listener, domain) ;
+    lively.addEventListener(domain, target, type, listener) ;
     expect(lively.eventListeners).property("length").to.be.equal(1);
     
     
@@ -39,46 +39,53 @@ describe('Register Event Listeners', function() {
       removedCalled = true
     }
     
-    lively.addEventListener(target1, type, listener, domain);
-    lively.addEventListener(target2, type, listener, "domain2");
+    lively.addEventListener(domain, target1, type, listener);
+    lively.addEventListener("domain2", target2, type, listener);
     expect(lively.eventListeners).property("length").to.be.equal(2);
-    lively.removeEventListener(undefined, undefined, undefined, domain); 
+    lively.removeEventListener(domain, undefined, undefined, undefined); 
     expect(lively.eventListeners).property("length").to.be.equal(1);
     expect(removedCalled).to.be.true()
   });
 
   it('should unregister events of a target',  () => {
     lively.eventListeners = [];
-    lively.addEventListener(target, type, listener, domain);
-    lively.addEventListener(target2, type, listener, domain);
+    lively.addEventListener(domain, target, type, listener)
+    lively.addEventListener(domain, target2, type, listener);
     expect(lively.eventListeners).property("length").to.be.equal(2);
-    lively.removeEventListener(target2, undefined, undefined, undefined); 
+    lively.removeEventListener(undefined, target2, undefined, undefined); 
     expect(lively.eventListeners).property("length").to.be.equal(1);
   });
   
     
   it('should unregister events of a type',  () => {
     lively.eventListeners = [];
-    lively.addEventListener(target, type, listener, domain);
-    lively.addEventListener(target, "mousedown", listener, domain);
+    lively.addEventListener(domain, target, type, listener);
+    lively.addEventListener(domain, target, "mousedown", listener);
     expect(lively.eventListeners).property("length").to.be.equal(2);
-    lively.removeEventListener(undefined, "click", undefined, undefined); 
+    lively.removeEventListener(undefined, undefined, "click", undefined); 
     expect(lively.eventListeners).property("length").to.be.equal(1);
   });
 
   it('should unregister events of a listener',  () => {
     lively.eventListeners = [];
-    lively.addEventListener(target, type, listener, domain);
-    lively.addEventListener(target, type, listener2, domain);
+    lively.addEventListener(domain, target, type, listener);
+    lively.addEventListener(domain, target, type, listener2);
     expect(lively.eventListeners).property("length").to.be.equal(2);
-    lively.removeEventListener(undefined, undefined, listener2, undefined); 
+    lively.removeEventListener(undefined, undefined, undefined, listener2); 
     expect(lively.eventListeners).property("length").to.be.equal(1);
   });
 
-    
-    // lively.addEventListener(target, type, listener, domain) 
-    
-    // lively.removeEventListener(target, undefined, undefined, domain)
-    // expect(lively.eventListeners.filter(ea => ea.domain == domain)).to.be.equal([])
+  it('should unregister events of a listener and domain',  () => {
+    lively.eventListeners = [];
+    lively.addEventListener(domain, target, type, listener);
+    lively.addEventListener(domain, target, type, listener2);
+    lively.addEventListener(domain, target, "mousedown", listener2);
+    expect(lively.eventListeners).property("length").to.be.equal(3);
+    debugger
+    lively.removeEventListener(domain, undefined, undefined, listener2); 
+    expect(lively.eventListeners).property("length").to.be.equal(1);
+  });
+
+
   
 });
