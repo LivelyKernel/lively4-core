@@ -10,9 +10,7 @@ export default class Selecting {
     // $("body")[0].addEventListener('click', (evt) => this.handleSelect(evt),true)
     // $("body")[0].addEventListener('click', (evt) => this.handleSelect(evt),true)
 
-    
     lively.removeEventListener("selecting") // in case of a reload
-
     lively.addEventListener("selecting", document.body, 'mousedown', 
       (evt) => this.handleMouseDown(evt), true)
     lively.addEventListener("selecting", document.body, 'mouseup', 
@@ -24,10 +22,9 @@ export default class Selecting {
   static handleSelect(e) {
     if (e.ctrlKey || e.metaKey) {
       if (e.target.getAttribute("data-is-meta") === "true") {
-
           return
       }
-      console.log("click " + e.path[0])
+      console.log("click" + e.path[0])
 
       this.onMagnify(e);
       e.stopPropagation();
