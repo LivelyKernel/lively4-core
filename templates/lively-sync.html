@@ -22,6 +22,12 @@
       width: 95%;
       margin-bottom: 10px;
     }
+    
+    #travisLink {
+      float: right;
+      margin-right: 30px;
+    }
+    
     </style>
     <div class="container">
         <p>
@@ -31,9 +37,7 @@
         </p>
         <p><button id="syncButton">sync</button> 
           repository: <input id="gitrepository" value="lively4-core" />
-          <a id="travisLink" href="https://travis-ci.org/LivelyKernel/lively4-core">
-            <img src='https://travis-ci.org/LivelyKernel/lively4-core.svg'>
-          </a>  
+         
         </p>
       
         <p>
@@ -48,6 +52,9 @@
           <button id="resolveButton">resolve</button>
           <button id="changelogButton">changelog</button>
           <button id="npmInstallButton">npm install</button>
+           <a id="travisLink" href="https://travis-ci.org/LivelyKernel/lively4-core">
+            <img src='https://travis-ci.org/LivelyKernel/lively4-core.svg'>
+          </a>  
         </p>
         <juicy-ace-editor id="log"></juicy-ace-editor>  
     </div>

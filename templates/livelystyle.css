@@ -16,3 +16,10 @@ button:hover {
 h1,h2,h3,h4 {
   color: #2B65EC;
 }
+
+input {
+  background: #EEEEEE;  
+  border: 0;
+  padding: 2px;
+  border-radius: 2px;
+}
