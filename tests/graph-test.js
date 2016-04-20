@@ -47,4 +47,23 @@ describe('graph', function() {
     });
   });
 
+  describe("reduce", () => {
+
+    it("works", () => {
+      var depGraph = {a: ["b", "c"],b: ["c"]},
+          result = graph.reduce((akk, ea, i) => akk + ` ${ea} ${i}`, depGraph, "a", "");
+      expect(result).to.equal(" a 0 b 1 c 2");
+    });
+
+  });
+
+  describe("sort", () => {
+
+    it("sorts into groups", () => {
+      var depGraph = {a: ["b", "c"], b: ["c"], c: ["b"]};
+      expect(graph.sortByReference(depGraph, "a")).to.deep.equal([["c"], ["b"], ["a"]]);
+    })
+
+  });
+
 });
