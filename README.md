@@ -1,11 +1,11 @@
 [![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
 
 
-Core functionality for Lively4 module management.
+Core functionality for [Lively4](https://github.com/LivelyKernel/Lively4/wiki/) module management.
 
 # Example Lively4 Sites
 
-- [https://livelykernel.github.io/lively4-core/draft/start.html?load=/README.md](https://livelykernel.github.io/lively4-core/draft/start.html?load=/README.md)
+- https://livelykernel.github.io/lively4-core/draft/start.html?load=/README.md
 	- HEAD of Lively4 core repository
 	- served by github.io
 	- no CORS (not usable by lively4 chromeplugin as backend)
@@ -17,7 +17,7 @@ Core functionality for Lively4 module management.
 	- CORS support, default server for lively4 chrome extension
 	- directly edit source code (not version and will end in file system, but not githbub yet)
 
-- [Lively4 Journal](https://livelykernel.github.io/lively4-core/draft/start.html?load=/README.md) 
+- [Lively4 Journal](https://lively-kernel.org/lively4/lively4-core/start.html?load=https://lively-kernel.org/lively4/Lively4.wiki/Journal.md) or see the [same in Github Wiki]([https://github.com/LivelyKernel/Lively4/wiki/Journal) 
 
 # Chrome Extension
 
