@@ -89,14 +89,16 @@ export default class ComponentLoader {
 
       // load any unknown elements, which this component might introduce
       ComponentLoader.loadUnresolved(this, true).then((args) => {
-        // call the initialize script, if it exists
-        if (typeof this.initialize === "function") {
-          this.initialize();
-        }
+        
+        lively.fillTemplateStyles(this.shadowRoot).then(() => {
+          // call the initialize script, if it exists
+          if (typeof this.initialize === "function") {
+            this.initialize();
+          }
+          this.dispatchEvent(new Event("created"));  
+        })
 
-
-
-        this.dispatchEvent(new Event("created"));
+        
       });
     }
     // don't store it just in a lexical scope, but make it available for runtime development

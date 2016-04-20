@@ -119,18 +119,17 @@ export default class Lively {
   }
   
   static fillTemplateStyles(root) {
-     // there seems to be no <link ..> tag allowed to reference css inside of templates
-     
+     // there seems to be no <link ..> tag allowed to reference css inside of templates #Jens
+     var promises = []
      _.each(root.querySelectorAll("style"), ea => {
         var src = ea.getAttribute("data-src")
         if (src) {
-          fetch(lively4url + src).then(r => r.text()).then(css => {
+          promises.push(fetch(lively4url + src).then(r => r.text()).then(css => {
             ea.innerHTML = css
-          })    
+          }))    
         }
      })
-     
-      
+     return Promise.all(promises)
   }
 
   static defaultPath(moduleName) {
