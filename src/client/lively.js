@@ -117,6 +117,21 @@ export default class Lively {
       document.head.appendChild(script);
     })
   }
+  
+  static fillTemplateStyles(root) {
+     // there seems to be no <link ..> tag allowed to reference css inside of templates
+     
+     _.each(root.querySelectorAll("style"), ea => {
+        var src = ea.getAttribute("data-src")
+        if (src) {
+          fetch(lively4url + src).then(r => r.text()).then(css => {
+            ea.innerHTML = css
+          })    
+        }
+     })
+     
+      
+  }
 
   static defaultPath(moduleName) {
     return ({

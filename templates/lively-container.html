@@ -1,5 +1,6 @@
-<template id="lively-container">
-    <style>
+<template id="lively-container" data-class="Container">
+     <style data-src="/templates/livelystyle.css"></style>
+     <style>
       .edit {
         visibility: hidden;
         display: none;
@@ -98,23 +99,7 @@
         flex-direction: column;
       }
       
-      button {
-        padding: 2;
-        border: 1px solid  #d5d5d5;
-        background: linear-gradient(#fcfcfc, #eee);
-        border-radius: 2px;
-        font-weight: bold;
-        font-size: 13px;
-        color: #404040 ;
-      }
-
-      button:hover {
-        background: linear-gradient(#eee, #ddd);
-      }
-
-      h1,h2,h3,h4 {
-        color: #2B65EC;
-      }
+     
       
       #delete {
         color: #b33630;
@@ -158,6 +143,14 @@
     </script>
     <script type="lively4script" data-name="initialize">
     () => {
+      // this.shadowRoot.querySelector("livelyStyle").innerHTML = '{color: red}'
+      
+      // there seems to be no <link ..> tag allowed to reference css inside of templates
+      // lively.files.loadFile(lively4url + "/templates/livelystyle.css").then(css => {
+      //   this.shadowRoot.querySelector("#livelyStyle").innerHTML = css
+      // })
+      lively.fillTemplateStyles(this.shadowRoot)
+
       console.log("Initialize Container")
       if (this.useBrowserHistory()) {
         window.onpopstate = (event) => {

@@ -2,6 +2,8 @@
 
 export default class Sync extends HTMLDivElement {
    initialize() {
+    lively.fillTemplateStyles(this.shadowRoot)
+
     var container = $(this.shadowRoot).find(".container")[0];
     lively.html.registerButtons(this)
     this.updateLoginStatus()
