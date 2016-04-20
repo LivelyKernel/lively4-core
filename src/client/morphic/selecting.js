@@ -40,7 +40,6 @@ export default class Selecting {
       console.log("mouse up " + e.target.tagName)
       e.stopPropagation()
       e.preventDefault();
-
     } else {
       // hide halos if the user clicks somewhere else
       if (window.that && !$(e.target).is("lively-halos")) {
@@ -54,17 +53,14 @@ export default class Selecting {
     if (e.shiftKey)
         grabTarget = e.path[0]
     var that = window.that;
-    var $that = $(that);
-    if (that && this.areHalosActive() && (grabTarget === that || $.contains(that, grabTarget))) {
-      parent = $that.parent();
-      if (!parent.is("html")) {
-        grabTarget = parent.get(0);
-      }
+    console.log("onMagnify " + grabTarget + " that: " + that)
+    if (that && this.areHalosActive()) {
+      var parents = _.reject(e.path, ea =>  ea instanceof ShadowRoot )
+      var index = parents.indexOf(that)
+      grabTarget = parents[index + 1] || grabTarget
     }
-
     // if there was no suitable parent, cycle back to the clicked element itself
     window.that = grabTarget;
-
     this.showHalos(grabTarget, e.path)
   }
 

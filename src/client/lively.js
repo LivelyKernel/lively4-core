@@ -476,7 +476,7 @@ export default class Lively {
           && (!listener || (ea.listener === listener)) 
           && (!domain   || (ea.domain   ==  domain))) {
         // actually removing the event listener
-        console.log("removeEventListener", ea.target, ea.type, ea.listener)
+        // console.log("removeEventListener", ea.target, ea.type, ea.listener)
         ea.target.removeEventListener(ea.type, ea.listener, ea.options)
         return false   
       } else {
