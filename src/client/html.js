@@ -21,6 +21,7 @@ export default class HTML {
   }
   
   
+  
   // static registerInputs(parent) {
   //   Array.prototype.forEach.call(parent.shadowRoot.querySelectorAll("input"), node => {
   //     var name = node.id
