@@ -51,7 +51,7 @@
       color: #555555;
     }
 
-    #loginButton, #cloneButton, #branchButton {
+    #loginButton, #cloneButton, #branchButton, #mergeButton, #commitButton {
       width: 60px;
     }
     
@@ -68,10 +68,16 @@
     }
 
     #deleteButton:hover {
-      background:  linear-gradient(#dc5f59, #b33630);;
+      background:  linear-gradient(#dc5f59, #b33630);
       color: white;
-      border: 0px
+      border: 0px;
     }
+
+    #deleteButton:disabled {
+      background: linear-gradient(#fefefe, #fcfcfc);
+      color: #cccccc;
+    }
+
 
     </style>
     <div class="container">
@@ -96,6 +102,7 @@
           <input class="persistent branch" id="gitrepositorybranch" value=""  list="gitbranches"/>
           <datalist id="gitbranches" ></datalist> 
           <button class="repo" id="branchButton">switch</button> 
+          <button class="repo" id="mergeButton">merge</button> 
         </p>
         <p class="fill">
           <label class="medium">message</label>
@@ -110,7 +117,7 @@
           <button class="repo" id="resolveButton">resolve</button>
           <button class="repo" id="changelogButton">changelog</button>
           <button class="repo" id="npmInstallButton">npm install</button>
-          <button class="edit" id="deleteButton">delete</button>
+          <button class="repo" id="deleteButton">delete</button>
 
            <a id="travisLink" href="https://travis-ci.org/LivelyKernel/lively4-core">
             <img src='https://travis-ci.org/LivelyKernel/lively4-core.svg'>

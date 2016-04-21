@@ -155,12 +155,22 @@ export default class Sync extends Morph {
   }
   
   onCommitButton() {
-   this.gitControl("commit");
+    return lively.notify("Commit is not implemented yet")  
+    this.gitControl("commit");
   }
   
   onDeleteButton() {
     if (window.confirm("Do you want to delete " + this.q("#gitrepository").value + " repository?")) {
       this.gitControl("delete");
+    }
+  }
+  
+  onMergeButton() {
+    if (window.confirm("Do you want to merge "
+      + this.q("#gitrepositorybranch").value 
+      +" into " + this.q("#gitrepository").value 
+      + " repository?")) {
+      this.gitControl("merge");
     }
   }
   
@@ -214,7 +224,7 @@ export default class Sync extends Morph {
     var currentRegex = /^ *\*/
     var currentBranch = _.detect(branches, ea => ea.match(currentRegex))
       .replace(currentRegex,"")
-     this.shadowRoot.querySelector("#gitrepositorybranch").value = currentBranch
+     this.q("#gitrepositorybranch").value = currentBranch
     
     var remoteRegEx = /^remotes\/origin\//
     branches = branches
@@ -222,17 +232,27 @@ export default class Sync extends Morph {
       .filter(ea => ea.match(remoteRegEx))
       .filter(ea => ! ea.match("HEAD "))
       .map(ea => ea.replace(remoteRegEx,""))
-    this.shadowRoot.querySelector("#gitbranches").innerHTML = 
-      branches.map(ea => "<option>" + ea).join("\n")
+    this.q("#gitbranches").innerHTML = branches.map(ea => "<option>" + ea).join("\n")
     console.log("branches: " + branches)
   }
 
-  async updateContextSensitiveButtons() {
-    var value = this.shadowRoot.querySelector("#gitrepository").value
-    var list = await this.getGitRepositoryNames()
-    var exists = _.include(list, value)
+  get repositoryBlacklist() {
+    return ["lively4-core", "lively4-stable"]
+  }
+  
 
+  async updateContextSensitiveButtons() {
+    var repository = this.q("#gitrepository").value
+    var list = await this.getGitRepositoryNames()
+    var exists = _.include(list, repository)
+  
+    
+    
+    console.log("delete " + this.q("#deleteButton").disabled)
+  
+  
     if (exists) {
+      
       this.updateUpstreamURL()
       this.updateBranchesList() 
     }
@@ -249,5 +269,7 @@ export default class Sync extends Morph {
     _.each(this.shadowRoot.querySelectorAll(".login"), ea => 
       ea.disabled= this.loggedin)
 
+    if (_.include(this.repositoryBlacklist, repository))
+      this.q("#deleteButton").disabled = true
   }
 }
