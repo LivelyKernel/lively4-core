@@ -15,6 +15,7 @@ export default class Selecting {
   }
 
   static handleSelect(e) {
+    
     if (e.ctrlKey || e.metaKey) {
       if (e.target.getAttribute("data-is-meta") === "true") {
           return
@@ -28,6 +29,7 @@ export default class Selecting {
   }
 
   static handleMouseDown(e) {
+    // lively.showElement(e.path[0])
     if (e.ctrlKey || e.metaKey) {
       console.log("mouse down " + e.target.tagName)
       e.stopPropagation()
