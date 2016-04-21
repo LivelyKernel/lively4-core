@@ -148,8 +148,10 @@ export default class Expose {
   }
   
   static bodyKeyDown(e) {
+    
     // cmd+E
-    if (e.keyCode === 69 && e.metaKey) {
+    if (e.keyCode === 69 && (e.metaKey || e.ctrlKey)) {
+    console.log("expose!")
       Expose.toggle();
     }
   }
