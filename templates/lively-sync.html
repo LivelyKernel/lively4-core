@@ -37,8 +37,7 @@
     
     #log {
       flex: 1;
-      width: 95%;
-      margin-bottom: 10px;
+      width: 100%;
     }
     
     #travisLink {
@@ -67,14 +66,13 @@
           <input class="persistent clone" id="gitrepositoryurl" value="https://github.com/LivelyKernel/lively4-core.git" /> 
           <button class="clone" id="cloneButton">clone</button> 
         </p>
-        <p  class="fill">
-          <label>repository</label>
+        <p class="fill">
+          <label>local name</label>
           <input class="branch" id="gitrepository" value="lively4-core" list="gitrepositories" />
           <datalist id="gitrepositories" >
           </datalist> 
           <label>branch</label>
           <input class="persistent branch" id="gitrepositorybranch" value="" />
-
         </p>
         <p>
           <button class="repo" id="syncButton">sync</button> 
