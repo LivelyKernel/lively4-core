@@ -47,7 +47,7 @@ export default class Sync extends Morph {
     
     this.updateContextSensitiveButtons()
     this.updateRepositoryList()
-  
+    this.updateBranchesList() 
   }
 
   login() {
@@ -77,7 +77,7 @@ export default class Sync extends Morph {
       "gitemail": this.shadowRoot.querySelector("#gitemail").value,
       "gitrepositoryurl": this.shadowRoot.querySelector("#gitrepositoryurl").value,
 	    "gitrepository": this.shadowRoot.querySelector("#gitrepository").value,
-	    "gitrepositorybranch": this.shadowRoot.querySelector("#gitrepositorybranch").value
+	    "gitrepositorybranch": this.shadowRoot.querySelector("#gitrepositorybranch").value,
     })
   }
 
@@ -105,7 +105,11 @@ export default class Sync extends Morph {
       this.login()
     }
   }
-  
+
+  onBranchButton() {
+    this.gitControl("branch")  
+  }
+
   onStatusButton() {
     this.gitControl("status")  
   }
@@ -180,12 +184,34 @@ export default class Sync extends Morph {
       list.map(ea => "<option>" + ea).join("\n")
   }
 
+  async updateBranchesList() {
+    var branches = await this.gitControl("branches")
+    branches = branches.split("\n")
+    var currentRegex = /^ *\*/
+    var currentBranch = _.detect(branches, ea => ea.match(currentRegex))
+      .replace(currentRegex,"")
+     this.shadowRoot.querySelector("#gitrepositorybranch").value = currentBranch
+    
+    var remoteRegEx = /^remotes\/origin\//
+    branches = branches
+      .map(ea => ea.replace(/^\*? */,"")) // trim
+      .filter(ea => ea.match(remoteRegEx))
+      .filter(ea => ! ea.match("HEAD "))
+      .map(ea => ea.replace(remoteRegEx,""))
+    this.shadowRoot.querySelector("#gitbranches").innerHTML = 
+      branches.map(ea => "<option>" + ea).join("\n")
+    console.log("branches: " + branches)
+  }
+
   async updateContextSensitiveButtons() {
     var value = this.shadowRoot.querySelector("#gitrepository").value
     var list = await this.getGitRepositoryNames()
     var exists = _.include(list, value)
 
-    if (exists) this.updateUpstreamURL()
+    if (exists) {
+      this.updateUpstreamURL()
+      this.updateBranchesList() 
+    }
 
     _.each(this.shadowRoot.querySelectorAll(".repo"), ea => 
       ea.disabled= !this.loggedin || !exists)

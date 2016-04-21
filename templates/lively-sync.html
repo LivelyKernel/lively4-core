@@ -54,11 +54,11 @@
     </style>
     <div class="container">
         <p class="fill">
-          <button id="loginButton">not initialize</button> 
           <label>username</label> 
           <input class="persistent login" id="gitusername" value="" />
           <label>email</label>
           <input class="persistent login" id="gitemail" value="" />
+           <button id="loginButton">not initialize</button> 
         </p>
 
         <p class="fill">
@@ -69,10 +69,11 @@
         <p class="fill">
           <label>local name</label>
           <input class="branch" id="gitrepository" value="lively4-core" list="gitrepositories" />
-          <datalist id="gitrepositories" >
-          </datalist> 
+          <datalist id="gitrepositories" ></datalist> 
           <label>branch</label>
-          <input class="persistent branch" id="gitrepositorybranch" value="" />
+          <input class="persistent branch" id="gitrepositorybranch" value=""  list="gitbranches"/>
+          <datalist id="gitbranches" ></datalist> 
+          <button class="repo" id="branchButton">switch</button> 
         </p>
         <p>
           <button class="repo" id="syncButton">sync</button> 
