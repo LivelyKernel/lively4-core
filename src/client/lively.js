@@ -283,18 +283,20 @@ export default class Lively {
         }
       });
   }
-
   static notify(title, text, timeout, cb) {
+    if (!this.notifications) this.notifications = [];
+    this.notifications.push({title: title, text: text, cb: cb, time: Date.now()})
+  
     // lively.notify("hello","",3)
     // just in case...
     if (Notification.permission !== "granted") Notification.requestPermission();
 
     var time = Date.now()
-    if (lively.lastNotificationTime && (time - lively.lastNotificationTime) < 500) {
+    if(this.notifications.length > 10 && 
+      (Date.now() - this.notifications[10].time < 1000)) {
       return console.log("SILENT NOTE: " + title  + " (" + text + ")");
     }
 
-    lively.lastNotificationTime = time
     console.log("NOTE: " + title  + " (" + text + ")");
 
 

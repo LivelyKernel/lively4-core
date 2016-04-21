@@ -159,9 +159,18 @@ export default class Sync extends Morph {
     var json = await lively.files.statFile(lively4url +'/../').then( JSON.parse)
     return json.contents.filter(ea => ea.type == "directory").map(ea => ea.name)
   }
+
+  async updateUpstreamURL() {
+    var url = await that.gitControl("remoteurl")
+    url = url.replace(/\n/,"")
+    this.shadowRoot.querySelector("#gitrepositoryurl").value = url
+  }
+  
+  // that.updateUpstreamURL
   
   async onGitrepositoryChanged(value) {
     this.updateContextSensitiveButtons()
+    this.updateUpstreamURL()
   }
   
 // that.shadowRoot.querySelector("#gitrepositories").innerHTML = "<option>bla" 
@@ -188,10 +197,6 @@ export default class Sync extends Morph {
       
     _.each(this.shadowRoot.querySelectorAll(".login"), ea => 
       ea.disabled= this.loggedin)
-    
-    // _.each(this.shadowRoot.querySelectorAll(".repo"), ea => ea.disabled= !this.login)
-    // _.each(this.shadowRoot.querySelectorAll(".login"), ea => ea.disabled= this.login)
 
-    
   }
 }
