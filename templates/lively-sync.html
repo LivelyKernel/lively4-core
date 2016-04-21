@@ -42,7 +42,7 @@
     
     #travisLink {
       float: right;
-      margin-right: 30px;
+      margin-right: 5px;
     }
     label {
       padding: 3px;
@@ -61,6 +61,16 @@
 
     label.small {
       width: 40px;
+    }
+    
+    #deleteButton {
+      color: #b33630;
+    }
+
+    #deleteButton:hover {
+      background:  linear-gradient(#dc5f59, #b33630);;
+      color: white;
+      border: 0px
     }
 
     </style>
@@ -87,6 +97,12 @@
           <datalist id="gitbranches" ></datalist> 
           <button class="repo" id="branchButton">switch</button> 
         </p>
+        <p class="fill">
+          <label class="medium">message</label>
+          <input class="repo" id="gitcommitmessage" value="" />
+          <button class="repo" id="commitButton">commit</button> 
+        </p>
+        
         <p>
           <button class="repo" id="syncButton">sync</button> 
           <button class="repo" id="statusButton">status</button> 
@@ -94,6 +110,8 @@
           <button class="repo" id="resolveButton">resolve</button>
           <button class="repo" id="changelogButton">changelog</button>
           <button class="repo" id="npmInstallButton">npm install</button>
+          <button class="edit" id="deleteButton">delete</button>
+
            <a id="travisLink" href="https://travis-ci.org/LivelyKernel/lively4-core">
             <img src='https://travis-ci.org/LivelyKernel/lively4-core.svg'>
           </a>  
