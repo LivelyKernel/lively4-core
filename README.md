@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
 
+Hello from Github.io!
 
 Core functionality for [Lively4](https://github.com/LivelyKernel/Lively4/wiki/) module management.
 
