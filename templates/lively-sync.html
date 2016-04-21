@@ -10,8 +10,14 @@
     }
     p {
       margin-top: 5px;
-      margin-bottom: 5px;      
+      margin-bottom: 5px;
     }
+    
+    input {
+      margin: 2px;
+      
+    }
+    
     
     #gitrepositoryurl {
       width: 300px; 
@@ -28,6 +34,8 @@
       margin-right: 30px;
     }
     
+    
+    
     </style>
     <div class="container">
         <p>
@@ -36,15 +44,22 @@
           email: <input class="persistent" id="gitemail" value="" />
         </p>
         <p><button id="syncButton">sync</button> 
-          repository: <input id="gitrepository" value="lively4-core" />
-         
+          <button id="cloneButton">clone</button> 
+          
+          
         </p>
       
         <p>
-          <button id="cloneButton">clone</button> 
-          url <input class="persistent" id="gitrepositoryurl" value="https://github.com/LivelyKernel/lively4-core.git" /> 
-          <!-- branch <input class="persistent" id="gitrepositorybranch" value="gh-pages" /> -->
-          into: <input class="persistent" id="gitrepositorytarget" value="lively4-test" />
+          <label>url</label>
+          <input class="persistent" id="gitrepositoryurl" value="https://github.com/LivelyKernel/lively4-core.git" /> <br/>
+          <label>repository</label><input id="gitrepository" value="lively4-core" />
+
+          <!--         
+          <label>into:</label>
+          <input class="persistent" id="gitrepositorytarget" value="lively4-test" />
+          -->
+          <label>branch</label>
+          <input class="persistent" id="gitrepositorybranch" value="gh-pages" />
         </p>
         <p>
           <button id="statusButton">status</button> 
@@ -61,3 +76,6 @@
 </template>
 
 <script class="registrationScript">lively.registerTemplate()</script>
+
+
+

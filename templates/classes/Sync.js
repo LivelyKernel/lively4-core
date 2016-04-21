@@ -72,7 +72,8 @@ export default class Sync extends Morph {
       "gitpassword":  await lively.focalStorage.getItem("githubToken"), 
       "gitemail": this.shadowRoot.querySelector("#gitemail").value,
       "gitrepositoryurl": this.shadowRoot.querySelector("#gitrepositoryurl").value,
-	    "gitrepositorytarget": this.shadowRoot.querySelector("#gitrepositorytarget").value,
+	    "gitrepository": this.shadowRoot.querySelector("#gitrepository").value,
+	    "gitrepositorybranch": this.shadowRoot.querySelector("#gitrepositorybranch").value
     })
   }
 
