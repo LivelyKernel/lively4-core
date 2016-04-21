@@ -81,14 +81,17 @@ export default class Sync extends Morph {
     })
   }
 
-  async gitControl(cmd) {
+  async gitControl(cmd, eachCB) {
     this.clearLog()
     var serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1]
     return new Promise(async (resolve) => {
       lively.files.fetchChunks(fetch(serverURL +"/_git/" + cmd, {
               headers: await this.getHeaders()
             }), (eaChunk) => {
-          this.log("" + eaChunk)
+          if (eachCB) 
+            eachCB(eaChunk)
+          else
+            this.log("" + eaChunk)
         }, resolve)
     })
   }
@@ -185,7 +188,7 @@ export default class Sync extends Morph {
   }
 
   async updateBranchesList() {
-    var branches = await this.gitControl("branches")
+    var branches = await this.gitControl("branches", ()=>{})
     branches = branches.split("\n")
     var currentRegex = /^ *\*/
     var currentBranch = _.detect(branches, ea => ea.match(currentRegex))

@@ -51,26 +51,38 @@
       color: #555555;
     }
 
+    #loginButton, #cloneButton, #branchButton {
+      width: 60px;
+    }
+    
+    label.medium {
+      width: 70px;
+    }
+
+    label.small {
+      width: 40px;
+    }
+
     </style>
     <div class="container">
         <p class="fill">
-          <label>username</label> 
+          <label class="medium">username</label> 
           <input class="persistent login" id="gitusername" value="" />
-          <label>email</label>
+          <label class="small">email</label>
           <input class="persistent login" id="gitemail" value="" />
-           <button id="loginButton">not initialize</button> 
+          <button id="loginButton">not initialize</button> 
         </p>
 
         <p class="fill">
-          <label>upstream</label>
+          <label class="medium">upstream</label>
           <input class="persistent clone" id="gitrepositoryurl" value="https://github.com/LivelyKernel/lively4-core.git" /> 
           <button class="clone" id="cloneButton">clone</button> 
         </p>
         <p class="fill">
-          <label>local name</label>
+          <label class="medium">local name</label>
           <input class="branch" id="gitrepository" value="lively4-core" list="gitrepositories" />
           <datalist id="gitrepositories" ></datalist> 
-          <label>branch</label>
+          <label class="small">branch</label>
           <input class="persistent branch" id="gitrepositorybranch" value=""  list="gitbranches"/>
           <datalist id="gitbranches" ></datalist> 
           <button class="repo" id="branchButton">switch</button> 
