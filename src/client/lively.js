@@ -17,6 +17,8 @@ import inspector from './inspector.js';
 import keys from './keys.js';
 import components from './morphic/component-loader.js';
 
+import expose from './expose.js';
+
 /* expose external modules */
 import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
@@ -42,7 +44,8 @@ var exportmodules = [
   "components",
   "inspector",
   "color",
-  "focalStorage"];
+  "focalStorage",
+  "expose"];
 
 
 
