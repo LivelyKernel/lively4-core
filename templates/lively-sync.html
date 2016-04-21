@@ -6,18 +6,30 @@
         height: 100%;
         display: flex;
         flex-direction: column;
-        padding-left: 20px;
+        padding: 0;
+        margin: 0;
     }
     p {
+      padding-left: 5px;
+      padding-right: 5px;
       margin-top: 5px;
       margin-bottom: 5px;
     }
     
-    input {
-      margin: 2px;
-      
+    p.fill {
+      display: flex;
+      flex-direction: row;
     }
     
+    input {
+      width: 40px;
+      flex: 1;
+      margin: 2px;
+    }
+    
+    input:disabled {
+      color: #aaaaaa
+    }
     
     #gitrepositoryurl {
       width: 300px; 
@@ -33,33 +45,36 @@
       float: right;
       margin-right: 30px;
     }
-  
+    label {
+      padding: 3px;
+      padding-top: 6px;
+      font-size: 13px;
+      color: #555555;
+    }
 
     </style>
     <div class="container">
-        <p>
+        <p class="fill">
           <button id="loginButton">not initialize</button> 
-          username: <input class="persistent" id="gitusername" value="" />
-          email: <input class="persistent" id="gitemail" value="" />
+          <label>username</label> 
+          <input class="persistent login" id="gitusername" value="" />
+          <label>email</label>
+          <input class="persistent login" id="gitemail" value="" />
         </p>
 
-        <p>
+        <p class="fill">
           <label>upstream</label>
-          <input class="persistent" id="gitrepositoryurl" value="https://github.com/LivelyKernel/lively4-core.git" /> 
-          <button id="cloneButton">clone</button> 
-          <br/>
+          <input class="persistent clone" id="gitrepositoryurl" value="https://github.com/LivelyKernel/lively4-core.git" /> 
+          <button class="clone" id="cloneButton">clone</button> 
+        </p>
+        <p  class="fill">
           <label>repository</label>
-          <input id="gitrepository" value="lively4-core" list="gitrepositories" />
+          <input class="branch" id="gitrepository" value="lively4-core" list="gitrepositories" />
           <datalist id="gitrepositories" >
           </datalist> 
           <label>branch</label>
-          <input class="persistent" id="gitrepositorybranch" value="gh-pages" />
+          <input class="persistent branch" id="gitrepositorybranch" value="" />
 
-          <!--         
-          <label>into:</label>
-          <input class="persistent" id="gitrepositorytarget" value="lively4-test" />
-          -->
-    
         </p>
         <p>
           <button class="repo" id="syncButton">sync</button> 

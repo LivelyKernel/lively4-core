@@ -33,13 +33,13 @@ export default class Sync extends Morph {
     var token = await lively.focalStorage.getItem("githubToken")
     this.shadowRoot.querySelector("#loginButton").innerHTML = 
         token ? "logout" : "login"
-    this.shadowRoot.querySelector("#syncButton").disabled = 
-      token ? false : true;
+    var login = token ? true : false
+    this.loggedin = login
+  
     this.shadowRoot.querySelector("#gitusername").value = 
       await lively.focalStorage.getItem("githubUsername")
     this.shadowRoot.querySelector("#gitemail").value = 
       await lively.focalStorage.getItem("githubEmail")
-    
     
     var value =await lively.focalStorage.getItem("githubRepository") 
     if (value)
@@ -47,6 +47,7 @@ export default class Sync extends Morph {
     
     this.updateContextSensitiveButtons()
     this.updateRepositoryList()
+  
   }
 
   login() {
@@ -64,7 +65,7 @@ export default class Sync extends Morph {
         })
       })
     }).then((token) => {
-      this.log("TOKEN: " + token)
+      this.log("Logged in")
     })
   }
 
@@ -170,12 +171,27 @@ export default class Sync extends Morph {
     this.shadowRoot.querySelector("#gitrepositories").innerHTML = 
       list.map(ea => "<option>" + ea).join("\n")
   }
-  
+
   async updateContextSensitiveButtons() {
     var value = this.shadowRoot.querySelector("#gitrepository").value
     var list = await this.getGitRepositoryNames()
     var exists = _.include(list, value)
-    this.shadowRoot.querySelector("#cloneButton").disabled= exists
-    _.each(this.shadowRoot.querySelectorAll(".repo"), ea => ea.disabled= !exists)
+
+    _.each(this.shadowRoot.querySelectorAll(".repo"), ea => 
+      ea.disabled= !this.loggedin || !exists)
+
+    _.each(this.shadowRoot.querySelectorAll(".branch"), ea => 
+      ea.disabled= !this.loggedin)
+      
+    _.each(this.shadowRoot.querySelectorAll(".clone"), ea => 
+      ea.disabled= !this.loggedin || exists)
+      
+    _.each(this.shadowRoot.querySelectorAll(".login"), ea => 
+      ea.disabled= this.loggedin)
+    
+    // _.each(this.shadowRoot.querySelectorAll(".repo"), ea => ea.disabled= !this.login)
+    // _.each(this.shadowRoot.querySelectorAll(".login"), ea => ea.disabled= this.login)
+
+    
   }
 }
