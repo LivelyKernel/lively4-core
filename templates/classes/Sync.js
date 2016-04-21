@@ -161,7 +161,7 @@ export default class Sync extends Morph {
   }
 
   async updateUpstreamURL() {
-    var url = await that.gitControl("remoteurl")
+    var url = await this.gitControl("remoteurl")
     url = url.replace(/\n/,"")
     this.shadowRoot.querySelector("#gitrepositoryurl").value = url
   }
@@ -170,7 +170,6 @@ export default class Sync extends Morph {
   
   async onGitrepositoryChanged(value) {
     this.updateContextSensitiveButtons()
-    this.updateUpstreamURL()
   }
   
 // that.shadowRoot.querySelector("#gitrepositories").innerHTML = "<option>bla" 
@@ -185,6 +184,8 @@ export default class Sync extends Morph {
     var value = this.shadowRoot.querySelector("#gitrepository").value
     var list = await this.getGitRepositoryNames()
     var exists = _.include(list, value)
+
+    if (exists) this.updateUpstreamURL()
 
     _.each(this.shadowRoot.querySelectorAll(".repo"), ea => 
       ea.disabled= !this.loggedin || !exists)
