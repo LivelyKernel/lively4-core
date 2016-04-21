@@ -20,26 +20,25 @@ export default class HTML {
     })
   }
   
-  
-  
-  // static registerInputs(parent) {
-  //   Array.prototype.forEach.call(parent.shadowRoot.querySelectorAll("input"), node => {
-  //     var name = node.id
-  //     var funcName = name.replace(/^./, function (c) {
-  //           return "on" + c.toUpperCase() ;
-  //         }) + "Changed";
-  //     console.log("register input " + name)
-  //       node.addEventListener("input", function(evt) {
-  //         var value = node.value
-  //         var func = parent[funcName];
-  //         if (func) {
-  //           func.call(parent, value);
-  //         } else {
-  //           alert("No callback: " + funcName);
-  //         }
-  //       });
-  //     })
-  // }
+  static registerInputs(parent) {
+    Array.prototype.forEach.call(parent.shadowRoot.querySelectorAll("input"), node => {
+      var name = node.id
+      var funcName = name.replace(/^./, function (c) {
+            return "on" + c.toUpperCase() ;
+          }) + "Changed";
+      console.log("register input " + name)
+        node.addEventListener("input", function(evt) {
+          var value = node.value
+          var func = parent[funcName];
+          if (func) {
+            func.call(parent, value);
+          } else {
+            // ignore it
+            // alert("No callback: " + funcName);
+          }
+        });
+      })
+  }
   
   static fixLinks(nodes, dir, followPath) {
     if (! followPath) {

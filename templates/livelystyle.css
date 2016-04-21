@@ -13,6 +13,14 @@ button:hover {
   background: linear-gradient(#eee, #ddd);
 }
 
+
+button:disabled {
+  background: linear-gradient(#fefefe, #fcfcfc);
+  color: #cccccc;
+}
+    
+
+
 h1,h2,h3,h4 {
   color: #2B65EC;
 }

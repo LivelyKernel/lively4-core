@@ -33,9 +33,8 @@
       float: right;
       margin-right: 30px;
     }
-    
-    
-    
+  
+
     </style>
     <div class="container">
         <p>
@@ -43,34 +42,37 @@
           username: <input class="persistent" id="gitusername" value="" />
           email: <input class="persistent" id="gitemail" value="" />
         </p>
-        <p><button id="syncButton">sync</button> 
-          <button id="cloneButton">clone</button> 
-          
-          
-        </p>
-      
+
         <p>
-          <label>url</label>
-          <input class="persistent" id="gitrepositoryurl" value="https://github.com/LivelyKernel/lively4-core.git" /> <br/>
-          <label>repository</label><input id="gitrepository" value="lively4-core" />
+          <label>upstream</label>
+          <input class="persistent" id="gitrepositoryurl" value="https://github.com/LivelyKernel/lively4-core.git" /> 
+          <button id="cloneButton">clone</button> 
+          <br/>
+          <label>repository</label>
+          <input id="gitrepository" value="lively4-core" list="gitrepositories" />
+          <datalist id="gitrepositories" >
+          </datalist> 
+          <label>branch</label>
+          <input class="persistent" id="gitrepositorybranch" value="gh-pages" />
 
           <!--         
           <label>into:</label>
           <input class="persistent" id="gitrepositorytarget" value="lively4-test" />
           -->
-          <label>branch</label>
-          <input class="persistent" id="gitrepositorybranch" value="gh-pages" />
+    
         </p>
         <p>
-          <button id="statusButton">status</button> 
-          <button id="diffButton">diff</button>
-          <button id="resolveButton">resolve</button>
-          <button id="changelogButton">changelog</button>
-          <button id="npmInstallButton">npm install</button>
+          <button class="repo" id="syncButton">sync</button> 
+          <button class="repo" id="statusButton">status</button> 
+          <button class="repo" id="diffButton">diff</button>
+          <button class="repo" id="resolveButton">resolve</button>
+          <button class="repo" id="changelogButton">changelog</button>
+          <button class="repo" id="npmInstallButton">npm install</button>
            <a id="travisLink" href="https://travis-ci.org/LivelyKernel/lively4-core">
             <img src='https://travis-ci.org/LivelyKernel/lively4-core.svg'>
           </a>  
         </p>
+       
         <juicy-ace-editor id="log"></juicy-ace-editor>  
     </div>
 </template>

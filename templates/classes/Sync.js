@@ -7,6 +7,7 @@ export default class Sync extends Morph {
     this.windowTitle = "Github Sync"
     var container = $(this.shadowRoot).find(".container")[0];
     lively.html.registerButtons(this)
+    lively.html.registerInputs(this)
     this.updateLoginStatus()
     console.log("install..")
     
@@ -43,7 +44,9 @@ export default class Sync extends Morph {
     var value =await lively.focalStorage.getItem("githubRepository") 
     if (value)
       this.shadowRoot.querySelector("#gitrepository").value = value
-      
+    
+    this.updateContextSensitiveButtons()
+    this.updateRepositoryList()
   }
 
   login() {
@@ -80,12 +83,13 @@ export default class Sync extends Morph {
   async gitControl(cmd) {
     this.clearLog()
     var serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1]
-     lively.files.fetchChunks(fetch(serverURL +"/_git/" + cmd, {
-            headers: await this.getHeaders()
-          }), (eaChunk) => {
-        this.log("" + eaChunk)
-      }, (done) => {
-      })
+    return new Promise(async (resolve) => {
+      lively.files.fetchChunks(fetch(serverURL +"/_git/" + cmd, {
+              headers: await this.getHeaders()
+            }), (eaChunk) => {
+          this.log("" + eaChunk)
+        }, resolve)
+    })
   }
 
   onSyncButton() {
@@ -109,9 +113,14 @@ export default class Sync extends Morph {
     this.gitControl("diff")  
   }
 
-  onCloneButton(){
-    this.gitControl("clone")
-    this.shadowRoot.querySelector("#gitrepository").value =  this.shadowRoot.querySelector("#gitrepositorytarget").value
+  async onCloneButton(){
+    if (window.confirm("Do you want to clone into " + 
+        this.shadowRoot.querySelector("#gitrepository").value)) {
+      this.shadowRoot.querySelector("#cloneButton").disabled= true
+      await this.gitControl("clone")
+      this.updateContextSensitiveButtons()
+      this.updateRepositoryList()
+    }
   }
 
   onNpmInstallButton() {
@@ -143,5 +152,30 @@ export default class Sync extends Morph {
   	lively.focalStorage.setItem("githubToken", null)    
     this.updateLoginStatus()
     this.log("")
+  }
+
+  async getGitRepositoryNames() {
+    var json = await lively.files.statFile(lively4url +'/../').then( JSON.parse)
+    return json.contents.filter(ea => ea.type == "directory").map(ea => ea.name)
+  }
+  
+  async onGitrepositoryChanged(value) {
+    this.updateContextSensitiveButtons()
+  }
+  
+// that.shadowRoot.querySelector("#gitrepositories").innerHTML = "<option>bla" 
+
+  async updateRepositoryList() {
+    var list = await this.getGitRepositoryNames()
+    this.shadowRoot.querySelector("#gitrepositories").innerHTML = 
+      list.map(ea => "<option>" + ea).join("\n")
+  }
+  
+  async updateContextSensitiveButtons() {
+    var value = this.shadowRoot.querySelector("#gitrepository").value
+    var list = await this.getGitRepositoryNames()
+    var exists = _.include(list, value)
+    this.shadowRoot.querySelector("#cloneButton").disabled= exists
+    _.each(this.shadowRoot.querySelectorAll(".repo"), ea => ea.disabled= !exists)
   }
 }
