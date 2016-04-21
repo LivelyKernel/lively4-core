@@ -32,22 +32,22 @@ export default class Sync extends Morph {
   async updateLoginStatus() {
     var token = await lively.focalStorage.getItem("githubToken")
     this.shadowRoot.querySelector("#loginButton").innerHTML = 
-        token ? "logout" : "login"
-    var login = token ? true : false
-    this.loggedin = login
-  
+        token ? "logout" : "login";
+    var login = token ? true : false;
+    this.loggedin = login;
+
     this.shadowRoot.querySelector("#gitusername").value = 
-      await lively.focalStorage.getItem("githubUsername")
+      await lively.focalStorage.getItem("githubUsername");
     this.shadowRoot.querySelector("#gitemail").value = 
-      await lively.focalStorage.getItem("githubEmail")
+      await lively.focalStorage.getItem("githubEmail");
     
     var value =await lively.focalStorage.getItem("githubRepository") 
     if (value)
-      this.shadowRoot.querySelector("#gitrepository").value = value
+      this.shadowRoot.querySelector("#gitrepository").value = value;
     
-    this.updateContextSensitiveButtons()
-    this.updateRepositoryList()
-    this.updateBranchesList() 
+    this.updateContextSensitiveButtons();
+    this.updateRepositoryList();
+    this.updateBranchesList();
   }
 
   login() {
@@ -56,17 +56,17 @@ export default class Sync extends Morph {
       return new Promise((resolve, reject) => {
         lively.authGithub.challengeForAuth(Date.now(), (token) => {  
       	  lively.focalStorage.setItem("githubUsername", 
-      	    this.shadowRoot.querySelector("#gitusername").value)
+      	    this.shadowRoot.querySelector("#gitusername").value);
       	  lively.focalStorage.setItem("githubEmail", 
-      	    this.shadowRoot.querySelector("#gitemail").value)   
-      	  lively.focalStorage.setItem("githubToken", token)
-      	  this.updateLoginStatus()
-      	  resolve(token)
-        })
-      })
+      	    this.shadowRoot.querySelector("#gitemail").value);
+      	  lively.focalStorage.setItem("githubToken", token);
+      	  this.updateLoginStatus();
+      	  resolve(token);
+        });
+      });
     }).then((token) => {
-      this.log("Logged in")
-    })
+      this.log("Logged in");
+    });
   }
 
   async getHeaders() {
@@ -140,7 +140,7 @@ export default class Sync extends Morph {
   }
 
   onChangelogButton() {
-   this.gitControl("log")
+   this.gitControl("log");
   }
   
   get storagePrefix() {
