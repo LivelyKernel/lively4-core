@@ -51,7 +51,7 @@
       color: #555555;
     }
 
-    #loginButton, #cloneButton, #branchButton, #mergeButton, #commitButton {
+    #loginButton, #cloneButton, #branchButton, #commitButton {
       width: 60px;
     }
     
@@ -101,8 +101,8 @@
           <label class="small">branch</label>
           <input class="persistent branch" id="gitrepositorybranch" value=""  list="gitbranches"/>
           <datalist id="gitbranches" ></datalist> 
+          <button class="repo" id="mergeButton">merge from</button> 
           <button class="repo" id="branchButton">switch</button> 
-          <button class="repo" id="mergeButton">merge</button> 
         </p>
         <p class="fill">
           <label class="medium">message</label>
