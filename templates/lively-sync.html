@@ -77,8 +77,13 @@
       background: linear-gradient(#fefefe, #fcfcfc);
       color: #cccccc;
     }
-
-
+    
+    input.checkbox {
+      width: 14px;
+      height: 14px;
+      margin: 0px;
+      padding: 0px;
+    }
     </style>
     <div class="container">
         <p class="fill">
@@ -118,7 +123,8 @@
           <button class="repo" id="changelogButton">changelog</button>
           <button class="repo" id="npmInstallButton">npm install</button>
           <button class="repo" id="deleteButton">delete</button>
-
+          <label><input class="checkbox" type="checkbox" id="dryrun">
+          dry run</label>
            <a id="travisLink" href="https://travis-ci.org/LivelyKernel/lively4-core">
             <img src='https://travis-ci.org/LivelyKernel/lively4-core.svg'>
           </a>  

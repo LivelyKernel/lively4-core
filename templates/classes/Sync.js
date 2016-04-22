@@ -89,6 +89,8 @@ export default class Sync extends Morph {
       "gitrepositoryurl":     this.q("#gitrepositoryurl").value,
 	    "gitrepository":        this.q("#gitrepository").value,
 	    "gitrepositorybranch":  this.q("#gitrepositorybranch").value,
+	    "gitcommitmessage":     this.q("#gitcommitmessage").value,
+	    "dryrun":               this.q("#dryrun").checked
     })
   }
 
@@ -155,7 +157,7 @@ export default class Sync extends Morph {
   }
   
   onCommitButton() {
-    return lively.notify("Commit is not implemented yet")  
+    // return lively.notify("Commit is not implemented yet")  
     this.gitControl("commit");
   }
   
@@ -204,14 +206,10 @@ export default class Sync extends Morph {
     this.shadowRoot.querySelector("#gitrepositoryurl").value = url
   }
   
-  // that.updateUpstreamURL
-  
   async onGitrepositoryChanged(value) {
     this.updateContextSensitiveButtons()
   }
   
-// that.shadowRoot.querySelector("#gitrepositories").innerHTML = "<option>bla" 
-
   async updateRepositoryList() {
     var list = await this.getGitRepositoryNames()
     this.shadowRoot.querySelector("#gitrepositories").innerHTML = 
@@ -240,17 +238,13 @@ export default class Sync extends Morph {
     return ["lively4-core", "lively4-stable"]
   }
   
-
   async updateContextSensitiveButtons() {
     var repository = this.q("#gitrepository").value
     var list = await this.getGitRepositoryNames()
     var exists = _.include(list, repository)
-  
-    
     
     console.log("delete " + this.q("#deleteButton").disabled)
-  
-  
+
     if (exists) {
       
       this.updateUpstreamURL()
