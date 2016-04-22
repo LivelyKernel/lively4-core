@@ -53,7 +53,6 @@ export default class Sync extends Morph {
     this.updateBranchesList();
   }
   
-  
   // #TODO pull into tool?
   store(key, value) {
     return lively.focalStorage.setItem(key, value)
