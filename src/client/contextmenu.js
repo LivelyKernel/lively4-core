@@ -74,7 +74,7 @@ export default class ContextMenu {
       //    })
       // }],
       // #TODO use sub menues here
-      ["Wiki",     (evt) => {
+      ["Wiki (Docs)",     (evt) => {
         this.openComponentInWindow("lively-container", evt).then(comp => {
           comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Home.md")
       })
@@ -83,6 +83,9 @@ export default class ContextMenu {
         this.openComponentInWindow("lively-container", evt).then(comp => {
           comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Journal.md")
       })
+      }],
+      ["Issues", (evt) => {
+        window.open("https://github.com/LivelyKernel/lively4-core/issues") 
       }],
       ["Text", (evt) => {
               var text  = document.createElement("p")
