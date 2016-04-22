@@ -61,8 +61,8 @@ describe('graph', function() {
 
     it("sorts into groups", () => {
       var depGraph = {a: ["b", "c"], b: ["c"], c: ["b"]};
-      expect(graph.sortByReference(depGraph, "a")).to.deep.equal([["c"], ["b"], ["a"]]);
-    })
+      expect(graph.sortByReference(depGraph, "a")).to.eql([["c"], ["b"], ["a"]]);
+    });
 
   });
 
