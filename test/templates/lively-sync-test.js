@@ -1,19 +1,11 @@
 import Sync from '../../templates/classes/Sync.js'
 import {expect} from '../../node_modules/chai/chai.js'
+import {loadComponent} from './templates-fixture.js'
 
 describe("Sync Tool",  () => {
   var that
-  
-  before("load", async function(){
-    // this.timeout(15000);
-    that = lively.components.createComponent("lively-sync");
-    lively.components.loadByName("lively-sync")
-    await new Promise(resolve => {
-      that.addEventListener("created", function (evt) {
-          evt.stopPropagation();
-          resolve(evt);
-      });
-    })
+  before("load", (done) => {
+    loadComponent("lively-sync").then(c => {that = c; done()})
   })
   
   it("should load stored value", async () => {
@@ -23,3 +15,5 @@ describe("Sync Tool",  () => {
   
   
 })
+
+
