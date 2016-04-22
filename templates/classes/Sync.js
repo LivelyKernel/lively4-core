@@ -94,6 +94,7 @@ export default class Sync extends Morph {
     })
   }
 
+
   async gitControl(cmd, eachCB) {
     this.clearLog()
     var serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1]
