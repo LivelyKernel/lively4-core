@@ -27,7 +27,6 @@ import * as _ from '../external/underscore.js';
 import * as rdfa from '../external/RDFa.js';
 
 
-
 let $ = window.$,
   babel = window.babel,
   System = window.System; // known global variables.
