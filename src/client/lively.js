@@ -27,6 +27,7 @@ import * as _ from '../external/underscore.js';
 import * as rdfa from '../external/RDFa.js';
 
 
+
 let $ = window.$,
   babel = window.babel,
   System = window.System; // known global variables.
@@ -290,13 +291,13 @@ export default class Lively {
   static notify(title, text, timeout, cb) {
     if (!this.notifications) this.notifications = [];
     this.notifications.push({title: title, text: text, cb: cb, time: Date.now()})
-  
+
     // lively.notify("hello","",3)
     // just in case...
     if (Notification.permission !== "granted") Notification.requestPermission();
 
     var time = Date.now()
-    if(this.notifications.length > 10 && 
+    if(this.notifications.length > 10 &&
       (Date.now() - this.notifications[10].time < 1000)) {
       return console.log("SILENT NOTE: " + title  + " (" + text + ")");
     }
