@@ -24,6 +24,7 @@ import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
 import * as jquery from '../external/jquery.js';
 import * as _ from '../external/underscore.js';
+import * as rdfa from '../external/RDFa.js';
 
 
 let $ = window.$,
@@ -100,11 +101,11 @@ export default class Lively {
       this[moduleName] = module.default || module;
     });
   }
-  
+
   static loadJavaScriptThroughDOM(name, src, force) {
     return new Promise((resolve) => {
       var mochaNode = document.querySelector("#mochaScript");
-      if (mochaNode) { 
+      if (mochaNode) {
         mochaNode.remove();
       }
       var script = document.createElement("script");
@@ -120,7 +121,7 @@ export default class Lively {
       document.head.appendChild(script);
     })
   }
-  
+
   static fillTemplateStyles(root) {
      // there seems to be no <link ..> tag allowed to reference css inside of templates #Jens
      var promises = []
@@ -129,7 +130,7 @@ export default class Lively {
         if (src) {
           promises.push(fetch(lively4url + src).then(r => r.text()).then(css => {
             ea.innerHTML = css
-          }))    
+          }))
         }
      })
      return Promise.all(promises)
@@ -189,7 +190,7 @@ export default class Lively {
 
     this.import("authGithub", lively4url + '/src/client/auth-github.js')
     this.import("authDropbox", lively4url + '/src/client/auth-dropbox.js')
-   
+
   }
 
   static array(anyList){
@@ -461,29 +462,29 @@ export default class Lively {
       window.livelyEventListeners = []
     }
     return window.livelyEventListeners
-  }  
-  
+  }
+
   static set eventListeners(list) {
       window.livelyEventListeners = list
-  }  
-  
+  }
+
   // Registration and deregistration of eventlisteners for run-time programming...
   static addEventListener(domain, target, type, listener, options) {
     this.eventListeners.push(
-      {target: target, type: type, listener: listener, domain: domain, options: options})      
+      {target: target, type: type, listener: listener, domain: domain, options: options})
     target.addEventListener(type, listener, options)
   }
-  
+
   static removeEventListener(domain, target, type, listener) {
     this.eventListeners = this.eventListeners.filter(ea => {
-      if ((!target      || (ea.target   === target)) 
-          && (!type     || (ea.type     ==  type)) 
-          && (!listener || (ea.listener === listener)) 
+      if ((!target      || (ea.target   === target))
+          && (!type     || (ea.type     ==  type))
+          && (!listener || (ea.listener === listener))
           && (!domain   || (ea.domain   ==  domain))) {
         // actually removing the event listener
         // console.log("removeEventListener", ea.target, ea.type, ea.listener)
         ea.target.removeEventListener(ea.type, ea.listener, ea.options)
-        return false   
+        return false
       } else {
         return true
       }
