@@ -4,7 +4,11 @@ import {loadComponent} from './templates-fixture.js'
 
 describe("Sync Tool",  () => {
   var that
-  before("load", (done) => {
+ 
+
+  
+  before("load", function(done){
+    this.timeout(1000);
     loadComponent("lively-sync").then(c => {that = c; done()})
   })
   
