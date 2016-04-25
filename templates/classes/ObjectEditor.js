@@ -455,7 +455,7 @@ export default class ObjectEditor extends Morph {
       return;
     }
 
-    scriptManager.addScript(this.targetElement, eval('(function ' + scriptName + '() {\n  \n})'));
+    scriptManager.default.addScript(this.targetElement, eval('(function ' + scriptName + '() {\n  \n})'));
     this.updateScripts();
     this.propertyList.selectLeaf(this.propertyList.querySelector('.leaf[data-script-name="'+scriptName+'"]'));
     this.listChanged();
@@ -465,7 +465,7 @@ export default class ObjectEditor extends Morph {
     if (this.targetElement) {
       if (this.propertyList.activeLeaf !== null) {
         let scriptName = this.propertyList.activeLeaf.dataset['scriptName'];
-        scriptManager.removeScript(this.targetElement, scriptName);
+        scriptManager.default.removeScript(this.targetElement, scriptName);
       }
       this.editor.value = '';
       this.updateScripts();
@@ -477,7 +477,7 @@ export default class ObjectEditor extends Morph {
       let data = this.propertyList.activeLeaf.dataset;
 
       if (typeof data['scriptName'] !== 'undefined') {
-        scriptManager.updateScript(
+        scriptManager.default.updateScript(
           this.targetElement,
           eval('(' + this.editor.value + ')'),
           { name: data['scriptName'] }
