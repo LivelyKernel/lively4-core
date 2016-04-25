@@ -2,13 +2,13 @@ import Sync from '../../templates/classes/Sync.js'
 import {expect} from '../../node_modules/chai/chai.js'
 import {loadComponent} from './templates-fixture.js'
 
-describe("Sync Tool",  () => {
+describe("Sync Tool",  function(){
   var that
  
+    this.timeout(15000);
 
   
   before("load", function(done){
-    this.timeout(1000);
     loadComponent("lively-sync").then(c => {that = c; done()})
   })
   
