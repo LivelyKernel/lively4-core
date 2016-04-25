@@ -5,10 +5,8 @@ import {loadComponent} from './templates-fixture.js'
 describe("Sync Tool",  function(){
   var that
  
-    this.timeout(15000);
-
-  
   before("load", function(done){
+    this.timeout(15000);
     loadComponent("lively-sync").then(c => {that = c; done()})
   })
   
