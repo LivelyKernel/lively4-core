@@ -1,12 +1,12 @@
 // import lively from "./lively.js";
-// #TODO this will fetch an old version of the lively module... 
+// #TODO this will fetch an old version of the lively module...
 
 export default class ContextMenu {
-  
+
   static hide() {
     if (this.menu) $(this.menu).remove()
   }
-  
+
   static openComponentInWindow (name, evt) {
     var comp  = document.createElement(name)
     this.hide()
@@ -16,7 +16,7 @@ export default class ContextMenu {
         return comp
     })
   }
-  
+
   static items (target) {
     if (target) {
       var wasEditable = (target.contentEditable == "true");
@@ -85,7 +85,7 @@ export default class ContextMenu {
       })
       }],
       ["Issues", (evt) => {
-        window.open("https://github.com/LivelyKernel/lively4-core/issues") 
+        window.open("https://github.com/LivelyKernel/lively4-core/issues")
       }],
       ["Text", (evt) => {
               var text  = document.createElement("p")
@@ -103,17 +103,29 @@ export default class ContextMenu {
           morph.style.backgroundColor = "blue"
           $('body')[0].appendChild(morph)
           this.hide()
+      }],
+      ["RDFa", (evt) => {
+        this.openComponentInWindow('table', evt).then((comp) => {
+          var table = $(comp);
+          document.data.getProperties().forEach(
+          p => table.append(
+              $('<tr>')
+              .append($('<td>').text(p))
+              .append($('<td>').text(document.data.getValues(document.data.getSubjects()[0], p)))
+            )
+          )
+        })
       }]
     ]}
   }
-  
+
   static openIn(container, evt, target) {
     this.hide()
     var menu = lively.components.createComponent("lively-menu")
     return lively.components.openIn(container, menu).then(() => {
       this.menu = menu
-      
-      
+
+
       if (evt) lively.setPosition(menu, lively.pt(evt.pageX, evt.pageY))
 
       menu.openOn(this.items(target), evt).then(() => {
