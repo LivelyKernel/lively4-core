@@ -62,6 +62,7 @@ export default class Container extends Morph {
       var username = await lively.focalStorage.getItem("githubUsername")
       var token = await lively.focalStorage.getItem("githubToken")
       if (!token) {
+        var comp = lively.components.createComponent("lively-sync")
         lively.components.openInWindow(comp).then((w) => {
           lively.setPosition(w, lively.pt(evt.pageX, evt.pageY))
         })
