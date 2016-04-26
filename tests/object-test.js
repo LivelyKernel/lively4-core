@@ -157,7 +157,8 @@ describe('obj', function() {
     it("does not override existing function names", function() {
       var o = obj.extend({}, {foo: function myFoo() { return "bar"; }});
       expect(o.foo.name).to.be("myFoo");
-      expect(o.foo).to.not.have.property("displayName");
+      expect(o.foo).to.have.property("displayName");
+      expect(o.foo.displayName).to.equal("foo");
     });
 
     describe("when lively.Module present", function() {
