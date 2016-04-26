@@ -209,7 +209,8 @@ export default class Container extends Morph {
   appendMarkdown(content) {
       System.import(lively4url + '/src/external/showdown.js').then((showdown) => {
         var converter = new showdown.Converter();
-        var htmlSource = converter.makeHtml(content)
+        var enhancedMarkdown = lively.html.enhanceMarkdown(content)
+        var htmlSource = converter.makeHtml(enhancedMarkdown)
         var html = $.parseHTML(htmlSource)
         lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path))
         console.log("html", html)
