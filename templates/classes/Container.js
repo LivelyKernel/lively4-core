@@ -172,12 +172,14 @@ export default class Container extends Morph {
         var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/)
         if (moduleName) {
           moduleName = moduleName[1]
-          lively.import(moduleName, url, true).then( module => {
-              lively.notify("Module " + moduleName + " reloaded!")
-          }, err => {
-              window.LastError = err
-              lively.notify("Error loading module " + moduleName, err)
-          })
+          if (this.getSubmorph("#live").checked) {
+            lively.import(moduleName, url, true).then( module => {
+                lively.notify("Module " + moduleName + " reloaded!")
+            }, err => {
+                window.LastError = err
+                lively.notify("Error loading module " + moduleName, err)
+            })
+          }
         }
       })
     }
