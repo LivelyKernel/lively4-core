@@ -87,7 +87,7 @@ export default class Window extends Morph {
 
     this.menuButton.addEventListener('click', (e) => { this.menuButtonClicked(e); });
     this.minButton.addEventListener('click', (e) => { this.minButtonClicked(e); });
-    // this.maxButton.addEventListener('click', (e) => { this.maxButtonClicked(e); });
+    this.maxButton.addEventListener('click', (e) => { this.maxButtonClicked(e); });
     this.pinButton.addEventListener('click', (e) => { this.pinButtonClicked(e); });
     this.resizeButton.addEventListener('mousedown', (e) => { this.resizeMouseDown(e); });
     this.closeButton.addEventListener('click', (e) => { this.closeButtonClicked(e); });
@@ -171,7 +171,15 @@ export default class Window extends Morph {
   }
 
   maxButtonClicked(e) {
-    // NotImplemented
+    lively.notify("max window");
+    this.setPosition(
+      window.scrollY,
+      window.scrollX
+    );
+    this.setSize(
+      window.innerWidth,
+      window.innerHeight
+    );
   }
 
   pinButtonClicked(e) {
