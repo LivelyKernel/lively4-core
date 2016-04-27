@@ -128,6 +128,7 @@ export default class Expose {
     overlay.style.background = 'rgba(0, 0, 0, 0.7)';
     overlay.style.opacity = 0;
     overlay.style.transition = 'opacity 200ms';
+    overlay.style['z-index'] = 99;
 
     document.body.appendChild(overlay);
     overlay.style.opacity = 1;
@@ -174,8 +175,5 @@ Expose.windowsPerRows = 3;
 
 document.body.removeEventListener('keydown', Expose.bodyKeyDown);
 document.body.addEventListener('keydown', Expose.bodyKeyDown);
-
-lively.removeEventListener("expose")
-lively.addEventListener("expose", document.body, 'keydown', Expose.bodyKeyDown)
 
 console.info('Expose loaded');
