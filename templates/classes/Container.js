@@ -62,6 +62,7 @@ export default class Container extends Morph {
       var username = await lively.focalStorage.getItem("githubUsername")
       var token = await lively.focalStorage.getItem("githubToken")
       if (!token) {
+        var comp = lively.components.createComponent("lively-sync")
         lively.components.openInWindow(comp).then((w) => {
           lively.setPosition(w, lively.pt(evt.pageX, evt.pageY))
         })
@@ -171,12 +172,14 @@ export default class Container extends Morph {
         var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/)
         if (moduleName) {
           moduleName = moduleName[1]
-          lively.import(moduleName, url, true).then( module => {
-              lively.notify("Module " + moduleName + " reloaded!")
-          }, err => {
-              window.LastError = err
-              lively.notify("Error loading module " + moduleName, err)
-          })
+          if (this.getSubmorph("#live").checked) {
+            lively.import(moduleName, url, true).then( module => {
+                lively.notify("Module " + moduleName + " reloaded!")
+            }, err => {
+                window.LastError = err
+                lively.notify("Error loading module " + moduleName, err)
+            })
+          }
         }
       })
     }
@@ -208,7 +211,8 @@ export default class Container extends Morph {
   appendMarkdown(content) {
       System.import(lively4url + '/src/external/showdown.js').then((showdown) => {
         var converter = new showdown.Converter();
-        var htmlSource = converter.makeHtml(content)
+        var enhancedMarkdown = lively.html.enhanceMarkdown(content)
+        var htmlSource = converter.makeHtml(enhancedMarkdown)
         var html = $.parseHTML(htmlSource)
         lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path))
         console.log("html", html)
@@ -545,11 +549,13 @@ export default class Container extends Morph {
           comp.setURL(url)
           aceComp.changeModeForFile(url.pathname);
 
-          aceComp.editor.session.setOptions({
-      			mode: "ace/mode/javascript",
-          		tabSize: 2,
-          		useSoftTabs: true
-      		});
+          if (aceComp.editor && aceComp.editor.session) {
+            aceComp.editor.session.setOptions({
+        			mode: "ace/mode/javascript",
+            		tabSize: 2,
+            		useSoftTabs: true
+        		});
+          }
 
           // NOTE: we don't user loadFile directly... because we don't want to edit PNG binaries etc...
           comp.setText(this.sourceContent); // directly setting the source we got

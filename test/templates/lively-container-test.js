@@ -4,9 +4,11 @@ import {loadComponent} from './templates-fixture.js'
 
 // System.import(lively4url + '/node_modules/chai/chai.js').then( m => window.expect = m.expect)
 
-describe("Container Tool",  () => {
+describe("Container Tool",  function() {
+  
   var that
-  before("load", (done) => {
+  before("load", function(done){
+    this.timeout(15000);
     loadComponent("lively-container").then(c => {that = c; done()})
   })
 

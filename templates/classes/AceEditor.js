@@ -148,7 +148,7 @@ export default class AceEditor extends HTMLElement {
     // CUSTOMIZATION
     enableAutocompletion(filename) {
       return this.aceRequire("ace/ext/language_tools").then( module => {
-        if (!this.editor) return;
+        if (!this.editor || !this.editor.setOptions) return;
         this.editor.setOptions({
             enableBasicAutocompletion: true,
             enableSnippets: true,
