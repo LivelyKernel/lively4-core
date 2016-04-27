@@ -17,7 +17,7 @@ import inspector from './inspector.js';
 import keys from './keys.js';
 import components from './morphic/component-loader.js';
 
-import expose from './expose.js';
+//import expose from './expose.js';
 
 /* expose external modules */
 import color from '../external/tinycolor.js';
@@ -44,8 +44,7 @@ var exportmodules = [
   "components",
   "inspector",
   "color",
-  "focalStorage",
-  "expose"];
+  "focalStorage"];
 
 
 
@@ -141,7 +140,8 @@ export default class Lively {
       typo: lively4url + "/src/external/typo.js",
       contextmenu: lively4url + '/src/client/contextmenu.js',
       customize: lively4url + '/src/client/customize.js',
-      selecting: lively4url + '/src/client/morphic/selecting.js'
+      selecting: lively4url + '/src/client/morphic/selecting.js',
+      expose: lively4url + '/src/client/expose.js'
     })[moduleName]
   }
 
@@ -189,6 +189,8 @@ export default class Lively {
 
     this.import("authGithub", lively4url + '/src/client/auth-github.js')
     this.import("authDropbox", lively4url + '/src/client/auth-dropbox.js')
+
+    this.import("expose")
    
   }
 

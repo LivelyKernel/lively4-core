@@ -1,5 +1,7 @@
 'use strict';
 
+// import lively from './lively.js'
+
 export default class Expose {
 
   static get _stylesToSave() {
@@ -128,7 +130,6 @@ export default class Expose {
     overlay.style.background = 'rgba(0, 0, 0, 0.7)';
     overlay.style.opacity = 0;
     overlay.style.transition = 'opacity 200ms';
-    overlay.style['z-index'] = 99;
 
     document.body.appendChild(overlay);
     overlay.style.opacity = 1;
@@ -161,9 +162,9 @@ export default class Expose {
   }
 
   static bodyKeyDown(e) {
-
     // (cmd|ctrl)+E
     if (e.keyCode === 69 && (e.metaKey || e.ctrlKey)) {
+      console.log("hello")
       Expose.toggle();
     }
   }
@@ -173,7 +174,7 @@ export default class Expose {
 Expose.isOpen = false;
 Expose.windowsPerRows = 3;
 
-document.body.removeEventListener('keydown', Expose.bodyKeyDown);
-document.body.addEventListener('keydown', Expose.bodyKeyDown);
+lively.removeEventListener("expose")
+lively.addEventListener("expose", document.body, 'keydown', Expose.bodyKeyDown)
 
 console.info('Expose loaded');
