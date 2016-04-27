@@ -52,6 +52,13 @@
         alert("load Lively4 failed:" + err)
     });
 
+    System.import(lively4url + "/src/client/search/github-search.js").then(function(search){
+      options = {
+        repo: "LivelyKernel/lively4-core"
+      }
+      window.search = function (pattern) { search.search(pattern, options) };
+    })
+
 </script>
 
 
