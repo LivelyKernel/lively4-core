@@ -175,4 +175,7 @@ Expose.windowsPerRows = 3;
 document.body.removeEventListener('keydown', Expose.bodyKeyDown);
 document.body.addEventListener('keydown', Expose.bodyKeyDown);
 
+lively.removeEventListener("expose")
+lively.addEventListener("expose", document.body, 'keydown', Expose.bodyKeyDown)
+
 console.info('Expose loaded');
