@@ -24,6 +24,7 @@ import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
 import * as jquery from '../external/jquery.js';
 import * as _ from '../external/underscore.js';
+import * as rdfa from '../external/RDFa.js';
 
 
 let $ = window.$,
