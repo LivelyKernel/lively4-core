@@ -4,7 +4,7 @@
 export default class HTML {
   
   static hello() {
-    alert("World!")
+    alert("World! Really!")
     
   }
   
