@@ -49,7 +49,7 @@ export default class ContextMenu {
       ["Browser",     (evt) => {
         this.openComponentInWindow("lively-container", evt).then(comp => {
           comp.followPath(lively4url +"/")
-          comp.parentElement.style.width = "800px"
+          comp.parentElement.style.width = "850px"
           comp.parentElement.style.height = "600px"
 
       })
