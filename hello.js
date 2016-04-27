@@ -2,5 +2,5 @@
 
 export function foo() {
   
-  return "bar"
+  return "not bar"
 }
