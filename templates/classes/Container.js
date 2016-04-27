@@ -425,11 +425,13 @@ export default class Container extends Morph {
   	      subList.appendChild(element) ;
         })
       } else if (this.getPath().match(/\.js$/)) {
-        var defRegEx = / *(static [A-Za-z0-9]+)\(.*\) *{/g
+        var defRegEx = /(?:^|\n)((?:(?:static)|(?:async)|(?:function)|(?: *))*([A-Za-z0-9_]+))\([^(]*\) *{/g
         var m
         var links = {}
         while (m = defRegEx.exec(this.sourceContent)) {
-          links[m[1]] = m[0]
+          // console.log("found " + m)
+          if(!m[2].match(/^((if)|(switch))$/))
+            links[m[1]] = m[0]
         }
         _.keys(links).forEach( name => {
           var element = document.createElement("li");
