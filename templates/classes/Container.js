@@ -549,11 +549,13 @@ export default class Container extends Morph {
           comp.setURL(url)
           aceComp.changeModeForFile(url.pathname);
 
-          aceComp.editor.session.setOptions({
-      			mode: "ace/mode/javascript",
-          		tabSize: 2,
-          		useSoftTabs: true
-      		});
+          if (aceComp.editor && aceComp.editor.session) {
+            aceComp.editor.session.setOptions({
+        			mode: "ace/mode/javascript",
+            		tabSize: 2,
+            		useSoftTabs: true
+        		});
+          }
 
           // NOTE: we don't user loadFile directly... because we don't want to edit PNG binaries etc...
           comp.setText(this.sourceContent); // directly setting the source we got
