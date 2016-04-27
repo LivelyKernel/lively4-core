@@ -37,12 +37,17 @@ export default class Expose {
     let windows = Array.from(document.querySelectorAll('body > lively-window')).sort((w1, w2) => {
       return parseInt(w2.style["z-index"]) - parseInt(w1.style["z-index"]);
     });
+    
+    Expose.windows = windows;
 
     if (windows.length === 0) {
       // no windows to display
       Expose.isOpen = false;
       return;
     }
+    
+    // select the second window, if it exists
+    Expose.selectedWin = windows[1] || windows[0];
 
     Expose.dimWindow();
 
@@ -59,7 +64,7 @@ export default class Expose {
       let column = i % Expose.windowsPerRows;
 
       Expose.saveWindowStyles(win);
-
+    
       win.style.transition = 'all 200ms';
       win.style.cursor = 'pointer';
 
@@ -76,6 +81,8 @@ export default class Expose {
       win.addEventListener('mouseleave', Expose.windowMouseLeave);
       win.addEventListener('click', Expose.windowClick);
     }
+    
+    Expose.windowMouseEnter.call(Expose.selectedWin);
   }
 
   static close() {
@@ -103,6 +110,20 @@ export default class Expose {
     });
     window.dataset['livelyExposePrevTransition'] = window.style.transition;
   }
+  
+  static selectNext() {
+    let idx = Expose.windows.indexOf(Expose.selectedWin);
+    Expose.windowMouseLeave.call(Expose.selectedWin);
+    Expose.selectedWin = Expose.windows[idx+1] || Expose.windows[0];
+    Expose.windowMouseEnter.call(Expose.selectedWin);
+  }
+  
+  static selectPrev() {
+    let idx = Expose.windows.indexOf(Expose.selectedWin);
+    Expose.windowMouseLeave.call(Expose.selectedWin);
+    Expose.selectedWin = Expose.windows[idx-1] || Expose.windows[Expose.windows.length-1];
+    Expose.windowMouseEnter.call(Expose.selectedWin);
+  }
 
   static restoreWindowStyles(window) {
     Expose._stylesToSave.forEach((style) => {
@@ -129,7 +150,7 @@ export default class Expose {
     overlay.style.opacity = 0;
     overlay.style.transition = 'opacity 200ms';
     overlay.style['z-index'] = 99;
-
+    
     document.body.appendChild(overlay);
     overlay.style.opacity = 1;
   }
@@ -154,10 +175,8 @@ export default class Expose {
 
   static windowClick(e) {
     let window = this;
-    Expose.close()
-    setTimeout(function() {
-      window.focus();
-    }, 250);
+    window.focus();
+    Expose.close();
   }
 
   static bodyKeyDown(e) {
@@ -165,6 +184,30 @@ export default class Expose {
     // (cmd|ctrl)+E
     if (e.keyCode === 69 && (e.metaKey || e.ctrlKey)) {
       Expose.toggle();
+    }
+    
+    if (Expose.isOpen) {
+      
+      // Left
+      if (e.keyCode === 37) {
+        Expose.selectPrev();
+      }
+      
+      // Right
+      if (e.keyCode === 39) {
+        Expose.selectNext();
+      }
+      
+      // Enter
+      if (e.keyCode === 13) {
+        Expose.windowClick.call(Expose.selectedWin, e);
+      }
+      
+      // Esc
+      if (e.keyCode === 27) {
+        Expose.close();
+      }
+      
     }
   }
 }
