@@ -3,6 +3,11 @@
 
 export default class HTML {
   
+  static hello() {
+    alert("World!")
+    
+  }
+  
   static registerButtons(parent) {
     // Just an experiment for having to write lesser code.... which ended up in having more code here ;-) #Jens
     Array.prototype.forEach.call(parent.shadowRoot.querySelectorAll("button"), node => {
