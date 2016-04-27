@@ -151,10 +151,12 @@ export default class Window extends Morph {
     allWindowsButThis.forEach((win, index) => {
       win.style['z-index'] = minZIndex + index;
       win.window.classList.remove('focused');
+      win.removeAttribute('active');
     });
 
     this.style['z-index'] = minZIndex + allWindowsButThis.length;
     this.window.classList.add('focused');
+    this.setAttribute('active', true);
   }
 
   minButtonClicked(e) {
