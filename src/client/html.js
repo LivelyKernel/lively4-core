@@ -3,6 +3,11 @@
 
 export default class HTML {
   
+  static hello() {
+    alert("World! Really!")
+    
+  }
+  
   static registerButtons(parent) {
     // Just an experiment for having to write lesser code.... which ended up in having more code here ;-) #Jens
     Array.prototype.forEach.call(parent.shadowRoot.querySelectorAll("button"), node => {
@@ -18,6 +23,11 @@ export default class HTML {
         }
       })
     })
+  }
+  
+  static enhanceMarkdown(source) {
+    return source.replace(/([^\n#])#([A-Za-z09]+)/g,
+      "$1[#$2](https://lively4/Thesis/notes/$2.html)") // #TODO this should be a plugin or somthing since it is user specific / context specific code
   }
   
   static registerInputs(parent) {
@@ -74,7 +84,14 @@ export default class HTML {
             
             
             // console.log("fix "  + href + " to " + path + "(dir " + dir + ")")
-            $(node).click(() => { followPath(path); return false; });
+            $(node).click(() => { 
+              // if (path.match(/https:\/\/lively4\/Thesis\/notes/)) {
+              //     if (window.confirm("follow path? " + path)) {
+              //       followPath(path); return false;
+              //     }
+              //     return false
+              // }
+              followPath(path); return false; });
 
             // ALTERNATIVE to navigate it inline, but the link will not be followed....
             // var link = lively4url + "/draft/start.html?load=" + path

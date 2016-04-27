@@ -103,12 +103,12 @@ export default class Lively {
   
   static loadJavaScriptThroughDOM(name, src, force) {
     return new Promise((resolve) => {
-      var mochaNode = document.querySelector("#mochaScript");
-      if (mochaNode) { 
-        mochaNode.remove();
+      var scriptNode = document.querySelector(name);
+      if (scriptNode) { 
+        scriptNode.remove();
       }
       var script = document.createElement("script");
-      script.id="mochaScript";
+      script.id=name;
       script.type="text/javascript";
       if (force) {
         src += + "?" + Date.now();
