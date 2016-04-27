@@ -115,16 +115,26 @@ export default class Expose {
 
   static selectNext() {
     let idx = Expose.windows.indexOf(Expose.selectedWin);
-    Expose.windowMouseLeave.call(Expose.selectedWin);
-    Expose.selectedWin = Expose.windows[idx+1] || Expose.windows[0];
-    Expose.windowMouseEnter.call(Expose.selectedWin);
+    Expose.setSelectedWindow(Expose.windows[idx+1] || Expose.windows[0]);
   }
 
   static selectPrev() {
     let idx = Expose.windows.indexOf(Expose.selectedWin);
-    Expose.windowMouseLeave.call(Expose.selectedWin);
-    Expose.selectedWin = Expose.windows[idx-1] || Expose.windows[Expose.windows.length-1];
-    Expose.windowMouseEnter.call(Expose.selectedWin);
+    Expose.setSelectedWindow(Expose.windows[idx-1] || Expose.windows[Expose.windows.length-1]);
+  }
+
+  static selectUp() {
+    let idx = Expose.windows.indexOf(Expose.selectedWin);
+    let row = Math.floor(idx / Expose.windowsPerRows);
+    let col = idx % Expose.windowsPerRows;
+    Expose.setSelectedWindow(Expose.windows[(row-1)*Expose.windowsPerRows + col] || Expose.windows[Expose.windows.length-1]);
+  }
+
+  static selectDown() {
+    let idx = Expose.windows.indexOf(Expose.selectedWin);
+    let row = Math.floor(idx / Expose.windowsPerRows);
+    let col = idx % Expose.windowsPerRows;
+    Expose.setSelectedWindow(Expose.windows[(row+1)*Expose.windowsPerRows + col] || Expose.windows[0]);
   }
 
   static restoreWindowStyles(window) {
@@ -167,12 +177,26 @@ export default class Expose {
     }
   }
 
+  static setSelectedWindow(w) {
+    Expose.windowRemoveHighlight(Expose.selectedWin);
+    Expose.windowHighlight(w);
+    Expose.selectedWin = w;
+  }
+
   static windowMouseEnter(e) {
-    this.style.transform = 'scale(1.02)';
+    Expose.setSelectedWindow(this);
   }
 
   static windowMouseLeave(e) {
-    this.style.transform = 'scale(1)';
+    Expose.windowRemoveHighlight(this);
+  }
+
+  static windowHighlight(w) {
+    w.style.transform = 'scale(1.05)';
+  }
+
+  static windowRemoveHighlight(w) {
+    w.style.transform = 'scale(1)';
   }
 
   static windowClick(e) {
@@ -182,8 +206,8 @@ export default class Expose {
   }
 
   static bodyKeyDown(e) {
-    // (cmd|ctrl)+E
-    if (e.keyCode === 69 && (e.metaKey || e.ctrlKey)) {
+    // (cmd|ctrl)+E || alt+q
+    if ((e.keyCode === 69 && (e.metaKey || e.ctrlKey)) || (e.keyCode === 81 && e.altKey)) {
       Expose.toggle();
     }
 
@@ -194,9 +218,19 @@ export default class Expose {
         Expose.selectPrev();
       }
 
+      // Up
+      if (e.keyCode === 38) {
+        Expose.selectUp();
+      }
+
       // Right
       if (e.keyCode === 39) {
         Expose.selectNext();
+      }
+
+      // Down
+      if (e.keyCode === 40) {
+        Expose.selectDown();
       }
 
       // Enter
