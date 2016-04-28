@@ -3232,8 +3232,7 @@ JSONLDProcessor.trim = function(str) {
    return str.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
 }
 
-JSONLDProcessor.builtinContexts = {
-   "http://schema.org/" : {
+var schemaOrgContext = {
         "@vocab": "http://schema.org/",
         "acceptsReservations": { "@type": "@id" },
         "additionalType": { "@type": "@id" },
@@ -3328,11 +3327,17 @@ JSONLDProcessor.builtinContexts = {
         "webCheckinTime": { "@type": "DateTime" }
     }
 
+JSONLDProcessor.builtinContexts = {
+   "http://schema.org/" : schemaOrgContext,
+   "http://schema.org" : schemaOrgContext
+
 }
 
 JSONLDProcessor.prototype.process = function(data,options) {
    if (typeof data === "string") {
-      data = JSON.parse(data)
+	  console.log("parsing data");
+	  data = data.replace(/\n/g, " ");
+      data = JSON.parse(data);
    }
    
    var queue = [];
