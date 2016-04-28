@@ -1,0 +1,35 @@
+<html>
+<head>
+  <style>
+    .red {
+      background: red;
+      width: 50px;
+      height: 50px;
+    }
+    
+    .blue {
+      background: blue;
+      width: 50px;
+      height: 50px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="red"></div>
+  <div class="red"></div>
+  <div class="blue"></div>
+  <div class="red"></div>
+
+  <script>
+  'use strict';
+  
+  import {select} from '../src/active-expressions';
+  
+  var view = select('div', function(e) {
+    return e.className === 'red';
+  });
+  </script>
+
+</body>
+</html>
