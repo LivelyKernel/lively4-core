@@ -182,6 +182,10 @@ export default class Window extends Morph {
       // document.body.style.overflow = "auto"
       this.positionBeforeMaximize = null
     } else {
+      if (this.isMinimized()) {
+        this.toggleMinimize()
+      }
+      
       var bounds = this.getBoundingClientRect()
       this.positionBeforeMaximize = {
         x: bounds.left,
@@ -220,35 +224,39 @@ export default class Window extends Morph {
       
       // this.classList.removed("minimized")
     } else {
+      if (this.isMaximized()) {
+        this.toggleMaximize()
+      }
       
-      var bounds = this.getBoundingClientRect()
+      var bounds = this.getBoundingClientRect();
       this.positionBeforeMinimize = {
         x: bounds.left,
         y: bounds.top,
         width: bounds.width,
         height: bounds.height,
-      }
+      };
     
-      this.style.position = "fixed"
+      this.style.position = "fixed";
       this.style.top = this.minimizedWindowPadding +"px";
-      this.style.left = (window.innerWidth - this.minimizedWindowWidth - this.minimizedWindowPadding)+"px"
+      this.style.left = (window.innerWidth - this.minimizedWindowWidth - this.minimizedWindowPadding)+"px";
       this.style.width = "300px";
       this.style.height= "30px";
       content.style.display = "none";
       resizeHandle.style.display = "none";
       // this.classList.add("minimized");
       
-      
-      this.sortMinimizedWindows()
+      this.sortMinimizedWindows();
     }
   }
   
-  
-  
   isMinimized() {
-    return true && this.positionBeforeMinimize
+    return !!this.positionBeforeMinimize;
   }
   
+  isMaximized() {
+    return !!this.positionBeforeMaximize;
+  }
+
   sortMinimizedWindows() {
     var x = this.minimizedWindowPadding
     var windowBarHeight = this.shadowRoot.querySelector('.window-titlebar').clientHeight
