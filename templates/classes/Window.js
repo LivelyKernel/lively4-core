@@ -26,7 +26,7 @@ export default class Window extends Morph {
     return this.hasAttribute('fixed');
   }
 
-  setPosition(top, left) {
+  setPosition(left, top) { // x, y
     this.style.top = top + 'px';
     this.style.left = left + 'px';
   }
@@ -115,21 +115,15 @@ export default class Window extends Morph {
     let rect = this.getBoundingClientRect();
 
     if (this.isFixed) {
-      this.setPosition(
-        rect.top,
-        rect.left
-      );
+      this.setPosition(rect.left, rect.top);
 
       this.classList.add('window-fixed');
       this.pinButton.classList.add('active');
     } else {
       let scroll = getScroll();
 
-      this.setPosition(
-        rect.top + scroll.y,
-        rect.left + scroll.x
-      );
-
+      this.setPosition(rect.left + scroll.x, rect.top + scroll.y);
+      
       this.classList.remove('window-fixed');
       this.pinButton.classList.remove('active');
     }
@@ -171,14 +165,43 @@ export default class Window extends Morph {
   }
 
   maxButtonClicked(e) {
-    this.setPosition(
-      window.scrollY,
-      window.scrollX
-    );
-    this.setSize(
-      window.innerWidth,
-      window.innerHeight
-    );
+    this.toggleMaximize()
+  }
+
+  toggleMaximize() {
+    if (this.positionBeforeMaximize) {
+      this.style.position = "absolute"
+      this.setPosition(
+          this.positionBeforeMaximize.x,
+          this.positionBeforeMaximize.y
+      );
+      this.setSize(
+        this.positionBeforeMaximize.width,
+        this.positionBeforeMaximize.height
+      );  
+      this.classList.remove("fullscreen")
+      
+      document.body.style.overflow = this.positionBeforeMaximize.bodyOverflow
+      // document.body.style.overflow = "auto"
+      this.positionBeforeMaximize = null
+    } else {
+      var bounds = this.getBoundingClientRect()
+      this.positionBeforeMaximize = {
+        x: bounds.left,
+        y: bounds.top,
+        width: bounds.width,
+        height: bounds.height,
+        bodyOverflow: document.body.style.overflow
+      }
+     
+      this.style.position = "fixed"
+      this.style.top = 0;
+      this.style.left = 0;
+      this.style.width = "100%";
+      this.style.height= "100%";
+      document.body.style.overflow = "hidden"
+    
+    }
   }
 
   pinButtonClicked(e) {
@@ -191,6 +214,9 @@ export default class Window extends Morph {
   }
 
   closeButtonClicked(e) {
+    if (this.positionBeforeMaximize)
+      this.toggleMaximize()
+    
     this.parentNode.removeChild(this);
   }
 
@@ -200,6 +226,8 @@ export default class Window extends Morph {
 
   titleMouseDown(e) {
     e.preventDefault();
+
+    if(this.positionBeforeMaximize) return; // no dragging when maximized
 
     let offsetWindow = $(this).offset();
 
@@ -248,15 +276,15 @@ export default class Window extends Morph {
 
       if (this.isFixed) {
         this.setPosition(
-          e.clientY - this.dragging.top,
-          e.clientX - this.dragging.left
+          e.clientX - this.dragging.left,
+          e.clientY - this.dragging.top
         );
       } else {
         let scroll = getScroll();
 
         this.setPosition(
-          e.pageY - this.dragging.top - scroll.y,
-          e.pageX - this.dragging.left - scroll.x
+          e.pageX - this.dragging.left - scroll.x,
+          e.pageY - this.dragging.top - scroll.y
         );
       }
     } else if (this.resizing) {
