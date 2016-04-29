@@ -11,6 +11,10 @@ function getScroll() {
 
 export default class Window extends Morph {
 
+  // how to move this into the template CSS? #Jens
+  get minimizedWindowWidth() { return 300 }
+  get minimizedWindowPadding() { return 10 }
+
   /*
    * Getters/Setters
    */
@@ -154,14 +158,7 @@ export default class Window extends Morph {
   }
 
   minButtonClicked(e) {
-    // NotImplemented
-    lively.notify("todo: implement min window");
-    var content = this.shadowRoot.querySelector('#window-content');
-    if (content.style.visibility == "hidden") {
-     content.style.visibility = "visible";
-    } else {
-      content.style.visibility = "hidden";
-    }
+    this.toggleMinimize()
   }
 
   maxButtonClicked(e) {
@@ -203,7 +200,65 @@ export default class Window extends Morph {
     
     }
   }
-
+  
+  toggleMinimize() {
+    var content = this.shadowRoot.querySelector('#window-content');
+    var resizeHandle = this.shadowRoot.querySelector('.window-resize');
+    if (this.positionBeforeMinimize) {
+      this.style.position = "absolute"
+      this.setPosition(
+          this.positionBeforeMinimize.x,
+          this.positionBeforeMinimize.y
+      );
+      this.setSize(
+        this.positionBeforeMinimize.width,
+        this.positionBeforeMinimize.height
+      );  
+      content.style.display = "block";
+      resizeHandle.style.display = "block";
+      this.positionBeforeMinimize = null
+      
+      // this.classList.removed("minimized")
+    } else {
+      
+      var bounds = this.getBoundingClientRect()
+      this.positionBeforeMinimize = {
+        x: bounds.left,
+        y: bounds.top,
+        width: bounds.width,
+        height: bounds.height,
+      }
+    
+      this.style.position = "fixed"
+      this.style.top = this.minimizedWindowPadding +"px";
+      this.style.left = (window.innerWidth - this.minimizedWindowWidth - this.minimizedWindowPadding)+"px"
+      this.style.width = "300px";
+      this.style.height= "30px";
+      content.style.display = "none";
+      resizeHandle.style.display = "none";
+      // this.classList.add("minimized");
+      
+      
+      this.sortMinimizedWindows()
+    }
+  }
+  
+  
+  
+  isMinimized() {
+    return true && this.positionBeforeMinimize
+  }
+  
+  sortMinimizedWindows() {
+    var x = this.minimizedWindowPadding
+    var windowBarHeight = this.shadowRoot.querySelector('.window-titlebar').clientHeight
+    
+    _.filter(document.body.querySelectorAll("lively-window"), ea => ea.isMinimized()).forEach(ea => {
+      ea.style.top= x + "px" ;
+      x += windowBarHeight + this.minimizedWindowPadding
+    })
+  }
+  
   pinButtonClicked(e) {
     let isPinned = this.pinButton.classList.toggle('active');
     if (isPinned) {

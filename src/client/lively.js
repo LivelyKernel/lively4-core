@@ -207,6 +207,7 @@ export default class Lively {
       comp.enableAutocompletion();
       comp.editor.setValue(string)
       lively.setPosition(container,pos);
+      container.setAttribute("title", "Workspace")
     }).then( () => {
       comp.editor.focus();
       return comp
