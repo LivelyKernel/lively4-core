@@ -522,6 +522,7 @@ export default class Container extends Morph {
     }
 
   async editFile (path) {
+    return new Promise(async (resolve, reject) => {
       this.setAttribute("mode","edit") // make it persistent
       
       if (path) await this.setPath(path)
@@ -531,8 +532,6 @@ export default class Container extends Morph {
       containerContent.style.display = "none"
       var containerEditor =  this.getSubmorph('#container-editor')
       containerEditor.style.display = "block"
-
-
 
       var livelyEditor = lively.components.createComponent("lively-editor");
       lively.components.openIn(containerEditor,livelyEditor).then( comp => {
@@ -564,13 +563,16 @@ export default class Container extends Morph {
           comp.setText(this.sourceContent); // directly setting the source we got
 
           this.showCancelAndSave()
+        
+          
+          setTimeout(resolve, 1000) // Promise from AceEditor needed here... #Jens #TODO
+          
           // comp.loadFile() // ALT: Load the file again?
-
-
       })
       this.showNavbar()
       lively.components.loadUnresolved(containerEditor)
-    }
+    })
+  }
 }
 
 
