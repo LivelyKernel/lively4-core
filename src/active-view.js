@@ -19,8 +19,8 @@ export class ActiveDOMView extends ActiveView {
     this.mutationObserver = null;
     this.elements = [];
     
-    _setupObserver();
-    _collectElements();
+    this._setupObserver();
+    this._collectElements();
   }
 
   /**
@@ -28,7 +28,7 @@ export class ActiveDOMView extends ActiveView {
    * @function ActiveDOMView#_setupObserver
    */
   _setupObserver() {
-    this.mutationObserver = new MutationObserver(_observerCallback);
+    this.mutationObserver = new MutationObserver(this._observerCallback);
     let config = {
       childList: true,
       subtree: true
