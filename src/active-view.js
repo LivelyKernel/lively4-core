@@ -6,8 +6,6 @@ class ActiveView {
       throw new TypeError('Cannot construct ActiveView directly');
     }
   }
-  
-  
 }
 
 export class ActiveDOMView extends ActiveView {
@@ -103,8 +101,38 @@ export class ActiveDOMView extends ActiveView {
     this.exited.add(node);
   }
   
+  /**
+   * Check if a node matches the views conditions
+   * @function ActiveDOMView#matches
+   * @param {HTMLElement} node
+   * @return {boolean} whether or not it's a match
+   */
   matches(node) {
     return node.matches(this.selector) && this.filterFunction(node);
+  }
+  
+  /**
+   * Call callback with all new elements since the last call
+   * @function ActiveDOMView#enter
+   * @param {function} callback
+   * @return {ActiveDOMView} This view
+   */
+  enter(callback) {
+    this.entered.forEach(e => callback(e));
+    this.entered.clear();
+    return this;
+  }
+  
+  /**
+   * Call callback with all removed elements since the last call
+   * @function ActiveDOMView#exit
+   * @param {function} callback
+   * @return {ActiveDOMView} This view
+   */
+  exit(callback) {
+    this.exited.forEach(e => callback(e));
+    this.exited.clear();
+    return this;
   }
 }
 
