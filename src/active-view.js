@@ -17,7 +17,9 @@ export class ActiveDOMView extends ActiveView {
     this.selector = selector;
     this.filterFunction = filterFunction;
     this.mutationObserver = null;
-    this.elements = [];
+    this.elements = new Set();
+    this.entered = new Set();
+    this.exited = new Set();
     
     this._setupObserver();
     this._collectElements();
@@ -28,7 +30,7 @@ export class ActiveDOMView extends ActiveView {
    * @function ActiveDOMView#_setupObserver
    */
   _setupObserver() {
-    this.mutationObserver = new MutationObserver(this._observerCallback);
+    this.mutationObserver = new MutationObserver(m => { this._observerCallback(m) });
     let config = {
       childList: true,
       subtree: true
@@ -42,8 +44,35 @@ export class ActiveDOMView extends ActiveView {
    * @function ActiveDOMView#_observerCallback
    */
   _observerCallback(mutations) {
+    console.debug(mutations);
     mutations.forEach(mutation => {
-      console.debug(mutation);
+      if (mutation.type === 'childList') {
+        Array.from(mutation.addedNodes).forEach(n => {
+          // check not itself
+          if (this.matches(n)) {
+            this._elementEnters(n);
+          }
+          
+          // check children
+          Array
+            .from(n.querySelectorAll(this.selector))
+            .filter(this.filterFunction)
+            .forEach(m => this._elementEnters(m));
+        });
+
+        Array.from(mutation.removedNodes).forEach(n => {
+          // check node itself (because there is no parent)
+          if (this.matches(n)) {
+            this._elementExits(n);
+          }
+          
+          // check children
+          Array
+            .from(n.querySelectorAll(this.selector))
+            .filter(this.filterFunction)
+            .forEach(m => this._elementExits(m));
+        });
+      }
     });
   }
   
@@ -52,21 +81,43 @@ export class ActiveDOMView extends ActiveView {
    * @function ActiveDOMView#_collectElements
    */
   _collectElements() {
-    this.elements = [];
+    this.elements = new Set();
 
-    let nodes = document.querySelectorAll(this.selector);
-    for (let i = 0; i < nodes.length; i++) {
-      if (this.filterFunction(nodes[i])) {
-        this.elements.push({
-          element: nodes[i],
-          isNew: true,
-          isGone: false
-        });
-      }
-    }
+    Array
+      .from(document.querySelectorAll(this.selector))
+      .filter(this.filterFunction)
+      .forEach(n => this.elements.add(n));
+  }
+  
+  _elementEnters(node) {
+    console.debug('adding', node);
+    this.exited.delete(node);
+    this.elements.add(node);
+    this.entered.add(node);
+  }
+  
+  _elementExits(node) {
+    console.debug('removing', node);
+    this.entered.delete(node);
+    this.elements.delete(node);
+    this.exited.add(node);
+  }
+  
+  matches(node) {
+    return node.matches(this.selector) && this.filterFunction(node);
   }
 }
 
 class ActiveObjectView extends ActiveView {
   // TODO
 }
+
+import { select } from './active-expressions.js';
+
+let view = select('lively-menu', function(e) {
+  return true;
+});
+
+console.debug(view);
+
+window.testingView = view;
