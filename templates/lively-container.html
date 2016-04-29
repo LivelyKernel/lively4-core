@@ -9,15 +9,18 @@
         width: 440px;
       }
       #container-navigation {
-        flex: 0;
+        // height: 100px;
       }
       #layout-center {
         width: 100%;
-        height: 100%;
         overflow: hidden;
         flex: 1;
         flex-direction: row;
-        display: flex;
+        display: -webkit-flex;
+        -webkit-flex-direction: row;
+        -webkit-align-content: stretch;
+        align-content: stretch;      
+        
       }
     	#container-content {
         width: 100%;
@@ -30,7 +33,7 @@
       #container-editor {
         width: 100%;
         height: 100%;
-        overflow: hidden;
+        //overflow: hidden;
         flex: 1;
         padding: 0px;
         display: block;
@@ -92,28 +95,62 @@
         color: white;
         border: 0px
       }
+      div.fill {
+      display: flex;
+      flex-direction: row;
+    }
+      input {
+      width: 40px;
+      flex: 1;
+      margin: 2px;
+    }
+    #root {
+      height: 100%;
+      display: flex,
+      display: flex;
+        display: -webkit-flex;
+        -webkit-flex-direction: column;
+        -webkit-align-content: stretch;
+    }
+    #container-rightpane {
+      flex: 1;
+      display: flex,
+      flex-direction: both;
+      align-items: 'stretch';
+      -webkit-flex: 1;
+    position:relative;
+    }
+    #container-editor, #container-content{
+      position:absolute;
+    width:100%;
+    height:100%;  
+    }
     </style>
-    <div id="container-navigation">
-      <button id="back">&lt;</button>
-      <button id="forward">&gt;</button>
-      <button id="up">^</button>
-      <input type="text" id="container-path" value="">
-      <button class="browse" id="edit">Edit</button>
-      <button class="edit" id="cancel">cancel</button>
-      <button class="edit" id="save">save</button>
-      <button class="edit" id="sync">sync</button>
-      <button class="edit" id="accept">accept</button>
-      <button class="edit" id="delete">delete</button>
-      <label class=""><input class="checkbox" type="checkbox" id="live" checked>live</label>
-    </div>
-
-    <div id="layout-center">
-      <div id="container-leftpane"></div>
-      <div id="container-content">
-        <!-- by default the content is hidden-->
-        <content></content>
+    <div id="root">
+      <div id="container-navigation" class="fill">
+        <button id="back">&lt;</button>
+        <button id="forward">&gt;</button>
+        <button id="up">^</button>
+        <input type="text" id="container-path" value="">
+        <button class="browse" id="edit">Edit</button>
+        <button class="edit" id="cancel">cancel</button>
+        <button class="edit" id="save">save</button>
+        <button class="edit" id="sync">sync</button>
+        <button class="edit" id="accept">accept</button>
+        <button class="edit" id="delete">delete</button>
+        <label class="" title="eval on save"><input class="checkbox" type="checkbox" id="live" checked>eval</label>
       </div>
-      <div id="container-editor"></div>
+  
+      <div id="layout-center">
+        <div id="container-leftpane"></div>
+        <div id="container-rightpane">
+          <div id="container-content">
+            <!-- by default the content is hidden-->
+            <content></content>
+          </div>
+          <div id="container-editor"></div>
+        </div>
+      </div>
     </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
