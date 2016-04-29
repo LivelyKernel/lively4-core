@@ -287,8 +287,7 @@ export default class Container extends Morph {
 
   isEditing() {
       return this.getAttribute("mode") == "edit"
-    }
-
+  }
 
   getURL() {
       var path = this.getPath()
@@ -523,6 +522,8 @@ export default class Container extends Morph {
     }
 
   async editFile (path) {
+      this.setAttribute("mode","edit") // make it persistent
+      
       if (path) await this.setPath(path)
 
       this.clear()
