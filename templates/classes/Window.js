@@ -43,11 +43,14 @@ export default class Window extends Morph {
   /*
    * HTMLElement callbacks
    */
-  attachedCallback() {
+  initialize() {
     this.setup();
 
     this.created = true;
     this.render();
+    
+    if (this.isMinimized() || this.isMaximized())
+      this.displayResizeHandle(false);
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
@@ -66,6 +69,9 @@ export default class Window extends Morph {
   /*
    * Initialization
    */
+   
+   
+   
   defineShortcuts() {
     this.window = this.shadowRoot.querySelector('.window');
     this.titleSpan = this.shadowRoot.querySelector('.window-title span');
@@ -102,6 +108,9 @@ export default class Window extends Morph {
 
     this.defineShortcuts();
     this.bindEvents();
+  
+    
+    
   }
 
   /*
@@ -176,10 +185,8 @@ export default class Window extends Morph {
         this.positionBeforeMaximize.width,
         this.positionBeforeMaximize.height
       );  
-      this.classList.remove("fullscreen")
-      
       document.body.style.overflow = this.positionBeforeMaximize.bodyOverflow
-      // document.body.style.overflow = "auto"
+      
       this.positionBeforeMaximize = null
     } else {
       if (this.isMinimized()) {
@@ -203,11 +210,17 @@ export default class Window extends Morph {
       document.body.style.overflow = "hidden"
     
     }
+    this.displayResizeHandle(!this.isMaximized())
+  }
+  
+  displayResizeHandle(bool) {
+    if (bool === undefined) bool = true;
+    this.shadowRoot.querySelector('.window-resize').style.display = 
+      bool ? "block" : "none";
   }
   
   toggleMinimize() {
     var content = this.shadowRoot.querySelector('#window-content');
-    var resizeHandle = this.shadowRoot.querySelector('.window-resize');
     if (this.positionBeforeMinimize) {
       this.style.position = "absolute"
       this.setPosition(
@@ -219,7 +232,7 @@ export default class Window extends Morph {
         this.positionBeforeMinimize.height
       );  
       content.style.display = "block";
-      resizeHandle.style.display = "block";
+      this.displayResizeHandle(true)
       this.positionBeforeMinimize = null
       
       // this.classList.removed("minimized")
@@ -242,8 +255,7 @@ export default class Window extends Morph {
       this.style.width = "300px";
       this.style.height= "30px";
       content.style.display = "none";
-      resizeHandle.style.display = "none";
-      // this.classList.add("minimized");
+      this.displayResizeHandle(false)
       
       this.sortMinimizedWindows();
     }
@@ -367,4 +379,14 @@ export default class Window extends Morph {
     this.style.top = 'calc(50% - ' + (rect.height / 2) + 'px)';
     this.style.left = 'calc(50% - ' + (rect.width / 2) + 'px)';
   }
+  
+  /*
+   * Live Programming / Instance Migration
+   */
+  livelyMigrate(oldInstance) {
+    // this is crucial state
+    this.positionBeforeMaximize = oldInstance.positionBeforeMaximize
+    this.positionBeforeMinimize = oldInstance.positionBeforeMinimize
+  }
+  
 }

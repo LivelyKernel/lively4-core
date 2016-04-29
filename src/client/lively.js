@@ -364,6 +364,9 @@ export default class Lively {
 
     _.each($(tagName), function(oldInstance) {
       if (oldInstance.__ingoreUpdates) return;
+      
+      // if (oldInstance.isMinimized && oldInstance.isMinimized()) return // ignore minimized windows
+      // if (oldInstance.isMaximized && oldInstance.isMaximized()) return // ignore isMaximized windows
 
       var owner = oldInstance.parentElement;
       var newInstance = document.createElement(tagName);
@@ -377,11 +380,12 @@ export default class Lively {
       _.each(oldInstance.attributes, function(ea) {
         console.log("set old attribute " + ea.name + " to: " + ea.value);
         newInstance.setAttribute(ea.name, ea.value);
+      });
 
-      });
-      _.each(_.keys(oldInstance), function(ea) {
-        console.log("ignore properties: " + newInstance[ea] + " <-- " + oldInstance[ea]);
-      });
+      // Properties
+      if (newInstance.livelyMigrate) {
+        newInstance.livelyMigrate(oldInstance) // give instances a chance to take over old state...
+      }
     });
   }
 
