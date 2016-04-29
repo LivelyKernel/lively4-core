@@ -267,7 +267,7 @@ export default class Container extends Morph {
   }
 
   followPath(path) {
-    console.log("follow path: " + path)
+    console.log("follow path2: " + path)
     if (_.last(this.history()) !== path)
       this.history().push(path)
 
@@ -300,12 +300,11 @@ export default class Container extends Morph {
   }
   
   setPath(path, donotrender) {
+    console.log("set path")
     this.getSubmorph('#container-content').style.display = "block"
     this.getSubmorph('#container-editor').style.display = "none"
 
     // this.getSubmorph('#container-leftpane').style.display = "none"
-
-
 
     if (!path) {
         path = ""
@@ -335,20 +334,25 @@ export default class Container extends Morph {
     this.sourceContent = "NOT EDITABLE"
     var render = !donotrender
     // Handling directories
+    
     if (isdir) {
-      return new Promise((resolve) => { resolve("") })
-      // return lively.files.statFile(url).then((content) => {
-      //   this.sourceContent = content
-      //   var html = "<ul>" +
-      //     "<li><a href='../'>..</a></li>" +
-      //     JSON.parse(content).contents.map( ea =>
-      //       "<li><a href='"+ea.name + (ea.type == "directory" ? "/" : "")+"''>" +
-      //       ea.name+ "</a></li>").join("\n")+"</ul>"
-      //   if (render) this.appendHtml(html)
-      // }).catch(function(err){
-      //   console.log("Error: ", err)
-      //   lively.notify("ERROR: Could not set path: " + path,  "because of: ",  err)
-      // })
+      
+      // return new Promise((resolve) => { resolve("") })
+      return lively.files.statFile(url).then((content) => {
+        this.sourceContent = content
+        var html = "<div class='table-container'><table class='directory'><tr><th>name</th><th>size</th></tr>" +
+          // "<li><a href='../'>..</a></li>" +
+          _.sortBy(JSON.parse(content).contents, ea => ea.name)
+            .filter(ea => !ea.name.match(/^\./))
+            .map( ea =>
+            // "<li><a href='"+ea.name + (ea.type == "directory" ? "/" : "")+"''>" +ea.name+ "</a></li>"
+            "<tr><td>" + ea.name + '</td><td>' + ea.size+ '</td></tr>'
+            ).join("\n")+"</table></div>"
+        if (render) this.appendHtml(html)
+      }).catch(function(err){
+        console.log("Error: ", err)
+        lively.notify("ERROR: Could not set path: " + path,  "because of: ",  err)
+      })
     }
     // Handling files
     return lively.files.loadFile(url).then((content) => {
