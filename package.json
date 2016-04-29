@@ -1,6 +1,6 @@
 {
   "name": "lively.lang",
-  "version": "0.5.21",
+  "version": "0.5.22",
   "description": "JavaScript utils providing useful abstractions for working with collections, functions, objects.",
   "main": "index.js",
   "systemjs": {
@@ -56,6 +56,7 @@
   "dependencies": {},
   "devDependencies": {
     "doc-comments": "^0.1.2",
+    "lively.ast": "^0.6.0",
     "babel-core": "^5.8.35",
     "uglify-js": "^2.6.1",
     "expect.js": "*",
