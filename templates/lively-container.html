@@ -1,130 +1,126 @@
 <template id="lively-container" data-class="Container">
      <style data-src="/templates/livelystyle.css"></style>
      <style>
+      :host {
+      }
+      
       .edit {
         visibility: hidden;
         display: none;
       }
-      #container-path {
-        width: 440px;
+      
+      #root {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
       }
-      #container-navigation {
-        // height: 100px;
+      
+      #container-rightpane {
+        flex: 1;
+        position: relative;
       }
+      
+      #container-editor, #container-content{
+        position:absolute;
+      }
+      
       #layout-center {
-        width: 100%;
         overflow: hidden;
         flex: 1;
+        display: flex;
         flex-direction: row;
-        display: -webkit-flex;
-        -webkit-flex-direction: row;
-        -webkit-align-content: stretch;
-        align-content: stretch;      
-        
       }
+      
     	#container-content {
-        width: 100%;
-        height: 100%;
         overflow: auto;
         flex: 1;
         margin: 0px;
         padding: 10px;
     	}
+    	
       #container-editor {
         width: 100%;
         height: 100%;
-        //overflow: hidden;
         flex: 1;
         padding: 0px;
-        display: block;
     	}
-      lively-editor {
-        margin: 0px;
-      }
+
       #container-leftpane {
         width: 150px;
         margin: 0;
         overflow: auto;
         overflow-x: hidden;
       }
+      
       #container-leftpane ul {
         margin:0;
         list-style-type: none;
         padding: 0;
       }
+      
       #container-leftpane ul li {
         margin: 0px;
         padding: 2px;
         font-size: 10pt;
       }
+      
       #container-leftpane ul li a {
        width: 200px;
        display: box;
       }
+      
       #container-leftpane ul li a:hover {
         background-color: gray;
         color: white;
         cursor: pointer
       }
+      
       #container-leftpane ul li a:hover {
         background-color: gray;
         color: white;
         cursor: pointer
       }
+      
       #container-leftpane ul li ul li {
         width: 400px;
         padding-left: 10px;
       }
+      
       #container-leftpane ul li ul li:hover{
         background-color: gray;
         color: white;
         cursor: pointer
       }
-      :host {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-      }
-
+      
       #delete {
         color: #b33630;
       }
+      
       #delete:hover {
-        background:  linear-gradient(#dc5f59, #b33630);;
+        background:  linear-gradient(#dc5f59, #b33630);
         color: white;
         border: 0px
       }
+      
       div.fill {
-      display: flex;
-      flex-direction: row;
-    }
+        display: flex;
+        flex-direction: row;
+      }
+      
       input {
-      width: 40px;
-      flex: 1;
-      margin: 2px;
-    }
-    #root {
-      height: 100%;
-      display: flex,
-      display: flex;
-        display: -webkit-flex;
-        -webkit-flex-direction: column;
-        -webkit-align-content: stretch;
-    }
-    #container-rightpane {
-      flex: 1;
-      display: flex,
-      flex-direction: both;
-      align-items: 'stretch';
-      -webkit-flex: 1;
-    position:relative;
-    }
-    #container-editor, #container-content{
-      position:absolute;
-    width:100%;
-    height:100%;  
-    }
+        width: 40px;
+        flex: 1;
+        margin: 2px;
+      }
+      
+       label {
+        max-height: 18px;
+      }
+      
+      lively-editor {
+        margin: 0px;
+      }
+
     </style>
     <div id="root">
       <div id="container-navigation" class="fill">
