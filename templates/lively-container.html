@@ -2,19 +2,15 @@
      <style data-src="/templates/livelystyle.css"></style>
      <style>
       :host {
+        display: flex;
+        flex-direction: column;
       }
       
       .edit {
         visibility: hidden;
         display: none;
       }
-      
-      #root {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-      }
-      
+
       #container-rightpane {
         flex: 1;
         position: relative;
@@ -113,40 +109,39 @@
         margin: 2px;
       }
       
-       label {
+      label {
         max-height: 18px;
       }
       
       lively-editor {
         margin: 0px;
       }
-
     </style>
-    <div id="root">
-      <div id="container-navigation" class="fill">
-        <button id="back">&lt;</button>
-        <button id="forward">&gt;</button>
-        <button id="up">^</button>
-        <input type="text" id="container-path" value="">
-        <button class="browse" id="edit">Edit</button>
-        <button class="edit" id="cancel">cancel</button>
-        <button class="edit" id="save">save</button>
-        <button class="edit" id="sync">sync</button>
-        <button class="edit" id="accept">accept</button>
-        <button class="edit" id="delete">delete</button>
-        <label class="" title="eval on save"><input class="checkbox" type="checkbox" id="live" checked>eval</label>
-      </div>
-  
-      <div id="layout-center">
-        <div id="container-leftpane"></div>
-        <div id="container-rightpane">
-          <div id="container-content">
-            <!-- by default the content is hidden-->
-            <content></content>
-          </div>
-          <div id="container-editor"></div>
+   
+    <div id="container-navigation" class="fill">
+      <button id="back">&lt;</button>
+      <button id="forward">&gt;</button>
+      <button id="up">^</button>
+      <input type="text" id="container-path" value="">
+      <button class="browse" id="edit">Edit</button>
+      <button class="edit" id="cancel">cancel</button>
+      <button class="edit" id="save">save</button>
+      <button class="edit" id="sync">sync</button>
+      <button class="edit" id="accept">accept</button>
+      <button class="edit" id="delete">delete</button>
+      <label class="" title="eval on save"><input class="checkbox" type="checkbox" id="live" checked>eval</label>
+    </div>
+
+    <div id="layout-center">
+      <div id="container-leftpane"></div>
+      <div id="container-rightpane">
+        <div id="container-content">
+          <!-- by default the content is hidden-->
+          <content></content>
         </div>
+        <div id="container-editor"></div>
       </div>
     </div>
+
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
