@@ -157,12 +157,17 @@
         height: 100px;
       }
       
+      button.arrow {
+        font-size: 12pt;
+        font-weight: bold;
+      }
+      
     </style>
    
     <div id="container-navigation" class="fill">
-      <button id="back">&lt;</button>
-      <button id="forward">&gt;</button>
-      <button id="up">^</button>
+      <button class="arrow" id="back">&lt;</button>
+      <button class="arrow" id="forward">&gt;</button>
+      <button class="arrow" id="up">&uarr;</button>
       <input type="text" id="container-path" value="">
       <button class="edit" id="sync">sync</button>
       <button class="edit" id="delete">delete</button>
