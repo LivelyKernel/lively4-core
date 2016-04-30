@@ -11,6 +11,10 @@ function getScroll() {
 
 export default class Window extends Morph {
 
+  // how to move this into the template CSS? #Jens
+  get minimizedWindowWidth() { return 300 }
+  get minimizedWindowPadding() { return 10 }
+
   /*
    * Getters/Setters
    */
@@ -26,7 +30,7 @@ export default class Window extends Morph {
     return this.hasAttribute('fixed');
   }
 
-  setPosition(top, left) {
+  setPosition(left, top) { // x, y
     this.style.top = top + 'px';
     this.style.left = left + 'px';
   }
@@ -39,11 +43,14 @@ export default class Window extends Morph {
   /*
    * HTMLElement callbacks
    */
-  attachedCallback() {
+  initialize() {
     this.setup();
 
     this.created = true;
     this.render();
+    
+    if (this.isMinimized() || this.isMaximized())
+      this.displayResizeHandle(false);
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
@@ -62,6 +69,9 @@ export default class Window extends Morph {
   /*
    * Initialization
    */
+   
+   
+   
   defineShortcuts() {
     this.window = this.shadowRoot.querySelector('.window');
     this.titleSpan = this.shadowRoot.querySelector('.window-title span');
@@ -87,7 +97,7 @@ export default class Window extends Morph {
 
     this.menuButton.addEventListener('click', (e) => { this.menuButtonClicked(e); });
     this.minButton.addEventListener('click', (e) => { this.minButtonClicked(e); });
-    // this.maxButton.addEventListener('click', (e) => { this.maxButtonClicked(e); });
+    this.maxButton.addEventListener('click', (e) => { this.maxButtonClicked(e); });
     this.pinButton.addEventListener('click', (e) => { this.pinButtonClicked(e); });
     this.resizeButton.addEventListener('mousedown', (e) => { this.resizeMouseDown(e); });
     this.closeButton.addEventListener('click', (e) => { this.closeButtonClicked(e); });
@@ -98,6 +108,9 @@ export default class Window extends Morph {
 
     this.defineShortcuts();
     this.bindEvents();
+  
+    
+    
   }
 
   /*
@@ -115,21 +128,15 @@ export default class Window extends Morph {
     let rect = this.getBoundingClientRect();
 
     if (this.isFixed) {
-      this.setPosition(
-        rect.top,
-        rect.left
-      );
+      this.setPosition(rect.left, rect.top);
 
       this.classList.add('window-fixed');
       this.pinButton.classList.add('active');
     } else {
       let scroll = getScroll();
 
-      this.setPosition(
-        rect.top + scroll.y,
-        rect.left + scroll.x
-      );
-
+      this.setPosition(rect.left + scroll.x, rect.top + scroll.y);
+      
       this.classList.remove('window-fixed');
       this.pinButton.classList.remove('active');
     }
@@ -160,20 +167,118 @@ export default class Window extends Morph {
   }
 
   minButtonClicked(e) {
-    // NotImplemented
-    lively.notify("min window")
-    var content = this.shadowRoot.querySelector('#window-content')
-    if (content.style.visibility == "hidden") {
-     content.style.visibility = "visible" 
-    } else {
-      content.style.visibility = "hidden"
-    }
+    this.toggleMinimize()
   }
 
   maxButtonClicked(e) {
-    // NotImplemented
+    this.toggleMaximize()
   }
 
+  toggleMaximize() {
+    if (this.positionBeforeMaximize) {
+      this.style.position = "absolute"
+      this.setPosition(
+          this.positionBeforeMaximize.x,
+          this.positionBeforeMaximize.y
+      );
+      this.setSize(
+        this.positionBeforeMaximize.width,
+        this.positionBeforeMaximize.height
+      );  
+      document.body.style.overflow = this.positionBeforeMaximize.bodyOverflow
+      
+      this.positionBeforeMaximize = null
+    } else {
+      if (this.isMinimized()) {
+        this.toggleMinimize()
+      }
+      
+      var bounds = this.getBoundingClientRect()
+      this.positionBeforeMaximize = {
+        x: bounds.left,
+        y: bounds.top,
+        width: bounds.width,
+        height: bounds.height,
+        bodyOverflow: document.body.style.overflow
+      }
+     
+      this.style.position = "fixed"
+      this.style.top = 0;
+      this.style.left = 0;
+      this.style.width = "100%";
+      this.style.height= "100%";
+      document.body.style.overflow = "hidden"
+    
+    }
+    this.displayResizeHandle(!this.isMaximized())
+  }
+  
+  displayResizeHandle(bool) {
+    if (bool === undefined) bool = true;
+    this.shadowRoot.querySelector('.window-resize').style.display = 
+      bool ? "block" : "none";
+  }
+  
+  toggleMinimize() {
+    var content = this.shadowRoot.querySelector('#window-content');
+    if (this.positionBeforeMinimize) {
+      this.style.position = "absolute"
+      this.setPosition(
+          this.positionBeforeMinimize.x,
+          this.positionBeforeMinimize.y
+      );
+      this.setSize(
+        this.positionBeforeMinimize.width,
+        this.positionBeforeMinimize.height
+      );  
+      content.style.display = "block";
+      this.displayResizeHandle(true)
+      this.positionBeforeMinimize = null
+      
+      // this.classList.removed("minimized")
+    } else {
+      if (this.isMaximized()) {
+        this.toggleMaximize()
+      }
+      
+      var bounds = this.getBoundingClientRect();
+      this.positionBeforeMinimize = {
+        x: bounds.left,
+        y: bounds.top,
+        width: bounds.width,
+        height: bounds.height,
+      };
+    
+      this.style.position = "fixed";
+      this.style.top = this.minimizedWindowPadding +"px";
+      this.style.left = (window.innerWidth - this.minimizedWindowWidth - this.minimizedWindowPadding)+"px";
+      this.style.width = "300px";
+      this.style.height= "30px";
+      content.style.display = "none";
+      this.displayResizeHandle(false)
+      
+      this.sortMinimizedWindows();
+    }
+  }
+  
+  isMinimized() {
+    return !!this.positionBeforeMinimize;
+  }
+  
+  isMaximized() {
+    return !!this.positionBeforeMaximize;
+  }
+
+  sortMinimizedWindows() {
+    var x = this.minimizedWindowPadding
+    var windowBarHeight = this.shadowRoot.querySelector('.window-titlebar').clientHeight
+    
+    _.filter(document.body.querySelectorAll("lively-window"), ea => ea.isMinimized()).forEach(ea => {
+      ea.style.top= x + "px" ;
+      x += windowBarHeight + this.minimizedWindowPadding
+    })
+  }
+  
   pinButtonClicked(e) {
     let isPinned = this.pinButton.classList.toggle('active');
     if (isPinned) {
@@ -184,6 +289,9 @@ export default class Window extends Morph {
   }
 
   closeButtonClicked(e) {
+    if (this.positionBeforeMaximize)
+      this.toggleMaximize()
+    
     this.parentNode.removeChild(this);
   }
 
@@ -193,6 +301,8 @@ export default class Window extends Morph {
 
   titleMouseDown(e) {
     e.preventDefault();
+
+    if(this.positionBeforeMaximize) return; // no dragging when maximized
 
     let offsetWindow = $(this).offset();
 
@@ -241,15 +351,15 @@ export default class Window extends Morph {
 
       if (this.isFixed) {
         this.setPosition(
-          e.clientY - this.dragging.top,
-          e.clientX - this.dragging.left
+          e.clientX - this.dragging.left,
+          e.clientY - this.dragging.top
         );
       } else {
         let scroll = getScroll();
 
         this.setPosition(
-          e.pageY - this.dragging.top - scroll.y,
-          e.pageX - this.dragging.left - scroll.x
+          e.pageX - this.dragging.left - scroll.x,
+          e.pageY - this.dragging.top - scroll.y
         );
       }
     } else if (this.resizing) {
@@ -269,4 +379,14 @@ export default class Window extends Morph {
     this.style.top = 'calc(50% - ' + (rect.height / 2) + 'px)';
     this.style.left = 'calc(50% - ' + (rect.width / 2) + 'px)';
   }
+  
+  /*
+   * Live Programming / Instance Migration
+   */
+  livelyMigrate(oldInstance) {
+    // this is crucial state
+    this.positionBeforeMaximize = oldInstance.positionBeforeMaximize
+    this.positionBeforeMinimize = oldInstance.positionBeforeMinimize
+  }
+  
 }

@@ -38,6 +38,8 @@ f(2)
     
     aceComp.enableAutocompletion = function(filename) {
       return this.aceRequire("ace/ext/language_tools").then( module => {
+        if (!this.editor) return
+        
         this.editor.setOptions({
             enableBasicAutocompletion: true,
             enableSnippets: true,

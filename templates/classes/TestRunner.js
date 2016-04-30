@@ -2,6 +2,7 @@
 
 export default class TestRunner extends HTMLDivElement {
   initialize() {
+    this.windowTitle = "Test Runner"
     lively.html.registerButtons(this)
     if (!this.querySelector("#mocha")) {
       var mochadiv  = document.createElement("div")

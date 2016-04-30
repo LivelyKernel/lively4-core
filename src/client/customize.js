@@ -11,6 +11,7 @@ export default class Customize {
           localStorage["customLivelyCode"] = text
           this.tryBoundEval(text); // just a default implementation...
       }
+      comp.parentElement.setAttribute("title", "Customize Page")
     })
   }
  

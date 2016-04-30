@@ -148,7 +148,7 @@ export default class Lively {
 
   static handleError(error) {
     lively.LastError = error
-   lively.notify("Error: ", error.message, 20, () =>
+    lively.notify("Error: ", error.message, 20, () =>
     		  lively.openWorkspace("Error:" + error.message + "\nLine:" + error.lineno + " Col: " + error.colno+"\nSource:" + error.source + "\nError:" + error.stack))
   }
 
@@ -207,6 +207,7 @@ export default class Lively {
       comp.enableAutocompletion();
       comp.editor.setValue(string)
       lively.setPosition(container,pos);
+      container.setAttribute("title", "Workspace")
     }).then( () => {
       comp.editor.focus();
       return comp
@@ -363,6 +364,9 @@ export default class Lively {
 
     _.each($(tagName), function(oldInstance) {
       if (oldInstance.__ingoreUpdates) return;
+      
+      // if (oldInstance.isMinimized && oldInstance.isMinimized()) return // ignore minimized windows
+      // if (oldInstance.isMaximized && oldInstance.isMaximized()) return // ignore isMaximized windows
 
       var owner = oldInstance.parentElement;
       var newInstance = document.createElement(tagName);
@@ -376,11 +380,22 @@ export default class Lively {
       _.each(oldInstance.attributes, function(ea) {
         console.log("set old attribute " + ea.name + " to: " + ea.value);
         newInstance.setAttribute(ea.name, ea.value);
+      });
 
-      });
-      _.each(_.keys(oldInstance), function(ea) {
-        console.log("ignore properties: " + newInstance[ea] + " <-- " + oldInstance[ea]);
-      });
+      // Migrate Position
+      if (oldInstance.style.position == "absolute") {
+        newInstance.style.top = oldInstance.style.top
+        newInstance.style.left = oldInstance.style.left
+      }
+
+      // Migrate "that" pointer
+      if (window.that == oldInstance) {
+        window.that = newInstance
+      }
+      
+      if (newInstance.livelyMigrate) {
+        newInstance.livelyMigrate(oldInstance) // give instances a chance to take over old state...
+      }
     });
   }
 
