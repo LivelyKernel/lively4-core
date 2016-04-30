@@ -6,8 +6,18 @@
 * [readme](README.md)
 
 ## Live Source Code
-* [mopdules](src/client/)
-  * [lively module](src/client/lively.js)
-* [templates](templates/)
+
+* [modules](src/client/) 
+  * [lively modules](src/client/lively.js)
+* [UI components (templates)](templates/) [UI classes](templates/classes/) 
   * [lively-container template](templates/lively-container.html) |  [Container class](templates/classes/Container.js)
-    
+* [service worker](src/swx/)
+ 
+
+## External Code
+
+We hope to come up with a sulution, that will be as comfortable as npm for node.js development, but at the same time will serve our need better to jump into development and immediatly make local customizations. 
+
+* [node modules](node_modules/): automatically updated, but not availablen on github.io
+* [external](src/external/): static copies, manually management needed
+* [vendor](vendor/) #Refactor

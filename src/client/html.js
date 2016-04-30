@@ -1,5 +1,8 @@
-
 'use strict';
+
+/*
+ * Kitchensink for all HTML manipulation utilities
+ */
 
 export default class HTML {
   
@@ -50,8 +53,6 @@ export default class HTML {
       })
   }
 
-
-  
   static fixLinks(nodes, dir, followPath) {
     if (! followPath) {
       throw new Error("argument followPath missing");
@@ -101,7 +102,7 @@ export default class HTML {
           if (path) {
             // console.log("fix "  + href + " to " + path + "(dir " + dir + ")")
             $(node).click(() => { 
-              // if (path.match(/https:\/\/lively4\/Thesis\/notes/)) {
+              // if (path.match(/https:\/\/lively4\/notes/)) {
               //     if (window.confirm("follow path? " + path)) {
               //       followPath(path); return false;
               //     }
