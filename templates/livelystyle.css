@@ -1,33 +1,34 @@
 
-button {
-  padding: 2;
-  border: 1px solid  #d5d5d5;
-  background: linear-gradient(#fcfcfc, #eee);
-  border-radius: 2px;
-  font-weight: bold;
-  font-size: 10pt;
-  color: #404040 ;
-}
-
-button:hover {
-  background: linear-gradient(#eee, #ddd);
-}
-
-
-button:disabled {
-  background: linear-gradient(#fefefe, #fcfcfc);
-  color: #cccccc;
-}
-    
-
-
-h1,h2,h3,h4 {
-  color: #2B65EC;
-}
-
-input {
-  background: #EEEEEE;  
-  border: 0;
-  padding: 2px;
-  border-radius: 2px;
-}
+  button {
+    padding: 2;
+    border: 1px solid  #d5d5d5;
+    background: linear-gradient(#fcfcfc, #eee);
+    border-radius: 2px;
+    font-weight: bold;
+    font-size: 10pt;
+    color: #404040 ;
+  }
+  
+  button:hover {
+    background: linear-gradient(#eee, #ddd);
+  }
+  
+  button:disabled {
+    background: linear-gradient(#fefefe, #fcfcfc);
+    color: #cccccc;
+  }
+  
+  h1,h2,h3,h4 {
+    color: #2B547E;
+  }
+  
+  a {
+    color: #2B547E;
+  }
+  
+  input {
+    background: #EEEEEE;  
+    border: 0;
+    padding: 2px;
+    border-radius: 2px;
+  }

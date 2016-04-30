@@ -11,116 +11,116 @@ export default class Container extends Morph {
     // lively.files.loadFile(lively4url + "/templates/livelystyle.css").then(css => {
     //   this.shadowRoot.querySelector("#livelyStyle").innerHTML = css
     // })
-    this.windowTitle = "Browser"
+    this.windowTitle = "Browser";
 
-    console.log("Initialize Container")
+    console.log("Initialize Container");
     if (this.useBrowserHistory()) {
       window.onpopstate = (event) => {
-        var state = event.state
+        var state = event.state;
         if (state && state.followInline) {
-          console.log("follow " + state.path)
-          this.setPath(state.path)
+          console.log("follow " + state.path);
+          this.setPath(state.path);
         }
       };
-      var path = lively.preferences.getURLParameter("load")
-      var edit = lively.preferences.getURLParameter("edit")
+      var path = lively.preferences.getURLParameter("load");
+      var edit = lively.preferences.getURLParameter("edit");
       if (path) {
-          this.setPath(path)
+          this.setPath(path);
       } else if (edit) {
           this.setPath(edit, true).then(() => {
-            this.editFile()
-          })
+            this.editFile();
+          });
       } else {
-        this.setPath(lively4url +"/")
+        this.setPath(lively4url +"/");
       }
     } else {
-    	var src = this.getAttribute("src")
+    	var src = this.getAttribute("src");
     	if (src) {
     		this.setPath(src).then(() => {
           if (this.getAttribute("mode") == "edit") {
-            this.editFile()
+            this.editFile();
       		}
-        })
+        });
     	}
     }
 
     // #TODO very ugly... I want to hide that level of JavaScript and just connect "onEnter" of the input field with my code
-    var input = this.getSubmorph("#container-path")
+    var input = this.getSubmorph("#container-path");
     $(input).keyup(event => {
       if (event.keyCode == 13) { // ENTER
         this.onPathEntered(input.value);
       }
     });
-    lively.html.registerButtons(this)
+    lively.html.registerButtons(this);
   }
     
   useBrowserHistory() {
-    return this.getAttribute("load") == "auto"
+    return this.getAttribute("load") == "auto";
   }  
     
   async onSync(evt) {
     var username = await lively.focalStorage.getItem("githubUsername")
     var token = await lively.focalStorage.getItem("githubToken")
     if (!token) {
-      var comp = lively.components.createComponent("lively-sync")
+      var comp = lively.components.createComponent("lively-sync");
       lively.components.openInWindow(comp).then((w) => {
-        lively.setPosition(w, lively.pt(evt.pageX, evt.pageY))
-      })
+        lively.setPosition(w, lively.pt(evt.pageX, evt.pageY));
+      });
     }
-    var serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1]
-    console.log("server url: " + serverURL)
+    var serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1];
+    console.log("server url: " + serverURL);
     if (!this.getPath().match(serverURL)) {
-      return lively.notify("can only sync on our repositories")
+      return lively.notify("can only sync on our repositories");
     }
-    var repo =  this.getPath().replace(serverURL +"/", "").replace(/\/.*/,"")
+    var repo =  this.getPath().replace(serverURL +"/", "").replace(/\/.*/,"");
     lively.files.syncRepository(serverURL, repo, username, token).then((r) =>
-      lively.notify("Synced " + repo, r, 10, () => lively.openWorkspace(r)))
+      lively.notify("Synced " + repo, r, 10, () => lively.openWorkspace(r)));
   }
 
 
   onPathEntered(path) {
-    this.followPath(path)
+    this.followPath(path);
   }
 
   hideCancelAndSave() {
     _.each(this.shadowRoot.querySelectorAll("button.edit"), (ea) => {
-      ea.style.visibility = "hidden"
-      ea.style.display = "none"
+      ea.style.visibility = "hidden";
+      ea.style.display = "none";
 
     });
     _.each(this.shadowRoot.querySelectorAll("button.browse"), (ea) => {
-      ea.style.visibility = "visible"
-      ea.style.display = "inline-block"
-    })
+      ea.style.visibility = "visible";
+      ea.style.display = "inline-block";
+    });
   }
 
   showCancelAndSave() {
       _.each(this.shadowRoot.querySelectorAll("button.edit"), (ea) => {
         ea.style.visibility = "visible";
-        ea.style.display = "inline-block"
+        ea.style.display = "inline-block";
       });
       
       _.each(this.shadowRoot.querySelectorAll("button.browse"), (ea) => {
         ea.style.visibility = "hidden";
-        ea.style.display = "none"
-      })
+        ea.style.display = "none";
+      });
 
     }
 
   onEdit() {
-      this.setAttribute("mode", "edit")
-      this.showCancelAndSave()
-      this.editFile()
+      this.setAttribute("mode", "edit");
+      this.showCancelAndSave();
+      this.editFile();
     }
 
   onCancel() {
-      this.setAttribute("mode", "show")
-      this.setPath(this.getPath())
-      this.hideCancelAndSave()
+      this.setAttribute("mode", "show");
+      this.setPath(this.getPath());
+      this.hideCancelAndSave();
     }
 
   onUp() {
-  	this.followPath(this.getPath().replace(/(\/[^/]+$)|([^/]+\/$)/,"/"))
+  	this.followPath(this.getPath().replace(/(\/[^/]+$)|([^/]+\/$)/,"/"));
   }
 
   onBack() {
@@ -203,58 +203,59 @@ export default class Container extends Morph {
   }
 
   clear() {
-    this.getSubmorph('#container-content').innerHTML = ''
+    this.getSubmorph('#container-root').innerHTML = ''
     this.getSubmorph('#container-editor').innerHTML = ''
   }
 
   appendMarkdown(content) {
     System.import(lively4url + '/src/external/showdown.js').then((showdown) => {
       var converter = new showdown.Converter();
-      var enhancedMarkdown = lively.html.enhanceMarkdown(content)
-      var htmlSource = converter.makeHtml(enhancedMarkdown)
-      var html = $.parseHTML(htmlSource)
-      lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path))
-      console.log("html", html)
-      var root = this.getSubmorph('#container-content');
-      html.forEach((ea) => root.appendChild(ea))
-      lively.components.loadUnresolved(root)
-    })
+      var enhancedMarkdown = lively.html.enhanceMarkdown(content);
+      var htmlSource = converter.makeHtml(enhancedMarkdown);
+      var html = $.parseHTML(htmlSource);
+      lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path));
+      console.log("html", html);
+      var root = this.getSubmorph('#container-root');
+      html.forEach((ea) => root.appendChild(ea));
+      lively.components.loadUnresolved(root);
+    });
   }
 
   appendLivelyMD(content) {
-    content = content.replace(/@World.*/g,"")
-    content = content.replace(/@+Text: name="Title".*\n/g,"# ")
-    content = content.replace(/@+Text: name="Text.*\n/g,"\n")
-    content = content.replace(/@+Text: name="Content.*\n/g,"\n")
-    content = content.replace(/@+Box: name="SteppingWordCounter".*\n/g,"\n")
-    content = content.replace(/@+Text: name="MetaNoteText".*\n(.*)\n\n/g,  "<i style='color:orange'>$1</i>\n\n")
-    content = content.replace(/@+Text: name="WordsText".*\n.*/g,"\n")
+    content = content.replace(/@World.*/g,"");
+    content = content.replace(/@+Text: name="Title".*\n/g,"# ");
+    content = content.replace(/@+Text: name="Text.*\n/g,"\n");
+    content = content.replace(/@+Text: name="Content.*\n/g,"\n");
+    content = content.replace(/@+Box: name="SteppingWordCounter".*\n/g,"\n");
+    content = content.replace(/@+Text: name="MetaNoteText".*\n(.*)\n\n/g,  "<i style='color:orange'>$1</i>\n\n");
+    content = content.replace(/@+Text: name="WordsText".*\n.*/g,"\n");
 
-    this.appendMarkdown(content)
+    this.appendMarkdown(content);
   }
 
 
   appendHtml(content) {
     try {
-      var nodes = $.parseHTML(content)
+      var root = this.getSubmorph('#container-root')  
+      var nodes = $.parseHTML(content);
       if (nodes[0] && nodes[0].localName == 'template') {
-      	lively.notify("append template " + nodes[0].id)
-		    return this.appendTemplate(nodes[0].id)
+      	lively.notify("append template " + nodes[0].id);
+		    return this.appendTemplate(nodes[0].id);
       }
       lively.html.fixLinks(nodes, this.getDir(),
-        (path) => this.followPath(path))
+        (path) => this.followPath(path));
       nodes.forEach((ea) => {
-        this.getSubmorph('#container-content').appendChild(ea)
-      })
+        root.appendChild(ea);
+      });
     } catch(e) {
-      console.log("Could not append html:" + content)
+      console.log("Could not append html:" + content);
     }
   }
 
   appendTemplate(name) {
     try {
     	var node = lively.components.createComponent(name)
-    	this.getSubmorph('#container-content').appendChild(node)
+    	this.getSubmorph('#container-root').appendChild(node)
       lively.components.loadByName(name)
     } catch(e) {
       console.log("Could not append html:" + content)
@@ -356,7 +357,7 @@ export default class Container extends Morph {
     path =  path + (isdir ? "/" : "")
 
     var container=  this.getSubmorph('#container-content')
-
+    
 	  this.setAttribute("src", path)
     this.clear()
     this.getSubmorph('#container-path').value = path
@@ -508,9 +509,17 @@ export default class Container extends Morph {
         if (m && m[2] != "livelymd" && names[m[1]+".livelymd"]) return
 
 	      var element = document.createElement("li");
-	      if (ea.name == filename) targetItem = element;
-	      var name = ea.name + (ea.type == "directory" ? "/" : "")
 	      var link = document.createElement("a");
+	      
+	      if (ea.name == filename) targetItem = element;
+	      var name = ea.name 
+	      if (ea.type == "directory") {
+	        name += "/"
+	        link.classList.add("directory")
+	      } else {
+	        link.classList.add("file")
+	      }
+	      
 	      link.innerHTML = name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"");
 	      link.href = ea.name
 	      link.onclick = () => {

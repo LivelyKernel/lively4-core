@@ -39,15 +39,18 @@
         padding: 0px;
     	}
     	
+    	#container-root {
+    	  padding: 10px;
+    	}
+    	
       #container-editor {
         width: 100%;
         height: 100%;
         flex: 1;
-        padding: 0px;
     	}
-
+    	
       #container-leftpane {
-        width: 150px;
+        width: 170px;
         margin: 0;
         overflow: auto;
         overflow-x: hidden;
@@ -57,18 +60,35 @@
         margin:0;
         list-style-type: none;
         padding: 0;
+        padding-left: 5px;
       }
       
       #container-leftpane ul li {
         margin: 0px;
         padding: 2px;
-        font-size: 10pt;
+        font-size: 11pt;
       }
       
+      #container-leftpane ul li a.directory::before{
+        content: "📁 ";
+        color: #EDB32B;
+      }
+ 
+      #container-leftpane ul li a.file::before{
+        content: "🗋 ";
+      }
+ 
+ 	
+ 	    #container-leftpane {
+ 	      background-color: #F5F5F5;
+ 	    }
+ 
       #container-leftpane ul li a {
-       width: 200px;
-       display: box;
-      white-space: nowrap;
+        width: 200px;
+        display: box;
+        white-space: nowrap;
+        text-decoration: none;
+        color: #444444;
       }
       
       #container-leftpane ul li a:hover {
@@ -157,6 +177,7 @@
       <div id="container-leftpane"></div>
       <div id="container-rightpane">
         <div id="container-content">
+          <div id="container-root"></div>
           <!-- by default the content is hidden-->
           <content></content>
         </div>
