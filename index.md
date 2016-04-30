@@ -8,11 +8,17 @@
 ## Live Source Code
 
 * [modules](src/client/) 
-  * [lively modules](src/client/lively.js)
+  * [lively.js](src/client/lively.js)
+  * [contextmenu.js](src/client/contextmenu.js)
+  * [keys.js](src/client/keys.js)
+  * [html.js](src/client/html.js)
+  * ...
 * [UI components (templates)](templates/) [UI classes](templates/classes/) 
   * [lively-container template](templates/lively-container.html) |  [Container class](templates/classes/Container.js)
+  * ...
 * [service worker](src/swx/)
- 
+
+
 
 ## External Code
 
