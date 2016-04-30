@@ -11,7 +11,7 @@ export default class AceEditor extends HTMLElement {
 
         if(this.editor){
             var editor = this.editor;
-            this.value = text.textContent || this.value;
+            this.value = (text && text.textContent) || this.value;
         } else {
             // container.appendChild(text);
             container.innerHTML = this.innerHTML || this.value;
