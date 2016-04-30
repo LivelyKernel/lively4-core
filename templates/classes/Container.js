@@ -184,7 +184,7 @@ export default class Container extends Morph {
     })
   }
 
-  async onDelete () {
+  async onDelete() {
     var url = this.getURL() +""
     if (window.confirm("delete " + url)) {
       var result = await fetch(url, {method: 'DELETE'})
@@ -439,7 +439,7 @@ export default class Container extends Morph {
 	      subList.appendChild(element) ;
       })
     } else if (this.getPath().match(/\.js$/)) {
-      var defRegEx = /(?:^|\n)((?:(?:static)|(?:async)|(?:function)|(?: *))*([A-Za-z0-9_]+))\([^(]*\) *{/g
+      var defRegEx = /(?:^|\n)((?:(?:static)|(?:async)|(?:function)|(?: *))*([A-Za-z0-9_]+)) *\([^(]*\) *{/g
       var m
       var links = {}
       while (m = defRegEx.exec(this.sourceContent)) {
@@ -475,8 +475,7 @@ export default class Container extends Morph {
     }
   }
 
-
-  showNavbar () {
+  showNavbar() {
     var filename = ("" + this.getURL()).replace(/.*\//,"")
     var root =("" + this.getURL()).replace(/\/[^\/]+$/,"/")
     this.currentDir = root
@@ -487,7 +486,7 @@ export default class Container extends Morph {
       var stats = JSON.parse(text)
       var names = {}
       stats.contents.forEach(ea => names[ea.name] = ea)
-      "hello" <= "world"
+      
       var files = stats.contents
         .sort((a, b) => {
           if (a.type > b.type) {
@@ -498,7 +497,8 @@ export default class Container extends Morph {
           }
           return (a.name >= b.name) ? 1 : -1;
         })
-        .filter( ea => ! ea.name.match(/^\./))
+        .filter(ea => ! ea.name.match(/\.((ogm)|(m4v)|(mp4)|(avi)|(mpe?g)|(mkv))$/))
+        .filter(ea => ! ea.name.match(/^\./))
 
       files.unshift({name: "..", type: "directory"})
       files.forEach((ea) => {
@@ -536,7 +536,7 @@ export default class Container extends Morph {
     return livelyEditor.shadowRoot.querySelector('juicy-ace-editor')
   }
 
-  async editFile (path) {
+  async editFile(path) {
     return new Promise(async (resolve, reject) => {
       this.setAttribute("mode","edit") // make it persistent
       if (path) await this.setPath(path)
