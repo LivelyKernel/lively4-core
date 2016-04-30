@@ -251,6 +251,14 @@ export default class Lively {
       obj.style.top = "" +  point.y + "px";
   }
 
+  static getPosition(obj) {
+      if (obj.clientX) 
+        return {x: obj.clientX, y: obj.clientY}
+      else if (obj.style)
+        return {x: obj.style.left, y: obj.style.top}
+      throw Error("" + obj + " has not position");
+  }
+
   static openFile(url) {
     if (url.hostname == "lively4"){
       var container  = $('lively-container')[0];
