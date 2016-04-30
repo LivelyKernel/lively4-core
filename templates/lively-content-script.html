@@ -1,0 +1,81 @@
+<template id="lively-content-script">
+  <style>
+  :host {
+    background-color: gray;
+  }
+  
+  #scriptsource {
+   display: block; 
+  }
+  </style>
+
+<div id="scriptsource">
+  Source:
+  <content></content>
+</div>
+
+<div id="result">
+
+</div>
+<!--
+ // Examples: 
+ that.innerText = '"<h1>hello world</h1>"'
+ that.innerText = 'new Promise(resolve => resolve("<h1>hello as promised!</h1>"))'
+ that.innerText = '"I am: " + this' 
+ that.updateContent()
+ that.boundEval("3+4")
+-->
+<script type="lively4script" data-name="initialize">
+  () => {
+    this.updateContent()
+  }  
+</script>
+<script type="lively4script" data-name="updateContent">
+  async () => {
+    var text=this.innerText
+    try {
+      var result =  this.boundEval(text, this.getDoitContext())
+      if (result && result.then) {
+        this.shadowRoot.querySelector("#result").innerHTML = "waitng for promise"
+        result = await result // resolve promise first
+      }
+      console.log("result: " + result)
+      this.shadowRoot.querySelector("#result").innerHTML = "Result:"+ result
+    } catch(e) {
+      this.shadowRoot.querySelector("#result").innerHTML = "Error: <pre> "+e +"</pre"
+    } 
+    
+  }  
+</script>
+<script type="lively4script" data-name="getDoitContext">
+  () => {
+    if (this.doitContext)
+      return this.doitContext
+    else 
+      return this
+  }  
+</script>
+
+
+<script type="lively4script" data-name="boundEval">
+  (str, ctx) => {
+
+    // #Hack #Hammer #Jens Wrap and Unwrap code into function to preserve "this"
+    var transpiledSource = babel.transform('(function(){' + str+'})', opts).code
+        .replace(/^"use strict";[\s\n]*\(function\s*\(\)\s*\{/,"") // strip prefix
+        .replace(/\}\);[\s\n]*$/,"") // strip postfix
+    
+    console.log("code: " + transpiledSource)
+    console.log("context: " + ctx)
+    
+    var interactiveEval = function interactiveEval(code) {
+      return eval(code);
+    };
+  
+    return interactiveEval.call(ctx, transpiledSource);
+  }
+</script>
+
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

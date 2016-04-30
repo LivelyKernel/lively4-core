@@ -148,7 +148,7 @@ export default class Lively {
 
   static handleError(error) {
     lively.LastError = error
-   lively.notify("Error: ", error.message, 20, () =>
+    lively.notify("Error: ", error.message, 20, () =>
     		  lively.openWorkspace("Error:" + error.message + "\nLine:" + error.lineno + " Col: " + error.colno+"\nSource:" + error.source + "\nError:" + error.stack))
   }
 
@@ -382,7 +382,17 @@ export default class Lively {
         newInstance.setAttribute(ea.name, ea.value);
       });
 
-      // Properties
+      // Migrate Position
+      if (oldInstance.style.position == "absolute") {
+        newInstance.style.top = oldInstance.style.top
+        newInstance.style.left = oldInstance.style.left
+      }
+
+      // Migrate "that" pointer
+      if (window.that == oldInstance) {
+        window.that = newInstance
+      }
+      
       if (newInstance.livelyMigrate) {
         newInstance.livelyMigrate(oldInstance) // give instances a chance to take over old state...
       }

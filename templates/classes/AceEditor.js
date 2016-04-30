@@ -291,26 +291,31 @@ export default class AceEditor extends HTMLElement {
     };
 
     getDoitContext() {
-        return this.doitContext
+      return this.doitContext
     }
 
-    boundEval(str) {
+    boundEval(str, ctx) {
       // just a hack... to get rid of some async....
       // #TODO make this more general
       // works: await new Promise((r) => r(3))
       // does not work yet: console.log(await new Promise((r) => r(3)))
-      if (str.match(/^await /)) {
-        str = "(async () => window._ = " + str +")()"
-      }
+      // if (str.match(/^await /)) {
+      //   str = "(async () => window._ = " + str +")()"
+      // }
 
-      var ctx = this.getDoitContext() || this,
-          interactiveEval = function(text) { return eval(text) };
-      // #TODO binding "this" does not work yet, this is needed to build interactive debuggers... and cool workspaces
-      var transpiledSource = babel.transform(str, {stage: 0}).code
-      // #TODO alt: babel.run
-      var result =  interactiveEval.call(ctx, transpiledSource);
-
-      return result
+      // #Hack #Hammer #Jens Wrap and Unwrap code into function to preserve "this"
+      var transpiledSource = babel.transform('(function(){' + str+'})', opts).code
+          .replace(/^"use strict";[\s\n]*\(function\s*\(\)\s*\{/,"") // strip prefix
+          .replace(/\}\);[\s\n]*$/,"") // strip postfix
+      
+      console.log("code: " + transpiledSource)
+      console.log("context: " + ctx)
+      
+      var interactiveEval = function interactiveEval(code) {
+        return eval(code);
+      };
+    
+      return interactiveEval.call(ctx, transpiledSource);
     }
 
     printResult(result) {
@@ -327,16 +332,26 @@ export default class AceEditor extends HTMLElement {
 
     tryBoundEval(str, printResult) {
         var result;
-        try { result =  this.boundEval(str) }
+        try { result =  this.boundEval(str, this.getDoitContext()) }
         catch(e) {
-            lively.LastError = e
-            console.log("Error: " + e)
-            result = e
+            console.error(e)
+            if (printResult) {
+                window.LastError = e
+                this.printResult("" +e)
+            }
+            return
         }
         if (printResult) {
-            if (str.match(/^await/) && result.then) {
+            // alaways wait on promises.. when interactively working...
+            if (result.then) { 
               // we will definitly return a promise on which we can wait here
-              result.then( result => this.printResult("" +result))
+              result
+                .then( result => this.printResult("" +result))
+                .catch( error => {
+                  console.error(error);
+                  // window.LastError = error;
+                  this.printResult("Error in Promise: \n" +error)
+                })
             } else {
               this.printResult(" " +result)
             }
