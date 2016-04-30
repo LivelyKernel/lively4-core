@@ -315,12 +315,18 @@ export default class Container extends Morph {
   
   listingForDirectory(url, render) {
     return lively.files.statFile(url).then((content) => {
+      var files = JSON.parse(content).contents;
+      var index = _.find(files, (ea) => ea.name.match(/^index\.md$/i)) 
+      if (!index) index = _.find(files, (ea) => ea.name.match(/^index\.html$/i))
+      if (index) { 
+        return this.setPath(url + "/" + index.name) 
+      }
       this.sourceContent = content
       var html = "<div class='table-container'>"+
         "<table class='directory'>"+
         "<tr><th></th><th>name</th><th>size</th></tr>" +
         // "<li><a href='../'>..</a></li>" +
-        _.sortBy(JSON.parse(content).contents, ea => ea.name)
+        _.sortBy(files, ea => ea.name)
           .filter(ea => !ea.name.match(/^\./))
           .map( ea =>
           // "<li><a href='"+ea.name + (ea.type == "directory" ? "/" : "")+"''>" +ea.name+ "</a></li>"
@@ -566,7 +572,7 @@ export default class Container extends Morph {
         aceComp.enableAutocompletion()
 
         aceComp.getDoitContext = () => {
-          return that;
+          return window.that;
         }
 
         aceComp.aceRequire('ace/ext/searchbox')
