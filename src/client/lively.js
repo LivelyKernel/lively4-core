@@ -1,7 +1,5 @@
 'use strict';
 
-window.lively = this;
-
 import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
 import * as preferences from './preferences.js';
@@ -520,8 +518,22 @@ export default class Lively {
       }
     })
   }
-}
 
+  static openSearchFileWindow(text) {
+    this.openComponentInWindow("lively-search").then( comp => 
+      comp.searchFile(text))
+  }
+
+  static openComponentInWindow(name, pos) {
+    var comp  = document.createElement(name);
+    return lively.components.openInWindow(comp).then((w) => {
+        if (pos) lively.setPosition(w, pos);
+        if (comp.windowTitle) w.setAttribute("title", "" + comp.windowTitle);
+        return comp;
+    });
+  }
+  
+}
 
 window.lively = Lively
 Lively.loaded();

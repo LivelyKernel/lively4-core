@@ -8,13 +8,8 @@ export default class ContextMenu {
   }
   
   static openComponentInWindow (name, evt) {
-    var comp  = document.createElement(name)
     this.hide()
-    return lively.components.openInWindow(comp).then((w) => {
-        lively.setPosition(w, lively.pt(evt.pageX, evt.pageY))
-        if (comp.windowTitle) w.setAttribute("title", "" + comp.windowTitle)
-        return comp
-    })
+    return lively.openComponentInWindow(name, lively.pt(evt.pageX, evt.pageY))
   }
   
   static items (target) {

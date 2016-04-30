@@ -273,6 +273,15 @@ export default class AceEditor extends HTMLElement {
         });
 
         editor.commands.addCommand({
+            name: "globallySearchIt",
+            bindKey: {win: "Ctrl-Shift-F", mac: "Command-Shift-P"},
+            exec: (editor) => {
+                let text = editor.currentSelectionOrLine()
+                lively.openSearchFileWindow(text)
+            }
+        });
+
+        editor.commands.addCommand({
             name: "inspectIt",
             bindKey: {win: "Ctrl-I", mac: "Command-I"},
             exec: (editor) => {
