@@ -334,6 +334,9 @@ export default class AceEditor extends HTMLElement {
                 })
             } else {
               this.printResult(" " +result)
+              if (result instanceof HTMLElement ) {
+                lively.showElement(result)
+              }
             }
         }
         return result
