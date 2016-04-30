@@ -104,18 +104,21 @@ export default class ContextMenu {
           $('body')[0].appendChild(morph)
           this.hide()
       }],
-      ["RDFa", (evt) => {
-        this.openComponentInWindow('table', evt).then((comp) => {
-          var table = $(comp);
-          document.data.getProperties().forEach(
-          p => table.append(
-              $('<tr>')
-              .append($('<td>').text(p))
-              .append($('<td>').text(document.data.getValues(document.data.getSubjects()[0], p)))
-            )
-          )
+        ["RDFa", (evt) => {
+            this.openComponentInWindow('table', evt).then((comp) => {
+                      var table = $(comp);
+                      document.data.getSubjects().forEach(s => {
+                          document.data.getProperties(s).forEach(p => {
+                              var v = document.data.getValues(s, p)
+                              table.append(
+                                  $('<tr>')
+                                      .append($('<td>').text(s))
+                                      .append($('<td>').text(p))
+                                      .append($('<td>').text(v)))
+                          });
+                      });
         })
-      }]
+    }]
     ]}
   }
 
