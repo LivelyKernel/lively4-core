@@ -1,11 +1,11 @@
 <template id="lively-content-script">
   <style>
   :host {
-    background-color: gray;
+    
   }
   
   #scriptsource {
-   display: block; 
+   display: none; 
   }
   </style>
 
@@ -32,7 +32,7 @@
 </script>
 <script type="lively4script" data-name="updateContent">
   async () => {
-    var text=this.innerText
+    var text=this.textContent
     try {
       var result =  this.boundEval(text, this.getDoitContext())
       if (result && result.then) {
@@ -40,7 +40,7 @@
         result = await result // resolve promise first
       }
       console.log("result: " + result)
-      this.shadowRoot.querySelector("#result").innerHTML = "Result:"+ result
+      this.shadowRoot.querySelector("#result").innerHTML = result
     } catch(e) {
       this.shadowRoot.querySelector("#result").innerHTML = "Error: <pre> "+e +"</pre"
     } 
@@ -56,20 +56,9 @@
   }  
 </script>
 
-
 <script type="lively4script" data-name="boundEval">
   (str, ctx) => {
-
-    // #Hack #Hammer #Jens Wrap and Unwrap code into function to preserve "this"
-    var transpiledSource = babel.transform('(function(){' + str+'})', opts).code
-        .replace(/^"use strict";[\s\n]*\(function\s*\(\)\s*\{/,"") // strip prefix
-        .replace(/\}\);[\s\n]*$/,"") // strip postfix
-
-    var interactiveEval = function interactiveEval(code) {
-      return eval(code);
-    };
-  
-    return interactiveEval.call(ctx, transpiledSource);
+    return lively.boundEval(str, ctx)
   }
 </script>
 

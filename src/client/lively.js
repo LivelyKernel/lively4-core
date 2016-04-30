@@ -215,10 +215,24 @@ export default class Lively {
   }
 
   static boundEval(str, ctx) {
-    var interactiveEval = function(text) { return eval(text) };
-    var transpiledSource = babel.transform(str).code;
-    // #TODO alt: babel.run
-    // #TODO context does not seem to work!
+    // just a hack... to get rid of some async....
+    // #TODO make this more general
+    // works: await new Promise((r) => r(3))
+    // does not work yet: console.log(await new Promise((r) => r(3)))
+    // if (str.match(/^await /)) {
+    //   str = "(async () => window._ = " + str +")()"
+    // }
+
+    // #Hack #Hammer #Jens Wrap and Unwrap code into function to preserve "this"
+    var transpiledSource = babel.transform('(function(){' + str+'})').code
+        .replace(/^[\s\n]*["']use strict["'];[\s\n]*\(function\s*\(\)\s*\{/,"") // strip prefix
+        .replace(/\}\);[\s\n]*$/,"") // strip postfix
+    
+    console.log("code: " + transpiledSource)
+    console.log("context: " + ctx)
+    var interactiveEval = function interactiveEval(code) {
+      return eval(code);
+    };
     return interactiveEval.call(ctx, transpiledSource);
   }
 
