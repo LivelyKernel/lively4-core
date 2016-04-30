@@ -520,8 +520,11 @@ export default class Lively {
   }
 
   static openSearchFileWindow(text) {
-    this.openComponentInWindow("lively-search").then( comp => 
-      comp.searchFile(text))
+    this.openComponentInWindow("lively-search").then( comp => {
+      comp.parentElement.style.width = "850px";
+      comp.parentElement.style.height = "600px";
+      comp.searchFile(text)
+    })
   }
 
   static openComponentInWindow(name, pos) {
@@ -532,7 +535,24 @@ export default class Lively {
         return comp;
     });
   }
-  
+  // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
+  static openBrowser(url, edit, pattern) {
+    var editorComp;
+    return lively.openComponentInWindow("lively-container").then(comp => {
+          editorComp = comp;
+          comp.followPath(lively4url +"/")
+          comp.parentElement.style.width = "850px"
+          comp.parentElement.style.height = "600px"
+          if (edit)
+            return comp.editFile(url)
+          else
+            return comp.setPath(url)
+    }).then( () => {   
+      if (edit && pattern) {
+        editorComp.getAceEditor().editor.find(pattern)  
+      }
+    })
+  }
 }
 
 window.lively = Lively

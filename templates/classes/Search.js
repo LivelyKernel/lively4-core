@@ -37,18 +37,11 @@ export default class Search extends Morph {
     this.q("#searchResults").innerHTML=""
   }
 
-  browseSearchResult(url, pattern) {
-    var comp = document.createElement("lively-container");
-    lively.components.openInWindow(comp).then(function (win) {
-        comp.editFile(url).then( () => {
-          comp.getAceEditor().editor.find(pattern)  
-        })
-        
-    });
+  async browseSearchResult(url, pattern) {
+    return lively.openBrowser(url, true, pattern)
   }
 
   log(s) {
-    
     s.split(/\n/g).forEach( entry => {
       
       var m = entry.match(/^([^:]*):(.*)$/)

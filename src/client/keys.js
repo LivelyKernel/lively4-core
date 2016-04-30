@@ -28,10 +28,14 @@ export default class Keys {
     try {
       var char = this.getChar(evt)
       // this.logEvent(evt)
-      if (evt.ctrlKey && char == "K") {
+      if ((evt.ctrlKey || evt.metaKey) && char == "K") {
         lively.openWorkspace("")
         evt.preventDefault()
-      } else if (evt.ctrlKey && char == "D") {
+      } else if ((evt.ctrlKey || evt.metaKey) && evt.shiftKey &&char == "F") {
+        var str = window.getSelection().toLocaleString()
+        lively.openSearchFileWindow(str)
+        evt.preventDefault()
+      } if ((evt.ctrlKey || evt.metaKey) && char == "D") {
         var str = window.getSelection().toLocaleString()
         try {
           lively.boundEval(str)
