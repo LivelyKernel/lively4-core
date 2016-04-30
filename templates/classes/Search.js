@@ -74,12 +74,24 @@ export default class Search extends Morph {
   }
 
   async onSearchButton() {
-      this.setAttribute("search", this.q("#searchInput").value)
-      this.searchFile()
+      this.setAttribute("search", this.q("#searchInput").value);
+      this.searchFile();
   }
   
-  searchFile() {
-     console.log("search")
+  getSearchURL() {
+    if (document.location.host == "livelykernel.github.io")
+      return "https://lively-kernel.org/lively4/_search/files";
+    else
+      return lively4url + "/../_search/files";
+  }
+  
+  searchFile(text) {
+    if (text) {
+      this.setAttribute("search", text); // #TODO how to specify data-flow / connections...
+      this.q("#searchInput").value = text
+    }
+    
+    console.log("search")
     // if (this.searchInProgres) return;
     this.searchInProgres = true
     this.clearLog()
@@ -89,7 +101,9 @@ export default class Search extends Morph {
       return // this.log("not searching for " + search)
     } 
     this.log("searching for " + search)
-    fetch("https://lively-kernel.org/lively4S2/_search/files", {
+    
+    
+    fetch(this.getSearchURL(), {
       headers: new Headers({ 
   	   "searchpattern": search,
   	   "rootdir": this.q("#rootInput").value,
