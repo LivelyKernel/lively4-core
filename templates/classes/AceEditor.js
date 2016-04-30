@@ -304,7 +304,7 @@ export default class AceEditor extends HTMLElement {
       // }
 
       // #Hack #Hammer #Jens Wrap and Unwrap code into function to preserve "this"
-      var transpiledSource = babel.transform('(function(){' + str+'})', opts).code
+      var transpiledSource = babel.transform('(function(){' + str+'})').code
           .replace(/^"use strict";[\s\n]*\(function\s*\(\)\s*\{/,"") // strip prefix
           .replace(/\}\);[\s\n]*$/,"") // strip postfix
       
