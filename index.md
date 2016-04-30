@@ -1,5 +1,8 @@
 # Welcome to Lively4
 
+* Sofware Architecture Group, Hasso Plattner Institute,  2015, 2016 [MIT LICENSE](LICENSE)
+* Stefan Lehmann, Jens Lincke, Tim Felgentreff, et al
+* SWD 2015 Seminar, WebDev 2016 Seminar
 * [readme](README.md)
 
 ## Live Source Code
