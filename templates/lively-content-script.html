@@ -64,10 +64,7 @@
     var transpiledSource = babel.transform('(function(){' + str+'})', opts).code
         .replace(/^"use strict";[\s\n]*\(function\s*\(\)\s*\{/,"") // strip prefix
         .replace(/\}\);[\s\n]*$/,"") // strip postfix
-    
-    console.log("code: " + transpiledSource)
-    console.log("context: " + ctx)
-    
+
     var interactiveEval = function interactiveEval(code) {
       return eval(code);
     };

@@ -207,7 +207,6 @@ export default class Container extends Morph {
     this.getSubmorph('#container-editor').innerHTML = ''
   }
 
-
   appendMarkdown(content) {
     System.import(lively4url + '/src/external/showdown.js').then((showdown) => {
       var converter = new showdown.Converter();
@@ -540,7 +539,9 @@ export default class Container extends Morph {
     return new Promise(async (resolve, reject) => {
       this.setAttribute("mode","edit") // make it persistent
       if (path) await this.setPath(path)
+      
       this.clear()
+      
       var containerContent=  this.getSubmorph('#container-content')
       containerContent.style.display = "none"
       var containerEditor =  this.getSubmorph('#container-editor')
@@ -554,6 +555,10 @@ export default class Container extends Morph {
         comp.id = "editor"
         var aceComp = comp.shadowRoot.querySelector('juicy-ace-editor')
         aceComp.enableAutocompletion()
+
+        aceComp.getDoitContext = () => {
+          return that;
+        }
 
         aceComp.aceRequire('ace/ext/searchbox')
 

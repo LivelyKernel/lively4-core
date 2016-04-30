@@ -308,13 +308,11 @@ export default class AceEditor extends HTMLElement {
           .replace(/^"use strict";[\s\n]*\(function\s*\(\)\s*\{/,"") // strip prefix
           .replace(/\}\);[\s\n]*$/,"") // strip postfix
       
-      console.log("code: " + transpiledSource)
-      console.log("context: " + ctx)
-      
+      // console.log("code: " + transpiledSource)
+      // console.log("context: " + ctx)
       var interactiveEval = function interactiveEval(code) {
         return eval(code);
       };
-    
       return interactiveEval.call(ctx, transpiledSource);
     }
 
@@ -343,7 +341,7 @@ export default class AceEditor extends HTMLElement {
         }
         if (printResult) {
             // alaways wait on promises.. when interactively working...
-            if (result.then) { 
+            if (result && result.then) { 
               // we will definitly return a promise on which we can wait here
               result
                 .then( result => this.printResult("" +result))
