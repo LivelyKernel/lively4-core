@@ -33,6 +33,7 @@
 <script type="lively4script" data-name="updateContent">
   async () => {
     var text=this.textContent
+  
     try {
       var result =  this.boundEval(text, this.getDoitContext())
       if (result && result.then) {
@@ -40,7 +41,12 @@
         result = await result // resolve promise first
       }
       console.log("result: " + result)
-      this.shadowRoot.querySelector("#result").innerHTML = result
+      var resultNode = this.shadowRoot.querySelector("#result")
+      resultNode.innerHTML = result
+      
+      // var nodes = $.parseHTML(result)
+      // _.each(lively.html.fixLinks(nodes, lively4url, (path) => this.followPath(path)
+      // ), ea => resultNode.appendChild(ea))
     } catch(e) {
       this.shadowRoot.querySelector("#result").innerHTML = "Error: <pre> "+e +"</pre"
     } 
