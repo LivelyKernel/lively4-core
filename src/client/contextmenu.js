@@ -110,9 +110,12 @@ export default class ContextMenu {
                       document.data.getSubjects().forEach(s => {
                           document.data.getProperties(s).forEach(p => {
                               var v = document.data.getValues(s, p)
-                              document.data.getValueOrigins(s, p).forEach(
-                                  (valueOrigin) => valueOrigin.origin.style.border = '1px solid red'
-                              )
+                              document.data.getValueOrigins(s, p).forEach((valueOrigin) => {
+                                if (!(valueOrigin.origin.getAttribute("style")==null
+                                      || valueOrigin.origin.getAttribute("style")=="")) {
+                                      valueOrigin.origin.style.border = '1px solid red'
+                                }
+                              })
                               table.append(
                                   $('<tr>')
                                       .append($('<td>').text(s))
