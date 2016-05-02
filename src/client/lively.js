@@ -556,13 +556,10 @@ export default class Lively {
     var editorComp;
     return lively.openComponentInWindow("lively-container").then(comp => {
           editorComp = comp;
-          comp.followPath(lively4url +"/")
           comp.parentElement.style.width = "850px"
           comp.parentElement.style.height = "600px"
-          if (edit)
-            return comp.editFile(url)
-          else
-            return comp.setPath(url)
+          if (edit) comp.setAttribute("mode", "edit");
+          return comp.followPath(url)
     }).then( () => {   
       if (edit && pattern) {
         editorComp.getAceEditor().editor.find(pattern)  

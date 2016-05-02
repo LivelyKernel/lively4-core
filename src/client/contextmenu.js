@@ -40,15 +40,14 @@ export default class ContextMenu {
       ["Workspace", (evt) => {
         this.hide()
         lively.openWorkspace("", lively.pt(evt.pageX, evt.pageY))
-      }],
+      }, "CMD+K"],
       ["Browser",     (evt) => {
         this.openComponentInWindow("lively-container", evt).then(comp => {
           comp.followPath(lively4url +"/")
           comp.parentElement.style.width = "850px"
           comp.parentElement.style.height = "600px"
-
-      })
-      }],
+        })
+      }, "CMD+B"],
       // ["File Editor",     (evt) => this.openComponentInWindow("lively-editor", evt)],
       // ["File Browser",    (evt) => this.openComponentInWindow("lively-file-browser", evt)],
       ["Mount",     (evt) => this.openComponentInWindow("lively-filesystems", evt)],
@@ -57,7 +56,8 @@ export default class ContextMenu {
       ["Console",         (evt) => this.openComponentInWindow("lively-console", evt)],
       ["File Search",         (evt) => this.openComponentInWindow("lively-search", evt)],
       ["TestRunner",         (evt) => this.openComponentInWindow("lively-testrunner", evt)],
-      ["Component Bin",   (evt) => this.openComponentInWindow("lively-component-bin", evt)],
+      ["Component Bin",   (evt) => this.openComponentInWindow("lively-component-bin", evt),
+       "CMD+O"],
       ["Customize Page",   (evt) => {
         this.hide()
         lively.import("customize").then(c => c.openCustomizeWorkspace(evt))
@@ -69,6 +69,9 @@ export default class ContextMenu {
       //    })
       // }],
       // #TODO use sub menues here
+      ["Devdocs.io",     (evt) => {
+        this.openComponentInWindow("lively-help",  lively.pt(evt.pageX, evt.pageY))
+      }, "CMD+H"],
       ["Wiki (Docs)",     (evt) => {
         this.openComponentInWindow("lively-container", evt).then(comp => {
           comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Home.md")

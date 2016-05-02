@@ -8,7 +8,7 @@
       z-index: 200;
     }
     .container {
-        width: 120px;
+        width: 200px;
         padding: 5px;
         // border-radius: 5px;
         // background-color: rgb(238, 238, 238);
@@ -20,6 +20,11 @@
     ul {
       margin: 0;
     }
+    li label {
+      color: lightgray;
+      float: right;
+    }
+
 
     li:hover {
         background-color: #2B65EC;
@@ -29,6 +34,7 @@
     li {
       font-size: 10pt;
       padding: 10px 5px 5px 10px;
+      font: arial, sans-serif;
       
       margin: 0;
       list-style-type: none;
@@ -52,7 +58,7 @@
         }
         items.forEach((ea) => {
           var item = document.createElement("li");
-          item.innerHTML = ea[0]
+          item.innerHTML = ea[0] + (ea[2] ? " <label>" + ea[2].replace("CMD","Ctrl") +"</label>"  : "")
           console.log(2**3, 'from babel transpile')
 
           $(item).on("click",function(evt) {
