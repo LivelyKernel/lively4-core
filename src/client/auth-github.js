@@ -104,12 +104,11 @@ export default class AuthGithub {
   	    var authInfo = parseAuthInfoFromUrl(data)
   	    AuthGithub.onAuthenticated(uuid, authInfo)
   	})
-  
       var url =
           "https://github.com/login/oauth/authorize/" +
           "?client_id=" + appInfo.clientId +
           "&response_type=token" +
-         	"&scope=repo" +
+         	"&scope=repo,user" +
           "&state=" + uuid +
           "&redirect_uri=" + encodeURIComponent(appInfo.redirectUri);
       popup(url);
