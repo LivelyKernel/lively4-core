@@ -5,6 +5,7 @@
         width: 100%;
         height: 100%;
         display: flex;
+        flex-direction: row;
         padding: 0;
         margin: 0;
     }
@@ -12,19 +13,77 @@
     .column-left {
       width: 200px;
       flex: 0 0 200px;
+      display: flex;
+      flex-direction: column;
       border-right: 1px solid rgb(120, 118, 116);
-      margin-right: 6px;
+    }
+    
+    .items {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow-y: scroll;
+    }
+    
+    .item {
+      padding: 4px;
+      cursor: pointer;
+    }
+    
+    .item:hover {
+      background-color: #eee;
+    }
+    
+    .item h1 {
+      font-size: 14px;
+      margin: 0;
+    }
+    
+    .item small {
+      font-size: 12px;
+      font-style: italic;
+    }
+    
+    .status {
+      float: left;
+      font-size: 30px;
+      margin-right: 8px;
+    }
+    
+    .running {
+      color: green;
+    }
+    
+    .errored {
+      color: red;
+    }
+    
+    .warning {
+      color: #edde3f;
+    }
+    
+    .not-running {
+      color: gray;
     }
     
     .services-menu {
       display: flex;
-      flex: 1;
       align-items: flex-end;
-      justify-content: center;
+    }
+    
+    button {
+      margin-right: 2px;
     }
     
     .column-right {
-      width: 400px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .service-top {
+      display: flex;
+      flex-direction: row;
     }
     
     input {
@@ -36,41 +95,55 @@
     #code {
       flex: 1;
       width: 100%;
+      border-bottom: 1px solid rgb(120, 118, 116);
     }
     
     #log {
-      margin-top: 12px;
-      flex: 1;
+      height: 100px;
       width: 100%;
     }
     
     </style>
     <div class="container">
       <div class="column-left">
-        <div>
-          <div class="status">
-            o
+        <div class="items">
+          <div class="item">
+            <div class="details">
+              <div class="status running">&#9679;</div>
+              <h1>Lively Server</h1>
+              <small>running for 3 days</small>
+            </div>
           </div>
-          <div class="details">
-            Lively Server
-            <small>running for 3 days</small>
+          <div class="item">
+            <div class="status warning">&#9679;</div>
+            <h1>Another Service</h1>
+            <small>warning</small>
           </div>
-        </div>
-        <div>
-          <div class="status">
-            o
-          </div>
-          <div class="details">
-            Jens' Service
+          <div class="item">
+            <div class="status errored">&#9679;</div>
+            <h1>Jens' Service</h1>
             <small>errored</small>
+          </div>
+          <div class="item">
+            <div class="status not-running">&#9679;</div>
+            <h1>Yet Another Service</h1>
+            <small>not running</small>
           </div>
         </div>
         <div class="services-menu">
-          <button class="service" id="addService">+</button> 
+          <button class="service" id="addService">+</button>
           <button class="service" id="removeService">-</button>
         </div>
       </div>
       <div class="column-right">
+        <div class="service-top">
+          <input type="text" value="Service Name" />
+          <div class="service-actions">
+            <button class="service" id="startService">&#9656;</button>
+            <button class="service" id="stopService">&#9724;</button>
+            <button class="service" id="debugService">D</button>
+          </div>
+        </div>
         <juicy-ace-editor id="code"></juicy-ace-editor>
         <juicy-ace-editor id="log"></juicy-ace-editor>
       </div>
