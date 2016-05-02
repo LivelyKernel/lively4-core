@@ -52,11 +52,11 @@ export default class SearchBar extends Morph {
         success: (text) => {
           var mounts = JSON.parse(text);
           console.log(mounts);
-          // var mountsList = this.getSubmorph("#mounts-list");
-          // mountsList.innerHTML = "";
-          // mounts.forEach(mount => {
-          //   mountsList.innerHTML += "<li><input type='checkbox'>" + mount.name + "</li>";
-          // });
+          var mountsList = this.getSubmorph("#mounts-list");
+          mountsList.innerHTML = "";
+          mounts.forEach(mount => {
+            mountsList.innerHTML += "<li><input type='checkbox' checked>" + mount.path + " (" + mount.name + ")</li>";
+          });
           
           this.searchableMounts.dropbox = mounts.filter(mount => { return mount.name == "dropbox" }).map((mount) => {
             mount.find = () => {

@@ -562,7 +562,7 @@ export default class Lively {
           if (edit)
             return comp.editFile(url)
           else
-            return comp.setPath(url)
+            return comp.followPath(url)
     }).then( () => {   
       if (edit && pattern) {
         editorComp.getAceEditor().editor.find(pattern)  

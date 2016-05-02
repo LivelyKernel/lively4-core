@@ -19,15 +19,6 @@
 * [service worker](src/swx/)
 
 
-
-<lively-content-script><script type="code">
-lively.files.statFile(lively4url +"")
-  .then(t => JSON.parse(t).contents.map(ea => ea.name))
-  .then(files => files.filter(ea => !ea.match(/^[.]/)))
-  .then(files =>  "" + lively4url +"/" + 
-      "<ul style='background-color:lightgray'>" + files.map(ea => "<li><a href='"+ea+"'>" + ea + "</a></li>").join("\n") + "</ul>")
-</script></lively-content-script>
-
 ## External Code
 
 We hope to come up with a sulution, that will be as comfortable as npm for node.js development, but at the same time will serve our need better to jump into development and immediatly make local customizations. 
