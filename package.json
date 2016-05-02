@@ -10,7 +10,8 @@
     "test": "karma start --single-run",
     "test-chrome-only": "karma start --single-run --browsers Chrome",
     "test-continuously": "karma start",
-    "test-continuously-chrome-only": "karma start --browsers Chrome"
+    "test-continuously-chrome-only": "karma start --browsers Chrome",
+    "test-canary": "karma start --browsers ChromeCanary"
   },
   "repository": {
     "type": "git",
@@ -38,6 +39,7 @@
     "karma-mocha": "^0.2.2",
     "karma-opera-launcher": "^0.3.0",
     "karma-safari-launcher": "^0.1.1",
-    "mocha": "^2.4.5"
+    "mocha": "^2.4.5",
+    "requirejs": "^2.2.0"
   }
 }

@@ -20,23 +20,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+'use strict';
 
+if (typeof window === 'undefined') {
+    window = this;
+}
 
 // Non-Lively Compatibility
 if (!window.module) {
-    window.module = function() {
-        return {
-            requires: function() {return this},
-            toRun: function(func) {
-                func()
-            }
-        }
-    }
     window.Config = {};
     window.cop = {};
     window.Global = window;
-
-
 
 Object.extend(Function.prototype, {
 
@@ -70,7 +64,8 @@ Object.extend(Function.prototype, {
 			// preserve the class to allow using the subclass construct in interactive development
 			klass = targetScope[shortName];
 		} else {
-			klass = lively.Class.newInitializer(shortName);
+            // TODO: make this right again
+			klass = { code: 'lively.Class.newInitializer(shortName)' };
 			klass.superclass = this;
 			var protoclass = function() { }; // that's the constructor of the new prototype object
 			protoclass.prototype = this.prototype;
@@ -81,8 +76,8 @@ Object.extend(Function.prototype, {
 			if (className) targetScope[shortName] = klass; // otherwise it's anonymous
 
 			// remember the module that contains the class def
-			if (Global.lively && lively.Module && lively.Module.current)
-				klass.sourceModule = lively.Module.current();
+			// if (Global.lively && lively.Module && lively.Module.current)
+			// 	klass.sourceModule = lively.Module.current();
 		};
 
 		// the remaining args should be category strings or source objects
@@ -100,8 +95,6 @@ Object.extend(Function.prototype, {
 /*
  * COP Layers for JavaScript
  */
-
-module('cop.Layers').requires().toRun(function(thisModule) {
 
 /* Private Helpers for Development */
 
@@ -194,10 +187,10 @@ Object.extend(cop, {
             layeredPropName = "_layered_" + layer.getName() + "_" + property;
         defs.__defineGetter__(property, function layeredGetter() {
             return this[layeredPropName] === undefined ? cop.proceed() : this[layeredPropName];
-        }.binds({layeredPropName: layeredPropName, baseValue: baseValue}));
+        }/*.binds({layeredPropName: layeredPropName, baseValue: baseValue})*/);
         defs.__defineSetter__(property, function layeredSetter(v) {
             this[layeredPropName] = v;
-        }.binds({layeredPropName: layeredPropName}));
+        }/*.binds({layeredPropName: layeredPropName})*/);
         cop.layerProperty(layer, object, property, defs);
     },
 
@@ -269,7 +262,7 @@ Object.extend(cop, {
             // log("look for superclass of: " + self.constructor)
             var superclass = self.constructor.superclass;
             if (superclass) {
-                foundClass = superclass;
+                var foundClass = superclass;
                 // log("layered function is not found in this partial method, lookup for my prototype?")
                 return cop.lookupLayeredFunctionForObject(superclass.prototype, layer, function_name, methodType);
             } else {
@@ -331,7 +324,7 @@ Object.extend(cop, {
             if (!base_function) {
                 // console.log("WARNING can't layer an non existent function" + function_name +" , so do nothing")
                 // return;
-                base_function = Functions.Null;
+                base_function = function () {};
             };
             cop.pvtMakeFunctionOrPropertyLayerAware(base_obj, function_name, base_function, undefined, isHidden)
     },
@@ -345,12 +338,12 @@ Object.extend(cop, {
         if (!getter) {
             // does not work when dealing with classes and instances...
             baseObj[propName] = baseObj[property]; // take over old value
-            getter = function() { return this[propName] }.binds({propName: propName});
+            getter = function() { return this[propName] }/*.bind({propName: propName})*/;
             baseObj.__defineGetter__(property, getter);
         };
         var setter = baseObj.__lookupSetter__(property);
         if (!setter) {
-            setter = function(value) { return this[propName] = value }.binds({propName: propName});
+            setter = function(value) { return this[propName] = value }/*.bind({propName: propName})*/;
             baseObj.__defineSetter__(property, setter);
         };
 
@@ -391,9 +384,13 @@ Object.extend(cop, {
     },
 
     uninstallLayersInObject: function(object) {
-        Functions.own(object).forEach(function(ea){
-            cop.makeFunctionLayerUnaware(object, ea)
-        })
+        for (let slotName in object) {
+            if (!object.hasOwnProperty(slotName)
+                    || typeof object[slotName] !== 'function')
+                continue;
+            var fn = object[slotName];
+            cop.makeFunctionLayerUnaware(object, slotName)
+        }
     },
 
     // cop.uninstallLayersInAllClasses()
@@ -410,6 +407,25 @@ Object.extend(cop, {
         return Object.values(optObject || Global).select(function(ea) { return ea instanceof Layer})
     }
 });
+
+/* TODO: get rid of this stub code, even though it is ES6 */
+class lively {
+}
+lively.Class = class Class {
+    static namespaceFor(name) {
+        let parts = name.split('.');
+        let context = Global;
+        for (let i = 0; i < parts.length - 1; i++) {
+            context = context[parts[i]];
+        }
+        return context;
+    }
+    static unqualifiedNameFor(name) {
+        let parts = name.split('.');
+        return parts[parts.length - 1];
+    }
+}
+/* end todo */
 
 /* PUPLIC COP  Layer Definition */
 Object.extend(cop, {
@@ -588,8 +604,8 @@ Object.subclass("Layer",
         this.namespaceName = namespaceName || 'Global';
         this.layeredFunctionsList = {};
 
-        if (Global.lively && lively.lang && lively.Module)
-            this.sourceModule = lively.Module.current();
+        // if (Global.lively && lively.lang && lively.Module)
+        //     this.sourceModule = lively.Module.current();
     },
 },
 'accessing', {
@@ -603,7 +619,8 @@ Object.subclass("Layer",
     layeredClasses: function() {
         return this.layeredObjects()
             .collect(function(ea) { return ea.constructor })
-            .select(function(ea) {return lively.Class.isClass(ea) })
+            // TODO: make this right again
+            .select(function(ea) {return { code: 'lively.Class.isClass(ea)' } })
     },
 
 
@@ -879,5 +896,3 @@ cop.resetLayerStack();
 
 if (cop.dynamicInlining)
     module('cop.Flatten').load(true);
-
-});

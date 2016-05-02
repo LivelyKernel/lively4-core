@@ -20,9 +20,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
-module('cop.Flatten').requires().toRun(function() {
-
 Object.subclass('MethodManipulator',
 'initializing', {
     initialize: function() {
@@ -605,5 +602,3 @@ cache[hashForLayers] = inlinedMethod;
     },
     inlinedMethodCache: {}
 });
-
-}) // end of module

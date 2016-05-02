@@ -25,17 +25,25 @@
 
 
 // Non-Lively Compatibility
-module = function() {
-        return {
+Global = window || {};
+module = (function () {
+    var modules = { 'Global': Global };
+    function lookupOrCreate(moduleName) {
+        if (modules.hasOwnProperty(moduleName))
+            return modules[moduleName];
+        return modules[moduleName] = {
             requires: function() {return this},
             toRun: function(func) {
-            func()
-        }
+                func()
+            }
+        };
     }
-}
+    return function(name) {
+        return lookupOrCreate(name);
+    };
+})();
 Config = {};
 cop = {};
-Global = window;
 
 // copied from ../lively/Base.js
 
@@ -64,7 +72,7 @@ function __oldNamespace(spec, context) {
 			}
 		} else {//spec is a specification object e.g, {com: {trifork: ['model,view']}}
 			for (i in spec) if (spec.hasOwnProperty(i)) {
-				context[i] = context[i] || new lively.lang.Namespace(context, i);
+				context[i] = context[i] || { code: 'new lively.lang.Namespace(context, i)' };
 					return namespace(spec[i], context[i]);//recursively descend tree
 			}
 		}
@@ -77,7 +85,7 @@ function __oldNamespace(spec, context) {
 				if (!Class.isValidIdentifier(spec)) {
 					throw new Error('"'+spec+'" is not a valid name for a package.');
 				}
-				context[spec] = context[spec] || new lively.lang.Namespace(context, spec);
+				context[spec] = context[spec] || { code: 'new lively.lang.Namespace(context, spec)' };
 				context = context[spec];
 			}
 		})();
@@ -132,8 +140,8 @@ Object.extend(Function.prototype, {
 			if (className) targetScope[shortName] = klass; // otherwise it's anonymous
 
 			// remember the module that contains the class def
-			if (Global.lively && lively.lang && lively.lang.Namespace)
-				klass.sourceModule = lively.lang.Namespace.current();
+			// if (Global.lively && lively.lang && lively.lang.Namespace)
+			// 	klass.sourceModule = lively.lang.Namespace.current();
 		};
 
 		// the remaining args should be category strings or source objects
@@ -242,8 +250,8 @@ Object.extend(Function.prototype, {
                 value.displayName = className + "$" + property;
 
                 // remember where it was defined
-                if (Global.lively && lively.lang && lively.lang.Namespace)
-                    value.sourceModule = lively.lang.Namespace.current();
+                // if (Global.lively && lively.lang && lively.lang.Namespace)
+                //     value.sourceModule = lively.lang.Namespace.current();
 
                 for (; value; value = value.originalFunction) {
                     if (value.methodName) {
