@@ -1,3 +1,5 @@
+<link rel="import" href="../templates/lively-services-item.html" />
+
 <template id="lively-services" data-class="Services" data-title="Services">
     <style data-src="/templates/livelystyle.css"></style>
     <style>
@@ -23,47 +25,6 @@
       flex-direction: column;
       flex: 1;
       overflow-y: scroll;
-    }
-    
-    .item {
-      padding: 4px;
-      cursor: pointer;
-    }
-    
-    .item:hover {
-      background-color: #eee;
-    }
-    
-    .item h1 {
-      font-size: 14px;
-      margin: 0;
-    }
-    
-    .item small {
-      font-size: 12px;
-      font-style: italic;
-    }
-    
-    .status {
-      float: left;
-      font-size: 30px;
-      margin-right: 8px;
-    }
-    
-    .running {
-      color: green;
-    }
-    
-    .errored {
-      color: red;
-    }
-    
-    .warning {
-      color: #edde3f;
-    }
-    
-    .not-running {
-      color: gray;
     }
     
     .services-menu {
@@ -106,42 +67,20 @@
     </style>
     <div class="container">
       <div class="column-left">
-        <div class="items">
-          <div class="item">
-            <div class="details">
-              <div class="status running">&#9679;</div>
-              <h1>Lively Server</h1>
-              <small>running for 3 days</small>
-            </div>
-          </div>
-          <div class="item">
-            <div class="status warning">&#9679;</div>
-            <h1>Another Service</h1>
-            <small>warning</small>
-          </div>
-          <div class="item">
-            <div class="status errored">&#9679;</div>
-            <h1>Jens' Service</h1>
-            <small>errored</small>
-          </div>
-          <div class="item">
-            <div class="status not-running">&#9679;</div>
-            <h1>Yet Another Service</h1>
-            <small>not running</small>
-          </div>
-        </div>
+        <div class="items"></div>
         <div class="services-menu">
-          <button class="service" id="addService">+</button>
-          <button class="service" id="removeService">-</button>
+          <button id="addButton">+</button>
+          <button id="removeButton">-</button>
+          <button id="refreshButton">&#8634;</button>
         </div>
       </div>
       <div class="column-right">
         <div class="service-top">
-          <input type="text" value="Service Name" />
+          <input type="text" value="Name" />
           <div class="service-actions">
-            <button class="service" id="startService">&#9656;</button>
-            <button class="service" id="stopService">&#9724;</button>
-            <button class="service" id="debugService">D</button>
+            <button id="startButton">&#9656;</button>
+            <button id="stopButton">&#9724;</button>
+            <button id="debugButton">D</button>
           </div>
         </div>
         <juicy-ace-editor id="code"></juicy-ace-editor>
