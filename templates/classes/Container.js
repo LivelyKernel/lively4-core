@@ -43,6 +43,7 @@ export default class Container extends Morph {
         });
     	}
     }
+    
 
     // #TODO very ugly... I want to hide that level of JavaScript and just connect "onEnter" of the input field with my code
     var input = this.getSubmorph("#container-path");

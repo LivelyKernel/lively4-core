@@ -534,6 +534,14 @@ export default class Lively {
       comp.searchFile(text)
     })
   }
+  
+  static openHelpWindow(text) {
+    this.openComponentInWindow("lively-help").then(comp => {
+      comp.parentElement.style.width = "850px";
+      comp.parentElement.style.height = "600px";
+      comp.getHelp(text);
+    })
+  }
 
   static openComponentInWindow(name, pos) {
     var comp  = document.createElement(name);

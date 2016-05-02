@@ -1,9 +1,0 @@
-<html>
-
-<lively-content-script><script type="code">
-lively.files.statFile(lively4url +"")
-  .then(t => JSON.parse(t).contents.map(ea => ea.name))
-  .then(files => files.filter(ea => !ea.match(/^\./)))
-  .then(files => "<ul>" + files.map(ea => "<li>" + ea + "</li>").join("") + "</ul>")
-</script></lively-content-script>
-</html>

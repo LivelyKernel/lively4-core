@@ -273,6 +273,15 @@ export default class AceEditor extends HTMLElement {
         });
 
         editor.commands.addCommand({
+            name: "w3HelpMe",
+            bindKey: {win: "Ctrl-Shift-H", mac: "Command-Shift-H"},
+            exec: (editor) => {
+                let text = editor.currentSelectionOrLine()
+                lively.openHelpWindow(text)
+            }
+        });
+        
+        editor.commands.addCommand({
             name: "globallySearchIt",
             bindKey: {win: "Ctrl-Shift-F", mac: "Command-Shift-P"},
             exec: (editor) => {
