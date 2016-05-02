@@ -32,4 +32,5 @@ export async function search(pattern, options) {
     console.log("[Search] Item: " + item.path + " with score: " + item.score);
   }
 
+  return _.map(responseJson.items, (item) => _.pick(item, ["path", "score"]));
 }
