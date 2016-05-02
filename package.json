@@ -1,0 +1,28 @@
+{
+  "name": "contextjs",
+  "version": "1.0.0-SNAPSHOT.1",
+  "description": "Context Oriented Programming (COP) for ECMAScript 6",
+  "main": "Layers.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "karma start karma.conf.js --single-run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LivelyKernel/ContextJS.git"
+  },
+  "keywords": [
+    "COP",
+    "Context",
+    "Oriented",
+    "Programming"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/LivelyKernel/ContextJS/issues"
+  },
+  "homepage": "https://github.com/LivelyKernel/ContextJS#readme"
+}
