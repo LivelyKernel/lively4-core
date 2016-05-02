@@ -1,0 +1,57 @@
+<template id="lively-help" data-title="File help">
+    <style data-src="/templates/livelystyle.css"></style>
+    <style>
+    .container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+        margin: 0;
+    }
+    p {
+      padding-left: 5px;
+      padding-right: 5px;
+      margin-top: 5px;
+      margin-bottom: 5px;
+      display: flex;
+      flex-direction: row;
+    }
+    
+    input {
+      width: 40px;
+      flex: 1;
+      margin: 2px;
+    }
+    
+    </style>
+    <div class="container">
+        <!--<p>-->
+        <!--  <input id="helpInput" value="" />-->
+        <!--  <button id="helpButton">help</button> -->
+        <!--</p>-->
+        <iframe id="helpContainer" width="100%" height="100%" src="//devdocs.io">
+        </iframe>
+    </div>
+
+    <script type="lively4script" data-name="initialize">
+      (txt) => {
+        this.windowTitle = "Help"
+        // this.shadowRoot.querySelector("#helpButton").onclick = () => {
+        //   this.getHelp(this.shadowRoot.querySelector("#helpInput").value);
+        // }
+      }
+    </script>
+
+    <script type="lively4script" data-name="getHelp">
+      (txt) => {
+        this.shadowRoot.querySelector("#helpContainer").src = "//devdocs.io/#q=" + txt;
+        // this.shadowRoot.querySelector("#helpInput").value = txt;
+      }
+    </script>
+</template>
+
+<script class="registrationScript">lively.registerTemplate()</script>
+
+
+
