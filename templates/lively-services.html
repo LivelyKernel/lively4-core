@@ -1,0 +1,80 @@
+<template id="lively-services" data-class="Services" data-title="Services">
+    <style data-src="/templates/livelystyle.css"></style>
+    <style>
+    .container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .column-left {
+      width: 200px;
+      flex: 0 0 200px;
+      border-right: 1px solid rgb(120, 118, 116);
+      margin-right: 6px;
+    }
+    
+    .services-menu {
+      display: flex;
+      flex: 1;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    
+    .column-right {
+      width: 400px;
+    }
+    
+    input {
+      width: 40px;
+      flex: 1;
+      margin: 2px;
+    }
+    
+    #code {
+      flex: 1;
+      width: 100%;
+    }
+    
+    #log {
+      margin-top: 12px;
+      flex: 1;
+      width: 100%;
+    }
+    
+    </style>
+    <div class="container">
+      <div class="column-left">
+        <div>
+          <div class="status">
+            o
+          </div>
+          <div class="details">
+            Lively Server
+            <small>running for 3 days</small>
+          </div>
+        </div>
+        <div>
+          <div class="status">
+            o
+          </div>
+          <div class="details">
+            Jens' Service
+            <small>errored</small>
+          </div>
+        </div>
+        <div class="services-menu">
+          <button class="service" id="addService">+</button> 
+          <button class="service" id="removeService">-</button>
+        </div>
+      </div>
+      <div class="column-right">
+        <juicy-ace-editor id="code"></juicy-ace-editor>
+        <juicy-ace-editor id="log"></juicy-ace-editor>
+      </div>
+    </div>
+</template>
+
+<script class="registrationScript">lively.registerTemplate()</script>

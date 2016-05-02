@@ -53,6 +53,7 @@ export default class ContextMenu {
       // ["File Browser",    (evt) => this.openComponentInWindow("lively-file-browser", evt)],
       ["Mount",     (evt) => this.openComponentInWindow("lively-filesystems", evt)],
       ["Sync",     (evt) => this.openComponentInWindow("lively-sync", evt)],
+      ["Services",     (evt) => this.openComponentInWindow("lively-services", evt)],
       // ["Terminal",        (evt) => this.openComponentInWindow("lively-terminal", evt)],
       ["Console",         (evt) => this.openComponentInWindow("lively-console", evt)],
       ["File Search",         (evt) => this.openComponentInWindow("lively-search", evt)],
