@@ -46,7 +46,11 @@ export default class Services extends Morph {
       this.stopService(pid);
     });
     this.debugButton = this.getSubmorph("#debugButton");
-    
+    this.debugButton.addEventListener("click", (evt) => {
+      lively.openComponentInWindow('lively-iframe').then(component => {
+	      component.setURL('http://lively-kernel.org/foo')
+      });
+    });
     
     this.codeEditor = this.getSubmorph("#code");
     this.logEditor = this.getSubmorph("#log");
