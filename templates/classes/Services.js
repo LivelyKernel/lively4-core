@@ -11,7 +11,7 @@ export default class Services extends Morph {
     $(this.serviceList).on('click', 'lively-services-item', (evt) => {
       var pid = evt.target.getAttribute('data-pid');
       that.unselectAll();
-      evt.target.getSubmorph('.item').classList = "item selected";
+      evt.target.getSubmorph('.item').classList.add("selected");
       this.showService(pid);
     });
     
@@ -61,7 +61,7 @@ export default class Services extends Morph {
   unselectAll() {
     var children = this.serviceList.children;
     for (var i = 0; i < children.length; i++) {
-      children[i].getSubmorph('.item').classList = "item";
+      children[i].getSubmorph('.item').classList.remove("selected");
     }
   }
   
@@ -158,7 +158,8 @@ export default class Services extends Morph {
   	      statusText = "running (" + uptime + ")";
   	    }
   	    
-  	    item.getSubmorph('.status').classList = "status " + status;
+  	    
+  	    item.getSubmorph('.status').classList.add(status);
   	    item.getSubmorph('small').innerHTML = statusText;
   	    that.serviceList.appendChild(item);
   	  }
