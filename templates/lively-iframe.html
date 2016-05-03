@@ -34,26 +34,31 @@
     </div>
 
     <script type="lively4script" data-name="initialize">
-      (txt) => {
-        this.windowTitle = "iFrame Browser"
-        var i = this.shadowRoot.querySelector("#input");
-        i.onchange = () => this.get(i.value);
-        i.value = "//lively-kernel.org";
-        i.onchange();
+    (txt) => {
+      this.windowTitle = "iFrame Browser"
+      var i = this.shadowRoot.querySelector("#input");
+      i.onchange = () => this.get(i.value);
+      
+      if (!this.getAttribute("src")) {
+        this.setURL("//lively-kernel.org/")    
       }
+    
+    }
     </script>
 
     <script type="lively4script" data-name="get">
-      (txt) => {
-        var i = this.shadowRoot.querySelector("#input");
-        this.shadowRoot.querySelector("#frame").src = i.value;
-      }
+    (txt) => {
+      var i = this.shadowRoot.querySelector("#input");
+      this.shadowRoot.querySelector("#frame").src = i.value;
+    }
     </script>
     
     <script type="lively4script" data-name="setURL">
-      (url) => {
-       this.get(url)
-      }
+    (url) => {
+      this.setAttribute("src", url)
+       this.shadowRoot.querySelector("#input").value = url
+       this.shadowRoot.querySelector("#frame").src = url;
+    }
     </script>
     
     

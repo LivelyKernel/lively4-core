@@ -48,7 +48,7 @@ export default class Services extends Morph {
     this.debugButton = this.getSubmorph("#debugButton");
     this.debugButton.addEventListener("click", (evt) => {
       lively.openComponentInWindow('lively-iframe').then(component => {
-	      component.setURL('http://lively-kernel.org/foo')
+	      component.setURL('https://lively-kernel.org/lively4servicesDebug/?port=5858')
       });
     });
     
