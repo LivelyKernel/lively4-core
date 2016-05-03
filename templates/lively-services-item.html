@@ -1,0 +1,58 @@
+<template id="lively-services-item">
+  <style>
+    .item {
+      padding: 4px;
+      cursor: pointer;
+    }
+    
+    .item:hover {
+      background-color: #eee;
+    }
+    
+    .selected {
+      background-color: #2B65EC;
+      color: #fff;
+    }
+    
+    .item h1 {
+      font-size: 14px;
+      margin: 0;
+    }
+    
+    .item small {
+      font-size: 12px;
+      font-style: italic;
+    }
+    
+    .status {
+      float: left;
+      font-size: 30px;
+      margin-right: 8px;
+    }
+    
+    .running {
+      color: green;
+    }
+    
+    .errored {
+      color: red;
+    }
+    
+    .warning {
+      color: #edde3f;
+    }
+    
+    .not-running {
+      color: gray;
+    }
+  </style>
+
+<div class="item">
+  <div class="status">&#9679;</div>
+  <h1></h1>
+  <small></small>
+</div>
+
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

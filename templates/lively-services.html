@@ -1,0 +1,92 @@
+<link rel="import" href="../templates/lively-services-item.html" />
+
+<template id="lively-services" data-class="Services" data-title="Services">
+    <style data-src="/templates/livelystyle.css"></style>
+    <style>
+    .container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: row;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .column-left {
+      width: 200px;
+      flex: 0 0 200px;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid rgb(120, 118, 116);
+    }
+    
+    .items {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow-y: scroll;
+    }
+    
+    .services-menu {
+      display: flex;
+      align-items: flex-end;
+    }
+    
+    button {
+      margin-right: 2px;
+    }
+    
+    .column-right {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .service-top {
+      display: flex;
+      flex-direction: row;
+    }
+    
+    input {
+      width: 40px;
+      flex: 1;
+      margin: 2px;
+    }
+    
+    #code {
+      flex: 1;
+      width: 100%;
+      border-bottom: 1px solid rgb(120, 118, 116);
+    }
+    
+    #log {
+      height: 100px;
+      width: 100%;
+    }
+    
+    </style>
+    <div class="container">
+      <div class="column-left">
+        <div class="items"></div>
+        <div class="services-menu">
+          <button id="addButton">+</button>
+          <button id="removeButton">-</button>
+          <button id="refreshButton">&#8634;</button>
+        </div>
+      </div>
+      <div class="column-right">
+        <div class="service-top">
+          <input type="text" value="Name" />
+          <div class="service-actions">
+            <button id="startButton">&#9656;</button>
+            <button id="stopButton">&#9724;</button>
+            <button id="debugButton">D</button>
+          </div>
+        </div>
+        <juicy-ace-editor id="code"></juicy-ace-editor>
+        <juicy-ace-editor id="log"></juicy-ace-editor>
+      </div>
+    </div>
+</template>
+
+<script class="registrationScript">lively.registerTemplate()</script>
