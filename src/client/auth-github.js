@@ -31,12 +31,18 @@ function notifyMe(title, text, cb) {
 
 export default class AuthGithub {
   
+
+  
   static onAuthenticated(windowUuid, authInfo) {
   
   	var state = authInfo.state
   	var token = authInfo.access_token
   
   	if (!state) { console.log("not state! authinfo: " + JSON.stringify(authInfo))}
+
+    if (this.iframe) document.body.removeChild(this.iframe)
+    this.iframe = false;
+
   
   	localStorage.GithubToken = token // #TODO refactor / remove it
   	focalStorage.setItem("githubToken", localStorage.GithubToken).then(function() {
@@ -60,8 +66,9 @@ export default class AuthGithub {
   	if (uuid && cb) {
   		AuthGithub.onAuthenticatedCallbacks[uuid] = cb
   	}
+  	var self = this;
   	function popup(url) {
-  	    var width = 525,
+  	    var width = 825,
   	        height = 525,
   	        screenX = window.screenX,
   	        screenY = window.screenY,
@@ -82,17 +89,36 @@ export default class AuthGithub {
   	              "toolbar=no",
   	              "menubar=no",
   	              "scrollbars=yes"];
-  	    popup = window.open(url, "oauth", features.join(","));
-  	    if (!popup) {
-  	    	notifyMe("Github Authenfication required", "click here to authenticate", function() {
-  	    		console.log("try to open window")
-  				window.open(url, "oauth", features.join(","));
-  	    	})
-  	    } else {
-  	    	// popup.uuid = lively.net.CloudStorage.addPendingRequest(req);
-  	    	popup.focus();
-  	    }
-  	}
+  	              
+  	    // prevent a flashing popup from github by using an iframe
+  	    // lively.openComponentInWindow("lively-iframe").then(comp => comp.setURL(url))
+  	    self.iframe = document.createElement("iframe")
+  	    self.iframe.id = "githubAuth"
+  	    self.iframe.src = url
+  	    self.iframe.style.display = "none"
+  	    self.iframe.width = "1px"
+    	  self.iframe.height = "1px"
+
+  	    document.body.appendChild(self.iframe)
+  	    
+  	    setTimeout(() => {
+  	      if (!self.iframe) return // everything is ok
+  	        document.body.removeChild(self.iframe)
+            self.iframe = false;
+  	      
+  	      // github did not authenticate us automatically
+          popup = window.open(url, "oauth", features.join(","));
+    	    if (!popup) {
+      	    	notifyMe("Github Authenfication required", "click here to authenticate", function() {
+      	    		console.log("try to open window")
+      				  window.open(url, "oauth", features.join(","));
+      				})
+      	    } else {
+      	    	// popup.uuid = lively.net.CloudStorage.addPendingRequest(req);
+      	    	popup.focus();
+      	    }
+  	      }, 5000)
+      }
   
       var appInfo = {
   	        "clientId": "21b67bb82b7af444a7ef",
@@ -111,6 +137,7 @@ export default class AuthGithub {
          	"&scope=repo,user" +
           "&state=" + uuid +
           "&redirect_uri=" + encodeURIComponent(appInfo.redirectUri);
+          
       popup(url);
   }
   
