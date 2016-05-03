@@ -111,8 +111,7 @@ export default class ContextMenu {
                           document.data.getProperties(s).forEach(p => {
                               var v = document.data.getValues(s, p)
                               document.data.getValueOrigins(s, p).forEach((valueOrigin) => {
-                                if (!(valueOrigin.origin.getAttribute("style")==null
-                                      || valueOrigin.origin.getAttribute("style")=="")) {
+                                if (!!valueOrigin.origin.style) {
                                       valueOrigin.origin.style.border = '1px solid red'
                                 }
                               })
