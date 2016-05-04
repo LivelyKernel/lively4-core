@@ -60,7 +60,6 @@
         margin:0;
         list-style-type: none;
         padding: 0;
-        padding-left: 5px;
       }
       
       #container-leftpane ul li {
@@ -72,13 +71,14 @@
       #container-leftpane ul li a.directory::before{
         font: normal normal normal 14px/1 FontAwesome;
         content: "\f07b";
-        margin-right: 4px;
+        margin: 0 4px;
+        color: #e99a01;
       }
  
       #container-leftpane ul li a.file::before{
         font: normal normal normal 14px/1 FontAwesome;
         content: "\f15b";
-        margin-right: 4px;
+        margin: 0 4px;
       }
  
  	
@@ -137,6 +137,10 @@
         margin: 2px;
       }
       
+      input#live {
+        width: auto;
+      }
+      
       label {
         max-height: 18px;
       }
@@ -167,16 +171,16 @@
     </style>
    
     <div id="container-navigation" class="fill">
-      <button class="arrow" id="back"><i class="fa fa-arrow-left" aria-hidden="true"></i></button>
-      <button class="arrow" id="forward"><i class="fa fa-arrow-right" aria-hidden="true"></i></button>
-      <button class="arrow" id="up"><i class="fa fa-arrow-up" aria-hidden="true"></i></button>
+      <button class="arrow" id="back"><i class="fa fa-arrow-left" title="Back" aria-hidden="true"></i></button>
+      <button class="arrow" id="forward"><i class="fa fa-arrow-right" title="Forward" aria-hidden="true"></i></button>
+      <button class="arrow" id="up"><i class="fa fa-arrow-up" title="Up" aria-hidden="true"></i></button>
       <input type="text" id="container-path" value="">
-      <button class="edit" id="sync"><i class="fa fa-refresh" aria-hidden="true"></i></button>
-      <button class="edit" id="delete"><i class="fa fa-trash" aria-hidden="true"></i></button>
-      <button class="edit" id="save"><i class="fa fa-floppy-o" aria-hidden="true"></i></button>
-      <button class="edit" id="accept"><i class="fa fa-check-circle" aria-hidden="true"></i></button>
-      <button class="browse" id="edit"><i class="fa fa-pencil" aria-hidden="true"></i></button>
-      <button class="edit" id="cancel"><i class="fa fa-ban" aria-hidden="true"></i></button>
+      <button class="edit" id="sync"><i class="fa fa-refresh" title="Sync" aria-hidden="true"></i></button>
+      <button class="edit" id="delete"><i class="fa fa-trash" title="Delete" aria-hidden="true"></i></button>
+      <button class="edit" id="save"><i class="fa fa-floppy-o" title="Save" aria-hidden="true"></i></button>
+      <button class="edit" id="accept"><i class="fa fa-check-circle" title="Accept" aria-hidden="true"></i></button>
+      <button class="browse" id="edit"><i class="fa fa-pencil" title="Edit" aria-hidden="true"></i></button>
+      <button class="edit" id="cancel"><i class="fa fa-ban" title="Cancel" aria-hidden="true"></i></button>
       <label class="" title="eval on save"><input class="checkbox" type="checkbox" id="live" checked>eval</label>
     </div>
 
