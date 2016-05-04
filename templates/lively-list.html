@@ -1,0 +1,37 @@
+<template id="lively-list">
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    .container {
+      width: 400px;
+      height: 100%;
+      border-width: 1px;
+      border-color: black;
+      border-style: solid;
+    }
+  </style>
+  <div class="list-container">
+    <ul id="list-list"></ul>
+  </div>
+  <script type="lively4script" data-name="show">
+    (items) => {
+      var ul = this.getSubmorph("#list-list");
+
+      var sortByScore = (a, b) => {
+        if (a.score && b.score) {
+          return a.score - b.score;
+        } else {
+          return 0;
+        }
+      }
+
+      items.sort(sortByScore);
+
+      ul.innerHTML = "";
+      var $ul = $(ul);
+      for (let item of items) {
+        $ul.append($("<li>").text(item.path));
+      }
+    }
+  </script>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>

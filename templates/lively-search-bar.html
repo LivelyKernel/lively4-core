@@ -1,34 +1,35 @@
 <template id="lively-search-bar" data-class="SearchBar">
-     <style data-src="/templates/livelystyle.css"></style>
-     <style>
-     .container {
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    .container {
       width: 400px;
       height: 100px;
       /*padding: 3px;*/
       border-width: 1px;
       border-color: black;
       border-style: solid;
-     }
-     #searchField {
-       width: 70%;
-     }
-     .text-entry {
-       display: block;
-     }
-     #mounts-list {
-       display: hidden;
-       width: 200px;
-       max-height: 60px;
-       overflow: auto;
-     }
-    </style>
-    <div class="container">
-      <div class="text-entry">
-        <input type="text" id="searchField" placeholder="search ..."/>
-        <button id="searchButton">search</button>
-        <button id="setupButton">setup</button>
-      </div>
-      <ul id="mounts-list"></ul>
+    }
+    #searchField {
+      width: 70%;
+    }
+    .text-entry {
+      display: block;
+    }
+    #mounts-list {
+      display: hidden;
+      width: 200px;
+      max-height: 60px;
+      overflow: auto;
+    }
+  </style>
+  <div class="container">
+    <div class="text-entry">
+      <input type="text" id="searchField" placeholder="search ..." autofocus/>
+      <button id="searchButton">search</button>
+      <button id="setupButton">setup</button>
     </div>
+    <ul id="mounts-list"></ul>
+    <lively-list id="searchResults"></lively-list>
+  </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
