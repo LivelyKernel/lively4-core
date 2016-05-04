@@ -70,7 +70,6 @@
     #deleteButton:hover {
       background:  linear-gradient(#dc5f59, #b33630);
       color: white;
-      border: 0px;
     }
 
     #deleteButton:disabled {
@@ -87,30 +86,30 @@
     </style>
     <div class="container">
         <p class="fill">
-          <label class="medium">username</label> 
+          <label class="medium">Username</label> 
           <input class="" id="gitusername" value="" disabled/>
-          <label class="small">email</label>
+          <label class="small">Email</label>
           <input class="" id="gitemail" value="" disabled/>
           <button id="loginButton">not initialize</button> 
         </p>
 
         <p class="fill">
-          <label class="medium">upstream</label>
+          <label class="medium">Upstream</label>
           <input class="persistent clone" id="gitrepositoryurl" value="https://github.com/LivelyKernel/lively4-core.git" /> 
           <button class="clone" id="cloneButton">clone</button> 
         </p>
         <p class="fill">
-          <label class="medium">local name</label>
+          <label class="medium">Local Name</label>
           <input class="branch" id="gitrepository" value="lively4-core" list="gitrepositories" />
           <datalist id="gitrepositories" ></datalist> 
-          <label class="small">branch</label>
+          <label class="small">Branch</label>
           <input class="persistent branch" id="gitrepositorybranch" value=""  list="gitbranches"/>
           <datalist id="gitbranches" ></datalist> 
           <button class="repo" id="mergeButton">merge from</button> 
           <button class="repo" id="branchButton">switch</button> 
         </p>
         <p class="fill">
-          <label class="medium">message</label>
+          <label class="medium">Message</label>
           <input class="repo" id="gitcommitmessage" value="" />
           <button class="repo" id="commitButton">commit</button> 
         </p>

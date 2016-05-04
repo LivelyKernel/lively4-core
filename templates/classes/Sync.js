@@ -4,7 +4,7 @@ import Morph from './Morph.js';
 
 export default class Sync extends Morph {
   initialize() {
-    this.windowTitle = "Github Sync"
+    this.windowTitle = "GitHub Sync"
     var container = this.q(".container");
     lively.html.registerButtons(this)
     lively.html.registerInputs(this)

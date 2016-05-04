@@ -53,10 +53,10 @@
     position: relative;
     display: flex;
     flex-grow: 0;
-      height: 2em;
+    height: 2em;
     width: 100%;
     padding: 0.3em 0.4em;
-    border: none;
+    border: 0;
     border-bottom: 1px #e9e9e9 solid;
   }
   .focused .window-titlebar {
@@ -72,13 +72,14 @@
     vertical-align: middle;
     font-size: 1.1em;
     line-height: 1.5rem;
+    margin-left: 6px;
   }
   .focused .window-title span {
     color: white;
   }
   .window-title span small {
-      font-style: italic;
-      color: #333;
+    font-style: italic;
+    color: #333;
   }
   .focused .window-title span small {
     color: white;
@@ -97,7 +98,10 @@
     cursor: pointer;
     line-height: 1.5rem;
   }
-  .focused .window-button{
+  .window-button .fa {
+    padding: 4px;
+  }
+  .focused .window-button {
     color: white;
     background-color: rgba(0,0,0,0);
   }
@@ -118,14 +122,14 @@
   }
   .window-resize {
     position: absolute;
-    right: -2px;
-    bottom: -2px;
-    font-size: 0.8em;
+    right: -4px;
+    bottom: -4px;
+    transform: rotate(-45deg);
+    font-size: 20px;
+    color: rgb(76, 74, 72);
     cursor: se-resize;
-    font-weight: 800;
     
     z-index: 100;
-    
   }
   .window-content {
     position: relative;
@@ -136,10 +140,6 @@
     flex: 1;
     overflow: hidden; /* when the users wants scrollable content, they should do it themselves */
     background-color: white;
-  }
-
-  .window-min {
-  	// display: none;
   }
   </style>
 
@@ -159,7 +159,9 @@
     <div class="window-content" id="window-content">
       <content></content>
     </div>
-    <span class="window-resize">&there4;</span>
+    <span class="window-resize">
+      <i class="fa fa-chevron-down" aria-hidden="true"></i>
+    </span>
   </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

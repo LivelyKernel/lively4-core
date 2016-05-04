@@ -4,7 +4,6 @@
       :host {
         height: 500px;
         width: 700px;
-
         display: flex;
         flex-direction: column;
       }
@@ -17,6 +16,7 @@
       #container-rightpane {
         flex: 1;
         position: relative;
+ 	      border-top: 1px solid #d5d5d5;
       }
       
       #container-editor, #container-content{
@@ -94,6 +94,8 @@
  	
  	    #container-leftpane {
  	      background-color: #F5F5F5;
+ 	      border-top: 1px solid #d5d5d5;
+ 	      border-right: 1px solid #d5d5d5;
  	    }
  	    
       #container-leftpane ul li a {
@@ -126,7 +128,11 @@
         color: white;
         cursor: pointer
       }
- 
+      
+      #container-path {
+        border: 1px solid #d5d5d5;
+        border-radius: 2px;
+      }
         
       #delete {
         color: #b33630;
@@ -184,10 +190,6 @@
         line-height: 15px;
         margin: 6px 2px 0px 4px;
       }
-
-
-
-
     </style>
    
     <div id="container-navigation" class="fill">
@@ -195,7 +197,6 @@
       <button id="forward"><i class="fa fa-arrow-right" title="Forward" aria-hidden="true"></i></button>
       <button id="up"><i class="fa fa-arrow-up" title="Up" aria-hidden="true"></i></button>
       <input type="text" id="container-path" value="">
-
 
       <div class="edit" id="eval">
           <input type="checkbox" id="live" checked/>
