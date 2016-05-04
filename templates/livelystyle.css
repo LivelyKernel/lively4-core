@@ -1,15 +1,20 @@
 
   @import url("src/external/font-awesome/css/font-awesome.css");
+  
+  .fa {
+    /* merge with fa-fw for fix width icons */
+    width: 1.28571429em;
+    text-align: center;
+  }
 
   button {
     padding: 4px;
-    margin-right: 2px;
-    border: 1px solid  #d5d5d5;
+    margin: 2px;
+    border: 1px solid #d5d5d5;
     background: linear-gradient(#fcfcfc, #eee);
     border-radius: 2px;
-    font-weight: bold;
     font-size: 10pt;
-    color: #404040 ;
+    color: #404040;
   }
   
   button:hover {
