@@ -176,6 +176,8 @@ export default class Window extends Morph {
 
   toggleMaximize() {
     if (this.positionBeforeMaximize) {
+      $('i', this.maxButton).removeClass('fa-compress').addClass('fa-expand');
+      
       this.style.position = "absolute"
       this.setPosition(
           this.positionBeforeMaximize.x,
@@ -192,6 +194,8 @@ export default class Window extends Morph {
       if (this.isMinimized()) {
         this.toggleMinimize()
       }
+      
+      $('i', this.maxButton).removeClass('fa-expand').addClass('fa-compress');
       
       var bounds = this.getBoundingClientRect()
       this.positionBeforeMaximize = {

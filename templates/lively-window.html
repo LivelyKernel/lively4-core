@@ -1,5 +1,8 @@
 <template id="lively-window" data-class="Window">
   <style>
+    @import url("src/external/font-awesome/css/font-awesome.min.css");
+  </style>
+  <style>
   :host {
     position: absolute;
     z-index: 100;
@@ -143,14 +146,14 @@
 
   <div class="window">
     <div class="window-titlebar">
-      <span class="window-button window-menu">&#x2630;</span>
+      <span class="window-button window-menu"><i class="fa fa-bars" aria-hidden="true"></i></span>
 
       <div class="window-title"><span></span></div>
       <div class="window-controls">
-        <span class="window-button window-pin"><i class="fa fa-thumb-tack"></i></span>
+        <span class="window-button window-pin"><i class="fa fa-thumb-tack" aria-hidden="true"></i></span>
         <span class="window-button window-min">&lowbar;</span>
-        <span class="window-button window-max">&#9634;</span>
-        <span class="window-button window-close">&#10005;</span>
+        <span class="window-button window-max"><i class="fa fa-expand" aria-hidden="true"></i></span>
+        <span class="window-button window-close"><i class="fa fa-times" aria-hidden="true"></i></span>
       </div>
     </div>
 

@@ -2,6 +2,8 @@
 
 <template id="lively-services" data-class="Services" data-title="Services">
     <style data-src="/templates/livelystyle.css"></style>
+    <style>@import url('src/external/font-awesome/css/font-awesome.min.css') </style>
+   
     <style>
     .container {
         width: 100%;
@@ -69,18 +71,18 @@
       <div class="column-left">
         <div class="items"></div>
         <div class="services-menu">
-          <button id="addButton">+</button>
-          <button id="removeButton">-</button>
-          <button id="refreshButton">&#8634;</button>
+          <button id="addButton"><i class="fa fa-plus" aria-hidden="true"></i></button>
+          <button id="removeButton"><i class="fa fa-minus" aria-hidden="true"></i></button>
+          <button id="refreshButton"><i class="fa fa-refresh" aria-hidden="true"></i></button>
         </div>
       </div>
       <div class="column-right">
         <div class="service-top">
           <input type="text" value="Name" />
           <div class="service-actions">
-            <button id="startButton">&#9656;</button>
-            <button id="stopButton">&#9724;</button>
-            <button id="debugButton">D</button>
+            <button id="startButton"><i class="fa fa-play" aria-hidden="true"></i></button>
+            <button id="stopButton"><i class="fa fa-stop" aria-hidden="true"></i></button>
+            <button id="debugButton"><i class="fa fa-bug" aria-hidden="true"></i></button>
           </div>
         </div>
         <juicy-ace-editor id="code"></juicy-ace-editor>

@@ -1,4 +1,6 @@
 
+  @import url("src/external/font-awesome/css/font-awesome.css");
+
   button {
     padding: 2;
     border: 1px solid  #d5d5d5;

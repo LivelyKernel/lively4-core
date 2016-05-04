@@ -70,12 +70,15 @@
       }
       
       #container-leftpane ul li a.directory::before{
-        content: "📁 ";
-        color: #EDB32B;
+        font: normal normal normal 14px/1 FontAwesome;
+        content: "\f07b";
+        margin-right: 4px;
       }
  
       #container-leftpane ul li a.file::before{
-        content: "🗋 ";
+        font: normal normal normal 14px/1 FontAwesome;
+        content: "\f15b";
+        margin-right: 4px;
       }
  
  	
@@ -165,16 +168,16 @@
     </style>
    
     <div id="container-navigation" class="fill">
-      <button class="arrow" id="back">&lt;</button>
-      <button class="arrow" id="forward">&gt;</button>
-      <button class="arrow" id="up">&uarr;</button>
+      <button class="arrow" id="back"><i class="fa fa-arrow-left" aria-hidden="true"></i></button>
+      <button class="arrow" id="forward"><i class="fa fa-arrow-right" aria-hidden="true"></i></button>
+      <button class="arrow" id="up"><i class="fa fa-arrow-up" aria-hidden="true"></i></button>
       <input type="text" id="container-path" value="">
-      <button class="edit" id="sync">sync</button>
-      <button class="edit" id="delete">delete</button>
-      <button class="edit" id="save">save</button>
-      <button class="edit" id="accept">accept</button>
-      <button class="browse" id="edit">edit</button>
-      <button class="edit" id="cancel">cancel</button>
+      <button class="edit" id="sync"><i class="fa fa-refresh" aria-hidden="true"></i></button>
+      <button class="edit" id="delete"><i class="fa fa-trash" aria-hidden="true"></i></button>
+      <button class="edit" id="save"><i class="fa fa-floppy-o" aria-hidden="true"></i></button>
+      <button class="edit" id="accept"><i class="fa fa-check-circle" aria-hidden="true"></i></button>
+      <button class="browse" id="edit"><i class="fa fa-pencil" aria-hidden="true"></i></button>
+      <button class="edit" id="cancel"><i class="fa fa-ban" aria-hidden="true"></i></button>
       <label class="" title="eval on save"><input class="checkbox" type="checkbox" id="live" checked>eval</label>
     </div>
 
