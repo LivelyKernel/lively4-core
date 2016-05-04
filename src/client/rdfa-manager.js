@@ -19,12 +19,40 @@ export default class RdfaManager {
           if (valueOrigin.origin.style) {
             valueOrigin.origin.style.border = '1px solid red';
             lively.addEventListener('click', valueOrigin.origin, 'click', evt => {
-              alert(v);
+              this.openMapsFrame(evt, v);
             }, true);
           }
         }
       });
     })
+  }
+
+  static openMapsFrame(evt, value) {
+    var comp = document.createElement("iframe");
+    lively.components.openInWindow(comp).then((w) => {
+      lively.setPosition(w, lively.pt(evt.pageX, evt.pageY));
+      if (comp.windowTitle) {
+        w.setAttribute("title", "Map" + comp.windowTitle);
+      }
+    });
+    var addressString = "";
+    if (Array.isArray(value)) {
+      value = value[0];
+    }
+    if (value.startsWith("_:")) {
+      // value is a subject
+      document.data.getProperties(value).forEach(p => {
+        addressString += document.data.getValues(value, p);
+      });
+    } else {
+      addressString = value;
+    }
+    var apiKey = "AIzaSyBLZknKBi39WOdlmZMYd7y0l7HU9zMFBB0";
+    var mapsLink = "https://www.google.com/maps/embed/v1/place?key="
+      + apiKey
+      + "&q="
+      + addressString;
+    comp.src = mapsLink;
   }
 
   static isGeoLocation(subject, property, value) {
