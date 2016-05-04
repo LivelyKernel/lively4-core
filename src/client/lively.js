@@ -6,6 +6,7 @@ import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
 import * as preferences from './preferences.js';
 import * as persistence from './persistence.js';
+import rdfaManager from './rdfa-manager.js';
 
 
 import files from './files.js';
@@ -45,7 +46,8 @@ var exportmodules = [
   "components",
   "inspector",
   "color",
-  "focalStorage"];
+  "focalStorage",
+  "rdfaManager"];
 
 
 

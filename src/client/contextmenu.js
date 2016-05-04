@@ -104,27 +104,22 @@ export default class ContextMenu {
           $('body')[0].appendChild(morph)
           this.hide()
       }],
-        ["RDFa", (evt) => {
-            this.openComponentInWindow('table', evt).then((comp) => {
-                      var table = $(comp);
-                      document.data.getSubjects().forEach(s => {
-                          document.data.getProperties(s).forEach(p => {
-                              var v = document.data.getValues(s, p)
-                              document.data.getValueOrigins(s, p).forEach((valueOrigin) => {
-                                if (valueOrigin.origin.style) {
-                                      valueOrigin.origin.style.border = '1px solid red'
-                                }
-                              })
-                              table.append(
-                                  $('<tr>')
-                                      .append($('<td>').text(s))
-                                      .append($('<td>').text(p))
-                                      .append($('<td>').text(v)))
-                          });
-                      });
-        })
-    }]
-    ]}
+          ["RDFa", (evt) => {
+            this.openRdfaManager(evt);
+            this.hide();
+          }]
+      ]
+    }
+  }
+
+  static openRdfaManager(evt) {
+    let rdfaManager = lively.rdfaManager;
+    rdfaManager.highlightNodes(rdfaManager.isGeoLocation);
+
+    this.openComponentInWindow('table', evt).then((comp) => {
+      var table = $(comp);
+      rdfaManager.generateTableRows(table);
+    })
   }
 
   static openIn(container, evt, target) {
