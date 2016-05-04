@@ -113,7 +113,15 @@ export default class ContextMenu {
       this.menu = menu
       
       
-      if (evt) lively.setPosition(menu, lively.pt(evt.pageX, evt.pageY))
+      if (evt) {
+        var xOffset = 0;
+        var menuWidth = menu.clientWidth;
+        var bodyWidth = $('body')[0].clientWidth;
+        if (evt.pageX + menuWidth > bodyWidth) {
+          xOffset = menuWidth;
+        }
+        lively.setPosition(menu, lively.pt(evt.pageX - xOffset, evt.pageY));
+      }
 
       menu.openOn(this.items(target), evt).then(() => {
       })
