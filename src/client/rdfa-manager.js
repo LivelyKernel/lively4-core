@@ -12,12 +12,15 @@ export default class RdfaManager {
     })
   }
 
-  static highlightNodes(filterFunction) {
+  static makeLocationsClickable() {
     this.iterateRdfaNodes((s, p, v) => {
       document.data.getValueOrigins(s, p).forEach((valueOrigin) => {
-        if (!filterFunction || filterFunction(s, p, v)) {
+        if (this.isGeoLocation(s, p, v)) {
           if (valueOrigin.origin.style) {
-            valueOrigin.origin.style.border = '1px solid red'
+            valueOrigin.origin.style.border = '1px solid red';
+            lively.addEventListener('click', valueOrigin.origin, 'click', evt => {
+              alert(v);
+            }, true);
           }
         }
       });
@@ -25,8 +28,12 @@ export default class RdfaManager {
   }
 
   static isGeoLocation(subject, property, value) {
-    console.log(property);
-    return true;
+    var locationTags = [
+      "http://schema.org/address",
+      "http://schema.org/geo"
+    ];
+
+    return locationTags.indexOf(property) >= 0;
   }
 
   static iterateRdfaNodes(visitor) {

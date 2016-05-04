@@ -114,7 +114,7 @@ export default class ContextMenu {
 
   static openRdfaManager(evt) {
     let rdfaManager = lively.rdfaManager;
-    rdfaManager.highlightNodes(rdfaManager.isGeoLocation);
+    rdfaManager.makeLocationsClickable();
 
     this.openComponentInWindow('table', evt).then((comp) => {
       var table = $(comp);
