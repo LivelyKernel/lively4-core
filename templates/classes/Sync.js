@@ -34,42 +34,51 @@ export default class Sync extends Morph {
   }
 
   async updateLoginStatus() {
-    var token = await lively.focalStorage.getItem("githubToken")
+    // this.updateLoginStatus()
+    var token = await this.loadValue("githubToken")
     this.q("#loginButton").innerHTML = 
         token ? "logout" : "login";
     var login = token ? true : false;
     this.loggedin = login;
+    
 
     this.q("#gitusername").value = 
-      await lively.focalStorage.getItem("githubUsername");
+      await this.loadValue("githubUsername");
     this.q("#gitemail").value = 
-      await lively.focalStorage.getItem("githubEmail");
+      await this.loadValue("githubEmail");
     
-    var value = await lively.focalStorage.getItem("githubRepository") 
+    var value = await this.loadValue("githubRepository") 
     if (value)this.q("#gitrepository").value = value;
     
     this.updateContextSensitiveButtons();
     this.updateRepositoryList();
     this.updateBranchesList();
   }
-  
-  // #TODO pull into tool?
-  store(key, value) {
-    return lively.focalStorage.setItem(key, value)
-  }
-  
-  load(key) {
-    return lively.focalStorage.getItem(key)
-  }
 
-  login() {
-    lively.focalStorage.getItem("githubToken").then((result) => {
+  githubApi(path, token) {
+    return fetch("https://api.github.com" + path, {headers: new Headers({
+      Authorization: "token " + token
+    })}).then(r => r.json())
+  }
+  
+  async login() {
+    this.loadValue("githubToken").then((result) => {
       if (result) return result
       return new Promise((resolve, reject) => {
-        lively.authGithub.challengeForAuth(Date.now(), (token) => {  
-      	  this.store("githubUsername", this.q("#gitusername").value);
-      	  this.store("githubEmail", this.q("#gitemail").value);
-      	  this.store("githubToken", token);
+        lively.authGithub.challengeForAuth(Date.now(), async (token) => {
+          console.log("authenticated")
+          var user = await this.githubApi("/user", token)
+          var username = user.login
+          var emails =  await this.githubApi("/user/emails", token)
+          var email = emails.find(ea => ea.primary).email
+
+          console.log("username: " + username )
+          console.log("email: " + email )
+
+          
+          this.storeValue("githubUsername", username);
+      	  this.storeValue("githubEmail", email);
+      	  this.storeValue("githubToken", token);
       	  this.updateLoginStatus();
       	  resolve(token);
         });
@@ -83,7 +92,7 @@ export default class Sync extends Morph {
     return new Headers({
       "gitrepository":        this.q("#gitrepository").value, 
       "gitusername":          this.q("#gitusername").value,
-      "gitpassword":          await this.load("githubToken"), 
+      "gitpassword":          await this.loadValue("githubToken"), 
       "gitemail":             this.q("#gitemail").value,
       "gitrepositoryurl":     this.q("#gitrepositoryurl").value,
 	    "gitrepository":        this.q("#gitrepository").value,
@@ -115,7 +124,7 @@ export default class Sync extends Morph {
 
   async onLoginButton() {
     this.clearLog()
-    if (await this.load("githubToken")) { 
+    if (await this.loadValue("githubToken")) { 
       this.logout() 
     } else { 
       this.login()
@@ -177,7 +186,7 @@ export default class Sync extends Morph {
   }
   
   get storagePrefix() {
-    return "LivelySyntax_"
+    return "LivelySync_"
   }
   
   async storeValue(key, value) {
@@ -190,7 +199,9 @@ export default class Sync extends Morph {
 
   logout() {
     this.clearLog()
-  	lively.focalStorage.setItem("githubToken", null)    
+  	this.storeValue("githubToken", null)    
+  	this.storeValue("githubUsername", null)    
+  	this.storeValue("githubEmail", null)
     this.updateLoginStatus()
     this.log("")
   }
@@ -221,8 +232,11 @@ export default class Sync extends Morph {
     branches = branches.split("\n")
     var currentRegex = /^ *\*/
     var currentBranch = _.detect(branches, ea => ea.match(currentRegex))
-      .replace(currentRegex,"")
-     this.q("#gitrepositorybranch").value = currentBranch
+    if(!currentBranch) {
+      return
+    }
+    currentBranch = currentBranch.replace(currentRegex,"")
+    this.q("#gitrepositorybranch").value = currentBranch
     
     var remoteRegEx = /^remotes\/origin\//
     branches = branches
