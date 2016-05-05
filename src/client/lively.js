@@ -546,9 +546,9 @@ export default class Lively {
   static openComponentInWindow(name, pos) {
     var comp  = document.createElement(name);
     return lively.components.openInWindow(comp).then((w) => {
-        if (pos) lively.setPosition(w, pos);
-        if (comp.windowTitle) w.setAttribute("title", "" + comp.windowTitle);
-        return comp;
+      if (pos) lively.setPosition(w, pos);
+      if (comp.windowTitle) w.setAttribute("title", "" + comp.windowTitle);
+      return comp;
     });
   }
   // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
