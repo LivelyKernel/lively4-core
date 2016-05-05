@@ -1,13 +1,10 @@
 <template id="resize-halo">
     <style>
-    :host {
-    }
+      @import url("src/external/font-awesome/css/font-awesome.min.css");
     </style>
     <script type="lively4script" data-name="initialize">
     () => {
       System.import(lively4url +"/src/client/morphic/resizing.js").then( function(resizing) {
-        $("body /deep/ resize-halo")[0].style.backgroundImage =
-          'url(' +lively4url + "/src/client/media/resize.svg)"
         $("body /deep/ resize-halo").off("mousedown").on("mousedown", function(e) {
           resizing.start(e);
 
@@ -30,6 +27,7 @@
       });
     }
     </script>
+    <i class="fa fa-arrows-alt" aria-hidden="true"></i>
 </template>
 <script class="registrationScript">
   lively.registerTemplate()
