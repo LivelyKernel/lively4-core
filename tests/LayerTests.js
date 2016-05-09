@@ -494,9 +494,9 @@ describe('cop', function () {
     // How to lookup objects in layers
     it('testObjectAsDictionaryKeys', function() {
         // it seems that the string value is used as the "key" in dictionary lookups
-        a = {name: "foo", toString: function() {return this.name}};
-        b = {name: "bar", toString: function() {return this.name}};
-        d = {};
+        var a = {name: "foo", toString: function() {return this.name}};
+        var b = {name: "bar", toString: function() {return this.name}};
+        var d = {};
         d[a] = 1;
         d[b] = 2;
         assert.equal(d[a], 1, "objects as keys are broken")
@@ -1248,7 +1248,7 @@ describe('cop', function () {
         });
 
         it('testNestedStateAccess', function() {
-            o = new cop.tests.MyClass();
+            var o = new cop.tests.MyClass();
             cop.withLayers([MyTestLayer1], function() {
                 o.a = 9;
                 cop.withLayers([MyTestLayer2], function() {
@@ -1500,8 +1500,9 @@ describe('cop', function () {
 
             var testCase = this,
                 partialMethods,
-            object,
-            functionName;
+                object,
+                prototypeObject,
+                functionName;
 
             cop.proceed = function() {
                 var composition = cop.proceedStack.last();
