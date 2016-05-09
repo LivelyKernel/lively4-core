@@ -2,7 +2,7 @@
 
 import Morph from './Morph.js';
 import { search as githubSearch } from '../../src/client/search/github-search.js';
-import { getSearchableFileNames as getDbFileNames } from '../../src/client/search/dropbox-search.js';
+import * as dbSearch from '../../src/client/search/dropbox-search.js';
 
 export default class SearchBar extends Morph {
 
@@ -24,8 +24,10 @@ export default class SearchBar extends Morph {
     this.setup();
   }
 
-  setup() {
+  async setup() {
     this.findAvailableMounts();
+    // some dummy index
+    this.lunrIdx = await dbSearch.loadSearchIndex("https://lively4/dropbox/lively-search/lively4-core/src/client/index.l4idx");
   }
 
   searchButtonClicked() {
@@ -44,12 +46,20 @@ export default class SearchBar extends Morph {
   async search(query) {
     console.log("[Search] searching for '" + query + "'");
 
-    let dbFileNames = await getDbFileNames(this.searchableMounts.dropbox[0].options);
-    console.log(JSON.stringify(dbFileNames));
+    // let dbFileNames = await dbSearch.getSearchableFileNames(this.searchableMounts.dropbox[0].options);
+    // console.log(JSON.stringify(dbFileNames));
 
     let results = []
+
+    // search through lunr index, if it exists
+    if (this.lunrIdx) {
+      results = results.concat(this.lunrIdx.search(query).map(res => { res.path = res.ref; return res; }));
+      console.log("[search] done with lunr");
+      this.searchResults.show(results);
+    }
     if (this.searchableMounts.dropbox.length > 0) {
       results = results.concat(await this.searchableMounts.dropbox[0].find(query));
+      this.searchResults.show(results);
     }
     results = results.concat(await this.searchableMounts.github[0].find(query, this.searchableMounts.github[0].options));
 
