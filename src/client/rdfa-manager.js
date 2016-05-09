@@ -19,7 +19,7 @@ export default class RdfaManager {
           if (valueOrigin.origin.style) {
             valueOrigin.origin.style.border = '1px solid red';
             lively.addEventListener('click', valueOrigin.origin, 'click', evt => {
-              this.openMapsFrame(evt, v);
+              this.openMapsFrame(evt, valueOrigin.value);
             }, true);
           }
         }
@@ -41,14 +41,19 @@ export default class RdfaManager {
     }
     if (value.startsWith("_:")) {
       // value is a subject
+      var isFirst = true; // skip the first value since this is the parent node
       document.data.getProperties(value).forEach(p => {
-        addressString += document.data.getValues(value, p);
+        if (isFirst) {
+          isFirst = false;
+          return;
+        }
+        addressString += document.data.getValues(value, p)[0] + " ";
       });
     } else {
       addressString = value;
     }
     var apiKey = "AIzaSyBLZknKBi39WOdlmZMYd7y0l7HU9zMFBB0";
-    var mapsLink = "https://www.google.com/maps/embed/v1/place?key="
+    var mapsLink = "https://www.google.com/maps/embed/v1/search?key="
       + apiKey
       + "&q="
       + addressString;
