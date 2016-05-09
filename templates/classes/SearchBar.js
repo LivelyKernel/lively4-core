@@ -44,7 +44,7 @@ export default class SearchBar extends Morph {
   async search(query) {
     console.log("[Search] searching for '" + query + "'");
 
-    let dbFileNames = getDbFileNames(this.searchableMounts.dropbox[0].options);
+    let dbFileNames = await getDbFileNames(this.searchableMounts.dropbox[0].options);
     console.log(JSON.stringify(dbFileNames));
 
     let results = []
