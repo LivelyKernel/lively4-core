@@ -42,6 +42,10 @@ export default class ContextMenu {
       return menu;
     } else {
       return [
+      ["RDFa", (evt) => {
+        this.openRdfaManager(evt);
+        this.hide();
+      }],
       ["Workspace", (evt) => {
         this.hide()
         lively.openWorkspace("", lively.pt(evt.pageX, evt.pageY))
@@ -103,11 +107,7 @@ export default class ContextMenu {
           morph.style.backgroundColor = "blue"
           $('body')[0].appendChild(morph)
           this.hide()
-      }],
-          ["RDFa", (evt) => {
-            this.openRdfaManager(evt);
-            this.hide();
-          }]
+      }]
       ]
     }
   }
