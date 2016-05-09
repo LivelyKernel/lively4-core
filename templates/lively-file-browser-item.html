@@ -1,14 +1,16 @@
 <template id="lively-file-browser-item">
   <style>
-    #item-icon svg {
-      width: 70%;
-      height: 70%;
-      margin: 5px auto;
-      display: block;
+    @import url('src/external/font-awesome/css/font-awesome.min.css');
+    
+    #container {
+      text-align: center;
     }
-
-    #item-icon svg .icon {
-      fill: #999;
+    
+    #item-icon {
+      color: #999;
+      height: 80%;
+      font-size: 36px;
+      width: 1.28571429em;
     }
 
     #item-name {
@@ -18,27 +20,16 @@
     }
   </style>
   <div id="container">
-    <div id="item-icon"></div>
+    <i id="item-icon" class="fa" aria-hidden="true"></i>
     <div id="item-name"></div>
   </div>
 </template>
-
-<svg viewBox="0 0 24 24" id="icon-folder">
-    <path class="icon" d="M10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6H12L10,4Z" />
-</svg>
-
-<svg viewBox="0 0 24 24" id="icon-file">
-    <path class="icon" d="M13,9V3.5L18.5,9M6,2C4.89,2 4,2.89 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2H6Z" />
-</svg>
 
 <script>
   (function() {
     'use strict';
 
     const doc = document.currentScript.ownerDocument
-
-    const fileSymbol   = doc.querySelector('#icon-file')
-    const folderSymbol = doc.querySelector('#icon-folder')
 
     class FileBrowserItem extends HTMLElement {
       set name(value) {
@@ -50,20 +41,16 @@
       set type(value) {
         switch(value) {
           case 'directory':
-            this._setIcon(folderSymbol)
+            this._setIcon('fa-folder-o')
             break
           default:
-            this._setIcon(fileSymbol)
+            this._setIcon('fa-file-o')
         }
       }
 
-      _setIcon(icon) {
+      _setIcon(iconClass) {
         let node = this._query('#item-icon')
-
-        while(node.firstChild)
-          node.removeChild(node.firstChild)
-
-        node.appendChild(icon.cloneNode(true))
+        node.classList.add(iconClass);
       }
 
       _query(selector) {

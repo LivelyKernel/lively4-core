@@ -1,15 +1,10 @@
 <template id="inspect-halo">
     <style>
-    :host {
-    }
+      @import url("src/external/font-awesome/css/font-awesome.min.css");
     </style>
     <script type="lively4script" data-name="initialize">
     () => {
-
-
       System.import(lively4url +"/src/client/morphic/inspecting.js").then( function(inspecting) {
-        $("body /deep/ inspect-halo")[0].style.backgroundImage =
-          'url(' +lively4url + "/src/client/media/inspect.svg)"
         $("body /deep/ inspect-halo").off("click").on("click", function() {
           inspecting.handle(window.that);
           window.HaloService.hideHalos();
@@ -17,6 +12,7 @@
       });
     }
     </script>
+    <i class="fa fa-wrench" aria-hidden="true"></i>
 </template>
 <script class="registrationScript">
   lively.registerTemplate()

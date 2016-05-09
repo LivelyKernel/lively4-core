@@ -4,9 +4,9 @@
       :host {
         height: 500px;
         width: 700px;
-
         display: flex;
         flex-direction: column;
+        border-right: 1px solid #d5d5d5;
       }
       
       .edit {
@@ -17,6 +17,7 @@
       #container-rightpane {
         flex: 1;
         position: relative;
+ 	      border-top: 1px solid #d5d5d5;
       }
       
       #container-editor, #container-content{
@@ -60,7 +61,6 @@
         margin:0;
         list-style-type: none;
         padding: 0;
-        padding-left: 5px;
       }
       
       #container-leftpane ul li {
@@ -68,21 +68,37 @@
         padding: 2px;
         font-size: 11pt;
       }
+
+      #container-leftpane ul li.subitem {
+        margin: 0px;
+        padding: 0px 0px 0px 25px;
+        font-size: 9pt;
+        color: gray;
+      }
       
-      #container-leftpane ul li a.directory::before{
-        content: "📁 ";
-        color: #EDB32B;
+      #container-leftpane ul li.subitem.level1 {
+        padding-left: 25px;
       }
- 
-      #container-leftpane ul li a.file::before{
-        content: "🗋 ";
+      
+      #container-leftpane ul li.subitem.level2 {
+        padding-left: 35px;
       }
- 
+
+      #container-leftpane ul li.subitem.level3 {
+        padding-left: 45px;
+      }
+
+
+      #container-leftpane ul li .fa-folder {
+        color: #e99a01;
+      }
  	
  	    #container-leftpane {
  	      background-color: #F5F5F5;
+ 	      border-top: 1px solid #d5d5d5;
+ 	      border-right: 1px solid #d5d5d5;
  	    }
- 
+ 	    
       #container-leftpane ul li a {
         width: 200px;
         display: box;
@@ -114,6 +130,11 @@
         cursor: pointer
       }
       
+      #container-path {
+        border: 1px solid #d5d5d5;
+        border-radius: 2px;
+      }
+        
       #delete {
         color: #b33630;
       }
@@ -121,7 +142,6 @@
       #delete:hover {
         background:  linear-gradient(#dc5f59, #b33630);
         color: white;
-        border: 0px
       }
       
       div.fill {
@@ -133,6 +153,10 @@
         width: 40px;
         flex: 1;
         margin: 2px;
+      }
+      
+      input#live {
+        width: auto;
       }
       
       label {
@@ -156,26 +180,43 @@
       table.directory .thumbnail{
         height: 100px;
       }
-      
-      button.arrow {
-        font-size: 12pt;
-        font-weight: bold;
+      #live {
+        width: 20px;
+        height: 20px;
+        margin: 6px 1px 0px 4px;
       }
-      
+    
+      #evaltext {
+        font-size: 13px;
+        line-height: 15px;
+        margin: 6px 2px 0px 4px;
+      }
     </style>
    
     <div id="container-navigation" class="fill">
-      <button class="arrow" id="back">&lt;</button>
-      <button class="arrow" id="forward">&gt;</button>
-      <button class="arrow" id="up">&uarr;</button>
+      <button id="back"><i class="fa fa-arrow-left" title="Back" aria-hidden="true"></i></button>
+      <button id="forward"><i class="fa fa-arrow-right" title="Forward" aria-hidden="true"></i></button>
+      <button id="up"><i class="fa fa-arrow-up" title="Up" aria-hidden="true"></i></button>
       <input type="text" id="container-path" value="">
-      <button class="edit" id="sync">sync</button>
-      <button class="edit" id="delete">delete</button>
-      <button class="edit" id="save">save</button>
-      <button class="edit" id="accept">accept</button>
-      <button class="browse" id="edit">edit</button>
-      <button class="edit" id="cancel">cancel</button>
-      <label class="" title="eval on save"><input class="checkbox" type="checkbox" id="live" checked>eval</label>
+
+      <div class="edit" id="eval">
+          <input type="checkbox" id="live" checked/>
+      </div>
+      <span class="edit" id="evaltext">eval</span>
+        
+      <button class="edit" id="sync"><i class="fa fa-refresh" title="Sync" aria-hidden="true"></i></button>
+      <button class="edit" id="delete"><i class="fa fa-trash" title="Delete" aria-hidden="true"></i></button>
+      <button class="edit" id="save">
+        <i class="fa fa-floppy-o" title="Save" aria-hidden="true"></i></button>
+     
+      <button class="edit" id="accept">
+          <i class="fa fa-check-circle" title="Accept" aria-hidden="true"></i></button>
+    
+
+      <button class="edit" id="cancel">
+        <i class="fa fa-ban" title="Cancel" aria-hidden="true"></i></button> 
+      <button class="browse" id="edit">
+        <i class="fa fa-pencil" title="Edit" aria-hidden="true"></i></button>   
     </div>
 
     <div id="layout-center">

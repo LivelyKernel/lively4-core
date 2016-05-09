@@ -84,24 +84,24 @@ export default class Container extends Morph {
   }
 
   hideCancelAndSave() {
-    _.each(this.shadowRoot.querySelectorAll("button.edit"), (ea) => {
+    _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
       ea.style.visibility = "hidden";
       ea.style.display = "none";
 
     });
-    _.each(this.shadowRoot.querySelectorAll("button.browse"), (ea) => {
+    _.each(this.shadowRoot.querySelectorAll(".browse"), (ea) => {
       ea.style.visibility = "visible";
       ea.style.display = "inline-block";
     });
   }
 
   showCancelAndSave() {
-      _.each(this.shadowRoot.querySelectorAll("button.edit"), (ea) => {
+      _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
         ea.style.visibility = "visible";
         ea.style.display = "inline-block";
       });
       
-      _.each(this.shadowRoot.querySelectorAll("button.browse"), (ea) => {
+      _.each(this.shadowRoot.querySelectorAll(".browse"), (ea) => {
         ea.style.visibility = "hidden";
         ea.style.display = "none";
       });
@@ -444,6 +444,7 @@ export default class Container extends Morph {
       lively.array(template.content.querySelectorAll("script")).forEach((ea) => {
 	      var element = document.createElement("li");
 	      element.innerHTML = ea.getAttribute('data-name');
+	      element.classList.add("subitem")
 	      element.onclick = () => {
 	        this.navigateToName(
 	          "data-name=\""+ea.getAttribute('data-name')+'"')
@@ -457,30 +458,36 @@ export default class Container extends Morph {
       while (m = defRegEx.exec(this.sourceContent)) {
         // console.log("found " + m)
         if(!m[2].match(/^((if)|(switch))$/))
-          links[m[1]] = m[0]
+          links[m[2]] = m[0]
       }
       _.keys(links).forEach( name => {
         var element = document.createElement("li");
   	    element.innerHTML = name
-  	    element.setAttribute("class", "link")
+  	    element.classList.add("link")
+  	    element.classList.add("subitem")
+	      
   	    element.onclick = () => {
   	        this.navigateToName(name)
   	    };
   	    subList.appendChild(element) ;
       })
     } else if (this.getPath().match(/\.md$/)) {
-      var defRegEx = /(?:^|\n)(# ?.*)/g
+      var defRegEx = /(?:^|\n)((#+) ?(.*))/g
       var m
       var links = {}
       while (m = defRegEx.exec(this.sourceContent)) {
-        links[m[1]] = m[0]
+        links[m[3]] = {name: m[0], level: m[2].length}
       }
       _.keys(links).forEach( name => {
+        var item = links[name];
         var element = document.createElement("li");
   	    element.innerHTML = name
-  	    element.setAttribute("class", "link")
+  	    element.classList.add("link")
+  	    element.classList.add("subitem")
+  	    element.classList.add("level" + item.level)
+
   	    element.onclick = () => {
-  	        this.navigateToName(name)
+  	        this.navigateToName(item.name)
   	    };
   	    subList.appendChild(element) ;
       })
@@ -524,15 +531,16 @@ export default class Container extends Morph {
 	      var link = document.createElement("a");
 	      
 	      if (ea.name == filename) targetItem = element;
-	      var name = ea.name 
+	      var name = ea.name;
+	      var icon;
 	      if (ea.type == "directory") {
-	        name += "/"
-	        link.classList.add("directory")
+	        name += "/";
+	        icon = '<i class="fa fa-folder"></i>';
 	      } else {
-	        link.classList.add("file")
+	        icon = '<i class="fa fa-file"></i>';
 	      }
 	      
-	      link.innerHTML = name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"");
+	      link.innerHTML = icon + name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"");
 	      link.href = ea.name
 	      link.onclick = () => {
 	        this.followPath(root + name);

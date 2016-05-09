@@ -176,6 +176,8 @@ export default class Window extends Morph {
 
   toggleMaximize() {
     if (this.positionBeforeMaximize) {
+      $('i', this.maxButton).removeClass('fa-compress').addClass('fa-expand');
+      
       this.style.position = "absolute"
       this.setPosition(
           this.positionBeforeMaximize.x,
@@ -192,6 +194,8 @@ export default class Window extends Morph {
       if (this.isMinimized()) {
         this.toggleMinimize()
       }
+      
+      $('i', this.maxButton).removeClass('fa-expand').addClass('fa-compress');
       
       var bounds = this.getBoundingClientRect()
       this.positionBeforeMaximize = {
@@ -280,12 +284,17 @@ export default class Window extends Morph {
   }
   
   pinButtonClicked(e) {
+    console.log("toggle...")
     let isPinned = this.pinButton.classList.toggle('active');
     if (isPinned) {
       this.setAttribute('fixed', '');
+      this.style.position = "fixed" // does not seem to work with css? #Jens
     } else {
       this.removeAttribute('fixed');
+      this.style.position = "absolute" // does not seem to work with css? #Jens
+
     }
+    // this.reposition()
   }
 
   closeButtonClicked(e) {

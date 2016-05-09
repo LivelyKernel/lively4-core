@@ -1,16 +1,11 @@
 <template id="unpack-halo">
     <style>
-    :host {
-
-    }
+      @import url("src/external/font-awesome/css/font-awesome.min.css");
     </style>
     <script type="lively4script" data-name="initialize">
     () => {
 
       System.import(lively4url +"/src/client/morphic/component-creator.js").then( function(unpacking) {
-        $("body /deep/ unpack-halo")[0].style.backgroundImage =
-          'url(' +lively4url + "/src/client/media/unpack.png)"
-
         $("body /deep/ unpack-halo").off("click").on("click", function() {
           unpacking.unpackShadowDOM(window.that);
           window.HaloService.hideHalos();
@@ -18,6 +13,7 @@
       });
     }
     </script>
+    <i class="fa fa-archive" aria-hidden="true"></i>
 </template>
 <script class="registrationScript">
   lively.registerTemplate()

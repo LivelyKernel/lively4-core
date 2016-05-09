@@ -10,6 +10,7 @@ export default class SearchBar extends Morph {
     this.searchButton = this.getSubmorph("#searchButton");
     this.setupButton = this.getSubmorph("#setupButton");
     this.searchField = this.getSubmorph("#searchField");
+    this.searchResults = this.getSubmorph("#searchResults");
 
     this.searchButton.addEventListener("click", (evt) => { this.searchButtonClicked() });
     this.setupButton.addEventListener("click", (evt) => { this.setup() });
@@ -40,13 +41,19 @@ export default class SearchBar extends Morph {
     }
   }
 
-  search(query) {
+  async search(query) {
     console.log("[Search] searching for '" + query + "'");
+
     let dbFileNames = getDbFileNames(this.searchableMounts.dropbox[0].options);
     console.log(JSON.stringify(dbFileNames));
 
-    this.searchableMounts.dropbox[0].find(query);
-    this.searchableMounts.github[0].find(query, this.searchableMounts.github[0].options);
+    let results = []
+    if (this.searchableMounts.dropbox.length > 0) {
+      results = results.concat(await this.searchableMounts.dropbox[0].find(query));
+    }
+    results = results.concat(await this.searchableMounts.github[0].find(query, this.searchableMounts.github[0].options));
+
+    this.searchResults.show(results);
   }
 
   findAvailableMounts() {
@@ -65,6 +72,7 @@ export default class SearchBar extends Morph {
           this.searchableMounts.dropbox = mounts.filter(mount => { return mount.name == "dropbox" }).map((mount) => {
             mount.find = () => {
               console.log("[Search] Dropbox-search not implemented!");
+              return [];
             }
             return mount;
           });

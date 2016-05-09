@@ -21,7 +21,7 @@
 
 ## External Code
 
-We hope to come up with a sulution, that will be as comfortable as npm for node.js development, but at the same time will serve our need better to jump into development and immediatly make local customizations. 
+We hope to come up with a solution, that will be as comfortable as npm for node.js development, but at the same time will serve our need better to jump into development and immediatly make local customizations. 
 
 * [node modules](node_modules/): automatically updated, but not availablen on github.io
 * [external](src/external/): static copies, manually management needed
