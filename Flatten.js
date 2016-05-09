@@ -20,7 +20,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-Object.subclass('MethodManipulator',
+'use strict';
+
+import { cop, Layer } from 'Layers.js';
+
+var MethodManipulator = Object.subclass('MethodManipulator',
 'initializing', {
     initialize: function() {
         this.parameterRegex = /function\s*\(([^\)]*)\)/;
@@ -368,7 +372,7 @@ Layer.addMethods(
 'hashing', {
 
 });
-Object.subclass('cop.LayerInliner',
+cop.LayerInliner = Object.subclass('cop.LayerInliner',
 'inlining', {
 
     inlinePartialMethods: function(object, methodName, type, partialMethods, justReturnSource) {

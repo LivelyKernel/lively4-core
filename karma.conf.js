@@ -10,11 +10,11 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['mocha', 'chai'],
-
+    frameworks: ['commonjs', 'mocha', 'chai'],
 
     // list of files / patterns to load in the browser
     files: [
+      'node_modules/babel-polyfill/dist/polyfill.js',
       'miniprototype.js',
       'minibase.js',
       'Layers.js',
@@ -31,8 +31,11 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      '/*.js': ['babel'],
-      'tests/**/*.js': ['babel'],
+      'miniprototype.js': ['babel', 'commonjs'],
+      'minibase.js': ['babel', 'commonjs'],
+      'Layers.js': ['babel', 'commonjs'],
+      'Flatten.js': ['babel', 'commonjs'],
+      'tests/**/*.js': ['babel', 'commonjs'],
     },
 
     babelPreprocessor: {
@@ -40,13 +43,21 @@ module.exports = function(config) {
         presets: ['es2015'],
         sourceMap: 'inline'
       },
-      filename: function (file) {
-        return file.originalPath.replace(/\.js$/, '.es5.js');
-      },
+      // filename: function (file) {
+      //   var lastSlash = file.originalPath.lastIndexOf('/');
+      //   var folder = file.originalPath.substring(0, lastSlash + 1);
+      //   var basename = file.originalPath.substring(lastSlash + 1);
+      //   return folder + 'es5/' + basename;
+      // },
       sourceFileName: function (file) {
         return file.originalPath;
       }
     },
+
+    commonjsPreprocessor: {
+      modulesRoot: '.'
+    },
+
 
 
     // test results reporter to use

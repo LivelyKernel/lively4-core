@@ -6,6 +6,7 @@
  *
  *--------------------------------------------------------------------------*/
 // Note this version is heavily trimmed from its original form.
+'use strict';
 
 var Prototype = {
   Version: '1.6.0_rc1_LK_Mini',
@@ -86,19 +87,6 @@ Object.extend(Object, {
   }
 });
 
-
-if (this.window && window.navigator && window.navigator.userAgent.match(/Firefox|Minefield/)) {
-// fixing the bug:	"var property is not a function" bug in Firefox
-Object.extend(Object, {
-	values: function(object) {
-	var values = [];
-	for (var property in object)
-		if (object.hasOwnProperty(property))
-			values.push(object[property]);
-	return values;
-  },
-})
-};
 
 Object.extend(Function.prototype, {
   argumentNames: function() {
@@ -430,7 +418,7 @@ Object.extend(Enumerable, {
 
 });
 
-function $A(iterable) {
+export function $A(iterable) {
   if (!iterable) return [];
   if (iterable.toArray) return iterable.toArray();
   var length = iterable.length, results = new Array(length);

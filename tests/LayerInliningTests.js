@@ -1,4 +1,10 @@
-Object.subclass('cop.tests.LayerInliningTests.Dummy', {
+'use strict';
+
+import { cop } from 'Layers.js';
+
+cop.tests = {};
+cop.tests.LayerInliningTests = {};
+cop.tests.LayerInliningTests.Dummy = Object.subclass('cop.tests.LayerInliningTests.Dummy', {
 
     m1: function() { return 23 },
 

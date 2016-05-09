@@ -1,6 +1,6 @@
-module('cop.tests.TracingTests').requires('cop.Layers', 'lively.TestFramework', 'cop.Tracing', 'cop.CopBenchmark').toRun(function(thisModule) {
+import { cop } from 'Layers';
 
-
+function TestCase() {}; // TODO: get rid of this
 TestCase.subclass('cop.tests.TracingTests.TracerTest',
 'running', {
     setUp: function($super) {
@@ -67,5 +67,3 @@ TestCase.subclass('cop.tests.TracingTests.TracerTest',
     },
 
 });
-
-}); // end of module

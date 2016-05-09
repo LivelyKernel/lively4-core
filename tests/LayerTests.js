@@ -21,15 +21,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+'use strict';
+
+import { Global } from 'minibase';
+import { cop, Layer, LayerableObject } from 'Layers.js';
 
 // COP Example from: Hirschfeld, Costanza, Nierstrasz. 2008.
 // Context-oriented Programming. JOT)
 var copExample = function() {
 
-cop.create("AddressLayer");
-cop.create("EmploymentLayer");
+var AddressLayer = cop.create("AddressLayer");
+var EmploymentLayer = cop.create("EmploymentLayer");
 
-Object.subclass('cop.example.Person', {
+if (!cop.example) cop.example = {};
+cop.example.Person = Object.subclass('cop.example.Person', {
 
     initialize: function(newName, newAddress, newEmployer) {
         this.name = newName;
@@ -56,7 +61,7 @@ Object.subclass('cop.example.Person', {
 });
 
 
-Object.subclass('cop.example.Employer', {
+cop.example.Employer = Object.subclass('cop.example.Employer', {
 
     initialize: function(newName, newAddress) {
         this.name = newName;
@@ -80,12 +85,13 @@ AddressLayer.refineClass(cop.example.Employer, {
 
 };
 
-cop.create("DummyLayer");
-cop.create("DummyLayer2");
-cop.create("DummyLayer3");
+var DummyLayer = cop.create("DummyLayer");
+var DummyLayer2 = cop.create("DummyLayer2");
+var DummyLayer3 = cop.create("DummyLayer3");
 
 
-Object.subclass('cop.example.DummyClass', {
+if (!cop.example) cop.example = {};
+cop.example.DummyClass = Object.subclass('cop.example.DummyClass', {
     initialize: function() {
         this.e = "Hello";
         this.m = "Hello";
@@ -165,7 +171,7 @@ Object.subclass('cop.example.DummyClass', {
 });
 
 
-cop.example.DummyClass.subclass('cop.example.DummySubclass', {
+cop.example.DummySubclass = cop.example.DummyClass.subclass('cop.example.DummySubclass', {
 
     f2: function() {
         return 3;
@@ -198,7 +204,7 @@ cop.example.DummyClass.subclass('cop.example.DummySubclass', {
 
 });
 
-cop.example.DummyClass.subclass('cop.example.SecondDummySubclass', {
+cop.example.SecondDummySubclass = cop.example.DummyClass.subclass('cop.example.SecondDummySubclass', {
 
     DummyLayer$m1: function() {
         return cop.proceed() + 100;
@@ -344,13 +350,13 @@ describe('cop', function () {
 
     it('can create a Layer', function() {
         cop.create("DummyLayer2");
-        assert(Global.DummyLayer2);
+        assert.isDefined(Global.DummyLayer2);
         assert(Global.DummyLayer2.toString(), "DummyLayer2");
     });
 
     it('can create a Layer in a namespace', function() {
-        cop.create("cop.tests.DummyLayer3");
-        assert(cop.tests.DummyLayer3);
+        cop.tests.DummyLayer3 = cop.create("cop.tests.DummyLayer3");
+        assert.isDefined(cop.tests.DummyLayer3);
         assert(cop.tests.DummyLayer3.toString(), "DummyLayer3");
     });
 
@@ -994,7 +1000,7 @@ describe('cop', function () {
      */
     describe('getters and setters', function () {
 
-        Object.subclass("cop.tests.GetterAndSetterTestDummy", {
+        cop.tests.GetterAndSetterTestDummy = Object.subclass("cop.tests.GetterAndSetterTestDummy", {
             initialize: function() {
                 this.a = 3;
                 this.d = 5;
@@ -1062,10 +1068,10 @@ describe('cop', function () {
     });
 
     describe('layer state', function () {
-        cop.create("MyTestLayer1");
-        cop.create("MyTestLayer2");
+        var MyTestLayer1 = cop.create("MyTestLayer1");
+        var MyTestLayer2 = cop.create("MyTestLayer2");
 
-        Object.subclass('cop.tests.MyClass', {
+        cop.tests.MyClass = Object.subclass('cop.tests.MyClass', {
             initialize: function() {
                 this.a = 7;
             },
@@ -1266,7 +1272,7 @@ describe('cop', function () {
     });
 
     describe('layer object activation', function () {
-        LayerableObject.subclass("DummyLayerableObject", {
+        var DummyLayerableObject = LayerableObject.subclass("DummyLayerableObject", {
 
             initialize: function() {
                 this.otherObject = new DummyOtherObject();
@@ -1295,7 +1301,7 @@ describe('cop', function () {
             }
         });
 
-        LayerableObject.subclass("DummyOtherObject", {
+        var DummyOtherObject = LayerableObject.subclass("DummyOtherObject", {
 
             lookupLayersIn: ["owner"],
 
@@ -1425,10 +1431,16 @@ describe('cop', function () {
     });
 
     describe('proceed', function () {
+        var CopProceedTestClass,
+            CopProceedTestAddLayer,
+            CopProceedPropertyTestLayer,
+            CopProceedMultAddLayer,
+            CopProceedMultipleProceedLayer;
+
         function setupClasses() {
             Global['CopProceedTestClass'] = undefined;
 
-            Object.subclass('CopProceedTestClass', {
+            CopProceedTestClass = Object.subclass('CopProceedTestClass', {
                 m: function(a) {
                     return a * a
                 },
@@ -1440,13 +1452,13 @@ describe('cop', function () {
             cop.makeFunctionLayerAware(CopProceedTestClass.prototype, 'm')
             cop.makePropertyLayerAware(CopProceedTestClass.prototype, 'p')
 
-            cop.create('CopProceedTestAddLayer').refineClass(CopProceedTestClass, {
+            CopProceedTestAddLayer = cop.create('CopProceedTestAddLayer').refineClass(CopProceedTestClass, {
                 m: function(a) {
                     return cop.proceed(a + 1)
                 },
             });
 
-            cop.create('CopProceedPropertyTestLayer').refineClass(CopProceedTestClass, {
+            CopProceedPropertyTestLayer = cop.create('CopProceedPropertyTestLayer').refineClass(CopProceedTestClass, {
                 get p() {
                     return cop.proceed() + " World"
                 },
@@ -1458,13 +1470,13 @@ describe('cop', function () {
             });
 
 
-            cop.create('CopProceedMultAddLayer').refineClass(CopProceedTestClass, {
+            CopProceedMultAddLayer = cop.create('CopProceedMultAddLayer').refineClass(CopProceedTestClass, {
                 m: function(a) {
                     return cop.proceed(a) * 3
                 }
             });
 
-            cop.create('CopProceedMultipleProceedLayer').refineClass(CopProceedTestClass, {
+            CopProceedMultipleProceedLayer = cop.create('CopProceedMultipleProceedLayer').refineClass(CopProceedTestClass, {
                 m: function(a) {
                     return cop.proceed(a * 2) + cop.proceed(a *3)
                 }
@@ -1513,7 +1525,7 @@ describe('cop', function () {
             }
 
             var o = new CopProceedTestClass();
-            withLayers([CopProceedTestAddLayer], function() {
+            cop.withLayers([CopProceedTestAddLayer], function() {
                 o.m();
             }.bind(this))
 
@@ -1532,7 +1544,7 @@ describe('cop', function () {
         it('testProceedFromAddToBase', function() {
             var o = new CopProceedTestClass();
             assert.equal(o.m(2), 4, "base class broken")
-            withLayers([CopProceedTestAddLayer], function() {
+            cop.withLayers([CopProceedTestAddLayer], function() {
                 assert.equal(o.m(2), 9, "add layer broken")
             }.bind(this))
         });
@@ -1540,8 +1552,8 @@ describe('cop', function () {
         it('testProceedFromMultOverAddToBase', function() {
             var o = new CopProceedTestClass();
             assert.equal(o.m(2), 4, "base class broken")
-            withLayers([CopProceedTestAddLayer], function() {
-                withLayers([CopProceedMultAddLayer], function() {
+            cop.withLayers([CopProceedTestAddLayer], function() {
+                cop.withLayers([CopProceedMultAddLayer], function() {
                     assert.equal(o.m(2), 27, "mult and add layer broken")
                 }.bind(this))
                 assert.equal(o.m(2), 9, "mult and add layer broken")
@@ -1552,7 +1564,7 @@ describe('cop', function () {
         it('testMultipleProceed', function() {
             var o = new CopProceedTestClass();
             assert.equal(o.m(2), 4, "base class broken")
-            withLayers([CopProceedMultipleProceedLayer], function() {
+            cop.withLayers([CopProceedMultipleProceedLayer], function() {
                 assert.equal(o.m(1), 13, "CopProceedMultipleProceedLayer")
             }.bind(this))
         });
@@ -1560,7 +1572,7 @@ describe('cop', function () {
         it('testCurrentLayerComposition', function() {
             var o = new CopProceedTestClass();
             assert.strictEqual(this.currentLayerComposition, undefined, "layer composition is undefined")
-            withLayers([CopProceedTestAddLayer], function() {
+            cop.withLayers([CopProceedTestAddLayer], function() {
                 assert.equal(o.m(2), 9, "add layer broken")
             }.bind(this))
 
@@ -1571,7 +1583,7 @@ describe('cop', function () {
             assert.equal(o.m(2), 4, "base class broken")
             assert.equal(o.p, "Hello", "base getter broken")
 
-            withLayers([CopProceedPropertyTestLayer], function() {
+            cop.withLayers([CopProceedPropertyTestLayer], function() {
                 assert.equal(o.p, "Hello World", "getter broken")
                 o.p = "hi"
                 assert.equal(o.p, "Hi World", "setter broken")

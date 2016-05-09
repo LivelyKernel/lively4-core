@@ -22,28 +22,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+'use strict';
 
+import { $A } from 'miniprototype.js';
 
 // Non-Lively Compatibility
-Global = window || {};
-module = (function () {
-    var modules = { 'Global': Global };
-    function lookupOrCreate(moduleName) {
-        if (modules.hasOwnProperty(moduleName))
-            return modules[moduleName];
-        return modules[moduleName] = {
-            requires: function() {return this},
-            toRun: function(func) {
-                func()
-            }
-        };
-    }
-    return function(name) {
-        return lookupOrCreate(name);
-    };
-})();
-Config = {};
-cop = {};
+export var Global = {};
+export var Config = {};
 
 // copied from ../lively/Base.js
 
@@ -237,7 +222,7 @@ Object.extend(Function.prototype, {
                     });
                     // for lively.Closures
                     method.varMapping = {$super: advice};
-                })();
+                }.bind(this))();
             }
 
             this.prototype[property] = value;
