@@ -106,6 +106,7 @@ export default class Lively {
       }
       var script = document.createElement("script");
       script.id=name;
+      script.charset="utf-8"
       script.type="text/javascript";
       if (force) {
         src += + "?" + Date.now();
