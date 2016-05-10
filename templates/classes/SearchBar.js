@@ -63,7 +63,7 @@ export default class SearchBar extends Morph {
     }
     results = results.concat(await this.searchableMounts.github[0].find(query, this.searchableMounts.github[0].options));
 
-    this.searchResults.show(results);
+    this.searchResults.show(results, query);
   }
 
   findAvailableMounts() {

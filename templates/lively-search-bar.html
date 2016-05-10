@@ -2,12 +2,11 @@
   <style data-src="/templates/livelystyle.css"></style>
   <style>
     .container {
-      width: 400px;
-      height: 100px;
-      /*padding: 3px;*/
-      border-width: 1px;
-      border-color: black;
-      border-style: solid;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      height: 100%;
+      box-sizing: border-box;
     }
     #searchField {
       width: 70%;
@@ -17,9 +16,12 @@
     }
     #mounts-list {
       display: hidden;
-      width: 200px;
-      max-height: 60px;
-      overflow: auto;
+      padding: 0px;
+      margin: 5px;
+    }
+    #mounts-list li {
+      display: inline;
+      margin-right: 10px;
     }
   </style>
   <div class="container">
