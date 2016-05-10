@@ -25,6 +25,7 @@ var lunrIdx;
     this.field("content");
 
     this.ref("path");
+    // this.saveDocument(false);
   });
 // }
 
@@ -32,30 +33,66 @@ var jsTokenizer = function (obj) {
   if (!arguments.length || obj == null || obj == undefined) return []
   if (Array.isArray(obj)) return obj.map(function (t) { return lunr.utils.asString(t).toLowerCase() })
 
-  return obj.toString().trim().toLowerCase().match(jsTokens);
+  return obj.toString().trim().toLowerCase().match(jsTokens).filter(function(token) { return token.length < 30; });
 }
+
 
 // register tokenizer function to allow index serialization
 lunr.tokenizer.registerFunction(jsTokenizer, "jsTokenizer");
-
+// lunr.tokenizer.setSeperator(jsRegex);
+// lunr.clearStopWords();
 // js tokenizer
 lunrIdx.tokenizer(jsTokenizer);
+// lunr.tokenizer = jsTokenizer;
 
-// just index js-files for now
-var jsFiles = fs.readdirSync(rootFolder).filter(function(file) {
-  return file.slice(-3) === ".js";
-});
+function indexFilesDeep(rootDir) {
+  fs.readdirSync(rootDir).forEach(function(file) {
+    var stat = fs.statSync(path.join(rootDir, file));
+    if (stat.isDirectory()) {
+      indexFilesDeep(path.join(rootDir, file));
+    } else if (stat.isFile()) {
+      // just index js-files for now
+      if (file.slice(-3) === ".js") {
+        addFile(rootDir, file);
+      }
+    }
+  });
 
-jsFiles.forEach(function(file) {
-  var filepath = path.join(rootFolder, file);
+}
+
+function addFile(dir, filename) {
+  var filepath = path.join(dir, filename);
+  console.log("Indexing " + filepath);
   var content = fs.readFileSync(filepath, 'utf8');
 
   lunrIdx.add({
     path: filepath,
-    filename: file,
+    filename: filename,
     content: content
   });
+  counter++;
+}
+
+var counter = 0;
+
+indexFilesDeep(rootFolder);
+
+console.log("Indexed " + counter + " files");
+// debugger;
+var serialized = JSON.stringify(lunrIdx.toJSON());
+console.log(serialized.length);
+
+fs.writeFileSync(path.join(rootFolder, idxFileName), serialized);
+console.log("written index to " + path.join(rootFolder, idxFileName));
+
+var stdin = process.openStdin();
+
+stdin.addListener("data", function(d) {
+  var s = d.toString().trim();
+  console.log(lunrIdx.search(s));
+  // note:  d is an object, and when converted to a string it will
+  // end with a linefeed.  so we (rather crudely) account for that
+  // with toString() and then trim()
+  // console.log("you entered: [" +
+  //     d.toString().trim() + "]");
 });
-
-
-fs.writeFileSync(path.join(rootFolder, idxFileName), JSON.stringify(lunrIdx.toJSON()));

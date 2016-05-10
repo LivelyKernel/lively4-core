@@ -19,7 +19,7 @@ function buildSearchIndex(indexJson) {
     if (!arguments.length || obj == null || obj == undefined) return []
     if (Array.isArray(obj)) return obj.map(function (t) { return lunr.utils.asString(t).toLowerCase() })
 
-    return obj.toString().trim().toLowerCase().match(jsTokens);
+    return obj.toString().trim().toLowerCase().match(jsTokens).filter(function(token) { return token.length < 30; });
   }
 
   // register tokenizer function to allow index serialization

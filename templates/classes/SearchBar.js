@@ -27,7 +27,7 @@ export default class SearchBar extends Morph {
   async setup() {
     this.findAvailableMounts();
     // some dummy index
-    this.lunrIdx = await dbSearch.loadSearchIndex("https://lively4/dropbox/lively-search/lively4-core/src/client/index.l4idx");
+    this.lunrIdx = await dbSearch.loadSearchIndex("https://lively4/dropbox/lively-search/index.l4idx");
   }
 
   searchButtonClicked() {
