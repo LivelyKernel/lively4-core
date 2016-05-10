@@ -7,6 +7,10 @@
   text-align: center;
 }
 
+.disabled {
+  color: grey;
+}
+
 button {
   padding: 4px;
   margin: 2px;
