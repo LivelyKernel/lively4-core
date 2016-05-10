@@ -2,7 +2,8 @@ var lunr = require("lunr");
 // var lunr = require("elasticlunr");
 var fs = require("fs");
 var path = require("path");
-var jsTokens = require("js-tokens")
+var jsTokens = require("js-tokens");
+var slash = require("slash");
 
 if (process.argv.length < 3) {
   console.log("too few arguments");
@@ -66,7 +67,7 @@ function addFile(dir, filename) {
   var content = fs.readFileSync(filepath, 'utf8');
 
   lunrIdx.add({
-    path: filepath,
+    path: slash(filepath.slice(rootFolder.length)),
     filename: filename,
     content: content
   });
@@ -90,9 +91,4 @@ var stdin = process.openStdin();
 stdin.addListener("data", function(d) {
   var s = d.toString().trim();
   console.log(lunrIdx.search(s));
-  // note:  d is an object, and when converted to a string it will
-  // end with a linefeed.  so we (rather crudely) account for that
-  // with toString() and then trim()
-  // console.log("you entered: [" +
-  //     d.toString().trim() + "]");
 });

@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "js-tokens": "^1.0.3",
-    "lunr": "^0.7.0"
+    "lunr": "^0.7.0",
+    "slash": "^1.0.0"
   }
 }
