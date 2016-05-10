@@ -28,6 +28,7 @@ export default class SearchBar extends Morph {
     this.findAvailableMounts();
     // some dummy index
     this.lunrIdx = await dbSearch.loadSearchIndex("https://lively4/dropbox/index.l4idx");
+    lively.notify("Info: ", "Dropbox index loaded!", 3);
   }
 
   searchButtonClicked() {
@@ -88,8 +89,7 @@ export default class SearchBar extends Morph {
           this.searchableMounts.dropbox = mounts.filter(mount => { return mount.name == "dropbox" }).map((mount) => {
             mount.find = (query) => {
               if (this.lunrIdx) {
-                console.log("[search] done with lunr");
-                return this.lunrIdx.search(query).map(res => { res.path = res.ref; return res; });
+                return this.lunrIdx.search(query).map(res => { res.path = mount.path + res.ref; return res; });
               }
               return [];
             }
