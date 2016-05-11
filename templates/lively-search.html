@@ -1,0 +1,107 @@
+<template id="lively-search" data-class="Search" data-title="File Search">
+    <style data-src="/templates/livelystyle.css"></style>
+    <style>
+    .container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+        margin: 0;
+    }
+    p {
+      padding-left: 5px;
+      padding-right: 5px;
+      margin-top: 5px;
+      margin-bottom: 5px;
+    }
+    
+    p.fill {
+      display: flex;
+      flex-direction: row;
+    }
+    
+    input {
+      width: 40px;
+      flex: 1;
+      margin: 2px;
+    }
+    
+    
+    input:disabled {
+      color: #aaaaaa
+    }
+   
+    
+    label {
+      padding: 3px;
+      padding-top: 6px;
+      font-size: 13px;
+      color: #555555;
+    }
+
+    
+    label.medium {
+      width: 70px;
+    }
+
+    label.small {
+      width: 40px;
+    }
+    
+    
+    input.checkbox {
+      width: 14px;
+      height: 14px;
+      margin: 0px;
+      padding: 0px;
+    }
+    
+    #searchContainer {
+      flex: 1;
+      overflow: auto; 
+    }
+    
+    #searchResults  {
+      width: 100%;
+      
+    }
+    
+    #searchResults li {
+      
+      width: 90%;
+    }
+    
+    
+    #searchResults li a {
+      // display: block;
+      // text-overflow: ellipsis;
+      // white-space: nowrap;
+      // overflow: hidden;
+    }
+    
+    #searchResults li span {
+      font-family: monospace
+    }
+    
+    
+    </style>
+    <div class="container">
+        <p class="fill">
+          <label class="small">Root:</label> 
+          <input class="" id="rootInput" value="lively4-core" />
+        </p>
+        <p class="fill">
+          <input class="" id="searchInput" value="" />
+          <button id="searchButton"><i class="fa fa-search" aria-hidden="true"></i></button> 
+        </p>
+        <div id="searchContainer">
+          <ul id="searchResults"></ul>  
+        </div>
+    </div>
+</template>
+
+<script class="registrationScript">lively.registerTemplate()</script>
+
+
+

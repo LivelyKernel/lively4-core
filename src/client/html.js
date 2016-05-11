@@ -1,5 +1,8 @@
-
 'use strict';
+
+/*
+ * Kitchensink for all HTML manipulation utilities
+ */
 
 export default class HTML {
   
@@ -49,7 +52,7 @@ export default class HTML {
         });
       })
   }
-  
+
   static fixLinks(nodes, dir, followPath) {
     if (! followPath) {
       throw new Error("argument followPath missing");
@@ -59,6 +62,22 @@ export default class HTML {
     Array.prototype.forEach.call(nodes, node => {
       if (node.getAttribute) {
         var href = node.getAttribute("href")
+        if (href && node.classList.contains("play")) {
+          var filename = href.replace(lively4url.replace(/[^\/]*$/,""),"")
+          console.log("fix play link " + filename)
+          node.onclick = () => {
+            lively.notify("play " + filename)
+            fetch(lively4url + "/_meta/play", {
+              headers: new Headers({ 
+                filepath: filename
+              })
+            }).then(r => r.text()).then(t => {
+                console.log("play: " + t)
+            })
+            return false
+          }
+          return
+        } 
         if (href) {
           // #TODO load inplace....
           var path;
@@ -79,13 +98,11 @@ export default class HTML {
               path += ".md"
               console.log("assume Markdown for "+ path)
             }
-          }
+          } 
           if (path) {
-            
-            
             // console.log("fix "  + href + " to " + path + "(dir " + dir + ")")
             $(node).click(() => { 
-              // if (path.match(/https:\/\/lively4\/Thesis\/notes/)) {
+              // if (path.match(/https:\/\/lively4\/notes/)) {
               //     if (window.confirm("follow path? " + path)) {
               //       followPath(path); return false;
               //     }

@@ -1,119 +1,235 @@
 <template id="lively-container" data-class="Container">
      <style data-src="/templates/livelystyle.css"></style>
      <style>
+      :host {
+        height: 500px;
+        width: 700px;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid #d5d5d5;
+      }
+      
       .edit {
         visibility: hidden;
         display: none;
       }
-      #container-path {
-        width: 440px;
+
+      #container-rightpane {
+        flex: 1;
+        position: relative;
+ 	      border-top: 1px solid #d5d5d5;
       }
-      #container-navigation {
-        flex: 0;
+      
+      #container-editor, #container-content{
+        position:absolute;
       }
+      
       #layout-center {
-        width: 100%;
-        height: 100%;
         overflow: hidden;
         flex: 1;
-        flex-direction: row;
         display: flex;
+        flex-direction: row;
       }
+      
     	#container-content {
-        width: 100%;
+    	  width: 100%;
         height: 100%;
         overflow: auto;
         flex: 1;
         margin: 0px;
-        padding: 10px;
+        padding: 0px;
     	}
+    	
+    	#container-root {
+    	  padding: 10px;
+    	}
+    	
       #container-editor {
         width: 100%;
         height: 100%;
-        overflow: hidden;
         flex: 1;
-        padding: 0px;
-        display: block;
     	}
-      lively-editor {
-        margin: 0px;
-      }
+    	
       #container-leftpane {
-        width: 150px;
+        width: 170px;
         margin: 0;
         overflow: auto;
         overflow-x: hidden;
       }
+      
       #container-leftpane ul {
         margin:0;
         list-style-type: none;
         padding: 0;
       }
+      
       #container-leftpane ul li {
         margin: 0px;
         padding: 2px;
-        font-size: 10pt;
+        font-size: 11pt;
       }
+
+      #container-leftpane ul li.subitem {
+        margin: 0px;
+        padding: 0px 0px 0px 25px;
+        font-size: 9pt;
+        color: gray;
+      }
+      
+      #container-leftpane ul li.subitem.level1 {
+        padding-left: 25px;
+      }
+      
+      #container-leftpane ul li.subitem.level2 {
+        padding-left: 35px;
+      }
+
+      #container-leftpane ul li.subitem.level3 {
+        padding-left: 45px;
+      }
+
+
+      #container-leftpane ul li .fa-folder {
+        color: #e99a01;
+      }
+ 	
+ 	    #container-leftpane {
+ 	      background-color: #F5F5F5;
+ 	      border-top: 1px solid #d5d5d5;
+ 	      border-right: 1px solid #d5d5d5;
+ 	    }
+ 	    
       #container-leftpane ul li a {
-       width: 200px;
-       display: box;
+        width: 200px;
+        display: box;
+        white-space: nowrap;
+        text-decoration: none;
+        color: #444444;
       }
+      
       #container-leftpane ul li a:hover {
         background-color: gray;
         color: white;
         cursor: pointer
       }
+      
       #container-leftpane ul li a:hover {
         background-color: gray;
         color: white;
         cursor: pointer
       }
+      
       #container-leftpane ul li ul li {
         width: 400px;
         padding-left: 10px;
       }
+      
       #container-leftpane ul li ul li:hover{
         background-color: gray;
         color: white;
         cursor: pointer
       }
-      :host {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
+      
+      #container-path {
+        border: 1px solid #d5d5d5;
+        border-radius: 2px;
       }
-
+        
       #delete {
         color: #b33630;
       }
+      
       #delete:hover {
-        background:  linear-gradient(#dc5f59, #b33630);;
+        background:  linear-gradient(#dc5f59, #b33630);
         color: white;
-        border: 0px
+      }
+      
+      div.fill {
+        display: flex;
+        flex-direction: row;
+      }
+      
+      input {
+        width: 40px;
+        flex: 1;
+        margin: 2px;
+      }
+      
+      input#live {
+        width: auto;
+      }
+      
+      label {
+        max-height: 18px;
+      }
+      
+      lively-editor {
+        margin: 0px;
+      }
+      
+      table.directory tr th {
+         text-align: left;
+      }
+      
+      table.directory {
+        font-size: 10pt;
+        color: #666666;
+        margin: 10px;
+      }
+      
+      table.directory .thumbnail{
+        height: 100px;
+      }
+      #live {
+        width: 20px;
+        height: 20px;
+        margin: 6px 1px 0px 4px;
+      }
+    
+      #evaltext {
+        font-size: 13px;
+        line-height: 15px;
+        margin: 6px 2px 0px 4px;
       }
     </style>
-    <div id="container-navigation">
-      <button id="back">&lt;</button>
-      <button id="forward">&gt;</button>
-      <button id="up">^</button>
+   
+    <div id="container-navigation" class="fill">
+      <button id="back"><i class="fa fa-arrow-left" title="Back" aria-hidden="true"></i></button>
+      <button id="forward"><i class="fa fa-arrow-right" title="Forward" aria-hidden="true"></i></button>
+      <button id="up"><i class="fa fa-arrow-up" title="Up" aria-hidden="true"></i></button>
       <input type="text" id="container-path" value="">
-      <button class="browse" id="edit">Edit</button>
-      <button class="edit" id="cancel">cancel</button>
-      <button class="edit" id="save">save</button>
-      <button class="edit" id="sync">sync</button>
-      <button class="edit" id="accept">accept</button>
-      <button class="edit" id="delete">delete</button>
-      <label class=""><input class="checkbox" type="checkbox" id="live" checked>live</label>
+
+      <div class="edit" id="eval">
+          <input type="checkbox" id="live" checked/>
+      </div>
+      <span class="edit" id="evaltext">eval</span>
+        
+      <button class="edit" id="sync"><i class="fa fa-refresh" title="Sync" aria-hidden="true"></i></button>
+      <button class="edit" id="delete"><i class="fa fa-trash" title="Delete" aria-hidden="true"></i></button>
+      <button class="edit" id="save">
+        <i class="fa fa-floppy-o" title="Save" aria-hidden="true"></i></button>
+     
+      <button class="edit" id="accept">
+          <i class="fa fa-check-circle" title="Accept" aria-hidden="true"></i></button>
+    
+
+      <button class="edit" id="cancel">
+        <i class="fa fa-ban" title="Cancel" aria-hidden="true"></i></button> 
+      <button class="browse" id="edit">
+        <i class="fa fa-pencil" title="Edit" aria-hidden="true"></i></button>   
     </div>
 
     <div id="layout-center">
       <div id="container-leftpane"></div>
-      <div id="container-content">
-        <!-- by default the content is hidden-->
-        <content></content>
+      <div id="container-rightpane">
+        <div id="container-content">
+          <div id="container-root"></div>
+          <!-- by default the content is hidden-->
+          <content></content>
+        </div>
+        <div id="container-editor"></div>
       </div>
-      <div id="container-editor"></div>
     </div>
+
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

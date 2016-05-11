@@ -6,14 +6,11 @@ import * as preferences from '../../src/client/preferences.js';
 
 export default class ComponentBinTile extends Morph {
   initialize() {
-    this.addEventListener('click', (evt) => {
-      var comp = componentLoader.createComponent(this.htmlTag);
-      if (this.componentBin.inWindow()) {
-        componentLoader.openInWindow(comp);
-      } else {
-        componentLoader.openInBody(comp);
-      }
-    });
+    this.addEventListener('click', evt => this.onClick(evt))
+    this.addEventListener('dragstart', evt => this.onDragStart(evt))
+    this.addEventListener('drag', evt => this.onDrag(evt))
+    this.addEventListener('dragend', evt => this.onDragEnd(evt))
+    this.draggable = true;
   }
 
   configure(config) {
@@ -42,4 +39,35 @@ export default class ComponentBinTile extends Morph {
   setBin(componentBin) {
     this.componentBin = componentBin;
   }
+  
+  async onClick(evt) {
+    var comp  = await this.createComponent();
+    lively.setPosition(comp, {x: evt.clientX - 300, y: evt.clientY - 10})
+  } 
+  
+  createComponent() {
+    var comp = componentLoader.createComponent(this.htmlTag);
+    this.component = comp;
+    if (this.componentBin.inWindow()) {
+      return componentLoader.openInWindow(comp);
+    } else {
+      return componentLoader.openInBody(comp);
+    }
+  }
+  
+  async onDragStart(evt) {
+    this.dragTarget = await this.createComponent()
+    evt.dataTransfer.setDragImage(document.createElement("div"), 0, 0); 
+  }
+  
+  onDrag(evt) {
+    if (this.dragTarget && evt.clientX) {
+     lively.setPosition(this.dragTarget, {x: evt.clientX - 300, y: evt.clientY - 10})
+    } 
+  }
+  
+  onDragEnd(evt) {
+    // Do nothing... 
+  }
+
 }

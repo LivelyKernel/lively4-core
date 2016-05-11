@@ -1,39 +1,43 @@
  <template id="lively-menu">
     <style>
-    :host {
-      position: absolute;
-      top: "200px";
-      left: "200px";
-      border: 20px;
-      z-index: 200;
-    }
-    .container {
-        width: 120px;
-        padding: 5px;
-        // border-radius: 5px;
-        // background-color: rgb(238, 238, 238);
-        background-color: white;
-        border: 0.7px solid gray;
+      :host {
+        position: absolute;
+        top: "200px";
+        left: "200px";
+        border: 20px;
+        z-index: 200;
+      }
+      .container {
+          width: 200px;
+          padding: 5px;
+          // border-radius: 5px;
+          // background-color: rgb(238, 238, 238);
+          background-color: white;
+          border: 0.7px solid gray;
+          margin: 0;
+          padding: 0px;
+      }
+      ul {
         margin: 0;
-        padding: 0px;
-    }
-    ul {
-      margin: 0;
-    }
-
-    li:hover {
-        background-color: #2B65EC;
-        color: white;
-    }
-
-    li {
-      font-size: 10pt;
-      padding: 10px 5px 5px 10px;
-      
-      margin: 0;
-      list-style-type: none;
-      color:  #1a1a1a;
-    }
+      }
+      ul li {
+        font-size: 10pt;
+        padding: 10px 5px 5px 10px;
+        font: arial, sans-serif;
+        cursor: pointer;
+        
+        margin: 0;
+        list-style-type: none;
+        color:  #1a1a1a;
+      }
+      ul li:hover {
+          background-color: #2B65EC;
+          color: white;
+      }
+      ul li label {
+        color: lightgray;
+        float: right;
+      }
     </style>
     <ul class="container">
     </ul>
@@ -52,7 +56,7 @@
         }
         items.forEach((ea) => {
           var item = document.createElement("li");
-          item.innerHTML = ea[0]
+          item.innerHTML = ea[0] + (ea[2] ? " <label>" + ea[2].replace("CMD","Ctrl") +"</label>"  : "")
           console.log(2**3, 'from babel transpile')
 
           $(item).on("click",function(evt) {

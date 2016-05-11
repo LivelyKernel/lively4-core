@@ -1,0 +1,37 @@
+<template id="lively-search-bar" data-class="SearchBar">
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      height: 100%;
+      box-sizing: border-box;
+    }
+    #searchField {
+      width: 70%;
+    }
+    .text-entry {
+      display: block;
+    }
+    #mounts-list {
+      display: hidden;
+      padding: 0px;
+      margin: 5px;
+    }
+    #mounts-list li {
+      display: inline-block;
+      margin-right: 10px;
+    }
+  </style>
+  <div class="container">
+    <div class="text-entry">
+      <input type="text" id="searchField" placeholder="search ..." autofocus/>
+      <button id="searchButton">search</button>
+      <button id="setupButton">setup</button>
+    </div>
+    <ul id="mounts-list"></ul>
+    <lively-list id="searchResults"></lively-list>
+  </div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>

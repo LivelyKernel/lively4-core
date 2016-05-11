@@ -1,0 +1,54 @@
+<template id="lively-list">
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      flex-grow: 1;
+      overflow: auto;
+    }
+    .container {
+      width: 400px;
+      height: 100%;
+      border-width: 1px;
+      border-color: black;
+      border-style: solid;
+    }
+  </style>
+  <div class="list-container">
+    <ul id="list-list"></ul>
+  </div>
+  <script type="lively4script" data-name="browseSearchResult">
+    async (url, pattern) => {
+      return lively.openBrowser(url, true, pattern)
+    }
+  </script>
+  <script type="lively4script" data-name="show">
+    (items, pattern) => {
+      let ul = this.getSubmorph("#list-list");
+
+      let sortByScore = (a, b) => {
+        if (a.score && b.score) {
+          return a.score - b.score;
+        } else {
+          return 0;
+        }
+      }
+
+      items.sort(sortByScore);
+
+      ul.innerHTML = "";
+      for (let item of items) {
+        let li = document.createElement("li");
+        let link = document.createElement("a");
+        link.innerHTML = item.path;
+        link.href = "#";
+        link.onclick = () => {
+          this.browseSearchResult(item.path, pattern)
+          return false;
+        }
+        li.appendChild(link);
+        ul.appendChild(li);
+      }
+    }
+  </script>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>

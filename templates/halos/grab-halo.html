@@ -1,13 +1,10 @@
 <template id="grab-halo">
     <style>
-    :host {
-    }
+      @import url("src/external/font-awesome/css/font-awesome.min.css");
     </style>
     <script type="lively4script" data-name="initialize">
     () => {
       System.import(lively4url +"/src/client/morphic/grabbing.js").then( function(grabbing) {
-        $("body /deep/ grab-halo")[0].style.backgroundImage =
-          'url(' +lively4url + "/src/client/media/grab.svg)"
          $("body /deep/ grab-halo").off("mousedown").on("mousedown", function(e) {
           grabbing.start(e);
 
@@ -36,6 +33,7 @@
       });
     }
     </script>
+    <i class="fa fa-hand-rock-o" aria-hidden="true"></i>
 </template>
 <script class="registrationScript">
   lively.registerTemplate()

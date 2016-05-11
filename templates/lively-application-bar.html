@@ -1,0 +1,41 @@
+<template id="lively-application-bar" data-class="ApplicationBar">
+  <style>
+  :host {
+    position: fixed;
+    left: 0px;
+    bottom: 0px;
+    z-index: 99;
+    width: 100%;
+    height: 25px;
+    
+    background-color: white;
+    border-top: 1px solid gray;
+    padding-top: 1px;
+  }
+  
+  ::content {
+    
+  }
+  
+  #window-space {
+    float: left;
+  }
+  
+  #toolbar, #clock {
+    float: right;
+    padding-right: 4px;
+  }
+  </style>
+
+  <div id="window-space">
+  </div>
+  
+  <div id="toolbar">
+      <content></content>
+  </div>
+  
+  <div id="clock">
+    <lively-digital-clock></lively-digital-clock>
+  </div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>

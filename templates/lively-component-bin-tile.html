@@ -2,7 +2,7 @@
 <style>
 :host {
   display: inline-block;
-  width: 180px;
+  width: 170px;
   height: 20px;
   margin: 6px;
   cursor: pointer;
@@ -17,13 +17,15 @@
 }
 
 .container {
-  background-color: lightgray;
-  border-radius: 5px;
+  background-color: #566D7E;
+  border-radius: 2px;
   width: 100%;
   height: 100%;
   padding: 2px;
   overflow: hidden;
 }
+
+
 
 #thumbnail {
   display: none;
@@ -49,7 +51,9 @@ p {
   text-align: center;
   margin: 0px;
   font-size: 14px;
-  font-weight: bold;
+  color: white;
+  // color: #FAEBD7;
+  // font-weight: bold;
 }
 
 </style>
@@ -58,8 +62,7 @@ p {
   <div class="name-container">
     <p>name</p>
   </div>
-
-    <img id="thumbnail" src="../templates/thumbnails/default-placeholder.png">
+  <img id="thumbnail" src="../templates/thumbnails/default-placeholder.png">
 </div>
 
 </template>

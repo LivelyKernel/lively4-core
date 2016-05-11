@@ -6,6 +6,7 @@ import * as componentLoader from '../../src/client/morphic/component-loader.js';
 
 export default class ComponentBin extends Morph {
   initialize() {
+    this.windowTitle = "Component Bin"
     this.loadComponentList().then((compList) => {
       this.createTiles(compList);
       this.showTiles(this.sortAlphabetically(this.componentList));

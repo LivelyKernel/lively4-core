@@ -1,7 +1,5 @@
 'use strict';
 
-window.lively = this;
-
 import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
 import * as preferences from './preferences.js';
@@ -111,6 +109,7 @@ export default class Lively {
       }
       var script = document.createElement("script");
       script.id=name;
+      script.charset="utf-8"
       script.type="text/javascript";
       if (force) {
         src += + "?" + Date.now();
@@ -151,7 +150,7 @@ export default class Lively {
 
   static handleError(error) {
     lively.LastError = error
-   lively.notify("Error: ", error.message, 20, () =>
+    lively.notify("Error: ", error.message, 20, () =>
     		  lively.openWorkspace("Error:" + error.message + "\nLine:" + error.lineno + " Col: " + error.colno+"\nSource:" + error.source + "\nError:" + error.stack))
   }
 
@@ -210,6 +209,7 @@ export default class Lively {
       comp.enableAutocompletion();
       comp.editor.setValue(string)
       lively.setPosition(container,pos);
+      container.setAttribute("title", "Workspace")
     }).then( () => {
       comp.editor.focus();
       return comp
@@ -217,10 +217,24 @@ export default class Lively {
   }
 
   static boundEval(str, ctx) {
-    var interactiveEval = function(text) { return eval(text) };
-    var transpiledSource = babel.transform(str).code;
-    // #TODO alt: babel.run
-    // #TODO context does not seem to work!
+    // just a hack... to get rid of some async....
+    // #TODO make this more general
+    // works: await new Promise((r) => r(3))
+    // does not work yet: console.log(await new Promise((r) => r(3)))
+    // if (str.match(/^await /)) {
+    //   str = "(async () => window._ = " + str +")()"
+    // }
+
+    // #Hack #Hammer #Jens Wrap and Unwrap code into function to preserve "this"
+    var transpiledSource = babel.transform('(function(){' + str+'})').code
+        .replace(/^[\s\n]*["']use strict["'];[\s\n]*\(function\s*\(\)\s*\{/,"") // strip prefix
+        .replace(/\}\);[\s\n]*$/,"") // strip postfix
+    
+    console.log("code: " + transpiledSource)
+    console.log("context: " + ctx)
+    var interactiveEval = function interactiveEval(code) {
+      return eval(code);
+    };
     return interactiveEval.call(ctx, transpiledSource);
   }
 
@@ -239,6 +253,14 @@ export default class Lively {
       // obj.style.top = "" + ((obj.style.top || 0) - deltay) + "px";
       obj.style.left = ""+  point.x + "px";
       obj.style.top = "" +  point.y + "px";
+  }
+
+  static getPosition(obj) {
+      if (obj.clientX) 
+        return {x: obj.clientX, y: obj.clientY}
+      else if (obj.style)
+        return {x: obj.style.left, y: obj.style.top}
+      throw Error("" + obj + " has not position");
   }
 
   static openFile(url) {
@@ -366,6 +388,9 @@ export default class Lively {
 
     _.each($(tagName), function(oldInstance) {
       if (oldInstance.__ingoreUpdates) return;
+      
+      // if (oldInstance.isMinimized && oldInstance.isMinimized()) return // ignore minimized windows
+      // if (oldInstance.isMaximized && oldInstance.isMaximized()) return // ignore isMaximized windows
 
       var owner = oldInstance.parentElement;
       var newInstance = document.createElement(tagName);
@@ -379,11 +404,22 @@ export default class Lively {
       _.each(oldInstance.attributes, function(ea) {
         console.log("set old attribute " + ea.name + " to: " + ea.value);
         newInstance.setAttribute(ea.name, ea.value);
+      });
 
-      });
-      _.each(_.keys(oldInstance), function(ea) {
-        console.log("ignore properties: " + newInstance[ea] + " <-- " + oldInstance[ea]);
-      });
+      // Migrate Position
+      if (oldInstance.style.position == "absolute") {
+        newInstance.style.top = oldInstance.style.top
+        newInstance.style.left = oldInstance.style.left
+      }
+
+      // Migrate "that" pointer
+      if (window.that == oldInstance) {
+        window.that = newInstance
+      }
+      
+      if (newInstance.livelyMigrate) {
+        newInstance.livelyMigrate(oldInstance) // give instances a chance to take over old state...
+      }
     });
   }
 
@@ -494,8 +530,47 @@ export default class Lively {
       }
     })
   }
-}
 
+  static openSearchFileWindow(text) {
+    this.openComponentInWindow("lively-search").then( comp => {
+      comp.parentElement.style.width = "850px";
+      comp.parentElement.style.height = "600px";
+      comp.searchFile(text)
+    })
+  }
+  
+  static openHelpWindow(text) {
+    this.openComponentInWindow("lively-help").then(comp => {
+      comp.parentElement.style.width = "850px";
+      comp.parentElement.style.height = "600px";
+      comp.getHelp(text);
+    })
+  }
+
+  static openComponentInWindow(name, pos) {
+    var comp  = document.createElement(name);
+    return lively.components.openInWindow(comp).then((w) => {
+      if (pos) lively.setPosition(w, pos);
+      if (comp.windowTitle) w.setAttribute("title", "" + comp.windowTitle);
+      return comp;
+    });
+  }
+  // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
+  static openBrowser(url, edit, pattern) {
+    var editorComp;
+    return lively.openComponentInWindow("lively-container").then(comp => {
+          editorComp = comp;
+          comp.parentElement.style.width = "850px"
+          comp.parentElement.style.height = "600px"
+          if (edit) comp.setAttribute("mode", "edit");
+          return comp.followPath(url)
+    }).then( () => {   
+      if (edit && pattern) {
+        editorComp.getAceEditor().editor.find(pattern)  
+      }
+    })
+  }
+}
 
 window.lively = Lively
 Lively.loaded();

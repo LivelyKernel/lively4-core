@@ -27,10 +27,11 @@
 
     }
     #listOfMountPoints li {
-      width: 100%; 
+      width: 100%;
+      clear: both;
     }
     
-    .browse, .umount {
+    .browse, .unmount {
        float: right;
        font-size: 10px;
        background-color: none;
@@ -38,7 +39,7 @@
        border: 0px;
     } 
     
-    .browse:hover, .umount:hover {
+    .browse:hover, .unmount:hover {
        background-color: #AAAAAA;
        background-image: none;
        border: 0px;
@@ -74,7 +75,7 @@
         from: <input id="dropboxSubfolder" value="/Lively" />
         to: <input id="dropboxMountPath" value="/dropbox" />
       </p>
-      <h3>Mounts <button id="updateMountList">update</button>
+      <h3>Mounts <button id="updateMountList"><i class="fa fa-refresh" aria-hidden="true"></i></button>
         </h3>
         <ol id="listOfMountPoints"></ol>
     </div>
@@ -229,11 +230,11 @@
             });
       }
     </script>
-    <script type="lively4script" data-name="umountPath">
+    <script type="lively4script" data-name="unmountPath">
     function(path) {
-      console.log("umountPath: " + path)
+      console.log("unmountPath: " + path)
        $.ajax({
-              url: "https://lively4/sys/fs/umount",
+              url: "https://lively4/sys/fs/unmount",
               type: 'PUT',
               data: JSON.stringify({path: path}),
               success: (text) => {
@@ -263,9 +264,9 @@
             listItem.innerHTML = ea.path + " (" + ea.name +") "
 
             let button = document.createElement("button")
-            button.innerHTML="umount"
-            button.onclick = () => { this.umountPath(ea.path)}
-            button.setAttribute("class","umount")
+            button.innerHTML="unmount"
+            button.onclick = () => { this.unmountPath(ea.path)}
+            button.setAttribute("class","unmount")
             listItem.appendChild(button)
 
             let browseButton = document.createElement("button")
@@ -287,10 +288,5 @@
       });
     }
     </script>
-
-
 </template>
-
-
 <script class="registrationScript">lively.registerTemplate()</script>
-

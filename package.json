@@ -1,42 +1,39 @@
 {
   "name": "lively4-core",
-  "version": "0.0.1",
-  "description": "An extensible module loader to load data and scripts from various locations and optionally perform transformations on this data. Powered by Service Worker.",
-  "keywords": ["lively", "lively4", "module", "modules", "loader", "compiler"],
-  "homepage": "https://github.com/onsetsu/lively4-core/",
+  "version": "0.1.0",
+  "description": "A browsers-based self supporting Morphic and JavaScript development and runtime environment.",
+  "keywords": ["lively", "lively4", "module", "modules", "loader", "compiler", "lively-kernel"],
+  "homepage": "https://github.com/LivelyKernel/lively4-core/",
   "bugs": {
-    "url": "https://github.com/onsetsu/lively4-core/issues",
-    "email": "todo@todo.com"
+    "url": "https://github.com/LivelyKernel/lively4-core/issues",
+    "email": "lively-kernel@hpi.uni-potsdam.de"
   },
   "license": "MIT",
   "contributors": [
     {
       "name": "Stefan Lehmann",
-      "email": "stefan.lehmann@student.hpi.uni-potsdam.de",
+      "email": "stefan.lehmann@hpi.de",
       "url": "https://github.com/onsetsu"
     },
     {
       "name": "Jens Lincke",
-      "email": "jens.lincke@hpi.uni-potsdam.de"
+      "email": "jens.lincke@hpi.de"
     },
     {
       "name": "Tim Felgentreff",
-      "email": "tim.felgentreff@hpi.uni-potsdam.de"
+      "email": "tim.felgentreff@hpi.de"
     }
   ],
   "files": [
-    "bootworker.js",
-    "TODO"
+    "src/client/lively.js"
   ],
-  "main": "bootworker.js",
-  "bin": "TODO",
-  "man": "TODO",
+  "main": "start.html",
   "directories": {
     "lib": "src"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/onsetsu/lively4-core.git"
+    "url": "https://github.com/LivelyKernel/lively4-core.git"
   },
   "scripts": {
     "test": "karma start karma.conf.js --single-run"

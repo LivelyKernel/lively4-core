@@ -1,0 +1,73 @@
+<template id="lively-content-script">
+  <style>
+  :host {
+    
+  }
+  
+  #scriptsource {
+   display: none; 
+  }
+  </style>
+
+<div id="scriptsource">
+  Source:
+  <content></content>
+</div>
+
+<div id="result">
+
+</div>
+<!--
+ // Examples: 
+ that.innerText = '"<h1>hello world</h1>"'
+ that.innerText = 'new Promise(resolve => resolve("<h1>hello as promised!</h1>"))'
+ that.innerText = '"I am: " + this' 
+ that.updateContent()
+ that.boundEval("3+4")
+-->
+<script type="lively4script" data-name="initialize">
+  () => {
+    this.updateContent()
+  }  
+</script>
+<script type="lively4script" data-name="updateContent">
+  async () => {
+    var text=this.textContent
+  
+    try {
+      var result =  this.boundEval(text, this.getDoitContext())
+      if (result && result.then) {
+        this.shadowRoot.querySelector("#result").innerHTML = "waitng for promise"
+        result = await result // resolve promise first
+      }
+      console.log("result: " + result)
+      var resultNode = this.shadowRoot.querySelector("#result")
+      resultNode.innerHTML = result
+      
+      // var nodes = $.parseHTML(result)
+      // _.each(lively.html.fixLinks(nodes, lively4url, (path) => this.followPath(path)
+      // ), ea => resultNode.appendChild(ea))
+    } catch(e) {
+      this.shadowRoot.querySelector("#result").innerHTML = "Error: <pre> "+e +"</pre"
+    } 
+    
+  }  
+</script>
+<script type="lively4script" data-name="getDoitContext">
+  () => {
+    if (this.doitContext)
+      return this.doitContext
+    else 
+      return this
+  }  
+</script>
+
+<script type="lively4script" data-name="boundEval">
+  (str, ctx) => {
+    return lively.boundEval(str, ctx)
+  }
+</script>
+
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

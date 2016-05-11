@@ -11,7 +11,7 @@ export default class AceEditor extends HTMLElement {
 
         if(this.editor){
             var editor = this.editor;
-            this.value = text.textContent || this.value;
+            this.value = (text && text.textContent) || this.value;
         } else {
             // container.appendChild(text);
             container.innerHTML = this.innerHTML || this.value;
@@ -273,6 +273,24 @@ export default class AceEditor extends HTMLElement {
         });
 
         editor.commands.addCommand({
+            name: "w3HelpMe",
+            bindKey: {win: "Ctrl-Shift-H", mac: "Command-Shift-H"},
+            exec: (editor) => {
+                let text = editor.currentSelectionOrLine()
+                lively.openHelpWindow(text)
+            }
+        });
+        
+        editor.commands.addCommand({
+            name: "globallySearchIt",
+            bindKey: {win: "Ctrl-Shift-F", mac: "Command-Shift-P"},
+            exec: (editor) => {
+                let text = editor.currentSelectionOrLine()
+                lively.openSearchFileWindow(text)
+            }
+        });
+
+        editor.commands.addCommand({
             name: "inspectIt",
             bindKey: {win: "Ctrl-I", mac: "Command-I"},
             exec: (editor) => {
@@ -291,26 +309,11 @@ export default class AceEditor extends HTMLElement {
     };
 
     getDoitContext() {
-        return this.doitContext
+      return this.doitContext
     }
 
-    boundEval(str) {
-      // just a hack... to get rid of some async....
-      // #TODO make this more general
-      // works: await new Promise((r) => r(3))
-      // does not work yet: console.log(await new Promise((r) => r(3)))
-      if (str.match(/^await /)) {
-        str = "(async () => window._ = " + str +")()"
-      }
-
-      var ctx = this.getDoitContext() || this,
-          interactiveEval = function(text) { return eval(text) };
-      // #TODO binding "this" does not work yet, this is needed to build interactive debuggers... and cool workspaces
-      var transpiledSource = babel.transform(str, {stage: 0}).code
-      // #TODO alt: babel.run
-      var result =  interactiveEval.call(ctx, transpiledSource);
-
-      return result
+    boundEval(str, ctx) {
+      return lively.boundEval(str, ctx)
     }
 
     printResult(result) {
@@ -327,18 +330,31 @@ export default class AceEditor extends HTMLElement {
 
     tryBoundEval(str, printResult) {
         var result;
-        try { result =  this.boundEval(str) }
+        try { result =  this.boundEval(str, this.getDoitContext()) }
         catch(e) {
-            lively.LastError = e
-            console.log("Error: " + e)
-            result = e
+            console.error(e)
+            if (printResult) {
+                window.LastError = e
+                this.printResult("" +e)
+            }
+            return
         }
         if (printResult) {
-            if (str.match(/^await/) && result.then) {
+            // alaways wait on promises.. when interactively working...
+            if (result && result.then) { 
               // we will definitly return a promise on which we can wait here
-              result.then( result => this.printResult("" +result))
+              result
+                .then( result => this.printResult("" +result))
+                .catch( error => {
+                  console.error(error);
+                  // window.LastError = error;
+                  this.printResult("Error in Promise: \n" +error)
+                })
             } else {
               this.printResult(" " +result)
+              if (result instanceof HTMLElement ) {
+                lively.showElement(result)
+              }
             }
         }
         return result

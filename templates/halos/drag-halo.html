@@ -1,14 +1,10 @@
 <template id="drag-halo">
     <style>
-    :host {
-
-    }
+       @import url("src/external/font-awesome/css/font-awesome.min.css");
     </style>
     <script type="lively4script" data-name="initialize">
     () => {
       System.import(lively4url +"/src/client/morphic/dragging.js").then( function(dragging) {
-        $("body /deep/ drag-halo")[0].style.backgroundImage =
-          'url(' +lively4url + "/src/client/media/drag.svg)"
         $("body /deep/ drag-halo").off("mousedown").on("mousedown", function(e) {
           dragging.start(e);
 
@@ -37,6 +33,7 @@
       });
     }
     </script>
+    <i class="fa fa-arrows" aria-hidden="true"></i>
 </template>
 <script class="registrationScript">
   lively.registerTemplate()

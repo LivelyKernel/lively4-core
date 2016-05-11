@@ -1,28 +1,42 @@
 
+@import url("src/external/font-awesome/css/font-awesome.css");
+
+.fa {
+  /* merge with fa-fw for fix width icons */
+  width: 1.28571429em;
+  text-align: center;
+}
+
+.disabled {
+  color: grey;
+}
+
 button {
-  padding: 2;
-  border: 1px solid  #d5d5d5;
+  padding: 4px;
+  margin: 2px;
+  border: 1px solid #d5d5d5;
   background: linear-gradient(#fcfcfc, #eee);
   border-radius: 2px;
-  font-weight: bold;
   font-size: 10pt;
-  color: #404040 ;
+  color: #404040;
+  cursor: pointer;
 }
 
 button:hover {
   background: linear-gradient(#eee, #ddd);
 }
 
-
 button:disabled {
   background: linear-gradient(#fefefe, #fcfcfc);
   color: #cccccc;
 }
-    
-
 
 h1,h2,h3,h4 {
-  color: #2B65EC;
+  color: #2B547E;
+}
+
+a {
+  color: #2B547E;
 }
 
 input {

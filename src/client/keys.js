@@ -28,10 +28,31 @@ export default class Keys {
     try {
       var char = this.getChar(evt)
       // this.logEvent(evt)
-      if (evt.ctrlKey && char == "K") {
+      
+      // TODO refactor it, so that there is only a single place for shortcut definition
+      // see /src/client/contextmenu.js and /templates/classes/AceEditor.js
+      if ((evt.ctrlKey || evt.metaKey) && char == "K") {
         lively.openWorkspace("")
         evt.preventDefault()
-      } else if (evt.ctrlKey && char == "D") {
+      } else if ((evt.ctrlKey || evt.metaKey) && evt.shiftKey &&char == "F") {
+        var str = window.getSelection().toLocaleString()
+        lively.openSearchFileWindow(str)
+        evt.preventDefault()
+      } else if ((evt.ctrlKey || evt.metaKey) && char == "B") {
+        var str = window.getSelection().toLocaleString()
+        lively.openBrowser(str)
+        evt.preventDefault()
+      } else if ((evt.ctrlKey || evt.metaKey) && char == "O") {
+        var str = window.getSelection().toLocaleString()
+        lively.openComponentInWindow("lively-component-bin")
+        evt.preventDefault()
+      }  else if ((evt.ctrlKey || evt.metaKey)  && char == "H") {
+        var str = window.getSelection().toLocaleString()
+        lively.openHelpWindow(str)
+        evt.preventDefault()
+      }
+      
+      if ((evt.ctrlKey || evt.metaKey) && char == "D") {
         var str = window.getSelection().toLocaleString()
         try {
           lively.boundEval(str)
