@@ -1,0 +1,31 @@
+<template id="lively-separator" data-class="Separator">
+    <style data-src="/templates/livelystyle.css"></style>
+    <style>
+    :host {
+      //background-color: red;
+      padding-left: 2px;
+      padding-right: 2px;
+    }
+    :host(:hover) {
+      cursor: ew-resize;
+    }
+    
+    #line {
+      background-color: red;
+      //background-color: lightgray;
+      width: 1px;
+      height: 100%;
+    }
+    
+   
+
+    
+    </style>
+    <div id="line"></div>
+
+</template>
+
+<script class="registrationScript">lively.registerTemplate()</script>
+
+
+
