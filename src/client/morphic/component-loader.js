@@ -84,8 +84,9 @@ export default class ComponentLoader {
       scriptManager.attachScriptsFromShadowDOM(this);
 
       if (prototypes[componentName].createdCallback) {
-        prototypes[componentName].createdCallback.call(this)
+        prototypes[componentName].createdCallback.call(this);
       }
+
 
       // load any unknown elements, which this component might introduce
       ComponentLoader.loadUnresolved(this, true).then((args) => {
@@ -101,6 +102,22 @@ export default class ComponentLoader {
         
       });
     }
+    proxies[componentName].attachedCallback = function() {
+      if (this.attachedCallback && proxies[componentName].attachedCallback != this.attachedCallback) {
+        this.attachedCallback.call(this);
+      } 
+      if (prototypes[componentName].attachedCallback) {
+        prototypes[componentName].attachedCallback.call(this);
+      }
+    };
+    proxies[componentName].detachedCallback = function() {
+      if (this.detachedCallback && proxies[componentName].detachedCallback != this.detachedCallback) {
+        this.detachedCallback.call(this);
+      } else if (prototypes[componentName].detachedCallback) {
+        prototypes[componentName].detachedCallback.call(this);
+      }
+    };
+    
     // don't store it just in a lexical scope, but make it available for runtime development
 
     document.registerElement(componentName, {
