@@ -2,6 +2,7 @@
 
 import Morph from './Morph.js';
 import { search as githubSearch } from '../../src/client/search/github-search.js';
+import * as dbSearch from '../../src/client/search/dropbox-search.js';
 
 export default class SearchBar extends Morph {
 
@@ -23,8 +24,11 @@ export default class SearchBar extends Morph {
     this.setup();
   }
 
-  setup() {
+  async setup() {
     this.findAvailableMounts();
+    // some dummy index
+    this.lunrIdx = await dbSearch.loadSearchIndex("https://lively4/dropbox/index.l4idx");
+    lively.notify("Info: ", "Dropbox index loaded!", 3);
   }
 
   searchButtonClicked() {
@@ -40,15 +44,29 @@ export default class SearchBar extends Morph {
     }
   }
 
+  isSearchEnabled(path) {
+    return this.getSubmorph(`input[data-path='${path}']`).checked;
+  }
+
   async search(query) {
     console.log("[Search] searching for '" + query + "'");
-    let results = []
-    if (this.searchableMounts.dropbox.length > 0) {
-      results = results.concat(await this.searchableMounts.dropbox[0].find(query));
-    }
-    results = results.concat(await this.searchableMounts.github[0].find(query, this.searchableMounts.github[0].options));
 
-    this.searchResults.show(results);
+    // let dbFileNames = await dbSearch.getSearchableFileNames(this.searchableMounts.dropbox[0].options);
+    // console.log(JSON.stringify(dbFileNames));
+
+    let results = []
+
+    for (let mountType in this.searchableMounts) {
+      let mounts = this.searchableMounts[mountType];
+      for (let i in mounts) {
+        let mount = mounts[i];
+        if (this.isSearchEnabled(mount.path)) {
+          results = results.concat(await mount.find(query, mount.options));
+          // update search results
+          this.searchResults.show(results, query);
+        }
+      }
+    }
   }
 
   findAvailableMounts() {
@@ -61,12 +79,18 @@ export default class SearchBar extends Morph {
           var mountsList = this.getSubmorph("#mounts-list");
           mountsList.innerHTML = "";
           mounts.forEach(mount => {
-            mountsList.innerHTML += "<li><input type='checkbox' checked>" + mount.path + " (" + mount.name + ")</li>";
+            let enabled = this.searchableMounts[mount.name];
+            mountsList.innerHTML += `
+              <li ${enabled ? '' : 'class="disabled"'}>
+                <input data-path='${mount.path}' type='checkbox' ${enabled ? 'checked' : 'disabled'}> ${mount.path} (${mount.name})
+              </li>`;
           });
 
           this.searchableMounts.dropbox = mounts.filter(mount => { return mount.name == "dropbox" }).map((mount) => {
-            mount.find = () => {
-              console.log("[Search] Dropbox-search not implemented!");
+            mount.find = (query) => {
+              if (this.lunrIdx) {
+                return this.lunrIdx.search(query).map(res => { res.path = mount.path + res.ref; return res; });
+              }
               return [];
             }
             return mount;
