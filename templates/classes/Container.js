@@ -430,6 +430,7 @@ export default class Container extends Morph {
     return navbar
   }
 
+  // #BUG this is broken for editing /src/client/load.js
   showNavbarSublist(targetItem) {
     var subList = document.createElement("ul")
     targetItem.appendChild(subList)
@@ -455,7 +456,9 @@ export default class Container extends Morph {
       var defRegEx = /(?:^|\n)((?:(?:static)|(?:async)|(?:function)|(?: *))*([A-Za-z0-9_]+)) *\([^(]*\) *{/g
       var m
       var links = {}
+      var i = 0;
       while (m = defRegEx.exec(this.sourceContent)) {
+        if (i++ > 1000) throw new Error("Error while showingNavbar " + this.getPath());
         // console.log("found " + m)
         if(!m[2].match(/^((if)|(switch))$/))
           links[m[2]] = m[0]
@@ -475,7 +478,10 @@ export default class Container extends Morph {
       var defRegEx = /(?:^|\n)((#+) ?(.*))/g
       var m
       var links = {}
+      var i=0
       while (m = defRegEx.exec(this.sourceContent)) {
+        if (i++ > 1000) throw new Error("Error while showingNavbar " + this.getPath());
+  
         links[m[3]] = {name: m[0], level: m[2].length}
       }
       _.keys(links).forEach( name => {
@@ -496,6 +502,7 @@ export default class Container extends Morph {
 
   showNavbar() {
     var filename = ("" + this.getURL()).replace(/.*\//,"")
+
     var root =("" + this.getURL()).replace(/\/[^\/]+$/,"/")
     this.currentDir = root
     lively.files.statFile(root).then( (text) => {
@@ -551,6 +558,11 @@ export default class Container extends Morph {
       })
 
       if (this.isEditing() && targetItem) {
+        
+        if (filename == "load.js") {
+          console.log("dont't show navbar for load.js, because it breaks")
+          return // #Hack #TODO
+        }
         this.showNavbarSublist(targetItem)
 
       }

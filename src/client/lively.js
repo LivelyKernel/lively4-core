@@ -216,6 +216,25 @@ export default class Lively {
     });
   }
 
+  static openCoolWorkspace(string, pos) {
+    var name = "juicy-ace-editor";
+    var comp  = document.createElement(name);
+    return lively.components.openInWindow(comp).then((container) => {
+      pos = pos || lively.pt(100,100);
+      comp.changeMode("javascript");
+      comp.enableAutocompletion();
+      comp.editor.setValue(string)
+      comp.boundEval = function(str) {
+        lively.vm.runEval(str, {topLevelVarRecorder: comp }).then(r => r.value)
+      }
+      lively.setPosition(container,pos);
+      container.setAttribute("title", "Cool Workspace")
+    }).then( () => {
+      comp.editor.focus();
+      return comp
+    });
+  }
+
   static boundEval(str, ctx) {
     // just a hack... to get rid of some async....
     // #TODO make this more general
@@ -574,5 +593,33 @@ export default class Lively {
 
 window.lively = Lively
 Lively.loaded();
+
+window.setTimeout(function() {
+          function loadJavaScriptThroughDOM(name, src, force) {
+            return new Promise(function (resolve) {
+              var scriptNode = document.querySelector(name);
+              if (scriptNode) {
+                scriptNode.remove();
+              }
+              var script = document.createElement("script");
+              script.id = name;
+              script.charset = "utf-8";
+              script.type = "text/javascript";
+              if (force) {
+                src += +"?" + Date.now();
+              }
+              script.src = src;
+              script.onload = function () {
+                resolve();
+              };
+              document.head.appendChild(script);
+            });
+          }
+          
+        loadJavaScriptThroughDOM("livelyModules", 
+            lively4url + "/src/external/lively.modules.js").then( function(module){
+              console.log("loaded lively.modules") 
+        })
+},2000)
 
 console.log("loaded lively");

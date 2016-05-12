@@ -107,15 +107,16 @@
         console.log("load " + url);
         this.updateAceMode();
 
-        $.get(url, null, (text) => {
-
-          this.currentEditor().setValue(text);
-          this.currentEditor().resize();
-          console.log("file " + url + " read.");
-          console.log("content: " + text);
-        }).fail(function(e) {
-            console.log('could not load ' + url + ": " + e); // or whatever
-        });
+        lively.files.loadFile(url).then(
+          (text) => {
+            this.currentEditor().setValue(text);
+            this.currentEditor().resize();
+            console.log("file " + url + " read.");
+            console.log("content: " + text);
+          },
+          (err) => {
+                 lively.notify("Could not load file " + url +"\nMaybe next time you are more lucky?")
+          });
       }
     </script>
 
@@ -129,7 +130,7 @@
           }).then( (sourceCode) => {
               lively.notify("saved file", url )
             }, (err) => {
-               lively.notify("Could not saved page",this.getPath() +"\nMaybe next time you are more lucky?")
+               lively.notify("Could not save file" + url +"\nMaybe next time you are more lucky?")
             }
           ) // don't catch here... so we can get the error later as needed...
       }
