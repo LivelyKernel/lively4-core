@@ -213,6 +213,25 @@ export default class Lively {
     });
   }
 
+  static openCoolWorkspace(string, pos) {
+    var name = "juicy-ace-editor";
+    var comp  = document.createElement(name);
+    return lively.components.openInWindow(comp).then((container) => {
+      pos = pos || lively.pt(100,100);
+      comp.changeMode("javascript");
+      comp.enableAutocompletion();
+      comp.editor.setValue(string)
+      comp.boundEval = function(str) {
+        lively.vm.runEval(str, {topLevelVarRecorder: comp }).then(r => r.value)
+      }
+      lively.setPosition(container,pos);
+      container.setAttribute("title", "Cool Workspace")
+    }).then( () => {
+      comp.editor.focus();
+      return comp
+    });
+  }
+
   static boundEval(str, ctx) {
     // just a hack... to get rid of some async....
     // #TODO make this more general
