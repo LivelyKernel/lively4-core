@@ -21,8 +21,6 @@
       var lively4yourself = /\/[^\/]*\.html/ // ADAPT THIS
         // some little reflection... help to find your inner self!
       var lively4url = window.location.origin + window.location.pathname.replace(lively4yourself,"")
-    
-    
       System.paths['babel'] =lively4url + '/src/external/babel-browser.js'
       // System.defaultJSExtensions = true;
       System.config({
@@ -33,6 +31,7 @@
         }
       });
     </script>
+   
     <!-- END SYSTEM.JS-->
   </head>
   <body>

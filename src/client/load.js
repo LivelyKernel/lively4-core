@@ -20,7 +20,21 @@ if ('serviceWorker' in navigator) {
           // #Experiment #Jens
           // window.lively4url = "https://lively4/"
         }
-        System.import(lively4url + "/src/client/lively.js").then(function(module) {
+        // var tmpLively = {}
+        // window.lively = tmpLively
+        
+       
+        
+        System.import(lively4url + "/src/client/lively.js")
+        // .then(function(module){
+        //   return lively.loadJavaScriptThroughDOM("livelyModules", 
+        //     lively4url + "/src/external/lively.modules.js").then( function(module){
+        //       console.log("loaded lively.modules") 
+        //     })  
+        // })
+        .then(function(module) {
+        
+          
             lively.initializeHalos();
             lively.components.loadUnresolved();
             console.log("running on load callbacks:");
@@ -31,6 +45,8 @@ if ('serviceWorker' in navigator) {
                     console.log("Error running on load callback: "  + cb + " error: " + e)
                 }
             });
+            
+            
 
             if (!window.__karma__) {
               window.onbeforeunload = function(e) {
@@ -39,6 +55,8 @@ if ('serviceWorker' in navigator) {
             }
             console.log("lively loaded");
         })
+        
+        // })  
     }
 
     if (navigator.serviceWorker.controller) {
