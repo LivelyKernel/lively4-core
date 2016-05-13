@@ -2,16 +2,16 @@
  *
  */
 
-import * as fs from 'src/swx/filesystem.jsx'
-import * as msg from 'src/swx/messaging.jsx'
+import * as fs from './filesystem.jsx'
+import * as msg from './messaging.jsx'
 
-import sysfs from 'src/swx/fs/sys.jsx'
-import httpfs from 'src/swx/fs/http.jsx'
-import html5fs from 'src/swx/fs/html5.jsx'
-import githubfs from 'src/swx/fs/github.jsx'
-import dropboxfs from 'src/swx/fs/dropbox.jsx'
+import sysfs from './fs/sys.jsx'
+import httpfs from './fs/http.jsx'
+import html5fs from './fs/html5.jsx'
+import githubfs from './fs/github.jsx'
+import dropboxfs from './fs/dropbox.jsx'
 
-import focalStorage from 'src/external/focalStorage.js';
+import focalStorage from './external/focalStorage.js';
 
 
 class ServiceWorker {
