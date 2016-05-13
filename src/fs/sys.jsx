@@ -151,9 +151,8 @@ class Directory extends Inode {
 
         if(contents) {
             let children = await this.children()
-            let contents = await* [
-                for(child of children) child.statinfo({contents: false})
-            ]
+            let contents = await Promise.all(
+              Array.from(children, _ => _.statinfo({contents: false})))
 
             Object.assign(info, {contents: contents})
         }

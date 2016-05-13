@@ -53,7 +53,8 @@ export default class Filesystem extends Base {
             if(json['contents']) {
                 JSON.stringify({
                     type: 'directory',
-                    contents: await* [for(item of json['contents']) this.statinfo(item)]
+                    contents: await Promise.all(
+                        Array.from(json['contents'], item => this.statinfo(item)))
                 }, null, '\t')
             } else {
                 JSON.stringify(await this.statinfo(json), null, '\t')

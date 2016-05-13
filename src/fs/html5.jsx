@@ -15,13 +15,13 @@ export default class Filesystem extends Base {
     }
 
     write(file, content) {
-        return content.then((actualContent) => {
+        return content.then(((actualContent) => {
             return this._rpc({
                 name: 'swx:writeFile',
                 file: file,
                 content: actualContent
             }).then((event) => event.data.content)
-        }.bind(this))
+        }).bind(this))
     }
 
     _rpc(data) {
