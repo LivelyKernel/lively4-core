@@ -44,7 +44,7 @@ class ServiceWorker {
             return fetch(request);
         } else {
           let response = this.filesystem.handle(request, url)
-  
+
           response = response.then((result) => {
               if(result instanceof Response) {
                   return result
@@ -53,13 +53,13 @@ class ServiceWorker {
               }
           }).catch((err) => {
               console.error('Error while processing fetch event:', err)
-  
+
               let message = err.toString()
               let content = JSON.stringify({message: message})
-  
+
               return new Response(content, {status: 500, statusText: message})
           })
-  
+
           event.respondWith(response)
         }
     }
