@@ -62,6 +62,8 @@
   "jest": {
     "unmockedModulePathPatterns": [
       "<rootDir>/node_modules"
-    ]
+    ],
+    "moduleFileExtensions": ["js", "json", "node", "jsx"],
+    "collectCoverage": true
   }
 }
