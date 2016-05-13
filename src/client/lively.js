@@ -188,6 +188,7 @@ export default class Lively {
 
     this.import("authGithub", lively4url + '/src/client/auth-github.js')
     this.import("authDropbox", lively4url + '/src/client/auth-dropbox.js')
+    this.import("authGoogledrive", lively4url + '/src/client/auth-googledrive.js')
 
     this.import("expose")
    
@@ -222,7 +223,7 @@ export default class Lively {
       comp.enableAutocompletion();
       comp.editor.setValue(string)
       comp.boundEval = function(str) {
-        lively.vm.runEval(str, {topLevelVarRecorder: comp }).then(r => r.value)
+        return lively.vm.runEval(str, {topLevelVarRecorder: comp }).then(r => r.value)
       }
       lively.setPosition(container,pos);
       container.setAttribute("title", "Cool Workspace")
@@ -591,32 +592,32 @@ export default class Lively {
 window.lively = Lively
 Lively.loaded();
 
-window.setTimeout(function() {
-          function loadJavaScriptThroughDOM(name, src, force) {
-            return new Promise(function (resolve) {
-              var scriptNode = document.querySelector(name);
-              if (scriptNode) {
-                scriptNode.remove();
-              }
-              var script = document.createElement("script");
-              script.id = name;
-              script.charset = "utf-8";
-              script.type = "text/javascript";
-              if (force) {
-                src += +"?" + Date.now();
-              }
-              script.src = src;
-              script.onload = function () {
-                resolve();
-              };
-              document.head.appendChild(script);
-            });
-          }
+// window.setTimeout(function() {
+//           function loadJavaScriptThroughDOM(name, src, force) {
+//             return new Promise(function (resolve) {
+//               var scriptNode = document.querySelector(name);
+//               if (scriptNode) {
+//                 scriptNode.remove();
+//               }
+//               var script = document.createElement("script");
+//               script.id = name;
+//               script.charset = "utf-8";
+//               script.type = "text/javascript";
+//               if (force) {
+//                 src += +"?" + Date.now();
+//               }
+//               script.src = src;
+//               script.onload = function () {
+//                 resolve();
+//               };
+//               document.head.appendChild(script);
+//             });
+//           }
           
-        loadJavaScriptThroughDOM("livelyModules", 
-            lively4url + "/src/external/lively.modules.js").then( function(module){
-              console.log("loaded lively.modules") 
-        })
-},2000)
+//         loadJavaScriptThroughDOM("livelyModules", 
+//             lively4url + "/src/external/lively.modules.js").then( function(module){
+//               console.log("loaded lively.modules") 
+//         })
+// },2000)
 
 console.log("loaded lively");

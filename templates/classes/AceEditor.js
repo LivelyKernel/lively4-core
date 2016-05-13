@@ -344,7 +344,7 @@ export default class AceEditor extends HTMLElement {
             if (result && result.then) { 
               // we will definitly return a promise on which we can wait here
               result
-                .then( result => this.printResult("" +result))
+                .then( result => this.printResult("RESOLVED: " +result))
                 .catch( error => {
                   console.error(error);
                   // window.LastError = error;
