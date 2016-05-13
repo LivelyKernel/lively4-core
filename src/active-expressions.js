@@ -9,3 +9,8 @@ export function select(selectorOrClass, filterFunction) {
     return view;
   }
 }
+
+export function observe(expression) {
+  
+}
+

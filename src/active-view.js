@@ -87,6 +87,11 @@ export class ActiveDOMView extends ActiveView {
       .forEach(n => this.elements.add(n));
   }
   
+  /**
+   * Logs element that entered the view
+   * @function ActiveDOMView#_elementEnters
+   * @param {HTMLElement} node
+   */
   _elementEnters(node) {
     console.debug('adding', node);
     this.exited.delete(node);
@@ -94,6 +99,11 @@ export class ActiveDOMView extends ActiveView {
     this.entered.add(node);
   }
   
+  /**
+   * Logs element that exited the view
+   * @function ActiveDOMView#_elementExits
+   * @param {HTMLElement} node
+   */
   _elementExits(node) {
     console.debug('removing', node);
     this.entered.delete(node);
@@ -139,6 +149,9 @@ export class ActiveDOMView extends ActiveView {
 class ActiveObjectView extends ActiveView {
   // TODO
 }
+
+
+// playground code
 
 import { select } from './active-expressions.js';
 
