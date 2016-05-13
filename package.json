@@ -58,5 +58,10 @@
         }
       ]
     ]
+  },
+  "jest": {
+    "unmockedModulePathPatterns": [
+      "<rootDir>/node_modules"
+    ]
   }
 }
