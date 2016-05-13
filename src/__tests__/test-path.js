@@ -1,3 +1,4 @@
+jest.autoMockOff();
 jest.unmock('../path.jsx');
 
 const path = require('../path.jsx');
