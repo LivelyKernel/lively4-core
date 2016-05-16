@@ -75,6 +75,11 @@
         from: <input id="dropboxSubfolder" value="/Lively" />
         to: <input id="dropboxMountPath" value="/dropbox" />
       </p>
+      <h3>Google Drive <button id="googledriveLoginButton">login</button> <button id="googledriveLogoutButton">logout</button></h3>
+      <p>
+        from: <input id="googledriveSubfolder" value="/lively4test" />
+        to: <input id="googledriveMountPath" value="/googledrive" />
+      </p>
       <h3>Mounts <button id="updateMountList"><i class="fa fa-refresh" aria-hidden="true"></i></button>
         </h3>
         <ol id="listOfMountPoints"></ol>
@@ -96,6 +101,12 @@
         this.loginDropbox()})
       $(this.getSubmorph('#dropboxLogoutButton')).click(() => {
         this.logoutDropbox()})
+
+      $(this.getSubmorph('#googledriveLoginButton')).click(() => {
+        this.loginGoogledrive()})
+      $(this.getSubmorph('#googledriveLogoutButton')).click(() => {
+        this.logoutGoogledrive()})
+
       $(this.getSubmorph('#updateMountList')).click(() => {
         this.updateMountList()})
 
@@ -230,6 +241,48 @@
             });
       }
     </script>
+
+    <script type="lively4script" data-name="loginGoogledrive">
+     function() {
+        console.log("login googledrive")
+
+        var mountPath = this.shadowRoot.querySelector('#googledriveMountPath').value
+        var subfolder = this.shadowRoot.querySelector('#googledriveSubfolder').value
+
+        lively.authGoogledrive.challengeForAuth(Date.now(), (token) => {
+            console.log('We are authenticated with the Token: ' + token)
+            var mount = {
+              "path": mountPath,
+              "name": "googledrive",
+              "options": {
+                "token": token,
+                "subfolder": subfolder
+              }
+            }
+            console.log("mount: " + this.getMountURL())
+            $.ajax({
+              url: this.getMountURL(),
+              type: 'PUT',
+              data: JSON.stringify(mount),
+              success: (text) => {
+                console.log("mounted googledrive")
+                this.updateMountList()
+              },
+              error: function(xhr, status, error) {
+                console.log("could not mount googledrive " + error)
+              }
+            });
+        })
+     }    
+    </script>
+    <script type="lively4script" data-name="logoutGoogledrive">
+      function(){
+        lively.authGoogledrive.logout();
+        console.log('logged out of googledrive')
+        alert("not supported")
+      }
+    </script>
+    
     <script type="lively4script" data-name="unmountPath">
     function(path) {
       console.log("unmountPath: " + path)
