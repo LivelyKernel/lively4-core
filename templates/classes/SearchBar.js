@@ -26,9 +26,6 @@ export default class SearchBar extends Morph {
 
   async setup() {
     this.findAvailableMounts();
-    // some dummy index
-    this.lunrIdx = await dbSearch.loadSearchIndex("https://lively4/dropbox/index.l4idx");
-    lively.notify("Info: ", "Dropbox index loaded!", 3);
   }
 
   searchButtonClicked() {
@@ -55,7 +52,6 @@ export default class SearchBar extends Morph {
     // console.log(JSON.stringify(dbFileNames));
 
     let results = []
-
     for (let mountType in this.searchableMounts) {
       let mounts = this.searchableMounts[mountType];
       for (let i in mounts) {
@@ -68,6 +64,8 @@ export default class SearchBar extends Morph {
       }
     }
   }
+
+
 
   findAvailableMounts() {
     $.ajax({
@@ -86,16 +84,15 @@ export default class SearchBar extends Morph {
               </li>`;
           });
 
-          this.searchableMounts.dropbox = mounts.filter(mount => { return mount.name == "dropbox" }).map((mount) => {
-            mount.find = (query) => {
-              if (this.lunrIdx) {
-                return this.lunrIdx.search(query).map(res => { res.path = mount.path + res.ref; return res; });
-              }
-              return [];
-            }
-            return mount;
-          });
+          var dropboxes = mounts.filter(mount => { return mount.name == "dropbox" });
 
+          // setup dropbox mounts to make them searchable
+          dbSearch.restoreIndex(dropboxes).then(() => {
+            dbSearch.addFindFunction(dropboxes);
+          });
+          this.searchableMounts.dropbox = dropboxes;
+
+          // setup github mounts to make them searchable
           this.searchableMounts.github = mounts.filter(mount => { return mount.name == "github" }).map((mount) => {
             mount.find = githubSearch;
             return mount;
