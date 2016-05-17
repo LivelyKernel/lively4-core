@@ -22,7 +22,7 @@
  */
 'use strict';
 
-import { cop, Layer } from 'Layers.js';
+import { default as cop } from 'copv2/Layers.js';
 
 var MethodManipulator = Object.subclass('MethodManipulator',
 'initializing', {
@@ -204,7 +204,7 @@ var MethodManipulator = Object.subclass('MethodManipulator',
 
 });
 
-Layer.addMethods(
+cop.Layer.addMethods(
 'flattening', {
     layerDefOfObject: function(object) {
         var result = this[object._layer_object_id];

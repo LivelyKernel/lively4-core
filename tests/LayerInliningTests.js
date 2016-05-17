@@ -1,6 +1,6 @@
 'use strict';
 
-import { cop } from 'Layers.js';
+import { default as cop } from 'copv2/Layers.js';
 
 cop.tests = {};
 cop.tests.LayerInliningTests = {};

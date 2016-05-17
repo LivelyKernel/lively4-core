@@ -17,8 +17,8 @@ module.exports = function(config) {
       'node_modules/babel-polyfill/dist/polyfill.js',
       'miniprototype.js',
       'minibase.js',
-      'Layers.js',
       'Flatten.js',
+      'copv2/*.js',
       'tests/**/*Tests.js'
     ],
 
@@ -35,6 +35,7 @@ module.exports = function(config) {
       'minibase.js': ['babel', 'commonjs'],
       'Layers.js': ['babel', 'commonjs'],
       'Flatten.js': ['babel', 'commonjs'],
+      'copv2/*.js': ['babel', 'commonjs'],
       'tests/**/*.js': ['babel', 'commonjs'],
     },
 

@@ -22,6 +22,7 @@
  */
 
 var copv2 = {};
+export default copv2;
 
 /* 
  * Private Helpers for Development
@@ -290,18 +291,19 @@ copv2.makePropertyLayerAware = function (baseObj, property) {
     throw new Error("can't layer an non existent object");
   }  
   // ensure base getter and setter
-  var getter = Object.getOwnPropertyDescriptor(baseObj, property).get;
+  var propertyDescriptor = Object.getOwnPropertyDescriptor(baseObj, property);
+  var getter = propertyDescriptor && propertyDescriptor.get;
   var propName = "__layered_" + property + "__";
   if (!getter) {
     // does not work when dealing with classes and instances...
     baseObj[propName] = baseObj[property]; // take over old value
-    getter = function() { return this[propName] }.binds({propName: propName});
-    Object.defineProperty(baseObj, property, {get: getter});
+    getter = function() { return this[propName] };
+    Object.defineProperty(baseObj, property, {get: getter, configurable: true});
   };
-  var setter = Object.getOwnPropertyDescriptor(baseObj, property).set;
+  var setter = propertyDescriptor && propertyDescriptor.set;
   if (!setter) {
-    setter = function(value) { return this[propName] = value }.binds({propName: propName});
-    Object.defineProperty(baseObj, property, {set: setter});
+    setter = function(value) { return this[propName] = value };
+    Object.defineProperty(baseObj, property, {set: setter, configurable: true});
   };
   copv2.pvtMakeFunctionOrPropertyLayerAware(baseObj, property, getter, 'getter');
   copv2.pvtMakeFunctionOrPropertyLayerAware(baseObj, property, setter, 'setter');
@@ -362,9 +364,155 @@ copv2.allLayers = function (optObject = Global) {
  * PUBLIC COP Layer Definition
  */
 
-copv2.basicCreate = function (layerName, context = Global) {
-  return context[layerName] || new Layer(layerName, context.namespaceIdentifier);
+/* 
+ * Layer Class
+ */
+class Layer {
+  constructor (name, namespaceName = 'Global') {
+    this._name = name;
+    this._namespaceName = namespaceName;
+    this._layeredFunctionsList = {};
+  }
+  
+  // Accessing
+  get name () {
+    return this._name;
+  }
+  fullName () {
+    return this._namespaceName + '.' + this._name;
+  }
+  layeredObjects () {
+    return Properties.own(this)
+      .collect(
+        function(ea) {
+          return this[ea] && this[ea]._layered_object;
+        }, this)
+      .select(
+        function(ea) {
+          return ea;
+        });
+  }
+  // TODO: doesn't differentiate between functions and classes - necessary?
+  layeredClasses () {
+    return this.layeredObjects().collect(
+      function(ea) {
+        return ea.constructor;
+      });
+  }
+  
+  // Removing
+  remove () {
+    // Deletes the LayerClass, but keeps the layered Functions.
+    if (this.isGlobal()) {
+      this.beNotGlobal();
+    }
+    var ns = module(this.namepsaceName);
+    delete ns[this.name];
+  }
+  uninstall () {
+    // Uninstalls jsut this Layer.
+    // functions that are layered by other Layers will not be reset.
+    var layer = this;
+    this.layeredObjects().each(
+      function(eachLayeredObj) {
+        var layerIdx = Object.isFunction(eachLayeredObj.activeLayers)
+            ? eachLayeredObj.activeLayers().indexOf(layer) : -1;
+        Properties.own(layer.layeredFunctionsList[eachLayeredObj]).each(
+          function(eachLayeredFunc) {
+            var newerLayer = eachLayeredObj.activeLayers().find(
+              function(eachOtherLayer) {
+                var eachOtherLayerIdx
+                    = eachLayeredObj.activeLayers().indexOf(eachOtherLayer);
+                var isNewer = (eachOtherLayerIdx !== -1)
+                    && (eachOtherLayerIdx < layerIdx);
+                return isNewer &&
+                    eachOtherLayer.layeredFunctionsList[eachLayeredObj][eachLayeredFunc];
+              });
+              if (!newerLayer) {
+                copv2.makeFunctionLayerUnaware(eachLayeredObj, eachLayeredFunc);
+              }
+          });
+      });
+      this.remove();
+      alertOK("Successfully uninstalled Layer " + this + " in Global Classes");
+  }
+  
+  // Layer installation
+  layerClass (classObject, methods) {
+    copv2.layerClass(this, classObj, methods);
+    return this;
+  }
+  layerObject (obj, methods) {
+    copv2.layerObject(this, classObj, methods);
+    return this;
+  }
+  refineClass (classObj, methods) {
+    copv2.layerClass(this, classObj, methods);
+    return this;
+  }
+  refineObject (obj, methods) {
+    copv2.layerObject(this, obj, methods);
+    return this;
+  }
+  unrefineObject (obj) {
+    var id = obj._layer_object_id;
+    if (id !== undefined) {
+      delete this[id];
+    }
+  }
+  unrefineClass (classObj) {
+    this.unrefineObject(classObj.prototype);
+  }
+  
+  // Layer activation
+  beGlobal () {
+    copv2.enableLayer(this);
+    return this;
+  }
+  beNotGlobal () {
+    copv2.disableLayer(this);
+    return this;
+  }
+  hide () {
+    // Hidden Layers do not appear when evaluating the sourcecode of a function
+    // TODO: this function has to be called BEFORE the layer refines any class,
+    // due to problems in unrefining classes.
+    this.isHidden = true;
+    return this;
+  }
+  
+  // Testing
+  isGlobal () {
+    return copv2.GlobalLayers.include(this);
+  }
+  
+  // Debugging
+  toString () {
+    return this.name();
+  }
+  
+  // Deprecated serialization
+  toLiteral () {
+    if (!this.name) {
+      console.warn("Layer: Can not serialize without a name!");
+    }
+    return { name: this.name };
+  }
+  
+  // Deserialization
+  fromLiteral (literal) {
+    // console.log("Deserializing Layer activation from: " + literal.name);
+    return copv2.create(literal.name, false);
+  }
+}
+copv2.Layer = Layer; // TODO: replace with proper module exports
+
+copv2.basicCreate = function (layerName, context) {
+  return context && context[layerName] ||
+      new Layer(layerName, context && context.namespaceIdentifier);
 };
+
+copv2.create = copv2.basicCreate;
 
 // Layering objects may be a garbage collection problem, because the layers keep strong
 // reference to the objects
@@ -495,153 +643,10 @@ copv2.proceed = function (/* arguments */) {
   }
 };
 
-/* 
- * Layer Class
- */
-
-copv2.Layer = class Layer {
-  constructor (name, namespaceName = 'Global') {
-    this._name = name;
-    this._namespaceName = namespaceName;
-    this._layeredFunctionsList = {};
-  }
-  
-  // Accessing
-  get name () {
-    return this._name;
-  }
-  get fullname () {
-    return this._namespaceName + '.' + this._name;
-  }
-  get layeredObjects () {
-    return Properties.own(this)
-      .collect(
-        function(ea) {
-          return this[ea] && this[ea]._layered_object;
-        }, this)
-      .select(
-        function(ea) {
-          return ea;
-        });
-  }
-  // TODO: doesn't differentiate between functions and classes - necessary?
-  get layeredClasses () {
-    return this.layeredObjects().collect(
-      function(ea) {
-        return ea.constructor;
-      });
-  }
-  
-  // Removing
-  remove () {
-    // Deletes the LayerClass, but keeps the layered Functions.
-    if (this.isGlobal()) {
-      this.beNotGlobal();
-    }
-    var ns = module(this.namepsaceName);
-    delete ns[this.name];
-  }
-  uninstall () {
-    // Uninstalls jsut this Layer.
-    // functions that are layered by other Layers will not be reset.
-    var layer = this;
-    this.layeredObjects().each(
-      function(eachLayeredObj) {
-        var layerIdx = Object.isFunction(eachLayeredObj.activeLayers)
-            ? eachLayeredObj.activeLayers().indexOf(layer) : -1;
-        Properties.own(layer.layeredFunctionsList[eachLayeredObj]).each(
-          function(eachLayeredFunc) {
-            var newerLayer = eachLayeredObj.activeLayers().find(
-              function(eachOtherLayer) {
-                var eachOtherLayerIdx
-                    = eachLayeredObj.activeLayers().indexOf(eachOtherLayer);
-                var isNewer = (eachOtherLayerIdx !== -1)
-                    && (eachOtherLayerIdx < layerIdx);
-                return isNewer &&
-                    eachOtherLayer.layeredFunctionsList[eachLayeredObj][eachLayeredFunc];
-              });
-              if (!newerLayer) {
-                copv2.makeFunctionLayerUnaware(eachLayeredObj, eachLayeredFunc);
-              }
-          });
-      });
-      this.remove();
-      alertOK("Successfully uninstalled Layer " + this + " in Global Classes");
-  }
-  
-  // Layer installation
-  layerClass (classObject, methods) {
-    copv2.layerClass(this, classObj, methods);
-    return this;
-  }
-  layerObject (obj, methods) {
-    copv2.layerObject(this, classObj, methods);
-    return this;
-  }
-  refineClass (classObj, methods) {
-    copv2.layerClass(this, classObj, methods);
-    return this;
-  }
-  refineObject (obj, methods) {
-    copv2.layerObject(his, obj, methods);
-    return this;
-  }
-  unrefineObject (obj) {
-    var id = obj._layer_object_id;
-    if (id !== undefined) {
-      delete this[id];
-    }
-  }
-  unrefineClass (classObj) {
-    this.unrefineObject(classObj.prototype);
-  }
-  
-  // Layer activation
-  beGlobal () {
-    copv2.enableLayer(this);
-    return this;
-  }
-  beNotGlobal () {
-    copv2.disableLayer(this);
-    return this;
-  }
-  hide () {
-    // Hidden Layers do not appear when evaluating the sourcecode of a function
-    // TODO: this function has to be called BEFORE the layer refines any class,
-    // due to problems in unrefining classes.
-    this.isHidden = true;
-    return this;
-  }
-  
-  // Testing
-  isGlobal () {
-    return copv2.GlobalLayers.include(this);
-  }
-  
-  // Debugging
-  toString () {
-    return this.name();
-  }
-  
-  // Deprecated serialization
-  toLiteral () {
-    if (!this.name) {
-      console.warn("Layer: Can not serialize without a name!");
-    }
-    return { name: this.name };
-  }
-  
-  // Deserialization
-  fromLiteral (literal) {
-    // console.log("Deserializing Layer activation from: " + literal.name);
-    return copv2.create(literal.name, false);
-  }
-};
-
 /*
  * Example implementation of a layerable object
  */
-copv2.LayerableObjectTrait = class LayerableObjectTrait {
+class LayerableObjectTrait {
   activeLayers () {
     var result = {withLayers: [], withoutLayers: []};
     this.dynamicLayers(result);
@@ -738,6 +743,9 @@ copv2.LayerableObjectTrait = class LayerableObjectTrait {
     return this.withoutLayers || [];
   }
 }
+copv2.LayerableObjectTrait = LayerableObjectTrait;
+
+export class LayerableObject extends LayerableObjectTrait {}
 
 copv2.COPError = class COPError {
   constructor (message) {

@@ -1,4 +1,4 @@
-import { cop } from 'Layers';
+import { default as cop } from 'copv2/Layers';
 
 function TestCase() {}; // TODO: get rid of this
 TestCase.subclass('cop.tests.TracingTests.TracerTest',
