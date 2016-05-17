@@ -20,10 +20,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+'use strict';
 
-module('cop.Flatten').requires().toRun(function() {
+import { cop, Layer } from 'Layers.js';
 
-Object.subclass('MethodManipulator',
+var MethodManipulator = Object.subclass('MethodManipulator',
 'initializing', {
     initialize: function() {
         this.parameterRegex = /function\s*\(([^\)]*)\)/;
@@ -371,7 +372,7 @@ Layer.addMethods(
 'hashing', {
 
 });
-Object.subclass('cop.LayerInliner',
+cop.LayerInliner = Object.subclass('cop.LayerInliner',
 'inlining', {
 
     inlinePartialMethods: function(object, methodName, type, partialMethods, justReturnSource) {
@@ -605,5 +606,3 @@ cache[hashForLayers] = inlinedMethod;
     },
     inlinedMethodCache: {}
 });
-
-}) // end of module

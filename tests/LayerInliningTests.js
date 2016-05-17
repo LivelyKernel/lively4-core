@@ -1,6 +1,10 @@
-module('cop.tests.LayerInliningTests').requires('lively.TestFramework', 'cop.Flatten').toRun(function() {
+'use strict';
 
-Object.subclass('cop.tests.LayerInliningTests.Dummy', {
+import { cop } from 'Layers.js';
+
+cop.tests = {};
+cop.tests.LayerInliningTests = {};
+cop.tests.LayerInliningTests.Dummy = Object.subclass('cop.tests.LayerInliningTests.Dummy', {
 
     m1: function() { return 23 },
 
@@ -43,7 +47,7 @@ cop.create('cop.tests.LayerInliningTests.FlattenTestLayer')
     printLayers: function() { return 'FlattenTestLayer-' + cop.proceed() },
 })
 .refineObject(cop.tests.LayerInliningTests.Dummy, {
-    classMethod1: Functions.Null
+    classMethod1: function () {}
 })
 .refineObject(cop.tests.LayerInliningTests, {
     get foo() { return 3 },
@@ -60,6 +64,10 @@ cop.create('cop.tests.LayerInliningTests.FlattenTestLayer2')
 
     printLayers: function() { return 'FlattenTestLayer2-' + cop.proceed() },
 });
+
+// TODO: port these test cases to Mocha as well
+function TestCase() {
+}
 TestCase.subclass('cop.tests.LayerInliningTests.MethodManipulatorTest', {
 
     setUp: function() {
@@ -474,5 +482,3 @@ TestCase.subclass('cop.tests.LayerInliningTests.LayerHashingTest',
     },
 
 });
-
-}) // end of module
