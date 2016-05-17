@@ -17,25 +17,17 @@ function ensureLunr() {
   });
 }
 
-export function restoreIndex(dropboxes) {
-  let promises = [];
+export function setup(db) {
+  return restoreIndex(db);
+}
 
-  dropboxes.forEach(db => {
-    let path = "https://lively4" + db.path + "/index.l4idx";
-    promises.push(loadSearchIndex(path).then(buildSearchIndex).then(index => {
-      lively.notify("Info: ", "Index loaded for " + db.path, 3);
-      db.index = index;
-    }).catch(error => {
-      lively.notify("Error: ", "Cannot load " + path, 10);
-    }));
-  });
-
-  return new Promise((resolve, reject) => {
-    Promise.all(promises).then(() => {
-      resolve(dropboxes);
-    }).catch(error => {
-      lively.notify("Error: ", "Something went wrong while restoring dropbox indexes: " + error.message, 5);
-    });
+function restoreIndex(db) {
+  let path = `https://lively4${db.path}/index.l4idx`;
+  return loadSearchIndex(path).then(buildSearchIndex).then(index => {
+    lively.notify("Info: ", `Index loaded for ${db.path}`, 3);
+    db.index = index;
+  }).catch(error => {
+    lively.notify("Error: ", `Cannot load ${path}`, 10);
   });
 }
 
@@ -100,17 +92,15 @@ export async function getSearchableFileNames(options) {
   return results;
 }
 
-export function addFindFunction(dbs) {
-  dbs.map((db) => {
-    db.find = (query) => {
-      if (db.index) {
-        return db.index.search(query).map((res) => {
-          res.path = db.path + res.ref;
-          return res;
-        });
-      }
-      return [];
+export function find(query) {
+  return new Promise((resolve, reject) => {
+    // find is bound to the mount object, so -this- is the mount
+    if (this.index) {
+      resolve(this.index.search(query).map((res) => {
+        res.path = this.path + res.ref;
+        return res;
+      }));
     }
-    return db;
+    resolve([]);
   });
 }
