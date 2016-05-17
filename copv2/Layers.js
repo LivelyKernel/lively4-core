@@ -100,19 +100,22 @@ copv2.layerMethod = function (layer, object, property, func) {
 };
 
 copv2.layerGetterMethod = function (layer, object, property, getter) {
-  Object.defineProperty(copv2.ensurePartialLayer(layer, object), property, {get: getter});
+  Object.defineProperty(copv2.ensurePartialLayer(layer, object), property,
+                        {get: getter, configurable: true});
 };
 
 copv2.layerSetterMethod = function (layer, object, property, setter) {
-  Object.defineProperty(copv2.ensurePartialLayer(layer, object), property, {set: setter});
+  Object.defineProperty(copv2.ensurePartialLayer(layer, object), property,
+                        {set: setter, configurable: true});
 };
 
 copv2.layerProperty = function (layer, object, property, defs) {
-  var getter = Object.getOwnPropertyDescriptor(defs, property).get;
+  var propertyDescriptor = Object.getOwnPropertyDescriptor(defs, property);
+  var getter = propertyDescriptor && propertyDescriptor.get;
   if (getter) {
     copv2.layerGetterMethod(layer, object, property, getter);
   }
-  var setter = Object.getOwnPropertyDescriptor(defs, property).set;
+  var setter = propertyDescriptor && propertyDescriptor.set;
   if (setter) {
     copv2.layerSetterMethod(layer, object, property, setter);
   }
@@ -128,17 +131,16 @@ copv2.layerPropertyWithShadow = function (layer, object, property) {
   // see the shadow tests in LayersTest
   var defs = {};
   var baseValue = object[property];
-  var layeredPropName = "_layered_" + layer.getName() + "_" + property;
-  Object.defineProperty(defs, property, {get: 
-    function layeredGetter() {
+  var layeredPropName = "_layered_" + layer.name + "_" + property;
+  Object.defineProperty(defs, property, {
+    get: function layeredGetter() {
       return this[layeredPropName] === undefined ?
           copv2.proceed() : this[layeredPropName];
-    }.binds({layeredPropName: layeredPropName, baseValue: baseValue})
-  });
-  Object.defineProperty(defs, property, {set: 
-    function layeredSetter(v) {
+    },
+    set: function layeredSetter(v) {
       this[layeredPropName] = v;
-    }.binds({layeredPropName: layeredPropName})
+    },
+    configurable: true
   });
   copv2.layerProperty(layer, object, property, defs);
 };
@@ -203,9 +205,9 @@ copv2.lookupLayeredFunctionForObject = function (
     // log("  found layer definitions for object");
     // TODO: optional proceed goes here....
     if (methodType == 'getter') {
-      Object.getOwnPropertyDescriptor(layer_definition_for_object, function_name).get;
+      layered_function = Object.getOwnPropertyDescriptor(layer_definition_for_object, function_name).get;
     } else if (methodType == 'setter'){
-      Object.getOwnPropertyDescriptor(layer_definition_for_object, function_name).set;
+      layered_function = Object.getOwnPropertyDescriptor(layer_definition_for_object, function_name).set;
     } else {
       if (layer_definition_for_object.hasOwnProperty(function_name)) {
         layered_function = layer_definition_for_object[function_name];
@@ -215,13 +217,12 @@ copv2.lookupLayeredFunctionForObject = function (
   if (!layered_function) {
     // try the superclass hierachy
     // log("look for superclass of: " + self.constructor)
-    var superclass = self.constructor.superclass;
+    var superclass = Object.getPrototypeOf(self);
     if (superclass) {
-      foundClass = superclass;
       // log("layered function is not found
       //in this partial method, lookup for my prototype?")
       return copv2.lookupLayeredFunctionForObject(
-          superclass.prototype, layer, function_name, methodType);
+          superclass, layer, function_name, methodType);
     } else {
         // log("obj has not prototype")
     }
@@ -280,7 +281,7 @@ copv2.makeFunctionLayerAware = function (base_obj, function_name, isHidden) {
     // console.log("WARNING can't layer an non existent function" + function_name +
     // " , so do nothing")
     // return;
-    base_function = Functions.Null;
+    base_function = () => null;
   };
   copv2.pvtMakeFunctionOrPropertyLayerAware(base_obj, function_name, base_function,
                                             undefined, isHidden)
@@ -338,10 +339,10 @@ copv2.makeFunctionLayerUnaware = function (base_obj, function_name) {
 };
 
 copv2.uninstallLayersInObject = function (object) {
-  Functions.own(object).forEach(
-    function(ea) {
+  Object.getOwnPropertyNames(object).forEach(ea => {
+    if (typeof object[ea] === 'function')
       copv2.makeFunctionLayerUnaware(object, ea);
-    });
+  });
 };
 
 copv2.uninstallLayersInAllClasses = function () {
@@ -367,10 +368,10 @@ copv2.allLayers = function (optObject = Global) {
 /* 
  * Layer Class
  */
-class Layer {
-  constructor (name, namespaceName = 'Global') {
+export class Layer {
+  constructor (name, context) {
     this._name = name;
-    this._namespaceName = namespaceName;
+    this._context = context;
     this._layeredFunctionsList = {};
   }
   
@@ -379,7 +380,7 @@ class Layer {
     return this._name;
   }
   fullName () {
-    return this._namespaceName + '.' + this._name;
+    return '' + this._context + '.' + this._name;
   }
   layeredObjects () {
     return Properties.own(this)
@@ -406,8 +407,9 @@ class Layer {
     if (this.isGlobal()) {
       this.beNotGlobal();
     }
-    var ns = module(this.namepsaceName);
-    delete ns[this.name];
+    var context = this._context;
+    if (typeof context !== 'undefined')
+      delete context[this.name];
   }
   uninstall () {
     // Uninstalls jsut this Layer.
@@ -488,7 +490,7 @@ class Layer {
   
   // Debugging
   toString () {
-    return this.name();
+    return this.name;
   }
   
   // Deprecated serialization
@@ -507,19 +509,41 @@ class Layer {
 }
 copv2.Layer = Layer; // TODO: replace with proper module exports
 
+var globalContextForLayers = {};
+
+export { globalContextForLayers as Global };
+
 copv2.basicCreate = function (layerName, context) {
-  return context && context[layerName] ||
-      new Layer(layerName, context && context.namespaceIdentifier);
+  if (typeof context === 'undefined')
+    context = globalContextForLayers;
+  return context[layerName] ||
+    (context[layerName] = new Layer(layerName, context));
 };
 
-copv2.create = copv2.basicCreate;
+copv2.create = function (rootContext, layerName) {
+  if (typeof layerName === 'undefined') {
+    // support copv2.create('LayerName') syntax without context
+    // (for "global" layers)
+    layerName = rootContext;
+    rootContext = undefined;
+  }
+  if (typeof rootContext === 'undefined') {
+    return copv2.basicCreate(layerName);
+  }
+  var parts = layerName.split(/\./);
+  var context = rootContext;
+  for (let i = 0; i < parts.length - 1; ++i) {
+    context = context[parts[i]];
+  }
+  return copv2.basicCreate(parts[parts.length - 1], context);
+};
 
 // Layering objects may be a garbage collection problem, because the layers keep strong
 // reference to the objects
 copv2.layerObject = function (layer, object, defs) {
   // log("copv2.layerObject");
   Object.isFunction(object.getName) && (layer.layeredFunctionsList[object] = {})
-  Object.keys(defs).forEach(
+  Object.getOwnPropertyNames(defs).forEach(
     function (function_name) {
       // log(" layer property: " + function_name)
       copv2.layerProperty(layer, object, function_name, defs);
@@ -535,31 +559,12 @@ copv2.layerClass = function (layer, classObject, defs) {
 };
 
 copv2.layerClassAndSubclasses = function (layer, classObject, defs) {
-  // log("layerClassAndSubclasses");
   copv2.layerClass(layer, classObject, defs);
-  
-  // and now wrap all overriden methods...
-  var allSubclasses = Global.classes(true)
-    .filter(
-      function(ea) {
-        return ea.isSubclassOf(classObject);
-      })
-    .forEach(
-      function(eaClass) {
-        // log("make m1 layer aware in " + eaClass);
-        var obj = eaClass.prototype;
-        Object.keys(defs).forEach(
-          function(eaFunctionName) {
-            if (obj.hasOwnProperty(eaFunctionName)) {
-              if (obj[eaFunctionName] instanceof Function) {
-                copv2.makeFunctionLayerAware(obj, eaFunctionName);
-              } else {
-                // to be tested...
-                // copv2.makePropertyLayerAware(eaClass.prototype, m1);
-              }
-            }
-          });
-      });
+  console.warn('layering subclasses automatically is not supported yet');
+  // TODO: and now wrap all overriden methods...
+  // foreach descendant class dclass of classObject
+  //   foreach own property p of dclass
+  //     copv2.make{Function|Property}LayerAware(obj, p);
 };
 
 // Layer Activation
@@ -609,10 +614,10 @@ copv2.proceed = function (/* arguments */) {
   }
   // TODO use index instead of shifiting?
   if (composition.partialMethodIndex == undefined) {
-    composition.partialMethodIndex = composition.partialMethods().length - 1;
+    composition.partialMethodIndex = composition.partialMethods.length - 1;
   }  
   var index = composition.partialMethodIndex;
-  var partialMethod = composition.partialMethods()[index];
+  var partialMethod = composition.partialMethods[index];
   if (!partialMethod) {
     if (!partialMethod) {
       throw new COPError('no partialMethod to proceed');
@@ -772,6 +777,10 @@ copv2.PartialLayerComposition = class PartialLayerComposition {
     this._prototypeObject = prototypeObject;
     this._functionName = functionName;
   }
+
+  get object() {
+    return this._object;
+  }
   
   get partialMethods () {
     return this._partialMethods;
@@ -780,6 +789,12 @@ copv2.PartialLayerComposition = class PartialLayerComposition {
   get functionName() {
     return this._functionName;
   }
+
+  get prototypeObject() {
+    return this._prototypeObject;
+  }
 }
 
 copv2.resetLayerStack();
+
+// vim: sw=2
