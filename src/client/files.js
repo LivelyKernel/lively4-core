@@ -1,5 +1,7 @@
 'use strict';
 
+import focalStorage from './../external/focalStorage.js'
+
 export default class Files {
 
   static  fetchChunks(fetchPromise, eachChunkCB, doneCB) {
@@ -24,7 +26,33 @@ export default class Files {
       })
   }
 
-  static  loadFile(urlString) {
+  static async loadFile(urlString) {
+    var path = this.getGoogledrivePath(urlString);
+    if(path) {
+      var id = await this.googlePathToId(path);
+      if(!id) {
+        return Promise.reject('No file found');
+      } else {
+        return this.googleAPIFetch(`files/`+id)
+          .then(r => r.json())
+          .then(metaData => {
+            if(metaData.mimeType.startsWith("application/vnd.google-apps")) {
+        			// Need conversion for Google Document types
+        			return this.googleAPIFetch(`files/`+id + '/export?mimeType=text/html')
+        			  .then(r => r.text())
+        		} else {
+        			// download file
+        			return this.googleAPIFetch(`files/`+id + '?alt=media').then(r => r.text())
+        		}
+        });
+      }
+    }
+
+    urlString = "" + urlString
+    if(urlString.match('https://lively4/googled/')) {
+      return Promise.resolve('no content2');
+      
+    }
     var url = new URL(urlString);
     return fetch(url).then(function (response, err) {
       if (err) {
@@ -35,7 +63,17 @@ export default class Files {
     })
   }
 
-  static saveFile(urlString, data){
+  static async saveFile(urlString, data){
+    var path = this.getGoogledrivePath(urlString);
+    if(path) {
+      var id = await this.googlePathToId(path);
+      if(!id) {
+        return Promise.reject('No file found');
+      } else {
+        return this.googleAPIUpload(id, data);
+      }
+    }
+    
     return new Promise((resolve, reject) => {
     	var url = new URL(urlString)
     	var tried = 0;
@@ -64,8 +102,73 @@ export default class Files {
       })()
     });
   }
+  static getGoogledrivePath(urlString) {
+    urlString = '' + urlString;
+    var m = urlString.match(/https:\/\/lively4\/googled(\/.*)/);
+    return m && m[1];
+  }
+  static async googleAPIUpload(id, content, mimeType) {
+    var headersDesc = {
+			Authorization: "Bearer " + token
+		};
+    //if(mimeType) { headersDesc['Content-Type'] = mimeType; }
+    
+    return focalStorage.getItem("googledriveToken").then( token => fetch(`https://www.googleapis.com/upload/drive/v2/files/` + id + '?uploadType=media', {
+    		method: 'PUT',
+    		headers: new Headers(headersDesc),
+    		body: content
+    	})
+  	)
 
-  static statFile(urlString){
+  }
+  static async googleAPIFetch(string) {
+    return focalStorage.getItem("googledriveToken").then( token => fetch(`https://www.googleapis.com/drive/v2/` + string, {
+    		method: 'GET',
+    		headers: new Headers({
+    			Authorization: "Bearer " + token
+    		}),
+    	})
+  	)
+  }
+  static async googlePathToId(path) {
+    if(!path) { return undefined; }
+    if(path === '/') { return 'root'; }
+    
+    var parentId ='root';
+    path = path.replace(/^\//, '').split('/')
+    while(path.length > 0 ) {
+      let childName = path.shift();
+      if(childName === '') { return parentId; }
+      let childItem = await this.googleAPIFetch(`files?corpus=domain&q=%27`+ parentId+`%27%20in%20parents`)
+      .then(r => r.json())
+      .then(json => {
+	      return json.items.find(item => item.title === childName)
+	    });
+    	if(!childItem) { return undefined; } // file not found
+      parentId = childItem.id;
+    }
+    
+    return parentId;
+  }
+  static async statFile(urlString){
+    var path = this.getGoogledrivePath(urlString);
+    if(path) {
+      var id = await this.googlePathToId(path);
+      return this.googleAPIFetch(`files?corpus=domain&q=%27`+id+`%27%20in%20parents`)
+        .then(r => r.json())
+        .then(json => {
+      	  console.log(path, json, urlString);
+          var items = json.items.map(item => ({
+      	    "type": item.mimeType === 'application/vnd.google-apps.folder' && true ? "directory" : 'file',
+			      "name": item.title,
+			      "size": 0
+      	  }));
+      	  return JSON.stringify({
+          	"type": "directory",
+          	"contents": items
+          });
+      });
+    }
   	var url =  new URL(urlString)
   	return new Promise(function(resolve, reject) {
   		$.ajax({
