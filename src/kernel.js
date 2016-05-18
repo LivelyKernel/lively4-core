@@ -1,12 +1,12 @@
 
-import boot from './boot'
+import client from './client'
 import worker from './worker'
 
 if(typeof window !== 'undefined') {
   // We're in the browser window/tab
   // Invoke boot loader
 
-  boot.call(window)
+  client.call(window)
 
 } else if(typeof self !== 'undefined') {
   // We're in the service worker
