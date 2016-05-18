@@ -36,10 +36,24 @@ export default class Files {
         return this.googleAPIFetch(`files/`+id)
           .then(r => r.json())
           .then(metaData => {
-            if(metaData.mimeType.startsWith("application/vnd.google-apps")) {
-        			// Need conversion for Google Document types
-        			return this.googleAPIFetch(`files/`+id + '/export?mimeType=text/html')
-        			  .then(r => r.text())
+            var m =metaData.mimeType.match(/application\/vnd.google-apps\.(.*)/)
+            if( m) {
+          		// Need conversion for Google Document types
+
+        			var type = m[1]
+              if (type == "spreadsheet") {
+          			return this.googleAPIFetch(`files/`+id + '/export?mimeType=text/csv')
+          			  .then(r => r.text())            
+              } else if (type == "drawing") {
+                // #TODO svg+xml does not seem to work any more? 
+                // we can only display this (easily) when this code moves into the service worker
+          			return this.googleAPIFetch(`files/`+id + '/export?mimeType=application/pdf')
+          			  .then(r => r.text())            
+              } else {
+                
+          			return this.googleAPIFetch(`files/`+id + '/export?mimeType=text/html')
+          			  .then(r => r.text())              
+              } 
         		} else {
         			// download file
         			return this.googleAPIFetch(`files/`+id + '?alt=media').then(r => r.text())
@@ -68,6 +82,7 @@ export default class Files {
     if(path) {
       var id = await this.googlePathToId(path);
       if(!id) {
+        debugger
         return Promise.reject('No file found');
       } else {
         return this.googleAPIUpload(id, data);
