@@ -23,8 +23,8 @@ export class Loader {
   register(name, dependencies, wrapper) {
     if (Array.isArray(name)) {
       this._anonymousEntry = []
-      this._anonymousEntry.push.apply(anonymousEntry, arguments)
-      return // breaking to let the script tag to name it.
+      this._anonymousEntry.push.apply(this._anonymousEntry, arguments)
+      return // breaking to let the _load function to name the module
     }
 
     let proxy = Object.create(null)
@@ -111,23 +111,19 @@ export class Loader {
       return mod
     }
 
-    let source = await this._load(name, options)
-
-    new Function(source.code)()
+    await this._load(name, options)
 
     return this._get(name)
   }
 
 
-  transpile(blob, {moduleId, filename}) {
+  transpile(blob, {filename}) {
     let source = babel.transform(blob, {
       plugins: [
         require('babel-plugin-syntax-async-functions'),
         require('babel-plugin-transform-es2015-modules-systemjs'),
         require('babel-plugin-transform-async-to-generator')
       ],
-      moduleIds: true,
-      moduleId: moduleId,
       sourceMaps: 'inline',
       filename: filename
     })
@@ -158,9 +154,19 @@ export class Loader {
   async _load(name, options = {}) {
     let blob = await this._fetch(name, options)
 
-    return this.transpile(blob, {
+    let source =  this.transpile(blob, {
       moduleId: name,
       filename: name
     })
+
+    new Function(source.code)()
+
+    if (this._anonymousEntry) {
+      console.log(this._anonymousEntry)
+      this.register(name, this._anonymousEntry[0], this._anonymousEntry[1]);
+      this._anonymousEntry = undefined;
+    }
+
+    return true
   }
 }
