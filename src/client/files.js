@@ -107,7 +107,7 @@ export default class Files {
     var m = urlString.match(/https:\/\/lively4\/googled(\/.*)/);
     return m && m[1];
   }
-  static async googleAPIUpload(id, content, mimeType) {
+  static async googleAPIUpload(id, content) {
     var headersDesc = {
 			Authorization: "Bearer " + token
 		};
