@@ -107,15 +107,19 @@ export default class Files {
     var m = urlString.match(/https:\/\/lively4\/googled(\/.*)/);
     return m && m[1];
   }
-  static async googleAPIUpload(id, content) {
+  static async googleAPIUpload(id, content, mimeType) {
     
-    return focalStorage.getItem("googledriveToken").then( token => {
+    return focalStorage.getItem("googledriveToken").then( async (token) => {
       var headersDesc = {
   			Authorization: "Bearer " + token
   		};
-      //if(mimeType) { headersDesc['Content-Type'] = mimeType; }
 
-      return fetch(`https://www.googleapis.com/upload/drive/v2/files/` + id + '?uploadType=media', {
+      if (!mimeType) 
+        mimeType = (await (await this.googleAPIFetch('files/' + id )).json()).mimeType;
+      
+      headersDesc['Content-Type'] = mimeType; 
+
+      return fetch('https://www.googleapis.com/upload/drive/v2/files/' + id + '?uploadType=media', {
     		method: 'PUT',
     		headers: new Headers(headersDesc),
     		body: content
