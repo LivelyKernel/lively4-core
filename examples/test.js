@@ -1,1 +1,1 @@
-export let name = 'abc'
+export let message = 'abc'

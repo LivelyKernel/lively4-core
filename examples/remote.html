@@ -9,12 +9,11 @@
     </head>
     <body>
         <script>
-            L4K.ready.then(function() {
+            System.import('/examples/.///a/../test.js').then((test) => {
                 if (Notification.permission !== "granted")
                     Notification.requestPermission();
 
-                var notification = new Notification("Hi there!");
-
+                var notification = new Notification(test.message);
             })
         </script>
     </body>

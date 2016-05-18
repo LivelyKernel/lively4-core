@@ -119,6 +119,23 @@ export class Loader {
   }
 
 
+  transpile(blob, {moduleId, filename}) {
+    let source = babel.transform(blob, {
+      plugins: [
+        require('babel-plugin-syntax-async-functions'),
+        require('babel-plugin-transform-es2015-modules-systemjs'),
+        require('babel-plugin-transform-async-to-generator')
+      ],
+      moduleIds: true,
+      moduleId: moduleId,
+      sourceMaps: 'inline',
+      filename: filename
+    })
+
+    return source
+  }
+
+
   _get(name) {
     let mod = this._registry[name]
 
@@ -141,18 +158,9 @@ export class Loader {
   async _load(name, options = {}) {
     let blob = await this._fetch(name, options)
 
-    let source = babel.transform(blob, {
-      plugins: [
-        require('babel-plugin-syntax-async-functions'),
-        require('babel-plugin-transform-es2015-modules-systemjs'),
-        require('babel-plugin-transform-async-to-generator')
-      ],
-      moduleIds: true,
+    return this.transpile(blob, {
       moduleId: name,
-      sourceMaps: 'inline',
       filename: name
     })
-
-    return source
   }
 }
