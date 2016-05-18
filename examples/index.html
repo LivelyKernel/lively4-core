@@ -1,0 +1,25 @@
+<html>
+    <head>
+        <title>Lively 4 Kernel Example Page</title>
+        <script src="../dist-kernel.js"
+            type="text/javascript"
+            charset="utf-8"
+            data-lively-kernel-boot>
+        </script>
+    </head>
+    <body>
+        <script>
+            // L4K.ready.then(function() {
+            //     if (Notification.permission !== "granted")
+            //         Notification.requestPermission();
+
+            //     var notification = new Notification("Hi there!");
+
+            // })
+            System.import('/vendor/.///a/../test.js').then((test) => {
+              console.log(test)
+              alert(test.name)
+            })
+        </script>
+    </body>
+</html>
