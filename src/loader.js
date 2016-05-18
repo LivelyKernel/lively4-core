@@ -78,8 +78,6 @@ export class Loader {
     meta = wrapper(function(identifier, value) {
       values[identifier] = value
 
-      console.log(identifier, value)
-
       // locking down the updates on the module to avoid infinite loop
       mod.lock = true
 
