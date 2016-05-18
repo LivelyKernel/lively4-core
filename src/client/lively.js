@@ -243,8 +243,8 @@ export default class Lively {
     // }
 
     // #Hack #Hammer #Jens Wrap and Unwrap code into function to preserve "this"
-    var transpiledSource = babel.transform('(function(){' + str+'})').code
-        .replace(/^(?:[\s\n]*["']use strict["'];[\s\n]*)([\S\s]*?)(?:\(function\s*\(\)\s*\{)/, "$1") // strip prefix
+    var transpiledSource = babel.transform('(function(){/*lively.code.start*/' + str+'})').code
+        .replace(/^(?:[\s\n]*["']use strict["'];[\s\n]*)([\S\s]*?)(?:\(function\s*\(\)\s*\{\s*\/\*lively.code.start\*\/)/, "$1") // strip prefix
         .replace(/\}\);[\s\n]*$/,"") // strip postfix
     
     console.log("code: " + transpiledSource)
