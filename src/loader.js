@@ -162,7 +162,6 @@ export class Loader {
     new Function(source.code)()
 
     if (this._anonymousEntry) {
-      console.log(this._anonymousEntry)
       this.register(name, this._anonymousEntry[0], this._anonymousEntry[1]);
       this._anonymousEntry = undefined;
     }
