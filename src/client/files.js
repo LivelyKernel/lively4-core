@@ -2,6 +2,8 @@
 
 import focalStorage from './../external/focalStorage.js'
 
+import generateUuid from './uuid.js'
+
 export default class Files {
 
   static  fetchChunks(fetchPromise, eachChunkCB, doneCB) {
@@ -82,8 +84,41 @@ export default class Files {
     if(path) {
       var id = await this.googlePathToId(path);
       if(!id) {
-        debugger
-        return Promise.reject('No file found');
+        var folderPath = path.replace(/\/[^\/]*$/,"");
+        var fileName = path.replace(/.*\//,"")
+        var folderId = await this.googlePathToId(folderPath);
+        if (!folderId) return Proise.reject(`Folder $(folderPath) does not exit`);
+        return focalStorage.getItem("googledriveToken").then( async (token) => {
+          var delim = generateUuid()
+          var body = `--${delim}
+Content-Type: application/json; charset=UTF-8
+
+{
+  title: "${fileName}",
+  parents: [
+    {kind: "drive#folder", id: "${folderId}"}
+  ]
+}
+
+--${delim}
+Content-Type: text/plain; charset=UTF-8
+
+`+data+`
+
+--${delim}--`
+          return fetch('https://www.googleapis.com/upload/drive/v2/files?uploadType=multipart', {
+	          method: 'POST',
+          	headers: new Headers({
+          		"Content-Type": "multipart/related; boundary=" + delim,
+          		Authorization: "Bearer " + token,
+          		"Content-Length": body.length
+          	}),
+          	body: body
+})
+      })
+        
+        
+        // return Promise.reject('No file found');
       } else {
         return this.googleAPIUpload(id, data);
       }
