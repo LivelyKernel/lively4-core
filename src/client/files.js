@@ -108,18 +108,19 @@ export default class Files {
     return m && m[1];
   }
   static async googleAPIUpload(id, content) {
-    var headersDesc = {
-			Authorization: "Bearer " + token
-		};
-    //if(mimeType) { headersDesc['Content-Type'] = mimeType; }
     
-    return focalStorage.getItem("googledriveToken").then( token => fetch(`https://www.googleapis.com/upload/drive/v2/files/` + id + '?uploadType=media', {
+    return focalStorage.getItem("googledriveToken").then( token => {
+      var headersDesc = {
+  			Authorization: "Bearer " + token
+  		};
+      //if(mimeType) { headersDesc['Content-Type'] = mimeType; }
+
+      return fetch(`https://www.googleapis.com/upload/drive/v2/files/` + id + '?uploadType=media', {
     		method: 'PUT',
     		headers: new Headers(headersDesc),
     		body: content
     	})
-  	)
-
+    })
   }
   static async googleAPIFetch(string) {
     return focalStorage.getItem("googledriveToken").then( token => fetch(`https://www.googleapis.com/drive/v2/` + string, {

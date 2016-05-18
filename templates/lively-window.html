@@ -25,6 +25,7 @@
   }
 
   .window {
+    border-radius: 4px 4px 0px 0px;
     width: 100%;
     height: 100%;
     display: flex;
@@ -51,9 +52,8 @@
     position: relative;
     display: flex;
     flex-grow: 0;
-    height: 2em;
+    height: 1.5em;
     width: 100%;
-    padding: 0.3em 0.4em;
     border: 0;
     border-bottom: 1px #e9e9e9 solid;
   }
@@ -62,14 +62,15 @@
   }
   .window-title {
     flex-grow: 1;
-    font-weight: 600;
+    font-weight: 400;
+    padding-top: 0.2em;
     vertical-align: middle;
     cursor: move;
   }
   .window-title span {
     vertical-align: middle;
-    font-size: 1.1em;
-    line-height: 1.5rem;
+    font-size: 1em;
+    line-height: 1.2rem;
     margin-left: 6px;
   }
   .focused .window-title span {
@@ -148,7 +149,7 @@
       <div class="window-title"><span></span></div>
       <div class="window-controls">
         <span class="window-button window-pin"><i class="fa fa-thumb-tack" aria-hidden="true"></i></span>
-        <span class="window-button window-min">&lowbar;</span>
+        <span class="window-button window-min"><i class="fa fa-minus" aria-hidden="true"></i></span>
         <span class="window-button window-max"><i class="fa fa-expand" aria-hidden="true"></i></span>
         <span class="window-button window-close"><i class="fa fa-times" aria-hidden="true"></i></span>
       </div>
