@@ -17,7 +17,8 @@ export default class RdfaManager {
       document.data.getValueOrigins(s, p).forEach((valueOrigin) => {
         if (this.isGeoLocation(s, p, v)) {
           if (valueOrigin.origin.style) {
-            valueOrigin.origin.style.outline = '1px solid red';
+            valueOrigin.origin.onmouseover = function(){this.style.outline = "1px solid red"};
+            valueOrigin.origin.onmouseout = function(){this.style.outline = ""};
             lively.addEventListener('click', valueOrigin.origin, 'click', evt => {
               this.openMapsFrame(evt, valueOrigin.value);
             }, true);
