@@ -138,7 +138,7 @@ Content-Type: text/plain; charset=UTF-8
   }
   
   getGoogledrivePath(relativePath) {
-    return this.subfolder + relativePath
+    return this.subfolder + decodeURIComponent(relativePath)
   }
   
   async googleAPIUpload(id, content, mimeType) {
