@@ -558,15 +558,6 @@ copv2.layerClass = function (layer, classObject, defs) {
   copv2.layerObject(layer, classObject.prototype, defs);
 };
 
-copv2.layerClassAndSubclasses = function (layer, classObject, defs) {
-  copv2.layerClass(layer, classObject, defs);
-  console.warn('layering subclasses automatically is not supported yet');
-  // TODO: and now wrap all overriden methods...
-  // foreach descendant class dclass of classObject
-  //   foreach own property p of dclass
-  //     copv2.make{Function|Property}LayerAware(obj, p);
-};
-
 // Layer Activation
 copv2.withLayers = function (layers, func) {
   copv2.LayerStack.push({withLayers: layers});
@@ -738,7 +729,7 @@ class LayerableObjectTrait {
     var layers = this.getWithoutLayers();
     this.setWithoutLayers(layers.without(layer));
   }
-  setWithoutLayer (layers) {
+  setWithoutLayers (layers) {
     this.withoutLayers = layers;
   }
   getWithLayers (layers) {
