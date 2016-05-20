@@ -63,7 +63,12 @@
     "unmockedModulePathPatterns": [
       "<rootDir>/node_modules"
     ],
-    "moduleFileExtensions": ["js", "json", "node", "jsx"],
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "node",
+      "jsx"
+    ],
     "collectCoverage": true
   }
 }
