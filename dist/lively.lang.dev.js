@@ -4333,6 +4333,33 @@
                 promise.then(val => !done && (done = true) && resolve(val)).catch(err => !done && (done = true) && reject(err));
             });
         },
+        waitFor: function (ms, tester) {
+            return new Promise((resolve, reject) => {
+                if (typeof ms === 'function') {
+                    tester = ms;
+                    ms = undefined;
+                }
+                var stopped = false, error = null, value = undefined, i = setInterval(() => {
+                        if (stopped) {
+                            clearInterval(i);
+                            return;
+                        }
+                        try {
+                            value = tester();
+                        } catch (e) {
+                            error = e;
+                        }
+                        if (value || error) {
+                            stopped = true;
+                            clearInterval(i);
+                            error ? reject(error) : resolve(value);
+                        }
+                    }, 10);
+                if (typeof ms === 'number') {
+                    setTimeout(() => error = new Error('timeout'), ms);
+                }
+            });
+        },
         deferred: function () {
             var resolve, reject, promise = new Promise((_resolve, _reject) => {
                     resolve = _resolve;

@@ -111,4 +111,28 @@ describe('promise', () => {
       p.timeout(100, new Promise((resolve, reject) => reject(new Error("foo"))))
         .catch(err => expect(err).to.match(/foo/i)));
   });
+
+  describe("waitFor", () => {
+
+    it("resolves with condition", () => {
+      var startTime = Date.now(), condition = false;
+      setTimeout(() => condition = {}, 100);
+      return p.waitFor(() => condition).then((val) => {
+        expect(val).equal(condition);
+        expect(Date.now() - startTime).to.be.above(80);
+      });
+    });
+
+    it("timesout", () => {
+      var startTime = Date.now(), condition = false;
+      setTimeout(() => condition = {}, 100);
+      return p.waitFor(50, () => condition)
+      .then(() => { throw new Error("then called"); })
+      .catch((err) => {
+        expect(err).to.match(/timeout/);
+        expect(Date.now() - startTime).to.be.below(70);
+      });
+    });
+
+  });
 });
