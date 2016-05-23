@@ -16,7 +16,7 @@ module.exports = function(config) {
     files: [
       'node_modules/babel-polyfill/dist/polyfill.js',
       'miniprototype.js',
-      'minibase.js',
+      'MiniBase.js',
       'Flatten.js',
       'copv2/*.js',
       'tests/**/*Tests.js'
