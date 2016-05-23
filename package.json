@@ -43,8 +43,9 @@
     "karma-ie-launcher": "^0.2.0",
     "karma-mocha": "^0.2.2",
     "karma-opera-launcher": "^0.3.0",
+    "karma-phantomjs-launcher": "^1.0.0",
     "karma-safari-launcher": "^0.1.1",
     "mocha": "^2.4.5",
-    "requirejs": "^2.2.0"
+    "phantomjs-prebuilt": "^2.1.7"
   }
 }
