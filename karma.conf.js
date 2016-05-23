@@ -32,7 +32,7 @@ module.exports = function(config) {
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
       'miniprototype.js': ['babel', 'commonjs'],
-      'minibase.js': ['babel', 'commonjs'],
+      'MiniBase.js': ['babel', 'commonjs'],
       'Layers.js': ['babel', 'commonjs'],
       'Flatten.js': ['babel', 'commonjs'],
       'copv2/*.js': ['babel', 'commonjs'],
