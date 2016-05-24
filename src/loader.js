@@ -187,7 +187,7 @@ export class Loader {
     let mod = this._registry[name]
 
     if (!mod) {
-      throw new Error('Error loading module ' + mame)
+      throw new Error('Error loading module ' + name)
     }
 
     return Promise.all(mod.dependencies.map(dependency => {
