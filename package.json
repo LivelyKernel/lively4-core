@@ -7,7 +7,9 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "karma start --single-run",
+    "test": "npm run test-node && npm run test-karma",
+    "test-karma": "karma start --single-run",
+    "test-node": "mocha --compilers js:babel-core/register tests",
     "test-chrome-only": "karma start --single-run --browsers Chrome",
     "test-continuously": "karma start",
     "test-continuously-chrome-only": "karma start --browsers Chrome",
