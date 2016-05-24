@@ -131,9 +131,23 @@ export class Loader {
   async transpile(blob, {filename}) {
     let source = babel.transform(blob, {
       plugins: [
-        require('babel-plugin-syntax-async-functions'),
-        require('babel-plugin-transform-es2015-modules-systemjs'),
-        require('babel-plugin-transform-async-to-generator')
+        require("babel-plugin-syntax-async-functions"),
+        require("babel-plugin-syntax-async-generators"),
+        require("babel-plugin-syntax-do-expressions"),
+        require("babel-plugin-syntax-exponentiation-operator"),
+        require("babel-plugin-syntax-export-extensions"),
+        require("babel-plugin-syntax-function-bind"),
+        require("babel-plugin-syntax-object-rest-spread"),
+        require("babel-plugin-syntax-trailing-function-commas"),
+        require("babel-plugin-transform-async-to-generator"),
+        require("babel-plugin-transform-async-to-module-method"),
+        require("babel-plugin-transform-do-expressions"),
+        require("babel-plugin-transform-es2015-destructuring"),
+        require("babel-plugin-transform-es2015-modules-systemjs"),
+        require("babel-plugin-transform-exponentiation-operator"),
+        require("babel-plugin-transform-export-extensions"),
+        require("babel-plugin-transform-function-bind"),
+        require("babel-plugin-transform-object-rest-spread"),
       ],
       sourceMaps: 'inline',
       filename: filename,
