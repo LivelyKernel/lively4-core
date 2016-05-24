@@ -136,7 +136,8 @@ export class Loader {
         require('babel-plugin-transform-async-to-generator')
       ],
       sourceMaps: 'inline',
-      filename: filename
+      filename: filename,
+      sourceFileName: filename
     })
 
     return source
