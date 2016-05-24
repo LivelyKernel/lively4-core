@@ -12,8 +12,12 @@ import * as babel from 'babel-core'
 
 
 export class Loader {
-  constructor() {
+  constructor(options = {}) {
     this._registry = Object.create(null)
+
+    if (options.base) {
+      this._base = new URL(options.base)
+    }
   }
 
 
@@ -139,8 +143,20 @@ export class Loader {
   }
 
 
+  async resolve(name) {
+    return do {
+      if (this._base) {
+        new URL(name, this._base)
+      } else {
+        name
+      }
+    }
+  }
+
+
   async fetch(name) {
-    let response = await fetch(name)
+    let uri = await this.resolve(name)
+    let response = await fetch(uri)
     let blob = await response.text()
 
     return blob

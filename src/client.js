@@ -33,7 +33,9 @@ export default function() {
   const src = new URL(script.src)
 
   // Initialize service loader
-  this.System = new Loader()
+  this.System = new Loader({
+    base: new URL(window.location)
+  })
 }
 
 
