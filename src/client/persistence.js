@@ -61,7 +61,7 @@ function initialize(){
                         orphans.add(node);
                     }
                 }
-                
+
                 shouldSave = hasNoDonotpersistFlagInherited(addedNodes) || checkRemovedNodes(removedNodes, orphans);
 
                 //remove removed orphan nodes from orphan set
@@ -218,7 +218,7 @@ export function saveDOM(async = true) {
     world.find("#ace_editor\\.css").remove();
     world.find("#ace-tm").remove();
     world.find("style").filter((i,e) => /\s*\.error_widget_wrapper+/.test(e.textContent)).remove();
-    
+
     var content = "<!DOCTYPE html>\n" + world[0].outerHTML;
 
     resetPersistenceSessionStore();
