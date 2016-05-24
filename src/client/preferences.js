@@ -15,11 +15,13 @@ function initialize() {
 }
 
 function createOrGetPreferenceNode() {
-  let node = $('lively-preferences');
-  if (node.size() == 0) {
-    $('body').append($('<lively-preferences>'));
+  let node = document.querySelectorAll('lively-preferences');
+
+  if (node.length == 0) {
+    document.body.appendChild(document.createElement('lively-preferences'));
   }
-  return $('lively-preferences')[0];
+
+  return document.querySelector('lively-preferences');
 }
 
 export function read(preferenceKey) {

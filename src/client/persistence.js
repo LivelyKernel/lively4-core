@@ -42,7 +42,7 @@ function initialize(){
 
     var orphans = new Set();
 
-    $(window).unload(saveOnLeave);
+    window.addEventListener('unload', saveOnLeave);
 
     let observer = new MutationObserver((mutations, observer) => {
         mutations.forEach(record => {
