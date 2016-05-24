@@ -1,11 +1,12 @@
 var path = require('path'),
-    webpack = require('webpack');
+    webpack = require('webpack'),
+    transformRuntime = require('babel-plugin-transform-runtime').default;
 
 module.exports = {
   target: 'web',
   context: path.resolve(__dirname),
   entry: {
-    'kernel': ['babel-polyfill', './src/kernel.js']
+    'kernel': ['./src/kernel.js']
   },
   output: {
     path: __dirname,
@@ -23,7 +24,11 @@ module.exports = {
             "transform-es2015-modules-commonjs",
             "transform-do-expressions",
             "transform-function-bind",
-            "transform-async-to-generator"
+            "transform-async-to-generator",
+            new transformRuntime({
+              "polyfill": false,
+              "regenerator": true
+            })
           ]
         }
       },
