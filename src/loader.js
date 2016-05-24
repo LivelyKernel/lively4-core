@@ -155,8 +155,7 @@ export class Loader {
   }
 
 
-  async fetch(name) {
-    let uri = await this.resolve(name)
+  async fetch(uri) {
     let response = await fetch(uri)
 
     if (response.status != 200) {
@@ -170,6 +169,7 @@ export class Loader {
 
 
   async load(name, options = {}) {
+    let uri = await this.resolve(name, options)
     let blob = await this.fetch(name, options)
 
     let source = await this.transpile(blob, {
@@ -177,7 +177,9 @@ export class Loader {
       filename: name
     })
 
-    new Function(source.code)()
+    let code = source.code + '\n//# sourceURL=' + uri + '!transpiled'
+
+    new Function(code)()
 
     if (this._anonymousEntry) {
       this.register(name, this._anonymousEntry[0], this._anonymousEntry[1]);
