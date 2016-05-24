@@ -146,7 +146,7 @@ export class Loader {
   async resolve(name) {
     return do {
       if (this._base) {
-        new URL(name, this._base)
+        new URL(path.normalize('./' + name), this._base)
       } else {
         name
       }
@@ -157,6 +157,11 @@ export class Loader {
   async fetch(name) {
     let uri = await this.resolve(name)
     let response = await fetch(uri)
+
+    if (response.status != 200) {
+      throw new Error('Could not fetch: ' + name)
+    }
+
     let blob = await response.text()
 
     return blob
@@ -178,6 +183,14 @@ export class Loader {
       this._anonymousEntry = undefined;
     }
 
-    return true
+    let mod = this._registry[name]
+
+    if (!mod) {
+      throw new Error('Error loading module ' + mame)
+    }
+
+    return Promise.all(mod.dependencies.map(dependency => {
+      return this.import(dependency)
+    }))
   }
 }
