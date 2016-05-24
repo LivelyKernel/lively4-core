@@ -14,13 +14,21 @@ export default function() {
   // the same kernel script.
   const script = do {
     document.querySelectorAll('script')
-      ::filter(el => typeof el.dataset.livelyKernelBoot !== 'undefined')
+      ::filter(el => typeof el.dataset.livelyKernel !== 'undefined')
       ::shift()
   }
 
   if (typeof script === 'undefined') {
-    throw new Error('Cannot find lively kernel script tag. You must add the `data-lively-kernel-boot` attribute!')
+    throw new Error('Cannot find lively kernel script tag. You must add the `data-lively-kernel` attribute!')
   }
+
+  let base = new URL(do {
+    if ('livelyKernelBase' in script.dataset) {
+      script.dataset.livelyKernelBase
+    } else {
+      window.location
+    }
+  })
 
   let init = do {
     if ('livelyKernelInit' in script.dataset) {
@@ -34,8 +42,12 @@ export default function() {
 
   // Initialize service loader
   this.System = new Loader({
-    base: new URL(window.location)
+    base: base
   })
+
+  if (init) {
+    this.System.import(init)
+  }
 }
 
 

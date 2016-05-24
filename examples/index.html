@@ -4,22 +4,11 @@
         <script src="../dist-kernel.js"
             type="text/javascript"
             charset="utf-8"
-            data-lively-kernel-boot>
+            data-lively-kernel
+            data-lively-kernel-base="http://localhost:3000/"
+            data-lively-kernel-init="/lively4-core/src/init.js">
         </script>
     </head>
     <body>
-        <script>
-            // L4K.ready.then(function() {
-            //     if (Notification.permission !== "granted")
-            //         Notification.requestPermission();
-
-            //     var notification = new Notification("Hi there!");
-
-            // })
-            System.import('/examples/.///a/../test.js').then((test) => {
-              console.log(test)
-              alert(test.message)
-            })
-        </script>
     </body>
 </html>
