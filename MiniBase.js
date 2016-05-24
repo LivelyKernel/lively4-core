@@ -24,7 +24,7 @@
  */
 'use strict';
 
-import { $A } from 'miniprototype.js';
+import { $A } from './miniprototype.js';
 
 // Non-Lively Compatibility
 export var Global = {};

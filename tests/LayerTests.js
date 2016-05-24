@@ -23,7 +23,7 @@
  */
 'use strict';
 
-import { default as cop, Layer, LayerableObject, Global } from 'copv2/Layers.js';
+import { default as cop, Layer, LayerableObject, Global } from '../copv2/Layers.js';
 
 // COP Example from: Hirschfeld, Costanza, Nierstrasz. 2008.
 // Context-oriented Programming. JOT)
