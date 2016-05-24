@@ -827,9 +827,11 @@ describe('cop', function () {
                     .refineObject(o, { say: function(a) {return cop.proceed(a + " World") + "!"}})
             assert.equal(o.say("Hello"), "Say: Hello", "test is broken");
             cop.withLayers([l], function() {
-                console.group("SayHello");
+                if (typeof console.group !== 'undefined')
+                    console.group("SayHello");
                 var result = o.say("Hello")
-                console.groupEnd("SayHello");
+                if (typeof console.group !== 'undefined')
+                    console.groupEnd("SayHello");
                 assert.equal(result, "Say: Hello World!", "adapting arguments is broken");
             }.bind(this));
         });
