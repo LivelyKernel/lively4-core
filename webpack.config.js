@@ -5,7 +5,7 @@ module.exports = {
   target: 'web',
   context: path.resolve(__dirname),
   entry: {
-    'kernel': './src/kernel.js'
+    'kernel': ['babel-polyfill', './src/kernel.js']
   },
   output: {
     path: __dirname,
@@ -23,14 +23,7 @@ module.exports = {
             "transform-es2015-modules-commonjs",
             "transform-do-expressions",
             "transform-function-bind",
-            // ["transform-runtime", {
-            //   "polyfill": false,
-            //   "regenerator": true
-            // }],
-            ["transform-async-to-generator", {
-              "module": "bluebird",
-              "method": "coroutine"
-            }]
+            "transform-async-to-generator"
           ]
         }
       },
