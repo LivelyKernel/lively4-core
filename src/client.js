@@ -33,16 +33,7 @@ export default function() {
   const src = new URL(script.src)
 
   // Initialize service loader
-  this.System = new Loader({
-    fetch: async (name) => {
-      console.log(name)
-
-      let response = await fetch(name)
-      let blob = await response.text()
-
-      return blob
-    }
-  })
+  this.System = new Loader()
 }
 
 

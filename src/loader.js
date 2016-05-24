@@ -12,12 +12,19 @@ import * as babel from 'babel-core'
 
 
 export class Loader {
-  constructor({fetch}) {
+  constructor() {
     this._registry = Object.create(null)
+  }
 
-    if (fetch) {
-      this._fetch = fetch
+
+  get(name) {
+    let mod = this._registry[name]
+
+    if (mod && !mod.executed) {
+      mod.execute()
     }
+
+    return mod && mod.proxy
   }
 
   register(name, dependencies, wrapper) {
@@ -61,10 +68,10 @@ export class Loader {
         mod.executed = true
 
         mod.dependencies.map(dep => {
-          let imports = this._get(dep) && this._registry[dep].values // optimization to pass plain values instead of bindings
+          let imports = this.get(dep) && this._registry[dep].values // optimization to pass plain values instead of bindings
 
           if (imports) {
-            this.__registry[dep].dependants.push(name)
+            this._registry[dep].dependants.push(name)
 
             mod.update(dep, imports)
           }
@@ -105,19 +112,19 @@ export class Loader {
 
   async import(modName, options = {}) {
     let name = path.normalize(modName)
-    let mod = this._get(name)
+    let mod = this.get(name)
 
     if (mod) {
       return mod
     }
 
-    await this._load(name, options)
+    await this.load(name, options)
 
-    return this._get(name)
+    return this.get(name)
   }
 
 
-  transpile(blob, {filename}) {
+  async transpile(blob, {filename}) {
     let source = babel.transform(blob, {
       plugins: [
         require('babel-plugin-syntax-async-functions'),
@@ -132,18 +139,7 @@ export class Loader {
   }
 
 
-  _get(name) {
-    let mod = this._registry[name]
-
-    if (mod && !mod.executed) {
-      mod.execute()
-    }
-
-    return mod && mod.proxy
-  }
-
-
-  async _fetch(name) {
+  async fetch(name) {
     let response = await fetch(name)
     let blob = await response.text()
 
@@ -151,10 +147,10 @@ export class Loader {
   }
 
 
-  async _load(name, options = {}) {
-    let blob = await this._fetch(name, options)
+  async load(name, options = {}) {
+    let blob = await this.fetch(name, options)
 
-    let source =  this.transpile(blob, {
+    let source = await this.transpile(blob, {
       moduleId: name,
       filename: name
     })
