@@ -85,8 +85,15 @@ export class Loader {
       }
     }
 
-    // collecting execute() and setters[]
-    meta = wrapper(function(identifier, value) {
+    let _export = (identifier, value) => {
+      if (typeof identifier === 'object') {
+        for (let prop in Object.getOwnPropertyNames(identifier)) {
+          _export(prop, identifier[prop])
+        }
+
+        return identifier
+      }
+
       values[identifier] = value
 
       // locking down the updates on the module to avoid infinite loop
@@ -110,7 +117,10 @@ export class Loader {
       }
 
       return value
-    })
+    }
+
+    // collecting execute() and setters[]
+    meta = wrapper(_export)
   }
 
 
@@ -170,7 +180,7 @@ export class Loader {
 
 
   async fetch(uri) {
-    let response = await fetch(uri)
+    let response = await self.fetch(uri)
 
     if (response.status != 200) {
       throw new Error('Could not fetch: ' + name)
@@ -184,7 +194,7 @@ export class Loader {
 
   async load(name, options = {}) {
     let uri = await this.resolve(name, options)
-    let blob = await this.fetch(name, options)
+    let blob = await this.fetch(uri, options)
 
     let source = await this.transpile(blob, {
       moduleId: name,
@@ -207,7 +217,11 @@ export class Loader {
     }
 
     return Promise.all(mod.dependencies.map(dependency => {
-      return this.import(dependency)
+      if (this._registry[dependency]) {
+        return Promise.resolve()
+      } else {
+        return this.load(dependency)
+      }
     }))
   }
 }
