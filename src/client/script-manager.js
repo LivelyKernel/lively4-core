@@ -109,7 +109,7 @@ export default class ScriptManager {
     // if shadow is set, look for the scripts in the shadow root
     var children = shadow ? parent.shadowRoot.children : parent.children;
 
-    _.each(children, (child) => {
+    for(let child of children) {
         if (isLively4Script(child)) {
             try {
                 var scriptName = child.dataset.name;
@@ -130,7 +130,7 @@ export default class ScriptManager {
         } else {
             this.findLively4Script(child, false);
         }
-    });
+    }
 
     // dont do it here...
     // if(parent.initialize) parent.initialize() // initialize only after all scripts are there.
