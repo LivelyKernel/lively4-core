@@ -17,7 +17,7 @@ Compilation will be places at `./dist-kernel.js`.
 
 ## Development
 
-Run `npm start --watch` to start webpack in watch mode. It will continue to watch the source files for changes after initial build and recompile the bundle whenever something changed. Such recompiles will be much faster compared to invoke `npm start` manually as only changes will be recompiled.
+Run `npm start -- --watch` to start webpack in watch mode. It will continue to watch the source files for changes after initial build and recompile the bundle whenever something changed. Such recompiles will be much faster compared to invoke `npm start` manually as only changes will be recompiled.
 
 ## License
 
