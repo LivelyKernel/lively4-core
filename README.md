@@ -8,7 +8,19 @@ The Livel4 Kernel Loader must be generated (compiled) and put into the document 
 
 ```
 $ npm install
-$ node_modules/.bin/webpack
+$ npm start
 ```
 
+Running `npm start` will invoke webpack to compile and package the kernel loader sources into a single bundle.
+
 Compilation will be places at `./dist-kernel.js`.
+
+## Development
+
+Run `npm start --watch` to start webpack in watch mode. It will continue to watch the source files for changes after initial build and recompile the bundle whenever something changed. Such recompiles will be much faster compared to invoke `npm start` manually as only changes will be recompiled.
+
+## License
+
+(c) Jan Graichen
+
+MIT License
