@@ -161,7 +161,8 @@ export class Loader {
       ],
       sourceMaps: 'inline',
       filename: filename,
-      sourceFileName: filename
+      sourceFileName: filename,
+      compact: true,
     })
 
     return source
