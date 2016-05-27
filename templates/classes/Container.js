@@ -454,7 +454,7 @@ export default class Container extends Morph {
     } else if (this.getPath().match(/\.js$/)) {
       var instMethod = "(^|\\s+)([a-zA-Z0-9$_]+)\\s*\\(\\s*[a-zA-Z0-9$_ ,]*\\s*\\)\\s*{",
           klass = "(?:^|\\s+)class\\s+([a-zA-Z0-9$_]+)",
-          func = "(?:^|\\s+)function\\s+([a-zA-Z0-9$_]+)";
+          func = "(?:^|\\s+)function\\s+([a-zA-Z0-9$_]+)\\s*\\(";
       var defRegEx = new RegExp(`(?:(?:${instMethod})|(?:${klass})|(?:${func}))`)
       var m
       var links = {}

@@ -312,14 +312,14 @@ export default class AceEditor extends HTMLElement {
       return this.doitContext
     }
 
-    async boundEval(str) {
+    async boundEval(str, context) {
       if (!lively.modules.isHookInstalled("fetch", "workspaceFetch")) {
         lively.modules.installHook("fetch", function workspaceFetch(proceed, load) { 
             if (load.address.match("workspace://")) return Promise.resolve("")
             return proceed(load)
         })
       }
-      return lively.vm.runEval(str, {targetModule: "workspace://1", context: this})
+      return lively.vm.runEval(str, {targetModule: "workspace://1", context: context})
     }
 
     printResult(result) {
