@@ -4,6 +4,7 @@ export default class TestRunner extends HTMLDivElement {
   initialize() {
     this.windowTitle = "Test Runner"
     lively.html.registerButtons(this)
+    lively.html.registerInputs(this)
     if (!this.querySelector("#mocha")) {
       var mochadiv  = document.createElement("div")
       mochadiv.id = "mocha"
@@ -52,7 +53,7 @@ export default class TestRunner extends HTMLDivElement {
   // [1,2,3].reduce((s,ea) => s + ea, 0 )
   async findTestFiles() {
     var files = []
-    var list = ["/test/", "/test/templates/"]
+    var list = this.shadowRoot.querySelector("#testDir").value.split(",")
     for(var i in list) {
       files = files.concat(await this.findTestFilesInDir(list[i]))
     };
@@ -73,12 +74,16 @@ export default class TestRunner extends HTMLDivElement {
     this.querySelector("#mocha").innerHTML= "";
     await Promise.all(
       (await this.findTestFiles()).map((url) => {
-        var name = url.replace(/.*\//,"").replace(/\..*/,"");
+        var name = url.replace(/.*\//,"").replace(/\/\.[^\.]*/,"");
           return lively.import(name, url, true)
           // mocha.addFile(url.replace(/.*\//,"").replace(/\..*/,""))
       }));
     console.log("RUN")
     mocha.run();
+  }
+  
+  async onTestDirChanged() {
+    this.onRunButton()
   }
   
   runMocha() {
