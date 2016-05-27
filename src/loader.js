@@ -55,8 +55,14 @@ export class Loader {
       executed: false,
 
       // normalized dependencies
-      dependencies: dependencies.map(dep => {
-        return path.normalize(path.resolve(name, '..', dep))
+      dependencies: dependencies.map(dep => do {
+        // Handle special cases for import names like "kernel"
+        // They must not be path and must not have an extension
+        if (dep.indexOf('/') < 0 && dep.indexOf('.') < 0) {
+          dep
+        } else {
+          path.normalize(path.resolve(name, '..', dep))
+        }
       }),
 
       // other modules that depends on this so we can push updates into those modules
