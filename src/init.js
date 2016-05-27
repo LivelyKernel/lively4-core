@@ -1,3 +1,6 @@
-import * as lively from './client/lively.js'
+import lively from '/src/client/lively.js'
 
-alert('Loaded by ES2016 module...')
+console.log("How are we?")
+
+lively.initializeHalos();
+lively.components.loadUnresolved();

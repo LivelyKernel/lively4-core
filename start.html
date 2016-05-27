@@ -24,10 +24,12 @@
       System.paths['babel'] =lively4url + '/src/external/babel-browser.js'
       // System.defaultJSExtensions = true;
       System.config({
+        baseURL: lively4url + '/',
         transpiler: 'babel',
         babelOptions: { },
         map: {
-            babel: lively4url + '/src/external/babel-browser.js'
+            babel: lively4url + '/src/external/babel-browser.js',
+            kernel: lively4url + '/src/client/legacy-kernel.js'
         }
       });
     </script>

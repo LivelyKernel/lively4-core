@@ -27,11 +27,11 @@ import components from './morphic/component-loader.js';
 import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
 
+import * as kernel from 'kernel'
 
 
 let $ = window.$,
-  babel = window.babel,
-  System = window.System; // known global variables.
+  babel = window.babel; // known global variables.
 
 // a) Special shorthands for interactive development
 // b) this is the only reasonable way to use modules in template scripts, due to no shared lexical scope #TODO
@@ -144,12 +144,12 @@ export default class Lively {
 
   static defaultPath(moduleName) {
     return ({
-      math: lively4url + "/src/external/math.js",
-      typo: lively4url + "/src/external/typo.js",
-      contextmenu: lively4url + '/src/client/contextmenu.js',
-      customize: lively4url + '/src/client/customize.js',
-      selecting: lively4url + '/src/client/morphic/selecting.js',
-      expose: lively4url + '/src/client/expose.js'
+      math: kernel.realpath("/src/external/math.js"),
+      typo: kernel.realpath("/src/external/typo.js"),
+      contextmenu: kernel.realpath('/src/client/contextmenu.js'),
+      customize: kernel.realpath('/src/client/customize.js'),
+      selecting: kernel.realpath('/src/client/morphic/selecting.js'),
+      expose: kernel.realpath('/src/client/expose.js')
     })[moduleName]
   }
 
@@ -195,9 +195,9 @@ export default class Lively {
 
     exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expected
 
-    this.import("authGithub", lively4url + '/src/client/auth-github.js')
-    this.import("authDropbox", lively4url + '/src/client/auth-dropbox.js')
-    this.import("authGoogledrive", lively4url + '/src/client/auth-googledrive.js')
+    this.import("authGithub", kernel.realpath('/src/client/auth-github.js'))
+    this.import("authDropbox", kernel.realpath('/src/client/auth-dropbox.js'))
+    this.import("authGoogledrive", kernel.realpath('/src/client/auth-googledrive.js'))
 
     this.import("expose")
     
