@@ -1,7 +1,6 @@
 'use strict';
 
 import * as messaging from './messaging.js';
-import {log} from './load.js';
 
 import focalStorage from '../external/focalStorage.js';
 
