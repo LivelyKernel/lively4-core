@@ -13,7 +13,7 @@ import * as babel from 'babel-core'
 
 export class Loader {
   constructor(options = {}) {
-    this._registry = Object.create(null)
+    this._registry = new Map()
 
     if (options.base) {
       this._base = new URL(options.base)
@@ -22,7 +22,7 @@ export class Loader {
 
 
   get(name) {
-    let mod = this._registry[name]
+    let mod = this._registry.get(name)
 
     if (mod && !mod.executed) {
       mod.execute()
@@ -43,7 +43,7 @@ export class Loader {
     let mod, meta
 
     // creating a new entry in the internal registry
-    this._registry[name] = mod = {
+    this._registry.set(name, mod = {
 
       // live bindings
       proxy: proxy,
@@ -78,10 +78,10 @@ export class Loader {
         mod.executed = true
 
         mod.dependencies.map(dep => {
-          let imports = this.get(dep) && this._registry[dep].values // optimization to pass plain values instead of bindings
+          let imports = this.get(dep) && this._registry.get(dep).values // optimization to pass plain values instead of bindings
 
           if (imports) {
-            this._registry[dep].dependants.push(name)
+            this._registry.get(dep).dependants.push(name)
 
             mod.update(dep, imports)
           }
@@ -89,7 +89,7 @@ export class Loader {
 
         meta.execute()
       }
-    }
+    })
 
     let _export = (identifier, value) => {
       if (typeof identifier === 'object') {
@@ -106,8 +106,10 @@ export class Loader {
       mod.lock = true
 
       mod.dependants.forEach(function(moduleName) {
-        if (this._registry[moduleName] && !this._registry[moduleName].lock) {
-          this._registry[moduleName].update(name, values)
+        let module = this._registry.get(moduleName)
+
+        if (module && !module.lock) {
+          module.update(name, values)
         }
       })
 
@@ -217,14 +219,14 @@ export class Loader {
       this._anonymousEntry = undefined;
     }
 
-    let mod = this._registry[name]
+    let mod = this._registry.get(name)
 
     if (!mod) {
       throw new Error('Error loading module ' + name)
     }
 
     return Promise.all(mod.dependencies.map(dependency => {
-      if (this._registry[dependency]) {
+      if (this._registry.has(dependency)) {
         return Promise.resolve()
       } else {
         return this.load(dependency)
