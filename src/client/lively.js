@@ -1,13 +1,16 @@
 'use strict';
 
+import * as jquery from '../external/jquery.js';
+import * as _ from '../external/underscore.js';
+
 import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
 import * as preferences from './preferences.js';
 import * as persistence from './persistence.js';
 
 
-import files from './files.js';
 import html from './html.js';
+import files from './files.js';
 import paths from './paths.js';
 
 import inspector from './inspector.js';
@@ -15,13 +18,15 @@ import inspector from './inspector.js';
 import keys from './keys.js';
 import components from './morphic/component-loader.js';
 
+
 //import expose from './expose.js';
 
 /* expose external modules */
+
+
 import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
-import * as jquery from '../external/jquery.js';
-import * as _ from '../external/underscore.js';
+
 
 
 let $ = window.$,
@@ -589,35 +594,11 @@ export default class Lively {
   }
 }
 
+if (window.lively)
+  Object.assign(Lively, window.lively) // copy objects from lively.modules 
+
 window.lively = Lively
 Lively.loaded();
 
-// window.setTimeout(function() {
-//           function loadJavaScriptThroughDOM(name, src, force) {
-//             return new Promise(function (resolve) {
-//               var scriptNode = document.querySelector(name);
-//               if (scriptNode) {
-//                 scriptNode.remove();
-//               }
-//               var script = document.createElement("script");
-//               script.id = name;
-//               script.charset = "utf-8";
-//               script.type = "text/javascript";
-//               if (force) {
-//                 src += +"?" + Date.now();
-//               }
-//               script.src = src;
-//               script.onload = function () {
-//                 resolve();
-//               };
-//               document.head.appendChild(script);
-//             });
-//           }
-          
-//         loadJavaScriptThroughDOM("livelyModules", 
-//             lively4url + "/src/external/lively.modules.js").then( function(module){
-//               console.log("loaded lively.modules") 
-//         })
-// },2000)
 
 console.log("loaded lively");
