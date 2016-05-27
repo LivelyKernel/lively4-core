@@ -31,6 +31,27 @@ export class Loader {
     return mod && mod.proxy
   }
 
+  set(name, module) {
+    if (this._registry.has(name)) {
+      this._registry.get(name).values = module
+
+      let dependants = this._registry.get(name).dependants
+
+      // Update all dependants
+      for(let dep in dependants) {
+        this._registry.get(dep).update(name, module)
+      }
+
+    } else {
+      this._registry.set(name, {
+        executed: true,
+        values: module,
+        proxy: module,
+        dependants: []
+      })
+    }
+  }
+
   register(name, dependencies, wrapper) {
     if (Array.isArray(name)) {
       this._anonymousEntry = []
