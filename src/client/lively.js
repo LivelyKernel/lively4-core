@@ -58,14 +58,18 @@ export default class Lively {
 
 
   static import(moduleName, path, forceLoad) {
+
     if (!path) path = this.defaultPath(moduleName)
     if (!path) throw Error("Could not imoport " + moduleName + ", not path specified!")
+
+    
 
     if (this[moduleName] && !forceLoad)
       return new Promise((resolve) => { resolve(this[moduleName])})
     if (forceLoad) {
       path += "?" + Date.now()
     }
+  
     return System.import(path).then( (module, err) => {
       if (err) {
         lively.notify("Could not load module " + moduleName, err);
@@ -196,6 +200,14 @@ export default class Lively {
     this.import("authGoogledrive", lively4url + '/src/client/auth-googledrive.js')
 
     this.import("expose")
+    
+    // for anonymous lively.modules workspaces
+    if (!lively.modules.isHookInstalled("fetch", "workspaceFetch")) {
+      lively.modules.installHook("fetch", function workspaceFetch(proceed, load) { 
+        if (load.address.match("workspace://")) return Promise.resolve("")
+        return proceed(load)
+      })
+    }
    
   }
 

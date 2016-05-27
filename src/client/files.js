@@ -4,9 +4,11 @@ import focalStorage from './../external/focalStorage.js'
 
 import generateUuid from './uuid.js'
 
+
+
 export default class Files {
 
-  static  fetchChunks(fetchPromise, eachChunkCB, doneCB) {
+  static fetchChunks(fetchPromise, eachChunkCB, doneCB) {
     fetchPromise.then(function(response) {
         var reader = response.body.getReader();
         var decoder = new TextDecoder();

@@ -4,10 +4,11 @@
  * Kitchensink for all HTML manipulation utilities
  */
 
+
 export default class HTML {
   
   static hello() {
-    alert("World! Really!")
+    alert("Hello World!")
     
   }
   

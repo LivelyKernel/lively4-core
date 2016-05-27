@@ -179,7 +179,8 @@ export default class Container extends Morph {
       if (moduleName) {
         moduleName = moduleName[1]
         if (this.getSubmorph("#live").checked) {
-          lively.import(moduleName, url, true).then( module => {
+          
+          lively.modules.reloadModule(""+url).then( module => {
               lively.notify("Module " + moduleName + " reloaded!")
           }, err => {
               window.LastError = err
@@ -601,7 +602,9 @@ export default class Container extends Morph {
         aceComp.doSave = text => {
           this.onSave()
         }
+        
         var url = this.getURL()
+
         comp.setURL(url)
         aceComp.changeModeForFile(url.pathname);
 
@@ -618,6 +621,8 @@ export default class Container extends Morph {
 
         this.showCancelAndSave()
     
+        aceComp.targetModule = "" + url // for editing
+
         setTimeout(resolve, 1000) // Promise from AceEditor needed here... #Jens #TODO
         
         // comp.loadFile() // ALT: Load the file again?
