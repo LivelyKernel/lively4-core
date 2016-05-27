@@ -58,7 +58,9 @@ if ('serviceWorker' in navigator) {
       //     lively4url + "/../lively.modules/dist/lively.modules_no-deps.js") })
       .then( function() {
         return loadJavaScriptThroughDOM("livelyModules",  
-          lively4url + "/../lively.modules/dist/lively.modules-with-lively.vm.js")})
+          lively4url + "/src/external/lively.modules-with-lively.vm.js")})
+        // return loadJavaScriptThroughDOM("livelyModules",  
+        //   lively4url + "/../lively.modules/dist/lively.modules-with-lively.vm.js")})
       .then( function(){
         console.log("lively.modules loaded... now try to load lively4")
         System.import(lively4url + "/src/client/lively.js")
