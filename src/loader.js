@@ -204,7 +204,7 @@ export class Loader {
 
     let code = source.code + '\n//# sourceURL=' + uri + '!transpiled'
 
-    new Function(code)()
+    new Function('System', code)(this)
 
     if (this._anonymousEntry) {
       this.register(name, this._anonymousEntry[0], this._anonymousEntry[1]);

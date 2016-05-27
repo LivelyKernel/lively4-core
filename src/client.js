@@ -41,12 +41,12 @@ export default function() {
   const src = new URL(script.src)
 
   // Initialize service loader
-  this.System = new Loader({
+  let loader = new Loader({
     base: base
   })
 
   if (init) {
-    this.System.import(init)
+    loader.import(init)
   }
 }
 
