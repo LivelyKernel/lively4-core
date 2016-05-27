@@ -45,6 +45,10 @@ export default function() {
     base: base
   })
 
+  loader.set('kernel', {
+    resolve: (name) => loader.resolve(name)
+  })
+
   if (init) {
     loader.import(init)
   }
