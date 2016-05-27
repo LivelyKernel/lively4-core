@@ -90,22 +90,22 @@ export default class ComponentLoader {
 
       // load any unknown elements, which this component might introduce
       ComponentLoader.loadUnresolved(this, true).then((args) => {
-        
+
         lively.fillTemplateStyles(this.shadowRoot).then(() => {
           // call the initialize script, if it exists
           if (typeof this.initialize === "function") {
             this.initialize();
           }
-          this.dispatchEvent(new Event("created"));  
+          this.dispatchEvent(new Event("created"));
         })
 
-        
+
       });
     }
     proxies[componentName].attachedCallback = function() {
       if (this.attachedCallback && proxies[componentName].attachedCallback != this.attachedCallback) {
         this.attachedCallback.call(this);
-      } 
+      }
       if (prototypes[componentName].attachedCallback) {
         prototypes[componentName].attachedCallback.call(this);
       }
@@ -117,7 +117,7 @@ export default class ComponentLoader {
         prototypes[componentName].detachedCallback.call(this);
       }
     };
-    
+
     // don't store it just in a lexical scope, but make it available for runtime development
 
     document.registerElement(componentName, {

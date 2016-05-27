@@ -69,7 +69,7 @@ export default class Lively {
     if (forceLoad) {
       path += "?" + Date.now()
     }
-  
+
     return System.import(path).then( (module, err) => {
       if (err) {
         lively.notify("Could not load module " + moduleName, err);
@@ -106,11 +106,11 @@ export default class Lively {
       this[moduleName] = module.default || module;
     });
   }
-  
+
   static loadJavaScriptThroughDOM(name, src, force) {
     return new Promise((resolve) => {
       var scriptNode = document.querySelector(name);
-      if (scriptNode) { 
+      if (scriptNode) {
         scriptNode.remove();
       }
       var script = document.createElement("script");
@@ -127,7 +127,7 @@ export default class Lively {
       document.head.appendChild(script);
     })
   }
-  
+
   static fillTemplateStyles(root) {
      // there seems to be no <link ..> tag allowed to reference css inside of templates #Jens
      var promises = []
@@ -136,7 +136,7 @@ export default class Lively {
         if (src) {
           promises.push(fetch(lively4url + src).then(r => r.text()).then(css => {
             ea.innerHTML = css
-          }))    
+          }))
         }
      })
      return Promise.all(promises)
@@ -208,7 +208,7 @@ export default class Lively {
         return proceed(load)
       })
     }
-   
+
   }
 
   static array(anyList){
@@ -263,7 +263,7 @@ export default class Lively {
     var transpiledSource = babel.transform('(function(){/*lively.code.start*/' + str+'})').code
         .replace(/^(?:[\s\n]*["']use strict["'];[\s\n]*)([\S\s]*?)(?:\(function\s*\(\)\s*\{\s*\/\*lively.code.start\*\/)/, "$1") // strip prefix
         .replace(/\}\);[\s\n]*$/,"") // strip postfix
-    
+
     console.log("code: " + transpiledSource)
     console.log("context: " + ctx)
     var interactiveEval = function interactiveEval(code) {
@@ -290,7 +290,7 @@ export default class Lively {
   }
 
   static getPosition(obj) {
-      if (obj.clientX) 
+      if (obj.clientX)
         return {x: obj.clientX, y: obj.clientY}
       else if (obj.style)
         return {x: obj.style.left, y: obj.style.top}
@@ -350,13 +350,13 @@ export default class Lively {
   static notify(title, text, timeout, cb) {
     if (!this.notifications) this.notifications = [];
     this.notifications.push({title: title, text: text, cb: cb, time: Date.now()})
-  
+
     // lively.notify("hello","",3)
     // just in case...
     if (Notification.permission !== "granted") Notification.requestPermission();
 
     var time = Date.now()
-    if(this.notifications.length > 10 && 
+    if(this.notifications.length > 10 &&
       (Date.now() - this.notifications[10].time < 1000)) {
       return console.log("SILENT NOTE: " + title  + " (" + text + ")");
     }
@@ -422,7 +422,7 @@ export default class Lively {
 
     _.each($(tagName), function(oldInstance) {
       if (oldInstance.__ingoreUpdates) return;
-      
+
       // if (oldInstance.isMinimized && oldInstance.isMinimized()) return // ignore minimized windows
       // if (oldInstance.isMaximized && oldInstance.isMaximized()) return // ignore isMaximized windows
 
@@ -450,7 +450,7 @@ export default class Lively {
       if (window.that == oldInstance) {
         window.that = newInstance
       }
-      
+
       if (newInstance.livelyMigrate) {
         newInstance.livelyMigrate(oldInstance) // give instances a chance to take over old state...
       }
@@ -536,29 +536,29 @@ export default class Lively {
       window.livelyEventListeners = []
     }
     return window.livelyEventListeners
-  }  
-  
+  }
+
   static set eventListeners(list) {
       window.livelyEventListeners = list
-  }  
-  
+  }
+
   // Registration and deregistration of eventlisteners for run-time programming...
   static addEventListener(domain, target, type, listener, options) {
     this.eventListeners.push(
-      {target: target, type: type, listener: listener, domain: domain, options: options})      
+      {target: target, type: type, listener: listener, domain: domain, options: options})
     target.addEventListener(type, listener, options)
   }
-  
+
   static removeEventListener(domain, target, type, listener) {
     this.eventListeners = this.eventListeners.filter(ea => {
-      if ((!target      || (ea.target   === target)) 
-          && (!type     || (ea.type     ==  type)) 
-          && (!listener || (ea.listener === listener)) 
+      if ((!target      || (ea.target   === target))
+          && (!type     || (ea.type     ==  type))
+          && (!listener || (ea.listener === listener))
           && (!domain   || (ea.domain   ==  domain))) {
         // actually removing the event listener
         // console.log("removeEventListener", ea.target, ea.type, ea.listener)
         ea.target.removeEventListener(ea.type, ea.listener, ea.options)
-        return false   
+        return false
       } else {
         return true
       }
@@ -572,7 +572,7 @@ export default class Lively {
       comp.searchFile(text)
     })
   }
-  
+
   static openHelpWindow(text) {
     this.openComponentInWindow("lively-help").then(comp => {
       comp.parentElement.style.width = "850px";
@@ -598,16 +598,16 @@ export default class Lively {
           comp.parentElement.style.height = "600px"
           if (edit) comp.setAttribute("mode", "edit");
           return comp.followPath(url)
-    }).then( () => {   
+    }).then( () => {
       if (edit && pattern) {
-        editorComp.getAceEditor().editor.find(pattern)  
+        editorComp.getAceEditor().editor.find(pattern)
       }
     })
   }
 }
 
 if (window.lively)
-  Object.assign(Lively, window.lively) // copy objects from lively.modules 
+  Object.assign(Lively, window.lively) // copy objects from lively.modules
 
 window.lively = Lively
 Lively.loaded();
