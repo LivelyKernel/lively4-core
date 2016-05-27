@@ -37,6 +37,10 @@ export class Filesystem {
             }
         }
 
+        if(typeof base === 'undefined') {
+          return new Response(null, {status: 400})
+        }
+
         path = path.substring(base.length)
 
         this.reqcount++
