@@ -6,11 +6,11 @@ module.exports = {
   target: 'web',
   context: path.resolve(__dirname),
   entry: {
-    'kernel': ['./src/kernel.js']
+    'kernel': ['./src/boot.js']
   },
   output: {
     path: __dirname,
-    filename: "dist-[name].js"
+    filename: "dist-kernel.js"
   },
   devtool: 'source-map',
   module: {
