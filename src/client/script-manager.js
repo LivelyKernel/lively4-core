@@ -206,6 +206,5 @@ export default class ScriptManager {
   }
 }
 
-
 ScriptManager.load()
 

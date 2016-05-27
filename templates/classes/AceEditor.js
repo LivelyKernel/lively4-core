@@ -312,8 +312,16 @@ export default class AceEditor extends HTMLElement {
       return this.doitContext
     }
 
-    boundEval(str, ctx) {
-      return lively.boundEval(str, ctx)
+    boundEval(str) {
+   // return lively.vm.runEval(str, {topLevelVarRecorder: this }).then(r => r.value)
+
+    if (!lively.modules.isHookInstalled("fetch", "workspaceFetch")) {
+        lively.modules.installHook("fetch", function workspaceFetch(proceed, load) { 
+            if (load.address.match("workspace://")) return Promise.resolve("")
+            return proceed(load)
+        })
+    }
+    return lively.modules.runEval(str, {targetModule: "workspace://1", context: this}).then( x => x.value)
     }
 
     printResult(result) {
