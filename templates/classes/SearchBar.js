@@ -1,6 +1,7 @@
 'use strict';
 
 import Morph from './Morph.js';
+import * as serverSearch from '../../src/client/search/server-search.js';
 import * as githubSearch from '../../src/client/search/github-search.js';
 import * as dropboxSearch from '../../src/client/search/dropbox-search.js';
 
@@ -16,10 +17,12 @@ export default class SearchBar extends Morph {
     this.setupButton.addEventListener("click", (evt) => { this.setup() });
     this.searchField.addEventListener("keyup", (evt) => { this.searchFieldKeyup(evt) });
 
+    this.serverSearch = serverSearch;
     this.githubSearch = githubSearch;
     this.dropboxSearch = dropboxSearch;
 
     this.searchableMounts = {
+      "server": [],
       "dropbox": [],
       "github": []
     };
@@ -84,6 +87,13 @@ export default class SearchBar extends Morph {
     fetch(mountRequest).then(
       async (response) => {
         let mounts = await response.json();
+        
+        // Add server mount
+        mounts.push({
+          path: lively4url,
+          name: "server"
+        });
+        
         console.log(`[Search] found the following mounts: ${mounts}`);
         var mountsList = this.getSubmorph("#mounts-list");
         mountsList.innerHTML = "";
