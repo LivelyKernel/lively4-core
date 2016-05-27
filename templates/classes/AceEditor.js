@@ -312,16 +312,14 @@ export default class AceEditor extends HTMLElement {
       return this.doitContext
     }
 
-    boundEval(str) {
-   // return lively.vm.runEval(str, {topLevelVarRecorder: this }).then(r => r.value)
-
-    if (!lively.modules.isHookInstalled("fetch", "workspaceFetch")) {
+    async boundEval(str) {
+      if (!lively.modules.isHookInstalled("fetch", "workspaceFetch")) {
         lively.modules.installHook("fetch", function workspaceFetch(proceed, load) { 
             if (load.address.match("workspace://")) return Promise.resolve("")
             return proceed(load)
         })
-    }
-    return lively.modules.runEval(str, {targetModule: "workspace://1", context: this}).then( x => x.value)
+      }
+      return lively.vm.runEval(str, {targetModule: "workspace://1", context: this})
     }
 
     printResult(result) {
@@ -336,10 +334,11 @@ export default class AceEditor extends HTMLElement {
         editor.selection.selectToPosition(toSel)
     }
 
-    tryBoundEval(str, printResult) {
-        var result;
-        try { result =  this.boundEval(str, this.getDoitContext()) }
-        catch(e) {
+    async tryBoundEval(str, printResult) {
+        var resp;
+        resp = await this.boundEval(str, this.getDoitContext()) 
+        if (resp.error) {
+            var e = resp.error
             console.error(e)
             if (printResult) {
                 window.LastError = e
@@ -347,6 +346,7 @@ export default class AceEditor extends HTMLElement {
             }
             return
         }
+        var result = resp.value
         if (printResult) {
             // alaways wait on promises.. when interactively working...
             if (result && result.then) { 
@@ -367,6 +367,7 @@ export default class AceEditor extends HTMLElement {
         }
         return result
     }
+    
     inspectIt(str) {
         var result;
         try { result =  this.boundEval(str) }
