@@ -3,32 +3,39 @@ import * as rdfa from '../external/RDFa.js';
 export default class RdfaManager {
 
   static generateTableRows(table) {
-    this.iterateRdfaNodes((s, p, v) => {
+    this.buildRdfaDataStructure((s, p, v) => {});
+    RdfaManager.data.subjects.forEach((s) => {
       table.append(
         $('<tr>')
-          .append($('<td>').text(s))
-          .append($('<td>').text(p))
-          .append($('<td>').text(v)))
-    })
+          .append($('<td>').text(s.name)));
+      s.properties.forEach((p) => {
+        var v = document.data.getValues(s, p);
+        table.append(
+          $('<tr>')
+            .append($('<td>'))
+            .append($('<td>').text(p))
+            .append($('<td>').text(v)));
+        });
+        RdfaManager.makeLocationsClickable(p);
+    });
   }
 
-  static makeLocationsClickable() {
-    this.iterateRdfaNodes((s, p, v) => {
-      document.data.getValueOrigins(s, p).forEach((valueOrigin) => {
-        if (this.isGeoLocation(s, p, v)) {
-          if (valueOrigin.origin.style) {
-            valueOrigin.origin.onmouseover = function(){this.style.outline = "1px solid red"};
-            valueOrigin.origin.onmouseout = function(){this.style.outline = ""};
-            lively.addEventListener('click', valueOrigin.origin, 'click', evt => {
-              this.openMapsFrame(evt, valueOrigin.value);
-            }, true);
-          }
+  static makeLocationsClickable(property) {
+    this.buildRdfaDataStructure((s, p, v) => {});
+    property.origins.forEach((valueOrigin) => {
+      if (this.isGeoLocation(property)) {
+        if (valueOrigin.style) {
+          valueOrigin.onmouseover = function(){this.style.outline = "1px solid red";};
+          valueOrigin.onmouseout = function(){this.style.outline = "";};
+          lively.addEventListener('click', valueOrigin, 'click', (evt) => {
+            this.openMapsFrame(evt, property);
+          }, true);
         }
-      });
-    })
+      }
+    });
   }
 
-  static openMapsFrame(evt, value) {
+  static openMapsFrame(evt, property) {
     var comp = document.createElement("iframe");
     lively.components.openInWindow(comp).then((w) => {
       lively.setPosition(w, lively.pt(evt.pageX, evt.pageY));
@@ -61,21 +68,32 @@ export default class RdfaManager {
     comp.src = mapsLink;
   }
 
-  static isGeoLocation(subject, property, value) {
+  static isGeoLocation(property) {
     var locationTags = [
-      "http://schema.org/address",
-      "http://schema.org/geo"
+      "address",
+      "geo"
     ];
 
-    return locationTags.indexOf(property) >= 0;
+    return locationTags.indexOf(property.simpleName) >= 0;
   }
 
-  static iterateRdfaNodes(visitor) {
+  static buildRdfaDataStructure(visitor) {
+    RdfaManager.data = {subjects: []};
     document.data.getSubjects().forEach(s => {
-      document.data.getProperties(s).forEach(p => {
+      var subject = {name: s, properties: []};
+      RdfaManager.data.subjects.push(subject);
+      document.data.getProperties(s).forEach((p) => {
         var v = document.data.getValues(s, p);
-        visitor(s, p, v);
+        var origins = [];
+        document.data.getValueOrigins(s, p).forEach((valueOrigin) => {
+          origins.push(valueOrigin.origin);
+        });
+        var nameParts = p.split('/');
+        var simpleName = nameParts[nameParts.length - 1];
+        var property = {name: p, simpleName: p, value: v, origins: origins};
+        subject.properties.push(property);
       });
     });
   }
+
 }
