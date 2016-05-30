@@ -23,7 +23,9 @@
  */
 'use strict';
 
-import { default as cop, Layer, LayerableObject, Global } from '../copv2/Layers.js';
+import { default as cop, Layer, LayerableObject } from '../copv2/Layers.js';
+
+let assert = chai.assert;
 
 // COP Example from: Hirschfeld, Costanza, Nierstrasz. 2008.
 // Context-oriented Programming. JOT)
@@ -243,15 +245,15 @@ describe('COP example', function () {
 
         assert.equal(person.print(), "Name: " + name, "toString without a layer is broken");
 
-        cop.withLayers([Global.AddressLayer], function() {
+        cop.withLayers([AddressLayer], function() {
             assert.equal(person.print(), "Name: " + name + "; Address: " + address, "toString with address layer is broken");
         }.bind(this));
 
-        cop.withLayers([Global.EmploymentLayer], function() {
+        cop.withLayers([EmploymentLayer], function() {
             assert.equal(person.print(), "Name: " + name + "; [Employer] Name: " + employer_name, "toString with employment layer is broken");
         }.bind(this));
 
-        cop.withLayers([Global.AddressLayer, Global.EmploymentLayer], function() {
+        cop.withLayers([AddressLayer, EmploymentLayer], function() {
             assert.equal(person.print(), "Name: " + name +  "; Address: " + address +
                 "; [Employer] Name: " + employer_name + "; Address: " + employer_address,
                 "toString with employment layer is broken");
@@ -260,15 +262,14 @@ describe('COP example', function () {
 
 });
 
-var currentTest = undefined;
-
 describe('cop', function () {
 
     beforeEach(function() {
         this.execution  = [];
-        Global.currentTest = this;
+        currentTest = this;
         this.oldGlobalLayers = cop.GlobalLayers;
-        cop.GlobalLayers = []; // ok, when we are testing layers, there should be no other layers active in the system (to make things easier)
+        // when we are testing layers, there should be no other layers active in the system (to make things easier)
+        cop.GlobalLayers = [];
         cop.resetLayerStack();
     });
 
@@ -282,12 +283,12 @@ describe('cop', function () {
         object1 = {
             myString: "I am an object",
             f(a, b) {
-                Global.currentTest.execution.push("d.f");
+                currentTest.execution.push("d.f");
                 // console.log("execute default f(" + a, ", " + b + ")");
                 return 0;
             },
             g() {
-                Global.currentTest.execution.push("d.g");
+                currentTest.execution.push("d.g");
                 // console.log("execute default g");
                 return "Hello";
             },
@@ -317,7 +318,7 @@ describe('cop', function () {
         layer1 = cop.create('LmakeLayer1');
         cop.layerObject(layer1, object1, {
             f(a, b) {
-                Global.currentTest.execution.push("l1.f");
+                currentTest.execution.push("l1.f");
                 console.log("execute layer1 function for f");
                 return cop.proceed(a, b) + a;
             }
@@ -330,12 +331,12 @@ describe('cop', function () {
         layer2 = cop.basicCreate('makeLayer2');
         cop.layerObject(layer2, object1, {
             f(a, b) {
-                Global.currentTest.execution.push("l2.f");
+                currentTest.execution.push("l2.f");
                 // console.log("execute layer2 function for f");
                 return cop.proceed(a, b) + b;
             },
             g() {
-                Global.currentTest.execution.push("l2.g");
+                currentTest.execution.push("l2.g");
                 // console.log("execute default g");
                 return cop.proceed() + " World";
             }
@@ -354,7 +355,7 @@ describe('cop', function () {
         layer3 = cop.basicCreate('LmakeLayer3');;
         cop.layerObject(layer3, object1, {
             f(a, b) {
-                Global.currentTest.execution.push("l3.f");
+                currentTest.execution.push("l3.f");
                 // console.log("execute layer3 function for f");
                 return cop.proceed() * 10;
             }
@@ -364,8 +365,8 @@ describe('cop', function () {
 
     it('can create a Layer', function() {
         cop.create("DummyLayer2");
-        assert.isDefined(Global.DummyLayer2);
-        assert(Global.DummyLayer2.toString(), "DummyLayer2");
+        assert.isDefined(DummyLayer2);
+        assert(DummyLayer2.toString(), "DummyLayer2");
     });
 
     it('can create a Layer in a namespace', function() {
@@ -388,13 +389,11 @@ describe('cop', function () {
         makeObject1();
         makeLayer1();
         assert.equal(object1.f(2,3), 0, "default result of f() failed");
-        cop.makeFunctionLayerAware(object1,"f");
-        assert.equal(object1.f(2,3), 0, "default result of f() with layer aware failed");
-        cop.withLayers([layer1], function() {
+        cop.withLayers([layer1], () => {
             var r = object1.f(2,3);
             assert.equal(r, 2, "result of f() failed");
-            assert.equal(String(Global.currentTest.execution), [ "d.f", "d.f", "l1.f", "d.f"]);
-        }.bind(this));
+            assert.equal(currentTest.execution.toString(), [ "d.f", "l1.f", "d.f"]);
+        });
 
       });
 
@@ -404,7 +403,7 @@ describe('cop', function () {
           makeLayer2();
         cop.withLayers([layer1, layer2], function() {
             assert.equal(object1.f(3,4), 7, "result of f() failed");
-            assert.equal(Global.currentTest.execution.toString(), ["l2.f", "l1.f", "d.f"]);
+            assert.equal(currentTest.execution.toString(), ["l2.f", "l1.f", "d.f"]);
         });
       });
 
@@ -415,7 +414,7 @@ describe('cop', function () {
         cop.withLayers([layer2, layer1], function() {
             cop.makeFunctionLayerAware(object1,"f");
             object1.f();
-            assert.equal(Global.currentTest.execution.toString(), ["l1.f", "l2.f", "d.f"]);
+            assert.equal(currentTest.execution.toString(), ["l1.f", "l2.f", "d.f"]);
         });
       });
 
@@ -430,7 +429,7 @@ describe('cop', function () {
             object1.f();
             var r = object1.g();
             assert.equal(r, "Hello World", "result of g() is wrong");
-            assert.equal(Global.currentTest.execution.toString(), ["l3.f", "l2.f","l1.f", "d.f", "l2.g", "d.g"]);
+            assert.equal(currentTest.execution.toString(), ["l3.f", "l2.f","l1.f", "d.f", "l2.g", "d.g"]);
         }.bind(this));
       });
 
@@ -439,16 +438,22 @@ describe('cop', function () {
           makeEmptyLayer();
           makeLayer1();
           makeLayer2();
-        cop.withLayers([layer1, emptyLayer, layer2], function() {
+        cop.withLayers([layer1, emptyLayer, layer2], () => {
             object1.f();
-            assert.equal(Global.currentTest.execution.toString(), ["l2.f","l1.f", "d.f"]);
-        }.bind(this));
+            assert.equal(currentTest.execution.toString(), ["l2.f","l1.f", "d.f"]);
+        });
 
       });
 
     it('testHTMLLayerExample', function() {
           makeObject1();
-          makeHtmlLayer();
+        let htmlLayer = cop.basicCreate('LmakeHtmlLayer');
+        // FIXME: why are private functions used here?
+        // ensurePartialLayer, makeFunctionLayerAware
+        cop.ensurePartialLayer(htmlLayer, object1)["print"] =  function() {
+            return "<b>"+ cop.proceed() + "</b>";
+        };
+        htmlLayer.toString = function() {return "Layer HTML";};
         cop.makeFunctionLayerAware(object1,"print");
         cop.withLayers([htmlLayer], function() {
             assert.equal(object1.print(), "<b>"+object1.myString + "</b>", "html print does not work")
@@ -497,7 +502,7 @@ describe('cop', function () {
         makeObject1();
         cop.layerObject(layer1, object1, {
             f(a, b) {
-                Global.currentTest.execution.push("l1.f");
+                currentTest.execution.push("l1.f");
                 // console.log("execute layer1 function for f");
                 return cop.proceed() + a;
             },
@@ -505,7 +510,7 @@ describe('cop', function () {
         cop.withLayers([layer1], function() {
             var r = object1.f(2);
             assert.equal(r, 2, "result of f() failed");
-            assert.equal(Global.currentTest.execution.toString(), ["l1.f", "d.f"]);
+            assert.equal(currentTest.execution.toString(), ["l1.f", "d.f"]);
         }.bind(this));
       });
 
@@ -806,18 +811,21 @@ describe('cop', function () {
     });
 
     it('testLayerRemove', function() {
+        // given
         makeObject1();
-        var layer = cop.create('TestLayerRemoveLayer').refineObject(object1, {
+        const context = {};
+        const layer = cop.create(context, 'TestLayerRemoveLayer');
+        layer.refineObject(object1, {
             f(x) { return x }
-        }).beGlobal();
-
+        });
+        layer.beGlobal();
         assert.equal(3, object1.f(3), 'layer not global');
-        assert(Global.TestLayerRemoveLayer, 'layer not in Namespace');
-
+        assert.isDefined(context.TestLayerRemoveLayer, 'layer not in context object');
+        // when
         layer.remove();
-
+        // then
         assert.equal(0, object1.f(3), 'layer still global');
-        assert.isUndefined(Global.TestLayerRemoveLayer, 'layer still in Namespace');
+        assert.isUndefined(context.TestLayerRemoveLayer, 'layer still in context object');
     });
 
     describe('argument adaption', function () {
@@ -871,8 +879,8 @@ describe('cop', function () {
         afterEach('remove test classes and layers', function() {
             TmpDummyClass = undefined;
             TmpDummySubclass = undefined;
-            TmpDummyLayer = Global.TmpDummyLayer = undefined;
-            TmpDummyLayer2 = Global.TmpDummyLayer2 = undefined;
+            TmpDummyLayer = undefined;
+            TmpDummyLayer2 = undefined;
         });
 
         describe('subclassing', function () {
