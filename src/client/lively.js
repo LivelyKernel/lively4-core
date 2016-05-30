@@ -59,6 +59,9 @@ export default class Lively {
 
   static import(moduleName, path, forceLoad) {
 
+    if (path)
+      lively.modules.reloadModule("" + path);
+
     if (!path) path = this.defaultPath(moduleName)
     if (!path) throw Error("Could not imoport " + moduleName + ", not path specified!")
 

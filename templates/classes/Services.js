@@ -5,7 +5,8 @@ import Morph from './Morph.js';
 const isLocalHost = document.location.hostname.indexOf('localhost') > -1;
 const localBaseUrl = 'http://localhost:9007/';
 const remoteBaseUrl = 'https://lively-kernel.org/lively4services/';
-const baseUrl = isLocalHost ? localBaseUrl : remoteBaseUrl;
+var servicesURL = isLocalHost ? localBaseUrl : remoteBaseUrl;
+var debuggerURL = 'https://lively-kernel.org/lively4servicesDebug/';
 
 var services = {};
 
@@ -13,8 +14,6 @@ export default class Services extends Morph {
 
   initialize() {
     this.windowTitle = 'Services'
-    this.servicesURL = 'https://lively-kernel.org/lively4services/';
-    this.debuggerURL = 'https://lively-kernel.org/lively4servicesDebug/';
     this.serviceList = this.getSubmorph('.items');
     var that = this;
     $(this.serviceList).on('click', 'lively-services-item', (evt) => {
@@ -48,20 +47,15 @@ export default class Services extends Morph {
 
     this.editButton = this.getSubmorph('#editButton');
     this.editButton.addEventListener('click', (evt) => {
-      lively.openBrowser(this.servicesURL + 'lively/');
+      lively.openBrowser(servicesURL + 'lively/');
     });
 
     this.settingsButton = this.getSubmorph('#settingsButton');
     this.settingsButton.addEventListener('click', (evt) => {
-      this.servicesURL = window.prompt('Please enter service endpoint',
-                                       this.servicesURL);
-      this.debuggerURL = window.prompt('Please enter debugger endpoint',
-                                       this.debuggerURL);
-    });
-
-    this.selectButton = this.getSubmorph('#selectButton');
-    this.selectButton.addEventListener('click', (evt) => {
-      
+      servicesURL = window.prompt('Please enter service endpoint',
+                                  servicesURL);
+      debuggerURL = window.prompt('Please enter debugger endpoint',
+                                  debuggerURL);
     });
     this.startButton = this.getSubmorph('#startButton');
     this.startButton.addEventListener('click', (evt) => {
@@ -76,7 +70,7 @@ export default class Services extends Morph {
     this.debugButton = this.getSubmorph('#debugButton');
     this.debugButton.addEventListener('click', (evt) => {
       lively.openComponentInWindow('lively-iframe').then(component => {
-        component.setURL(this.debuggerURL + '?port=5858');
+        component.setURL(debuggerURL + '?port=5858');
       });
     });
 
@@ -109,7 +103,7 @@ export default class Services extends Morph {
 
     // if (pid === null) {
       $.ajax({
-        url: this.servicesURL + 'start',
+        url: servicesURL + 'start',
         type: 'POST',
         data: JSON.stringify({ entryPoint: that.entryPoint.value }),
         contentType: 'application/json',
@@ -127,7 +121,7 @@ export default class Services extends Morph {
     var that = this;
     var serviceName = services[pid].name;
     $.ajax({
-      url: this.servicesURL + 'stop',
+      url: servicesURL + 'stop',
       type: 'POST',
       data: JSON.stringify({ serviceName: serviceName }),
       contentType: 'application/json',
@@ -142,7 +136,7 @@ export default class Services extends Morph {
     var that = this;
     var serviceName = services[pid].name;
     $.ajax({
-      url: this.servicesURL + 'remove',
+      url: servicesURL + 'remove',
       type: 'POST',
       data: JSON.stringify({ serviceName: serviceName }),
       contentType: 'application/json',
@@ -156,7 +150,7 @@ export default class Services extends Morph {
   refreshServiceList() {
     var that = this;
     $.ajax({
-      url: this.servicesURL + 'list',
+      url: servicesURL + 'list',
       success: function(_services) {
         services = _services;
         // Clear all items
