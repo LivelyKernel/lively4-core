@@ -111,7 +111,7 @@ export default class Services extends Morph {
   startService(id) {
     var that = this;
     var data;
-    if (id !== undefined) {
+    if (id !== null) {
       data = { id: id };
     } else {
       data = { entryPoint: this.entryPoint.value };
