@@ -998,6 +998,7 @@ describe('cop', function () {
         var MyTestLayer2 = cop.create("MyTestLayer2");
 
         it('testMakePropertyLayerAware', function() {
+            // TODO: implementation detail?
             var o = {a: 3};
             cop.makePropertyLayerAware(o,"a");
 
@@ -1005,15 +1006,13 @@ describe('cop', function () {
             o.a = 4;
             assert.equal(o.a, 4, "setter is broken");
 
-            var getter = o.__lookupGetter__("a");
+            var getter = Object.getOwnPropertyDescriptor(o, "a").get;
             assert(getter, "o has not getter for a");
             assert(getter.isLayerAware || getter.isInlinedByCop, "o.a getter is not layerAware");
 
-            var setter = o.__lookupSetter__("a");
+            var setter = Object.getOwnPropertyDescriptor(o, "a").set;
             assert(setter, "o has not setter for a");
             assert(setter.isLayerAware || getter.isInlinedByCop, "o.a setter is not layerAware");
-
-
         });
 
         it('testLayerGetter', function() {
@@ -1034,8 +1033,8 @@ describe('cop', function () {
         });
 
         it('testLayerGetterAndSetter', function() {
-            var o = {a: 5};
-            var layer1 = cop.create('L1');
+            const o = {a: 5};
+            const layer1 = cop.create('L1');
             assert.equal(o.a, 5, "property access is broken");
 
             o.l1_value = 10;
@@ -1043,16 +1042,17 @@ describe('cop', function () {
                 get a() { return this.l1_value },
                 set a(value) { return this.l1_value = value }
             });
-            assert(
-                cop.getLayerDefinitionForObject(layer1,o).__lookupSetter__("a"),
-                "layer1 hast no setter for a");
-                assert(o.__lookupSetter__("a").isLayerAware, "o.a setter is not layerAware");
+            // TODO: implementation detail?
+            const layerDef = cop.getLayerDefinitionForObject(layer1,o);
+            assert(Object.getOwnPropertyDescriptor(layerDef, "a").set,
+                "layer1 has no setter for a");
+            assert(Object.getOwnPropertyDescriptor(o, "a").set.isLayerAware, "o.a setter is not layerAware");
 
-                cop.withLayers([layer1], function() {
-                    assert.equal(o.a, 10, "layer getter broken");
-                    o.a = 20;
-                    assert.equal(o.l1_value, 20, "layer setter broken");
-                }.bind(this));
+            cop.withLayers([layer1], () => {
+                assert.equal(o.a, 10, "layer getter broken");
+                o.a = 20;
+                assert.equal(o.l1_value, 20, "layer setter broken");
+            });
         });
 
         it('testLayerStateInTwoObjects', function() {
@@ -1072,11 +1072,11 @@ describe('cop', function () {
         });
 
         it('testGetterAndSetterClassInLayer', function() {
-            var o = new CopExampleDummyClass();
+            const o = new CopExampleDummyClass();
             o.toString = function(){return "[o]"};
-            var o2 = new CopExampleDummyClass();
+            const o2 = new CopExampleDummyClass();
             o2.toString= function(){return "[o2]"};
-            var layer1 = cop.create('LtestGetterAndSetterClassInLayer');
+            const layer1 = cop.create('LtestGetterAndSetterClassInLayer');
             cop.layerClass(layer1, CopExampleDummyClass, {
                 get a() {
                     return 10;
@@ -1084,8 +1084,7 @@ describe('cop', function () {
             });
             o.a = 5; // initialize works only after layer installation
             o2.a = 7; // initialize works only after layer installation
-            assert(CopExampleDummyClass.prototype.__lookupGetter__("a"), "DummyClass has no getter for a");
-            assert(o.__lookupGetter__("a"), "o.a has no getter");
+            assert(Object.getOwnPropertyDescriptor(CopExampleDummyClass.prototype, "a").get, "DummyClass has no getter for a");
 
             assert.equal(o.a, 5, "layer getter broken after initialization");
             cop.withLayers([layer1], function() {
@@ -1096,8 +1095,8 @@ describe('cop', function () {
         });
 
         it('testGetterLayerInClass', function() {
-            var o = new CopExampleDummyClass();
-            assert(o.__lookupGetter__("e"), "o.e has no getter");
+            const o = new CopExampleDummyClass();
+            assert(Object.getOwnPropertyDescriptor(Object.getPrototypeOf(o), "e").get, "o.e has no getter");
             assert.equal(o.e, "Hello", "layer getter broken after initialization");
             cop.withLayers([DummyLayer], function() {
                 o.e = "World"
@@ -1118,8 +1117,12 @@ describe('cop', function () {
         });
 
         it('testLayerInstallation', function() {
-            assert(cop.getLayerDefinitionForObject(DummyLayer, CopExampleDummyClass.prototype).__lookupGetter__("e"), "no getter in partial class");
-            assert(CopExampleDummyClass.prototype.__lookupGetter__("e"), "no getter in class");
+            let getter = Object.getOwnPropertyDescriptor(CopExampleDummyClass.prototype, "e").get;
+            assert.isDefined(getter, "no getter in class");
+            // FIXME: implementation detail?
+            const layerDef = cop.getLayerDefinitionForObject(DummyLayer, CopExampleDummyClass.prototype);
+            getter = Object.getOwnPropertyDescriptor(layerDef, "e").get;
+            assert(getter, "no getter in partial class");
         });
 
         it('testLayerPropertyWithShadow', function() {
