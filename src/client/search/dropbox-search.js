@@ -1,3 +1,5 @@
+import * as utils from "./search-utils.js";
+
 function getReadableFileExtensions() {
   return [".js", ".md", ".html"];
 }
@@ -97,7 +99,7 @@ export function find(query) {
     // find is bound to the mount object, so -this- is the mount
     if (this.index) {
       resolve(this.index.search(query).map((res) => {
-        res.path = this.path + res.ref;
+        res.path = utils.join(this.path, res.ref);
         return res;
       }));
     }
