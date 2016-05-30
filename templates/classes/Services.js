@@ -59,6 +59,10 @@ export default class Services extends Morph {
                                        this.debuggerURL);
     });
 
+    this.selectButton = this.getSubmorph('#selectButton');
+    this.selectButton.addEventListener('click', (evt) => {
+      
+    });
     this.startButton = this.getSubmorph('#startButton');
     this.startButton.addEventListener('click', (evt) => {
       var pid = this.serviceTop.getAttribute('data-pid');
