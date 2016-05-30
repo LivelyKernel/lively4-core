@@ -50,10 +50,17 @@ export default class SearchBar extends Morph {
   }
 
   enableSearch(path) {
-     let checkbox = this.getSubmorph(`input[data-path='${path}']`);
-     checkbox.checked = "true";
-     checkbox.disabled = '';
-     checkbox.parentNode.classList.remove("disabled");
+    let checkbox = this.getSubmorph(`input[data-path='${path}']`);
+    checkbox.classList.remove("hidden");
+    checkbox.checked = "true";
+    checkbox.disabled = '';
+     
+    let li = checkbox.parentNode;
+    li.classList.remove("disabled");
+    
+    // Remove spinner
+    let spinner = li.querySelector("i");
+    if (spinner) spinner.remove();
   }
 
   search(query) {
@@ -96,9 +103,12 @@ export default class SearchBar extends Morph {
         var mountsList = this.getSubmorph("#mounts-list");
         mountsList.innerHTML = "";
         mounts.forEach(mount => {
+          let searchable = this.searchableMounts[mount.name];
           mountsList.innerHTML += `
             <li class="disabled">
-              <input data-path='${mount.path}' type='checkbox' disabled> ${mount.path} (${mount.name})
+              ${(searchable) ? '<i class="fa fa-spinner fa-pulse"></i>' : ''}
+              <input data-path='${mount.path}' type='checkbox' ${(searchable) ? 'class="hidden"' : ''} disabled>
+              ${mount.path} (${mount.name})
             </li>`;
         });
 

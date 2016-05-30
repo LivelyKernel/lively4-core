@@ -26,7 +26,6 @@ export function setup(db) {
 function restoreIndex(db) {
   let path = `https://lively4${db.path}/index.l4idx`;
   return loadSearchIndex(path).then(buildSearchIndex).then(index => {
-    lively.notify("Info: ", `Index loaded for ${db.path}`, 3);
     db.index = index;
   }).catch(error => {
     lively.notify("Error: ", `Cannot load ${path}`, 10);
