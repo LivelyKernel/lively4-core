@@ -1,4 +1,4 @@
-import { default as cop } from 'copv2/Layers';
+import { default as cop } from '../copv2/Layers';
 
 function TestCase() {}; // TODO: get rid of this
 TestCase.subclass = function () {
