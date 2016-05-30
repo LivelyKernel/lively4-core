@@ -263,6 +263,7 @@ describe('COP example', function () {
 });
 
 describe('cop', function () {
+    let currentTest;
 
     beforeEach(function() {
         this.execution  = [];
@@ -1004,80 +1005,6 @@ describe('cop', function () {
                 assert(cop.GlobalLayers.include(l), "be global is broken")
 
             });
-        });
-    });
-
-    /*
-     * Test for Getter and Setter Functionality
-     * (Supportet in Mozilla, WebKit et al)
-     *
-     */
-    describe('getters and setters', function () {
-
-        cop.tests.GetterAndSetterTestDummy = Object.subclass("cop.tests.GetterAndSetterTestDummy", {
-            initialize: function() {
-                this.a = 3;
-                this.d = 5;
-            },
-            get b() {
-                return this.a + 1;
-            },
-            set c(p) {
-                this.a = p * 2;
-            },
-            get d() {
-                return this._d * 2
-            },
-            set d(v) {
-                this._d = v
-            },
-        });
-
-        it('testGetterInObject', function() {
-            var o = { get b() { return 4}};
-            assert.equal(o.b, 4, "getter method is not supported");
-        });
-
-        it('testDefineGetter', function() {
-            var o = {};
-            o.__defineGetter__("b", function(){return 4});
-            assert.equal(o.b, 4, "__defineGetter__ is not supported");
-        });
-
-        it('testDefineSetter', function() {
-            var o = {a: 0};
-            o.__defineSetter__("b", function(v){this.a = v});
-            o.b = 4;
-            assert.equal(o.a, 4, "__defineSetter__ is not supported");
-        });
-
-        it('testLookupGetter', function() {
-            var o = {};
-            var f1 = function(){return 4};
-            o.__defineGetter__("b", f1);
-            var f2 = o.__lookupGetter__("b");
-            assert.equal(f1, f2, "__lookupGetter__ is not supported");
-        });
-
-        it('testLookupSetter', function() {
-            var o = {};
-            var f1 = function(v){};
-            o.__defineSetter__("b", f1);
-            var f2 = o.__lookupSetter__("b");
-            assert.equal(f1, f2, "__lookupGetter__ is not supported");
-        });
-
-        it('testSubclassWithGetterAndSetter', function() {
-            var o = new cop.tests.GetterAndSetterTestDummy();
-            assert.equal(o.b, 4, "subclass getter broken");
-            o.c = 5;
-            assert.equal(o.a, 10, "subclass setter broken");
-        });
-
-        it('testOverideWithGetterInClass', function() {
-            var o = new cop.tests.GetterAndSetterTestDummy();
-            o.d = 7
-            assert.equal(o.d, 14, "subclass getter broken");
         });
     });
 
