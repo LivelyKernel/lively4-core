@@ -9,12 +9,10 @@ export default class SearchBar extends Morph {
 
   initialize() {
     this.searchButton = this.getSubmorph("#searchButton");
-    this.setupButton = this.getSubmorph("#setupButton");
     this.searchField = this.getSubmorph("#searchField");
     this.searchResults = this.getSubmorph("#searchResults");
 
     this.searchButton.addEventListener("click", (evt) => { this.searchButtonClicked() });
-    this.setupButton.addEventListener("click", (evt) => { this.setup() });
     this.searchField.addEventListener("keyup", (evt) => { this.searchFieldKeyup(evt) });
 
     this.serverSearch = serverSearch;
@@ -87,13 +85,13 @@ export default class SearchBar extends Morph {
     fetch(mountRequest).then(
       async (response) => {
         let mounts = await response.json();
-        
+
         // Add server mount
         mounts.push({
           path: lively4url,
           name: "server"
         });
-        
+
         console.log(`[Search] found the following mounts: ${mounts}`);
         var mountsList = this.getSubmorph("#mounts-list");
         mountsList.innerHTML = "";
