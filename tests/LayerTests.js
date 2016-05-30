@@ -355,10 +355,11 @@ describe('cop', function () {
         assert(DummyLayer2.toString(), "DummyLayer2");
     });
 
-    it('can create a Layer in a namespace', function() {
-        cop.tests.DummyLayer3 = cop.create("cop.tests.DummyLayer3");
-        assert.isDefined(cop.tests.DummyLayer3);
-        assert(cop.tests.DummyLayer3.toString(), "DummyLayer3");
+    it('can create a Layer in a context object', function() {
+        const context = {};
+        cop.create(context, "DummyLayer3");
+        assert.isDefined(context.DummyLayer3);
+        assert(context.DummyLayer3.toString(), "DummyLayer3");
     });
 
 
