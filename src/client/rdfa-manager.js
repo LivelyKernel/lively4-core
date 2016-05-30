@@ -2,6 +2,20 @@ import * as rdfa from '../external/RDFa.js';
 
 export default class RdfaManager {
 
+  /*class Property {
+    constructor(name, value) {
+      this.name = name;
+      this.value = value;
+    }
+  }
+
+  class Subject {
+    constructor(name) {
+      this.name = name;
+      this.properties = [];
+    }
+  }*/
+
   static generateTableRows(table) {
     this.buildRdfaDataStructure((s, p, v) => {});
     RdfaManager.data.subjects.forEach((s) => {
@@ -9,14 +23,14 @@ export default class RdfaManager {
         $('<tr>')
           .append($('<td>').text(s.name)));
       s.properties.forEach((p) => {
-        var v = document.data.getValues(s, p);
+        //var v = document.data.getValues(s, p);
         table.append(
           $('<tr>')
             .append($('<td>'))
             .append($('<td>').text(p))
-            .append($('<td>').text(v)));
-        });
+            .append($('<td>').text(p.value)));
         RdfaManager.makeLocationsClickable(p);
+      });
     });
   }
 
