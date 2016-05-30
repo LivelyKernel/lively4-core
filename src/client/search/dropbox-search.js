@@ -100,6 +100,7 @@ export function find(query) {
     if (this.index) {
       resolve(this.index.search(query).map((res) => {
         res.path = utils.join(this.path, res.ref);
+        res.type = "dropbox";
         return res;
       }));
     }

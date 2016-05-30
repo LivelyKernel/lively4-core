@@ -33,6 +33,7 @@ export function find(pattern) {
     return _.map(responseJson.items, (item) => {
       let strippedItem = _.pick(item, ["path", "score"]);
       strippedItem.path = utils.join(this.path, strippedItem.path);
+      strippedItem.type = "github";
       return strippedItem;
     });
   });
