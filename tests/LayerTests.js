@@ -29,8 +29,6 @@ let assert = chai.assert;
 
 // COP Example from: Hirschfeld, Costanza, Nierstrasz. 2008.
 // Context-oriented Programming. JOT)
-var copExample = function() {
-};
 
 var DummyLayer = cop.create("DummyLayer");
 var DummyLayer2 = cop.create("DummyLayer2");
@@ -175,8 +173,6 @@ DummyLayer.refineClass(CopExampleSecondDummySublass, {
 });
 
 
-var assert = chai.assert;
-
 describe('COP example', function () {
 
     var AddressLayer = cop.create("AddressLayer");
@@ -302,17 +298,6 @@ describe('cop', function () {
 
         };
     };
-
-    var htmlLayer;
-    var makeHtmlLayer = function() {
-        var layer = cop.basicCreate('LmakeHtmlLayer');
-        cop.ensurePartialLayer(layer, object1)["print"] =  function() {
-            return "<b>"+ cop.proceed() + "</b>";
-        };
-        layer.toString = function() {return "Layer HTML";};
-        htmlLayer = layer;
-    };
-
 
     var layer1;
     var makeLayer1 = function() {
@@ -1687,25 +1672,4 @@ describe('cop', function () {
         });
     });
 });
-
-// TODO: can this be removed?
-// LayerExamples = {
-//     logSetPostionInMorph: function() {
-//         Morph.addMethods(LayerableObjectTrait);
-//         Morph.prototype.lookupLayersIn = ["owner"];
-//         WindowMorph.prototype.lookupLayersIn = [""];
-//         HandMorph.prototype.lookupLayersIn = [""];
-
-//         cop.create("LogPostionLayer");
-//         cop.layerClass(LogPostionLayer, Morph, {
-//             setPosition: function(pos) {
-//                 console.log(this + "setPosition(" + pos +")")
-//                 return cop.proceed(pos);
-//             }
-//         });
-//     }
-// }
-
-// LayerExamples.logSetPostionInMorph()
-// WorldMorph.current().setWithLayers([LogPostionLayer]);
 
