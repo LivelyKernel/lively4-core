@@ -1,7 +1,6 @@
 'use strict';
 
 import * as messaging from './messaging.js';
-import {log} from './load.js';
 
 import focalStorage from '../external/focalStorage.js';
 
@@ -31,12 +30,12 @@ function notifyMe(title, text, cb) {
 
 
 export default class AuthDropbox {
-  
+
   static onAuthenticated(windowUuid, authInfo) {
-  
+
   	var state = authInfo.state
   	var token = authInfo.token
-  
+
   	if (!state) { console.log("not state! authinfo: " + JSON.stringify(authInfo))}
   	console.log("authInfo: ", authInfo)
   	focalStorage.setItem("dropboxToken", token).then(function() {
@@ -49,12 +48,12 @@ export default class AuthDropbox {
   		}
   	})
   }
-  
+
   static logout(cb) {
   	focalStorage.setItem("dropboxToken", null).then(cb)
   }
-  
-  
+
+
   static challengeForAuth(uuid, cb) {
   	if (uuid && cb) {
   		AuthDropbox.onAuthenticatedCallbacks[uuid] = cb
@@ -66,16 +65,16 @@ export default class AuthDropbox {
   	        screenY = window.screenY,
   	        outerWidth = window.outerWidth,
   	        outerHeight = window.outerHeight;
-  
+
   	    var left = screenX + Math.max(outerWidth - width, 0) / 2;
   	    var top = screenY + Math.max(outerHeight - height, 0) / 2;
-  
+
   	    var features = [
   	              "width=" + width,
   	              "height=" + height,
   	              "top=" + top,
   	              "left=" + left,
-  
+
   	              "status=no",
   	              "resizable=yes",
   	              "toolbar=no",
@@ -92,27 +91,27 @@ export default class AuthDropbox {
   	    	popupWindow.focus();
   	    }
   	}
-  
+
       var appInfo = {
   	        "clientId": "1774dvkirby4490",
   	        "redirectUri": "https://lively-kernel.org/lively4-auth/oauth/dropbox.html"
   	 };
-  
+
   	$.get("https://lively-kernel.org/lively4-auth/open_dropbox_accesstoken?state="+uuid, null, function(data){
   	    console.log("challenge got a token, too: " + data)
   	    var authInfo = parseAuthInfoFromUrl(data)
   	    AuthDropbox.onAuthenticated(uuid, authInfo)
   	})
-  
+
       var url =
               "https://www.dropbox.com/1/oauth2/authorize" +
               "?client_id=" + appInfo.clientId +
               "&response_type=token" +
               "&state=" + uuid +
               "&redirect_uri=" + encodeURIComponent(appInfo.redirectUri);
-  
+
       console.log("query dropbox")
-          
+
       popup(url);
   }
 
