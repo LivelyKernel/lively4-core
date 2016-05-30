@@ -25,13 +25,12 @@ export default class Services extends Morph {
     });
 
     this.serviceTop = this.getSubmorph('.service-top');
-    this.serviceNameInput = this.getSubmorph('.service-top input');
+    this.entryPoint = this.getSubmorph('#entryPoint');
 
     this.addButton = this.getSubmorph('#addButton');
     this.addButton.addEventListener('click', (evt) => {
       this.serviceTop.removeAttribute('data-pid');
-      this.serviceNameInput.value = 'Enter name...';
-      this.codeEditor.editor.setValue('');
+      this.entryPoint.value = 'Enter path...';
       this.logEditor.editor.setValue('');
       this.unselectAll();
     });
@@ -45,6 +44,11 @@ export default class Services extends Morph {
     this.refreshButton = this.getSubmorph('#refreshButton');
     this.refreshButton.addEventListener('click', (evt) => {
       this.refreshServiceList();
+    });
+
+    this.editButton = this.getSubmorph('#editButton');
+    this.editButton.addEventListener('click', (evt) => {
+      lively.openBrowser(this.servicesURL + 'lively/');
     });
 
     this.settingsButton = this.getSubmorph('#settingsButton');
@@ -72,7 +76,6 @@ export default class Services extends Morph {
       });
     });
 
-    this.codeEditor = this.getSubmorph('#code');
     this.logEditor = this.getSubmorph('#log');
 
     this.refreshServiceList();
@@ -91,7 +94,6 @@ export default class Services extends Morph {
     var serviceName = services[pid].name;
     this.serviceNameInput.value = serviceName;
     $.get(this.servicesURL + 'get?serviceName=' + serviceName, null, function(service) {
-      that.codeEditor.editor.setValue(service.code);
       that.logEditor.editor.setValue(service.log);
     });
   }
@@ -102,12 +104,10 @@ export default class Services extends Morph {
     console.log(pid)
 
     // if (pid === null) {
-      var name = that.serviceNameInput.value;
-      var code = that.codeEditor.editor.getValue();
       $.ajax({
         url: this.servicesURL + 'start',
         type: 'POST',
-        data: JSON.stringify({ name: name, code: code }),
+        data: JSON.stringify({ entryPoint: that.entryPoint.value }),
         contentType: 'application/json',
         success: function(res) {
           console.log(res);
