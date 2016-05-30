@@ -1,7 +1,6 @@
 'use strict';
 
 import * as messaging from './messaging.js';
-import {log} from './load.js';
 
 import focalStorage from '../external/focalStorage.js';
 
@@ -30,12 +29,12 @@ function notifyMe(title, text, cb) {
 
 
 export default class AuthGoogledrive {
-  
+
   static onAuthenticated(windowUuid, authInfo) {
-  
+
   	var state = authInfo.state
   	var token = authInfo.token
-  
+
   	if (!state) { console.log("not state! authinfo: " + JSON.stringify(authInfo))}
   	console.log("authInfo: ", authInfo)
   	focalStorage.setItem("googledriveToken", token).then(function() {
@@ -48,12 +47,12 @@ export default class AuthGoogledrive {
   		}
   	})
   }
-  
+
   static logout(cb) {
   	focalStorage.setItem("googledriveToken", null).then(cb)
   }
-  
-  
+
+
   static challengeForAuth(uuid, cb) {
   	if (uuid && cb) {
   		AuthGoogledrive.onAuthenticatedCallbacks[uuid] = cb
@@ -65,16 +64,16 @@ export default class AuthGoogledrive {
   	        screenY = window.screenY,
   	        outerWidth = window.outerWidth,
   	        outerHeight = window.outerHeight;
-  
+
   	    var left = screenX + Math.max(outerWidth - width, 0) / 2;
   	    var top = screenY + Math.max(outerHeight - height, 0) / 2;
-  
+
   	    var features = [
   	              "width=" + width,
   	              "height=" + height,
   	              "top=" + top,
   	              "left=" + left,
-  
+
   	              "status=no",
   	              "resizable=yes",
   	              "toolbar=no",
@@ -91,18 +90,18 @@ export default class AuthGoogledrive {
   	    	popupWindow.focus();
   	    }
   	}
-  
+
    	var appInfo = {
   	    "clientId": "255612037819-mggijqbougej39s0j95oqvq3ej5hid79.apps.googleusercontent.com",
   	    "redirectUri": "https://lively-kernel.org/lively4-auth/oauth/googledrive.html"
   	};
-  
+
   	$.get("https://lively-kernel.org/lively4-auth/open_googledrive_accesstoken?state="+uuid, null, function(data){
   	    console.log("challenge got a token, too: " + data)
   	    var authInfo = parseAuthInfoFromUrl(data)
   	    AuthGoogledrive.onAuthenticated(uuid, authInfo)
   	})
-  
+
       var url =
               "https://accounts.google.com/o/oauth2/v2/auth" +
               "?client_id=" + appInfo.clientId +
@@ -110,9 +109,9 @@ export default class AuthGoogledrive {
               "&scope=https://www.googleapis.com/auth/drive" +
               "&state=" + uuid +
               "&redirect_uri=" + encodeURIComponent(appInfo.redirectUri);
-  
+
       console.log("query googledrive")
-          
+
       popup(url);
   }
 

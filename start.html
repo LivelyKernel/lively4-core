@@ -11,9 +11,9 @@
         color: #2B65EC;
       }
     </style>
-    
+
     <link rel="stylesheet" href="src/external/font-awesome/css/font-awesome.min.css">
-    
+
     <!-- BEGIN SYSTEM.JS: should go away, until then we use a "static" global source -->
     <script src="src/external/system.src.js" type="text/javascript" charset="utf-8"></script>
     <script src="vendor/regenerator-runtime.js" type="text/javascript" charset="utf-8"></script>
@@ -24,14 +24,16 @@
       System.paths['babel'] =lively4url + '/src/external/babel-browser.js'
       // System.defaultJSExtensions = true;
       System.config({
+        baseURL: lively4url + '/',
         transpiler: 'babel',
         babelOptions: { },
         map: {
-            babel: lively4url + '/src/external/babel-browser.js'
+            babel: lively4url + '/src/external/babel-browser.js',
+            kernel: lively4url + '/src/client/legacy-kernel.js'
         }
       });
     </script>
-   
+
     <!-- END SYSTEM.JS-->
   </head>
   <body>

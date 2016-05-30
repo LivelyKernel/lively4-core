@@ -179,7 +179,8 @@ export default class Container extends Morph {
       if (moduleName) {
         moduleName = moduleName[1]
         if (this.getSubmorph("#live").checked) {
-          lively.import(moduleName, url, true).then( module => {
+          
+          lively.modules.reloadModule(""+url).then( module => {
               lively.notify("Module " + moduleName + " reloaded!")
           }, err => {
               window.LastError = err
@@ -187,7 +188,7 @@ export default class Container extends Morph {
           })
         }
       }
-    })
+    }).then( () => this.showNavbar())
   }
 
   async onDelete() {
@@ -430,7 +431,6 @@ export default class Container extends Morph {
     return navbar
   }
 
-  // #BUG this is broken for editing /src/client/load.js
   showNavbarSublist(targetItem) {
     var subList = document.createElement("ul")
     targetItem.appendChild(subList)
@@ -453,27 +453,29 @@ export default class Container extends Morph {
 	      subList.appendChild(element) ;
       })
     } else if (this.getPath().match(/\.js$/)) {
-      var defRegEx = /(?:^|\n)((?:(?:static)|(?:async)|(?:function)|(?: *))*([A-Za-z0-9_]+)) *\([^(]*\) *{/g
+      var instMethod = "(^|\\s+)([a-zA-Z0-9$_]+)\\s*\\(\\s*[a-zA-Z0-9$_ ,]*\\s*\\)\\s*{",
+          klass = "(?:^|\\s+)class\\s+([a-zA-Z0-9$_]+)",
+          func = "(?:^|\\s+)function\\s+([a-zA-Z0-9$_]+)\\s*\\(";
+      var defRegEx = new RegExp(`(?:(?:${instMethod})|(?:${klass})|(?:${func}))`)
       var m
       var links = {}
       var i = 0;
-      while (m = defRegEx.exec(this.sourceContent)) {
-        if (i++ > 1000) throw new Error("Error while showingNavbar " + this.getPath());
-        // console.log("found " + m)
-        if(!m[2].match(/^((if)|(switch))$/))
-          links[m[2]] = m[0]
-      }
-      _.keys(links).forEach( name => {
-        var element = document.createElement("li");
-  	    element.innerHTML = name
-  	    element.classList.add("link")
-  	    element.classList.add("subitem")
-	      
-  	    element.onclick = () => {
-  	        this.navigateToName(name)
-  	    };
-  	    subList.appendChild(element) ;
-      })
+      var lines = this.sourceContent.split("\n");
+      lines.forEach((line) => {
+        if (m = defRegEx.exec(line)) {
+          var theMatch = m[2] || (m[3] && "class " + m[3]) || (m[4] && "function " + m[4]);
+          if(!theMatch.match(/^(if|switch|for|catch|function)$/)) {
+            let name = (m[1] || "").replace(/\s/g, "&nbsp;") + theMatch,
+                navigateToName = m[0],
+                element = document.createElement("li");
+    	      element.innerHTML = name
+    	      element.classList.add("link")
+    	      element.classList.add("subitem")
+    	      element.onclick = () => this.navigateToName(navigateToName);
+    	      subList.appendChild(element) ;
+          }
+        }
+      });
     } else if (this.getPath().match(/\.md$/)) {
       var defRegEx = /(?:^|\n)((#+) ?(.*))/g
       var m
@@ -558,13 +560,7 @@ export default class Container extends Morph {
       })
 
       if (this.isEditing() && targetItem) {
-        
-        if (filename == "load.js") {
-          console.log("dont't show navbar for load.js, because it breaks")
-          return // #Hack #TODO
-        }
         this.showNavbarSublist(targetItem)
-
       }
     })
   }
@@ -606,7 +602,9 @@ export default class Container extends Morph {
         aceComp.doSave = text => {
           this.onSave()
         }
+        
         var url = this.getURL()
+
         comp.setURL(url)
         aceComp.changeModeForFile(url.pathname);
 
@@ -623,6 +621,8 @@ export default class Container extends Morph {
 
         this.showCancelAndSave()
     
+        aceComp.targetModule = "" + url // for editing
+
         setTimeout(resolve, 1000) // Promise from AceEditor needed here... #Jens #TODO
         
         // comp.loadFile() // ALT: Load the file again?

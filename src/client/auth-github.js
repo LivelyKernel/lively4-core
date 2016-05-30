@@ -1,7 +1,6 @@
 'use strict';
 
 import * as messaging from './messaging.js';
-import {log} from './load.js';
 
 import focalStorage from '../external/focalStorage.js';
 
@@ -30,20 +29,20 @@ function notifyMe(title, text, cb) {
 
 
 export default class AuthGithub {
-  
 
-  
+
+
   static onAuthenticated(windowUuid, authInfo) {
-  
+
   	var state = authInfo.state
   	var token = authInfo.access_token
-  
+
   	if (!state) { console.log("not state! authinfo: " + JSON.stringify(authInfo))}
 
     if (this.iframe) document.body.removeChild(this.iframe)
     this.iframe = false;
 
-  
+
   	localStorage.GithubToken = token // #TODO refactor / remove it
   	focalStorage.setItem("githubToken", localStorage.GithubToken).then(function() {
   		var cb = AuthGithub.onAuthenticatedCallbacks[state]
@@ -55,13 +54,13 @@ export default class AuthGithub {
   		}
   	})
   }
-  
+
   static logout(cb) {
   	localStorage.GithubToken = null
   	focalStorage.setItem("githubToken", null).then(cb)
   }
-  
-  
+
+
   static challengeForAuth(uuid, cb) {
   	if (uuid && cb) {
   		AuthGithub.onAuthenticatedCallbacks[uuid] = cb
@@ -74,22 +73,22 @@ export default class AuthGithub {
   	        screenY = window.screenY,
   	        outerWidth = window.outerWidth,
   	        outerHeight = window.outerHeight;
-  
+
   	    var left = screenX + Math.max(outerWidth - width, 0) / 2;
   	    var top = screenY + Math.max(outerHeight - height, 0) / 2;
-  
+
   	    var features = [
   	              "width=" + width,
   	              "height=" + height,
   	              "top=" + top,
   	              "left=" + left,
-  
+
   	              "status=no",
   	              "resizable=yes",
   	              "toolbar=no",
   	              "menubar=no",
   	              "scrollbars=yes"];
-  	              
+
   	    // prevent a flashing popup from github by using an iframe
   	    // lively.openComponentInWindow("lively-iframe").then(comp => comp.setURL(url))
   	    self.iframe = document.createElement("iframe")
@@ -100,12 +99,12 @@ export default class AuthGithub {
     	  self.iframe.height = "1px"
 
   	    document.body.appendChild(self.iframe)
-  	    
+
   	    setTimeout(() => {
   	      if (!self.iframe) return // everything is ok
   	        document.body.removeChild(self.iframe)
             self.iframe = false;
-  	      
+
   	      // github did not authenticate us automatically
           popup = window.open(url, "oauth", features.join(","));
     	    if (!popup) {
@@ -119,12 +118,12 @@ export default class AuthGithub {
       	    }
   	      }, 5000)
       }
-  
+
       var appInfo = {
   	        "clientId": "21b67bb82b7af444a7ef",
   	        "redirectUri": "https://lively-kernel.org/lively4-auth/oauth/github.html"
   	 };
-  
+
   	$.get("https://lively-kernel.org/lively4-auth/open_github_accesstoken?state="+uuid, null, function(data){
   	    console.log("challenge got a token, too: " + data)
   	    var authInfo = parseAuthInfoFromUrl(data)
@@ -137,10 +136,10 @@ export default class AuthGithub {
          	"&scope=repo,user" +
           "&state=" + uuid +
           "&redirect_uri=" + encodeURIComponent(appInfo.redirectUri);
-          
+
       popup(url);
   }
-  
+
   static load() {
     this.onAuthenticatedCallbacks = {}
 

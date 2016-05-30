@@ -1,13 +1,16 @@
 'use strict';
 
+import * as jquery from '../external/jquery.js';
+import * as _ from '../external/underscore.js';
+
 import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
 import * as preferences from './preferences.js';
 import * as persistence from './persistence.js';
 
 
-import files from './files.js';
 import html from './html.js';
+import files from './files.js';
 import paths from './paths.js';
 
 import inspector from './inspector.js';
@@ -15,18 +18,20 @@ import inspector from './inspector.js';
 import keys from './keys.js';
 import components from './morphic/component-loader.js';
 
+
 //import expose from './expose.js';
 
 /* expose external modules */
+
+
 import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
-import * as jquery from '../external/jquery.js';
-import * as _ from '../external/underscore.js';
+
+import * as kernel from 'kernel'
 
 
 let $ = window.$,
-  babel = window.babel,
-  System = window.System; // known global variables.
+  babel = window.babel; // known global variables.
 
 // a) Special shorthands for interactive development
 // b) this is the only reasonable way to use modules in template scripts, due to no shared lexical scope #TODO
@@ -53,14 +58,18 @@ export default class Lively {
 
 
   static import(moduleName, path, forceLoad) {
+
     if (!path) path = this.defaultPath(moduleName)
     if (!path) throw Error("Could not imoport " + moduleName + ", not path specified!")
+
+    
 
     if (this[moduleName] && !forceLoad)
       return new Promise((resolve) => { resolve(this[moduleName])})
     if (forceLoad) {
       path += "?" + Date.now()
     }
+
     return System.import(path).then( (module, err) => {
       if (err) {
         lively.notify("Could not load module " + moduleName, err);
@@ -97,11 +106,11 @@ export default class Lively {
       this[moduleName] = module.default || module;
     });
   }
-  
+
   static loadJavaScriptThroughDOM(name, src, force) {
     return new Promise((resolve) => {
       var scriptNode = document.querySelector(name);
-      if (scriptNode) { 
+      if (scriptNode) {
         scriptNode.remove();
       }
       var script = document.createElement("script");
@@ -118,7 +127,7 @@ export default class Lively {
       document.head.appendChild(script);
     })
   }
-  
+
   static fillTemplateStyles(root) {
      // there seems to be no <link ..> tag allowed to reference css inside of templates #Jens
      var promises = []
@@ -127,7 +136,7 @@ export default class Lively {
         if (src) {
           promises.push(fetch(lively4url + src).then(r => r.text()).then(css => {
             ea.innerHTML = css
-          }))    
+          }))
         }
      })
      return Promise.all(promises)
@@ -135,12 +144,12 @@ export default class Lively {
 
   static defaultPath(moduleName) {
     return ({
-      math: lively4url + "/src/external/math.js",
-      typo: lively4url + "/src/external/typo.js",
-      contextmenu: lively4url + '/src/client/contextmenu.js',
-      customize: lively4url + '/src/client/customize.js',
-      selecting: lively4url + '/src/client/morphic/selecting.js',
-      expose: lively4url + '/src/client/expose.js'
+      math: kernel.realpath("/src/external/math.js"),
+      typo: kernel.realpath("/src/external/typo.js"),
+      contextmenu: kernel.realpath('/src/client/contextmenu.js'),
+      customize: kernel.realpath('/src/client/customize.js'),
+      selecting: kernel.realpath('/src/client/morphic/selecting.js'),
+      expose: kernel.realpath('/src/client/expose.js')
     })[moduleName]
   }
 
@@ -186,12 +195,20 @@ export default class Lively {
 
     exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expected
 
-    this.import("authGithub", lively4url + '/src/client/auth-github.js')
-    this.import("authDropbox", lively4url + '/src/client/auth-dropbox.js')
-    this.import("authGoogledrive", lively4url + '/src/client/auth-googledrive.js')
+    this.import("authGithub", kernel.realpath('/src/client/auth-github.js'))
+    this.import("authDropbox", kernel.realpath('/src/client/auth-dropbox.js'))
+    this.import("authGoogledrive", kernel.realpath('/src/client/auth-googledrive.js'))
 
     this.import("expose")
-   
+    
+    // for anonymous lively.modules workspaces
+    if (!lively.modules.isHookInstalled("fetch", "workspaceFetch")) {
+      lively.modules.installHook("fetch", function workspaceFetch(proceed, load) { 
+        if (load.address.match("workspace://")) return Promise.resolve("")
+        return proceed(load)
+      })
+    }
+
   }
 
   static array(anyList){
@@ -246,7 +263,7 @@ export default class Lively {
     var transpiledSource = babel.transform('(function(){/*lively.code.start*/' + str+'})').code
         .replace(/^(?:[\s\n]*["']use strict["'];[\s\n]*)([\S\s]*?)(?:\(function\s*\(\)\s*\{\s*\/\*lively.code.start\*\/)/, "$1") // strip prefix
         .replace(/\}\);[\s\n]*$/,"") // strip postfix
-    
+
     console.log("code: " + transpiledSource)
     console.log("context: " + ctx)
     var interactiveEval = function interactiveEval(code) {
@@ -273,7 +290,7 @@ export default class Lively {
   }
 
   static getPosition(obj) {
-      if (obj.clientX) 
+      if (obj.clientX)
         return {x: obj.clientX, y: obj.clientY}
       else if (obj.style)
         return {x: obj.style.left, y: obj.style.top}
@@ -333,13 +350,13 @@ export default class Lively {
   static notify(title, text, timeout, cb) {
     if (!this.notifications) this.notifications = [];
     this.notifications.push({title: title, text: text, cb: cb, time: Date.now()})
-  
+
     // lively.notify("hello","",3)
     // just in case...
     if (Notification.permission !== "granted") Notification.requestPermission();
 
     var time = Date.now()
-    if(this.notifications.length > 10 && 
+    if(this.notifications.length > 10 &&
       (Date.now() - this.notifications[10].time < 1000)) {
       return console.log("SILENT NOTE: " + title  + " (" + text + ")");
     }
@@ -405,7 +422,7 @@ export default class Lively {
 
     _.each($(tagName), function(oldInstance) {
       if (oldInstance.__ingoreUpdates) return;
-      
+
       // if (oldInstance.isMinimized && oldInstance.isMinimized()) return // ignore minimized windows
       // if (oldInstance.isMaximized && oldInstance.isMaximized()) return // ignore isMaximized windows
 
@@ -433,7 +450,7 @@ export default class Lively {
       if (window.that == oldInstance) {
         window.that = newInstance
       }
-      
+
       if (newInstance.livelyMigrate) {
         newInstance.livelyMigrate(oldInstance) // give instances a chance to take over old state...
       }
@@ -519,29 +536,29 @@ export default class Lively {
       window.livelyEventListeners = []
     }
     return window.livelyEventListeners
-  }  
-  
+  }
+
   static set eventListeners(list) {
       window.livelyEventListeners = list
-  }  
-  
+  }
+
   // Registration and deregistration of eventlisteners for run-time programming...
   static addEventListener(domain, target, type, listener, options) {
     this.eventListeners.push(
-      {target: target, type: type, listener: listener, domain: domain, options: options})      
+      {target: target, type: type, listener: listener, domain: domain, options: options})
     target.addEventListener(type, listener, options)
   }
-  
+
   static removeEventListener(domain, target, type, listener) {
     this.eventListeners = this.eventListeners.filter(ea => {
-      if ((!target      || (ea.target   === target)) 
-          && (!type     || (ea.type     ==  type)) 
-          && (!listener || (ea.listener === listener)) 
+      if ((!target      || (ea.target   === target))
+          && (!type     || (ea.type     ==  type))
+          && (!listener || (ea.listener === listener))
           && (!domain   || (ea.domain   ==  domain))) {
         // actually removing the event listener
         // console.log("removeEventListener", ea.target, ea.type, ea.listener)
         ea.target.removeEventListener(ea.type, ea.listener, ea.options)
-        return false   
+        return false
       } else {
         return true
       }
@@ -555,7 +572,7 @@ export default class Lively {
       comp.searchFile(text)
     })
   }
-  
+
   static openHelpWindow(text) {
     this.openComponentInWindow("lively-help").then(comp => {
       comp.parentElement.style.width = "850px";
@@ -581,43 +598,19 @@ export default class Lively {
           comp.parentElement.style.height = "600px"
           if (edit) comp.setAttribute("mode", "edit");
           return comp.followPath(url)
-    }).then( () => {   
+    }).then( () => {
       if (edit && pattern) {
-        editorComp.getAceEditor().editor.find(pattern)  
+        editorComp.getAceEditor().editor.find(pattern)
       }
     })
   }
 }
 
+if (window.lively)
+  Object.assign(Lively, window.lively) // copy objects from lively.modules
+
 window.lively = Lively
 Lively.loaded();
 
-// window.setTimeout(function() {
-//           function loadJavaScriptThroughDOM(name, src, force) {
-//             return new Promise(function (resolve) {
-//               var scriptNode = document.querySelector(name);
-//               if (scriptNode) {
-//                 scriptNode.remove();
-//               }
-//               var script = document.createElement("script");
-//               script.id = name;
-//               script.charset = "utf-8";
-//               script.type = "text/javascript";
-//               if (force) {
-//                 src += +"?" + Date.now();
-//               }
-//               script.src = src;
-//               script.onload = function () {
-//                 resolve();
-//               };
-//               document.head.appendChild(script);
-//             });
-//           }
-          
-//         loadJavaScriptThroughDOM("livelyModules", 
-//             lively4url + "/src/external/lively.modules.js").then( function(module){
-//               console.log("loaded lively.modules") 
-//         })
-// },2000)
 
 console.log("loaded lively");

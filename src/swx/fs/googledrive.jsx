@@ -4,6 +4,7 @@
 
 import { Base } from './base.jsx'
 import * as util from '../util.jsx'
+import generateUuid from '../../client/uuid.js'
 
 export default class Filesystem extends Base {
   constructor(path, options) {
@@ -24,21 +25,6 @@ export default class Filesystem extends Base {
           this.subfolder = ''
       }
   }
-
-  async statinfo(json) {
-      let type = 'file'
-      let name = json['path'].split('/').pop()
-
-      if(json['is_dir'] === true)
-          type = 'directory'
-
-      return {
-          type: type,
-          name: name,
-          size: json['size']
-      }
-  }
-
   
   async stat(relativePath){
     var path = this.getGoogledrivePath(relativePath);
@@ -64,10 +50,30 @@ export default class Filesystem extends Base {
     )
   }
 
-  async read(path) {
-      let googledriveHeaders = new Headers()
-      googledriveHeaders.append('Authorization', 'Bearer ' + this.token)
-      let response = await self.fetch('https://content.dropboxapi.com/1/files/auto' + this.subfolder + path, {headers: googledriveHeaders})
+  async read(urlString) {
+      var path = this.getGoogledrivePath(urlString);
+      var id = await this.googlePathToId(path);
+      let response = await this.googleAPIFetch(`files/`+id)
+        .then(r => r.json())
+        .then(metaData => {
+          var m =metaData.mimeType.match(/application\/vnd.google-apps\.(.*)/)
+          if(m) {
+        		// Need conversion for Google Document types
+      			var type = m[1]
+            if (type == "spreadsheet") {
+        			return this.googleAPIFetch(`files/`+id + '/export?mimeType=text/csv');
+            } else if (type == "drawing") {
+              // #TODO svg+xml does not seem to work any more? 
+              // we can only display this (easily) when this code moves into the service worker
+        			return this.googleAPIFetch(`files/`+id + '/export?mimeType=application/pdf');
+            } else {
+        			return this.googleAPIFetch(`files/`+id + '/export?mimeType=text/html');     
+            } 
+      		} else {
+      			// download file
+      			return this.googleAPIFetch(`files/`+id + '?alt=media');
+      		}
+      });
 
       if(response.status < 200 && response.status >= 300) {
           throw new Error(response.statusText)
@@ -80,13 +86,49 @@ export default class Filesystem extends Base {
       })
   }
 
-  async write(path, fileContent) {
-      let fileContentFinal = await fileContent
-      let googledriveHeaders = new Headers()
+  async write(urlString, fileContent) {
+    debugger
+      var response;
+      var data = await fileContent;
+      var path = this.getGoogledrivePath(urlString);
+      var id = await this.googlePathToId(path);
+      if(!id) {
+        var folderPath = path.replace(/\/[^\/]*$/,"");
+        var fileName = path.replace(/.*\//,"")
+        var folderId = await this.googlePathToId(folderPath);
+        if (!folderId) {
+          throw new Error(`Folder $(folderPath) does not exit`);
+        }
+         
+        var delim = generateUuid()
+        var body = `--${delim}
+Content-Type: application/json; charset=UTF-8
 
-      googledriveHeaders.append('Authorization', 'Bearer ' + this.token)
-      googledriveHeaders.append("Content-Length", fileContentFinal.length.toString())
-      let response = await self.fetch('https://content.dropboxapi.com/1/files_put/auto' + this.subfolder + path, {method: 'PUT', headers: googledriveHeaders, body: fileContentFinal})
+{
+  title: "${fileName}",
+  parents: [
+    {kind: "drive#folder", id: "${folderId}"}
+  ]
+}
+
+--${delim}
+Content-Type: text/plain; charset=UTF-8
+
+`+data+`
+
+--${delim}--`
+        response = await fetch('https://www.googleapis.com/upload/drive/v2/files?uploadType=multipart', {
+          method: 'POST',
+        	headers: new Headers({
+        		"Content-Type": "multipart/related; boundary=" + delim,
+        		Authorization: "Bearer " + this.token,
+        		"Content-Length": body.length
+        	}),
+        	body: body
+        })
+      } else {
+        response = await this.googleAPIUpload(id, data);
+      }
 
       if(response.status < 200 && response.status >= 300) {
           throw new Error(response.statusText)
@@ -96,27 +138,23 @@ export default class Filesystem extends Base {
   }
   
   getGoogledrivePath(relativePath) {
-    return this.subfolder + relativePath
+    return this.subfolder + decodeURIComponent(relativePath)
   }
   
   async googleAPIUpload(id, content, mimeType) {
+    var headers = new Headers();
+    headers.append('Authorization', 'Bearer ' + this.token)
+
+    if (!mimeType) 
+      mimeType = (await (await this.googleAPIFetch('files/' + id )).json()).mimeType;
     
-    return focalStorage.getItem("googledriveToken").then( async (token) => {
-      var headersDesc = {
-  			Authorization: "Bearer " + token
-  		};
+    headers.append('Content-Type', mimeType)
 
-      if (!mimeType) 
-        mimeType = (await (await this.googleAPIFetch('files/' + id )).json()).mimeType;
-      
-      headersDesc['Content-Type'] = mimeType; 
-
-      return fetch('https://www.googleapis.com/upload/drive/v2/files/' + id + '?uploadType=media', {
-    		method: 'PUT',
-    		headers: new Headers(headersDesc),
-    		body: content
-    	})
-    })
+    return fetch('https://www.googleapis.com/upload/drive/v2/files/' + id + '?uploadType=media', {
+  		method: 'PUT',
+  		headers: headers,
+  		body: content
+  	})
   }
   
   async googleAPIFetch(string) {
