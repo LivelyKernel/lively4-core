@@ -37,6 +37,7 @@ export default class AceEditor extends HTMLElement {
             editor.setFontSize( this.getAttribute("fontsize") );
             editor.setReadOnly( this.getAttribute("readonly") );
             var session = editor.getSession();
+            session.setNewLineMode("unix");
             session.setMode( this.getAttribute("mode") );
             session.setUseSoftTabs( this.getAttribute("softtabs") );
             this.getAttribute("tabsize") && session.setTabSize( this.getAttribute("tabsize") );

@@ -19,10 +19,10 @@ export default class Window extends Morph {
    * Getters/Setters
    */
   get title() {
-    return this._title;
+    return this._title
   }
   set title(val) {
-    this._title = val;
+    this._title = val
     this.render();
   }
 
@@ -117,11 +117,11 @@ export default class Window extends Morph {
    * Window methods
    */
   render() {
-    if (this.created) {
+    // if (this.created) {
       if (this.attributes['title']) {
         this.titleSpan.innerHTML = this.attributes['title'].value;
       }
-    }
+    // }
   }
 
   reposition() {

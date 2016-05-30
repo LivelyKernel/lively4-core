@@ -56,14 +56,8 @@
       margin: 2px;
     }
 
-    #code {
-      flex: 1;
-      width: 100%;
-      border-bottom: 1px solid rgb(120, 118, 116);
-    }
-
     #log {
-      height: 100px;
+      flex: 1;
       width: 100%;
     }
 
@@ -75,18 +69,19 @@
           <button id="addButton"><i class="fa fa-fw fa-plus" aria-hidden="true"></i></button>
           <button id="removeButton"><i class="fa fa-fw fa-minus" aria-hidden="true"></i></button>
           <button id="refreshButton"><i class="fa fa-fw fa-refresh" aria-hidden="true"></i></button>
+          <button id="editButton"><i class="fa fa-fw fa-code" aria-hidden="true"></i></button>
+          <button id="settingsButton"><i class="fa fa-fw fa-cog" aria-hidden="true"></i></button>
         </div>
       </div>
       <div class="column-right">
         <div class="service-top">
-          <input type="text" value="Name" />
+          <input id="entryPoint" type="text" value="Name" />
           <div class="service-actions">
             <button id="startButton"><i class="fa fa-fw fa-play" aria-hidden="true"></i></button>
             <button id="stopButton"><i class="fa fa-fw fa-stop" aria-hidden="true"></i></button>
             <button id="debugButton"><i class="fa fa-fw fa-bug" aria-hidden="true"></i></button>
           </div>
         </div>
-        <juicy-ace-editor id="code"></juicy-ace-editor>
         <juicy-ace-editor id="log"></juicy-ace-editor>
       </div>
     </div>

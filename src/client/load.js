@@ -27,7 +27,7 @@ function loadJavaScriptThroughDOM(name, src, force) {
     document.head.appendChild(script);
   });
 }
-          
+
 
 
 if ('serviceWorker' in navigator) {
@@ -45,36 +45,35 @@ if ('serviceWorker' in navigator) {
     }
     // var tmpLively = {}
     // window.lively = tmpLively
-    
+
     Promise.resolve("")
       // .then( function() {
-      //   return loadJavaScriptThroughDOM("livelyAST",  
+      //   return loadJavaScriptThroughDOM("livelyAST",
       //     lively4url + "/../lively.ast/dist/lively.ast.js")})
       // .then( function() {
-      //   return loadJavaScriptThroughDOM("livelyVM",  
+      //   return loadJavaScriptThroughDOM("livelyVM",
       //     lively4url + "/../lively.vm/dist/lively.vm_no-deps.js") })
       // .then( function() {
-      //   return loadJavaScriptThroughDOM("livelyModules",  
+      //   return loadJavaScriptThroughDOM("livelyModules",
       //     lively4url + "/../lively.modules/dist/lively.modules_no-deps.js") })
       .then( function() {
-        return loadJavaScriptThroughDOM("livelyModules",  
+        return loadJavaScriptThroughDOM("livelyModules",
           lively4url + "/src/external/lively.modules-with-lively.vm.js")})
-        // return loadJavaScriptThroughDOM("livelyModules",  
+        // return loadJavaScriptThroughDOM("livelyModules",
         //   lively4url + "/../lively.modules/dist/lively.modules-with-lively.vm.js")})
       .then( function(){
         console.log("lively.modules loaded... now try to load lively4")
         System.import(lively4url + "/src/client/lively.js")
         // .then(function(module){
-        //   return lively.loadJavaScriptThroughDOM("livelyModules", 
+        //   return lively.loadJavaScriptThroughDOM("livelyModules",
         //     lively4url + "/src/external/lively.modules.js").then( function(module){
-        //       console.log("loaded lively.modules") 
-        //     })  
+        //       console.log("loaded lively.modules")
+        //     })
         // })
         .then(function(module) {
-            debugger
            console.log("How are we?")
-        
-          
+
+
             lively.initializeHalos();
             lively.components.loadUnresolved();
             console.log("running on load callbacks:");
@@ -85,7 +84,7 @@ if ('serviceWorker' in navigator) {
                     console.log("Error running on load callback: "  + cb + " error: " + e)
                 }
             });
-            
+
             if (!window.__karma__) {
               window.onbeforeunload = function(e) {
                 return 'Do you really want to leave this page?';
@@ -93,13 +92,13 @@ if ('serviceWorker' in navigator) {
             }
             console.log("lively loaded");
         })
-        
-        console.log("loaded lively.modules") 
+
+        console.log("loaded lively.modules")
       })
-   
-   
-      
-      // })  
+
+
+
+      // })
   }
 
   if (navigator.serviceWorker.controller) {

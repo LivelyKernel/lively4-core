@@ -180,7 +180,7 @@ export default class Container extends Morph {
         moduleName = moduleName[1]
         if (this.getSubmorph("#live").checked) {
           
-          lively.modules.reloadModule(""+url).then( module => {
+          lively.import(moduleName, url, true).then( module => {
               lively.notify("Module " + moduleName + " reloaded!")
           }, err => {
               window.LastError = err
@@ -455,15 +455,19 @@ export default class Container extends Morph {
     } else if (this.getPath().match(/\.js$/)) {
       var instMethod = "(^|\\s+)([a-zA-Z0-9$_]+)\\s*\\(\\s*[a-zA-Z0-9$_ ,]*\\s*\\)\\s*{",
           klass = "(?:^|\\s+)class\\s+([a-zA-Z0-9$_]+)",
-          func = "(?:^|\\s+)function\\s+([a-zA-Z0-9$_]+)\\s*\\(";
-      var defRegEx = new RegExp(`(?:(?:${instMethod})|(?:${klass})|(?:${func}))`)
+          func = "(?:^|\\s+)function\\s+([a-zA-Z0-9$_]+)\\s*\\(",
+          oldProtoFunc = "[a-zA-Z0-9$_]+\.prototype\.([a-zA-Z0-9$_]+)\\s*=";
+      var defRegEx = new RegExp(`(?:(?:${instMethod})|(?:${klass})|(?:${func})|(?:${oldProtoFunc}))`);
       var m
       var links = {}
       var i = 0;
       var lines = this.sourceContent.split("\n");
       lines.forEach((line) => {
         if (m = defRegEx.exec(line)) {
-          var theMatch = m[2] || (m[3] && "class " + m[3]) || (m[4] && "function " + m[4]);
+          var theMatch = m[2] ||
+                        (m[3] && "class " + m[3]) ||
+                        (m[4] && "function " + m[4]) ||
+                         m[5]
           if(!theMatch.match(/^(if|switch|for|catch|function)$/)) {
             let name = (m[1] || "").replace(/\s/g, "&nbsp;") + theMatch,
                 navigateToName = m[0],
