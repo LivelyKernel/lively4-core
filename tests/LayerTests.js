@@ -74,7 +74,7 @@ class CopExampleDummyClass {
 
 DummyLayer.refineClass(CopExampleDummyClass, {
 
-    f: function DummyLayer$f(a, n) {
+    f(a, n) {
         this.execution.push("ld.f");
         //console.log("execute dummy layer f(" + a, ", " + b + ")");
         return cop.proceed() + 100;
@@ -92,37 +92,37 @@ DummyLayer.refineClass(CopExampleDummyClass, {
         return cop.proceed() + " World";
     },
 
-    h: function DummyLayer$h() {
+    h() {
         // console.log("D$h old(" + cop.proceed() +")");
         return 3;
     },
 
-    newMethod: function DummyLayer$newMethod() {
+    newMethod() {
         return "totally new"
     },
 
-    m1: function DummyLayer$m1() {
+    m1() {
         return 7;
     },
 
-    m2: function DummyLayer$m2() {
+    m2() {
         return "D$m2," + cop.proceed();
     },
 
-    newFoo: function DummyLayer$newFoo() {
+    newFoo() {
         return "newFoo";
     }
 });
 
 DummyLayer2.refineClass(CopExampleDummyClass, {
-    f: function DummyLayer2$f(a, n) {
+    f(a, n) {
         this.execution.push("ld2.f");
         return cop.proceed() + 1000;
     }
 });
 
 DummyLayer3.refineClass(CopExampleDummyClass, {
-    h: function DummyLayer3$h() {
+    h() {
         // console.log("D3$h old(" + cop.proceed() +")");
         return 4;
     }
@@ -150,15 +150,15 @@ class CopExampleDummySubclass extends CopExampleDummyClass {
 
 DummyLayer.refineClass(CopExampleDummySubclass, {
 
-    f2: function DummyLayer$f2() {
+    f2() {
         return 4;
     },
 
-    m1: function DummyLayer$m1() {
+    m1() {
         return cop.proceed() + 1;
     },
 
-    fooo: function DummyLayer$fooo() {
+    fooo() {
         var proc =  cop.proceed();
         return proc+"-layer-"+this.newFoo();
     }
@@ -167,7 +167,7 @@ DummyLayer.refineClass(CopExampleDummySubclass, {
 class CopExampleSecondDummySublass extends CopExampleDummyClass { }
 
 DummyLayer.refineClass(CopExampleSecondDummySublass, {
-    m1: function DummyLayer$m1() {
+    m1() {
         return cop.proceed() + 100;
     }
 });
@@ -199,13 +199,13 @@ describe('COP example', function () {
     }
 
     AddressLayer.refineClass(CopExamplePerson, {
-        print: function AddressLayer$print() {
+        print() {
             return cop.proceed() + "; Address: " + this.address;
         }
     });
 
     EmploymentLayer.refineClass(CopExamplePerson, {
-        print: function EmploymentLayer$print() {
+        print() {
             return cop.proceed() + "; [Employer] " + this.employer.print();
         }
     });
@@ -228,7 +228,7 @@ describe('COP example', function () {
     }
 
     AddressLayer.refineClass(CopExampleEmployer, {
-        print: function() {
+        print() {
             return cop.proceed() + "; Address: " + this.address;
         },
     });
@@ -281,20 +281,20 @@ describe('cop', function () {
     var makeObject1 = function() {
         object1 = {
             myString: "I am an object",
-            f: function(a, b) {
+            f(a, b) {
                 Global.currentTest.execution.push("d.f");
                 // console.log("execute default f(" + a, ", " + b + ")");
                 return 0;
             },
-            g: function() {
+            g() {
                 Global.currentTest.execution.push("d.g");
                 // console.log("execute default g");
                 return "Hello";
             },
-            print: function() {
+            print() {
                 return this.myString;
             },
-            toString: function() {
+            toString() {
                 return "object1"
             }
 
@@ -316,7 +316,7 @@ describe('cop', function () {
     var makeLayer1 = function() {
         layer1 = cop.create('LmakeLayer1');
         cop.layerObject(layer1, object1, {
-            f: function(a, b) {
+            f(a, b) {
                 Global.currentTest.execution.push("l1.f");
                 console.log("execute layer1 function for f");
                 return cop.proceed(a, b) + a;
@@ -329,12 +329,12 @@ describe('cop', function () {
     var makeLayer2 = function() {
         layer2 = cop.basicCreate('makeLayer2');
         cop.layerObject(layer2, object1, {
-            f: function(a, b) {
+            f(a, b) {
                 Global.currentTest.execution.push("l2.f");
                 // console.log("execute layer2 function for f");
                 return cop.proceed(a, b) + b;
             },
-            g: function() {
+            g() {
                 Global.currentTest.execution.push("l2.g");
                 // console.log("execute default g");
                 return cop.proceed() + " World";
@@ -353,7 +353,7 @@ describe('cop', function () {
     var makeLayer3 = function() {
         layer3 = cop.basicCreate('LmakeLayer3');;
         cop.layerObject(layer3, object1, {
-            f: function(a, b) {
+            f(a, b) {
                 Global.currentTest.execution.push("l3.f");
                 // console.log("execute layer3 function for f");
                 return cop.proceed() * 10;
@@ -458,7 +458,7 @@ describe('cop', function () {
     it('testLayerClass', function() {
         var layer1 = cop.basicCreate('LtestLayerClass');
         cop.layerClass(layer1, CopExampleDummyClass, {
-            f: function(a, b) {
+            f(a, b) {
                 this.execution.push("l1.f");
                 // console.log("execute layer1 function for f");
                 return cop.proceed() + a;
@@ -496,7 +496,7 @@ describe('cop', function () {
         var layer1 = cop.basicCreate('LtestLayerObject');
         makeObject1();
         cop.layerObject(layer1, object1, {
-            f: function(a, b) {
+            f(a, b) {
                 Global.currentTest.execution.push("l1.f");
                 // console.log("execute layer1 function for f");
                 return cop.proceed() + a;
@@ -512,8 +512,8 @@ describe('cop', function () {
     // How to lookup objects in layers
     it('testObjectAsDictionaryKeys', function() {
         // it seems that the string value is used as the "key" in dictionary lookups
-        var a = {name: "foo", toString: function() {return this.name}};
-        var b = {name: "bar", toString: function() {return this.name}};
+        var a = {name: "foo", toString() {return this.name}};
+        var b = {name: "bar", toString() {return this.name}};
         var d = {};
         d[a] = 1;
         d[b] = 2;
@@ -522,15 +522,15 @@ describe('cop', function () {
 
     it('testLayerObjectsInOneLayer', function() {
         var layer = cop.basicCreate('LtestLayerObjectsInOneLayer');
-        var o1 = {f: function() {return 1}};
-        var o2 = {f: function() {return 2}};
+        var o1 = {f() {return 1}};
+        var o2 = {f() {return 2}};
         cop.layerObject(layer, o1, {
-            f: function() {
+            f() {
                 return 3
             },
         });
         cop.layerObject(layer, o2, {
-            f: function() {
+            f() {
                 return 4
             },
         });
@@ -541,7 +541,7 @@ describe('cop', function () {
     });
 
     it('testLayerMethod', function() {
-        var object1 = {f: function() {return 0}, g: function() {}},
+        var object1 = {f() {return 0}, g() {}},
             layer1 = cop.basicCreate('LtestLayerMethod');
 
         cop.layerMethod(layer1, object1, "f", function(){
@@ -625,7 +625,7 @@ describe('cop', function () {
         var layer1 = cop.basicCreate('LtestErrorInLayeredActivation')
         makeObject1();
         cop.layerObject(layer1, object1, {
-            f: function() {
+            f() {
                 throw {testError: true}
             },
         });
@@ -644,7 +644,7 @@ describe('cop', function () {
         var layer1 = cop.basicCreate('LtestErrorInLayeredDeactivation');
         makeObject1();
         cop.layerObject(layer1, object1, {
-            f: function() {
+            f() {
                 throw {testError: true};
             },
         });
@@ -663,22 +663,22 @@ describe('cop', function () {
 
 
     it('testComposeLayers', function() {
-        var layer1 = {toString: function(){return "l1"}};
-        var layer2 = {toString: function(){return "l2"}};
-        var layer3 = {toString: function(){return "l3"}};
+        const layer1 = {toString(){return "l1"}};
+        const layer2 = {toString(){return "l2"}};
+        const layer3 = {toString(){return "l3"}};
 
-        var stack = [{}];
+        let stack = [{}];
         assert.equal(cop.composeLayers(stack.clone()).toString(), [].toString());
         assert.equal(cop.composeLayers([{}, {withLayers: [layer1]}]).toString(), ["l1"].toString());
         assert.equal(cop.composeLayers([{}, {withLayers: [layer1]},{withLayers: [layer2, layer3]} ]).toString(), ["l1","l2","l3"].toString());
     });
 
     it('testComposeLayersWithWithoutLayers', function() {
-        var layer1 = {toString: function(){return "l1"}},
-            layer2 = {toString: function(){return "l2"}},
-            layer3 = {toString: function(){return "l3"}};
+        const layer1 = {toString(){return "l1"}},
+              layer2 = {toString(){return "l2"}},
+              layer3 = {toString(){return "l3"}};
 
-        var stack = [{}];
+        let stack = [{}];
         assert.equal(
             cop.composeLayers([
                 {},
@@ -692,7 +692,7 @@ describe('cop', function () {
             layer1 = cop.basicCreate('testThisReferenceInLayeredMethod')
         makeObject1();
         layer1.refineObject(object1, {
-            f: function() {
+            f() {
                 test.thisIsBound = object1 === this;
             }
         });
@@ -808,7 +808,7 @@ describe('cop', function () {
     it('testLayerRemove', function() {
         makeObject1();
         var layer = cop.create('TestLayerRemoveLayer').refineObject(object1, {
-            f: function(x) { return x }
+            f(x) { return x }
         }).beGlobal();
 
         assert.equal(3, object1.f(3), 'layer not global');
@@ -822,14 +822,14 @@ describe('cop', function () {
 
     describe('argument adaption', function () {
         it('testAdaptArgumentsInLayer', function () {
-            var o = {say: function(a) {return "Say: " +a}},
-                l = cop.basicCreate('L')
-                    .refineObject(o, { say: function(a) {return cop.proceed(a + " World") + "!"}})
+            const o = {say(a) {return "Say: " +a}},
+                  l = cop.basicCreate('L');
+            l.refineObject(o, { say(a) {return cop.proceed(a + " World") + "!"}})
             assert.equal(o.say("Hello"), "Say: Hello", "test is broken");
             cop.withLayers([l], function() {
                 if (typeof console.group !== 'undefined')
                     console.group("SayHello");
-                var result = o.say("Hello")
+                const result = o.say("Hello")
                 if (typeof console.group !== 'undefined')
                     console.groupEnd("SayHello");
                 assert.equal(result, "Say: Hello World!", "adapting arguments is broken");
@@ -838,7 +838,7 @@ describe('cop', function () {
     });
 
     describe('Layer', function () {
-        var TmpDummyClass,
+        let TmpDummyClass,
             TmpDummySubclass,
             TmpDummyLayer,
             TmpDummyLayer2;
@@ -849,6 +849,8 @@ describe('cop', function () {
             TmpDummyLayer = cop.create('TmpDummyLayer');
             TmpDummyLayer2 = cop.create('TmpDummyLayer2');
         });
+
+        // TODO: refactor, remove this indirection
 
         var dummyClass = function() {
             return TmpDummyClass;
@@ -883,16 +885,16 @@ describe('cop', function () {
 
             it('testLayerClassAndSubclasses', function() {
                 dummyClass().addMethods({
-                    m1: function(){return "m1"},
+                    m1(){return "m1"},
                 });
 
                 dummySubclass().addMethods({
-                    m1: function(){return "S$m1"},
-                    m2: function(){return "S$m2"},
+                    m1(){return "S$m1"},
+                    m2(){return "S$m2"},
                 });
 
                 cop.layerClass(dummyLayer(), dummyClass(), {
-                    m1: function() {return "L$m1,"+cop.proceed()}
+                    m1() {return "L$m1,"+cop.proceed()}
                 });
 
                 var o = new (dummyClass())();
@@ -918,7 +920,7 @@ describe('cop', function () {
                 }
 
                 cop.layerClass(dummyLayer(), DummyClass, {
-                    m1: function Lm1() { return "L$m1a " + cop.proceed() + " L$m1b" }
+                    m1() { return "L$m1a " + cop.proceed() + " L$m1b" }
                 });
 
 
@@ -938,16 +940,16 @@ describe('cop', function () {
 
 
             it('testMultipleLayerDefintions', function() {
-                dummyClass().addMethods({m1: function() { return "m1" }});
+                dummyClass().addMethods({m1() { return "m1" }});
 
-                dummySubclass().addMethods({m1: function() { return "S$m1" }});
+                dummySubclass().addMethods({m1() { return "S$m1" }});
 
                 cop.layerClass(dummyLayer(), dummyClass(), {
-                    m1: function() {return "L$m1,"+cop.proceed()}
+                    m1() {return "L$m1,"+cop.proceed()}
                 });
 
                 cop.layerClass(dummyLayer2(), dummySubclass(), {
-                    m1: function() {return "L$m1,"+cop.proceed()}
+                    m1() {return "L$m1,"+cop.proceed()}
                 });
 
                 var s = new (dummySubclass())();
@@ -977,12 +979,12 @@ describe('cop', function () {
             });
 
             it('testRefineObject', function() {
-                var l = cop.create("MyDummyLayer2");
+                const l = cop.create("MyDummyLayer2");
                 assert(l.refineObject instanceof Function, "l does not respond to refineObject")
 
-                var o = {foo: function() {return 1}}
-                var r = l.refineObject(o, {
-                    foo: function() { }
+                const o = {foo() {return 1}}
+                const r = l.refineObject(o, {
+                    foo() { }
                 });
 
                 assert.strictEqual(l, r, "refineObject does not return layer")
@@ -1301,11 +1303,11 @@ describe('cop', function () {
         }
 
         DummyLayer.refineClass(DummyLayerableObject, {
-            f: function DummyLayer$f() {
+            f() {
                 return 4
             },
 
-            thisRef: function DummyLayer$thisRef() {
+            thisRef() {
                 return this
             }
         });
@@ -1326,7 +1328,7 @@ describe('cop', function () {
         }
 
         DummyLayer.refineClass(DummyOtherObject, {
-            k: function DummyLayer$k() {
+            k() {
                 cop.proceed();
                 this.count_dummy_k = this.count_dummy_k + 1;
                 return 7
@@ -1462,13 +1464,15 @@ describe('cop', function () {
             cop.makeFunctionLayerAware(CopProceedTestClass.prototype, 'm')
             cop.makePropertyLayerAware(CopProceedTestClass.prototype, 'p')
 
-            CopProceedTestAddLayer = cop.create('CopProceedTestAddLayer').refineClass(CopProceedTestClass, {
-                m: function(a) {
+            CopProceedTestAddLayer = cop.create('CopProceedTestAddLayer')
+            .refineClass(CopProceedTestClass, {
+                m(a) {
                     return cop.proceed(a + 1)
                 },
             });
 
-            CopProceedPropertyTestLayer = cop.create('CopProceedPropertyTestLayer').refineClass(CopProceedTestClass, {
+            CopProceedPropertyTestLayer = cop.create('CopProceedPropertyTestLayer')
+            .refineClass(CopProceedTestClass, {
                 get p() {
                     return cop.proceed() + " World"
                 },
@@ -1480,14 +1484,16 @@ describe('cop', function () {
             });
 
 
-            CopProceedMultAddLayer = cop.create('CopProceedMultAddLayer').refineClass(CopProceedTestClass, {
-                m: function(a) {
+            CopProceedMultAddLayer = cop.create('CopProceedMultAddLayer')
+            .refineClass(CopProceedTestClass, {
+                m(a) {
                     return cop.proceed(a) * 3
                 }
             });
 
-            CopProceedMultipleProceedLayer = cop.create('CopProceedMultipleProceedLayer').refineClass(CopProceedTestClass, {
-                m: function(a) {
+            CopProceedMultipleProceedLayer = cop.create('CopProceedMultipleProceedLayer')
+            .refineClass(CopProceedTestClass, {
+                m(a) {
                     return cop.proceed(a * 2) + cop.proceed(a *3)
                 }
             });
@@ -1509,7 +1515,7 @@ describe('cop', function () {
 
             var testCase = this, newLength;
             cop.proceed = function() { newLength = cop.proceedStack.length }
-            var o = {m: function() { return 1 }}
+            var o = {m() { return 1 }}
             cop.makeFunctionLayerAware(o, 'm')
             var oldLength = cop.proceedStack.length;
             o.m();
@@ -1603,9 +1609,9 @@ describe('cop', function () {
 
     describe('regressions', function () {
         it('testLookupLayeredFunctionForObjectIgnoresInheritedProperties', function() {
-            var layer = new Layer();
-            var obj = {foo: function() {return 3} };
-            layer.refineObject(obj, {foo: function() {return cop.proceed() + 1}});
+            const layer = new Layer();
+            const obj = {foo() {return 3} };
+            layer.refineObject(obj, {foo() {return cop.proceed() + 1}});
             assert.strictEqual(cop.lookupLayeredFunctionForObject(obj, layer, 'toString'), undefined, 'toString should not be found')
         });
     });
@@ -1613,8 +1619,8 @@ describe('cop', function () {
     describe('layer uninstalling', function () {
 
         it('testMakeFunctionLayerUnaware', function() {
-            var obj = {m: function() {return 3}};
-            var originalFunction = obj.m;
+            const obj = {m() {return 3}};
+            const originalFunction = obj.m;
             cop.makeFunctionLayerAware(obj, "m");
 
             assert(obj.m !== originalFunction, "make layer aware failed")
@@ -1626,19 +1632,19 @@ describe('cop', function () {
 
         // FIXME: this test case uses the global connect function
         xit('testMakeFunctionLayerUnawareThatIsConnected', function() {
-            var obj1 = {m1: function(a) {return a}};
-            var obj2 = {m2: function(b) {
+            const obj1 = {m1(a) {return a}};
+            const obj2 = {m2(b) {
                 this.b = b;
                 // do nothing
             }};
 
-            var originalFunction = obj1.m1;
+            const originalFunction = obj1.m1;
             cop.makeFunctionLayerAware(obj1, "m1");
 
-            var layerWrapper = obj1.m1;
+            const layerWrapper = obj1.m1;
 
             connect(obj1, "m1", obj2, "m2");
-            var bindingsWrapper = obj1.m1;
+            const bindingsWrapper = obj1.m1;
 
 
             assert(bindingsWrapper !== layerWrapper, "binding did not work")
@@ -1652,22 +1658,22 @@ describe('cop', function () {
         });
 
         it('testUninstallLayerInObject', function() {
-            var obj1 = {
-                m1: function() {return 3},
-                m2: function() {return 2}
+            const obj1 = {
+                m1() {return 3},
+                m2() {return 2}
             };
-            var originalM1 = obj1.m1;
-            var originalM2 = obj1.m2;
+            const originalM1 = obj1.m1;
+            const originalM2 = obj1.m2;
 
 
-            var layer = new Layer();
+            const layer = new Layer();
             layer.refineObject(obj1, {
-                m1: function() { return cop.proceed() + 1 }
+                m1() { return cop.proceed() + 1 }
             });
 
-            var layer2 = new Layer();
+            const layer2 = new Layer();
             layer2.refineObject(obj1, {
-                m2: function() { return cop.proceed() + 1 }
+                m2() { return cop.proceed() + 1 }
             });
 
             cop.uninstallLayersInObject(obj1);
@@ -1713,19 +1719,18 @@ describe('cop', function () {
 
     describe('unrefineObject', function () {
         it('testUntrefineObject', function() {
-            var object = {foo: function() {return 3 }}
+            const object = {foo() {return 3 }};
 
-            var layer = new Layer("TestLayer")
+            const layer = new Layer("TestLayer");
             layer.refineObject(object, {
-                foo: function() {
+                foo() {
                     return cop.proceed() + 4
                 }
-            })
+            });
 
             assert(cop.getLayerDefinitionForObject(layer, object), "no layer definition")
             layer.unrefineObject(object);
-            assert(cop.getLayerDefinitionForObject(layer, object) == undefined, "layer definition still there")
-
+            assert(cop.getLayerDefinitionForObject(layer, object) == undefined, "layer definition still there");
         });
 
         it('testUntrefineClass', function() {
@@ -1733,17 +1738,17 @@ describe('cop', function () {
                 foo() { return 3 }
             }
 
-            var layer = new Layer("TestLayer")
+            const layer = new Layer("TestLayer")
             layer.refineClass(klass, {
-                foo: function() {
+                foo() {
                     return cop.proceed() + 4
                 }
-            })
+            });
 
-            assert(cop.getLayerDefinitionForObject(layer, klass.prototype), "no layer definition")
+            assert(cop.getLayerDefinitionForObject(layer, klass.prototype), "no layer definition");
             layer.unrefineClass(klass);
-            assert(cop.getLayerDefinitionForObject(layer, klass.prototype) == undefined, "layer definition still there")
-
+            assert.isUndefined(cop.getLayerDefinitionForObject(layer, klass.prototype),
+                               "layer definition still there");
         });
     });
 });
