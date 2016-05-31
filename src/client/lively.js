@@ -112,7 +112,7 @@ export default class Lively {
 
   static loadJavaScriptThroughDOM(name, src, force) {
     return new Promise((resolve) => {
-      var scriptNode = document.querySelector(name);
+      var scriptNode = document.querySelector("#"+name);
       if (scriptNode) {
         scriptNode.remove();
       }
@@ -130,6 +130,30 @@ export default class Lively {
       document.head.appendChild(script);
     })
   }
+  
+  
+  static loadCSSThroughDOM(name, href, force) {
+    return new Promise((resolve) => {
+      var linkNode = document.querySelector("#"+name);
+      if (linkNode) {
+        linkNode.remove();
+      }
+      var link = document.createElement("link");
+      link.rel="stylesheet"
+      link.id=name;
+      link.charset="utf-8"
+      link.type="text/css";
+      if (force) {
+        href += + "?" + Date.now();
+      }
+      link.href= href;
+      link.onload = function() {
+        resolve();
+      };
+      document.head.appendChild(link);
+    })
+  }
+
 
   static fillTemplateStyles(root) {
      // there seems to be no <link ..> tag allowed to reference css inside of templates #Jens
@@ -211,7 +235,9 @@ export default class Lively {
         return proceed(load)
       })
     }
-
+  
+    // for container content... But this will lead to conflicts with lively4chrome  ?? #Jens
+    // lively.loadCSSThroughDOM("livelystyle", lively4url + "/templates/livelystyle.css")
   }
 
   static array(anyList){

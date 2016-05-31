@@ -210,8 +210,13 @@ export default class Container extends Morph {
   }
 
   clear() {
-    this.getSubmorph('#container-root').innerHTML = ''
+    this.getContentRoot().innerHTML = ''
     this.getSubmorph('#container-editor').innerHTML = ''
+  }
+  
+  getContentRoot() {
+    return this.getSubmorph('#container-root')
+    // return this
   }
 
   appendMarkdown(content) {
@@ -222,7 +227,7 @@ export default class Container extends Morph {
       var html = $.parseHTML(htmlSource);
       lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path));
       console.log("html", html);
-      var root = this.getSubmorph('#container-root');
+      var root = this.getContentRoot()
       html.forEach((ea) => root.appendChild(ea));
       lively.components.loadUnresolved(root);
     });
@@ -243,7 +248,7 @@ export default class Container extends Morph {
 
   appendHtml(content) {
     try {
-      var root = this.getSubmorph('#container-root')  
+      var root = this.getContentRoot()  
       var nodes = $.parseHTML(content);
       if (nodes[0] && nodes[0].localName == 'template') {
       	lively.notify("append template " + nodes[0].id);
@@ -262,7 +267,7 @@ export default class Container extends Morph {
   appendTemplate(name) {
     try {
     	var node = lively.components.createComponent(name)
-    	this.getSubmorph('#container-root').appendChild(node)
+    	this.getContentRoot().appendChild(node)
       lively.components.loadByName(name)
     } catch(e) {
       console.log("Could not append html:" + content)

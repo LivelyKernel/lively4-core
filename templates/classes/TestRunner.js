@@ -46,7 +46,7 @@ export default class TestRunner extends HTMLDivElement {
     var dir = lively4url + dir;
     var json = await lively.files.statFile(dir).then(JSON.parse)
     return json.contents.map(ea => ea.name )
-      .filter(ea => ea.match(/(?:_|-)test\.js$/))
+      .filter(ea => ea.match(/-test\.js$/))
       .map(ea => dir + ea)
   }
   
