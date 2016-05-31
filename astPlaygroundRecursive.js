@@ -1,27 +1,16 @@
 
-//import {livelyModules} from '../lively.modules/dist/lively.modules.js';
-//import {livelyAST} from '../lively.ast/dist/lively.ast.js';
-
-System["import"]("https://lively-kernel.org/lively4/lively.modules/dist/lively.modules.js").then(function (m) {
-  lively.modules = m;
-})
-.then(function () {
-  System["import"]("https://lively-kernel.org/lively4/lively.ast/dist/lively.ast.js").then(function (m) {
-    lively.ast = m;
-  });
-});
-
-
 class Expr {
   constructor(expression, callback, context) {
     this.originalExpr = expression;
-    this.callback = callback;
     this.context = context;
+    this.callback = callback.bind(context);
 
     this.lastValue = undefined;
+    this.observers = {};
 
     this._ast = lively.ast.parseFunction(expression);
     this._declarations = lively.ast.query.topLevelDeclsAndRefs(this._ast);
+    console.log(this._declarations);
     this.observables = this.detectObservables();
 
     this.transformExpression();
@@ -33,6 +22,7 @@ class Expr {
   test() {
     let result = this.expr(this.context);
     
+    console.log(this.expr, this.context);
     console.log('test returned', result);
 
     if (this.lastValue === undefined) {
@@ -40,7 +30,7 @@ class Expr {
     } else {
       if (this.lastValue !== result) {
         console.log('value changed!');
-        this.callback();
+        this.callback(result);
       }
       this.lastValue = result;
     }
@@ -50,9 +40,13 @@ class Expr {
     let off = 0;
     
     let src = this.originalExpr.toString();
-    
     for (let i = this._declarations.refs.length - 1; i >= 0; i--) {
       let node = this._declarations.refs[i];
+      
+      if (!node.name.includes('.') && window[node.name] !== undefined) {
+        // dont replace global objects like parseInt
+        continue;
+      }
       let left = src.substring(0, node.start - 1);
       let right = src.substring(node.start - 1);
       src = left + '__context.' + right;
@@ -110,17 +104,22 @@ class Expr {
   }
   
   proxify() {
+    console.log(this.observables.variablesToObserve);
     for(let observable of this.observables.variablesToObserve) {
       let observableParts = observable.split('.');
       let contextVariableName = observableParts.shift();
-      let objectPropertyName = observableParts.join("");
+      let objectPropertyName = observableParts.join(".");
   
       let object = null;
+      
+      console.log(contextVariableName, observable);
       if(contextVariableName != observable) {
-        object = context[contextVariableName];
+        object = this.context[contextVariableName];
+        
+        
   
         if(object) {
-          this.proxifyVariable(object, objectPropertyName, callback);
+          this.proxifyVariable(object, objectPropertyName, this.callback);
         }
       } else {
         //has no dot in its name, so is probably a global var?
@@ -131,6 +130,37 @@ class Expr {
   
   proxifyVariable(object, variable, callback) {
     console.log(object, variable, callback);
+    
+    if (object instanceof HTMLElement) {
+      if (this.observers[object] === undefined) {
+        this.observers[object] = {
+          attributes: new Set(),
+          mutationObserver: null,
+          config: {
+            attributes: true
+          }
+        }
+        
+        var mutationObserver = new MutationObserver(
+          (records, m) => this.mutationObserverCallback(records, m)
+        );
+        mutationObserver.observe(object, this.observers[object].config);
+        
+        this.observers[object].mutationObserver = mutationObserver;
+       
+        console.log('set up', this.observers[object]);
+      }
+      // HTMLElements get special treatment
+      return;
+    }
+    
+    if (variable.includes('.')) {
+      let components = variable.split('.');
+      this.proxifyVariable(object[components[0]], components.splice(1).join('.'), callback);
+      return;
+    }
+    
+    console.log('patching ', variable);
     
     ['__lively_expr_getters',
      '__lively_expr_setters',
@@ -159,8 +189,8 @@ class Expr {
     
     object.__lively_expr_watchers.add(this);
     
-    console.log('old getter:', oldGetter);
-    console.log('old setter:', oldSetter);
+    // console.log('old getter:', oldGetter);
+    // console.log('old setter:', oldSetter);
 
     var newGetter = function() {
       if (this.__lively_expr_getters[variable]) {
@@ -185,6 +215,12 @@ class Expr {
     object.__defineGetter__(variable, newGetter);
     object.__defineSetter__(variable, newSetter);
   }
+  
+  mutationObserverCallback(records, mutationObserver) {
+    // console.log(mutationObserver);
+    // console.log(records);
+    this.test();
+  }
 }
 
 //var code = "var ret = 0; if(obj.b.c.d.e == this.a.b.d.e) null(); ret = this.a; ret = ret + obj.b;";
@@ -194,18 +230,42 @@ class Expr {
 
 var object = {
   height: 100,
-  width: 200
+  width: 200,
+  position: {
+    x: 1,
+    y: 2
+  }
 };
-var context = {obj: object};
+// var context = {obj: object};
 
-var expr = new Expr(function() { 
-  return obj.width > 100 && obj.width < 1000 
-}, () => {
-  console.log('changed');
-}, context);
+// var expr = new Expr(function() { 
+//   return obj.width > 100 && obj.position.x > 0
+// }, () => {
+//   console.log('changed');
+// }, context);
 
-setTimeout(function() {
-  context.obj.width = 0;  
-}, 1000);
+// setTimeout(function() {
+//   object.position.x = 0;  
+// }, 1000);
+
+var div = document.querySelector('#active-ball');
+if (div) div.remove();
+
+div = document.createElement('div');
+div.id = "active-ball";
+div.style.position = 'absolute';
+div.style.width = '30px';
+div.style.height = '30px';
+div.style.background = 'red';
+div.style.left = '50px';
+div.style.top = '100px';
+
+document.body.appendChild(div);
+
+var expr = new Expr(
+  function() { return parseInt(ball.style.left) > 800 },
+  function(newValue) { this.ball.style.background = newValue ? 'red' : 'blue'},
+  { ball: div }
+);
 
 
