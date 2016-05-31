@@ -11,6 +11,10 @@
   color: grey;
 }
 
+.hidden {
+  display: none;
+}
+
 button {
   padding: 4px;
   margin: 2px;

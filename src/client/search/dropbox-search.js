@@ -1,3 +1,5 @@
+import * as utils from "./search-utils.js";
+
 function getReadableFileExtensions() {
   return [".js", ".md", ".html"];
 }
@@ -24,7 +26,6 @@ export function setup(db) {
 function restoreIndex(db) {
   let path = `https://lively4${db.path}/index.l4idx`;
   return loadSearchIndex(path).then(buildSearchIndex).then(index => {
-    lively.notify("Info: ", `Index loaded for ${db.path}`, 3);
     db.index = index;
   }).catch(error => {
     lively.notify("Error: ", `Cannot load ${path}`, 10);
@@ -97,7 +98,8 @@ export function find(query) {
     // find is bound to the mount object, so -this- is the mount
     if (this.index) {
       resolve(this.index.search(query).map((res) => {
-        res.path = this.path + res.ref;
+        res.path = utils.join(this.path, res.ref);
+        res.type = "dropbox";
         return res;
       }));
     }

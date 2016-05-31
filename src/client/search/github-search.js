@@ -1,3 +1,5 @@
+import * as utils from "./search-utils.js";
+
 function encodeQueryData(data) {
    var ret = [];
    for (let d in data)
@@ -30,7 +32,8 @@ export function find(pattern) {
     let responseJson = await response.json()
     return _.map(responseJson.items, (item) => {
       let strippedItem = _.pick(item, ["path", "score"]);
-      strippedItem.path = this.path + strippedItem.path;
+      strippedItem.path = utils.join(this.path, strippedItem.path);
+      strippedItem.type = "github";
       return strippedItem;
     });
   });
