@@ -45,7 +45,8 @@
         i.classList.add(`fa-${item.type}`);
         // Add link with onClick handler
         let link = document.createElement("a");
-        link.innerHTML = item.score + " : " + item.path;
+        link.innerHTML = item.path;
+        link.title = item.score;
         link.href = "#";
         link.onclick = () => {
           this.browseSearchResult(item.path, pattern)
