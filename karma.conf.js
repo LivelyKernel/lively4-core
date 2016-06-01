@@ -15,8 +15,6 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       'node_modules/babel-polyfill/dist/polyfill.js',
-      'miniprototype.js',
-      'MiniBase.js',
       'Flatten.js',
       'copv2/*.js',
       'tests/**/*Tests.js'
