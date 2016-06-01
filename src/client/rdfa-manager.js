@@ -5,6 +5,8 @@ class Property {
     this.name = name;
     this.value = value;
     this.origins = [];
+    var parts = name.split("/");
+    this.simpleName = parts[parts.length - 1];
   }
 }
 
@@ -17,7 +19,9 @@ class Subject {
 
 export default class RdfaManager {
 
-  static generateTableRows(table) {
+  static generateTableRows(div) {
+    div[0].style.overflow = "auto";
+    var table = div.append($('<table>'));
     this.buildRdfaDataStructure((s, p, v) => {});
     RdfaManager.data.subjects.forEach((s) => {
       table.append(
@@ -28,7 +32,7 @@ export default class RdfaManager {
         table.append(
           $('<tr>')
             .append($('<td>'))
-            .append($('<td>').text(p))
+            .append($('<td>').text(p.simpleName))
             .append($('<td>').text(p.value)));
         RdfaManager.makeLocationsClickable(p);
       });
@@ -59,21 +63,17 @@ export default class RdfaManager {
       }
     });
     var addressString = "";
-    if (Array.isArray(value)) {
-      value = value[0];
-    }
-    if (value.startsWith("_:")) {
-      // value is a subject
+    if (property.value.constructor.name == "Subject") {
       var isFirst = true; // skip the first value since this is the parent node
-      document.data.getProperties(value).forEach(p => {
+      property.value.properties.forEach(p => {
         if (isFirst) {
           isFirst = false;
           return;
         }
-        addressString += document.data.getValues(value, p)[0] + " ";
+        addressString += p.value + " ";
       });
     } else {
-      addressString = value;
+      addressString = property.value;
     }
     var apiKey = "AIzaSyBLZknKBi39WOdlmZMYd7y0l7HU9zMFBB0";
     var mapsLink = "https://www.google.com/maps/embed/v1/search?key="
@@ -104,8 +104,6 @@ export default class RdfaManager {
         document.data.getValueOrigins(subjectName, propertyName).forEach((valueOrigin) => {
           property.origins.push(valueOrigin.origin);
         });
-        var nameParts = propertyName.split('/');
-        var simpleName = nameParts[nameParts.length - 1];
         subject.properties.push(property);
       });
     });
