@@ -29,8 +29,8 @@ import focalStorage from '../external/focalStorage.js';
 
 import * as kernel from 'kernel'
 
-
 let $ = window.$,
+  _ = window._,
   babel = window.babel; // known global variables.
 
 // a) Special shorthands for interactive development
@@ -460,9 +460,10 @@ export default class Lively {
 
       owner.replaceChild(newInstance, oldInstance);
       _.each(oldInstance.childNodes, function(ea) {
-        newInstance.appendChild(ea);
-        console.log("append old child: " + ea);
-
+        if (ea) { // there are "undefined" elemented in childNodes... sometimes #TODO
+          newInstance.appendChild(ea);
+          console.log("append old child: " + ea);
+        }
       });
       _.each(oldInstance.attributes, function(ea) {
         console.log("set old attribute " + ea.name + " to: " + ea.value);
