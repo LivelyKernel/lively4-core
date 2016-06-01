@@ -23,7 +23,7 @@
  */
 'use strict';
 
-import { default as cop, Layer, LayerableObject } from '../copv2/Layers.js';
+import { default as cop, Layer, LayerableObject } from '../Layers.js';
 
 let assert = chai.assert;
 
