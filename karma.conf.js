@@ -19,6 +19,7 @@ module.exports = function(config) {
       'src/external/system.src.js',
       'src/external/babel-browser.js',
       'vendor/regenerator-runtime.js',
+      'src/external/lively.modules-with-lively.vm.js',
       {pattern: 'node_modules/**/*.js', included: false},
       {pattern: 'node_modules/chai/chai.js', included: false},
       {pattern: 'node_modules/mocha/mocha.js', included: false},
