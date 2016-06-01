@@ -46,6 +46,7 @@ export default class RdfaManager {
         if (valueOrigin.style) {
           valueOrigin.onmouseover = function(){this.style.outline = "1px solid red";};
           valueOrigin.onmouseout = function(){this.style.outline = "";};
+          valueOrigin.rdfaData = property;
           lively.addEventListener('click', valueOrigin, 'click', (evt) => {
             this.openMapsFrame(evt, property);
           }, true);
@@ -102,6 +103,7 @@ export default class RdfaManager {
         value = this.resolveSubject(value);
         var property = new Property(propertyName, value);
         document.data.getValueOrigins(subjectName, propertyName).forEach((valueOrigin) => {
+          valueOrigin.origin.rdfaData = property;
           property.origins.push(valueOrigin.origin);
         });
         subject.properties.push(property);
