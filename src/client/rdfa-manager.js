@@ -1,20 +1,21 @@
 import * as rdfa from '../external/RDFa.js';
 
-export default class RdfaManager {
-
-  /*class Property {
-    constructor(name, value) {
-      this.name = name;
-      this.value = value;
-    }
+class Property {
+  constructor(name, value) {
+    this.name = name;
+    this.value = value;
+    this.origins = [];
   }
+}
 
-  class Subject {
-    constructor(name) {
-      this.name = name;
-      this.properties = [];
-    }
-  }*/
+class Subject {
+  constructor(name) {
+    this.name = name;
+    this.properties = [];
+  }
+}
+
+export default class RdfaManager {
 
   static generateTableRows(table) {
     this.buildRdfaDataStructure((s, p, v) => {});
@@ -92,22 +93,38 @@ export default class RdfaManager {
   }
 
   static buildRdfaDataStructure(visitor) {
-    RdfaManager.data = {subjects: []};
-    document.data.getSubjects().forEach(s => {
-      var subject = {name: s, properties: []};
-      RdfaManager.data.subjects.push(subject);
-      document.data.getProperties(s).forEach((p) => {
-        var v = document.data.getValues(s, p);
-        var origins = [];
-        document.data.getValueOrigins(s, p).forEach((valueOrigin) => {
-          origins.push(valueOrigin.origin);
+    this.data = {subjects: []};
+    document.data.getSubjects().forEach(subjectName => {
+      var subject = this.getOrCreateSubject(subjectName);
+      document.data.getProperties(subjectName).forEach((propertyName) => {
+        //TODO for multiple values
+        var value = document.data.getValues(subjectName, propertyName)[0];
+        value = this.resolveSubject(value);
+        var property = new Property(propertyName, value);
+        document.data.getValueOrigins(subjectName, propertyName).forEach((valueOrigin) => {
+          property.origins.push(valueOrigin.origin);
         });
-        var nameParts = p.split('/');
+        var nameParts = propertyName.split('/');
         var simpleName = nameParts[nameParts.length - 1];
-        var property = {name: p, simpleName: p, value: v, origins: origins};
         subject.properties.push(property);
       });
     });
+  }
+
+  static resolveSubject(value) {
+    if (value.startsWith('_:')) {
+      return this.getOrCreateSubject(value);
+    }
+    return value;
+  }
+
+  static getOrCreateSubject(value) {
+    var subject = this.data.subjects.find(subject => {return subject.name == value});
+    if (!subject) {
+      subject = new Subject(value);
+      this.data.subjects.push(subject);
+    }
+    return subject;
   }
 
 }
