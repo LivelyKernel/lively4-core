@@ -237,7 +237,7 @@ export default class Lively {
     }
   
     // for container content... But this will lead to conflicts with lively4chrome  ?? #Jens
-    // lively.loadCSSThroughDOM("livelystyle", lively4url + "/templates/livelystyle.css")
+    lively.loadCSSThroughDOM("livelystyle", lively4url + "/templates/livelystyle.css")
   }
 
   static array(anyList){

@@ -2,6 +2,7 @@
 
 import Morph from './Morph.js';
 
+
 export default class Container extends Morph {
 
   initialize() {
@@ -215,8 +216,8 @@ export default class Container extends Morph {
   }
   
   getContentRoot() {
-    return this.getSubmorph('#container-root')
-    // return this
+    // return this.getSubmorph('#container-root')
+    return this
   }
 
   appendMarkdown(content) {

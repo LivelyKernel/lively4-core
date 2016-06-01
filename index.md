@@ -1,4 +1,4 @@
-# Welcome to Lively4
+# Welcome to Lively1337
 
 * Sofware Architecture Group, Hasso Plattner Institute,  2015, 2016 [MIT LICENSE](LICENSE)
 * Stefan Lehmann, Jens Lincke, Tim Felgentreff, et al

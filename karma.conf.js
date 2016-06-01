@@ -19,6 +19,7 @@ module.exports = function(config) {
       'src/external/system.src.js',
       'src/external/babel-browser.js',
       'vendor/regenerator-runtime.js',
+      {pattern: 'node_modules/**/*.js', included: false},
       {pattern: 'node_modules/chai/chai.js', included: false},
       {pattern: 'node_modules/mocha/mocha.js', included: false},
       {pattern: 'src/**/*.js*', included: false},
@@ -32,6 +33,7 @@ module.exports = function(config) {
     ],
 
     proxies: {
+      '/node_modules/': '/base/node_modules/',
       '/node_modules/chai/chai.js': '/base/node_modules/chai/chai.js',
       '/node_modules/mocha/mocha.js': '/base/node_modules/mocha/mocha.js',
       '/src/': '/base/src/',
