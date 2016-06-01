@@ -80,6 +80,11 @@
         from: <input id="googledriveSubfolder" value="/lively4test" />
         to: <input id="googledriveMountPath" value="/googledrive" />
       </p>
+      <h3>HTTP <button id="httpMountButton">mount</button></h3>
+      <p>
+        from: <input id="httpUrl" value="https://lively-kernel.org/lively4/lively4-core" />
+        to: <input id="httpMountPath" value="/http" />
+      </p>
       <h3>Mounts <button id="updateMountList"><i class="fa fa-refresh" aria-hidden="true"></i></button>
         </h3>
         <ol id="listOfMountPoints"></ol>
@@ -106,6 +111,9 @@
         this.loginGoogledrive()})
       $(this.getSubmorph('#googledriveLogoutButton')).click(() => {
         this.logoutGoogledrive()})
+
+      $(this.getSubmorph('#httpMountButton')).click(() => {
+        this.mountHttp()})
 
       $(this.getSubmorph('#updateMountList')).click(() => {
         this.updateMountList()})
@@ -243,7 +251,7 @@
     </script>
 
     <script type="lively4script" data-name="loginGoogledrive">
-     function() {
+      function() {
         console.log("login googledrive")
 
         var mountPath = this.shadowRoot.querySelector('#googledriveMountPath').value
@@ -283,6 +291,37 @@
       }
     </script>
     
+    <script type="lively4script" data-name="mountHttp">
+     function() {
+        console.log("mount http")
+
+        var mountPath = this.shadowRoot.querySelector('#httpMountPath').value
+        var httpUrl = this.shadowRoot.querySelector('#httpUrl').value
+
+        var mount = {
+          "path": mountPath,
+          "name": "http",
+          "options": {
+            "base": httpUrl
+          }
+        }
+        
+        $.ajax({
+          url: this.getMountURL(),
+          type: 'PUT',
+          data: JSON.stringify(mount),
+          success: (text) => {
+            console.log("mounted http")
+            this.updateMountList()
+          },
+          error: function(xhr, status, error) {
+            console.log("could not mount http " + error)
+          }
+        });
+
+     }
+    </script>
+    
     <script type="lively4script" data-name="unmountPath">
     function(path) {
       console.log("unmountPath: " + path)
@@ -300,6 +339,7 @@
             });
     }
     </script>
+    
     <script type="lively4script" data-name="updateMountList">
     function() {
       $.ajax({
