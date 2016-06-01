@@ -21,18 +21,18 @@
  * THE SOFTWARE.
  */
 
-var copv2 = {};
-export default copv2;
+var cop = {};
+export default cop;
 
 /* 
  * Private Helpers for Development
  */
 
-copv2.Config = {};
-copv2.Config.ignoredepricatedProceed = true;
+cop.Config = {};
+cop.Config.ignoredepricatedProceed = true;
 
-copv2.log_layer_code = false;
-copv2.log = function (string) {
+cop.log_layer_code = false;
+cop.log = function (string) {
   if (log_layer_code) console.log(string);
 };
 
@@ -41,14 +41,14 @@ copv2.log = function (string) {
  * Private State
  */
 
-copv2.proceedStack = [];
-copv2.GlobalLayers = [];
+cop.proceedStack = [];
+cop.GlobalLayers = [];
 // hack, to work around absence of identity dictionaries in JavaScript
 // we could perhaps limit ourselfs to layer only those objects that respond to object.id()
 // because working with objects is a serialization problem in itself, perhaps we should
 // restrict ourself in working with classes
 // So classes have names and names can be used as keys in dictionaries :-)
-copv2.object_id_counter = 0;
+cop.object_id_counter = 0;
 
 /* 
  * Private Methods
@@ -68,10 +68,10 @@ function $A(iterable) {
   }
   return results;
 }
-copv2.isFunction = function (object) {
+cop.isFunction = function (object) {
   return typeof object === "function";
 }
-copv2.isString  = function (object) {
+cop.isString  = function (object) {
   return typeof object === "string";
 }
 Object.assign (String.prototype, {
@@ -88,7 +88,7 @@ Object.assign(Function.prototype, {
     var category = this.defaultCategoryName;
     var traits = [];
     for (var i = 0; i < args.length; i++) {
-      if (copv2.isString(args[i])) {
+      if (cop.isString(args[i])) {
         category = args[i];
       } else {
         this.addCategorizedMethods(category, args[i] instanceof Function ? (args[i])() : args[i]);
@@ -140,7 +140,7 @@ Object.assign(Function.prototype, {
       // Object.isFunction on regexp field values will return true.
       // But they're not full-blown functions and don't
       // inherit argumentNames from Function.prototype
-      var hasSuperCall = ancestor && copv2.isFunction(value) &&
+      var hasSuperCall = ancestor && cop.isFunction(value) &&
         value.argumentNames && value.argumentNames().first() == "$super";
       if (hasSuperCall) {(function() {
           // wrapped in a function to save the value of 'method' for advice
@@ -173,7 +173,7 @@ Object.assign(Function.prototype, {
       if (property === "formals") { // rk FIXME remove this cruft
         // special property (used to be pins, but now called formals to disambiguate old and new style
         Class.addPins(this, value);
-      } else if (copv2.isFunction(value)) {
+      } else if (cop.isFunction(value)) {
         // remember name for profiling in WebKit
         value.displayName = className + "$" + property;
         for (; value; value = value.originalFunction) {
@@ -238,7 +238,7 @@ Object.assign(Array.prototype, {
 });
 
 // for debugging ContextJS itself
-copv2.withLogLayerCode = function (func) {
+cop.withLogLayerCode = function (func) {
   try {
     var old = log_layer_code;
     log_layer_code = true;
@@ -248,21 +248,21 @@ copv2.withLogLayerCode = function (func) {
   }
 };
 
-copv2.getLayerDefinitionForObject = function (layer, object) {
-  // log("copv2.getLayerDefinitionForObject(" + layer + ", " + object + ")");
+cop.getLayerDefinitionForObject = function (layer, object) {
+  // log("cop.getLayerDefinitionForObject(" + layer + ", " + object + ")");
   if (!layer || !object) {
     return;
   }
   var result = layer[object._layer_object_id];
-  return result ? result : copv2.getLayerDefinitionForObject(layer, object.prototype);
+  return result ? result : cop.getLayerDefinitionForObject(layer, object.prototype);
 };
 
-copv2.ensurePartialLayer = function (layer, object) {
+cop.ensurePartialLayer = function (layer, object) {
   if (!layer) {
     throw new Error("in ensurePartialLayer: layer is nil");
   }
   if (!object.hasOwnProperty("_layer_object_id")) {
-    object._layer_object_id = copv2.object_id_counter++;
+    object._layer_object_id = cop.object_id_counter++;
   }
   if (!layer[object._layer_object_id]) {
     layer[object._layer_object_id] = {_layered_object: object};
@@ -272,44 +272,44 @@ copv2.ensurePartialLayer = function (layer, object) {
 
 // TODO(mariannet) : Find out if ES6 constructor also has type
 // TODO(mariannet) : ask Javascript Ninja about last line
-copv2.layerMethod = function (layer, object, property, func) {
-  copv2.ensurePartialLayer(layer, object)[property] = func;
+cop.layerMethod = function (layer, object, property, func) {
+  cop.ensurePartialLayer(layer, object)[property] = func;
   func.displayName = "layered " + layer.name + " "
                    + (object.constructor ? (object.constructor.type + "$") : "")
                    + property;
-  copv2.makeFunctionLayerAware(object, property, layer.isHidden);
-  copv2.isFunction(object.getName)
+  cop.makeFunctionLayerAware(object, property, layer.isHidden);
+  cop.isFunction(object.getName)
       && (layer.layeredFunctionsList[object][property] = true);
 };
 
-copv2.layerGetterMethod = function (layer, object, property, getter) {
-  Object.defineProperty(copv2.ensurePartialLayer(layer, object), property,
+cop.layerGetterMethod = function (layer, object, property, getter) {
+  Object.defineProperty(cop.ensurePartialLayer(layer, object), property,
                         {get: getter, configurable: true});
 };
 
-copv2.layerSetterMethod = function (layer, object, property, setter) {
-  Object.defineProperty(copv2.ensurePartialLayer(layer, object), property,
+cop.layerSetterMethod = function (layer, object, property, setter) {
+  Object.defineProperty(cop.ensurePartialLayer(layer, object), property,
                         {set: setter, configurable: true});
 };
 
-copv2.layerProperty = function (layer, object, property, defs) {
+cop.layerProperty = function (layer, object, property, defs) {
   var propertyDescriptor = Object.getOwnPropertyDescriptor(defs, property);
   var getter = propertyDescriptor && propertyDescriptor.get;
   if (getter) {
-    copv2.layerGetterMethod(layer, object, property, getter);
+    cop.layerGetterMethod(layer, object, property, getter);
   }
   var setter = propertyDescriptor && propertyDescriptor.set;
   if (setter) {
-    copv2.layerSetterMethod(layer, object, property, setter);
+    cop.layerSetterMethod(layer, object, property, setter);
   }
   if (getter || setter) {
-    copv2.makePropertyLayerAware(object, property);
+    cop.makePropertyLayerAware(object, property);
   } else {
-    copv2.layerMethod(layer, object, property, defs[property]);
+    cop.layerMethod(layer, object, property, defs[property]);
   }
 };
 
-copv2.layerPropertyWithShadow = function (layer, object, property) {
+cop.layerPropertyWithShadow = function (layer, object, property) {
   // shadowing does not work with current implementation
   // see the shadow tests in LayersTest
   var defs = {};
@@ -318,23 +318,23 @@ copv2.layerPropertyWithShadow = function (layer, object, property) {
   Object.defineProperty(defs, property, {
     get: function layeredGetter() {
       return this[layeredPropName] === undefined ?
-          copv2.proceed() : this[layeredPropName];
+          cop.proceed() : this[layeredPropName];
     },
     set: function layeredSetter(v) {
       this[layeredPropName] = v;
     },
     configurable: true
   });
-  copv2.layerProperty(layer, object, property, defs);
+  cop.layerProperty(layer, object, property, defs);
 };
 
-copv2.computeLayersFor = function Layers$computeLayersFor(obj) {
+cop.computeLayersFor = function Layers$computeLayersFor(obj) {
   return obj && obj.activeLayers ?
-      obj.activeLayers(copv2.currentLayers) : copv2.currentLayers();
+      obj.activeLayers(cop.currentLayers) : cop.currentLayers();
 };
 
-copv2.composeLayers = function (stack) {
-  var result = copv2.GlobalLayers.clone();
+cop.composeLayers = function (stack) {
+  var result = cop.GlobalLayers.clone();
   for (var i = 0; i < stack.length; i++) {
     var current = stack[i];
     if (current.withLayers) {
@@ -346,36 +346,36 @@ copv2.composeLayers = function (stack) {
   return result;
 };
 
-copv2.currentLayers = function () {
-  if (copv2.LayerStack.length == 0) {
+cop.currentLayers = function () {
+  if (cop.LayerStack.length == 0) {
     throw new Error("The default layer is missing");
   }
   // NON OPTIMIZED VERSION FOR STATE BASED LAYER ACTIVATION
-  var current = copv2.LayerStack.last();
+  var current = cop.LayerStack.last();
   if (!current.composition) {
-    current.composition = copv2.composeLayers(copv2.LayerStack);
+    current.composition = cop.composeLayers(cop.LayerStack);
   }
   return current.composition;
 };
 
 // clear cached layer compositions
-copv2.invalidateLayerComposition = function () {
-  copv2.LayerStack.forEach(
+cop.invalidateLayerComposition = function () {
+  cop.LayerStack.forEach(
     function(ea) {
       ea.composition = null;
     });
 };
 
-copv2.resetLayerStack = function () {
-  copv2.LayerStack = [{
+cop.resetLayerStack = function () {
+  cop.LayerStack = [{
     isStatic: true,
     toString: function() { return "BaseLayer"; },
     composition: null
   }];
-  copv2.invalidateLayerComposition();
+  cop.invalidateLayerComposition();
 };
 
-copv2.lookupLayeredFunctionForObject = function (
+cop.lookupLayeredFunctionForObject = function (
     self, layer, function_name, methodType, n) {
   if (!layer) {
     return undefined; 
@@ -383,7 +383,7 @@ copv2.lookupLayeredFunctionForObject = function (
   // we have to look for layer defintions in self, self.prototype,
   // ... there may be layered methods in a subclass of "obj"
   var layered_function;
-  var layer_definition_for_object = copv2.getLayerDefinitionForObject(layer, self);
+  var layer_definition_for_object = cop.getLayerDefinitionForObject(layer, self);
   if (layer_definition_for_object) {
     // log("  found layer definitions for object");
     // TODO: optional proceed goes here....
@@ -404,7 +404,7 @@ copv2.lookupLayeredFunctionForObject = function (
     if (superclass) {
       // log("layered function is not found
       //in this partial method, lookup for my prototype?")
-      return copv2.lookupLayeredFunctionForObject(
+      return cop.lookupLayeredFunctionForObject(
           superclass, layer, function_name, methodType);
     } else {
         // log("obj has not prototype")
@@ -413,26 +413,26 @@ copv2.lookupLayeredFunctionForObject = function (
   return layered_function;
 };
 
-copv2.pvtMakeFunctionOrPropertyLayerAware
+cop.pvtMakeFunctionOrPropertyLayerAware
     = function (obj, slotName, baseValue, type, isHidden) {
   // install in obj[slotName] a cop wrapper that weaves partial methods
   // into real method (baseValue)
   if (baseValue.isLayerAware) {
     return;
   }
-  copv2.makeSlotLayerAwareWithNormalLookup(obj, slotName, baseValue, type, isHidden);
+  cop.makeSlotLayerAwareWithNormalLookup(obj, slotName, baseValue, type, isHidden);
 };
 
-copv2.makeSlotLayerAwareWithNormalLookup = function (
+cop.makeSlotLayerAwareWithNormalLookup = function (
     obj, slotName, baseValue, type, isHidden) {
   var wrapped_function = function() {
     var composition =
-        new copv2.PartialLayerComposition(this, obj, slotName, baseValue, type);
-    copv2.proceedStack.push(composition);
+        new cop.PartialLayerComposition(this, obj, slotName, baseValue, type);
+    cop.proceedStack.push(composition);
     try {
-      return copv2.proceed.apply(this, arguments);
+      return cop.proceed.apply(this, arguments);
     } finally {
-      copv2.proceedStack.pop()
+      cop.proceedStack.pop()
     };
   };
   wrapped_function.isLayerAware = true;
@@ -454,7 +454,7 @@ copv2.makeSlotLayerAwareWithNormalLookup = function (
   }
 };
 
-copv2.makeFunctionLayerAware = function (base_obj, function_name, isHidden) {
+cop.makeFunctionLayerAware = function (base_obj, function_name, isHidden) {
   if (!base_obj) {
     throw new Error("can't layer an non existent object");
   }
@@ -466,11 +466,11 @@ copv2.makeFunctionLayerAware = function (base_obj, function_name, isHidden) {
     // return;
     base_function = () => null;
   };
-  copv2.pvtMakeFunctionOrPropertyLayerAware(base_obj, function_name, base_function,
+  cop.pvtMakeFunctionOrPropertyLayerAware(base_obj, function_name, base_function,
                                             undefined, isHidden)
 };
 
-copv2.makePropertyLayerAware = function (baseObj, property) {
+cop.makePropertyLayerAware = function (baseObj, property) {
   if (!baseObj) {
     throw new Error("can't layer an non existent object");
   }  
@@ -489,11 +489,11 @@ copv2.makePropertyLayerAware = function (baseObj, property) {
     setter = function(value) { return this[propName] = value };
     Object.defineProperty(baseObj, property, {set: setter, configurable: true});
   };
-  copv2.pvtMakeFunctionOrPropertyLayerAware(baseObj, property, getter, 'getter');
-  copv2.pvtMakeFunctionOrPropertyLayerAware(baseObj, property, setter, 'setter');
+  cop.pvtMakeFunctionOrPropertyLayerAware(baseObj, property, getter, 'getter');
+  cop.pvtMakeFunctionOrPropertyLayerAware(baseObj, property, setter, 'setter');
 };
 
-copv2.makeFunctionLayerUnaware = function (base_obj, function_name) {
+cop.makeFunctionLayerUnaware = function (base_obj, function_name) {
   if (!base_obj) {
     throw new Error("need object to makeFunctionLayerUnaware");
   }
@@ -521,21 +521,21 @@ copv2.makeFunctionLayerUnaware = function (base_obj, function_name) {
   }
 };
 
-copv2.uninstallLayersInObject = function (object) {
+cop.uninstallLayersInObject = function (object) {
   Object.getOwnPropertyNames(object).forEach(ea => {
     if (typeof object[ea] === 'function')
-      copv2.makeFunctionLayerUnaware(object, ea);
+      cop.makeFunctionLayerUnaware(object, ea);
   });
 };
 
-copv2.uninstallLayersInAllClasses = function () {
+cop.uninstallLayersInAllClasses = function () {
   Global.classes(true).forEach(
     function(ea) {
-      copv2.uninstallLayersInObject(ea.prototype);
+      cop.uninstallLayersInObject(ea.prototype);
     });
 };
 
-copv2.allLayers = function (optObject = Global) {
+cop.allLayers = function (optObject = Global) {
   // does not really return all layers... layers in namepsaces are not found!
   // therefore you can query all layers in an optObject
   return Object.values(optObject).select(
@@ -600,7 +600,7 @@ export class Layer {
     var layer = this;
     this.layeredObjects().each(
       function(eachLayeredObj) {
-        var layerIdx = copv2.isFunction(eachLayeredObj.activeLayers)
+        var layerIdx = cop.isFunction(eachLayeredObj.activeLayers)
             ? eachLayeredObj.activeLayers().indexOf(layer) : -1;
         Properties.own(layer.layeredFunctionsList[eachLayeredObj]).each(
           function(eachLayeredFunc) {
@@ -614,7 +614,7 @@ export class Layer {
                     eachOtherLayer.layeredFunctionsList[eachLayeredObj][eachLayeredFunc];
               });
               if (!newerLayer) {
-                copv2.makeFunctionLayerUnaware(eachLayeredObj, eachLayeredFunc);
+                cop.makeFunctionLayerUnaware(eachLayeredObj, eachLayeredFunc);
               }
           });
       });
@@ -624,19 +624,19 @@ export class Layer {
   
   // Layer installation
   layerClass (classObject, methods) {
-    copv2.layerClass(this, classObj, methods);
+    cop.layerClass(this, classObj, methods);
     return this;
   }
   layerObject (obj, methods) {
-    copv2.layerObject(this, classObj, methods);
+    cop.layerObject(this, classObj, methods);
     return this;
   }
   refineClass (classObj, methods) {
-    copv2.layerClass(this, classObj, methods);
+    cop.layerClass(this, classObj, methods);
     return this;
   }
   refineObject (obj, methods) {
-    copv2.layerObject(this, obj, methods);
+    cop.layerObject(this, obj, methods);
     return this;
   }
   unrefineObject (obj) {
@@ -651,11 +651,11 @@ export class Layer {
   
   // Layer activation
   beGlobal () {
-    copv2.enableLayer(this);
+    cop.enableLayer(this);
     return this;
   }
   beNotGlobal () {
-    copv2.disableLayer(this);
+    cop.disableLayer(this);
     return this;
   }
   hide () {
@@ -668,7 +668,7 @@ export class Layer {
   
   // Testing
   isGlobal () {
-    return copv2.GlobalLayers.include(this);
+    return cop.GlobalLayers.include(this);
   }
   
   // Debugging
@@ -687,101 +687,101 @@ export class Layer {
   // Deserialization
   fromLiteral (literal) {
     // console.log("Deserializing Layer activation from: " + literal.name);
-    return copv2.create(literal.name, false);
+    return cop.create(literal.name, false);
   }
 }
-copv2.Layer = Layer; // TODO: replace with proper module exports
+cop.Layer = Layer; // TODO: replace with proper module exports
 
 var globalContextForLayers = {};
 
 export { globalContextForLayers as Global };
 
-copv2.basicCreate = function (layerName, context) {
+cop.basicCreate = function (layerName, context) {
   if (typeof context === 'undefined')
     context = globalContextForLayers;
   return context[layerName] ||
     (context[layerName] = new Layer(layerName, context));
 };
 
-copv2.create = function (rootContext, layerName) {
+cop.create = function (rootContext, layerName) {
   if (typeof layerName === 'undefined') {
-    // support copv2.create('LayerName') syntax without context
+    // support cop.create('LayerName') syntax without context
     // (for "global" layers)
     layerName = rootContext;
     rootContext = undefined;
   }
   if (typeof rootContext === 'undefined') {
-    return copv2.basicCreate(layerName);
+    return cop.basicCreate(layerName);
   }
   var parts = layerName.split(/\./);
   var context = rootContext;
   for (let i = 0; i < parts.length - 1; ++i) {
     context = context[parts[i]];
   }
-  return copv2.basicCreate(parts[parts.length - 1], context);
+  return cop.basicCreate(parts[parts.length - 1], context);
 };
 
 // Layering objects may be a garbage collection problem, because the layers keep strong
 // reference to the objects
-copv2.layerObject = function (layer, object, defs) {
-  // log("copv2.layerObject");
-  copv2.isFunction(object.getName) && (layer.layeredFunctionsList[object] = {});
+cop.layerObject = function (layer, object, defs) {
+  // log("cop.layerObject");
+  cop.isFunction(object.getName) && (layer.layeredFunctionsList[object] = {});
   Object.getOwnPropertyNames(defs).forEach(
     function (function_name) {
       // log(" layer property: " + function_name)
-      copv2.layerProperty(layer, object, function_name, defs);
+      cop.layerProperty(layer, object, function_name, defs);
     });
 };
 
 // layer around only the class methods
-copv2.layerClass = function (layer, classObject, defs) {
+cop.layerClass = function (layer, classObject, defs) {
   if (!classObject || !classObject.prototype) {
     throw new Error("ContextJS: can not refine class '" + classOBject + "' in " + layer);
   }
-  copv2.layerObject(layer, classObject.prototype, defs);
+  cop.layerObject(layer, classObject.prototype, defs);
 };
 
 // Layer Activation
-copv2.withLayers = function (layers, func) {
-  copv2.LayerStack.push({withLayers: layers});
-  // console.log("callee: " + copv2.withLayers.callee);
+cop.withLayers = function (layers, func) {
+  cop.LayerStack.push({withLayers: layers});
+  // console.log("callee: " + cop.withLayers.callee);
   try {
     return func();
   } finally {
-    copv2.LayerStack.pop();
+    cop.LayerStack.pop();
   }
 };
 
-copv2.withoutLayers = function (layers, func) {
-  copv2.LayerStack.push({withoutLayers: layers});
+cop.withoutLayers = function (layers, func) {
+  cop.LayerStack.push({withoutLayers: layers});
   try {
     return func();
   } finally {
-    copv2.LayerStack.pop();
+    cop.LayerStack.pop();
   }
 };
 
 // Gloabl Layer Activation
-copv2.enableLayer = function (layer) {
-  if (copv2.GlobalLayers.include(layer)) {
+cop.enableLayer = function (layer) {
+  if (cop.GlobalLayers.include(layer)) {
     return;
   }
-  copv2.GlobalLayers.push(layer);
-  copv2.invalidateLayerComposition();
+  cop.GlobalLayers.push(layer);
+  cop.invalidateLayerComposition();
 };
 
-copv2.disableLayer = function (layer) {
-  var idx = copv2.GlobalLayers.indexOf(layer);
+cop.disableLayer = function (layer) {
+  var idx = cop.GlobalLayers.indexOf(layer);
   if (idx < 0) {
     return;
   }
-  copv2.GlobalLayers.removeAt(idx);
-  copv2.invalidateLayerComposition();
+  cop.GlobalLayers.removeAt(idx);
+  cop.invalidateLayerComposition();
 };
 
-copv2.proceed = function (/* arguments */) {
+cop.proceed = function (/* arguments */) {
   // COP Proceed Function
-  var composition = copv2.proceedStack.last();
+  var composition = cop.proceedStack.last();
   if (!composition) {
     console.log('ContextJS: no composition to proceed (stack is empty) ');
     return;
@@ -799,15 +799,15 @@ copv2.proceed = function (/* arguments */) {
   } else {
     try {
       composition.partialMethodIndex = index - 1;
-      if (!copv2.Config.ignoredepricatedProceed
+      if (!cop.Config.ignoredepricatedProceed
           && partialMethod.toString().match(/^[\t ]*function ?\(\$?proceed/)) {
         var args = $A(arguments);
-        args.unshift(copv2.proceed);
+        args.unshift(cop.proceed);
         var msg = "proceed in arguments list in " + composition.functionName();
-        if (copv2.Config.throwErrorOnDepricated) {
+        if (cop.Config.throwErrorOnDepricated) {
           throw new Error("DEPRICATED ERROR: " + msg);
         }
-        if (copv2.Config.logDepricated) {
+        if (cop.Config.logDepricated) {
           // console.log("source: " + partialMethod.toString());
           console.log("DEPRICATED WARNING: " + msg);
         }
@@ -852,7 +852,7 @@ class LayerableObjectTrait {
   }
   dynamicLayers (result) {
     // optimized version, that does not use closures and recursion
-    var stack = copv2.LayerStack;
+    var stack = cop.LayerStack;
     // top down, ignore bottom element
     for (var j = stack.length - 1; j > 0; j--) {
       var current = stack[j];
@@ -884,7 +884,7 @@ class LayerableObjectTrait {
     return result;
   }
   globalLayers (result) {
-    this.collectWithLayersIn(copv2.GlobalLayers, result);
+    this.collectWithLayersIn(cop.GlobalLayers, result);
     return result;
   }
   setWithLayers (layers) {
@@ -922,11 +922,11 @@ class LayerableObjectTrait {
     return this.withoutLayers || [];
   }
 }
-copv2.LayerableObjectTrait = LayerableObjectTrait;
+cop.LayerableObjectTrait = LayerableObjectTrait;
 
 export class LayerableObject extends LayerableObjectTrait {}
 
-copv2.COPError = class COPError {
+cop.COPError = class COPError {
   constructor (message) {
     this._msg = msg;
   }
@@ -935,13 +935,13 @@ copv2.COPError = class COPError {
   }
 }
 
-copv2.PartialLayerComposition = class PartialLayerComposition {
+cop.PartialLayerComposition = class PartialLayerComposition {
   constructor (obj, prototypeObject, functionName, baseFunction, methodType) {
     this._partialMethods = [baseFunction];
-    var layers = copv2.computeLayersFor(obj);
+    var layers = cop.computeLayersFor(obj);
     for (var i = 0; i < layers.length; i++) {
         var layer = layers[i];
-        var partialMethod = copv2.lookupLayeredFunctionForObject(
+        var partialMethod = cop.lookupLayeredFunctionForObject(
             obj, layer, functionName, methodType);
         if (partialMethod) {
           this._partialMethods.push(partialMethod);
@@ -969,6 +969,6 @@ copv2.PartialLayerComposition = class PartialLayerComposition {
   }
 }
 
-copv2.resetLayerStack();
+cop.resetLayerStack();
 
 // vim: sw=2
