@@ -1,4 +1,4 @@
-import * as path from '/src/swx/path.jsx'
+import * as path from '../src/swx/path.jsx'
 
 String.prototype.hexEncode = function(){
   var hex, i;
@@ -126,7 +126,7 @@ class Shell {
     try {
       let pathname = path.join(this.pwd, argv[1])
 
-      let response = await fetch('https://lively4/' + pathname, {method: 'OPTIONS'})
+      let response = await fetch(lively4url + pathname, {method: 'OPTIONS'})
 
       if(response.status < 200 || response.status > 399)
         throw new Error('Request failed: ' + response.statusText)
@@ -166,7 +166,7 @@ class Shell {
 
   async _lookupPath(binary) {
     if(binary.indexOf('/') >= 0) {
-      return await System.import('https://lively4' + path.normalize('/' + binary))
+      return await System.import(lively4url + path.normalize('/' + binary))
     } else {
       if(this.hash && this.hash[binary]) {
         return this.hash[binary];
@@ -175,7 +175,7 @@ class Shell {
       let imports = this.env.ENV.PATH
         .split(this.env.ENV.PATH_SEPARATOR)
         .filter((str) => str.length > 0)
-        .map((str) => 'https://lively4' + path.normalize('/' + path.join(str, binary + '.js')))
+        .map((str) => lively4url + path.normalize('/' + path.join(str, binary + '.js')))
         .map((str) => System.import(str).catch((err) => undefined))
 
       let matches = await Promise.all(imports)

@@ -1,4 +1,4 @@
-import * as path from '/src/swx/path.jsx'
+import * as path from '../src/swx/path.jsx'
 
 function fprint(fd, str) {
     fd.emit('data', str)

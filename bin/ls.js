@@ -1,4 +1,4 @@
-import * as path from '/src/swx/path.jsx'
+import * as path from '../src/swx/path.jsx'
 
 function format(child) {
     let string = ''
@@ -31,7 +31,7 @@ function format(child) {
     return string
 }
 
-export default async function ls(env, args) {
+async function ls(env, args) {
     let pathname = path.join(env.ENV.PWD, args[1] || '')
 
     let response = await fetch('https://lively4/' + pathname, {method: 'OPTIONS'})
@@ -56,3 +56,5 @@ export default async function ls(env, args) {
 
     return 0
 }
+
+export default ls;
