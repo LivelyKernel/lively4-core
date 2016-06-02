@@ -1,4 +1,4 @@
-// import lively from "./lively.js";
+// import lively2 from "./lively.js";
 // #TODO this will fetch an old version of the lively module... 
 
 export default class ContextMenu {

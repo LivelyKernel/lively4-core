@@ -15,6 +15,9 @@ import paths from './paths.js';
 
 import inspector from './inspector.js';
 
+// import contextmenu2 from './contextmenu.js';
+
+
 import keys from './keys.js';
 import components from './morphic/component-loader.js';
 
@@ -58,7 +61,7 @@ export default class Lively {
 
   static import(moduleName, path, forceLoad) {
 
-    if (path)
+    if (lively.modules && path)
       lively.modules.reloadModule("" + path);
 
     if (!path) path = this.defaultPath(moduleName)
