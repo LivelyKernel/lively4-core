@@ -287,11 +287,11 @@ export default class Container extends Morph {
     if (this.isEditing() && !path.match(/\/$/)) {
       if (this.useBrowserHistory())
         window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?edit="+path);
-      this.setPath(path, true).then(() => this.editFile())
+      return this.setPath(path, true).then(() => this.editFile())
     } else {
       if (this.useBrowserHistory())
         window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?load="+path);
-      this.setPath(path)
+      return this.setPath(path)
     }
   }
 
@@ -574,7 +574,6 @@ export default class Container extends Morph {
       }
     })
   }
-
 
   getAceEditor() {
     var livelyEditor = this.shadowRoot.querySelector('lively-editor')

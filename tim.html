@@ -51,6 +51,9 @@
           lively.components.loadUnresolved().then(function() {
             console.log("load lively 3/3")
               lively.initializeDocument(document)
+              lively.openComponentInWindow(
+                  "lively-testrunner",
+                  {x: document.body.clientWidth - 500, y: 0})
               $('lively-container')[0].__ingoreUpdates = true // a hack... since I am missing DevLayers...
               $('lively-container')[0].style.float = "left"
               $('lively-container')[0].style.width = "900px"

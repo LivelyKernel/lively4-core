@@ -30,7 +30,6 @@ import focalStorage from '../external/focalStorage.js';
 import * as kernel from 'kernel'
 
 let $ = window.$,
-  _ = window._,
   babel = window.babel; // known global variables.
 
 // a) Special shorthands for interactive development
@@ -237,7 +236,7 @@ export default class Lively {
     }
   
     // for container content... But this will lead to conflicts with lively4chrome  ?? #Jens
-    lively.loadCSSThroughDOM("livelystyle", lively4url + "/templates/livelystyle.css")
+    lively.loadCSSThroughDOM("livelystyle", lively4url + "/templates/lively4.css")
   }
 
   static array(anyList){
@@ -630,7 +629,7 @@ export default class Lively {
           return comp.followPath(url)
     }).then( () => {
       if (edit && pattern) {
-        editorComp.getAceEditor().editor.find(pattern)
+          editorComp.getAceEditor().editor.find(pattern)
       }
     })
   }
