@@ -105,23 +105,19 @@ export default class Window extends Morph {
 
   setup() {
     this.dragging = false;
-
     this.defineShortcuts();
     this.bindEvents();
-  
-    
-    
   }
 
   /*
    * Window methods
    */
   render() {
-    // if (this.created) {
+    if (this.created) {
       if (this.attributes['title']) {
         this.titleSpan.innerHTML = this.attributes['title'].value;
       }
-    // }
+    }
   }
 
   reposition() {
