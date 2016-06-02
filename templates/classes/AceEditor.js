@@ -156,7 +156,7 @@ export default class AceEditor extends HTMLElement {
             enableLiveAutocompletion: false
         });
         this.editor.completers[3] =  {
-          getCompletions: function(editor, session, pos, prefix, callback) {
+          getCompletions: async (editor, session, pos, prefix, callback) => {
               // console.log("getCompletions: " + pos + " prefix " + prefix)
               var curLine = session.getDocument().getLine(pos.row);
               var curTokens = curLine.slice(0, pos.column).split(/\s+/);
@@ -166,7 +166,7 @@ export default class AceEditor extends HTMLElement {
               try {
                 var wordList = [];
               curCmd = curCmd.replace(/\.[^.]*$/,"")
-              var obj = eval(curCmd);
+              var obj = (await this.boundEval(curCmd)).value;
               wordList = lively.allProperties(obj);
               // console.log("complete: " + curCmd +"\n" + wordList)
                 callback(null, _.keys(wordList).map(function(ea) {
