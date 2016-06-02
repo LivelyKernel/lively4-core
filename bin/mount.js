@@ -1,10 +1,11 @@
 import * as path from '../src/swx/path.jsx'
+import * as kernel from 'kernel'
 
 function fprint(fd, str) {
     fd.emit('data', str)
 }
 
-export default async function mount(env, args) {
+async function mount(env, args) {
     if(args.length < 3) {
         fprint(env.fd[2], 'Error: Arguments missing.\r\n')
         fprint(env.fd[2], 'Usage: ' + argv[0] + ' <uri> <target>\r\n')
@@ -26,7 +27,7 @@ export default async function mount(env, args) {
     fprint(env.fd[1], 'Base: ' + base + '\r\n')
     fprint(env.fd[1], 'Target: ' + mp + '\r\n')
 
-    let response = await fetch('https://lively4/sys/fs/mount', {
+    let response = await fetch(kernel.resolve('/sys/fs/mount'), {
         method: 'PUT',
         body: JSON.stringify({
             path: mp,
@@ -52,3 +53,4 @@ export default async function mount(env, args) {
 
     return 0
 }
+export default mount
