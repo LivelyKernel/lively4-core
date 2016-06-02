@@ -922,11 +922,12 @@ class LayerableObjectTrait {
     return this.withoutLayers || [];
   }
 }
-cop.LayerableObjectTrait = LayerableObjectTrait;
+
 
 export class LayerableObject extends LayerableObjectTrait {}
 
-cop.COPError = class COPError {
+
+class COPError {
   constructor (message) {
     this._msg = msg;
   }
@@ -935,7 +936,8 @@ cop.COPError = class COPError {
   }
 }
 
-cop.PartialLayerComposition = class PartialLayerComposition {
+
+class PartialLayerComposition {
   constructor (obj, prototypeObject, functionName, baseFunction, methodType) {
     this._partialMethods = [baseFunction];
     var layers = cop.computeLayersFor(obj);
@@ -968,6 +970,11 @@ cop.PartialLayerComposition = class PartialLayerComposition {
     return this._prototypeObject;
   }
 }
+
+cop.LayerableObjectTrait = LayerableObjectTrait;
+cop.COPError = COPError
+cop.PartialLayerComposition = PartialLayerComposition
+
 
 cop.resetLayerStack();
 
