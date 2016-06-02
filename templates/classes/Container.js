@@ -459,6 +459,7 @@ export default class Container extends Morph {
 	      subList.appendChild(element) ;
       })
     } else if (this.getPath().match(/\.js$/)) {
+      // |async\\s+
       var instMethod = "(^|\\s+)([a-zA-Z0-9$_]+)\\s*\\(\\s*[a-zA-Z0-9$_ ,]*\\s*\\)\\s*{",
           klass = "(?:^|\\s+)class\\s+([a-zA-Z0-9$_]+)",
           func = "(?:^|\\s+)function\\s+([a-zA-Z0-9$_]+)\\s*\\(",
@@ -475,7 +476,7 @@ export default class Container extends Morph {
                         (m[4] && "function " + m[4]) ||
                          m[5]
           if(!theMatch.match(/^(if|switch|for|catch|function)$/)) {
-            let name = (m[1] || "").replace(/\s/g, "&nbsp;") + theMatch,
+            let name = (line.replace(/[A-Za-z].*/g,"")).replace(/\s/g, "&nbsp;") + theMatch,
                 navigateToName = m[0],
                 element = document.createElement("li");
     	      element.innerHTML = name
