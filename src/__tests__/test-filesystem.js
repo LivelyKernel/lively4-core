@@ -156,7 +156,7 @@ describe('Filesystem with stubs', () => {
 
   it('handels unsupported method', () => {
     let req = {method: 'DELETE'}
-    let url = {pathname: 'boot/but/more/this/and/that.txt'}
+    let url = {pathname: 'root/but/more/this/and/that.txt'}
 
     expect(fs.handle(req, url)).toEqual(new Response(null, {status: 400}));
   });
