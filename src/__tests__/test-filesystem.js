@@ -224,30 +224,40 @@ describe('Filesystem with stubs', () => {
     let obj = Object.create(null);
     let whatever = {default: obj};
 
-    global.System = {"import": () => Promise.resolve(whatever)};
+    global.System = {import: () => Promise.resolve(whatever)};
     spyOn(System, 'import').and.returnValue(Promise.resolve({default: obj}));
-    //spyOn(global.System, 'import').and.returnValue(Promise.resolve({default: obj}));
-    //spyOn(global, 'System.import').and.returnValue(Promise.resolve({default: obj}));
-    spyOn(fs, 'mount');
+    pyOn(fs, 'mount');
 
     await fs.loadMounts();
 
     expect(focalStorage.getItem).toHaveBeenCalledWith("lively4mounts");
-    //expect(global.System.import).toHaveBeenCalled()
     expect(System.import).toHaveBeenCalledWith("src/swx/fs/fake.jsx");
-    //expect(System.import).toHaveBeenCalledWith("src/swx/fs/fake2.jsx");
+    expect(System.import).toHaveBeenCalledWith("src/swx/fs/fake2.jsx");
     expect(fs.mount).toHaveBeenCalledWith("additional1", obj, {op3: 'yes', op4: 'no'});
-    //expect(fs.mount).toHaveBeenCalledWith("additional2", obj, {op1: 'yes', op2: 'no'});
-    //expect(fs.mount.calls.mostRecent().args[0]).toEqual("additional2");
+    expect(fs.mount).toHaveBeenCalledWith("additional2", obj, {op1: 'yes', op2: 'no'});
+    expect(fs.mount.calls.mostRecent().args[0]).toEqual("additional2");
   });
-});
 
-describe('File', () => {
-  it('does a lot of cool stuff', () => {
-  });
-});
+  it('loads persisted mounts', async () => {
+    let res = [{
+      name: 'fake',
+      options: {
+       op3: 'yes',
+       op4: 'no'
+      },
+      path: 'additional1'
+    }];
+    spyOn(focalStorage, 'getItem').and.returnValue(Promise.resolve(res));
 
-describe('Directory', () => {
-  it('does a lot of cool stuff', () => {
+    global.System = {import: () => ""};
+    global.console = {error: () => ""};
+    let obj = Object.create(null);
+
+    spyOn(System, 'import').and.throwError(obj);
+    spyOn(console, 'error');
+
+    await fs.loadMounts();
+
+    expect(console.error).toHaveBeenCalledWith(obj);
   });
 });
