@@ -254,7 +254,7 @@ describe('Filesystem with stubs', () => {
     let obj = Object.create(null);
     let prom = Promise.reject(new Error("Test Error Message"));
 
-    spyOn(System, 'import').and.returnValue();
+    spyOn(System, 'import').and.returnValue(prom);
     spyOn(console, 'error');
 
     try {
