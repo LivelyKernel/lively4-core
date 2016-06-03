@@ -191,8 +191,10 @@ export class Loader {
       sourceMaps: 'inline',
       filename: filename,
       sourceFileName: filename,
-      compact: true,
+      compact: 'auto',
     })
+
+    source.code += '\n//# sourceURL=' + filename + '!transpiled'
 
     return source
   }
@@ -231,9 +233,7 @@ export class Loader {
       filename: name
     })
 
-    let code = source.code + '\n//# sourceURL=' + uri + '!transpiled'
-
-    new Function('System', code)(this)
+    new Function('System', source.code)(this)
 
     if (this._anonymousEntry) {
       this.register(name, this._anonymousEntry[0], this._anonymousEntry[1]);
