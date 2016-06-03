@@ -226,7 +226,7 @@ describe('Filesystem with stubs', () => {
 
     global.System = {import: () => Promise.resolve(whatever)};
     spyOn(System, 'import').and.returnValue(Promise.resolve({default: obj}));
-    pyOn(fs, 'mount');
+    spyOn(fs, 'mount');
 
     await fs.loadMounts();
 
