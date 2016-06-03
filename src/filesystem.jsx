@@ -74,20 +74,16 @@ export class Filesystem {
       focalStorage.setItem("lively4mounts", mounts)
     }
 
-    // #TODO refactor to "async/await style"
-    loadMounts(){
-      focalStorage.getItem("lively4mounts").then((mounts) => {
-        try {
-          mounts.forEach(mount => {
-            console.log("mount ", mount)
-            System.import('src/swx/fs/' + mount.name + '.jsx').then(fs => {
-              this.mount(mount.path, fs.default, mount.options)
-            })
-          })
-        } catch(e) {
-          console.log("error loading mounts: " + e)
+    async loadMounts(){
+      let mounts = await focalStorage.getItem("lively4mounts")
+      try {
+        for(let mount of mounts) {
+          let fs = await System.import('src/swx/fs/' + mount.name + '.jsx')
+          this.mount(mount.path, fs.default, mount.options)
         }
-      })
+      } catch(e) {
+        console.error(e)
+      }
     }
 
 }

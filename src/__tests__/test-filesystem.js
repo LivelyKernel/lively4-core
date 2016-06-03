@@ -204,7 +204,7 @@ describe('Filesystem with stubs', () => {
     expect(focalStorage.setItem).toHaveBeenCalledWith("lively4mounts", res);
   });
 
-  it('loads persisted mounts', () => {
+  it('loads persisted mounts', async () => {
     let res = [{
       name: 'fake',
       options: {
@@ -222,18 +222,19 @@ describe('Filesystem with stubs', () => {
     }];
     spyOn(focalStorage, 'getItem').and.returnValue(Promise.resolve(res));
     let obj = Object.create(null);
-    let whatever = {default: obj}
+    let whatever = {default: obj};
 
-    global.System = {import: () => Promise.resolve(whatever)};
+    global.System = {"import": () => Promise.resolve(whatever)};
+    spyOn(System, 'import').and.returnValue(Promise.resolve({default: obj}));
     //spyOn(global.System, 'import').and.returnValue(Promise.resolve({default: obj}));
     //spyOn(global, 'System.import').and.returnValue(Promise.resolve({default: obj}));
     spyOn(fs, 'mount');
 
-    fs.loadMounts();
+    await fs.loadMounts();
 
     expect(focalStorage.getItem).toHaveBeenCalledWith("lively4mounts");
     //expect(global.System.import).toHaveBeenCalled()
-    //expect(System.import).toHaveBeenCalledWith("src/swx/fs/fake.jsx");
+    expect(System.import).toHaveBeenCalledWith("src/swx/fs/fake.jsx");
     //expect(System.import).toHaveBeenCalledWith("src/swx/fs/fake2.jsx");
     expect(fs.mount).toHaveBeenCalledWith("additional1", obj, {op3: 'yes', op4: 'no'});
     //expect(fs.mount).toHaveBeenCalledWith("additional2", obj, {op1: 'yes', op2: 'no'});
