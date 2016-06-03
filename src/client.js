@@ -4,6 +4,8 @@
 // This file initializes the ES6 System Loader,
 // the ServiceWorker - if possible - and starts the initialize client code.
 //
+import * as path from 'path'
+
 import { Loader } from './loader'
 
 const { filter, shift } = Array.prototype
@@ -46,7 +48,8 @@ export default function() {
   })
 
   loader.set('kernel', {
-    resolve: (name) => loader.resolve(name)
+    resolve: (name) => loader.resolve(name).toString(),
+    realpath: (name) => path.normalize(name),
   })
 
   if (init) {

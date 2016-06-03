@@ -200,7 +200,7 @@ export class Loader {
   }
 
 
-  async resolve(name) {
+  resolve(name) {
     return do {
       if (this._base) {
         new URL(path.normalize('./' + name), this._base)
