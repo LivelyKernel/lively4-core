@@ -252,24 +252,18 @@ describe('Filesystem with stubs', () => {
     global.System = {import: () => ""};
     global.console = {error: () => ""};
     let obj = Object.create(null);
-    try {
-      let prom = Promise.reject(new Error("Test Error Message"));
-    } catch (e) {
-      expect("this").toBe("never called");
-    }
+    let prom = null;
+    prom = Promise.reject(new Error("Test Error Message"));
 
     spyOn(System, 'import').and.returnValue(prom);
     spyOn(console, 'error');
 
     try {
       await fs.loadMounts();
-
-      // expect("this test").toBe("failed");
     } catch (e) {
       expect(e.error).toEqual("Test Error Message");
     }
-    // expect(async () => {await fs.loadMounts();}).toEqual("Test Error Message");
 
-    expect(console.error).toHaveBeenCalledWith("Test Error Message");
+    expect(console.error).toHaveBeenCalledWith(new Error("Test Error Message"));
   });
 });
