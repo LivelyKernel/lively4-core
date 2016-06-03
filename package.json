@@ -22,7 +22,9 @@
     "babel-plugin-transform-es2015-spread": "^6.8.0",
     "babel-plugin-transform-function-bind": "^6.8.0",
     "bluebird": "^3.3.5",
-    "jest-cli": "^12.0.2"
+    "jest-cli": "^12.0.2",
+    "node-fetch": "^1.5.3",
+    "systemjs": "^0.19.29"
   },
   "scripts": {
     "test": "jest --no-cache"
