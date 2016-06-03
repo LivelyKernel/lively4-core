@@ -253,11 +253,11 @@ describe('Filesystem with stubs', () => {
     global.console = {error: () => ""};
     let obj = Object.create(null);
 
-    spyOn(System, 'import').and.throwError(obj);
+    spyOn(System, 'import').and.throwError("Test Error Message");
     spyOn(console, 'error');
 
     await fs.loadMounts();
 
-    expect(console.error).toHaveBeenCalledWith(obj);
+    expect(console.error).toHaveBeenCalledWith("Test Error Message");
   });
 });
