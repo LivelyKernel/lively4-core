@@ -262,7 +262,7 @@ describe('Filesystem with stubs', () => {
 
       expect("this test").toBe("failed");
     } catch (e) {
-      expect(e.message).toEqual("Test Error Message")
+      expect(e.error).toEqual("Test Error Message")
     }
     // expect(async () => {await fs.loadMounts();}).toEqual("Test Error Message");
 
