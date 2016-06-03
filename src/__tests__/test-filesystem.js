@@ -255,8 +255,11 @@ describe('Filesystem with stubs', () => {
 
     spyOn(System, 'import').and.throwError("Test Error Message");
     spyOn(console, 'error');
-
-    await fs.loadMounts();
+    try {
+      await fs.loadMounts();
+    } catch (e) {
+      expect(e).toEqual("Test Error Message");
+    }
 
     expect(console.error).toHaveBeenCalledWith("Test Error Message");
   });
