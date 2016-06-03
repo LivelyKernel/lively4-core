@@ -1,5 +1,5 @@
 
-import * as Path from './path.jsx'
+import * as Path from './path.js'
 import focalStorage from './external/focalStorage.js'
 
 
@@ -78,7 +78,7 @@ export class Filesystem {
       let mounts = await focalStorage.getItem("lively4mounts")
       try {
         for(let mount of mounts) {
-          let fs = await System.import('src/swx/fs/' + mount.name + '.jsx')
+          let fs = await System.import('src/swx/fs/' + mount.name + '.js')
           this.mount(mount.path, fs.default, mount.options)
         }
       } catch(e) {

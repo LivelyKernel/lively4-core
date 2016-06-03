@@ -1,7 +1,7 @@
 jest.autoMockOff();
-jest.unmock('../github.jsx');
+jest.unmock('../github.js');
 
-const githubfs = require('../github.jsx');
+const githubfs = require('../github.js');
 
 describe('GitHub', () => {
   it('does a lot of cool stuff', () => {

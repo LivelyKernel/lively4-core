@@ -2,14 +2,14 @@
  *
  */
 
-import * as fs from './filesystem.jsx'
-import * as msg from './messaging.jsx'
+import * as fs from './filesystem.js'
+import * as msg from './messaging.js'
 
-import sysfs from './fs/sys.jsx'
-import httpfs from './fs/http.jsx'
-import html5fs from './fs/html5.jsx'
-import githubfs from './fs/github.jsx'
-import dropboxfs from './fs/dropbox.jsx'
+import sysfs from './fs/sys.js'
+import httpfs from './fs/http.js'
+import html5fs from './fs/html5.js'
+import githubfs from './fs/github.js'
+import dropboxfs from './fs/dropbox.js'
 
 import focalStorage from './external/focalStorage.js';
 

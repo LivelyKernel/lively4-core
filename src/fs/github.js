@@ -2,8 +2,8 @@
  * HTTP GitHub project access.
  */
 
-import { Base } from './base.jsx'
-import * as util from '../util.jsx'
+import { Base } from './base.js'
+import * as util from '../util.js'
 
 export default class Filesystem extends Base {
     constructor(path, options) {

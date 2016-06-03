@@ -1,7 +1,7 @@
 jest.autoMockOff();
-jest.unmock('../base.jsx');
+jest.unmock('../base.js');
 
-const base = require('../base.jsx');
+const base = require('../base.js');
 
 describe('Base', () => {
   it('does a lot of cool stuff', () => {

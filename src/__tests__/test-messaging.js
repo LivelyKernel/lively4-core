@@ -1,6 +1,6 @@
-jest.unmock('../messaging.jsx');
+jest.unmock('../messaging.js');
 
-const path = require('../messaging.jsx');
+const path = require('../messaging.js');
 
 describe('broadcast', () => {
   it('does a lot of cool stuff', () => {

@@ -2,8 +2,8 @@
  * Sysfs for the important things.
  */
 
-import { Base } from './base.jsx'
-import * as swx from '../swx.jsx'
+import { Base } from './base.js'
+import * as swx from '../swx.js'
 
 export default class Filesystem extends Base {
     constructor(path, options) {
@@ -47,7 +47,7 @@ export default class Filesystem extends Base {
         if(!name)
             throw new Error('<name> is missing')
 
-        let fs = await System.import('src/swx/fs/' + name + '.jsx')
+        let fs = await System.import('src/swx/fs/' + name + '.js')
 
         swx.instance().filesystem.mount(path, fs.default, opts)
 

@@ -1,6 +1,6 @@
-jest.unmock('../util.jsx');
+jest.unmock('../util.js');
 
-const util = require('../util.jsx');
+const util = require('../util.js');
 
 describe('util', () => {
   it('converts the response to json', () => {
@@ -31,5 +31,15 @@ describe('util', () => {
 
     expect(() => util.responseOk(response)).toThrowError("res1");
     expect(() => util.responseOk(response2)).toThrowError("res2");
+  });
+
+  it('generates a UUID', () => {
+    global.crypto = {getRandomValues: () => ""};
+    spyOn(crypto, 'getRandomValues').and.returnValue([12]);
+
+    let ret = util.generateUUID();
+
+    expect(crypto.getRandomValues).toHaveBeenCalledWith(new Uint8Array(1));
+    expect(ret).toEqual("cccccccc-cccc-4ccc-8ccc-cccccccccccc");
   });
 });

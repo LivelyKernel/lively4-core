@@ -1,7 +1,7 @@
 jest.autoMockOff();
-jest.unmock('../dropbox.jsx');
+jest.unmock('../dropbox.js');
 
-const dropboxfs = require('../dropbox.jsx');
+const dropboxfs = require('../dropbox.js');
 
 describe('Dropbox', () => {
   it('does a lot of cool stuff', () => {

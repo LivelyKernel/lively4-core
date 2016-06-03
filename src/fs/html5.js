@@ -2,7 +2,7 @@
  * In-browser local file system access using HTML5 FileSystem-API.
  */
 
-import { Base } from './base.jsx'
+import { Base } from './base.js'
 
 export default class Filesystem extends Base {
     constructor(path, options) {

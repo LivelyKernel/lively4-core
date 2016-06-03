@@ -1,9 +1,9 @@
 jest.autoMockOff();
-jest.unmock('../filesystem.jsx');
+jest.unmock('../filesystem.js');
 
 jest.disableAutomock()
 
-const filesystem = require('../filesystem.jsx');
+const filesystem = require('../filesystem.js');
 
 jest.unmock('node-fetch');
 const fetch = require('node-fetch');
@@ -22,8 +22,8 @@ describe('Filesystem', () => {
   });
 
   it('mounts basefs under path "base"', () => {
-    jest.unmock('../fs/base.jsx');
-    const basefs = require('../fs/base.jsx');
+    jest.unmock('../fs/base.js');
+    const basefs = require('../fs/base.js');
     let fs = new filesystem.Filesystem();
     fs.mount("base", basefs.Base, {testoption: 'aValue'});
     expect(fs.mounts.values().next().value instanceof basefs.Base).toBeTruthy();
@@ -33,8 +33,8 @@ describe('Filesystem', () => {
   });
 
   it('unmounts basefs under path "base"', () => {
-    jest.unmock('../fs/base.jsx');
-    const basefs = require('../fs/base.jsx');
+    jest.unmock('../fs/base.js');
+    const basefs = require('../fs/base.js');
     let fs = new filesystem.Filesystem();
     fs.mount("base", basefs.Base, {testoption: 'aValue'});
     fs.umount("base");
@@ -231,8 +231,8 @@ describe('Filesystem with stubs', () => {
     await fs.loadMounts();
 
     expect(focalStorage.getItem).toHaveBeenCalledWith("lively4mounts");
-    expect(System.import).toHaveBeenCalledWith("src/swx/fs/fake.jsx");
-    expect(System.import).toHaveBeenCalledWith("src/swx/fs/fake2.jsx");
+    expect(System.import).toHaveBeenCalledWith("src/swx/fs/fake.js");
+    expect(System.import).toHaveBeenCalledWith("src/swx/fs/fake2.js");
     expect(fs.mount).toHaveBeenCalledWith("additional1", obj, {op3: 'yes', op4: 'no'});
     expect(fs.mount).toHaveBeenCalledWith("additional2", obj, {op1: 'yes', op2: 'no'});
     expect(fs.mount.calls.mostRecent().args[0]).toEqual("additional2");

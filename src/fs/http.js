@@ -3,7 +3,7 @@
  * access all unknown, default resources.
  */
 
-import { Base } from './base.jsx'
+import { Base } from './base.js'
 
 export default class Filesystem extends Base {
     constructor(path, options) {

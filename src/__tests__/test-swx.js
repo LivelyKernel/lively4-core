@@ -1,6 +1,6 @@
-jest.unmock('../swx.jsx');
+jest.unmock('../swx.js');
 
-const path = require('../swx.jsx');
+const path = require('../swx.js');
 
 describe('Serviceworker', () => {
   it('does a lot of cool stuff', () => {

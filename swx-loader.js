@@ -20,7 +20,7 @@ function swx() {
         }
     }
 
-    return System.import('src/swx/swx.jsx')
+    return System.import('src/swx/swx.js')
 }
 
 function __reload__() {

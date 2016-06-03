@@ -2,9 +2,8 @@
  * HTTP Google Drive access.
  */
 
-import { Base } from './base.jsx'
-import * as util from '../util.jsx'
-import generateUuid from '../../client/uuid.js'
+import { Base } from './base.js'
+import * as util from '../util.js'
 
 export default class Filesystem extends Base {
   constructor(path, options) {
@@ -100,7 +99,7 @@ export default class Filesystem extends Base {
           throw new Error(`Folder $(folderPath) does not exit`);
         }
 
-        var delim = generateUuid()
+        var delim = util.generateUuid()
         var body = `--${delim}
 Content-Type: application/json; charset=UTF-8
 

@@ -1,7 +1,7 @@
 jest.autoMockOff();
-jest.unmock('../path.jsx');
+jest.unmock('../path.js');
 
-const path = require('../path.jsx');
+const path = require('../path.js');
 
 describe('join', () => {
   it('joins "d" and "s" to equal "d/s"', () => {
