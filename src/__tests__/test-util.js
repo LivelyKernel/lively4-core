@@ -35,11 +35,13 @@ describe('util', () => {
 
   it('generates a UUID', () => {
     global.crypto = {getRandomValues: () => ""};
-    spyOn(crypto, 'getRandomValues').and.returnValue([12]);
+    spyOn(crypto, 'getRandomValues').and.callFake(buf => {
+      for(let i = 0; i < buf.length; i++) buf[i] = 0xcc
+      return buf
+    })
 
     let ret = util.generateUUID();
 
-    expect(crypto.getRandomValues).toHaveBeenCalledWith(new Uint8Array(1));
     expect(ret).toEqual("cccccccc-cccc-4ccc-8ccc-cccccccccccc");
   });
 });
