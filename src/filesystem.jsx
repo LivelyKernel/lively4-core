@@ -85,34 +85,4 @@ export class Filesystem {
         console.error(e)
       }
     }
-
-}
-
-export class File {
-    constructor(name, stat) {
-        this.name = name
-    }
-
-    read() {
-
-    }
-}
-
-export class Directory {
-    constructor(name, children, options) {
-        this.name     = name
-        this.children = children
-        this.options  = options
-    }
-
-    asJson(options = {}) {
-        let json = {
-            'type': 'directory'
-        }
-
-        if(!('recursive' in options) || options.recursive)
-            json['contents'] = this.children.map((child) => child.asJson({recursive: false}))
-
-        return json
-    }
 }
