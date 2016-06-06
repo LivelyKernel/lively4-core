@@ -26,7 +26,7 @@
  */
 
 export const Config = {};
-Config.ignoredepricatedProceed = true;
+Config.ignoreDeprecatedProceed = true;
 
 export let log_layer_code = false;
 export function log(string) {
@@ -798,17 +798,17 @@ export function proceed(/* arguments */) {
   } else {
     try {
       composition.partialMethodIndex = index - 1;
-      if (!Config.ignoredepricatedProceed
+      if (!Config.ignoreDeprecatedProceed
           && partialMethod.toString().match(/^[\t ]*function ?\(\$?proceed/)) {
         var args = $A(arguments);
         args.unshift(proceed);
         var msg = "proceed in arguments list in " + composition.functionName();
-        if (Config.throwErrorOnDepricated) {
-          throw new Error("DEPRICATED ERROR: " + msg);
+        if (Config.throwErrorOnDeprecated) {
+          throw new Error("DEPRECATED ERROR: " + msg);
         }
-        if (Config.logDepricated) {
+        if (Config.logDeprecated) {
           // console.log("source: " + partialMethod.toString());
-          console.log("DEPRICATED WARNING: " + msg);
+          console.log("DEPRECATED WARNING: " + msg);
         }
         var result = partialMethod.apply(composition.object, args);
       } else {
