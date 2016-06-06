@@ -10,8 +10,6 @@ const localDebugURL = 'http://localhost:9008/';
 const remoteDebugURL = 'https://lively-kernel.org/lively4servicesDebug/';
 var debuggerURL = isLocalHost ? localDebugURL : remoteDebugURL;
 
-var services = {};
-
 export default class Services extends Morph {
 
   initialize() {
@@ -19,7 +17,7 @@ export default class Services extends Morph {
     this.pid = null;
     this.logType = 'stdout';
     this.services = {};
-    
+
     this.serviceList = this.getSubmorph('.items');
     $(this.serviceList).on('click', 'lively-services-item', (evt) => {
       this.unselectAll();
@@ -73,10 +71,11 @@ export default class Services extends Morph {
     this.debugButton = this.getSubmorph('#debugButton');
     this.debugButton.addEventListener('click', (evt) => {
       lively.openComponentInWindow('lively-iframe').then(component => {
-        component.setURL(debuggerURL + '?port=5858');
+        var debuggerPort = this.services[this.pid].debugPort;
+        component.setURL(debuggerURL + '?port=' + debuggerPort);
       });
     });
-    
+
     this.stdoutButton = this.getSubmorph('#stdoutButton');
     this.stderrButton = this.getSubmorph('#stderrButton');
     this.stdoutButton.addEventListener('click', (evt) => {
@@ -166,7 +165,7 @@ export default class Services extends Morph {
     }.bind(this));
   }
 
-  refreshServiceList() {    
+  refreshServiceList() {
     $.ajax({
       url: servicesURL + 'list',
       success: function(services) {
@@ -176,7 +175,7 @@ export default class Services extends Morph {
         // Clear all items
         while (this.serviceList.firstChild) {
           item = this.serviceList.firstChild;
-          if (selectedPID === null && ! item.classList.contains('empty') &&
+          if (selectedPID === null && !item.classList.contains('empty') &&
               item.getSubmorph('.item').classList.contains('selected')) {
             selectedPID = item.getAttribute('data-id');
           }
