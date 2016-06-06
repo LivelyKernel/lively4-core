@@ -82,7 +82,7 @@ export default class Services extends Morph {
       that.refreshServiceList()
     }, 5000);
     this.logInterval = null;
-    
+
     this.detachedCallback = function() {
       clearInterval(that.refreshInterval);
       clearInterval(that.logInterval);
@@ -211,12 +211,12 @@ export default class Services extends Morph {
       }
     });
   }
-  
+
   refreshLog() {
     var that = this;
     $.ajax({
       url: servicesURL + 'get',
-      type: 'POST',
+      type: 'GET',
       data: JSON.stringify({ id: that.serviceTop.getAttribute('data-id') }),
       contentType: 'application/json',
       success: function(res) {
