@@ -26,7 +26,7 @@
  */
 
 export const Config = {};
-Config.ignoredepricatedProceed = true;
+Config.ignoreDeprecatedProceed = true;
 
 export let log_layer_code = false;
 export function log(string) {
@@ -50,189 +50,6 @@ let object_id_counter = 0;
 /* 
  * Private Methods
  */
-// General utilities
-function $A(iterable) {
-  if (!iterable) {
-    return [];
-  }
-  if (iterable.toArray) {
-    return iterable.toArray();
-  }
-  var length = iterable.length;
-  var results = new Array(length);
-  while (length--) {
-    results[length] = iterable[length];
-  }
-  return results;
-}
-function isFunction(object) {
-  return typeof object === "function";
-}
-function isString(object) {
-  return typeof object === "string";
-}
-Object.assign (String.prototype, {
-  capitalize () {
-    if (this.length < 1) {
-      return this;
-    }
-    return this.charAt(0).toUpperCase() + this.slice(1);
-  }
-});
-Object.assign(Function.prototype, {
-  addMethods (/*...*/) {
-    var args = arguments;
-    var category = this.defaultCategoryName;
-    var traits = [];
-    for (var i = 0; i < args.length; i++) {
-      if (isString(args[i])) {
-        category = args[i];
-      } else {
-        this.addCategorizedMethods(category, args[i] instanceof Function ? (args[i])() : args[i]);
-      }
-    }
-    for (var i = 0; i < traits.length; i++) {
-      traits[i].applyTo(this);
-    }
-  },
-  addCategorizedMethods (categoryName, source) {
-    // first parameter is a category name
-    // copy all the methods and properties from {source} into the
-    // prototype property of the receiver, which is intended to be
-    // a class constructor.     Method arguments named '$super' are treated
-    // specially, see Prototype.js documentation for "Class.create()" for details.
-    // derived from Class.Methods.addMethods() in prototype.js
-  
-    // prepare the categories
-    if (!this.categories) {
-      this.categories = {};
-    }
-    if (!this.categories[categoryName]) {
-      this.categories[categoryName] = [];
-    }
-    var currentCategoryNames = this.categories[categoryName];
-    if (!source) {
-      throw dbgOn(new Error('no source in addCategorizedMethods!'));
-    }
-    var ancestor = this.superclass && this.superclass.prototype;
-    var className = this.type || "Anonymous";
-    for (var property in source) {
-      if (property == 'constructor') {
-        continue;
-      }
-      var getter = source.__lookupGetter__(property);
-      if (getter) {
-        this.prototype.__defineGetter__(property, getter);
-      }
-      var setter = source.__lookupSetter__(property);
-      if (setter) {
-        this.prototype.__defineSetter__(property, setter);
-      }
-      if (getter || setter) {
-        continue;
-      }
-      currentCategoryNames.push(property);
-      var value = source[property];
-      // weirdly, RegExps are functions in Safari, so testing for
-      // Object.isFunction on regexp field values will return true.
-      // But they're not full-blown functions and don't
-      // inherit argumentNames from Function.prototype
-      var hasSuperCall = ancestor && isFunction(value) &&
-        value.argumentNames && value.argumentNames().first() == "$super";
-      if (hasSuperCall) {(function() {
-          // wrapped in a function to save the value of 'method' for advice
-          var method = value;
-          var advice = (function(m) {
-            return function callSuper() {
-              var method = ancestor[m];
-              if (!method) {
-                throw new Error(Strings.format('Trying to call super of' +
-                    '%s>>%s but super method non existing in %s', className, m, ancestor.constructor.type));
-              }
-              return method.apply(this, arguments);
-            };
-          })(property);
-          advice.methodName = "$super:" + (this.superclass ? this.superclass.type + ">>" : "") + property;
-          value = Object.extend(advice.wrap(method), {
-            valueOf:  function() {
-              return method
-            },
-            toString: function() {
-              return method.toString()
-            },
-            originalFunction: method,
-          });
-          // for lively.Closures
-          method.varMapping = {$super: advice};
-        })();
-      }
-      this.prototype[property] = value;
-      if (property === "formals") { // rk FIXME remove this cruft
-        // special property (used to be pins, but now called formals to disambiguate old and new style
-        Class.addPins(this, value);
-      } else if (isFunction(value)) {
-        // remember name for profiling in WebKit
-        value.displayName = className + "$" + property;
-        for (; value; value = value.originalFunction) {
-          if (value.methodName) {
-            //console.log("class " + this.prototype.constructor.type
-            // + " borrowed " + value.qualifiedMethodName());
-          }
-          value.declaredClass = this.prototype.constructor.type;
-          value.methodName = property;
-        }
-      }
-    } // end of for (var property in source)
-    return this;
-  }
-});
-// Array utilities
-Object.assign(Array.prototype, {
-  last () {
-    return this[this.length - 1];
-  },
-  first () {
-    return this[0];
-  },
-  clone () {
-    return [].concat(this);
-  },
-  without () {
-    var values = $A(arguments);
-    return this.select(function(value) {
-      return !values.include(value);
-    });
-  },
-  withoutAll (otherArr) {
-    return this.without.apply(this, otherArr);
-  },
-  select(iterator, context) {
-    var results = [];
-    for (var i = 0; i < this.length; i++) {
-      var value = this[i];
-      if (iterator.call(context, value, i)) {
-        results.push(value);        
-      }
-    }
-    return results;
-  },
-  include (object) {
-    if (typeof this.indexOf == 'function') {
-      return this.indexOf(object) != -1;
-    }
-    var found = false;
-    this.each(function(value) {
-      if (value == object) {
-        found = true;
-        throw $break;
-      }
-    });
-    return found;
-  },
-  removeAt (index) {
-    this.splice(index, 1);
-  }
-});
 
 // for debugging ContextJS itself
 export function withLogLayerCode(func) {
@@ -275,7 +92,7 @@ export function layerMethod(layer, object, property, func) {
                    + (object.constructor ? (object.constructor.type + "$") : "")
                    + property;
   makeFunctionLayerAware(object, property, layer.isHidden);
-  isFunction(object.getName)
+  typeof object.getName === 'function'
       && (layer.layeredFunctionsList[object][property] = true);
 };
 
@@ -331,13 +148,13 @@ export function computeLayersFor(obj) {
 };
 
 export function composeLayers(stack) {
-  var result = GlobalLayers.clone();
+  var result = GlobalLayers.slice(0);
   for (var i = 0; i < stack.length; i++) {
     var current = stack[i];
     if (current.withLayers) {
-      result = result.withoutAll(current.withLayers).concat(current.withLayers);
+      result = result.filter(l => !current.withLayers.includes(l)).concat(current.withLayers);
     } else if (current.withoutLayers) {
-      result = result.withoutAll(current.withoutLayers);
+      result = result.filter(l => !current.withoutLayers.includes(l));
     }
   }
   return result;
@@ -359,7 +176,7 @@ export function currentLayers() {
     throw new Error("The default layer is missing");
   }
   // NON OPTIMIZED VERSION FOR STATE BASED LAYER ACTIVATION
-  var current = LayerStack.last();
+  var current = LayerStack[LayerStack.length - 1];
   if (!current.composition) {
     current.composition = composeLayers(LayerStack);
   }
@@ -598,7 +415,7 @@ export class Layer {
     var layer = this;
     this.layeredObjects().each(
       function(eachLayeredObj) {
-        var layerIdx = isFunction(eachLayeredObj.activeLayers)
+        var layerIdx = typeof eachLayeredObj.activeLayers === 'function'
             ? eachLayeredObj.activeLayers().indexOf(layer) : -1;
         Properties.own(layer.layeredFunctionsList[eachLayeredObj]).each(
           function(eachLayeredFunc) {
@@ -724,7 +541,7 @@ export function create(rootContext, layerName) {
 // reference to the objects
 export function layerObject(layer, object, defs) {
   // log("cop layerObject");
-  isFunction(object.getName) && (layer.layeredFunctionsList[object] = {});
+  typeof object.getName === 'function' && (layer.layeredFunctionsList[object] = {});
   Object.getOwnPropertyNames(defs).forEach(
     function (function_name) {
       // log(" layer property: " + function_name)
@@ -774,13 +591,13 @@ export function disableLayer(layer) {
   if (idx < 0) {
     return;
   }
-  GlobalLayers.removeAt(idx);
+  GlobalLayers.splice(idx, 1);
   invalidateLayerComposition();
 };
 
 export function proceed(/* arguments */) {
   // COP Proceed Function
-  var composition = proceedStack.last();
+  var composition = proceedStack[proceedStack.length - 1];
   if (!composition) {
     console.log('ContextJS: no composition to proceed (stack is empty) ');
     return;
@@ -798,17 +615,17 @@ export function proceed(/* arguments */) {
   } else {
     try {
       composition.partialMethodIndex = index - 1;
-      if (!Config.ignoredepricatedProceed
+      if (!Config.ignoreDeprecatedProceed
           && partialMethod.toString().match(/^[\t ]*function ?\(\$?proceed/)) {
         var args = $A(arguments);
         args.unshift(proceed);
         var msg = "proceed in arguments list in " + composition.functionName();
-        if (Config.throwErrorOnDepricated) {
-          throw new Error("DEPRICATED ERROR: " + msg);
+        if (Config.throwErrorOnDeprecated) {
+          throw new Error("DEPRECATED ERROR: " + msg);
         }
-        if (Config.logDepricated) {
+        if (Config.logDeprecated) {
           // console.log("source: " + partialMethod.toString());
-          console.log("DEPRICATED WARNING: " + msg);
+          console.log("DEPRECATED WARNING: " + msg);
         }
         var result = partialMethod.apply(composition.object, args);
       } else {
@@ -891,14 +708,14 @@ export class LayerableObjectTrait {
   }
   addWithLayer (layer) {
     var layers = this.getWithLayers();
-    if (!layers.include(layer)) {
+    if (!layers.includes(layer)) {
       this.setWithLayers(layers.concat([layer]));
     }
   }
   removeWithLayer (layer) {
     var layers = this.getWithLayers();
-    if (layers.include(layer)) {
-      this.setWithLayers(layers.without(layer));
+    if (layers.includes(layer)) {
+      this.setWithLayers(layers.filter(l => l !== layer));
     }
   }
   addWithoutLayer (layer) {
@@ -909,7 +726,7 @@ export class LayerableObjectTrait {
   }
   removeWithoutLayer (layer) {
     var layers = this.getWithoutLayers();
-    this.setWithoutLayers(layers.without(layer));
+    this.setWithoutLayers(layers.filter(l => l !== layer));
   }
   setWithoutLayers (layers) {
     this.withoutLayers = layers;

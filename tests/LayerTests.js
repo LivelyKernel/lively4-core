@@ -369,7 +369,7 @@ describe('cop', function () {
         makeLayer1();
         cop.withLayers([layer1], function() {
             assert(layer1, "no layer1");
-            assert(cop.currentLayers().first(), "currentLayers failed");
+            assert(cop.currentLayers()[0], "currentLayers failed");
         });
     });
 
@@ -652,7 +652,7 @@ describe('cop', function () {
         const layer3 = {toString(){return "l3"}};
 
         let stack = [{}];
-        assert.equal(cop.composeLayers(stack.clone()).toString(), [].toString());
+        assert.equal(cop.composeLayers(stack.slice(0)).toString(), [].toString());
         assert.equal(cop.composeLayers([{}, {withLayers: [layer1]}]).toString(), ["l1"].toString());
         assert.equal(cop.composeLayers([{}, {withLayers: [layer1]},{withLayers: [layer2, layer3]} ]).toString(), ["l1","l2","l3"].toString());
     });
@@ -704,7 +704,7 @@ describe('cop', function () {
         assert.equal(cop.currentLayers().length, 1, "layer 1 is not enabled");
         // console.log("current layers: " + cop.currentLayers())
         cop.disableLayer(layer1);
-        assert(!cop.LayerStack.last().composition, "there is a cached composition!");
+        assert(!cop.LayerStack[cop.LayerStack.length - 1].composition, "there is a cached composition!");
         assert.equal(cop.currentLayers().length, 0, "layer 1 is not disabeled");
     });
 
@@ -822,74 +822,56 @@ describe('cop', function () {
     });
 
     describe('Layer', function () {
-        let TmpDummyClass,
-            TmpDummySubclass,
-            TmpDummyLayer,
-            TmpDummyLayer2;
+        let DummyClass,
+            DummySubclass,
+            DummyLayer,
+            DummyLayer2;
 
         beforeEach('set up the test classes and layers', function () {
-            TmpDummyClass = class TmpDummyClass {};
-            TmpDummySubclass = class TmpDummySubclass extends TmpDummyClass {};
-            TmpDummyLayer = cop.create('TmpDummyLayer');
-            TmpDummyLayer2 = cop.create('TmpDummyLayer2');
+            DummyClass = class DummyClass {};
+            DummySubclass = class DummySubclass extends DummyClass {};
+            DummyLayer = cop.create('TmpDummyLayer');
+            DummyLayer2 = cop.create('TmpDummyLayer2');
         });
 
-        // TODO: refactor, remove this indirection
-
-        function dummyClass() {
-            return TmpDummyClass;
-        };
-
-        function dummySubclass() {
-            return TmpDummySubclass;
-        };
-
-        function dummyLayer() {
-            return TmpDummyLayer;
-        };
-
-        function dummyLayer2() {
-            return TmpDummyLayer2;
-        };
-
         afterEach('remove test classes and layers', function() {
-            TmpDummyClass = undefined;
-            TmpDummySubclass = undefined;
-            TmpDummyLayer = undefined;
-            TmpDummyLayer2 = undefined;
+            DummyClass = undefined;
+            DummySubclass = undefined;
+            DummyLayer = undefined;
+            DummyLayer2 = undefined;
         });
 
         describe('subclassing', function () {
 
             it('testSetup', function() {
-                assert(dummyClass());
-                assert(dummySubclass());
-                assert(dummyLayer());
+                assert(DummyClass);
+                assert(DummySubclass);
+                assert(DummyLayer);
             });
 
             it('testLayerClassAndSubclasses', function() {
-                dummyClass().addMethods({
+                Object.assign(DummyClass.prototype, {
                     m1(){return "m1"},
                 });
 
-                dummySubclass().addMethods({
+                Object.assign(DummySubclass.prototype, {
                     m1(){return "S$m1"},
                     m2(){return "S$m2"},
                 });
 
-                cop.layerClass(dummyLayer(), dummyClass(), {
+                cop.layerClass(DummyLayer, DummyClass, {
                     m1() {return "L$m1,"+cop.proceed()}
                 });
 
-                const o = new (dummyClass())();
+                const o = new DummyClass();
                 assert.equal(o.m1(), "m1", "base m1 broken");
-                cop.withLayers([dummyLayer()], () => {
+                cop.withLayers([DummyLayer], () => {
                     assert.equal(o.m1(), "L$m1,m1", "layered m1 broken");
                 });
 
-                const s = new (dummySubclass())();
+                const s = new DummySubclass();
                 assert.equal(s.m1(), "S$m1", "base S$m1 broken");
-                cop.withLayers([dummyLayer()], () => {
+                cop.withLayers([DummyLayer], () => {
                     assert.equal(s.m1(), "S$m1",
                         "overriden method should not show layered behavior");
                 });
@@ -903,7 +885,7 @@ describe('cop', function () {
                     m1() { return "S$m1a " + super.m1() + " S$m1b" }
                 }
 
-                cop.layerClass(dummyLayer(), DummyClass, {
+                cop.layerClass(DummyLayer, DummyClass, {
                     m1() { return "L$m1a " + cop.proceed() + " L$m1b" }
                 });
 
@@ -911,38 +893,39 @@ describe('cop', function () {
                 const o = new DummyClass();
                 assert.equal(o.m1(), "m1", "unlayered m1 in superclass broken");
 
-                cop.withLayers([dummyLayer()], () => {
+                cop.withLayers([DummyLayer], () => {
                     assert.equal(o.m1(), "L$m1a m1 L$m1b", "layered m1 broken");
                 });
 
                 const s = new DummySubclass();
                 assert.equal(s.m1(), "S$m1a m1 S$m1b", "base S$m1 broken");
-                cop.withLayers([dummyLayer()], () => {
+                cop.withLayers([DummyLayer], () => {
                     assert.equal(s.m1(), "S$m1a L$m1a m1 L$m1b S$m1b", "layered S$m1 broken");
                 });
             });
 
 
             it('testMultipleLayerDefintions', function() {
-                dummyClass().addMethods({m1() { return "m1" }});
+                Object.assign(DummyClass.prototype, {m1() { return "m1" }});
 
-                dummySubclass().addMethods({m1() { return "S$m1" }});
+                Object.assign(DummySubclass.prototype, {m1() { return "S$m1" }});
 
-                cop.layerClass(dummyLayer(), dummyClass(), {
+                cop.layerClass(DummyLayer, DummyClass, {
                     m1() {return "L$m1,"+cop.proceed()}
                 });
 
-                cop.layerClass(dummyLayer2(), dummySubclass(), {
+                cop.layerClass(DummyLayer2, DummySubclass, {
                     m1() {return "L$m1,"+cop.proceed()}
                 });
 
-                const s = new (dummySubclass())();
-                cop.withLayers([dummyLayer()], () => {
+                const s = new DummySubclass();
+                cop.withLayers([DummyLayer], () => {
                     assert.equal(s.m1(), "L$m1,S$m1", "layered S$m1 broken");
                 })
             });
         });
 
+        // TODO: this syntax is no longer 'alternative', it is the only one
         describe('alternative syntax', function () {
 
             it('testNewSyntax', function() {
@@ -1388,7 +1371,7 @@ describe('cop', function () {
                 },
 
                 set p(value) {
-                    cop.proceed(value.capitalize())
+                    cop.proceed(value.charAt(0).toUpperCase() + value.slice(1))
                 },
 
             });
@@ -1444,7 +1427,7 @@ describe('cop', function () {
                 functionName;
 
             cop.proceed = function() {
-                const composition = cop.proceedStack.last();
+                const composition = cop.proceedStack[cop.proceedStack.length - 1];
                 partialMethods = composition.partialMethods;
                 object = composition.object;
                 prototypeObject = composition.prototypeObject;
