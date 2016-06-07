@@ -1603,35 +1603,35 @@ describe('cop', function () {
 
         // FIXME: this test case uses Morph
         xit('testUninstallLayer', function() {
-            lively.morphic.Morph.subclass('obj', {
+            var obj =  {
                 m1: function() { return 1 },
                 m2: function() { return 2 },
                 m3: function() { return 3 }
-            })
-            var originalM2 = obj.prototype.m2;
+            }
+            var originalM2 = obj.m2;
 
-            cop.create('TestLayer1').refineClass(obj, {
+            cop.create('TestLayer1').refineObject(obj, {
                 m1: function() { return cop.proceed() + 1 },
-                m2: function() { return cop.proceed() + 1 },
                 m3: function() { return cop.proceed() + 1 }
             }).beGlobal();
-            var singleLayeredM1 = obj.prototype.m1;
+            var singleLayeredM1 = obj.m1;
 
-            cop.create('TestLayer2').refineClass(obj, {
+            cop.create('TestLayer2').refineObject(obj, {
+                m1: function() { return cop.proceed() + 2 },
                 m2: function() { return cop.proceed() + 2 },
                 m3: function() { return cop.proceed() + 2 }
             }).beGlobal();
 
-            cop.create('TestLayer3').refineClass(obj, {
+            cop.create('TestLayer3').refineObject(obj, {
                 m3: function() { return cop.proceed() + 3 }
             }).beGlobal();
-            var tripleLayeredM3 = obj.prototype.m3;
+            var tripleLayeredM3 = obj.m3;
 
             TestLayer2.uninstall();
 
-            assert(obj.prototype.m1 === singleLayeredM1, "obj.m1 is not wrapped anymore.");
-            assert(obj.prototype.m2 === originalM2, "obj.m2 is still wrapped.");
-            assert(obj.prototype.m3 === tripleLayeredM3, "obj.m3 is not wrapped anymore.");
+            assert(obj.m1 === singleLayeredM1, "obj.m1 is not wrapped anymore.");
+            assert(obj.m2 === originalM2, "obj.m2 is still wrapped.");
+            assert(obj.m3 === tripleLayeredM3, "obj.m3 is not wrapped anymore.");
         });
     });
 
