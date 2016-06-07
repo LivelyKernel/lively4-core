@@ -26,7 +26,10 @@
 import * as cop from '../Layers.js';
 import { Layer, LayerableObject } from '../Layers.js';
 
+import chai from '../node_modules/chai/chai.js'
+
 let assert = chai.assert;
+
 
 // COP Example from: Hirschfeld, Costanza, Nierstrasz. 2008.
 // Context-oriented Programming. JOT)
