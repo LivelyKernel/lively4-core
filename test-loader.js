@@ -3,7 +3,8 @@ System.config({
   transpiler: 'babel',
   baseURL: '/base',
   map: {
-    babel: 'src/external/babel-browser.js',
+    babel: 'src/external/babel-browser.js'
+    ,
     kernel: 'src/client/legacy-kernel.js'
   }
 });

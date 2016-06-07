@@ -42,7 +42,6 @@
   "devDependencies": {
     "browserify": "^11.0.0",
     "chai": "^1.9.1",
-    "lively.modules": "^0.4.3",
     "karma": "^0.13.1",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^0.1.10",

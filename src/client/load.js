@@ -57,6 +57,9 @@ if ('serviceWorker' in navigator) {
       //   return loadJavaScriptThroughDOM("livelyModules",
       //     lively4url + "/../lively.modules/dist/lively.modules_no-deps.js") })
       .then( function() {
+        if(window.__karma__) {
+          return;
+        }
         return loadJavaScriptThroughDOM("livelyModules",
           lively4url + "/src/external/lively.modules-with-lively.vm.js")})
         // return loadJavaScriptThroughDOM("livelyModules",
@@ -94,6 +97,7 @@ if ('serviceWorker' in navigator) {
         })
 
         console.log("loaded lively.modules")
+        console.log("THIS IS NO MAGIC");
       })
 
 
