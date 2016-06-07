@@ -177,9 +177,10 @@ export default class Container extends Morph {
       
       document.body.querySelectorAll('lively-container').forEach(ea => {
         var url = "" + this.getURL()
-        if (ea !== this && !ea.isEditing() && ea.getURL() == url) {
+        if (ea !== this && !ea.isEditing() 
+          && ("" +ea.getURL()).match(url.replace(/\.[^.]+$/,""))) {
           console.log("update container content: " + ea)
-          ea.setPath(url)
+          ea.setPath(ea.getURL() + "")
         }  
         
       })
@@ -254,9 +255,10 @@ export default class Container extends Morph {
 
 
   appendHtml(content) {
+    //  var content = this.sourceContent
     try {
-      var root = this.getContentRoot()  
-      var nodes = $.parseHTML(content);
+      var root = this.getContentRoot()
+      var nodes = $.parseHTML(content, document, true);
       if (nodes[0] && nodes[0].localName == 'template') {
       	lively.notify("append template " + nodes[0].id);
 		    return this.appendTemplate(nodes[0].id);
@@ -264,7 +266,9 @@ export default class Container extends Morph {
       lively.html.fixLinks(nodes, this.getDir(),
         (path) => this.followPath(path));
       nodes.forEach((ea) => {
-        root.appendChild(ea);
+        // console.log("append child: " + ea.textContent)
+        // root.appendChild(ea);
+        $(root).append(ea); // for script tags
       });
     } catch(e) {
       console.log("Could not append html:" + content);
