@@ -29,6 +29,13 @@
       flex: 1;
       overflow-y: scroll;
     }
+    
+    .items .empty {
+      margin-top: 10px;
+      font-size: 12px;
+      font-style: italic;
+      text-align: center;
+    }
 
     .services-menu {
       display: flex;
@@ -45,9 +52,31 @@
       flex-direction: column;
     }
 
-    .service-top {
+    #service-top {
       display: flex;
       flex-direction: row;
+    }
+    
+    #service-bottom {
+      width: 100%;
+    }
+    
+    #service-bottom button {
+      border: 0;
+      border-radius: 0;
+      border-top: 1px solid rgb(120, 118, 116);
+      margin: 0;
+      width: 50%;
+      outline: none;
+      float: left;
+    }
+    
+    #service-bottom button:not(:last-child) {
+      border-right: 1px solid rgb(120, 118, 116);
+    }
+    
+    #service-bottom button.active {
+      background: linear-gradient(#eee, #ddd);
     }
 
     input {
@@ -68,21 +97,25 @@
         <div class="services-menu">
           <button id="addButton"><i class="fa fa-fw fa-plus" aria-hidden="true"></i></button>
           <button id="removeButton"><i class="fa fa-fw fa-minus" aria-hidden="true"></i></button>
-          <button id="refreshButton"><i class="fa fa-fw fa-refresh" aria-hidden="true"></i></button>
           <button id="editButton"><i class="fa fa-fw fa-code" aria-hidden="true"></i></button>
           <button id="settingsButton"><i class="fa fa-fw fa-cog" aria-hidden="true"></i></button>
         </div>
       </div>
       <div class="column-right">
-        <div class="service-top">
-          <input id="entryPoint" type="text" value="Name" />
+        <div id="service-top">
+          <input id="entryPoint" type="text" placeholder="Enter path..." value="" />
           <div class="service-actions">
             <button id="startButton"><i class="fa fa-fw fa-play" aria-hidden="true"></i></button>
             <button id="stopButton"><i class="fa fa-fw fa-stop" aria-hidden="true"></i></button>
             <button id="debugButton"><i class="fa fa-fw fa-bug" aria-hidden="true"></i></button>
+            <button id="trashButton"><i class="fa fa-fw fa-trash" aria-hidden="true"></i></button>
           </div>
         </div>
         <juicy-ace-editor id="log"></juicy-ace-editor>
+        <div id="service-bottom">
+          <button id="stdoutButton" class="active">Standard log</button>
+          <button id="stderrButton">Error log</button>
+        </div>
       </div>
     </div>
 </template>

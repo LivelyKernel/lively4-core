@@ -3,44 +3,44 @@
 import Morph from './Morph.js';
 
 const isLocalHost = document.location.hostname.indexOf('localhost') > -1;
-const localBaseUrl = 'http://localhost:9007/';
-const remoteBaseUrl = 'https://lively-kernel.org/lively4services/';
-var servicesURL = isLocalHost ? localBaseUrl : remoteBaseUrl;
-var debuggerURL = 'https://lively-kernel.org/lively4servicesDebug/';
-
-var services = {};
+const localBaseURL = 'http://localhost:9007/';
+const remoteBaseURL = 'https://lively-kernel.org/lively4services/';
+var servicesURL = isLocalHost ? localBaseURL : remoteBaseURL;
+const localDebugURL = 'http://localhost:9008/';
+const remoteDebugURL = 'https://lively-kernel.org/lively4servicesDebug/';
+var debuggerURL = isLocalHost ? localDebugURL : remoteDebugURL;
 
 export default class Services extends Morph {
 
   initialize() {
-    this.windowTitle = 'Services'
+    this.windowTitle = 'Services';
+    this.pid = null;
+    this.logType = 'stdout';
+    this.services = {};
+
     this.serviceList = this.getSubmorph('.items');
-    var that = this;
     $(this.serviceList).on('click', 'lively-services-item', (evt) => {
-      that.unselectAll();
+      this.unselectAll();
       evt.target.getSubmorph('.item').classList.add('selected');
-      this.showService(evt.target.getAttribute('data-id'));
+      this.pid = evt.target.getAttribute('data-id');
+      this.showService();
     });
 
-    this.serviceTop = this.getSubmorph('.service-top');
+    this.serviceTop = this.getSubmorph('#service-top');
     this.entryPoint = this.getSubmorph('#entryPoint');
 
     this.addButton = this.getSubmorph('#addButton');
     this.addButton.addEventListener('click', (evt) => {
       this.serviceTop.removeAttribute('data-id');
-      this.entryPoint.value = 'Enter path...';
-      this.logEditor.editor.setValue('');
+      this.entryPoint.value = '';
+      this.entryPoint.focus();
+      this.logEditor.setValue('');
       this.unselectAll();
     });
 
     this.removeButton = this.getSubmorph('#removeButton');
     this.removeButton.addEventListener('click', (evt) => {
-      this.removeService(this.serviceTop.getAttribute('data-id'));
-    });
-
-    this.refreshButton = this.getSubmorph('#refreshButton');
-    this.refreshButton.addEventListener('click', (evt) => {
-      this.refreshServiceList();
+      this.removeService();
     });
 
     this.editButton = this.getSubmorph('#editButton');
@@ -62,130 +62,142 @@ export default class Services extends Morph {
     });
     this.startButton = this.getSubmorph('#startButton');
     this.startButton.addEventListener('click', (evt) => {
-      this.startService(this.serviceTop.getAttribute('data-id'));
+      this.startService();
     });
     this.stopButton = this.getSubmorph('#stopButton');
     this.stopButton.addEventListener('click', (evt) => {
-      this.stopService(this.serviceTop.getAttribute('data-id'));
+      this.stopService();
     });
     this.debugButton = this.getSubmorph('#debugButton');
     this.debugButton.addEventListener('click', (evt) => {
       lively.openComponentInWindow('lively-iframe').then(component => {
-        component.setURL(debuggerURL + '?port=5858');
+        var debuggerPort = this.services[this.pid].debugPort;
+        component.setURL(debuggerURL + '?port=' + debuggerPort);
       });
     });
 
-    this.logEditor = this.getSubmorph('#log');
+    this.stdoutButton = this.getSubmorph('#stdoutButton');
+    this.stderrButton = this.getSubmorph('#stderrButton');
+    this.stdoutButton.addEventListener('click', (evt) => {
+      this.stdoutButton.classList.add('active');
+      this.stderrButton.classList.remove('active');
+      this.logType = 'stdout';
+      this.refreshLog();
+    });
+    this.stderrButton.addEventListener('click', (evt) => {
+      this.stderrButton.classList.add('active');
+      this.stdoutButton.classList.remove('active');
+      this.logType = 'stderr';
+      this.refreshLog();
+    });
+
+    this.logEditor = this.getSubmorph('#log').editor;
+    this.logEditor.setReadOnly(true);
 
     this.refreshServiceList();
-    this.refreshInterval = setInterval(function() {
-      that.refreshServiceList()
+    this.refreshInterval = setInterval(() => {
+      this.refreshServiceList();
     }, 5000);
     this.logInterval = null;
-    
-    this.detachedCallback = function() {
-      clearInterval(that.refreshInterval);
-      clearInterval(that.logInterval);
+
+    this.detachedCallback = () => {
+      clearInterval(this.refreshInterval);
+      clearInterval(this.logInterval);
     };
   }
 
   unselectAll() {
     var children = this.serviceList.children;
-    for (var i = 0; i < children.length; i++) {
+    for (var i = 0; i < children.length - 1; i++) {
       children[i].getSubmorph('.item').classList.remove('selected');
     }
   }
 
-  showService(id) {
-    var that = this;
-    this.serviceTop.setAttribute('data-id', id);
-    this.entryPoint.value = services[id].entryPoint;
-    that.refreshLog();
+  post(endpoint, data, success, error) {
+    $.ajax({
+      url: servicesURL + endpoint,
+      type: 'POST',
+      data: JSON.stringify(data),
+      contentType: 'application/json',
+      success: success,
+      error: error || function(jqXHR, textStatus, errorThrown) {
+        console.log(errorThrown);
+      }
+    });
+  }
+
+  showService() {
+    this.entryPoint.value = this.services[this.pid].entryPoint;
+    this.refreshLog();
     if (this.logInterval === null) {
       this.logInterval = setInterval(function() {
-        that.refreshLog();
-      }, 2000);
+        this.refreshLog();
+      }.bind(this), 2000);
     }
   }
 
-  startService(id) {
-    var that = this;
+  startService() {
     var data;
-    if (id !== null) {
-      data = { id: id };
+    if (this.pid !== null) {
+      data = { id: this.pid };
     } else {
       data = { entryPoint: this.entryPoint.value };
     }
-
-    console.log(id)
-
-    // if (pid === null) {
-      $.ajax({
-        url: servicesURL + 'start',
-        type: 'POST',
-        data: JSON.stringify(data),
-        contentType: 'application/json',
-        success: function(res) {
-          console.log(res);
-          that.refreshServiceList();
-        }
-      });
-    // }else {
-    //   //implement resume process
-    // }
+    this.post('start', data, function(res) {
+      console.log(res);
+      this.refreshServiceList();
+    }.bind(this));
   }
 
-  stopService(id) {
-    var that = this;
-    $.ajax({
-      url: servicesURL + 'stop',
-      type: 'POST',
-      data: JSON.stringify({ id: id }),
-      contentType: 'application/json',
-      success: function(res) {
-        console.log(res);
-        that.refreshServiceList();
-        clearInterval(that.logInterval);
-        that.logInterval = null;
-      }
-    });
+  stopService() {
+    this.post('stop', { id: this.pid }, function(res) {
+      console.log(res);
+      this.refreshServiceList();
+      clearInterval(this.logInterval);
+      this.logInterval = null;
+    }.bind(this));
   }
 
-  removeService(id) {
-    var that = this;
-    $.ajax({
-      url: servicesURL + 'remove',
-      type: 'POST',
-      data: JSON.stringify({ id: id }),
-      contentType: 'application/json',
-      success: function(res) {
-        console.log(res);
-        that.refreshServiceList();
-      }
-    });
+  removeService() {
+    this.post('remove', { id: this.pid }, function(res) {
+      console.log(res);
+      this.refreshServiceList();
+    }.bind(this));
   }
 
   refreshServiceList() {
-    var that = this;
     $.ajax({
       url: servicesURL + 'list',
-      success: function(_services) {
-        services = _services;
+      success: function(services) {
+        this.services = services;
+        var item;
+        var selectedPID = null;
         // Clear all items
-        while (that.serviceList.firstChild) {
-          that.serviceList.removeChild(that.serviceList.firstChild);
+        while (this.serviceList.firstChild) {
+          item = this.serviceList.firstChild;
+          if (selectedPID === null && !item.classList.contains('empty') &&
+              item.getSubmorph('.item').classList.contains('selected')) {
+            selectedPID = item.getAttribute('data-id');
+          }
+          this.serviceList.removeChild(this.serviceList.firstChild);
         }
         // Check if any service running
         if (Object.keys(services).length === 0) {
-          console.log('No services running yet!');
+          item = document.createElement('div');
+          item.classList.add('empty');
+          item.innerHTML = "No services available yet.";
+          this.serviceList.appendChild(item);
           return;
         }
         // List all services
         var now = new Date().getTime();
         for (var id in services) {
           var service = services[id];
-          var item = document.createElement('lively-services-item');
+          item = document.createElement('lively-services-item');
           item.setAttribute('data-id', id);
+          if (id == selectedPID) {
+            item.getSubmorph('.item').classList.add('selected');
+          }
           var title = service.entryPoint + ' (#' + id + ')';
           item.getSubmorph('h1').innerHTML = title;
 
@@ -203,27 +215,19 @@ export default class Services extends Morph {
 
           item.getSubmorph('.status').classList.add(status);
           item.getSubmorph('small').innerHTML = statusText;
-          that.serviceList.appendChild(item);
+          this.serviceList.appendChild(item);
         }
-      },
+      }.bind(this),
       error: function(jqXHR, textStatus, errorThrown) {
-        console.log(errorThrown)
+        console.log(errorThrown);
       }
     });
   }
-  
+
   refreshLog() {
-    var that = this;
-    $.ajax({
-      url: servicesURL + 'get',
-      type: 'POST',
-      data: JSON.stringify({ id: that.serviceTop.getAttribute('data-id') }),
-      contentType: 'application/json',
-      success: function(res) {
-        var editor = that.logEditor.editor;
-        editor.setValue(res.log);
-        editor.gotoPageDown();
-      }
-    });
+    this.post('get', { id: this.pid }, function(res) {
+      this.logEditor.setValue(res.log);
+      this.logEditor.gotoPageDown();
+    }.bind(this));
   }
 }
