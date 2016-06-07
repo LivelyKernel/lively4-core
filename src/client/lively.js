@@ -623,7 +623,7 @@ export default class Lively {
     });
   }
   // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
-  static openBrowser(url, edit, pattern) {
+  static async openBrowser(url, edit, pattern) {
     var editorComp;
     return lively.openComponentInWindow("lively-container").then(comp => {
           editorComp = comp;
@@ -631,9 +631,9 @@ export default class Lively {
           comp.parentElement.style.height = "600px"
           if (edit) comp.setAttribute("mode", "edit");
           return comp.followPath(url)
-    }).then( () => {
+    }).then( async () => {
       if (edit && pattern) {
-          editorComp.getAceEditor().editor.find(pattern)
+          (await editorComp.realAceEditor()).find(pattern)
       }
     })
   }

@@ -175,6 +175,15 @@ export default class Container extends Morph {
         return
       }
       
+      document.body.querySelectorAll('lively-container').forEach(ea => {
+        var url = "" + this.getURL()
+        if (ea !== this && !ea.isEditing() && ea.getURL() == url) {
+          console.log("update container content: " + ea)
+          ea.setPath(url)
+        }  
+        
+      })
+      
       var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/)
       if (moduleName) {
         moduleName = moduleName[1]
@@ -320,6 +329,22 @@ export default class Container extends Morph {
     var livelyEditor = this.shadowRoot.querySelector('lively-editor')
     if (!livelyEditor) return;
     return livelyEditor.shadowRoot.querySelector('juicy-ace-editor')
+  }
+  
+  async realAceEditor() {
+    return new Promise(resolve => {
+      var checkForEditor = () => {
+        var editor = this.getAceEditor()
+        if (editor && editor.editor) {
+          resolve(editor.editor)
+        } else {
+          setTimeout(() => {
+            checkForEditor()
+          },100) 
+        }
+      };
+      checkForEditor()
+    })
   }
   
   thumbnailFor(url, name) {
