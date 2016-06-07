@@ -15,18 +15,19 @@ import paths from './paths.js';
 
 import inspector from './inspector.js';
 
-// import contextmenu2 from './contextmenu.js';
-
+import contextmenu from './contextmenu.js';
 
 import keys from './keys.js';
 import components from './morphic/component-loader.js';
 
 
-//import expose from './expose.js';
+import authGithub from './auth-github.js'
+import authDropbox from './auth-dropbox.js'
+import authGoogledrive  from './auth-googledrive.js'
+
+import expose from './expose.js';
 
 /* expose external modules */
-
-
 import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
 
@@ -59,21 +60,28 @@ var exportmodules = [
 export default class Lively {
 
 
-  static import(moduleName, path, forceLoad) {
+  static async import(moduleName, path, forceLoad) {
+    console.log('import module path', moduleName, path, forceLoad)
+    debugger
+    path = "" + path
+    
+    // if(moduleName === 'html') {
+    //   let source = await fetch(path).then(r => r.text());
+    //   return lively.modules.moduleSourceChange("" + path, source)
+    // }
 
-    if (lively.modules && path)
-      lively.modules.reloadModule("" + path);
-
+    if (lively.modules && path && forceLoad) {
+      lively.modules.reloadModule(path);
+    }
+    
     if (!path) path = this.defaultPath(moduleName)
     if (!path) throw Error("Could not imoport " + moduleName + ", not path specified!")
 
-    
-
-    if (this[moduleName] && !forceLoad)
-      return new Promise((resolve) => { resolve(this[moduleName])})
-    if (forceLoad) {
-      path += "?" + Date.now()
-    }
+    // if (this[moduleName] && !forceLoad)
+    //   return new Promise((resolve) => { resolve(this[moduleName])})
+    // if (forceLoad) {
+    //   path += "?" + Date.now()
+    // }
 
     return System.import(path).then( (module, err) => {
       if (err) {
@@ -190,25 +198,31 @@ export default class Lively {
   }
 
 
-  static loaded() {
+  static loaded(force) {
+    if (window.lively4loaded && !force) {
+      console.log("lively already loaded")
+      return //
+    }
+    window.lively4loaded = true
+    
     // #Refactor with #ContextJS
     // guard againsst wrapping twice and ending in endless recursion
-    if (!console.log.originalFunction) {
-        var nativeLog = console.log;
-        console.log = function() {
-            nativeLog.apply(console, arguments);
-            lively.log.apply(undefined, arguments);
-        };
-        console.log.originalFunction = nativeLog; // #TODO use generic Wrapper mechanism here
-    }
-    if (!console.error.originalFunction) {
-        var nativeError = console.error;
-        console.error = function() {
-            nativeError.apply(console, arguments);
-            lively.log.apply(undefined, arguments);
-        };
-        console.error.originalFunction = nativeError; // #TODO use generic Wrapper mechanism here
-    }
+    // if (!console.log.originalFunction) {
+    //     var nativeLog = console.log;
+    //     console.log = function() {
+    //         nativeLog.apply(console, arguments);
+    //         lively.log.apply(undefined, arguments);
+    //     };
+    //     console.log.originalFunction = nativeLog; // #TODO use generic Wrapper mechanism here
+    // }
+    // if (!console.error.originalFunction) {
+    //     var nativeError = console.error;
+    //     console.error = function() {
+    //         nativeError.apply(console, arguments);
+    //         lively.log.apply(undefined, arguments);
+    //     };
+    //     console.error.originalFunction = nativeError; // #TODO use generic Wrapper mechanism here
+    // }
 
     // General Error Handling
     if (window.onerror === null) {
@@ -224,11 +238,7 @@ export default class Lively {
 
     exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expected
 
-    this.import("authGithub", kernel.realpath('/src/client/auth-github.js'))
-    this.import("authDropbox", kernel.realpath('/src/client/auth-dropbox.js'))
-    this.import("authGoogledrive", kernel.realpath('/src/client/auth-googledrive.js'))
-
-    this.import("expose")
+    
     
     // for anonymous lively.modules workspaces
     if (!lively.modules.isHookInstalled("fetch", "workspaceFetch")) {
@@ -240,6 +250,10 @@ export default class Lively {
   
     // for container content... But this will lead to conflicts with lively4chrome  ?? #Jens
     lively.loadCSSThroughDOM("livelystyle", lively4url + "/templates/lively4.css")
+    
+    
+    expose.postLoad()
+    
   }
 
   static array(anyList){
@@ -355,7 +369,7 @@ export default class Lively {
     // console.log("hide: " + (evt.path[0] === document.body))
     if (evt.path[0] !== document.body) return
     console.log("hide context menu:" + evt)
-    this.import("contextmenu").then(m => m.hide());
+    contextmenu.hide();
   }
 
   static openContextMenu(container, evt, target) {
@@ -364,7 +378,7 @@ export default class Lively {
       target = that
     }
     console.log("open context menu: " + target);
-    this.import("contextmenu").then(m => m.openIn(container, evt, target));
+    contextmenu.openIn(container, evt, target);
 
   }
 

@@ -168,8 +168,8 @@ export default class Container extends Morph {
       return
     }
     return this.getSubmorph("#editor").saveFile().then( () => {
-        var sourceCode = this.getSubmorph("#editor").currentEditor().getValue()
-        lively.updateTemplate(sourceCode)
+      var sourceCode = this.getSubmorph("#editor").currentEditor().getValue()
+      lively.updateTemplate(sourceCode)
       var url = this.getURL();
       if (this.getURL().pathname.match(/\/test\/.*([^/]+)\.js$/)) {
         console.log("ignore test: " + this.getURL())
@@ -182,14 +182,15 @@ export default class Container extends Morph {
         if (this.getSubmorph("#live").checked) {
           
           lively.import(moduleName, url, true).then( module => {
-              lively.notify("Module " + moduleName + " reloaded!")
+            lively.notify("Module " + moduleName + " reloaded!")
           }, err => {
-              window.LastError = err
-              lively.notify("Error loading module " + moduleName, err)
+            window.LastError = err
+            lively.notify("Error loading module " + moduleName, err)
+            console.error(err)
           })
         }
       }
-    }).then( () => this.showNavbar())
+    }).then(() => this.showNavbar())
   }
 
   async onDelete() {

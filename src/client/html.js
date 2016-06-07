@@ -4,12 +4,32 @@
  * Kitchensink for all HTML manipulation utilities
  */
 
-
 export default class HTML {
   
   static hello() {
-    alert("Hello World!")
-    
+    alert("Hello World?")
+  }
+  
+  // 
+  
+  // #JENS #ContinueWork here #NotFinished... load/save for tim
+  static getFilter(ea) {
+    return !['SCRIPT', 'LIVELY-PREFERENCES', 'LIVELY-HALOS'].includes(ea.tagName)
+  }
+  
+  static getHtmlContent(body) {
+    return _.filter(body.childNodes, this.getFilter).map( (ea) => ea.outerHTML).join("\n")
+  }
+  
+  static clearHtmlContent(body) {
+    return _.filter(body.childNodes, this.getFilter).each( (ea) => body.removeChild(ea)).join("\n")
+  }
+  
+  static setHtmlContent(body, html) {
+    var nodes = $.parseHTML(html)
+    _.each(nodes, (ea) => {
+      body.appendChild(html)
+    })
   }
   
   static registerButtons(parent) {
