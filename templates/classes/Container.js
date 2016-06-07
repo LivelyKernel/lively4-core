@@ -59,6 +59,40 @@ export default class Container extends Morph {
   useBrowserHistory() {
     return this.getAttribute("load") == "auto";
   }  
+
+  hideCancelAndSave() {
+    _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
+      ea.style.visibility = "hidden";
+      ea.style.display = "none";
+
+    });
+    _.each(this.shadowRoot.querySelectorAll(".browse"), (ea) => {
+      ea.style.visibility = "visible";
+      ea.style.display = "inline-block";
+    });
+  }
+
+  showCancelAndSave() {
+    _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
+      ea.style.visibility = "visible";
+      ea.style.display = "inline-block";
+    });
+    
+    _.each(this.shadowRoot.querySelectorAll(".browse"), (ea) => {
+      ea.style.visibility = "hidden";
+      ea.style.display = "none";
+    });
+  }
+  
+  history() {
+    if (!this._history) this._history = []
+    return this._history
+  }
+
+  forwardHistory() {
+    if (!this._forwardHistory) this._forwardHistory = []
+    return this._forwardHistory
+  }
     
   async onSync(evt) {
     var username = await lively.focalStorage.getItem("githubUsername")
@@ -83,31 +117,7 @@ export default class Container extends Morph {
   onPathEntered(path) {
     this.followPath(path);
   }
-
-  hideCancelAndSave() {
-    _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
-      ea.style.visibility = "hidden";
-      ea.style.display = "none";
-
-    });
-    _.each(this.shadowRoot.querySelectorAll(".browse"), (ea) => {
-      ea.style.visibility = "visible";
-      ea.style.display = "inline-block";
-    });
-  }
-
-  showCancelAndSave() {
-      _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
-        ea.style.visibility = "visible";
-        ea.style.display = "inline-block";
-      });
-      
-      _.each(this.shadowRoot.querySelectorAll(".browse"), (ea) => {
-        ea.style.visibility = "hidden";
-        ea.style.display = "none";
-      });
-
-    }
+    
 
   onEdit() {
       this.setAttribute("mode", "edit");
@@ -150,17 +160,6 @@ export default class Container extends Morph {
       lively.notify("Could not navigate forward")
     }
   }
-
-  history() {
-    if (!this._history) this._history = []
-    return this._history
-  }
-
-  forwardHistory() {
-    if (!this._forwardHistory) this._forwardHistory = []
-    return this._forwardHistory
-  }
-
 
   onSave(doNotQuit) {
     if (this.getPath().match(/\/$/)) {
@@ -216,10 +215,7 @@ export default class Container extends Morph {
     this.getSubmorph('#container-editor').innerHTML = ''
   }
   
-  getContentRoot() {
-    // return this.getSubmorph('#container-root')
-    return this
-  }
+
 
   appendMarkdown(content) {
     System.import(lively4url + '/src/external/showdown.js').then((showdown) => {
@@ -275,10 +271,8 @@ export default class Container extends Morph {
       console.log("Could not append html:" + content)
     }
   }
+  
 
-  getDir() {
-       return this.getPath().replace(/[^/]*$/,"")
-  }
 
   followPath(path) {
     console.log("follow path2: " + path)
@@ -300,6 +294,15 @@ export default class Container extends Morph {
     return this.getAttribute("mode") == "edit"
   }
 
+  getContentRoot() {
+    // return this.getSubmorph('#container-root')
+    return this
+  }
+
+  getDir() {
+       return this.getPath().replace(/[^/]*$/,"")
+  }
+
   getURL() {
     var path = this.getPath()
     if (path && path.match(/^https?:\/\//)) {
@@ -311,6 +314,12 @@ export default class Container extends Morph {
 
   getPath() {
     return this.getAttribute("src")
+  }
+  
+  getAceEditor() {
+    var livelyEditor = this.shadowRoot.querySelector('lively-editor')
+    if (!livelyEditor) return;
+    return livelyEditor.shadowRoot.querySelector('juicy-ace-editor')
   }
   
   thumbnailFor(url, name) {
@@ -576,13 +585,7 @@ export default class Container extends Morph {
       }
     })
   }
-
-  getAceEditor() {
-    var livelyEditor = this.shadowRoot.querySelector('lively-editor')
-    if (!livelyEditor) return;
-    return livelyEditor.shadowRoot.querySelector('juicy-ace-editor')
-  }
-
+  
   async editFile(path) {
     return new Promise(async (resolve, reject) => {
       this.setAttribute("mode","edit") // make it persistent

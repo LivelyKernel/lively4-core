@@ -54,18 +54,29 @@ export default class TestRunner extends HTMLDivElement {
   async findTestFiles() {
     var files = []
     var list = this.shadowRoot.querySelector("#testDir").value.split(",")
-    for(var i in list) {
-      files = files.concat(await this.findTestFilesInDir(list[i]))
-    };
+    console.log("list: " + list)
+
+    // await Promise.all(list.map((dir) => {
+    //   console.log("find test file in dir: " + dir)
+    //   return this.findTestFilesInDir(dir).then(newFiles => {
+    //     files = files.concat(newFiles)
+    //   })
+    // }));
+    
+    for (let dir of list) {
+      let newFiles = await this.findTestFilesInDir(dir)
+      files = files.concat(newFiles)
+    }
+
     return files
     // #WhyNotThis #ContinueHere
     // return ["/test/", "/test/templates/"].reduce(async (sum, ea) => {
     //     return sum.concat(await this.findTestFilesInDir(ea))
     // }, [])
   }
-// await that.findTestFilesInDir( "/test/templates/")
+  // await that.findTestFilesInDir( "/test/templates/")
   
-    // debugger
+  // debugger
   // it('sds',()=>{})
   // window.it
   

@@ -16863,6 +16863,7 @@ module.exports = function(acorn) {
           varDeclPaths: [],
           funcDecls: [],
           classDecls: [],
+          classExprs: [],
           methodDecls: [],
           importDecls: [],
           exportDecls: [],
@@ -17061,6 +17062,23 @@ module.exports = function(acorn) {
       key: "visitClassDeclaration",
       value: function visitClassDeclaration(node, scope, path) {
         scope.classDecls.push(node);
+
+        var visitor = this;
+        // ignore id
+        // // id is of types Identifier
+        // node["id"] = visitor.accept(node["id"], scope, path.concat(["id"]));
+        // superClass is of types Expression
+        if (node["superClass"]) {
+          node["superClass"] = visitor.accept(node["superClass"], scope, path.concat(["superClass"]));
+        }
+        // body is of types ClassBody
+        node["body"] = visitor.accept(node["body"], scope, path.concat(["body"]));
+        return node;
+      }
+    }, {
+      key: "visitClassExpression",
+      value: function visitClassExpression(node, scope, path) {
+        scope.classExprs.push(node);
 
         var visitor = this;
         // ignore id
@@ -18988,6 +19006,8 @@ var nodes = Object.freeze({
       options.excludeRefs.push(options.es6ExportFuncId);
       options.excludeRefs.push(options.es6ImportFuncId);
       rewritten = es6ModuleTransforms(rewritten, options);
+    } else {
+      rewritten = fixDefaultAsyncFunctionExportForRegeneratorBug(rewritten, options);
     }
 
     // 4. make all references declared in the toplevel scope into property
@@ -19069,14 +19089,12 @@ var nodes = Object.freeze({
   function blockInliner(node) {
     // FIXME what about () => x kind of functions?
     if (Array.isArray(node.body)) {
-      node.body = node.body.reduce(function (body, node) {
-        if (node.type !== "BlockStatement" || !node[canBeInlinedSym]) {
-          body.push(node);
-          return body;
-        } else {
-          return body.concat(node.body);
+      for (var i = node.body.length - 1; i >= 0; i--) {
+        var stmt = node.body[i];
+        if (stmt.type === "BlockStatement" && stmt[canBeInlinedSym]) {
+          node.body.splice.apply(node.body, [i, 1].concat(stmt.body));
         }
-      }, []);
+      }
     }
     return node;
   }
@@ -19177,9 +19195,10 @@ var nodes = Object.freeze({
   function replaceClassDecls(parsed, options) {
     var topLevel = topLevelDeclsAndRefs(parsed);
     if (!topLevel.classDecls.length) return parsed;
-    parsed.body = parsed.body.reduce(function (stmts, stmt) {
-      return stmts.concat(topLevel.classDecls.indexOf(stmt) === -1 ? [stmt] : [stmt, assignExpr(options.captureObj, stmt.id, stmt.id, false)]);
-    }, []);
+    for (var i = parsed.body.length - 1; i >= 0; i--) {
+      var stmt = parsed.body[i];
+      if (topLevel.classDecls.indexOf(stmt) !== -1) parsed.body.splice(i + 1, 0, assignExpr(options.captureObj, stmt.id, stmt.id, false));
+    }
     return parsed;
   }
 
@@ -19203,19 +19222,18 @@ var nodes = Object.freeze({
 
   function additionalIgnoredDecls(parsed, options) {
     var topLevel = topLevelDeclsAndRefs(parsed),
-        ignoreDecls = topLevel.scope.varDecls.reduce(function (result, decl, i) {
-      var path = lively_lang.Path(topLevel.scope.varDeclPaths[i]),
+        ignoreDecls = [];
+    for (var i = 0; i < topLevel.scope.varDecls.length; i++) {
+      var decl = topLevel.scope.varDecls[i],
+          path = lively_lang.Path(topLevel.scope.varDeclPaths[i]),
           parent = path.slice(0, -1).get(parsed);
-      if (parent.type === "ForStatement" || parent.type === "ForInStatement" || parent.type === "ExportNamedDeclaration") {
-        result.push(decl);
+      if (parent.type === "ForStatement" || parent.type === "ForInStatement" || parent.type === "ForOfStatement" || parent.type === "ExportNamedDeclaration") {
+        ignoreDecls.push.apply(ignoreDecls, babelHelpers.toConsumableArray(decl.declarations));
       }
-      return result;
-    }, []);
-    return [].concat(topLevel.scope.catches.map(function (ea) {
+    }
+    return topLevel.scope.catches.map(function (ea) {
       return ea.name;
-    })).concat(ignoreDecls.reduce(function (all, ea) {
-      all.push.apply(all, ea.declarations);return all;
-    }, []).map(function (ea) {
+    }).concat(ignoreDecls.map(function (ea) {
       return ea.id.name;
     }));
   }
@@ -19224,29 +19242,40 @@ var nodes = Object.freeze({
     // FIXME rk 2016-05-11: in shouldRefBeCaptured we now also test for import
     // decls, this should somehow be consolidated with this function and with the
     // fact that naming based ignores aren't good enough...
-    var topLevel = topLevelDeclsAndRefs(parsed),
-        ignoreDecls = topLevel.scope.varDecls.reduce(function (result, decl, i) {
-      var path = lively_lang.Path(topLevel.scope.varDeclPaths[i]),
+    var topLevel = topLevelDeclsAndRefs(parsed);
+
+    var ignoreDecls = [];
+    for (var i = 0; i < topLevel.scope.varDecls.length; i++) {
+      var decl = topLevel.scope.varDecls[i],
+          path = lively_lang.Path(topLevel.scope.varDeclPaths[i]),
           parent = path.slice(0, -1).get(parsed);
-      if (parent.type === "ForStatement" || parent.type === "ForInStatement" || parent.type === "ExportNamedDeclaration") {
-        result.push(decl);
+      if (parent.type === "ForStatement" || parent.type === "ForInStatement" || parent.type === "ForOfStatement" || parent.type === "ExportNamedDeclaration") {
+        ignoreDecls.push.apply(ignoreDecls, babelHelpers.toConsumableArray(decl.declarations));
       }
-      return result;
-    }, []),
-        ignoredImportAndExportNames = parsed.body.reduce(function (ignored, stmt) {
-      if (!options.es6ImportFuncId && stmt.type === "ImportDeclaration") return stmt.specifiers.reduce(function (ignored, specifier) {
-        return specifier.type === "ImportSpecifier" ? ignored.concat([specifier.imported.name]) : ignored;
-      }, ignored);
-      if (!options.es6ExportFuncId && (stmt.type === "ExportNamedDeclaration" || stmt.type === "ExportDefaultDeclaration") && stmt.specifiers) return ignored.concat(stmt.specifiers.map(function (specifier) {
-        return specifier.local.name;
-      }));
-      return ignored;
-    }, []);
+    }
+
+    // ignore stuff like var bar = class Foo {}
+    ignoreDecls.push.apply(ignoreDecls, babelHelpers.toConsumableArray(topLevel.scope.classExprs));
+
+    var ignoredImportAndExportNames = [];
+    for (var i = 0; i < parsed.body.length; i++) {
+      var stmt = parsed.body[i];
+      if (!options.es6ImportFuncId && stmt.type === "ImportDeclaration") {
+        ignoredImportAndExportNames.push.apply(ignoredImportAndExportNames, babelHelpers.toConsumableArray(stmt.specifiers.filter(function (ea) {
+          return ea.type === "ImportSpecifier";
+        }).map(function (ea) {
+          return ea.imported.name;
+        })));
+      } else if (!options.es6ExportFuncId && (stmt.type === "ExportNamedDeclaration" || stmt.type === "ExportDefaultDeclaration") && stmt.specifiers) {
+        ignoredImportAndExportNames.push.apply(ignoredImportAndExportNames, babelHelpers.toConsumableArray(stmt.specifiers.map(function (specifier) {
+          return specifier.local.name;
+        })));
+      }
+    }
+
     return [].concat(topLevel.scope.catches.map(function (ea) {
       return ea.name;
-    })).concat(ignoredImportAndExportNames).concat(ignoreDecls.reduce(function (all, ea) {
-      all.push.apply(all, ea.declarations);return all;
-    }, []).map(function (ea) {
+    })).concat(ignoredImportAndExportNames).concat(ignoreDecls.map(function (ea) {
       return ea.id.name;
     }));
   }
@@ -19256,9 +19285,9 @@ var nodes = Object.freeze({
   }
 
   function shouldRefBeCaptured(ref, toplevel, options) {
-    return !lively_lang.arr.include(toplevel.scope.importDecls, ref) && !lively_lang.arr.include(lively_lang.arr.flatmap(toplevel.scope.exportDecls, function (ea) {
+    return toplevel.scope.importDecls.indexOf(ref) === -1 && lively_lang.arr.flatmap(toplevel.scope.exportDecls, function (ea) {
       return ea.declarations ? ea.declarations : ea.declaration ? [ea.declaration] : [];
-    }), ref) && options.excludeRefs.indexOf(ref.name) === -1 && (!options.includeRefs || options.includeRefs.indexOf(ref.name) > -1);
+    }).indexOf(ref) === -1 && options.excludeRefs.indexOf(ref.name) === -1 && (!options.includeRefs || options.includeRefs.indexOf(ref.name) !== -1);
   }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -19266,22 +19295,28 @@ var nodes = Object.freeze({
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   function insertCapturesForExportDeclarations(parsed, options) {
-    parsed.body = parsed.body.reduce(function (stmts, stmt) {
-      stmts.push(stmt);
+    var body = [];
+    for (var i = 0; i < parsed.body.length; i++) {
+      var stmt = parsed.body[i];
+      body.push(stmt);
       // ExportNamedDeclaration can have specifieres = refs, those should already
       // be captured. Only focus on export declarations and only those
       // declarations that are no refs, i.e.
       // ignore: "export default x;"
       // capture: "export default function foo () {};", "export var x = 23, y = 3;"
-      if (stmt.type !== "ExportNamedDeclaration" && stmt.type !== "ExportDefaultDeclaration" || !stmt.declaration) return stmts;else if (stmt.declaration.declarations) {
-        stmts.push.apply(stmts, babelHelpers.toConsumableArray(stmt.declaration.declarations.map(function (decl) {
-          return assignExpr(options.captureObj, decl.id, decl.id, false);
-        })));
-      } else if (stmt.declaration.type === "FunctionDeclaration" || stmt.declaration.type === "ClassDeclaration") {
-        stmts.push(assignExpr(options.captureObj, stmt.declaration.id, stmt.declaration.id, false));
-      }
-      return stmts;
-    }, []);
+      if (stmt.type !== "ExportNamedDeclaration" && stmt.type !== "ExportDefaultDeclaration" || !stmt.declaration) {
+        /*...*/
+      } else if (stmt.declaration.declarations) {
+          body.push.apply(body, babelHelpers.toConsumableArray(stmt.declaration.declarations.map(function (decl) {
+            return assignExpr(options.captureObj, decl.id, decl.id, false);
+          })));
+        } else if (stmt.declaration.type === "FunctionDeclaration") {
+          /*handled by function rewriter as last step*/
+        } else if (stmt.declaration.type === "ClassDeclaration") {
+            body.push(assignExpr(options.captureObj, stmt.declaration.id, stmt.declaration.id, false));
+          }
+    }
+    parsed.body = body;
     return parsed;
   }
 
@@ -19295,18 +19330,20 @@ var nodes = Object.freeze({
   }
 
   function insertDeclarationsForExports(parsed, options) {
-    var topLevel = topLevelDeclsAndRefs(parsed);
-    parsed.body = parsed.body.reduce(function (stmts, stmt) {
+    var topLevel = topLevelDeclsAndRefs(parsed),
+        body = [];
+    for (var i = 0; i < parsed.body.length; i++) {
+      var stmt = parsed.body[i];
       if (stmt.type === "ExportDefaultDeclaration" && stmt.declaration && stmt.declaration.type.indexOf("Declaration") === -1) {
-        return stmts.concat([varDeclOrAssignment(parsed, {
+        body = body.concat([varDeclOrAssignment(parsed, {
           type: "VariableDeclarator",
           id: stmt.declaration,
           init: member$1(stmt.declaration, options.captureObj)
         }), stmt]);
       } else if (stmt.type !== "ExportNamedDeclaration" || !stmt.specifiers.length) {
-        return stmts.concat([stmt]);
+        body.push(stmt);
       } else {
-        return stmts.concat(stmt.specifiers.map(function (specifier) {
+        body = body.concat(stmt.specifiers.map(function (specifier) {
           return topLevel.declaredNames.indexOf(specifier.local.name) > -1 ? null : varDeclOrAssignment(parsed, {
             type: "VariableDeclarator",
             id: specifier.local,
@@ -19314,7 +19351,25 @@ var nodes = Object.freeze({
           });
         }).filter(Boolean)).concat(stmt);
       }
-    }, []);
+    }
+
+    parsed.body = body;
+    return parsed;
+  }
+
+  function fixDefaultAsyncFunctionExportForRegeneratorBug(parsed, options) {
+    // rk 2016-06-02: see https://github.com/LivelyKernel/lively.modules/issues/9
+    // FIXME this needs to be removed as soon as the cause for the issue is fixed
+    var body = [];
+    for (var i = 0; i < parsed.body.length; i++) {
+      var stmt = parsed.body[i];
+      if (stmt.type === "ExportDefaultDeclaration" && stmt.declaration.type === "FunctionDeclaration" && stmt.declaration.id && stmt.declaration.async) {
+        body.push(stmt.declaration);
+        stmt.declaration = stmt.declaration.id;
+      }
+      body.push(stmt);
+    }
+    parsed.body = body;
     return parsed;
   }
 
@@ -19340,8 +19395,11 @@ var nodes = Object.freeze({
           });
         }
       } else if (stmt.type === "ExportDefaultDeclaration") {
-        // nodes = [assignExpr(options.moduleExportFunc, {type: "Literal", value: "default"}, stmt.declaration, true)];
-        nodes = [exportCallStmt(options.moduleExportFunc, "default", stmt.declaration)];
+        if (stmt.declaration && stmt.declaration.id) {
+          nodes = [stmt.declaration].concat(exportCallStmt(options.moduleExportFunc, "default", stmt.declaration.id));
+        } else {
+          nodes = [exportCallStmt(options.moduleExportFunc, "default", stmt.declaration)];
+        }
       } else if (stmt.type === "ExportAllDeclaration") {
         var key = { name: options.es6ExportFuncId + "__iterator__", type: "Identifier" },
             moduleId = stmt.source;
@@ -20732,442 +20790,6 @@ var categorizer = Object.freeze({
   var GLOBAL = typeof window !== "undefined" ? window :
       typeof global!=="undefined" ? global :
         typeof self!=="undefined" ? self : this;
-  (function() {
-    (function(self) {
-  'use strict';
-
-  if (self.fetch) {
-    return
-  }
-
-  var support = {
-    searchParams: 'URLSearchParams' in self,
-    iterable: 'Symbol' in self && 'iterator' in Symbol,
-    blob: 'FileReader' in self && 'Blob' in self && (function() {
-      try {
-        new Blob()
-        return true
-      } catch(e) {
-        return false
-      }
-    })(),
-    formData: 'FormData' in self,
-    arrayBuffer: 'ArrayBuffer' in self
-  }
-
-  function normalizeName(name) {
-    if (typeof name !== 'string') {
-      name = String(name)
-    }
-    if (/[^a-z0-9\-#$%&'*+.\^_`|~]/i.test(name)) {
-      throw new TypeError('Invalid character in header field name')
-    }
-    return name.toLowerCase()
-  }
-
-  function normalizeValue(value) {
-    if (typeof value !== 'string') {
-      value = String(value)
-    }
-    return value
-  }
-
-  // Build a destructive iterator for the value list
-  function iteratorFor(items) {
-    var iterator = {
-      next: function() {
-        var value = items.shift()
-        return {done: value === undefined, value: value}
-      }
-    }
-
-    if (support.iterable) {
-      iterator[Symbol.iterator] = function() {
-        return iterator
-      }
-    }
-
-    return iterator
-  }
-
-  function Headers(headers) {
-    this.map = {}
-
-    if (headers instanceof Headers) {
-      headers.forEach(function(value, name) {
-        this.append(name, value)
-      }, this)
-
-    } else if (headers) {
-      Object.getOwnPropertyNames(headers).forEach(function(name) {
-        this.append(name, headers[name])
-      }, this)
-    }
-  }
-
-  Headers.prototype.append = function(name, value) {
-    name = normalizeName(name)
-    value = normalizeValue(value)
-    var list = this.map[name]
-    if (!list) {
-      list = []
-      this.map[name] = list
-    }
-    list.push(value)
-  }
-
-  Headers.prototype['delete'] = function(name) {
-    delete this.map[normalizeName(name)]
-  }
-
-  Headers.prototype.get = function(name) {
-    var values = this.map[normalizeName(name)]
-    return values ? values[0] : null
-  }
-
-  Headers.prototype.getAll = function(name) {
-    return this.map[normalizeName(name)] || []
-  }
-
-  Headers.prototype.has = function(name) {
-    return this.map.hasOwnProperty(normalizeName(name))
-  }
-
-  Headers.prototype.set = function(name, value) {
-    this.map[normalizeName(name)] = [normalizeValue(value)]
-  }
-
-  Headers.prototype.forEach = function(callback, thisArg) {
-    Object.getOwnPropertyNames(this.map).forEach(function(name) {
-      this.map[name].forEach(function(value) {
-        callback.call(thisArg, value, name, this)
-      }, this)
-    }, this)
-  }
-
-  Headers.prototype.keys = function() {
-    var items = []
-    this.forEach(function(value, name) { items.push(name) })
-    return iteratorFor(items)
-  }
-
-  Headers.prototype.values = function() {
-    var items = []
-    this.forEach(function(value) { items.push(value) })
-    return iteratorFor(items)
-  }
-
-  Headers.prototype.entries = function() {
-    var items = []
-    this.forEach(function(value, name) { items.push([name, value]) })
-    return iteratorFor(items)
-  }
-
-  if (support.iterable) {
-    Headers.prototype[Symbol.iterator] = Headers.prototype.entries
-  }
-
-  function consumed(body) {
-    if (body.bodyUsed) {
-      return Promise.reject(new TypeError('Already read'))
-    }
-    body.bodyUsed = true
-  }
-
-  function fileReaderReady(reader) {
-    return new Promise(function(resolve, reject) {
-      reader.onload = function() {
-        resolve(reader.result)
-      }
-      reader.onerror = function() {
-        reject(reader.error)
-      }
-    })
-  }
-
-  function readBlobAsArrayBuffer(blob) {
-    var reader = new FileReader()
-    reader.readAsArrayBuffer(blob)
-    return fileReaderReady(reader)
-  }
-
-  function readBlobAsText(blob) {
-    var reader = new FileReader()
-    reader.readAsText(blob)
-    return fileReaderReady(reader)
-  }
-
-  function Body() {
-    this.bodyUsed = false
-
-    this._initBody = function(body) {
-      this._bodyInit = body
-      if (typeof body === 'string') {
-        this._bodyText = body
-      } else if (support.blob && Blob.prototype.isPrototypeOf(body)) {
-        this._bodyBlob = body
-      } else if (support.formData && FormData.prototype.isPrototypeOf(body)) {
-        this._bodyFormData = body
-      } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
-        this._bodyText = body.toString()
-      } else if (!body) {
-        this._bodyText = ''
-      } else if (support.arrayBuffer && ArrayBuffer.prototype.isPrototypeOf(body)) {
-        // Only support ArrayBuffers for POST method.
-        // Receiving ArrayBuffers happens via Blobs, instead.
-      } else {
-        throw new Error('unsupported BodyInit type')
-      }
-
-      if (!this.headers.get('content-type')) {
-        if (typeof body === 'string') {
-          this.headers.set('content-type', 'text/plain;charset=UTF-8')
-        } else if (this._bodyBlob && this._bodyBlob.type) {
-          this.headers.set('content-type', this._bodyBlob.type)
-        } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
-          this.headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8')
-        }
-      }
-    }
-
-    if (support.blob) {
-      this.blob = function() {
-        var rejected = consumed(this)
-        if (rejected) {
-          return rejected
-        }
-
-        if (this._bodyBlob) {
-          return Promise.resolve(this._bodyBlob)
-        } else if (this._bodyFormData) {
-          throw new Error('could not read FormData body as blob')
-        } else {
-          return Promise.resolve(new Blob([this._bodyText]))
-        }
-      }
-
-      this.arrayBuffer = function() {
-        return this.blob().then(readBlobAsArrayBuffer)
-      }
-
-      this.text = function() {
-        var rejected = consumed(this)
-        if (rejected) {
-          return rejected
-        }
-
-        if (this._bodyBlob) {
-          return readBlobAsText(this._bodyBlob)
-        } else if (this._bodyFormData) {
-          throw new Error('could not read FormData body as text')
-        } else {
-          return Promise.resolve(this._bodyText)
-        }
-      }
-    } else {
-      this.text = function() {
-        var rejected = consumed(this)
-        return rejected ? rejected : Promise.resolve(this._bodyText)
-      }
-    }
-
-    if (support.formData) {
-      this.formData = function() {
-        return this.text().then(decode)
-      }
-    }
-
-    this.json = function() {
-      return this.text().then(JSON.parse)
-    }
-
-    return this
-  }
-
-  // HTTP methods whose capitalization should be normalized
-  var methods = ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST', 'PUT']
-
-  function normalizeMethod(method) {
-    var upcased = method.toUpperCase()
-    return (methods.indexOf(upcased) > -1) ? upcased : method
-  }
-
-  function Request(input, options) {
-    options = options || {}
-    var body = options.body
-    if (Request.prototype.isPrototypeOf(input)) {
-      if (input.bodyUsed) {
-        throw new TypeError('Already read')
-      }
-      this.url = input.url
-      this.credentials = input.credentials
-      if (!options.headers) {
-        this.headers = new Headers(input.headers)
-      }
-      this.method = input.method
-      this.mode = input.mode
-      if (!body) {
-        body = input._bodyInit
-        input.bodyUsed = true
-      }
-    } else {
-      this.url = input
-    }
-
-    this.credentials = options.credentials || this.credentials || 'omit'
-    if (options.headers || !this.headers) {
-      this.headers = new Headers(options.headers)
-    }
-    this.method = normalizeMethod(options.method || this.method || 'GET')
-    this.mode = options.mode || this.mode || null
-    this.referrer = null
-
-    if ((this.method === 'GET' || this.method === 'HEAD') && body) {
-      throw new TypeError('Body not allowed for GET or HEAD requests')
-    }
-    this._initBody(body)
-  }
-
-  Request.prototype.clone = function() {
-    return new Request(this)
-  }
-
-  function decode(body) {
-    var form = new FormData()
-    body.trim().split('&').forEach(function(bytes) {
-      if (bytes) {
-        var split = bytes.split('=')
-        var name = split.shift().replace(/\+/g, ' ')
-        var value = split.join('=').replace(/\+/g, ' ')
-        form.append(decodeURIComponent(name), decodeURIComponent(value))
-      }
-    })
-    return form
-  }
-
-  function headers(xhr) {
-    var head = new Headers()
-    var pairs = (xhr.getAllResponseHeaders() || '').trim().split('\n')
-    pairs.forEach(function(header) {
-      var split = header.trim().split(':')
-      var key = split.shift().trim()
-      var value = split.join(':').trim()
-      head.append(key, value)
-    })
-    return head
-  }
-
-  Body.call(Request.prototype)
-
-  function Response(bodyInit, options) {
-    if (!options) {
-      options = {}
-    }
-
-    this.type = 'default'
-    this.status = options.status
-    this.ok = this.status >= 200 && this.status < 300
-    this.statusText = options.statusText
-    this.headers = options.headers instanceof Headers ? options.headers : new Headers(options.headers)
-    this.url = options.url || ''
-    this._initBody(bodyInit)
-  }
-
-  Body.call(Response.prototype)
-
-  Response.prototype.clone = function() {
-    return new Response(this._bodyInit, {
-      status: this.status,
-      statusText: this.statusText,
-      headers: new Headers(this.headers),
-      url: this.url
-    })
-  }
-
-  Response.error = function() {
-    var response = new Response(null, {status: 0, statusText: ''})
-    response.type = 'error'
-    return response
-  }
-
-  var redirectStatuses = [301, 302, 303, 307, 308]
-
-  Response.redirect = function(url, status) {
-    if (redirectStatuses.indexOf(status) === -1) {
-      throw new RangeError('Invalid status code')
-    }
-
-    return new Response(null, {status: status, headers: {location: url}})
-  }
-
-  self.Headers = Headers
-  self.Request = Request
-  self.Response = Response
-
-  self.fetch = function(input, init) {
-    return new Promise(function(resolve, reject) {
-      var request
-      if (Request.prototype.isPrototypeOf(input) && !init) {
-        request = input
-      } else {
-        request = new Request(input, init)
-      }
-
-      var xhr = new XMLHttpRequest()
-
-      function responseURL() {
-        if ('responseURL' in xhr) {
-          return xhr.responseURL
-        }
-
-        // Avoid security warnings on getResponseHeader when not allowed by CORS
-        if (/^X-Request-URL:/m.test(xhr.getAllResponseHeaders())) {
-          return xhr.getResponseHeader('X-Request-URL')
-        }
-
-        return
-      }
-
-      xhr.onload = function() {
-        var options = {
-          status: xhr.status,
-          statusText: xhr.statusText,
-          headers: headers(xhr),
-          url: responseURL()
-        }
-        var body = 'response' in xhr ? xhr.response : xhr.responseText
-        resolve(new Response(body, options))
-      }
-
-      xhr.onerror = function() {
-        reject(new TypeError('Network request failed'))
-      }
-
-      xhr.ontimeout = function() {
-        reject(new TypeError('Network request failed'))
-      }
-
-      xhr.open(request.method, request.url, true)
-
-      if (request.credentials === 'include') {
-        xhr.withCredentials = true
-      }
-
-      if ('responseType' in xhr && support.blob) {
-        xhr.responseType = 'blob'
-      }
-
-      request.headers.forEach(function(value, name) {
-        xhr.setRequestHeader(name, value)
-      })
-
-      xhr.send(typeof request._bodyInit === 'undefined' ? null : request._bodyInit)
-    })
-  }
-  self.fetch.polyfill = true
-})(typeof self !== 'undefined' ? self : this);
-
-  }).call(GLOBAL);
   this.lively = this.lively || {};
 (function (exports,lively_lang,ast,babelRegeneratorRuntime) {
   'use strict';
@@ -21189,7 +20811,7 @@ var categorizer = Object.freeze({
     return obj;
   };
   function scheduleModuleExportsChange(System, moduleId, name, value, addNewExport) {
-    var pendingExportChanges = System["__lively.modules__"].pendingExportChanges,
+    var pendingExportChanges = System.get("@lively-env").pendingExportChanges,
         rec = moduleRecordFor$1(System, moduleId);
     if (rec && (name in rec.exports || addNewExport)) {
       var pending = pendingExportChanges[moduleId] || (pendingExportChanges[moduleId] = {});
@@ -21198,7 +20820,7 @@ var categorizer = Object.freeze({
   }
 
   function runScheduledExportChanges(System, moduleId) {
-    var pendingExportChanges = System["__lively.modules__"].pendingExportChanges,
+    var pendingExportChanges = System.get("@lively-env").pendingExportChanges,
         keysAndValues = pendingExportChanges[moduleId];
     if (!keysAndValues) return;
     clearPendingModuleExportChanges(System, moduleId);
@@ -21206,12 +20828,12 @@ var categorizer = Object.freeze({
   }
 
   function clearPendingModuleExportChanges(System, moduleId) {
-    var pendingExportChanges = System["__lively.modules__"].pendingExportChanges;
+    var pendingExportChanges = System.get("@lively-env").pendingExportChanges;
     delete pendingExportChanges[moduleId];
   }
 
   function updateModuleExports(System, moduleId, keysAndValues) {
-    var debug = System["__lively.modules__"].debug;
+    var debug = System.debug;
     updateModuleRecordOf(System, moduleId, function (record) {
 
       var newExports = [],
@@ -21267,78 +20889,92 @@ var categorizer = Object.freeze({
   }
 
   function importsAndExportsOf$1(System, moduleName, parent) {
-    return System.normalize(moduleName, parent).then(function (id) {
-      return Promise.resolve(sourceOf$1(System, id)).then(function (source) {
-        var parsed = ast.parse(source),
-            scope = ast.query.scopes(parsed);
+    var id, source, parsed, scope, imports, exports;
+    return regeneratorRuntime.async(function importsAndExportsOf$(context$1$0) {
+      while (1) switch (context$1$0.prev = context$1$0.next) {
+        case 0:
+          context$1$0.next = 2;
+          return regeneratorRuntime.awrap(System.normalize(moduleName, parent));
 
-        // compute imports
-        var imports = scope.importDecls.reduce(function (imports, node) {
-          var nodes = ast.query.nodesAtIndex(parsed, node.start);
-          var importStmt = lively_lang.arr.without(nodes, scope.node)[0];
-          if (!importStmt) return imports;
+        case 2:
+          id = context$1$0.sent;
+          context$1$0.next = 5;
+          return regeneratorRuntime.awrap(sourceOf$1(System, id));
 
-          var from = importStmt.source ? importStmt.source.value : "unknown module";
-          if (!importStmt.specifiers.length) // no imported vars
-            return imports.concat([{
-              localModule: id,
-              local: null,
-              imported: null,
-              fromModule: from,
-              importStatement: importStmt
-            }]);
+        case 5:
+          source = context$1$0.sent;
+          parsed = ast.parse(source);
+          scope = ast.query.scopes(parsed);
+          imports = scope.importDecls.reduce(function (imports, node) {
+            var nodes = ast.query.nodesAtIndex(parsed, node.start);
+            var importStmt = lively_lang.arr.without(nodes, scope.node)[0];
+            if (!importStmt) return imports;
 
-          return imports.concat(importStmt.specifiers.map(function (importSpec) {
-            var imported;
-            if (importSpec.type === "ImportNamespaceSpecifier") imported = "*";else if (importSpec.type === "ImportDefaultSpecifier") imported = "default";else if (importStmt.source) imported = importStmt.source.name;else imported = null;
-            return {
-              localModule: id,
-              local: importSpec.local ? importSpec.local.name : null,
-              imported: imported,
-              fromModule: from,
-              importStatement: importStmt
-            };
-          }));
-        }, []);
+            var from = importStmt.source ? importStmt.source.value : "unknown module";
+            if (!importStmt.specifiers.length) // no imported vars
+              return imports.concat([{
+                localModule: id,
+                local: null,
+                imported: null,
+                fromModule: from,
+                importStatement: importStmt
+              }]);
 
-        var exports = scope.exportDecls.reduce(function (exports, node) {
-          var nodes = ast.query.nodesAtIndex(parsed, node.start);
-          var exportsStmt = lively_lang.arr.without(nodes, scope.node)[0];
-          if (!exportsStmt) return exports;
+            return imports.concat(importStmt.specifiers.map(function (importSpec) {
+              var imported;
+              if (importSpec.type === "ImportNamespaceSpecifier") imported = "*";else if (importSpec.type === "ImportDefaultSpecifier") imported = "default";else if (importStmt.source) imported = importStmt.source.name;else imported = null;
+              return {
+                localModule: id,
+                local: importSpec.local ? importSpec.local.name : null,
+                imported: imported,
+                fromModule: from,
+                importStatement: importStmt
+              };
+            }));
+          }, []);
+          exports = scope.exportDecls.reduce(function (exports, node) {
+            var nodes = ast.query.nodesAtIndex(parsed, node.start);
+            var exportsStmt = lively_lang.arr.without(nodes, scope.node)[0];
+            if (!exportsStmt) return exports;
 
-          if (exportsStmt.type === "ExportAllDeclaration") {
-            var from = exportsStmt.source ? exportsStmt.source.value : null;
-            return exports.concat([{
-              localModule: id,
-              local: null,
-              exported: "*",
-              fromModule: from,
-              exportStatement: exportsStmt
-            }]);
-          }
+            if (exportsStmt.type === "ExportAllDeclaration") {
+              var from = exportsStmt.source ? exportsStmt.source.value : null;
+              return exports.concat([{
+                localModule: id,
+                local: null,
+                exported: "*",
+                fromModule: from,
+                exportStatement: exportsStmt
+              }]);
+            }
 
-          return exports.concat(exportsStmt.specifiers.map(function (exportSpec) {
-            return {
-              localModule: id,
-              local: exportSpec.local ? exportSpec.local.name : null,
-              exported: exportSpec.exported ? exportSpec.exported.name : null,
-              fromModule: id,
-              exportStatement: exportsStmt
-            };
-          }));
-        }, []);
+            return exports.concat(exportsStmt.specifiers.map(function (exportSpec) {
+              return {
+                localModule: id,
+                local: exportSpec.local ? exportSpec.local.name : null,
+                exported: exportSpec.exported ? exportSpec.exported.name : null,
+                fromModule: id,
+                exportStatement: exportsStmt
+              };
+            }));
+          }, []);
+          return context$1$0.abrupt("return", {
+            imports: lively_lang.arr.uniqBy(imports, function (a, b) {
+              return a.local == b.local && a.imported == b.imported && a.fromModule == b.fromModule;
+            }),
+            exports: lively_lang.arr.uniqBy(exports, function (a, b) {
+              return a.local == b.local && a.exported == b.exported && a.fromModule == b.fromModule;
+            })
+          });
 
-        return {
-          imports: lively_lang.arr.uniqBy(imports, function (a, b) {
-            return a.local == b.local && a.imported == b.imported && a.fromModule == b.fromModule;
-          }),
-          exports: lively_lang.arr.uniqBy(exports, function (a, b) {
-            return a.local == b.local && a.exported == b.exported && a.fromModule == b.fromModule;
-          })
-        };
-      });
-    });
+        case 11:
+        case "end":
+          return context$1$0.stop();
+      }
+    }, null, this);
   }
+
+  // compute imports
 
   function installHook$1(System, hookName, hook) {
     System[hookName] = lively_lang.fun.wrap(System[hookName], hook);
@@ -21420,8 +21056,8 @@ var categorizer = Object.freeze({
 
     // FIXME how to update exports in that case?
     if (!isGlobal) {
-      header += "var __lively_modules__ = System[\"__lively.modules__\"],\n    " + env.recorderName + " = __lively_modules__.moduleEnv(\"" + fullname + "\").recorder;";
-      footer += "\n__lively_modules__.evaluationDone(\"" + fullname + "\");";
+      header += "var " + env.recorderName + " = System.get(\"@lively-env\").moduleEnv(\"" + fullname + "\").recorder;";
+      footer += "\nSystem.get(\"@lively-env\").evaluationDone(\"" + fullname + "\");";
     }
 
     try {
@@ -21453,9 +21089,9 @@ var categorizer = Object.freeze({
     // twice we have this little hack...
     var m = getCachedNodejsModule(System, load);
     if (m) {
-      load.source = "export default System._nodeRequire('" + m.id + "');\n";
-      load.source += lively_lang.properties.allOwnPropertiesOrFunctions(m.exports).map(function (k) {
-        return lively_lang.classHelper.isValidIdentifier(k) ? "export var " + k + " = System._nodeRequire('" + m.id + "')['" + k + "'];" : "/*ignoring export \"" + k + "\" b/c it is not a valid identifier*/";
+      load.metadata.format = 'esm';
+      load.source = "var exports = System._nodeRequire('" + m.id + "'); export default exports;\n" + lively_lang.properties.allOwnPropertiesOrFunctions(m.exports).map(function (k) {
+        return lively_lang.classHelper.isValidIdentifier(k) ? "export var " + k + " = exports['" + k + "'];" : "/*ignoring export \"" + k + "\" b/c it is not a valid identifier*/";
       }).join("\n");
       System.debug && console.log("[lively.modules customTranslate] loading %s from nodejs module cache", load.name);
       return true;
@@ -21599,10 +21235,8 @@ var categorizer = Object.freeze({
     notificationLimit: null
   };
 
-  SystemClass.prototype.__defineGetter__("__lively.modules__", function () {
-    var System = this;
+  function livelySystemEnv(System) {
     return Object.defineProperties({
-
       moduleEnv: function moduleEnv(id) {
         return moduleEnv$1(System, id);
       },
@@ -21626,6 +21260,7 @@ var categorizer = Object.freeze({
       },
 
       // this is where the canonical state of the module system is held...
+      packages: System["__lively.modules__packages"] || (System["__lively.modules__packages"] = {}),
       loadedModules: System["__lively.modules__loadedModules"] || (System["__lively.modules__loadedModules"] = {}),
       pendingExportChanges: System["__lively.modules__pendingExportChanges"] || (System["__lively.modules__pendingExportChanges"] = {}),
       notifications: System["__lively.modules__notifications"] || (System["__lively.modules__notifications"] = []),
@@ -21641,7 +21276,7 @@ var categorizer = Object.freeze({
         enumerable: true
       }
     });
-  });
+  }
 
   function systems() {
     return SystemClass.systems;
@@ -21671,6 +21306,8 @@ var categorizer = Object.freeze({
 
   function prepareSystem(System, config) {
     System.trace = true;
+
+    System.set("@lively-env", System.newModule(livelySystemEnv(System)));
 
     wrapModuleLoad$1(System);
 
@@ -21834,11 +21471,11 @@ var categorizer = Object.freeze({
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   function loadedModules$1(System) {
-    return System["__lively.modules__"].loadedModules;
+    return System.get("@lively-env").loadedModules;
   }
 
   function moduleEnv$1(System, moduleId) {
-    var ext = System["__lively.modules__"];
+    var ext = System.get("@lively-env");
 
     if (ext.loadedModules[moduleId]) return ext.loadedModules[moduleId];
 
@@ -21944,7 +21581,7 @@ var categorizer = Object.freeze({
   }
 
   function forgetEnvOf(System, fullname) {
-    delete System["__lively.modules__"].loadedModules[fullname];
+    delete System.get("@lively-env").loadedModules[fullname];
   }
 
   function forgetModuleDeps(System, moduleName, opts) {
@@ -22099,7 +21736,7 @@ var categorizer = Object.freeze({
   }
 
   function registerPackage$1(System, packageURL, packageLoadStack) {
-    var url, registerSubPackages, packageInSystem, cfg, packageConfigResult, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, subp;
+    var url, registerSubPackages, cfg, packageConfigResult, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, subp;
 
     return regeneratorRuntime.async(function registerPackage$(context$1$0) {
       while (1) switch (context$1$0.prev = context$1$0.next) {
@@ -22144,109 +21781,138 @@ var categorizer = Object.freeze({
 
           System.debug && console.log("[lively.modules package register] %s", url);
 
-          packageInSystem = System.packages[url] || (System.packages[url] = {});
-          context$1$0.next = 16;
+          context$1$0.next = 15;
           return regeneratorRuntime.awrap(tryToLoadPackageConfig(System, url));
 
-        case 16:
+        case 15:
           cfg = context$1$0.sent;
-          context$1$0.next = 19;
+          context$1$0.next = 18;
           return regeneratorRuntime.awrap(applyConfig(System, cfg, url));
 
-        case 19:
+        case 18:
           packageConfigResult = context$1$0.sent;
 
           if (!registerSubPackages) {
-            context$1$0.next = 47;
+            context$1$0.next = 46;
             break;
           }
 
           _iteratorNormalCompletion = true;
           _didIteratorError = false;
           _iteratorError = undefined;
-          context$1$0.prev = 24;
+          context$1$0.prev = 23;
           _iterator = packageConfigResult.subPackages[Symbol.iterator]();
 
-        case 26:
+        case 25:
           if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
-            context$1$0.next = 33;
+            context$1$0.next = 32;
             break;
           }
 
           subp = _step.value;
-          context$1$0.next = 30;
+          context$1$0.next = 29;
           return regeneratorRuntime.awrap(registerPackage$1(System, subp.address.replace(/\/?$/, "/"), packageLoadStack));
 
-        case 30:
+        case 29:
           _iteratorNormalCompletion = true;
-          context$1$0.next = 26;
+          context$1$0.next = 25;
           break;
 
-        case 33:
-          context$1$0.next = 39;
+        case 32:
+          context$1$0.next = 38;
           break;
 
-        case 35:
-          context$1$0.prev = 35;
-          context$1$0.t0 = context$1$0["catch"](24);
+        case 34:
+          context$1$0.prev = 34;
+          context$1$0.t0 = context$1$0["catch"](23);
           _didIteratorError = true;
           _iteratorError = context$1$0.t0;
 
-        case 39:
+        case 38:
+          context$1$0.prev = 38;
           context$1$0.prev = 39;
-          context$1$0.prev = 40;
 
           if (!_iteratorNormalCompletion && _iterator["return"]) {
             _iterator["return"]();
           }
 
-        case 42:
-          context$1$0.prev = 42;
+        case 41:
+          context$1$0.prev = 41;
 
           if (!_didIteratorError) {
-            context$1$0.next = 45;
+            context$1$0.next = 44;
             break;
           }
 
           throw _iteratorError;
 
+        case 44:
+          return context$1$0.finish(41);
+
         case 45:
-          return context$1$0.finish(42);
+          return context$1$0.finish(38);
 
         case 46:
-          return context$1$0.finish(39);
+          return context$1$0.abrupt("return", cfg);
 
         case 47:
-          return context$1$0.abrupt("return", cfg.name);
-
-        case 48:
         case "end":
           return context$1$0.stop();
       }
-    }, null, this, [[24, 35, 39, 47], [40,, 42, 46]]);
+    }, null, this, [[23, 34, 38, 46], [39,, 41, 45]]);
   }
 
   function tryToLoadPackageConfig(System, packageURL) {
-    var packageConfigURL = packageURL + "/package.json";
+    var packageConfigURL, config, name;
+    return regeneratorRuntime.async(function tryToLoadPackageConfig$(context$1$0) {
+      while (1) switch (context$1$0.prev = context$1$0.next) {
+        case 0:
+          packageConfigURL = packageURL + "/package.json";
 
-    System.config({
-      meta: babelHelpers.defineProperty({}, packageConfigURL, { format: "json" }),
-      packages: babelHelpers.defineProperty({}, packageURL, { meta: { "package.json": { format: "json" } } })
-    });
+          System.config({
+            meta: babelHelpers.defineProperty({}, packageConfigURL, { format: "json" }),
+            packages: babelHelpers.defineProperty({}, packageURL, { meta: { "package.json": { format: "json" } } })
+          });
 
-    System.debug && console.log("[lively.modules package reading config] %s", packageConfigURL);
+          System.debug && console.log("[lively.modules package reading config] %s", packageConfigURL);
 
-    return Promise.resolve(System.get(packageConfigURL) || System["import"](packageConfigURL)).then(function (config) {
-      lively_lang.arr.pushIfNotIncluded(System.packageConfigPaths, packageConfigURL);
-      return config;
-    })["catch"](function (err) {
-      console.log("[lively.modules package] Unable loading package config %s for package: ", packageConfigURL, err);
-      delete System.meta[packageConfigURL];
-      var name = packageURL.split("/").slice(-1)[0];
-      return { name: name }; // "pseudo-config"
-    });
+          context$1$0.prev = 3;
+          context$1$0.t0 = System.get(packageConfigURL);
+
+          if (context$1$0.t0) {
+            context$1$0.next = 9;
+            break;
+          }
+
+          context$1$0.next = 8;
+          return regeneratorRuntime.awrap(System["import"](packageConfigURL));
+
+        case 8:
+          context$1$0.t0 = context$1$0.sent;
+
+        case 9:
+          config = context$1$0.t0;
+
+          lively_lang.arr.pushIfNotIncluded(System.packageConfigPaths, packageConfigURL);
+          return context$1$0.abrupt("return", config);
+
+        case 14:
+          context$1$0.prev = 14;
+          context$1$0.t1 = context$1$0["catch"](3);
+
+          console.log("[lively.modules package] Unable loading package config %s for package: ", packageConfigURL, context$1$0.t1);
+          delete System.meta[packageConfigURL];
+          name = packageURL.split("/").slice(-1)[0];
+          return context$1$0.abrupt("return", { name: name });
+
+        case 20:
+        case "end":
+          return context$1$0.stop();
+      }
+    }, null, this, [[3, 14]]);
   }
 
+  // "pseudo-config"
   function applyConfig(System, packageConfig, packageURL) {
     // takes a config json object (typically read from a package.json file but
     // can be used standalone) and changes the System configuration to what it finds
@@ -22273,8 +21939,12 @@ var categorizer = Object.freeze({
 
     packageInSystem.names = packageInSystem.names || [];
     lively_lang.arr.pushIfNotIncluded(packageInSystem.names, name);
+
     if (!main.match(/\.[^\/\.]+/)) main += ".js";
     packageInSystem.main = main;
+
+    // System.packages doesn't allow us to store our own properties
+    System.get("@lively-env").packages[packageURL] = packageInSystem;
 
     return packageApplyResult;
   }
@@ -22390,11 +22060,15 @@ var categorizer = Object.freeze({
 
     var map = computeRequireMap(System),
         modules = Object.keys(map),
-        packages = Object.keys(System.packages),
+        sysPackages = System.packages,
+        livelyPackages = System.get("@lively-env").packages,
+        packageNames = lively.lang.arr.uniq(Object.keys(sysPackages).concat(Object.keys(livelyPackages))),
         result = {};
 
-    groupIntoPackages(System, modules, packages).mapGroups(function (packageAddress, moduleNames) {
-      var p = System.packages[packageAddress],
+    groupIntoPackages(System, modules, packageNames).mapGroups(function (packageAddress, moduleNames) {
+      var systemP = sysPackages[packageAddress],
+          livelyP = livelyPackages[packageAddress],
+          p = livelyP && systemP ? Object.assign(livelyP, systemP) : livelyP || systemP,
           names = p ? p.names : [];
       if (!names || !names.length) names = [packageAddress.replace(/^(?:.+\/)?([^\/]+)$/, "$1")];
 
@@ -22428,11 +22102,11 @@ var categorizer = Object.freeze({
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   function getNotifications$1(System) {
-    return System["__lively.modules__"].notifications;
+    return System.get("@lively-env").notifications;
   }
 
   function truncateNotifications(System) {
-    var limit = System["__lively.modules__"].options.notificationLimit;
+    var limit = System.get("@lively-env").options.notificationLimit;
     if (limit) {
       var notifications = getNotifications$1(System);
       notifications.splice(0, notifications.length - limit);
@@ -22474,7 +22148,7 @@ var categorizer = Object.freeze({
   }
 
   function subsribersForType(System, type) {
-    var subscribers = System["__lively.modules__"].notificationSubscribers;
+    var subscribers = System.get("@lively-env").notificationSubscribers;
     return subscribers[type] || (subscribers[type] = []);
   }
 
@@ -22541,83 +22215,169 @@ var categorizer = Object.freeze({
   }
 
   function moduleSourceChangeEsm(System, moduleId, newSource, options) {
-    var debug = System["__lively.modules__"].debug,
-        load = {
-      status: 'loading',
-      source: newSource,
-      name: moduleId,
-      address: moduleId,
-      linkSets: [],
-      dependencies: [],
-      metadata: { format: "esm" }
-    };
+    var debug, load, updateData, _exports, declared, deps, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, depName, fullname, depModule, record, prevLoad;
 
-    return (System.get(moduleId) ? Promise.resolve() : System["import"](moduleId)).
+    return regeneratorRuntime.async(function moduleSourceChangeEsm$(context$1$0) {
+      while (1) switch (context$1$0.prev = context$1$0.next) {
+        case 0:
+          debug = System.debug, load = {
+            status: 'loading',
+            source: newSource,
+            name: moduleId,
+            address: moduleId,
+            linkSets: [],
+            dependencies: [],
+            metadata: { format: "esm" }
+          };
 
-    // translate the source and produce a {declare: FUNCTION, localDeps:
-    // [STRING]} object
-    then(function (_) {
-      return instrumentSourceOfEsmModuleLoad(System, load);
-    }).then(function (updateData) {
-      // evaluate the module source
-      var _exports = function _exports(name, val) {
-        return scheduleModuleExportsChange(System, load.name, name, val);
-      },
-          declared = updateData.declare(_exports);
-      System["__lively.modules__"].evaluationDone(load.name);
-
-      debug && console.log("[lively.vm es6] sourceChange of %s with deps", load.name, updateData.localDeps);
-
-      // ensure dependencies are loaded
-      return Promise.all(
-      // gather the data we need for the update, this includes looking up the
-      // imported modules and getting the module record and module object as
-      // a fallback (module records only exist for esm modules)
-      updateData.localDeps.map(function (depName) {
-        return System.normalize(depName, load.name).then(function (depFullname) {
-          var depModule = System.get(depFullname),
-              record = moduleRecordFor$1(System, depFullname);
-          return depModule && record ? { name: depName, fullname: depFullname, module: depModule, record: record } : System["import"](depFullname).then(function (module) {
-            return {
-              name: depName,
-              fullname: depFullname,
-              module: System.get(depFullname) || module,
-              record: moduleRecordFor$1(System, depFullname)
-            };
-          });
-        });
-      })).then(function (deps) {
-        // 1. update dependencies
-        var record = moduleRecordFor$1(System, load.name);
-        if (record) record.dependencies = deps.map(function (ea) {
-          return ea.record;
-        });
-
-        // hmm... for house keeping... not really needed right now, though
-        var prevLoad = System.loads && System.loads[load.name];
-        if (prevLoad) {
-          prevLoad.deps = deps.map(function (ea) {
-            return ea.name;
-          });
-          prevLoad.depMap = deps.reduce(function (map, dep) {
-            map[dep.name] = dep.fullname;return map;
-          }, {});
-          if (prevLoad.metadata && prevLoad.metadata.entry) {
-            prevLoad.metadata.entry.deps = prevLoad.deps;
-            prevLoad.metadata.entry.normalizedDeps = deps.map(function (ea) {
-              return ea.fullname;
-            });
-            prevLoad.metadata.entry.declare = updateData.declare;
+          if (System.get(moduleId)) {
+            context$1$0.next = 4;
+            break;
           }
-        }
-        // 2. run setters to populate imports
-        deps.forEach(function (d, i) {
-          return declared.setters[i](d.module);
-        });
-        // 3. execute module body
-        return declared.execute();
-      });
-    });
+
+          context$1$0.next = 4;
+          return regeneratorRuntime.awrap(System["import"](moduleId));
+
+        case 4:
+          context$1$0.next = 6;
+          return regeneratorRuntime.awrap(instrumentSourceOfEsmModuleLoad(System, load));
+
+        case 6:
+          updateData = context$1$0.sent;
+          _exports = function _exports(name, val) {
+            return scheduleModuleExportsChange(System, load.name, name, val);
+          }, declared = updateData.declare(_exports);
+
+          System.get("@lively-env").evaluationDone(load.name);
+
+          debug && console.log("[lively.vm es6] sourceChange of %s with deps", load.name, updateData.localDeps);
+
+          // ensure dependencies are loaded
+          deps = [];
+          _iteratorNormalCompletion = true;
+          _didIteratorError = false;
+          _iteratorError = undefined;
+          context$1$0.prev = 14;
+          _iterator = updateData.localDeps[Symbol.iterator]();
+
+        case 16:
+          if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
+            context$1$0.next = 32;
+            break;
+          }
+
+          depName = _step.value;
+          context$1$0.next = 20;
+          return regeneratorRuntime.awrap(System.normalize(depName, load.name));
+
+        case 20:
+          fullname = context$1$0.sent;
+          context$1$0.t0 = System.get(fullname);
+
+          if (context$1$0.t0) {
+            context$1$0.next = 26;
+            break;
+          }
+
+          context$1$0.next = 25;
+          return regeneratorRuntime.awrap(System["import"](fullname));
+
+        case 25:
+          context$1$0.t0 = context$1$0.sent;
+
+        case 26:
+          depModule = context$1$0.t0;
+          record = moduleRecordFor$1(System, fullname);
+
+          deps.push({
+            name: depName,
+            fullname: fullname,
+            module: depModule,
+            record: moduleRecordFor$1(System, fullname)
+          });
+
+        case 29:
+          _iteratorNormalCompletion = true;
+          context$1$0.next = 16;
+          break;
+
+        case 32:
+          context$1$0.next = 38;
+          break;
+
+        case 34:
+          context$1$0.prev = 34;
+          context$1$0.t1 = context$1$0["catch"](14);
+          _didIteratorError = true;
+          _iteratorError = context$1$0.t1;
+
+        case 38:
+          context$1$0.prev = 38;
+          context$1$0.prev = 39;
+
+          if (!_iteratorNormalCompletion && _iterator["return"]) {
+            _iterator["return"]();
+          }
+
+        case 41:
+          context$1$0.prev = 41;
+
+          if (!_didIteratorError) {
+            context$1$0.next = 44;
+            break;
+          }
+
+          throw _iteratorError;
+
+        case 44:
+          return context$1$0.finish(41);
+
+        case 45:
+          return context$1$0.finish(38);
+
+        case 46:
+          record = moduleRecordFor$1(System, load.name);
+
+          if (record) {
+            record.dependencies = deps.map(function (ea) {
+              return ea.record;
+            });
+            record.execute = declared.execute;
+            record.setters = declared.setters;
+          }
+
+          // hmm... for house keeping... not really needed right now, though
+          prevLoad = System.loads && System.loads[load.name];
+
+          if (prevLoad) {
+            prevLoad.deps = deps.map(function (ea) {
+              return ea.name;
+            });
+            prevLoad.depMap = deps.reduce(function (map, dep) {
+              map[dep.name] = dep.fullname;return map;
+            }, {});
+            if (prevLoad.metadata && prevLoad.metadata.entry) {
+              prevLoad.metadata.entry.deps = prevLoad.deps;
+              prevLoad.metadata.entry.normalizedDeps = deps.map(function (ea) {
+                return ea.fullname;
+              });
+              prevLoad.metadata.entry.declare = updateData.declare;
+            }
+          }
+
+          // 2. run setters to populate imports
+          deps.forEach(function (d, i) {
+            return declared.setters[i](d.module);
+          });
+
+          // 3. execute module body
+          return context$1$0.abrupt("return", declared.execute());
+
+        case 52:
+        case "end":
+          return context$1$0.stop();
+      }
+    }, null, this, [[14, 34, 38, 46], [39,, 41, 45]]);
   }
 
   function moduleSourceChangeGlobal(System, moduleId, newSource, options) {
@@ -22792,6 +22552,18 @@ var categorizer = Object.freeze({
 
     return entry;
   }
+
+  // translate the source and produce a {declare: FUNCTION, localDeps:
+  // [STRING]} object
+
+  // evaluate the module source
+
+  // gather the data we need for the update, this includes looking up the
+  // imported modules and getting the module record and module object as
+  // a fallback (module records only exist for esm modules)
+
+  // 1. update the record so that when its dependencies change and cause a
+  // re-execute, the correct code (new version) is run
 
   var GLOBAL = typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : undefined;
 
@@ -23438,7 +23210,7 @@ var categorizer = Object.freeze({
       return System.normalize(targetModule, options.parentModule, options.parentAddress);
     }).then(function (targetModule) {
       var fullname = options.targetModule = targetModule;
-      var env = System["__lively.modules__"].moduleEnv(fullname);
+      var env = System.get("@lively-env").moduleEnv(fullname);
       var recorder = env.recorder;
       var recorderName = env.recorderName;
       var dontTransform = env.dontTransform;
@@ -23474,7 +23246,7 @@ var categorizer = Object.freeze({
         //   Date.now());
 
         return vmRunEval(code, options).then(function (result) {
-          System["__lively.modules__"].evaluationDone(fullname);
+          System.get("@lively-env").evaluationDone(fullname);
           System.debug && console.log("[lively.module] runEval in module " + targetModule + " done");
           console.warn("FIX recordDoitResult");
           // recordDoitResult(
