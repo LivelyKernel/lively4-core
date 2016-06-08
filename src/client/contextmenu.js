@@ -113,6 +113,7 @@ export default class ContextMenu {
 
   static openRdfaManager(evt) {
     let rdfaManager = lively.rdfaManager;
+    rdfaManager.reloadData();
 
     this.openComponentInWindow('div', evt).then((comp) => {
       var div = $(comp);
