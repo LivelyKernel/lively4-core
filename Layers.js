@@ -92,8 +92,10 @@ export function layerMethod(layer, object, property, func) {
                    + (object.constructor ? (object.constructor.type + "$") : "")
                    + property;
   makeFunctionLayerAware(object, property, layer.isHidden);
-  typeof object.getName === 'function'
-      && (layer.layeredFunctionsList[object][property] = true);
+  
+  // Bookkeeping for layer uninstall
+  // typeof object.getName === 'function'
+  //    && (layer._layeredFunctionsList[object][property] = true);
 };
 
 function layerGetterMethod(layer, object, property, getter) {
@@ -370,7 +372,7 @@ export class Layer {
   constructor (name, context) {
     this._name = name;
     this._context = context;
-    this._layeredFunctionsList = {};
+    // this._layeredFunctionsList = {};
   }
   
   // Accessing
@@ -410,28 +412,32 @@ export class Layer {
       delete context[this.name];
   }
   uninstall () {
-    // Uninstalls jsut this Layer.
+    // Uninstalls just this Layer.
     // functions that are layered by other Layers will not be reset.
     var layer = this;
     this.layeredObjects().each(
       function(eachLayeredObj) {
-        var layerIdx = typeof eachLayeredObj.activeLayers === 'function'
-            ? eachLayeredObj.activeLayers().indexOf(layer) : -1;
-        Properties.own(layer.layeredFunctionsList[eachLayeredObj]).each(
-          function(eachLayeredFunc) {
-            var newerLayer = eachLayeredObj.activeLayers().find(
-              function(eachOtherLayer) {
-                var eachOtherLayerIdx
-                    = eachLayeredObj.activeLayers().indexOf(eachOtherLayer);
-                var isNewer = (eachOtherLayerIdx !== -1)
-                    && (eachOtherLayerIdx < layerIdx);
-                return isNewer &&
-                    eachOtherLayer.layeredFunctionsList[eachLayeredObj][eachLayeredFunc];
-              });
-              if (!newerLayer) {
-                makeFunctionLayerUnaware(eachLayeredObj, eachLayeredFunc);
-              }
-          });
+        // var layerIdx = typeof eachLayeredObj.activeLayers === 'function'
+        //     ? eachLayeredObj.activeLayers().indexOf(layer) : -1;
+        
+        // #Special Lively Webwerkstatt code.... General Case? #Jens
+        // #TODO if we have of gloabal list of all layers... we can look there
+        
+        // Properties.own(layer._layeredFunctionsList[eachLayeredObj]).each(
+        //   function(eachLayeredFunc) {
+        //     var newerLayer = eachLayeredObj.activeLayers().find(
+        //       function(eachOtherLayer) {
+        //         var eachOtherLayerIdx
+        //             = eachLayeredObj.activeLayers().indexOf(eachOtherLayer);
+        //         var isNewer = (eachOtherLayerIdx !== -1)
+        //             && (eachOtherLayerIdx < layerIdx);
+        //         return isNewer &&
+        //             eachOtherLayer._layeredFunctionsList[eachLayeredObj][eachLayeredFunc];
+        //       });
+        //       if (!newerLayer) {
+        //         makeFunctionLayerUnaware(eachLayeredObj, eachLayeredFunc);
+        //       }
+        //   });
       });
       this.remove();
       alertOK("Successfully uninstalled Layer " + this + " in Global Classes");
@@ -541,7 +547,9 @@ export function create(rootContext, layerName) {
 // reference to the objects
 export function layerObject(layer, object, defs) {
   // log("cop layerObject");
-  typeof object.getName === 'function' && (layer.layeredFunctionsList[object] = {});
+  
+  // Bookkeeping:
+  // typeof object.getName === 'function' && (layer._layeredFunctionsList[object] = {});
   Object.getOwnPropertyNames(defs).forEach(
     function (function_name) {
       // log(" layer property: " + function_name)
