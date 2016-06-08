@@ -30,7 +30,7 @@ function functionFromString(funcOrString) {
 }
 
 function isLively4Script(object) {
-    return object.tagName.toLocaleLowerCase() == "script" && 
+    return object.tagName.toLocaleLowerCase() == "script" &&
         object.type == 'lively4script';
 }
 
@@ -89,7 +89,7 @@ function initializeScriptsMap(object) {
 }
 
 function scriptExists(object, name) {
-    return typeof object.__scripts__ !== 'undefined' && 
+    return typeof object.__scripts__ !== 'undefined' &&
         typeof object.__scripts__[name] !== 'undefined';
 }
 
@@ -104,12 +104,12 @@ function persistScript(object, name, funcOrString, options) {
 }
 
 export default class ScriptManager {
-  
+
   static findLively4Script(parent, shadow) {
     // if shadow is set, look for the scripts in the shadow root
     var children = shadow ? parent.shadowRoot.children : parent.children;
 
-    _.each(children, (child) => {
+    for(let child of children) {
         if (isLively4Script(child)) {
             try {
                 var scriptName = child.dataset.name;
@@ -121,7 +121,7 @@ export default class ScriptManager {
 
             } catch(e) {
                 debugger
-                lively.notify('Error adding function: ' + scriptName + ' to object: ' + parent, 
+                lively.notify('Error adding function: ' + scriptName + ' to object: ' + parent,
                 ""+e , 20, () => lively.openWorkspace("" + e + "Source: " + child.textContent));
                 console.error('Error while adding function ' + scriptName + ' to object:');
                 console.error($(parent));
@@ -130,56 +130,56 @@ export default class ScriptManager {
         } else {
             this.findLively4Script(child, false);
         }
-    });
-    
+    }
+
     // dont do it here...
     // if(parent.initialize) parent.initialize() // initialize only after all scripts are there.
   }
-  
-  
+
+
   static load() {
     this.loadScriptsFromDOM();
   }
-  
+
   static loadScriptsFromDOM() {
       this.findLively4Script(document);
   }
-  
+
   static attachScriptsFromShadowDOM(root) {
       this.findLively4Script(root, true);
   }
-  
+
   static updateScript(object, funcOrString, options={}) {
       var objects = asCollection(object);
-  
+
       _.each(objects, (object) => {
           var func = prepareFunction(funcOrString, options);
-  
+
           this.removeScript(object, func.name);
           this.addScript(object, func.executable, options);
       });
   }
-  
+
   static addScript(object, funcOrString, options={}) {
       var objects = asCollection(object);
-  
+
       _.each(objects, function(object) {
           var func = prepareFunction(funcOrString, options);
           initializeScriptsMap(object);
-  
+
           if(scriptExists(object, func.name)) {
               throw 'script name "' + func.name + '" is already reserved!';
           }
-  
+
           bindFunctionToObject(object, func, options);
           addFunctionToScriptsMap(object, func.name, funcOrString);
           persistScript(object, func.name, funcOrString, options);
       });
   }
-  
+
   static removeScript(object, name) {
       var objects = asCollection(object);
-  
+
       _.each(objects, function(object) {
           if(!scriptExists(object, name)) {
               throw 'script name "' + name + '" does not exist!';
@@ -189,23 +189,22 @@ export default class ScriptManager {
           removeFromDOM(object, name);
       });
   }
-  
+
   static callScript(object, name) {
       var optionalArgs = [].splice.call(arguments, 2);
       var objects = asCollection(object);
-  
+
       _.each(objects, function(object) {
           if(!scriptExists(object, name)) {
               throw 'unknown script "' + name +'"!';
           }
-  
-          var returnValue = object[name].apply(object, optionalArgs);        
+
+          var returnValue = object[name].apply(object, optionalArgs);
       });
-  
-      return returnValue;    
+
+      return returnValue;
   }
 }
-
 
 ScriptManager.load()
 

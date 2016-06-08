@@ -245,13 +245,16 @@ export default class Expose {
 
     }
   }
+
+  static postLoad() {
+    // basic class configuration
+    Expose.isOpen = false;
+    Expose.windowsPerRows = 3;
+
+    lively.removeEventListener("expose")
+    lively.addEventListener("expose", document.body, 'keydown', Expose.bodyKeyDown)
+  }
 }
 
-// basic class configuration
-Expose.isOpen = false;
-Expose.windowsPerRows = 3;
-
-lively.removeEventListener("expose")
-lively.addEventListener("expose", document.body, 'keydown', Expose.bodyKeyDown)
 
 console.info('Expose loaded');

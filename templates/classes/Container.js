@@ -2,6 +2,7 @@
 
 import Morph from './Morph.js';
 
+
 export default class Container extends Morph {
 
   initialize() {
@@ -58,6 +59,40 @@ export default class Container extends Morph {
   useBrowserHistory() {
     return this.getAttribute("load") == "auto";
   }  
+
+  hideCancelAndSave() {
+    _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
+      ea.style.visibility = "hidden";
+      ea.style.display = "none";
+
+    });
+    _.each(this.shadowRoot.querySelectorAll(".browse"), (ea) => {
+      ea.style.visibility = "visible";
+      ea.style.display = "inline-block";
+    });
+  }
+
+  showCancelAndSave() {
+    _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
+      ea.style.visibility = "visible";
+      ea.style.display = "inline-block";
+    });
+    
+    _.each(this.shadowRoot.querySelectorAll(".browse"), (ea) => {
+      ea.style.visibility = "hidden";
+      ea.style.display = "none";
+    });
+  }
+  
+  history() {
+    if (!this._history) this._history = []
+    return this._history
+  }
+
+  forwardHistory() {
+    if (!this._forwardHistory) this._forwardHistory = []
+    return this._forwardHistory
+  }
     
   async onSync(evt) {
     var username = await lively.focalStorage.getItem("githubUsername")
@@ -82,31 +117,7 @@ export default class Container extends Morph {
   onPathEntered(path) {
     this.followPath(path);
   }
-
-  hideCancelAndSave() {
-    _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
-      ea.style.visibility = "hidden";
-      ea.style.display = "none";
-
-    });
-    _.each(this.shadowRoot.querySelectorAll(".browse"), (ea) => {
-      ea.style.visibility = "visible";
-      ea.style.display = "inline-block";
-    });
-  }
-
-  showCancelAndSave() {
-      _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
-        ea.style.visibility = "visible";
-        ea.style.display = "inline-block";
-      });
-      
-      _.each(this.shadowRoot.querySelectorAll(".browse"), (ea) => {
-        ea.style.visibility = "hidden";
-        ea.style.display = "none";
-      });
-
-    }
+    
 
   onEdit() {
       this.setAttribute("mode", "edit");
@@ -150,44 +161,45 @@ export default class Container extends Morph {
     }
   }
 
-  history() {
-    if (!this._history) this._history = []
-    return this._history
-  }
-
-  forwardHistory() {
-    if (!this._forwardHistory) this._forwardHistory = []
-    return this._forwardHistory
-  }
-
-
   onSave(doNotQuit) {
     if (this.getPath().match(/\/$/)) {
       lively.files.saveFile(this.getURL(),"") 
       return
     }
     return this.getSubmorph("#editor").saveFile().then( () => {
-        var sourceCode = this.getSubmorph("#editor").currentEditor().getValue()
-        lively.updateTemplate(sourceCode)
+      var sourceCode = this.getSubmorph("#editor").currentEditor().getValue()
+      lively.updateTemplate(sourceCode)
       var url = this.getURL();
       if (this.getURL().pathname.match(/\/test\/.*([^/]+)\.js$/)) {
         console.log("ignore test: " + this.getURL())
         return
       }
       
+      document.body.querySelectorAll('lively-container').forEach(ea => {
+        var url = "" + this.getURL()
+        if (ea !== this && !ea.isEditing() 
+          && ("" +ea.getURL()).match(url.replace(/\.[^.]+$/,""))) {
+          console.log("update container content: " + ea)
+          ea.setPath(ea.getURL() + "")
+        }  
+        
+      })
+      
       var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/)
       if (moduleName) {
         moduleName = moduleName[1]
         if (this.getSubmorph("#live").checked) {
+          
           lively.import(moduleName, url, true).then( module => {
-              lively.notify("Module " + moduleName + " reloaded!")
+            lively.notify("Module " + moduleName + " reloaded!")
           }, err => {
-              window.LastError = err
-              lively.notify("Error loading module " + moduleName, err)
+            window.LastError = err
+            lively.notify("Error loading module " + moduleName, err)
+            console.error(err)
           })
         }
       }
-    })
+    }).then(() => this.showNavbar())
   }
 
   async onDelete() {
@@ -209,9 +221,11 @@ export default class Container extends Morph {
   }
 
   clear() {
-    this.getSubmorph('#container-root').innerHTML = ''
+    this.getContentRoot().innerHTML = ''
     this.getSubmorph('#container-editor').innerHTML = ''
   }
+  
+
 
   appendMarkdown(content) {
     System.import(lively4url + '/src/external/showdown.js').then((showdown) => {
@@ -221,7 +235,7 @@ export default class Container extends Morph {
       var html = $.parseHTML(htmlSource);
       lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path));
       console.log("html", html);
-      var root = this.getSubmorph('#container-root');
+      var root = this.getContentRoot()
       html.forEach((ea) => root.appendChild(ea));
       lively.components.loadUnresolved(root);
     });
@@ -241,9 +255,10 @@ export default class Container extends Morph {
 
 
   appendHtml(content) {
+    //  var content = this.sourceContent
     try {
-      var root = this.getSubmorph('#container-root')  
-      var nodes = $.parseHTML(content);
+      var root = this.getContentRoot()
+      var nodes = $.parseHTML(content, document, true);
       if (nodes[0] && nodes[0].localName == 'template') {
       	lively.notify("append template " + nodes[0].id);
 		    return this.appendTemplate(nodes[0].id);
@@ -251,7 +266,9 @@ export default class Container extends Morph {
       lively.html.fixLinks(nodes, this.getDir(),
         (path) => this.followPath(path));
       nodes.forEach((ea) => {
-        root.appendChild(ea);
+        // console.log("append child: " + ea.textContent)
+        // root.appendChild(ea);
+        $(root).append(ea); // for script tags
       });
     } catch(e) {
       console.log("Could not append html:" + content);
@@ -261,16 +278,14 @@ export default class Container extends Morph {
   appendTemplate(name) {
     try {
     	var node = lively.components.createComponent(name)
-    	this.getSubmorph('#container-root').appendChild(node)
+    	this.getContentRoot().appendChild(node)
       lively.components.loadByName(name)
     } catch(e) {
       console.log("Could not append html:" + content)
     }
   }
+  
 
-  getDir() {
-       return this.getPath().replace(/[^/]*$/,"")
-  }
 
   followPath(path) {
     console.log("follow path2: " + path)
@@ -280,16 +295,25 @@ export default class Container extends Morph {
     if (this.isEditing() && !path.match(/\/$/)) {
       if (this.useBrowserHistory())
         window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?edit="+path);
-      this.setPath(path, true).then(() => this.editFile())
+      return this.setPath(path, true).then(() => this.editFile())
     } else {
       if (this.useBrowserHistory())
         window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?load="+path);
-      this.setPath(path)
+      return this.setPath(path)
     }
   }
 
   isEditing() {
     return this.getAttribute("mode") == "edit"
+  }
+
+  getContentRoot() {
+    // return this.getSubmorph('#container-root')
+    return this
+  }
+
+  getDir() {
+       return this.getPath().replace(/[^/]*$/,"")
   }
 
   getURL() {
@@ -303,6 +327,28 @@ export default class Container extends Morph {
 
   getPath() {
     return this.getAttribute("src")
+  }
+  
+  getAceEditor() {
+    var livelyEditor = this.shadowRoot.querySelector('lively-editor')
+    if (!livelyEditor) return;
+    return livelyEditor.shadowRoot.querySelector('juicy-ace-editor')
+  }
+  
+  async realAceEditor() {
+    return new Promise(resolve => {
+      var checkForEditor = () => {
+        var editor = this.getAceEditor()
+        if (editor && editor.editor) {
+          resolve(editor.editor)
+        } else {
+          setTimeout(() => {
+            checkForEditor()
+          },100) 
+        }
+      };
+      checkForEditor()
+    })
   }
   
   thumbnailFor(url, name) {
@@ -430,7 +476,6 @@ export default class Container extends Morph {
     return navbar
   }
 
-  // #BUG this is broken for editing /src/client/load.js
   showNavbarSublist(targetItem) {
     var subList = document.createElement("ul")
     targetItem.appendChild(subList)
@@ -453,27 +498,34 @@ export default class Container extends Morph {
 	      subList.appendChild(element) ;
       })
     } else if (this.getPath().match(/\.js$/)) {
-      var defRegEx = /(?:^|\n)((?:(?:static)|(?:async)|(?:function)|(?: *))*([A-Za-z0-9_]+)) *\([^(]*\) *{/g
+      // |async\\s+
+      var instMethod = "(^|\\s+)([a-zA-Z0-9$_]+)\\s*\\(\\s*[a-zA-Z0-9$_ ,]*\\s*\\)\\s*{",
+          klass = "(?:^|\\s+)class\\s+([a-zA-Z0-9$_]+)",
+          func = "(?:^|\\s+)function\\s+([a-zA-Z0-9$_]+)\\s*\\(",
+          oldProtoFunc = "[a-zA-Z0-9$_]+\.prototype\.([a-zA-Z0-9$_]+)\\s*=";
+      var defRegEx = new RegExp(`(?:(?:${instMethod})|(?:${klass})|(?:${func})|(?:${oldProtoFunc}))`);
       var m
       var links = {}
       var i = 0;
-      while (m = defRegEx.exec(this.sourceContent)) {
-        if (i++ > 1000) throw new Error("Error while showingNavbar " + this.getPath());
-        // console.log("found " + m)
-        if(!m[2].match(/^((if)|(switch))$/))
-          links[m[2]] = m[0]
-      }
-      _.keys(links).forEach( name => {
-        var element = document.createElement("li");
-  	    element.innerHTML = name
-  	    element.classList.add("link")
-  	    element.classList.add("subitem")
-	      
-  	    element.onclick = () => {
-  	        this.navigateToName(name)
-  	    };
-  	    subList.appendChild(element) ;
-      })
+      var lines = this.sourceContent.split("\n");
+      lines.forEach((line) => {
+        if (m = defRegEx.exec(line)) {
+          var theMatch = m[2] ||
+                        (m[3] && "class " + m[3]) ||
+                        (m[4] && "function " + m[4]) ||
+                         m[5]
+          if(!theMatch.match(/^(if|switch|for|catch|function)$/)) {
+            let name = (line.replace(/[A-Za-z].*/g,"")).replace(/\s/g, "&nbsp;") + theMatch,
+                navigateToName = m[0],
+                element = document.createElement("li");
+    	      element.innerHTML = name
+    	      element.classList.add("link")
+    	      element.classList.add("subitem")
+    	      element.onclick = () => this.navigateToName(navigateToName);
+    	      subList.appendChild(element) ;
+          }
+        }
+      });
     } else if (this.getPath().match(/\.md$/)) {
       var defRegEx = /(?:^|\n)((#+) ?(.*))/g
       var m
@@ -558,24 +610,11 @@ export default class Container extends Morph {
       })
 
       if (this.isEditing() && targetItem) {
-        
-        if (filename == "load.js") {
-          console.log("dont't show navbar for load.js, because it breaks")
-          return // #Hack #TODO
-        }
         this.showNavbarSublist(targetItem)
-
       }
     })
   }
-
-
-  getAceEditor() {
-    var livelyEditor = this.shadowRoot.querySelector('lively-editor')
-    if (!livelyEditor) return;
-    return livelyEditor.shadowRoot.querySelector('juicy-ace-editor')
-  }
-
+  
   async editFile(path) {
     return new Promise(async (resolve, reject) => {
       this.setAttribute("mode","edit") // make it persistent
@@ -606,7 +645,9 @@ export default class Container extends Morph {
         aceComp.doSave = text => {
           this.onSave()
         }
+        
         var url = this.getURL()
+
         comp.setURL(url)
         aceComp.changeModeForFile(url.pathname);
 
@@ -623,6 +664,8 @@ export default class Container extends Morph {
 
         this.showCancelAndSave()
     
+        aceComp.targetModule = "" + url // for editing
+
         setTimeout(resolve, 1000) // Promise from AceEditor needed here... #Jens #TODO
         
         // comp.loadFile() // ALT: Load the file again?

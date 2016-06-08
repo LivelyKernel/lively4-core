@@ -29,7 +29,7 @@
       
       molecules.forEach(molecule => {
           context.beginPath();
-          // context.fillStyle = molecule.color;
+          context.fillStyle = molecule.color;
           context.fillStyle = 'gray';
           context.arc(molecule.x, molecule.y, 10, 0, Math.PI*2, true);
           context.closePath();

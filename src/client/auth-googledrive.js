@@ -4,9 +4,8 @@ import * as messaging from './messaging.js';
 
 import focalStorage from '../external/focalStorage.js';
 
-
 console.log("focalStorage: ", focalStorage)
-console.log("load dropboxAuth")
+console.log("load googledriveAuth")
 
 
 function parseAuthInfoFromUrl(data) {
@@ -21,7 +20,7 @@ function notifyMe(title, text, cb) {
     Notification.requestPermission();
   else {
     var notification = new Notification(title, {
-      icon: 'https://cf.dropboxstatic.com/static/images/brand/glyph-vflK-Wlfk.png',
+      icon: 'http://www.google.com/drive/images/drive/logo-drive.png',
       body: text,
     });
     notification.onclick = cb
@@ -29,7 +28,7 @@ function notifyMe(title, text, cb) {
 }
 
 
-export default class AuthDropbox {
+export default class AuthGoogledrive {
 
   static onAuthenticated(windowUuid, authInfo) {
 
@@ -38,8 +37,8 @@ export default class AuthDropbox {
 
   	if (!state) { console.log("not state! authinfo: " + JSON.stringify(authInfo))}
   	console.log("authInfo: ", authInfo)
-  	focalStorage.setItem("dropboxToken", token).then(function() {
-  		var cb = AuthDropbox.onAuthenticatedCallbacks[state]
+  	focalStorage.setItem("googledriveToken", token).then(function() {
+  		var cb = AuthGoogledrive.onAuthenticatedCallbacks[state]
   		if (cb) {
   			console.log("running onAuthenticated callback: " + cb)
   			cb(token)
@@ -50,13 +49,13 @@ export default class AuthDropbox {
   }
 
   static logout(cb) {
-  	focalStorage.setItem("dropboxToken", null).then(cb)
+  	focalStorage.setItem("googledriveToken", null).then(cb)
   }
 
 
   static challengeForAuth(uuid, cb) {
   	if (uuid && cb) {
-  		AuthDropbox.onAuthenticatedCallbacks[uuid] = cb
+  		AuthGoogledrive.onAuthenticatedCallbacks[uuid] = cb
   	}
   	function popup(url) {
   	    var width = 525,
@@ -82,7 +81,7 @@ export default class AuthDropbox {
   	              "scrollbars=yes"];
   	    var popupWindow = window.open(url, "oauth", features.join(","));
   	    if (!popupWindow) {
-  	    	notifyMe("Dropbox Authenfication required", "click here to authenticate", function() {
+  	    	notifyMe("googledrive Authenfication required", "click here to authenticate", function() {
   	    		console.log("try to open window")
   				window.open(url, "oauth", features.join(","));
   	    	})
@@ -92,25 +91,26 @@ export default class AuthDropbox {
   	    }
   	}
 
-      var appInfo = {
-  	        "clientId": "1774dvkirby4490",
-  	        "redirectUri": "https://lively-kernel.org/lively4-auth/oauth/dropbox.html"
-  	 };
+   	var appInfo = {
+  	    "clientId": "255612037819-mggijqbougej39s0j95oqvq3ej5hid79.apps.googleusercontent.com",
+  	    "redirectUri": "https://lively-kernel.org/lively4-auth/oauth/googledrive.html"
+  	};
 
-  	$.get("https://lively-kernel.org/lively4-auth/open_dropbox_accesstoken?state="+uuid, null, function(data){
+  	$.get("https://lively-kernel.org/lively4-auth/open_googledrive_accesstoken?state="+uuid, null, function(data){
   	    console.log("challenge got a token, too: " + data)
   	    var authInfo = parseAuthInfoFromUrl(data)
-  	    AuthDropbox.onAuthenticated(uuid, authInfo)
+  	    AuthGoogledrive.onAuthenticated(uuid, authInfo)
   	})
 
       var url =
-              "https://www.dropbox.com/1/oauth2/authorize" +
+              "https://accounts.google.com/o/oauth2/v2/auth" +
               "?client_id=" + appInfo.clientId +
               "&response_type=token" +
+              "&scope=https://www.googleapis.com/auth/drive" +
               "&state=" + uuid +
               "&redirect_uri=" + encodeURIComponent(appInfo.redirectUri);
 
-      console.log("query dropbox")
+      console.log("query googledrive")
 
       popup(url);
   }
@@ -122,18 +122,18 @@ export default class AuthDropbox {
         if (event.data.name == 'githubAuthTokenRequired') {
         	console.log("goth auth token required: " + JSON.stringify(event.data))
         	var callbackId = event.data.callbackId
-        	AuthDropbox.challengeForAuth(Date.now(), function(token) {
+        	AuthGoogledrive.challengeForAuth(Date.now(), function(token) {
         		messaging.postMessage({
-    	        	type: 'callback',
+  	        	type: 'callback',
     	    		callbackId: callbackId,
     	    		args: [token]
-    			})
+    			  })
         	})
         }
     })
   }
 
 }
-AuthDropbox.load()
+AuthGoogledrive.load()
 
 

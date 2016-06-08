@@ -1,9 +1,10 @@
-import * as path from '/src/swx/path.jsx'
+import * as path from '../src/swx/path.jsx'
+import * as kernel from 'kernel'
 
-export default async function cat(env, args) {
+async function cat(env, args) {
     let file = path.join(env.ENV.PWD, args[1])
 
-    let response = await fetch('https://lively4/' + file)
+    let response = await fetch(kernel.resolve(file))
 
     if(response.status < 200 || response.status > 399) {
         env.fd[2].emit('data', 'Error: ' + response.statusText)
@@ -16,3 +17,7 @@ export default async function cat(env, args) {
 
     return 0
 }
+
+
+
+export default cat;

@@ -12,3 +12,5 @@ Lively4.sublime-workspace
 *~
 Wiki
 
+# Lively search index
+*.l4idx

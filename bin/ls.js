@@ -1,4 +1,5 @@
-import * as path from '/src/swx/path.jsx'
+import * as path from '../src/swx/path.jsx'
+import * as kernel from 'kernel'
 
 function format(child) {
     let string = ''
@@ -31,10 +32,10 @@ function format(child) {
     return string
 }
 
-export default async function ls(env, args) {
+async function ls(env, args) {
     let pathname = path.join(env.ENV.PWD, args[1] || '')
 
-    let response = await fetch('https://lively4/' + pathname, {method: 'OPTIONS'})
+    let response = await fetch(kernel.resolve(pathname), {method: 'OPTIONS'})
 
     if(response.status < 200 || response.status > 399) {
         env.fd[2].emit('data', 'Error: ' + response.statusText)
@@ -56,3 +57,5 @@ export default async function ls(env, args) {
 
     return 0
 }
+
+export default ls;

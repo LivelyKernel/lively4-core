@@ -1,22 +1,26 @@
 'use strict';
 
 import Morph from './Morph.js';
-import { search as githubSearch } from '../../src/client/search/github-search.js';
-import * as dbSearch from '../../src/client/search/dropbox-search.js';
+import * as serverSearch from '../../src/client/search/server-search.js';
+import * as githubSearch from '../../src/client/search/github-search.js';
+import * as dropboxSearch from '../../src/client/search/dropbox-search.js';
 
 export default class SearchBar extends Morph {
 
   initialize() {
     this.searchButton = this.getSubmorph("#searchButton");
-    this.setupButton = this.getSubmorph("#setupButton");
     this.searchField = this.getSubmorph("#searchField");
     this.searchResults = this.getSubmorph("#searchResults");
 
     this.searchButton.addEventListener("click", (evt) => { this.searchButtonClicked() });
-    this.setupButton.addEventListener("click", (evt) => { this.setup() });
     this.searchField.addEventListener("keyup", (evt) => { this.searchFieldKeyup(evt) });
 
+    this.serverSearch = serverSearch;
+    this.githubSearch = githubSearch;
+    this.dropboxSearch = dropboxSearch;
+
     this.searchableMounts = {
+      "server": [],
       "dropbox": [],
       "github": []
     };
@@ -24,11 +28,8 @@ export default class SearchBar extends Morph {
     this.setup();
   }
 
-  async setup() {
+  setup() {
     this.findAvailableMounts();
-    // some dummy index
-    this.lunrIdx = await dbSearch.loadSearchIndex("https://lively4/dropbox/index.l4idx");
-    lively.notify("Info: ", "Dropbox index loaded!", 3);
   }
 
   searchButtonClicked() {
@@ -48,62 +49,85 @@ export default class SearchBar extends Morph {
     return this.getSubmorph(`input[data-path='${path}']`).checked;
   }
 
-  async search(query) {
-    console.log("[Search] searching for '" + query + "'");
+  enableSearch(path) {
+    let checkbox = this.getSubmorph(`input[data-path='${path}']`);
+    checkbox.classList.remove("hidden");
+    checkbox.checked = "true";
+    checkbox.disabled = '';
+     
+    let li = checkbox.parentNode;
+    li.classList.remove("disabled");
+    
+    // Remove spinner
+    let spinner = li.querySelector("i");
+    if (spinner) spinner.remove();
+  }
 
-    // let dbFileNames = await dbSearch.getSearchableFileNames(this.searchableMounts.dropbox[0].options);
-    // console.log(JSON.stringify(dbFileNames));
+  search(query) {
+    console.log(`[Search] searching for '${query}'`);
+
+    // Clear search results
+    this.searchResults.show([]);
 
     let results = []
-
     for (let mountType in this.searchableMounts) {
       let mounts = this.searchableMounts[mountType];
       for (let i in mounts) {
         let mount = mounts[i];
         if (this.isSearchEnabled(mount.path)) {
-          results = results.concat(await mount.find(query, mount.options));
-          // update search results
-          this.searchResults.show(results, query);
+          mount.find(query, mount.options).then( (res) => {
+            // Update search results
+            results = results.concat(res);
+            this.searchResults.show(results, query);
+          });
         }
       }
     }
   }
 
+
+
   findAvailableMounts() {
-    $.ajax({
-        url: "https://lively4/sys/mounts",
-        type: 'GET',
-        success: (text) => {
-          var mounts = JSON.parse(text);
-          console.log(mounts);
-          var mountsList = this.getSubmorph("#mounts-list");
-          mountsList.innerHTML = "";
-          mounts.forEach(mount => {
-            let enabled = this.searchableMounts[mount.name];
-            mountsList.innerHTML += `
-              <li ${enabled ? '' : 'class="disabled"'}>
-                <input data-path='${mount.path}' type='checkbox' ${enabled ? 'checked' : 'disabled'}> ${mount.path} (${mount.name})
-              </li>`;
-          });
+    let mountRequest = new Request("https://lively4/sys/mounts")
+    fetch(mountRequest).then(
+      async (response) => {
+        let mounts = await response.json();
 
-          this.searchableMounts.dropbox = mounts.filter(mount => { return mount.name == "dropbox" }).map((mount) => {
-            mount.find = (query) => {
-              if (this.lunrIdx) {
-                return this.lunrIdx.search(query).map(res => { res.path = mount.path + res.ref; return res; });
-              }
-              return [];
-            }
-            return mount;
-          });
+        // Add server mount
+        mounts.push({
+          path: lively4url,
+          name: "server"
+        });
 
-          this.searchableMounts.github = mounts.filter(mount => { return mount.name == "github" }).map((mount) => {
-            mount.find = githubSearch;
-            return mount;
-          });
-        },
-        error: function(xhr, status, error) {
-          console.log("could not get list of mounts for searching: " + error);
-        }
-      });
+        console.log(`[Search] found the following mounts: ${mounts}`);
+        var mountsList = this.getSubmorph("#mounts-list");
+        mountsList.innerHTML = "";
+        mounts.forEach(mount => {
+          let searchable = this.searchableMounts[mount.name];
+          mountsList.innerHTML += `
+            <li class="disabled">
+              ${(searchable) ? '<i class="fa fa-spinner fa-pulse"></i>' : ''}
+              <input data-path='${mount.path}' type='checkbox' ${(searchable) ? 'class="hidden"' : ''} disabled>
+              ${mount.path} (${mount.name})
+            </li>`;
+        });
+
+        mounts.forEach( (mount) => {
+          if (this.searchableMounts[mount.name]) {
+            let search = this[`${mount.name}Search`];
+
+            // Call the searchs setup function
+            search.setup(mount).then( () => {
+              // After the setup bind the find function and enable the mounts checkbox
+              mount.find = search.find;
+              this.enableSearch(mount.path);
+              this.searchableMounts[mount.name].push(mount);
+            });
+          }
+        });
+
+      }, (error) => {
+        console.log(`[Search] could not get list of mounts for searching: ${error}`);
+    });
   }
 }

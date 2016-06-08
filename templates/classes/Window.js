@@ -19,10 +19,10 @@ export default class Window extends Morph {
    * Getters/Setters
    */
   get title() {
-    return this._title;
+    return this._title
   }
   set title(val) {
-    this._title = val;
+    this._title = val
     this.render();
   }
 
@@ -105,12 +105,8 @@ export default class Window extends Morph {
 
   setup() {
     this.dragging = false;
-
     this.defineShortcuts();
     this.bindEvents();
-  
-    
-    
   }
 
   /*

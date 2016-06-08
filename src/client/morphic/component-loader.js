@@ -2,6 +2,8 @@ import scriptManager from  "../script-manager.js";
 import * as persistence from  "../persistence.js";
 import Morph from "../../../templates/classes/Morph.js";
 
+import * as kernel from 'kernel';
+
 // store promises of loaded and currently loading templates
 export var loadingPromises = {};
 
@@ -90,22 +92,22 @@ export default class ComponentLoader {
 
       // load any unknown elements, which this component might introduce
       ComponentLoader.loadUnresolved(this, true).then((args) => {
-        
+
         lively.fillTemplateStyles(this.shadowRoot).then(() => {
           // call the initialize script, if it exists
           if (typeof this.initialize === "function") {
             this.initialize();
           }
-          this.dispatchEvent(new Event("created"));  
+          this.dispatchEvent(new Event("created"));
         })
 
-        
+
       });
     }
     proxies[componentName].attachedCallback = function() {
       if (this.attachedCallback && proxies[componentName].attachedCallback != this.attachedCallback) {
         this.attachedCallback.call(this);
-      } 
+      }
       if (prototypes[componentName].attachedCallback) {
         prototypes[componentName].attachedCallback.call(this);
       }
@@ -117,7 +119,7 @@ export default class ComponentLoader {
         prototypes[componentName].detachedCallback.call(this);
       }
     };
-    
+
     // don't store it just in a lexical scope, but make it available for runtime development
 
     document.registerElement(componentName, {
@@ -202,7 +204,7 @@ export default class ComponentLoader {
   static loadByName(name) {
       var link = document.createElement("link");
       link.rel = "import";
-      link.href = (window.lively4url || "..") + "/" + "templates/" + name + ".html";
+      link.href = kernel.resolve('/templates/' + name + '.html')
       link.dataset.lively4Donotpersist = "all";
 
       document.head.appendChild(link);

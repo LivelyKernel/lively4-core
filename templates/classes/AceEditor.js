@@ -37,6 +37,7 @@ export default class AceEditor extends HTMLElement {
             editor.setFontSize( this.getAttribute("fontsize") );
             editor.setReadOnly( this.getAttribute("readonly") );
             var session = editor.getSession();
+            session.setNewLineMode("unix");
             session.setMode( this.getAttribute("mode") );
             session.setUseSoftTabs( this.getAttribute("softtabs") );
             this.getAttribute("tabsize") && session.setTabSize( this.getAttribute("tabsize") );
@@ -155,7 +156,7 @@ export default class AceEditor extends HTMLElement {
             enableLiveAutocompletion: false
         });
         this.editor.completers[3] =  {
-          getCompletions: function(editor, session, pos, prefix, callback) {
+          getCompletions: async (editor, session, pos, prefix, callback) => {
               // console.log("getCompletions: " + pos + " prefix " + prefix)
               var curLine = session.getDocument().getLine(pos.row);
               var curTokens = curLine.slice(0, pos.column).split(/\s+/);
@@ -165,7 +166,7 @@ export default class AceEditor extends HTMLElement {
               try {
                 var wordList = [];
               curCmd = curCmd.replace(/\.[^.]*$/,"")
-              var obj = eval(curCmd);
+              var obj = (await this.boundEval(curCmd)).value;
               wordList = lively.allProperties(obj);
               // console.log("complete: " + curCmd +"\n" + wordList)
                 callback(null, _.keys(wordList).map(function(ea) {
@@ -312,8 +313,12 @@ export default class AceEditor extends HTMLElement {
       return this.doitContext
     }
 
-    boundEval(str, ctx) {
-      return lively.boundEval(str, ctx)
+    getTargetModule() {
+      return this.targetModule || "workspace://1"
+    }
+
+    async boundEval(str, context) {
+      return lively.vm.runEval(str, {targetModule: this.getTargetModule(), context: context})
     }
 
     printResult(result) {
@@ -328,10 +333,11 @@ export default class AceEditor extends HTMLElement {
         editor.selection.selectToPosition(toSel)
     }
 
-    tryBoundEval(str, printResult) {
-        var result;
-        try { result =  this.boundEval(str, this.getDoitContext()) }
-        catch(e) {
+    async tryBoundEval(str, printResult) {
+        var resp;
+        resp = await this.boundEval(str, this.getDoitContext()) 
+        if (resp.error) {
+            var e = resp.error
             console.error(e)
             if (printResult) {
                 window.LastError = e
@@ -339,12 +345,13 @@ export default class AceEditor extends HTMLElement {
             }
             return
         }
+        var result = resp.value
         if (printResult) {
             // alaways wait on promises.. when interactively working...
             if (result && result.then) { 
               // we will definitly return a promise on which we can wait here
               result
-                .then( result => this.printResult("" +result))
+                .then( result => this.printResult("RESOLVED: " +result))
                 .catch( error => {
                   console.error(error);
                   // window.LastError = error;
@@ -359,6 +366,7 @@ export default class AceEditor extends HTMLElement {
         }
         return result
     }
+    
     inspectIt(str) {
         var result;
         try { result =  this.boundEval(str) }

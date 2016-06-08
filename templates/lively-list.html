@@ -14,7 +14,7 @@
     }
   </style>
   <div class="list-container">
-    <ul id="list-list"></ul>
+    <ul id="list-list" class="fa-ul"></ul>
   </div>
   <script type="lively4script" data-name="browseSearchResult">
     async (url, pattern) => {
@@ -27,7 +27,7 @@
 
       let sortByScore = (a, b) => {
         if (a.score && b.score) {
-          return a.score - b.score;
+          return b.score - a.score;
         } else {
           return 0;
         }
@@ -38,13 +38,21 @@
       ul.innerHTML = "";
       for (let item of items) {
         let li = document.createElement("li");
+        // Add icon
+        let i = document.createElement("i");
+        i.classList.add(`fa-li`);
+        i.classList.add(`fa`);
+        i.classList.add(`fa-${item.type}`);
+        // Add link with onClick handler
         let link = document.createElement("a");
         link.innerHTML = item.path;
+        link.title = item.score;
         link.href = "#";
         link.onclick = () => {
           this.browseSearchResult(item.path, pattern)
           return false;
         }
+        li.appendChild(i);
         li.appendChild(link);
         ul.appendChild(li);
       }
