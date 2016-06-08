@@ -4,37 +4,20 @@
 export default class Inspector  {
 
   static printObject(object, depth, name) {
-    var printStr = ""
-    if (_.isFunction(object)) {
-      printStr = "<pre style='fontSize:7pt'>" + object + "</pre>"
+    try {
+      return "<pre style='fontSize:7pt'>" + JSON.stringify(object) + "</pre>"
+    } catch(e) {
+      return "<pre style='fontSize:7pt'>" + object + "</pre>"
     }
-
-      var s =  '<li>' + (name ? name +": " : "") + printStr + ""
-        +"\n"
-    if (depth > 0) {
-        s += '<ul>'
-        _.keys(object).forEach( ea => s +=
-          this.printObject(object[ea], depth - 1, ea))
-       s += '</ul></li>\n'
-    }
-      return s
   }
 
   static printNode(node, indent) {
-    if (node.nodeName == "#text")
-      return "" + "<pre style='fontSize:7pt'>" + node.textContent + "</pre>"
-    var s =  '<li>' + "" + node.localName + ": "
-      + (node.src || "")
-      +"\n"
-    s += '<ul>'
-    lively.array(node.childNodes).forEach( ea => s +=
-      this.printNode(ea, indent + "  "))
-    s += '</ul></li>\n'
-    return s
+    return "<pre style='fontSize:7pt'>" + node.outerHTML.replace(/</g,"&lt;") + "</pre>"
   }
 
   static openInspector(obj) {
-    return new Promise(resolve => {
+    return new Promise(async (resolve) => {
+      obj = (await obj).value; // lively.vm
       var comp = lively.components.createComponent("lively-inspector")
       comp.id = "Inspector"
       comp.style.overflow = "scroll"

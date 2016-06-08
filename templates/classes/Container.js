@@ -271,7 +271,7 @@ export default class Container extends Morph {
         $(root).append(ea); // for script tags
       });
     } catch(e) {
-      console.log("Could not append html:" + content);
+      console.log("Could not append html:" + content.slice(0,200) +"..." +" ERROR:", e);
     }
   }
 
