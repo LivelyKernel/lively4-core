@@ -16,7 +16,6 @@ module.exports = function(config) {
     files: [
       'node_modules/babel-polyfill/dist/polyfill.js',
       'Layers.js',
-      'Flatten.js',
       'tests/**/*test.js',
       'tests/**/*Tests.js'
     ],

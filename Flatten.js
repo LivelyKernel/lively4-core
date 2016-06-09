@@ -237,7 +237,7 @@ Object.assign(cop.Layer.prototype, {
         continue;
       }
       var prop = this[name];
-      if (prop._layered_object && !result.include(prop._layered_object)) {
+      if (prop._layered_object && !result.includes(prop._layered_object)) {
         result.push(prop._layered_object);
       }
     }
