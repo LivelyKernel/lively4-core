@@ -133,4 +133,12 @@ export default class RdfaManager {
     GreenTurtle.attach(document);
   }
 
+  static storeData() {
+    var json = JSON.stringify(document.data.rdfa.query(), function(key, val) {
+        if (key == 'owner' && typeof val == 'object') return;
+        return val;
+      });
+    localStorage.setItem("rdfa", json);
+    return json;
+  }
 }
