@@ -4332,29 +4332,35 @@
     };
     obj.extend(exports.promise, {
         delay: function (ms, resolveVal) {
-            return new Promise(resolve => {
+            return new Promise(function (resolve) {
                 setTimeout(resolve, ms, resolveVal);
             });
         },
         delayReject: function (ms, rejectVal) {
-            return new Promise((_, reject) => {
+            return new Promise(function (_, reject) {
                 setTimeout(reject, ms, rejectVal);
             });
         },
         timeout: function (ms, promise) {
-            return new Promise((resolve, reject) => {
+            return new Promise(function (resolve, reject) {
                 var done = false;
-                setTimeout(() => !done && (done = true) && reject(new Error('Promise timed out')), ms);
-                promise.then(val => !done && (done = true) && resolve(val)).catch(err => !done && (done = true) && reject(err));
+                setTimeout(function () {
+                    return !done && (done = true) && reject(new Error('Promise timed out'));
+                }, ms);
+                promise.then(function (val) {
+                    return !done && (done = true) && resolve(val);
+                }, function (err) {
+                    return !done && (done = true) && reject(err);
+                });
             });
         },
         waitFor: function (ms, tester) {
-            return new Promise((resolve, reject) => {
+            return new Promise(function (resolve, reject) {
                 if (typeof ms === 'function') {
                     tester = ms;
                     ms = undefined;
                 }
-                var stopped = false, error = null, value = undefined, i = setInterval(() => {
+                var stopped = false, error = null, value = undefined, i = setInterval(function () {
                         if (stopped) {
                             clearInterval(i);
                             return;
@@ -4371,12 +4377,14 @@
                         }
                     }, 10);
                 if (typeof ms === 'number') {
-                    setTimeout(() => error = new Error('timeout'), ms);
+                    setTimeout(function () {
+                        error = new Error('timeout');
+                    }, ms);
                 }
             });
         },
         deferred: function () {
-            var resolve, reject, promise = new Promise((_resolve, _reject) => {
+            var resolve, reject, promise = new Promise(function (_resolve, _reject) {
                     resolve = _resolve;
                     reject = _reject;
                 });
@@ -4388,22 +4396,24 @@
         },
         convertCallbackFun: function (func) {
             return function promiseGenerator() {
-                var args = arr.from(arguments);
-                return new Promise((resolve, reject) => {
-                    args.push((err, result) => err ? reject(err) : resolve(result));
-                    func.apply(this, args);
+                var args = arr.from(arguments), self = this;
+                return new Promise(function (resolve, reject) {
+                    args.push(function (err, result) {
+                        return err ? reject(err) : resolve(result);
+                    });
+                    func.apply(self, args);
                 });
             };
         },
         convertCallbackFunWithManyArgs: function (func) {
             return function promiseGenerator() {
-                var args = arr.from(arguments);
-                return new Promise((resolve, reject) => {
+                var args = arr.from(arguments), self = this;
+                return new Promise(function (resolve, reject) {
                     args.push(function () {
                         var args = arr.from(arguments), err = args.shift();
                         return err ? reject(err) : resolve(args);
                     });
-                    func.apply(this, args);
+                    func.apply(self, args);
                 });
             };
         },
@@ -4413,16 +4423,18 @@
                 resolve(prevResult);
             else {
                 try {
-                    Promise.resolve(next(prevResult, akku)).then(result => {
+                    Promise.resolve(next(prevResult, akku)).then(function (result) {
                         resolveNext(promiseFuncs, result, akku, resolve, reject);
-                    }).catch(err => reject(err));
+                    }).catch(function (err) {
+                        reject(err);
+                    });
                 } catch (err) {
                     reject(err);
                 }
             }
         },
         chain: function (promiseFuncs) {
-            return new Promise((resolve, reject) => {
+            return new Promise(function (resolve, reject) {
                 exports.promise._chainResolveNext(promiseFuncs.slice(), undefined, {}, resolve, reject);
             });
         }
@@ -4531,8 +4543,8 @@
             return subgraph;
         },
         invert: function (g) {
-            return Object.keys(g).reduce((inverted, k) => {
-                g[k].forEach(k2 => {
+            return Object.keys(g).reduce(function (inverted, k) {
+                g[k].forEach(function (k2) {
                     if (!inverted[k2])
                         inverted[k2] = [k];
                     else
@@ -4544,12 +4556,16 @@
         sortByReference: function (depGraph, startNode) {
             var all = [startNode].concat(graph.hull(depGraph, startNode)), seen = [], groups = [];
             while (seen.length !== all.length) {
-                var depsRemaining = arr.withoutAll(all, seen).reduce((depsRemaining, node) => {
+                var depsRemaining = arr.withoutAll(all, seen).reduce(function (depsRemaining, node) {
                         depsRemaining[node] = arr.withoutAll(depGraph[node] || [], seen).length;
                         return depsRemaining;
-                    }, {}), min = arr.withoutAll(all, seen).reduce((minNode, node) => depsRemaining[node] <= depsRemaining[minNode] ? node : minNode);
+                    }, {}), min = arr.withoutAll(all, seen).reduce(function (minNode, node) {
+                        return depsRemaining[node] <= depsRemaining[minNode] ? node : minNode;
+                    });
                 if (depsRemaining[min] === 0) {
-                    groups.push(Object.keys(depsRemaining).filter(key => depsRemaining[key] === 0));
+                    groups.push(Object.keys(depsRemaining).filter(function (key) {
+                        return depsRemaining[key] === 0;
+                    }));
                 } else {
                     groups.push([min]);
                 }
@@ -4567,7 +4583,9 @@
                 carryOver = doFunc.call(context, carryOver, currentNode, index++);
                 visitedNodes = visitedNodes.concat([currentNode]);
                 var next = arr.withoutAll(graph[currentNode] || [], visitedNodes);
-                next.forEach(ea => iterator(ea));
+                next.forEach(function (ea) {
+                    return iterator(ea);
+                });
             }
         }
     };

@@ -5,14 +5,12 @@ fswatch -0 -r . | xargs -0 -I{} bash -c \
 */
 
 var uglify      = require("uglify-js")
-var babel       = require("babel-core");
 var fs          = require("fs");
 var exec        = require("child_process").exec;
 var fun         = require("./index").fun;
 var arr         = require("./index").arr;
 var ast         = require("lively.ast");
 var target      = "./dist/lively.lang.dev.js";
-var targetES5   = target.replace(/\.dev\.js$/,".es5.js");
 var targetMin   = target.replace(/\.dev\.js$/,".min.js");
 var packageJson = JSON.parse(fs.readFileSync('./package.json'));
 
@@ -31,18 +29,15 @@ fun.composeAsync(
   // n => exec("npm run doc", (code, out, err) => n(code ? out+err : null)),
   log("2. Cleanup build files"),
   n => fs.unlink(target, (err) => n()),
-  n => fs.unlink(targetES5, (err) => n()),
   n => fs.unlink(targetMin, (err) => n()),
   // n => fs.mkdir("dist", (err) => n()),
   log("3. write " + target),
   n => arr.mapAsync(packageJson.libFiles, (f, _, n) => fs.readFile(f, n), n),
   (contents, n) => n(null, contents.map(String)),
   (contents, n) => n(null, preamble + contents[0] + contents.slice(1).map(ensureExport).join("\n\n") + postscript),
-  (code, n) => fs.writeFile(target, code, err => n(err, code)),
-  log("4. write " + targetES5),
-  (code, n) => fs.writeFile(targetES5, babel.transform(code).code, n),
-  log("5. minification"),
-  n => fs.writeFile(targetMin, uglify.minify(targetES5).code, n)
+  (code, n) => fs.writeFile(target, code, err => n(err)),
+  log("4. minification"),
+  n => fs.writeFile(targetMin, uglify.minify(target).code, n)
 )(err => {
   err ? console.error(err) : console.log("bundled to %s!", target)
 });
