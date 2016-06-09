@@ -141,4 +141,22 @@ export default class RdfaManager {
     localStorage.setItem("rdfa", json);
     return json;
   }
+  
+  static initializeFirebase() {
+     var config = {
+        apiKey: "AIzaSyCdiOSF0DUialcbR86BoJAmdj_RQFWgUk8",
+        authDomain: "webdev16-rdfa.firebaseapp.com",
+        databaseURL: "https://webdev16-rdfa.firebaseio.com",
+        storageBucket: "webdev16-rdfa.appspot.com",
+      };
+      firebase.initializeApp(config);
+  }
+  
+  static storeDataToFirebase() {
+    firebase.database().ref("rdfa").set(this.storeData());
+  }
+  
+  static readDataFromFirebase() {
+    firebase.database().ref("rdfa").once('value').then(rdfa => console.log(rdfa.val()))
+  }
 }
