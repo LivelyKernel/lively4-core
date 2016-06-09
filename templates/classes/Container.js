@@ -252,7 +252,14 @@ export default class Container extends Morph {
 
     this.appendMarkdown(content);
   }
-
+  appendScript(scriptElement) {
+    var root = this.getContentRoot()
+    var script   = document.createElement("script");
+    script.type  = "text/javascript";
+    if (scriptElement.src) script.src  = scriptElement.src;
+    script.text  = scriptElement.textContent;
+    root.appendChild(script);
+  }
 
   appendHtml(content) {
     //  var content = this.sourceContent
@@ -266,9 +273,11 @@ export default class Container extends Morph {
       lively.html.fixLinks(nodes, this.getDir(),
         (path) => this.followPath(path));
       nodes.forEach((ea) => {
-        // console.log("append child: " + ea.textContent)
-        // root.appendChild(ea);
-        $(root).append(ea); // for script tags
+        if (ea.tagName == "SCRIPT") {
+          this.appendScript(ea)
+        } else {
+          root.appendChild(ea);
+        }
       });
     } catch(e) {
       console.log("Could not append html:" + content.slice(0,200) +"..." +" ERROR:", e);
