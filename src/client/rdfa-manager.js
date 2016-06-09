@@ -23,7 +23,7 @@ export default class RdfaManager {
     div[0].style.overflow = "auto";
     var table = div.append($('<table>'));
     this.buildRdfaDataStructure((s, p, v) => {});
-    RdfaManager.data.subjects.forEach((s) => {
+    this.data.subjects.forEach((s) => {
       table.append(
         $('<tr>')
           .append($('<td>').text(s.name)));
