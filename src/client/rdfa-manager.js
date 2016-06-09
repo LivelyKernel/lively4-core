@@ -128,6 +128,7 @@ export default class RdfaManager {
   }
 
   static reloadData() {
+    //
     GreenTurtle.attach(document);
   }
 
