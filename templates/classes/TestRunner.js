@@ -1,12 +1,29 @@
 'use strict';
 
+import * as cop from 'src/external/ContextJS.js';
+
+
+//     Mocha.utils.parseQuery()
+
+// var parseQueryLayer = cop.create("MochaParseQueryLayer");
+// parseQueryLayer.layerObject(Mocha.utils, {
+    
+// });
+
+class MochaDiv extends HTMLDivElement {
+  appendChild(aChild) {
+    debugger
+    return super.appendChild(aChild)
+  }
+}
+
 export default class TestRunner extends HTMLDivElement {
   initialize() {
     this.windowTitle = "Test Runner"
     lively.html.registerButtons(this)
     lively.html.registerInputs(this)
     if (!this.querySelector("#mocha")) {
-      var mochadiv  = document.createElement("div")
+      var mochadiv = Object.create(MochaDiv.prototype);//document.createElement("div")
       mochadiv.id = "mocha"
       this.appendChild(mochadiv)
     }

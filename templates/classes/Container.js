@@ -261,7 +261,11 @@ export default class Container extends Morph {
     root.appendChild(script);
   }
 
-  appendHtml(content) {
+  async appendHtml(content) {
+    if (content.match(/<script src=".*d3\.v3(.min)?\.js".*>/) && !window.d3) {
+      await System.import("templates/classes/ContainerScopedD3.js")   
+      return this.appendHtml(content) // try again
+    }
     //  var content = this.sourceContent
     try {
       var root = this.getContentRoot()
@@ -447,21 +451,21 @@ export default class Container extends Morph {
       var format = path.replace(/.*\./,"")
       if (format == "html")  {
         this.sourceContent = content
-        if (render) this.appendHtml(content)
+        if (render) return this.appendHtml(content)
       } else if (format == "md") {
         this.sourceContent = content
-        if (render) this.appendMarkdown(content)
+        if (render) return this.appendMarkdown(content)
       } else if (format == "livelymd") {
         this.sourceContent = content
-        if (render) this.appendLivelyMD(content)
+        if (render) return this.appendLivelyMD(content)
       } else if (format.match(/(png)|(jpe?g)/)) {
-        if (render) this.appendHtml("<img src='" + url +"'>")
+        if (render) return this.appendHtml("<img src='" + url +"'>")
       } else if (format == "pdf") {
-        if (render) this.appendHtml('<object style="width:21cm;height:29cm" data="'
+        if (render) return this.appendHtml('<object style="width:21cm;height:29cm" data="'
           + url +'" type="application/pdf"></object>')
       } else {
         this.sourceContent = content
-        if (render) this.appendHtml("<pre>" + content +"</pre>")
+        if (render) return this.appendHtml("<pre>" + content +"</pre>")
       }
     }).catch(function(err){
       console.log("Error: ", err)

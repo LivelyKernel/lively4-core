@@ -43,7 +43,11 @@ export default class ContextMenu {
       }, "CMD+K"],
       ["Browser",     (evt) => {
         this.openComponentInWindow("lively-container", evt).then(comp => {
-          comp.followPath(lively4url +"/")
+          var container = _.last(document.querySelectorAll("lively-container"))
+          if (container)
+            comp.followPath("" +container.getURL());
+          else
+            comp.followPath(lively4url +"/");
           comp.parentElement.style.width = "850px"
           comp.parentElement.style.height = "600px"
         })
