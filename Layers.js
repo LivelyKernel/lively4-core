@@ -85,10 +85,9 @@ export function ensurePartialLayer(layer, object) {
 };
 
 // TODO(mariannet) : Find out if ES6 constructor also has type
-// TODO(mariannet) : ask Javascript Ninja about last line
 export function layerMethod(layer, object, property, func) {
   ensurePartialLayer(layer, object)[property] = func;
-  func.displayName = "layered " + layer.name + " "
+  func.displayName = "layered " + String(layer.name) + " "
                    + (object.constructor ? (object.constructor.type + "$") : "")
                    + property;
   makeFunctionLayerAware(object, property, layer.isHidden);
@@ -383,22 +382,13 @@ export class Layer {
     return '' + this._context + '.' + this._name;
   }
   layeredObjects () {
-    return Properties.own(this)
-      .collect(
-        function(ea) {
-          return this[ea] && this[ea]._layered_object;
-        }, this)
-      .select(
-        function(ea) {
-          return ea;
-        });
+    return Object.getOwnPropertyNames(this)
+      .map(ea => this[ea] && this[ea]._layered_object)
+      .filter(ea => ea); // filters falsy things
   }
   // TODO: doesn't differentiate between functions and classes - necessary?
   layeredClasses () {
-    return this.layeredObjects().collect(
-      function(ea) {
-        return ea.constructor;
-      });
+    return this.layeredObjects().map(ea => ea.constructor);
   }
   
   // Removing
@@ -415,7 +405,7 @@ export class Layer {
     // Uninstalls just this Layer.
     // functions that are layered by other Layers will not be reset.
     var layer = this;
-    this.layeredObjects().each(
+    this.layeredObjects().forEach(
       function(eachLayeredObj) {
         // var layerIdx = typeof eachLayeredObj.activeLayers === 'function'
         //     ? eachLayeredObj.activeLayers().indexOf(layer) : -1;
@@ -440,7 +430,6 @@ export class Layer {
         //   });
       });
       this.remove();
-      alertOK("Successfully uninstalled Layer " + this + " in Global Classes");
   }
   
   // Layer installation

@@ -1564,34 +1564,58 @@ describe('cop', function () {
 
         });
 
-        // FIXME: this test case uses Morph
-        xit('testUninstallLayer', function() {
-            var obj =  {
+        function uninstallScenario() {
+            const obj =  {
                 m1: function() { return 1 },
                 m2: function() { return 2 },
                 m3: function() { return 3 }
             }
-            var originalM2 = obj.m2;
+            const originalM2 = obj.m2;
 
-            cop.create('TestLayer1').refineObject(obj, {
+            const TestLayer1 = new Layer('TestLayer1').refineObject(obj, {
                 m1: function() { return cop.proceed() + 1 },
                 m3: function() { return cop.proceed() + 1 }
             }).beGlobal();
             var singleLayeredM1 = obj.m1;
 
-            cop.create('TestLayer2').refineObject(obj, {
+            const TestLayer2 = new Layer('TestLayer2').refineObject(obj, {
                 m1: function() { return cop.proceed() + 2 },
                 m2: function() { return cop.proceed() + 2 },
                 m3: function() { return cop.proceed() + 2 }
             }).beGlobal();
 
-            cop.create('TestLayer3').refineObject(obj, {
-                m3: function() { return cop.proceed() + 3 }
+            const TestLayer3 = new Layer('TestLayer3').refineObject(obj, {
+                m3: function() { return cop.proceed() + 4 }
             }).beGlobal();
-            var tripleLayeredM3 = obj.m3;
+            const tripleLayeredM3 = obj.m3;
 
+            assert.equal(obj.m1(), 1 + 1 + 2, 'm1 setup failed');
+            assert.equal(obj.m2(), 2 + 2, 'm2 setup failed');
+            assert.equal(obj.m3(), 3 + 1 + 2 + 4, 'm3 setup failed');
+
+            return {
+                obj, TestLayer1, TestLayer2, TestLayer3,
+                originalM2, singleLayeredM1, tripleLayeredM3
+            };
+        }
+
+        it('disables that layer', function() {
+            const { obj, TestLayer2 } = uninstallScenario();
+            // when
             TestLayer2.uninstall();
+            // then
+            assert.equal(obj.m1(), 1 + 1, 'm1 erroneously changed');
+            assert.equal(obj.m2(), 2, 'm2 broken after uninstall');
+            assert.equal(obj.m3(), 3 + 1 + 4, 'm3 layers broken after uninstall');
+        });
 
+        // TODO: function unwrapping on uninstall is currently not supported
+        xit('unwraps functions if no layers are left for them', function () {
+            const { obj, TestLayer2, singleLayeredM1, originalM2,
+                tripleLayeredM3 } = uninstallScenario();
+            // when
+            TestLayer2.uninstall();
+            // then
             assert(obj.m1 === singleLayeredM1, "obj.m1 is not wrapped anymore.");
             assert(obj.m2 === originalM2, "obj.m2 is still wrapped.");
             assert(obj.m3 === tripleLayeredM3, "obj.m3 is not wrapped anymore.");
