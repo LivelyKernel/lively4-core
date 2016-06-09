@@ -10,22 +10,15 @@ import * as cop from 'src/external/ContextJS.js';
     
 // });
 
-class MochaDiv extends HTMLDivElement {
-  appendChild(aChild) {
-    debugger
-    return super.appendChild(aChild)
-  }
-}
-
 export default class TestRunner extends HTMLDivElement {
   initialize() {
     this.windowTitle = "Test Runner"
     lively.html.registerButtons(this)
     lively.html.registerInputs(this)
     if (!this.querySelector("#mocha")) {
-      var mochadiv = Object.create(MochaDiv.prototype);//document.createElement("div")
-      mochadiv.id = "mocha"
-      this.appendChild(mochadiv)
+      this.mochadiv = document.createElement("div");
+      this.mochadiv.id = "mocha"
+      this.appendChild(this.mochadiv)
     }
     this.querySelector("#mocha").innerHTML= ""
     
@@ -106,8 +99,31 @@ export default class TestRunner extends HTMLDivElement {
           return lively.import(name, url, true)
           // mocha.addFile(url.replace(/.*\//,"").replace(/\..*/,""))
       }));
-    console.log("RUN")
-    mocha.run();
+    console.log("RUN");
+    var self = this;
+    mocha.run(failures => {
+      if (self.prevState) {
+        window.history.pushState(self.prevState, '', self.prevLocation + "&grep=.*");
+        self.prevState = self.prevLocation = undefined;
+      }
+      self.fixHTML();
+    });
+  }
+  
+  fixHTML() {
+    var self = this;
+    this.mochadiv.querySelectorAll(".replay").forEach(ea => {
+      ea.innerHTML = "R";
+      ea.onclick = (evt) => {
+        evt.preventDefault();
+        self.prevState = window.history.state;
+        self.prevLocation = window.location.toString().replace(/&grep=[^&]+/, '');
+        var grep = ea.href.replace(/.*(&grep.*)/, '$1');
+        window.history.pushState({ mochastate: true }, '', self.prevLocation + grep);
+        self.onRunButton();
+        return false;
+      };
+    });
   }
   
   async onTestDirChanged() {
