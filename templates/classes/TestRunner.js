@@ -22,34 +22,8 @@ export default class TestRunner extends HTMLDivElement {
     }
     this.querySelector("#mocha").innerHTML= ""
     
-    if(!document.querySelector("#mochaCSS")) {
-      var link = document.createElement("link")
-      link.id="mochaCSS"
-      link.type="text/css"
-      link.rel="stylesheet"
-      link.href=lively4url + "/node_modules/mocha/mocha.css"
-      document.head.appendChild(link)
-    }
-
-    if(document.querySelector("#mochaScript")) {
-        document.querySelector("#mochaScript").remove()
-    }
-    
-      var script = document.createElement("script")
-      script.id="mochaScript"
-      script.type="text/javascript"
-      script.src=lively4url + "/src/external/mocha.js" + "?" + Date.now()
-      script.onload = function() {
-        mocha.setup("bdd")
-      }
-      document.head.appendChild(script)
-  
-  
-    
-    // <script src="" type="text/javascript" charset="utf-8"></script>
-    // <script>mocha.setup("bdd")</script>
-
-    
+    lively.loadCSSThroughDOM("mochacss", lively4url + "/node_modules/mocha/mocha.css")
+    lively.loadJavaScriptThroughDOM("mocha", lively4url + "/src/external/mocha.js")
   }
 
   async findTestFilesInDir(dir) {
