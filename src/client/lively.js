@@ -3,6 +3,8 @@
 import * as jquery from '../external/jquery.js';
 import * as _ from '../external/underscore.js';
 
+import * as firebase from 'https://www.gstatic.com/firebasejs/live/3.0/firebase.js';
+
 import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
 import * as preferences from './preferences.js';
