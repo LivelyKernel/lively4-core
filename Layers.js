@@ -514,10 +514,9 @@ function basicCreate(layerName, context) {
     (context[layerName] = new Layer(layerName, context));
 };
 
-export function create(rootContext, layerName) {
+export function layer(rootContext, layerName) {
   if (typeof layerName === 'undefined') {
-    // support create('LayerName') syntax without context
-    // (for "global" layers)
+    // support layer('LayerName') syntax without context object
     layerName = rootContext;
     rootContext = undefined;
   }
