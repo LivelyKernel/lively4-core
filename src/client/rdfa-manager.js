@@ -21,7 +21,8 @@ export default class RdfaManager {
 
   static generateTableRows(div) {
     div[0].style.overflow = "auto";
-    var table = div.append($('<table>'));
+    var table = $('<table>');
+    div.append(table);
     this.buildRdfaDataStructure((s, p, v) => {});
     this.data.subjects.forEach((s) => {
       table.append(
@@ -38,9 +39,29 @@ export default class RdfaManager {
       });
     });
   }
+  
+  static generateJSONTableRows(div, remote) {
+    div[0].style.overflow = "auto";
+    var table = $('<table>');
+    div.append(table);
+    this.buildJSONRdfaDataStructure(remote).then((data) => {
+      data.forEach((projection) => {
+        table.append(
+          $('<tr>')
+            .append($('<td>').text(projection._data_.subject)));
+        let properties = projection._data_.properties;
+        for (let property in properties) {
+          table.append(
+            $('<tr>')
+              .append($('<td>'))
+              .append($('<td>').text(property))
+              .append($('<td>').text(properties[property])));
+        }
+      });
+    });
+  }
 
   static makeLocationsClickable(property) {
-    this.buildRdfaDataStructure((s, p, v) => {});
     property.origins.forEach((valueOrigin) => {
       if (this.isGeoLocation(property)) {
         if (valueOrigin.style) {
@@ -112,6 +133,18 @@ export default class RdfaManager {
       });
     });
   }
+  
+  static buildJSONRdfaDataStructure(remote = false) {
+    return new Promise((resolve, reject) => {
+      if (remote) {
+        this.readDataFromFirebase().then((jsonWrapper) => {
+          resolve(JSON.parse(jsonWrapper.val()));
+        })
+      } else {
+        resolve(JSON.parse(this.storeData()));
+      }
+    });
+  }
 
   static resolveSubject(value) {
     if (value && typeof value == 'string' && value.startsWith('_:')) {
@@ -157,6 +190,6 @@ export default class RdfaManager {
   }
   
   static readDataFromFirebase() {
-    firebase.database().ref("rdfa").once('value').then(rdfa => console.log(rdfa.val()))
+    return firebase.database().ref("rdfa").once('value') // returns a Promise
   }
 }

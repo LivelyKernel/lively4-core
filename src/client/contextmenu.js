@@ -41,6 +41,14 @@ export default class ContextMenu {
         this.openRdfaManager(evt);
         this.hide();
       }],
+      ["RDFa JSON", (evt) => {
+        this.openRdfaJSONManager(evt);
+        this.hide();
+      }],
+      ["RDFa firebase", (evt) => {
+        this.openRdfaJSONManager(evt, true);
+        this.hide();
+      }],
       ["Workspace", (evt) => {
         this.hide()
         lively.openWorkspace("", lively.pt(evt.pageX, evt.pageY))
@@ -118,6 +126,16 @@ export default class ContextMenu {
     this.openComponentInWindow('div', evt).then((comp) => {
       var div = $(comp);
       rdfaManager.generateTableRows(div);
+    })
+  }
+  
+  static openRdfaJSONManager(evt, remote = false) {
+    let rdfaManager = lively.rdfaManager;
+    rdfaManager.reloadData();
+
+    this.openComponentInWindow('div', evt).then((comp) => {
+      var div = $(comp);
+      rdfaManager.generateJSONTableRows(div, remote);
     })
   }
 
