@@ -103,8 +103,10 @@ export default class RdfaManager {
         value = this.resolveSubject(value);
         var property = new Property(propertyName, value);
         document.data.getValueOrigins(subjectName, propertyName).forEach((valueOrigin) => {
-          valueOrigin.origin.rdfaData = property;
-          property.origins.push(valueOrigin.origin);
+          if (valueOrigin.origin) {
+            valueOrigin.origin.rdfaData = property;
+            property.origins.push(valueOrigin.origin);
+          }
         });
         subject.properties.push(property);
       });
@@ -112,7 +114,7 @@ export default class RdfaManager {
   }
 
   static resolveSubject(value) {
-    if (value.startsWith('_:')) {
+    if (value && typeof value == 'string' && value.startsWith('_:')) {
       return this.getOrCreateSubject(value);
     }
     return value;
@@ -128,7 +130,6 @@ export default class RdfaManager {
   }
 
   static reloadData() {
-    //
     GreenTurtle.attach(document);
   }
 
