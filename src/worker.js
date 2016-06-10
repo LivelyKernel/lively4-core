@@ -7,8 +7,11 @@ var loader
 
 const system = () => {
   if (typeof loader === 'undefined') {
+    let scope = new URL(self.registration.scope)
+    let base = new URL(path.join(scope.pathname, path.resolve(kernel_conf.base)), scope)
+
     loader = new Loader({
-      base: new URL(kernel_conf.base, new URL(self.registration.scope))
+      base: base
     })
   }
 
@@ -16,17 +19,15 @@ const system = () => {
 }
 
 const init = async (fn) => {
-  return system().import(kernel_conf.initsw).then(fn)
+  return system().import(path.resolve(kernel_conf.initsw)).then(fn)
 }
 
 export default function() {
   this.addEventListener('install', (event) => {
-    // event.waitUntil(this.skipWaiting())
     event.waitUntil(init(worker => worker.install(event)))
   })
 
   this.addEventListener('activate', (event) => {
-    // event.waitUntil(this.clients.claim())
     event.waitUntil(init(worker => worker.activate(event)))
   })
 
@@ -35,6 +36,10 @@ export default function() {
   })
 
   this.addEventListener('message', (event) => {
+    if(event.data === 'kernel:sw-force-reload') {
+      loader = undefined
+    }
+
     event.waitUntil(init(worker => worker.message(event)))
   })
 }

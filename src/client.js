@@ -45,7 +45,7 @@ export default async function() {
       registration.installing || registration.waiting || registration.active
     }
 
-    if (serviceWorker.state !== 'active') {
+    if (serviceWorker.state !== 'activated' && serviceWorker.state !== 'activated') {
       let swState = new Promise((resolve, reject) => {
         const fn = (event) => {
           serviceWorker.removeEventListener('statechange', fn)
@@ -60,12 +60,14 @@ export default async function() {
         serviceWorker.addEventListener('statechange', fn)
       })
 
+      serviceWorker.addEventListener('statechange', (e) => console.log(e.target.state))
+
       await swState
     }
 
     // Set loader base to redirect all file requests to service worker
     // file systems
-    base = new URL('https://lively/')
+    base = new URL('https://lively')
 
     console.log('[KERNEL] ServiceWorker registered and ready')
 
@@ -84,7 +86,7 @@ export default async function() {
 
   loader.set('kernel', {
     resolve: (name) => loader.resolve(name).toString(),
-    realpath: (name) => path.normalize(name),
+    realpath: (name) => path.resolve(name),
   })
 
   //
@@ -95,7 +97,7 @@ export default async function() {
     if ('livelyKernelInit' in script.dataset) {
       script.dataset.livelyKernelInit
     } else {
-      path.normalize(kernel_conf.init)
+      path.resolve(kernel_conf.init)
     }
   }
 

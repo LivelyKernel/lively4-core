@@ -203,7 +203,7 @@ export class Loader {
   resolve(name) {
     return do {
       if (this._base) {
-        new URL(path.normalize('./' + name), this._base)
+        new URL(path.join(this._base.pathname, path.resolve(name)), this._base)
       } else {
         name
       }
