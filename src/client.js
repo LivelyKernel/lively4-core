@@ -31,7 +31,7 @@ export default async function() {
   // Service worker
   //
 
-  if (!('serviceWorker' in navigator) || true) {
+  if (!('serviceWorker' in navigator)) {
     console.error('[KERNEL] ServiceWorker API not available')
     console.error('[KERNEL] Your browser is total wrong for this. I refuse to continue any further...')
     return undefined
