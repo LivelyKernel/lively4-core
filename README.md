@@ -30,9 +30,9 @@ See the following example:
 ```js
 // We are at /src/client.js
 
-import '/my/file.js' # Will load `./lively/my/file.js`
+import '/my/file.js' // Will load `./lively/my/file.js`
 
-System.import('./header.js') # `./lively/src/header.js`
+System.import('./header.js') // `./lively/src/header.js`
 ```
 
 ## Kernel API
