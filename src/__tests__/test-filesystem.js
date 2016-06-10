@@ -123,6 +123,18 @@ describe('Filesystem with stubs', () => {
     expect(stubfs.stat).toHaveBeenCalledWith('/this/and/that.txt', req);
   });
 
+  it('handels options requests to direct response filesystems', () => {
+    let req = {method: 'OPTIONS'};
+    let url = {pathname: 'root/this/and/that.txt'};
+    let resp = new Response(null, {status: 400});
+    stubfs.stat.and.returnValue(resp);
+
+    let ret = fs.handle(req, url);
+
+    expect(ret).toBe(resp);
+    expect(stubfs.stat).toHaveBeenCalledWith('/this/and/that.txt', req);
+  });
+
   it('handels requests with object of longest match', () => {
     let req = {method: 'GET'}
     let url = {pathname: 'root/but/more/this/and/that.txt'}

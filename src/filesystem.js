@@ -47,10 +47,22 @@ export class Filesystem {
 
     if(request.method === 'GET')
       return fs.read(path, request)
+
     if(request.method === 'PUT')
       return fs.write(path, request.text(), request)
-    if(request.method === 'OPTIONS')
-      return fs.stat(path, request)
+
+    if(request.method === 'OPTIONS') {
+      try {
+        let stat_resp = fs.stat(path, request)
+        if (stat_resp instanceof Response)
+          return stat_resp
+        return stat_resp.toResponse()
+      }
+      catch (e) {
+        // TODO: Do something with the information from the StatNotFoundError
+        return new Response(null, {status: 405})
+      }
+    }
 
     return new Response(null, {status: 400})
     // TODO: respond with 400 / 404?

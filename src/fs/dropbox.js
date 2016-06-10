@@ -2,7 +2,7 @@
  * HTTP Dropbox access.
  */
 
-import { Base } from './base.js'
+import { Base, Stat, StatNotFoundError } from './base.js'
 import * as util from '../util.js'
 
 export default class Filesystem extends Base {
@@ -42,29 +42,23 @@ export default class Filesystem extends Base {
   async stat(path) {
     let dropboxHeaders = new Headers()
     dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
+
     let response = await self.fetch('https://api.dropboxapi.com/1/metadata/auto' + this.subfolder + path, {headers: dropboxHeaders})
 
-    if(response.status < 200 && response.status >= 300) {
-      throw new Error(response.statusText)
-    }
+    util.responseOk(response, StatNotFoundError)
 
     let json  = await response.json()
-    let content = do {
+    let dir = false
+    let contents = do {
       if(json['contents']) {
-        JSON.stringify({
-          type: 'directory',
-          contents: await Promise.all(
-            Array.from(json['contents'], item => this.statinfo(item)))
-        }, null, '\t')
+        dir = true
+        await Promise.all(Array.from(json['contents'], item => this.statinfo(item)))
       } else {
-        JSON.stringify(await this.statinfo(json), null, '\t')
+        await this.statinfo(json)
       }
     }
 
-    return new Response(content, {
-      status: 200,
-      headers: {'Allow': 'GET,OPTIONS'}
-    })
+    return new Stat(dir, contents, ['GET', 'OPTIONS'])
   }
 
   async read(path) {

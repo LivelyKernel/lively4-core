@@ -2,7 +2,7 @@
  * HTTP GitHub project access.
  */
 
-import { Base } from './base.js'
+import { Base, Stat, StatNotFoundError } from './base.js'
 import * as util from '../util.js'
 
 export default class Filesystem extends Base {
@@ -56,27 +56,20 @@ export default class Filesystem extends Base {
 
     let response = await self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path + branchParam, {headers: githubHeaders})
 
-    if(response.status < 200 || response.status >= 300) {
-      return response
-    }
+    util.responseOk(response, StatNotFoundError)
 
     let json  = await response.json()
-    let content = do {
+    let dir = false
+    let contents = do {
       if(Array.isArray(json)) {
-        JSON.stringify({
-          type: 'directory',
-          contents: await Promise.all(
-            Array.from(json, item => this.statinfo(item)))
-        }, null, '\t')
+        dir = true
+        await Promise.all(Array.from(json, item => this.statinfo(item)))
       } else {
-        JSON.stringify(await this.statinfo(json), null, '\t')
+        await this.statinfo(json)
       }
     }
 
-    return new Response(content, {
-      status: 200,
-      headers: {'Allow': 'GET,OPTIONS'}
-    })
+    return new Stat(dir, contents, ['GET', 'OPTIONS'])
   }
 
   async read(path) {

@@ -2,7 +2,7 @@
  * HTTP Google Drive access.
  */
 
-import { Base } from './base.js'
+import { Base, Stat, StatNotFoundError } from './base.js'
 import * as util from '../util.js'
 
 export default class Filesystem extends Base {
@@ -26,27 +26,22 @@ export default class Filesystem extends Base {
   }
 
   async stat(relativePath){
-  var path = this.getGoogledrivePath(relativePath);
-  var id = await this.googlePathToId(path);
-  return this.googleAPIFetch(`files?corpus=domain&q=%27`+id+`%27%20in%20parents`)
-    .then(r => r.json())
-    .then(json => {
-  	  console.log(path, json, relativePath);
-    var items = json.items.map(item => ({
+    let path = this.getGoogledrivePath(relativePath);
+    let id = await this.googlePathToId(path);
+
+    let response = await this.googleAPIFetch(`files?corpus=domain&q=%27`+id+`%27%20in%20parents`)
+
+    util.responseOk(response, StatNotFoundError)
+
+    let json  = await response.json()
+
+    let items = json.items.map(item => ({
   	  "type": item.mimeType === 'application/vnd.google-apps.folder' && true ? "directory" : 'file',
 		    "name": item.title,
 		    "size": 0
-  	  }));
-  	  return JSON.stringify({
-    	"type": "directory",
-    	"contents": items
-    });
-  }).then( content =>
-    new Response(content, {
-      status: 200,
-      headers: {'Allow': 'GET,OPTIONS'}
-    })
-  )
+  	  }))
+
+  	return Stat(true, items, ['GET', 'OPTIONS'])
   }
 
   async read(urlString) {

@@ -15,7 +15,7 @@ export class Base {
    * @return {Promise}
    */
   stat(path) {
-    return Promise.resolve(new Response(null, {status: 405}))
+    throw new StatNotFoundError()
   }
 
   /**
@@ -37,5 +37,41 @@ export class Base {
    */
   write(path, content) {
     return Promise.resolve(new Response(null, {status: 405}))
+  }
+}
+
+export class Stat {
+  constructor(isDirectory, contents, allowed) {
+    this.isDirectory = isDirectory
+    this.contents = contents
+    this.allowed = allowed
+  }
+
+  toResponse() {
+    return new Response(this.contentToJson(), {
+      status: 200,
+      headers: {'Allow': this.allowedToHeader()}
+    })
+  }
+
+  allowedToHeader() {
+    return this.allowed.toString()
+  }
+
+  contentToJson() {
+    if (this.isDirectory) {
+      return JSON.stringify({
+          type: 'directory',
+          contents: this.contents
+        }, null, '\t')
+    }
+    return JSON.stringify(this.contents, null, '\t')
+  }
+}
+
+export class StatNotFoundError extends Error {
+  constructor(message='No stat available for given path.') {
+    super(message)
+    this.name = 'StatNotFoundError'
   }
 }
