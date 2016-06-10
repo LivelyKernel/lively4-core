@@ -63,7 +63,9 @@ Compilation will be places at `./dist-kernel.js`.
 Use `kernel.conf.js` to configure kernel before compiling:
 
 * *base*: The base path used to resolve init files.
+
   When it's a relative path it be resolved relative to the `dist-kernel.js` path from the script tag.
+
   An absolute path or a full URL can also be specified.
   The base path cannot be escaped when importing code, the import path will be normalized before being appended to the base path.
 
