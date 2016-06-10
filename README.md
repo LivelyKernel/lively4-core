@@ -28,7 +28,7 @@ These init "processes" can be ES6 modules including other files. They will be re
 See the following example:
 
 ```js
-# We are at /src/client.js
+// We are at /src/client.js
 
 import '/my/file.js' # Will load `./lively/my/file.js`
 
