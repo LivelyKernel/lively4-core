@@ -15,20 +15,18 @@ const system = () => {
   return loader
 }
 
-const init = (fn) => {
-  system().import(kernel_conf.initsw).then(fn)
+const init = async (fn) => {
+  return system().import(kernel_conf.initsw).then(fn)
 }
 
 export default function() {
   this.addEventListener('install', (event) => {
     // event.waitUntil(this.skipWaiting())
-
     event.waitUntil(init(worker => worker.install(event)))
   })
 
   this.addEventListener('activate', (event) => {
     // event.waitUntil(this.clients.claim())
-
     event.waitUntil(init(worker => worker.activate(event)))
   })
 

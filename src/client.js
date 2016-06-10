@@ -25,21 +25,52 @@ export default async function() {
   }
 
   let src = new URL(script.src)
+  let base = new URL(kernel_conf.base, src)
 
   //
   // Service worker
   //
 
   if ('serviceWorker' in navigator) {
-    await navigator.serviceWorker.register(src, {scope: './'})
-    await navigator.serviceWorker.ready
+    try {
+      let scope = new URL('./', src)
+      let registration = await navigator.serviceWorker.register(src, {scope: scope})
 
-    // Set loader base to redirect all file requests to service worker
-    // file systems
-    src = new URL('https://lively/')
+      let serviceWorker = do {
+        registration.installing || registration.waiting || registration.active
+      }
 
+      if (serviceWorker.state !== 'active') {
+        let swState = new Promise((resolve, reject) => {
+          const fn = (event) => {
+            serviceWorker.removeEventListener('statechange', fn)
+
+            if (event.target.state === 'redundant') {
+              reject(new Error('State changed to redundant'))
+            } else {
+              resolve(event.target)
+            }
+          }
+
+          serviceWorker.addEventListener('statechange', fn)
+        })
+
+        await swState
+      }
+
+      // Set loader base to redirect all file requests to service worker
+      // file systems
+      base = new URL('https://lively/')
+
+      console.log('[KERNEL] ServiceWorker registered and ready')
+
+    } catch(e) {
+      console.error('[KERNEL] ServiceWorker install failed:', e)
+      console.log('[KERNEL] Continue with client-only boot...')
+    }
   } else {
     console.error('[KERNEL] ServiceWorker API not available')
+    console.log('[KERNEL] Continue with client-only boot...')
   }
 
   //
@@ -47,7 +78,7 @@ export default async function() {
   //
 
   let loader = new Loader({
-    base: src
+    base: base
   })
 
   loader.set('kernel', {
