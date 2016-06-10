@@ -262,9 +262,17 @@ export default class Container extends Morph {
   }
 
   async appendHtml(content) {
-    if (content.match(/<script src=".*d3\.v3(.min)?\.js".*>/) && !window.d3) {
-      await System.import("templates/classes/ContainerScopedD3.js")   
-      return this.appendHtml(content) // try again
+    if (content.match(/<script src=".*d3\.v3(.min)?\.js".*>/)) {
+      if (!window.d3) {
+        console.log("LOAD D3")
+        await lively.loadJavaScriptThroughDOM("d3", "src/external/d3.v3.js")
+      }
+      
+      if (!window.ScopedD3) {
+        console.log("LOAD D3 Adaption Layer")
+        await System.import("templates/classes/ContainerScopedD3.js")   
+        return this.appendHtml(content) // try again
+      }
     }
     //  var content = this.sourceContent
     try {

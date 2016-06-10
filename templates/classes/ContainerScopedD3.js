@@ -1,6 +1,6 @@
 import {proceed, create as layer}  from "src/external/ContextJS.js"
 import * as cop  from "src/external/ContextJS.js"
-import "src/external/d3.v3.js"
+
 
 /* A COP Layer that adapts D3 and Lively Containers to display D3 examples inline */
 
