@@ -1,8 +1,8 @@
-export function responseOk(response) {
+export function responseOk(response, throwError=Error) {
   if(response.status >= 200 && response.status < 300) {
     return response
   } else {
-    throw new Error(response.statusText)
+    throw new throwError(response.statusText)
   }
 }
 
