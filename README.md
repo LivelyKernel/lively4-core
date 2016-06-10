@@ -1,6 +1,6 @@
 # Lively Kernel
 
-The Lively kernel is a small bootloader for the Lively environment. It provides a minimal ES6 module loader, allows to transpile ES6+ into runnable code and prepares the environment. This includes testing for ServiceWorker availability and initializes the a service worker environment.
+The Lively kernel is a small bootloader for the Lively environment. It provides a minimal ES6 module loader, it can to transpile ES6+ into runnable code and it loads an "init process". The kernel also tests for ServiceWorker availability and initializes a service worker if possible.
 
 The kernel must be generated (compiled) and put into the document root to support loading ServiceWorkers.
 
