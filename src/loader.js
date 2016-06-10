@@ -215,7 +215,7 @@ export class Loader {
     let response = await self.fetch(uri)
 
     if (response.status != 200) {
-      throw new Error('Could not fetch: ' + name)
+      throw new Error('Could not fetch: ' + uri)
     }
 
     let blob = await response.text()

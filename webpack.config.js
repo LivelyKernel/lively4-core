@@ -12,6 +12,11 @@ module.exports = {
     path: __dirname,
     filename: "dist-kernel.js"
   },
+  resolve: {
+    alias: {
+      'kernel_conf': path.resolve('./kernel.conf.js')
+    }
+  },
   devtool: 'source-map',
   module: {
     loaders: [

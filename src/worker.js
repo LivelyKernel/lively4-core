@@ -1,25 +1,42 @@
+import * as path from 'path'
+import kernel_conf from 'kernel_conf'
+
+import { Loader } from './loader'
+
+var loader
+
+const system = () => {
+  if (typeof loader === 'undefined') {
+    loader = new Loader({
+      base: new URL(kernel_conf.base, new URL(self.registration.scope))
+    })
+  }
+
+  return loader
+}
+
+const init = (fn) => {
+  system().import(kernel_conf.initsw).then(fn)
+}
+
 export default function() {
   this.addEventListener('install', (event) => {
-    event.waitUntil(this.skipWaiting())
+    // event.waitUntil(this.skipWaiting())
+
+    event.waitUntil(init(worker => worker.install(event)))
   })
 
   this.addEventListener('activate', (event) => {
-    console.log('L4K: activate', event)
+    // event.waitUntil(this.clients.claim())
 
-    event.waitUntil(this.clients.claim())
+    event.waitUntil(init(worker => worker.activate(event)))
   })
 
   this.addEventListener('fetch', (event) => {
-    console.log('L4K: fetch', event, event.request.url)
-
-    event.respondWith(this.fetch(event.request))
+    event.waitUntil(init(worker => worker.fetch(event)))
   })
 
   this.addEventListener('message', (event) => {
-    if(typeof event.data.__l4k_boot_kernel !== 'undefined') {
-
-    }
-
-    console.log('L4K: message', event, event.data)
+    event.waitUntil(init(worker => worker.message(event)))
   })
 }

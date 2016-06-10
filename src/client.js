@@ -5,13 +5,13 @@
 // the ServiceWorker - if possible - and starts the initialize client code.
 //
 import * as path from 'path'
+import kernel_conf from 'kernel_conf'
 
 import { Loader } from './loader'
 
 const { filter, shift } = Array.prototype
 
-export default function() {
-
+export default async function() {
   // Lookup self script tag as the service worker will be started using
   // the same kernel script.
   const script = do {
@@ -24,27 +24,30 @@ export default function() {
     throw new Error('Cannot find lively kernel script tag. You must add the `data-lively-kernel` attribute!')
   }
 
-  let base = new URL(do {
-    if ('livelyKernelBase' in script.dataset) {
-      script.dataset.livelyKernelBase
-    } else {
-      window.location
-    }
-  })
+  let src = new URL(script.src)
 
-  let init = do {
-    if ('livelyKernelInit' in script.dataset) {
-      script.dataset.livelyKernelInit
-    } else {
-      null
-    }
+  //
+  // Service worker
+  //
+
+  if ('serviceWorker' in navigator) {
+    await navigator.serviceWorker.register(src, {scope: './'})
+    await navigator.serviceWorker.ready
+
+    // Set loader base to redirect all file requests to service worker
+    // file systems
+    src = new URL('https://lively/')
+
+  } else {
+    console.error('[KERNEL] ServiceWorker API not available')
   }
 
-  const src = new URL(script.src)
+  //
+  // ES module loader
+  //
 
-  // Initialize service loader
   let loader = new Loader({
-    base: base
+    base: src
   })
 
   loader.set('kernel', {
@@ -52,26 +55,21 @@ export default function() {
     realpath: (name) => path.normalize(name),
   })
 
-  if (init) {
-    loader.import(init)
-  }
-}
+  //
+  // Initialize system (like running init process)
+  //
 
-
-async function __boot__({src, scope}) {
-  if (!('serviceWorker' in navigator)) {
-    throw new RuntimeError('Serviceworker not supported.')
-  }
-
-  if (navigator.serviceWorker.controller) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.debug("[L4K] SW already installed")
+  let init = do {
+    if ('livelyKernelInit' in script.dataset) {
+      script.dataset.livelyKernelInit
+    } else {
+      path.normalize(kernel_conf.init)
     }
-  } else {
-    await navigator.serviceWorker.register(src, {scope: scope})
   }
 
-  await navigator.serviceWorker.ready
-
-  return true
+  if (init) {
+    return loader.import(init)
+  } else {
+    return true
+  }
 }
