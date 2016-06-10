@@ -67,7 +67,8 @@ export default async function() {
 
     // Set loader base to redirect all file requests to service worker
     // file systems
-    base = new URL('https://lively')
+    // TODO: Should this be part of the kernel or user land?
+    // base = new URL('https://lively')
 
     console.log('[KERNEL] ServiceWorker registered and ready')
 

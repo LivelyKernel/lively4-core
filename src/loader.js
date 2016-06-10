@@ -167,7 +167,10 @@ export class Loader {
   }
 
 
-  async transpile(blob, {filename}) {
+  async transpile(blob, {filename, uri}) {
+    // let sourceURL = 'lively:///' + filename
+    let sourceURL = uri.toString()
+
     let source = babel.transform(blob, {
       plugins: [
         require("babel-plugin-syntax-async-functions"),
@@ -190,11 +193,11 @@ export class Loader {
       ],
       sourceMaps: 'inline',
       filename: filename,
-      sourceFileName: filename,
+      sourceFileName: sourceURL,
       compact: 'auto',
     })
 
-    source.code += '\n//# sourceURL=' + filename + '!transpiled'
+    source.code += '\n//# sourceURL=' + sourceURL + '!transpiled'
 
     return source
   }
@@ -230,7 +233,8 @@ export class Loader {
 
     let source = await this.transpile(blob, {
       moduleId: name,
-      filename: name
+      filename: name,
+      uri: uri,
     })
 
     new Function('System', source.code)(this)
