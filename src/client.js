@@ -31,45 +31,46 @@ export default async function() {
   // Service worker
   //
 
-  if ('serviceWorker' in navigator) {
-    try {
-      let scope = new URL('./', src)
-      let registration = await navigator.serviceWorker.register(src, {scope: scope})
-
-      let serviceWorker = do {
-        registration.installing || registration.waiting || registration.active
-      }
-
-      if (serviceWorker.state !== 'active') {
-        let swState = new Promise((resolve, reject) => {
-          const fn = (event) => {
-            serviceWorker.removeEventListener('statechange', fn)
-
-            if (event.target.state === 'redundant') {
-              reject(new Error('State changed to redundant'))
-            } else {
-              resolve(event.target)
-            }
-          }
-
-          serviceWorker.addEventListener('statechange', fn)
-        })
-
-        await swState
-      }
-
-      // Set loader base to redirect all file requests to service worker
-      // file systems
-      base = new URL('https://lively/')
-
-      console.log('[KERNEL] ServiceWorker registered and ready')
-
-    } catch(e) {
-      console.error('[KERNEL] ServiceWorker install failed:', e)
-      console.log('[KERNEL] Continue with client-only boot...')
-    }
-  } else {
+  if (!('serviceWorker' in navigator) || true) {
     console.error('[KERNEL] ServiceWorker API not available')
+    console.error('[KERNEL] Your browser is total wrong for this. I refuse to continue any further...')
+    return undefined
+  }
+
+  try {
+    let scope = new URL('./', src)
+    let registration = await navigator.serviceWorker.register(src, {scope: scope})
+
+    let serviceWorker = do {
+      registration.installing || registration.waiting || registration.active
+    }
+
+    if (serviceWorker.state !== 'active') {
+      let swState = new Promise((resolve, reject) => {
+        const fn = (event) => {
+          serviceWorker.removeEventListener('statechange', fn)
+
+          if (event.target.state === 'redundant') {
+            reject(new Error('State changed to redundant'))
+          } else {
+            resolve(event.target)
+          }
+        }
+
+        serviceWorker.addEventListener('statechange', fn)
+      })
+
+      await swState
+    }
+
+    // Set loader base to redirect all file requests to service worker
+    // file systems
+    base = new URL('https://lively/')
+
+    console.log('[KERNEL] ServiceWorker registered and ready')
+
+  } catch(e) {
+    console.error('[KERNEL] ServiceWorker install failed:', e)
     console.log('[KERNEL] Continue with client-only boot...')
   }
 
