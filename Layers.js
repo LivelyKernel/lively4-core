@@ -477,6 +477,9 @@ export class Layer {
   }
   
   // Testing
+  isLayer() {
+    return true;
+  }
   isGlobal () {
     return GlobalLayers.indexOf(this) !== -1;
   }
@@ -510,8 +513,15 @@ function basicCreate(layerName, context) {
     layerName = Symbol('COP Layer');
   if (typeof context === 'undefined')
     context = globalContextForLayers;
-  return context[layerName] ||
-    (context[layerName] = new Layer(layerName, context));
+  if (typeof context[layerName] !== 'undefined') {
+    let existing = context[layerName];
+    if (!existing.isLayer /* undefined or falsy */ || !existing.isLayer()) {
+      throw new Error('Will not overwrite existing property ' + layerName);
+    }
+    return existing;
+  } else {
+    return context[layerName] = new Layer(layerName, context);
+  }
 };
 
 export function layer(rootContext, layerName) {

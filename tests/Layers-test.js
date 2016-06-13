@@ -392,7 +392,7 @@ describe('contextjs', function () {
         });
 
         // TODO: enable test and implement the feature
-        xit('will not overwrite existing properties in objects', function () {
+        it('will not overwrite existing properties in objects', function () {
             const context = { x: 5, y() { return x; } };
             const yMethod = context.y;
             assert.throws(() => cop.layer(context, 'x'), 'existing property');
