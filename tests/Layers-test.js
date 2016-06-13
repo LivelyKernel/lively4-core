@@ -306,11 +306,11 @@ describe('contextjs', function () {
             const layer1 = this.layer1 = new Layer('LmakeLayer1');
             if (this.object1 === null)
                 this.makeObject1();
-            cop.layerObject(layer1, this.object1, {
+            layer1.refineObject(this.object1, {
                 f(a, b) {
                     currentTest.execution.push("l1.f");
                     console.log("execute layer1 function for f");
-                    return cop.proceed(a, b) + a;
+                    return proceed(a, b) + a;
                 }
             });
             layer1.toString = function() {return "Layer L1";};
@@ -322,11 +322,11 @@ describe('contextjs', function () {
             const layer2 = this.layer2 = new Layer('makeLayer2');
             if (this.object1 === null)
                 this.makeObject1();
-            cop.layerObject(layer2, this.object1, {
+            layer2.refineObject(this.object1, {
                 f(a, b) {
                     currentTest.execution.push("l2.f");
                     // console.log("execute layer2 function for f");
-                    return cop.proceed(a, b) + b;
+                    return proceed(a, b) + b;
                 },
                 g() {
                     currentTest.execution.push("l2.g");
@@ -350,7 +350,7 @@ describe('contextjs', function () {
             const layer3 = this.layer3 = new Layer('LmakeLayer3');
             if (this.object1 === null)
                 this.makeObject1();
-            cop.layerObject(layer3, this.object1, {
+            layer3.refineObject(this.object1, {
                 f(a, b) {
                     currentTest.execution.push("l3.f");
                     // console.log("execute layer3 function for f");
@@ -493,42 +493,63 @@ describe('contextjs', function () {
         });
     });
 
-    describe('layerClass', function () {
+    describe('class refinement', function () {
 
-        it('testLayerClass', function() {
+        it('returns the layer for chaining', function () {
+            const layer = new Layer();
+            class Subject {}
+            assert.strictEqual(layer, layer.refineClass(Subject, {}),
+                'refineClass should return its receiver');
+        });
+
+        // TODO: this test also uses proceed, test that separately?
+        it('changes behavior of methods', function() {
+            // given
             const layer1 = new Layer('LtestLayerClass');
-            cop.layerClass(layer1, CopExampleDummyClass, {
+            class Example {
+                constructor() {
+                    this.execution = [];
+                }
+                f(a, b) {
+                    this.execution.push("f");
+                    return a + b;
+                }
+            }
+            layer1.refineClass(Example, {
                 f(a, b) {
                     this.execution.push("l1.f");
-                    // console.log("execute layer1 function for f");
-                    return proceed() + a;
+                    return proceed(a, b) + a;
                 },
             });
-            const object1 = new CopExampleDummyClass();
-
-            assert.equal(object1.f(2,3), 0, "default result of f() with layer aware failed");
+            const object1 = new Example();
+            assert.equal(object1.f(2,3), 2 + 3, "method should not change when the layer is not active");
+            // when
             withLayers([layer1], () => {
                 const r = object1.f(2,3);
-                assert.equal(r, 2, "result of f() failed");
-                assert.equal(object1.execution.toString(), ["d.f", "l1.f", "d.f"]);
+                // then
+                assert.equal(r, 2 + 3 + 2, "method behavior should change when the layer is active");
+                assert.equal(object1.execution.toString(), ["f", "l1.f", "f"]);
             })
         });
 
-        it('testNestedLayerInClass', function() {
-            const o = new CopExampleDummyClass();
-            withLayers([DummyLayer], () => {
-                assert.equal(o.h(), 3, "outer layer broken");
-                withLayers([DummyLayer3], () => {
-                    // console.log("Layers: " + cop.currentLayers());
-                    // cop.currentLayers().forEach(function(ea){
-                    //     var p = ea[CopExampleDummyClass.prototype];
-                    //     if (p) {
-                    //         console.log("" + ea + ".h : " + p.h)
-                    //     }})
-                    assert.equal(o.h(), 4, "inner layer broken");
+        it('works with nested layer activations', function() {
+            class Example {
+                f() { return 0 }
+            }
+            const layer1 = new Layer('L1').refineClass(Example, {
+                f() { return 1 }
+            });
+            const layer2 = new Layer('L2').refineClass(Example, {
+                f() { return 2 }
+            });
+            const o = new Example();
+            assert.equal(o.f(), 0, "no layer should apply");
+            withLayers([layer1], () => {
+                assert.equal(o.f(), 1, "layer1 should apply");
+                withLayers([layer2], () => {
+                    assert.equal(o.f(), 2, "layer2 should apply");
                 })
             });
-            // console.log("LOG: " + o.log)
         });
     });
 
@@ -549,7 +570,7 @@ describe('contextjs', function () {
         it('testLayerObject', function() {
             const layer1 = new Layer('LtestLayerObject');
             const object1 = fixture().makeObject1();
-            cop.layerObject(layer1, object1, {
+            layer1.refineObject(object1, {
                 f(a, b) {
                     currentTest.execution.push("l1.f");
                     // console.log("execute layer1 function for f");
@@ -567,12 +588,12 @@ describe('contextjs', function () {
             const layer = new Layer('LtestLayerObjectsInOneLayer');
             const o1 = {f() {return 1}};
             const o2 = {f() {return 2}};
-            cop.layerObject(layer, o1, {
+            layer.refineObject(o1, {
                 f() {
                     return 3
                 },
             });
-            cop.layerObject(layer, o2, {
+            layer.refineObject(o2, {
                 f() {
                     return 4
                 },
@@ -662,7 +683,7 @@ describe('contextjs', function () {
         it('testErrorInLayeredActivation', function() {
             const layer1 = new Layer('LtestErrorInLayeredActivation')
             const object1 = fixture().makeObject1();
-            cop.layerObject(layer1, object1, {
+            layer1.refineObject(object1, {
                 f() {
                     throw {testError: true}
                 },
@@ -682,7 +703,7 @@ describe('contextjs', function () {
             const layer1 = new Layer('LtestErrorInLayeredDeactivation');
             const f = fixture();
             const object1 = f.makeObject1();
-            cop.layerObject(layer1, object1, {
+            layer1.refineObject(object1, {
                 f() {
                     throw {testError: true};
                 },
@@ -892,7 +913,7 @@ describe('contextjs', function () {
                     m2(){return "S$m2"},
                 });
 
-                cop.layerClass(DummyLayer, DummyClass, {
+                DummyLayer.refineClass(DummyClass, {
                     m1() {return "L$m1,"+proceed()}
                 });
 
@@ -918,7 +939,7 @@ describe('contextjs', function () {
                     m1() { return "S$m1a " + super.m1() + " S$m1b" }
                 }
 
-                cop.layerClass(DummyLayer, DummyClass, {
+                DummyLayer.refineClass(DummyClass, {
                     m1() { return "L$m1a " + proceed() + " L$m1b" }
                 });
 
@@ -943,11 +964,11 @@ describe('contextjs', function () {
 
                 Object.assign(DummySubclass.prototype, {m1() { return "S$m1" }});
 
-                cop.layerClass(DummyLayer, DummyClass, {
+                DummyLayer.refineClass(DummyClass, {
                     m1() {return "L$m1,"+proceed()}
                 });
 
-                cop.layerClass(DummyLayer2, DummySubclass, {
+                DummyLayer2.refineClass(DummySubclass, {
                     m1() {return "L$m1,"+proceed()}
                 });
 
@@ -1043,7 +1064,7 @@ describe('contextjs', function () {
             const o1 = new CopExampleDummyClass(),
                   o2 = new CopExampleDummyClass(),
                   layer1 = new Layer('LtestLayerStateInTwoObjects1');
-            cop.layerClass(layer1, CopExampleDummyClass, {
+            layer1.refineClass(CopExampleDummyClass, {
                 get a() { return this.l1_value },
                 set a(value) { this.l1_value = value },
             });
@@ -1061,7 +1082,7 @@ describe('contextjs', function () {
             const o2 = new CopExampleDummyClass();
             o2.toString= function(){return "[o2]"};
             const layer1 = new Layer('LtestGetterAndSetterClassInLayer');
-            cop.layerClass(layer1, CopExampleDummyClass, {
+            layer1.refineClass(CopExampleDummyClass, {
                 get a() {
                     return 10;
                 },
@@ -1371,7 +1392,7 @@ describe('contextjs', function () {
             CopProceedTestAddLayer = new Layer('CopProceedTestAddLayer')
             .refineClass(CopProceedTestClass, {
                 m(a) {
-                    return cop.proceed(a + 1)
+                    return proceed(a + 1)
                 },
             });
 

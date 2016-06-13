@@ -520,20 +520,25 @@ export class Layer {
   }
   
   // Layer installation
-  layerClass (classObject, methods) {
-    layerClass(this, classObj, methods);
+  refineClass (classObject, methods) {
+    if (!classObject || !classObject.prototype) {
+      throw new Error("ContextJS: can not refine class '" + classObject + "' in " + layer);
+    }
+    this.refineObject(classObject.prototype, methods);
     return this;
   }
-  layerObject (obj, methods) {
-    layerObject(this, classObj, methods);
-    return this;
-  }
-  refineClass (classObj, methods) {
-    layerClass(this, classObj, methods);
-    return this;
-  }
-  refineObject (obj, methods) {
-    layerObject(this, obj, methods);
+
+  // Layering objects may be a garbage collection problem, because the layers keep strong
+  // reference to the objects
+  refineObject (object, methods) {
+    // log("cop refineObject");
+
+    // Bookkeeping:
+    // typeof object.getName === 'function' && (layer._layeredFunctionsList[object] = {});
+    Object.getOwnPropertyNames(methods).forEach(function_name => {
+      // log(" layer property: " + function_name)
+      layerProperty(this, object, function_name, methods);
+    });
     return this;
   }
   unrefineObject (obj) {

@@ -17,6 +17,7 @@ module.exports = function(config) {
       'node_modules/babel-polyfill/dist/polyfill.js',
       'contextjs.js',
       'Layers.js',
+      'old-api.js',
       'tests/**/*test.js',
       'tests/**/*Tests.js'
     ],
@@ -32,7 +33,7 @@ module.exports = function(config) {
     preprocessors: {
       'contextjs.js': ['babel', 'commonjs'],
       'Layers.js': ['babel', 'commonjs'],
-      'Flatten.js': ['babel', 'commonjs'],
+      'old-api.js': ['babel', 'commonjs'],
       'tests/**/*.js': ['babel', 'commonjs'],
     },
 
