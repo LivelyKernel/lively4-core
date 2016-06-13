@@ -18,6 +18,8 @@ export default class External {
   static updateExternalModules() {
     External.copy( "https://lively-kernel.org/lively4/ContextJS/Layers.js", lively4url + "/src/external/ContextJS.js")
     External.copy( "https://d3js.org/d3.v3.js", lively4url + "/src/external/d3.v3.js")
+    
+    // External.copy( "https://marvl.infotech.monash.edu/webcola/cola.js", lively4url + "/src/external/cola.js")
   }
 
 }

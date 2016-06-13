@@ -13,8 +13,19 @@ layer(window, "ScopedD3").refineObject(d3, {
   },
   json(url, ...rest) {
     url = "" + url
-    if (!url.match(/^(https?:\/\/)|\//)) {
-      url =  ScopedD3.currentBaseURL + "/" + url 
+    console.log("json url: " + url)
+    if (!url.match(/^((https?:\/\/)|\/)/)) {
+      url =  ScopedD3.currentBaseURL + "/" + url
+      console.log("json adapt url: " + url)
+    }
+    return proceed(url, ...rest)
+  },
+  text(url, ...rest) {
+    url = "" + url
+    console.log("text url: " + url)
+    if (!url.match(/^((https?:\/\/)|\/)/)) {
+      url =  ScopedD3.currentBaseURL + "/" + url
+      console.log("text adapt url: " + url)
     }
     return proceed(url, ...rest)
   }
@@ -28,6 +39,10 @@ layer(window, "ScopedD3").refineObject(d3, {
       console.log("ignore D3")
       return
     } 
+    if (scriptElement.src && scriptElement.src.match(/cola(\.min)?\.js/)) {
+      console.log("ignore cola")
+      return
+    } 
     return proceed(scriptElement)
   },
   setPath(...rest) {
@@ -37,8 +52,11 @@ layer(window, "ScopedD3").refineObject(d3, {
   appendHtml(content) {
     console.log("append html " + this)
     if (content.match(/<script src=".*d3\.v3(.min)?\.js".*>/)) {
+      
       ScopedD3.currentBody = this.getSubmorph('#container-content');
       ScopedD3.currentBaseURL = (""+ this.getURL()).replace(/[^/]*$/,"") 
+      console.log("SCOPE D3: " +ScopedD3.currentBody)
+      
     } 
     var result = proceed(content)
   },
