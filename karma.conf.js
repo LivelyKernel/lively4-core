@@ -15,6 +15,7 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       'node_modules/babel-polyfill/dist/polyfill.js',
+      'contextjs.js',
       'Layers.js',
       'tests/**/*test.js',
       'tests/**/*Tests.js'
@@ -29,6 +30,7 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
+      'contextjs.js': ['babel', 'commonjs'],
       'Layers.js': ['babel', 'commonjs'],
       'Flatten.js': ['babel', 'commonjs'],
       'tests/**/*.js': ['babel', 'commonjs'],

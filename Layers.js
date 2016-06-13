@@ -508,7 +508,7 @@ var globalContextForLayers = {};
 
 export { globalContextForLayers as Global };
 
-function basicCreate(layerName, context) {
+export function basicCreate(layerName, context) {
   if (typeof layerName === 'undefined')
     layerName = Symbol('COP Layer');
   if (typeof context === 'undefined')
@@ -522,23 +522,6 @@ function basicCreate(layerName, context) {
   } else {
     return context[layerName] = new Layer(layerName, context);
   }
-};
-
-export function layer(rootContext, layerName) {
-  if (typeof layerName === 'undefined') {
-    // support layer('LayerName') syntax without context object
-    layerName = rootContext;
-    rootContext = undefined;
-  }
-  if (typeof rootContext === 'undefined') {
-    return basicCreate(layerName);
-  }
-  var parts = layerName.split(/\./);
-  var context = rootContext;
-  for (let i = 0; i < parts.length - 1; ++i) {
-    context = context[parts[i]];
-  }
-  return basicCreate(parts[parts.length - 1], context);
 };
 
 // Layering objects may be a garbage collection problem, because the layers keep strong
@@ -561,26 +544,6 @@ export function layerClass(layer, classObject, defs) {
     throw new Error("ContextJS: can not refine class '" + classOBject + "' in " + layer);
   }
   layerObject(layer, classObject.prototype, defs);
-};
-
-// Layer Activation
-export function withLayers(layers, func) {
-  LayerStack.push({withLayers: layers});
-  // console.log("callee: " + withLayers.callee);
-  try {
-    return func();
-  } finally {
-    LayerStack.pop();
-  }
-};
-
-export function withoutLayers(layers, func) {
-  LayerStack.push({withoutLayers: layers});
-  try {
-    return func();
-  } finally {
-    LayerStack.pop();
-  }
 };
 
 // Gloabl Layer Activation
