@@ -391,7 +391,6 @@ describe('contextjs', function () {
             assert.strictEqual(l1, l2, 'should not replace existing layers');
         });
 
-        // TODO: enable test and implement the feature
         it('will not overwrite existing properties in objects', function () {
             const context = { x: 5, y() { return x; } };
             const yMethod = context.y;
