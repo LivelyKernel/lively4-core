@@ -23,9 +23,9 @@
  */
 'use strict';
 
-import { proceed, withLayers, withoutLayers, layer } from '../contextjs.js';
+import { proceed, withLayers, withoutLayers, layer, Layer } from '../contextjs.js';
 import * as cop from '../Layers.js';
-import { Layer, LayerableObject } from '../Layers.js';
+import { LayerableObject } from '../Layers.js';
 
 const assert = chai.assert;
 
