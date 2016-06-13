@@ -1,3 +1,5 @@
+'use strict'; 
+
 import * as cop from "./Layers.js";
 
 // Layerfunction proceeding
