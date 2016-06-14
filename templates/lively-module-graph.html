@@ -41,6 +41,7 @@
         await lively.loadJavaScriptThroughDOM("cola-shortestpaths", "../LivelyCalibreViz/external/cola-shortestpaths.js");
       }
       var d3cola = cola.d3adaptor().convergenceThreshold(0.1);
+      console.log("logggg")
       
       var width = 1000, height = 1000;
 
@@ -126,17 +127,23 @@
               .enter().append("text")
               .attr("class", "label")
               .text(function (d) { return d.name.replace(/.*\//, ""); })
+              //.style("user-select", "none")
+              
+              .call(d3cola.drag)
               .on("click", (d) => {
+                if (d3.event.defaultPrevented) return; // click suppressed
                 lively.openBrowser(d.name, true);
               })
-              .call(d3cola.drag)
               .each(function (d) {
                   var b = this.getBBox();
                   var extra = 2 * margin + 2 * pad;
                   d.width = b.width + extra;
                   d.height = b.height + extra;
               });
-          label.append("title").text(function(d) { return d.name; });
+          label
+            .append("title")
+            .text(function(d) { return d.name; });
+          
 
           var lineFunction = d3.svg.line()
               .x(function (d) { return d.x; })
