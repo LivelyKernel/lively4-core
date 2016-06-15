@@ -161,7 +161,6 @@ export default class Lively {
     })
   }
 
-
   static fillTemplateStyles(root) {
      // there seems to be no <link ..> tag allowed to reference css inside of templates #Jens
      var promises = []
@@ -187,14 +186,12 @@ export default class Lively {
     })[moduleName]
   }
 
-
   static handleError(error) {
     lively.LastError = error
     if (!error) return // hmm... this is currious...
     lively.notify("Error: ", error.message, 20, () =>
     		  lively.openWorkspace("Error:" + error.message + "\nLine:" + error.lineno + " Col: " + error.colno+"\nSource:" + error.source + "\nError:" + error.stack))
   }
-
 
   static loaded() {
     // #Refactor with #ContextJS

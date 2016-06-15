@@ -252,9 +252,34 @@ export default class Container extends Morph {
 
     this.appendMarkdown(content);
   }
+  appendScript(scriptElement) {
+    var root = this.getContentRoot()
+    var script   = document.createElement("script");
+    script.type  = "text/javascript";
+    if (scriptElement.src) script.src  = scriptElement.src;
+    script.text  = scriptElement.textContent;
+    root.appendChild(script);
+  }
 
+  async appendHtml(content) {
+    if (content.match(/<script src=".*d3\.v3(.min)?\.js".*>/)) {
+      if (!window.d3) {
+        console.log("LOAD D3")
+        await lively.loadJavaScriptThroughDOM("d3", "src/external/d3.v3.js")
+      }
+    
+      if (!window.ScopedD3) {
+        console.log("LOAD D3 Adaption Layer")
+        await System.import("templates/classes/ContainerScopedD3.js")   
+        // return this.appendHtml(content) // try again
+      }
+    }
 
-  appendHtml(content) {
+    if (content.match(/<script src=".*cola(\.min)?\.js".*>/)) {
+        console.log("LOAD Cola")
+        await lively.loadJavaScriptThroughDOM("cola", "src/external/cola.js")
+    }
+    
     //  var content = this.sourceContent
     try {
       var root = this.getContentRoot()
@@ -266,12 +291,14 @@ export default class Container extends Morph {
       lively.html.fixLinks(nodes, this.getDir(),
         (path) => this.followPath(path));
       nodes.forEach((ea) => {
-        // console.log("append child: " + ea.textContent)
-        // root.appendChild(ea);
-        $(root).append(ea); // for script tags
+        if (ea.tagName == "SCRIPT") {
+          this.appendScript(ea)
+        } else {
+          root.appendChild(ea);
+        }
       });
     } catch(e) {
-      console.log("Could not append html:" + content);
+      console.log("Could not append html:" + content.slice(0,200) +"..." +" ERROR:", e);
     }
   }
 
@@ -438,21 +465,21 @@ export default class Container extends Morph {
       var format = path.replace(/.*\./,"")
       if (format == "html")  {
         this.sourceContent = content
-        if (render) this.appendHtml(content)
+        if (render) return this.appendHtml(content)
       } else if (format == "md") {
         this.sourceContent = content
-        if (render) this.appendMarkdown(content)
+        if (render) return this.appendMarkdown(content)
       } else if (format == "livelymd") {
         this.sourceContent = content
-        if (render) this.appendLivelyMD(content)
+        if (render) return this.appendLivelyMD(content)
       } else if (format.match(/(png)|(jpe?g)/)) {
-        if (render) this.appendHtml("<img src='" + url +"'>")
+        if (render) return this.appendHtml("<img src='" + url +"'>")
       } else if (format == "pdf") {
-        if (render) this.appendHtml('<object style="width:21cm;height:29cm" data="'
+        if (render) return this.appendHtml('<object style="width:21cm;height:29cm" data="'
           + url +'" type="application/pdf"></object>')
       } else {
         this.sourceContent = content
-        if (render) this.appendHtml("<pre>" + content +"</pre>")
+        if (render) return this.appendHtml("<pre>" + content +"</pre>")
       }
     }).catch(function(err){
       console.log("Error: ", err)
@@ -664,8 +691,9 @@ export default class Container extends Morph {
 
         this.showCancelAndSave()
     
-        aceComp.targetModule = "" + url // for editing
-
+        if ((""+url).match(/\.js$/)) {
+          aceComp.targetModule = "" + url // for editing
+        }
         setTimeout(resolve, 1000) // Promise from AceEditor needed here... #Jens #TODO
         
         // comp.loadFile() // ALT: Load the file again?
