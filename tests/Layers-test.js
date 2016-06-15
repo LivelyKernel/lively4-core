@@ -23,16 +23,17 @@
  */
 'use strict';
 
+import { proceed, withLayers, withoutLayers, layer, Layer } from '../contextjs.js';
 import * as cop from '../Layers.js';
-import { Layer, LayerableObject } from '../Layers.js';
+import { LayerableObject } from '../Layers.js';
 
-let assert = chai.assert;
+const assert = chai.assert;
 
 // COP Example from: Hirschfeld, Costanza, Nierstrasz. 2008.
 // Context-oriented Programming. JOT)
-let DummyLayer = cop.create("DummyLayer");
-let DummyLayer2 = cop.create("DummyLayer2");
-let DummyLayer3 = cop.create("DummyLayer3");
+const DummyLayer = new Layer("DummyLayer");
+const DummyLayer2 = new Layer("DummyLayer2");
+const DummyLayer3 = new Layer("DummyLayer3");
 
 
 class CopExampleDummyClass {
@@ -77,7 +78,7 @@ DummyLayer.refineClass(CopExampleDummyClass, {
     f(a, n) {
         this.execution.push("ld.f");
         //console.log("execute dummy layer f(" + a, ", " + b + ")");
-        return cop.proceed() + 100;
+        return proceed() + 100;
     },
 
     get e() {
@@ -89,11 +90,11 @@ DummyLayer.refineClass(CopExampleDummyClass, {
     },
 
     get m() {
-        return cop.proceed() + " World";
+        return proceed() + " World";
     },
 
     h() {
-        // console.log("D$h old(" + cop.proceed() +")");
+        // console.log("D$h old(" + proceed() +")");
         return 3;
     },
 
@@ -106,7 +107,7 @@ DummyLayer.refineClass(CopExampleDummyClass, {
     },
 
     m2() {
-        return "D$m2," + cop.proceed();
+        return "D$m2," + proceed();
     },
 
     newFoo() {
@@ -117,13 +118,13 @@ DummyLayer.refineClass(CopExampleDummyClass, {
 DummyLayer2.refineClass(CopExampleDummyClass, {
     f(a, n) {
         this.execution.push("ld2.f");
-        return cop.proceed() + 1000;
+        return proceed() + 1000;
     }
 });
 
 DummyLayer3.refineClass(CopExampleDummyClass, {
     h() {
-        // console.log("D3$h old(" + cop.proceed() +")");
+        // console.log("D3$h old(" + proceed() +")");
         return 4;
     }
 });
@@ -155,11 +156,11 @@ DummyLayer.refineClass(CopExampleDummySubclass, {
     },
 
     m1() {
-        return cop.proceed() + 1;
+        return proceed() + 1;
     },
 
     fooo() {
-        let proc =  cop.proceed();
+        let proc =  proceed();
         return proc+"-layer-"+this.newFoo();
     }
 });
@@ -168,15 +169,15 @@ class CopExampleSecondDummySublass extends CopExampleDummyClass { }
 
 DummyLayer.refineClass(CopExampleSecondDummySublass, {
     m1() {
-        return cop.proceed() + 100;
+        return proceed() + 100;
     }
 });
 
 
 describe('COP example', function () {
 
-    const AddressLayer = cop.create("AddressLayer");
-    const EmploymentLayer = cop.create("EmploymentLayer");
+    const AddressLayer = new Layer("AddressLayer");
+    const EmploymentLayer = new Layer("EmploymentLayer");
 
     class CopExamplePerson {
 
@@ -198,13 +199,13 @@ describe('COP example', function () {
 
     AddressLayer.refineClass(CopExamplePerson, {
         print() {
-            return cop.proceed() + "; Address: " + this.address;
+            return proceed() + "; Address: " + this.address;
         }
     });
 
     EmploymentLayer.refineClass(CopExamplePerson, {
         print() {
-            return cop.proceed() + "; [Employer] " + this.employer.print();
+            return proceed() + "; [Employer] " + this.employer.print();
         }
     });
 
@@ -227,7 +228,7 @@ describe('COP example', function () {
 
     AddressLayer.refineClass(CopExampleEmployer, {
         print() {
-            return cop.proceed() + "; Address: " + this.address;
+            return proceed() + "; Address: " + this.address;
         },
     });
 
@@ -241,15 +242,15 @@ describe('COP example', function () {
 
         assert.equal(person.print(), "Name: " + name, "toString without a layer is broken");
 
-        cop.withLayers([AddressLayer], () => {
+        withLayers([AddressLayer], () => {
             assert.equal(person.print(), "Name: " + name + "; Address: " + address, "toString with address layer is broken");
         });
 
-        cop.withLayers([EmploymentLayer], () => {
+        withLayers([EmploymentLayer], () => {
             assert.equal(person.print(), "Name: " + name + "; [Employer] Name: " + employer_name, "toString with employment layer is broken");
         });
 
-        cop.withLayers([AddressLayer, EmploymentLayer], () => {
+        withLayers([AddressLayer, EmploymentLayer], () => {
             assert.equal(person.print(), "Name: " + name +  "; Address: " + address +
                 "; [Employer] Name: " + employer_name + "; Address: " + employer_address,
                 "toString with employment layer is broken");
@@ -258,7 +259,7 @@ describe('COP example', function () {
 
 });
 
-describe('cop', function () {
+describe('contextjs', function () {
     let currentTest;
 
     beforeEach(function() {
@@ -276,224 +277,262 @@ describe('cop', function () {
         cop.resetLayerStack();
     });
 
-    let object1;
-    function makeObject1() {
-        object1 = {
-            myString: "I am an object",
-            f(a, b) {
-                currentTest.execution.push("d.f");
-                // console.log("execute default f(" + a, ", " + b + ")");
-                return 0;
-            },
-            g() {
-                currentTest.execution.push("d.g");
-                // console.log("execute default g");
-                return "Hello";
-            },
-            print() {
-                return this.myString;
-            },
-            toString() {
-                return "object1"
-            }
+    function fixture() { return {
+        object1: null,
+        makeObject1() {
+            return this.object1 = {
+                myString: "I am an object",
+                f(a, b) {
+                    currentTest.execution.push("d.f");
+                    // console.log("execute default f(" + a, ", " + b + ")");
+                    return 0;
+                },
+                g() {
+                    currentTest.execution.push("d.g");
+                    // console.log("execute default g");
+                    return "Hello";
+                },
+                print() {
+                    return this.myString;
+                },
+                toString() {
+                    return "object1"
+                }
+            };
+        },
 
-        };
-    };
+        layer1: null,
+        makeLayer1() {
+            const layer1 = this.layer1 = new Layer('LmakeLayer1');
+            if (this.object1 === null)
+                this.makeObject1();
+            cop.layerObject(layer1, this.object1, {
+                f(a, b) {
+                    currentTest.execution.push("l1.f");
+                    console.log("execute layer1 function for f");
+                    return cop.proceed(a, b) + a;
+                }
+            });
+            layer1.toString = function() {return "Layer L1";};
+            return layer1;
+        },
 
-    let layer1;
-    function makeLayer1() {
-        layer1 = cop.create('LmakeLayer1');
-        cop.layerObject(layer1, object1, {
-            f(a, b) {
-                currentTest.execution.push("l1.f");
-                console.log("execute layer1 function for f");
-                return cop.proceed(a, b) + a;
-            }
+        layer2: null,
+        makeLayer2() {
+            const layer2 = this.layer2 = new Layer('makeLayer2');
+            if (this.object1 === null)
+                this.makeObject1();
+            cop.layerObject(layer2, this.object1, {
+                f(a, b) {
+                    currentTest.execution.push("l2.f");
+                    // console.log("execute layer2 function for f");
+                    return cop.proceed(a, b) + b;
+                },
+                g() {
+                    currentTest.execution.push("l2.g");
+                    // console.log("execute default g");
+                    return proceed() + " World";
+                }
+            });
+            layer2.toString = function() {return "Layer L2"};
+            return layer2;
+        },
+
+        emptyLayer: null,
+        makeEmptyLayer() {
+            const emptyLayer = this.emptyLayer = new Layer('LEmpty');
+            emptyLayer.toString = function() {return "Empty Layer"};
+            return emptyLayer;
+        },
+
+        layer3: null,
+        makeLayer3() {
+            const layer3 = this.layer3 = new Layer('LmakeLayer3');
+            if (this.object1 === null)
+                this.makeObject1();
+            cop.layerObject(layer3, this.object1, {
+                f(a, b) {
+                    currentTest.execution.push("l3.f");
+                    // console.log("execute layer3 function for f");
+                    return proceed() * 10;
+                }
+            });
+            layer3.toString = function() {return "Layer L3"};
+            return layer3;
+        },
+    }};
+
+    describe('layer function', function () {
+        it('creates new layers if they do not exist already', function () {
+            // assert(typeof cop.NamedLayers.NewLayer === 'undefined',
+            //        'NewLayer already existed prior to the test setup');
+            assert(layer('NewLayer') instanceof Layer);
         });
-        layer1.toString = function() {return "Layer L1";};
-    }
 
-    let layer2;
-    function makeLayer2() {
-        layer2 = cop.create('makeLayer2');
-        cop.layerObject(layer2, object1, {
-            f(a, b) {
-                currentTest.execution.push("l2.f");
-                // console.log("execute layer2 function for f");
-                return cop.proceed(a, b) + b;
-            },
-            g() {
-                currentTest.execution.push("l2.g");
-                // console.log("execute default g");
-                return cop.proceed() + " World";
-            }
+        it('retrieves existing layers by name', function () {
+            const l1 = layer('LayerCreationTestLayer');
+            const l2 = layer('LayerCreationTestLayer');
+            assert.strictEqual(l1, l2,
+                'layer function should return same Layer for the same name');
         });
-        layer2.toString = function() {return "Layer L2"};
-    }
 
-    let emptyLayer;
-    function makeEmptyLayer() {
-        emptyLayer = cop.create('LEmpty');
-        emptyLayer.toString = function() {return "Empty Layer"};
-    }
-
-    let layer3;
-    function makeLayer3() {
-        layer3 = cop.create('LmakeLayer3');;
-        cop.layerObject(layer3, object1, {
-            f(a, b) {
-                currentTest.execution.push("l3.f");
-                // console.log("execute layer3 function for f");
-                return cop.proceed() * 10;
-            }
+        it('does not know about manually created Layers', function () {
+            const l1 = new Layer('IndependentLayerCreationTestLayer');
+            const l2 = layer('IndependentLayerCreationTestLayer');
+            assert.notStrictEqual(l1, l2,
+               'the Layer constructor should not affect the layer function');
         });
-        layer3.toString = function() {return "Layer L3"};
-    }
 
-    it('can create a Layer', function() {
-        cop.create("DummyLayer2");
-        assert.isDefined(DummyLayer2);
-        assert(DummyLayer2.toString(), "DummyLayer2");
+        it('can create layers as properties of other objects', function () {
+            const context = {};
+            const l1 = layer(context, "TestLayerInContextObject");
+            assert.isDefined(context.TestLayerInContextObject);
+            assert.instanceOf(context.TestLayerInContextObject, Layer);
+            const l2 = layer(context, "TestLayerInContextObject");
+            assert.strictEqual(l1, l2, 'should not replace existing layers');
+        });
+
+        it('will not overwrite existing properties in objects', function () {
+            const context = { x: 5, y() { return x; } };
+            const yMethod = context.y;
+            assert.throws(() => layer(context, 'x'), 'existing property');
+            assert.equal(context.x, 5, 'context object should not be modified');
+            assert.throws(() => layer(context, 'y'), 'existing property');
+            assert.strictEqual(context.y, yMethod, 'context object should not be modified');
+        });
+
+        it('stores layers in objects separately from those outside of objects', function () {
+            const context = {};
+            const l1 = layer(context, "TestLayerInContextObject");
+            const l2 = layer("TestLayerInContextObject");
+            assert.notStrictEqual(l1, l2,
+                'layers in objects should be independent from those outside');
+        });
     });
-
-    it('can create a Layer in a context object', function() {
-        const context = {};
-        cop.create(context, "DummyLayer3");
-        assert.isDefined(context.DummyLayer3);
-        assert(context.DummyLayer3.toString(), "DummyLayer3");
-    });
-
 
     it('can inspect the current layers', function() {
-        makeObject1();
-        makeLayer1();
-        cop.withLayers([layer1], function() {
+        const layer1 = fixture().makeLayer1();
+        withLayers([layer1], function() {
             assert(layer1, "no layer1");
             assert(cop.currentLayers()[0], "currentLayers failed");
         });
     });
 
-    it('testOneLayer', function() {
-        makeObject1();
-        makeLayer1();
-        assert.equal(object1.f(2,3), 0, "default result of f() failed");
-        cop.withLayers([layer1], () => {
-            const r = object1.f(2,3);
-            assert.equal(r, 2, "result of f() failed");
-            assert.equal(currentTest.execution.toString(), [ "d.f", "l1.f", "d.f"]);
+    describe('withLayers', function () {
+
+        it('testOneLayer', function() {
+            const f = fixture();
+            const object1 = f.makeObject1();
+            const layer1 = f.makeLayer1();
+            assert.equal(object1.f(2,3), 0, "default result of f() failed");
+            withLayers([layer1], () => {
+                const r = object1.f(2,3);
+                assert.equal(r, 2, "result of f() failed");
+                assert.equal(currentTest.execution.toString(), [ "d.f", "l1.f", "d.f"]);
+            });
         });
 
-      });
-
-    it('testTwoLayers', function() {
-          makeObject1();
-          makeLayer1();
-          makeLayer2();
-        cop.withLayers([layer1, layer2], function() {
-            assert.equal(object1.f(3,4), 7, "result of f() failed");
-            assert.equal(currentTest.execution.toString(), ["l2.f", "l1.f", "d.f"]);
-        });
-      });
-
-    it('testTwoLayerInverse', function() {
-          makeObject1();
-          makeLayer1();
-          makeLayer2();
-        cop.withLayers([layer2, layer1], function() {
-            object1.f();
-            assert.equal(currentTest.execution.toString(), ["l1.f", "l2.f", "d.f"]);
-        });
-      });
-
-    it('testThreeLayers', function() {
-          makeObject1();
-          makeLayer1();
-          makeLayer2();
-          makeLayer3();
-        cop.withLayers([layer1, layer2, layer3], () => {
-            object1.f();
-            const r = object1.g();
-            assert.equal(r, "Hello World", "result of g() is wrong");
-            assert.equal(currentTest.execution.toString(), ["l3.f", "l2.f","l1.f", "d.f", "l2.g", "d.g"]);
-        });
-      });
-
-    it('testTwoLayersAndEmpty', function() {
-          makeObject1();
-          makeEmptyLayer();
-          makeLayer1();
-          makeLayer2();
-        cop.withLayers([layer1, emptyLayer, layer2], () => {
-            object1.f();
-            assert.equal(currentTest.execution.toString(), ["l2.f","l1.f", "d.f"]);
+        it('testTwoLayers', function() {
+            const f = fixture();
+            const object1 = f.makeObject1();
+            const layer1 = f.makeLayer1();
+            const layer2 = f.makeLayer2();
+            withLayers([layer1, layer2], function() {
+                assert.equal(object1.f(3,4), 7, "result of f() failed");
+                assert.equal(currentTest.execution.toString(), ["l2.f", "l1.f", "d.f"]);
+            });
         });
 
-      });
-
-    it('testHTMLLayerExample', function() {
-        makeObject1();
-        const htmlLayer = cop.create('LmakeHtmlLayer');
-        htmlLayer.refineObject(object1, {
-            print() { return '<b>' + cop.proceed() + '</b>' }
+        it('testTwoLayerInverse', function() {
+            const f = fixture();
+            const object1 = f.makeObject1();
+            const layer1 = f.makeLayer1();
+            const layer2 = f.makeLayer2();
+            withLayers([layer2, layer1], function() {
+                object1.f();
+                assert.equal(currentTest.execution.toString(), ["l1.f", "l2.f", "d.f"]);
+            });
         });
-        cop.withLayers([htmlLayer], () => {
-            assert.equal(object1.print(), "<b>"+object1.myString + "</b>", "html print does not work")
+
+        it('testThreeLayers', function() {
+            const f = fixture();
+            const object1 = f.makeObject1();
+            const layer1 = f.makeLayer1();
+            const layer2 = f.makeLayer2();
+            const layer3 = f.makeLayer3();
+            withLayers([layer1, layer2, layer3], () => {
+                object1.f();
+                const r = object1.g();
+                assert.equal(r, "Hello World", "result of g() is wrong");
+                assert.equal(currentTest.execution.toString(), ["l3.f", "l2.f","l1.f", "d.f", "l2.g", "d.g"]);
+            });
+        });
+
+        it('testTwoLayersAndEmpty', function() {
+            const f = fixture();
+            const object1 = f.makeObject1();
+            const emptyLayer = f.makeEmptyLayer();
+            const layer1 = f.makeLayer1();
+            const layer2 = f.makeLayer2();
+            withLayers([layer1, emptyLayer, layer2], () => {
+                object1.f();
+                assert.equal(currentTest.execution.toString(), ["l2.f","l1.f", "d.f"]);
+            });
+        });
+
+        it('testHTMLLayerExample', function() {
+            const f = fixture();
+            const object1 = f.makeObject1();
+            const htmlLayer = new Layer('LmakeHtmlLayer');
+            htmlLayer.refineObject(object1, {
+                print() { return '<b>' + proceed() + '</b>' }
+            });
+            withLayers([htmlLayer], () => {
+                assert.equal(object1.print(), "<b>"+object1.myString + "</b>", "html print does not work")
+            });
         });
     });
 
-    it('testLayerClass', function() {
-        const layer1 = cop.create('LtestLayerClass');
-        cop.layerClass(layer1, CopExampleDummyClass, {
-            f(a, b) {
-                this.execution.push("l1.f");
-                // console.log("execute layer1 function for f");
-                return cop.proceed() + a;
-            },
-        });
-        const object1 = new CopExampleDummyClass();
+    describe('layerClass', function () {
 
-        assert.equal(object1.f(2,3), 0, "default result of f() with layer aware failed");
-        cop.withLayers([layer1], () => {
-            const r = object1.f(2,3);
-            assert.equal(r, 2, "result of f() failed");
-            assert.equal(object1.execution.toString(), ["d.f", "l1.f", "d.f"]);
-        })
-    });
+        it('testLayerClass', function() {
+            const layer1 = new Layer('LtestLayerClass');
+            cop.layerClass(layer1, CopExampleDummyClass, {
+                f(a, b) {
+                    this.execution.push("l1.f");
+                    // console.log("execute layer1 function for f");
+                    return proceed() + a;
+                },
+            });
+            const object1 = new CopExampleDummyClass();
 
-    it('testNestedLayerInClass', function() {
-        const o = new CopExampleDummyClass();
-        cop.withLayers([DummyLayer], () => {
-            assert.equal(o.h(), 3, "outer layer broken");
-            cop.withLayers([DummyLayer3], () => {
-                // console.log("Layers: " + cop.currentLayers());
-                // cop.currentLayers().each(function(ea){
-                //     var p = ea[CopExampleDummyClass.prototype];
-                //     if (p) {
-                //         console.log("" + ea + ".h : " + p.h)
-                //     }})
-                assert.equal(o.h(), 4, "inner layer broken");
+            assert.equal(object1.f(2,3), 0, "default result of f() with layer aware failed");
+            withLayers([layer1], () => {
+                const r = object1.f(2,3);
+                assert.equal(r, 2, "result of f() failed");
+                assert.equal(object1.execution.toString(), ["d.f", "l1.f", "d.f"]);
             })
         });
-        // console.log("LOG: " + o.log)
+
+        it('testNestedLayerInClass', function() {
+            const o = new CopExampleDummyClass();
+            withLayers([DummyLayer], () => {
+                assert.equal(o.h(), 3, "outer layer broken");
+                withLayers([DummyLayer3], () => {
+                    // console.log("Layers: " + cop.currentLayers());
+                    // cop.currentLayers().forEach(function(ea){
+                    //     var p = ea[CopExampleDummyClass.prototype];
+                    //     if (p) {
+                    //         console.log("" + ea + ".h : " + p.h)
+                    //     }})
+                    assert.equal(o.h(), 4, "inner layer broken");
+                })
+            });
+            // console.log("LOG: " + o.log)
+        });
     });
 
-    it('testLayerObject', function() {
-        const layer1 = cop.create('LtestLayerObject');
-        makeObject1();
-        cop.layerObject(layer1, object1, {
-            f(a, b) {
-                currentTest.execution.push("l1.f");
-                // console.log("execute layer1 function for f");
-                return cop.proceed() + a;
-            },
-        });
-        cop.withLayers([layer1], () => {
-            const r = object1.f(2);
-            assert.equal(r, 2, "result of f() failed");
-            assert.equal(currentTest.execution.toString(), ["l1.f", "d.f"]);
-        });
-      });
-
+    // FIXME: this tests ECMAScript, not ContextJS
     // How to lookup objects in layers
     it('testObjectAsDictionaryKeys', function() {
         // it seems that the string value is used as the "key" in dictionary lookups
@@ -505,32 +544,53 @@ describe('cop', function () {
         assert.equal(d[a], 1, "objects as keys are broken")
     });
 
-    it('testLayerObjectsInOneLayer', function() {
-        const layer = cop.create('LtestLayerObjectsInOneLayer');
-        const o1 = {f() {return 1}};
-        const o2 = {f() {return 2}};
-        cop.layerObject(layer, o1, {
-            f() {
-                return 3
-            },
+    describe('layerObject', function () {
+        // TODO: why do we need this syntax in addition to Layer.prototype.refineObject?
+        it('testLayerObject', function() {
+            const layer1 = new Layer('LtestLayerObject');
+            const object1 = fixture().makeObject1();
+            cop.layerObject(layer1, object1, {
+                f(a, b) {
+                    currentTest.execution.push("l1.f");
+                    // console.log("execute layer1 function for f");
+                    return proceed() + a;
+                },
+            });
+            withLayers([layer1], () => {
+                const r = object1.f(2);
+                assert.equal(r, 2, "result of f() failed");
+                assert.equal(currentTest.execution.toString(), ["l1.f", "d.f"]);
+            });
         });
-        cop.layerObject(layer, o2, {
-            f() {
-                return 4
-            },
-        });
-        cop.withLayers([layer], () => {
-            assert.equal(o1.f(), 3, "result of o1.f() failed");
-            assert.equal(o2.f(), 4, "result of o2.f() failed");
+
+        it('testLayerObjectsInOneLayer', function() {
+            const layer = new Layer('LtestLayerObjectsInOneLayer');
+            const o1 = {f() {return 1}};
+            const o2 = {f() {return 2}};
+            cop.layerObject(layer, o1, {
+                f() {
+                    return 3
+                },
+            });
+            cop.layerObject(layer, o2, {
+                f() {
+                    return 4
+                },
+            });
+            withLayers([layer], () => {
+                assert.equal(o1.f(), 3, "result of o1.f() failed");
+                assert.equal(o2.f(), 4, "result of o2.f() failed");
+            });
         });
     });
 
     it('testLayerMethod', function() {
+        // TODO: why do we need this syntax in addition to refineObject?
         const object1 = {f() {return 0}, g() {}},
-            layer1 = cop.create('LtestLayerMethod');
+            layer1 = new Layer('LtestLayerMethod');
 
         cop.layerMethod(layer1, object1, "f", function(){
-            return cop.proceed() + 1});
+            return proceed() + 1});
 
         assert(cop.getLayerDefinitionForObject(layer1, object1).f, "f did not get stored");
 
@@ -541,107 +601,103 @@ describe('cop', function () {
     });
 
     it('stores partial methods for class prototypes', function() {
-        // TODO: implementation detail?
+        // FIXME: implementation detail?
         assert(cop.getLayerDefinitionForObject(DummyLayer, CopExampleDummyClass.prototype).f, "f did not end up in DummyLayer");
         assert(cop.getLayerDefinitionForObject(DummyLayer, CopExampleDummyClass.prototype), "DummyLayer2 has no partial class");
         assert(cop.getLayerDefinitionForObject(DummyLayer, CopExampleDummyClass.prototype).h, "DummyLayer2 has no method for h");
     });
 
-    it('testLayerActivation', function() {
-        const layer1 = cop.create('LtestLayerActivation');
-        const oldLength = cop.currentLayers().length;
-        cop.withLayers([layer1], () => {
-            assert.equal(cop.currentLayers().length, oldLength + 1, "layer1 is not actived");
-        });
-        assert.equal(cop.currentLayers().length, oldLength, "layer1 is not deactived");
-    });
+    describe('dynamically scoped layer activation', function () {
 
-    it('testNestedLayerActivation', function() {
-        const layer1 = cop.create('LtestNested1'),
-              layer2 = cop.create('LtestNested2');
-        assert.equal(cop.currentLayers().length, 0, "there are active layers where there shouldn't be ")
-        cop.withLayers([layer1], () => {
-            assert.equal(cop.currentLayers().length, 1, "layer1 is not active");
-            cop.withLayers([layer2], () => {
-                assert.equal(cop.currentLayers().length, 2, "layer2 is not active");
+        it('testNestedLayerActivation', function() {
+            const layer1 = new Layer('LtestNested1'),
+                layer2 = new Layer('LtestNested2');
+            assert.equal(cop.currentLayers().length, 0, "there are active layers where there shouldn't be ")
+            withLayers([layer1], () => {
+                assert.equal(cop.currentLayers().length, 1, "layer1 is not active");
+                assert.include(cop.currentLayers(), layer1, "layer1 is not active");
+                withLayers([layer2], () => {
+                    assert.equal(cop.currentLayers().length, 2, "layer2 is not active");
+                });
+                assert.equal(cop.currentLayers().length, 1, "layer2 is not deactivated");
             });
-            assert.equal(cop.currentLayers().length, 1, "layer2 is not deactivated");
+            assert.equal(cop.currentLayers().length, 0, "layer1 is not deactivated");
         });
-        assert.equal(cop.currentLayers().length, 0, "layer1 is not deactivated");
-    });
 
-    it('testNestedLayerDeactivationAndActivation', function() {
-        const layer1 = cop.create('l1'),
-              layer2 = cop.create('l2'),
-              layer3 = cop.create('l3');
-        cop.withLayers([layer1, layer2, layer3], () => {
-            cop.withoutLayers([layer2], () => {
-                assert.equal(cop.currentLayers().toString(), ["l1","l3"].toString());
-                cop.withLayers([layer2], () => {
-                    assert.equal(cop.currentLayers().toString(), ["l1","l3","l2"].toString());
+        it('testNestedLayerDeactivationAndActivation', function() {
+            const layer1 = new Layer('l1'),
+                layer2 = new Layer('l2'),
+                layer3 = new Layer('l3');
+            withLayers([layer1, layer2, layer3], () => {
+                withoutLayers([layer2], () => {
+                    assert.equal(cop.currentLayers().toString(), ["l1","l3"].toString());
+                    withLayers([layer2], () => {
+                        assert.equal(cop.currentLayers().toString(), ["l1","l3","l2"].toString());
+                    });
                 });
             });
         });
-    });
 
-    it('testDuplicateLayerActivation', function() {
-        const layer1 = cop.create('LtestDup');
-        cop.withLayers([layer1], () => {
-            cop.withLayers([layer1], () => {
-                assert.equal(cop.currentLayers().length, 1, "layer1 activated twice");
+        it('testDuplicateLayerActivation', function() {
+            const layer1 = new Layer('LtestDup');
+            withLayers([layer1], () => {
+                withLayers([layer1], () => {
+                    assert.equal(cop.currentLayers().length, 1, "layer1 activated twice");
+                });
+                assert.equal(cop.currentLayers().length, 1, "layer1 is deactivated");
             });
-            assert.equal(cop.currentLayers().length, 1, "layer1 is deactivated");
         });
-    });
 
-    it('testLayerDeactivation', function() {
-        const layer1 = cop.create('LtestLayerDeactivation1');
-        const layer2 = cop.create('LtestLayerDeactivation2');
-        cop.withLayers([layer1, layer2], () => {
-            cop.withoutLayers([layer2], () => {
-                assert.equal(cop.currentLayers().length, 1, "layer2 is not deactiveated");
+        it('testLayerDeactivation', function() {
+            const layer1 = new Layer('LtestLayerDeactivation1');
+            const layer2 = new Layer('LtestLayerDeactivation2');
+            withLayers([layer1, layer2], () => {
+                withoutLayers([layer2], () => {
+                    assert.equal(cop.currentLayers().length, 1, "layer2 is not deactiveated");
+                });
+                assert.equal(cop.currentLayers().length, 2, "layer2 is not reactivated");
             });
-            assert.equal(cop.currentLayers().length, 2, "layer2 is not reactivated");
         });
-    });
 
-    it('testErrorInLayeredActivation', function() {
-        const layer1 = cop.create('LtestErrorInLayeredActivation')
-        makeObject1();
-        cop.layerObject(layer1, object1, {
-            f() {
-                throw {testError: true}
-            },
-        });
-        try {
-            cop.withLayers([layer1], () => {
-                object1.f();
+        it('testErrorInLayeredActivation', function() {
+            const layer1 = new Layer('LtestErrorInLayeredActivation')
+            const object1 = fixture().makeObject1();
+            cop.layerObject(layer1, object1, {
+                f() {
+                    throw {testError: true}
+                },
             });
-        } catch (e) {
-            if (!e.testError) throw e;
-            assert.equal(cop.currentLayers().length, 0, "layer1 is still active");
-
-        }
-    });
-
-    it('testErrorInLayeredDeactivation', function() {
-        const layer1 = cop.create('LtestErrorInLayeredDeactivation');
-        makeObject1();
-        cop.layerObject(layer1, object1, {
-            f() {
-                throw {testError: true};
-            },
-        });
-        cop.withLayers([layer1], () => {
             try {
-                cop.withoutLayers([layer1], () => {
-                    assert.equal(cop.currentLayers().length, 0, "layer1 deactivation is not active");
+                withLayers([layer1], () => {
                     object1.f();
                 });
             } catch (e) {
                 if (!e.testError) throw e;
-            };
-            assert.equal(cop.currentLayers().length, 1, "layer1 deactivation is still active");
+                assert.equal(cop.currentLayers().length, 0, "layer1 is still active");
+
+            }
+        });
+
+        it('testErrorInLayeredDeactivation', function() {
+            const layer1 = new Layer('LtestErrorInLayeredDeactivation');
+            const f = fixture();
+            const object1 = f.makeObject1();
+            cop.layerObject(layer1, object1, {
+                f() {
+                    throw {testError: true};
+                },
+            });
+            withLayers([layer1], () => {
+                try {
+                    withoutLayers([layer1], () => {
+                        assert.equal(cop.currentLayers().length, 0, "layer1 deactivation is not active");
+                        object1.f();
+                    });
+                } catch (e) {
+                    if (!e.testError) throw e;
+                };
+                assert.equal(cop.currentLayers().length, 1, "layer1 deactivation is still active");
+            });
         });
     });
 
@@ -651,6 +707,7 @@ describe('cop', function () {
         const layer2 = {toString(){return "l2"}};
         const layer3 = {toString(){return "l3"}};
 
+        // FIXME: implementation detail?
         let stack = [{}];
         assert.equal(cop.composeLayers(stack.slice(0)).toString(), [].toString());
         assert.equal(cop.composeLayers([{}, {withLayers: [layer1]}]).toString(), ["l1"].toString());
@@ -662,6 +719,7 @@ describe('cop', function () {
               layer2 = {toString(){return "l2"}},
               layer3 = {toString(){return "l3"}};
 
+        // FIXME: implementation detail?
         let stack = [{}];
         assert.equal(
             cop.composeLayers([
@@ -672,156 +730,125 @@ describe('cop', function () {
     });
 
     it('testThisReferenceInLayeredMethod', function(){
-        const layer1 = cop.create('testThisReferenceInLayeredMethod')
-        makeObject1();
+        const layer1 = new Layer('testThisReferenceInLayeredMethod')
+        const object1 = fixture().makeObject1();
         layer1.refineObject(object1, {
             f() {
                 assert(object1 === this, "this is not object1 in layer");
             }
         });
-        cop.withLayers([layer1], function() {
+        withLayers([layer1], function() {
             object1.f();
         });
     });
 
-    it('testGlobalLayers', function() {
-        const layer1 = {name: "Layer1"};
-        const layer2 = {name: "Layer2"};
-        cop.enableLayer(layer1);
-        cop.enableLayer(layer2);
-        // TODO: implementation detail? GlobalLayers[...]
-        assert.strictEqual(cop.GlobalLayers[0], layer1, "layer1 not global");
-        assert.strictEqual(cop.GlobalLayers[1], layer2, "layer2 not global");
-        cop.disableLayer(layer1);
-        assert.strictEqual(cop.GlobalLayers[0], layer2, "layer1 not removed from global");
-        cop.disableLayer(layer2);
-        assert.strictEqual(cop.GlobalLayers.length, 0, "global layers still active");
-    });
-
-    it('testEnableDisableLayer', function() {
-        const layer1 = cop.create("Layer1");
-        cop.enableLayer(layer1);
-        assert.equal(cop.currentLayers().length, 1, "layer 1 is not enabled");
-        // console.log("current layers: " + cop.currentLayers())
-        cop.disableLayer(layer1);
-        assert(!cop.LayerStack[cop.LayerStack.length - 1].composition, "there is a cached composition!");
-        assert.equal(cop.currentLayers().length, 0, "layer 1 is not disabeled");
-    });
-
-
-    it('testEnableLayersInContext', function() {
-        const layer1 = cop.create("Layer1"),
-              layer2 = cop.create("Layer2");
-        cop.withLayers([layer2], () => {
+    describe('global layer activation', function () {
+        it('testGlobalLayers', function() {
+            const layer1 = {name: "Layer1"};
+            const layer2 = {name: "Layer2"};
             cop.enableLayer(layer1);
-            assert.equal(cop.currentLayers().length, 2, "layer 2 is not enabled");
+            cop.enableLayer(layer2);
+            // FIXME: implementation detail? GlobalLayers[...]
+            assert.strictEqual(cop.GlobalLayers[0], layer1, "layer1 not global");
+            assert.strictEqual(cop.GlobalLayers[1], layer2, "layer2 not global");
+            cop.disableLayer(layer1);
+            assert.strictEqual(cop.GlobalLayers[0], layer2, "layer1 not removed from global");
+            cop.disableLayer(layer2);
+            assert.strictEqual(cop.GlobalLayers.length, 0, "global layers still active");
         });
-        assert.equal(cop.currentLayers().length, 1, "layer 1 is not enabled");
-        cop.disableLayer(layer1);
-    });
 
-    it('testEnableLayersInContextAgain', function() {
-        const layer1 = cop.create('Layer1');
-        cop.withLayers([layer1], () => {
+        it('testEnableDisableLayer', function() {
+            const layer1 = new Layer("Layer1");
             cop.enableLayer(layer1);
-            assert.equal(cop.currentLayers().length, 1, "layer 1 enabled twice?");
+            assert.equal(cop.currentLayers().length, 1, "layer 1 is not enabled");
+            // console.log("current layers: " + cop.currentLayers())
+            cop.disableLayer(layer1);
+            assert(!cop.LayerStack[cop.LayerStack.length - 1].composition, "there is a cached composition!");
+            assert.equal(cop.currentLayers().length, 0, "layer 1 is not disabeled");
         });
-        assert.equal(cop.currentLayers().length, 1, "layer 1 is not enabled");
-    });
 
-    it('testLayerSubclass', function() {
-        const o = new CopExampleDummySubclass();
-        assert(o.f2.isLayerAware, "function is not layer aware when subclassing not directly from object")
-    });
-
-    it('testNewMethodOnlyInLayer', function() {
-        const o = new CopExampleDummyClass();
-        cop.withLayers([DummyLayer], () => {
-            assert(o.newMethod, "new method is not there");
-            assert.equal(o.newMethod(), "totally new","layered newMethod() is wrong");
+        it('is independent from dynamically scoped activation', function() {
+            const layer1 = new Layer("Layer1"),
+                layer2 = new Layer("Layer2");
+            withLayers([layer2], () => {
+                cop.enableLayer(layer1);
+                assert.equal(cop.currentLayers().length, 2, "layer 2 is not enabled");
+            });
+            assert.equal(cop.currentLayers().length, 1, "layer 1 is not enabled");
+            cop.disableLayer(layer1);
         });
-    });
 
-    it('testLayerMethodInSubclass', function() {
-        const o = new CopExampleDummySubclass();
-        assert.equal(o.m1(), 10, "subclassing is broken")
-        cop.withLayers([DummyLayer], () => {
-            assert.equal(o.m1(), 11, "layer in subclass is broken")
-        });
-    });
-
-    it('testLayerMethodInSecondSubclass', function() {
-        const o = new CopExampleSecondDummySublass();
-        assert.equal(o.m1(), 1, "base is broken")
-        cop.withLayers([DummyLayer], () => {
-            assert.equal(o.m1(), 101, "layer in second subclass is broken")
+        it('overrides dynamically scoped activation of the same layer', function() {
+            const layer1 = new Layer('Layer1');
+            withLayers([layer1], () => {
+                cop.enableLayer(layer1);
+                assert.equal(cop.currentLayers().length, 1, "layer 1 enabled twice?");
+            });
+            assert.include(cop.currentLayers(), layer1, "layer 1 should still be enabled");
         });
     });
 
-    it('testSetWithLayers', function() {
-        const o = new CopExampleDummySubclass();
-        assert.equal(o.fooo(), "base", "base is broken");
-        cop.withLayers([DummyLayer], () => {
-            assert.equal(o.fooo(), "base-layer-newFoo", "SecondDummySubclass is broken");
-        });
-    });
+    describe('behavior with subclasses of layered classes', function () {
 
-    it('testExecuteLayeredBehaviorOfSuperclass', function() {
-        const o = new CopExampleDummySubclass();
-        cop.withLayers([DummyLayer], () => {
-            assert.equal(o.newFoo(), "newFoo", "newFoo is broken");
-        });
-    });
-
-
-    it('testDoNotOverideLayeredMethodInSubclass', function() {
-        const o = new CopExampleDummyClass();
-        cop.withLayers([DummyLayer], () => {
-            assert.equal(o.m2(), "D$m2,m2", "installing wrappers on base class broken");
+        it('testLayerSubclass', function() {
+            const o = new CopExampleDummySubclass();
+            assert(o.f2.isLayerAware, "function is not layer aware when subclassing not directly from object")
         });
 
-        const s = new CopExampleDummySubclass();
-        cop.withLayers([DummyLayer], () => {
-            assert.equal(s.m2(), "S$m2", "not installing wrappers on subclassing broken`");
+        it('testNewMethodOnlyInLayer', function() {
+            const o = new CopExampleDummyClass();
+            withLayers([DummyLayer], () => {
+                assert(o.newMethod, "new method is not there");
+                assert.equal(o.newMethod(), "totally new","layered newMethod() is wrong");
+            });
         });
-    });
 
-    it('testLayerRemove', function() {
-        // given
-        makeObject1();
-        const context = {};
-        const layer = cop.create(context, 'TestLayerRemoveLayer');
-        layer.refineObject(object1, {
-            f(x) { return x }
+        it('testLayerMethodInSubclass', function() {
+            const o = new CopExampleDummySubclass();
+            assert.equal(o.m1(), 10, "subclassing is broken")
+            withLayers([DummyLayer], () => {
+                assert.equal(o.m1(), 11, "layer in subclass is broken")
+            });
         });
-        layer.beGlobal();
-        assert.equal(3, object1.f(3), 'layer not global');
-        assert.isDefined(context.TestLayerRemoveLayer, 'layer not in context object');
-        // when
-        layer.remove();
-        // then
-        assert.equal(0, object1.f(3), 'layer still global');
-        assert.isUndefined(context.TestLayerRemoveLayer, 'layer still in context object');
-    });
 
-    describe('argument adaption', function () {
-        it('testAdaptArgumentsInLayer', function () {
-            const o = {say(a) {return "Say: " +a}},
-                  l = cop.create('L');
-            l.refineObject(o, { say(a) {return cop.proceed(a + " World") + "!"}})
-            assert.equal(o.say("Hello"), "Say: Hello", "test is broken");
-            cop.withLayers([l], () => {
-                if (typeof console.group !== 'undefined')
-                    console.group("SayHello");
-                const result = o.say("Hello")
-                if (typeof console.group !== 'undefined')
-                    console.groupEnd("SayHello");
-                assert.equal(result, "Say: Hello World!", "adapting arguments is broken");
+        it('testLayerMethodInSecondSubclass', function() {
+            const o = new CopExampleSecondDummySublass();
+            assert.equal(o.m1(), 1, "base is broken")
+            withLayers([DummyLayer], () => {
+                assert.equal(o.m1(), 101, "layer in second subclass is broken")
+            });
+        });
+
+        it('testSetWithLayers', function() {
+            const o = new CopExampleDummySubclass();
+            assert.equal(o.fooo(), "base", "base is broken");
+            withLayers([DummyLayer], () => {
+                assert.equal(o.fooo(), "base-layer-newFoo", "SecondDummySubclass is broken");
+            });
+        });
+
+        it('testExecuteLayeredBehaviorOfSuperclass', function() {
+            const o = new CopExampleDummySubclass();
+            withLayers([DummyLayer], () => {
+                assert.equal(o.newFoo(), "newFoo", "newFoo is broken");
+            });
+        });
+
+
+        it('testDoNotOverideLayeredMethodInSubclass', function() {
+            const o = new CopExampleDummyClass();
+            withLayers([DummyLayer], () => {
+                assert.equal(o.m2(), "D$m2,m2", "installing wrappers on base class broken");
+            });
+
+            const s = new CopExampleDummySubclass();
+            withLayers([DummyLayer], () => {
+                assert.equal(s.m2(), "S$m2", "not installing wrappers on subclassing broken`");
             });
         });
     });
 
-    describe('Layer', function () {
+    describe('Layer object', function () {
         let DummyClass,
             DummySubclass,
             DummyLayer,
@@ -830,8 +857,8 @@ describe('cop', function () {
         beforeEach('set up the test classes and layers', function () {
             DummyClass = class DummyClass {};
             DummySubclass = class DummySubclass extends DummyClass {};
-            DummyLayer = cop.create('TmpDummyLayer');
-            DummyLayer2 = cop.create('TmpDummyLayer2');
+            DummyLayer = new Layer('TmpDummyLayer');
+            DummyLayer2 = new Layer('TmpDummyLayer2');
         });
 
         afterEach('remove test classes and layers', function() {
@@ -841,7 +868,13 @@ describe('cop', function () {
             DummyLayer2 = undefined;
         });
 
+        it('overrides toString to return the layer name', function () {
+            assert.equal(new Layer('TheName').toString(), 'TheName');
+            assert.equal(layer('TestName').toString(), 'TestName');
+        });
+
         describe('subclassing', function () {
+            // TODO: move these methods and the fixture to the "behavior for subclasses ..." description
 
             it('testSetup', function() {
                 assert(DummyClass);
@@ -860,18 +893,18 @@ describe('cop', function () {
                 });
 
                 cop.layerClass(DummyLayer, DummyClass, {
-                    m1() {return "L$m1,"+cop.proceed()}
+                    m1() {return "L$m1,"+proceed()}
                 });
 
                 const o = new DummyClass();
                 assert.equal(o.m1(), "m1", "base m1 broken");
-                cop.withLayers([DummyLayer], () => {
+                withLayers([DummyLayer], () => {
                     assert.equal(o.m1(), "L$m1,m1", "layered m1 broken");
                 });
 
                 const s = new DummySubclass();
                 assert.equal(s.m1(), "S$m1", "base S$m1 broken");
-                cop.withLayers([DummyLayer], () => {
+                withLayers([DummyLayer], () => {
                     assert.equal(s.m1(), "S$m1",
                         "overriden method should not show layered behavior");
                 });
@@ -886,20 +919,20 @@ describe('cop', function () {
                 }
 
                 cop.layerClass(DummyLayer, DummyClass, {
-                    m1() { return "L$m1a " + cop.proceed() + " L$m1b" }
+                    m1() { return "L$m1a " + proceed() + " L$m1b" }
                 });
 
 
                 const o = new DummyClass();
                 assert.equal(o.m1(), "m1", "unlayered m1 in superclass broken");
 
-                cop.withLayers([DummyLayer], () => {
+                withLayers([DummyLayer], () => {
                     assert.equal(o.m1(), "L$m1a m1 L$m1b", "layered m1 broken");
                 });
 
                 const s = new DummySubclass();
                 assert.equal(s.m1(), "S$m1a m1 S$m1b", "base S$m1 broken");
-                cop.withLayers([DummyLayer], () => {
+                withLayers([DummyLayer], () => {
                     assert.equal(s.m1(), "S$m1a L$m1a m1 L$m1b S$m1b", "layered S$m1 broken");
                 });
             });
@@ -911,64 +944,40 @@ describe('cop', function () {
                 Object.assign(DummySubclass.prototype, {m1() { return "S$m1" }});
 
                 cop.layerClass(DummyLayer, DummyClass, {
-                    m1() {return "L$m1,"+cop.proceed()}
+                    m1() {return "L$m1,"+proceed()}
                 });
 
                 cop.layerClass(DummyLayer2, DummySubclass, {
-                    m1() {return "L$m1,"+cop.proceed()}
+                    m1() {return "L$m1,"+proceed()}
                 });
 
                 const s = new DummySubclass();
-                cop.withLayers([DummyLayer], () => {
+                withLayers([DummyLayer], () => {
                     assert.equal(s.m1(), "L$m1,S$m1", "layered S$m1 broken");
                 })
             });
         });
 
-        // TODO: this syntax is no longer 'alternative', it is the only one
-        describe('alternative syntax', function () {
-
-            it('testNewSyntax', function() {
-                const l = cop.create("MyDummyLayer2");
-                assert(l instanceof Layer, "l is no layer")
-                assert(l.layerClass instanceof Function, "l does not respond to layerClass")
-                assert(l.layerObject instanceof Function, "l does not respond to layerObject")
+        it('returns itself from #refineObject', function() {
+            const layer = new Layer("MyDummyLayer2");
+            const o = {foo() {return 1}}
+            const refineReturnValue = layer.refineObject(o, {
+                foo() { }
             });
+            assert.strictEqual(layer, refineReturnValue, "refineObject should return the layer")
+        });
 
-            it('testCreateLayer', function() {
-                const l = cop.create("MyDummyLayer2");
-                assert(l instanceof Layer, "l is no layer")
-            });
+        it('should be activated globally by #beGlobal', function() {
+            const l = new Layer();
+            l.beGlobal();
+            assert.include(cop.GlobalLayers, l, "be global is broken")
 
-            it('testRefineClass', function() {
-                const l = cop.create("MyDummyLayer2");
-                assert(l.refineClass instanceof Function, "l does not respond to refineClass")
-            });
-
-            it('testRefineObject', function() {
-                const l = cop.create("MyDummyLayer2");
-                assert(l.refineObject instanceof Function, "l does not respond to refineObject")
-
-                const o = {foo() {return 1}}
-                const r = l.refineObject(o, {
-                    foo() { }
-                });
-
-                assert.strictEqual(l, r, "refineObject does not return layer")
-            });
-
-            it('testBeGlobal', function() {
-                const l = cop.create();
-                l.beGlobal();
-                assert.include(cop.GlobalLayers, l, "be global is broken")
-
-            });
         });
     });
 
-    describe('layer state', function () {
-        const MyTestLayer1 = cop.create("MyTestLayer1");
-        const MyTestLayer2 = cop.create("MyTestLayer2");
+    describe('state provided by layers', function () {
+        const MyTestLayer1 = new Layer("MyTestLayer1");
+        const MyTestLayer2 = new Layer("MyTestLayer2");
 
         it('testMakePropertyLayerAware', function() {
             const o = {a: 3};
@@ -981,7 +990,7 @@ describe('cop', function () {
             });
 
             const getter = Object.getOwnPropertyDescriptor(o, "a").get;
-            // TODO: implementation detail?
+            // FIXME: implementation detail?
             assert(getter, "o has not getter for a");
             assert(getter.isLayerAware || getter.isInlinedByCop, "o.a getter is not layerAware");
 
@@ -993,14 +1002,14 @@ describe('cop', function () {
         it('testLayerGetter', function() {
             const o = {a: 5};
 
-            const layer1 = cop.create('L1');
+            const layer1 = new Layer('L1');
             assert.equal(o.a, 5, "property access is broken");
             layer1.refineObject(o, {get a() { return 10 }})
 
-            const layer2 = cop.create('L2');
-            cop.withLayers([layer1], function() {
+            const layer2 = new Layer('L2');
+            withLayers([layer1], function() {
                 assert.equal(o.a, 10, "layer getter broken");
-                cop.withLayers([layer2], function() {
+                withLayers([layer2], function() {
                     assert.equal(o.a, 10, "with empty innner layer getter broken");
                 });
             });
@@ -1009,7 +1018,7 @@ describe('cop', function () {
 
         it('testLayerGetterAndSetter', function() {
             const o = {a: 5};
-            const layer1 = cop.create('L1');
+            const layer1 = new Layer('L1');
             assert.equal(o.a, 5, "property access is broken");
 
             o.l1_value = 10;
@@ -1017,13 +1026,13 @@ describe('cop', function () {
                 get a() { return this.l1_value },
                 set a(value) { return this.l1_value = value }
             });
-            // TODO: implementation detail?
+            // FIXME: implementation detail?
             const layerDef = cop.getLayerDefinitionForObject(layer1,o);
             assert(Object.getOwnPropertyDescriptor(layerDef, "a").set,
                 "layer1 has no setter for a");
             assert(Object.getOwnPropertyDescriptor(o, "a").set.isLayerAware, "o.a setter is not layerAware");
 
-            cop.withLayers([layer1], () => {
+            withLayers([layer1], () => {
                 assert.equal(o.a, 10, "layer getter broken");
                 o.a = 20;
                 assert.equal(o.l1_value, 20, "layer setter broken");
@@ -1033,12 +1042,12 @@ describe('cop', function () {
         it('testLayerStateInTwoObjects', function() {
             const o1 = new CopExampleDummyClass(),
                   o2 = new CopExampleDummyClass(),
-                  layer1 = cop.create('LtestLayerStateInTwoObjects1');
+                  layer1 = new Layer('LtestLayerStateInTwoObjects1');
             cop.layerClass(layer1, CopExampleDummyClass, {
                 get a() { return this.l1_value },
                 set a(value) { this.l1_value = value },
             });
-            cop.withLayers([layer1], () => {
+            withLayers([layer1], () => {
                 o1.a = 20;
                 o2.a = 30;
                 assert.equal(o1.a, 20, "layer state in two objects broken");
@@ -1051,7 +1060,7 @@ describe('cop', function () {
             o.toString = function(){return "[o]"};
             const o2 = new CopExampleDummyClass();
             o2.toString= function(){return "[o2]"};
-            const layer1 = cop.create('LtestGetterAndSetterClassInLayer');
+            const layer1 = new Layer('LtestGetterAndSetterClassInLayer');
             cop.layerClass(layer1, CopExampleDummyClass, {
                 get a() {
                     return 10;
@@ -1062,7 +1071,7 @@ describe('cop', function () {
             assert(Object.getOwnPropertyDescriptor(CopExampleDummyClass.prototype, "a").get, "DummyClass has no getter for a");
 
             assert.equal(o.a, 5, "layer getter broken after initialization");
-            cop.withLayers([layer1], () => {
+            withLayers([layer1], () => {
                 assert.equal(o.a, 10, "layer getter broken");
             });
             assert.equal(o.a, 5, "layer getter broken after activation");
@@ -1073,12 +1082,12 @@ describe('cop', function () {
             const o = new CopExampleDummyClass();
             assert(Object.getOwnPropertyDescriptor(Object.getPrototypeOf(o), "e").get, "o.e has no getter");
             assert.equal(o.e, "Hello", "layer getter broken after initialization");
-            cop.withLayers([DummyLayer], () => {
+            withLayers([DummyLayer], () => {
                 o.e = "World"
                 assert.equal(o.e, "World", "layer getter broken");
             });
             assert.equal(o.e, "Hello", "layer getter broken after activation");
-            cop.withLayers([DummyLayer], () => {
+            withLayers([DummyLayer], () => {
                 assert.equal(o.e, "World", "layer does not remember state");
             });
 
@@ -1086,7 +1095,7 @@ describe('cop', function () {
 
         it('testGetterProceed', function() {
             const o = new CopExampleDummyClass();
-            cop.withLayers([DummyLayer], () => {
+            withLayers([DummyLayer], () => {
                 assert.equal(o.m, "Hello World", "layer getter broken");
             });
         });
@@ -1101,15 +1110,15 @@ describe('cop', function () {
         });
 
         it('testLayerPropertyWithShadow', function() {
-            const o = {}, layer1 = cop.create('LtestLayerPropertyWithShadow');
+            const o = {}, layer1 = new Layer('LtestLayerPropertyWithShadow');
             cop.layerPropertyWithShadow(layer1, o, "a");
             o.a = 5;
-            cop.withLayers([layer1], function() {
+            withLayers([layer1], function() {
                 o.a = 10;
                 assert.equal(o.a, 10, "shadow broken");
             });
             assert.equal(o.a, 5, "shadow don't changes base");
-            cop.withLayers([layer1], function() {
+            withLayers([layer1], function() {
                 assert.equal(o.a, 10, "shadow broken 2");
             });
         });
@@ -1118,22 +1127,22 @@ describe('cop', function () {
             const o = new CopExampleDummyClass();
             cop.layerPropertyWithShadow(DummyLayer, o, "a");
             o.a = 5;
-            cop.withLayers([DummyLayer], function() {
+            withLayers([DummyLayer], function() {
                 o.a = 10;
                 assert.equal(o.a, 10, "shadow broken");
             });
             assert.equal(o.a, 5, "shadow breaks base");
-            cop.withLayers([DummyLayer], function() {
+            withLayers([DummyLayer], function() {
                 assert.equal(o.a, 10, "shadow broken 2");
             });
         });
 
         it('testLayerPropertyWithShadowFallsBack', function() {
             const o = {};
-            const layer1 = cop.create('LtestLayerPropertyWithShadowFallsBack');
+            const layer1 = new Layer('LtestLayerPropertyWithShadowFallsBack');
             cop.layerPropertyWithShadow(layer1, o, "a");
             o.a = 5;
-            cop.withLayers([layer1], () => {
+            withLayers([layer1], () => {
                 assert.equal(o.a, 5, "fallback is broken");
             });
         });
@@ -1161,15 +1170,15 @@ describe('cop', function () {
                 }
             });
             const o = new MyClass();
-            cop.withLayers([MyTestLayer1], () => {
+            withLayers([MyTestLayer1], () => {
                 o.a = 9;
-                cop.withLayers([MyTestLayer2], function() {
+                withLayers([MyTestLayer2], function() {
                     o.a = 10;
                 }.bind(this));
             });
-            cop.withLayers([MyTestLayer1], () => {
+            withLayers([MyTestLayer1], () => {
                 assert.equal(o.a, 9, "outer layer broken")
-                cop.withLayers([MyTestLayer2], () => {
+                withLayers([MyTestLayer2], () => {
                     assert.equal(o.a, 10, "inner layer broken")
                 });
             });
@@ -1224,7 +1233,7 @@ describe('cop', function () {
 
         DummyLayer.refineClass(DummyOtherObject, {
             k() {
-                cop.proceed();
+                proceed();
                 this.count_dummy_k = this.count_dummy_k + 1;
                 return 7
             }
@@ -1244,7 +1253,7 @@ describe('cop', function () {
 
         it('testDummyObjectDefault', function() {
             assert.equal(o.f(), 3, " default fails");
-            cop.withLayers([DummyLayer], () => {
+            withLayers([DummyLayer], () => {
                 assert.equal(o.f(), 4, " dynamic layer activation is broken");
             });
         });
@@ -1268,7 +1277,7 @@ describe('cop', function () {
 
         it('testStateActivationAndWithLayers', function() {
             o.setWithLayers([DummyLayer]);
-            cop.withLayers([DummyLayer], () => {
+            withLayers([DummyLayer], () => {
                 assert.equal(o.k2(), 7, " layer is not activated in my object")
                 assert.equal(o.myObject.count_dummy_k, 1, " layered method is excuted wrong number")
             });
@@ -1276,7 +1285,7 @@ describe('cop', function () {
 
         it('testStateActivationAndWithoutLayers', function() {
             o.setWithLayers([DummyLayer]);
-            cop.withoutLayers([DummyLayer], () => {
+            withoutLayers([DummyLayer], () => {
                 assert.equal(o.k2(), 5, " layer is not deactivated in my object")
             });
         });
@@ -1318,11 +1327,12 @@ describe('cop', function () {
     });
 
     describe('activeLayers', function () {
+        // TODO(jr): find out what this is about
 
         it('testOverrideActiveLayers', function() {
             const o = new CopExampleDummyClass();
             o.activeLayers = function() { return [] }
-            cop.withLayers([DummyLayer], function(){
+            withLayers([DummyLayer], function(){
                 assert.equal(o.f(), 0, "layer is still active")
             });
         });
@@ -1330,10 +1340,11 @@ describe('cop', function () {
         it('testOverrideActiveLayersWithAdditionalLayer', function() {
             // object overrides the layer composition
             const o = new CopExampleDummyClass();
+            // FIXME: this should not work because we no longer use Prototype.js
             o.activeLayers= function($super) {
                 return $super().concat([DummyLayer2])
             };
-            cop.withLayers([DummyLayer], function() {
+            withLayers([DummyLayer], function() {
                 assert.equal(o.f(), 1100, "active layers failed")
             });
         });
@@ -1357,17 +1368,17 @@ describe('cop', function () {
                 }
             };
 
-            CopProceedTestAddLayer = cop.create('CopProceedTestAddLayer')
+            CopProceedTestAddLayer = new Layer('CopProceedTestAddLayer')
             .refineClass(CopProceedTestClass, {
                 m(a) {
                     return cop.proceed(a + 1)
                 },
             });
 
-            CopProceedPropertyTestLayer = cop.create('CopProceedPropertyTestLayer')
+            CopProceedPropertyTestLayer = new Layer('CopProceedPropertyTestLayer')
             .refineClass(CopProceedTestClass, {
                 get p() {
-                    return cop.proceed() + " World"
+                    return proceed() + " World"
                 },
 
                 set p(value) {
@@ -1377,14 +1388,14 @@ describe('cop', function () {
             });
 
 
-            CopProceedMultAddLayer = cop.create('CopProceedMultAddLayer')
+            CopProceedMultAddLayer = new Layer('CopProceedMultAddLayer')
             .refineClass(CopProceedTestClass, {
                 m(a) {
                     return cop.proceed(a) * 3
                 }
             });
 
-            CopProceedMultipleProceedLayer = cop.create('CopProceedMultipleProceedLayer')
+            CopProceedMultipleProceedLayer = new Layer('CopProceedMultipleProceedLayer')
             .refineClass(CopProceedTestClass, {
                 m(a) {
                     return cop.proceed(a * 2) + cop.proceed(a *3)
@@ -1402,6 +1413,17 @@ describe('cop', function () {
             cop.proceed = originalProceed;
         });
 
+        it('testAdaptArgumentsInLayer', function () {
+            const o = {say(a) {return "Say: " +a}},
+                  l = new Layer('L');
+            l.refineObject(o, { say(a) {return cop.proceed(a + " World") + "!"}})
+            assert.equal(o.say("Hello"), "Say: Hello", "test is broken");
+            withLayers([l], () => {
+                const result = o.say("Hello")
+                assert.equal(result, "Say: Hello World!", "adapting arguments is broken");
+            });
+        });
+
         it('testMakeFunctionLayerAware', function() {
             // inlining does not use proceedStack
             if (cop.staticInlining || cop.dynamicInlining) return;
@@ -1409,11 +1431,11 @@ describe('cop', function () {
             // TODO: why do we test the proceedStack length? Shouldn't we test the behavior instead? (but most of the other tests do that)
             let newLength;
             const o = {m() { return 1 }};
-            const layer = cop.create('someLayer').refineObject(o, {
+            const layer = new Layer('someLayer').refineObject(o, {
                 m() { newLength = cop.proceedStack.length }
             });
             const oldLength = cop.proceedStack.length;
-            cop.withLayers([layer], () => o.m());
+            withLayers([layer], () => o.m());
             assert.isAbove(newLength, oldLength, "stack did not change")
         });
 
@@ -1426,6 +1448,7 @@ describe('cop', function () {
                 prototypeObject,
                 functionName;
 
+            // FIXME: as cop is a Module now, this should not work
             cop.proceed = function() {
                 const composition = cop.proceedStack[cop.proceedStack.length - 1];
                 partialMethods = composition.partialMethods;
@@ -1435,7 +1458,7 @@ describe('cop', function () {
             }
 
             const o = new CopProceedTestClass();
-            cop.withLayers([CopProceedTestAddLayer], () => {
+            withLayers([CopProceedTestAddLayer], () => {
                 o.m();
             });
 
@@ -1454,7 +1477,7 @@ describe('cop', function () {
         it('testProceedFromAddToBase', function() {
             const o = new CopProceedTestClass();
             assert.equal(o.m(2), 4, "base class broken")
-            cop.withLayers([CopProceedTestAddLayer], () => {
+            withLayers([CopProceedTestAddLayer], () => {
                 assert.equal(o.m(2), 9, "add layer broken")
             });
         });
@@ -1462,8 +1485,8 @@ describe('cop', function () {
         it('testProceedFromMultOverAddToBase', function() {
             const o = new CopProceedTestClass();
             assert.equal(o.m(2), 4, "base class broken");
-            cop.withLayers([CopProceedTestAddLayer], () => {
-                cop.withLayers([CopProceedMultAddLayer], () => {
+            withLayers([CopProceedTestAddLayer], () => {
+                withLayers([CopProceedMultAddLayer], () => {
                     assert.equal(o.m(2), 27, "mult and add layer broken");
                 });
                 assert.equal(o.m(2), 9, "mult and add layer broken");
@@ -1474,7 +1497,7 @@ describe('cop', function () {
         it('testMultipleProceed', function() {
             const o = new CopProceedTestClass();
             assert.equal(o.m(2), 4, "base class broken");
-            cop.withLayers([CopProceedMultipleProceedLayer], () => {
+            withLayers([CopProceedMultipleProceedLayer], () => {
                 assert.equal(o.m(1), 13, "CopProceedMultipleProceedLayer");
             });
         });
@@ -1482,7 +1505,7 @@ describe('cop', function () {
         it('testCurrentLayerComposition', function() {
             const o = new CopProceedTestClass();
             assert.strictEqual(this.currentLayerComposition, undefined, "layer composition is undefined");
-            cop.withLayers([CopProceedTestAddLayer], () => {
+            withLayers([CopProceedTestAddLayer], () => {
                 assert.equal(o.m(2), 9, "add layer broken")
             });
 
@@ -1493,7 +1516,7 @@ describe('cop', function () {
             assert.equal(o.m(2), 4, "base class broken");
             assert.equal(o.p, "Hello", "base getter broken");
 
-            cop.withLayers([CopProceedPropertyTestLayer], () => {
+            withLayers([CopProceedPropertyTestLayer], () => {
                 assert.equal(o.p, "Hello World", "getter broken");
                 o.p = "hi";
                 assert.equal(o.p, "Hi World", "setter broken");
@@ -1505,12 +1528,30 @@ describe('cop', function () {
         it('testLookupLayeredFunctionForObjectIgnoresInheritedProperties', function() {
             const layer = new Layer();
             const obj = {foo() {return 3} };
-            layer.refineObject(obj, {foo() {return cop.proceed() + 1}});
+            layer.refineObject(obj, {foo() {return proceed() + 1}});
             assert.strictEqual(cop.lookupLayeredFunctionForObject(obj, layer, 'toString'), undefined, 'toString should not be found')
         });
     });
 
     describe('layer uninstalling', function () {
+
+        it('testLayerRemove', function() {
+            // given
+            const object1 = fixture().makeObject1();
+            const context = {};
+            const layer_obj = layer(context, 'TestLayerRemoveLayer');
+            layer_obj.refineObject(object1, {
+                f(x) { return x }
+            });
+            layer_obj.beGlobal();
+            assert.equal(3, object1.f(3), 'layer not global');
+            assert.isDefined(context.TestLayerRemoveLayer, 'layer not in context object');
+            // when
+            layer_obj.remove();
+            // then
+            assert.equal(0, object1.f(3), 'layer still global');
+            assert.isUndefined(context.TestLayerRemoveLayer, 'layer still in context object');
+        });
 
         // FIXME: this test case uses the global connect function
         xit('testMakeFunctionLayerUnawareThatIsConnected', function() {
@@ -1549,12 +1590,12 @@ describe('cop', function () {
 
             const layer = new Layer();
             layer.refineObject(obj1, {
-                m1() { return cop.proceed() + 1 }
+                m1() { return proceed() + 1 }
             });
 
             const layer2 = new Layer();
             layer2.refineObject(obj1, {
-                m2() { return cop.proceed() + 1 }
+                m2() { return proceed() + 1 }
             });
 
             cop.uninstallLayersInObject(obj1);
@@ -1573,19 +1614,19 @@ describe('cop', function () {
             const originalM2 = obj.m2;
 
             const TestLayer1 = new Layer('TestLayer1').refineObject(obj, {
-                m1: function() { return cop.proceed() + 1 },
-                m3: function() { return cop.proceed() + 1 }
+                m1: function() { return proceed() + 1 },
+                m3: function() { return proceed() + 1 }
             }).beGlobal();
             var singleLayeredM1 = obj.m1;
 
             const TestLayer2 = new Layer('TestLayer2').refineObject(obj, {
-                m1: function() { return cop.proceed() + 2 },
-                m2: function() { return cop.proceed() + 2 },
-                m3: function() { return cop.proceed() + 2 }
+                m1: function() { return proceed() + 2 },
+                m2: function() { return proceed() + 2 },
+                m3: function() { return proceed() + 2 }
             }).beGlobal();
 
             const TestLayer3 = new Layer('TestLayer3').refineObject(obj, {
-                m3: function() { return cop.proceed() + 4 }
+                m3: function() { return proceed() + 4 }
             }).beGlobal();
             const tripleLayeredM3 = obj.m3;
 
@@ -1629,7 +1670,7 @@ describe('cop', function () {
             const layer = new Layer("TestLayer");
             layer.refineObject(object, {
                 foo() {
-                    return cop.proceed() + 4
+                    return proceed() + 4
                 }
             });
 
@@ -1646,7 +1687,7 @@ describe('cop', function () {
             const layer = new Layer("TestLayer")
             layer.refineClass(klass, {
                 foo() {
-                    return cop.proceed() + 4
+                    return proceed() + 4
                 }
             });
 

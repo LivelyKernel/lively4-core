@@ -364,6 +364,93 @@ export function allLayers(optObject = Global) {
  * PUBLIC COP Layer Definition
  */
 
+var globalContextForLayers = {};
+
+export { globalContextForLayers as Global };
+
+// Layering objects may be a garbage collection problem, because the layers keep strong
+// reference to the objects
+export function layerObject(layer, object, defs) {
+  // log("cop layerObject");
+  
+  // Bookkeeping:
+  // typeof object.getName === 'function' && (layer._layeredFunctionsList[object] = {});
+  Object.getOwnPropertyNames(defs).forEach(
+    function (function_name) {
+      // log(" layer property: " + function_name)
+      layerProperty(layer, object, function_name, defs);
+    });
+};
+
+// layer around only the class methods
+export function layerClass(layer, classObject, defs) {
+  if (!classObject || !classObject.prototype) {
+    throw new Error("ContextJS: can not refine class '" + classOBject + "' in " + layer);
+  }
+  layerObject(layer, classObject.prototype, defs);
+};
+
+// Gloabl Layer Activation
+export function enableLayer(layer) {
+  if (GlobalLayers.indexOf(layer) !== -1) {
+    return;
+  }
+  GlobalLayers.push(layer);
+  invalidateLayerComposition();
+};
+
+export function disableLayer(layer) {
+  var idx = GlobalLayers.indexOf(layer);
+  if (idx < 0) {
+    return;
+  }
+  GlobalLayers.splice(idx, 1);
+  invalidateLayerComposition();
+};
+
+export function proceed(/* arguments */) {
+  // COP Proceed Function
+  var composition = proceedStack[proceedStack.length - 1];
+  if (!composition) {
+    console.log('ContextJS: no composition to proceed (stack is empty) ');
+    return;
+  }
+  // TODO use index instead of shifiting?
+  if (composition.partialMethodIndex == undefined) {
+    composition.partialMethodIndex = composition.partialMethods.length - 1;
+  }  
+  var index = composition.partialMethodIndex;
+  var partialMethod = composition.partialMethods[index];
+  if (!partialMethod) {
+    if (!partialMethod) {
+      throw new COPError('no partialMethod to proceed');
+    }
+  } else {
+    try {
+      composition.partialMethodIndex = index - 1;
+      if (!Config.ignoreDeprecatedProceed
+          && partialMethod.toString().match(/^[\t ]*function ?\(\$?proceed/)) {
+        var args = $A(arguments);
+        args.unshift(proceed);
+        var msg = "proceed in arguments list in " + composition.functionName();
+        if (Config.throwErrorOnDeprecated) {
+          throw new Error("DEPRECATED ERROR: " + msg);
+        }
+        if (Config.logDeprecated) {
+          // console.log("source: " + partialMethod.toString());
+          console.log("DEPRECATED WARNING: " + msg);
+        }
+        var result = partialMethod.apply(composition.object, args);
+      } else {
+        var result = partialMethod.apply(composition.object, arguments);
+      }
+    } finally {
+      composition.partialMethodIndex = index;
+    }
+    return result;
+  }
+};
+
 /* 
  * Layer Class
  */
@@ -477,6 +564,9 @@ export class Layer {
   }
   
   // Testing
+  isLayer() {
+    return true;
+  }
   isGlobal () {
     return GlobalLayers.indexOf(this) !== -1;
   }
@@ -500,140 +590,6 @@ export class Layer {
     return create(literal.name, false);
   }
 }
-
-var globalContextForLayers = {};
-
-export { globalContextForLayers as Global };
-
-function basicCreate(layerName, context) {
-  if (typeof layerName === 'undefined')
-    layerName = Symbol('COP Layer');
-  if (typeof context === 'undefined')
-    context = globalContextForLayers;
-  return context[layerName] ||
-    (context[layerName] = new Layer(layerName, context));
-};
-
-export function create(rootContext, layerName) {
-  if (typeof layerName === 'undefined') {
-    // support create('LayerName') syntax without context
-    // (for "global" layers)
-    layerName = rootContext;
-    rootContext = undefined;
-  }
-  if (typeof rootContext === 'undefined') {
-    return basicCreate(layerName);
-  }
-  var parts = layerName.split(/\./);
-  var context = rootContext;
-  for (let i = 0; i < parts.length - 1; ++i) {
-    context = context[parts[i]];
-  }
-  return basicCreate(parts[parts.length - 1], context);
-};
-
-// Layering objects may be a garbage collection problem, because the layers keep strong
-// reference to the objects
-export function layerObject(layer, object, defs) {
-  // log("cop layerObject");
-  
-  // Bookkeeping:
-  // typeof object.getName === 'function' && (layer._layeredFunctionsList[object] = {});
-  Object.getOwnPropertyNames(defs).forEach(
-    function (function_name) {
-      // log(" layer property: " + function_name)
-      layerProperty(layer, object, function_name, defs);
-    });
-};
-
-// layer around only the class methods
-export function layerClass(layer, classObject, defs) {
-  if (!classObject || !classObject.prototype) {
-    throw new Error("ContextJS: can not refine class '" + classOBject + "' in " + layer);
-  }
-  layerObject(layer, classObject.prototype, defs);
-};
-
-// Layer Activation
-export function withLayers(layers, func) {
-  LayerStack.push({withLayers: layers});
-  // console.log("callee: " + withLayers.callee);
-  try {
-    return func();
-  } finally {
-    LayerStack.pop();
-  }
-};
-
-export function withoutLayers(layers, func) {
-  LayerStack.push({withoutLayers: layers});
-  try {
-    return func();
-  } finally {
-    LayerStack.pop();
-  }
-};
-
-// Gloabl Layer Activation
-export function enableLayer(layer) {
-  if (GlobalLayers.indexOf(layer) !== -1) {
-    return;
-  }
-  GlobalLayers.push(layer);
-  invalidateLayerComposition();
-};
-
-export function disableLayer(layer) {
-  var idx = GlobalLayers.indexOf(layer);
-  if (idx < 0) {
-    return;
-  }
-  GlobalLayers.splice(idx, 1);
-  invalidateLayerComposition();
-};
-
-export function proceed(/* arguments */) {
-  // COP Proceed Function
-  var composition = proceedStack[proceedStack.length - 1];
-  if (!composition) {
-    console.log('ContextJS: no composition to proceed (stack is empty) ');
-    return;
-  }
-  // TODO use index instead of shifiting?
-  if (composition.partialMethodIndex == undefined) {
-    composition.partialMethodIndex = composition.partialMethods.length - 1;
-  }  
-  var index = composition.partialMethodIndex;
-  var partialMethod = composition.partialMethods[index];
-  if (!partialMethod) {
-    if (!partialMethod) {
-      throw new COPError('no partialMethod to proceed');
-    }
-  } else {
-    try {
-      composition.partialMethodIndex = index - 1;
-      if (!Config.ignoreDeprecatedProceed
-          && partialMethod.toString().match(/^[\t ]*function ?\(\$?proceed/)) {
-        var args = $A(arguments);
-        args.unshift(proceed);
-        var msg = "proceed in arguments list in " + composition.functionName();
-        if (Config.throwErrorOnDeprecated) {
-          throw new Error("DEPRECATED ERROR: " + msg);
-        }
-        if (Config.logDeprecated) {
-          // console.log("source: " + partialMethod.toString());
-          console.log("DEPRECATED WARNING: " + msg);
-        }
-        var result = partialMethod.apply(composition.object, args);
-      } else {
-        var result = partialMethod.apply(composition.object, arguments);
-      }
-    } finally {
-      composition.partialMethodIndex = index;
-    }
-    return result;
-  }
-};
 
 /*
  * Example implementation of a layerable object
