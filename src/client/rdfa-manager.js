@@ -18,6 +18,28 @@ class Subject {
 }
 
 export default class RdfaManager {
+  
+  static showBox() {
+    this.reloadData();
+    let boxDiv = document.getElementById("rdfaBox");
+    
+    if (!boxDiv) {
+      boxDiv = document.createElement("div");
+      boxDiv.id = "rdfaBox";
+      boxDiv.style.position = "fixed";
+      boxDiv.style.background = "#aaa";
+      boxDiv.style.right = 0;
+      boxDiv.style.bottom = 0;
+      boxDiv.style.width = "200px";
+      boxDiv.style.height = "200px";
+      
+      document.body.appendChild(boxDiv);
+    }
+    
+    let jQueryBox = $("#rdfaBox");
+    jQueryBox.empty();
+    RdfaManager.generateJSONTableRows(jQueryBox); 
+  }
 
   static generateTableRows(div) {
     div[0].style.overflow = "auto";
@@ -193,3 +215,5 @@ export default class RdfaManager {
     return firebase.database().ref("rdfa").once('value') // returns a Promise
   }
 }
+
+RdfaManager.showBox();
