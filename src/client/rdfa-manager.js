@@ -38,7 +38,7 @@ export default class RdfaManager {
     
     let jQueryBox = $("#rdfaBox");
     jQueryBox.empty();
-    RdfaManager.generateJSONTableRows(jQueryBox); 
+    this.generateJSONTableRows(jQueryBox); 
   }
 
   static generateTableRows(div) {
@@ -57,7 +57,7 @@ export default class RdfaManager {
             .append($('<td>'))
             .append($('<td>').text(p.simpleName))
             .append($('<td>').text(p.value)));
-        RdfaManager.makeLocationsClickable(p);
+        this.makeLocationsClickable(p);
       });
     });
   }
