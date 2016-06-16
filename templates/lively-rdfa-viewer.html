@@ -5,20 +5,41 @@
 
   :host {
     position: fixed;
-    background: #aaa;
+    background: #ddd;
     right: 0;
     bottom: 0;
     width: 400px;
     height: 400px;
     overflow: auto;
+    z-index: 1000;
   }
   
-  #rdfaTable {
+  table#rdfaTable {
     font-size: small;
+    border-collapse: collapse;
+  }
+  
+  table, tr, td, th {
+    padding: 2px 4px;
+    border: 1px solid #bbb;
+  }
+  
+  th {
+    padding: 8px;
+  }
+  
+  tr {
+    border: 1px solid #bbb;
   }
   </style>
 
-  <table id="rdfaTable"></table>
+  <table id="rdfaTable">
+    <tr>
+      <th>Subject</th>
+      <th>Property</th>
+      <th>Value</th>
+    </tr>
+  </table>
 
   <script type="lively4script" data-name="initialize">
     () => {

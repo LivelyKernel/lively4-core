@@ -15,7 +15,6 @@ export default class RdfaViewer extends Morph {
   /*
    * Initialization
    */
-
   setup() {
     rdfaManager.reloadData();
     this.table = $(this.shadowRoot.querySelector('#rdfaTable'));
@@ -34,7 +33,7 @@ export default class RdfaViewer extends Morph {
     rdfaManager.buildJSONRdfaDataStructure(remote).then((data) => {
       data.forEach((projection) => {
         this.table.append($('<tr>').attr('data-depth', 0).addClass("collapse")
-          .append($('<td>')
+          .append($('<td>').attr("colspan", 3)
             .append($('<i>').addClass("fa").addClass("fa-minus-square").addClass("treeToggle").attr('aria-hidden', true))
             .append(" ")
             .append(projection._data_.subject)
