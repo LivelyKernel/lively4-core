@@ -1,0 +1,29 @@
+<template id="lively-rdfa-viewer" data-class="RdfaViewer">
+  <style>
+  :host {
+    display: block;
+    position: relative;
+    background: white;
+    width: 400px;
+    height: 300px;
+  }
+
+  #rdfaBox {
+    position: fixed;
+    background: #aaa;
+    right: 0;
+    bottom: 0;
+    width: 400px;
+    height: 400px;
+  }
+  </style>
+
+  <div id="rdfaBox"></div>
+
+  <script type="lively4script" data-name="initialize">
+    () => {
+
+    }
+  </script>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
