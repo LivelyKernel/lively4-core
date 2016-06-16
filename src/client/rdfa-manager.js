@@ -64,7 +64,7 @@ export default class RdfaManager {
   
   static generateJSONTableRows(div, remote) {
     div[0].style.overflow = "auto";
-    var table = $('<table>').attr("id", "rdfaTable");
+    var table = $('<table>').attr("id", "rdfaTable").css("font-size", "small");
     div.append(table);
     this.buildJSONRdfaDataStructure(remote).then((data) => {
       data.forEach((projection) => {
