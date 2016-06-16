@@ -1,24 +1,24 @@
 <template id="lively-rdfa-viewer" data-class="RdfaViewer">
+  <style data-src="/templates/livelystyle.css"></style>
+  <style data-src="/src/external/font-awesome/css/font-awesome.min.css"></style>
   <style>
-  :host {
-    display: block;
-    position: relative;
-    background: white;
-    width: 400px;
-    height: 300px;
-  }
 
-  #rdfaBox {
+  :host {
     position: fixed;
     background: #aaa;
     right: 0;
     bottom: 0;
     width: 400px;
     height: 400px;
+    overflow: auto;
+  }
+  
+  #rdfaTable {
+    font-size: small;
   }
   </style>
 
-  <div id="rdfaBox"></div>
+  <table id="rdfaTable"></table>
 
   <script type="lively4script" data-name="initialize">
     () => {

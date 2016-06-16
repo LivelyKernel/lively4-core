@@ -37,16 +37,13 @@ export default class ContextMenu {
       return menu;
     } else {
       return [
-      ["RDFa", (evt) => {
-        this.openRdfaManager(evt);
-        this.hide();
-      }],
-      ["RDFa JSON", (evt) => {
-        this.openRdfaJSONManager(evt);
+      ["RDFa viewer", (evt) => {
+        this.openRdfaViewer(evt);
         this.hide();
       }],
       ["RDFa firebase", (evt) => {
-        this.openRdfaJSONManager(evt, true);
+        alert("not implemented anymore")
+        //this.openRdfaViewer(evt, true);
         this.hide();
       }],
       ["Workspace", (evt) => {
@@ -122,25 +119,10 @@ export default class ContextMenu {
       ]
     }
   }
-
-  static openRdfaManager(evt) {
-    let rdfaManager = lively.rdfaManager;
-    rdfaManager.reloadData();
-
-    this.openComponentInWindow('div', evt).then((comp) => {
-      var div = $(comp);
-      rdfaManager.generateTableRows(div);
-    })
-  }
   
-  static openRdfaJSONManager(evt, remote = false) {
-    let rdfaManager = lively.rdfaManager;
-    rdfaManager.reloadData();
-
-    this.openComponentInWindow('div', evt).then((comp) => {
-      var div = $(comp);
-      rdfaManager.generateJSONTableRows(div, remote);
-    })
+  static openRdfaViewer(evt, remote = false) {
+    $('lively-rdfa-viewer').remove();
+    lively.components.openInBody(lively.components.createComponent("lively-rdfa-viewer"));
   }
 
   static openIn(container, evt, target) {
