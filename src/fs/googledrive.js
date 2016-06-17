@@ -2,7 +2,7 @@
  * HTTP Google Drive access.
  */
 
-import { Base, Stat, StatNotFoundError } from './base.js'
+import { Base, Stat, StatNotFoundError, File, FileNotFoundError, IsDirectoryError } from './base.js'
 import * as util from '../util.js'
 
 export default class Filesystem extends Base {
@@ -36,48 +36,40 @@ export default class Filesystem extends Base {
     let json  = await response.json()
 
     let items = json.items.map(item => ({
-  	  "type": item.mimeType === 'application/vnd.google-apps.folder' && true ? "directory" : 'file',
-		    "name": item.title,
-		    "size": 0
-  	  }))
+      "type": item.mimeType === 'application/vnd.google-apps.folder' && true ? "directory" : 'file',
+        "name": item.title,
+        "size": 0
+      }))
 
-  	return Stat(true, items, ['GET', 'OPTIONS'])
+    return Stat(true, items, ['GET', 'OPTIONS'])
   }
 
   async read(urlString) {
-    var path = this.getGoogledrivePath(urlString);
-    var id = await this.googlePathToId(path);
-    let response = await this.googleAPIFetch(`files/`+id)
-    .then(r => r.json())
-    .then(metaData => {
-      var m =metaData.mimeType.match(/application\/vnd.google-apps\.(.*)/)
-      if(m) {
-    		// Need conversion for Google Document types
-    			var type = m[1]
+    let path = this.getGoogledrivePath(urlString);
+    let id = await this.googlePathToId(path);
+    let metadata_response = await this.googleAPIFetch(`files/`+id)
+
+    util.responseOk(response, FileNotFoundError)
+
+    let json  = await metadata_response.json()
+
+    let m = json.mimeType.match(/application\/vnd.google-apps\.(.*)/)
+    if(m) {
+      // Need conversion for Google Document types
+      let type = m[1]
       if (type == "spreadsheet") {
-    			return this.googleAPIFetch(`files/`+id + '/export?mimeType=text/csv');
+        return this.googleAPIFetch(`files/`+id + '/export?mimeType=text/csv');
       } else if (type == "drawing") {
         // #TODO svg+xml does not seem to work any more?
         // we can only display this (easily) when this code moves into the service worker
-    			return this.googleAPIFetch(`files/`+id + '/export?mimeType=application/pdf');
+        return this.googleAPIFetch(`files/`+id + '/export?mimeType=application/pdf');
       } else {
-    			return this.googleAPIFetch(`files/`+id + '/export?mimeType=text/html');
+        return this.googleAPIFetch(`files/`+id + '/export?mimeType=text/html');
       }
-    		} else {
-    			// download file
-    			return this.googleAPIFetch(`files/`+id + '?alt=media');
-    		}
-    });
-
-    if(response.status < 200 && response.status >= 300) {
-      throw new Error(response.statusText)
+    } else {
+      // download file
+      return this.googleAPIFetch(`files/`+id + '?alt=media');
     }
-
-    let blob = await response.blob()
-
-    return new Response(blob, {
-      status: 200
-    })
   }
 
   async write(urlString, fileContent) {
@@ -113,12 +105,12 @@ Content-Type: text/plain; charset=UTF-8
 --${delim}--`
     response = await fetch('https://www.googleapis.com/upload/drive/v2/files?uploadType=multipart', {
       method: 'POST',
-    	headers: new Headers({
-    		"Content-Type": "multipart/related; boundary=" + delim,
-    		Authorization: "Bearer " + this.token,
-    		"Content-Length": body.length
-    	}),
-    	body: body
+      headers: new Headers({
+        "Content-Type": "multipart/related; boundary=" + delim,
+        Authorization: "Bearer " + this.token,
+        "Content-Length": body.length
+      }),
+      body: body
     })
     } else {
     response = await this.googleAPIUpload(id, data);
@@ -145,19 +137,19 @@ Content-Type: text/plain; charset=UTF-8
   headers.append('Content-Type', mimeType)
 
   return fetch('https://www.googleapis.com/upload/drive/v2/files/' + id + '?uploadType=media', {
-  		method: 'PUT',
-  		headers: headers,
-  		body: content
-  	})
+      method: 'PUT',
+      headers: headers,
+      body: content
+    })
   }
 
   async googleAPIFetch(string) {
   return  fetch(`https://www.googleapis.com/drive/v2/` + string, {
-  		method: 'GET',
-  		headers: new Headers({
-  			Authorization: "Bearer " + this.token
-  		}),
-  	})
+      method: 'GET',
+      headers: new Headers({
+        Authorization: "Bearer " + this.token
+      }),
+    })
   }
 
 
@@ -174,9 +166,9 @@ Content-Type: text/plain; charset=UTF-8
     let childItem = await this.googleAPIFetch(`files?corpus=domain&q=%27`+ parentId+`%27%20in%20parents`)
     .then(r => r.json())
     .then(json => {
-	    return json.items.find(item => item.title === childName)
-	  });
-  	if(!childItem) { return undefined; } // file not found
+      return json.items.find(item => item.title === childName)
+    });
+    if(!childItem) { return undefined; } // file not found
     parentId = childItem.id;
   }
   return parentId;
