@@ -5,6 +5,9 @@ jest.disableAutomock()
 
 const filesystem = require('../filesystem.js');
 
+jest.unmock('../fs/base.js');
+const base = require('../fs/base.js');
+
 jest.unmock('node-fetch');
 const fetch = require('node-fetch');
 global.Response = fetch.Response;
@@ -98,8 +101,62 @@ describe('Filesystem with stubs', () => {
   it('handels get requests', () => {
     let req = {method: 'GET'}
     let url = {pathname: 'root/this/and/that.txt'}
-    fs.handle(req, url)
 
+    let file = new base.File('Some content.');
+
+    stubfs.read.and.returnValue(file);
+
+    let ret = fs.handle(req, url);
+
+    expect(ret).toEqual(file.toResponse());
+    expect(stubfs.read).toHaveBeenCalled();
+    expect(stubfs.read).toHaveBeenCalledWith('/this/and/that.txt', req);
+  });
+
+  it('handels get requests to direct response filesystems', () => {
+    let req = {method: 'GET'}
+    let url = {pathname: 'root/this/and/that.txt'}
+    let obj = Object.create(null);
+
+    stubfs.read.and.returnValue(obj);
+
+    let ret = fs.handle(req, url);
+
+    expect(ret).toBe(obj);
+    expect(stubfs.read).toHaveBeenCalled();
+    expect(stubfs.read).toHaveBeenCalledWith('/this/and/that.txt', req);
+  });
+
+  it('handels get requests with FileNotFoundError', () => {
+    let req = {method: 'GET'}
+    let url = {pathname: 'root/this/and/that.txt'}
+
+    stubfs.read.and.callFake((path) => {
+      throw base.FileNotFoundError()
+    });
+
+    let ret = fs.handle(req, url);
+
+    expect(ret).toEqual(new Response(null, {status: 405}));
+    expect(stubfs.read).toHaveBeenCalled();
+    expect(stubfs.read).toHaveBeenCalledWith('/this/and/that.txt', req);
+  });
+
+  it('handels get requests with IsDirectoryError', () => {
+    let req = {method: 'GET'}
+    let url = {pathname: 'root/this/and/that.txt'}
+
+    stubfs.read.and.callFake((path) => {
+      throw new base.IsDirectoryError()
+    });
+
+    let ret = fs.handle(req, url);
+
+    expect(ret).toEqual(new Response(null, {
+            status: 405,
+            statusText: 'EISDIR',
+            headers: {'Allow': 'OPTIONS'}
+          }));
     expect(stubfs.read).toHaveBeenCalled();
     expect(stubfs.read).toHaveBeenCalledWith('/this/and/that.txt', req);
   });
@@ -117,8 +174,14 @@ describe('Filesystem with stubs', () => {
   it('handels options requests', () => {
     let req = {method: 'OPTIONS'}
     let url = {pathname: 'root/this/and/that.txt'}
-    fs.handle(req, url)
 
+    let stat = new base.Stat(false, {val: 'Some content.'}, 'GET,OPTIONS');
+
+    stubfs.stat.and.returnValue(stat);
+
+    let ret = fs.handle(req, url);
+
+    expect(ret).toEqual(stat.toResponse());
     expect(stubfs.stat).toHaveBeenCalled();
     expect(stubfs.stat).toHaveBeenCalledWith('/this/and/that.txt', req);
   });
@@ -126,12 +189,29 @@ describe('Filesystem with stubs', () => {
   it('handels options requests to direct response filesystems', () => {
     let req = {method: 'OPTIONS'};
     let url = {pathname: 'root/this/and/that.txt'};
-    let resp = new Response(null, {status: 400});
-    stubfs.stat.and.returnValue(resp);
+    let obj = Object.create(null);
+
+    stubfs.stat.and.returnValue(obj);
 
     let ret = fs.handle(req, url);
 
-    expect(ret).toBe(resp);
+    expect(ret).toBe(obj);
+    expect(stubfs.stat).toHaveBeenCalled();
+    expect(stubfs.stat).toHaveBeenCalledWith('/this/and/that.txt', req);
+  });
+
+  it('handels options requests with StatNotFoundError', () => {
+    let req = {method: 'OPTIONS'}
+    let url = {pathname: 'root/this/and/that.txt'}
+
+    stubfs.stat.and.callFake((path) => {
+      throw base.StatNotFoundError()
+    });
+
+    let ret = fs.handle(req, url);
+
+    expect(ret).toEqual(new Response(null, {status: 405}));
+    expect(stubfs.stat).toHaveBeenCalled();
     expect(stubfs.stat).toHaveBeenCalledWith('/this/and/that.txt', req);
   });
 

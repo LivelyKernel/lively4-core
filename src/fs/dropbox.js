@@ -66,15 +66,11 @@ export default class Filesystem extends Base {
     dropboxHeaders.append('Authorization', 'Bearer ' + this.token)
     let response = await self.fetch('https://content.dropboxapi.com/1/files/auto' + this.subfolder + path, {headers: dropboxHeaders})
 
-    if(response.status < 200 && response.status >= 300) {
-      throw new Error(response.statusText)
-    }
+    util.responseOk(response, FileNotFoundError)
 
     let blob = await response.blob()
 
-    return new Response(blob, {
-      status: 200
-    })
+    return new File(blob)
   }
 
   async write(path, fileContent) {

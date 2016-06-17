@@ -25,7 +25,7 @@ export class Base {
    * @return {Promise}
    */
   read(path) {
-    return Promise.resolve(new Response(null, {status: 405}))
+    throw new FileNotFoundError()
   }
 
   /**
@@ -73,5 +73,30 @@ export class StatNotFoundError extends Error {
   constructor(message='No stat available for given path.') {
     super(message)
     this.name = 'StatNotFoundError'
+  }
+}
+
+export class File {
+  constructor(blob) {
+    this.blob = blob
+  }
+
+  toResponse() {
+    return new Response(this.blob, {
+      status: 200})
+  }
+}
+
+export class FileNotFoundError extends Error {
+  constructor(message='No file available for given path.') {
+    super(message)
+    this.name = 'FileNotFoundError'
+  }
+}
+
+export class IsDirectoryError extends Error {
+  constructor(message='The requested file is a directory.') {
+    super(message)
+    this.name = 'IsDirectoryError'
   }
 }

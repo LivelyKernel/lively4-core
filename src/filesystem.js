@@ -1,6 +1,7 @@
 
 import * as Path from './path.js'
 import focalStorage from './external/focalStorage.js'
+import * as basefs from './fs/base.js'
 
 
 /**
@@ -45,8 +46,26 @@ export class Filesystem {
 
     this.reqcount++
 
-    if(request.method === 'GET')
-      return fs.read(path, request)
+    if(request.method === 'GET') {
+      try {
+        let read_resp = fs.read(path, request)
+        if (read_resp instanceof basefs.File)
+          return read_resp.toResponse()
+        return read_resp
+      }
+      catch (e) {
+        if (e.name === 'IsDirectoryError') {
+          return new Response(null, {
+            status: 405,
+            statusText: 'EISDIR',
+            headers: {'Allow': 'OPTIONS'}
+          })
+        }
+
+        // TODO: Do something with the information from the FileNotFoundError
+        return new Response(null, {status: 405})
+      }
+    }
 
     if(request.method === 'PUT')
       return fs.write(path, request.text(), request)
@@ -54,9 +73,9 @@ export class Filesystem {
     if(request.method === 'OPTIONS') {
       try {
         let stat_resp = fs.stat(path, request)
-        if (stat_resp instanceof Response)
-          return stat_resp
-        return stat_resp.toResponse()
+        if (stat_resp instanceof basefs.Stat)
+          return stat_resp.toResponse()
+        return stat_resp
       }
       catch (e) {
         // TODO: Do something with the information from the StatNotFoundError

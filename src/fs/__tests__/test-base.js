@@ -31,9 +31,6 @@ describe('Base', () => {
     let options = Object.create(null);
     let bfs = new base.Base(name, path, options);
 
-    //let val = bfs.stat('')
-    //console.log(val)
-
     expect(() => {bfs.stat('')}).toThrow(new base.StatNotFoundError());
   });
 
@@ -43,14 +40,7 @@ describe('Base', () => {
     let options = Object.create(null);
     let bfs = new base.Base(name, path, options);
 
-    let ret = Object.create(null);
-
-    spyOn(Promise, 'resolve').and.returnValue(ret);
-
-    let val = bfs.read('');
-
-    expect(Promise.resolve).toHaveBeenCalledWith(new Response(null, {status: 405}));
-    expect(val).toBe(ret);
+    expect(() => {bfs.read('')}).toThrow(new base.FileNotFoundError());
   });
 
   it('does not write paths', () => {
@@ -140,6 +130,28 @@ describe('Stat', () => {
   });
 });
 
+describe('File', () => {
+
+  it('constructs correctly', () => {
+    let blob = Object.create(null);
+
+    let file = new base.File(blob);
+    expect(file).toBeDefined();
+    expect(file.blob).toBe(blob);
+    expect(file instanceof base.File).toBeTruthy();
+  });
+
+  it('returns itself as response', () => {
+    let blob = 'blob';
+
+    let file = new base.File(blob);
+
+    let ret = file.toResponse();
+
+    expect(ret).toEqual(new Response(blob, {status: 200}));
+  });
+});
+
 describe('StatNotFoundError', () => {
 
   it('constructs correctly', () => {
@@ -150,5 +162,29 @@ describe('StatNotFoundError', () => {
     expect(statError).toBeDefined();
     expect(statError.name).toBe('StatNotFoundError');
     expect(statError.message).toBe(message);
+  });
+});
+
+describe('FileNotFoundError', () => {
+
+  it('constructs correctly', () => {
+    let message = 'Some error message';
+
+    let fileError = new base.FileNotFoundError(message);
+
+    expect(fileError).toBeDefined();
+    expect(fileError.name).toBe('FileNotFoundError');
+    expect(fileError.message).toBe(message);
+  });
+});
+
+describe('IsDirectoryError', () => {
+
+  it('constructs correctly', () => {
+    let isDirError = new base.IsDirectoryError();
+
+    expect(isDirError).toBeDefined();
+    expect(isDirError.name).toBe('IsDirectoryError');
+    expect(isDirError.message).toBe('The requested file is a directory.');
   });
 });
