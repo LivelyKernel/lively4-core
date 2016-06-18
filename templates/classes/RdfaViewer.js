@@ -38,7 +38,7 @@ export default class RdfaViewer extends Morph {
           .append($('<td>').attr("colspan", 3)
             .append($('<i>').addClass("fa").addClass("fa-minus-square").addClass("treeToggle").attr('aria-hidden', true))
             .append(" ")
-            .append(projection._data_.subject)
+            .append(this.processUrl(projection._data_.subject))
           )
         );
         let properties = projection._data_.properties;
@@ -46,11 +46,44 @@ export default class RdfaViewer extends Morph {
           this.table.append(
             $('<tr>').attr('data-depth', 1).addClass("collapse")
               .append($('<td>'))
-              .append($('<td>').text(property))
-              .append($('<td>').text(properties[property])));
+              .append($('<td>').append(this.processUrl(property)))
+              .append($('<td>').append(this.processUrl(properties[property][0]))));
         }
       });
     });
+  }
+  
+  processUrl(string) {
+    if (typeof string == 'string' && this.isUrl(string)) {
+      let simpleName = this.getSimpleName(string);
+      simpleName = simpleName == "" ? string : simpleName;
+      let link = $('<a>').attr('href', string).text(simpleName);
+      return link;
+    }
+    else {
+      return string;
+    }
+  }
+  
+  getSimpleName(name) {
+    if (!name) return "";
+    let nameParts = name.split('?');
+    let firstPart = nameParts[0];
+    nameParts = firstPart.split('/');
+    let lastPart = nameParts[nameParts.length - 1];
+    nameParts = lastPart.split('#');
+    return nameParts[nameParts.length - 1];
+  }
+  
+  isUrl(string) {
+    let potentialUrl = string.split('?')[0];
+    let pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
+    '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
+    '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
+    '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
+    '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
+    '(\\#[-a-z\\d_]*)?$','i'); // fragment locater
+    return pattern.test(potentialUrl);
   }
   
   registerTreeToggle() {
