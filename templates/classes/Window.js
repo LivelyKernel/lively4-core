@@ -29,6 +29,10 @@ export default class Window extends Morph {
   get isFixed() {
     return this.hasAttribute('fixed');
   }
+  
+  get titleSpan() {
+    return this.shadowRoot.querySelector('.window-title span');
+  }
 
   setPosition(left, top) { // x, y
     this.style.top = top + 'px';
@@ -72,11 +76,8 @@ export default class Window extends Morph {
    * Initialization
    */
    
-   
-   
   defineShortcuts() {
     this.window = this.shadowRoot.querySelector('.window');
-    this.titleSpan = this.shadowRoot.querySelector('.window-title span');
 
     this.menuButton = this.shadowRoot.querySelector('.window-menu');
     this.minButton = this.shadowRoot.querySelector('.window-min');
