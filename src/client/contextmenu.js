@@ -123,7 +123,7 @@ export default class ContextMenu {
   static openRdfaViewer(evt, remote = false) {
     $('lively-rdfa-viewer').remove();
     
-    let div = document.createElement('div');
+    /*let div = document.createElement('div');
     div.style.position = 'fixed';
     div.style.right = 0;
     div.style.bottom = 0;
@@ -131,10 +131,14 @@ export default class ContextMenu {
     div.style.height = '400px';
     div.style.zIndex = 1000;
     div.style.overflow = 'auto';
-    div.style.background = '#ddd';
+    //div.style.background = '#ddd';*/
     
-    div.appendChild(lively.components.createComponent("lively-rdfa-viewer"));
-    lively.components.openInBody(div);
+    //div.appendChild(lively.components.createComponent("lively-rdfa-viewer"));
+    lively.components.openInWindow(lively.components.createComponent("lively-rdfa-viewer")).then((w) => {
+      w.style.position = 'fixed';
+      w.style.right = 0;
+      w.style.bottom = 0;
+    });
   }
 
   static openIn(container, evt, target) {

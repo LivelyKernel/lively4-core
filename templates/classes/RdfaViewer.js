@@ -20,6 +20,7 @@ export default class RdfaViewer extends Morph {
     this.table = $(this.shadowRoot.querySelector('#rdfaTable'));
     this.generateJSONTableRows(false);
     this.registerTreeToggle();
+    this.registerFirebaseButton();
   }
 
   /*
@@ -89,6 +90,12 @@ export default class RdfaViewer extends Morph {
       }
       return children;
     });
+  }
+  
+  registerFirebaseButton() {
+    $(this.shadowRoot.querySelector("#save-button")).on('click', () => {
+      rdfaManager.storeDataToFirebase();
+    })
   }
 
 }

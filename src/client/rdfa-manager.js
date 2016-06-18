@@ -133,7 +133,8 @@ export default class RdfaManager {
     }
   }
   
-  static storeDataToFirebase(path) {
+  static storeDataToFirebase() {
+    let path = document.title.replace(/([\.\$\#\[\]\/]|[^[:print:]])/g, "_");
     firebase.database().ref("rdfa/" + path).set(this.getRdfaAsJson());
   }
   

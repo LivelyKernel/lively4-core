@@ -13,9 +13,10 @@
     overflow: auto;
     z-index: 1000;
   }*/
-  :host {
+  .rdfa-container {
     overflow: auto;
-    background: #ddd;
+    background: rgba(255, 255, 255, 0.9);
+     border: 1px solid #ddd;
   }
   
   table#rdfaTable {
@@ -25,26 +26,57 @@
   
   table, tr, td, th {
     padding: 2px 4px;
-    border: 1px solid #bbb;
+    border: 1px solid #ddd;
+    border-left: 0;
   }
   
   th {
     padding: 8px;
   }
   
-  tr {
-    border: 1px solid #bbb;
+  .green-button {
+    color: #fff;
+    text-shadow: 0 -1px 0 rgba(0,0,0,0.15);
+    background-color: #60b044;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: bold;
+    line-height: 20px;
+    white-space: nowrap;
+    vertical-align: middle;
+    cursor: pointer;
+    border: 1px solid #d5d5d5;
+    border-radius: 3px;
+    background-image: linear-gradient(#8add6d, #60b044);
+    border-color: #5ca941;
+    margin: 5px;
   }
+  
+  .green-button:hover {
+    color: #fff;
+    background-color: #569e3d;
+    background-image: -webkit-linear-gradient(#79d858, #569e3d);
+    background-image: linear-gradient(#79d858, #569e3d);
+    border-color: #4a993e;
+  }
+  
   </style>
 
-  <table id="rdfaTable">
-    <tr>
-      <th>Subject</th>
-      <th>Property</th>
-      <th>Value</th>
-    </tr>
-  </table>
-
+  <div class="rdfa-container">
+    <div>
+      <button class="green-button" id="save-button">
+        <i class="fa fa-cloud-upload" aria-hidden=true></i>
+        Save to Firebase
+      </button>
+    </div>
+    <table id="rdfaTable">
+      <tr>
+        <th>Subject</th>
+        <th>Property</th>
+        <th>Value</th>
+      </tr>
+    </table>
+  </div>
   <script type="lively4script" data-name="initialize">
     () => {
 
