@@ -2,6 +2,15 @@ import * as rdfa from '../external/RDFa.js';
 
 export default class RdfaManager {
   
+  static loadFirebaseConfig() {
+    return {
+      apiKey: "AIzaSyCdiOSF0DUialcbR86BoJAmdj_RQFWgUk8",
+      authDomain: "webdev16-rdfa.firebaseapp.com",
+      databaseURL: "https://webdev16-rdfa.firebaseio.com",
+      storageBucket: "webdev16-rdfa.appspot.com",
+    };
+  }
+  
   static makeLocationsClickable(property) {
     property.origins.forEach((valueOrigin) => {
       if (this.isGeoLocation(property)) {
@@ -75,14 +84,14 @@ export default class RdfaManager {
     });
   }
   
-  static buildJSONRdfaDataStructure(remote = false) {
+  static buildJSONRdfaDataStructure(fromFirebase = false) {
     return new Promise((resolve, reject) => {
-      if (remote) {
+      if (fromFirebase) {
         this.readDataFromFirebase().then((jsonWrapper) => {
           resolve(JSON.parse(jsonWrapper.val()));
         })
       } else {
-        resolve(JSON.parse(this.storeData()));
+        resolve(JSON.parse(this.getRdfaAsJson()));
       }
     });
   }
@@ -107,30 +116,30 @@ export default class RdfaManager {
     GreenTurtle.attach(document);
   }
 
-  static storeData() {
-    var json = JSON.stringify(document.data.rdfa.query(), function(key, val) {
+  static getRdfaAsJson() {
+    var json = JSON.stringify(
+      document.data.rdfa.query(),
+      function(key, val) {
         if (key == 'owner' && typeof val == 'object') return;
         return val;
-      });
-    localStorage.setItem("rdfa", json);
+      }
+    );
     return json;
   }
   
   static initializeFirebase() {
-     var config = {
-        apiKey: "AIzaSyCdiOSF0DUialcbR86BoJAmdj_RQFWgUk8",
-        authDomain: "webdev16-rdfa.firebaseapp.com",
-        databaseURL: "https://webdev16-rdfa.firebaseio.com",
-        storageBucket: "webdev16-rdfa.appspot.com",
-      };
-      firebase.initializeApp(config);
+    if (firebase.apps.length === 0) {
+      firebase.initializeApp(this.loadFirebaseConfig());
+    }
   }
   
-  static storeDataToFirebase() {
-    firebase.database().ref("rdfa").set(this.storeData());
+  static storeDataToFirebase(path) {
+    firebase.database().ref("rdfa/" + path).set(this.getRdfaAsJson());
   }
   
-  static readDataFromFirebase() {
-    return firebase.database().ref("rdfa").once('value') // returns a Promise
+  static readDataFromFirebase(path) {
+    return firebase.database().ref("rdfa/" + path).once('value') // returns a Promise
   }
 }
+
+RdfaManager.initializeFirebase();

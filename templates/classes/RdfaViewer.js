@@ -29,7 +29,7 @@ export default class RdfaViewer extends Morph {
 
   }
   
-  generateJSONTableRows(remote) {
+  generateJSONTableRows(remote = false) {
     rdfaManager.buildJSONRdfaDataStructure(remote).then((data) => {
       data.forEach((projection) => {
         this.table.append($('<tr>').attr('data-depth', 0).addClass("collapse")
