@@ -33,6 +33,8 @@ export default class Window extends Morph {
   setPosition(left, top) { // x, y
     this.style.top = top + 'px';
     this.style.left = left + 'px';
+    this.style.right = "";
+    this.style.bottom = "";
   }
 
   setSize(width, height) {
@@ -251,7 +253,8 @@ export default class Window extends Morph {
     
       this.style.position = "fixed";
       this.style.top = this.minimizedWindowPadding +"px";
-      this.style.left = (window.innerWidth - this.minimizedWindowWidth - this.minimizedWindowPadding)+"px";
+      this.style.left = "";
+      this.style.right = this.minimizedWindowPadding + "px";
       this.style.width = "300px";
       this.style.height= "30px";
       content.style.display = "none";
