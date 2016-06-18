@@ -35,7 +35,7 @@ export default class RdfaViewer extends Morph {
     rdfaManager.buildJSONRdfaDataStructure(remote).then((data) => {
       data.forEach((projection) => {
         this.table.append($('<tr>').attr('data-depth', 0).addClass("collapse")
-          .append($('<td>').attr("colspan", 3)
+          .append($('<td>').attr("colspan", 3).attr("id", projection._data_.subject)
             .append($('<i>').addClass("fa").addClass("fa-minus-square").addClass("treeToggle").attr('aria-hidden', true))
             .append(" ")
             .append(this.processUrl(projection._data_.subject))
@@ -43,14 +43,32 @@ export default class RdfaViewer extends Morph {
         );
         let properties = projection._data_.properties;
         for (let property in properties) {
+          let propertyString = properties[property][0];
           this.table.append(
             $('<tr>').attr('data-depth', 1).addClass("collapse")
               .append($('<td>'))
               .append($('<td>').append(this.processUrl(property)))
-              .append($('<td>').append(this.processUrl(properties[property][0]))));
+              .append($('<td>').append(this.isSubject(propertyString) ? this.processSubject(propertyString) : this.processUrl(propertyString))));
         }
       });
     });
+  }
+  
+  isSubject(string) {
+    if (string && typeof string == 'string') {
+      var pattern = new RegExp("^_:(\\d)+$")
+      return pattern.test(string);  
+    }
+    return false;
+  }
+  
+  processSubject(value) {
+    let link = $('<span>').text(value);
+    link.on('click', () => {
+      let elem = this.shadowRoot.querySelector("[id='" + value + "']")
+      //TODO
+    })
+    return link;
   }
   
   processUrl(string) {
