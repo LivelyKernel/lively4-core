@@ -10,6 +10,7 @@ export default class RdfaViewer extends Morph {
    */
   attachedCallback() {
     this.setup();
+    this.windowTitle = "RDFa data";
   }
 
   /*
