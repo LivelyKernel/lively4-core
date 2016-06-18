@@ -16,7 +16,9 @@ export default class RdfaManager {
       if (fromFirebase) {
         this.readDataFromFirebase().then((jsonWrapper) => {
           resolve(JSON.parse(jsonWrapper.val()));
-        })
+        }).catch((reason) => {
+          reject(reason);
+        });
       } else {
         resolve(JSON.parse(this.getRdfaAsJson()));
       }
@@ -24,7 +26,15 @@ export default class RdfaManager {
   }
 
   static reloadData() {
-    GreenTurtle.attach(document);
+    return new Promise((resolve, reject) => {
+      let listenerFunc = (() => {
+        lively.notify("RDFa loaded");
+        document.removeEventListener("rdfa.loaded", listenerFunc);
+        resolve();
+      });
+      document.addEventListener("rdfa.loaded", listenerFunc, false);
+      GreenTurtle.attach(document);
+    });
   }
 
   static getRdfaAsJson() {
@@ -46,7 +56,12 @@ export default class RdfaManager {
   
   static storeDataToFirebase() {
     let path = document.title.replace(/([\.\$\#\[\]\/]|[^[:print:]])/g, "_");
-    firebase.database().ref("rdfa/" + path).set(this.getRdfaAsJson());
+    let fullPath = "rdfa/" + path;
+    firebase.database().ref(fullPath).set(this.getRdfaAsJson()).then(() => {
+      lively.notify("Saved RDFa data", fullPath);
+    }).catch((reason) => {
+      lively.notify("Failed to save RDFa data to " + fullPath, reason);
+    });
   }
   
   static readDataFromFirebase(path) {

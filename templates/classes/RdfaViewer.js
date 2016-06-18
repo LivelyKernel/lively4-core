@@ -3,6 +3,13 @@
 import Morph from './Morph.js';
 import rdfaManager from '../../src/client/rdfa-manager.js'
 
+const urlPattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
+    '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
+    '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
+    '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
+    '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
+    '(\\#[-a-z\\d_]*)?$','i'); // fragment locater
+
 export default class RdfaViewer extends Morph {
 
   /*
@@ -17,11 +24,12 @@ export default class RdfaViewer extends Morph {
    * Initialization
    */
   setup() {
-    rdfaManager.reloadData();
-    this.table = $(this.shadowRoot.querySelector('#rdfaTable'));
-    this.generateJSONTableRows(false);
-    this.registerTreeToggle();
-    this.registerFirebaseButton();
+    rdfaManager.reloadData().then(() => {
+      this.table = $(this.shadowRoot.querySelector('#rdfaTable'));
+      this.generateJSONTableRows(false);
+      this.registerTreeToggle();
+      this.registerFirebaseButton();
+    });
   }
 
   /*
@@ -63,10 +71,18 @@ export default class RdfaViewer extends Morph {
   }
   
   processSubject(value) {
-    let link = $('<span>').text(value);
+    let link = $('<a>').addClass('rdfa-subject').attr('target', '_blank').text(value);
     link.on('click', () => {
-      let elem = this.shadowRoot.querySelector("[id='" + value + "']")
-      //TODO
+      let elem = $(this.shadowRoot.querySelector("[id='" + value + "']"));
+      elem.scrollintoview({complete: () => {
+        elem.animate({
+          opacity: "0.2"
+        }, 250, function() {
+          elem.animate({
+            opacity: "1"
+          }, 250);
+        });
+      }});
     })
     return link;
   }
@@ -75,7 +91,7 @@ export default class RdfaViewer extends Morph {
     if (typeof string == 'string' && this.isUrl(string)) {
       let simpleName = this.getSimpleName(string);
       simpleName = simpleName == "" ? string : simpleName;
-      let link = $('<a>').attr('href', string).text(simpleName);
+      let link = $('<a>').attr('href', string).attr('target', '_blank').text(simpleName);
       return link;
     }
     else {
@@ -95,13 +111,7 @@ export default class RdfaViewer extends Morph {
   
   isUrl(string) {
     let potentialUrl = string.split('?')[0];
-    let pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
-    '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
-    '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
-    '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
-    '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
-    '(\\#[-a-z\\d_]*)?$','i'); // fragment locater
-    return pattern.test(potentialUrl);
+    return urlPattern.test(potentialUrl);
   }
   
   registerTreeToggle() {

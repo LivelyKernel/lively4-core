@@ -1,6 +1,7 @@
 'use strict';
 
 import * as jquery from '../external/jquery.js';
+import * as scrollIntoView from '../external/jquery.scrollintoview.js';
 import * as _ from '../external/underscore.js';
 
 import * as firebase from '../external/firebase.js';
