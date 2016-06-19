@@ -51,6 +51,10 @@
     border-color: #4a993e;
   }
   
+  .reload-button {
+    
+  }
+  
   .rdfa-subject {
     cursor: pointer;
   }
@@ -59,17 +63,16 @@
 
   <div class="rdfa-container">
     <div>
+      <button class="green-button" id="reload-button">
+        <i class="fa fa-refresh" aria-hidden=true title="Reload RDFa"></i>
+        Reload RDFa
+      </button>
       <button class="green-button" id="save-button">
         <i class="fa fa-cloud-upload" aria-hidden=true></i>
         Save to Firebase
       </button>
     </div>
     <table id="rdfaTable">
-      <tr>
-        <th>Subject</th>
-        <th>Property</th>
-        <th>Value</th>
-      </tr>
     </table>
   </div>
   <script type="lively4script" data-name="initialize">

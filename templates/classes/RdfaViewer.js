@@ -24,12 +24,18 @@ export default class RdfaViewer extends Morph {
    * Initialization
    */
   setup() {
-    rdfaManager.reloadData().then(() => {
       this.table = $(this.shadowRoot.querySelector('#rdfaTable'));
+      this.registerFirebaseButton();
+      this.registerReloadRdfaButton();
+      this.loadRdfaDataAndFillTable();
+  }
+  
+  loadRdfaDataAndFillTable() {
+    rdfaManager.reloadData().then(() => {
+      this.createTableHeader();
       this.generateJSONTableRows(false);
       this.registerTreeToggle();
-      this.registerFirebaseButton();
-    });
+    });  
   }
 
   /*
@@ -37,6 +43,15 @@ export default class RdfaViewer extends Morph {
    */
   render() {
 
+  }
+  
+  createTableHeader() {
+    this.table
+      .append($('<tr>')
+        .append($('<th>').text("Subject"))
+        .append($('<th>').text("Property"))
+        .append($('<th>').text("Value"))
+      )
   }
   
   generateJSONTableRows(remote = false) {
@@ -157,6 +172,13 @@ export default class RdfaViewer extends Morph {
   registerFirebaseButton() {
     $(this.shadowRoot.querySelector("#save-button")).on('click', () => {
       rdfaManager.storeDataToFirebase();
+    })
+  }
+  
+  registerReloadRdfaButton() {
+    $(this.shadowRoot.querySelector("#reload-button")).on('click', () => {
+      this.table.empty();
+      this.loadRdfaDataAndFillTable();
     })
   }
 
