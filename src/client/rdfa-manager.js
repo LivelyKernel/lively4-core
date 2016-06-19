@@ -30,6 +30,7 @@ export default class RdfaManager {
       let listenerFunc = (() => {
         lively.notify("RDFa loaded");
         document.removeEventListener("rdfa.loaded", listenerFunc);
+        this.notifyRdfaEventListener();
         resolve();
       });
       document.addEventListener("rdfa.loaded", listenerFunc, false);
@@ -67,6 +68,24 @@ export default class RdfaManager {
   static readDataFromFirebase(path) {
     return firebase.database().ref("rdfa/" + path).once('value') // returns a Promise
   }
+  
+  //TODO
+  /* 
+  lively.rdfaManager.addRdfaEventListener({ "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : "http://schema.org/GeoCoordinates" }, (projs) => {lively.notify("RDFa Geo data detected", projs)})
+   */
+  static addRdfaEventListener(mapping, callback) {
+    this.listener.push({mapping: mapping, callback: callback})
+  }
+  
+  static notifyRdfaEventListener() {
+    this.listener.forEach((listener) => {
+      let projections = document.data.rdfa.query(listener.mapping);
+      if (projections.length > 0) {
+        listener.callback(projections);
+      }
+    })
+  }
 }
 
+RdfaManager.listener = [];
 RdfaManager.initializeFirebase();
