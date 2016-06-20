@@ -21,9 +21,13 @@ export default class ContextMenu {
            this.hide()
            lively.showElement(target)
         }],
-        ["show source", (evt) => {
+        ["browse template source", (evt) => {
            this.hide()
            lively.showSource(target, evt)
+        }],
+        ["browse class source", (evt) => {
+           this.hide()
+           lively.showClassSource(target, evt)
         }],
         [wasEditable ? "make uneditable" : "make editable", (evt) => {
            this.hide()

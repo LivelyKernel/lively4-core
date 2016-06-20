@@ -234,12 +234,6 @@ export default class Lively {
 
     exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expected
 
-    // this.import("authGithub", kernel.realpath('/src/client/auth-github.js'))
-    // this.import("authDropbox", kernel.realpath('/src/client/auth-dropbox.js'))
-    // this.import("authGoogledrive", kernel.realpath('/src/client/auth-googledrive.js'))
-
-    // this.import("expose")
-
     // for anonymous lively.modules workspaces
     if (lively.modules && !lively.modules.isHookInstalled("fetch", "workspaceFetch")) {
       lively.modules.installHook("fetch", function workspaceFetch(proceed, load) {
@@ -362,10 +356,9 @@ export default class Lively {
   }
 
   static hideContextMenu(evt) {
-    // console.log("hide: " + (evt.path[0] === document.body))
     if (evt.path[0] !== document.body) return
     console.log("hide context menu:" + evt)
-    this.import("contextmenu").then(m => m.hide());
+    contextmenu.hide()
   }
 
   static openContextMenu(container, evt, target) {
@@ -374,8 +367,7 @@ export default class Lively {
       target = that
     }
     console.log("open context menu: " + target);
-    this.import("contextmenu").then(m => m.openIn(container, evt, target));
-
+    contextmenu.openIn(container, evt, target)
   }
 
   static log(/* varargs */) {
@@ -524,6 +516,21 @@ export default class Lively {
       lively.notify("Could not show source for: " + object)
     }
   }
+
+  static async showClassSource(object, evt) {
+    // object = that
+    if (object instanceof HTMLElement) {
+      let templateFile = lively4url +"/templates/" + object.localName + ".html",
+        source = await fetch(templateFile).then( r => r.text());
+        template = $.parseHTML(source).find( ea => ea.tagName == "TEMPLATE"),
+        className = template.getAttribute('data-class'),
+        moduleURL = lively4url +"/templates/classes/" + className + ".js";
+      lively.openBrowser(moduleURL, true, className);
+    } else {
+      lively.notify("Could not show source for: " + object)
+    }
+  }
+
 
   static showElement(elem, timeout) {
     var comp = document.createElement("div")
