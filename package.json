@@ -25,7 +25,14 @@
     "Oriented",
     "Programming"
   ],
-  "author": "",
+  "author": "HPI Software Architecture Group (https://github.com/LivelyKernel)",
+  "contributors": [
+    "Jens Lincke <jens.lincke@hpi.de>",
+    "Stefan Lehmann <stefan.lehmann@student.hpi.uni-potsdam.de>",
+    "Robert Krahn <robert.krahn@gmail.com>",
+    "Jakob Reschke <jakres@gmail.com>",
+    "Marianne Thieffry <marianne.thieffry@gmail.com>"
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/LivelyKernel/ContextJS/issues"
