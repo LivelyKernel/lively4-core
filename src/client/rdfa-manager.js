@@ -30,6 +30,7 @@ export default class RdfaManager {
       let listenerFunc = (() => {
         lively.notify("RDFa loaded");
         document.removeEventListener("rdfa.loaded", listenerFunc);
+        this.buildRdfaObjectGraph();
         this.notifyRdfaEventListener();
         resolve();
       });
@@ -81,10 +82,43 @@ export default class RdfaManager {
     this.listener.forEach((listener) => {
       let projections = document.data.rdfa.query(listener.mapping);
       if (projections.length > 0) {
-        //TODO also provide whole rdfa data structure or object structure
-        listener.callback(projections);
+        listener.callback(this.resolveSubjects(projections));
       }
     })
+  }
+
+  static resolveSubjects(projections) {
+    projections.forEach((projection) => {
+      let properties = projection._data_.properties;
+      for (property in properties) {
+        let values = properties[property];
+        for (let i = 0; i < values.length; i++) {
+          let value = values[i];
+          if (this.isSubject(value)) {
+            values[i] = this.subject2DataMapping[value];
+          }
+        }
+      }
+    })
+    return projections;
+  }
+
+  static isSubject(string) {
+    if (string && typeof string == 'string') {
+      var pattern = new RegExp("^_:(\\d)+$")
+      return pattern.test(string);
+    }
+    return false;
+  }
+
+  static buildRdfaObjectGraph() {
+    this.subject2DataMapping = {};
+    let projections = document.data.rdfa.query();
+    projections.forEach((projection) => {
+      let properties = projection._data_.properties;
+      this.subject2DataMapping[projection.getSubject()] = projection;
+    });
+    this.objectGraph = this.resolveSubjects(projections);
   }
 }
 
