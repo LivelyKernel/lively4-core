@@ -501,7 +501,6 @@ describe('contextjs', function () {
 
     describe('class refinement', function () {
 
-        // TODO: this test also uses proceed, test that separately?
         it('changes behavior of methods', function() {
             // given
             const layer1 = new Layer('LtestLayerClass');
