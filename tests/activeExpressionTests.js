@@ -5,7 +5,7 @@ import Interpreter from './../src/babelsberg/jsinterpreter/interpreter.js'
 import { ConstraintInterpreter } from '../src/active-expressions.js';
 
 
-describe('Scope', function() {
+describe('Active Expressions', function() {
     it("should interpret", function() {
         var predicate = function () {
             return 23;
@@ -13,6 +13,7 @@ describe('Scope', function() {
         var i = new Interpreter(`var returnValue = (${predicate.toString()})();`);
         i.run();
         assert.equal(23, i.stateStack[0].scope.properties.returnValue)
+        //expect(i.stateStack[0].scope.properties.returnValue).to.equal(23);
     })
 
     it("should interpret constrained", function() {
