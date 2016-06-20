@@ -70,10 +70,6 @@ export default class RdfaManager {
     return firebase.database().ref("rdfa/" + path).once('value') // returns a Promise
   }
 
-  //TODO
-  /*
-  lively.rdfa.addRdfaEventListener({ "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : "http://schema.org/GeoCoordinates" }, (projs) => {lively.notify("RDFa Geo data detected", projs)})
-   */
   static addRdfaEventListener(mapping, callback) {
     this.listener.push({mapping: mapping, callback: callback})
   }
@@ -90,7 +86,7 @@ export default class RdfaManager {
   static resolveSubjects(projections) {
     projections.forEach((projection) => {
       let properties = projection._data_.properties;
-      for (property in properties) {
+      for (let property in properties) {
         let values = properties[property];
         for (let i = 0; i < values.length; i++) {
           let value = values[i];
