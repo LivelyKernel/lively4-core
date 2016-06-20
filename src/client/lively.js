@@ -50,7 +50,11 @@ var exportmodules = [
   "components",
   "inspector",
   "color",
-  "focalStorage"];
+  "focalStorage",
+  "authGithub",
+  "authDropbox",
+  "authGoogledrive"
+];
 
 
 
@@ -60,6 +64,18 @@ var exportmodules = [
 export default class Lively {
 
 
+  static reloadModule(path) {
+    path = "" + path;
+    if (lively.modules && path)
+      lively.modules.reloadModule(path);
+      
+    var moduleName = path.replace(/[^\/]*/,"")
+    if (lively.components && this[moduleName]) {
+      console.log("update template prototype: " + moduleName)
+      lively.components.updatePrototype(this[moduleName].prototype);
+    }
+  }
+  
   static import(moduleName, path, forceLoad) {
 
     if (lively.modules && path)
@@ -223,11 +239,11 @@ export default class Lively {
 
     exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expected
 
-    this.import("authGithub", kernel.realpath('/src/client/auth-github.js'))
-    this.import("authDropbox", kernel.realpath('/src/client/auth-dropbox.js'))
-    this.import("authGoogledrive", kernel.realpath('/src/client/auth-googledrive.js'))
+    // this.import("authGithub", kernel.realpath('/src/client/auth-github.js'))
+    // this.import("authDropbox", kernel.realpath('/src/client/auth-dropbox.js'))
+    // this.import("authGoogledrive", kernel.realpath('/src/client/auth-googledrive.js'))
 
-    this.import("expose")
+    // this.import("expose")
 
     // for anonymous lively.modules workspaces
     if (lively.modules && !lively.modules.isHookInstalled("fetch", "workspaceFetch")) {
@@ -640,8 +656,12 @@ export default class Lively {
 if (window.lively)
   Object.assign(Lively, window.lively) // copy objects from lively.modules
 
-window.lively = Lively
-Lively.loaded();
+if (!window.lively || window.lively.name != "Lively") {
+  console.log("loaded lively intializer");
+  // only load once... not during development
+  window.lively = Lively
+  Lively.loaded();
+}
 
 
 console.log("loaded lively");

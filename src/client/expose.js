@@ -247,14 +247,18 @@ export default class Expose {
   }
 
   static postLoad() {
-    // basic class configuration
-    Expose.isOpen = false;
-    Expose.windowsPerRows = 3;
+    if (window.lively) {
+      // basic class configuration
+      Expose.isOpen = false;
+      Expose.windowsPerRows = 3;
 
-    lively.removeEventListener("expose")
-    lively.addEventListener("expose", document.body, 'keydown', Expose.bodyKeyDown)
+      lively.removeEventListener("expose")
+      lively.addEventListener("expose", document.body, 'keydown', Expose.bodyKeyDown)
+    } else {
+      window.setTimeout(this.postLoad, 100)
+    }
+    
   }
 }
-
 
 console.info('Expose loaded');
