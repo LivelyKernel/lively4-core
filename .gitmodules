@@ -1,0 +1,3 @@
+[submodule "src/babelsberg"]
+	path = src/babelsberg
+	url = https://github.com/babelsberg/babelsberg.js.git
