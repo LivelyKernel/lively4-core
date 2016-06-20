@@ -368,28 +368,6 @@ var globalContextForLayers = {};
 
 export { globalContextForLayers as Global };
 
-// Layering objects may be a garbage collection problem, because the layers keep strong
-// reference to the objects
-export function layerObject(layer, object, defs) {
-  // log("cop layerObject");
-  
-  // Bookkeeping:
-  // typeof object.getName === 'function' && (layer._layeredFunctionsList[object] = {});
-  Object.getOwnPropertyNames(defs).forEach(
-    function (function_name) {
-      // log(" layer property: " + function_name)
-      layerProperty(layer, object, function_name, defs);
-    });
-};
-
-// layer around only the class methods
-export function layerClass(layer, classObject, defs) {
-  if (!classObject || !classObject.prototype) {
-    throw new Error("ContextJS: can not refine class '" + classOBject + "' in " + layer);
-  }
-  layerObject(layer, classObject.prototype, defs);
-};
-
 // Gloabl Layer Activation
 export function enableLayer(layer) {
   if (GlobalLayers.indexOf(layer) !== -1) {
