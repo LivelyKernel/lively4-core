@@ -29,10 +29,16 @@ export default class Window extends Morph {
   get isFixed() {
     return this.hasAttribute('fixed');
   }
+  
+  get titleSpan() {
+    return this.shadowRoot.querySelector('.window-title span');
+  }
 
   setPosition(left, top) { // x, y
     this.style.top = top + 'px';
     this.style.left = left + 'px';
+    this.style.right = "";
+    this.style.bottom = "";
   }
 
   setSize(width, height) {
@@ -70,11 +76,8 @@ export default class Window extends Morph {
    * Initialization
    */
    
-   
-   
   defineShortcuts() {
     this.window = this.shadowRoot.querySelector('.window');
-    this.titleSpan = this.shadowRoot.querySelector('.window-title span');
 
     this.menuButton = this.shadowRoot.querySelector('.window-menu');
     this.minButton = this.shadowRoot.querySelector('.window-min');
@@ -251,7 +254,8 @@ export default class Window extends Morph {
     
       this.style.position = "fixed";
       this.style.top = this.minimizedWindowPadding +"px";
-      this.style.left = (window.innerWidth - this.minimizedWindowWidth - this.minimizedWindowPadding)+"px";
+      this.style.left = "";
+      this.style.right = this.minimizedWindowPadding + "px";
       this.style.width = "300px";
       this.style.height= "30px";
       content.style.display = "none";
