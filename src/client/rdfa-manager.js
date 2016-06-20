@@ -81,6 +81,7 @@ export default class RdfaManager {
     this.listener.forEach((listener) => {
       let projections = document.data.rdfa.query(listener.mapping);
       if (projections.length > 0) {
+        //TODO also provide whole rdfa data structure or object structure
         listener.callback(projections);
       }
     })

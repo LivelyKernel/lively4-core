@@ -8,6 +8,23 @@ const urlPattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
     '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
     '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
     '(\\#[-a-z\\d_]*)?$','i'); // fragment locater
+    
+var listenerSampleCode = 
+`lively.rdfa.addRdfaEventListener(
+  {
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : "{{type}}"
+  },
+  (projections) => {
+  	var string = "";
+  	projections.forEach((projection) => {
+  	  var properties = projection._data_.properties;
+      for (var property in properties) {
+      	string += property + " : " + properties[property] + "\\n"
+      }
+  	});
+    lively.notify("RDFa {{type}} detected", string)
+  }
+)`
 
 export default class RdfaViewer extends Morph {
 
@@ -65,12 +82,13 @@ export default class RdfaViewer extends Morph {
         );
         let properties = projection._data_.properties;
         for (let property in properties) {
-          let propertyString = properties[property][0];
+          let value = properties[property][0];
           this.table.append(
             $('<tr>').attr('data-depth', 1).addClass("collapse")
-              .append($('<td>'))
+              .append($('<td>').append(this.addRdfaListenerSample(property, value)))
               .append($('<td>').append(this.processUrl(property)))
-              .append($('<td>').append(this.isSubject(propertyString) ? this.processSubject(propertyString) : this.processUrl(propertyString))));
+              .append($('<td>').append(this.isSubject(value) ? this.processSubject(value) : this.processUrl(value)))
+          );
         }
       });
     });
@@ -126,6 +144,17 @@ export default class RdfaViewer extends Morph {
   isUrl(string) {
     let potentialUrl = string.split('?')[0];
     return urlPattern.test(potentialUrl);
+  }
+  
+  addRdfaListenerSample(property, value) {
+    if (property === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
+      return $('<i>').addClass("fa").addClass("fa-bug").attr('aria-hidden', true).addClass("listenerSample")
+        .on('click', (evt) => {
+          lively.openWorkspace(listenerSampleCode.replace(/{{type}}/g, value));
+        }
+      )
+    }
+    return "";
   }
 
   registerTreeToggle() {
