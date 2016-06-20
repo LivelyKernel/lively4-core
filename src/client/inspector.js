@@ -35,4 +35,4 @@ export default class Inspector  {
 
 
 }
-console.log("loaded html.js")
+console.log("loaded inspector.js")
