@@ -16,6 +16,7 @@ module.exports = function(config) {
     files: [
       'node_modules/babel-polyfill/dist/polyfill.js',
       'contextjs.js',
+      'module_import.js',
       'Layers.js',
       'old-api.js',
       'tests/**/*test.js',
@@ -32,6 +33,7 @@ module.exports = function(config) {
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
       'contextjs.js': ['babel', 'commonjs'],
+      'module_import.js': ['babel', 'commonjs'],
       'Layers.js': ['babel', 'commonjs'],
       'old-api.js': ['babel', 'commonjs'],
       'tests/**/*.js': ['babel', 'commonjs'],
