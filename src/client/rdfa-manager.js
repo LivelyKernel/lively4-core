@@ -1,7 +1,7 @@
 import * as rdfa from '../external/RDFa.js';
 
 export default class RdfaManager {
-  
+
   static loadFirebaseConfig() {
     return {
       apiKey: "AIzaSyCdiOSF0DUialcbR86BoJAmdj_RQFWgUk8",
@@ -10,7 +10,7 @@ export default class RdfaManager {
       storageBucket: "webdev16-rdfa.appspot.com",
     };
   }
-  
+
   static buildJSONRdfaDataStructure(fromFirebase = false) {
     return new Promise((resolve, reject) => {
       if (fromFirebase) {
@@ -48,13 +48,13 @@ export default class RdfaManager {
     );
     return json;
   }
-  
+
   static initializeFirebase() {
     if (firebase.apps.length === 0) {
       firebase.initializeApp(this.loadFirebaseConfig());
     }
   }
-  
+
   static storeDataToFirebase() {
     let path = document.title.replace(/([\.\$\#\[\]\/]|[^[:print:]])/g, "_");
     let fullPath = "rdfa/" + path;
@@ -64,19 +64,19 @@ export default class RdfaManager {
       lively.notify("Failed to save RDFa data to " + fullPath, reason);
     });
   }
-  
+
   static readDataFromFirebase(path) {
     return firebase.database().ref("rdfa/" + path).once('value') // returns a Promise
   }
-  
+
   //TODO
-  /* 
-  lively.rdfaManager.addRdfaEventListener({ "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : "http://schema.org/GeoCoordinates" }, (projs) => {lively.notify("RDFa Geo data detected", projs)})
+  /*
+  lively.rdfa.addRdfaEventListener({ "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : "http://schema.org/GeoCoordinates" }, (projs) => {lively.notify("RDFa Geo data detected", projs)})
    */
   static addRdfaEventListener(mapping, callback) {
     this.listener.push({mapping: mapping, callback: callback})
   }
-  
+
   static notifyRdfaEventListener() {
     this.listener.forEach((listener) => {
       let projections = document.data.rdfa.query(listener.mapping);

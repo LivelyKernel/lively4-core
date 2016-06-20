@@ -10,7 +10,7 @@ import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
 import * as preferences from './preferences.js';
 import * as persistence from './persistence.js';
-import rdfaManager from './rdfa-manager.js';
+import rdfa from './rdfa-manager.js';
 
 
 import html from './html.js';
@@ -55,7 +55,7 @@ var exportmodules = [
   "inspector",
   "color",
   "focalStorage",
-  "rdfaManager"];
+  "rdfa"];
 
 
 

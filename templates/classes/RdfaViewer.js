@@ -1,7 +1,6 @@
 'use strict';
 
 import Morph from './Morph.js';
-import rdfaManager from '../../src/client/rdfa-manager.js'
 
 const urlPattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
     '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
@@ -29,13 +28,13 @@ export default class RdfaViewer extends Morph {
       this.registerReloadRdfaButton();
       this.loadRdfaDataAndFillTable();
   }
-  
+
   loadRdfaDataAndFillTable() {
-    rdfaManager.reloadData().then(() => {
+    lively.rdfa.reloadData().then(() => {
       this.createTableHeader();
       this.generateJSONTableRows(false);
       this.registerTreeToggle();
-    });  
+    });
   }
 
   /*
@@ -44,7 +43,7 @@ export default class RdfaViewer extends Morph {
   render() {
 
   }
-  
+
   createTableHeader() {
     this.table
       .append($('<tr>')
@@ -53,9 +52,9 @@ export default class RdfaViewer extends Morph {
         .append($('<th>').text("Value"))
       )
   }
-  
+
   generateJSONTableRows(remote = false) {
-    rdfaManager.buildJSONRdfaDataStructure(remote).then((data) => {
+    lively.rdfa.buildJSONRdfaDataStructure(remote).then((data) => {
       data.forEach((projection) => {
         this.table.append($('<tr>').attr('data-depth', 0).addClass("collapse")
           .append($('<td>').attr("colspan", 3).attr("id", projection._data_.subject)
@@ -76,15 +75,15 @@ export default class RdfaViewer extends Morph {
       });
     });
   }
-  
+
   isSubject(string) {
     if (string && typeof string == 'string') {
       var pattern = new RegExp("^_:(\\d)+$")
-      return pattern.test(string);  
+      return pattern.test(string);
     }
     return false;
   }
-  
+
   processSubject(value) {
     let link = $('<a>').addClass('rdfa-subject').attr('target', '_blank').text(value);
     link.on('click', () => {
@@ -101,7 +100,7 @@ export default class RdfaViewer extends Morph {
     })
     return link;
   }
-  
+
   processUrl(string) {
     if (typeof string == 'string' && this.isUrl(string)) {
       let simpleName = this.getSimpleName(string);
@@ -113,7 +112,7 @@ export default class RdfaViewer extends Morph {
       return string;
     }
   }
-  
+
   getSimpleName(name) {
     if (!name) return "";
     let nameParts = name.split('?');
@@ -123,12 +122,12 @@ export default class RdfaViewer extends Morph {
     nameParts = lastPart.split('#');
     return nameParts[nameParts.length - 1];
   }
-  
+
   isUrl(string) {
     let potentialUrl = string.split('?')[0];
     return urlPattern.test(potentialUrl);
   }
-  
+
   registerTreeToggle() {
     let rdfaViewer = this;
     this.table.on('click', '.treeToggle', function (evt) {
@@ -145,8 +144,8 @@ export default class RdfaViewer extends Morph {
       var children = findChildren(tr);
 
       //Remove already collapsed nodes from children so that we don't
-      //make them visible. 
-      //(Confused? Remove this code and close Item 2, close Item 1 
+      //make them visible.
+      //(Confused? Remove this code and close Item 2, close Item 1
       //then open Item 1 again, then you will understand)
       var subnodes = children.filter('.expand');
       subnodes.each(function () {
@@ -168,13 +167,13 @@ export default class RdfaViewer extends Morph {
       return children;
     });
   }
-  
+
   registerFirebaseButton() {
     $(this.shadowRoot.querySelector("#save-button")).on('click', () => {
-      rdfaManager.storeDataToFirebase();
+      lively.rdfa.storeDataToFirebase();
     })
   }
-  
+
   registerReloadRdfaButton() {
     $(this.shadowRoot.querySelector("#reload-button")).on('click', () => {
       this.table.empty();
