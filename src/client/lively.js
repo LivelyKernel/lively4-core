@@ -20,7 +20,6 @@ import contextmenu from './contextmenu.js';
 import keys from './keys.js';
 import components from './morphic/component-loader.js';
 
-
 import authGithub from './auth-github.js'
 import authDropbox from './auth-dropbox.js'
 import authGoogledrive  from './auth-googledrive.js'
@@ -62,22 +61,7 @@ var exportmodules = [
 // By structuring our modules differently, we still can act as es6 module to the outside but develop at runtime
 // #IDEA: I refactored from "static module and function style" to "dynamic object" style
 export default class Lively {
-
-
-  static reloadModule(path) {
-    path = "" + path;
-    if (lively.modules && path)
-      lively.modules.reloadModule(path);
-      
-    var moduleName = path.replace(/[^\/]*/,"")
-    if (lively.components && this[moduleName]) {
-      console.log("update template prototype: " + moduleName)
-      lively.components.updatePrototype(this[moduleName].prototype);
-    }
-  }
-  
   static import(moduleName, path, forceLoad) {
-
     if (lively.modules && path)
       lively.modules.reloadModule("" + path);
 
@@ -116,17 +100,28 @@ export default class Lively {
     })
   }
 
-  static reloadModule(path, optSource) {
-    if (!path) path = this.defaultPath(moduleName)
-    if (!path) throw Error("Could not imoport " + moduleName + ", not path specified!")
-
-    if (this[moduleName]) {
-      return new Promise((resolve) => { resolve(this[moduleName])});
-    }
-    return System.import(path).then( module => {
-      console.log("lively: load "+ moduleName);
-      this[moduleName] = module.default || module;
-    });
+  static async reloadModule(path) {
+    path = "" + path;
+    return lively.modules.reloadModule(path).then( mod => {
+      var moduleName = path.replace(/[^\/]*/,"")
+      
+      var defaultClass = mod.default
+      
+      if (lively.components && defaultClass) {
+        console.log("update template prototype: " + moduleName)
+        lively.components.updatePrototype(defaultClass.prototype);
+      };
+      
+      if (moduleName == "lively") {
+          this.notify("migrate lively.js")
+          var oldLively = window.lively;
+          window.lively =module.default || module
+          this["previous"] = oldLively
+          this.components = oldLively.components // components have important state
+      }
+      
+      return mod;
+    })
   }
 
   static loadJavaScriptThroughDOM(name, src, force) {
@@ -657,11 +652,12 @@ if (window.lively)
   Object.assign(Lively, window.lively) // copy objects from lively.modules
 
 if (!window.lively || window.lively.name != "Lively") {
+  window.lively = Lively
   console.log("loaded lively intializer");
   // only load once... not during development
-  window.lively = Lively
   Lively.loaded();
+} else {
+  window.lively = Lively
 }
-
 
 console.log("loaded lively");

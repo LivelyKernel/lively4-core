@@ -190,7 +190,7 @@ export default class Container extends Morph {
         moduleName = moduleName[1]
         if (this.getSubmorph("#live").checked) {
           
-          lively.reloadModule(url).then( module => {
+          lively.reloadModule("" + url).then( module => {
             lively.notify("Module " + moduleName + " reloaded!")
           }, err => {
             window.LastError = err
