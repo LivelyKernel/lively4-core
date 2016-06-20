@@ -247,7 +247,8 @@ export default class Expose {
   }
 
   static postLoad() {
-    if (window.lively) {
+    if (window.lively && lively.removeEventListener) {
+      console.log("Post load expose")
       // basic class configuration
       Expose.isOpen = false;
       Expose.windowsPerRows = 3;
@@ -255,10 +256,12 @@ export default class Expose {
       lively.removeEventListener("expose")
       lively.addEventListener("expose", document.body, 'keydown', Expose.bodyKeyDown)
     } else {
+      console.log("defere Post load expose")
       window.setTimeout(this.postLoad, 100)
     }
-    
   }
 }
+
+Expose.postLoad()
 
 console.info('Expose loaded');
