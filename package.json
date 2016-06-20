@@ -2,7 +2,7 @@
   "name": "active-expressions",
   "version": "0.1.0",
   "description": " Monitor expressions over the execution of a program",
-  "main": "Layers.js",
+  "main": "index.js",
   "directories": {
     "test": "tests"
   },
