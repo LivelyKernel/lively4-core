@@ -119,25 +119,15 @@ export default class ContextMenu {
       ]
     }
   }
-  
+
   static openRdfaViewer(evt, remote = false) {
-    $('lively-rdfa-viewer').remove();
-    
-    /*let div = document.createElement('div');
-    div.style.position = 'fixed';
-    div.style.right = 0;
-    div.style.bottom = 0;
-    div.style.width = '500px';
-    div.style.height = '400px';
-    div.style.zIndex = 1000;
-    div.style.overflow = 'auto';
-    //div.style.background = '#ddd';*/
-    
-    //div.appendChild(lively.components.createComponent("lively-rdfa-viewer"));
+    $('#lively-rdfa-window').remove();
+
     lively.components.openInWindow(lively.components.createComponent("lively-rdfa-viewer")).then((w) => {
       w.style.position = 'fixed';
       w.style.right = 0;
       w.style.bottom = 0;
+      w.id = 'lively-rdfa-window';
     });
   }
 
