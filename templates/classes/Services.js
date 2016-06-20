@@ -71,6 +71,10 @@ export default class Services extends Morph {
     this.debugButton = this.getSubmorph('#debugButton');
     this.debugButton.addEventListener('click', (evt) => {
       lively.openComponentInWindow('lively-iframe').then(component => {
+        if (!(this.pid in this.services)) {
+          console.log('Nothing to debug');
+          return;
+        }
         var debuggerPort = this.services[this.pid].debugPort;
         component.setURL(debuggerURL + '?port=' + debuggerPort);
       });
@@ -159,6 +163,10 @@ export default class Services extends Morph {
   }
 
   removeService() {
+    if (this.pid === null) {
+      console.log('Nothing to remove');
+      return;
+    }
     this.post('remove', { id: this.pid }, function(res) {
       console.log(res);
       this.refreshServiceList();
@@ -217,10 +225,7 @@ export default class Services extends Morph {
           item.getSubmorph('small').innerHTML = statusText;
           this.serviceList.appendChild(item);
         }
-      }.bind(this),
-      error: function(jqXHR, textStatus, errorThrown) {
-        console.log(errorThrown);
-      }
+      }.bind(this)
     });
   }
 
