@@ -364,9 +364,9 @@ export function allLayers(optObject = Global) {
  * PUBLIC COP Layer Definition
  */
 
-var globalContextForLayers = {};
+var globalContextForNamedLayers = {};
 
-export { globalContextForLayers as Global };
+export { globalContextForNamedLayers as GlobalNamedLayers };
 
 // Gloabl Layer Activation
 export function enableLayer(layer) {

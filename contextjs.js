@@ -23,12 +23,13 @@ export function withoutLayers(layers, func) {
   }
 };
 
-// Layer creation
-export function layer(rootContext, layerName) {
-  if (typeof layerName === 'undefined') {
-    // support layer('LayerName') syntax without context object
-    layerName = rootContext;
-    rootContext = undefined;
+// Layer creation by name
+export function layer(...args) {
+  let layerName, rootContext;
+  if (args.length === 2) {
+    [rootContext, layerName] = args;
+  } else if (args.length === 1) {
+    [layerName] = args;
   }
   if (typeof rootContext === 'undefined') {
     return basicCreate(layerName);
@@ -46,7 +47,7 @@ function basicCreate(layerName, context) {
   if (typeof layerName === 'undefined')
     layerName = Symbol('COP Layer');
   if (typeof context === 'undefined')
-    context = cop.Global;
+    context = cop.GlobalNamedLayers;
   if (typeof context[layerName] !== 'undefined') {
     let existing = context[layerName];
     if (!existing.isLayer /* undefined or falsy */ || !existing.isLayer()) {
