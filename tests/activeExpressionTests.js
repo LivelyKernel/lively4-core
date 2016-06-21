@@ -2,19 +2,20 @@
 
 //import * as acorn from './../src/babelsberg/jsinterpreter/acorn.js'
 import Interpreter from './../src/babelsberg/jsinterpreter/interpreter.js'
-import { ConstraintInterpreter } from '../src/active-expressions.js';
+import { ConstraintInterpreter, aexpr } from '../src/active-expressions.js';
 
 
 describe('Active Expressions', function() {
     it("should interpret", function() {
         var predicate = function () {
             return 23;
-        }
+        };
         var i = new Interpreter(`var returnValue = (${predicate.toString()})();`);
         i.run();
-        assert.equal(23, i.stateStack[0].scope.properties.returnValue)
-        //expect(i.stateStack[0].scope.properties.returnValue).to.equal(23);
-    })
+        console.log(23, i.stateStack[0].scope.properties.returnValue);
+        assert.equal(23, i.stateStack[0].scope.properties.returnValue);
+        expect(i.stateStack[0].scope.properties.returnValue.data).to.equal(23);
+    });
 
     it("should interpret constrained", function() {
         var predicate = function () {
@@ -89,7 +90,7 @@ describe('Active Expressions', function() {
         }
         var r = ConstraintInterpreter.runAndReturn(predicate.toString(), {obj: obj})
         assert.equal(obj.a + obj.b, r)
-    })
+    });
 
 
     xit("should solve a simple constraint", function() {
@@ -103,5 +104,20 @@ describe('Active Expressions', function() {
             return obj.a + obj.b == 3;
         });
         assert(obj.a + obj.b == 3, "Solver failed: " + obj.a + ", " + obj.b)
-    })
+    });
+
+    xit("should run a basic aexpr", () => {
+        var obj = {a: 2, b: 3};
+        let spy = sinon.spy();
+
+        aexpr(function() {
+            return obj.a;
+        }, {obj}).onChange(spy);
+
+        obj.a = 42;
+
+        expect(spy.called).to.be.true;
+
+        //assert(obj.a + obj.b == 3, "Solver failed: " + obj.a + ", " + obj.b)
+    });
 });
