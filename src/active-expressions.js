@@ -3,6 +3,9 @@ import Interpreter from './babelsberg/jsinterpreter/interpreter.js';
 import ConstrainedVariable from './babelsberg/constrainedvariable.js';
 import Constraint from './babelsberg/constraint.js';
 
+import { identity, isPrimitive, pushIfMissing, removeIfExisting, Stack } from './utils.js';
+import { select, SelectionItem} from './property-accessor.js';
+
 export { ConstraintInterpreter } from './constraint-interpreter.js';
 
 class ActiveExpression {
