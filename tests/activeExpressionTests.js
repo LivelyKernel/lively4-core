@@ -106,7 +106,7 @@ describe('Active Expressions', function() {
         assert(obj.a + obj.b == 3, "Solver failed: " + obj.a + ", " + obj.b)
     });
 
-    xit("should run a basic aexpr", () => {
+    it("should run a basic aexpr", () => {
         var obj = {a: 2, b: 3};
         let spy = sinon.spy();
 
