@@ -4,7 +4,7 @@ import ConstrainedVariable from './babelsberg/constrainedvariable.js';
 import Constraint from './babelsberg/constraint.js';
 
 import { identity, isPrimitive, pushIfMissing, removeIfExisting, Stack } from './utils.js';
-import { select, SelectionItem} from './property-accessor.js';
+import { PropertyAccessor, SelectionItem, stack} from './property-accessor.js';
 
 export { ConstraintInterpreter } from './constraint-interpreter.js';
 
@@ -14,6 +14,15 @@ class ActiveExpression {
         this.func = func;
         this.scope = scope;
         this.callbacks = [];
+        this.propertyAccessors = new Set();
+        
+        stack.with(this, () => {
+            ActiveExpressionInterpreter.runAndReturn(this.func, this.scope);
+        });
+    }
+    
+    expressionChanged() {
+        this.callbacks.forEach(callback => callback());
     }
 
     onChange(callback) {
@@ -44,7 +53,7 @@ export class ActiveExpressionInterpreter extends Interpreter {
 
     static runAndReturn(func, optScope) {
         var scope = optScope || {};
-        var i = new ConstraintInterpreter(
+        var i = new ActiveExpressionInterpreter(
             `var returnValue = (${func.toString()})();`,
             (self, rootScope) => {
                 console.log(scope);
@@ -82,7 +91,17 @@ export class ActiveExpressionInterpreter extends Interpreter {
         return str;
     }
 
+
     getProperty(obj, name) {
+        let object = obj.valueOf(),
+            prop = name.valueOf();
+
+        PropertyAccessor
+            .wrapProperties(object, prop)
+            .addCallback(stack.current());
+
+        return super.getProperty(obj, name);
+
         if (obj.valueOf() === window /*||
          // (obj instanceof Interpreter.Object) ||
          // (obj instanceof Interpreter.Primitive) ||

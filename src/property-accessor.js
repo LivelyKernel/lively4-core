@@ -10,7 +10,7 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
 //     });
 
 var PROPERTY_ACCESSOR_NAME = 'wrappedValue';
-class PropertyAccessor {
+export class PropertyAccessor {
     constructor(obj, propName) {
         this.selectionItems = new Set();
 
@@ -64,7 +64,7 @@ class PropertyAccessor {
 
     applyCallbacks() {
         this.selectionItems.forEach(function(selectionItem) {
-            selectionItem.callback();
+            selectionItem.expressionChanged();
         });
     }
 
@@ -208,14 +208,14 @@ class FilterOperator extends IdentityOperator {
     }
 }
 
-View.stack = new Stack();
-View.current = function() { return View.stack.top(); };
-View.withOnStack = function(el, callback, context) {
-    View.stack.push(el);
+export var stack = new Stack();
+stack.current = function() { return stack.top(); };
+stack.with = function(el, callback, context) {
+    stack.push(el);
     try {
         callback.call(context);
     } finally {
-        View.stack.pop();
+        stack.pop();
     }
 };
 
@@ -230,7 +230,7 @@ export class SelectionItem {
 
     installListeners() {
         var item = this.item;
-        View.withOnStack(this, function() {
+        stack.with(this, function() {
             cop.withLayers([SelectionLayer], (function() {
                 this.expression.forInterpretation().apply(null, [item]);
             }).bind(this));
