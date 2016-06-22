@@ -1,9 +1,4 @@
 import Interpreter from './babelsberg/jsinterpreter/interpreter.js';
-
-import ConstrainedVariable from './babelsberg/constrainedvariable.js';
-import Constraint from './babelsberg/constraint.js';
-
-import { identity, isPrimitive, pushIfMissing, removeIfExisting, Stack } from './utils.js';
 import { PropertyAccessor, SelectionItem, stack} from './property-accessor.js';
 
 export { ConstraintInterpreter } from './constraint-interpreter.js';
@@ -70,28 +65,6 @@ export class ActiveExpressionInterpreter extends Interpreter {
         return i.stateStack[0].scope.properties.returnValue.valueOf();
     }
 
-    getConstraintObjectValue(o) {
-        if (o === undefined || !o.isConstraintObject) return o;
-        var value = o.value;
-        if (typeof(value) == 'function') {
-            return value.apply(o);
-        } else {
-            return value;
-        }
-    }
-
-    safeToString(obj) {
-        var toS = Object.prototype.toString,
-            str;
-        try {
-            if (obj.toString) str = obj.toString();
-        } catch (e) {
-            str = toS.apply(obj);
-        }
-        return str;
-    }
-
-
     getProperty(obj, name) {
         let object = obj.valueOf(),
             prop = name.valueOf();
@@ -101,74 +74,5 @@ export class ActiveExpressionInterpreter extends Interpreter {
             .addCallback(stack.current());
 
         return super.getProperty(obj, name);
-
-        if (obj.valueOf() === window /*||
-         // (obj instanceof Interpreter.Object) ||
-         // (obj instanceof Interpreter.Primitive) ||
-         (obj instanceof lively.Module) || (typeof(obj) == "string")*/) {
-            return super.getProperty(obj, name);
-        }
-        obj = obj.valueOf();
-        var cobj = (obj ? obj[ConstrainedVariable.ThisAttrName] : undefined),
-            cvar;
-        name = name.valueOf();
-        if (name && name.isConstraintObject) {
-            name = this.getConstraintObjectValue(name);
-        }
-        if (obj && obj.isConstraintObject) {
-            if (obj['cn' + name]) {
-                return obj['cn' + name]; // XXX: TODO: Document this
-            } else if (name === 'is') {
-                // possibly a finite domain definition
-                this.$finiteDomainProperty = obj;
-            } else {
-                cobj = obj.__cvar__;
-                obj = this.getConstraintObjectValue(obj);
-            }
-        }
-        cvar = ConstrainedVariable.newConstraintVariableFor(obj, name, cobj);
-        if (Constraint.current) {
-            cvar.ensureExternalVariableFor(Constraint.current.solver);
-            cvar.addToConstraint(Constraint.current);
-        }
-        if (cvar && cvar.isSolveable()) {
-            return cvar.externalVariable;
-        } else {
-            var retval = obj[name];
-            if (!retval || !retval.isConstraintObject) {
-                var objStr = this.safeToString(obj),
-                    retStr = this.safeToString(retval);
-                if (Constraint.current) {
-                    console.log(
-                        Constraint.current.solver.constructor.name +
-                        ' cannot reason about the variable ' + objStr + '[' +
-                        name + '], a ' + retStr + ' of type ' +
-                        (typeof(retval) == 'object' ?
-                            retval.constructor.name :
-                            typeof(retval))
-                    );
-                    Constraint.current.haltIfDebugging();
-                }
-            }
-            if (retval) {
-                switch (typeof(retval)) {
-                    case 'object':
-                    case 'function':
-                        retval[ConstrainedVariable.ThisAttrName] = cvar;
-                        break;
-                    case 'number':
-                        new Number(retval)[ConstrainedVariable.ThisAttrName] = cvar;
-                        break;
-                    case 'string':
-                        new String(retval)[ConstrainedVariable.ThisAttrName] = cvar;
-                        break;
-                    case 'boolean': break;
-                    default: throw 'Error - ' +
-                    'we cannot store the constrained var attribute on ' +
-                    retval + ' of type ' + typeof(retval);
-                }
-            }
-            return retval;
-        }
     }
 }
