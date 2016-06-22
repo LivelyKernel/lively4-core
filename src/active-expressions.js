@@ -41,10 +41,6 @@ class ActiveExpression {
         throw new Error('Not yet implemented');
     }
 
-    /**
-     * TODO
-     * uninstalls all listeners, so that the given callback is not called anymore
-     */
     revoke() {
         this.removeListeners();
     }

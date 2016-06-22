@@ -119,6 +119,24 @@ describe('Active Expressions', function() {
         expect(spy.calledOnce).to.be.true;
     });
 
+    it("invokes multiple callbacks", () => {
+        var obj = {a: 1};
+        let spy1 = sinon.spy(),
+            spy2 = sinon.spy(),
+            spy3 = sinon.spy();
+
+        aexpr(() => obj.a, {obj})
+            .onChange(spy1)
+            .onChange(spy2)
+            .onChange(spy3);
+
+        obj.a = 2;
+
+        expect(spy1.calledOnce).to.be.true;
+        expect(spy2.calledOnce).to.be.true;
+        expect(spy3.calledOnce).to.be.true;
+    });
+
     it("uninstalls an aexpr (and reinstalls it afterwards)", () => {
         var obj = {a: 2, b: 3};
         let spy = sinon.spy();
