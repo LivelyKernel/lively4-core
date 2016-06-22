@@ -106,7 +106,7 @@ describe('Active Expressions', function() {
         assert(obj.a + obj.b == 3, "Solver failed: " + obj.a + ", " + obj.b)
     });
 
-    it("should run a basic aexpr", () => {
+    it("runs a basic aexpr", () => {
         var obj = {a: 2, b: 3};
         let spy = sinon.spy();
 
@@ -119,7 +119,7 @@ describe('Active Expressions', function() {
         expect(spy.calledOnce).to.be.true;
     });
 
-    it("should allow to uninstall an aexpr", () => {
+    it("uninstalls an aexpr (and reinstalls it afterwards)", () => {
         var obj = {a: 2, b: 3};
         let spy = sinon.spy();
 
@@ -132,5 +132,11 @@ describe('Active Expressions', function() {
         obj.a = 42;
 
         expect(spy.called).to.be.false;
+
+        expr.installListeners();
+
+        obj.a = 3;
+
+        expect(spy.calledOnce).to.be.true;
     });
 });
