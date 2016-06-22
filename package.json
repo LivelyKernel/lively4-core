@@ -2,7 +2,7 @@
   "name": "active-expressions",
   "version": "1.0.0",
   "description": " Monitor expressions over the execution of a program",
-  "main": "index.js",
+  "main": "src/active-expressions.js",
   "directories": {
     "test": "tests"
   },
