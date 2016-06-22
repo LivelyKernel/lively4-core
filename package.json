@@ -28,7 +28,11 @@
     "event",
     "state"
   ],
-  "author": "",
+  "author": {
+    "name" : "Stefan Ramson",
+    "email" : "stefan.ramson@gmail.com",
+    "url" : "http://onsetsu.github.io/"
+  },
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/onsetsu/active-expressions/issues"
