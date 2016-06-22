@@ -3,6 +3,14 @@ import { PropertyAccessor, SelectionItem, stack} from './property-accessor.js';
 
 export { ConstraintInterpreter } from './constraint-interpreter.js';
 
+class Handler {
+    constructor() {
+
+    }
+
+
+}
+
 class ActiveExpression {
 
     constructor(func, scope) {
@@ -10,10 +18,8 @@ class ActiveExpression {
         this.scope = scope;
         this.callbacks = [];
         this.propertyAccessors = new Set();
-        
-        stack.with(this, () => {
-            ActiveExpressionInterpreter.runAndReturn(this.func, this.scope);
-        });
+
+        this.installListeners();
     }
     
     expressionChanged() {
@@ -22,6 +28,8 @@ class ActiveExpression {
 
     onChange(callback) {
         this.callbacks.push(callback);
+
+        return this;
     }
 
     /**
@@ -38,7 +46,20 @@ class ActiveExpression {
      * uninstalls all listeners, so that the given callback is not called anymore
      */
     revoke() {
-        throw new Error('Not yet implemented');
+        this.removeListeners();
+    }
+
+    installListeners() {
+        stack.with(this, () => {
+            ActiveExpressionInterpreter.runAndReturn(this.func, this.scope);
+        });
+    }
+
+    removeListeners() {
+        this.propertyAccessors.forEach(function(propertyAccessor) {
+            propertyAccessor.selectionItems.delete(this);
+        }, this);
+        this.propertyAccessors.clear();
     }
 }
 

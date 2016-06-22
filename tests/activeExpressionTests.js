@@ -117,7 +117,20 @@ describe('Active Expressions', function() {
         obj.a = 42;
 
         expect(spy.calledOnce).to.be.true;
+    });
 
-        //assert(obj.a + obj.b == 3, "Solver failed: " + obj.a + ", " + obj.b)
+    it("should allow to uninstall an aexpr", () => {
+        var obj = {a: 2, b: 3};
+        let spy = sinon.spy();
+
+        let expr = aexpr(function() {
+            return obj.a;
+        }, {obj}).onChange(spy);
+
+        expr.revoke();
+
+        obj.a = 42;
+
+        expect(spy.called).to.be.false;
     });
 });
