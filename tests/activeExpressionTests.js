@@ -116,7 +116,7 @@ describe('Active Expressions', function() {
 
         obj.a = 42;
 
-        expect(spy.called).to.be.true;
+        expect(spy.calledOnce).to.be.true;
 
         //assert(obj.a + obj.b == 3, "Solver failed: " + obj.a + ", " + obj.b)
     });
