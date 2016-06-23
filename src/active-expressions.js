@@ -15,14 +15,23 @@ class ActiveExpression {
 
     constructor(func, scope) {
         this.func = func;
+        this.lastValue = this.getCurrentValue();
         this.scope = scope;
         this.callbacks = [];
         this.propertyAccessors = new Set();
 
         this.installListeners();
     }
+
+    getCurrentValue() {
+        return this.func();
+    }
     
-    expressionChanged() {
+    propertyAssigned() {
+        let currentValue = this.getCurrentValue();
+        if(this.lastValue === currentValue) { return; }
+
+        this.lastValue = currentValue;
         this.callbacks.forEach(callback => callback());
     }
 

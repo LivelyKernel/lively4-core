@@ -12,7 +12,6 @@ describe('Active Expressions', function() {
         };
         var i = new Interpreter(`var returnValue = (${predicate.toString()})();`);
         i.run();
-        console.log(23, i.stateStack[0].scope.properties.returnValue);
         assert.equal(23, i.stateStack[0].scope.properties.returnValue);
         expect(i.stateStack[0].scope.properties.returnValue.data).to.equal(23);
     });
@@ -119,6 +118,44 @@ describe('Active Expressions', function() {
         expect(spy.calledOnce).to.be.true;
     });
 
+    it("should handle simple a calculation", function() {
+        var obj = {a: 2, b: 3};
+        let spy = sinon.spy();
+        function predicate() {
+            return obj.a + obj.b;
+        }
+
+        aexpr(predicate, {obj})
+            .onChange(spy);
+
+        obj.a = 42;
+
+        expect(spy.calledOnce).to.be.true;
+
+        obj.b = 17;
+
+        expect(spy.calledTwice).to.be.true;
+    });
+
+    it("should not invoke the callback if assigning the same value", () => {
+        var obj = {a: 0, b: 3};
+        let spy = sinon.spy();
+        function predicate() {
+            return obj.a * obj.b;
+        }
+
+        aexpr(predicate, {obj})
+            .onChange(spy);
+
+        obj.b = 5;
+
+        expect(spy.called).to.be.false;
+
+        obj.a = 17;
+
+        expect(spy.calledOnce).to.be.true;
+    });
+
     it("invokes multiple callbacks", () => {
         var obj = {a: 1};
         let spy1 = sinon.spy(),
@@ -135,6 +172,18 @@ describe('Active Expressions', function() {
         expect(spy1.calledOnce).to.be.true;
         expect(spy2.calledOnce).to.be.true;
         expect(spy3.calledOnce).to.be.true;
+    });
+
+    it("use multiple aexprs", () => {
+        var obj = {a: 1};
+        let spy = sinon.spy();
+
+        aexpr(() => obj.a, {obj}).onChange(spy);
+        aexpr(() => obj.a, {obj}).onChange(spy);
+
+        obj.a = 2;
+
+        expect(spy.calledTwice).to.be.true;
     });
 
     it("uninstalls an aexpr (and reinstalls it afterwards)", () => {
@@ -156,5 +205,22 @@ describe('Active Expressions', function() {
         obj.a = 3;
 
         expect(spy.calledOnce).to.be.true;
+    });
+
+    it("deals with the prototype chain", () => {
+        var superObj = {a: 'superA', b: 'superB'},
+            subObj = Object.create(superObj, {
+                b: {
+                    value: 'subB',
+                    configurable: true,
+                    enumerable: true,
+                    writable: true
+                },
+                c: {value: 'subC', configurable: true}
+            });
+
+        debugger;
+
+
     });
 });

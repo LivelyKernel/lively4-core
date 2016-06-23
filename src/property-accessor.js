@@ -64,7 +64,7 @@ export class PropertyAccessor {
 
     applyCallbacks() {
         this.selectionItems.forEach(function(selectionItem) {
-            selectionItem.expressionChanged();
+            selectionItem.propertyAssigned();
         });
     }
 
