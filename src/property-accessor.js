@@ -54,10 +54,12 @@ export class PropertyAccessor {
         }
     }
 
-    setterCallback(newValue) {}
+    setterCallback(callback) {
+        this.callbackForSetProperty = callback;
+    }
 
     setPropertyWith(newValue) {
-        this.setterCallback(newValue);
+        this.callbackForSetProperty && this.callbackForSetProperty(newValue);
     }
 }
 
@@ -68,7 +70,7 @@ export class Listener {
         this.selectionItems = new Set();
 
         this.propertyAccessor = new PropertyAccessor(obj, propName);
-        this.propertyAccessor.setterCallback = this.newValueSet.bind(this);
+        this.propertyAccessor.setterCallback(newValue => this.newValueSet(newValue));
     }
     
     static watchProperty(obj, propName) {
