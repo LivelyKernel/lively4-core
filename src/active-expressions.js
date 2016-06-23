@@ -1,5 +1,5 @@
 import Interpreter from './babelsberg/jsinterpreter/interpreter.js';
-import { Listener, PropertyAccessor, SelectionItem, stack} from './property-accessor.js';
+import { Listener, stack} from './property-accessor.js';
 
 export { ConstraintInterpreter } from './constraint-interpreter.js';
 
