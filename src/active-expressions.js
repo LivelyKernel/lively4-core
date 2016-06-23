@@ -1,7 +1,6 @@
 import Interpreter from './babelsberg/jsinterpreter/interpreter.js';
-import { Listener } from './property-accessor.js';
-
 import { Stack } from './utils.js';
+import { Listener } from './listener.js';
 
 export { ConstraintInterpreter } from './constraint-interpreter.js';
 
