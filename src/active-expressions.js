@@ -1,7 +1,11 @@
 import Interpreter from './babelsberg/jsinterpreter/interpreter.js';
-import { Listener, stack} from './property-accessor.js';
+import { Listener } from './property-accessor.js';
+
+import { Stack } from './utils.js';
 
 export { ConstraintInterpreter } from './constraint-interpreter.js';
+
+const AEXPR_STACK = new Stack();
 
 class Handler {
     constructor() {
@@ -55,7 +59,7 @@ class ActiveExpression {
     }
 
     installListeners() {
-        stack.with(this, () => {
+        AEXPR_STACK.withElement(this, () => {
             ActiveExpressionInterpreter.runAndReturn(this.func, this.scope);
         });
     }
@@ -97,7 +101,7 @@ export class ActiveExpressionInterpreter extends Interpreter {
 
         Listener
             .watchProperty(object, prop)
-            .addHandler(stack.current());
+            .addHandler(AEXPR_STACK.top());
 
         return super.getProperty(obj, name);
     }

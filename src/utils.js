@@ -46,6 +46,15 @@ export class Stack {
     top() {
         return this.arr.last();
     }
+
+    withElement(el, callback, context) {
+        this.push(el);
+        try {
+            callback.call(context);
+        } finally {
+            this.pop();
+        }
+    }
 }
 
 export function isPrimitive(elem) {

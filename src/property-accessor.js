@@ -115,14 +115,3 @@ export class Listener {
         });
     }
 }
-
-export var stack = new Stack();
-stack.current = function() { return stack.top(); };
-stack.with = function(el, callback, context) {
-    stack.push(el);
-    try {
-        callback.call(context);
-    } finally {
-        stack.pop();
-    }
-};
