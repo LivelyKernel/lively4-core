@@ -20,16 +20,18 @@ describe('Property Accessor', function() {
             obj = {
             base: 17,
             get prop() {
+                console.log('get prop', this.base);
                 getterSpy();
                 return this.base;
             },
             set prop(val) {
+                console.log('set prop', val, this.base);
                 setterSpy(val);
                 return this.base = val;
             }
         };
 
-        new PropertyAccessor(obj, 'prop');
+        //new PropertyAccessor(obj, 'prop');
 
         expect(obj.prop).to.equal(17);
         expect(getterSpy.calledOnce).to.be.true;

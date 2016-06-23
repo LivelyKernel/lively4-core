@@ -219,8 +219,5 @@ describe('Active Expressions', function() {
                 c: {value: 'subC', configurable: true}
             });
 
-        debugger;
-
-
     });
 });

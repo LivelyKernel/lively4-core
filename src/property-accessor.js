@@ -17,7 +17,11 @@ export class PropertyAccessor {
         this.safeOldAccessors(obj, propName);
 
         try {
-            obj.__defineGetter__(propName, () => this[PROPERTY_ACCESSOR_NAME]);
+            obj.__defineGetter__(propName, (function() {
+                if(propName === 'prop') debugger;
+                obj;
+                return this[PROPERTY_ACCESSOR_NAME];
+            }).bind(this));
         } catch (e) { /* Firefox raises for Array.length */ }
         var newGetter = obj.__lookupGetter__(propName);
         if (!newGetter) {
@@ -26,7 +30,7 @@ export class PropertyAccessor {
             return;
         }
 
-        obj.__defineSetter__(propName, newValue => {
+        obj.__defineSetter__(propName, (function(newValue) {
             var returnValue = this[PROPERTY_ACCESSOR_NAME] = newValue;
             console.log('newValue for', obj, propName, newValue);
             if(!isPrimitive(newValue)) {
@@ -34,7 +38,7 @@ export class PropertyAccessor {
             }
             this.applyCallbacks();
             return returnValue;
-        });
+        }).bind(this));
     }
 
     safeOldAccessors(obj, propName) {
@@ -99,6 +103,12 @@ PropertyAccessor.wrapProperties = function(obj, propName) {
 
     return mapObj[propName];
 };
+
+class Listener {
+    constructor() {
+        
+    }
+}
 
 // users.timfelgentreff.jsinterpreter.InterpreterVisitor.subclass('SelectionInterpreterVisitor', {
 //
