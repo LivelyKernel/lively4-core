@@ -37,8 +37,8 @@
         await lively.loadJavaScriptThroughDOM("d3", "src/external/d3.v3.js")
         await System.import("templates/classes/ContainerScopedD3.js")
         await lively.loadJavaScriptThroughDOM("cola", "src/external/cola.js");
-        await lively.loadJavaScriptThroughDOM("cola-layout", "../LivelyCalibreViz/external/cola-layout.js");
-        await lively.loadJavaScriptThroughDOM("cola-shortestpaths", "../LivelyCalibreViz/external/cola-shortestpaths.js");
+        await lively.loadJavaScriptThroughDOM("cola-layout", "src/external/cola-layout.js");
+        await lively.loadJavaScriptThroughDOM("cola-shortestpaths", "src/external/cola-shortestpaths.js");
       }
       var d3cola = cola.d3adaptor().convergenceThreshold(0.1);
       console.log("logggg")
