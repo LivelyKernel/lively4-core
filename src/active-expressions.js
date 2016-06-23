@@ -1,5 +1,5 @@
 import Interpreter from './babelsberg/jsinterpreter/interpreter.js';
-import { PropertyAccessor, SelectionItem, stack} from './property-accessor.js';
+import { Listener, PropertyAccessor, SelectionItem, stack} from './property-accessor.js';
 
 export { ConstraintInterpreter } from './constraint-interpreter.js';
 
@@ -95,9 +95,9 @@ export class ActiveExpressionInterpreter extends Interpreter {
         let object = obj.valueOf(),
             prop = name.valueOf();
 
-        PropertyAccessor
-            .wrapProperties(object, prop)
-            .addCallback(stack.current());
+        Listener
+            .watchProperty(object, prop)
+            .addHandler(stack.current());
 
         return super.getProperty(obj, name);
     }

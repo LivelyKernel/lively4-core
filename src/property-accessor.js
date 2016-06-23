@@ -87,26 +87,31 @@ export class PropertyAccessor {
     }
 }
 
-PropertyAccessor.accessors = new Map();
-PropertyAccessor.wrapProperties = function(obj, propName) {
-    var mapObj;
-    if(PropertyAccessor.accessors.has(obj)) {
-        mapObj = PropertyAccessor.accessors.get(obj);
-    } else {
-        mapObj = {};
-        PropertyAccessor.accessors.set(obj, mapObj);
+const LISTENERS_BY_ACCESSOR = new Map();
+
+export class Listener {
+    constructor(obj, propName) {
+        this.propertyAccessor = new PropertyAccessor(obj, propName);
     }
+    
+    static watchProperty(obj, propName) {
+        var mapObj;
+        if(LISTENERS_BY_ACCESSOR.has(obj)) {
+            mapObj = LISTENERS_BY_ACCESSOR.get(obj);
+        } else {
+            mapObj = {};
+            LISTENERS_BY_ACCESSOR.set(obj, mapObj);
+        }
 
-    if(!mapObj.hasOwnProperty(propName)) {
-        mapObj[propName] = new PropertyAccessor(obj, propName);
-    }
+        if(!mapObj.hasOwnProperty(propName)) {
+            mapObj[propName] = new Listener(obj, propName);
+        }
 
-    return mapObj[propName];
-};
+        return mapObj[propName];
+    };
 
-class Listener {
-    constructor() {
-        
+    addHandler(selectionItem) {
+        this.propertyAccessor.addCallback(selectionItem);
     }
 }
 
