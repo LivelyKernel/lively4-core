@@ -31,9 +31,6 @@ export class PropertyAccessor {
         obj.__defineSetter__(propName, (function(newValue) {
             var returnValue = this[PROPERTY_ACCESSOR_NAME] = newValue;
             console.log('newValue for', obj, propName, newValue);
-            if(!isPrimitive(newValue)) {
-                this.recalculate();
-            }
             this.setPropertyWith(newValue);
             return returnValue;
         }).bind(this));
@@ -62,22 +59,6 @@ export class PropertyAccessor {
     setPropertyWith(newValue) {
         this.setterCallback(newValue);
     }
-
-    recalculate() {
-        console.log('should recalculate');
-
-        var selectionItems = [];
-        this.selectionItems.forEach(function(selectionItem) {
-            selectionItems.push(selectionItem);
-        });
-
-        selectionItems.forEach(function(selectionItem) {
-            selectionItem.removeListeners();
-        });
-        selectionItems.forEach(function(selectionItem) {
-            selectionItem.installListeners();
-        });
-    }
 }
 
 const LISTENERS_BY_ACCESSOR = new Map();
@@ -87,7 +68,7 @@ export class Listener {
         this.selectionItems = new Set();
 
         this.propertyAccessor = new PropertyAccessor(obj, propName);
-        this.propertyAccessor.setterCallback = this.applyCallbacks.bind(this);
+        this.propertyAccessor.setterCallback = this.newValueSet.bind(this);
     }
     
     static watchProperty(obj, propName) {
@@ -111,12 +92,35 @@ export class Listener {
         selectionItem.propertyAccessors.add(this);
     }
 
+    newValueSet(newValue) {
+        if(!isPrimitive(newValue)) {
+            this.recalculate();
+        }
+
+        this.applyCallbacks();
+    }
+
     applyCallbacks() {
         this.selectionItems.forEach(function(selectionItem) {
             selectionItem.propertyAssigned();
         });
     }
 
+    recalculate() {
+        console.log('should recalculate');
+
+        var selectionItems = [];
+        this.selectionItems.forEach(function(selectionItem) {
+            selectionItems.push(selectionItem);
+        });
+
+        selectionItems.forEach(function(selectionItem) {
+            selectionItem.removeListeners();
+        });
+        selectionItems.forEach(function(selectionItem) {
+            selectionItem.installListeners();
+        });
+    }
 }
 
 // users.timfelgentreff.jsinterpreter.InterpreterVisitor.subclass('SelectionInterpreterVisitor', {
