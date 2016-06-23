@@ -556,7 +556,7 @@ export class Layer {
   
   // Debugging
   toString () {
-    return this.name;
+    return String(this.name); // could be a symbol
   }
   
   // Deprecated serialization
