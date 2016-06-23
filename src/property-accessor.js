@@ -12,8 +12,6 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
 var PROPERTY_ACCESSOR_NAME = 'wrappedValue';
 export class PropertyAccessor {
     constructor(obj, propName) {
-        this.selectionItems = new Set();
-
         this.safeOldAccessors(obj, propName);
 
         try {
@@ -36,7 +34,7 @@ export class PropertyAccessor {
             if(!isPrimitive(newValue)) {
                 this.recalculate();
             }
-            this.applyCallbacks();
+            this.setPropertyWith(newValue);
             return returnValue;
         }).bind(this));
     }
@@ -59,15 +57,10 @@ export class PropertyAccessor {
         }
     }
 
-    addCallback(selectionItem) {
-        this.selectionItems.add(selectionItem);
-        selectionItem.propertyAccessors.add(this);
-    }
+    setterCallback(newValue) {}
 
-    applyCallbacks() {
-        this.selectionItems.forEach(function(selectionItem) {
-            selectionItem.propertyAssigned();
-        });
+    setPropertyWith(newValue) {
+        this.setterCallback(newValue);
     }
 
     recalculate() {
@@ -91,7 +84,10 @@ const LISTENERS_BY_ACCESSOR = new Map();
 
 export class Listener {
     constructor(obj, propName) {
+        this.selectionItems = new Set();
+
         this.propertyAccessor = new PropertyAccessor(obj, propName);
+        this.propertyAccessor.setterCallback = this.applyCallbacks.bind(this);
     }
     
     static watchProperty(obj, propName) {
@@ -111,8 +107,16 @@ export class Listener {
     };
 
     addHandler(selectionItem) {
-        this.propertyAccessor.addCallback(selectionItem);
+        this.selectionItems.add(selectionItem);
+        selectionItem.propertyAccessors.add(this);
     }
+
+    applyCallbacks() {
+        this.selectionItems.forEach(function(selectionItem) {
+            selectionItem.propertyAssigned();
+        });
+    }
+
 }
 
 // users.timfelgentreff.jsinterpreter.InterpreterVisitor.subclass('SelectionInterpreterVisitor', {
