@@ -220,4 +220,26 @@ describe('Active Expressions', function() {
             });
 
     });
+
+    it("handles assignments of complex objects", () => {
+        let spy = sinon.spy(),
+            complexObject = {
+            foo: {
+                bar: 17
+            }
+        };
+
+        aexpr(() => complexObject.foo.bar, {complexObject}).onChange(spy);
+
+        complexObject.foo.bar = 33;
+        expect(spy.calledOnce).to.be.true;
+
+        let newBar = { bar: 42 };
+        complexObject.foo = newBar;
+        expect(spy.calledTwice).to.be.true;
+
+        // changing th new bar property should trigger the callback
+        newBar.bar = 0;
+        expect(spy.calledThrice).to.be.true;
+    });
 });
