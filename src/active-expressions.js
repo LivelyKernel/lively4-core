@@ -10,8 +10,6 @@ class Handler {
     constructor() {
 
     }
-
-
 }
 
 class ActiveExpression {
@@ -104,4 +102,17 @@ export class ActiveExpressionInterpreter extends Interpreter {
 
         return super.getProperty(obj, name);
     }
+
+/*
+    stepCallExpression(...args) {
+        if(this.stateStack[0].arguments > 0) debugger;
+        var stateStack = this.stateStack,
+            state = stateStack[0],
+            node = state.node,
+            func = state.func_;
+
+
+    }
+*/
+
 }

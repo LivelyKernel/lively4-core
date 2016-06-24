@@ -2,7 +2,7 @@
 
 //import * as acorn from './../src/babelsberg/jsinterpreter/acorn.js'
 import Interpreter from './../src/babelsberg/jsinterpreter/interpreter.js'
-import { ConstraintInterpreter, aexpr } from '../src/active-expressions.js';
+import { aexpr } from '../src/active-expressions.js';
 
 
 describe('Active Expressions', function() {
@@ -145,10 +145,10 @@ describe('Active Expressions', function() {
     it("handles assignments of complex objects", () => {
         let spy = sinon.spy(),
             complexObject = {
-            foo: {
-                bar: 17
-            }
-        };
+                foo: {
+                    bar: 17
+                }
+            };
 
         aexpr(() => complexObject.foo.bar, {complexObject}).onChange(spy);
 
@@ -162,5 +162,40 @@ describe('Active Expressions', function() {
         // changing th new bar property should trigger the callback
         newBar.bar = 0;
         expect(spy.calledThrice).to.be.true;
+    });
+
+    xit("can do function calls", () => {
+        function double(x) {
+            return 2 * x;
+        }
+
+        let obj = { a: 17 },
+            spy = sinon.spy();
+
+        aexpr(() => double(obj.a), {obj, double}).onChange(spy);
+
+        obj.a = 21;
+        expect(spy.calledOnce).to.be.true;
+    });
+
+    xit("traces simple function calls", () => {
+        class Rectangle {
+            constructor(width, height) {
+                this.width = width;
+                this.height = height;
+            }
+
+            area() {
+                return this.width * this.height;
+            }
+        }
+
+        let rect = new Rectangle(10, 20),
+            spy = sinon.spy();
+
+        aexpr(() => rect.area(3), {rect}).onChange(spy);
+
+        rect.height = 33;
+        expect(spy.calledOnce).to.be.true;
     });
 });
