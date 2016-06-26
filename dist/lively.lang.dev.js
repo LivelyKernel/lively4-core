@@ -327,6 +327,12 @@
                 return object[k];
             }) : [];
         },
+        select: function (obj, keys) {
+            var selected = {};
+            for (var i = 0; i < keys.length; i++)
+                selected[keys[i]] = obj[keys[i]];
+            return selected;
+        },
         addScript: function (object, funcOrString, optName, optMapping) {
             var func = exports.fun.fromString(funcOrString);
             return exports.fun.asScriptOf(func, object, optName, optMapping);

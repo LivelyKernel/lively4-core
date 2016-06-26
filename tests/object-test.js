@@ -317,6 +317,12 @@ describe('obj', function() {
 
   });
 
+  describe("select keys", function() {
+    it("does what it says", function() {
+      expect(obj.select({a: 1, b: 2, c: 3}, ["a", "b"])).eql({a: 1, b: 2})
+    });
+  });
+
   describe("inherit", function() {
 
     it("inherits", function() {
