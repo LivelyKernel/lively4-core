@@ -60,8 +60,6 @@ export default async function() {
         serviceWorker.addEventListener('statechange', fn)
       })
 
-      serviceWorker.addEventListener('statechange', (e) => console.log(e.target.state))
-
       await swState
     }
 
