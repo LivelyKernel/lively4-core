@@ -111,6 +111,7 @@ export default class Services extends Morph {
     this.post('start', data, function(res) {
       console.log(res);
       this.refreshServiceList();
+      this.showService();
     }.bind(this));
   }
 
