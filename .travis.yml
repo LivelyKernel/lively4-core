@@ -4,4 +4,5 @@ node_js:
   - "5"
 
 notifications:
-  slack: cdglabs:fhJ0mRZkjMb0erIw3LetA9I2
+  email: "robert.krahn@gmail.com"
+  slack: harcommunity:DHnjngxzOUybEggU2lAYdP9R
