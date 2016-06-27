@@ -6,7 +6,7 @@ Context-oriented Programming (COP) for JavaScript
 ## Example Code 
 
 ```JS
-import "https://lively-kernel.org/lively4/ContextJS/ContextJS.js"
+import "https://lively-kernel.org/lively4/ContextJS"
 
 class Foo {
 	bar() {
@@ -29,6 +29,6 @@ withLayers([L1], () => o.bar())  // 7
 Further functionality can be added via
 
 ```JS
-import "https://lively-kernel.org/lively4/ContextJS/ContextJS.js"
+import "https://lively-kernel.org/lively4/ContextJS"
 import * as cop from "https://lively-kernel.org/lively4/ContextJS/Layer.js"
 ```

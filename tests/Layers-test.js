@@ -22,7 +22,7 @@
  */
 'use strict';
 
-import { proceed, withLayers, withoutLayers, layer, Layer } from '../contextjs.js';
+import '../module_import.js';
 import * as cop from '../Layers.js';
 import { LayerableObject } from '../Layers.js';
 
