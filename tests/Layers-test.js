@@ -965,7 +965,10 @@ describe('contextjs', function () {
                 const ex = new Example();
                 assert.isTrue(ex.version.isLayerAware, "method should now be layer aware");
                 // when
-                Example.prototype.version = function () { return "2" };
+                Object.defineProperty(Example.prototype, 'version', {
+                   value() { return "2" },
+                   configurable: true
+                });
                 assert.isNotOk(ex.version.isLayerAware, "method should now be layer unaware");
                 aLayer.reinstallInClass(Example);
                 // then
@@ -1013,6 +1016,24 @@ describe('contextjs', function () {
                     assert.equal(ex.value, -4, "setter should be layer aware again");
                 });
             });
+        });
+    });
+
+    describe('overwriting layered properties', function () {
+        it('will not make methods layer unaware', function () {
+            // given
+            class Example {
+                m() { return 1 }
+            }
+            // when
+            const layer1 = new Layer().refineClass(Example, {
+                m() { return proceed() + 1 }
+            });
+            Example.prototype.m = function () { return 2 }
+            // then
+            assert.equal(new Example().m(), 2, 'new method definition should apply');
+            withLayers([layer1], () => assert.equal(new Example().m(), 3,
+                'method should still be layered after redefinition'));
         });
     });
 
@@ -1770,9 +1791,9 @@ describe('contextjs', function () {
                 layer2.refineObject(obj1, {
                     m2() { return proceed() + 1 }
                 });
-
+                // when
                 cop.uninstallLayersInObject(obj1);
-
+                // then
                 assert.equal(obj1.m1(), 3, "layers still applied");
                 assert.equal(obj1.m2(), 2, "layers still applied");
                 assert(obj1.m1 === originalM1, "obj1.m1 is still wrapped");

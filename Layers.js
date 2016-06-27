@@ -290,7 +290,7 @@ function pvtMakeFunctionOrPropertyLayerAware(obj, slotName, baseValue, type, isH
 
 function makeSlotLayerAwareWithNormalLookup(
     obj, slotName, baseValue, type, isHidden) {
-  var wrapped_function = function() {
+  let wrapped_function = function() {
     var composition =
         new PartialLayerComposition(this, obj, slotName, baseValue, type);
     proceedStack.push(composition);
@@ -315,7 +315,12 @@ function makeSlotLayerAwareWithNormalLookup(
   } else if (type == "setter") {
     Object.defineProperty(obj, slotName, {set: wrapped_function});
   } else {
-    obj[slotName] = wrapped_function;
+    Object.defineProperty(obj, slotName, {
+      get() { return wrapped_function; },
+      set(newFunction) {
+        makeSlotLayerAwareWithNormalLookup(this, slotName, newFunction);
+      }
+    });
   }
 };
 
@@ -382,7 +387,11 @@ function makeFunctionLayerUnaware(base_obj, function_name) {
   if (prevFunction instanceof Function) {
     prevFunction.originalFunction = originalFunction
   } else {
-    base_obj[function_name] = originalFunction
+    // need to use defineProperty because the setter keeps the function wrapped
+    Object.defineProperty(base_obj, function_name, {
+      value: originalFunction,
+      configurable: true
+    });
   }
 };
 
