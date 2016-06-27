@@ -22,9 +22,9 @@
  */
 'use strict';
 
-import '../module_import.js';
-import * as cop from '../Layers.js';
-import { LayerableObject } from '../Layers.js';
+import '../src/module_import.js';
+import * as cop from '../src/Layers.js';
+import { LayerableObject } from '../src/Layers.js';
 
 const assert = chai.assert;
 
