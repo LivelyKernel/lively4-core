@@ -254,7 +254,7 @@ export default class Services extends Morph {
           if (service.status === 0) {
             status = 'not-running';
             var since = (now - service.kill);
-            statusText = 'not running since ' + this.msToString(since);
+            statusText = 'not running (' + this.msToString(since) + ')';
           } else if (service.status === 1) {
             status = 'running';
             var uptime = (now - service.start);
