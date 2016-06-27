@@ -15,6 +15,7 @@ class Handler {
 class ActiveExpression {
 
     constructor(func, scope) {
+        console.log(func);
         this.func = func;
         this.lastValue = this.getCurrentValue();
         this.scope = scope;
@@ -78,12 +79,13 @@ export class ActiveExpressionInterpreter extends Interpreter {
         var i = new ActiveExpressionInterpreter(
             `var returnValue = (${func.toString()})();`,
             (self, rootScope) => {
-                console.log(scope);
+                console.log('scope', scope);
                 Object.keys(scope).forEach((k) => {
                     var value = scope[k];
                     console.log(k, value);
                     self.setProperty(rootScope, k, self.createPseudoObject(value));
                 });
+                // TODO: delete as the relevant global objects can be inferred by analysing the local scope
                 ["__lvVarRecorder", "jQuery", "$", "_", "lively"].forEach((k) => {
                     self.setProperty(rootScope, k, self.createPseudoObject(window[k]));
                 });
@@ -103,16 +105,18 @@ export class ActiveExpressionInterpreter extends Interpreter {
         return super.getProperty(obj, name);
     }
 
-/*
     stepCallExpression(...args) {
-        if(this.stateStack[0].arguments > 0) debugger;
+        if(this.stateStack[0].arguments > 0) {
+            console.log('call expression');
+            debugger;
+        }
         var stateStack = this.stateStack,
             state = stateStack[0],
             node = state.node,
             func = state.func_;
 
 
+        return super.stepCallExpression();
     }
-*/
 
 }

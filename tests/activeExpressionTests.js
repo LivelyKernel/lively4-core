@@ -164,7 +164,7 @@ describe('Active Expressions', function() {
         expect(spy.calledThrice).to.be.true;
     });
 
-    xit("can do function calls", () => {
+    it("can do function calls", () => {
         function double(x) {
             return 2 * x;
         }
@@ -178,7 +178,25 @@ describe('Active Expressions', function() {
         expect(spy.calledOnce).to.be.true;
     });
 
-    xit("traces simple function calls", () => {
+    it("traces simple function calls on objects", () => {
+        let spy = sinon.spy(),
+            rect = {
+                width: 10,
+                height: 20,
+                area() {
+                    return this.width * this.height;
+                }
+            };
+
+        aexpr(() => rect.area(), {rect}).onChange(spy);
+
+        rect.height = 33;
+        expect(spy.calledOnce).to.be.true;
+        //expect(spy.withArgs(330).calledOnce).to.be.true;
+    });
+
+    // TODO: cuurently leads to an error, as the property rect.area is overwritten, yet only the prototype has the .area function
+    xit("traces function calls to the protopyte of an object", () => {
         class Rectangle {
             constructor(width, height) {
                 this.width = width;
