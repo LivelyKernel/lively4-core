@@ -2,7 +2,7 @@
   "name": "contextjs",
   "version": "2.0.0",
   "description": "Context Oriented Programming (COP) for ECMAScript 6",
-  "main": "module_import.js",
+  "main": "contextjs.js",
   "directories": {
     "test": "tests"
   },
