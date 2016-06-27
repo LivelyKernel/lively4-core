@@ -19,6 +19,7 @@ const BABEL_REQ_PLUGINS = [
   require("babel-plugin-syntax-function-bind"),
   require("babel-plugin-syntax-object-rest-spread"),
   require("babel-plugin-syntax-trailing-function-commas"),
+  require("babel-plugin-syntax-jsx"),
   require("babel-plugin-transform-async-to-generator"),
   require("babel-plugin-transform-async-to-module-method"),
   require("babel-plugin-transform-do-expressions"),
@@ -28,6 +29,7 @@ const BABEL_REQ_PLUGINS = [
   require("babel-plugin-transform-export-extensions"),
   require("babel-plugin-transform-function-bind"),
   require("babel-plugin-transform-object-rest-spread"),
+  require("babel-plugin-transform-jsx").default,
 ]
 
 
