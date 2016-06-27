@@ -67,11 +67,22 @@ export default class Services extends Morph {
   }
 
   addButtonClick(evt) {
-    this.serviceTop.removeAttribute('data-id');
-    this.entryPoint.value = '';
-    this.entryPoint.focus();
-    this.logEditor.setValue('');
-    this.unselectAll();
+    var browser = lively.components.createComponent("lively-file-browser");
+    lively.components.openInWindow(browser).then(() => {
+      // TODO: warn if path does not exist
+      browser.path = "/services";
+      browser.setMainAction((url) => {
+        this.serviceTop.removeAttribute('data-id');
+        this.entryPoint.value = '';
+        this.entryPoint.focus();
+        this.logEditor.setValue('');
+        this.unselectAll();
+
+        const relativePath = url.pathname.replace("/services/", "");
+        this.startButtonClick(relativePath);
+        browser.parentElement.closeButtonClicked();
+      });
+    });
   }
 
   removeButtonClick() {
@@ -101,12 +112,12 @@ export default class Services extends Morph {
     }
   }
 
-  startButtonClick() {
+  startButtonClick(entryPoint) {
     var data;
     if (this.pid !== null) {
       data = { id: this.pid };
     } else {
-      data = { entryPoint: this.entryPoint.value };
+      data = { entryPoint: entryPoint || this.entryPoint.value };
     }
     this.post('start', data, function(res) {
       console.log(res);
