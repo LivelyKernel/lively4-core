@@ -8,8 +8,8 @@
   },
   "files": ["lib/"],
   "scripts": {
-    "compile-es5": "./node_modules/.bin/babel -d lib/ src/",
-    "compile-browser": "./node_modules/.bin/browserify lib/contextjs.js --outfile lib/browser-contextjs.js --standalone cop",
+    "compile-es5": "babel -d lib/ src/",
+    "compile-browser": "browserify lib/contextjs.js --outfile lib/browser-contextjs.js --standalone cop",
     "prepublish": "npm run compile-es5 && npm run compile-browser",
     "test": "npm run test-node && npm run test-karma",
     "test-karma": "karma start --single-run",
