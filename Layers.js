@@ -62,12 +62,14 @@ export function withLogLayerCode(func) {
   }
 };
 
+const LayerObjectID = Symbol("layerObjectID");
+
 export function getLayerDefinitionForObject(layer, object) {
   // log("cop getLayerDefinitionForObject(" + layer + ", " + object + ")");
   if (!layer || !object) {
     return;
   }
-  var result = layer[object._layer_object_id];
+  var result = layer[object[LayerObjectID]];
   return result ? result : getLayerDefinitionForObject(layer, object.prototype);
 };
 
@@ -75,13 +77,18 @@ export function ensurePartialLayer(layer, object) {
   if (!layer) {
     throw new Error("in ensurePartialLayer: layer is nil");
   }
-  if (!object.hasOwnProperty("_layer_object_id")) {
-    object._layer_object_id = object_id_counter++;
+  if (!object.hasOwnProperty(LayerObjectID)) {
+    Object.defineProperty(object, LayerObjectID, {
+      value: object_id_counter++,
+      enumerable: false,
+      configurable: false,
+      writable: false
+    });
   }
-  if (!layer[object._layer_object_id]) {
-    layer[object._layer_object_id] = {_layered_object: object};
+  if (!layer[object[LayerObjectID]]) {
+    layer[object[LayerObjectID]] = {_layered_object: object};
   }
-  return layer[object._layer_object_id];
+  return layer[object[LayerObjectID]];
 };
 
 // TODO(mariannet) : Find out if ES6 constructor also has type
@@ -520,7 +527,7 @@ export class Layer {
     return this;
   }
   unrefineObject (obj) {
-    var id = obj._layer_object_id;
+    var id = obj[LayerObjectID];
     if (id !== undefined) {
       delete this[id];
     }
