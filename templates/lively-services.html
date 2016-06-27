@@ -29,7 +29,7 @@
       flex: 1;
       overflow-y: scroll;
     }
-    
+
     .items .empty {
       margin-top: 10px;
       font-size: 12px;
@@ -58,11 +58,11 @@
       flex-direction: row;
       border-bottom: 1px solid rgb(120, 118, 116);
     }
-    
+
     #service-bottom {
       width: 100%;
     }
-    
+
     #service-bottom button {
       border: 0;
       border-radius: 0;
@@ -73,11 +73,11 @@
       outline: none;
       float: left;
     }
-    
+
     #service-bottom button:not(:last-child) {
       border-right: 1px solid rgb(120, 118, 116);
     }
-    
+
     #service-bottom button.active {
       background: linear-gradient(#eee, #ddd);
     }
@@ -106,7 +106,7 @@
       </div>
       <div class="column-right">
         <div id="service-top">
-          <input id="entryPoint" type="text" placeholder="Enter path..." value="" />
+          <input id="entryPoint" type="text" value="" readonly />
           <div class="service-actions">
             <button id="startButton"><i class="fa fa-fw fa-play" aria-hidden="true"></i></button>
             <button id="stopButton"><i class="fa fa-fw fa-stop" aria-hidden="true"></i></button>

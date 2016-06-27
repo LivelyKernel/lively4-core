@@ -45,9 +45,10 @@ export default class Services extends Morph {
     this.logEditor.setReadOnly(true);
 
     this.refreshServiceList();
-    this.refreshInterval = window.setInterval(() => {
-      this.refreshServiceList();
-    }, 5000);
+    this.refreshInterval = window.setInterval(
+      this.refreshServiceList.bind(this),
+      5000
+    );
     this.logInterval = null;
 
     this.detachedCallback = () => {
@@ -72,13 +73,14 @@ export default class Services extends Morph {
       // TODO: warn if path does not exist
       browser.path = "/services";
       browser.setMainAction((url) => {
+        const relativePath = url.pathname.replace("/services/", "");
+
         this.serviceTop.removeAttribute('data-id');
-        this.entryPoint.value = '';
+        this.entryPoint.value = relativePath;
         this.entryPoint.focus();
         this.logEditor.setValue('');
         this.unselectAll();
 
-        const relativePath = url.pathname.replace("/services/", "");
         this.startButtonClick(relativePath);
         browser.parentElement.closeButtonClicked();
       });
@@ -91,6 +93,7 @@ export default class Services extends Morph {
       return;
     }
     this.post('remove', { id: this.pid }, function(res) {
+      this.pid = null;
       console.log(res);
       this.refreshServiceList();
     }.bind(this));
@@ -119,11 +122,11 @@ export default class Services extends Morph {
     } else {
       data = { entryPoint: entryPoint || this.entryPoint.value };
     }
-    this.post('start', data, function(res) {
+    this.post('start', data, (res) => {
       console.log(res);
-      this.refreshServiceList();
-      this.showService();
-    }.bind(this));
+      this.pid = res.pid;
+      this.refreshServiceList().then(this.showService.bind(this));
+    });
   }
 
   stopButtonClick(evt) {
@@ -238,7 +241,7 @@ export default class Services extends Morph {
   * Refresh functions
   */
   refreshServiceList() {
-    $.ajax({
+    return $.ajax({
       url: servicesURL + 'list',
       success: function(services) {
         this.services = services;
@@ -283,6 +286,10 @@ export default class Services extends Morph {
   }
 
   refreshLog() {
+    if (this.pid === null) {
+      this.logEditor.setValue("");
+      return;
+    }
     this.post('get', { id: this.pid }, function(res) {
       this.logEditor.setValue(res[this.logType]);
       this.logEditor.gotoPageDown();
