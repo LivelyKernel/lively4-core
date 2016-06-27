@@ -1127,7 +1127,7 @@ describe('contextjs', function () {
             assert.equal(o2.a, 7, "layer getter broken after activation for o2");
         });
 
-        it('can provide a getter in the class for for an existing property', function() {
+        it('can provide a getter in the class for an existing property', function() {
             class Example {
                 constructor() {
                     this.a = 0;
