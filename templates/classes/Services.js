@@ -122,6 +122,7 @@ export default class Services extends Morph {
     this.post('start', data, function(res) {
       console.log(res);
       this.refreshServiceList();
+      this.showService();
     }.bind(this));
   }
 
@@ -217,6 +218,22 @@ export default class Services extends Morph {
     this.serviceList.appendChild(item);
   }
 
+  msToString(milliseconds) {
+    function ending(number) { return (number > 1) ? 's' : ''; }
+    var seconds = Math.floor(milliseconds / 1000);
+    var years = Math.floor(seconds / 31536000);
+    if (years) { return years + ' year' + ending(years); }
+    var days = Math.floor((seconds %= 31536000) / 86400);
+    if (days) { return days + ' day' + ending(days); }
+    var hours = Math.floor((seconds %= 86400) / 3600);
+    if (hours) { return hours + ' hour' + ending(hours); }
+    var minutes = Math.floor((seconds %= 3600) / 60);
+    if (minutes) { return minutes + ' minute' + ending(minutes); }
+    seconds = seconds % 60;
+    if (seconds) { return seconds + ' second' + ending(seconds); }
+    return 'just now';
+  }
+
   /*
   * Refresh functions
   */
@@ -248,12 +265,12 @@ export default class Services extends Morph {
           var statusText = 'unkown';
           if (service.status === 0) {
             status = 'not-running';
-            var since = (now - service.kill)/1000;
-            statusText = 'not running since ' + since + 's';
+            var since = (now - service.kill);
+            statusText = 'not running (' + this.msToString(since) + ')';
           } else if (service.status === 1) {
             status = 'running';
-            var uptime = (now - service.start)/1000;
-            statusText = 'running (' + uptime + 's)';
+            var uptime = (now - service.start);
+            statusText = 'running (' + this.msToString(uptime) + ')';
           }
 
           item.getSubmorph('.status').classList.add(status);
