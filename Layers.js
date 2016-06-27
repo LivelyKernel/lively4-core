@@ -73,6 +73,55 @@ export function getLayerDefinitionForObject(layer, object) {
   return result ? result : getLayerDefinitionForObject(layer, object.prototype);
 };
 
+/**
+ * Stores partial definitions for a single layered object and layer.
+ */
+class PartialLayer {
+  constructor(layeredObject) {
+    this.layeredObject = layeredObject;
+    this.layeredProperties = {};
+  }
+
+  setLayeredPropertyValue(name, value) {
+    this.layeredProperties[name] = value;
+  }
+
+  defineGetter(propertyName, getter) {
+    return Object.defineProperty(this.layeredProperties, propertyName,
+                          {get: getter, configurable: true});
+  }
+
+  defineSetter(propertyName, setter) {
+    return Object.defineProperty(this.layeredProperties, propertyName,
+                          {set: setter, configurable: true});
+  }
+
+  getterMethod(propertyName) {
+    return Object.getOwnPropertyDescriptor(this.layeredProperties, propertyName).get;
+  }
+
+  setterMethod(propertyName) {
+    return Object.getOwnPropertyDescriptor(this.layeredProperties, propertyName).set;
+  }
+
+  property(propertyName) {
+    if (this.layeredProperties.hasOwnProperty(propertyName)) {
+      return this.layeredProperties[propertyName];
+    }
+  }
+
+  reinstall() {
+    Object.getOwnPropertyNames(this.layeredProperties).forEach(eachProperty => {
+      const property = Object.getOwnPropertyDescriptor(this.layeredProperties, eachProperty);
+      if (typeof property.get !== 'undefined' || typeof property.set !== 'undefined') {
+        makePropertyLayerAware(this.layeredObject, eachProperty);
+      } else {
+        makeFunctionLayerAware(this.layeredObject, eachProperty);
+      }
+    });
+  }
+}
+
 export function ensurePartialLayer(layer, object) {
   if (!layer) {
     throw new Error("in ensurePartialLayer: layer is nil");
@@ -86,14 +135,14 @@ export function ensurePartialLayer(layer, object) {
     });
   }
   if (!layer[object[LayerObjectID]]) {
-    layer[object[LayerObjectID]] = {_layered_object: object};
+    layer[object[LayerObjectID]] = new PartialLayer(object);
   }
   return layer[object[LayerObjectID]];
 };
 
 // TODO(mariannet) : Find out if ES6 constructor also has type
 export function layerMethod(layer, object, property, func) {
-  ensurePartialLayer(layer, object)[property] = func;
+  ensurePartialLayer(layer, object).setLayeredPropertyValue(property, func);
   func.displayName = "layered " + String(layer.name) + " "
                    + (object.constructor ? (object.constructor.type + "$") : "")
                    + property;
@@ -105,22 +154,20 @@ export function layerMethod(layer, object, property, func) {
 };
 
 function layerGetterMethod(layer, object, property, getter) {
-  Object.defineProperty(ensurePartialLayer(layer, object), property,
-                        {get: getter, configurable: true});
+  ensurePartialLayer(layer, object).defineGetter(property, getter);
 };
 
 function layerSetterMethod(layer, object, property, setter) {
-  Object.defineProperty(ensurePartialLayer(layer, object), property,
-                        {set: setter, configurable: true});
+  ensurePartialLayer(layer, object).defineSetter(property, setter);
 };
 
 export function layerProperty(layer, object, property, defs) {
-  var propertyDescriptor = Object.getOwnPropertyDescriptor(defs, property);
-  var getter = propertyDescriptor && propertyDescriptor.get;
+  var defProperty = Object.getOwnPropertyDescriptor(defs, property);
+  var getter = defProperty && defProperty.get;
   if (getter) {
     layerGetterMethod(layer, object, property, getter);
   }
-  var setter = propertyDescriptor && propertyDescriptor.set;
+  var setter = defProperty && defProperty.set;
   if (setter) {
     layerSetterMethod(layer, object, property, setter);
   }
@@ -206,35 +253,30 @@ export function lookupLayeredFunctionForObject(
   }
   // we have to look for layer defintions in self, self.prototype,
   // ... there may be layered methods in a subclass of "obj"
-  var layered_function;
-  var layer_definition_for_object = getLayerDefinitionForObject(layer, self);
-  if (layer_definition_for_object) {
+  let partialFunction;
+  const partialLayerForObject = getLayerDefinitionForObject(layer, self);
+  if (partialLayerForObject) {
     // log("  found layer definitions for object");
-    // TODO: optional proceed goes here....
     if (methodType == 'getter') {
-      layered_function = Object.getOwnPropertyDescriptor(layer_definition_for_object, function_name).get;
+      partialFunction = partialLayerForObject.getterMethod(function_name);
     } else if (methodType == 'setter'){
-      layered_function = Object.getOwnPropertyDescriptor(layer_definition_for_object, function_name).set;
+      partialFunction = partialLayerForObject.setterMethod(function_name);
     } else {
-      if (layer_definition_for_object.hasOwnProperty(function_name)) {
-        layered_function = layer_definition_for_object[function_name];
-      }
+      partialFunction = partialLayerForObject.property(function_name);
     }
   }
-  if (!layered_function) {
+  if (!partialFunction) {
     // try the superclass hierachy
     // log("look for superclass of: " + self.constructor)
-    var superclass = Object.getPrototypeOf(self);
+    const superclass = Object.getPrototypeOf(self);
     if (superclass) {
       // log("layered function is not found
       //in this partial method, lookup for my prototype?")
       return lookupLayeredFunctionForObject(
           superclass, layer, function_name, methodType);
-    } else {
-        // log("obj has not prototype")
     }
   }
-  return layered_function;
+  return partialFunction;
 };
 
 function pvtMakeFunctionOrPropertyLayerAware(obj, slotName, baseValue, type, isHidden) {
@@ -295,19 +337,19 @@ function makeFunctionLayerAware(base_obj, function_name, isHidden) {
 
 function makePropertyLayerAware(baseObj, property) {
   if (!baseObj) {
-    throw new Error("can't layer an non existent object");
+    throw new Error("can't layer a non existent object");
   }  
   // ensure base getter and setter
-  var propertyDescriptor = Object.getOwnPropertyDescriptor(baseObj, property);
-  var getter = propertyDescriptor && propertyDescriptor.get;
+  var baseObjProperty = Object.getOwnPropertyDescriptor(baseObj, property);
   var propName = "__layered_" + property + "__";
+  var getter = baseObjProperty && baseObjProperty.get;
   if (!getter) {
     // does not work when dealing with classes and instances...
     baseObj[propName] = baseObj[property]; // take over old value
     getter = function() { return this[propName] };
     Object.defineProperty(baseObj, property, {get: getter, configurable: true});
   };
-  var setter = propertyDescriptor && propertyDescriptor.set;
+  var setter = baseObjProperty && baseObjProperty.set;
   if (!setter) {
     setter = function(value) { return this[propName] = value };
     Object.defineProperty(baseObj, property, {set: setter, configurable: true});
@@ -534,6 +576,15 @@ export class Layer {
   }
   unrefineClass (classObj) {
     this.unrefineObject(classObj.prototype);
+  }
+
+  reinstallInClass (constructor) {
+    this.reinstallInObject(constructor.prototype);
+  }
+
+  reinstallInObject (object) {
+    const partialLayer = ensurePartialLayer(this, object);
+    partialLayer.reinstall();
   }
   
   // Layer activation

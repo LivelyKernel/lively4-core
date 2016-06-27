@@ -620,19 +620,29 @@ describe('contextjs', function () {
 
     it('testLayerMethod', function() {
         // TODO: why do we need this syntax in addition to refineObject?
-        const object1 = {f() {return 0}, g() {}},
+        const object1 = { f() { return 0 }, g() { return 1 } },
             layer1 = new Layer('LtestLayerMethod');
 
         cop.layerMethod(layer1, object1, "f", function(){
             return proceed() + 1});
 
-        assert(cop.getLayerDefinitionForObject(layer1, object1).f, "f did not get stored");
+        assert.equal(object1.f(), 0, "f should behave unchanged");
+        assert.equal(object1.g(), 1, "g should behave unchanged");
+        withLayers([layer1], () => {
+            assert.equal(object1.f(), 1, "f should behave differently with layer");
+            assert.equal(object1.g(), 1, "unlayered g should behave unchanged with layer");
+        });
+        assert.equal(object1.f(), 0, "f should behave unchanged with layer off again");
+        // assert(cop.getLayerDefinitionForObject(layer1, object1).property('f'), "f did not get stored");
 
-        cop.layerMethod(layer1, object1, "g", function(){});
+        cop.layerMethod(layer1, object1, "g", function(){ return 2 });
 
-        // FIXME: implementation detail
-        assert(cop.getLayerDefinitionForObject(layer1, object1).f, "f did not get stored");
-        assert(cop.getLayerDefinitionForObject(layer1, object1).g, "g did not get stored");
+        assert.equal(object1.g(), 1, "layered g should behave unchanged without layer");
+        withLayers([layer1], () => {
+            assert.equal(object1.g(), 2, "layered g should behave differently with layer");
+            assert.equal(object1.f(), 1, "f should still be layered");
+        });
+        assert.equal(object1.g(), 1, "layered g should behave unchanged after layer deactivation");
     });
 
     it('stores partial methods for class prototypes', function() {
@@ -647,8 +657,10 @@ describe('contextjs', function () {
             h() { return -1 }
         });
         // FIXME: implementation detail?
-        assert(cop.getLayerDefinitionForObject(layer1, Example.prototype).f, "f did not end up in layer");
-        assert(cop.getLayerDefinitionForObject(layer2, Example.prototype).h, "layer2 has no method for h");
+        const partialLayer1 = cop.getLayerDefinitionForObject(layer1, Example.prototype)
+        assert.isFunction(partialLayer1.property('f'), "f did not end up in layer");
+        const partialLayer2 = cop.getLayerDefinitionForObject(layer2, Example.prototype);
+        assert.isFunction(partialLayer2.property('h'), "layer2 has no method for h");
     });
 
     it('testComposeLayers', function() {
@@ -941,6 +953,67 @@ describe('contextjs', function () {
             l.beGlobal();
             assert.include(cop.GlobalLayers, l, "be global is broken")
         });
+
+        describe('reinstall', function () {
+            it('reenables composition on methods that were overwritten', function () {
+                class Example {
+                    version() { return "1" }
+                }
+                const aLayer = new Layer().refineClass(Example, {
+                    version() { return proceed() + "a" }
+                });
+                const ex = new Example();
+                assert.isTrue(ex.version.isLayerAware, "method should now be layer aware");
+                // when
+                Example.prototype.version = function () { return "2" };
+                assert.isNotOk(ex.version.isLayerAware, "method should now be layer unaware");
+                aLayer.reinstallInClass(Example);
+                // then
+                assert.isTrue(ex.version.isLayerAware, "method should be layer aware again");
+                withLayers([aLayer], () => assert.equal(ex.version(), "2a",
+                        "method should be layer aware again"));
+            });
+
+            it('reenables composition on accessors that were overwritten', function () {
+                class Example {
+                    constructor () { this._value = 0 }
+                    get version() { return "1" }
+                    get value() { return this._value }
+                    set value(newValue) { this._value = newValue }
+                }
+                const aLayer = new Layer().refineClass(Example, {
+                    get version() { return proceed() + "a" },
+                    set value(newValue) { proceed(-newValue) }
+                });
+                const ex = new Example();
+                // when
+                Object.defineProperties(Example.prototype, {
+                    version: {
+                        get() { return "2" },
+                        configurable: true
+                    },
+                    value: {
+                        get() { return this._value * 2 },
+                        set(newValue) { this._value = newValue / 2 },
+                        configurable: true
+                    }
+                });
+                withLayers([aLayer], () => {
+                    assert.equal(ex.version, "2", "getter should now be layer unaware");
+                    ex.value = 4;
+                    assert.equal(ex.value, 4, "setter should now be layer unaware");
+                });
+                aLayer.reinstallInClass(Example);
+                // then
+                ex.value = 2;
+                assert.equal(ex.value, 2, "setter should be unchanged with inactive layer");
+                withLayers([aLayer], () => {
+                    assert.equal(ex.version, "2a", "getter should be layer aware again");
+                    ex.value = 4;
+                    assert.equal(ex.value, -4, "setter should be layer aware again");
+                });
+            });
+        });
     });
 
     describe('state provided by layers', function () {
@@ -985,21 +1058,15 @@ describe('contextjs', function () {
         it('can provide refined getter and setter', function() {
             const o = {a: 5, l1_value: 10};
             const layer1 = new Layer('L1');
-
+            // when
             layer1.refineObject(o, {
                 get a() { return this.l1_value },
                 set a(value) { return this.l1_value = value }
             });
+            // then
             assert.equal(o.a, 5, "property access is broken");
             o.a = 6;
             assert.equal(o.a, 6, "property setter is broken");
-            // FIXME: implementation detail?
-            const layerDef = cop.getLayerDefinitionForObject(layer1,o);
-            assert(Object.getOwnPropertyDescriptor(layerDef, "a").set,
-                "layer1 has no setter for a");
-            assert(Object.getOwnPropertyDescriptor(o, "a").set.isLayerAware, "o.a setter is not layerAware");
-            //        end implementation detail
-
             withLayers([layer1], () => {
                 assert.equal(o.a, 10, "layer getter broken");
                 o.a = 20;
@@ -1008,6 +1075,12 @@ describe('contextjs', function () {
             assert.equal(o.a, 6, "getter broken after activation");
             o.a = 7;
             assert.equal(o.a, 7, "setter broken after activation");
+            // FIXME: implementation detail?
+            const layerDef = cop.getLayerDefinitionForObject(layer1,o);
+            assert.isFunction(layerDef.setterMethod('a'),
+                "layer1 has no setter for a");
+            assert.isTrue(Object.getOwnPropertyDescriptor(o, "a").set.isLayerAware,
+                          "o.a setter is not layerAware");
         });
 
         it('can provide a getter for a new property in a class', function() {
@@ -1185,8 +1258,7 @@ describe('contextjs', function () {
             assert.isDefined(getter, "no getter in class");
             // FIXME: implementation detail?
             const layerDef = cop.getLayerDefinitionForObject(layer, Example.prototype);
-            getter = Object.getOwnPropertyDescriptor(layerDef, "e").get;
-            assert.isDefined(getter, "no getter in partial class");
+            assert.isDefined(layerDef.getterMethod('e'), "no getter in partial class");
         });
 
         it('can create layer specific bindings for properties', function() {
@@ -1638,7 +1710,7 @@ describe('contextjs', function () {
     });
 
     describe('regressions', function () {
-        describe('layer definition object', function () {
+        describe('PartialLayer', function () {
             it('does not contribute inherited properties to the layer', function() {
                 const layer = new Layer();
                 const obj = {foo() {return 3} };
