@@ -38,9 +38,11 @@ class FileBrowser extends HTMLElement {
       fontSize: 20
     }
 
-    let a = toHTML(<div className='abc' style={style}>
-      <h2>File Browser</h2>
-    </div>)
+    let a = toHTML(
+      <div className='abc' style={style}>
+        <h2>File Browser</h2>
+      </div>
+    )
 
     this.appendChild(a)
   }
