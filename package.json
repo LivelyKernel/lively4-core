@@ -2,10 +2,11 @@
   "name": "contextjs",
   "version": "2.0.0",
   "description": "Context Oriented Programming (COP) for ECMAScript 6",
-  "main": "contextjs.js",
+  "main": "lib/contextjs.js",
   "directories": {
     "test": "tests"
   },
+  "files": ["lib/"],
   "scripts": {
     "compile-es5": "./node_modules/.bin/babel -d lib/ src/",
     "compile-browser": "./node_modules/.bin/browserify lib/contextjs.js --outfile lib/browser-contextjs.js --standalone cop",
