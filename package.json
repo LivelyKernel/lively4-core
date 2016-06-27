@@ -6,7 +6,9 @@
   "directories": {
     "test": "tests"
   },
-  "files": ["lib/"],
+  "files": [
+    "lib/"
+  ],
   "scripts": {
     "compile-es5": "babel -d lib/ src/",
     "compile-browser": "browserify lib/contextjs.js --outfile lib/browser-contextjs.js --standalone cop",
@@ -44,6 +46,7 @@
   },
   "homepage": "https://github.com/LivelyKernel/ContextJS#readme",
   "devDependencies": {
+    "babel-cli": "^6.10.1",
     "babel-core": "^6.7.7",
     "babel-plugin-array-includes": "^2.0.3",
     "babel-polyfill": "^6.8.0",
