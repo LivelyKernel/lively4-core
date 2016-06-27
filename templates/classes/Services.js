@@ -69,11 +69,18 @@ export default class Services extends Morph {
 
   addButtonClick(evt) {
     var browser = lively.components.createComponent("lively-file-browser");
+    const endpoint = "/services";
+    fetch('https://lively4' + endpoint, {method: 'OPTIONS'}).then((response) => {
+      if (!response.ok) {
+        lively.notify("Ensure that there is an endpoint called " + endpoint);
+        lively.openComponentInWindow("lively-filesystems");
+      }
+    });
+
     lively.components.openInWindow(browser).then(() => {
-      // TODO: warn if path does not exist
-      browser.path = "/services";
+      browser.path = endpoint;
       browser.setMainAction((url) => {
-        const relativePath = url.pathname.replace("/services/", "");
+        const relativePath = url.pathname.replace(endpoint + "/", "");
 
         this.serviceTop.removeAttribute('data-id');
         this.entryPoint.value = relativePath;
