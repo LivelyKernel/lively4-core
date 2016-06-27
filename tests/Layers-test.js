@@ -1029,7 +1029,9 @@ describe('contextjs', function () {
             const layer1 = new Layer().refineClass(Example, {
                 m() { return proceed() + 1 }
             });
-            Example.prototype.m = function () { return 2 }
+            Object.assign(Example.prototype, {
+                m() { return 2 }
+            });
             // then
             assert.equal(new Example().m(), 2, 'new method definition should apply');
             withLayers([layer1], () => assert.equal(new Example().m(), 3,

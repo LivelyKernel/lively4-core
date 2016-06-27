@@ -300,6 +300,9 @@ function makeSlotLayerAwareWithNormalLookup(
       proceedStack.pop()
     };
   };
+  Object.defineProperty(wrapped_function, 'name', {
+    value: 'layered ' + baseValue.name
+  });
   wrapped_function.isLayerAware = true;
   // this is more declarative outside of COP context
   wrapped_function.isContextJSWrapper = true;
