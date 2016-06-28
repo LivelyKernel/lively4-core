@@ -1,3 +1,7 @@
 # lively.graphics
 
-No description for package lively.graphics yet.
+Geometry objects and transformations.
+
+# License
+
+[MIT License](LICENSE)
