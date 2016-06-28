@@ -181,16 +181,17 @@ export function layerProperty(layer, object, property, defs) {
 export function layerPropertyWithShadow(layer, object, property) {
   // shadowing does not work with current implementation
   // see the shadow tests in LayersTest
+  // TODO: the tests are green, what is the above comment about?
   var defs = {};
   var baseValue = object[property];
-  var layeredPropName = "_layered_" + layer.name + "_" + property;
+  const layeredPropSymbol = Symbol(property + (typeof layer.name === 'string' ? ' for Layer ' + layer.name : 'for anonymous Layer'));
   Object.defineProperty(defs, property, {
     get: function layeredGetter() {
-      return this[layeredPropName] === undefined ?
-          proceed() : this[layeredPropName];
+      return this[layeredPropSymbol] === undefined ?
+          proceed() : this[layeredPropSymbol];
     },
     set: function layeredSetter(v) {
-      this[layeredPropName] = v;
+      this[layeredPropSymbol] = v;
     },
     configurable: true
   });
@@ -484,6 +485,9 @@ export function proceed(/* arguments */) {
 export class Layer {
   constructor (name, context) {
     this._name = name;
+    if (typeof name === 'undefined') {
+      this._name = Symbol('COP Layer');
+    }
     this._context = context;
     // this._layeredFunctionsList = {};
   }

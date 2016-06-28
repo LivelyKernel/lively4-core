@@ -36,8 +36,6 @@ export function layer(...args) {
 
 // Private helpers
 function basicCreate(layerName, context) {
-  if (typeof layerName === 'undefined')
-    layerName = Symbol('COP Layer');
   if (typeof context === 'undefined')
     context = cop.GlobalNamedLayers;
   if (typeof context[layerName] !== 'undefined') {

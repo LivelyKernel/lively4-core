@@ -932,6 +932,13 @@ describe('contextjs', function () {
             assert.equal(layer('TestName').toString(), 'TestName');
         });
 
+        it('has a symbol as name by default', function () {
+            assert.isDefined(new Layer().name, 'name should not be undefined');
+            const name1 = new Layer().name;
+            const name2 = new Layer().name;
+            assert.notStrictEqual(name1, name2, 'anonymous layers should not share names');
+        });
+
         it('returns itself from #refineObject', function() {
             const layer = new Layer("MyDummyLayer2");
             const o = {foo() {return 1}}
