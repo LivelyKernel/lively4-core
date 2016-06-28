@@ -180,7 +180,8 @@ describe('Active Expressions', function() {
         expect(spy.calledOnce).to.be.true;
     });
 
-    it("traces simple function calls on objects", () => {
+    // TODO: TRACE INTO FUNCTION CALLS
+    xit("traces simple function calls on objects", () => {
         let spy = sinon.spy(),
             rect = {
                 width: 10,
@@ -238,7 +239,8 @@ describe('Active Expressions', function() {
         expect(spy.calledOnce).to.be.true;
     });
 
-    it("tests with a string", () => {
+    // TODO: What about the this reference in arrow functions, normal functions and constructors
+    xit("tests with a string", () => {
         let spy = sinon.spy();
 
         class Obj {
