@@ -620,20 +620,6 @@ export class Layer {
   toString () {
     return String(this.name); // could be a symbol
   }
-  
-  // Deprecated serialization
-  toLiteral () {
-    if (!this.name) {
-      console.warn("Layer: Can not serialize without a name!");
-    }
-    return { name: this.name };
-  }
-  
-  // Deserialization
-  fromLiteral (literal) {
-    // console.log("Deserializing Layer activation from: " + literal.name);
-    return create(literal.name, false);
-  }
 }
 
 /*
