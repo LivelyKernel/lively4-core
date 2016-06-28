@@ -184,7 +184,10 @@ export function layerPropertyWithShadow(layer, object, property) {
   // TODO: the tests are green, what is the above comment about?
   var defs = {};
   var baseValue = object[property];
-  const layeredPropSymbol = Symbol(property + (typeof layer.name === 'string' ? ' for Layer ' + layer.name : 'for anonymous Layer'));
+  const layeredPropSymbol = Symbol(property + ' ' +
+      (typeof layer.name === 'string'
+       ? 'for Layer ' + layer.name
+       : 'for anonymous Layer'));
   Object.defineProperty(defs, property, {
     get: function layeredGetter() {
       return this[layeredPropSymbol] === undefined ?
