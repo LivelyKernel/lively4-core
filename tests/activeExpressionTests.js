@@ -128,6 +128,7 @@ describe('Active Expressions', function() {
         expect(spy.calledOnce).to.be.true;
     });
 
+    // TODO: this has no check currently, so it currently just make sure our interpreter can work with property accessors
     it("deals with the prototype chain", () => {
         var superObj = {a: 'superA', b: 'superB'},
             subObj = Object.create(superObj, {
@@ -164,6 +165,7 @@ describe('Active Expressions', function() {
         expect(spy.calledThrice).to.be.true;
     });
 
+    // TODO: this works as long as our interpreter supports basic function calls (even if not interpreted)
     it("can do function calls", () => {
         function double(x) {
             return 2 * x;
@@ -195,7 +197,7 @@ describe('Active Expressions', function() {
         //expect(spy.withArgs(330).calledOnce).to.be.true;
     });
 
-    // TODO: cuurently leads to an error, as the property rect.area is overwritten, yet only the prototype has the .area function
+    // TODO: currently leads to an error, as the property rect.area is overwritten, yet only the prototype has the .area function
     xit("traces function calls to the protopyte of an object", () => {
         class Rectangle {
             constructor(width, height) {
@@ -214,6 +216,42 @@ describe('Active Expressions', function() {
         aexpr(() => rect.area(3), {rect}).onChange(spy);
 
         rect.height = 33;
+        expect(spy.calledOnce).to.be.true;
+    });
+
+    // TODO: test function call with less/more arguments than expected
+
+    xit("bind the this argument correctly for arrow functions", () => {
+        let spy = sinon.spy();
+
+        class Obj {
+            constructor(foo) {
+                this.foo = foo;
+                this.expr = aexpr(() => this.foo, {});
+            }
+        }
+
+        let obj = new Obj(17);
+        obj.expr.onChange(spy);
+
+        obj.foo = 33;
+        expect(spy.calledOnce).to.be.true;
+    });
+
+    it("tests with a string", () => {
+        let spy = sinon.spy();
+
+        class Obj {
+            constructor(foo) {
+                this.foo = foo;
+                this.expr = aexpr(() => this.foo, {});
+            }
+        }
+
+        let obj = new Obj(17);
+        obj.expr.onChange(spy);
+
+        obj.foo = 33;
         expect(spy.calledOnce).to.be.true;
     });
 });
