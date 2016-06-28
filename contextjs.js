@@ -25,21 +25,13 @@ export function withoutLayers(layers, func) {
 
 // Layer creation by name
 export function layer(...args) {
-  let layerName, rootContext;
+  let layerName, context;
   if (args.length === 2) {
-    [rootContext, layerName] = args;
+    [context, layerName] = args;
   } else if (args.length === 1) {
     [layerName] = args;
   }
-  if (typeof rootContext === 'undefined') {
-    return basicCreate(layerName);
-  }
-  var parts = layerName.split(/\./);
-  var context = rootContext;
-  for (let i = 0; i < parts.length - 1; ++i) {
-    context = context[parts[i]];
-  }
-  return basicCreate(parts[parts.length - 1], context);
+  return basicCreate(layerName, context);
 };
 
 // Private helpers
