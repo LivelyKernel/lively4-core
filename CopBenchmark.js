@@ -167,55 +167,75 @@ class BenchClass {
 	countWithLayers() {	
 		this.counter_00++;
 	}
+}
 
-	L1$countWithLayers() {	
+L1.refineClass(BenchClass, {
+	countWithLayers() {	
 		this.counter_01++;
 		cop.proceed()
 	}
+})
 	
-	L2$countWithLayers() {	
+L2.refineClass(BenchClass, {
+    countWithLayers() {	
 		this.counter_02++;
 		cop.proceed()
 	}
+})
 	
-	L3$countWithLayers() {	
+L3.refineClass(BenchClass, {
+    countWithLayers() {	
 		this.counter_03++;
 		cop.proceed()
 	}
+})
 	
-	L4$countWithLayers() {	
+L4.refineClass(BenchClass, {
+    countWithLayers() {	
 		this.counter_04++;
 		cop.proceed()
 	}
+})
 	
-	L5$countWithLayers() {	
+L5.refineClass(BenchClass, {
+    countWithLayers() {	
 		this.counter_05++;
 		cop.proceed()
 	}
+})
 	
-	L6$countWithLayers() {	
+L6.refineClass(BenchClass, {
+    countWithLayers() {	
 		this.counter_06++;
 		cop.proceed()
 	}
+})
 	
-	L7$countWithLayers() {	
+L7.refineClass(BenchClass, {
+    countWithLayers() {	
 		this.counter_07++;
 		cop.proceed()
 	}
+})
 	
-	L8$countWithLayers() {	
+L8.refineClass(BenchClass, {
+    countWithLayers() {	
 		this.counter_08++;
 		cop.proceed()
 	}
-	L9$countWithLayers() {	
+})
+L9.refineClass(BenchClass, {
+    countWithLayers() {	
 		this.counter_09++;
 		cop.proceed()
 	}
-	L10$countWithLayers() {	
+})
+L10.refineClass(BenchClass, {
+    countWithLayers() {	
 		this.counter_10++;
 		cop.proceed()
 	}
-}
+})
 
 /* Benchmarks */
 
@@ -236,37 +256,47 @@ class C1 {
 	m3() {this.counter_00++;}
 	m4() {this.counter_00++;}
 	m5() {this.counter_00++;}
-
-	L1$m1() {this.counter_01++;}
-	L1$m2() {this.counter_01++;}
-	L1$m3() {this.counter_01++;}
-	L1$m4() {this.counter_01++;}
-	L1$m5() {this.counter_01++;}
-
-	L2$m1() {this.counter_02++;}
-	L2$m2() {this.counter_02++;}
-	L2$m3() {this.counter_02++;}
-	L2$m4() {this.counter_02++;}
-	L2$m5() {this.counter_02++;}
-
-	L3$m1() {this.counter_03++;}
-	L3$m2() {this.counter_03++;}
-	L3$m3() {this.counter_03++;}
-	L3$m4() {this.counter_03++;}
-	L3$m5() {this.counter_03++;}
-
-	L4$m1() {this.counter_04++;}
-	L4$m2() {this.counter_04++;}
-	L4$m3() {this.counter_04++;}
-	L4$m4() {this.counter_04++;}
-	L4$m5() {this.counter_04++;}
-
-	L5$m1() {this.counter_05++;}
-	L5$m2() {this.counter_05++;}
-	L5$m3() {this.counter_05++;}
-	L5$m4() {this.counter_05++;}
-	L5$m5() {this.counter_05++;}
 }
+
+L1.refineClass(C1, {
+    m1() {this.counter_01++;}, 
+    m2() {this.counter_01++;}, 
+    m3() {this.counter_01++;}, 
+    m4() {this.counter_01++;}, 
+    m5() {this.counter_01++;}
+})
+
+L2.refineClass(C1, {
+    m1() {this.counter_02++;},
+    m2() {this.counter_02++;}, 
+    m3() {this.counter_02++;}, 
+    m4() {this.counter_02++;}, 
+    m5() {this.counter_02++;}
+})
+
+L3.refineClass(C1, {
+    m1() {this.counter_03++;},
+    m2() {this.counter_03++;}, 
+    m3() {this.counter_03++;}, 
+    m4() {this.counter_03++;}, 
+    m5() {this.counter_03++;}
+})
+
+L4.refineClass(C1, {
+    m1() {this.counter_04++;},
+    m2() {this.counter_04++;}, 
+    m3() {this.counter_04++;}, 
+    m4() {this.counter_04++;}, 
+    m5() {this.counter_04++;}
+})
+
+L5.refineClass(C1, {
+    m1() {this.counter_05++;},
+    m2() {this.counter_05++;}, 
+    m3() {this.counter_05++;}, 
+    m4() {this.counter_05++;}, 
+    m5() {this.counter_05++;}
+})
 
 class WrappBenchTest {
 	constructor() {
