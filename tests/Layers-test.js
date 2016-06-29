@@ -26,6 +26,8 @@ import '../module_import.js';
 import * as cop from '../Layers.js';
 import { LayerableObject } from '../Layers.js';
 
+import './globalChai.js'
+
 const assert = chai.assert;
 
 // COP Example from: Hirschfeld, Costanza, Nierstrasz. 2008.

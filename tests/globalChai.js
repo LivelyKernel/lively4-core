@@ -1,3 +1,13 @@
-// only to be run with node (or rather mocha), not in a browser
-
-global.chai = require('chai');
+if (typeof chai === 'undefined') {
+  if (window.lively4url) {
+    // workaround for lively4
+    System.import('node_modules/chai/chai.js').then(module => {
+      window.chai = module
+    });
+  } else {
+    const _require = require; // workaround for lively modules
+    if (typeof global !== 'undefined') {
+      global.chai = _require('chai');
+    }
+  }
+}

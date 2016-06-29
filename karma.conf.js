@@ -19,6 +19,7 @@ module.exports = function(config) {
       'module_import.js',
       'Layers.js',
       'old-api.js',
+      'tests/globalChai.js', // only needed for the import
       'tests/**/*test.js',
       'tests/**/*Tests.js'
     ],
