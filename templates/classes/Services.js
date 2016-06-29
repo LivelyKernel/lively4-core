@@ -295,6 +295,7 @@ export default class Services extends Morph {
   refreshLog() {
     if (this.pid === null) {
       this.logEditor.setValue("");
+      this.entryPoint.value = "";
       return;
     }
     this.post('get', { id: this.pid }, function(res) {
