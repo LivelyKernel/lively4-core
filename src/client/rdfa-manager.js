@@ -1,4 +1,5 @@
 import * as rdfa from '../external/RDFa.js';
+import generateUuid from './uuid.js'
 
 export default class RdfaManager {
 
@@ -93,7 +94,7 @@ export default class RdfaManager {
         let values = properties[property];
         for (let i = 0; i < values.length; i++) {
           let value = values[i];
-          if (this.isSubject(value)) {
+          if (this.isAnnonymousSubject(value)) {
             values[i] = this.subject2DataMapping[value];
           }
         }
@@ -102,7 +103,7 @@ export default class RdfaManager {
     return projections;
   }
 
-  static isSubject(string) {
+  static isAnnonymousSubject(string) {
     if (string && typeof string == 'string') {
       var pattern = new RegExp("^_:(\\d)+$")
       return pattern.test(string);
@@ -118,6 +119,58 @@ export default class RdfaManager {
       this.subject2DataMapping[projection.getSubject()] = projection;
     });
     this.objectGraph = this.resolveSubjects(projections);
+  }
+  
+  static getRDFaTriples() {
+    let subject2uuid = {};
+    let projections = document.data.rdfa.query();
+    let triples = [];
+    document.data.getSubjects().forEach((subject) => {
+      let subjectIdentifier = subject;
+      if (!subject2uuid[subject]) {
+        if (this.isAnnonymousSubject(subject)) {
+          subjectIdentifier = generateUuid();
+        }
+        subject2uuid[subject] = subjectIdentifier;
+      }
+    });
+    projections.forEach((projection) => {
+      let subject = projection.getSubject();
+      let properties = projection._data_.properties;
+      for (let property in properties) {
+        let values = properties[property];
+        let processedValues = values.map((value) => {
+          return subject2uuid[value] || value
+        });
+        triples.push({
+          subject: subject2uuid[subject],
+          property: property,
+          //TODO all values
+          values: processedValues});
+      }
+    })
+    return triples;
+  }
+  
+  static storeRDFaTriplesToFirebase() {
+    let path = "rdfaTriples/";
+    let triples = this.getRDFaTriples();
+    let updates = {};
+    triples.forEach((triple) => {
+      let fullPath = path + generateUuid();
+      let key = firebase.database().ref(fullPath).push().key;
+      updates[key] = triple;
+      /*firebase.database().ref(fullPath).set(triple).then(() => {
+        lively.notify("Saved RDFa data", fullPath);
+      }).catch((reason) => {
+        lively.notify("Failed to save RDFa data to " + fullPath, reason);
+      });*/
+    });
+    firebase.database().ref(path).update(updates).then(() => {
+      lively.notify("Updated RDFa data", path);
+    }).catch((reason) => {
+      lively.notify("Failed to update RDFa data to " + path, reason);
+    });
   }
 }
 
