@@ -1,6 +1,14 @@
 import * as rdfa from '../external/RDFa.js';
 import generateUuid from './uuid.js'
 
+class RdfaTriple {
+  constructor(subject, property, values) {
+    this.subject = subject;
+    this.property = property;
+    this.values = values;
+  }
+}
+
 export default class RdfaManager {
 
   static loadFirebaseConfig() {
@@ -68,7 +76,33 @@ export default class RdfaManager {
   }
 
   static readDataFromFirebase(path) {
-    return firebase.database().ref("rdfa/" + path).once('value') // returns a Promise
+    return firebase.database().ref("rdfaTriples/" + path).once('value')
+      .then((data) => {
+        let uuidMap = {};
+        let triples = []
+        let values = data.val();
+        
+        for (let id in values) {
+          let val = values[id];
+          let triple = new RdfaTriple(val.subject, val.property, val.values)
+          triples.push(triple);
+          if (this.isUuid(triple.subject)) {
+            uuidMap[triple.subject] = triple;
+          }
+        }
+        
+        triples.forEach((triple) => {
+          for (let i = 0; i < triple.values.length; i++) {
+            triple.values[i] = uuidMap[triple.values[i]] || triple.values[i];
+          }
+        });
+        
+        return triples;
+      })
+  }
+  
+  static isUuid(string) {
+    return string.match(/\S{8}-\S{4}-4\S{3}-\S{4}-\S{12}/);
   }
 
   static addRdfaEventListener(mappings, callback) {
