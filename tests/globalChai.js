@@ -1,5 +1,5 @@
 if (typeof chai === 'undefined') {
-  if (window && window.lively4url) {
+  if (typeof window !== 'undefined' && window.lively4url) {
     // workaround for lively4
     System.import('../ContextJS/node_modules/chai/chai.js').then(module => {
       window.chai = module
