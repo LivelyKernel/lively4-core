@@ -2,9 +2,9 @@
 // abstract view class
 class ActiveView {
   constructor() {
-    if (new.target === ActiveView) {
-      throw new TypeError('Cannot construct ActiveView directly');
-    }
+    // if (new.target === ActiveView) {
+    //   throw new TypeError('Cannot construct ActiveView directly');
+    // }
   }
 }
 
@@ -13,11 +13,13 @@ export class ActiveDOMView extends ActiveView {
     super();
 
     this.selector = selector;
-    this.filterFunction = filterFunction;
+    this.filterFunction = filterFunction || function() { return true };
     this.mutationObserver = null;
     this.elements = new Set();
     this.entered = new Set();
     this.exited = new Set();
+    this.enterCallbacks = new Set();
+    this.exitCallbacks = new Set();
     
     this._setupObserver();
     this._collectElements();
@@ -42,11 +44,14 @@ export class ActiveDOMView extends ActiveView {
    * @function ActiveDOMView#_observerCallback
    */
   _observerCallback(mutations) {
-    console.debug(mutations);
     mutations.forEach(mutation => {
       if (mutation.type === 'childList') {
         Array.from(mutation.addedNodes).forEach(n => {
-          // check not itself
+          if (!(n instanceof HTMLElement)) {
+            return;
+          }
+          
+          // check node itself
           if (this.matches(n)) {
             this._elementEnters(n);
           }
@@ -59,6 +64,10 @@ export class ActiveDOMView extends ActiveView {
         });
 
         Array.from(mutation.removedNodes).forEach(n => {
+          if (!(n instanceof HTMLElement)) {
+            return;
+          }
+
           // check node itself (because there is no parent)
           if (this.matches(n)) {
             this._elementExits(n);
@@ -93,10 +102,10 @@ export class ActiveDOMView extends ActiveView {
    * @param {HTMLElement} node
    */
   _elementEnters(node) {
-    console.debug('adding', node);
     this.exited.delete(node);
     this.elements.add(node);
     this.entered.add(node);
+    this.enterCallbacks.forEach(cb => cb(node));
   }
   
   /**
@@ -105,10 +114,10 @@ export class ActiveDOMView extends ActiveView {
    * @param {HTMLElement} node
    */
   _elementExits(node) {
-    console.debug('removing', node);
     this.entered.delete(node);
     this.elements.delete(node);
     this.exited.add(node);
+    this.exitCallbacks.forEach(cb => cb(node));
   }
   
   /**
@@ -144,6 +153,14 @@ export class ActiveDOMView extends ActiveView {
     this.exited.clear();
     return this;
   }
+  
+  onEnter(callback) {
+    this.enterCallbacks.add(callback);
+  }
+  
+  onExit(callback) {
+    this.exitCallbacks.add(callback);
+  }
 }
 
 class ActiveObjectView extends ActiveView {
@@ -153,12 +170,6 @@ class ActiveObjectView extends ActiveView {
 
 // playground code
 
-import { select } from './active-expressions.js';
-
-let view = select('lively-menu', function(e) {
-  return true;
-});
-
-console.debug(view);
-
-window.testingView = view;
+// var view = new ActiveDOMView('lively-window');
+// console.debug(view);
+// window.testingView = view;

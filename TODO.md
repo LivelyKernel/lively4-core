@@ -1,9 +1,18 @@
 # ToDos
 
+* **README**
+* **Verbosity mode**
+* **Re-evaluate AExpressions on Javascript Objects**
+* **Recursively analyze function calls in condition**
 * Make MutationObserver more efficient by filtering only necessary attributes
 * Build a cool example/showcase
-* Work with query selectors (`$('div')`)
-* Listen to DOM changes
-* Also analyze called functions
-* Properly re-bind context
 * Derive context automatically
+
+##Präsentation
+* screencast
+* screenshot
+* mini abstract
+
+##Abgabe
+* tag in git
+* pdf mit präsentation

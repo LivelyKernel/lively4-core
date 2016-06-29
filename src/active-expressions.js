@@ -1,35 +1,98 @@
 
+import { ActiveDOMView } from './active-view.js';
+import { Logger } from './logger.js';
 
-export class Expr {
-  constructor(expression, callback, context) {
-    this.originalExpr = expression;
+function setDefaultOptions(options) {
+  if (options.alwaysTrigger === undefined) {
+    options.alwaysTrigger = false;
+  }
+  
+  if (options.strict === undefined) {
+    options.strict = true;
+  }
+  
+  if (options.debug === undefined) {
+    options.debug = false;
+  }
+  
+  return options;
+}
+
+// TODO: move back to a constructor
+export function AExpr(condition, options) {
+  if (!(condition instanceof Function)) {
+    throw new TypeError('AExpr needs a condition function');
+  }
+
+  options = setDefaultOptions(options || {});
+  return new ActiveExprFactory(condition, options);
+}
+
+class ActiveExprFactory {
+  constructor(condition, options) {
+    this.condition = condition;
+    this.options = options;
+  }
+
+  applyOn(/* arguments */) {
+    if (arguments.length != this.condition.length) {
+      console.warn('AExpr: mismatching argument count: ', 
+                    arguments.length, this.condition.length);
+    }
+    
+    // TODO: Check if all are null?
+    if (this.options.strict && arguments[0] === null) {
+      // TODO: warning instead of Exception ?
+      // option to allow null?
+      throw 'ActiveExpr.applyOn: null arguments received!';
+    }
+    
+    var context = Array.prototype.slice.call(arguments);
+    return new ActiveExpr(this.condition, context, this.options);
+  }
+}
+
+class ActiveExpr {
+  constructor(condition, context, options) {
+    this.options = options;
+    this.condition = condition;
+    
     this.context = context;
-    this.callback = callback.bind(context);
+    this.callback = null; // callback.bind(this);
 
     this.lastValue = undefined;
     this.observers = {};
+    
+    this.logger = new Logger(options);
 
-    this._ast = lively.ast.parseFunction(expression);
+    this._ast = lively.ast.parseFunction(condition);
     this._declarations = lively.ast.query.topLevelDeclsAndRefs(this._ast);
     this.observables = this.detectObservables();
 
-    this.transformExpression();
+    // this.transformExpression();
     this.proxify();
     
     this.test();
   }
   
+  onChange(callback) {
+    this.callback = callback;
+  }
+  
   test() {
-    let result = this.expr(this.context);
+    let result = this.condition.apply(this, this.context);
 
-    console.log('test returned', result);
+    this.logger.log('Test returned:', result);
 
     if (this.lastValue === undefined) {
       this.lastValue = result;
     } else {
-      if (this.lastValue !== result) {
-        // console.log('value changed!');
-        this.callback(result);
+      if (this.lastValue !== result || this.options.alwaysTrigger) {
+        if (this.callback) {
+          this.callback.apply(this, this.context);
+          // re-evaluate
+          result = this.condition.apply(this, this.context);
+        }
       }
       this.lastValue = result;
     }
@@ -53,9 +116,10 @@ export class Expr {
     }
 
     let body = src.substring(this._ast.body.start - 1, this._ast.body.end + off);
-    console.log(body);
     this.expr = eval('(function(__context)' + body + ')');
-    console.log(this.expr);
+    
+    this.logger.log('Transformed body:', body);
+    this.logger.log('Transformed expr:', this.expr);
   }
   
   detectObservables() {
@@ -114,7 +178,15 @@ export class Expr {
   }
   
   proxify() {
-    // console.log(this.observables.variablesToObserve);
+    this.logger.log('Variables to observe:', this.observables.variablesToObserve);
+    
+    var contextArgs = {};
+    var i = 0;
+    this._ast.params.forEach(function(p) {
+      contextArgs[p.name] = i;
+      i++;
+    });
+    
     for(let observable of this.observables.variablesToObserve) {
       let observableParts = observable.split('.');
       let contextVariableName = observableParts.shift();
@@ -122,12 +194,12 @@ export class Expr {
   
       let object = null;
       
-      // console.log(contextVariableName, observable);
       if(contextVariableName != observable) {
-        object = this.context[contextVariableName];
-
-        if(object) {
-          this.proxifyVariable(object, objectPropertyName, this.callback);
+        var idx = contextArgs[contextVariableName];
+        
+        if (idx !== undefined) {
+          object = this.context[idx];
+          this.proxifyVariable(object, objectPropertyName, this.callback, contextVariableName);
         }
       } else {
         //has no dot in its name, so is probably a global var?
@@ -136,27 +208,35 @@ export class Expr {
     }
   }
   
-  proxifyVariable(object, variable, callback) {
-    // console.log(object, variable, callback);
-    
+  proxifyVariable(object, variable, callback, contextVariableName) {
+    this.logger.log('Proxifying variable:', object, variable, 'With callback:', callback, 'With context variable name:', contextVariableName);
+
     if (object instanceof HTMLElement) {
-      if (this.observers[object] === undefined) {
-        this.observers[object] = {
+      if (this.observers[contextVariableName] === undefined) {
+        this.observers[contextVariableName] = {
           attributes: new Set(),
           mutationObserver: null,
           config: {
-            attributes: true
+            attributes: true,
+            characterData: false,
+            subtree: false
           }
         }
         
         var mutationObserver = new MutationObserver(
           (records, m) => this.mutationObserverCallback(records, m)
         );
-        mutationObserver.observe(object, this.observers[object].config);
+        mutationObserver.observe(object, this.observers[contextVariableName].config);
         
-        this.observers[object].mutationObserver = mutationObserver;
+        this.observers[contextVariableName].mutationObserver = mutationObserver;
        
-        // console.log('set up', this.observers[object]);
+        // this.logger.log('set up', this.observers[contextVariableName]);
+        
+        // set up event listeners if necessary...
+        if (variable == 'value') {
+          // this.logger.log('Adding event listener');
+          object.addEventListener('change', (e) => this.domEventCallback(e));
+        }
       }
       // HTMLElements get special treatment
       return;
@@ -168,7 +248,7 @@ export class Expr {
       return;
     }
     
-    console.log('patching ', variable);
+    this.logger.log('Patching variable:', variable);
     
     ['__lively_expr_getters',
      '__lively_expr_setters',
@@ -197,8 +277,8 @@ export class Expr {
     
     object.__lively_expr_watchers.add(this);
     
-    // console.log('old getter:', oldGetter);
-    // console.log('old setter:', oldSetter);
+    // this.logger.log('old getter:', oldGetter);
+    // this.logger.log('old setter:', oldSetter);
 
     var newGetter = function() {
       if (this.__lively_expr_getters[variable]) {
@@ -225,8 +305,28 @@ export class Expr {
   }
   
   mutationObserverCallback(records, mutationObserver) {
-    // console.log(mutationObserver);
-    // console.log(records);
+    this.test();
+  }
+  
+  domEventCallback(e) {
     this.test();
   }
 }
+
+  // let outOfScreen = AExpr(
+  //   function condition(w) { 
+  //     return parseInt(w.style.top) < 0 || parseInt(w.style.left) < 0
+  //   }
+  // );
+  
+  // outOfScreen
+  //   .applyOn(document.querySelector('lively-window'))
+  //   .onChange(function(node) {
+  //     if (parseInt(node.style.top) < 0) {
+  //       node.style.top = 0;
+  //     }
+  //     if (parseInt(node.style.left) < 0) {
+  //       node.style.left = 0;
+  //     }
+  //   });
+
