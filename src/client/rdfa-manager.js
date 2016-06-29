@@ -70,8 +70,11 @@ export default class RdfaManager {
     return firebase.database().ref("rdfa/" + path).once('value') // returns a Promise
   }
 
-  static addRdfaEventListener(mapping, callback) {
-    this.listener.push({mapping: mapping, callback: callback})
+  static addRdfaEventListener(mappings, callback) {
+    let mappingArray = typeof mappings == 'string' ? [mappings] : mappings;
+    mappingArray.forEach((mapping) => {
+      this.listener.push({mapping: mapping, callback: callback})
+    })
   }
 
   static notifyRdfaEventListener() {
