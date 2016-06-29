@@ -33,7 +33,7 @@
     "packageMap": {
       "html": "src/client/lively.js"
     }
-  }
+  },
   "directories": {
     "lib": "src"
   },
