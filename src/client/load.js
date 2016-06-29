@@ -28,55 +28,32 @@ function loadJavaScriptThroughDOM(name, src, force) {
   });
 }
 
-
-
 if ('serviceWorker' in navigator) {
   console.log("LOAD Lively4: boot lively4 service worker")
-  // var root = ("" + window.location).replace(/[^\/]*$/,'../')
   var root = "" + lively4url + "/";
   var serviceworkerReady = false
 
   var onReady = function() {
     serviceworkerReady = true;
     // Lively has all the dependencies
-    if (window.location.host == "livelykernel.github.io") {
-      // #Experiment #Jens
-      // window.lively4url = "https://lively4/"
-    }
-    // var tmpLively = {}
-    // window.lively = tmpLively
 
     Promise.resolve("")
-      // .then( function() {
-      //   return loadJavaScriptThroughDOM("livelyAST",
-      //     lively4url + "/../lively.ast/dist/lively.ast.js")})
-      // .then( function() {
-      //   return loadJavaScriptThroughDOM("livelyVM",
-      //     lively4url + "/../lively.vm/dist/lively.vm_no-deps.js") })
-      // .then( function() {
-      //   return loadJavaScriptThroughDOM("livelyModules",
-      //     lively4url + "/../lively.modules/dist/lively.modules_no-deps.js") })
       .then( function() {
         if(window.__karma__) {
           return;
         }
         return loadJavaScriptThroughDOM("livelyModules",
           lively4url + "/src/external/lively.modules-with-lively.vm.js")})
-        // return loadJavaScriptThroughDOM("livelyModules",
-        //   lively4url + "/../lively.modules/dist/lively.modules-with-lively.vm.js")})
       .then( function(){
-        console.log("lively.modules loaded... now try to load lively4")
+        console.log("lively.modules loaded... now try to load lively4");
+        
+        // (window.__karma__ ?
+        //   System.import(lively4url + "/src/client/lively.js") :
+        //   lively.modules.importPackage(lively4url)
+        // )
+        
         System.import(lively4url + "/src/client/lively.js")
-        // .then(function(module){
-        //   return lively.loadJavaScriptThroughDOM("livelyModules",
-        //     lively4url + "/src/external/lively.modules.js").then( function(module){
-        //       console.log("loaded lively.modules")
-        //     })
-        // })
         .then(function(module) {
-           console.log("How are we?")
-
-
             lively.initializeHalos();
             lively.components.loadUnresolved();
             console.log("running on load callbacks:");

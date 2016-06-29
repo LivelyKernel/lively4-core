@@ -28,6 +28,12 @@
     "src/client/lively.js"
   ],
   "main": "start.html",
+  "lively": {
+    "main": "src/client/lively.js",
+    "packageMap": {
+      "html": "src/client/lively.js"
+    }
+  },
   "directories": {
     "lib": "src"
   },

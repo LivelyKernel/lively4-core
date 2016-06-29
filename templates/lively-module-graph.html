@@ -1,0 +1,218 @@
+<template id="lively-module-graph">
+<style>
+    .background {
+        stroke: white;
+        stroke-width: 1px;
+        fill: white;
+    }
+
+    .node {
+        stroke: black;
+        stroke-width: 1.5px;
+        cursor: move;
+        fill: lightcoral;
+    }
+
+    .link {
+        fill: none;
+        stroke: #000;
+        stroke-width: 3px;
+        opacity: 0.7;
+        marker-end: url(#end-arrow);
+    }
+
+    .label {
+        fill: black;
+        font-family: Verdana;
+        font-size: 25px;
+        text-anchor: middle;
+        cursor: move;
+    }
+    </style > 
+
+    <script type="lively4script" data-name="initialize">
+    async () => {
+      if (!window.d3 || !window.cola || !window.ScopedD3) {
+        console.log("LOAD D3")
+        await lively.loadJavaScriptThroughDOM("d3", "src/external/d3.v3.js")
+        await System.import("templates/classes/ContainerScopedD3.js")
+        await lively.loadJavaScriptThroughDOM("cola", "src/external/cola.js");
+        await lively.loadJavaScriptThroughDOM("cola-layout", "src/external/cola-layout.js");
+        await lively.loadJavaScriptThroughDOM("cola-shortestpaths", "src/external/cola-shortestpaths.js");
+      }
+      var d3cola = cola.d3adaptor().convergenceThreshold(0.1);
+      console.log("logggg")
+      
+      var width = 700, height = 500;
+
+      var scale = 0.3;
+      var zoom = d3.behavior.zoom();
+      
+      
+      var zoomWidth = (width-scale*width)/2
+      var zoomHeight = (height-scale*height)/2
+      
+      zoom.translate([zoomWidth,zoomHeight]).scale(scale);
+
+      var outer = d3.select(this.shadowRoot).append("svg")
+          .attr({ width: width, height: height, "pointer-events": "all" });
+
+      outer.append('rect')
+          .attr({ class: 'background', width: "100%", height: "100%" })
+          .call(zoom.on("zoom", redraw));
+          
+          
+      
+      var vis = outer
+          .append('g')
+          .attr('transform', "translate("+zoomWidth+","+zoomHeight+") scale(" + scale +' )');
+
+      function redraw() {
+          // console.log("translate " + d3.event.translate + " scale " + d3.event.scale)
+        
+          vis.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
+      }
+
+
+     
+
+
+      outer.append('svg:defs').append('svg:marker')
+          .attr({
+              id: 'end-arrow',
+              viewBox: '0 -5 10 10',
+              refX: 8,
+              markerWidth: 6,
+              markerHeight: 6,
+              orient: 'auto'
+          })
+        .append('svg:path')
+          .attr({
+              d: 'M0,-5L10,0L0,5L2,0',
+              'stroke-width': '0px',
+              fill: '#000'});
+
+      (function (f) {
+          var graph = {nodes: [], links: []},
+              graphModules = [];
+          _.keys(lively.modules.requireMap()).map(function (moduleName) {
+            if (moduleName.match(/\.js\?[0-9]+/)) return;
+            
+            // if (!moduleName.match(/babelsberg/)) return;
+            
+            graphModules.push(moduleName);
+            graph.nodes.push({name: moduleName, id: graphModules.length - 1});
+            return moduleName;
+          }).forEach(function (moduleName) {
+            if (!moduleName) return;
+            lively.modules.requireMap()[moduleName].forEach(function (dependency) {
+              var targetIdx = graphModules.indexOf(dependency);
+              if (targetIdx < 0) return;
+              graph.links.push({
+                source: targetIdx,
+                target: graphModules.indexOf(moduleName), value: 1
+              });
+            });
+          })
+          var nodes = graph.nodes;
+          var edges = graph.links;
+
+          d3cola
+              .avoidOverlaps(true)
+              .convergenceThreshold(1e-3)
+              .flowLayout('x', 150)
+              .size([width, height])
+              .nodes(nodes)
+              .links(edges)
+              .jaccardLinkLengths(150);
+
+          var link = vis.selectAll(".link")
+              .data(edges)
+              .enter().append("path")
+              .attr("class", "link");
+
+          var margin = 10, pad = 12;
+          var node = vis.selectAll(".node")
+              .data(nodes)
+              .enter().append("rect")
+              .classed("node", true)
+              .attr({ rx: 5, ry: 5 })
+              .call(d3cola.drag);
+          node.append("title").text(function(d) { return d.name; });
+          var label = vis.selectAll(".label")
+              .data(nodes)
+              .enter().append("text")
+              .attr("class", "label")
+              .text(function (d) { return d.name.replace(/.*\//, ""); })
+              //.style("user-select", "none")
+              
+              .call(d3cola.drag)
+              .on("click", (d) => {
+                if (d3.event.defaultPrevented) return; // click suppressed
+                lively.openBrowser(d.name, true);
+              })
+              .each(function (d) {
+                  var b = this.getBBox();
+                  var extra = 2 * margin + 2 * pad;
+                  d.width = b.width + extra;
+                  d.height = b.height + extra;
+              });
+          label
+            .append("title")
+            .text(function(d) { return d.name; });
+          
+
+          var lineFunction = d3.svg.line()
+              .x(function (d) { return d.x; })
+              .y(function (d) { return d.y; })
+              .interpolate("linear");
+
+          var routeEdges = function () {
+              d3cola.prepareEdgeRouting();
+              link.attr("d", function (d) {
+                  return lineFunction(d3cola.routeEdge(d
+                  // show visibility graph
+                      //, function (g) {
+                      //    if (d.source.id === 10 && d.target.id === 11) {
+                      //    g.E.forEach(function (e) {
+                      //        vis.append("line").attr("x1", e.source.p.x).attr("y1", e.source.p.y)
+                      //            .attr("x2", e.target.p.x).attr("y2", e.target.p.y)
+                      //            .attr("stroke", "green");
+                      //    });
+                      //    }
+                      //}
+                  ));
+              });
+            }
+            d3cola.start(50, 100, 200).on("tick", function () {
+                node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin); })
+                    .attr("x", function (d) { return d.innerBounds.x; })
+                    .attr("y", function (d) { return d.innerBounds.y; })
+                    .attr("width", function (d) {
+                        return d.innerBounds.width();
+                    })
+                    .attr("height", function (d) { return d.innerBounds.height(); });
+
+                link.attr("d", function (d) {
+                    var route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
+                    return lineFunction([route.sourceIntersection, route.arrowStart]);
+                });
+
+                label
+                    .attr("x", function (d) { return d.x })
+                    .attr("y", function (d) { return d.y + (margin + pad) / 2 });
+
+            }).on("end", routeEdges);
+        })();
+        
+        this.shadowRoot.querySelector("h1").onclick = () => {
+          this.initialize()
+        }
+        
+    }
+    </script>
+    
+    <a href="#"><h1>Lively Modules Family Tree</h1></a>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

@@ -54,10 +54,10 @@ export default class SearchBar extends Morph {
     checkbox.classList.remove("hidden");
     checkbox.checked = "true";
     checkbox.disabled = '';
-     
+
     let li = checkbox.parentNode;
     li.classList.remove("disabled");
-    
+
     // Remove spinner
     let spinner = li.querySelector("i");
     if (spinner) spinner.remove();
@@ -99,7 +99,8 @@ export default class SearchBar extends Morph {
           name: "server"
         });
 
-        console.log(`[Search] found the following mounts: ${mounts}`);
+
+        console.log("[Search] found the following mounts: ", mounts);
         var mountsList = this.getSubmorph("#mounts-list");
         mountsList.innerHTML = "";
         mounts.forEach(mount => {

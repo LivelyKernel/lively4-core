@@ -190,7 +190,7 @@ export default class Container extends Morph {
         moduleName = moduleName[1]
         if (this.getSubmorph("#live").checked) {
           
-          lively.import(moduleName, url, true).then( module => {
+          lively.reloadModule("" + url).then( module => {
             lively.notify("Module " + moduleName + " reloaded!")
           }, err => {
             window.LastError = err
@@ -267,13 +267,19 @@ export default class Container extends Morph {
         console.log("LOAD D3")
         await lively.loadJavaScriptThroughDOM("d3", "src/external/d3.v3.js")
       }
-      
+    
       if (!window.ScopedD3) {
         console.log("LOAD D3 Adaption Layer")
         await System.import("templates/classes/ContainerScopedD3.js")   
-        return this.appendHtml(content) // try again
+        // return this.appendHtml(content) // try again
       }
     }
+
+    if (content.match(/<script src=".*cola(\.min)?\.js".*>/)) {
+        console.log("LOAD Cola")
+        await lively.loadJavaScriptThroughDOM("cola", "src/external/cola.js")
+    }
+    
     //  var content = this.sourceContent
     try {
       var root = this.getContentRoot()
@@ -685,8 +691,9 @@ export default class Container extends Morph {
 
         this.showCancelAndSave()
     
-        aceComp.targetModule = "" + url // for editing
-
+        if ((""+url).match(/\.js$/)) {
+          aceComp.targetModule = "" + url // for editing
+        }
         setTimeout(resolve, 1000) // Promise from AceEditor needed here... #Jens #TODO
         
         // comp.loadFile() // ALT: Load the file again?

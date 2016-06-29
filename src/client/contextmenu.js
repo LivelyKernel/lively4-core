@@ -4,12 +4,12 @@
 export default class ContextMenu {
   
   static hide() {
-    if (this.menu) $(this.menu).remove()
+    if (this.menu) $(this.menu).remove();
   }
   
   static openComponentInWindow (name, evt) {
-    this.hide()
-    return lively.openComponentInWindow(name, lively.pt(evt.pageX, evt.pageY))
+    this.hide();
+    return lively.openComponentInWindow(name, lively.pt(evt.pageX, evt.pageY));
   }
   
   static items (target) {
@@ -18,19 +18,23 @@ export default class ContextMenu {
       var wasDisabled = (target.disabled == "true");
       var menu = [
         ["show", (evt) => {
-           this.hide()
-           lively.showElement(target)
+           this.hide();
+           lively.showElement(target);
         }],
-        ["show source", (evt) => {
-           this.hide()
-           lively.showSource(target, evt)
+        ["browse template source", (evt) => {
+           this.hide();
+           lively.showSource(target, evt);
+        }],
+        ["browse class source", (evt) => {
+           this.hide();
+           lively.showClassSource(target, evt);
         }],
         [wasEditable ? "make uneditable" : "make editable", (evt) => {
-           this.hide()
+           this.hide();
            target.contentEditable = !wasEditable;
         }],
         [wasDisabled ? "enable" : "disable", (evt) => {
-           this.hide()
+           this.hide();
            target.disabled = !wasDisabled;
         }]
       ];
@@ -38,19 +42,19 @@ export default class ContextMenu {
     } else {
       return [
       ["Workspace", (evt) => {
-        this.hide()
-        lively.openWorkspace("", lively.pt(evt.pageX, evt.pageY))
+        this.hide();
+        lively.openWorkspace("", lively.pt(evt.pageX, evt.pageY));
       }, "CMD+K"],
       ["Browser",     (evt) => {
         this.openComponentInWindow("lively-container", evt).then(comp => {
-          var container = _.last(document.querySelectorAll("lively-container"))
+          var container = _.last(document.querySelectorAll("lively-container"));
           if (container)
             comp.followPath("" +container.getURL());
           else
             comp.followPath(lively4url +"/");
-          comp.parentElement.style.width = "850px"
-          comp.parentElement.style.height = "600px"
-        })
+          comp.parentElement.style.width = "850px";
+          comp.parentElement.style.height = "600px";
+        });
       }, "CMD+B"],
       // ["File Editor",     (evt) => this.openComponentInWindow("lively-editor", evt)],
       // ["File Browser",    (evt) => this.openComponentInWindow("lively-file-browser", evt)],
@@ -64,8 +68,8 @@ export default class ContextMenu {
       ["Component Bin",   (evt) => this.openComponentInWindow("lively-component-bin", evt),
        "CMD+O"],
       ["Customize Page",   (evt) => {
-        this.hide()
-        lively.import("customize").then(c => c.openCustomizeWorkspace(evt))
+        this.hide();
+        lively.import("customize").then(c => c.openCustomizeWorkspace(evt));
       }],
       // ["Persistens Settings", (evt) => {
       //    this.openComponentInWindow("lively-persistence-settings", evt).then((comp) => {
@@ -75,46 +79,46 @@ export default class ContextMenu {
       // }],
       // #TODO use sub menues here
       ["Devdocs.io",     (evt) => {
-        this.openComponentInWindow("lively-help",  lively.pt(evt.pageX, evt.pageY))
+        this.openComponentInWindow("lively-help",  lively.pt(evt.pageX, evt.pageY));
       }, "CMD+H"],
       ["Wiki (Docs)",     (evt) => {
         this.openComponentInWindow("lively-container", evt).then(comp => {
-          comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Home.md")
-      })
+          comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Home.md");
+      });
       }],
       ["Journal",     (evt) => {
         this.openComponentInWindow("lively-container", evt).then(comp => {
-          comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Journal.md")
-      })
+          comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Journal.md");
+      });
       }],
       ["Issues", (evt) => {
-        window.open("https://github.com/LivelyKernel/lively4-core/issues") 
+        window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
       }],
       ["Text", (evt) => {
-              var text  = document.createElement("p")
-              text.innerHTML = "Hello"
-              text.contentEditable = true
-              $('body')[0].appendChild(text)
-              lively.setPosition(text, lively.pt(evt.pageX, evt.pageY))
-              this.hide()
+              var text  = document.createElement("p");
+              text.innerHTML = "Hello";
+              text.contentEditable = true;
+              $('body')[0].appendChild(text);
+              lively.setPosition(text, lively.pt(evt.pageX, evt.pageY));
+              this.hide();
       }],
       ["Rectangle", (evt) => {
-          var morph  = document.createElement("div")
-          morph.style.width = "200px"
-          morph.style.height = "100px"
-          lively.setPosition(morph, lively.pt(evt.pageX, evt.pageY))
-          morph.style.backgroundColor = "blue"
-          $('body')[0].appendChild(morph)
-          this.hide()
+          var morph  = document.createElement("div");
+          morph.style.width = "200px";
+          morph.style.height = "100px";
+          lively.setPosition(morph, lively.pt(evt.pageX, evt.pageY));
+          morph.style.backgroundColor = "blue";
+          $('body')[0].appendChild(morph);
+          this.hide();
       }]
-    ]}
+    ];}
   }
   
   static openIn(container, evt, target) {
-    this.hide()
-    var menu = lively.components.createComponent("lively-menu")
+    this.hide();
+    var menu = lively.components.createComponent("lively-menu");
     return lively.components.openIn(container, menu).then(() => {
-      this.menu = menu
+      this.menu = menu;
       
       
       if (evt) {
@@ -128,11 +132,11 @@ export default class ContextMenu {
       }
 
       menu.openOn(this.items(target), evt).then(() => {
-      })
-      return menu
-    })
+      });
+      return menu;
+    });
   }
 }
 
-console.log("loaded contextmenu")
+console.log("loaded contextmenu");
 
