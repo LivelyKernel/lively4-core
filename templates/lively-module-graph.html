@@ -37,28 +37,45 @@
         await lively.loadJavaScriptThroughDOM("d3", "src/external/d3.v3.js")
         await System.import("templates/classes/ContainerScopedD3.js")
         await lively.loadJavaScriptThroughDOM("cola", "src/external/cola.js");
-        await lively.loadJavaScriptThroughDOM("cola-layout", "../LivelyCalibreViz/external/cola-layout.js");
-        await lively.loadJavaScriptThroughDOM("cola-shortestpaths", "../LivelyCalibreViz/external/cola-shortestpaths.js");
+        await lively.loadJavaScriptThroughDOM("cola-layout", "src/external/cola-layout.js");
+        await lively.loadJavaScriptThroughDOM("cola-shortestpaths", "src/external/cola-shortestpaths.js");
       }
       var d3cola = cola.d3adaptor().convergenceThreshold(0.1);
       console.log("logggg")
       
-      var width = 1000, height = 1000;
+      var width = 700, height = 500;
+
+      var scale = 0.3;
+      var zoom = d3.behavior.zoom();
+      
+      
+      var zoomWidth = (width-scale*width)/2
+      var zoomHeight = (height-scale*height)/2
+      
+      zoom.translate([zoomWidth,zoomHeight]).scale(scale);
 
       var outer = d3.select(this.shadowRoot).append("svg")
           .attr({ width: width, height: height, "pointer-events": "all" });
 
       outer.append('rect')
           .attr({ class: 'background', width: "100%", height: "100%" })
-          .call(d3.behavior.zoom().on("zoom", redraw));
-
+          .call(zoom.on("zoom", redraw));
+          
+          
+      
       var vis = outer
           .append('g')
-          .attr('transform', 'translate(250,250) scale(0.3)');
+          .attr('transform', "translate("+zoomWidth+","+zoomHeight+") scale(" + scale +' )');
 
       function redraw() {
+          // console.log("translate " + d3.event.translate + " scale " + d3.event.scale)
+        
           vis.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
       }
+
+
+     
+
 
       outer.append('svg:defs').append('svg:marker')
           .attr({
@@ -191,6 +208,7 @@
         this.shadowRoot.querySelector("h1").onclick = () => {
           this.initialize()
         }
+        
     }
     </script>
     
