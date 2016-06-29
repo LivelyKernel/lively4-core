@@ -1,7 +1,7 @@
 if (typeof chai === 'undefined') {
   if (window.lively4url) {
     // workaround for lively4
-    System.import('node_modules/chai/chai.js').then(module => {
+    System.import('../ContextJS/node_modules/chai/chai.js').then(module => {
       window.chai = module
     });
   } else {
