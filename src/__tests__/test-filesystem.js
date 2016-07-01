@@ -12,7 +12,7 @@ jest.unmock('node-fetch');
 const fetch = require('node-fetch');
 global.Response = fetch.Response;
 
-const focalStorage = require('../external/focalStorage.js');
+const focalStorage = require('../external/focalStorage.js').default;
 
 describe('Filesystem', () => {
 
