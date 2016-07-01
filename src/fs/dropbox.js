@@ -43,7 +43,13 @@ export default class Filesystem extends Base {
     let dropboxHeaders = new Headers()
     dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
 
-    let response = await self.fetch('https://api.dropboxapi.com/1/metadata/auto' + this.subfolder + path, {headers: dropboxHeaders})
+    let request = new Request('https://api.dropboxapi.com/1/metadata/auto' + this.subfolder + path, {headers: dropboxHeaders})
+
+    let response = await cache.match(request)
+    if (response === undefined) {
+      response = await self.fetch(request)
+      cache.put(request, response)
+    }
 
     util.responseOk(response, StatNotFoundError)
 
@@ -64,7 +70,14 @@ export default class Filesystem extends Base {
   async read(path) {
     let dropboxHeaders = new Headers()
     dropboxHeaders.append('Authorization', 'Bearer ' + this.token)
-    let response = await self.fetch('https://content.dropboxapi.com/1/files/auto' + this.subfolder + path, {headers: dropboxHeaders})
+
+    let request = new Request('https://content.dropboxapi.com/1/files/auto' + this.subfolder + path, {headers: dropboxHeaders})
+
+    let response = await cache.match(request)
+    if (response === undefined) {
+      response = await self.fetch(request)
+      cache.put(request, response)
+    }
 
     util.responseOk(response, FileNotFoundError)
 
