@@ -1,9 +1,3 @@
-(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.focalStorage = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, '__esModule', {
-  value: true
-});
 /* globals indexedDB */
 /**
  * focalStorage
@@ -68,7 +62,8 @@ function openDatabase() {
       return;
     }
 
-    var openreq = indexedDB.open(focalStorage.settings.name, focalStorage.settings.version);
+    var openreq = indexedDB.open(focalStorage.settings.name,
+                                 focalStorage.settings.version);
 
     openreq.onsuccess = function () {
       db = openreq.result;
@@ -117,7 +112,7 @@ function getItem(key) {
       req.onerror = function () {
         reject(req.error);
       };
-    })['catch'](reject);
+    }).catch(reject);
   });
 }
 
@@ -158,7 +153,7 @@ function setItem(key, value) {
       transaction.onabort = transaction.onerror = function () {
         reject(req.error ? req.error : req.transaction.error);
       };
-    })['catch'](reject);
+    }).catch(reject);
   });
 }
 
@@ -173,7 +168,7 @@ function removeItem(key) {
         key = String(key);
       }
 
-      var req = store['delete'](key);
+      var req = store.delete(key);
 
       transaction.oncomplete = function () {
         resolve();
@@ -187,7 +182,7 @@ function removeItem(key) {
       transaction.onabort = function () {
         reject(req.error ? req.error : req.transaction.error);
       };
-    })['catch'](reject);
+    }).catch(reject);
   });
 }
 
@@ -205,7 +200,7 @@ function clear() {
       transaction.onabort = transaction.onerror = function () {
         reject(req.error ? req.error : req.transaction.error);
       };
-    })['catch'](reject);
+    }).catch(reject);
   });
 }
 
@@ -221,7 +216,7 @@ function length(callback) {
       req.onerror = function () {
         reject(req.error);
       };
-    })['catch'](reject);
+    }).catch(reject);
   });
 }
 
@@ -263,7 +258,7 @@ function key(n) {
       req.onerror = function () {
         reject(req.error);
       };
-    })['catch'](reject);
+    }).catch(reject);
   });
 }
 
@@ -282,13 +277,14 @@ function keys() {
         }
 
         keys.push(cursor.key);
-        cursor['continue']();
+        cursor.continue();
       };
 
       req.onerror = function () {
         reject(req.error);
       };
-    })['catch'](reject);
+
+    }).catch(reject);
   });
 }
 
@@ -316,28 +312,9 @@ var DEFAULT_SETTINGS = {
   driver: focalStorage.indexedDB,
   name: 'focalStorage',
   version: 1,
-  storeName: 'keyvaluepairs' };
+  storeName: 'keyvaluepairs',
+};
 
 focalStorage.settings = DEFAULT_SETTINGS;
 
-exports['default'] = focalStorage;
-module.exports = exports['default'];
-
-},{}],2:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, '__esModule', {
-  value: true
-});
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-var _libFocalStorageJs = require('./lib/focalStorage.js');
-
-var _libFocalStorageJs2 = _interopRequireDefault(_libFocalStorageJs);
-
-exports['default'] = _libFocalStorageJs2['default'];
-module.exports = exports['default'];
-
-},{"./lib/focalStorage.js":1}]},{},[2])(2)
-});
+export default focalStorage;
