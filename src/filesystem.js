@@ -26,7 +26,7 @@ export class Filesystem {
     this.mounts.delete(path)
   }
 
-  handle(request, url) {
+  async handle(request, url) {
     let path = Path.normalize(url.pathname),
       base = undefined,
       fs   = undefined
@@ -48,7 +48,7 @@ export class Filesystem {
 
     if(request.method === 'GET') {
       try {
-        let read_resp = fs.read(path, request)
+        let read_resp = await fs.read(path, request)
         if (read_resp instanceof basefs.File)
           return read_resp.toResponse()
         return read_resp
@@ -72,7 +72,7 @@ export class Filesystem {
 
     if(request.method === 'OPTIONS') {
       try {
-        let stat_resp = fs.stat(path, request)
+        let stat_resp = await fs.stat(path, request)
         if (stat_resp instanceof basefs.Stat)
           return stat_resp.toResponse()
         return stat_resp
