@@ -39,13 +39,20 @@ export default class Filesystem extends Base {
     }
   }
 
-  async stat(path) {
+  async stat(path, no_cache=false) {
     let dropboxHeaders = new Headers()
     dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
 
     let request = new Request('https://api.dropboxapi.com/1/metadata/auto' + this.subfolder + path, {headers: dropboxHeaders})
 
-    let response = await cache.match(request)
+    let response = undefined
+
+    if (!no_cache) {
+      response = await cache.match(request)
+    } else {
+      cache.purge(request);
+    }
+
     if (response === undefined) {
       response = await self.fetch(request)
       cache.put(request, response)
@@ -67,13 +74,20 @@ export default class Filesystem extends Base {
     return new Stat(dir, contents, ['GET', 'OPTIONS'])
   }
 
-  async read(path) {
+  async read(path, no_cache=false) {
     let dropboxHeaders = new Headers()
     dropboxHeaders.append('Authorization', 'Bearer ' + this.token)
 
     let request = new Request('https://content.dropboxapi.com/1/files/auto' + this.subfolder + path, {headers: dropboxHeaders})
 
-    let response = await cache.match(request)
+    let response = undefined
+
+    if (!no_cache) {
+      response = await cache.match(request)
+    } else {
+      cache.purge(request);
+    }
+
     if (response === undefined) {
       response = await self.fetch(request)
       cache.put(request, response)

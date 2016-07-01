@@ -44,7 +44,7 @@ export default class Filesystem extends Base {
     }
   }
 
-  async stat(path) {
+  async stat(path, no_cache=false) {
     let githubHeaders = new Headers()
     if (this.token) {
       githubHeaders.append('Authorization', 'token ' + this.token)
@@ -57,7 +57,14 @@ export default class Filesystem extends Base {
 
     let request = new Request('https://api.github.com/repos/' + this.repo + '/contents/' + path + branchParam, {headers: githubHeaders})
 
-    let response = await cache.match(request)
+    let response = undefined
+
+    if (!no_cache) {
+      response = await cache.match(request)
+    } else {
+      cache.purge(request);
+    }
+
     if (response === undefined) {
       response = await self.fetch(request)
       cache.put(request, response)
@@ -79,7 +86,7 @@ export default class Filesystem extends Base {
     return new Stat(dir, contents, ['GET', 'OPTIONS'])
   }
 
-  async read(path) {
+  async read(path, no_cache=false) {
     let githubHeaders = new Headers()
     if (this.token) {
       githubHeaders.append('Authorization', 'token ' + this.token)
@@ -92,7 +99,14 @@ export default class Filesystem extends Base {
 
     let request = new Request('https://api.github.com/repos/' + this.repo + '/contents/' + path + branchParam, {headers: githubHeaders})
 
-    let response = await cache.match(request)
+    let response = undefined
+
+    if (!no_cache) {
+      response = await cache.match(request)
+    } else {
+      cache.purge(request);
+    }
+
     if (response === undefined) {
       response = await self.fetch(request)
       cache.put(request, response)
