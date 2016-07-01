@@ -4,6 +4,7 @@
 
 import { Base, Stat, StatNotFoundError, File, FileNotFoundError, IsDirectoryError } from './base.js'
 import * as util from '../util.js'
+import * as cache from '../cache.js'
 
 export default class Filesystem extends Base {
   constructor(path, options) {
@@ -54,7 +55,13 @@ export default class Filesystem extends Base {
       branchParam = '?ref=' + this.branch
     }
 
-    let response = await self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path + branchParam, {headers: githubHeaders})
+    let request = new Request('https://api.github.com/repos/' + this.repo + '/contents/' + path + branchParam, {headers: githubHeaders})
+
+    let response = await cache.match(request)
+    if (response === undefined) {
+      response = await self.fetch(request)
+      cache.put(request, response)
+    }
 
     util.responseOk(response, StatNotFoundError)
 
@@ -83,7 +90,13 @@ export default class Filesystem extends Base {
       branchParam = '?ref=' + this.branch
     }
 
-    let response = await self.fetch('https://api.github.com/repos/' + this.repo + '/contents/' + path + branchParam, {headers: githubHeaders})
+    let request = new Request('https://api.github.com/repos/' + this.repo + '/contents/' + path + branchParam, {headers: githubHeaders})
+
+    let response = await cache.match(request)
+    if (response === undefined) {
+      response = await self.fetch(request)
+      cache.put(request, response)
+    }
 
     util.responseOk(response, FileNotFoundError)
 
