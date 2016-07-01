@@ -16,7 +16,23 @@ export default class Filesystem extends Base {
   }
 
   async read(path, request) {
-    return fetch(await this.createProxyRequest(path, request))
+    let f_request = await this.createProxyRequest(path, request)
+
+    let response = undefined
+
+    if (!no_cache) {
+      response = await cache.match(f_request)
+    } else {
+      cache.purge(f_request);
+    }
+
+    if (response === undefined) {
+      response = await self.fetch(f_request)
+      cache.put(f_request, response)
+      response = response.clone()
+    }
+
+    return response
   }
 
   async write(path, content, request) {
@@ -24,7 +40,23 @@ export default class Filesystem extends Base {
   }
 
   async stat(path, request) {
-    return fetch(await this.createProxyRequest(path, request))
+    let f_request = await this.createProxyRequest(path, request)
+
+    let response = undefined
+
+    if (!no_cache) {
+      response = await cache.match(f_request)
+    } else {
+      cache.purge(f_request);
+    }
+
+    if (response === undefined) {
+      response = await self.fetch(f_request)
+      cache.put(f_request, response)
+      response = response.clone()
+    }
+
+    return response
   }
 
   async createProxyRequest(path, request, content) {
