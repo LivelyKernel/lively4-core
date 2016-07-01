@@ -1,5 +1,6 @@
 module.exports = {
-  base: './lively',
-  init: '/init.js',
-  initsw: '/init-sw.js'
+  "BASE": "./lively",
+  "INIT": "/init.js",
+  "WORKER_INIT": "/init-sw.js",
+  "WORKER_EMBED": false,
 }

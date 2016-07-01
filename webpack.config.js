@@ -1,6 +1,28 @@
-var path = require('path'),
-    webpack = require('webpack'),
-    transformRuntime = require('babel-plugin-transform-runtime').default;
+const path = require('path'),
+  webpack = require('webpack'),
+  transformRuntime = require('babel-plugin-transform-runtime').default;
+
+const kernelConfFile = path.resolve('./kernel.conf.js')
+
+const defines = {}
+const kernelConf = require(kernelConfFile)
+
+const defaults = {
+  'BASE': false,
+  'INIT': false,
+  'WORKER_EMBED': false,
+  'WORKER_INIT': false,
+}
+
+for (var key in defaults) {
+  var val = defaults[key]
+
+  if (key in kernelConf) {
+    val = kernelConf[key]
+  }
+
+  defines["KERNEL_CONFIG_" + key] = JSON.stringify(val)
+}
 
 module.exports = {
   target: 'web',
@@ -14,7 +36,7 @@ module.exports = {
   },
   resolve: {
     alias: {
-      'kernel_conf': path.resolve('./kernel.conf.js')
+      'kernel_conf': kernelConfFile
     }
   },
   devtool: 'source-map',
@@ -58,5 +80,8 @@ module.exports = {
     fs: 'empty',
     module: 'empty',
     net: 'empty'
-  }
+  },
+  plugins: [
+    new webpack.DefinePlugin(defines)
+  ]
 };

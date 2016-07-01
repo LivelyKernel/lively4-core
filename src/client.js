@@ -5,7 +5,6 @@
 // the ServiceWorker - if possible - and starts the initialize client code.
 //
 import * as path from 'path'
-import kernel_conf from 'kernel_conf'
 
 import { Loader } from './loader'
 
@@ -25,7 +24,12 @@ export default async function() {
   }
 
   let src = new URL(script.src)
-  let base = new URL(kernel_conf.base, src)
+
+  if (KERNEL_CONFIG_BASE) {
+    let base = new URL(KERNEL_CONFIG_BASE, src)
+  } else {
+    let base = new URL('../', src)
+  }
 
   //
   // Service worker
@@ -96,7 +100,11 @@ export default async function() {
     if ('livelyKernelInit' in script.dataset) {
       script.dataset.livelyKernelInit
     } else {
-      path.resolve(kernel_conf.init)
+      if (KERNEL_CONFIG_INIT) {
+        path.resolve(KERNEL_CONFIG_INIT)
+      } else {
+        false
+      }
     }
   }
 

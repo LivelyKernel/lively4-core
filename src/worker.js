@@ -1,5 +1,4 @@
 import * as path from 'path'
-import kernel_conf from 'kernel_conf'
 
 import { Loader } from './loader'
 
@@ -13,6 +12,10 @@ const system = () => {
     loader = new Loader({
       base: base
     })
+
+    if (KERNEL_CONFIG_WORKER_EMBED) {
+      loader.set(KERNEL_CONFIG_WORKER_INIT, require(KERNEL_CONFIG_WORKER_INIT))
+    }
   }
 
   return loader
