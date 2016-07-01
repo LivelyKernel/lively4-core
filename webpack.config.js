@@ -2,7 +2,15 @@ const path = require('path'),
   webpack = require('webpack'),
   transformRuntime = require('babel-plugin-transform-runtime').default;
 
-const kernelConfFile = path.resolve('./kernel.conf.js')
+function resolveKernelConfigFile() {
+  if (process.env.KERNEL_CONFIG) {
+    return path.resolve(process.env.KERNEL_CONFIG)
+  } else {
+    return path.resolve('./kernel.conf.js')
+  }
+}
+
+const kernelConfFile = resolveKernelConfigFile()
 
 const defines = {}
 const kernelConf = require(kernelConfFile)
