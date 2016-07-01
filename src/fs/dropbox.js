@@ -56,6 +56,7 @@ export default class Filesystem extends Base {
     if (response === undefined) {
       response = await self.fetch(request)
       cache.put(request, response)
+      response = response.clone()
     }
 
     util.responseOk(response, StatNotFoundError)
@@ -91,6 +92,7 @@ export default class Filesystem extends Base {
     if (response === undefined) {
       response = await self.fetch(request)
       cache.put(request, response)
+      response = response.clone()
     }
 
     util.responseOk(response, FileNotFoundError)
