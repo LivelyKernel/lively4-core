@@ -6,7 +6,7 @@ export function put(request, response) {
   return open().then((cache) => cache.put(request, response))
 }
 
-export function delete(request) {
+export function purge(request) {
   return open().then((cache) => cache.delete(request))
 }
 
