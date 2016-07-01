@@ -31,8 +31,10 @@ for (var key in defaults) {
     val = kernelConf[key]
   }
 
-  defines["KERNEL_CONFIG_" + key] = JSON.stringify(val)
+  defines['KERNEL_CONFIG_' + key] = JSON.stringify(val)
 }
+
+console.log(defines)
 
 module.exports = {
   target: 'web',
@@ -52,37 +54,7 @@ module.exports = {
   devtool: 'source-map',
   module: {
     loaders: [
-      { test: /\.jsx?$/, exclude: /(node_modules)/, loader: 'babel',
-        query: {
-          plugins: [
-            "syntax-async-functions",
-            "syntax-async-generators",
-            "syntax-class-properties",
-            "syntax-decorators",
-            "syntax-do-expressions",
-            "syntax-exponentiation-operator",
-            "syntax-export-extensions",
-            "syntax-function-bind",
-            "syntax-object-rest-spread",
-            "syntax-trailing-function-commas",
-            "transform-async-to-generator",
-            "transform-async-to-module-method",
-            "transform-class-properties",
-            "transform-decorators-legacy",
-            "transform-do-expressions",
-            "transform-es2015-destructuring",
-            "transform-es2015-modules-commonjs",
-            "transform-exponentiation-operator",
-            "transform-export-extensions",
-            "transform-function-bind",
-            "transform-object-rest-spread",
-            new transformRuntime({
-              "polyfill": false,
-              "regenerator": true
-            })
-          ]
-        }
-      },
+      { test: /\.jsx?$/, exclude: /(node_modules)/, loader: 'rollup' },
       { test: /\.json$/, loader: 'json' }
     ]
   },
@@ -93,5 +65,35 @@ module.exports = {
   },
   plugins: [
     new webpack.DefinePlugin(defines)
+  ],
+  rollup: [
+    require('rollup-plugin-babel')({
+      babelrc: false,
+      runtimeHelpers: true,
+      plugins: [
+        require("babel-plugin-syntax-async-functions"),
+        require("babel-plugin-syntax-async-generators"),
+        require("babel-plugin-syntax-class-properties"),
+        require("babel-plugin-syntax-decorators"),
+        require("babel-plugin-syntax-do-expressions"),
+        require("babel-plugin-syntax-exponentiation-operator"),
+        require("babel-plugin-syntax-export-extensions"),
+        require("babel-plugin-syntax-function-bind"),
+        require("babel-plugin-syntax-object-rest-spread"),
+        require("babel-plugin-syntax-trailing-function-commas"),
+        require("babel-plugin-transform-async-to-generator"),
+        require("babel-plugin-transform-async-to-module-method"),
+        require("babel-plugin-transform-class-properties"),
+        require("babel-plugin-transform-decorators-legacy").default,
+        require("babel-plugin-transform-do-expressions"),
+        require("babel-plugin-transform-es2015-object-super"),
+        require("babel-plugin-transform-es2015-destructuring"),
+        // require("babel-plugin-transform-es2015-modules-commonjs"),
+        require("babel-plugin-transform-exponentiation-operator"),
+        require("babel-plugin-transform-export-extensions"),
+        require("babel-plugin-transform-function-bind"),
+        require("babel-plugin-transform-object-rest-spread"),
+      ]
+    })
   ]
 };

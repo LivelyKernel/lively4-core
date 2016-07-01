@@ -24,6 +24,9 @@
     "babel-loader": "^6",
     "imports-loader": "^0.6.5",
     "json-loader": "^0.5.4",
+    "rollup-loader": "0.0.2",
+    "rollup-plugin-alias": "^1.2.0",
+    "rollup-plugin-babel": "^2.6.1",
     "webpack": "^1.12.9"
   },
   "dependencies": {
