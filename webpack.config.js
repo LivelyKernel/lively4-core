@@ -86,7 +86,6 @@ module.exports = {
         require("babel-plugin-transform-class-properties"),
         require("babel-plugin-transform-decorators-legacy").default,
         require("babel-plugin-transform-do-expressions"),
-        require("babel-plugin-transform-es2015-object-super"),
         require("babel-plugin-transform-es2015-destructuring"),
         // require("babel-plugin-transform-es2015-modules-commonjs"),
         require("babel-plugin-transform-exponentiation-operator"),
