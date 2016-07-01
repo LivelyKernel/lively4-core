@@ -15,7 +15,7 @@ export default class Filesystem extends Base {
     this.base = options.base
   }
 
-  async read(path, request) {
+  async read(path, request, no_cache=false) {
     let f_request = await this.createProxyRequest(path, request)
 
     let response = undefined
@@ -39,7 +39,7 @@ export default class Filesystem extends Base {
     return fetch(await this.createProxyRequest(path, request, content))
   }
 
-  async stat(path, request) {
+  async stat(path, request, no_cache=false) {
     let f_request = await this.createProxyRequest(path, request)
 
     let response = undefined
