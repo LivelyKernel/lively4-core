@@ -15,7 +15,7 @@ export class Point {
   }
 
   static random(scalePt) {
-    return new Point(scalePt.x.randomSmallerInteger(), scalePt.y.randomSmallerInteger());
+    return new Point(num.randomSmallerInteger(scalePt.x), num.randomSmallerInteger(scalePt.y));
   }
 
   static fromLiteral(literal) {
@@ -177,7 +177,7 @@ export class Point {
   // geometry computation
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   roundTo(quantum) {
-    return new Point(this.x.roundTo(quantum), this.y.roundTo(quantum));
+    return new Point(num.roundTo(this.x, quantum), num.roundTo(this.y, quantum));
   }
 
   dist(p) {
@@ -870,34 +870,31 @@ export class Transform {
   }
 
   toCSSValue(bounds) {
-    var attr = '';
+    var attr = '', delta = this.getTranslation();
 
-    var round = function(n) { return Math.round(n*100)/100 }
-
-    var delta = this.getTranslation();
-    attr += "translate(" + round(delta.x) + "px," + round(delta.y) +"px)";
+    attr += "translate(" + delta.x.toFixed(2) + "px," + delta.y.toFixed(2) +"px)";
 
     if (bounds) {
       // FIXME this is to fix the rotation...!
       var offsetX = bounds.width / 2;
       var offsetY = bounds.height / 2;
-      attr += " translate(" + round(offsetX) + "px," + round(offsetY) +"px)";
+      attr += " translate(" + offsetX.toFixed(2) + "px," + offsetY.toFixed(2) +"px)";
     }
 
     var theta = this.getRotation();
     if (theta != 0.0) attr += " rotate("
-        + round(this.getRotation()) +"deg)";
+        + this.getRotation().toFixed(2) +"deg)";
 
     if (bounds) {
       // FIXME this is to fix the rotation...!
       var offsetX = bounds.width / 2;
       var offsetY = bounds.height / 2;
-      attr += " translate(" + round(offsetX * -1) + "px," + round(offsetY * -1) +"px)";
+      attr += " translate(" + (offsetX * -1).toFixed(2) + "px," + (offsetY * -1).toFixed(2) +"px)";
     }
 
     var sp = this.getScalePoint();
     if (sp.x != 1.0 || sp.y != 1.0) {
-      attr += " scale(" + round(sp.x) + "," + round(sp.y) + ")";
+      attr += " scale(" + sp.x.toFixed(2) + "," + sp.y.toFixed(2) + ")";
     }
 
     return attr;
