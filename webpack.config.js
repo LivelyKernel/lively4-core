@@ -18,6 +18,8 @@ const kernelConf = require(kernelConfFile)
 const defaults = {
   'BASE': false,
   'INIT': false,
+  'CLIENT': false,
+  'WORKER': false,
   'WORKER_EMBED': false,
   'WORKER_INIT': false,
 }
