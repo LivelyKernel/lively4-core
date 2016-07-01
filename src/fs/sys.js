@@ -235,7 +235,7 @@ class SysFile extends File {
 
       return response
     } else {
-      return super.read()
+      return File.prototype.read.call(this)
     }
   }
 
@@ -257,7 +257,7 @@ class SysFile extends File {
         return response
       }
     } else {
-      return super.write(blob)
+      return File.prototype.write.call(this, blob)
     }
   }
 }
