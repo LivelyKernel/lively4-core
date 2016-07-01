@@ -98,36 +98,36 @@ describe('Filesystem with stubs', () => {
     spyOn(stubfs2, 'stat');
   });
 
-  it('handels get requests', () => {
+  it('handels get requests', async () => {
     let req = {method: 'GET'}
     let url = {pathname: 'root/this/and/that.txt'}
 
     let file = new base.File('Some content.');
 
-    stubfs.read.and.returnValue(file);
+    stubfs.read.and.returnValue(Promise.resolve(file));
 
-    let ret = fs.handle(req, url);
+    let ret = await fs.handle(req, url);
 
     expect(ret).toEqual(file.toResponse());
     expect(stubfs.read).toHaveBeenCalled();
     expect(stubfs.read).toHaveBeenCalledWith('/this/and/that.txt', req);
   });
 
-  it('handels get requests to direct response filesystems', () => {
+  it('handels get requests to direct response filesystems', async () => {
     let req = {method: 'GET'}
     let url = {pathname: 'root/this/and/that.txt'}
     let obj = Object.create(null);
 
-    stubfs.read.and.returnValue(obj);
+    stubfs.read.and.returnValue(Promise.resolve(obj));
 
-    let ret = fs.handle(req, url);
+    let ret = await fs.handle(req, url);
 
     expect(ret).toBe(obj);
     expect(stubfs.read).toHaveBeenCalled();
     expect(stubfs.read).toHaveBeenCalledWith('/this/and/that.txt', req);
   });
 
-  it('handels get requests with FileNotFoundError', () => {
+  it('handels get requests with FileNotFoundError', async () => {
     let req = {method: 'GET'}
     let url = {pathname: 'root/this/and/that.txt'}
 
@@ -135,14 +135,14 @@ describe('Filesystem with stubs', () => {
       throw base.FileNotFoundError()
     });
 
-    let ret = fs.handle(req, url);
+    let ret = await fs.handle(req, url);
 
     expect(ret).toEqual(new Response(null, {status: 405}));
     expect(stubfs.read).toHaveBeenCalled();
     expect(stubfs.read).toHaveBeenCalledWith('/this/and/that.txt', req);
   });
 
-  it('handels get requests with IsDirectoryError', () => {
+  it('handels get requests with IsDirectoryError', async () => {
     let req = {method: 'GET'}
     let url = {pathname: 'root/this/and/that.txt'}
 
@@ -150,7 +150,7 @@ describe('Filesystem with stubs', () => {
       throw new base.IsDirectoryError()
     });
 
-    let ret = fs.handle(req, url);
+    let ret = await fs.handle(req, url);
 
     expect(ret).toEqual(new Response(null, {
             status: 405,
@@ -171,36 +171,36 @@ describe('Filesystem with stubs', () => {
     expect(stubfs.write).toHaveBeenCalledWith('/this/and/that.txt', text, req);
   });
 
-  it('handels options requests', () => {
+  it('handels options requests', async () => {
     let req = {method: 'OPTIONS'}
     let url = {pathname: 'root/this/and/that.txt'}
 
     let stat = new base.Stat(false, {val: 'Some content.'}, 'GET,OPTIONS');
 
-    stubfs.stat.and.returnValue(stat);
+    stubfs.stat.and.returnValue(Promise.resolve(stat));
 
-    let ret = fs.handle(req, url);
+    let ret = await fs.handle(req, url);
 
     expect(ret).toEqual(stat.toResponse());
     expect(stubfs.stat).toHaveBeenCalled();
     expect(stubfs.stat).toHaveBeenCalledWith('/this/and/that.txt', req);
   });
 
-  it('handels options requests to direct response filesystems', () => {
+  it('handels options requests to direct response filesystems', async () => {
     let req = {method: 'OPTIONS'};
     let url = {pathname: 'root/this/and/that.txt'};
     let obj = Object.create(null);
 
-    stubfs.stat.and.returnValue(obj);
+    stubfs.stat.and.returnValue(Promise.resolve(obj));
 
-    let ret = fs.handle(req, url);
+    let ret = await fs.handle(req, url);
 
     expect(ret).toBe(obj);
     expect(stubfs.stat).toHaveBeenCalled();
     expect(stubfs.stat).toHaveBeenCalledWith('/this/and/that.txt', req);
   });
 
-  it('handels options requests with StatNotFoundError', () => {
+  it('handels options requests with StatNotFoundError', async () => {
     let req = {method: 'OPTIONS'}
     let url = {pathname: 'root/this/and/that.txt'}
 
@@ -208,7 +208,7 @@ describe('Filesystem with stubs', () => {
       throw base.StatNotFoundError()
     });
 
-    let ret = fs.handle(req, url);
+    let ret = await fs.handle(req, url);
 
     expect(ret).toEqual(new Response(null, {status: 405}));
     expect(stubfs.stat).toHaveBeenCalled();
@@ -239,18 +239,18 @@ describe('Filesystem with stubs', () => {
     expect(fs.reqcount).toBe(4);
   });
 
-  it('handels invalid path', () => {
+  it('handels invalid path', async () => {
     let req = {method: 'GET'}
     let url = {pathname: 'boot/but/more/this/and/that.txt'}
 
-    expect(fs.handle(req, url)).toEqual(new Response(null, {status: 400}));
+    expect(await fs.handle(req, url)).toEqual(new Response(null, {status: 400}));
   });
 
-  it('handels unsupported method', () => {
+  it('handels unsupported method', async () => {
     let req = {method: 'DELETE'}
     let url = {pathname: 'root/but/more/this/and/that.txt'}
 
-    expect(fs.handle(req, url)).toEqual(new Response(null, {status: 400}));
+    expect(await fs.handle(req, url)).toEqual(new Response(null, {status: 400}));
   });
 
   it('returns mounts as jso', () => {
