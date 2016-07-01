@@ -44,7 +44,7 @@ export default class Filesystem extends Base {
     }
   }
 
-  async stat(path, no_cache=false) {
+  async stat(path, unused_request, no_cache=false) {
     let githubHeaders = new Headers()
     if (this.token) {
       githubHeaders.append('Authorization', 'token ' + this.token)
@@ -87,7 +87,7 @@ export default class Filesystem extends Base {
     return new Stat(dir, contents, ['GET', 'OPTIONS'])
   }
 
-  async read(path, no_cache=false) {
+  async read(path, unused_request, no_cache=false) {
     let githubHeaders = new Headers()
     if (this.token) {
       githubHeaders.append('Authorization', 'token ' + this.token)
@@ -125,7 +125,7 @@ export default class Filesystem extends Base {
     }
   }
 
-  async write(path, fileContent) {
+  async write(path, unused_request, fileContent) {
     if(!this.token) {
       return new Response(null, {
         status: 401,

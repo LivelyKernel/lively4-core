@@ -39,7 +39,7 @@ export default class Filesystem extends Base {
     }
   }
 
-  async stat(path, no_cache=false) {
+  async stat(path, unused_request, no_cache=false) {
     let dropboxHeaders = new Headers()
     dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
 
@@ -75,7 +75,7 @@ export default class Filesystem extends Base {
     return new Stat(dir, contents, ['GET', 'OPTIONS'])
   }
 
-  async read(path, no_cache=false) {
+  async read(path, unused_request, no_cache=false) {
     let dropboxHeaders = new Headers()
     dropboxHeaders.append('Authorization', 'Bearer ' + this.token)
 
@@ -102,7 +102,7 @@ export default class Filesystem extends Base {
     return new File(blob)
   }
 
-  async write(path, fileContent) {
+  async write(path, fileContent, unused_request) {
     let fileContentFinal = await fileContent
     let dropboxHeaders = new Headers()
 
