@@ -7,7 +7,11 @@ var loader
 const system = () => {
   if (typeof loader === 'undefined') {
     let scope = new URL(self.registration.scope)
-    let base = new URL(path.join(scope.pathname, path.resolve(kernel_conf.base)), scope)
+    let base = scope
+
+    if (KERNEL_CONFIG_BASE) {
+      let base = new URL(path.join(scope.pathname, path.resolve(KERNEL_CONFIG_BASE)), scope)
+    }
 
     loader = new Loader({
       base: base
@@ -22,7 +26,7 @@ const system = () => {
 }
 
 const init = async (fn) => {
-  return system().import(path.resolve(kernel_conf.initsw)).then(fn)
+  return system().import(path.resolve(KERNEL_CONFIG_WORKER_INIT)).then(fn)
 }
 
 export default function() {
