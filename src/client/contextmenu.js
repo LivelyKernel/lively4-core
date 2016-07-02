@@ -46,8 +46,7 @@ export default class ContextMenu {
         this.hide();
       }],
       ["RDFa firebase", (evt) => {
-        alert("not implemented anymore")
-        //this.openRdfaViewer(evt, true);
+        this.openRdfaDb(evt);
         this.hide();
       }],
       ["Workspace", (evt) => {
@@ -123,7 +122,7 @@ export default class ContextMenu {
     ];}
   }
 
-  static openRdfaViewer(evt, remote = false) {
+  static openRdfaViewer(evt) {
     $('#lively-rdfa-window').remove();
 
     lively.components.openInWindow(lively.components.createComponent("lively-rdfa-viewer")).then((w) => {
@@ -131,6 +130,14 @@ export default class ContextMenu {
       w.style.right = 0;
       w.style.bottom = 0;
       w.id = 'lively-rdfa-window';
+    });
+  }
+  
+  static openRdfaDb(evt) {
+    $('#lively-rdfa-db').remove();
+  
+    lively.components.openInWindow(lively.components.createComponent("lively-rdfa-db")).then((w) => {
+      w.id = 'lively-rdfa-db';
     });
   }
 

@@ -2,29 +2,31 @@
 
 import Morph from './Morph.js';
 
-export default class RdfaMovieDb extends Morph {
+import RdfaManager from '../../src/client/rdfa-manager.js';
+
+export default class RdfaDb extends Morph {
 
   /*
    * HTMLElement callbacks
    */
   attachedCallback() {
     this.setup();
-    this.windowTitle = "RDFa Movie DB";
+    this.windowTitle = "RDFa DB";
   }
 
   /*
    * Initialization
    */
   setup() {
-    this.table = $(this.shadowRoot.querySelector('#movieTable'));
+    this.table = $(this.shadowRoot.querySelector('#dbTable'));
     this.createTableHeader();
     this.loadRdfaDataAndFillTable();
   }
 
   loadRdfaDataAndFillTable() {
-    firebase.database().ref("rdfa-movies").once('value').then((moviesWrapper) => {
-      let movies = moviesWrapper.val();
-      this.generateTableRows(movies);
+    RdfaManager.loadFirebaseConfig();
+    RdfaManager.readDataFromFirebase('').then((data) => {
+      this.generateTableRows(data);
     });
   }
 
@@ -35,15 +37,15 @@ export default class RdfaMovieDb extends Morph {
 
   }
   
-  generateTableRows(movies) {
-    for (let movieId in movies) {
+  generateTableRows(dataArray) {
+    dataArray.forEach((triple) => {
       this.table.append($('<tr>')
         .append($('<td>')
-          .append(movieId))
+          .append(triple.getReadableUrl()))
         .append($('<td>')
-          .append(movies[movieId]))
+          .append(triple.toString()))
       );
-    };
+    });
   }
   
   createTableHeader() {

@@ -7,6 +7,28 @@ class RdfaTriple {
     this.property = property;
     this.values = values;
   }
+  
+  toString() {
+    string = '';
+    
+    this.values.forEach((value) => {
+      if (string.length > 0) {
+        string += ', ';
+      }
+      
+      if (value.constructor.name == 'RdfaTriple') {
+        string += value.toString();
+      } else {
+        string += value.toString();
+      }
+    })
+    
+    return string;
+  }
+  
+  getReadableUrl() {
+    return this.subject;
+  }
 }
 
 export default class RdfaManager {
