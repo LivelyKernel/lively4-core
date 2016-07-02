@@ -460,8 +460,8 @@ export class Rectangle {
     var center1 = this.center(),
       center2 = otherRect.center(),
       lineBetween = center1.lineTo(center2),
-      start = this.lineIntersection(lineBetween).first(),
-      end = otherRect.lineIntersection(lineBetween).first();
+      start = this.lineIntersection(lineBetween)[0],
+      end = otherRect.lineIntersection(lineBetween)[0];
     return start && end && start.lineTo(end);
   }
 
