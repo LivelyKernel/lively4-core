@@ -4,17 +4,20 @@
 import client from './client.js'
 import worker from './worker.js'
 
-if(typeof window !== 'undefined') {
-  // We're in the browser window/tab
-  // Invoke boot loader
+(function() {
+  if (%KERNEL_CONFIG_CLIENT%) {
+    if(typeof window !== 'undefined') {
+      // We're in the browser window/tab
+      // Invoke boot loader
+      return client.call(window)
+    }
+  }
 
-  if (KERNEL_CONFIG_CLIENT)
-    client.call(window)
-
-} else if(typeof self !== 'undefined') {
-  // We're in the service worker
-  // Load service worker
-
-  if (KERNEL_CONFIG_WORKER)
-    worker.call(self)
-}
+  if (%KERNEL_CONFIG_WORKER%) {
+    if(typeof self !== 'undefined') {
+      // We're in the service worker
+      // Load service worker
+      return worker.call(self)
+    }
+  }
+})()

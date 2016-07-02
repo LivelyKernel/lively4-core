@@ -1,7 +1,7 @@
 'use strict';
 
 const path = require('path'),
-  webpack = require('webpack');
+  webpack = require('webpack')
 
 let config = {
   BASE: false,
@@ -58,8 +58,11 @@ module.exports = {
     new webpack.DefinePlugin(values)
   ],
   rollup: [
+    require('rollup-plugin-replace')({
+      delimiters: ['%', '%'],
+      values: values
+    }),
     require('rollup-plugin-babel')({
-      // compact: true, // Enabled makes rollup believe we're emitting CJS (WTF)
       comments: false,
       babelrc: false,
       runtimeHelpers: true,
@@ -84,7 +87,8 @@ module.exports = {
         require("babel-plugin-transform-export-extensions"),
         require("babel-plugin-transform-function-bind"),
         require("babel-plugin-transform-object-rest-spread"),
-        [require("babel-plugin-transform-runtime"), {"polyfill": false, "regenerator": true}]
+        [require("babel-plugin-transform-runtime"), {"polyfill": false, "regenerator": true}],
+        require("babel-plugin-transform-dead-code-elimination").default
       ]
     })
   ]
