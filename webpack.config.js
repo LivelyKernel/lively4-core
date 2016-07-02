@@ -90,6 +90,7 @@ module.exports = {
         [require("babel-plugin-transform-runtime"), {"polyfill": false, "regenerator": true}],
         require("babel-plugin-transform-dead-code-elimination").default
       ]
-    })
+    }),
+    require('rollup-plugin-node-builtins')()
   ]
 };
