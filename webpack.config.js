@@ -16,12 +16,13 @@ const defines = {}
 const kernelConf = require(kernelConfFile)
 
 const defaults = {
-  'BASE': false,
-  'INIT': false,
-  'CLIENT': false,
-  'WORKER': false,
-  'WORKER_EMBED': false,
-  'WORKER_INIT': false,
+  BASE: false,
+  LOADER_TRANSPILE: false,
+  CLIENT: false,
+  CLIENT_INIT: false,
+  WORKER: false,
+  WORKER_INIT: false,
+  WORKER_EMBED: false,
 }
 
 for (var key in defaults) {

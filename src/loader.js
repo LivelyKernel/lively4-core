@@ -8,30 +8,32 @@
 // chrome browsers and omits much ES5 compatible transformations.
 //
 import * as path from 'path'
-import * as babel from 'babel-core'
 
-const BABEL_REQ_PLUGINS = [
-  require("babel-plugin-syntax-async-functions"),
-  require("babel-plugin-syntax-async-generators"),
-  require("babel-plugin-syntax-do-expressions"),
-  require("babel-plugin-syntax-exponentiation-operator"),
-  require("babel-plugin-syntax-export-extensions"),
-  require("babel-plugin-syntax-function-bind"),
-  require("babel-plugin-syntax-object-rest-spread"),
-  require("babel-plugin-syntax-trailing-function-commas"),
-  require("babel-plugin-syntax-jsx"),
-  require("babel-plugin-transform-async-to-generator"),
-  require("babel-plugin-transform-async-to-module-method"),
-  require("babel-plugin-transform-do-expressions"),
-  require("babel-plugin-transform-es2015-destructuring"),
-  require("babel-plugin-transform-es2015-modules-systemjs"),
-  require("babel-plugin-transform-exponentiation-operator"),
-  require("babel-plugin-transform-export-extensions"),
-  require("babel-plugin-transform-function-bind"),
-  require("babel-plugin-transform-object-rest-spread"),
-  require("babel-plugin-transform-jsx").default,
-]
+if (KERNEL_CONFIG_LOADER_TRANSPILE) {
+  const babel = require('babel-core')
 
+  const BABEL_REQ_PLUGINS = [
+    require("babel-plugin-syntax-async-functions"),
+    require("babel-plugin-syntax-async-generators"),
+    require("babel-plugin-syntax-do-expressions"),
+    require("babel-plugin-syntax-exponentiation-operator"),
+    require("babel-plugin-syntax-export-extensions"),
+    require("babel-plugin-syntax-function-bind"),
+    require("babel-plugin-syntax-object-rest-spread"),
+    require("babel-plugin-syntax-trailing-function-commas"),
+    require("babel-plugin-syntax-jsx"),
+    require("babel-plugin-transform-async-to-generator"),
+    require("babel-plugin-transform-async-to-module-method"),
+    require("babel-plugin-transform-do-expressions"),
+    require("babel-plugin-transform-es2015-destructuring"),
+    require("babel-plugin-transform-es2015-modules-systemjs"),
+    require("babel-plugin-transform-exponentiation-operator"),
+    require("babel-plugin-transform-export-extensions"),
+    require("babel-plugin-transform-function-bind"),
+    require("babel-plugin-transform-object-rest-spread"),
+    require("babel-plugin-transform-jsx").default,
+  ]
+}
 
 export class Loader {
   constructor(options = {}) {
@@ -191,20 +193,26 @@ export class Loader {
 
 
   async transpile(blob, {filename, uri}) {
-    // let sourceURL = 'lively:///' + filename
-    let sourceURL = uri.toString()
+    if (KERNEL_CONFIG_LOADER_TRANSPILE) {
 
-    let source = babel.transform(blob, {
-      plugins: [...this.plugins, ...BABEL_REQ_PLUGINS],
-      sourceMaps: 'inline',
-      filename: filename,
-      sourceFileName: sourceURL,
-      compact: 'auto',
-    })
+      // let sourceURL = 'lively:///' + filename
+      let sourceURL = uri.toString()
 
-    source.code += '\n//# sourceURL=' + sourceURL + '!transpiled'
+      let source = babel.transform(blob, {
+        plugins: [...this.plugins, ...BABEL_REQ_PLUGINS],
+        sourceMaps: 'inline',
+        filename: filename,
+        sourceFileName: sourceURL,
+        compact: 'auto',
+      })
 
-    return source
+      source.code += '\n//# sourceURL=' + sourceURL + '!transpiled'
+
+      return source
+
+    } else {
+      return blob
+    }
   }
 
 
