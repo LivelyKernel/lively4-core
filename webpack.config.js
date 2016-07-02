@@ -1,6 +1,5 @@
 const path = require('path'),
-  webpack = require('webpack'),
-  transformRuntime = require('babel-plugin-transform-runtime').default;
+  webpack = require('webpack');
 
 function resolveKernelConfigFile() {
   if (process.env.KERNEL_CONFIG) {
@@ -55,7 +54,7 @@ module.exports = {
   devtool: 'source-map',
   module: {
     loaders: [
-      { test: /\.jsx?$/, exclude: /(node_modules)/, loader: 'rollup' },
+      { test: /\.jsx?$/, exclude: /(node_modules)/, loader: 'babel' },
       { test: /\.json$/, loader: 'json' }
     ]
   },
@@ -67,33 +66,29 @@ module.exports = {
   plugins: [
     new webpack.DefinePlugin(defines)
   ],
-  rollup: [
-    require('rollup-plugin-babel')({
-      babelrc: false,
-      runtimeHelpers: true,
-      plugins: [
-        require("babel-plugin-syntax-async-functions"),
-        require("babel-plugin-syntax-async-generators"),
-        require("babel-plugin-syntax-class-properties"),
-        require("babel-plugin-syntax-decorators"),
-        require("babel-plugin-syntax-do-expressions"),
-        require("babel-plugin-syntax-exponentiation-operator"),
-        require("babel-plugin-syntax-export-extensions"),
-        require("babel-plugin-syntax-function-bind"),
-        require("babel-plugin-syntax-object-rest-spread"),
-        require("babel-plugin-syntax-trailing-function-commas"),
-        require("babel-plugin-transform-async-to-generator"),
-        require("babel-plugin-transform-async-to-module-method"),
-        require("babel-plugin-transform-class-properties"),
-        require("babel-plugin-transform-decorators-legacy").default,
-        require("babel-plugin-transform-do-expressions"),
-        require("babel-plugin-transform-es2015-destructuring"),
-        // require("babel-plugin-transform-es2015-modules-commonjs"),
-        require("babel-plugin-transform-exponentiation-operator"),
-        require("babel-plugin-transform-export-extensions"),
-        require("babel-plugin-transform-function-bind"),
-        require("babel-plugin-transform-object-rest-spread"),
-      ]
-    })
-  ]
+  babel: {
+    babelrc: false,
+    plugins: [
+      require("babel-plugin-syntax-async-functions"),
+      require("babel-plugin-syntax-async-generators"),
+      require("babel-plugin-syntax-class-properties"),
+      require("babel-plugin-syntax-decorators"),
+      require("babel-plugin-syntax-do-expressions"),
+      require("babel-plugin-syntax-exponentiation-operator"),
+      require("babel-plugin-syntax-export-extensions"),
+      require("babel-plugin-syntax-function-bind"),
+      require("babel-plugin-syntax-object-rest-spread"),
+      require("babel-plugin-syntax-trailing-function-commas"),
+      require("babel-plugin-transform-async-to-generator"),
+      require("babel-plugin-transform-async-to-module-method"),
+      require("babel-plugin-transform-class-properties"),
+      require("babel-plugin-transform-decorators-legacy").default,
+      require("babel-plugin-transform-do-expressions"),
+      require("babel-plugin-transform-es2015-destructuring"),
+      require("babel-plugin-transform-exponentiation-operator"),
+      require("babel-plugin-transform-export-extensions"),
+      require("babel-plugin-transform-function-bind"),
+      require("babel-plugin-transform-object-rest-spread"),
+    ]
+  }
 };
