@@ -10,7 +10,7 @@
 import * as path from 'path'
 
 if (KERNEL_CONFIG_LOADER_TRANSPILE) {
-  const babel = require('babel-core')
+  const babel = require('babel-core').default
 
   const BABEL_REQ_PLUGINS = [
     require("babel-plugin-syntax-async-functions"),

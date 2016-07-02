@@ -24,6 +24,8 @@ const values = Object.keys(config).reduce((prev, cur) => {
   return prev
 }, {})
 
+console.log(values)
+
 module.exports = {
   target: 'web',
   context: path.resolve(__dirname),
@@ -36,6 +38,7 @@ module.exports = {
   },
   resolve: {
     alias: {
+      'babel-runtime': path.resolve(__dirname, 'node_modules/babel-runtime')
       // 'kernel_conf': kernelConfFile
     }
   },
@@ -56,7 +59,7 @@ module.exports = {
   ],
   rollup: [
     require('rollup-plugin-babel')({
-      compact: true,
+      // compact: true, // Enabled makes rollup believe we're emitting CJS (WTF)
       comments: false,
       babelrc: false,
       runtimeHelpers: true,
@@ -81,6 +84,7 @@ module.exports = {
         require("babel-plugin-transform-export-extensions"),
         require("babel-plugin-transform-function-bind"),
         require("babel-plugin-transform-object-rest-spread"),
+        [require("babel-plugin-transform-runtime"), {"polyfill": false, "regenerator": true}]
       ]
     })
   ]
