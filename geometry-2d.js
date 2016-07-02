@@ -1,4 +1,4 @@
-import { num, string } from "lively.lang";
+import { num, string, grid } from "lively.lang";
 import { cssLengthToPixels } from "./convert-css-length.js";
 
 export class Point {
@@ -432,7 +432,7 @@ export class Rectangle {
 
   grid(rows, cols) {
     var w = this.width / cols, h = this.height / rows;
-    return Grid.mapCreate(rows, cols, function(i, j) {
+    return grid.mapCreate(rows, cols, function(i, j) {
       return new Rectangle(w*j, h*i, w, h); });
   }
 
@@ -444,9 +444,9 @@ export class Rectangle {
     var orig = this;
     return relativeRects.map(function(relRect) {
       return rect(orig.x + orig.width*relRect.x,
-                 orig.y + orig.height*relRect.y,
-                 orig.width*relRect.width,
-                 orig.height*relRect.height); });
+                orig.y + orig.height*relRect.y,
+                orig.width*relRect.width,
+                orig.height*relRect.height); });
   }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -621,12 +621,12 @@ export class Rectangle {
 
   insetByRect(r) {
     return new Rectangle(this.x + r.left(), this.y + r.top(), this.width -
-         (r.left() + r.right()), this.height - (r.top() + r.bottom()));
+        (r.left() + r.right()), this.height - (r.top() + r.bottom()));
   }
 
   outsetByRect(r) {
     return new Rectangle(this.x - r.left(), this.y - r.top(), this.width +
-         (r.left() + r.right()), this.height + (r.top() + r.bottom()));
+        (r.left() + r.right()), this.height + (r.top() + r.bottom()));
   }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -646,7 +646,7 @@ export class Rectangle {
   }
 
   lineIntersection(line) {
-    return this.edges().collect(function(edge) { return edge.intersection(line); }).compact();
+    return this.edges().map(function(edge) { return edge.intersection(line); }).compact();
   }
 
   dist(rect) {
