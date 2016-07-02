@@ -20,7 +20,7 @@ if (process.env.KERNEL_CONFIG) {
 }
 
 const values = Object.keys(config).reduce((prev, cur) => {
-  prev['KERNEL_CONFIG_' + cur] = config[cur]
+  prev['KERNEL_CONFIG_' + cur] = JSON.stringify(config[cur])
   return prev
 }, {})
 
@@ -55,6 +55,8 @@ module.exports = {
     new webpack.DefinePlugin(values)
   ],
   babel: {
+    compact: true,
+    comments: false,
     babelrc: false,
     plugins: [
       require("babel-plugin-syntax-async-functions"),
@@ -77,6 +79,7 @@ module.exports = {
       require("babel-plugin-transform-export-extensions"),
       require("babel-plugin-transform-function-bind"),
       require("babel-plugin-transform-object-rest-spread"),
+      require("babel-plugin-transform-es2015-modules-commonjs")
     ]
   }
 };

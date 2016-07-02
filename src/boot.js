@@ -9,12 +9,12 @@ if(typeof window !== 'undefined') {
   // Invoke boot loader
 
   if (KERNEL_CONFIG_CLIENT)
-    require('./client').call(window)
+    require('./client').default.call(window)
 
 } else if(typeof self !== 'undefined') {
   // We're in the service worker
   // Load service worker
 
   if (KERNEL_CONFIG_WORKER)
-    require('./worker').call(self)
+    require('./worker').default.call(self)
 }
