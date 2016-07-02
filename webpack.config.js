@@ -1,5 +1,8 @@
+'use strict';
+
 const path = require('path'),
-  webpack = require('webpack');
+  webpack = require('webpack'),
+  DefinePlugin = require('extended-define-webpack-plugin')
 
 let config = {
   BASE: false,
@@ -18,11 +21,9 @@ if (process.env.KERNEL_CONFIG) {
 }
 
 const values = Object.keys(config).reduce((prev, cur) => {
-  prev['%KERNEL_CONFIG_' + cur + '%'] = JSON.stringify(config[cur])
+  prev['KERNEL_CONFIG_' + cur] = config[cur]
   return prev
 }, {})
-
-console.log(values)
 
 module.exports = {
   target: 'web',
@@ -52,7 +53,7 @@ module.exports = {
     net: 'empty'
   },
   plugins: [
-    new webpack.DefinePlugin(defines)
+    new DefinePlugin(values)
   ],
   babel: {
     babelrc: false,

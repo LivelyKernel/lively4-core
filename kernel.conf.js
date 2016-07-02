@@ -9,13 +9,13 @@ module.exports = {
   LOADER_TRANSPILE: true,
 
   // Enable client kernel module
-  CLIENT: false,
+  CLIENT: true,
 
   // Initial file to load for client module
   CLIENT_INIT: "/init.js",
 
   // Enable service worker kernel module
-  WORKER: false,
+  WORKER: true,
 
   // Initial file to load for service worker
   WORKER_INIT: "/init-sw.js",

@@ -193,7 +193,7 @@ export class Loader {
 
 
   async transpile(blob, {filename, uri}) {
-    if (%KERNEL_CONFIG_LOADER_TRANSPILE%) {
+    if (KERNEL_CONFIG_LOADER_TRANSPILE) {
 
       // let sourceURL = 'lively:///' + filename
       let sourceURL = uri.toString()
