@@ -82,8 +82,13 @@ export function instance() {
   return __instance__
 }
 
-export function install() {}
-export function activate() {}
+export function install() {
+  return self.skipWaiting()
+}
+
+export function activate() {
+  return self.clients.claim()
+}
 
 export function fetch(event) {
   return instance().fetch(event)
