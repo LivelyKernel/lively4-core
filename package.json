@@ -22,7 +22,6 @@
   },
   "devDependencies": {
     "babel-loader": "^6",
-    "extended-define-webpack-plugin": "^0.1.0",
     "imports-loader": "^0.6.5",
     "json-loader": "^0.5.4",
     "webpack": "^2.1.0-beta"

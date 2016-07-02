@@ -1,8 +1,7 @@
 'use strict';
 
 const path = require('path'),
-  webpack = require('webpack'),
-  DefinePlugin = require('extended-define-webpack-plugin')
+  webpack = require('webpack')
 
 let config = {
   BASE: false,
@@ -53,7 +52,7 @@ module.exports = {
     net: 'empty'
   },
   plugins: [
-    new DefinePlugin(values)
+    new webpack.DefinePlugin(values)
   ],
   babel: {
     babelrc: false,
