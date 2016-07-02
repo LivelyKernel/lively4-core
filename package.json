@@ -24,7 +24,15 @@
     "babel-loader": "^6",
     "imports-loader": "^0.6.5",
     "json-loader": "^0.5.4",
-    "webpack": "^1.13.1"
+    "rollup": "^0.33.0",
+    "rollup-plugin-alias": "^1.2.0",
+    "rollup-plugin-babel": "^2.6.1",
+    "rollup-plugin-commonjs": "^3.1.0",
+    "rollup-plugin-json": "^2.0.1",
+    "rollup-plugin-node-builtins": "^1.0.4",
+    "rollup-plugin-node-resolve": "^1.7.1",
+    "rollup-plugin-replace": "^1.1.1",
+    "webpack": "^2.1.0-beta"
   },
   "dependencies": {
     "babel-core": "^6",

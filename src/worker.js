@@ -9,16 +9,16 @@ const system = () => {
     let scope = new URL(self.registration.scope)
     let base = scope
 
-    if (KERNEL_CONFIG_BASE) {
-      let base = new URL(path.join(scope.pathname, path.resolve(KERNEL_CONFIG_BASE)), scope)
+    if (%KERNEL_CONFIG_BASE%) {
+      let base = new URL(path.join(scope.pathname, path.resolve(%KERNEL_CONFIG_BASE%)), scope)
     }
 
     loader = new Loader({
       base: base
     })
 
-    if (KERNEL_CONFIG_WORKER_EMBED) {
-      loader.set(KERNEL_CONFIG_WORKER_INIT, require(KERNEL_CONFIG_WORKER_INIT))
+    if (%KERNEL_CONFIG_WORKER_EMBED%) {
+      loader.set(%KERNEL_CONFIG_WORKER_INIT%, require(%KERNEL_CONFIG_WORKER_INIT%))
     }
   }
 

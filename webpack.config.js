@@ -1,20 +1,7 @@
 const path = require('path'),
   webpack = require('webpack');
 
-function resolveKernelConfigFile() {
-  if (process.env.KERNEL_CONFIG) {
-    return path.resolve(process.env.KERNEL_CONFIG)
-  } else {
-    return path.resolve('./kernel.conf.js')
-  }
-}
-
-const kernelConfFile = resolveKernelConfigFile()
-
-const defines = {}
-const kernelConf = require(kernelConfFile)
-
-const defaults = {
+let config = {
   BASE: false,
   LOADER_TRANSPILE: false,
   CLIENT: false,
@@ -24,17 +11,18 @@ const defaults = {
   WORKER_EMBED: false,
 }
 
-for (var key in defaults) {
-  var val = defaults[key]
-
-  if (key in kernelConf) {
-    val = kernelConf[key]
-  }
-
-  defines['KERNEL_CONFIG_' + key] = JSON.stringify(val)
+if (process.env.KERNEL_CONFIG) {
+  Object.assign(config, require(process.env.KERNEL_CONFIG))
+} else {
+  Object.assign(config, require('./kernel.conf.js'))
 }
 
-console.log(defines)
+const values = Object.keys(config).reduce((prev, cur) => {
+  prev['%KERNEL_CONFIG_' + cur + '%'] = JSON.stringify(config[cur])
+  return prev
+}, {})
+
+console.log(values)
 
 module.exports = {
   target: 'web',
@@ -48,7 +36,7 @@ module.exports = {
   },
   resolve: {
     alias: {
-      'kernel_conf': kernelConfFile
+      // 'kernel_conf': kernelConfFile
     }
   },
   devtool: 'source-map',
