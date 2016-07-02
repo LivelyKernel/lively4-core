@@ -1,4 +1,4 @@
-import * as path from '../src/swx/path.jsx'
+import * as path from '../src/external/path.js'
 import * as kernel from 'kernel'
 
 function format(child) {
