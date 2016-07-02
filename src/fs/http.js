@@ -21,7 +21,11 @@ export default class Filesystem extends Base {
     let response = undefined
 
     if (!no_cache) {
-      response = await cache.match(f_request)
+      if (navigator.onLine) {
+        response = await cache.match(f_request, 5 * 60 * 1000 /* 5 minute max cache age */)
+      } else {
+        response = await cache.match(f_request)
+      }
     } else {
       cache.purge(f_request);
     }
@@ -45,7 +49,11 @@ export default class Filesystem extends Base {
     let response = undefined
 
     if (!no_cache) {
-      response = await cache.match(f_request)
+      if (navigator.onLine) {
+        response = await cache.match(f_request, 5 * 60 * 1000 /* 5 minute max cache age */)
+      } else {
+        response = await cache.match(f_request)
+      }
     } else {
       cache.purge(f_request);
     }
