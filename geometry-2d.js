@@ -646,7 +646,9 @@ export class Rectangle {
   }
 
   lineIntersection(line) {
-    return this.edges().map(function(edge) { return edge.intersection(line); }).compact();
+    return this.edges()
+      .map(function(edge) { return edge.intersection(line); })
+      .filter(ea => !!ea);
   }
 
   dist(rect) {
