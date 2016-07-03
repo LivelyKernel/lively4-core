@@ -29,7 +29,7 @@ async function getFilepaths(options) {
     return file.path.slice(options.options.subfolder.length);
   });
 
-  return filepaths;
+  return filepaths.slice(0, 5);
 }
 
 export async function* FileReader(filepath, options) {
