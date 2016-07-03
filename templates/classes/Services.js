@@ -28,6 +28,8 @@ export default class Services extends Morph {
     this.removeButton.addEventListener('click', this.removeButtonClick.bind(this));
     this.editButton = this.getSubmorph('#editButton');
     this.editButton.addEventListener('click', this.editButtonClick.bind(this));
+    this.cloneButton = this.getSubmorph('#cloneButton');
+    this.cloneButton.addEventListener('click', this.cloneButtonClick.bind(this));
     this.settingsButton = this.getSubmorph('#settingsButton');
     this.settingsButton.addEventListener('click', this.settingsButtonClick.bind(this));
     this.startButton = this.getSubmorph('#startButton');
@@ -110,13 +112,21 @@ export default class Services extends Morph {
     lively.openBrowser(servicesURL + 'lively/');
   }
 
+  cloneButtonClick() {
+    var gitURL = window.prompt('Please enter a GitHub link to clone:');
+    if (userInput === null) return;
+    this.post('/clone', { url: gitURL }, function(res) {
+      console.log(res);
+    });
+  }
+
   settingsButtonClick() {
     var userInput;
-    userInput = window.prompt('Please enter service endpoint', servicesURL);
+    userInput = window.prompt('Please enter service endpoint:', servicesURL);
     if (userInput !== null) {
       servicesURL = userInput;
     }
-    userInput = window.prompt('Please enter debugger endpoint', debuggerURL);
+    userInput = window.prompt('Please enter debugger endpoint:', debuggerURL);
     if (userInput !== null) {
       debuggerURL = userInput;
     }
