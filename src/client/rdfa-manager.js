@@ -8,6 +8,14 @@ class RdfaTriple {
     this.values = values;
   }
   
+  subject() {
+    return this.subject;
+  }
+  
+  property() {
+    return this.property;
+  }
+  
   toString() {
     let string = '';
     
@@ -24,6 +32,14 @@ class RdfaTriple {
     })
     
     return string;
+  }
+  
+  values() {
+    return this.values;
+  }
+  
+  value() {
+    return this.values[0];
   }
   
   getReadableUrl() {

@@ -49,6 +49,10 @@ export default class ContextMenu {
         this.openRdfaDb(evt);
         this.hide();
       }],
+      ["RDFa movies", (evt) => {
+        this.openRdfaMovies(evt);
+        this.hide();
+      }],
       ["Workspace", (evt) => {
         this.hide();
         lively.openWorkspace("", lively.pt(evt.pageX, evt.pageY));
@@ -138,6 +142,14 @@ export default class ContextMenu {
   
     lively.components.openInWindow(lively.components.createComponent("lively-rdfa-db")).then((w) => {
       w.id = 'lively-rdfa-db';
+    });
+  }
+  
+  static openRdfaMovies(evt) {
+    $('#lively-rdfa-movie-db').remove();
+  
+    lively.components.openInWindow(lively.components.createComponent("lively-rdfa-movie-db")).then((w) => {
+      w.id = 'lively-rdfa-movie-db';
     });
   }
 

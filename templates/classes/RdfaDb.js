@@ -43,6 +43,8 @@ export default class RdfaDb extends Morph {
         .append($('<td>')
           .append(triple.getReadableUrl()))
         .append($('<td>')
+          .append(triple.property))
+        .append($('<td>')
           .append(triple.toString()))
       );
     });
@@ -51,8 +53,9 @@ export default class RdfaDb extends Morph {
   createTableHeader() {
     this.table
       .append($('<tr>')
-        .append($('<th>').text("Title"))
-        .append($('<th>').text("URL"))
+        .append($('<th>').text("Subject"))
+        .append($('<th>').text("Property"))
+        .append($('<th>').text("Value"))
       )
   }
 
