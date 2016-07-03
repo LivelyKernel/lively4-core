@@ -1,0 +1,40 @@
+<template id="lively-rdfa-movie-db" data-class="RdfaMovieDb">
+  <style data-src="/templates/livelystyle.css"></style>
+  <style data-src="/src/external/font-awesome/css/font-awesome.min.css"></style>
+  <style>
+  
+  .db-container {
+    overflow: auto;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #ddd;
+    height: 100%;
+  }
+  
+  table#dbTable {
+    font-size: small;
+    border-collapse: collapse;
+  }
+  
+  table, tr, td, th {
+    padding: 2px 4px;
+    border: 1px solid #ddd;
+    border-left: 0;
+  }
+  
+  th {
+    padding: 8px;
+  }
+  
+  </style>
+
+  <div class="db-container">
+    <table id="dbTable">
+    </table>
+  </div>
+  <script type="lively4script" data-name="initialize">
+    () => {
+
+    }
+  </script>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
