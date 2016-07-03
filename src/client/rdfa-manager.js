@@ -9,7 +9,7 @@ class RdfaTriple {
   }
   
   toString() {
-    string = '';
+    let string = '';
     
     this.values.forEach((value) => {
       if (string.length > 0) {
