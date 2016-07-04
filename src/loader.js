@@ -202,7 +202,7 @@ export class Loader {
 
       let source = babel.transform(blob, {
         plugins: [...this.plugins, ...BABEL_PLUGINS],
-        sourceMaps: 'inline',
+        // sourceMaps: 'inline',
         filename: filename,
         sourceFileName: sourceURL,
         compact: 'auto',
