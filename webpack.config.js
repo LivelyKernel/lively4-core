@@ -42,7 +42,7 @@ module.exports = {
       'babel-runtime': path.resolve(__dirname, 'node_modules/babel-runtime')
     }
   },
-  devtool: 'source-map',
+  devtool: 'inline-source-map',
   module: {
     loaders: [
       { test: /\.jsx?$/, exclude: /(node_modules)/, loader: 'babel' },

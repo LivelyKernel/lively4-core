@@ -10,14 +10,14 @@ const system = () => {
     let base = scope
 
     if (KERNEL_CONFIG.WORKER_BASE) {
-      // TODO: Check if WORKER_BASE is relative or full URL
-      base = new URL(KERNEL_CONFIG.WORKER_BASE)
-      // base = new URL(path.join(scope.pathname, path.resolve(KERNEL_CONFIG.WORKER_BASE)), scope)
+      base = new URL(KERNEL_CONFIG.WORKER_BASE, base)
     }
 
     loader = new Loader({
       base: base
     })
+
+    console.warn('[SW] Kick-off from ' + base.toString())
 
     if (KERNEL_CONFIG.WORKER_EMBED) {
       loader.set(KERNEL_CONFIG.WORKER_INIT, require(KERNEL_CONFIG.WORKER_INIT))
