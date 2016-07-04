@@ -48,6 +48,7 @@ export async function* FileReader(filepath, options) {
     yield {
       path: path,
       filename: path.slice(path.lastIndexOf("/") + 1),
+      ext: path.slice(path.lastIndexOf(".") + 1),
       content: content
     }
   }
