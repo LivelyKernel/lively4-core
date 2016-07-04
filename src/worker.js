@@ -2,10 +2,8 @@ import * as path from 'path'
 
 import { Loader } from './loader'
 
-var loader
-
 const system = () => {
-  if (typeof loader === 'undefined') {
+  if (!self.System) {
     let scope = new URL(self.registration.scope)
     let base = scope
 
@@ -13,18 +11,18 @@ const system = () => {
       base = new URL(KERNEL_CONFIG.WORKER_BASE, base)
     }
 
-    loader = new Loader({
+    self.System = new Loader({
       base: base
     })
 
     console.warn('[SW] Kick-off from ' + base.toString())
 
     if (KERNEL_CONFIG.WORKER_EMBED) {
-      loader.set(KERNEL_CONFIG.WORKER_INIT, require(KERNEL_CONFIG.WORKER_INIT))
+      System.set(KERNEL_CONFIG.WORKER_INIT, require(KERNEL_CONFIG.WORKER_INIT))
     }
   }
 
-  return loader
+  return System
 }
 
 const init = async (fn) => {
