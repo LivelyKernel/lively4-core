@@ -107,9 +107,14 @@ export class Filesystem {
 
   async loadMounts(){
     let mounts = await focalStorage.getItem("lively4mounts")
+
+    if (typeof mounts === 'undefined') {
+      return
+    }
+
     try {
       for(let mount of mounts) {
-        let fs = await System.import('src/swx/fs/' + mount.name + '.js')
+        let fs = await System.import('./fs/' + mount.name + '.js')
         this.mount(mount.path, fs.default, mount.options)
       }
     } catch(e) {
