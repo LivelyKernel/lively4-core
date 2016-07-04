@@ -26,10 +26,11 @@ import * as cop from './contextjs'
 import { Layer } from './contextjs'
 
 function extendString(s, length) {
-    while(s.length < length) {
-        s = s + " ";
-    }
-    return s
+    return s + new Array(Math.max(0, length - s.length)).join(' ')
+}
+
+function ralign(s, length) {
+    return new Array(Math.max(0, length - String(s).length)).join(' ') + s 
 }
 
 const DEFAULT_MAXSIZE = 1000000000
@@ -54,9 +55,8 @@ function benchmarkBlock(name, unrolledOps, func) {
         ops = (unrolledOps * size);
         size *= 2;
     };
-    var result = extendString(name, 40) +
-                "	" + ops + "	" + time + "	" + Math.round(ops / time) + "\n";
-    result = result.concat(result);
+    var result = extendString(name, 40) + ralign(String(ops), 16) + " " +
+        ralign(String(time), 4) + " " + ralign(String(Math.round(ops / time)), 8);
     printEachResult(result);
 }
 
