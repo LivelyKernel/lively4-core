@@ -323,8 +323,8 @@ describe('Filesystem with stubs', () => {
     await fs.loadMounts();
 
     expect(focalStorage.getItem).toHaveBeenCalledWith("lively4mounts");
-    expect(System.import).toHaveBeenCalledWith("src/swx/fs/fake.js");
-    expect(System.import).toHaveBeenCalledWith("src/swx/fs/fake2.js");
+    expect(System.import).toHaveBeenCalledWith("/fs/fake.js");
+    expect(System.import).toHaveBeenCalledWith("/fs/fake2.js");
     expect(fs.mount).toHaveBeenCalledWith("additional1", obj, {op3: 'yes', op4: 'no'});
     expect(fs.mount).toHaveBeenCalledWith("additional2", obj, {op1: 'yes', op2: 'no'});
     expect(fs.mount.calls.mostRecent().args[0]).toEqual("additional2");
