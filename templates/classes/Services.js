@@ -111,8 +111,8 @@ export default class Services extends Morph {
 
   cloneButtonClick() {
     var gitURL = window.prompt('Please enter a GitHub link to clone:');
-    if (userInput === null) return;
-    this.post('/clone', { url: gitURL }, function(res) {
+    if (gitURL === null) return;
+    this.post('clone', { url: gitURL }, function(res) {
       console.log(res);
     });
   }
