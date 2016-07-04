@@ -58,6 +58,12 @@
 	var _asyncToGenerator = _interopDefault(__webpack_require__(2));
 	var path = __webpack_require__(71);
 	
+	if (false) {
+	  const babel = require('babel-core').default;
+	
+	  const BABEL_REQ_PLUGINS = [require("babel-plugin-syntax-async-functions"), require("babel-plugin-syntax-async-generators"), require("babel-plugin-syntax-do-expressions"), require("babel-plugin-syntax-exponentiation-operator"), require("babel-plugin-syntax-export-extensions"), require("babel-plugin-syntax-function-bind"), require("babel-plugin-syntax-object-rest-spread"), require("babel-plugin-syntax-trailing-function-commas"), require("babel-plugin-syntax-jsx"), require("babel-plugin-transform-async-to-generator"), require("babel-plugin-transform-async-to-module-method"), require("babel-plugin-transform-do-expressions"), require("babel-plugin-transform-es2015-destructuring"), require("babel-plugin-transform-es2015-modules-systemjs"), require("babel-plugin-transform-exponentiation-operator"), require("babel-plugin-transform-export-extensions"), require("babel-plugin-transform-function-bind"), require("babel-plugin-transform-object-rest-spread"), require("babel-plugin-transform-jsx").default];
+	}
+	
 	let Loader = class Loader {
 	  constructor(options = {}) {
 	    this._registry = new Map();
@@ -199,7 +205,23 @@
 	    var _this2 = this;
 	
 	    return _asyncToGenerator(function* () {
-	      return blob;
+	      if (false) {
+	        let sourceURL = uri.toString();
+	
+	        let source = babel.transform(blob, {
+	          plugins: [..._this2.plugins, ...BABEL_REQ_PLUGINS],
+	          sourceMaps: 'inline',
+	          filename: filename,
+	          sourceFileName: sourceURL,
+	          compact: 'auto'
+	        });
+	
+	        source.code += '\n//# sourceURL=' + sourceURL + '!transpiled';
+	
+	        return source;
+	      } else {
+	        return blob;
+	      }
 	    })();
 	  }
 	
@@ -263,7 +285,7 @@
 	const shift = _Array$prototype.shift;
 	
 	
-	_asyncToGenerator(function* () {
+	var client = _asyncToGenerator(function* () {
 	  var _context;
 	
 	  const script = (_context = (_context = document.querySelectorAll('script'), filter).call(_context, function (el) {
@@ -276,7 +298,11 @@
 	
 	  let src = new URL(script.src);
 	
-	  let base = new URL('../', src);
+	  if (false) {
+	    let base = new URL(KERNEL_CONFIG_BASE, src);
+	  } else {
+	    let base = new URL('../', src);
+	  }
 	
 	  if (!('serviceWorker' in navigator)) {
 	    console.error('[KERNEL] ServiceWorker API not available');
@@ -327,7 +353,7 @@
 	    }
 	  });
 	
-	  let init = 'livelyKernelInit' in script.dataset ? script.dataset.livelyKernelInit : false;
+	  let init = 'livelyKernelInit' in script.dataset ? script.dataset.livelyKernelInit : KERNEL_CONFIG_INIT ? path.resolve(KERNEL_CONFIG_INIT) : false;
 	
 	  if (init) {
 	    return loader.import(init);
@@ -343,11 +369,17 @@
 	    let scope = new URL(self.registration.scope);
 	    let base = scope;
 	
+	    if (false) {
+	      let base = new URL(path.join(scope.pathname, path.resolve(KERNEL_CONFIG_BASE)), scope);
+	    }
+	
 	    loader = new Loader({
 	      base: base
 	    });
 	
-	    loader.set("/home/jan/workspace/lively4/lively4-serviceworker/src/swx.js", __webpack_require__(73));
+	    if (true) {
+	      loader.set(("/home/jan/workspace/lively4/lively4-serviceworker/src/swx.js"), __webpack_require__(73));
+	    }
 	  }
 	
 	  return loader;
@@ -355,7 +387,7 @@
 	
 	const init = (() => {
 	  var _ref = _asyncToGenerator(function* (fn) {
-	    return system().import(path.resolve("/home/jan/workspace/lively4/lively4-serviceworker/src/swx.js")).then(fn);
+	    return system().import(path.resolve(("/home/jan/workspace/lively4/lively4-serviceworker/src/swx.js"))).then(fn);
 	  });
 	
 	  return function init(_x) {
@@ -385,11 +417,13 @@
 	  });
 	}
 	
-	(function () {
-	  if (typeof self !== 'undefined') {
-	    return worker.call(self);
-	  }
-	})();
+	if (typeof window !== 'undefined') {
+	
+	  if (false) client.call(window);
+	} else if (typeof self !== 'undefined') {
+	
+	  if (true) worker.call(self);
+	}
 
 /***/ },
 /* 2 */
