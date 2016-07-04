@@ -1,11 +1,27 @@
-'use strict'
+'use strict';
 
-export function loadIndexJson(l4idxFile, options) {
-  // TODO
+
+export function loadIndexJson(filename, options) {
+  let path = `https://lively4${options.path}/${filename}`;
+  return fetch(path).then(response => {
+    if (!response.ok) {
+      throw new Error(response);
+    } else {
+      return response.json();
+    }
+  });
 }
 
 export function saveIndexJson(jsonIndex, filename, options) {
-  // TODO
+  let path = `https://lively4${options.path}/${filename}`;
+  let serialized = JSON.stringify(jsonIndex);
+  let headers = new Headers();
+  headers.append("Content-Type", "application/json");
+  return fetch(path, {
+    method: "PUT",
+    headers: headers,
+    body: serialized
+  });
 }
 
 async function getFilepaths(options) {
