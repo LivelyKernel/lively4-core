@@ -9,10 +9,12 @@
 //
 import * as path from 'path'
 
-if (KERNEL_CONFIG.LOADER_TRANSPILE) {
-  const babel = require('babel-core').default
+let babel = false, BABEL_PLUGINS = false
 
-  const BABEL_REQ_PLUGINS = [
+if (KERNEL_CONFIG.LOADER_TRANSPILE) {
+  babel = require('babel-core')
+
+  BABEL_PLUGINS = [
     require("babel-plugin-syntax-async-functions"),
     require("babel-plugin-syntax-async-generators"),
     require("babel-plugin-syntax-do-expressions"),
@@ -151,7 +153,7 @@ export class Loader {
       // locking down the updates on the module to avoid infinite loop
       mod.lock = true
 
-      mod.dependants.forEach(function(moduleName) {
+      mod.dependants.forEach((moduleName) => {
         let module = this._registry.get(moduleName)
 
         if (module && !module.lock) {
@@ -199,7 +201,7 @@ export class Loader {
       let sourceURL = uri.toString()
 
       let source = babel.transform(blob, {
-        plugins: [...this.plugins, ...BABEL_REQ_PLUGINS],
+        plugins: [...this.plugins, ...BABEL_PLUGINS],
         sourceMaps: 'inline',
         filename: filename,
         sourceFileName: sourceURL,
@@ -211,7 +213,7 @@ export class Loader {
       return source
 
     } else {
-      return blob
+      return {code: blob}
     }
   }
 

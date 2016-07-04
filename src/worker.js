@@ -10,7 +10,9 @@ const system = () => {
     let base = scope
 
     if (KERNEL_CONFIG.WORKER_BASE) {
-      let base = new URL(path.join(scope.pathname, path.resolve(KERNEL_CONFIG.WORKER_BASE)), scope)
+      // TODO: Check if WORKER_BASE is relative or full URL
+      base = new URL(KERNEL_CONFIG.WORKER_BASE)
+      // base = new URL(path.join(scope.pathname, path.resolve(KERNEL_CONFIG.WORKER_BASE)), scope)
     }
 
     loader = new Loader({
