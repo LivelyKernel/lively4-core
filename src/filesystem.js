@@ -114,7 +114,7 @@ export class Filesystem {
 
     try {
       for(let mount of mounts) {
-        let fs = await System.import('./fs/' + mount.name + '.js')
+        let fs = await System.import('/fs/' + mount.name + '.js')
         this.mount(mount.path, fs.default, mount.options)
       }
     } catch(e) {
