@@ -108,7 +108,7 @@ export class Filesystem {
   async loadMounts(){
     let mounts = await focalStorage.getItem("lively4mounts")
 
-    if (typeof mounts === 'undefined') {
+    if (!mounts) {
       return
     }
 
