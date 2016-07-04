@@ -2,7 +2,7 @@
   "name": "lively4-serviceworker",
   "version": "0.1.0",
   "description": "Lively4's service worker with caching and unified cloud storage access",
-  "main": "swx-loader.js",
+  "main": "src/swx.js",
   "directories": {
     "test": "test"
   },
