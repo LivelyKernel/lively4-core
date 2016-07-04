@@ -9,21 +9,38 @@ export function saveIndexJson(jsonIndex, filename, options) {
 }
 
 async function getFilepaths(options) {
-  let query = ".js";
-  let fileLimit = 10000;
-  let req = `https://api.dropboxapi.com/1/search/auto${options.options.subfolder}?query=${query}&file_limit=${fileLimit}`;
+  let extensions = [".js", ".html", ".md"];
+  let proms = [];
 
-  let responseJson = await fetch(req, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${options.options.token}`,
-      "Content-Type": "application/json"
-    }
-  }).then(resp => { return resp.json(); });
+  function isIndexable(filepath) {
+    return extensions.indexOf(filepath.slice(filepath.lastIndexOf("."))) >= 0;
+  }
 
-  let filepaths = responseJson.filter(file => {
+  extensions.forEach(query => {
+    let fileLimit = 10000;
+    let req = `https://api.dropboxapi.com/1/search/auto${options.options.subfolder}?query=${query}&file_limit=${fileLimit}`;
+
+    proms.push(
+      fetch(req, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${options.options.token}`,
+          "Content-Type": "application/json"
+        }
+      }).then(resp => { return resp.json(); })
+    );
+  });
+
+  let filepaths = await Promise.all(proms).then(responses => {
+    return responses.reduce((a, b) => {
+      return a.concat(b);
+    }, []);
+  });
+
+  filepaths = filepaths.filter(file => {
     // ensure that this is really a js-file
-    return file.path.slice(-3) === ".js";
+    return isIndexable(file.path);
+    // return file.path.slice(-3) === ".js";
   }).map(file => {
     // remove the subfolder from the file path
     return file.path.slice(options.options.subfolder.length);
