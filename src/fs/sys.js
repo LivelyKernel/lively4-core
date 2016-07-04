@@ -47,7 +47,7 @@ export default class Filesystem extends Base {
     if(!name)
       throw new Error('<name> is missing')
 
-    let fs = await System.import('src/swx/fs/' + name + '.js')
+    let fs = await System.import('./' + name + '.js')
 
     swx.instance().filesystem.mount(path, fs.default, opts)
 
