@@ -106,7 +106,7 @@
 	};
 	
 	function normalize(path) {
-	  var isAbsolute = path.indexOf('/') === 0,
+	  var isAbsolute = isAbsolute(path),
 	      trailingSlash = substr(path, -1) === '/';
 	
 	  path = normalizeArray(filter$1(path.split('/'), function (p) {
