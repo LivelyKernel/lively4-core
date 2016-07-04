@@ -4,6 +4,7 @@
  */
 
 import { Base } from './base.js'
+import * as cache from '../cache.js'
 
 export default class Filesystem extends Base {
   constructor(path, options) {
@@ -58,7 +59,7 @@ export default class Filesystem extends Base {
       cache.purge(f_request);
     }
 
-    if (response === undefined) {
+    if (typeof response === 'undefined') {
       response = await self.fetch(f_request)
       cache.put(f_request, response)
       response = response.clone()

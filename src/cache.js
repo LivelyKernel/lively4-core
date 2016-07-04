@@ -17,16 +17,26 @@ export function purge(request) {
 }
 
 export async function match(request, timeout=-1) {
-  if (timeout != -1) {
-    let age = await getAgeOf(request)
-    console.log(age)
-    let age_v = await age.text()
-    if (age && Date.now() - parseInt(age_v) >= timeout) {
-      purge(request)
-      return Promise.resolve(undefined)
+  try {
+    if (timeout != -1) {
+      let age = await getAgeOf(request)
+      let age_v = await age.text()
+
+      if (age && Date.now() - parseInt(age_v) >= timeout) {
+        purge(request)
+        return Promise.resolve(undefined)
+      }
     }
+
+    let cache = await open('lively4')
+    let match = await cache.match(request)
+
+    return match
+  } catch(e) {
+    console.warn('Error happened while matching cache:', e)
+
+    return Promise.resolve(undefined)
   }
-  return open('lively4').then((cache) => cache.match(request))
 }
 
 export function getAgeOf(request) {
