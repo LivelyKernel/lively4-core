@@ -4,9 +4,6 @@ const isLocalHost = document.location.hostname.indexOf('localhost') > -1;
 const localBaseURL = 'http://localhost:9007/';
 const remoteBaseURL = 'https://lively-kernel.org/lively4services/';
 var servicesURL = isLocalHost ? localBaseURL : remoteBaseURL;
-const localDebugURL = 'http://localhost:9008/';
-const remoteDebugURL = 'https://lively-kernel.org/lively4servicesDebug/';
-var debuggerURL = isLocalHost ? localDebugURL : remoteDebugURL;
 
 export default class Services extends Morph {
 
@@ -123,13 +120,8 @@ export default class Services extends Morph {
   settingsButtonClick() {
     var userInput;
     userInput = window.prompt('Please enter service endpoint:', servicesURL);
-    if (userInput !== null) {
-      servicesURL = userInput;
-    }
-    userInput = window.prompt('Please enter debugger endpoint:', debuggerURL);
-    if (userInput !== null) {
-      debuggerURL = userInput;
-    }
+    if (userInput === null) return;
+    servicesURL = userInput;
   }
 
   startButtonClick(entryPoint) {
@@ -162,7 +154,7 @@ export default class Services extends Morph {
         return;
       }
       var debuggerPort = this.services[this.pid].debugPort;
-      component.setURL(debuggerURL + '?port=' + debuggerPort);
+      component.setURL(servicesURL + 'debug/?port=' + debuggerPort);
     });
   }
 
