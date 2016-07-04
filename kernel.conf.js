@@ -1,7 +1,8 @@
 module.exports = {
   // Base path prepended to initial files and kernel loader
   // Can be an absolute URL or an relative path to kernel location at runtime.
-  BASE: "./lively",
+  CLIENT_BASE: "./lively",
+  WORKER_BASE: "./lively",
 
   // Enable or disable transpiling for loader module
   // Disabling transpiling requires a static build or precompiled
@@ -9,13 +10,13 @@ module.exports = {
   LOADER_TRANSPILE: true,
 
   // Enable client kernel module
-  CLIENT: true,
+  CLIENT_ENABLED: true,
 
   // Initial file to load for client module
   CLIENT_INIT: "/init.js",
 
   // Enable service worker kernel module
-  WORKER: true,
+  WORKER_ENABLED: true,
 
   // Initial file to load for service worker
   WORKER_INIT: "/init-sw.js",

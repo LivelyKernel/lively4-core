@@ -26,8 +26,8 @@ export default async function() {
   let src = new URL(script.src)
 
   let base = do {
-    if (%KERNEL_CONFIG_BASE%) {
-      new URL(%KERNEL_CONFIG_BASE%, src)
+    if (KERNEL_CONFIG.CLIENT_BASE) {
+      new URL(KERNEL_CONFIG.CLIENT_BASE, src)
     } else {
       new URL('../', src)
     }
@@ -102,8 +102,8 @@ export default async function() {
     if ('livelyKernelInit' in script.dataset) {
       script.dataset.livelyKernelInit
     } else {
-      if (%KERNEL_CONFIG_CLIENT_INIT%) {
-        path.resolve(%KERNEL_CONFIG_CLIENT_INIT%)
+      if (KERNEL_CONFIG.CLIENT_INIT) {
+        path.resolve(KERNEL_CONFIG.CLIENT_INIT)
       } else {
         false
       }

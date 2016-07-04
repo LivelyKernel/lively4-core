@@ -9,16 +9,16 @@ const system = () => {
     let scope = new URL(self.registration.scope)
     let base = scope
 
-    if (%KERNEL_CONFIG_BASE%) {
-      let base = new URL(path.join(scope.pathname, path.resolve(%KERNEL_CONFIG_BASE%)), scope)
+    if (KERNEL_CONFIG.WORKER_BASE) {
+      let base = new URL(path.join(scope.pathname, path.resolve(KERNEL_CONFIG.WORKER_BASE)), scope)
     }
 
     loader = new Loader({
       base: base
     })
 
-    if (%KERNEL_CONFIG_WORKER_EMBED%) {
-      loader.set(%KERNEL_CONFIG_WORKER_INIT%, require(%KERNEL_CONFIG_WORKER_INIT%))
+    if (KERNEL_CONFIG.WORKER_EMBED) {
+      loader.set(KERNEL_CONFIG.WORKER_INIT, require(KERNEL_CONFIG.WORKER_INIT))
     }
   }
 
@@ -26,20 +26,32 @@ const system = () => {
 }
 
 const init = async (fn) => {
-  return system().import(path.resolve(%KERNEL_CONFIG_WORKER_INIT%)).then(fn)
+  return system().import(path.resolve(KERNEL_CONFIG.WORKER_INIT)).then(fn)
 }
 
 export default function() {
   this.addEventListener('install', (event) => {
-    event.waitUntil(init(worker => worker.install(event)))
+    event.waitUntil(
+      init()
+        .then(worker => worker.install(event))
+        .catch(error => { console.error(error); throw error })
+    )
   })
 
   this.addEventListener('activate', (event) => {
-    event.waitUntil(init(worker => worker.activate(event)))
+    event.waitUntil(
+      init()
+        .then(worker => worker.activate(event))
+        .catch(error => { console.error(error); throw error })
+    )
   })
 
   this.addEventListener('fetch', (event) => {
-    event.waitUntil(init(worker => worker.fetch(event)))
+    event.waitUntil(
+      init()
+        .then(worker => worker.fetch(event))
+        .catch(error => { console.error(error); throw error })
+    )
   })
 
   this.addEventListener('message', (event) => {
@@ -47,6 +59,10 @@ export default function() {
       loader = undefined
     }
 
-    event.waitUntil(init(worker => worker.message(event)))
+    event.waitUntil(
+      init()
+        .then(worker => worker.message(event))
+        .catch(error => { console.error(error); throw error })
+    )
   })
 }

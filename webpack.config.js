@@ -4,11 +4,12 @@ const path = require('path'),
   webpack = require('webpack')
 
 let config = {
-  BASE: false,
+  CLIENT_BASE: false,
+  WORKER_BASE: false,
   LOADER_TRANSPILE: false,
-  CLIENT: false,
+  CLIENT_ENABLED: false,
   CLIENT_INIT: false,
-  WORKER: false,
+  WORKER_ENABLED: false,
   WORKER_INIT: false,
   WORKER_EMBED: false,
 }
@@ -19,12 +20,12 @@ if (process.env.KERNEL_CONFIG) {
   Object.assign(config, require('./kernel.conf.js'))
 }
 
-const values = Object.keys(config).reduce((prev, cur) => {
-  prev['KERNEL_CONFIG_' + cur] = JSON.stringify(config[cur])
+const defines = Object.keys(config).reduce((prev, cur) => {
+  prev['KERNEL_CONFIG.' + cur] = config[cur]
   return prev
 }, {})
 
-console.log(values)
+console.log(defines)
 
 module.exports = {
   target: 'web',
@@ -39,13 +40,12 @@ module.exports = {
   resolve: {
     alias: {
       'babel-runtime': path.resolve(__dirname, 'node_modules/babel-runtime')
-      // 'kernel_conf': kernelConfFile
     }
   },
-  devtool: 'source-map',
+  devtool: 'inline-source-map',
   module: {
     loaders: [
-      { test: /\.jsx?$/, exclude: /(node_modules)/, loader: 'rollup' },
+      { test: /\.jsx?$/, exclude: /(node_modules)/, loader: 'babel' },
       { test: /\.json$/, loader: 'json' }
     ]
   },
@@ -54,43 +54,34 @@ module.exports = {
     module: 'empty',
     net: 'empty'
   },
-  plugins: [
-    new webpack.DefinePlugin(values)
-  ],
-  rollup: [
-    require('rollup-plugin-replace')({
-      delimiters: ['%', '%'],
-      values: values
-    }),
-    require('rollup-plugin-babel')({
-      comments: false,
-      babelrc: false,
-      runtimeHelpers: true,
-      plugins: [
-        require("babel-plugin-syntax-async-functions"),
-        require("babel-plugin-syntax-async-generators"),
-        require("babel-plugin-syntax-class-properties"),
-        require("babel-plugin-syntax-decorators"),
-        require("babel-plugin-syntax-do-expressions"),
-        require("babel-plugin-syntax-exponentiation-operator"),
-        require("babel-plugin-syntax-export-extensions"),
-        require("babel-plugin-syntax-function-bind"),
-        require("babel-plugin-syntax-object-rest-spread"),
-        require("babel-plugin-syntax-trailing-function-commas"),
-        require("babel-plugin-transform-async-to-generator"),
-        require("babel-plugin-transform-async-to-module-method"),
-        require("babel-plugin-transform-class-properties"),
-        require("babel-plugin-transform-decorators-legacy").default,
-        require("babel-plugin-transform-do-expressions"),
-        require("babel-plugin-transform-es2015-destructuring"),
-        require("babel-plugin-transform-exponentiation-operator"),
-        require("babel-plugin-transform-export-extensions"),
-        require("babel-plugin-transform-function-bind"),
-        require("babel-plugin-transform-object-rest-spread"),
-        [require("babel-plugin-transform-runtime"), {"polyfill": false, "regenerator": true}],
-        require("babel-plugin-transform-dead-code-elimination").default
-      ]
-    }),
-    require('rollup-plugin-node-builtins')()
-  ]
+  babel: {
+    comments: false,
+    babelrc: false,
+    plugins: [
+      ["transform-define", defines],
+      "syntax-async-functions",
+      "syntax-async-generators",
+      "syntax-class-properties",
+      "syntax-decorators",
+      "syntax-do-expressions",
+      "syntax-exponentiation-operator",
+      "syntax-export-extensions",
+      "syntax-function-bind",
+      "syntax-object-rest-spread",
+      "syntax-trailing-function-commas",
+      "transform-async-to-generator",
+      "transform-async-to-module-method",
+      "transform-class-properties",
+      "transform-decorators-legacy",
+      "transform-do-expressions",
+      "transform-es2015-destructuring",
+      "transform-es2015-modules-commonjs",
+      "transform-exponentiation-operator",
+      "transform-export-extensions",
+      "transform-function-bind",
+      "transform-object-rest-spread",
+      // ["transform-runtime", {"polyfill": false, "regenerator": true}],
+      "transform-dead-code-elimination",
+    ]
+  },
 };
