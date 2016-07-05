@@ -1,7 +1,7 @@
 /*global describe, it*/
 
 import { expect, chai } from "mocha-es6";
-import { Rectangle, Line, Point, pt, rect } from "../geometry-2d.js";
+import { Rectangle, Line, Point, pt, rect, Transform } from "../geometry-2d.js";
 
 chai.Assertion.overwriteMethod('equal', function (_super) {
   return function equalsGeometry (other) {
@@ -168,6 +168,15 @@ describe("lines", () => {
     line = r.center().lineTo(r.bottomCenter());
     result = r.lineIntersection(line);
     expect([pt(10, 20)]).to.equal(result);
+  });
+
+  it("point transform", function() {
+      var globalPoint = pt(20,10),
+          globalTransform = new Transform(pt(0,0), 0, pt(1,1)),
+          localTransform = new Transform(pt(5,10), 0, pt(1,1)),
+          globalizedInvertedLocal = localTransform.preConcatenate(globalTransform).inverse(),
+          matrix = globalTransform.preConcatenate(globalizedInvertedLocal);
+      expect(pt(15, 0)).deep.equals(globalPoint.matrixTransform(matrix))
   });
 
 });

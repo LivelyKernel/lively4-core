@@ -101,24 +101,18 @@ export class Point {
   }
 
   equals(p) {
-    return this.eqPt(p);
+    return this.x == p.x && this.y == p.y;
   }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // instance creation
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  withX(x) {
-    return pt(x, this.y);
-  }
+  withX(x) { return pt(x, this.y); }
 
-  withY(y) {
-    return pt(this.x, y);
-  }
+  withY(y) { return pt(this.x, y); }
 
-  copy() {
-    return new Point(this.x, this.y);
-  }
+  copy() { return new Point(this.x, this.y); }
 
   minPt(p, acc) {
     if (!acc) acc = new Point(0, 0);
@@ -207,47 +201,26 @@ export class Point {
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // converting
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  asRectangle() {
-    return new Rectangle(this.x, this.y, 0, 0);
-  }
+  asRectangle() { return new Rectangle(this.x, this.y, 0, 0); }
 
-  extent(ext) {
-    return new Rectangle(this.x, this.y, ext.x, ext.y);
-  }
+  extent(ext) { return new Rectangle(this.x, this.y, ext.x, ext.y); }
 
-  extentAsRectangle() {
-    return new Rectangle(0, 0, this.x, this.y)
-  }
+  extentAsRectangle() { return new Rectangle(0, 0, this.x, this.y) }
 
-  lineTo(end) {
-    return new Line(this, end);
-  }
+  lineTo(end) { return new Line(this, end); }
 
-  toTuple() {
-    return [this.x, this.y];
-  }
+  toTuple() { return [this.x, this.y]; }
 
-  toLiteral() {
-    return {x: this.x, y: this.y};
-  }
+  toLiteral() { return {x: this.x, y: this.y}; }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // printing
+  // debugging
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   toString() {
     return string.format("pt(%1.f,%1.f)", this.x, this.y);
   }
 
-  toShortString() {
-    return string.format("pt(%1.f,%1.f)", this.x, this.y);
-  }
-
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // debugging
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  inspect() {
-    return JSON.serialize(this);
-  }
+  inspect() { return JSON.stringify(this); }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // polar coordinates
@@ -485,9 +458,7 @@ export class Rectangle {
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // debugging
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  inspect() {
-    return JSON.serialize(this);
-  }
+  inspect() { return JSON.stringify(this); }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // accessing
