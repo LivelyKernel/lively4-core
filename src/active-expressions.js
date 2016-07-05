@@ -18,6 +18,15 @@ function setDefaultOptions(options) {
   return options;
 }
 
+var htmlAttributes = [
+  // Node:
+  'innerText', 'outerText', 'textContent',
+  // Element:
+  'accessKey', 'attributes', 'childElementCount', 'children', 'classList', 'className', 'clientHeight', 'clientLeft', 'clientTop', 'clientWidth', 'currentStyle', 'firstElementChild', 'id', 'innerHTML', 'lastElementChild', 'localName', 'name', 'namespaceURI', 'nextElementSibling', 'prefix', 'previousElementSibling', 'runtimeStyle', 'scrollHeight', 'scrollLeft', 'scrollLeftMax', 'scrollTop', 'scrollTopMax', 'scrollWidth', 'tabStop', 'tagName',
+  // HtmlElement:
+  'contentEditable', 'dataset', 'dir', 'isContentEditable', 'lang', 'offsetHeight', 'offsetLeft', 'offsetParent', 'offsetTop', 'offsetWidth', 'outerText', 'style', 'tabIndex', 'title'
+];
+
 export class AExpr {
   constructor(condition, options) {
     options = setDefaultOptions(options || {});
@@ -249,8 +258,12 @@ class ActiveExpr {
           object.addEventListener('change', (e) => this.domEventCallback(e));
         }
       }
-      // HTMLElements get special treatment
-      return;
+
+      // stop recursion of it's a standard HTML attribute
+      if (htmlAttributes.indexOf(variable) !== -1) {
+        // HTMLElements get special treatment
+        return;
+      }
     }
     
     if (variable.includes('.')) {

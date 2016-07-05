@@ -156,10 +156,15 @@ export class ActiveDOMView extends ActiveView {
   
   onEnter(callback) {
     this.enterCallbacks.add(callback);
+
+    // invoke for all current elements
+    this.elements.forEach(e => callback(e));
+    return this;
   }
   
   onExit(callback) {
     this.exitCallbacks.add(callback);
+    return this;
   }
 }
 
