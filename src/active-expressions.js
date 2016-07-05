@@ -24,7 +24,9 @@ var htmlAttributes = [
   // Element:
   'accessKey', 'attributes', 'childElementCount', 'children', 'classList', 'className', 'clientHeight', 'clientLeft', 'clientTop', 'clientWidth', 'currentStyle', 'firstElementChild', 'id', 'innerHTML', 'lastElementChild', 'localName', 'name', 'namespaceURI', 'nextElementSibling', 'prefix', 'previousElementSibling', 'runtimeStyle', 'scrollHeight', 'scrollLeft', 'scrollLeftMax', 'scrollTop', 'scrollTopMax', 'scrollWidth', 'tabStop', 'tagName',
   // HtmlElement:
-  'contentEditable', 'dataset', 'dir', 'isContentEditable', 'lang', 'offsetHeight', 'offsetLeft', 'offsetParent', 'offsetTop', 'offsetWidth', 'outerText', 'style', 'tabIndex', 'title'
+  'contentEditable', 'dataset', 'dir', 'isContentEditable', 'lang', 'offsetHeight', 'offsetLeft', 'offsetParent', 'offsetTop', 'offsetWidth', 'outerText', 'style', 'tabIndex', 'title',
+  // InputElement
+  'value'
 ];
 
 export class AExpr {
@@ -123,6 +125,7 @@ class ActiveExpr {
   }
   
   detectObservables() {
+    var self = this;
     var state = {
       localVariables: [],
       calledFunctions: [],
@@ -165,7 +168,7 @@ class ActiveExpr {
         
         c(node.callee, tmpState);
         //TODO: ignore inline functions
-        console.log(node, tmpState);
+        self.logger.log(node, tmpState);
         state.calledFunctions.push(tmpState.varName);
         
         for(let argument of node.arguments) {
@@ -215,17 +218,10 @@ class ActiveExpr {
   }
   
   proxifyFunction(func) {
-    console.log(func);
-    let functionObject = eval(func);
-    
-    console.log(__lvVarRecorder);
-    console.log(func, functionObject);
     return;
+    //NOT IMPLEMENTED
     
-    let expr = AExpr(
-      functionObject,
-      this.options
-    ).applyOn();
+    let functionObject = eval(func);
   }
   
   proxifyVariable(object, variable, contextVariableName) {
@@ -233,6 +229,7 @@ class ActiveExpr {
 
     if (object instanceof HTMLElement) {
       if (this.observers[contextVariableName] === undefined) {
+        this.logger.log('Proxifying with MutationObserver');
         this.observers[contextVariableName] = {
           attributes: new Set(),
           mutationObserver: null,
@@ -259,9 +256,15 @@ class ActiveExpr {
         }
       }
 
+      var nextAttribute = variable;
+      if (nextAttribute.includes('.')) {
+        nextAttribute = nextAttribute.split('.')[0];
+      }
+
       // stop recursion of it's a standard HTML attribute
-      if (htmlAttributes.indexOf(variable) !== -1) {
+      if (object.hasAttribute(nextAttribute) ||  htmlAttributes.indexOf(variable) !== -1) {
         // HTMLElements get special treatment
+        this.logger.log('Returning, because MutationObserver is enough');
         return;
       }
     }
@@ -272,7 +275,7 @@ class ActiveExpr {
       return;
     }
     
-    this.logger.log('Patching variable:', variable);
+    this.logger.log('Patching variable:', variable, ' on ', object);
     
     ['__lively_expr_getters',
      '__lively_expr_setters',
