@@ -39,6 +39,9 @@ export default class RdfaDb extends Morph {
   
   generateTableRows(dataArray) {
     dataArray.forEach((triple) => {
+      if (!triple.isRoot) {
+        return;
+      }
       this.table.append($('<tr>')
         .append($('<td>')
           .append(triple.getReadableUrl()))

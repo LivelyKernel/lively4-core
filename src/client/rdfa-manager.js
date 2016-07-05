@@ -6,14 +6,12 @@ class RdfaTriple {
     this.subject = subject;
     this.property = property;
     this.values = values;
+    this.isRoot = true;
   }
   
-  subject() {
-    return this.subject;
-  }
-  
-  property() {
-    return this.property;
+  setParent(parentTriple) {
+    this.parent = parentTriple;
+    this.isRoot = false;
   }
   
   toString() {
@@ -24,22 +22,16 @@ class RdfaTriple {
         string += ', ';
       }
       
-      if (value.constructor.name == 'RdfaTriple') {
-        string += value.toString();
+      if (Array.isArray(value)) {
+        value.forEach((childValue) => {
+          string += value.toString();
+        })
       } else {
         string += value.toString();
       }
     })
     
     return string;
-  }
-  
-  values() {
-    return this.values;
-  }
-  
-  value() {
-    return this.values[0];
   }
   
   getReadableUrl() {
@@ -125,13 +117,22 @@ export default class RdfaManager {
           let triple = new RdfaTriple(val.subject, val.property, val.values)
           triples.push(triple);
           if (this.isUuid(triple.subject)) {
-            uuidMap[triple.subject] = triple;
+            if (!uuidMap[triple.subject]) {
+              uuidMap[triple.subject] = [];
+            }
+            uuidMap[triple.subject].push(triple);
           }
         }
         
         triples.forEach((triple) => {
           for (let i = 0; i < triple.values.length; i++) {
-            triple.values[i] = uuidMap[triple.values[i]] || triple.values[i];
+            let childTriples = uuidMap[triple.values[i]];
+            if (childTriples) {
+              triple.values[i] = childTriples;
+              childTriples.forEach((childTriple) => {
+                childTriple.setParent(triple);
+              });
+            }
           }
         });
         
