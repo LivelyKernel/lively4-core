@@ -30,6 +30,12 @@ export class Logger {
     console.warn.apply(null, args);
   }
   
+  trap() {
+    if (this.options.debug === true) {
+      debugger;
+    }
+  }
+  
   getCaller() {
       let re = /@|at (\w+).(\w+) \(/g;
       re.exec(new Error().stack);

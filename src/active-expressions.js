@@ -1,5 +1,5 @@
 
-import { ActiveDOMView } from './active-view.js';
+import { ActiveView, ActiveDOMView } from './active-view.js';
 import { Logger } from './logger.js';
 
 function setDefaultOptions(options) {
@@ -32,8 +32,46 @@ var htmlAttributes = [
 export class AExpr {
   constructor(condition, options) {
     options = setDefaultOptions(options || {});
+    
+    this.applyArguments = null;
     this.condition = condition;
     this.options = options;
+  }
+  
+  applyOnAll() {
+    this.applyArguments = Array.prototype.slice.call(arguments);
+    
+    return this;
+  }
+  
+  applyOnCollection() {
+    var collection = this.applyArguments.shift();
+    
+    if(collection instanceof ActiveView) {
+      this.applyOnActiveView(collection);
+    } else if(collection instanceof NodeList) {
+      this.applyOnIteratable(collection);
+    } else {
+      //normal collection
+      this.applyOnIteratable(collection);
+    }
+  }
+  
+  applyOnActiveView(activeView) {
+    activeView.onEnter(node => {
+      new ActiveExpr(this.condition, [node, ...this.applyArguments], this.options)
+       .onChange(this.callback);
+    })
+    .onExit(node => {
+      //destroy AExpr
+    });
+  }
+  
+  applyOnIteratable(collection) {
+    collection.forEach(element => {
+      new ActiveExpr(this.condition, [element, ...this.applyArguments], this.options)
+       .onChange(this.callback);
+    });
   }
 
   applyOn(/* arguments */) {
@@ -52,6 +90,14 @@ export class AExpr {
     var context = Array.prototype.slice.call(arguments);
     return new ActiveExpr(this.condition, context, this.options);
   }
+  
+  onChange(callback) {
+    this.callback = callback;
+    
+    if(this.applyArguments) {
+      this.applyOnCollection();
+    }
+  }
 }
 
 class ActiveExpr {
@@ -60,9 +106,9 @@ class ActiveExpr {
     this.condition = condition;
     
     this.context = context;
-    this.callback = null; // callback.bind(this);
+    this.callback = null;
 
-    this.lastValue = undefined;
+    this.lastValue = ActiveExpr.NotTested;
     this.observers = {};
     
     this.logger = new Logger(options);
@@ -86,10 +132,12 @@ class ActiveExpr {
 
     this.logger.log('Test returned:', result);
 
-    if (this.lastValue === undefined) {
+    if (this.lastValue === ActiveExpr.NotTested) {
+      this.logger.log('first test!');
       this.lastValue = result;
     } else {
       if (this.lastValue !== result || this.options.alwaysTrigger) {
+        this.logger.log('Firing callback as result differs');
         if (this.callback) {
           this.callback.apply(this, this.context);
           // re-evaluate
@@ -141,6 +189,7 @@ class ActiveExpr {
       },
       'MemberExpression': function MemberExpression(node, state, c) {
         var tmpState = jQuery.extend(true, {}, state);
+        tmpState.funcName = null;
   
         c(node.object, tmpState);
         node.object.name = tmpState.varName;
@@ -149,6 +198,8 @@ class ActiveExpr {
         node.property.name = tmpState.varName;
         
         state.varName = node.object.name + '.' + node.property.name;
+        state.objName = node.object.name;
+        state.funcName = tmpState.funcName ? tmpState.funcName : node.property.name;
         state.variablesToObserve.push(state.varName);
       },
       'ThisExpression': function ThisExpression(node, state, c) {
@@ -169,6 +220,11 @@ class ActiveExpr {
         c(node.callee, tmpState);
         //TODO: ignore inline functions
         self.logger.log(node, tmpState);
+        
+        if(tmpState.funcName == 'getAttribute' || tmpState.funcName == 'hasAttribute') {
+          self.logger.log('Attribute access found:', node.arguments[0].value);
+          state.variablesToObserve.push(tmpState.objName + '.$attributes.' + node.arguments[0].value);
+        }
         state.calledFunctions.push(tmpState.varName);
         
         for(let argument of node.arguments) {
@@ -182,15 +238,21 @@ class ActiveExpr {
     return state;
   }
   
-  proxify() {
-    this.logger.log('Variables to observe:', this.observables.variablesToObserve);
-    
+  getCalledArguments() {
     var contextArgs = {};
     var i = 0;
     this._ast.params.forEach(function(p) {
       contextArgs[p.name] = i;
       i++;
     });
+    
+    return contextArgs;
+  }
+  
+  proxify() {
+    this.logger.log('Variables to observe:', this.observables.variablesToObserve);
+    
+    var contextArgs = this.getCalledArguments();
     
     for(let observable of this.observables.variablesToObserve) {
       let observableParts = observable.split('.');
@@ -217,6 +279,43 @@ class ActiveExpr {
     }
   }
   
+  unProxify() {
+    var contextArgs = this.getCalledArguments();
+  
+    for(let observable of this.observables.variablesToObserve) {
+      let observableParts = observable.split('.');
+      let contextVariableName = observableParts.shift();
+      let objectPropertyName = observableParts.join(".");
+  
+      let object = null;
+      
+      if(contextVariableName != observable) {
+        var idx = contextArgs[contextVariableName];
+        
+        if (idx !== undefined) {
+          object = this.context[idx];
+      
+          this.unProxifyVariable(object, objectPropertyName, contextVariableName);
+        }
+      }
+    }
+  }
+  
+  unProxifyVariable(object, variable, contextVariableName) {
+    if (object instanceof HTMLElement) {
+      //TODO stop mutation observer
+      
+      //return
+    }
+    
+    //TODO handle recursion
+    
+    object.__lively_expr_watchers.remove(this);
+    
+    //TODO overwrite new getter/setter with original ones
+    //if we are the last watcher
+  }
+  
   proxifyFunction(func) {
     return;
     //NOT IMPLEMENTED
@@ -227,44 +326,65 @@ class ActiveExpr {
   proxifyVariable(object, variable, contextVariableName) {
     this.logger.log('Proxifying variable:', object, variable, 'With context variable name:', contextVariableName);
 
+    var nextAttribute = variable;
+    var isAttribute = false;
+    
+    if (nextAttribute.includes('.')) {
+      nextAttribute = nextAttribute.split('.')[0];
+      if(nextAttribute == '$attributes') {
+        this.logger.log('Attribute catched!');
+        nextAttribute = variable.split('.')[1];
+        variable = variable.split('.').slice(1).join('.');
+        isAttribute = true;
+      }
+    }
+
     if (object instanceof HTMLElement) {
-      if (this.observers[contextVariableName] === undefined) {
-        this.logger.log('Proxifying with MutationObserver');
-        this.observers[contextVariableName] = {
-          attributes: new Set(),
-          mutationObserver: null,
-          config: {
-            attributes: true,
-            characterData: false,
-            subtree: false
+      var isHtmlAttribute = object.hasAttribute(nextAttribute) || htmlAttributes.indexOf(nextAttribute) !== -1 || isAttribute;
+      if (isHtmlAttribute) {
+        if (this.observers[contextVariableName] === undefined) {
+          this.logger.log('Proxifying with MutationObserver');
+          
+          let obs = {
+            attributes: new Set([nextAttribute]),
+            mutationObserver: null,
+            config: {
+              attributes: true,
+              characterData: false,
+              subtree: false
+            }
+          };
+
+          this.observers[contextVariableName] = obs;
+
+          obs.config.attributeFilter = [...obs.attributes];
+
+          var mutationObserver = new MutationObserver(
+            (records, m) => this.mutationObserverCallback(records, m)
+          );
+          mutationObserver.observe(object, obs.config);
+          
+          obs.mutationObserver = mutationObserver;
+         
+          this.logger.log('set up', this.observers[contextVariableName]);
+        } else {
+          let obs = this.observers[contextVariableName];
+          if (!obs.attributes.has(nextAttribute)) {
+            this.logger.log('restarting observer for attribute', nextAttribute);
+            obs.attributes.add(nextAttribute);
+            obs.config.attributeFilter = [...obs.attributes];
+            
+            obs.mutationObserver.disconnect();
+            obs.mutationObserver.observe(object, obs.config);
           }
         }
-        
-        var mutationObserver = new MutationObserver(
-          (records, m) => this.mutationObserverCallback(records, m)
-        );
-        mutationObserver.observe(object, this.observers[contextVariableName].config);
-        
-        this.observers[contextVariableName].mutationObserver = mutationObserver;
-       
-        // this.logger.log('set up', this.observers[contextVariableName]);
-        
+
         // set up event listeners if necessary...
-        if (variable == 'value') {
+        if (nextAttribute == 'value') {
           // this.logger.log('Adding event listener');
           object.addEventListener('change', (e) => this.domEventCallback(e));
         }
-      }
-
-      var nextAttribute = variable;
-      if (nextAttribute.includes('.')) {
-        nextAttribute = nextAttribute.split('.')[0];
-      }
-
-      // stop recursion of it's a standard HTML attribute
-      if (object.hasAttribute(nextAttribute) ||  htmlAttributes.indexOf(variable) !== -1) {
-        // HTMLElements get special treatment
-        this.logger.log('Returning, because MutationObserver is enough');
+        // MutationObserver is enough for HTML attributes
         return;
       }
     }
@@ -276,6 +396,8 @@ class ActiveExpr {
     }
     
     this.logger.log('Patching variable:', variable, ' on ', object);
+    
+    // this.logger.trap();
     
     ['__lively_expr_getters',
      '__lively_expr_setters',
@@ -290,7 +412,13 @@ class ActiveExpr {
       object.__lively_expr_watchers = new Set();
     }
 
-    // TODO: handle multiple expressions on same object
+    object.__lively_expr_watchers.add(this);
+
+    // check if object is already patched
+    if (object.__lively_expr_vars.hasOwnProperty(variable)) {
+      this.logger.log('variable', variable, 'already patched.');
+      return;
+    }
     
     let oldGetter = object.__lookupGetter__(variable) || object.__lively_expr_getters[variable];
 
@@ -301,9 +429,7 @@ class ActiveExpr {
 
     // save current value for default getter
     object.__lively_expr_vars[variable] = object[variable];
-    
-    object.__lively_expr_watchers.add(this);
-    
+
     // this.logger.log('old getter:', oldGetter);
     // this.logger.log('old setter:', oldSetter);
 
@@ -338,7 +464,13 @@ class ActiveExpr {
   domEventCallback(e) {
     this.test();
   }
+  
+  destroy() {
+    this.unProxify();
+  }
 }
+
+ActiveExpr.NotTested = Symbol('ActiveExpr::NotTested');
 
   // let outOfScreen = AExpr(
   //   function condition(w) { 

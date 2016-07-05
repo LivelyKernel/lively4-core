@@ -1,13 +1,13 @@
 'use strict';
 
-import { AExpr } from '../src/active-expressions.js';
-import { ActiveDOMView } from '../src/active-view.js?324234';
+import { AExpr } from '../src/active-expressions.js?123';
+import { ActiveDOMView } from '../src/active-view.js';
 
 function mainDemo() {
   let outOfScreen = new AExpr(
     function condition(w) { 
-      return parseInt(w.style.top) < 0 || parseInt(w.style.left) < 0
-    }
+      return parseInt(w.style.top) < 0 || parseInt(w.style.left) < 0;
+    }, {debug: true}
   );
   
   function adjustPosition(node) {

@@ -1,6 +1,6 @@
 
 // abstract view class
-class ActiveView {
+export class ActiveView {
   constructor() {
     // if (new.target === ActiveView) {
     //   throw new TypeError('Cannot construct ActiveView directly');
@@ -105,6 +105,7 @@ export class ActiveDOMView extends ActiveView {
     this.exited.delete(node);
     this.elements.add(node);
     this.entered.add(node);
+    console.log('elementEnters', node);
     this.enterCallbacks.forEach(cb => cb(node));
   }
   
@@ -156,6 +157,9 @@ export class ActiveDOMView extends ActiveView {
   
   onEnter(callback) {
     this.enterCallbacks.add(callback);
+    
+    console.log('new onEnter callback!');
+    console.log('current elements:', this.elements);
 
     // invoke for all current elements
     this.elements.forEach(e => callback(e));
