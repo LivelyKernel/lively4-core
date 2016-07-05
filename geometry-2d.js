@@ -788,7 +788,7 @@ export class Transform {
   getRotation() { // in degrees
     // Note the ambiguity with negative scales is resolved by assuming
     // scale x is positive
-    var r = Math.atan2(-this.c, this.a).toDegrees();
+    var r = num.toDegrees(Math.atan2(-this.c, this.a));
 
     // don't bother with values very close to 0
     return Math.abs(r) < this.eps ? 0 : r;
