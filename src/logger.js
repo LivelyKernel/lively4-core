@@ -17,23 +17,28 @@ export class Logger {
   log() {
     if(this.options.debug === true) {
       let args = Array.prototype.slice.call(arguments);
-      //let callerName = arguments.callee; //arguments.callee.caller.name;
-      //let re = /(\w+)@|at (\w+) \(/g;
-      //let aRegexResult = re.exec(new Error().stack);
-      //let callerName = aRegexResult[1] || aRegexResult[2];
-      let callerName = new Error().stack;
       
-      console.log(this.name + '::' + callerName);
-      args.forEach(function(text) {
-        console.log(text);  
-      }, this);
+      console.log(this.getCaller());
+      console.log.apply(null, args);
     }
   }
   
   warn() {
     let args = Array.prototype.slice.call(arguments);
-    args.forEach(function(text) {
-      console.warn(text);
-    });
+    
+    console.log(this.getCaller());
+    console.warn.apply(null, args);
   }
+  
+  getCaller() {
+      let re = /@|at (\w+).(\w+) \(/g;
+      re.exec(new Error().stack);
+      re.exec(new Error().stack);
+      let aRegexResult = re.exec(new Error().stack);
+      
+      let className = aRegexResult[1];
+      let callerName = aRegexResult[2];
+      
+      return className + '::' + callerName;
+    }
 }

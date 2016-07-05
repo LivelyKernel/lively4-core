@@ -54,7 +54,7 @@ if (circle) {
 
   window.timer.reset();
   
-  AExpr(function condition(t) {
+  new AExpr(function condition(t) {
     return t.ticks;
   })
     .applyOn(window.timer)

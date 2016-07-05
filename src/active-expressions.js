@@ -18,18 +18,9 @@ function setDefaultOptions(options) {
   return options;
 }
 
-// TODO: move back to a constructor
-export function AExpr(condition, options) {
-  if (!(condition instanceof Function)) {
-    throw new TypeError('AExpr needs a condition function');
-  }
-
-  options = setDefaultOptions(options || {});
-  return new ActiveExprFactory(condition, options);
-}
-
-class ActiveExprFactory {
+export class AExpr {
   constructor(condition, options) {
+    options = setDefaultOptions(options || {});
     this.condition = condition;
     this.options = options;
   }
@@ -164,6 +155,8 @@ class ActiveExpr {
         var tmpState = jQuery.extend(true, {}, state);
         
         c(node.callee, tmpState);
+        //TODO: ignore inline functions
+        console.log(node, tmpState);
         state.calledFunctions.push(tmpState.varName);
         
         for(let argument of node.arguments) {
@@ -206,10 +199,28 @@ class ActiveExpr {
       }
       
     }
+    
+    for(let func of this.observables.calledFunctions) {
+      this.proxifyFunction(func);
+    }
   }
   
-  proxifyVariable(object, variable, callback, contextVariableName) {
-    this.logger.log('Proxifying variable:', object, variable, 'With callback:', callback, 'With context variable name:', contextVariableName);
+  proxifyFunction(func) {
+    console.log(func);
+    let functionObject = eval(func);
+    
+    console.log(__lvVarRecorder);
+    console.log(func, functionObject);
+    return;
+    
+    let expr = AExpr(
+      functionObject,
+      this.options
+    ).applyOn();
+  }
+  
+  proxifyVariable(object, variable, contextVariableName) {
+    this.logger.log('Proxifying variable:', object, variable, 'With context variable name:', contextVariableName);
 
     if (object instanceof HTMLElement) {
       if (this.observers[contextVariableName] === undefined) {
@@ -244,7 +255,7 @@ class ActiveExpr {
     
     if (variable.includes('.')) {
       let components = variable.split('.');
-      this.proxifyVariable(object[components[0]], components.splice(1).join('.'), callback);
+      this.proxifyVariable(object[components[0]], components.splice(1).join('.'));
       return;
     }
     

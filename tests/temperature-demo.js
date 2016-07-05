@@ -6,10 +6,10 @@ function mainDemo() {
   var sliderC = document.querySelector('lively-container /deep/ #celsius');
   var sliderF = document.querySelector('lively-container /deep/ #fahrenheit');
 
-  let expr = AExpr(
+  let expr = new AExpr(
     function watch(c, f) {
       return c.value;
-    }, {debug: true})
+    })
     .applyOn(sliderC, sliderF)
     .onChange(function(c, f) {
       f.value = c.value * 1.8 + 32;

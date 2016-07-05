@@ -4,7 +4,7 @@ import { AExpr } from '../src/active-expressions.js';
 import { ActiveDOMView } from '../src/active-view.js?324234';
 
 function mainDemo() {
-  let outOfScreen = AExpr(
+  let outOfScreen = new AExpr(
     function condition(w) { 
       return parseInt(w.style.top) < 0 || parseInt(w.style.left) < 0
     }
