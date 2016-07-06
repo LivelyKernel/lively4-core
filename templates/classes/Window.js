@@ -1,7 +1,7 @@
 'use strict';
 
 import Morph from './Morph.js';
-// import { AExpr } from '/lively4/active-expressions/src/active-expressions.js';
+import { AExpr } from '/lively4/active-expressions/src/active-expressions.js';
 
 function getScroll() {
   return {
@@ -60,22 +60,19 @@ export default class Window extends Morph {
       this.displayResizeHandle(false);
       
     // Capture in window
-    
-    // TODO: Remove debug prints before enabling this
-    // this._capture_expr = AExpr(function watch(win) {
-    //   return parseInt(win.style.top) < 0 || parseInt(win.style.left) < 0;
-    // });
-    // this._capture_expr
-    //   .applyOn(this)
-    //   .onChange(function(win) {
-    //     console.log('get back here!');
-    //     if (parseInt(win.style.top) < 0) {
-    //       win.style.top = 0;
-    //     }
-    //     if (parseInt(win.style.left) < 0) {
-    //       win.style.left = 0;
-    //     }
-    //   });
+    this._capture_expr = new AExpr(win => 
+      parseInt(win.style.top) < 0 || parseInt(win.style.left) < 0
+    );
+    this._capture_expr
+    .applyOn(this)
+    .onChange(win => {
+      if (parseInt(win.style.top) < 0) {
+        win.style.top = 0;
+      }
+      if (parseInt(win.style.left) < 0) {
+        win.style.left = 0;
+      }
+    });
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
