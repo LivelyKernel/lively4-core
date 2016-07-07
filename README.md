@@ -62,16 +62,29 @@ Compilation will be places at `./dist-kernel.js`.
 
 Use `kernel.conf.js` to configure kernel before compiling:
 
-* *base*: The base path used to resolve init files.
+* *CLIENT_BASE*, *WORKER_BASE*: The base path used to resolve init files.
 
   When it's a relative path it be resolved relative to the `dist-kernel.js` path from the script tag.
 
   An absolute path or a full URL can also be specified.
   The base path cannot be escaped when importing code, the import path will be normalized before being appended to the base path.
 
-* *init*: The path to load in the client (browser tab) after boot.
+* *CLIENT_INIT*: The path to load in the client (browser tab) after boot.
 
-* *initsw*: The service worker init file to load.
+* *WORKER_INIT*: The service worker init file to load.
+
+Examples for other compile calls:
+
+```
+# Specify configuration
+KERNEL_CONFIG=./kernel.conf.l4.js npm start
+
+# Write to specific output file
+npm start -- --output-file ../lively4-core/swx-loader.js
+
+# Build kernel for localhost usage
+KERNEL_CONFIG=./kernel.conf.l4.localhost.js npm start -- --output-file ../lively4-core/swx-loader.js
+```
 
 ## Development
 
