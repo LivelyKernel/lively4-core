@@ -54,8 +54,12 @@
 	'use strict';
 	
 	(function () {
+	  if (typeof window !== 'undefined') {
+	    return __webpack_require__(2).default.call(window);
+	  }
+	
 	  if (typeof self !== 'undefined') {
-	    return __webpack_require__(2).default.call(self);
+	    return __webpack_require__(550).default.call(self);
 	  }
 	})();
 
@@ -69,36 +73,6 @@
 	  value: true
 	});
 	
-	exports.default = function () {
-	  this.addEventListener('install', event => {
-	    event.waitUntil(init().then(worker => worker.install(event)).catch(error => {
-	      console.error(error);throw error;
-	    }));
-	  });
-	
-	  this.addEventListener('activate', event => {
-	    event.waitUntil(init().then(worker => worker.activate(event)).catch(error => {
-	      console.error(error);throw error;
-	    }));
-	  });
-	
-	  this.addEventListener('fetch', event => {
-	    event.waitUntil(init().then(worker => worker.fetch(event)).catch(error => {
-	      console.error(error);throw error;
-	    }));
-	  });
-	
-	  this.addEventListener('message', event => {
-	    if (event.data === 'kernel:sw-force-reload') {
-	      loader = undefined;
-	    }
-	
-	    event.waitUntil(init().then(worker => worker.message(event)).catch(error => {
-	      console.error(error);throw error;
-	    }));
-	  });
-	};
-	
 	var _path = __webpack_require__(3);
 	
 	var path = _interopRequireWildcard(_path);
@@ -109,33 +83,81 @@
 	
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
 	
-	var loader;
+	var _Array$prototype = Array.prototype;
+	const filter = _Array$prototype.filter;
+	const shift = _Array$prototype.shift;
+	exports.default = _asyncToGenerator(function* () {
+	  var _context;
 	
-	const system = () => {
-	  if (typeof loader === 'undefined') {
-	    let scope = new URL(self.registration.scope);
-	    let base = scope;
+	  const script = (_context = (_context = document.querySelectorAll('script'), filter).call(_context, function (el) {
+	    return typeof el.dataset.livelyKernel !== 'undefined';
+	  }), shift).call(_context);
 	
-	    base = new URL('https://raw.githubusercontent.com/LivelyKernel/lively4-serviceworker/master/src/');
-	
-	
-	    loader = new _loader.Loader({
-	      base: base
-	    });
+	  if (typeof script === 'undefined') {
+	    throw new Error('Cannot find lively kernel script tag. You must add the `data-lively-kernel` attribute!');
 	  }
 	
-	  return loader;
-	};
+	  let src = new URL(script.src);
 	
-	const init = (() => {
-	  var _ref = _asyncToGenerator(function* (fn) {
-	    return system().import(path.resolve('/swx.js')).then(fn);
+	  let base = new URL('./', src);
+	
+	  if (!('serviceWorker' in navigator)) {
+	    console.error('[KERNEL] ServiceWorker API not available');
+	    console.error('[KERNEL] Your browser is total wrong for this. I refuse to continue any further...');
+	    return undefined;
+	  }
+	
+	  try {
+	    let scope = new URL('./', src);
+	    let registration = yield navigator.serviceWorker.register(src, { scope: scope });
+	
+	    let serviceWorker = registration.installing || registration.waiting || registration.active;
+	
+	    if (serviceWorker.state !== 'activated' && serviceWorker.state !== 'activated') {
+	      let swState = new Promise(function (resolve, reject) {
+	        const fn = function (event) {
+	          serviceWorker.removeEventListener('statechange', fn);
+	
+	          if (event.target.state === 'redundant') {
+	            reject(new Error('State changed to redundant'));
+	          } else {
+	            resolve(event.target);
+	          }
+	        };
+	
+	        serviceWorker.addEventListener('statechange', fn);
+	      });
+	
+	      yield swState;
+	    }
+	
+	    console.log('[KERNEL] ServiceWorker registered and ready');
+	  } catch (e) {
+	    console.error('[KERNEL] ServiceWorker install failed:', e);
+	    console.log('[KERNEL] Continue with client-only boot...');
+	  }
+	
+	  let loader = new _loader.Loader({
+	    base: base
 	  });
 	
-	  return function init(_x) {
-	    return _ref.apply(this, arguments);
-	  };
-	})();
+	  loader.set('kernel', {
+	    resolve: function (name) {
+	      return loader.resolve(name).toString();
+	    },
+	    realpath: function (name) {
+	      return path.resolve(name);
+	    }
+	  });
+	
+	  let init = 'livelyKernelInit' in script.dataset ? script.dataset.livelyKernelInit : path.resolve('/src/init.js');
+	
+	  if (init) {
+	    return loader.import(init);
+	  } else {
+	    return true;
+	  }
+	});
 
 /***/ },
 /* 3 */
@@ -48564,6 +48586,84 @@
 	module.exports = mergeData;
 
 
+/***/ },
+/* 550 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	exports.default = function () {
+	  this.addEventListener('install', event => {
+	    event.waitUntil(init().then(worker => worker.install(event)).catch(error => {
+	      console.error(error);throw error;
+	    }));
+	  });
+	
+	  this.addEventListener('activate', event => {
+	    event.waitUntil(init().then(worker => worker.activate(event)).catch(error => {
+	      console.error(error);throw error;
+	    }));
+	  });
+	
+	  this.addEventListener('fetch', event => {
+	    event.waitUntil(init().then(worker => worker.fetch(event)).catch(error => {
+	      console.error(error);throw error;
+	    }));
+	  });
+	
+	  this.addEventListener('message', event => {
+	    if (event.data === 'kernel:sw-force-reload') {
+	      loader = undefined;
+	    }
+	
+	    event.waitUntil(init().then(worker => worker.message(event)).catch(error => {
+	      console.error(error);throw error;
+	    }));
+	  });
+	};
+	
+	var _path = __webpack_require__(3);
+	
+	var path = _interopRequireWildcard(_path);
+	
+	var _loader = __webpack_require__(5);
+	
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+	
+	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
+	
+	var loader;
+	
+	const system = () => {
+	  if (typeof loader === 'undefined') {
+	    let scope = new URL(self.registration.scope);
+	    let base = scope;
+	
+	    base = new URL('https://raw.githubusercontent.com/LivelyKernel/lively4-serviceworker/master/src/');
+	
+	
+	    loader = new _loader.Loader({
+	      base: base
+	    });
+	  }
+	
+	  return loader;
+	};
+	
+	const init = (() => {
+	  var _ref = _asyncToGenerator(function* (fn) {
+	    return system().import(path.resolve('/swx.js')).then(fn);
+	  });
+	
+	  return function init(_x) {
+	    return _ref.apply(this, arguments);
+	  };
+	})();
+
 /***/ }
 /******/ ]);
-//# sourceMappingURL=dist-kernel.js.map
+//# sourceMappingURL=swx-loader.js.map
