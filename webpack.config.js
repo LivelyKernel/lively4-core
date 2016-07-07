@@ -54,6 +54,14 @@ module.exports = {
     module: 'empty',
     net: 'empty'
   },
+  plugins: [
+    // new (require('webpack-plugin-output-babel').default)({
+    //   compact: false,
+    //   comments: false,
+    //   babelrc: false,
+    //   plugins: []
+    // })
+  ],
   babel: {
     comments: false,
     babelrc: false,
