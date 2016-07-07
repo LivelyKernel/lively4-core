@@ -1,4 +1,5 @@
 import * as utils from "./search-utils.js";
+import Files from "src/client/files.js";
 
 function getReadableFileExtensions() {
   return [".js", ".md", ".html"];
@@ -6,6 +7,29 @@ function getReadableFileExtensions() {
 
 export function setup(db) {
   return restoreIndex(db);
+}
+
+export function checkIndexStatus(db) {
+  return new Promise((resolve, reject) => {
+    let path = `https://lively4${db.path}/index.l4idx`;
+    Files.statFile(path).then(resp => {
+      return JSON.parse(resp);
+    }).then(jsonResp => {
+      // ugly way to check if file exists (we dont get a 404...)
+      if (jsonResp.size === "0 bytes") {
+        resolve("unavailable");
+      } else {
+        resolve("available");
+      }
+    });  
+  });
+  
+  
+  // fetch(path).then(response => {
+  //   console.log(response);
+  // }).catch(err => {
+  //   console.log("not found")
+  // });
 }
 
 function restoreIndex(db) {

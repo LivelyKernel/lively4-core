@@ -1,6 +1,5 @@
 'use strict';
 
-
 export function loadIndexJson(filename, options) {
   let path = `https://lively4${options.path}/${filename}`;
   return fetch(path).then(response => {
@@ -22,6 +21,25 @@ export function saveIndexJson(jsonIndex, filename, options) {
     headers: headers,
     body: serialized
   });
+}
+
+export function checkIndexFile(filename, options) {
+  return new Promise((resolve, reject) => {
+    let path = `https://lively4${options.path}/${filename}`;
+    fetch(path, {
+      method: "OPTIONS"
+    }).then(resp => {
+      return resp.json();
+    }).then(jsonResp => {
+      // ugly way to check if file exists (we dont get a 404...)
+      if (jsonResp.size === "0 bytes") {
+        resolve("unavailable");
+      } else {
+        resolve("available");
+      }
+    });
+  });
+  
 }
 
 async function getFilepaths(options) {
@@ -54,15 +72,14 @@ async function getFilepaths(options) {
   });
 
   filepaths = filepaths.filter(file => {
-    // ensure that this is really a js-file
     return isIndexable(file.path);
-    // return file.path.slice(-3) === ".js";
   }).map(file => {
     // remove the subfolder from the file path
     return file.path.slice(options.options.subfolder.length);
   });
 
   return filepaths.slice(0, 5);
+  // return filepaths;
 }
 
 export async function* FileReader(filepath, options) {
