@@ -4,4 +4,7 @@ module.exports = {
   WORKER_ENABLED: true,
   WORKER_INIT: "/swx.js",
   WORKER_EMBED: false,
+  CLIENT_ENABLED: true,
+  CLIENT_BASE: "./",
+  CLIENT_INIT: "/src/init.js",
 }
