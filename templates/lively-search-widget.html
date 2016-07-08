@@ -1,0 +1,57 @@
+<template id="lively-search-widget" data-class="SearchWidget">
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      position: fixed;
+      top: 0px;
+      right: 0px;
+      z-index: 200;
+      background-color: white;
+      border-style: solid;
+      border-width: 0px 1px 1px 1px;
+      width: 550px;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    #searchField {
+      width: 400px;
+    }
+    #configButton {
+      align: right;
+    }
+    .text-entry {
+      display: block;
+    }
+    #searchResults {
+      max-height: 200px;
+      margin-top: 15px;
+      word-wrap: break-word;
+    }
+    .fa-spinner {
+      margin: 20px auto 0px auto;
+    }
+    #noResults {
+      text-align: center;
+      margin-top: 15px;
+    }
+  </style>
+  <div class="container">
+    <div class="text-entry">
+      <input type="text" id="searchField" placeholder="search ..." autofocus/>
+      <button id="searchButton">
+        <i class="fa fa-search"></i>
+      </button>
+      <button id="configButton">
+        <i class="fa fa-cog"></i>
+      </button>
+    </div>
+    <i class="fa fa-spinner fa-pulse fa-fw"></i>
+    <span id="noResults">No results found</span>
+    <lively-list id="searchResults"></lively-list>
+  </div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
