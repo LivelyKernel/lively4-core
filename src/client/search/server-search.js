@@ -3,7 +3,8 @@ import * as utils from "./search-utils.js";
 export function setup(options) {
   return new Promise((resolve, reject) => {
     let location = options.path.replace(window.location.origin, "");
-    
+    console.log("setup location:", options.path);
+
     let fetchStatus =  () => {
       fetch(`${window.location.origin}/api/searchSetup?location=${location}`).then( (response) => {
         if (response.statusText == "OK") {
@@ -14,7 +15,7 @@ export function setup(options) {
         reject();
       });
     };
-  
+
     fetchStatus();
     let interval = setInterval(fetchStatus, 5000);
   });
@@ -32,5 +33,13 @@ export function find(pattern) {
       res.type = "server";
       return res;
     });
+  });
+}
+
+export function checkIndexFile(subdir, options) {
+  return fetch(`${window.location.origin}/api/searchIndexStatus?location=${subdir}`).then((response) => {
+    return response.json();
+  }).then(responseJson =>{
+    return responseJson.indexStatus;
   });
 }
