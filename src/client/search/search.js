@@ -8,7 +8,10 @@ let availableMounts = {
 }
 
 let searchableMounts = [];
-let searchFunctions = [];
+let searchFunctions = {
+  "dropbox": [],
+  "server": []
+}
 
 function loadMounts() {
   // find all dropboxes
@@ -63,7 +66,7 @@ export function loadIndex(mountType, path) {
       }
       return dropboxSearch.setup(db).then(() => {
         // db.find = dropboxSearch.find;
-        searchFunctions.push(dropboxSearch.find.bind(db));
+        searchFunctions.dropbox.push(dropboxSearch.find.bind(db));
       });
     }
 
@@ -73,7 +76,7 @@ export function loadIndex(mountType, path) {
         throw new Error(`Folder not found at ${path}`);
       }
       return serverSearch.setup(dir).then(() => {
-        searchFunctions.push(serverSearch.find.bind(dir));
+        searchFunctions.server.push(serverSearch.find.bind(dir));
       });
     }
   });
@@ -103,10 +106,30 @@ export function getStatus(mountType, path) {
   return Promise.reject("unknown mount type");
 }
 
+function getLabel(str) {
+  // shorten the string
+  return str.length < 60 ? str : str.slice(0,15) + " [...] " + str.slice(-40);
+}
+
 export function search(query) {
   let proms = [];
-  searchFunctions.forEach(func => {
-    proms.push(func(query));
+  searchFunctions.dropbox.forEach(func => {
+    proms.push(func(query).then(results => {
+      return results.map(res => {
+        res.label = getLabel(res.path);
+        return res;
+      });
+    }));
+  });
+
+  searchFunctions.server.forEach(func => {
+    proms.push(func(query).then(results => {
+      return results.map(res => {
+        res.path = window.location.origin + res.path;
+        res.label = getLabel(res.path);
+        return res;
+      });
+    }));
   });
 
   return Promise.all(proms).then(results => {

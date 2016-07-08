@@ -4,68 +4,20 @@
     .container {
         width: 100%;
         height: 100%;
-        /*
-        box-sizing: border-box;
-        padding-top: 25px; */
         margin-left: 10px;
         display: flex;
         flex-direction: column;
+        overflow: auto;
     }
-    .toolbar {
-        /* position: absolute;
-        left: 0px;
-        top: 0px;
-        width: 100%; */
-        height: 25px;
-        /*flex: 0;*/
+    td {
+      padding: 0px 15px 0px 15px;
     }
-    #editor {
-        /* box-sizing: border-box; */
-        width: 100%;
-        height: 100%;
-        flex: 1;   /* ACE does not display right with "flex" */
-
-    }
-    #listOfMountPoints li {
-      width: 100%;
-      clear: both;
-    }
-
-    .browse, .unmount {
-       float: right;
-       font-size: 10px;
-       background-color: none;
-       background-image: none;
-       border: 0px;
-    }
-
-    .browse:hover, .unmount:hover {
-       background-color: #AAAAAA;
-       background-image: none;
-       border: 0px;
-    }
-    p {
-      margin: 2px;
-    }
-    #listOfMountPoints {
-      padding: 5px;
-      background-color: #E0E0E0;
-      width: 90%;
-      overflow: auto;
-    }
-
-    #githubBranch {
-      width: 80px;
-    }
-
     </style>
     <div class="container">
-      <div data-type="server" id="server-list">
-        <h3>Server</h3>
-      </div>
-      <div data-type="dropbox" id="dropbox-list">
-        <h3>Dropbox</h3>
-      </div>
+      <h3>Server</h3>
+      <table id="server-table" data-type="server"></table>
+      <h3>Dropbox</h3>
+      <table id="dropbox-table" data-type="dropbox"></table>
     </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

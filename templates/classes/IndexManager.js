@@ -7,17 +7,17 @@ export default class IndexManager extends Morph {
 
   initialize() {
     this.windowTitle = "Index Manager";
-    this.serverList = this.getSubmorph("#server-list");
-    this.dropboxList = this.getSubmorph("#dropbox-list");
+    this.serverList = this.getSubmorph("#server-table");
+    this.dropboxList = this.getSubmorph("#dropbox-table");
 
     $(this.getSubmorph(".container")).on("click", ".refresh-button", evt => {
       let target = evt.currentTarget;
-      this.refreshIndex(target.parentElement.parentElement.dataset.type, target.dataset.path);
+      this.refreshIndex(target.dataset.mountType, target.dataset.path);
     });
 
     $(this.getSubmorph(".container")).on("click", ".create-button", evt => {
       let target = evt.currentTarget;
-      this.createIndex(target.parentElement.parentElement.dataset.type, target.dataset.path);
+      this.createIndex(target.dataset.mountType, target.dataset.path);
     });
 
     let mountRequest = new Request("https://lively4/sys/mounts");
@@ -41,7 +41,7 @@ export default class IndexManager extends Morph {
 
   appendDropboxes(mounts) {
     mounts.forEach(mount => {
-      this.dropboxList.innerHTML += this.getEntryFor(mount.path);
+      this.dropboxList.innerHTML += this.getEntryFor("dropbox", mount.path);
     });
   }
 
@@ -54,18 +54,20 @@ export default class IndexManager extends Morph {
     	}).map(dir => {
     		return "/" + dir.name;
     	}).forEach(path => {
-    	  this.serverList.innerHTML += this.getEntryFor(path);
+    	  this.serverList.innerHTML += this.getEntryFor("server", path);
     	});
     });
   }
 
-  getEntryFor(path) {
-    return `<p>
-        ${path}:
-        <i id=${path.slice(1)}-status>unknown</i>
-        <button data-path=${path} class="refresh-button"><i class="fa fa-refresh" aria-hidden="true"></i></button>
-        <button data-path=${path} class="create-button"><i class="fa fa-plus" aria-hidden="true"></i></button>
-      </p>`
+  getEntryFor(mountType, path) {
+    return `<tr>
+        <td>${path}</td>
+        <td><i id=${path.slice(1)}-status>unknown</i></td>
+        <td>
+          <button data-path=${path} data-mount-type=${mountType} class="refresh-button"><i class="fa fa-refresh" aria-hidden="true"></i></button>
+          <button data-path=${path} data-mount-type=${mountType} class="create-button"><i class="fa fa-plus" aria-hidden="true"></i></button>
+        </td>
+      </tr>`
   }
 
   createIndex(mountType, path) {

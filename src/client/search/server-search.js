@@ -27,6 +27,10 @@ export function find(pattern) {
 
   // test
   return fetch(`${window.location.origin}/api/search?q=${pattern}&location=${location}`).then( async (response) => {
+    if (response.status != 200) {
+      return [];
+    }
+
     let responseJson = await response.json();
     return responseJson.map((res) => {
       res.path = utils.join(this.path, res.ref);
