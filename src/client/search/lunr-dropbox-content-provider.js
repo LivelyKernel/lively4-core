@@ -1,5 +1,11 @@
 'use strict';
 
+let extensions = [".js", ".html", ".md", ".txt"];
+
+export function isIndexable(filepath) {
+  return extensions.indexOf(filepath.slice(filepath.lastIndexOf("."))) >= 0;
+}
+
 export function loadIndexJson(filename, options) {
   let path = `https://lively4${options.path}/${filename}`;
   return fetch(path).then(response => {
@@ -43,12 +49,7 @@ export function checkIndexFile(filename, options) {
 }
 
 async function getFilepaths(options) {
-  let extensions = [".js", ".html", ".md", ".txt"];
   let proms = [];
-
-  function isIndexable(filepath) {
-    return extensions.indexOf(filepath.slice(filepath.lastIndexOf("."))) >= 0;
-  }
 
   extensions.forEach(query => {
     let fileLimit = 10000;

@@ -35,13 +35,14 @@ export default class Filesystem extends Base {
         return {
             type: type,
             name: name,
-            size: json['size']
+            size: json['size'],
+            rev: json['rev']
         }
     }
 
     async stat(path) {
         let dropboxHeaders = new Headers()
-        dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer 
+        dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
         let response = await self.fetch('https://api.dropboxapi.com/1/metadata/auto' + this.subfolder + path, {headers: dropboxHeaders})
 
         if(response.status < 200 && response.status >= 300) {

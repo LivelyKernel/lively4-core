@@ -99,8 +99,6 @@ export function getStatus(mountType, path) {
     }
 
     return serverSearch.checkIndexFile(path, dir);
-
-    return Promise.reject("not implemented");
   }
 
   return Promise.reject("unknown mount type");
@@ -136,7 +134,6 @@ export function search(query) {
     let res = results.reduce((a, b) => {
       return a.concat(b);
     }, []);
-    console.log(res);
     return res;
   });
 }
