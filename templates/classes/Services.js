@@ -41,7 +41,9 @@ export default class Services extends Morph {
     this.stderrButton.addEventListener('click', this.stderrButtonClick.bind(this));
 
     this.logEditor = this.getSubmorph('#log').editor;
-    this.logEditor.setReadOnly(true);
+    if (this.logEditor) { // editor is not initialized during testing
+      this.logEditor.setReadOnly(true);
+    }
 
     this.refreshServiceList();
     this.refreshInterval = window.setInterval(
@@ -50,10 +52,12 @@ export default class Services extends Morph {
     );
     this.logInterval = null;
 
-    this.detachedCallback = () => {
-      window.clearInterval(this.refreshInterval);
-      window.clearInterval(this.logInterval);
-    };
+    this.detachedCallback = this.unload;
+  }
+
+  unload() {
+    window.clearInterval(this.refreshInterval);
+    window.clearInterval(this.logInterval);
   }
 
   /*
@@ -223,6 +227,45 @@ export default class Services extends Morph {
     }
   }
 
+  listServices(services) {
+    this.services = services;
+    var item;
+    var selectedPID = this.removeAllItems();
+    // Check if any service running
+    if (Object.keys(services).length === 0) {
+      this.showMessageInServiceList("No services available yet.");
+      return;
+    }
+    // List all services
+    var now = new Date().getTime();
+    for (var id in services) {
+      var service = services[id];
+      item = document.createElement('lively-services-item');
+      item.setAttribute('data-id', id);
+      if (id == selectedPID) {
+        item.getSubmorph('.item').classList.add('selected');
+      }
+      var title = service.entryPoint + ' (#' + id + ')';
+      item.getSubmorph('h1').innerHTML = title;
+
+      var status = 'unkown';
+      var statusText = 'unkown';
+      if (service.status === 0) {
+        status = 'not-running';
+        var since = (now - service.kill);
+        statusText = 'not running (' + this.msToString(since) + ')';
+      } else if (service.status === 1) {
+        status = 'running';
+        var uptime = (now - service.start);
+        statusText = 'running (' + this.msToString(uptime) + ')';
+      }
+
+      item.getSubmorph('.status').classList.add(status);
+      item.getSubmorph('small').innerHTML = statusText;
+      this.serviceList.appendChild(item);
+    }
+  }
+
   showMessageInServiceList(msg) {
     var item = document.createElement('div');
     item.classList.add('empty');
@@ -252,44 +295,7 @@ export default class Services extends Morph {
   refreshServiceList() {
     return $.ajax({
       url: servicesURL + 'list',
-      success: function(services) {
-        this.services = services;
-        var item;
-        var selectedPID = this.removeAllItems();
-        // Check if any service running
-        if (Object.keys(services).length === 0) {
-          this.showMessageInServiceList("No services available yet.");
-          return;
-        }
-        // List all services
-        var now = new Date().getTime();
-        for (var id in services) {
-          var service = services[id];
-          item = document.createElement('lively-services-item');
-          item.setAttribute('data-id', id);
-          if (id == selectedPID) {
-            item.getSubmorph('.item').classList.add('selected');
-          }
-          var title = service.entryPoint + ' (#' + id + ')';
-          item.getSubmorph('h1').innerHTML = title;
-
-          var status = 'unkown';
-          var statusText = 'unkown';
-          if (service.status === 0) {
-            status = 'not-running';
-            var since = (now - service.kill);
-            statusText = 'not running (' + this.msToString(since) + ')';
-          } else if (service.status === 1) {
-            status = 'running';
-            var uptime = (now - service.start);
-            statusText = 'running (' + this.msToString(uptime) + ')';
-          }
-
-          item.getSubmorph('.status').classList.add(status);
-          item.getSubmorph('small').innerHTML = statusText;
-          this.serviceList.appendChild(item);
-        }
-      }.bind(this),
+      success: this.listServices.bind(this),
       error: this.handleAjaxError.bind(this)
     });
   }
