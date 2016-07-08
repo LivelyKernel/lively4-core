@@ -444,6 +444,15 @@ export default class Lively {
     }
     lively.components.loadUnresolved();
   }
+  
+  static initializeSearch() {
+    if ($('lively-search-widget').size() === 0) {
+      $('<lively-search-widget>')
+          .attr('data-lively4-donotpersist', 'all')
+          .appendTo($('body'));
+    }
+    lively.components.loadUnresolved();
+  }
 
    static unload() {
       lively.notify("unloading Lively is not supported yet! Please reload page....");
@@ -620,6 +629,17 @@ export default class Lively {
       comp.parentElement.style.height = "600px";
       comp.searchFile(text)
     })
+  }
+  
+  static openSearchWidget(text) {
+    var comp = document.getElementsByTagName("lively-search-widget")[0]
+    var isShown = comp.toggle();
+    if (isShown && text.length) comp.search(text, true);
+  }
+  
+  static hideSearchWidget() {
+    var comp = document.getElementsByTagName("lively-search-widget")[0]
+    comp.hide();
   }
 
   static openHelpWindow(text) {
