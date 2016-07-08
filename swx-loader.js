@@ -686,7 +686,7 @@
 	
 	        let source = babel.transform(blob, {
 	          plugins: [..._this2.plugins, ...BABEL_PLUGINS],
-	          sourceMaps: 'inline',
+	
 	          filename: filename,
 	          sourceFileName: sourceURL,
 	          compact: 'auto'
@@ -23969,7 +23969,7 @@
 	        left.decorators = decorators;
 	      }
 	      this.parseAssignableListItemTypes(left);
-	      elts.push(this.parseMaybeDefault(left.start, left.loc.start, left));
+	      elts.push(this.parseMaybeDefault(null, null, left));
 	    }
 	  }
 	  return elts;
@@ -48636,22 +48636,22 @@
 	
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
 	
-	var loader;
-	
 	const system = () => {
-	  if (typeof loader === 'undefined') {
+	  if (!self.System) {
 	    let scope = new URL(self.registration.scope);
 	    let base = scope;
 	
-	    base = new URL('https://raw.githubusercontent.com/LivelyKernel/lively4-serviceworker/master/src/');
+	    base = new URL('/lively4-serviceworker/src/', base);
 	
 	
-	    loader = new _loader.Loader({
+	    self.System = new _loader.Loader({
 	      base: base
 	    });
+	
+	    console.warn('[SW] Kick-off from ' + base.toString());
 	  }
 	
-	  return loader;
+	  return System;
 	};
 	
 	const init = (() => {
