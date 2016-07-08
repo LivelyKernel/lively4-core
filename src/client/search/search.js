@@ -115,20 +115,20 @@ export function search(query) {
   let proms = [];
   searchFunctions.dropbox.forEach(func => {
     proms.push(func(query).then(results => {
-      return results.map(res => {
+      results.forEach(res => {
         res.label = getLabel(res.path);
-        return res;
       });
+      return results;
     }));
   });
 
   searchFunctions.server.forEach(func => {
     proms.push(func(query).then(results => {
-      return results.map(res => {
+      results.forEach(res => {
         res.path = window.location.origin + res.path;
         res.label = getLabel(res.path);
-        return res;
       });
+      return results;
     }));
   });
 

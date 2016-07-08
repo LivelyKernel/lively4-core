@@ -39,11 +39,11 @@ export function checkIndexFile(filename, options) {
       }
     });
   });
-  
+
 }
 
 async function getFilepaths(options) {
-  let extensions = [".js", ".html", ".md"];
+  let extensions = [".js", ".html", ".md", ".txt"];
   let proms = [];
 
   function isIndexable(filepath) {
@@ -72,6 +72,7 @@ async function getFilepaths(options) {
   });
 
   filepaths = filepaths.filter(file => {
+    // check if we really have an indexable extension
     return isIndexable(file.path);
   }).map(file => {
     // remove the subfolder from the file path
