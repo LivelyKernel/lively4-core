@@ -26,14 +26,10 @@ export default class RdfaMovieDb extends Morph {
   loadRdfaDataAndFillTable() {
     RdfaManager.loadFirebaseConfig();
     RdfaManager.readDataFromFirebase('mymovies', true).then((data) => {
-      //let movieTriples = this.filterSchemaOrgMovies(data);
-      //let movies = this.buildMoviesFromSchemaOrgTriples(movieTriples, data);
-      //let ogpMovieTriples = this.filterOgpMovies(data);
-      //let ogpMovies = this.buildMoviesFromOgpTriples(ogpMovieTriples, data);
-      //this.generateTableRows(movies.concat(ogpMovies));
-      
       let movies = this.filterMovies(data);
-      console.log(movies);
+      let processedMovies = this.enrichMovies(movies);
+      console.log(processedMovies);
+      this.generateTableRows(processedMovies);
     });
   }
 
@@ -77,52 +73,6 @@ export default class RdfaMovieDb extends Morph {
       )
   }
   
-  filterSchemaOrgMovies(data) {
-    let movieTriples = data.filter((triple) => {
-      return triple.property == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-        && triple.values[0]== "http://schema.org/Movie"
-    });
-    return movieTriples;
-  }
-  
-  buildMoviesFromSchemaOrgTriples(movieTriples, data) {
-    let movies = [];
-    movieTriples.forEach((movieTriple) => {
-      let movie = {};
-      movie.subject = movieTriple.subject;
-      let sameSubjectTriples = data.filter((triple) => triple.subject == movie.subject);
-      movie.url = sameSubjectTriples.filter((triple) => triple.property == "http://schema.org/url")[0];
-      movie.url = movie.url ? movie.url.values[0]: null;
-      movie.name = sameSubjectTriples.filter((triple) => triple.property == "http://schema.org/name")[0];
-      movie.name = movie.name ? movie.name.values[0] : null;
-      movies.push(movie);
-    });
-    return movies;
-  }
-  
-  filterOgpMovies(data) {
-    let movieTriples = data.filter((triple) => {
-      return triple.property == "http://ogp.me/ns#type"
-        && triple.values[0] == "video.movie"
-    });
-    return movieTriples;
-  }
-  
-  buildMoviesFromOgpTriples(movieTriples, data) {
-    let movies = [];
-    movieTriples.forEach((movieTriple) => {
-      let movie = {};
-      movie.subject = movieTriple.subject;
-      let sameSubjectTriples = data.filter((triple) => triple.subject == movie.subject);
-      movie.url = sameSubjectTriples.filter((triple) => triple.property == "http://ogp.me/ns#url")[0];
-      movie.url = movie.url ? movie.url.values[0] : null;
-      movie.name = sameSubjectTriples.filter((triple) => triple.property == "http://ogp.me/ns#title")[0];
-      movie.name = movie.name ? movie.name.values[0] : null;
-      movies.push(movie);
-    });
-    return movies;
-  }
-  
   filterMovies(graph) {
     let movieSubjects = graph.subjects.filter((subject) => {
       return subject.predicates.some((predicate) => {
@@ -134,5 +84,31 @@ export default class RdfaMovieDb extends Morph {
     });
     return movieSubjects;
   }
+  
+  enrichMovies(movieSubjects) {
+    movieSubjects.forEach((movieSubject) => {
+      if (this.isOgpMovie(movieSubject)) {
+        movieSubject.url = movieSubject.predicates.filter((predicate) => predicate.property == "http://ogp.me/ns#url")[0].value();
+        movieSubject.name = movieSubject.predicates.filter((predicate) => predicate.property == "http://ogp.me/ns#title")[0].value();
+      } else if (this.isSchemaMovie(movieSubject)) {
+        movieSubject.url = movieSubject.predicates.filter((predicate) => predicate.property == "http://schema.org/url")[0].value();
+        movieSubject.name = movieSubject.predicates.filter((predicate) => predicate.property == "http://schema.org/name")[0].value();
+      }
+    });
+    return movieSubjects;
+  }
 
+  isOgpMovie(movieSubject) {
+    return movieSubject.predicates.some((predicate) => {
+      return (predicate.property == "http://ogp.me/ns#type"
+          && predicate.values[0] == "video.movie");
+    });
+  }
+  
+  isSchemaMovie(movieSubject) {
+    return movieSubject.predicates.some((predicate) => {
+      return (predicate.property == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+          && predicate.values[0] == "http://schema.org/Movie");
+    });
+  }
 }

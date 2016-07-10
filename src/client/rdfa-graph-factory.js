@@ -10,6 +10,10 @@ class RdfaPredicate {
     this.property = property;
     this.values = values;
   }
+  
+  value() {
+    return this.values[0];
+  }
 }
 
 export default class RdfaGraphFactory {
@@ -33,9 +37,8 @@ export default class RdfaGraphFactory {
       const values = predicate.values;
       for (let i = 0; i < values.length; i++) {
         const value = values[i];
-        const subject = subjectMapping[value];
-        if (subject) {
-          values[i] = subject;
+        if (this.isUuid(value) && subjectMapping[value]) {
+          values[i] = subjectMapping[value];
         }
       }
     });
@@ -87,5 +90,9 @@ export default class RdfaGraphFactory {
       return pattern.test(string);
     }
     return false;
+  }
+  
+  static isUuid(string) {
+    return typeof string == 'string' && string.match(/\S{8}-\S{4}-4\S{3}-\S{4}-\S{12}/);
   }
 }
