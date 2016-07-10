@@ -25,12 +25,15 @@ export default class RdfaMovieDb extends Morph {
 
   loadRdfaDataAndFillTable() {
     RdfaManager.loadFirebaseConfig();
-    RdfaManager.readDataFromFirebase('').then((data) => {
-      let movieTriples = this.filterSchemaOrgMovies(data);
-      let movies = this.buildMoviesFromSchemaOrgTriples(movieTriples, data);
-      let ogpMovieTriples = this.filterOgpMovies(data);
-      let ogpMovies = this.buildMoviesFromOgpTriples(ogpMovieTriples, data);
-      this.generateTableRows(movies.concat(ogpMovies));
+    RdfaManager.readDataFromFirebase('mymovies', true).then((data) => {
+      //let movieTriples = this.filterSchemaOrgMovies(data);
+      //let movies = this.buildMoviesFromSchemaOrgTriples(movieTriples, data);
+      //let ogpMovieTriples = this.filterOgpMovies(data);
+      //let ogpMovies = this.buildMoviesFromOgpTriples(ogpMovieTriples, data);
+      //this.generateTableRows(movies.concat(ogpMovies));
+      
+      let movies = this.filterMovies(data);
+      console.log(movies);
     });
   }
 
@@ -118,6 +121,18 @@ export default class RdfaMovieDb extends Morph {
       movies.push(movie);
     });
     return movies;
+  }
+  
+  filterMovies(graph) {
+    let movieSubjects = graph.subjects.filter((subject) => {
+      return subject.predicates.some((predicate) => {
+        return (predicate.property == "http://ogp.me/ns#type"
+            && predicate.values[0] == "video.movie")
+          || (predicate.property == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+            && predicate.values[0] == "http://schema.org/Movie");
+      });
+    });
+    return movieSubjects;
   }
 
 }

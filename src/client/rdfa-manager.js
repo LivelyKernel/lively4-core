@@ -2,8 +2,6 @@ import * as rdfa from '../external/RDFa.js';
 import generateUuid from './uuid.js'
 import rdfaGraphFactory from './rdfa-graph-factory.js'
 
-//var rdfaListener = [];
-
 class RdfaTriple {
   constructor(subject, property, values) {
     this.subject = subject;
@@ -77,7 +75,7 @@ export default class RdfaManager {
     }
   }
 
-  static readDataFromFirebase(bucket) {
+  static readDataFromFirebase(bucket, asGraph = false) {
     return firebase.database().ref("rdfaTriples/" + bucket).once('value')
       .then((data) => {
         let triples = [];
@@ -89,7 +87,7 @@ export default class RdfaManager {
           triples.push(triple);
         }
         
-        return triples;
+        return asGraph ? rdfaGraphFactory.fromTriples(triples) : triples;
       })
   }
 
@@ -160,5 +158,6 @@ export default class RdfaManager {
     });
   }
 }
+
 RdfaManager.rdfaListener = [];
 RdfaManager.initializeFirebase();

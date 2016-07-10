@@ -1,3 +1,17 @@
+class RdfaSubject {
+  constructor(id) {
+    this.id = id;
+    this.predicates = [];
+  }
+}
+
+class RdfaPredicate {
+  constructor(property, values = []) {
+    this.property = property;
+    this.values = values;
+  }
+}
+
 export default class RdfaGraphFactory {
   static fromTriples(triples) {
     const subjectMapping = {};
@@ -6,17 +20,11 @@ export default class RdfaGraphFactory {
       const subject = triple.subject;
       let subjectObject = subjectMapping[subject];
       if (!subjectObject) {
-        subjectObject = {
-          id: subject,
-          predicates: []
-        };
+        subjectObject = new RdfaSubject(subject);
         subjectMapping[subject] = subjectObject;
       }
 
-      const predicate = {
-        property: triple.property,
-        values: triple.values
-      };
+      const predicate = new RdfaPredicate(triple.property, triple.values);
       subjectObject.predicates.push(predicate);
       predicates.push(predicate);
     });
@@ -47,17 +55,11 @@ export default class RdfaGraphFactory {
     const subjectMapping = {};
     
     projections.forEach((projection) => {
-      const subject = {
-        id: projection._data_.subject,
-        predicates: []
-      };
+      const subject = new RdfaSubject(projection._data_.subject);
       objectGraph.subjects.push(subject);
       const properties = projection._data_.properties;
       for (let property in properties) {
-        const predicate = {
-          property: property,
-          values: properties[property]
-        };
+        const predicate = new RdfaPredicate(property, properties[property]);
         subject.predicates.push(predicate); 
       }
       
