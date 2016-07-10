@@ -45,7 +45,11 @@ export default class RdfaMovieDb extends Morph {
     movies.forEach((movie) => {
       let ratingTd = $('<td>')
       for (let i = 0; i < 5; i++) {
-        ratingTd.append($('<i class="fa fa-star-o">'));
+        if (movie.rating > i) {
+          ratingTd.append($('<i class="fa fa-star">'));
+        } else {
+          ratingTd.append($('<i class="fa fa-star-o">'));
+        }
       }
       
       this.table.append($('<tr>')
