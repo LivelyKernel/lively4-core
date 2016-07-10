@@ -1,5 +1,8 @@
 import * as rdfa from '../external/RDFa.js';
 import generateUuid from './uuid.js'
+import rdfaGraphFactory from './rdfa-graph-factory.js'
+
+//var rdfaListener = [];
 
 class RdfaTriple {
   constructor(subject, property, values) {
@@ -13,7 +16,7 @@ class RdfaTriple {
     this.parent = parentTriple;
     this.isRoot = false;
   }
-  
+
   toString() {
     let string = '';
     
@@ -41,6 +44,10 @@ class RdfaTriple {
 
 export default class RdfaManager {
 
+  static objectGraph() {
+    return this.objectGraph;
+  }
+
   static loadFirebaseConfig() {
     return {
       apiKey: "AIzaSyCdiOSF0DUialcbR86BoJAmdj_RQFWgUk8",
@@ -48,20 +55,6 @@ export default class RdfaManager {
       databaseURL: "https://webdev16-rdfa.firebaseio.com",
       storageBucket: "webdev16-rdfa.appspot.com",
     };
-  }
-
-  static buildJSONRdfaDataStructure(fromFirebase = false) {
-    return new Promise((resolve, reject) => {
-      if (fromFirebase) {
-        this.readDataFromFirebase().then((jsonWrapper) => {
-          resolve(JSON.parse(jsonWrapper.val()));
-        }).catch((reason) => {
-          reject(reason);
-        });
-      } else {
-        resolve(JSON.parse(this.getRdfaAsJson()));
-      }
-    });
   }
 
   static reloadData() {
@@ -78,120 +71,47 @@ export default class RdfaManager {
     });
   }
 
-  static getRdfaAsJson() {
-    var json = JSON.stringify(
-      document.data.rdfa.query(),
-      function(key, val) {
-        if (key == 'owner' && typeof val == 'object') return;
-        return val;
-      }
-    );
-    return json;
-  }
-
   static initializeFirebase() {
     if (firebase.apps.length === 0) {
       firebase.initializeApp(this.loadFirebaseConfig());
     }
   }
 
-  static storeDataToFirebase() {
-    let path = document.title.replace(/([\.\$\#\[\]\/]|[^[:print:]])/g, "_");
-    let fullPath = "rdfa/" + path;
-    firebase.database().ref(fullPath).set(this.getRdfaAsJson()).then(() => {
-      lively.notify("Saved RDFa data", fullPath);
-    }).catch((reason) => {
-      lively.notify("Failed to save RDFa data to " + fullPath, reason);
-    });
-  }
-
-  static readDataFromFirebase(path) {
-    return firebase.database().ref("rdfaTriples/" + path).once('value')
+  static readDataFromFirebase(bucket) {
+    return firebase.database().ref("rdfaTriples/" + bucket).once('value')
       .then((data) => {
-        let uuidMap = {};
-        let triples = []
+        let triples = [];
         let values = data.val();
         
         for (let id in values) {
           let val = values[id];
           let triple = new RdfaTriple(val.subject, val.property, val.values)
           triples.push(triple);
-          if (this.isUuid(triple.subject)) {
-            if (!uuidMap[triple.subject]) {
-              uuidMap[triple.subject] = [];
-            }
-            uuidMap[triple.subject].push(triple);
-          }
         }
-        
-        triples.forEach((triple) => {
-          for (let i = 0; i < triple.values.length; i++) {
-            let childTriples = uuidMap[triple.values[i]];
-            if (childTriples) {
-              triple.values[i] = childTriples;
-              childTriples.forEach((childTriple) => {
-                childTriple.setParent(triple);
-              });
-            }
-          }
-        });
         
         return triples;
       })
   }
-  
-  static isUuid(string) {
-    return string.match(/\S{8}-\S{4}-4\S{3}-\S{4}-\S{12}/);
-  }
 
   static addRdfaEventListener(mappings, callback) {
-    let mappingArray = typeof mappings == 'string' ? [mappings] : mappings;
+    let mappingArray = Array.isArray(mappings) ? mappings : [mappings];
     mappingArray.forEach((mapping) => {
-      this.listener.push({mapping: mapping, callback: callback})
+      this.rdfaListener.push({mapping: mapping, callback: callback})
     })
   }
 
   static notifyRdfaEventListener() {
-    this.listener.forEach((listener) => {
+    this.rdfaListener.forEach((listener) => {
       let projections = document.data.rdfa.query(listener.mapping);
       if (projections.length > 0) {
-        listener.callback(this.resolveSubjects(projections));
+        listener.callback(rdfaGraphFactory.fromGreenTurtleProjections(projections));
       }
     })
-  }
-
-  static resolveSubjects(projections) {
-    projections.forEach((projection) => {
-      let properties = projection._data_.properties;
-      for (let property in properties) {
-        let values = properties[property];
-        for (let i = 0; i < values.length; i++) {
-          let value = values[i];
-          if (this.isAnnonymousSubject(value)) {
-            values[i] = this.subject2DataMapping[value];
-          }
-        }
-      }
-    })
-    return projections;
-  }
-
-  static isAnnonymousSubject(string) {
-    if (string && typeof string == 'string') {
-      var pattern = new RegExp("^_:(\\d)+$")
-      return pattern.test(string);
-    }
-    return false;
   }
 
   static buildRdfaObjectGraph() {
-    this.subject2DataMapping = {};
     let projections = document.data.rdfa.query();
-    projections.forEach((projection) => {
-      let properties = projection._data_.properties;
-      this.subject2DataMapping[projection.getSubject()] = projection;
-    });
-    this.objectGraph = this.resolveSubjects(projections);
+    this.objectGraph = rdfaGraphFactory.fromGreenTurtleProjections(projections);
   }
   
   static getRDFaTriples() {
@@ -201,7 +121,7 @@ export default class RdfaManager {
     document.data.getSubjects().forEach((subject) => {
       let subjectIdentifier = subject;
       if (!subject2uuid[subject]) {
-        if (this.isAnnonymousSubject(subject)) {
+        if (rdfaGraphFactory.isBlankNode(subject)) {
           subjectIdentifier = generateUuid();
         }
         subject2uuid[subject] = subjectIdentifier;
@@ -218,26 +138,20 @@ export default class RdfaManager {
         triples.push({
           subject: subject2uuid[subject],
           property: property,
-          //TODO all values
           values: processedValues});
       }
     })
     return triples;
   }
   
-  static storeRDFaTriplesToFirebase() {
-    let path = "rdfaTriples/";
+  static storeRDFaTriplesToFirebase(bucket) {
+    let path = "rdfaTriples/" + bucket + "/";
     let triples = this.getRDFaTriples();
     let updates = {};
     triples.forEach((triple) => {
       let fullPath = path + generateUuid();
-      let key = firebase.database().ref(fullPath).push().key;
+      let key = firebase.database().ref(path).push().key;
       updates[key] = triple;
-      /*firebase.database().ref(fullPath).set(triple).then(() => {
-        lively.notify("Saved RDFa data", fullPath);
-      }).catch((reason) => {
-        lively.notify("Failed to save RDFa data to " + fullPath, reason);
-      });*/
     });
     firebase.database().ref(path).update(updates).then(() => {
       lively.notify("Updated RDFa data", path);
@@ -246,6 +160,5 @@ export default class RdfaManager {
     });
   }
 }
-
-RdfaManager.listener = [];
+RdfaManager.rdfaListener = [];
 RdfaManager.initializeFirebase();

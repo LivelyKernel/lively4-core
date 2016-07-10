@@ -1,28 +1,25 @@
 'use strict';
 
 import Morph from './Morph.js';
+import rdfa from '../../src/client/rdfa-manager.js';
 
 const urlPattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
     '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
     '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
     '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
     '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
-    '(\\#[-a-z\\d_]*)?$','i'); // fragment locater
-    
-var listenerSampleCode = 
-`lively.rdfa.addRdfaEventListener(
+    '(\\#[-a-z\\d_:]*)?$','i'); // fragment locater
+
+const listenerSampleCode = 
+`import rdfa from 'src/client/rdfa-manager.js';
+
+rdfa.addRdfaEventListener(
   {
     "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : "{{type}}"
   },
-  (projections) => {
-  	var string = "";
-  	projections.forEach((projection) => {
-  	  var properties = projection._data_.properties;
-      for (var property in properties) {
-      	string += property + " : " + properties[property] + "\\n"
-      }
-  	});
-    lively.notify("RDFa {{type}} detected", string)
+  (graph) => {
+    lively.notify("RDFa {{type}} detected");
+    console.log(graph);
   }
 )`
 
@@ -47,9 +44,9 @@ export default class RdfaViewer extends Morph {
   }
 
   loadRdfaDataAndFillTable() {
-    lively.rdfa.reloadData().then(() => {
+    rdfa.reloadData().then(() => {
       this.createTableHeader();
-      this.generateJSONTableRows(false);
+      this.generateJSONTableRows(rdfa.objectGraph);
       this.registerTreeToggle();
     });
   }
@@ -70,42 +67,37 @@ export default class RdfaViewer extends Morph {
       )
   }
 
-  generateJSONTableRows(remote = false) {
-    lively.rdfa.buildJSONRdfaDataStructure(remote).then((data) => {
-      data.forEach((projection) => {
-        this.table.append($('<tr>').attr('data-depth', 0).addClass("collapse")
-          .append($('<td>').attr("colspan", 3).attr("id", projection._data_.subject)
-            .append($('<i>').addClass("fa").addClass("fa-minus-square").addClass("treeToggle").attr('aria-hidden', true))
-            .append(" ")
-            .append(this.processUrl(projection._data_.subject))
-          )
-        );
-        let properties = projection._data_.properties;
-        for (let property in properties) {
-          let value = properties[property][0];
+  generateJSONTableRows(graph) {
+    graph.subjects.forEach((subject) => {
+      this.table.append($('<tr>').attr('data-depth', 0).addClass("collapse")
+        .append($('<td>').attr("colspan", 3).attr("id", subject.id)
+          .append($('<i>').addClass("fa").addClass("fa-minus-square").addClass("treeToggle").attr('aria-hidden', true))
+          .append(" ")
+          .append(this.processUrl(subject.id))
+        )
+      );
+      subject.predicates.forEach((predicate) => {
+        predicate.values.forEach((value) => {
+          const property = predicate.property;
           this.table.append(
             $('<tr>').attr('data-depth', 1).addClass("collapse")
               .append($('<td>').append(this.addRdfaListenerSample(property, value)))
               .append($('<td>').append(this.processUrl(property)))
               .append($('<td>').append(this.isSubject(value) ? this.processSubject(value) : this.processUrl(value)))
           );
-        }
+        });
       });
     });
   }
 
-  isSubject(string) {
-    if (string && typeof string == 'string') {
-      var pattern = new RegExp("^_:(\\d)+$")
-      return pattern.test(string);
-    }
-    return false;
+  isSubject(value) {
+    return typeof value == 'object';
   }
 
-  processSubject(value) {
-    let link = $('<a>').addClass('rdfa-subject').attr('target', '_blank').text(value);
+  processSubject(subject) {
+    let link = $('<a>').addClass('rdfa-subject').attr('target', '_blank').text(subject.id);
     link.on('click', () => {
-      let elem = $(this.shadowRoot.querySelector("[id='" + value + "']"));
+      let elem = $(this.shadowRoot.querySelector("[id='" + subject.id + "']"));
       elem.scrollintoview({complete: () => {
         elem.animate({
           opacity: "0.2"
@@ -121,9 +113,10 @@ export default class RdfaViewer extends Morph {
 
   processUrl(string) {
     if (typeof string == 'string' && this.isUrl(string)) {
+      let fullUrl = string.match(/^https?:/) ? string : 'http://' + string;
       let simpleName = this.getSimpleName(string);
       simpleName = simpleName == "" ? string : simpleName;
-      let link = $('<a>').attr('href', string).attr('target', '_blank').text(simpleName);
+      let link = $('<a>').attr('href', fullUrl).attr('target', '_blank').text(simpleName);
       return link;
     }
     else {
@@ -199,7 +192,10 @@ export default class RdfaViewer extends Morph {
 
   registerFirebaseButton() {
     $(this.shadowRoot.querySelector("#save-button")).on('click', () => {
-      lively.rdfa.storeDataToFirebase();
+      let result = window.prompt("Into which bucket do you want to store the data?");
+      if (result) {
+        rdfa.storeRDFaTriplesToFirebase(result);
+      }
     })
   }
 
