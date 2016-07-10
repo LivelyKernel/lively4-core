@@ -28,8 +28,10 @@ export default class RdfaMovieDb extends Morph {
     RdfaManager.readDataFromFirebase('mymovies', true).then((data) => {
       let movies = this.filterMovies(data);
       let processedMovies = this.enrichMovies(movies);
-      console.log(processedMovies);
-      this.generateTableRows(processedMovies);
+      console.log("processedMovies", processedMovies);
+      let mergedMovies = this.mergeMovies(processedMovies)
+      console.log("mergedMovies", mergedMovies);
+      this.generateTableRows(mergedMovies);
     });
   }
 
@@ -59,6 +61,10 @@ export default class RdfaMovieDb extends Morph {
             .append(movie.url)
           )
         )
+        .append($('<td>')
+          .append(movie.movieDb.name))
+        .append($('<td>')
+          .append(movie.movieDb.id))
         .append(ratingTd)
       );
     });
@@ -69,6 +75,8 @@ export default class RdfaMovieDb extends Morph {
       .append($('<tr>')
         .append($('<th>').text("Title"))
         .append($('<th>').text("URL"))
+        .append($('<th>').text("DB"))
+        .append($('<th>').text("ID"))
         .append($('<th>').text("Rating"))
       )
   }
@@ -90,9 +98,11 @@ export default class RdfaMovieDb extends Morph {
       if (this.isOgpMovie(movieSubject)) {
         movieSubject.url = movieSubject.predicates.filter((predicate) => predicate.property == "http://ogp.me/ns#url")[0].value();
         movieSubject.name = movieSubject.predicates.filter((predicate) => predicate.property == "http://ogp.me/ns#title")[0].value();
+        this.setMovieDb(movieSubject);
       } else if (this.isSchemaMovie(movieSubject)) {
         movieSubject.url = movieSubject.predicates.filter((predicate) => predicate.property == "http://schema.org/url")[0].value();
         movieSubject.name = movieSubject.predicates.filter((predicate) => predicate.property == "http://schema.org/name")[0].value();
+        this.setMovieDb(movieSubject);
       }
     });
     return movieSubjects;
@@ -110,5 +120,59 @@ export default class RdfaMovieDb extends Morph {
       return (predicate.property == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
           && predicate.values[0] == "http://schema.org/Movie");
     });
+  }
+  
+  mergeMovies(movieSubjects) {
+    movieSubjects.forEach((movieSubject) => {
+      let moviesSameName = movieSubjects.filter((otherMovieSubject) => {
+        return otherMovieSubject !== movieSubject
+          && movieSubject.name === otherMovieSubject.name
+          //&& this.isSameUrl(movieSubject, otherMovieSubject);
+      });
+      console.log(moviesSameName);
+    });
+    return movieSubjects;
+  }
+  /*
+  isSameUrl(movieSubject, otherMovieSubject) {
+    var prefixRegex = /^https?:\/\//i;
+    var domainRegex = /^[^\/]+/;
+    
+    let url = movieSubject.url.replace(prefixRegex, '');
+    let otherUrl = otherMovieSubject.url.replace(prefixRegex, '');
+    
+    let domain = url.match(domainRegex);
+    let otherDomain = otherUrl.match(domainRegex);
+
+    return domain === otherDomain;
+  }*/
+  
+  setMovieDb(movieSubject) {
+    let url = movieSubject.url;
+    let regexArray = [
+      {
+        prefix: /^www\.rottentomatoes\.com\//,
+        id: /^m\/.*/,
+        db: 'rottentomatoes'
+      },
+      {
+        prefix: /^www\.imdb\.com\/title\//,
+        id: /^tt[0-9]*\/?/,
+        db: 'imdb'
+      },
+    ];
+    let stripedUrl = url.replace(/^https?:\/\//, "");
+    for(let regexObj of regexArray) {
+      let stripedUrl2 = stripedUrl.replace(regexObj.prefix, '');
+      let id = stripedUrl2.match(regexObj.id, '');
+      if (id) {
+        id = id[0].replace(/\/$/, '');
+        movieSubject.movieDb = {
+          name: regexObj.db,
+          id: id
+        };
+        break;
+      }
+    }
   }
 }
