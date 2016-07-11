@@ -36,14 +36,14 @@ export function checkIndexFile(filename, options) {
     fetch(path, {
       method: "OPTIONS"
     }).then(resp => {
+      if (resp.status != 200) {
+        throw new Error("index not available");
+      }
       return resp.json();
     }).then(jsonResp => {
-      // ugly way to check if file exists (we dont get a 404...)
-      if (jsonResp.size === "0 bytes") {
-        resolve("unavailable");
-      } else {
-        resolve("available");
-      }
+      resolve("available");
+    }).catch(err => {
+      resolve("unavailable");
     });
   });
 }

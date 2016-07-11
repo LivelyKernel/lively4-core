@@ -7,7 +7,6 @@ let availableMounts = {
   "server": {}
 }
 
-let searchableMounts = [];
 let searchFunctions = {
   "dropbox": [],
   "server": []
@@ -44,9 +43,9 @@ function loadMounts() {
   });
 
   return Promise.all([dbPromise, serverPromise]).then(() => {
-    Object.keys(availableMounts.dropbox).forEach(path => {
-      loadIndex("dropbox", path);
-    });
+    // Object.keys(availableMounts.dropbox).forEach(path => {
+    //   loadIndex("dropbox", path);
+    // });
 
     loadIndex("server", "/" + window.location.pathname.split("/")[1]);
   });
