@@ -7,17 +7,19 @@ export default class External {
 
   static copyFile(fromURL, toURL) {
     return files.loadFile(fromURL)
-      .then(r => files.saveFile(toURL, r));
+      .then(r => files.saveFile(toURL, r)).then( () => toURL);
   }
   
-  static updateModule(name, fromDir, toDir) {
+  static copy(fromDir, toDir) {
     return this.copyFile(fromDir + name, toDir + name)
       .then( () => lively.notify("updated " + name));
   }
   
   static updateExternalModules() {
-    this.updateModule("lively.modules-with-lively.vm.js", 
-      "https://lively-kernel.org/lively4/lively.modules/dist/", lively4url + "/src/external/");
+    External.copy( "https://lively-kernel.org/lively4/ContextJS/Layers.js", lively4url + "/src/external/ContextJS.js")
+    External.copy( "https://d3js.org/d3.v3.js", lively4url + "/src/external/d3.v3.js")
+    
+    // External.copy( "https://marvl.infotech.monash.edu/webcola/cola.js", lively4url + "/src/external/cola.js")
   }
 
 }

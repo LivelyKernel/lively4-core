@@ -15,20 +15,22 @@ import paths from './paths.js';
 
 import inspector from './inspector.js';
 
+import contextmenu from './contextmenu.js';
+
 import keys from './keys.js';
 import components from './morphic/component-loader.js';
 
+import authGithub from './auth-github.js'
+import authDropbox from './auth-dropbox.js'
+import authGoogledrive  from './auth-googledrive.js'
 
-//import expose from './expose.js';
+import expose from './expose.js';
 
 /* expose external modules */
-
-
 import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
 
 import * as kernel from 'kernel'
-
 
 let $ = window.$,
   babel = window.babel; // known global variables.
@@ -47,7 +49,11 @@ var exportmodules = [
   "components",
   "inspector",
   "color",
-  "focalStorage"];
+  "focalStorage",
+  "authGithub",
+  "authDropbox",
+  "authGoogledrive"
+];
 
 
 
@@ -55,17 +61,14 @@ var exportmodules = [
 // By structuring our modules differently, we still can act as es6 module to the outside but develop at runtime
 // #IDEA: I refactored from "static module and function style" to "dynamic object" style
 export default class Lively {
-
-
   static import(moduleName, path, forceLoad) {
-
-    if (path)
+    if (lively.modules && path)
       lively.modules.reloadModule("" + path);
 
     if (!path) path = this.defaultPath(moduleName)
     if (!path) throw Error("Could not imoport " + moduleName + ", not path specified!")
 
-    
+
 
     if (this[moduleName] && !forceLoad)
       return new Promise((resolve) => { resolve(this[moduleName])})
@@ -97,17 +100,28 @@ export default class Lively {
     })
   }
 
-  static reloadModule(path, optSource) {
-    if (!path) path = this.defaultPath(moduleName)
-    if (!path) throw Error("Could not imoport " + moduleName + ", not path specified!")
-
-    if (this[moduleName]) {
-      return new Promise((resolve) => { resolve(this[moduleName])});
-    }
-    return System.import(path).then( module => {
-      console.log("lively: load "+ moduleName);
-      this[moduleName] = module.default || module;
-    });
+  static async reloadModule(path) {
+    path = "" + path;
+    return lively.modules.reloadModule(path).then( mod => {
+      var moduleName = path.replace(/[^\/]*/,"")
+      
+      var defaultClass = mod.default
+      
+      if (lively.components && defaultClass) {
+        console.log("update template prototype: " + moduleName)
+        lively.components.updatePrototype(defaultClass.prototype);
+      };
+      
+      if (moduleName == "lively") {
+          this.notify("migrate lively.js")
+          var oldLively = window.lively;
+          window.lively =module.default || module
+          this["previous"] = oldLively
+          this.components = oldLively.components // components have important state
+      }
+      
+      return mod;
+    })
   }
 
   static loadJavaScriptThroughDOM(name, src, force) {
@@ -130,8 +144,8 @@ export default class Lively {
       document.head.appendChild(script);
     })
   }
-  
-  
+
+
   static loadCSSThroughDOM(name, href, force) {
     return new Promise((resolve) => {
       var linkNode = document.querySelector("#"+name);
@@ -153,7 +167,6 @@ export default class Lively {
       document.head.appendChild(link);
     })
   }
-
 
   static fillTemplateStyles(root) {
      // there seems to be no <link ..> tag allowed to reference css inside of templates #Jens
@@ -180,13 +193,12 @@ export default class Lively {
     })[moduleName]
   }
 
-
   static handleError(error) {
     lively.LastError = error
+    if (!error) return // hmm... this is currious...
     lively.notify("Error: ", error.message, 20, () =>
     		  lively.openWorkspace("Error:" + error.message + "\nLine:" + error.lineno + " Col: " + error.colno+"\nSource:" + error.source + "\nError:" + error.stack))
   }
-
 
   static loaded() {
     // #Refactor with #ContextJS
@@ -222,22 +234,16 @@ export default class Lively {
 
     exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expected
 
-    this.import("authGithub", kernel.realpath('/src/client/auth-github.js'))
-    this.import("authDropbox", kernel.realpath('/src/client/auth-dropbox.js'))
-    this.import("authGoogledrive", kernel.realpath('/src/client/auth-googledrive.js'))
-
-    this.import("expose")
-    
     // for anonymous lively.modules workspaces
-    if (!lively.modules.isHookInstalled("fetch", "workspaceFetch")) {
-      lively.modules.installHook("fetch", function workspaceFetch(proceed, load) { 
+    if (lively.modules && !lively.modules.isHookInstalled("fetch", "workspaceFetch")) {
+      lively.modules.installHook("fetch", function workspaceFetch(proceed, load) {
         if (load.address.match("workspace://")) return Promise.resolve("")
         return proceed(load)
       })
     }
-  
+
     // for container content... But this will lead to conflicts with lively4chrome  ?? #Jens
-    // lively.loadCSSThroughDOM("livelystyle", lively4url + "/templates/livelystyle.css")
+    lively.loadCSSThroughDOM("livelystyle", lively4url + "/templates/lively4.css")
   }
 
   static array(anyList){
@@ -350,10 +356,9 @@ export default class Lively {
   }
 
   static hideContextMenu(evt) {
-    // console.log("hide: " + (evt.path[0] === document.body))
     if (evt.path[0] !== document.body) return
     console.log("hide context menu:" + evt)
-    this.import("contextmenu").then(m => m.hide());
+    contextmenu.hide()
   }
 
   static openContextMenu(container, evt, target) {
@@ -362,8 +367,7 @@ export default class Lively {
       target = that
     }
     console.log("open context menu: " + target);
-    this.import("contextmenu").then(m => m.openIn(container, evt, target));
-
+    contextmenu.openIn(container, evt, target)
   }
 
   static log(/* varargs */) {
@@ -460,9 +464,10 @@ export default class Lively {
 
       owner.replaceChild(newInstance, oldInstance);
       _.each(oldInstance.childNodes, function(ea) {
-        newInstance.appendChild(ea);
-        console.log("append old child: " + ea);
-
+        if (ea) { // there are "undefined" elemented in childNodes... sometimes #TODO
+          newInstance.appendChild(ea);
+          console.log("append old child: " + ea);
+        }
       });
       _.each(oldInstance.attributes, function(ea) {
         console.log("set old attribute " + ea.name + " to: " + ea.value);
@@ -511,6 +516,21 @@ export default class Lively {
       lively.notify("Could not show source for: " + object)
     }
   }
+
+  static async showClassSource(object, evt) {
+    // object = that
+    if (object instanceof HTMLElement) {
+      let templateFile = lively4url +"/templates/" + object.localName + ".html",
+        source = await fetch(templateFile).then( r => r.text());
+        template = $.parseHTML(source).find( ea => ea.tagName == "TEMPLATE"),
+        className = template.getAttribute('data-class'),
+        moduleURL = lively4url +"/templates/classes/" + className + ".js";
+      lively.openBrowser(moduleURL, true, className);
+    } else {
+      lively.notify("Could not show source for: " + object)
+    }
+  }
+
 
   static showElement(elem, timeout) {
     var comp = document.createElement("div")
@@ -619,7 +639,7 @@ export default class Lively {
     });
   }
   // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
-  static openBrowser(url, edit, pattern) {
+  static async openBrowser(url, edit, pattern) {
     var editorComp;
     return lively.openComponentInWindow("lively-container").then(comp => {
           editorComp = comp;
@@ -627,9 +647,9 @@ export default class Lively {
           comp.parentElement.style.height = "600px"
           if (edit) comp.setAttribute("mode", "edit");
           return comp.followPath(url)
-    }).then( () => {
+    }).then( async () => {
       if (edit && pattern) {
-        editorComp.getAceEditor().editor.find(pattern)
+          (await editorComp.realAceEditor()).find(pattern)
       }
     })
   }
@@ -638,8 +658,13 @@ export default class Lively {
 if (window.lively)
   Object.assign(Lively, window.lively) // copy objects from lively.modules
 
-window.lively = Lively
-Lively.loaded();
-
+if (!window.lively || window.lively.name != "Lively") {
+  window.lively = Lively
+  console.log("loaded lively intializer");
+  // only load once... not during development
+  Lively.loaded();
+} else {
+  window.lively = Lively
+}
 
 console.log("loaded lively");

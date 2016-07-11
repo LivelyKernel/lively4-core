@@ -43,7 +43,7 @@
       border-radius: 3px;
       cursor: pointer;
     }
-    
+
     nav button .fa {
       color: #777;
       font-size: 16px;
@@ -180,7 +180,11 @@
 
     class FileBrowser extends HTMLElement {
       initialize() {
-        this.path = '/'
+        if (!this._path) {
+          // initialize is called after the created callback was invoked, which
+          // is why path might be already set
+          this.path = '/';
+        }
 
         let location = this._query('#location')
         location.addEventListener('keypress', (event) => {
@@ -200,7 +204,11 @@
           this.path = '/'
         })
         this.addEventListener('file-select', (event) => {
-          lively.openFile(event.file.url)
+          if (this.mainAction) {
+            this.mainAction(event.file.url);
+          } else {
+            lively.openFile(event.file.url)
+          }
         })
       }
 
@@ -221,6 +229,10 @@
 
         this._path = target
         this._update()
+      }
+
+      setMainAction(cb) {
+        this.mainAction = cb;
       }
 
       get path() {
@@ -297,6 +309,10 @@
 
             contents.appendChild(item)
           })
+        }).then(() => {
+          // remove old errors
+          this._query('#error').innerHTML = ""
+          this._query('#error').classList.remove('visible')
         }).catch((err) => {
           console.error(err)
           this._query('#error').innerHTML = err.toString()

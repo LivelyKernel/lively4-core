@@ -2,6 +2,7 @@
 
 import Morph from './Morph.js';
 
+
 export default class Container extends Morph {
 
   initialize() {
@@ -58,6 +59,40 @@ export default class Container extends Morph {
   useBrowserHistory() {
     return this.getAttribute("load") == "auto";
   }  
+
+  hideCancelAndSave() {
+    _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
+      ea.style.visibility = "hidden";
+      ea.style.display = "none";
+
+    });
+    _.each(this.shadowRoot.querySelectorAll(".browse"), (ea) => {
+      ea.style.visibility = "visible";
+      ea.style.display = "inline-block";
+    });
+  }
+
+  showCancelAndSave() {
+    _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
+      ea.style.visibility = "visible";
+      ea.style.display = "inline-block";
+    });
+    
+    _.each(this.shadowRoot.querySelectorAll(".browse"), (ea) => {
+      ea.style.visibility = "hidden";
+      ea.style.display = "none";
+    });
+  }
+  
+  history() {
+    if (!this._history) this._history = []
+    return this._history
+  }
+
+  forwardHistory() {
+    if (!this._forwardHistory) this._forwardHistory = []
+    return this._forwardHistory
+  }
     
   async onSync(evt) {
     var username = await lively.focalStorage.getItem("githubUsername")
@@ -82,31 +117,7 @@ export default class Container extends Morph {
   onPathEntered(path) {
     this.followPath(path);
   }
-
-  hideCancelAndSave() {
-    _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
-      ea.style.visibility = "hidden";
-      ea.style.display = "none";
-
-    });
-    _.each(this.shadowRoot.querySelectorAll(".browse"), (ea) => {
-      ea.style.visibility = "visible";
-      ea.style.display = "inline-block";
-    });
-  }
-
-  showCancelAndSave() {
-      _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
-        ea.style.visibility = "visible";
-        ea.style.display = "inline-block";
-      });
-      
-      _.each(this.shadowRoot.querySelectorAll(".browse"), (ea) => {
-        ea.style.visibility = "hidden";
-        ea.style.display = "none";
-      });
-
-    }
+    
 
   onEdit() {
       this.setAttribute("mode", "edit");
@@ -150,45 +161,45 @@ export default class Container extends Morph {
     }
   }
 
-  history() {
-    if (!this._history) this._history = []
-    return this._history
-  }
-
-  forwardHistory() {
-    if (!this._forwardHistory) this._forwardHistory = []
-    return this._forwardHistory
-  }
-
-
   onSave(doNotQuit) {
     if (this.getPath().match(/\/$/)) {
       lively.files.saveFile(this.getURL(),"") 
       return
     }
     return this.getSubmorph("#editor").saveFile().then( () => {
-        var sourceCode = this.getSubmorph("#editor").currentEditor().getValue()
-        lively.updateTemplate(sourceCode)
+      var sourceCode = this.getSubmorph("#editor").currentEditor().getValue()
+      lively.updateTemplate(sourceCode)
       var url = this.getURL();
       if (this.getURL().pathname.match(/\/test\/.*([^/]+)\.js$/)) {
         console.log("ignore test: " + this.getURL())
         return
       }
       
+      document.body.querySelectorAll('lively-container').forEach(ea => {
+        var url = "" + this.getURL()
+        if (ea !== this && !ea.isEditing() 
+          && ("" +ea.getURL()).match(url.replace(/\.[^.]+$/,""))) {
+          console.log("update container content: " + ea)
+          ea.setPath(ea.getURL() + "")
+        }  
+        
+      })
+      
       var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/)
       if (moduleName) {
         moduleName = moduleName[1]
         if (this.getSubmorph("#live").checked) {
           
-          lively.import(moduleName, url, true).then( module => {
-              lively.notify("Module " + moduleName + " reloaded!")
+          lively.reloadModule("" + url).then( module => {
+            lively.notify("Module " + moduleName + " reloaded!")
           }, err => {
-              window.LastError = err
-              lively.notify("Error loading module " + moduleName, err)
+            window.LastError = err
+            lively.notify("Error loading module " + moduleName, err)
+            console.error(err)
           })
         }
       }
-    }).then( () => this.showNavbar())
+    }).then(() => this.showNavbar())
   }
 
   async onDelete() {
@@ -214,10 +225,7 @@ export default class Container extends Morph {
     this.getSubmorph('#container-editor').innerHTML = ''
   }
   
-  getContentRoot() {
-    return this.getSubmorph('#container-root')
-    // return this
-  }
+
 
   appendMarkdown(content) {
     System.import(lively4url + '/src/external/showdown.js').then((showdown) => {
@@ -244,12 +252,38 @@ export default class Container extends Morph {
 
     this.appendMarkdown(content);
   }
+  appendScript(scriptElement) {
+    var root = this.getContentRoot()
+    var script   = document.createElement("script");
+    script.type  = "text/javascript";
+    if (scriptElement.src) script.src  = scriptElement.src;
+    script.text  = scriptElement.textContent;
+    root.appendChild(script);
+  }
 
+  async appendHtml(content) {
+    if (content.match(/<script src=".*d3\.v3(.min)?\.js".*>/)) {
+      if (!window.d3) {
+        console.log("LOAD D3")
+        await lively.loadJavaScriptThroughDOM("d3", "src/external/d3.v3.js")
+      }
+    
+      if (!window.ScopedD3) {
+        console.log("LOAD D3 Adaption Layer")
+        await System.import("templates/classes/ContainerScopedD3.js")   
+        // return this.appendHtml(content) // try again
+      }
+    }
 
-  appendHtml(content) {
+    if (content.match(/<script src=".*cola(\.min)?\.js".*>/)) {
+        console.log("LOAD Cola")
+        await lively.loadJavaScriptThroughDOM("cola", "src/external/cola.js")
+    }
+    
+    //  var content = this.sourceContent
     try {
-      var root = this.getContentRoot()  
-      var nodes = $.parseHTML(content);
+      var root = this.getContentRoot()
+      var nodes = $.parseHTML(content, document, true);
       if (nodes[0] && nodes[0].localName == 'template') {
       	lively.notify("append template " + nodes[0].id);
 		    return this.appendTemplate(nodes[0].id);
@@ -257,10 +291,14 @@ export default class Container extends Morph {
       lively.html.fixLinks(nodes, this.getDir(),
         (path) => this.followPath(path));
       nodes.forEach((ea) => {
-        root.appendChild(ea);
+        if (ea.tagName == "SCRIPT") {
+          this.appendScript(ea)
+        } else {
+          root.appendChild(ea);
+        }
       });
     } catch(e) {
-      console.log("Could not append html:" + content);
+      console.log("Could not append html:" + content.slice(0,200) +"..." +" ERROR:", e);
     }
   }
 
@@ -273,10 +311,8 @@ export default class Container extends Morph {
       console.log("Could not append html:" + content)
     }
   }
+  
 
-  getDir() {
-       return this.getPath().replace(/[^/]*$/,"")
-  }
 
   followPath(path) {
     console.log("follow path2: " + path)
@@ -286,16 +322,25 @@ export default class Container extends Morph {
     if (this.isEditing() && !path.match(/\/$/)) {
       if (this.useBrowserHistory())
         window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?edit="+path);
-      this.setPath(path, true).then(() => this.editFile())
+      return this.setPath(path, true).then(() => this.editFile())
     } else {
       if (this.useBrowserHistory())
         window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?load="+path);
-      this.setPath(path)
+      return this.setPath(path)
     }
   }
 
   isEditing() {
     return this.getAttribute("mode") == "edit"
+  }
+
+  getContentRoot() {
+    // return this.getSubmorph('#container-root')
+    return this
+  }
+
+  getDir() {
+       return this.getPath().replace(/[^/]*$/,"")
   }
 
   getURL() {
@@ -309,6 +354,28 @@ export default class Container extends Morph {
 
   getPath() {
     return this.getAttribute("src")
+  }
+  
+  getAceEditor() {
+    var livelyEditor = this.shadowRoot.querySelector('lively-editor')
+    if (!livelyEditor) return;
+    return livelyEditor.shadowRoot.querySelector('juicy-ace-editor')
+  }
+  
+  async realAceEditor() {
+    return new Promise(resolve => {
+      var checkForEditor = () => {
+        var editor = this.getAceEditor()
+        if (editor && editor.editor) {
+          resolve(editor.editor)
+        } else {
+          setTimeout(() => {
+            checkForEditor()
+          },100) 
+        }
+      };
+      checkForEditor()
+    })
   }
   
   thumbnailFor(url, name) {
@@ -398,21 +465,21 @@ export default class Container extends Morph {
       var format = path.replace(/.*\./,"")
       if (format == "html")  {
         this.sourceContent = content
-        if (render) this.appendHtml(content)
+        if (render) return this.appendHtml(content)
       } else if (format == "md") {
         this.sourceContent = content
-        if (render) this.appendMarkdown(content)
+        if (render) return this.appendMarkdown(content)
       } else if (format == "livelymd") {
         this.sourceContent = content
-        if (render) this.appendLivelyMD(content)
+        if (render) return this.appendLivelyMD(content)
       } else if (format.match(/(png)|(jpe?g)/)) {
-        if (render) this.appendHtml("<img src='" + url +"'>")
+        if (render) return this.appendHtml("<img src='" + url +"'>")
       } else if (format == "pdf") {
-        if (render) this.appendHtml('<object style="width:21cm;height:29cm" data="'
+        if (render) return this.appendHtml('<object style="width:21cm;height:29cm" data="'
           + url +'" type="application/pdf"></object>')
       } else {
         this.sourceContent = content
-        if (render) this.appendHtml("<pre>" + content +"</pre>")
+        if (render) return this.appendHtml("<pre>" + content +"</pre>")
       }
     }).catch(function(err){
       console.log("Error: ", err)
@@ -458,6 +525,7 @@ export default class Container extends Morph {
 	      subList.appendChild(element) ;
       })
     } else if (this.getPath().match(/\.js$/)) {
+      // |async\\s+
       var instMethod = "(^|\\s+)([a-zA-Z0-9$_]+)\\s*\\(\\s*[a-zA-Z0-9$_ ,]*\\s*\\)\\s*{",
           klass = "(?:^|\\s+)class\\s+([a-zA-Z0-9$_]+)",
           func = "(?:^|\\s+)function\\s+([a-zA-Z0-9$_]+)\\s*\\(",
@@ -474,7 +542,7 @@ export default class Container extends Morph {
                         (m[4] && "function " + m[4]) ||
                          m[5]
           if(!theMatch.match(/^(if|switch|for|catch|function)$/)) {
-            let name = (m[1] || "").replace(/\s/g, "&nbsp;") + theMatch,
+            let name = (line.replace(/[A-Za-z].*/g,"")).replace(/\s/g, "&nbsp;") + theMatch,
                 navigateToName = m[0],
                 element = document.createElement("li");
     	      element.innerHTML = name
@@ -573,14 +641,7 @@ export default class Container extends Morph {
       }
     })
   }
-
-
-  getAceEditor() {
-    var livelyEditor = this.shadowRoot.querySelector('lively-editor')
-    if (!livelyEditor) return;
-    return livelyEditor.shadowRoot.querySelector('juicy-ace-editor')
-  }
-
+  
   async editFile(path) {
     return new Promise(async (resolve, reject) => {
       this.setAttribute("mode","edit") // make it persistent
@@ -630,8 +691,9 @@ export default class Container extends Morph {
 
         this.showCancelAndSave()
     
-        aceComp.targetModule = "" + url // for editing
-
+        if ((""+url).match(/\.js$/)) {
+          aceComp.targetModule = "" + url // for editing
+        }
         setTimeout(resolve, 1000) // Promise from AceEditor needed here... #Jens #TODO
         
         // comp.loadFile() // ALT: Load the file again?

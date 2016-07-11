@@ -5,19 +5,22 @@ import {loadComponent} from './templates-fixture.js'
 // System.import(lively4url + '/node_modules/chai/chai.js').then( m => window.expect = m.expect)
 
 describe("Container Tool",  function() {
-  
+
   var that
   before("load", function(done){
-    this.timeout(15000);
+    this.timeout(35000);
     loadComponent("lively-container").then(c => {that = c; done()})
   })
 
-  it("should setPath an url", async () => {
-    var url = "https://lively4/sys/mounts"
-    await that.setPath(url);
-    
-    expect("" +await that.getURL()).to.be.equal(url);
+  xit("should setPath an url", function(done) {
+    var expectedUrl = "https://lively4/sys/mounts"
 
-    expect(that.shadowRoot.querySelector("#container-content").textContent).match(/\"path\": \"\/\"/) 
+    that.setPath(expectedUrl)
+      .then(() => that.getURL())
+      .then(url => {
+        expect("" + url).to.be.equal(expectedUrl);
+        expect(that.shadowRoot.querySelector("#container-content").textContent).match(/\"path\": \"\/\"/)
+      })
+      .then(done)
   })
 })

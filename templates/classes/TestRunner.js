@@ -1,14 +1,24 @@
 'use strict';
 
+import * as cop from 'src/external/ContextJS.js';
+
+
+//     Mocha.utils.parseQuery()
+
+// var parseQueryLayer = cop.create("MochaParseQueryLayer");
+// parseQueryLayer.layerObject(Mocha.utils, {
+    
+// });
+
 export default class TestRunner extends HTMLDivElement {
   initialize() {
     this.windowTitle = "Test Runner"
     lively.html.registerButtons(this)
-    lively.html.registerInputs(this)
+    // lively.html.registerInputs(this)
     if (!this.querySelector("#mocha")) {
-      var mochadiv  = document.createElement("div")
-      mochadiv.id = "mocha"
-      this.appendChild(mochadiv)
+      this.mochadiv = document.createElement("div");
+      this.mochadiv.id = "mocha"
+      this.appendChild(this.mochadiv)
     }
     this.querySelector("#mocha").innerHTML= ""
     
@@ -54,18 +64,29 @@ export default class TestRunner extends HTMLDivElement {
   async findTestFiles() {
     var files = []
     var list = this.shadowRoot.querySelector("#testDir").value.split(",")
-    for(var i in list) {
-      files = files.concat(await this.findTestFilesInDir(list[i]))
-    };
+    console.log("list: " + list)
+
+    // await Promise.all(list.map((dir) => {
+    //   console.log("find test file in dir: " + dir)
+    //   return this.findTestFilesInDir(dir).then(newFiles => {
+    //     files = files.concat(newFiles)
+    //   })
+    // }));
+    
+    for (let dir of list) {
+      let newFiles = await this.findTestFilesInDir(dir)
+      files = files.concat(newFiles)
+    }
+
     return files
     // #WhyNotThis #ContinueHere
     // return ["/test/", "/test/templates/"].reduce(async (sum, ea) => {
     //     return sum.concat(await this.findTestFilesInDir(ea))
     // }, [])
   }
-// await that.findTestFilesInDir( "/test/templates/")
+  // await that.findTestFilesInDir( "/test/templates/")
   
-    // debugger
+  // debugger
   // it('sds',()=>{})
   // window.it
   
@@ -75,11 +96,35 @@ export default class TestRunner extends HTMLDivElement {
     await Promise.all(
       (await this.findTestFiles()).map((url) => {
         var name = url.replace(/.*\//,"").replace(/\/\.[^\.]*/,"");
-          return lively.import(name, url, true)
+          lively.modules.reloadModule(url);
+          return System.import(url)
           // mocha.addFile(url.replace(/.*\//,"").replace(/\..*/,""))
       }));
-    console.log("RUN")
-    mocha.run();
+    console.log("RUN");
+    var self = this;
+    mocha.run(failures => {
+      if (self.prevState) {
+        window.history.pushState(self.prevState, '', self.prevLocation + "&grep=.*");
+        self.prevState = self.prevLocation = undefined;
+      }
+      self.fixHTML();
+    });
+  }
+  
+  fixHTML() {
+    var self = this;
+    this.mochadiv.querySelectorAll(".replay").forEach(ea => {
+      ea.innerHTML = "R";
+      ea.onclick = (evt) => {
+        evt.preventDefault();
+        self.prevState = window.history.state;
+        self.prevLocation = window.location.toString().replace(/&grep=[^&]+/, '');
+        var grep = ea.href.replace(/.*(&grep.*)/, '$1');
+        window.history.pushState({ mochastate: true }, '', self.prevLocation + grep);
+        self.onRunButton();
+        return false;
+      };
+    });
   }
   
   async onTestDirChanged() {

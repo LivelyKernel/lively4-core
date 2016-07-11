@@ -10,6 +10,7 @@ import httpfs from 'src/swx/fs/http.jsx'
 import html5fs from 'src/swx/fs/html5.jsx'
 import githubfs from 'src/swx/fs/github.jsx'
 import dropboxfs from 'src/swx/fs/dropbox.jsx'
+import rootfs from 'src/swx/fs/root.jsx'
 
 import focalStorage from 'src/external/focalStorage.js';
 
@@ -19,7 +20,12 @@ class ServiceWorker {
         this.filesystem = new fs.Filesystem()
 
         // default file system
-        this.filesystem.mount('/', githubfs, {repo: 'LivelyKernel/lively4-core', branch: 'gh-pages'})
+        
+        
+        this.filesystem.mount('/', rootfs)
+        
+        
+        // this.filesystem.mount('/github', githubfs, {repo: 'LivelyKernel/lively4-core', branch: 'gh-pages'})
         this.filesystem.mount('/sys', sysfs)
         this.filesystem.mount('/local', html5fs)
 

@@ -3,7 +3,7 @@
 import Morph from './Morph.js';
 import * as serverSearch from '../../src/client/search/server-search.js';
 import * as githubSearch from '../../src/client/search/github-search.js';
-import * as dropboxSearch from '../../src/client/search/dropbox-search.js';
+import * as lunrSearch from '../../../lively4-server/src/lunr-search.js';
 
 export default class SearchBar extends Morph {
 
@@ -17,7 +17,7 @@ export default class SearchBar extends Morph {
 
     this.serverSearch = serverSearch;
     this.githubSearch = githubSearch;
-    this.dropboxSearch = dropboxSearch;
+    this.dropboxSearch = lunrSearch;
 
     this.searchableMounts = {
       "server": [],
@@ -54,10 +54,10 @@ export default class SearchBar extends Morph {
     checkbox.classList.remove("hidden");
     checkbox.checked = "true";
     checkbox.disabled = '';
-     
+
     let li = checkbox.parentNode;
     li.classList.remove("disabled");
-    
+
     // Remove spinner
     let spinner = li.querySelector("i");
     if (spinner) spinner.remove();
@@ -99,7 +99,8 @@ export default class SearchBar extends Morph {
           name: "server"
         });
 
-        console.log(`[Search] found the following mounts: ${mounts}`);
+
+        console.log("[Search] found the following mounts: ", mounts);
         var mountsList = this.getSubmorph("#mounts-list");
         mountsList.innerHTML = "";
         mounts.forEach(mount => {
