@@ -46,9 +46,9 @@ export default class Services extends Morph {
     }
 
     this.refreshServiceList();
-    this.refreshInterval = window.setInterval(
-      this.refreshServiceList.bind(this),
-      5000
+    this.refreshInterval = window.setInterval(() => {
+        this.refreshServiceList();
+      }, 5000
     );
     this.logInterval = null;
 
@@ -221,9 +221,9 @@ export default class Services extends Morph {
     this.entryPoint.value = this.services[this.pid].entryPoint;
     this.refreshLog();
     if (this.logInterval === null) {
-      this.logInterval = window.setInterval(function() {
+      this.logInterval = window.setInterval(() => {
         this.refreshLog();
-      }.bind(this), 2000);
+      }, 2000);
     }
   }
 
