@@ -665,13 +665,12 @@
 	
 	    return _asyncToGenerator(function* () {
 	      let name = path.normalize(modName);
-	      let mod = _this.get(name);
 	
-	      if (mod) {
-	        return mod;
+	      if (_this._registry.has(name)) {
+	        yield _this._registry.get(name).ready;
+	      } else {
+	        yield _this.load(name, options);
 	      }
-	
-	      yield _this.load(name, options);
 	
 	      return _this.get(name);
 	    })();
@@ -743,13 +742,15 @@
 	        throw new Error('Error loading module ' + name);
 	      }
 	
-	      return Promise.all(mod.dependencies.map(function (dependency) {
+	      mod.ready = Promise.all(mod.dependencies.map(function (dependency) {
 	        if (_this3._registry.has(dependency)) {
 	          return Promise.resolve();
 	        } else {
 	          return _this3.load(dependency);
 	        }
 	      }));
+	
+	      return mod.ready;
 	    })();
 	  }
 	};
@@ -48626,13 +48627,7 @@
 	  });
 	};
 	
-	var _path = __webpack_require__(3);
-	
-	var path = _interopRequireWildcard(_path);
-	
 	var _loader = __webpack_require__(5);
-	
-	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 	
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { return step("next", value); }, function (err) { return step("throw", err); }); } } return step("next"); }); }; }
 	
@@ -48655,11 +48650,11 @@
 	};
 	
 	const init = (() => {
-	  var _ref = _asyncToGenerator(function* (fn) {
-	    return system().import(path.resolve('/swx.js')).then(fn);
+	  var _ref = _asyncToGenerator(function* () {
+	    return system().import('/swx.js');
 	  });
 	
-	  return function init(_x) {
+	  return function init() {
 	    return _ref.apply(this, arguments);
 	  };
 	})();
