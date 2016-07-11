@@ -3,17 +3,27 @@ import {expect} from '../../node_modules/chai/chai.js';
 import {loadComponent} from './templates-fixture.js';
 
 describe("Services Tool",  function() {
-  var that, listRefreshed = false, logRefreshed = false;
+  var that;
+  var listCount = 0, logCount = 0;
+  var listRefreshed = false, logRefreshed = false;
 
   var checkListRefreshed = function(done) {
     if (listRefreshed) {
+      return done();
+    }
+    if (++listCount > 8) {
+      assert.fail(listRefreshed, true, 'Does not refresh list');
       return done();
     }
     setTimeout(function() {checkListRefreshed(done);}, 1000);
   };
 
   var checklogRefreshed = function(done) {
-    if (listRefreshed) {
+    if (logRefreshed) {
+      return done();
+    }
+    if (++logCount > 8) {
+      assert.fail(logRefreshed, true, 'Does not refresh log');
       return done();
     }
     setTimeout(function() {checklogRefreshed(done);}, 1000);
@@ -39,11 +49,12 @@ describe("Services Tool",  function() {
   });
   
   it("should refresh automatically", function(done) {
-    this.timeout(8000);
+    this.timeout(10000);
     checkListRefreshed(done);
   });
   
   it("should list, select, and remove services", function(done) {
+    this.timeout(10000);
     var fakeServices = {
       '1': {
         'entryPoint': 'foo.js',
