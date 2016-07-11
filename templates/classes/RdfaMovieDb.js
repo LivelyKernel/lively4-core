@@ -4,6 +4,8 @@ import Morph from './Morph.js';
 
 import RdfaManager from '../../src/client/rdfa-manager.js';
 
+import * as WikiDataAdapter from '../../src/client/wiki-data-adapter.js';
+
 export default class RdfaMovieDb extends Morph {
 
   /*
@@ -19,6 +21,8 @@ export default class RdfaMovieDb extends Morph {
    */
   setup() {
     this.table = $(this.shadowRoot.querySelector('#dbTable'));
+    this.registerMergeDuplicatesButton();
+    this.registerMergeImdbRottenButton();
     this.createTableHeader();
     this.loadRdfaDataAndFillTable();
   }
@@ -27,11 +31,9 @@ export default class RdfaMovieDb extends Morph {
     RdfaManager.loadFirebaseConfig();
     RdfaManager.readDataFromFirebase('mymovies', true).then((data) => {
       let movies = this.filterMovies(data);
-      let processedMovies = this.enrichMovies(movies);
-      console.log("processedMovies", processedMovies);
-      let mergedMovies = this.mergeMovies(processedMovies)
-      console.log("mergedMovies", mergedMovies);
-      this.generateTableRows(mergedMovies);
+      this.movies = this.enrichMovies(movies);
+      console.log("movies", this.movies);
+      this.generateTableRows(this.movies);
     });
   }
 
@@ -42,9 +44,31 @@ export default class RdfaMovieDb extends Morph {
 
   }
   
+  registerMergeDuplicatesButton() {
+    $(this.shadowRoot.querySelector("#merge-duplicates-button")).on('click', () => {
+      this.table.empty();
+      this.createTableHeader();
+      this.movies = this.mergeDuplicateMovies(this.movies);
+      console.log("mergedDuplicateMovies", this.movies);
+      this.generateTableRows(this.movies);
+    })
+  }
+  
+  registerMergeImdbRottenButton() {
+    $(this.shadowRoot.querySelector("#merge-imdb-rotten-button")).on('click', () => {
+      this.table.empty();
+      this.createTableHeader();
+      this.enrichWithOtherDbMovieId(this.movies).then(() => {
+        this.movies = this.mergeImdbRottenMovies(this.movies);
+        console.log("mergedImdbRottenMovies", this.movies);
+        this.generateTableRows(this.movies);
+      }).catch((reason) => console.log("Error merging IMDB + rottentomatoes", reason));
+    })
+  }
+  
   generateTableRows(movies) {
     movies.forEach((movie) => {
-      let ratingTd = $('<td>')
+      let ratingTd = $('<div>')
       for (let i = 0; i < 5; i++) {
         if (movie.rating > i) {
           ratingTd.append($('<i class="fa fa-star">'));
@@ -65,7 +89,13 @@ export default class RdfaMovieDb extends Morph {
           .append(movie.movieDb.name))
         .append($('<td>')
           .append(movie.movieDb.id))
-        .append(ratingTd)
+        .append($('<td>')
+          .append($('<a>').attr('href', this.dbObjectToUrl(movie.otherDb)).attr('target', '_blank')
+            .append(this.dbObjectToUrl(movie.otherDb))
+          )
+        )
+        .append($('<td>')
+          .append(ratingTd))
       );
     });
   }
@@ -77,6 +107,7 @@ export default class RdfaMovieDb extends Morph {
         .append($('<th>').text("URL"))
         .append($('<th>').text("DB"))
         .append($('<th>').text("ID"))
+        .append($('<th>').text("Same as"))
         .append($('<th>').text("Rating"))
       )
   }
@@ -98,12 +129,12 @@ export default class RdfaMovieDb extends Morph {
       if (this.isOgpMovie(movieSubject)) {
         movieSubject.url = movieSubject.predicates.filter((predicate) => predicate.property == "http://ogp.me/ns#url")[0].value();
         movieSubject.name = movieSubject.predicates.filter((predicate) => predicate.property == "http://ogp.me/ns#title")[0].value();
-        this.setMovieDb(movieSubject);
       } else if (this.isSchemaMovie(movieSubject)) {
         movieSubject.url = movieSubject.predicates.filter((predicate) => predicate.property == "http://schema.org/url")[0].value();
         movieSubject.name = movieSubject.predicates.filter((predicate) => predicate.property == "http://schema.org/name")[0].value();
-        this.setMovieDb(movieSubject);
       }
+      
+      this.setMovieDb(movieSubject);
     });
     return movieSubjects;
   }
@@ -122,30 +153,82 @@ export default class RdfaMovieDb extends Morph {
     });
   }
   
-  mergeMovies(movieSubjects) {
+  mergeDuplicateMovies(movieSubjects) {
+    let movies = {};
+    let filteredMovieSubjects = [];
     movieSubjects.forEach((movieSubject) => {
-      let moviesSameName = movieSubjects.filter((otherMovieSubject) => {
-        return otherMovieSubject !== movieSubject
-          && movieSubject.name === otherMovieSubject.name
-          //&& this.isSameUrl(movieSubject, otherMovieSubject);
-      });
-      console.log(moviesSameName);
+      if (movieSubject.movieDb.name) {
+        let dbMovies = movies[movieSubject.movieDb.name];
+        if (!dbMovies) {
+          dbMovies = {};
+          movies[movieSubject.movieDb.name] = dbMovies;
+        }
+        
+        let sameMovieSubject = dbMovies[movieSubject.movieDb.id];
+        if (sameMovieSubject) {
+          sameMovieSubject.duplicates = sameMovieSubject.duplicates || [];
+          sameMovieSubject.duplicates.push(movieSubject);
+        } else {
+          dbMovies[movieSubject.movieDb.id] = movieSubject;
+          filteredMovieSubjects.push(movieSubject);
+        }
+      } else {
+        filteredMovieSubjects.push(movieSubject);
+      }
     });
-    return movieSubjects;
+    return filteredMovieSubjects;
   }
-  /*
-  isSameUrl(movieSubject, otherMovieSubject) {
-    var prefixRegex = /^https?:\/\//i;
-    var domainRegex = /^[^\/]+/;
+  
+  mergeImdbRottenMovies(movieSubjects) {
+    let imdbMovies = movieSubjects.filter((movieSubject) => movieSubject.movieDb.name == "imdb");
+    let rottenMovies = movieSubjects.filter((movieSubject) => movieSubject.movieDb.name == "rottentomatoes");
+    let duplicates = [];
     
-    let url = movieSubject.url.replace(prefixRegex, '');
-    let otherUrl = otherMovieSubject.url.replace(prefixRegex, '');
+    imdbMovies.forEach((imdbMovie) => {
+      let sameMovies = rottenMovies.filter((rottenMovie) => {
+        return imdbMovie.otherDb.id == rottenMovie.movieDb.id;
+      });
+      sameMovies.forEach((sameMovie) => {
+        imdbMovie.duplicates = imdbMovie.duplicates || [];
+        imdbMovie.duplicates.push(sameMovie);
+        console.log("sameMovie", sameMovie);
+        duplicates.push(sameMovie);
+      });
+    });
     
-    let domain = url.match(domainRegex);
-    let otherDomain = otherUrl.match(domainRegex);
-
-    return domain === otherDomain;
-  }*/
+    console.log("duplicates", duplicates);
+    console.log("movieSubjects", movieSubjects);
+    console.log("movieSubjects.filter", movieSubjects.filter((movieSubject) => !duplicates[movieSubject]));
+    
+    return movieSubjects.filter((movieSubject) => !duplicates.includes(movieSubject));
+  }
+  
+  enrichWithOtherDbMovieId(movieSubjects) {
+    let imdbMovies = movieSubjects.filter((movieSubject) => movieSubject.movieDb.name == "imdb");
+    let rottenMovies = movieSubjects.filter((movieSubject) => movieSubject.movieDb.name == "rottentomatoes");
+    let promises = [];
+    imdbMovies.forEach((imdbMovie) => {
+      promises.push(WikiDataAdapter.imdb2rotten(imdbMovie.movieDb.id).then((rottenId) => {
+        if (rottenId && rottenId[0]) {
+          imdbMovie.otherDb = {
+            id: rottenId[0],
+            name: 'rottentomatoes'
+          };
+        }
+      }));
+    });
+    rottenMovies.forEach((rottenMovie) => {
+      promises.push(WikiDataAdapter.rotten2imdb(rottenMovie.movieDb.id).then((imdbId) => {
+        if (imdbId && imdbId[0]) {
+          rottenMovie.otherDb = {
+            id: imdbId[0],
+            name: 'imdb'
+          };
+        }
+      }));
+    });
+    return Promise.all(promises);
+  }
   
   setMovieDb(movieSubject) {
     let url = movieSubject.url;
@@ -162,6 +245,12 @@ export default class RdfaMovieDb extends Morph {
       },
     ];
     let stripedUrl = url.replace(/^https?:\/\//, "");
+    
+    movieSubject.movieDb = {
+      name: null,
+      id: null
+    };
+    
     for(let regexObj of regexArray) {
       let stripedUrl2 = stripedUrl.replace(regexObj.prefix, '');
       let id = stripedUrl2.match(regexObj.id, '');
@@ -174,5 +263,16 @@ export default class RdfaMovieDb extends Morph {
         break;
       }
     }
+  }
+  
+  dbObjectToUrl(movieDb) {
+    if (!movieDb) return '';
+    
+    if (movieDb.name == 'imdb') {
+      return "http://www.imdb.com/title/" + movieDb.id;
+    } else if (movieDb.name == 'rottentomatoes') {
+      return "http://www.rottentomatoes.com/" + movieDb.id;
+    }
+    return '';
   }
 }
