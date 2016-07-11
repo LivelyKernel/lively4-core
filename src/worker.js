@@ -1,4 +1,3 @@
-import * as path from 'path'
 
 import { Loader } from './loader'
 
@@ -25,8 +24,8 @@ const system = () => {
   return System
 }
 
-const init = async (fn) => {
-  return system().import(path.resolve(KERNEL_CONFIG.WORKER_INIT)).then(fn)
+const init = async () => {
+  return system().import(KERNEL_CONFIG.WORKER_INIT)
 }
 
 export default function() {

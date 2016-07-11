@@ -182,13 +182,12 @@ export class Loader {
 
   async import(modName, options = {}) {
     let name = path.normalize(modName)
-    let mod = this.get(name)
 
-    if (mod) {
-      return mod
+    if (this._registry.has(name)) {
+      await this._registry.get(name).ready
+    } else {
+      await this.load(name, options)
     }
-
-    await this.load(name, options)
 
     return this.get(name)
   }
@@ -265,12 +264,14 @@ export class Loader {
       throw new Error('Error loading module ' + name)
     }
 
-    return Promise.all(mod.dependencies.map(dependency => {
+    mod.ready = Promise.all(mod.dependencies.map(dependency => {
       if (this._registry.has(dependency)) {
         return Promise.resolve()
       } else {
         return this.load(dependency)
       }
     }))
+
+    return mod.ready
   }
 }
