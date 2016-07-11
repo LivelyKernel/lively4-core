@@ -207,7 +207,7 @@ export default class Services extends Morph {
   removeAllItems() {
     var selectedPID = null;
     while (this.serviceList.firstChild) {
-      item = this.serviceList.firstChild;
+      var item = this.serviceList.firstChild;
       if (selectedPID === null && !item.classList.contains('empty') &&
           item.getSubmorph('.item').classList.contains('selected')) {
         selectedPID = item.getAttribute('data-id');
