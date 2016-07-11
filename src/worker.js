@@ -24,7 +24,7 @@ const system = () => {
   return System
 }
 
-const init = async () => {
+const init = () => {
   return system().import(KERNEL_CONFIG.WORKER_INIT)
 }
 
