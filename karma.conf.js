@@ -20,6 +20,7 @@ module.exports = function(config) {
       'src/babelsberg/constraint.js',
       'src/babelsberg/util.js',
       'src/*.js',
+      'src/ticking/*.js',
       'tests/**/*Helper.js',
       'tests/**/*Fixture.js',
       'tests/**/*Tests.js'
