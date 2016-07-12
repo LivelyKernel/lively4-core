@@ -1,6 +1,7 @@
 import Interpreter from './babelsberg/jsinterpreter/interpreter.js';
 import { Stack } from './utils.js';
 import { Listener } from './listener.js';
+import { BaseActiveExpression } from './base/base-active-expressions.js';
 
 export { ConstraintInterpreter } from './constraint-interpreter.js';
 
@@ -12,44 +13,19 @@ class Handler {
     }
 }
 
-class ActiveExpression {
+class ActiveExpression extends BaseActiveExpression {
 
     constructor(func, scope) {
-        console.log(func);
-        this.func = func;
-        this.lastValue = this.getCurrentValue();
+        super(func);
         this.scope = scope;
-        this.callbacks = [];
         this.propertyAccessors = new Set();
 
         this.installListeners();
     }
 
-    getCurrentValue() {
-        return this.func();
-    }
-    
+    // TODO: remove indirection
     propertyAssigned() {
-        let currentValue = this.getCurrentValue();
-        if(this.lastValue === currentValue) { return; }
-
-        this.lastValue = currentValue;
-        this.callbacks.forEach(callback => callback());
-    }
-
-    onChange(callback) {
-        this.callbacks.push(callback);
-
-        return this;
-    }
-
-    /**
-     * TODO
-     * like a bind for AExpr
-     * @param items
-     */
-    applyOn(...items) {
-        throw new Error('Not yet implemented');
+        this.checkAndNotify();
     }
 
     revoke() {

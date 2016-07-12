@@ -4,18 +4,38 @@ export class BaseActiveExpression {
      *
      * @param func (Function) the expression to be observed
      */
-    constructor(func) {}
+    constructor(func) {
+        // console.log(func);
+        this.func = func;
+        this.lastValue = this.getCurrentValue();
+        this.callbacks = [];
+    }
 
     /**
      * aliases with 'now'
      * @returns {*} the current value of the expression
      */
-    getCurrentValue() {}
+    getCurrentValue() {
+        return this.func();
+    }
 
     onChange(callback) {
         this.callbacks.push(callback);
 
         return this;
+    }
+
+    checkAndNotify() {
+        let currentValue = this.getCurrentValue();
+        if(this.lastValue === currentValue) { return; }
+
+        this.lastValue = currentValue;
+        this.notify();
+
+    }
+
+    notify() {
+        this.callbacks.forEach(callback => callback());
     }
 
     /**
@@ -25,10 +45,6 @@ export class BaseActiveExpression {
      */
     applyOn(...items) {
         throw new Error('Not yet implemented');
-    }
-
-    revoke() {
-        this.removeListeners();
     }
 }
 
