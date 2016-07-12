@@ -1,4 +1,4 @@
 
 export class MyClass {
-  f() { return 1 }
+  f() { return 3 }
 }
