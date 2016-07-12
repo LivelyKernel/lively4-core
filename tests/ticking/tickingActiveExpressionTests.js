@@ -66,7 +66,6 @@ describe('Ticking Active Expressions', () => {
         expect(spy.withArgs(42, {lastValue: 17}).calledOnce).to.be.true;
     });
 
-
     describe('check', () => {
         it("run multiple checks only invokes the callback once", () => {
             let val = 17,
@@ -118,6 +117,7 @@ describe('Ticking Active Expressions', () => {
             expect(spy3.called).to.be.false;
         });
 
+        // TODO: should this really be part of the API?
         it("check a single active expressions", () => {
             let val = 17,
                 spy = sinon.spy(),
@@ -128,5 +128,57 @@ describe('Ticking Active Expressions', () => {
 
             expect(spy.calledOnce).to.be.true;
         });
+    });
+
+    // TODO: is this useful?
+    describe('disable and re-enable', () => {
+        it("disabled aexprs do not fire notify the callback", () => {
+            let val = 17,
+                spy = sinon.spy();
+
+            aexpr(() => val)
+                .onChange(spy)
+                .disable();
+
+            val = 33;
+            check();
+
+            expect(spy.called).to.be.false;
+        });
+
+        it("disabled aexprs do nothing when explicitly listed to be checked", () => {
+            let val = 17,
+                spy = sinon.spy(),
+                expr = aexpr(() => val)
+                    .onChange(spy)
+                    .disable();
+
+            val = 33;
+            check([expr]);
+
+            expect(spy.called).to.be.false;
+        });
+
+        it("disabled aexprs do nothing when explicitly listed to be checked", () => {
+            let val = 17,
+                spy = sinon.spy(),
+                expr = aexpr(() => val)
+                    .onChange(spy)
+                    .disable();
+
+            val = 33;
+            check();
+
+            expect(spy.called).to.be.false;
+
+            expr.enable();
+
+            val = 33;
+            check();
+
+            expect(spy.calledOnce).to.be.true;
+
+        });
+
     });
 });

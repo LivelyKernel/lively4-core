@@ -5,7 +5,7 @@ import Interpreter from './../src/babelsberg/jsinterpreter/interpreter.js'
 import { aexpr } from '../src/active-expressions.js';
 
 
-describe('Active Expressions', function() {
+describe('Interpreting Active Expressions', function() {
     it("should interpret", () => {
         var predicate = function () {
             return 23;
