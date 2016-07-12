@@ -21,6 +21,7 @@ module.exports = function(config) {
       'src/babelsberg/util.js',
       'src/*.js',
       'src/ticking/*.js',
+      'src/base/*.js',
       'tests/**/*Helper.js',
       'tests/**/*Fixture.js',
       'tests/**/*Tests.js'
