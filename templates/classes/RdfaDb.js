@@ -19,13 +19,16 @@ export default class RdfaDb extends Morph {
    */
   setup() {
     this.table = $(this.shadowRoot.querySelector('#dbTable'));
-    this.createTableHeader();
-    this.loadRdfaDataAndFillTable();
+    RdfaManager.loadFirebaseConfig();
+    this.registerReloadButton();
   }
 
   loadRdfaDataAndFillTable() {
-    RdfaManager.loadFirebaseConfig();
-    RdfaManager.readDataFromFirebase('').then((data) => {
+    this.table.empty();
+    this.createTableHeader();
+    let result = window.prompt("Wich bucket to load triples from?");
+    if (!result) return;
+    RdfaManager.readDataFromFirebase(result).then((data) => {
       this.generateTableRows(data);
     });
   }
@@ -35,6 +38,12 @@ export default class RdfaDb extends Morph {
    */
   render() {
 
+  }
+  
+  registerReloadButton() {
+    $(this.shadowRoot.querySelector("#reload-button")).on('click', () => {
+      this.loadRdfaDataAndFillTable();
+    })
   }
   
   generateTableRows(dataArray) {

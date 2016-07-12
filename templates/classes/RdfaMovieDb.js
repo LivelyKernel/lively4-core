@@ -191,14 +191,9 @@ export default class RdfaMovieDb extends Morph {
       sameMovies.forEach((sameMovie) => {
         imdbMovie.duplicates = imdbMovie.duplicates || [];
         imdbMovie.duplicates.push(sameMovie);
-        console.log("sameMovie", sameMovie);
         duplicates.push(sameMovie);
       });
     });
-    
-    console.log("duplicates", duplicates);
-    console.log("movieSubjects", movieSubjects);
-    console.log("movieSubjects.filter", movieSubjects.filter((movieSubject) => !duplicates[movieSubject]));
     
     return movieSubjects.filter((movieSubject) => !duplicates.includes(movieSubject));
   }
