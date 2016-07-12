@@ -42,7 +42,7 @@
         // Add link with onClick handler
         let link = document.createElement("a");
         link.innerHTML = item.label;
-        link.title = item.score;
+        link.title = item.path;
         link.href = "#";
         link.onclick = () => {
           this.browseSearchResult(item.path, pattern)

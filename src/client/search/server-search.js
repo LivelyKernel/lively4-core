@@ -33,7 +33,7 @@ export function find(pattern) {
 
     let responseJson = await response.json();
     return responseJson.map((res) => {
-      res.path = utils.join(this.path, res.ref);
+      res.path = window.location.origin + utils.join(this.path, res.ref);
       res.type = "server";
       return res;
     });

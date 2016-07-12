@@ -16,9 +16,9 @@ export default class SearchWidget extends Morph {
     this.searchButton.addEventListener("click", (evt) => { this.searchButtonClicked(); });
     this.configButton.addEventListener("click", (evt) => { this.configButtonClicked(); });
     this.searchField.addEventListener("keyup", (evt) => { this.searchFieldKeyup(evt); });
-    
+
     $(this.spinner).hide();
-    
+
     this.hide();
   }
 
@@ -26,7 +26,7 @@ export default class SearchWidget extends Morph {
     let query = this.searchField.value;
     this.search(query);
   }
-  
+
   configButtonClicked() {
     var comp  = document.createElement("lively-index-manager");
     return lively.components.openInWindow(comp);
@@ -39,11 +39,11 @@ export default class SearchWidget extends Morph {
       this.search(query);
     }
   }
-  
+
   hide() {
     $(this).hide();
   }
-  
+
   toggle() {
     if ($(this).is(":visible")) {
       this.hide();
@@ -51,33 +51,48 @@ export default class SearchWidget extends Morph {
     }
     $(this).show();
     this.searchField.focus();
-    this.searchField.setSelectionRange(0, this.searchField.value.length)
+    this.searchField.setSelectionRange(0, this.searchField.value.length);
     return true;
+  }
+
+  getLabel(str) {
+    // shorten the string
+    return str.length < 60 ? str : str.slice(0,15) + " [...] " + str.slice(-40);
   }
 
   search(query, triggeredByShow=false) {
     // Search was triggered by the shortcut, but the selection hasn't changed
     if (triggeredByShow && this.searchField.value == query) return;
-    
+
     console.log(`[Search] searching for '${query}'`);
-    
-    
+
+
     // In case the search was opened by keyboard shortcut
      this.searchField.value = query;
 
     // Clear search results
     this.searchResults.show([]);
-    
+
     $(this.noResults).hide();
     $(this.spinner).show();
 
-    let results = []
-    search.search(query).then( (res) => {
-      // Update search results
-      results = results.concat(res);
-      this.searchResults.show(results, query);
-      $(this.spinner).hide();
-      
+    let results = [];
+    let searchPromises = search.search(query);
+
+    searchPromises.forEach(prom => {
+      prom.then(newResults => {
+        newResults.forEach(res => {
+          res.label = this.getLabel(res.path);
+        });
+
+        // Update search results
+        results = results.concat(newResults);
+        this.searchResults.show(results, query);
+        $(this.spinner).hide();
+      });
+    });
+    
+    Promise.all(searchPromises).then(r => {
       if (results.length == 0) $(this.noResults).show();
     });
   }
