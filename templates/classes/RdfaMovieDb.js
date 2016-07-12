@@ -2,18 +2,20 @@
 
 import Morph from './Morph.js';
 
-import RdfaManager from '../../src/client/rdfa-manager.js';
+    import rdfa from '../../src/client/rdfa-manager.js';
 
 import * as WikiDataAdapter from '../../src/client/wiki-data-adapter.js';
 
-export default class RdfaMovieDb extends Morph {
+const DEFAULT_BUCKET = "mymovies";
+
+  export default class RdfaMovieDb extends Morph {
 
   /*
    * HTMLElement callbacks
    */
   attachedCallback() {
     this.setup();
-    this.windowTitle = "RDFa Movie DB";
+      this.windowTitle = "RDFa Movie DB";
   }
 
   /*
@@ -24,16 +26,18 @@ export default class RdfaMovieDb extends Morph {
     this.registerMergeDuplicatesButton();
     this.registerMergeImdbRottenButton();
     this.createTableHeader();
-    this.loadRdfaDataAndFillTable();
+      this.loadRdfaDataAndFillTable(DEFAULT_BUCKET);
+    this.updateBucketList();
+    this.registerLoadBucketButton();
   }
 
-  loadRdfaDataAndFillTable() {
-    RdfaManager.loadFirebaseConfig();
-    RdfaManager.readDataFromFirebase('mymovies', true).then((data) => {
+    loadRdfaDataAndFillTable(bucket) {
+      rdfa.loadFirebaseConfig();
+      rdfa.readDataFromFirebase(bucket, true).then((data) => {
       let movies = this.filterMovies(data);
       this.movies = this.enrichMovies(movies);
       console.log("movies", this.movies);
-      this.generateTableRows(this.movies);
+      this.generateTable(this.movies);
     });
   }
 
@@ -46,27 +50,26 @@ export default class RdfaMovieDb extends Morph {
   
   registerMergeDuplicatesButton() {
     $(this.shadowRoot.querySelector("#merge-duplicates-button")).on('click', () => {
-      this.table.empty();
-      this.createTableHeader();
       this.movies = this.mergeDuplicateMovies(this.movies);
       console.log("mergedDuplicateMovies", this.movies);
-      this.generateTableRows(this.movies);
+      this.generateTable(this.movies);
     })
   }
   
   registerMergeImdbRottenButton() {
     $(this.shadowRoot.querySelector("#merge-imdb-rotten-button")).on('click', () => {
-      this.table.empty();
-      this.createTableHeader();
       this.enrichWithOtherDbMovieId(this.movies).then(() => {
         this.movies = this.mergeImdbRottenMovies(this.movies);
         console.log("mergedImdbRottenMovies", this.movies);
-        this.generateTableRows(this.movies);
+        this.generateTable(this.movies);
       }).catch((reason) => console.log("Error merging IMDB + rottentomatoes", reason));
     })
   }
   
-  generateTableRows(movies) {
+  generateTable(movies) {
+    this.table.empty();
+    this.createTableHeader();
+      
     movies.forEach((movie) => {
       let ratingTd = $('<div>')
       for (let i = 0; i < 5; i++) {
@@ -269,5 +272,30 @@ export default class RdfaMovieDb extends Morph {
       return "http://www.rottentomatoes.com/" + movieDb.id;
     }
     return '';
+  }
+  
+  updateBucketList() {
+    const bucketList = this.shadowRoot.querySelector("#bucketlist");
+    bucketList.innerHTML = "";
+    
+      rdfa.getBucketListFromFirebase().then(buckets => {
+      buckets.forEach(bucket => {
+        const option = document.createElement("option");
+        option.value = bucket;
+        bucketList.appendChild(option);
+      });
+    })
+  }
+  
+  registerLoadBucketButton() {
+    $(this.shadowRoot.querySelector("#select-bucket-button")).on('click', () => {
+      let bucket = this.shadowRoot.querySelector("#bucketNameInput").value;
+      if (!bucket) {
+        window.prompt("Which bucket do you want to load?");
+      }
+      if (bucket) {
+        this.loadRdfaDataAndFillTable(bucket);
+      }
+    });
   }
 }

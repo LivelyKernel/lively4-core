@@ -199,7 +199,7 @@ export default class RdfaViewer extends Morph {
   
   saveButtonPressed() {
     let bucketName = this.shadowRoot.querySelector("#bucketNameInput").value;
-    if (!bucketName || bucketName === "") {
+    if (!bucketName) {
       bucketName = window.prompt("Into which bucket do you want to store the data?");
     }
     if (bucketName) {
