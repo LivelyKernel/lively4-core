@@ -192,10 +192,32 @@ export default class RdfaViewer extends Morph {
 
   registerFirebaseButton() {
     $(this.shadowRoot.querySelector("#save-button")).on('click', () => {
-      let result = window.prompt("Into which bucket do you want to store the data?");
-      if (result) {
-        rdfa.storeRDFaTriplesToFirebase(result);
-      }
+      this.saveButtonPressed();
+    })
+    this.updateBucketList();
+  }
+  
+  saveButtonPressed() {
+    let bucketName = this.shadowRoot.querySelector("#bucketNameInput").value;
+    if (!bucketName || bucketName === "") {
+      bucketName = window.prompt("Into which bucket do you want to store the data?");
+    }
+    if (bucketName) {
+      rdfa.storeRDFaTriplesToFirebase(bucketName);
+      this.updateBucketList();
+    }
+  }
+  
+  updateBucketList() {
+    const bucketList = this.shadowRoot.querySelector("#bucketlist");
+    bucketList.innerHTML = "";
+    
+    rdfa.getBucketListFromFirebase().then(buckets => {
+      buckets.forEach(bucket => {
+        const option = document.createElement("option");
+        option.value = bucket;
+        bucketList.appendChild(option);
+      });
     })
   }
 

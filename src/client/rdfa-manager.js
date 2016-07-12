@@ -90,6 +90,18 @@ export default class RdfaManager {
         return asGraph ? rdfaGraphFactory.fromTriples(triples) : triples;
       })
   }
+  
+  static getBucketListFromFirebase() {
+    return firebase.database().ref("rdfaTriples").once('value')
+    .then(data => {
+      const buckets = [];
+      data.forEach(keyObject => {
+        buckets.push(keyObject.key);
+      })
+      
+      return buckets;
+    });
+  }
 
   static addRdfaEventListener(mappings, callback) {
     let mappingArray = Array.isArray(mappings) ? mappings : [mappings];
