@@ -54,4 +54,79 @@ describe('Ticking Active Expressions', () => {
         expect(spy.withArgs(42, {lastValue: 17}).calledOnce).to.be.true;
     });
 
+    it("provide additional information (e.g. the last value of the expression) to the callback", () => {
+        let val = 17,
+            spy = sinon.spy();
+
+        aexpr(() => val).onChange(spy);
+
+        val = 42;
+
+        check();
+        expect(spy.withArgs(42, {lastValue: 17}).calledOnce).to.be.true;
+    });
+
+
+    describe('check', () => {
+        it("run multiple checks only invokes the callback once", () => {
+            let val = 17,
+                spy = sinon.spy();
+
+            aexpr(() => val).onChange(spy);
+
+            val = 42;
+
+            check();
+            check();
+
+            expect(spy.calledOnce).to.be.true;
+        });
+
+        it("check all active expressions if not specified further", () => {
+            let val1 = 17,
+                val2 = 33,
+                spy1 = sinon.spy(),
+                spy2 = sinon.spy();
+
+            aexpr(() => val1).onChange(spy1);
+            aexpr(() => val2).onChange(spy2);
+
+            val1 = 42;
+            val2 = 51;
+
+            check();
+
+            expect(spy1.calledOnce).to.be.true;
+            expect(spy2.calledOnce).to.be.true;
+        });
+
+        it("check all active expressions provided by an iterator", () => {
+            let val = 17,
+                spy1 = sinon.spy(),
+                spy2 = sinon.spy(),
+                spy3 = sinon.spy(),
+                aexpr1 = aexpr(() => val).onChange(spy1),
+                aexpr2 = aexpr(() => val).onChange(spy2),
+                aexpr3 = aexpr(() => val).onChange(spy3);
+
+            val = 42;
+
+            check([aexpr1, aexpr2]);
+
+            expect(spy1.calledOnce).to.be.true;
+            expect(spy2.calledOnce).to.be.true;
+            expect(spy3.called).to.be.false;
+        });
+
+        it("check a single active expressions", () => {
+            let val = 17,
+                spy = sinon.spy(),
+                expr = aexpr(() => val).onChange(spy);
+
+            val = 42;
+            expr.checkAndNotify();
+
+            expect(spy.calledOnce).to.be.true;
+        });
+    });
 });

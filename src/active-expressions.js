@@ -13,7 +13,7 @@ class Handler {
     }
 }
 
-class ActiveExpression extends BaseActiveExpression {
+class InterpreterActiveExpression extends BaseActiveExpression {
 
     constructor(func, scope) {
         super(func);
@@ -46,7 +46,7 @@ class ActiveExpression extends BaseActiveExpression {
     }
 }
 
-export function aexpr(func, scope) { return new ActiveExpression(func, scope); }
+export function aexpr(func, scope) { return new InterpreterActiveExpression(func, scope); }
 
 export class ActiveExpressionInterpreter extends Interpreter {
 
