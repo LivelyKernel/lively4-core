@@ -199,7 +199,7 @@ describe('Active Expressions', function() {
     });
 
     // TODO: currently leads to an error, as the property rect.area is overwritten, yet only the prototype has the .area function
-    xit("traces function calls to the protopyte of an object", () => {
+    xit("traces function calls to the prototype of an object", () => {
         class Rectangle {
             constructor(width, height) {
                 this.width = width;

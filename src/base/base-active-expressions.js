@@ -35,7 +35,8 @@ export class BaseActiveExpression {
     }
 
     notify() {
-        this.callbacks.forEach(callback => callback());
+        // TODO: we provide the current value, which is assumably updated before; make this explicit
+        this.callbacks.forEach(callback => callback(this.lastValue));
     }
 
     /**

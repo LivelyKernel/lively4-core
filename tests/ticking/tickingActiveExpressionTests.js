@@ -30,4 +30,16 @@ describe('Ticking Active Expressions', () => {
         expect(spy.calledOnce).to.be.true;
     });
 
+    it("provide the new value to the callback", () => {
+        let val = 17,
+            spy = sinon.spy();
+
+        aexpr(() => val).onChange(spy);
+
+        val = 42;
+
+        check();
+        expect(spy.withArgs(42).calledOnce).to.be.true;
+    });
+
 });
