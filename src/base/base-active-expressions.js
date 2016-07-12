@@ -29,14 +29,16 @@ export class BaseActiveExpression {
         let currentValue = this.getCurrentValue();
         if(this.lastValue === currentValue) { return; }
 
+        let lastValue = this.lastValue;
         this.lastValue = currentValue;
-        this.notify();
 
+        this.notify(currentValue, {
+            lastValue
+        });
     }
 
-    notify() {
-        // TODO: we provide the current value, which is assumably updated before; make this explicit
-        this.callbacks.forEach(callback => callback(this.lastValue));
+    notify(...args) {
+        this.callbacks.forEach(callback => callback(...args));
     }
 
     /**
