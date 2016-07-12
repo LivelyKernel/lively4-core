@@ -1,0 +1,62 @@
+<template id="lively-xterm">
+  <style data-src="/src/external/xterm.js/xterm.css"></style>
+  <style>
+    #terminal-container, .terminal {
+      height: 100%;
+      font-size: 14px;
+    }
+  </style>
+  <div id="terminal-container">
+    <content />
+  </div>
+</template>
+
+<script>
+  (function() {
+    'use strict';
+
+    const template = document.currentScript.ownerDocument.querySelector('#lively-xterm');
+    const clone    = document.importNode(template.content, true);
+
+    Promise.all([
+      System.import(lively4url + '/src/external/xterm.js/xterm.js'),
+      System.import(lively4url + '/src/client/morphic/component-loader.js'),
+      // Addons extend xterm.js module
+      System.import(lively4url + '/src/external/xterm.js/addons/attach.js'),
+      System.import(lively4url + '/src/external/xterm.js/addons/fit.js')
+    ]).then((imports) => {
+      const XTerm = imports[0];
+      const Loader = imports[1];
+      
+      class XTermContainer extends HTMLElement {
+        initialize() {
+          this.term = new XTerm({
+            screenKeys: true,
+            cursorBlink: true
+          });
+
+          var socketURL = window.prompt('Please enter xterm.js /bash endpoint');
+          if (socketURL === null) {
+            console.warn('No endpoint provided');
+            return;
+          }
+          this.socket = new WebSocket(socketURL);
+
+          this.term.open($('#terminal-container', this.shadowRoot)[0]);
+          this.term.fit();
+
+          this.socket.onopen = () => {
+            this.term.attach(this.socket);
+            this.term._initialized = true;
+          };
+
+          // Resize term on mouseup
+          this.parentElement.addEventListener("mouseup", function(e){
+            this.term.fit();
+          }.bind(this));
+        }
+      }
+      Loader.register('lively-xterm', clone, XTermContainer.prototype);
+    });
+  })();
+</script>

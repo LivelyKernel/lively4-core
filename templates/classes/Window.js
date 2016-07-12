@@ -1,7 +1,7 @@
 'use strict';
 
 import Morph from './Morph.js';
-// import { AExpr } from '/lively4/active-expressions/src/active-expressions.js';
+import { AExpr } from 'https://lively-kernel.org/lively4/active-expressions/src/active-expressions.js';
 
 function getScroll() {
   return {
@@ -30,7 +30,7 @@ export default class Window extends Morph {
   get isFixed() {
     return this.hasAttribute('fixed');
   }
-  
+
   get titleSpan() {
     return this.shadowRoot.querySelector('.window-title span');
   }
@@ -55,27 +55,24 @@ export default class Window extends Morph {
 
     this.created = true;
     this.render();
-    
+
     if (this.isMinimized() || this.isMaximized())
       this.displayResizeHandle(false);
-      
+
     // Capture in window
-    
-    // TODO: Remove debug prints before enabling this
-    // this._capture_expr = AExpr(function watch(win) {
-    //   return parseInt(win.style.top) < 0 || parseInt(win.style.left) < 0;
-    // });
-    // this._capture_expr
-    //   .applyOn(this)
-    //   .onChange(function(win) {
-    //     console.log('get back here!');
-    //     if (parseInt(win.style.top) < 0) {
-    //       win.style.top = 0;
-    //     }
-    //     if (parseInt(win.style.left) < 0) {
-    //       win.style.left = 0;
-    //     }
-    //   });
+    this._capture_expr = new AExpr(win =>
+      parseInt(win.style.top) < 0 || parseInt(win.style.left) < 0
+    );
+    this._capture_expr
+    .applyOn(this)
+    .onChange(win => {
+      if (parseInt(win.style.top) < 0) {
+        win.style.top = 0;
+      }
+      if (parseInt(win.style.left) < 0) {
+        win.style.left = 0;
+      }
+    });
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
@@ -94,7 +91,7 @@ export default class Window extends Morph {
   /*
    * Initialization
    */
-   
+
   defineShortcuts() {
     this.window = this.shadowRoot.querySelector('.window');
 
@@ -154,7 +151,7 @@ export default class Window extends Morph {
       let scroll = getScroll();
 
       this.setPosition(rect.left + scroll.x, rect.top + scroll.y);
-      
+
       this.classList.remove('window-fixed');
       this.pinButton.classList.remove('active');
     }
@@ -195,7 +192,7 @@ export default class Window extends Morph {
   toggleMaximize() {
     if (this.positionBeforeMaximize) {
       $('i', this.maxButton).removeClass('fa-compress').addClass('fa-expand');
-      
+
       this.style.position = "absolute"
       this.setPosition(
           this.positionBeforeMaximize.x,
@@ -204,17 +201,17 @@ export default class Window extends Morph {
       this.setSize(
         this.positionBeforeMaximize.width,
         this.positionBeforeMaximize.height
-      );  
+      );
       document.body.style.overflow = this.positionBeforeMaximize.bodyOverflow
-      
+
       this.positionBeforeMaximize = null
     } else {
       if (this.isMinimized()) {
         this.toggleMinimize()
       }
-      
+
       $('i', this.maxButton).removeClass('fa-expand').addClass('fa-compress');
-      
+
       var bounds = this.getBoundingClientRect()
       this.positionBeforeMaximize = {
         x: bounds.left,
@@ -223,24 +220,24 @@ export default class Window extends Morph {
         height: bounds.height,
         bodyOverflow: document.body.style.overflow
       }
-     
+
       this.style.position = "fixed"
       this.style.top = 0;
       this.style.left = 0;
       this.style.width = "100%";
       this.style.height= "100%";
       document.body.style.overflow = "hidden"
-    
+
     }
     this.displayResizeHandle(!this.isMaximized())
   }
-  
+
   displayResizeHandle(bool) {
     if (bool === undefined) bool = true;
-    this.shadowRoot.querySelector('.window-resize').style.display = 
+    this.shadowRoot.querySelector('.window-resize').style.display =
       bool ? "block" : "none";
   }
-  
+
   toggleMinimize() {
     var content = this.shadowRoot.querySelector('#window-content');
     if (this.positionBeforeMinimize) {
@@ -252,17 +249,17 @@ export default class Window extends Morph {
       this.setSize(
         this.positionBeforeMinimize.width,
         this.positionBeforeMinimize.height
-      );  
+      );
       content.style.display = "block";
       this.displayResizeHandle(true)
       this.positionBeforeMinimize = null
-      
+
       // this.classList.removed("minimized")
     } else {
       if (this.isMaximized()) {
         this.toggleMaximize()
       }
-      
+
       var bounds = this.getBoundingClientRect();
       this.positionBeforeMinimize = {
         x: bounds.left,
@@ -270,7 +267,7 @@ export default class Window extends Morph {
         width: bounds.width,
         height: bounds.height,
       };
-    
+
       this.style.position = "fixed";
       this.style.top = this.minimizedWindowPadding +"px";
       this.style.left = "";
@@ -279,15 +276,15 @@ export default class Window extends Morph {
       this.style.height= "30px";
       content.style.display = "none";
       this.displayResizeHandle(false)
-      
+
       this.sortMinimizedWindows();
     }
   }
-  
+
   isMinimized() {
     return !!this.positionBeforeMinimize;
   }
-  
+
   isMaximized() {
     return !!this.positionBeforeMaximize;
   }
@@ -295,13 +292,13 @@ export default class Window extends Morph {
   sortMinimizedWindows() {
     var x = this.minimizedWindowPadding
     var windowBarHeight = this.shadowRoot.querySelector('.window-titlebar').clientHeight
-    
+
     _.filter(document.body.querySelectorAll("lively-window"), ea => ea.isMinimized()).forEach(ea => {
       ea.style.top= x + "px" ;
       x += windowBarHeight + this.minimizedWindowPadding
     })
   }
-  
+
   pinButtonClicked(e) {
     console.log("toggle...")
     let isPinned = this.pinButton.classList.toggle('active');
@@ -319,7 +316,7 @@ export default class Window extends Morph {
   closeButtonClicked(e) {
     if (this.positionBeforeMaximize)
       this.toggleMaximize()
-    
+
     this.parentNode.removeChild(this);
   }
 
@@ -394,7 +391,7 @@ export default class Window extends Morph {
       e.preventDefault();
       this.setSize(
         e.pageX - this.resizing.left,
-        e.pageY - this.resizing.top        
+        e.pageY - this.resizing.top
       );
     }
   }
@@ -407,7 +404,7 @@ export default class Window extends Morph {
     this.style.top = 'calc(50% - ' + (rect.height / 2) + 'px)';
     this.style.left = 'calc(50% - ' + (rect.width / 2) + 'px)';
   }
-  
+
   /*
    * Live Programming / Instance Migration
    */
@@ -416,5 +413,5 @@ export default class Window extends Morph {
     this.positionBeforeMaximize = oldInstance.positionBeforeMaximize
     this.positionBeforeMinimize = oldInstance.positionBeforeMinimize
   }
-  
+
 }

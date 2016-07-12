@@ -102,12 +102,15 @@ export default class Sync extends Morph {
     })
   }
 
+  getServerURL() {
+      return this.serverURL || lively4url.match(/(.*)\/([^\/]+$)/)[1]
+    
+  }
 
   async gitControl(cmd, eachCB) {
     this.clearLog()
-    var serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1]
     return new Promise(async (resolve) => {
-      lively.files.fetchChunks(fetch(serverURL +"/_git/" + cmd, {
+      lively.files.fetchChunks(fetch(this.getServerURL() +"/_git/" + cmd, {
               headers: await this.getHeaders()
             }), (eaChunk) => {
           if (eachCB) 
@@ -207,7 +210,7 @@ export default class Sync extends Morph {
   }
 
   async getGitRepositoryNames() {
-    var json = await lively.files.statFile(lively4url +'/../').then( JSON.parse)
+    var json = await lively.files.statFile(this.getServerURL()).then( JSON.parse)
     return json.contents.filter(ea => ea.type == "directory").map(ea => ea.name)
   }
 

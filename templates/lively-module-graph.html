@@ -1,5 +1,9 @@
 <template id="lively-module-graph">
 <style>
+    :host {
+      width: 200px;
+      height: 200px;
+    }
     .background {
         stroke: white;
         stroke-width: 1px;
@@ -10,7 +14,7 @@
         stroke: black;
         stroke-width: 1.5px;
         cursor: move;
-        fill: lightcoral;
+        fill: lightgray;
     }
 
     .link {
@@ -33,17 +37,22 @@
     <script type="lively4script" data-name="initialize">
     async () => {
       if (!window.d3 || !window.cola || !window.ScopedD3) {
-        console.log("LOAD D3")
-        await lively.loadJavaScriptThroughDOM("d3", "src/external/d3.v3.js")
-        await System.import("templates/classes/ContainerScopedD3.js")
+        console.log("LOAD D3");
+        await lively.loadJavaScriptThroughDOM("d3", "src/external/d3.v3.js");
+        await System.import("templates/classes/ContainerScopedD3.js");
         await lively.loadJavaScriptThroughDOM("cola", "src/external/cola.js");
         await lively.loadJavaScriptThroughDOM("cola-layout", "src/external/cola-layout.js");
         await lively.loadJavaScriptThroughDOM("cola-shortestpaths", "src/external/cola-shortestpaths.js");
       }
       var d3cola = cola.d3adaptor().convergenceThreshold(0.1);
-      console.log("logggg")
+
+
+
+      var bounds = this.getBoundingClientRect()
+
+      var width = bounds.width, height = bounds.height;
       
-      var width = 700, height = 500;
+      this.box
 
       var scale = 0.3;
       var zoom = d3.behavior.zoom();
@@ -61,8 +70,7 @@
           .attr({ class: 'background', width: "100%", height: "100%" })
           .call(zoom.on("zoom", redraw));
           
-          
-      
+
       var vis = outer
           .append('g')
           .attr('transform', "translate("+zoomWidth+","+zoomHeight+") scale(" + scale +' )');
@@ -72,11 +80,7 @@
         
           vis.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
       }
-
-
-     
-
-
+      
       outer.append('svg:defs').append('svg:marker')
           .attr({
               id: 'end-arrow',
@@ -120,11 +124,11 @@
           d3cola
               .avoidOverlaps(true)
               .convergenceThreshold(1e-3)
-              .flowLayout('x', 150)
+              .flowLayout('x', 350)
               .size([width, height])
               .nodes(nodes)
               .links(edges)
-              .jaccardLinkLengths(150);
+              .jaccardLinkLengths(250);
 
           var link = vis.selectAll(".link")
               .data(edges)

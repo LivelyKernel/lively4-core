@@ -3,7 +3,7 @@
 import Morph from './Morph.js';
 import * as serverSearch from '../../src/client/search/server-search.js';
 import * as githubSearch from '../../src/client/search/github-search.js';
-import * as dropboxSearch from '../../src/client/search/dropbox-search.js';
+import * as lunrSearch from '../../../lively4-server/src/lunr-search.js';
 
 export default class SearchBar extends Morph {
 
@@ -17,7 +17,7 @@ export default class SearchBar extends Morph {
 
     this.serverSearch = serverSearch;
     this.githubSearch = githubSearch;
-    this.dropboxSearch = dropboxSearch;
+    this.dropboxSearch = lunrSearch;
 
     this.searchableMounts = {
       "server": [],

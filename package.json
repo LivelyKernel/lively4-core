@@ -33,7 +33,7 @@
     "packageMap": {
       "html": "src/client/lively.js"
     }
-  }
+  },
   "directories": {
     "lib": "src"
   },
@@ -62,5 +62,8 @@
   "engines": {
     "node": ">= 0.12.4",
     "npm": "~2.10.1"
+  },
+  "jshintConfig": {
+    "esversion": 6
   }
 }

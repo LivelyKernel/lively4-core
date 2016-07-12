@@ -4,21 +4,6 @@ function getReadableFileExtensions() {
   return [".js", ".md", ".html"];
 }
 
-function ensureLunr() {
-  return new Promise((resolve, reject) => {
-    if (typeof lunr !== "function") {
-      // load lunr
-      System.import(lively4url + "/src/external/lunr.js").then(module => {
-        window.lunr = module;
-        resolve();
-      });
-    } else {
-      // lunr already loaded
-      resolve();
-    }
-  });
-}
-
 export function setup(db) {
   return restoreIndex(db);
 }
@@ -45,7 +30,7 @@ function loadSearchIndex(pathToIdx) {
 }
 
 function buildSearchIndex(indexJson) {
-  return ensureLunr().then(() => {
+  return utils.ensureLunr().then(() => {
     var jsTokenizer = function (obj) {
       let jsTokens = /((['"])(?:(?!\2|\\).|\\(?:\r\n|[\s\S]))*(\2)?|`(?:[^`\\$]|\\[\s\S]|\$(?!\{)|\$\{(?:[^{}]|\{[^}]*\}?)*\}?)*(`)?)|(\/\/.*)|(\/\*(?:[^*]|\*(?!\/))*(\*\/)?)|(\/(?!\*)(?:\[(?:(?![\]\\]).|\\.)*\]|(?![\/\]\\]).|\\.)+\/(?:(?!\s*(?:\b|[\u0080-\uFFFF$\\'"~({]|[+\-!](?!=)|\.?\d))|[gmiyu]{1,5}\b(?![\u0080-\uFFFF$\\]|\s*(?:[+\-*%&|^<>!=?({]|\/(?![\/*])))))|(0[xX][\da-fA-F]+|0[oO][0-7]+|0[bB][01]+|(?:\d*\.\d+|\d+\.?)(?:[eE][+-]?\d+)?)|((?!\d)(?:(?!\s)[$\w\u0080-\uFFFF]|\\u[\da-fA-F]{4}|\\u\{[\da-fA-F]{1,6}\})+)|(--|\+\+|&&|\|\||=>|\.{3}|(?:[+\-*\/%&|^]|<{1,2}|>{1,3}|!=?|={1,2})=?|[?~.,:;[\](){}])|(\s+)|(^$|[\s\S])/g
       if (!arguments.length || obj == null || obj == undefined) return []

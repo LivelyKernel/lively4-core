@@ -7,12 +7,13 @@
 export default class HTML {
   
   static hello() {
-    alert("Hello World?")
+    alert("Hello World...")
+    debugger
   }
   
   // #JENS #ContinueWork here #NotFinished... load/save for tim
   static getFilter(ea) {
-    return !['SCRIPT', 'LIVELY-PREFERENCES', 'LIVELY-HALOS'].includes(ea.tagName)
+    return !['SCRIPT', 'LIVELY-PREFERENCES', 'LIVELY-HALOS'].includes(ea.tagName);
   }
   
   static getHtmlContent(body) {
