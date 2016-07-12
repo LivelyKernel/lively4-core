@@ -16,6 +16,6 @@ class TickingActiveExpression extends BaseActiveExpression {
 
 export function aexpr(func, scope) { return new TickingActiveExpression(func, scope); }
 
-export function check(group = TICKING_INSTANCES) {
-    group.forEach(aexpr => aexpr.checkAndNotify());
+export function check(iterable = TICKING_INSTANCES) {
+    iterable.forEach(aexpr => aexpr.checkAndNotify());
 }
