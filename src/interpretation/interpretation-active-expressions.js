@@ -1,9 +1,9 @@
-import Interpreter from './babelsberg/jsinterpreter/interpreter.js';
-import { Stack } from './utils.js';
+import Interpreter from './../babelsberg/jsinterpreter/interpreter.js';
+import { Stack } from './../utils.js';
 import { Listener } from './listener.js';
-import { BaseActiveExpression } from './base/base-active-expressions.js';
+import { BaseActiveExpression } from './../base/base-active-expressions.js';
 
-export { ConstraintInterpreter } from './constraint-interpreter.js';
+export { ConstraintInterpreter } from './../constraint-interpreter.js';
 
 const AEXPR_STACK = new Stack();
 

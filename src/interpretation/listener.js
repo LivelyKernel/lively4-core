@@ -1,5 +1,5 @@
 import { PropertyAccessor } from './property-accessor.js';
-import { isPrimitive } from './utils.js';
+import { isPrimitive } from '../utils.js';
 
 const LISTENERS_BY_ACCESSOR = new Map();
 

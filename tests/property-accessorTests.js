@@ -1,6 +1,6 @@
 'use strict';
 
-import { PropertyAccessor } from '../src/property-accessor.js';
+import { PropertyAccessor } from '../src/interpretation/property-accessor.js';
 
 describe('Property Accessor', function() {
     it("wrap a property", () => {

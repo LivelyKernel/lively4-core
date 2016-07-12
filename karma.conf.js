@@ -12,6 +12,7 @@ module.exports = function(config) {
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
     frameworks: ['commonjs', 'mocha', 'chai', 'sinon'],
 
+
     // list of files / patterns to load in the browser
     files: [
       'node_modules/babel-polyfill/dist/polyfill.js',
@@ -20,8 +21,9 @@ module.exports = function(config) {
       'src/babelsberg/constraint.js',
       'src/babelsberg/util.js',
       'src/*.js',
-      'src/ticking/*.js',
       'src/base/*.js',
+      'src/ticking/*.js',
+      'src/interpretation/*.js',
       'tests/**/*Helper.js',
       'tests/**/*Fixture.js',
       'tests/**/*Tests.js'
@@ -39,6 +41,7 @@ module.exports = function(config) {
       'src/**/!(acorn)*.js': ['babel', 'commonjs'],
       'tests/**/*.js': ['babel', 'commonjs']
     },
+
 
     babelPreprocessor: {
       options: {
@@ -59,7 +62,6 @@ module.exports = function(config) {
     commonjsPreprocessor: {
       modulesRoot: '.'
     },
-
 
 
     // test results reporter to use
@@ -101,10 +103,12 @@ module.exports = function(config) {
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: false,
 
+
     // Concurrency level
     // how many browser should be started simultaneous
     concurrency: Infinity
   };
+
   if (process.env.TRAVIS) {
       configuration.browsers = ['Chrome_no_sandbox'/*, 'Firefox'*/];
   }
