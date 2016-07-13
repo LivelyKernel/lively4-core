@@ -5,9 +5,9 @@ import { ActiveDOMView } from '../src/active-view.js';
 
 function mainDemo() {
   let outOfScreen = new AExpr(
-    function condition(w) { 
-      return parseInt(w.style.top) < 0 || parseInt(w.style.left) < 0;
-    }, {debug: true}
+    window => { 
+      return parseInt(window.style.top) < 0 || parseInt(window.style.left) < 0;
+    }
   );
   
   function adjustPosition(node) {

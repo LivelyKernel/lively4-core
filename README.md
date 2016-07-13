@@ -23,6 +23,14 @@ expr
 object.hello = 'World';
 ```
 
+```
+expr.applyOn(jsObjectA);
+expr.applyOn(document.querySelector('#container'));
+expr.applyOnAll([jsObjectA, jsObjectB]);
+expr.applyOnAll(new ActiveDOMView('div.ball'));
+expr.applyOnAll(document.querySelectorAll('div.ball'));
+```
+
 ## Examples
 * [Temperature Slider](tests/temperature-demo.js)
 * [Window Boundary Check](tests/window-demo.js)

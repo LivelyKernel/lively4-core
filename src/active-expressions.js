@@ -138,6 +138,8 @@ class ActiveExpr {
     } else {
       if (this.lastValue !== result || this.options.alwaysTrigger) {
         this.logger.log('Firing callback as result differs');
+        this.currentValue = result;
+        
         if (this.callback) {
           this.callback.apply(this, this.context);
           // re-evaluate
