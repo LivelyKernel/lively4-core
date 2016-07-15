@@ -17,9 +17,7 @@ module.exports = function(config) {
     files: [
       'node_modules/babel-polyfill/dist/polyfill.js',
       'src/babelsberg/jsinterpreter/*.js',
-      'src/babelsberg/constrainedvariable.js',
-      'src/babelsberg/constraint.js',
-      'src/babelsberg/util.js',
+      //'src/babelsberg/!(uglify|PerformanceTests)*.js',
       'src/*.js',
       'src/base/*.js',
       'src/ticking/*.js',
