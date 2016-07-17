@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2011 Hasso Plattner Institute
+ * Copyright (c) 2008-2016 Hasso Plattner Institute
  *
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
