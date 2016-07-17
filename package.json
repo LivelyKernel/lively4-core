@@ -12,7 +12,7 @@
     "karma": "karma",
     "mocha": "mocha --compilers js:babel-core/register",
     "test-node": "npm run mocha -- tests/*-test.js",
-    "benchmark": "npm run mocha -- tests/Benchmark.js",
+    "benchmark": "npm run mocha -- benchmark.spec.js",
     "test-chrome-only": "karma start --single-run --browsers Chrome",
     "test-continuously": "karma start",
     "test-continuously-chrome-only": "karma start --browsers Chrome",

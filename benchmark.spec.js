@@ -1,4 +1,4 @@
-import { runBenchmark } from '../CopBenchmark.js'
+import { runBenchmark } from './benchmark.js'
 
 describe('COP Benchmark', function () {
     it('runs', function (done) {
