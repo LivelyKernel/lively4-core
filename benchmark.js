@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2011 Hasso Plattner Institute
+ * Copyright (c) 2008-2016 Hasso Plattner Institute
  *
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -39,7 +39,7 @@ const SAMPLE_SIZE = 30
 
 function benchmarkBlock(name, unrolledOps, func) {
     var MAXSIZE = DEFAULT_MAXSIZE || 100000000;
-    var TARGETTIME = DEFAULT_TARGETTIME || 1000; // 1000
+    var TARGETTIME = DEFAULT_TARGETTIME || 1000;
     unrolledOps = unrolledOps || 1;
 
     var time = 0.0;
@@ -61,7 +61,7 @@ function benchmarkBlock(name, unrolledOps, func) {
     };
     // measure
     let sample = new Array(SAMPLE_SIZE);
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < SAMPLE_SIZE; i++) {
         let time1 = new Date().getTime();
         func(size, obj);
         let time2 = new Date().getTime();
@@ -71,11 +71,14 @@ function benchmarkBlock(name, unrolledOps, func) {
     // var result = extendString(name, 40) + ralign(String(ops), 16) + " " +
     //     ralign(String(time), 4) + " " + ralign(String(Math.round(ops / time)), 8);
     let result = [name, size, ops].concat(sample).join();
-    printEachResult(result);
+    console.log(result);
 }
 
 
-/* Here come the Benchmarks */
+/*
+ * Benchmark subjects
+ */
+
 const L1 = new Layer("L1");
 const L2 = new Layer("L2");
 const L3 = new Layer("L3");
@@ -87,7 +90,11 @@ const L8 = new Layer("L8");
 const L9 = new Layer("L9");
 const L10 = new Layer("L10");
 
-
+/**
+ * Benchmark subject with counter variables from 00 to 10.
+ * They can be increased with noLayer_##(), and countWithoutLayers without COP
+ * and with countWithLayers with COP.
+ */
 class BenchClass {
 
 	constructor() {
@@ -104,6 +111,12 @@ class BenchClass {
 		this.counter_10= 0;
 	}
 
+    /**
+     * Increases all the counters from 01 up to the number of this method.
+     * No conditionals are involved, only which method is called determines
+     * which counters are affected.
+     * This also applies to all other noLayer_## methods.
+     */
 	noLayer_01() {	
 		this.counter_01++;
 	}
@@ -145,6 +158,11 @@ class BenchClass {
 		this.counter_07++; this.counter_08++; this.counter_09++; this.counter_10++;
 	}
 
+    /**
+     * Increases counters depending on the supplied context object.
+     * For each truthy valued property layerX (1 <= X <= 10)
+     * the respective counter will be updated.
+     */
 	countWithoutLayers(context){
 		if(context.layer1) {	
 			this.counter_01++; 
@@ -178,6 +196,9 @@ class BenchClass {
 		};
 	}
 
+    /**
+     * Increases counters based on the currently active COP layers.
+     */
 	countWithLayers() {	
 		this.counter_00++;
 	}
@@ -251,11 +272,10 @@ L10.refineClass(BenchClass, {
 	}
 })
 
-/* Benchmarks */
-
-
-
-
+/**
+ * Benchmark subject with counters from 01 to 05.
+ * Each method increases all counters based on the currently active COP layers.
+ */
 class C1 {
 	initialize() {
 		this.counter_01= 0;
@@ -312,21 +332,12 @@ L5.refineClass(C1, {
     m5() {this.counter_05++;}
 })
 
-class WrappBenchTest {
-	constructor() {
-		this.counter_01 = 0;
-		this.counter_02 = 0
-	}
-	
-	m1() {
-		this.counter_01++;
-	}
-}
+/*
+ * Benchmarks
+ */
 
-let benchmarksToRun = []
-
-function addLayerBenchmarks0() {
-	var standardRunWithContext = function(name, context) {
+export function explicitContextBenchmarks() {
+	var runWithContext = function(name, context) {
 		benchmarkBlock(name, 16, function(size, obj) {
 			for(var i = 0; i < size; i++) {			
 				obj.countWithoutLayers(context);
@@ -349,48 +360,47 @@ function addLayerBenchmarks0() {
 		})
 	};
 	
-	benchmarksToRun = benchmarksToRun.concat([
-	{name: "ContextJS:Method:Standard:0 ", run: function(name) {
-		standardRunWithContext(name, {})
+	return [
+	{name: "ContextJS:Method:Standard:0 ", run: function() {
+		runWithContext(this.name, {})
 	}},
-	{name: "ContextJS:Method:Standard:1 ", run: function(name) {
-		standardRunWithContext(name, {layer1: true})
+	{name: "ContextJS:Method:Standard:1 ", run: function() {
+		runWithContext(this.name, {layer1: true})
 	}},
-	{name: "ContextJS:Method:Standard:2 ", run: function(name) {
-		standardRunWithContext(name, {layer1: true, layer2: true })
+	{name: "ContextJS:Method:Standard:2 ", run: function() {
+		runWithContext(this.name, {layer1: true, layer2: true })
 	}},
-	{name: "ContextJS:Method:Standard:3 ", run: function(name) {
-		standardRunWithContext(name, {layer1: true, layer2: true, layer3: true })
+	{name: "ContextJS:Method:Standard:3 ", run: function() {
+		runWithContext(this.name, {layer1: true, layer2: true, layer3: true })
 	}},
-	{name: "ContextJS:Method:Standard:4 ", run: function(name) {
-		standardRunWithContext(name, {layer1: true, layer2: true, layer3: true, layer4: true })
+	{name: "ContextJS:Method:Standard:4 ", run: function() {
+		runWithContext(this.name, {layer1: true, layer2: true, layer3: true, layer4: true })
 	}},
-	{name: "ContextJS:Method:Standard:5 ", run: function(name) {
-		standardRunWithContext(name, {layer1: true, layer2: true, layer3: true, layer4: true, layer5: true })
+	{name: "ContextJS:Method:Standard:5 ", run: function() {
+		runWithContext(this.name, {layer1: true, layer2: true, layer3: true, layer4: true, layer5: true })
 	}},
-	{name: "ContextJS:Method:Standard:6 ", run: function(name) {
-		standardRunWithContext(name, {layer1: true, layer2: true, layer3: true, layer4: true, layer5: true, layer6: true })
+	{name: "ContextJS:Method:Standard:6 ", run: function() {
+		runWithContext(this.name, {layer1: true, layer2: true, layer3: true, layer4: true, layer5: true, layer6: true })
 	}},
-	{name: "ContextJS:Method:Standard:7 ", run: function(name) {
-		standardRunWithContext(name, {layer1: true, layer2: true, layer3: true, layer4: true, layer5: true, layer6: true, layer7: true })
+	{name: "ContextJS:Method:Standard:7 ", run: function() {
+		runWithContext(this.name, {layer1: true, layer2: true, layer3: true, layer4: true, layer5: true, layer6: true, layer7: true })
 	}},
-	{name: "ContextJS:Method:Standard:8 ", run: function(name) {
-		standardRunWithContext(name, {layer1: true, layer2: true, layer3: true, layer4: true, layer5: true, layer6: true, layer7: true, layer8: true })
+	{name: "ContextJS:Method:Standard:8 ", run: function() {
+		runWithContext(this.name, {layer1: true, layer2: true, layer3: true, layer4: true, layer5: true, layer6: true, layer7: true, layer8: true })
 	}},
-	{name: "ContextJS:Method:Standard:9 ", run: function(name) {
-		standardRunWithContext(name, {layer1: true, layer2: true, layer3: true, layer4: true, layer5: true, layer6: true, layer7: true, layer8: true, layer9: true })
+	{name: "ContextJS:Method:Standard:9 ", run: function() {
+		runWithContext(this.name, {layer1: true, layer2: true, layer3: true, layer4: true, layer5: true, layer6: true, layer7: true, layer8: true, layer9: true })
 	}},
-	{name: "ContextJS:Method:Standard:10 ", run: function(name) {
-		standardRunWithContext(name, {layer1: true, layer2: true, layer3: true, layer4: true, layer5: true, layer6: true, layer7: true, layer8: true, layer9: true, layer10: true  })
-	}},
-	])
+	{name: "ContextJS:Method:Standard:10 ", run: function() {
+		runWithContext(this.name, {layer1: true, layer2: true, layer3: true, layer4: true, layer5: true, layer6: true, layer7: true, layer8: true, layer9: true, layer10: true  })
+	}}]
 }
 
-function addLayerBenchmarks1() {
+export function plainCallsBenchmarks() {
 
-	benchmarksToRun = benchmarksToRun.concat([
-	{name: "ContextJS:Method:NoLayer_01", run: function(name) {
-		benchmarkBlock(name, 16, function(size, obj) {
+	return [
+	{name: "ContextJS:Method:NoLayer_01", run: function() {
+		benchmarkBlock(this.name, 16, function(size, obj) {
 			for(var i = 0; i < size; i++) {		
 				obj.noLayer_01();	
 				obj.noLayer_01();	
@@ -411,8 +421,8 @@ function addLayerBenchmarks1() {
 			}})
 		}	
 	},
-	{name: "ContextJS:Method:NoLayer_02", run: function(name) {
-		benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:NoLayer_02", run: function() {
+		benchmarkBlock(this.name, 16, function(size, obj) {
 			for(var i = 0; i < size; i++) {		
 				obj.noLayer_02();	
 				obj.noLayer_02();	
@@ -433,8 +443,8 @@ function addLayerBenchmarks1() {
 				}})
 			}
 		},
-	{name: "ContextJS:Method:NoLayer_03", run: function(name) {
-		benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:NoLayer_03", run: function() {
+		benchmarkBlock(this.name, 16, function(size, obj) {
 			for(var i = 0; i < size; i++) {		
 				obj.noLayer_03();	
 				obj.noLayer_03();	
@@ -455,8 +465,8 @@ function addLayerBenchmarks1() {
 			}})
 		}
 		},
-	{name: "ContextJS:Method:NoLayer_04", run: function(name) {
-		benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:NoLayer_04", run: function() {
+		benchmarkBlock(this.name, 16, function(size, obj) {
 			for(var i = 0; i < size; i++) {		
 				obj.noLayer_04();	
 				obj.noLayer_04();	
@@ -478,8 +488,8 @@ function addLayerBenchmarks1() {
 		}
 	},
 
-	{name: "ContextJS:Method:NoLayer_05", run: function(name) {
-		benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:NoLayer_05", run: function() {
+		benchmarkBlock(this.name, 16, function(size, obj) {
 			for(var i = 0; i < size; i++) {		
 				obj.noLayer_05();	
 				obj.noLayer_05();	
@@ -500,8 +510,8 @@ function addLayerBenchmarks1() {
 			}})
 			}
 	},
-	{name: "ContextJS:Method:NoLayer_06", run: function(name) {
-		benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:NoLayer_06", run: function() {
+		benchmarkBlock(this.name, 16, function(size, obj) {
 			for(var i = 0; i < size; i++) {		
 				obj.noLayer_06();	
 				obj.noLayer_06();	
@@ -523,8 +533,8 @@ function addLayerBenchmarks1() {
 		}
 	},
 
-	{name: "ContextJS:Method:NoLayer_07", run: function(name) {
-		benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:NoLayer_07", run: function() {
+		benchmarkBlock(this.name, 16, function(size, obj) {
 			for(var i = 0; i < size; i++) {		
 				obj.noLayer_07();	
 				obj.noLayer_07();	
@@ -546,8 +556,8 @@ function addLayerBenchmarks1() {
 		}
 		},
 
-	{name: "ContextJS:Method:NoLayer_08", run: function(name) {
-		benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:NoLayer_08", run: function() {
+		benchmarkBlock(this.name, 16, function(size, obj) {
 			for(var i = 0; i < size; i++) {		
 				obj.noLayer_08();	
 				obj.noLayer_08();	
@@ -569,8 +579,8 @@ function addLayerBenchmarks1() {
 		}
 		},
 
-	{name: "ContextJS:Method:NoLayer_09", run: function(name) {
-		benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:NoLayer_09", run: function() {
+		benchmarkBlock(this.name, 16, function(size, obj) {
 			for(var i = 0; i < size; i++) {		
 				obj.noLayer_09();	
 				obj.noLayer_09();	
@@ -592,8 +602,8 @@ function addLayerBenchmarks1() {
 		}
 		},
 
-	{name: "ContextJS:Method:NoLayer_10", run: function(name) {
-		benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:NoLayer_10", run: function() {
+		benchmarkBlock(this.name, 16, function(size, obj) {
 			for(var i = 0; i < size; i++) {		
 				obj.noLayer_10();	
 				obj.noLayer_10();	
@@ -613,14 +623,13 @@ function addLayerBenchmarks1() {
 				obj.noLayer_10();		
 			}})
 		}
-	},
-	])
+	}]
 }
 
-function addLayerBenchmarks2() {
-	benchmarksToRun = benchmarksToRun.concat([
-	{name: "ContextJS:Method:WithLayer:0 ", run: function(name) {
-		benchmarkBlock(name, 16, function(size, obj) {
+export function copContextBenchmarks() {
+	return [
+	{name: "ContextJS:Method:WithLayer:0 ", run: function() {
+		benchmarkBlock(this.name, 16, function(size, obj) {
 			for(var i = 0; i < size; i++) {		
 				obj.countWithLayers();	
 				obj.countWithLayers();	
@@ -642,9 +651,9 @@ function addLayerBenchmarks2() {
 		}
     },
 
-	{name: "ContextJS:Method:WithLayer:1 ", run: function(name) {
-		cop.withLayers([L1], function() {
-			benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:WithLayer:1 ", run: function() {
+		cop.withLayers([L1], () => {
+			benchmarkBlock(this.name, 16, function(size, obj) {
 				for(var i = 0; i < size; i++) {		
 					obj.countWithLayers();	
 					obj.countWithLayers();	
@@ -667,9 +676,9 @@ function addLayerBenchmarks2() {
 		})}
 	},
 
-	{name: "ContextJS:Method:WithLayer:2 ", run: function(name) {
-		cop.withLayers([L1, L2], function() {
-			benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:WithLayer:2 ", run: function() {
+		cop.withLayers([L1, L2], () => {
+			benchmarkBlock(this.name, 16, function(size, obj) {
 				for(var i = 0; i < size; i++) {		
 					obj.countWithLayers();	
 					obj.countWithLayers();	
@@ -692,9 +701,9 @@ function addLayerBenchmarks2() {
 		})}
 	},
 
-	{name: "ContextJS:Method:WithLayer:3 ", run: function(name) {
-		cop.withLayers([L1, L2, L3], function() {
-			benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:WithLayer:3 ", run: function() {
+		cop.withLayers([L1, L2, L3], () => {
+			benchmarkBlock(this.name, 16, function(size, obj) {
 				for(var i = 0; i < size; i++) {		
 					obj.countWithLayers();	
 					obj.countWithLayers();	
@@ -717,9 +726,9 @@ function addLayerBenchmarks2() {
 		})}
 	},
 
-	{name: "ContextJS:Method:WithLayer:4 ", run: function(name) {
-		cop.withLayers([L1, L2, L3, L4], function() {
-			benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:WithLayer:4 ", run: function() {
+		cop.withLayers([L1, L2, L3, L4], () => {
+			benchmarkBlock(this.name, 16, function(size, obj) {
 				for(var i = 0; i < size; i++) {		
 					obj.countWithLayers();	
 					obj.countWithLayers();	
@@ -742,9 +751,9 @@ function addLayerBenchmarks2() {
 		})}
 	},
 
-	{name: "ContextJS:Method:WithLayer:5 ", run: function(name) {
-		cop.withLayers([L1, L2, L3, L4, L5], function() {
-			benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:WithLayer:5 ", run: function() {
+		cop.withLayers([L1, L2, L3, L4, L5], () => {
+			benchmarkBlock(this.name, 16, function(size, obj) {
 				for(var i = 0; i < size; i++) {		
 					obj.countWithLayers();	
 					obj.countWithLayers();	
@@ -767,9 +776,9 @@ function addLayerBenchmarks2() {
 		})}
 	},
 
-	{name: "ContextJS:Method:WithLayer:6 ", run: function(name) {
-		cop.withLayers([L1, L2, L3, L4, L5, L6], function() {
-			benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:WithLayer:6 ", run: function() {
+		cop.withLayers([L1, L2, L3, L4, L5, L6], () => {
+			benchmarkBlock(this.name, 16, function(size, obj) {
 				for(var i = 0; i < size; i++) {		
 					obj.countWithLayers();	
 					obj.countWithLayers();	
@@ -792,9 +801,9 @@ function addLayerBenchmarks2() {
 		})}
 	},
 
-	{name: "ContextJS:Method:WithLayer:7 ", run: function(name) {
-		cop.withLayers([L1, L2, L3, L4, L5, L6, L7], function() {
-			benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:WithLayer:7 ", run: function() {
+		cop.withLayers([L1, L2, L3, L4, L5, L6, L7], () => {
+			benchmarkBlock(this.name, 16, function(size, obj) {
 				for(var i = 0; i < size; i++) {		
 					obj.countWithLayers();	
 					obj.countWithLayers();	
@@ -817,9 +826,9 @@ function addLayerBenchmarks2() {
 		})}
 	},
 
-	{name: "ContextJS:Method:WithLayer:8 ", run: function(name) {
-		cop.withLayers([L1, L2, L3, L4, L5, L6, L7, L8], function() {
-			benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:WithLayer:8 ", run: function() {
+		cop.withLayers([L1, L2, L3, L4, L5, L6, L7, L8], () => {
+			benchmarkBlock(this.name, 16, function(size, obj) {
 				for(var i = 0; i < size; i++) {		
 					obj.countWithLayers();	
 					obj.countWithLayers();	
@@ -842,9 +851,9 @@ function addLayerBenchmarks2() {
 		})}
 	},
 
-	{name: "ContextJS:Method:WithLayer:9 ", run: function(name) {
-		cop.withLayers([L1, L2, L3, L4, L5, L6, L7, L8, L9], function() {
-			benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:WithLayer:9 ", run: function() {
+		cop.withLayers([L1, L2, L3, L4, L5, L6, L7, L8, L9], () => {
+			benchmarkBlock(this.name, 16, function(size, obj) {
 				for(var i = 0; i < size; i++) {		
 					obj.countWithLayers();	
 					obj.countWithLayers();	
@@ -867,9 +876,9 @@ function addLayerBenchmarks2() {
 		})}
 	},
 
-	{name: "ContextJS:Method:WithLayer:10 ", run: function(name) {
-		cop.withLayers([L1, L2, L3, L4, L5, L6, L7, L8, L9, L10], function() {
-			benchmarkBlock(name, 16, function(size, obj) {
+	{name: "ContextJS:Method:WithLayer:10 ", run: function() {
+		cop.withLayers([L1, L2, L3, L4, L5, L6, L7, L8, L9, L10], () => {
+			benchmarkBlock(this.name, 16, function(size, obj) {
 				for(var i = 0; i < size; i++) {		
 					obj.countWithLayers();	
 					obj.countWithLayers();	
@@ -890,16 +899,15 @@ function addLayerBenchmarks2() {
 				}
 			});
 		})}
-	}
-	])	
+	}]	
 }
 
-function addLayerBenchmarks3() {
+export function repeatedNestedLayerActivationsBenchmarks() {
 	var o1 = new C1();
 
-	benchmarksToRun = benchmarksToRun.concat([
-	{name: "ContextJS:ActivateLayer:0 ", run: function(name) {
-		benchmarkBlock(name, 1, function(size, obj) {
+	return [
+	{name: "ContextJS:ActivateLayer:0 ", run: function() {
+		benchmarkBlock(this.name, 1, function(size, obj) {
 			for(var i = 0; i < size; i++) {
 				o1.m1();
 				o1.m2();
@@ -909,8 +917,8 @@ function addLayerBenchmarks3() {
 			}})
 		}
 	},
-	{name: "ContextJS:ActivateLayer:1 ", run: function(name) {
-		benchmarkBlock(name, 1, function(size, obj) {
+	{name: "ContextJS:ActivateLayer:1 ", run: function() {
+		benchmarkBlock(this.name, 1, function(size, obj) {
 			for(var i = 0; i < size; i++) {
 				cop.withLayers([L1], function() {
 					o1.m1();
@@ -922,8 +930,8 @@ function addLayerBenchmarks3() {
 			}})
 		}
 	},
-	{name: "ContextJS:ActivateLayer:2 ", run: function(name) {
-		benchmarkBlock(name, 1, function(size, obj) {
+	{name: "ContextJS:ActivateLayer:2 ", run: function() {
+		benchmarkBlock(this.name, 1, function(size, obj) {
 			for(var i = 0; i < size; i++) {
 				cop.withLayers([L1], function() {
 					o1.m1();
@@ -937,8 +945,8 @@ function addLayerBenchmarks3() {
 			}})
 		}
 	},
-	{name: "ContextJS:ActivateLayer:3 ", run: function(name) {
-		benchmarkBlock(name, 1, function(size, obj) {
+	{name: "ContextJS:ActivateLayer:3 ", run: function() {
+		benchmarkBlock(this.name, 1, function(size, obj) {
 			for(var i = 0; i < size; i++) {
 				cop.withLayers([L1], function() {
 					o1.m1();
@@ -954,8 +962,8 @@ function addLayerBenchmarks3() {
 			}})
 		}
 	},
-	{name: "ContextJS:ActivateLayer:4 ", run: function(name) {
-		benchmarkBlock(name, 1, function(size, obj) {
+	{name: "ContextJS:ActivateLayer:4 ", run: function() {
+		benchmarkBlock(this.name, 1, function(size, obj) {
 			for(var i = 0; i < size; i++) {
 				cop.withLayers([L1], function() {
 					o1.m1();
@@ -973,8 +981,8 @@ function addLayerBenchmarks3() {
 			}})
 		}
 	},
-	{name: "ContextJS:ActivateLayer:5 ", run: function(name) {
-		benchmarkBlock(name, 1, function(size, obj) {
+	{name: "ContextJS:ActivateLayer:5 ", run: function() {
+		benchmarkBlock(this.name, 1, function(size, obj) {
 			for(var i = 0; i < size; i++) {
 				cop.withLayers([L1], function() {
 					o1.m1();
@@ -993,16 +1001,15 @@ function addLayerBenchmarks3() {
 				});		
 			}})
 		}
-	},
-	])
+	}]
 }
 
-function addLayerBenchmarks4() {
+export function repeatedLayerActivationsBenchmarks() {
 	var o1 = new C1();
 
-	benchmarksToRun = benchmarksToRun.concat([
-	{name: "ContextJS:ActivateLayerFlat:0 ", run: function(name) {
-		benchmarkBlock(name, 1, function(size, obj) {
+    return [
+	{name: "ContextJS:ActivateLayerFlat:0 ", run: function() {
+		benchmarkBlock(this.name, 1, function(size, obj) {
 			for(var i = 0; i < size; i++) {
 				o1.m1();
 				o1.m2();
@@ -1012,8 +1019,8 @@ function addLayerBenchmarks4() {
 			}})
 		}
 	},
-	{name: "ContextJS:ActivateLayerFlat:1 ", run: function(name) {
-		benchmarkBlock(name, 1, function(size, obj) {
+	{name: "ContextJS:ActivateLayerFlat:1 ", run: function() {
+		benchmarkBlock(this.name, 1, function(size, obj) {
 			for(var i = 0; i < size; i++) {
 				cop.withLayers([L1], function() {
 					o1.m1();
@@ -1025,8 +1032,8 @@ function addLayerBenchmarks4() {
 			}})
 		}
 	},
-	{name: "ContextJS:ActivateLayerFlat:2 ", run: function(name) {
-		benchmarkBlock(name, 1, function(size, obj) {
+	{name: "ContextJS:ActivateLayerFlat:2 ", run: function() {
+		benchmarkBlock(this.name, 1, function(size, obj) {
 			for(var i = 0; i < size; i++) {
 				cop.withLayers([L1, L2], function() {
 					o1.m1();
@@ -1038,8 +1045,8 @@ function addLayerBenchmarks4() {
 			}})
 		}
 	},
-	{name: "ContextJS:ActivateLayerFlat:3 ", run: function(name) {
-		benchmarkBlock(name, 1, function(size, obj) {
+	{name: "ContextJS:ActivateLayerFlat:3 ", run: function() {
+		benchmarkBlock(this.name, 1, function(size, obj) {
 			for(var i = 0; i < size; i++) {
 				cop.withLayers([L1, L2, L3], function() {
 					o1.m1();
@@ -1051,8 +1058,8 @@ function addLayerBenchmarks4() {
 			}})
 		}
 	},
-	{name: "ContextJS:ActivateLayerFlat:4 ", run: function(name) {
-		benchmarkBlock(name, 1, function(size, obj) {
+	{name: "ContextJS:ActivateLayerFlat:4 ", run: function() {
+		benchmarkBlock(this.name, 1, function(size, obj) {
 			for(var i = 0; i < size; i++) {
 				cop.withLayers([L1, L2, L3, L4], function() {
 					o1.m1();
@@ -1064,8 +1071,8 @@ function addLayerBenchmarks4() {
 			}})
 		}
 	},
-	{name: "ContextJS:ActivateLayerFlat:5 ", run: function(name) {
-		benchmarkBlock(name, 1, function(size, obj) {
+	{name: "ContextJS:ActivateLayerFlat:5 ", run: function() {
+		benchmarkBlock(this.name, 1, function(size, obj) {
 			for(var i = 0; i < size; i++) {
 				cop.withLayers([L1, L2, L3, L4, L5], function() {
 					o1.m1();
@@ -1076,39 +1083,47 @@ function addLayerBenchmarks4() {
 				});
 			}})
 		}
-	},
-	])
+	}]
 }
 
-function addWrapperBenchmarks() {
-	var o1 = new WrappBenchTest();
-	var o2 = new WrappBenchTest();
-	o2.m1 = function() {this.counter_02++;}
+/**
+ * Benchmark subject for measuring various variants of wrapped methods.
+ */
+class WrapBench {
+	constructor() {
+		this.counter_01 = 0;
+		this.counter_02 = 0
+	}
+	
+	m1() {
+		this.counter_01++;
+	}
+}
 
-	var o3 = new WrappBenchTest();
-	var oldFunc = o3.m1.bind(o3);
-	o3.m1 = function() {
-		oldFunc.call();
-		this.counter_02++;
-	};
+export function methodWrappingBenchmarks() {
+	var o1 = new WrapBench(); // unmodified
+	var o2 = new WrapBench();
+	o2.m1 = function() {this.counter_02++;} // plain overwritten
 
-	var o4 = new WrappBenchTest();
-    const original_m1 = o4.m1.bind(o4);
-	o4.m1 = function wrappedm1(...args) {
+    // wrap and call original
+	var o3 = new WrapBench();
+    const original_m1 = o3.m1.bind(o3);
+	o3.m1 = function wrappedm1(...args) {
         original_m1();
         this.counter_02++;
     };
 
-	var o5 = new WrappBenchTest();
-	o5.m1 = function(...args) {
+    // put arguments into an array
+	var o4 = new WrapBench();
+	o4.m1 = function(...args) {
 		this.counter_01++;		
 		args.shift();
 		return args
 	};
 
-	benchmarksToRun = benchmarksToRun.concat([
-	{name: "WrapperBenchmark:Default ", run: function(name) {
-		benchmarkBlock(name, 16, function(size, obj) {
+	return [
+	{name: "WrapperBenchmark:Default ", run: function() {
+		benchmarkBlock(this.name, 16, function(size, obj) {
 			for(var i = 0; i < size; i++) {
 				o1.m1();
 				o1.m1();
@@ -1129,8 +1144,8 @@ function addWrapperBenchmarks() {
 			}})
 		}
 	},
-	{name: "WrapperBenchmark:InstanceSpecific ", run: function(name) {
-		benchmarkBlock(name, 16, function(size, obj) {
+	{name: "WrapperBenchmark:InstanceSpecific ", run: function() {
+		benchmarkBlock(this.name, 16, function(size, obj) {
 			for(var i = 0; i < size; i++) {
 				o2.m1();
 				o2.m1();				
@@ -1151,8 +1166,8 @@ function addWrapperBenchmarks() {
 			}})
 		}
 	},
-	{name: "WrapperBenchmark:ManualWrap", run: function(name) {
-		benchmarkBlock(name, 16, function(size, obj) {
+	{name: "WrapperBenchmark:Wrap", run: function() {
+		benchmarkBlock(this.name, 16, function(size, obj) {
 			for(var i = 0; i < size; i++) {
 				o3.m1();
 				o3.m1();
@@ -1173,86 +1188,53 @@ function addWrapperBenchmarks() {
 			}})
 		}
 	},
-	{name: "WrapperBenchmark:Wrap", run: function(name) {
-		benchmarkBlock(name, 16, function(size, obj) {
+	{name: "WrapperBenchmark:ArgsToArray", run: function() {
+		benchmarkBlock(this.name, 16, function(size, obj) {
 			for(var i = 0; i < size; i++) {
-				o4.m1();
-				o4.m1();
-				o4.m1();
-				o4.m1();
-				o4.m1();
-				o4.m1();
-				o4.m1();
-				o4.m1();
-				o4.m1();
-				o4.m1();
-				o4.m1();
-				o4.m1();
-				o4.m1();
-				o4.m1();
-				o4.m1();
-				o4.m1();
+				o4.m1(1,2,'Hello World');
+				o4.m1(1,2,'Hello World');
+				o4.m1(1,2,'Hello World');
+				o4.m1(1,2,'Hello World');
+				o4.m1(1,2,'Hello World');
+				o4.m1(1,2,'Hello World');
+				o4.m1(1,2,'Hello World');
+				o4.m1(1,2,'Hello World');
+				o4.m1(1,2,'Hello World');
+				o4.m1(1,2,'Hello World');
+				o4.m1(1,2,'Hello World');
+				o4.m1(1,2,'Hello World');
+				o4.m1(1,2,'Hello World');
+				o4.m1(1,2,'Hello World');
+				o4.m1(1,2,'Hello World');
+				o4.m1(1,2,'Hello World');
 			}})
 		}
-	},
-	{name: "WrapperBenchmark:ArgsToArray", run: function(name) {
-		benchmarkBlock(name, 16, function(size, obj) {
-			for(var i = 0; i < size; i++) {
-				o5.m1(1,2,'Hello World');
-				o5.m1(1,2,'Hello World');
-				o5.m1(1,2,'Hello World');
-				o5.m1(1,2,'Hello World');
-				o5.m1(1,2,'Hello World');
-				o5.m1(1,2,'Hello World');
-				o5.m1(1,2,'Hello World');
-				o5.m1(1,2,'Hello World');
-				o5.m1(1,2,'Hello World');
-				o5.m1(1,2,'Hello World');
-				o5.m1(1,2,'Hello World');
-				o5.m1(1,2,'Hello World');
-				o5.m1(1,2,'Hello World');
-				o5.m1(1,2,'Hello World');
-				o5.m1(1,2,'Hello World');
-				o5.m1(1,2,'Hello World');
-			}})
-		}
-	},
-	])
+	}]
 }
 
-let result;
-
-function printEachResult(result) {
-    console.log(result);
+export function allBenchmarks() {
+    return [
+        ...explicitContextBenchmarks(),
+        ...plainCallsBenchmarks(),
+        ...copContextBenchmarks(),
+        ...repeatedNestedLayerActivationsBenchmarks(),
+        ...repeatedLayerActivationsBenchmarks(),
+        ...methodWrappingBenchmarks()]
 }
 
-function printResults() {
-    console.log("Results:");
-    console.log(result);
-            // lively.bindings.signal(CopBenchmark, 'done', result)
-}
-
-function runDelayed(done) {
+export function runBenchmarksAsync(benchmarksToRun, done) {
     (function runNext() {
         var benchmark = benchmarksToRun.shift();
         if (!benchmark) {
-            printResults();
             done();
         };
-        // console.log("run " + benchmark.name)
         benchmark.run(benchmark.name)
         setTimeout(runNext, 10);
     })();
 }
 
-export function runBenchmark(done) {
-    result = extendString("name", 40) + "\tops\ttime\tops / time\n";
-    benchmarksToRun = [];
-    addLayerBenchmarks0();
-    addLayerBenchmarks1();
-    addLayerBenchmarks2();
-    addLayerBenchmarks3();
-    addLayerBenchmarks4();
-    addWrapperBenchmarks();
-    runDelayed(done);
+export function runBenchmarks(benchmarksToRun) {
+    for (const benchmark of benchmarksToRun) {
+        benchmark.run(benchmark.name)
+    }
 }

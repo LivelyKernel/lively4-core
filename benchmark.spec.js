@@ -1,8 +1,8 @@
-import { runBenchmark } from './benchmark.js'
+import { allBenchmarks, runBenchmarks } from './benchmark.js'
 
-describe('COP Benchmark', function () {
-    it('runs', function (done) {
+describe('All benchmarks', function () {
+    it('runs', function () {
         this.timeout(300000)
-        runBenchmark(done)
+        runBenchmarks(allBenchmarks())
     })
 })
