@@ -34,7 +34,8 @@ function ralign(s, length) {
 }
 
 const DEFAULT_MAXSIZE = 1000000000
-const DEFAULT_TARGETTIME = 100
+const DEFAULT_TARGETTIME = 25
+const SAMPLE_SIZE = 30
 
 function benchmarkBlock(name, unrolledOps, func) {
     var MAXSIZE = DEFAULT_MAXSIZE || 100000000;
@@ -45,6 +46,9 @@ function benchmarkBlock(name, unrolledOps, func) {
     var size = 100; 
     var ops = 0;
     var obj = new BenchClass();
+    // warmup
+    func(100, obj);
+    // find good size
     while(time < TARGETTIME && size < MAXSIZE) {
         // console.log("execute func: " + time + " " + size)
         func(1, obj);
@@ -55,8 +59,18 @@ function benchmarkBlock(name, unrolledOps, func) {
         ops = (unrolledOps * size);
         size *= 2;
     };
-    var result = extendString(name, 40) + ralign(String(ops), 16) + " " +
-        ralign(String(time), 4) + " " + ralign(String(Math.round(ops / time)), 8);
+    // measure
+    let sample = new Array(SAMPLE_SIZE);
+    for (let i = 0; i < 30; i++) {
+        let time1 = new Date().getTime();
+        func(size, obj);
+        let time2 = new Date().getTime();
+        let timedelta = time2 - time1;
+        sample[i] = ops / timedelta;
+    }
+    // var result = extendString(name, 40) + ralign(String(ops), 16) + " " +
+    //     ralign(String(time), 4) + " " + ralign(String(Math.round(ops / time)), 8);
+    let result = [name, size, ops].concat(sample).join();
     printEachResult(result);
 }
 
@@ -336,37 +350,37 @@ function addLayerBenchmarks0() {
 	};
 	
 	benchmarksToRun = benchmarksToRun.concat([
-	{name: "ContextJS:Method:Standard:0, ", run: function(name) {
+	{name: "ContextJS:Method:Standard:0 ", run: function(name) {
 		standardRunWithContext(name, {})
 	}},
-	{name: "ContextJS:Method:Standard:1, ", run: function(name) {
+	{name: "ContextJS:Method:Standard:1 ", run: function(name) {
 		standardRunWithContext(name, {layer1: true})
 	}},
-	{name: "ContextJS:Method:Standard:2, ", run: function(name) {
+	{name: "ContextJS:Method:Standard:2 ", run: function(name) {
 		standardRunWithContext(name, {layer1: true, layer2: true })
 	}},
-	{name: "ContextJS:Method:Standard:3, ", run: function(name) {
+	{name: "ContextJS:Method:Standard:3 ", run: function(name) {
 		standardRunWithContext(name, {layer1: true, layer2: true, layer3: true })
 	}},
-	{name: "ContextJS:Method:Standard:4, ", run: function(name) {
+	{name: "ContextJS:Method:Standard:4 ", run: function(name) {
 		standardRunWithContext(name, {layer1: true, layer2: true, layer3: true, layer4: true })
 	}},
-	{name: "ContextJS:Method:Standard:5, ", run: function(name) {
+	{name: "ContextJS:Method:Standard:5 ", run: function(name) {
 		standardRunWithContext(name, {layer1: true, layer2: true, layer3: true, layer4: true, layer5: true })
 	}},
-	{name: "ContextJS:Method:Standard:6, ", run: function(name) {
+	{name: "ContextJS:Method:Standard:6 ", run: function(name) {
 		standardRunWithContext(name, {layer1: true, layer2: true, layer3: true, layer4: true, layer5: true, layer6: true })
 	}},
-	{name: "ContextJS:Method:Standard:7, ", run: function(name) {
+	{name: "ContextJS:Method:Standard:7 ", run: function(name) {
 		standardRunWithContext(name, {layer1: true, layer2: true, layer3: true, layer4: true, layer5: true, layer6: true, layer7: true })
 	}},
-	{name: "ContextJS:Method:Standard:8, ", run: function(name) {
+	{name: "ContextJS:Method:Standard:8 ", run: function(name) {
 		standardRunWithContext(name, {layer1: true, layer2: true, layer3: true, layer4: true, layer5: true, layer6: true, layer7: true, layer8: true })
 	}},
-	{name: "ContextJS:Method:Standard:9, ", run: function(name) {
+	{name: "ContextJS:Method:Standard:9 ", run: function(name) {
 		standardRunWithContext(name, {layer1: true, layer2: true, layer3: true, layer4: true, layer5: true, layer6: true, layer7: true, layer8: true, layer9: true })
 	}},
-	{name: "ContextJS:Method:Standard:10, ", run: function(name) {
+	{name: "ContextJS:Method:Standard:10 ", run: function(name) {
 		standardRunWithContext(name, {layer1: true, layer2: true, layer3: true, layer4: true, layer5: true, layer6: true, layer7: true, layer8: true, layer9: true, layer10: true  })
 	}},
 	])
@@ -626,7 +640,7 @@ function addLayerBenchmarks2() {
 				obj.countWithLayers();				
 			}})
 		}
-		},
+    },
 
 	{name: "ContextJS:Method:WithLayer:1 ", run: function(name) {
 		cop.withLayers([L1], function() {
