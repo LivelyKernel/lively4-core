@@ -46,14 +46,19 @@ are made in npm.
 
 ## Further Functionality
 
-Further functionality can be added via
+The contextjs module only exports the most frequently used COP facilities.
+All remaining functionality can be imported from the Layers module:
 
 ```JS
 import { withoutLayers, Layer } from "contextjs"
 import * as cop from "contextjs/lib/Layers"
 ```
 
-# Global import of ContextJS
+For example, there is a `LayerableObjectTrait`, which can be used as a starting
+point for objects that can have their own context. That context is scoped by
+the object composition hierarchy.
+
+## Global import of ContextJS
 
 If you would like to add the functions and classes exported from the
 `contetxjs` Module (proceed, withLayers etc.) into the `window` or `global`
