@@ -18,7 +18,7 @@ describe("Services Tool",  function() {
     setTimeout(function() {checkListRefreshed(done);}, 1000);
   };
 
-  var checklogRefreshed = function(done) {
+  var checkLogRefreshed = function(done) {
     if (logRefreshed) {
       return done();
     }
@@ -26,7 +26,7 @@ describe("Services Tool",  function() {
       assert.fail(logRefreshed, true, 'Does not refresh log');
       return done();
     }
-    setTimeout(function() {checklogRefreshed(done);}, 1000);
+    setTimeout(function() {checkLogRefreshed(done);}, 1000);
   };
 
   var getItems = function(c) {
@@ -35,10 +35,10 @@ describe("Services Tool",  function() {
  
   before("load", function(done){
     this.timeout(15000);
-    Services.prototype.refreshServiceList = function() { listRefreshed = true; };
-    Services.prototype.refreshLog = function() { logRefreshed = true; };
     loadComponent("lively-services").then(c => {
       that = c;
+      that.refreshServiceList = function() { listRefreshed = true; };
+      that.refreshLog = function() { logRefreshed = true; };
       done();
     });
   });
@@ -83,7 +83,7 @@ describe("Services Tool",  function() {
     var emptyItem = that.serviceList.querySelectorAll('.empty');
     expect(emptyItem).to.not.be.null;
 
-    checklogRefreshed(done);
+    checkLogRefreshed(done);
   });
 
 });
