@@ -2,6 +2,20 @@
 
 Context-oriented Programming (COP) for JavaScript
 
+Context-oriented Programming is a programming technique that allows to define
+behavioral variations of objects depending on the context in which an object is
+invoked. Context may be anything from the battery status of the executing
+device to software settings.
+COP groups behavioral variations (i. e., alternate code to be executed for
+certain methods, but with the possiblity to delegate to the original behavior)
+into layers. Each layer encodes a certain aspect of context (e. g., there might
+be a "low battery" layer). A layer can add partial methods, which override or
+supplement ordinary methods, or partial state to objects and classes (in
+ECMAScript, prototypes). Thus, COP provides a way to handle cross cutting
+concerns in software systems. In contrast to Aspect-oriented Programming, the
+composition of partial behavior is determined not at compile time, but at
+runtime. In practice it means that layers and their associated behavioral
+changes can be activated and deactivated by the program itself.
 
 ## Example Code 
 
