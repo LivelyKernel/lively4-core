@@ -323,12 +323,12 @@ export default class Lively {
       obj.style.left = ""+  point.x + "px";
       obj.style.top = "" +  point.y + "px";
   }
-
+  
   static getPosition(obj) {
       if (obj.clientX)
         return {x: obj.clientX, y: obj.clientY}
       else if (obj.style)
-        return {x: obj.style.left, y: obj.style.top}
+        return {x: parseFloat(obj.style.left), y: parseFloat(obj.style.top)}
       throw Error("" + obj + " has not position");
   }
 

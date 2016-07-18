@@ -1,6 +1,8 @@
 // import lively2 from "./lively.js";
 // #TODO this will fetch an old version of the lively module... 
 
+
+
 export default class ContextMenu {
   
   static hide() {
@@ -12,10 +14,21 @@ export default class ContextMenu {
     return lively.openComponentInWindow(name, lively.pt(evt.pageX, evt.pageY));
   }
   
+  static openInWindow(comp, evt) {
+    var pos = lively.getPosition(comp)
+	  lively.components.openInWindow(comp).then(function (w) {
+        lively.setPosition(w, pos);
+        lively.setPosition(comp, {x:0, y:0});
+        if (comp.windowTitle) w.setAttribute('title', '' + comp.windowTitle);
+        return comp;
+    });
+  }
+  
   static items (target) {
     if (target) {
       var wasEditable = (target.contentEditable == "true");
       var wasDisabled = (target.disabled == "true");
+      var targetInWindow = target.parentElement.tagName == 'LIVELY-WINDOW' 
       var menu = [
         ["show", (evt) => {
            this.hide();
@@ -36,7 +49,13 @@ export default class ContextMenu {
         [wasDisabled ? "enable" : "disable", (evt) => {
            this.hide();
            target.disabled = !wasDisabled;
-        }]
+        }],
+        [targetInWindow ? "strip window" : "open in window", (evt) => {
+            this.hide();
+            targetInWindow ?
+              target.parentElement.embedContentInParent() :
+              ContextMenu.openInWindow(target, evt)
+          }]
       ];
       return menu;
     } else {

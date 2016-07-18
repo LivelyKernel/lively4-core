@@ -413,5 +413,16 @@ export default class Window extends Morph {
     this.positionBeforeMaximize = oldInstance.positionBeforeMaximize
     this.positionBeforeMinimize = oldInstance.positionBeforeMinimize
   }
+  
+  /*
+   * embed content in parent and remove yourself
+   */
+  embedContentInParent() {
+  	var content = this.querySelector("*")
+  	var pos = lively.getPosition(this)
+  	this.parentElement.appendChild(content)
+  	lively.setPosition(content, pos)
+  	this.remove()
+  }
 
 }

@@ -83,6 +83,15 @@ describe('Register Event Listeners', function() {
     expect(lively.eventListeners).length(1);
   });
 
-
-  
 });
+
+
+describe('Position API', function() {
+  
+  it('should return plain numbers in getter', () => {
+    expect(lively.getPosition(document.querySelector('body')).x).to.be.a('number')
+  })
+})
+  
+  
+  
