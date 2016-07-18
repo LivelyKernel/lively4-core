@@ -24,6 +24,26 @@ o.bar()  // 3
 withLayers([L1], () => o.bar())  // 7
 ```
 
+## Installation Instructions
+
+You can install ContextJS via npm:
+
+    npm install contextjs
+
+If you want install ContextJS from GitHub instead, you should use
+[npm-git-install](https://github.com/lzrski/npm-git-install)
+because otherwise the ES2015 code will not be transpiled automatically.
+
+ContextJS uses ES2015, which is not yet completely supported natively by 
+current browsers and Node.js. Therefore, the code must be transpiled to ES5
+before use. This happens automatically through the npm prepublish script,
+which is executed before the library is published to the npm registry and also
+when you `npm install` it from a local working copy. But npm does not execute
+this script when you install something via Git. npm-git-install alleviates this 
+problem by ensuring that the prepublish script is run for Git dependencies. As
+pointed out in the Readme of npm-git-install, it is a workaround until changes
+are made in npm.
+
 ## Further Functionality
 
 Further functionality can be added via
