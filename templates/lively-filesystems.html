@@ -45,6 +45,8 @@
     p {
       margin: 10px;
       margin-top: 0px;
+      display: flex;
+      flex-direction: row;
     }
     #listOfMountPoints {
       padding: 5px;
@@ -76,6 +78,16 @@
       position: absolute;
       top: 0px;
       left: calc(100% - 40px);
+    }
+    input {
+      flex: 1;
+      margin: 0px 4px;
+    }
+    #httpUrl {
+      flex: 0.7; 
+    }
+    #httpMountPath {
+      flex: 0.3
     }
 
     </style>
