@@ -1,6 +1,10 @@
 <html lang="en">
   <head>
     <title>Lively 4</title>
+    <script>
+      var lively4yourself = /\/[^\/]*\.html/
+      window.lively4url = window.location.origin + window.location.pathname.replace(lively4yourself,"")
+    </script>
     <script src="./swx-loader.js"
         type="text/javascript"
         charset="utf-8"
