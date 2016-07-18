@@ -2,14 +2,15 @@
     <style data-src="/templates/livelystyle.css"></style>
     <style>
     .container {
-        width: 100%;
+        width: calc(100% - 10px);
         height: 100%;
         /*
         box-sizing: border-box;
         padding-top: 25px; */
-        margin-left: 10px;
+        padding-left: 10px; 
         display: flex;
         flex-direction: column;
+        overflow: auto;
     }
     .toolbar {
         /* position: absolute;
@@ -26,10 +27,7 @@
         flex: 1;   /* ACE does not display right with "flex" */
 
     }
-    #listOfMountPoints li {
-      width: 100%;
-      clear: both;
-    }
+
     
     .browse, .unmount {
        float: right;
@@ -45,49 +43,76 @@
        border: 0px;
     }
     p {
-      margin: 2px;
+      margin: 10px;
+      margin-top: 0px;
     }
     #listOfMountPoints {
       padding: 5px;
+      padding-left: 30px;
       background-color: #E0E0E0;
       width: 90%;      
-      overflow: auto;
+    }
+    
+    #listOfMountPoints li {
+      width: 100%;
+      clear: both;
     }
 
     #githubBranch {
       width: 80px;  
     }
     
+    h3 {
+      margin-top: 0px;
+      margin-bottom: 0px;
+    }
+    
+    .mount, .logout {
+      padding: 0px 2px;
+      margin: 0px;
+    }
+    
+    #reloadMountListContainer {
+      position: absolute;
+      top: 0px;
+      left: calc(100% - 40px);
+    }
+
     </style>
     <div class="container">
-      <h3>Github  <button id="githubLoginButton">login</button>
-        <button id="githubLogoutButton">logout</button></h3>
+        <ol id="listOfMountPoints"></ol>
+        <p id="reloadMountListContainer">
+          <button id="updateMountList"><i class="fa fa-refresh" aria-hidden="true"></i></button>
+        </p>
+      <h3>Github  
+        <button class="logout" id="githubLogoutButton">logout</button></h3>
       <p>
-       
         repo: <input id="githubRepo" value="LivelyKernel/lively4-core" />
         branch: <input id="githubBranch" value="gh-pages" />
         to: <input id="githubMount" value="/github" />
+        <button class="mount" id="githubLoginButton">mount</button>
       </p>
-      <h3>Dropbox <button id="dropboxLoginButton">login</button> <button id="dropboxLogoutButton">logout</button></h3>
+      <h3>Dropbox  <button class="logout" id="dropboxLogoutButton">logout</button></h3>
       <p>
         
        
         from: <input id="dropboxSubfolder" value="/Lively" />
         to: <input id="dropboxMountPath" value="/dropbox" />
+        <button class="mount" id="dropboxLoginButton">mount</button>
       </p>
-      <h3>Google Drive <button id="googledriveLoginButton">login</button> <button id="googledriveLogoutButton">logout</button></h3>
+      <h3>Google Drive  <button class="logout" id="googledriveLogoutButton">logout</button></h3>
       <p>
         from: <input id="googledriveSubfolder" value="/lively4test" />
         to: <input id="googledriveMountPath" value="/googledrive" />
+        <button class="mount" id="googledriveLoginButton">mount</button>
       </p>
-      <h3>HTTP <button id="httpMountButton">mount</button></h3>
+      <h3>HTTP </h3>
       <p>
         from: <input id="httpUrl" value="https://lively-kernel.org/lively4/lively4-core" />
         to: <input id="httpMountPath" value="/http" />
+        <button class="mount" id="httpMountButton">mount</button>
       </p>
-      <h3>Mounts <button id="updateMountList"><i class="fa fa-refresh" aria-hidden="true"></i></button>
-        </h3>
-        <ol id="listOfMountPoints"></ol>
+     
     </div>
 
     <script type="lively4script" data-name="initialize">
