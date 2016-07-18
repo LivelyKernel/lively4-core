@@ -7,6 +7,8 @@ export default class ContextMenu {
   
   static hide() {
     if (this.menu) $(this.menu).remove();
+    
+    lively.removeEventListener("contextMenu",  document.documentElement)
   }
   
   static openComponentInWindow (name, evt) {
@@ -135,6 +137,13 @@ export default class ContextMenu {
   
   static openIn(container, evt, target) {
     this.hide();
+    
+    
+    lively.addEventListener("contextMenu", document.documentElement, "click", () => {
+      this.hide()
+    }, true)
+    
+    
     var menu = lively.components.createComponent("lively-menu");
     return lively.components.openIn(container, menu).then(() => {
       this.menu = menu;
