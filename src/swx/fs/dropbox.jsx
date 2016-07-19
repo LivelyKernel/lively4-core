@@ -50,6 +50,9 @@ export default class Filesystem extends Base {
         }
 
         let json    = await response.json()
+        if (json['is_deleted']) {
+          throw new Error('File has been deleted');
+        }
         let content = do {
             if(json['contents']) {
                 JSON.stringify({
