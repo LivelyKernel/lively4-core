@@ -255,8 +255,6 @@ export function lookupLayeredFunctionForObject(
   if (!layer) {
     return undefined; 
   }
-  // we have to look for layer defintions in self, self.prototype,
-  // ... there may be layered methods in a subclass of "obj"
   let partialFunction;
   const partialLayerForObject = getLayerDefinitionForObject(layer, self);
   if (partialLayerForObject) {
@@ -269,13 +267,11 @@ export function lookupLayeredFunctionForObject(
       partialFunction = partialLayerForObject.property(function_name);
     }
   }
-  if (!partialFunction) {
-    // try the superclass hierachy
-    // log("look for superclass of: " + self.constructor)
+  if (!partialFunction && !self.hasOwnProperty(function_name)) {
+    // this method was probably added by a layer
+    // so try to look it up in the superclass hierachy
     const superclass = Object.getPrototypeOf(self);
     if (superclass) {
-      // log("layered function is not found
-      //in this partial method, lookup for my prototype?")
       return lookupLayeredFunctionForObject(
           superclass, layer, function_name, methodType);
     }

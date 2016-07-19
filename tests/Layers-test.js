@@ -887,7 +887,7 @@ describe('contextjs', function () {
                 });
             });
 
-            xit('can be layered independently from super', function () {
+            it('can be layered independently from super', function () {
                 const s = new Child();
                 // when
                 const layer = new Layer().refineClass(Child, {
@@ -901,26 +901,6 @@ describe('contextjs', function () {
                 withLayers([DummyLayer], () => {
                     // then
                     assert.equal(s.m2(), "S$m2", "should not be affected by refinements on super");
-                });
-            });
-
-            // FIXME: this is a bug, so the test should be removed, once a fix is attempted
-            // the test above contradicts this one
-            // enable the test above when you attempt to fix this bug
-            it('BUG: gains layered behavior from other layers', function () {
-                const s = new Child();
-                // when
-                const layer = new Layer().refineClass(Child, {
-                    m2() { return 'L$m2,' + proceed() }
-                });
-                withLayers([DummyLayer, layer], () => {
-                    // then
-                    assert.equal(s.m2(), "L$m2,D$m2,S$m2", "layered S$m2 broken");
-                });
-                // when
-                withLayers([DummyLayer], () => {
-                    // then
-                    assert.equal(s.m2(), "D$m2,S$m2", "layered S$m2 broken");
                 });
             });
 
