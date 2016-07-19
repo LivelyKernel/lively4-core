@@ -41,19 +41,23 @@ export default class Services extends Morph {
     this.stderrButton.addEventListener('click', this.stderrButtonClick.bind(this));
 
     this.logEditor = this.getSubmorph('#log').editor;
-    this.logEditor.setReadOnly(true);
+    if (this.logEditor) { // editor is not initialized during testing
+      this.logEditor.setReadOnly(true);
+    }
 
     this.refreshServiceList();
-    this.refreshInterval = window.setInterval(
-      this.refreshServiceList.bind(this),
-      5000
+    this.refreshInterval = window.setInterval(() => {
+        this.refreshServiceList();
+      }, 5000
     );
     this.logInterval = null;
 
-    this.detachedCallback = () => {
-      window.clearInterval(this.refreshInterval);
-      window.clearInterval(this.logInterval);
-    };
+    this.detachedCallback = this.unload;
+  }
+
+  unload() {
+    window.clearInterval(this.refreshInterval);
+    window.clearInterval(this.logInterval);
   }
 
   /*
@@ -111,8 +115,8 @@ export default class Services extends Morph {
 
   cloneButtonClick() {
     var gitURL = window.prompt('Please enter a GitHub link to clone:');
-    if (userInput === null) return;
-    this.post('/clone', { url: gitURL }, function(res) {
+    if (gitURL === null) return;
+    this.post('clone', { url: gitURL }, function(res) {
       console.log(res);
     });
   }
@@ -203,7 +207,7 @@ export default class Services extends Morph {
   removeAllItems() {
     var selectedPID = null;
     while (this.serviceList.firstChild) {
-      item = this.serviceList.firstChild;
+      var item = this.serviceList.firstChild;
       if (selectedPID === null && !item.classList.contains('empty') &&
           item.getSubmorph('.item').classList.contains('selected')) {
         selectedPID = item.getAttribute('data-id');
@@ -217,9 +221,48 @@ export default class Services extends Morph {
     this.entryPoint.value = this.services[this.pid].entryPoint;
     this.refreshLog();
     if (this.logInterval === null) {
-      this.logInterval = window.setInterval(function() {
+      this.logInterval = window.setInterval(() => {
         this.refreshLog();
-      }.bind(this), 2000);
+      }, 2000);
+    }
+  }
+
+  listServices(services) {
+    this.services = services;
+    var item;
+    var selectedPID = this.removeAllItems();
+    // Check if any service running
+    if (Object.keys(services).length === 0) {
+      this.showMessageInServiceList("No services available yet.");
+      return;
+    }
+    // List all services
+    var now = new Date().getTime();
+    for (var id in services) {
+      var service = services[id];
+      item = document.createElement('lively-services-item');
+      item.setAttribute('data-id', id);
+      if (id == selectedPID) {
+        item.getSubmorph('.item').classList.add('selected');
+      }
+      var title = service.entryPoint + ' (#' + id + ')';
+      item.getSubmorph('h1').innerHTML = title;
+
+      var status = 'unkown';
+      var statusText = 'unkown';
+      if (service.status === 0) {
+        status = 'not-running';
+        var since = (now - service.kill);
+        statusText = 'not running (' + this.msToString(since) + ')';
+      } else if (service.status === 1) {
+        status = 'running';
+        var uptime = (now - service.start);
+        statusText = 'running (' + this.msToString(uptime) + ')';
+      }
+
+      item.getSubmorph('.status').classList.add(status);
+      item.getSubmorph('small').innerHTML = statusText;
+      this.serviceList.appendChild(item);
     }
   }
 
@@ -252,44 +295,7 @@ export default class Services extends Morph {
   refreshServiceList() {
     return $.ajax({
       url: servicesURL + 'list',
-      success: function(services) {
-        this.services = services;
-        var item;
-        var selectedPID = this.removeAllItems();
-        // Check if any service running
-        if (Object.keys(services).length === 0) {
-          this.showMessageInServiceList("No services available yet.");
-          return;
-        }
-        // List all services
-        var now = new Date().getTime();
-        for (var id in services) {
-          var service = services[id];
-          item = document.createElement('lively-services-item');
-          item.setAttribute('data-id', id);
-          if (id == selectedPID) {
-            item.getSubmorph('.item').classList.add('selected');
-          }
-          var title = service.entryPoint + ' (#' + id + ')';
-          item.getSubmorph('h1').innerHTML = title;
-
-          var status = 'unkown';
-          var statusText = 'unkown';
-          if (service.status === 0) {
-            status = 'not-running';
-            var since = (now - service.kill);
-            statusText = 'not running (' + this.msToString(since) + ')';
-          } else if (service.status === 1) {
-            status = 'running';
-            var uptime = (now - service.start);
-            statusText = 'running (' + this.msToString(uptime) + ')';
-          }
-
-          item.getSubmorph('.status').classList.add(status);
-          item.getSubmorph('small').innerHTML = statusText;
-          this.serviceList.appendChild(item);
-        }
-      }.bind(this),
+      success: this.listServices.bind(this),
       error: this.handleAjaxError.bind(this)
     });
   }

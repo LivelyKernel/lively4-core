@@ -73,7 +73,6 @@ function loadIndexedFileVersions(path) {
 }
 
 async function getFilepaths(options) {
-  let indexedVersions = await loadIndexedFileVersions(options.path);
   let proms = [];
 
   extensions.forEach(query => {
@@ -99,7 +98,7 @@ async function getFilepaths(options) {
 
   filepaths = filepaths.filter(file => {
     // check if we really have an indexable extension
-    return isIndexable(file.path) && (indexedVersions[file.path] !== file.rev);
+    return isIndexable(file.path);
   }).map(file => {
     // remove the subfolder from the file path
     return {
@@ -126,13 +125,11 @@ export async function* FileReader(filepath, options) {
 
   for (let i = 0; i < filepaths.length; i++) {
     let path = filepaths[i].path;
-    let rev = filepaths[i].rev;
     let content = await fetch(`https://lively4${options.path}${path}`).then(resp => { return resp.text(); });
     yield {
       path: path,
       filename: path.slice(path.lastIndexOf("/") + 1),
       ext: path.slice(path.lastIndexOf(".") + 1),
-      rev: rev,
       content: content
     }
   }
