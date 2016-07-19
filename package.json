@@ -2,7 +2,7 @@
   "name": "active-expressions",
   "version": "1.2.1",
   "description": " Monitor expressions over the execution of a program",
-  "main": "src/active-expressions.js",
+  "main": "aexpr.js",
   "directories": {
     "test": "tests"
   },
@@ -60,6 +60,6 @@
     "sinon": "^1.17.4"
   },
   "dependencies": {
-    "stack-es2015-modules": "^1.0.0"
+    "composite-scopes-all": "^1.0.0"
   }
 }
