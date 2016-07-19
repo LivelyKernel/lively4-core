@@ -1663,17 +1663,13 @@ describe('contextjs', function () {
             if (cop.staticInlining || cop.dynamicInlining) return;
 
             let partialMethods,
-                object,
-                prototypeObject,
-                functionName;
+                object;
 
             // FIXME: as cop is a Module now, this should not work
             cop.proceed = function() {
                 const composition = cop.proceedStack[cop.proceedStack.length - 1];
                 partialMethods = composition.partialMethods;
                 object = composition.object;
-                prototypeObject = composition.prototypeObject;
-                functionName = composition.functionName;
             }
 
             const o = new CopProceedTestClass();
@@ -1683,9 +1679,6 @@ describe('contextjs', function () {
 
             assert(partialMethods, "no partialMethods");
             assert(object, "no  object");
-            assert(prototypeObject, "no  prototypeObject");
-            assert(functionName, "no functionName");
-
         });
 
         it('can provide different arguments to the next partial method (defined in class)', function() {

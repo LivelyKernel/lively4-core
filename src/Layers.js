@@ -297,7 +297,7 @@ function makeSlotLayerAwareWithNormalLookup(
   let wrapped_function = function() {
     'use strict';
     var composition =
-        new PartialLayerComposition(this, obj, slotName, baseValue, type);
+        new PartialLayerComposition(this, slotName, baseValue, type);
     proceedStack.push(composition);
     return invokeLayeredMethodThenPopProceedStack.apply(this, arguments);
   };
@@ -740,7 +740,7 @@ export class COPError {
 }
 
 export class PartialLayerComposition {
-  constructor (obj, prototypeObject, functionName, baseFunction, methodType) {
+  constructor (obj, functionName, baseFunction, methodType) {
     this._partialMethods = [baseFunction];
     var layers = computeLayersFor(obj);
     for (var i = 0; i < layers.length; i++) {
@@ -752,8 +752,6 @@ export class PartialLayerComposition {
         }
     }
     this._object = obj;
-    this._prototypeObject = prototypeObject;
-    this._functionName = functionName;
   }
 
   get object() {
@@ -762,14 +760,6 @@ export class PartialLayerComposition {
   
   get partialMethods () {
     return this._partialMethods;
-  }
-  
-  get functionName() {
-    return this._functionName;
-  }
-
-  get prototypeObject() {
-    return this._prototypeObject;
   }
 }
 
