@@ -74,7 +74,7 @@ export default class IndexManager extends Morph {
     console.log("create index at", mountType, path);
     let statusText = this.getSubmorph(`#${path.slice(1)}-status`);
     statusText.innerHTML = "waiting...";
-    search.loadIndex(mountType, path).then(() => {
+    search.prepareForSearch(mountType, path).then(() => {
       this.refreshIndex(mountType, path);
     });
   }
