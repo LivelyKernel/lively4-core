@@ -2123,6 +2123,7 @@
 	  // Thrash, waste and sodomy: IE GC bug
 	  var iframe = __webpack_require__(30)('iframe')
 	    , i      = enumBugKeys.length
+	    , lt     = '<'
 	    , gt     = '>'
 	    , iframeDocument;
 	  iframe.style.display = 'none';
@@ -2132,7 +2133,7 @@
 	  // html.removeChild(iframe);
 	  iframeDocument = iframe.contentWindow.document;
 	  iframeDocument.open();
-	  iframeDocument.write('<script>document.F=Object</script' + gt);
+	  iframeDocument.write(lt + 'script' + gt + 'document.F=Object' + lt + '/script' + gt);
 	  iframeDocument.close();
 	  createDict = iframeDocument.F;
 	  while(i--)delete createDict[PROTOTYPE][enumBugKeys[i]];
@@ -2150,6 +2151,7 @@
 	  } else result = createDict();
 	  return Properties === undefined ? result : dPs(result, Properties);
 	};
+
 
 /***/ },
 /* 38 */
@@ -18657,7 +18659,6 @@
 	  , assign       = __webpack_require__(88)
 	  , weak         = __webpack_require__(329)
 	  , isObject     = __webpack_require__(26)
-	  , has          = __webpack_require__(34)
 	  , getWeak      = meta.getWeak
 	  , isExtensible = Object.isExtensible
 	  , uncaughtFrozenStore = weak.ufstore
@@ -23970,7 +23971,7 @@
 	        left.decorators = decorators;
 	      }
 	      this.parseAssignableListItemTypes(left);
-	      elts.push(this.parseMaybeDefault(null, null, left));
+	      elts.push(this.parseMaybeDefault(left.start, left.loc.start, left));
 	    }
 	  }
 	  return elts;
@@ -27865,7 +27866,6 @@
 	'use strict';
 	var dP          = __webpack_require__(24).f
 	  , create      = __webpack_require__(37)
-	  , hide        = __webpack_require__(23)
 	  , redefineAll = __webpack_require__(330)
 	  , ctx         = __webpack_require__(21)
 	  , anInstance  = __webpack_require__(331)
@@ -34965,7 +34965,7 @@
 	    begs = [];
 	    left = str.length;
 	
-	    while (i < str.length && i >= 0 && ! result) {
+	    while (i >= 0 && !result) {
 	      if (i == ai) {
 	        begs.push(i);
 	        ai = str.indexOf(a, i + 1);
@@ -39641,15 +39641,11 @@
 	
 	var _sourceMap2 = _interopRequireDefault(_sourceMap);
 	
-	var _position = __webpack_require__(454);
-	
-	var _position2 = _interopRequireDefault(_position);
-	
 	var _babelMessages = __webpack_require__(316);
 	
 	var messages = _interopRequireWildcard(_babelMessages);
 	
-	var _printer = __webpack_require__(455);
+	var _printer = __webpack_require__(454);
 	
 	var _printer2 = _interopRequireDefault(_printer);
 	
@@ -39674,12 +39670,11 @@
 	    var tokens = ast.tokens || [];
 	    var format = Generator.normalizeOptions(code, opts, tokens);
 	
-	    var position = new _position2.default();
+	    var map = opts.sourceMaps ? new _sourceMap2.default(opts, code) : null;
 	
-	    var _this = (0, _possibleConstructorReturn3.default)(this, _Printer.call(this, position, format));
+	    var _this = (0, _possibleConstructorReturn3.default)(this, _Printer.call(this, format, map));
 	
 	    _this.comments = comments;
-	    _this.position = position;
 	    _this.tokens = tokens;
 	    _this.format = format;
 	    _this.opts = opts;
@@ -39687,7 +39682,6 @@
 	    _this._inForStatementInitCounter = 0;
 	
 	    _this.whitespace = new _whitespace2.default(tokens);
-	    _this.map = new _sourceMap2.default(position, opts, code);
 	    return _this;
 	  }
 	
@@ -39785,10 +39779,7 @@
 	    this.print(this.ast);
 	    this.printAuxAfterComment();
 	
-	    return {
-	      map: this.map.get(),
-	      code: this.get()
-	    };
+	    return this._buf.get();
 	  };
 	
 	  return Generator;
@@ -40148,12 +40139,11 @@
 	 */
 	
 	var SourceMap = function () {
-	  function SourceMap(position, opts, code) {
+	  function SourceMap(opts, code) {
 	    var _this = this;
 	
 	    (0, _classCallCheck3.default)(this, SourceMap);
 	
-	    this.position = position;
 	    this.opts = opts;
 	    this.last = { generated: {}, original: {} };
 	
@@ -40193,34 +40183,32 @@
 	   * values to insert a mapping to nothing.
 	   */
 	
-	  SourceMap.prototype.mark = function mark(sourcePos) {
+	  SourceMap.prototype.mark = function mark(position, line, column, filename) {
 	    var map = this.map;
 	    if (!map) return; // no source map
 	
-	    var position = this.position;
-	
 	    // Adding an empty mapping at the start of a generated line just clutters the map.
-	    if (this._lastGenLine !== position.line && sourcePos.line === null) return;
+	    if (this._lastGenLine !== position.line && line === null) return;
 	
 	    // If this mapping points to the same source location as the last one, we can ignore it since
 	    // the previous one covers it.
-	    if (this._lastGenLine === position.line && this._lastSourceLine === sourcePos.line && this._lastSourceColumn === sourcePos.column) {
+	    if (this._lastGenLine === position.line && this._lastSourceLine === line && this._lastSourceColumn === column) {
 	      return;
 	    }
 	
 	    this._lastGenLine = position.line;
-	    this._lastSourceLine = sourcePos.line;
-	    this._lastSourceColumn = sourcePos.column;
+	    this._lastSourceLine = line;
+	    this._lastSourceColumn = column;
 	
 	    map.addMapping({
 	      generated: {
 	        line: position.line,
 	        column: position.column
 	      },
-	      source: sourcePos.line == null ? null : sourcePos.filename || this.opts.sourceFileName,
-	      original: sourcePos.line == null ? null : {
-	        line: sourcePos.line,
-	        column: sourcePos.column
+	      source: line == null ? null : filename || this.opts.sourceFileName,
+	      original: line == null ? null : {
+	        line: line,
+	        column: column
 	      }
 	    });
 	  };
@@ -40233,67 +40221,6 @@
 
 /***/ },
 /* 454 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	
-	exports.__esModule = true;
-	
-	var _classCallCheck2 = __webpack_require__(89);
-	
-	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	/**
-	 * Track current position in code generation.
-	 */
-	
-	var Position = function () {
-	  function Position() {
-	    (0, _classCallCheck3.default)(this, Position);
-	
-	    this.line = 1;
-	    this.column = 0;
-	  }
-	
-	  /**
-	   * Push a string to the current position, mantaining the current line and column.
-	   */
-	
-	  Position.prototype.push = function push(str) {
-	    for (var i = 0; i < str.length; i++) {
-	      if (str[i] === "\n") {
-	        this.line++;
-	        this.column = 0;
-	      } else {
-	        this.column++;
-	      }
-	    }
-	  };
-	
-	  /**
-	   * Unshift a string from the current position, mantaining the current line and column.
-	   */
-	
-	  Position.prototype.unshift = function unshift(str) {
-	    for (var i = 0; i < str.length; i++) {
-	      if (str[i] === "\n") {
-	        this.line--;
-	      } else {
-	        this.column--;
-	      }
-	    }
-	  };
-	
-	  return Position;
-	}();
-	
-	exports.default = Position;
-	module.exports = exports["default"];
-
-/***/ },
-/* 455 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -40316,19 +40243,11 @@
 	
 	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
 	
-	var _possibleConstructorReturn2 = __webpack_require__(90);
-	
-	var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
-	
-	var _inherits2 = __webpack_require__(91);
-	
-	var _inherits3 = _interopRequireDefault(_inherits2);
-	
 	var _repeat = __webpack_require__(305);
 	
 	var _repeat2 = _interopRequireDefault(_repeat);
 	
-	var _buffer = __webpack_require__(456);
+	var _buffer = __webpack_require__(455);
 	
 	var _buffer2 = _interopRequireDefault(_buffer);
 	
@@ -40346,26 +40265,263 @@
 	
 	/* eslint max-len: 0 */
 	
-	var Printer = function (_Buffer) {
-	  (0, _inherits3.default)(Printer, _Buffer);
-	
-	  function Printer() {
+	var Printer = function () {
+	  function Printer(format, map) {
 	    (0, _classCallCheck3.default)(this, Printer);
 	
-	    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-	      args[_key] = arguments[_key];
-	    }
-	
-	    var _this = (0, _possibleConstructorReturn3.default)(this, _Buffer.call.apply(_Buffer, [this].concat(args)));
-	
-	    _this.insideAux = false;
-	    _this.printAuxAfterOnNextUserNode = false;
-	    _this._printStack = [];
-	    return _this;
+	    this._format = format || {};
+	    this._buf = new _buffer2.default(map);
+	    this.insideAux = false;
+	    this.printAuxAfterOnNextUserNode = false;
+	    this._printStack = [];
+	    this.printedCommentStarts = {};
+	    this.parenPushNewlineState = null;
+	    this._indent = 0;
 	  }
 	
+	  /**
+	   * Get the current indent.
+	   */
+	
+	  Printer.prototype._getIndent = function _getIndent() {
+	    if (this._format.compact || this._format.concise) {
+	      return "";
+	    } else {
+	      return (0, _repeat2.default)(this._format.indent.style, this._indent);
+	    }
+	  };
+	
+	  /**
+	   * Increment indent size.
+	   */
+	
+	  Printer.prototype.indent = function indent() {
+	    this._indent++;
+	  };
+	
+	  /**
+	   * Decrement indent size.
+	   */
+	
+	  Printer.prototype.dedent = function dedent() {
+	    this._indent--;
+	  };
+	
+	  /**
+	   * Add a semicolon to the buffer.
+	   */
+	
+	  Printer.prototype.semicolon = function semicolon() {
+	    this._append(";", true /* queue */);
+	  };
+	
+	  /**
+	   * Add a right brace to the buffer.
+	   */
+	
+	  Printer.prototype.rightBrace = function rightBrace() {
+	    if (!this.endsWith("\n")) this.newline();
+	
+	    if (this._format.minified && !this._lastPrintedIsEmptyStatement) {
+	      this._buf.removeLastSemicolon();
+	    }
+	    this.token("}");
+	  };
+	
+	  /**
+	   * Add a keyword to the buffer.
+	   */
+	
+	  Printer.prototype.keyword = function keyword(name) {
+	    this.word(name);
+	    this.space();
+	  };
+	
+	  /**
+	   * Add a space to the buffer unless it is compact.
+	   */
+	
+	  Printer.prototype.space = function space() {
+	    var force = arguments.length <= 0 || arguments[0] === undefined ? false : arguments[0];
+	
+	    if (this._format.compact) return;
+	
+	    if (this._buf.hasContent() && !this.endsWith(" ") && !this.endsWith("\n") || force) {
+	      this._space();
+	    }
+	  };
+	
+	  /**
+	   * Writes a token that can't be safely parsed without taking whitespace into account.
+	   */
+	
+	  Printer.prototype.word = function word(str) {
+	    if (this._endsWithWord) this._space();
+	
+	    this._append(str);
+	
+	    this._endsWithWord = true;
+	  };
+	
+	  /**
+	   * Writes a simple token.
+	   */
+	
+	  Printer.prototype.token = function token(str) {
+	    var last = this._buf.getLast();
+	    // space is mandatory to avoid outputting <!--
+	    // http://javascript.spec.whatwg.org/#comment-syntax
+	    if (str === "--" && last === "!" ||
+	
+	    // Need spaces for operators of the same kind to avoid: `a+++b`
+	    str[0] === "+" && last === "+" || str[0] === "-" && last === "-") {
+	      this._space();
+	    }
+	
+	    this._append(str);
+	  };
+	
+	  /**
+	   * Add a newline (or many newlines), maintaining formatting.
+	   */
+	
+	  Printer.prototype.newline = function newline(i) {
+	    if (this._format.retainLines || this._format.compact) return;
+	
+	    if (this._format.concise) {
+	      this.space();
+	      return;
+	    }
+	
+	    // never allow more than two lines
+	    if (this.endsWith("\n\n")) return;
+	
+	    if (typeof i !== "number") i = 1;
+	
+	    i = Math.min(2, i);
+	    if (this.endsWith("{\n") || this.endsWith(":\n")) i--;
+	    if (i <= 0) return;
+	
+	    this._buf.removeTrailingSpaces();
+	    for (var j = 0; j < i; j++) {
+	      this._newline();
+	    }
+	  };
+	
+	  Printer.prototype.endsWith = function endsWith(str) {
+	    return this._buf.endsWith(str);
+	  };
+	
+	  Printer.prototype.removeTrailingNewline = function removeTrailingNewline() {
+	    this._buf.removeTrailingNewline();
+	  };
+	
+	  Printer.prototype.source = function source(prop, loc) {
+	    this._catchUp(prop, loc);
+	
+	    this._buf.source(prop, loc);
+	  };
+	
+	  Printer.prototype.withSource = function withSource(prop, loc, cb) {
+	    this._catchUp(prop, loc);
+	
+	    this._buf.withSource(prop, loc, cb);
+	  };
+	
+	  Printer.prototype._space = function _space() {
+	    this._append(" ", true /* queue */);
+	  };
+	
+	  Printer.prototype._newline = function _newline() {
+	    this._append("\n", true /* queue */);
+	  };
+	
+	  Printer.prototype._append = function _append(str) {
+	    var queue = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+	
+	    this._maybeAddParen(str);
+	    this._maybeIndent(str);
+	
+	    if (queue) this._buf.queue(str);else this._buf.append(str);
+	
+	    this._endsWithWord = false;
+	  };
+	
+	  Printer.prototype._maybeIndent = function _maybeIndent(str) {
+	    // we've got a newline before us so prepend on the indentation
+	    if (!this._format.compact && this._indent && this.endsWith("\n") && str[0] !== "\n") {
+	      this._buf.queue(this._getIndent());
+	    }
+	  };
+	
+	  Printer.prototype._maybeAddParen = function _maybeAddParen(str) {
+	    // see startTerminatorless() instance method
+	    var parenPushNewlineState = this.parenPushNewlineState;
+	    if (!parenPushNewlineState) return;
+	    this.parenPushNewlineState = null;
+	
+	    var i = void 0;
+	    for (i = 0; i < str.length && str[i] === " "; i++) {
+	      continue;
+	    }if (i === str.length) return;
+	
+	    var cha = str[i];
+	    if (cha === "\n" || cha === "/") {
+	      // we're going to break this terminator expression so we need to add a parentheses
+	      this.token("(");
+	      this.indent();
+	      parenPushNewlineState.printed = true;
+	    }
+	  };
+	
+	  Printer.prototype._catchUp = function _catchUp(prop, loc) {
+	    if (!this._format.retainLines) return;
+	
+	    // catch up to this nodes newline if we're behind
+	    var pos = loc ? loc[prop] : null;
+	    if (pos && pos.line !== null) {
+	      while (this._buf.getCurrentLine() < pos.line) {
+	        this._newline();
+	      }
+	    }
+	  };
+	
+	  /**
+	   * Set some state that will be modified if a newline has been inserted before any
+	   * non-space characters.
+	   *
+	   * This is to prevent breaking semantics for terminatorless separator nodes. eg:
+	   *
+	   *    return foo;
+	   *
+	   * returns `foo`. But if we do:
+	   *
+	   *   return
+	   *   foo;
+	   *
+	   *  `undefined` will be returned and not `foo` due to the terminator.
+	   */
+	
+	  Printer.prototype.startTerminatorless = function startTerminatorless() {
+	    return this.parenPushNewlineState = {
+	      printed: false
+	    };
+	  };
+	
+	  /**
+	   * Print an ending parentheses if a starting one has been printed.
+	   */
+	
+	  Printer.prototype.endTerminatorless = function endTerminatorless(state) {
+	    if (state.printed) {
+	      this.dedent();
+	      this.newline();
+	      this.token(")");
+	    }
+	  };
+	
 	  Printer.prototype.print = function print(node, parent) {
-	    var _this2 = this;
+	    var _this = this;
 	
 	    var opts = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 	
@@ -40380,9 +40536,9 @@
 	    var oldInAux = this.insideAux;
 	    this.insideAux = !node.loc;
 	
-	    var oldConcise = this.format.concise;
+	    var oldConcise = this._format.concise;
 	    if (node._compact) {
-	      this.format.concise = true;
+	      this._format.concise = true;
 	    }
 	
 	    var printMethod = this[node.type];
@@ -40400,15 +40556,13 @@
 	
 	    this.printLeadingComments(node, parent);
 	
-	    this.catchUp(node);
-	
 	    this._printNewline(true, node, parent, opts);
 	
 	    if (opts.before) opts.before();
 	
 	    var loc = t.isProgram(node) || t.isFile(node) ? null : node.loc;
 	    this.withSource("start", loc, function () {
-	      _this2[node.type](node, parent);
+	      _this[node.type](node, parent);
 	    });
 	
 	    // Check again if any of our children may have left an aux comment on the stack
@@ -40422,14 +40576,14 @@
 	    this._printStack.pop();
 	    if (opts.after) opts.after();
 	
-	    this.format.concise = oldConcise;
+	    this._format.concise = oldConcise;
 	    this.insideAux = oldInAux;
 	
 	    this._printNewline(false, node, parent, opts);
 	  };
 	
 	  Printer.prototype.printAuxBeforeComment = function printAuxBeforeComment(wasInAux) {
-	    var comment = this.format.auxiliaryCommentBefore;
+	    var comment = this._format.auxiliaryCommentBefore;
 	    if (!wasInAux && this.insideAux && !this.printAuxAfterOnNextUserNode) {
 	      this.printAuxAfterOnNextUserNode = true;
 	      if (comment) this.printComment({
@@ -40442,7 +40596,7 @@
 	  Printer.prototype.printAuxAfterComment = function printAuxAfterComment() {
 	    if (this.printAuxAfterOnNextUserNode) {
 	      this.printAuxAfterOnNextUserNode = false;
-	      var comment = this.format.auxiliaryCommentAfter;
+	      var comment = this._format.auxiliaryCommentAfter;
 	      if (comment) this.printComment({
 	        type: "CommentBlock",
 	        value: comment
@@ -40451,7 +40605,7 @@
 	  };
 	
 	  Printer.prototype.getPossibleRaw = function getPossibleRaw(node) {
-	    if (this.format.minified) return;
+	    if (this._format.minified) return;
 	
 	    var extra = node.extra;
 	    if (extra && extra.raw != null && extra.rawValue != null && node.value === extra.rawValue) {
@@ -40460,7 +40614,7 @@
 	  };
 	
 	  Printer.prototype.printJoin = function printJoin(nodes, parent) {
-	    var _this3 = this;
+	    var _this2 = this;
 	
 	    var opts = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 	
@@ -40481,11 +40635,11 @@
 	        }
 	
 	        if (opts.separator && parent.loc) {
-	          _this3.printAuxAfterComment();
+	          _this2.printAuxAfterComment();
 	        }
 	
 	        if (opts.separator && i < len - 1) {
-	          opts.separator.call(_this3);
+	          opts.separator.call(_this2);
 	        }
 	      }
 	    };
@@ -40561,7 +40715,7 @@
 	
 	  Printer.prototype._printNewline = function _printNewline(leading, node, parent, opts) {
 	    // Fast path since 'this.newline' does nothing when not tracking lines.
-	    if (this.format.retainLines || this.format.compact) return;
+	    if (this._format.retainLines || this._format.compact) return;
 	
 	    if (!opts.statement && !n.isUserWhitespacable(node, parent)) {
 	      return;
@@ -40569,7 +40723,7 @@
 	
 	    // Fast path for concise since 'this.newline' just inserts a space when
 	    // concise formatting is in use.
-	    if (this.format.concise) {
+	    if (this._format.concise) {
 	      this.space();
 	      return;
 	    }
@@ -40593,7 +40747,7 @@
 	      if (needs(node, parent)) lines++;
 	
 	      // generated nodes can't add starting file whitespace
-	      if (!this.buf) lines = 0;
+	      if (!this._buf.hasContent()) lines = 0;
 	    }
 	
 	    this.newline(lines);
@@ -40606,19 +40760,19 @@
 	  };
 	
 	  Printer.prototype.shouldPrintComment = function shouldPrintComment(comment) {
-	    if (this.format.shouldPrintComment) {
-	      return this.format.shouldPrintComment(comment.value);
+	    if (this._format.shouldPrintComment) {
+	      return this._format.shouldPrintComment(comment.value);
 	    } else {
-	      if (!this.format.minified && (comment.value.indexOf("@license") >= 0 || comment.value.indexOf("@preserve") >= 0)) {
+	      if (!this._format.minified && (comment.value.indexOf("@license") >= 0 || comment.value.indexOf("@preserve") >= 0)) {
 	        return true;
 	      } else {
-	        return this.format.comments;
+	        return this._format.comments;
 	      }
 	    }
 	  };
 	
 	  Printer.prototype.printComment = function printComment(comment) {
-	    var _this4 = this;
+	    var _this3 = this;
 	
 	    if (!this.shouldPrintComment(comment)) return;
 	
@@ -40631,40 +40785,37 @@
 	    }
 	
 	    // Exclude comments from source mappings since they will only clutter things.
-	    this.withSource(null, null, function () {
-	      _this4.catchUp(comment);
-	
+	    this.withSource("start", comment.loc, function () {
 	      // whitespace before
-	      _this4.newline(_this4.whitespace.getNewlinesBefore(comment));
+	      _this3.newline(_this3.whitespace.getNewlinesBefore(comment));
 	
-	      if (!_this4.endsWith(["[", "{"])) _this4.space();
+	      if (!_this3.endsWith("[") && !_this3.endsWith("{")) _this3.space();
 	
-	      var column = _this4.position.column;
-	      var val = _this4.generateComment(comment);
+	      var val = _this3.generateComment(comment);
 	
 	      //
-	      if (comment.type === "CommentBlock" && _this4.format.indent.adjustMultilineComment) {
+	      if (comment.type === "CommentBlock" && _this3._format.indent.adjustMultilineComment) {
 	        var offset = comment.loc && comment.loc.start.column;
 	        if (offset) {
 	          var newlineRegex = new RegExp("\\n\\s{1," + offset + "}", "g");
 	          val = val.replace(newlineRegex, "\n");
 	        }
 	
-	        var indent = Math.max(_this4.indentSize(), column);
-	        val = val.replace(/\n/g, "\n" + (0, _repeat2.default)(" ", indent));
+	        var indentSize = Math.max(_this3._getIndent().length, _this3._buf.getCurrentColumn());
+	        val = val.replace(/\n(?!$)/g, "\n" + (0, _repeat2.default)(" ", indentSize));
 	      }
 	
 	      // force a newline for line comments when retainLines is set in case the next printed node
 	      // doesn't catch up
-	      if ((_this4.format.compact || _this4.format.concise || _this4.format.retainLines) && comment.type === "CommentLine") {
+	      if ((_this3._format.compact || _this3._format.concise || _this3._format.retainLines) && comment.type === "CommentLine") {
 	        val += "\n";
 	      }
 	
 	      //
-	      _this4.push(val);
+	      _this3.token(val);
 	
 	      // whitespace after
-	      _this4.newline(_this4.whitespace.getNewlinesAfter(comment));
+	      _this3.newline(_this3.whitespace.getNewlinesAfter(comment));
 	    });
 	  };
 	
@@ -40690,7 +40841,7 @@
 	  };
 	
 	  return Printer;
-	}(_buffer2.default);
+	}();
 	
 	exports.default = Printer;
 	
@@ -40708,7 +40859,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 456 */
+/* 455 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -40719,9 +40870,9 @@
 	
 	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
 	
-	var _repeat = __webpack_require__(305);
+	var _position = __webpack_require__(456);
 	
-	var _repeat2 = _interopRequireDefault(_repeat);
+	var _position2 = _interopRequireDefault(_position);
 	
 	var _trimEnd = __webpack_require__(457);
 	
@@ -40729,258 +40880,116 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
+	var SPACES_RE = /^[ \t]+$/;
+	
 	/**
-	 * Buffer for collecting generated output.
+	 * The Buffer class exists to manage the queue of tokens being pushed onto the output string
+	 * in such a way that the final string buffer is treated as write-only until the final .get()
+	 * call. This allows V8 to optimize the output efficiently by not requiring it to store the
+	 * string in contiguous memory.
 	 */
 	
 	var Buffer = function () {
-	  function Buffer(position, format) {
+	  function Buffer(map) {
 	    (0, _classCallCheck3.default)(this, Buffer);
-	
-	    this.printedCommentStarts = {};
-	    this.parenPushNewlineState = null;
-	    this.position = position;
-	    this._indent = format.indent.base;
-	    this.format = format;
-	    this.buf = "";
-	
-	    // Maintaining a reference to the last char in the buffer is an optimization
-	    // to make sure that v8 doesn't "flatten" the string more often than needed
-	    // see https://github.com/babel/babel/pull/3283 for details.
-	    this.last = "";
-	
-	    this.map = null;
+	    this._map = null;
+	    this._buf = "";
+	    this._last = "";
+	    this._queue = [];
+	    this._position = new _position2.default();
 	    this._sourcePosition = {
 	      line: null,
 	      column: null,
 	      filename: null
 	    };
-	    this._endsWithWord = false;
+	
+	    this._map = map;
 	  }
 	
 	  /**
-	   * Description
-	   */
-	
-	  Buffer.prototype.catchUp = function catchUp(node) {
-	    // catch up to this nodes newline if we're behind
-	    if (node.loc && this.format.retainLines && this.buf) {
-	      while (this.position.line < node.loc.start.line) {
-	        this.push("\n");
-	      }
-	    }
-	  };
-	
-	  /**
-	   * Get the current trimmed buffer.
+	   * Get the final string output from the buffer, along with the sourcemap if one exists.
 	   */
 	
 	  Buffer.prototype.get = function get() {
-	    return (0, _trimEnd2.default)(this.buf);
-	  };
+	    this._flush();
 	
-	  /**
-	   * Get the current indent.
-	   */
-	
-	  Buffer.prototype.getIndent = function getIndent() {
-	    if (this.format.compact || this.format.concise) {
-	      return "";
-	    } else {
-	      return (0, _repeat2.default)(this.format.indent.style, this._indent);
-	    }
-	  };
-	
-	  /**
-	   * Get the current indent size.
-	   */
-	
-	  Buffer.prototype.indentSize = function indentSize() {
-	    return this.getIndent().length;
-	  };
-	
-	  /**
-	   * Increment indent size.
-	   */
-	
-	  Buffer.prototype.indent = function indent() {
-	    this._indent++;
-	  };
-	
-	  /**
-	   * Decrement indent size.
-	   */
-	
-	  Buffer.prototype.dedent = function dedent() {
-	    this._indent--;
-	  };
-	
-	  /**
-	   * Add a semicolon to the buffer.
-	   */
-	
-	  Buffer.prototype.semicolon = function semicolon() {
-	    this.token(";");
-	  };
-	
-	  /**
-	   * Add a right brace to the buffer.
-	   */
-	
-	  Buffer.prototype.rightBrace = function rightBrace() {
-	    this.newline(true);
-	    if (this.format.minified && !this._lastPrintedIsEmptyStatement) {
-	      this._removeLast(";");
-	    }
-	    this.token("}");
-	  };
-	
-	  /**
-	   * Add a keyword to the buffer.
-	   */
-	
-	  Buffer.prototype.keyword = function keyword(name) {
-	    this.word(name);
-	    this.space();
-	  };
-	
-	  /**
-	   * Add a space to the buffer unless it is compact.
-	   */
-	
-	  Buffer.prototype.space = function space() {
-	    if (this.format.compact) return;
-	
-	    if (this.buf && !this.endsWith(" ") && !this.endsWith("\n")) {
-	      this.push(" ");
-	    }
-	  };
-	
-	  /**
-	   * Writes a token that can't be safely parsed without taking whitespace into account.
-	   */
-	
-	  Buffer.prototype.word = function word(str) {
-	    if (this._endsWithWord) this.push(" ");
-	
-	    this.push(str);
-	    this._endsWithWord = true;
-	  };
-	
-	  /**
-	   * Writes a simple token.
-	   */
-	
-	  Buffer.prototype.token = function token(str) {
-	    // space is mandatory to avoid outputting <!--
-	    // http://javascript.spec.whatwg.org/#comment-syntax
-	    if (str === "--" && this.last === "!" ||
-	
-	    // Need spaces for operators of the same kind to avoid: `a+++b`
-	    str[0] === "+" && this.last === "+" || str[0] === "-" && this.last === "-") {
-	      this.push(" ");
-	    }
-	
-	    this.push(str);
-	  };
-	
-	  /**
-	   * Remove the last character.
-	   */
-	
-	  Buffer.prototype.removeLast = function removeLast(cha) {
-	    if (this.format.compact) return;
-	    return this._removeLast(cha);
-	  };
-	
-	  Buffer.prototype._removeLast = function _removeLast(cha) {
-	    if (!this.endsWith(cha)) return;
-	    this.buf = this.buf.slice(0, -1);
-	    this.last = this.buf[this.buf.length - 1];
-	    this.position.unshift(cha);
-	  };
-	
-	  /**
-	   * Set some state that will be modified if a newline has been inserted before any
-	   * non-space characters.
-	   *
-	   * This is to prevent breaking semantics for terminatorless separator nodes. eg:
-	   *
-	   *    return foo;
-	   *
-	   * returns `foo`. But if we do:
-	   *
-	   *   return
-	   *   foo;
-	   *
-	   *  `undefined` will be returned and not `foo` due to the terminator.
-	   */
-	
-	  Buffer.prototype.startTerminatorless = function startTerminatorless() {
-	    return this.parenPushNewlineState = {
-	      printed: false
+	    return {
+	      code: (0, _trimEnd2.default)(this._buf),
+	      map: this._map ? this._map.get() : null
 	    };
 	  };
 	
 	  /**
-	   * Print an ending parentheses if a starting one has been printed.
+	   * Add a string to the buffer that cannot be reverted.
 	   */
 	
-	  Buffer.prototype.endTerminatorless = function endTerminatorless(state) {
-	    if (state.printed) {
-	      this.dedent();
-	      this.newline();
-	      this.token(")");
-	    }
+	  Buffer.prototype.append = function append(str) {
+	    this._flush();
+	    this._append(str, this._sourcePosition.line, this._sourcePosition.column, this._sourcePosition.filename);
 	  };
 	
 	  /**
-	   * Add a newline (or many newlines), maintaining formatting.
-	   * Strips multiple newlines if removeLast is true.
+	   * Add a string to the buffer than can be reverted.
 	   */
 	
-	  Buffer.prototype.newline = function newline(i, removeLast) {
-	    if (this.format.retainLines || this.format.compact) return;
+	  Buffer.prototype.queue = function queue(str) {
+	    this._queue.unshift([str, this._sourcePosition.line, this._sourcePosition.column, this._sourcePosition.filename]);
+	  };
 	
-	    if (this.format.concise) {
-	      this.space();
-	      return;
-	    }
-	
-	    // never allow more than two lines
-	    if (this.endsWith("\n\n")) return;
-	
-	    if (typeof i === "boolean") removeLast = i;
-	    if (typeof i !== "number") i = 1;
-	
-	    i = Math.min(2, i);
-	    if (this.endsWith("{\n") || this.endsWith(":\n")) i--;
-	    if (i <= 0) return;
-	
-	    // remove the last newline
-	    if (removeLast) {
-	      this.removeLast("\n");
-	    }
-	
-	    this.removeLast(" ");
-	    this._removeSpacesAfterLastNewline();
-	    for (var j = 0; j < i; j++) {
-	      this.push("\n");
+	  Buffer.prototype._flush = function _flush() {
+	    var item = void 0;
+	    while (item = this._queue.pop()) {
+	      this._append.apply(this, item);
 	    }
 	  };
 	
-	  /**
-	   * If buffer ends with a newline and some spaces after it, trim those spaces.
-	   */
+	  Buffer.prototype._append = function _append(str, line, column, filename) {
+	    // If there the line is ending, adding a new mapping marker is redundant
+	    if (this._map && str[0] !== "\n") this._map.mark(this._position, line, column, filename);
 	
-	  Buffer.prototype._removeSpacesAfterLastNewline = function _removeSpacesAfterLastNewline() {
-	    var lastNewlineIndex = this.buf.lastIndexOf("\n");
-	    if (lastNewlineIndex >= 0 && this.get().length <= lastNewlineIndex) {
-	      var toRemove = this.buf.slice(lastNewlineIndex + 1);
-	      this.buf = this.buf.substring(0, lastNewlineIndex + 1);
-	      this.last = "\n";
-	      this.position.unshift(toRemove);
+	    this._buf += str;
+	    this._last = str[str.length - 1];
+	    this._position.push(str);
+	  };
+	
+	  Buffer.prototype.removeTrailingSpaces = function removeTrailingSpaces() {
+	    while (this._queue.length > 0 && SPACES_RE.test(this._queue[0][0])) {
+	      this._queue.shift();
 	    }
+	  };
+	
+	  Buffer.prototype.removeTrailingNewline = function removeTrailingNewline() {
+	    if (this._queue.length > 0 && this._queue[0][0] === "\n") this._queue.shift();
+	  };
+	
+	  Buffer.prototype.removeLastSemicolon = function removeLastSemicolon() {
+	    if (this._queue.length > 0 && this._queue[0][0] === ";") this._queue.shift();
+	  };
+	
+	  Buffer.prototype.endsWith = function endsWith(str) {
+	    var end = this._last + this._queue.reduce(function (acc, item) {
+	      return item[0] + acc;
+	    }, "");
+	    if (str.length <= end.length) {
+	      return end.slice(-str.length) === str;
+	    }
+	
+	    // We assume that everything being matched is at most a single token plus some whitespace,
+	    // which everything currently is, but otherwise we'd have to expand _last or check _buf.
+	    return false;
+	  };
+	
+	  Buffer.prototype.getLast = function getLast() {
+	    if (this._queue.length > 0) {
+	      var last = this._queue[0][0];
+	      return last[last.length - 1];
+	    }
+	
+	    return this._last;
+	  };
+	
+	  Buffer.prototype.hasContent = function hasContent() {
+	    return this._queue.length > 0 || !!this._last;
 	  };
 	
 	  /**
@@ -41003,7 +41012,7 @@
 	   */
 	
 	  Buffer.prototype.withSource = function withSource(prop, loc, cb) {
-	    if (!this.opts.sourceMaps) return cb();
+	    if (!this._map) return cb();
 	
 	    // Use the call stack to manage a stack of "source location" data.
 	    var originalLine = this._sourcePosition.line;
@@ -41019,72 +41028,79 @@
 	    this._sourcePosition.filename = originalFilename;
 	  };
 	
-	  /**
-	   * Push a string to the buffer, maintaining indentation and newlines.
-	   */
+	  Buffer.prototype.getCurrentColumn = function getCurrentColumn() {
+	    var extra = this._queue.reduce(function (acc, item) {
+	      return item[0] + acc;
+	    }, "");
+	    var lastIndex = extra.lastIndexOf("\n");
 	
-	  Buffer.prototype.push = function push(str) {
-	    if (!this.format.compact && this._indent && str[0] !== "\n") {
-	      // we've got a newline before us so prepend on the indentation
-	      if (this.endsWith("\n")) str = this.getIndent() + str;
-	    }
-	
-	    // see startTerminatorless() instance method
-	    var parenPushNewlineState = this.parenPushNewlineState;
-	    if (parenPushNewlineState) {
-	      for (var i = 0; i < str.length; i++) {
-	        var cha = str[i];
-	
-	        // we can ignore spaces since they wont interupt a terminatorless separator
-	        if (cha === " ") continue;
-	
-	        this.parenPushNewlineState = null;
-	
-	        if (cha === "\n" || cha === "/") {
-	          // we're going to break this terminator expression so we need to add a parentheses
-	          str = "(" + str;
-	          this.indent();
-	          parenPushNewlineState.printed = true;
-	        }
-	
-	        break;
-	      }
-	    }
-	
-	    // If there the line is ending, adding a new mapping marker is redundant
-	    if (this.opts.sourceMaps && str[0] !== "\n") this.map.mark(this._sourcePosition);
-	
-	    //
-	    this.position.push(str);
-	    this.buf += str;
-	    this.last = str[str.length - 1];
-	
-	    // Clear any state-tracking flags that may have been set.
-	    this._endsWithWord = false;
+	    return lastIndex === -1 ? this._position.column + extra.length : extra.length - 1 - lastIndex;
 	  };
 	
-	  /**
-	   * Test if the buffer ends with a string.
-	   */
+	  Buffer.prototype.getCurrentLine = function getCurrentLine() {
+	    var extra = this._queue.reduce(function (acc, item) {
+	      return item[0] + acc;
+	    }, "");
 	
-	  Buffer.prototype.endsWith = function endsWith(str) {
-	    var _this = this;
-	
-	    if (Array.isArray(str)) return str.some(function (s) {
-	      return _this.endsWith(s);
-	    });
-	
-	    if (str.length === 1) {
-	      return this.last === str;
-	    } else {
-	      return this.buf.slice(-str.length) === str;
+	    var count = 0;
+	    for (var i = 0; i < extra.length; i++) {
+	      if (extra[i] === "\n") count++;
 	    }
+	
+	    return this._position.line + count;
 	  };
 	
 	  return Buffer;
 	}();
 	
 	exports.default = Buffer;
+	module.exports = exports["default"];
+
+/***/ },
+/* 456 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	exports.__esModule = true;
+	
+	var _classCallCheck2 = __webpack_require__(89);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	/**
+	 * Track current position in code generation.
+	 */
+	
+	var Position = function () {
+	  function Position() {
+	    (0, _classCallCheck3.default)(this, Position);
+	
+	    this.line = 1;
+	    this.column = 0;
+	  }
+	
+	  /**
+	   * Push a string to the current position, mantaining the current line and column.
+	   */
+	
+	  Position.prototype.push = function push(str) {
+	    for (var i = 0; i < str.length; i++) {
+	      if (str[i] === "\n") {
+	        this.line++;
+	        this.column = 0;
+	      } else {
+	        this.column++;
+	      }
+	    }
+	  };
+	
+	  return Position;
+	}();
+	
+	exports.default = Position;
 	module.exports = exports["default"];
 
 /***/ },
@@ -42203,7 +42219,7 @@
 	
 	function commaSeparatorNewline() {
 	  this.token(",");
-	  this.push("\n");
+	  this.newline();
 	}
 	
 	function CallExpression(node) {
@@ -42622,18 +42638,18 @@
 	function variableDeclarationIdent() {
 	  // "let " or "var " indentation.
 	  this.token(",");
-	  this.push("\n");
+	  this.newline();
 	  for (var i = 0; i < 4; i++) {
-	    this.push(" ");
+	    this.space(true);
 	  }
 	}
 	
 	function constDeclarationIdent() {
 	  // "const " indentation.
 	  this.token(",");
-	  this.push("\n");
+	  this.newline();
 	  for (var i = 0; i < 6; i++) {
-	    this.push(" ");
+	    this.space(true);
 	  }
 	}
 	
@@ -43719,7 +43735,7 @@
 	    if (node.directives && node.directives.length) this.newline();
 	
 	    this.printSequence(node.body, node, { indent: true });
-	    if (!this.format.retainLines && !this.format.concise) this.removeLast("\n");
+	    if (!this.format.retainLines && !this.format.concise) this.removeTrailingNewline();
 	
 	    this.source("end", node.loc);
 	    this.rightBrace();
