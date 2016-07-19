@@ -100,12 +100,14 @@ module.exports = function(config) {
     browserNoActivityTimeout: 20000
   });
 
-  if (!process.env.GithubToken) {
-    console.log("\033[7m\033[31m****************************************************************************\033[0m");
-    console.log("\033[7m\033[31m* You need to provide the \"GithubToken\" environment variable to run tests. *\033[0m");
-    console.log("\033[7m\033[31m****************************************************************************\033[0m");
-    process.exit(-1);
-  }
+
+  // Not needed at the moment
+  // if (!process.env.GithubToken) {
+  //   console.log("\033[7m\033[31m****************************************************************************\033[0m");
+  //   console.log("\033[7m\033[31m* You need to provide the \"GithubToken\" environment variable to run tests. *\033[0m");
+  //   console.log("\033[7m\033[31m****************************************************************************\033[0m");
+  //   process.exit(-1);
+  // }
 
   // insert the github token
   fs.writeSync(

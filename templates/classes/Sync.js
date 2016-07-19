@@ -9,7 +9,9 @@ export default class Sync extends Morph {
     lively.html.registerButtons(this)
     lively.html.registerInputs(this)
     this.updateLoginStatus()
-
+    
+    this.getSubmorph('#gitrepository').value = lively4url.replace(/.*\//,"")
+    
     var travis = this.shadowRoot.querySelector("#travisLink")
     travis.onclick = () => {
       window.open(travis.getAttribute("href"))

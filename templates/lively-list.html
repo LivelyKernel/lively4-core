@@ -5,12 +5,8 @@
       flex-grow: 1;
       overflow: auto;
     }
-    .container {
-      width: 400px;
-      height: 100%;
-      border-width: 1px;
-      border-color: black;
-      border-style: solid;
+    .list-container {
+      width: 99%;
     }
   </style>
   <div class="list-container">
@@ -45,8 +41,8 @@
         i.classList.add(`fa-${item.type}`);
         // Add link with onClick handler
         let link = document.createElement("a");
-        link.innerHTML = item.path;
-        link.title = item.score;
+        link.innerHTML = item.label;
+        link.title = item.path;
         link.href = "#";
         link.onclick = () => {
           this.browseSearchResult(item.path, pattern)

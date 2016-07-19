@@ -47,7 +47,7 @@ export default class DigitalClock extends Morph {
   
   updateTime() {
     let date = new Date();
-    let formattedDate = date.getHours() + ":" + date.getMinutes();
+    let formattedDate = date.toTimeString().replace(/ .*/,"")
     this.shadowRoot.innerHTML = formattedDate;
   }
 }

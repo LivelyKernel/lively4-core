@@ -36,7 +36,7 @@ export default class Keys {
         evt.preventDefault()
       } else if ((evt.ctrlKey || evt.metaKey) && evt.shiftKey &&char == "F") {
         var str = window.getSelection().toLocaleString()
-        lively.openSearchFileWindow(str)
+        lively.openSearchWidget(str)
         evt.preventDefault()
       } else if ((evt.ctrlKey || evt.metaKey) && char == "B") {
         var str = window.getSelection().toLocaleString()
@@ -50,6 +50,8 @@ export default class Keys {
         var str = window.getSelection().toLocaleString()
         lively.openHelpWindow(str)
         evt.preventDefault()
+      } else if (evt.keyCode == 27) {
+        lively.hideSearchWidget();
       }
       
       if ((evt.ctrlKey || evt.metaKey) && char == "D") {
