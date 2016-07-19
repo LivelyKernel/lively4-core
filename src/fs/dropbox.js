@@ -2,7 +2,7 @@
  * HTTP Dropbox access.
  */
 
-import { Base, Stat, StatNotFoundError } from './base.js'
+import { Base, Stat, StatNotFoundError, File, FileNotFoundError } from './base.js'
 import * as util from '../util.js'
 import * as cache from '../cache.js'
 
