@@ -2,8 +2,8 @@ import Interpreter from './babelsberg/jsinterpreter/interpreter.js';
 
 let bbb = {};
 
-import ConstrainedVariable from './babelsberg/constrainedvariable.js';
-import Constraint from './babelsberg/constraint.js';
+//import ConstrainedVariable from './babelsberg/constrainedvariable.js';
+//import Constraint from './babelsberg/constraint.js';
 
 export class ConstraintInterpreter extends Interpreter {
     // static newConstraint(func, solver) {
