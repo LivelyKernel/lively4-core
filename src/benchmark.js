@@ -74,6 +74,23 @@ function benchmarkBlock(name, unrolledOps, func) {
     console.log(result);
 }
 
+export function benchmark(work) {
+    // warmup
+    const startTime = Date.now();
+    for (let i = 0; i < 50 || Date.now() - startTime < 800; i++) {
+        work();
+    }
+    // measure
+    let sample = new Array(SAMPLE_SIZE);
+    for (let i = 0; i < SAMPLE_SIZE; i++) {
+        const start = Date.now();
+        work();
+        const end = Date.now();
+        sample[i] = end - start;
+    }
+    return sample;
+}
+
 
 /*
  * Benchmark subjects
@@ -1236,5 +1253,36 @@ export function runBenchmarksAsync(benchmarksToRun, done) {
 export function runBenchmarks(benchmarksToRun) {
     for (const benchmark of benchmarksToRun) {
         benchmark.run(benchmark.name)
+    }
+}
+
+const LOOP_SIZE = 1000000;
+
+export function makeWorkloadWithoutLayersAndParameters() {
+    class C {
+        constructor() { this.counter = 0 }
+        method() { this.counter++ }
+    }
+    const obj = new C();
+    return function () {
+        for (let i = 0; i < LOOP_SIZE; i++) {
+            obj.method();
+        }
+    }
+}
+
+export function makeWorkloadWithDisabledLayersWithoutParameters() {
+    class C {
+        constructor() { this.counter1 = 0, this.counter2 = 0 }
+        method() { this.counter1++ }
+    }
+    const layer = new Layer('overwriting').refineClass(C, {
+        method() { this.counter2++ }
+    });
+    const obj = new C();
+    return function () {
+        for (let i = 0; i < LOOP_SIZE; i++) {
+            obj.method();
+        }
     }
 }
