@@ -67,6 +67,9 @@ export default class Filesystem extends Base {
     util.responseOk(response, StatNotFoundError)
 
     let json  = await response.json()
+    if (json['is_deleted']) {
+      throw new Error('File has been deleted');
+    }
     let dir = false
     let contents = do {
       if(json['contents']) {
@@ -119,7 +122,7 @@ export default class Filesystem extends Base {
     dropboxHeaders.append("Content-Length", fileContentFinal.length.toString())
     let response = await self.fetch('https://content.dropboxapi.com/1/files_put/auto' + this.subfolder + path, {method: 'PUT', headers: dropboxHeaders, body: fileContentFinal})
 
-    if(response.status < 200 && response.status >= 300) {
+    if(response.status < 200 || response.status >= 300) {
       throw new Error(response.statusText)
     }
 
