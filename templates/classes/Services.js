@@ -1,6 +1,6 @@
 import Morph from './Morph.js';
 
-const mountEndpoint = "/services";
+const mountEndpoint = '/services';
 const isLocalHost = document.location.hostname.indexOf('localhost') > -1;
 const localBaseURL = 'http://localhost:9007/';
 const remoteBaseURL = 'https://lively-kernel.org/lively4services/';
@@ -72,11 +72,11 @@ export default class Services extends Morph {
   }
 
   addButtonClick(evt) {
-    var browser = lively.components.createComponent("lively-file-browser");
+    var browser = lively.components.createComponent('lively-file-browser');
     lively.components.openInWindow(browser).then(() => {
       browser.path = mountEndpoint;
       browser.setMainAction((url) => {
-        const relativePath = url.pathname.replace(mountEndpoint + "/", "");
+        const relativePath = url.pathname.replace(mountEndpoint + '/', '');
 
         this.serviceTop.removeAttribute('data-id');
         this.entryPoint.value = relativePath;
@@ -187,7 +187,7 @@ export default class Services extends Morph {
   handleAjaxError(jqXHR, textStatus, errorThrown) {
     console.log(errorThrown);
     this.removeAllItems();
-    this.showMessageInServiceList("Cannot connect to server.");
+    this.showMessageInServiceList('Cannot connect to server.');
   }
 
   unselectAll() {
@@ -227,7 +227,7 @@ export default class Services extends Morph {
     var selectedPID = this.removeAllItems();
     // Check if any service running
     if (Object.keys(services).length === 0) {
-      this.showMessageInServiceList("No services available yet.");
+      this.showMessageInServiceList('No services available yet.');
       return;
     }
     // List all services
@@ -285,22 +285,22 @@ export default class Services extends Morph {
   
   mountRemoteServices() {
     var mount = {
-      "path": mountEndpoint,
-      "name": "http",
-      "options": {
-        "base": servicesURL
+      'path': mountEndpoint,
+      'name': 'http',
+      'options': {
+        'base': servicesURL
       }
-    }
+    };
     
     $.ajax({
       url: this.getMountURL(),
       type: 'PUT',
       data: JSON.stringify(mount),
       success: (text) => {
-        console.log("mounted " + mountEndpoint);
+        console.log('mounted ' + mountEndpoint);
       },
       error: function(xhr, status, error) {
-        console.log("could not mount " + mountEndpoint + " " + error);
+        console.log('could not mount ' + mountEndpoint + ' ' + error);
       }
     });
   }
@@ -318,8 +318,8 @@ export default class Services extends Morph {
 
   refreshLog() {
     if (this.pid === null) {
-      this.logEditor.setValue("");
-      this.entryPoint.value = "";
+      this.logEditor.setValue('');
+      this.entryPoint.value = '';
       return;
     }
     this.post('get', { id: this.pid }, function(res) {
