@@ -4,6 +4,7 @@
 
 import { Base, Stat, StatNotFoundError } from './base.js'
 import * as util from '../util.js'
+import * as cache from '../cache.js'
 
 export default class Filesystem extends Base {
   constructor(path, options) {
