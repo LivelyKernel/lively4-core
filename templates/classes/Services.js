@@ -1,5 +1,6 @@
 import Morph from './Morph.js';
 
+const mountEndpoint = "/services";
 const isLocalHost = document.location.hostname.indexOf('localhost') > -1;
 const localBaseURL = 'http://localhost:9007/';
 const remoteBaseURL = 'https://lively-kernel.org/lively4services/';
@@ -72,18 +73,10 @@ export default class Services extends Morph {
 
   addButtonClick(evt) {
     var browser = lively.components.createComponent("lively-file-browser");
-    const endpoint = "/services";
-    fetch('https://lively4' + endpoint, {method: 'OPTIONS'}).then((response) => {
-      if (!response.ok) {
-        lively.notify("Ensure that there is an endpoint called " + endpoint);
-        lively.openComponentInWindow("lively-filesystems");
-      }
-    });
-
     lively.components.openInWindow(browser).then(() => {
-      browser.path = endpoint;
+      browser.path = mountEndpoint;
       browser.setMainAction((url) => {
-        const relativePath = url.pathname.replace(endpoint + "/", "");
+        const relativePath = url.pathname.replace(mountEndpoint + "/", "");
 
         this.serviceTop.removeAttribute('data-id');
         this.entryPoint.value = relativePath;
@@ -126,6 +119,7 @@ export default class Services extends Morph {
     userInput = window.prompt('Please enter service endpoint:', servicesURL);
     if (userInput === null) return;
     servicesURL = userInput;
+    mountRemoteServices();
   }
 
   startButtonClick(entryPoint) {
@@ -287,6 +281,28 @@ export default class Services extends Morph {
     seconds = seconds % 60;
     if (seconds) { return seconds + ' second' + ending(seconds); }
     return 'just now';
+  }
+  
+  mountRemoteServices() {
+    var mount = {
+      "path": mountEndpoint,
+      "name": "http",
+      "options": {
+        "base": servicesURL
+      }
+    }
+    
+    $.ajax({
+      url: this.getMountURL(),
+      type: 'PUT',
+      data: JSON.stringify(mount),
+      success: (text) => {
+        console.log("mounted " + mountEndpoint);
+      },
+      error: function(xhr, status, error) {
+        console.log("could not mount " + mountEndpoint + " " + error);
+      }
+    });
   }
 
   /*
