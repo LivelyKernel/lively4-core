@@ -52,9 +52,7 @@ layer(window, "ScopedD3").refineObject(d3, {
   appendHtml(content) {
     console.log("append html " + this)
     if (content.match(/<script src=".*d3\.v3(.min)?\.js".*>/)) {
-      
-      ScopedD3.currentBody = this.getSubmorph('#container-content');
-      ScopedD3.currentBaseURL = (""+ this.getURL()).replace(/[^/]*$/,"") 
+      ScopedD3.updateCurrentBodyAndURLFrom(this)
       console.log("SCOPE D3: " +ScopedD3.currentBody)
       
     } 
@@ -68,6 +66,10 @@ layer(window, "ScopedD3").refineObject(d3, {
       return proceed()
   }
 })
+ScopedD3.updateCurrentBodyAndURLFrom = function (container) {
+  ScopedD3.currentBody = container.getSubmorph('#container-content');
+  ScopedD3.currentBaseURL = (""+ container.getURL()).replace(/[^/]*$/,"") 
+}
 ScopedD3.beGlobal()
 
 layer(window, "D3ScopedDocument").refineObject(document, {
