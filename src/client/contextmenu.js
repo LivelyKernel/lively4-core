@@ -1,21 +1,21 @@
 // import lively2 from "./lively.js";
-// #TODO this will fetch an old version of the lively module... 
+// #TODO this will fetch an old version of the lively module...
 
 
 
 export default class ContextMenu {
-  
+
   static hide() {
     if (this.menu) $(this.menu).remove();
-    
+
     lively.removeEventListener("contextMenu",  document.documentElement)
   }
-  
+
   static openComponentInWindow (name, evt) {
     this.hide();
     return lively.openComponentInWindow(name, lively.pt(evt.pageX, evt.pageY));
   }
-  
+
   static openInWindow(comp, evt) {
     var pos = lively.getPosition(comp)
 	  lively.components.openInWindow(comp).then(function (w) {
@@ -25,12 +25,12 @@ export default class ContextMenu {
         return comp;
     });
   }
-  
+
   static items (target) {
     if (target) {
       var wasEditable = (target.contentEditable == "true");
       var wasDisabled = (target.disabled == "true");
-      var targetInWindow = target.parentElement.tagName == 'LIVELY-WINDOW' 
+      var targetInWindow = target.parentElement.tagName == 'LIVELY-WINDOW'
       var menu = [
         ["show", (evt) => {
            this.hide();
@@ -68,11 +68,14 @@ export default class ContextMenu {
       }, "CMD+K"],
       ["Browser",     (evt) => {
         this.openComponentInWindow("lively-container", evt).then(comp => {
-          var container = _.last(document.querySelectorAll("lively-container"));
+          let containers = Array.from(document.querySelectorAll('lively-container'))
+          let container = containers.slice(-1)[0]
+
           if (container)
-            comp.followPath("" +container.getURL());
+            comp.followPath(container.getURL().toString());
           else
-            comp.followPath(lively4url +"/");
+            comp.followPath(lively4url + '/');
+
           comp.parentElement.style.width = "850px";
           comp.parentElement.style.height = "600px";
         });
@@ -134,21 +137,21 @@ export default class ContextMenu {
       }]
     ];}
   }
-  
+
   static openIn(container, evt, target) {
     this.hide();
-    
-    
+
+
     lively.addEventListener("contextMenu", document.documentElement, "click", () => {
       this.hide()
     }, true)
-    
-    
+
+
     var menu = lively.components.createComponent("lively-menu");
     return lively.components.openIn(container, menu).then(() => {
       this.menu = menu;
-      
-      
+
+
       if (evt) {
         var xOffset = 0;
         var menuWidth = menu.clientWidth;

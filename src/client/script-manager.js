@@ -1,7 +1,5 @@
 'use strict';
 
-import * as _ from '../external/underscore.js';
-
 function functionFromString(funcOrString) {
     if (typeof funcOrString === 'function') {
         return funcOrString;
@@ -151,18 +149,18 @@ export default class ScriptManager {
   static updateScript(object, funcOrString, options={}) {
       var objects = asCollection(object);
 
-      _.each(objects, (object) => {
+      for(let object of objects) {
           var func = prepareFunction(funcOrString, options);
 
           this.removeScript(object, func.name);
           this.addScript(object, func.executable, options);
-      });
+      }
   }
 
   static addScript(object, funcOrString, options={}) {
       var objects = asCollection(object);
 
-      _.each(objects, function(object) {
+      for(let object of objects) {
           var func = prepareFunction(funcOrString, options);
           initializeScriptsMap(object);
 
@@ -173,37 +171,36 @@ export default class ScriptManager {
           bindFunctionToObject(object, func, options);
           addFunctionToScriptsMap(object, func.name, funcOrString);
           persistScript(object, func.name, funcOrString, options);
-      });
+      }
   }
 
   static removeScript(object, name) {
       var objects = asCollection(object);
 
-      _.each(objects, function(object) {
+      for(let object of objects) {
           if(!scriptExists(object, name)) {
               throw 'script name "' + name + '" does not exist!';
           }
           delete object.__scripts__[name];
           delete object[name];
           removeFromDOM(object, name);
-      });
+      }
   }
 
   static callScript(object, name) {
       var optionalArgs = [].splice.call(arguments, 2);
       var objects = asCollection(object);
 
-      _.each(objects, function(object) {
+      for(let object of objects) {
           if(!scriptExists(object, name)) {
               throw 'unknown script "' + name +'"!';
           }
 
           var returnValue = object[name].apply(object, optionalArgs);
-      });
+      }
 
       return returnValue;
   }
 }
 
 ScriptManager.load()
-

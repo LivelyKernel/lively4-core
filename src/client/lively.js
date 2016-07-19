@@ -1,7 +1,6 @@
 'use strict';
 
 import * as jquery from '../external/jquery.js';
-import * as _ from '../external/underscore.js';
 
 import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
@@ -104,14 +103,14 @@ export default class Lively {
     path = "" + path;
     return lively.modules.reloadModule(path).then( mod => {
       var moduleName = path.replace(/[^\/]*/,"")
-      
+
       var defaultClass = mod.default
-      
+
       if (lively.components && defaultClass) {
         console.log("update template prototype: " + moduleName)
         lively.components.updatePrototype(defaultClass.prototype);
       };
-      
+
       if (moduleName == "lively") {
           this.notify("migrate lively.js")
           var oldLively = window.lively;
@@ -119,7 +118,7 @@ export default class Lively {
           this["previous"] = oldLively
           this.components = oldLively.components // components have important state
       }
-      
+
       return mod;
     })
   }
@@ -171,14 +170,14 @@ export default class Lively {
   static fillTemplateStyles(root) {
      // there seems to be no <link ..> tag allowed to reference css inside of templates #Jens
      var promises = []
-     _.each(root.querySelectorAll("style"), ea => {
+     for(let ea of root.querySelectorAll("style")) {
         var src = ea.getAttribute("data-src")
         if (src) {
           promises.push(fetch(lively4url + src).then(r => r.text()).then(css => {
             ea.innerHTML = css
           }))
         }
-     })
+     }
      return Promise.all(promises)
   }
 
@@ -323,7 +322,7 @@ export default class Lively {
       obj.style.left = ""+  point.x + "px";
       obj.style.top = "" +  point.y + "px";
   }
-  
+
   static getPosition(obj) {
       if (obj.clientX)
         return {x: obj.clientX, y: obj.clientY}
@@ -453,7 +452,7 @@ export default class Lively {
     var tagName = components.reloadComponent(html);
     if (!tagName) return;
 
-    _.each($(tagName), function(oldInstance) {
+    for(let oldInstance of document.querySelectorAll(tagName)) {
       if (oldInstance.__ingoreUpdates) return;
 
       // if (oldInstance.isMinimized && oldInstance.isMinimized()) return // ignore minimized windows
@@ -463,16 +462,18 @@ export default class Lively {
       var newInstance = document.createElement(tagName);
 
       owner.replaceChild(newInstance, oldInstance);
-      _.each(oldInstance.childNodes, function(ea) {
+
+      for(let ea of oldInstance.childNodes) {
         if (ea) { // there are "undefined" elemented in childNodes... sometimes #TODO
           newInstance.appendChild(ea);
           console.log("append old child: " + ea);
         }
-      });
-      _.each(oldInstance.attributes, function(ea) {
+      }
+
+      for(let ea of oldInstance.attributes) {
         console.log("set old attribute " + ea.name + " to: " + ea.value);
         newInstance.setAttribute(ea.name, ea.value);
-      });
+      }
 
       // Migrate Position
       if (oldInstance.style.position == "absolute") {
@@ -488,7 +489,7 @@ export default class Lively {
       if (newInstance.livelyMigrate) {
         newInstance.livelyMigrate(oldInstance) // give instances a chance to take over old state...
       }
-    });
+    }
   }
 
   static showPoint(point) {
