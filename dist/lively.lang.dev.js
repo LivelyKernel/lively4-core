@@ -333,6 +333,13 @@
                 selected[keys[i]] = obj[keys[i]];
             return selected;
         },
+        dissoc: function (object, keys) {
+            var result = {};
+            for (var name in object)
+                if (object.hasOwnProperty(name) && keys.indexOf(name) === -1)
+                    result[name] = object[name];
+            return result;
+        },
         addScript: function (object, funcOrString, optName, optMapping) {
             var func = exports.fun.fromString(funcOrString);
             return exports.fun.asScriptOf(func, object, optName, optMapping);

@@ -323,6 +323,14 @@ describe('obj', function() {
     });
   });
 
+  describe("dissoc", function() {
+    it("does what it says", function() {
+      var o = {a: 1, b: 2, c: 3}, result = obj.dissoc(o, ["a", "c"]);
+      expect(o).eql({a: 1, b: 2, c: 3})
+      expect(result).eql({b: 2});
+    });
+  });
+
   describe("inherit", function() {
 
     it("inherits", function() {
