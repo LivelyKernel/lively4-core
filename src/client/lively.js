@@ -62,9 +62,9 @@ var exportmodules = [
 // #IDEA: I refactored from "static module and function style" to "dynamic object" style
 export default class Lively {
   static import(moduleName, path, forceLoad) {
-    if (lively.modules && path)
-      lively.modules.reloadModule("" + path);
-
+    if (lively.modules && path) {
+      lively.modules.module("" + path).reload({reloadDeps: true, resetEnv: false})
+    }
     if (!path) path = this.defaultPath(moduleName)
     if (!path) throw Error("Could not imoport " + moduleName + ", not path specified!")
 
@@ -101,8 +101,12 @@ export default class Lively {
   }
 
   static async reloadModule(path) {
+    console.log("reload module: " + path)
     path = "" + path;
-    return lively.modules.reloadModule(path).then( mod => {
+    var module = lively.modules.module(path)
+    return module.reload({reloadDeps: true, resetEnv: false})
+      .then( () => System.import(path))
+      .then( mod => {
       var moduleName = path.replace(/[^\/]*/,"")
       
       var defaultClass = mod.default
@@ -203,22 +207,22 @@ export default class Lively {
   static loaded() {
     // #Refactor with #ContextJS
     // guard againsst wrapping twice and ending in endless recursion
-    if (!console.log.originalFunction) {
-        var nativeLog = console.log;
-        console.log = function() {
-            nativeLog.apply(console, arguments);
-            lively.log.apply(undefined, arguments);
-        };
-        console.log.originalFunction = nativeLog; // #TODO use generic Wrapper mechanism here
-    }
-    if (!console.error.originalFunction) {
-        var nativeError = console.error;
-        console.error = function() {
-            nativeError.apply(console, arguments);
-            lively.log.apply(undefined, arguments);
-        };
-        console.error.originalFunction = nativeError; // #TODO use generic Wrapper mechanism here
-    }
+    // if (!console.log.originalFunction) {
+    //     var nativeLog = console.log;
+    //     console.log = function() {
+    //         nativeLog.apply(console, arguments);
+    //         lively.log.apply(undefined, arguments);
+    //     };
+    //     console.log.originalFunction = nativeLog; // #TODO use generic Wrapper mechanism here
+    // }
+    // if (!console.error.originalFunction) {
+    //     var nativeError = console.error;
+    //     console.error = function() {
+    //         nativeError.apply(console, arguments);
+    //         lively.log.apply(undefined, arguments);
+    //     };
+    //     console.error.originalFunction = nativeError; // #TODO use generic Wrapper mechanism here
+    // }
 
     // General Error Handling
     if (window.onerror === null) {
