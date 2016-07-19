@@ -1,5 +1,7 @@
 'use strict';
 
+import './patches.js' // monkey patch the meta sytem....
+
 import * as jquery from '../external/jquery.js';
 import * as _ from '../external/underscore.js';
 
@@ -34,6 +36,8 @@ import * as kernel from 'kernel'
 
 let $ = window.$,
   babel = window.babel; // known global variables.
+
+
 
 // a) Special shorthands for interactive development
 // b) this is the only reasonable way to use modules in template scripts, due to no shared lexical scope #TODO
