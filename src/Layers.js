@@ -295,14 +295,11 @@ function pvtMakeFunctionOrPropertyLayerAware(obj, slotName, baseValue, type, isH
 function makeSlotLayerAwareWithNormalLookup(
     obj, slotName, baseValue, type, isHidden) {
   let wrapped_function = function() {
+    'use strict';
     var composition =
         new PartialLayerComposition(this, obj, slotName, baseValue, type);
     proceedStack.push(composition);
-    try {
-      return proceed.apply(this, arguments);
-    } finally {
-      proceedStack.pop()
-    };
+    return invokeLayeredMethodThenPopProceedStack.apply(this, arguments);
   };
   wrapped_function.isLayerAware = true;
   // this is more declarative outside of COP context
@@ -327,6 +324,15 @@ function makeSlotLayerAwareWithNormalLookup(
     });
   }
 };
+
+function invokeLayeredMethodThenPopProceedStack() {
+  'use strict';
+  try {
+    return proceed.apply(void 0 /* undefined */, arguments);
+  } finally {
+    proceedStack.pop()
+  };
+}
 
 function makeFunctionLayerAware(base_obj, function_name, isHidden) {
   if (!base_obj) {
@@ -448,14 +454,13 @@ export function disableLayer(layer) {
   invalidateLayerComposition();
 };
 
-export function proceed(/* arguments */) {
+export function proceed(...args) {
   // COP Proceed Function
   var composition = proceedStack[proceedStack.length - 1];
   if (!composition) {
     console.log('ContextJS: no composition to proceed (stack is empty) ');
     return;
   }
-  // TODO use index instead of shifiting?
   if (composition.partialMethodIndex == undefined) {
     composition.partialMethodIndex = composition.partialMethods.length - 1;
   }  
@@ -466,30 +471,18 @@ export function proceed(/* arguments */) {
       throw new COPError('no partialMethod to proceed');
     }
   } else {
-    try {
-      composition.partialMethodIndex = index - 1;
-      if (!Config.ignoreDeprecatedProceed
-          && partialMethod.toString().match(/^[\t ]*function ?\(\$?proceed/)) {
-        var args = $A(arguments);
-        args.unshift(proceed);
-        var msg = "proceed in arguments list in " + composition.functionName();
-        if (Config.throwErrorOnDeprecated) {
-          throw new Error("DEPRECATED ERROR: " + msg);
-        }
-        if (Config.logDeprecated) {
-          // console.log("source: " + partialMethod.toString());
-          console.log("DEPRECATED WARNING: " + msg);
-        }
-        var result = partialMethod.apply(composition.object, args);
-      } else {
-        var result = partialMethod.apply(composition.object, arguments);
-      }
-    } finally {
-      composition.partialMethodIndex = index;
-    }
-    return result;
+    composition.partialMethodIndex = index - 1;
+    return invokeNextPartialMethod(partialMethod, index, composition, args);
   }
 };
+
+function invokeNextPartialMethod(partialMethod, index, composition, args) {
+  try {
+    return partialMethod.apply(composition.object, args);
+  } finally {
+    composition.partialMethodIndex = index;
+  }
+}
 
 /* 
  * Layer Class

@@ -12,6 +12,7 @@ describe('Layered methods slowdown', function () {
     this.timeout(60000)
     
     function printQuartiles(sample) {
+        sample.sort()
         console.log('   min   ' + sample[0])
         console.log('low qart ' + sample[sample.length / 4 >> 0])
         console.log('> median ' + sample[sample.length / 2 >> 0] + ' <')
@@ -22,14 +23,12 @@ describe('Layered methods slowdown', function () {
     it('unlayered', function () {
         const workload = benchmarks.makeWorkloadWithoutLayersAndParameters()
         const timesamples = benchmarks.benchmark(workload)
-        timesamples.sort()
         printQuartiles(timesamples)
     });
 
     it('layered', function () {
         const workload = benchmarks.makeWorkloadWithDisabledLayersWithoutParameters()
         const timesamples = benchmarks.benchmark(workload)
-        timesamples.sort()
         printQuartiles(timesamples)
     });
 })
