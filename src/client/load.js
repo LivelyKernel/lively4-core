@@ -55,6 +55,7 @@ if ('serviceWorker' in navigator) {
         System.import(lively4url + "/src/client/lively.js")
         .then(function(module) {
             lively.initializeHalos();
+            lively.initializeSearch();
             lively.components.loadUnresolved();
             console.log("running on load callbacks:");
             loadCallbacks.forEach(function(cb){

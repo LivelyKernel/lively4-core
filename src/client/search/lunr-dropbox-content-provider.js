@@ -1,5 +1,11 @@
 'use strict';
 
+let extensions = [".js", ".html", ".md", ".txt"];
+let versionsFilename = "versions.l4idx";
+
+export function isIndexable(filepath) {
+  return extensions.indexOf(filepath.slice(filepath.lastIndexOf("."))) >= 0;
+}
 
 export function loadIndexJson(filename, options) {
   let path = `https://lively4${options.path}/${filename}`;
@@ -24,13 +30,50 @@ export function saveIndexJson(jsonIndex, filename, options) {
   });
 }
 
-async function getFilepaths(options) {
-  let extensions = [".js", ".html", ".md"];
-  let proms = [];
+export function checkIndexFile(filename, options) {
+  return new Promise((resolve, reject) => {
+    let path = `https://lively4${options.path}/${filename}`;
+    fetch(path, {
+      method: "OPTIONS"
+    }).then(resp => {
+      if (resp.status != 200) {
+        throw new Error("index not available");
+      }
+      return resp.json();
+    }).then(jsonResp => {
+      resolve("available");
+    }).catch(err => {
+      resolve("unavailable");
+    });
+  });
+}
 
-  function isIndexable(filepath) {
-    return extensions.indexOf(filepath.slice(filepath.lastIndexOf("."))) >= 0;
-  }
+export async function saveIndexedVersions(versions, options) {
+  let currentVersions = await loadIndexedFileVersions(options.path);
+  Object.keys(versions).forEach(indexedPath => {
+    currentVersions[indexedPath] = versions[indexedPath];
+  });
+
+  // use the save function also for the versions file
+  saveIndexJson(currentVersions, versionsFilename, options);
+}
+
+function loadIndexedFileVersions(path) {
+  return fetch(`https://lively4${path}/${versionsFilename}`).then(resp => {
+    return resp.text();
+  }).then(resp => {
+    let jsonResp = JSON.parse(resp);
+    if (jsonResp.error) {
+      // looks like versions file does not exist
+      return {};
+    }
+
+    return jsonResp;
+  });
+}
+
+async function getFilepaths(options) {
+  let proms = [];
 
   extensions.forEach(query => {
     let fileLimit = 10000;
@@ -54,15 +97,18 @@ async function getFilepaths(options) {
   });
 
   filepaths = filepaths.filter(file => {
-    // ensure that this is really a js-file
+    // check if we really have an indexable extension
     return isIndexable(file.path);
-    // return file.path.slice(-3) === ".js";
   }).map(file => {
     // remove the subfolder from the file path
-    return file.path.slice(options.options.subfolder.length);
+    return {
+      path: file.path.slice(options.options.subfolder.length),
+      rev: file.rev
+    }
   });
 
-  return filepaths.slice(0, 5);
+  return filepaths.slice(0, 30);
+  // return filepaths;
 }
 
 export async function* FileReader(filepath, options) {
@@ -72,12 +118,14 @@ export async function* FileReader(filepath, options) {
     options = filepath;
     filepaths = await getFilepaths(options);
   } else {
-    filepaths = [filepath];
+    filepaths = [{
+      path: filepath
+    }];
   }
 
   for (let i = 0; i < filepaths.length; i++) {
-    var path = filepaths[i];
-    var content = await fetch(`https://lively4${options.path}${path}`).then(resp => { return resp.text(); });
+    let path = filepaths[i].path;
+    let content = await fetch(`https://lively4${options.path}${path}`).then(resp => { return resp.text(); });
     yield {
       path: path,
       filename: path.slice(path.lastIndexOf("/") + 1),

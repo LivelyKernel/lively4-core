@@ -35,20 +35,24 @@ export default class Filesystem extends Base {
         return {
             type: type,
             name: name,
-            size: json['size']
+            size: json['size'],
+            rev: json['rev']
         }
     }
 
     async stat(path) {
         let dropboxHeaders = new Headers()
-        dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer 
+        dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
         let response = await self.fetch('https://api.dropboxapi.com/1/metadata/auto' + this.subfolder + path, {headers: dropboxHeaders})
 
-        if(response.status < 200 && response.status >= 300) {
+        if(response.status < 200 || response.status >= 300) {
             throw new Error(response.statusText)
         }
 
         let json    = await response.json()
+        if (json['is_deleted']) {
+          throw new Error('File has been deleted');
+        }
         let content = do {
             if(json['contents']) {
                 JSON.stringify({
@@ -71,7 +75,7 @@ export default class Filesystem extends Base {
         dropboxHeaders.append('Authorization', 'Bearer ' + this.token)
         let response = await self.fetch('https://content.dropboxapi.com/1/files/auto' + this.subfolder + path, {headers: dropboxHeaders})
 
-        if(response.status < 200 && response.status >= 300) {
+        if(response.status < 200 || response.status >= 300) {
             throw new Error(response.statusText)
         }
 
@@ -90,7 +94,7 @@ export default class Filesystem extends Base {
         dropboxHeaders.append("Content-Length", fileContentFinal.length.toString())
         let response = await self.fetch('https://content.dropboxapi.com/1/files_put/auto' + this.subfolder + path, {method: 'PUT', headers: dropboxHeaders, body: fileContentFinal})
 
-        if(response.status < 200 && response.status >= 300) {
+        if(response.status < 200 || response.status >= 300) {
             throw new Error(response.statusText)
         }
 
