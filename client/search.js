@@ -1,7 +1,7 @@
 import Files from "src/client/files.js";
-import * as lunrSearch from "../../../../lively4-server/src/lunr-search.js";
-import * as serverSearch from "src/client/search/server-search.js";
-import * as githubSearch from "src/client/search/github-search.js";
+import * as lunrSearch from "../shared/lunr-search.js";
+import * as serverSearch from "./server-search.js";
+import * as githubSearch from "./github-search.js";
 
 let searchModules = {
   "server" : serverSearch,

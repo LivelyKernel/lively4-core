@@ -1,4 +1,4 @@
-import * as utils from "./search-utils.js";
+import * as utils from "../shared/search-utils.js";
 
 function encodeQueryData(data) {
    var ret = [];

@@ -1,8 +1,7 @@
-var rootUrl = "../../lively4-core/";
-importScripts(rootUrl + 'src/external/system.src.js', rootUrl + 'src/external/lunr.js');
-importScripts(rootUrl + 'vendor/regenerator-runtime.js');
-importScripts(rootUrl + 'vendor/babel-browser.js');
-importScripts(rootUrl + 'vendor/es6-module-loader-dev.js');
+importScripts('src/external/system.src.js', 'src/external/lunr.js');
+importScripts('vendor/regenerator-runtime.js');
+importScripts('vendor/babel-browser.js');
+importScripts('vendor/es6-module-loader-dev.js');
 
 msgId = undefined
 options = undefined

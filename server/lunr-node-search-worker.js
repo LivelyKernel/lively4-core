@@ -6,7 +6,7 @@ var path = require("path");
 var fs = require("fs");
 var jsTokens = require("js-tokens");
 import * as cp from "./lunr-node-content-provider.js";
-import SearchWorker from "./lunr-search-worker.js";
+import SearchWorker from "../shared/lunr-search-worker.js";
 
 class NodeSearchWorker extends SearchWorker {
 
