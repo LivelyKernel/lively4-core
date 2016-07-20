@@ -2,7 +2,7 @@
   "name": "lively.graphics",
   "version": "0.1.0",
   "dependencies": {
-    "lively.lang": "^0.6.2"
+    "lively.lang": "^0.7.0"
   },
   "systemjs": {
     "map": {
