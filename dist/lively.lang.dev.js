@@ -1215,88 +1215,12 @@
 ;
 (function (exports) {
     'use strict';
-    var arrNative = exports.arrNative = {
-        sort: function (sortFunc) {
-            if (!sortFunc) {
-                sortFunc = function (x, y) {
-                    if (x < y)
-                        return -1;
-                    if (x > y)
-                        return 1;
-                    return 0;
-                };
-            }
-            var len = this.length, sorted = [];
-            for (var i = 0; i < this.length; i++) {
-                var inserted = false;
-                for (var j = 0; j < sorted.length; j++) {
-                    if (1 === sortFunc(sorted[j], this[i])) {
-                        inserted = true;
-                        sorted[j + 1] = sorted[j];
-                        sorted[j] = this[i];
-                        break;
-                    }
-                }
-                if (!inserted)
-                    sorted.push(this[i]);
-            }
-            return sorted;
-        },
-        filter: function (iterator, context) {
-            var results = [];
-            for (var i = 0; i < this.length; i++) {
-                if (!this.hasOwnProperty(i))
-                    continue;
-                var value = this[i];
-                if (iterator.call(context, value, i))
-                    results.push(value);
-            }
-            return results;
-        },
-        forEach: function (iterator, context) {
-            for (var i = 0, len = this.length; i < len; i++) {
-                iterator.call(context, this[i], i, this);
-            }
-        },
-        some: function (iterator, context) {
-            return this.detect(iterator, context) !== undefined;
-        },
-        every: function (iterator, context) {
-            var result = true;
-            for (var i = 0, len = this.length; i < len; i++) {
-                result = result && !!iterator.call(context, this[i], i);
-                if (!result)
-                    break;
-            }
-            return result;
-        },
-        map: function (iterator, context) {
-            var results = [];
-            this.forEach(function (value, index) {
-                results.push(iterator.call(context, value, index));
-            });
-            return results;
-        },
-        reduce: function (iterator, memo, context) {
-            var start = 0;
-            if (!arguments.hasOwnProperty(1)) {
-                start = 1;
-                memo = this[0];
-            }
-            for (var i = start; i < this.length; i++)
-                memo = iterator.call(context, memo, this[i], i, this);
-            return memo;
-        },
-        reduceRight: function (iterator, memo, context) {
-            var start = this.length - 1;
-            if (!arguments.hasOwnProperty(1)) {
-                start--;
-                memo = this[this.length - 1];
-            }
-            for (var i = start; i >= 0; i--)
-                memo = iterator.call(context, memo, this[i], i, this);
-            return memo;
-        }
+    var features = {
+        from: !!Array.from,
+        filter: !!Array.prototype.filter,
+        find: !!Array.prototype.find,
+        findIndex: !!Array.prototype.findIndex,
+        includes: !!Array.prototype.includes
     };
     var arr = exports.arr = {
         range: function (begin, end, step) {
@@ -1306,7 +1230,7 @@
                 result.push(i);
             return result;
         },
-        from: function (iterable) {
+        from: features.from ? Array.from : function (iterable) {
             if (!iterable)
                 return [];
             if (Array.isArray(iterable))
@@ -1333,13 +1257,24 @@
         filter: function (array, iterator, context) {
             return array.filter(iterator, context);
         },
-        detect: function (arr, iterator, context) {
+        detect: features.find ? function (arr, iterator, context) {
+            return arr.find(iterator, context);
+        } : function (arr, iterator, context) {
             for (var value, i = 0, len = arr.length; i < len; i++) {
                 value = arr[i];
                 if (iterator.call(context, value, i))
                     return value;
             }
             return undefined;
+        },
+        findIndex: features.findIndex ? function (arr, iterator, context) {
+            return arr.findIndex(iterator, context);
+        } : function (arr, iterator, context) {
+            var i = -1;
+            return arr.find(function (ea, j) {
+                i = j;
+                return iterator.call(ea, context);
+            }) ? i : -1;
         },
         filterByKey: function (arr, key) {
             return arr.filter(function (ea) {
@@ -1417,9 +1352,11 @@
             return array.forEach(iterator, context);
         },
         zip: function () {
-            var args = arr.from(arguments), array = args.shift(), iterator = typeof arr.last(args) === 'function' ? args.pop() : function (x) {
+            var args = Array.from(arguments), array = args.shift(), iterator = typeof arr.last(args) === 'function' ? args.pop() : function (x) {
                     return x;
-                }, collections = [array].concat(args).map(arr.from);
+                }, collections = [array].concat(args).map(function (ea) {
+                    return Array.from(ea);
+                });
             return array.map(function (value, index) {
                 return iterator(arr.pluck(collections, index), index);
             });
@@ -1472,7 +1409,9 @@
             return array.reduceRight(iterator, memo, context);
         },
         isArray: Array.isArray,
-        include: function (array, object) {
+        include: features.includes ? function (array, object) {
+            return array.includes(object);
+        } : function (array, object) {
             return array.indexOf(object) !== -1;
         },
         some: function (array, iterator, context) {
@@ -1581,8 +1520,7 @@
             return item;
         },
         pushAll: function (array, items) {
-            for (var i = 0; i < items.length; i++)
-                array.push(items[i]);
+            array.push.apply(array, items);
             return array;
         },
         pushAllAt: function (array, items, idx) {
@@ -1592,7 +1530,7 @@
             ].concat(items));
         },
         pushIfNotIncluded: function (array, item) {
-            if (!arr.include(array, item))
+            if (!array.includes(item))
                 array.push(item);
         },
         replaceAt: function (array, item, index) {
@@ -1999,6 +1937,24 @@
             }
         }
     };
+    if (!features.from)
+        Array.from = arr.from;
+    if (!features.filter)
+        Array.prototype.filter = function (it, ctx) {
+            return arr.filter(this, it, ctx);
+        };
+    if (!features.find)
+        Array.prototype.find = function (it, ctx) {
+            return arr.find(this, it, ctx);
+        };
+    if (!features.findIndex)
+        Array.prototype.findIndex = function (it, ctx) {
+            return arr.findIndex(this, it, ctx);
+        };
+    if (!features.includes)
+        Array.prototype.includes = function (x) {
+            return arr.include(this, x);
+        };
     var Group = exports.Group = function Group() {
     };
     Group.by = exports.arr.groupBy;
