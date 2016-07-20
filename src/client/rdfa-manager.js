@@ -7,6 +7,7 @@ class RdfaTriple {
     this.subject = subject;
     this.property = property;
     this.values = values;
+    this.value = Array.isArray(values) ? values[0] : values;
     this.isRoot = true;
   }
   
@@ -83,7 +84,7 @@ export default class RdfaManager {
         
         for (let id in values) {
           let val = values[id];
-          let triple = new RdfaTriple(val.subject, val.property, val.values)
+          let triple = new RdfaTriple(val.subject, val.property, val.values || val.value)
           triples.push(triple);
         }
         
@@ -154,9 +155,8 @@ export default class RdfaManager {
     return triples;
   }
   
-  static storeRDFaTriplesToFirebase(bucket) {
+  static storeRDFaTriplesToFirebase(bucket, triples = this.getRDFaTriples()) {
     let path = "rdfaTriples/" + bucket + "/";
-    let triples = this.getRDFaTriples();
     let updates = {};
     triples.forEach((triple) => {
       let fullPath = path + generateUuid();

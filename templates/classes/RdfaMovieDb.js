@@ -3,6 +3,10 @@
 import Morph from './Morph.js';
 
 import rdfa from '../../src/client/rdfa-manager.js';
+import RdfaTriple from '../../src/client/rdfa/RdfaTriple.js';
+import RdfaPredicate from '../../src/client/rdfa/RdfaPredicate.js';
+import RdfaSubject from '../../src/client/rdfa/RdfaSubject.js';
+import generateUuid from '../../src/client/uuid.js';
 
 import * as WikiDataAdapter from '../../src/client/wiki-data-adapter.js';
 
@@ -26,7 +30,7 @@ const DEFAULT_BUCKET = "mymovies";
     this.registerMergeDuplicatesButton();
     this.registerMergeImdbRottenButton();
     this.createTableHeader();
-      this.loadRdfaDataAndFillTable(DEFAULT_BUCKET);
+    this.loadRdfaDataAndFillTable(DEFAULT_BUCKET);
     this.updateBucketList();
     this.registerLoadBucketButton();
   }
@@ -83,9 +87,8 @@ const DEFAULT_BUCKET = "mymovies";
         ratingTd.append(ratingStar);
         
         const rating = i + 1;
-        const movie2 = movie;
         ratingStar.on("click", () => {
-          this.setRating(movie2, rating);
+          this.setRating(movie, rating);
         });
       }
       
@@ -114,10 +117,24 @@ const DEFAULT_BUCKET = "mymovies";
   
   setRating(movie, rating) {
     console.log(movie, rating);
-    console.warn(RdfaTriple);
-    debugger;
-    console.log(new RdfaTriple());
-    rdfa.saveTriples();
+    const reviewUuid = generateUuid();
+    const authorUuid = generateUuid();
+    const ratingUuid = generateUuid();
+    
+    const triples = [];
+    
+    triples.push(new RdfaTriple(ratingUuid, 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://schema.org/Rating'));
+    triples.push(new RdfaTriple(ratingUuid, 'http://schema.org/ratingValue', rating.toString()));
+    
+    triples.push(new RdfaTriple(authorUuid, 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://schema.org/Person'));
+    triples.push(new RdfaTriple(authorUuid, 'http://schema.org/name', 'TestAuthor'));
+    
+    triples.push(new RdfaTriple(reviewUuid, 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://schema.org/Review'));
+    triples.push(new RdfaTriple(movie.id, 'http://schema.org/Review', reviewUuid));
+    triples.push(new RdfaTriple(reviewUuid, 'http://schema.org/reviewRating', ratingUuid));
+    triples.push(new RdfaTriple(reviewUuid, 'http://schema.org/Author', authorUuid));
+    
+    rdfa.storeRDFaTriplesToFirebase('mymovies', triples);
   }
   
   createTableHeader() {
@@ -152,6 +169,19 @@ const DEFAULT_BUCKET = "mymovies";
       } else if (this.isSchemaMovie(movieSubject)) {
         movieSubject.url = movieSubject.predicates.filter((predicate) => predicate.property == "http://schema.org/url")[0].value();
         movieSubject.name = movieSubject.predicates.filter((predicate) => predicate.property == "http://schema.org/name")[0].value();
+      }
+      
+      console.log(movieSubject);
+      const review = movieSubject.predicates.filter((predicate) => predicate.property == 'http://schema.org/Review')[0];
+      if (false && review) {
+        console.log(review);
+        movie.ratings = review.predicates
+          .map(predicate => {
+          // TODO extract ratings as {rating, user} objects
+          console.log(predicate);
+        });
+      } else {
+        movieSubject.ratings = [];
       }
       
       this.setMovieDb(movieSubject);
