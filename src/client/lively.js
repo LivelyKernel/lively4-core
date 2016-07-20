@@ -4,14 +4,10 @@ import * as jquery from '../external/jquery.js';
 import * as scrollIntoView from '../external/jquery.scrollintoview.js';
 import * as _ from '../external/underscore.js';
 
-import * as firebase from '../external/firebase.js';
-
 import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
 import * as preferences from './preferences.js';
 import * as persistence from './persistence.js';
-import rdfa from './rdfa-manager.js';
-
 
 import html from './html.js';
 import files from './files.js';
@@ -54,7 +50,6 @@ var exportmodules = [
   "inspector",
   "color",
   "focalStorage",
-  "rdfa",
   "authGithub",
   "authDropbox",
   "authGoogledrive"

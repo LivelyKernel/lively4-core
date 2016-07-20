@@ -1,7 +1,7 @@
 'use strict';
 
 import Morph from './Morph.js';
-import rdfa from '../../src/client/rdfa-manager.js';
+import rdfa from '../../src/client/rdfa/rdfa-utils.js';
 
 const urlPattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
     '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
@@ -11,7 +11,7 @@ const urlPattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
     '(\\#[-a-z\\d_:]*)?$','i'); // fragment locater
 
 const listenerSampleCode = 
-`import rdfa from 'src/client/rdfa-manager.js';
+`import rdfa from 'src/client/rdfa/rdfa-utils.js';';
 
 rdfa.addRdfaEventListener(
   {

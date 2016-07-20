@@ -1,7 +1,11 @@
 export default class RdfaTriple {
-  constructor(subject, property, value) {
+  constructor(subject, predicate, value) {
     this.subject = subject;
-    this.property = property;
+    this.predicate = predicate;
     this.value = value;
+  }
+  
+  toString() {
+    return this.subject + " " + this.predicate + " " + this.value;
   }
 }

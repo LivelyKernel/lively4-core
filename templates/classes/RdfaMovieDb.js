@@ -2,7 +2,7 @@
 
 import Morph from './Morph.js';
 
-import rdfa from '../../src/client/rdfa-manager.js';
+import rdfa from '../../src/client/rdfa/rdfa-utils.js';
 import RdfaTriple from '../../src/client/rdfa/RdfaTriple.js';
 import RdfaPredicate from '../../src/client/rdfa/RdfaPredicate.js';
 import RdfaSubject from '../../src/client/rdfa/RdfaSubject.js';
@@ -12,7 +12,7 @@ import * as WikiDataAdapter from '../../src/client/wiki-data-adapter.js';
 
 const DEFAULT_BUCKET = "mymovies";
 
-  export default class RdfaMovieDb extends Morph {
+export default class RdfaMovieDb extends Morph {
 
   /*
    * HTMLElement callbacks
@@ -35,10 +35,11 @@ const DEFAULT_BUCKET = "mymovies";
     this.registerLoadBucketButton();
   }
 
-    loadRdfaDataAndFillTable(bucket) {
-      rdfa.loadFirebaseConfig();
-      rdfa.readDataFromFirebase(bucket, true).then((data) => {
+  loadRdfaDataAndFillTable(bucket) {
+    rdfa.readDataFromFirebase(bucket, true).then((data) => {
+      console.log(data);
       let movies = this.filterMovies(data);
+      console.log("movies1", movies);
       this.movies = this.enrichMovies(movies);
       console.log("movies", this.movies);
       this.generateTable(this.movies);
@@ -150,29 +151,58 @@ const DEFAULT_BUCKET = "mymovies";
   }
   
   filterMovies(graph) {
-    let movieSubjects = graph.subjects.filter((subject) => {
-      return subject.predicates.some((predicate) => {
-        return (predicate.property == "http://ogp.me/ns#type"
-            && predicate.values[0] == "video.movie")
-          || (predicate.property == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-            && predicate.values[0] == "http://schema.org/Movie");
-      });
-    });
+    const movieSubjects = [];
+    for (let key in graph.subjects) {
+      if (!graph.subjects.hasOwnProperty(key)) continue;
+      
+      const subject = graph.subjects[key];
+      
+      for (let key2 in subject.predicates) {
+        const predicate = subject.predicates[key2];
+        if (predicate.id == "http://ogp.me/ns#type") {
+          predicate.objects.forEach(object => {
+            if (object.value == "video.movie") {
+              movieSubjects.push(subject);
+            }
+          });
+        } else if (predicate.id == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") {
+          predicate.objects.forEach(object => {
+            if (object.value == "http://schema.org/Movie") {
+              movieSubjects.push(subject);
+            }
+          });
+        }
+      }
+    }
     return movieSubjects;
   }
   
   enrichMovies(movieSubjects) {
     movieSubjects.forEach((movieSubject) => {
       if (this.isOgpMovie(movieSubject)) {
-        movieSubject.url = movieSubject.predicates.filter((predicate) => predicate.property == "http://ogp.me/ns#url")[0].value();
-        movieSubject.name = movieSubject.predicates.filter((predicate) => predicate.property == "http://ogp.me/ns#title")[0].value();
+        let predicate = movieSubject.predicates["http://ogp.me/ns#url"];
+        if (predicate) {
+          movieSubject.url = predicate.objects[0].value;
+        }
+        
+        predicate = movieSubject.predicates["http://ogp.me/ns#title"];
+        if (predicate) {
+          movieSubject.name = predicate.objects[0].value;
+        }
       } else if (this.isSchemaMovie(movieSubject)) {
-        movieSubject.url = movieSubject.predicates.filter((predicate) => predicate.property == "http://schema.org/url")[0].value();
-        movieSubject.name = movieSubject.predicates.filter((predicate) => predicate.property == "http://schema.org/name")[0].value();
+        let predicate = movieSubject.predicates["http://schema.org/url"];
+        if (predicate) {
+          movieSubject.url = predicate.objects[0].value;
+        }
+        
+        predicate = movieSubject.predicates["http://schema.org/name"];
+        if (predicate) {
+          movieSubject.name = predicate.objects[0].value;
+        }
       }
       
       console.log(movieSubject);
-      const review = movieSubject.predicates.filter((predicate) => predicate.property == 'http://schema.org/Review')[0];
+      const review = movieSubject.predicates['http://schema.org/Review'];
       if (false && review) {
         console.log(review);
         movie.ratings = review.predicates
@@ -190,17 +220,19 @@ const DEFAULT_BUCKET = "mymovies";
   }
 
   isOgpMovie(movieSubject) {
-    return movieSubject.predicates.some((predicate) => {
-      return (predicate.property == "http://ogp.me/ns#type"
-          && predicate.values[0] == "video.movie");
-    });
+    const predicate = movieSubject.predicates["http://ogp.me/ns#type"];
+    if (predicate) {
+      return predicate.objects[0].value == "video.movie";
+    }
+    return false;
   }
   
   isSchemaMovie(movieSubject) {
-    return movieSubject.predicates.some((predicate) => {
-      return (predicate.property == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-          && predicate.values[0] == "http://schema.org/Movie");
-    });
+    const predicate = movieSubject.predicates["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"];
+    if (predicate) {
+      return predicate.objects[0].value == "http://schema.org/Movie";
+    }
+    return false;
   }
   
   mergeDuplicateMovies(movieSubjects) {

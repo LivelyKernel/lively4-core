@@ -2,7 +2,7 @@
 
 import Morph from './Morph.js';
 
-import RdfaManager from '../../src/client/rdfa-manager.js';
+import rdfa from '../../src/client/rdfa/rdfa-utils.js';
 
 export default class RdfaDb extends Morph {
 
@@ -19,7 +19,7 @@ export default class RdfaDb extends Morph {
    */
   setup() {
     this.table = $(this.shadowRoot.querySelector('#dbTable'));
-    RdfaManager.loadFirebaseConfig();
+    rdfa.loadFirebaseConfig();
     this.registerReloadButton();
   }
 
@@ -28,7 +28,7 @@ export default class RdfaDb extends Morph {
     this.createTableHeader();
     let result = window.prompt("Wich bucket to load triples from?");
     if (!result) return;
-    RdfaManager.readDataFromFirebase(result).then((data) => {
+    rdfa.readDataFromFirebase(result).then((data) => {
       this.generateTableRows(data);
     });
   }
