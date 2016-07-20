@@ -13,11 +13,10 @@ export default class GreenTurtleFactory {
       
       //TODO define correct type of triple
       /*
-      if (this.isUuid(subject)) {
-        subject = "_:" + subject;
+      if (this.isSubject(value)) {
         type = "http://www.w3.org/1999/02/22-rdf-syntax-ns#object";
       }*/
-      
+
       const object = {type: type, value: value};
       turtleParser.addTriple(subject, triple.predicate, object);
     });
