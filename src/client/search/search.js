@@ -53,13 +53,20 @@ function loadMounts() {
   });
 
   return Promise.all([mountPromise, serverPromise]).then(() => {
-    // github repos are automatically searchable
-    Object.keys(availableMounts.github).forEach(path => {
-      prepareForSearch("github", path);
-    });
-
-    // the current folder that lively is served from is also automatically searchable
+    // the current folder that lively is served from is automatically searchable
     prepareForSearch("server", "/" + window.location.pathname.split("/")[1]);
+
+    // check all available mounts (server folders and mounts) if there is an index available,
+    // activate search when there is one
+    for (let type in availableMounts) {
+      for (let path in availableMounts[type]) {
+        getStatus(type, path).then(status => {
+          if (status === "available") {
+            prepareForSearch(type, path);
+          }
+        });
+      }
+    }
   });
 }
 
@@ -83,7 +90,7 @@ export function getStatus(mountType, path) {
     return Promise.reject("Mount not found");
   }
 
-  return searchModules[mountType].checkIndexFile(path, db);
+  return searchModules[mountType].getStatus(path, db);
 }
 
 export function search(query) {

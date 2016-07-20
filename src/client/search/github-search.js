@@ -51,3 +51,7 @@ export function find(pattern) {
     });
   });
 }
+
+export function getStatus(path, options) {
+  return Promise.resolve("available");
+}

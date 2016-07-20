@@ -40,7 +40,7 @@ export function find(pattern) {
   });
 }
 
-export function checkIndexFile(subdir, options) {
+export function getStatus(subdir, options) {
   return fetch(`${window.location.origin}/api/searchIndexStatus?location=${subdir}`).then((response) => {
     return response.json();
   }).then(responseJson =>{
