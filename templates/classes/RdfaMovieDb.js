@@ -2,7 +2,7 @@
 
 import Morph from './Morph.js';
 
-    import rdfa from '../../src/client/rdfa-manager.js';
+import rdfa from '../../src/client/rdfa-manager.js';
 
 import * as WikiDataAdapter from '../../src/client/wiki-data-adapter.js';
 
@@ -73,11 +73,20 @@ const DEFAULT_BUCKET = "mymovies";
     movies.forEach((movie) => {
       let ratingTd = $('<div>')
       for (let i = 0; i < 5; i++) {
+        let ratingStar;
         if (movie.rating > i) {
-          ratingTd.append($('<i class="fa fa-star">'));
+          ratingStar = $('<i class="fa fa-star">');
         } else {
-          ratingTd.append($('<i class="fa fa-star-o">'));
+          ratingStar = $('<i class="fa fa-star-o">');
         }
+        
+        ratingTd.append(ratingStar);
+        
+        const rating = i + 1;
+        const movie2 = movie;
+        ratingStar.on("click", () => {
+          this.setRating(movie2, rating);
+        });
       }
       
       this.table.append($('<tr>')
@@ -101,6 +110,14 @@ const DEFAULT_BUCKET = "mymovies";
           .append(ratingTd))
       );
     });
+  }
+  
+  setRating(movie, rating) {
+    console.log(movie, rating);
+    console.warn(RdfaTriple);
+    debugger;
+    console.log(new RdfaTriple());
+    rdfa.saveTriples();
   }
   
   createTableHeader() {
