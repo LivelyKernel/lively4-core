@@ -21,6 +21,7 @@ export default class RdfaUtils {
         resolve();
       });
       document.addEventListener("rdfa.loaded", listenerFunc, false);
+      //GreenTurtle.implementation.processors["microdata"].enabled = true;
       GreenTurtle.attach(document);
     });
   }
