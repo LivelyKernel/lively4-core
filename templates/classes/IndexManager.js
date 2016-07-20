@@ -1,6 +1,6 @@
 import Morph from './Morph.js';
 import Files from "src/client/files.js";
-import * as search from "src/client/search/search.js";
+import * as search from "src/external/lively4-search/client/search.js";
 
 
 export default class IndexManager extends Morph {

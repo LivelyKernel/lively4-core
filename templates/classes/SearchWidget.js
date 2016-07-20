@@ -1,7 +1,7 @@
 'use strict';
 
 import Morph from './Morph.js';
-import * as search from '../../src/client/search/search.js';
+import * as search from 'src/external/lively4-search/client/search.js';
 
 export default class SearchWidget extends Morph {
 
@@ -91,7 +91,7 @@ export default class SearchWidget extends Morph {
         $(this.spinner).hide();
       });
     });
-    
+
     Promise.all(searchPromises).then(r => {
       if (results.length == 0) $(this.noResults).show();
     });
