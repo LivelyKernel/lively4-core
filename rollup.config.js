@@ -4,7 +4,9 @@ export default {
     entry: 'aexpr.js',
     //format: 'cjs',
     plugins: [
-        nodeResolve()
+        nodeResolve({
+            jsnext: true
+        })
     ],
     dest: 'bundle3.js' // equivalent to --output
 };
