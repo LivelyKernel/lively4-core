@@ -20,7 +20,7 @@
     {action: "installMethods", target: "Number.prototype",   sources: ["num"],    methods: ["detent","randomSmallerInteger","roundTo","toDegrees","toRadians"]},
     {action: "installMethods", target: "Object",             sources: ["obj"],    methods: ["addScript","clone","deepCopy","extend","inherit","isArray","isBoolean","isElement","isEmpty","isFunction","isNumber","isObject","isRegExp","isString","isUndefined","merge","mergePropertyInHierarchy","values","valuesInPropertyHierarchy"]},
     {action: "installMethods", target: "Object.prototype",   sources: ["obj"],    methods: []},
-    {action: "installMethods", target: "String.prototype",   sources: ["string"], methods: ["camelize","capitalize","digitValue","empty","endsWith","hashCode","include","pad","regExpEscape","startsWith","startsWithVowel","succ","times","toArray","toQueryParams","truncate"]},
+    {action: "installMethods", target: "String.prototype",   sources: ["string"], methods: ["camelize","capitalize","digitValue","empty","hashCode","include","pad","regExpEscape","startsWithVowel","succ","times","toArray","toQueryParams","truncate"]},
     {action: "installMethods", target: "Function.prototype", sources: ["klass"],  methods: ["create","addMethods","isSubclassOf","superclasses","categoryNameFor","remove"], alias: [["subclass", "create"]]},
 
     {action: "installObject", target: "Numbers",                source: "num",        methods: ["average","between","convertLength","humanReadableByteSize","median","normalRandom","parseLength","random","sort"]},
@@ -3325,6 +3325,12 @@
 
 ;
 (function (exports) {
+    var features = {
+        repeat: !!String.prototype.repeat,
+        includes: !!String.prototype.includes,
+        startsWith: !!String.prototype.startsWith,
+        endsWith: !!String.prototype.endsWith
+    };
     var string = exports.string = {
         format: function strings$format() {
             return string.formatFromArray(Array.prototype.slice.call(arguments));
@@ -3434,7 +3440,7 @@
             return s;
         },
         pad: function (string, n, left) {
-            return left ? ' '.times(n) + string : string + ' '.times(n);
+            return left ? ' '.repeat(n) + string : string + ' '.repeat(n);
         },
         printTable: function (tableArray, options) {
             var columnWidths = [], separator = options && options.separator || ' ', alignLeftAll = !options || !options.align || options.align === 'left', alignRightAll = options && options.align === 'right';
@@ -3465,7 +3471,7 @@
             iterator(0, 0, rootNode);
             return nodeList.join('\n');
             function iterator(depth, index, node) {
-                nodeList[index] = string.times(indent, depth) + nodePrinter(node, depth);
+                nodeList[index] = indent.repeat(depth) + nodePrinter(node, depth);
                 var children = childGetter(node, depth), childIndex = index + 1;
                 if (!children || !children.length)
                     return childIndex;
@@ -3931,17 +3937,23 @@
         empty: function (s) {
             return s == '';
         },
-        include: function (s, pattern) {
+        include: features.includes ? function (s, pattern) {
+            return s.includes(pattern);
+        } : function (s, pattern) {
             return s.indexOf(pattern) > -1;
         },
-        startsWith: function (s, pattern) {
+        startsWith: features.startsWith ? function (s, pattern) {
+            return s.startsWith(pattern);
+        } : function (s, pattern) {
             return s.indexOf(pattern) === 0;
         },
         startsWithVowel: function (s) {
             var c = s[0];
             return c === 'A' || c === 'E' || c === 'I' || c === 'O' || c === 'U' || c === 'a' || c === 'e' || c === 'i' || c === 'o' || c === 'u' || false;
         },
-        endsWith: function (s, pattern) {
+        endsWith: features.endsWith ? function (s, pattern) {
+            return s.endsWith(pattern);
+        } : function (s, pattern) {
             var d = s.length - pattern.length;
             return d >= 0 && s.lastIndexOf(pattern) === d;
         },
@@ -3978,7 +3990,9 @@
         digitValue: function (s) {
             return s.charCodeAt(0) - '0'.charCodeAt(0);
         },
-        times: function (s, count) {
+        times: features.repeat ? function (s, count) {
+            return s.repeat(count);
+        } : function (s, count) {
             return count < 1 ? '' : new Array(count + 1).join(s);
         },
         applyChange: function (string, change) {
