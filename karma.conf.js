@@ -25,7 +25,11 @@ module.exports = function(config) {
       'tests/**/*Helper.js',
       'tests/**/*Fixture.js',
       'tests/**/*Tests.js',
-      'node_modules/stack-es2015-modules/stack.js'
+      'node_modules/stack-es2015-modules/stack.js',
+      'node_modules/composite-scopes-all/index.js',
+      'node_modules/composite-scopes-all/contextjs.js',
+      'node_modules/composite-scopes-all/Layers.js',
+      'node_modules/composite-scopes-all/copv2/*.js'
     ],
 
 
@@ -39,9 +43,16 @@ module.exports = function(config) {
     preprocessors: {
       'src/**/!(acorn)*.js': ['babel', 'commonjs'],
       'tests/**/*.js': ['babel', 'commonjs'],
-      'node_modules/stack-es2015-modules/!(karma)*.js': ['babel', 'commonjs']
+      'node_modules/stack-es2015-modules/!(karma)*.js': ['babel', 'commonjs'],
+      'node_modules/composite-scopes-all/index.js': ['babel', 'commonjs'],
+      'node_modules/composite-scopes-all/contextjs.js': ['babel', 'commonjs'],
+      'node_modules/composite-scopes-all/Layers.js': ['babel', 'commonjs'],
+      'node_modules/composite-scopes-all/copv2/*.js': ['babel', 'commonjs']
     },
 
+    // proxies: {
+    //   "stack-es2015-modules": "/node_modules/stack-es2015-modules/"
+    // },
 
     babelPreprocessor: {
       options: {
@@ -60,7 +71,10 @@ module.exports = function(config) {
     },
 
     commonjsPreprocessor: {
-      modulesRoot: '.'
+      modulesRoot: 'node_modules',
+      alias : {
+            'node_modules/stack-es2015-modules/stack.js': 'stack-es2015-modules'
+          }
     },
 
 
