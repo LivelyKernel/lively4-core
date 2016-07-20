@@ -1,8 +1,9 @@
 {
   "name": "stack-es2015-modules",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "The stack data type as es2015 module",
   "main": "stack.js",
+  "jsnext:main": "stack.js",
   "directories": {
     "test": "tests"
   },
