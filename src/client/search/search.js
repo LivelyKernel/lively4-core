@@ -3,7 +3,6 @@ import * as lunrSearch from "../../../../lively4-server/src/lunr-search.js";
 import * as serverSearch from "src/client/search/server-search.js";
 import * as githubSearch from "src/client/search/github-search.js";
 
-
 let searchModules = {
   "server" : serverSearch,
   "dropbox" : lunrSearch,
@@ -53,15 +52,12 @@ function loadMounts() {
   });
 
   return Promise.all([mountPromise, serverPromise]).then(() => {
-    // the current folder that lively is served from is automatically searchable
-    prepareForSearch("server", "/" + window.location.pathname.split("/")[1]);
-
     // check all available mounts (server folders and mounts) if there is an index available,
     // activate search when there is one
     for (let type in availableMounts) {
       for (let path in availableMounts[type]) {
         getStatus(type, path).then(status => {
-          if (status === "available") {
+          if (status === "available" || status === "ready") {
             prepareForSearch(type, path);
           }
         });
