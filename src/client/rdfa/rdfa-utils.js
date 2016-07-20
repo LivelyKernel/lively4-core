@@ -119,7 +119,7 @@ export default class RdfaUtils {
       let key = this.firebase.database().ref(path).push().key;
       updates[key] = triple;
     });
-    this.firebase.database().ref(path).update(updates).then(() => {
+   return this.firebase.database().ref(path).update(updates).then(() => {
       lively.notify("Updated RDFa data", path);
     }).catch((reason) => {
       lively.notify("Failed to update RDFa data to " + path, reason);

@@ -26,20 +26,21 @@ export default class RdfaMovieDb extends Morph {
    * Initialization
    */
   setup() {
+    this.bucket = DEFAULT_BUCKET;
+    
     this.table = $(this.shadowRoot.querySelector('#dbTable'));
     this.registerMergeDuplicatesButton();
     this.registerMergeImdbRottenButton();
-    this.createTableHeader();
-    this.loadRdfaDataAndFillTable(DEFAULT_BUCKET);
+    this.loadRdfaDataAndFillTable();
     this.updateBucketList();
     this.registerLoadBucketButton();
   }
 
-  loadRdfaDataAndFillTable(bucket) {
-    rdfa.readDataFromFirebase(bucket, true).then((data) => {
-      console.log(data);
+  loadRdfaDataAndFillTable() {
+    this.table.empty();
+    this.createTableHeader();
+    rdfa.readDataFromFirebase(this.bucket, true).then((data) => {
       let movies = this.filterMovies(data);
-      console.log("movies1", movies);
       this.movies = this.enrichMovies(movies);
       console.log("movies", this.movies);
       this.generateTable(this.movies);
@@ -79,7 +80,7 @@ export default class RdfaMovieDb extends Morph {
       let ratingTd = $('<div>')
       for (let i = 0; i < 5; i++) {
         let ratingStar;
-        if (movie.rating > i) {
+        if (movie.ratings[0] && movie.ratings[0].value > i) {
           ratingStar = $('<i class="fa fa-star">');
         } else {
           ratingStar = $('<i class="fa fa-star-o">');
@@ -118,9 +119,9 @@ export default class RdfaMovieDb extends Morph {
   
   setRating(movie, rating) {
     console.log(movie, rating);
-    const reviewUuid = generateUuid();
-    const authorUuid = generateUuid();
-    const ratingUuid = generateUuid();
+    const reviewUuid = '_:' + generateUuid();
+    const authorUuid = '_:' + generateUuid();
+    const ratingUuid = '_:' + generateUuid();
     
     const triples = [];
     
@@ -135,7 +136,9 @@ export default class RdfaMovieDb extends Morph {
     triples.push(new RdfaTriple(reviewUuid, 'http://schema.org/reviewRating', ratingUuid));
     triples.push(new RdfaTriple(reviewUuid, 'http://schema.org/Author', authorUuid));
     
-    rdfa.storeRDFaTriplesToFirebase('mymovies', triples);
+    rdfa.storeRDFaTriplesToFirebase('mymovies', triples).then(()=> {
+      this.loadRdfaDataAndFillTable();
+    });
   }
   
   createTableHeader() {
@@ -203,20 +206,43 @@ export default class RdfaMovieDb extends Morph {
       
       console.log(movieSubject);
       const review = movieSubject.predicates['http://schema.org/Review'];
-      if (false && review) {
-        console.log(review);
-        movie.ratings = review.predicates
-          .map(predicate => {
-          // TODO extract ratings as {rating, user} objects
-          console.log(predicate);
+      movieSubject.ratings = [];
+      if (review) {
+        review.objects.forEach(object => {
+          const reviewSubject = movieSubject.graph.subjects[object.value];
+        
+          const authorSubject = this.getSubject(reviewSubject, 'http://schema.org/Author');
+          if (!authorSubject) return;
+          const authorNamePredicate = authorSubject.predicates['http://schema.org/name'];
+          if (!authorNamePredicate) return;
+          const authorName = authorNamePredicate.objects[0].value;
+          if (!authorName) return;
+          
+          const ratingSubject = this.getSubject(reviewSubject, 'http://schema.org/reviewRating');
+          if (!ratingSubject) return;
+          const ratingPredicate = ratingSubject.predicates['http://schema.org/ratingValue'];
+          if (!ratingPredicate) return;
+          const ratingValue = ratingPredicate.objects[0].value;
+          if (!ratingValue) return;
+          
+          movieSubject.ratings.push({name: authorName, value: ratingValue});
         });
-      } else {
-        movieSubject.ratings = [];
       }
       
       this.setMovieDb(movieSubject);
     });
     return movieSubjects;
+  }
+  
+  getSubject(subject, predicateName) {
+    if (!subject) return null;
+    const predicate = subject.predicates[predicateName];
+    if (!predicate) return null;
+    const subjectId = predicate.objects[0].value;
+    if (subjectId) {
+      return subject.graph.subjects[subjectId];
+    }
+    return null;
   }
 
   isOgpMovie(movieSubject) {
@@ -370,10 +396,11 @@ export default class RdfaMovieDb extends Morph {
     $(this.shadowRoot.querySelector("#select-bucket-button")).on('click', () => {
       let bucket = this.shadowRoot.querySelector("#bucketNameInput").value;
       if (!bucket) {
-        window.prompt("Which bucket do you want to load?");
+        bucket = window.prompt("Which bucket do you want to load?");
       }
       if (bucket) {
-        this.loadRdfaDataAndFillTable(bucket);
+        this.bucket = bucket;
+        this.loadRdfaDataAndFillTable();
       }
     });
   }
