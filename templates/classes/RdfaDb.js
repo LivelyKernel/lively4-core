@@ -2,7 +2,7 @@
 
 import Morph from './Morph.js';
 
-import rdfa from '../../src/client/rdfa/rdfa-utils.js';
+import rdfa from '../../src/client/rdfa/rdfa-api.js';
 
 export default class RdfaDb extends Morph {
 

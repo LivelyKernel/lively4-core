@@ -2,7 +2,7 @@
 
 import Morph from './Morph.js';
 
-import rdfa from '../../src/client/rdfa/rdfa-utils.js';
+import rdfa from '../../src/client/rdfa/rdfa-api.js';
 import RdfaTriple from '../../src/client/rdfa/RdfaTriple.js';
 import RdfaPredicate from '../../src/client/rdfa/RdfaPredicate.js';
 import RdfaSubject from '../../src/client/rdfa/RdfaSubject.js';
@@ -39,8 +39,8 @@ export default class RdfaMovieDb extends Morph {
   loadRdfaDataAndFillTable() {
     this.table.empty();
     this.createTableHeader();
-    rdfa.readDataFromFirebase(this.bucket, true).then((data) => {
-      let movies = this.filterMovies(data);
+    rdfa.readDataFromFirebase(this.bucket, true).then((graph) => {
+      let movies = this.filterMovies(graph);
       this.movies = this.enrichMovies(movies);
       console.log("movies", this.movies);
       this.generateTable(this.movies);

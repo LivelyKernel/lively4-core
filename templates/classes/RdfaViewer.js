@@ -1,7 +1,7 @@
 'use strict';
 
 import Morph from './Morph.js';
-import rdfa from '../../src/client/rdfa/rdfa-utils.js';
+import rdfa from '../../src/client/rdfa/rdfa-api.js';
 
 const urlPattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
     '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
@@ -11,7 +11,7 @@ const urlPattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
     '(\\#[-a-z\\d_:]*)?$','i'); // fragment locater
 
 const listenerSampleCode = 
-`import rdfa from 'src/client/rdfa/rdfa-utils.js';';
+`import rdfa from 'src/client/rdfa/rdfa-api.js';';
 
 rdfa.addRdfaEventListener(
   {
@@ -44,9 +44,9 @@ export default class RdfaViewer extends Morph {
   }
 
   loadRdfaDataAndFillTable() {
-    rdfa.reloadData().then(() => {
+    rdfa.reloadData().then((data) => {
       this.createTableHeader();
-      this.generateJSONTableRows(rdfa.objectGraph);
+      this.generateJSONTableRows(data);
       this.registerTreeToggle();
     });
   }
@@ -67,22 +67,21 @@ export default class RdfaViewer extends Morph {
       )
   }
 
-  generateJSONTableRows(graph) {
-    graph.subjects.forEach((subject) => {
+  generateJSONTableRows(data) {
+    data.getSubjects().forEach((subjectName) => {
       this.table.append($('<tr>').attr('data-depth', 0).addClass("collapse")
-        .append($('<td>').attr("colspan", 3).attr("id", subject.id)
+        .append($('<td>').attr("colspan", 3).attr("id", subjectName)
           .append($('<i>').addClass("fa").addClass("fa-minus-square").addClass("treeToggle").attr('aria-hidden', true))
           .append(" ")
-          .append(this.processUrl(subject.id))
+          .append(this.processUrl(subjectName))
         )
       );
-      subject.predicates.forEach((predicate) => {
-        predicate.values.forEach((value) => {
-          const property = predicate.property;
+      data.getProperties().forEach((predicateName) => {
+        data.getValues(subjectName, predicateName).forEach((value) => {
           this.table.append(
             $('<tr>').attr('data-depth', 1).addClass("collapse")
-              .append($('<td>').append(this.addRdfaListenerSample(property, value)))
-              .append($('<td>').append(this.processUrl(property)))
+              .append($('<td>').append(this.addRdfaListenerSample(predicateName, value)))
+              .append($('<td>').append(this.processUrl(predicateName)))
               .append($('<td>').append(this.isSubject(value) ? this.processSubject(value) : this.processUrl(value)))
           );
         });
