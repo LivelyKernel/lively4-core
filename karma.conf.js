@@ -25,7 +25,9 @@ module.exports = function(config) {
       {pattern: 'node_modules/mocha/mocha.js', included: false},
       {pattern: 'src/**/*.js*', included: false},
       {pattern: 'swx-loader.js', included: false},
+      
       {pattern: 'test/**/*.js', included: false},
+      
       {pattern: 'vendor/**/*.js', included: false},
       {pattern: 'templates/**/*', included: false},
       {pattern: 'test-main.js', included: false},
@@ -97,7 +99,7 @@ module.exports = function(config) {
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: false,
 
-    browserNoActivityTimeout: 20000
+    browserNoActivityTimeout: 60000
   });
 
 

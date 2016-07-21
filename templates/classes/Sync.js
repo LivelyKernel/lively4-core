@@ -10,6 +10,11 @@ export default class Sync extends Morph {
     lively.html.registerInputs(this)
     this.updateLoginStatus()
     
+    if (window.__karma__) {
+      console.log("exit early... due to karma")
+      return 
+    }
+    
     this.getSubmorph('#gitrepository').value = lively4url.replace(/.*\//,"")
     
     var travis = this.shadowRoot.querySelector("#travisLink")
@@ -36,6 +41,8 @@ export default class Sync extends Morph {
   }
 
   async updateLoginStatus() {
+    if (window.__karma__) return; // no lively4-server active
+    
     // this.updateLoginStatus()
     var token = await this.loadValue("githubToken")
     this.q("#loginButton").innerHTML = 
@@ -106,7 +113,6 @@ export default class Sync extends Morph {
 
   getServerURL() {
       return this.serverURL || lively4url.match(/(.*)\/([^\/]+$)/)[1]
-    
   }
 
   async gitControl(cmd, eachCB) {
@@ -212,6 +218,7 @@ export default class Sync extends Morph {
   }
 
   async getGitRepositoryNames() {
+    debugger
     var json = await lively.files.statFile(this.getServerURL()).then( JSON.parse)
     return json.contents.filter(ea => ea.type == "directory").map(ea => ea.name)
   }
@@ -258,6 +265,7 @@ export default class Sync extends Morph {
   }
   
   async updateContextSensitiveButtons() {
+    
     var repository = this.q("#gitrepository").value
     var list = await this.getGitRepositoryNames()
     var exists = _.include(list, repository)

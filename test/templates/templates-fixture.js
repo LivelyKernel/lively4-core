@@ -5,10 +5,11 @@
 export function loadComponent(name) {
   return new Promise(resolve => {
     var component = lively.components.createComponent(name);
-    lively.components.loadByName(name);
     component.addEventListener("created", function (evt) {
+      "created component: " + name
       evt.stopPropagation();
       resolve(component);
     }); 
+    lively.components.loadByName(name);
   });
 }
