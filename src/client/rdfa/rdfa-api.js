@@ -40,11 +40,15 @@ export default class RdfaApi {
           let triple = new RdfaTriple(val.subject, val.predicate, val.value)
           triples.push(triple);
         }
+        
         let graph = graphFactory.fromTriples(triples);
-        //TODO
-        //let documentData = GreenTurtle.implementation.createDocumentData(graph, "about:blank");
-        //documentData.merge(graph.subjects, {prefixes: graph.prefixes});
-        return graph;
+        let documentData = GreenTurtle.implementation.createDocumentData("http://example.org");
+        documentData.merge(graph.subjects, {
+          prefixes: graph.prefixes,
+          mergeBlankNodes: true
+        });
+
+        return documentData;
       })
   }
   

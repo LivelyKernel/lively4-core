@@ -19,7 +19,7 @@ export default class RdfaMovieDb extends Morph {
    */
   attachedCallback() {
     this.setup();
-      this.windowTitle = "RDFa Movie DB";
+    this.windowTitle = "RDFa Movie DB";
   }
 
   /*
@@ -39,11 +39,11 @@ export default class RdfaMovieDb extends Morph {
   loadRdfaDataAndFillTable() {
     this.table.empty();
     this.createTableHeader();
-    rdfa.readDataFromFirebase(this.bucket, true).then((graph) => {
-      let movies = this.filterMovies(graph);
-      this.movies = this.enrichMovies(movies);
-      console.log("movies", this.movies);
-      this.generateTable(this.movies);
+    rdfa.readDataFromFirebase(this.bucket, true).then((data) => {
+      let movieProjections = this.filterMovies(data);
+      this.movieProjections = this.enrichMovieProjections(movieProjections, data);
+      console.log("movieProjections", this.movieProjections);
+      this.generateTable(this.movieProjections);
     });
   }
 
@@ -72,15 +72,14 @@ export default class RdfaMovieDb extends Morph {
     })
   }
   
-  generateTable(movies) {
+  generateTable(movieProjections) {
     this.table.empty();
     this.createTableHeader();
-      
-    movies.forEach((movie) => {
+    movieProjections.forEach((movieProjection) => {
       let ratingTd = $('<div>')
       for (let i = 0; i < 5; i++) {
         let ratingStar;
-        if (movie.ratings[0] && movie.ratings[0].value > i) {
+        if (movieProjection.ratings && movieProjection.ratings[0] && movieProjection.ratings[0].value > i) {
           ratingStar = $('<i class="fa fa-star">');
         } else {
           ratingStar = $('<i class="fa fa-star-o">');
@@ -90,25 +89,25 @@ export default class RdfaMovieDb extends Morph {
         
         const rating = i + 1;
         ratingStar.on("click", () => {
-          this.setRating(movie, rating);
+          this.setRating(movieProjection, rating);
         });
       }
       
       this.table.append($('<tr>')
         .append($('<td>')
-          .append(movie.name))
+          .append(movieProjection.name))
         .append($('<td>')
-          .append($('<a>').attr('href', movie.url.match(/^http/) ? movie.url : 'http://' + movie.url).attr('target', '_blank')
-            .append(movie.url)
+          .append($('<a>').attr('href', movieProjection.url.match(/^http/) ? movieProjection.url : 'http://' + movieProjection.url).attr('target', '_blank')
+            .append(movieProjection.url)
           )
         )
         .append($('<td>')
-          .append(movie.movieDb.name))
+          .append(movieProjection.movieDb.name))
         .append($('<td>')
-          .append(movie.movieDb.id))
+          .append(movieProjection.movieDb.id))
         .append($('<td>')
-          .append($('<a>').attr('href', this.dbObjectToUrl(movie.otherDb)).attr('target', '_blank')
-            .append(this.dbObjectToUrl(movie.otherDb))
+          .append($('<a>').attr('href', this.dbObjectToUrl(movieProjection.otherDb)).attr('target', '_blank')
+            .append(this.dbObjectToUrl(movieProjection.otherDb))
           )
         )
         .append($('<td>')
@@ -117,8 +116,8 @@ export default class RdfaMovieDb extends Morph {
     });
   }
   
-  setRating(movie, rating) {
-    console.log(movie, rating);
+  setRating(movieProjection, rating) {
+    console.log(movieProjection, rating);
     const reviewUuid = '_:' + generateUuid();
     const authorUuid = '_:' + generateUuid();
     const ratingUuid = '_:' + generateUuid();
@@ -132,7 +131,7 @@ export default class RdfaMovieDb extends Morph {
     triples.push(new RdfaTriple(authorUuid, 'http://schema.org/name', 'TestAuthor'));
     
     triples.push(new RdfaTriple(reviewUuid, 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://schema.org/Review'));
-    triples.push(new RdfaTriple(movie.id, 'http://schema.org/Review', reviewUuid));
+    triples.push(new RdfaTriple(movieProjection.getSubject(), 'http://schema.org/Review', reviewUuid));
     triples.push(new RdfaTriple(reviewUuid, 'http://schema.org/reviewRating', ratingUuid));
     triples.push(new RdfaTriple(reviewUuid, 'http://schema.org/Author', authorUuid));
     
@@ -153,115 +152,68 @@ export default class RdfaMovieDb extends Morph {
       )
   }
   
-  filterMovies(graph) {
-    const movieSubjects = [];
-    for (let key in graph.subjects) {
-      if (!graph.subjects.hasOwnProperty(key)) continue;
-      
-      const subject = graph.subjects[key];
-      
-      for (let key2 in subject.predicates) {
-        const predicate = subject.predicates[key2];
-        if (predicate.id == "http://ogp.me/ns#type") {
-          predicate.objects.forEach(object => {
-            if (object.value == "video.movie") {
-              movieSubjects.push(subject);
-            }
-          });
-        } else if (predicate.id == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") {
-          predicate.objects.forEach(object => {
-            if (object.value == "http://schema.org/Movie") {
-              movieSubjects.push(subject);
-            }
-          });
-        }
-      }
-    }
-    return movieSubjects;
-  }
-  
-  enrichMovies(movieSubjects) {
-    movieSubjects.forEach((movieSubject) => {
-      if (this.isOgpMovie(movieSubject)) {
-        let predicate = movieSubject.predicates["http://ogp.me/ns#url"];
-        if (predicate) {
-          movieSubject.url = predicate.objects[0].value;
-        }
-        
-        predicate = movieSubject.predicates["http://ogp.me/ns#title"];
-        if (predicate) {
-          movieSubject.name = predicate.objects[0].value;
-        }
-      } else if (this.isSchemaMovie(movieSubject)) {
-        let predicate = movieSubject.predicates["http://schema.org/url"];
-        if (predicate) {
-          movieSubject.url = predicate.objects[0].value;
-        }
-        
-        predicate = movieSubject.predicates["http://schema.org/name"];
-        if (predicate) {
-          movieSubject.name = predicate.objects[0].value;
-        }
-      }
-      
-      console.log(movieSubject);
-      const review = movieSubject.predicates['http://schema.org/Review'];
-      movieSubject.ratings = [];
-      if (review) {
-        review.objects.forEach(object => {
-          const reviewSubject = movieSubject.graph.subjects[object.value];
-        
-          const authorSubject = this.getSubject(reviewSubject, 'http://schema.org/Author');
-          if (!authorSubject) return;
-          const authorNamePredicate = authorSubject.predicates['http://schema.org/name'];
-          if (!authorNamePredicate) return;
-          const authorName = authorNamePredicate.objects[0].value;
-          if (!authorName) return;
-          
-          const ratingSubject = this.getSubject(reviewSubject, 'http://schema.org/reviewRating');
-          if (!ratingSubject) return;
-          const ratingPredicate = ratingSubject.predicates['http://schema.org/ratingValue'];
-          if (!ratingPredicate) return;
-          const ratingValue = ratingPredicate.objects[0].value;
-          if (!ratingValue) return;
-          
-          movieSubject.ratings.push({name: authorName, value: ratingValue});
-        });
-      }
-      
-      this.setMovieDb(movieSubject);
-    });
-    return movieSubjects;
-  }
-  
-  getSubject(subject, predicateName) {
-    if (!subject) return null;
-    const predicate = subject.predicates[predicateName];
-    if (!predicate) return null;
-    const subjectId = predicate.objects[0].value;
-    if (subjectId) {
-      return subject.graph.subjects[subjectId];
-    }
-    return null;
-  }
+  filterMovies(data) {
+    let movieProjections = [];
 
-  isOgpMovie(movieSubject) {
-    const predicate = movieSubject.predicates["http://ogp.me/ns#type"];
-    if (predicate) {
-      return predicate.objects[0].value == "video.movie";
-    }
-    return false;
+    movieProjections = movieProjections.concat(data.rdfa.query({
+      "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : "http://schema.org/Movie"
+    }, {
+      "url" : "http://schema.org/url",
+      "name" : "http://schema.org/name",
+      "review" : "http://schema.org/Review"
+    }));
+
+    movieProjections = movieProjections.concat(data.rdfa.query({
+      "http://ogp.me/ns#type" : "video.movie"
+    }, {
+      "url" : "http://ogp.me/ns#url",
+      "name" : "http://ogp.me/ns#title",
+      "review" : "http://schema.org/Review"
+    }));
+    
+    return movieProjections;
   }
   
-  isSchemaMovie(movieSubject) {
-    const predicate = movieSubject.predicates["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"];
-    if (predicate) {
-      return predicate.objects[0].value == "http://schema.org/Movie";
+  enrichMovieProjections(movieProjections, data) {
+    movieProjections.forEach((movieProjection) => {
+      this.setReview(movieProjection, data);
+      this.setMovieDb(movieProjection);
+    });
+    return movieProjections;
+  }
+  
+  setReview(movieProjection, data) {
+    if (!movieProjection.review) return;
+
+    let authorName;
+    let ratingValue;
+    //TODO handle multiple reviews
+    const reviewSubjectId = Array.isArray(movieProjection.review) ? movieProjection.review[0] : movieProjection.review;
+    //const movieSubject = data.getSubject(movieProjection.getSubject());
+    movieProjection.ratings = [];
+    const reviewProjection = data.getProjection(reviewSubjectId, {
+      "authorSubjectId" : "http://schema.org/Author",
+      "reviewRatingSubjectId" : "http://schema.org/reviewRating"
+    });
+    if (reviewProjection.authorSubjectId) {
+      const authorNames = data.getValues(reviewProjection.authorSubjectId, "http://schema.org/name");
+      if (authorNames && authorNames[0]) {
+        authorName = authorNames[0];
+      }
     }
-    return false;
+    
+    if (reviewProjection.reviewRatingSubjectId) {
+      const ratingValues = data.getValues(reviewProjection.reviewRatingSubjectId, "http://schema.org/ratingValue");
+      if (ratingValues && ratingValues[0]) {
+        ratingValue = ratingValues[0];
+      }
+    }
+    
+    movieProjection.ratings.push({name: authorName, value: ratingValue});
   }
   
   mergeDuplicateMovies(movieSubjects) {
+    //TODO
     let movies = {};
     let filteredMovieSubjects = [];
     movieSubjects.forEach((movieSubject) => {
@@ -288,6 +240,7 @@ export default class RdfaMovieDb extends Morph {
   }
   
   mergeImdbRottenMovies(movieSubjects) {
+    //TODO
     let imdbMovies = movieSubjects.filter((movieSubject) => movieSubject.movieDb.name == "imdb");
     let rottenMovies = movieSubjects.filter((movieSubject) => movieSubject.movieDb.name == "rottentomatoes");
     let duplicates = [];
@@ -307,6 +260,7 @@ export default class RdfaMovieDb extends Morph {
   }
   
   enrichWithOtherDbMovieId(movieSubjects) {
+    //TODO
     let imdbMovies = movieSubjects.filter((movieSubject) => movieSubject.movieDb.name == "imdb");
     let rottenMovies = movieSubjects.filter((movieSubject) => movieSubject.movieDb.name == "rottentomatoes");
     let promises = [];
@@ -333,8 +287,8 @@ export default class RdfaMovieDb extends Morph {
     return Promise.all(promises);
   }
   
-  setMovieDb(movieSubject) {
-    let url = movieSubject.url;
+  setMovieDb(movieProjection) {
+    let url = movieProjection.url;
     let regexArray = [
       {
         prefix: /^www\.rottentomatoes\.com\//,
@@ -349,7 +303,7 @@ export default class RdfaMovieDb extends Morph {
     ];
     let stripedUrl = url.replace(/^https?:\/\//, "");
     
-    movieSubject.movieDb = {
+    movieProjection.movieDb = {
       name: null,
       id: null
     };
@@ -359,7 +313,7 @@ export default class RdfaMovieDb extends Morph {
       let id = stripedUrl2.match(regexObj.id, '');
       if (id) {
         id = id[0].replace(/\/$/, '');
-        movieSubject.movieDb = {
+        movieProjection.movieDb = {
           name: regexObj.db,
           id: id
         };
