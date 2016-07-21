@@ -98,10 +98,17 @@ export default class ComponentLoader {
           if (typeof this.initialize === "function") {
             this.initialize();
           }
+          console.log("dispatch created " +componentName )
+          console.log("Identitity: " + (window.LastRegistered === this))
+          
+          
           this.dispatchEvent(new Event("created"));
         })
 
 
+      }).catch( e => {
+        console.error(e); 
+        return e
       });
     }
     proxies[componentName].attachedCallback = function() {
