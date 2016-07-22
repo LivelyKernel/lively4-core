@@ -123,6 +123,51 @@ export default class RdfaApi {
       lively.notify("Failed to update RDFa data to " + path, reason);
     });
   }
+  
+  static queryResolved(data, query, hierachicalTemplate) {
+    const template = {};
+    const subjectsToPostResolve = [];
+    
+    for (let key in hierachicalTemplate) {
+      const iri = hierachicalTemplate[key];
+      if (Array.isArray(iri)) {
+        if (iri.length != 2) throw 'iri has to be a tuple';
+        template[key] = iri[0];
+        subjectsToPostResolve.push({'key': key, 'template': iri[1]});
+      } else {
+        template[key] = iri;
+      }
+    }
+    const projections = (typeof query === 'object')
+      ? data.rdfa.query(query, template)
+      : [data.getProjection(query, template)]; // then query is a subjectId
+    
+    subjectsToPostResolve.forEach(object => {
+      const key = object.key;
+      const template = object.template;
+      projections.forEach(projection => {
+        let subjectIds = projection[key];
+        if (!subjectIds) return;
+        
+        if (!Array.isArray(subjectIds)) {
+          subjectIds = [subjectIds];
+        }
+        
+        let resolvedProjections = [];
+        
+        subjectIds.forEach(subjectId => {
+          const subProjections = this.queryResolved(data, subjectId, template);
+          resolvedProjections = resolvedProjections.concat(subProjections);
+        });
+        
+        projection[key] = (resolvedProjections.length == 1)
+          ? resolvedProjections[0]
+          : resolvedProjections;
+      });
+    });
+    
+    return projections;
+  }
 }
 
 RdfaApi.rdfaListener = [];
