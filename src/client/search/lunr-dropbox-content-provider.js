@@ -1,35 +1,114 @@
-'use strict'
+'use strict';
 
-export function loadIndexJson(l4idxFile, options) {
-  // TODO
+let extensions = [".js", ".html", ".md", ".txt"];
+let versionsFilename = "versions.l4idx";
+
+export function isIndexable(filepath) {
+  return extensions.indexOf(filepath.slice(filepath.lastIndexOf("."))) >= 0;
+}
+
+export function loadIndexJson(filename, options) {
+  let path = `https://lively4${options.path}/${filename}`;
+  return fetch(path).then(response => {
+    if (!response.ok) {
+      throw new Error(response);
+    } else {
+      return response.json();
+    }
+  });
 }
 
 export function saveIndexJson(jsonIndex, filename, options) {
-  // TODO
+  let path = `https://lively4${options.path}/${filename}`;
+  let serialized = JSON.stringify(jsonIndex);
+  let headers = new Headers();
+  headers.append("Content-Type", "application/json");
+  return fetch(path, {
+    method: "PUT",
+    headers: headers,
+    body: serialized
+  });
+}
+
+export function checkIndexFile(filename, options) {
+  return new Promise((resolve, reject) => {
+    let path = `https://lively4${options.path}/${filename}`;
+    fetch(path, {
+      method: "OPTIONS"
+    }).then(resp => {
+      if (resp.status != 200) {
+        throw new Error("index not available");
+      }
+      return resp.json();
+    }).then(jsonResp => {
+      resolve("available");
+    }).catch(err => {
+      resolve("unavailable");
+    });
+  });
+}
+
+export async function saveIndexedVersions(versions, options) {
+  let currentVersions = await loadIndexedFileVersions(options.path);
+  Object.keys(versions).forEach(indexedPath => {
+    currentVersions[indexedPath] = versions[indexedPath];
+  });
+
+  // use the save function also for the versions file
+  saveIndexJson(currentVersions, versionsFilename, options);
+}
+
+function loadIndexedFileVersions(path) {
+  return fetch(`https://lively4${path}/${versionsFilename}`).then(resp => {
+    return resp.text();
+  }).then(resp => {
+    let jsonResp = JSON.parse(resp);
+    if (jsonResp.error) {
+      // looks like versions file does not exist
+      return {};
+    }
+
+    return jsonResp;
+  });
 }
 
 async function getFilepaths(options) {
-  let query = ".js";
-  let fileLimit = 10000;
-  let req = `https://api.dropboxapi.com/1/search/auto${options.options.subfolder}?query=${query}&file_limit=${fileLimit}`;
+  let proms = [];
 
-  let responseJson = await fetch(req, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${options.options.token}`,
-      "Content-Type": "application/json"
-    }
-  }).then(resp => { return resp.json(); });
+  extensions.forEach(query => {
+    let fileLimit = 10000;
+    let req = `https://api.dropboxapi.com/1/search/auto${options.options.subfolder}?query=${query}&file_limit=${fileLimit}`;
 
-  let filepaths = responseJson.filter(file => {
-    // ensure that this is really a js-file
-    return file.path.slice(-3) === ".js";
-  }).map(file => {
-    // remove the subfolder from the file path
-    return file.path.slice(options.options.subfolder.length);
+    proms.push(
+      fetch(req, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${options.options.token}`,
+          "Content-Type": "application/json"
+        }
+      }).then(resp => { return resp.json(); })
+    );
   });
 
-  return filepaths;
+  let filepaths = await Promise.all(proms).then(responses => {
+    return responses.reduce((a, b) => {
+      return a.concat(b);
+    }, []);
+  });
+
+  filepaths = filepaths.filter(file => {
+    // check if we really have an indexable extension
+    return isIndexable(file.path);
+  }).map(file => {
+    // remove the subfolder from the file path
+    return {
+      path: file.path.slice(options.options.subfolder.length),
+      rev: file.rev
+    }
+  });
+
+  return filepaths.slice(0, 30);
+  // return filepaths;
 }
 
 export async function* FileReader(filepath, options) {
@@ -39,15 +118,18 @@ export async function* FileReader(filepath, options) {
     options = filepath;
     filepaths = await getFilepaths(options);
   } else {
-    filepaths = [filepath];
+    filepaths = [{
+      path: filepath
+    }];
   }
 
   for (let i = 0; i < filepaths.length; i++) {
-    var path = filepaths[i];
-    var content = await fetch(`https://lively4${options.path}${path}`).then(resp => { return resp.text(); });
+    let path = filepaths[i].path;
+    let content = await fetch(`https://lively4${options.path}${path}`).then(resp => { return resp.text(); });
     yield {
       path: path,
       filename: path.slice(path.lastIndexOf("/") + 1),
+      ext: path.slice(path.lastIndexOf(".") + 1),
       content: content
     }
   }

@@ -25,7 +25,9 @@ module.exports = function(config) {
       {pattern: 'node_modules/mocha/mocha.js', included: false},
       {pattern: 'src/**/*.js*', included: false},
       {pattern: 'swx-loader.js', included: false},
+      
       {pattern: 'test/**/*.js', included: false},
+      
       {pattern: 'vendor/**/*.js', included: false},
       {pattern: 'templates/**/*', included: false},
       {pattern: 'test-main.js', included: false},
@@ -97,15 +99,17 @@ module.exports = function(config) {
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: false,
 
-    browserNoActivityTimeout: 20000
+    browserNoActivityTimeout: 60000
   });
 
-  if (!process.env.GithubToken) {
-    console.log("\033[7m\033[31m****************************************************************************\033[0m");
-    console.log("\033[7m\033[31m* You need to provide the \"GithubToken\" environment variable to run tests. *\033[0m");
-    console.log("\033[7m\033[31m****************************************************************************\033[0m");
-    process.exit(-1);
-  }
+
+  // Not needed at the moment
+  // if (!process.env.GithubToken) {
+  //   console.log("\033[7m\033[31m****************************************************************************\033[0m");
+  //   console.log("\033[7m\033[31m* You need to provide the \"GithubToken\" environment variable to run tests. *\033[0m");
+  //   console.log("\033[7m\033[31m****************************************************************************\033[0m");
+  //   process.exit(-1);
+  // }
 
   // insert the github token
   fs.writeSync(

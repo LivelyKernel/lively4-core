@@ -1,10 +1,14 @@
 // import lively2 from "./lively.js";
 // #TODO this will fetch an old version of the lively module...
 
+
+
 export default class ContextMenu {
 
   static hide() {
     if (this.menu) $(this.menu).remove();
+
+    lively.removeEventListener("contextMenu",  document.documentElement)
   }
 
   static openComponentInWindow (name, evt) {
@@ -12,10 +16,21 @@ export default class ContextMenu {
     return lively.openComponentInWindow(name, lively.pt(evt.pageX, evt.pageY));
   }
 
+  static openInWindow(comp, evt) {
+    var pos = lively.getPosition(comp)
+	  lively.components.openInWindow(comp).then(function (w) {
+        lively.setPosition(w, pos);
+        lively.setPosition(comp, {x:0, y:0});
+        if (comp.windowTitle) w.setAttribute('title', '' + comp.windowTitle);
+        return comp;
+    });
+  }
+
   static items (target) {
     if (target) {
       var wasEditable = (target.contentEditable == "true");
       var wasDisabled = (target.disabled == "true");
+      var targetInWindow = target.parentElement.tagName == 'LIVELY-WINDOW'
       var menu = [
         ["show", (evt) => {
            this.hide();
@@ -36,7 +51,13 @@ export default class ContextMenu {
         [wasDisabled ? "enable" : "disable", (evt) => {
            this.hide();
            target.disabled = !wasDisabled;
-        }]
+        }],
+        [targetInWindow ? "strip window" : "open in window", (evt) => {
+            this.hide();
+            targetInWindow ?
+              target.parentElement.embedContentInParent() :
+              ContextMenu.openInWindow(target, evt)
+          }]
       ];
       return menu;
     } else {
@@ -74,7 +95,7 @@ export default class ContextMenu {
       ["Sync",     (evt) => this.openComponentInWindow("lively-sync", evt)],
       ["Services",     (evt) => this.openComponentInWindow("lively-services", evt)],
       // ["Terminal",        (evt) => this.openComponentInWindow("lively-terminal", evt)],
-      ["Console",         (evt) => this.openComponentInWindow("lively-console", evt)],
+      // ["Console",         (evt) => this.openComponentInWindow("lively-console", evt)],
       ["File Search",         (evt) => this.openComponentInWindow("lively-search", evt)],
       ["TestRunner",         (evt) => this.openComponentInWindow("lively-testrunner", evt)],
       ["Component Bin",   (evt) => this.openComponentInWindow("lively-component-bin", evt),
@@ -136,18 +157,18 @@ export default class ContextMenu {
       w.id = 'lively-rdfa-window';
     });
   }
-  
+
   static openRdfaDb(evt) {
     $('#lively-rdfa-db').remove();
-  
+
     lively.components.openInWindow(lively.components.createComponent("lively-rdfa-db")).then((w) => {
       w.id = 'lively-rdfa-db';
     });
   }
-  
+
   static openRdfaMovies(evt) {
     $('#lively-rdfa-movie-db').remove();
-  
+
     lively.components.openInWindow(lively.components.createComponent("lively-rdfa-movie-db")).then((w) => {
       w.id = 'lively-rdfa-movie-db';
     });
@@ -155,6 +176,13 @@ export default class ContextMenu {
 
   static openIn(container, evt, target) {
     this.hide();
+
+
+    lively.addEventListener("contextMenu", document.documentElement, "click", () => {
+      this.hide()
+    }, true)
+
+
     var menu = lively.components.createComponent("lively-menu");
     return lively.components.openIn(container, menu).then(() => {
       this.menu = menu;

@@ -14,7 +14,7 @@ export default class TestRunner extends HTMLDivElement {
   initialize() {
     this.windowTitle = "Test Runner"
     lively.html.registerButtons(this)
-    lively.html.registerInputs(this)
+    // lively.html.registerInputs(this)
     if (!this.querySelector("#mocha")) {
       this.mochadiv = document.createElement("div");
       this.mochadiv.id = "mocha"
@@ -96,7 +96,8 @@ export default class TestRunner extends HTMLDivElement {
     await Promise.all(
       (await this.findTestFiles()).map((url) => {
         var name = url.replace(/.*\//,"").replace(/\/\.[^\.]*/,"");
-          return lively.import(name, url, true)
+          lively.modules.reloadModule(url);
+          return System.import(url)
           // mocha.addFile(url.replace(/.*\//,"").replace(/\..*/,""))
       }));
     console.log("RUN");

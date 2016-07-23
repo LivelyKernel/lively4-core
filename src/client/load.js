@@ -46,15 +46,16 @@ if ('serviceWorker' in navigator) {
           lively4url + "/src/external/lively.modules-with-lively.vm.js")})
       .then( function(){
         console.log("lively.modules loaded... now try to load lively4");
-        
+
         // (window.__karma__ ?
         //   System.import(lively4url + "/src/client/lively.js") :
         //   lively.modules.importPackage(lively4url)
         // )
-        
+
         System.import(lively4url + "/src/client/lively.js")
         .then(function(module) {
             lively.initializeHalos();
+            // lively.initializeSearch();
             lively.components.loadUnresolved();
             console.log("running on load callbacks:");
             loadCallbacks.forEach(function(cb){
@@ -88,11 +89,7 @@ if ('serviceWorker' in navigator) {
     onReady()
   } else {
 
-    navigator.serviceWorker.register(root + 'swx-loader.js', {
-        // navigator.serviceWorker.register('../../serviceworker-loader.js', {
-        // scope: root + "draft/"
-        scope: root
-    }).then(function(registration) {
+    navigator.serviceWorker.register(new URL('swx-loader.js', window.location)).then(function(registration) {
         // Registration was successful
         console.log('ServiceWorker registration successful with scope: ', registration.scope);
 

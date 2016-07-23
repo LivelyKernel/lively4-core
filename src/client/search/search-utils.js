@@ -7,3 +7,18 @@ export function join(path1, path2) {
   }
   return path1 + path2;
 }
+
+export function ensureLunr() {
+  return new Promise((resolve, reject) => {
+    if (typeof lunr !== "function") {
+      // load lunr
+      System.import(lively4url + "/src/external/lunr.js").then(module => {
+        window.lunr = module;
+        resolve();
+      });
+    } else {
+      // lunr already loaded
+      resolve();
+    }
+  });
+}

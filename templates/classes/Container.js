@@ -170,10 +170,10 @@ export default class Container extends Morph {
       var sourceCode = this.getSubmorph("#editor").currentEditor().getValue()
       lively.updateTemplate(sourceCode)
       var url = this.getURL();
-      if (this.getURL().pathname.match(/\/test\/.*([^/]+)\.js$/)) {
-        console.log("ignore test: " + this.getURL())
-        return
-      }
+      // if (this.getURL().pathname.match(/\/test\/.*([^/]+)\.js$/)) {
+      //   console.log("ignore test: " + this.getURL())
+      //   return
+      // }
       
       document.body.querySelectorAll('lively-container').forEach(ea => {
         var url = "" + this.getURL()
@@ -270,7 +270,8 @@ export default class Container extends Morph {
     
       if (!window.ScopedD3) {
         console.log("LOAD D3 Adaption Layer")
-        await System.import("templates/classes/ContainerScopedD3.js")   
+        await System.import("templates/classes/ContainerScopedD3.js")
+        ScopedD3.updateCurrentBodyAndURLFrom(this)
         // return this.appendHtml(content) // try again
       }
     }
