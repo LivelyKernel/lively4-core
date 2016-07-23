@@ -6,7 +6,7 @@ import rdfa from '../../src/client/rdfa/rdfa-api.js';
 import RdfaTriple from '../../src/client/rdfa/RdfaTriple.js';
 import RdfaPredicate from '../../src/client/rdfa/RdfaPredicate.js';
 import RdfaSubject from '../../src/client/rdfa/RdfaSubject.js';
-import generateUuid from '../../src/client/uuid.js';
+import Firebase from '../../src/client/firebase.js';
 
 import * as WikiDataAdapter from '../../src/client/wiki-data-adapter.js';
 
@@ -27,6 +27,7 @@ export default class RdfaMovieDb extends Morph {
    */
   setup() {
     this.bucket = DEFAULT_BUCKET;
+    this.firebase = new Firebase(rdfa.firebaseSampleConf());
     
     this.table = $(this.shadowRoot.querySelector('#dbTable'));
     this.registerMergeDuplicatesButton();
@@ -39,7 +40,7 @@ export default class RdfaMovieDb extends Morph {
   loadRdfaDataAndFillTable() {
     this.table.empty();
     this.createTableHeader();
-    rdfa.readDataFromFirebase(this.bucket).then((data) => {
+    rdfa.loadDataFrom(this.firebase, this.bucket).then((data) => {
       this.movieProjections = this.filterMovies(data);
       this.enrichMovieProjections(this.movieProjections, data);
       console.log("movieProjections", this.movieProjections);
@@ -59,7 +60,7 @@ export default class RdfaMovieDb extends Morph {
       this.movies = this.mergeDuplicateMovies(this.movies);
       console.log("mergedDuplicateMovies", this.movies);
       this.generateTable(this.movies);
-    })
+    });
   }
   
   registerMergeImdbRottenButton() {
@@ -123,9 +124,9 @@ export default class RdfaMovieDb extends Morph {
   
   setRating(movieProjection, rating) {
     console.log("setRating", movieProjection, rating);
-    const reviewUuid = '_:' + generateUuid();
-    const authorUuid = '_:' + generateUuid();
-    const ratingUuid = '_:' + generateUuid();
+    const reviewUuid = rdfa.newBlankNodeId();
+    const authorUuid = rdfa.newBlankNodeId();
+    const ratingUuid = rdfa.newBlankNodeId();
     
     const triples = [];
     
@@ -140,7 +141,7 @@ export default class RdfaMovieDb extends Morph {
     triples.push(new RdfaTriple(reviewUuid, 'http://schema.org/reviewRating', ratingUuid));
     triples.push(new RdfaTriple(reviewUuid, 'http://schema.org/Author', authorUuid));
     
-    rdfa.storeRDFaTriplesToFirebase('mymovies', triples).then(()=> {
+    rdfa.storeRdfTriplesTo(this.firebase, 'mymovies', triples).then(()=> {
       this.loadRdfaDataAndFillTable();
     });
   }
@@ -154,7 +155,7 @@ export default class RdfaMovieDb extends Morph {
         .append($('<th>').text("ID"))
         .append($('<th>').text("Same as"))
         .append($('<th>').text("Rating"))
-      )
+      );
   }
   
   filterMovies(data) {
@@ -324,13 +325,13 @@ export default class RdfaMovieDb extends Morph {
     const bucketList = this.shadowRoot.querySelector("#bucketlist");
     bucketList.innerHTML = "";
     
-      rdfa.getBucketListFromFirebase().then(buckets => {
+      rdfa.getBucketListFrom(this.firebase).then(buckets => {
       buckets.forEach(bucket => {
         const option = document.createElement("option");
         option.value = bucket;
         bucketList.appendChild(option);
       });
-    })
+    });
   }
   
   registerLoadBucketButton() {

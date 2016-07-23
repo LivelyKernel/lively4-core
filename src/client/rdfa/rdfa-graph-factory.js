@@ -1,11 +1,9 @@
 import * as rdfa from '../../external/RDFa.js';
 
+const BLANK_NODE_PATTERN = /^_:.+/;
+const UUID_PATTERN = /\S{8}-\S{4}-4\S{3}-\S{4}-\S{12}/;
+
 export default class GraphFactory {
-  
-  static initialize() {
-    this.blankNodePattern = /^_:.+/;
-    this.uuidPattern = /\S{8}-\S{4}-4\S{3}-\S{4}-\S{12}/;
-  }
   
   static fromTriples(triples) {
     const turtleParser = GreenTurtle.implementation.processors['text/turtle'].createParser();
@@ -29,13 +27,9 @@ export default class GraphFactory {
     return graph;
   }
   
-  static isUuid(string) {
-    return typeof string == 'string' && string.match(this.uuidPattern);
-  }
-  
   static isBlankNode(string) {
     if (string && typeof string == 'string') {
-      return this.blankNodePattern.test(string);
+      return BLANK_NODE_PATTERN.test(string);
     }
     return false;
   }
@@ -71,6 +65,8 @@ export default class GraphFactory {
     
     return objectGraph;
   }
+  
+  static blankNodePattern() {
+    return BLANK_NODE_PATTERN;
+  }
 }
-
-GraphFactory.initialize();

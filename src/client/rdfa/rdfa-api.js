@@ -1,8 +1,14 @@
 import * as rdfa from '../../external/RDFa.js';
 import generateUuid from '../uuid.js';
 import graphFactory from './rdfa-graph-factory.js';
-import Firebase from './firebase.js';
 import RdfaTriple from './RdfaTriple.js';
+
+const FIREBASE_SAMPLE_CONF = {
+  apiKey: "AIzaSyCdiOSF0DUialcbR86BoJAmdj_RQFWgUk8",
+  authDomain: "webdev16-rdfa.firebaseapp.com",
+  databaseURL: "https://webdev16-rdfa.firebaseio.com",
+  storageBucket: "webdev16-rdfa.appspot.com",
+};
 
 export default class RdfaApi {
 
@@ -20,24 +26,15 @@ export default class RdfaApi {
     });
   }
 
-  static initializeFirebase() {
-    this.firebase = new Firebase({
-      apiKey: "AIzaSyCdiOSF0DUialcbR86BoJAmdj_RQFWgUk8",
-      authDomain: "webdev16-rdfa.firebaseapp.com",
-      databaseURL: "https://webdev16-rdfa.firebaseio.com",
-      storageBucket: "webdev16-rdfa.appspot.com",
-    });
-  }
-
-  static readDataFromFirebase(bucket) {
-    return this.firebase.database().ref("rdfaTriples/" + bucket).once('value')
+  static loadDataFrom(firebase, bucket, root = "rdfTriples") {
+    return firebase.database().ref(root + "/" + bucket).once('value')
       .then((data) => {
         let triples = [];
         let values = data.val();
         
         for (let id in values) {
           let val = values[id];
-          let triple = new RdfaTriple(val.subject, val.predicate, val.value)
+          let triple = new RdfaTriple(val.subject, val.predicate, val.value);
           triples.push(triple);
         }
         
@@ -49,16 +46,16 @@ export default class RdfaApi {
         });
 
         return documentData;
-      })
+      });
   }
   
-  static getBucketListFromFirebase() {
-    return this.firebase.database().ref("rdfaTriples").once('value')
+  static getBucketListFrom(firebase, root = "rdfTriples") {
+    return firebase.database().ref(root).once('value')
     .then(data => {
       const buckets = [];
       data.forEach(keyObject => {
         buckets.push(keyObject.key);
-      })
+      });
       
       return buckets;
     });
@@ -67,8 +64,8 @@ export default class RdfaApi {
   static addRdfaEventListener(mappings, callback) {
     let mappingArray = Array.isArray(mappings) ? mappings : [mappings];
     mappingArray.forEach((mapping) => {
-      this.rdfaListener.push({mapping: mapping, callback: callback})
-    })
+      this.rdfaListener.push({mapping: mapping, callback: callback});
+    });
   }
 
   static notifyRdfaEventListener() {
@@ -78,9 +75,10 @@ export default class RdfaApi {
         //TODO
         //listener.callback(graphFactory.fromGreenTurtleProjections(projections));
       }
-    })
+    });
   }
   
+  //TODO refactoring
   static getRDFaTriples() {
     let subject2uuid = {};
     let projections = document.data.rdfa.query();
@@ -89,7 +87,7 @@ export default class RdfaApi {
       let subjectIdentifier = subject;
       if (!subject2uuid[subject]) {
         if (graphFactory.isBlankNode(subject)) {
-          subjectIdentifier = '_:' + generateUuid();
+          subjectIdentifier = this.newBlankNodeId();
         }
         subject2uuid[subject] = subjectIdentifier;
       }
@@ -100,7 +98,7 @@ export default class RdfaApi {
       for (let property in properties) {
         let values = properties[property];
         let processedValues = values.map((value) => {
-          return subject2uuid[value] || value
+          return subject2uuid[value] || value;
         });
         processedValues.forEach(processedValue => {
           triples.push(new RdfaTriple(subject2uuid[subject], property, processedValue));
@@ -110,14 +108,14 @@ export default class RdfaApi {
     return triples;
   }
   
-  static storeRDFaTriplesToFirebase(bucket, triples = this.getRDFaTriples()) {
-    let path = "rdfaTriples/" + bucket + "/";
+  static storeRdfTriplesTo(firebase, bucket, triples = this.getRDFaTriples(), root = "rdfTriples") {
+    let path = root + "/" + bucket + "/";
     let updates = {};
     triples.forEach((triple) => {
-      let key = this.firebase.database().ref(path).push().key;
+      let key = firebase.database().ref(path).push().key;
       updates[key] = triple;
     });
-   return this.firebase.database().ref(path).update(updates).then(() => {
+   return firebase.database().ref(path).update(updates).then(() => {
       lively.notify("Updated RDFa data", path);
     }).catch((reason) => {
       lively.notify("Failed to update RDFa data to " + path, reason);
@@ -168,7 +166,14 @@ export default class RdfaApi {
     
     return projections;
   }
+  
+  static firebaseSampleConf() {
+    return FIREBASE_SAMPLE_CONF;
+  }
+  
+  static newBlankNodeId() {
+    return "_:" + generateUuid();
+  }
 }
 
 RdfaApi.rdfaListener = [];
-RdfaApi.initializeFirebase();

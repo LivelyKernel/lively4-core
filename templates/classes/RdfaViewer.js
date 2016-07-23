@@ -2,8 +2,9 @@
 
 import Morph from './Morph.js';
 import rdfa from '../../src/client/rdfa/rdfa-api.js';
+import Firebase from '../../src/client/firebase.js';
 
-const urlPattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
+const URL_PATTERN = new RegExp('^(https?:\\/\\/)?'+ // protocol
     '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
     '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
     '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
@@ -21,7 +22,7 @@ rdfa.addRdfaEventListener(
     lively.notify("RDFa {{type}} detected");
     console.log(graph);
   }
-)`
+)`;
 
 export default class RdfaViewer extends Morph {
 
@@ -37,10 +38,12 @@ export default class RdfaViewer extends Morph {
    * Initialization
    */
   setup() {
-      this.table = $(this.shadowRoot.querySelector('#rdfaTable'));
-      this.registerFirebaseButton();
-      this.registerReloadRdfaButton();
-      this.loadRdfaDataAndFillTable();
+    this.firebase = new Firebase(rdfa.firebaseSampleConf());
+    
+    this.table = $(this.shadowRoot.querySelector('#rdfaTable'));
+    this.registerFirebaseButton();
+    this.registerReloadRdfaButton();
+    this.loadRdfaDataAndFillTable();
   }
 
   loadRdfaDataAndFillTable() {
@@ -64,7 +67,7 @@ export default class RdfaViewer extends Morph {
         .append($('<th>').text("Subject"))
         .append($('<th>').text("Property"))
         .append($('<th>').text("Value"))
-      )
+      );
   }
 
   generateJSONTableRows(data) {
@@ -106,7 +109,7 @@ export default class RdfaViewer extends Morph {
           }, 250);
         });
       }});
-    })
+    });
     return link;
   }
 
@@ -135,7 +138,7 @@ export default class RdfaViewer extends Morph {
 
   isUrl(string) {
     let potentialUrl = string.split('?')[0];
-    return urlPattern.test(potentialUrl);
+    return URL_PATTERN.test(potentialUrl);
   }
   
   addRdfaListenerSample(property, value) {
@@ -144,7 +147,7 @@ export default class RdfaViewer extends Morph {
         .on('click', (evt) => {
           lively.openWorkspace(listenerSampleCode.replace(/{{type}}/g, value));
         }
-      )
+      );
     }
     return "";
   }
@@ -192,7 +195,7 @@ export default class RdfaViewer extends Morph {
   registerFirebaseButton() {
     $(this.shadowRoot.querySelector("#save-button")).on('click', () => {
       this.saveButtonPressed();
-    })
+    });
     this.updateBucketList();
   }
   
@@ -202,7 +205,7 @@ export default class RdfaViewer extends Morph {
       bucketName = window.prompt("Into which bucket do you want to store the data?");
     }
     if (bucketName) {
-      rdfa.storeRDFaTriplesToFirebase(bucketName);
+      rdfa.storeRdfTriplesTo(this.firebase, bucketName);
       this.updateBucketList();
     }
   }
@@ -211,20 +214,20 @@ export default class RdfaViewer extends Morph {
     const bucketList = this.shadowRoot.querySelector("#bucketlist");
     bucketList.innerHTML = "";
     
-    rdfa.getBucketListFromFirebase().then(buckets => {
+    rdfa.getBucketListFrom(this.firebase).then(buckets => {
       buckets.forEach(bucket => {
         const option = document.createElement("option");
         option.value = bucket;
         bucketList.appendChild(option);
       });
-    })
+    });
   }
 
   registerReloadRdfaButton() {
     $(this.shadowRoot.querySelector("#reload-button")).on('click', () => {
       this.table.empty();
       this.loadRdfaDataAndFillTable();
-    })
+    });
   }
 
 }
