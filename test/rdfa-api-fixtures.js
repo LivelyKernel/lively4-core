@@ -1,9 +1,32 @@
 import * as rdfa from '../src/external/RDFa.js';
 
-export function newRdfaMovieGraph() {
+export function rdfaDocumentDataSimple() {
+  return newDocumentData(simpleTurtleString());
+}
+
+export function rdfaDocumentDataComplex() {
+  return newDocumentData(turtleString());
+}
+
+function newDocumentData(turtleString) {
+  let graph = newRdfaMovieGraph(turtleString);
+  let data = GreenTurtle.implementation.createDocumentData("http://example.org");
+  data.merge(graph.subjects, {
+    prefixes: graph.prefixes,
+    mergeBlankNodes: true
+  });
+  return data;
+}
+
+function newRdfaMovieGraph(turtleString) {
   let turtleParser = GreenTurtle.implementation.processors['text/turtle'].createParser();
-  turtleParser.parse(turtleString());
+  turtleParser.parse(turtleString);
   return turtleParser.context;
+}
+
+function simpleTurtleString() {
+  return `<https://www.rottentomatoes.com/m/spectre_2015/> <http://ogp.me/ns#title> "Spectre";
+ <http://ogp.me/ns#type> "video.movie" .`;
 }
 
 function turtleString() {
@@ -197,7 +220,7 @@ _:1b7fd8a8-e39a-4322-9dfc-f60e49d0e912 <http://www.w3.org/1999/02/22-rdf-syntax-
  <http://schema.org/publisher> "_:ba058ccb-1eaa-4fd1-a7cf-233540f97ee1";
  <http://schema.org/reviewRating> "_:486982d7-dd8b-45c8-81a0-83946e6ad91a" .
 _:f0102aef-e827-4b15-aba4-6a99e424593b <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> "http://schema.org/Review";
- <http://schema.org/reviewBody> "Daniel Craig recently said that he'd rather \"kill himself\" than do another Bond film -- and in Spectre, his misery shows.";
+ <http://schema.org/reviewBody> "Daniel Craig recently said that he'd rather \\"kill himself\\" than do another Bond film -- and in Spectre, his misery shows.";
  <http://schema.org/url> "http://www.baltimoremagazine.net/2015/11/5/review-spectre";
  <http://schema.org/dateCreated> "2016-06-12T13:15:04-07:00";
  <http://schema.org/author> "_:444e9bc7-a57c-4414-9923-7404fc1c0445";

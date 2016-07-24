@@ -31,13 +31,13 @@ export default class RdfaApi {
       .then((data) => {
         let triples = [];
         let values = data.val();
-        
+
         for (let id in values) {
           let val = values[id];
           let triple = new RdfaTriple(val.subject, val.predicate, val.value);
           triples.push(triple);
         }
-        
+
         let graph = graphFactory.fromTriples(triples);
         let documentData = GreenTurtle.implementation.createDocumentData("http://example.org");
         documentData.merge(graph.subjects, {
@@ -48,7 +48,7 @@ export default class RdfaApi {
         return documentData;
       });
   }
-  
+
   static getBucketListFrom(firebase, root = "rdfTriples") {
     return firebase.database().ref(root).once('value')
     .then(data => {
@@ -56,7 +56,7 @@ export default class RdfaApi {
       data.forEach(keyObject => {
         buckets.push(keyObject.key);
       });
-      
+
       return buckets;
     });
   }
@@ -77,7 +77,7 @@ export default class RdfaApi {
       }
     });
   }
-  
+
   //TODO refactoring
   static getRDFaTriples() {
     let subject2uuid = {};
@@ -107,7 +107,7 @@ export default class RdfaApi {
     });
     return triples;
   }
-  
+
   static storeRdfTriplesTo(firebase, bucket, triples = this.getRDFaTriples(), root = "rdfTriples") {
     let path = root + "/" + bucket + "/";
     let updates = {};
@@ -121,11 +121,13 @@ export default class RdfaApi {
       lively.notify("Failed to update RDFa data to " + path, reason);
     });
   }
-  
+
   static queryResolved(data, query, hierachicalTemplate) {
+    if (!data) throw new Error("data must not be undefined");
+
     const template = {};
     const subjectsToPostResolve = [];
-    
+
     for (let key in hierachicalTemplate) {
       const iri = hierachicalTemplate[key];
       if (Array.isArray(iri)) {
@@ -139,38 +141,38 @@ export default class RdfaApi {
     const projections = (typeof query === 'object')
       ? data.rdfa.query(query, template)
       : [data.getProjection(query, template)]; // then query is a subjectId
-    
+
     subjectsToPostResolve.forEach(object => {
       const key = object.key;
       const template = object.template;
       projections.forEach(projection => {
         let subjectIds = projection[key];
         if (!subjectIds) return;
-        
+
         if (!Array.isArray(subjectIds)) {
           subjectIds = [subjectIds];
         }
-        
+
         let resolvedProjections = [];
-        
+
         subjectIds.forEach(subjectId => {
           const subProjections = this.queryResolved(data, subjectId, template);
           resolvedProjections = resolvedProjections.concat(subProjections);
         });
-        
+
         projection[key] = (resolvedProjections.length == 1)
           ? resolvedProjections[0]
           : resolvedProjections;
       });
     });
-    
+
     return projections;
   }
-  
+
   static firebaseSampleConf() {
     return FIREBASE_SAMPLE_CONF;
   }
-  
+
   static newBlankNodeId() {
     return "_:" + generateUuid();
   }
