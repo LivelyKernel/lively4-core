@@ -23,6 +23,12 @@ function initialize() {
 function loadMounts() {
   lunrSearch.setRootFolder("https://lively4");
 
+  // clear everything
+  for (let type in searchModules) {
+    availableMounts[type] = {};
+    searchFunctions[type] = [];
+  }
+
   // initialize mounts, except for server mounts
   let mountRequest = new Request("https://lively4/sys/mounts");
   let mountPromise = fetch(mountRequest).then(resp => {
@@ -67,7 +73,9 @@ function loadMounts() {
 }
 
 export function getAvailableMounts() {
-  return availableMounts;
+  return loadMounts().then( () => {
+    return availableMounts;
+  });
 }
 
 export function prepareForSearch(mountType, path) {
@@ -83,7 +91,16 @@ export function prepareForSearch(mountType, path) {
 export function getStatus(mountType, path) {
   let db = availableMounts[mountType][path];
   if (!db) {
-    return Promise.reject("Mount not found");
+    // mount unknown, maybe it was just mounted?
+    return loadMounts().then( () => {
+      console.log("Reloading mounts");
+      db = availableMounts[mountType][path];
+      if (!db) {
+        // nope, we really dont know this mount
+        throw new Error("Mount not found");
+      }
+      return searchModules[mountType].getStatus(path, db);
+    });
   }
 
   return searchModules[mountType].getStatus(path, db);
