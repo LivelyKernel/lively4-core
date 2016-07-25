@@ -1,6 +1,6 @@
 {
   "name": "stack-es2015-modules",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "The stack data type as es2015 module",
   "main": "dist/bundle.js",
   "jsnext:main": "src/stack.js",
