@@ -6,7 +6,7 @@ export function setup(options) {
     console.log("setup location:", options.path);
 
     let fetchStatus =  () => {
-      fetch(`${window.location.origin}/api/search/createIndex?location=${location}`).then( (response) => {
+      fetch(`${window.location.origin}/api/search/createIndex?location=${location}`).then( async (response) => {
         let responseJson = await response.json();
         if (responseJson.indexStatus == "available") {
           resolve();

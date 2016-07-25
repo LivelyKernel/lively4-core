@@ -139,7 +139,7 @@ function stopWorker(subdir) {
 
 export function createIndex(subdir, options) {
   return startWorker(subdir).then(() => {
-    new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       if (!rootFolder) {
         console.log("[Indexing] Cannot create index, no root folder set");
         reject("Error: no root folder set");
