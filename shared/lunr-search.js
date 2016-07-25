@@ -13,6 +13,8 @@ if (isNode) {
 }
 
 function send(receiver, message) {
+  if (!receiver) return;
+
   if (isNode) {
     receiver.send(message);
   } else {
@@ -176,21 +178,13 @@ export function createIndex(subdir, options) {
 
 export function removeIndex(subdir, options) {
   return startWorker(subdir).then(() => {
-    new Promise((resolve, reject) => {
-      if (!rootFolder) {
-        console.log("[Indexing] Cannot remove index, no root folder set");
-        reject("Error: no root folder set");
-        return;
-      }
-
-      send(workers[subdir], {
-        type: "removeIndex"
-      });
-
-      // stopWorker(subdir);
-
-      delete indexStatus[subdir];
+    send(workers[subdir], {
+      type: "removeIndex"
     });
+
+    stopWorker(subdir);
+
+    delete indexStatus[subdir];
   });
 }
 
