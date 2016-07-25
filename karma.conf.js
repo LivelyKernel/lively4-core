@@ -10,7 +10,8 @@ module.exports = function (config) {
                 base: 'Chrome',
                 flags: [
                     '--window-size=1100,600',
-                    '--window-position=-0,0'
+                    '--window-position=-0,0',
+                    '--no-sandbox'
                 ]
             },
             Chrome_large_no_sandbox: {
@@ -20,6 +21,14 @@ module.exports = function (config) {
                     '--window-position=-0,0',
                     '--no-sandbox'
                 ],
+            },
+            ChromeCanary_Travis_CI_large_no_sandbox: {
+                base: 'ChromeCanary',
+                flags: [
+                    '--window-size=1100,600',
+                    '--window-position=-0,0',
+                    '--no-sandbox'
+                ]
             }
         },
         files: [
@@ -46,7 +55,7 @@ module.exports = function (config) {
         }
     };
     if (process.env.TRAVIS) {
-        configuration.browsers = ['Chrome_large_no_sandbox'];
+        configuration.browsers = ['ChromeCanary_Travis_CI_large_no_sandbox'];
     }
 
     config.set(configuration);
