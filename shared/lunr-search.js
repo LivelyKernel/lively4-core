@@ -85,7 +85,7 @@ export function startWorker(subdir) {
 
     console.log("[Indexing] Starting new worker for " + subdir);
     try {
-      let script = isNode ? "../server/lunr-node-search-worker.js" : "../client/lunr-es6-search-worker-wrapper.js";
+      let script = isNode ? "./lively4-search/server/lunr-node-search-worker.js" : "./src/external/lively4-search/client/lunr-es6-search-worker-wrapper.js";
       workers[subdir] = createProcess(script, subdir);
     } catch (err) {
       console.log("[Indexing] Error starting new worker for " + subdir + ": " + err);

@@ -1,7 +1,7 @@
-importScripts('src/external/system.src.js', 'src/external/lunr.js');
-importScripts('vendor/regenerator-runtime.js');
-importScripts('vendor/babel-browser.js');
-importScripts('vendor/es6-module-loader-dev.js');
+importScripts('../external/system.src.js', '../external/lunr.js');
+importScripts('../external/regenerator-runtime.js');
+importScripts('../external/babel-browser.js');
+importScripts('../external/es6-module-loader-dev.js');
 
 msgId = undefined
 options = undefined

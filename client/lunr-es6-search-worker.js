@@ -1,8 +1,8 @@
 'use strict';
 
-import SearchWorker from './lunr-search-worker.js';
-import {jsTokens} from '../../lively4-core/src/external/js-tokens.js';
-import * as cp from '../../lively4-core/src/client/search/lunr-dropbox-content-provider.js';
+import SearchWorker from '../shared/lunr-search-worker.js';
+import {jsTokens} from '../external/js-tokens.js';
+import * as cp from './lunr-dropbox-content-provider.js';
 // import * as utils from "./search-utils.js";
 
 export class ES6SearchWorker extends SearchWorker {
