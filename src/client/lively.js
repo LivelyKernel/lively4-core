@@ -65,6 +65,7 @@ var exportmodules = [
 // By structuring our modules differently, we still can act as es6 module to the outside but develop at runtime
 // #IDEA: I refactored from "static module and function style" to "dynamic object" style
 export default class Lively {
+  
   static import(moduleName, path, forceLoad) {
     if (lively.modules && path) {
       lively.modules.module("" + path).reload({reloadDeps: true, resetEnv: false})
@@ -445,8 +446,8 @@ export default class Lively {
   }
 
   static initializeHalos() {
-    if ($('lively-halos').size() === 0) {
-        $('<lively-halos>')
+    if ($('lively-halo').size() === 0) {
+        $('<lively-halo>')
             .attr('data-lively4-donotpersist', 'all')
             .appendTo($('body'));
     }
