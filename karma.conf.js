@@ -46,8 +46,8 @@ module.exports = function (config) {
         }
     };
     if (process.env.TRAVIS) {
-        configuration.browsers = ['Chrome_no_sandbox'];
+        configuration.browsers = ['Chrome_large_no_sandbox'];
     }
 
-    config.set();
+    config.set(configuration);
 };
