@@ -7,44 +7,57 @@ webpackConfig.module.postLoaders = [{
 }]
 
 module.exports = function (config) {
-  config.set({
-  	// basePath: '.',
-	browsers: ['chrome_large'],
-  customLaunchers: {
-    chrome_large: {
-      base: 'Chrome',
-      flags: [
-          '--window-size=1100,600',
-          '--window-position=-0,0'
-      ]
+    var configuration = {
+        // basePath: '.',
+        browsers: ['chrome_large'],
+        customLaunchers: {
+            chrome_large: {
+                base: 'Chrome',
+                flags: [
+                    '--window-size=1100,600',
+                    '--window-position=-0,0'
+                ]
+            },
+            Chrome_large_no_sandbox: {
+                base: 'Chrome',
+                flags: [
+                    '--window-size=1100,600',
+                    '--window-position=-0,0',
+                    '--no-sandbox'
+                ],
+            }
+        },
+        files: [
+            'test/runner.coverage.js'
+        ],
+        plugins: [
+            'karma-chrome-launcher',
+            'karma-chai',
+            'karma-mocha',
+            'karma-sourcemap-loader',
+            'karma-webpack',
+            'karma-coverage',
+            'karma-mocha-reporter'
+        ],
+        frameworks: [ 'chai', 'mocha' ],
+        preprocessors: {
+            'test/**/*': ['webpack', 'sourcemap'],
+            'src/**/*': ['webpack', 'sourcemap']
+        },
+        coverageReporter: {
+            type : 'html',
+            dir : 'coverage/'
+        },
+        reporters: [ 'progress', 'coverage' ],
+        singleRun: true,
+        webpack: webpackConfig,
+        webpackServer: {
+            noInfo: true
+        }
+    };
+    if (process.env.TRAVIS) {
+        configuration.browsers = ['Chrome_no_sandbox'];
     }
-  },
-	files: [
-		'test/runner.coverage.js'
-	],
-	plugins: [
-      'karma-chrome-launcher',
-      'karma-chai',
-      'karma-mocha',
-      'karma-sourcemap-loader',
-      'karma-webpack',
-      'karma-coverage',
-      'karma-mocha-reporter'
-    ],
-	frameworks: [ 'chai', 'mocha' ],
-	preprocessors: {
-        'test/**/*': ['webpack', 'sourcemap'],
-        'src/**/*': ['webpack', 'sourcemap']
-	},
-  coverageReporter: {
-    type : 'html',
-    dir : 'coverage/'
-  },
-	reporters: [ 'progress', 'coverage' ],
-	singleRun: true,
-	webpack: webpackConfig,
-	webpackServer: {
-      noInfo: true
-    }
-  });
+
+    config.set();
 };
