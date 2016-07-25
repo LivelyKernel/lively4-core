@@ -187,9 +187,9 @@ export function removeIndex(subdir, options) {
         type: "removeIndex"
       });
 
-      stopWorker(subdir);
+      // stopWorker(subdir);
 
-      indexStatus[subdir] = "unavailable";
+      delete indexStatus[subdir];
     });
   });
 }
