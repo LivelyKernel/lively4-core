@@ -139,7 +139,7 @@ function stopWorker(subdir) {
 
 export function createIndex(subdir, options) {
   return startWorker(subdir).then(() => {
-    new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       if (!rootFolder) {
         console.log("[Indexing] Cannot create index, no root folder set");
         reject("Error: no root folder set");
@@ -170,6 +170,26 @@ export function createIndex(subdir, options) {
       });
 
       indexStatus[subdir] = "indexing";
+    });
+  });
+}
+
+export function removeIndex(subdir, options) {
+  return startWorker(subdir).then(() => {
+    new Promise((resolve, reject) => {
+      if (!rootFolder) {
+        console.log("[Indexing] Cannot remove index, no root folder set");
+        reject("Error: no root folder set");
+        return;
+      }
+
+      send(workers[subdir], {
+        type: "removeIndex"
+      });
+
+      // stopWorker(subdir);
+
+      delete indexStatus[subdir];
     });
   });
 }

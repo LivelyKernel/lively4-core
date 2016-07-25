@@ -30,6 +30,16 @@ export function saveIndexJson(jsonIndex, filename, options) {
   });
 }
 
+// TODO: service worker doesn't provide delete yet
+export function removeIndexFile(filename, options) {
+  let path = `https://lively4${options.path}/${filename}`;
+  let headers = new Headers();
+  return fetch(path, {
+    method: "DELETE",
+    headers: headers,
+  });
+}
+
 export function checkIndexFile(filename, options) {
   return new Promise((resolve, reject) => {
     let path = `https://lively4${options.path}/${filename}`;
