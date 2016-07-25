@@ -11,6 +11,22 @@ $ npm install stack-es2015-module --save
 
 Or download the [stack.js](https://raw.githubusercontent.com/onsetsu/stack-es2015-module/master/stack.js) file.
 
+## Building
+
+```
+$ npm run-script build
+```
+
+creates the `bundle.js` file in the `dist` folder.
+
+## Testing
+
+As npm package:
+
+```
+$ npm test
+```
+
 ## Example
 
 ```js
@@ -50,14 +66,6 @@ Pushes the `element` at the top of the stack.
 
 Pushes the `element` at the top of the stack and executes the `callback` with the optional `context`.
 After successfully returning from the `callback` or upon an uncatched error, the top element is poped from the stack.
-
-## Testing
-
-As npm package:
-
-```
-$ npm test
-```
 
 ## Licence
 

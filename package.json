@@ -5,7 +5,7 @@
   "main": "dist/bundle.js",
   "jsnext:main": "src/stack.js",
   "scripts": {
-    "build": "webpack -p",
+    "build": "set NODE_ENV=production && webpack --define process.env.NODE_ENV='\"production\"'",
     "watch": "webpack -d --watch",
     "test": "karma start --single-run",
     "coverage": "karma start karma-coverage.conf.js"
