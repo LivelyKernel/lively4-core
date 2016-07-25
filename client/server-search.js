@@ -7,7 +7,8 @@ export function setup(options) {
 
     let fetchStatus =  () => {
       fetch(`${window.location.origin}/api/search/createIndex?location=${location}`).then( (response) => {
-        if (response.statusText == "OK") {
+        let responseJson = await response.json();
+        if (responseJson.indexStatus == "available") {
           resolve();
           clearInterval(interval);
         }
