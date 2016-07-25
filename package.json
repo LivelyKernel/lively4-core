@@ -1,8 +1,9 @@
 {
-  "name": "hyperlively",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "stack-es2015-modules",
+  "version": "1.0.4",
+  "description": "The stack data type as es2015 module",
+  "main": "dist/bundle.js",
+  "jsnext:main": "src/stack.js",
   "scripts": {
     "build": "webpack -p",
     "watch": "webpack -d --watch",
@@ -11,14 +12,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/athomschke/hyperlively.git"
+    "url": "git+https://github.com/onsetsu/stack-es2015-module.git"
   },
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "stack",
+    "data",
+    "type"
+  ],
+  "author": {
+    "name" : "Stefan Ramson",
+    "email" : "stefan.ramson@gmail.com",
+    "url" : "https://github.com/onsetsu/"
+  },
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/athomschke/hyperlively/issues"
+    "url": "https://github.com/onsetsu/stack-es2015-module/issues"
   },
-  "homepage": "https://github.com/athomschke/hyperlively",
+  "homepage": "https://github.com/onsetsu/stack-es2015-module#readme",
   "dependencies": {
     "babel-core": "^6.7.7",
     "babel-loader": "^6.2.4",

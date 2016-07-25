@@ -1,15 +1,17 @@
 var webpack = require('webpack');
 var path = require('path');
 
-var BUILD_DIR = path.resolve(__dirname, 'src/client/public');
+var BUILD_DIR = path.resolve(__dirname, 'dist');
 var APP_DIR = path.resolve(__dirname, 'src/client/app');
+var JSNEXT_MAIN = path.resolve(__dirname, require('./package.json')['jsnext:main']);
 
 var config = {
-  entry: APP_DIR + '/index.jsx',
+  entry: JSNEXT_MAIN,
   output: {
     path: BUILD_DIR,
     filename: 'bundle.js'
   },
+  devtool: "inline-source-map",
   module : {
     loaders : [
       {
