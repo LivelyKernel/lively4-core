@@ -1,6 +1,6 @@
 'use strict';
 
-import Stack from './../stack.js';
+import Stack from '../src/stack.js';
 
 describe('Stack', function() {
     it('returns the latest pushed element', () => {
