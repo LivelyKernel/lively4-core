@@ -11,14 +11,6 @@ export function setup(options) {
   return Promise.resolve();
 }
 
-function normalizeScores(results) {
-  let maxScore = _.max(results, "score").score;
-  return _.map(results, item => {
-    item.score = item.score / maxScore;
-    return item;
-  });
-}
-
 export function find(pattern) {
   // find is bound to the mount object, so -this- is the mount
   let options = this.options;
@@ -37,11 +29,7 @@ export function find(pattern) {
   }
 
   return fetch(`https://api.github.com/search/code?q=${pattern}+${queryOptionsString}`, headers).then( async (response) => {
-    let responseJson = await response.json()
-
-    // TODO: find better way to combine lunr and github scores
-    // normalize githubs scores for now
-    responseJson.items = normalizeScores(responseJson.items);
+    let responseJson = await response.json();
 
     return _.map(responseJson.items, (item) => {
       let strippedItem = _.pick(item, ["path", "score"]);
