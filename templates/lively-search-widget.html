@@ -26,7 +26,7 @@
     .text-entry {
       display: block;
     }
-    #searchResults {
+    lively-list {
       max-height: 200px;
       margin-top: 15px;
       word-wrap: break-word;
@@ -34,9 +34,16 @@
     .fa-spinner {
       margin: 20px auto 0px auto;
     }
-    #noResults {
+    .no-results {
       text-align: center;
       margin-top: 15px;
+    }
+    .divider {
+      height: 1px;
+      width: 90%;
+      margin: auto;
+      margin-top: 20px;
+      background-color: black;
     }
   </style>
   <div class="container">
@@ -49,9 +56,13 @@
         <i class="fa fa-cog"></i>
       </button>
     </div>
-    <i class="fa fa-spinner fa-pulse fa-fw"></i>
-    <span id="noResults">No results found</span>
+    <i id="searchSpinner" class="fa fa-spinner fa-pulse fa-fw"></i>
+    <span id="noResults" class="no-results">No results found</span>
     <lively-list id="searchResults"></lively-list>
+    <div class="divider"></div>
+    <i id="searchSpinner-github" class="fa fa-spinner fa-pulse fa-fw"></i>
+    <span id="noResults-github" class="no-results">No github results found</span>
+    <lively-list id="searchResults-github"></lively-list>
   </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
