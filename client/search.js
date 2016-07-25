@@ -30,8 +30,8 @@ function loadMounts() {
   }).then(mounts => {
     mounts.filter(m => {
       return m.name !== "server" && searchModules[m.name];
-    }).forEach(db => {
-      availableMounts[db.name][db.path] = db;
+    }).forEach(mount => {
+      availableMounts[mount.name][mount.path] = mount;
     });
   }).catch(err => {
     lively.notify("Error: ", err, 5);
@@ -81,12 +81,21 @@ export function prepareForSearch(mountType, path) {
 }
 
 export function getStatus(mountType, path) {
-  let db = availableMounts[mountType][path];
-  if (!db) {
+  let mount = availableMounts[mountType][path];
+  if (!mount) {
     return Promise.reject("Mount not found");
   }
 
-  return searchModules[mountType].getStatus(path, db);
+  return searchModules[mountType].getStatus(path, mount);
+}
+
+export function removeIndex(mountType, path) {
+  let mount = availableMounts[mountType][path];
+  if (!mount) {
+    return Promise.reject("Mount not found");
+  }
+
+  return searchModules[mountType].removeIndex(path, mount);
 }
 
 export function search(query) {

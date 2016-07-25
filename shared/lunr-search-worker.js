@@ -67,6 +67,9 @@ export default class SearchWorker {
       case "search":
         this.search(m.query, m.msgId);
         break;
+      case "removeIndex":
+        this.removeIndex();
+        break;
       case "stop":
         this.stop();
         break;
@@ -161,6 +164,10 @@ export default class SearchWorker {
     }
 
     this.saveIndexFile();
+  }
+
+  async removeIndex() {
+    this.cp.removeIndexFile(this.idxFileName, this.options);
   }
 
   async addFile(relPath) {

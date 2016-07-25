@@ -29,6 +29,14 @@ export function saveIndexJson(jsonIndex, filename) {
   });
 }
 
+export function removeIndexFile(filename) {
+  return new Promise( (resolve, reject) => {
+    fs.unlink(filename, (err) => {
+      resolve();
+    });
+  });
+}
+
 export function checkIndexFile(filename, options) {
   return new Promise((resolve, reject) => {
     try {
