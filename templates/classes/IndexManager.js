@@ -20,6 +20,11 @@ export default class IndexManager extends Morph {
       this.createIndex(target.dataset.mountType, target.dataset.path);
     });
 
+    $(this.getSubmorph(".container")).on("click", ".remove-button", evt => {
+      let target = evt.currentTarget;
+      this.removeIndex(target.dataset.mountType, target.dataset.path);
+    });
+
     let mountRequest = new Request("https://lively4/sys/mounts");
     Promise.all([
       fetch(mountRequest).then(resp => {
@@ -69,6 +74,7 @@ export default class IndexManager extends Morph {
         <td>
           <button data-path=${path} data-mount-type=${mountType} class="refresh-button" title="Refresh status"><i class="fa fa-refresh" aria-hidden="true"></i></button>
           <button data-path=${path} data-mount-type=${mountType} class="create-button" title="Load or create index"><i class="fa fa-plus" aria-hidden="true"></i></button>
+          <button data-path=${path} data-mount-type=${mountType} class="remove-button" title="Remove index"><i class="fa fa-trash" aria-hidden="true"></i></button>
         </td>
       </tr>`
   }
@@ -88,6 +94,15 @@ export default class IndexManager extends Morph {
     console.log("refresh index at", mountType, path);
     search.getStatus(mountType, path).then(status => {
       statusText.innerHTML = status;
+    });
+  }
+
+  removeIndex(mountType, path) {
+    console.log("remove index at", mountType, path);
+    let statusText = this.getSubmorph(`#${path.slice(1)}-status`);
+    statusText.innerHTML = `<i class="fa fa-spinner fa-pulse fa-fw"></i>`;
+    search.removeIndex(mountType, path).then(() => {
+      this.refreshIndex(mountType, path);
     });
   }
 
