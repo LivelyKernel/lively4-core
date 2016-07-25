@@ -14,14 +14,6 @@ module.exports = function (config) {
                     '--no-sandbox'
                 ]
             },
-            Chrome_large_no_sandbox: {
-                base: 'Chrome',
-                flags: [
-                    '--window-size=1100,600',
-                    '--window-position=-0,0',
-                    '--no-sandbox'
-                ],
-            },
             ChromeCanary_Travis_CI_large_no_sandbox: {
                 base: 'ChromeCanary',
                 flags: [
