@@ -29,19 +29,17 @@ export default class IndexManager extends Morph {
       }),
       this.appendServerRepos()
     ]).then(() => {
-      let availableMounts = search.getAvailableMounts();
-
-      for (let type in availableMounts) {
-        if (type !== "server" && type !== "dropbox") {
-          continue;
+      search.getAvailableMounts().then(availableMounts => {
+        for (let type in availableMounts) {
+          if (type !== "server" && type !== "dropbox") {
+            continue;
+          }
+          for (let path in availableMounts[type]) {
+            this.refreshIndex(type, path);
+          }
         }
-        for (let path in availableMounts[type]) {
-          this.refreshIndex(type, path);
-        }
-      }
+      });
     });
-
-
   }
 
   appendDropboxes(mounts) {
