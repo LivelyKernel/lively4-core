@@ -9,7 +9,7 @@ As npm for Node.js:
 $ npm install stack-es2015-module --save
 ```
 
-Or download the [bundle.js](https://raw.githubusercontent.com/onsetsu/stack-es2015-module/master/dist/stack-es2015-modules.js) file.
+Or download the [bundle](https://raw.githubusercontent.com/onsetsu/stack-es2015-module/master/dist/stack-es2015-modules.js) file.
 
 ## Building
 
@@ -17,7 +17,7 @@ Or download the [bundle.js](https://raw.githubusercontent.com/onsetsu/stack-es20
 $ npm run-script build
 ```
 
-creates the `bundle.js` file in the `dist` folder.
+creates the *bundle* file in the `dist` folder.
 
 ## Testing
 

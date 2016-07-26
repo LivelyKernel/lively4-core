@@ -29,17 +29,18 @@ module.exports = function (config) {
         plugins: [
             'karma-chrome-launcher',
             'karma-chai',
+            'karma-sinon',
             'karma-mocha',
             'karma-sourcemap-loader',
             'karma-webpack',
             'karma-mocha-reporter'
         ],
-        frameworks: [ 'chai', 'mocha' ],
+        frameworks: [ 'chai', 'mocha', 'sinon' ],
         preprocessors: {
             'test/**/*': ['webpack', 'sourcemap'],
             'src/**/*': ['webpack', 'sourcemap']
         },
-        reporters: [ 'progress' ],
+        reporters: [ 'progress', 'mocha' ],
         singleRun: false,
         webpack: webpackConfig,
         webpackServer: {
