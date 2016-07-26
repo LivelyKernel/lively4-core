@@ -8,7 +8,6 @@ import * as config from 'src/client/morphic/config.js';
 
 // import Point from 'src/external/lively.graphics/index.js'
 
-
 export default class HaloGrabItem extends HaloItem {
  
   
