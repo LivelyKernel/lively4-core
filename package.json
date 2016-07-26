@@ -46,7 +46,6 @@
     "reactrangeslider": "^2.0.0",
     "redux": "^3.5.2",
     "require": "^2.4.20",
-    "stack-es2015-modules": "^1.0.3",
     "webpack": "^1.13.0"
   },
   "devDependencies": {
