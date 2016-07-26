@@ -184,12 +184,14 @@ export default class Services extends Morph {
           success(data);
         }
       },
-      error: (jqXHR, textStatus, errorThrown) => {
-        console.log(errorThrown);
-        this.removeAllItems();
-        this.showMessageInServiceList('Cannot connect to server.');
-      }
+      error: this.handleAjaxError.bind(this)
     });
+  }
+
+  handleAjaxError(jqXHR, textStatus, errorThrown) {
+    console.log(errorThrown);
+    this.removeAllItems();
+    this.showMessageInServiceList('Cannot connect to server.');
   }
 
   unselectAll() {
