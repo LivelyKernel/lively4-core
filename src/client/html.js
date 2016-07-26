@@ -7,9 +7,21 @@
 export default class HTML {
   
   static hello() {
-    alert("Hello World...")
-    debugger
+    alert("Hello World...");
   }
+  
+  static findAllNodes(visit, all) {
+  	if (!all) { all = new Set() }
+  	if (!visit) { visit = document.querySelectorAll('*') }
+  	for (var ea of visit) {
+  		all.add(ea);
+  		if (ea.shadowRoot) {
+  			var subobjects = ea.shadowRoot.querySelectorAll('*');
+  			this.findAllNodes(subobjects, all);
+  		}
+  	}
+  	return Array.from(all);
+  } 
   
   // #JENS #ContinueWork here #NotFinished... load/save for tim
   static getFilter(ea) {
@@ -17,7 +29,8 @@ export default class HTML {
   }
   
   static getHtmlContent(body) {
-    return _.filter(body.childNodes, this.getFilter).map( (ea) => ea.outerHTML).join("\n")
+    return _.filter(body.childNodes, this.getFilter).map( 
+      (ea) => ea.outerHTML).join("\n");
   }
   
   static clearHtmlContent(body) {

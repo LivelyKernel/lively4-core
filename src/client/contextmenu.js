@@ -128,7 +128,8 @@ export default class ContextMenu {
           morph.style.width = "200px";
           morph.style.height = "100px";
           lively.setPosition(morph, lively.pt(evt.pageX, evt.pageY));
-          morph.style.backgroundColor = "blue";
+          // morph.style.backgroundColor = "blue";
+          morph.style.backgroundColor = 'rgba(40,40,40,0.5)'
           $('body')[0].appendChild(morph);
           this.hide();
       }]
