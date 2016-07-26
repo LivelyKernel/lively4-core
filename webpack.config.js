@@ -44,7 +44,7 @@ if(process.env.npm_lifecycle_event == 'build') {
 
     config.output.library = 'stack-es2015-modules';
     config.output.libraryTarget = 'umd';
-    config.output.umdNamedDefine = true
+    config.output.umdNamedDefine = true;
 }
 
 module.exports = config;
