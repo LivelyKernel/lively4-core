@@ -54,6 +54,7 @@ export default class Services extends Morph {
     this.logInterval = null;
 
     this.detachedCallback = this.unload;
+    this.ensureRemoteServicesMounted();
   }
 
   unload() {
@@ -116,7 +117,7 @@ export default class Services extends Morph {
 
   settingsButtonClick() {
     var userInput;
-    userInput = window.prompt('Please enter service endpoint:', servicesURL);
+    userInput = window.prompt('Please enter a URL to a lively4-services instance:', servicesURL);
     if (userInput === null) return;
     servicesURL = userInput;
     mountRemoteServices();
@@ -281,6 +282,20 @@ export default class Services extends Morph {
     seconds = seconds % 60;
     if (seconds) { return seconds + ' second' + ending(seconds); }
     return 'just now';
+  }
+  
+  ensureRemoteServicesMounted() {
+    $.getJSON("https://lively4/sys/mounts", function(mounts) {
+      var mounted = false;
+      mounts.forEach(ea => {
+        if (ea.path === mountEndpoint) {
+          mounted = true;
+        }
+      });
+      if (!mounted) {
+        this.settingsButtonClick();
+      }
+    }.bind(this));
   }
   
   mountRemoteServices() {
