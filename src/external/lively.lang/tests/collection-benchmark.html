@@ -1,0 +1,46 @@
+<html>
+<head></head>
+<body>
+    <script>
+var Functions = {
+    timeToRunN: function (func, n, arg0, arg1, arg2) {
+        var startTime = Date.now();
+        for (var i = 0; i < n; i++)
+            func(arg0, arg1, arg2);
+        return (Date.now() - startTime) / n;
+    }
+}
+
+Array.range = function (begin, end, step) {
+    step = step || 1
+    var result = [];
+    for (var i = begin; i <= end; i += step)
+    result.push(i);
+    return result;
+}
+
+var arr = {
+    forEach: function(arr, it, context) {
+        return arr.forEach(it, context);
+    }
+}
+
+var x = Array.range(0, 10000)
+
+var r1 = Functions.timeToRunN(function() {
+    var result = [];
+    x.forEach(function(ea) { result.push(ea); });
+}, 1000);
+
+var r2 = Functions.timeToRunN(function() {
+    var result = [];
+    arr.forEach(x, function(ea) { result.push(ea); });
+}, 1000);
+
+console.log(r1);
+
+console.log(r2);
+
+    </script>
+</body>
+</html>
