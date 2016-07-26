@@ -14,20 +14,29 @@ describe('string', function() {
     expect([["Date"], [new Date('06/11/2013')]]).to.eql(string.tableize('Date\n06/11/2013'));
   });
 
-  it("lineLookupByIndex", function() {
-    var s = 'test\n123\nfo\nbarbaz\nzork\n';
-    var lookupFunc = string.lineIndexComputer(s);
-    expect(0).to.equal(lookupFunc(0),"char pos: 0");
-    expect(0).to.equal(lookupFunc(1),"char pos: 1");
-    expect(0).to.equal(lookupFunc(4),"char pos: 4");
-    expect(1).to.equal(lookupFunc(5),"char pos: 5");
-    expect(1).to.equal(lookupFunc(7),"char pos: 7");
-    expect(1).to.equal(lookupFunc(8),"char pos: 8");
-    expect(2).to.equal(lookupFunc(9),"char pos: 9");
-    expect(4).to.equal(lookupFunc(23),"char pos: 2");
-    expect(5).to.equal(lookupFunc(24),"char pos: 2");
-    expect(-1).to.equal(lookupFunc(99),"char pos: 9");
+  describe("line index computations", () => {
+
+    it("lineLookupByIndex", function() {
+      var s = 'test\n123\nfo\nbarbaz\nzork\n';
+      var lookupFunc = string.lineIndexComputer(s);
+      expect(0).to.equal(lookupFunc(0),"char pos: 0");
+      expect(0).to.equal(lookupFunc(1),"char pos: 1");
+      expect(0).to.equal(lookupFunc(4),"char pos: 4");
+      expect(1).to.equal(lookupFunc(5),"char pos: 5");
+      expect(1).to.equal(lookupFunc(7),"char pos: 7");
+      expect(1).to.equal(lookupFunc(8),"char pos: 8");
+      expect(2).to.equal(lookupFunc(9),"char pos: 9");
+      expect(4).to.equal(lookupFunc(23),"char pos: 2");
+      expect(5).to.equal(lookupFunc(24),"char pos: 2");
+      expect(-1).to.equal(lookupFunc(99),"char pos: 9");
+    });
+
+    it("newlines are correctly indexed", () => {
+      expect(string.lineIndexComputer("\n\nTest")(1)).equals(1);
+    });
+
   });
+
 
   it("finds index range for line", function() {
     var s = 'test\n123\nfo\nbarbaz\nzork\n';
