@@ -6,8 +6,10 @@ describe("Sync Tool",  function(){
   var that
  
   before("load", function(done){
-    this.timeout(15000);
-    loadComponent("lively-sync").then(c => {that = c; done()})
+    this.timeout(25000);
+    loadComponent("lively-sync")
+      .then(c => {that = c; done()})
+      .catch(e => console.error(e))
   })
   
   it("should load stored value", async () => {
