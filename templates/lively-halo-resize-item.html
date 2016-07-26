@@ -1,30 +1,5 @@
 <template id="lively-halo-resize-item" data-class="HaloResizeItem">
     <style data-src="/src/external/font-awesome/css/font-awesome.min.css"></style>
-    <script type="lively4script" data-name="initialize">
-    () => {
-      System.import(lively4url +"/src/client/morphic/resizing.js").then( function(resizing) {
-        $("body /deep/ resize-halo").off("mousedown").on("mousedown", function(e) {
-          resizing.start(e);
-
-          // attach mousemove handler to body only after mousedown occured
-          $(document).off("mousemove.resize").on("mousemove.resize", function(e) {
-            resizing.move(e);
-
-            // update position of halos on mousemove
-            HaloService.showHalos(window.that);
-          });
-        });
-
-        $("body").off("mouseup.resize").on("mouseup.resize", function(e) {
-          if (resizing.resizing) {
-            resizing.stop(e);
-            // detach mousemove handler from body
-            $(document).off("mousemove.resize");
-          }
-        });
-      });
-    }
-    </script>
     <i class="fa fa-expand fa-flip-horizontal" aria-hidden="true"></i>
 </template>
 <script class="registrationScript">

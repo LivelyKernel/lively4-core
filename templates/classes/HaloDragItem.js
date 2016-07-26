@@ -42,8 +42,6 @@ export default class HaloDragItem extends HaloItem {
   }
   
   
-  // ---
-  
   initialize() {
     this.startCustomDragging()
   }

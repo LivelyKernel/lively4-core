@@ -5,6 +5,10 @@ import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
 import * as config from 'src/client/morphic/config.js';
 
+
+// import Point from 'src/external/lively.graphics/index.js'
+
+
 export default class HaloGrabItem extends HaloItem {
  
   
@@ -158,6 +162,10 @@ export default class HaloGrabItem extends HaloItem {
       return child !== this.grabShadow && child !== this.grabTarget &&
         child.nodeType === 1 && this.nodeComesBehind(child, pos);
     });
+    // ALT position... directly
+    
+    // var nodes.getPosition(this.dragTarget)
+
     targetNode.insertBefore(this.grabShadow, nextChild);
   }
   

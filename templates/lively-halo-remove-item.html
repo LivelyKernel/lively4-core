@@ -1,15 +1,5 @@
 <template id="lively-halo-remove-item" data-class="HaloRemoveItem">
     <style data-src="/src/external/font-awesome/css/font-awesome.min.css"></style>
-    <script type="lively4script" data-name="initialize">
-    () => {
-      System.import(lively4url +"/src/client/morphic/deleting.js").then( function(deleting) {
-        $("body /deep/ remove-halo").off("click").on("click", function() {
-          deleting.handle(window.that);
-          window.HaloService.hideHalos();
-        });
-      });
-    }
-    </script>
     <i class="fa fa-trash-o" aria-hidden="true"></i>
 </template>
 <script class="registrationScript">

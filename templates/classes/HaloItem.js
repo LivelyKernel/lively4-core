@@ -6,7 +6,24 @@ import Morph from './Morph.js'
  */
 
 export default class HaloItem extends Morph {
- 
+  initialize() {
+    // super.initialize()
+    this.registerMouseEvents()
+  }
 
- 
+  registerMouseEvents() {
+    this.registerEvent('click', 'onClick')
+    this.registerEvent('mousedown', 'onMouseDown')
+    this.registerEvent('mouseUp', 'onMouseUp')
+  }
+  
+  registerEvent(eventName, methodName) {
+    if (this[methodName]) {
+      lively.removeEventListener('Morphic', this, eventName)
+      lively.addEventListener('Morphic', this, eventName, 
+        e => this[methodName](e))
+    }  
+  }
+
+  
 }
