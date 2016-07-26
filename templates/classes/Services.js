@@ -1,5 +1,6 @@
 import Morph from './Morph.js';
 
+const mountURL = 'https://lively4/sys/fs/mount';
 const mountEndpoint = '/services';
 const isLocalHost = document.location.hostname.indexOf('localhost') > -1;
 const localBaseURL = 'http://localhost:9007/';
@@ -118,7 +119,7 @@ export default class Services extends Morph {
     userInput = window.prompt('Please enter a URL to a lively4-services instance:', servicesURL);
     if (userInput === null) return;
     servicesURL = userInput;
-    mountRemoteServices();
+    this.mountRemoteServices();
   }
 
   startButtonClick(entryPoint) {
@@ -306,12 +307,12 @@ export default class Services extends Morph {
       'path': mountEndpoint,
       'name': 'http',
       'options': {
-        'base': servicesURL
+        'base': servicesURL + 'mount/'
       }
     };
     
     $.ajax({
-      url: this.getMountURL(),
+      url: mountURL,
       type: 'PUT',
       data: JSON.stringify(mount),
       success: (text) => {
