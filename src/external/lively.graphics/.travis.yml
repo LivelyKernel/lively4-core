@@ -1,0 +1,8 @@
+language: node_js
+
+node_js:
+  - "6"
+
+notifications:
+  email: "robert.krahn@gmail.com"
+  slack: harcommunity:DHnjngxzOUybEggU2lAYdP9R
