@@ -47,13 +47,10 @@ if ('serviceWorker' in navigator) {
       .then( function(){
         console.log("lively.modules loaded... now try to load lively4");
 
-        // (window.__karma__ ?
-        //   System.import(lively4url + "/src/client/lively.js") :
-        //   lively.modules.importPackage(lively4url)
-        // )
-
-        System.import(lively4url + "/src/client/lively.js")
-        .then(function(module) {
+        (window.__karma__ ?
+          System.import(lively4url + "/src/client/lively.js") :
+          window.lively.modules.importPackage(lively4url)
+        ).then(function(module) {
             lively.initializeHalos();
             // lively.initializeSearch();
             lively.components.loadUnresolved();
@@ -75,7 +72,6 @@ if ('serviceWorker' in navigator) {
         })
 
         console.log("loaded lively.modules")
-        console.log("THIS IS NO MAGIC");
       })
 
 

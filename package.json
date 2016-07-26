@@ -27,11 +27,12 @@
   "files": [
     "src/client/lively.js"
   ],
-  "main": "start.html",
+  "main": "src/client/lively.js",
   "lively": {
     "main": "src/client/lively.js",
     "packageMap": {
-      "html": "src/client/lively.js"
+      "lively.lang": "src/external/lively.lang",
+      "lively.graphics": "src/external/lively.graphics"
     }
   },
   "directories": {
