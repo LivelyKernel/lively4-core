@@ -32,7 +32,7 @@ describe('string', function() {
     });
 
     it("newlines are correctly indexed", () => {
-      expect(string.lineIndexComputer("\n\nTest")(1)).equals(1);
+      expect(string.lineIndexComputer("\n\nTest")(1)).to.equal(1);
     });
 
   });
