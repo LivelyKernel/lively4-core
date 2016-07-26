@@ -9,7 +9,7 @@ As npm for Node.js:
 $ npm install stack-es2015-module --save
 ```
 
-Or download the [bundle.js](https://raw.githubusercontent.com/onsetsu/stack-es2015-module/master/dist/bundle.js) file.
+Or download the [bundle.js](https://raw.githubusercontent.com/onsetsu/stack-es2015-module/master/dist/stack-es2015-modules.js) file.
 
 ## Building
 

@@ -1,8 +1,8 @@
 {
   "name": "stack-es2015-modules",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "description": "The stack data type as es2015 module",
-  "main": "dist/bundle.js",
+  "main": "dist/stack-es2015-modules.js",
   "jsnext:main": "src/stack.js",
   "scripts": {
     "build": "set NODE_ENV=production && webpack --define process.env.NODE_ENV='\"production\"'",

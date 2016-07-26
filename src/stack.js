@@ -5,6 +5,7 @@ export default class Stack {
 
     push(el) {
         this.arr.push(el);
+
     }
 
     pop() {

@@ -9,7 +9,7 @@ var config = {
     //entry: JSNEXT_MAIN.toString(),
     output: {
         path: BUILD_DIR,
-        filename: 'bundle.js'
+        filename: 'stack-es2015-modules.js'
     },
     devtool: "inline-source-map",
     module : {
@@ -38,9 +38,13 @@ var config = {
         }
     }
 };
-console.log(process.env.npm_lifecycle_event)
+console.log(process.env.npm_lifecycle_event);
 if(process.env.npm_lifecycle_event == 'build') {
     config.entry = JSNEXT_MAIN;
+
+    config.output.library = 'stack-es2015-modules';
+    config.output.libraryTarget = 'umd';
+    config.output.umdNamedDefine = true
 }
 
 module.exports = config;
