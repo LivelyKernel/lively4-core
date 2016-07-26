@@ -1,5 +1,6 @@
 import Morph from './Morph.js';
 
+const mountURL = 'https://lively4/sys/fs/mount';
 const mountEndpoint = '/services';
 const isLocalHost = document.location.hostname.indexOf('localhost') > -1;
 const localBaseURL = 'http://localhost:9007/';
@@ -54,6 +55,7 @@ export default class Services extends Morph {
     this.logInterval = null;
 
     this.detachedCallback = this.unload;
+    this.ensureRemoteServicesMounted();
   }
 
   unload() {
@@ -95,11 +97,11 @@ export default class Services extends Morph {
       console.log('Nothing to remove');
       return;
     }
-    this.post('remove', { id: this.pid }, function(res) {
+    this.post('remove', { id: this.pid }, (res) => {
       this.pid = null;
       console.log(res);
       this.refreshServiceList();
-    }.bind(this));
+    });
   }
 
   editButtonClick() {
@@ -109,17 +111,15 @@ export default class Services extends Morph {
   cloneButtonClick() {
     var gitURL = window.prompt('Please enter a GitHub link to clone:');
     if (gitURL === null) return;
-    this.post('clone', { url: gitURL }, function(res) {
-      console.log(res);
-    });
+    this.post('clone', { url: gitURL });
   }
 
   settingsButtonClick() {
     var userInput;
-    userInput = window.prompt('Please enter service endpoint:', servicesURL);
+    userInput = window.prompt('Please enter a URL to a lively4-services instance:', servicesURL);
     if (userInput === null) return;
     servicesURL = userInput;
-    mountRemoteServices();
+    this.mountRemoteServices();
   }
 
   startButtonClick(entryPoint) {
@@ -137,12 +137,12 @@ export default class Services extends Morph {
   }
 
   stopButtonClick(evt) {
-    this.post('stop', { id: this.pid }, function(res) {
+    this.post('stop', { id: this.pid }, (res) => {
       console.log(res);
       this.refreshServiceList();
       window.clearInterval(this.logInterval);
       this.logInterval = null;
-    }.bind(this));
+    });
   }
 
   debugButtonClick(evt) {
@@ -173,13 +173,18 @@ export default class Services extends Morph {
   /*
   * Helper functions
   */
-  post(endpoint, data, success, error) {
+  post(endpoint, data, success) {
     $.ajax({
       url: servicesURL + endpoint,
       type: 'POST',
       data: JSON.stringify(data),
       contentType: 'application/json',
-      success: success,
+      success: (data) => {
+        console.log(data);
+        if (success) {
+          success(data);
+        }
+      },
       error: this.handleAjaxError.bind(this)
     });
   }
@@ -268,7 +273,7 @@ export default class Services extends Morph {
   }
 
   msToString(milliseconds) {
-    function ending(number) { return (number > 1) ? 's' : ''; }
+    var ending = (number) => { return (number > 1) ? 's' : ''; };
     var seconds = Math.floor(milliseconds / 1000);
     var years = Math.floor(seconds / 31536000);
     if (years) { return years + ' year' + ending(years); }
@@ -283,24 +288,38 @@ export default class Services extends Morph {
     return 'just now';
   }
   
+  ensureRemoteServicesMounted() {
+    $.getJSON("https://lively4/sys/mounts", (mounts) => {
+      var mounted = false;
+      mounts.forEach(ea => {
+        if (ea.path === mountEndpoint) {
+          mounted = true;
+        }
+      });
+      if (!mounted) {
+        this.settingsButtonClick();
+      }
+    });
+  }
+  
   mountRemoteServices() {
     var mount = {
       'path': mountEndpoint,
       'name': 'http',
       'options': {
-        'base': servicesURL
+        'base': servicesURL + 'mount/'
       }
     };
     
     $.ajax({
-      url: this.getMountURL(),
+      url: mountURL,
       type: 'PUT',
       data: JSON.stringify(mount),
       success: (text) => {
-        console.log('mounted ' + mountEndpoint);
+        console.log('Mounted ' + mountEndpoint);
       },
-      error: function(xhr, status, error) {
-        console.log('could not mount ' + mountEndpoint + ' ' + error);
+      error: (xhr, status, error) => {
+        console.log('Could not mount ' + mountEndpoint + ' ' + error);
       }
     });
   }
@@ -322,9 +341,9 @@ export default class Services extends Morph {
       this.entryPoint.value = '';
       return;
     }
-    this.post('get', { id: this.pid }, function(res) {
+    this.post('get', { id: this.pid }, (res) => {
       this.logEditor.setValue(res[this.logType]);
       this.logEditor.gotoPageDown();
-    }.bind(this));
+    });
   }
 }
