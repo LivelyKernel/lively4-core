@@ -57,18 +57,18 @@ export default class RdfaMovieDb extends Morph {
   
   registerMergeDuplicatesButton() {
     $(this.shadowRoot.querySelector("#merge-duplicates-button")).on('click', () => {
-      this.movies = this.mergeDuplicateMovies(this.movies);
-      console.log("mergedDuplicateMovies", this.movies);
-      this.generateTable(this.movies);
+      this.movieProjections = this.mergeDuplicateMovies(this.movieProjections);
+      console.log("movieProjections (merged duplicates)", this.movieProjections);
+      this.generateTable(this.movieProjections);
     });
   }
   
   registerMergeImdbRottenButton() {
     $(this.shadowRoot.querySelector("#merge-imdb-rotten-button")).on('click', () => {
-      this.enrichWithOtherDbMovieId(this.movies).then(() => {
-        this.movies = this.mergeImdbRottenMovies(this.movies);
-        console.log("mergedImdbRottenMovies", this.movies);
-        this.generateTable(this.movies);
+      this.enrichWithOtherDbMovieId(this.movieProjections).then(() => {
+        this.movieProjections = this.mergeImdbRottenMovies(this.movieProjections);
+        console.log("movieProjections (merged imdb-rotten)", this.movieProjections);
+        this.generateTable(this.movieProjections);
       }).catch((reason) => console.log("Error merging IMDB + rottentomatoes", reason));
     });
   }
@@ -99,12 +99,15 @@ export default class RdfaMovieDb extends Morph {
         });
       }
       
+      const movieName = Array.isArray(movieProjection.name) ? movieProjection.name[0] : movieProjection.name;
+      const movieUrl = Array.isArray(movieProjection.url) ? movieProjection.url[0] : movieProjection.url;
+      
       this.table.append($('<tr>')
         .append($('<td>')
-          .append(movieProjection.name))
+          .append(movieName))
         .append($('<td>')
-          .append($('<a>').attr('href', movieProjection.url.match(/^http/) ? movieProjection.url : 'http://' + movieProjection.url).attr('target', '_blank')
-            .append(movieProjection.url)
+          .append($('<a>').attr('href', movieUrl.match(/^http/) ? movieProjection.url : 'http://' + movieUrl).attr('target', '_blank')
+            .append(movieUrl)
           )
         )
         .append($('<td>')
@@ -141,6 +144,7 @@ export default class RdfaMovieDb extends Morph {
     triples.push(new RdfaTriple(reviewUuid, 'http://schema.org/reviewRating', ratingUuid));
     triples.push(new RdfaTriple(reviewUuid, 'http://schema.org/Author', authorUuid));
     
+    //TODO mymovies
     rdfa.storeRdfTriplesTo(this.firebase, 'mymovies', triples).then(()=> {
       this.loadRdfaDataAndFillTable();
     });
@@ -200,37 +204,39 @@ export default class RdfaMovieDb extends Morph {
     });
   }
   
-  mergeDuplicateMovies(movieSubjects) {
-    //TODO
+  mergeDuplicateMovies(movieProjections) {
     let movies = {};
-    let filteredMovieSubjects = [];
-    movieSubjects.forEach((movieSubject) => {
-      if (movieSubject.movieDb.name) {
-        let dbMovies = movies[movieSubject.movieDb.name];
+    let filteredMovieProjections = [];
+    movieProjections.forEach((movieProjection) => {
+      if (movieProjection.movieDb.name) {
+        let dbMovies = movies[movieProjection.movieDb.name];
         if (!dbMovies) {
           dbMovies = {};
-          movies[movieSubject.movieDb.name] = dbMovies;
+          movies[movieProjection.movieDb.name] = dbMovies;
         }
         
-        let sameMovieSubject = dbMovies[movieSubject.movieDb.id];
-        if (sameMovieSubject) {
-          sameMovieSubject.duplicates = sameMovieSubject.duplicates || [];
-          sameMovieSubject.duplicates.push(movieSubject);
+        let sameMovieProjection = dbMovies[movieProjection.movieDb.id];
+        if (sameMovieProjection) {
+          sameMovieProjection.duplicates = sameMovieProjection.duplicates || [];
+          sameMovieProjection.duplicates.push(movieProjection);
+          if (!sameMovieProjection.review && movieProjection.review) {
+            // only for displaying purpose, the triples are not stored to the "sameMovie"
+            sameMovieProjection.review = movieProjection.review;
+          }
         } else {
-          dbMovies[movieSubject.movieDb.id] = movieSubject;
-          filteredMovieSubjects.push(movieSubject);
+          dbMovies[movieProjection.movieDb.id] = movieProjection;
+          filteredMovieProjections.push(movieProjection);
         }
       } else {
-        filteredMovieSubjects.push(movieSubject);
+        filteredMovieProjections.push(movieProjection);
       }
     });
-    return filteredMovieSubjects;
+    return filteredMovieProjections;
   }
   
-  mergeImdbRottenMovies(movieSubjects) {
-    //TODO
-    let imdbMovies = movieSubjects.filter((movieSubject) => movieSubject.movieDb.name == "imdb");
-    let rottenMovies = movieSubjects.filter((movieSubject) => movieSubject.movieDb.name == "rottentomatoes");
+  mergeImdbRottenMovies(movieProjections) {
+    let imdbMovies = movieProjections.filter((movieProjection) => movieProjection.movieDb.name == "imdb");
+    let rottenMovies = movieProjections.filter((movieProjection) => movieProjection.movieDb.name == "rottentomatoes");
     let duplicates = [];
     
     imdbMovies.forEach((imdbMovie) => {
@@ -241,16 +247,19 @@ export default class RdfaMovieDb extends Morph {
         imdbMovie.duplicates = imdbMovie.duplicates || [];
         imdbMovie.duplicates.push(sameMovie);
         duplicates.push(sameMovie);
+        if (!imdbMovie.review && sameMovie.review) {
+            // only for displaying purpose, the triples are not stored to the "imdbMovie"
+            imdbMovie.review = sameMovie.review;
+          }
       });
     });
     
-    return movieSubjects.filter((movieSubject) => !duplicates.includes(movieSubject));
+    return movieProjections.filter((movieProjection) => !duplicates.includes(movieProjection));
   }
   
-  enrichWithOtherDbMovieId(movieSubjects) {
-    //TODO
-    let imdbMovies = movieSubjects.filter((movieSubject) => movieSubject.movieDb.name == "imdb");
-    let rottenMovies = movieSubjects.filter((movieSubject) => movieSubject.movieDb.name == "rottentomatoes");
+  enrichWithOtherDbMovieId(movieProjections) {
+    let imdbMovies = movieProjections.filter((movieProjection) => movieProjection.movieDb.name == "imdb");
+    let rottenMovies = movieProjections.filter((movieProjection) => movieProjection.movieDb.name == "rottentomatoes");
     let promises = [];
     imdbMovies.forEach((imdbMovie) => {
       promises.push(WikiDataAdapter.imdb2rotten(imdbMovie.movieDb.id).then((rottenId) => {
@@ -276,7 +285,7 @@ export default class RdfaMovieDb extends Morph {
   }
   
   setMovieDb(movieProjection) {
-    let url = movieProjection.url;
+    let url = Array.isArray(movieProjection.url) ? movieProjection.url[0] : movieProjection.url;
     let regexArray = [
       {
         prefix: /^www\.rottentomatoes\.com\//,
