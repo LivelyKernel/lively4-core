@@ -65,7 +65,7 @@ module.exports = function (config) {
             exclude: /(test|libs|node_modules|bower_components)\//,
             loader: 'istanbul-instrumenter'
         }];
-        configuration.files = ['test/runner.js'];
+        configuration.files = ['test/runner.coverage.js'];
         configuration.plugins.push('karma-coverage');
         configuration.coverageReporter = {
             type : 'html',
