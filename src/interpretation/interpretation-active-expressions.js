@@ -3,8 +3,6 @@ import Stack from 'stack-es2015-modules';
 import { Listener } from './listener.js';
 import { BaseActiveExpression } from './../base/base-active-expressions.js';
 
-//export { ConstraintInterpreter } from './../constraint-interpreter.js';
-
 const AEXPR_STACK = new Stack();
 
 class Handler {
