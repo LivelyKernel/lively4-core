@@ -1,7 +1,7 @@
 'use strict';
 
 //import * as acorn from './../src/babelsberg/jsinterpreter/acorn.js'
-import Interpreter from './../src/babelsberg/jsinterpreter/interpreter.js'
+import Interpreter from '../src/babelsberg/jsinterpreter/interpreter.js'
 import { aexpr } from '../src/interpretation/interpretation-active-expressions.js';
 
 

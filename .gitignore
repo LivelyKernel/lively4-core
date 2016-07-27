@@ -1,3 +1,6 @@
+.idea
+coverage
+
 # Logs
 logs
 *.log

@@ -1,5 +1,10 @@
 var webpackConfig = require('./webpack.config');
 webpackConfig.devtool = 'inline-source-map';
+webpackConfig.module.postLoaders = [{
+  test: /\.jsx|\.js$/,
+  exclude: /(test|libs|node_modules|bower_components)\//,
+  loader: 'istanbul-instrumenter'
+}]
 
 module.exports = function (config) {
     var configuration = {
@@ -10,8 +15,7 @@ module.exports = function (config) {
                 base: 'Chrome',
                 flags: [
                     '--window-size=1100,600',
-                    '--window-position=-0,0',
-                    '--no-sandbox'
+                    '--window-position=-0,0'
                 ]
             },
             ChromeCanary_Travis_CI_large_no_sandbox: {
@@ -24,7 +28,7 @@ module.exports = function (config) {
             }
         },
         files: [
-            'test/runner.js'
+            'test/runner.coverage.js'
         ],
         plugins: [
             'karma-chrome-launcher',
@@ -33,6 +37,7 @@ module.exports = function (config) {
             'karma-mocha',
             'karma-sourcemap-loader',
             'karma-webpack',
+            'karma-coverage',
             'karma-mocha-reporter'
         ],
         frameworks: [ 'chai', 'mocha', 'sinon' ],
@@ -40,8 +45,12 @@ module.exports = function (config) {
             'test/**/*': ['webpack', 'sourcemap'],
             'src/**/*': ['webpack', 'sourcemap']
         },
-        reporters: [ 'progress', 'mocha' ],
-        singleRun: false,
+        coverageReporter: {
+            type : 'html',
+            dir : 'coverage/'
+        },
+        reporters: [ 'progress', 'coverage', 'mocha' ],
+        singleRun: true,
         webpack: webpackConfig,
         webpackServer: {
             noInfo: true
