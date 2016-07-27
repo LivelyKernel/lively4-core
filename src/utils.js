@@ -44,7 +44,7 @@ export class Stack {
     }
 
     top() {
-        return this.arr.last();
+        return this.arr[this.arr.length - 1];
     }
 
     withElement(el, callback, context) {
