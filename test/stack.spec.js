@@ -1,4 +1,4 @@
-//import Stack from 'stack-es2015-modules';
+import Stack from '../src/stack.js';
 
 function setFoo() {
     this.foo = 42;
@@ -12,7 +12,7 @@ describe('STACK', () => {
 
         expect(obj.foo).to.equal(42);
     });
-    xit('should test the stack', () => {
+    it('should test the stack', () => {
         let s = new Stack();
         s.push(42);
 
