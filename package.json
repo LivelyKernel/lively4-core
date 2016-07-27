@@ -10,15 +10,9 @@
   "scripts": {
     "build": "set NODE_ENV=production && webpack --define process.env.NODE_ENV='\"production\"'",
     "watch": "webpack -d --watch",
-    "test": "karma start --single-run",
-    "coverage": "karma start karma-coverage.conf.js",
-    "old-test": "npm run test-karma",
-    "test-karma": "karma start --single-run",
-    "test-node": "mocha tests --compilers js:babel-core/register --require tests/globalChai.js",
-    "test-chrome-only": "karma start --single-run --browsers Chrome",
-    "test-continuously": "karma start",
-    "test-continuously-chrome-only": "karma start --browsers Chrome",
-    "test-canary": "karma start --browsers ChromeCanary"
+    "test": "karma start karma.conf.js --single-run",
+    "test:watch": "karma start karma.conf.js",
+    "coverage": "karma start karma.conf.js"
   },
   "repository": {
     "type": "git",
