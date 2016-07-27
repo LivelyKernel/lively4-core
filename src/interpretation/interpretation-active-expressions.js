@@ -1,5 +1,5 @@
 import Interpreter from './../babelsberg/jsinterpreter/interpreter.js';
-import { Stack } from './../utils.js';
+import Stack from 'stack-es2015-modules';
 import { Listener } from './listener.js';
 import { BaseActiveExpression } from './../base/base-active-expressions.js';
 

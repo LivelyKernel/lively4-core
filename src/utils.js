@@ -1,4 +1,4 @@
-// TODO this is a copy from reactive object queries repository
+// TODO this is a copy from reactive object queries repository (not completely anymore)
 // TODO extract this into its own library
 
 export function pushIfMissing(array, item) {
@@ -28,33 +28,6 @@ export function removeIfExisting(array, item) {
         return true;
     }
     return false;
-}
-
-export class Stack {
-    constructor() {
-        this.arr = [];
-    };
-
-    push(el) {
-        this.arr.push(el);
-    }
-
-    pop() {
-        this.arr.length--;
-    }
-
-    top() {
-        return this.arr[this.arr.length - 1];
-    }
-
-    withElement(el, callback, context) {
-        this.push(el);
-        try {
-            callback.call(context);
-        } finally {
-            this.pop();
-        }
-    }
 }
 
 export function isPrimitive(elem) {
