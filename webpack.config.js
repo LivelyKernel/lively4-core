@@ -38,13 +38,16 @@ var config = {
         }
     }
 };
-console.log(process.env.npm_lifecycle_event)
+
 if(process.env.npm_lifecycle_event == 'build') {
+    console.log('webpack: use special \'build\' configuration.');
     config.entry = JSNEXT_MAIN;
 
     config.output.library = 'active-expressions';
     config.output.libraryTarget = 'umd';
     config.output.umdNamedDefine = true;
+} else {
+    console.log('webpack: basic configuration used, as no special configuration found, instead found: \'' + process.env.npm_lifecycle_event + '\'.');
 }
 
 module.exports = config;
