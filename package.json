@@ -7,8 +7,9 @@
   "scripts": {
     "build": "set NODE_ENV=production && webpack --define process.env.NODE_ENV='\"production\"'",
     "watch": "webpack -d --watch",
-    "test": "karma start --single-run",
-    "coverage": "karma start karma-coverage.conf.js"
+    "test": "karma start karma.conf.js --single-run",
+    "test:watch": "karma start karma.conf.js",
+    "coverage": "karma start karma.conf.js"
   },
   "repository": {
     "type": "git",

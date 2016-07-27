@@ -1,6 +1,14 @@
 var webpackConfig = require('./webpack.config');
 webpackConfig.devtool = 'inline-source-map';
 
+var type = process.env.npm_lifecycle_event;
+if(type) {
+    console.log('script type: ' + type);
+} else {
+    type = 'test';
+    console.log('no npm_lifecycle_event given, ASSUMING: ' + type);
+}
+
 module.exports = function (config) {
     var configuration = {
         // basePath: '.',
@@ -10,8 +18,7 @@ module.exports = function (config) {
                 base: 'Chrome',
                 flags: [
                     '--window-size=1100,600',
-                    '--window-position=-0,0',
-                    '--no-sandbox'
+                    '--window-position=-0,0'
                 ]
             },
             ChromeCanary_Travis_CI_large_no_sandbox: {
@@ -50,6 +57,23 @@ module.exports = function (config) {
     };
     if (process.env.TRAVIS) {
         configuration.browsers = ['ChromeCanary_Travis_CI_large_no_sandbox'];
+    }
+
+    if (type === 'coverage') {
+        webpackConfig.module.postLoaders = [{
+            test: /\.jsx|\.js$/,
+            exclude: /(test|libs|node_modules|bower_components)\//,
+            loader: 'istanbul-instrumenter'
+        }];
+        configuration.files = ['test/runner.js'];
+        configuration.plugins.push('karma-coverage');
+        configuration.coverageReporter = {
+            type : 'html',
+            dir : 'coverage/'
+        };
+        configuration.reporters.push('coverage');
+        configuration.singleRun = true;
+
     }
 
     config.set(configuration);
