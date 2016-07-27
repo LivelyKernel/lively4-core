@@ -6,7 +6,7 @@ import * as events from 'src/client/morphic/event-helpers.js';
 import * as config from 'src/client/morphic/config.js';
 
 
-// import Point from 'src/external/lively.graphics/index.js'
+// import {Point} from 'lively.graphics'
 
 export default class HaloGrabItem extends HaloItem {
  
