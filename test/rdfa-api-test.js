@@ -66,7 +66,6 @@ describe('RDFa querying api', () => {
     let projections = rdfaApi.queryResolved(data, query, template);
     expect(projections).to.have.length(1);
     let projection = projections[0];
-    console.log(projection)
     expect(projection.url).to.equal("https://www.rottentomatoes.com/m/spectre_2015/");
     expect(projection.name).to.equal("Spectre");
     expect(projection.review.author.name).to.equal("TestAuthor");
