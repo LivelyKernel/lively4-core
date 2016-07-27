@@ -12,11 +12,26 @@ const URL_PATTERN = new RegExp('^(https?:\\/\\/)?'+ // protocol
     '(\\#[-a-z\\d_:]*)?$','i'); // fragment locater
 
 const listenerSampleCode = 
-`import rdfa from 'src/client/rdfa/rdfa-api.js';';
+`import rdfa from 'src/client/rdfa/rdfa-api.js';
 
-rdfa.addRdfaEventListener(
+let id = rdfa.addRdfaEventListener(
   {
+    // put selectors here
     "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : "{{type}}"
+  },
+  {
+    // put mapping here
+    // e.g.
+    //
+    // "title" : "http://ogp.me/ns#title",
+    // 
+    // or a hierarchical one
+    //
+    // "review" : [ "http://schema.org/Review", {
+    //    "author" : [ "http://schema.org/Author", {
+    //          "name" : "http://schema.org/name" } ],
+    //      "reviewRating" : [ "http://schema.org/reviewRating", {
+    //          "ratingValue" : "http://schema.org/ratingValue" } ]
   },
   (graph) => {
     lively.notify("RDFa {{type}} detected");

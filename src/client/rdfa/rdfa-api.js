@@ -12,6 +12,26 @@ const FIREBASE_SAMPLE_CONF = {
 
 export default class RdfaApi {
 
+  static addRdfaEventListener(mapping, template, callback) {
+    const id = generateUuid();
+    this.rdfaListener[id] = {mapping: mapping, template: template, callback: callback};
+    return id;
+  }
+  
+  static removeRdfaEventListener(id) {
+    delete this.rdfaListener[id];
+  }
+
+  static notifyRdfaEventListener() {
+    for (let key in this.rdfaListener) {
+      const listener = this.rdfaListener[key];
+      let projections = this.queryResolved(document.data, listener.mapping, listener.template);
+      if (projections.length > 0) {
+        listener.callback(projections);
+      }
+    }
+  }
+  
   static reloadData() {
     return new Promise((resolve, reject) => {
       let listenerFunc = (() => {
@@ -58,23 +78,6 @@ export default class RdfaApi {
       });
 
       return buckets;
-    });
-  }
-
-  static addRdfaEventListener(mappings, callback) {
-    let mappingArray = Array.isArray(mappings) ? mappings : [mappings];
-    mappingArray.forEach((mapping) => {
-      this.rdfaListener.push({mapping: mapping, callback: callback});
-    });
-  }
-
-  static notifyRdfaEventListener() {
-    this.rdfaListener.forEach((listener) => {
-      let projections = document.data.rdfa.query(listener.mapping);
-      if (projections.length > 0) {
-        //TODO
-        //listener.callback(graphFactory.fromGreenTurtleProjections(projections));
-      }
     });
   }
 
@@ -178,4 +181,4 @@ export default class RdfaApi {
   }
 }
 
-RdfaApi.rdfaListener = [];
+RdfaApi.rdfaListener = {};
