@@ -30,12 +30,13 @@ module.exports = function (config) {
             'karma-chrome-launcher',
             'karma-chai',
             'karma-sinon',
+            'karma-sinon-chai',
             'karma-mocha',
             'karma-sourcemap-loader',
             'karma-webpack',
             'karma-mocha-reporter'
         ],
-        frameworks: [ 'chai', 'mocha', 'sinon' ],
+        frameworks: [ 'chai', 'mocha', 'sinon', 'sinon-chai' ],
         preprocessors: {
             'test/**/*': ['webpack', 'sourcemap'],
             'src/**/*': ['webpack', 'sourcemap']
