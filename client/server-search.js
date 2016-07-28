@@ -6,7 +6,7 @@ export function setup(options) {
     console.log("setup location:", options.path);
 
     let fetchStatus =  () => {
-      fetch(`${window.location.origin}/api/search/createIndex?location=${location}`).then( async (response) => {
+      fetch(`api/search/createIndex?location=${location}`).then( async (response) => {
         let responseJson = await response.json();
         if (responseJson.indexStatus == "available") {
           resolve();
@@ -27,7 +27,7 @@ export function find(pattern) {
   let location = this.path.replace(window.location.origin, "");
 
   // test
-  return fetch(`${window.location.origin}/api/search/search?q=${pattern}&location=${location}`).then( async (response) => {
+  return fetch(`api/search/search?q=${pattern}&location=${location}`).then( async (response) => {
     if (response.status != 200) {
       return [];
     }
@@ -42,7 +42,7 @@ export function find(pattern) {
 }
 
 export function getStatus(subdir, options) {
-  return fetch(`${window.location.origin}/api/search/statusIndex?location=${subdir}`).then((response) => {
+  return fetch(`api/search/statusIndex?location=${subdir}`).then((response) => {
     return response.json();
   }).then(responseJson =>{
     return responseJson.indexStatus;
@@ -50,5 +50,5 @@ export function getStatus(subdir, options) {
 }
 
 export function removeIndex(subdir, options) {
-  return fetch(`${window.location.origin}/api/search/removeIndex?location=${subdir}`);
+  return fetch(`api/search/removeIndex?location=${subdir}`);
 }
