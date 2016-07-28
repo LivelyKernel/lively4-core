@@ -1,11 +1,12 @@
 var webpack = require('webpack');
+var WebpackConfig = require('webpack-config').Config;
 var path = require('path');
 
 var BUILD_DIR = path.resolve(__dirname, 'dist');
 var APP_DIR = path.resolve(__dirname, 'src/client/app');
 var JSNEXT_MAIN = path.resolve(__dirname, require('./package.json')['jsnext:main']);
 
-var config = {
+var config = new WebpackConfig().merge({
     //entry: JSNEXT_MAIN.toString(),
     output: {
         path: BUILD_DIR,
@@ -37,15 +38,18 @@ var config = {
             base: APP_DIR
         }
     }
-};
+});
 
 if(process.env.npm_lifecycle_event == 'build') {
     console.log('webpack: use special \'build\' configuration.');
-    config.entry = JSNEXT_MAIN;
-
-    config.output.library = 'stack-es2015-modules';
-    config.output.libraryTarget = 'umd';
-    config.output.umdNamedDefine = true;
+    config.merge({
+        entry: JSNEXT_MAIN,
+        output: {
+            library: 'stack-es2015-modules',
+            libraryTarget: 'umd',
+            umdNamedDefine: true
+        }
+    });
 } else {
     console.log('webpack: basic configuration used, as no special configuration found, instead found: \'' + process.env.npm_lifecycle_event + '\'.');
 }

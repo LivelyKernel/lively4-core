@@ -5,7 +5,7 @@
   "main": "dist/stack-es2015-modules.js",
   "jsnext:main": "src/stack.js",
   "scripts": {
-    "build": "set NODE_ENV=production && webpack --define process.env.NODE_ENV='\"production\"'",
+    "build": "webpack",
     "watch": "webpack -d --watch",
     "test": "karma start karma.conf.js --single-run",
     "test:watch": "karma start karma.conf.js",
@@ -62,6 +62,7 @@
     "node-static": "^0.7.7",
     "require": "^2.4.20",
     "watchify": "^3.7.0",
-    "webpack": "^1.13.0"
+    "webpack": "^1.13.0",
+    "webpack-config": "^5.2.1"
   }
 }
