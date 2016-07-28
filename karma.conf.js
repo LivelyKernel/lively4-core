@@ -11,24 +11,41 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['mocha', 'requirejs', 'chai'],
+    // frameworks: ['mocha', 'requirejs', 'chai'],
+    // frameworks: [],
+    // 'requirejs' ... !!!! THIS BREAKS Lively Modules
+    frameworks: ['mocha','chai'],
 
+    // frameworks: [],
+    
 
     // list of files / patterns to load in the browser
     files: [
       'src/external/system.src.js',
       'src/external/babel-browser.js',
       'vendor/regenerator-runtime.js',
-      //'src/external/lively.modules-with-lively.vm.js',
+
+      
+      // #Jens, cannot load lively.modules here, because we configure System.js later
+      // ALT: 'src/external/lively.modules-with-lively.vm.js',
+      // 'node_modules/systemjs/dist/system.src.js',
+      // 'node_modules/lively.modules/dist/lively.modules-with-lively.vm.js',
+      
       {pattern: 'node_modules/**/*.js', included: false},
+      {pattern: 'node_modules/**/*.json', included: false},
       {pattern: 'node_modules/chai/chai.js', included: false},
       {pattern: 'node_modules/mocha/mocha.js', included: false},
       {pattern: 'src/**/*.js*', included: false},
+      {pattern: 'src/**/*.css*', included: false},
       {pattern: 'swx-loader.js', included: false},
+      
       {pattern: 'test/**/*.js', included: false},
+      
       {pattern: 'vendor/**/*.js', included: false},
       {pattern: 'templates/**/*', included: false},
       {pattern: 'test-main.js', included: false},
+      {pattern: 'package.json', included: false},
+
       {pattern: 'src/external/focalStorage.js', included: false},
       'test-loader.js'
     ],
@@ -41,13 +58,14 @@ module.exports = function(config) {
       '/test/': '/base/test/',
       '/templates/': '/base/templates/',
       '/vendor/': '/base/vendor/',
+      '/package.json': '/base/package.json',
       '/swx-loader.js': '/base/swx-loader.js',
     },
 
 
     // list of files to exclude
     // TODO: call github api from travis ci
-    exclude: process.env.TRAVIS ? ['test/github-api-test.js'] : [],
+    exclude: ['src/external/**/*-test.js'].concat(process.env.TRAVIS ? ['test/github-api-test.js'] : []),
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
@@ -97,15 +115,17 @@ module.exports = function(config) {
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: false,
 
-    browserNoActivityTimeout: 20000
+    browserNoActivityTimeout: 60000
   });
 
-  if (!process.env.GithubToken) {
-    console.log("\033[7m\033[31m****************************************************************************\033[0m");
-    console.log("\033[7m\033[31m* You need to provide the \"GithubToken\" environment variable to run tests. *\033[0m");
-    console.log("\033[7m\033[31m****************************************************************************\033[0m");
-    process.exit(-1);
-  }
+
+  // Not needed at the moment
+  // if (!process.env.GithubToken) {
+  //   console.log("\033[7m\033[31m****************************************************************************\033[0m");
+  //   console.log("\033[7m\033[31m* You need to provide the \"GithubToken\" environment variable to run tests. *\033[0m");
+  //   console.log("\033[7m\033[31m****************************************************************************\033[0m");
+  //   process.exit(-1);
+  // }
 
   // insert the github token
   fs.writeSync(

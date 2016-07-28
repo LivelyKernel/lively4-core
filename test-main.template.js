@@ -26,7 +26,7 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
     }
   });
 
-  window.lively4url = "http://localhost:9876"
+  window.lively4url = "http://localhost:9876/base"
 
 
   var runTests = ()=> {

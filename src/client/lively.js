@@ -1,5 +1,7 @@
 'use strict';
 
+import './patches.js' // monkey patch the meta sytem....
+
 import * as jquery from '../external/jquery.js';
 import * as _ from '../external/underscore.js';
 
@@ -35,6 +37,8 @@ import * as kernel from 'kernel'
 let $ = window.$,
   babel = window.babel; // known global variables.
 
+
+
 // a) Special shorthands for interactive development
 // b) this is the only reasonable way to use modules in template scripts, due to no shared lexical scope #TODO
 var exportmodules = [
@@ -61,10 +65,11 @@ var exportmodules = [
 // By structuring our modules differently, we still can act as es6 module to the outside but develop at runtime
 // #IDEA: I refactored from "static module and function style" to "dynamic object" style
 export default class Lively {
+  
   static import(moduleName, path, forceLoad) {
-    if (lively.modules && path)
-      lively.modules.reloadModule("" + path);
-
+    if (lively.modules && path) {
+      lively.modules.module("" + path).reload({reloadDeps: true, resetEnv: false})
+    }
     if (!path) path = this.defaultPath(moduleName)
     if (!path) throw Error("Could not imoport " + moduleName + ", not path specified!")
 
@@ -101,8 +106,12 @@ export default class Lively {
   }
 
   static async reloadModule(path) {
+    console.log("reload module: " + path)
     path = "" + path;
-    return lively.modules.reloadModule(path).then( mod => {
+    var module = lively.modules.module(path)
+    return module.reload({reloadDeps: true, resetEnv: false})
+      .then( () => System.import(path))
+      .then( mod => {
       var moduleName = path.replace(/[^\/]*/,"")
       
       var defaultClass = mod.default
@@ -203,22 +212,22 @@ export default class Lively {
   static loaded() {
     // #Refactor with #ContextJS
     // guard againsst wrapping twice and ending in endless recursion
-    if (!console.log.originalFunction) {
-        var nativeLog = console.log;
-        console.log = function() {
-            nativeLog.apply(console, arguments);
-            lively.log.apply(undefined, arguments);
-        };
-        console.log.originalFunction = nativeLog; // #TODO use generic Wrapper mechanism here
-    }
-    if (!console.error.originalFunction) {
-        var nativeError = console.error;
-        console.error = function() {
-            nativeError.apply(console, arguments);
-            lively.log.apply(undefined, arguments);
-        };
-        console.error.originalFunction = nativeError; // #TODO use generic Wrapper mechanism here
-    }
+    // if (!console.log.originalFunction) {
+    //     var nativeLog = console.log;
+    //     console.log = function() {
+    //         nativeLog.apply(console, arguments);
+    //         lively.log.apply(undefined, arguments);
+    //     };
+    //     console.log.originalFunction = nativeLog; // #TODO use generic Wrapper mechanism here
+    // }
+    // if (!console.error.originalFunction) {
+    //     var nativeError = console.error;
+    //     console.error = function() {
+    //         nativeError.apply(console, arguments);
+    //         lively.log.apply(undefined, arguments);
+    //     };
+    //     console.error.originalFunction = nativeError; // #TODO use generic Wrapper mechanism here
+    // }
 
     // General Error Handling
     if (window.onerror === null) {
@@ -437,8 +446,8 @@ export default class Lively {
   }
 
   static initializeHalos() {
-    if ($('lively-halos').size() === 0) {
-        $('<lively-halos>')
+    if ($('lively-halo').size() === 0) {
+        $('<lively-halo>')
             .attr('data-lively4-donotpersist', 'all')
             .appendTo($('body'));
     }

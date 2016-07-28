@@ -7,9 +7,9 @@ import * as kernel from 'kernel';
 // store promises of loaded and currently loading templates
 export var loadingPromises = {};
 
-export var templates = {}
-export var prototypes = {}
-export var proxies = {}
+var _templates
+var _prototypes
+var _proxies
 
 // for compatibility
 export function register(componentName, template, prototype) {
@@ -19,15 +19,18 @@ export function register(componentName, template, prototype) {
 export default class ComponentLoader {
 
   static get templates() {
-    return templates
+    if (!_templates) _templates = {}
+    return _templates
   }
 
   static get prototypes() {
-    return prototypes
+    if (!_prototypes) _prototypes = {}
+    return _prototypes
   }
 
   static get proxies() {
-    return proxies
+     if (!_proxies) _proxies = {}
+    return _proxies
   }
 
   static protypeToComponentName(prototype) {
@@ -55,9 +58,9 @@ export default class ComponentLoader {
     var proto = prototype || Object.create(Morph.prototype);
 
     // For reflection and debugging
-    templates[componentName] = template;
-    prototypes[componentName] = proto;
-    proxies[componentName] = Object.create(proto) // not changeable
+    this.templates[componentName] = template;
+    this.prototypes[componentName] = proto;
+    this.proxies[componentName] = Object.create(proto) // not changeable
 
 
     // #TODO: we should check here, if the prototype already has a createdCallback,
@@ -66,7 +69,7 @@ export default class ComponentLoader {
 
     // #TODO: should we dispatch event 'created' also in attached callback???
     // And what about initizalize call? Actually I think yes. - Felix
-    proxies[componentName].createdCallback = function() {
+    this.proxies[componentName].createdCallback = function() {
       if (persistence.isCurrentlyCloning()) {
         return;
       }
@@ -75,9 +78,9 @@ export default class ComponentLoader {
 
       // clone the template again, so when more elements are created,
       // they get their own copy of elements
-      var clone = document.importNode(templates[componentName], true);
+      var clone = document.importNode(ComponentLoader.templates[componentName], true);
       // #TODO replace the "template" reference with an indirection that can be changed from the outside,
-      // e.g. var clone = document.importNode(templates[componentName], true);
+      // e.g. var clone = document.importNode(this.templates[componentName], true);
       // but beeing able to modify it, because we have a reference should suffice at the moment...
 
       shadow.appendChild(clone);
@@ -85,10 +88,9 @@ export default class ComponentLoader {
       // attach lively4scripts from the shadow root to this
       scriptManager.attachScriptsFromShadowDOM(this);
 
-      if (prototypes[componentName].createdCallback) {
-        prototypes[componentName].createdCallback.call(this);
+      if (ComponentLoader.prototypes[componentName].createdCallback) {
+        ComponentLoader.prototypes[componentName].createdCallback.call(this);
       }
-
 
       // load any unknown elements, which this component might introduce
       ComponentLoader.loadUnresolved(this, true).then((args) => {
@@ -98,32 +100,42 @@ export default class ComponentLoader {
           if (typeof this.initialize === "function") {
             this.initialize();
           }
+          // console.log("dispatch created " +componentName )
+          // console.log("Identitity: " + (window.LastRegistered === this))
+          
+          
           this.dispatchEvent(new Event("created"));
         })
 
 
+      }).catch( e => {
+        console.error(e); 
+        return e
       });
     }
-    proxies[componentName].attachedCallback = function() {
-      if (this.attachedCallback && proxies[componentName].attachedCallback != this.attachedCallback) {
+    this.proxies[componentName].attachedCallback = function() {
+      if (this.attachedCallback && ComponentLoader.proxies[componentName].attachedCallback != this.attachedCallback) {
         this.attachedCallback.call(this);
       }
-      if (prototypes[componentName].attachedCallback) {
-        prototypes[componentName].attachedCallback.call(this);
+      if (ComponentLoader.prototypes[componentName].attachedCallback) {
+        ComponentLoader.prototypes[componentName].attachedCallback.call(this);
       }
     };
-    proxies[componentName].detachedCallback = function() {
-      if (this.detachedCallback && proxies[componentName].detachedCallback != this.detachedCallback) {
+
+    this.proxies[componentName].detachedCallback = function() {
+      
+      console.log("detachedCallback " + this.class + " " + this.id)
+      if (this.detachedCallback && ComponentLoader.proxies[componentName].detachedCallback != this.detachedCallback) {
         this.detachedCallback.call(this);
-      } else if (prototypes[componentName].detachedCallback) {
-        prototypes[componentName].detachedCallback.call(this);
+      } else if (ComponentLoader.prototypes[componentName].detachedCallback) {
+        ComponentLoader.prototypes[componentName].detachedCallback.call(this);
       }
     };
 
     // don't store it just in a lexical scope, but make it available for runtime development
 
     document.registerElement(componentName, {
-      prototype: proxies[componentName]
+      prototype: this.proxies[componentName]
     });
   }
 

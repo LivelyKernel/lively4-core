@@ -120,7 +120,6 @@ export default class ScriptManager {
                 });
 
             } catch(e) {
-                debugger
                 lively.notify('Error adding function: ' + scriptName + ' to object: ' + parent,
                 ""+e , 20, () => lively.openWorkspace("" + e + "Source: " + child.textContent));
                 console.error('Error while adding function ' + scriptName + ' to object:');

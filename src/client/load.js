@@ -1,11 +1,9 @@
 /* Load Lively */
 
-
 var loadCallbacks = []
 export function whenLoaded(cb) {
     loadCallbacks.push(cb)
 }
-
 
 function loadJavaScriptThroughDOM(name, src, force) {
   return new Promise(function (resolve) {
@@ -39,48 +37,30 @@ if ('serviceWorker' in navigator) {
 
     Promise.resolve("")
       .then( function() {
-        if(window.__karma__) {
-          return;
-        }
         return loadJavaScriptThroughDOM("livelyModules",
           lively4url + "/src/external/lively.modules-with-lively.vm.js")})
-      .then( function(){
+      .then( function() {
         console.log("lively.modules loaded... now try to load lively4");
-
-        // (window.__karma__ ?
-        //   System.import(lively4url + "/src/client/lively.js") :
-        //   lively.modules.importPackage(lively4url)
-        // )
-
-        System.import(lively4url + "/src/client/lively.js")
-        .then(function(module) {
-            lively.initializeHalos();
-            lively.initializeSearch();
-            lively.components.loadUnresolved();
-            console.log("running on load callbacks:");
-            loadCallbacks.forEach(function(cb){
-                try {
-                   cb()
-                } catch(e) {
-                    console.log("Error running on load callback: "  + cb + " error: " + e)
-                }
-            });
-
-            if (!window.__karma__) {
-              window.onbeforeunload = function(e) {
-                return 'Do you really want to leave this page?';
-              };
+        return lively.modules.importPackage(lively4url)})
+      .then(function(module) {
+        lively.initializeHalos();
+        // lively.initializeSearch();
+        lively.components.loadUnresolved();
+        console.log("running on load callbacks:");
+        loadCallbacks.forEach(function(cb){
+            try {
+               cb()
+            } catch(e) {
+                console.log("Error running on load callback: "  + cb + " error: " + e)
             }
-            console.log("lively loaded");
-        })
-
-        console.log("loaded lively.modules")
-        console.log("THIS IS NO MAGIC");
+        });
+        if (!window.__karma__) {
+          window.onbeforeunload = function(e) {
+            return 'Do you really want to leave this page?';
+          };
+        }
+        console.log("lively loaded");
       })
-
-
-
-      // })
   }
 
   if (navigator.serviceWorker.controller) {
@@ -88,26 +68,20 @@ if ('serviceWorker' in navigator) {
     // we don't have to do anything here... the service worker is already there
     onReady()
   } else {
-
     navigator.serviceWorker.register(new URL('swx-loader.js', window.location)).then(function(registration) {
         // Registration was successful
         console.log('ServiceWorker registration successful with scope: ', registration.scope);
 
         // so now we have to reload!
-
-
         console.log("ok... lets WAIT WAIT WAIT!!!!")
         // console.log("Lively4 ServiceWorker installed! Reboot needed! ;-)")
         // window.location = window.location
-
     }).catch(function(err) {
         // registration failed
         console.log('ServiceWorker registration failed: ', err);
     });
     navigator.serviceWorker.ready.then(onReady)
   }
-
-
 
   var fs = new Promise(function(resolve, reject) {
       navigator.webkitPersistentStorage.requestQuota(1024 * 1024 * 10, function(grantedQuota) {
@@ -126,17 +100,14 @@ if ('serviceWorker' in navigator) {
               fs.root.getFile(event.data.file, undefined, function(fileEntry) {
                   fileEntry.file(function(file) {
                       var reader = new FileReader()
-
                       reader.onloadend = function(e) {
                           console.log('[LFS] read complete', e)
                           event.ports[0].postMessage({content: reader.result})
                       }
-
                       reader.readAsText(file)
                   })
               }, reject)
           }).catch(reject)
-
           break
         case 'swx:writeFile':
           fs.then((fs) => {
@@ -149,7 +120,6 @@ if ('serviceWorker' in navigator) {
                               content: event.data.content
                           })
                       }
-
                       writer.onerror = reject
                       writer.write(new Blob([event.data.content], {type: 'text/plain'}))
                   }, reject)

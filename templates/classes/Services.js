@@ -1,5 +1,7 @@
 import Morph from './Morph.js';
 
+const mountURL = 'https://lively4/sys/fs/mount';
+const mountEndpoint = '/services';
 const isLocalHost = document.location.hostname.indexOf('localhost') > -1;
 const localBaseURL = 'http://localhost:9007/';
 const remoteBaseURL = 'https://lively-kernel.org/lively4services/';
@@ -53,6 +55,7 @@ export default class Services extends Morph {
     this.logInterval = null;
 
     this.detachedCallback = this.unload;
+    this.ensureRemoteServicesMounted();
   }
 
   unload() {
@@ -71,19 +74,11 @@ export default class Services extends Morph {
   }
 
   addButtonClick(evt) {
-    var browser = lively.components.createComponent("lively-file-browser");
-    const endpoint = "/services";
-    fetch('https://lively4' + endpoint, {method: 'OPTIONS'}).then((response) => {
-      if (!response.ok) {
-        lively.notify("Ensure that there is an endpoint called " + endpoint);
-        lively.openComponentInWindow("lively-filesystems");
-      }
-    });
-
+    var browser = lively.components.createComponent('lively-file-browser');
     lively.components.openInWindow(browser).then(() => {
-      browser.path = endpoint;
+      browser.path = mountEndpoint;
       browser.setMainAction((url) => {
-        const relativePath = url.pathname.replace(endpoint + "/", "");
+        const relativePath = url.pathname.replace(mountEndpoint + '/', '');
 
         this.serviceTop.removeAttribute('data-id');
         this.entryPoint.value = relativePath;
@@ -102,30 +97,29 @@ export default class Services extends Morph {
       console.log('Nothing to remove');
       return;
     }
-    this.post('remove', { id: this.pid }, function(res) {
+    this.post('remove', { id: this.pid }, (res) => {
       this.pid = null;
       console.log(res);
       this.refreshServiceList();
-    }.bind(this));
+    });
   }
 
   editButtonClick() {
-    lively.openBrowser(servicesURL + 'lively/');
+    lively.openBrowser(servicesURL + 'mount/');
   }
 
   cloneButtonClick() {
     var gitURL = window.prompt('Please enter a GitHub link to clone:');
     if (gitURL === null) return;
-    this.post('clone', { url: gitURL }, function(res) {
-      console.log(res);
-    });
+    this.post('clone', { url: gitURL });
   }
 
   settingsButtonClick() {
     var userInput;
-    userInput = window.prompt('Please enter service endpoint:', servicesURL);
+    userInput = window.prompt('Please enter a URL to a lively4-services instance:', servicesURL);
     if (userInput === null) return;
     servicesURL = userInput;
+    this.mountRemoteServices();
   }
 
   startButtonClick(entryPoint) {
@@ -143,12 +137,12 @@ export default class Services extends Morph {
   }
 
   stopButtonClick(evt) {
-    this.post('stop', { id: this.pid }, function(res) {
+    this.post('stop', { id: this.pid }, (res) => {
       console.log(res);
       this.refreshServiceList();
       window.clearInterval(this.logInterval);
       this.logInterval = null;
-    }.bind(this));
+    });
   }
 
   debugButtonClick(evt) {
@@ -179,13 +173,18 @@ export default class Services extends Morph {
   /*
   * Helper functions
   */
-  post(endpoint, data, success, error) {
+  post(endpoint, data, success) {
     $.ajax({
       url: servicesURL + endpoint,
       type: 'POST',
       data: JSON.stringify(data),
       contentType: 'application/json',
-      success: success,
+      success: (data) => {
+        console.log(data);
+        if (success) {
+          success(data);
+        }
+      },
       error: this.handleAjaxError.bind(this)
     });
   }
@@ -193,7 +192,7 @@ export default class Services extends Morph {
   handleAjaxError(jqXHR, textStatus, errorThrown) {
     console.log(errorThrown);
     this.removeAllItems();
-    this.showMessageInServiceList("Cannot connect to server.");
+    this.showMessageInServiceList('Cannot connect to server.');
   }
 
   unselectAll() {
@@ -233,7 +232,7 @@ export default class Services extends Morph {
     var selectedPID = this.removeAllItems();
     // Check if any service running
     if (Object.keys(services).length === 0) {
-      this.showMessageInServiceList("No services available yet.");
+      this.showMessageInServiceList('No services available yet.');
       return;
     }
     // List all services
@@ -274,7 +273,7 @@ export default class Services extends Morph {
   }
 
   msToString(milliseconds) {
-    function ending(number) { return (number > 1) ? 's' : ''; }
+    var ending = (number) => { return (number > 1) ? 's' : ''; };
     var seconds = Math.floor(milliseconds / 1000);
     var years = Math.floor(seconds / 31536000);
     if (years) { return years + ' year' + ending(years); }
@@ -287,6 +286,42 @@ export default class Services extends Morph {
     seconds = seconds % 60;
     if (seconds) { return seconds + ' second' + ending(seconds); }
     return 'just now';
+  }
+  
+  ensureRemoteServicesMounted() {
+    $.getJSON("https://lively4/sys/mounts", (mounts) => {
+      var mounted = false;
+      mounts.forEach(ea => {
+        if (ea.path === mountEndpoint) {
+          mounted = true;
+        }
+      });
+      if (!mounted) {
+        this.settingsButtonClick();
+      }
+    });
+  }
+  
+  mountRemoteServices() {
+    var mount = {
+      'path': mountEndpoint,
+      'name': 'http',
+      'options': {
+        'base': servicesURL + 'mount/'
+      }
+    };
+    
+    $.ajax({
+      url: mountURL,
+      type: 'PUT',
+      data: JSON.stringify(mount),
+      success: (text) => {
+        console.log('Mounted ' + mountEndpoint);
+      },
+      error: (xhr, status, error) => {
+        console.log('Could not mount ' + mountEndpoint + ' ' + error);
+      }
+    });
   }
 
   /*
@@ -302,13 +337,13 @@ export default class Services extends Morph {
 
   refreshLog() {
     if (this.pid === null) {
-      this.logEditor.setValue("");
-      this.entryPoint.value = "";
+      this.logEditor.setValue('');
+      this.entryPoint.value = '';
       return;
     }
-    this.post('get', { id: this.pid }, function(res) {
+    this.post('get', { id: this.pid }, (res) => {
       this.logEditor.setValue(res[this.logType]);
       this.logEditor.gotoPageDown();
-    }.bind(this));
+    });
   }
 }
