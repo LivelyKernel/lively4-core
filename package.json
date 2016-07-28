@@ -8,7 +8,7 @@
     "test": "tests"
   },
   "scripts": {
-    "build": "set NODE_ENV=production && webpack --define process.env.NODE_ENV='\"production\"'",
+    "build": "webpack",
     "watch": "webpack -d --watch",
     "test": "karma start karma.conf.js --single-run",
     "test:watch": "karma start karma.conf.js",
@@ -86,7 +86,8 @@
     "systemjs": "^0.19.31",
     "systemjs-plugin-babel": "0.0.12",
     "watchify": "^3.7.0",
-    "webpack": "^1.13.0"
+    "webpack": "^1.13.0",
+    "webpack-config": "^5.2.1"
   },
   "dependencies": {
     "stack-es2015-modules": "^1.1.0"
