@@ -29,6 +29,8 @@ export class Point {
     this.y = y || 0;
   }
 
+  get isPoint() { return true }
+
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // accessing
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -197,6 +199,25 @@ export class Point {
     return pt(x1 + (t * x21), y1 + (t * y21));
   }
 
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  // polar coordinates
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  r() {
+    // Polar coordinates (theta=0 is East on screen, and increases in CCW
+    // direction
+    return Math.sqrt(this.x*this.x + this.y*this.y);
+  }
+
+  fastR() {
+    // actually, r() might be faster...
+    var a = this.x * this.x + this.y * this.y;
+    var x = 17;
+    for (var i = 0; i < 6; i++)
+    x = (x + a / x) / 2;
+    return x;
+  }
+
+  theta() { return Math.atan2(this.y, this.x); }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // converting
@@ -223,25 +244,11 @@ export class Point {
   inspect() { return JSON.stringify(this); }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // polar coordinates
+  // serialization
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  r() {
-    // Polar coordinates (theta=0 is East on screen, and increases in CCW
-    // direction
-    return Math.sqrt(this.x*this.x + this.y*this.y);
+  __serialize__() {
+    return {__expr__: this.toString(), bindings: {pt: "lively.graphics/geometry-2d.js"}}
   }
-
-  fastR() {
-    // actually, r() might be faster...
-    var a = this.x * this.x + this.y * this.y;
-    var x = 17;
-    for (var i = 0; i < 6; i++)
-    x = (x + a / x) / 2;
-    return x;
-  }
-
-  theta() { return Math.atan2(this.y, this.x); }
-
 }
 
 
@@ -319,6 +326,8 @@ export class Rectangle {
     this.width = w || 0;
     this.height = h || 0;
   }
+
+  get isRectangle() { return true }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // accessing
@@ -436,13 +445,6 @@ export class Rectangle {
       start = this.lineIntersection(lineBetween)[0],
       end = otherRect.lineIntersection(lineBetween)[0];
     return start && end && start.lineTo(end);
-  }
-
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // printing
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  toString() {
-    return string.format("rect(%s,%s,%s,%s)", this.x, this.y, this.width, this.height);
   }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -736,7 +738,22 @@ export class Rectangle {
 
     return nearest;
   }
+
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  // printing
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  toString() {
+    return string.format("rect(%s,%s,%s,%s)", this.x, this.y, this.width, this.height);
+  }
+  
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  // serialization
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  __serialize__() {
+    return {__expr__: this.toString(), bindings: {rect: "lively.graphics/geometry-2d.js"}}
+  }
 }
+
 
 export class Transform {
 
@@ -770,6 +787,8 @@ export class Transform {
       this.b = this.c = this.e = this.f = 0.0;
     }
   }
+
+  get isTransform() { return true }
 
   copy() { return new Transform(this); }
 
@@ -878,7 +897,7 @@ export class Transform {
     return `translate(${this.e}px,${this.f}px) rotate(${rot}deg) scale(${scale},${scale})`;
   }
 
-  toString() { return this.toCSSValue(); }
+  toString() { return this.toCSSTransformString(); }
 
   toMatrix() { return this.copy(); }
 
@@ -961,14 +980,31 @@ export class Transform {
     if (isNaN(value)) { throw new Error('not a number');}
     return value;
   }
+
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  // serialization
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  __serialize__() {
+    return {
+      __expr__: `new Transform({a: ${this.a}, b: ${this.b}, c: ${this.c}, d: ${this.d}, e: ${this.e}, f: ${this.f}})`,
+      bindings: {Transform: "lively.graphics/geometry-2d.js"}
+    }
+  }
+
 }
 
 export class Line {
+
+  static fromCoords(startX, startY, endX, endY) {
+    return new Line(pt(startX, startY), pt(endX, endY));
+  }
 
   constructor(start, end) {
     this.start = start;
     this.end = end;
   }
+
+  get isLine() { return true }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // accessing
@@ -1073,6 +1109,17 @@ export class Line {
                 this.start.x, this.start.y,
                 this.end.x, this.end.y)
   }
+
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  // serialization
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  __serialize__() {
+    return {
+      __expr__: `Line.fromCoords(${this.start.x}, ${this.start.y}, ${this.end.x}, ${this.end.y})`,
+      bindings: {Line: "lively.graphics/geometry-2d.js"}
+    }
+  }
+
 }
 
 export function rect(arg1, arg2, arg3, arg4) {

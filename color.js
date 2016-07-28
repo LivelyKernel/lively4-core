@@ -229,6 +229,7 @@ export class Color {
     function floor(x) { return Math.floor(x*255.99) };
     return "rgba(" + floor(this.r) + "," + floor(this.g) + "," + floor(this.b) + "," + this.a + ")";
   }
+
   toHexString() {
     function floor(x) { return Math.floor(x*255.99) };
     function addLeadingZero(string){
@@ -288,6 +289,18 @@ export class Color {
   invert() {
     return Color.rgb(255 * (1 - this.r), 255 * (1 - this.g), 255 * (1 - this.b));
   }
+
+
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  // serialization
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  __serialize__() {
+    return {
+      __expr__: "Color." + this.toString(),
+      bindings: {Color: "lively.graphics/color.js"}
+    }
+  }
+
 }
 
 // well-known colors
