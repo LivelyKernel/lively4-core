@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>lively-lang Tests</title>
+    <link type="text/css" rel="stylesheet" href="../node_modules/mocha/mocha.css" />
+    <meta http-equiv="cache-control" content="no-cache" />
+    <meta http-equiv="pragma" content="no-cache" />
+
+  </head>
+  <body>
+    <div id="mocha"></div>
+    <!--<script type="text/javascript" src="http://lively-web.org/users/robertkrahn/node-lively2lively/lively2lively-browserified.js?name=jsext-test&baseURL=http://lively-web.org:8080&autoload=true"></script></style>-->
+    <script type="text/javascript" src="helper.js"></script>
+    <script type="text/javascript" src="../node_modules/expect.js/index.js"></script>
+    <script type="text/javascript" src="../node_modules/mocha/mocha.js"></script>
+    <script type="text/javascript" src="../node_modules/babel-core/browser-polyfill.js"></script>
+    <script type="text/javascript" >
+      mocha.setup({ui: "bdd", useColors: false});
+      mocha.globals(["jQuery", "$", "script*", "BlobBuilder"]);
+      if (typeof initMochaPhantomJS === 'function') initMochaPhantomJS();
+      var urls = [
+        // "../dist/lively.lang.dev.js",
+        
+        "../lib/base.js",
+        "../lib/object.js",
+        "../lib/class.js",
+        "../lib/collection.js",
+        "../lib/sequence.js",
+        "../lib/tree.js",
+        "../lib/function.js",
+        "../lib/string.js",
+        "../lib/number.js",
+        "../lib/date.js",
+        "../lib/promise.js",
+        "../lib/events.js",
+        "../lib/graph.js",
+        "../lib/messenger.js",
+        "../lib/worker.js",
+
+        "class-test.js",
+        "collection-test.js",
+        "date-test.js",
+        "events-test.js",
+        "function-test.js",
+        "graph-test.js",
+        "messenger-test.js",
+        "number-test.js",
+        "object-test.js",
+        "promise-test.js",
+        // "sequence-test.js",
+        "string-test.js",
+        "tree-test.js",
+        "usage-test.js",
+        "worker-test.js"
+      ];
+      loadUncached(urls, function() {
+        mocha.checkLeaks();
+        mocha.run();
+      });
+    </script>
+
+  </body>
+</html>

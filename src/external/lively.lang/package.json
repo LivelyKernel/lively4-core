@@ -1,0 +1,84 @@
+{
+  "name": "lively.lang",
+  "version": "0.7.2",
+  "description": "JavaScript utils providing useful abstractions for working with collections, functions, objects.",
+  "main": "index.js",
+  "systemjs": {
+    "main": "index.js",
+    "meta": {
+      "format": "cjs",
+      "defaultJSExtensions": true
+    },
+    "map": {
+      "path": {
+        "node": "@node/path",
+        "~node": "@empty"
+      },
+      "fs": {
+        "node": "@node/fs",
+        "~node": "@empty"
+      },
+      "events": {
+        "node": "@node/events",
+        "~node": "@empty"
+      },
+      "util": {
+        "node": "@node/util",
+        "~node": "@empty"
+      },
+      "os": {
+        "node": "@node/os",
+        "~node": "@empty"
+      },
+      "child_process": {
+        "node": "@node/child_process",
+        "~node": "@empty"
+      }
+    }
+  },
+  "libFiles": [
+    "lib/base.js",
+    "lib/object.js",
+    "lib/class.js",
+    "lib/collection.js",
+    "lib/sequence.js",
+    "lib/tree.js",
+    "lib/function.js",
+    "lib/string.js",
+    "lib/number.js",
+    "lib/date.js",
+    "lib/promise.js",
+    "lib/events.js",
+    "lib/graph.js",
+    "lib/messenger.js",
+    "lib/worker.js"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "doc-comments": "^0.1.2",
+    "lively.ast": "^0.6.3",
+    "uglify-js": "^2.6.1",
+    "expect.js": "*",
+    "mocha": "*"
+  },
+  "scripts": {
+    "test": "node_modules/mocha/bin/mocha tests/*-test.js",
+    "doc": "node -e \"require('doc-comments')({intoFiles: true, files: JSON.parse(require('fs').readFileSync('./package.json')).libFiles.filter(ea => ea !== 'lib/base.js')})\"",
+    "build": "node build.js"
+  },
+  "author": "Robert Krahn",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LivelyKernel/lively.lang"
+  },
+  "keywords": [
+    "utilities",
+    "LivelyWeb",
+    "LivelyKernel"
+  ],
+  "bugs": {
+    "url": "https://github.com/LivelyKernel/lively.lang/issues"
+  },
+  "homepage": "https://github.com/LivelyKernel/lively.lang"
+}

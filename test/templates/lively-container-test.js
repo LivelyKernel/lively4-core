@@ -2,7 +2,7 @@ import Sync from '../../templates/classes/Sync.js'
 import {expect} from '../../node_modules/chai/chai.js'
 import {loadComponent} from './templates-fixture.js'
 
-// System.import(lively4url + '/node_modules/chai/chai.js').then( m => window.expect = m.expect)
+System.import(lively4url + '/node_modules/chai/chai.js').then( m => window.expect = m.expect)
 
 describe("Container Tool",  function() {
 

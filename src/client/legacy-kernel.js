@@ -11,5 +11,5 @@ export function resolve(name) {
 }
 
 export function realpath(name) {
-  return new URL(window.lively4url + '/' + name).pathname.replace(/\/+/, '/')
+  return new URL(window.lively4url + '/' + name).pathname.replace(/\/+/g, '/')
 }
