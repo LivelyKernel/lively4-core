@@ -8,6 +8,11 @@ System.config({
     kernel: 'src/client/legacy-kernel.js'
   }
 });
+
+// make it async
+window.__karma__.loaded = function() {};
+
+
 System.import('test-main.js')
   .catch(e => console.log(
     e,

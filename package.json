@@ -58,7 +58,8 @@
     "mocha": "^2.2.5",
     "requirejs": "^2.1.20",
     "sinon-chai": "^2.8.0",
-    "systemjs": "^0.18.10"
+    "systemjs": "^0.19.31",
+    "systemjs-plugin-babel": "0.0.12"
   },
   "engines": {
     "node": ">= 0.12.4",
