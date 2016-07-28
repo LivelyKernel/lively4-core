@@ -70,7 +70,7 @@ export default class IndexManager extends Morph {
   getEntryFor(mountType, path) {
     return `<tr>
         <td>${path}</td>
-        <td><i id=${path.slice(1)}-status>unknown</i></td>
+        <td><i data-id=${path.slice(1)}>unknown</i></td>
         <td>
           <button data-path=${path} data-mount-type=${mountType} class="refresh-button" title="Refresh status"><i class="fa fa-refresh" aria-hidden="true"></i></button>
           <button data-path=${path} data-mount-type=${mountType} class="create-button" title="Load or create index"><i class="fa fa-plus" aria-hidden="true"></i></button>
@@ -81,7 +81,7 @@ export default class IndexManager extends Morph {
 
   createIndex(mountType, path) {
     console.log("create index at", mountType, path);
-    let statusText = this.getSubmorph(`#${path.slice(1)}-status`);
+    let statusText = this.getSubmorph(`i[data-id="${path.slice(1)}"]`);
     statusText.innerHTML = `<i class="fa fa-spinner fa-pulse fa-fw"></i>`;
     search.prepareForSearch(mountType, path).then(() => {
       this.refreshIndex(mountType, path);
@@ -89,7 +89,7 @@ export default class IndexManager extends Morph {
   }
 
   refreshIndex(mountType, path) {
-    let statusText = this.getSubmorph(`#${path.slice(1)}-status`);
+    let statusText = this.getSubmorph(`i[data-id="${path.slice(1)}"]`);
     statusText.innerHTML = `<i class="fa fa-spinner fa-pulse fa-fw"></i>`;
     console.log("refresh index at", mountType, path);
     search.getStatus(mountType, path).then(status => {
@@ -99,7 +99,7 @@ export default class IndexManager extends Morph {
 
   removeIndex(mountType, path) {
     console.log("remove index at", mountType, path);
-    let statusText = this.getSubmorph(`#${path.slice(1)}-status`);
+    let statusText = this.getSubmorph(`i[data-id="${path.slice(1)}"]`);
     statusText.innerHTML = `<i class="fa fa-spinner fa-pulse fa-fw"></i>`;
     search.removeIndex(mountType, path).then(() => {
       this.refreshIndex(mountType, path);
