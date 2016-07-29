@@ -74,9 +74,14 @@ export default class HaloGrabItem extends HaloItem {
   stopGrabbingAtEvent(evt) {
     this.insertGrabTargetBeforeShadow();
     this.removeGrabShadow();
-    this.grabTarget.style.position = 'relative';
-    this.grabTarget.style.removeProperty('top');
-    this.grabTarget.style.removeProperty('left');
+    if (this.grabShadow.style.position == 'absolute') {
+        this.grabTarget.style.position = 'absolute';
+        nodes.setPosition(this.grabTarget, nodes.getPosition(this.grabShadow))
+    } else {    
+      this.grabTarget.style.position = 'relative';
+      this.grabTarget.style.removeProperty('top');
+      this.grabTarget.style.removeProperty('left');
+    }
     evt.preventDefault();
     this.isDragging = false;
   }
@@ -88,8 +93,7 @@ export default class HaloGrabItem extends HaloItem {
   dropAtEvent(node, evt) {
     var droptarget = this.droptargetAtEvent(node, evt);
     if (droptarget) {
-      var pos = pt(evt.pageX, evt.pageY)
-      this.moveGrabShadowToTargetAtPosition(droptarget, pos);
+      this.moveGrabShadowToTargetAtEvent(droptarget, evt);
     }
   }
   
@@ -112,43 +116,47 @@ export default class HaloGrabItem extends HaloItem {
     return document.body;
   }
   
-  moveGrabShadowToTargetAtPosition(targetNode, pos) {
+  moveGrabShadowToTargetAtEvent(targetNode, evt) {
+    var pos = pt(evt.pageX, evt.pageY)
+
     var children = targetNode.childNodes;
     var nextChild = Array.from(children).find(child => {
       return child !== this.grabShadow && child !== this.grabTarget &&
         child.nodeType === 1 && this.nodeComesBehind(child, pos);
     });
-    // ALT position... directly
     
-    // var nodes.getPosition(this.dragTarget)
-
     targetNode.insertBefore(this.grabShadow, nextChild);
+    this.grabShadow.style.position = 'relative';
+    
+
+    this.grabShadow.style.position = 'relative';
+    this.grabShadow.style.removeProperty('top');
+    this.grabShadow.style.removeProperty('left'); 
+
+    if (evt.shiftKey || 
+      nodes.globalPosition(this.grabShadow).dist(nodes.globalPosition(this.grabTarget)) > 300) {
+      this.grabShadow.style.opacity = 0
+      this.grabShadow.style.position = 'absolute';
+      nodes.setPosition(this.grabShadow, nodes.globalPosition(this.grabTarget).subPt(nodes.globalPosition(targetNode))) // localize
+    } else {
+      // drag position is near enough to relative position, so SNAP  
+      this.grabShadow.style.opacity = 0.5
+    }
   }
   
   canDropInto(node, targetNode) {
+    var targetTag = targetNode.tagName.toLowerCase();
     return node !== targetNode &&
-      // !Array.from(targetNode.getElementsByTagName('*')).includes(node) &&
       !Array.from(node.getElementsByTagName('*')).includes(targetNode) &&
-      $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist[node.tagName.toLowerCase()] || []) < 0 &&
-      $.inArray(targetNode.tagName.toLowerCase(), config.droppingBlacklist['*'] || []) < 0
+      !(config.droppingBlacklist[node.tagName.toLowerCase()] || []).includes(targetTag) &&
+      !(config.droppingBlacklist['*'] || []).includes(targetTag)
   }
   
   nodeComesBehind(node, pos) {
-       var childTop = $(node).offset().top;
-    var childLeft = $(node).offset().left;
-    var childBottom = childTop + $(node).height();
-    var childRight = childLeft + $(node).width();
-    var toTheRight = childTop <= pos.y <= childBottom
-        && childLeft > pos.x;
-    var below = childTop > pos.y;
+    var bounds = node.getBoundingClientRect()
+    var toTheRight = 
+      (bounds.top <= pos.y <= bounds.bottom) && (bounds.left > pos.x);
+    var below = bounds.top > pos.y;
     return toTheRight || below;
-    
-  
-    // node = that
-    // var bounds = node.getBoundingClientRect()
-    // var toTheRight = 
-    //   (bounds.top <= pos.y <= bounds.bottom) && (bounds.left > pos.x);
-    // var below = bounds.top > pos.y;
-    // return toTheRight || below;
   }
 }

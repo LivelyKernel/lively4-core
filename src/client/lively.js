@@ -398,8 +398,10 @@ export default class Lively {
     if (Notification.permission !== "granted") Notification.requestPermission();
 
     var time = Date.now()
-    if(this.notifications.length > 10 &&
-      (Date.now() - this.notifications[10].time < 1000)) {
+    
+    // check if the third last notification was already one second ago
+    if(this.notifications.length > 5 &&
+      (Date.now() - this.notifications[this.notifications.length - 3].time < 1000)) {
       return console.log("SILENT NOTE: " + title  + " (" + text + ")");
     }
 

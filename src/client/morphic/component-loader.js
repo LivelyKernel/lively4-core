@@ -214,11 +214,26 @@ export default class ComponentLoader {
 
   // this function loads a component by adding a link tag to the head
   static loadByName(name) {
-      var link = document.createElement("link");
-      link.rel = "import";
-      link.href = kernel.resolve('/templates/' + name + '.html')
-      link.dataset.lively4Donotpersist = "all";
-
+      function toTitleCase(str) {
+        return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+      }
+    
+      // #TODO make templates path configurable... and make its search in many places
+      var url = '/templates/' + name + '.html'
+      if (true) { // #TODO continue here url.exists() 
+        var link = document.createElement("link");
+        link.rel = "import";
+        link.href = kernel.resolve(url)
+        link.dataset.lively4Donotpersist = "all";
+      } else {
+        // #TODO what string library do we want to use?
+        
+        // name = "hello-world-foo"  
+        var className = toTitleCase(name.replace(/-/g, " ")).replace(/ /g,"")
+        var classOnlyComponentURL = '/templates/classes/' + className + '.js'
+        // #TODO continue here
+        
+      }
       document.head.appendChild(link);
   }
 
