@@ -9,7 +9,7 @@ export default class HaloRemoveItem extends HaloItem {
       $(deleteTarget).remove();
       window.that = undefined;
     }
-    window.HaloService.hideHalos();
+    this.hideHalo();
   }
 
   isAllowedToBeDeleted(element) {

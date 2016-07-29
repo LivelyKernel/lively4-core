@@ -1,4 +1,6 @@
 
+// import... HaloService from /templates/classes/Halo.js
+
 // DEBUG: lively.import("selecting", "../src/client/morphic/selecting.js")
 export default class Selecting {
 

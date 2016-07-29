@@ -1,6 +1,8 @@
 import lively from 'src/client/lively.js'
 import Morph from './Morph.js'
 
+import Halo from './Halo.js';
+
 
 /*
  * HaloItem are buttons layouted in from o halo around the object 
@@ -10,6 +12,10 @@ export default class HaloItem extends Morph {
   initialize() {
     // super.initialize()
     this.registerMouseEvents()
+  }
+
+  hideHalo() {
+    Halo.hideHalos()
   }
 
   registerMouseEvents() {

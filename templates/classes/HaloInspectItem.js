@@ -14,6 +14,6 @@ export default class HaloInspectItem extends HaloItem {
         objectEditorWindow.centerInWindow();
       });
   
-      window.HaloService.hideHalos();
+      this.hideHalo();
     }
 }
