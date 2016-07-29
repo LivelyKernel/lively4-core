@@ -1,89 +1,53 @@
-// "use strict";
+"use strict";
 import HaloItem from './HaloItem.js';
 
 import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
 import * as config from 'src/client/morphic/config.js';
 
-
-// import {Point} from 'lively.graphics'
+import {pt} from 'lively.graphics';
 
 export default class HaloGrabItem extends HaloItem {
  
-  
   initialize() {
-    this.isDragging = false
-    
-         $(this).off("mousedown").on("mousedown", (e) => {
-          this.start(e);
-
-          // attach mousemove handler to body only after mousedown occured
-          $("body").off("mousemove.grab").on("mousemove.grab", (e) => {
-            this.move(e);
-
-            // update position of halos on mousemove
-            HaloService.showHalos(window.that);
-          }); 
-        });
-
-        $("body").off("mouseup.grab").on("mouseup.grab", (e) => {
-          // save this as grabbing.stop will overwrite the current value
-          var wasGrabbing = this.isDragging;
-
-          this.stop(e);
-          // detach mousemove handler from body
-          $("body").off("mousemove.grab");
-
-          if (wasGrabbing) {
-            HaloService.showHalos(window.that);
-            e.stopPropagation();
-          }
-        });
-    
+    this.startCustomDragging();
   }
 
-  start(e) {
+  // DRAG API
+
+  start(evt) {
     if (this.isDragging) return;
     this.grabTarget = window.that;
     if (this.grabTarget) {
-      this.initGrabbingAtEvent(e);
+      this.grabStartEventPosition = events.globalPosition(evt);
+      this.grabOffset =  events.globalPosition(evt).subPt(nodes.globalPosition(this.grabTarget));
+      evt.preventDefault();
     }
   }
 
-  move(e) {
-    if (this.grabTarget) {
-      this.startOffsetGrabbing(e);
+  move(evt) {
+    if (this.grabTarget && !this.isDragging && 
+      events.noticableDistanceTo(evt, this.grabStartEventPosition)) {
+      // drag detected
+      this.initGrabShadow();
+      this.prepareGrabTarget();
+      this.isDragging = true;
     }
     if (this.isDragging) {
-      this.moveGrabbedNodeToEvent(e);
+      this.moveGrabbedNodeToEvent(evt);
     }
   }
   
-  stop(e) {
+  stop(evt) {
     if (this.isDragging) {
-      this.stopGrabbingAtEvent(e);
+      this.stopGrabbingAtEvent(evt);
     }
     this.grabTarget = null;
     this.grabStartEventPosition = null;
     this.grabShadow = null;
   }
   
-  initGrabbingAtEvent(anEvent) {
-    this.grabStartEventPosition = events.globalPosition(anEvent);
-    this.grabOffset = {
-      x: events.globalPosition(anEvent).x - nodes.globalPosition(this.grabTarget).x,
-      y: events.globalPosition(anEvent).y - nodes.globalPosition(this.grabTarget).y
-    }
-    anEvent.preventDefault();
-  }
-  
-  startOffsetGrabbing(anEvent) {
-    if (!this.isDragging && events.noticableDistanceTo(anEvent, this.grabStartEventPosition)) {
-      this.initGrabShadow();
-      this.prepareGrabTarget();
-      this.isDragging = true;
-    }
-  }
+  // HELPERS
   
   prepareGrabTarget() {
     document.body.appendChild(this.grabTarget);
@@ -100,23 +64,20 @@ export default class HaloGrabItem extends HaloItem {
     this.grabShadow.style.removeProperty('left');
   }
   
-  moveGrabbedNodeToEvent(anEvent) {
-    var eventPosition = events.globalPosition(anEvent);
-    this.dropAtEvent(this.grabShadow, anEvent);
-    nodes.setPosition(this.grabTarget, {
-      x: eventPosition.x - this.grabOffset.x,
-      y: eventPosition.y - this.grabOffset.y
-    })
-    anEvent.preventDefault();
+  moveGrabbedNodeToEvent(evt) {
+    var eventPosition = events.globalPosition(evt);
+    this.dropAtEvent(this.grabShadow, evt);
+    nodes.setPosition(this.grabTarget, eventPosition.subPt(this.grabOffset))
+    evt.preventDefault();
   }
   
-  stopGrabbingAtEvent(anEvent) {
+  stopGrabbingAtEvent(evt) {
     this.insertGrabTargetBeforeShadow();
     this.removeGrabShadow();
     this.grabTarget.style.position = 'relative';
     this.grabTarget.style.removeProperty('top');
     this.grabTarget.style.removeProperty('left');
-    anEvent.preventDefault();
+    evt.preventDefault();
     this.isDragging = false;
   }
   
@@ -124,26 +85,22 @@ export default class HaloGrabItem extends HaloItem {
     this.grabShadow.parentNode.removeChild(this.grabShadow);
   }
   
-  dropAtEvent(node, e) {
-    var droptarget = this.droptargetAtEvent(node, e);
+  dropAtEvent(node, evt) {
+    var droptarget = this.droptargetAtEvent(node, evt);
     if (droptarget) {
-      var pos = {
-        x: e.pageX,
-        y: e.pageY
-      };
+      var pos = pt(evt.pageX, evt.pageY)
       this.moveGrabShadowToTargetAtPosition(droptarget, pos);
     }
   }
   
   insertGrabTargetBeforeShadow() {
-    debugger
     if (this.grabShadow && this.grabTarget) {
       this.grabShadow.parentNode.insertBefore(this.grabTarget, this.grabShadow);
     }
   }
   
-  droptargetAtEvent(node, e) {
-    var elementsUnderCursor = Array.from(events.elementsUnder(e)).filter( (elementUnder) => {
+  droptargetAtEvent(node, evt) {
+    var elementsUnderCursor = Array.from(events.elementsUnder(evt)).filter( (elementUnder) => {
       return elementUnder !== this.grabTarget && elementUnder !== this.grabShadow;
     });
     for (var i = 0; i < elementsUnderCursor.length; i++) {
@@ -177,7 +134,7 @@ export default class HaloGrabItem extends HaloItem {
   }
   
   nodeComesBehind(node, pos) {
-    var childTop = $(node).offset().top;
+       var childTop = $(node).offset().top;
     var childLeft = $(node).offset().left;
     var childBottom = childTop + $(node).height();
     var childRight = childLeft + $(node).width();
@@ -185,5 +142,13 @@ export default class HaloGrabItem extends HaloItem {
         && childLeft > pos.x;
     var below = childTop > pos.y;
     return toTheRight || below;
+    
+  
+    // node = that
+    // var bounds = node.getBoundingClientRect()
+    // var toTheRight = 
+    //   (bounds.top <= pos.y <= bounds.bottom) && (bounds.left > pos.x);
+    // var below = bounds.top > pos.y;
+    // return toTheRight || below;
   }
 }

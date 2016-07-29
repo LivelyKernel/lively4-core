@@ -39,9 +39,6 @@ if ('serviceWorker' in navigator) {
 
     Promise.resolve("")
       .then( function() {
-        if(window.__karma__) {
-          return;
-        }
         return loadJavaScriptThroughDOM("livelyModules",
           lively4url + "/src/external/lively.modules-with-lively.vm.js")})
       .then( function(){
