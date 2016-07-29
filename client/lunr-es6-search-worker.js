@@ -38,10 +38,4 @@ export class ES6SearchWorker extends SearchWorker {
     log(string) {
       console.log(string);
     }
-
-    saveIndexedVersions(versions) {
-      this.cp.saveIndexedVersions(versions, this.options);
-    }
 }
-
-// let worker = new ES6SearchWorker(this.msgId, this.options);

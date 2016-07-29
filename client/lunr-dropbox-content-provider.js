@@ -58,30 +58,6 @@ export function checkIndexFile(filename, options) {
   });
 }
 
-export async function saveIndexedVersions(versions, options) {
-  let currentVersions = await loadIndexedFileVersions(options.path);
-  Object.keys(versions).forEach(indexedPath => {
-    currentVersions[indexedPath] = versions[indexedPath];
-  });
-
-  // use the save function also for the versions file
-  saveIndexJson(currentVersions, versionsFilename, options);
-}
-
-function loadIndexedFileVersions(path) {
-  return fetch(`https://lively4${path}/${versionsFilename}`).then(resp => {
-    return resp.text();
-  }).then(resp => {
-    let jsonResp = JSON.parse(resp);
-    if (jsonResp.error) {
-      // looks like versions file does not exist
-      return {};
-    }
-
-    return jsonResp;
-  });
-}
-
 async function getFilepaths(options) {
   let proms = [];
 

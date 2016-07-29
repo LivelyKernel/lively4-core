@@ -153,7 +153,7 @@ export default class SearchWorker {
     while (true) {
       let file = await files.next();
 
-      // if the iterator is exhausted an object {done: true} is returned ?! ^^
+      // if the iterator is exhausted an object {done: true} is returned
       if (file.done) {
         break;
       }
