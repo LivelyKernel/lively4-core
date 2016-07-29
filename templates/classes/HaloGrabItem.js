@@ -1,15 +1,26 @@
 "use strict";
-import HaloItem from './HaloItem.js';
 
+/*
+# LivelyHaloGrabItem
+
+The GrabHaloItem removes the selected node from its parent element
+drags it to a new position and places it relative or aboslute 
+(distance or holding shift pressed) into another node. 
+
+*/
+
+
+
+import HaloItem from './HaloItem.js';
 import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
 import * as config from 'src/client/morphic/config.js';
-
 import {pt} from 'lively.graphics';
 
 export default class HaloGrabItem extends HaloItem {
  
   initialize() {
+    this.registerMouseEvents()
     this.startCustomDragging();
   }
 
