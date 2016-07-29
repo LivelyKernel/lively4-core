@@ -17,6 +17,11 @@ export function getExtent(node) {
     parseInt(node.style.height) || 0)
 }
 
+export function setExtent(node, extent) {
+  node.style.width = '' + extent.x + 'px';
+  node.style.height = '' + extent.y + 'px';
+}
+
 export function getBounds(node) {
   var pos = getPosition(node)
   return rect(pos, pos.addPt(getExtent(node)))
