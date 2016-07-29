@@ -11,19 +11,32 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['mocha', 'requirejs', 'chai'],
+    // frameworks: ['mocha', 'requirejs', 'chai'],
+    // frameworks: [],
+    // 'requirejs' ... !!!! THIS BREAKS Lively Modules
+    frameworks: ['mocha','chai'],
 
+    // frameworks: [],
+    
 
     // list of files / patterns to load in the browser
     files: [
       'src/external/system.src.js',
       'src/external/babel-browser.js',
       'vendor/regenerator-runtime.js',
-      //'src/external/lively.modules-with-lively.vm.js',
+
+      
+      // #Jens, cannot load lively.modules here, because we configure System.js later
+      // ALT: 'src/external/lively.modules-with-lively.vm.js',
+      // 'node_modules/systemjs/dist/system.src.js',
+      // 'node_modules/lively.modules/dist/lively.modules-with-lively.vm.js',
+      
       {pattern: 'node_modules/**/*.js', included: false},
+      {pattern: 'node_modules/**/*.json', included: false},
       {pattern: 'node_modules/chai/chai.js', included: false},
       {pattern: 'node_modules/mocha/mocha.js', included: false},
       {pattern: 'src/**/*.js*', included: false},
+      {pattern: 'src/**/*.css*', included: false},
       {pattern: 'swx-loader.js', included: false},
       
       {pattern: 'test/**/*.js', included: false},
@@ -31,6 +44,8 @@ module.exports = function(config) {
       {pattern: 'vendor/**/*.js', included: false},
       {pattern: 'templates/**/*', included: false},
       {pattern: 'test-main.js', included: false},
+      {pattern: 'package.json', included: false},
+
       {pattern: 'src/external/focalStorage.js', included: false},
       'test-loader.js'
     ],
@@ -43,6 +58,7 @@ module.exports = function(config) {
       '/test/': '/base/test/',
       '/templates/': '/base/templates/',
       '/vendor/': '/base/vendor/',
+      '/package.json': '/base/package.json',
       '/swx-loader.js': '/base/swx-loader.js',
     },
 
