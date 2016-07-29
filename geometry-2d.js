@@ -759,15 +759,15 @@ export class Transform {
 
   get exp() { return 0.0001; /*precision*/ }
 
-  constructor(duck) {
+  constructor(translation, rotation, scale) {
     // matrix is a duck with a,b,c,d,e,f, could be an SVG matrix or a
     // Lively Transform
     // alternatively, its a combination of translation rotation and scale
-    if (duck) {
-      if (duck instanceof Point) {
-        var delta = duck,
-          angleInRadians = arguments[1] || 0.0,
-          scale = arguments[2];
+    if (translation) {
+      if (translation instanceof Point) {
+        var delta = translation,
+            angleInRadians = rotation || 0.0,
+            scale = scale;
         if (scale === undefined) { scale = pt(1.0, 1.0); }
         this.a = this.ensureNumber(scale.x * Math.cos(angleInRadians));
         this.b = this.ensureNumber(scale.y * Math.sin(angleInRadians));
@@ -780,7 +780,7 @@ export class Transform {
         if (this.a > 1) this.a = Math.round(this.a*Math.pow(10,2))/Math.pow(10,2);
         if (this.d > 1) this.d = Math.round(this.d*Math.pow(10,2))/Math.pow(10,2);
       } else {
-        this.fromMatrix(duck);
+        this.fromMatrix(translation);
       }
     } else {
       this.a = this.d = 1.0;
