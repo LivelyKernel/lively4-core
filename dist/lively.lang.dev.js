@@ -3396,11 +3396,14 @@
         indent: function (str, indentString, depth) {
             if (!depth || depth <= 0)
                 return str;
+            var indent = '';
             while (depth > 0) {
                 depth--;
-                str = indentString + str;
+                indent += indentString;
             }
-            return str;
+            return string.lines(str).map(function (line) {
+                return indent + line;
+            }).join('\n');
         },
         removeSurroundingWhitespaces: function (str) {
             function removeTrailingWhitespace(s) {
@@ -3898,22 +3901,23 @@
             return null;
         },
         lineIndexComputer: function (s) {
-            var lineRanges = string.lines(s).reduce(function (lineIndexes, line) {
-                var lastPos = lineIndexes.slice(-1)[0] || -1;
-                return lineIndexes.concat([
-                    lastPos + 1,
-                    lastPos + 1 + line.length
-                ]);
-            }, []);
+            var lineRanges = string.lineRanges(s);
             return function (pos) {
-                for (var line = 0; line < lineRanges.length; line += 2)
-                    if (pos >= lineRanges[line] && pos <= lineRanges[line + 1])
-                        return line / 2;
+                for (var line = 0; line < lineRanges.length; line++) {
+                    var lineRange = lineRanges[line];
+                    if (pos >= lineRange[0] && pos < lineRange[1])
+                        return line;
+                }
                 return -1;
             };
         },
         lineNumberToIndexesComputer: function (s) {
-            var lineRanges = string.lines(s).reduce(function (akk, line) {
+            return function (lineNo) {
+                return string.lineRanges(s)[lineNo];
+            };
+        },
+        lineRanges: function (s) {
+            return string.lines(s).reduce(function (akk, line) {
                 var start = akk.indexCount, end = akk.indexCount + line.length + 1;
                 akk.lineRanges.push([
                     start,
@@ -3925,9 +3929,6 @@
                 lineRanges: [],
                 indexCount: 0
             }).lineRanges;
-            return function (lineNo) {
-                return lineRanges[lineNo];
-            };
         },
         diff: function (s1, s2) {
             if (typeof JsDiff === 'undefined')

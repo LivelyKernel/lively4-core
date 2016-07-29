@@ -120,6 +120,10 @@ describe('string', function() {
     });
   });
 
+  it("indents", function() {
+    expect(string.indent("hello\n world", "  ", 2)).equal("    hello\n     world");
+  });
+
   it("reMatches", function() {
     var s = 'abc def abc xyz';
     var expected = [{start: 4, end: 11, match: "def abc"}];
