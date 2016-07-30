@@ -4,8 +4,6 @@ import Morph from './Morph.js';
 
 import rdfa from '../../src/client/rdfa/rdfa-api.js';
 import RdfaTriple from '../../src/client/rdfa/RdfaTriple.js';
-import RdfaPredicate from '../../src/client/rdfa/RdfaPredicate.js';
-import RdfaSubject from '../../src/client/rdfa/RdfaSubject.js';
 import Firebase from '../../src/client/firebase.js';
 
 import * as WikiDataAdapter from '../../src/client/wiki-data-adapter.js';
@@ -20,6 +18,9 @@ export default class RdfaMovieDb extends Morph {
   attachedCallback() {
     this.setup();
     this.windowTitle = "RDFa Movie DB";
+    if (this.parentElement && this.parentElement.setSize) {
+      this.parentElement.setSize(870, 400);
+    }
   }
 
   /*
@@ -78,14 +79,10 @@ export default class RdfaMovieDb extends Morph {
     this.createTableHeader();
     movieProjections.forEach((movieProjection) => {
       let ratingTd = $('<div>')
-      let review = movieProjection.review;
-      //TODO handle multiple reviews
-      if (Array.isArray(review)) {
-        review = review[0];
-      }
+      let rating = movieProjection.getRating();
       for (let i = 0; i < 5; i++) {
         let ratingStar;
-        if (review && review.reviewRating && review.reviewRating.ratingValue > i) {
+        if (rating && rating.ratingValue > i) {
           ratingStar = $('<i class="fa fa-star">');
         } else {
           ratingStar = $('<i class="fa fa-star-o">');
@@ -93,9 +90,9 @@ export default class RdfaMovieDb extends Morph {
         
         ratingTd.append(ratingStar);
         
-        const rating = i + 1;
+        const ratingValue = i + 1;
         ratingStar.on("click", () => {
-          this.setRating(movieProjection, rating);
+          this.setRating(movieProjection, ratingValue);
         });
       }
       
@@ -126,6 +123,16 @@ export default class RdfaMovieDb extends Morph {
   }
   
   setRating(movieProjection, rating) {
+    const ratingProjection = movieProjection.getRating();
+    if (ratingProjection) {
+      const oldTriple = new RdfaTriple(ratingProjection.getSubject(), 'http://schema.org/ratingValue', ratingProjection.ratingValue);
+      const newTriple = new RdfaTriple(ratingProjection.getSubject(), 'http://schema.org/ratingValue', "" + rating);
+      rdfa.updateRdfTriple(this.firebase, this.bucket, oldTriple, newTriple).then(()=> {
+        this.loadRdfaDataAndFillTable();
+      });
+      return;
+    }
+    
     console.log("setRating", movieProjection, rating);
     const reviewUuid = rdfa.newBlankNodeId();
     const authorUuid = rdfa.newBlankNodeId();
@@ -144,8 +151,7 @@ export default class RdfaMovieDb extends Morph {
     triples.push(new RdfaTriple(reviewUuid, 'http://schema.org/reviewRating', ratingUuid));
     triples.push(new RdfaTriple(reviewUuid, 'http://schema.org/Author', authorUuid));
     
-    //TODO mymovies
-    rdfa.storeRdfTriplesTo(this.firebase, 'mymovies', triples).then(()=> {
+    rdfa.storeRdfTriplesTo(this.firebase, this.bucket, triples).then(()=> {
       this.loadRdfaDataAndFillTable();
     });
   }
@@ -199,9 +205,28 @@ export default class RdfaMovieDb extends Morph {
   }
   
   enrichMovieProjections(movieProjections, data) {
+    // set movie DB
     movieProjections.forEach((movieProjection) => {
       this.setMovieDb(movieProjection);
     });
+    
+    // add getRating function
+     movieProjections.forEach((projection) => {
+        projection.getRating = function() {
+          let review = this.review;
+          if (!review) {
+            return null;
+          }
+          if (Array.isArray(review)) {
+            review = review[0];
+          }
+          return review.reviewRating;
+      };
+    });
+    
+    //if (Array.isArray(review)) {
+    //    review = review[0];
+     // }
   }
   
   mergeDuplicateMovies(movieProjections) {

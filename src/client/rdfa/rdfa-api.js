@@ -1,13 +1,14 @@
 import * as rdfa from '../../external/RDFa.js';
+import md5 from '../../external/md5.js';
 import generateUuid from '../uuid.js';
 import graphFactory from './rdfa-graph-factory.js';
 import RdfaTriple from './RdfaTriple.js';
 
 const FIREBASE_SAMPLE_CONF = {
-  apiKey: "AIzaSyCdiOSF0DUialcbR86BoJAmdj_RQFWgUk8",
-  authDomain: "webdev16-rdfa.firebaseapp.com",
-  databaseURL: "https://webdev16-rdfa.firebaseio.com",
-  storageBucket: "webdev16-rdfa.appspot.com",
+  apiKey: "AIzaSyA2wPvJ-OaCMpd559n2Tz_oyhWlGMLxXdU",
+  authDomain: "webdev16-rdfa-b6944.firebaseapp.com",
+  databaseURL: "https://webdev16-rdfa-b6944.firebaseio.com",
+  storageBucket: "webdev16-rdfa-b6944.appspot.com",
 };
 
 export default class RdfaApi {
@@ -68,6 +69,10 @@ export default class RdfaApi {
         return documentData;
       });
   }
+  
+  static removeDataFrom(firebase, bucket, root = "rdfTriples") {
+    return firebase.database().ref(root + "/" + bucket).remove();
+  }
 
   static getBucketListFrom(firebase, root = "rdfTriples") {
     return firebase.database().ref(root).once('value')
@@ -110,12 +115,12 @@ export default class RdfaApi {
     });
     return triples;
   }
-
+  
   static storeRdfTriplesTo(firebase, bucket, triples = this.getRDFaTriples(), root = "rdfTriples") {
     let path = root + "/" + bucket + "/";
     let updates = {};
     triples.forEach((triple) => {
-      let key = firebase.database().ref(path).push().key;
+      let key = this.generateKeyForTriple(triple);
       updates[key] = triple;
     });
    return firebase.database().ref(path).update(updates).then(() => {
@@ -123,6 +128,30 @@ export default class RdfaApi {
     }).catch((reason) => {
       lively.notify("Failed to update RDFa data to " + path, reason);
     });
+  }
+  
+  static updateRdfTriple(firebase, bucket, oldRdfaTriple, newRdfaTriple, root = "rdfTriples") {
+    let path = root + "/" + bucket + "/";
+    let oldKey = this.generateKeyForTriple(oldRdfaTriple);
+    let newKey = this.generateKeyForTriple(newRdfaTriple);
+    let updates = {};
+    updates[oldKey] = null;
+    updates[newKey] = newRdfaTriple;
+    
+    return firebase.database().ref(path).update(updates).then(() => {
+      console.log("Updated RDFa triple", path, "old", oldRdfaTriple, "new", newRdfaTriple);
+    }).catch((reason) => {
+      lively.notify("Failed to update RDFa data to " + path, reason);
+    });
+  }
+  
+  static removeRdfTriple(firebase, bucket, rdfaTriple, root = "rdfTriples") {
+    const key = this.generateKeyForTriple(rdfaTriple);
+    return firebase.database().ref(root + "/" + bucket + "/" + key).remove();
+  }
+  
+  static generateKeyForTriple(triple) {
+    return md5(triple.subject + ">>>" + triple.predicate + ">>>" + triple.value)
   }
 
   static queryResolved(data, query, hierachicalTemplate) {
