@@ -62,18 +62,6 @@ export default class ContextMenu {
       return menu;
     } else {
       return [
-      ["RDFa viewer", (evt) => {
-        this.openRdfaViewer(evt);
-        this.hide();
-      }],
-      ["RDFa firebase", (evt) => {
-        this.openRdfaDb(evt);
-        this.hide();
-      }],
-      ["RDFa movies", (evt) => {
-        this.openRdfaMovies(evt);
-        this.hide();
-      }],
       ["Workspace", (evt) => {
         this.hide();
         lively.openWorkspace("", lively.pt(evt.pageX, evt.pageY));
@@ -143,6 +131,14 @@ export default class ContextMenu {
           morph.style.backgroundColor = "blue";
           $('body')[0].appendChild(morph);
           this.hide();
+      }],
+      ["RDFa viewer", (evt) => {
+        this.openRdfaViewer(evt);
+        this.hide();
+      }],
+      ["RDFa movies", (evt) => {
+        this.openRdfaMovies(evt);
+        this.hide();
       }]
     ];}
   }
@@ -155,14 +151,6 @@ export default class ContextMenu {
       w.style.right = 0;
       w.style.bottom = 0;
       w.id = 'lively-rdfa-window';
-    });
-  }
-
-  static openRdfaDb(evt) {
-    $('#lively-rdfa-db').remove();
-
-    lively.components.openInWindow(lively.components.createComponent("lively-rdfa-db")).then((w) => {
-      w.id = 'lively-rdfa-db';
     });
   }
 
