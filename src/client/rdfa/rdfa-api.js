@@ -13,6 +13,10 @@ const FIREBASE_SAMPLE_CONF = {
 
 export default class RdfaApi {
 
+  /**
+   * Register a listener that is called whenever RDFa is loaded. E.g. when you 
+   * open the RDFa viewer.
+   */
   static addRdfaEventListener(mapping, template, callback) {
     const id = generateUuid();
     this.rdfaListener[id] = {mapping: mapping, template: template, callback: callback};
@@ -33,6 +37,11 @@ export default class RdfaApi {
     }
   }
   
+  /**
+   * Reruns the GreenTurtle parser and subsequently calls RDFaEventListeners.
+   * Return a promise that resolves when the data was loaded, passing the 
+   * document.data.
+   */
   static reloadData() {
     return new Promise((resolve, reject) => {
       let listenerFunc = (() => {
@@ -47,6 +56,12 @@ export default class RdfaApi {
     });
   }
 
+  /**
+   * Loads RDFa triples from a firebase instance at the supplied path.
+   * Return a promise that resolves with the DocumentData containing the data
+   * from the firebase.
+   * See https://www.w3.org/2010/02/rdfa/sources/rdfa-api/#document-data
+   */
   static loadDataFrom(firebase, bucket, root = "rdfTriples") {
     return firebase.database().ref(root + "/" + bucket).once('value')
       .then((data) => {
@@ -70,10 +85,17 @@ export default class RdfaApi {
       });
   }
   
+  /**
+   * Removes all data from the firebase instance at the .
+   */
   static removeDataFrom(firebase, bucket, root = "rdfTriples") {
     return firebase.database().ref(root + "/" + bucket).remove();
   }
 
+  /**
+   * Returns a promise that resolves to an array of available buckets in the 
+   * firebase instance.
+   */
   static getBucketListFrom(firebase, root = "rdfTriples") {
     return firebase.database().ref(root).once('value')
     .then(data => {
@@ -86,7 +108,10 @@ export default class RdfaApi {
     });
   }
 
-  //TODO refactoring
+  /**
+   * Returns a list of all triples on the current web site.
+   * Blank nodes are replaced with uuids.
+   */
   static getRDFaTriples() {
     let subject2uuid = {};
     let projections = document.data.rdfa.query();
@@ -116,6 +141,9 @@ export default class RdfaApi {
     return triples;
   }
   
+  /**
+   * Returns a promise, that resolves with a boolean whether the triple could be saved.
+   */
   static storeRdfTriplesTo(firebase, bucket, triples = this.getRDFaTriples(), root = "rdfTriples") {
     let path = root + "/" + bucket + "/";
     let updates = {};
@@ -125,11 +153,18 @@ export default class RdfaApi {
     });
    return firebase.database().ref(path).update(updates).then(() => {
       lively.notify("Updated RDFa data", path);
+      return true;
     }).catch((reason) => {
       lively.notify("Failed to update RDFa data to " + path, reason);
+      return false;
     });
   }
   
+  /**
+   * Returns a promise, that resolves with a boolean whether the triple could be saved.
+   * 
+   * This method deletes the old triple and saves the new one.
+   */
   static updateRdfTriple(firebase, bucket, oldRdfaTriple, newRdfaTriple, root = "rdfTriples") {
     let path = root + "/" + bucket + "/";
     let oldKey = this.generateKeyForTriple(oldRdfaTriple);
@@ -140,8 +175,10 @@ export default class RdfaApi {
     
     return firebase.database().ref(path).update(updates).then(() => {
       console.log("Updated RDFa triple", path, "old", oldRdfaTriple, "new", newRdfaTriple);
+      return true;
     }).catch((reason) => {
       lively.notify("Failed to update RDFa data to " + path, reason);
+      return false;
     });
   }
   
@@ -154,16 +191,41 @@ export default class RdfaApi {
     return md5(triple.subject + ">>>" + triple.predicate + ">>>" + triple.value)
   }
 
-  static queryResolved(data, query, hierachicalTemplate) {
+
+  /**
+   * Resolves the query object to an object populated with the data from the 
+   * data parameter. Blank nodes can be resolved by defining a hierarchical template.
+   * 
+   * See https://www.w3.org/TR/rdfa-api/#advanced-concepts
+   * 
+   * Simple Example:
+   * queryResolved( 
+   *   { 
+   *     "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": "http://xmlns.com/foaf/0.1/Person"
+   *   },{ 
+   *     "name": "http://xmlns.com/foaf/0.1/name",
+   *     "age": "http://xmlns.com/foaf/0.1/age"
+   *   }
+   * );
+   * 
+   * Complex Example: See /templates/classes/RdfaMovieDb.js:filterMovies
+   * 
+   * data DocumentData
+   * query {key: value} A property-value-filter. The property must exist and 
+   * have that value. Can be one or more selectors (key-value pairs).
+   * hierarchicalTemplate {} A template to map RDFa data to a POJO hierarchy. See the examples.
+   * 
+   */
+  static queryResolved(data, query, hierarchicalTemplate) {
     if (!data) throw new Error("data must not be undefined");
 
     const template = {};
     const subjectsToPostResolve = [];
 
-    for (let key in hierachicalTemplate) {
-      const iri = hierachicalTemplate[key];
+    for (let key in hierarchicalTemplate) {
+      const iri = hierarchicalTemplate[key]; // iri = Internationalized Resource Identifier
       if (Array.isArray(iri)) {
-        if (iri.length != 2) throw 'iri has to be a tuple';
+        if (iri.length != 2) throw 'IRI has to be a tuple';
         template[key] = iri[0];
         subjectsToPostResolve.push({'key': key, 'template': iri[1]});
       } else {

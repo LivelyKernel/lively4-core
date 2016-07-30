@@ -33,9 +33,9 @@ let id = rdfa.addRdfaEventListener(
     //      "reviewRating" : [ "http://schema.org/reviewRating", {
     //          "ratingValue" : "http://schema.org/ratingValue" } ]
   },
-  (graph) => {
+  (projections) => {
     lively.notify("RDFa {{type}} detected");
-    console.log(graph);
+    console.log(projections);
   }
 )`;
 
