@@ -517,7 +517,8 @@ export default class Lively {
     comp.style.width = "5px";
     comp.style.height = "5px";
     comp.style.padding = "1px";
-    comp.style.backgroundColor = "red";
+    comp.style.backgroundColor = 'rgba(255,0,0,0.5)';
+    comp.isMetaNode = true;
     document.body.appendChild(comp);
     lively.setPosition(comp, point);
     comp.setAttribute("data-is-meta", "true");
@@ -565,6 +566,7 @@ export default class Lively {
     // comp.style.height = "0px"
     comp.style["z-index"] = 1000;
     comp.style.border = "1px solid red";
+    comp.isMetaNode = true;
     document.body.appendChild(comp)
     lively.setPosition(comp, pos);
     comp.setAttribute("data-is-meta", "true")

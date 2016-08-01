@@ -46,13 +46,17 @@ export default class HaloDragItem extends HaloItem {
   }
 
   dragTo(evt) {
-    var eventPos = events.globalPosition(evt);
-    var newPosition = eventPos.subPt(this.dragStartEventPosition).addPt(this.dragStartNodePosition)
-    // {
-    //   x: eventPosition.x - this.dragStartEventPosition.x + this.dragStartNodePosition.x,
-    //   y: eventPosition.y - this.dragStartEventPosition.y + this.dragStartNodePosition.y
-    // }
-    nodes.setPosition(this.dragTarget, newPosition);
+    if (this.dragTarget.haloDragTo) {
+      this.dragTarget.haloDragTo(events.globalPosition(evt), this.dragStartEventPosition)
+    } else {
+      var eventPos = events.globalPosition(evt);
+      var newPosition = eventPos.subPt(this.dragStartEventPosition).addPt(this.dragStartNodePosition)
+      // {
+      //   x: eventPosition.x - this.dragStartEventPosition.x + this.dragStartNodePosition.x,
+      //   y: eventPosition.y - this.dragStartEventPosition.y + this.dragStartNodePosition.y
+      // }
+      nodes.setPosition(this.dragTarget, newPosition);
+    }
     evt.preventDefault();
   }
   

@@ -5,8 +5,13 @@ export default class HaloRemoveItem extends HaloItem {
 
   onClick() {
     var deleteTarget =window.that;
-    if (this.isAllowedToBeDeleted(deleteTarget)) {
-      $(deleteTarget).remove();
+    if (deleteTarget && this.isAllowedToBeDeleted(deleteTarget)) {
+      
+      if (deleteTarget.haloRemove) {
+        deleteTarget.haloRemove()
+      } else {
+        deleteTarget.remove();
+      }
       window.that = undefined;
     }
     this.hideHalo();
