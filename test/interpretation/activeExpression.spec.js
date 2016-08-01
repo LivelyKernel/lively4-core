@@ -4,6 +4,7 @@
 import Interpreter from '../../src/babelsberg/jsinterpreter/interpreter.js'
 import { aexpr } from '../../src/interpretation/interpretation-active-expressions.js';
 
+import './set-global-state.fixture.js';
 
 describe('Interpreting Active Expressions', function() {
     it("should interpret", () => {
@@ -222,6 +223,7 @@ describe('Interpreting Active Expressions', function() {
 
     // TODO: test function call with less/more arguments than expected
 
+    // TODO: Correct this binding for arrow functions
     xit("bind the this reference correctly for arrow functions", () => {
         let spy = sinon.spy();
 
@@ -257,33 +259,48 @@ describe('Interpreting Active Expressions', function() {
         expect(spy.calledOnce).to.be.true;
     });
 
-    it("access Math object", () => {
-        let spy = sinon.spy(),
-            obj = {
-                a: 2,
-                b:3
-            };
+    describe('Dealing With Globals', function() {
 
-        aexpr(() => Math.max(obj.a, obj.b), {obj}).onChange(spy);
+        it("access Math object", () => {
+            let spy = sinon.spy(),
+                obj = {
+                    a: 2,
+                    b:3
+                };
 
-        obj.a = 33;
-        obj.b = 42;
-        expect(spy).to.be.calledTwice;
+            aexpr(() => Math.max(obj.a, obj.b), {obj}).onChange(spy);
+
+            obj.a = 33;
+            obj.b = 42;
+            expect(spy).to.be.calledTwice;
+        });
+
+        it("access global objects", () => {
+            let spy = sinon.spy(),
+                obj = { a: 2 };
+
+            aexpr(() => __interpretation_test_global__ === obj.a, {obj}).onChange(spy);
+
+            obj.a = 42;
+
+            expect(spy).to.be.calledOnce;
+
+            // TODO: we currently do not listen to changes to global objects
+            return;
+            __interpretation_test_global__ = 17;
+            expect(spy).to.be.calledTwice;
+        });
+
+        // TODO: Transpiler magic currently renders us unable to refer to a global object in a function that does not have an explicit scope object, because the transpiler introduces variables in the function's local scope
+        xit("access global objects in functions without an explicit scope object", () => {
+            let spy = sinon.spy(),
+                obj = { a: 2 };
+
+            aexpr(() => getInterpretationTestGlobal() === obj.a + 2, {obj}).onChange(spy);
+
+            obj.a = 42;
+
+            expect(spy).to.be.calledOnce;
+        });
     });
-
-    xit("access global objects", () => {
-        let spy = sinon.spy(),
-            obj = {
-                a: 2,
-                b:3
-            };
-
-        aexpr(() => Math.max(obj.a, obj.b), {obj}).onChange(spy);
-
-        obj.a = 33;
-        obj.b = 42;
-        expect(spy).to.be.calledTwice;
-    });
-
-    xit("access global objects in functions without explicit scope object", () => {});
 });
