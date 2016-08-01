@@ -1,8 +1,8 @@
 'use strict';
 
 //import * as acorn from './../src/babelsberg/jsinterpreter/acorn.js'
-import Interpreter from '../src/babelsberg/jsinterpreter/interpreter.js'
-import { aexpr } from '../src/interpretation/interpretation-active-expressions.js';
+import Interpreter from '../../src/babelsberg/jsinterpreter/interpreter.js'
+import { aexpr } from '../../src/interpretation/interpretation-active-expressions.js';
 
 
 describe('Interpreting Active Expressions', function() {
@@ -222,7 +222,7 @@ describe('Interpreting Active Expressions', function() {
 
     // TODO: test function call with less/more arguments than expected
 
-    xit("bind the this argument correctly for arrow functions", () => {
+    xit("bind the this reference correctly for arrow functions", () => {
         let spy = sinon.spy();
 
         class Obj {
@@ -256,4 +256,34 @@ describe('Interpreting Active Expressions', function() {
         obj.foo = 33;
         expect(spy.calledOnce).to.be.true;
     });
+
+    it("access Math object", () => {
+        let spy = sinon.spy(),
+            obj = {
+                a: 2,
+                b:3
+            };
+
+        aexpr(() => Math.max(obj.a, obj.b), {obj}).onChange(spy);
+
+        obj.a = 33;
+        obj.b = 42;
+        expect(spy).to.be.calledTwice;
+    });
+
+    xit("access global objects", () => {
+        let spy = sinon.spy(),
+            obj = {
+                a: 2,
+                b:3
+            };
+
+        aexpr(() => Math.max(obj.a, obj.b), {obj}).onChange(spy);
+
+        obj.a = 33;
+        obj.b = 42;
+        expect(spy).to.be.calledTwice;
+    });
+
+    xit("access global objects in functions without explicit scope object", () => {});
 });
