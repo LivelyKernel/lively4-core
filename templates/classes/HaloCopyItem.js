@@ -3,7 +3,6 @@ import HaloGrabItem from './HaloGrabItem.js';
 
 import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
-import * as config from 'src/client/morphic/config.js';
 import {pt} from 'lively.graphics';
 
 var copyBlacklist = ["body", "html"];

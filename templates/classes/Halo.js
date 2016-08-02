@@ -43,7 +43,7 @@ export default class Halo extends Morph {
       nodes.setPosition(comp,  this.selectionOffset)
     })
     
-    this.selection.context = document.body
+    this.selection.context = window.that || document.body
     this.selection.isMetaNode = true
     this.selection.nodes = []
     

@@ -554,6 +554,7 @@ export default class Lively {
 
 
   static showElement(elem, timeout) {
+    if (!elem || !elem.getBoundingClientRect) return 
     var comp = document.createElement("div")
     var bounds = elem.getBoundingClientRect()
     var pos = lively.pt(

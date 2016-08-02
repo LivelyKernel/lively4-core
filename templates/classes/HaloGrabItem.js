@@ -9,25 +9,38 @@ drags it to a new position and places it relative or aboslute
 
 */
 
-
-
 import HaloItem from './HaloItem.js';
 import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
-import * as config from 'src/client/morphic/config.js';
 import {pt} from 'lively.graphics';
+
+// window.that = document.querySelector('lively-halo').shadowRoot.querySelector('lively-halo-grab-item')
+
+let 
+
+
+
+// this.isDragging = false
 
 export default class HaloGrabItem extends HaloItem {
  
   initialize() {
     this.registerMouseEvents()
     this.startCustomDragging();
+    
+    this.droppingBlacklist = {
+      "*": ["button", "input", "lively-halo", "html",  "lively-selection"]
+    };
   }
 
   // DRAG API
 
+  
   start(evt) {
-    if (this.isDragging) return;
+    if (this.isDragging) {
+      console.log("isDragging " + this.isDragging)
+      return;
+    }
     this.grabTarget = window.that;
     if (this.grabTarget) {
       this.grabStartEventPosition = events.globalPosition(evt);
@@ -40,22 +53,38 @@ export default class HaloGrabItem extends HaloItem {
     if (this.grabTarget && !this.isDragging && 
       events.noticableDistanceTo(evt, this.grabStartEventPosition)) {
       // drag detected
-      this.initGrabShadow();
-      this.prepareGrabTarget();
-      this.isDragging = true;
+        if (this.grabTarget.haloGrabStart) {
+          this.grabTarget.haloGrabStart(evt, this)
+        } else {
+          this.initGrabShadow();
+          this.prepareGrabTarget();
+        }
+        this.isDragging = true;
     }
-    if (this.isDragging) {
-      this.moveGrabbedNodeToEvent(evt);
+    if (this.isDragging && this.grabTarget) {
+      if (this.grabTarget.haloGrabMove) {
+        this.grabTarget.haloGrabMove(evt, this)
+      } else {
+        this.moveGrabbedNodeToEvent(evt);
+      }
     }
   }
   
   stop(evt) {
-    if (this.isDragging) {
-      this.stopGrabbingAtEvent(evt);
+    try {
+    if (this.isDragging && this.grabTarget) {
+      if (this.grabTarget.haloGrabStop) {
+        this.grabTarget.haloGrabStop(evt, this)
+      } else {
+        this.stopGrabbingAtEvent(evt);
+      }
     }
+    } finally {
+    this.isDragging = false;
     this.grabTarget = null;
     this.grabStartEventPosition = null;
     this.grabShadow = null;
+    }
   }
   
   // HELPERS
@@ -159,8 +188,8 @@ export default class HaloGrabItem extends HaloItem {
     var targetTag = targetNode.tagName.toLowerCase();
     return node !== targetNode &&
       !Array.from(node.getElementsByTagName('*')).includes(targetNode) &&
-      !(config.droppingBlacklist[node.tagName.toLowerCase()] || []).includes(targetTag) &&
-      !(config.droppingBlacklist['*'] || []).includes(targetTag)
+      !(this.droppingBlacklist[node.tagName.toLowerCase()] || []).includes(targetTag) &&
+      !(this.droppingBlacklist['*'] || []).includes(targetTag)
   }
   
   nodeComesBehind(node, pos) {

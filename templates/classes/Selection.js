@@ -44,4 +44,51 @@ export default class Selection extends Morph {
     })
     Halo.showHalos(this)
   }
-}
+ 
+  haloGrabStart(evt, grabHaloItem) {
+    this.startPositions.set(this, nodes.globalPosition(this))
+    this.nodes.forEach( ea => {
+     var pos = nodes.globalPosition(ea);
+     this.startPositions.set(ea, pos)
+     document.body.appendChild(ea)
+     ea.style.position = 'absolute'
+     nodes.setPosition(ea, pos)
+    })
+  }
+  
+  haloGrabMove(evt, grabHaloItem) {
+    this.haloDragTo(events.globalPosition(evt), this.startPositions.get(this))
+   
+  }
+  
+  haloGrabStop(evt, grabHaloItem) {
+   var positions = new Map()
+    // first add temorarily to selection ... so that we do not drop into each other
+   this.nodes.forEach( ea => {
+      
+      positions.set(ea, nodes.globalPosition(ea))
+      this.appendChild(ea)
+    })
+
+    var dropTarget = grabHaloItem.droptargetAtEvent(this, evt);
+
+    // then drop into the real target
+
+    dropTarget = dropTarget || document.body; // we have to drop somewhere
+    var i=0;
+    var offset = nodes.globalPosition(dropTarget)
+    this.nodes.forEach( ea => {
+      dropTarget.appendChild(ea)
+      ea.style.position = "absolute"
+      nodes.setPosition(ea, positions.get(ea).subPt(offset))
+      // nodes.setPosition(ea, pt(10*++i,10*i))
+    })
+    // this.nodes = []
+    // this.remove()
+    Halo.showHalos(this)
+    
+  }
+  
+}  
+  
+  
