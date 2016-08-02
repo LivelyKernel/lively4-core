@@ -11,7 +11,7 @@ export default function({ types: t }) {
                 // The identifier should not reference a variable in current scope
                 if (path.scope.hasBinding(LOCALS_NAME)) { return; }
 
-                console.log('locals expanded to', Object.keys(path.scope.getAllBindings()));
+                // console.log('locals expanded to', Object.keys(path.scope.getAllBindings()));
 
                 let vars = Object.keys(path.scope.getAllBindings())
                         .map(label => t.objectProperty(

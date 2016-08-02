@@ -9,18 +9,19 @@ var plugin = require('../dist/index').default;
 
 var tests = [
     {file: 'base'},
-    {file: 'base2'},
-//    {file: 'none'},
-  //  {file: 'locals-declared'}
+    {file: 'none'},
+    {file: 'locals-declared'},
+    {file: 'nested'}
 ];
 
 function normalize(str) {
     return str.toString().replace(/(\r\n|\n|\r)/gm, '\n');
 }
 
-describe('transform code', function () {
+describe('locals'
+    , function () {
     tests.forEach(function(test){
-        it(`No preset ${test.file}`, function() {
+        it(`case: ${test.file}`, function() {
             var transform = normalize(transformFileSync(path.join(__dirname, `src/${test.file}.js`), {
                 plugins: [[plugin, test.options]],
                 babelrc: false // So we don't get babelrc from whole project
