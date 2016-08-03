@@ -9,6 +9,10 @@ var copyBlacklist = ["body", "html"];
 
 export default class HaloCopyItem extends HaloGrabItem {
  
+  get isCopyItem() {
+    return true
+  }
+  
   onClick() {
     if (!this.copiedObject) {
       this.copyObject(window.that)
@@ -23,7 +27,7 @@ export default class HaloCopyItem extends HaloGrabItem {
   copyObject(el) {
     this.copyTarget = el;
     if (el.haloCopyObject) {
-        this.copiedObject = el.haloCopyObject(); // copy selection etc...
+        this.copiedObject = el.haloCopyObject(this); // copy selection etc...
     } else {
       if (this.isAllowedToBeCopied(this.copyTarget)) {
         this.copiedObject = this.copyTarget.cloneNode();

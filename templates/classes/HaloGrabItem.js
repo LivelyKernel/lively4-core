@@ -16,10 +16,6 @@ import {pt} from 'lively.graphics';
 
 // window.that = document.querySelector('lively-halo').shadowRoot.querySelector('lively-halo-grab-item')
 
-let 
-
-
-
 // this.isDragging = false
 
 export default class HaloGrabItem extends HaloItem {

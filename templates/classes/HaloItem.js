@@ -9,6 +9,9 @@ import Halo from './Halo.js';
  */
 
 export default class HaloItem extends Morph {
+  
+  get isMetaNode() { return true}
+  
   initialize() {
     // super.initialize()
     this.registerMouseEvents()
