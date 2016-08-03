@@ -24,7 +24,7 @@ function send(receiver, message) {
 
 function createProcess(script, cwd) {
   if (isNode) {
-    let p = child_process.fork(path.join(process.cwd(), script), {
+    let p = child_process.fork(path.join(__dirname, script), {
       cwd: toAbsPath(cwd),
       // pipe stdout/stderr into this process
       silent: true
@@ -87,7 +87,7 @@ export function startWorker(subdir) {
 
     console.log("[Indexing] Starting new worker for " + subdir);
     try {
-      let script = isNode ? __dirname + "/../server/lunr-node-search-worker.js" : "./src/external/lively4-search/client/lunr-es6-search-worker-wrapper.js";
+      let script = isNode ? "../server/lunr-node-search-worker.js" : "./src/external/lively4-search/client/lunr-es6-search-worker-wrapper.js";
       workers[subdir] = createProcess(script, subdir);
     } catch (err) {
       console.log("[Indexing] Error starting new worker for " + subdir + ": " + err);
