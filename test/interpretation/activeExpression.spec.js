@@ -17,14 +17,6 @@ describe('Interpreting Active Expressions', function() {
         expect(i.stateStack[0].scope.properties.returnValue.data).to.equal(23);
     });
 
-    xit("should allow constrained access to important globals", function() {
-        var predicate = function () {
-            return [jQuery, $, _, lively];
-        };
-        var r = ConstraintInterpreter.runAndReturn(predicate.toString())
-        assert.equal([jQuery, $, _, lively], r)
-    });
-
     it("runs a basic aexpr", () => {
         var obj = {a: 2, b: 3};
         let spy = sinon.spy();

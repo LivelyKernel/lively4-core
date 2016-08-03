@@ -60,9 +60,9 @@ export class ActiveExpressionInterpreter extends Interpreter {
                     self.setProperty(rootScope, k, self.createPseudoObject(value));
                 });
                 // TODO: delete as the relevant global objects can be inferred by analysing the local scope
-                ["__lvVarRecorder", "jQuery", "$", "_", "lively"].forEach((k) => {
-                    self.setProperty(rootScope, k, self.createPseudoObject(window[k]));
-                });
+                // ["__lvVarRecorder", "jQuery", "$", "_", "lively"].forEach((k) => {
+                //     self.setProperty(rootScope, k, self.createPseudoObject(window[k]));
+                // });
             });
         i.run();
         return i.stateStack[0].scope.properties.returnValue.valueOf();
