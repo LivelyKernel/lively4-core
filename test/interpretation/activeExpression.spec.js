@@ -31,7 +31,7 @@ describe('Interpreting Active Expressions', function() {
 
         aexpr(function() {
             return obj.a;
-        }, {obj}).onChange(spy);
+        }, locals).onChange(spy);
 
         expect(spy.called).to.be.false;
 
@@ -47,7 +47,7 @@ describe('Interpreting Active Expressions', function() {
             return obj.a + obj.b;
         }
 
-        aexpr(predicate, {obj})
+        aexpr(predicate, locals)
             .onChange(spy);
 
         obj.a = 42;
@@ -66,7 +66,7 @@ describe('Interpreting Active Expressions', function() {
             return obj.a * obj.b;
         }
 
-        aexpr(predicate, {obj})
+        aexpr(predicate, locals)
             .onChange(spy);
 
         obj.b = 5;
@@ -84,7 +84,7 @@ describe('Interpreting Active Expressions', function() {
             spy2 = sinon.spy(),
             spy3 = sinon.spy();
 
-        aexpr(() => obj.a, {obj})
+        aexpr(() => obj.a, locals)
             .onChange(spy1)
             .onChange(spy2)
             .onChange(spy3);
@@ -100,8 +100,8 @@ describe('Interpreting Active Expressions', function() {
         var obj = {a: 1};
         let spy = sinon.spy();
 
-        aexpr(() => obj.a, {obj}).onChange(spy);
-        aexpr(() => obj.a, {obj}).onChange(spy);
+        aexpr(() => obj.a, locals).onChange(spy);
+        aexpr(() => obj.a, locals).onChange(spy);
 
         obj.a = 2;
 
@@ -114,7 +114,7 @@ describe('Interpreting Active Expressions', function() {
 
         let expr = aexpr(function() {
             return obj.a;
-        }, {obj}).onChange(spy);
+        }, locals).onChange(spy);
 
         expr.revoke();
 
@@ -152,7 +152,7 @@ describe('Interpreting Active Expressions', function() {
                 }
             };
 
-        aexpr(() => complexObject.foo.bar, {complexObject}).onChange(spy);
+        aexpr(() => complexObject.foo.bar, locals).onChange(spy);
 
         complexObject.foo.bar = 33;
         expect(spy.calledOnce).to.be.true;
@@ -175,7 +175,7 @@ describe('Interpreting Active Expressions', function() {
         let obj = { a: 17 },
             spy = sinon.spy();
 
-        aexpr(() => double(obj.a), {obj, double}).onChange(spy);
+        aexpr(() => double(obj.a), locals).onChange(spy);
 
         obj.a = 21;
         expect(spy.calledOnce).to.be.true;
@@ -192,7 +192,7 @@ describe('Interpreting Active Expressions', function() {
                 }
             };
 
-        aexpr(() => rect.area(), {rect}).onChange(spy);
+        aexpr(() => rect.area(), locals).onChange(spy);
 
         rect.height = 33;
         expect(spy.calledOnce).to.be.true;
@@ -215,7 +215,7 @@ describe('Interpreting Active Expressions', function() {
         let rect = new Rectangle(10, 20),
             spy = sinon.spy();
 
-        aexpr(() => rect.area(3), {rect}).onChange(spy);
+        aexpr(() => rect.area(3), locals).onChange(spy);
 
         rect.height = 33;
         expect(spy.calledOnce).to.be.true;
@@ -230,7 +230,7 @@ describe('Interpreting Active Expressions', function() {
         class Obj {
             constructor(foo) {
                 this.foo = foo;
-                this.expr = aexpr(() => this.foo, {});
+                this.expr = aexpr(() => this.foo, locals);
             }
         }
 
@@ -248,7 +248,7 @@ describe('Interpreting Active Expressions', function() {
         class Obj {
             constructor(foo) {
                 this.foo = foo;
-                this.expr = aexpr(() => this.foo, {});
+                this.expr = aexpr(() => this.foo, locals);
             }
         }
 
@@ -268,7 +268,7 @@ describe('Interpreting Active Expressions', function() {
                     b:3
                 };
 
-            aexpr(() => Math.max(obj.a, obj.b), {obj}).onChange(spy);
+            aexpr(() => Math.max(obj.a, obj.b), locals).onChange(spy);
 
             obj.a = 33;
             obj.b = 42;
@@ -279,7 +279,7 @@ describe('Interpreting Active Expressions', function() {
             let spy = sinon.spy(),
                 obj = { a: 2 };
 
-            aexpr(() => __interpretation_test_global__ === obj.a, {obj}).onChange(spy);
+            aexpr(() => __interpretation_test_global__ === obj.a, locals).onChange(spy);
 
             obj.a = 42;
 
@@ -296,7 +296,7 @@ describe('Interpreting Active Expressions', function() {
             let spy = sinon.spy(),
                 obj = { a: 2 };
 
-            aexpr(() => getInterpretationTestGlobal() === obj.a + 2, {obj}).onChange(spy);
+            aexpr(() => getInterpretationTestGlobal() === obj.a + 2, locals).onChange(spy);
 
             obj.a = 42;
 

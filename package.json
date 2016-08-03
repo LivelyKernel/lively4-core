@@ -90,6 +90,7 @@
     "webpack-config": "^5.2.1"
   },
   "dependencies": {
+    "babel-plugin-locals": "^1.0.1",
     "stack-es2015-modules": "^1.1.0"
   }
 }

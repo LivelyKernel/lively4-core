@@ -6,7 +6,8 @@
   "plugins": [
     "array-includes",
     "transform-class-properties",
-    "transform-runtime"
+    "transform-runtime",
+    "locals"
   ],
   auxiliaryCommentBefore: 'istanbul ignore next'
 }
