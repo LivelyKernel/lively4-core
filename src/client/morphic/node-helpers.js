@@ -1,13 +1,30 @@
+import {pt,rect} from 'lively.graphics'
+
 export function setPosition(node, pos) {
   node.style.left = '' + pos.x + 'px';
   node.style.top = '' + pos.y + 'px';
 }
 
-export function getPosition(node, pos) {
-  return {
-    x: parseInt(node.style.left) || 0,
-    y: parseInt(node.style.top) || 0
-  }
+export function getPosition(node) {
+  return pt(
+    parseInt(node.style.left) || 0,
+    parseInt(node.style.top) || 0)
+}
+
+export function getExtent(node) {
+  return pt(
+    parseInt(node.style.width) || 0,
+    parseInt(node.style.height) || 0)
+}
+
+export function setExtent(node, extent) {
+  node.style.width = '' + extent.x + 'px';
+  node.style.height = '' + extent.y + 'px';
+}
+
+export function getBounds(node) {
+  var pos = getPosition(node)
+  return rect(pos, pos.addPt(getExtent(node)))
 }
 
 export function globalPosition(node) {
@@ -18,8 +35,5 @@ export function globalPosition(node) {
     top += node.offsetTop;
     node = node.offsetParent;
   }
-  return {
-    x: left,
-    y: top
-  }
+  return pt(left, top)
 }

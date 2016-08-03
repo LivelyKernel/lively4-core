@@ -398,8 +398,10 @@ export default class Lively {
     if (Notification.permission !== "granted") Notification.requestPermission();
 
     var time = Date.now()
-    if(this.notifications.length > 10 &&
-      (Date.now() - this.notifications[10].time < 1000)) {
+    
+    // check if the third last notification was already one second ago
+    if(this.notifications.length > 5 &&
+      (Date.now() - this.notifications[this.notifications.length - 3].time < 1000)) {
       return console.log("SILENT NOTE: " + title  + " (" + text + ")");
     }
 
@@ -515,7 +517,8 @@ export default class Lively {
     comp.style.width = "5px";
     comp.style.height = "5px";
     comp.style.padding = "1px";
-    comp.style.backgroundColor = "red";
+    comp.style.backgroundColor = 'rgba(255,0,0,0.5)';
+    comp.isMetaNode = true;
     document.body.appendChild(comp);
     lively.setPosition(comp, point);
     comp.setAttribute("data-is-meta", "true");
@@ -551,6 +554,7 @@ export default class Lively {
 
 
   static showElement(elem, timeout) {
+    if (!elem || !elem.getBoundingClientRect) return 
     var comp = document.createElement("div")
     var bounds = elem.getBoundingClientRect()
     var pos = lively.pt(
@@ -563,6 +567,7 @@ export default class Lively {
     // comp.style.height = "0px"
     comp.style["z-index"] = 1000;
     comp.style.border = "1px solid red";
+    comp.isMetaNode = true;
     document.body.appendChild(comp)
     lively.setPosition(comp, pos);
     comp.setAttribute("data-is-meta", "true")

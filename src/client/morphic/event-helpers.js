@@ -1,18 +1,16 @@
-import * as nodes from './node-helpers.js'
-import * as config from './config.js';
+import * as nodes from './node-helpers.js';
+import {pt} from 'lively.graphics';
 
 // todo: export class wrappers
+
 /**
 Event(e).globalPosition();
 */
 
-var offset = config.MOUSE_MOVE_OFFSET || 0;
+var offset = 30;
 
 export function globalPosition(e) {
-  return {
-    x: e.pageX,
-    y: e.pageY
-  }
+  return pt(e.pageX, e.pageY)
 }
 
 export function elementsUnder(e) {
