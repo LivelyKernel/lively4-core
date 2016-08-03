@@ -1,6 +1,6 @@
 import Morph from './Morph.js';
 import Files from "src/client/files.js";
-import * as search from "src/client/search/search.js";
+import * as search from "src/external/lively4-search/client/search.js";
 
 
 export default class IndexManager extends Morph {
@@ -20,6 +20,11 @@ export default class IndexManager extends Morph {
       this.createIndex(target.dataset.mountType, target.dataset.path);
     });
 
+    $(this.getSubmorph(".container")).on("click", ".remove-button", evt => {
+      let target = evt.currentTarget;
+      this.removeIndex(target.dataset.mountType, target.dataset.path);
+    });
+
     let mountRequest = new Request("https://lively4/sys/mounts");
     Promise.all([
       fetch(mountRequest).then(resp => {
@@ -29,14 +34,17 @@ export default class IndexManager extends Morph {
       }),
       this.appendServerRepos()
     ]).then(() => {
-      let availableMounts = search.getAvailableMounts();
-      Object.keys(availableMounts.dropbox).forEach(path => {
-        this.refreshIndex("dropbox", path);
+      search.getAvailableMounts().then(availableMounts => {
+        for (let type in availableMounts) {
+          if (type !== "server" && type !== "dropbox") {
+            continue;
+          }
+          for (let path in availableMounts[type]) {
+            this.refreshIndex(type, path);
+          }
+        }
       });
-      this.refreshIndex("server", "/" + window.location.pathname.split("/")[1]);
     });
-
-
   }
 
   appendDropboxes(mounts) {
@@ -62,29 +70,39 @@ export default class IndexManager extends Morph {
   getEntryFor(mountType, path) {
     return `<tr>
         <td>${path}</td>
-        <td><i id=${path.slice(1)}-status>unknown</i></td>
+        <td><i data-id=${path.slice(1)}>unknown</i></td>
         <td>
-          <button data-path=${path} data-mount-type=${mountType} class="refresh-button"><i class="fa fa-refresh" aria-hidden="true"></i></button>
-          <button data-path=${path} data-mount-type=${mountType} class="create-button"><i class="fa fa-plus" aria-hidden="true"></i></button>
+          <button data-path=${path} data-mount-type=${mountType} class="refresh-button" title="Refresh status"><i class="fa fa-refresh" aria-hidden="true"></i></button>
+          <button data-path=${path} data-mount-type=${mountType} class="create-button" title="Load or create index"><i class="fa fa-plus" aria-hidden="true"></i></button>
+          <button data-path=${path} data-mount-type=${mountType} class="remove-button" title="Remove index"><i class="fa fa-trash" aria-hidden="true"></i></button>
         </td>
       </tr>`
   }
 
   createIndex(mountType, path) {
     console.log("create index at", mountType, path);
-    let statusText = this.getSubmorph(`#${path.slice(1)}-status`);
-    statusText.innerHTML = "waiting...";
-    search.loadIndex(mountType, path).then(() => {
+    let statusText = this.getSubmorph(`i[data-id="${path.slice(1)}"]`);
+    statusText.innerHTML = `<i class="fa fa-spinner fa-pulse fa-fw"></i>`;
+    search.prepareForSearch(mountType, path).then(() => {
       this.refreshIndex(mountType, path);
     });
   }
 
   refreshIndex(mountType, path) {
-    let statusText = this.getSubmorph(`#${path.slice(1)}-status`);
-    statusText.innerHTML = "waiting...";
+    let statusText = this.getSubmorph(`i[data-id="${path.slice(1)}"]`);
+    statusText.innerHTML = `<i class="fa fa-spinner fa-pulse fa-fw"></i>`;
     console.log("refresh index at", mountType, path);
     search.getStatus(mountType, path).then(status => {
       statusText.innerHTML = status;
+    });
+  }
+
+  removeIndex(mountType, path) {
+    console.log("remove index at", mountType, path);
+    let statusText = this.getSubmorph(`i[data-id="${path.slice(1)}"]`);
+    statusText.innerHTML = `<i class="fa fa-spinner fa-pulse fa-fw"></i>`;
+    search.removeIndex(mountType, path).then(() => {
+      this.refreshIndex(mountType, path);
     });
   }
 
