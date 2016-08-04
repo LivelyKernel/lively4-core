@@ -29,25 +29,36 @@ export default class HaloResizeItem extends HaloItem {
 
   start(evt) {
     evt.preventDefault();
-
     this.target = window.that
-    this.initialExtent  = nodes.getExtent(this.target)
-    this.eventOffset  = events.globalPosition(evt)
-  
-    this.removeRestrictions(this.target)
-  }
-
-  stop(e) {
-    e.preventDefault();
-    this.resizing = false;
+    
+    if (this.target.haloResizeStart) {
+      this.target.haloResizeStart(evt, this)
+    } else {
+      this.initialExtent  = nodes.getExtent(this.target)
+      this.eventOffset  = events.globalPosition(evt)
+      this.removeRestrictions(this.target)
+    }
   }
 
   move(evt) {
     evt.preventDefault();
-    var delta = events.globalPosition(evt).subPt(this.eventOffset)
-    console.log("this.initialExtent " + this.initialExtent)
-    nodes.setExtent(this.target, this.initialExtent.addPt(delta)) 
-    HaloService.showHalos(window.that);
+    if (this.target.haloResizeMove) {
+      this.target.haloResizeMove(evt, this)
+    } else {
+      var delta = events.globalPosition(evt).subPt(this.eventOffset)
+      console.log("this.initialExtent " + this.initialExtent)
+      nodes.setExtent(this.target, this.initialExtent.addPt(delta)) 
+      HaloService.showHalos(window.that);
+    }
+  }
+
+  stop(e) {
+    e.preventDefault();
+    if (this.target.haloResizeStop) {
+      this.target.haloResizeStop(evt, this)
+    } else {
+      // do nothing... anymore
+    }
   }
 
   removeRestrictions(node) {
