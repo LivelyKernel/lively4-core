@@ -218,7 +218,6 @@ export default class Sync extends Morph {
   }
 
   async getGitRepositoryNames() {
-    debugger
     var json = await lively.files.statFile(this.getServerURL()).then( JSON.parse)
     return json.contents.filter(ea => ea.type == "directory").map(ea => ea.name)
   }
