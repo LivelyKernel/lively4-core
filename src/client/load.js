@@ -44,7 +44,7 @@ if ('serviceWorker' in navigator) {
         return lively.modules.importPackage(lively4url)})
       .then(function(module) {
         lively.initializeHalos();
-        // lively.initializeSearch();
+        lively.initializeSearch();
         lively.components.loadUnresolved();
         console.log("running on load callbacks:");
         loadCallbacks.forEach(function(cb){
@@ -73,7 +73,7 @@ if ('serviceWorker' in navigator) {
         console.log('ServiceWorker registration successful with scope: ', registration.scope);
 
         // so now we have to reload!
-        console.log("ok... lets WAIT WAIT WAIT!!!!")
+        console.log("ok... lets wait for the service worker.")
         // console.log("Lively4 ServiceWorker installed! Reboot needed! ;-)")
         // window.location = window.location
     }).catch(function(err) {

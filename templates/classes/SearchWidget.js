@@ -1,6 +1,5 @@
 'use strict';
 
-
 import Morph from './Morph.js';
 import * as search from 'src/external/lively4-search/client/search.js';
 
@@ -100,6 +99,9 @@ export default class SearchWidget extends Morph {
         newResults.forEach(res => {
           res.label = this.getLabel(res.path);
         });
+        
+        newResults = newResults.filter(ea => ! ea.path.match(/node_modules/))
+        newResults = newResults.filter(ea => ! ea.path.match(/src\/external/))
 
         // Update search results
         if (newResults.length && newResults[0].type == "github") {
