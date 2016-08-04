@@ -1,47 +1,40 @@
 
 import HaloItem from './HaloItem.js';
 
+import * as nodes from 'src/client/morphic/node-helpers.js'
+import * as events from 'src/client/morphic/event-helpers.js'
+
+
 export default class HaloResizeItem extends HaloItem {
   initialize() {
-    console.log("init resize")
-      lively.addEventListener("Morphic", this, 'mousedown',  e => this.onMouseDown(e));
-      lively.addEventListener("Morphic", this, 'mouseup',  e => this.onMouseUp(e));
+    lively.addEventListener("Morphic", this, 'mousedown',  e => this.onMouseDown(e));
   }
 
   onMouseDown(evt) {
-    console.log("...")
     this.start(evt);
 
     // attach mousemove handler to body only after mousedown occured
-    $(document).off("mousemove.resize").on("mousemove.resize", (evt) => {
+    lively.addEventListener("HaloResize", document, 'mousemove', (evt) => {
       this.move(evt);
-      // update position of halos on mousemove
-      HaloService.showHalos(window.that);
     });
+    // and capture the following mouse up anywere 
+    lively.addEventListener("HaloResize", document.body, 'mouseup',  e => this.onMouseUp(e));
   }
 
   onMouseUp(evt) {
-    if (this.resizing) {
-      this.stop(evt);
-      // detach mousemove handler from body
-      $(document).off("mousemove.resize");
-    }
+    lively.removeEventListener("HaloResize", document.body, 'mouseup');
+    lively.removeEventListener("HaloResize", document, 'mousemove');
+    this.stop(evt);
   }
 
-  start(e) {
-    e.preventDefault();
+  start(evt) {
+    evt.preventDefault();
+
+    this.target = window.that
+    this.initialExtent  = nodes.getExtent(this.target)
+    this.eventOffset  = events.globalPosition(evt)
   
-    let $el = $(window.that)
-    let offsetWindow = $el.offset();
-  
-    this.removeRestrictions($el)
-  
-    this.resizing = {
-      left: offsetWindow.left,
-      top: offsetWindow.top,
-      offsetX: offsetWindow.left + $el.width() - e.pageX,
-      offsetY: offsetWindow.top + $el.height() - e.pageY
-    };
+    this.removeRestrictions(this.target)
   }
 
   stop(e) {
@@ -49,24 +42,19 @@ export default class HaloResizeItem extends HaloItem {
     this.resizing = false;
   }
 
-  move(e) {
-    e.preventDefault();
-  
-    if (this.resizing) {
-      $(window.that).css({
-        width: e.pageX - this.resizing.left + this.resizing.offsetX,
-        height: e.pageY - this.resizing.top + this.resizing.offsetY
-      });
-    }
+  move(evt) {
+    evt.preventDefault();
+    var delta = events.globalPosition(evt).subPt(this.eventOffset)
+    console.log("this.initialExtent " + this.initialExtent)
+    nodes.setExtent(this.target, this.initialExtent.addPt(delta)) 
+    HaloService.showHalos(window.that);
   }
 
-  removeRestrictions($el) {
-    $el.css({
-      "min-width": "none",
-      "min-height": "none",
-      "max-width": "none",
-      "max-height": "none"
-    })
+  removeRestrictions(node) {
+    node.style.minWidth = null;
+    node.style.minHeight = null;
+    node.style.maxWidth = null;
+    node.style.maxHeight = null;
   }
     
     
