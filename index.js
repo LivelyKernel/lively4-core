@@ -1,30 +1,153 @@
-const LOCALS_NAME = "locals";
+const SET_MEMBER = "setMember";
+const GET_MEMBER = "getMember";
+const GET_AND_CALL_MEMBER = "getAndCallMember";
 
-export default function({ types: t }) {
+const SET_LOCAL = "setLocal";
+const GET_LOCAL = "getLocal";
+
+const SET_GLOBAL = "setGlobal";
+const GET_GLOBAL = "getGlobal";
+
+const RESERVED_IDENTIFIERS = [
+    SET_MEMBER,
+    GET_MEMBER,
+    GET_AND_CALL_MEMBER,
+    SET_LOCAL,
+    GET_LOCAL,
+    SET_GLOBAL,
+    GET_GLOBAL
+];
+
+export default function(param) {
+    console.log(param);
+    let {
+        types: t,
+        template
+    } = param;
+
+    function getPropertyFromMemberExpression(node) {
+        // We are looking for MemberExpressions, which have two distinct incarnations:
+        // 1. we have a computed MemberExpression like a[b], with the property being an Expression
+        // 2. a non-computed MemberExpression like a.b, with the property being an Identifier
+        return node.computed ?
+            // We can easily deal with the first case by replacing the MemberExpression with a call
+            node.property :
+            // In the second case, we introduce a StringLiteral matching the Identifier
+            t.stringLiteral(node.property.name);
+    }
+
     return {
         visitor: {
             Identifier(path) {
-                // The identifier should have the expected name
-                if (path.node.name !== LOCALS_NAME) { return; }
-                // The identifier should not be part of a declaration
-                if (!path.isReferencedIdentifier()) { return; }
-                // The identifier should not reference a variable in current scope
-                if (path.scope.hasBinding(LOCALS_NAME)) { return; }
+                return;
 
-                // console.log('locals expanded to', Object.keys(path.scope.getAllBindings()));
+                if(RESERVED_IDENTIFIERS.includes(path.node.name)) { return; }
 
-                let vars = Object.keys(path.scope.getAllBindings())
-                        .map(label => t.objectProperty(
-                        t.identifier(label), // key
-                        t.identifier(label), // value
-                        undefined, // computed?
-                        true, // shorthand?
-                        undefined // decorators array
-                    ));
+                if(t.isClassDeclaration(path.parent)) {
+                    console.log("classDecl", path.node.name);
+                    return;
+                }
+
+                if(t.isClassMethod(path.parent)) {
+                    console.log("classMethod", path.node.name);
+                    return;
+                }
+
+                if(t.isObjectMethod(path.parent)) {
+                    console.log("objectMethod", path.node.name);
+                    return;
+                }
+                if(t.isVariableDeclarator(path.parent)) {
+                    console.log("varDecl", path.node.name);
+                    return;
+                }
+
+                // is this correct here?
+                // TODO: is it correct for the locals plugin?
+                if (!path.isReferencedIdentifier()) {
+                    console.log("def", path.node.name);
+                    return;
+                }
+
+                // is locally defined variable?
+                if (path.scope.hasBinding(path.node.name)) {
+                    console.log("local", path.node.name);
+                } else {
+                    // we have a global
+                    console.log("global", path.node.name);
+                }
+            },
+
+            AssignmentExpression(path, state) {
+                // check, whether we assign to a member (no support for pattern right now)
+                if(!t.isMemberExpression(path.node.left)) { return; }
+
+                let uid = state.file.scope.generateUidIdentifier(name);
+                let ref = template(`
+  (function (left, right) {
+    if (right != null && typeof Symbol !== "undefined" && right[Symbol.hasInstance]) {
+      return right[Symbol.hasInstance](left);
+    } else {
+      return left instanceof right;
+    }
+  });
+`)().expression;
+                if (t.isFunctionExpression(ref) && !ref.id) {
+                    ref.body._compact = true;
+                    ref._generated = true;
+                    ref.id = uid;
+                    ref.type = "FunctionDeclaration";
+                    state.file.path.unshiftContainer("body", ref);
+                } else {
+                    ref._compact = true;
+                    state.file.scope.push({
+                        id: uid,
+                        init: ref,
+                        unique: true
+                    });
+                }
+                path.replaceWith(
+                    t.callExpression(
+                        t.identifier(SET_MEMBER),
+                        [
+                            path.node.left.object,
+                            getPropertyFromMemberExpression(path.node.left),
+                            t.stringLiteral(path.node.operator),
+                            path.node.right
+                        ]
+                    )
+                );
+            },
+
+            MemberExpression(path, state) {
+                // lval (left values) are ignored for now
+                if(t.isAssignmentExpression(path.parent) && path.key === 'left') { return; }
 
                 path.replaceWith(
-                    t.objectExpression(vars)
+                    t.callExpression(
+                        t.identifier(GET_MEMBER),
+                        [
+                            path.node.object,
+                            getPropertyFromMemberExpression(path.node)
+                        ]
+                    )
                 );
+            },
+
+            CallExpression(path) {
+                // check whether we call a MemberExpression
+                if(!t.isMemberExpression(path.node.callee)) { return; }
+
+                path.replaceWith(
+                    t.callExpression(
+                        t.identifier(GET_AND_CALL_MEMBER),
+                        [
+                            path.node.callee.object,
+                            getPropertyFromMemberExpression(path.node.callee),
+                            t.arrayExpression(path.node.arguments)
+                        ]
+                    )
+                )
             }
         }
     };
