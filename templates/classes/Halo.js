@@ -49,12 +49,15 @@ export default class Halo extends Morph {
     
   
   showHalo(target, path) {
-    if (!target || !target.getBoundingClientRect) return;
+    if (!target.getBoundingClientRect) {
+      $(this).show();
+      return    
+    }
     var bounds = target.getBoundingClientRect();
     var offset = {
       top: bounds.top +  $(document).scrollTop(), 
       left: bounds.left +  $(document).scrollLeft()};
-        
+  
     // viewport coordinates
     var scrollTop = Math.abs($(document).scrollTop());
     var scrollLeft = Math.abs($(document).scrollLeft());
