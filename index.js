@@ -8,22 +8,8 @@ const GET_LOCAL = "getLocal";
 const SET_GLOBAL = "setGlobal";
 const GET_GLOBAL = "getGlobal";
 
-const RESERVED_IDENTIFIERS = [
-    SET_MEMBER,
-    GET_MEMBER,
-    GET_AND_CALL_MEMBER,
-    SET_LOCAL,
-    GET_LOCAL,
-    SET_GLOBAL,
-    GET_GLOBAL
-];
-
-export default function(param) {
-    console.log(param);
-    let {
-        types: t,
-        template
-    } = param;
+export default function({ types: t, template }) {
+    console.log(arguments);
 
     function getPropertyFromMemberExpression(node) {
         // We are looking for MemberExpressions, which have two distinct incarnations:
@@ -36,8 +22,65 @@ export default function(param) {
             t.stringLiteral(node.property.name);
     }
 
+    let customTemplates = {}
+    customTemplates[SET_MEMBER] = template(`
+  (function(left, right) {
+    if (right != null && typeof Symbol !== "undefined" && right[Symbol.hasInstance]) {
+      return right[Symbol.hasInstance](left);
+    } else {
+      return left instanceof right;
+    }
+  });
+`);
+
+    customTemplates[GET_MEMBER] = template(`
+  (function(left, right) {
+    if (right != null && typeof Symbol !== "undefined" && right[Symbol.hasInstance]) {
+      return right[Symbol.hasInstance](left);
+    } else {
+      return left instanceof right;
+    }
+  });
+`);
+
+    customTemplates[GET_AND_CALL_MEMBER] = template(`
+  (function(left, right) {
+    if (right != null && typeof Symbol !== "undefined" && right[Symbol.hasInstance]) {
+      return right[Symbol.hasInstance](left);
+    } else {
+      return left instanceof right;
+    }
+  });
+`);
+
+    function addCustomTemplate(file, name) {
+        let declar = file.declarations[name];
+        if (declar) return declar;
+
+        let ref = customTemplates[name]().expression;
+        let uid = file.declarations[name] = file.scope.generateUidIdentifier(name);
+
+        if (t.isFunctionExpression(ref) && !ref.id) {
+            ref.body._compact = true;
+            ref._generated = true;
+            ref.id = uid;
+            ref.type = "FunctionDeclaration";
+            file.path.unshiftContainer("body", ref);
+        } else {
+            ref._compact = true;
+            file.scope.push({
+                id: uid,
+                init: ref,
+                unique: true
+            });
+        }
+
+        return uid;
+    }
+
     return {
         visitor: {
+            // TODO: also
             Identifier(path) {
                 return;
 
@@ -82,33 +125,9 @@ export default function(param) {
                 // check, whether we assign to a member (no support for pattern right now)
                 if(!t.isMemberExpression(path.node.left)) { return; }
 
-                let uid = state.file.scope.generateUidIdentifier(name);
-                let ref = template(`
-  (function (left, right) {
-    if (right != null && typeof Symbol !== "undefined" && right[Symbol.hasInstance]) {
-      return right[Symbol.hasInstance](left);
-    } else {
-      return left instanceof right;
-    }
-  });
-`)().expression;
-                if (t.isFunctionExpression(ref) && !ref.id) {
-                    ref.body._compact = true;
-                    ref._generated = true;
-                    ref.id = uid;
-                    ref.type = "FunctionDeclaration";
-                    state.file.path.unshiftContainer("body", ref);
-                } else {
-                    ref._compact = true;
-                    state.file.scope.push({
-                        id: uid,
-                        init: ref,
-                        unique: true
-                    });
-                }
                 path.replaceWith(
                     t.callExpression(
-                        t.identifier(SET_MEMBER),
+                        addCustomTemplate(state.file, SET_MEMBER),
                         [
                             path.node.left.object,
                             getPropertyFromMemberExpression(path.node.left),
@@ -125,7 +144,7 @@ export default function(param) {
 
                 path.replaceWith(
                     t.callExpression(
-                        t.identifier(GET_MEMBER),
+                        addCustomTemplate(state.file, GET_MEMBER),
                         [
                             path.node.object,
                             getPropertyFromMemberExpression(path.node)
@@ -134,13 +153,13 @@ export default function(param) {
                 );
             },
 
-            CallExpression(path) {
+            CallExpression(path, state) {
                 // check whether we call a MemberExpression
                 if(!t.isMemberExpression(path.node.callee)) { return; }
 
                 path.replaceWith(
                     t.callExpression(
-                        t.identifier(GET_AND_CALL_MEMBER),
+                        addCustomTemplate(state.file, GET_AND_CALL_MEMBER),
                         [
                             path.node.callee.object,
                             getPropertyFromMemberExpression(path.node.callee),
