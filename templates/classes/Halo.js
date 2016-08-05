@@ -49,6 +49,7 @@ export default class Halo extends Morph {
     
   
   showHalo(target, path) {
+    if (!target || !target.getBoundingClientRect) return;
     var bounds = target.getBoundingClientRect();
     var offset = {
       top: bounds.top +  $(document).scrollTop(), 
