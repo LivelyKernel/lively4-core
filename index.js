@@ -2,13 +2,14 @@ const SET_MEMBER = "setMember";
 const GET_MEMBER = "getMember";
 const GET_AND_CALL_MEMBER = "getAndCallMember";
 
-const SET_LOCAL = "setLocal";
-const GET_LOCAL = "getLocal";
+// const SET_LOCAL = "setLocal";
+// const GET_LOCAL = "getLocal";
 
-const SET_GLOBAL = "setGlobal";
-const GET_GLOBAL = "getGlobal";
+// const SET_GLOBAL = "setGlobal";
+// const GET_GLOBAL = "getGlobal";
 
-export default function({ types: t, template }) {
+export default function(param) {
+    let { types: t, template } = param;
     console.log(arguments);
 
     function getPropertyFromMemberExpression(node) {
@@ -22,34 +23,27 @@ export default function({ types: t, template }) {
             t.stringLiteral(node.property.name);
     }
 
+    const GENERATED_FUNCTION = Symbol("generated function");
+    function isGenerated(path) {
+        return path.findParent(p => t.isFunctionDeclaration(p.node) && p.node[GENERATED_FUNCTION])
+    }
+
     let customTemplates = {}
     customTemplates[SET_MEMBER] = template(`
-  (function(left, right) {
-    if (right != null && typeof Symbol !== "undefined" && right[Symbol.hasInstance]) {
-      return right[Symbol.hasInstance](left);
-    } else {
-      return left instanceof right;
-    }
+  (function(obj, prop, operator, val) {
+    return obj[prop] = val;
   });
 `);
 
     customTemplates[GET_MEMBER] = template(`
-  (function(left, right) {
-    if (right != null && typeof Symbol !== "undefined" && right[Symbol.hasInstance]) {
-      return right[Symbol.hasInstance](left);
-    } else {
-      return left instanceof right;
-    }
+  (function(obj, prop) {
+    return obj[prop];
   });
 `);
 
     customTemplates[GET_AND_CALL_MEMBER] = template(`
-  (function(left, right) {
-    if (right != null && typeof Symbol !== "undefined" && right[Symbol.hasInstance]) {
-      return right[Symbol.hasInstance](left);
-    } else {
-      return left instanceof right;
-    }
+  (function(obj, prop, args) {
+    return obj[prop](...args)
   });
 `);
 
@@ -57,8 +51,11 @@ export default function({ types: t, template }) {
         let declar = file.declarations[name];
         if (declar) return declar;
 
-        let ref = customTemplates[name]().expression;
+        let ref = customTemplates[name];
         let uid = file.declarations[name] = file.scope.generateUidIdentifier(name);
+
+        ref = ref().expression;
+        ref[GENERATED_FUNCTION] = true
 
         if (t.isFunctionExpression(ref) && !ref.id) {
             ref.body._compact = true;
@@ -84,7 +81,7 @@ export default function({ types: t, template }) {
             Identifier(path) {
                 return;
 
-                if(RESERVED_IDENTIFIERS.includes(path.node.name)) { return; }
+                //if(RESERVED_IDENTIFIERS.includes(path.node.name)) { return; }
 
                 if(t.isClassDeclaration(path.parent)) {
                     console.log("classDecl", path.node.name);
@@ -124,6 +121,7 @@ export default function({ types: t, template }) {
             AssignmentExpression(path, state) {
                 // check, whether we assign to a member (no support for pattern right now)
                 if(!t.isMemberExpression(path.node.left)) { return; }
+                if(isGenerated(path)) { return; }
 
                 path.replaceWith(
                     t.callExpression(
@@ -141,6 +139,7 @@ export default function({ types: t, template }) {
             MemberExpression(path, state) {
                 // lval (left values) are ignored for now
                 if(t.isAssignmentExpression(path.parent) && path.key === 'left') { return; }
+                if(isGenerated(path)) { return; }
 
                 path.replaceWith(
                     t.callExpression(
@@ -156,6 +155,7 @@ export default function({ types: t, template }) {
             CallExpression(path, state) {
                 // check whether we call a MemberExpression
                 if(!t.isMemberExpression(path.node.callee)) { return; }
+                if(isGenerated(path)) { return; }
 
                 path.replaceWith(
                     t.callExpression(
