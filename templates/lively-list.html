@@ -19,6 +19,8 @@
   </script>
   <script type="lively4script" data-name="show">
     (items, pattern) => {
+      // #TODO #Refactoring needed... this clearing does not belong here
+      
       let ul = this.getSubmorph("#list-list");
 
       let sortByScore = (a, b) => {

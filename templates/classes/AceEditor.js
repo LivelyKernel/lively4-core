@@ -287,7 +287,7 @@ export default class AceEditor extends HTMLElement {
             bindKey: {win: "Ctrl-Shift-F", mac: "Command-Shift-P"},
             exec: (editor) => {
                 let text = editor.currentSelectionOrLine()
-                lively.openSearchFileWindow(text)
+                lively.openSearchWidget(text)
             }
         });
 

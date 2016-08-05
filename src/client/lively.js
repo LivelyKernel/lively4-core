@@ -637,18 +637,14 @@ export default class Lively {
     })
   }
 
-  static openSearchFileWindow(text) {
-    this.openComponentInWindow("lively-search").then( comp => {
-      comp.parentElement.style.width = "850px";
-      comp.parentElement.style.height = "600px";
-      comp.searchFile(text)
-    })
-  }
-  
   static openSearchWidget(text) {
     var comp = document.getElementsByTagName("lively-search-widget")[0]
-    var isShown = comp.toggle();
-    if (isShown && text.length) comp.search(text, true);
+    if (comp.isVisible && text == comp.query) {
+      comp.isVisible = false;
+    } else {
+      comp.isVisible = true
+      comp.search(text, true)
+    }
   }
   
   static hideSearchWidget() {
@@ -675,15 +671,29 @@ export default class Lively {
   // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
   static async openBrowser(url, edit, pattern) {
     var editorComp;
-    return lively.openComponentInWindow("lively-container").then(comp => {
-          editorComp = comp;
-          comp.parentElement.style.width = "850px"
-          comp.parentElement.style.height = "600px"
-          if (edit) comp.setAttribute("mode", "edit");
-          return comp.followPath(url)
-    }).then( async () => {
+    var containerPromise
+    if (pattern) {
+      editorComp = _.detect(document.querySelectorAll("lively-container"), 
+        ea => ea.isSearchBrowser)
+    } 
+    // that.isSearchBrowser
+ 
+    containerPromise = editorComp ? Promise.resolve(editorComp) :
+      lively.openComponentInWindow("lively-container");
+    
+    return containerPromise.then(comp => {
+      editorComp = comp;
+      comp.parentElement.style.width = "850px"
+      comp.parentElement.style.height = "600px"
+      if (edit) comp.setAttribute("mode", "edit");
+      if (pattern) {
+        comp.isSearchBrowser = true
+        comp.hideNavbar()
+      }
+      return comp.followPath(url)
+    }).then(() => {
       if (edit && pattern) {
-          (await editorComp.realAceEditor()).find(pattern)
+        editorComp.realAceEditor().then( editor => editor.find(pattern))
       }
     })
   }
