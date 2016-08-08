@@ -42,6 +42,7 @@ exports.default = function (param) {
         if (declar) return declar;
 
         return file.declarations[name] = file.addImport("aexpr-source-transformation-propagation", name, name);
+
         var ref = customTemplates[name];
         console.log(file.addImport("aexpr-source-transformation-propagation", "aexpr"));
         var uid = file.declarations[name] = file.scope.generateUidIdentifier(name);
@@ -68,13 +69,108 @@ exports.default = function (param) {
     }
 
     return {
+        pre: function pre(file) {
+            console.log("fff", file);
+        },
+
         visitor: {
+            Program: {
+                enter: function enter(path, state) {
+                    console.log("file", path);
+                    //state.file.addImport("aexpr-source-transformation-propagation21", "aexpr");
+                    path.traverse({
+                        Identifier: function Identifier(path) {
+                            console.log(path.node.name);
+                            // Check for a call to aexpr:
+                            if (t.isCallExpression(path.parent) && path.node.name === AEXPR_IDENTIFIER_NAME && !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)) {
+                                path.replaceWith(addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME));
+                                return;
+                            }
+
+                            return;
+
+                            //if(RESERVED_IDENTIFIERS.includes(path.node.name)) { return; }
+
+                            if (t.isClassDeclaration(path.parent)) {
+                                console.log("classDecl", path.node.name);
+                                return;
+                            }
+
+                            if (t.isClassMethod(path.parent)) {
+                                console.log("classMethod", path.node.name);
+                                return;
+                            }
+
+                            if (t.isObjectMethod(path.parent)) {
+                                console.log("objectMethod", path.node.name);
+                                return;
+                            }
+                            if (t.isVariableDeclarator(path.parent)) {
+                                console.log("varDecl", path.node.name);
+                                return;
+                            }
+
+                            // is this correct here?
+                            // TODO: is it correct for the locals plugin?
+                            if (!path.isReferencedIdentifier()) {
+                                console.log("def", path.node.name);
+                                return;
+                            }
+
+                            // is locally defined variable?
+                            if (path.scope.hasBinding(path.node.name)) {
+                                console.log("local", path.node.name);
+                            } else {
+                                // we have a global
+                                console.log("global", path.node.name);
+                            }
+                        },
+                        AssignmentExpression: function AssignmentExpression(path) {
+                            // check, whether we assign to a member (no support for pattern right now)
+                            if (!t.isMemberExpression(path.node.left)) {
+                                return;
+                            }
+                            if (isGenerated(path)) {
+                                return;
+                            }
+
+                            //state.file.addImport
+
+                            path.replaceWith(t.callExpression(addCustomTemplate(state.file, SET_MEMBER), [path.node.left.object, getPropertyFromMemberExpression(path.node.left), t.stringLiteral(path.node.operator), path.node.right]));
+                        },
+                        MemberExpression: function MemberExpression(path) {
+                            // lval (left values) are ignored for now
+                            if (t.isAssignmentExpression(path.parent) && path.key === 'left') {
+                                return;
+                            }
+                            if (isGenerated(path)) {
+                                return;
+                            }
+
+                            path.replaceWith(t.callExpression(addCustomTemplate(state.file, GET_MEMBER), [path.node.object, getPropertyFromMemberExpression(path.node)]));
+                        },
+                        CallExpression: function CallExpression(path) {
+                            if (isGenerated(path)) {
+                                return;
+                            }
+
+                            // check whether we call a MemberExpression
+                            if (t.isMemberExpression(path.node.callee)) {
+                                path.replaceWith(t.callExpression(addCustomTemplate(state.file, GET_AND_CALL_MEMBER), [path.node.callee.object, getPropertyFromMemberExpression(path.node.callee), t.arrayExpression(path.node.arguments)]));
+                            } else {
+                                if (t.isIdentifier(path.node.callee) && true) {}
+                            }
+                        }
+                    });
+                }
+            },
             // TODO: also
             Identifier: function Identifier(path, state) {
+                //console.log(state);
                 // Check for a call to aexpr:
                 if (t.isCallExpression(path.parent) && path.node.name === AEXPR_IDENTIFIER_NAME && !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)) {
                     //path.replaceWith(
-                    addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME);
+                    //addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
                     //);
                     return;
                 }
@@ -130,7 +226,7 @@ exports.default = function (param) {
 
                 //path.replaceWith(
                 //  t.callExpression(
-                addCustomTemplate(state.file, SET_MEMBER); //,
+                //addCustomTemplate(state.file, SET_MEMBER)//,
                 //        [
                 //          path.node.left.object,
                 //        getPropertyFromMemberExpression(path.node.left),
@@ -151,7 +247,7 @@ exports.default = function (param) {
 
                 //path.replaceWith(
                 //  t.callExpression(
-                addCustomTemplate(state.file, GET_MEMBER); //,
+                //addCustomTemplate(state.file, GET_MEMBER)//,
                 //    [
                 //    path.node.object,
                 //    getPropertyFromMemberExpression(path.node)
@@ -168,7 +264,7 @@ exports.default = function (param) {
                 if (t.isMemberExpression(path.node.callee)) {
                     //  path.replaceWith(
                     //    t.callExpression(
-                    addCustomTemplate(state.file, GET_AND_CALL_MEMBER); //,
+                    //addCustomTemplate(state.file, GET_AND_CALL_MEMBER)//,
                     //      [
                     //        path.node.callee.object,
                     //      getPropertyFromMemberExpression(path.node.callee),
