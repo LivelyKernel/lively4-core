@@ -6,7 +6,7 @@ import * as events from 'src/client/morphic/event-helpers.js';
 
 import selecting from 'src/client/morphic/selecting.js';
 
-import {pt, rect} from 'lively.graphics';
+import {pt, rect, Rectangle} from 'lively.graphics';
 
 
 /*
@@ -25,13 +25,28 @@ export default class Halo extends Morph {
   }
   
   registerBodyDragAndDrop() {
-    // document.body.draggable="true";
-    // lively.addEventListener("Halo", document.body, "dragstart", evt => this.onBodyDragStart(evt));
-    // lively.addEventListener("Halo", document.body, "drag", evt => this.onBodyDrag(evt));
-    // lively.addEventListener("Halo", document.body, "dragend", evt => this.onBodyDragEnd(evt));
+    document.body.draggable="true";
+    lively.addEventListener("Halo", document.body, "dragstart", evt => this.onBodyDragStart(evt));
+    lively.addEventListener("Halo", document.body, "drag", evt => this.onBodyDrag(evt));
+    lively.addEventListener("Halo", document.body, "dragend", evt => this.onBodyDragEnd(evt));
   }
   
   onBodyDragStart(evt) {
+    var inputFields = lively.html.findAllNodes()
+        .filter (ea => ea.tagName == 'INPUT')
+        .filter (ea => {
+          var b = ea.getBoundingClientRect()
+          var bounds = new Rectangle(b.left, b.top, b.width, b.height) 
+          var pos = events.globalPosition(evt)
+          // lively.showPoint(bounds.topLeft())
+          // lively.showPoint(pos)
+          return bounds.containsPoint(pos)
+      })
+    // inputFields.forEach( ea => lively.showElement(ea))
+    if (inputFields.length > 0) {
+      evt.preventDefault();
+      return false
+    }
     if (this.selection) this.selection.remove(); // #TODO reuse eventually?
     this.selection = lively.components.createComponent("lively-selection");
     lively.components.openIn(document.body, this.selection).then(comp => {
@@ -40,10 +55,14 @@ export default class Halo extends Morph {
   }
   
   onBodyDrag(evt) {
+    //evt.preventDefault();
+    // return false
     this.selection.onSelectionDrag && this.selection.onSelectionDrag(evt)
   } 
   
   onBodyDragEnd(evt) {
+    // evt.preventDefault();
+    // return false
     this.selection.onSelectionDragEnd && this.selection.onSelectionDragEnd(evt)
   }
     
