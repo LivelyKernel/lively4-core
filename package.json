@@ -1,6 +1,6 @@
 {
   "name": "babel-plugin-aexpr-source-transformation",
-  "version": "1.0.0",
+  "version": "2.0.2",
   "description": "3rd implementation strategy of active expressions, via a babel transformation",
   "main": "dist/index.js",
   "jsnext:main": "index.js",

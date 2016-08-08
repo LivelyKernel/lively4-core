@@ -1,3 +1,5 @@
+const AEXPR_IDENTIFIER_NAME = "aexpr";
+
 const SET_MEMBER = "setMember";
 const GET_MEMBER = "getMember";
 const GET_AND_CALL_MEMBER = "getAndCallMember";
@@ -47,11 +49,19 @@ export default function(param) {
   });
 `);
 
+    customTemplates[AEXPR_IDENTIFIER_NAME] = template(`
+  (function(expr) {
+    return { onChange(cb) {}};
+  });
+`);
+
     function addCustomTemplate(file, name) {
         let declar = file.declarations[name];
         if (declar) return declar;
 
+        return file.declarations[name] = file.addImport("aexpr-source-transformation-propagation", name, name);
         let ref = customTemplates[name];
+        console.log(file.addImport("aexpr-source-transformation-propagation", "aexpr"));
         let uid = file.declarations[name] = file.scope.generateUidIdentifier(name);
 
         ref = ref().expression;
@@ -78,7 +88,19 @@ export default function(param) {
     return {
         visitor: {
             // TODO: also
-            Identifier(path) {
+            Identifier(path, state) {
+                // Check for a call to aexpr:
+                if(
+                    t.isCallExpression(path.parent) &&
+                    path.node.name === AEXPR_IDENTIFIER_NAME &&
+                    !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)
+                ) {
+                    //path.replaceWith(
+                    addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
+                    //);
+                    return;
+                }
+
                 return;
 
                 //if(RESERVED_IDENTIFIERS.includes(path.node.name)) { return; }
@@ -123,17 +145,19 @@ export default function(param) {
                 if(!t.isMemberExpression(path.node.left)) { return; }
                 if(isGenerated(path)) { return; }
 
-                path.replaceWith(
-                    t.callExpression(
-                        addCustomTemplate(state.file, SET_MEMBER),
-                        [
-                            path.node.left.object,
-                            getPropertyFromMemberExpression(path.node.left),
-                            t.stringLiteral(path.node.operator),
-                            path.node.right
-                        ]
-                    )
-                );
+                //state.file.addImport
+
+                //path.replaceWith(
+                //  t.callExpression(
+                addCustomTemplate(state.file, SET_MEMBER)//,
+                //        [
+                //          path.node.left.object,
+                //        getPropertyFromMemberExpression(path.node.left),
+                //      t.stringLiteral(path.node.operator),
+                //      path.node.right
+                //    ]
+                //  )
+                //);
             },
 
             MemberExpression(path, state) {
@@ -141,32 +165,37 @@ export default function(param) {
                 if(t.isAssignmentExpression(path.parent) && path.key === 'left') { return; }
                 if(isGenerated(path)) { return; }
 
-                path.replaceWith(
-                    t.callExpression(
-                        addCustomTemplate(state.file, GET_MEMBER),
-                        [
-                            path.node.object,
-                            getPropertyFromMemberExpression(path.node)
-                        ]
-                    )
-                );
+                //path.replaceWith(
+                //  t.callExpression(
+                addCustomTemplate(state.file, GET_MEMBER)//,
+                //    [
+                //    path.node.object,
+                //    getPropertyFromMemberExpression(path.node)
+                //]
+                //)
+                //
             },
 
             CallExpression(path, state) {
-                // check whether we call a MemberExpression
-                if(!t.isMemberExpression(path.node.callee)) { return; }
                 if(isGenerated(path)) { return; }
 
-                path.replaceWith(
-                    t.callExpression(
-                        addCustomTemplate(state.file, GET_AND_CALL_MEMBER),
-                        [
-                            path.node.callee.object,
-                            getPropertyFromMemberExpression(path.node.callee),
-                            t.arrayExpression(path.node.arguments)
-                        ]
-                    )
-                )
+                // check whether we call a MemberExpression
+                if(t.isMemberExpression(path.node.callee)) {
+                    //  path.replaceWith(
+                    //    t.callExpression(
+                    addCustomTemplate(state.file, GET_AND_CALL_MEMBER)//,
+                    //      [
+                    //        path.node.callee.object,
+                    //      getPropertyFromMemberExpression(path.node.callee),
+                    //          t.arrayExpression(path.node.arguments)
+                    //        ]
+                    //      )
+                    //    )
+                } else {
+                    if(t.isIdentifier(path.node.callee) && true) {
+                    }
+                }
+
             }
         }
     };
