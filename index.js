@@ -4,6 +4,9 @@ const SET_MEMBER = "setMember";
 const GET_MEMBER = "getMember";
 const GET_AND_CALL_MEMBER = "getAndCallMember";
 
+const IGNORE_STRING = "aexpr ignore";
+const IGNORE_INDICATOR = Symbol("aexpr ignore");
+
 // const SET_LOCAL = "setLocal";
 // const GET_LOCAL = "getLocal";
 
@@ -11,7 +14,7 @@ const GET_AND_CALL_MEMBER = "getAndCallMember";
 // const GET_GLOBAL = "getGlobal";
 
 export default function(param) {
-    let { types: t, template } = param;
+    let { types: t, template, traverse } = param;
     console.log(arguments);
 
     function getPropertyFromMemberExpression(node) {
@@ -88,16 +91,29 @@ export default function(param) {
 
     return {
         pre(file) {
-            console.log("fff", file)
+            console.log("fff", file, traverse);
+
+            traverse(file.ast, {
+                enter(path) {
+                    if (
+                        path.node.leadingComments &&
+                        path.node.leadingComments.some(comment => comment.value.includes(IGNORE_STRING))
+                    ) {
+                        console.log("IGNORED!!!")
+                        file[IGNORE_INDICATOR] = true;
+                    }
+                }
+            });
         },
         visitor: {
             Program: {
                 enter(path, state) {
-                    console.log("file", path);
-                    //state.file.addImport("aexpr-source-transformation-propagation21", "aexpr");
+                    console.log("file", path, state);
+                    if(state.file[IGNORE_INDICATOR]) { console.log("read ignored"); return; };
+
                     path.traverse({
                         Identifier(path) {
-                            console.log(path.node.name)
+                            //console.log(path.node.name)
                             // Check for a call to aexpr:
                             if(
                                 t.isCallExpression(path.parent) &&

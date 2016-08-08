@@ -7,6 +7,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = function (param) {
     var t = param.types;
     var template = param.template;
+    var traverse = param.traverse;
 
     console.log(arguments);
 
@@ -70,17 +71,31 @@ exports.default = function (param) {
 
     return {
         pre: function pre(file) {
-            console.log("fff", file);
+            console.log("fff", file, traverse);
+
+            traverse(file.ast, {
+                enter: function enter(path) {
+                    if (path.node.leadingComments && path.node.leadingComments.some(function (comment) {
+                        return comment.value.includes(IGNORE_STRING);
+                    })) {
+                        console.log("IGNORED!!!");
+                        file[IGNORE_INDICATOR] = true;
+                    }
+                }
+            });
         },
 
         visitor: {
             Program: {
                 enter: function enter(path, state) {
-                    console.log("file", path);
-                    //state.file.addImport("aexpr-source-transformation-propagation21", "aexpr");
+                    console.log("file", path, state);
+                    if (state.file[IGNORE_INDICATOR]) {
+                        console.log("read ignored");return;
+                    };
+
                     path.traverse({
                         Identifier: function Identifier(path) {
-                            console.log(path.node.name);
+                            //console.log(path.node.name)
                             // Check for a call to aexpr:
                             if (t.isCallExpression(path.parent) && path.node.name === AEXPR_IDENTIFIER_NAME && !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)) {
                                 path.replaceWith(addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME));
@@ -285,6 +300,9 @@ var AEXPR_IDENTIFIER_NAME = "aexpr";
 var SET_MEMBER = "setMember";
 var GET_MEMBER = "getMember";
 var GET_AND_CALL_MEMBER = "getAndCallMember";
+
+var IGNORE_STRING = "aexpr ignore";
+var IGNORE_INDICATOR = Symbol("aexpr ignore");
 
 // const SET_LOCAL = "setLocal";
 // const GET_LOCAL = "getLocal";
