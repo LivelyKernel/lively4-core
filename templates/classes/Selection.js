@@ -15,6 +15,8 @@ export default class Selection extends Morph {
     // super.initialize()
     this.nodes = [];
     this.startPositions = new Map();
+    this.originalExtents = new Map();
+    this.originalOffset = new Map();
   }
 
   onSelectionDragStart(evt) {
@@ -154,6 +156,41 @@ export default class Selection extends Morph {
     });
     HaloService.showHalos(this);
   }
+  
+  haloResizeStart(evt, haloItem) {
+    this.eventOffset = events.globalPosition(evt)
+    this.nodes.concat([this]).forEach( ea => {
+       this.startPositions.set(ea, nodes.globalPosition(ea));
+       this.originalExtents.set(ea, nodes.getExtent(ea));
+       this.originalOffset.set(ea, nodes.globalPosition(this).subPt(
+        nodes.globalPosition(ea.parentNode)));
+    });
+  }
+  
+  haloResizeMove(evt, haloItem) {
+    var delta = events.globalPosition(evt).subPt(this.eventOffset)
+    var newExtent = this.originalExtents.get(this).addPt(delta)
+  
+    var oldExtent = this.originalExtents.get(this)
+    var scale = newExtent.scaleBy(1/ oldExtent.x, 1/oldExtent.y)
+    
+    //nodes.setExtent(ea, this.originalExtents.get(ea).scaleByPt(scale))
+    nodes.setExtent(this, newExtent)
+    
+    this.nodes.forEach( ea => {
+      var oldRelativePos = this.startPositions.get(ea).subPt(this.startPositions.get(this)) 
+      
+      lively.showPoint(this.originalOffset.get(ea))  
+      
+      nodes.setPosition(ea, this.originalOffset.get(ea).addPt(oldRelativePos.scaleByPt(scale)))
+      nodes.setExtent(ea, this.originalExtents.get(ea).scaleByPt(scale))               
+    });
+  }
+  
+  haloResizeStop(evt, haloItem) {
+    
+  }
+  
   
 }  
   

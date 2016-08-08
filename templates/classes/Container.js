@@ -13,6 +13,9 @@ export default class Container extends Morph {
     //   this.shadowRoot.querySelector("#livelyStyle").innerHTML = css
     // })
     this.windowTitle = "Browser";
+    if (this.isSearchBrowser) {
+      this.windowTitle = "Search Browser"
+    }
 
     console.log("Initialize Container");
     if (this.useBrowserHistory()) {
@@ -495,7 +498,7 @@ export default class Container extends Morph {
 
   clearNavbar() {
     var container = this.getSubmorph('#container-leftpane');
-    container.style.display = "block";
+    // container.style.display = "block";
 
     container.innerHTML= "";
     var navbar = document.createElement("ul");
@@ -503,6 +506,7 @@ export default class Container extends Morph {
     container.appendChild(navbar);
     return navbar
   }
+  
 
   showNavbarSublist(targetItem) {
     var subList = document.createElement("ul")
@@ -579,8 +583,17 @@ export default class Container extends Morph {
       })
     }
   }
+  
+  hideNavbar() {
+    this.getSubmorph('#container-leftpane').style.display = "none";
+    this.getSubmorph('lively-separator').style.display = "none";
+  }
 
   showNavbar() {
+    // this.getSubmorph('#container-leftpane').style.display = "block";
+    // this.getSubmorph('lively-separator').style.display = "block";
+
+
     var filename = ("" + this.getURL()).replace(/.*\//,"")
 
     var root =("" + this.getURL()).replace(/\/[^\/]+$/,"/")

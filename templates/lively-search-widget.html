@@ -48,6 +48,23 @@
       margin-top: 20px;
       background-color: black;
     }
+    
+    .divider {
+      display: none
+    }
+    
+    /* disable github for now #TODO make github search optional */
+    #searchSpinner-github {
+      display: none;
+    }
+    #noResults-github {
+      display: none
+    }
+    #searchResults-github {
+      display: none
+    }
+    
+    
   </style>
   <div class="container">
     <div class="text-entry">
@@ -57,6 +74,9 @@
       </button>
       <button id="configButton">
         <i class="fa fa-cog"></i>
+      </button>
+      <button id="closeButton">
+        <i class="fa fa-close"></i>
       </button>
     </div>
     <i id="searchSpinner" class="fa fa-spinner fa-pulse fa-fw"></i>

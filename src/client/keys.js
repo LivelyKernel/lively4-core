@@ -7,10 +7,12 @@
 
 // #Duplication with shortcuts.js #TODO
 
+import lively from "./lively.js";
+
 export default class Keys {
 
   static getChar(evt) {
-    return String.fromCharCode(evt.keyCode || evt.charCode)
+    return String.fromCharCode(evt.keyCode || evt.charCode);
   }
 
   static logEvent(evt) {
@@ -23,52 +25,50 @@ export default class Keys {
       );
   }
 
+  static getTextSelection() {
+    return window.getSelection().toLocaleString()
+  }
+
   static handle(evt) {
     // lively.notify("handle " + this.getChar(evt))
     try {
-      var char = this.getChar(evt)
+      var char = this.getChar(evt);
       // this.logEvent(evt)
       
       // TODO refactor it, so that there is only a single place for shortcut definition
       // see /src/client/contextmenu.js and /templates/classes/AceEditor.js
       if ((evt.ctrlKey || evt.metaKey) && char == "K") {
-        lively.openWorkspace("")
-        evt.preventDefault()
+        lively.openWorkspace("");
+        evt.preventDefault();
       } else if ((evt.ctrlKey || evt.metaKey) && evt.shiftKey &&char == "F") {
-        var str = window.getSelection().toLocaleString()
-        lively.openSearchWidget(str)
-        evt.preventDefault()
+        lively.openSearchWidget(this.getTextSelection());
+        evt.preventDefault();
       } else if ((evt.ctrlKey || evt.metaKey) && char == "B") {
-        var str = window.getSelection().toLocaleString()
-        lively.openBrowser(str)
-        evt.preventDefault()
+        lively.openBrowser(this.getTextSelection());
+        evt.preventDefault();
       } else if ((evt.ctrlKey || evt.metaKey) && char == "O") {
-        var str = window.getSelection().toLocaleString()
-        lively.openComponentInWindow("lively-component-bin")
-        evt.preventDefault()
+        lively.openComponentInWindow("lively-component-bin");
+        evt.preventDefault();
       }  else if ((evt.ctrlKey || evt.metaKey)  && char == "H") {
-        var str = window.getSelection().toLocaleString()
-        lively.openHelpWindow(str)
-        evt.preventDefault()
+        lively.openHelpWindow(this.getTextSelection());
+        evt.preventDefault();
       } else if (evt.keyCode == 27) {
         lively.hideSearchWidget();
       }
       
       if ((evt.ctrlKey || evt.metaKey) && char == "D") {
-        var str = window.getSelection().toLocaleString()
+        let str = window.getSelection().toLocaleString();
         try {
-          lively.boundEval(str)
+          lively.boundEval(str);
         } catch(e) {
-          lively.handleError(e)
+          lively.handleError(e);
         }
-        evt.preventDefault()
+        evt.preventDefault();
       }
     } catch (err) {
       console.log("Error in handleKeyEvent" +  err);
     }
   }
 }
-// var instance = new Keys()
-// export default instance
 
 console.log("loaded keys.js")

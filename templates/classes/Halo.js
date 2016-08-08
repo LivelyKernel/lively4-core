@@ -25,17 +25,17 @@ export default class Halo extends Morph {
   }
   
   registerBodyDragAndDrop() {
-    document.body.draggable="true";
-    lively.addEventListener("Halo", document.body, "dragstart", evt => this.onBodyDragStart(evt));
-    lively.addEventListener("Halo", document.body, "drag", evt => this.onBodyDrag(evt));
-    lively.addEventListener("Halo", document.body, "dragend", evt => this.onBodyDragEnd(evt));
+    // document.body.draggable="true";
+    // lively.addEventListener("Halo", document.body, "dragstart", evt => this.onBodyDragStart(evt));
+    // lively.addEventListener("Halo", document.body, "drag", evt => this.onBodyDrag(evt));
+    // lively.addEventListener("Halo", document.body, "dragend", evt => this.onBodyDragEnd(evt));
   }
   
   onBodyDragStart(evt) {
     if (this.selection) this.selection.remove(); // #TODO reuse eventually?
     this.selection = lively.components.createComponent("lively-selection");
     lively.components.openIn(document.body, this.selection).then(comp => {
-       comp.onSelectionDragStart(evt)
+      comp.onSelectionDragStart(evt)
     });
   }
   
@@ -44,16 +44,20 @@ export default class Halo extends Morph {
   } 
   
   onBodyDragEnd(evt) {
-   this.selection.onSelectionDragEnd && this.selection.onSelectionDragEnd(evt)
+    this.selection.onSelectionDragEnd && this.selection.onSelectionDragEnd(evt)
   }
     
   
   showHalo(target, path) {
+    if (!target.getBoundingClientRect) {
+      $(this).show();
+      return    
+    }
     var bounds = target.getBoundingClientRect();
     var offset = {
       top: bounds.top +  $(document).scrollTop(), 
       left: bounds.left +  $(document).scrollLeft()};
-        
+  
     // viewport coordinates
     var scrollTop = Math.abs($(document).scrollTop());
     var scrollLeft = Math.abs($(document).scrollLeft());
