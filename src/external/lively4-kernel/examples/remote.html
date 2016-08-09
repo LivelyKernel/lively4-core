@@ -1,0 +1,20 @@
+<html>
+    <head>
+        <title>Lively 4 Kernel Example Page (Remote Usage)</title>
+        <script src="http://localhost:3000/dist-kernel.js"
+            type="text/javascript"
+            charset="utf-8"
+            data-lively-kernel-boot>
+        </script>
+    </head>
+    <body>
+        <script>
+            System.import('/examples/.///a/../test.js').then((test) => {
+                if (Notification.permission !== "granted")
+                    Notification.requestPermission();
+
+                var notification = new Notification(test.message);
+            })
+        </script>
+    </body>
+</html>
