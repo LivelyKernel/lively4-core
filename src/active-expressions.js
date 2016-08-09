@@ -181,7 +181,6 @@ class ActiveExpr {
       calledFunctions: [],
       variablesToObserve: []
     };
-
     lively.ast.acorn.walk.recursive(this._ast, state, {
       'VariableDeclarator': function VariableDeclarator(node, state, c) {
         var varName = node.id.name;
