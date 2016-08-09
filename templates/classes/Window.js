@@ -1,7 +1,7 @@
 'use strict';
 
 import Morph from './Morph.js';
-import { AExpr } from 'https://lively-kernel.org/lively4/active-expressions/src/active-expressions.js';
+import { AExpr } from 'active-expressions';
 
 function getScroll() {
   return {

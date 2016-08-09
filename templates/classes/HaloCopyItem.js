@@ -24,13 +24,28 @@ export default class HaloCopyItem extends HaloGrabItem {
     this.copiedObject = null
   }
   
+  cloneObject(obj) {
+    var tmp = document.createElement("div")
+    tmp.innerHTML = obj.outerHTML 
+    console.log ("IN: " + obj.outerHTML)
+    console.log ("OUT: " + obj.innerHTML)
+    
+    var clone = tmp.childNodes[0]
+    console.log("CLONE " + obj.outerHTML)
+    clone.style.backgroundColor = 'red'
+    clone.textContent = "HTML: " + clone.outerHTML
+    window.LastClone = clone
+    clone.remove()
+    return clone
+  }
+  
   copyObject(el) {
     this.copyTarget = el;
     if (el.haloCopyObject) {
         this.copiedObject = el.haloCopyObject(this); // copy selection etc...
     } else {
       if (this.isAllowedToBeCopied(this.copyTarget)) {
-        this.copiedObject = this.copyTarget.cloneNode();
+        this.copiedObject = this.cloneObject(this.copyTarget);
         this.copyTarget.parentNode.appendChild(this.copiedObject);    
       } else {
         lively.notify("Could not copy " + sourceObj)
