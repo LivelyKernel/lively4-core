@@ -1,0 +1,67 @@
+{
+  "name": "lively4-serviceworker",
+  "version": "0.1.0",
+  "description": "Lively4's service worker with caching and unified cloud storage access",
+  "main": "src/swx.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "babel-core": "^6",
+    "babel-jest": "^12.0.2",
+    "babel-plugin-syntax-do-expressions": "^6.8.0",
+    "babel-plugin-syntax-function-bind": "^6.8.0",
+    "babel-plugin-transform-async-to-generator": "^6.8.0",
+    "babel-plugin-transform-do-expressions": "^6.8.0",
+    "babel-plugin-transform-es2015-classes": "^6.8.0",
+    "babel-plugin-transform-es2015-destructuring": "^6.8.0",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.8.0",
+    "babel-plugin-transform-es2015-object-super": "^6.8.0",
+    "babel-plugin-transform-es2015-parameters": "^6.8.0",
+    "babel-plugin-transform-es2015-spread": "^6.8.0",
+    "babel-plugin-transform-function-bind": "^6.8.0",
+    "jest-cli": "^12.0.2",
+    "node-fetch": "^1.5.3"
+  },
+  "scripts": {
+    "test": "jest --no-cache"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LivelyKernel/lively4-serviceworker.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/LivelyKernel/lively4-serviceworker/issues"
+  },
+  "homepage": "https://github.com/LivelyKernel/lively4-serviceworker#readme",
+  "private": true,
+  "babel": {
+    "plugins": [
+      "syntax-do-expressions",
+      "syntax-function-bind",
+      "transform-function-bind",
+      "transform-do-expressions",
+      "transform-es2015-classes",
+      "transform-es2015-destructuring",
+      "transform-es2015-modules-commonjs",
+      "transform-es2015-object-super",
+      "transform-es2015-parameters",
+      "transform-es2015-spread",
+      "transform-async-to-generator"
+    ]
+  },
+  "jest": {
+    "unmockedModulePathPatterns": [
+      "<rootDir>/node_modules"
+    ],
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "node"
+    ],
+    "collectCoverage": true
+  }
+}
