@@ -169,6 +169,7 @@ export class Color {
   static get darkGray()      { return darkGray      }
   static get lightGray()     { return lightGray     }
   static get veryLightGray() { return veryLightGray }
+  static get transparent()   { return transparent   }
 
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -323,4 +324,5 @@ export const black         = new Color(0,0,0),
              limeGreen     = Color.rgb(51,255,0),
              darkGray      = Color.rgb(102,102,102),
              lightGray     = Color.rgb(230,230,230),
-             veryLightGray = Color.rgb(243,243,243);
+             veryLightGray = Color.rgb(243,243,243),
+             transparent   = Color.rgba(0,0,0,0);
