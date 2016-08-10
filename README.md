@@ -2,7 +2,6 @@
 
 # Example Lively4 Sites
 
-
 - [https://livelykernel.github.io/lively4-core/](https://livelykernel.github.io/lively4-core/start.html)
 	- HEAD of Lively4 core repository
 	- served by github.io
@@ -17,6 +16,8 @@
 	- A second server [https://lively-kernel.org/lively4S2/lively4-core/](https://lively-kernel.org/lively4S2/lively4-core/) is used to allow for safe self-supporting develpment even on the [lively4-server code](https://lively-kernel.org/lively4/lively4-core/start.html?edit=https://lively-kernel.org/lively4/lively4-server/httpServer.js)
 
 - [Lively4 Journal](https://lively-kernel.org/lively4/lively4-core/start.html?load=https://lively-kernel.org/lively4/Lively4.wiki/Journal.md) or see the [same in Github Wiki]([https://github.com/LivelyKernel/Lively4/wiki/Journal) 
+
+
 
 # Chrome Extension
 

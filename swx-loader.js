@@ -48650,7 +48650,7 @@
 	    let scope = new URL(self.registration.scope);
 	    let base = scope;
 	
-	    base = new URL('https://raw.githubusercontent.com/LivelyKernel/lively4-serviceworker/master/src/', base);
+	    base = new URL('./src/external/lively4-serviceworker/src/', base);
 	
 	
 	    self.System = new _loader.Loader({
