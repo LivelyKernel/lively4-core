@@ -4436,6 +4436,7 @@
             var events = require('events');
             require('util')._extend(obj, events.EventEmitter.prototype);
             events.EventEmitter.call(obj);
+            obj.setMaxListeners(10000);
             return obj;
         } : function (obj) {
             if (obj.on && obj.removeListener)
