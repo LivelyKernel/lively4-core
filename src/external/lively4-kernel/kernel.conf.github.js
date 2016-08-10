@@ -1,8 +1,8 @@
 module.exports = {
   LOADER_TRANSPILE: true,
-  WORKER_BASE: "./src/external/lively4-serviceworker/",
+  WORKER_BASE: "https://raw.githubusercontent.com/LivelyKernel/lively4-serviceworker/master/src/",
   WORKER_ENABLED: true,
-  WORKER_INIT: "./src/swx.js",
+  WORKER_INIT: "/swx.js",
   WORKER_EMBED: false,
   CLIENT_ENABLED: true,
   CLIENT_BASE: "./",

@@ -1,6 +1,6 @@
 
-import * as Path from 'src/swx/path.jsx'
-import focalStorage from 'src/external/focalStorage.js'
+import * as Path from './path.jsx'
+import focalStorage from './../external/focalStorage.js'
 
 
 /**
