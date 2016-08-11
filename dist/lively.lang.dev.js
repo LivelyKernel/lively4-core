@@ -4430,13 +4430,14 @@
     'use strict';
     var isNode = typeof process !== 'undefined' && process.versions && process.versions.node;
     var events = exports.events = {
-        makeEmitter: isNode ? function (obj) {
+        makeEmitter: isNode ? function (obj, options) {
             if (obj.on && obj.removeListener)
                 return obj;
             var events = require('events');
             require('util')._extend(obj, events.EventEmitter.prototype);
             events.EventEmitter.call(obj);
-            obj.setMaxListeners(10000);
+            if (options.maxListenerLimit)
+                obj.setMaxListeners(options.maxListenerLimit);
             return obj;
         } : function (obj) {
             if (obj.on && obj.removeListener)
