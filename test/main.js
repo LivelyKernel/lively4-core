@@ -9,7 +9,7 @@ var plugin = require('../dist/index').default;
 
 var tests = [
     {file: 'base'},
-    {file: 'none'},
+    {file: 'ignore'},
     {file: 'locals-declared'},
     {file: 'nested'}
 ];
