@@ -4,17 +4,19 @@ import { aexpr, setMember, getMember, getAndCallMember } from '../src/aexpr-sour
 
 describe('Propagation Logic', function() {
 
-    xit('transparent wrapper', () => {
-        let obj = { prop: 42 },
-            spy = sinon.spy();
+    xit('is a transparent wrapper for property accesses', () => {
+        let obj = {
+            prop: 42,
+            func(mul) { return getMember(this, 'prop') * mul}
+        };
 
-        aexpr(() => getMember(obj, "prop")).onChange(spy);
+        expect(getMember(obj, 'prop')).to.be(42);
+        expect(getAndCallMember(obj, 'func', [2])).to.be(84);
 
-        expect(spy).not.to.be.called;
+        setMember(obj, "prop", "/=", 3);
 
-        setMember(obj, "prop", "=", 17);
-
-        expect(spy).to.be.calledOnce;
+        expect(getMember(obj, 'prop')).to.be(14);
+        expect(getAndCallMember(obj, 'func', [2])).to.be(28);
     });
 
     it('should be supported with proper integration', () => {
