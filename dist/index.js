@@ -1,9 +1,5 @@
 "use strict";
 
-/**
- * see http://astexplorer.net/#/h1zFzvogmm/13 for interactive development
- */
-
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
