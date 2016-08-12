@@ -72,12 +72,12 @@ class RewritingActiveExpression extends BaseActiveExpression {
 }
 
 export function aexpr(func) {
-    console.log('aexpr', func);
+    // console.log('aexpr', func);
     return new RewritingActiveExpression(func);
 }
 
 export function getMember(obj, prop) {
-    console.log('getMember', obj, prop);
+    // console.log('getMember', obj, prop);
     let currentAExpr = aexprStack.top();
     if(currentAExpr) {
         aexprStorage.associate(currentAExpr, obj, prop);
@@ -86,7 +86,7 @@ export function getMember(obj, prop) {
 }
 
 export function getAndCallMember(obj, prop, args = []) {
-    console.log('getAndCallMember', obj, prop, ...args);
+    // console.log('getAndCallMember', obj, prop, ...args);
     let currentAExpr = aexprStack.top();
     if(currentAExpr) {
         aexprStorage.associate(currentAExpr, obj, prop);
@@ -95,8 +95,7 @@ export function getAndCallMember(obj, prop, args = []) {
 }
 
 export function setMember(obj, prop, operator, val) {
-    console.log('setMember', obj, prop, operator, val);
-    // TODO: check actual operator
+    // console.log('setMember', obj, prop, operator, val);
     let result;
     switch (operator) {
         case "=":
