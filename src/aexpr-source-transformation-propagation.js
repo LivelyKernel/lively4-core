@@ -85,7 +85,7 @@ export function getMember(obj, prop) {
     return obj[prop];
 }
 
-export function getAndCallMember(obj, prop, args) {
+export function getAndCallMember(obj, prop, args = []) {
     console.log('getAndCallMember', obj, prop, ...args);
     let currentAExpr = aexprStack.top();
     if(currentAExpr) {
@@ -97,8 +97,54 @@ export function getAndCallMember(obj, prop, args) {
 export function setMember(obj, prop, operator, val) {
     console.log('setMember', obj, prop, operator, val);
     // TODO: check actual operator
-    let result = obj[prop] = val;
-    aexprStorage.getAExprsFor(obj, prop).forEach(aexpr => aexpr.checkAndNotify());
+    let result;
+    switch (operator) {
+        case "=":
+            result = obj[prop] = val;
+            break;
+        case "+=":
+            result = obj[prop] += val;
+            break;
+        case "-=":
+            result = obj[prop] -= val;
+            break;
+        case "*=":
+            result = obj[prop] *= val;
+            break;
+        case "/=":
+            result = obj[prop] /= val;
+            break;
+        case "%=":
+            result = obj[prop] %= val;
+            break;
+        case "<<=":
+            result = obj[prop] <<= val;
+            break;
+        case ">>=":
+            result = obj[prop] >>= val;
+            break;
+        case ">>>=":
+            result = obj[prop] >>>= val;
+            break;
+        case "|=":
+            result = obj[prop] |= val;
+            break;
+        case "^=":
+            result = obj[prop] ^= val;
+            break;
+        case "&=":
+            result = obj[prop] &= val;
+            break;
+        default:
+            throw new Error(`unknown operator ${operator}`);
+            break;
+    }
+    let affectedAExprs = aexprStorage.getAExprsFor(obj, prop);
+    affectedAExprs.forEach(aexpr => {
+        aexprStorage.disconnectAll(aexpr);
+        ExpressionAnalysis.check(aexpr);
+    });
+    affectedAExprs.forEach(aexpr => aexpr.checkAndNotify());
     return result;
 }
 
