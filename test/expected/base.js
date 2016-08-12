@@ -1,10 +1,2 @@
-var x;
-let y = 42;
-
-function z() {}
-
-({
-  x,
-  y,
-  z
-});
+import { getMember as _getMember } from "aexpr-source-transformation-propagation";
+let r = _getMember(Number, "POSITIVE_INFINITY");
