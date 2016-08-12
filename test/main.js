@@ -10,8 +10,11 @@ var plugin = require('../dist/index').default;
 var tests = [
     {file: 'base'},
     {file: 'ignore'},
-    {file: 'locals-declared'},
-    {file: 'nested'}
+    {file: 'nested_left_assignment'},
+    {file: 'all-accesses'},
+    {file: 'class_example'},
+    {file: 'class_example'},
+    {file: 'with_aexpr'}
 ];
 
 function normalize(str) {

@@ -1,0 +1,1 @@
+aexpr(() => r1.area(), foo).onChange(() => console.log("changed"));
