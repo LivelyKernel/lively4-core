@@ -4,6 +4,10 @@
   "dependencies": {
     "lively.lang": "^0.7.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LivelyKernel/lively.graphics"
+  },
   "systemjs": {
     "map": {
       "mocha-es6": "./node_modules/mocha-es6/mocha-es6.js"
