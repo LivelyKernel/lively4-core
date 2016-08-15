@@ -1,6 +1,6 @@
 {
   "name": "active-expressions",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": " Monitor expressions over the execution of a program",
   "main": "dist/active-expressions.js",
   "jsnext:main": "src/active-expressions.js",

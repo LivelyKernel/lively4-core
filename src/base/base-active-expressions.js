@@ -16,6 +16,7 @@ export class BaseActiveExpression {
      * @returns {*} the current value of the expression
      */
     getCurrentValue() {
+        // TODO: provide an API for this extact call (run the function and return its value)
         return this.func();
     }
 
