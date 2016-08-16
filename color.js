@@ -1,5 +1,6 @@
 import { num } from "lively.lang";
 import { parse } from "./color-parser.js";
+import { Rectangle, rect } from "./geometry-2d.js";
 
 function floor(x) { return Math.floor(x*255.99) };
 
@@ -291,6 +292,9 @@ export class Color {
     return Color.rgb(255 * (1 - this.r), 255 * (1 - this.g), 255 * (1 - this.b));
   }
 
+  toCSSString() {
+    return this.toRGBAString();
+  }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // serialization
@@ -302,6 +306,106 @@ export class Color {
     }
   }
 
+}
+
+class Gradient {
+  
+  constructor(stops) {
+    this.stops = stops || [];
+  }
+  
+  getStopsLighter(n) {
+      return this.stops.collect(function(ea) {
+          return {offset: ea.offset, color: ea.color.lighter(n)};
+      });
+  }
+  
+  getStopsDarker(n) {
+      return this.stops.collect(function(ea) {
+          return {offset: ea.offset, color: ea.color.darker(n)};
+      });
+  }
+  
+  get isGradient() { return true }
+  
+}
+
+export class LinearGradient extends Gradient {
+  
+  constructor(stops, vector) {
+    super(stops);
+    this.vector = vector;
+  }
+
+  get vectors() {
+      return {
+        northsouth: rect(pt(0, 0), pt(0, 1)),
+        southnorth: rect(pt(0, 1), pt(0, 0)),
+        eastwest:    rect(pt(0, 0), pt(1, 0)),
+        westeast:    rect(pt(1, 0), pt(0, 0)),
+        southwest:    rect(pt(1, 0), pt(0, 1)),  // Down and to the left
+        southeast:    rect(pt(0, 0), pt(1, 1)),
+        northeast:    rect(pt(0, 1), pt(1, 0)),
+        northwest:    rect(pt(1, 1), pt(0, 0))
+    }
+  }
+  
+  get vector() { return this.vector }
+  set vector(value) {
+    if (!value) this.vector = this.vectors.northsouth;
+    else if (Object.isString(value)) this.vector = this.vectors[value.toLowerCase()]
+    else this.vector = value;
+  }
+  
+  lighter(n) { return new this.constructor(this.getStopsLighter(n), this.vector) }
+  darker() { return new this.constructor(this.getStopsDarker(), this.vector) }
+  
+  toCSSString(bounds, cssPrefix) {
+    // default webkit way of defining gradients
+    var str = `${cssPrefix}gradient(linear, 
+        ${this.vector.x * 100.0}\% 
+        ${this.vector.y * 100.0}\%, 
+        ${this.vector.maxX() * 100.0}\% 
+        ${this.vector.maxY() * 100.0}\%`;
+    for (var i = 0; i < this.stops.length; i++)
+        str += `,color-stop(${this.stops[i].offset}, ${this.stops[i].color.toRGBAString()})`;
+    str += ')';
+    return str;
+  }
+}
+
+export class RadialGradient extends Gradient {
+  
+  constructor(stops, focus) {
+    super(stops);
+    this.focus = focus || pt(0.5, 0.5);
+  }
+  
+  lighter(n) { return new this.constructor(this.getStopsLighter(n), this.focus) }
+  darker() { return new this.constructor(this.getStopsDarker(), this.focus) }
+  
+  toCSSString(bounds, cssPrefix) {
+    const innerCircle = this.focus.scaleBy(100.0),
+          innerCircleRadius = 0.0,
+          outerCircle = pt(50.0, 50.0),
+          outerCircleRadius = bounds.width/2;
+    bounds = bounds || new Rectangle(0,0, 20, 20);
+    var str = `${cssPrefix}gradient(radial, 
+               ${innerCircle.x}\% 
+               ${innerCircle.y}\%, 
+               ${innerCircleRadius}, 
+               ${outerCircle.x}\% 
+               ${outerCircle.y}\%, 
+               ${outerCircleRadius}`;
+    for (var i = 0; i < this.stops.length; i++)
+        str += ` ,color-stop(
+          ${this.stops[i].offset}, 
+          ${this.stops[i].color.toRGBAString()}
+          )`;
+    str += ')';
+    return str;
+  }
+  
 }
 
 // well-known colors
