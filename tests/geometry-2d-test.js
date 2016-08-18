@@ -15,6 +15,11 @@ describe("rectangles", () => {
     it("with negative width / height", () => {
       expect(new Rectangle(10,20, -10, -20).area()).equals(-10*20);
     });
+    
+    it("with only one negative side", () => {
+      expect(new Rectangle(10,20, 10, -20).area()).equals(-10*20);
+      expect(new Rectangle(10,20, -10, 20).area()).equals(-10*20);
+    })
 
   });
   

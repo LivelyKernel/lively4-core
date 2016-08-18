@@ -661,7 +661,7 @@ export class Rectangle {
 
   area() { 
     const area = this.width * this.height,
-          sign = this.width < 0 || this.height < 0 ? -1 : 1; 
+          sign = this.width < 0 && this.height < 0 ? -1 : 1; 
     return sign * area;
   }
 
