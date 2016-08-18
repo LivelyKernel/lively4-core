@@ -3,20 +3,21 @@
 import { expect, chai } from "mocha-es6";
 import { Rectangle, Line, Point, pt, rect, Transform } from "../geometry-2d.js";
 
-chai.Assertion.overwriteMethod('equal', function (_super) {
-  return function equalsGeometry (other) {
-    if (this._obj instanceof Rectangle || this._obj instanceof Point || this._obj instanceof Line) {
-      this.assert(
-        this._obj.equals(other),
-        undefined, undefined,
-        String(this._obj), String(other));
-    } else {
-      _super.apply(this, arguments);
-    }
-  };
-});
 
 describe("rectangles", () => {
+
+  describe("area", () => {
+    
+    it("computes it", () => {
+      expect(new Rectangle(10,20, 10, 20).area()).equals(10*20);
+    });
+
+    it("with negative width / height", () => {
+      expect(new Rectangle(10,20, -10, -20).area()).equals(-10*20);
+    });
+
+  });
+  
 
   it("testCreateGrid", function() {
     var bounds = new Rectangle(0,0, 100, 200),
@@ -33,7 +34,8 @@ describe("rectangles", () => {
   });
 
   it("testWithCenter", function() {
-    expect(rect(10,10,10,10)).to.equal(rect(0,0, 10, 10).withCenter(pt(15,15)));
+    expect(rect(10,10,10,10)).equals(rect(0,0, 10, 10).withCenter(pt(15,15)));
+
   });
 
   it("testWithTopRight", function() {

@@ -659,7 +659,11 @@ export class Rectangle {
     return this.y < 0 ? -this.y + this.height : this.height
   }
 
-  area() { return this.width * this.height; }
+  area() { 
+    const area = this.width * this.height,
+          sign = this.width < 0 || this.height < 0 ? -1 : 1; 
+    return sign * area;
+  }
 
   randomPoint() {
     return Point.random(pt(this.width, this.height)).addPt(this.topLeft());
