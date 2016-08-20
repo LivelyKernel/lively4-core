@@ -1,15 +1,10 @@
 # ToDos
 
-* **Recursively analyze function calls in condition**
+* Recursively analyze function calls in condition
+    //not needed, will be implemented using other feature
 * Add destroy method to AExpr
-* Build a cool example/showcase
 * Derive context automatically
 
-##Präsentation
-* screencast
-* screenshot
-* mini abstract
-
-##Abgabe
+##Hand-in
 * tag in git
-* pdf mit präsentation
+* slides as pdf
