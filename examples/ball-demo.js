@@ -1,6 +1,5 @@
 'use strict';
 
-
 function setUpBall(ball) {
   ball.id = 'bouncy-ball';
   ball.setAttribute('style', `
@@ -28,7 +27,6 @@ function mainDemo() {
   // remove previous ball
   var b = document.querySelector('* /deep/ #bouncy-ball');
   if (b) b.remove();
-  
   
   window.ball = document.createElement('div');
   let ball = window.ball;
@@ -59,8 +57,6 @@ function mainDemo() {
   }, 10);
   
   return;
-  
-  
   
   var expr = new lively.ActiveExpr.Expr(
     // Condition

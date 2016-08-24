@@ -28,6 +28,3 @@ function mainDemo() {
 }
 
 mainDemo();
-// lively.import('ActiveExpr', 'https://lively-kernel.org/lively4/active-expressions/src/active-expressions.js').then(function() {
-//   mainDemo();
-// });
