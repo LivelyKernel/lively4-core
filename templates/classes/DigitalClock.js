@@ -45,9 +45,15 @@ export default class DigitalClock extends Morph {
   	);
   }
   
+  formatTime(dateTime) {
+    var hours = ("0" + dateTime.getHours()).substr(-2);
+    var minutes = ("0" + dateTime.getMinutes()).substr(-2);
+    
+    return hours + ":" + minutes;
+  }
+  
   updateTime() {
     let date = new Date();
-    let formattedDate = date.toTimeString().replace(/ .*/,"")
-    this.shadowRoot.innerHTML = formattedDate;
+    this.shadowRoot.innerHTML = this.formatTime(date);
   }
 }

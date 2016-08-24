@@ -29,6 +29,7 @@ export default class ApplicationBar extends Morph {
    */
   defineShortcuts() {
     this.windowSpace = this.shadowRoot.querySelector('#window-space');
+    this.menuButton = this.shadowRoot.querySelector('#menu-button');
     this.toolbar = this.shadowRoot.querySelector('#toolbar');
     this.clock = this.shadowRoot.querySelector('#clock');
     
@@ -36,7 +37,11 @@ export default class ApplicationBar extends Morph {
   }
 
   bindEvents() {
-    //
+    this.onTitleChange();
+    this.onActiveChange();
+    this.onMinimizeChange();
+    
+    this.menuButton.addEventListener('click', (e) => { this.openContextMenu(e); });
   }
 
   registerActiveWindowView() {
@@ -50,12 +55,8 @@ export default class ApplicationBar extends Morph {
 
   setup() {
     this.defineShortcuts();
-    this.bindEvents();
     this.registerActiveWindowView();
-
-    this.onTitleChange();
-    this.onActiveChange();
-    this.onOutOfWindow();
+    this.bindEvents();
   }
 
   /*
@@ -70,12 +71,14 @@ export default class ApplicationBar extends Morph {
       return;
 
     var windowTab = document.createElement('span');
-    windowTab.style = 'float: left; border: 1px solid gray; margin-right: 5px;';
+    windowTab.classList.add('tab');
+    
     windowTab.addEventListener('click', e => {
-      if(win.isMinimized())
+      if(win.isMinimized() || win.active)
         win.toggleMinimize();
         
-      win.focus(e);
+      if(!win.isMinimized())
+        win.focus(e);
     });
     
     windowTab.innerHTML = win.hasAttribute('title') ? 
@@ -90,7 +93,7 @@ export default class ApplicationBar extends Morph {
     this.windowTabs.delete(win);
     windowTab.remove();
   }
-
+  
   onTitleChange() {
     new AExpr(win => win.getAttribute('title'))
     .applyOnAll(this.activeWindowView)
@@ -99,31 +102,39 @@ export default class ApplicationBar extends Morph {
       windowTab.innerHTML = win.getAttribute('title');
     });
   }
+  
+  onMinimizeChange() {
+    new AExpr(win => win.style.display == 'none')
+    .applyOnAll(this.activeWindowView)
+    .onChange(win => {
+      var windowTab = this.windowTabs.get(win);
+      
+      if(win.isMinimized()) {
+        windowTab.classList.add('minimized');
+      } else {
+        windowTab.classList.remove('minimized');
+      }
+    });
+  }
 
   onActiveChange() {
     new AExpr(win => win.getAttribute('active'))
     .applyOnAll(this.activeWindowView)
     .onChange(win => {
       var windowTab = this.windowTabs.get(win);
-      windowTab.style.borderColor = win.getAttribute('active') ? 'red' : 'gray';
+      
+      if(win.getAttribute('active')) {
+        windowTab.classList.add('active');
+      } else {
+        windowTab.classList.remove('active');
+      }
     });
   }
-
-  onOutOfWindow() {
-    var windowTabs = this.windowTabs;
-    
-    new AExpr(win => {
-      var fromBottom = window.innerHeight - win.offsetHeight - parseInt(win.style.top);
-      var fromRight = window.innerWidth - win.offsetWidth - parseInt(win.style.left);
-
-      return fromBottom < 0 || fromRight < 0;
-    })
-    .applyOnAll(this.activeWindowView)
-    .onChange(function(win) {
-      var windowTab = windowTabs.get(win);
-      
-      windowTab.style.backgroundColor = this.currentValue ?
-        'red' : '';
-    });
+  
+  openContextMenu(event) {
+    let openMenuCount = document.querySelectorAll('lively-menu').length;
+    if(openMenuCount == 0) {
+      lively.openContextMenu(document.body, event);  
+    }
   }
 }
