@@ -105,7 +105,7 @@ export class ActiveDOMView extends ActiveView {
     this.exited.delete(node);
     this.elements.add(node);
     this.entered.add(node);
-    console.log('elementEnters', node);
+    
     this.enterCallbacks.forEach(cb => cb(node));
   }
   
@@ -157,9 +157,6 @@ export class ActiveDOMView extends ActiveView {
   
   onEnter(callback) {
     this.enterCallbacks.add(callback);
-    
-    console.log('new onEnter callback!');
-    console.log('current elements:', this.elements);
 
     // invoke for all current elements
     this.elements.forEach(e => callback(e));
@@ -175,10 +172,3 @@ export class ActiveDOMView extends ActiveView {
 class ActiveObjectView extends ActiveView {
   // TODO
 }
-
-
-// playground code
-
-// var view = new ActiveDOMView('lively-window');
-// console.debug(view);
-// window.testingView = view;

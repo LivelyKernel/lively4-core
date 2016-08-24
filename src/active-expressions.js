@@ -35,6 +35,7 @@ export class AExpr {
     
     this.applyArguments = null;
     this.condition = condition;
+    this.expressions = new Map();
     this.options = options;
   }
   
@@ -59,11 +60,13 @@ export class AExpr {
   
   applyOnActiveView(activeView) {
     activeView.onEnter(node => {
-      new ActiveExpr(this.condition, [node, ...this.applyArguments], this.options)
-       .onChange(this.callback);
+      let expression = new ActiveExpr(this.condition, [node, ...this.applyArguments], this.options);
+      expression.onChange(this.callback);
+       
+       this.expressions.set(node, expression);
     })
     .onExit(node => {
-      //destroy AExpr
+      this.expressions.get(node).destroy();
     });
   }
   
@@ -116,8 +119,7 @@ class ActiveExpr {
     this._ast = lively.ast.parseFunction(condition);
     this._declarations = lively.ast.query.topLevelDeclsAndRefs(this._ast);
     this.observables = this.detectObservables();
-
-    // this.transformExpression();
+    
     this.proxify();
     
     this.test();
@@ -303,18 +305,55 @@ class ActiveExpr {
   }
   
   unProxifyVariable(object, variable, contextVariableName) {
-    if (object instanceof HTMLElement) {
-      //TODO stop mutation observer
-      
-      //return
+    var nextAttribute = variable;
+    var isAttribute = false;
+    
+    if (nextAttribute.includes('.')) {
+      nextAttribute = nextAttribute.split('.')[0];
+      if(nextAttribute == '$attributes') {
+        this.logger.log('Attribute catched!');
+        nextAttribute = variable.split('.')[1];
+        variable = variable.split('.').slice(1).join('.');
+        isAttribute = true;
+      }
     }
     
-    //TODO handle recursion
+    if (object instanceof HTMLElement) {
+      
+      let obs = this.observers[contextVariableName];
+      if (obs && obs.attributes.has(variable)) {
+        obs.attributes.delete(variable);
+        obs.config.attributeFilter = [...obs.attributes];
+        
+        obs.mutationObserver.disconnect();
+        if (obs.attributes.size > 0) {
+          obs.mutationObserver.observe(object, obs.config);
+        }
+        
+        return;
+      }
+    }
     
-    object.__lively_expr_watchers.remove(this);
+    if (variable.includes('.')) {
+      let components = variable.split('.');
+      this.unProxifyVariable(object[components[0]], components.splice(1).join('.'));
+      return;
+    }
     
-    //TODO overwrite new getter/setter with original ones
-    //if we are the last watcher
+    if(!object.__lively_expr_watchers)
+      return;
+      
+    object.__lively_expr_watchers.delete(this);
+    
+    if(object.__lively_expr_watchers.size === 0) {
+      let oldGetter = object.__lively_expr_getters[variable];
+      let oldSetter = object.__lively_expr_setters[variable];
+      
+      if(oldGetter)
+        object.__defineGetter__(variable, oldGetter);
+      if(oldSetter)
+        object.__defineSetter__(variable, oldSetter);
+    }
   }
   
   proxifyFunction(func) {
@@ -324,7 +363,7 @@ class ActiveExpr {
     let functionObject = eval(func);
   }
   
-  proxifyVariable(object, variable, contextVariableName) {
+  proxifyVariable(object, variable, callback, contextVariableName) {
     this.logger.log('Proxifying variable:', object, variable, 'With context variable name:', contextVariableName);
 
     var nextAttribute = variable;
@@ -397,8 +436,6 @@ class ActiveExpr {
     }
     
     this.logger.log('Patching variable:', variable, ' on ', object);
-    
-    // this.logger.trap();
     
     ['__lively_expr_getters',
      '__lively_expr_setters',
