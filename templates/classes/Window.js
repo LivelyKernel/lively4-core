@@ -26,6 +26,10 @@ export default class Window extends Morph {
     this._title = val
     this.render();
   }
+  
+  get active() {
+    return this.hasAttribute('active');
+  }
 
   get isFixed() {
     return this.hasAttribute('fixed');
@@ -239,64 +243,21 @@ export default class Window extends Morph {
   }
 
   toggleMinimize() {
-    var content = this.shadowRoot.querySelector('#window-content');
-    if (this.positionBeforeMinimize) {
-      this.style.position = "absolute"
-      this.setPosition(
-          this.positionBeforeMinimize.x,
-          this.positionBeforeMinimize.y
-      );
-      this.setSize(
-        this.positionBeforeMinimize.width,
-        this.positionBeforeMinimize.height
-      );
-      content.style.display = "block";
-      this.displayResizeHandle(true)
-      this.positionBeforeMinimize = null
-
-      // this.classList.removed("minimized")
-    } else {
-      if (this.isMaximized()) {
-        this.toggleMaximize()
-      }
-
-      var bounds = this.getBoundingClientRect();
-      this.positionBeforeMinimize = {
-        x: bounds.left,
-        y: bounds.top,
-        width: bounds.width,
-        height: bounds.height,
-      };
-
-      this.style.position = "fixed";
-      this.style.top = this.minimizedWindowPadding +"px";
-      this.style.left = "";
-      this.style.right = this.minimizedWindowPadding + "px";
-      this.style.width = "300px";
-      this.style.height= "30px";
-      content.style.display = "none";
-      this.displayResizeHandle(false)
-
-      this.sortMinimizedWindows();
-    }
+    this.style.display = this.isMinimized() ?
+      'block' : 'none';
+      
+    if(this.isMinimized())
+      this.removeAttribute('active');
+      
+    return;
   }
 
   isMinimized() {
-    return !!this.positionBeforeMinimize;
+    return this.style.display === 'none';
   }
 
   isMaximized() {
     return !!this.positionBeforeMaximize;
-  }
-
-  sortMinimizedWindows() {
-    var x = this.minimizedWindowPadding
-    var windowBarHeight = this.shadowRoot.querySelector('.window-titlebar').clientHeight
-
-    _.filter(document.body.querySelectorAll("lively-window"), ea => ea.isMinimized()).forEach(ea => {
-      ea.style.top= x + "px" ;
-      x += windowBarHeight + this.minimizedWindowPadding
-    })
   }
 
   pinButtonClicked(e) {
