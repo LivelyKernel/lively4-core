@@ -23,3 +23,5 @@ function demo() {
   	});
   console.log(view);
 }
+
+demo();

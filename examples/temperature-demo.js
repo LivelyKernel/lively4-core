@@ -3,8 +3,10 @@
 import { AExpr } from '../src/active-expressions.js';
 
 function mainDemo() {
-  var sliderC = document.querySelector('lively-container /deep/ #celsius');
-  var sliderF = document.querySelector('lively-container /deep/ #fahrenheit');
+  var sliderC = document.querySelector('lively-container #celsius');
+  var sliderF = document.querySelector('lively-container #fahrenheit');
+
+  console.log(sliderC, sliderF);
 
   let expr = new AExpr(
     function watch(c, f) {
@@ -15,7 +17,7 @@ function mainDemo() {
       f.value = c.value * 1.8 + 32;
     });
 
-  let expr2 = AExpr(
+  let expr2 = new AExpr(
     function watch(c, f) {
       return f.value;
     })

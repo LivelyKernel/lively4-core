@@ -2,6 +2,7 @@
 // abstract view class
 export class ActiveView {
   constructor() {
+    // this does not work with Babel
     // if (new.target === ActiveView) {
     //   throw new TypeError('Cannot construct ActiveView directly');
     // }
@@ -155,6 +156,12 @@ export class ActiveDOMView extends ActiveView {
     return this;
   }
   
+  /**
+   * Register callback for entering objects and invoke for all current elements
+   * @function ActiveDOMView#onEnter
+   * @param {function} callback
+   * @return {ActiveDOMView} This view
+   */
   onEnter(callback) {
     this.enterCallbacks.add(callback);
 
@@ -162,7 +169,13 @@ export class ActiveDOMView extends ActiveView {
     this.elements.forEach(e => callback(e));
     return this;
   }
-  
+
+  /**
+   * Register callback for exiting objects
+   * @function ActiveDOMView#onExit
+   * @param {function} callback
+   * @return {ActiveDOMView} This view
+   */
   onExit(callback) {
     this.exitCallbacks.add(callback);
     return this;

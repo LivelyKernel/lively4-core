@@ -39,44 +39,12 @@ export class AExpr {
     this.options = options;
   }
   
-  applyOnAll() {
-    this.applyArguments = Array.prototype.slice.call(arguments);
-    
-    return this;
-  }
-  
-  applyOnCollection() {
-    var collection = this.applyArguments.shift();
-    
-    if(collection instanceof ActiveView) {
-      this.applyOnActiveView(collection);
-    } else if(collection instanceof NodeList) {
-      this.applyOnIteratable(collection);
-    } else {
-      //normal collection
-      this.applyOnIteratable(collection);
-    }
-  }
-  
-  applyOnActiveView(activeView) {
-    activeView.onEnter(node => {
-      let expression = new ActiveExpr(this.condition, [node, ...this.applyArguments], this.options);
-      expression.onChange(this.callback);
-       
-       this.expressions.set(node, expression);
-    })
-    .onExit(node => {
-      this.expressions.get(node).destroy();
-    });
-  }
-  
-  applyOnIteratable(collection) {
-    collection.forEach(element => {
-      new ActiveExpr(this.condition, [element, ...this.applyArguments], this.options)
-       .onChange(this.callback);
-    });
-  }
-
+  /**
+   * Create AExpr with the given arguments
+   * @function AExpr#applyOn
+   * @param {any} ...arguments
+   * @return {ActiveExpr} The new ActiveExpr instance
+   */
   applyOn(/* arguments */) {
     if (arguments.length != this.condition.length) {
       console.warn('AExpr: mismatching argument count: ', 
@@ -94,11 +62,79 @@ export class AExpr {
     return new ActiveExpr(this.condition, context, this.options);
   }
   
+  /**
+   * Set callback for this AExpr
+   * @function AExpr#onChange
+   * @param {Function} callback
+   * @return {AExpr} This AExpr instance
+   */
   onChange(callback) {
     this.callback = callback;
     
     if(this.applyArguments) {
-      this.applyOnCollection();
+      this._applyOnCollection();
+    }
+    
+    return this;
+  }
+  
+  /**
+   * Apply the expression on all arguments provided
+   * @function AExpr#applyOnAll
+   * @param {any} ...arguments
+   * @return {AExpr} This active expression
+   */
+  applyOnAll() {
+    this.applyArguments = Array.prototype.slice.call(arguments);
+    
+    return this;
+  }
+  
+  /**
+   * Apply the expression on the given ActiveView instance
+   * @function AExpr#_applyOnActiveView
+   * @param {ActiveView} activeView
+   */
+  _applyOnActiveView(activeView) {
+    activeView.onEnter(node => {
+      let expression = new ActiveExpr(this.condition, [node, ...this.applyArguments], this.options);
+      expression.onChange(this.callback);
+       
+       this.expressions.set(node, expression);
+    })
+    .onExit(node => {
+      this.expressions.get(node).destroy();
+    });
+  }
+  
+  /**
+   * Apply the expression on the collection
+   * @function AExpr#_applyOnIteratable
+   * @param {iterable} collection
+   */
+  _applyOnIteratable(collection) {
+    collection.forEach(element => {
+      new ActiveExpr(this.condition, [element, ...this.applyArguments], this.options)
+       .onChange(this.callback);
+    });
+  }
+  
+  
+  /**
+   * Apply the expression on the saved arguments
+   * @function AExpr#_applyOnCollection
+   * @return {AExpr} This active expression
+   */
+  _applyOnCollection() {
+    var collection = this.applyArguments.shift();
+    
+    if(collection instanceof ActiveView) {
+      this.applyOnActiveView(collection);
+    } else if(collection instanceof NodeList) {
+      this._applyOnIteratable(collection);
+    } else {
+      //normal collection
+      this._applyOnIteratable(collection);
     }
   }
 }
@@ -125,10 +161,19 @@ class ActiveExpr {
     this.test();
   }
   
+  /**
+   * Set callback for this ActiveExpr
+   * @function ActiveExpr#onChange
+   * @param {Function} callback
+   */
   onChange(callback) {
     this.callback = callback;
   }
   
+  /**
+   * Test the condition and make callback if necessary
+   * @function ActiveExpr#test
+   */
   test() {
     let result = this.condition.apply(this, this.context);
 
@@ -151,31 +196,12 @@ class ActiveExpr {
       this.lastValue = result;
     }
   }
-  
-  transformExpression() {
-    let off = 0;
-    
-    let src = this.originalExpr.toString();
-    for (let i = this._declarations.refs.length - 1; i >= 0; i--) {
-      let node = this._declarations.refs[i];
-      
-      if (!node.name.includes('.') && window[node.name] !== undefined) {
-        // dont replace global objects like parseInt
-        continue;
-      }
-      let left = src.substring(0, node.start - 1);
-      let right = src.substring(node.start - 1);
-      src = left + '__context.' + right;
-      off += 10;
-    }
 
-    let body = src.substring(this._ast.body.start - 1, this._ast.body.end + off);
-    this.expr = eval('(function(__context)' + body + ')');
-    
-    this.logger.log('Transformed body:', body);
-    this.logger.log('Transformed expr:', this.expr);
-  }
-  
+  /**
+   * Find variables to be observed in the condition function
+   * @function ActiveExpr#detectObservables
+   * @return {Object} State object with observables
+   */
   detectObservables() {
     var self = this;
     var state = {
@@ -241,6 +267,11 @@ class ActiveExpr {
     return state;
   }
   
+  /**
+   * Retrieve arguments of the expression as a Map
+   * @function ActiveExpr#getCalledArguments
+   * @return {Object} Map of expression arguments
+   */
   getCalledArguments() {
     var contextArgs = {};
     var i = 0;
@@ -252,6 +283,10 @@ class ActiveExpr {
     return contextArgs;
   }
   
+  /**
+   * Wrap a proxy/hook around all variables to be observed
+   * @function ActiveExpr#proxify
+   */
   proxify() {
     this.logger.log('Variables to observe:', this.observables.variablesToObserve);
     
@@ -282,6 +317,10 @@ class ActiveExpr {
     }
   }
   
+  /**
+   * Remove proxies/hooks from observed variables
+   * @function ActiveExpr#unProxify
+   */
   unProxify() {
     var contextArgs = this.getCalledArguments();
   
@@ -304,6 +343,13 @@ class ActiveExpr {
     }
   }
   
+  /**
+   * Remove proxy/hook from specified context variable
+   * @function ActiveExpr#unproxifyVariable
+   * @param {Object} object that has the variable
+   * @param {String} name of the variable
+   * @param {String} contextVariableName, name of the base variable
+   */
   unProxifyVariable(object, variable, contextVariableName) {
     var nextAttribute = variable;
     var isAttribute = false;
@@ -356,13 +402,23 @@ class ActiveExpr {
     }
   }
   
+  /**
+   * Unwraps a function to find more variables to observe
+   * @function ActiveExpr#proxifyFunction
+   */
   proxifyFunction(func) {
+    // NOT IMPLEMENTED
     return;
-    //NOT IMPLEMENTED
-    
-    let functionObject = eval(func);
   }
-  
+
+  /**
+   * Wrap proxy/hook around specified context variable
+   * @function ActiveExpr#proxifyVariable
+   * @param {Object} object that has the variable
+   * @param {String} variable, name of the variable
+   * @param {Function} unused
+   * @param {String} contextVariableName, name of the base variable
+   */
   proxifyVariable(object, variable, callback, contextVariableName) {
     this.logger.log('Proxifying variable:', object, variable, 'With context variable name:', contextVariableName);
 
@@ -509,21 +565,3 @@ class ActiveExpr {
 }
 
 ActiveExpr.NotTested = Symbol('ActiveExpr::NotTested');
-
-  // let outOfScreen = AExpr(
-  //   function condition(w) { 
-  //     return parseInt(w.style.top) < 0 || parseInt(w.style.left) < 0
-  //   }
-  // );
-  
-  // outOfScreen
-  //   .applyOn(document.querySelector('lively-window'))
-  //   .onChange(function(node) {
-  //     if (parseInt(node.style.top) < 0) {
-  //       node.style.top = 0;
-  //     }
-  //     if (parseInt(node.style.left) < 0) {
-  //       node.style.left = 0;
-  //     }
-  //   });
-

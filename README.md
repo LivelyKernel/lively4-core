@@ -20,9 +20,12 @@ expr
     console.log('Our object is saying hello ' + obj.hello);
   });
 
-object.hello = 'World';
+setTimeout(function() {
+  object.hello = 'World';
+}, 1000);
 ```
 
+## Alternative uses for collections
 ```
 expr.applyOn(jsObjectA);
 expr.applyOn(document.querySelector('#container'));
@@ -32,8 +35,8 @@ expr.applyOnAll(document.querySelectorAll('div.ball'));
 ```
 
 ## Examples
-* [Temperature Slider](tests/temperature-demo.js)
-* [Window Boundary Check](tests/window-demo.js)
+* [Temperature Slider](examples/temperature-demo.js)
+* [Window Boundary Check](examples/window-demo.js)
 
 ## API
 __AExpr(condition, options)__
