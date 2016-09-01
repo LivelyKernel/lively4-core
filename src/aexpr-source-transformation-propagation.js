@@ -29,6 +29,9 @@ class CompositeKey {
 
         return secondKeyMap.get(obj2);
     }
+    static clear() {
+        compositeKeyStore.clear();
+    }
 }
 
 class HookStorage {
@@ -57,6 +60,14 @@ class HookStorage {
             return this.objPropsByAExpr.get(aexpr).has(comp);
         });
     }
+
+    /*
+     * Removes all associations.
+     * As a result
+     */
+    clear() {
+        this.objPropsByAExpr.clear();
+    }
 }
 
 const aexprStorage = new HookStorage();
@@ -74,6 +85,18 @@ class RewritingActiveExpression extends BaseActiveExpression {
 export function aexpr(func) {
     // console.log('aexpr', func);
     return new RewritingActiveExpression(func);
+}
+
+/*
+ * Disconnects all associations between active expressions and object properties
+ * As a result no currently enable active expression will be notified again,
+ * effectively removing them from the system.
+ *
+ * TODO: Caution, this might break with some semantics, if we still have references to an aexpr!
+ */
+export function reset() {
+    aexprStorage.clear();
+    CompositeKey.clear();
 }
 
 export function getMember(obj, prop) {

@@ -1,6 +1,6 @@
 {
   "name": "aexpr-source-transformation-propagation",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "Internal notification logic for the 3rd implementation of active expressions.",
   "main": "dist/aexpr-source-transformation-propagation.js",
   "jsnext:main": "src/aexpr-source-transformation-propagation.js",

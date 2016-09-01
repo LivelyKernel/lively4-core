@@ -1,22 +1,22 @@
 'use strict';
 
-import { aexpr, setMember, getMember, getAndCallMember } from '../src/aexpr-source-transformation-propagation.js';
+import { aexpr, reset, setMember, getMember, getAndCallMember } from '../src/aexpr-source-transformation-propagation.js';
 
 describe('Propagation Logic', function() {
 
-    xit('is a transparent wrapper for property accesses', () => {
+    it('is a transparent wrapper for property accesses', () => {
         let obj = {
             prop: 42,
             func(mul) { return getMember(this, 'prop') * mul}
         };
 
-        expect(getMember(obj, 'prop')).to.be(42);
-        expect(getAndCallMember(obj, 'func', [2])).to.be(84);
+        expect(getMember(obj, 'prop')).to.equal(42);
+        expect(getAndCallMember(obj, 'func', [2])).to.equal(84);
 
         setMember(obj, "prop", "/=", 3);
 
-        expect(getMember(obj, 'prop')).to.be(14);
-        expect(getAndCallMember(obj, 'func', [2])).to.be(28);
+        expect(getMember(obj, 'prop')).to.equal(14);
+        expect(getAndCallMember(obj, 'func', [2])).to.equal(28);
     });
 
     it('should be supported with proper integration', () => {
@@ -86,5 +86,18 @@ describe('Propagation Logic', function() {
         setMember(obj, "a", "=", 1);
 
         expect(spy.withArgs(3)).to.be.calledOnce;
+    });
+
+    it('reset all active expressions', () => {
+        let obj = { prop: 42 },
+            spy = sinon.spy();
+
+        aexpr(() => getMember(obj, "prop")).onChange(spy);
+
+        reset();
+
+        setMember(obj, "prop", "=", 17);
+
+        expect(spy).not.to.be.called;
     });
 });
