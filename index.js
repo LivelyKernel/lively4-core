@@ -7,6 +7,22 @@ const GET_AND_CALL_MEMBER = "getAndCallMember";
 const IGNORE_STRING = "aexpr ignore";
 const IGNORE_INDICATOR = Symbol("aexpr ignore");
 
+const SET_MEMBER_BY_OPERATORS = {
+    '=': 'setMember',
+    '+=': 'setMemberAddition',
+    '-=': 'setMemberSubtraction',
+    '*=': 'setMemberMultiplication',
+    '/=': 'setMemberDivision',
+    '%=': 'setMemberRemainder',
+    //'**=': 'setMemberExponentiation',
+    '<<=': 'setMemberLeftShift',
+    '>>=': 'setMemberRightShift',
+    '>>>=': 'setMemberUnsignedRightShift',
+    '&=': 'setMemberBitwiseAND',
+    '^=': 'setMemberBitwiseXOR',
+    '|=': 'setMemberBitwiseOR'
+};
+
 // const SET_LOCAL = "setLocal";
 // const GET_LOCAL = "getLocal";
 
@@ -171,13 +187,15 @@ export default function(param) {
 
                             //state.file.addImport
 
+                            if(!SET_MEMBER_BY_OPERATORS[path.node.operator]) { return; }
+
                             path.replaceWith(
                                 t.callExpression(
-                                    addCustomTemplate(state.file, SET_MEMBER),
+                                    addCustomTemplate(state.file, SET_MEMBER_BY_OPERATORS[path.node.operator]),
                                     [
                                         path.node.left.object,
                                         getPropertyFromMemberExpression(path.node.left),
-                                        t.stringLiteral(path.node.operator),
+                                        //t.stringLiteral(path.node.operator),
                                         path.node.right
                                     ]
                                 )
