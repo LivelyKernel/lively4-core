@@ -151,7 +151,13 @@ exports.default = function (param) {
 
                             //state.file.addImport
 
-                            path.replaceWith(t.callExpression(addCustomTemplate(state.file, SET_MEMBER), [path.node.left.object, getPropertyFromMemberExpression(path.node.left), t.stringLiteral(path.node.operator), path.node.right]));
+                            if (!SET_MEMBER_BY_OPERATORS[path.node.operator]) {
+                                return;
+                            }
+
+                            path.replaceWith(t.callExpression(addCustomTemplate(state.file, SET_MEMBER_BY_OPERATORS[path.node.operator]), [path.node.left.object, getPropertyFromMemberExpression(path.node.left),
+                            //t.stringLiteral(path.node.operator),
+                            path.node.right]));
                         },
                         MemberExpression: function MemberExpression(path) {
                             // lval (left values) are ignored for now
@@ -303,6 +309,22 @@ var GET_AND_CALL_MEMBER = "getAndCallMember";
 
 var IGNORE_STRING = "aexpr ignore";
 var IGNORE_INDICATOR = Symbol("aexpr ignore");
+
+var SET_MEMBER_BY_OPERATORS = {
+    '=': 'setMember',
+    '+=': 'setMemberAddition',
+    '-=': 'setMemberSubtraction',
+    '*=': 'setMemberMultiplication',
+    '/=': 'setMemberDivision',
+    '%=': 'setMemberRemainder',
+    //'**=': 'setMemberExponentiation',
+    '<<=': 'setMemberLeftShift',
+    '>>=': 'setMemberRightShift',
+    '>>>=': 'setMemberUnsignedRightShift',
+    '&=': 'setMemberBitwiseAND',
+    '^=': 'setMemberBitwiseXOR',
+    '|=': 'setMemberBitwiseOR'
+};
 
 // const SET_LOCAL = "setLocal";
 // const GET_LOCAL = "getLocal";
