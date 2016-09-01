@@ -7,4 +7,4 @@ var a = { b: 1, fn() {
 var c = {};
 
 // Mixin everything together
-_setMember(_getAndCallMember(a, "fn", []), _getMember(c, "d"), "=", 1);
+_setMember(_getAndCallMember(a, "fn", []), _getMember(c, "d"), 1);

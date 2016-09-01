@@ -14,7 +14,8 @@ var tests = [
     {file: 'all-accesses'},
     {file: 'class_example'},
     {file: 'class_example'},
-    {file: 'with_aexpr'}
+    {file: 'with_aexpr'},
+    {file: 'operators'}
 ];
 
 function normalize(str) {
