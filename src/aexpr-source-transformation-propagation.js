@@ -47,7 +47,6 @@ class HookStorage {
         let objPropSet = this.objPropsByAExpr.get(aexpr);
 
         objPropSet.add(CompositeKey.get(obj, prop));
-        console.log('added', obj, prop);
     }
 
     disconnectAll(aexpr) {
@@ -117,56 +116,93 @@ export function getAndCallMember(obj, prop, args = []) {
     return obj[prop](...args);
 }
 
-export function setMember(obj, prop, operator, val) {
-    // console.log('setMember', obj, prop, operator, val);
-    let result;
-    switch (operator) {
-        case "=":
-            result = obj[prop] = val;
-            break;
-        case "+=":
-            result = obj[prop] += val;
-            break;
-        case "-=":
-            result = obj[prop] -= val;
-            break;
-        case "*=":
-            result = obj[prop] *= val;
-            break;
-        case "/=":
-            result = obj[prop] /= val;
-            break;
-        case "%=":
-            result = obj[prop] %= val;
-            break;
-        case "<<=":
-            result = obj[prop] <<= val;
-            break;
-        case ">>=":
-            result = obj[prop] >>= val;
-            break;
-        case ">>>=":
-            result = obj[prop] >>>= val;
-            break;
-        case "|=":
-            result = obj[prop] |= val;
-            break;
-        case "^=":
-            result = obj[prop] ^= val;
-            break;
-        case "&=":
-            result = obj[prop] &= val;
-            break;
-        default:
-            throw new Error(`unknown operator ${operator}`);
-            break;
-    }
+function checkDependentAExprs(obj, prop) {
     let affectedAExprs = aexprStorage.getAExprsFor(obj, prop);
     affectedAExprs.forEach(aexpr => {
         aexprStorage.disconnectAll(aexpr);
         ExpressionAnalysis.check(aexpr);
     });
     affectedAExprs.forEach(aexpr => aexpr.checkAndNotify());
+}
+
+export function setMember(obj, prop, val) {
+    let result = obj[prop] = val;
+    checkDependentAExprs(obj, prop);
+    return result;
+
+}
+
+export function setMemberAddition(obj, prop, val) {
+    let result = obj[prop] += val;
+    checkDependentAExprs(obj, prop);
+    return result;
+}
+
+export function setMemberSubtraction(obj, prop, val) {
+    let result = obj[prop] -= val;
+    checkDependentAExprs(obj, prop);
+    return result;
+}
+
+export function setMemberMultiplication(obj, prop, val) {
+    let result = obj[prop] *= val;
+    checkDependentAExprs(obj, prop);
+    return result;
+}
+
+export function setMemberDivision(obj, prop, val) {
+    let result = obj[prop] /= val;
+    checkDependentAExprs(obj, prop);
+    return result;
+}
+
+export function setMemberRemainder(obj, prop, val) {
+    let result = obj[prop] %= val;
+    checkDependentAExprs(obj, prop);
+    return result;
+}
+
+/*
+export function setMemberExponentiation(obj, prop, val) {
+    let result = obj[prop] **= val;
+    checkDependentAExprs(obj, prop);
+    return result;
+}
+*/
+
+export function setMemberLeftShift(obj, prop, val) {
+    let result = obj[prop] <<= val;
+    checkDependentAExprs(obj, prop);
+    return result;
+}
+
+export function setMemberRightShift(obj, prop, val) {
+    let result = obj[prop] >>= val;
+    checkDependentAExprs(obj, prop);
+    return result;
+}
+
+export function setMemberUnsignedRightShift(obj, prop, val) {
+    let result = obj[prop] >>>= val;
+    checkDependentAExprs(obj, prop);
+    return result;
+}
+
+export function setMemberBitwiseAND(obj, prop, val) {
+    let result = obj[prop] &= val;
+    checkDependentAExprs(obj, prop);
+    return result;
+}
+
+export function setMemberBitwiseXOR(obj, prop, val) {
+    let result = obj[prop] ^= val;
+    checkDependentAExprs(obj, prop);
+    return result;
+}
+
+export function setMemberBitwiseOR(obj, prop, val) {
+    let result = obj[prop] |= val;
+    checkDependentAExprs(obj, prop);
     return result;
 }
 
