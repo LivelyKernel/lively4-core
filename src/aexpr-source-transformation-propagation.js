@@ -36,28 +36,52 @@ class CompositeKey {
 
 class HookStorage {
     constructor() {
-        this.objPropsByAExpr = new Map();
+        // this.objPropsByAExpr = new Map();
+
+        this.aexprsByObjProp = new Map();
     }
 
     associate(aexpr, obj, prop) {
-        if(!this.objPropsByAExpr.has(aexpr)) {
-            this.objPropsByAExpr.set(aexpr, new Set());
+        // if(!this.objPropsByAExpr.has(aexpr)) {
+        //     this.objPropsByAExpr.set(aexpr, new Set());
+        // }
+        //
+        // let objPropSet = this.objPropsByAExpr.get(aexpr);
+        //
+        // objPropSet.add(CompositeKey.get(obj, prop));
+
+        // ---
+
+        let key = CompositeKey.get(obj, prop);
+        if(!this.aexprsByObjProp.has(key)) {
+            this.aexprsByObjProp.set(key, new Set());
         }
 
-        let objPropSet = this.objPropsByAExpr.get(aexpr);
-
-        objPropSet.add(CompositeKey.get(obj, prop));
+        this.aexprsByObjProp.get(key).add(aexpr);
     }
 
     disconnectAll(aexpr) {
-        this.objPropsByAExpr.delete(aexpr);
+        // this.objPropsByAExpr.delete(aexpr);
+
+        // ---
+
+        this.aexprsByObjProp.forEach(setOfAExprs => {
+            setOfAExprs.delete(aexpr);
+        });
     }
 
     getAExprsFor(obj, prop) {
-        let comp = CompositeKey.get(obj, prop);
-        return Array.from(this.objPropsByAExpr.keys()).filter(aexpr => {
-            return this.objPropsByAExpr.get(aexpr).has(comp);
-        });
+        let key = CompositeKey.get(obj, prop);
+        if(!this.aexprsByObjProp.has(key)) {
+            return [];
+        }
+        return Array.from(this.aexprsByObjProp.get(key));
+
+        // ---
+        // let comp = CompositeKey.get(obj, prop);
+        // return Array.from(this.objPropsByAExpr.keys()).filter(aexpr => {
+        //     return this.objPropsByAExpr.get(aexpr).has(comp);
+        // });
     }
 
     /*
@@ -65,7 +89,7 @@ class HookStorage {
      * As a result
      */
     clear() {
-        this.objPropsByAExpr.clear();
+        this.aexprsByObjProp.clear();
     }
 }
 
