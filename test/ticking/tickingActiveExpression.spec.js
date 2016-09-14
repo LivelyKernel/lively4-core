@@ -1,6 +1,6 @@
 'use strict';
 
-import { aexpr, check } from './../../src/ticking/ticking-active-expressions.js';
+import { aexpr, check, clearDefaultActiveExpressions } from './../../src/ticking/ticking-active-expressions.js';
 
 describe('Ticking Active Expressions', () => {
     it("runs a basic aexpr", () => {
@@ -179,6 +179,27 @@ describe('Ticking Active Expressions', () => {
             expect(spy.calledOnce).to.be.true;
 
         });
+    });
 
+    describe('clearDefaultActiveExpressions', () => {
+        it("clear global fallback set of active expressions", () => {
+            let val = 17,
+                spy = sinon.spy();
+
+            let expr = aexpr(() => val)
+                .onChange(spy);
+
+            val = 33;
+
+            clearDefaultActiveExpressions();
+
+            check();
+
+            expect(spy.called).to.be.false;
+
+            check([expr]);
+
+            expect(spy.called).to.be.true;
+        });
     });
 });

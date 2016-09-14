@@ -45,3 +45,10 @@ export function aexpr(func, scope) { return new TickingActiveExpression(func, sc
 export function check(iterable = TICKING_INSTANCES) {
     iterable.forEach(aexpr => aexpr.enabled && aexpr.checkAndNotify());
 }
+
+// Remove all active expressions of this type from the system
+// afterward active expressions are only reachable by providing them explicitly in an iterable to `check`
+// Caution: Do not use this function unless you know what you are doing!
+export function clearDefaultActiveExpressions() {
+    TICKING_INSTANCES.clear();
+}

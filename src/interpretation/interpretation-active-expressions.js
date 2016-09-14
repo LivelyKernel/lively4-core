@@ -53,10 +53,10 @@ export class ActiveExpressionInterpreter extends Interpreter {
         var i = new ActiveExpressionInterpreter(
             `var returnValue = (${func.toString()})();`,
             (self, rootScope) => {
-                console.log('scope', scope);
+                //console.log('scope', scope);
                 Object.keys(scope).forEach((k) => {
                     var value = scope[k];
-                    console.log(k, value);
+                    //console.log(k, value);
                     self.setProperty(rootScope, k, self.createPseudoObject(value));
                 });
                 // TODO: delete as the relevant global objects can be inferred by analysing the local scope
