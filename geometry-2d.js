@@ -568,6 +568,25 @@ export class Rectangle {
     // return a relative rect for this as a part of fullRect
     return new Rectangle((this.x - fullRect.x) / fullRect.width, (this.y - fullRect.y) / fullRect.height, this.width / fullRect.width, this.height / fullRect.height);
   }
+  
+  scaleRectTo(fullRect) {
+    // scale the rect until it reaches the bounds of the full rect
+    var height, width, scale;
+    if (this.width > this.height) {
+      width = this.width;
+    } else {
+      height = this.height;
+    }
+    
+    if (width) {
+      scale = fullRect.width / width
+    } else {
+      scale = fullRect.height / height;
+    }
+    
+    return this.withExtent(this.extent().scaleBy(scale))
+               .withCenter(this.center());
+  }
 
   expandBy(delta) {
     return this.insetBy(0 - delta);
