@@ -300,21 +300,27 @@
             case Number:
                 return a == b;
             }
-            ;
             if (typeof a.isEqualNode === 'function')
                 return a.isEqualNode(b);
             if (typeof a.equals === 'function')
                 return a.equals(b);
-            return cmp(a, b) && cmp(b, a);
-            function cmp(left, right) {
-                for (var name in left) {
-                    if (typeof left[name] === 'function')
-                        continue;
-                    if (!obj.equals(left[name], right[name]))
-                        return false;
-                }
-                return true;
+            var seenInA = [];
+            for (var name in a) {
+                seenInA.push(name);
+                if (typeof a[name] === 'function')
+                    continue;
+                if (!obj.equals(a[name], b[name]))
+                    return false;
             }
+            for (var name in b) {
+                if (seenInA.indexOf(name) !== -1)
+                    continue;
+                if (typeof b[name] === 'function')
+                    continue;
+                if (!obj.equals(b[name], a[name]))
+                    return false;
+            }
+            return true;
         },
         keys: Object.keys || function (object) {
             var keys = [];
@@ -1224,10 +1230,19 @@
     };
     var arr = exports.arr = {
         range: function (begin, end, step) {
-            step = step || 1;
+            step = step || 0;
             var result = [];
-            for (var i = begin; i <= end; i += step)
-                result.push(i);
+            if (begin <= end) {
+                if (step <= 0)
+                    step = -step || 1;
+                for (var i = begin; i <= end; i += step)
+                    result.push(i);
+            } else {
+                if (step >= 0)
+                    step = -step || -1;
+                for (var i = begin; i >= end; i += step)
+                    result.push(i);
+            }
             return result;
         },
         from: features.from ? Array.from : function (iterable) {
@@ -4420,6 +4435,25 @@
         chain: function (promiseFuncs) {
             return new Promise(function (resolve, reject) {
                 exports.promise._chainResolveNext(promiseFuncs.slice(), undefined, {}, resolve, reject);
+            });
+        },
+        finally: function (promise, finallyFn) {
+            return Promise.resolve(promise).then(function (result) {
+                try {
+                    finallyFn();
+                } catch (err) {
+                    console.error('Error in promise finally: ' + err.stack || err);
+                }
+                ;
+                return result;
+            }).catch(function (err) {
+                try {
+                    finallyFn();
+                } catch (err) {
+                    console.error('Error in promise finally: ' + err.stack || err);
+                }
+                ;
+                throw err;
             });
         }
     });
