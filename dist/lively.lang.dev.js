@@ -1291,6 +1291,13 @@
                 return iterator.call(ea, context);
             }) ? i : -1;
         },
+        findAndGet: function (arr, iterator) {
+            var result;
+            arr.find(function (ea, i) {
+                return result = iterator(ea, i);
+            });
+            return result;
+        },
         filterByKey: function (arr, key) {
             return arr.filter(function (ea) {
                 return !!ea[key];
@@ -2476,17 +2483,19 @@
                 return tree.filter(n, testFunc, childGetter);
             })));
         },
-        map: function (treeNode, mapFunc, childGetter) {
-            var result = [mapFunc(treeNode)];
+        map: function (treeNode, mapFunc, childGetter, depth) {
+            depth = depth || 0;
+            var result = [mapFunc(treeNode, depth)];
             return result.concat(exports.arr.flatten((childGetter(treeNode) || []).map(function (n) {
-                return tree.map(n, mapFunc, childGetter);
+                return tree.map(n, mapFunc, childGetter, depth);
             })));
         },
-        mapTree: function (treeNode, mapFunc, childGetter) {
+        mapTree: function (treeNode, mapFunc, childGetter, depth) {
+            depth = depth || 0;
             var mappedNodes = (childGetter(treeNode) || []).map(function (n) {
-                return tree.mapTree(n, mapFunc, childGetter);
+                return tree.mapTree(n, mapFunc, childGetter, depth);
             });
-            return mapFunc(treeNode, mappedNodes);
+            return mapFunc(treeNode, mappedNodes, depth);
         }
     };
 }(typeof lively !== 'undefined' && lively.lang ? lively.lang : {}));
