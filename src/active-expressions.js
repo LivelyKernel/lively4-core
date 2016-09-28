@@ -129,7 +129,7 @@ export class AExpr {
     var collection = this.applyArguments.shift();
     
     if(collection instanceof ActiveView) {
-      this.applyOnActiveView(collection);
+      this._applyOnActiveView(collection);
     } else if(collection instanceof NodeList) {
       this._applyOnIteratable(collection);
     } else {
