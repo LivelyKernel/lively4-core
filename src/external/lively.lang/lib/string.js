@@ -84,8 +84,8 @@ var string = exports.string = {
     // Example:
     //   string.indent("Hello", "  ", 2) // => "    Hello"
     if (!depth || depth <= 0) return str;
-    while (depth > 0) { depth--; str = indentString + str; }
-    return str;
+    var indent = ""; while (depth > 0) { depth--; indent += indentString; }
+    return string.lines(str).map(function(line) { return indent + line; }).join("\n");
   },
 
   removeSurroundingWhitespaces: function(str) {

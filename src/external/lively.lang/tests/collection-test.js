@@ -15,6 +15,15 @@ describe('arr', function() {
     expect(result).to.equal('[4,0][5,1][6,2]')
   });
 
+  it("range", function() {
+    expect(arr.range(1,1)).to.eql([1]);
+    expect(arr.range(1,1, 10)).to.eql([1]);
+    expect(arr.range(1,5)).to.eql([1,2,3,4,5]);
+    expect(arr.range(1,10, 2)).to.eql([1,3,5,7,9]);
+    expect(arr.range(10, 1, -2)).to.eql([10,8,6,4,2]);
+    expect(arr.range(10, 1, 20)).to.eql([10]);
+  });
+
   it('without', function() {
     var array = ["a"];
     expect([]).to.eql(arr.without(array, "a"));
@@ -78,8 +87,8 @@ describe('arr', function() {
   });
 
   it('partition', function() {
-  	expect(arr.partition(arr.range(0,10), function(n) { return n % 2 === 0 }))
-    .to.eql([[0,2,4,6,8,10], [1,3,5,7,9]]);
+    expect(arr.partition(arr.range(0,10), function(n) { return n % 2 === 0 }))
+      .to.eql([[0,2,4,6,8,10], [1,3,5,7,9]]);
   });
 
   it('groupBy', function() {

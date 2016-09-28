@@ -41,23 +41,25 @@ var tree = exports.tree = {
         return tree.filter(n, testFunc, childGetter); })));
   },
 
-  map: function(treeNode, mapFunc, childGetter) {
+  map: function(treeNode, mapFunc, childGetter, depth) {
     // Traverses a `treeNode` recursively and call `mapFunc` on each node. The
     // return values of all mapFunc calls is the result. `childGetter` is a
     // function to retrieve the children from a node.
-    var result = [mapFunc(treeNode)];
+    depth = depth || 0;
+    var result = [mapFunc(treeNode, depth)];
     return result.concat(
       exports.arr.flatten((childGetter(treeNode) || []).map(function(n) {
-        return tree.map(n, mapFunc, childGetter); })));
+        return tree.map(n, mapFunc, childGetter, depth); })));
   },
 
-  mapTree: function(treeNode, mapFunc, childGetter) {
+  mapTree: function(treeNode, mapFunc, childGetter, depth) {
     // Traverses the tree and creates a structurally identical tree but with
     // mapped nodes
+    depth = depth || 0;
     var mappedNodes = (childGetter(treeNode) || []).map(function(n) {
-      return tree.mapTree(n, mapFunc, childGetter);
+      return tree.mapTree(n, mapFunc, childGetter, depth);
     })
-    return mapFunc(treeNode, mappedNodes);
+    return mapFunc(treeNode, mappedNodes, depth);
   }
 
 }

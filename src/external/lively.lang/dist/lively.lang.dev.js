@@ -300,21 +300,27 @@
             case Number:
                 return a == b;
             }
-            ;
             if (typeof a.isEqualNode === 'function')
                 return a.isEqualNode(b);
             if (typeof a.equals === 'function')
                 return a.equals(b);
-            return cmp(a, b) && cmp(b, a);
-            function cmp(left, right) {
-                for (var name in left) {
-                    if (typeof left[name] === 'function')
-                        continue;
-                    if (!obj.equals(left[name], right[name]))
-                        return false;
-                }
-                return true;
+            var seenInA = [];
+            for (var name in a) {
+                seenInA.push(name);
+                if (typeof a[name] === 'function')
+                    continue;
+                if (!obj.equals(a[name], b[name]))
+                    return false;
             }
+            for (var name in b) {
+                if (seenInA.indexOf(name) !== -1)
+                    continue;
+                if (typeof b[name] === 'function')
+                    continue;
+                if (!obj.equals(b[name], a[name]))
+                    return false;
+            }
+            return true;
         },
         keys: Object.keys || function (object) {
             var keys = [];
@@ -1224,10 +1230,19 @@
     };
     var arr = exports.arr = {
         range: function (begin, end, step) {
-            step = step || 1;
+            step = step || 0;
             var result = [];
-            for (var i = begin; i <= end; i += step)
-                result.push(i);
+            if (begin <= end) {
+                if (step <= 0)
+                    step = -step || 1;
+                for (var i = begin; i <= end; i += step)
+                    result.push(i);
+            } else {
+                if (step >= 0)
+                    step = -step || -1;
+                for (var i = begin; i >= end; i += step)
+                    result.push(i);
+            }
             return result;
         },
         from: features.from ? Array.from : function (iterable) {
@@ -1275,6 +1290,13 @@
                 i = j;
                 return iterator.call(ea, context);
             }) ? i : -1;
+        },
+        findAndGet: function (arr, iterator) {
+            var result;
+            arr.find(function (ea, i) {
+                return result = iterator(ea, i);
+            });
+            return result;
         },
         filterByKey: function (arr, key) {
             return arr.filter(function (ea) {
@@ -2461,17 +2483,19 @@
                 return tree.filter(n, testFunc, childGetter);
             })));
         },
-        map: function (treeNode, mapFunc, childGetter) {
-            var result = [mapFunc(treeNode)];
+        map: function (treeNode, mapFunc, childGetter, depth) {
+            depth = depth || 0;
+            var result = [mapFunc(treeNode, depth)];
             return result.concat(exports.arr.flatten((childGetter(treeNode) || []).map(function (n) {
-                return tree.map(n, mapFunc, childGetter);
+                return tree.map(n, mapFunc, childGetter, depth);
             })));
         },
-        mapTree: function (treeNode, mapFunc, childGetter) {
+        mapTree: function (treeNode, mapFunc, childGetter, depth) {
+            depth = depth || 0;
             var mappedNodes = (childGetter(treeNode) || []).map(function (n) {
-                return tree.mapTree(n, mapFunc, childGetter);
+                return tree.mapTree(n, mapFunc, childGetter, depth);
             });
-            return mapFunc(treeNode, mappedNodes);
+            return mapFunc(treeNode, mappedNodes, depth);
         }
     };
 }(typeof lively !== 'undefined' && lively.lang ? lively.lang : {}));
@@ -3396,11 +3420,14 @@
         indent: function (str, indentString, depth) {
             if (!depth || depth <= 0)
                 return str;
+            var indent = '';
             while (depth > 0) {
                 depth--;
-                str = indentString + str;
+                indent += indentString;
             }
-            return str;
+            return string.lines(str).map(function (line) {
+                return indent + line;
+            }).join('\n');
         },
         removeSurroundingWhitespaces: function (str) {
             function removeTrailingWhitespace(s) {
@@ -3898,22 +3925,23 @@
             return null;
         },
         lineIndexComputer: function (s) {
-            var lineRanges = string.lines(s).reduce(function (lineIndexes, line) {
-                var lastPos = lineIndexes.slice(-1)[0] || -1;
-                return lineIndexes.concat([
-                    lastPos + 1,
-                    lastPos + 1 + line.length
-                ]);
-            }, []);
+            var lineRanges = string.lineRanges(s);
             return function (pos) {
-                for (var line = 0; line < lineRanges.length; line += 2)
-                    if (pos >= lineRanges[line] && pos <= lineRanges[line + 1])
-                        return line / 2;
+                for (var line = 0; line < lineRanges.length; line++) {
+                    var lineRange = lineRanges[line];
+                    if (pos >= lineRange[0] && pos < lineRange[1])
+                        return line;
+                }
                 return -1;
             };
         },
         lineNumberToIndexesComputer: function (s) {
-            var lineRanges = string.lines(s).reduce(function (akk, line) {
+            return function (lineNo) {
+                return string.lineRanges(s)[lineNo];
+            };
+        },
+        lineRanges: function (s) {
+            return string.lines(s).reduce(function (akk, line) {
                 var start = akk.indexCount, end = akk.indexCount + line.length + 1;
                 akk.lineRanges.push([
                     start,
@@ -3925,9 +3953,6 @@
                 lineRanges: [],
                 indexCount: 0
             }).lineRanges;
-            return function (lineNo) {
-                return lineRanges[lineNo];
-            };
         },
         diff: function (s1, s2) {
             if (typeof JsDiff === 'undefined')
@@ -4420,6 +4445,25 @@
             return new Promise(function (resolve, reject) {
                 exports.promise._chainResolveNext(promiseFuncs.slice(), undefined, {}, resolve, reject);
             });
+        },
+        finally: function (promise, finallyFn) {
+            return Promise.resolve(promise).then(function (result) {
+                try {
+                    finallyFn();
+                } catch (err) {
+                    console.error('Error in promise finally: ' + err.stack || err);
+                }
+                ;
+                return result;
+            }).catch(function (err) {
+                try {
+                    finallyFn();
+                } catch (err) {
+                    console.error('Error in promise finally: ' + err.stack || err);
+                }
+                ;
+                throw err;
+            });
         }
     });
 }(typeof lively !== 'undefined' && lively.lang ? lively.lang : {}));
@@ -4429,12 +4473,14 @@
     'use strict';
     var isNode = typeof process !== 'undefined' && process.versions && process.versions.node;
     var events = exports.events = {
-        makeEmitter: isNode ? function (obj) {
+        makeEmitter: isNode ? function (obj, options) {
             if (obj.on && obj.removeListener)
                 return obj;
             var events = require('events');
             require('util')._extend(obj, events.EventEmitter.prototype);
             events.EventEmitter.call(obj);
+            if (options && options.maxListenerLimit)
+                obj.setMaxListeners(options.maxListenerLimit);
             return obj;
         } : function (obj) {
             if (obj.on && obj.removeListener)
