@@ -350,11 +350,13 @@ export class LinearGradient extends Gradient {
     }
   }
   
-  get vector() { return this.vector }
+  toString() { return this.toCSSString(null, "-webkit-"); }
+  
+  get vector() { return this._vector }
   set vector(value) {
-    if (!value) this.vector = this.vectors.northsouth;
-    else if (Object.isString(value)) this.vector = this.vectors[value.toLowerCase()]
-    else this.vector = value;
+    if (!value) this._vector = this.vectors.northsouth;
+    else if (Object.isString(value)) this._vector = this.vectors[value.toLowerCase()]
+    else this._vector = value;
   }
   
   lighter(n) { return new this.constructor(this.getStopsLighter(n), this.vector) }
@@ -380,6 +382,8 @@ export class RadialGradient extends Gradient {
     super(stops);
     this.focus = focus || pt(0.5, 0.5);
   }
+  
+  toString() { return this.toCSSString() }
   
   lighter(n) { return new this.constructor(this.getStopsLighter(n), this.focus) }
   darker() { return new this.constructor(this.getStopsDarker(), this.focus) }
