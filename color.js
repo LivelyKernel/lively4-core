@@ -267,8 +267,8 @@ export class Color {
       h = 60 * (2 + ((this.b - this.r) / (max - min)));
     } else if (max == this.b) {
       h = 60 * (4 + ((this.r - this.g) / (max - min)));
-      h = (h + 360) % 360;
     }
+    h = (h + 360) % 360;
     s = max == 0 ? 0 : (max - min) / max;
     return [h, s, b];
   }
