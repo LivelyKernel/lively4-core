@@ -9,6 +9,16 @@ export default class ObjectEditor extends Morph {
     this.getSubmorph("#editor").changeMode("javascript");
     var aceComp = this.shadowRoot.querySelector('juicy-ace-editor');
     aceComp.enableAutocompletion();
+    
+      console.log("initialize color chooser2")
+      this.backgroundColorInput = this.shadowRoot.querySelector("#background-color");
+      this.backgroundColorInput.addEventListener(
+        'change',
+        (e) => { 
+          this.updateBackgroundColor(); 
+          
+        }
+      );
   }
 
   /*
@@ -183,7 +193,7 @@ export default class ObjectEditor extends Morph {
   }
 
   destroyObservers() {
-    this.domObserver.disconnect();
+    if (this.domObserver) this.domObserver.disconnect(); // #TODO why is that sometimes not initialized ?
   }
 
   attributesObserver(changes) {
@@ -323,12 +333,12 @@ export default class ObjectEditor extends Morph {
       return;
     }
 
-    var propertyName = prompt('Please enter the name of the property', '');
+    var propertyName = window.prompt('Please enter the name of the property', '');
     if (!propertyName || propertyName.length == 0) {
       return;
     }
 
-    var propertyValue = prompt('Please enter the (new) value', '');
+    var propertyValue = window.prompt('Please enter the (new) value', '');
     if (!propertyValue || propertyValue.length == 0) {
       return;
     }
@@ -343,12 +353,12 @@ export default class ObjectEditor extends Morph {
       return;
     }
 
-    var attributeName = prompt('Please enter the name of the attribute', '');
+    var attributeName = window.prompt('Please enter the name of the attribute', '');
     if (!attributeName || attributeName.length == 0) {
       return;
     }
 
-    var attributeValue = prompt('Please enter the (new) value', '');
+    var attributeValue = window.prompt('Please enter the (new) value', '');
     if (!attributeValue || attributeValue.length == 0) {
       return;
     }
@@ -383,12 +393,12 @@ export default class ObjectEditor extends Morph {
       this.targetElement.__connections__ = [];
     }
 
-    var eventName = prompt('Please enter the event to be connected', '');
+    var eventName = window.prompt('Please enter the event to be connected', '');
     if (!eventName || eventName.length == 0) {
       return;
     }
 
-    var scriptName = prompt('Please enter the name of the script to be executed', '');
+    var scriptName = window.prompt('Please enter the name of the script to be executed', '');
     if (!scriptName || scriptName.length == 0) {
       return;
     }
@@ -445,7 +455,7 @@ export default class ObjectEditor extends Morph {
       this.targetElement.__scripts__ = {};
     }
 
-    var scriptName = prompt('Please enter a new script name', '');
+    var scriptName = window.prompt('Please enter a new script name', '');
     if (!scriptName || scriptName.length <= 0) {
       return;
     }
@@ -544,5 +554,11 @@ export default class ObjectEditor extends Morph {
       }
     }
     this.shadowRoot.querySelector('#script-nodes').innerHTML = scriptHtml;
+  }
+  
+  updateBackgroundColor() {
+    console.log("update color")
+    var color = this.shadowRoot.querySelector("#background-color").value;
+    this.targetElement.style.backgroundColor = color;
   }
 }

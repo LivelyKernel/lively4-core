@@ -51,30 +51,12 @@ export default class ComponentLoader {
     }
   }
 
-  // this function registers a custom element,
-  // it is called from the bootstap code in the component templates
-  static register(componentName, template, prototype) {
-    console.log("register " + componentName)
-    var proto = prototype || Object.create(Morph.prototype);
-
-    // For reflection and debugging
-    this.templates[componentName] = template;
-    this.prototypes[componentName] = proto;
-    this.proxies[componentName] = Object.create(proto) // not changeable
-
-
-    // #TODO: we should check here, if the prototype already has a createdCallback,
-    // if that's the case, we should wrap it and call it in our createdCallback
-    var previousCreatedCallback = proto.createdCallback;
-
-    // #TODO: should we dispatch event 'created' also in attached callback???
-    // And what about initizalize call? Actually I think yes. - Felix
-    this.proxies[componentName].createdCallback = function() {
+  static onCreatedCallback(object, componentName) {
       if (persistence.isCurrentlyCloning()) {
         return;
       }
 
-      var shadow = this.createShadowRoot();
+      var shadow = object.createShadowRoot();
 
       // clone the template again, so when more elements are created,
       // they get their own copy of elements
@@ -86,50 +68,73 @@ export default class ComponentLoader {
       shadow.appendChild(clone);
 
       // attach lively4scripts from the shadow root to this
-      scriptManager.attachScriptsFromShadowDOM(this);
+      scriptManager.attachScriptsFromShadowDOM(object);
 
       if (ComponentLoader.prototypes[componentName].createdCallback) {
-        ComponentLoader.prototypes[componentName].createdCallback.call(this);
+        ComponentLoader.prototypes[componentName].createdCallback.call(object);
       }
 
       // load any unknown elements, which this component might introduce
-      ComponentLoader.loadUnresolved(this, true).then((args) => {
-
-        lively.fillTemplateStyles(this.shadowRoot).then(() => {
+      ComponentLoader.loadUnresolved(object, true, "onCreated " + componentName).then((args) => {
+        
+        lively.fillTemplateStyles(object.shadowRoot).then(() => {
           // call the initialize script, if it exists
-          if (typeof this.initialize === "function") {
-            this.initialize();
+          
+          if (typeof object.initialize === "function") {
+            object.initialize();
           }
           // console.log("dispatch created " +componentName )
-          // console.log("Identitity: " + (window.LastRegistered === this))
+          // console.log("Identitity: " + (window.LastRegistered === object))
           
           
-          this.dispatchEvent(new Event("created"));
+          object.dispatchEvent(new Event("created"));
         })
-
-
       }).catch( e => {
         console.error(e); 
         return e
       });
-    }
-    this.proxies[componentName].attachedCallback = function() {
-      if (this.attachedCallback && ComponentLoader.proxies[componentName].attachedCallback != this.attachedCallback) {
-        this.attachedCallback.call(this);
+  }
+  
+  static onAttachedCallback(object, componentName) {
+    if (object.attachedCallback && 
+      ComponentLoader.proxies[componentName].attachedCallback != object.attachedCallback) {
+        object.attachedCallback.call(object);
       }
       if (ComponentLoader.prototypes[componentName].attachedCallback) {
-        ComponentLoader.prototypes[componentName].attachedCallback.call(this);
+        ComponentLoader.prototypes[componentName].attachedCallback.call(object);
       }
-    };
-
-    this.proxies[componentName].detachedCallback = function() {
-      
-      console.log("detachedCallback " + this.class + " " + this.id)
-      if (this.detachedCallback && ComponentLoader.proxies[componentName].detachedCallback != this.detachedCallback) {
-        this.detachedCallback.call(this);
+  }
+  
+  static onDetachedCallback(object, componentName) {
+      if (object.detachedCallback && ComponentLoader.proxies[componentName].detachedCallback != object.detachedCallback) {
+        object.detachedCallback.call(object);
       } else if (ComponentLoader.prototypes[componentName].detachedCallback) {
-        ComponentLoader.prototypes[componentName].detachedCallback.call(this);
+        ComponentLoader.prototypes[componentName].detachedCallback.call(object);
       }
+  }
+  
+  // this function registers a custom element,
+  // it is called from the bootstap code in the component templates
+  static register(componentName, template, prototype) {
+    var proto = prototype || Object.create(Morph.prototype);
+
+    // For reflection and debugging
+    this.templates[componentName] = template;
+    this.prototypes[componentName] = proto;
+    this.proxies[componentName] = Object.create(proto) // not changeable
+
+    // #TODO: we should check here, if the prototype already has a createdCallback,
+    // if that's the case, we should wrap it and call it in our createdCallback
+    //var previousCreatedCallback = proto.createdCallback;
+
+    this.proxies[componentName].createdCallback = function() {
+      ComponentLoader.onCreatedCallback(this, componentName)
+    }
+    this.proxies[componentName].attachedCallback = function() {
+      ComponentLoader.onAttachedCallback(this, componentName)
+    };
+    this.proxies[componentName].detachedCallback = function() {
+       ComponentLoader.onDetachedCallback(this, componentName)
     };
 
     // don't store it just in a lexical scope, but make it available for runtime development
@@ -150,14 +155,13 @@ export default class ComponentLoader {
   // this function loads all unregistered elements, starts looking in lookupRoot,
   // if lookupRoot is not set, it looks in the whole document.body,
   // if deep is set, it also looks into shadow roots
-  static loadUnresolved(lookupRoot, deep) {
+  static loadUnresolved(lookupRoot, deep, debuggingHint) {
     lookupRoot = lookupRoot || document.body;
 
     var selector = ":unresolved";
 
     // find all unresolved elements looking downwards from lookupRoot
     var unresolved = Array.from(lookupRoot.querySelectorAll(selector));
-
     if (deep) {
       var deepUnresolved = findUnresolvedDeep(lookupRoot);
       unresolved = unresolved.concat(deepUnresolved);
@@ -202,6 +206,9 @@ export default class ComponentLoader {
 
       // trigger loading the template of the unresolved element
       loadingPromises[name] = createdPromise;
+      
+      loadingPromises[name].name = name + " " + Date.now()
+      
       this.loadByName(name);
 
       return createdPromise;
@@ -209,7 +216,29 @@ export default class ComponentLoader {
 
     // return a promise that resolves once all unresolved elements from the unresolved-array
     // are completely created
-    return Promise.all(promises);
+    return new Promise( (resolve, reject) => {
+      
+      // fuck promises!!!! I hate them. There is one promise pending.... but just does not fail. It just hangs around doing nothing! #Jens
+      promises.forEach( p => {
+        p.then( r => {
+          p.finished = true;
+        }, er => console.log("ERROR in promise: " + p.name))
+        
+      })
+      window.setTimeout( function() {
+        promises.forEach( p => {
+          if (!p.finished) {
+            resolve("timeout") // "(if) the fuel gauge breaks, call maintenance. If they’re not there in 20 minutes, fuck it."
+            lively.notify("Timout due to error loading " + p.name + " context: " + debuggingHint )
+          }
+        })
+      }, 15 * 1000)
+
+      Promise.all(promises).then( result => resolve(), reject => {
+          console.log("ERROR loading " +reject)
+          reject()
+      })
+    })
   }
 
   // this function loads a component by adding a link tag to the head
@@ -255,7 +284,7 @@ export default class ComponentLoader {
     } else {
       parent.appendChild(component);
     }
-    this.loadUnresolved(document.body, true);
+    this.loadUnresolved(document.body, true, "openIn " + component);
 
     return compPromise;
   }
@@ -275,7 +304,7 @@ export default class ComponentLoader {
     // adding the child, so that it finds it and resolves it,
     // if it is currently unresolved
     var windowPromise = new Promise((resolve, reject) => {
-      this.loadUnresolved(w, true).then(() => {
+      this.loadUnresolved(w, true, "openInWindow " + component).then(() => {
         resolve(w);
       });
     });

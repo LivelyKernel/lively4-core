@@ -51,13 +51,14 @@
     padding: 0;
     border: 0;
   }
+  
 
   #tabView {
     display: flex;
     width: 100%;
     flex: 1;
     flex-direction: column;
-    overflow-y: scroll;
+    overflow: hidden;
   }
 
   #attributesContent, #propertiesContent, #connectionsContents, #styleContent {
@@ -69,6 +70,7 @@
 
   #scriptsContent {
     margin-top: 8px;
+    overflow: hidden;
   }
 
   #connectionsContent {
@@ -157,23 +159,6 @@
       </lively-tab-view>
     </div>
   </div>
-  
-  <script type="lively4script" data-name="initialize">
-    () => {
-      this.backgroundColorInput = this.shadowRoot.querySelector("#background-color");
-      this.backgroundColorInput.addEventListener(
-        'change',
-        (e) => { this.updateBackgroundColor(); }
-      );
-    }
-  </script>
-  
-  <script type="lively4script" data-name="updateBackgroundColor">
-    () => {
-      var color = this.shadowRoot.querySelector("#background-color").value;
-      this.targetElement.style.backgroundColor = color;
-    }
-  </script>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

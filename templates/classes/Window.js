@@ -176,7 +176,8 @@ export default class Window extends Morph {
 
     allWindowsButThis.forEach((win, index) => {
       win.style['z-index'] = minZIndex + index;
-      win.window.classList.remove('focused');
+      if (win.window)
+        win.window.classList.remove('focused');
       win.removeAttribute('active');
     });
 

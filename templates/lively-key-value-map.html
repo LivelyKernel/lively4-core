@@ -1,7 +1,7 @@
 <!-- This link here is needed since key-value-inputs are created dynamically -->
 <!-- Would be cleaner to use conponent-loader API -->
 <link rel="import" href="lively-key-value-input.html">
-<template id="lively-key-value-map">
+<template id="lively-key-value-map" data-class="KeyValueMap">
   <style>
   :host {
     display: block;
@@ -9,54 +9,4 @@
   </style>
   <content></content>
 </template>
-
-<script>
-  'use strict';
-
-  class LivelyKeyValueMap extends HTMLDivElement {
-    attachedCallback() {
-      this.map = {};
-
-    }
-
-    set map(map) {
-      while (this.firstChild) {
-        this.removeChild(this.firstChild);
-      }
-
-      for(let key in map) {
-        let value = map[key];
-
-        let input = document.createElement('lively-key-value-input');
-        this.appendChild(input);
-
-        input.key = key;
-        if (typeof value == 'object' && typeof value.value != 'undefined') {
-          input.value = value.value;
-          input.type = value.type;
-        } else {
-          input.value = value;
-          input.type = 'string';
-        }
-
-        if (value.readonly) {
-          input.readonly = true;
-        }
-      }
-
-      this._map = map;
-    }
-
-    get map() {
-      return this._map;
-    }
-  }
-
-  (function() {
-    LivelyKeyValueMap.template = document.currentScript.ownerDocument.querySelector('#lively-key-value-map');
-    var clone = document.importNode(LivelyKeyValueMap.template.content, true);
-    var prototype = Object.create(LivelyKeyValueMap.prototype);
-
-    System.import('../src/client/morphic/component-loader.js').then(loader => { loader.register('lively-key-value-map', clone, prototype); });
-  })();
-</script>
+<script class="registrationScript">lively.registerTemplate()</script>

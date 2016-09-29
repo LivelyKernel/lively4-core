@@ -11,7 +11,8 @@ export default class HaloInspectItem extends HaloItem {
       editor.targetElement    = inspectTarget;
 
       componentLoader.openInWindow(editor).then((objectEditorWindow) => {
-        objectEditorWindow.centerInWindow();
+        if (objectEditorWindow.centerInWindow)
+          objectEditorWindow.centerInWindow(); // #TODO loading async??? Problem
       });
   
       this.hideHalo();

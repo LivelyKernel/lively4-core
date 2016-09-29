@@ -31,9 +31,7 @@ export default class HaloCopyItem extends HaloGrabItem {
     console.log ("OUT: " + obj.innerHTML)
     
     var clone = tmp.childNodes[0]
-    console.log("CLONE " + obj.outerHTML)
-    clone.style.backgroundColor = 'red'
-    clone.textContent = "HTML: " + clone.outerHTML
+    
     window.LastClone = clone
     clone.remove()
     return clone
