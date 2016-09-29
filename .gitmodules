@@ -1,3 +1,0 @@
-[submodule "src/external/lively4-search"]
-	path = src/external/lively4-search
-	url = git@github.com:LivelyKernel/lively4-search.git
