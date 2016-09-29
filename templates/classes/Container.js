@@ -35,7 +35,11 @@ export default class Container extends Morph {
             this.editFile();
           });
       } else {
-        this.setPath(lively4url +"/");
+        if (lively4url.match(/github\.io/)) { 
+          this.setPath("/"); // the lively4url is not listable
+        } else {
+          this.setPath(lively4url +"/");
+        }
       }
     } else {
     	var src = this.getAttribute("src");
