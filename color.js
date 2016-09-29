@@ -1,6 +1,6 @@
 import { num } from "lively.lang";
 import { parse } from "./color-parser.js";
-import { Rectangle, rect } from "./geometry-2d.js";
+import { Rectangle, rect, pt } from "./geometry-2d.js";
 
 function floor(x) { return Math.floor(x*255.99) };
 
@@ -350,21 +350,21 @@ export class LinearGradient extends Gradient {
     }
   }
   
-  toString() { return this.toCSSString(null, "-webkit-"); }
+  toString() { return this.toCSSString(); }
   
   get vector() { return this._vector }
   set vector(value) {
     if (!value) this._vector = this.vectors.northsouth;
-    else if (Object.isString(value)) this._vector = this.vectors[value.toLowerCase()]
+    else if (typeof value === "string") this._vector = this.vectors[value.toLowerCase()]
     else this._vector = value;
   }
   
   lighter(n) { return new this.constructor(this.getStopsLighter(n), this.vector) }
   darker() { return new this.constructor(this.getStopsDarker(), this.vector) }
   
-  toCSSString(bounds, cssPrefix) {
+  toCSSString() {
     // default webkit way of defining gradients
-    var str = `${cssPrefix}gradient(linear, 
+    var str = `-webkit-gradient(linear,
         ${this.vector.x * 100.0}\% 
         ${this.vector.y * 100.0}\%, 
         ${this.vector.maxX() * 100.0}\% 
@@ -388,13 +388,13 @@ export class RadialGradient extends Gradient {
   lighter(n) { return new this.constructor(this.getStopsLighter(n), this.focus) }
   darker() { return new this.constructor(this.getStopsDarker(), this.focus) }
   
-  toCSSString(bounds, cssPrefix) {
+  toCSSString(bounds) {
+    bounds = bounds || new Rectangle(0,0, 20, 20);
     const innerCircle = this.focus.scaleBy(100.0),
           innerCircleRadius = 0.0,
           outerCircle = pt(50.0, 50.0),
           outerCircleRadius = bounds.width/2;
-    bounds = bounds || new Rectangle(0,0, 20, 20);
-    var str = `${cssPrefix}gradient(radial, 
+    var str = `-webkit-gradient(radial,
                ${innerCircle.x}\% 
                ${innerCircle.y}\%, 
                ${innerCircleRadius}, 
