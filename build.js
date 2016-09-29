@@ -24,6 +24,7 @@ var preamble = `
 var postscript = `\n})();`
 
 console.log("--------------");
+
 fun.composeAsync(
   // log("1. Generating doc"),
   // n => exec("npm run doc", (code, out, err) => n(code ? out+err : null)),
@@ -53,9 +54,9 @@ function log(msg) {
 
 function ensureExport(source) {
   // will remove the require('./base') thing
-  var parsed = ast.parse(source)
-  var replacement = ast.parse('typeof lively !== "undefined" && lively.lang ? lively.lang : {}').body[0].expression
-  var call = parsed.body.find(n => n.expression && n.expression.type === "CallExpression")
+  var parsed = ast.parse(source),
+      replacement = ast.parse('typeof lively !== "undefined" && lively.lang ? lively.lang : {}').body[0].expression,
+      call = parsed.body.find(n => n.expression && n.expression.type === "CallExpression")
   call.expression["arguments"] = [replacement];
   return ast.stringify(parsed);
 }
