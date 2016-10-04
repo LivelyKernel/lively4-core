@@ -1,4 +1,4 @@
-# active-expressions [![Build Status](https://travis-ci.org/onsetsu/active-expressions.svg?branch=master)](https://travis-ci.org/onsetsu/active-expressions)
+# aexpr-ticking [![Build Status](https://travis-ci.org/active-expressions/aexpr-ticking.svg?branch=master)](https://travis-ci.org/active-expressions/aexpr-ticking)
 Monitor expressions over the execution of a program
 
 ## Installation
@@ -6,10 +6,10 @@ Monitor expressions over the execution of a program
 As npm for Node.js:
 
 ```
-$ npm install active-expressions --save
+$ npm install aexpr-ticking --save
 ```
 
-Or download the [bundle](https://raw.githubusercontent.com/onsetsu/active-expressions/master/dist/active-expressions.js) file.
+Or download the [bundle](https://raw.githubusercontent.com/active-expressions/aexpr-ticking/master/dist/aexpr-ticking.js) file.
 
 ## Building
 

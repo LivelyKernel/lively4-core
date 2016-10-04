@@ -10,7 +10,7 @@ var config = new WebpackConfig().merge({
     //entry: JSNEXT_MAIN.toString(),
     output: {
         path: BUILD_DIR,
-        filename: 'active-expressions.js'
+        filename: 'aexpr-ticking.js'
     },
     devtool: "inline-source-map",
     module : {
@@ -45,7 +45,7 @@ if(process.env.npm_lifecycle_event == 'build') {
     config.merge({
         entry: JSNEXT_MAIN,
         output: {
-            library: 'active-expressions',
+            library: 'aexpr-ticking',
             libraryTarget: 'umd',
             umdNamedDefine: true
         }

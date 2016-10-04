@@ -1,9 +1,9 @@
 {
-  "name": "active-expressions",
-  "version": "1.5.1",
+  "name": "aexpr-ticking",
+  "version": "1.0.0",
   "description": " Monitor expressions over the execution of a program",
-  "main": "dist/active-expressions.js",
-  "jsnext:main": "src/active-expressions.js",
+  "main": "dist/aexpr-ticking.js",
+  "jsnext:main": "src/aexpr-ticking.js",
   "directories": {
     "test": "tests"
   },
@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/onsetsu/active-expressions.git"
+    "url": "git+https://github.com/active-expressions/aexpr-ticking.git"
   },
   "keywords": [
     "Active",
@@ -30,13 +30,13 @@
   "author": {
     "name": "Stefan Ramson",
     "email": "stefan.ramson@gmail.com",
-    "url": "http://onsetsu.github.io/"
+    "url": "http://active-expressions.github.io/"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/onsetsu/active-expressions/issues"
+    "url": "https://github.com/active-expressions/aexpr-ticking/issues"
   },
-  "homepage": "https://github.com/onsetsu/active-expressions#readme",
+  "homepage": "https://github.com/active-expressions/aexpr-ticking#readme",
   "devDependencies": {
     "babel-core": "^6.7.7",
     "babel-loader": "^6.2.4",
@@ -90,6 +90,7 @@
     "webpack-config": "^5.2.1"
   },
   "dependencies": {
+    "active-expressions": "^1.5.1",
     "babel-plugin-locals": "^1.0.1",
     "stack-es2015-modules": "^1.1.0"
   }
