@@ -1,4 +1,4 @@
-import { BaseActiveExpression } from './../base/base-active-expressions.js';
+import { BaseActiveExpression } from 'active-expressions';
 
 const TICKING_INSTANCES = new Set();
 
