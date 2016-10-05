@@ -1,6 +1,5 @@
 const AEXPR_IDENTIFIER_NAME = "aexpr";
 
-const SET_MEMBER = "setMember";
 const GET_MEMBER = "getMember";
 const GET_AND_CALL_MEMBER = "getAndCallMember";
 
@@ -49,60 +48,64 @@ export default function(param) {
         return path.findParent(p => t.isFunctionDeclaration(p.node) && p.node[GENERATED_FUNCTION])
     }
 
-    let customTemplates = {};
-    customTemplates[SET_MEMBER] = template(`
-  (function(obj, prop, operator, val) {
-    return obj[prop] = val;
-  });
-`);
+    const GENERATED_IMPORT_IDENTIFIER = Symbol("generated import identifier");
 
-    customTemplates[GET_MEMBER] = template(`
-  (function(obj, prop) {
-    return obj[prop];
-  });
-`);
-
-    customTemplates[GET_AND_CALL_MEMBER] = template(`
-  (function(obj, prop, args) {
-    return obj[prop](...args)
-  });
-`);
-
-    customTemplates[AEXPR_IDENTIFIER_NAME] = template(`
-  (function(expr) {
-    return { onChange(cb) {}};
-  });
-`);
+//     let customTemplates = {};
+//     customTemplates[SET_MEMBER] = template(`
+//   (function(obj, prop, operator, val) {
+//     return obj[prop] = val;
+//   });
+// `);
+//
+//     customTemplates[GET_MEMBER] = template(`
+//   (function(obj, prop) {
+//     return obj[prop];
+//   });
+// `);
+//
+//     customTemplates[GET_AND_CALL_MEMBER] = template(`
+//   (function(obj, prop, args) {
+//     return obj[prop](...args)
+//   });
+// `);
+//
+//     customTemplates[AEXPR_IDENTIFIER_NAME] = template(`
+//   (function(expr) {
+//     return { onChange(cb) {}};
+//   });
+// `);
 
     function addCustomTemplate(file, name) {
         let declar = file.declarations[name];
         if (declar) return declar;
 
-        return file.declarations[name] = file.addImport("aexpr-source-transformation-propagation", name, name);
+        let identifier = file.declarations[name] = file.addImport("aexpr-source-transformation-propagation", name, name);
+        identifier[GENERATED_IMPORT_IDENTIFIER] = true;
+        return identifier;
 
-        let ref = customTemplates[name];
-        console.log(file.addImport("aexpr-source-transformation-propagation", "aexpr"));
-        let uid = file.declarations[name] = file.scope.generateUidIdentifier(name);
-
-        ref = ref().expression;
-        ref[GENERATED_FUNCTION] = true;
-
-        if (t.isFunctionExpression(ref) && !ref.id) {
-            ref.body._compact = true;
-            ref._generated = true;
-            ref.id = uid;
-            ref.type = "FunctionDeclaration";
-            file.path.unshiftContainer("body", ref);
-        } else {
-            ref._compact = true;
-            file.scope.push({
-                id: uid,
-                init: ref,
-                unique: true
-            });
-        }
-
-        return uid;
+        // let ref = customTemplates[name];
+        // console.log(file.addImport("aexpr-source-transformation-propagation", "aexpr"));
+        // let uid = file.declarations[name] = file.scope.generateUidIdentifier(name);
+        //
+        // ref = ref().expression;
+        // ref[GENERATED_FUNCTION] = true;
+        //
+        // if (t.isFunctionExpression(ref) && !ref.id) {
+        //     ref.body._compact = true;
+        //     ref._generated = true;
+        //     ref.id = uid;
+        //     ref.type = "FunctionDeclaration";
+        //     file.path.unshiftContainer("body", ref);
+        // } else {
+        //     ref._compact = true;
+        //     file.scope.push({
+        //         id: uid,
+        //         init: ref,
+        //         unique: true
+        //     });
+        // }
+        //
+        // return uid;
     }
 
     return {
@@ -136,10 +139,15 @@ export default function(param) {
                                 path.node.name === AEXPR_IDENTIFIER_NAME &&
                                 !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)
                             ) {
+                                console.log("we found a call to aexpr");
                                 path.replaceWith(
                                     addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
                                 );
                                 return;
+                            }
+
+                            if(!path.node[GENERATED_IMPORT_IDENTIFIER]) {
+                                console.log(path.node.name)
                             }
 
                             return;
@@ -241,117 +249,6 @@ export default function(param) {
                         }
                     });
                 }
-            // },
-            // // TODO: also
-            // Identifier(path, state) {
-            //     //console.log(state);
-            //     // Check for a call to aexpr:
-            //     if(
-            //         t.isCallExpression(path.parent) &&
-            //         path.node.name === AEXPR_IDENTIFIER_NAME &&
-            //         !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)
-            //     ) {
-            //         //path.replaceWith(
-            //         //addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
-            //         //);
-            //         return;
-            //     }
-            //
-            //     return;
-            //
-            //     //if(RESERVED_IDENTIFIERS.includes(path.node.name)) { return; }
-            //
-            //     if(t.isClassDeclaration(path.parent)) {
-            //         console.log("classDecl", path.node.name);
-            //         return;
-            //     }
-            //
-            //     if(t.isClassMethod(path.parent)) {
-            //         console.log("classMethod", path.node.name);
-            //         return;
-            //     }
-            //
-            //     if(t.isObjectMethod(path.parent)) {
-            //         console.log("objectMethod", path.node.name);
-            //         return;
-            //     }
-            //     if(t.isVariableDeclarator(path.parent)) {
-            //         console.log("varDecl", path.node.name);
-            //         return;
-            //     }
-            //
-            //     // is this correct here?
-            //     // TODO: is it correct for the locals plugin?
-            //     if (!path.isReferencedIdentifier()) {
-            //         console.log("def", path.node.name);
-            //         return;
-            //     }
-            //
-            //     // is locally defined variable?
-            //     if (path.scope.hasBinding(path.node.name)) {
-            //         console.log("local", path.node.name);
-            //     } else {
-            //         // we have a global
-            //         console.log("global", path.node.name);
-            //     }
-            // },
-
-            // AssignmentExpression(path, state) {
-            //     // check, whether we assign to a member (no support for pattern right now)
-            //     if(!t.isMemberExpression(path.node.left)) { return; }
-            //     if(isGenerated(path)) { return; }
-            //
-            //     //state.file.addImport
-            //
-            //     //path.replaceWith(
-            //     //  t.callExpression(
-            //     //addCustomTemplate(state.file, SET_MEMBER)//,
-            //     //        [
-            //     //          path.node.left.object,
-            //     //        getPropertyFromMemberExpression(path.node.left),
-            //     //      t.stringLiteral(path.node.operator),
-            //     //      path.node.right
-            //     //    ]
-            //     //  )
-            //     //);
-            // },
-
-            // MemberExpression(path, state) {
-            //     // lval (left values) are ignored for now
-            //     if(t.isAssignmentExpression(path.parent) && path.key === 'left') { return; }
-            //     if(isGenerated(path)) { return; }
-            //
-            //     //path.replaceWith(
-            //     //  t.callExpression(
-            //     //addCustomTemplate(state.file, GET_MEMBER)//,
-            //     //    [
-            //     //    path.node.object,
-            //     //    getPropertyFromMemberExpression(path.node)
-            //     //]
-            //     //)
-            //     //
-            // },
-
-            // CallExpression(path, state) {
-            //     if(isGenerated(path)) { return; }
-            //
-            //     // check whether we call a MemberExpression
-            //     if(t.isMemberExpression(path.node.callee)) {
-            //         //  path.replaceWith(
-            //         //    t.callExpression(
-            //         //addCustomTemplate(state.file, GET_AND_CALL_MEMBER)//,
-            //         //      [
-            //         //        path.node.callee.object,
-            //         //      getPropertyFromMemberExpression(path.node.callee),
-            //         //          t.arrayExpression(path.node.arguments)
-            //         //        ]
-            //         //      )
-            //         //    )
-            //     } else {
-            //         if(t.isIdentifier(path.node.callee) && true) {
-            //         }
-            //     }
-            //
             }
         }
     };
