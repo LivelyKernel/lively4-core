@@ -10,6 +10,7 @@ export default class HTML {
     alert("Hello World...");
   }
   
+  
   static findAllNodes(visit, all) {
   	if (!all) { all = new Set() }
   	if (!visit) { visit = document.querySelectorAll('*') }
@@ -22,6 +23,7 @@ export default class HTML {
   	}
   	return Array.from(all);
   } 
+  
   
   // #JENS #ContinueWork here #NotFinished... load/save for tim
   static getFilter(ea) {

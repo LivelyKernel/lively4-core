@@ -205,8 +205,9 @@ export default class Lively {
   static handleError(error) {
     lively.LastError = error
     if (!error) return // hmm... this is currious...
-    lively.notify("Error: ", error.message, 20, () =>
-    		  lively.openWorkspace("Error:" + error.message + "\nLine:" + error.lineno + " Col: " + error.colno+"\nSource:" + error.source + "\nError:" + error.stack))
+    lively.notify("Error: ", error.message, 10, () =>
+    		  lively.openWorkspace("Error:" + error.message + "\nLine:" + error.lineno + " Col: " + error.colno+"\nSource:" + error.source + "\nError:" + error.stack), 
+          "red")
   }
 
   static loaded() {
@@ -389,12 +390,12 @@ export default class Lively {
         }
       });
   }
-  static notify(title, text, timeout, cb) {
+  
+  static nativeNotify(title, text, timeout, cb) {
     if (!this.notifications) this.notifications = [];
     this.notifications.push({title: title, text: text, cb: cb, time: Date.now()})
 
-    // lively.notify("hello","",3)
-    // just in case...
+
     if (Notification.permission !== "granted") Notification.requestPermission();
 
     var time = Date.now()
@@ -416,6 +417,29 @@ export default class Lively {
     if (timeout === undefined) timeout = 3
     setTimeout(() => notification.close(), timeout * 1000);
     // notification.onclick = cb
+
+  }
+  
+  static notify(title, text, timeout, cb, color) {
+    // #TODO make native notifications opitional?
+    // this.nativeNotify(title, text, timeout, cb) 
+    console.log("Note: " + title + "\n" + text)
+
+    if (!this.notificationList || !this.notificationList.parentElement) {
+      this.notificationList = document.createElement("lively-notification-list")
+      lively.components.openIn(document.body, this.notificationList).then( () => {
+        this.notificationList.addNotification(title, text, timeout, cb, color)
+      })
+    } else {
+      if (this.notificationList.addNotification) {
+       this.notificationList.addNotification(title, text, timeout, cb, color)
+      } else {
+        console.log("Notification List not initialized yet")
+      }
+    }
+
+
+
   }
 
   static initializeDocument(doc, loadedAsExtension) {

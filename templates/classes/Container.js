@@ -198,7 +198,8 @@ export default class Container extends Morph {
         if (this.getSubmorph("#live").checked) {
           
           lively.reloadModule("" + url).then( module => {
-            lively.notify("Module " + moduleName + " reloaded!")
+            // lively.notify("Module " + moduleName + " reloaded!")
+            console.log("Module " + moduleName + " reloaded!")
           }, err => {
             window.LastError = err
             lively.notify("Error loading module " + moduleName, err)

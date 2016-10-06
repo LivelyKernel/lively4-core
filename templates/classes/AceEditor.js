@@ -336,12 +336,14 @@ export default class AceEditor extends HTMLElement {
     async tryBoundEval(str, printResult) {
         var resp;
         resp = await this.boundEval(str, this.getDoitContext()) 
-        if (resp.error) {
-            var e = resp.error
+        if (resp.isError) {
+            var e = resp.value
             console.error(e)
             if (printResult) {
                 window.LastError = e
                 this.printResult("" +e)
+            } else {
+              lively.handleError(e)
             }
             return
         }

@@ -1,0 +1,64 @@
+<template id="lively-notification" data-class="Notification">
+<style>
+  :host {
+    display: block;
+    position: relative;
+  }
+  
+  #notification {
+    position: relative;
+    background-color: rgba(255, 255,255,0.8);
+    border: 2px solid;
+    border-color: lightgray;
+    margin: 10px;
+    padding: 10px;
+    width: 200px;
+    opacity: 0.8;
+  }
+  
+  #title {
+    color: black;
+    font-size: 14px;
+  }
+  #message {
+    color: black;
+    font-size: 10px;
+  }
+  
+  #closeButton {
+    position: absolute;
+    right: 0;
+    top: 0;
+    padding: 2px;
+  }
+  
+  #closeButton:hover {
+    color: red;
+  }
+  
+  #moreButton {
+    visibility: none;
+    position: absolute;
+    right: 0;
+    top: 14px;
+    text-align: right;
+    font-size: 10px;
+    padding: 3px;
+  }
+  
+  #moreButton:hover {
+    color: blue;
+  }
+</style>
+
+<div id="notification">
+    <div id="closeButton">×</div>
+    <div id="title"></div>
+    <div id="message"></div>
+    <div id="moreButton">more</div>
+
+    <content></content>
+</div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

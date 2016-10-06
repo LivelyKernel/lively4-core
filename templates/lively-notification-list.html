@@ -1,0 +1,21 @@
+<template id="lively-notification-list" data-class="NotificationList">
+<style>
+  :host {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    z-index: 10000;
+  }
+  #notifications {
+    padding: 5px;
+  }
+  .lively-rect {
+    all: inherit;
+  }
+</style>
+<div id='notifications'>
+    <content></content>
+</div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+
