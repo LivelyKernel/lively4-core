@@ -52,17 +52,23 @@ export default class Halo extends Morph {
     lively.components.openIn(document.body, this.selection).then(comp => {
       comp.onSelectionDragStart(evt)
     });
+    
+    // give it something to drag
+    var img = document.createElement("img");
+    evt.dataTransfer.setDragImage(img, 0, 0);
   }
   
   onBodyDrag(evt) {
     //evt.preventDefault();
     // return false
+    if (!this.selection) return;
     this.selection.onSelectionDrag && this.selection.onSelectionDrag(evt)
   } 
   
   onBodyDragEnd(evt) {
     // evt.preventDefault();
     // return false
+    if (!this.selection) return;
     this.selection.onSelectionDragEnd && this.selection.onSelectionDragEnd(evt)
   }
     

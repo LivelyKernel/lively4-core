@@ -30,7 +30,7 @@ export default class Selection extends Morph {
       this.context = that;
     }
     this.nodes = [];
-    console.log("drag start");
+    console.log("selection drag start");
   }
   
   onSelectionDrag(evt) {
