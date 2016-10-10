@@ -1,8 +1,8 @@
 'use strict'
 
 import Morph from './Morph.js';
-import files from '../../src/client/files.js';
-import * as componentLoader from '../../src/client/morphic/component-loader.js';
+import files from 'src/client/files.js';
+import * as componentLoader from 'src/client/morphic/component-loader.js';
 
 export default class ComponentBin extends Morph {
   initialize() {

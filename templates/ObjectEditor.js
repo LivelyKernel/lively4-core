@@ -1,8 +1,8 @@
 'use strict';
 
 import Morph from './Morph.js';
-import generateUUID from '../../src/client/uuid.js';
-import * as scriptManager from  "../../src/client/script-manager.js";
+import generateUUID from 'src/client/uuid.js';
+import * as scriptManager from  "src/client/script-manager.js";
 
 export default class ObjectEditor extends Morph {
   initialize() {

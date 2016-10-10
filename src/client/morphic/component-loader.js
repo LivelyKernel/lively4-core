@@ -1,6 +1,6 @@
-import scriptManager from  "../script-manager.js";
-import * as persistence from  "../persistence.js";
-import Morph from "../../../templates/classes/Morph.js";
+import scriptManager from  "src/client/script-manager.js";
+import * as persistence from  "src/client/persistence.js";
+import Morph from "templates/Morph.js";
 
 import * as kernel from 'kernel';
 
@@ -259,7 +259,7 @@ export default class ComponentLoader {
         
         // name = "hello-world-foo"  
         var className = toTitleCase(name.replace(/-/g, " ")).replace(/ /g,"")
-        var classOnlyComponentURL = '/templates/classes/' + className + '.js'
+        var classOnlyComponentURL = '/templates/' + className + '.js'
         // #TODO continue here
         
       }

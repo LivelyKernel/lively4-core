@@ -1,4 +1,4 @@
-import Services from '../../templates/classes/Services.js';
+import Services from '../../templates/Services.js';
 import {expect} from '../../node_modules/chai/chai.js';
 import {loadComponent} from './templates-fixture.js';
 

@@ -569,7 +569,7 @@ export default class Lively {
         source = await fetch(templateFile).then( r => r.text());
         template = $.parseHTML(source).find( ea => ea.tagName == "TEMPLATE"),
         className = template.getAttribute('data-class'),
-        moduleURL = lively4url +"/templates/classes/" + className + ".js";
+        moduleURL = lively4url +"/templates/" + className + ".js";
       lively.openBrowser(moduleURL, true, className);
     } else {
       lively.notify("Could not show source for: " + object)
@@ -621,7 +621,7 @@ export default class Lively {
     var proto;
     var className = template.getAttribute("data-class")
     if (className) {
-      var module= await System.import(lively4url +'/templates/classes/' + className +".js");
+      var module= await System.import(lively4url +'/templates/' + className +".js");
       proto =  Object.create(module.prototype || module.default.prototype)
     }
     lively.components.register(template.id, clone, proto);

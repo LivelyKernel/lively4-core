@@ -284,7 +284,7 @@ export default class Container extends Morph {
     
       if (!window.ScopedD3) {
         console.log("LOAD D3 Adaption Layer")
-        await System.import("templates/classes/ContainerScopedD3.js")
+        await System.import("templates/ContainerScopedD3.js")
         ScopedD3.updateCurrentBodyAndURLFrom(this)
         // return this.appendHtml(content) // try again
       }
