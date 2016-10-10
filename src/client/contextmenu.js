@@ -1,6 +1,7 @@
 // import lively2 from "./lively.js";
 // #TODO this will fetch an old version of the lively module... 
 
+import html from 'src/client/html.js'
 
 
 export default class ContextMenu {
@@ -139,8 +140,16 @@ export default class ContextMenu {
           morph.style.backgroundColor = 'rgba(40,40,40,0.5)'
           $('body')[0].appendChild(morph);
           this.hide();
+      }],
+      ["save as ..", (evt) => {
+          html.saveCurrentPageAs()
+      }],
+
+      ["save", (evt) => {
+          html.saveCurrentPage()
       }]
-    ];}
+      
+      ];}
   }
   
   static openIn(container, evt, target) {

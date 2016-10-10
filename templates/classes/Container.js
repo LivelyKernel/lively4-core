@@ -270,6 +270,12 @@ export default class Container extends Morph {
   }
 
   async appendHtml(content) {
+    
+    // strip lively boot code... 
+    content = content.replace(/\<\!-- BEGIN SYSTEM\.JS(.|\n)*\<\!-- END SYSTEM.JS--\>/,"")
+    content = content.replace(/\<\!-- BEGIN LIVELY BOOT(.|\n)*\<\!-- END LIVELY BOOT --\>/,"")
+    
+  
     if (content.match(/<script src=".*d3\.v3(.min)?\.js".*>/)) {
       if (!window.d3) {
         console.log("LOAD D3")
@@ -720,6 +726,11 @@ export default class Container extends Morph {
       this.showNavbar()
       lively.components.loadUnresolved(containerEditor)
     })
+  }
+  
+  saveHTML() {
+    var source  = this.getContentRoot().innerHTML
+    lively.files.saveFile(this.getURL(),source) 
   }
 }
 

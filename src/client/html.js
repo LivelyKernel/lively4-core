@@ -175,7 +175,29 @@ export default class HTML {
         this.fixLinks(node.childNodes, dir, followPath)
       }
     })
-}
+  }
+  
+  static saveCurrentPageAs() {
+    var prev = lively.preferences.getURLParameter("page")
+    if (!prev) prev = ""
+    var url = window.prompt("Save page as?", prev)
+    this.savePageAs(url)
+  }
+
+  static saveCurrentPage() {
+    var url = lively.preferences.getURLParameter("page");
+    this.savePageAs(url)
+  }
+  
+  static savePageAs(url) {
+    var source  = document.body.innerHTML // #TODO here we must put more work...
+    lively.files.saveFile(url, source).then( () => {
+      lively.notify("Saved " + url)
+    })
+  }
+
+
+
 
 }
 console.log("loaded html.js")
