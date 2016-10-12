@@ -2,7 +2,6 @@
 
 import Morph from './Morph.js';
 import lively from 'src/client/lively.js'
-import Notification from './Notification.js'
 
 export default class NotificationList extends Morph {
   

@@ -569,7 +569,8 @@ export default class Lively {
         source = await fetch(templateFile).then( r => r.text());
         template = $.parseHTML(source).find( ea => ea.tagName == "TEMPLATE"),
         className = template.getAttribute('data-class'),
-        moduleURL = lively4url +"/templates/" + className + ".js";
+        baseName = this.templateClassNameToTemplateName(className)
+        moduleURL = lively4url +"/templates/" + baseName + ".js";
       lively.openBrowser(moduleURL, true, className);
     } else {
       lively.notify("Could not show source for: " + object)
@@ -614,6 +615,10 @@ export default class Lively {
     }
     return result
   }
+  
+  static templateClassNameToTemplateName(className) {
+    return className.replace(/[A-Z]/g, ea => "-" + ea.toLowerCase()).replace(/^-/,"")
+  }
 
   static async registerTemplate() {
     var template = document.currentScript.ownerDocument.querySelector('template');
@@ -621,7 +626,9 @@ export default class Lively {
     var proto;
     var className = template.getAttribute("data-class")
     if (className) {
-      var module= await System.import(lively4url +'/templates/' + className +".js");
+      // className = "LivelyFooBar"
+      baseName = this.templateClassNameToTemplateName(className)
+      var module= await System.import(lively4url +'/templates/' + baseName +".js");
       proto =  Object.create(module.prototype || module.default.prototype)
     }
     lively.components.register(template.id, clone, proto);

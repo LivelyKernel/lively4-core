@@ -1,9 +1,11 @@
 
-import HaloGrabItem from './HaloGrabItem.js';
+import HaloGrabItem from './lively-halo-grab-item.js';
 
 import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
 import {pt} from 'lively.graphics';
+
+import scriptManager from  "src/client/script-manager.js";
 
 var copyBlacklist = ["body", "html"];
 
@@ -31,6 +33,8 @@ export default class HaloCopyItem extends HaloGrabItem {
     console.log ("OUT: " + obj.innerHTML)
     
     var clone = tmp.childNodes[0]
+    
+    scriptManager.findLively4Script(clone);
     
     window.LastClone = clone
     clone.remove()

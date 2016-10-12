@@ -1,7 +1,7 @@
 import lively from 'src/client/lively.js'
 import Morph from './Morph.js'
 
-import Halo from './Halo.js';
+import Halo from './lively-halo.js';
 
 
 /*

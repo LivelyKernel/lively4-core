@@ -165,6 +165,8 @@ export default class ObjectEditor extends Morph {
     }
 
     this.createObservers();
+    
+    this.shadowRoot.querySelector("#editor").doitContext = val
   }
 
   releaseTarget() {

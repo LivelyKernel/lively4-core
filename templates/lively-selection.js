@@ -5,7 +5,7 @@ import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
 import {pt, rect} from 'lively.graphics';
 
-import Halo from './Halo.js'; // #TODO cyclic dependencies still does not seem to work
+import Halo from './lively-halo.js'; // #TODO cyclic dependencies still does not seem to work
 
 export default class Selection extends Morph {
   

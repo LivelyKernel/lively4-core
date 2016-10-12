@@ -249,20 +249,12 @@ export default class ComponentLoader {
     
       // #TODO make templates path configurable... and make its search in many places
       var url = '/templates/' + name + '.html'
-      if (true) { // #TODO continue here url.exists() 
-        var link = document.createElement("link");
-        link.rel = "import";
-        link.href = kernel.resolve(url)
-        link.dataset.lively4Donotpersist = "all";
-      } else {
-        // #TODO what string library do we want to use?
-        
-        // name = "hello-world-foo"  
-        var className = toTitleCase(name.replace(/-/g, " ")).replace(/ /g,"")
-        var classOnlyComponentURL = '/templates/' + className + '.js'
-        // #TODO continue here
-        
-      }
+      // #TODO continue here url.exists() 
+      var link = document.createElement("link");
+      link.rel = "import";
+      link.href = kernel.resolve(url)
+      link.dataset.lively4Donotpersist = "all";
+      
       document.head.appendChild(link);
   }
 
