@@ -262,7 +262,6 @@ export default class Window extends Morph {
   }
 
   pinButtonClicked(e) {
-    console.log("toggle...")
     let isPinned = this.pinButton.classList.toggle('active');
     if (isPinned) {
       this.setAttribute('fixed', '');
@@ -291,18 +290,20 @@ export default class Window extends Morph {
 
     if(this.positionBeforeMaximize) return; // no dragging when maximized
 
-    let offsetWindow = $(this).offset();
-
     if (this.isFixed) {
+      let offsetWindow =  this.getBoundingClientRect()
       this.dragging = {
         left: e.pageX - offsetWindow.left,
         top: e.pageY - offsetWindow.top
       };
     } else {
+      this.draggingStart = lively.getPosition(this)
       this.dragging = {
-        left: e.clientX - offsetWindow.left,
-        top: e.clientY - offsetWindow.top
+        left: e.clientX,
+        top: e.clientY
       };
+    
+ 
     }
 
     this.window.classList.add('dragging');
@@ -343,11 +344,12 @@ export default class Window extends Morph {
         );
       } else {
         let scroll = getScroll();
-
+       
         this.setPosition(
-          e.pageX - this.dragging.left - scroll.x,
-          e.pageY - this.dragging.top - scroll.y
+          this.draggingStart.x + e.pageX - this.dragging.left - scroll.x,
+          this.draggingStart.y + e.pageY - this.dragging.top - scroll.y
         );
+        
       }
     } else if (this.resizing) {
       e.preventDefault();

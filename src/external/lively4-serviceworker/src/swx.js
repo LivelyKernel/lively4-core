@@ -24,8 +24,6 @@ class ServiceWorker {
     this.filesystem.mount('/local', html5fs)
 
     this.filesystem.loadMounts();
-
-
     // here we should remount previous filesystem (remembered in focalStorage)
   }
 
