@@ -452,7 +452,7 @@
                     if (isArray)
                         inspect(object[key], options, depth + 1);
                     var printedVal = inspect(object[key], options, depth + 1);
-                    return options.escapeKeys ? Strings.print(key) : key + ': ' + printedVal;
+                    return options.escapeKeys ? exports.string.print(key) : key + ': ' + printedVal;
                 });
             }
             if (printedProps.length === 0) {
@@ -788,7 +788,7 @@
             return this.normalizePath();
         },
         serializeExpr: function () {
-            return 'Path(' + Objects.inspect(this.parts()) + ')';
+            return 'Path(' + obj.inspect(this.parts()) + ')';
         },
         watch: function (options) {
             if (!options || this.isRoot())
