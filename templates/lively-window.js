@@ -3,6 +3,9 @@
 import Morph from './Morph.js';
 import { AExpr } from 'active-expressions';
 
+import {pt} from 'lively.graphics'
+
+
 function getScroll() {
   return {
     x: document.scrollingElement.scrollLeft || 0,
@@ -298,6 +301,10 @@ export default class Window extends Morph {
       };
     } else {
       this.draggingStart = lively.getPosition(this)
+      if (isNaN(this.draggingStart.x) || isNaN(this.draggingStart.y)){
+        throw new Error("Drag failed, because window Position is not a number")
+      }
+
       this.dragging = {
         left: e.clientX,
         top: e.clientY
@@ -333,7 +340,6 @@ export default class Window extends Morph {
   }
 
   windowMouseMove(e) {
-
     if (this.dragging) {
       e.preventDefault();
 
@@ -344,12 +350,10 @@ export default class Window extends Morph {
         );
       } else {
         let scroll = getScroll();
-       
         this.setPosition(
           this.draggingStart.x + e.pageX - this.dragging.left - scroll.x,
           this.draggingStart.y + e.pageY - this.dragging.top - scroll.y
         );
-        
       }
     } else if (this.resizing) {
       e.preventDefault();
@@ -364,9 +368,12 @@ export default class Window extends Morph {
    * Public interface
    */
   centerInWindow() {
-    let rect = this.getBoundingClientRect();
-    this.style.top = 'calc(50% - ' + (rect.height / 2) + 'px)';
-    this.style.left = 'calc(50% - ' + (rect.width / 2) + 'px)';
+    let bounds = this.getBoundingClientRect();
+    var s= getScroll();
+
+    lively.setPosition(this,
+      pt(s.x + document.body.clientWidth / 2 - bounds.width /2,
+        s.y + document.body.clientHeight / 2 - bounds.height  /2));
   }
 
   /*
@@ -374,8 +381,8 @@ export default class Window extends Morph {
    */
   livelyMigrate(oldInstance) {
     // this is crucial state
-    this.positionBeforeMaximize = oldInstance.positionBeforeMaximize
-    this.positionBeforeMinimize = oldInstance.positionBeforeMinimize
+    this.positionBeforeMaximize = oldInstance.positionBeforeMaximize;
+    this.positionBeforeMinimize = oldInstance.positionBeforeMinimize;
   }
   
   /*
@@ -383,9 +390,9 @@ export default class Window extends Morph {
    */
   embedContentInParent() {
   	var content = this.querySelector("*")
-  	var pos = lively.getPosition(this)
-  	this.parentElement.appendChild(content)
-  	lively.setPosition(content, pos)
+  	var pos = lively.getPosition(this);
+  	this.parentElement.appendChild(content);
+  	lively.setPosition(content, pos);
   	this.remove()
   }
 
