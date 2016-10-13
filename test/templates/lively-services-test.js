@@ -1,4 +1,4 @@
-import Services from '../../templates/Services.js';
+import Services from '../../templates/lively-services.js';
 import {expect} from '../../node_modules/chai/chai.js';
 import {loadComponent} from './templates-fixture.js';
 
