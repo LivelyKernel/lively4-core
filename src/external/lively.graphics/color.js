@@ -1,6 +1,6 @@
 import { num } from "lively.lang";
 import { parse } from "./color-parser.js";
-import { Rectangle, rect } from "./geometry-2d.js";
+import { Rectangle, rect, pt } from "./geometry-2d.js";
 
 function floor(x) { return Math.floor(x*255.99) };
 
@@ -267,8 +267,8 @@ export class Color {
       h = 60 * (2 + ((this.b - this.r) / (max - min)));
     } else if (max == this.b) {
       h = 60 * (4 + ((this.r - this.g) / (max - min)));
-      h = (h + 360) % 360;
     }
+    h = (h + 360) % 360;
     s = max == 0 ? 0 : (max - min) / max;
     return [h, s, b];
   }
@@ -350,19 +350,21 @@ export class LinearGradient extends Gradient {
     }
   }
   
-  get vector() { return this.vector }
+  toString() { return this.toCSSString(); }
+  
+  get vector() { return this._vector }
   set vector(value) {
-    if (!value) this.vector = this.vectors.northsouth;
-    else if (Object.isString(value)) this.vector = this.vectors[value.toLowerCase()]
-    else this.vector = value;
+    if (!value) this._vector = this.vectors.northsouth;
+    else if (typeof value === "string") this._vector = this.vectors[value.toLowerCase()]
+    else this._vector = value;
   }
   
   lighter(n) { return new this.constructor(this.getStopsLighter(n), this.vector) }
   darker() { return new this.constructor(this.getStopsDarker(), this.vector) }
   
-  toCSSString(bounds, cssPrefix) {
+  toCSSString() {
     // default webkit way of defining gradients
-    var str = `${cssPrefix}gradient(linear, 
+    var str = `-webkit-gradient(linear,
         ${this.vector.x * 100.0}\% 
         ${this.vector.y * 100.0}\%, 
         ${this.vector.maxX() * 100.0}\% 
@@ -381,16 +383,18 @@ export class RadialGradient extends Gradient {
     this.focus = focus || pt(0.5, 0.5);
   }
   
+  toString() { return this.toCSSString() }
+  
   lighter(n) { return new this.constructor(this.getStopsLighter(n), this.focus) }
   darker() { return new this.constructor(this.getStopsDarker(), this.focus) }
   
-  toCSSString(bounds, cssPrefix) {
+  toCSSString(bounds) {
+    bounds = bounds || new Rectangle(0,0, 20, 20);
     const innerCircle = this.focus.scaleBy(100.0),
           innerCircleRadius = 0.0,
           outerCircle = pt(50.0, 50.0),
           outerCircleRadius = bounds.width/2;
-    bounds = bounds || new Rectangle(0,0, 20, 20);
-    var str = `${cssPrefix}gradient(radial, 
+    var str = `-webkit-gradient(radial,
                ${innerCircle.x}\% 
                ${innerCircle.y}\%, 
                ${innerCircleRadius}, 
