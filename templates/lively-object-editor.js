@@ -2,7 +2,7 @@
 
 import Morph from './Morph.js';
 import generateUUID from 'src/client/uuid.js';
-import * as scriptManager from  "src/client/script-manager.js";
+import scriptManager from  "src/client/script-manager.js";
 
 export default class ObjectEditor extends Morph {
   initialize() {
@@ -317,6 +317,16 @@ export default class ObjectEditor extends Morph {
       { name: 'scrollTop', type: 'number' },
       { name: 'scrollLeft', type: 'number' }
     ];
+    
+    Object.keys(this.targetElement).forEach( ea => {
+      if (ea.match(/^__/)) return;
+      var readonly = true;
+      var propType = typeof this.targetElement[ea]
+      if (propType == "function") return
+      if (propType == "string" || propType == "number") readonly = false;
+      editableProperties.push({name: ea, type: propType, readonly: readonly})
+    })
+    
 
     let properties = {};
     for (let i = 0; i < editableProperties.length; i++) {
@@ -482,7 +492,7 @@ export default class ObjectEditor extends Morph {
   }
 
   addScript(scriptName, funcOrString) {
-    scriptManager.default.addScript(this.targetElement, funcOrString, {name: scriptName});
+    scriptManager.addScript(this.targetElement, funcOrString, {name: scriptName});
     this.updateScripts();
     this.propertyList.selectLeaf(this.propertyList.querySelector('.leaf[data-script-name="'+scriptName+'"]'));
     this.listChanged();
@@ -492,7 +502,7 @@ export default class ObjectEditor extends Morph {
     if (this.targetElement) {
       if (this.propertyList.activeLeaf !== null) {
         let scriptName = this.propertyList.activeLeaf.dataset['scriptName'];
-        scriptManager.default.removeScript(this.targetElement, scriptName);
+        scriptManager.removeScript(this.targetElement, scriptName);
       }
       this.editor.value = '';
       this.updateScripts();
@@ -546,7 +556,7 @@ export default class ObjectEditor extends Morph {
       return
     }
     let scriptName =  data['scriptName']
-    scriptManager.default.updateScript(
+    scriptManager.updateScript(
       this.targetElement,
       functionObj,
       { name: scriptName }
