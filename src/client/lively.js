@@ -202,7 +202,11 @@ export default class Lively {
       expose: kernel.realpath('/src/client/expose.js')
     })[moduleName]
   }
-
+  
+  static showError(error) {
+    this.handleError(error)
+  }
+  
   static handleError(error) {
     lively.LastError = error
     if (!error) return // hmm... this is currious...
