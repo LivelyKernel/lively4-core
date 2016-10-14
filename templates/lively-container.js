@@ -651,7 +651,8 @@ export default class Container extends Morph {
 	        icon = '<i class="fa fa-file"></i>';
 	      }
 	      
-	      link.innerHTML = icon + name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"");
+	      // name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"")
+	      link.innerHTML = icon + name;
 	      link.href = ea.name
 	      link.onclick = () => {
 	        this.followPath(root + name);

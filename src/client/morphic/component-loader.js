@@ -292,16 +292,17 @@ export default class ComponentLoader {
     var w = this.createComponent("lively-window");
     w.appendChild(component);
 
+
+    this.openInBody(w);
+
     // therefore, we need to call loadUnresolved again after
     // adding the child, so that it finds it and resolves it,
     // if it is currently unresolved
     var windowPromise = new Promise((resolve, reject) => {
-      this.loadUnresolved(w, true, "openInWindow " + component).then(() => {
+      this.loadUnresolved(document.body, true, "openInWindow " + component).then(() => {
         resolve(w);
       });
     });
-
-    this.openInBody(w);
 
     return windowPromise;
   }

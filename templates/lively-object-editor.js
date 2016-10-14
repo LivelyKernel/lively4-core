@@ -235,6 +235,7 @@ export default class ObjectEditor extends Morph {
   }
 
   setWindowTitle() {
+    if(!this.targetElement) return;
     if(this.parentElement.tagName != 'LIVELY-WINDOW') {
       // parent is not a window, so cannot set title
       return;
@@ -606,7 +607,7 @@ export default class ObjectEditor extends Morph {
     if (this.targetElement && typeof this.targetElement.__scripts__ !== 'undefined') {
       for (let scriptName in this.targetElement.__scripts__) {
         let isActive = scriptName == activeLeaf;
-        scriptHtml += '<li><span class="leaf' + (isActive ? ' active' : '') + '" data-script-name="' + scriptName + '">' + scriptName + '</span></li>';
+        scriptHtml += '<li class="leaf' + (isActive ? ' active' : '') + '" data-script-name="' + scriptName + '">' + scriptName + '</li>';
       }
     }
     this.shadowRoot.querySelector('#script-nodes').innerHTML = scriptHtml;
@@ -616,5 +617,9 @@ export default class ObjectEditor extends Morph {
     console.log("update color")
     var color = this.shadowRoot.querySelector("#background-color").value;
     this.targetElement.style.backgroundColor = color;
+  }
+  
+  livelyMigrate(oldInstance) {
+    this.targetElement = oldInstance.targetElement
   }
 }

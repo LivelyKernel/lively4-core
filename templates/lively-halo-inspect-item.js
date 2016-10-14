@@ -9,8 +9,7 @@ export default class HaloInspectItem extends HaloItem {
       editor.targetElement    = inspectTarget;
 
       componentLoader.openInWindow(editor).then((objectEditorWindow) => {
-        if (objectEditorWindow.centerInWindow)
-          objectEditorWindow.centerInWindow(); // #TODO loading async??? Problem
+        objectEditorWindow.centerInWindow(); 
       });
   
       this.hideHalo();
