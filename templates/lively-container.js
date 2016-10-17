@@ -173,6 +173,8 @@ export default class Container extends Morph {
       lively.files.saveFile(this.getURL(),"") 
       return
     }
+    this.getSubmorph("#editor").setURL(this.getURL())
+    
     return this.getSubmorph("#editor").saveFile().then( () => {
       var sourceCode = this.getSubmorph("#editor").currentEditor().getValue()
       lively.updateTemplate(sourceCode)
@@ -368,7 +370,8 @@ export default class Container extends Morph {
   }
 
   getPath() {
-    return this.getAttribute("src")
+    // return this.getAttribute("src")
+    return this.shadowRoot.querySelector("#container-path").value
   }
   
   getAceEditor() {
