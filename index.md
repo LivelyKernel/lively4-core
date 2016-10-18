@@ -2,7 +2,9 @@
 
 * Sofware Architecture Group, Hasso Plattner Institute,  2015, 2016 [MIT LICENSE](LICENSE)
 * Stefan Lehmann, Jens Lincke, Tim Felgentreff, et al
-* SWD 2015 Seminar, WebDev 2016 Seminar
+* Seminars
+  * Software Design  [SWD 2015](https://lively-kernel.org/lively4/Lively4.wiki/SWD15.md) [SWD 2016](https://lively-kernel.org/lively4/Lively4.wiki/SWD16.md)
+  * Web-based Development [WebDev 2016](https://lively-kernel.org/lively4/Lively4.wiki/WebDev16.md) 
 * [readme](README.md)
 
 ## Live Source Code
