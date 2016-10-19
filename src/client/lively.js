@@ -753,8 +753,9 @@ export default class Lively {
   }
 }
 
-if (window.lively)
+if (window.lively && window.lively.name != "Lively") {
   Object.assign(Lively, window.lively) // copy objects from lively.modules
+}
 
 if (!window.lively || window.lively.name != "Lively") {
   window.lively = Lively
