@@ -6,8 +6,10 @@ export default class Search extends Morph {
   initialize() {
     this.windowTitle = "File Search"
     var container = this.q(".container");
-    lively.html.registerButtons(this)
-    lively.html.registerInputs(this)
+    lively.html.registerButtons(this);
+    lively.html.registerInputs(this);
+    
+    this.shadowRoot.querySelector("#rootsInput").value = lively4url.replace(/.*\//,"");
     
     lively.addEventListener("lively-search", this.q('#searchInput'), "keyup",
       (evt) => { 
@@ -48,10 +50,10 @@ export default class Search extends Morph {
       if (!m) return 
       var file = m[1]
       var pattern = m[2]
-      var url = lively4url + "/../" + this.q("#rootInput").value + "/" + file
+      var url = lively4url + "/../" + file
       var item = document.createElement("li")
       var link = document.createElement("a")
-      link.innerHTML = file
+      link.innerHTML = file +":"
       link.href = entry
       link.onclick = () => {
         this.browseSearchResult(url, pattern)
@@ -72,6 +74,8 @@ export default class Search extends Morph {
   }
   
   getSearchURL() {
+    // return "https://lively-kernel.org/lively4S2/_search/files" // #DEV
+    
     if (document.location.host == "livelykernel.github.io")
       return "https://lively-kernel.org/lively4/_search/files";
     else
@@ -99,7 +103,8 @@ export default class Search extends Morph {
     fetch(this.getSearchURL(), {
       headers: new Headers({ 
   	   "searchpattern": search,
-  	   "rootdir": this.q("#rootInput").value,
+  	   "rootdirs": this.q("#rootsInput").value,
+  	   "excludes": this.q("#excludesInput").value,
     })}).then(r => r.text()).then( t => {
       this.searchInProgres = false 
       this.clearLog()

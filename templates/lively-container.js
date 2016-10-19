@@ -173,6 +173,8 @@ export default class Container extends Morph {
       lively.files.saveFile(this.getURL(),"") 
       return
     }
+    this.getSubmorph("#editor").setURL(this.getURL())
+    
     return this.getSubmorph("#editor").saveFile().then( () => {
       var sourceCode = this.getSubmorph("#editor").currentEditor().getValue()
       lively.updateTemplate(sourceCode)
@@ -195,11 +197,10 @@ export default class Container extends Morph {
       var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/)
       if (moduleName) {
         moduleName = moduleName[1]
-        if (this.getSubmorph("#live").checked) {
+        if (this.getSubmorph("#live").checked && !this.getSubmorph("#live").disabled) {
           
           lively.reloadModule("" + url).then( module => {
-            // lively.notify("Module " + moduleName + " reloaded!")
-            console.log("Module " + moduleName + " reloaded!")
+            lively.notify("Scripting","Module " + moduleName + " reloaded!", 3, null, "green")
           }, err => {
             window.LastError = err
             lively.notify("Error loading module " + moduleName, err)
@@ -327,13 +328,20 @@ export default class Container extends Morph {
     }
   }
   
+  async followPath(path) {
+    var m = path.match(/start\.html\?load=(.*)/)
+    if (m) {
+      lively.notify(m[1])
+      return this.followPath(m[1])
+    }
 
+    if (!await fetch(path, {method: "OPTIONS"}).catch(e => false)) {
+      return window.open(path)
+    }
 
-  followPath(path) {
-    console.log("follow path2: " + path)
+    console.log("follow path: " + path)
     if (_.last(this.history()) !== path)
       this.history().push(path)
-
     if (this.isEditing() && !path.match(/\/$/)) {
       if (this.useBrowserHistory())
         window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?edit="+path);
@@ -341,6 +349,9 @@ export default class Container extends Morph {
     } else {
       if (this.useBrowserHistory())
         window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?load="+path);
+      
+      // #TODO replace this with a dynamic fetch
+     
       return this.setPath(path)
     }
   }
@@ -368,7 +379,8 @@ export default class Container extends Morph {
   }
 
   getPath() {
-    return this.getAttribute("src")
+    // return this.getAttribute("src")
+    return this.shadowRoot.querySelector("#container-path").value
   }
   
   getAceEditor() {
@@ -679,6 +691,13 @@ export default class Container extends Morph {
       containerContent.style.display = "none"
       var containerEditor =  this.getSubmorph('#container-editor')
       containerEditor.style.display = "block"
+
+
+      var urlString = this.getURL().toString()
+      if (urlString.match(/\.js$/)) {
+        var module = lively.modules.module(urlString)
+        this.shadowRoot.querySelector("#live").disabled = !module.isLoaded()
+      }
 
       var livelyEditor = lively.components.createComponent("lively-editor");
       lively.components.openIn(containerEditor,livelyEditor).then( comp => {
