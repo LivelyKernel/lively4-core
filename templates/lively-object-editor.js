@@ -10,15 +10,20 @@ export default class ObjectEditor extends Morph {
     var aceComp = this.shadowRoot.querySelector('juicy-ace-editor');
     aceComp.enableAutocompletion();
     
-      console.log("initialize color chooser2")
-      this.backgroundColorInput = this.shadowRoot.querySelector("#background-color");
-      this.backgroundColorInput.addEventListener(
-        'change',
-        (e) => { 
-          this.updateBackgroundColor(); 
-          
-        }
-      );
+    console.log("initialize color chooser2")
+    this.backgroundColorInput = this.shadowRoot.querySelector("#background-color");
+    this.backgroundColorInput.addEventListener(
+      'change',
+      (e) => { 
+        this.updateBackgroundColor(); 
+        
+      }
+    );
+      
+    aceComp.doSave = text => {
+      this.onSave()
+    }
+    
   }
 
   /*
@@ -97,7 +102,7 @@ export default class ObjectEditor extends Morph {
     this.propertyList.addEventListener('change', (e) => { this.listChanged(e) });
     this.addButton.addEventListener('click', (e) => { this.addButtonClicked(e) });
     this.removeButton.addEventListener('click', (e) => { this.removeButtonClicked(e) });
-    this.saveButton.addEventListener('click', (e) => { this.saveButtonClicked(e) });
+    this.saveButton.addEventListener('click', (e) => { this.onSave(e) });
     this.runButton.addEventListener('click', (e) => { this.runButtonClicked(e) });
     this.addConnectionButton.addEventListener('click', (e) => { this.addConnectionButtonClicked(e) });
     this.removeConnectionButton.addEventListener('click', (e) => { this.removeConnectionButtonClicked(e) });
@@ -230,6 +235,7 @@ export default class ObjectEditor extends Morph {
   }
 
   setWindowTitle() {
+    if(!this.targetElement) return;
     if(this.parentElement.tagName != 'LIVELY-WINDOW') {
       // parent is not a window, so cannot set title
       return;
@@ -264,8 +270,9 @@ export default class ObjectEditor extends Morph {
     this.shadowRoot.querySelector("#attributesMap").map = attributes;
   }
 
-  saveAttribute(attributeName) {
-    this.targetElement.setAttribute(attributeName, this.editor.value);
+  saveAttribute(data, source) {
+    let attributeName = data['attributeName']
+    this.targetElement.setAttribute(attributeName, source);
   }
 
   attributeChanged(e) {
@@ -310,6 +317,16 @@ export default class ObjectEditor extends Morph {
       { name: 'scrollTop', type: 'number' },
       { name: 'scrollLeft', type: 'number' }
     ];
+    
+    Object.keys(this.targetElement).forEach( ea => {
+      if (ea.match(/^__/)) return;
+      var readonly = true;
+      var propType = typeof this.targetElement[ea]
+      if (propType == "function") return
+      if (propType == "string" || propType == "number") readonly = false;
+      editableProperties.push({name: ea, type: propType, readonly: readonly})
+    })
+    
 
     let properties = {};
     for (let i = 0; i < editableProperties.length; i++) {
@@ -467,7 +484,19 @@ export default class ObjectEditor extends Morph {
       return;
     }
 
+<<<<<<< HEAD
     scriptManager.addScript(this.targetElement, eval('(function ' + scriptName + '() {\n  \n})'));
+=======
+    this.addEmptyScript(scriptName)
+  }
+  
+  addEmptyScript(scriptName) {
+    this.addScript(scriptName, 'function ' + scriptName + '() {\n  \n}')
+  }
+
+  addScript(scriptName, funcOrString) {
+    scriptManager.addScript(this.targetElement, funcOrString, {name: scriptName});
+>>>>>>> 13d7491394c80e32806a5610af0866b72ba9fa2f
     this.updateScripts();
     this.propertyList.selectLeaf(this.propertyList.querySelector('.leaf[data-script-name="'+scriptName+'"]'));
     this.listChanged();
@@ -484,10 +513,15 @@ export default class ObjectEditor extends Morph {
     }
   }
 
-  saveButtonClicked(e) {
-    if (this.targetElement && this.propertyList.activeLeaf !== null) {
-      let data = this.propertyList.activeLeaf.dataset;
+  isScriptData(data) {
+    return typeof data['scriptName'] !== 'undefined'
+  }
+  
+  isAttributeData(data) {
+    return typeof data['attributeName'] !== 'undefined'
+  }
 
+<<<<<<< HEAD
       if (typeof data['scriptName'] !== 'undefined') {
         scriptManager.updateScript(
           this.targetElement,
@@ -496,9 +530,55 @@ export default class ObjectEditor extends Morph {
         );
       } else if (typeof data['attributeName'] !== 'undefined') {
         this.saveAttribute(data['attributeName']);
+=======
+  onSave(e) {
+    if (!this.targetElement) return;
+    let source = this.editor.value;
+    let m = source.match(/^function +([a-zA-Z][a-zA-Z0-9$_]+) *\(/)
+    var scriptName = m && m[1]
+
+    if (this.propertyList.activeLeaf !== null) {
+      let data = this.propertyList.activeLeaf.dataset;
+      if (this.isScriptData(data)) {
+        if (scriptName === data['scriptName']) {
+          this.saveScript(data, source);
+        } else {
+          this.addScript(scriptName, source)  
+        }
+      } else if (this.isAttributeData(data)) {
+        this.saveAttribute(data, source);
+      }
+    } else {
+      if(scriptName) {
+        this.addScript(scriptName, source)
+        lively.notify("[ObjectEditor] added new script " + scriptName)
+      } else {
+      // #here go the new attributes?
+      lively.notify("[ObjectEditor] Could not save.")
+>>>>>>> 13d7491394c80e32806a5610af0866b72ba9fa2f
       }
     }
   }
+  
+  saveScript(data, source) {
+    try {
+      // #FEATURE can we parse it before to show better syntax errors?
+      var functionObj = eval('(' + source + ')')
+    } catch(e) {
+      lively.notify("[ObjectEditor] Eror compiling script! ", 
+        "" + e, 10, () => { lively.showError(e)}, "red")
+      functionObj = source
+      return
+    }
+    let scriptName =  data['scriptName']
+    scriptManager.updateScript(
+      this.targetElement,
+      functionObj,
+      { name: scriptName }
+    );
+    lively.notify("[ObjectEditor] Saved script " + scriptName, "", 2, null, "green" )
+  }
+  
 
   runButtonClicked(e) {
     if (this.targetElement && this.propertyList.activeLeaf !== null) {
@@ -511,7 +591,7 @@ export default class ObjectEditor extends Morph {
 
   editorKeyDown(e) {
     if (e.metaKey && e.keyCode === 83) {
-      this.saveButtonClicked();
+      this.onSave();
       e.preventDefault();
     }
   }
@@ -552,7 +632,7 @@ export default class ObjectEditor extends Morph {
     if (this.targetElement && typeof this.targetElement.__scripts__ !== 'undefined') {
       for (let scriptName in this.targetElement.__scripts__) {
         let isActive = scriptName == activeLeaf;
-        scriptHtml += '<li><span class="leaf' + (isActive ? ' active' : '') + '" data-script-name="' + scriptName + '">' + scriptName + '</span></li>';
+        scriptHtml += '<li class="leaf' + (isActive ? ' active' : '') + '" data-script-name="' + scriptName + '">' + scriptName + '</li>';
       }
     }
     this.shadowRoot.querySelector('#script-nodes').innerHTML = scriptHtml;
@@ -562,5 +642,9 @@ export default class ObjectEditor extends Morph {
     console.log("update color")
     var color = this.shadowRoot.querySelector("#background-color").value;
     this.targetElement.style.backgroundColor = color;
+  }
+  
+  livelyMigrate(oldInstance) {
+    this.targetElement = oldInstance.targetElement
   }
 }

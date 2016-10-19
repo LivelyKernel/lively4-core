@@ -14,7 +14,8 @@ export default class Treeview extends Morph {
     });
     
     // activate/deactivate leaves
-    $(this).on('click', 'li:not(.node) .leaf', function() {
+    $(this).on('click', '.leaf', function() {
+      console.log("click...")
       var active = !$(this).hasClass('active');
       $('.active', that).removeClass('active');
       $(this).toggleClass('active', active);

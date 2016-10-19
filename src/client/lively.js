@@ -37,6 +37,7 @@ import * as kernel from 'kernel'
 let $ = window.$,
   babel = window.babel; // known global variables.
 
+import {pt} from 'lively.graphics';
 
 
 // a) Special shorthands for interactive development
@@ -201,7 +202,11 @@ export default class Lively {
       expose: kernel.realpath('/src/client/expose.js')
     })[moduleName]
   }
-
+  
+  static showError(error) {
+    this.handleError(error)
+  }
+  
   static handleError(error) {
     lively.LastError = error
     if (!error) return // hmm... this is currious...
@@ -334,6 +339,24 @@ export default class Lively {
       obj.style.top = "" +  point.y + "px";
   }
   
+  
+  // Example: lively.getPosition(that)
+  
+  // static getPosition(obj) {
+  //     if (obj.clientX)
+  //       return pt(obj.clientX, obj.clientY)
+  //     if (obj.style) {
+  //       var pos = pt(parseFloat(obj.style.left), parseFloat(obj.style.top))
+        
+  //       return pos
+  //     }
+  //     // if (isNaN(pos.x) || isNaN(pos.y)) {
+  //     //   pos = $(that).position() // fallback to jQuery...
+  //     //   pos = pt(pos.left, pos.top)
+  //     // }
+  //     return pos
+  // }
+  
   static getPosition(obj) {
       if (obj.clientX)
         return {x: obj.clientX, y: obj.clientY}
@@ -341,7 +364,7 @@ export default class Lively {
         return {x: parseFloat(obj.style.left), y: parseFloat(obj.style.top)}
       throw Error("" + obj + " has not position");
   }
-
+  
   static openFile(url) {
     if (url.hostname == "lively4"){
       var container  = $('lively-container')[0];

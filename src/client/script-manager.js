@@ -52,14 +52,6 @@ function removeFromDOM(object, name) {
     children.remove();
 }
 
-function asCollection(object) {
-    if (object instanceof jQuery) {
-        return object;
-    }
-
-    return [object];
-}
-
 function prepareFunction(funcOrString, options) {
     var func = functionFromString(funcOrString);
     if (typeof func !== 'function') {
@@ -130,9 +122,6 @@ export default class ScriptManager {
             this.findLively4Script(child, false);
         }
     }
-
-    // dont do it here...
-    // if(parent.initialize) parent.initialize() // initialize only after all scripts are there.
   }
 
 
@@ -149,59 +138,40 @@ export default class ScriptManager {
   }
 
   static updateScript(object, funcOrString, options={}) {
-      var objects = asCollection(object);
-
-      _.each(objects, (object) => {
-          var func = prepareFunction(funcOrString, options);
-
-          this.removeScript(object, func.name);
-          this.addScript(object, func.executable, options);
-      });
+    var func = prepareFunction(funcOrString, options);
+    this.removeScript(object, func.name);
+    this.addScript(object, func.executable, options);
   }
 
   static addScript(object, funcOrString, options={}) {
-      var objects = asCollection(object);
+    var func = prepareFunction(funcOrString, options);
+    initializeScriptsMap(object);
 
-      _.each(objects, function(object) {
-          var func = prepareFunction(funcOrString, options);
-          initializeScriptsMap(object);
+    if(scriptExists(object, func.name)) {
+        throw 'script name "' + func.name + '" is already reserved!';
+    }
 
-          if(scriptExists(object, func.name)) {
-              throw 'script name "' + func.name + '" is already reserved!';
-          }
-
-          bindFunctionToObject(object, func, options);
-          addFunctionToScriptsMap(object, func.name, funcOrString);
-          persistScript(object, func.name, funcOrString, options);
-      });
+    bindFunctionToObject(object, func, options);
+    addFunctionToScriptsMap(object, func.name, funcOrString);
+    persistScript(object, func.name, funcOrString, options);
   }
 
   static removeScript(object, name) {
-      var objects = asCollection(object);
-
-      _.each(objects, function(object) {
-          if(!scriptExists(object, name)) {
-              throw 'script name "' + name + '" does not exist!';
-          }
-          delete object.__scripts__[name];
-          delete object[name];
-          removeFromDOM(object, name);
-      });
+    if(!scriptExists(object, name)) {
+        throw 'script name "' + name + '" does not exist!';
+    }
+    delete object.__scripts__[name];
+    delete object[name];
+    removeFromDOM(object, name);
   }
 
   static callScript(object, name) {
-      var optionalArgs = [].splice.call(arguments, 2);
-      var objects = asCollection(object);
+    var optionalArgs = [].splice.call(arguments, 2);
+    if(!scriptExists(object, name)) {
+        throw 'unknown script "' + name +'"!';
+    }
 
-      _.each(objects, function(object) {
-          if(!scriptExists(object, name)) {
-              throw 'unknown script "' + name +'"!';
-          }
-
-          var returnValue = object[name].apply(object, optionalArgs);
-      });
-
-      return returnValue;
+    return object[name].apply(object, optionalArgs);
   }
 }
 
