@@ -107,9 +107,13 @@ export default class Lively {
   }
 
   static async reloadModule(path) {
-    console.log("reload module: " + path)
     path = "" + path;
     var module = lively.modules.module(path)
+    if (!module.isLoaded()) {
+      console.log("cannot reload module " + path + " because it is not loaded")
+      return;
+    }
+    console.log("reload module: " + path)
     return module.reload({reloadDeps: true, resetEnv: false})
       .then( () => System.import(path))
       .then( mod => {

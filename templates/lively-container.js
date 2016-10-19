@@ -197,11 +197,10 @@ export default class Container extends Morph {
       var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/)
       if (moduleName) {
         moduleName = moduleName[1]
-        if (this.getSubmorph("#live").checked) {
+        if (this.getSubmorph("#live").checked && !this.getSubmorph("#live").disabled) {
           
           lively.reloadModule("" + url).then( module => {
-            // lively.notify("Module " + moduleName + " reloaded!")
-            console.log("Module " + moduleName + " reloaded!")
+            lively.notify("Scripting","Module " + moduleName + " reloaded!", 3, null, "green")
           }, err => {
             window.LastError = err
             lively.notify("Error loading module " + moduleName, err)
@@ -692,6 +691,13 @@ export default class Container extends Morph {
       containerContent.style.display = "none"
       var containerEditor =  this.getSubmorph('#container-editor')
       containerEditor.style.display = "block"
+
+
+      var urlString = this.getURL().toString()
+      if (urlString.match(/\.js$/)) {
+        var module = lively.modules.module(urlString)
+        this.shadowRoot.querySelector("#live").disabled = !module.isLoaded()
+      }
 
       var livelyEditor = lively.components.createComponent("lively-editor");
       lively.components.openIn(containerEditor,livelyEditor).then( comp => {

@@ -9,7 +9,7 @@ export default class AceEditor extends HTMLElement {
         var container = this.container;
         var element = this;
 
-        if(this.editor){
+        if(this.editor)""
             var editor = this.editor;
             this.value = (text && text.textContent) || this.value;
         } else {
