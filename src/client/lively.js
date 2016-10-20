@@ -346,28 +346,26 @@ export default class Lively {
   
   // Example: lively.getPosition(that)
   
-  // static getPosition(obj) {
-  //     if (obj.clientX)
-  //       return pt(obj.clientX, obj.clientY)
-  //     if (obj.style) {
-  //       var pos = pt(parseFloat(obj.style.left), parseFloat(obj.style.top))
-        
-  //       return pos
-  //     }
-  //     // if (isNaN(pos.x) || isNaN(pos.y)) {
-  //     //   pos = $(that).position() // fallback to jQuery...
-  //     //   pos = pt(pos.left, pos.top)
-  //     // }
-  //     return pos
-  // }
-  
   static getPosition(obj) {
       if (obj.clientX)
-        return {x: obj.clientX, y: obj.clientY}
-      else if (obj.style)
-        return {x: parseFloat(obj.style.left), y: parseFloat(obj.style.top)}
-      throw Error("" + obj + " has not position");
+        return pt(obj.clientX, obj.clientY)
+      if (obj.style) {
+        var pos = pt(parseFloat(obj.style.left), parseFloat(obj.style.top))
+      }
+      if (isNaN(pos.x) || isNaN(pos.y)) {
+        pos = $(that).position() // fallback to jQuery...
+        pos = pt(pos.left, pos.top)
+      }
+      return pos
   }
+  
+  // static getPosition(obj) {
+  //     if (obj.clientX)
+  //       return {x: obj.clientX, y: obj.clientY}
+  //     else if (obj.style)
+  //       return {x: parseFloat(obj.style.left), y: parseFloat(obj.style.top)}
+  //     throw Error("" + obj + " has not position");
+  // }
   
   static openFile(url) {
     if (url.hostname == "lively4"){
