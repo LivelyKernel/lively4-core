@@ -334,9 +334,16 @@ export default class Container extends Morph {
       lively.notify(m[1])
       return this.followPath(m[1])
     }
-
-    if (!await fetch(path, {method: "OPTIONS"}).catch(e => false)) {
-      return window.open(path)
+   
+   
+    // this check could happen later
+    if (!path.match("https://lively4") && !path.match(window.location.host)) {
+      lively.notify("follow foreign url: " + path)
+      var startTime = Date.now()
+      if (!await fetch(path, {method: "OPTIONS"}).catch(e => false)) {
+        return window.open(path)
+      }
+      lively.notify("delayx " + (Date.now() - startTime))
     }
 
     console.log("follow path: " + path)
