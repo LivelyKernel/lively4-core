@@ -153,35 +153,33 @@ export default function(param) {
                                 );
                                 return;
                             }
-                            try{
-                                if(!path.node[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] &&
-                                    !path.scope.hasBinding(path.node.name) &&
 
-                                    // TODO: is there a general way to exclude non-variables?
-                                    !t.isObjectProperty(path.parent) &&
-                                    !t.isClassMethod(path.parent) &&
-                                    !t.isImportSpecifier(path.parent) &&
-                                    !t.isMemberExpression(path.parent) &&
-                                    !t.isObjectMethod(path.parent) &&
-                                    !t.isVariableDeclarator(path.parent) &&
-                                    (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
-                                ) {
-                                    path.node[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] = true;
-                                    logIdentifier('get global', path);
-                                    path.replaceWith(
-                                        t.sequenceExpression([
-                                            t.callExpression(
-                                                addCustomTemplate(state.file, GET_GLOBAL),
-                                                [t.stringLiteral(path.node.name)]
-                                            ),
-                                            path.node
-                                        ])
-                                    );
-                                    return;
-                                }
-                            }catch(e){
-                                console.error(e)
+                            if(!path.node[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] &&
+                                !path.scope.hasBinding(path.node.name) &&
+
+                                // TODO: is there a general way to exclude non-variables?
+                                !t.isObjectProperty(path.parent) &&
+                                !t.isClassMethod(path.parent) &&
+                                !t.isImportSpecifier(path.parent) &&
+                                !t.isMemberExpression(path.parent) &&
+                                !t.isObjectMethod(path.parent) &&
+                                !t.isVariableDeclarator(path.parent) &&
+                                (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
+                            ) {
+                                path.node[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] = true;
+                                logIdentifier('get global', path);
+                                path.replaceWith(
+                                    t.sequenceExpression([
+                                        t.callExpression(
+                                            addCustomTemplate(state.file, GET_GLOBAL),
+                                            [t.stringLiteral(path.node.name)]
+                                        ),
+                                        path.node
+                                    ])
+                                );
+                                return;
                             }
+
                             logIdentifier('others', path);
                             return;
 
