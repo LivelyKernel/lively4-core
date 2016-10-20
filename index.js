@@ -147,7 +147,7 @@ export default function(param) {
                                 path.node.name === AEXPR_IDENTIFIER_NAME &&
                                 !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)
                             ) {
-                                logIdentifier("we found a call to aexpr", path);
+                                logIdentifier("call to aexpr", path);
                                 path.replaceWith(
                                     addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
                                 );
@@ -160,22 +160,27 @@ export default function(param) {
                                     // TODO: is there a general way to exclude non-variables?
                                     !t.isObjectProperty(path.parent) &&
                                     !t.isClassMethod(path.parent) &&
-                                    !t.isVariableDeclarator(path.parent) && (
-                                    !t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
+                                    !t.isImportSpecifier(path.parent) &&
+                                    !t.isMemberExpression(path.parent) &&
+                                    !t.isObjectMethod(path.parent) &&
+                                    !t.isVariableDeclarator(path.parent) &&
+                                    (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
                                 ) {
-                                    console.log('--------------------------');
                                     path.node[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] = true;
+                                    logIdentifier('get global', path);
                                     path.replaceWith(
                                         t.sequenceExpression([
-                                            addCustomTemplate(state.file, GET_GLOBAL),
+                                            t.callExpression(
+                                                addCustomTemplate(state.file, GET_GLOBAL),
+                                                [t.stringLiteral(path.node.name)]
+                                            ),
                                             path.node
                                         ])
                                     );
-                                    logIdentifier('non l-value global', path);
                                     return;
                                 }
                             }catch(e){
-                                //debugger
+                                console.error(e)
                             }
                             logIdentifier('others', path);
                             return;
