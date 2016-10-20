@@ -177,7 +177,8 @@ export default class Container extends Morph {
     
     return this.getSubmorph("#editor").saveFile().then( () => {
       var sourceCode = this.getSubmorph("#editor").currentEditor().getValue()
-      lively.updateTemplate(sourceCode)
+      if (this.getPath().match(/templates\/.*html/))
+        lively.updateTemplate(sourceCode)
       var url = this.getURL();
       // if (this.getURL().pathname.match(/\/test\/.*([^/]+)\.js$/)) {
       //   console.log("ignore test: " + this.getURL())
