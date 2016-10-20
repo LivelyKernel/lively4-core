@@ -25,7 +25,7 @@ const SET_MEMBER_BY_OPERATORS = {
 // const SET_LOCAL = "setLocal";
 // const GET_LOCAL = "getLocal";
 
-// const SET_GLOBAL = "setGlobal";
+const SET_GLOBAL = "setGlobal";
 // const GET_GLOBAL = "getGlobal";
 
 const REPLACED_GLOBAL_ASSIGNMENT_FLAG = Symbol('replaced_global_assignment_FLAG');
@@ -259,6 +259,10 @@ export default function(param) {
                                     path.replaceWith(
                                         t.sequenceExpression([
                                             path.node,
+                                            t.callExpression(
+                                                addCustomTemplate(state.file, SET_GLOBAL),
+                                                [t.stringLiteral(path.node.left.name)]
+                                            ),
                                             t.identifier(path.node.left.name)
                                         ]));
 
