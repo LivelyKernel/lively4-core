@@ -26,9 +26,10 @@ const SET_MEMBER_BY_OPERATORS = {
 // const GET_LOCAL = "getLocal";
 
 const SET_GLOBAL = "setGlobal";
-// const GET_GLOBAL = "getGlobal";
+const GET_GLOBAL = "getGlobal";
 
 const REPLACED_GLOBAL_ASSIGNMENT_FLAG = Symbol('replaced_global_assignment_FLAG');
+const REPLACED_GLOBAL_GET_IDENTIFIER_FLAG = Symbol('replaced_global_get_identifier_FLAG');
 
 export default function(param) {
     let { types: t, template, traverse } = param;
@@ -152,6 +153,32 @@ export default function(param) {
                                 );
                                 return;
                             }
+                            try{
+                                if(!path.node[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] &&
+                                    !path.scope.hasBinding(path.node.name) &&
+
+                                    // TODO: is there a general way to exclude non-variables?
+                                    !t.isObjectProperty(path.parent) &&
+                                    !t.isClassMethod(path.parent) &&
+                                    !t.isVariableDeclarator(path.parent) && (
+                                    !t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
+                                ) {
+                                    console.log('--------------------------');
+                                    path.node[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] = true;
+                                    path.replaceWith(
+                                        t.sequenceExpression([
+                                            addCustomTemplate(state.file, GET_GLOBAL),
+                                            path.node
+                                        ])
+                                    );
+                                    logIdentifier('non l-value global', path);
+                                    return;
+                                }
+                            }catch(e){
+                                //debugger
+                            }
+                            logIdentifier('others', path);
+                            return;
 
                             // l-value of an assignment
                             if(t.isAssignmentExpression(path.parent)
