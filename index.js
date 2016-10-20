@@ -28,6 +28,8 @@ const SET_MEMBER_BY_OPERATORS = {
 // const SET_GLOBAL = "setGlobal";
 // const GET_GLOBAL = "getGlobal";
 
+const REPLACED_GLOBAL_ASSIGNMENT_FLAG = Symbol('replaced_global_assignment_FLAG');
+
 export default function(param) {
     let { types: t, template, traverse } = param;
     console.log(arguments);
@@ -133,22 +135,55 @@ export default function(param) {
                     path.traverse({
                         Identifier(path) {
                             //console.log(path.node.name)
+
+                            function logIdentifier(msg, path) {
+                                console.log(msg, path.node.name, path.node.loc ? path.node.loc.start.line : '');
+                            }
+
                             // Check for a call to aexpr:
                             if(
                                 t.isCallExpression(path.parent) &&
                                 path.node.name === AEXPR_IDENTIFIER_NAME &&
                                 !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)
                             ) {
-                                console.log("we found a call to aexpr");
+                                logIdentifier("we found a call to aexpr", path);
                                 path.replaceWith(
                                     addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
                                 );
                                 return;
                             }
 
-                            if(!path.node[GENERATED_IMPORT_IDENTIFIER]) {
-                                console.log(path.node.name)
+                            // l-value of an assignment
+                            if(t.isAssignmentExpression(path.parent)
+                                && path.parentKey === 'left'
+                            ) {
+                                //logIdentifier('l-value', path);
+                                if(path.scope.hasBinding(path.node.name)) {
+                                    logIdentifier('local assignment', path);
+                                    console.log(path);
+                                } else {
+                                    logIdentifier('global assginment', path);
+                                }
                             }
+
+                            if(path.node[GENERATED_IMPORT_IDENTIFIER]) {
+                                logIdentifier('Generated Import Identifier', path)
+                                return;
+                            }
+
+                            // global?
+                            //if (!path.isReferencedIdentifier()) {
+                            //logIdentifier('is no referenced identifier', path);
+                            //return;
+                            //}
+
+                            // The identifier should not reference a variable in current scope
+                            if (path.scope.hasBinding(path.node.name)) {
+                                logIdentifier('Binding for ', path);
+                                return;
+                            }
+
+                            logIdentifier('Unexpected Case', path);
 
                             return;
 
@@ -190,24 +225,46 @@ export default function(param) {
                         },
                         AssignmentExpression(path) {
                             // check, whether we assign to a member (no support for pattern right now)
-                            if(!t.isMemberExpression(path.node.left)) { return; }
-                            if(isGenerated(path)) { return; }
+                            if(t.isMemberExpression(path.node.left) &&
+                                !isGenerated(path) &&
+                                SET_MEMBER_BY_OPERATORS[path.node.operator]
+                            ) {
+                                //state.file.addImport
 
-                            //state.file.addImport
+                                path.replaceWith(
+                                    t.callExpression(
+                                        addCustomTemplate(state.file, SET_MEMBER_BY_OPERATORS[path.node.operator]),
+                                        [
+                                            path.node.left.object,
+                                            getPropertyFromMemberExpression(path.node.left),
+                                            //t.stringLiteral(path.node.operator),
+                                            path.node.right
+                                        ]
+                                    )
+                                );
+                            }
 
-                            if(!SET_MEMBER_BY_OPERATORS[path.node.operator]) { return; }
 
-                            path.replaceWith(
-                                t.callExpression(
-                                    addCustomTemplate(state.file, SET_MEMBER_BY_OPERATORS[path.node.operator]),
-                                    [
-                                        path.node.left.object,
-                                        getPropertyFromMemberExpression(path.node.left),
-                                        //t.stringLiteral(path.node.operator),
-                                        path.node.right
-                                    ]
-                                )
-                            );
+                            if(t.isIdentifier(path.node.left) &&
+                                !path.node[REPLACED_GLOBAL_ASSIGNMENT_FLAG]) {
+                                if(path.scope.hasBinding(path.node.left.name)) {
+                                    // local assignment
+                                    console.log('---local---');
+                                    console.log(path.node.left.name);
+                                } else {
+                                    // global assginment
+                                    path.node[REPLACED_GLOBAL_ASSIGNMENT_FLAG] = true;
+                                    //console.log('---global---');
+                                    //console.log(path.node.left.name);
+                                    path.replaceWith(
+                                        t.sequenceExpression([
+                                            path.node,
+                                            t.identifier(path.node.left.name)
+                                        ]));
+
+                                }
+                            }
+
                         },
 
                         MemberExpression(path) {
