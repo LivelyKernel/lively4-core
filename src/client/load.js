@@ -26,7 +26,7 @@ function loadJavaScriptThroughDOM(name, src, force) {
   });
 }
 
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator || window.lively4chrome) {
   console.log("LOAD Lively4: boot lively4 service worker")
   var root = "" + lively4url + "/";
   var serviceworkerReady = false
@@ -44,7 +44,8 @@ if ('serviceWorker' in navigator) {
         return lively.modules.importPackage(lively4url)})
       .then(function(module) {
         lively.initializeHalos();
-        lively.initializeSearch();
+        if (!window.lively4chrome)
+          lively.initializeSearch(); // disable search widget in chrome extension setting
         lively.components.loadUnresolved();
         console.log("running on load callbacks:");
         loadCallbacks.forEach(function(cb){
@@ -63,8 +64,12 @@ if ('serviceWorker' in navigator) {
       })
   }
 
-  if (navigator.serviceWorker.controller) {
-    console.log("Use existing service worker")
+  if (navigator.serviceWorker.controller || window.lively4chrome) {
+    if (window.lively4chrome)
+      console.log("[Livley4] running without service worker");
+    else
+      console.log("[Lively4] Use existing service worker");
+      
     // we don't have to do anything here... the service worker is already there
     onReady()
   } else {
