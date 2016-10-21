@@ -5,11 +5,13 @@ function funcA() {
     function funcB() {
         var y;
         function funcC() {
-            var z;
-            function funcD() {
-                y = x;
-                function funcE() {
-                    x = z;
+            if(42) {
+                let z;
+                function funcD() {
+                    y = x;
+                    function funcE() {
+                        x = z;
+                    }
                 }
             }
         }

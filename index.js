@@ -170,20 +170,39 @@ export default function(param) {
                                 if(path.scope.hasBinding(path.node.name)) {
                                     path.node[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] = true;
                                     logIdentifier('local var', path)
-                                    let parentWithScope = path.findParent(par => par.scope.hasOwnBinding(path.node.name))
+                                    let parentWithScope = path.findParent(par =>
+                                        par.scope.hasOwnBinding(path.node.name)
+                                    );
                                     if(parentWithScope) {
-                                        let uniqueIdentifier = parentWithScope.scope.generateUidIdentifier('scope');
-                                        uniqueIdentifier[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] = true;
-                                        //parentWithScope.scope.generateDeclaredUidIdentifier('scope');
-                                        parentWithScope.scope.push(t.variableDeclarator(
-                                            uniqueIdentifier,
-                                            t.objectExpression([])
-                                        ));
+                                        let bindings = parentWithScope.scope.bindings;
+                                        let scopeName = Object.keys(bindings).find(key => {
+                                            return bindings[key].path &&
+                                                bindings[key].path.node &&
+                                                bindings[key].path.node.id &&
+                                                bindings[key].path.node.id[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] // should actually be IS_EXPLICIT_SCOPE_OBJECT
+                                        });
+
+                                        let uniqueIdentifier;
+                                        if(scopeName) {
+                                            uniqueIdentifier = t.identifier(scopeName);
+                                            uniqueIdentifier[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] = true;
+                                        } else {
+                                            uniqueIdentifier = parentWithScope.scope.generateUidIdentifier('scope');
+                                            uniqueIdentifier[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] = true;
+                                            //parentWithScope.scope.generateDeclaredUidIdentifier('scope');
+                                            parentWithScope.scope.push(t.variableDeclarator(
+                                                uniqueIdentifier,
+                                                t.objectExpression([])
+                                            ));
+                                        }
                                         path.replaceWith(
                                             t.sequenceExpression([
                                                 t.callExpression(
                                                     addCustomTemplate(state.file, GET_LOCAL),
-                                                    [uniqueIdentifier, t.stringLiteral(path.node.name)]
+                                                    [
+                                                        uniqueIdentifier,
+                                                        t.stringLiteral(path.node.name)
+                                                    ]
                                                 ),
                                                 path.node
                                             ])
