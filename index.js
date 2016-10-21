@@ -31,6 +31,11 @@ const GET_GLOBAL = "getGlobal";
 const REPLACED_GLOBAL_ASSIGNMENT_FLAG = Symbol('replaced_global_assignment_FLAG');
 const REPLACED_GLOBAL_GET_IDENTIFIER_FLAG = Symbol('replaced_global_get_identifier_FLAG');
 
+// TODO: use multiple flag for indication of generated content, marking explicit scopes, etc.
+const FLAG_GENERATED_SCOPE_OBJECT = Symbol('FLAG: generated scope object');
+const FLAG_SHOULD_NOT_REWRITE_IDENTIFIER = Symbol('FLAG: should not rewrite identifier');
+const FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION = Symbol('FLAG: should not rewrite assignment expression');
+
 export default function(param) {
     let { types: t, template, traverse } = param;
     console.log(arguments);
@@ -154,6 +159,8 @@ export default function(param) {
                                 return;
                             }
 
+                            if(path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER]) { return; }
+
                             if(!path.node[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] &&
 
                                 // TODO: is there a general way to exclude non-variables?
@@ -168,7 +175,7 @@ export default function(param) {
                                 (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
                             ) {
                                 if(path.scope.hasBinding(path.node.name)) {
-                                    path.node[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] = true;
+                                    path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
                                     logIdentifier('local var', path)
                                     let parentWithScope = path.findParent(par =>
                                         par.scope.hasOwnBinding(path.node.name)
@@ -179,16 +186,18 @@ export default function(param) {
                                             return bindings[key].path &&
                                                 bindings[key].path.node &&
                                                 bindings[key].path.node.id &&
-                                                bindings[key].path.node.id[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] // should actually be IS_EXPLICIT_SCOPE_OBJECT
+                                                bindings[key].path.node.id[FLAG_GENERATED_SCOPE_OBJECT] // should actually be IS_EXPLICIT_SCOPE_OBJECT
                                         });
 
                                         let uniqueIdentifier;
                                         if(scopeName) {
                                             uniqueIdentifier = t.identifier(scopeName);
-                                            uniqueIdentifier[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] = true;
+                                            uniqueIdentifier[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
                                         } else {
                                             uniqueIdentifier = parentWithScope.scope.generateUidIdentifier('scope');
-                                            uniqueIdentifier[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] = true;
+                                            uniqueIdentifier[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
+                                            uniqueIdentifier[FLAG_GENERATED_SCOPE_OBJECT] = true;
+
                                             //parentWithScope.scope.generateDeclaredUidIdentifier('scope');
                                             parentWithScope.scope.push(t.variableDeclarator(
                                                 uniqueIdentifier,
@@ -209,7 +218,7 @@ export default function(param) {
                                         );
                                     }
                                 } else {
-                                    path.node[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] = true;
+                                    path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
                                     logIdentifier('get global', path);
                                     path.replaceWith(
                                         t.sequenceExpression([
@@ -304,7 +313,6 @@ export default function(param) {
                                 SET_MEMBER_BY_OPERATORS[path.node.operator]
                             ) {
                                 //state.file.addImport
-
                                 path.replaceWith(
                                     t.callExpression(
                                         addCustomTemplate(state.file, SET_MEMBER_BY_OPERATORS[path.node.operator]),
@@ -322,14 +330,15 @@ export default function(param) {
                             if(t.isIdentifier(path.node.left) &&
                                 !path.node[REPLACED_GLOBAL_ASSIGNMENT_FLAG]) {
                                 if(path.scope.hasBinding(path.node.left.name)) {
-                                    // local assignment
-                                    console.log('---local---');
-                                    console.log(path.node.left.name);
+                                    // TODO: local assignment
+                                    console.log('---local---', path.node.left.name);
                                 } else {
                                     // global assginment
+                                    //console.log('---global---', path.node.left.name);
                                     path.node[REPLACED_GLOBAL_ASSIGNMENT_FLAG] = true;
-                                    //console.log('---global---');
-                                    //console.log(path.node.left.name);
+
+                                    let valueToReturn = t.identifier(path.node.left.name);
+                                    valueToReturn[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
                                     path.replaceWith(
                                         t.sequenceExpression([
                                             path.node,
@@ -337,7 +346,7 @@ export default function(param) {
                                                 addCustomTemplate(state.file, SET_GLOBAL),
                                                 [t.stringLiteral(path.node.left.name)]
                                             ),
-                                            t.identifier(path.node.left.name)
+                                            valueToReturn
                                         ]));
 
                                 }
@@ -349,7 +358,7 @@ export default function(param) {
                             // lval (left values) are ignored for now
                             if(t.isAssignmentExpression(path.parent) && path.key === 'left') { return; }
                             if(isGenerated(path)) { return; }
-
+//FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION
                             path.replaceWith(
                                 t.callExpression(
                                     addCustomTemplate(state.file, GET_MEMBER),
@@ -380,7 +389,6 @@ export default function(param) {
                                 if(t.isIdentifier(path.node.callee) && true) {
                                 }
                             }
-
                         }
                     });
                 }
