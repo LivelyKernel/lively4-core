@@ -138,6 +138,32 @@ export default function(param) {
                     console.log("file", path, state);
                     if(state.file[IGNORE_INDICATOR]) { console.log("read ignored"); return; }
 
+                    function getIdentifierForExplicitScopeObject(parentWithScope) {
+                        let bindings = parentWithScope.scope.bindings;
+                        let scopeName = Object.keys(bindings).find(key => {
+                            return bindings[key].path &&
+                                bindings[key].path.node &&
+                                bindings[key].path.node.id &&
+                                bindings[key].path.node.id[FLAG_GENERATED_SCOPE_OBJECT] // should actually be IS_EXPLICIT_SCOPE_OBJECT
+                        });
+
+                        let uniqueIdentifier;
+                        if(scopeName) {
+                            uniqueIdentifier = t.identifier(scopeName);
+                        } else {
+                            uniqueIdentifier = parentWithScope.scope.generateUidIdentifier('scope');
+                            uniqueIdentifier[FLAG_GENERATED_SCOPE_OBJECT] = true;
+
+                            //parentWithScope.scope.generateDeclaredUidIdentifier('scope');
+                            parentWithScope.scope.push(t.variableDeclarator(
+                                uniqueIdentifier,
+                                t.objectExpression([])
+                            ));
+                        }
+                        uniqueIdentifier[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
+                        return uniqueIdentifier;
+                    }
+
                     path.traverse({
                         Identifier(path) {
                             //console.log(path.node.name)
@@ -174,41 +200,20 @@ export default function(param) {
                             (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
                             ) {
                                 if(path.scope.hasBinding(path.node.name)) {
+                                    logIdentifier('get local var', path)
                                     path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
-                                    logIdentifier('local var', path)
+
                                     let parentWithScope = path.findParent(par =>
                                         par.scope.hasOwnBinding(path.node.name)
                                     );
                                     if(parentWithScope) {
-                                        let bindings = parentWithScope.scope.bindings;
-                                        let scopeName = Object.keys(bindings).find(key => {
-                                            return bindings[key].path &&
-                                                bindings[key].path.node &&
-                                                bindings[key].path.node.id &&
-                                                bindings[key].path.node.id[FLAG_GENERATED_SCOPE_OBJECT] // should actually be IS_EXPLICIT_SCOPE_OBJECT
-                                        });
 
-                                        let uniqueIdentifier;
-                                        if(scopeName) {
-                                            uniqueIdentifier = t.identifier(scopeName);
-                                            uniqueIdentifier[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
-                                        } else {
-                                            uniqueIdentifier = parentWithScope.scope.generateUidIdentifier('scope');
-                                            uniqueIdentifier[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
-                                            uniqueIdentifier[FLAG_GENERATED_SCOPE_OBJECT] = true;
-
-                                            //parentWithScope.scope.generateDeclaredUidIdentifier('scope');
-                                            parentWithScope.scope.push(t.variableDeclarator(
-                                                uniqueIdentifier,
-                                                t.objectExpression([])
-                                            ));
-                                        }
                                         path.replaceWith(
                                             t.sequenceExpression([
                                                 t.callExpression(
                                                     addCustomTemplate(state.file, GET_LOCAL),
                                                     [
-                                                        uniqueIdentifier,
+                                                        getIdentifierForExplicitScopeObject(parentWithScope),
                                                         t.stringLiteral(path.node.name)
                                                     ]
                                                 ),
@@ -217,8 +222,9 @@ export default function(param) {
                                         );
                                     }
                                 } else {
+                                    logIdentifier('get global var', path);
                                     path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
-                                    logIdentifier('get global', path);
+
                                     path.replaceWith(
                                         t.sequenceExpression([
                                             t.callExpression(
@@ -327,10 +333,39 @@ export default function(param) {
 
 
                             if(t.isIdentifier(path.node.left) &&
-                                !path.node[REPLACED_GLOBAL_ASSIGNMENT_FLAG]) {
+                                !path.node[REPLACED_GLOBAL_ASSIGNMENT_FLAG] &&
+                                !path.node[FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION]) {
                                 if(path.scope.hasBinding(path.node.left.name)) {
                                     // TODO: local assignment
-                                    console.log('---local---', path.node.left.name);
+                                    console.log('set local', path.node.left.name);
+
+
+                                    //logIdentifier('get local var', path)
+                                    path.node[FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION] = true;
+
+                                    let parentWithScope = path.findParent(par =>
+                                        par.scope.hasOwnBinding(path.node.left.name)
+                                    );
+                                    console.log('33333');
+                                    if(parentWithScope) {
+                                        console.log('33333');
+
+                                        path.replaceWith(
+                                            t.sequenceExpression([
+                                                path.node,
+                                                t.callExpression(
+                                                    addCustomTemplate(state.file, SET_LOCAL),
+                                                    [
+                                                        getIdentifierForExplicitScopeObject(parentWithScope),
+                                                        t.stringLiteral(path.node.left.name)
+                                                    ]
+                                                ),
+                                                // TODO: FALG this
+                                                path.node.left
+                                            ])
+                                        );
+                                    }
+
                                 } else {
                                     // global assginment
                                     //console.log('---global---', path.node.left.name);
