@@ -29,11 +29,11 @@ const SET_GLOBAL = "setGlobal";
 const GET_GLOBAL = "getGlobal";
 
 const REPLACED_GLOBAL_ASSIGNMENT_FLAG = Symbol('replaced_global_assignment_FLAG');
-const REPLACED_GLOBAL_GET_IDENTIFIER_FLAG = Symbol('replaced_global_get_identifier_FLAG');
 
 // TODO: use multiple flag for indication of generated content, marking explicit scopes, etc.
 const FLAG_GENERATED_SCOPE_OBJECT = Symbol('FLAG: generated scope object');
 const FLAG_SHOULD_NOT_REWRITE_IDENTIFIER = Symbol('FLAG: should not rewrite identifier');
+const FLAG_SHOULD_NOT_REWRITE_MEMBER_EXPRESSION = Symbol('FLAG: should not rewrite member expression');
 const FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION = Symbol('FLAG: should not rewrite assignment expression');
 
 export default function(param) {
@@ -146,7 +146,7 @@ export default function(param) {
                                 console.log(msg, path.node.name, path.node.loc ? path.node.loc.start.line : '');
                             }
 
-                            // Check for a call to aexpr:
+                            // Check for a call to undeclared aexpr:
                             if(
                                 t.isCallExpression(path.parent) &&
                                 path.node.name === AEXPR_IDENTIFIER_NAME &&
@@ -161,18 +161,17 @@ export default function(param) {
 
                             if(path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER]) { return; }
 
-                            if(!path.node[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] &&
-
+                            if(
                                 // TODO: is there a general way to exclude non-variables?
-                                !t.isObjectProperty(path.parent) &&
-                                !t.isClassMethod(path.parent) &&
-                                !t.isImportSpecifier(path.parent) &&
-                                !t.isMemberExpression(path.parent) &&
-                                !t.isObjectMethod(path.parent) &&
-                                !t.isVariableDeclarator(path.parent) &&
-                                !t.isFunctionDeclaration(path.parent) &&
-                                !t.isRestElement(path.parent) &&
-                                (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
+                            !t.isObjectProperty(path.parent) &&
+                            !t.isClassMethod(path.parent) &&
+                            !t.isImportSpecifier(path.parent) &&
+                            !t.isMemberExpression(path.parent) &&
+                            !t.isObjectMethod(path.parent) &&
+                            !t.isVariableDeclarator(path.parent) &&
+                            !t.isFunctionDeclaration(path.parent) &&
+                            !t.isRestElement(path.parent) &&
+                            (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
                             ) {
                                 if(path.scope.hasBinding(path.node.name)) {
                                     path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
