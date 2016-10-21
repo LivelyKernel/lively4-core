@@ -178,7 +178,7 @@ export default function(param) {
                                 path.node.name === AEXPR_IDENTIFIER_NAME &&
                                 !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)
                             ) {
-                                logIdentifier("call to aexpr", path);
+                                //logIdentifier("call to aexpr", path);
                                 path.replaceWith(
                                     addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
                                 );
@@ -200,7 +200,7 @@ export default function(param) {
                             (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
                             ) {
                                 if(path.scope.hasBinding(path.node.name)) {
-                                    logIdentifier('get local var', path)
+                                    //logIdentifier('get local var', path)
                                     path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
 
                                     let parentWithScope = path.findParent(par =>
@@ -222,7 +222,7 @@ export default function(param) {
                                         );
                                     }
                                 } else {
-                                    logIdentifier('get global var', path);
+                                    //logIdentifier('get global var', path);
                                     path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
 
                                     path.replaceWith(
@@ -238,21 +238,8 @@ export default function(param) {
                                 return;
                             }
 
-                            logIdentifier('others', path);
+                            //logIdentifier('others', path);
                             return;
-
-                            // l-value of an assignment
-                            if(t.isAssignmentExpression(path.parent)
-                                && path.parentKey === 'left'
-                            ) {
-                                //logIdentifier('l-value', path);
-                                if(path.scope.hasBinding(path.node.name)) {
-                                    logIdentifier('local assignment', path);
-                                    console.log(path);
-                                } else {
-                                    logIdentifier('global assginment', path);
-                                }
-                            }
 
                             if(path.node[GENERATED_IMPORT_IDENTIFIER]) {
                                 logIdentifier('Generated Import Identifier', path)
@@ -336,20 +323,16 @@ export default function(param) {
                                 !path.node[REPLACED_GLOBAL_ASSIGNMENT_FLAG] &&
                                 !path.node[FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION]) {
                                 if(path.scope.hasBinding(path.node.left.name)) {
-                                    // TODO: local assignment
-                                    console.log('set local', path.node.left.name);
-
-
-                                    //logIdentifier('get local var', path)
+                                    //console.log('set local', path.node.left.name);
                                     path.node[FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION] = true;
 
                                     let parentWithScope = path.findParent(par =>
                                         par.scope.hasOwnBinding(path.node.left.name)
                                     );
-                                    console.log('33333');
                                     if(parentWithScope) {
-                                        console.log('33333');
 
+                                        let valueToReturn = t.identifier(path.node.left.name);
+                                        valueToReturn[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
                                         path.replaceWith(
                                             t.sequenceExpression([
                                                 path.node,
@@ -360,8 +343,7 @@ export default function(param) {
                                                         t.stringLiteral(path.node.left.name)
                                                     ]
                                                 ),
-                                                // TODO: FALG this
-                                                path.node.left
+                                                valueToReturn
                                             ])
                                         );
                                     }
