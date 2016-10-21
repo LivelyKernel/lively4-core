@@ -164,6 +164,7 @@ export default function(param) {
                                 !t.isObjectMethod(path.parent) &&
                                 !t.isVariableDeclarator(path.parent) &&
                                 !t.isFunctionDeclaration(path.parent) &&
+                                !t.isRestElement(path.parent) &&
                                 (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
                             ) {
                                 if(path.scope.hasBinding(path.node.name)) {
