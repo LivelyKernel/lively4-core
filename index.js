@@ -22,8 +22,8 @@ const SET_MEMBER_BY_OPERATORS = {
     '|=': 'setMemberBitwiseOR'
 };
 
-// const SET_LOCAL = "setLocal";
-// const GET_LOCAL = "getLocal";
+const SET_LOCAL = "setLocal";
+const GET_LOCAL = "getLocal";
 
 const SET_GLOBAL = "setGlobal";
 const GET_GLOBAL = "getGlobal";
@@ -155,7 +155,6 @@ export default function(param) {
                             }
 
                             if(!path.node[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] &&
-                                !path.scope.hasBinding(path.node.name) &&
 
                                 // TODO: is there a general way to exclude non-variables?
                                 !t.isObjectProperty(path.parent) &&
@@ -164,19 +163,44 @@ export default function(param) {
                                 !t.isMemberExpression(path.parent) &&
                                 !t.isObjectMethod(path.parent) &&
                                 !t.isVariableDeclarator(path.parent) &&
+                                !t.isFunctionDeclaration(path.parent) &&
                                 (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
                             ) {
-                                path.node[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] = true;
-                                logIdentifier('get global', path);
-                                path.replaceWith(
-                                    t.sequenceExpression([
-                                        t.callExpression(
-                                            addCustomTemplate(state.file, GET_GLOBAL),
-                                            [t.stringLiteral(path.node.name)]
-                                        ),
-                                        path.node
-                                    ])
-                                );
+                                if(path.scope.hasBinding(path.node.name)) {
+                                    path.node[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] = true;
+                                    logIdentifier('local var', path)
+                                    let parentWithScope = path.findParent(par => par.scope.hasOwnBinding(path.node.name))
+                                    if(parentWithScope) {
+                                        let uniqueIdentifier = parentWithScope.scope.generateUidIdentifier('scope');
+                                        uniqueIdentifier[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] = true;
+                                        //parentWithScope.scope.generateDeclaredUidIdentifier('scope');
+                                        parentWithScope.scope.push(t.variableDeclarator(
+                                            uniqueIdentifier,
+                                            t.objectExpression([])
+                                        ));
+                                        path.replaceWith(
+                                            t.sequenceExpression([
+                                                t.callExpression(
+                                                    addCustomTemplate(state.file, GET_LOCAL),
+                                                    [uniqueIdentifier, t.stringLiteral(path.node.name)]
+                                                ),
+                                                path.node
+                                            ])
+                                        );
+                                    }
+                                } else {
+                                    path.node[REPLACED_GLOBAL_GET_IDENTIFIER_FLAG] = true;
+                                    logIdentifier('get global', path);
+                                    path.replaceWith(
+                                        t.sequenceExpression([
+                                            t.callExpression(
+                                                addCustomTemplate(state.file, GET_GLOBAL),
+                                                [t.stringLiteral(path.node.name)]
+                                            ),
+                                            path.node
+                                        ])
+                                    );
+                                }
                                 return;
                             }
 
