@@ -188,6 +188,7 @@ export default function(param) {
                             if(
                                 // TODO: is there a general way to exclude non-variables?
                             !t.isObjectProperty(path.parent) &&
+                            !t.isClassDeclaration(path.parent) &&
                             !t.isClassMethod(path.parent) &&
                             !t.isImportSpecifier(path.parent) &&
                             !t.isMemberExpression(path.parent) &&

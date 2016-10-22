@@ -10,10 +10,12 @@ var plugin = require('../dist/index').default;
 var tests = [
     {file: 'base'},
     {file: 'ignore'},
+    {file: 'nested_locals'},
+    {file: 'class_example'},
+    {file: 'locals_and_globals'},
     {file: 'nested_left_assignment'},
+
     {file: 'all-accesses'},
-    {file: 'class_example'},
-    {file: 'class_example'},
     {file: 'with_aexpr'},
     {file: 'operators'}
 ];
