@@ -152,11 +152,11 @@ export default function(param) {
                             uniqueIdentifier = parentWithScope.scope.generateUidIdentifier('scope');
                             uniqueIdentifier[FLAG_GENERATED_SCOPE_OBJECT] = true;
 
-                            //parentWithScope.scope.generateDeclaredUidIdentifier('scope');
-                            parentWithScope.scope.push(t.variableDeclarator(
-                                uniqueIdentifier,
-                                t.objectExpression([])
-                            ));
+                            parentWithScope.scope.push({
+                                kind: 'let',
+                                id: uniqueIdentifier,
+                                init: t.objectExpression([])
+                            });
                         }
                         uniqueIdentifier[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
                         return uniqueIdentifier;
