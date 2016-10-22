@@ -28,8 +28,6 @@ const GET_LOCAL = "getLocal";
 const SET_GLOBAL = "setGlobal";
 const GET_GLOBAL = "getGlobal";
 
-const REPLACED_GLOBAL_ASSIGNMENT_FLAG = Symbol('replaced_global_assignment_FLAG');
-
 // TODO: use multiple flag for indication of generated content, marking explicit scopes, etc.
 const FLAG_GENERATED_SCOPE_OBJECT = Symbol('FLAG: generated scope object');
 const FLAG_SHOULD_NOT_REWRITE_IDENTIFIER = Symbol('FLAG: should not rewrite identifier');
@@ -172,6 +170,8 @@ export default function(param) {
                                 console.log(msg, path.node.name, path.node.loc ? path.node.loc.start.line : '');
                             }
 
+                            if(path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER]) { return; }
+
                             // Check for a call to undeclared aexpr:
                             if(
                                 t.isCallExpression(path.parent) &&
@@ -184,8 +184,6 @@ export default function(param) {
                                 );
                                 return;
                             }
-
-                            if(path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER]) { return; }
 
                             if(
                                 // TODO: is there a general way to exclude non-variables?
@@ -320,7 +318,6 @@ export default function(param) {
 
 
                             if(t.isIdentifier(path.node.left) &&
-                                !path.node[REPLACED_GLOBAL_ASSIGNMENT_FLAG] &&
                                 !path.node[FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION]) {
                                 if(path.scope.hasBinding(path.node.left.name)) {
                                     //console.log('set local', path.node.left.name);
@@ -351,7 +348,7 @@ export default function(param) {
                                 } else {
                                     // global assginment
                                     //console.log('---global---', path.node.left.name);
-                                    path.node[REPLACED_GLOBAL_ASSIGNMENT_FLAG] = true;
+                                    path.node[FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION] = true;
 
                                     let valueToReturn = t.identifier(path.node.left.name);
                                     valueToReturn[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
