@@ -231,7 +231,6 @@ export function setMemberBitwiseOR(obj, prop, val) {
 }
 
 export function getLocal(scope, varName) {
-    // console.log('getMember', obj, prop);
     let currentAExpr = aexprStack.top();
     if(currentAExpr) {
         aexprStorage.associate(currentAExpr, scope, varName);
@@ -240,7 +239,19 @@ export function getLocal(scope, varName) {
 export function setLocal(scope, varName) {
     checkDependentAExprs(scope, varName);
 }
-export function getGlobal(globalName) {}
-export function setGlobal(globalName) {}
+
+const globalRef = typeof window !== "undefined" ? window : // browser tab
+    (typeof self !== "undefined" ? self : // web worker
+        global); // node.js
+
+export function getGlobal(globalName) {
+    let currentAExpr = aexprStack.top();
+    if(currentAExpr) {
+        aexprStorage.associate(currentAExpr, globalRef, globalName);
+    }
+}
+export function setGlobal(globalName) {
+    checkDependentAExprs(globalRef, globalName);
+}
 
 export default aexpr;

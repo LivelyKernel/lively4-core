@@ -204,15 +204,46 @@ describe('Propagation Logic', function() {
     });
 
     describe('globals', () => {
-        it('reset all active expressions', () => {
-            let obj = { prop: 42 },
-                spy = sinon.spy();
+        it('interacts with member accesses on global object', () => {
+            window.globalValue = 17;
+            let spy = sinon.spy();
 
-            aexpr(() => getMember(obj, "prop")).onChange(spy);
+            aexpr(() => (getGlobal('globalValue'), globalValue)).onChange(spy);
+
+            expect(spy).not.to.be.called;
+
+            globalValue = 33, setGlobal('globalValue'), globalValue;
+
+            expect(spy.withArgs(33)).to.be.calledOnce;
+
+            setMember((getGlobal('window'), window), 'globalValue', 42);
+
+            expect(spy).to.be.calledWithMatch(42);
+        });
+
+        it('should be supported with proper integration', () => {
+            let _scope = {};
+            window.globalValue = 17;
+            let spy = sinon.spy();
+
+            aexpr(() => (getGlobal('globalValue'), globalValue)).onChange(spy);
+
+            expect(spy).not.to.be.called;
+
+            globalValue = 42, setGlobal('globalValue'), globalValue;
+
+            expect(spy).to.be.calledOnce;
+        });
+
+        it('reset all active expressions', () => {
+            globalValue = 42;
+                let spy = sinon.spy();
+
+            aexpr(() => (getGlobal("globalValue"), globalValue)).onChange(spy);
 
             reset();
 
-            setMember(obj, "prop", 17);
+            globalValue = 17, setGlobal("globalValue"), globalValue;
 
             expect(spy).not.to.be.called;
         });
