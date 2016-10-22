@@ -230,4 +230,17 @@ export function setMemberBitwiseOR(obj, prop, val) {
     return result;
 }
 
+export function getLocal(scope, varName) {
+    // console.log('getMember', obj, prop);
+    let currentAExpr = aexprStack.top();
+    if(currentAExpr) {
+        aexprStorage.associate(currentAExpr, scope, varName);
+    }
+}
+export function setLocal(scope, varName) {
+    checkDependentAExprs(scope, varName);
+}
+export function getGlobal(globalName) {}
+export function setGlobal(globalName) {}
+
 export default aexpr;

@@ -1,6 +1,19 @@
 'use strict';
 
-import { aexpr, reset, getMember, getAndCallMember, setMember, setMemberAddition, setMemberMultiplication, setMemberDivision } from '../src/aexpr-source-transformation-propagation.js';
+import {
+    aexpr,
+    reset,
+    getMember,
+    getAndCallMember,
+    setMember,
+    setMemberAddition,
+    setMemberMultiplication,
+    setMemberDivision,
+    getLocal,
+    setLocal,
+    getGlobal,
+    setGlobal
+} from '../src/aexpr-source-transformation-propagation.js';
 
 describe('Propagation Logic', function() {
 
@@ -103,5 +116,105 @@ describe('Propagation Logic', function() {
         setMember(obj, "prop", 17);
 
         expect(spy).not.to.be.called;
+    });
+
+    describe('locals', () => {
+
+        it('is a transparent wrapper for local variables', () => {
+            let _scope = {};
+            var x = 0, y = 1, z = 2;
+
+            let func, inc;
+            {
+                let _scope2 = {};
+                let x = 42;
+                func = function() {
+                    return (getLocal(_scope2, 'x'), x);
+                }, setLocal(_scope, 'func'), func;
+                inc = function() {
+                    x += 1, setLocal(_scope2, 'x'), x;
+                }, setLocal(_scope, 'inc'), inc;
+            }
+
+            expect(func()).to.equal(42);
+
+            x = 17, setLocal(_scope, 'x'), x;
+
+            expect(x).to.equal(17);
+            expect(func()).to.equal(42);
+
+            (getLocal(_scope, 'inc'), inc)();
+
+            expect(x).to.equal(17);
+            expect(func()).to.equal(43);
+        });
+
+        it('should be supported with proper integration', () => {
+            let _scope = {};
+            let value = 17,
+                spy = sinon.spy();
+
+            aexpr(() => (getLocal(_scope, 'value'), value)).onChange(spy);
+
+            expect(spy).not.to.be.called;
+
+            value = 42, setLocal(_scope, 'value'), value;
+
+            expect(spy).to.be.calledOnce;
+        });
+
+        it('should recalculate to recognize latest changes', () => {
+            let _scope = {};
+            let obj = { a: 15 },
+                obj2 =obj,
+                spy = sinon.spy();
+
+            aexpr(() => getMember((getLocal(_scope, 'obj'), obj), 'a')).onChange(spy);
+
+            setMember(obj, "a", 17);
+
+            expect(spy.withArgs(17)).to.be.calledOnce;
+
+            obj = { a: 32 }, setLocal(_scope, 'obj'), obj;
+
+            expect(spy.withArgs(32)).to.be.calledOnce;
+
+            setMember(obj2, "a", 42);
+
+            expect(spy.withArgs(42)).not.to.be.called;
+
+            setMember(obj, "a", 33);
+
+            expect(spy.withArgs(33)).to.be.calledOnce;
+        });
+
+        it('reset all active expressions', () => {
+            let _scope = {};
+            let value = 42,
+                spy = sinon.spy();
+
+            aexpr(() => (getLocal(_scope, "value"), value)).onChange(spy);
+
+            reset();
+
+            value = 17, setLocal(_scope, "value"), value;
+
+            expect(spy).not.to.be.called;
+        });
+    });
+
+    describe('globals', () => {
+        it('reset all active expressions', () => {
+            let obj = { prop: 42 },
+                spy = sinon.spy();
+
+            aexpr(() => getMember(obj, "prop")).onChange(spy);
+
+            reset();
+
+            setMember(obj, "prop", 17);
+
+            expect(spy).not.to.be.called;
+        });
     });
 });
