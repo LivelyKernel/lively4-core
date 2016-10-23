@@ -195,6 +195,8 @@ export default function(param) {
                             !t.isObjectMethod(path.parent) &&
                             !t.isVariableDeclarator(path.parent) &&
                             !t.isFunctionDeclaration(path.parent) &&
+                            !(t.isArrowFunctionExpression(path.parent) && path.parentKey === 'params') &&
+                            !(t.isFunctionExpression(path.parent) && path.parentKey === 'params') &&
                             !t.isRestElement(path.parent) &&
                             (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
                             ) {
