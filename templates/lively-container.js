@@ -102,22 +102,23 @@ export default class Container extends Morph {
   }
     
   async onSync(evt) {
-    var username = await lively.focalStorage.getItem("githubUsername")
-    var token = await lively.focalStorage.getItem("githubToken")
-    if (!token) {
-      var comp = lively.components.createComponent("lively-sync");
-      lively.components.openInWindow(comp).then((w) => {
-        lively.setPosition(w, lively.pt(evt.pageX, evt.pageY));
-      });
-    }
+    var comp = lively.components.createComponent("lively-sync");
+    var compWindow;
+    lively.components.openInWindow(comp).then((w) => {
+      compWindow = w;
+      lively.setPosition(w, lively.pt(100, 100));
+    });
+  
     var serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1];
+    comp.setServerURL(serverURL)
     console.log("server url: " + serverURL);
     if (!this.getPath().match(serverURL)) {
       return lively.notify("can only sync on our repositories");
     }
     var repo =  this.getPath().replace(serverURL +"/", "").replace(/\/.*/,"");
-    lively.files.syncRepository(serverURL, repo, username, token).then((r) =>
-      lively.notify("Synced " + repo, r, 10, () => lively.openWorkspace(r)));
+    comp.setRepository(repo)
+    comp.sync()
+    // .then(() => compWindow.remove())
   }
 
 
@@ -177,7 +178,8 @@ export default class Container extends Morph {
     
     return this.getSubmorph("#editor").saveFile().then( () => {
       var sourceCode = this.getSubmorph("#editor").currentEditor().getValue()
-      lively.updateTemplate(sourceCode)
+      if (this.getPath().match(/templates\/.*html/))
+        lively.updateTemplate(sourceCode)
       var url = this.getURL();
       // if (this.getURL().pathname.match(/\/test\/.*([^/]+)\.js$/)) {
       //   console.log("ignore test: " + this.getURL())
@@ -334,9 +336,16 @@ export default class Container extends Morph {
       lively.notify(m[1])
       return this.followPath(m[1])
     }
-
-    if (!await fetch(path, {method: "OPTIONS"}).catch(e => false)) {
-      return window.open(path)
+   
+   
+    // this check could happen later
+    if (!path.match("https://lively4") && !path.match(window.location.host)) {
+      lively.notify("follow foreign url: " + path)
+      var startTime = Date.now()
+      if (!await fetch(path, {method: "OPTIONS"}).catch(e => false)) {
+        return window.open(path)
+      }
+      lively.notify("delayx " + (Date.now() - startTime))
     }
 
     console.log("follow path: " + path)
