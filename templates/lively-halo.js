@@ -75,12 +75,11 @@ export default class Halo extends Morph {
   
   showHalo(target, path) {
   
-    if (!this.parentElement)
-      document.body.appendChild(this)
+    document.body.appendChild(this);
     
     if (!target.getBoundingClientRect) {
       $(this).show();
-      return    
+      return;
     }
     var bounds = target.getBoundingClientRect();
     var offset = {

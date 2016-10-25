@@ -732,21 +732,21 @@ export default class Lively {
       editorComp = _.detect(document.querySelectorAll("lively-container"), 
         ea => ea.isSearchBrowser)
     } 
-    // that.isSearchBrowser
  
+    var lastWindow = _.first(lively.array(document.body.querySelectorAll("lively-window"))
+      .filter(  ea => ea.childNodes[0].isSearchBrowser))
+      
     containerPromise = editorComp ? Promise.resolve(editorComp) :
       lively.openComponentInWindow("lively-container");
-    
-    
+
     return containerPromise.then(comp => {
       editorComp = comp;
-      var lastWindow = _.first(document.body.querySelectorAll("lively-window"))
-      if (!lastWindow) {
-        comp.parentElement.style.width = "850px"
-        comp.parentElement.style.height = "600px"
-      } else {
+      comp.parentElement.style.width = "850px"
+      comp.parentElement.style.height = "600px"
+      
+      if (lastWindow) {
         lively.setPosition(comp.parentElement, 
-          lively.getPosition(lastWindow).addPt(pt(10,10)))
+          lively.getPosition(lastWindow).addPt(pt(25,25)))
       }
 
       if (edit) comp.setAttribute("mode", "edit");
@@ -766,6 +766,7 @@ export default class Lively {
 if (window.lively && window.lively.name != "Lively") {
   Object.assign(Lively, window.lively) // copy objects from lively.modules
 }
+
 
 if (!window.lively || window.lively.name != "Lively") {
   window.lively = Lively
