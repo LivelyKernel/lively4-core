@@ -725,10 +725,10 @@ export default class Lively {
     });
   }
   // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
-  static async openBrowser(url, edit, pattern) {
+  static async openBrowser(url, edit, pattern, replaceExisting) {
     var editorComp;
     var containerPromise
-    if (pattern) {
+    if (replaceExisting) {
       editorComp = _.detect(document.querySelectorAll("lively-container"), 
         ea => ea.isSearchBrowser)
     } 
@@ -737,10 +737,18 @@ export default class Lively {
     containerPromise = editorComp ? Promise.resolve(editorComp) :
       lively.openComponentInWindow("lively-container");
     
+    
     return containerPromise.then(comp => {
       editorComp = comp;
-      comp.parentElement.style.width = "850px"
-      comp.parentElement.style.height = "600px"
+      var lastWindow = _.first(document.body.querySelectorAll("lively-window"))
+      if (!lastWindow) {
+        comp.parentElement.style.width = "850px"
+        comp.parentElement.style.height = "600px"
+      } else {
+        lively.setPosition(comp.parentElement, 
+          lively.getPosition(lastWindow).addPt(pt(10,10)))
+      }
+
       if (edit) comp.setAttribute("mode", "edit");
       if (pattern) {
         comp.isSearchBrowser = true
