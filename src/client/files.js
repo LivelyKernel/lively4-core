@@ -45,20 +45,7 @@ export default class Files {
   static async statFile(urlString){
   	return fetch(urlString, {method: 'OPTIONS', body: data}).then(resp => resp.text())
   }
-  
-  static syncRepository(lively4serverUrl, gitrepository, gitusername, gitpasssword, gitemail) {
-    return fetch(lively4serverUrl + "/_git/sync", {
-      headers: new Headers({ 
-    	  "gitrepository": gitrepository, // "Lively4.wiki"
-        "gitusername" : gitusername, // "jens.lincke"
-        "gitpassword" : gitpasssword, // "f777a0fa178bc855c28f89b402786b36f8b..."
-        "gitemail" : gitemail
-      })
-    }).then(r => r.text()).then(r => {
-      console.log(r); 
-      return r
-    })
-  }
+
 }
 
 console.log("loaded file-editor.js")

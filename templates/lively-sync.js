@@ -115,6 +115,18 @@ export default class Sync extends Morph {
       return this.serverURL || lively4url.match(/(.*)\/([^\/]+$)/)[1]
   }
 
+  setServerURL(url) {
+      this.serverURL = url
+  }
+  
+  setRepository(name) {
+     this.q("#gitrepository").value = name
+  }
+  
+  getRepository(name) {
+     return this.q("#gitrepository").value
+  }
+
   async gitControl(cmd, eachCB) {
     this.clearLog()
     return new Promise(async (resolve) => {
@@ -130,7 +142,11 @@ export default class Sync extends Morph {
   }
 
   onSyncButton() {
-    this.gitControl("sync")  
+    this.sync()
+  }
+
+  sync() {
+    return this.gitControl("sync")  
   }
 
   async onLoginButton() {

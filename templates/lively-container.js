@@ -102,22 +102,23 @@ export default class Container extends Morph {
   }
     
   async onSync(evt) {
-    var username = await lively.focalStorage.getItem("githubUsername")
-    var token = await lively.focalStorage.getItem("githubToken")
-    if (!token) {
-      var comp = lively.components.createComponent("lively-sync");
-      lively.components.openInWindow(comp).then((w) => {
-        lively.setPosition(w, lively.pt(evt.pageX, evt.pageY));
-      });
-    }
+    var comp = lively.components.createComponent("lively-sync");
+    var compWindow;
+    lively.components.openInWindow(comp).then((w) => {
+      compWindow = w;
+      lively.setPosition(w, lively.pt(100, 100));
+    });
+  
     var serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1];
+    comp.setServerURL(serverURL)
     console.log("server url: " + serverURL);
     if (!this.getPath().match(serverURL)) {
       return lively.notify("can only sync on our repositories");
     }
     var repo =  this.getPath().replace(serverURL +"/", "").replace(/\/.*/,"");
-    lively.files.syncRepository(serverURL, repo, username, token).then((r) =>
-      lively.notify("Synced " + repo, r, 10, () => lively.openWorkspace(r)));
+    comp.setRepository(repo)
+    comp.sync()
+    // .then(() => compWindow.remove())
   }
 
 
