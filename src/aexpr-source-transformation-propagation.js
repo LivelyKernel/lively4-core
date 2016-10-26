@@ -97,15 +97,15 @@ const aexprStack = new Stack();
 
 class RewritingActiveExpression extends BaseActiveExpression {
 
-    constructor(func, param){
-        super(func, param);
+    constructor(func, ...params){
+        super(func, ...params);
         ExpressionAnalysis.check(this);
     }
 }
 
-export function aexpr(func, param) {
+export function aexpr(func, ...params) {
     // console.log('aexpr', func);
-    return new RewritingActiveExpression(func, param);
+    return new RewritingActiveExpression(func, ...params);
 }
 
 /*
