@@ -1,6 +1,6 @@
 {
   "name": "aexpr-ticking",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": " Monitor expressions over the execution of a program",
   "main": "dist/aexpr-ticking.js",
   "jsnext:main": "src/aexpr-ticking.js",
@@ -90,7 +90,7 @@
     "webpack-config": "^5.2.1"
   },
   "dependencies": {
-    "active-expressions": "^2.0.1",
+    "active-expressions": "^2.1.0",
     "babel-plugin-locals": "^1.0.1",
     "stack-es2015-modules": "^1.1.0"
   }

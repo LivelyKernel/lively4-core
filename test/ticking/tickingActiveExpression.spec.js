@@ -130,7 +130,45 @@ describe('Ticking Active Expressions', () => {
         });
     });
 
-    // TODO: is this useful?
+    describe('parametrizable aexprs', () => {
+        it("handle aexprs with one single instance-bindong", () => {
+            let obj = { val: 17 },
+                spy = sinon.spy();
+
+            aexpr(o => o.val, obj).onChange(spy);
+
+            expect(spy).not.to.be.called;
+
+            obj.val = 42;
+
+            check();
+
+            expect(spy).to.be.calledOnce;
+        });
+
+        xit("handle aexprs with multiple instance-bindings", () => {
+            let obj1 = { val: 1 },
+                obj2 = { val: 2 },
+                obj3 = { val: 3 },
+                spy = sinon.spy();
+
+            aexpr((o1, o2, o3) => o1.val + o2.val + o3.val, obj1, obj2, obj3).onChange(spy);
+
+            expect(spy).not.to.be.called;
+
+            obj1.val = 10;
+            check();
+
+            expect(spy.withArgs(15)).to.be.calledOnce;
+
+            obj2.val = 20;
+            check();
+
+            expect(spy.withArgs(33)).to.be.calledOnce;
+        });
+    });
+
+        // TODO: is this useful?
     describe('disable and re-enable', () => {
         it("disabled aexprs do not fire notify the callback", () => {
             let val = 17,

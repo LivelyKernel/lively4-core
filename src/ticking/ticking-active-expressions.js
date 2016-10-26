@@ -7,8 +7,8 @@ class TickingActiveExpression extends BaseActiveExpression {
     // each implementation strategy ensures to track changes of the given expression
     // in the case of ticking, we add the aexpr to a collection of tracked aexpr
     // which enables them to recognize changes (here, explicitly through the `check` method)
-    constructor(func) {
-        super(func);
+    constructor(func, scope) {
+        super(func, scope);
         this.enable();
     }
 
