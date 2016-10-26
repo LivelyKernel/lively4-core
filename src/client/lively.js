@@ -15,8 +15,6 @@ import html from './html.js';
 import files from './files.js';
 import paths from './paths.js';
 
-import inspector from './inspector.js';
-
 import contextmenu from './contextmenu.js';
 
 import keys from './keys.js';
@@ -52,7 +50,6 @@ var exportmodules = [
   "paths",
   "html",
   "components",
-  "inspector",
   "color",
   "focalStorage",
   "authGithub",

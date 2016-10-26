@@ -296,7 +296,7 @@ export default class AceEditor extends HTMLElement {
             bindKey: {win: "Ctrl-I", mac: "Command-I"},
             exec: (editor) => {
                 let text = editor.currentSelectionOrLine()
-                let result = this.inspectIt(text, true);
+                this.inspectIt(text, true);
             }
         });
 
@@ -369,16 +369,15 @@ export default class AceEditor extends HTMLElement {
         return result
     }
     
-    inspectIt(str) {
-        var result;
-        try { result =  this.boundEval(str) }
-        catch(e) {
-            document.LastError = e
-            console.log("Error: " + e)
-            result = e
+    async inspectIt(str) {
+        var result =  await this.boundEval(str) 
+        if (!result.isError) {
+          var comp = document.createElement("lively-inspector")
+          lively.components.openInWindow(comp).then( () => {
+            comp.windowTitle = "inspect: " + str
+            comp.inspect(result.value)
+          })
         }
-        var result = lively.inspector.openInspector(result)
-        return result
     }
 
     doSave(text) {
