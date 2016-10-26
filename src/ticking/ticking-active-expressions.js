@@ -7,8 +7,8 @@ class TickingActiveExpression extends BaseActiveExpression {
     // each implementation strategy ensures to track changes of the given expression
     // in the case of ticking, we add the aexpr to a collection of tracked aexpr
     // which enables them to recognize changes (here, explicitly through the `check` method)
-    constructor(func, scope) {
-        super(func, scope);
+    constructor(func, ...params) {
+        super(func, ...params);
         this.enable();
     }
 
@@ -32,7 +32,7 @@ class TickingActiveExpression extends BaseActiveExpression {
     }
 }
 
-export function aexpr(func, scope) { return new TickingActiveExpression(func, scope); }
+export function aexpr(func, ...params) { return new TickingActiveExpression(func, ...params); }
 
 // TODO: the concrete semantic of enabled and disabled aexprs are not clear yet.
 // Instead, they are related to this concrete implementation.

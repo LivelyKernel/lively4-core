@@ -146,7 +146,7 @@ describe('Ticking Active Expressions', () => {
             expect(spy).to.be.calledOnce;
         });
 
-        xit("handle aexprs with multiple instance-bindings", () => {
+        it("handle aexprs with one instance-binding with multiple variables", () => {
             let obj1 = { val: 1 },
                 obj2 = { val: 2 },
                 obj3 = { val: 3 },
@@ -165,6 +165,39 @@ describe('Ticking Active Expressions', () => {
             check();
 
             expect(spy.withArgs(33)).to.be.calledOnce;
+        });
+
+        it("handle aexprs with multiple instance-bindings", () => {
+            let obj1 = { val: 1 },
+                obj2 = { val: 2 },
+                obj3 = { val: 3 },
+                spy12 = sinon.spy(),
+                spy23 = sinon.spy(),
+                expr = (o1, o2) => o1.val + o2.val;
+
+            aexpr(expr, obj1, obj2).onChange(spy12);
+            aexpr(expr, obj2, obj3).onChange(spy23);
+
+            expect(spy12).not.to.be.called;
+            expect(spy23).not.to.be.called;
+
+            obj1.val = 10;
+            check();
+
+            expect(spy12.withArgs(12)).to.be.calledOnce;
+            expect(spy23).not.to.be.called;
+
+            obj2.val = 20;
+            check();
+
+            expect(spy12.withArgs(30)).to.be.calledOnce;
+            expect(spy23.withArgs(23)).to.be.calledOnce;
+
+            obj3.val = 30;
+            check();
+
+            expect(spy12.withArgs(30)).to.be.calledOnce;
+            expect(spy23.withArgs(50)).to.be.calledOnce;
         });
     });
 
