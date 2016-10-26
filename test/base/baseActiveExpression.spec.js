@@ -32,7 +32,7 @@ describe('Base Active Expressions', () => {
             expect(spy).to.be.calledOnce;
         });
 
-        xit("multiple parameters", () => {
+        it("multiple parameters", () => {
             let spy = sinon.spy(),
                 obj1 = {val:1},
                 obj2 = {val:2},

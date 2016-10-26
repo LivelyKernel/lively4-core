@@ -4,10 +4,10 @@ export class BaseActiveExpression {
      *
      * @param func (Function) the expression to be observed
      */
-    constructor(func, param) {
+    constructor(func, ...params) {
         // console.log(func);
         this.func = func;
-        this.param = param;
+        this.params = params;
         this.lastValue = this.getCurrentValue();
         this.callbacks = [];
     }
@@ -18,7 +18,7 @@ export class BaseActiveExpression {
      */
     getCurrentValue() {
         // TODO: provide an API for this extact call (run the function and return its value)
-        return this.func(this.param);
+        return this.func(...(this.params));
     }
 
     onChange(callback) {
