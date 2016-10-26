@@ -3,6 +3,7 @@ export class BaseActiveExpression {
     /**
      *
      * @param func (Function) the expression to be observed
+     * @param ...params (Objects) the instances bound as parameters to the expression
      */
     constructor(func, ...params) {
         // console.log(func);
@@ -13,20 +14,31 @@ export class BaseActiveExpression {
     }
 
     /**
+     * Executes the encapsulated expression with the given parameters.
      * aliases with 'now'
+     * @public
      * @returns {*} the current value of the expression
      */
     getCurrentValue() {
-        // TODO: provide an API for this extact call (run the function and return its value)
         return this.func(...(this.params));
     }
 
+    /**
+     * @public
+     * @param callback
+     * @returns {BaseActiveExpression} this very active expression (for chaining)
+     */
     onChange(callback) {
         this.callbacks.push(callback);
 
         return this;
     }
 
+    /**
+     * Signals the active expression that a state change might have happened.
+     * Mainly for implementation strategies.
+     * @public
+     */
     checkAndNotify() {
         let currentValue = this.getCurrentValue();
         if(this.lastValue === currentValue) { return; }
