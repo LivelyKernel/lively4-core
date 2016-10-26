@@ -91,7 +91,7 @@
     "webpack-config": "^5.2.1"
   },
   "dependencies": {
-    "active-expressions": "^1.4.1",
+    "active-expressions": "^2.1.0",
     "stack-es2015-modules": "^1.1.0"
   }
 }

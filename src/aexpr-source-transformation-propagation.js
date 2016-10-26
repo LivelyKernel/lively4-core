@@ -7,8 +7,7 @@ class ExpressionAnalysis {
     // Do the function execution in ExpressionAnalysisMode
     static check(aexpr) {
         aexprStack.withElement(aexpr, () => {
-            // TODO: provide API for running the expression and returning its value, rather that relying on the instance property directly
-            aexpr.func();
+            aexpr.getCurrentValue();
         });
     }
 }
@@ -98,16 +97,15 @@ const aexprStack = new Stack();
 
 class RewritingActiveExpression extends BaseActiveExpression {
 
-    constructor(func){
-        super(func);
-
+    constructor(func, param){
+        super(func, param);
         ExpressionAnalysis.check(this);
     }
 }
 
-export function aexpr(func) {
+export function aexpr(func, param) {
     // console.log('aexpr', func);
-    return new RewritingActiveExpression(func);
+    return new RewritingActiveExpression(func, param);
 }
 
 /*
@@ -122,7 +120,7 @@ export function reset() {
     CompositeKey.clear();
 }
 
-export function getMember(obj, prop) {
+export function getMember(obj, prop, ...params) {
     // console.log('getMember', obj, prop);
     let currentAExpr = aexprStack.top();
     if(currentAExpr) {
