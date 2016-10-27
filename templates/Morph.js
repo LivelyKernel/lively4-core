@@ -9,6 +9,10 @@ export default class Morph extends HTMLDivElement {
     this.name = name;
   }
 
+  get(selector) {
+    return this.getSubmorph(selector)
+  }
+
   getSubmorph(selector) {
     var morph = this.querySelector(selector);
     if (!morph && this.shadowRoot) {

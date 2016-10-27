@@ -3,15 +3,19 @@ import componentLoader from "src/client/morphic/component-loader.js";
 
 export default class HaloInspectItem extends HaloItem {
   
-    onClick() {
+    onClick(evt) {
       var inspectTarget = window.that;
-      var editor = componentLoader.createComponent('lively-object-editor');
-      editor.targetElement    = inspectTarget;
 
-      componentLoader.openInWindow(editor).then((objectEditorWindow) => {
-        objectEditorWindow.centerInWindow(); 
-      });
+      if (evt.shiftKey) {
+        lively.openInspector(inspectTarget)    
+      } else {
+        var editor = componentLoader.createComponent('lively-object-editor');
+        editor.targetElement    = inspectTarget;
   
+        componentLoader.openInWindow(editor).then((objectEditorWindow) => {
+          objectEditorWindow.centerInWindow(); 
+        });
+      }
       this.hideHalo();
     }
 }

@@ -1,8 +1,9 @@
 
 import Morph from './Morph.js';
 
-export default class Inspector   extends Morph{
+export default class Inspector   extends Morph {
   
+
   displayValue(value) {
     var node = document.createElement("pre")
     node.innerHTML = JSON.stringify(value)
@@ -54,6 +55,8 @@ export default class Inspector   extends Morph{
   }
 
   inspect(obj) {
+    this.targetObject = obj;
+    this.get("#editor").doitContext = obj;
     this.innerHTML = ""
     this.appendChild(this.display(obj))
   }
