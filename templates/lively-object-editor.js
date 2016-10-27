@@ -484,9 +484,6 @@ export default class ObjectEditor extends Morph {
       return;
     }
 
-<<<<<<< HEAD
-    scriptManager.addScript(this.targetElement, eval('(function ' + scriptName + '() {\n  \n})'));
-=======
     this.addEmptyScript(scriptName)
   }
   
@@ -496,7 +493,6 @@ export default class ObjectEditor extends Morph {
 
   addScript(scriptName, funcOrString) {
     scriptManager.addScript(this.targetElement, funcOrString, {name: scriptName});
->>>>>>> 13d7491394c80e32806a5610af0866b72ba9fa2f
     this.updateScripts();
     this.propertyList.selectLeaf(this.propertyList.querySelector('.leaf[data-script-name="'+scriptName+'"]'));
     this.listChanged();
@@ -521,16 +517,6 @@ export default class ObjectEditor extends Morph {
     return typeof data['attributeName'] !== 'undefined'
   }
 
-<<<<<<< HEAD
-      if (typeof data['scriptName'] !== 'undefined') {
-        scriptManager.updateScript(
-          this.targetElement,
-          eval('(' + this.editor.value + ')'),
-          { name: data['scriptName'] }
-        );
-      } else if (typeof data['attributeName'] !== 'undefined') {
-        this.saveAttribute(data['attributeName']);
-=======
   onSave(e) {
     if (!this.targetElement) return;
     let source = this.editor.value;
@@ -555,7 +541,6 @@ export default class ObjectEditor extends Morph {
       } else {
       // #here go the new attributes?
       lively.notify("[ObjectEditor] Could not save.")
->>>>>>> 13d7491394c80e32806a5610af0866b72ba9fa2f
       }
     }
   }

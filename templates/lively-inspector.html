@@ -1,13 +1,27 @@
 <template id="lively-inspector" data-class="LivelyInspector">
-    <style>
-      .container {
-        margin: 10px;
-      }
-    </style>
-    <div class="container">
-    <content></content>
-    </div>
+  <style>
+    #top {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+    }
 
+    #container {
+      flex: 0.66;
+      margin: 10px;
+      overflow: auto;
+    }
+    #editor {
+      flex: 0.33;
+    }
+  </style>
+  <div id="top">
+    <div id="container">
+      <content></content>
+    </div>
+    <juicy-ace-editor id="editor"></juicy-ace-editor>
+  </div>
 </template>
 
 <script class="registrationScript">lively.registerTemplate()</script>
