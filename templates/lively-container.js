@@ -180,6 +180,8 @@ export default class Container extends Morph {
       var sourceCode = this.getSubmorph("#editor").currentEditor().getValue()
       if (this.getPath().match(/templates\/.*html/))
         lively.updateTemplate(sourceCode)
+        
+   
       var url = this.getURL();
       // if (this.getURL().pathname.match(/\/test\/.*([^/]+)\.js$/)) {
       //   console.log("ignore test: " + this.getURL())
@@ -201,8 +203,20 @@ export default class Container extends Morph {
         moduleName = moduleName[1]
         if (this.getSubmorph("#live").checked && !this.getSubmorph("#live").disabled) {
           
-          lively.reloadModule("" + url).then( module => {
+          lively.reloadModule("" + url).then( async module => {
             lively.notify("Scripting","Module " + moduleName + " reloaded!", 3, null, "green")
+            // we are editing a class file to a template... just reload to get some feedback
+            if (this.getPath().match(/templates\/.*js/)) {
+              var templateURL = this.getPath().replace(/\.js$/,".html")
+              try {
+                console.log("[container] update template " + templateURL)
+                var sourceCode = await lively.files.loadFile(templateURL);
+                lively.updateTemplate(sourceCode)
+              } catch(e) {
+                lively.notify("[container] could not update template " + templateURL, ""+e)
+              }
+            }
+
           }, err => {
             window.LastError = err
             lively.notify("Error loading module " + moduleName, err)

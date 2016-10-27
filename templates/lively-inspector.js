@@ -2,7 +2,6 @@
 import Morph from './Morph.js';
 
 export default class Inspector   extends Morph {
-  
 
   displayValue(value) {
     var node = document.createElement("pre")
@@ -10,7 +9,7 @@ export default class Inspector   extends Morph {
     return node
   }
   
-  displayObject(object, depth, name) {
+  displayObject(object) {
     var node = document.createElement("ul")
     var createChild = (ea) => {
       var child = document.createElement("span")
@@ -21,7 +20,7 @@ export default class Inspector   extends Morph {
         evt.stopPropagation()
       }
       return child
-    }
+    } 
   
     Object.keys(object).forEach( ea => {
       var eaNode = document.createElement("li")
@@ -37,9 +36,35 @@ export default class Inspector   extends Morph {
     return node
   }
 
-  displayNode(obj, indent) {
-    var node = document.createElement("pre")
-    node.innerHTML = obj.outerHTML.replace(/</g,"&lt;")
+  displayNode(obj) {
+    var node = document.createElement("div")
+    var render = () => {
+      if (!obj.tagName) {
+        node.innertHTML = "DEBUG " + obj
+        return node
+      }
+      node.innerHTML = "&lt;<a id='tagname'>" + obj.tagName.toLowerCase() + "</a>&gt;" +
+        "<span id='content'><a id='more'>...</a></span>" +
+        "&lt;" + obj.tagName.toLowerCase() + "&gt;"
+      
+      var contentNode = node.querySelector("#content")
+      node.querySelector("#more").onclick = (evt) => {
+        contentNode.innerHTML = "y"
+        if (obj.shadowRoot) {
+          contentNode.innerHTML = "<br>_shadow rootY_"
+          contentNode.appendChild(this.displayNode(obj.shadowRoot))  
+        }  
+        obj.childNodes.forEach( ea => { 
+          contentNode.appendChild(this.displayNode(ea))
+      })
+        
+      }
+      node.querySelector("#tagname").onclick = (evt) => {
+        render()
+      }
+    }
+    render()
+    
     return node
   }
   
@@ -58,7 +83,13 @@ export default class Inspector   extends Morph {
     this.targetObject = obj;
     this.get("#editor").doitContext = obj;
     this.innerHTML = ""
-    this.appendChild(this.display(obj))
+    this.get("#container").appendChild(this.display(obj))
   }
+  
+  livelyMigrate(oldInstance) {
+    this.inspect(oldInstance.targetObject)    
+  } 
+  
+  
 }
 console.log("loaded html.js")
