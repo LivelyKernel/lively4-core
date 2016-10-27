@@ -223,6 +223,11 @@ export default class Container extends Morph {
     }
   }
 
+  async onNewfile() {
+      lively.notify("implement new file")
+  }
+
+
   onAccept() {
     this.setAttribute("mode", "show")
     this.onSave().then((sourceCode) => {
