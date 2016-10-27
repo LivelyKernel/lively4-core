@@ -9,6 +9,12 @@ export default class Inspector   extends Morph {
     return node
   }
   
+  select(obj) {
+    
+    this.selection = obj
+    this.get("#editor").doitContext = obj;
+  }
+  
   displayObject(object) {
     var node = document.createElement("ul")
     var createChild = (ea) => {
@@ -35,36 +41,57 @@ export default class Inspector   extends Morph {
     })
     return node
   }
-
-  displayNode(obj) {
-    var node = document.createElement("div")
-    var render = () => {
-      if (!obj.tagName) {
-        node.innertHTML = "DEBUG " + obj
-        return node
-      }
-      node.innerHTML = "&lt;<a id='tagname'>" + obj.tagName.toLowerCase() + "</a>&gt;" +
-        "<span id='content'><a id='more'>...</a></span>" +
-        "&lt;" + obj.tagName.toLowerCase() + "&gt;"
-      
-      var contentNode = node.querySelector("#content")
-      node.querySelector("#more").onclick = (evt) => {
-        contentNode.innerHTML = "y"
-        if (obj.shadowRoot) {
-          contentNode.innerHTML = "<br>_shadow rootY_"
-          contentNode.appendChild(this.displayNode(obj.shadowRoot))  
-        }  
-        obj.childNodes.forEach( ea => { 
-          contentNode.appendChild(this.displayNode(ea))
-      })
-        
-      }
-      node.querySelector("#tagname").onclick = (evt) => {
-        render()
-      }
-    }
-    render()
+  
+  
+  renderNode(node, obj, expanded) {
+    node.isExpanded = expanded
     
+    var tagName = obj.tagName
+    if (obj instanceof ShadowRoot) {
+      tagName = "shadowRoot"
+    }
+    
+    if (!tagName) {
+      node.innerHTML = obj.textContent
+      return node
+    }
+    node.innerHTML = "<a id='expand'>▶</a><a id='tagname'>&lt;"+ tagName.toLowerCase() + "&gt;</a>" +
+      "<span id='content'><a id='more' class='more'>...</a></span>" +
+      "&lt;/" + tagName.toLowerCase() + "&gt;"
+    
+    if (node.isExpanded) {
+      node.querySelector('#expand').innerHTML = "▼"
+    }
+
+    var contentNode = node.querySelector("#content")
+    node.querySelector("#more").onclick = (evt) => {
+      this.renderNode(node, obj, true)
+    }
+    node.querySelector("#expand").onclick = (evt) => {
+      this.renderNode(node, obj, !node.isExpanded)
+    }
+    node.querySelector("#tagname").onclick = (evt) => {
+      this.select(obj)
+    }
+    
+    if (node.isExpanded) {
+      contentNode.innerHTML = ""
+      if (obj.shadowRoot) {
+        contentNode.appendChild(this.displayNode(obj.shadowRoot))  
+      }  
+      obj.childNodes.forEach( ea => { 
+        contentNode.appendChild(this.displayNode(ea))
+      })
+    }
+    
+    
+  }
+  
+  displayNode(obj) {
+    console.log("display " + obj)
+    var node = document.createElement("div")
+    node.setAttribute("class","element")
+    this.renderNode(node, obj, false)
     return node
   }
   
