@@ -1,3 +1,32 @@
+# aexpr-interpretation [![Build Status](https://travis-ci.org/active-expressions/aexpr-interpretation.svg?branch=master)](https://travis-ci.org/active-expressions/aexpr-interpretation)
+Monitor expressions over the execution of a program
+
+## Installation
+
+As npm for Node.js:
+
+```
+$ npm install aexpr-interpretation --save
+```
+
+Or download the [bundle](https://raw.githubusercontent.com/active-expressions/active-expressions/master/dist/aexpr-interpretation.js) file.
+
+## Building
+
+```
+$ npm run-script build
+```
+
+creates the *bundle* file in the `dist` folder.
+
+## Testing
+
+As npm package:
+
+```
+$ npm test
+```
+
 ### Prototype of Reactive Object Set Queries in JavaScript [![Build Status](https://travis-ci.org/onsetsu/active-collection-prototype.svg?branch=master)](https://travis-ci.org/onsetsu/active-collection-prototype) [![view on npm](http://img.shields.io/npm/v/object-queries.svg)](https://www.npmjs.org/package/object-queries)
 Reactive Object Queries allow you to glob your program for specific objects. To do so, the `select` method returns a view containing all objects that match a given condition.
 Note, that views are automatically updated, i.e. objects are added to or removed from a view in case of new objects being constructed or certain objects no longer match the specified condition.
