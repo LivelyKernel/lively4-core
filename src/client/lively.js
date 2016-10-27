@@ -281,24 +281,12 @@ export default class Lively {
       return comp
     });
   }
-
-  static openCoolWorkspace(string, pos) {
-    var name = "juicy-ace-editor";
-    var comp  = document.createElement(name);
-    return lively.components.openInWindow(comp).then((container) => {
-      pos = pos || lively.pt(100,100);
-      comp.changeMode("javascript");
-      comp.enableAutocompletion();
-      comp.editor.setValue(string)
-      comp.boundEval = function(str) {
-        return lively.vm.runEval(str, {topLevelVarRecorder: comp }).then(r => r.value)
-      }
-      lively.setPosition(container,pos);
-      container.setAttribute("title", "Cool Workspace")
-    }).then( () => {
-      comp.editor.focus();
-      return comp
-    });
+  
+  static openInspector(object, pos, str) {
+    lively.openComponentInWindow("lively-inspector", null, pt(400,500)).then( inspector => {
+        inspector.windowTitle = "Inspect: " + str
+        inspector.inspect(object)
+    })
   }
 
   static boundEval(str, ctx) {
@@ -713,14 +701,35 @@ export default class Lively {
     })
   }
 
-  static openComponentInWindow(name, pos) {
+  static openComponentInWindow(name, pos, extent) {
+    var lastWindow = _.first(lively.array(document.body.querySelectorAll("lively-window")))
+
     var comp  = document.createElement(name);
     return lively.components.openInWindow(comp).then((w) => {
-      if (pos) lively.setPosition(w, pos);
+      if (extent) {
+        w.style.width = extent.x
+        w.style.height = extent.y
+      }
+      if (lastWindow) {
+        var lastPos = lively.getPosition(lastWindow)
+        var windowWidth = comp.parentElement.getBoundingClientRect().width
+        if (lastPos !== undefined && windowWidth !== undefined) {
+          if (lastPos.x > windowWidth) {
+            lively.setPosition(comp.parentElement, lastPos.subPt(pt(windowWidth + 25, 0)))
+          } else {
+            lively.setPosition(comp.parentElement, lastPos.addPt(pt(25,25)))
+          }
+        }      
+      }
+      if (pos) 
+        lively.setPosition(w, pos);
+      
       if (comp.windowTitle) w.setAttribute("title", "" + comp.windowTitle);
+      
       return comp;
     });
   }
+  
   // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
   static async openBrowser(url, edit, pattern, replaceExisting) {
     var editorComp;

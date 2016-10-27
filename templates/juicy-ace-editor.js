@@ -372,11 +372,7 @@ export default class AceEditor extends HTMLElement {
     async inspectIt(str) {
         var result =  await this.boundEval(str) 
         if (!result.isError) {
-          var comp = document.createElement("lively-inspector")
-          lively.components.openInWindow(comp).then( () => {
-            comp.windowTitle = "inspect: " + str
-            comp.inspect(result.value)
-          })
+          lively.openInspector(result.value, null, str)
         }
     }
 
