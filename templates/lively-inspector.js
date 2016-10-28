@@ -15,7 +15,12 @@ export default class Inspector   extends Morph {
   /*
    * called, when selecting a subobject 
    */
-  onSelect(obj) {
+  onSelect(node, obj) {
+    if (this.selectedNode)
+      this.selectedNode.classList.remove("selected")
+    this.selectedNode  = node
+    this.selectedNode.classList.add("selected")
+  
     this.selection = obj;
     lively.showElement(obj)
     window.that = obj // #Experimental
@@ -49,14 +54,24 @@ export default class Inspector   extends Morph {
     return node;
   }
   
+  changeAttributeValue(obj, attrName, attrValue) {
+    obj.setAttribute(attrName, attrValue)
+    lively.notify("edited " + attrName + " to " + attrValue)
+  }
+  
   
   renderNode(node, obj, expanded) {
     node.isExpanded = expanded || obj.textContent.length < 80;
-    
+    if (expanded === false) {
+      node.isExpanded = false // force colapse 
+    }
     
     var tagName = obj.tagName;
     if (obj instanceof ShadowRoot) {
-      tagName = "shadowRoot";
+      tagName = "shadowroot";
+    }
+    if (obj instanceof Comment) {
+      tagName = "comment";
     }
     
     if (!tagName) {
@@ -68,9 +83,44 @@ export default class Inspector   extends Morph {
       
       return node;
     }
-    node.innerHTML = "<a id='expand'>▶</a><a id='tagname'>&lt;"+ tagName.toLowerCase() + "&gt;</a>" +
-      "<span id='content'><a id='more' class='more'>...</a></span>" +
-      "&lt;/" + tagName.toLowerCase() + "&gt;";
+    var expand = "<span class='syntax'><a id='expand'><span style='font-size:9'>&#9654;</span></a></span>"
+    var lt = "<span class='syntax'>&lt;</span>"
+    var gt = "<span class='syntax'>&gt;</span>"
+    var content = "<span id='content'><a id='more' class='more'>...</a></span>"
+    node.innerHTML = `${expand}${lt}`+
+      `<a id='tagname' class='tagname'>${tagName.toLowerCase()}</a>`+
+      `<span id='attributes'></span>${gt}` + content +
+      `${lt}<span class='tagname'>${tagName.toLowerCase()}</span>${gt}`;
+    if (tagName == "shadowroot") {
+      node.innerHTML = expand + "<a id='tagname' class='tagname'>#shadow-root</a>" +
+        content 
+    }
+    if (tagName == "comment") {
+      node.innerHTML = expand + "<a id='tagname' class='tagname'>&lt!-- </a>" + content +" --&gt" 
+    }
+    var quote = '<span class="syntax">"</span>'
+    if (obj.attributes) {
+      var attrNode = node.querySelector("#attributes")
+      lively.array(obj.attributes).forEach(ea => {
+        var eaNode = document.createElement("span")
+        eaNode.innerHTML = ` <span class='attrName'>${ea.name}=</span>${quote}<span class="attrValue">${ea.value}</span>${quote}`
+        var valueNode = eaNode.querySelector(".attrValue") 
+        // Editing of attribute values in inspector
+        valueNode.onclick = evt => {
+          eaNode.querySelector(".attrValue").contentEditable = true
+          return true
+        }
+        // accept changes in content editable attribute value
+        valueNode.onkeydown = evt => {
+          if(evt.keyCode == 13) { // on enter -> like in input fields
+           valueNode.contentEditable = false
+            this.changeAttributeValue(obj, ea.name, valueNode.textContent)
+            evt.preventDefault();
+          }
+        }
+        attrNode.appendChild(eaNode)
+      })
+    }
     
     if (node.isExpanded) {
       node.querySelector('#expand').innerHTML = "▼";
@@ -84,39 +134,55 @@ export default class Inspector   extends Morph {
       this.renderNode(node, obj, !node.isExpanded);
     };
     node.querySelector("#tagname").onclick = (evt) => {
-      this.onSelect(obj);
+      this.onSelect(node, obj);
     };
+
+   
     
     if (node.isExpanded) {
       contentNode.innerHTML = "";
+      if (obj instanceof Comment) {
+        contentNode.innerHTML = obj.textContent
+      }
       if (obj.shadowRoot) {
         contentNode.appendChild(this.displayNode(obj.shadowRoot))  ;
       }  
       obj.childNodes.forEach( ea => { 
         contentNode.appendChild(this.displayNode(ea));
       });
+      
     }
   }
   
-  displayNode(obj) {
+  displayNode(obj, expanded) {
     var node;
-    if (obj.tagName || obj instanceof ShadowRoot)
+    if (obj.tagName) {
       node = document.createElement("div");
-    else
+      node.setAttribute("class","element tag");
+    } else if (obj instanceof ShadowRoot) {
+      node = document.createElement("div");
+      node.setAttribute("class","element shadowroot");
+    } else if (obj instanceof Comment) {
+      node = document.createElement("div");
+      node.setAttribute("class","element comment");
+    } else {
       node = document.createElement("span");
-    node.setAttribute("class","element");
-    this.renderNode(node, obj, false);
+      node.setAttribute("class","element");
+
+    }
+    node.target = obj
+    this.renderNode(node, obj, expanded); 
     return node;
   }
   
-  display(obj) {
+  display(obj, expanded) {
     if (obj instanceof HTMLElement) {
-     return this.displayNode(obj);
+     return this.displayNode(obj, expanded);
      // return this.displayObject(obj)
     } else if (obj instanceof Object){
-      return this.displayObject(obj);
+      return this.displayObject(obj, expanded);
     } else {
-      return this.displayValue(obj);
+      return this.displayValue(obj, expanded);
     }
   }
 
@@ -124,7 +190,7 @@ export default class Inspector   extends Morph {
     this.targetObject = obj;
     this.get("#editor").doitContext = obj;
     this.innerHTML = "";
-    this.get("#container").appendChild(this.display(obj));
+    this.get("#container").appendChild(this.display(obj, true));
   }
   
   livelyMigrate(oldInstance) {
