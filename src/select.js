@@ -11,7 +11,7 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
 
     var PROPERTY_ACCESSOR_NAME = 'wrappedValue';
     var PropertyAccessor = Object.subclass('whjfqggkewgdkewgfiuewgfeldigdk3v3m', {
-        initialize: function(obj, propName) {
+        constructor: function(obj, propName) {
             this.selectionItems = new Set();
 
             this.safeOldAccessors(obj, propName);
@@ -123,7 +123,8 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
 
     class Operator {}
     class IdentityOperator extends Operator {
-        initialize(upstream, downstream) {
+        constructor(upstream, downstream) {
+            super();
             this.downstream = downstream;
             upstream.downstream.push(this);
             upstream.now().forEach(function(item) {
@@ -139,7 +140,8 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
     }
 
     class FilterOperator extends IdentityOperator {
-        initialize($super, upstream, downstream, expression, context) {
+        constructor(upstream, downstream, expression, context) {
+            super(upstream, downstream);
             this.expression = expression;
             this.expression.varMapping = context;
 
@@ -159,7 +161,7 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
                 this.downstream.safeAdd(item);
             }
 
-            if(this.selectionItems.any(function(selectionItem) {
+            if(this.selectionItems.some(function(selectionItem) {
                     return selectionItem.item === item;
                 })) {
                 throw Error('Item already tracked', item);
@@ -205,7 +207,8 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
     }
 
     class MapOperator extends IdentityOperator {
-        initialize($super, upstream, downstream, mapFunction) {
+        constructor(upstream, downstream, mapFunction) {
+            super(upstream, downstream);
             this.mapFunction = mapFunction || identity;
             this.items = [];
             this.outputItemsByItems = new Map();
@@ -235,7 +238,8 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
     }
 
     class UnionOperator extends IdentityOperator {
-        initialize($super, upstream1, upstream2, downstream) {
+        constructor(upstream1, upstream2, downstream) {
+            super(upstream, downstream);
             this.upstream1 = upstream1;
             this.upstream2 = upstream2;
             this.downstream = downstream;
@@ -262,7 +266,7 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
 
     // TODO: make this reusable
     class FlowToFunction {
-        initialize(upstream, create, destroy) {
+        constructor(upstream, create, destroy) {
             this.create = create;
             this.destroy = destroy;
             upstream.downstream.push(this);
@@ -283,14 +287,14 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
      * @property {Object} second
      */
     class Pair {
-        initialize(first, second) {
+        constructor(first, second) {
             this.first = first;
             this.second = second;
         }
     }
 
-    class CrossOperator extends IdentityOperator {
-        initialize($super, upstream1, upstream2, downstream) {
+    class CrossOperator {
+        constructor(upstream1, upstream2, downstream) {
             this.upstream1 = upstream1;
             this.upstream2 = upstream2;
             this.downstream = downstream;
@@ -343,7 +347,8 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
     }
 
     class DelayOperator extends IdentityOperator {
-        initialize($super, upstream, downstream, delayTime) {
+        constructor(upstream, downstream, delayTime) {
+            super(upstream, downstream);
             this.upstream = upstream;
             this.downstream = downstream;
             this.delayTime = delayTime;
@@ -371,8 +376,8 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
         }
     }
 
-    class ReduceOperator extends IdentityOperator {
-        initialize($super, upstream, callback, reducer, initialValue) {
+    class ReduceOperator {
+        constructor(upstream, callback, reducer, initialValue) {
             this.callback = callback;
             this.reducer = reducer;
             this.initialValue = initialValue;
@@ -513,7 +518,7 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
     };
 
     class SelectionItem {
-        initialize(selection, item, callback) {
+        constructor(selection, item, callback) {
             this.selection = selection;
             this.item = item;
             this.callback = callback;
