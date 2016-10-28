@@ -11,6 +11,14 @@ export default class Inspector   extends Morph {
     node.innerHTML = JSON.stringify(value);
     return node;
   }
+
+  displayFunction(value) {
+    var node = document.createElement("div");
+    node.classList.add("element")
+    node.innerHTML = this.expandTemplate(node) + " function " + value.name + "("
+    // node.innerHTML = "<pre>" + value + "</pre>";
+    return node;
+  }
   
   /*
    * called, when selecting a subobject 
@@ -27,30 +35,34 @@ export default class Inspector   extends Morph {
     this.get("#editor").doitContext = obj;
   }
   
-  displayObject(object) {
-    var node = document.createElement("ul");
-    var createChild = (ea) => {
-      var child = document.createElement("span");
-      child.innerHTML = "" + object[ea] + "...";
-      child.onclick = evt => {
-        child.innerHTML = "";
-        child.appendChild(this.display(object[ea]));
-        evt.stopPropagation();
-      };
-      return child;
-    };
+  renderObject(node, obj, expanded, name) {
+    node.isExpanded = expanded
+    if (!name) {
+      name = ""
+    }
+    var className = obj.constructor.name
+    
+    node.innerHTML = `${this.expandTemplate(node)}`+
+      ` <a id='tagname' class='tagname'>${name} ${className}</a> `+
+      '<span class="syntax">{'+"</span>" +
+       this.contentTemplate +
+      '<span class="syntax">}'+"</span>";
   
-    Object.keys(object).forEach( ea => {
-      var eaNode = document.createElement("li");
-      eaNode.innerHTML = "" + ea  + ": ";
-      eaNode.onclick = evt => {
-        eaNode.innerHTML = "" + ea  + ": ";
-        eaNode.appendChild(createChild(ea));
-        evt.stopPropagation();
-      };
-      eaNode.appendChild(createChild(ea));
-      node.appendChild(eaNode);
-    });
+    this.attachHandlers(node, obj)
+    
+    var contentNode = node.querySelector("#content");
+    if (node.isExpanded) {
+      contentNode.innerHTML = "";
+      Object.keys(obj).forEach( ea => { 
+          contentNode.appendChild(this.display(obj[ea], false, ea));
+      });
+    }
+  }
+  
+  displayObject(obj, expand, name) {
+    var node = document.createElement("div");
+    node.classList.add("element")
+    this.renderObject(node, obj, expand, name)
     return node;
   }
   
@@ -59,51 +71,42 @@ export default class Inspector   extends Morph {
     lively.notify("edited " + attrName + " to " + attrValue)
   }
   
+  expandTemplate(node) {
+    return "<span class='syntax'><a id='expand'><span style='font-size:9'>" +
+      (node.isExpanded ? "&#9654" : "&#9660;") + "</span></a></span>"
+  }
   
-  renderNode(node, obj, expanded) {
-    node.isExpanded = expanded || obj.textContent.length < 80;
-    if (expanded === false) {
-      node.isExpanded = false // force colapse 
-    }
-    
-    var tagName = obj.tagName;
-    if (obj instanceof ShadowRoot) {
-      tagName = "shadowroot";
-    }
-    if (obj instanceof Comment) {
-      tagName = "comment";
-    }
-    
-    if (!tagName) {
-      if (obj.textContent.match(/^[ \n]*$/)) return node
-      if (obj.textContent.length > 100)
-        node.innerHTML = "<pre>" +  obj.textContent + "</pre>";
-      else
-        node.innerHTML = obj.textContent;
-      
-      return node;
-    }
-    var expand = "<span class='syntax'><a id='expand'><span style='font-size:9'>&#9654;</span></a></span>"
-    var lt = "<span class='syntax'>&lt;</span>"
-    var gt = "<span class='syntax'>&gt;</span>"
-    var content = "<span id='content'><a id='more' class='more'>...</a></span>"
-    node.innerHTML = `${expand}${lt}`+
-      `<a id='tagname' class='tagname'>${tagName.toLowerCase()}</a>`+
-      `<span id='attributes'></span>${gt}` + content +
-      `${lt}<span class='tagname'>${tagName.toLowerCase()}</span>${gt}`;
-    if (tagName == "shadowroot") {
-      node.innerHTML = expand + "<a id='tagname' class='tagname'>#shadow-root</a>" +
-        content 
-    }
-    if (tagName == "comment") {
-      node.innerHTML = expand + "<a id='tagname' class='tagname'>&lt!-- </a>" + content +" --&gt" 
-    }
-    var quote = '<span class="syntax">"</span>'
+  get contentTemplate() {
+    return "<span id='content'><a id='more' class='more'>...</a></span>"
+  }
+
+  get quoteTemplate() {
+    return `<span class='syntax'>"</span>`
+  }
+  
+
+  attachHandlers(node, obj) {
+    // jqyery would make this cleaner here...
+    var moreNode = node.querySelector("#more")
+    if (moreNode) moreNode.onclick = (evt) => {
+      this.render(node, obj, true);
+    };
+    var expandNode = node.querySelector("#expand")
+    if (expandNode) expandNode.onclick = (evt) => {
+      this.render(node, obj, !node.isExpanded);
+    };
+    var tagNode = node.querySelector("#tagname")
+    if (tagNode) tagNode.onclick = (evt) => {
+      this.onSelect(node, obj);
+    };
+  }
+  
+  renderAttributes(node, obj) {
     if (obj.attributes) {
       var attrNode = node.querySelector("#attributes")
       lively.array(obj.attributes).forEach(ea => {
         var eaNode = document.createElement("span")
-        eaNode.innerHTML = ` <span class='attrName'>${ea.name}=</span>${quote}<span class="attrValue">${ea.value}</span>${quote}`
+        eaNode.innerHTML = ` <span class='attrName'>${ea.name}=</span>${this.quoteTemplate}<span class="attrValue">${ea.value}</span>${this.quoteTemplate}`
         var valueNode = eaNode.querySelector(".attrValue") 
         // Editing of attribute values in inspector
         valueNode.onclick = evt => {
@@ -121,39 +124,85 @@ export default class Inspector   extends Morph {
         attrNode.appendChild(eaNode)
       })
     }
+  }
+
+  renderHeader(node, obj) {
     
-    if (node.isExpanded) {
-      node.querySelector('#expand').innerHTML = "▼";
+    var tagName = obj.tagName;
+    if (obj instanceof ShadowRoot) {
+      tagName = "shadowroot";
+    }
+    if (obj instanceof Comment) {
+      tagName = "comment";
+    }
+    var lt = "<span class='syntax'>&lt;</span>"
+    var gt = "<span class='syntax'>&gt;</span>"
+    node.innerHTML = this.expandTemplate(node)  + `${lt}`+
+      `<a id='tagname' class='tagname'>${tagName.toLowerCase()}</a>`+
+      `<span id='attributes'></span>${gt}` + this.contentTemplate +
+      `${lt}<span class='tagname'>${tagName.toLowerCase()}</span>${gt}`;
+    if (tagName == "shadowroot") {
+      node.innerHTML = this.expandTemplate(node) + "<a id='tagname' class='tagname'>#shadow-root</a>" +
+        this.contentTemplate 
+    }
+    
+    if (tagName == "comment") {
+      node.innerHTML = "<a id='tagname' class='tagname'>&lt!-- </a>" + 
+        this.contentTemplate +" --&gt" 
+    }
+    // if (!node.isAutoExpanded) html = this.expandTemplate + html
+  }
+
+  
+  renderNode(node, obj, expanded) {
+    node.isExpanded = expanded;
+    if (obj.textContent.length < 80) {
+      node.isExpanded = true;
+      node.isAutoExpanded = true;
     }
 
-    var contentNode = node.querySelector("#content");
-    node.querySelector("#more").onclick = (evt) => {
-      this.renderNode(node, obj, true);
-    };
-    node.querySelector("#expand").onclick = (evt) => {
-      this.renderNode(node, obj, !node.isExpanded);
-    };
-    node.querySelector("#tagname").onclick = (evt) => {
-      this.onSelect(node, obj);
-    };
-
-   
+    if (expanded === false) {
+      node.isExpanded = false // force colapse 
+    }
     
+    this.renderHeader(node, obj)
+    this.renderAttributes(node, obj)
+
+    var contentNode = node.querySelector("#content");
+    this.attachHandlers(node, obj)
+
     if (node.isExpanded) {
       contentNode.innerHTML = "";
       if (obj instanceof Comment) {
         contentNode.innerHTML = obj.textContent
       }
       if (obj.shadowRoot) {
-        contentNode.appendChild(this.displayNode(obj.shadowRoot))  ;
+        contentNode.appendChild(this.display(obj.shadowRoot))  ;
       }  
       obj.childNodes.forEach( ea => { 
-        contentNode.appendChild(this.displayNode(ea));
+        contentNode.appendChild(this.display(ea));
       });
       
     }
   }
   
+  renderText(node, obj, expanded) {
+    if (obj.textContent.match(/^[ \n]*$/)) 
+      return // nothing to render here... skip, empty lines or just spaces
+    if (obj.textContent.length > 100)
+      node.innerHTML = "<pre>" +  obj.textContent + "</pre>";
+    else {
+      node.innerHTML =  obj.textContent;
+    }
+  }
+  
+  displayText(obj, expanded) {
+    node = document.createElement("span");
+    node.setAttribute("class","element");
+    this.render(node, obj, expanded); 
+    return node
+  }
+    
   displayNode(obj, expanded) {
     var node;
     if (obj.tagName) {
@@ -166,23 +215,45 @@ export default class Inspector   extends Morph {
       node = document.createElement("div");
       node.setAttribute("class","element comment");
     } else {
+      // Fallback... 
       node = document.createElement("span");
       node.setAttribute("class","element");
-
     }
     node.target = obj
-    this.renderNode(node, obj, expanded); 
+    this.render(node, obj, expanded); 
     return node;
   }
   
-  display(obj, expanded) {
-    if (obj instanceof HTMLElement) {
-     return this.displayNode(obj, expanded);
-     // return this.displayObject(obj)
-    } else if (obj instanceof Object){
-      return this.displayObject(obj, expanded);
+  isNode(obj) {
+    return obj instanceof HTMLElement || obj instanceof ShadowRoot || obj instanceof Comment || obj instanceof Text
+  }
+  
+  render(node, obj, expanded) {
+    if (obj instanceof Text) {
+      return this.renderText(node, obj, expanded);
+    } else if (this.isNode(obj)) {
+      return this.renderNode(node, obj, expanded);
+    } else if (typeof(obj) == "object"){
+      return this.renderObject(node, obj, expanded, name);
+    } else if (typeof(obj) == "function"){
+      // return this.renderFunction(node, obj, expanded, name);
     } else {
-      return this.displayValue(obj, expanded);
+      // return this.renderValue(node, obj, expanded, name);
+    }
+  }
+  
+  display(obj, expanded, name) {
+    // from most special to general
+    if (obj instanceof Text) {
+      return this.displayText(obj, expanded);
+    } else if (this.isNode(obj)) {
+      return this.displayNode(obj, expanded);
+    } else if (typeof(obj) == "object"){
+      return this.displayObject(obj, expanded, name);
+    } else if (typeof(obj) == "function"){
+      return this.displayFunction(obj, expanded, name);
+    } else {
+      return this.displayValue(obj, expanded, name);
     }
   }
 
