@@ -1,11 +1,9 @@
-//import '../../lib/lib.importer.js';
 import withLogging from '../../src/withlogging.js';
 import select from '../../src/select.js';
 import classFactory from '../fixtures/class-factory.js';
 var DataHolder = classFactory.getValueClass();
 
 describe('.filter operator', function() {
-    return;
     it('DataHolder example', function() {
         withLogging.call(DataHolder);
         var range = {

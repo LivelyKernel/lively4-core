@@ -1,6 +1,4 @@
-define(function module() {
-
-var pushIfMissing = function(array, item) {
+export function pushIfMissing(array, item) {
     // check for already existing.
     var exists = false;
     var len = array.length;
@@ -17,9 +15,9 @@ var pushIfMissing = function(array, item) {
 
     // return true if the given element was pushed, otherwise false
     return !exists;
-};
+}
 
-var removeIfExisting = function(array, item) {
+export function removeIfExisting(array, item) {
     var index = array.indexOf(item);
     if (index !== -1) {
         array.splice(index, 1);
@@ -27,24 +25,27 @@ var removeIfExisting = function(array, item) {
         return true;
     }
     return false;
-};
+}
 
-var Stack = function() {
-    this.arr = [];
-};
-Stack.prototype.push = function(el) {
-    this.arr.push(el);
-};
+export class Stack {
+    constructor() {
+        this.arr = [];
+    }
 
-Stack.prototype.pop = function() {
-    this.arr.length--;
-};
+    push(el) {
+        this.arr.push(el);
+    }
 
-Stack.prototype.top = function() {
-    return this.arr.last();
-};
+    pop() {
+        this.arr.length--;
+    }
 
-var isPrimitive = function(elem) {
+    top() {
+        return this.arr.last();
+    }
+}
+
+export function isPrimitive(elem) {
     var getType = function (elem) {
         return Object.prototype.toString.call(elem).slice(8, -1);
     };
@@ -57,14 +58,6 @@ var isPrimitive = function(elem) {
         type === 'Number' ||
         type === 'Null' ||
         type === 'Undefined';
-};
+}
 
-return {
-    pushIfMissing: pushIfMissing,
-    removeIfExisting: removeIfExisting,
-    Stack: Stack,
-    isPrimitive: isPrimitive,
-    identity: function identity(x) { return x; }
-};
-
-});
+export function identity(x) { return x; }
