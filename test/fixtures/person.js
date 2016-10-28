@@ -1,23 +1,18 @@
-define(function module() {
+export default class Person {
+  constructor() { this.initialize.apply(this, arguments); }
 
-  var Person = function() { this.initialize.apply(this, arguments); };
-
-  Person.NoTitle = '';
-  Person.Dr = 'Dr.';
-  Person.Prof = 'Prof.';
-
-  Person.prototype.initialize = function(name, title) {
+  initialize(name, title) {
     this.name = name;
     this.setTitle(title);
-  };
-  Person.prototype.getName = function() {
+  }
+  getName() {
     return this.name;
-  };
-  Person.prototype.setTitle = function(title) {
+  }
+  setTitle(title) {
     this.title = title || Person.NoTitle;
-  };
+  }
+}
 
-  return {
-    Person: Person
-  };
-});
+Person.NoTitle = '';
+Person.Dr = 'Dr.';
+Person.Prof = 'Prof.';

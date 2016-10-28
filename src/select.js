@@ -1,5 +1,7 @@
 import View from './view.js';
 import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from './utils.js';
+import trigger from 'aexpr-trigger';
+import aexpr from 'aexpr-interpretation';
 
 /*
     cop.create('SelectionLayer')
@@ -123,14 +125,14 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
 
     class Operator {}
     class IdentityOperator extends Operator {
-        constructor(upstream, downstream) {
-            super();
-            this.downstream = downstream;
-            upstream.downstream.push(this);
-            upstream.now().forEach(function(item) {
-                downstream.safeAdd(item);
-            });
-        }
+        // constructor(upstream, downstream) {
+        //     super();
+        //     this.downstream = downstream;
+        //     upstream.downstream.push(this);
+        //     upstream.now().forEach(function(item) {
+        //         downstream.safeAdd(item);
+        //     });
+        // }
         newItemFromUpstream(item) {
             this.downstream.safeAdd(item);
         }
@@ -141,12 +143,13 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
 
     class FilterOperator extends IdentityOperator {
         constructor(upstream, downstream, expression, context) {
-            super(upstream, downstream);
+            super();
             this.expression = expression;
             this.expression.varMapping = context;
 
             this.selectionItems = [];
 
+            this.upstream = upstream;
             this.downstream = downstream;
             upstream.downstream.push(this);
             upstream.now().forEach(function(item) {
@@ -154,28 +157,17 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
             }, this);
         }
         newItemFromUpstream(item) {
-            this.trackItem(item);
+            this.onNewInstance(item);
         }
-        trackItem(item) {
+        onNewInstance(item) {
             if(this.expression(item)) {
                 this.downstream.safeAdd(item);
             }
 
-            if(this.selectionItems.some(function(selectionItem) {
-                    return selectionItem.item === item;
-                })) {
-                throw Error('Item already tracked', item);
-            }
-
-            var selectionItem = new SelectionItem(this, item, this.onChangeCallback.bind(this, item));
-
-            this.selectionItems.push(selectionItem);
-
-            selectionItem.installListeners();
+            aexpr(this.expression, this.expression.varMapping, item).onChange(() => this.onChangeCallback(item));
         }
         onChangeCallback(item) {
-            console.log('check');
-            if(this.expression(item)) {
+            if(this.upstream.now().indexOf(item) >= 0 && this.expression(item)) {
                 this.addDueToFilterExpression(item);
             } else {
                 this.removeDueToFilterExpression(item);
@@ -188,27 +180,13 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
             this.downstream.safeRemove(item);
         }
         destroyItemFromUpstream(item) {
-            var selectionItem = this.selectionItems.find(function(selectionItem) {
-                return selectionItem.item === item;
-            });
-
-            if(!selectionItem) {
-                console.warn('remove non-existing item from upstream', item, this);
-                return;
-            }
-
-            selectionItem.removeListeners();
-
-            var gotRemoved = removeIfExisting(this.selectionItems, selectionItem);
-            if(gotRemoved) { console.log('removed via baseset', item); }
-
-            this.downstream.safeRemove(selectionItem.item);
+            this.onChangeCallback(item);
         }
     }
 
     class MapOperator extends IdentityOperator {
         constructor(upstream, downstream, mapFunction) {
-            super(upstream, downstream);
+            super();
             this.mapFunction = mapFunction || identity;
             this.items = [];
             this.outputItemsByItems = new Map();
@@ -239,7 +217,7 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
 
     class UnionOperator extends IdentityOperator {
         constructor(upstream1, upstream2, downstream) {
-            super(upstream, downstream);
+            super();
             this.upstream1 = upstream1;
             this.upstream2 = upstream2;
             this.downstream = downstream;

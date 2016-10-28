@@ -1,47 +1,43 @@
-define(function module() {
+export class NumExpr {
+  constructor() { this.initialize.apply(this, arguments); }
 
-  var NumExpr = function() { this.initialize.apply(this, arguments); };
-
-  NumExpr.prototype.initialize = function(val) {
+  initialize(val) {
     this.val = val;
-  };
-  NumExpr.prototype.toString = function() {
+  }
+  toString() {
     return this.val.toString();
-  };
-  NumExpr.prototype.result = function() {
+  }
+  result() {
     return this.val;
-  };
+  }
+}
 
-  var NegExpr = function() { this.initialize.apply(this, arguments); };
-
-  NegExpr.prototype.initialize = function(expr) {
+export class NegExpr {
+  constructor() { this.initialize.apply(this, arguments); }
+  initialize(expr) {
     this.expr = expr;
-  };
-  NegExpr.prototype.toString = function() {
+  }
+  toString() {
     return '(-' + this.expr.toString() + ')';
-  };
-  NegExpr.prototype.result = function() {
+  }
+  result() {
     return -1 * this.expr.result();
-  };
+  }
+}
 
-  var AddExpr = function() { this.initialize.apply(this, arguments); };
+export class AddExpr {
+  constructor() { this.initialize.apply(this, arguments); }
 
-  AddExpr.prototype.initialize = function(expr1, expr2) {
+  initialize(expr1, expr2) {
     this.expr1 = expr1;
     this.expr2 = expr2;
-  };
-  AddExpr.prototype.toString = function() {
+  }
+  toString() {
     return '(' + this.expr1.toString() + ' + ' + this.expr2.toString() + ')';
-  };
-  AddExpr.prototype.result = function() {
+  }
+  result() {
     var result1 = this.expr1.result(),
         result2 = this.expr2.result();
     return result1 + result2;
-  };
-
-  return {
-    NumExpr: NumExpr,
-    NegExpr: NegExpr,
-    AddExpr: AddExpr
-  };
-});
+  }
+}

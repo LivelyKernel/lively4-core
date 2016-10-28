@@ -1,10 +1,10 @@
 import withLogging from '../../src/withlogging.js';
 import select from '../../src/select.js';
-import classFactory from '../fixtures/class-factory.js';
-var DataHolder = classFactory.getValueClass();
+import { getValueClass } from '../fixtures/class-factory.js';
 
 describe('.filter operator', function() {
     it('DataHolder example', function() {
+        var DataHolder = getValueClass();
         withLogging.call(DataHolder);
         var range = {
             min: 0,
@@ -12,12 +12,13 @@ describe('.filter operator', function() {
         };
         var positiveData = select(DataHolder, function(data) {
             return data.value > range.min;
-        });
+        }, locals);
         var d1 = new DataHolder(17);
         var d2 = new DataHolder(33);
+        expect(positiveData.now()).to.have.lengthOf(2);
         var smallData = positiveData.filter(function(data) {
             return data.value < range.max;
-        });
+        }, locals);
         expect(smallData.now()).to.have.lengthOf(1);
         range.max = 50;
         expect(smallData.now()).to.have.lengthOf(2);
