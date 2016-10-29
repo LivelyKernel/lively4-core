@@ -238,7 +238,8 @@ export default class Container extends Morph {
   }
 
   async onNewfile() {
-      lively.notify("implement new file")
+    var fileName = window.prompt('Please enter the name of the file', this.getPath());
+    lively.files.saveFile(fileName,"");
   }
 
 
