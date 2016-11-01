@@ -4,7 +4,7 @@ import { getValueClass } from '../fixtures/class-factory.js';
 var ValueHolder = getValueClass();
 
 describe('.union operator', function() {
-    xit('ValueHolder example', function() {
+    it('ValueHolder example', function() {
         this.timeout(10000);
 
         withLogging.call(ValueHolder);

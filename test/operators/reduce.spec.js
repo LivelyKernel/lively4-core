@@ -5,7 +5,7 @@ var AValueClass = getValueClass();
 
 describe('.reduce operator', function() {
 
-    xit('Example', function() {
+    it('Example', function() {
         this.timeout(10000);
 
         withLogging.call(AValueClass);

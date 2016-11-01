@@ -229,13 +229,13 @@ import aexpr from 'aexpr-interpretation';
             }, this);
         }
         newItemFromUpstream(item) {
-            var itemAlreadyExists = this.downstream.now().includes(item);
+            var itemAlreadyExists = this.downstream.now().indexOf(item) >= 0;
             if(!itemAlreadyExists) {
                 this.downstream.safeAdd(item);
             }
         }
         destroyItemFromUpstream(item) {
-            var itemStillExists = this.upstream1.now().includes(item) || this.upstream2.now().include(item);
+            var itemStillExists = this.upstream1.now().indexOf(item) >= 0 || this.upstream2.now().indexOf(item) >= 0;
             if(!itemStillExists) {
                 this.downstream.safeRemove(item);
             }

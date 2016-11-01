@@ -3,7 +3,7 @@ import select from '../src/select.js';
 import { AddExpr, NegExpr, NumExpr } from './fixtures/expr.js';
 
 describe('complex example', function() {
-    xit('runs an empty program', function() {
+    it('runs an empty program', function() {
 
         withLogging.call(AddExpr);
 
@@ -37,7 +37,7 @@ describe('complex example', function() {
             return new NumExpr(addExpr.result());
         })
             .enter(function(numExpr) {
-                console.log('new NumExpr through maping', numExpr);
+                console.log('new NumExpr through mapping', numExpr);
             });
 
 

@@ -4,7 +4,7 @@ import { getValueClass } from '../fixtures/class-factory.js';
 var OtherClass = getValueClass();
 
 describe('.delay operator', function() {
-    xit('OtherClass example', function(done) {
+    it('OtherClass example', function(done) {
         this.timeout(10000);
 
         withLogging.call(OtherClass);

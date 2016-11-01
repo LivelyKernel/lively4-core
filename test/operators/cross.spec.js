@@ -5,8 +5,7 @@ var ValueClassA = getValueClass(),
     ValueClassB = getValueClass();
 
 describe('.cross operator', function() {
-
-    xit('Example', function() {
+    it('Example', function() {
         this.timeout(10000);
 
         withLogging.call(ValueClassA);
