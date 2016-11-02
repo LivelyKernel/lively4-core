@@ -112,7 +112,7 @@
     "active-expressions": "^2.1.0",
     "aexpr-interpretation": "^1.1.1",
     "aexpr-source-transformation-propagation": "^1.6.0",
-    "aexpr-trigger": "^1.0.1",
+    "aexpr-trigger": "^1.1.0",
     "babel-plugin-aexpr-source-transformation": "^2.3.7",
     "babel-plugin-locals": "^1.0.1",
     "stack-es2015-modules": "^1.1.0"

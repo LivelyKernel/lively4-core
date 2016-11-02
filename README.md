@@ -1,15 +1,15 @@
-# aexpr-interpretation [![Build Status](https://travis-ci.org/active-expressions/aexpr-interpretation.svg?branch=master)](https://travis-ci.org/active-expressions/aexpr-interpretation)
-Monitor expressions over the execution of a program
+# Reactive Object Queries[![Build Status](https://travis-ci.org/active-expressions/reactive-object-queries.svg?branch=master)](https://travis-ci.org/active-expressions/reactive-object-queries)
+A JavaScript implementation of reactive object queries using active expressions.
 
 ## Installation
 
 As npm for Node.js:
 
 ```
-$ npm install aexpr-interpretation --save
+$ npm install reactive-object-queries --save
 ```
 
-Or download the [bundle](https://raw.githubusercontent.com/active-expressions/active-expressions/master/dist/aexpr-interpretation.js) file.
+Or download the [bundle](https://raw.githubusercontent.com/active-expressions/active-expressions/master/dist/reactive-object-queries.js) file.
 
 ## Building
 

@@ -1,5 +1,6 @@
 import View from './view.js';
 import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from './utils.js';
+import trigger from 'aexpr-trigger';
 
 /*
     cop.create('SelectionLayer')
@@ -158,18 +159,17 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
             this.onNewInstance(item);
         }
         onNewInstance(item) {
-            if(this.expression(item)) {
-                this.downstream.safeAdd(item);
-            }
-
-            aexpr(this.expression, item).onChange(() => this.onChangeCallback(item));
+            trigger(aexpr(this.expression, item))
+                .onBecomeTrue(() => this.add(item))
+                .onBecomeFalse(() => this.remove(item));
         }
-        onChangeCallback(item) {
-            if(this.upstream.now().indexOf(item) >= 0 && this.expression(item)) {
+        add(item) {
+            if(this.upstream.now().indexOf(item) >= 0) {
                 this.addDueToFilterExpression(item);
-            } else {
-                this.removeDueToFilterExpression(item);
             }
+        }
+        remove(item) {
+            this.removeDueToFilterExpression(item);
         }
         addDueToFilterExpression(item) {
             this.downstream.safeAdd(item);
@@ -178,7 +178,7 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
             this.downstream.safeRemove(item);
         }
         destroyItemFromUpstream(item) {
-            this.onChangeCallback(item);
+            this.remove(item);
         }
     }
 
