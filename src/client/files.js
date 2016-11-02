@@ -26,8 +26,12 @@ export default class Files {
       })
   }
 
-  static async loadFile(url) {
-    return fetch(url).then(function (response) {
+  static async loadFile(url, version) {
+    return fetch(url, {
+      headers: {
+        fileversion: version
+      }
+    }).then(function (response) {
       console.log("file " + url + " read.");
       return response.text();
     })

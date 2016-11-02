@@ -1,4 +1,4 @@
-<template id="lively-editor">
+<template id="lively-editor" data-class="LivelyEditor">
     <style>
     :host {
       //width: 100%;
@@ -34,17 +34,15 @@
         height: 100%;
         flex: 1;   /* ACE does not display right with "flex" */
     }
-    #versions {
+    #versionControl {
       position: absolute;
-      top: 25px;
-      right: 0px;
+      top: 40px;
+      right: 40px;
+      width: 400px;
+      height: calc(100% - 100px);
       z-index: 200;
       display: none; 
-    }
-    
-    #versions > ul {
-      font-size: 8;
-      padding: 8px;
+      background: white;
     }
     
     </style>
@@ -56,126 +54,13 @@
           <input type="text" id="filename" value="https://lively4/README.md">
         </div>
         <juicy-ace-editor id="editor" wrapmode="true"></juicy-ace-editor>
-        <lively-version-control id="versions"></lively-version-control>
+        <div id="versionControl">
+          <button id="loadVersionButton">load</button>
+          <button id="closeVersionsButton">close</button>
+          <lively-version-control id="versions"></lively-version-control>
+        </div>
     </div>
 
-
-    <script type="lively4script" data-name="initialize">
-    () => {
-      console.log("initialize lively editor")
-      var container = $(this.shadowRoot).find(".container")[0];
-
-      // #TODO refactor to "connections"
-      $(this.getSubmorph('#saveButton')).click(() => this.saveFile())
-      $(this.getSubmorph('#loadButton')).click(() => this.loadFile())
-      $(this.getSubmorph('#versionsButton')).click(() => this.showVersions())
-
-      container.dispatchEvent(new Event("initialized"))
-    }
-    </script>
-    <script type="lively4script" data-name="getMountURL">
-    function() {
-      return "https://lively4/sys/fs/mount"
-    }
-    </script>
-
-    <script type="lively4script" data-name="currentEditor">
-      function() {
-        return this.getSubmorph('juicy-ace-editor').editor;
-      }
-    </script>
-
-    <script type="lively4script" data-name="getURL">
-      function() {
-        var filename = $(this.getSubmorph('#filename')).val();
-        return new URL(filename);
-      }
-    </script>
-
-    <script type="lively4script" data-name="setURL">
-      function(urlString) {
-        var url = new URL(urlString);
-        this.getSubmorph("#filename").value = url.href;
-      }
-    </script>
-
-
-
-    <script type="lively4script" data-name="setText">
-      function(text) {
-        this.getSubmorph("juicy-ace-editor").editor.setValue(text);
-        this.updateAceMode();
-      }
-    </script>
-
-    <script type="lively4script" data-name="updateAceMode">
-      function() {
-        var url = this.getURL();
-        var editorComp = this.getSubmorph("juicy-ace-editor");
-        editorComp.changeModeForFile(url.pathname);
-      }
-    </script>
-
-    <script type="lively4script" data-name="loadFile">
-      function() {
-        var url = this.getURL();
-        console.log("load " + url);
-        this.updateAceMode();
-
-        lively.files.loadFile(url).then(
-          (text) => {
-            this.currentEditor().setValue(text);
-            this.currentEditor().resize();
-            console.log("file " + url + " read.");
-            console.log("content: " + text);
-          },
-          (err) => {
-                 lively.notify("Could not load file " + url +"\nMaybe next time you are more lucky?")
-          });
-      }
-    </script>
-
-    <script type="lively4script" data-name="saveFile">
-      function() {
-        var url = this.getURL();
-        console.log("save " + url + "!")
-        var data = this.currentEditor().getValue()
-        return lively.files.saveFile(url, data).then(() => {
-            console.log("edited file " + url + " written.")
-          }).then( (sourceCode) => {
-              lively.notify("saved file", url )
-            }, (err) => {
-               lively.notify("Could not save file" + url +"\nMaybe next time you are more lucky?")
-            }
-          ) // don't catch here... so we can get the error later as needed...
-      }
-    </script>
-
-    <script type="lively4script" data-name="hideToolbar">
-    function() {
-       this.getSubmorph("#toolbar").style.display = "none"
-    }
-    </script>
-
-    <script type="lively4script" data-name="showVersions">
-    function(obj) {
-      var versions = this.shadowRoot.querySelector("#versions")
-      if (versions.style.display == "block") {
-        versions.style.display = "none"
-      } else {
-        versions.style.display = "block"
-        versions.showVersions(this.getURL())
-      }
-    }
-    </script>
-
-
-    <script type="lively4script" data-name="livelyMigrate">
-    function(obj) {
-      this.setURL(obj.getURL())
-      this.loadFile()
-    }
-    </script>
 
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

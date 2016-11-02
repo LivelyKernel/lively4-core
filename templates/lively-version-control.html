@@ -1,69 +1,48 @@
-<template id="lively-version-control">
+<template id="lively-version-control" data-class="LivelyVersionControl">
     <style>
     :host {
     }
     #versions {
-      margin: 5px;
-      padding: 5px;
       background: white;
-      width: 400px;
     }
     
-    #versions > ul {
+    #versions > table {
       font-size: 12;
-      padding: 8px;
     }
     
     #container {
       width: 100%;
       height: 100%;
+      margin: 0px;
       overflow: auto;
     }
+
+    td.date {
+     width: 100px;
+    }
+
+    .selected {
+      background: gray;
+      color: white
+    }
+
+    tr:hover {
+      background: lightgray;
+    }
+    
+    td {
+      border-bottom: 1px lightgray solid;
+      padding: 5px;
+      margin: 0px;
+    }
+    
+    
     </style>
     <div id="container">
       <div id="versions">
-        Versions:
-        <ul id="list"></ul>
+        <table id="list"></table>
       </div>
     </div>
-    <script type="lively4script" data-name="showVersions">
-    function(url) {
-      this.url= url
-      var listNode = this.shadowRoot.querySelector("#list")
-      fetch(url, {
-        method: "OPTIONS",
-        headers: {
-          showversions: true
-        }
-      }).then(r => r.text()).then( text => {
-        try {
-          var json = JSON.parse(text)
-        } catch(e) {
-          lively.notify("[version control] could not parse " + url+"versions:" + e, text.slice(0,1000), 10, () => {
-            lively.openWorkspace(text)
-          }, "red")
-          return 
-        }
-        if (!json.versions) {
-          lively.notify("[version control] no versions found", text)
-          return
-        }
-        json.versions.forEach( ea => {
-          if (!ea) return // guard for syntax fixing null in server..  
-          var item = document.createElement("li")
-          item.innerHTML = ea.date + ", "+ ea.author + ", " + ea.comment
-          listNode.appendChild(item)
-        }) 
-      })
-    }
-    </script>
-
-    <script type="lively4script" data-name="livelyMigrate">
-    function(obj) {
-      this.showVersions(obj.url)
-    }
-    </script>
-
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

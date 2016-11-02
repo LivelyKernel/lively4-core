@@ -248,6 +248,10 @@ export default class Container extends Morph {
     this.followPath(this.getPath());
   }
 
+  onVersions() {
+    this.get("#editor").toggleVersions()
+  }
+
   onAccept() {
     this.setAttribute("mode", "show")
     this.onSave().then((sourceCode) => {
