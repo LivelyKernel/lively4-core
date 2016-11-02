@@ -35,14 +35,11 @@
         flex: 1;   /* ACE does not display right with "flex" */
     }
     #versions {
-      padding: 5px;
       position: absolute;
-      background: white;
       top: 25px;
       right: 0px;
       z-index: 200;
-      width: 400px;
-      display: none;
+      display: none; 
     }
     
     #versions > ul {
@@ -59,10 +56,7 @@
           <input type="text" id="filename" value="https://lively4/README.md">
         </div>
         <juicy-ace-editor id="editor" wrapmode="true"></juicy-ace-editor>
-        <div id="versions">
-          Versions:
-          <ul id="list"></ul>
-        </div>
+        <lively-version-control id="versions"></lively-version-control>
     </div>
 
 
@@ -170,30 +164,8 @@
         versions.style.display = "none"
       } else {
         versions.style.display = "block"
-        var listNode = versions.querySelector("#list")
-        fetch(this.getURL(), {
-          method: "OPTIONS",
-          headers: {
-            showversions: true
-          }
-        }).then(r => r.text()).then( text => {
-          try {
-            var json = JSON.parse(text)
-          } catch(e) {
-            lively.notify("could not parse versions:" + e, text.slice(0,1000), 10, () => {
-              lively.openWorkspace(text)
-            }, "red")
-          }
-          json.versions.forEach( ea => {
-            if (!ea) return // guard for syntax fixing null in server..  
-            var item = document.createElement("li")
-            item.innerHTML = ea.date + ", "+ ea.author + ", " + ea.comment
-            listNode.appendChild(item)
-          }) 
-        })
+        versions.showVersions(this.getURL())
       }
-      
-      
     }
     </script>
 

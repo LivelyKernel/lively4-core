@@ -1,0 +1,69 @@
+<template id="lively-version-control">
+    <style>
+    :host {
+    }
+    #versions {
+      margin: 5px;
+      padding: 5px;
+      background: white;
+      width: 400px;
+    }
+    
+    #versions > ul {
+      font-size: 12;
+      padding: 8px;
+    }
+    
+    #container {
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+    }
+    </style>
+    <div id="container">
+      <div id="versions">
+        Versions:
+        <ul id="list"></ul>
+      </div>
+    </div>
+    <script type="lively4script" data-name="showVersions">
+    function(url) {
+      this.url= url
+      var listNode = this.shadowRoot.querySelector("#list")
+      fetch(url, {
+        method: "OPTIONS",
+        headers: {
+          showversions: true
+        }
+      }).then(r => r.text()).then( text => {
+        try {
+          var json = JSON.parse(text)
+        } catch(e) {
+          lively.notify("[version control] could not parse " + url+"versions:" + e, text.slice(0,1000), 10, () => {
+            lively.openWorkspace(text)
+          }, "red")
+          return 
+        }
+        if (!json.versions) {
+          lively.notify("[version control] no versions found", text)
+          return
+        }
+        json.versions.forEach( ea => {
+          if (!ea) return // guard for syntax fixing null in server..  
+          var item = document.createElement("li")
+          item.innerHTML = ea.date + ", "+ ea.author + ", " + ea.comment
+          listNode.appendChild(item)
+        }) 
+      })
+    }
+    </script>
+
+    <script type="lively4script" data-name="livelyMigrate">
+    function(obj) {
+      this.showVersions(obj.url)
+    }
+    </script>
+
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+
