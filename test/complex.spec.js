@@ -18,7 +18,7 @@ describe('complex example', function() {
         var threshold = 10;
         var selection = select(AddExpr, function(expr) {
             return expr.result() > threshold;
-        }, locals);
+        });
 
         expect(selection.now()).to.have.lengthOf(1);
 

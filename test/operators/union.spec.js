@@ -18,10 +18,10 @@ describe('.union operator', function() {
         };
         var view1 = select(ValueHolder, function(data) {
             return range1.min <= data.value && data.value <= range1.max;
-        }, locals);
+        });
         var view2 = select(ValueHolder, function(data) {
             return range2.min <= data.value && data.value <= range2.max;
-        }, locals);
+        });
         var v1 = new ValueHolder(10);
         var v2 = new ValueHolder(20);
         var v3 = new ValueHolder(30);

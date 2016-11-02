@@ -1,7 +1,5 @@
 import View from './view.js';
 import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from './utils.js';
-import trigger from 'aexpr-trigger';
-import aexpr from 'aexpr-interpretation';
 
 /*
     cop.create('SelectionLayer')
@@ -164,7 +162,7 @@ import aexpr from 'aexpr-interpretation';
                 this.downstream.safeAdd(item);
             }
 
-            aexpr(this.expression, this.expression.varMapping, item).onChange(() => this.onChangeCallback(item));
+            aexpr(this.expression, item).onChange(() => this.onChangeCallback(item));
         }
         onChangeCallback(item) {
             if(this.upstream.now().indexOf(item) >= 0 && this.expression(item)) {

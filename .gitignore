@@ -1,5 +1,8 @@
 .idea
 coverage
+test/temp/out.js
+test/temp/pre-babel.js
+test/temp/post-babel.js
 
 # Logs
 logs

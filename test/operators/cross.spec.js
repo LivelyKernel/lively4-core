@@ -15,10 +15,10 @@ describe('.cross operator', function() {
         var instanceB1 = new ValueClassB(43);
         var baseA = select(ValueClassA, function(data) {
             return data.value > 30;
-        }, locals);
+        });
         var baseB = select(ValueClassB, function(data) {
             return data.value > 30;
-        }, locals);
+        });
         var product = baseA.cross(baseB);
 
         expect(product.now()).to.have.lengthOf(1);

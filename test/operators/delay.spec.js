@@ -12,7 +12,7 @@ describe('.delay operator', function() {
         var otherInstance1 = new OtherClass(42);
         var baseView = select(OtherClass, function(data) {
             return data.value === 42;
-        }, locals);
+        });
         var otherInstance2 = new OtherClass(42);
         var delayedView = baseView.delay(500);
         var otherInstance3 = new OtherClass(42);

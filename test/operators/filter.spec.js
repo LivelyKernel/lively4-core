@@ -12,13 +12,13 @@ describe('.filter operator', function() {
         };
         var positiveData = select(DataHolder, function(data) {
             return data.value > range.min;
-        }, locals);
+        });
         var d1 = new DataHolder(17);
         var d2 = new DataHolder(33);
         expect(positiveData.now()).to.have.lengthOf(2);
         var smallData = positiveData.filter(function(data) {
             return data.value < range.max;
-        }, locals);
+        });
         expect(smallData.now()).to.have.lengthOf(1);
         range.max = 50;
         expect(smallData.now()).to.have.lengthOf(2);
