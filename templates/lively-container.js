@@ -243,11 +243,10 @@ export default class Container extends Morph {
       lively.notify("no file created");
       return;
     }
-    lively.files.saveFile(fileName,"");
+    await lively.files.saveFile(fileName,"");
     lively.notify("created " + fileName);
     this.followPath(this.getPath());
   }
-
 
   onAccept() {
     this.setAttribute("mode", "show")

@@ -34,15 +34,29 @@
         height: 100%;
         flex: 1;   /* ACE does not display right with "flex" */
     }
+    #versions {
+      position: absolute;
+      top: 25px;
+      right: 0px;
+      z-index: 200;
+      display: none; 
+    }
+    
+    #versions > ul {
+      font-size: 8;
+      padding: 8px;
+    }
+    
     </style>
     <div class="container">
         <div class="toolbar" id="toolbar">
+          <button id="versionsButton">versions</button>
           <button id="loadButton">load</button>
           <button id="saveButton">save</button>
           <input type="text" id="filename" value="https://lively4/README.md">
         </div>
         <juicy-ace-editor id="editor" wrapmode="true"></juicy-ace-editor>
-
+        <lively-version-control id="versions"></lively-version-control>
     </div>
 
 
@@ -54,6 +68,7 @@
       // #TODO refactor to "connections"
       $(this.getSubmorph('#saveButton')).click(() => this.saveFile())
       $(this.getSubmorph('#loadButton')).click(() => this.loadFile())
+      $(this.getSubmorph('#versionsButton')).click(() => this.showVersions())
 
       container.dispatchEvent(new Event("initialized"))
     }
@@ -142,6 +157,25 @@
     }
     </script>
 
+    <script type="lively4script" data-name="showVersions">
+    function(obj) {
+      var versions = this.shadowRoot.querySelector("#versions")
+      if (versions.style.display == "block") {
+        versions.style.display = "none"
+      } else {
+        versions.style.display = "block"
+        versions.showVersions(this.getURL())
+      }
+    }
+    </script>
+
+
+    <script type="lively4script" data-name="livelyMigrate">
+    function(obj) {
+      this.setURL(obj.getURL())
+      this.loadFile()
+    }
+    </script>
 
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
