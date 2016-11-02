@@ -15,6 +15,7 @@ var tests = [
     {file: 'locals_and_globals'},
     {file: 'nested_left_assignment'},
 
+    {file: 'function-expression'},
     {file: 'all-accesses'},
     {file: 'with_aexpr'},
     {file: 'operators'}

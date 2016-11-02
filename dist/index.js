@@ -157,7 +157,7 @@ exports.default = function (param) {
 
                             if (
                             // TODO: is there a general way to exclude non-variables?
-                            !t.isObjectProperty(path.parent) && !t.isClassDeclaration(path.parent) && !t.isClassMethod(path.parent) && !t.isImportSpecifier(path.parent) && !t.isMemberExpression(path.parent) && !t.isObjectMethod(path.parent) && !t.isVariableDeclarator(path.parent) && !t.isFunctionDeclaration(path.parent) && !(t.isArrowFunctionExpression(path.parent) && path.parentKey === 'params') && !(t.isFunctionExpression(path.parent) && path.parentKey === 'params') && !t.isRestElement(path.parent) && (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))) {
+                            !(t.isLabeledStatement(path.parent) && path.parentKey === 'label') && !(t.isBreakStatement(path.parent) && path.parentKey === 'label') && !(t.isForInStatement(path.parent) && path.parentKey === 'left') && !(t.isAssignmentPattern(path.parent) && path.parentKey === 'left') && !t.isUpdateExpression(path.parent) && !(t.isFunctionExpression(path.parent) && path.parentKey === 'id') && !(t.isImportDefaultSpecifier(path.parent) && path.parentKey === 'local') && !(t.isCatchClause(path.parent) && path.parentKey === 'param') && !t.isObjectProperty(path.parent) && !t.isClassDeclaration(path.parent) && !t.isClassMethod(path.parent) && !t.isImportSpecifier(path.parent) && !t.isMemberExpression(path.parent) && !t.isObjectMethod(path.parent) && !t.isVariableDeclarator(path.parent) && !t.isFunctionDeclaration(path.parent) && !(t.isArrowFunctionExpression(path.parent) && path.parentKey === 'params') && !(t.isFunctionExpression(path.parent) && path.parentKey === 'params') && !t.isRestElement(path.parent) && (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))) {
                                 if (path.scope.hasBinding(path.node.name)) {
                                     //logIdentifier('get local var', path)
                                     path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
@@ -275,6 +275,9 @@ exports.default = function (param) {
                         MemberExpression: function MemberExpression(path) {
                             // lval (left values) are ignored for now
                             if (t.isAssignmentExpression(path.parent) && path.key === 'left') {
+                                return;
+                            }
+                            if (t.isUpdateExpression(path.parent) && path.key === 'argument') {
                                 return;
                             }
                             if (isGenerated(path)) {

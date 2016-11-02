@@ -187,6 +187,14 @@ export default function(param) {
 
                             if(
                                 // TODO: is there a general way to exclude non-variables?
+                            !(t.isLabeledStatement(path.parent) && path.parentKey === 'label') &&
+                            !(t.isBreakStatement(path.parent) && path.parentKey === 'label') &&
+                            !(t.isForInStatement(path.parent) && path.parentKey === 'left') &&
+                            !(t.isAssignmentPattern(path.parent) && path.parentKey === 'left') &&
+                            !(t.isUpdateExpression(path.parent)) &&
+                            !(t.isFunctionExpression(path.parent) && path.parentKey === 'id') &&
+                            !(t.isImportDefaultSpecifier(path.parent) && path.parentKey === 'local') &&
+                            !(t.isCatchClause(path.parent) && path.parentKey === 'param') &&
                             !t.isObjectProperty(path.parent) &&
                             !t.isClassDeclaration(path.parent) &&
                             !t.isClassMethod(path.parent) &&
@@ -373,6 +381,7 @@ export default function(param) {
                         MemberExpression(path) {
                             // lval (left values) are ignored for now
                             if(t.isAssignmentExpression(path.parent) && path.key === 'left') { return; }
+                            if(t.isUpdateExpression(path.parent) && path.key === 'argument') { return; }
                             if(isGenerated(path)) { return; }
 //FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION
                             path.replaceWith(
