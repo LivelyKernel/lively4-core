@@ -26,6 +26,7 @@ export default class Files {
       })
   }
 
+  // #depricated, use fetch directly
   static async loadFile(url, version) {
     return fetch(url, {
       headers: {
@@ -37,6 +38,7 @@ export default class Files {
     })
   }
 
+  // #depricated
   static async saveFile(url, data){
     var urlString = url.toString();
     if (urlString.match(/\/$/)) {

@@ -14,6 +14,23 @@ export default class Editor extends Morph {
       }
     });
     container.dispatchEvent(new Event("initialized"));
+    
+    this.currentEditor().on('change', () => {
+      this.onTextChanged()
+    });
+  }
+  
+  onTextChanged() {
+    if (!this.lastText) return;
+    var newText = this.currentEditor().getValue();
+    
+    if (newText != this.lastText) {
+      this.get("#changeIndicator").style.backgroundColor = "rgb(220,30,30)"
+      this.textChanged = true
+    } else {
+      this.get("#changeIndicator").style.backgroundColor = "rgb(200,200,200)"
+      this.textChanged = false
+    }
   }
 
   onSaveButton() {
@@ -90,6 +107,7 @@ export default class Editor extends Morph {
       return response.text();
     }).then((text) => {
         this.lastText = text;
+        this.textChanged = false;
         this.currentEditor().setValue(text);
         this.currentEditor().resize();
         console.log("file " + url + " read.");
@@ -104,14 +122,22 @@ export default class Editor extends Morph {
     var url = this.getURL();
     console.log("save " + url + "!");
     var data = this.currentEditor().getValue();
-    return lively.files.saveFile(url, data).then(() => {
+    var urlString = url.toString();
+    if (urlString.match(/\/$/)) {
+      return fetch(urlString, {method: 'MKCOL'});
+    } else {
+      return fetch(urlString, {method: 'PUT', body: data}).then((response) => {
         console.log("edited file " + url + " written.");
-      }).then( (sourceCode) => {
-          lively.notify("saved file", url );
-        }, (err) => {
-           lively.notify("Could not save file" + url +"\nMaybe next time you are more lucky?");
-        }
-      ); // don't catch here... so we can get the error later as needed...
+    
+        this.lastText = data;
+        this.lastVersion = response.headers.get("fileversion");
+        lively.notify("last version " + this.lastVersion);
+        lively.notify("saved file", url );
+      }, (err) => {
+         lively.notify("Could not save file" + url +"\nMaybe next time you are more lucky?");
+         throw err
+      }); // don't catch here... so we can get the error later as needed...
+    }
   }
 
   hideToolbar() {

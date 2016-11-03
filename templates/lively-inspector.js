@@ -139,7 +139,7 @@ export default class Inspector   extends Morph {
     node.innerHTML = this.expandTemplate(node)  + `${lt}`+
       `<a id='tagname' class='tagname'>${tagName.toLowerCase()}</a>`+
       `<span id='attributes'></span>${gt}` + this.contentTemplate +
-      `${lt}<span class='tagname'>${tagName.toLowerCase()}</span>${gt}`;
+      `${lt}/<span class='tagname'>${tagName.toLowerCase()}</span>${gt}`;
     if (tagName == "shadowroot") {
       node.innerHTML = this.expandTemplate(node) + "<a id='tagname' class='tagname'>#shadow-root</a>" +
         this.contentTemplate; 

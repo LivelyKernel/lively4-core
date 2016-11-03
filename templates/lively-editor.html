@@ -37,14 +37,22 @@
     #versionControl {
       position: absolute;
       top: 40px;
-      right: 40px;
+      right: 10px;
       width: 400px;
       height: calc(100% - 100px);
       z-index: 200;
       display: none; 
       background: white;
     }
-    
+    #changeIndicator {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      right: 17px;
+      top: 0px;
+      z-index: 200;
+      background: rgb(220,30,30)
+    }
     </style>
     <div class="container">
         <div class="toolbar" id="toolbar">
@@ -54,6 +62,7 @@
           <input type="text" id="filename" value="https://lively4/README.md">
         </div>
         <juicy-ace-editor id="editor" wrapmode="true"></juicy-ace-editor>
+        <div id="changeIndicator"></div>
         <div id="versionControl">
           <button id="loadVersionButton">load</button>
           <button id="closeVersionsButton">close</button>
