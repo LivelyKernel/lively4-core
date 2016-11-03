@@ -280,6 +280,9 @@ exports.default = function (param) {
                             if (t.isUpdateExpression(path.parent) && path.key === 'argument') {
                                 return;
                             }
+                            if (t.isSuper(path.node.object)) {
+                                return;
+                            }
                             if (isGenerated(path)) {
                                 return;
                             }
@@ -288,6 +291,9 @@ exports.default = function (param) {
                         },
                         CallExpression: function CallExpression(path) {
                             if (isGenerated(path)) {
+                                return;
+                            }
+                            if (path.node.callee && t.isSuper(path.node.callee.object)) {
                                 return;
                             }
 

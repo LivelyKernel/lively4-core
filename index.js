@@ -382,6 +382,7 @@ export default function(param) {
                             // lval (left values) are ignored for now
                             if(t.isAssignmentExpression(path.parent) && path.key === 'left') { return; }
                             if(t.isUpdateExpression(path.parent) && path.key === 'argument') { return; }
+                            if(t.isSuper(path.node.object)) { return; }
                             if(isGenerated(path)) { return; }
 //FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION
                             path.replaceWith(
@@ -397,6 +398,7 @@ export default function(param) {
 
                         CallExpression(path) {
                             if(isGenerated(path)) { return; }
+                            if(path.node.callee && t.isSuper(path.node.callee.object)) { return; }
 
                             // check whether we call a MemberExpression
                             if(t.isMemberExpression(path.node.callee)) {
