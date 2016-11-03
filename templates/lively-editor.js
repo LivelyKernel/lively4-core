@@ -1,3 +1,9 @@
+/*
+ * Lively 4 Text Editor
+ * - based Ace editor
+ * - simple load/save/navigate UI, that can be disabled to use elsewhere, e.g. container
+ * - updates change indicator while when editting,loading, and saving
+ */
 
 import Morph from './Morph.js';
 import moment from "src/external/moment.js";
@@ -16,12 +22,12 @@ export default class Editor extends Morph {
     container.dispatchEvent(new Event("initialized"));
     
     this.currentEditor().on('change', () => {
-      this.onTextChanged()
+      this.onTextChanged();
     });
   }
   
   onTextChanged() {
-    this.updateChangeIndicator()
+    this.updateChangeIndicator();
   }
 
   updateChangeIndicator() {
@@ -29,11 +35,11 @@ export default class Editor extends Morph {
     var newText = this.currentEditor().getValue();
     
     if (newText != this.lastText) {
-      this.get("#changeIndicator").style.backgroundColor = "rgb(220,30,30)"
-      this.textChanged = true
+      this.get("#changeIndicator").style.backgroundColor = "rgb(220,30,30)";
+      this.textChanged = true;
     } else {
-      this.get("#changeIndicator").style.backgroundColor = "rgb(200,200,200)"
-      this.textChanged = false
+      this.get("#changeIndicator").style.backgroundColor = "rgb(200,200,200)";
+      this.textChanged = false;
     }
   }
 
@@ -113,7 +119,7 @@ export default class Editor extends Morph {
       lively.notify("loaded version " + this.lastVersion);
       return response.text();
     }).then((text) => {
-        this.setText(text)
+        this.setText(text);
       },
       (err) => {
         lively.notify("Could not load file " + url +"\nMaybe next time you are more lucky?");
