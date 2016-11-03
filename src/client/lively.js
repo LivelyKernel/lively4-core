@@ -679,12 +679,19 @@ export default class Lively {
   }
 
   static openSearchWidget(text) {
-    var comp = document.getElementsByTagName("lively-search-widget")[0]
-    if (comp.isVisible && text == comp.query) {
-      comp.isVisible = false;
+    // index based search is not useful at the moment
+    if (true) {
+      this.openComponentInWindow("lively-search", evt).then( comp => {
+         comp.searchFile(text)
+      })
     } else {
-      comp.isVisible = true
-      comp.search(text, true)
+      var comp = document.getElementsByTagName("lively-search-widget")[0]
+      if (comp.isVisible && text == comp.query) {
+        comp.isVisible = false;
+      } else {
+        comp.isVisible = true
+        comp.search(text, true)
+      }
     }
   }
   

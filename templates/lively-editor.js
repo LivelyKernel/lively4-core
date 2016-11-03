@@ -75,14 +75,21 @@ export default class Editor extends Morph {
   }
 
   loadFile(version) {
-    this.lastVersion = version
     var url = this.getURL();
     console.log("load " + url);
     this.updateAceMode();
 
-    lively.files.loadFile(url, version).then(
-      (text) => {
-        this.lastText = text
+    fetch(url, {
+      headers: {
+        fileversion: version
+      }
+    }).then( response => {
+      // remember the commit hash (or similar version information) if loaded resource
+      this.lastVersion = response.headers.get("fileversion"); 
+      // lively.notify("loaded version " + this.lastVersion);
+      return response.text();
+    }).then((text) => {
+        this.lastText = text;
         this.currentEditor().setValue(text);
         this.currentEditor().resize();
         console.log("file " + url + " read.");
