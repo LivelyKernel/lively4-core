@@ -130,11 +130,11 @@ export default class Editor extends Morph {
     } else {
       return fetch(urlString, {method: 'PUT', body: data}).then((response) => {
         console.log("edited file " + url + " written.");
-    
         this.lastText = data;
         this.lastVersion = response.headers.get("fileversion");
         lively.notify("last version " + this.lastVersion);
         lively.notify("saved file", url );
+        this.updateChangeIndicator()
       }, (err) => {
          lively.notify("Could not save file" + url +"\nMaybe next time you are more lucky?");
          throw err
