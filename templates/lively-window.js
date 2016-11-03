@@ -327,7 +327,17 @@ export default class Window extends Morph {
     // this.reposition()
   }
 
+  get target() {
+    return this.childNodes[0]
+  }
+
   closeButtonClicked(e) {
+    if (this.target && this.target.unsavedChanges && this.target.unsavedChanges()) {
+      if(!window.confirm("Window contains unsaved changes, close anyway?"))  {
+        return 
+      }
+    }
+    
     if (this.positionBeforeMaximize)
       this.toggleMaximize()
 

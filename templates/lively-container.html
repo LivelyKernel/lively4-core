@@ -14,7 +14,6 @@
         display: none;
       }
 
-
       #container-rightpane {
         flex: 1;
         position: relative;
@@ -57,8 +56,6 @@
         overflow: auto;
         overflow-x: hidden;
       }
-      
-     
       
       #container-leftpane ul {
         margin:0;
@@ -108,6 +105,12 @@
         white-space: nowrap;
         text-decoration: none;
         color: #444444;
+      }
+      
+      #container-leftpane ul li.selected a {
+        background-color: gray;
+        color: white;
+        cursor: pointer
       }
       
       #container-leftpane ul li a:hover {

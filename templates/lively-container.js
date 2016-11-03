@@ -1,7 +1,4 @@
-'use strict';
-
 import Morph from './Morph.js';
-
 
 export default class Container extends Morph {
 
@@ -54,7 +51,7 @@ export default class Container extends Morph {
     
 
     // #TODO very ugly... I want to hide that level of JavaScript and just connect "onEnter" of the input field with my code
-    var input = this.getSubmorph("#container-path");
+    var input = this.get("#container-path");
     $(input).keyup(event => {
       if (event.keyCode == 13) { // ENTER
         this.onPathEntered(input.value);
@@ -174,10 +171,10 @@ export default class Container extends Morph {
       lively.files.saveFile(this.getURL(),"") 
       return
     }
-    this.getSubmorph("#editor").setURL(this.getURL())
+    this.get("#editor").setURL(this.getURL())
     
-    return this.getSubmorph("#editor").saveFile().then( () => {
-      var sourceCode = this.getSubmorph("#editor").currentEditor().getValue()
+    return this.get("#editor").saveFile().then( () => {
+      var sourceCode = this.get("#editor").currentEditor().getValue()
       if (this.getPath().match(/templates\/.*html/))
         lively.updateTemplate(sourceCode)
         
@@ -201,7 +198,7 @@ export default class Container extends Morph {
       var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/)
       if (moduleName) {
         moduleName = moduleName[1]
-        if (this.getSubmorph("#live").checked && !this.getSubmorph("#live").disabled) {
+        if (this.get("#live").checked && !this.get("#live").disabled) {
           
           lively.reloadModule("" + url).then( async module => {
             lively.notify("Scripting","Module " + moduleName + " reloaded!", 3, null, "green")
@@ -262,7 +259,7 @@ export default class Container extends Morph {
 
   clear() {
     this.getContentRoot().innerHTML = ''
-    this.getSubmorph('#container-editor').innerHTML = ''
+    this.get('#container-editor').innerHTML = ''
   }
   
 
@@ -360,6 +357,12 @@ export default class Container extends Morph {
   }
   
   async followPath(path) {
+    if (this.unsavedChanges()) {
+      if (!window.confirm("You will loos unsaved changes, continue anyway?")) {
+        return;
+      }
+    } 
+    
     var m = path.match(/start\.html\?load=(.*)/)
     if (m) {
       lively.notify(m[1])
@@ -399,7 +402,7 @@ export default class Container extends Morph {
   }
 
   getContentRoot() {
-    // return this.getSubmorph('#container-root')
+    // return this.get('#container-root')
     return this
   }
 
@@ -487,10 +490,10 @@ export default class Container extends Morph {
   
   setPath(path, donotrender) {
     console.log("set path")
-    this.getSubmorph('#container-content').style.display = "block"
-    this.getSubmorph('#container-editor').style.display = "none"
+    this.get('#container-content').style.display = "block"
+    this.get('#container-editor').style.display = "none"
 
-    // this.getSubmorph('#container-leftpane').style.display = "none"
+    // this.get('#container-leftpane').style.display = "none"
 
     if (!path) {
         path = ""
@@ -506,11 +509,11 @@ export default class Container extends Morph {
     }
     path =  path + (isdir ? "/" : "")
 
-    var container=  this.getSubmorph('#container-content')
+    var container=  this.get('#container-content')
     
 	  this.setAttribute("src", path)
     this.clear()
-    this.getSubmorph('#container-path').value = path
+    this.get('#container-path').value = path
     container.style.overflow = "auto";
 
 
@@ -558,7 +561,7 @@ export default class Container extends Morph {
   }
 
   clearNavbar() {
-    var container = this.getSubmorph('#container-leftpane');
+    var container = this.get('#container-leftpane');
     // container.style.display = "block";
 
     container.innerHTML= "";
@@ -646,13 +649,13 @@ export default class Container extends Morph {
   }
   
   hideNavbar() {
-    this.getSubmorph('#container-leftpane').style.display = "none";
-    this.getSubmorph('lively-separator').style.display = "none";
+    this.get('#container-leftpane').style.display = "none";
+    this.get('lively-separator').style.display = "none";
   }
 
   showNavbar() {
-    // this.getSubmorph('#container-leftpane').style.display = "block";
-    // this.getSubmorph('lively-separator').style.display = "block";
+    // this.get('#container-leftpane').style.display = "block";
+    // this.get('lively-separator').style.display = "block";
 
 
     var filename = ("" + this.getURL()).replace(/.*\//,"")
@@ -705,6 +708,9 @@ export default class Container extends Morph {
 	      link.innerHTML = icon + name;
 	      link.href = ea.name
 	      link.onclick = () => {
+          if (this.selectedLink) this.selectedLink.classList.remove("selected")
+	        this.selectedLink = link
+	        this.selectedLink.classList.add("selected")
 	        this.followPath(root + name);
 	        return false
 	      }
@@ -725,9 +731,9 @@ export default class Container extends Morph {
       
       this.clear()
       
-      var containerContent=  this.getSubmorph('#container-content')
+      var containerContent=  this.get('#container-content')
       containerContent.style.display = "none"
-      var containerEditor =  this.getSubmorph('#container-editor')
+      var containerEditor =  this.get('#container-editor')
       containerEditor.style.display = "block"
 
 
@@ -790,6 +796,11 @@ export default class Container extends Morph {
     var source  = this.getContentRoot().innerHTML
     lively.files.saveFile(this.getURL(),source) 
   }
+  
+  unsavedChanges() {
+    var editor = this.get("#editor");
+    if (!editor) return false
+    return  editor.textChanged
+  }
 }
-
 

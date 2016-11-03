@@ -21,6 +21,10 @@ export default class Editor extends Morph {
   }
   
   onTextChanged() {
+    this.updateChangeIndicator()
+  }
+
+  updateChangeIndicator() {
     if (!this.lastText) return;
     var newText = this.currentEditor().getValue();
     
@@ -81,7 +85,10 @@ export default class Editor extends Morph {
   }
 
   setText(text) {
-    this.getSubmorph("juicy-ace-editor").editor.setValue(text);
+    this.lastText = text;
+    this.updateChangeIndicator();
+    this.currentEditor().setValue(text);
+    this.currentEditor().resize();
     this.updateAceMode();
   }
 
@@ -103,15 +110,10 @@ export default class Editor extends Morph {
     }).then( response => {
       // remember the commit hash (or similar version information) if loaded resource
       this.lastVersion = response.headers.get("fileversion"); 
-      // lively.notify("loaded version " + this.lastVersion);
+      lively.notify("loaded version " + this.lastVersion);
       return response.text();
     }).then((text) => {
-        this.lastText = text;
-        this.textChanged = false;
-        this.currentEditor().setValue(text);
-        this.currentEditor().resize();
-        console.log("file " + url + " read.");
-        console.log("content: " + text);
+        this.setText(text)
       },
       (err) => {
         lively.notify("Could not load file " + url +"\nMaybe next time you are more lucky?");

@@ -505,51 +505,55 @@ export default class AceEditor extends HTMLElement {
 
     // Spell check the Ace editor contents.
     spellCheck() {
-        if (!this.isSpellChecking) return
-      
-        // Wait for the dictionary to be loaded.
-        if (this.dictionary == null) {
-          return;
-        }
-
-        if (this.currently_spellchecking) {
-        	return;
-        }
-
-        if (!this.contents_modified) {
-        	return;
-        }
-
-        console.log("spell check!")
-
-        this.currently_spellchecking = true;
-        var session = this.editor.getSession();
-
-        
-        this.clearSpellCheckMarkers()
-
-        try {
-      	  var Range = ace.require('ace/range').Range
-      	  var lines = session.getDocument().getAllLines();
-      	  for (var i in lines) {
-      	    // Check spelling of this line.
-      	    var misspellings = this.misspelled(lines[i]);
-
-      	    // Add markers and gutter markings.
-      	    if (misspellings.length > 0) {
-      	      session.addGutterDecoration(i, "misspelled");
-      	    }
-      	    for (var j in misspellings) {
-      	      var range = new Range(i, misspellings[j][0], i, misspellings[j][1]);
-      	      // console.log("missspell: ", misspellings[j])
-      	  
-      	      this.markers_present[this.markers_present.length] =
-      	        session.addMarker(range, "misspelled", "typo", true);
-      	    }
-      	  }
-      	} finally {
-      		this.currently_spellchecking = false;
-      		this.contents_modified = false;
-      	}
+      if (!this.isSpellChecking) return
+    
+      // Wait for the dictionary to be loaded.
+      if (this.dictionary == null) {
+        return;
       }
+
+      if (this.currently_spellchecking) {
+      	return;
+      }
+
+      if (!this.contents_modified) {
+      	return;
+      }
+
+      console.log("spell check!")
+
+      this.currently_spellchecking = true;
+      var session = this.editor.getSession();
+
+      
+      this.clearSpellCheckMarkers()
+
+      try {
+    	  var Range = ace.require('ace/range').Range
+    	  var lines = session.getDocument().getAllLines();
+    	  for (var i in lines) {
+    	    // Check spelling of this line.
+    	    var misspellings = this.misspelled(lines[i]);
+
+    	    // Add markers and gutter markings.
+    	    if (misspellings.length > 0) {
+    	      session.addGutterDecoration(i, "misspelled");
+    	    }
+    	    for (var j in misspellings) {
+    	      var range = new Range(i, misspellings[j][0], i, misspellings[j][1]);
+    	      // console.log("missspell: ", misspellings[j])
+    	  
+    	      this.markers_present[this.markers_present.length] =
+    	        session.addMarker(range, "misspelled", "typo", true);
+    	    }
+    	  }
+    	} finally {
+    		this.currently_spellchecking = false;
+    		this.contents_modified = false;
+    	}
+    }
+    
+    unsavedChanges() {
+      return  true // workspaces should be treated carefully
+    }
 }
