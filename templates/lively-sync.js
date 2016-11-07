@@ -212,6 +212,10 @@ export default class Sync extends Morph {
     }
   }
   
+  onSquashButton() {
+    this.gitControl("squash");
+  }
+
   get storagePrefix() {
     return "LivelySync_"
   }
