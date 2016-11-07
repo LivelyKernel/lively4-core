@@ -45,12 +45,23 @@ export default class VersionControl extends Morph {
   }
   
   selectItem(item) {
+    this.get("#preview").editor.setValue("")
+
     if (this.selectedItem) 
       this.selectedItem.classList.remove("selected");
     if (this.selectedItem !== item) { 
       this.selectedItem = item;
       this.selectedItem.classList.add("selected");
       this.selection = item.value;
+      fetch(this.url, {
+        headers: {
+          fileversion: item.value.version
+        }
+      }).then( r => r.text()).then( text => {
+        this.get("#preview").editor.setValue(text)
+      })
+      
+      
     } else {
       this.selectedItem = null;
       this.selection = null

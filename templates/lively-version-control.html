@@ -36,13 +36,24 @@
       margin: 0px;
     }
     
+    #preview {
+      position: absolute;
+      width: 400px;
+      height: 600px;
+      right: 380px;
+      top: -60px;
+      z-index: 200;
+      transform: scale(0.8);
+    }
     
     </style>
+    <juicy-ace-editor id="preview"></juicy-ace-editor>
     <div id="container">
       <div id="versions">
         <table id="list"></table>
       </div>
     </div>
+
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 
