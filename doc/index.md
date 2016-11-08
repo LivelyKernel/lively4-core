@@ -33,3 +33,6 @@ All components are stored together with their prototype definitions (JavaScript 
 
 # Modules
 
+# Other Documentation
+- [Lively4 Wiki on Github](https://lively-kernel.org/lively4/Lively4.wiki/Home.md)
+- that also hosts our [developers journal](https://lively-kernel.org/lively4/Lively4.wiki/Journal.md)
