@@ -350,6 +350,11 @@ export default class Container extends Morph {
           this.appendScript(ea);
         } else {
           root.appendChild(ea);
+          if (ea.querySelectorAll) {
+            ea.querySelectorAll("pre code").forEach( block => {
+              highlight.highlightBlock(block);
+            });
+          };
         }
       });
     } catch(e) {
@@ -555,7 +560,7 @@ export default class Container extends Morph {
           + url +'" type="application/pdf"></object>')
       } else {
         this.sourceContent = content
-        if (render) return this.appendHtml("<pre>" + content +"</pre>")
+        if (render) return this.appendHtml("<pre><code>" + content +"</code></pre>")
       }
     }).catch(function(err){
       console.log("Error: ", err)
