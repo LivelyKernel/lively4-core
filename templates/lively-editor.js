@@ -45,10 +45,12 @@ export default class Editor extends Morph {
   }
   
   updateOtherEditors() {
+    
     var url = this.getURL();
     var editors = lively.array(document.querySelectorAll("lively-container::shadow lively-editor, lively-editor"));
-    var editorsToUpdate = editors.filter( ea => ea.getURL() == url && !ea.textChanged);
 
+    var editorsToUpdate = editors.filter( ea => ea.getURL() == url && !ea.textChanged);
+  debugger
     editorsToUpdate.forEach( ea => {
       lively.showElement(ea);
       // here we want to continue
