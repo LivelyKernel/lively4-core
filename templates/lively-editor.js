@@ -43,6 +43,10 @@ export default class Editor extends Morph {
       this.textChanged = false;
     }
   }
+  
+  updateOtherEditors() {
+    
+  }
 
   onSaveButton() {
     this.saveFile();
@@ -170,6 +174,7 @@ export default class Editor extends Morph {
     var patch1 = dmp.patch_make(diff1);
     var patch2 = dmp.patch_make(diff2);
     var merge = dmp.patch_apply(patch1.concat(patch2), a);
+    // #TODO handle conflicts detected in merge
     return merge[0];
   }
 
