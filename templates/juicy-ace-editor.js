@@ -144,7 +144,9 @@ export default class AceEditor extends HTMLElement {
   // CUSTOMIZATION
   enableAutocompletion(filename) {
     return this.aceRequire("ace/ext/language_tools").then( module => {
-      if (!this.editor || !this.editor.setOptions) return;
+      if (!this.editor || !this.editor.setOptions) { 
+        return;
+      }
       this.editor.setOptions({
           enableBasicAutocompletion: true,
           enableSnippets: true,
@@ -162,6 +164,7 @@ export default class AceEditor extends HTMLElement {
             var wordList = [];
           curCmd = curCmd.replace(/\.[^.]*$/,"");
           var obj = (await this.boundEval(curCmd)).value;
+          // console.log("COMPLETE", obj)
           wordList = lively.allProperties(obj);
           // console.log("complete: " + curCmd +"\n" + wordList)
             callback(null, _.keys(wordList).map(function(ea) {
@@ -538,4 +541,9 @@ export default class AceEditor extends HTMLElement {
   unsavedChanges() {
     return  true // workspaces should be treated carefully
   }
+  
+  livelyMigrate(other) {
+    this.editor.setValue(other.editor.getValue())
+  }
+  
 }
