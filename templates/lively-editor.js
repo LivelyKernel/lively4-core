@@ -7,6 +7,7 @@
 
 import Morph from './Morph.js';
 import moment from "src/external/moment.js";
+import diff from 'src/external/diff-match-patch.js'
 
 export default class Editor extends Morph {
 
@@ -115,7 +116,7 @@ export default class Editor extends Morph {
       }
     }).then( response => {
       // remember the commit hash (or similar version information) if loaded resource
-      this.lastVersion = response.headers.get("fileversion"); 
+      this.lastVersion = response.headers.get("fileversion");
       lively.notify("loaded version " + this.lastVersion);
       return response.text();
     }).then((text) => {
@@ -127,6 +128,7 @@ export default class Editor extends Morph {
   }
 
   saveFile() {
+    lively.notify("SAVE!!!!")
     var url = this.getURL();
     console.log("save " + url + "!");
     var data = this.currentEditor().getValue();
@@ -134,18 +136,49 @@ export default class Editor extends Morph {
     if (urlString.match(/\/$/)) {
       return fetch(urlString, {method: 'MKCOL'});
     } else {
-      return fetch(urlString, {method: 'PUT', body: data}).then((response) => {
+      return fetch(urlString, {
+        method: 'PUT', 
+        body: data,
+        headers: {
+          lastversion:  this.lastVersion
+        }
+      }).then((response) => {
         console.log("edited file " + url + " written.");
-        this.lastText = data;
-        this.lastVersion = response.headers.get("fileversion");
-        lively.notify("last version " + this.lastVersion);
+        var newVersion = response.headers.get("fileversion") 
+        var conflictVersion = response.headers.get("conflictversion")
+        if (conflictVersion) {
+          return this.solveConflic(conflictVersion)
+        }
+        if (newVersion) {
+          lively.notify("new version " + newVersion);
+          this.lastVersion = newVersion;
+        }
         lively.notify("saved file", url );
-        this.updateChangeIndicator()
+        this.lastText = data;
+        this.updateChangeIndicator();
       }, (err) => {
          lively.notify("Could not save file" + url +"\nMaybe next time you are more lucky?");
-         throw err
+         throw err;
       }); // don't catch here... so we can get the error later as needed...
     }
+  }
+
+  /*
+   * solveConflict
+   * use three-way-merge
+   */ 
+  async solveConflic(otherVersion) {
+    lively.notify("Solve Conflict: " + otherVersion)
+    var parentText = this.lastText // 
+    var myText = this.currentEditor().getValue(); // data
+    // load from conflict version
+    var otherText = await fetch(this.getURL(), {
+        headers: {fileversion: otherVersion}
+      }).then( r => r.text()); 
+    
+    lively.notify("OTHER", otherText)
+    
+    
   }
 
   hideToolbar() {
