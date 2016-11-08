@@ -32,6 +32,22 @@ All components are stored together with their prototype definitions (JavaScript 
 
 # Modules
 
+- [lively](src/client/lively.js) -> Our used to be kitchen-sink-god-class modules that has to be cleaned up after helping us in a time with needs
+- 
+
+# Development
+
+- Issues
+- Repositories
+- Libraries 
+  - Problematic: npm --> problematic, because it does not work with github.io
+  - Problematic: ../some-relative-repository (on lively-kernel.org) --> problematic, ... see above
+  - OK: static copies of (potentially minified) libraries
+  - Best: github repositories subtrees, statically available, but still updateable
+    - FEATURE: allows for local adaptation, without giving up, updateabiltiy 
+    - #TODO -> provide tool support from inside lively4 to add, update, remove such dependencies
+  - Do you have a favorite module/library/package/dependency management system that works clientside only?
+
 # Other Documentation
 - [Lively4 Wiki on Github](https://lively-kernel.org/lively4/Lively4.wiki/Home.md)
 - that also hosts our [developers journal](https://lively-kernel.org/lively4/Lively4.wiki/Journal.md)
