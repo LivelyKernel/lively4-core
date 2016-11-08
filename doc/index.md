@@ -20,9 +20,8 @@ All components are stored together with their prototype definitions (JavaScript 
 - Lively Sync
   - sync
   - commit
-  - squash [experimental]
+  - squash
     - squashes several commits into one
-    - PROBLEM: Lively Editors rember commit hashes as lastVersion that will now not be available....
   - branch [experimental]
 
 
