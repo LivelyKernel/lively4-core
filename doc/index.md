@@ -8,6 +8,8 @@
   - sync
   - commit
   - squash [experimental]
+    - squashes several commits into one
+    - PROBLEM: Lively Editors rember commit hashes as lastVersion that will now not be available....
   - branch [experimental]
 
 
