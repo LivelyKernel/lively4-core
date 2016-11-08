@@ -161,7 +161,8 @@ export default class Container extends Morph {
     this.forwardHistory().push(url);
     this.followPath(last);
   }
-
+  
+  
   onForward() {
     var url = this.forwardHistory().pop();
     if (url) {
@@ -170,6 +171,13 @@ export default class Container extends Morph {
       lively.notify("Could not navigate forward");
     }
   }
+
+  async onBrowse() {
+    var url = this.getURL();
+    var comp = await lively.openComponentInWindow("lively-container")
+    comp.editFile("" + url)
+  }
+
 
   onSave(doNotQuit) {
     if (this.getPath().match(/\/$/)) {
