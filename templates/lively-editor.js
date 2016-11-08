@@ -54,7 +54,7 @@ export default class Editor extends Morph {
       ea.getURL().toString() == url && !ea.textChanged && ea !== this);
           
     editorsToUpdate.forEach( ea => {
-      lively.showElement(ea);
+      // lively.showElement(ea);
       ea.loadFile()
     });
   }
