@@ -51,19 +51,14 @@ export default class Search extends Morph {
       var file = m[1]
       var pattern = m[2]
       var url = lively4url + "/../" + file
-      var item = document.createElement("li")
-      var link = document.createElement("a")
-      link.innerHTML = file +":"
+      var item = document.createElement("tr")
+      item.innerHTML = `<td><a>${file}</a></td><td><span ="pattern">${pattern}</span></td>`
+      link = item.querySelector("a")
       link.href = entry
       link.onclick = () => {
         this.browseSearchResult(url, pattern)
         return false;
       }
-      var text = document.createElement("span")
-      text.classList.add("pattern")
-      text.innerHTML = pattern
-      item.appendChild(link)
-      item.appendChild(text)
       this.q("#searchResults").appendChild(item)
     })
   }
