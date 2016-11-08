@@ -32,7 +32,7 @@ All components are stored together with their prototype definitions (JavaScript 
 
 # Modules
 
-- [lively](src/client/lively.js) -> Our used to be kitchen-sink-god-class modules that has to be cleaned up after helping us in a time with needs
+- [lively](../src/client/lively.js) -> Our used to be kitchen-sink-god-class modules that has to be cleaned up after helping us in a time with needs
 - ...
 
 # Development
