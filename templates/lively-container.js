@@ -546,8 +546,8 @@ export default class Container extends Morph {
     // Handling directories
     
     if (isdir) {
-      // return new Promise((resolve) => { resolve("") })
-      return this.listingForDirectory(url, render)
+      return new Promise((resolve) => { resolve("") })
+      // return this.listingForDirectory(url, render)
     }
     // Handling files
     return lively.files.loadFile(url).then((content) => {
