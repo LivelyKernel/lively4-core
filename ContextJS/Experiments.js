@@ -39,7 +39,8 @@ cop.LayerInliner.addMethods( {
             if (firstRun) {
                 firstRun = false;
                 if (!isValid)
-                    throw new Error('Layer validation check failed on first call... this should not be!\nprecomputed hash: ' + preComputedHash + '\nactualHash: ' + currentHash)
+                    throw new Error('Layer validation check failed on first call... this should not be!\nprecomputed hash: ' 
+                      + preComputedHash + '\nactualHash: ' + currentHash)
             }
             return isValid ?
                 method.apply(this, arguments) :

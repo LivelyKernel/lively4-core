@@ -3,7 +3,8 @@
 * Sofware Architecture Group, Hasso Plattner Institute,  2015, 2016 [MIT LICENSE](LICENSE)
 * Stefan Lehmann, Jens Lincke, Tim Felgentreff, et al
 * Seminars
-  * Software Design  [SWD 2015](https://lively-kernel.org/lively4/Lively4.wiki/SWD15.md) [SWD 2016](https://lively-kernel.org/lively4/Lively4.wiki/SWD16.md)
+  * Software Design  [SWD 2015](https://lively-kernel.org/lively4/Lively4.wiki/SWD15.md) 
+   [SWD 2016](https://lively-kernel.org/lively4/Lively4.wiki/SWD16.md)
   * Web-based Development [WebDev 2016](https://lively-kernel.org/lively4/Lively4.wiki/WebDev16.md) 
 * [readme](README.md)
 
@@ -23,7 +24,8 @@
 
 ## External Code
 
-We hope to come up with a solution, that will be as comfortable as npm for node.js development, but at the same time will serve our need better to jump into development and immediatly make local customizations. 
+We hope to come up with a solution, that will be as comfortable as npm for node.js development, 
+but at the same time will serve our need better to jump into development and immediatly make local customizations. 
 
 * [node modules](node_modules/): automatically updated, but not availablen on github.io
 * [external](src/external/): static copies, manually management needed
