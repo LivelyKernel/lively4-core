@@ -1,17 +1,18 @@
 'use strict';
 
 import Morph from './Morph.js';
+import lively from 'src/client/lively.js'
 
 export default class Search extends Morph {
   initialize() {
     this.windowTitle = "File Search"
-    var container = this.q(".container");
+    var container = this.get(".container");
     lively.html.registerButtons(this);
     lively.html.registerInputs(this);
     
     this.shadowRoot.querySelector("#rootsInput").value = lively4url.replace(/.*\//,"");
     
-    lively.addEventListener("lively-search", this.q('#searchInput'), "keyup",
+    lively.addEventListener("lively-search", this.get('#searchInput'), "keyup",
       (evt) => { 
         if(evt.keyCode == 13) { 
           try {
@@ -24,22 +25,16 @@ export default class Search extends Morph {
       
     var search = this.getAttribute("search")
     if(search) {
-      this.q("#searchInput").value = search
+      this.get("#searchInput").value = search
       this.searchFile()
     }
   }
 
-  // #TODO pull into Morph?  
-  q(selector) {
-    return this.shadowRoot.querySelector(selector)
-  }
-  
-  // #TODO into Morph or Tool
   clearLog(s) {
-    this.q("#searchResults").innerHTML=""
+    this.get("#searchResults").innerHTML=""
   }
 
-  async browseSearchResult(url, pattern) {
+  browseSearchResult(url, pattern) {
     return lively.openBrowser(url, true, pattern)
   }
 
@@ -59,12 +54,12 @@ export default class Search extends Morph {
         this.browseSearchResult(url, pattern)
         return false;
       }
-      this.q("#searchResults").appendChild(item)
+      this.get("#searchResults").appendChild(item)
     })
   }
 
   async onSearchButton() {
-      this.setAttribute("search", this.q("#searchInput").value);
+      this.setAttribute("search", this.get("#searchInput").value);
       this.searchFile();
   }
   
@@ -80,14 +75,14 @@ export default class Search extends Morph {
   searchFile(text) {
     if (text) {
       this.setAttribute("search", text); // #TODO how to specify data-flow / connections...
-      this.q("#searchInput").value = text
+      this.get("#searchInput").value = text
     }
     
     console.log("search")
     // if (this.searchInProgres) return;
     this.searchInProgres = true
     this.clearLog()
-    var search = this.q("#searchInput").value
+    var search = this.get("#searchInput").value
     if (search.length < 3) {
       this.searchInProgres = false 
       return // this.log("not searching for " + search)
@@ -98,8 +93,8 @@ export default class Search extends Morph {
     fetch(this.getSearchURL(), {
       headers: new Headers({ 
   	   "searchpattern": search,
-  	   "rootdirs": this.q("#rootsInput").value,
-  	   "excludes": this.q("#excludesInput").value,
+  	   "rootdirs": this.get("#rootsInput").value,
+  	   "excludes": this.get("#excludesInput").value,
     })}).then(r => r.text()).then( t => {
       this.searchInProgres = false 
       this.clearLog()
