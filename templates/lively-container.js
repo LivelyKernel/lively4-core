@@ -714,8 +714,12 @@ export default class Container extends Morph {
 
 	      var element = document.createElement("li");
 	      var link = document.createElement("a");
+
+        
 	      
 	      if (ea.name == filename) targetItem = element;
+	      if (targetItem) targetItem.classList.add("selected")
+	      
 	      var name = ea.name;
 	      var icon;
 	      if (ea.type == "directory") {
@@ -729,9 +733,6 @@ export default class Container extends Morph {
 	      link.innerHTML = icon + name;
 	      link.href = ea.name
 	      link.onclick = () => {
-          if (this.selectedLink) this.selectedLink.classList.remove("selected")
-	        this.selectedLink = link
-	        this.selectedLink.classList.add("selected")
 	        this.followPath(root + name);
 	        return false
 	      }
@@ -742,6 +743,7 @@ export default class Container extends Morph {
       if (this.isEditing() && targetItem) {
         this.showNavbarSublist(targetItem)
       }
+      
     })
   }
   

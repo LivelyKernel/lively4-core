@@ -55,6 +55,7 @@
               $('lively-container')[0].__ingoreUpdates = true // a hack... since I am missing DevLayers...
               $('lively-container')[0].style.width = "calc(100%)"
               $('lively-container')[0].style.height = "calc(100%)"
+              $('lively-container')[0].style.position = "fixed"
               $('lively-container')[0].shadowRoot
                 .querySelector('#container-content').style.overflow = "visible"
               console.log("Finally loaded!")
