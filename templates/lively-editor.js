@@ -34,7 +34,6 @@ export default class Editor extends Morph {
   updateChangeIndicator() {
     if (!this.lastText) return;
     var newText = this.currentEditor().getValue();
-    
     if (newText != this.lastText) {
       this.get("#changeIndicator").style.backgroundColor = "rgb(220,30,30)";
       this.textChanged = true;
@@ -45,7 +44,6 @@ export default class Editor extends Morph {
   }
   
   updateOtherEditors() {
-    
     var url = this.getURL().toString();
     var editors = lively.array(document.querySelectorAll("lively-container::shadow lively-editor, lively-editor"));
 
@@ -164,7 +162,7 @@ export default class Editor extends Morph {
           return this.solveConflic(conflictVersion);
         }
         if (newVersion) {
-          lively.notify("new version " + newVersion);
+          // lively.notify("new version " + newVersion);
           this.lastVersion = newVersion;
         }
         lively.notify("saved file", url );
