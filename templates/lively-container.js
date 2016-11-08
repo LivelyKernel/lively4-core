@@ -1,4 +1,5 @@
 import Morph from './Morph.js';
+import highlight from 'src/external/highlight.js'
 
 export default class Container extends Morph {
 
@@ -13,6 +14,9 @@ export default class Container extends Morph {
     if (this.isSearchBrowser) {
       this.windowTitle = "Search Browser"
     }
+
+    // make sure the global css is there...
+    lively.loadCSSThroughDOM("hightlight", "src/external/highlight.css")
 
     console.log("Initialize Container");
     if (this.useBrowserHistory()) {
@@ -273,7 +277,16 @@ export default class Container extends Morph {
       lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path));
       console.log("html", html);
       var root = this.getContentRoot()
-      html.forEach((ea) => root.appendChild(ea));
+      html.forEach((ea) => {
+        root.appendChild(ea);
+        if (ea.querySelectorAll) {
+          ea.querySelectorAll("pre code").forEach( block => {
+            highlight.highlightBlock(block)
+          });
+        }
+        
+      })
+      
       lively.components.loadUnresolved(root);
     });
   }
