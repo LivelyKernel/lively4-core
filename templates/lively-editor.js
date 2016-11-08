@@ -50,7 +50,8 @@ export default class Editor extends Morph {
     var editorsToUpdate = editors.filter( ea => ea.getURL() == url && !ea.textChanged)
 
     editorsToUpdate.forEach( ea => {
-      lively.showElement(ea)
+      lively.showElement(ea);
+      // here we want to continue
     })
   }
 
