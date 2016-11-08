@@ -203,7 +203,6 @@ export default class Editor extends Morph {
 
     // #TODO do something when actual conflicts occure?
     var mergedText = this.threeWayMerge(parentText, myText, otherText);
-    lively.notify("Merged: " + mergedText);
     this.setText(mergedText);
     this.lastVersion = otherVersion;
     this.saveFile();
