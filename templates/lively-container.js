@@ -811,4 +811,3 @@ export default class Container extends Morph {
     return  editor.textChanged
   }
 }
-
