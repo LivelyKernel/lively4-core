@@ -46,6 +46,9 @@ export default class Editor extends Morph {
   
   updateOtherEditors() {
     
+    var editors = lively.array(document.querySelectorAll("lively-container::shadow lively-editor, lively-editor"))
+    editors[2].textChanged
+    
   }
 
   onSaveButton() {
@@ -159,6 +162,7 @@ export default class Editor extends Morph {
         lively.notify("saved file", url );
         this.lastText = data;
         this.updateChangeIndicator();
+        this.updateOtherEditors();
       }, (err) => {
          lively.notify("Could not save file" + url +"\nMaybe next time you are more lucky?");
          throw err;
