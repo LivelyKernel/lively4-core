@@ -1,5 +1,5 @@
 import Morph from './Morph.js';
-import highlight from 'src/external/highlight.js'
+import highlight from 'src/external/highlight.js';
 
 export default class Container extends Morph {
 
@@ -12,11 +12,11 @@ export default class Container extends Morph {
     // })
     this.windowTitle = "Browser";
     if (this.isSearchBrowser) {
-      this.windowTitle = "Search Browser"
+      this.windowTitle = "Search Browser";
     }
 
     // make sure the global css is there...
-    lively.loadCSSThroughDOM("hightlight", "src/external/highlight.css")
+    lively.loadCSSThroughDOM("hightlight", "src/external/highlight.css");
 
     console.log("Initialize Container");
     if (this.useBrowserHistory()) {
@@ -93,13 +93,13 @@ export default class Container extends Morph {
   }
   
   history() {
-    if (!this._history) this._history = []
-    return this._history
+    if (!this._history) this._history = [];
+    return this._history;
   }
 
   forwardHistory() {
-    if (!this._forwardHistory) this._forwardHistory = []
-    return this._forwardHistory
+    if (!this._forwardHistory) this._forwardHistory = [];
+    return this._forwardHistory;
   }
     
   async onSync(evt) {
@@ -111,14 +111,14 @@ export default class Container extends Morph {
     });
   
     var serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1];
-    comp.setServerURL(serverURL)
+    comp.setServerURL(serverURL);
     console.log("server url: " + serverURL);
     if (!this.getPath().match(serverURL)) {
       return lively.notify("can only sync on our repositories");
     }
     var repo =  this.getPath().replace(serverURL +"/", "").replace(/\/.*/,"");
-    comp.setRepository(repo)
-    comp.sync()
+    comp.setRepository(repo);
+    comp.sync();
     // .then(() => compWindow.remove())
   }
 
@@ -141,7 +141,7 @@ export default class Container extends Morph {
     }
 
   onUp() {
-    var path = this.getPath()
+    var path = this.getPath();
     if (path.match(/index\.((html)|(md))/))
       // one level more
       this.followPath(path.replace(/(\/[^/]+\/[^/]+$)|([^/]+\/$)/,"/"));
@@ -151,36 +151,36 @@ export default class Container extends Morph {
 
   onBack() {
     if (this.history().length < 2) {
-      lively.notify("No history to go back!")
-      return
+      lively.notify("No history to go back!");
+      return;
     }
-    var url = this.history().pop()
-    var last = _.last(this.history())
+    var url = this.history().pop();
+    var last = _.last(this.history());
     // lively.notify("follow " + url)
-    this.forwardHistory().push(url)
-    this.followPath(last)
+    this.forwardHistory().push(url);
+    this.followPath(last);
   }
 
   onForward() {
-    var url = this.forwardHistory().pop()
+    var url = this.forwardHistory().pop();
     if (url) {
-      this.followPath(url)
+      this.followPath(url);
     } else {
-      lively.notify("Could not navigate forward")
+      lively.notify("Could not navigate forward");
     }
   }
 
   onSave(doNotQuit) {
     if (this.getPath().match(/\/$/)) {
-      lively.files.saveFile(this.getURL(),"") 
-      return
+      lively.files.saveFile(this.getURL(),"");
+      return;
     }
-    this.get("#editor").setURL(this.getURL())
+    this.get("#editor").setURL(this.getURL());
     
     return this.get("#editor").saveFile().then( () => {
-      var sourceCode = this.get("#editor").currentEditor().getValue()
+      var sourceCode = this.get("#editor").currentEditor().getValue();
       if (this.getPath().match(/templates\/.*html/))
-        lively.updateTemplate(sourceCode)
+        lively.updateTemplate(sourceCode);
         
    
       var url = this.getURL();
@@ -190,38 +190,38 @@ export default class Container extends Morph {
       // }
       
       document.body.querySelectorAll('lively-container').forEach(ea => {
-        var url = "" + this.getURL()
+        var url = "" + this.getURL();
         if (ea !== this && !ea.isEditing() 
           && ("" +ea.getURL()).match(url.replace(/\.[^.]+$/,""))) {
-          console.log("update container content: " + ea)
-          ea.setPath(ea.getURL() + "")
+          console.log("update container content: " + ea);
+          ea.setPath(ea.getURL() + "");
         }  
         
-      })
+      });
       
-      var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/)
+      var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/);
       if (moduleName) {
-        moduleName = moduleName[1]
+        moduleName = moduleName[1];
         if (this.get("#live").checked && !this.get("#live").disabled) {
           
           lively.reloadModule("" + url).then( async module => {
             lively.notify("Scripting","Module " + moduleName + " reloaded!", 3, null, "green")
             // we are editing a class file to a template... just reload to get some feedback
             if (this.getPath().match(/templates\/.*js/)) {
-              var templateURL = this.getPath().replace(/\.js$/,".html")
+              var templateURL = this.getPath().replace(/\.js$/,".html");
               try {
-                console.log("[container] update template " + templateURL)
+                console.log("[container] update template " + templateURL);
                 var sourceCode = await lively.files.loadFile(templateURL);
-                lively.updateTemplate(sourceCode)
+                lively.updateTemplate(sourceCode);
               } catch(e) {
-                lively.notify("[container] could not update template " + templateURL, ""+e)
+                lively.notify("[container] could not update template " + templateURL, ""+e);
               }
             }
 
           }, err => {
-            window.LastError = err
-            lively.notify("Error loading module " + moduleName, err)
-            console.error(err)
+            window.LastError = err;
+            lively.notify("Error loading module " + moduleName, err);
+            console.error(err);
           })
         }
       }
@@ -229,12 +229,12 @@ export default class Container extends Morph {
   }
 
   async onDelete() {
-    var url = this.getURL() +""
+    var url = this.getURL() +"";
     if (window.confirm("delete " + url)) {
       var result = await fetch(url, {method: 'DELETE'})
-        .then(r => r.text())
-      this.setPath(url.replace(/[^/]*$/, ""))
-      lively.notify("deleted " + url, result)
+        .then(r => r.text());
+      this.setPath(url.replace(/[^/]*$/, ""));
+      lively.notify("deleted " + url, result);
     }
   }
 
@@ -250,24 +250,22 @@ export default class Container extends Morph {
   }
 
   onVersions() {
-    this.get("#editor").toggleVersions()
+    this.get("#editor").toggleVersions();
   }
 
   onAccept() {
-    this.setAttribute("mode", "show")
+    this.setAttribute("mode", "show");
     this.onSave().then((sourceCode) => {
       this.setPath(this.getPath());
       this.hideCancelAndSave();
-    })
+    });
   }
 
   clear() {
-    this.getContentRoot().innerHTML = ''
-    this.get('#container-editor').innerHTML = ''
+    this.getContentRoot().innerHTML = '';
+    this.get('#container-editor').innerHTML = '';
   }
   
-
-
   appendMarkdown(content) {
     System.import(lively4url + '/src/external/showdown.js').then((showdown) => {
       var converter = new showdown.Converter();
@@ -276,17 +274,15 @@ export default class Container extends Morph {
       var html = $.parseHTML(htmlSource);
       lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path));
       console.log("html", html);
-      var root = this.getContentRoot()
+      var root = this.getContentRoot();
       html.forEach((ea) => {
         root.appendChild(ea);
         if (ea.querySelectorAll) {
           ea.querySelectorAll("pre code").forEach( block => {
-            highlight.highlightBlock(block)
+            highlight.highlightBlock(block);
           });
         }
-        
-      })
-      
+      });
       lively.components.loadUnresolved(root);
     });
   }
@@ -302,8 +298,9 @@ export default class Container extends Morph {
 
     this.appendMarkdown(content);
   }
+  
   appendScript(scriptElement) {
-    var root = this.getContentRoot()
+    var root = this.getContentRoot();
     var script   = document.createElement("script");
     script.type  = "text/javascript";
     if (scriptElement.src) script.src  = scriptElement.src;
@@ -320,26 +317,26 @@ export default class Container extends Morph {
   
     if (content.match(/<script src=".*d3\.v3(.min)?\.js".*>/)) {
       if (!window.d3) {
-        console.log("LOAD D3")
+        console.log("LOAD D3");
         await lively.loadJavaScriptThroughDOM("d3", "src/external/d3.v3.js")
       }
     
       if (!window.ScopedD3) {
-        console.log("LOAD D3 Adaption Layer")
+        console.log("LOAD D3 Adaption Layer");
         await System.import("templates/ContainerScopedD3.js")
-        ScopedD3.updateCurrentBodyAndURLFrom(this)
+        ScopedD3.updateCurrentBodyAndURLFrom(this);
         // return this.appendHtml(content) // try again
       }
     }
 
     if (content.match(/<script src=".*cola(\.min)?\.js".*>/)) {
-        console.log("LOAD Cola")
+        console.log("LOAD Cola");
         await lively.loadJavaScriptThroughDOM("cola", "src/external/cola.js")
     }
     
     //  var content = this.sourceContent
     try {
-      var root = this.getContentRoot()
+      var root = this.getContentRoot();
       var nodes = $.parseHTML(content, document, true);
       if (nodes[0] && nodes[0].localName == 'template') {
       	lively.notify("append template " + nodes[0].id);
@@ -349,7 +346,7 @@ export default class Container extends Morph {
         (path) => this.followPath(path));
       nodes.forEach((ea) => {
         if (ea.tagName == "SCRIPT") {
-          this.appendScript(ea)
+          this.appendScript(ea);
         } else {
           root.appendChild(ea);
         }
@@ -361,11 +358,11 @@ export default class Container extends Morph {
 
   appendTemplate(name) {
     try {
-    	var node = lively.components.createComponent(name)
-    	this.getContentRoot().appendChild(node)
-      lively.components.loadByName(name)
+    	var node = lively.components.createComponent(name);
+    	this.getContentRoot().appendChild(node);
+      lively.components.loadByName(name);
     } catch(e) {
-      console.log("Could not append html:" + content)
+      console.log("Could not append html:" + content);
     }
   }
   
@@ -403,60 +400,57 @@ export default class Container extends Morph {
     } else {
       if (this.useBrowserHistory())
         window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?load="+path);
-      
       // #TODO replace this with a dynamic fetch
-     
-      return this.setPath(path)
+      return this.setPath(path);
     }
   }
 
   isEditing() {
-    return this.getAttribute("mode") == "edit"
+    return this.getAttribute("mode") == "edit";
   }
 
   getContentRoot() {
     // return this.get('#container-root')
-    return this
+    return this;
   }
 
   getDir() {
-       return this.getPath().replace(/[^/]*$/,"")
+    return this.getPath().replace(/[^/]*$/,"");
   }
 
   getURL() {
-    var path = this.getPath()
+    var path = this.getPath();
     if (path && path.match(/^https?:\/\//)) {
-      return new URL(path)
+      return new URL(path);
     } else {
-      return new URL("https://lively4/" + path)
+      return new URL("https://lively4/" + path);
     }
   }
 
   getPath() {
-    // return this.getAttribute("src")
-    return this.shadowRoot.querySelector("#container-path").value
+    return this.shadowRoot.querySelector("#container-path").value;
   }
-  
+
   getAceEditor() {
-    var livelyEditor = this.shadowRoot.querySelector('lively-editor')
+    var livelyEditor = this.shadowRoot.querySelector('lively-editor');
     if (!livelyEditor) return;
-    return livelyEditor.shadowRoot.querySelector('juicy-ace-editor')
+    return livelyEditor.shadowRoot.querySelector('juicy-ace-editor');
   }
   
   async realAceEditor() {
     return new Promise(resolve => {
       var checkForEditor = () => {
-        var editor = this.getAceEditor()
+        var editor = this.getAceEditor();
         if (editor && editor.editor) {
-          resolve(editor.editor)
+          resolve(editor.editor);
         } else {
           setTimeout(() => {
-            checkForEditor()
-          },100) 
+            checkForEditor();
+          },100);
         }
       };
-      checkForEditor()
-    })
+      checkForEditor();
+    });
   }
   
   thumbnailFor(url, name) {
