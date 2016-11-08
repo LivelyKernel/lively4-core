@@ -7,7 +7,7 @@
 
 import Morph from './Morph.js';
 import moment from "src/external/moment.js";
-import diff from 'src/external/diff-match-patch.js'
+import diff from 'src/external/diff-match-patch.js';
 
 export default class Editor extends Morph {
 
@@ -128,7 +128,6 @@ export default class Editor extends Morph {
   }
 
   saveFile() {
-    lively.notify("SAVE!!!!")
     var url = this.getURL();
     console.log("save " + url + "!");
     var data = this.currentEditor().getValue();
@@ -144,10 +143,10 @@ export default class Editor extends Morph {
         }
       }).then((response) => {
         console.log("edited file " + url + " written.");
-        var newVersion = response.headers.get("fileversion") 
-        var conflictVersion = response.headers.get("conflictversion")
+        var newVersion = response.headers.get("fileversion");
+        var conflictVersion = response.headers.get("conflictversion");
         if (conflictVersion) {
-          return this.solveConflic(conflictVersion)
+          return this.solveConflic(conflictVersion);
         }
         if (newVersion) {
           lively.notify("new version " + newVersion);
@@ -162,23 +161,37 @@ export default class Editor extends Morph {
       }); // don't catch here... so we can get the error later as needed...
     }
   }
+  
+  threeWayMerge(a,b,c) {
+    var dmp = new diff.diff_match_patch();
+    var diff1 = dmp.diff_main(a, b);
+    var diff2 = dmp.diff_main(a, c);
+    
+    var patch1 = dmp.patch_make(diff1);
+    var patch2 = dmp.patch_make(diff2);
+    var merge = dmp.patch_apply(patch1.concat(patch2), a);
+    return merge[0];
+  }
 
   /*
    * solveConflict
    * use three-way-merge
    */ 
   async solveConflic(otherVersion) {
-    lively.notify("Solve Conflict: " + otherVersion)
-    var parentText = this.lastText // 
+    lively.notify("Solve Conflict: " + otherVersion);
+    var parentText = this.lastText; // 
     var myText = this.currentEditor().getValue(); // data
     // load from conflict version
     var otherText = await fetch(this.getURL(), {
         headers: {fileversion: otherVersion}
       }).then( r => r.text()); 
-    
-    lively.notify("OTHER", otherText)
-    
-    
+
+    // #TODO do something when actual conflicts occure?
+    var mergedText = this.threeWayMerge(parentText, myText, otherText);
+    lively.notify("Merged: " + mergedText);
+    this.setText(mergedText);
+    this.lastVersion = otherVersion;
+    this.saveFile();
   }
 
   hideToolbar() {
