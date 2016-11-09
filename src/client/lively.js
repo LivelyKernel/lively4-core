@@ -430,17 +430,36 @@ export default class Lively {
 
   }
   
+  /** notify **
+   *
+   * - displays an notification in the lower left of screen 
+   * - takes arguments also as object parameter
+   *
+   * EXAMPLE:
+   * 
+      lively.notify({
+      	title: "hello",
+      	text: "world",
+      	color: "blue",
+      	timeout: 10,
+      	details: "what's up?"})
+   */
   static notify(titleOrOptions, text, timeout, cb, color) {
-    var title = titleOrOptions
+    var title = titleOrOptions;
     if (titleOrOptions && titleOrOptions.title) {
       title = titleOrOptions.title;
       text = titleOrOptions.title;
       timeout = titleOrOptions.timeout;
       cb = titleOrOptions.more;
-      color = titleOrOptions.more;
+      color = titleOrOptions.color;
+      
+      // open details in a workspace
       if (titleOrOptions.details) {
         cb = () => {
-          lively.openWorkspace(titleOrOptions.details)
+          lively.openWorkspace(titleOrOptions.details).then( comp => {
+            comp.parentElement.setAttribute("title", title)
+            comp.unsavedChanges = () => false; // close workspace without asking
+          })
         }
       }
     }
