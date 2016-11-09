@@ -42,7 +42,7 @@ export default class Halo extends Morph {
   }
   
   onBodyMouseDown(evt, targetContext) {
-    console.log("down " + targetContext)
+    lively.notify("down " + targetContext)
     evt.stopPropagation()
     // lively.notify("mouse down " + targetContext)
     var whitelistNodes = lively.html.findAllNodes() // #TODO only find nodes of subelement
