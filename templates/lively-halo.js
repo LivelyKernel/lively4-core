@@ -58,6 +58,7 @@ export default class Halo extends Morph {
       document.body.draggable=false; 
       return false;
     }
+    lively.notify("enable")
     document.body.draggable=true; 
   }
   
