@@ -128,7 +128,10 @@ export default class ContextMenu {
         text.innerHTML = "Hello";
         text.contentEditable = true;
         worldContext.appendChild(text);
-        lively.setPosition(text, pt(evt.pageX, evt.pageY));
+        var pos = pt(evt.pageX, evt.pageY)
+        if (worldContext.localizePosition) pos = worldContext.localizePosition(pos)
+
+        lively.setPosition(text, pos);
         this.hide();
       }],
       ["Rectangle", (evt) => {
