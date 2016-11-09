@@ -381,13 +381,13 @@ export default class Lively {
     contextmenu.hide()
   }
 
-  static openContextMenu(container, evt, target, optWorldContext) {
+  static openContextMenu(container, evt, target, worldContext) {
     if (HaloService.areHalosActive() ||
       (HaloService.halosHidden && ((Date.now() - HaloService.halosHidden) < 500))) {
       target = that
     }
     console.log("open context menu: " + target);
-    contextmenu.openIn(container, evt, target, optWorldContext)
+    contextmenu.openIn(container, evt, target, worldContext)
   }
 
   static log(/* varargs */) {
