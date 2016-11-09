@@ -29,7 +29,7 @@ export default class Selection extends Morph {
         && !that.isMeta) {
       this.context = that;
     }
-    lively.showElement(this.context)
+    lively.showElement(windowContext)
     this.nodes = [];
     console.log("selection drag start");
   }
