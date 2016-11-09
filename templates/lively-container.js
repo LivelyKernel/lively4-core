@@ -181,7 +181,7 @@ export default class Container extends Morph {
   onSave(doNotQuit) {
     if (!this.isEditing()) {
       this.saveEditsInView();
-      return 
+      return; 
     }
     
     if (this.getPath().match(/\/$/)) {
@@ -826,7 +826,7 @@ export default class Container extends Morph {
   
   saveEditsInView() {
     var url = this.getURL().toString()
-    if (url.match(/template.*\.html$)) {
+    if (url.match(/template.*\.html$/)) {
         return lively.notify("Editing templates in View not supported yet!")
     } else if (url.match(/\.html$)) {
        this.saveHTML()
