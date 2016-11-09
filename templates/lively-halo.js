@@ -38,6 +38,7 @@ export default class Halo extends Morph {
   }
   
   onBodyMouseDown(evt, targetContext) {
+    lively.notify("mouse down " + targetContext)
     var whitelistNodes = lively.html.findAllNodes() // #TODO only find nodes of subelement
         .filter (ea => ea.tagName == 'INPUT' || 
           ea.tagName == "LI" || ea.tagName == "TD" ||
