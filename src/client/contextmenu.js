@@ -4,7 +4,7 @@
  */ 
   
 import html from 'src/client/html.js';
-import {pt} from 'lively.graphics'
+import {pt} from 'lively.graphics';
 
 export default class ContextMenu {
   
@@ -27,49 +27,49 @@ export default class ContextMenu {
         return comp;
     });
   }
-  static items (target, worldContext) {
-    if (!worldContext) worldContext = document.body;
-    if (target) {
-      var wasEditable = (target.contentEditable == "true");
-      var wasDisabled = (target.disabled == "true");
-      var targetInWindow = target.parentElement.tagName == 'LIVELY-WINDOW';
-      var menu = [
-        ["show", (evt) => {
-           this.hide();
-           lively.showElement(target);
-        }],
-        ["browse template source", (evt) => {
-           this.hide();
-           lively.showSource(target, evt);
-        }],
-        ["browse class source", (evt) => {
-           this.hide();
-           lively.showClassSource(target, evt);
-        }],
-        ["trace", (evt) => {
-           System.import("src/client/tracer.js").then(tracer => {
-             tracer.default.traceObject(target);
-           });
-           this.hide();
-        }],
-        [wasEditable ? "make uneditable" : "make editable", (evt) => {
-           this.hide();
-           target.contentEditable = !wasEditable;
-        }],
-        [wasDisabled ? "enable" : "disable", (evt) => {
-           this.hide();
-           target.disabled = !wasDisabled;
-        }],
-        [targetInWindow ? "strip window" : "open in window", (evt) => {
-            this.hide();
-            targetInWindow ?
-              target.parentElement.embedContentInParent() :
-              ContextMenu.openInWindow(target, evt)
-          }]
-      ];
-      return menu;
-    } else {
-      return [
+  
+  static targetMenuItems(target) {
+    var wasEditable = (target.contentEditable == "true");
+    var wasDisabled = (target.disabled == "true");
+    var targetInWindow = target.parentElement.tagName == 'LIVELY-WINDOW';
+    return [
+      ["show", (evt) => {
+         this.hide();
+         lively.showElement(target);
+      }],
+      ["browse template source", (evt) => {
+         this.hide();
+         lively.showSource(target, evt);
+      }],
+      ["browse class source", (evt) => {
+         this.hide();
+         lively.showClassSource(target, evt);
+      }],
+      ["trace", (evt) => {
+         System.import("src/client/tracer.js").then(tracer => {
+           tracer.default.traceObject(target);
+         });
+         this.hide();
+      }],
+      [wasEditable ? "make uneditable" : "make editable", (evt) => {
+         this.hide();
+         target.contentEditable = !wasEditable;
+      }],
+      [wasDisabled ? "enable" : "disable", (evt) => {
+         this.hide();
+         target.disabled = !wasDisabled;
+      }],
+      [targetInWindow ? "strip window" : "open in window", (evt) => {
+          this.hide();
+          targetInWindow ?
+            target.parentElement.embedContentInParent() :
+            ContextMenu.openInWindow(target, evt);
+        }]
+    ];
+  }
+  
+  static worldMenuItems(worldContext) {
+    return  [
       ["Workspace", (evt) => {
         this.hide();
         lively.openWorkspace("", pt(evt.pageX, evt.pageY));
@@ -100,12 +100,6 @@ export default class ContextMenu {
         this.hide();
         lively.import("customize").then(c => c.openCustomizeWorkspace(evt));
       }],
-      // ["Persistens Settings", (evt) => {
-      //    this.openComponentInWindow("lively-persistence-settings", evt).then((comp) => {
-      //        comp.parentElement.style.height = "150px"
-      //        comp.parentElement.style.width = "400px"
-      //    })
-      // }],
       // #TODO use sub menues here
       ["Devdocs.io",     (evt) => {
         this.openComponentInWindow("lively-help",  pt(evt.pageX, evt.pageY));
@@ -128,8 +122,8 @@ export default class ContextMenu {
         text.innerHTML = "Hello";
         text.contentEditable = true;
         worldContext.appendChild(text);
-        var pos = pt(evt.pageX, evt.pageY)
-        if (worldContext.localizePosition) pos = worldContext.localizePosition(pos)
+        var pos = pt(evt.pageX, evt.pageY);
+        if (worldContext.localizePosition) pos = worldContext.localizePosition(pos);
 
         lively.setPosition(text, pos);
         this.hide();
@@ -138,8 +132,8 @@ export default class ContextMenu {
         var morph  = document.createElement("div");
         morph.style.width = "200px";
         morph.style.height = "100px";
-        var pos = pt(evt.pageX, evt.pageY)
-        if (worldContext.localizePosition) pos = worldContext.localizePosition(pos)
+        var pos = pt(evt.pageX, evt.pageY);
+        if (worldContext.localizePosition) pos = worldContext.localizePosition(pos);
         lively.setPosition(morph, pos);
         // morph.style.backgroundColor = "blue";
         morph.style.backgroundColor = 'rgba(40,40,40,0.5)';
@@ -152,7 +146,16 @@ export default class ContextMenu {
       ["save", (evt) => {
         html.saveCurrentPage();
       }]
-    ]}
+    ];
+  }
+  
+  static items (target, worldContext) {
+    if (!worldContext) worldContext = document.body;
+    if (target) {
+      return this.targetMenuItems(target);
+    } else {
+      return this.worldMenuItems(worldContext);
+    }
   }
   
   static openIn(container, evt, target, worldContext) {
