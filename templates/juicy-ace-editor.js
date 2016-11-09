@@ -140,9 +140,9 @@ export default class AceEditor extends HTMLElement {
     var n = document.querySelector(themeId);
     this.shadowRoot.appendChild(cloneStyle(n));
   }
-
+  
   // CUSTOMIZATION
-  enableAutocompletion(filename) {
+  enableAutocompletion() {
     return this.aceRequire("ace/ext/language_tools").then( module => {
       if (!this.editor || !this.editor.setOptions) { 
         return;
