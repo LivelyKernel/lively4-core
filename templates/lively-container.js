@@ -847,7 +847,9 @@ export default class Container extends Morph {
         return lively.notify("Editing templates in View not supported yet!")
     } else if (url.match(/\.html$/)) {
        this.saveHTML().then( () => {
-         lively.notify("saved HTML")
+         lively.notify({
+           title: "saved HTML",
+           color: "green"})
        })
     } else {
       lively.notify("Editing in view not supported for the content type!")
