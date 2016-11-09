@@ -1,6 +1,6 @@
 import Morph from './Morph.js';
 import highlight from 'src/external/highlight.js';
-
+import {pt} from 'lively.graphics'
 
 export default class Container extends Morph {
 
