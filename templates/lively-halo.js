@@ -22,13 +22,16 @@ export default class Halo extends Morph {
     Halo.halo.hide();
     window.HaloService = Halo;
     this.registerBodyDragAndDrop(document.body);
+  
+    lively.addEventListener("Halo", document.body, "mousedown", 
+      evt => this.onBodyMouseDown(evt, targetContext));
+    
+    
   }
   
   registerBodyDragAndDrop(targetContext) {
     // document.body.draggable=true; 
     lively.removeEventListener("Halo", targetContext)
-    lively.addEventListener("Halo", targetContext, "mousedown", 
-      evt => this.onBodyMouseDown(evt, targetContext));
     lively.addEventListener("Halo", targetContext, "dragstart", 
       evt => this.onBodyDragStart(evt, targetContext));
     lively.addEventListener("Halo", targetContext, "drag", 
@@ -38,6 +41,7 @@ export default class Halo extends Morph {
   }
   
   onBodyMouseDown(evt, targetContext) {
+    evt.stopPropagation()
     // lively.notify("mouse down " + targetContext)
     var whitelistNodes = lively.html.findAllNodes() // #TODO only find nodes of subelement
         .filter (ea => ea.tagName == 'INPUT' || 
