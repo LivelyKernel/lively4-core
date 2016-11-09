@@ -24,17 +24,17 @@ export default class Halo extends Morph {
     this.registerBodyDragAndDrop();
   }
   
-  registerBodyDragAndDrop() {
+  registerBodyDragAndDrop(targetContext) {
     // document.body.draggable=true; 
-    lively.removeEventListener("Halo", document.body)
-    lively.addEventListener("Halo", document.body, "mousedown", 
-      evt => this.onBodyMouseDown(evt, document.body));
-    lively.addEventListener("Halo", document.body, "dragstart", 
-      evt => this.onBodyDragStart(evt));
-    lively.addEventListener("Halo", document.body, "drag", 
-      evt => this.onBodyDrag(evt));
-    lively.addEventListener("Halo", document.body, "dragend", 
-      evt => this.onBodyDragEnd(evt));
+    lively.removeEventListener("Halo", targetContext)
+    lively.addEventListener("Halo", targetContext, "mousedown", 
+      evt => this.onBodyMouseDown(evt, targetContext));
+    lively.addEventListener("Halo", targetContext, "dragstart", 
+      evt => this.onBodyDragStart(evt, targetContext));
+    lively.addEventListener("Halo", targetContext, "drag", 
+      evt => this.onBodyDrag(evt, targetContext));
+    lively.addEventListener("Halo", targetContext, "dragend", 
+      evt => this.onBodyDragEnd(evt, targetContext));
   }
   
   onBodyMouseDown(evt, targetContext) {
