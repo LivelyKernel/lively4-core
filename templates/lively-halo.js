@@ -62,7 +62,7 @@ export default class Halo extends Morph {
   }
   
   onBodyDragStart(evt) {
-    lively.notify("drag start")
+    // lively.notify("drag start")
     if (this.selection) this.selection.remove(); // #TODO reuse eventually?
     this.selection = lively.components.createComponent("lively-selection");
     lively.components.openIn(document.body, this.selection).then(comp => {
@@ -75,7 +75,7 @@ export default class Halo extends Morph {
   }
   
   onBodyDrag(evt, targetContext) {
-    lively.notify("drag")
+    // lively.notify("drag")
     
     //evt.preventDefault();
     // return false
