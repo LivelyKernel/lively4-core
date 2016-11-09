@@ -190,7 +190,7 @@ export default class Container extends Morph {
     if (halo.halo && halo.halo[0])
       halo.halo[0].onBodyMouseDown(evt, this);
     evt.stopPropagation();
-    evt.preventDefault();
+    // evt.preventDefault();
     
   }
   
