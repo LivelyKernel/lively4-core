@@ -4,7 +4,6 @@
 * [$1]($1) 
 -->
 
-
 * Main
   * [lively.js](lively.js)	#KitchenSink #CircularDepency #Refactoring to submodules 
   * [load.js](load.js)	
@@ -14,8 +13,7 @@
   * [contextmenu.js](contextmenu.js)	
   * [expose.js](expose.js)	
   * [keys.js](keys.js) #Events
-  * [shortcuts.js](shortcuts.js)	#Refactor -> move to keys.js
-  
+
 * Files
   * [files.js](files.js)	
   * [html.js](html.js)	
