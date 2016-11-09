@@ -838,7 +838,7 @@ export default class Container extends Morph {
   
   saveHTML() {
     var source  = this.getContentRoot().innerHTML
-    lively.files.saveFile(this.getURL(),source) 
+    return lively.files.saveFile(this.getURL(),source) 
   }
   
   saveEditsInView() {
@@ -846,7 +846,9 @@ export default class Container extends Morph {
     if (url.match(/template.*\.html$/)) {
         return lively.notify("Editing templates in View not supported yet!")
     } else if (url.match(/\.html$/)) {
-       this.saveHTML()
+       this.saveHTML().then( () => {
+         lively.notify("saved HTML")
+       })
     } else {
       lively.notify("Editing in view not supported for the content type!")
     }
