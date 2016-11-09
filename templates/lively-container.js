@@ -23,7 +23,8 @@ export default class Container extends Morph {
     lively.loadCSSThroughDOM("hightlight", "src/external/highlight.css");
 
     console.log("Initialize Container");
-
+    
+    lively.addEventListener("Container", this, "mousedown", evt => this.onMouseDown(evt))
 
     // #TODO continue here, halo selection and container do now work yet
     // var halos = halo.halo && halo.halo[0];
@@ -185,6 +186,9 @@ export default class Container extends Morph {
     this.followPath(last);
   }
   
+  onMouseDown(evt) {
+    
+  }
   
   onForward() {
     var url = this.forwardHistory().pop();
