@@ -42,8 +42,9 @@ export default class Halo extends Morph {
   }
   
   onBodyMouseDown(evt, targetContext) {
-    lively.notify("down " + targetContext)
-    evt.stopPropagation()
+    lively.notify("down " + targetContext);
+    this.targetContext = targetContext;
+    evt.stopPropagation();
     // lively.notify("mouse down " + targetContext)
     var whitelistNodes = lively.html.findAllNodes() // #TODO only find nodes of subelement
         .filter (ea => ea.tagName == 'INPUT' || 
@@ -68,12 +69,12 @@ export default class Halo extends Morph {
     document.body.draggable=true; 
   }
   
-  onBodyDragStart(evt, targetContext) {
+  onBodyDragStart(evt) {
     // lively.notify("drag start")
     if (this.selection) this.selection.remove(); // #TODO reuse eventually?
     this.selection = lively.components.createComponent("lively-selection");
     lively.components.openIn(document.body, this.selection).then(comp => {
-      comp.onSelectionDragStart(evt, targetContext);
+      comp.onSelectionDragStart(evt, this.targetContext);
     });
     
     // give it something to drag
