@@ -22,7 +22,9 @@ export default class Editor extends Morph {
     });
     container.dispatchEvent(new Event("initialized"));
     
-    this.currentEditor().on('change', () => {
+    var editor = this.currentEditor();
+    // check if we are not fully initialized
+    if (editor) editor.on('change', () => {
       this.onTextChanged();
     });
   }

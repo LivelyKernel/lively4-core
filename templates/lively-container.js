@@ -838,7 +838,13 @@ export default class Container extends Morph {
   
   saveHTML() {
     var source  = this.getContentRoot().innerHTML;
-    return lively.files.saveFile(this.getURL(),source) ;
+  
+    return lively.files.saveFile(this.getURL(),source).then( () => {
+      // reuse?
+      var editor = lively.components.createComponent("lively-editor");
+      editor.setURL(this.getURL());
+      editor.updateOtherEditors();
+    }) ;
   }
   
   saveEditsInView() {
