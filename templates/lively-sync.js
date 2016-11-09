@@ -141,14 +141,19 @@ export default class Sync extends Morph {
     })
   }
 
+
+  
   onSyncButton() {
-    this.gitControl("status", (status) => {
+    this.gitControl("status").then((status) => {
       if (!status.match("AUTO-COMMIT-")) {
-        this.sync()  
+        this.sync()
+        lively.notify("sync directly")
       } else {
         if (window.confirm("Contains auto commits, push them anyway?")) {
-          // this.sync()
-          lively.notify("haha")
+          this.sync()
+          lively.notify("sync anyway")
+        } else {
+          lively.notify("sync canceled")
         }
       }
     })
