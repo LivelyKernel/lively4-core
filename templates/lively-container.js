@@ -191,6 +191,10 @@ export default class Container extends Morph {
     comp.editFile("" + url)
   }
 
+  onSaveAs() {
+    lively.notify("Save as... not implemented yet")
+  }
+
   onSave(doNotQuit) {
     if (!this.isEditing()) {
       this.saveEditsInView();
