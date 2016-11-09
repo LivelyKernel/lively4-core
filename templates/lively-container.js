@@ -854,4 +854,11 @@ export default class Container extends Morph {
     if (!editor) return false
     return  editor.textChanged
   }
+  
+  // make a gloval position relative, so it can be used in local content
+  localizePosition(pos) {
+    var offsetBounds = this.get('#container-content').getBoundingClientRect()
+    return pos.subPt(pt(offsetBounds.left, offsetBounds.top))
+  }
+  
 }
