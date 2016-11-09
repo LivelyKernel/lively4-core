@@ -432,8 +432,18 @@ export default class Lively {
   
   static notify(titleOrOptions, text, timeout, cb, color) {
     var title = titleOrOptions
-    
-    
+    if (titleOrOptions && titleOrOptions.title) {
+      title = titleOrOptions.title;
+      text = titleOrOptions.title;
+      timeout = titleOrOptions.timeout;
+      cb = titleOrOptions.more;
+      color = titleOrOptions.more;
+      if (titleOrOptions.details) {
+        cb = () => {
+          lively.openWorkspace(titleOrOptions.details)
+        }
+      }
+    }
     // #TODO make native notifications opitional?
     // this.nativeNotify(title, text, timeout, cb) 
     console.log("Note: " + title + "\n" + text)
