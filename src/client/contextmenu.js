@@ -26,9 +26,8 @@ export default class ContextMenu {
         return comp;
     });
   }
-  
-  static items (target) {
-    var targetWorld = document.body;
+  static items (target, worldContext) {
+    if (!worldContext) worldContext = document.body;
     if (target) {
       var wasEditable = (target.contentEditable == "true");
       var wasDisabled = (target.disabled == "true");
@@ -127,7 +126,7 @@ export default class ContextMenu {
         var text  = document.createElement("p");
         text.innerHTML = "Hello";
         text.contentEditable = true;
-        target.appendChild(text);
+        worldContext.appendChild(text);
         lively.setPosition(text, lively.pt(evt.pageX, evt.pageY));
         this.hide();
       }],
@@ -138,7 +137,7 @@ export default class ContextMenu {
         lively.setPosition(morph, lively.pt(evt.pageX, evt.pageY));
         // morph.style.backgroundColor = "blue";
         morph.style.backgroundColor = 'rgba(40,40,40,0.5)';
-        targetWorld.appendChild(morph);
+        worldContext.appendChild(morph);
         this.hide();
       }],
       ["save as ..", (evt) => {
@@ -150,7 +149,7 @@ export default class ContextMenu {
     ]}
   }
   
-  static openIn(container, evt, target) {
+  static openIn(container, evt, target, worldContext) {
     this.hide();
     
     lively.addEventListener("contextMenu", document.documentElement, "click", () => {
@@ -169,7 +168,7 @@ export default class ContextMenu {
         }
         lively.setPosition(menu, lively.pt(evt.pageX - xOffset, evt.pageY));
       }
-      menu.openOn(this.items(target), evt).then(() => {
+      menu.openOn(this.items(target, worldContext), evt).then(() => {
       });
       return menu;
     });
