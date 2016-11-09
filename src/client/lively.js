@@ -457,7 +457,7 @@ export default class Lively {
       doc.addEventListener('contextmenu', function(evt) {
           if (evt.ctrlKey) {
             evt.preventDefault();
-            lively.openContextMenu($('body')[0], evt);
+            lively.openContextMenu(document.body, evt);
             return false;
           }
       }, false);
