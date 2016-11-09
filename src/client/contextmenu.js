@@ -21,10 +21,10 @@ export default class ContextMenu {
   static openInWindow(comp, evt) {
     var pos = lively.getPosition(comp);
 	  lively.components.openInWindow(comp).then(function (w) {
-        lively.setPosition(w, pos);
-        lively.setPosition(comp, {x:0, y:0});
-        if (comp.windowTitle) w.setAttribute('title', '' + comp.windowTitle);
-        return comp;
+      lively.setPosition(w, pos);
+      lively.setPosition(comp, {x:0, y:0});
+      if (comp.windowTitle) w.setAttribute('title', '' + comp.windowTitle);
+      return comp;
     });
   }
   
@@ -141,10 +141,15 @@ export default class ContextMenu {
         this.hide();
       }],
       ["save as ..", (evt) => {
-        html.saveCurrentPageAs();
+        if (worldContext.onSaveAs)
+          worldContext.onSaveAs() 
+        else html.saveCurrentPageAs();
       }],
       ["save", (evt) => {
-        html.saveCurrentPage();
+        if (worldContext.onSave)
+          worldContext.onSave()
+        else
+          html.saveCurrentPage();
       }]
     ];
   }
