@@ -21,7 +21,7 @@ export default class Halo extends Morph {
     Halo.halo = $(this);
     Halo.halo.hide();
     window.HaloService = Halo;
-    this.registerBodyDragAndDrop();
+    this.registerBodyDragAndDrop(document.body);
   }
   
   registerBodyDragAndDrop(targetContext) {
