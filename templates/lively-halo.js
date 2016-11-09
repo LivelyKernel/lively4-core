@@ -21,20 +21,20 @@ export default class Halo extends Morph {
     Halo.halo = $(this);
     Halo.halo.hide();
     window.HaloService = Halo;
-    this.registerBodyDragAndDrop(document.body);
+    this.registerBodyDragAndDrop();
   }
   
-  registerBodyDragAndDrop(targetContext) {
+  registerBodyDragAndDrop() {
     // document.body.draggable=true; 
-    lively.removeEventListener("Halo", targetContext)
-    lively.addEventListener("Halo", targetContext, "mousedown", 
-      evt => this.onBodyMouseDown(evt, targetContext));
-    lively.addEventListener("Halo", targetContext, "dragstart", 
-      evt => this.onBodyDragStart(evt, targetContext));
-    lively.addEventListener("Halo", targetContext, "drag", 
-      evt => this.onBodyDrag(evt, targetContext));
-    lively.addEventListener("Halo", targetContext, "dragend", 
-      evt => this.onBodyDragEnd(evt, targetContext));
+    lively.removeEventListener("Halo", document.body)
+    lively.addEventListener("Halo", document.body, "mousedown", 
+      evt => this.onBodyMouseDown(evt, document.body));
+    lively.addEventListener("Halo", document.body, "dragstart", 
+      evt => this.onBodyDragStart(evt, document.body));
+    lively.addEventListener("Halo", document.body, "drag", 
+      evt => this.onBodyDrag(evt, document.body));
+    lively.addEventListener("Halo", document.body, "dragend", 
+      evt => this.onBodyDragEnd(evt, document.body));
   }
   
   onBodyMouseDown(evt, targetContext) {
@@ -54,10 +54,10 @@ export default class Halo extends Morph {
     if (whitelistNodes.length > 0) {
       // evt.preventDefault();
       // evt.stopPropagation();
-      targetContext.draggable=false; 
+      document.body.draggable=false; 
       return false;
     }
-    targetContext.draggable=true; 
+    document.body.draggable=true; 
   }
   
   onBodyDragStart(evt, targetContext) {
