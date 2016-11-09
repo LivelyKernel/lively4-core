@@ -1,15 +1,15 @@
-// import lively2 from "./lively.js";
-// #TODO this will fetch an old version of the lively module... 
-
-import html from 'src/client/html.js'
-
+/*
+ * Lively4 ContextMenu
+ * - creates the "world menu" for Lively4
+ */ 
+  
+import html from 'src/client/html.js';
 
 export default class ContextMenu {
   
   static hide() {
     if (this.menu) $(this.menu).remove();
-    
-    lively.removeEventListener("contextMenu",  document.documentElement)
+    lively.removeEventListener("contextMenu",  document.documentElement);
   }
   
   static openComponentInWindow (name, evt) {
@@ -18,7 +18,7 @@ export default class ContextMenu {
   }
   
   static openInWindow(comp, evt) {
-    var pos = lively.getPosition(comp)
+    var pos = lively.getPosition(comp);
 	  lively.components.openInWindow(comp).then(function (w) {
         lively.setPosition(w, pos);
         lively.setPosition(comp, {x:0, y:0});
@@ -31,7 +31,7 @@ export default class ContextMenu {
     if (target) {
       var wasEditable = (target.contentEditable == "true");
       var wasDisabled = (target.disabled == "true");
-      var targetInWindow = target.parentElement.tagName == 'LIVELY-WINDOW' 
+      var targetInWindow = target.parentElement.tagName == 'LIVELY-WINDOW';
       var menu = [
         ["show", (evt) => {
            this.hide();
@@ -47,11 +47,10 @@ export default class ContextMenu {
         }],
         ["trace", (evt) => {
            System.import("src/client/tracer.js").then(tracer => {
-             tracer.default.traceObject(target)
-           })
+             tracer.default.traceObject(target);
+           });
            this.hide();
         }],
-
         [wasEditable ? "make uneditable" : "make editable", (evt) => {
            this.hide();
            target.contentEditable = !wasEditable;
@@ -124,29 +123,29 @@ export default class ContextMenu {
         window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
       }],
       ["Text", (evt) => {
-              var text  = document.createElement("p");
-              text.innerHTML = "Hello";
-              text.contentEditable = true;
-              $('body')[0].appendChild(text);
-              lively.setPosition(text, lively.pt(evt.pageX, evt.pageY));
-              this.hide();
+        var text  = document.createElement("p");
+        text.innerHTML = "Hello";
+        text.contentEditable = true;
+        $('body')[0].appendChild(text);
+        lively.setPosition(text, lively.pt(evt.pageX, evt.pageY));
+        this.hide();
       }],
       ["Rectangle", (evt) => {
-          var morph  = document.createElement("div");
-          morph.style.width = "200px";
-          morph.style.height = "100px";
-          lively.setPosition(morph, lively.pt(evt.pageX, evt.pageY));
-          // morph.style.backgroundColor = "blue";
-          morph.style.backgroundColor = 'rgba(40,40,40,0.5)'
-          $('body')[0].appendChild(morph);
-          this.hide();
+        var morph  = document.createElement("div");
+        morph.style.width = "200px";
+        morph.style.height = "100px";
+        lively.setPosition(morph, lively.pt(evt.pageX, evt.pageY));
+        // morph.style.backgroundColor = "blue";
+        morph.style.backgroundColor = 'rgba(40,40,40,0.5)';
+        $('body')[0].appendChild(morph);
+        this.hide();
       }],
       ["save as ..", (evt) => {
-          html.saveCurrentPageAs()
+        html.saveCurrentPageAs();
       }],
 
       ["save", (evt) => {
-          html.saveCurrentPage()
+        html.saveCurrentPage();
       }]
       
       ];}
@@ -155,17 +154,13 @@ export default class ContextMenu {
   static openIn(container, evt, target) {
     this.hide();
     
-    
     lively.addEventListener("contextMenu", document.documentElement, "click", () => {
-      this.hide()
-    }, true)
-    
-    
+      this.hide();
+    }, true);
+
     var menu = lively.components.createComponent("lively-menu");
     return lively.components.openIn(container, menu).then(() => {
       this.menu = menu;
-      
-      
       if (evt) {
         var xOffset = 0;
         var menuWidth = menu.clientWidth;
@@ -175,7 +170,6 @@ export default class ContextMenu {
         }
         lively.setPosition(menu, lively.pt(evt.pageX - xOffset, evt.pageY));
       }
-
       menu.openOn(this.items(target), evt).then(() => {
       });
       return menu;
@@ -184,4 +178,3 @@ export default class ContextMenu {
 }
 
 console.log("loaded contextmenu");
-
