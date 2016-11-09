@@ -76,10 +76,10 @@ export default class HaloGrabItem extends HaloItem {
       }
     }
     } finally {
-    this.isDragging = false;
-    this.grabTarget = null;
-    this.grabStartEventPosition = null;
-    this.grabShadow = null;
+      this.isDragging = false;
+      this.grabTarget = null;
+      this.grabStartEventPosition = null;
+      this.grabShadow = null;
     }
   }
   
@@ -166,19 +166,24 @@ export default class HaloGrabItem extends HaloItem {
     targetNode.insertBefore(this.grabShadow, nextChild);
     this.grabShadow.style.position = 'relative';
     
-
     this.grabShadow.style.position = 'relative';
     this.grabShadow.style.removeProperty('top');
     this.grabShadow.style.removeProperty('left'); 
 
     if (evt.shiftKey || 
       nodes.globalPosition(this.grabShadow).dist(nodes.globalPosition(this.grabTarget)) > 300) {
-      this.grabShadow.style.opacity = 0
+      this.grabShadow.style.opacity = 0;
       this.grabShadow.style.position = 'absolute';
-      nodes.setPosition(this.grabShadow, nodes.globalPosition(this.grabTarget).subPt(nodes.globalPosition(targetNode))) // localize
+      var pos = nodes.globalPosition(this.grabTarget);
+      if (targetNode.localizePosition) {
+        pos = targetNode.localizePosition(pos);
+      } else {
+        pos = pos.subPt(nodes.globalPosition(targetNode));
+      }
+      nodes.setPosition(this.grabShadow, pos); // localize
     } else {
       // drag position is near enough to relative position, so SNAP  
-      this.grabShadow.style.opacity = 0.5
+      this.grabShadow.style.opacity = 0.5;
     }
   }
   
