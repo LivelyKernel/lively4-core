@@ -4,6 +4,7 @@
  */ 
   
 import html from 'src/client/html.js';
+import {pt} from 'lively.graphics'
 
 export default class ContextMenu {
   
@@ -14,7 +15,7 @@ export default class ContextMenu {
   
   static openComponentInWindow (name, evt) {
     this.hide();
-    return lively.openComponentInWindow(name, lively.pt(evt.pageX, evt.pageY));
+    return lively.openComponentInWindow(name, pt(evt.pageX, evt.pageY));
   }
   
   static openInWindow(comp, evt) {
@@ -71,7 +72,7 @@ export default class ContextMenu {
       return [
       ["Workspace", (evt) => {
         this.hide();
-        lively.openWorkspace("", lively.pt(evt.pageX, evt.pageY));
+        lively.openWorkspace("", pt(evt.pageX, evt.pageY));
       }, "CMD+K"],
       ["Browser",     (evt) => {
         this.openComponentInWindow("lively-container", evt).then(comp => {
@@ -107,7 +108,7 @@ export default class ContextMenu {
       // }],
       // #TODO use sub menues here
       ["Devdocs.io",     (evt) => {
-        this.openComponentInWindow("lively-help",  lively.pt(evt.pageX, evt.pageY));
+        this.openComponentInWindow("lively-help",  pt(evt.pageX, evt.pageY));
       }, "CMD+H"],
       ["Wiki (Docs)",     (evt) => {
         this.openComponentInWindow("lively-container", evt).then(comp => {
@@ -127,7 +128,7 @@ export default class ContextMenu {
         text.innerHTML = "Hello";
         text.contentEditable = true;
         worldContext.appendChild(text);
-        lively.setPosition(text, lively.pt(evt.pageX, evt.pageY));
+        lively.setPosition(text, pt(evt.pageX, evt.pageY));
         this.hide();
       }],
       ["Rectangle", (evt) => {
@@ -135,8 +136,8 @@ export default class ContextMenu {
         morph.style.width = "200px";
         morph.style.height = "100px";
         var worldBounds = worldContext.getBoundingClientRect()
-        lively.setPosition(morph, lively.pt(evt.pageX, evt.pageY)
-          .subPt(lively.pt(worldBounds.left, worldBounds.top)));
+        lively.setPosition(morph, pt(evt.pageX, evt.pageY)
+          .subPt(pt(worldBounds.left, worldBounds.top)));
         // morph.style.backgroundColor = "blue";
         morph.style.backgroundColor = 'rgba(40,40,40,0.5)';
         worldContext.appendChild(morph);
@@ -168,7 +169,7 @@ export default class ContextMenu {
         if (evt.pageX + menuWidth > bodyWidth) {
           xOffset = menuWidth;
         }
-        lively.setPosition(menu, lively.pt(evt.pageX - xOffset, evt.pageY));
+        lively.setPosition(menu, pt(evt.pageX - xOffset, evt.pageY));
       }
       menu.openOn(this.items(target, worldContext), evt).then(() => {
       });
