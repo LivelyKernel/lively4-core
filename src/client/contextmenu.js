@@ -28,6 +28,7 @@ export default class ContextMenu {
   }
   
   static items (target) {
+    var targetWorld = document.body;
     if (target) {
       var wasEditable = (target.contentEditable == "true");
       var wasDisabled = (target.disabled == "true");
@@ -126,7 +127,7 @@ export default class ContextMenu {
         var text  = document.createElement("p");
         text.innerHTML = "Hello";
         text.contentEditable = true;
-        $('body')[0].appendChild(text);
+        target.appendChild(text);
         lively.setPosition(text, lively.pt(evt.pageX, evt.pageY));
         this.hide();
       }],
@@ -137,18 +138,16 @@ export default class ContextMenu {
         lively.setPosition(morph, lively.pt(evt.pageX, evt.pageY));
         // morph.style.backgroundColor = "blue";
         morph.style.backgroundColor = 'rgba(40,40,40,0.5)';
-        $('body')[0].appendChild(morph);
+        targetWorld.appendChild(morph);
         this.hide();
       }],
       ["save as ..", (evt) => {
         html.saveCurrentPageAs();
       }],
-
       ["save", (evt) => {
         html.saveCurrentPage();
       }]
-      
-      ];}
+    ]}
   }
   
   static openIn(container, evt, target) {
