@@ -142,7 +142,10 @@ export default class Sync extends Morph {
   }
 
   onSyncButton() {
-    this.sync()
+    this.gitControl("status", (status) => {
+      this.sync()  
+    })
+    
   }
 
   sync() {
