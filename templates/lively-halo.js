@@ -65,7 +65,7 @@ export default class Halo extends Morph {
       document.body.draggable=false; 
       return false;
     }
-    this.registerBodyDragAndDrop(targetContext);
+    // this.registerBodyDragAndDrop(targetContext);
     document.body.draggable=true; 
   }
   
