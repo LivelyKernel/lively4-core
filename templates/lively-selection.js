@@ -19,11 +19,11 @@ export default class Selection extends Morph {
     this.originalOffset = new Map();
   }
 
-  onSelectionDragStart(evt) {
+  onSelectionDragStart(evt, windowContext) {
     this.selectionOffset = events.globalPosition(evt);
     nodes.setPosition(this,  this.selectionOffset);
 
-    this.context = document.body;
+    this.context = windowContext || document.body;
     if (window.that && that !== this 
         && HaloService.areHalosActive()
         && !that.isMeta) {

@@ -21,51 +21,65 @@ export default class Halo extends Morph {
     Halo.halo = $(this);
     Halo.halo.hide();
     window.HaloService = Halo;
-    this.registerBodyDragAndDrop();
+    this.registerBodyDragAndDrop(document.body);
   }
   
-  registerBodyDragAndDrop() {
-    document.body.draggable="true";
-    lively.addEventListener("Halo", document.body, "dragstart", evt => this.onBodyDragStart(evt));
-    lively.addEventListener("Halo", document.body, "drag", evt => this.onBodyDrag(evt));
-    lively.addEventListener("Halo", document.body, "dragend", evt => this.onBodyDragEnd(evt));
+  registerBodyDragAndDrop(targetContext) {
+    // document.body.draggable=true; 
+    lively.removeEventListener("Halo", targetContext)
+    lively.addEventListener("Halo", targetContext, "mousedown", 
+      evt => this.onBodyMouseDown(evt, targetContext));
+    lively.addEventListener("Halo", targetContext, "dragstart", 
+      evt => this.onBodyDragStart(evt, targetContext));
+    lively.addEventListener("Halo", targetContext, "drag", 
+      evt => this.onBodyDrag(evt, targetContext));
+    lively.addEventListener("Halo", targetContext, "dragend", 
+      evt => this.onBodyDragEnd(evt, targetContext));
   }
   
-  onBodyDragStart(evt) {
-    var inputFields = lively.html.findAllNodes()
-        .filter (ea => ea.tagName == 'INPUT')
+  onBodyMouseDown(evt, targetContext) {
+    var whitelistNodes = lively.html.findAllNodes() // #TODO only find nodes of subelement
+        .filter (ea => ea.tagName == 'INPUT' || 
+          ea.tagName == "LI" || ea.tagName == "TD" ||
+          ea.tagName == "P" ||  ea.tagName == "PRE")
         .filter (ea => {
-          var b = ea.getBoundingClientRect()
-          var bounds = new Rectangle(b.left, b.top, b.width, b.height) 
-          var pos = events.globalPosition(evt)
+          var b = ea.getBoundingClientRect();
+          var bounds = new Rectangle(b.left, b.top, b.width, b.height) ;
+          var pos = events.globalPosition(evt);
           // lively.showPoint(bounds.topLeft())
           // lively.showPoint(pos)
-          return bounds.containsPoint(pos)
-      })
+          return bounds.containsPoint(pos);
+      });
     // inputFields.forEach( ea => lively.showElement(ea))
-    if (inputFields.length > 0) {
-      evt.preventDefault();
-      return false
+    if (whitelistNodes.length > 0) {
+      // evt.preventDefault();
+      // evt.stopPropagation();
+      targetContext.draggable=false; 
+      return false;
     }
+    targetContext.draggable=true; 
+  }
+  
+  onBodyDragStart(evt, targetContext) {
     if (this.selection) this.selection.remove(); // #TODO reuse eventually?
     this.selection = lively.components.createComponent("lively-selection");
     lively.components.openIn(document.body, this.selection).then(comp => {
-      comp.onSelectionDragStart(evt)
+      comp.onSelectionDragStart(evt);
     });
     
     // give it something to drag
-    var img = document.createElement("img");
-    evt.dataTransfer.setDragImage(img, 0, 0);
+    var div = document.createElement("div");
+    evt.dataTransfer.setDragImage(div, 0, 0);
   }
   
-  onBodyDrag(evt) {
+  onBodyDrag(evt, targetContext) {
     //evt.preventDefault();
     // return false
     if (!this.selection) return;
     this.selection.onSelectionDrag && this.selection.onSelectionDrag(evt)
   } 
   
-  onBodyDragEnd(evt) {
+  onBodyDragEnd(evt, targetContext) {
     // evt.preventDefault();
     // return false
     if (!this.selection) return;

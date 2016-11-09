@@ -2,6 +2,9 @@ import Morph from './Morph.js';
 import highlight from 'src/external/highlight.js';
 import {pt} from 'lively.graphics'
 
+import halo from 'templates/lively-halo.js';
+
+
 export default class Container extends Morph {
 
   initialize() {
@@ -20,6 +23,13 @@ export default class Container extends Morph {
     lively.loadCSSThroughDOM("hightlight", "src/external/highlight.css");
 
     console.log("Initialize Container");
+
+
+    // #TODO continue here, halo selection and container do now work yet
+    // var halos = halo.halo && halo.halo[0];
+    // if (halos)
+    //   halos.registerBodyDragAndDrop(this); // for content selection
+    
     if (this.useBrowserHistory()) {
       window.onpopstate = (event) => {
         var state = event.state;
