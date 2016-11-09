@@ -560,7 +560,11 @@ export default class Container extends Morph {
       // return this.listingForDirectory(url, render)
     }
     // Handling files
-    return lively.files.loadFile(url).then((content) => {
+    this.lastVersion = null; // just to be sure
+    return fetch(url).then( resp => {
+      this.lastVersion = resp.headers.get("fileversion");
+      return resp.text();
+    }).then((content) => {
       var format = path.replace(/.*\./,"");
       if (format == "html")  {
         this.sourceContent = content;
@@ -757,7 +761,7 @@ export default class Container extends Morph {
   
   editFile(path) {
     this.setAttribute("mode","edit"); // make it persistent
-    (path ? this.setPath(path) : Promise.resolve()).then( () => {
+    (path ? this.setPath(path, true /* do not render */) : Promise.resolve()).then( () => {
       this.clear();
       var containerContent=  this.get('#container-content');
       containerContent.style.display = "none";
@@ -797,10 +801,9 @@ export default class Container extends Morph {
           		useSoftTabs: true
       		});
         }
-
         // NOTE: we don't user loadFile directly... because we don't want to edit PNG binaries etc...
         comp.setText(this.sourceContent); // directly setting the source we got
-
+        comp.lastVersion = this.lastVersion;
         this.showCancelAndSave();
     
         if ((""+url).match(/\.js$/)) {
