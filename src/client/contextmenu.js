@@ -134,7 +134,8 @@ export default class ContextMenu {
         var morph  = document.createElement("div");
         morph.style.width = "200px";
         morph.style.height = "100px";
-        lively.setPosition(morph, lively.pt(evt.pageX, evt.pageY));
+        lively.setPosition(morph, lively.pt(evt.pageX, evt.pageY)
+          .subPt(lively.getPosition(worldContext)));
         // morph.style.backgroundColor = "blue";
         morph.style.backgroundColor = 'rgba(40,40,40,0.5)';
         worldContext.appendChild(morph);
