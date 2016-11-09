@@ -8,3 +8,8 @@ a {
   color: #2B547E;
 }
 
+
+.lively4-grabbed {
+
+  z-index: 1000;
+}

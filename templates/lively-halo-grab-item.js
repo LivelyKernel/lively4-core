@@ -87,6 +87,7 @@ export default class HaloGrabItem extends HaloItem {
   
   prepareGrabTarget() {
     document.body.appendChild(this.grabTarget);
+    this.grabTarget.classList.add("lively4-grabbed")
     this.grabTarget.style.position = 'absolute';
     this.grabTarget.style.removeProperty('top');
     this.grabTarget.style.removeProperty('left');
@@ -108,6 +109,7 @@ export default class HaloGrabItem extends HaloItem {
   }
   
   stopGrabbingAtEvent(evt) {
+    this.grabTarget.classList.remove("lively4-grabbed")
     this.insertGrabTargetBeforeShadow();
     this.removeGrabShadow();
     if (this.grabShadow.style.position == 'absolute') {

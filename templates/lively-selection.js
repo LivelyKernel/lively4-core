@@ -123,11 +123,12 @@ export default class Selection extends Morph {
     
     this.startPositions.set(this, nodes.globalPosition(this));
     this.nodes.forEach( ea => {
-     var pos = nodes.globalPosition(ea);
-     this.startPositions.set(ea, pos);
-     document.body.appendChild(ea);
-     ea.style.position = 'absolute';
-     nodes.setPosition(ea, pos);
+      ea.classList.add("lively4-grabbed")
+      var pos = nodes.globalPosition(ea);
+      this.startPositions.set(ea, pos);
+      document.body.appendChild(ea);
+      ea.style.position = 'absolute';
+      nodes.setPosition(ea, pos);
     });
   }
   
@@ -138,7 +139,8 @@ export default class Selection extends Morph {
   haloGrabStop(evt, grabHaloItem) {
    var positions = new Map();
     // first add temorarily to selection ... so that we do not drop into each other
-   this.nodes.forEach( ea => {
+    this.nodes.forEach( ea => {
+      ea.classList.remove("lively4-grabbed")
       positions.set(ea, nodes.globalPosition(ea));
       this.appendChild(ea);
     });
@@ -152,14 +154,20 @@ export default class Selection extends Morph {
     this.nodes.forEach( ea => {
       dropTarget.appendChild(ea);
       ea.style.position = "absolute";
-      nodes.setPosition(ea, positions.get(ea).subPt(offset));
-      // nodes.setPosition(ea, pt(10*++i,10*i))
+      
+      var pos = positions.get(ea);
+      if (dropTarget.localizePosition) {
+        pos = dropTarget.localizePosition(pos);
+      } else {
+        pos = pos.subPt(offset);
+      }
+      nodes.setPosition(ea, pos);
     });
     HaloService.showHalos(this);
   }
   
   haloResizeStart(evt, haloItem) {
-    this.eventOffset = events.globalPosition(evt)
+    this.eventOffset = events.globalPosition(evt);
     this.nodes.concat([this]).forEach( ea => {
        this.startPositions.set(ea, nodes.globalPosition(ea));
        this.originalExtents.set(ea, nodes.getExtent(ea));
