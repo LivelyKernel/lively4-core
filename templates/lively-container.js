@@ -70,9 +70,11 @@ export default class Container extends Morph {
   }
   
   onContextMenu(evt) {
-    evt.preventDefault();
-	  lively.openContextMenu(document.body, evt, undefined, this);
-	  return false;
+    if (!evt.altKey) {
+      evt.preventDefault();
+	    lively.openContextMenu(document.body, evt, undefined, this);
+	    return false;
+    }
   }
     
   useBrowserHistory() {
