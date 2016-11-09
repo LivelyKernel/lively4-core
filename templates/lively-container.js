@@ -187,7 +187,7 @@ export default class Container extends Morph {
   }
   
   onMouseDown(evt) {
-    
+    lively.notify("mouse down")
   }
   
   onForward() {
