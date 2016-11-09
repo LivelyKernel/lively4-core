@@ -70,7 +70,8 @@ export default class Container extends Morph {
   }
   
   onContextMenu(evt) {
-    if (!evt.shiftKey) {
+    // fall back to system context menu if shift pressed
+    if (!evt.shiftKey) { 
       evt.preventDefault();
 	    lively.openContextMenu(document.body, evt, undefined, this);
 	    return false;
