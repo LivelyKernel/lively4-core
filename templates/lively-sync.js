@@ -149,7 +149,7 @@ export default class Sync extends Morph {
         this.sync()
         lively.notify("sync directly")
       } else {
-        if (window.confirm("Contains auto commits, push them anyway?")) {
+        if (window.confirm("Contains auto commits. Forgot to squash? Push them anyway? ")) {
           this.sync()
           lively.notify("sync anyway")
         } else {
