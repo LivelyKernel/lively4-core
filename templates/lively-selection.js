@@ -11,6 +11,7 @@ export default class Selection extends Morph {
   
   get isMetaNode() { return true}
  
+ 
   initialize() {
     // super.initialize()
     this.nodes = [];
