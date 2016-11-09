@@ -4,40 +4,35 @@ import Morph from './Morph.js';
 
 export default class Sync extends Morph {
   initialize() {
-    this.windowTitle = "GitHub Sync"
-    var container = this.q(".container");
-    lively.html.registerButtons(this)
-    lively.html.registerInputs(this)
-    this.updateLoginStatus()
+    this.windowTitle = "GitHub Sync";
+    var container = this.get(".container");
+    lively.html.registerButtons(this);
+    lively.html.registerInputs(this);
+    this.updateLoginStatus();
     
     if (window.__karma__) {
-      console.log("exit early... due to karma")
-      return 
+      console.log("exit early... due to karma");
+      return;
     }
     
-    this.getSubmorph('#gitrepository').value = lively4url.replace(/.*\//,"")
+    this.getSubmorph('#gitrepository').value = lively4url.replace(/.*\//,"");
     
-    var travis = this.shadowRoot.querySelector("#travisLink")
+    var travis = this.shadowRoot.querySelector("#travisLink");
     travis.onclick = () => {
-      window.open(travis.getAttribute("href"))
-      return false
-    } 
+      window.open(travis.getAttribute("href"));
+      return false;
+    };
   }
 
-  // #TODO pull into Morph?  
-  q(selector) {
-    return this.shadowRoot.querySelector(selector)
-  }
-  
   // #TODO into Morph or Tool
   clearLog(s) {
-    var editor= this.q("#log").editor
-    if (editor) editor.setValue("")
+    var editor= this.get("#log").editor;
+    if (editor) editor.setValue("");
   }
 
   log(s) {
-    var editor = this.q("#log").editor
-    if (editor) editor.setValue(editor.getValue() + "\n" + s)
+    var editor = this.get("#log").editor;
+    if (editor) editor.setValue(editor.getValue() + "\n" + s);
   }
 
   async updateLoginStatus() {
@@ -45,19 +40,18 @@ export default class Sync extends Morph {
     
     // this.updateLoginStatus()
     var token = await this.loadValue("githubToken")
-    this.q("#loginButton").innerHTML = 
+    this.get("#loginButton").innerHTML = 
         token ? "logout" : "login";
     var login = token ? true : false;
     this.loggedin = login;
-    
 
-    this.q("#gitusername").value = 
+    this.get("#gitusername").value = 
       await this.loadValue("githubUsername");
-    this.q("#gitemail").value = 
+    this.get("#gitemail").value = 
       await this.loadValue("githubEmail");
     
     var value = await this.loadValue("githubRepository") 
-    if (value)this.q("#gitrepository").value = value;
+    if (value)this.get("#gitrepository").value = value;
     
     this.updateContextSensitiveButtons();
     this.updateRepositoryList();
@@ -67,22 +61,22 @@ export default class Sync extends Morph {
   githubApi(path, token) {
     return fetch("https://api.github.com" + path, {headers: new Headers({
       Authorization: "token " + token
-    })}).then(r => r.json())
+    })}).then(r => r.json());
   }
   
   async login() {
     this.loadValue("githubToken").then((result) => {
-      if (result) return result
+      if (result) return result;
       return new Promise((resolve, reject) => {
         lively.authGithub.challengeForAuth(Date.now(), async (token) => {
-          console.log("authenticated")
-          var user = await this.githubApi("/user", token)
-          var username = user.login
-          var emails =  await this.githubApi("/user/emails", token)
-          var email = emails.find(ea => ea.primary).email
+          console.log("authenticated");
+          var user = await this.githubApi("/user", token);
+          var username = user.login;
+          var emails =  await this.githubApi("/user/emails", token);
+          var email = emails.find(ea => ea.primary).email;
 
-          console.log("username: " + username )
-          console.log("email: " + email )
+          console.log("username: " + username);
+          console.log("email: " + email);
 
           
           this.storeValue("githubUsername", username);
@@ -99,15 +93,15 @@ export default class Sync extends Morph {
 
   async getHeaders() {
     return new Headers({
-      "gitrepository":        this.q("#gitrepository").value, 
-      "gitusername":          this.q("#gitusername").value,
+      "gitrepository":        this.get("#gitrepository").value, 
+      "gitusername":          this.get("#gitusername").value,
       "gitpassword":          await this.loadValue("githubToken"), 
-      "gitemail":             this.q("#gitemail").value,
-      "gitrepositoryurl":     this.q("#gitrepositoryurl").value,
-	    "gitrepository":        this.q("#gitrepository").value,
-	    "gitrepositorybranch":  this.q("#gitrepositorybranch").value,
-	    "gitcommitmessage":     this.q("#gitcommitmessage").value,
-	    "dryrun":               this.q("#dryrun").checked
+      "gitemail":             this.get("#gitemail").value,
+      "gitrepositoryurl":     this.get("#gitrepositoryurl").value,
+	    "gitrepository":        this.get("#gitrepository").value,
+	    "gitrepositorybranch":  this.get("#gitrepositorybranch").value,
+	    "gitcommitmessage":     this.get("#gitcommitmessage").value,
+	    "dryrun":               this.get("#dryrun").checked
     })
   }
 
@@ -120,11 +114,11 @@ export default class Sync extends Morph {
   }
   
   setRepository(name) {
-     this.q("#gitrepository").value = name
+     this.get("#gitrepository").value = name
   }
   
   getRepository(name) {
-     return this.q("#gitrepository").value
+     return this.get("#gitrepository").value
   }
 
   async gitControl(cmd, eachCB) {
@@ -140,8 +134,6 @@ export default class Sync extends Morph {
         }, resolve)
     })
   }
-
-
   
   onSyncButton() {
     this.gitControl("status").then((status) => {
@@ -186,8 +178,8 @@ export default class Sync extends Morph {
 
   async onCloneButton(){
     if (window.confirm("Do you want to clone into " + 
-        this.q("#gitrepository").value)) {
-      this.q("#cloneButton").disabled= true
+        this.get("#gitrepository").value)) {
+      this.get("#cloneButton").disabled= true
       await this.gitControl("clone")
       this.updateContextSensitiveButtons()
       this.updateRepositoryList()
@@ -212,15 +204,15 @@ export default class Sync extends Morph {
   }
   
   onDeleteButton() {
-    if (window.confirm("Do you want to delete " + this.q("#gitrepository").value + " repository?")) {
+    if (window.confirm("Do you want to delete " + this.get("#gitrepository").value + " repository?")) {
       this.gitControl("delete");
     }
   }
   
   onMergeButton() {
     if (window.confirm("Do you want to merge "
-      + this.q("#gitrepositorybranch").value 
-      +" into " + this.q("#gitrepository").value 
+      + this.get("#gitrepositorybranch").value 
+      +" into " + this.get("#gitrepository").value 
       + " repository?")) {
       this.gitControl("merge");
     }
@@ -281,7 +273,7 @@ export default class Sync extends Morph {
       return
     }
     currentBranch = currentBranch.replace(currentRegex,"")
-    this.q("#gitrepositorybranch").value = currentBranch
+    this.get("#gitrepositorybranch").value = currentBranch
     
     var remoteRegEx = /^remotes\/origin\//
     branches = branches
@@ -289,7 +281,7 @@ export default class Sync extends Morph {
       .filter(ea => ea.match(remoteRegEx))
       .filter(ea => ! ea.match("HEAD "))
       .map(ea => ea.replace(remoteRegEx,""))
-    this.q("#gitbranches").innerHTML = branches.map(ea => "<option>" + ea).join("\n")
+    this.get("#gitbranches").innerHTML = branches.map(ea => "<option>" + ea).join("\n")
     console.log("branches: " + branches)
   }
 
@@ -299,11 +291,11 @@ export default class Sync extends Morph {
   
   async updateContextSensitiveButtons() {
     
-    var repository = this.q("#gitrepository").value
+    var repository = this.get("#gitrepository").value
     var list = await this.getGitRepositoryNames()
     var exists = _.include(list, repository)
     
-    console.log("delete " + this.q("#deleteButton").disabled)
+    console.log("delete " + this.get("#deleteButton").disabled)
 
     if (exists) {
       
@@ -324,6 +316,6 @@ export default class Sync extends Morph {
       ea.disabled= this.loggedin)
 
     if (_.include(this.repositoryBlacklist, repository))
-      this.q("#deleteButton").disabled = true
+      this.get("#deleteButton").disabled = true
   }
 }
