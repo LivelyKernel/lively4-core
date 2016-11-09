@@ -70,7 +70,7 @@ export default class Container extends Morph {
   }
   
   onContextMenu(evt) {
-    if (!evt.altKey) {
+    if (!evt.shiftKey) {
       evt.preventDefault();
 	    lively.openContextMenu(document.body, evt, undefined, this);
 	    return false;
