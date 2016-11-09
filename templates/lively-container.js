@@ -178,8 +178,12 @@ export default class Container extends Morph {
     comp.editFile("" + url)
   }
 
-
   onSave(doNotQuit) {
+    if (!this.isEditing()) {
+      this.saveEditsInView();
+      return 
+    }
+    
     if (this.getPath().match(/\/$/)) {
       lively.files.saveFile(this.getURL(),"");
       return;
@@ -818,6 +822,18 @@ export default class Container extends Morph {
   saveHTML() {
     var source  = this.getContentRoot().innerHTML
     lively.files.saveFile(this.getURL(),source) 
+  }
+  
+  saveEditsInView() {
+    var url = this.getURL().toString()
+    if (url.match(/template.*\.html$)) {
+        return lively.notify("Editing templates in View not supported yet!")
+    } else if (url.match(/\.html$)) {
+       this.saveHTML()
+    } else {
+      lively.notify("Editing in view not supported for the content type!")
+    }
+    
   }
   
   unsavedChanges() {
