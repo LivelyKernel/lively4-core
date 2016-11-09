@@ -430,7 +430,10 @@ export default class Lively {
 
   }
   
-  static notify(title, text, timeout, cb, color) {
+  static notify(titleOrOptions, text, timeout, cb, color) {
+    var title = titleOrOptions
+    
+    
     // #TODO make native notifications opitional?
     // this.nativeNotify(title, text, timeout, cb) 
     console.log("Note: " + title + "\n" + text)
