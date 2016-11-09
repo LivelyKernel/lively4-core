@@ -828,7 +828,7 @@ export default class Container extends Morph {
     var url = this.getURL().toString()
     if (url.match(/template.*\.html$/)) {
         return lively.notify("Editing templates in View not supported yet!")
-    } else if (url.match(/\.html$)) {
+    } else if (url.match(/\.html$/)) {
        this.saveHTML()
     } else {
       lively.notify("Editing in view not supported for the content type!")
