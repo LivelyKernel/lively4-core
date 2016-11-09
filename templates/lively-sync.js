@@ -147,7 +147,8 @@ export default class Sync extends Morph {
         this.sync()  
       } else {
         if (window.confirm("Contains auto commits, push them anyway?")) {
-          this.sync()
+          // this.sync()
+          lively.notify("haha")
         }
       }
     })
