@@ -74,6 +74,8 @@ export default class Halo extends Morph {
   }
   
   onBodyDrag(evt, targetContext) {
+    lively.notify("drag")
+    
     //evt.preventDefault();
     // return false
     if (!this.selection) return;
