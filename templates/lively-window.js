@@ -297,7 +297,7 @@ export default class Window extends Morph {
   }
 
   sortMinimizedWindows() {
-    var x = this.minimizedWindowPadding
+    var x = 100;
     var windowBarHeight = this.shadowRoot.querySelector('.window-titlebar').clientHeight
     
     _.filter(document.body.querySelectorAll("lively-window"), ea => ea.isMinimized()).forEach(ea => {
