@@ -187,7 +187,8 @@ export default class Container extends Morph {
   }
   
   onMouseDown(evt) {
-    halo.halo[0].onBodyMouseDown(evt, this)
+    if (halo.halo && halo.halo[0])
+      halo.halo[0].onBodyMouseDown(evt, this);
   }
   
   onForward() {
