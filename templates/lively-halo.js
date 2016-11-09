@@ -30,15 +30,14 @@ export default class Halo extends Morph {
     lively.addEventListener("Halo", document.body, "mousedown", 
       evt => this.onBodyMouseDown(evt, document.body));
     lively.addEventListener("Halo", document.body, "dragstart", 
-      evt => this.onBodyDragStart(evt, document.body));
+      evt => this.onBodyDragStart(evt));
     lively.addEventListener("Halo", document.body, "drag", 
-      evt => this.onBodyDrag(evt, document.body));
+      evt => this.onBodyDrag(evt));
     lively.addEventListener("Halo", document.body, "dragend", 
-      evt => this.onBodyDragEnd(evt, document.body));
+      evt => this.onBodyDragEnd(evt));
   }
   
   onBodyMouseDown(evt, targetContext) {
-    lively.notify("down")
     var whitelistNodes = lively.html.findAllNodes() // #TODO only find nodes of subelement
         .filter (ea => ea.tagName == 'INPUT' || 
           ea.tagName == "LI" || ea.tagName == "TD" ||
@@ -58,11 +57,10 @@ export default class Halo extends Morph {
       document.body.draggable=false; 
       return false;
     }
-    lively.notify("enable")
     document.body.draggable=true; 
   }
   
-  onBodyDragStart(evt, targetContext) {
+  onBodyDragStart(evt) {
     if (this.selection) this.selection.remove(); // #TODO reuse eventually?
     this.selection = lively.components.createComponent("lively-selection");
     lively.components.openIn(document.body, this.selection).then(comp => {
