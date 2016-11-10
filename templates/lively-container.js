@@ -75,9 +75,10 @@ export default class Container extends Morph {
     });
     lively.html.registerButtons(this);
 
-    this.addEventListener('contextmenu', function(evt) {
-      this.onContextMenu(evt);
-    }, false);
+    this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
+    // this.addEventListener('keyup',   evt => this.onKeyUp(evt));
+    this.addEventListener('keydown',   evt => this.onKeyDown(evt));
+    this.setAttribute("tabindex", 0)	
   }
   
   onContextMenu(evt) {
@@ -125,7 +126,17 @@ export default class Container extends Morph {
     if (!this._forwardHistory) this._forwardHistory = [];
     return this._forwardHistory;
   }
-    
+
+  onKeyDown(evt) {
+    var char = String.fromCharCode(evt.keyCode || evt.charCode)
+    if (evt.ctrlKey && char == "S") {
+      this.onSave()
+      evt.preventDefault()
+      evt.stopPropagation()
+    }
+  }
+
+
   async onSync(evt) {
     var comp = lively.components.createComponent("lively-sync");
     var compWindow;

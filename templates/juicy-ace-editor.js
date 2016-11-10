@@ -27,7 +27,9 @@ export default class AceEditor extends HTMLElement {
         editor.getSession().on('change', function(event){
             element.dispatchEvent(new CustomEvent("change", {detail: event}));
         });
+        
     }
+    this.addEventListener("change", evt => this.onChanged(evt))
 
     // handle theme changes
     editor.renderer.addEventListener("themeLoaded", this.onThemeLoaded.bind(this));
@@ -544,6 +546,19 @@ export default class AceEditor extends HTMLElement {
   
   livelyMigrate(other) {
     this.editor.setValue(other.editor.getValue())
+  }
+  
+  get persistent() {
+    return this.getAttribute("persistent")
+  }
+
+  set persistent(bool) {
+    return this.setAttribute("persistent", bool)
+  }
+  
+  onChanged() {
+    if (this.persistent)
+      this.innerHTML = this.editor.getValue().replace(/</g,"&lt;")
   }
   
 }

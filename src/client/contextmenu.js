@@ -9,7 +9,7 @@ import {pt} from 'lively.graphics';
 export default class ContextMenu {
   
   static hide() {
-    if (this.menu) $(this.menu).remove();
+    if (this.menu) this.menu.remove();
     lively.removeEventListener("contextMenu",  document.documentElement);
   }
   
@@ -172,6 +172,7 @@ export default class ContextMenu {
 
     var menu = lively.components.createComponent("lively-menu");
     return lively.components.openIn(container, menu).then(() => {
+      if (this.menu) this.menu.remove()
       this.menu = menu;
       if (evt) {
         var xOffset = 0;
