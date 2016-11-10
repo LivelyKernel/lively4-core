@@ -1,0 +1,32 @@
+<h1>This is an Example</h1>
+
+<h2>A simple script</h2> 
+
+<div id="hello">Hello</div>
+<script>
+  document.querySelector("#hello").onclick = function() {
+    if (this.innerHTML == "Hello") {
+      this.innerHTML = "World"
+    } else {
+      this.innerHTML = "Hello"
+    }
+  }
+</script>
+
+<h2>Loading a module</h2> 
+
+Module:
+<pre id="mylog"></pre>
+<script>
+  System.import("./mymodule.js").then( mod => {
+    window.Last = mod
+    document.querySelector("#mylog").textContent = mod.hello()
+  }, error => {
+    document.querySelector("#mylog").textContent = error
+  })
+</script>
+
+
+
+
+
