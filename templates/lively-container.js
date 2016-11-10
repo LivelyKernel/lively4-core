@@ -12,7 +12,7 @@ export default class Container extends Morph {
     
     // there seems to be no <link ..> tag allowed to reference css inside of templates
     // lively.files.loadFile(lively4url + "/templates/livelystyle.css").then(css => {
-    //   this.shadowRoot.querySelector("#livelyStyle").innerHTML = css
+    //   this.shadowRoot.querySelector("#livelySt\yle").innerHTML = css
     // })
     this.windowTitle = "Browser";
     if (this.isSearchBrowser) {
@@ -522,6 +522,8 @@ export default class Container extends Morph {
       if (index) { 
         return this.setPath(url + "/" + index.name) ;
       }
+      return; // DISABLE Listings
+      
       this.sourceContent = content;
       var html = "<div class='table-container'>"+
         "<table class='directory'>"+
@@ -574,8 +576,8 @@ export default class Container extends Morph {
     // Handling directories
     
     if (isdir) {
-      return new Promise((resolve) => { resolve("") });
-      // return this.listingForDirectory(url, render)
+      // return new Promise((resolve) => { resolve("") });
+      return this.listingForDirectory(url, render)
     }
     // Handling files
     this.lastVersion = null; // just to be sure
