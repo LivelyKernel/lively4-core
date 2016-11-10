@@ -97,7 +97,6 @@ export default class Container extends Morph {
     _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
       ea.style.visibility = "hidden";
       ea.style.display = "none";
-
     });
     _.each(this.shadowRoot.querySelectorAll(".browse"), (ea) => {
       ea.style.visibility = "visible";
@@ -106,15 +105,15 @@ export default class Container extends Morph {
   }
 
   showCancelAndSave() {
-    _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
-      ea.style.visibility = "visible";
-      ea.style.display = "inline-block";
-    });
-    
     _.each(this.shadowRoot.querySelectorAll(".browse"), (ea) => {
       ea.style.visibility = "hidden";
       ea.style.display = "none";
     });
+    _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
+      ea.style.visibility = "visible";
+      ea.style.display = "inline-block";
+    });
+
   }
   
   history() {
