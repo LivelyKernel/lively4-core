@@ -24,7 +24,6 @@ export default class DigitalClock extends Morph {
   /*
    * Initialization
    */
-
   setup() {
     this.renderLoop();
   }

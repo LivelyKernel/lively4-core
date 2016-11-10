@@ -79,6 +79,7 @@ export default class Container extends Morph {
     // this.addEventListener('keyup',   evt => this.onKeyUp(evt));
     this.addEventListener('keydown',   evt => this.onKeyDown(evt));
     this.setAttribute("tabindex", 0)	
+    this.hideCancelAndSave()
   }
   
   onContextMenu(evt) {
@@ -128,14 +129,66 @@ export default class Container extends Morph {
   }
 
   onKeyDown(evt) {
-    var char = String.fromCharCode(evt.keyCode || evt.charCode)
+    var char = String.fromCharCode(evt.keyCode || evt.charCode);
     if (evt.ctrlKey && char == "S") {
-      this.onSave()
-      evt.preventDefault()
-      evt.stopPropagation()
+      this.onSave();
+      evt.preventDefault();
+      evt.stopPropagation();
     }
   }
 
+  reloadModule(url) {
+    System.import(url.toString()).then( m => {
+        this.shadowRoot.querySelector("#live").disabled =false;
+        lively.notify({
+          title: "Loaded " + url, color: "green"});
+        this.resetLoadingFailed();
+      }, error => {
+        this.loadingFailed(url.replace(/.*\//,""), error);
+      });
+  }
+  
+  resetLoadingFailed() {
+    // that.resetLoadingFailed()
+    // System.import(urlString)
+    var urlString = this.getURL().toString();
+    if (urlString.match(/\.js$/)) {
+      var m = lively.modules.module(urlString);
+      this.get("#live").disabled = !m.isLoaded();
+    }
+    this.lastLoadingFailed = false;
+    var b = this.get("#apply"); if (b) b.style.border = "";
+
+  }
+  
+  loadingFailed(moduleName, err) {
+    this.lastLoadingFailed = err;
+    this.get("#live").disabled = true;
+    this.get("#apply").style.border = "2px solid red";
+
+    lively.notify({
+      title: "Error loading module " + moduleName,
+      text:  err.toString().slice(0,200),
+      color: "red",
+      details: err});
+    console.error(err);
+  }
+
+  openTemplateInstance(url) {
+      var name = url.toString().replace(/.*\//,"").replace(/\.html$/,"");
+      lively.openComponentInWindow(name);
+  }
+
+  onApply() {
+    var url = this.getURL().toString();
+    if (url.match(/\.js$/))  {
+      this.reloadModule(url);
+    } else if (url.match(/templates\/.*\.html$/)) {
+      this.openTemplateInstance(url);
+    } else {
+      lively.openBrowser(url);
+    }
+  }
 
   async onSync(evt) {
     var comp = lively.components.createComponent("lively-sync");
@@ -164,16 +217,22 @@ export default class Container extends Morph {
     
 
   onEdit() {
-      this.setAttribute("mode", "edit");
-      this.showCancelAndSave();
-      this.editFile();
-    }
+    this.setAttribute("mode", "edit");
+    this.showCancelAndSave();
+    this.editFile();
+  }
 
   onCancel() {
-      this.setAttribute("mode", "show");
-      this.setPath(this.getPath());
-      this.hideCancelAndSave();
+    if (this.unsavedChanges()) { 
+      if (!confirm("There are unsaved changes. Loos them?")) {
+        return;
+      }
     }
+    this.setAttribute("mode", "show");
+    this.setPath(this.getPath());
+    this.hideCancelAndSave();
+
+  }
 
   onUp() {
     var path = this.getPath();
@@ -255,30 +314,28 @@ export default class Container extends Morph {
       var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/);
       if (moduleName) {
         moduleName = moduleName[1];
-        if (this.get("#live").checked && !this.get("#live").disabled) {
-          
-          lively.reloadModule("" + url).then( async module => {
-            lively.notify("Scripting","Module " + moduleName + " reloaded!", 3, null, "green")
-            // we are editing a class file to a template... just reload to get some feedback
+        if (this.lastLoadingFailed) {
+          this.reloadModule(url); // use our own mechanism...
+        } else if ((this.get("#live").checked && !this.get("#live").disabled)) {
+          lively.reloadModule("" + url).then(module => {
+            lively.notify("Scripting","Module " + moduleName + " reloaded!", 3, null, "green");
             if (this.getPath().match(/templates\/.*js/)) {
               var templateURL = this.getPath().replace(/\.js$/,".html");
               try {
                 console.log("[container] update template " + templateURL);
-                var sourceCode = await lively.files.loadFile(templateURL);
-                lively.updateTemplate(sourceCode);
+                lively.files.loadFile(templateURL).then( sourceCode => 
+                  lively.updateTemplate(sourceCode));
               } catch(e) {
                 lively.notify("[container] could not update template " + templateURL, ""+e);
               }
             }
-
+            this.resetLoadingFailed();
           }, err => {
-            window.LastError = err;
-            lively.notify("Error loading module " + moduleName, err);
-            console.error(err);
-          })
+            this.loadingFailed(moduleName, err);
+          });
         }
       }
-    }).then(() => this.showNavbar())
+    }).then(() => this.showNavbar());
   }
 
   async onDelete() {
@@ -799,10 +856,7 @@ export default class Container extends Morph {
       containerEditor.style.display = "block";
 
       var urlString = this.getURL().toString();
-      if (urlString.match(/\.js$/)) {
-        var module = lively.modules.module(urlString);
-        this.shadowRoot.querySelector("#live").disabled = !module.isLoaded();
-      }
+      this.resetLoadingFailed();
 
       var livelyEditor = lively.components.createComponent("lively-editor");
       lively.components.openIn(containerEditor,livelyEditor).then( comp => {
@@ -848,15 +902,27 @@ export default class Container extends Morph {
     });
   }
   
+  getEditor() {
+    var container = this.get('#container-editor');
+    var editor = container.querySelector("lively-editor");
+    if (editor) return Promise.resolve(editor);
+    editor = lively.components.createComponent("lively-editor");
+    return lively.components.openIn(container, editor).then( () => {
+      return editor;
+    });
+  }
+  
   saveHTML() {
     var source  = this.getContentRoot().innerHTML;
-  
-    return lively.files.saveFile(this.getURL(),source).then( () => {
-      // reuse?
-      var editor = lively.components.createComponent("lively-editor");
+    return this.getEditor().then( editor => {
       editor.setURL(this.getURL());
-      editor.updateOtherEditors();
-    }) ;
+      editor.setText(source);
+      editor.lastVersion = this.lastVersion;
+      editor.saveFile().then( () => {
+        // #TODO we should update here after conflict resolution?
+      })
+    })
+    
   }
   
   saveEditsInView() {
@@ -885,6 +951,36 @@ export default class Container extends Morph {
   localizePosition(pos) {
     var offsetBounds = this.get('#container-content').getBoundingClientRect();
     return pos.subPt(pt(offsetBounds.left, offsetBounds.top));
+  }
+  
+  // let's do it the hard way
+  asyncGet(selector, maxtime) {
+    maxtime = maxtime || 10000;
+    var startTime = Date.now();
+    return new Promise((resolve, reject) => {
+      var check = () => {
+        var found = this.get(selector);
+        if (found) resolve(found);
+        else if (Date.now() - startTime > maxtime) reject();
+        else setTimeout(check, 100);
+      };
+      check();
+    });
+  }
+  
+  livelyMigrate(other) {
+    // other = that
+    var otherAce = other.get("#editor").currentEditor();  
+    var range = otherAce.selection.getRange();
+    var scrollTop = otherAce.session.getScrollTop();
+
+    this.asyncGet("#editor").then( editor => {
+      var thisAce = editor.currentEditor();
+      if (otherAce && thisAce) {
+        thisAce.selection.setRange(range);
+        thisAce.session.setScrollTop(scrollTop)
+      }
+    })
   }
   
 }
