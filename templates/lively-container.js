@@ -521,7 +521,7 @@ export default class Container extends Morph {
       if (index) { 
         return this.setPath(url + "/" + index.name) ;
       }
-      return; // DISABLE Listings
+      // return Promise.resolve(""); // DISABLE Listings
       
       this.sourceContent = content;
       var html = "<div class='table-container'>"+
