@@ -1,6 +1,6 @@
 import Morph from './Morph.js';
 import highlight from 'src/external/highlight.js';
-import {pt} from 'lively.graphics'
+import {pt} from 'lively.graphics';
 
 import halo from 'templates/lively-halo.js';
 
@@ -24,7 +24,7 @@ export default class Container extends Morph {
 
     console.log("Initialize Container");
     
-    lively.addEventListener("Container", this, "mousedown", evt => this.onMouseDown(evt))
+    lively.addEventListener("Container", this, "mousedown", evt => this.onMouseDown(evt));
 
     // #TODO continue here, halo selection and container do now work yet
     // var halos = halo.halo && halo.halo[0];
@@ -545,12 +545,34 @@ export default class Container extends Morph {
     return this.shadowRoot.querySelector("#container-path").value;
   }
 
+  getEditor() {
+    var container = this.get('#container-editor');
+    var editor = container.querySelector("lively-editor");
+    if (editor) return Promise.resolve(editor);
+    editor = lively.components.createComponent("lively-editor");
+    editor.id = "editor";
+    return lively.components.openIn(container, editor).then( () => {
+        editor.hideToolbar();
+        var aceComp = editor.get('juicy-ace-editor');
+        aceComp.enableAutocompletion();
+        aceComp.getDoitContext = () => {
+          return window.that;
+        };
+        aceComp.aceRequire('ace/ext/searchbox');
+        aceComp.doSave = text => {
+          this.onSave();
+        };
+      return editor;
+    });
+  }
+
   getAceEditor() {
-    var livelyEditor = this.shadowRoot.querySelector('lively-editor');
+    var livelyEditor = this.get('lively-editor');
     if (!livelyEditor) return;
-    return livelyEditor.shadowRoot.querySelector('juicy-ace-editor');
+    return livelyEditor.get('juicy-ace-editor');
   }
   
+  // #TODO replace this with asyncGet
   async realAceEditor() {
     return new Promise(resolve => {
       var checkForEditor = () => {
@@ -858,24 +880,12 @@ export default class Container extends Morph {
       var urlString = this.getURL().toString();
       this.resetLoadingFailed();
 
-      var livelyEditor = lively.components.createComponent("lively-editor");
-      lively.components.openIn(containerEditor,livelyEditor).then( comp => {
-        comp.hideToolbar();
-        comp.id = "editor";
-        var aceComp = comp.shadowRoot.querySelector('juicy-ace-editor');
-        aceComp.enableAutocompletion();
-
-        aceComp.getDoitContext = () => {
-          return window.that;
-        };
-
-        aceComp.aceRequire('ace/ext/searchbox');
-        aceComp.doSave = text => {
-          this.onSave();
-        };
+      this.getEditor().then(livelyEditor => {
+        var aceComp = livelyEditor.get('juicy-ace-editor');
+        
         
         var url = this.getURL();
-        comp.setURL(url);
+        livelyEditor.setURL(url);
         aceComp.changeModeForFile(url.pathname);
 
         if (aceComp.editor && aceComp.editor.session) {
@@ -886,32 +896,26 @@ export default class Container extends Morph {
       		});
         }
         // NOTE: we don't user loadFile directly... because we don't want to edit PNG binaries etc...
-        comp.setText(this.sourceContent); // directly setting the source we got
-        comp.lastVersion = this.lastVersion;
+        livelyEditor.setText(this.sourceContent); // directly setting the source we got
+        
+        if (aceComp.editor) {
+          aceComp.editor.selection.moveCursorTo(0,0);
+        }
+        
+        livelyEditor.lastVersion = this.lastVersion;
         this.showCancelAndSave();
     
         if ((""+url).match(/\.js$/)) {
           aceComp.targetModule = "" + url; // for editing
         }
-        setTimeout(resolve, 1000); // Promise from AceEditor needed here... #Jens #TODO
-        
-        // comp.loadFile() // ALT: Load the file again?
+
+        // livelyEditor.loadFile() // ALT: Load the file again?
       });
       this.showNavbar();
       lively.components.loadUnresolved(containerEditor);
     });
   }
-  
-  getEditor() {
-    var container = this.get('#container-editor');
-    var editor = container.querySelector("lively-editor");
-    if (editor) return Promise.resolve(editor);
-    editor = lively.components.createComponent("lively-editor");
-    return lively.components.openIn(container, editor).then( () => {
-      return editor;
-    });
-  }
-  
+
   saveHTML() {
     var source  = this.getContentRoot().innerHTML;
     return this.getEditor().then( editor => {
@@ -920,8 +924,8 @@ export default class Container extends Morph {
       editor.lastVersion = this.lastVersion;
       editor.saveFile().then( () => {
         // #TODO we should update here after conflict resolution?
-      })
-    })
+      });
+    });
     
   }
   
@@ -973,14 +977,12 @@ export default class Container extends Morph {
     var otherAce = other.get("#editor").currentEditor();  
     var range = otherAce.selection.getRange();
     var scrollTop = otherAce.session.getScrollTop();
-
     this.asyncGet("#editor").then( editor => {
       var thisAce = editor.currentEditor();
       if (otherAce && thisAce) {
+        thisAce.session.setScrollTop(scrollTop);
         thisAce.selection.setRange(range);
-        thisAce.session.setScrollTop(scrollTop)
       }
-    })
+    });
   }
-  
 }

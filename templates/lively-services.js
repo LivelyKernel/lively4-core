@@ -109,9 +109,12 @@ export default class Services extends Morph {
   }
 
   cloneButtonClick() {
-    var gitURL = window.prompt('Please enter a GitHub link to clone:');
-    if (gitURL === null) return;
-    this.post('clone', { url: gitURL });
+    lively.openComponentInWindow("lively-sync").then( comp => {
+      comp.serverURL = servicesURL + 'mount/'
+    });
+    // var gitURL = window.prompt('Please enter a GitHub link to clone:');
+    // if (gitURL === null) return;
+    // this.post('clone', { url: gitURL });
   }
 
   settingsButtonClick() {

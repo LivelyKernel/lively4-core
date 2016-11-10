@@ -1,10 +1,7 @@
-
 import HaloGrabItem from './lively-halo-grab-item.js';
-
 import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
 import {pt} from 'lively.graphics';
-
 import scriptManager from  "src/client/script-manager.js";
 
 var copyBlacklist = ["body", "html"];
@@ -12,33 +9,33 @@ var copyBlacklist = ["body", "html"];
 export default class HaloCopyItem extends HaloGrabItem {
  
   get isCopyItem() {
-    return true
+    return true;
   }
   
   onClick() {
     if (!this.copiedObject) {
-      this.copyObject(window.that)
-      this.copiedObject.style.position = 'absolute'
-      nodes.setPosition(this.copiedObject, nodes.getPosition(this.copyTarget).addPt(pt(10,10)))
-      window.that = this.copiedObject
-      window.HaloService.showHalos(that)
+      this.copyObject(window.that);
+      this.copiedObject.style.position = 'absolute';
+      nodes.setPosition(this.copiedObject, nodes.getPosition(this.copyTarget).addPt(pt(10,10)));
+      window.that = this.copiedObject;
+      window.HaloService.showHalos(that);
     } 
-    this.copiedObject = null
+    this.copiedObject = null;
   }
   
   cloneObject(obj) {
-    var tmp = document.createElement("div")
-    tmp.innerHTML = obj.outerHTML 
-    console.log ("IN: " + obj.outerHTML)
-    console.log ("OUT: " + obj.innerHTML)
+    var tmp = document.createElement("div");
+    tmp.innerHTML = obj.outerHTML;
+    console.log ("IN: " + obj.outerHTML);
+    console.log ("OUT: " + obj.innerHTML);
     
-    var clone = tmp.childNodes[0]
+    var clone = tmp.childNodes[0];
     
     scriptManager.findLively4Script(clone);
     
-    window.LastClone = clone
-    clone.remove()
-    return clone
+    window.LastClone = clone;
+    clone.remove();
+    return clone;
   }
   
   copyObject(el) {
@@ -50,11 +47,10 @@ export default class HaloCopyItem extends HaloGrabItem {
         this.copiedObject = this.cloneObject(this.copyTarget);
         this.copyTarget.parentNode.appendChild(this.copiedObject);    
       } else {
-        lively.notify("Could not copy " + sourceObj)
+        lively.notify("Could not copy " + sourceObj);
       }
     }
-    return this.copiedObject
-      
+    return this.copiedObject;
   }
 
   isAllowedToBeCopied(element) {
@@ -62,12 +58,11 @@ export default class HaloCopyItem extends HaloGrabItem {
   }
 
   // DRAG API
-  
   prepareGrabTarget() {
-    this.grabTarget = this.copyObject(this.grabTarget)
-    window.that = this.grabTarget
-    HaloService.showHalos(this.grabTarget)
+    this.grabTarget = this.copyObject(this.grabTarget);
+    window.that = this.grabTarget;
+    HaloService.showHalos(this.grabTarget);
     
-    super.prepareGrabTarget()
+    super.prepareGrabTarget();
   }
 }
