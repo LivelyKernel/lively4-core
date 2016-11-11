@@ -23,9 +23,9 @@
       var lively4yourself = /\/[^\/]*\.html/ // ADAPT THIS
         // some little reflection... help to find your inner self!
       var lively4url = window.location.origin + window.location.pathname.replace(lively4yourself,"")
-      System.paths['babel'] =lively4url + '/src/external/systemjs-babel-browser.js'
-      System.paths['plugin-babel'] =lively4url + '/src/external/plugin-babel.js'
-      System.paths['systemjs-plugin-babel'] =lively4url + '/src/external/plugin-babel.js'
+      System.paths['babel'] =lively4url + '/src/external/plugin-babel/systemjs-babel-browser.js'
+      System.paths['plugin-babel'] =lively4url + '/src/external/plugin-babel/plugin-babel.js'
+      System.paths['systemjs-plugin-babel'] =lively4url + '/src/external/plugin-babel/plugin-babel.js'
       // System.defaultJSExtensions = true;
       System.config({
         baseURL: lively4url + '/',
@@ -34,8 +34,8 @@
         map: {
             babel: lively4url + '/src/external/babel-standalone.js',
             kernel: lively4url + '/src/client/legacy-kernel.js',
-    'plugin-babel': lively4url + '/src/external/plugin-babel.js',
-    'systemjs-babel-build': lively4url + '/src/external/systemjs-babel-browser.js'
+    'plugin-babel': lively4url + '/src/external/plugin-babel/plugin-babel.js',
+    'systemjs-babel-build': lively4url + '/src/external/plugin-babel/systemjs-babel-browser.js'
         }
       });
     </script>
@@ -48,11 +48,14 @@
     -->
     <lively-container id='main-content' load="auto"></lively-container>
     <script>
-    System.import('babel').then(bab => window.babel = bab).then(() => {
+    debugger
+    System.import(lively4url + '/src/external/plugin-babel/systemjs-babel-browser.js').then(sysBabel => window.babel = sysBabel.babel).then(() => {
       System.import(lively4url + "/src/client/load.js").then((load) => {
         console.log("load lively 1/3")
+        debugger
         load.whenLoaded(function(){
             console.log("load lively 2/3")
+            debugger
             lively.components.loadUnresolved().then(function() {
                 console.log("load lively 3/3")
                 lively.initializeDocument(document)
