@@ -190,6 +190,10 @@ export default class Sync extends Morph {
     this.gitControl("npminstall")
   }
 
+  onNpmTestButton() {
+    this.gitControl("npmtest")
+  }
+
   onResolveButton() {
     this.gitControl("resolve")
   }
