@@ -1,0 +1,46 @@
+{
+  "name": "systemjs-plugin-babel",
+  "version": "0.0.17",
+  "registry": "npm",
+  "jspmPackage": true,
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/systemjs/plugin-babel.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/systemjs/plugin-babel/issues"
+  },
+  "homepage": "https://github.com/systemjs/plugin-babel",
+  "scripts": {
+    "build": "./build.sh",
+    "clear": "rm -rf build-babel/node_modules build-babel/jspm_packages regenerator-runtime.js systemjs-babel-node.js systemjs-babel-browser.js",
+    "test": "node test/index.js"
+  },
+  "main": "plugin-babel.js",
+  "map": {
+    "systemjs-babel-build": {
+      "node": "./systemjs-babel-node.js",
+      "browser": "./systemjs-babel-browser.js",
+      "default": "./systemjs-babel-browser.js"
+    }
+  },
+  "meta": {
+    "./plugin-babel.js": {
+      "format": "cjs"
+    }
+  },
+  "files": [
+    "plugin-babel.js",
+    "babel-helpers",
+    "babel-helpers.js",
+    "regenerator-runtime.js",
+    "systemjs-babel-browser.js",
+    "systemjs-babel-node.js"
+  ],
+  "devDependencies": {
+    "browser-run": "^3.2.0",
+    "systemjs": "^0.19.29",
+    "tape": "^4.6.0"
+  }
+}
