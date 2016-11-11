@@ -20,12 +20,9 @@ export default class ContextMenu {
   
   static openInWindow(comp, evt) {
     var pos = lively.getPosition(comp);
-	  lively.components.openInWindow(comp).then(function (w) {
-      lively.setPosition(w, pos);
-      lively.setPosition(comp, {x:0, y:0});
-      if (comp.windowTitle) w.setAttribute('title', '' + comp.windowTitle);
-      return comp;
-    });
+	  lively.components.openInWindow(comp, pos).then( comp => {
+	     lively.setPosition(comp, pt(0,0));
+	  });
   }
   
   static targetMenuItems(target) {

@@ -743,7 +743,7 @@ export default class Lively {
     var lastWindow = _.first(lively.array(document.body.querySelectorAll("lively-window")));
 
     var comp  = document.createElement(name);
-    return lively.components.openInWindow(comp).then((w) => {
+    return lively.components.openInWindow(comp, pos).then((w) => {
       if (extent) {
         w.style.width = extent.x;
         w.style.height = extent.y;

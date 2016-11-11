@@ -1,6 +1,7 @@
 import scriptManager from  "src/client/script-manager.js";
 import * as persistence from  "src/client/persistence.js";
 import Morph from "templates/Morph.js";
+import {pt} from 'lively.graphics';
 
 import * as kernel from 'kernel';
 
@@ -285,11 +286,15 @@ export default class ComponentLoader {
     return this.openIn(document.body, component, true);
   }
 
-  static openInWindow(component) {
+  static openInWindow(component, pos, title) {
     // this will call the window's createdCallback before
     // we append the child, if the window template is already
     // loaded
     var w = this.createComponent("lively-window");
+    if (pos) {
+      lively.setPosition(w, pos);
+    }
+    w.style.opacity = 0.2
     w.appendChild(component);
 
 
@@ -300,6 +305,10 @@ export default class ComponentLoader {
     // if it is currently unresolved
     var windowPromise = new Promise((resolve, reject) => {
       this.loadUnresolved(document.body, true, "openInWindow " + component).then(() => {
+        w.style.opacity = 1 
+        if (component.windowTitle) 
+          w.setAttribute('title', '' + component.windowTitle);
+
         resolve(w);
       });
     });
