@@ -5,6 +5,9 @@ import {pt} from 'lively.graphics';
 import halo from 'templates/lively-halo.js';
 
 
+import * as cop  from "src/external/ContextJS.js"
+import ScopedImport from "./ContainerScopedSystemImport.js"
+
 export default class Container extends Morph {
 
   initialize() {
@@ -144,7 +147,7 @@ export default class Container extends Morph {
           title: "Loaded " + url, color: "green"});
         this.resetLoadingFailed();
       }, error => {
-        this.loadingFailed(url.replace(/.*\//,""), error);
+        this.loadingFailed(url.toString().replace(/.*\//,""), error);
       });
   }
   
@@ -415,6 +418,9 @@ export default class Container extends Morph {
     script.type  = "text/javascript";
     if (scriptElement.src) script.src  = scriptElement.src;
     script.text  = scriptElement.textContent;
+    
+    ScopedImport;
+    
     root.appendChild(script);
   }
 

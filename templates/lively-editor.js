@@ -4,7 +4,7 @@
  * - simple load/save/navigate UI, that can be disabled to use elsewhere, e.g. container
  * - updates change indicator while when editting,loading, and saving
  */
-
+ 
 import Morph from './Morph.js';
 import moment from "src/external/moment.js";
 import diff from 'src/external/diff-match-patch.js';
@@ -135,7 +135,11 @@ export default class Editor extends Morph {
       lively.notify("loaded version " + this.lastVersion);
       return response.text();
     }).then((text) => {
+        var oldRange = this.currentEditor().selection.getRange()
         this.setText(text);
+        this.currentEditor().selection.setRange(oldRange)
+        
+        
       },
       (err) => {
         lively.notify("Could not load file " + url +"\nMaybe next time you are more lucky?");
