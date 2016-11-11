@@ -19,7 +19,7 @@ Module:
 <pre id="mylog"></pre>
 <script>
   System.import("./mymodule.js").then( mod => {
-    window.Last = mod
+    window.Last = mod;
     document.querySelector("#mylog").textContent = mod.hello()
   }, error => {
     document.querySelector("#mylog").textContent = error
