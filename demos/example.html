@@ -14,16 +14,12 @@
 </script>
 
 <h2>Loading a module</h2> 
-
 Module: <pre id="mylog"></pre>
 Location: <pre id="mylocation"></pre>
 
+<!-- we are currently using COP to dynamically change the behavior scripts... 
+     but infact it does change the behavior in the lexical scope -->
 <script>
-debugger
-2 ** 3
-async function() {
-  await fetch('foo')
-}
   System.import("./mymodule.js").then( mod => {
     window.Last = mod;
     document.querySelector("#mylog").textContent = mod.hello()
@@ -33,8 +29,5 @@ async function() {
   // window.location cannot be adapted
   document.querySelector("#mylocation").textContent = lively.location
 </script>
-
-
-
 
 

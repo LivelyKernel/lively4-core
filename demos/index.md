@@ -1,2 +1,3 @@
 # Demos
 
+* [Example](example.html)
