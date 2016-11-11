@@ -2,6 +2,5 @@
 
 
 export function hello() {
-  alert("Hello from mymodule!")
-  return "World";
+  return "World! Today is the " + new Date() ;
 }

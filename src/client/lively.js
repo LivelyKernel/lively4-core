@@ -63,6 +63,14 @@ var exportmodules = [
 // #IDEA: I refactored from "static module and function style" to "dynamic object" style
 export default class Lively {
   
+  static get location() {
+    return window.location;
+  }
+  
+  static set location(url) {
+    return window.location = url;
+  }
+  
   static import(moduleName, path, forceLoad) {
     if (lively.modules && path) {
       lively.modules.module("" + path).reload({reloadDeps: true, resetEnv: false});

@@ -6,7 +6,7 @@ import halo from 'templates/lively-halo.js';
 
 
 import * as cop  from "src/external/ContextJS.js"
-import ScopedImport from "./ContainerScopedSystemImport.js"
+import ScopedScripts from "./ScopedScripts.js"
 
 export default class Container extends Morph {
 
@@ -359,7 +359,7 @@ export default class Container extends Morph {
     }
     await lively.files.saveFile(fileName,"");
     lively.notify("created " + fileName);
-    this.followPath(this.getPath());
+    this.followPath(fileName);
   }
 
   onVersions() {
@@ -419,9 +419,10 @@ export default class Container extends Morph {
     if (scriptElement.src) script.src  = scriptElement.src;
     script.text  = scriptElement.textContent;
     
-    ScopedImport;
+    cop.withLayers(ScopedScripts.layers(this.getURL()), () => {
+      root.appendChild(script);  
+    });
     
-    root.appendChild(script);
   }
 
   async appendHtml(content) {

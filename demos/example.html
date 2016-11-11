@@ -15,15 +15,23 @@
 
 <h2>Loading a module</h2> 
 
-Module:
-<pre id="mylog"></pre>
+Module: <pre id="mylog"></pre>
+Location: <pre id="mylocation"></pre>
+
 <script>
+debugger
+2 ** 3
+async function() {
+  await fetch('foo')
+}
   System.import("./mymodule.js").then( mod => {
     window.Last = mod;
     document.querySelector("#mylog").textContent = mod.hello()
   }, error => {
     document.querySelector("#mylog").textContent = error
   })
+  // window.location cannot be adapted
+  document.querySelector("#mylocation").textContent = lively.location
 </script>
 
 

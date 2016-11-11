@@ -1,13 +1,12 @@
 import {proceed, create as layer}  from "src/external/ContextJS.js"
 import * as cop  from "src/external/ContextJS.js"
-import lively from "src/client/lively.js"
 
-export default class ScopedSystemImport {
+export default class ScopedScripts {
   
   
 }
 
-layer(ScopedSystemImport, "ImportLayer").refineObject(lively, {
+layer(ScopedSystemImport, "ImportLayer").refineObject(System, {
 	import(name, parentName, parentAddress) {
 		name = name.replace(/^.\//, ScopedSystemImport.documentRoot);
 		// lively.notify("import "+ name + ", " + parentName +","+ parentAddress)
