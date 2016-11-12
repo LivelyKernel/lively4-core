@@ -907,6 +907,7 @@ export default class Container extends Morph {
         
         if (aceComp.editor) {
           aceComp.editor.selection.moveCursorTo(0,0);
+          aceComp.editor.session.setWrapLimit(120);
         }
         
         livelyEditor.lastVersion = this.lastVersion;
