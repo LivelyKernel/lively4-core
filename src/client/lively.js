@@ -269,7 +269,7 @@ export default class Lively {
     
     // preload some components
     lively.components.loadByName("lively-window");
-    lively.components.loadByName("lively-ediot");
+    lively.components.loadByName("lively-editor");
   }
 
   static array(anyList){
@@ -494,15 +494,19 @@ export default class Lively {
 
   }
 
-  static initializeDocument(doc, loadedAsExtension) {
+  static initializeDocument(doc, loadedAsExtension, loadContainer) {
     console.log("Lively4 initializeDocument");
-      doc.addEventListener('contextmenu', function(evt) {
-          if (evt.ctrlKey) {
-            evt.preventDefault();
-            lively.openContextMenu(document.body, evt);
-            return false;
-          }
-      }, false);
+    lively.loadCSSThroughDOM("font-awesome", lively4url + "/src/external/font-awesome/css/font-awesome.min.css");
+    
+    doc.addEventListener('contextmenu', function(evt) {
+        if (evt.ctrlKey) {
+          evt.preventDefault();
+          lively.openContextMenu(document.body, evt);
+          return false;
+        }
+    }, false);
+    doc.addEventListener('click', function(evt){lively.hideContextMenu(evt)}, false);
+    doc.addEventListener('keydown', function(evt){lively.keys.handle(evt)}, false);
 
     if (loadedAsExtension) {
       this.import("customize").then(customize => {
@@ -511,16 +515,33 @@ export default class Lively {
       lively.notify("Lively4 extension loaded!",
         "  CTRL+LeftClick  ... open halo\n" +
         "  CTRL+RightClick ... open menu");
+      return Promise.resolve();
     } else {
-      // doc.addEventListener('contextmenu', function(evt) {
-      //   evt.preventDefault();
-      //   lively.openContextMenu($('body')[0], evt);
-      //   return false;
-      // }, false);
-    }
+      // don't want to change style of external web-sites...
+      lively.loadCSSThroughDOM("lively4", lively4url +"/src/client/lively.css");
+      
+      var titleTag = document.querySelector("title");
+      if (!titleTag) {
+        titleTag = document.createElement("title");
+        titleTag.textContent = "Lively 4";        
+        document.head.appendChild(titleTag);
+      }
 
-    doc.addEventListener('click', function(evt){lively.hideContextMenu(evt)}, false);
-    doc.addEventListener('keydown', function(evt){lively.keys.handle(evt)}, false);
+      if (loadContainer) {
+        var container = document.createElement("lively-container");
+        container.id = 'main-content';
+        container.setAttribute("load", "auto");
+        container.style.width = "calc(100%)";
+        container.style.height = "calc(100%)";
+        container.style.position = "fixed";
+        container.setAttribute("data-lively4-donotpersist","all");
+
+        return lively.components.openIn(document.body, container).then( () => {
+          container.__ingoreUpdates = true; // a hack... since I am missing DevLayers...
+          container.get('#container-content').style.overflow = "visible";
+        });
+      } 
+    }
   }
 
   static initializeHalos() {

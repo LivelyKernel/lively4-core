@@ -28,5 +28,3 @@ export default class Paths {
     }
   }
 }
-
-console.log("loaded paths.js")

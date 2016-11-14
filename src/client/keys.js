@@ -70,5 +70,3 @@ export default class Keys {
     }
   }
 }
-
-console.log("loaded keys.js")

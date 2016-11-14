@@ -43,6 +43,3 @@ export function getURLParameter(theParameter) {
   }
   return false;
 }
-
-
-console.log("loaded preferences")

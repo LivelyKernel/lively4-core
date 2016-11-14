@@ -53,5 +53,3 @@ export default class Files {
   }
 
 }
-
-console.log("loaded file-editor.js")

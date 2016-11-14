@@ -15,6 +15,8 @@ function loadJavaScriptThroughDOM(name, src, force) {
     script.id = name;
     script.charset = "utf-8";
     script.type = "text/javascript";
+    script.setAttribute("data-lively4-donotpersist","all");
+
     if (force) {
       src += +"?" + Date.now();
     }
@@ -43,7 +45,7 @@ if ('serviceWorker' in navigator || window.lively4chrome) {
         console.log("lively.modules loaded... now try to load lively4");
         return lively.modules.importPackage(lively4url)})
       .then(function(module) {
-        lively.initializeHalos();
+        lively.initializeHalos(); // #TODO make halo it latebound but fast? (get rid of flickering when halo are eagerly loaded....)
         
         // disable search widget for now
         // if (!window.lively4chrome)

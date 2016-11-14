@@ -263,5 +263,3 @@ export default class Expose {
 }
 
 Expose.postLoad()
-
-console.info('Expose loaded');

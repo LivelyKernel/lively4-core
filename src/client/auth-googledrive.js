@@ -1,11 +1,7 @@
 'use strict';
 
 import * as messaging from './messaging.js';
-
 import focalStorage from '../external/focalStorage.js';
-
-console.log("focalStorage: ", focalStorage)
-console.log("load googledriveAuth")
 
 
 function parseAuthInfoFromUrl(data) {

@@ -33,7 +33,6 @@ export default class Container extends Morph {
     // var halos = halo.halo && halo.halo[0];
     // if (halos)
     //   halos.registerBodyDragAndDrop(this); // for content selection
-    
     if (this.useBrowserHistory()) {
       window.onpopstate = (event) => {
         var state = event.state;

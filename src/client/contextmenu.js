@@ -186,5 +186,3 @@ export default class ContextMenu {
     });
   }
 }
-
-console.log("loaded contextmenu");

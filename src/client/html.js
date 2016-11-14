@@ -195,9 +195,4 @@ export default class HTML {
       lively.notify("Saved " + url)
     })
   }
-
-
-
-
 }
-console.log("loaded html.js")
