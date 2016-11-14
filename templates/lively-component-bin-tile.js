@@ -15,7 +15,7 @@ export default class ComponentBinTile extends Morph {
 
   configure(config) {
     this.setComponentName(config.name);
-    this.setThumbnail(lively4url + "/templates/" + (config.thumbnail || "thumbnails/default-placeholder.png"));
+    // this.setThumbnail(lively4url + "/templates/" + (config.thumbnail || "thumbnails/default-placeholder.png"));
     this.setTooltip(config.description);
 
     this.htmlTag = config["html-tag"];

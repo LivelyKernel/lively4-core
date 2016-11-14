@@ -43,7 +43,7 @@ export default class Keys {
       } else if ((evt.ctrlKey || evt.metaKey) && evt.shiftKey &&char == "F") {
         lively.openSearchWidget(this.getTextSelection());
         evt.preventDefault();
-      } else if (ect.shiftKey && (evt.ctrlKey || evt.metaKey) && char == "B") {
+      } else if (evt.shiftKey && (evt.ctrlKey || evt.metaKey) && char == "B") {
         lively.openBrowser(this.getTextSelection());
         evt.preventDefault();
       } else if ((evt.ctrlKey || evt.metaKey) && char == "O") {
