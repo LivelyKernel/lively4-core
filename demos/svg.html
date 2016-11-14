@@ -1,0 +1,30 @@
+<h1>SVG Path</h1>
+<!-- from: http://www.w3schools.com/graphics/svg_path.asp -->
+
+
+
+<svg id="path" height="400" width="450">
+  <path id="line" d="M 100 350 L 250 50 L 400 350" stroke="red" stroke-width="3" fill="none" />
+  <path d="M 100 350 Q 250 50 400 350" stroke="green" stroke-width="5" fill="none" />
+
+  <!-- Mark relevant points -->
+  <g stroke="black" stroke-width="3" fill="black">
+    <circle id="pointA" cx="100" cy="350" r="3" />
+    <circle id="pointB" cx="250" cy="50" r="3" />
+    <circle id="pointC" cx="400" cy="350" r="3" />
+  </g>
+  <!-- Label the points -->
+  <g font-size="30" font-family="sans-serif" fill="black" stroke="none"
+  text-anchor="middle">
+    <text x="100" y="350" dx="-30">A</text>
+    <text x="250" y="50" dy="-10">B</text>
+    <text x="400" y="350" dx="30">C</text>
+  </g>
+</svg>
+
+<script>
+  document.querySelector("#path")
+
+
+</script>
+

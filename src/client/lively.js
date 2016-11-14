@@ -9,7 +9,6 @@ import * as messaging from './messaging.js';
 import * as preferences from './preferences.js';
 import * as persistence from './persistence.js';
 
-
 import html from './html.js';
 import files from './files.js';
 import paths from './paths.js';
@@ -267,6 +266,10 @@ export default class Lively {
 
     // for container content... But this will lead to conflicts with lively4chrome  ?? #Jens
     lively.loadCSSThroughDOM("livelystyle", lively4url + "/templates/lively4.css");
+    
+    // preload some components
+    lively.components.loadByName("lively-window");
+    lively.components.loadByName("lively-ediot");
   }
 
   static array(anyList){
