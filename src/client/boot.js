@@ -7,14 +7,15 @@
  #TODO refactor booting/loading/init of lively4
   - currently we have different entry points we should unify
  */
+console.group("BOOT")
 
 // for finding the baseURL...
 var script = document.currentScript
 var scriptURL = script.src;
+window.lively4url = scriptURL.replace("/src/client/boot.js","")
 
-var loadContainer = script.getAttribute("data-container")
-
-console.group("BOOT")
+var loadContainer = script.getAttribute("data-container") // some simple configuration 
+console.log("lively4url: " + lively4url);
 
  
 // COPIED HERE BECAUSE resuse through libs does not work yet
@@ -41,15 +42,10 @@ function loadJavaScriptThroughDOM(name, src, force) {
 }
 
 Promise.resolve().then( () => {
-  return loadJavaScriptThroughDOM("systemjs", "src/external/system.src.js");
+  return loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/system.src.js");
 }).then( () => {
-  return loadJavaScriptThroughDOM("regenerator", "vendor/regenerator-runtime.js");
+  return loadJavaScriptThroughDOM("regenerator", lively4url + "/vendor/regenerator-runtime.js");
 }).then( () => {
-  var lively4yourself = /\/[^\/]*\.html/; // ADAPT THIS
-    // some little reflection... help to find your inner self!
-  window.lively4url = scriptURL.replace("/src/client/boot.js","")
-  console.log("lively4url: " + lively4url);
-
   // configure babel
   System.paths.babel = lively4url + '/src/external/babel-browser.js';
   System.config({

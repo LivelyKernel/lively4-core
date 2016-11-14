@@ -62,8 +62,13 @@ p {
   <div class="name-container">
     <p>name</p>
   </div>
-  <img id="thumbnail" src="../templates/thumbnails/default-placeholder.png">
+  <img id="thumbnail" >
 </div>
+<script>
+ // ok, now it gets ugly...
+  var template = document.currentScript.ownerDocument.querySelector('template');
+  template.querySelector("#thumbnail").setAttribute("src", lively4url +"/templates/thumbnails/default-placeholder.png")
+</script>
 
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

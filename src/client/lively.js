@@ -191,6 +191,7 @@ export default class Lively {
      _.each(root.querySelectorAll("style"), ea => {
         var src = ea.getAttribute("data-src");
         if (src) {
+         console.log("fillTemplateStyles: " + lively4url + src )
           promises.push(fetch(lively4url + src).then(r => r.text()).then(css => {
             ea.innerHTML = css;
           }));

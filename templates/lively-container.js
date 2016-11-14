@@ -23,7 +23,7 @@ export default class Container extends Morph {
     }
 
     // make sure the global css is there...
-    lively.loadCSSThroughDOM("hightlight", "src/external/highlight.css");
+    lively.loadCSSThroughDOM("hightlight", lively4url + "/src/external/highlight.css");
 
     console.log("Initialize Container");
     
