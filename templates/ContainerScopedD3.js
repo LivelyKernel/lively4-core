@@ -72,7 +72,8 @@ ScopedD3.updateCurrentBodyAndURLFrom = function (container) {
 }
 ScopedD3.beGlobal()
 
-layer(window, "D3ScopedDocument").refineObject(document, {
+layer(window, "D3ScopedDocument")
+.refineObject(document, {
   querySelector(s, ...rest) {
     // console.log("query selector " + s)
     if (ScopedD3.currentBody)

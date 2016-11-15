@@ -14,7 +14,8 @@
 </script>
 
 <h2>Loading a module</h2> 
-Module: <pre id="mylog"></pre>
+Module: 
+<pre id="mylog"></pre>
 Location: <pre id="mylocation"></pre>
 
 <!-- we are currently using COP to dynamically change the behavior scripts... 
@@ -22,12 +23,23 @@ Location: <pre id="mylocation"></pre>
 <script>
   System.import("./mymodule.js").then( mod => {
     window.Last = mod;
-    document.querySelector("#mylog").textContent = mod.hello()
+    document.querySelector("#mylog").textContent += "\nRESULT:" + mod.hello()  
   }, error => {
-    document.querySelector("#mylog").textContent = error
+    document.querySelector("#mylog").textContent += "\nERROR:" + error
   })
   // window.location cannot be adapted
   document.querySelector("#mylocation").textContent = lively.location
+
+  Promise.resolve("").then( ea => {
+    System.import("./mymodule2.js").then( mod => {
+      window.Last = mod;
+      document.querySelector("#mylog").textContent += "\nRESULT:" +mod.hello()
+    }, error => {
+      document.querySelector("#mylog").textContent += "\nERROR:" + error
+    })
+  })
+
+
 </script>
 
 

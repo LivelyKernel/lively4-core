@@ -1,0 +1,23 @@
+<html>
+  <body>
+    <h1>Playing with the document API</h1>
+  </body>
+  
+  <h2>document write</h2>
+  
+  <!--
+  document.write is only available on when synchronous. </br>
+  <script>
+  Promise.resolve("").then( ea => {
+    document.write("<b>This should not work, but is does now... ;-)</b>")
+  })
+  </script>
+  -->
+  
+  <script>
+  Promise.resolve("").then( ea => {
+    document.write("xxx<script src='https://lively-kernel.org/lively4/lively4-jens/demos/hello.js'><\/script>")
+  })
+  </script>
+  
+</html>

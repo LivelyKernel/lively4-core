@@ -1,7 +1,6 @@
-import {proceed, create as layer}  from "src/external/ContextJS.js"
-import * as cop  from "src/external/ContextJS.js"
-import lively from "src/client/lively.js"
-
+import {proceed, create as layer}  from "src/external/ContextJS.js";
+import * as cop  from "src/external/ContextJS.js";
+import lively from "src/client/lively.js";
 
 export default class ScopedScripts {
 
@@ -10,15 +9,59 @@ export default class ScopedScripts {
     this.documentLocation = window.location;   
   }
   
- static layers(url) {
+ static layers(url, optBody) {
    this.documentRoot = url.toString().replace(/[^/]*$/,"");
    this.documentLocation = new URL(url); 
-   return [this.ImportLayer, this.LocalLayer];
+   this.documentBody = optBody || document.body;
+   return [this.ImportLayer, this.DocumentLayer, this.LocalLayer, this.PropagateLayerActicationLayer];
  } 
 }
 
+/*
+ * Captures the layer activation on Promise definition and replays it when resolving the promise
+ */
+layer(ScopedScripts, "PropagateLayerActicationLayer").refineClass(Promise, {
+	then(onresolve, onerror) {
+	  // return cop.proceed(onresolve, onerror)
+
+    var layers = cop.currentLayers();
+    // console.log("Promise.then ... ");
+		var newResolve = function(){
+		    var args = arguments;
+		    // console.log("replay layers..." + layers);
+		    return cop.withLayers(layers, () => onresolve.apply(window, args));
+		  };
+		var newError = function() {
+		    var args = arguments;
+		    return cop.withLayers(layers, () => onerror.apply(window, args));
+		}; 
+		return cop.proceed(onresolve ? newResolve : undefined,
+		  onerror ? newError : undefined);
+	}
+}).refineObject(lively, {
+  loadJavaScriptThroughDOM(name, url, force) {
+    var globalLayers = cop.currentLayers();
+    globalLayers.forEach( ea => {
+      // console.log("Layer enable: " + ea)
+      ea.beGlobal();
+    });
+    return cop.proceed(name, url, force).then( (result) => {
+      globalLayers.forEach( ea => {
+        // console.log("Layer disable: " + ea)
+        ea.beNotGlobal();
+      });
+      return result;
+    }, (error) => {
+      globalLayers.forEach( ea => ea.beNotGlobal());
+      return error;
+    });
+  }  
+});
+
+
 layer(ScopedScripts, "ImportLayer").refineObject(System, {
 	import(name, parentName, parentAddress) {
+	  // console.log("System.import " + name +', ' + parentName + ", " + parentAddress)
 		name = name.replace(/^.\//, ScopedScripts.documentRoot);
 		// lively.notify("import "+ name + ", " + parentName +","+ parentAddress)
 		return cop.proceed(name, parentName, parentAddress);
@@ -27,9 +70,34 @@ layer(ScopedScripts, "ImportLayer").refineObject(System, {
 
 layer(ScopedScripts, "LocalLayer").refineObject(lively, {
 	get location() {
-	  lively.notify("get location");
+	  // lively.notify("get location");
 		return new URL(ScopedScripts.documentLocation);
 	}
+});
+
+layer(ScopedScripts, "DocumentLayer").refineObject(document, {
+	write(a) {
+    // console.log("document.write " + a);
+    // console.log("BEGIN")
+    var div = document.createElement("div");
+    div.innerHTML = a;
+    lively.array(div.childNodes).forEach( ea => {
+      // console.log("append child: " + ea);
+      if (ea.tagName == "SCRIPT") {
+        var s = document.createElement("script");
+        s.src = ea.src;
+        ea = s;        
+        ea.addEventListener("load", () => {
+          // console.log("END")      
+        });
+      } 
+      ScopedScripts.documentBody.appendChild(ea); // #TODO instanctiate layers
+    });
+  },
+  createElement(name) {
+    // console.log("document.createElement " + name);
+    return cop.proceed.apply(this, arguments);
+  }
 });
 
 
@@ -39,4 +107,4 @@ ScopedScripts.LocalLayer.beGlobal()
 ScopedScripts.ImportLayer
 */
 
-ScopedScripts.load()
+ScopedScripts.load();

@@ -412,13 +412,14 @@ export default class Container extends Morph {
   }
   
   appendScript(scriptElement) {
+    console.log("append script " + scriptElement.src)
     var root = this.getContentRoot();
     var script   = document.createElement("script");
     script.type  = "text/javascript";
     if (scriptElement.src) script.src  = scriptElement.src;
     script.text  = scriptElement.textContent;
     
-    cop.withLayers(ScopedScripts.layers(this.getURL()), () => {
+    cop.withLayers(ScopedScripts.layers(this.getURL(), this.getContentRoot()), () => {
       root.appendChild(script);  
     });
     
