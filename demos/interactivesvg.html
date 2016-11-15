@@ -4,7 +4,7 @@
 
 <svg id="path" height="400" width="450">
   <path id="line" d="M 100 350 L 250 50 L 400 350" stroke="red" stroke-width="3" fill="none" />
-  <path d="M 100 350 Q 250 50 400 350" stroke="green" stroke-width="5" fill="none" />
+  <path id="curve" d="M 100 350 Q 250 50 400 350" stroke="green" stroke-width="5" fill="none" />
 
   <!-- Mark relevant points -->
   <g stroke="black" stroke-width="3" fill="black">
@@ -23,26 +23,74 @@
 
 <script>
   var p = document.querySelector("#pointA")
-
+  var t = document.querySelector("#textA")
+  var l = document.querySelector("#line")
+  var c = document.querySelector("#curve")
   
+  getVertices = function(p) {
+    return p.getAttribute("d").split(/(?=[ML] +)/).map( ea => {
+      var m = ea.split(/ +/)
+      var pos = {c: m[0], x1: parseFloat(m[1]), y1: parseFloat(m[2]), toString: function() { return JSON.stringify(this)}}
+      if (m[3]) {
+        pos.x2 = parseFloat(m[3]);
+        pos.y2 = parseFloat(m[4]);
+      }
+      return pos  
+    })
+  }
+  setVertices = function(p, vertices) {
+    p.setAttribute("d", vertices.map(ea => {
+        var s = ea.c + " " + ea.x1 + " " + ea.y1;
+        if (typeof ea.x2 !== 'undefined') s +=  " " + ea.x2 + " " + ea.y2
+        return s 
+      }).join(" "))
+  }
+  
+  // var verts = getVertices(l)
+  // verts[0].x = verts[0].x  + 100
+  // setVertices(l, verts)
 
+  updateVertsPos = function(p, i, pos) {
+    var verts = getVertices(p)
+    verts[i].x1 = pos.x
+    verts[i].y1 = pos.y
+    setVertices(p, verts)
+  } 
+  
+  // updateVertsPos(l, 0, {x: 100, y: 100})
+  
+  
   p.onmousedown = function(evt){
+      lively.notify("down")
+
       var offsetX = evt.clientX
       var offsetY = evt.clientY
       var posX = parseFloat(p.getAttribute("cx")) 
       var posY = parseFloat(p.getAttribute("cy")) 
-
-      document.body.onmousemove = function(evt) {
-        lively.notify("move")
-        p.setAttribute("cx", posX + evt.clientX - offsetX)
-        p.setAttribute("cy", posY + evt.clientY - offsetY)
-        evt.stopPropagation();
-      }
+    
+      lively.removeEventListener("svgpath", document.body)
+      lively.addEventListener("svgpath", document.body, "mousemove" , (evt) => {
+        // lively.notify("move " + (posY + evt.clientY - offsetY))
+        var x = posX + evt.clientX - offsetX
+        var y = posY + evt.clientY - offsetY
+        
+        p.setAttribute("cx", x)
+        p.setAttribute("cy", y)
+        t.setAttribute("x", x)
+        t.setAttribute("y", y)
       
-      document.body.onmouseup = function(evt){
-         delete document.body.onmousemove
-         delete document.body.onmouseup
-      }
+        updateVertsPos(l, 0, {x: x, y: y})
+        updateVertsPos(c, 0, {x: x, y: y})
+        
+        evt.stopPropagation();
+      })
+      lively.addEventListener("svgpath", document.body, "mouseup" , (ect) => {
+        lively.notify("up")
+
+        lively.removeEventListener("svgpath", document.body)
+      })
+      evt.stopPropagation();
+      evt.preventDefault();
   }
   
 </script>
