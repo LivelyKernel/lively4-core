@@ -31,7 +31,7 @@ layer(window, "ScopedD3").refineObject(d3, {
   }
 }).refineObject(lively.components.prototypes['lively-container'], {
   clear() {
-    this.getSubmorph('#container-content').innerHTML = null;
+    this.getContentRoot().innerHTML = null;
     proceed()
   },
   appendScript(scriptElement) {
@@ -67,7 +67,7 @@ layer(window, "ScopedD3").refineObject(d3, {
   }
 })
 ScopedD3.updateCurrentBodyAndURLFrom = function (container) {
-  ScopedD3.currentBody = container.getSubmorph('#container-content');
+  ScopedD3.currentBody = container.getContentRoot();
   ScopedD3.currentBaseURL = (""+ container.getURL()).replace(/[^/]*$/,"") 
 }
 ScopedD3.beGlobal()
