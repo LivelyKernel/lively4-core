@@ -412,30 +412,64 @@ export default class Container extends Morph {
   }
   
   appendScript(scriptElement) {
-    console.log("append script " + scriptElement.src)
-    var root = this.getContentRoot();
-    var script   = document.createElement("script");
-    script.type  = "text/javascript";
-    if (scriptElement.src) script.src  = scriptElement.src;
-    script.text  = scriptElement.textContent;
-    
-    cop.withLayers(ScopedScripts.layers(this.getURL(), this.getContentRoot()), () => {
-      root.appendChild(script);  
-    });
+    // #IDEA by instanciating we can avoid global (de-)activation collisions
+    // Scenario (A) There should be no activation conflict in this case, because appendScript wait on each other...
+    // Scenario (B)  #TODO opening a page on two licely-containers at the same time will produce such a conflict. 
+    // #DRAFT instead of using ScopedScripts as a singleton, we should instanciate it. 
+    var layers = ScopedScripts.layers(this.getURL(), this.getContentRoot());
+    ScopedScripts.openPromises = [];  
+    return new Promise((resolve, reject)=> {
+      var root = this.getContentRoot();
+      var script   = document.createElement("script");
+      script.type  = "text/javascript";
+      
+      layers.forEach( ea => ea.beGlobal());
+
+      if (scriptElement.src) {
+        script.src  = scriptElement.src;
+        script.onload = () => {
+          // #WIP multiple activations are not covered.... through this...
+          Promise.all(ScopedScripts.openPromises).then( () => {
+            layers.forEach( ea => ea.beNotGlobal());
+            // console.log("ScopedScripts openPromises: " + ScopedScripts.openPromises)
+            resolve();
+          }, () => {
+            // error
+            reject();
+          });
+        };
+        script.onerror = reject; 
+      }
+      script.text  = scriptElement.textContent;
+      
+      cop.withLayers(layers, () => {
+        root.appendChild(script);  
+      });
+      if (!script.src) {
+        Promise.all(ScopedScripts.openPromises).then( () => {
+          layers.forEach( ea => ea.beNotGlobal());
+          // console.log("ScopedScripts openPromises: " + ScopedScripts.openPromises)
+          resolve();
+        }, () => {
+          // error
+          reject();
+        });
+      }
+    })
     
   }
 
   async appendHtml(content) {
-    
     // strip lively boot code... 
-    content = content.replace(/\<\!-- BEGIN SYSTEM\.JS(.|\n)*\<\!-- END SYSTEM.JS--\>/,"")
-    content = content.replace(/\<\!-- BEGIN LIVELY BOOT(.|\n)*\<\!-- END LIVELY BOOT --\>/,"")
     
-  
+    // content = content.replace(/\<\!-- BEGIN SYSTEM\.JS(.|\n)*\<\!-- END SYSTEM.JS--\>/,"");
+    // content = content.replace(/\<\!-- BEGIN LIVELY BOOT(.|\n)*\<\!-- END LIVELY BOOT --\>/,"");
+    
     if (content.match(/<script src=".*d3\.v3(.min)?\.js".*>/)) {
       if (!window.d3) {
         console.log("LOAD D3");
-        await lively.loadJavaScriptThroughDOM("d3", "src/external/d3.v3.js")
+        // #TODO check if dealing with this D3 is covered now through our general approach...
+        await lively.loadJavaScriptThroughDOM("d3", "src/external/d3.v3.js");
       }
     
       if (!window.ScopedD3) {
@@ -461,18 +495,18 @@ export default class Container extends Morph {
       }
       lively.html.fixLinks(nodes, this.getDir(),
         (path) => this.followPath(path));
-      nodes.forEach((ea) => {
+      for(var ea of nodes) {
         if (ea.tagName == "SCRIPT") {
-          this.appendScript(ea);
+          await this.appendScript(ea);
         } else {
           root.appendChild(ea);
           if (ea.querySelectorAll) {
-            ea.querySelectorAll("pre code").forEach( block => {
+            for(var block of ea.querySelectorAll("pre code")) {
               highlight.highlightBlock(block);
-            });
-          };
+            }
+          }
         }
-      });
+      }
     } catch(e) {
       console.log("Could not append html:" + content.slice(0,200) +"..." +" ERROR:", e);
     }
@@ -982,15 +1016,19 @@ export default class Container extends Morph {
   
   livelyMigrate(other) {
     // other = that
-    var otherAce = other.get("#editor").currentEditor();  
-    var range = otherAce.selection.getRange();
-    var scrollTop = otherAce.session.getScrollTop();
-    this.asyncGet("#editor").then( editor => {
-      var thisAce = editor.currentEditor();
-      if (otherAce && thisAce) {
-        thisAce.session.setScrollTop(scrollTop);
-        thisAce.selection.setRange(range);
-      }
-    });
+    var editor = other.get("#editor")
+    if (!editor) return; 
+    var otherAce = editor.currentEditor();  
+    if (otherAce && otherAce.selection) {
+      var range = otherAce.selection.getRange();
+      var scrollTop = otherAce.session.getScrollTop();
+      this.asyncGet("#editor").then( editor => {
+        var thisAce = editor.currentEditor();
+        if (otherAce && thisAce) {
+          thisAce.session.setScrollTop(scrollTop);
+          thisAce.selection.setRange(range);
+        }
+      });
+    }
   }
 }

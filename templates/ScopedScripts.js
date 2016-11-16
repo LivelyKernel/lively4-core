@@ -5,6 +5,7 @@ import lively from "src/client/lively.js";
 export default class ScopedScripts {
 
   static load() {
+    this.openPromises = []
     this.documentRoot = lively4url; 
     this.documentLocation = window.location;   
   }
@@ -83,14 +84,21 @@ layer(ScopedScripts, "DocumentLayer").refineObject(document, {
     div.innerHTML = a;
     lively.array(div.childNodes).forEach( ea => {
       // console.log("append child: " + ea);
-      if (ea.tagName == "SCRIPT") {
-        var s = document.createElement("script");
-        s.src = ea.src;
-        ea = s;        
-        ea.addEventListener("load", () => {
-          // console.log("END")      
-        });
-      } 
+      var myPromise = new Promise((resolve, reject) => {
+        if (ea.tagName == "SCRIPT") {
+          var s = document.createElement("script");
+          s.src = ea.src;
+          s.async = false;
+          ea = s;        
+          ea.addEventListener("load", () => {
+            resolve();          
+          });
+          ea.addEventListener("error", () => {
+            reject();          
+          });
+        } 
+      });
+      ScopedScripts.openPromises.push(myPromise);
       ScopedScripts.documentBody.appendChild(ea); // #TODO instanctiate layers
     });
   },
