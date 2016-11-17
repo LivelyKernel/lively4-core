@@ -226,7 +226,7 @@ export default class Container extends Morph {
 
   onCancel() {
     if (this.unsavedChanges()) { 
-      if (!confirm("There are unsaved changes. Loos them?")) {
+      if (!confirm("There are unsaved changes. Discard them?")) {
         return;
       }
     }
@@ -524,7 +524,7 @@ export default class Container extends Morph {
   
   async followPath(path) {
     if (this.unsavedChanges()) {
-      if (!window.confirm("You will loos unsaved changes, continue anyway?")) {
+      if (!window.confirm("You will lose unsaved changes, continue anyway?")) {
         return;
       }
     } 
