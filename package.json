@@ -33,7 +33,7 @@
     "packageMap": {
       "lively.lang": "src/external/lively.lang",
       "lively.graphics": "src/external/lively.graphics",
-      "active-expressions": "https://lively-kernel.org/lively4/active-expressions/"
+      "active-expressions": "src/external/active-expressions/"
     }
   },
   "directories": {
