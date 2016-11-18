@@ -85,7 +85,7 @@ layer(ScopedScripts, "LocalLayer").refineObject(lively, {
 
 layer(ScopedScripts, "DocumentLayer").refineObject(document, {
 	write(a) {
-    // console.log("document.write " + a);
+    console.log("document.write " + a);
     // console.log("BEGIN")
     var div = document.createElement("div");
     div.innerHTML = a;
@@ -94,8 +94,13 @@ layer(ScopedScripts, "DocumentLayer").refineObject(document, {
       var myPromise = new Promise((resolve, reject) => {
         if (ea.tagName == "SCRIPT") {
           var s = document.createElement("script");
-          s.src = ea.src;
-          s.async = false;
+          var src = ea.getAttribute("src")
+          if (!src.match(/^(https?\:\/\/)|(\/\/)/) )
+            src = src.replace(/^/, ScopedScripts.documentRoot);
+          s.src = src
+          
+		      console.log("old src... ", ea)
+          // s.async = false;
           ea = s;        
           ea.addEventListener("load", () => {
             resolve();          

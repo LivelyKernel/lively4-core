@@ -15,33 +15,32 @@
   })
   </script>
   -->
-  <script src="https://lively-kernel.org/lively4/lively4-jens/demos/foo.js"></script>
-  <script src="https://lively-kernel.org/lively4/lively4-jens/demos/hello.js"></script>
-  
+  <script src="./foo.js"></script>
+  <script src="./hello.js"></script>
   
   <script>
   document.querySelector("#log").textContent += "\n" + "Script1" 
-  document.write("<script src='https://lively-kernel.org/lively4/lively4-jens/demos/hello.js'><\/script>")
+  document.write("<script src='./hello.js'><\/script>")
   </script>
+
   <script>
   document.querySelector("#log").textContent += "\n" + "Script2" 
-  document.write("<script src='https://lively-kernel.org/lively4/lively4-jens/demos/hello.js'><\/script>")
+  document.write("<script src='./hello.js'><\/script>")
   </script>
   <script>
   document.querySelector("#log").textContent += "\n" + "Script3.1" 
-  document.write("<script src='https://lively-kernel.org/lively4/lively4-jens/demos/hello.js'><\/script>")
+  document.write("<script src='./hello.js'><\/script>")
   document.querySelector("#log").textContent += "\n" + "Script3.2" 
-  document.write("<script src='https://lively-kernel.org/lively4/lively4-jens/demos/hello.js'><\/script>")
+  document.write("<script src='./hello.js'><\/script>")
   document.querySelector("#log").textContent += "\n" + "Script3.3" 
-  document.write("<script src='https://lively-kernel.org/lively4/lively4-jens/demos/hello.js'><\/script>")
+  document.write("<script src='./hello.js'><\/script>")
   </script>
   
   <script>
   document.querySelector("#log").textContent += "\n" + "Script4" 
   Promise.resolve("").then( ea => {
-    document.write("<script src='https://lively-kernel.org/lively4/lively4-jens/demos/hello.js'><\/script>")
+    document.write("<script src='./hello.js'><\/script>")
   })
   </script>
 
-  
 </html>
