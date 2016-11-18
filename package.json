@@ -33,7 +33,8 @@
     "packageMap": {
       "lively.lang": "src/external/lively.lang",
       "lively.graphics": "src/external/lively.graphics",
-      "active-expressions": "src/external/active-expressions/"
+      "active-expressions": "src/external/active-expressions/",
+      "ContextJS": "src/external/ContextJS/src/Layers.js"
     }
   },
   "directories": {
