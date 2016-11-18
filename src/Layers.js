@@ -408,22 +408,6 @@ export function uninstallLayersInObject(object) {
   });
 };
 
-export function uninstallLayersInAllClasses() {
-  Global.classes(true).forEach(
-    function(ea) {
-      uninstallLayersInObject(ea.prototype);
-    });
-};
-
-export function allLayers(optObject = Global) {
-  // does not really return all layers... layers in namepsaces are not found!
-  // therefore you can query all layers in an optObject
-  return Object.values(optObject).select(
-    function(ea) {
-      return ea instanceof Layer;
-    });
-};
-
 /* 
  * PUBLIC COP Layer Definition
  */
