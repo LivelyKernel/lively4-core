@@ -97,11 +97,15 @@ class PartialLayer {
   }
 
   getterMethod(propertyName) {
-    return Object.getOwnPropertyDescriptor(this.layeredProperties, propertyName).get;
+    var desc = Object.getOwnPropertyDescriptor(this.layeredProperties, propertyName);
+    if (desc)
+      return desc.get;
   }
 
   setterMethod(propertyName) {
-    return Object.getOwnPropertyDescriptor(this.layeredProperties, propertyName).set;
+    var desc = Object.getOwnPropertyDescriptor(this.layeredProperties, propertyName);
+    if (desc)
+      return desc.set;
   }
 
   property(propertyName) {
