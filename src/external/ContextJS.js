@@ -205,10 +205,12 @@ export function lookupLayeredFunctionForObject(
   if (layer_definition_for_object) {
     // log("  found layer definitions for object");
     // TODO: optional proceed goes here....
-    if (methodType == 'getter') {
-      layered_function = Object.getOwnPropertyDescriptor(layer_definition_for_object, function_name).get;
-    } else if (methodType == 'setter'){
-      layered_function = Object.getOwnPropertyDescriptor(layer_definition_for_object, function_name).set;
+    
+    var desc = Object.getOwnPropertyDescriptor(layer_definition_for_object, function_name)
+    if (desc && methodType == 'getter') {
+      layered_function = desc.get;
+    } else if (desc && methodType == 'setter'){
+      layered_function = desc.set;
     } else {
       if (layer_definition_for_object.hasOwnProperty(function_name)) {
         layered_function = layer_definition_for_object[function_name];

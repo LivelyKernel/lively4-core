@@ -10,12 +10,12 @@ export default class ScopedScripts {
     this.documentLocation = window.location;   
   }
   
- static layers(url, optBody) {
-   this.documentRoot = url.toString().replace(/[^/]*$/,"");
-   this.documentLocation = new URL(url); 
-   this.documentBody = optBody || document.body;
-   return [this.ImportLayer, this.DocumentLayer, this.LocalLayer, this.PropagateLayerActicationLayer];
- } 
+  static layers(url, optBody) {
+    this.documentRoot = url.toString().replace(/[^/]*$/,"");
+    this.documentLocation = new URL(url); 
+    this.documentBody = optBody || document.body;
+    return [this.ImportLayer, this.DocumentLayer, this.LocalLayer, this.PropagateLayerActicationLayer];
+  } 
 }
 
 /*
@@ -73,8 +73,13 @@ layer(ScopedScripts, "LocalLayer").refineObject(lively, {
 	get location() {
 	  // lively.notify("get location");
 		return new URL(ScopedScripts.documentLocation);
+	},
+	set location(url) {
+	  // lively.notify("get location");
+		return cop.proceed(url)
 	}
 });
+
 
 layer(ScopedScripts, "DocumentLayer").refineObject(document, {
 	write(a) {
