@@ -1,0 +1,73 @@
+{
+  "name": "contextjs",
+  "version": "2.0.0",
+  "description": "Context Oriented Programming (COP) for ECMAScript 6",
+  "main": "lib/contextjs.js",
+  "directories": {
+    "test": "tests"
+  },
+  "files": [
+    "lib/"
+  ],
+  "scripts": {
+    "compile-es5": "babel -d lib/ src/",
+    "compile-browser": "browserify lib/contextjs.js --outfile lib/browser-contextjs.js --standalone cop",
+    "prepublish": "npm run compile-es5 && npm run compile-browser",
+    "test": "npm run test-node && npm run test-karma",
+    "test-karma": "karma start --single-run",
+    "karma": "karma",
+    "mocha": "mocha --compilers js:babel-core/register",
+    "test-node": "npm run mocha -- tests/*-test.js",
+    "benchmark": "npm run mocha -- src/benchmark.spec.js",
+    "test-chrome-only": "karma start --single-run --browsers Chrome",
+    "test-continuously": "karma start",
+    "test-continuously-chrome-only": "karma start --browsers Chrome",
+    "test-canary": "karma start --browsers ChromeCanary"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LivelyKernel/ContextJS.git"
+  },
+  "keywords": [
+    "COP",
+    "Context",
+    "Oriented",
+    "Programming"
+  ],
+  "author": "HPI Software Architecture Group (https://github.com/LivelyKernel)",
+  "contributors": [
+    "Jens Lincke <jens.lincke@hpi.de>",
+    "Stefan Lehmann <stefan.lehmann@student.hpi.uni-potsdam.de>",
+    "Robert Krahn <robert.krahn@gmail.com>",
+    "Jakob Reschke <jakres@gmail.com>",
+    "Marianne Thieffry <marianne.thieffry@gmail.com>"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/LivelyKernel/ContextJS/issues"
+  },
+  "homepage": "https://github.com/LivelyKernel/ContextJS#readme",
+  "devDependencies": {
+    "babel-cli": "^6.10.1",
+    "babel-core": "^6.7.7",
+    "babel-plugin-array-includes": "^2.0.3",
+    "babel-polyfill": "^6.8.0",
+    "babel-preset-es2015": "^6.6.0",
+    "browserify": "^13.0.1",
+    "chai": "^3.5.0",
+    "karma": "^0.13.22",
+    "karma-babel-preprocessor": "^6.0.1",
+    "karma-chai": "^0.1.0",
+    "karma-chrome-launcher": "^0.2.3",
+    "karma-commonjs": "^1.0.0",
+    "karma-firefox-launcher": "^0.1.7",
+    "karma-ie-launcher": "^0.2.0",
+    "karma-mocha": "^0.2.2",
+    "karma-opera-launcher": "^0.3.0",
+    "karma-phantomjs-launcher": "^1.0.0",
+    "karma-safari-launcher": "^0.1.1",
+    "mocha": "^2.4.5",
+    "phantomjs-prebuilt": "^2.1.7"
+  },
+  "dependencies": {}
+}
