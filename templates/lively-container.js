@@ -5,7 +5,7 @@ import {pt} from 'lively.graphics';
 import halo from 'templates/lively-halo.js';
 
 
-import * as cop  from "src/external/ContextJS.js"
+import * as cop  from "src/external/ContextJS/src/contextjs.js"
 import ScopedScripts from "./ScopedScripts.js"
 
 export default class Container extends Morph {

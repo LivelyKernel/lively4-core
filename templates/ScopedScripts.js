@@ -1,6 +1,8 @@
-import {proceed, create as layer}  from "src/external/ContextJS.js";
-import * as cop  from "src/external/ContextJS.js";
+import {proceed, layer} from "src/external/ContextJS/src/contextjs.js";
+import * as cop  from "src/external/ContextJS/src/contextjs.js";
+import * as Layers  from "src/external/ContextJS/src/Layers.js";
 import lively from "src/client/lively.js";
+
 
 export default class ScopedScripts {
 
@@ -25,7 +27,7 @@ layer(ScopedScripts, "PropagateLayerActicationLayer").refineClass(Promise, {
 	then(onresolve, onerror) {
 	  // return cop.proceed(onresolve, onerror)
 
-    var layers = cop.currentLayers();
+    var layers = Layers.currentLayers();
     // console.log("Promise.then ... ");
 		var newResolve = function(){
 		    var args = arguments;
@@ -41,7 +43,7 @@ layer(ScopedScripts, "PropagateLayerActicationLayer").refineClass(Promise, {
 	}
 }).refineObject(lively, {
   loadJavaScriptThroughDOM(name, url, force) {
-    var globalLayers = cop.currentLayers();
+    var globalLayers = Layers.currentLayers();
     globalLayers.forEach( ea => {
       // console.log("Layer enable: " + ea)
       ea.beGlobal();

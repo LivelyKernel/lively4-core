@@ -30,11 +30,11 @@
   "main": "src/client/lively.js",
   "lively": {
     "main": "src/client/lively.js",
+  
     "packageMap": {
       "lively.lang": "src/external/lively.lang",
       "lively.graphics": "src/external/lively.graphics",
-      "active-expressions": "src/external/active-expressions/",
-      "ContextJS": "src/external/ContextJS/src/Layers.js"
+      "active-expressions": "src/external/active-expressions/"
     }
   },
   "directories": {

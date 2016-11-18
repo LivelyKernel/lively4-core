@@ -1,5 +1,5 @@
-import {proceed, create as layer}  from "src/external/ContextJS.js"
-import * as cop  from "src/external/ContextJS.js"
+import {proceed, layer}  from "src/external/ContextJS/src/contextjs.js"
+import * as cop  from "src/external/ContextJS/src/contextjs.js"
 
 
 /* A COP Layer that adapts D3 and Lively Containers to display D3 examples inline */
@@ -89,7 +89,7 @@ layer(window, "D3ScopedDocument")
 })
 // D3ScopedDocument.beGlobal()
 
-cop.create(window, "PrettyPrint").refineObject([].__proto__, {
+layer(window, "PrettyPrint").refineObject([].__proto__, {
   toString() {
     return "[" + proceed() + "]"
   }
