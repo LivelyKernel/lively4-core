@@ -1,23 +1,23 @@
-<h1>SVG Path</h1>
+<h1>SVG Path Interaction Example</h1>
 <!-- from: http://www.w3schools.com/graphics/svg_path.asp -->
 
 
-<svg id="path" height="400" width="450">
+<svg id="path" height="400" width="450" style="overflow:visible">
   <path id="line" d="M 100 350 L 250 50 L 400 350" stroke="red" stroke-width="3" fill="none" />
   <path id="curve" d="M 100 350 Q 250 50 400 350" stroke="green" stroke-width="5" fill="none" />
 
   <!-- Mark relevant points -->
   <g stroke="black" stroke-width="3" fill="black">
-    <circle id="pointA" cx="100" cy="350" r="3" />
-    <circle id="pointB" cx="250" cy="50" r="3" />
-    <circle id="pointC" cx="400" cy="350" r="3" />
+    <circle id="pointA" cx="100" cy="350" r="5" />
+    <circle id="pointB" cx="250" cy="50" r="5" />
+    <circle id="pointC" cx="400" cy="350" r="5" />
   </g>
   <!-- Label the points -->
   <g font-size="30" font-family="sans-serif" fill="black" stroke="none"
   text-anchor="middle">
     <text id="textA"  x="100" y="350" dx="-30">A</text>
-    <text x="250" y="50" dy="-10">B</text>
-    <text x="400" y="350" dx="30">C</text>
+    <text id="textB" x="250" y="50" dy="-10">B</text>
+    <text id="textC" x="400" y="350" dx="30">C</text>
   </g>
 </svg>
 
@@ -28,70 +28,93 @@
   var c = document.querySelector("#curve")
   
   getVertices = function(p) {
-    return p.getAttribute("d").split(/(?=[ML] +)/).map( ea => {
+    return p.getAttribute("d").split(/(?=[A-Za-z] +)/).map( ea => {
+      console.log("ea " + ea)
       var m = ea.split(/ +/)
       var pos = {c: m[0], x1: parseFloat(m[1]), y1: parseFloat(m[2]), toString: function() { return JSON.stringify(this)}}
       if (m[3]) {
-        pos.x2 = parseFloat(m[3]);
-        pos.y2 = parseFloat(m[4]);
+        pos.x1 = parseFloat(m[3]);
+        pos.y1 = parseFloat(m[4]);
+        pos.x2 = parseFloat(m[1]);
+        pos.y2 = parseFloat(m[2]);
       }
       return pos  
     })
   }
   setVertices = function(p, vertices) {
-    p.setAttribute("d", vertices.map(ea => {
-        var s = ea.c + " " + ea.x1 + " " + ea.y1;
-        if (typeof ea.x2 !== 'undefined') s +=  " " + ea.x2 + " " + ea.y2
+    var s = vertices.map(ea => {
+        var s = ea.c  
+        if (typeof ea.x2 !== 'undefined') 
+          s +=  " " + ea.x2 + " " + ea.y2 // first the helper points
+        s += " " + ea.x1 + " " + ea.y1;
         return s 
-      }).join(" "))
+      }).join(" ")
+    p.setAttribute("d", s)
+    return s
   }
   
   // var verts = getVertices(l)
-  // verts[0].x = verts[0].x  + 100
+  // verts[0].x1 = verts[0].x1  + 100
   // setVertices(l, verts)
 
-  updateVertsPos = function(p, i, pos) {
+  // // c.getAttribute("d") M 200 350 Q NaN 250 50 400
+  // var verts = getVertices(c)
+  // verts[0].x1 = verts[0].x1  + 100
+  // setVertices(c, verts)
+
+
+  updateVertsPos = function(p, i, pos, helper_index) {
     var verts = getVertices(p)
-    verts[i].x1 = pos.x
-    verts[i].y1 = pos.y
+    if (helper_index == 2) {
+      verts[i].x2 = pos.x
+      verts[i].y2 = pos.y
+    } else {
+      verts[i].x1 = pos.x
+      verts[i].y1 = pos.y
+    }
     setVertices(p, verts)
   } 
   
   // updateVertsPos(l, 0, {x: 100, y: 100})
   
-  
-  p.onmousedown = function(evt){
-      lively.notify("down")
-
-      var offsetX = evt.clientX
-      var offsetY = evt.clientY
-      var posX = parseFloat(p.getAttribute("cx")) 
-      var posY = parseFloat(p.getAttribute("cy")) 
-    
-      lively.removeEventListener("svgpath", document.body)
-      lively.addEventListener("svgpath", document.body, "mousemove" , (evt) => {
-        // lively.notify("move " + (posY + evt.clientY - offsetY))
-        var x = posX + evt.clientX - offsetX
-        var y = posY + evt.clientY - offsetY
-        
-        p.setAttribute("cx", x)
-        p.setAttribute("cy", y)
-        t.setAttribute("x", x)
-        t.setAttribute("y", y)
+  var enableHandle = (p, t, l, l_index, c, c_index, helper_index) => {
+    p.onmousedown = function(evt){
+        var offsetX = evt.clientX
+        var offsetY = evt.clientY
+        var posX = parseFloat(p.getAttribute("cx")) 
+        var posY = parseFloat(p.getAttribute("cy")) 
       
-        updateVertsPos(l, 0, {x: x, y: y})
-        updateVertsPos(c, 0, {x: x, y: y})
-        
-        evt.stopPropagation();
-      })
-      lively.addEventListener("svgpath", document.body, "mouseup" , (ect) => {
-        lively.notify("up")
-
         lively.removeEventListener("svgpath", document.body)
-      })
-      evt.stopPropagation();
-      evt.preventDefault();
+        lively.addEventListener("svgpath", document.body, "mousemove" , (evt) => {
+          // lively.notify("move " + (posY + evt.clientY - offsetY))
+          var x = posX + evt.clientX - offsetX
+          var y = posY + evt.clientY - offsetY
+          
+          p.setAttribute("cx", x)
+          p.setAttribute("cy", y)
+          t.setAttribute("x", x)
+          t.setAttribute("y", y)
+        
+          updateVertsPos(l, l_index, {x: x, y: y})
+          updateVertsPos(c, c_index, {x: x, y: y}, helper_index)
+          
+          evt.stopPropagation();
+        })
+        lively.addEventListener("svgpath", document.body, "mouseup" , (ect) => {
+          lively.removeEventListener("svgpath", document.body)
+        })
+        evt.stopPropagation();
+        evt.preventDefault();
+    }
   }
+  enableHandle(document.querySelector("#pointA"), document.querySelector("#textA"), 
+    document.querySelector("#line"), 0,  document.querySelector("#curve"), 0)
+  
+  enableHandle(document.querySelector("#pointB"), document.querySelector("#textB"), 
+    document.querySelector("#line"), 1,  document.querySelector("#curve"), 1, 2)
+  
+  enableHandle(document.querySelector("#pointC"), document.querySelector("#textC"), 
+    document.querySelector("#line"), 2,  document.querySelector("#curve"), 1)
   
 </script>
 

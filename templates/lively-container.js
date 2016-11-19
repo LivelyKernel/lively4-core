@@ -38,7 +38,7 @@ export default class Container extends Morph {
         var state = event.state;
         if (state && state.followInline) {
           console.log("follow " + state.path);
-          this.setPath(state.path);
+          this.followPath(state.path);
         }
       };
       var path = lively.preferences.getURLParameter("load");
@@ -941,7 +941,10 @@ export default class Container extends Morph {
         
         if (aceComp.editor) {
           aceComp.editor.selection.moveCursorTo(0,0);
-          aceComp.editor.session.setWrapLimit(120);
+          var lineWidth = 100
+          aceComp.editor.session.setWrapLimit(lineWidth);
+          aceComp.editor.renderer.setPrintMarginColumn(lineWidth)
+          
         }
         
         livelyEditor.lastVersion = this.lastVersion;
