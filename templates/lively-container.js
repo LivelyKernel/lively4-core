@@ -396,6 +396,11 @@ export default class Container extends Morph {
         }
       });
       lively.components.loadUnresolved(root);
+      // get around some async fun
+      if (this.preserveContentScroll) {
+       this.get("#container-content").scrollTop = this.preserveContentScroll
+      delete this.preserveContentScroll
+    }
     });
   }
 

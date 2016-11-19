@@ -49,7 +49,7 @@ Since Lively4 commits just to html5, we are agnostic when it comes to canvas or 
 - [GraphicsJS](http://www.graphicsjs.org) #BSD
   - free library of [AnyChart.js](http://www.anychart.com) #Compercial
 
-# Games and Interaction Design=
+## Games and Interaction Design
 
 - [Processing.js](http://processingjs.org)
 - [two.js](https://two.js.org/) 
@@ -57,7 +57,7 @@ Since Lively4 commits just to html5, we are agnostic when it comes to canvas or 
   - #SVG #Canvas #Webgl.
 - [Three.js](http://mrdoob.github.com/three.js) #WebGL
 
-# Generic 2D Scenegraph
+## Generic 2D Scenegraph
 - [Raphael](http://dmitrybaranovskiy.github.io/raphael/) #MIT 
 - EaselJS
   - "A JavaScript library that makes working with the HTML5 Canvas element easy. Useful for creating games, generative art, and other highly graphical experiences."
@@ -67,10 +67,13 @@ Since Lively4 commits just to html5, we are agnostic when it comes to canvas or 
   - #Canvas, Examples
 - [Paperjs](http://paperjs.org) #MIT 
 
-# Graph Layout
+## Graph Layout
 - [Dagre] (https://github.com/cpettitt/dagre) #MIT
   - [combined with JointJS](http://www.daviddurman.com/automatic-graph-layout-with-jointjs-and-dagre.html)
-  - 
+- [vis.js](http://visjs.org/)
+- [Mermaid](http://knsv.github.io/mermaid/)
+  - "Generation of diagrams and flowcharts from text in a similar manner as markdown."
+
 ## Misc
 - [BonsaiJS](http://bonsaijs.org/) #MIT 
   - "A lightweight graphics library with an intuitive graphics API and an SVG renderer." 
