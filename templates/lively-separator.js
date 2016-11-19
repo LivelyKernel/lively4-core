@@ -9,27 +9,44 @@ export default class Separator extends Morph {
     lively.addEventListener('lively', this,'dragstart', evt => this.onDragStart(evt));
     lively.addEventListener('lively', this,'drag', evt => this.onDrag(evt));
     lively.addEventListener('lively', this,'dragend', evt => this.onDragEnd(evt));
+    lively.addEventListener('lively', this,'click', evt => this.onClick(evt));
   }
 
   getLeftTarget() {
-    return this.parentElement.querySelector(this.getAttribute("leftselector"))
+    return this.parentElement.querySelector(this.getAttribute("leftselector"));
+  }
+
+  getLeftWidth() {
+    return this.getLeftTarget().getBoundingClientRect().width
+  }
+  
+  setLeftWidth(w) {
+    this.getLeftTarget().style.width = w + "px";
   }
 
   onDragStart(evt) {
-    // console.log("[separator] dragStart")
-    this.originalWidth =  this.getLeftTarget().getBoundingClientRect().width
-    this.dragOffset = evt.clientX
+    this.originalWidth =  this.getLeftWidth();
+    this.dragOffset = evt.clientX;
     evt.dataTransfer.setDragImage(document.createElement("div"), 0, 0); 
-    
     evt.stopPropagation();
+  }
+  /*
+   * (un-)collabses left target on click
+   */
+  onClick() {
+    if (this.targetLastWidth) {
+      this.setLeftWidth(this.targetLastWidth);
+      delete this.targetLastWidth;
+    } else {
+      this.targetLastWidth = this.getLeftWidth();
+      this.getLeftTarget().style.width = "0px";
+    }
   }
   
   onDrag(evt) {
-    // console.log("[separator] drag")
     if (!evt.clientX) return
     var delta = evt.clientX - this.dragOffset
-    this.getLeftTarget().style.width = Math.max(this.originalWidth + delta, 0);
-
+    this.setLeftWidth(Math.max(this.originalWidth + delta, 0))
 	  evt.stopPropagation();
   }
   
