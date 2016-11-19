@@ -34,6 +34,7 @@ export default class Search extends Morph {
   }
 
   browseSearchResult(url, pattern) {
+    // lively.notify("pattern" + pattern)
     return lively.openBrowser(url, true, pattern);
   }
 
@@ -46,7 +47,8 @@ export default class Search extends Morph {
       var pattern = m[2];
       var url = lively4url + "/../" + file;
       var item = document.createElement("tr");
-      item.innerHTML = `<td><a>${file}</a></td><td><span ="pattern">${pattern}</span></td>`;
+      var filename = file.replace(/.*\//,"")
+      item.innerHTML = `<td><a>${filename}</a></td><td><span ="pattern">${pattern}</span></td>`;
       var link = item.querySelector("a");
       link.href = entry;
       link.onclick = () => {

@@ -35,6 +35,15 @@ let $ = window.$,
 
 import {pt} from 'lively.graphics';
 
+// FOR DEBUGGING
+// import * as cop  from "src/external/ContextJS/src/contextjs.js"
+// cop.layer(window, "DevLayer").refineObject(document, { 
+//   createElement(name) {
+//     console.log("create element " + name); 
+//     return cop.proceed(name)
+//   } 
+// })
+// DevLayer.beGlobal()
 
 // a) Special shorthands for interactive development
 // b) this is the only reasonable way to use modules in template scripts, due to no shared lexical scope #TODO
@@ -186,19 +195,21 @@ export default class Lively {
   }
 
 
-  static fillTemplateStyles(root) {
+  static fillTemplateStyles(root, debugInfo) {
     // there seems to be no <link ..> tag allowed to reference css inside of templates #Jens
     var promises = [];
+    var allSrc = []
     _.each(root.querySelectorAll("style"), ea => {
       var src = ea.getAttribute("data-src"); 
       if (src) {
+        allSrc.push(src)
         // console.log("load fillTemplateStyles: " + lively4url + src );
         promises.push(fetch(lively4url + src).then(r => r.text()).then(css => {
           ea.innerHTML = css;
         }));
       }
     });
-    return Promise.all(promises);
+    return Promise.all(promises)
   }
 
   static defaultPath(moduleName) {
@@ -778,31 +789,34 @@ export default class Lively {
 
   static openComponentInWindow(name, pos, extent) {
     var lastWindow = _.first(lively.array(document.body.querySelectorAll("lively-window")));
-
-    var comp  = document.createElement(name);
-    return lively.components.openInWindow(comp, pos).then((w) => {
-      if (extent) {
-        w.style.width = extent.x;
-        w.style.height = extent.y;
-      }
-      if (lastWindow) {
-        var lastPos = lively.getPosition(lastWindow);
-        var windowWidth = comp.parentElement.getBoundingClientRect().width;
-        if (lastPos !== undefined && windowWidth !== undefined) {
-          if (lastPos.x > windowWidth) {
-            lively.setPosition(comp.parentElement, lastPos.subPt(pt(windowWidth + 25, 0)));
-          } else {
-            lively.setPosition(comp.parentElement, lastPos.addPt(pt(25,25)));
-          }
-        }      
-      }
-      if (pos) 
-        lively.setPosition(w, pos);
-      
-      if (comp.windowTitle) w.setAttribute("title", "" + comp.windowTitle);
-      
-      return comp;
-    });
+  
+  
+    var w = document.createElement("lively-window");
+    if (extent) {
+      w.style.width = extent.x;
+      w.style.height = extent.y;
+    }
+    if (lastWindow) {
+      var lastPos = lively.getPosition(lastWindow);
+      var windowWidth = w.getBoundingClientRect().width;
+      console.log("window width")
+      if (lastPos !== undefined && windowWidth !== undefined) {
+        if (lastPos.x > windowWidth) {
+          lively.setPosition(w, lastPos.subPt(pt(windowWidth + 25, 0)));
+        } else {
+          lively.setPosition(w, lastPos.addPt(pt(25,25)));
+        }
+      }      
+    }
+    return lively.components.openInBody(w).then((w) => {
+    	return lively.components.openIn(w, document.createElement(name)).then((comp) => {
+    	  if (pos) 
+          lively.setPosition(w, pos);
+        
+        if (comp.windowTitle) w.setAttribute("title", "" + comp.windowTitle);
+        return comp
+    	})
+    })
   }
   
   // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
@@ -835,10 +849,15 @@ export default class Lively {
         comp.isSearchBrowser = true;
         comp.hideNavbar();
       }
-      return comp.followPath(url);
+      return comp.followPath(url).then( () => {
+        var ace = editorComp.get("#editor").currentEditor();
+      });
     }).then(() => {
       if (edit && pattern) {
-        editorComp.realAceEditor().then( editor => editor.find(pattern));
+        editorComp.asyncGet("#editor").then(livelyEditor => {
+          var ace = livelyEditor.currentEditor();
+          ace.find(pattern);
+        });
       }
     });
   }

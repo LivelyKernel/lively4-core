@@ -31,15 +31,8 @@ Since Lively4 commits just to html5, we are agnostic when it comes to canvas or 
   - showcase: [draw.io](https://github.com/jgraph/draw.io)  (GPL Licence) 
 - [JointJS](https://github.com/clientIO/joint), (Apache License) 
   - Rappid #comerical "Rappid is a diagramming framework for advanced applications, delivering the best of HTML 5 + SVG and providing you with the right tools to build outstanding products."
-- Microsoft's Powerpoint #Propriatary
 - [jsPlumb](http://jsplumbtoolkit.com) #MIT
 - [Lucidchart](https://www.lucidchart.com) #Propritary 
-
-## Note taking
-- Microsoft's OneNote #Propriatary
-  - Collaborative
-  - Cloud/REST API
-- Google Docs #Propriatary
 
 ## Charting library
 - [D3 - Data-Driven Documents](http://d3js.org/)(BSD license) 

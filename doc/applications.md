@@ -9,3 +9,15 @@ Here are some initial results:
 - Calibribe book visualization (d3 and drobbox) 
 
 
+# Applications we want to work together
+
+We are not alone! 
+
+## Presentation
+- Microsoft's Powerpoint #Propriatary
+
+## Note taking
+- Microsoft's OneNote #Propriatary
+  - Collaborative
+  - Cloud/REST API
+- Google Docs #Propriatary

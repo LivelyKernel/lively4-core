@@ -6,6 +6,10 @@ import Morph from './Morph.js';
 
 export default class Inspector   extends Morph {
 
+  initialize() {
+    lively.notify("[inspector] intialize")    
+  }
+
   displayValue(value) {
     var node = document.createElement("pre");
     node.innerHTML = JSON.stringify(value);

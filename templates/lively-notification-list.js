@@ -14,7 +14,7 @@ export default class NotificationList extends Morph {
     
     lively.components.openIn(this, notification).then( () => {
       this.hidden = false;
-      if (timeout === undefined) timeout = 3;
+      if (timeout === undefined) timeout = 7;
       setTimeout(() => notification.onClose(), timeout * 1000); 
     })
 

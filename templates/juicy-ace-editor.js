@@ -183,10 +183,7 @@ export default class AceEditor extends HTMLElement {
   changeModeForFile(filename) {
     var modelist = ace.require("ace/ext/modelist");
     var mode = modelist.getModeForPath(filename).name;
-    console.log(filename + " -> " + mode);
-
     this.changeMode(mode);
-
   }
 
   changeMode(mode) {
@@ -195,7 +192,7 @@ export default class AceEditor extends HTMLElement {
       Mode = ace.require("ace/mode/" + mode).Mode;
       this.editor.session.setMode(new Mode());
     } catch (e) {
-      console.log("ace-editor: lazy load ace mode " + mode);
+      // console.log("ace-editor: lazy load ace mode " + mode);
       // mode is not loaded, so try to load it,
       // there must be a way to make ace do all this stuff as with themes... :(
       var script = document.createElement("Script");
@@ -387,7 +384,7 @@ export default class AceEditor extends HTMLElement {
 
   // Fires when an instance of the element is created
   createdCallback() {
-      console.log("createdCallback")
+      // console.log("createdCallback ", this)
       var value = "";
       Object.defineProperty(this, "value", {
           set: function(val){

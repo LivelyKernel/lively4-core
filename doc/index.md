@@ -26,12 +26,10 @@ All components are stored together with their prototype definitions (JavaScript 
   - squash
     - squashes several commits into one
   - branch [experimental]
-
-
 - Lively Server
   - auto commit
       - every writeFile produces a git commit that later can be squashed
-      - 
+      
 
 # Modules
 

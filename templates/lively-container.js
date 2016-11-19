@@ -25,7 +25,6 @@ export default class Container extends Morph {
     // make sure the global css is there...
     lively.loadCSSThroughDOM("hightlight", lively4url + "/src/external/highlight.css");
 
-    console.log("Initialize Container");
     
     lively.addEventListener("Container", this, "mousedown", evt => this.onMouseDown(evt));
 
@@ -542,19 +541,16 @@ export default class Container extends Morph {
     
     var m = path.match(/start\.html\?load=(.*)/);
     if (m) {
-      lively.notify(m[1]);
       return this.followPath(m[1]);
     }
-   
-   
+  
     // this check could happen later
     if (!path.match("https://lively4") && !path.match(window.location.host)) {
-      lively.notify("follow foreign url: " + path);
+      // lively.notify("follow foreign url: " + path);
       var startTime = Date.now();
       if (!await fetch(path, {method: "OPTIONS"}).catch(e => false)) {
         return window.open(path);
       }
-      lively.notify("delayx " + (Date.now() - startTime));
     }
 
     if (_.last(this.history()) !== path)
@@ -601,6 +597,7 @@ export default class Container extends Morph {
     var container = this.get('#container-editor');
     var editor = container.querySelector("lively-editor");
     if (editor) return Promise.resolve(editor);
+    // console.log("[container] create editor")
     editor = lively.components.createComponent("lively-editor");
     editor.id = "editor";
     return lively.components.openIn(container, editor).then( () => {
@@ -925,8 +922,9 @@ export default class Container extends Morph {
   }
   
   editFile(path) {
+    // console.log("[container ] editFile " + path)
     this.setAttribute("mode","edit"); // make it persistent
-    (path ? this.setPath(path, true /* do not render */) : Promise.resolve()).then( () => {
+    return (path ? this.setPath(path, true /* do not render */) : Promise.resolve()).then( () => {
       this.clear();
       var containerContent=  this.get('#container-content');
       containerContent.style.display = "none";
@@ -936,7 +934,9 @@ export default class Container extends Morph {
       var urlString = this.getURL().toString();
       this.resetLoadingFailed();
 
-      this.getEditor().then(livelyEditor => {
+      this.showNavbar();
+      
+      return this.getEditor().then(livelyEditor => {
         var aceComp = livelyEditor.get('juicy-ace-editor');
         
         
@@ -968,11 +968,8 @@ export default class Container extends Morph {
         if ((""+url).match(/\.js$/)) {
           aceComp.targetModule = "" + url; // for editing
         }
-
         // livelyEditor.loadFile() // ALT: Load the file again?
       });
-      this.showNavbar();
-      lively.components.loadUnresolved(containerEditor);
     });
   }
 
@@ -1039,6 +1036,8 @@ export default class Container extends Morph {
   
   livelyMigrate(other) {
     // other = that
+    this.isMigrating = true
+    this.preserveContentScroll = other.oldContentScroll
     var editor = other.get("#editor")
     if (editor) {
       var otherAce = editor.currentEditor();  
@@ -1051,11 +1050,14 @@ export default class Container extends Morph {
             thisAce.session.setScrollTop(scrollTop);
             thisAce.selection.setRange(range);
           }
+          this.isMigrating = false
+        }).catch(() => {
+          // jsut to be sure..
+          this.isMigrating = false
         });
       }
+    } else {
+      this.isMigrating = false
     }
-    
-    this.get("#container-content").scrollTop = other.oldContentScroll  
-    this.preserveContentScroll = other.oldContentScroll 
   }
 }

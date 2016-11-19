@@ -53,65 +53,63 @@ export default class ComponentLoader {
   }
 
   static onCreatedCallback(object, componentName) {
-      if (persistence.isCurrentlyCloning()) {
-        return;
-      }
+    if (persistence.isCurrentlyCloning()) {
+      return;
+    }
 
-      var shadow = object.createShadowRoot();
+    var shadow = object.createShadowRoot();
 
-      // clone the template again, so when more elements are created,
-      // they get their own copy of elements
-      var clone = document.importNode(ComponentLoader.templates[componentName], true);
-      // #TODO replace the "template" reference with an indirection that can be changed from the outside,
-      // e.g. var clone = document.importNode(this.templates[componentName], true);
-      // but beeing able to modify it, because we have a reference should suffice at the moment...
+    // clone the template again, so when more elements are created,
+    // they get their own copy of elements
+    var clone = document.importNode(ComponentLoader.templates[componentName], true);
+    // #TODO replace the "template" reference with an indirection that can be changed from the outside,
+    // e.g. var clone = document.importNode(this.templates[componentName], true);
+    // but beeing able to modify it, because we have a reference should suffice at the moment...
 
-      shadow.appendChild(clone);
+    shadow.appendChild(clone);
 
-      // attach lively4scripts from the shadow root to this
-      scriptManager.attachScriptsFromShadowDOM(object);
+    // attach lively4scripts from the shadow root to this
+    scriptManager.attachScriptsFromShadowDOM(object);
 
-      if (ComponentLoader.prototypes[componentName].createdCallback) {
-        ComponentLoader.prototypes[componentName].createdCallback.call(object);
-      }
+    if (ComponentLoader.prototypes[componentName].createdCallback) {
+      ComponentLoader.prototypes[componentName].createdCallback.call(object);
+    }
 
-      // load any unknown elements, which this component might introduce
-      ComponentLoader.loadUnresolved(object, true, "onCreated " + componentName).then((args) => {
+    // load any unknown elements, which this component might introduce
+    ComponentLoader.loadUnresolved(object, true, "onCreated " + componentName).then((args) => {
+      lively.fillTemplateStyles(object.shadowRoot, "source: " + componentName).then(() => {
+        // call the initialize script, if it exists
+      
+        if (typeof object.initialize === "function") {
+          object.initialize();
+        }
+        // console.log("dispatch created " +componentName )
+        // console.log("Identitity: " + (window.LastRegistered === object))
         
-        lively.fillTemplateStyles(object.shadowRoot).then(() => {
-          // call the initialize script, if it exists
-          
-          if (typeof object.initialize === "function") {
-            object.initialize();
-          }
-          // console.log("dispatch created " +componentName )
-          // console.log("Identitity: " + (window.LastRegistered === object))
-          
-          
-          object.dispatchEvent(new Event("created"));
-        })
-      }).catch( e => {
-        console.error(e); 
-        return e
-      });
+        object.dispatchEvent(new Event("created"));
+      })
+    }).catch( e => {
+      console.error(e); 
+      return e
+    });
   }
   
   static onAttachedCallback(object, componentName) {
     if (object.attachedCallback && 
       ComponentLoader.proxies[componentName].attachedCallback != object.attachedCallback) {
         object.attachedCallback.call(object);
-      }
-      if (ComponentLoader.prototypes[componentName].attachedCallback) {
-        ComponentLoader.prototypes[componentName].attachedCallback.call(object);
-      }
+    }
+    if (ComponentLoader.prototypes[componentName].attachedCallback) {
+      ComponentLoader.prototypes[componentName].attachedCallback.call(object);
+    }
   }
   
   static onDetachedCallback(object, componentName) {
-      if (object.detachedCallback && ComponentLoader.proxies[componentName].detachedCallback != object.detachedCallback) {
-        object.detachedCallback.call(object);
-      } else if (ComponentLoader.prototypes[componentName].detachedCallback) {
-        ComponentLoader.prototypes[componentName].detachedCallback.call(object);
-      }
+    if (object.detachedCallback && ComponentLoader.proxies[componentName].detachedCallback != object.detachedCallback) {
+      object.detachedCallback.call(object);
+    } else if (ComponentLoader.prototypes[componentName].detachedCallback) {
+      ComponentLoader.prototypes[componentName].detachedCallback.call(object);
+    }
   }
   
   // this function registers a custom element,
@@ -124,12 +122,29 @@ export default class ComponentLoader {
     this.prototypes[componentName] = proto;
     this.proxies[componentName] = Object.create(proto) // not changeable
 
-    // #TODO: we should check here, if the prototype already has a createdCallback,
-    // if that's the case, we should wrap it and call it in our createdCallback
-    //var previousCreatedCallback = proto.createdCallback;
 
+    // FOR DEBUGGING
+    // if (!window.createdCompontents)
+    //   window.createdCompontents = {}
+    // window.createdCompontents[componentName] = []
+
+    // #Mystery #Debugging #ExperienceReport
+    // Task was to figure out why the created callback is called several times when loading the
+    // componen for the first time? E.g 5 ace editors for the container, where 2 are actually needed
+    // maybe they are also called for the template documents that we store?
+    // e.g. lively-editor (+ 1 ace + lively-version (+1 ace)) + lively-version (1 ace)
+    // that would actually account for the missing three instances
+    // It is Saturday night... past midnight and I finnally have at least an hypothesis, 
+    // where I was debugging in the dark the last 3 hours.
+    // I got burned so hard by the "created" event that was thrown at me even if not myself 
+    // was created but if a child of mine was created too... and we did not expected such behavior
+    // that this time I wanted to find out what was going on here. Even though it seemed to 
+    // be not a problem
+    
     this.proxies[componentName].createdCallback = function() {
-      ComponentLoader.onCreatedCallback(this, componentName)
+      // window.createdCompontents[componentName].push(this)  
+      // console.log("[components] call createdCallback for " + componentName, this)
+      ComponentLoader.onCreatedCallback(this, componentName, this)
     }
     this.proxies[componentName].attachedCallback = function() {
       ComponentLoader.onAttachedCallback(this, componentName)
@@ -265,10 +280,22 @@ export default class ComponentLoader {
   }
 
   static openIn(parent, component, beginning) {
+    var created = false;
     var compPromise = new Promise((resolve, reject) => {
       component.addEventListener("created", (e) => {
-        e.stopPropagation();
-        resolve(e.target);
+        if (e.path[0] !== component) {
+          // console.log("[components] ingnore and stop created event from child " + e.path[0].tagName);
+          return 
+        }
+        if (created) {
+          // #Just check... we had this issue before
+          throw new Error("[compontents] created called twice for " + component)
+        } else {
+          created = true
+          e.stopPropagation();
+          resolve(e.target);
+        }
+        
       });
     });
 
