@@ -580,7 +580,10 @@ export default class Lively {
 
       var owner = oldInstance.parentElement;
       var newInstance = document.createElement(tagName);
-
+      
+      if (oldInstance.livelyPreMigrate) {
+        oldInstance.livelyPreMigrate(oldInstance); 
+      }
       owner.replaceChild(newInstance, oldInstance);
       _.each(oldInstance.childNodes, function(ea) {
         if (ea) { // there are "undefined" elemented in childNodes... sometimes #TODO

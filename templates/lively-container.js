@@ -510,6 +510,12 @@ export default class Container extends Morph {
     } catch(e) {
       console.log("Could not append html:" + content.slice(0,200) +"..." +" ERROR:", e);
     }
+    
+    // get around some async fun
+    if (this.preserveContentScroll) {
+       this.get("#container-content").scrollTop = this.preserveContentScroll
+      delete this.preserveContentScroll
+    }
   }
 
   appendTemplate(name) {
@@ -693,6 +699,10 @@ export default class Container extends Morph {
     path =  path + (isdir ? "/" : "");
 
     var container=  this.get('#container-content');
+    // don't scroll away whe reloading the same url
+    if (this.getPath() == path) {
+      this.preserveContentScroll = this.get("#container-content").scrollTop;
+    }
 	  this.setAttribute("src", path);
     this.clear();
     this.get('#container-path').value = path;
@@ -1017,21 +1027,30 @@ export default class Container extends Morph {
     });
   }
   
+  livelyPreMigrate() {
+    // do something before I got replaced  
+    this.oldContentScroll = this.get("#container-content").scrollTop;
+  }
+  
   livelyMigrate(other) {
     // other = that
     var editor = other.get("#editor")
-    if (!editor) return; 
-    var otherAce = editor.currentEditor();  
-    if (otherAce && otherAce.selection) {
-      var range = otherAce.selection.getRange();
-      var scrollTop = otherAce.session.getScrollTop();
-      this.asyncGet("#editor").then( editor => {
-        var thisAce = editor.currentEditor();
-        if (otherAce && thisAce) {
-          thisAce.session.setScrollTop(scrollTop);
-          thisAce.selection.setRange(range);
-        }
-      });
+    if (editor) {
+      var otherAce = editor.currentEditor();  
+      if (otherAce && otherAce.selection) {
+        var range = otherAce.selection.getRange();
+        var scrollTop = otherAce.session.getScrollTop();
+        this.asyncGet("#editor").then( editor => {
+          var thisAce = editor.currentEditor();
+          if (otherAce && thisAce) {
+            thisAce.session.setScrollTop(scrollTop);
+            thisAce.selection.setRange(range);
+          }
+        });
+      }
     }
+    
+    this.get("#container-content").scrollTop = other.oldContentScroll  
+    this.preserveContentScroll = other.oldContentScroll 
   }
 }

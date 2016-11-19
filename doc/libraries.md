@@ -22,6 +22,8 @@ Since Lively4 commits just to html5, we are agnostic when it comes to canvas or 
 - [javascript-drawing-libraries-diagrams](http://modeling-languages.com/javascript-drawing-libraries-diagrams/)
 - [Comparison of 2D canvas libraries](https://docs.google.com/spreadsheets/d/1JYEGMN2jJtmwyjB4DMw3uaYLVMkduf61suKpiOzo0hc/edit#gid=0)
 - [JavaScript_graphics_library on wikipedia](https://en.wikipedia.org/wiki/JavaScript_graphics_library)
+- [Our Code World, 2016. Top 5 : Best free diagrams javascript libraries](http://ourcodeworld.com/articles/read/159/top-5-best-free-diagrams-javascript-libraries)
+  - Mermaid, Flowchart, JS Sequence Diagrams, Cytoscape.js, JointJS
 
 ## Diagramming
 
@@ -31,7 +33,7 @@ Since Lively4 commits just to html5, we are agnostic when it comes to canvas or 
   - Rappid #comerical "Rappid is a diagramming framework for advanced applications, delivering the best of HTML 5 + SVG and providing you with the right tools to build outstanding products."
 - Microsoft's Powerpoint #Propriatary
 - [jsPlumb](http://jsplumbtoolkit.com) #MIT
-
+- [Lucidchart](https://www.lucidchart.com) #Propritary 
 
 ## Note taking
 - Microsoft's OneNote #Propriatary
