@@ -70,7 +70,7 @@ Since Lively4 commits just to html5, we are agnostic when it comes to canvas or 
 ## Graph Layout
 - [Dagre] (https://github.com/cpettitt/dagre) #MIT
   - [combined with JointJS](http://www.daviddurman.com/automatic-graph-layout-with-jointjs-and-dagre.html)
-- [vis.js](http://visjs.org/)
+- [vis.js](http://visjs.org/) #MIT
 - [Mermaid](http://knsv.github.io/mermaid/)
   - "Generation of diagrams and flowcharts from text in a similar manner as markdown."
 
@@ -79,7 +79,7 @@ Since Lively4 commits just to html5, we are agnostic when it comes to canvas or 
   - "A lightweight graphics library with an intuitive graphics API and an SVG renderer." 
 - [Cakejs](http://code.google.com/p/cakejs/) #MIT 
   - #jQuery UI framework 
-- [dojox.gfx](http://dojotoolkit.org)([Dojo)(dual BSD and AFL license)
+- [dojox.gfx](http://dojotoolkit.org) #BSD
 - [GoJS](http://gojs.net)
 - [JenScript](http://jensoftapi.com/site/framework/jenscript) #AGPL #Commercial
 - [jsDraw2DX](http://jsdraw2dx.jsfiction.com) #LGPL

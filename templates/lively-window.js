@@ -164,10 +164,16 @@ export default class Window extends Morph {
     }
   }
 
-  focus(e) {
-    let minZIndex = 100;
+	get minZIndex() {
+		return 100
+	}
+	
+	allWindows() {
+		return Array.from(document.querySelectorAll('lively-window'));
+	}
 
-    let allWindows = Array.from(document.querySelectorAll('lively-window'));
+  focus(e) {
+    let allWindows = this.allWindows();
     let thisIdx = allWindows.indexOf(this);
 
     let allWindowsButThis = allWindows;
@@ -178,17 +184,26 @@ export default class Window extends Morph {
     });
 
     allWindowsButThis.forEach((win, index) => {
-      win.style['z-index'] = minZIndex + index;
+      win.style['z-index'] = this.minZIndex + index;
       if (win.window)
         win.window.classList.remove('focused');
       win.removeAttribute('active');
     });
-
-    this.style['z-index'] = minZIndex + allWindowsButThis.length;
+    
+    this.style['z-index'] = this.minZIndex + allWindowsButThis.length;
     this.window.classList.add('focused');
     this.setAttribute('active', true);
+    
+    this.bringMinimizedWindowsToFront()
   }
 
+	bringMinimizedWindowsToFront() {
+	  var allWindows = this.allWindows();
+		allWindows.filter(ea => ea.isMinimized()).forEach( ea => {
+      ea.style['z-index'] = this.minZIndex + allWindows.length +1
+    });
+	}
+	
   minButtonClicked(e) {
     this.toggleMinimize()
   }
@@ -237,6 +252,7 @@ export default class Window extends Morph {
       document.body.style.overflow = "hidden"
 
     }
+    this.bringMinimizedWindowsToFront()
     this.displayResizeHandle(!this.isMaximized())
   }
 
@@ -274,7 +290,7 @@ export default class Window extends Morph {
       if (this.isMaximized()) {
         this.toggleMaximize()
       }
-      
+      this.style['z-index'] = 100
       var bounds = this.getBoundingClientRect();
       this.positionBeforeMinimize = {
         x: bounds.left,
@@ -294,6 +310,7 @@ export default class Window extends Morph {
       
       this.sortMinimizedWindows();
     }
+    this.bringMinimizedWindowsToFront()
   }
 
   sortMinimizedWindows() {
