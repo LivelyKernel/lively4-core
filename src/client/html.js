@@ -65,8 +65,9 @@ export default class HTML {
   
   static enhanceMarkdown(source) {
     return source.replace(/([^\n#])#([A-Za-z09]+)/g,
-      "$1[#$2](https://lively4/Thesis/notes/$2.html)") // #TODO this should be a plugin or somthing since it is user specific / context specific code
+       "$1[#$2](javascript:lively.openSearchWidget('#$2'))");
   }
+       
   
   static registerInputs(parent) {
     Array.prototype.forEach.call(parent.shadowRoot.querySelectorAll("input"), node => {
@@ -119,6 +120,13 @@ export default class HTML {
           var m
           if (m = href.match(/javascript:visitPath\('webwerkstatt\/(.*)'\)/)) {
             path = "/Thesis/" + m[1]
+          } else if (m = href.match(/javascript:(.*)'\)/)) {
+            var code = m[1]
+            // do nothing
+            
+            // $(node).click(() => { 
+            //   alert("eval " + code)
+            // })
           } else if (href.match(/([A-Za-z]+):\/\/.+/)) {
             // console.log("ignore "  + href);
             path = href;
