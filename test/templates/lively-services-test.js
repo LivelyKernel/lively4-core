@@ -39,7 +39,6 @@ describe("Services Tool",  function() {
       that = c;
       that.refreshServiceList = function() { listRefreshed = true; };
       that.refreshLog = function() { logRefreshed = true; };
-      that.ensureRemoteServicesMounted = function() {};
       done();
     });
   });

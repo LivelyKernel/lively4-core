@@ -17,6 +17,8 @@ export function loadComponent(name) {
 
   var world = testWorld();
   var component = lively.components.createComponent(name);
+  component.isInTesting = true;
+
   return lively.components.openIn(world, component);
     
     // window.LastRegistered = component; // I don't understand this #TODO #Jens why does it work when this line is in?
