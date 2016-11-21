@@ -1,6 +1,6 @@
 import Services from '../../templates/lively-services.js';
 import {expect} from '../../node_modules/chai/chai.js';
-import {loadComponent} from './templates-fixture.js';
+import {testWorld, loadComponent} from './templates-fixture.js';
 
 describe("Services Tool",  function() {
   var that;
@@ -86,7 +86,10 @@ describe("Services Tool",  function() {
 
     checkLogRefreshed(done);
   });
-
+  
+  after("cleanup", function() {
+    testWorld().innerHTML = "";
+  });
 });
 
 

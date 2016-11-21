@@ -22,7 +22,7 @@ describe("Container Tool",  function() {
   });
   
   it("should open a filebrowser for a dir", function(done) {
-    var url = "https://lively4/sys/"
+    var url = "https://lively4/sys/";
     that.setPath(url).then(() => {
       var fileBrowser = that.getContentRoot().querySelector("lively-file-browser");
       expect(fileBrowser).to.be.an('object');
@@ -33,7 +33,3 @@ describe("Container Tool",  function() {
     .catch(e => done(e));
   });
 });
-
-
-console.log("load lively-container-test");
-

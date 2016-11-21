@@ -1,6 +1,6 @@
 import Sync from '../../templates/lively-sync.js';
 import {expect} from '../../node_modules/chai/chai.js';
-import {loadComponent} from './templates-fixture.js';
+import {testWorld, loadComponent} from './templates-fixture.js';
 
 window.expect = expect;
 System.import(lively4url + '/node_modules/chai/chai.js').then( m => window.expect = m.expect);
@@ -14,13 +14,13 @@ describe("File Browser Tool",  function() {
     loadComponent(templateName)
       .then(c => {that = c; done()})
       .catch((e) => {
-        conosole.log("could not create " + templateName)
-        done(e)
+        conosole.log("could not create " + templateName);
+        done(e);
       });
   });
 
   it("should visit an url when setURL", function(done) {
-    var expectedURL ="https://lively4/sys/" 
+    var expectedURL ="https://lively4/sys/" ;
     that.setURL(expectedURL).then(() => {
         expect(that.getURL().toString()).to.be.equal(expectedURL);
         done();
@@ -28,6 +28,11 @@ describe("File Browser Tool",  function() {
       .catch(e => done(e));
   });
   
+  
+  after("cleanup", function() {
+    testWorld().innerHTML = "";
+  });
 
+  
 });
 

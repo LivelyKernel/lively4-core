@@ -1,6 +1,6 @@
 import Sync from '../../templates/lively-sync.js'
 import {expect} from '../../node_modules/chai/chai.js'
-import {loadComponent} from './templates-fixture.js'
+import {testWorld, loadComponent} from './templates-fixture.js'
 
 describe("Sync Tool",  function(){
   var that
@@ -14,13 +14,14 @@ describe("Sync Tool",  function(){
   })
   
   it("should load stored value", async () => {
-    
-    
     await that.storeValue("test_tmp_key", "hello");
     expect(await that.loadValue("test_tmp_key")).to.be.equal("hello");
   })
   
   
+  after("cleanup", function() {
+    testWorld().innerHTML = "";
+  });
 })
 
 
