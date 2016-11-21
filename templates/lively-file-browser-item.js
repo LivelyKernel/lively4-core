@@ -3,19 +3,26 @@ import Morph from "./Morph.js"
 export default class FileBrowserItem extends Morph {
   set name(value) {
     this.get('#item-name').innerHTML = value
+    if (value.match(/\.(md)|(txt)$/))
+      this._setIcon('fa-file-text-o')
+    if (value.match(/\.(html)|(js)|(json)$/))
+      this._setIcon('fa-file-code-o')
+    if (value.match(/\.(mkv)|(mov)|(mp4)$/))
+      this._setIcon('fa-film')
+    if (value.match(/\.(mp3)$/))
+      this._setIcon('fa-audio')
+
   }
 
   set type(value) {
-    // this.classList.remove("class-type")
-
     switch(value) {
       case 'directory':
-        this._setIcon('fa-folder-o')
-        // this.classList.add("class-type")
+        this._setIcon('fa-folder')
         break
       default:
         this._setIcon('fa-file-o')
     }
+
   }
 
   _setIcon(iconClass) {
