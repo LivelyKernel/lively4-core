@@ -579,8 +579,8 @@ export default class Lively {
       lively.notify("unloading Lively is not supported yet! Please reload page....");
   }
 
-  static updateTemplate(html) {
-    var tagName = components.reloadComponent(html);
+  static async updateTemplate(html) {
+    var tagName = await components.reloadComponent(html);
     if (!tagName) return;
 
     _.each($(tagName), function(oldInstance) {

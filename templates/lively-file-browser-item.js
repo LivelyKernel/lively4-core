@@ -6,9 +6,12 @@ export default class FileBrowserItem extends Morph {
   }
 
   set type(value) {
+    // this.classList.remove("class-type")
+
     switch(value) {
       case 'directory':
         this._setIcon('fa-folder-o')
+        // this.classList.add("class-type")
         break
       default:
         this._setIcon('fa-file-o')

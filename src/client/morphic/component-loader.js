@@ -358,6 +358,7 @@ export default class ComponentLoader {
     if (!name) return;
     var templateClone = document.importNode(template.content, true);
     lively.components.templates[name] = templateClone;
-    return name;
+    
+    return lively.fillTemplateStyles(templateClone, "source: " + componentName).then( () => name);
   }
 }
