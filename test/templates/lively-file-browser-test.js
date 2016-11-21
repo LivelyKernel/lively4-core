@@ -10,13 +10,8 @@ describe("File Browser Tool",  function() {
   var that;
   before("load", function(done){
     this.timeout(35000);
-    var templateName = "lively-file-browser";
-    loadComponent(templateName)
-      .then(c => {that = c; done()})
-      .catch((e) => {
-        conosole.log("could not create " + templateName);
-        done(e);
-      });
+    var templateName = "lively-file-browser"
+    loadComponent(templateName).then(c => {that = c; done()}).catch(e => done(e));
   });
 
   it("should visit an url when setURL", function(done) {
@@ -27,12 +22,9 @@ describe("File Browser Tool",  function() {
       })
       .catch(e => done(e));
   });
-  
-  
+
   after("cleanup", function() {
     testWorld().innerHTML = "";
   });
-
-  
 });
 

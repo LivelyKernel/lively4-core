@@ -10,7 +10,8 @@ describe("Container Tool",  function() {
   var that;
   before("load", function(done){
     this.timeout(35000);
-    loadComponent("lively-container").then(c => {that = c; done()});
+    var templateName = "lively-container"
+    loadComponent(templateName).then(c => {that = c; done()}).catch(e => done(e));
   });
 
   it("should visit an url when setPath", function(done) {
