@@ -26,7 +26,7 @@ describe("Container Tool",  function() {
     that.setPath(url).then(() => {
       var fileBrowser = that.getContentRoot().querySelector("lively-file-browser");
       expect(fileBrowser).to.be.an('object');
-      expect(fileBrowser.path).to.be.an(url);
+      expect(fileBrowser.path).to.be.equal(url);
       
       done();
     })
