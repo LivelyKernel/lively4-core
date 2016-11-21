@@ -780,7 +780,7 @@ export default class Container extends Morph {
         this.sourceContent = content;
         if (render) return this.appendLivelyMD(content);
       } else if (format.match(/(png)|(jpe?g)/)) {
-        if (render) return this.appendHtml("<img src='" + url +"'>");
+        if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + url +"'>");
       } else if (format == "pdf") {
         if (render) return this.appendHtml('<object style="width:21cm;height:29cm" data="'
           + url +'" type="application/pdf"></object>');
