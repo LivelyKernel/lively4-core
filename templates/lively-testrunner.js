@@ -101,7 +101,7 @@ export default class TestRunner extends HTMLDivElement {
     await this.loadTests();
     this.runTests();
   }
-  
+  //  window.history.pushState({ mochastate: true }, '',        window.location);
   fixHTML() {
     var self = this;
     this.mochadiv.querySelectorAll(".replay").forEach(ea => {

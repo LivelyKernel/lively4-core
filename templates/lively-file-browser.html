@@ -1,6 +1,7 @@
 <link rel="import" href="../templates/lively-file-browser-item.html" />
-<template id="lively-file-browser">
+<template id="lively-file-browser" data-class="LivelyFileBrowser">
   <style data-src="/templates/livelystyle.css"></style>
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style>
     * {
       box-sizing: border-box;
@@ -163,171 +164,17 @@
       <div class="group fluid">
         <input name="location" id="location" />
       </div>
+      <!--
       <div class="group">
         <button id="prefs">
           <i class="fa fa-cog" aria-hidden="true"></i>
         </button>
       </div>
+      -->
     </nav>
     <div id="contents"></div>
     <div id="error"></div>
   </div>
 </template>
+<script class="registrationScript">lively.registerTemplate()</script>
 
-<script>
-  (function() {
-    'use strict';
-
-    class FileBrowser extends HTMLElement {
-      initialize() {
-        if (!this._path) {
-          // initialize is called after the created callback was invoked, which
-          // is why path might be already set
-          this.path = '/';
-        }
-
-        let location = this._query('#location')
-        location.addEventListener('keypress', (event) => {
-          if(event.keyCode !== 13)
-            return
-
-          this.path = event.target.value
-        })
-
-        this._query('#up').addEventListener('click', (event) => {
-          event.preventDefault()
-          this.path = this.path + '/..'
-        })
-
-        this._query('#home').addEventListener('click', (event) => {
-          event.preventDefault()
-          this.path = '/'
-        })
-        this.addEventListener('file-select', (event) => {
-          if (this.mainAction) {
-            this.mainAction(event.file.url);
-          } else {
-            lively.openFile(event.file.url)
-          }
-        })
-      }
-
-      set path(value) {
-        let source = value.split(/\/+/).filter((str) => str.length > 0)
-        let target = []
-
-        if(value.charAt(0) !== '/')
-          target = target.concat(this._path)
-
-        for(let token of source) {
-          if(token === '..') {
-            target.pop()
-          } else if(target !== '' && target !== '.') {
-            target.push(token)
-          }
-        }
-
-        this._path = target
-        this._update()
-      }
-
-      setMainAction(cb) {
-        this.mainAction = cb;
-      }
-
-      get path() {
-        return '/' + this._path.join('/')
-      }
-
-      get url() {
-        return 'https://lively4' + this.path
-      }
-
-      _query(selector) {
-        return this.shadowRoot.querySelector(selector)
-      }
-
-      _update() {
-        let path = this.path
-
-        this._query('#location').value = path
-        this._query('#error').classList.remove('visible')
-
-        fetch('https://lively4' + path, {method: 'OPTIONS'}).then((response) => {
-          if(response.ok) {
-            return response.json()
-          } else {
-            return response.json()
-              .catch((err) => {
-                throw new Error(response.statusText + ' (' + response.status + ')')
-              })
-              .then((json) => {
-                if(json['message'])
-                  throw new Error(json['message'])
-                else
-                  throw new Error(response.statusText + ' (' + response.status + ')')
-              })
-          }
-        }).then((json) => {
-          if(Array.isArray(json['contents']) && json['type'] === 'directory') {
-            return json
-          } else {
-            console.log(json)
-            throw new Error('Invalid JSON response content. Not a directory?')
-          }
-        }).then((json) => {
-          let contents = this.shadowRoot.querySelector('#contents')
-
-          if(path !== this.path) {
-            console.log('Path already changed. Skip update.')
-            return
-          }
-
-          while(contents.firstChild)
-            contents.removeChild(contents.firstChild)
-
-          json['contents'].forEach((file) => {
-            let item = document.createElement('lively-file-browser-item')
-
-            item.type = file['type']
-            item.name = file['name']
-            item.size = file['size']
-
-            item.addEventListener('click', (event) => {
-              if(file['type'] === 'directory') {
-                this.path = this.path + '/' + file['name']
-              } else {
-                let event = new Event("file-select")
-                event.file = Object.assign({}, file, {
-                  path: path + '/' + file['name'],
-                  url: new URL('https://lively4' + path + '/' + file['name'])
-                })
-
-                this.dispatchEvent(event)
-              }
-            })
-
-            contents.appendChild(item)
-          })
-        }).then(() => {
-          // remove old errors
-          this._query('#error').innerHTML = ""
-          this._query('#error').classList.remove('visible')
-        }).catch((err) => {
-          console.error(err)
-          this._query('#error').innerHTML = err.toString()
-          this._query('#error').classList.add('visible')
-        })
-      }
-    }
-
-    let template = document.currentScript.ownerDocument.querySelector('#lively-file-browser');
-    let clone    = document.importNode(template.content, true);
-
-    System
-      .import(lively4url + '/src/client/morphic/component-loader.js')
-      .then((Loader) => {
-        Loader.register('lively-file-browser', clone, FileBrowser.prototype);
-      })
-  })();
-</script>

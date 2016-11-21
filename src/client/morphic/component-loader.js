@@ -77,7 +77,7 @@ export default class ComponentLoader {
 
     // load any unknown elements, which this component might introduce
     ComponentLoader.loadUnresolved(object, true, "onCreated " + componentName).then((args) => {
-      lively.fillTemplateStyles(object.shadowRoot, "source: " + componentName).then(() => {
+      // lively.fillTemplateStyles(object.shadowRoot, "source: " + componentName).then(() => {
         // call the initialize script, if it exists
       
         if (typeof object.initialize === "function") {
@@ -87,7 +87,7 @@ export default class ComponentLoader {
         // console.log("Identitity: " + (window.LastRegistered === object))
         
         object.dispatchEvent(new Event("created"));
-      })
+      // })
     }).catch( e => {
       console.error(e); 
       return e
@@ -121,43 +121,46 @@ export default class ComponentLoader {
     this.templates[componentName] = template;
     this.prototypes[componentName] = proto;
     this.proxies[componentName] = Object.create(proto) // not changeable
+  
+    lively.fillTemplateStyles(template, "source: " + componentName).then( () => {
 
-
-    // FOR DEBUGGING
-    // if (!window.createdCompontents)
-    //   window.createdCompontents = {}
-    // window.createdCompontents[componentName] = []
-
-    // #Mystery #Debugging #ExperienceReport
-    // Task was to figure out why the created callback is called several times when loading the
-    // componen for the first time? E.g 5 ace editors for the container, where 2 are actually needed
-    // maybe they are also called for the template documents that we store?
-    // e.g. lively-editor (+ 1 ace + lively-version (+1 ace)) + lively-version (1 ace)
-    // that would actually account for the missing three instances
-    // It is Saturday night... past midnight and I finnally have at least an hypothesis, 
-    // where I was debugging in the dark the last 3 hours.
-    // I got burned so hard by the "created" event that was thrown at me even if not myself 
-    // was created but if a child of mine was created too... and we did not expected such behavior
-    // that this time I wanted to find out what was going on here. Even though it seemed to 
-    // be not a problem
-    
-    this.proxies[componentName].createdCallback = function() {
-      // window.createdCompontents[componentName].push(this)  
-      // console.log("[components] call createdCallback for " + componentName, this)
-      ComponentLoader.onCreatedCallback(this, componentName, this)
-    }
-    this.proxies[componentName].attachedCallback = function() {
-      ComponentLoader.onAttachedCallback(this, componentName)
-    };
-    this.proxies[componentName].detachedCallback = function() {
-       ComponentLoader.onDetachedCallback(this, componentName)
-    };
-
-    // don't store it just in a lexical scope, but make it available for runtime development
-
-    document.registerElement(componentName, {
-      prototype: this.proxies[componentName]
-    });
+  
+      // FOR DEBUGGING
+      // if (!window.createdCompontents)
+      //   window.createdCompontents = {}
+      // window.createdCompontents[componentName] = []
+  
+      // #Mystery #Debugging #ExperienceReport
+      // Task was to figure out why the created callback is called several times when loading the
+      // componen for the first time? E.g 5 ace editors for the container, where 2 are actually needed
+      // maybe they are also called for the template documents that we store?
+      // e.g. lively-editor (+ 1 ace + lively-version (+1 ace)) + lively-version (1 ace)
+      // that would actually account for the missing three instances
+      // It is Saturday night... past midnight and I finnally have at least an hypothesis, 
+      // where I was debugging in the dark the last 3 hours.
+      // I got burned so hard by the "created" event that was thrown at me even if not myself 
+      // was created but if a child of mine was created too... and we did not expected such behavior
+      // that this time I wanted to find out what was going on here. Even though it seemed to 
+      // be not a problem
+      
+      this.proxies[componentName].createdCallback = function() {
+        // window.createdCompontents[componentName].push(this)  
+        // console.log("[components] call createdCallback for " + componentName, this)
+        ComponentLoader.onCreatedCallback(this, componentName, this)
+      }
+      this.proxies[componentName].attachedCallback = function() {
+        ComponentLoader.onAttachedCallback(this, componentName)
+      };
+      this.proxies[componentName].detachedCallback = function() {
+         ComponentLoader.onDetachedCallback(this, componentName)
+      };
+  
+      // don't store it just in a lexical scope, but make it available for runtime development
+  
+      document.registerElement(componentName, {
+        prototype: this.proxies[componentName]
+      });
+    })
   }
 
   // this function creates the bootstrap script for the component templates

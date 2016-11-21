@@ -148,6 +148,37 @@ export default class Container extends Morph {
         this.loadingFailed(url.toString().replace(/.*\//,""), error);
       });
   }
+
+  loadTestModule(url) {
+    console.group("run test: " + this.getPath());
+    var testRunner = document.body.querySelector("lively-testrunner");
+    if (testRunner) testRunner.clearTests();
+    var module = lively.modules.module(url.toString());
+    if (module) module.reload();
+    System.import(url.toString()).then( () => {
+      if (testRunner)  testRunner.runTests();
+      console.groupEnd();
+    });
+  }
+  
+  loadModule(url) {
+    lively.reloadModule("" + url).then(module => {
+      lively.notify("Scripting","Module " + moduleName + " reloaded!", 3, null, "green");
+      if (this.getPath().match(/templates\/.*js/)) {
+        var templateURL = this.getPath().replace(/\.js$/,".html");
+        try {
+          console.log("[container] update template " + templateURL);
+          lively.files.loadFile(templateURL).then( sourceCode => 
+            lively.updateTemplate(sourceCode));
+        } catch(e) {
+          lively.notify("[container] could not update template " + templateURL, ""+e);
+        }
+      }
+      this.resetLoadingFailed();
+    }, err => {
+      this.loadingFailed(moduleName, err);
+    });
+  }
   
   resetLoadingFailed() {
     // that.resetLoadingFailed()
@@ -317,32 +348,9 @@ export default class Container extends Morph {
         if (this.lastLoadingFailed) {
           this.reloadModule(url); // use our own mechanism...
         } else if (this.getPath().match(/test\/.*js/)) {
-          console.group("run test: " + this.getPath());
-          var testRunner = document.body.querySelector("lively-testrunner");
-          if (testRunner) testRunner.clearTests();
-          var module = lively.modules.module(url.toString());
-          if (module) module.reload();
-          System.import(url.toString()).then( () => {
-            if (testRunner)  testRunner.runTests();
-            console.groupEnd()
-          });
+          this.loadTestModule(url)
         } else if ((this.get("#live").checked && !this.get("#live").disabled)) {
-          lively.reloadModule("" + url).then(module => {
-            lively.notify("Scripting","Module " + moduleName + " reloaded!", 3, null, "green");
-            if (this.getPath().match(/templates\/.*js/)) {
-              var templateURL = this.getPath().replace(/\.js$/,".html");
-              try {
-                console.log("[container] update template " + templateURL);
-                lively.files.loadFile(templateURL).then( sourceCode => 
-                  lively.updateTemplate(sourceCode));
-              } catch(e) {
-                lively.notify("[container] could not update template " + templateURL, ""+e);
-              }
-            }
-            this.resetLoadingFailed();
-          }, err => {
-            this.loadingFailed(moduleName, err);
-          });
+          this.loadModule(url)
         }
       }
     }).then(() => this.showNavbar());
@@ -672,19 +680,44 @@ export default class Container extends Morph {
       // return Promise.resolve(""); // DISABLE Listings
       
       this.sourceContent = content;
-      var html = "<div class='table-container'>"+
-        "<table class='directory'>"+
-        "<tr><th></th><th>name</th><th>size</th></tr>" +
-        // "<li><a href='../'>..</a></li>" +
-        _.sortBy(files, ea => ea.name)
-          .filter(ea => !ea.name.match(/^\./))
-          .map( ea =>
-          // "<li><a href='"+ea.name + (ea.type == "directory" ? "/" : "")+"''>" +ea.name+ "</a></li>"
-          "<tr><td>"+this.thumbnailFor(url, ea.name)+"</td><td>" + ea.name + '</td><td>' + ea.size+ '</td><td>'+this.linksForFile(url, ea.name)+'</td></tr>'
-          ).join("\n")+"</table></div>";
+      
+      var fileBrowser = document.createElement("lively-file-browser")
+      /* DEV
+        fileBrowser = that.querySelector("lively-file-browser")
+        url = "https://lively-kernel.org/lively4/"
+       */
       if (render) {
-        this.appendHtml(html);
+        return lively.components.openIn(this.getContentRoot(), fileBrowser).then( () => {
+          lively.notify("set url " + url)
+          fileBrowser.hideToolbar()
+          // override browsing file and direcotry
+          fileBrowser.setMainAction((newURL) => {
+            lively.notify("go " + newURL)
+            this.followPath(newURL.toString())
+          })
+          fileBrowser.setMainDirectoryAction((newURL) => {
+            lively.notify("go dir " + newURL)
+            this.followPath(newURL.toString() + "/")
+          })
+
+          fileBrowser.setURL(url)
+        })
+      } else {
+        return 
       }
+      // var html = "<div class='table-container'>"+
+      //   "<table class='directory'>"+
+      //   "<tr><th></th><th>name</th><th>size</th></tr>" +
+      //   // "<li><a href='../'>..</a></li>" +
+      //   _.sortBy(files, ea => ea.name)
+      //     .filter(ea => !ea.name.match(/^\./))
+      //     .map( ea =>
+      //     // "<li><a href='"+ea.name + (ea.type == "directory" ? "/" : "")+"''>" +ea.name+ "</a></li>"
+      //     "<tr><td>"+this.thumbnailFor(url, ea.name)+"</td><td>" + ea.name + '</td><td>' + ea.size+ '</td><td>'+this.linksForFile(url, ea.name)+'</td></tr>'
+      //     ).join("\n")+"</table></div>";
+      // if (render) {
+      //   this.appendHtml(html);
+      // }
     }).catch(function(err){
       console.log("Error: ", err);
       lively.notify("ERROR: Could not set path: " + url,  "because of: ",  err);

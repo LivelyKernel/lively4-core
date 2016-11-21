@@ -1,5 +1,6 @@
-<template id="lively-file-browser-item">
+<template id="lively-file-browser-item" data-class="LivelyFileBrowserItem">
   <style data-src="/src/external/font-awesome/css/font-awesome.min.css"></style>
+  
   <style>
     #container {
       text-align: center;
@@ -23,47 +24,4 @@
     <div id="item-name"></div>
   </div>
 </template>
-
-<script>
-  (function() {
-    'use strict';
-
-    const doc = document.currentScript.ownerDocument
-
-    class FileBrowserItem extends HTMLElement {
-      set name(value) {
-        let node = this._query('#item-name')
-        if(node)
-          node.innerHTML = value
-      }
-
-      set type(value) {
-        switch(value) {
-          case 'directory':
-            this._setIcon('fa-folder-o')
-            break
-          default:
-            this._setIcon('fa-file-o')
-        }
-      }
-
-      _setIcon(iconClass) {
-        let node = this._query('#item-icon')
-        node.classList.add(iconClass);
-      }
-
-      _query(selector) {
-        return this.shadowRoot.querySelector(selector)
-      }
-    }
-
-    let template = document.currentScript.ownerDocument.querySelector('#lively-file-browser-item');
-    let clone    = document.importNode(template.content, true);
-
-    System
-      .import(lively4url + '/src/client/morphic/component-loader.js')
-      .then((Loader) => {
-        Loader.register('lively-file-browser-item', clone, FileBrowserItem.prototype);
-      })
-  })();
-</script>
+<script class="registrationScript">lively.registerTemplate()</script>
