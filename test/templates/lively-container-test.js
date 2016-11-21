@@ -1,26 +1,44 @@
-import Sync from '../../templates/lively-sync.js'
-import {expect} from '../../node_modules/chai/chai.js'
-import {loadComponent} from './templates-fixture.js'
+import Sync from '../../templates/lively-sync.js';
+import {expect} from '../../node_modules/chai/chai.js';
+import {loadComponent} from './templates-fixture.js';
 
-System.import(lively4url + '/node_modules/chai/chai.js').then( m => window.expect = m.expect)
+window.expect = expect;
+// System.import(lively4url + '/node_modules/chai/chai.js').then( m => window.expect = m.expect);
 
 describe("Container Tool",  function() {
 
-  var that
+  var that;
   before("load", function(done){
     this.timeout(35000);
-    loadComponent("lively-container").then(c => {that = c; done()})
-  })
+    loadComponent("lively-container").then(c => {that = c; done()});
+  });
 
-  xit("should setPath an url", function(done) {
-    var expectedUrl = "https://lively4/sys/mounts"
 
+  it("should setPath an url", function(done) {
+    this.timeout(35000);
+    var expectedUrl = "https://lively4/sys/mounts";
     that.setPath(expectedUrl)
       .then(() => that.getURL())
       .then(url => {
         expect("" + url).to.be.equal(expectedUrl);
-        expect(that.shadowRoot.querySelector("#container-content").textContent).match(/\"path\": \"\/\"/)
+        expect(that.getContentRoot().textContent).match(/\"path\": \"\/\"/);
       })
       .then(done)
-  })
-})
+      .catch(e => done(e))
+  });
+  
+  it("should open a filebrowser for a dir", function(done) {
+    var expectedUrl = "https://lively4/sys/";
+
+    that.setPath(expectedUrl)
+      .then(() => that.getURL())
+      .then(url => {
+        expect(that.shadowRoot.querySelector("#container-content").textContent).match(/\"path\": \"\/file-browser/);
+      })
+      .then(done);
+  });
+});
+
+
+console.log("load lively-container-test");
+

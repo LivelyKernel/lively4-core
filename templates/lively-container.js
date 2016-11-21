@@ -309,14 +309,23 @@ export default class Container extends Morph {
           console.log("update container content: " + ea);
           ea.setPath(ea.getURL() + "");
         }  
-        
       });
-      
+    
       var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/);
       if (moduleName) {
         moduleName = moduleName[1];
         if (this.lastLoadingFailed) {
           this.reloadModule(url); // use our own mechanism...
+        } else if (this.getPath().match(/test\/.*js/)) {
+          console.group("run test: " + this.getPath());
+          var testRunner = document.body.querySelector("lively-testrunner");
+          if (testRunner) testRunner.clearTests();
+          var module = lively.modules.module(url.toString());
+          if (module) module.reload();
+          System.import(url.toString()).then( () => {
+            if (testRunner)  testRunner.runTests();
+            console.groupEnd()
+          });
         } else if ((this.get("#live").checked && !this.get("#live").disabled)) {
           lively.reloadModule("" + url).then(module => {
             lively.notify("Scripting","Module " + moduleName + " reloaded!", 3, null, "green");

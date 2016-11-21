@@ -66,10 +66,13 @@ export default class TestRunner extends HTMLDivElement {
   // it('sds',()=>{})
   // window.it
   
-  async onRunButton() {
+  clearTests() {
     mocha.suite.suites.length = 0; // hihi #Holzhammer
-    this.querySelector("#mocha").innerHTML= "";
-    await Promise.all(
+    this.querySelector("#mocha").innerHTML= "";    
+  }
+  
+  async loadTests() {
+    return Promise.all(
       (await this.findTestFiles()).map((url) => {
         var name = url.replace(/.*\//,"").replace(/\/\.[^\.]*/,"");
         
@@ -80,7 +83,9 @@ export default class TestRunner extends HTMLDivElement {
         return System.import(url)
         // mocha.addFile(url.replace(/.*\//,"").replace(/\..*/,""))
       }));
-    console.log("RUN");
+  }
+  
+  runTests() {
     var self = this;
     mocha.run(failures => {
       if (self.prevState) {
@@ -89,6 +94,12 @@ export default class TestRunner extends HTMLDivElement {
       }
       self.fixHTML();
     });
+  }
+  
+  async onRunButton() {
+    this.clearTests();
+    await this.loadTests();
+    this.runTests();
   }
   
   fixHTML() {
