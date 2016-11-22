@@ -3,25 +3,25 @@
  */
 
 import { Base, Stat, StatNotFoundError, File, FileNotFoundError, IsDirectoryError } from './base.js'
-import * as util from '../util.js'
+import * as util from '../util.js';
 
 export default class Filesystem extends Base {
   constructor(path, options) {
-    super('googledrive', path, options)
+    super('googledrive', path, options);
 
     if(options.token) {
-      this.token = options.token
+      this.token = options.token;
     } else {
-      throw new Error("[googledrive] bearer auth token required")
+      throw new Error("[googledrive] bearer auth token required");
     }
 
     if(options.subfolder) {
-      this.subfolder = options.subfolder
+      this.subfolder = options.subfolder;
       if (this.subfolder[0] != '/') {
-        this.subfolder = '/' + this.subfolder
+        this.subfolder = '/' + this.subfolder;
       }
     } else {
-      this.subfolder = ''
+      this.subfolder = '';
     }
   }
 
@@ -41,7 +41,7 @@ export default class Filesystem extends Base {
         "size": 0
       }))
 
-    return Stat(true, items, ['GET', 'OPTIONS'])
+    return new Stat(true, items, ['GET', 'OPTIONS'])
   }
 
   async read(urlString) {

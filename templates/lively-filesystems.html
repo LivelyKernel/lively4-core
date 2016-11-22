@@ -1,4 +1,4 @@
-<template id="lively-filesystems">
+<template id="lively-filesystems" data-class="LivelyFilesystems">
     <style data-src="/templates/livelystyle.css"></style>
     <style>
     .container {
@@ -90,6 +90,10 @@
       flex: 0.3
     }
 
+    .line {
+      min-height: 20px;
+    } 
+
     </style>
     <div class="container">
         <ol id="listOfMountPoints"></ol>
@@ -98,325 +102,31 @@
         </p>
       <h3>Github  
         <button class="logout" id="githubLogoutButton">logout</button></h3>
-      <p>
+      <p class="line">
         repo: <input id="githubRepo" value="LivelyKernel/lively4-core" />
         branch: <input id="githubBranch" value="gh-pages" />
         to: <input id="githubMount" value="/github" />
         <button class="mount" id="githubLoginButton">mount</button>
       </p>
       <h3>Dropbox  <button class="logout" id="dropboxLogoutButton">logout</button></h3>
-      <p>
-        
-       
+      <p class="line">
         from: <input id="dropboxSubfolder" value="/Lively" />
         to: <input id="dropboxMountPath" value="/dropbox" />
         <button class="mount" id="dropboxLoginButton">mount</button>
       </p>
       <h3>Google Drive  <button class="logout" id="googledriveLogoutButton">logout</button></h3>
-      <p>
+      <p class="line">
         from: <input id="googledriveSubfolder" value="/lively4test" />
         to: <input id="googledriveMountPath" value="/googledrive" />
         <button class="mount" id="googledriveLoginButton">mount</button>
       </p>
       <h3>HTTP </h3>
-      <p>
+      <p class="line">
         from: <input id="httpUrl" value="https://lively-kernel.org/lively4/lively4-core" />
         to: <input id="httpMountPath" value="/http" />
         <button class="mount" id="httpMountButton">mount</button>
       </p>
      
     </div>
-
-    <script type="lively4script" data-name="initialize">
-    () => {
-      var container = $(this.shadowRoot).find(".container")[0];
-
-      this.windowTitle = "Lively Mounts"
-      // #TODO refactor to "connections"
-
-      $(this.getSubmorph('#githubLoginButton')).click(() => {
-        this.loginGitHub()})
-      $(this.getSubmorph('#githubLogoutButton')).click(() => {
-        this.logoutGitHub()})
-
-      $(this.getSubmorph('#dropboxLoginButton')).click(() => {
-        this.loginDropbox()})
-      $(this.getSubmorph('#dropboxLogoutButton')).click(() => {
-        this.logoutDropbox()})
-
-      $(this.getSubmorph('#googledriveLoginButton')).click(() => {
-        this.loginGoogledrive()})
-      $(this.getSubmorph('#googledriveLogoutButton')).click(() => {
-        this.logoutGoogledrive()})
-
-      $(this.getSubmorph('#httpMountButton')).click(() => {
-        this.mountHttp()})
-
-      $(this.getSubmorph('#updateMountList')).click(() => {
-        this.updateMountList()})
-
-      this.updateMountList()
-
-      container.dispatchEvent(new Event("initialized"))
-    }
-    </script>
-    <script type="lively4script" data-name="getMountURL">
-    function() {
-      return "https://lively4/sys/fs/mount"
-    }
-    </script>
-
-    <script type="lively4script" data-name="loginGitHub">
-     function() {
-        console.log("login")
-        var mountPath = this.shadowRoot.querySelector('#githubMount').value
-        var repo = this.shadowRoot.querySelector('#githubRepo').value
-        var branch = this.shadowRoot.querySelector('#githubBranch').value
-
-        lively.authGithub.challengeForAuth(Date.now(), (token) => {
-            console.log('We are authenticated with the Token: ' + token)
-            var mountGithub = {
-              "path": mountPath,
-              "name": "github",
-              "options": {
-                "repo":  repo,
-                "branch": branch,
-                "token": token
-              }
-            }
-            console.log("mount: " + this.getMountURL())
-            $.ajax({
-              url: this.getMountURL(),
-              type: 'PUT',
-              data: JSON.stringify(mountGithub),
-              success: function(text) {
-                console.log("mounted github")
-              },
-              error: function(xhr, status, error) {
-                console.log("could not mount gitub " + error)
-              }
-            });
-        })
-      }
-    </script>
-    <script type="lively4script" data-name="logoutGitHub">
-      function(){
-        lively.authGithub.logout();
-        console.log('logged out of github')
-        var unmountGithub = {
-              "path": "/",
-              "name": "github",
-              "options": {
-                "repo": "LivelyKernel/lively4-core",
-                "branch": "gh-pages"
-                 // No token, so we mount it read-only
-              }
-            }
-            $.ajax({
-              url: this.getMountURL(),
-              type: 'PUT',
-              data: JSON.stringify(unmountGithub),
-              success: (text) => {
-                console.log("unmounted github")
-                this.updateMountList()
-              },
-              error: function(xhr, status, error) {
-                console.log("could not unmount github " + error)
-              }
-            });
-      }
-    </script>
-
-    <script type="lively4script" data-name="loginDropbox">
-     function() {
-        console.log("login dropbox")
-
-        // #FutureWork -> make object lookup look nicer
-        var mountPath = this.shadowRoot.querySelector('#dropboxMountPath').value
-        var subfolder = this.shadowRoot.querySelector('#dropboxSubfolder').value
-
-        lively.authDropbox.challengeForAuth(Date.now(), (token) => {
-            console.log('We are authenticated with the Token: ' + token)
-            var mount = {
-              "path": mountPath,
-              "name": "dropbox",
-              "options": {
-                "token": token,
-                "subfolder": subfolder
-              }
-            }
-            console.log("mount: " + this.getMountURL())
-            $.ajax({
-              url: this.getMountURL(),
-              type: 'PUT',
-              data: JSON.stringify(mount),
-              success: (text) => {
-                console.log("mounted dropbox")
-                this.updateMountList()
-              },
-              error: function(xhr, status, error) {
-                console.log("could not mount dropbox " + error)
-              }
-            });
-        })
-
-}    </script>
-    <script type="lively4script" data-name="logoutDropbox">
-      function(){
-        lively.authDropbox.logout();
-        console.log('logged out of dropbox')
-        alert("not supprt")
-        var unmountGithub = {
-              "path": "/dropbox",
-              "name": "????",
-              "options": {
-                 // No token, so we mount it read-only
-              }
-            }
-            $.ajax({
-              url: this.getMountURL(),
-              type: 'PUT',
-              data: JSON.stringify(unmountGithub),
-              success: function(text) {
-                console.log("unmounted github")
-              },
-              error: function(xhr, status, error) {
-                console.log("could not unmount gitub " + error)
-              }
-            });
-      }
-    </script>
-
-    <script type="lively4script" data-name="loginGoogledrive">
-      function() {
-        console.log("login googledrive")
-
-        var mountPath = this.shadowRoot.querySelector('#googledriveMountPath').value
-        var subfolder = this.shadowRoot.querySelector('#googledriveSubfolder').value
-
-        lively.authGoogledrive.challengeForAuth(Date.now(), (token) => {
-            console.log('We are authenticated with the Token: ' + token)
-            var mount = {
-              "path": mountPath,
-              "name": "googledrive",
-              "options": {
-                "token": token,
-                "subfolder": subfolder
-              }
-            }
-            console.log("mount: " + this.getMountURL())
-            $.ajax({
-              url: this.getMountURL(),
-              type: 'PUT',
-              data: JSON.stringify(mount),
-              success: (text) => {
-                console.log("mounted googledrive")
-                this.updateMountList()
-              },
-              error: function(xhr, status, error) {
-                console.log("could not mount googledrive " + error)
-              }
-            });
-        })
-     }    
-    </script>
-    <script type="lively4script" data-name="logoutGoogledrive">
-      function(){
-        lively.authGoogledrive.logout();
-        console.log('logged out of googledrive')
-        alert("not supported")
-      }
-    </script>
-    
-    <script type="lively4script" data-name="mountHttp">
-     function() {
-        console.log("mount http")
-
-        var mountPath = this.shadowRoot.querySelector('#httpMountPath').value
-        var httpUrl = this.shadowRoot.querySelector('#httpUrl').value
-
-        var mount = {
-          "path": mountPath,
-          "name": "http",
-          "options": {
-            "base": httpUrl
-          }
-        }
-        
-        $.ajax({
-          url: this.getMountURL(),
-          type: 'PUT',
-          data: JSON.stringify(mount),
-          success: (text) => {
-            console.log("mounted http")
-            this.updateMountList()
-          },
-          error: function(xhr, status, error) {
-            console.log("could not mount http " + error)
-          }
-        });
-
-     }
-    </script>
-    
-    <script type="lively4script" data-name="unmountPath">
-    function(path) {
-      console.log("unmountPath: " + path)
-       $.ajax({
-              url: "https://lively4/sys/fs/unmount",
-              type: 'PUT',
-              data: JSON.stringify({path: path}),
-              success: (text) => {
-                console.log("unmounted path: " + path)
-                this.updateMountList()
-              },
-              error: function(xhr, status, error) {
-                alert("could not unmount path: "  + path, error)
-              }
-            });
-    }
-    </script>
-    
-    <script type="lively4script" data-name="updateMountList">
-    function() {
-      $.ajax({
-        url: "https://lively4/sys/mounts",
-        type: 'GET',
-        success: (text) => {
-          console.log("show mounts...")
-          var list = this.shadowRoot.querySelector('#listOfMountPoints')
-          var mounts = JSON.parse(text)
-          console.log(mounts)
-
-          list.innerHTML = ""
-          mounts.forEach(ea => {
-            let listItem = document.createElement("li")
-            listItem.innerHTML = ea.path + " (" + ea.name +") "
-
-            let button = document.createElement("button")
-            button.innerHTML="unmount"
-            button.onclick = () => { this.unmountPath(ea.path)}
-            button.setAttribute("class","unmount")
-            listItem.appendChild(button)
-
-            let browseButton = document.createElement("button")
-            browseButton.innerHTML="browse"
-            browseButton.onclick = () => {
-              var browser = lively.components.createComponent("lively-file-browser");
-              lively.components.openInWindow(browser).then(() => {
-                browser.path = ea.path
-              });
-            }
-            browseButton.setAttribute("class","browse")
-            listItem.appendChild(browseButton)
-            list.appendChild(listItem)
-          })
-        },
-        error: function(xhr, status, error) {
-          console.log("could not get list of mounts: " + error)
-        }
-      });
-    }
-    </script>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

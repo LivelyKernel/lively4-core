@@ -57,6 +57,7 @@ export default class Filesystem extends Base {
   }
 
   async _sysFsUmount(content) {
+    console.log("umount " + content)
     let json = JSON.parse(await content)
     let path = json['path']
 
@@ -202,12 +203,12 @@ class SysDir extends Directory {
       if(node instanceof SysDir) {
         return node.resolve(rest)
       } else {
-        throw new Error('ENOTDIR')
+        throw new Error('ENOTDI could not resolve dir' + path)
       }
     } else if(node) {
       return node
     } else {
-      throw new Error('ENOTFOUND')
+      throw new Error('ENOTFOUND could not resolve ' + path)
     }
   }
 }

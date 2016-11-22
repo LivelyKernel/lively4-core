@@ -19,7 +19,7 @@ function notifyMe(title, text, cb) {
       icon: 'http://www.google.com/drive/images/drive/logo-drive.png',
       body: text,
     });
-    notification.onclick = cb
+    notification.onclick = cb;
   }
 }
 
@@ -28,8 +28,8 @@ export default class AuthGoogledrive {
 
   static onAuthenticated(windowUuid, authInfo) {
 
-  	var state = authInfo.state
-  	var token = authInfo.token
+  	var state = authInfo.state;
+  	var token = authInfo.token;
 
   	if (!state) { console.log("not state! authinfo: " + JSON.stringify(authInfo))}
   	console.log("authInfo: ", authInfo)
