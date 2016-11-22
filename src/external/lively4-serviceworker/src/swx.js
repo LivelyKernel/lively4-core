@@ -13,6 +13,7 @@ import dropboxfs from './fs/dropbox.js'
 
 import focalStorage from './external/focalStorage.js';
 
+const storagePrefix = "LivelySync_";
 
 class ServiceWorker {
   constructor() {
@@ -34,12 +35,59 @@ class ServiceWorker {
       promise = undefined
 
     if(url.hostname !== 'lively4') {
-      if (url.pathname.match(/_git\/clone/)) {
-        console.log("fetch: irgnore " + url)
-
-        return // do nothing... ?
+      if (url.hostname == location.hostname && url.pathname.match(/lively4S2/)) {
+         event.respondWith(new Promise(async (resolve, reject) => {
+          var email = await focalStorage.getItem(storagePrefix+ "githubEmail") 
+          var username = await focalStorage.getItem(storagePrefix+ "githubUsername") 
+          var token = await focalStorage.getItem(storagePrefix+ "githubToken")
+          // console.log("email: " + email + " username: " + username + " token: " + token)
+          // console.log("heimspiel: " + url);
+           
+           // we have to manually recreate a request, because you cannot modify the original
+           // see http://stackoverflow.com/questions/35420980/how-to-alter-the-headers-of-a-request
+           var options = {
+              method: request.method,
+              headers: {
+                gitusername: username,
+                gitemail: email
+              }, 
+              mode: request.mode,
+              credentials: request.credentials,
+              redirect: request.redirect 
+          }
+          if (request.method == "PUT") {
+            options.body =  await request.text()
+          }
+           
+          var req = new Request(request.url, options );
+          req.headers.set("gitusername", username);
+          req.headers.set("gitemail", email);
+          req.headers.set("gitpassword", token);
+          // console.log("username: " + req.headers.get("gitusername"));
+          
+          
+          // req = request.clone()
+          req.headers.set("gitusername", username);
+          req.headers.set("gitemail", email);
+          req.headers.set("gitpassword", token);
+          
+          // use system here to prevent recursion...
+          resolve(self.fetch(req).then(result => {
+            // console.log("got result!" + result)
+            if(result instanceof Response) {
+              return result
+            } else {
+              return new Response(result)
+            }
+          }).catch(e => {
+            console.log("fetch error: "  + e)
+            return new Response("Could not fetch " + url +", because of: " + e)
+          })) 
+        }))
+      } else {
+        // do nothing should be fine...
+        // event.respondWith(self.fetch(request));
       }
-      return fetch(request);
     } else {
       let response = this.filesystem.handle(request, url)
 
@@ -100,3 +148,5 @@ export function message(event) {
 export {
   focalStorage
 }
+
+console.log("Loaded swx.js")

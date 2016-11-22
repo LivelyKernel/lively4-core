@@ -32,7 +32,10 @@ export default class Sync extends Morph {
 
   log(s) {
     var editor = this.get("#log").editor;
-    if (editor) editor.setValue(editor.getValue() + "\n" + s);
+    if (editor) {
+      editor.setValue(editor.getValue() + "\n" + s);
+      editor.session.setScrollTop(1000000); // #TODO find scroll to bottom method in ace
+    }
   }
 
   async updateLoginStatus() {
