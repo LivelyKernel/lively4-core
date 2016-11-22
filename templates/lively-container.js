@@ -681,29 +681,28 @@ export default class Container extends Morph {
       
       this.sourceContent = content;
       
-      var fileBrowser = document.createElement("lively-file-browser")
+      var fileBrowser = document.createElement("lively-file-browser");
       /* DEV
         fileBrowser = that.querySelector("lively-file-browser")
         url = "https://lively-kernel.org/lively4/"
        */
       if (render) {
         return lively.components.openIn(this.getContentRoot(), fileBrowser).then( () => {
-          lively.notify("set url " + url)
-          fileBrowser.hideToolbar()
+          // lively.notify("set url " + url)
+          fileBrowser.hideToolbar();
           // override browsing file and direcotry
           fileBrowser.setMainAction((newURL) => {
-            lively.notify("go " + newURL)
-            this.followPath(newURL.toString())
-          })
+            // lively.notify("go " + newURL)
+            this.followPath(newURL.toString());
+          });
           fileBrowser.setMainDirectoryAction((newURL) => {
-            lively.notify("go dir " + newURL)
-            this.followPath(newURL.toString() + "/")
-          })
-
-          fileBrowser.setURL(url)
-        })
+            // lively.notify("go dir " + newURL)
+            this.followPath(newURL.toString() + "/");
+          });
+          fileBrowser.setURL(url);
+        });
       } else {
-        return 
+        return ;
       }
       // var html = "<div class='table-container'>"+
       //   "<table class='directory'>"+

@@ -35,8 +35,13 @@ class ServiceWorker {
       promise = undefined
 
     if(url.hostname !== 'lively4') {
-      if (url.hostname == location.hostname && url.pathname.match(/lively4S2/)) {
-         event.respondWith(new Promise(async (resolve, reject) => {
+      if (url.hostname == location.hostname && request.mode != 'navigate') {
+        if (url.pathname.match(/\/_git\//))  return;
+        if (url.pathname.match(/\/_search\//))  return; 
+        if (url.pathname.match(/\/_meta\//))  return; 
+        if (url.pathname.match(/lively4-serviceworker/))  return; 
+                                
+        event.respondWith(new Promise(async (resolve, reject) => {
           var email = await focalStorage.getItem(storagePrefix+ "githubEmail") 
           var username = await focalStorage.getItem(storagePrefix+ "githubUsername") 
           var token = await focalStorage.getItem(storagePrefix+ "githubToken")
@@ -47,10 +52,7 @@ class ServiceWorker {
            // see http://stackoverflow.com/questions/35420980/how-to-alter-the-headers-of-a-request
            var options = {
               method: request.method,
-              headers: {
-                gitusername: username,
-                gitemail: email
-              }, 
+              headers: new Headers(), 
               mode: request.mode,
               credentials: request.credentials,
               redirect: request.redirect 
@@ -58,18 +60,16 @@ class ServiceWorker {
           if (request.method == "PUT") {
             options.body =  await request.text()
           }
+          for (i in request.headers.entries) {
+            options.headers.set([i], request.headers.get[i]);
+          }
+          options.headers.set("gitusername", username);
+          options.headers.set("gitemail", email);
+          options.headers.set("gitpassword", token);
            
           var req = new Request(request.url, options );
-          req.headers.set("gitusername", username);
-          req.headers.set("gitemail", email);
-          req.headers.set("gitpassword", token);
+          
           // console.log("username: " + req.headers.get("gitusername"));
-          
-          
-          // req = request.clone()
-          req.headers.set("gitusername", username);
-          req.headers.set("gitemail", email);
-          req.headers.set("gitpassword", token);
           
           // use system here to prevent recursion...
           resolve(self.fetch(req).then(result => {
