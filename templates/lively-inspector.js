@@ -8,6 +8,7 @@ export default class Inspector   extends Morph {
 
   initialize() {
     lively.notify("[inspector] intialize")    
+    this.get("#editor").enableAutocompletion()
   }
 
   displayValue(value) {

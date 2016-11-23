@@ -64,7 +64,7 @@ export default class HTML {
   }
   
   static enhanceMarkdown(source) {
-    return source.replace(/([^\n#])#([A-Za-z09]+)/g,
+    return source.replace(/([ ])#([A-Za-z09]+)/g,
        "$1[#$2](javascript:lively.openSearchWidget('#$2'))");
   }
        

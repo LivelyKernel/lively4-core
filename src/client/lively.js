@@ -849,9 +849,7 @@ export default class Lively {
         comp.isSearchBrowser = true;
         comp.hideNavbar();
       }
-      return comp.followPath(url).then( () => {
-        var ace = editorComp.get("#editor").currentEditor();
-      });
+      return comp.followPath(url)
     }).then(() => {
       if (edit && pattern) {
         editorComp.asyncGet("#editor").then(livelyEditor => {

@@ -391,6 +391,9 @@ export default class Container extends Morph {
 
   clear() {
     this.getContentRoot().innerHTML = '';
+    lively.array(this.get('#container-content').childNodes)
+      .filter( ea => ea.id !== "container-root")
+      .forEach(ea => ea.remove());
     this.get('#container-editor').innerHTML = '';
   }
   
