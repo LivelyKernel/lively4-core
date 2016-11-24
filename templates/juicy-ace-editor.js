@@ -165,8 +165,8 @@ export default class AceEditor extends HTMLElement {
           try {
             var wordList = [];
           curCmd = curCmd.replace(/\.[^.]*$/,"");
-          var result = (await this.tryBoundEval(curCmd))
-          if (result.error) return []
+          var result = (await this.boundEval(curCmd, this.getDoitContext()))
+          if (result.isError) return []
           var obj = result.value;
           // console.log("COMPLETE", obj)
           wordList = lively.allProperties(obj);
