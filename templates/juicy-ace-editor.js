@@ -344,7 +344,7 @@ export default class AceEditor extends HTMLElement {
       } else {
         lively.handleError(e)
       }
-      return
+      return e
     }
     var result = resp.value
     if (printResult) {
