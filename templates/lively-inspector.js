@@ -59,7 +59,7 @@ export default class Inspector   extends Morph {
     if (node.isExpanded) {
       contentNode.innerHTML = "";
       Object.keys(obj).forEach( ea => { 
-          contentNode.appendChild(this.display(obj[ea], false, ea));
+          contentNode.appendChild(this.display(obj[ea], false, ea, obj));
       });
     }
   }
@@ -159,7 +159,7 @@ export default class Inspector   extends Morph {
 
   
   renderNode(node, obj, expanded) {
-    node.isExpanded = expanded;
+    node.isExpanded = true && expanded;
     if (obj.textContent.length < 80) {
       node.isExpanded = true;
       node.isAutoExpanded = true;
@@ -175,16 +175,18 @@ export default class Inspector   extends Morph {
     var contentNode = node.querySelector("#content");
     this.attachHandlers(node, obj);
 
+    var expandChildren = obj.livelyIsParentPlaceholder || false;
+
     if (node.isExpanded) {
       contentNode.innerHTML = "";
       if (obj instanceof Comment) {
         contentNode.innerHTML = obj.textContent.replace(/</,"&lt;").replace(/>/,"&gt;");
       }
       if (obj.shadowRoot) {
-        contentNode.appendChild(this.display(obj.shadowRoot))  ;
+        contentNode.appendChild(this.display(obj.shadowRoot, expandChildren, null, obj))  ;
       }  
       obj.childNodes.forEach( ea => { 
-        contentNode.appendChild(this.display(ea));
+        contentNode.appendChild(this.display(ea, expandChildren, null, obj));
       });
       
     }
@@ -200,16 +202,25 @@ export default class Inspector   extends Morph {
     }
   }
   
-  displayText(obj, expanded) {
+  displayText(obj, expanded, parent) {
     node = document.createElement("span");
     node.setAttribute("class","element");
     this.render(node, obj, expanded); 
     return node;
   }
     
-  displayNode(obj, expanded) {
+  displayNode(obj, expanded, parent) {
     var node;
-    if (obj.tagName) {
+     if (!parent && obj.parentElement) {
+      var tmpParent = {tagName: "...", textContent: "", childNodes: [obj], livelyIsParentPlaceholder: true }
+      node = this.displayNode(tmpParent, true, tmpParent)
+      var tagNode = node.querySelector("#tagname");
+      if (tagNode) tagNode.onclick = (evt) => {
+        this.inspect(obj.parentElement)
+      };
+      node.target = node.parentElement
+      return node
+    } else if (obj.tagName) {
       node = document.createElement("div");
       node.setAttribute("class","element tag");
     } else if (obj instanceof ShadowRoot) {
@@ -229,7 +240,7 @@ export default class Inspector   extends Morph {
   }
   
   isNode(obj) {
-    return obj instanceof HTMLElement || obj instanceof ShadowRoot || obj instanceof Comment || obj instanceof Text;
+    return obj instanceof HTMLElement ||  obj instanceof SVGElement || obj instanceof ShadowRoot || obj instanceof Comment || obj instanceof Text || (obj instanceof Object && obj.livelyIsParentPlaceholder);
   }
   
   render(node, obj, expanded) {
@@ -246,26 +257,29 @@ export default class Inspector   extends Morph {
     }
   }
   
-  display(obj, expanded, name) {
+  display(obj, expanded, name, parent) {
     // from most special to general
     if (obj instanceof Text) {
-      return this.displayText(obj, expanded);
+      return this.displayText(obj, expanded, parent);
     } else if (this.isNode(obj)) {
-      return this.displayNode(obj, expanded);
+      return this.displayNode(obj, expanded, parent);
     } else if (typeof(obj) == "object"){
-      return this.displayObject(obj, expanded, name);
+      return this.displayObject(obj, expanded, name, parent);
     } else if (typeof(obj) == "function"){
-      return this.displayFunction(obj, expanded, name);
+      return this.displayFunction(obj, expanded, name, parent);
     } else {
-      return this.displayValue(obj, expanded, name);
+      return this.displayValue(obj, expanded, name, parent);
     }
   }
 
   inspect(obj) {
     this.targetObject = obj;
     this.get("#editor").doitContext = obj;
-    this.innerHTML = "";
-    this.get("#container").appendChild(this.display(obj, true));
+    this.get("#container").innerHTML = "";
+    // special case for inspecting single dom nodes
+    var content= this.display(obj, true, null, null)
+    this.get("#container").appendChild(content);
+    return content
   }
   
   livelyMigrate(oldInstance) {
