@@ -369,7 +369,7 @@ export default class AceEditor extends HTMLElement {
   }
   
   async inspectIt(str) {
-    var result =  await this.tryBoundEval(str) 
+    var result =  await this.boundEval(str, this.getDoitContext()) 
     if (!result.isError) {
       lively.openInspector(result.value, null, str)
     }
