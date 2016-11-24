@@ -165,7 +165,9 @@ export default class AceEditor extends HTMLElement {
           try {
             var wordList = [];
           curCmd = curCmd.replace(/\.[^.]*$/,"");
-          var obj = (await this.boundEval(curCmd)).value;
+          var result = (await this.tryBoundEval(curCmd))
+          if (result.error) return []
+          var obj = result.value;
           // console.log("COMPLETE", obj)
           wordList = lively.allProperties(obj);
           // console.log("complete: " + curCmd +"\n" + wordList)
@@ -367,7 +369,7 @@ export default class AceEditor extends HTMLElement {
   }
   
   async inspectIt(str) {
-    var result =  await this.boundEval(str) 
+    var result =  await this.tryBoundEval(str) 
     if (!result.isError) {
       lively.openInspector(result.value, null, str)
     }
