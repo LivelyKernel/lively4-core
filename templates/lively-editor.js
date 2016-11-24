@@ -149,6 +149,7 @@ export default class Editor extends Morph {
   saveFile() {
     var url = this.getURL();
     console.log("save " + url + "!");
+    console.log("version " + this.latestVersion);
     var data = this.currentEditor().getValue();
     var urlString = url.toString();
     if (urlString.match(/\/$/)) {

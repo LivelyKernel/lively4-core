@@ -150,15 +150,19 @@ export default class Container extends Morph {
   }
 
   loadTestModule(url) {
-    console.group("run test: " + this.getPath());
     var testRunner = document.body.querySelector("lively-testrunner");
-    if (testRunner) testRunner.clearTests();
-    var module = lively.modules.module(url.toString());
-    if (module) module.reload();
-    System.import(url.toString()).then( () => {
-      if (testRunner)  testRunner.runTests();
-      console.groupEnd();
-    });
+    if (testRunner) {
+      console.group("run test: " + this.getPath());
+      testRunner.clearTests();
+      var module = lively.modules.module(url.toString());
+      if (module) module.reload();
+      System.import(url.toString()).then( () => {
+        testRunner.runTests();
+        console.groupEnd();
+      });
+    } else {
+      lively.notify("no rest-runner to run " + url.toString().replace(/.*\//,""))
+    }
   }
   
   loadModule(url) {

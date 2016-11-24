@@ -40,50 +40,66 @@ class ServiceWorker {
         if (url.pathname.match(/\/_search\//))  return; 
         if (url.pathname.match(/\/_meta\//))  return; 
         if (url.pathname.match(/lively4-serviceworker/))  return; 
-                                
-        event.respondWith(new Promise(async (resolve, reject) => {
-          var email = await focalStorage.getItem(storagePrefix+ "githubEmail") 
-          var username = await focalStorage.getItem(storagePrefix+ "githubUsername") 
-          var token = await focalStorage.getItem(storagePrefix+ "githubToken")
-          // console.log("email: " + email + " username: " + username + " token: " + token)
-          // console.log("heimspiel: " + url);
-           
-           // we have to manually recreate a request, because you cannot modify the original
-           // see http://stackoverflow.com/questions/35420980/how-to-alter-the-headers-of-a-request
-           var options = {
-              method: request.method,
-              headers: new Headers(), 
-              mode: request.mode,
-              credentials: request.credentials,
-              redirect: request.redirect 
-          }
-          if (request.method == "PUT") {
-            options.body =  await request.text()
-          }
-          for (i in request.headers.entries) {
-            options.headers.set([i], request.headers.get[i]);
-          }
-          options.headers.set("gitusername", username);
-          options.headers.set("gitemail", email);
-          options.headers.set("gitpassword", token);
-           
-          var req = new Request(request.url, options );
-          
-          // console.log("username: " + req.headers.get("gitusername"));
-          
-          // use system here to prevent recursion...
-          resolve(self.fetch(req).then(result => {
-            // console.log("got result!" + result)
-            if(result instanceof Response) {
-              return result
-            } else {
-              return new Response(result)
+        
+        
+        try {                        
+          event.respondWith(new Promise(async (resolve, reject) => {
+            var email = await focalStorage.getItem(storagePrefix+ "githubEmail") 
+            var username = await focalStorage.getItem(storagePrefix+ "githubUsername") 
+            var token = await focalStorage.getItem(storagePrefix+ "githubToken")
+            // console.log("email: " + email + " username: " + username + " token: " + token)
+            // console.log("heimspiel: " + url);
+             
+             // we have to manually recreate a request, because you cannot modify the original
+             // see http://stackoverflow.com/questions/35420980/how-to-alter-the-headers-of-a-request
+             var options = {
+                method: request.method,
+                headers: new Headers(), 
+                mode: request.mode,
+                credentials: request.credentials,
+                redirect: request.redirect 
             }
-          }).catch(e => {
-            console.log("fetch error: "  + e)
-            return new Response("Could not fetch " + url +", because of: " + e)
-          })) 
-        }))
+            if (request.method == "PUT") {
+              options.body =  await request.text()
+            }
+            
+            // if (request.url.toString().match("dummy")) {
+            //   debugger
+            // }
+            // for(var ea of request.headers.entries()) {console.log(ea) }
+              
+            for (var pair of request.headers.entries()) {
+              // console.log("set header " + pair[0] + " to" + pair[1])
+              options.headers.set(pair[0], pair[1]);
+            }
+            options.headers.set("gitusername", username);
+            options.headers.set("gitemail", email);
+            options.headers.set("gitpassword", token);
+             
+            var req = new Request(request.url, options );
+            
+            // console.log("username: " + req.headers.get("gitusername"));
+            
+            // use system here to prevent recursion...
+            resolve(self.fetch(req).then(result => {
+              // console.log("got result!" + result)
+              if(result instanceof Response) {
+                return result
+              } else {
+                return new Response(result)
+              }
+            }).catch(e => {
+              console.log("fetch error: "  + e)
+              return new Response("Could not fetch " + url +", because of: " + e)
+            })) 
+          }))
+        } catch(err) {
+          if (err.toString().match("The fetch event has already been responded to.")) {
+            console.log("How can we check for this before? ", err)
+          } else {
+            throw err
+          }
+        }
       } else {
         // do nothing should be fine...
         // event.respondWith(self.fetch(request));
