@@ -2,16 +2,25 @@ import Morph from './Morph.js';
 import jsPlumb from "src/external/jsPlumb.js" 
 
 
-// #TODO implement connections
 export default class Connectors extends Morph {
 
   initialize() {
+    this.addEventListener("ready", (evt) => {
+      this.onReady(evt)
+    })    
     jsPlumb.ready(() => {
       this.plumb = jsPlumb.getInstance()
-      
-      lively.notify("set blumb")
-      // #TODO delay the "created" event... somehow
+
+      this.dispatchEvent(new Event("ready"));
     })
+  }
+  
+  onReady(evt) {
+    // do nothing
+  }
+
+  ready(cb) {
+    this.addEventListener("ready", cb)
   }
 
   connect(source, target) {
