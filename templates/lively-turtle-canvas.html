@@ -5,84 +5,91 @@
   </canvas>
   
   <script type="lively4script" data-name="initialize">
-  () => {
-    this.canvas = $(this.shadowRoot).find("canvas")[0];
-    this.context = this.canvas.getContext("2d");
-    
-    this.turtle = {
-      pos: {x:0.0, y:0.0},
-      heading: 0,
-      pen: false,
+    () =>
+    {
+      this.canvas = $(this.shadowRoot).find("canvas")[0];
+      this.context = this.canvas.getContext("2d");
       
-      // drawing functions
-      left: (deg) => {this.turtle.heading = (this.turtle.heading - deg) % 360},
-      right: (deg) => {this.turtle.heading = (this.turtle.heading + deg) % 360},
+      this.turtle = {
+        pos: {x:0.0, y:0.0},
+        heading: 0,
+        pen: false,
+        
+        // drawing functions
+        left: (deg) => {this.turtle.heading = (this.turtle.heading - deg) % 360},
+        right: (deg) => {this.turtle.heading = (this.turtle.heading + deg) % 360},
+        
+        forward: (dist) =>
+        {
+          var turtle = this.turtle;
+          var pos = turtle.pos;
+          
+          var oldPos = {x:pos.x, y:pos.y};
+          
+          pos.x += dist * Math.cos(turtle.heading/180 * Math.PI);
+          pos.y += dist * Math.sin(turtle.heading/180 * Math.PI);
+          
+          if (this.turtle.pen)
+          {
+            this.context.beginPath();
+            this.context.moveTo(oldPos.x, oldPos.y);
+            this.context.lineTo(pos.x, pos.y);
+            this.context.stroke();
+          }
+        },
+        backward: (dist) => {this.turtle.forward(-dist)},
+        
+        penUp: () => {this.turtle.pen = false},
+        penDown: () => {this.turtle.pen = true},
+        
+        // direct state access
+        getState: () =>
+        {
+          return {pos: {x: this.turtle.pos.x, y: this.turtle.pos.y},
+                  heading: this.turtle.heading,
+                  pen: this.turtle.pen};
+        },
+        setState: (state) =>
+        {
+          if (state.pos != null && state.pos.x != null && state.pos.y != null)
+          {
+            this.turtle.pos = {x: state.pos.x, y: state.pos.y};
+          }
+          
+          if (state.heading != null)
+          {
+            this.turtle.heading = state.heading;
+          }
+          
+          if (state.pen != null)
+          {
+            this.turtle.pen = state.pen;
+          }
+        },
+        getPos: () =>
+        {
+          return {x: this.turtle.pos.x, y: this.turtle.pos.y};
+        },
+        setPos: (px, py) =>
+        {
+          this.turtle.pos = {x: px, y: py};
+        },
+        getHeading: () =>
+        {
+          return this.turtle.heading
+        },
+        setHeading: (head) =>
+        {
+          this.turtle.heading = head;
+        }
+      };
+    }
+  </script>
+  <script type="lively4script" data-name="execute">
+    (code) =>
+    {
       
-      forward: (dist) =>
-      {
-        var turtle = this.turtle;
-        var pos = turtle.pos;
-        
-        var oldPos = {x:pos.x, y:pos.y};
-        
-        pos.x += dist * Math.cos(turtle.heading/180 * Math.PI);
-        pos.y += dist * Math.sin(turtle.heading/180 * Math.PI);
-        
-        if (this.turtle.pen)
-        {
-          this.context.beginPath();
-          this.context.moveTo(oldPos.x, oldPos.y);
-          this.context.lineTo(pos.x, pos.y);
-          this.context.stroke();
-        }
-      },
-      backward: (dist) => {this.turtle.forward(-dist)},
-      
-      penUp: () => {this.turtle.pen = false},
-      penDown: () => {this.turtle.pen = true},
-      
-      // direct state access
-      getState: () =>
-      {
-        return {pos: {x: this.turtle.pos.x, y: this.turtle.pos.y},
-                heading: this.turtle.heading,
-                pen: this.turtle.pen};
-      },
-      setState: (state) =>
-      {
-        if (state.pos != null && state.pos.x != null && state.pos.y != null)
-        {
-          this.turtle.pos = {x: state.pos.x, y: state.pos.y};
-        }
-        
-        if (state.heading != null)
-        {
-          this.turtle.heading = state.heading;
-        }
-        
-        if (state.pen != null)
-        {
-          this.turtle.pen = state.pen;
-        }
-      },
-      getPos: () =>
-      {
-        return {x: this.turtle.pos.x, y: this.turtle.pos.y};
-      },
-      setPos: (px, py) =>
-      {
-        this.turtle.pos = {x: px, y: py};
-      },
-      getHeading: () =>
-      {
-        return this.turtle.heading
-      },
-      setHeading: (head) =>
-      {
-        this.turtle.heading = head;
-      }
-    };
-  }
+    }
   </script>
 </template>
 <script>
