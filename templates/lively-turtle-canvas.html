@@ -15,9 +15,9 @@
         heading: 0,
         pen: false,
         
-        test: () =>
+        test: (what) =>
         {
-          lively.notify(this);
+          lively.notify(eval(what));
         },
         
         // drawing functions
