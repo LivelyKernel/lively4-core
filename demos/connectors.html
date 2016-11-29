@@ -1,0 +1,21 @@
+<head>
+</head>
+
+<h1>Trying out jsPlumb</h1>
+
+
+<lively-connectors>
+  <div id="A" style="background-color: green; position:absolute; left: 100px; top: 100px; width: 100px; height: 100px">Hello</div>
+  <div id="B" style="background-color: blue; position:absolute; left: 300px; top: 300px; width: 100px; height: 100px">World</div>
+
+  <div id="C" style="background-color: red; position:absolute; left: 100px; top: 300px; width: 100px; height: 100px">Foo</div>
+</lively-connectors>
+
+
+<script>
+setTimeout(() => {
+  var c = document.body.querySelector("lively-connectors"); 
+  c.connect("A", "B");
+  c.connect("A", "C");
+},0)
+</script>

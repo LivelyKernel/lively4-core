@@ -8,30 +8,30 @@ import * as kernel from 'kernel';
 // store promises of loaded and currently loading templates
 export var loadingPromises = {};
 
-var _templates
-var _prototypes
-var _proxies
+var _templates;
+var _prototypes;
+var _proxies;
 
 // for compatibility
 export function register(componentName, template, prototype) {
-    return ComponentLoader.register(componentName, template, prototype)
+  return ComponentLoader.register(componentName, template, prototype);
 }
 
 export default class ComponentLoader {
 
   static get templates() {
-    if (!_templates) _templates = {}
-    return _templates
+    if (!_templates) _templates = {};
+    return _templates;
   }
 
   static get prototypes() {
-    if (!_prototypes) _prototypes = {}
-    return _prototypes
+    if (!_prototypes) _prototypes = {};
+    return _prototypes;
   }
 
   static get proxies() {
-     if (!_proxies) _proxies = {}
-    return _proxies
+     if (!_proxies) _proxies = {};
+    return _proxies;
   }
 
   static protypeToComponentName(prototype) {
@@ -70,6 +70,9 @@ export default class ComponentLoader {
 
     // attach lively4scripts from the shadow root to this
     scriptManager.attachScriptsFromShadowDOM(object);
+    
+    // attach lively4script from the instance
+    scriptManager.findLively4Script(object, false);
 
     if (ComponentLoader.prototypes[componentName].createdCallback) {
       ComponentLoader.prototypes[componentName].createdCallback.call(object);

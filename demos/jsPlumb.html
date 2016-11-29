@@ -1,0 +1,63 @@
+<head>
+  <script src="./../src/external/jsPlumb.js "></script>
+</head>
+
+<h1>Trying out jsPlumb</h1>
+
+<div id="plumbContainer" style="background-color: green; position:absolute; left: 0px; top: 0px">
+  
+</div>
+  
+  
+  <div id="A" style="background-color: green; position:absolute; left: 100px; top: 100px; width: 100px; height: 100px">Hello</div>
+  <div id="B" style="background-color: blue; position:absolute; left: 300px; top: 300px; width: 100px; height: 100px">World</div>
+
+  <div id="C" style="background-color: red; position:absolute; left: 100px; top: 300px; width: 100px; height: 100px">World</div>
+
+
+<script>
+  jsPlumb.ready(() => {
+
+  // window.plumbContainer = document.body.querySelector("#plumbContainer")
+  // plumbContainer.style = "background-color: gray; position:absolute; top: 0px; left: 0px; z-index: 200; width: 200px; height: 200px"
+    
+
+  var plumb = jsPlumb.getInstance();
+  
+  plumb.importDefaults({
+    // Connector : [ "Bezier", { curviness: 150 } ],
+    // Anchors : [ "TopCenter", "BottomCenter" ]
+  });
+  
+
+  // plumb.setContainer(document.body.querySelector("#plumbContainer").parentElement.get("#content-root"));
+
+  plumb.connect({
+    source: "A", 
+    target: "B"
+  });
+  
+  /*
+
+  plumb.setContainer(that);
+
+
+  plumb.connect({
+    source: "A", 
+    target: "C"
+  });
+  
+  plumb.connect({
+    source: "B", 
+    target: "C"
+  });
+
+  plumb.detachAllConnections("A")
+  plumb.detachAllConnections("B")
+  
+  plumb.detachAllConnections("C")
+  
+  
+  */
+})
+</script>
