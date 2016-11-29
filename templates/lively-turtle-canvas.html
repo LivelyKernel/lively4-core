@@ -15,6 +15,11 @@
         heading: 0,
         pen: false,
         
+        test: () =>
+        {
+          lively.notify(this);
+        },
+        
         // drawing functions
         left: (deg) => {this.turtle.heading = (this.turtle.heading - deg) % 360},
         right: (deg) => {this.turtle.heading = (this.turtle.heading + deg) % 360},
