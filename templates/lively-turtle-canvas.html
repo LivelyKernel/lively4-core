@@ -21,11 +21,12 @@
         },
         
         // drawing functions
-        left: (deg) => {turtle.heading = (turtle.heading - deg) % 360},
-        right: (deg) => {turtle.heading = (turtle.heading + deg) % 360},
+        left: (deg) => {this.turtle.heading = (this.turtle.heading - deg) % 360},
+        right: (deg) => {this.turtle.heading = (this.turtle.heading + deg) % 360},
         
         forward: (dist) =>
         {
+          var turtle = this.turtle;
           var pos = turtle.pos;
           
           var oldPos = {x:pos.x, y:pos.y};
@@ -35,56 +36,56 @@
           
           if (this.turtle.pen)
           {
-            context.beginPath();
-            context.moveTo(oldPos.x, oldPos.y);
-            context.lineTo(pos.x, pos.y);
-            context.stroke();
+            this.context.beginPath();
+            this.context.moveTo(oldPos.x, oldPos.y);
+            this.context.lineTo(pos.x, pos.y);
+            this.context.stroke();
           }
         },
-        backward: (dist) => {turtle.forward(-dist)},
+        backward: (dist) => {this.turtle.forward(-dist)},
         
-        penUp: () => {turtle.pen = false},
-        penDown: () => {turtle.pen = true},
+        penUp: () => {this.turtle.pen = false},
+        penDown: () => {this.turtle.pen = true},
         
         // direct state access
         getState: () =>
         {
-          return {pos: {x: turtle.pos.x, y: turtle.pos.y},
-                  heading: turtle.heading,
-                  pen: turtle.pen};
+          return {pos: {x: this.turtle.pos.x, y: this.turtle.pos.y},
+                  heading: this.turtle.heading,
+                  pen: this.turtle.pen};
         },
         setState: (state) =>
         {
           if (state.pos != null && state.pos.x != null && state.pos.y != null)
           {
-            turtle.pos = {x: state.pos.x, y: state.pos.y};
+            this.turtle.pos = {x: state.pos.x, y: state.pos.y};
           }
           
           if (state.heading != null)
           {
-            turtle.heading = state.heading;
+            this.turtle.heading = state.heading;
           }
           
           if (state.pen != null)
           {
-            turtle.pen = state.pen;
+            this.turtle.pen = state.pen;
           }
         },
         getPos: () =>
         {
-          return {x: turtle.pos.x, y: turtle.pos.y};
+          return {x: this.turtle.pos.x, y: this.turtle.pos.y};
         },
         setPos: (px, py) =>
         {
-          turtle.pos = {x: px, y: py};
+          this.turtle.pos = {x: px, y: py};
         },
         getHeading: () =>
         {
-          return turtle.heading
+          return this.turtle.heading
         },
         setHeading: (head) =>
         {
-          turtle.heading = head;
+          this.turtle.heading = head;
         }
       };
     }
