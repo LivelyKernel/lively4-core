@@ -735,7 +735,7 @@ export default class Container extends Morph {
     });
   }
   
-  setPath(path, donotrender) {
+  async setPath(path, donotrender) {
     this.get('#container-content').style.display = "block";
     this.get('#container-editor').style.display = "none";
 
@@ -743,6 +743,8 @@ export default class Container extends Morph {
         path = "";
     }
 	  var isdir= path.match(/.\/$/);
+
+
     var url;
     if (path.match(/^https?:\/\//)) {
       url = new URL(path);
@@ -750,8 +752,18 @@ export default class Container extends Morph {
       path = "" + url;
     } else {
       path = lively.paths.normalize(path);
+      url = "https://lively4" + path
+    }
+    if (!isdir) {
+      // check if our file is a directory
+      var options = await fetch(url, {method: "OPTIONS"}).then(r => r.json()).catch( e => {})
+      if (options.type == "directory") {
+        isdir = true
+      }
     }
     path =  path + (isdir ? "/" : "");
+
+    
 
     var container=  this.get('#container-content');
     // don't scroll away whe reloading the same url
@@ -759,11 +771,21 @@ export default class Container extends Morph {
       this.preserveContentScroll = this.get("#container-content").scrollTop;
     }
 	  this.setAttribute("src", path);
+    
+    
+    // make sure directories are browsed as directories
+    // var options = await fetch(url, {method: "OPTIONS"}).then(r => r.json()).catch(e => {});
+    // isdir = isdir || options.type == "directory";
+    // lively.notify("url " + url + " " + options.type)
+    
     this.clear();
     this.get('#container-path').value = path.replace(/\%20/g, " ");
     container.style.overflow = "auto";
 
     url = this.getURL();
+    
+
+    
     this.showNavbar();
     // console.log("set url: " + url);
     this.sourceContent = "NOT EDITABLE";
