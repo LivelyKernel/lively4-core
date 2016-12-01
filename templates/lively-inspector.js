@@ -7,14 +7,17 @@ import Morph from './Morph.js';
 export default class Inspector   extends Morph {
 
   initialize() {
-    lively.notify("[inspector] intialize")    
-    this.get("#editor").enableAutocompletion()
+    if (this.getAttribute("target")) {
+      this.inspect(document.querySelector(this.getAttribute("target")))
+    }
+    lively.notify("[inspector] intialize");  
+    this.get("#editor").enableAutocompletion();
   }
 
   displayValue(value, expand, name) {
     if (name) {
       var node = document.createElement("div");
-      node.classList.add("element")
+      node.classList.add("element");
       node.innerHTML = name +": " +JSON.stringify(value);
       return node;
     } else {
@@ -73,7 +76,7 @@ export default class Inspector   extends Morph {
   
   displayObject(obj, expand, name) {
     if (!(obj instanceof Object)) {
-      return this.displayValue(obj, expand, name) // even when displaying objects.
+      return this.displayValue(obj, expand, name); // even when displaying objects.
     }
     var node = document.createElement("div");
     node.classList.add("element");
@@ -206,10 +209,10 @@ export default class Inspector   extends Morph {
         contentNode.appendChild(this.display(ea, expandChildren, null, obj));
       });
 
-      var hasProperties = Object.keys(obj).length > 0
+      var hasProperties = Object.keys(obj).length > 0;
       if (hasProperties && !obj.livelyIsParentPlaceholder) {
-        var props = this.displayObject(obj, false, "#Properties")
-        contentNode.appendChild(props)
+        var props = this.displayObject(obj, false, "#Properties");
+        contentNode.appendChild(props);
         if (props.childNodes.length == 0) props.remove() // clean up 
         
       }
@@ -234,21 +237,21 @@ export default class Inspector   extends Morph {
   }
 
   findParentNode(obj) {
-    return obj.parentNode || obj.host
+    return obj.parentNode || obj.host;
   }
     
   displayNode(obj, expanded, parent) {
     var node;
-    var parentNode = this.findParentNode(obj)
+    var parentNode = this.findParentNode(obj);
     if (!parent && parentNode) {
-      var tmpParent = {tagName: "...", textContent: "", childNodes: [obj], livelyIsParentPlaceholder: true }
-      node = this.displayNode(tmpParent, true, tmpParent)
+      var tmpParent = {tagName: "...", textContent: "", childNodes: [obj], livelyIsParentPlaceholder: true };
+      node = this.displayNode(tmpParent, true, tmpParent);
       var tagNode = node.querySelector("#tagname");
       if (tagNode) tagNode.onclick = (evt) => {
-        this.inspect(parentNode)
+        this.inspect(parentNode);
       };
-      node.target = parentNode
-      return node
+      node.target = parentNode;
+      return node;
     } else if (obj.tagName) {
       node = document.createElement("div");
       node.setAttribute("class","element tag");
@@ -305,13 +308,16 @@ export default class Inspector   extends Morph {
   }
 
   inspect(obj) {
+    if (obj.id) {
+      this.setAttribute("target", "#" + obj.id);
+    }
     this.targetObject = obj;
     this.get("#editor").doitContext = obj;
     this.get("#container").innerHTML = "";
     // special case for inspecting single dom nodes
-    var content= this.display(obj, true, null, null)
+    var content= this.display(obj, true, null, null);
     this.get("#container").appendChild(content);
-    return content
+    return content;
   }
   
   livelyMigrate(oldInstance) {

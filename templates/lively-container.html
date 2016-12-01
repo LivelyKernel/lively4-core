@@ -217,16 +217,26 @@
       <div class="edit" id="eval">
           <input type="checkbox" id="live" title="auto apply code or template one save" checked/>
       </div>
-      <button class="edit"        id="apply"    title="apply code or template">     <i class="fa fa-gears"          aria-hidden="true"></i></button>
-      <button class="edit"        id="browse"   title="open new browser for url">   <i class="fa fa-external-link"  aria-hidden="true"></i></button>
-      <button class="edit"        id="sync"     title="sync changes">               <i class="fa fa-refresh"        aria-hidden="true"></i></button>
-      <button class="edit"        id="delete"   title="delete file">                <i class="fa fa-trash"          aria-hidden="true"></i></button>
-      <button class="browse edit" id="newfile"  title="create new file">            <i class="fa fa-file-o"         aria-hidden="true"></i></button>
-      <button class="edit"        id="versions" title="versions">                   <i class="fa fa-code-fork"      aria-hidden="true"></i></button>
-      <button class="browse edit" id="save"     title="save file">                  <i class="fa fa-floppy-o"       aria-hidden="true"></i></button>
-      <button class="edit"        id="accept"   title="accept changes">             <i class="fa fa-check-circle"   aria-hidden="true"></i></button>
-      <button class="edit"        id="cancel"   title="cancel and quit editor">     <i class="fa fa-ban"            aria-hidden="true"></i></button> 
-      <button class="browse"      id="edit"     title="edit file">                  <i class="fa fa-pencil"         aria-hidden="true"></i></button>
+      <button class="edit" id="apply" title="apply code or template">
+        <i class="fa fa-gears" aria-hidden="true"></i></button>
+      <button class="edit" id="browse" title="open new browser for url">
+        <i class="fa fa-external-link" aria-hidden="true"></i></button>
+      <button class="edit"id="sync" title="sync changes">
+        <i class="fa fa-refresh" aria-hidden="true"></i></button>
+      <button class="edit" id="delete" title="delete file">
+        <i class="fa fa-trash" aria-hidden="true"></i></button>
+      <button class="browse edit" id="newfile" title="create new file">
+        <i class="fa fa-file-o" aria-hidden="true"></i></button>
+      <button class="edit" id="versions" title="versions">
+        <i class="fa fa-code-fork" aria-hidden="true"></i></button>
+      <button class="browse edit" id="save" title="save file"> 
+        <i class="fa fa-floppy-o" aria-hidden="true"></i></button>
+      <button class="edit" id="accept" title="accept changes">
+        <i class="fa fa-check-circle" aria-hidden="true"></i></button>
+      <button class="edit" id="cancel" title="cancel and quit editor">
+        <i class="fa fa-ban" aria-hidden="true"></i></button> 
+      <button class="browse" id="edit" title="edit file">
+        <i class="fa fa-pencil" aria-hidden="true"></i></button>
     </div>
 
     <div id="layout-center">
@@ -240,7 +250,13 @@
           </div>
         </div>
         <div id="container-editor"></div>
+        <a id="fullscreenButton" 
+          style="font-size: 9px; position:absolute; right: 30px; top: 2px; " >
+          <i class="fa fa-arrows-alt" aria-hidden="true"></i>
+        </a>
+
       </div>
+
     </div>
 
 </template>

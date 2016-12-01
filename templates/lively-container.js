@@ -66,7 +66,6 @@ export default class Container extends Morph {
     	}
     }
     
-
     // #TODO very ugly... I want to hide that level of JavaScript and just connect "onEnter" of the input field with my code
     var input = this.get("#container-path");
     $(input).keyup(event => {
@@ -74,13 +73,15 @@ export default class Container extends Morph {
         this.onPathEntered(input.value);
       }
     });
+    this.get("#fullscreenButton").onclick = (e) => this.onFullscreenButton(e);
+    
     lively.html.registerButtons(this);
-
+    // SQUEAK!!!
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
     // this.addEventListener('keyup',   evt => this.onKeyUp(evt));
     this.addEventListener('keydown',   evt => this.onKeyDown(evt));
-    this.setAttribute("tabindex", 0)	
-    this.hideCancelAndSave()
+    this.setAttribute("tabindex", 0);
+    this.hideCancelAndSave();
   }
   
   onContextMenu(evt) {
@@ -89,7 +90,11 @@ export default class Container extends Morph {
       evt.preventDefault();
 	    lively.openContextMenu(document.body, evt, undefined, this);
 	    return false;
-    }
+    } // Hallo Jens! Was macht Lively so?
+  }
+  
+  onFullscreenButton(evt) {
+    this.toggleControls();
   }
     
   useBrowserHistory() {
@@ -755,7 +760,7 @@ export default class Container extends Morph {
     }
 	  this.setAttribute("src", path);
     this.clear();
-    this.get('#container-path').value = path;
+    this.get('#container-path').value = path.replace(/\%20/g, " ");
     container.style.overflow = "auto";
 
     url = this.getURL();
@@ -788,8 +793,8 @@ export default class Container extends Morph {
       } else if (format.match(/(png)|(jpe?g)/)) {
         if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + url +"'>");
       } else if (format == "pdf") {
-        if (render) return this.appendHtml('<object style="width:21cm;height:29cm" data="'
-          + url +'" type="application/pdf"></object>');
+        if (render) return this.appendHtml('<lively-pdf overflow="visible" src="'
+          + url +'"></lively-pdf>');
       } else {
         this.sourceContent = content;
         if (render) return this.appendHtml("<pre><code>" + content +"</code></pre>");
@@ -968,6 +973,28 @@ export default class Container extends Morph {
       }
     });
   }
+  
+  
+  toggleControls() {
+    if (this.get("#container-navigation").style.display  == "none") {
+      this.showControls();
+    } else {
+      this.hideControls();
+    }
+  }
+  
+  hideControls() {
+    this.get("#container-navigation").style.display  = "none";
+    this.get("#container-leftpane").style.display  = "none";
+    this.get("lively-separator").style.display  = "none";
+  }
+  
+  showControls() {
+    this.get("#container-navigation").style.display  = "";
+    this.get("#container-leftpane").style.display  = "";
+    this.get("lively-separator").style.display  = "";
+  }
+  
   
   editFile(path) {
     // console.log("[container ] editFile " + path)
