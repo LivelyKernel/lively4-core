@@ -53,7 +53,7 @@
   "devDependencies": {
     "browserify": "^11.0.0",
     "chai": "^1.9.1",
-    "karma": "^0.13.1",
+    "karma": "^0.13.19",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^0.1.10",
     "karma-mocha": "^0.2.0",
@@ -62,7 +62,7 @@
     "mocha": "^2.2.5",
     "requirejs": "^2.1.20",
     "sinon-chai": "^2.8.0",
-    "systemjs": "^0.19.31",
+    "systemjs": "0.19.31",
     "systemjs-plugin-babel": "0.0.12"
   },
   "engines": {
