@@ -1,4 +1,4 @@
-# Welcome to Lively4 
+# Welcome to <img alt="Lively 4" style="position:relative; top: 25px" src="media/lively4_logo_smooth_100.png" />
 
 * Sofware Architecture Group, Hasso Plattner Institute,  2015, 2016 [MIT LICENSE](LICENSE)
 * Stefan Lehmann, Jens Lincke, Tim Felgentreff, et al
