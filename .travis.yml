@@ -27,11 +27,11 @@ before_install:
 ## stable chrome
 - sh -e /etc/init.d/xvfb start
 - export DISPLAY=:99.0
+- wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+- sudo sh -c 'echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
 - sudo apt-get update
-- sudo apt-get install -y libappindicator1 fonts-liberation
-- wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-- sudo dpkg -i google-chrome-stable_current_amd64.deb
-- export CHROME_BIN=/usr/bin/google-chrome
+- sudo apt-get install google-chrome-stable
+- export CHROME_BIN=chromium-browser
 
 # Use https (public access) instead of git for git-submodules
 - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
