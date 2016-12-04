@@ -83,6 +83,9 @@ export class File {
 
   toResponse() {
     return new Response(this.blob, {
+      headers: {
+        fileversion: this.fileversion
+      },
       status: 200})
   }
 }

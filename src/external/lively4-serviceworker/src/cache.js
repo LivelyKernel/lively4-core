@@ -19,7 +19,10 @@ export function purge(request) {
 export async function match(request, timeout=-1) {
   try {
     if (timeout != -1) {
-      let age = await getAgeOf(request)
+      let age = await getAgeOf(request) 
+      if (!age) return Promise.resolve(undefined)
+
+      
       let age_v = await age.text()
 
       if (age && Date.now() - parseInt(age_v) >= timeout) {

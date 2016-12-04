@@ -756,8 +756,8 @@ export default class Container extends Morph {
     }
     if (!isdir) {
       // check if our file is a directory
-      var options = await fetch(url, {method: "OPTIONS"}).then(r => r.json()).catch( e => {})
-      if (options.type == "directory") {
+      var options = await fetch(url, {method: "OPTIONS"}).then(r => r.json()).catch( e => null)
+      if (options && options.type == "directory") {
         isdir = true
       }
     }
