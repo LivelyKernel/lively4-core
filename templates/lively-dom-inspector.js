@@ -1,6 +1,6 @@
 /*
  * # LivelyDomInspector 
- */
+ *
 import Morph from './Morph.js';
 import ExplorableDomInspector from '../../lively4-explorable-dom/explorableDomInspector.js';
 
@@ -48,3 +48,4 @@ export default class DomInspector extends Morph {
     }
   }
 }
+ */
