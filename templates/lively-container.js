@@ -76,7 +76,7 @@ export default class Container extends Morph {
     this.get("#fullscreenButton").onclick = (e) => this.onFullscreenButton(e);
     
     lively.html.registerButtons(this);
-    // SQUEAK!!!
+
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
     // this.addEventListener('keyup',   evt => this.onKeyUp(evt));
     this.addEventListener('keydown',   evt => this.onKeyDown(evt));
@@ -674,13 +674,6 @@ export default class Container extends Morph {
       return "";    
   }
   
-  linksForFile(url, name) {
-    if (name.match(/\.((mkv)|(mp4)|(avi))$/))
-      return "<a class='play' href='" + (""+url).replace(/\/?$/,"/") + name +"'>play</href>";
-    else
-      return "";  
-  }
-  
   listingForDirectory(url, render) {
     return lively.files.statFile(url).then((content) => {
       var files = JSON.parse(content).contents;
@@ -716,19 +709,6 @@ export default class Container extends Morph {
       } else {
         return ;
       }
-      // var html = "<div class='table-container'>"+
-      //   "<table class='directory'>"+
-      //   "<tr><th></th><th>name</th><th>size</th></tr>" +
-      //   // "<li><a href='../'>..</a></li>" +
-      //   _.sortBy(files, ea => ea.name)
-      //     .filter(ea => !ea.name.match(/^\./))
-      //     .map( ea =>
-      //     // "<li><a href='"+ea.name + (ea.type == "directory" ? "/" : "")+"''>" +ea.name+ "</a></li>"
-      //     "<tr><td>"+this.thumbnailFor(url, ea.name)+"</td><td>" + ea.name + '</td><td>' + ea.size+ '</td><td>'+this.linksForFile(url, ea.name)+'</td></tr>'
-      //     ).join("\n")+"</table></div>";
-      // if (render) {
-      //   this.appendHtml(html);
-      // }
     }).catch(function(err){
       console.log("Error: ", err);
       lively.notify("ERROR: Could not set path: " + url,  "because of: ",  err);
@@ -756,7 +736,7 @@ export default class Container extends Morph {
     }
     if (!isdir) {
       // check if our file is a directory
-      var options = await fetch(url, {method: "OPTIONS"}).then(r => r.json()).catch( e => null)
+      var options = await fetch(url, {method: "OPTIONS"}).then(r =>  r.json()).catch(e => {})
       if (options && options.type == "directory") {
         isdir = true
       }
@@ -771,13 +751,7 @@ export default class Container extends Morph {
       this.preserveContentScroll = this.get("#container-content").scrollTop;
     }
 	  this.setAttribute("src", path);
-    
-    
-    // make sure directories are browsed as directories
-    // var options = await fetch(url, {method: "OPTIONS"}).then(r => r.json()).catch(e => {});
-    // isdir = isdir || options.type == "directory";
-    // lively.notify("url " + url + " " + options.type)
-    
+
     this.clear();
     this.get('#container-path').value = path.replace(/\%20/g, " ");
     container.style.overflow = "auto";
@@ -798,11 +772,24 @@ export default class Container extends Morph {
     }
     // Handling files
     this.lastVersion = null; // just to be sure
+    
+    var format = path.replace(/.*\./,"");
+    if (format.match(/(png)|(jpe?g)/)) {
+      if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + url +"'>");
+      else return;
+    } else if (format.match(/(ogm)|(m4v)|(mp4)|(avi)|(mpe?g)|(mkv)/)) {
+      if (render) return this.appendHtml('<lively-movie src="' + url +'"></lively-movie>');
+      else return;
+    } else if (format == "pdf") {
+      if (render) return this.appendHtml('<lively-pdf overflow="visible" src="'
+        + url +'"></lively-pdf>');
+      else return;
+    }
+  
     return fetch(url).then( resp => {
       this.lastVersion = resp.headers.get("fileversion");
       return resp.text();
     }).then((content) => {
-      var format = path.replace(/.*\./,"");
       if (format == "html")  {
         this.sourceContent = content;
         if (render) return this.appendHtml(content);
@@ -812,11 +799,6 @@ export default class Container extends Morph {
       } else if (format == "livelymd") {
         this.sourceContent = content;
         if (render) return this.appendLivelyMD(content);
-      } else if (format.match(/(png)|(jpe?g)/)) {
-        if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + url +"'>");
-      } else if (format == "pdf") {
-        if (render) return this.appendHtml('<lively-pdf overflow="visible" src="'
-          + url +'"></lively-pdf>');
       } else {
         this.sourceContent = content;
         if (render) return this.appendHtml("<pre><code>" + content +"</code></pre>");
@@ -953,7 +935,6 @@ export default class Container extends Morph {
           }
           return (a.name >= b.name) ? 1 : -1;
         })
-        .filter(ea => ! ea.name.match(/\.((ogm)|(m4v)|(mp4)|(avi)|(mpe?g)|(mkv))$/))
         .filter(ea => ! ea.name.match(/^\./));
 
       files.unshift({name: "..", type: "directory"});
