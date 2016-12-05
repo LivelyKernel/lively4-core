@@ -187,6 +187,7 @@ export default function(param) {
 
                             if(
                                 // TODO: is there a general way to exclude non-variables?
+                            !(t.isImportNamespaceSpecifier(path.parent) && path.parentKey === 'local') &&
                             !(t.isLabeledStatement(path.parent) && path.parentKey === 'label') &&
                             !(t.isBreakStatement(path.parent) && path.parentKey === 'label') &&
                             !(t.isForInStatement(path.parent) && path.parentKey === 'left') &&
