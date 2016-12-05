@@ -14,7 +14,7 @@ export class Base {
    * @param  {String} path
    * @return {Promise}
    */
-  stat(path) {
+  stat(path, request) {
     throw new StatNotFoundError()
   }
 
@@ -22,9 +22,10 @@ export class Base {
    * Return content at given path.
    *
    * @param  {String} path
+   * @param  {Request} request
    * @return {Promise}
    */
-  read(path) {
+  read(path, request) {
     throw new FileNotFoundError()
   }
 
@@ -33,10 +34,22 @@ export class Base {
    *
    * @param  {String} path
    * @param  {String} content
+   * @param  {Request} request
    * @return {Promise}
    */
-  write(path, content) {
+  write(path, content, request) {
     return Promise.resolve(new Response(null, {status: 405}))
+  }
+  
+  /**
+   * Deletes  object at given path.
+   *
+   * @param  {String} path
+   * @param  {Request} request
+   * @return {Promise}
+   */
+  del(path, request) {
+    throw new FileNotFoundError()
   }
 }
 

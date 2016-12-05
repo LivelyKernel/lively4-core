@@ -81,7 +81,7 @@ export default class Filesystem extends Base {
 
     if (!no_cache) {
       if (navigator.onLine) {
-        response = await cache.match(dropboxRequest, 30 * 1000 /* 30sec max cache age */)
+        response = await cache.match(dropboxRequest, 1 * 1000 /* 1sec max cache age */)
       } else {
         response = await cache.match(dropboxRequest)
       }
@@ -227,6 +227,24 @@ export default class Filesystem extends Base {
       headers: headers,
       status: 200})
   }
+  
+  
+  async del(path, request) {
+    let dropboxHeaders = new Headers()
+    dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
+
+    var dropboxPath = this.subfolder + path
+
+    var deleteParameters = "?rev_limit=100"
+    var deleteRequest = new Request('https://api.dropboxapi.com/1/fileops/delete?root=auto&path=' + dropboxPath, {headers: dropboxHeaders});
+
+    var response = await fetch(deleteRequest)
+    
+    return new Response("deleted " + dropboxPath, {
+      headers: {},
+      status: 200})
+  }
+  
 }
 
 console.log("dropbox loaded")

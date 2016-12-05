@@ -73,7 +73,6 @@ export default class Filesystem extends Base {
   }
 
   async write(urlString, fileContent) {
-  debugger
     var response;
     var data = await fileContent;
     var path = this.getGoogledrivePath(urlString);
