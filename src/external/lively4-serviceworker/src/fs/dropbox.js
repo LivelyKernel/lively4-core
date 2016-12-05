@@ -37,34 +37,61 @@ export default class Filesystem extends Base {
     if(json['is_dir'] === true)
       type = 'directory'
 
-    return {
+    var result = {
       type: type,
       name: name,
       size: json['size']
     }
+    
+    
+    
+    return result 
   }
 
-  async stat(path, unused_request, no_cache=false) {
+  async stat(path, request, no_cache=false) {
     let dropboxHeaders = new Headers()
     dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
 
-    let request = new Request('https://api.dropboxapi.com/1/metadata/auto' + this.subfolder + path, {headers: dropboxHeaders})
+    var showversions  = request.headers.get("showversions")
+    if (showversions) {
+      var revisionParameters = "?rev_limit=100"
+      var revisionRequest = new Request('https://api.dropboxapi.com/1/revisions/auto/' + this.subfolder + path + revisionParameters, {headers: dropboxHeaders});
+      
+      var revisions = await fetch(revisionRequest).then(r => r.json());
+      var revisionContents = {
+        // #TODO the API we use in the lively-editor and lively4-server are currently a proof of concept and should be unified to something with better names... etc
+        versions: revisions.map(ea => {
+            return {
+              version: ea.rev,
+              date: ea.modified,
+              author: "unknown",
+              comment: "no comment",
+              size: ea.size
+            }
+        })
+      };
+      
+      var isDirectory = false; // versions of a directory?
+      return new Stat(isDirectory, revisionContents, ['GET', 'OPTIONS']);
+    }
+
+    let dropboxRequest = new Request('https://api.dropboxapi.com/1/metadata/auto' + this.subfolder + path, {headers: dropboxHeaders})
 
     let response = undefined
 
     if (!no_cache) {
       if (navigator.onLine) {
-        response = await cache.match(request, 5 * 60 * 1000 /* 5 minute max cache age */)
+        response = await cache.match(dropboxRequest, 30 * 1000 /* 30sec max cache age */)
       } else {
-        response = await cache.match(request)
+        response = await cache.match(dropboxRequest)
       }
     } else {
-      cache.purge(request);
+      cache.purge(dropboxRequest);
     }
 
     if (response === undefined) {
-      response = await self.fetch(request)
-      cache.put(request, response)
+      response = await self.fetch(dropboxRequest)
+      cache.put(dropboxRequest, response)
       response = response.clone()
     }
 
@@ -97,27 +124,31 @@ export default class Filesystem extends Base {
   }
 
 
-  async read(path, unused_request, no_cache=false) {
-    let dropboxHeaders = new Headers()
-    dropboxHeaders.append('Authorization', 'Bearer ' + this.token)
+  async read(path, request, no_cache=false) {
+    let dropboxHeaders = new Headers();
+    dropboxHeaders.append('Authorization', 'Bearer ' + this.token);
 
-    let request = new Request('https://content.dropboxapi.com/1/files/auto' + this.subfolder + path, {headers: dropboxHeaders})
+    let dropboxParameter = "";
+    let fileversion = request.headers.get("fileversion");
+    if (fileversion) dropboxParameter = "?rev=" +fileversion;
 
-    let response = undefined
+    let dropboxRequest = new Request('https://content.dropboxapi.com/1/files/auto' + this.subfolder + path + dropboxParameter, {headers: dropboxHeaders});
+
+    let response = undefined;
 
     if (!no_cache) {
       if (navigator.onLine) {
-        response = await cache.match(request, 5 * 60 * 1000 /* 5 minute max cache age */)
+        response = await cache.match(dropboxRequest, 5 * 60 * 1000 /* 5 minute max cache age */)
       } else {
-        response = await cache.match(request)
+        response = await cache.match(dropboxRequest)
       }
     } else {
-      cache.purge(request);
+      cache.purge(dropboxRequest);
     }
 
     if (response === undefined) {
-      response = await self.fetch(request)
-      cache.put(request, response)
+      response = await self.fetch(dropboxRequest)
+      cache.put(dropboxRequest, response)
       response = response.clone()
     }
 
