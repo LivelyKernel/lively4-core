@@ -35,7 +35,9 @@ export default class LivelyMovie extends Morph {
       this.get("#info").textContent = 'No search result for: ' + this.title
       return
     }
-    var json = JSON.parse(info)
+    try {
+      var json = JSON.parse(info)
+    } catch(e) {}
     if (!json) {
       this.get("#info").innerHTML = "Could not parse: <pre>" + info + "</pre>"
       return
