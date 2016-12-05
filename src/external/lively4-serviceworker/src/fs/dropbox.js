@@ -130,27 +130,48 @@ export default class Filesystem extends Base {
     return file
   }
 
-  async write(path, fileContent, unused_request) {
+  async write(path, fileContent, request) {
     let fileContentFinal = await fileContent
     let dropboxHeaders = new Headers()
     let dropboxPath = this.subfolder + path;
+    var conflictversion;
 
     // clear caches
-    let request = new Request('https://content.dropboxapi.com/1/files/auto' + dropboxPath, 
+    let dropboxRequest = new Request('https://content.dropboxapi.com/1/files/auto' + dropboxPath, 
        {headers: dropboxHeaders})
-    await cache.purge(request);
+    await cache.purge(dropboxRequest);
 
     // #TODO we could fill the cache with it... with the cache.put API
 
     dropboxHeaders.append('Authorization', 'Bearer ' + this.token)
     dropboxHeaders.append("Content-Length", fileContentFinal.length.toString())
-    let response = await self.fetch('https://content.dropboxapi.com/1/files_put/auto' + dropboxPath, {method: 'PUT', headers: dropboxHeaders, body: fileContentFinal})
+    
+    var parameters = ""
+    var lastversion = request.headers.get("lastversion")
+    if (lastversion) {
+      console.log("put with last version: " + lastversion)
+      parameters += "?parent_rev="+lastversion + "&" +"autorename=false"
+    }
+    let response = await self.fetch('https://content.dropboxapi.com/1/files_put/auto' + dropboxPath + parameters, {method: 'PUT', headers: dropboxHeaders, body: fileContentFinal})
 
-    if(response.status < 200 || response.status >= 300) {
+    if(response.status == 409) {
+      
+      let metaRequest = new Request('https://api.dropboxapi.com/1/metadata/auto' + dropboxPath, {headers: dropboxHeaders})
+      var metainfo = await fetch(metaRequest).then(r => r.json())
+      conflictversion = metainfo.rev
+      console.log("found conflict with " + conflictversion )
+    
+    } else if(response.status < 200 || response.status >= 300) {
       throw new Error(response.statusText)
     }
     // the metadata is not in the header, but now in the return value
     let metadata = await response.text();
+    try {
+      metadata = JSON.parse(metadata)
+    } catch(e) {
+      throw new Error("[swx.fs.dropbox] Could not parse metadata: " + metadata)
+    }
+    
     /* Sample response 
     {
       "size": "225.4KB",
@@ -167,11 +188,12 @@ export default class Filesystem extends Base {
     }*/   
     
     
-    metadata = JSON.parse(metadata)
+    var headers = {
+        fileversion: metadata.rev,
+    }
+    if (conflictversion) headers.conflictversion = conflictversion;
     return new Response(null, {
-      headers: {
-        fileversion: metadata.rev
-      },
+      headers: headers,
       status: 200})
   }
 }
