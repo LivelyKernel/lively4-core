@@ -370,9 +370,16 @@ export default class Container extends Morph {
     if (window.confirm("delete " + url)) {
       var result = await fetch(url, {method: 'DELETE'})
         .then(r => r.text());
+        
+      this.setAttribute("mode", "show");
       this.setPath(url.replace(/[^/]*$/, ""));
+      this.hideCancelAndSave();
+
       lively.notify("deleted " + url, result);
-    }
+    
+      
+      
+    } 
   }
 
   async onNewfile() {

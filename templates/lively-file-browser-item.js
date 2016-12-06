@@ -1,6 +1,20 @@
 import Morph from "./Morph.js"
 
 export default class FileBrowserItem extends Morph {
+  initialize() {
+    this.addEventListener('contextmenu', (evt) => {
+      if (!evt.shiftKey) {
+        lively.notify("context on " + this)
+        evt.preventDefault();
+        lively.openContextMenu(document.body, evt, this);
+        evt.stopPropagation()
+        evt.preventDefault()
+        return true;
+      }
+    }, false);
+     
+  }
+  
   set name(value) {
     this.get('#item-name').innerHTML = value
     if (value.match(/\.(md)|(txt)$/))

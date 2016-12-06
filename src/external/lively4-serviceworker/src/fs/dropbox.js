@@ -179,7 +179,7 @@ export default class Filesystem extends Base {
     
     var parameters = ""
     var lastversion = request.headers.get("lastversion")
-    if (lastversion) {
+    if (lastversion && lastversion != "null") {
       console.log("put with last version: " + lastversion)
       parameters += "?parent_rev="+lastversion + "&" +"autorename=false"
     }
@@ -239,6 +239,9 @@ export default class Filesystem extends Base {
     var deleteRequest = new Request('https://api.dropboxapi.com/1/fileops/delete?root=auto&path=' + dropboxPath, {headers: dropboxHeaders});
 
     var response = await fetch(deleteRequest)
+    if(response.status < 200 || response.status >= 300) {
+      throw new Error(response.statusText)
+    }
     
     return new Response("deleted " + dropboxPath, {
       headers: {},

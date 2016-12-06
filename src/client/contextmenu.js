@@ -167,7 +167,6 @@ export default class ContextMenu {
   
   static openIn(container, evt, target, worldContext) {
     this.hide();
-    
     lively.addEventListener("contextMenu", document.documentElement, "click", () => {
       this.hide();
     }, true);
