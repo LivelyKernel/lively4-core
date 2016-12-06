@@ -207,6 +207,16 @@
         line-height: 15px;
         margin: 6px 2px 0px 4px;
       }
+      
+      #fullscreenButton {
+        font-size: 10pt; 
+        position:absolute; 
+        right: 16px; 
+        top: 10px;
+        z-index: 10;
+        /* background-color: white; */
+      }
+      
     </style>
     <div id="container-navigation" class="fill">
       <button id="back"><i class="fa fa-arrow-left" title="Back" aria-hidden="true"></i></button>
@@ -250,8 +260,8 @@
           </div>
         </div>
         <div id="container-editor"></div>
-        <a id="fullscreenButton" 
-          style="font-size: 9px; position:absolute; right: 30px; top: 2px; " >
+        <!-- #TODO move this into button row -->
+        <a id="fullscreenButton">
           <i class="fa fa-arrows-alt" aria-hidden="true"></i>
         </a>
 

@@ -2,7 +2,15 @@
   "name": "lively4-core",
   "version": "0.1.0",
   "description": "A browsers-based self supporting Morphic and JavaScript development and runtime environment.",
-  "keywords": ["lively", "lively4", "module", "modules", "loader", "compiler", "lively-kernel"],
+  "keywords": [
+    "lively",
+    "lively4",
+    "module",
+    "modules",
+    "loader",
+    "compiler",
+    "lively-kernel"
+  ],
   "homepage": "https://github.com/LivelyKernel/lively4-core/",
   "bugs": {
     "url": "https://github.com/LivelyKernel/lively4-core/issues",
@@ -30,7 +38,6 @@
   "main": "src/client/lively.js",
   "lively": {
     "main": "src/client/lively.js",
-  
     "packageMap": {
       "lively.lang": "src/external/lively.lang",
       "lively.graphics": "src/external/lively.graphics",
@@ -47,13 +54,11 @@
   "scripts": {
     "test": "karma start karma.conf.js --single-run"
   },
-  "dependencies": {
-
-  },
+  "dependencies": {},
   "devDependencies": {
     "browserify": "^11.0.0",
     "chai": "^1.9.1",
-    "karma": "^0.13.19",
+    "karma": "^0.13.22",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^0.1.10",
     "karma-mocha": "^0.2.0",

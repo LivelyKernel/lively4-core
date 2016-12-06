@@ -115,9 +115,7 @@ export default class Window extends Morph {
   bindEvents() {
     this.addEventListener('mousedown', (e) => { this.focus(); });
     this.addEventListener('created', (e) => { this.focus(); });
-    document.addEventListener('mousemove', (e) => { this.windowMouseMove(e); });
-    document.addEventListener('mouseup', (e) => { this.windowMouseUp(e); });
-
+    
     this.shadowRoot.querySelector('.window-title')
       .addEventListener('mousedown', (e) => { this.titleMouseDown(e); });
 
@@ -381,17 +379,26 @@ export default class Window extends Morph {
       if (isNaN(this.draggingStart.x) || isNaN(this.draggingStart.y)){
         throw new Error("Drag failed, because window Position is not a number")
       }
-
       this.dragging = {
         left: e.clientX,
         top: e.clientY
       };
-    
- 
     }
-
+    this.startMyDrag()
     this.window.classList.add('dragging');
   }
+
+  startMyDrag() {
+    lively.removeEventListener('lively-window', document)
+    
+    lively.addEventListener('lively-window', document, 'mousemove', (e) => { this.windowMouseMove(e); });
+    lively.addEventListener('lively-window', document, 'mouseup', (e) => { this.windowMouseUp(e); });
+  } 
+
+  stopMyDrag() {
+    lively.removeEventListener('lively-window', document)
+  } 
+
 
   resizeMouseDown(e) {
     e.preventDefault();
@@ -404,6 +411,7 @@ export default class Window extends Morph {
     };
 
     this.window.classList.add('resizing');
+    this.startMyDrag()
   }
 
   windowMouseUp(e) {
@@ -414,6 +422,8 @@ export default class Window extends Morph {
 
     this.window.classList.remove('dragging');
     this.window.classList.remove('resizing');
+    
+    this.stopMyDrag()
   }
 
   windowMouseMove(e) {
