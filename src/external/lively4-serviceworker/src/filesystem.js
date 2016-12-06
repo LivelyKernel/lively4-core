@@ -70,6 +70,9 @@ export class Filesystem {
     if(request.method === 'PUT')
       return fs.write(path, request.text(), request)
 
+    if(request.method === 'DELETE')
+      return fs.del(path, request)
+
     if(request.method === 'OPTIONS') {
       try {
         let stat_resp = await fs.stat(path, request)

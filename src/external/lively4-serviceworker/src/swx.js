@@ -110,6 +110,8 @@ class ServiceWorker {
       response = response.then((result) => {
         if(result instanceof Response) {
           return result
+        } if(result && result.toResponse) {
+          return result.toResponse()
         } else {
           return new Response(result)
         }

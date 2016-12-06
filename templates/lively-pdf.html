@@ -1,0 +1,17 @@
+<template id="lively-pdf" data-class="LivelyPdf">
+  <style>
+    #log {
+      position: absolute;
+    }
+    #container {
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+    }
+  </style>
+  <pre id="log"></pre>
+  <div id="container">
+    <canvas id="canvas"></canvas>
+  </div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>

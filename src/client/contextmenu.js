@@ -93,6 +93,11 @@ export default class ContextMenu {
       ["TestRunner",         (evt) => this.openComponentInWindow("lively-testrunner", evt)],
       ["Component Bin",   (evt) => this.openComponentInWindow("lively-component-bin", evt),
        "CMD+O"],
+      !document.webkitIsFullScreen ?
+        ["Enter fullscreen", (evt) => 
+          document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)] :
+          ["Cancel fullscreen", (evt) => 
+          document.webkitCancelFullScreen()],
       ["Customize Page",   (evt) => {
         this.hide();
         lively.import("customize").then(c => c.openCustomizeWorkspace(evt));
@@ -162,7 +167,6 @@ export default class ContextMenu {
   
   static openIn(container, evt, target, worldContext) {
     this.hide();
-    
     lively.addEventListener("contextMenu", document.documentElement, "click", () => {
       this.hide();
     }, true);

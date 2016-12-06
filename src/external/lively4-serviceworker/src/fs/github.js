@@ -133,7 +133,7 @@ export default class Filesystem extends Base {
     }
   }
 
-  async write(path, unused_request, fileContent) {
+  async write(path, fileContent, unused_request) {
     if(!this.token) {
       return new Response(null, {
         status: 401,
@@ -181,6 +181,8 @@ export default class Filesystem extends Base {
 
     return fileContent
   }
+  
+
 }
 
 // class GHFile extends File

@@ -82,7 +82,7 @@ if ('serviceWorker' in navigator || window.lively4chrome) {
   } else {
     // the scope of the serviceworker can only be refined to something below it's root... so we have to install it as a file at the content's side. 
     navigator.serviceWorker.register(new URL('swx-loader.js', window.location)).then(function(registration) {
-        lively.console("SWX registration", registration)
+        console.log("SWX registration", registration)
         window.lively4swxregistration = registration; // for debugging
         // Registration was successful
         console.log('ServiceWorker registration successful with scope: ', registration.scope);

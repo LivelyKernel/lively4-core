@@ -66,7 +66,6 @@ export default class Container extends Morph {
     	}
     }
     
-
     // #TODO very ugly... I want to hide that level of JavaScript and just connect "onEnter" of the input field with my code
     var input = this.get("#container-path");
     $(input).keyup(event => {
@@ -74,13 +73,15 @@ export default class Container extends Morph {
         this.onPathEntered(input.value);
       }
     });
+    this.get("#fullscreenButton").onclick = (e) => this.onFullscreenButton(e);
+    
     lively.html.registerButtons(this);
 
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
     // this.addEventListener('keyup',   evt => this.onKeyUp(evt));
     this.addEventListener('keydown',   evt => this.onKeyDown(evt));
-    this.setAttribute("tabindex", 0)	
-    this.hideCancelAndSave()
+    this.setAttribute("tabindex", 0);
+    this.hideCancelAndSave();
   }
   
   onContextMenu(evt) {
@@ -89,7 +90,11 @@ export default class Container extends Morph {
       evt.preventDefault();
 	    lively.openContextMenu(document.body, evt, undefined, this);
 	    return false;
-    }
+    } // Hallo Jens! Was macht Lively so?
+  }
+  
+  onFullscreenButton(evt) {
+    this.toggleControls();
   }
     
   useBrowserHistory() {
@@ -365,9 +370,16 @@ export default class Container extends Morph {
     if (window.confirm("delete " + url)) {
       var result = await fetch(url, {method: 'DELETE'})
         .then(r => r.text());
+        
+      this.setAttribute("mode", "show");
       this.setPath(url.replace(/[^/]*$/, ""));
+      this.hideCancelAndSave();
+
       lively.notify("deleted " + url, result);
-    }
+    
+      
+      
+    } 
   }
 
   async onNewfile() {
@@ -669,13 +681,6 @@ export default class Container extends Morph {
       return "";    
   }
   
-  linksForFile(url, name) {
-    if (name.match(/\.((mkv)|(mp4)|(avi))$/))
-      return "<a class='play' href='" + (""+url).replace(/\/?$/,"/") + name +"'>play</href>";
-    else
-      return "";  
-  }
-  
   listingForDirectory(url, render) {
     return lively.files.statFile(url).then((content) => {
       var files = JSON.parse(content).contents;
@@ -711,26 +716,13 @@ export default class Container extends Morph {
       } else {
         return ;
       }
-      // var html = "<div class='table-container'>"+
-      //   "<table class='directory'>"+
-      //   "<tr><th></th><th>name</th><th>size</th></tr>" +
-      //   // "<li><a href='../'>..</a></li>" +
-      //   _.sortBy(files, ea => ea.name)
-      //     .filter(ea => !ea.name.match(/^\./))
-      //     .map( ea =>
-      //     // "<li><a href='"+ea.name + (ea.type == "directory" ? "/" : "")+"''>" +ea.name+ "</a></li>"
-      //     "<tr><td>"+this.thumbnailFor(url, ea.name)+"</td><td>" + ea.name + '</td><td>' + ea.size+ '</td><td>'+this.linksForFile(url, ea.name)+'</td></tr>'
-      //     ).join("\n")+"</table></div>";
-      // if (render) {
-      //   this.appendHtml(html);
-      // }
     }).catch(function(err){
       console.log("Error: ", err);
       lively.notify("ERROR: Could not set path: " + url,  "because of: ",  err);
     });
   }
   
-  setPath(path, donotrender) {
+  async setPath(path, donotrender) {
     this.get('#container-content').style.display = "block";
     this.get('#container-editor').style.display = "none";
 
@@ -738,6 +730,8 @@ export default class Container extends Morph {
         path = "";
     }
 	  var isdir= path.match(/.\/$/);
+
+
     var url;
     if (path.match(/^https?:\/\//)) {
       url = new URL(path);
@@ -745,8 +739,18 @@ export default class Container extends Morph {
       path = "" + url;
     } else {
       path = lively.paths.normalize(path);
+      url = "https://lively4" + path
+    }
+    if (!isdir) {
+      // check if our file is a directory
+      var options = await fetch(url, {method: "OPTIONS"}).then(r =>  r.json()).catch(e => {})
+      if (options && options.type == "directory") {
+        isdir = true
+      }
     }
     path =  path + (isdir ? "/" : "");
+
+    
 
     var container=  this.get('#container-content');
     // don't scroll away whe reloading the same url
@@ -754,11 +758,15 @@ export default class Container extends Morph {
       this.preserveContentScroll = this.get("#container-content").scrollTop;
     }
 	  this.setAttribute("src", path);
+
     this.clear();
-    this.get('#container-path').value = path;
+    this.get('#container-path').value = path.replace(/\%20/g, " ");
     container.style.overflow = "auto";
 
     url = this.getURL();
+    
+
+    
     this.showNavbar();
     // console.log("set url: " + url);
     this.sourceContent = "NOT EDITABLE";
@@ -771,11 +779,24 @@ export default class Container extends Morph {
     }
     // Handling files
     this.lastVersion = null; // just to be sure
+    
+    var format = path.replace(/.*\./,"");
+    if (format.match(/(png)|(jpe?g)/)) {
+      if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + url +"'>");
+      else return;
+    } else if (format.match(/(ogm)|(m4v)|(mp4)|(avi)|(mpe?g)|(mkv)/)) {
+      if (render) return this.appendHtml('<lively-movie src="' + url +'"></lively-movie>');
+      else return;
+    } else if (format == "pdf") {
+      if (render) return this.appendHtml('<lively-pdf overflow="visible" src="'
+        + url +'"></lively-pdf>');
+      else return;
+    }
+  
     return fetch(url).then( resp => {
       this.lastVersion = resp.headers.get("fileversion");
       return resp.text();
     }).then((content) => {
-      var format = path.replace(/.*\./,"");
       if (format == "html")  {
         this.sourceContent = content;
         if (render) return this.appendHtml(content);
@@ -785,11 +806,6 @@ export default class Container extends Morph {
       } else if (format == "livelymd") {
         this.sourceContent = content;
         if (render) return this.appendLivelyMD(content);
-      } else if (format.match(/(png)|(jpe?g)/)) {
-        if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + url +"'>");
-      } else if (format == "pdf") {
-        if (render) return this.appendHtml('<object style="width:21cm;height:29cm" data="'
-          + url +'" type="application/pdf"></object>');
       } else {
         this.sourceContent = content;
         if (render) return this.appendHtml("<pre><code>" + content +"</code></pre>");
@@ -926,7 +942,6 @@ export default class Container extends Morph {
           }
           return (a.name >= b.name) ? 1 : -1;
         })
-        .filter(ea => ! ea.name.match(/\.((ogm)|(m4v)|(mp4)|(avi)|(mpe?g)|(mkv))$/))
         .filter(ea => ! ea.name.match(/^\./));
 
       files.unshift({name: "..", type: "directory"});
@@ -968,6 +983,28 @@ export default class Container extends Morph {
       }
     });
   }
+  
+  
+  toggleControls() {
+    if (this.get("#container-navigation").style.display  == "none") {
+      this.showControls();
+    } else {
+      this.hideControls();
+    }
+  }
+  
+  hideControls() {
+    this.get("#container-navigation").style.display  = "none";
+    this.get("#container-leftpane").style.display  = "none";
+    this.get("lively-separator").style.display  = "none";
+  }
+  
+  showControls() {
+    this.get("#container-navigation").style.display  = "";
+    this.get("#container-leftpane").style.display  = "";
+    this.get("lively-separator").style.display  = "";
+  }
+  
   
   editFile(path) {
     // console.log("[container ] editFile " + path)
