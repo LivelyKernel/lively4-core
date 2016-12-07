@@ -393,6 +393,18 @@ export default class Container extends Morph {
     this.followPath(fileName);
   }
 
+  async onNewdirectory() {
+    var fileName = window.prompt('Please enter the name of the directory', this.getPath());
+    if (!fileName) {
+      lively.notify("no file created");
+      return;
+    }
+    await lively.files.saveFile(fileName +"/","");
+    lively.notify("created " + fileName);
+    this.followPath(fileName);
+  }
+
+
   onVersions() {
     this.get("#editor").toggleVersions();
   }
