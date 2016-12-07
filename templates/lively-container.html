@@ -208,12 +208,13 @@
         margin: 6px 2px 0px 4px;
       }
       
-      #fullscreenButton {
+      #fullscreenInline {
         font-size: 10pt; 
         position:absolute; 
         right: 16px; 
         top: 10px;
         z-index: 10;
+        display: none;
         /* background-color: white; */
       }
       
@@ -247,6 +248,9 @@
         <i class="fa fa-ban" aria-hidden="true"></i></button> 
       <button class="browse" id="edit" title="edit file">
         <i class="fa fa-pencil" aria-hidden="true"></i></button>
+        
+      <button class="browse edit" id="fullscreen" title="fullscreen">
+        <i class="fa fa-arrows-alt" aria-hidden="true"></i></button>  
     </div>
 
     <div id="layout-center">
@@ -261,10 +265,9 @@
         </div>
         <div id="container-editor"></div>
         <!-- #TODO move this into button row -->
-        <a id="fullscreenButton">
+        <a id="fullscreenInline">
           <i class="fa fa-arrows-alt" aria-hidden="true"></i>
         </a>
-
       </div>
 
     </div>

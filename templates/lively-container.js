@@ -73,7 +73,7 @@ export default class Container extends Morph {
         this.onPathEntered(input.value);
       }
     });
-    this.get("#fullscreenButton").onclick = (e) => this.onFullscreenButton(e);
+    this.get("#fullscreenInline").onclick = (e) => this.onFullscreen(e);
     
     lively.html.registerButtons(this);
 
@@ -93,7 +93,7 @@ export default class Container extends Morph {
     } // Hallo Jens! Was macht Lively so?
   }
   
-  onFullscreenButton(evt) {
+  onFullscreen(evt) {
     this.toggleControls();
   }
     
@@ -988,7 +988,9 @@ export default class Container extends Morph {
   toggleControls() {
     if (this.get("#container-navigation").style.display  == "none") {
       this.showControls();
+      this.get("#fullscreenInline").style.display = "none"
     } else {
+      this.get("#fullscreenInline").style.display = "block"
       this.hideControls();
     }
   }
