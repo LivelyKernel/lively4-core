@@ -399,7 +399,7 @@ export default class Container extends Morph {
       lively.notify("no file created");
       return;
     }
-    await lively.files.saveFile(fileName +"/","");
+    await fetch(fileName, {method: 'MKCOL'});
     lively.notify("created " + fileName);
     this.followPath(fileName);
   }
@@ -927,7 +927,7 @@ export default class Container extends Morph {
     this.get('lively-separator').style.display = "none";
   }
 
-  showNavbar() {
+  async showNavbar() {
     // this.get('#container-leftpane').style.display = "block";
     // this.get('lively-separator').style.display = "block";
 
@@ -936,64 +936,92 @@ export default class Container extends Morph {
 
     var root =("" + this.getURL()).replace(/\/[^\/]+$/,"/");
     this.currentDir = root;
-    lively.files.statFile(root).then( (text) => {
       var navbar = this.clearNavbar();
       var targetItem;
-
-      var stats = JSON.parse(text);
-      var names = {};
-      stats.contents.forEach(ea => names[ea.name] = ea);
+    var stats = await fetch(root, {
+      method: "OPTIONS",
+    }).then(r => r.json()).catch(e => null);
+    
+    if (!stats) {
+      stats = {};// fake it
+      stats.contents = [{type: "file", name: "index.html"}];
       
-      var files = stats.contents
-        .sort((a, b) => {
-          if (a.type > b.type) {
-            return 1;
-          }
-          if (a.type < b.type) {
-            return -1;
-          }
-          return (a.name >= b.name) ? 1 : -1;
-        })
-        .filter(ea => ! ea.name.match(/^\./));
-
-      files.unshift({name: "..", type: "directory"});
-      files.forEach((ea) => {
-
-        // if there is an Markdown File, ignore the rest
-        var m = ea.name.match(/(.*)\.(.*)/);
-        if (m && m[2] != "md" && names[m[1]+".md"]) return;
-        if (m && m[2] != "livelymd" && names[m[1]+".livelymd"]) return;
-
-	      var element = document.createElement("li");
-	      var link = document.createElement("a");
-
-	      if (ea.name == filename) targetItem = element;
-	      if (targetItem) targetItem.classList.add("selected");
-	      
-	      var name = ea.name;
-	      var icon;
-	      if (ea.type == "directory") {
-	        name += "/";
-	        icon = '<i class="fa fa-folder"></i>';
-	      } else {
-	        icon = '<i class="fa fa-file"></i>';
-	      }
-	      
-	      // name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"")
-	      link.innerHTML = icon + name;
-	      link.href = ea.name;
-	      link.onclick = () => {
-	        this.followPath(root + name);
-	        return false;
-	      };
-	      element.appendChild(link);
-	      navbar.appendChild(element);
+      var html = await fetch(root).then(r => r.text())
+      var div = document.createElement("div");
+      div.innerHTML = html;
+      var i=0;
+      lively.array(div.querySelectorAll("a"))
+        .filter( ea => !ea.getAttribute("href").match(/^javascript:/))
+        .forEach( ea => {
+        stats.contents.push({
+          type: 'link', 
+          name: '' + ea.getAttribute("href").replace(/\/(index.html)?$/,"").replace(/.*\//,""), // ea.textContent,
+          href: "" + ea.getAttribute("href") 
+        });
       });
+    }
+    
+    var names = {};
+    stats.contents.forEach(ea => names[ea.name] = ea);
+    
+    var files = stats.contents
+      .sort((a, b) => {
+        if (a.type > b.type) {
+          return 1;
+        }
+        if (a.type < b.type) {
+          return -1;
+        }
+        return (a.name >= b.name) ? 1 : -1;
+      })
+      .filter(ea => ! ea.name.match(/^\./));
 
-      if (this.isEditing() && targetItem) {
-        this.showNavbarSublist(targetItem);
+    files.unshift({name: "..", type: "directory"});
+    files.forEach((ea) => {
+
+      // if there is an Markdown File, ignore the rest
+      var m = ea.name.match(/(.*)\.(.*)/);
+      if (m && m[2] != "md" && names[m[1]+".md"]) return;
+      if (m && m[2] != "livelymd" && names[m[1]+".livelymd"]) return;
+
+      var element = document.createElement("li");
+      var link = document.createElement("a");
+
+      if (ea.name == filename) targetItem = element;
+      if (targetItem) targetItem.classList.add("selected");
+      
+      var name = ea.name;
+      var icon;
+      if (ea.type == "directory") {
+        name += "/";
+        icon = '<i class="fa fa-folder"></i>';
+      } else if (ea.type == "link") {
+        icon = '<i class="fa fa-arrow-circle-o-right"></i>';
+      } 
+        else {
+        icon = '<i class="fa fa-file"></i>';
       }
+      
+      // name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"")
+      link.innerHTML = icon + name;
+      var href = ea.href || ea.name;
+      link.href = href;
+      
+      link.onclick = () => {
+        lively.notify("href " + root + "" + href1)
+        if (href.match(/^https?:\/\//))
+          this.followPath( href);
+        else
+          this.followPath(root + "" + href);
+        return false;
+      };
+      element.appendChild(link);
+      navbar.appendChild(element);
     });
+
+    if (this.isEditing() && targetItem) {
+      this.showNavbarSublist(targetItem);
+    }
   }
   
   
