@@ -296,6 +296,7 @@ export default class Lively {
       pos = pos || lively.pt(100,100);
       comp.changeMode("javascript");
       comp.enableAutocompletion();
+      comp.setAttribute("persistent", "true");
       comp.editor.setValue(string);
       lively.setPosition(container,pos);
       container.setAttribute("title", "Workspace");
