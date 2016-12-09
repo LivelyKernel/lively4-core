@@ -51,6 +51,17 @@ export class Base {
   del(path, request) {
     throw new FileNotFoundError()
   }
+  
+  /**
+   * creates directory at given path.
+   *
+   * @param  {String} path
+   * @param  {Request} request
+   * @return {Promise}
+   */
+  makeDir(path, request) {
+    throw new FileNotFoundError()
+  }
 }
 
 export class Stat {

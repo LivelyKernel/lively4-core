@@ -8,6 +8,15 @@ import {pt} from 'lively.graphics';
 
 export default class ContextMenu {
   
+  constructor(target, optItems) {
+    this.target = target;
+    this.items = optItems;
+  }
+  
+  openIn(container, evt, target, worldContext) {
+     return ContextMenu.openIn(container, evt, target, worldContext,  this.items);
+  }
+  
   static hide() {
     if (this.menu) this.menu.remove();
     lively.removeEventListener("contextMenu",  document.documentElement);
@@ -165,7 +174,7 @@ export default class ContextMenu {
     }
   }
   
-  static openIn(container, evt, target, worldContext) {
+  static openIn(container, evt, target, worldContext, optItems) {
     this.hide();
     lively.addEventListener("contextMenu", document.documentElement, "click", () => {
       this.hide();
@@ -184,7 +193,7 @@ export default class ContextMenu {
         }
         lively.setPosition(menu, pt(evt.pageX - xOffset, evt.pageY));
       }
-      menu.openOn(this.items(target, worldContext), evt).then(() => {
+      menu.openOn(optItems || this.items(target, worldContext), evt).then(() => {
       });
       return menu;
     });

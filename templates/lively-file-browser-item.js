@@ -4,7 +4,6 @@ export default class FileBrowserItem extends Morph {
   initialize() {
     this.addEventListener('contextmenu', (evt) => {
       if (!evt.shiftKey) {
-        lively.notify("context on " + this)
         evt.preventDefault();
         lively.openContextMenu(document.body, evt, this);
         evt.stopPropagation()

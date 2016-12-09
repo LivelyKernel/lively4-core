@@ -4,6 +4,7 @@ import {pt} from 'lively.graphics';
 
 import halo from 'templates/lively-halo.js';
 
+import ContextMenu from 'src/client/contextmenu.js'
 
 import * as cop  from "src/external/ContextJS/src/contextjs.js"
 import ScopedScripts from "./ScopedScripts.js"
@@ -172,7 +173,7 @@ export default class Container extends Morph {
   
   loadModule(url) {
     lively.reloadModule("" + url).then(module => {
-      lively.notify("Scripting","Module " + moduleName + " reloaded!", 3, null, "green");
+      lively.notify("","Module " + moduleName + " reloaded!", 3, null, "green");
       if (this.getPath().match(/templates\/.*js/)) {
         var templateURL = this.getPath().replace(/\.js$/,".html");
         try {
@@ -365,20 +366,21 @@ export default class Container extends Morph {
     }).then(() => this.showNavbar());
   }
 
-  async onDelete() {
+  onDelete() {
     var url = this.getURL() +"";
+    this.deleteFile(url)
+  }
+  
+  async deleteFile(url) {
     if (window.confirm("delete " + url)) {
       var result = await fetch(url, {method: 'DELETE'})
         .then(r => r.text());
         
       this.setAttribute("mode", "show");
-      this.setPath(url.replace(/[^/]*$/, ""));
+      this.setPath(url.replace(/\/$/, "").replace(/[^/]*$/, ""));
       this.hideCancelAndSave();
 
       lively.notify("deleted " + url, result);
-    
-      
-      
     } 
   }
 
@@ -542,7 +544,7 @@ export default class Container extends Morph {
       var root = this.getContentRoot();
       var nodes = $.parseHTML(content, document, true);
       if (nodes[0] && nodes[0].localName == 'template') {
-      	lively.notify("append template " + nodes[0].id);
+      	// lively.notify("append template " + nodes[0].id);
 		    return this.appendTemplate(nodes[0].id);
       }
       lively.html.fixLinks(nodes, this.getDir(),
@@ -1006,15 +1008,28 @@ export default class Container extends Morph {
       link.innerHTML = icon + name;
       var href = ea.href || ea.name;
       link.href = href;
-      
+
+      var url = href.match(/^https?:\/\//) ? href : root + "" + href;
+
       link.onclick = () => {
-        lively.notify("href " + root + "" + href1)
-        if (href.match(/^https?:\/\//))
-          this.followPath( href);
-        else
-          this.followPath(root + "" + href);
+        this.followPath(url);
         return false;
       };
+      link.addEventListener('contextmenu', (evt) => {
+	        if (!evt.shiftKey) {
+            evt.preventDefault();
+            var menu = new ContextMenu(this, [
+              ["delete", () => this.deleteFile(url)],
+              ["edit", () => lively.openBrowser(url, true)],
+              ["browse", () => lively.openBrowser(url)],
+              
+            ]);
+            menu.openIn(document.body, evt, this);
+            evt.stopPropagation();
+            evt.preventDefault();
+            return true;
+          }
+      }, false);
       element.appendChild(link);
       navbar.appendChild(element);
     });

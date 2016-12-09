@@ -235,7 +235,6 @@ export default class Filesystem extends Base {
 
     var dropboxPath = this.subfolder + path
 
-    var deleteParameters = "?rev_limit=100"
     var deleteRequest = new Request('https://api.dropboxapi.com/1/fileops/delete?root=auto&path=' + dropboxPath, {headers: dropboxHeaders});
 
     var response = await fetch(deleteRequest)
@@ -244,6 +243,25 @@ export default class Filesystem extends Base {
     }
     
     return new Response("deleted " + dropboxPath, {
+      headers: {},
+      status: 200})
+  }
+  
+  async makeDir(path, request) {
+    
+    let dropboxHeaders = new Headers()
+    dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
+
+    var dropboxPath = this.subfolder + path
+
+    var makeDirRequest = new Request('https://api.dropboxapi.com/1/fileops/create_folder?root=auto&path=' + dropboxPath, {headers: dropboxHeaders});
+
+    var response = await fetch(makeDirRequest)
+    if(response.status < 200 || response.status >= 300) {
+      throw new Error(response.statusText)
+    }
+    
+    return new Response("created directory:  " + dropboxPath, {
       headers: {},
       status: 200})
   }

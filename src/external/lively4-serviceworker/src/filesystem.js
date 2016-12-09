@@ -73,6 +73,10 @@ export class Filesystem {
     if(request.method === 'DELETE')
       return fs.del(path, request)
 
+    if(request.method === 'MKCOL')
+      return fs.makeDir(path, request)
+
+
     if(request.method === 'OPTIONS') {
       try {
         let stat_resp = await fs.stat(path, request)
