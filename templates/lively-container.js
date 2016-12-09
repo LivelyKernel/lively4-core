@@ -4,10 +4,10 @@ import {pt} from 'lively.graphics';
 
 import halo from 'templates/lively-halo.js';
 
-import ContextMenu from 'src/client/contextmenu.js'
+import ContextMenu from 'src/client/contextmenu.js';
 
-import * as cop  from "src/external/ContextJS/src/contextjs.js"
-import ScopedScripts from "./ScopedScripts.js"
+import * as cop  from "src/external/ContextJS/src/contextjs.js";
+import ScopedScripts from "./ScopedScripts.js";
 
 export default class Container extends Morph {
 
@@ -167,7 +167,7 @@ export default class Container extends Morph {
         console.groupEnd();
       });
     } else {
-      lively.notify("no rest-runner to run " + url.toString().replace(/.*\//,""))
+      lively.notify("no rest-runner to run " + url.toString().replace(/.*\//,""));
     }
   }
   
@@ -384,17 +384,24 @@ export default class Container extends Morph {
     } 
   }
 
-  async onNewfile() {
-    var fileName = window.prompt('Please enter the name of the file', this.getPath());
+  onNewfile() {
+    newfile(this.getPath())
+  }
+  
+  async newfile(path) {
+    var fileName = window.prompt('Please enter the name of the file', path);
     if (!fileName) {
       lively.notify("no file created");
       return;
     }
     await lively.files.saveFile(fileName,"");
     lively.notify("created " + fileName);
+    this.setAttribute("mode", "edit");
+    this.showCancelAndSave();
+    
     this.followPath(fileName);
   }
-
+  
   async onNewdirectory() {
     var fileName = window.prompt('Please enter the name of the directory', this.getPath());
     if (!fileName) {
@@ -938,8 +945,7 @@ export default class Container extends Morph {
 
     var root =("" + this.getURL()).replace(/\/[^\/]+$/,"/");
     this.currentDir = root;
-      var navbar = this.clearNavbar();
-      var targetItem;
+    var targetItem;
     var stats = await fetch(root, {
       method: "OPTIONS",
     }).then(r => r.json()).catch(e => null);
@@ -962,7 +968,8 @@ export default class Container extends Morph {
         });
       });
     }
-    
+    var navbar = this.clearNavbar();
+      
     var names = {};
     stats.contents.forEach(ea => names[ea.name] = ea);
     
@@ -1019,7 +1026,8 @@ export default class Container extends Morph {
 	        if (!evt.shiftKey) {
             evt.preventDefault();
             var menu = new ContextMenu(this, [
-              ["delete", () => this.deleteFile(url)],
+              ["delete file", () => this.deleteFile(url)],
+              ["new file", () => this.newfile(url)],
               ["edit", () => lively.openBrowser(url, true)],
               ["browse", () => lively.openBrowser(url)],
               
@@ -1178,9 +1186,9 @@ export default class Container extends Morph {
   
   livelyMigrate(other) {
     // other = that
-    this.isMigrating = true
-    this.preserveContentScroll = other.oldContentScroll
-    var editor = other.get("#editor")
+    this.isMigrating = true;
+    this.preserveContentScroll = other.oldContentScroll;
+    var editor = other.get("#editor");
     if (editor) {
       var otherAce = editor.currentEditor();  
       if (otherAce && otherAce.selection) {
@@ -1192,14 +1200,14 @@ export default class Container extends Morph {
             thisAce.session.setScrollTop(scrollTop);
             thisAce.selection.setRange(range);
           }
-          this.isMigrating = false
+          this.isMigrating = false;
         }).catch(() => {
           // jsut to be sure..
-          this.isMigrating = false
+          this.isMigrating = false;
         });
       }
     } else {
-      this.isMigrating = false
+      this.isMigrating = false;
     }
   }
 }
