@@ -1,0 +1,41 @@
+<head>
+  <style>
+    #editorDemo lively-container {
+      margin: 10px;
+      border: 1px solid gray;
+    }
+  </style>
+</head>
+
+<h1>Editors</h1>
+
+<p>
+  This page should demonstrate how the content of containers get updated when it is changed in other containers. 
+</p>
+
+<table id="editorDemo">
+  <tr><td><b>Container 1 (edit)</b></td><td><b>Container 2 (edit)</b></td></tr>
+  <tr>
+    <td>
+      <lively-container mode="edit" src="https://lively-kernel.org/lively4/lively4-jens/demos/hello.html"  style="width: 400px; height: 200px;" tabindex="0" controls="hidden">
+      </lively-container>
+    </td>
+    <td>
+      <lively-container mode="edit" src="https://lively-kernel.org/lively4/lively4-jens/demos/hello.html"  style="width: 400px; height: 200px;" tabindex="0" controls="hidden">
+      </lively-container>
+    </td>
+  </tr>
+  <tr><td><b>Container 3 (browse)</b></td><td><b>Container 4 (browse)</b></td></tr>
+  <tr>
+    <td>
+      <lively-container mode="show" src="https://lively-kernel.org/lively4/lively4-jens/demos/hello.html"  style="width: 400px; height: 200px;" tabindex="0" controls="hidden">
+      </lively-container>
+    </td>
+    <td>
+      <lively-container mode="show" src="https://lively-kernel.org/lively4/lively4-jens/demos/hello.html"  style="width: 400px; height: 200px;" tabindex="0" controls="hidden">
+      </lively-container>
+    </td>
+  </tr>
+  <tr></tr>
+  <tr></tr>
+</table>

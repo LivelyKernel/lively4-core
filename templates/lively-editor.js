@@ -49,7 +49,6 @@ export default class Editor extends Morph {
     var url = this.getURL().toString();
     var editors = lively.array(document.querySelectorAll("lively-container::shadow lively-editor, lively-editor"));
 
-
     var editorsToUpdate = editors.filter( ea => 
       ea.getURL().toString() == url && !ea.textChanged && ea !== this);
           
@@ -132,7 +131,7 @@ export default class Editor extends Morph {
     }).then( response => {
       // remember the commit hash (or similar version information) if loaded resource
       this.lastVersion = response.headers.get("fileversion");
-      lively.notify("loaded version " + this.lastVersion);
+      // lively.notify("loaded version " + this.lastVersion);
       return response.text();
     }).then((text) => {
         var oldRange = this.currentEditor().selection.getRange()

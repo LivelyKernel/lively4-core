@@ -83,6 +83,10 @@ export default class Container extends Morph {
     this.addEventListener('keydown',   evt => this.onKeyDown(evt));
     this.setAttribute("tabindex", 0);
     this.hideCancelAndSave();
+    
+    if(this.getAttribute("controls") =="hidden") {
+      this.hideControls()
+    }
   }
   
   onContextMenu(evt) {
@@ -343,14 +347,8 @@ export default class Container extends Morph {
       }
       var url = this.getURL();
       
-      document.body.querySelectorAll('lively-container').forEach(ea => {
-        var url = "" + this.getURL();
-        if (ea !== this && !ea.isEditing() 
-          && ("" +ea.getURL()).match(url.replace(/\.[^.]+$/,""))) {
-          console.log("update container content: " + ea);
-          ea.setPath(ea.getURL() + "");
-        }  
-      });
+      this.updateOtherContainers();
+      
     
       var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/);
       if (moduleName) {
@@ -358,12 +356,23 @@ export default class Container extends Morph {
         if (this.lastLoadingFailed) {
           this.reloadModule(url); // use our own mechanism...
         } else if (this.getPath().match(/test\/.*js/)) {
-          this.loadTestModule(url)
+          this.loadTestModule(url); 
         } else if ((this.get("#live").checked && !this.get("#live").disabled)) {
-          this.loadModule(url)
+          this.loadModule(url);
         }
       }
     }).then(() => this.showNavbar());
+  }
+
+  updateOtherContainers() {
+    var url = "" + this.getURL();
+    document.body.querySelectorAll('lively-container').forEach(ea => {
+      if (ea !== this && !ea.isEditing() 
+        && ("" +ea.getURL()).match(url.replace(/\.[^.]+$/,""))) {
+        console.log("update container content: " + ea);
+        ea.setPath(ea.getURL() + "");
+      }  
+    });
   }
 
   onDelete() {
@@ -1051,20 +1060,22 @@ export default class Container extends Morph {
   toggleControls() {
     if (this.get("#container-navigation").style.display  == "none") {
       this.showControls();
-      this.get("#fullscreenInline").style.display = "none"
     } else {
-      this.get("#fullscreenInline").style.display = "block"
       this.hideControls();
     }
   }
   
   hideControls() {
+    this.setAttribute("controls","hidden")
+    this.get("#fullscreenInline").style.display = "block"
     this.get("#container-navigation").style.display  = "none";
     this.get("#container-leftpane").style.display  = "none";
     this.get("lively-separator").style.display  = "none";
   }
   
-  showControls() {
+  showControls() {    this.getAttribute("controls")
+    this.setAttribute("controls","shown")
+    this.get("#fullscreenInline").style.display = "none"
     this.get("#container-navigation").style.display  = "";
     this.get("#container-leftpane").style.display  = "";
     this.get("lively-separator").style.display  = "";
@@ -1130,7 +1141,9 @@ export default class Container extends Morph {
       editor.setText(source);
       editor.lastVersion = this.lastVersion;
       editor.saveFile().then( () => {
+        this.lastVersion = editor.lastVersion
         // #TODO we should update here after conflict resolution?
+        this.updateOtherContainers()
       });
     });
     
@@ -1142,9 +1155,9 @@ export default class Container extends Morph {
         return lively.notify("Editing templates in View not supported yet!");
     } else if (url.match(/\.html$/)) {
        this.saveHTML().then( () => {
-         lively.notify({
-           title: "saved HTML",
-           color: "green"});
+        // lively.notify({
+        //   title: "saved HTML",
+        //   color: "green"});
        });
     } else {
       lively.notify("Editing in view not supported for the content type!");
