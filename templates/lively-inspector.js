@@ -18,7 +18,7 @@ export default class Inspector   extends Morph {
     if (name) {
       var node = document.createElement("div");
       node.classList.add("element");
-      node.innerHTML = name +": " +JSON.stringify(value);
+      node.innerHTML = "<span class='attrName'>"+ name +":</span> <span class='attrValue'>"+ JSON.stringify(value)+"</span>";
       return node;
     } else {
       var node = document.createElement("pre");
@@ -30,8 +30,7 @@ export default class Inspector   extends Morph {
   displayFunction(value) {
     var node = document.createElement("div");
     node.classList.add("element");
-    node.innerHTML = this.expandTemplate(node) + " function " + value.name + "(";
-    // node.innerHTML = "<pre>" + value + "</pre>";
+    node.innerHTML =  "<pre>" + value + "</pre>";
     return node;
   }
   
@@ -68,7 +67,11 @@ export default class Inspector   extends Morph {
     var contentNode = node.querySelector("#content");
     if (node.isExpanded) {
       contentNode.innerHTML = "";
-      Object.keys(obj).forEach( ea => { 
+      if (obj instanceof Function) {
+       contentNode.appendChild(this.displayFunction(obj, expand, name)); 
+      }
+
+      this.allKeys(obj).forEach( ea => { 
           contentNode.appendChild(this.displayObject(obj[ea], false, ea, obj)); // force object display
       });
     }
@@ -78,6 +81,7 @@ export default class Inspector   extends Morph {
     if (!(obj instanceof Object)) {
       return this.displayValue(obj, expand, name); // even when displaying objects.
     }
+    
     var node = document.createElement("div");
     node.classList.add("element");
     this.renderObject(node, obj, expand, name);
@@ -209,7 +213,7 @@ export default class Inspector   extends Morph {
         contentNode.appendChild(this.display(ea, expandChildren, null, obj));
       });
 
-      var hasProperties = Object.keys(obj).length > 0;
+      var hasProperties = this.allKeys(obj).length > 0;
       if (hasProperties && !obj.livelyIsParentPlaceholder) {
         var props = this.displayObject(obj, false, "#Properties");
         contentNode.appendChild(props);
@@ -319,6 +323,13 @@ export default class Inspector   extends Morph {
     this.get("#container").appendChild(content);
     return content;
   }
+  
+  allKeys(obj) {
+    var keys = []
+    for(var i in obj) { keys.push(i)}
+    return keys
+  }
+  
   
   livelyMigrate(oldInstance) {
     this.inspect(oldInstance.targetObject) ;   

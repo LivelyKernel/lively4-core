@@ -1,0 +1,91 @@
+<html>
+      <head>
+      <style>
+        /* Disable intrinsic user agent touch behaviors (such as panning or zooming) */
+        canvas {
+          touch-action: none;
+        }
+      </style>
+ 
+ 
+    <script type='text/javascript'>
+      var offset
+      var lastPt = new Object();;
+      var colours = ['red', 'green', 'blue', 'yellow', 'black'];
+      var canvas;
+      var ctx;
+
+      //Helper function to get correct page offset for the Pointer coords
+      function getOffset(obj) {
+          var offsetLeft = 0;
+          var offsetTop = 0;
+          do {
+            if (!isNaN(obj.offsetLeft)) {
+                offsetLeft += obj.offsetLeft;
+            }
+            if (!isNaN(obj.offsetTop)) {
+                offsetTop += obj.offsetTop;
+            }   
+          } while(obj = obj.offsetParent );
+          return {left: offsetLeft, top: offsetTop};
+      } 
+      
+      
+      
+        function init() {
+          canvas = document.getElementById("mycanvas");
+          ctx = canvas.getContext("2d");
+          offset  = getOffset(canvas);
+          canvas.addEventListener("pointerdown", function(evt) {
+            evt.stopPropagation()
+            evt.preventDefault()
+            canvas.addEventListener("pointermove", draw, false);
+          }, false);
+          canvas.addEventListener("pointerup", endPointer, false);
+        }
+        
+        // Event handler called for each pointerdown event:
+        function draw(e) {
+            var id = e.pointerId;   
+          
+          if(lastPt[id]) {
+            ctx.beginPath();
+            // Start at previous point
+            ctx.moveTo(lastPt[id].x, lastPt[id].y);
+            // Line to latest point
+            ctx.lineTo(e.pageX - offset.left, e.pageY - offset.top);
+            ctx.strokeStyle = colours[id%5];
+            ctx.lineWidth=5 * e.pressure;
+            lively.get("#peninfo").textContent = "pressure: " + e.pressure + ", pointerType: "+ e.pointerType 
+            // Draw it!
+            ctx.stroke();
+            window.LastEvt = e
+          }
+          //Store latest pointer
+          lastPt[id] = {x:e.pageX - offset.left, y:e.pageY - offset.top};
+        }
+ 
+
+        function endPointer(e) {
+          var id = e.pointerId;
+          
+          //Stop tracking the pointermove (and mousemove) events
+          canvas.removeEventListener("pointermove", draw, false); 
+          canvas.removeEventListener("mousemove", draw, false); 
+ 
+          delete lastPt[id];
+        }
+      
+ 
+ 
+    </script>
+    </head>
+    From <a href="https://mobiforge.com/design-development/html5-pointer-events-api-combining-touch-mouse-and-pen">Ruadhán O'Donoghue, 2015-06-15: The HTML5 Pointer Events API: Combining touch, mouse, and pen</a>
+    
+    
+    <canvas id="mycanvas" width="500" height="500" style="border:1px solid black;"></canvas>
+    <script>
+      init()
+    </script>
+
+    </html>

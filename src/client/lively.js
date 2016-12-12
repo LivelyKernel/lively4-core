@@ -860,6 +860,22 @@ export default class Lively {
       }
     });
   }
+  
+  static get(query) {
+    return document.querySelector(query)
+  }
+  
+  // lively.print(document)
+  static print(obj) {
+    var s = "" + obj + "{"
+    for(var i in obj) {
+      if (!(obj[i] instanceof Function) && obj[i] !== undefined)
+      s += i + ": " + obj[i] + "\n"
+    }
+    s +"}"
+    return s
+  }
+  
 }
 
 if (window.lively && window.lively.name != "Lively") {

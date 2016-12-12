@@ -1,6 +1,4 @@
 
-
-
 export default class AceEditor extends HTMLElement {
 
   // Fires when an instance was inserted into the document
@@ -555,9 +553,12 @@ export default class AceEditor extends HTMLElement {
     return this.setAttribute("persistent", bool)
   }
   
-  onChanged() {
-    if (this.persistent)
-      this.innerHTML = this.editor.getValue().replace(/</g,"&lt;")
+  onChanged(evt) {
+    if (this.persistent) {
+      this.textContent = this.editor.getValue().replace(/</g,"&lt;")
+      this.editor.focus()
+      // lively.notify("change ",  lively.print(evt))
+    }
   }
   
 }

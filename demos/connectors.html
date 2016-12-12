@@ -8,14 +8,18 @@
   <div id="A" style="background-color: green; position:absolute; left: 100px; top: 100px; width: 100px; height: 100px">Hello</div>
   <div id="B" style="background-color: blue; position:absolute; left: 300px; top: 300px; width: 100px; height: 100px">World</div>
 
-  <div id="C" style="background-color: red; position:absolute; left: 100px; top: 300px; width: 100px; height: 100px">Foo</div>
+  <div style="background-color: gray; position:absolute; left: 100px; top: 300px; width: 100px; height: 100px">
+    haha...
+  <div id="C" style="background-color: red; position:absolute; left: 10px; top: 30px; width: 100px; height: 100px">Foo</div>
+  </div>
+  <script data-name="onReady" type="lively4script">() => {
+    this.connect("A", "B");
+    this.connect("A", "C");
+    this.plumb.draggable("A");
+    this.plumb.draggable("B");
+    this.plumb.draggable("C");
+    
+  }
+  </script>
 </lively-connectors>
 
-
-<script>
-setTimeout(() => {
-  var c = document.body.querySelector("lively-connectors"); 
-  c.connect("A", "B");
-  c.connect("A", "C");
-},0)
-</script>
