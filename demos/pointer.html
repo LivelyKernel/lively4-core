@@ -55,8 +55,7 @@
             // Line to latest point
             ctx.lineTo(e.pageX - offset.left, e.pageY - offset.top);
             ctx.strokeStyle = colours[id%5];
-            ctx.lineWidth=5 * e.pressure;
-            lively.get("#peninfo").textContent = "pressure: " + e.pressure + ", pointerType: "+ e.pointerType 
+            ctx.lineWidth=2 * e.pressure;
             // Draw it!
             ctx.stroke();
             window.LastEvt = e

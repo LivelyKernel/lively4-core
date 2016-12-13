@@ -1,0 +1,26 @@
+<template id="lively-drawboard" data-class="LivelyDrawboard">
+  <style>
+  :host {
+    width: 800px;
+    height: 600px;
+    touch-action: none;
+  }
+
+  #canvas, #svg {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 800px;
+    height: 600px;
+    border:1px solid black;
+    opacity: 0.5;
+  }
+
+  </style>
+  <svg id="svg"></svg>
+  <canvas id="canvas" width="800" height="600" ></canvas>
+  <content></content>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+
+ 
