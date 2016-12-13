@@ -96,8 +96,8 @@ export default class Inspector   extends Morph {
   expandTemplate(node) {
     return "<span class='syntax'><a id='expand'>" +
       (node.isExpanded ? 
-        "<span style='font-size:12pt'>&#9660;</span>" : 
-        "<span style='font-size:9pt'>&#9654</span>") + "</span></a></span>";
+        "<span style='font-size:9pt'>&#9660;</span>" : 
+        "<span style='font-size:7pt'>&#9654</span>") + "</span></a></span>";
   }
   
   get contentTemplate() {
