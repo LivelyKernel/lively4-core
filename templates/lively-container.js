@@ -9,6 +9,8 @@ import ContextMenu from 'src/client/contextmenu.js';
 import * as cop  from "src/external/ContextJS/src/contextjs.js";
 import ScopedScripts from "./ScopedScripts.js";
 
+import components from "src/client/morphic/component-loader.js"
+
 export default class Container extends Morph {
 
   initialize() {
@@ -460,7 +462,7 @@ export default class Container extends Morph {
           });
         }
       });
-      lively.components.loadUnresolved(root);
+      components.loadUnresolved(root);
       // get around some async fun
       if (this.preserveContentScroll) {
        this.get("#container-content").scrollTop = this.preserveContentScroll
@@ -576,6 +578,7 @@ export default class Container extends Morph {
             }
           }
         }
+        components.loadUnresolved(root);
       }
     } catch(e) {
       console.log("Could not append html:" + content.slice(0,200) +"..." +" ERROR:", e);
