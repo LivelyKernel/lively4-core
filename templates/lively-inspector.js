@@ -18,7 +18,7 @@ export default class Inspector   extends Morph {
     if (name) {
       var node = document.createElement("div");
       node.classList.add("element");
-      node.innerHTML = "<span class='attrName'>"+ name +":</span> <span class='attrValue'>"+ JSON.stringify(value)+"</span>";
+      node.innerHTML = "<span class='attrName'>"+ name +":</span> <span class='attrValue'>"+ JSON.stringify(value).replace(/</g,"&lt;")+"</span>";
       return node;
     } else {
       var node = document.createElement("pre");
@@ -27,10 +27,10 @@ export default class Inspector   extends Morph {
     }
   }
 
-  displayFunction(value) {
+  displayFunction(value, expand, name) {
     var node = document.createElement("div");
     node.classList.add("element");
-    node.innerHTML =  "<pre>" + value + "</pre>";
+    node.innerHTML =  "<span class='attrName'>"+ name +":</span> <span class='attrValue'>" + ("" +value).replace(/</g,"&lt;") + "</span>";
     return node;
   }
   
@@ -68,11 +68,20 @@ export default class Inspector   extends Morph {
     if (node.isExpanded) {
       contentNode.innerHTML = "";
       if (obj instanceof Function) {
-       contentNode.appendChild(this.displayFunction(obj, expand, name)); 
+        var childNode = this.displayFunction(obj, expand, name)
+        if (childNode) contentNode.appendChild(childNode); 
       }
 
       this.allKeys(obj).forEach( ea => { 
-          contentNode.appendChild(this.displayObject(obj[ea], false, ea, obj)); // force object display
+        try {
+          var value = obj[ea]
+        } catch(e) {
+          console.log("[inspector] could not display " + ea + " of " + obj)
+          return
+        }
+        if (value == null) return  
+        var childNode = this.displayObject(value, false, ea, obj)
+        if (childNode) contentNode.appendChild(childNode); // force object display
       });
     }
   }
@@ -80,6 +89,9 @@ export default class Inspector   extends Morph {
   displayObject(obj, expand, name) {
     if (!(obj instanceof Object)) {
       return this.displayValue(obj, expand, name); // even when displaying objects.
+    }
+    if ((obj instanceof Function)) {
+      return this.displayFunction(obj, expand, name); // even when displaying objects.
     }
     
     var node = document.createElement("div");
@@ -326,8 +338,12 @@ export default class Inspector   extends Morph {
   
   allKeys(obj) {
     var keys = []
-    for(var i in obj) { keys.push(i)}
-    return keys
+    for(var i in obj) {
+      if (obj.hasOwnProperty(i) || this.__lookupGetter__(i))
+        keys.push(i)
+    }
+    keys.push("__proto__")
+    return _.sortBy(keys)
   }
   
   
