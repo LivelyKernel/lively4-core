@@ -44,6 +44,12 @@ export default class LivelyPaper extends Morph {
     lively.html.registerButtons(this)
     
     this.addEventListener('contextmenu', (evt) => {
+      if (this.lastPointerUp && (this.lastPointerUp - Date.now() < 1000)) {
+        evt.stopPropagation()
+        evt.preventDefault()
+        return // #HACK custom prevent default....
+      }
+      
       if (!evt.shiftKey) {
         evt.stopPropagation()
         evt.preventDefault()
@@ -77,11 +83,17 @@ export default class LivelyPaper extends Morph {
     }
     this.undoIndex = Math.max(0, this.undoIndex - 1); 
     var lastStroke = this.strokes[this.undoIndex]
-    if(lastStroke) {
-      lastStroke.remove()
+    if(lastStroke) { 
+      if (lastStroke.type == "stroke") {
+        lastStroke.path.remove()
+      } else if (lastStroke.type == "delete") {
+        this.paper.project.activeLayer.addChild(lastStroke.path)
+      }
     }
     this.save()
   }
+  
+  
   
   
   redoStroke() {
@@ -91,8 +103,12 @@ export default class LivelyPaper extends Morph {
     var lastStroke = this.strokes[this.undoIndex]
     this.undoIndex = Math.min(this.strokes.length, this.undoIndex + 1); 
 
-    if(lastStroke) {
-      this.paper.project.activeLayer.addChild(lastStroke)
+    if(lastStroke) { 
+      if (lastStroke.type == "stroke") {
+        this.paper.project.activeLayer.addChild(lastStroke.path)
+      } else if (lastStroke.type == "delete") {
+        lastStroke.path.remove()
+      }
     }
     this.save()
   }
@@ -113,13 +129,25 @@ export default class LivelyPaper extends Morph {
       // context menu
       return
     }
+    
+    if (evt.pointerType == "pen" && evt.button == 2) {
+       // context menu
+      // return
+    }
+    
 
     evt.stopPropagation();
     evt.preventDefault();
     var id = evt.pointerId;   
     this.offset  = this.getOffset(this.canvas);
     var path = new Path();
-    path.strokeColor = "blue"
+    
+    if (evt.pointerType == "pen" && evt.button == 2) {
+      path.command = "delete"
+      path.strokeColor = "red"
+    } else {
+      path.strokeColor = "blue"
+    }
 
     this.lastPath[id] = path;
     var x = evt.pageX - this.offset.left;
@@ -134,28 +162,58 @@ export default class LivelyPaper extends Morph {
   onPointerMove(evt) {
     var id = evt.pointerId;   
     var path = this.lastPath[id];
+    if (path) {
+      
+      var x = evt.pageX - this.offset.left;
+      var y = evt.pageY - this.offset.top;
+      
+      var p = {x:x, y:y};
     
-    var x = evt.pageX - this.offset.left;
-    var y = evt.pageY - this.offset.top;
-    
-    var p = {x:x, y:y};
-  
-    path.lineTo(p);
+      path.lineTo(p);
+    }
   }
 
   onPointerUp(evt) {
+    this.lastPointerUp = Date.now() // #Hack custom prevent default
+    evt.stopPropagation();
+    evt.preventDefault();
+    
     var id = evt.pointerId;
     var path = this.lastPath[id];
     if (path) {
-      path.simplify(3);
-      
-      this.strokes.length = this.undoIndex;
-      this.strokes.push(path);
-      this.undoIndex = this.strokes.length;
-      
+      if (path.command == "delete") {
+        this.paper.project.activeLayer.getItems({class: Path})
+          .filter( ea => {
+            try { 
+              return ea.intersects(path) // 
+            } catch(e) { return false}
+          })
+          .forEach( ea => {
+            // #TODO refaktor into Undo/Redo Command  + CommandProcessor
+            this.strokes.length = this.undoIndex;
+            this.strokes.push({
+              type: "delete",
+              path: ea
+            })
+            this.undoIndex = this.strokes.length;
+
+            ea.remove();
+          })
+        path.remove()
+      } else {
+        path.simplify(3);
+        
+        this.strokes.length = this.undoIndex;
+        this.strokes.push({
+          type: "stroke",
+          path: path
+        });
+        this.undoIndex = this.strokes.length;
+        
+      }
       lively.removeEventListener("drawboard", this.canvas, "pointermove")    
       delete this.lastPath[id];
-      
+
       this.save()
     }
   }

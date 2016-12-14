@@ -339,8 +339,9 @@ export default class Inspector   extends Morph {
   allKeys(obj) {
     var keys = []
     for(var i in obj) {
-      if (obj.hasOwnProperty(i) || this.__lookupGetter__(i))
-        keys.push(i)
+      if (obj.hasOwnProperty(i) || obj.__lookupGetter__(i)) {
+        keys.push(i);
+      }
     }
     keys.push("__proto__")
     return _.sortBy(keys)
