@@ -39,7 +39,7 @@ export default class LivelyPaper extends Morph {
       
     this.load()
     this.strokes = []
-    this.redoStrokes = []
+    this.undoIndex = null
     
     lively.html.registerButtons(this)
     
@@ -72,9 +72,12 @@ export default class LivelyPaper extends Morph {
   }
   
   undoStroke() {
-    var lastStroke = this.strokes.pop()
+    if (this.undoIndex == undefined) {
+      this.undoIndex = this.strokes.length;
+    }
+    this.undoIndex = Math.max(0, this.undoIndex - 1); 
+    var lastStroke = this.strokes[this.undoIndex]
     if(lastStroke) {
-      this.redoStrokes.push(lastStroke)
       lastStroke.remove()
     }
     this.save()
@@ -82,7 +85,12 @@ export default class LivelyPaper extends Morph {
   
   
   redoStroke() {
-    var lastStroke = this.redoStrokes.pop()
+    if (this.undoIndex == undefined) {
+      return;
+    }
+    var lastStroke = this.strokes[this.undoIndex]
+    this.undoIndex = Math.min(this.strokes.length, this.undoIndex + 1); 
+
     if(lastStroke) {
       this.paper.project.activeLayer.addChild(lastStroke)
     }
@@ -140,7 +148,10 @@ export default class LivelyPaper extends Morph {
     var path = this.lastPath[id];
     if (path) {
       path.simplify(3);
-      this.strokes.push(path)
+      
+      this.strokes.length = this.undoIndex;
+      this.strokes.push(path);
+      this.undoIndex = this.strokes.length;
       
       lively.removeEventListener("drawboard", this.canvas, "pointermove")    
       delete this.lastPath[id];
