@@ -20,9 +20,9 @@ export default class LivelyPaper extends Morph {
   
   initPaper() {
     if (this.paper) return this.paper;
+    this.paper = new paper.PaperScope()
     this.canvas = this.get("#canvas");
-    paper.setup(this.canvas);
-    this.paper = paper
+    this.paper.setup(this.canvas);
     
   }
   
@@ -122,9 +122,8 @@ export default class LivelyPaper extends Morph {
     this.redoStroke()
   }
   
-  
-  
   onPointerDown(evt) {
+    this.paper.activate()
     if (evt.pointerType == "mouse" && evt.button == 2) {
       // context menu
       return
