@@ -3,8 +3,11 @@ import paper from "src/external/paperjs/paper-core.js";
 
 import ContextMenu from 'src/client/contextmenu.js';
 
+import CommandHistory  from "src/client/command-history.js";
+
 let Path = paper.Path,
 	Point = paper.Point;
+
 
 export default class LivelyPaper extends Morph {
       
@@ -34,8 +37,7 @@ export default class LivelyPaper extends Morph {
       (e) => this.onPointerUp(e));
       
     this.load();
-    this.strokes = [];
-    this.undoIndex = null;
+    this.strokes = new CommandHistory();
     
     lively.html.registerButtons(this);
     
@@ -74,35 +76,12 @@ export default class LivelyPaper extends Morph {
   }
   
   undoStroke() {
-    if (this.undoIndex === undefined) {
-      this.undoIndex = this.strokes.length;
-    }
-    this.undoIndex = Math.max(0, this.undoIndex - 1); 
-    var lastStroke = this.strokes[this.undoIndex];
-    if(lastStroke) { 
-      if (lastStroke.type == "stroke") {
-        lastStroke.path.remove();
-      } else if (lastStroke.type == "delete") {
-        this.paper.project.activeLayer.addChild(lastStroke.path);
-      }
-    }
+    this.strokes.undo();
     this.save();
   }
-  
-  redoStroke() {
-    if (this.undoIndex === undefined) {
-      return;
-    }
-    var lastStroke = this.strokes[this.undoIndex];
-    this.undoIndex = Math.min(this.strokes.length, this.undoIndex + 1); 
 
-    if(lastStroke) { 
-      if (lastStroke.type == "stroke") {
-        this.paper.project.activeLayer.addChild(lastStroke.path);
-      } else if (lastStroke.type == "delete") {
-        lastStroke.path.remove();
-      }
-    }
+  redoStroke() {
+    this.strokes.redo();
     this.save();
   }
   
@@ -180,25 +159,36 @@ export default class LivelyPaper extends Morph {
             } catch(e) { return false}
           })
           .forEach( ea => {
-            // #TODO refaktor into Undo/Redo Command  + CommandProcessor
-            this.strokes.length = this.undoIndex;
-            this.strokes.push({
+            var command = {
               type: "delete",
-              path: ea
-            });
-            this.undoIndex = this.strokes.length;
-            ea.remove();
+              stroke: ea,
+              container: this.paper.project.activeLayer,
+              execute: function(){
+                this.stroke.remove();
+              },
+              unexecute: function(){
+                this.container.addChild(this.stroke);
+              }
+            };
+            this.strokes.addCommand(command);
+            command.execute();
           });
         path.remove();
       } else {
         path.simplify(3);
-        
-        this.strokes.length = this.undoIndex;
-        this.strokes.push({
+
+        var command = {
           type: "stroke",
-          path: path
-        });
-        this.undoIndex = this.strokes.length;
+          stroke: path,
+          container: this.paper.project.activeLayer,
+          execute: function() {
+            this.container.addChild(this.stroke);
+          },
+          unexecute: function(){
+            this.stroke.remove();
+          }
+        }
+        this.strokes.addCommand(command)
         
       }
       lively.removeEventListener("drawboard", this.canvas, "pointermove");    
