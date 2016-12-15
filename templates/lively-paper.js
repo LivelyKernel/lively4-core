@@ -1,12 +1,10 @@
 import Morph from './Morph.js';
-import paper from "src/external/paperjs/paper-core.js"
+import paper from "src/external/paperjs/paper-core.js";
 
 import ContextMenu from 'src/client/contextmenu.js';
 
-
 let Path = paper.Path,
 	Point = paper.Point;
-
 
 export default class LivelyPaper extends Morph {
       
@@ -15,21 +13,19 @@ export default class LivelyPaper extends Morph {
   }
   
   getOffset(obj) {
-    return  obj.getBoundingClientRect()
+    return  obj.getBoundingClientRect();
   } 
   
   initPaper() {
     if (this.paper) return this.paper;
-    this.paper = new paper.PaperScope()
+    this.paper = new paper.PaperScope();
     this.canvas = this.get("#canvas");
     this.paper.setup(this.canvas);
-    
   }
   
   initialize() {
-    this.lastPath = new Object();
-    
-    this.initPaper()
+    this.lastPath = {};
+    this.initPaper();
 
     lively.addEventListener("drawboard", this.canvas, "pointerdown", 
       (e) => this.onPointerDown(e));
@@ -37,22 +33,22 @@ export default class LivelyPaper extends Morph {
     lively.addEventListener("drawboard", this.canvas, "pointerup", 
       (e) => this.onPointerUp(e));
       
-    this.load()
-    this.strokes = []
-    this.undoIndex = null
+    this.load();
+    this.strokes = [];
+    this.undoIndex = null;
     
-    lively.html.registerButtons(this)
+    lively.html.registerButtons(this);
     
     this.addEventListener('contextmenu', (evt) => {
       if (this.lastPointerUp && (this.lastPointerUp - Date.now() < 1000)) {
-        evt.stopPropagation()
-        evt.preventDefault()
-        return // #HACK custom prevent default....
+        evt.stopPropagation();
+        evt.preventDefault();
+        return; // #HACK custom prevent default....
       }
       
       if (!evt.shiftKey) {
-        evt.stopPropagation()
-        evt.preventDefault()
+        evt.stopPropagation();
+        evt.preventDefault();
 
         var menu = new ContextMenu(this, [
               ["clear", () => this.clear()],
@@ -66,67 +62,63 @@ export default class LivelyPaper extends Morph {
   
   load() {
     // #TODO we know that the state of the svg might diverge frome the state of paper
-    var svg = this.querySelector("svg")
+    var svg = this.querySelector("svg");
     if (svg) {
       this.paper.project.importSVG(svg);
     }
   }
 
   clear() {
-    this.paper.project.clear()
-    this.save()
+    this.paper.project.clear();
+    this.save();
   }
   
   undoStroke() {
-    if (this.undoIndex == undefined) {
+    if (this.undoIndex === undefined) {
       this.undoIndex = this.strokes.length;
     }
     this.undoIndex = Math.max(0, this.undoIndex - 1); 
-    var lastStroke = this.strokes[this.undoIndex]
+    var lastStroke = this.strokes[this.undoIndex];
     if(lastStroke) { 
       if (lastStroke.type == "stroke") {
-        lastStroke.path.remove()
+        lastStroke.path.remove();
       } else if (lastStroke.type == "delete") {
-        this.paper.project.activeLayer.addChild(lastStroke.path)
+        this.paper.project.activeLayer.addChild(lastStroke.path);
       }
     }
-    this.save()
+    this.save();
   }
   
-  
-  
-  
   redoStroke() {
-    if (this.undoIndex == undefined) {
+    if (this.undoIndex === undefined) {
       return;
     }
-    var lastStroke = this.strokes[this.undoIndex]
+    var lastStroke = this.strokes[this.undoIndex];
     this.undoIndex = Math.min(this.strokes.length, this.undoIndex + 1); 
 
     if(lastStroke) { 
       if (lastStroke.type == "stroke") {
-        this.paper.project.activeLayer.addChild(lastStroke.path)
+        this.paper.project.activeLayer.addChild(lastStroke.path);
       } else if (lastStroke.type == "delete") {
-        lastStroke.path.remove()
+        lastStroke.path.remove();
       }
     }
-    this.save()
+    this.save();
   }
   
   onUndoStroke() {
-    this.undoStroke()
+    this.undoStroke();
   }
   
-  
   onRedoStroke() {
-    this.redoStroke()
+    this.redoStroke();
   }
   
   onPointerDown(evt) {
-    this.paper.activate()
+    this.paper.activate();
     if (evt.pointerType == "mouse" && evt.button == 2) {
       // context menu
-      return
+      return;
     }
     
     if (evt.pointerType == "pen" && evt.button == 2) {
@@ -142,10 +134,10 @@ export default class LivelyPaper extends Morph {
     var path = new Path();
     
     if (evt.pointerType == "pen" && evt.button == 2) {
-      path.command = "delete"
-      path.strokeColor = "red"
+      path.command = "delete";
+      path.strokeColor = "red";
     } else {
-      path.strokeColor = "blue"
+      path.strokeColor = "blue";
     }
 
     this.lastPath[id] = path;
@@ -173,7 +165,7 @@ export default class LivelyPaper extends Morph {
   }
 
   onPointerUp(evt) {
-    this.lastPointerUp = Date.now() // #Hack custom prevent default
+    this.lastPointerUp = Date.now(); // #Hack custom prevent default
     evt.stopPropagation();
     evt.preventDefault();
     
@@ -184,7 +176,7 @@ export default class LivelyPaper extends Morph {
         this.paper.project.activeLayer.getItems({class: Path})
           .filter( ea => {
             try { 
-              return ea.intersects(path) // 
+              return ea.intersects(path);  
             } catch(e) { return false}
           })
           .forEach( ea => {
@@ -193,12 +185,11 @@ export default class LivelyPaper extends Morph {
             this.strokes.push({
               type: "delete",
               path: ea
-            })
+            });
             this.undoIndex = this.strokes.length;
-
             ea.remove();
-          })
-        path.remove()
+          });
+        path.remove();
       } else {
         path.simplify(3);
         
@@ -210,16 +201,16 @@ export default class LivelyPaper extends Morph {
         this.undoIndex = this.strokes.length;
         
       }
-      lively.removeEventListener("drawboard", this.canvas, "pointermove")    
+      lively.removeEventListener("drawboard", this.canvas, "pointermove");    
       delete this.lastPath[id];
 
-      this.save()
+      this.save();
     }
   }
   
   save() {
-    this.innerHTML = ""
-    this.appendChild(this.paper.project.exportSVG())
+    this.innerHTML = "";
+    this.appendChild(this.paper.project.exportSVG());
   }
   
   
