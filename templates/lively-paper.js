@@ -41,6 +41,18 @@ export default class LivelyPaper extends Morph {
     
     lively.html.registerButtons(this);
     
+    var height = this.getAttribute("height")
+    if (height) {
+      this.canvas.style.height = height
+      this.canvas.setAttribute("height", height)
+    }
+    
+    var width = this.getAttribute("width")
+    if (width) {
+      this.canvas.style.width = width
+      this.canvas.setAttribute("width", width)
+    }
+    
     this.addEventListener('contextmenu', (evt) => {
       if (this.lastPointerUp && (this.lastPointerUp - Date.now() < 1000)) {
         evt.stopPropagation();
@@ -117,6 +129,8 @@ export default class LivelyPaper extends Morph {
       path.strokeColor = "red";
     } else {
       path.strokeColor = "blue";
+      path.strokeWidth = 2;
+
     }
 
     this.lastPath[id] = path;
@@ -175,7 +189,7 @@ export default class LivelyPaper extends Morph {
           });
         path.remove();
       } else {
-        path.simplify(3);
+        path.simplify(1);
 
         var command = {
           type: "stroke",

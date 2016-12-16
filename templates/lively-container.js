@@ -345,7 +345,6 @@ export default class Container extends Morph {
     // clear markers
     var markers = editor.getSession().getMarkers();
     for(var i in markers) {
-        console.log("i" + i);
         if (markers[i].clazz == "marked") {
             editor.getSession().removeMarker(i);
         }

@@ -1,0 +1,20 @@
+<h1>One Dollar Recognizer</h1>
+
+
+
+
+<lively-paper id="paper" width="300px" height="300px"></lively-paper>
+<div id="result"></div>
+
+<lively-script>
+import onedollar from 'src/external/onedollar.js'
+
+var paper = this.parentElement.querySelector("#paper")
+paper.save = async () => {
+  var image = paper.get("#canvas").getContext('2d')
+  var result = await Tesseract.recognize(image)
+  this.parentElement.querySelector("#result").innerHTML = result.html
+}
+
+</lively-script>
+

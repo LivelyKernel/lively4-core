@@ -248,12 +248,18 @@ export default class ComponentLoader {
         
       })
       window.setTimeout( function() {
+        var unfinished = false;
+        var unfinishedPromise;
         promises.forEach( p => {
           if (!p.finished) {
-            resolve("timeout") // "(if) the fuel gauge breaks, call maintenance. If they’re not there in 20 minutes, fuck it."
-            lively.notify("Timout due to error loading " + p.name + " context: " + debuggingHint )
+            unfinishedPromise = p
+            unfinished = true;
           }
         })
+        if (unfinished) {
+          resolve("timeout") // "(if) the fuel gauge breaks, call maintenance. If they’re not there in 20 minutes, fuck it."
+          lively.notify("Timout due to unresolved promises, while loading " + unfinishedPromise.name + " context: " + debuggingHint )
+        }
       }, 15 * 1000)
 
       Promise.all(promises).then( result => resolve(), reject => {
