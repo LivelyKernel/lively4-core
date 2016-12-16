@@ -1,0 +1,32 @@
+<template id="lively-grail" data-class="LivelyGrail">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style>
+  :host {
+    touch-action: none;
+  }
+
+  #canvas {
+    width: 300px;
+    height: 300px;
+    border:1px solid black;
+    opacity: 1;
+    touch-action: none;
+    pointer-events: auto;
+  }
+
+  #hiddenContent {
+    display: none;
+  }
+  </style>
+  <canvas id="canvas" width="300" height="300" ></canvas>
+  <div id="result">
+
+  </div>
+  
+  <div id="hiddenContent">
+    <content></content>
+  </div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+
+ 

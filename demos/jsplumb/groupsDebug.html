@@ -1,0 +1,92 @@
+<style>
+  
+.w {
+    position:absolute;
+    width:30px;
+    height:30px;
+    border:1px solid black;
+    font-size:12px;
+    border-radius:3px;
+    text-align:center;
+    background-color:WhiteSmoke;
+    opacity:0.7;
+    z-index:10;
+    color:black;
+    cursor:move;
+}
+
+.w:hover {
+    background-color:#629f8d;
+}
+
+.group-container {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    border-radius: 12px;
+    background-color: WhiteSmoke;
+    font-size: 12px;
+    cursor:move;
+}
+
+#container1 { left:20px;top:50px; }
+#container2 { left:250px;top:50px; }
+
+</style>
+<lively-connectors>
+  <div id="canvas">
+    
+    <div class="group-container" id="container1" group="one">
+      <div id="c1_1" class="w" style="left:30px;top:35px">1.1</div>
+      <div id="c1_2" class="w" style="left:160px;top:140px">1.2</div>
+    </div>
+
+    <div class="group-container" id="container2" group="two">
+      <div id="c2_1" class="w" style="left:30px;top:40px">2.1</div>
+      <div id="c2_2" class="w" style="left:150px;top:160px">2.2</div>
+    </div>
+
+  
+    <div class="w" id="standalone" style="left:455px;top:280px" title="drag me into a group. if you want to.">?</div>
+
+  </div>
+  <script type="lively4script" data-name="onReady">() => {
+    var j = this.plumb;
+    j.importDefaults({Connector:"StateMachine", Endpoint:["Dot", {radius:3}], Anchor:"Center"});
+
+    
+    // j.connect({source:c1_1, target:c2_1});
+    // j.connect({source:c1_1,target:c1_2});
+    // j.connect({source:c2_1,target:c2_2});
+
+    // this.connect("standalone", "c1_1")
+
+    this.connect("c1_1", "c2_1");
+    this.connect("c2_1", "c2_2");
+
+    // j.draggable(c1_1);
+    // j.addGroup({
+    //     el:container1,
+    //     id:"one",
+    //     constrain:true,
+    //     anchor:"Continuous",
+    //     endpoint:"Blank",
+    //     droppable:false
+    // });
+    // j.addToGroup("one", c1_1);
+    // j.addToGroup("one", c1_2);
+    // j.draggable(c1_2);
+
+    // j.draggable(c2_1);
+    // j.addGroup({
+    //     el:container2,
+    //     id:"two",
+    //     dropOverride:true,
+    //     endpoint:["Dot", { radius:3 }]
+    // });  //(the default is to revert)
+    // j.addToGroup("two", c2_1);
+    // j.addToGroup("two", c2_2);
+    // j.draggable(c2_2);
+  }
+  </script>
+</lively-connectors>

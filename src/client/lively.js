@@ -296,7 +296,7 @@ export default class Lively {
       pos = pos || lively.pt(100,100);
       comp.changeMode("javascript");
       comp.enableAutocompletion();
-      comp.setAttribute("persistent", "true");
+      // comp.setAttribute("persistent", "true"); #TODO slows down typing?
       comp.editor.setValue(string);
       lively.setPosition(container,pos);
       container.setAttribute("title", "Workspace");
@@ -860,6 +860,22 @@ export default class Lively {
       }
     });
   }
+  
+  static get(query) {
+    return document.querySelector(query)
+  }
+  
+  // lively.print(document)
+  static print(obj) {
+    var s = "" + obj + "{"
+    for(var i in obj) {
+      if (!(obj[i] instanceof Function) && obj[i] !== undefined)
+      s += i + ": " + obj[i] + "\n"
+    }
+    s +"}"
+    return s
+  }
+  
 }
 
 if (window.lively && window.lively.name != "Lively") {

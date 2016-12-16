@@ -9,6 +9,8 @@ import ContextMenu from 'src/client/contextmenu.js';
 import * as cop  from "src/external/ContextJS/src/contextjs.js";
 import ScopedScripts from "./ScopedScripts.js";
 
+import components from "src/client/morphic/component-loader.js"
+
 export default class Container extends Morph {
 
   initialize() {
@@ -320,14 +322,54 @@ export default class Container extends Morph {
 
   async onBrowse() {
     var url = this.getURL();
-    var comp = await lively.openComponentInWindow("lively-container")
-    comp.editFile("" + url)
+    var comp = await lively.openComponentInWindow("lively-container");
+    comp.editFile("" + url);
   }
 
   onSaveAs() {
-    lively.notify("Save as... not implemented yet")
+    lively.notify("Save as... not implemented yet");
   }
 
+  checkForSyntaxErrors() {
+    if (!this.getURL().pathname.match(/\.js$/)) {
+      return
+    }
+    var Range = ace.require('ace/range').Range;
+    var editor = this.get("#editor").currentEditor();
+    var doc = editor.getSession().getDocument(); 
+    var src = editor.getValue();
+    
+    // clear annotations
+    editor.getSession().setAnnotations([]);
+    
+    // clear markers
+    var markers = editor.getSession().getMarkers();
+    for(var i in markers) {
+        if (markers[i].clazz == "marked") {
+            editor.getSession().removeMarker(i);
+        }
+    }
+    
+    try {
+        var ast = lively.ast.parse(src);
+        return false;
+    } catch(e) {
+      editor.session.addMarker(Range.fromPoints(
+        doc.indexToPosition(e.pos),
+        doc.indexToPosition(e.raisedAt)), "marked", "text", false); 
+
+      editor.getSession().setAnnotations([{
+        row: e.loc.line - 1,
+        column: e.loc.column,
+        text: e.message,
+        type: "error"
+      }]);
+      
+      return true
+    }
+          
+  }
+  
   onSave(doNotQuit) {
     if (!this.isEditing()) {
       this.saveEditsInView();
@@ -353,6 +395,11 @@ export default class Container extends Morph {
       var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/);
       if (moduleName) {
         moduleName = moduleName[1];
+        
+        if (this.checkForSyntaxErrors()){
+          lively.notify("found syntax error")
+          return // don't try any further...
+        };
         if (this.lastLoadingFailed) {
           this.reloadModule(url); // use our own mechanism...
         } else if (this.getPath().match(/test\/.*js/)) {
@@ -460,7 +507,7 @@ export default class Container extends Morph {
           });
         }
       });
-      lively.components.loadUnresolved(root);
+      components.loadUnresolved(root);
       // get around some async fun
       if (this.preserveContentScroll) {
        this.get("#container-content").scrollTop = this.preserveContentScroll
@@ -576,6 +623,7 @@ export default class Container extends Morph {
             }
           }
         }
+        components.loadUnresolved(root);
       }
     } catch(e) {
       console.log("Could not append html:" + content.slice(0,200) +"..." +" ERROR:", e);
@@ -638,7 +686,10 @@ export default class Container extends Morph {
   }
 
   getContentRoot() {
-    // return this.get('#container-root')
+    // #Design #Livley4 The container should hide all its contents. The styles defined here should not affect others. 
+    // return this.get('#container-root');
+    
+    // #BUT #TODO Blockly and connectors just work globally...
     return this;
   }
 
@@ -1100,6 +1151,8 @@ export default class Container extends Morph {
       return this.getEditor().then(livelyEditor => {
         var aceComp = livelyEditor.get('juicy-ace-editor');
         
+        aceComp.addEventListener("change", evt => this.onTextChanged(evt))
+        
         
         var url = this.getURL();
         livelyEditor.setURL(url);
@@ -1190,6 +1243,10 @@ export default class Container extends Morph {
       };
       check();
     });
+  }
+  
+  onTextChanged() {
+    this.checkForSyntaxErrors();
   }
   
   livelyPreMigrate() {

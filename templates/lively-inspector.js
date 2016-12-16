@@ -18,7 +18,7 @@ export default class Inspector   extends Morph {
     if (name) {
       var node = document.createElement("div");
       node.classList.add("element");
-      node.innerHTML = name +": " +JSON.stringify(value);
+      node.innerHTML = "<span class='attrName'>"+ name +":</span> <span class='attrValue'>"+ JSON.stringify(value).replace(/</g,"&lt;")+"</span>";
       return node;
     } else {
       var node = document.createElement("pre");
@@ -27,11 +27,10 @@ export default class Inspector   extends Morph {
     }
   }
 
-  displayFunction(value) {
+  displayFunction(value, expand, name) {
     var node = document.createElement("div");
     node.classList.add("element");
-    node.innerHTML = this.expandTemplate(node) + " function " + value.name + "(";
-    // node.innerHTML = "<pre>" + value + "</pre>";
+    node.innerHTML =  "<span class='attrName'>"+ name +":</span> <span class='attrValue'>" + ("" +value).replace(/</g,"&lt;") + "</span>";
     return node;
   }
   
@@ -68,8 +67,21 @@ export default class Inspector   extends Morph {
     var contentNode = node.querySelector("#content");
     if (node.isExpanded) {
       contentNode.innerHTML = "";
-      Object.keys(obj).forEach( ea => { 
-          contentNode.appendChild(this.displayObject(obj[ea], false, ea, obj)); // force object display
+      if (obj instanceof Function) {
+        var childNode = this.displayFunction(obj, expand, name)
+        if (childNode) contentNode.appendChild(childNode); 
+      }
+
+      this.allKeys(obj).forEach( ea => { 
+        try {
+          var value = obj[ea]
+        } catch(e) {
+          console.log("[inspector] could not display " + ea + " of " + obj)
+          return
+        }
+        if (value == null) return  
+        var childNode = this.displayObject(value, false, ea, obj)
+        if (childNode) contentNode.appendChild(childNode); // force object display
       });
     }
   }
@@ -78,6 +90,10 @@ export default class Inspector   extends Morph {
     if (!(obj instanceof Object)) {
       return this.displayValue(obj, expand, name); // even when displaying objects.
     }
+    if ((obj instanceof Function)) {
+      return this.displayFunction(obj, expand, name); // even when displaying objects.
+    }
+    
     var node = document.createElement("div");
     node.classList.add("element");
     this.renderObject(node, obj, expand, name);
@@ -92,8 +108,8 @@ export default class Inspector   extends Morph {
   expandTemplate(node) {
     return "<span class='syntax'><a id='expand'>" +
       (node.isExpanded ? 
-        "<span style='font-size:12pt'>&#9660;</span>" : 
-        "<span style='font-size:9pt'>&#9654</span>") + "</span></a></span>";
+        "<span style='font-size:9pt'>&#9660;</span>" : 
+        "<span style='font-size:7pt'>&#9654</span>") + "</span></a></span>";
   }
   
   get contentTemplate() {
@@ -209,7 +225,7 @@ export default class Inspector   extends Morph {
         contentNode.appendChild(this.display(ea, expandChildren, null, obj));
       });
 
-      var hasProperties = Object.keys(obj).length > 0;
+      var hasProperties = this.allKeys(obj).length > 0;
       if (hasProperties && !obj.livelyIsParentPlaceholder) {
         var props = this.displayObject(obj, false, "#Properties");
         contentNode.appendChild(props);
@@ -319,6 +335,18 @@ export default class Inspector   extends Morph {
     this.get("#container").appendChild(content);
     return content;
   }
+  
+  allKeys(obj) {
+    var keys = []
+    for(var i in obj) {
+      if (obj.hasOwnProperty(i) || obj.__lookupGetter__(i)) {
+        keys.push(i);
+      }
+    }
+    keys.push("__proto__")
+    return _.sortBy(keys)
+  }
+  
   
   livelyMigrate(oldInstance) {
     this.inspect(oldInstance.targetObject) ;   

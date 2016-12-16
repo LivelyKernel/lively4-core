@@ -1,0 +1,32 @@
+<template id="lively-paper" data-class="LivelyPaper">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style>
+  :host {
+    touch-action: none;
+  }
+
+  #canvas {
+    width: 800px;
+    height: 600px;
+    border:1px solid black;
+    opacity: 1;
+    touch-action: none;
+    pointer-events: auto;
+  }
+
+  #hiddenContent {
+    display: none;
+  }
+  </style>
+  <button id="undoStroke"><i class="fa fa-arrow-left" title="undo stroke" aria-hidden="true"></i></button>
+  <button id="redoStroke"><i class="fa fa-arrow-right" title="redo stroke" aria-hidden="true"></i></button>
+  <div>
+  <canvas id="canvas" width="800" height="600" ></canvas>
+  </div>
+  <div id="hiddenContent">
+    <content></content>
+  </div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+
+ 
