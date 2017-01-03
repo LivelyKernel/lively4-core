@@ -2,6 +2,8 @@
  *
  */
 
+console.log("load swx");
+
 import * as fs from './filesystem.js'
 import * as msg from './messaging.js'
 
@@ -24,13 +26,36 @@ class ServiceWorker {
     this.filesystem.mount('/sys', sysfs)
     this.filesystem.mount('/local', html5fs)
 
-    this.filesystem.loadMounts();
+    var startTime = Date.now();
+    this.filesystem.loadMounts().then( () => {
+      console.log("mount FS in" + (Date.now() - startTime) + "ms");
+
+      this.resolvePendingRequests()
+    })
     // here we should remount previous filesystem (remembered in focalStorage)
   }
 
-  fetch(event) {
+  resolvePendingRequests() {
+    
+
+    if (!pendingRequests) {
+      console.log("no pending requests");
+      return
+    }
+    console.log("resolve pending requests: " + pendingRequests)
+    // #Hack needed, because the swx-solved loads asyncronously and the service worker expects and syncronouse answer or promise. 
+    pendingRequests.forEach(ea => {
+      console.log("work on pendingRequest " + ea.url)
+      this.fetch(ea.event, ea)
+    })
+    pendingRequests = null; // stop listening to requests..
+  }
+
+  fetch(event, pending) {
+    // console.log("fetch " + event + ", " + pending)
     let request = event.request;
     if (!request) return
+
     let  url   = new URL(request.url),
       promise = undefined
 
@@ -43,7 +68,7 @@ class ServiceWorker {
         
         
         try {                        
-          event.respondWith(new Promise(async (resolve, reject) => {
+          var p = new Promise(async (resolve, reject) => {
             var email = await focalStorage.getItem(storagePrefix+ "githubEmail") 
             var username = await focalStorage.getItem(storagePrefix+ "githubUsername") 
             var token = await focalStorage.getItem(storagePrefix+ "githubToken")
@@ -92,7 +117,11 @@ class ServiceWorker {
               console.log("fetch error: "  + e)
               return new Response("Could not fetch " + url +", because of: " + e)
             })) 
-          }))
+          })
+          if (pending) 
+            pending.resolve(p)
+          else
+            event.respondWith(p)
         } catch(err) {
           if (err.toString().match("The fetch event has already been responded to.")) {
             console.log("How can we check for this before? ", err)
@@ -105,8 +134,9 @@ class ServiceWorker {
         // event.respondWith(self.fetch(request));
       }
     } else {
+      // console.log("fetch " + request.url)
       let response = this.filesystem.handle(request, url)
-
+      
       response = response.then((result) => {
         if(result instanceof Response) {
           return result
@@ -124,7 +154,11 @@ class ServiceWorker {
         return new Response(content, {status: 500, statusText: message})
       })
 
-      event.respondWith(response)
+      if (pending) {
+        console.log("resolve pending request: " + pending.url)
+        pending.resolve(response)
+      } else
+        event.respondWith(response)
     }
   }
 
@@ -166,5 +200,8 @@ export function message(event) {
 export {
   focalStorage
 }
+
+instance(); // force constructor
+
 
 console.log("Loaded swx.js")
