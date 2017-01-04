@@ -1,0 +1,81 @@
+<template id="lively-debugger" data-class="LivelyDebugger" data-title="Debugger">
+    <style data-src="/templates/livelystyle.css"></style>
+    <style data-src="/src/external/font-awesome/css/font-awesome.min.css"></style>
+
+    <style>
+    .container {
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+    }
+
+    .column-right {
+      width: 200px;
+      flex: 0 0 200px;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid rgb(120, 118, 116);
+    }
+  
+    button {
+      margin-right: 2px;
+    }
+    
+    .two-columns {
+      display: flex;
+      flex-direction : row;
+      height: 100%;
+    }
+
+    .column-left {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #debugger-top {
+      display: flex;
+      flex-direction: row;
+      border-bottom: 1px solid rgb(120, 118, 116);
+    }
+    
+    #debugger-targets select {
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+
+    #codeEditor {
+      flex: 1;
+      width: 100%;
+    }
+    
+    .hide {
+      display: none;
+    }
+
+    </style>
+    <div class="container">
+      <div id="debugger-top">
+        <div id="debugger-targets"></div>
+        <button id="debugButton" title="Debug"><i class="fa fa-fw fa-bug" aria-hidden="true"></i></button>
+        <button id="stopButton" title="Stop"class="hide"><i class="fa fa-fw fa-stop" aria-hidden="true"></i></button>
+        <button id="pauseButton" title="Pause" disabled><i class="fa fa-fw fa-pause" aria-hidden="true"></i></button>
+        <button id="playButton" title="Continue" class="hide"><i class="fa fa-fw fa-play" aria-hidden="true"></i></button>
+        <button id="stepOverButton" title="Step Over" disabled><i class="fa fa-fw fa-step-forward" aria-hidden="true"></i></button>
+        <button id="stepIntoButton" title="Step Into" disabled><i class="fa fa-fw fa-arrow-down" aria-hidden="true"></i></button>
+        <button id="stepOutButton" title="Step Out" disabled><i class="fa fa-fw fa-arrow-up" aria-hidden="true"></i></button>
+      </div>
+      <div class="two-columns">
+        <div class="column-left">
+          <juicy-ace-editor id="codeEditor"></juicy-ace-editor>
+        </div>
+        <div class="column-right">
+          <div id="details"></div>
+        </div>
+      </div>
+    </div>
+</template>
+
+<script class="registrationScript">lively.registerTemplate()</script>
