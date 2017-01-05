@@ -5,20 +5,22 @@
 import { Base } from './base.js'
 import * as swx from '../swx.js'
 
-export default class Filesystem extends Base {
-  constructor(path, options) {
-    super('sys', path, options)
+export default class SysFilesystem extends Base {
+  constructor(path, swx) {
+    super('sys', path)
+
+    this.swx = swx
 
     let name = path.split(/\/+/)
     name = name[name.length - 1]
 
     this.tree = new SysDir(name, [
-      new SysFile('mounts', function() {
-        return swx.instance().filesystem.mountsAsJso()
+      new SysFile('mounts', () => {
+        return this.swx.filesystem.mountsAsJso()
       }),
       new SysDir('swx', [
-        new SysFile('reqcount', function() {
-          return swx.instance().filesystem.reqcount
+        new SysFile('reqcount', () => {
+          return this.swx.filesystem.reqcount
         }),
         new SysFile('reload', null, function() {
           self.__reload__({force: true})
@@ -26,8 +28,8 @@ export default class Filesystem extends Base {
         })
       ]),
       new SysDir('fs', [
-        new SysFile('mount', null, ::this._sysFsMount),
-        new SysFile('umount', null, ::this._sysFsUmount)
+        new SysFile('mount', null, content => this._sysFsMount(content)),
+        new SysFile('umount', null, content => this._sysFsUmount(content))
       ])
     ])
   }
@@ -189,9 +191,8 @@ class SysDir extends Directory {
     if(path.length == 0)
       return this
 
-    let [name, ...rest] = do {
-      typeof path === 'string' ? path.split(/\/+/) : path
-    }
+    let [name, ...rest] = 
+      typeof path === 'string' ? path.split(/\/+/) : path;
 
     if(name === '')
       return this

@@ -1119,6 +1119,7 @@ oop.inherits(Mode, TextMode);
     };
 
     this.createWorker = function(session) {
+        return; // #Disable #Jens #Hack found no option to disable
         var worker = new WorkerClient(["ace"], "ace/mode/javascript_worker", "JavaScriptWorker");
         worker.attachToDocument(session.getDocument());
 

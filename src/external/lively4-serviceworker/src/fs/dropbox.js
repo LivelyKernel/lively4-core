@@ -102,15 +102,13 @@ export default class Filesystem extends Base {
       throw new Error('File has been deleted');
     }
     let dir = false
-    let contents = do {
-      if(json['contents']) {
-        dir = true
-        await Promise.all(Array.from(json['contents'], item => this.statinfo(item)))
-      } else {
-        await this.statinfo(json)
-      }
+    var contents; 
+    if(json['contents']) {
+      dir = true
+      contents = await Promise.all(Array.from(json['contents'], item => this.statinfo(item)))
+    } else {
+      contents = await this.statinfo(json)
     }
-
     return new Stat(dir, contents, ['GET', 'OPTIONS'])
   }
   

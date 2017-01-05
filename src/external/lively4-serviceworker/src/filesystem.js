@@ -60,10 +60,10 @@ export class Filesystem {
             statusText: 'EISDIR',
             headers: {'Allow': 'OPTIONS'}
           })
-        }
-
+        } 
+        console.log('Error: ' + e)
         // TODO: Do something with the information from the FileNotFoundError
-        return new Response(null, {status: 405})
+        return new Response("ERROR:" + e, {status: 405})
       }
     }
 
@@ -112,7 +112,7 @@ export class Filesystem {
     focalStorage.setItem("lively4mounts", mounts)
   }
 
-  async loadMounts(){
+  async loadMounts() {
     let mounts = await focalStorage.getItem("lively4mounts")
 
     if (!mounts) {
@@ -121,8 +121,15 @@ export class Filesystem {
 
     try {
       for(let mount of mounts) {
-        let fs = await System.import('/fs/' + mount.name + '.js')
-        this.mount(mount.path, fs.default, mount.options)
+        
+        // #TODO #Hack I though relative paths are now suported in System.js 0.20 #Fuck?
+        // let fs = await System.import('./fs/' + mount.name + '.js')
+        if (mount.name == "sys") {
+          // do nothing with sys fs... is already mounted
+        } else {
+          let fs = await System.import('./src/external/lively4-serviceworker/src/fs/' + mount.name + '.js')
+          this.mount(mount.path, fs.default, mount.options)
+        }
       }
     } catch(e) {
       console.error(e)

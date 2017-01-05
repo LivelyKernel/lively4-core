@@ -19,20 +19,28 @@ const storagePrefix = "LivelySync_";
 
 class ServiceWorker {
   constructor() {
+
     this.filesystem = new fs.Filesystem()
 
     // default file system
     this.filesystem.mount('/', githubfs, {repo: 'LivelyKernel/lively4-core', branch: 'gh-pages'})
-    this.filesystem.mount('/sys', sysfs)
+    this.filesystem.mount('/sys', sysfs, this)
     this.filesystem.mount('/local', html5fs)
 
+    // here we should remount previous filesystem (remembered in focalStorage)
+  }
+
+  static instance() {
     var startTime = Date.now();
-    this.filesystem.loadMounts().then( () => {
+    var instance = new ServiceWorker()
+    __instance__ = instance; // Global side effect #TODO
+
+    return instance.filesystem.loadMounts().then( () => {
       console.log("mount FS in" + (Date.now() - startTime) + "ms");
 
-      this.resolvePendingRequests()
+      instance.resolvePendingRequests()
+      return instance
     })
-    // here we should remount previous filesystem (remembered in focalStorage)
   }
 
   resolvePendingRequests() {
@@ -52,7 +60,7 @@ class ServiceWorker {
   }
 
   fetch(event, pending) {
-    // console.log("fetch " + event + ", " + pending)
+    // console.log("SWX.fetch " + event + ", " + pending)
     let request = event.request;
     if (!request) return
 
@@ -134,7 +142,7 @@ class ServiceWorker {
         // event.respondWith(self.fetch(request));
       }
     } else {
-      // console.log("fetch " + request.url)
+      // console.log("lively4 fetch " + request.url)
       let response = this.filesystem.handle(request, url)
       
       response = response.then((result) => {
@@ -172,12 +180,16 @@ class ServiceWorker {
  */
 
 var __instance__
-export function instance() {
-  if(typeof __instance__ === 'undefined') {
-    __instance__ = new ServiceWorker()
-  }
-
+var __instancePromise__
+export async function instance() {
   return __instance__
+}
+
+export async function instancePromise() {
+  if(typeof  __instancePromise__ === 'undefined') {
+    __instancePromise__ = ServiceWorker.instance() // sets __instance__
+  }
+  return  __instancePromise__
 }
 
 export function install() {
@@ -189,19 +201,18 @@ export function activate() {
 }
 
 export function fetch(event) {
-  return instance().fetch(event)
+  // console.log("fetch swx.js " + event.request.url)
+  return instancePromise().then( swx => swx.fetch(event))
 }
 
 export function message(event) {
-  return instance().message(event)
+  return instancePromise().then( swx => swx.message(event))
 }
-
 
 export {
   focalStorage
 }
 
-instance(); // force constructor
+instancePromise(); // force constructor
 
-
-console.log("Loaded swx.js")
+// console.log("Loaded swx.js")

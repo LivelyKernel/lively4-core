@@ -79,15 +79,13 @@ export default class Filesystem extends Base {
 
     let json  = await response.json()
     let dir = false
-    let contents = do {
-      if(Array.isArray(json)) {
-        dir = true
-        await Promise.all(Array.from(json, item => this.statinfo(item)))
-      } else {
-        await this.statinfo(json)
-      }
+    var contents 
+    if(Array.isArray(json)) {
+      dir = true
+      contents = await Promise.all(Array.from(json, item => this.statinfo(item)))
+    } else {
+      contents = await this.statinfo(json)
     }
-
     return new Stat(dir, contents, ['GET', 'OPTIONS'])
   }
 

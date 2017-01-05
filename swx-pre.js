@@ -3,6 +3,8 @@ var pendingRequests  = [];
 var startSwxTime = Date.now();
 // console.log("registering fetch")
 
+
+// #TODO somehow event.waitUntil does not work....
 self.addEventListener("fetch", (event) => {
   if (!pendingRequests) {
     // console.log("[PATCH] no pendingRequests")
@@ -11,7 +13,7 @@ self.addEventListener("fetch", (event) => {
   var url = event.request.url;
   var s = Date.now();
   if (url.toString().match(/https:\/\/lively4\//)) {
-  	console.log("loader fetch " + url);
+  	// console.log("loader fetch " + url);
   	
   	// this is our manual event waiting...
   	// maybe we can use event.waitUnit here?
@@ -28,7 +30,7 @@ self.addEventListener("fetch", (event) => {
   	event.respondWith(promise);
     // event.stopPropagation();
 
-   // event.waitUntil(new Promise((resolve) => setTimeout(resolve, 100000)))
+  // event.waitUntil(new Promise((resolve) => setTimeout(resolve, 100000)))
 
   }
 });
