@@ -15,6 +15,7 @@
       flex: 0 0 200px;
       display: flex;
       flex-direction: column;
+      overflow: scroll;
       border-left: 1px solid rgb(120, 118, 116);
     }
   
@@ -49,8 +50,41 @@
     #codeEditor {
       flex: 1;
       width: 100%;
+      border-bottom: 1px solid rgb(120, 118, 116);
     }
     
+    #details {
+      font-size: 12px;
+      padding: 5px;
+    }
+    
+    #details ul {
+      margin: 0;
+      padding: 0;
+      list-style-type: none;
+    }
+    
+    #details ul li {
+      cursor: pointer;
+      border: 1px solid #ccc;
+      border-bottom: 0;
+      padding: 2px;
+    }
+    
+    #details ul li:last-child {
+      border: 1px solid #ccc;
+    }
+    
+    #details ul li:nth-child(odd) {
+      background-color: #eee;
+    }
+    
+    summary button {
+      background: none;
+      padding: 2px;
+      font-size: 12px;
+    }
+
     .hide {
       display: none;
     }
@@ -70,6 +104,7 @@
       <div class="two-columns">
         <div class="column-left">
           <juicy-ace-editor id="codeEditor"></juicy-ace-editor>
+          <juicy-ace-editor id="debuggerWorkspace"></juicy-ace-editor>
         </div>
         <div class="column-right">
           <div id="details"></div>
