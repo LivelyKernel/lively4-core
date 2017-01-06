@@ -1,5 +1,6 @@
 import Morph from './Morph.js';
 
+const debuggerGitHubURL = 'https://github.com/LivelyKernel/lively4-chrome-debugger';
 
 export default class Debugger extends Morph {
 
@@ -9,18 +10,9 @@ export default class Debugger extends Morph {
     this.logType = 'stdout';
     this.services = [];
     this.debuggerTargets = this.getSubmorph('#debugger-targets');
-    
     this.targetSelection = document.createElement('select');
-    lively4ChromeDebugger.getDebuggingTargets().then((targets) =>
-      targets.forEach((ea) => {
-        var option = document.createElement('option');
-        option.text = ea.title;
-        option.value = ea.id;
-        this.targetSelection.appendChild(option);
-      }
-    ));
     this.debuggerTargets.appendChild(this.targetSelection);
-    
+  
     this.debugButton = this.getSubmorph('#debugButton');
     this.debugButton.addEventListener('click', this.debugButtonClick.bind(this));
     this.stopButton = this.getSubmorph('#stopButton');
@@ -39,6 +31,21 @@ export default class Debugger extends Morph {
     this.codeEditor = this.getSubmorph('#codeEditor').editor;
     this.codeEditor.getSession().setMode("ace/mode/javascript");
     this.details = this.getSubmorph('#details');
+    
+    if (lively4ChromeDebugger) {
+      lively4ChromeDebugger.getDebuggingTargets().then((targets) =>
+        targets.forEach((ea) => {
+          var option = document.createElement('option');
+          option.text = ea.title;
+          option.value = ea.id;
+          this.targetSelection.appendChild(option);
+        }
+      ));
+    } else {
+      if (window.confirm('Lively4 Debugger Extension not found. Do you want to install it?')) {
+        window.open(debuggerGitHubURL, '_blank').focus();
+      }
+    }
   }
 
   attachDebugger() {
