@@ -147,9 +147,9 @@ export default class Debugger extends Morph {
   }
   
   _evaluateOnCallFrame(editor, cb) {
-    let expression = editor.currentSelectionOrLine()
+    let expression = editor.currentSelectionOrLine();
     if (!this.debuggerAttached()) {
-      alert('Debugger is not attached to any target.')
+      alert('Debugger is not attached to any target.');
       debugger;
       return;
     }
@@ -176,17 +176,17 @@ export default class Debugger extends Morph {
   }
   
   initializeDebuggerWorkspace() {
-    this.debuggerWorkspace.currentSelectionOrLine = function() {
+    this.debuggerWorkspace.currentSelectionOrLine = () => {
         let text,
             sel =  this.getSelectionRange();
         if (sel.start.row == sel.end.row && sel.start.column == sel.end.column) {
             var currline = this.getSelectionRange().start.row;
             text = this.session.getLine(currline);
         } else {
-            text = this.getCopyText()
-        };
-        return text
-    }
+            text = this.getCopyText();
+        }
+        return text;
+    };
     this.debuggerWorkspace.commands.addCommand({
       name: "doIt",
       bindKey: {win: "Ctrl-D", mac: "Command-D"},
@@ -234,7 +234,7 @@ export default class Debugger extends Morph {
           }
         }
       } else {
-        alert(`Failed to getScriptSource for ${this.currentCallFrame.location.scriptId}`)
+        alert(`Failed to getScriptSource for ${this.currentCallFrame.location.scriptId}`);
       }
     });
   }
@@ -358,7 +358,7 @@ export default class Debugger extends Morph {
   }
   
   debuggerAttached() {
-    return this.targetSelection.disabled
+    return this.targetSelection.disabled;
   }
   
   selectedTargetId() {
@@ -440,36 +440,36 @@ export default class Debugger extends Morph {
   profilerButtonClick(evt) {
     var numberOfSections = parseInt(window.prompt('Seconds to profile:', '5'));
     this.sendCommandToDebugger('Profiler.enable').then(() => {
-    	this.sendCommandToDebugger('Profiler.start').then(() => {
-    	  setTimeout(() => {
-    	    this.sendCommandToDebugger('Profiler.stop').then((res) => {
-    	      if (res && res.profile) {
-    	        lively.openInspector(res.profile);
-    	      } else {
-    	        alert('Failed to retrieve profile.');
-    	        debugger;
-    	      }
-    	      this.sendCommandToDebugger('Profiler.disable');
-    	    });
-    	  }, numberOfSections * 1000);
-    	});
+      this.sendCommandToDebugger('Profiler.start').then(() => {
+        setTimeout(() => {
+          this.sendCommandToDebugger('Profiler.stop').then((res) => {
+            if (res && res.profile) {
+              lively.openInspector(res.profile);
+            } else {
+              alert('Failed to retrieve profile.');
+              debugger;
+            }
+            this.sendCommandToDebugger('Profiler.disable');
+          });
+        }, numberOfSections * 1000);
+      });
     });
   }
   
   urlButtonClick(evt) {
     var url = window.prompt('URL to open:', 'https://hpi.de');
     this.sendCommandToDebugger('Page.enable').then(() => {
-    	this.sendCommandToDebugger('Page.navigate', { url: url }).then((res) => {
-    	  this.sendCommandToDebugger('Page.disable');
-    	});
+      this.sendCommandToDebugger('Page.navigate', { url: url }).then((res) => {
+        this.sendCommandToDebugger('Page.disable');
+      });
     });
   }
   
   reloadButtonClick(evt) {
     this.sendCommandToDebugger('Page.enable').then(() => {
-    	this.sendCommandToDebugger('Page.reload', { ignoreCache: true }).then(() => {
-    	  this.sendCommandToDebugger('Page.disable');
-    	});
+      this.sendCommandToDebugger('Page.reload', { ignoreCache: true }).then(() => {
+        this.sendCommandToDebugger('Page.disable');
+      });
     });
   }
 }
