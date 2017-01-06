@@ -16,11 +16,6 @@
         pen: false,
         color: '#000000',
         
-        test: (what) =>
-        {
-          lively.notify(eval(what));
-        },
-        
         // drawing functions
         left: (deg) => {this.turtle.heading = (this.turtle.heading - deg) % 360},
         right: (deg) => {this.turtle.heading = (this.turtle.heading + deg) % 360},
@@ -118,13 +113,14 @@
       var context = this.context;
       var turtle = this.turtle;
       
-      eval(code);
+      return eval(code);
     }
   </script>
   <script type="lively4script" data-name="clearCanvas">
-    () =>
+    (color = '#FFFFFF') =>
     {
-      this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.context.fillStyle = color;
+      this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
   </script>
 </template>
