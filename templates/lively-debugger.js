@@ -8,6 +8,9 @@ export default class Debugger extends Morph {
     this.windowTitle = 'Debugger';
     this.lastDebuggerPausedResult = null;
     this.currentCallFrame = null;
+    this.scopeList = document.createElement('ul');
+    this.breakPoints = {}; // mapping: scriptId => {lineNumber => breakpointId}
+
     this.debuggerTargets = this.getSubmorph('#debugger-targets');
     this.targetSelection = document.createElement('select');
     this.debuggerTargets.appendChild(this.targetSelection);
@@ -35,7 +38,6 @@ export default class Debugger extends Morph {
     this.initializeTargets();
     this.initializeCodeEditor();
     this.initializeDebuggerWorkspace();
-    this.breakPoints = {};
   }
   
   initializeTargets() {
@@ -63,19 +65,33 @@ export default class Debugger extends Morph {
   }
   
   initializeCodeEditor() {
+    this.codeEditor.commands.addCommand({
+      name: "saveIt",
+      bindKey: {win: "Ctrl-S", mac: "Command-S"},
+      exec: (editor) => {
+        if (!this._ensureCurrentCallFrame()) return;
+        this.sendCommandToDebugger('Debugger.setScriptSource', {
+          scriptId: this.currentCallFrame.location.scriptId,
+          scriptSource: editor.getValue()
+        }).then((res) => {
+          console.log('Debugger.setScriptSource', res);
+        });
+      }
+    });
     this.codeEditor.on("guttermousedown", function(e) {
       if (!this._ensureCurrentCallFrame()) return;
       var scriptId = this.currentCallFrame.location.scriptId;
       var lineNumber = e.getDocumentPosition().row;
       var method, params;
-      if (lineNumber in this.codeEditor.session.getBreakpoints()) {
+      if (lineNumber in this.codeEditor.getSession().getBreakpoints()) {
         method = 'Debugger.removeBreakpoint';
-        var breakPointId = this.breakPoints[lineNumber];
-        if (!breakPointId) {
+        if (!(scriptId in this.breakPoints) || !(lineNumber in this.breakPoints[scriptId])) {
           alert(`Cannot find breakpointId for line #${lineNumber}`);
           debugger;
           return;
         }
+        var breakPointId = this.breakPoints[scriptId][lineNumber];
+        delete this.breakPoints[scriptId][lineNumber];
         params = { breakpointId: breakPointId };
       } else {
         method = 'Debugger.setBreakpoint';
@@ -95,14 +111,16 @@ export default class Debugger extends Morph {
             return;
           }
           var actualLineNumber = res.actualLocation.lineNumber;
-          this.breakPoints[actualLineNumber - 1] = res.breakpointId;
-          this.codeEditor.session.setBreakpoint(actualLineNumber - 1);
+          if (!(scriptId in this.breakPoints)) {
+            this.breakPoints[scriptId] = {};
+          }
+          this.breakPoints[scriptId][actualLineNumber - 1] = res.breakpointId;
+          this.codeEditor.getSession().setBreakpoint(actualLineNumber - 1);
         } else {
-          this.codeEditor.session.clearBreakpoint(lineNumber);
+          this.codeEditor.getSession().clearBreakpoint(lineNumber);
         }
-        
       });
-    }.bind(this))
+    }.bind(this));
   }
   
   _ensureCurrentCallFrame() {
@@ -151,7 +169,7 @@ export default class Debugger extends Morph {
       exec: (editor) => {
         this._evaluateOnCallFrame(editor);
       }
-    })
+    });
 
     this.debuggerWorkspace.commands.addCommand({
       name: "printIt",
@@ -168,15 +186,29 @@ export default class Debugger extends Morph {
     });
   }
   
-  updateCodeEditor() {
+  updateCodeEditor(pausedResult) {
     if (!this._ensureCurrentCallFrame()) return;
     this.sendCommandToDebugger('Debugger.getScriptSource', {
       scriptId: this.currentCallFrame.location.scriptId
     }).then((res) => {
-      if (res.scriptSource) {
+      if (res && res.scriptSource) {
         this.codeEditor.setValue(res.scriptSource);
-        this.codeEditor.gotoLine(this.currentCallFrame.location.lineNumber);
-        this.codeEditor.session.clearBreakpoints();
+        this.codeEditor.gotoLine(this.currentCallFrame.location.lineNumber + 1);
+        this.codeEditor.getSession().clearBreakpoints();
+        if (pausedResult) {
+          // restore breakpoints from pausedResult.hitBreakpoints
+          if (pausedResult.hitBreakpoints.length > 0) {
+            for (var i = 0; i < pausedResult.hitBreakpoints.length; i++) {
+              var breakpointId = pausedResult.hitBreakpoints[i];
+              var parts = breakpointId.split(':');
+              if (parts[0] != this.currentCallFrame.location.scriptId) {
+                break; // break because all breakpoints belong to the same scriptId
+              }
+              var lineNumber = parseInt(parts[1]);
+              this.codeEditor.getSession().setBreakpoint(lineNumber - 1);
+            }
+          }
+        }
       } else {
         alert(`Failed to getScriptSource for ${this.currentCallFrame.location.scriptId}`)
       }
@@ -184,6 +216,10 @@ export default class Debugger extends Morph {
   }
   
   dispatchDebuggerPaused(result) {
+    // Update buttons
+    this.pauseButton.classList.add('hide');
+    this.playButton.classList.remove('hide');
+    
     this.lastDebuggerPausedResult = result;
     this.currentCallFrame = result.callFrames[0];
     var callFrameList = document.createElement('ul');
@@ -193,23 +229,35 @@ export default class Debugger extends Morph {
       var callFrame = callFrames[callFrameIndex];
       this.currentCallFrame = callFrame;
       this.updateCodeEditor();
+      this.updateScopeList();
       e.stopPropagation();
     };
     for (var i = 0; i < callFrames.length; i++) {
       var callFrame = callFrames[i];
       var li = document.createElement('li');
       li.setAttribute('data-call-frame-index', i);
-      li.innerHTML = callFrame.functionName;
+      li.innerHTML = callFrame.functionName || '<i>unknown</i>';
       li.addEventListener('click', callFrameClickHandler.bind(this));
       callFrameList.appendChild(li);
     }
-    this.updateCodeEditor();
-    // TODO: restore existing breakpoints
-    if (result.hitBreakpoints.length > 0) {
-      debugger;
-    }
+    this.updateCodeEditor(result);
+  
+    this.details.innerHTML = '';
+    var callFrameListTitle = document.createElement('b');
+    callFrameListTitle.innerHTML = 'Call Frames';
+    this.details.appendChild(callFrameListTitle);
+    this.details.appendChild(callFrameList);
+    
+    var scopeListTitle = document.createElement('b');
+    scopeListTitle.innerHTML = 'Scope';
+    this.details.appendChild(scopeListTitle);
+    this.details.appendChild(this.scopeList);
+    this.updateScopeList();
+  }
+  
+  updateScopeList() {
     var scopeChain = this.currentCallFrame.scopeChain;
-    var scopeList = document.createElement('ul');
+    this.scopeList.innerHTML = '';
     var summaryClickHandler = (e) => {
       var selectedSummary = e.target;
       var selectedDetails = selectedSummary.parentElement;
@@ -218,32 +266,22 @@ export default class Debugger extends Morph {
       this.appendPropertyList(selectedSummary, objectId);
     };
     for (var i = 0; i < scopeChain.length; i++) {
-        var scope = scopeChain[i];
-        var obj = scope.object;
-        var details = document.createElement('details');
-        var summary = document.createElement('summary');
-        summary.setAttribute('data-object-id', obj.objectId);
-        summary.addEventListener('click', summaryClickHandler.bind(this));
-        var text = scope.type;
-        if (scope.name) {
-          text = `${scope.type}: ${scope.name}`;
-        }
-        summary.innerHTML = text;
-        details.appendChild(summary);
-        var li = document.createElement('li');
-        li.appendChild(details);
-        scopeList.appendChild(li);
+      var scope = scopeChain[i];
+      var obj = scope.object;
+      var details = document.createElement('details');
+      var summary = document.createElement('summary');
+      summary.setAttribute('data-object-id', obj.objectId);
+      summary.addEventListener('click', summaryClickHandler.bind(this));
+      var text = scope.type;
+      if (scope.name) {
+        text = `${scope.type}: ${scope.name}`;
+      }
+      summary.innerHTML = text;
+      details.appendChild(summary);
+      var li = document.createElement('li');
+      li.appendChild(details);
+      this.scopeList.appendChild(li);
     }
-
-    this.details.innerHTML = '';
-    var callFrameListTitle = document.createElement('b');
-    callFrameListTitle.innerHTML = 'Call Frames';
-    this.details.appendChild(callFrameListTitle);
-    this.details.appendChild(callFrameList);
-    var scopeListTitle = document.createElement('b');
-    scopeListTitle.innerHTML = 'Scope';
-    this.details.appendChild(scopeListTitle);
-    this.details.appendChild(scopeList);
   }
   
   appendPropertyList(parentSummary, objectId) {
@@ -252,9 +290,11 @@ export default class Debugger extends Morph {
         var parentDetails = parentSummary.parentElement;
         var propList = document.createElement('ul');
         var itemClickHandler = (e) => {
-          if (parentDetails.hasAttribute('open')) return;
-          var objectId = e.target.getAttribute('data-object-id');
-          this.appendPropertyList(e.target, objectId);
+          var currentSummary = e.target;
+          var currentDetails = currentSummary.parentElement;
+          if (currentDetails.hasAttribute('open')) return;
+          var objectId = currentSummary.getAttribute('data-object-id');
+          this.appendPropertyList(currentSummary, objectId);
         };
         for (var j = 0; j < res.result.length; j++) {
           var property = res.result[j];
@@ -268,7 +308,7 @@ export default class Debugger extends Morph {
             var propSummary = document.createElement('summary');
             propSummary.setAttribute('data-object-id', property.value.objectId);
             propSummary.innerHTML = `${property.name} [${property.value.type}]`;
-            propSummary.addEventListener('click', itemClickHandler);
+            propSummary.addEventListener('click', itemClickHandler.bind(this));
             propDetails.appendChild(propSummary);
             li.append(propDetails);
           }
@@ -327,8 +367,6 @@ export default class Debugger extends Morph {
 
   pauseButtonClick(evt) {
     this.sendCommandToDebugger('Debugger.pause');
-    this.pauseButton.classList.add('hide');
-    this.playButton.classList.remove('hide');
   }
   
   playButtonClick(evt) {
