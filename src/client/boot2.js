@@ -54,8 +54,10 @@ if (window.lively && window.lively4url) {
       meta: {
         "*.js": { 
           babelOptions: {
-            stage0: true,
-            stage1: true
+            stage2: false,
+            stage3: false
+            // stage0: true,
+            // stage1: true
           }
         }
       },
@@ -68,7 +70,7 @@ if (window.lively && window.lively4url) {
       transpiler: 'plugin-babel' }
     )
     
-    System.import(lively4url + "/src/client/load.js").then((load) => {
+    System.import(lively4url + "/src/client/load2.js").then((load) => {
       console.group("Lively1/3")
       console.log("Wait for service worker....");
       return new Promise((resolve, reject) => {

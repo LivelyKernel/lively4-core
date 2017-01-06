@@ -49,7 +49,7 @@ export default class Files {
   }
   
   static async statFile(urlString){
-  	return fetch(urlString, {method: 'OPTIONS', body: data}).then(resp => resp.text())
+  	return fetch(urlString, {method: 'OPTIONS'}).then(resp => resp.text())
   }
 
 }

@@ -3,7 +3,7 @@ import lively from 'src/client/lively.js'
 import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
 
-import {pt} from 'lively.graphics'
+import {pt} from 'src/client/graphics.js'
 
 import HaloItem from './HaloItem.js';
 

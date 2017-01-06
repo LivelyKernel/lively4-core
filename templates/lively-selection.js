@@ -3,7 +3,7 @@ import Morph from './Morph.js';
 
 import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
-import {pt, rect} from 'lively.graphics';
+import {pt, rect} from 'src/client/graphics.js';
 
 import Halo from './lively-halo.js'; // #TODO cyclic dependencies still does not seem to work
 

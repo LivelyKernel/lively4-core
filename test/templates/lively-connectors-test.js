@@ -2,7 +2,7 @@ import Sync from '../../templates/lively-sync.js';
 import {expect} from '../../node_modules/chai/chai.js';
 import {testWorld, loadComponent} from './templates-fixture.js';
 
-import {pt} from "lively.graphics"
+import {pt} from "src/client/graphics.js"
 
 describe("Lively Connectors Component",  function() {
 

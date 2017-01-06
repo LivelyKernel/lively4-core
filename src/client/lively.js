@@ -33,7 +33,7 @@ import * as kernel from 'kernel';
 let $ = window.$,
   babel = window.babel; // known global variables.
 
-import {pt} from 'lively.graphics';
+import {pt} from './graphics.js';
 
 // FOR DEBUGGING
 // import * as cop  from "src/external/ContextJS/src/contextjs.js"
@@ -120,6 +120,10 @@ export default class Lively {
 
   static async reloadModule(path) {
     path = "" + path;
+    if (!lively.modules) {
+      console.log("#TODO reimplement module reloading, fall back to System.import")
+      return System.import(path)
+    }
     var module = lively.modules.module(path);
     if (!module.isLoaded()) {
       console.log("cannot reload module " + path + " because it is not loaded");
@@ -363,7 +367,7 @@ export default class Lively {
       pos = pt(parseFloat(obj.style.left), parseFloat(obj.style.top));
     }
     if (isNaN(pos.x) || isNaN(pos.y)) {
-      pos = $(that).position(); // fallback to jQuery...
+      pos = $(obj).position(); // fallback to jQuery...
       pos = pt(pos.left, pos.top);
     }
     return pos;
@@ -717,7 +721,7 @@ export default class Lively {
     var className = template.getAttribute("data-class");
     if (className) {
       // className = "LivelyFooBar"
-      baseName = this.templateClassNameToTemplateName(className);
+      let baseName = this.templateClassNameToTemplateName(className);
       var module= await System.import(lively4url +'/templates/' + baseName +".js");
       proto =  Object.create(module.prototype || module.default.prototype);
     }

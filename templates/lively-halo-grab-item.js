@@ -12,7 +12,7 @@ drags it to a new position and places it relative or aboslute
 import HaloItem from './HaloItem.js';
 import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
-import {pt} from 'lively.graphics';
+import {pt} from 'src/client/graphics.js';
 
 // window.that = document.querySelector('lively-halo').shadowRoot.querySelector('lively-halo-grab-item')
 

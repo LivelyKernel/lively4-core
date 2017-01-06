@@ -1,9 +1,12 @@
 'use strict';
 
 import Morph from './Morph.js';
-import { AExpr } from 'active-expressions';
+import { AExpr } from 'src/external/active-expressions/src/active-expressions.js';
 
-import {pt} from 'lively.graphics'
+// import { AExpr } from 'src/external/active-expressions/src/active-view.js';
+
+
+import {pt} from 'src/client/graphics.js'
 
 
 function getScroll() {

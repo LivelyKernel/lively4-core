@@ -2,11 +2,18 @@
 
 import * as _ from '../external/underscore.js';
 
+import {babel} from 'systemjs-babel-build'
+
 function functionFromString(funcOrString) {
     if (typeof funcOrString === 'function') {
         return funcOrString;
     }
 
+
+    // #TODO check if we still need this... use eval for now
+    console.log("functionFromString #TODO")
+    return eval(funcOrString)
+    
     // lets trick babel to allow the usage of 'this' in outermost context
     var innerWrap = '(function() { return (' + funcOrString + ').apply(this, args)}).call(temp)',
         transpiled = (babel.transform(innerWrap).code

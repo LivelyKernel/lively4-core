@@ -315,7 +315,14 @@ export default class AceEditor extends HTMLElement {
   }
 
   async boundEval(str, context) {
-    return lively.vm.runEval(str, {targetModule: this.getTargetModule(), context: context})
+    // return lively.vm.runEval(str, {targetModule: this.getTargetModule(), context: context})
+    return new Promise((resolve) => {
+      try {
+        resolve({value: eval(str)})
+      } catch(e) {
+        resolve({value: e, isError: true})
+      }
+    })
   }
 
   printResult(result) {

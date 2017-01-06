@@ -3,8 +3,8 @@
  * - creates the "world menu" for Lively4
  */ 
   
-import html from 'src/client/html.js';
-import {pt} from 'lively.graphics';
+import html from './html.js';
+import {pt} from './graphics.js';
 
 export default class ContextMenu {
   

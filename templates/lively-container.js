@@ -1,6 +1,6 @@
 import Morph from './Morph.js';
 import highlight from 'src/external/highlight.js';
-import {pt} from 'lively.graphics';
+import {pt} from 'src/client/graphics.js';
 
 import halo from 'templates/lively-halo.js';
 
@@ -200,9 +200,13 @@ export default class Container extends Morph {
     // that.resetLoadingFailed()
     // System.import(urlString)
     var urlString = this.getURL().toString();
-    if (urlString.match(/\.js$/)) {
-      var m = lively.modules.module(urlString);
-      this.get("#live").disabled = !m.isLoaded();
+    
+    // #TODO #babel6refactoring
+    if (lively.modules) {
+      if (urlString.match(/\.js$/)) {
+        var m = lively.modules.module(urlString);
+        this.get("#live").disabled = !m.isLoaded();
+      }
     }
     this.lastLoadingFailed = false;
     var b = this.get("#apply"); if (b) b.style.border = "";
@@ -350,24 +354,27 @@ export default class Container extends Morph {
         }
     }
     
-    try {
-        var ast = lively.ast.parse(src);
-        return false;
-    } catch(e) {
-      editor.session.addMarker(Range.fromPoints(
-        doc.indexToPosition(e.pos),
-        doc.indexToPosition(e.raisedAt)), "marked", "text", false); 
-
-      editor.getSession().setAnnotations([{
-        row: e.loc.line - 1,
-        column: e.loc.column,
-        text: e.message,
-        type: "error"
-      }]);
-      
-      return true
+    
+    // #TODO #babel6refactoring replace lively.ast with different parser
+    if (lively.ast) {
+      try {
+          var ast = lively.ast.parse(src);
+          return false;
+      } catch(e) {
+        editor.session.addMarker(Range.fromPoints(
+          doc.indexToPosition(e.pos),
+          doc.indexToPosition(e.raisedAt)), "marked", "text", false); 
+        
+        editor.getSession().setAnnotations([{
+          row: e.loc.line - 1,
+          column: e.loc.column,
+          text: e.message,
+          type: "error"
+        }]);
+        
+        return true
+      }
     }
-          
   }
   
   onSave(doNotQuit) {
