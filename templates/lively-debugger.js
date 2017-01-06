@@ -158,6 +158,19 @@ export default class Debugger extends Morph {
         });
       }
     });
+    this.debuggerWorkspace.commands.addCommand({
+      name: "inspectIt",
+      bindKey: {win: "Ctrl-I", mac: "Command-I"},
+      exec: (editor) => {
+        this._evaluateOnCallFrame(editor, (res) => {
+          if (res.exceptionsDetails) {
+            lively.openInspector(res);
+          } else {
+            lively.openInspector(res.result.value || res.result);
+          }
+        });
+      }
+    });
   }
 
   /*
