@@ -1161,8 +1161,8 @@ export default class Container extends Morph {
         if (aceComp.editor && aceComp.editor.session) {
           aceComp.editor.session.setOptions({
       			mode: "ace/mode/javascript",
-          		tabSize: 2,
-          		useSoftTabs: true
+          	tabSize: 2,
+          	useSoftTabs: true
       		});
         }
         // NOTE: we don't user loadFile directly... because we don't want to edit PNG binaries etc...

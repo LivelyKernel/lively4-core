@@ -2,6 +2,8 @@
  *
  */
 
+console.log("load swx");
+
 import * as fs from './filesystem.js'
 import * as msg from './messaging.js'
 
@@ -17,20 +19,51 @@ const storagePrefix = "LivelySync_";
 
 class ServiceWorker {
   constructor() {
+
     this.filesystem = new fs.Filesystem()
 
     // default file system
     this.filesystem.mount('/', githubfs, {repo: 'LivelyKernel/lively4-core', branch: 'gh-pages'})
-    this.filesystem.mount('/sys', sysfs)
+    this.filesystem.mount('/sys', sysfs, this)
     this.filesystem.mount('/local', html5fs)
 
-    this.filesystem.loadMounts();
     // here we should remount previous filesystem (remembered in focalStorage)
   }
 
-  fetch(event) {
+  static instance() {
+    var startTime = Date.now();
+    var instance = new ServiceWorker()
+    __instance__ = instance; // Global side effect #TODO
+
+    return instance.filesystem.loadMounts().then( () => {
+      console.log("mount FS in" + (Date.now() - startTime) + "ms");
+
+      instance.resolvePendingRequests()
+      return instance
+    })
+  }
+
+  resolvePendingRequests() {
+    
+
+    if (!pendingRequests) {
+      console.log("no pending requests");
+      return
+    }
+    console.log("resolve pending requests: " + pendingRequests)
+    // #Hack needed, because the swx-solved loads asyncronously and the service worker expects and syncronouse answer or promise. 
+    pendingRequests.forEach(ea => {
+      console.log("work on pendingRequest " + ea.url)
+      this.fetch(ea.event, ea)
+    })
+    pendingRequests = null; // stop listening to requests..
+  }
+
+  fetch(event, pending) {
+    // console.log("SWX.fetch " + event + ", " + pending)
     let request = event.request;
     if (!request) return
+
     let  url   = new URL(request.url),
       promise = undefined
 
@@ -43,7 +76,7 @@ class ServiceWorker {
         
         
         try {                        
-          event.respondWith(new Promise(async (resolve, reject) => {
+          var p = new Promise(async (resolve, reject) => {
             var email = await focalStorage.getItem(storagePrefix+ "githubEmail") 
             var username = await focalStorage.getItem(storagePrefix+ "githubUsername") 
             var token = await focalStorage.getItem(storagePrefix+ "githubToken")
@@ -92,7 +125,11 @@ class ServiceWorker {
               console.log("fetch error: "  + e)
               return new Response("Could not fetch " + url +", because of: " + e)
             })) 
-          }))
+          })
+          if (pending) 
+            pending.resolve(p)
+          else
+            event.respondWith(p)
         } catch(err) {
           if (err.toString().match("The fetch event has already been responded to.")) {
             console.log("How can we check for this before? ", err)
@@ -105,8 +142,9 @@ class ServiceWorker {
         // event.respondWith(self.fetch(request));
       }
     } else {
+      // console.log("lively4 fetch " + request.url)
       let response = this.filesystem.handle(request, url)
-
+      
       response = response.then((result) => {
         if(result instanceof Response) {
           return result
@@ -124,7 +162,11 @@ class ServiceWorker {
         return new Response(content, {status: 500, statusText: message})
       })
 
-      event.respondWith(response)
+      if (pending) {
+        console.log("resolve pending request: " + pending.url)
+        pending.resolve(response)
+      } else
+        event.respondWith(response)
     }
   }
 
@@ -138,12 +180,16 @@ class ServiceWorker {
  */
 
 var __instance__
-export function instance() {
-  if(typeof __instance__ === 'undefined') {
-    __instance__ = new ServiceWorker()
-  }
-
+var __instancePromise__
+export async function instance() {
   return __instance__
+}
+
+export async function instancePromise() {
+  if(typeof  __instancePromise__ === 'undefined') {
+    __instancePromise__ = ServiceWorker.instance() // sets __instance__
+  }
+  return  __instancePromise__
 }
 
 export function install() {
@@ -155,16 +201,18 @@ export function activate() {
 }
 
 export function fetch(event) {
-  return instance().fetch(event)
+  // console.log("fetch swx.js " + event.request.url)
+  return instancePromise().then( swx => swx.fetch(event))
 }
 
 export function message(event) {
-  return instance().message(event)
+  return instancePromise().then( swx => swx.message(event))
 }
-
 
 export {
   focalStorage
 }
 
-console.log("Loaded swx.js")
+instancePromise(); // force constructor
+
+// console.log("Loaded swx.js")
