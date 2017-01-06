@@ -23,6 +23,10 @@
       margin-right: 2px;
     }
     
+    .active {
+      color: green;
+    }
+    
     .two-columns {
       display: flex;
       flex-direction : row;
@@ -76,7 +80,11 @@
     }
     
     #details ul li:nth-child(odd) {
-      background-color: #eee;
+      background-color: #f2f2f2;
+    }
+    
+    #details ul li:hover {
+      background-color: #ddd;
     }
     
     summary button {
@@ -101,6 +109,10 @@
         <button id="stepIntoButton" title="Step Into" disabled><i class="fa fa-fw fa-arrow-down" aria-hidden="true"></i></button>
         <button id="stepOutButton" title="Step Out" disabled><i class="fa fa-fw fa-arrow-up" aria-hidden="true"></i></button>
         <button id="restartFrameButton" title="Restart current call frame" disabled><i class="fa fa-fw fa-repeat" aria-hidden="true"></i></button>
+        <button id="breakpointsButton" title="Enable/disable all breakpoints" disabled><i class="fa fa-fw fa-flag" aria-hidden="true"></i></button>
+        <button id="profilerButton" title="Run profiler" disabled><i class="fa fa-fw fa-flask" aria-hidden="true"></i></button>
+        <button id="urlButton" title="Navigate to URL" disabled><i class="fa fa-fw fa-folder-open-o" aria-hidden="true"></i></button>
+        <button id="reloadButton" title="Reload page and igore cache" disabled><i class="fa fa-fw fa-refresh" aria-hidden="true"></i></button>
       </div>
       <div class="two-columns">
         <div class="column-left">

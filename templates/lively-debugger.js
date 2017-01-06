@@ -5,7 +5,7 @@ const debuggerGitHubURL = 'https://github.com/LivelyKernel/lively4-chrome-debugg
 export default class Debugger extends Morph {
 
   initialize() {
-    this.windowTitle = 'Debugger';
+    this.windowTitle = '<i class="fa fa-chrome" aria-hidden="true"></i> Debugger';
     this.lastDebuggerPausedResult = null;
     this.currentCallFrame = null;
     this.scopeList = document.createElement('ul');
@@ -31,6 +31,14 @@ export default class Debugger extends Morph {
     this.stepOutButton.addEventListener('click', this.stepOutButtonClick.bind(this));
     this.restartFrameButton = this.getSubmorph('#restartFrameButton');
     this.restartFrameButton.addEventListener('click', this.restartFrameButtonClick.bind(this));
+    this.breakpointsButton = this.getSubmorph('#breakpointsButton');
+    this.breakpointsButton.addEventListener('click', this.breakpointsButtonClick.bind(this));
+    this.profilerButton = this.getSubmorph('#profilerButton');
+    this.profilerButton.addEventListener('click', this.profilerButtonClick.bind(this));
+    this.urlButton = this.getSubmorph('#urlButton');
+    this.urlButton.addEventListener('click', this.urlButtonClick.bind(this));
+    this.reloadButton = this.getSubmorph('#reloadButton');
+    this.reloadButton.addEventListener('click', this.reloadButtonClick.bind(this));
     
     this.codeEditor = this.getSubmorph('#codeEditor').editor;
     this.codeEditor.getSession().setMode("ace/mode/javascript");
@@ -76,7 +84,11 @@ export default class Debugger extends Morph {
           scriptId: this.currentCallFrame.location.scriptId,
           scriptSource: editor.getValue()
         }).then((res) => {
-          console.log('Debugger.setScriptSource', res);
+          if (res && res.exceptionDetails) {
+            alert(res.exceptionDetails.text); 
+          } else {
+            console.log('Debugger.setScriptSource', res);
+          }
         });
       }
     });
@@ -136,11 +148,21 @@ export default class Debugger extends Morph {
   
   _evaluateOnCallFrame(editor, cb) {
     let expression = editor.currentSelectionOrLine()
-    if (!this._ensureCurrentCallFrame()) return;
-    this.sendCommandToDebugger('Debugger.evaluateOnCallFrame', {
-      callFrameId: this.currentCallFrame.callFrameId,
-      expression: expression
-    }).then(cb);
+    if (!this.debuggerAttached()) {
+      alert('Debugger is not attached to any target.')
+      debugger;
+      return;
+    }
+    if (this.currentCallFrame) {
+      this.sendCommandToDebugger('Debugger.evaluateOnCallFrame', {
+        callFrameId: this.currentCallFrame.callFrameId,
+        expression: expression
+      }).then(cb);
+    } else {
+      this.sendCommandToDebugger('Runtime.evaluate', {
+        expression: expression
+      }).then(cb);
+    }
   }
   
   _printResult(editor, result) {
@@ -335,16 +357,19 @@ export default class Debugger extends Morph {
     return lively4ChromeDebugger.debuggerSendCommand(this.selectedTargetId(), method, args);
   }
   
+  debuggerAttached() {
+    return this.targetSelection.disabled
+  }
+  
   selectedTargetId() {
     return this.targetSelection.options[this.targetSelection.selectedIndex].value;
   }
   
-  setDisabledAllDebugButton(bool) {
-    this.pauseButton.disabled = bool;
-    this.stepOverButton.disabled = bool;
-    this.stepIntoButton.disabled = bool;
-    this.stepOutButton.disabled = bool;
-    this.restartFrameButton.disabled = bool;
+  setDisabledAllDebugButtons(bool) {
+    var buttons = this.getSubmorph('#debugger-top').getElementsByTagName('button');
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].disabled = bool;
+    }
     this.targetSelection.disabled = !bool;
   }
 
@@ -358,14 +383,15 @@ export default class Debugger extends Morph {
     this.sendCommandToDebugger('Debugger.enable');
     this.debugButton.classList.add('hide');
     this.stopButton.classList.remove('hide');
-    this.setDisabledAllDebugButton(false);
+    this.setDisabledAllDebugButtons(false);
   }
   
   stopButtonClick(evt) {
     this.detachDebugger();
     this.stopButton.classList.add('hide');
     this.debugButton.classList.remove('hide');
-    this.setDisabledAllDebugButton(true);
+    this.setDisabledAllDebugButtons(true);
+    this.debugButton.disabled = false;
   }
 
   pauseButtonClick(evt) {
@@ -403,6 +429,47 @@ export default class Debugger extends Morph {
       } else {
         console.log('Debugger.restartFrame', res);
       }
+    });
+  }
+  
+  breakpointsButtonClick(evt) {
+    var active = evt.target.classList.toggle('active');
+    this.sendCommandToDebugger('Debugger.setBreakpointsActive', {active: active });
+  }
+  
+  profilerButtonClick(evt) {
+    var numberOfSections = parseInt(window.prompt('Seconds to profile:', '5'));
+    this.sendCommandToDebugger('Profiler.enable').then(() => {
+    	this.sendCommandToDebugger('Profiler.start').then(() => {
+    	  setTimeout(() => {
+    	    this.sendCommandToDebugger('Profiler.stop').then((res) => {
+    	      if (res && res.profile) {
+    	        lively.openInspector(res.profile);
+    	      } else {
+    	        alert('Failed to retrieve profile.');
+    	        debugger;
+    	      }
+    	      this.sendCommandToDebugger('Profiler.disable');
+    	    });
+    	  }, numberOfSections * 1000);
+    	});
+    });
+  }
+  
+  urlButtonClick(evt) {
+    var url = window.prompt('URL to open:', 'https://hpi.de');
+    this.sendCommandToDebugger('Page.enable').then(() => {
+    	this.sendCommandToDebugger('Page.navigate', { url: url }).then((res) => {
+    	  this.sendCommandToDebugger('Page.disable');
+    	});
+    });
+  }
+  
+  reloadButtonClick(evt) {
+    this.sendCommandToDebugger('Page.enable').then(() => {
+    	this.sendCommandToDebugger('Page.reload', { ignoreCache: true }).then(() => {
+    	  this.sendCommandToDebugger('Page.disable');
+    	});
     });
   }
 }
