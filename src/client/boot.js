@@ -47,21 +47,31 @@ if (window.lively && window.lively4url) {
   }
   
   Promise.resolve().then( () => {
-    return loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/system.src.js");
+    return loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/systemjs/system.js");
   }).then( () => {
-    return loadJavaScriptThroughDOM("regenerator", lively4url + "/vendor/regenerator-runtime.js");
-  }).then( () => {
-    // configure babel
-    System.paths.babel = lively4url + '/src/external/babel-browser.js';
-    System.config({
-      baseURL: lively4url + '/',
-      transpiler: 'babel',
-      babelOptions: { },
+    SystemJS.config({
+      // baseURL: lively4url + '/',
+      meta: {
+        "*.js": { 
+          babelOptions: {
+            stage2: false,
+            stage3: false,
+            es2015: false,
+            // stage0: true,
+            // stage1: true
+            // presets: [],
+            // plugins: []
+          }
+        }
+      },
       map: {
-        babel: lively4url + '/src/external/babel-browser.js',
-        kernel: lively4url + '/src/client/legacy-kernel.js'
-      }
-    });
+        'plugin-babel': './src/external/babel/plugin-babel.js',
+        'systemjs-plugin-babel': './src/external/babel/plugin-babel.js',
+        'systemjs-babel-build': './src/external/babel/systemjs-babel-browser.js',
+        'kernel': lively4url + '/src/client/legacy-kernel.js'
+      },
+      transpiler: 'plugin-babel' }
+    )
     
     System.import(lively4url + "/src/client/load.js").then((load) => {
       console.group("Lively1/3")

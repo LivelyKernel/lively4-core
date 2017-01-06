@@ -40,12 +40,12 @@ if ('serviceWorker' in navigator || window.lively4chrome) {
     // Lively has all the dependencies
 
     Promise.resolve("")
-      .then( function() {
-        return loadJavaScriptThroughDOM("livelyModules",
-          lively4url + "/src/external/lively.modules-with-lively.vm.js")})
+      // .then( function() {
+      //   return loadJavaScriptThroughDOM("livelyModules",
+      //     lively4url + "/src/external/lively.modules-with-lively.vm.js")})
       .then( function() {
         console.log("lively.modules loaded... now try to load lively4");
-        return lively.modules.importPackage(lively4url)})
+        return System.import("src/client/lively.js")})
       .then(function(module) {
         lively.initializeHalos(); // #TODO make halo it latebound but fast? (get rid of flickering when halo are eagerly loaded....)
         // disable search widget for now
@@ -69,7 +69,11 @@ if ('serviceWorker' in navigator || window.lively4chrome) {
       });
   };
 
-  if (navigator.serviceWorker.controller || window.lively4chrome || externalSite) {
+  if (navigator.serviceWorker.controller || window.lively4chrome || externalSite || true) {
+  
+    console.log("NO Service worker during migration!!!")
+  
+  
     if (window.lively4chrome) {
       console.log("[Livley4] running without service worker");
     } else if (externalSite) {
