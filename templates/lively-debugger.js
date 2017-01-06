@@ -14,34 +14,15 @@ export default class Debugger extends Morph {
     this.debuggerTargets = this.getSubmorph('#debugger-targets');
     this.targetSelection = document.createElement('select');
     this.debuggerTargets.appendChild(this.targetSelection);
-  
-    this.debugButton = this.getSubmorph('#debugButton');
-    this.debugButton.addEventListener('click', this.debugButtonClick.bind(this));
-    this.stopButton = this.getSubmorph('#stopButton');
-    this.stopButton.addEventListener('click', this.stopButtonClick.bind(this));
-    this.pauseButton = this.getSubmorph('#pauseButton');
-    this.pauseButton.addEventListener('click', this.pauseButtonClick.bind(this));
-    this.playButton = this.getSubmorph('#playButton');
-    this.playButton.addEventListener('click', this.playButtonClick.bind(this));
-    this.stepOverButton = this.getSubmorph('#stepOverButton');
-    this.stepOverButton.addEventListener('click', this.stepOverButtonClick.bind(this));
-    this.stepIntoButton = this.getSubmorph('#stepIntoButton');
-    this.stepIntoButton.addEventListener('click', this.stepIntoButtonClick.bind(this));
-    this.stepOutButton = this.getSubmorph('#stepOutButton');
-    this.stepOutButton.addEventListener('click', this.stepOutButtonClick.bind(this));
-    this.restartFrameButton = this.getSubmorph('#restartFrameButton');
-    this.restartFrameButton.addEventListener('click', this.restartFrameButtonClick.bind(this));
-    this.breakpointsButton = this.getSubmorph('#breakpointsButton');
-    this.breakpointsButton.addEventListener('click', this.breakpointsButtonClick.bind(this));
-    this.profilerButton = this.getSubmorph('#profilerButton');
-    this.profilerButton.addEventListener('click', this.profilerButtonClick.bind(this));
-    this.urlButton = this.getSubmorph('#urlButton');
-    this.urlButton.addEventListener('click', this.urlButtonClick.bind(this));
-    this.reloadButton = this.getSubmorph('#reloadButton');
-    this.reloadButton.addEventListener('click', this.reloadButtonClick.bind(this));
     
+    var buttons = this.getSubmorph('#debugger-top').getElementsByTagName('button');
+    for (var i = 0; i < buttons.length; i++) {
+      var button = buttons[i];
+      this[button.id] = button;
+      button.addEventListener('click', this[`${button.id}Click`].bind(this));
+    }
+  
     this.codeEditor = this.getSubmorph('#codeEditor').editor;
-    this.codeEditor.getSession().setMode("ace/mode/javascript");
     this.debuggerWorkspace = this.getSubmorph('#debuggerWorkspace').editor;
     this.details = this.getSubmorph('#details');
     
@@ -49,6 +30,10 @@ export default class Debugger extends Morph {
     this.initializeCodeEditor();
     this.initializeDebuggerWorkspace();
   }
+
+  /*
+  * Initialization
+  */
   
   initializeTargets() {
     if (!lively4ChromeDebugger) {
@@ -75,6 +60,7 @@ export default class Debugger extends Morph {
   }
   
   initializeCodeEditor() {
+    this.codeEditor.session.setMode("ace/mode/javascript");
     this.codeEditor.commands.addCommand({
       name: "saveIt",
       bindKey: {win: "Ctrl-S", mac: "Command-S"},
@@ -92,12 +78,12 @@ export default class Debugger extends Morph {
         });
       }
     });
-    this.codeEditor.on("guttermousedown", function(e) {
+    this.codeEditor.on("guttermousedown", (e) => {
       if (!this._ensureCurrentCallFrame()) return;
       var scriptId = this.currentCallFrame.location.scriptId;
       var lineNumber = e.getDocumentPosition().row;
       var method, params;
-      if (lineNumber in this.codeEditor.getSession().getBreakpoints()) {
+      if (lineNumber in this.codeEditor.session.getBreakpoints()) {
         method = 'Debugger.removeBreakpoint';
         if (!(scriptId in this.breakPoints) || !(lineNumber in this.breakPoints[scriptId])) {
           alert(`Cannot find breakpointId for line #${lineNumber}`);
@@ -129,61 +115,26 @@ export default class Debugger extends Morph {
             this.breakPoints[scriptId] = {};
           }
           this.breakPoints[scriptId][actualLineNumber - 1] = res.breakpointId;
-          this.codeEditor.getSession().setBreakpoint(actualLineNumber - 1);
+          this.codeEditor.session.setBreakpoint(actualLineNumber - 1);
         } else {
-          this.codeEditor.getSession().clearBreakpoint(lineNumber);
+          this.codeEditor.session.clearBreakpoint(lineNumber);
         }
       });
-    }.bind(this));
-  }
-  
-  _ensureCurrentCallFrame() {
-    if (!this.currentCallFrame) {
-      alert('No call frame to operate on. Has the debugger paused?');
-      debugger;
-      return false;
-    }
-    return true;
-  }
-  
-  _evaluateOnCallFrame(editor, cb) {
-    let expression = editor.currentSelectionOrLine();
-    if (!this.debuggerAttached()) {
-      alert('Debugger is not attached to any target.');
-      debugger;
-      return;
-    }
-    if (this.currentCallFrame) {
-      this.sendCommandToDebugger('Debugger.evaluateOnCallFrame', {
-        callFrameId: this.currentCallFrame.callFrameId,
-        expression: expression
-      }).then(cb);
-    } else {
-      this.sendCommandToDebugger('Runtime.evaluate', {
-        expression: expression
-      }).then(cb);
-    }
-  }
-  
-  _printResult(editor, result) {
-    var fromSel =  editor.getSelectionRange().end;
-    editor.selection.moveCursorToPosition(fromSel);
-    editor.selection.clearSelection(); // don't replace existing selection
-    editor.insert(JSON.stringify(result));
-    var toSel =  editor.getSelectionRange().start;
-    editor.selection.moveCursorToPosition(fromSel);
-    editor.selection.selectToPosition(toSel);
+    });
   }
   
   initializeDebuggerWorkspace() {
+    this.codeEditor.session.setMode("ace/mode/javascript");
+    this.debuggerWorkspace.renderer.setShowGutter(false);
     this.debuggerWorkspace.currentSelectionOrLine = () => {
         let text,
-            sel =  this.getSelectionRange();
+            editor = this.debuggerWorkspace,
+            sel =  editor.getSelectionRange();
         if (sel.start.row == sel.end.row && sel.start.column == sel.end.column) {
-            var currline = this.getSelectionRange().start.row;
-            text = this.session.getLine(currline);
+            var currline = editor.getSelectionRange().start.row;
+            text = editor.session.getLine(currline);
         } else {
-            text = this.getCopyText();
+            text = editor.getCopyText();
         }
         return text;
     };
@@ -194,7 +145,6 @@ export default class Debugger extends Morph {
         this._evaluateOnCallFrame(editor);
       }
     });
-
     this.debuggerWorkspace.commands.addCommand({
       name: "printIt",
       bindKey: {win: "Ctrl-P", mac: "Command-P"},
@@ -209,169 +159,6 @@ export default class Debugger extends Morph {
       }
     });
   }
-  
-  updateCodeEditor(pausedResult) {
-    if (!this._ensureCurrentCallFrame()) return;
-    this.sendCommandToDebugger('Debugger.getScriptSource', {
-      scriptId: this.currentCallFrame.location.scriptId
-    }).then((res) => {
-      if (res && res.scriptSource) {
-        this.codeEditor.setValue(res.scriptSource);
-        this.codeEditor.gotoLine(this.currentCallFrame.location.lineNumber + 1);
-        this.codeEditor.getSession().clearBreakpoints();
-        if (pausedResult) {
-          // restore breakpoints from pausedResult.hitBreakpoints
-          if (pausedResult.hitBreakpoints.length > 0) {
-            for (var i = 0; i < pausedResult.hitBreakpoints.length; i++) {
-              var breakpointId = pausedResult.hitBreakpoints[i];
-              var parts = breakpointId.split(':');
-              if (parts[0] != this.currentCallFrame.location.scriptId) {
-                break; // break because all breakpoints belong to the same scriptId
-              }
-              var lineNumber = parseInt(parts[1]);
-              this.codeEditor.getSession().setBreakpoint(lineNumber - 1);
-            }
-          }
-        }
-      } else {
-        alert(`Failed to getScriptSource for ${this.currentCallFrame.location.scriptId}`);
-      }
-    });
-  }
-  
-  dispatchDebuggerPaused(result) {
-    // Update buttons
-    this.pauseButton.classList.add('hide');
-    this.playButton.classList.remove('hide');
-    
-    this.lastDebuggerPausedResult = result;
-    this.currentCallFrame = result.callFrames[0];
-    var callFrameList = document.createElement('ul');
-    var callFrames = this.lastDebuggerPausedResult.callFrames;
-    var callFrameClickHandler = (e) => {
-      var callFrameIndex = e.target.getAttribute('data-call-frame-index');
-      var callFrame = callFrames[callFrameIndex];
-      this.currentCallFrame = callFrame;
-      this.updateCodeEditor();
-      this.updateScopeList();
-      e.stopPropagation();
-    };
-    for (var i = 0; i < callFrames.length; i++) {
-      var callFrame = callFrames[i];
-      var li = document.createElement('li');
-      li.setAttribute('data-call-frame-index', i);
-      li.innerHTML = callFrame.functionName || '<i>unknown</i>';
-      li.addEventListener('click', callFrameClickHandler.bind(this));
-      callFrameList.appendChild(li);
-    }
-    this.updateCodeEditor(result);
-  
-    this.details.innerHTML = '';
-    var callFrameListTitle = document.createElement('b');
-    callFrameListTitle.innerHTML = 'Call Frames';
-    this.details.appendChild(callFrameListTitle);
-    this.details.appendChild(callFrameList);
-    
-    var scopeListTitle = document.createElement('b');
-    scopeListTitle.innerHTML = 'Scope';
-    this.details.appendChild(scopeListTitle);
-    this.details.appendChild(this.scopeList);
-    this.updateScopeList();
-  }
-  
-  updateScopeList() {
-    var scopeChain = this.currentCallFrame.scopeChain;
-    this.scopeList.innerHTML = '';
-    var summaryClickHandler = (e) => {
-      var selectedSummary = e.target;
-      var selectedDetails = selectedSummary.parentElement;
-      if (selectedDetails.hasAttribute('open')) return;
-      var objectId = e.target.getAttribute('data-object-id');
-      this.appendPropertyList(selectedSummary, objectId);
-    };
-    for (var i = 0; i < scopeChain.length; i++) {
-      var scope = scopeChain[i];
-      var obj = scope.object;
-      var details = document.createElement('details');
-      var summary = document.createElement('summary');
-      summary.setAttribute('data-object-id', obj.objectId);
-      summary.addEventListener('click', summaryClickHandler.bind(this));
-      var text = scope.type;
-      if (scope.name) {
-        text = `${scope.type}: ${scope.name}`;
-      }
-      summary.innerHTML = text;
-      details.appendChild(summary);
-      var li = document.createElement('li');
-      li.appendChild(details);
-      this.scopeList.appendChild(li);
-    }
-  }
-  
-  appendPropertyList(parentSummary, objectId) {
-    this.sendCommandToDebugger('Runtime.getProperties', {objectId: objectId})
-      .then((res) => {
-        var parentDetails = parentSummary.parentElement;
-        var propList = document.createElement('ul');
-        var itemClickHandler = (e) => {
-          var currentSummary = e.target;
-          var currentDetails = currentSummary.parentElement;
-          if (currentDetails.hasAttribute('open')) return;
-          var objectId = currentSummary.getAttribute('data-object-id');
-          this.appendPropertyList(currentSummary, objectId);
-        };
-        for (var j = 0; j < res.result.length; j++) {
-          var property = res.result[j];
-          var li = document.createElement('li');
-          if (!property.value) {
-            li.innerHTML = `${property.name}`;
-          } else if (property.value.value) {
-            li.innerHTML = `${property.name}: ${property.value.value}`;
-          } else {
-            var propDetails = document.createElement('details');
-            var propSummary = document.createElement('summary');
-            propSummary.setAttribute('data-object-id', property.value.objectId);
-            propSummary.innerHTML = `${property.name} [${property.value.type}]`;
-            propSummary.addEventListener('click', itemClickHandler.bind(this));
-            propDetails.appendChild(propSummary);
-            li.append(propDetails);
-          }
-          propList.appendChild(li);
-          parentDetails.innerHTML = '';
-          parentDetails.appendChild(parentSummary);
-          parentDetails.appendChild(propList);
-        }
-      }
-    );
-  }
-
-  attachDebugger() {
-    return lively4ChromeDebugger.debuggerAttach(this.selectedTargetId());
-  }
-
-  detachDebugger() {
-    return lively4ChromeDebugger.debuggerDetach(this.selectedTargetId());
-  }
-
-  sendCommandToDebugger(method, args) {
-    return lively4ChromeDebugger.debuggerSendCommand(this.selectedTargetId(), method, args);
-  }
-  
-  debuggerAttached() {
-    return this.targetSelection.disabled;
-  }
-  
-  selectedTargetId() {
-    return this.targetSelection.options[this.targetSelection.selectedIndex].value;
-  }
-  
-  setDisabledAllDebugButtons(bool) {
-    var buttons = this.getSubmorph('#debugger-top').getElementsByTagName('button');
-    for (var i = 0; i < buttons.length; i++) {
-      buttons[i].disabled = bool;
-    }
-    this.targetSelection.disabled = !bool;
-  }
 
   /*
   * Event handlers
@@ -383,14 +170,14 @@ export default class Debugger extends Morph {
     this.sendCommandToDebugger('Debugger.enable');
     this.debugButton.classList.add('hide');
     this.stopButton.classList.remove('hide');
-    this.setDisabledAllDebugButtons(false);
+    this._setDisabledAllDebugButtons(false);
   }
   
   stopButtonClick(evt) {
     this.detachDebugger();
     this.stopButton.classList.add('hide');
     this.debugButton.classList.remove('hide');
-    this.setDisabledAllDebugButtons(true);
+    this._setDisabledAllDebugButtons(true);
     this.debugButton.disabled = false;
   }
 
@@ -471,5 +258,213 @@ export default class Debugger extends Morph {
         this.sendCommandToDebugger('Page.disable');
       });
     });
+  }
+
+  /*
+  * Interaction with debugger extension
+  */
+
+  attachDebugger() {
+    return lively4ChromeDebugger.debuggerAttach(this._selectedTargetId());
+  }
+
+  detachDebugger() {
+    return lively4ChromeDebugger.debuggerDetach(this._selectedTargetId());
+  }
+
+  sendCommandToDebugger(method, args) {
+    return lively4ChromeDebugger.debuggerSendCommand(this._selectedTargetId(), method, args);
+  }
+  
+  dispatchDebuggerPaused(result) {
+    // Update buttons
+    this.pauseButton.classList.add('hide');
+    this.playButton.classList.remove('hide');
+    
+    this.lastDebuggerPausedResult = result;
+    this.currentCallFrame = result.callFrames[0];
+    var callFrameList = document.createElement('ul');
+    var callFrames = this.lastDebuggerPausedResult.callFrames;
+    var callFrameClickHandler = (e) => {
+      var callFrameIndex = e.target.getAttribute('data-call-frame-index');
+      var callFrame = callFrames[callFrameIndex];
+      this.currentCallFrame = callFrame;
+      this.updateCodeEditor();
+      this.updateScopeList();
+      e.stopPropagation();
+    };
+    for (var i = 0; i < callFrames.length; i++) {
+      var callFrame = callFrames[i];
+      var li = document.createElement('li');
+      li.setAttribute('data-call-frame-index', i);
+      li.innerHTML = callFrame.functionName || '<i>unknown</i>';
+      li.addEventListener('click', callFrameClickHandler);
+      callFrameList.appendChild(li);
+    }
+    this.updateCodeEditor(result);
+  
+    this.details.innerHTML = '';
+    var callFrameListTitle = document.createElement('b');
+    callFrameListTitle.innerHTML = 'Call Frames';
+    this.details.appendChild(callFrameListTitle);
+    this.details.appendChild(callFrameList);
+    
+    var scopeListTitle = document.createElement('b');
+    scopeListTitle.innerHTML = 'Scope';
+    this.details.appendChild(scopeListTitle);
+    this.details.appendChild(this.scopeList);
+    this.updateScopeList();
+  }
+  
+  /*
+  * Dynamic UI updating
+  */
+  
+  updateScopeList() {
+    var scopeChain = this.currentCallFrame.scopeChain;
+    this.scopeList.innerHTML = '';
+    var summaryClickHandler = (e) => {
+      var selectedSummary = e.target;
+      var selectedDetails = selectedSummary.parentElement;
+      if (selectedDetails.hasAttribute('open')) return;
+      var objectId = e.target.getAttribute('data-object-id');
+      this.appendPropertyList(selectedSummary, objectId);
+    };
+    for (var i = 0; i < scopeChain.length; i++) {
+      var scope = scopeChain[i];
+      var obj = scope.object;
+      var details = document.createElement('details');
+      var summary = document.createElement('summary');
+      summary.setAttribute('data-object-id', obj.objectId);
+      summary.addEventListener('click', summaryClickHandler);
+      var text = scope.type;
+      if (scope.name) {
+        text = `${scope.type}: ${scope.name}`;
+      }
+      summary.innerHTML = text;
+      details.appendChild(summary);
+      var li = document.createElement('li');
+      li.appendChild(details);
+      this.scopeList.appendChild(li);
+    }
+  }
+  
+  updateCodeEditor(pausedResult) {
+    if (!this._ensureCurrentCallFrame()) return;
+    this.sendCommandToDebugger('Debugger.getScriptSource', {
+      scriptId: this.currentCallFrame.location.scriptId
+    }).then((res) => {
+      if (res && res.scriptSource) {
+        this.codeEditor.setValue(res.scriptSource);
+        this.codeEditor.gotoLine(this.currentCallFrame.location.lineNumber + 1);
+        this.codeEditor.session.clearBreakpoints();
+        if (pausedResult) {
+          // restore breakpoints from pausedResult.hitBreakpoints
+          if (pausedResult.hitBreakpoints.length > 0) {
+            for (var i = 0; i < pausedResult.hitBreakpoints.length; i++) {
+              var breakpointId = pausedResult.hitBreakpoints[i];
+              var parts = breakpointId.split(':');
+              if (parts[0] != this.currentCallFrame.location.scriptId) {
+                break; // break because all breakpoints belong to the same scriptId
+              }
+              var lineNumber = parseInt(parts[1]);
+              this.codeEditor.session.setBreakpoint(lineNumber - 1);
+            }
+          }
+        }
+      } else {
+        alert(`Failed to getScriptSource for ${this.currentCallFrame.location.scriptId}`);
+      }
+    });
+  }
+  
+  appendPropertyList(parentSummary, objectId) {
+    this.sendCommandToDebugger('Runtime.getProperties', {objectId: objectId})
+      .then((res) => {
+        var parentDetails = parentSummary.parentElement;
+        var propList = document.createElement('ul');
+        var clickHandler = (e) => {
+          var currentSummary = e.target;
+          var currentDetails = currentSummary.parentElement;
+          if (currentDetails.hasAttribute('open')) return;
+          var objectId = currentSummary.getAttribute('data-object-id');
+          this.appendPropertyList(currentSummary, objectId);
+        };
+        for (var j = 0; j < res.result.length; j++) {
+          var property = res.result[j];
+          var li = document.createElement('li');
+          if (!property.value) {
+            li.innerHTML = `${property.name}`;
+          } else if (property.value.value) {
+            li.innerHTML = `${property.name}: ${property.value.value}`;
+          } else {
+            var propSummary = document.createElement('summary');
+            propSummary.setAttribute('data-object-id', property.value.objectId);
+            propSummary.innerHTML = `${property.name} [${property.value.type}]`;
+            propSummary.addEventListener('click', clickHandler);
+            var propDetails = document.createElement('details');
+            propDetails.appendChild(propSummary);
+            li.append(propDetails);
+          }
+          propList.appendChild(li);
+          parentDetails.innerHTML = '';
+          parentDetails.appendChild(parentSummary);
+          parentDetails.appendChild(propList);
+        }
+      }
+    );
+  }
+
+  /*
+  * Private helpers
+  */
+  _selectedTargetId() {
+    return this.targetSelection.options[this.targetSelection.selectedIndex].value;
+  }
+  
+  _setDisabledAllDebugButtons(bool) {
+    var buttons = this.getSubmorph('#debugger-top').getElementsByTagName('button');
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].disabled = bool;
+    }
+    this.targetSelection.disabled = !bool;
+  }
+  
+  _ensureCurrentCallFrame() {
+    if (!this.currentCallFrame) {
+      alert('No call frame to operate on. Has the debugger paused?');
+      debugger;
+      return false;
+    }
+    return true;
+  }
+  
+  _evaluateOnCallFrame(editor, cb) {
+    let expression = editor.currentSelectionOrLine();
+    if (!this.targetSelection.disabled) {
+      alert('Debugger is not attached to any target.');
+      debugger;
+      return;
+    }
+    if (this.currentCallFrame) {
+      this.sendCommandToDebugger('Debugger.evaluateOnCallFrame', {
+        callFrameId: this.currentCallFrame.callFrameId,
+        expression: expression
+      }).then(cb);
+    } else {
+      this.sendCommandToDebugger('Runtime.evaluate', {
+        expression: expression
+      }).then(cb);
+    }
+  }
+  
+  _printResult(editor, result) {
+    var fromSel =  editor.getSelectionRange().end;
+    editor.selection.moveCursorToPosition(fromSel);
+    editor.selection.clearSelection(); // don't replace existing selection
+    editor.insert(JSON.stringify(result));
+    var toSel =  editor.getSelectionRange().start;
+    editor.selection.moveCursorToPosition(fromSel);
+    editor.selection.selectToPosition(toSel);
   }
 }

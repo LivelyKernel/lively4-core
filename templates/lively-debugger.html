@@ -51,6 +51,10 @@
         height: 100%;
         border: 0;
       }
+      
+      #debuggerWorkspace {
+        min-height: 80px;
+      }
 
       #codeEditor {
         flex: 1;
@@ -106,8 +110,8 @@
     <div class="container">
       <div id="debugger-top">
         <div id="debugger-targets"></div>
-        <button id="debugButton" title="Debug"><i class="fa fa-fw fa-bug" aria-hidden="true"></i></button>
-        <button id="stopButton" title="Stop"class="hide"><i class="fa fa-fw fa-stop" aria-hidden="true"></i></button>
+        <button id="debugButton" title="Attach debugger"><i class="fa fa-fw fa-bug" aria-hidden="true"></i></button>
+        <button id="stopButton" title="Detach debugger"class="hide"><i class="fa fa-fw fa-stop" aria-hidden="true"></i></button>
         <button id="pauseButton" title="Pause" disabled><i class="fa fa-fw fa-pause" aria-hidden="true"></i></button>
         <button id="playButton" title="Continue" class="hide"><i class="fa fa-fw fa-play" aria-hidden="true"></i></button>
         <button id="stepOverButton" title="Step Over" disabled><i class="fa fa-fw fa-step-forward" aria-hidden="true"></i></button>
@@ -117,7 +121,7 @@
         <button id="breakpointsButton" title="Enable/disable all breakpoints" disabled><i class="fa fa-fw fa-flag" aria-hidden="true"></i></button>
         <button id="profilerButton" title="Run profiler" disabled><i class="fa fa-fw fa-flask" aria-hidden="true"></i></button>
         <button id="urlButton" title="Navigate to URL" disabled><i class="fa fa-fw fa-folder-open-o" aria-hidden="true"></i></button>
-        <button id="reloadButton" title="Reload page and igore cache" disabled><i class="fa fa-fw fa-refresh" aria-hidden="true"></i></button>
+        <button id="reloadButton" title="Reload page and ignore cache" disabled><i class="fa fa-fw fa-refresh" aria-hidden="true"></i></button>
       </div>
       <div class="two-columns">
         <div class="column-left">
