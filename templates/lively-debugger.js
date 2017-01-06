@@ -29,6 +29,8 @@ export default class Debugger extends Morph {
     this.stepIntoButton.addEventListener('click', this.stepIntoButtonClick.bind(this));
     this.stepOutButton = this.getSubmorph('#stepOutButton');
     this.stepOutButton.addEventListener('click', this.stepOutButtonClick.bind(this));
+    this.restartFrameButton = this.getSubmorph('#restartFrameButton');
+    this.restartFrameButton.addEventListener('click', this.restartFrameButtonClick.bind(this));
     
     this.codeEditor = this.getSubmorph('#codeEditor').editor;
     this.codeEditor.getSession().setMode("ace/mode/javascript");
@@ -342,6 +344,7 @@ export default class Debugger extends Morph {
     this.stepOverButton.disabled = bool;
     this.stepIntoButton.disabled = bool;
     this.stepOutButton.disabled = bool;
+    this.restartFrameButton.disabled = bool;
     this.targetSelection.disabled = !bool;
   }
 
@@ -385,5 +388,21 @@ export default class Debugger extends Morph {
   
   stepOutButtonClick(evt) {
     this.sendCommandToDebugger('Debugger.stepOut');
+  }
+  
+  restartFrameButtonClick(evt) {
+    if (!this._ensureCurrentCallFrame()) return;
+    this.sendCommandToDebugger('Debugger.restartFrame', {
+      callFrameId: this.currentCallFrame.callFrameId
+    }).then((res) => {
+      if (!res) {
+        alert('Failed to restart frame.');
+      } else if (res.callFrames && res.callFrames.length > 0){
+        this.currentCallFrame = res.callFrames[0];
+        this.updateCodeEditor();
+      } else {
+        console.log('Debugger.restartFrame', res);
+      }
+    });
   }
 }
