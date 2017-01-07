@@ -4,10 +4,12 @@
 
     <style>
       .container {
-          width: 100%;
-          height: 100%;
-          padding: 0;
-          margin: 0;
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
       }
     
       button {
@@ -16,7 +18,8 @@
       
       .two-columns {
         display: flex;
-        flex-direction : row;
+        flex-direction: row;
+        flex: 1;
         height: 100%;
       }
 
@@ -40,25 +43,30 @@
         flex-direction: row;
         border-bottom: 1px solid rgb(120, 118, 116);
       }
+
+      select {
+        border: 0;
+      }
       
-      #debugger-targets {
+      #targetList {
+        width: 100%;
+        height: 100%;
         display: flex;
         width: 100%;
       }
       
-      #debugger-targets select {
+      #scriptList {
         width: 100%;
-        height: 100%;
-        border: 0;
       }
       
       #debuggerWorkspace {
-        min-height: 80px;
+        min-height: 50px;
       }
 
       #codeEditor {
         flex: 1;
         width: 100%;
+        border-top: 1px solid rgb(120, 118, 116);
         border-bottom: 1px solid rgb(120, 118, 116);
       }
       
@@ -109,7 +117,7 @@
 
     <div class="container">
       <div id="debugger-top">
-        <div id="debugger-targets"></div>
+        <div><select id="targetList"></select></div>
         <button id="debugButton" title="Attach debugger"><i class="fa fa-fw fa-bug" aria-hidden="true"></i></button>
         <button id="stopButton" title="Detach debugger"class="hide"><i class="fa fa-fw fa-stop" aria-hidden="true"></i></button>
         <button id="pauseButton" title="Pause" disabled><i class="fa fa-fw fa-pause" aria-hidden="true"></i></button>
@@ -125,11 +133,17 @@
       </div>
       <div class="two-columns">
         <div class="column-left">
+          <select id="scriptList"></select>
           <juicy-ace-editor id="codeEditor"></juicy-ace-editor>
           <juicy-ace-editor id="debuggerWorkspace"></juicy-ace-editor>
         </div>
         <div class="column-right">
-          <div id="details"></div>
+          <div id="details">
+            <b>Call Frames</b>
+            <ul id="callFrameList"></ul>
+            <b>Scope</b>
+            <ul id="scopeList"></ul>
+          </div>
         </div>
       </div>
     </div>

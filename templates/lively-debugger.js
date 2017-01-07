@@ -1,6 +1,7 @@
 import Morph from './Morph.js';
 
 const debuggerGitHubURL = 'https://github.com/LivelyKernel/lively4-chrome-debugger';
+var Range = ace.require('ace/range').Range;
 
 export default class Debugger extends Morph {
 
@@ -8,12 +9,14 @@ export default class Debugger extends Morph {
     this.windowTitle = '<i class="fa fa-chrome" aria-hidden="true"></i> Debugger';
     this.lastDebuggerPausedResult = null;
     this.currentCallFrame = null;
+    this.highlightedLineId = null;
     this.scopeList = document.createElement('ul');
     this.breakPoints = {}; // mapping: scriptId => {lineNumber => breakpointId}
-
-    this.debuggerTargets = this.getSubmorph('#debugger-targets');
-    this.targetSelection = document.createElement('select');
-    this.debuggerTargets.appendChild(this.targetSelection);
+    this.targetList = this.getSubmorph('#targetList');
+    this.scriptList = this.getSubmorph('#scriptList');
+    this.scriptList.addEventListener('change', this.scriptListChanged.bind(this))
+    this.callFrameList = this.getSubmorph('#callFrameList');
+    this.scopeList = this.getSubmorph('#scopeList');
     
     var buttons = this.getSubmorph('#debugger-top').getElementsByTagName('button');
     for (var i = 0; i < buttons.length; i++) {
@@ -26,6 +29,13 @@ export default class Debugger extends Morph {
     this.debuggerWorkspace = this.getSubmorph('#debuggerWorkspace').editor;
     this.details = this.getSubmorph('#details');
     
+    if (!lively4ChromeDebugger) {
+      if (window.confirm('Lively4 Debugger Extension not found. Do you want to install it?')) {
+        window.open(debuggerGitHubURL, '_blank').focus();
+        return;
+      }
+    }
+    
     this.initializeTargets();
     this.initializeCodeEditor();
     this.initializeDebuggerWorkspace();
@@ -36,12 +46,6 @@ export default class Debugger extends Morph {
   */
   
   initializeTargets() {
-    if (!lively4ChromeDebugger) {
-      if (window.confirm('Lively4 Debugger Extension not found. Do you want to install it?')) {
-        window.open(debuggerGitHubURL, '_blank').focus();
-        return;
-      }
-    }
     lively4ChromeDebugger.getDebuggingTargets().then((targets) =>
       targets.forEach((ea) => {
         // hide background page which is used to talk to the debugger
@@ -53,7 +57,7 @@ export default class Debugger extends Morph {
             option.text = ea.title;
           }
           option.value = ea.id;
-          this.targetSelection.appendChild(option);
+          this.targetList.appendChild(option);
         }
       }
     ));
@@ -67,7 +71,7 @@ export default class Debugger extends Morph {
       exec: (editor) => {
         if (!this._ensureCurrentCallFrame()) return;
         this.sendCommandToDebugger('Debugger.setScriptSource', {
-          scriptId: this.currentCallFrame.location.scriptId,
+          scriptId: this._selectedScriptId(),
           scriptSource: editor.getValue()
         }).then((res) => {
           if (res && res.exceptionDetails) {
@@ -80,7 +84,7 @@ export default class Debugger extends Morph {
     });
     this.codeEditor.on("guttermousedown", (e) => {
       if (!this._ensureCurrentCallFrame()) return;
-      var scriptId = this.currentCallFrame.location.scriptId;
+      var scriptId = this._selectedScriptId();
       var lineNumber = e.getDocumentPosition().row;
       var method, params;
       if (lineNumber in this.codeEditor.session.getBreakpoints()) {
@@ -179,8 +183,9 @@ export default class Debugger extends Morph {
 
   debugButtonClick(evt) {
     this.detachDebugger(); // detach any old debugger
-    this.attachDebugger();
-    this.sendCommandToDebugger('Debugger.enable');
+    this.attachDebugger().then(() => {
+      this.sendCommandToDebugger('Debugger.enable');
+    });
     this.debugButton.classList.add('hide');
     this.stopButton.classList.remove('hide');
     this._setDisabledAllDebugButtons(false);
@@ -192,9 +197,11 @@ export default class Debugger extends Morph {
     this.debugButton.classList.remove('hide');
     this._setDisabledAllDebugButtons(true);
     this.debugButton.disabled = false;
+    this._reset();
   }
 
   pauseButtonClick(evt) {
+    this.updateScripts();
     this.sendCommandToDebugger('Debugger.pause');
   }
   
@@ -272,6 +279,19 @@ export default class Debugger extends Morph {
       });
     });
   }
+  
+  scriptListChanged(evt) {
+    this.sendCommandToDebugger('Debugger.getScriptSource', {
+      scriptId: this._selectedScriptId()
+    }).then((res) => {
+      if (res && res.scriptSource) {
+        this.codeEditor.setValue(res.scriptSource);
+      } else {
+        alert('Unable to retrieve scriptSource:', res);
+        debugger;
+      }
+    });
+  }
 
   /*
   * Interaction with debugger extension
@@ -296,7 +316,50 @@ export default class Debugger extends Morph {
     
     this.lastDebuggerPausedResult = result;
     this.currentCallFrame = result.callFrames[0];
-    var callFrameList = document.createElement('ul');
+    this.updateCodeEditor(result);
+    this.updateCallFrameList();
+    this.updateScopeList();
+  }
+  
+  /*
+  * Dynamic UI updating
+  */
+  
+  updateCodeEditor(pausedResult) {
+    if (!this._ensureCurrentCallFrame()) return;
+    var currentScriptId = this.currentCallFrame.location.scriptId;
+    this.sendCommandToDebugger('Debugger.getScriptSource', {
+      scriptId: currentScriptId
+    }).then((res) => {
+      if (res && res.scriptSource) {
+        var lineNumber = this.currentCallFrame.location.lineNumber;
+        this._setScriptId(currentScriptId);
+        this.codeEditor.setValue(res.scriptSource);
+        this.codeEditor.gotoLine(lineNumber + 1);
+        this._updateHighlightLine(this.codeEditor.session, lineNumber);
+        this.codeEditor.session.clearBreakpoints();
+        if (pausedResult) {
+          // restore breakpoints from pausedResult.hitBreakpoints
+          if (pausedResult.hitBreakpoints.length > 0) {
+            for (var i = 0; i < pausedResult.hitBreakpoints.length; i++) {
+              var breakpointId = pausedResult.hitBreakpoints[i];
+              var parts = breakpointId.split(':');
+              if (parts[0] != this._selectedScriptId()) {
+                break; // break because all breakpoints belong to the same scriptId
+              }
+              var lineNumber = parseInt(parts[1]);
+              this.codeEditor.session.setBreakpoint(lineNumber - 1);
+            }
+          }
+        }
+      } else {
+        alert(`Failed to getScriptSource for ${this.currentCallFrame.location.scriptId}`);
+      }
+    });
+  }
+  
+  updateCallFrameList() {
+    this.callFrameList.innerHTML = '';
     var callFrames = this.lastDebuggerPausedResult.callFrames;
     var callFrameClickHandler = (e) => {
       var callFrameIndex = e.target.getAttribute('data-call-frame-index');
@@ -312,30 +375,13 @@ export default class Debugger extends Morph {
       li.setAttribute('data-call-frame-index', i);
       li.innerHTML = callFrame.functionName || '<i>unknown</i>';
       li.addEventListener('click', callFrameClickHandler);
-      callFrameList.appendChild(li);
+      this.callFrameList.appendChild(li);
     }
-    this.updateCodeEditor(result);
-  
-    this.details.innerHTML = '';
-    var callFrameListTitle = document.createElement('b');
-    callFrameListTitle.innerHTML = 'Call Frames';
-    this.details.appendChild(callFrameListTitle);
-    this.details.appendChild(callFrameList);
-    
-    var scopeListTitle = document.createElement('b');
-    scopeListTitle.innerHTML = 'Scope';
-    this.details.appendChild(scopeListTitle);
-    this.details.appendChild(this.scopeList);
-    this.updateScopeList();
   }
   
-  /*
-  * Dynamic UI updating
-  */
-  
   updateScopeList() {
-    var scopeChain = this.currentCallFrame.scopeChain;
     this.scopeList.innerHTML = '';
+    var scopeChain = this.currentCallFrame.scopeChain;
     var summaryClickHandler = (e) => {
       var selectedSummary = e.target;
       var selectedDetails = selectedSummary.parentElement;
@@ -360,35 +406,6 @@ export default class Debugger extends Morph {
       li.appendChild(details);
       this.scopeList.appendChild(li);
     }
-  }
-  
-  updateCodeEditor(pausedResult) {
-    if (!this._ensureCurrentCallFrame()) return;
-    this.sendCommandToDebugger('Debugger.getScriptSource', {
-      scriptId: this.currentCallFrame.location.scriptId
-    }).then((res) => {
-      if (res && res.scriptSource) {
-        this.codeEditor.setValue(res.scriptSource);
-        this.codeEditor.gotoLine(this.currentCallFrame.location.lineNumber + 1);
-        this.codeEditor.session.clearBreakpoints();
-        if (pausedResult) {
-          // restore breakpoints from pausedResult.hitBreakpoints
-          if (pausedResult.hitBreakpoints.length > 0) {
-            for (var i = 0; i < pausedResult.hitBreakpoints.length; i++) {
-              var breakpointId = pausedResult.hitBreakpoints[i];
-              var parts = breakpointId.split(':');
-              if (parts[0] != this.currentCallFrame.location.scriptId) {
-                break; // break because all breakpoints belong to the same scriptId
-              }
-              var lineNumber = parseInt(parts[1]);
-              this.codeEditor.session.setBreakpoint(lineNumber - 1);
-            }
-          }
-        }
-      } else {
-        alert(`Failed to getScriptSource for ${this.currentCallFrame.location.scriptId}`);
-      }
-    });
   }
   
   appendPropertyList(parentSummary, objectId) {
@@ -427,12 +444,43 @@ export default class Debugger extends Morph {
       }
     );
   }
+  
+  updateScripts() {
+    lively4ChromeDebugger.getDebuggingScripts().then((scripts) => {
+      scripts.forEach((ea) => {
+        // hide background page which is used to talk to the debugger
+        if (ea.url) {
+          var option = document.createElement('option');
+          option.text = ea.url;
+          option.value = ea.scriptId;
+          this.scriptList.appendChild(option);
+        }
+      });
+    });
+  }
 
   /*
   * Private helpers
   */
+  
+  _reset() {
+    this.codeEditor.setValue('');
+    this.scriptList.innerHTML = '';
+    this.callFrameList.innerHTML = '';
+    this.scopeList.innerHTML = '';
+  }
+  
   _selectedTargetId() {
-    return this.targetSelection.options[this.targetSelection.selectedIndex].value;
+    return this.targetList.options[this.targetList.selectedIndex].value;
+  }
+
+  _selectedScriptId() {
+    return this.scriptList.options[this.scriptList.selectedIndex].value;
+  }
+  
+  _setScriptId(scriptId) {
+    this.updateScripts();
+    this.scriptList.value = scriptId;
   }
   
   _setDisabledAllDebugButtons(bool) {
@@ -440,7 +488,15 @@ export default class Debugger extends Morph {
     for (var i = 0; i < buttons.length; i++) {
       buttons[i].disabled = bool;
     }
-    this.targetSelection.disabled = !bool;
+    this.targetList.disabled = !bool;
+  }
+  
+  _updateHighlightLine(session, lineNumber) {
+    if (this.highlightedLineId) {
+      session.removeMarker(this.highlightedLineId);
+    }
+    var range = new Range(lineNumber, 0, lineNumber, 1);
+    this.highlightedLineId = session.addMarker(range, 'highlight_line', 'fullLine');
   }
   
   _ensureCurrentCallFrame() {
@@ -454,7 +510,7 @@ export default class Debugger extends Morph {
   
   _evaluateOnCallFrame(editor, cb) {
     let expression = editor.currentSelectionOrLine();
-    if (!this.targetSelection.disabled) {
+    if (!this.targetList.disabled) {
       alert('Debugger is not attached to any target.');
       debugger;
       return;
