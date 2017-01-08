@@ -1,7 +1,6 @@
 import Morph from './Morph.js';
 
 const debuggerGitHubURL = 'https://github.com/LivelyKernel/lively4-chrome-debugger';
-var Range = ace.require('ace/range').Range;
 
 export default class Debugger extends Morph {
 
@@ -12,30 +11,25 @@ export default class Debugger extends Morph {
     this.highlightedLineId = null;
     this.scopeList = document.createElement('ul');
     this.breakPoints = {}; // mapping: scriptId => {lineNumber => breakpointId}
+    this.Range = ace.require('ace/range').Range;
+
     this.targetList = this.getSubmorph('#targetList');
     this.scriptList = this.getSubmorph('#scriptList');
     this.scriptList.addEventListener('change', this.scriptListChanged.bind(this))
     this.callFrameList = this.getSubmorph('#callFrameList');
     this.scopeList = this.getSubmorph('#scopeList');
-    
-    var buttons = this.getSubmorph('#debugger-top').getElementsByTagName('button');
-    for (var i = 0; i < buttons.length; i++) {
-      var button = buttons[i];
-      this[button.id] = button;
-      button.addEventListener('click', this[`${button.id}Click`].bind(this));
-    }
-  
     this.codeEditor = this.getSubmorph('#codeEditor').editor;
     this.debuggerWorkspace = this.getSubmorph('#debuggerWorkspace').editor;
-    this.details = this.getSubmorph('#details');
-    
+
+    // ensure the extension is installed    
     if (!lively4ChromeDebugger) {
       if (window.confirm('Lively4 Debugger Extension not found. Do you want to install it?')) {
         window.open(debuggerGitHubURL, '_blank').focus();
-        return;
       }
+      return;
     }
-    
+
+    this.initializeButtonBar();
     this.initializeTargets();
     this.initializeCodeEditor();
     this.initializeDebuggerWorkspace();
@@ -44,6 +38,15 @@ export default class Debugger extends Morph {
   /*
   * Initialization
   */
+  
+  initializeButtonBar() {
+    var buttons = this.getSubmorph('#debugger-top').getElementsByTagName('button');
+    for (var i = 0; i < buttons.length; i++) {
+      var button = buttons[i];
+      this[button.id] = button;
+      button.addEventListener('click', this[`${button.id}Click`].bind(this));
+    }
+  }
   
   initializeTargets() {
     lively4ChromeDebugger.getDebuggingTargets().then((targets) =>
@@ -495,7 +498,7 @@ export default class Debugger extends Morph {
     if (this.highlightedLineId) {
       session.removeMarker(this.highlightedLineId);
     }
-    var range = new Range(lineNumber, 0, lineNumber, 1);
+    var range = new this.Range(lineNumber, 0, lineNumber, 1);
     this.highlightedLineId = session.addMarker(range, 'highlight_line', 'fullLine');
   }
   
