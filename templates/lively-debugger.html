@@ -3,6 +3,14 @@
     <style data-src="/src/external/font-awesome/css/font-awesome.min.css"></style>
 
     <style>
+      button {
+        margin-right: 2px;
+      }
+
+      select {
+        border: 0;
+      }
+
       .container {
         width: 100%;
         height: 100%;
@@ -10,10 +18,6 @@
         margin: 0;
         display: flex;
         flex-direction: column;
-      }
-    
-      button {
-        margin-right: 2px;
       }
       
       .two-columns {
@@ -42,10 +46,6 @@
         display: flex;
         flex-direction: row;
         border-bottom: 1px solid rgb(120, 118, 116);
-      }
-
-      select {
-        border: 0;
       }
       
       #targetList {
@@ -99,12 +99,6 @@
       #details ul li:hover {
         background-color: #ddd;
       }
-      
-      summary button {
-        background: none;
-        padding: 2px;
-        font-size: 12px;
-      }
 
       .hide {
         display: none;
@@ -119,7 +113,7 @@
       <div id="debugger-top">
         <div><select id="targetList"></select></div>
         <button id="debugButton" title="Attach debugger"><i class="fa fa-fw fa-bug" aria-hidden="true"></i></button>
-        <button id="stopButton" title="Detach debugger"class="hide"><i class="fa fa-fw fa-stop" aria-hidden="true"></i></button>
+        <button id="stopButton" title="Detach debugger" class="hide"><i class="fa fa-fw fa-stop" aria-hidden="true"></i></button>
         <button id="pauseButton" title="Pause" disabled><i class="fa fa-fw fa-pause" aria-hidden="true"></i></button>
         <button id="playButton" title="Continue" class="hide"><i class="fa fa-fw fa-play" aria-hidden="true"></i></button>
         <button id="stepOverButton" title="Step Over" disabled><i class="fa fa-fw fa-step-forward" aria-hidden="true"></i></button>
