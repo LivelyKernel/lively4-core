@@ -33,6 +33,12 @@ export default class Debugger extends Morph {
     this.initializeTargets();
     this.initializeCodeEditor();
     this.initializeDebuggerWorkspace();
+    
+    this.detachedCallback = () => {
+      if (this._debugger_is_attached()) {
+        this.detachDebugger();
+      }
+    };
   }
 
   /*
@@ -105,7 +111,7 @@ export default class Debugger extends Morph {
         params = {
           location: {
             scriptId: scriptId,
-            lineNumber: lineNumber + 1 // ace rows start at 0
+            lineNumber: lineNumber + 2 // ace rows start at 0
           }
         };
       }
@@ -121,8 +127,8 @@ export default class Debugger extends Morph {
           if (!(scriptId in this.breakPoints)) {
             this.breakPoints[scriptId] = {};
           }
-          this.breakPoints[scriptId][actualLineNumber - 1] = res.breakpointId;
-          this.codeEditor.session.setBreakpoint(actualLineNumber - 1);
+          this.breakPoints[scriptId][actualLineNumber - 2] = res.breakpointId;
+          this.codeEditor.session.setBreakpoint(actualLineNumber - 2);
         } else {
           this.codeEditor.session.clearBreakpoint(lineNumber);
         }
@@ -335,26 +341,11 @@ export default class Debugger extends Morph {
       scriptId: currentScriptId
     }).then((res) => {
       if (res && res.scriptSource) {
-        var lineNumber = this.currentCallFrame.location.lineNumber;
+        var lineNumber = this.currentCallFrame.location.lineNumber - 1; // Chrome debugger to ace
         this._setScriptId(currentScriptId);
         this.codeEditor.setValue(res.scriptSource);
-        this.codeEditor.gotoLine(lineNumber + 1);
+        this.codeEditor.gotoLine(lineNumber);
         this._updateHighlightLine(this.codeEditor.session, lineNumber);
-        this.codeEditor.session.clearBreakpoints();
-        if (pausedResult) {
-          // restore breakpoints from pausedResult.hitBreakpoints
-          if (pausedResult.hitBreakpoints.length > 0) {
-            for (var i = 0; i < pausedResult.hitBreakpoints.length; i++) {
-              var breakpointId = pausedResult.hitBreakpoints[i];
-              var parts = breakpointId.split(':');
-              if (parts[0] != this._selectedScriptId()) {
-                break; // break because all breakpoints belong to the same scriptId
-              }
-              var lineNumber = parseInt(parts[1]);
-              this.codeEditor.session.setBreakpoint(lineNumber - 1);
-            }
-          }
-        }
       } else {
         alert(`Failed to getScriptSource for ${this.currentCallFrame.location.scriptId}`);
       }
@@ -448,8 +439,9 @@ export default class Debugger extends Morph {
     );
   }
   
-  updateScripts() {
+  updateScripts(cb) {
     lively4ChromeDebugger.getDebuggingScripts().then((scripts) => {
+      this.scriptList.innerHTML = '';
       scripts.forEach((ea) => {
         // hide background page which is used to talk to the debugger
         if (ea.url) {
@@ -459,6 +451,7 @@ export default class Debugger extends Morph {
           this.scriptList.appendChild(option);
         }
       });
+      if (cb) cb();
     });
   }
 
@@ -482,8 +475,10 @@ export default class Debugger extends Morph {
   }
   
   _setScriptId(scriptId) {
-    this.updateScripts();
-    this.scriptList.value = scriptId;
+    this.updateScripts(() => {
+      this.scriptList.value = scriptId;
+    });
+    
   }
   
   _setDisabledAllDebugButtons(bool) {
@@ -498,7 +493,7 @@ export default class Debugger extends Morph {
     if (this.highlightedLineId) {
       session.removeMarker(this.highlightedLineId);
     }
-    var range = new this.Range(lineNumber, 0, lineNumber, 1);
+    var range = new this.Range(lineNumber - 1, 0, lineNumber - 1, 1);
     this.highlightedLineId = session.addMarker(range, 'highlight_line', 'fullLine');
   }
   
@@ -511,9 +506,13 @@ export default class Debugger extends Morph {
     return true;
   }
   
+  _debugger_is_attached() {
+    return this.targetList.disabled;
+  }
+  
   _evaluateOnCallFrame(editor, cb) {
     let expression = editor.currentSelectionOrLine();
-    if (!this.targetList.disabled) {
+    if (!this._debugger_is_attached()) {
       alert('Debugger is not attached to any target.');
       debugger;
       return;
