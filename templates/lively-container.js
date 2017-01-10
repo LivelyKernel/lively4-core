@@ -6,8 +6,8 @@ import halo from 'templates/lively-halo.js';
 
 import ContextMenu from 'src/client/contextmenu.js';
 
-import * as cop  from "src/external/ContextJS/src/contextjs.js";
-import ScopedScripts from "./ScopedScripts.js";
+// import * as cop  from "src/external/ContextJS/src/contextjs.js";
+// import ScopedScripts from "./ScopedScripts.js";
 
 import components from "src/client/morphic/component-loader.js"
 
@@ -151,7 +151,12 @@ export default class Container extends Morph {
   }
 
   reloadModule(url) {
-    System.import(url.toString()).then( m => {
+    var urlString = url.toString()
+    // #Hack #issue in SystemJS babel syntax errors do not clear errors
+    System['@@registerRegistry'][System.normalizeSync(urlString)] = undefined
+    System.registry.delete(System.normalizeSync(urlString))
+    debugger
+    System.import(urlString).then( m => {
         this.shadowRoot.querySelector("#live").disabled =false;
         lively.notify({
           title: "Loaded " + url, color: "green"});
@@ -179,7 +184,7 @@ export default class Container extends Morph {
   
   loadModule(url) {
     lively.reloadModule("" + url).then(module => {
-      lively.notify("","Module " + moduleName + " reloaded!", 3, null, "green");
+      lively.notify("","Module " + url + " reloaded!", 3, null, "green");
       if (this.getPath().match(/templates\/.*js/)) {
         var templateURL = this.getPath().replace(/\.js$/,".html");
         try {
@@ -192,7 +197,7 @@ export default class Container extends Morph {
       }
       this.resetLoadingFailed();
     }, err => {
-      this.loadingFailed(moduleName, err);
+      this.loadingFailed(url, err);
     });
   }
   

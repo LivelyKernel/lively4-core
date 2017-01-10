@@ -47,19 +47,21 @@ if (window.lively && window.lively4url) {
   }
   
   Promise.resolve().then( () => {
-    return loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/systemjs/system.js");
+    return loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/systemjs/system.src.js");
   }).then( () => {
     SystemJS.config({
       // baseURL: lively4url + '/',
       meta: {
         "*.js": { 
           babelOptions: {
-            stage2: false,
-            stage3: false,
-            es2015: false,
+            // stage2: false,
+            // stage3: false,
+            // es2015: false,
             // stage0: true,
             // stage1: true
-            // presets: [],
+            presets: [
+             //    ["es2015", { "loose": true, "modules": false }]
+              ],
             // plugins: []
           }
         }

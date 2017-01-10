@@ -121,7 +121,7 @@ export default class Lively {
   static async reloadModule(path) {
     path = "" + path;
     if (!lively.modules) {
-      console.log("#TODO reimplement module reloading, fall back to System.import")
+      System.registry.delete(System.normalizeSync(path))
       return System.import(path)
     }
     var module = lively.modules.module(path);

@@ -337,7 +337,7 @@ export default class AceEditor extends HTMLElement {
     editor.selection.selectToPosition(toSel)
   }
 
-  async tryBoundEval(str, printResult) {
+ async tryBoundEval(str, printResult) {
     var resp;
     resp = await this.boundEval(str, this.getDoitContext()) 
     if (resp.isError) {
@@ -352,19 +352,31 @@ export default class AceEditor extends HTMLElement {
       return e
     }
     var result = resp.value
+    var obj2string = function(obj) {
+      var s = "";
+      try {
+        s += obj // #HACK some objects cannot be printed any more
+      } catch(e) {
+        s += "UnprintableObject["+ Object.keys(e) + "]" // so we print something else
+      }
+      return s
+    }
+    
     if (printResult) {
       // alaways wait on promises.. when interactively working...
       if (result && result.then) { 
         // we will definitly return a promise on which we can wait here
         result
-          .then( result => this.printResult("RESOLVED: " +result))
+          .then( result => {
+            this.printResult("RESOLVED: " + obj2string(result))
+          })
           .catch( error => {
             console.error(error);
             // window.LastError = error;
             this.printResult("Error in Promise: \n" +error)
           })
       } else {
-        this.printResult(" " +result)
+        this.printResult(" " + obj2string(result))
         if (result instanceof HTMLElement ) {
           lively.showElement(result)
         }
