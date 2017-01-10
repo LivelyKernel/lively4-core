@@ -1,8 +1,8 @@
 
 import {foo} from './mymod2.js'
 
+console.log("load mymod")
 
-console.log("hello: " + (2**4))
-
-
-foo().then( x => console.log("x: " + x))
+export async function bla() {
+  return "X_" + await foo() 
+}

@@ -49,6 +49,9 @@ if (window.lively && window.lively4url) {
   Promise.resolve().then( () => {
     return loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/systemjs/system.src.js");
   }).then( () => {
+    
+    SystemJS.trace = true;
+
     SystemJS.config({
       // baseURL: lively4url + '/',
       meta: {
@@ -74,6 +77,7 @@ if (window.lively && window.lively4url) {
       },
       transpiler: 'plugin-babel' }
     )
+    
     
     System.import(lively4url + "/src/client/load.js").then((load) => {
       console.group("Lively1/3")

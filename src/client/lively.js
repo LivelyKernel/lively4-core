@@ -120,19 +120,26 @@ export default class Lively {
 
   static async reloadModule(path) {
     path = "" + path;
-    if (!lively.modules) {
-      System.registry.delete(System.normalizeSync(path))
-      return System.import(path)
+    var changedModule = System.normalizeSync(path);
+    var load = System.loads[changedModule]
+    if (!load) {
+      console.log("Don't reload non-loaded module")
+      return   
     }
-    var module = lively.modules.module(path);
-    if (!module.isLoaded()) {
-      console.log("cannot reload module " + path + " because it is not loaded");
-      return;
-    }
-    console.log("reload module: " + path);
-    return module.reload({reloadDeps: true, resetEnv: false})
-      .then( () => System.import(path))
-      .then( mod => {
+    
+    System.registry.delete(System.normalizeSync(path))
+    return System.import(path).then( m => {
+      // Find all modules that depend on me
+      var dependedModules = Object.values(System.loads).filter( ea => 
+        ea.dependencies.find(dep => System.normalizeSync(dep, ea.key) == changedModule))
+      // and update them
+      dependedModules.forEach( ea => {
+        console.log("reload " + path + " triggers reload of " + ea.key)
+        System.registry.delete(ea.key)  
+        System.import(ea.key)
+      })
+      return m
+    }).then( mod => {
       var moduleName = path.replace(/[^\/]*/,"");
       
       var defaultClass = mod.default;
@@ -149,7 +156,6 @@ export default class Lively {
           this.previous = oldLively;
           this.components = oldLively.components; // components have important state
       }
-      
       return mod;
     });
   }

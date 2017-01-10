@@ -54,10 +54,10 @@ function prepend(a, b) {
 var defaultBabelOptions = {
   modularRuntime: true,
   sourceMaps: true,
-  es2015: true, // true
-  stage3: true,  // true
-  stage2: true, // true
-  stage1: true,
+  es2015: false, // true
+  stage3: false,  // true
+  stage2: false, // true
+  stage1: false,
   compact: false,
   comments: true
 };
