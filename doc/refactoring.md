@@ -11,6 +11,7 @@
 
 ## Issues
 
+### Bug in babel-plugin
 
 ```
 graphics.js:1170 Uncaught ReferenceError: Point is not defined
@@ -42,3 +43,10 @@ graphics.js:1170 Uncaught ReferenceError: Point is not defined
 
       class Point {
 ```
+
+### Updating dependent modules
+
+
+
+
+

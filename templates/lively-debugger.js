@@ -50,7 +50,12 @@ export default class Debugger extends Morph {
     for (var i = 0; i < buttons.length; i++) {
       var button = buttons[i];
       this[button.id] = button;
-      button.addEventListener('click', this[`${button.id}Click`].bind(this));
+      var clickHandler = this[`${button.id}Click`];
+      if (clickHandler) {
+        button.addEventListener('click', clickHandler.bind(this));
+      } else {
+        console.warn(`No click handler called ${button.id}Click`);
+      }
     }
   }
   
@@ -230,6 +235,17 @@ export default class Debugger extends Morph {
   
   stepOutButtonClick(evt) {
     this.sendCommandToDebugger('Debugger.stepOut');
+  }
+  
+  multiStepButtonClick(evt) {
+    var debugMethod = window.prompt('Step method (stepOver, stepInto, or stepOut):', 'stepOver');
+    var numberOfIterations = parseInt(window.prompt('Number of iterations:', '5'));
+    var millisecondsBetweenSteps = parseInt(window.prompt('Milliseconds between steps:', '1000'));
+    for (var i = 0; i < numberOfIterations; i++) {
+      setTimeout(() => {
+        this.sendCommandToDebugger(`Debugger.${debugMethod}`);
+      }, millisecondsBetweenSteps * i);
+    }
   }
   
   restartFrameButtonClick(evt) {
