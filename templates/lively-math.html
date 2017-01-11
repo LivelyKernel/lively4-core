@@ -29,12 +29,13 @@ f(2)
 [[1],[2],[3]] * [[1,2,3]] ==  [[1, 2, 3], [2, 4, 6], [3, 6, 9]]</juicy-ace-editor>
     
     <script type="lively4script" data-name="initialize">
-    () => {
-      var aceComp = this.shadowRoot.querySelector('#workspace')
-      lively.import("math")
+() => {
+    var aceComp = this.shadowRoot.querySelector('#workspace')
+    System.import("src/external/math.js").then(m => {
       aceComp.boundEval = function (str) {
-        return lively.math.eval(str)
+        return Promise.resolve({value: m.eval(str)})
       } 
+    })
     
     aceComp.enableAutocompletion = function(filename) {
       return this.aceRequire("ace/ext/language_tools").then( module => {

@@ -445,7 +445,7 @@ export default class AceEditor extends HTMLElement {
 
     // Load the dictionary.
     // We have to load the dictionary files sequentially to ensure
-    lively.import("typo").then(() => {
+    System.import("src/external/typo.js").then(() => {
       $.get(dicPath, (data) => {
       	dicData = data;
       }).done(() => {

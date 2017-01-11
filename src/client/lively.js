@@ -30,28 +30,15 @@ import focalStorage from '../external/focalStorage.js';
 
 import * as kernel from 'kernel';
 
-let $ = window.$,
-  babel = window.babel; // known global variables.
+let $ = window.$; // known global variables.
 
 import {pt} from './graphics.js';
 
-// FOR DEBUGGING
-// import * as cop  from "src/external/ContextJS/src/contextjs.js"
-// cop.layer(window, "DevLayer").refineObject(document, { 
-//   createElement(name) {
-//     console.log("create element " + name); 
-//     return cop.proceed(name)
-//   } 
-// })
-// DevLayer.beGlobal()
-
 // a) Special shorthands for interactive development
 // b) this is the only reasonable way to use modules in template scripts, due to no shared lexical scope #TODO
+// c) This indirection is also needed to let old events listeners signal to code in current modules 
 var exportmodules = [
-  "scripts",
-  "messaging",
   "preferences",
-  "persistence",
   "files",
   "keys",
   "paths",
@@ -64,8 +51,6 @@ var exportmodules = [
   "authGoogledrive"
 ];
 
-
-
 // #LiveProgramming #Syntax #ES6Modules #Experiment #Jens
 // By structuring our modules differently, we still can act as es6 module to the outside but develop at runtime
 // #IDEA: I refactored from "static module and function style" to "dynamic object" style
@@ -77,45 +62,6 @@ export default class Lively {
   
   static set location(url) {
     return window.location = url;
-  }
-  
-  static import(moduleName, path, forceLoad) {
-    if (lively.modules && path) {
-      lively.modules.module("" + path).reload({reloadDeps: true, resetEnv: false});
-    }
-    if (!path) path = this.defaultPath(moduleName);
-    if (!path) throw Error("Could not imoport " + moduleName + ", not path specified!");
-
-
-
-    if (this[moduleName] && !forceLoad)
-      return new Promise((resolve) => { resolve(this[moduleName])});
-    if (forceLoad) {
-      path += "?" + Date.now();
-    }
-
-    return System.import(path).then( (module, err) => {
-      if (err) {
-        lively.notify("Could not load module " + moduleName, err);
-      } else {
-        console.log("lively: load "+ moduleName);
-
-        if (moduleName == "lively") {
-          this.notify("migrate lively.js");
-          var oldLively = window.lively;
-          window.lively = module.default || module;
-          this.previous = oldLively;
-          this.components = oldLively.components; // components have important state
-        } else {
-          this[moduleName] = module.default || module;
-        }
-
-        if (lively.components && this[moduleName]) {
-          lively.components.updatePrototype(this[moduleName].prototype);
-        }
-        return module.default || module;
-      }
-    });
   }
 
   static async reloadModule(path) {
@@ -144,18 +90,11 @@ export default class Lively {
       
       var defaultClass = mod.default;
       
-      if (lively.components && defaultClass) {
+      if (defaultClass) {
         console.log("update template prototype: " + moduleName);
-        lively.components.updatePrototype(defaultClass.prototype);
+        components.updatePrototype(defaultClass.prototype);
       }
-      
-      if (moduleName == "lively") {
-          this.notify("migrate lively.js");
-          var oldLively = window.lively;
-          window.lively = module.default || module;
-          this.previous = oldLively;
-          this.components = oldLively.components; // components have important state
-      }
+   
       return mod;
     });
   }
@@ -222,17 +161,6 @@ export default class Lively {
     return Promise.all(promises)
   }
 
-  static defaultPath(moduleName) {
-    return ({
-      math: kernel.realpath("/src/external/math.js"),
-      typo: kernel.realpath("/src/external/typo.js"),
-      contextmenu: kernel.realpath('/src/client/contextmenu.js'),
-      customize: kernel.realpath('/src/client/customize.js'),
-      selecting: kernel.realpath('/src/client/morphic/selecting.js'),
-      expose: kernel.realpath('/src/client/expose.js')
-    })[moduleName];
-  }
-  
   static showError(error) {
     this.handleError(error);
   }
@@ -277,23 +205,21 @@ export default class Lively {
       window.addEventListener('unhandledrejection', unhandledRejectionEventLister);
     }
 
-    exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expected
-
-    // for anonymous lively.modules workspaces
-    if (lively.modules && !lively.modules.isHookInstalled("fetch", "workspaceFetch")) {
-      lively.modules.installHook("fetch", function workspaceFetch(proceed, load) {
-        if (load.address.match("workspace://")) return Promise.resolve("");
-        return proceed(load);
-      });
-    }
+    this.exportModules()
 
     // for container content... But this will lead to conflicts with lively4chrome  ?? #Jens
     lively.loadCSSThroughDOM("livelystyle", lively4url + "/templates/lively4.css");
     
     // preload some components
-    lively.components.loadByName("lively-window");
-    lively.components.loadByName("lively-editor");
+    components.loadByName("lively-window");
+    components.loadByName("lively-editor");
   }
+  
+  
+  static exportModules() {
+    exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expected
+  }
+  
 
   static array(anyList){
     return Array.prototype.slice.call(anyList);
@@ -302,7 +228,7 @@ export default class Lively {
   static openWorkspace(string, pos) {
     var name = "juicy-ace-editor";
     var comp  = document.createElement(name);
-    return lively.components.openInWindow(comp).then((container) => {
+    return components.openInWindow(comp).then((container) => {
       pos = pos || lively.pt(100,100);
       comp.changeMode("javascript");
       comp.enableAutocompletion();
@@ -403,7 +329,7 @@ export default class Lively {
 
   static editFile(url) {
     var editor  = document.createElement("lively-editor");
-    lively.components.openInWindow(editor).then((container) => {
+    components.openInWindow(editor).then((container) => {
         lively.setPosition(container, lively.pt(100, 100));
         editor.setURL(url);
         editor.loadFile();
@@ -503,7 +429,7 @@ export default class Lively {
 
     if (!this.notificationList || !this.notificationList.parentElement) {
       this.notificationList = document.createElement("lively-notification-list");
-      lively.components.openIn(document.body, this.notificationList).then( () => {
+      components.openIn(document.body, this.notificationList).then( () => {
         this.notificationList.addNotification(title, text, timeout, cb, color);
       });
     } else {
@@ -533,7 +459,7 @@ export default class Lively {
     doc.addEventListener('keydown', function(evt){lively.keys.handle(evt)}, false);
 
     if (loadedAsExtension) {
-      this.import("customize").then(customize => {
+      System.import("src/client/customize.js").then(customize => {
           customize.customizePage();
       });
       lively.notify("Lively4 extension loaded!",
@@ -560,7 +486,7 @@ export default class Lively {
         container.style.position = "fixed";
         container.setAttribute("data-lively4-donotpersist","all");
 
-        return lively.components.openIn(document.body, container).then( () => {
+        return components.openIn(document.body, container).then( () => {
           container.__ingoreUpdates = true; // a hack... since I am missing DevLayers...
           container.get('#container-content').style.overflow = "visible";
         });
@@ -574,7 +500,7 @@ export default class Lively {
             .attr('data-lively4-donotpersist', 'all')
             .appendTo($('body'));
     }
-    lively.components.loadUnresolved();
+    components.loadUnresolved();
   }
   
   static initializeSearch() {
@@ -583,7 +509,7 @@ export default class Lively {
           .attr('data-lively4-donotpersist', 'all')
           .appendTo($('body'));
     }
-    lively.components.loadUnresolved();
+    components.loadUnresolved();
   }
 
    static unload() {
@@ -654,7 +580,7 @@ export default class Lively {
   static showSource(object, evt) {
     if (object instanceof HTMLElement) {
         var comp  = document.createElement("lively-container");
-        lively.components.openInWindow(comp).then((container) => {
+        components.openInWindow(comp).then((container) => {
           comp.editFile(lively4url +"/templates/" + object.localName + ".html");
         });
     } else {
@@ -731,7 +657,7 @@ export default class Lively {
       var module= await System.import(lively4url +'/templates/' + baseName +".js");
       proto =  Object.create(module.prototype || module.default.prototype);
     }
-    lively.components.register(template.id, clone, proto);
+    components.register(template.id, clone, proto);
   }
 
   static get eventListeners() {
@@ -819,8 +745,8 @@ export default class Lively {
         }
       }      
     }
-    return lively.components.openInBody(w).then((w) => {
-    	return lively.components.openIn(w, document.createElement(name)).then((comp) => {
+    return components.openInBody(w).then((w) => {
+    	return components.openIn(w, document.createElement(name)).then((comp) => {
     	  if (pos) 
           lively.setPosition(w, pos);
         
@@ -888,18 +814,17 @@ export default class Lively {
   
 }
 
-if (window.lively && window.lively.name != "Lively") {
-  Object.assign(Lively, window.lively); // copy objects from lively.modules
-}
-
-
 if (!window.lively || window.lively.name != "Lively") {
   window.lively = Lively;
   console.log("loaded lively intializer");
   // only load once... not during development
   Lively.loaded();
 } else {
+  var oldLively = window.lively
+  Lively.previous = oldLively
   window.lively = Lively;
 }
 
+Lively.exportModules();
+  
 console.log("loaded lively");
