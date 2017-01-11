@@ -1,7 +1,3 @@
 export async function p() {
-  return await new Promise(function(resolve, reject) {
-    setTimeout(function() {
-      resolve('Rocks :)');
-    }, 0);
-  });
+  return (await import('./testing-dep.js')).p;
 }

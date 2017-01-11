@@ -5,7 +5,7 @@ NODE_CWD=./node_modules/.bin
 BUILD_DIR=build-babel
 JSPM_VERSION=beta
 
-REGENERATOR_VERSION=0.9.5
+REGENERATOR_VERSION=0.10.1
 
 cd $BUILD_DIR
 cp -r jspm_packages_override/* jspm_packages

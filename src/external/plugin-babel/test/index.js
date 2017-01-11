@@ -1,7 +1,7 @@
 'use strict';
 
 var test = require('tape');
-var SystemJS = require('systemjs');
+var System = require('systemjs');
 
 test('systemjs-plugin-babel', function (t) {
   t.plan(1);
@@ -21,7 +21,7 @@ test('systemjs-plugin-babel', function (t) {
   // then
   .then(function(m) {
     return m.p().then(function (message) {
-      t.equal(message, 'Rocks :)');
+      t.equal(message, 5);
     });
   })
   .then(t.end, t.end);
