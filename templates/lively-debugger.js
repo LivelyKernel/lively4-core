@@ -142,7 +142,7 @@ export default class Debugger extends Morph {
   }
   
   initializeDebuggerWorkspace() {
-    this.codeEditor.session.setMode("ace/mode/javascript");
+    this.debuggerWorkspace.session.setMode("ace/mode/javascript");
     this.debuggerWorkspace.renderer.setShowGutter(false);
     this.debuggerWorkspace.currentSelectionOrLine = () => {
         let text,
