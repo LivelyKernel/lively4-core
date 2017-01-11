@@ -771,7 +771,7 @@ export default class Lively {
   static openSearchWidget(text) {
     // index based search is not useful at the moment
     if (true) {
-      this.openComponentInWindow("lively-search", evt).then( comp => {
+      this.openComponentInWindow("lively-search").then( comp => {
          comp.searchFile(text);
       });
     } else {
