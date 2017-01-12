@@ -48,24 +48,23 @@ if (window.lively && window.lively4url) {
   
   Promise.resolve().then( () => {
     return loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/systemjs/system.src.js");
-  }).then( () => {
-    
-    SystemJS.trace = true;
-
+  }).then(async () => {
     SystemJS.config({
       // baseURL: lively4url + '/',
+      babelOptions: {
+        // stage2: false,
+        // stage3: false,
+        // es2015: false,
+        // stage0: true,
+        // stage1: true
+        //presets: [
+        //    ["es2015", { "loose": true, "modules": false }]
+        //],
+        plugins: []
+      },
       meta: {
-        "*.js": { 
+        '*.js': {
           babelOptions: {
-            // stage2: false,
-            // stage3: false,
-            // es2015: false,
-            // stage0: true,
-            // stage1: true
-            presets: [
-             //    ["es2015", { "loose": true, "modules": false }]
-              ],
-            // plugins: []
           }
         }
       },
@@ -73,12 +72,28 @@ if (window.lively && window.lively4url) {
         'plugin-babel': './src/external/babel/plugin-babel.js',
         'systemjs-plugin-babel': './src/external/babel/plugin-babel.js',
         'systemjs-babel-build': './src/external/babel/systemjs-babel-browser.js',
-        'kernel': lively4url + '/src/client/legacy-kernel.js'
+        'kernel': lively4url + '/src/client/legacy-kernel.js',
+        'babel-plugin-locals': 'src/external/babel-plugin-locals.js'
       },
-      transpiler: 'plugin-babel' }
-    )
+      trace: true,
+      transpiler: 'plugin-babel'
+    })
     
+    await System.import('babel-plugin-locals');
     
+    SystemJS.config({
+      meta: {
+        '*.js': {
+          babelOptions: {
+            es2015: false,
+            stage2: false,
+            stage3: false,
+            plugins: ['babel-plugin-locals']
+          }
+        }
+      }
+    });
+
     System.import(lively4url + "/src/client/load.js").then((load) => {
       console.group("Lively1/3")
       console.log("Wait for service worker....");
