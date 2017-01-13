@@ -45,15 +45,8 @@
         penDown: () => {this.turtle.pen = true},
         setColor: (r, g, b) =>
         {
-          var hexStr = (c) =>
-          {
-            if (c > 255) c = 255;
-            if (c < 0) c = 0;
-            
-            return (c < 16 ? '0' : '') + c.toString(16);
-          }
-
-          this.turtle.color = '#' + hexStr(r) + hexStr(g) + hexStr(b);
+          var total = int(r) + 0x100 * int(g) + 0x10000 * int(b) + 0x1000000;
+          this.turtle.color = '#' + total.toString(16).subString(1);
         },
         
         // direct state access
