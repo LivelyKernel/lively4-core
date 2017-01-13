@@ -79,6 +79,27 @@ export default class Debugger extends Morph {
   
   initializeCodeEditor() {
     this.codeEditor.session.setMode("ace/mode/javascript");
+    this.codeEditor.currentLocationToScropeEnd = () => {
+      let text,
+          editor = this.codeEditor,
+          sel = editor.getSelectionRange(),
+          start = sel.start.row,
+          bracketCount = null,
+          currline = start;
+      while (!bracketCount || bracketCount > 0) {
+        var line = editor.session.getLine(currline);
+        if (line.length == 0) {
+          break;
+        }
+        bracketCount += (line.match(/{/g) || []).length;
+        bracketCount -= (line.match(/}/g) || []).length;
+        currline += 1;
+      }
+      return {
+        start: start + 2,
+        end: currline
+      };
+    };
     this.codeEditor.commands.addCommand({
       name: "saveIt",
       bindKey: {win: "Ctrl-S", mac: "Command-S"},
@@ -121,24 +142,28 @@ export default class Debugger extends Morph {
         };
       }
       this.sendCommandToDebugger(method, params).then((res) => {
-        if (!res) return; // command failed on background page
-        if (res.actualLocation) {
-          if (scriptId != res.actualLocation.scriptId) {
-            alert('Breakpoint set in a different script.');
-            debugger;
-            return;
-          }
-          var actualLineNumber = res.actualLocation.lineNumber;
-          if (!(scriptId in this.breakPoints)) {
-            this.breakPoints[scriptId] = {};
-          }
-          this.breakPoints[scriptId][actualLineNumber - 2] = res.breakpointId;
-          this.codeEditor.session.setBreakpoint(actualLineNumber - 2);
-        } else {
-          this.codeEditor.session.clearBreakpoint(lineNumber);
-        }
+        this.dispatchBreakpointResult(scriptId, res);
       });
     });
+  }
+  
+  dispatchBreakpointResult(scriptId, res) {
+    if (!res) return; // command failed on background page
+    if (res.actualLocation) {
+      if (scriptId != res.actualLocation.scriptId) {
+        alert('Breakpoint set in a different script.');
+        debugger;
+        return;
+      }
+      var actualLineNumber = res.actualLocation.lineNumber;
+      if (!(scriptId in this.breakPoints)) {
+        this.breakPoints[scriptId] = {};
+      }
+      this.breakPoints[scriptId][actualLineNumber - 2] = res.breakpointId;
+      this.codeEditor.session.setBreakpoint(actualLineNumber - 2);
+    } else {
+      this.codeEditor.session.clearBreakpoint(lineNumber);
+    }
   }
   
   initializeDebuggerWorkspace() {
@@ -235,6 +260,23 @@ export default class Debugger extends Morph {
   
   stepOutButtonClick(evt) {
     this.sendCommandToDebugger('Debugger.stepOut');
+  }
+  
+  stepThroughButtonClick(evt) {
+    if (!this._ensureCurrentCallFrame()) return;
+    var scriptId = this._selectedScriptId();
+    var startEnd = this.codeEditor.currentLocationToScropeEnd();
+    for (var i = startEnd.start; i < startEnd.end; i++) {
+      this.sendCommandToDebugger('Debugger.setBreakpoint', {
+          location: {
+            scriptId: scriptId,
+            lineNumber: i + 1
+          }
+      }).then((res) => {
+        this.dispatchBreakpointResult(scriptId, res);
+      });
+    }
+    this.sendCommandToDebugger('Debugger.resume');
   }
   
   multiStepButtonClick(evt) {
@@ -357,7 +399,7 @@ export default class Debugger extends Morph {
       scriptId: currentScriptId
     }).then((res) => {
       if (res && res.scriptSource) {
-        var lineNumber = this.currentCallFrame.location.lineNumber - 1; // Chrome debugger to ace
+        var lineNumber = this.currentCallFrame.location.lineNumber - 2; // Chrome debugger to ace
         this._setScriptId(currentScriptId);
         this.codeEditor.setValue(res.scriptSource);
         this.codeEditor.gotoLine(lineNumber);
