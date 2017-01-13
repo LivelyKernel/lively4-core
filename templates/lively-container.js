@@ -453,7 +453,7 @@ export default class Container extends Morph {
   }
 
   onNewfile() {
-    newfile(this.getPath())
+    this.newfile(this.getPath())
   }
   
   async newfile(path) {

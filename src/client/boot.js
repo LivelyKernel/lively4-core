@@ -49,6 +49,10 @@ if (window.lively && window.lively4url) {
   Promise.resolve().then( () => {
     return loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/systemjs/system.src.js");
   }).then(async () => {
+    
+    
+    System.trace = true; // does not work in config
+    
     SystemJS.config({
       // baseURL: lively4url + '/',
       babelOptions: {
@@ -66,6 +70,16 @@ if (window.lively && window.lively4url) {
         '*.js': {
           babelOptions: {
           }
+        },
+        
+        'workspace:*': {
+          babelOptions: {
+            es2015: false,
+            stage2: false,
+            stage3: false,
+            plugins: ['babel-plugin-locals', 'babel-plugin-test']
+          },
+          loader: 'workspace-loader'
         }
       },
       map: {
@@ -73,7 +87,9 @@ if (window.lively && window.lively4url) {
         'systemjs-plugin-babel': './src/external/babel/plugin-babel.js',
         'systemjs-babel-build': './src/external/babel/systemjs-babel-browser.js',
         'kernel': lively4url + '/src/client/legacy-kernel.js',
-        'babel-plugin-locals': 'src/external/babel-plugin-locals.js'
+        'babel-plugin-locals': 'src/external/babel-plugin-locals.js',
+        'babel-plugin-test': 'src/external/babel-plugin-test.js',
+        'workspace-loader': './src/client/workspace-loader.js'
       },
       trace: true,
       transpiler: 'plugin-babel'

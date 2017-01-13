@@ -4,6 +4,3 @@ export default function generateUUID() {
 		return v.toString(16);
 	});	
 }
-
-debugger
-locals
