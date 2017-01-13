@@ -45,9 +45,9 @@
         penDown: () => {this.turtle.pen = true},
         setColor: (r, g, b) =>
         {
-        	var total = (Math.max(Math.min(b,0xFF),0) & 0xFF) +
-        	           ((Math.max(Math.min(g,0xFF),0) << 8) +
-        	           ((Math.max(Math.min(r,0xFF),0) << 16) +
+        	var total = Math.max(Math.min(b,0xFF),0) +
+        	           (Math.max(Math.min(g,0xFF),0) << 8) +
+        	           (Math.max(Math.min(r,0xFF),0) << 16) +
         	           0x1000000;
           this.turtle.color = '#' + total.toString(16).substr(1);
         },
