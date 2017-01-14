@@ -110,31 +110,26 @@ if (window.lively && window.lively4url) {
       }
     });
 
-    System.import(lively4url + "/src/client/load.js").then((load) => {
-      console.group("Lively1/3")
-      console.log("Wait for service worker....");
-      return new Promise((resolve, reject) => {
-        load.whenLoaded(function(){
-          resolve();
-        });
-      });
-    }).then(() => {
+    try {
+      let { whenLoaded } = await System.import(lively4url + "/src/client/load.js")
+      
+      console.group("1/3: Wait for Service Worker...")
+      await new Promise(whenLoaded);
       console.groupEnd();
-      console.group("Lively2/3");
-      console.log("Look for uninitialized instances of web compoments");
-      return lively.components.loadUnresolved();
-    }).then(function() {
+      
+      console.group("2/3: Look for uninitialized instances of Web Compoments");
+      await lively.components.loadUnresolved();
       console.groupEnd();
-      console.group("Lively3/3")
-      console.log("Initialize document");
-      return lively.initializeDocument(document, false, loadContainer);
-    }).then(() => {
+      
+      console.group("3/3: Initialize Document")
+      await lively.initializeDocument(document, false, loadContainer);
       console.groupEnd();
+      
       console.log("Finally loaded!");
       console.groupEnd(); // BOOT
-    }).catch(function(err) {
+    } catch(err) {
       console.log("Lively Loaging failed", err);
       alert("load Lively4 failed:" + err);
-    });
+    }
   });
 }
