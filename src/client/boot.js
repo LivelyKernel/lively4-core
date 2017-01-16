@@ -77,7 +77,7 @@ if (window.lively && window.lively4url) {
             es2015: false,
             stage2: false,
             stage3: false,
-            plugins: ['babel-plugin-locals', 'babel-plugin-test', 'babel-plugin-doit-result']
+            plugins: ['babel-plugin-locals', 'babel-plugin-doit-result']
           },
           loader: 'workspace-loader'
         }
@@ -89,7 +89,6 @@ if (window.lively && window.lively4url) {
         'kernel': lively4url + '/src/client/legacy-kernel.js',
         'babel-plugin-doit-result': 'src/external/babel-plugin-doit-result.js',
         'babel-plugin-locals': 'src/external/babel-plugin-locals.js',
-        'babel-plugin-test': 'src/external/babel-plugin-test.js',
         'workspace-loader': './src/client/workspace-loader.js'
       },
       trace: true,
