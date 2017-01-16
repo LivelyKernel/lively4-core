@@ -18,4 +18,4 @@ cop.layer(window, "DevLayer").refineClass(aceEditor, {
 })
 
 
-DevLayer.beGloval()
+DevLayer.beGlobal()
