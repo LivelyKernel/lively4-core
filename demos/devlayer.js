@@ -4,7 +4,7 @@ import aceEditor from 'templates/juicy-ace-editor.js'
 
 
 
-cop.layer(window, "DevLayer").refineClass(aceEditor, {
+cop.layer(window, "DevLayer2").refineClass(aceEditor, {
 
  async boundEval(str, context) {
     // using lively vm:
