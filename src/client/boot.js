@@ -77,7 +77,7 @@ if (window.lively && window.lively4url) {
             es2015: false,
             stage2: false,
             stage3: false,
-            plugins: ['babel-plugin-locals', 'babel-plugin-test']
+            plugins: ['babel-plugin-locals', 'babel-plugin-test', 'babel-plugin-doit-result']
           },
           loader: 'workspace-loader'
         }
