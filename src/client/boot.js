@@ -87,6 +87,7 @@ if (window.lively && window.lively4url) {
         'systemjs-plugin-babel': './src/external/babel/plugin-babel.js',
         'systemjs-babel-build': './src/external/babel/systemjs-babel-browser.js',
         'kernel': lively4url + '/src/client/legacy-kernel.js',
+        'babel-plugin-doit-result': 'src/external/babel-plugin-doit-result.js',
         'babel-plugin-locals': 'src/external/babel-plugin-locals.js',
         'babel-plugin-test': 'src/external/babel-plugin-test.js',
         'workspace-loader': './src/client/workspace-loader.js'
