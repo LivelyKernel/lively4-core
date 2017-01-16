@@ -2,6 +2,8 @@ import * as cop  from "src/external/ContextJS/src/contextjs.js";
 import aceEditor from 'templates/juicy-ace-editor.js'
 
 
+// System.import('demos/devlayer.js')
+
 // fall back to simple eval while we are working on the real code....
 cop.layer(window, "DevLayer").refineClass(aceEditor, {
 
@@ -14,3 +16,6 @@ cop.layer(window, "DevLayer").refineClass(aceEditor, {
     })
   }
 })
+
+
+DevLayer.beGloval()
