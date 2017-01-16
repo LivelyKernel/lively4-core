@@ -326,7 +326,7 @@ export default class AceEditor extends HTMLElement {
       console.log('eval with context', context);
       let id = generateUUID();
       setCode(id, str);
-      return System.import('workspace:' + id);
+      return System.import('workspace:' + id).__result__;
     } catch(err) {
       return Promise.resolve({ value: err, isError: true });
     }
