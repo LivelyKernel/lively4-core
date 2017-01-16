@@ -11,7 +11,6 @@ export default function({ types: t }) {
         finalStatement.replaceWith(t.variableDeclaration('const', [
           t.variableDeclarator(t.identifier('__result__'), expr.node)
         ]));
-        console.log(finalStatement, t.isExpressionStatement(finalStatement));
 
         path.pushContainer('body', t.exportNamedDeclaration(null, [
           t.exportSpecifier(
