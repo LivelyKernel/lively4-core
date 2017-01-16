@@ -1,3 +1,5 @@
+import generateUUID from './../src/client/uuid.js';
+import { setCode } from './../src/client/workspaces.js';
 
 export default class AceEditor extends HTMLElement {
 
@@ -315,17 +317,28 @@ export default class AceEditor extends HTMLElement {
   }
 
   async boundEval(str, context) {
+    // using lively vm:
     // return lively.vm.runEval(str, {targetModule: this.getTargetModule(), context: context})
+    
+    // src, topLevelVariables, thisReference, <- finalStatement
+    
+    try {
+      console.log('eval with context', context);
+      let id = generateUUID();
+      setCode(id, str);
+      return System.import('workspace:' + id);
+    } catch(err) {
+      return Promise.resolve({ value: err, isError: true });
+    }
+    
+    /*
     return new Promise((resolve) => {
-      try {
-        var result = (function() {
-        	return eval(str)
-        }).bind(context)()
-        resolve({value: result})
-      } catch(e) {
-        resolve({value: e, isError: true})
-      }
+      var result = (function() {
+      	return eval(str)
+      }).bind(context)()
+      resolve({value: result})
     })
+    */
   }
 
   printResult(result) {
@@ -342,7 +355,7 @@ export default class AceEditor extends HTMLElement {
 
  async tryBoundEval(str, printResult) {
     var resp;
-    resp = await this.boundEval(str, this.getDoitContext()) 
+    resp = await this.boundEval(str, this.getDoitContext())
     if (resp.isError) {
       var e = resp.value
       console.error(e)
