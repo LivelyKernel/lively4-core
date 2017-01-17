@@ -323,6 +323,7 @@ export default class AceEditor extends HTMLElement {
     // src, topLevelVariables, thisReference, <- finalStatement
     
     try {
+      window.__global_this__ = this.getDoitContext();
       console.log('eval with context', context);
       let id = generateUUID();
       setCode(id, str);
@@ -330,15 +331,6 @@ export default class AceEditor extends HTMLElement {
     } catch(err) {
       return Promise.resolve({ value: err, isError: true });
     }
-    
-    /*
-    return new Promise((resolve) => {
-      var result = (function() {
-      	return eval(str)
-      }).bind(context)()
-      resolve({value: result})
-    })
-    */
   }
 
   printResult(result) {

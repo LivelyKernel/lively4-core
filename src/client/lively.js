@@ -592,10 +592,10 @@ export default class Lively {
     // object = that
     if (object instanceof HTMLElement) {
       let templateFile = lively4url +"/templates/" + object.localName + ".html",
-        source = await fetch(templateFile).then( r => r.text());
+        source = await fetch(templateFile).then( r => r.text()),
         template = $.parseHTML(source).find( ea => ea.tagName == "TEMPLATE"),
         className = template.getAttribute('data-class'),
-        baseName = this.templateClassNameToTemplateName(className);
+        baseName = this.templateClassNameToTemplateName(className),
         moduleURL = lively4url +"/templates/" + baseName + ".js";
       lively.openBrowser(moduleURL, true, className);
     } else {

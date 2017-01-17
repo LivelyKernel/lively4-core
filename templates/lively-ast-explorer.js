@@ -1,6 +1,7 @@
 'use strict';
 
 import Morph from './Morph.js';
+//import lively from './../src/client/lively.js';
 
 import {babel} from 'systemjs-babel-build';
 
@@ -29,40 +30,120 @@ export default class AstExplorer extends Morph {
       this.updateAST()      
     }
     
+    this.get("#plugin").addEventListener("change", evt => 
+      this.checkForSyntaxErrors(this.get("#plugin").editor))
+
+    this.get("#source").addEventListener("change", evt => 
+      this.checkForSyntaxErrors(this.get("#source").editor))
+
+
   }
+  
+  checkForSyntaxErrors(editor) {
+    var Range = ace.require('ace/range').Range;
+    var doc = editor.getSession().getDocument(); 
+    var src = editor.getValue();
+    
+    // clear annotations
+    editor.getSession().setAnnotations([]);
+    
+    // clear markers
+    var markers = editor.getSession().getMarkers();
+    for(var i in markers) {
+        if (markers[i].clazz == "marked") {
+            editor.getSession().removeMarker(i);
+        }
+    }
+    
+    try {
+        var result =babel.transform(src, {
+          babelrc: false,
+          plugins: [],
+          presets: [],
+          filename: undefined,
+          sourceFileName: undefined,
+          moduleIds: false,
+          sourceMaps: false,
+          compact: false,
+          comments: true,
+          code: true,
+          ast: true,
+          resolveModuleSource: undefined
+        })
+        var ast = result.ast;
+        return false;
+    } catch(e) {
+      debugger
+      editor.session.addMarker(Range.fromPoints(
+        doc.indexToPosition(e.pos),
+        doc.indexToPosition(e.raisedAt)), "marked", "text", false); 
+      
+      editor.getSession().setAnnotations([{
+        row: e.loc.line - 1,
+        column: e.loc.column,
+        text: e.message,
+        type: "error"
+      }]);
+      
+      return true
+    }
+  }
+  
   
   updateAST() {
     var pluginSrc = this.get("#plugin").editor.getValue()
+    this.get("#plugin").editor.getSession().setAnnotations([]);
+    
+    this.checkForSyntaxErrors(this.get("#plugin").editor) 
+    
     try {
       var plugin = eval(pluginSrc)
-    } catch(e) {
-      console.log(e)
-      
-      this.get("#output").editor.setValue("Error evaluating Plugin: " +e) 
+    } catch(err) {
+      console.error(err)
+      this.get("#output").editor.setValue("Error evaluating Plugin: " + err);
+      // TODO: Error locations in Plugin Editor
+      lively.notify(err.name, err.message, 5, ()=>{}, 'red');
       return
     }
     
-    var src = this.get("#source").editor.getValue();
-    this.result = babel.transform(src, {
-      babelrc: false,
-      plugins: [plugin],
-      presets: [],
-      filename: undefined,
-      sourceFileName: undefined,
-      moduleIds: false,
-      sourceMaps: false,
-      // inputSourceMap: load.metadata.sourceMap,
-      compact: false,
-      comments: true,
-      code: true,
-      ast: true,
-      resolveModuleSource: undefined
-    })
+    try {
+      debugger
+      var src = this.get("#source").editor.getValue();
+      this.result = babel.transform(src, {
+        babelrc: false,
+        plugins: [plugin],
+        presets: [],
+        filename: undefined,
+        sourceFileName: undefined,
+        moduleIds: false,
+        sourceMaps: false,
+        // inputSourceMap: load.metadata.sourceMap,
+        compact: false,
+        comments: true,
+        code: true,
+        ast: true,
+        resolveModuleSource: undefined
+      })
+    } catch(err) {
+      console.error(err);
+      this.get("#output").editor.setValue("Error transforming code: " + err);
+      this.get("#plugin").editor.getSession().setAnnotations(err.stack.split('\n')
+        .filter(line => line.match('updateAST'))
+        .map(line => {
+          let [row, column] = line
+            .replace(/.*<.*>:/, '')
+            .replace(/\)/, '')
+            .split(':')
+          return {
+            row: parseInt(row) - 1, column: parseInt(column), text: err.message, type: "error"
+          }
+        }));
+      lively.notify(err.name, err.message, 5, ()=>{}, 'red');
+      return;
+    }
     
     this.get("#output").editor.setValue(this.result.code) 
   }
-  
- 
   
   onAcceptSource() {
     this.updateAST()
@@ -83,7 +164,5 @@ export default class AstExplorer extends Morph {
       this.updateAST()
       
     })
-    
   }
-  
 }
