@@ -59,7 +59,11 @@ module.exports = function(config) {
       '/templates/': '/base/templates/',
       '/vendor/': '/base/vendor/',
       '/package.json': '/base/package.json',
+      '/swx-boot.js': '/base/swx-boot.js',
+      '/swx-kernel.js': '/base/swx-kernel.js',
       '/swx-loader.js': '/base/swx-loader.js',
+      '/swx-post.js': '/base/swx-post.js',
+      '/swx-pre.js': '/base/swx-pre.js',
     },
 
 
