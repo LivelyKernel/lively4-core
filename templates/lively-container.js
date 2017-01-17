@@ -1214,6 +1214,9 @@ export default class Container extends Morph {
   
   async onTextChanged() {
     var editor = this.getAceEditor().editor;
+    if (!this.getURL().pathname.match(/\.js$/)) {
+      return
+    }
     SyntaxChecker.checkForSyntaxErrors(editor);
   }
   

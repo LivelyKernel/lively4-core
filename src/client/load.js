@@ -69,7 +69,7 @@ if ('serviceWorker' in navigator || window.lively4chrome) {
       });
   };
 
-  if (navigator.serviceWorker.controller || window.lively4chrome || externalSite || true) {
+  if (navigator.serviceWorker.controller || window.lively4chrome || externalSite) {
   
     console.log("NO Service worker during migration!!!")
   

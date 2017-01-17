@@ -22,7 +22,7 @@ export default class SyntaxChecker {
     }
     
     try {
-        var result =babel.transform(src, {
+        var result = babel.transform(src, {
           babelrc: false,
           plugins: [],
           presets: [],
