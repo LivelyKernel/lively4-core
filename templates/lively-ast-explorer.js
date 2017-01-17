@@ -5,18 +5,18 @@ import Morph from './Morph.js';
 
 import {babel} from 'systemjs-babel-build';
 
+import SyntaxChecker from 'src/client/syntax.js'
+
 // import {html} from 'src/client/html.js';
 
 import locals from 'babel-plugin-locals'
-
 
 export default class AstExplorer extends Morph {
 
   initialize() {
     this.windowTitle = "AST Explorer";  // #TODO why does it not work?
     this.dispatchEvent(new CustomEvent("initialize"));
-    
-    
+
     // lets work with properties until we get access to the module state again
     this.babel = babel
     
@@ -31,70 +31,18 @@ export default class AstExplorer extends Morph {
     }
     
     this.get("#plugin").addEventListener("change", evt => 
-      this.checkForSyntaxErrors(this.get("#plugin").editor))
+      SyntaxChecker.checkForSyntaxErrors(this.get("#plugin").editor))
 
     this.get("#source").addEventListener("change", evt => 
-      this.checkForSyntaxErrors(this.get("#source").editor))
-
-
+      SyntaxChecker.checkForSyntaxErrors(this.get("#source").editor))
   }
   
-  checkForSyntaxErrors(editor) {
-    var Range = ace.require('ace/range').Range;
-    var doc = editor.getSession().getDocument(); 
-    var src = editor.getValue();
-    
-    // clear annotations
-    editor.getSession().setAnnotations([]);
-    
-    // clear markers
-    var markers = editor.getSession().getMarkers();
-    for(var i in markers) {
-        if (markers[i].clazz == "marked") {
-            editor.getSession().removeMarker(i);
-        }
-    }
-    
-    try {
-        var result =babel.transform(src, {
-          babelrc: false,
-          plugins: [],
-          presets: [],
-          filename: undefined,
-          sourceFileName: undefined,
-          moduleIds: false,
-          sourceMaps: false,
-          compact: false,
-          comments: true,
-          code: true,
-          ast: true,
-          resolveModuleSource: undefined
-        })
-        var ast = result.ast;
-        return false;
-    } catch(e) {
-      debugger
-      editor.session.addMarker(Range.fromPoints(
-        doc.indexToPosition(e.pos),
-        doc.indexToPosition(e.raisedAt)), "marked", "text", false); 
-      
-      editor.getSession().setAnnotations([{
-        row: e.loc.line - 1,
-        column: e.loc.column,
-        text: e.message,
-        type: "error"
-      }]);
-      
-      return true
-    }
-  }
+  
   
   
   updateAST() {
     var pluginSrc = this.get("#plugin").editor.getValue()
     this.get("#plugin").editor.getSession().setAnnotations([]);
-    
-    this.checkForSyntaxErrors(this.get("#plugin").editor) 
     
     try {
       var plugin = eval(pluginSrc)

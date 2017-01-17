@@ -1,15 +1,14 @@
 import Morph from './Morph.js';
 import highlight from 'src/external/highlight.js';
 import {pt} from 'src/client/graphics.js';
-
 import halo from 'templates/lively-halo.js';
-
 import ContextMenu from 'src/client/contextmenu.js';
+import SyntaxChecker from 'src/client/syntax.js'
+import components from "src/client/morphic/component-loader.js"
 
 // import * as cop  from "src/external/ContextJS/src/contextjs.js";
 // import ScopedScripts from "./ScopedScripts.js";
 
-import components from "src/client/morphic/component-loader.js"
 
 export default class Container extends Morph {
 
@@ -339,49 +338,6 @@ export default class Container extends Morph {
     lively.notify("Save as... not implemented yet");
   }
 
-  checkForSyntaxErrors() {
-    if (!this.getURL().pathname.match(/\.js$/)) {
-      return
-    }
-    var Range = ace.require('ace/range').Range;
-    var editor = this.get("#editor").currentEditor();
-    var doc = editor.getSession().getDocument(); 
-    var src = editor.getValue();
-    
-    // clear annotations
-    editor.getSession().setAnnotations([]);
-    
-    // clear markers
-    var markers = editor.getSession().getMarkers();
-    for(var i in markers) {
-        if (markers[i].clazz == "marked") {
-            editor.getSession().removeMarker(i);
-        }
-    }
-    
-    
-    // #TODO #babel6refactoring replace lively.ast with different parser
-    if (lively.ast) {
-      try {
-          var ast = lively.ast.parse(src);
-          return false;
-      } catch(e) {
-        editor.session.addMarker(Range.fromPoints(
-          doc.indexToPosition(e.pos),
-          doc.indexToPosition(e.raisedAt)), "marked", "text", false); 
-        
-        editor.getSession().setAnnotations([{
-          row: e.loc.line - 1,
-          column: e.loc.column,
-          text: e.message,
-          type: "error"
-        }]);
-        
-        return true
-      }
-    }
-  }
-  
   onSave(doNotQuit) {
     if (!this.isEditing()) {
       this.saveEditsInView();
@@ -408,7 +364,7 @@ export default class Container extends Morph {
       if (moduleName) {
         moduleName = moduleName[1];
         
-        if (this.checkForSyntaxErrors()){
+        if (SyntaxChecker.checkForSyntaxErrors(this.getAceEditor().editor)){
           lively.notify("found syntax error")
           return // don't try any further...
         };
@@ -1165,7 +1121,6 @@ export default class Container extends Morph {
         
         aceComp.addEventListener("change", evt => this.onTextChanged(evt))
         
-        
         var url = this.getURL();
         livelyEditor.setURL(url);
         aceComp.changeModeForFile(url.pathname);
@@ -1257,8 +1212,9 @@ export default class Container extends Morph {
     });
   }
   
-  onTextChanged() {
-    this.checkForSyntaxErrors();
+  async onTextChanged() {
+    var editor = this.getAceEditor().editor;
+    SyntaxChecker.checkForSyntaxErrors(editor);
   }
   
   livelyPreMigrate() {
