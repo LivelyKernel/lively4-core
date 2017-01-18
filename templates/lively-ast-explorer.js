@@ -17,16 +17,15 @@ import sourcemap from 'https://raw.githubusercontent.com/mozilla/source-map/mast
 export default class AstExplorer extends Morph {
 
   initialize() {
-    
 
     this.windowTitle = "AST Explorer";  // #TODO why does it not work?
     this.dispatchEvent(new CustomEvent("initialize"));
 
     // lets work with properties until we get access to the module state again
     this.babel = babel
-    this.smc = smc
+    //this.smc = smc
 
-    
+    try {    
     lively.html.registerButtons(this);
 
     this.get("#plugin").doSave = () => {
@@ -36,8 +35,6 @@ export default class AstExplorer extends Morph {
     this.get("#source").doSave = () => {
       this.updateAST()      
     };
-    
-    
     
     this.get("#plugin").addEventListener("change", evt => 
       SyntaxChecker.checkForSyntaxErrors(this.get("#plugin").editor));
@@ -50,29 +47,32 @@ export default class AstExplorer extends Morph {
 
     this.get("#source").editor.session.selection.on("changeSelection", (evt) => {
       this.onSourceSelectionChanged(evt)
-    })
+    });
+    
     this.get("#source").editor.session.selection.on("changeCursor", (evt) => {
       this.onSourceSelectionChanged(evt)
-    })
-
-    
-    
+    });
 
     [this.get("#output"), this.get("#source"), this.get("#plugin")].forEach(ea => ea.editor.session.setOptions({
 			mode: "ace/mode/javascript",
     	tabSize: 2,
     	useSoftTabs: true
 		}));
+		
+    } catch(e) {
+      console.log(e);
+      throw new Error("Could not initialize AST-Explorer " + e);
+    }
   }
   
   updateAST() {
-    var pluginSrc = this.get("#plugin").editor.getValue()
+    var pluginSrc = this.get("#plugin").editor.getValue();
     this.get("#plugin").editor.getSession().setAnnotations([]);
     
     try {
-      var plugin = eval(pluginSrc)
+      var plugin = eval(pluginSrc);
     } catch(err) {
-      console.error(err)
+      console.error(err);
       this.get("#output").editor.setValue("Error evaluating Plugin: " + err);
       // TODO: Error locations in Plugin Editor
       lively.notify(err.name, err.message, 5, ()=>{}, 'red');
