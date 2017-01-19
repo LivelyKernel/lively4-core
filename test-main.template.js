@@ -50,7 +50,7 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   }
 
   console.log("lively4url: " + lively4url)
-  System.import(lively4url + "/src/client/load.js").then(function(load){
+  System.import(lively4url + "/src/client/boot.js").then(function(load){
     console.log("load lively 1/3")
     load.whenLoaded(function(){
       console.log("load lively 2/3")
