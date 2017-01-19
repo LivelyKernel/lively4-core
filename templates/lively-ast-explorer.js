@@ -53,6 +53,14 @@ export default class AstExplorer extends Morph {
       this.onSourceSelectionChanged(evt)
     });
 
+    this.get("#output").editor.session.selection.on("changeSelection", (evt) => {
+      this.onOutputSelectionChanged(evt)
+    });
+    
+    this.get("#output").editor.session.selection.on("changeCursor", (evt) => {
+      this.onOutputSelectionChanged(evt)
+    });
+
     [this.get("#output"), this.get("#source"), this.get("#plugin")].forEach(ea => ea.editor.session.setOptions({
 			mode: "ace/mode/javascript",
     	tabSize: 2,
@@ -157,18 +165,37 @@ export default class AstExplorer extends Morph {
   }
   
   onSourceSelectionChanged(evt) {
-    this.get("#output").editor.selection.clearSelection()
+    setTimeout(() => {
+      if(this.get("#source").editor.isFocused()) {
+        this.get("#output").editor.selection.clearSelection()
+        
+        var range = this.get("#source").editor.selection.getRange()
+        
+        var start = this.generatedPositionFor(range.start.row + 1, range.start.column)
+        var end = this.generatedPositionFor(range.end.row + 1, range.end.column)
+        
+        if (!start || !end) return;
+        this.get("#output").editor.selection.moveCursorTo(start.line - 1, start.column)
+        this.get("#output").editor.selection.selectTo(end.line -  1, end.column)
     
-    var range = this.get("#source").editor.selection.getRange()
-    
-    var start = this.generatedPositionFor(range.start.row + 1, range.start.column)
-    var end = this.generatedPositionFor(range.end.row + 1, range.end.column)
-    
-    if (!start || !end) return;
-    this.get("#output").editor.selection.moveCursorTo(start.line - 1, start.column)
-    this.get("#output").editor.selection.selectTo(end.line -  1, end.column)
-
-    // this.get("#output").editor.selection.selectTo(end.line, end.column)
-    
+        // this.get("#output").editor.selection.selectTo(end.line, end.column)
+      }
+    }, 0);
+  }
+  onOutputSelectionChanged(evt) {
+    setTimeout(() => {
+      if(this.get("#output").editor.isFocused()) {
+        this.get("#source").editor.selection.clearSelection()
+        
+        var range = this.get("#output").editor.selection.getRange()
+        
+        var start = this.originalPositionFor(range.start.row + 1, range.start.column)
+        var end = this.originalPositionFor(range.end.row + 1, range.end.column)
+        
+        if (!start || !end) return;
+        this.get("#source").editor.selection.moveCursorTo(start.line - 1, start.column)
+        this.get("#source").editor.selection.selectTo(end.line -  1, end.column)
+      }
+    }, 0);
   }
 }
