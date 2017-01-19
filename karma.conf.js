@@ -21,9 +21,9 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'src/external/system.src.js',
-      'src/external/babel-browser.js',
-      'vendor/regenerator-runtime.js',
+      // 'src/external/system.src.js',
+      // 'src/external/babel-browser.js',
+      // 'vendor/regenerator-runtime.js',
 
       
       // #Jens, cannot load lively.modules here, because we configure System.js later

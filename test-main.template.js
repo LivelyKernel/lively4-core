@@ -49,21 +49,23 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
         });
   }
 
+  runTests();
+
   console.log("lively4url: " + lively4url)
-  System.import(lively4url + "/src/client/boot.js").then(function(load){
-    console.log("load lively 1/3")
-    load.whenLoaded(function(){
-      console.log("load lively 2/3")
-      lively.components.loadUnresolved().then(function() {
-        console.log("load lively 3/3")
-          lively.initializeDocument(document)
-          console.log("Finally loaded!")
-          runTests()
-      })
-  })}).catch(function(err) {
-      console.log("Lively Loaging failed", err)
-      alert("load Lively4 failed:" + err)
-  });
+  // System.import(lively4url + "/src/client/boot.js").then(function(load){
+  //   console.log("load lively 1/3")
+  //   load.whenLoaded(function(){
+  //     console.log("load lively 2/3")
+  //     lively.components.loadUnresolved().then(function() {
+  //       console.log("load lively 3/3")
+  //         lively.initializeDocument(document)
+  //         console.log("Finally loaded!")
+  //         runTests()
+  //     })
+  // })}).catch(function(err) {
+  //     console.log("Lively Loaging failed", err)
+  //     alert("load Lively4 failed:" + err)
+  // });
 
 
 

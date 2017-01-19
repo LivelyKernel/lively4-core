@@ -131,6 +131,9 @@ if (window.lively && window.lively4url) {
       console.groupEnd();
       
       console.log("Finally loaded!");
+      
+      document.dispatchEvent(new Event("livelyloaded"))
+      
       console.groupEnd(); // BOOT
     } catch(err) {
       console.log("Lively Loaging failed", err);

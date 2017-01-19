@@ -20,7 +20,7 @@ describe("Lively Connectors Component",  function() {
     lively.setPosition(testWorld(), {x: 1000, y: 350});
   });
 
-  createNode = (name, p) => {
+  var createNode = (name, p) => {
     var node = document.createElement("div")
     node.textContent = name
     node.id = name
