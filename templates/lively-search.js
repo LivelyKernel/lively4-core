@@ -48,7 +48,8 @@ export default class Search extends Morph {
       var url = lively4url + "/../" + file;
       var item = document.createElement("tr");
       var filename = file.replace(/.*\//,"")
-      item.innerHTML = `<td><a>${filename}</a></td><td><span ="pattern">${pattern}</span></td>`;
+      item.innerHTML = `<td><a>${filename}</a></td><td><span ="pattern">${
+        pattern.replace(/</,"&lt;")}</span></td>`;
       var link = item.querySelector("a");
       link.href = entry;
       link.onclick = () => {

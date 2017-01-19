@@ -22,7 +22,7 @@ export default class TestRunner extends HTMLDivElement {
     }
     this.querySelector("#mocha").innerHTML= ""
     
-    lively.loadCSSThroughDOM("mochaCSS", lively4url + "/node_modules/mocha/mocha.css", f)
+    lively.loadCSSThroughDOM("mochaCSS", lively4url + "/node_modules/mocha/mocha.css")
     
     lively.loadJavaScriptThroughDOM("mochaJS", lively4url + "/src/external/mocha.js")
       .then(() => {mocha.setup("bdd")})
@@ -67,7 +67,8 @@ export default class TestRunner extends HTMLDivElement {
   // window.it
   
   clearTests() {
-    mocha.suite.suites.length = 0; // hihi #Holzhammer
+    if (mocha.suite)
+      mocha.suite.suites.length = 0; // hihi #Holzhammer
     this.querySelector("#mocha").innerHTML= "";    
   }
   
@@ -77,8 +78,10 @@ export default class TestRunner extends HTMLDivElement {
         var name = url.replace(/.*\//,"").replace(/\/\.[^\.]*/,"");
         
         // the code in the module has to be reexecuted!
-        var module = lively.modules.module(url)
-        if (module) module.reload()
+        // var module = lively.modules.module(url)
+        // if (module) module.reload()
+      
+        lively.reloadModule(url)
       
         return System.import(url)
         // mocha.addFile(url.replace(/.*\//,"").replace(/\..*/,""))
