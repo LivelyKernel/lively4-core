@@ -79,8 +79,8 @@ export default function({ types: t, template, traverse, }) {
         
         window[VAR_RECORDER_NAME] = window[VAR_RECORDER_NAME] || {};
         window[VAR_RECORDER_NAME][MODULE_IDENTIFIER] = window[VAR_RECORDER_NAME][MODULE_IDENTIFIER] || {};
-        this.moduleBoundGlobals = Object.keys(window[VAR_RECORDER_NAME][MODULE_IDENTIFIER]);
-        console.log('bound names:', ...this.moduleBoundGlobals);
+        moduleBoundGlobals = Object.keys(window[VAR_RECORDER_NAME][MODULE_IDENTIFIER]);
+        console.log('bound names:', ...moduleBoundGlobals);
 
         let bindings = program.scope.getAllBindings();
 
@@ -133,7 +133,7 @@ export default function({ types: t, template, traverse, }) {
             // Distinguish between module-bound variables and real globals
             if(
               path.scope.hasGlobal(path.node.name) &&
-                this.moduleBoundGlobals.includes(path.node.name)
+                moduleBoundGlobals.includes(path.node.name)
             ) {
               replaceReference(path);
               return path.skip();
