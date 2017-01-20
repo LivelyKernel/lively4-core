@@ -49,7 +49,7 @@ if (window.lively && window.lively4url) {
   Promise.resolve().then( () => {
     return loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/systemjs/system.src.js");
   }).then(async () => {
-    
+    window._recorder_ = {_module_:{}}
     
     System.trace = true; // does not work in config
     
