@@ -65,7 +65,7 @@ export default function({ types: t, template, traverse, }) {
     },
     visitor: {
       Program(program) {
-        const VAR_RECORDER_NAME = '__varRecorder__',
+        const VAR_RECORDER_NAME = '_recorder_' || '__varRecorder__',
               MODULE_IDENTIFIER = window.__topLevelVarRecorder_ModuleName__ || '_module_' || '__defaultModule__',
               varToRecordTemplate = template(`${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference = reference`),
               recordToVarTemplate = template(`reference = ${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference`),
