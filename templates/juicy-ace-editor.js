@@ -322,12 +322,16 @@ export default class AceEditor extends HTMLElement {
     
     // src, topLevelVariables, thisReference, <- finalStatement
     
+    // TODO: provide a module identifier (use id for now)
+    function prepareContainer(id) {
+      
+    }
+    
     try {
       console.log('eval with context', context);
       window.__global_this__ = this.getDoitContext();
       this.__id__  = this.__id__ || generateUUID();
       let id = this.__id__;
-      // TODO: provide a module identifier (use id for now)
       window.__topLevelVarRecorder_ModuleName__ = '_module_'; // id;
       setCode(id, str);
       return System.import('workspace:' + encodeURI(id)).then(m => ({ value: m.__result__ }));
