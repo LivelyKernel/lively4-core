@@ -73,6 +73,8 @@ export default function({ types: t, template, traverse, }) {
     name: "top-level-var-recorder",
     pre() {
       console.clear();
+      if(!window[VAR_RECORDER_NAME]) window[VAR_RECORDER_NAME] = {};
+      if(!window[VAR_RECORDER_NAME][MODULE_IDENTIFIER]) window[VAR_RECORDER_NAME][MODULE_IDENTIFIER] = {}
       this.moduleBoundGlobals = Object.keys(window[VAR_RECORDER_NAME][MODULE_IDENTIFIER]);
       console.log('bound names:', ...this.moduleBoundGlobals);
     },
