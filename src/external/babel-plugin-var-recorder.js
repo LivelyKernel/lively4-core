@@ -74,7 +74,7 @@ export default function({ types: t, template, traverse, }) {
     name: "top-level-var-recorder",
     pre() {
       console.clear();
-      this.moduleBoundGlobals = ['moduleBoundGlobal1', 'moduleBoundGlobal2'];
+      this.moduleBoundGlobals = Object.keys(window[VAR_RECORDER_NAME][MODULE_IDENTIFIER]);
     },
     visitor: {
       Program(program) {
