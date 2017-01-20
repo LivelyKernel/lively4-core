@@ -45,17 +45,6 @@ export default function({ types: t, template, traverse, }) {
     return path;
   }
 
-  const VAR_RECORDER_NAME = window.__topLevelVarRecorderName__ || '_recorder_' || '__varRecorder__',
-        MODULE_IDENTIFIER = window.__topLevelVarRecorder_ModuleName__ || '_module_' || '__defaultModule__',
-        varToRecordTemplate = template(`${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference = reference`),
-        recordToVarTemplate = template(`reference = ${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference`),
-        referenceTemplate = template(`${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference`);
-
-  function replaceReference(ref) {
-    ref.replaceWith(referenceTemplate({ reference: ref.node }).expression);
-    ref.skip();
-  }
-  
   function log(path, pre) {
     if(path.node.name !== 'glob5') return;
     return logIdentifier(path, pre);
@@ -73,13 +62,25 @@ export default function({ types: t, template, traverse, }) {
     name: "top-level-var-recorder",
     pre() {
       console.clear();
-      window[VAR_RECORDER_NAME] = window[VAR_RECORDER_NAME] || {};
-      window[VAR_RECORDER_NAME][MODULE_IDENTIFIER] = window[VAR_RECORDER_NAME][MODULE_IDENTIFIER] || {};
-      this.moduleBoundGlobals = Object.keys(window[VAR_RECORDER_NAME][MODULE_IDENTIFIER]);
-      console.log('bound names:', ...this.moduleBoundGlobals);
     },
     visitor: {
       Program(program) {
+        const VAR_RECORDER_NAME = window.__topLevelVarRecorderName__ || '_recorder_' || '__varRecorder__',
+              MODULE_IDENTIFIER = window.__topLevelVarRecorder_ModuleName__ || '_module_' || '__defaultModule__',
+              varToRecordTemplate = template(`${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference = reference`),
+              recordToVarTemplate = template(`reference = ${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference`),
+              referenceTemplate = template(`${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference`);
+      
+        function replaceReference(ref) {
+          ref.replaceWith(referenceTemplate({ reference: ref.node }).expression);
+          ref.skip();
+        }
+        
+        window[VAR_RECORDER_NAME] = window[VAR_RECORDER_NAME] || {};
+        window[VAR_RECORDER_NAME][MODULE_IDENTIFIER] = window[VAR_RECORDER_NAME][MODULE_IDENTIFIER] || {};
+        this.moduleBoundGlobals = Object.keys(window[VAR_RECORDER_NAME][MODULE_IDENTIFIER]);
+        console.log('bound names:', ...this.moduleBoundGlobals);
+
         let bindings = program.scope.getAllBindings();
 
         // iterate all module wide bindings
