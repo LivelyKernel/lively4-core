@@ -24,7 +24,7 @@ export default function({ types: t, template, traverse, }) {
     if(t.isImportSpecifier(path.parent)) return false; // correct?
     if(t.isMemberExpression(path.parent) && path.parentKey === 'property' && !path.parent.computed) return false; // TODO: correct?
     if(t.isObjectMethod(path.parent)) return false;
-    if(t.isVariableDeclarator(path.parent)) return false;
+    //if(t.isVariableDeclarator(path.parent)) return false;
     if(t.isFunctionDeclaration(path.parent)) return false;
     if((t.isArrowFunctionExpression(path.parent) && path.parentKey === 'params')) return false;
     if((t.isFunctionExpression(path.parent) && path.parentKey === 'params')) return false;
