@@ -61,7 +61,7 @@ export default function({ types: t, template, traverse, }) {
   return {
     name: "top-level-var-recorder",
     pre() {
-      console.clear();
+      //console.clear();
     },
     visitor: {
       Program(program) {
