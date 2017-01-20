@@ -328,7 +328,7 @@ export default class AceEditor extends HTMLElement {
     }
     
     try {
-      console.log('eval with context', context);
+      //console.log('eval with context', context);
       window.__global_this__ = this.getDoitContext();
       this.__id__  = this.__id__ || generateUUID().replace(/-/g, '_');
       console.log('id:', this.__id__);
