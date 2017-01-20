@@ -1,6 +1,4 @@
-const GLOBAL_THIS_REPLACEMENT = '__global_this__';
-
-export default function(param) {
+export default function({ types: t, template, traverse, }) {
 
   const GENERATED = Symbol('generated');
   function isMarked(node) {
