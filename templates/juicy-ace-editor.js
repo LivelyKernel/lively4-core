@@ -329,7 +329,7 @@ export default class AceEditor extends HTMLElement {
     
     try {
       window.__global_this__ = this.getDoitContext();
-      this.__module_recording_id__  = this.__module_recording_id__ || generateUUID().replace(/-/g, '_');
+      this.__module_recording_id__  = this.__module_recording_id__ || 'module_' + generateUUID().replace(/-/g, '_');
       window.__topLevelVarRecorder_ModuleName__ = this.__module_recording_id__;
       // TODO: we currently use a newly generated UUID on each evaluation to trick SystemJS into actually loading it (therefore, we use codeId):
       let codeId = generateUUID();
