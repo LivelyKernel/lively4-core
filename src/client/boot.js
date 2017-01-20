@@ -81,7 +81,7 @@ if (window.lively && window.lively4url) {
               'babel-plugin-locals',
               'babel-plugin-doit-result',
               'babel-plugin-doit-this-ref',
-              'babel-plugin-doit-var-recorder'
+              'babel-plugin-var-recorder'
             ]
           },
           loader: 'workspace-loader'
