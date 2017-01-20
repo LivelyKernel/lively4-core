@@ -330,7 +330,7 @@ export default class AceEditor extends HTMLElement {
     try {
       console.log('eval with context', context);
       window.__global_this__ = this.getDoitContext();
-      this.__id__  = this.__id__ || generateUUID().replace('-', '_');
+      this.__id__  = this.__id__ || generateUUID().replace(/-/g, '_');
       console.log('id:', this.__id__);
       let id = this.__id__;
       window.__topLevelVarRecorder_ModuleName__ = id;
