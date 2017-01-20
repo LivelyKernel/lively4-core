@@ -112,11 +112,12 @@ export default function({ types: t, template, traverse, }) {
             .forEach(newPath => newPath.skip());
         });
     
-        // special case of assigning to a reference
         program.traverse({
           Identifier(path) {
             if(isMarked(path.node)) return;
             if(!isVariable(path)) return;
+    
+            // special case of assigning to a reference
             let pattern = bubbleThroughPattern(path);
             if(pattern.parentPath.isAssignmentExpression() && pattern.parentKey === 'left') {
               let par = path.find(parent => parent.scope.hasOwnBinding(path.node.name));
@@ -126,17 +127,14 @@ export default function({ types: t, template, traverse, }) {
                 return path.skip();
               }
             }
+            
+            // Distinguish between module-bound variables and real globals
+            if(!path.scope.hasGlobal(path.node.name)) return;
+            if(!this.moduleBoundGlobals.includes(path.node.name)) return;
+            replaceReference(path);
+            return path.skip();
           }
         });
-      },
-      Identifier(path) {
-        if(isMarked(path.node)) return;
-        if(!isVariable(path)) return;
-        // Distinguish between module-bound variables and real globals
-        if(!path.scope.hasGlobal(path.node.name)) return;
-        if(!this.moduleBoundGlobals.includes(path.node.name)) return;
-        replaceReference(path);
-        return path.skip();
       }
     }
   };
