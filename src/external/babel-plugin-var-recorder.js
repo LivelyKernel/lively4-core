@@ -130,7 +130,6 @@ export default function({ types: t, template, traverse, }) {
         });
       },
       Identifier(path) {
-        logIdentifier(path, 'visited identifier ')
         if(isMarked(path.node)) return;
         if(!isVariable(path)) return;
         // Distinguish between module-bound variables and real globals
