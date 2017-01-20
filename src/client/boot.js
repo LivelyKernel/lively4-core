@@ -80,7 +80,8 @@ if (window.lively && window.lively4url) {
             plugins: [
               'babel-plugin-locals',
               'babel-plugin-doit-result',
-              'babel-plugin-doit-this-ref'
+              'babel-plugin-doit-this-ref',
+              'babel-plugin-doit-var-recorder'
             ]
           },
           loader: 'workspace-loader'
