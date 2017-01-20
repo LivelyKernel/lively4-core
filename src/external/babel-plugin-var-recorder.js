@@ -129,10 +129,13 @@ export default function({ types: t, template, traverse, }) {
             }
             
             // Distinguish between module-bound variables and real globals
-            if(!path.scope.hasGlobal(path.node.name)) return;
-            if(!this.moduleBoundGlobals.includes(path.node.name)) return;
-            replaceReference(path);
-            return path.skip();
+            if(
+              path.scope.hasGlobal(path.node.name) &&
+                this.moduleBoundGlobals.includes(path.node.name)
+            ) {
+              replaceReference(path);
+              return path.skip();
+            }
           }
         });
       }
