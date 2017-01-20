@@ -332,7 +332,7 @@ export default class AceEditor extends HTMLElement {
       window.__global_this__ = this.getDoitContext();
       this.__id__  = this.__id__ || generateUUID();
       let id = this.__id__;
-      window.__topLevelVarRecorder_ModuleName__ = '_module_'; // id;
+      window.__topLevelVarRecorder_ModuleName__ = id;
       setCode(id, str);
       return System.import('workspace:' + encodeURI(id)).then(m => ({ value: m.__result__ }));
     } catch(err) {
