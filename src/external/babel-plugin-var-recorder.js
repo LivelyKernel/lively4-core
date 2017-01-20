@@ -79,7 +79,7 @@ export default function({ types: t, template, traverse, }) {
         
         window[VAR_RECORDER_NAME] = window[VAR_RECORDER_NAME] || {};
         window[VAR_RECORDER_NAME][MODULE_IDENTIFIER] = window[VAR_RECORDER_NAME][MODULE_IDENTIFIER] || {};
-        moduleBoundGlobals = Object.keys(window[VAR_RECORDER_NAME][MODULE_IDENTIFIER]);
+        let moduleBoundGlobals = Object.keys(window[VAR_RECORDER_NAME][MODULE_IDENTIFIER]);
         console.log('bound names:', ...moduleBoundGlobals);
 
         let bindings = program.scope.getAllBindings();
