@@ -324,6 +324,7 @@ export default class AceEditor extends HTMLElement {
     
     try {
       window.__global_this__ = this.getDoitContext();
+      window.__topLevelVarRecorder_ModuleName__ = id;
       console.log('eval with context', context);
       let id = generateUUID();
       setCode(id, str);
