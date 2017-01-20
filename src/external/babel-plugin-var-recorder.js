@@ -75,6 +75,7 @@ export default function({ types: t, template, traverse, }) {
     pre() {
       console.clear();
       this.moduleBoundGlobals = Object.keys(window[VAR_RECORDER_NAME][MODULE_IDENTIFIER]);
+      console.log('bound names:', ...this.moduleBoundGlobals);
     },
     visitor: {
       Program(program) {
