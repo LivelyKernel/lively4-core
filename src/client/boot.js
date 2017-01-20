@@ -95,6 +95,7 @@ if (window.lively && window.lively4url) {
         'babel-plugin-doit-result': 'src/external/babel-plugin-doit-result.js',
         'babel-plugin-doit-this-ref': 'src/external/babel-plugin-doit-this-ref.js',
         'babel-plugin-locals': 'src/external/babel-plugin-locals.js',
+        'babel-plugin-var-recorder': 'src/external/babel-plugin-var-recorder.js',
         'workspace-loader': './src/client/workspace-loader.js'
       },
       trace: true,
