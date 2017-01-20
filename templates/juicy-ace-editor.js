@@ -335,7 +335,8 @@ export default class AceEditor extends HTMLElement {
       let id = this.__id__;
       window.__topLevelVarRecorder_ModuleName__ = id;
       setCode(id, str);
-      return System.import('workspace:' + encodeURI(id)).then(m => ({ value: m.__result__ }));
+      // TODO: we currently use a newly generated UUID on each evaluation to trick SystemJS into actually loading it 
+      return System.import('workspace:' + encodeURI(generateUUID())).then(m => ({ value: m.__result__ }));
     } catch(err) {
       return Promise.resolve({ value: err, isError: true });
     }
