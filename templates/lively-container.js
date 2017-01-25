@@ -692,6 +692,9 @@ export default class Container extends Morph {
         aceComp.getDoitContext = () => {
           return window.that;
         };
+        aceComp.getDoitContextModuleUrl = () => {
+          return this.getURL()
+        }
         aceComp.aceRequire('ace/ext/searchbox');
         aceComp.doSave = text => {
           this.onSave();

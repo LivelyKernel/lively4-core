@@ -53,8 +53,9 @@ if (window.lively && window.lively4url) {
     
     System.trace = true; // does not work in config
     
+    // config for loading babal plugins
     SystemJS.config({
-      // baseURL: lively4url + '/',
+      baseURL: lively4url + '/', // needed for global refs like "src/client/lively.js", we have to refactor those before disabling this here. #TODO #Discussion
       babelOptions: {
         // stage2: false,
         // stage3: false,
@@ -69,40 +70,33 @@ if (window.lively && window.lively4url) {
       meta: {
         '*.js': {
           babelOptions: {
-          }
-        },
-        
-        'workspace:*': {
-          babelOptions: {
             es2015: false,
             stage2: false,
             stage3: false,
-            plugins: [
-              'babel-plugin-locals',
-              'babel-plugin-doit-result',
-              'babel-plugin-doit-this-ref',
-              'babel-plugin-var-recorder'
-            ]
-          },
-          loader: 'workspace-loader'
+            plugins: []
+          }
         }
       },
       map: {
-        'plugin-babel': './src/external/babel/plugin-babel.js',
-        'systemjs-plugin-babel': './src/external/babel/plugin-babel.js',
-        'systemjs-babel-build': './src/external/babel/systemjs-babel-browser.js',
+        // #Discussion have to use absolute paths here, because it is not clear what the baseURL is
+        'plugin-babel': lively4url + '/src/external/babel/plugin-babel2.js',
+        'systemjs-plugin-babel': lively4url + '/src/external/babel/plugin-babel.js',
+        'systemjs-babel-build': lively4url + '/src/external/babel/systemjs-babel-browser.js',
         'kernel': lively4url + '/src/client/legacy-kernel.js',
-        'babel-plugin-doit-result': 'src/external/babel-plugin-doit-result.js',
-        'babel-plugin-doit-this-ref': 'src/external/babel-plugin-doit-this-ref.js',
-        'babel-plugin-locals': 'src/external/babel-plugin-locals.js',
-        'babel-plugin-var-recorder': 'src/external/babel-plugin-var-recorder.js',
-        'workspace-loader': './src/client/workspace-loader.js'
+        'babel-plugin-doit-result': lively4url + '/src/external/babel-plugin-doit-result.js',
+        'babel-plugin-doit-this-ref': lively4url + '/src/external/babel-plugin-doit-this-ref.js',
+        'babel-plugin-locals': lively4url + '/src/external/babel-plugin-locals.js',
+        'babel-plugin-var-recorder': lively4url + '/src/external/babel-plugin-var-recorder.js',
+        'workspace-loader': lively4url + '/src/client/workspace-loader.js'
       },
       trace: true,
       transpiler: 'plugin-babel'
     })
     
-    await System.import('babel-plugin-locals');
+    await System.import('babel-plugin-doit-result', scriptURL);
+    await System.import('babel-plugin-doit-this-ref', scriptURL);
+    await System.import('babel-plugin-locals', scriptURL);
+    await System.import('babel-plugin-var-recorder', scriptURL);
     
     SystemJS.config({
       meta: {
@@ -111,9 +105,27 @@ if (window.lively && window.lively4url) {
             es2015: false,
             stage2: false,
             stage3: false,
-            plugins: ['babel-plugin-locals']
+            plugins: [
+              'babel-plugin-locals',
+              'babel-plugin-var-recorder'
+            ]
           }
         }
+      },
+      
+      'workspace:*': {
+        babelOptions: {
+          es2015: false,
+          stage2: false,
+          stage3: false,
+          plugins: [
+            'babel-plugin-locals',
+            'babel-plugin-doit-result',
+            'babel-plugin-doit-this-ref',
+            'babel-plugin-var-recorder'
+          ]
+        },
+        loader: 'workspace-loader'
       }
     });
 
@@ -129,7 +141,7 @@ if (window.lively && window.lively4url) {
       console.groupEnd();
       
       console.group("3/3: Initialize Document")
-      await lively.initializeDocument(document, false, loadContainer);
+      await lively.initializeDocument(document, window.lively4chrome, loadContainer);
       console.groupEnd();
       
       console.log("Finally loaded!");
@@ -138,7 +150,8 @@ if (window.lively && window.lively4url) {
       
       console.groupEnd(); // BOOT
     } catch(err) {
-      console.log("Lively Loaging failed", err);
+      console.error("Lively Loading failed");
+      console.error(err);
       alert("load Lively4 failed:" + err);
     }
   });

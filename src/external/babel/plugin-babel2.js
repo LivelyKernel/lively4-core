@@ -166,6 +166,7 @@ exports.translate = function(load, traceOpts) {
           plugins.push(plugin);
       });
 
+    console.log(`load: ${load.address}`, plugins);
     var output = babel.transform(load.source, {
       babelrc: false,
       plugins: plugins,
@@ -201,7 +202,6 @@ exports.translate = function(load, traceOpts) {
         return m;
       }
     });
-    console.log(`load: ${load.address}`, plugins);
 
     // add babelHelpers as a dependency for non-modular runtime
     if (!babelOptions.modularRuntime)

@@ -5,7 +5,8 @@
   
 import html from './html.js';
 import {pt} from './graphics.js';
-import lively from './lively.js';
+
+// import lively from './lively.js'; #TODO resinsert after we support cycles again
 
 export default class ContextMenu {
   

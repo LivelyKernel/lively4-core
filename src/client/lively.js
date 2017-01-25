@@ -54,6 +54,7 @@ var exportmodules = [
 // #LiveProgramming #Syntax #ES6Modules #Experiment #Jens
 // By structuring our modules differently, we still can act as es6 module to the outside but develop at runtime
 // #IDEA: I refactored from "static module and function style" to "dynamic object" style
+debugger;
 export default class Lively {
   
   static get location() {
@@ -207,9 +208,10 @@ export default class Lively {
 
     this.exportModules()
 
+    if (!window.lively4chrome) {
     // for container content... But this will lead to conflicts with lively4chrome  ?? #Jens
-    lively.loadCSSThroughDOM("livelystyle", lively4url + "/templates/lively4.css");
-    
+      // lively.loadCSSThroughDOM("livelystyle", lively4url + "/templates/lively4.css");
+    }    
     // preload some components
     components.loadByName("lively-window");
     components.loadByName("lively-editor");
