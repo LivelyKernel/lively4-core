@@ -1,0 +1,27 @@
+<template id="lively-turtle-canvas">
+  <canvas width="600" height="450">
+    <content>
+    </content>
+  </canvas>
+  
+  <script type="lively4script" data-name="execute">
+    (code) =>
+    {
+      var canvas = this.canvas;
+      var context = this.context;
+      var turtle = this.turtle;
+
+      return eval(code);
+    }
+  </script>
+  <script type="lively4script" data-name="clearCanvas">
+    (color = '#FFFFFF') =>
+    {
+      this.context.fillStyle = color;
+      this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+  </script>
+</template>
+<script>
+  lively.registerTemplate()
+</script>
