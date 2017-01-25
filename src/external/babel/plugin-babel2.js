@@ -26,6 +26,7 @@ if (System.getCanonicalName) {
   regeneratorRuntimePath = System.getCanonicalName(regeneratorRuntimePath);
 }
 
+
 // disable SystemJS runtime detection
 SystemJS._loader.loadedTranspilerRuntime = true;
 

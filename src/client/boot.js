@@ -93,10 +93,11 @@ if (window.lively && window.lively4url) {
       transpiler: 'plugin-babel'
     })
     
-    await System.import('babel-plugin-doit-result', scriptURL);
-    await System.import('babel-plugin-doit-this-ref', scriptURL);
-    await System.import('babel-plugin-locals', scriptURL);
-    await System.import('babel-plugin-var-recorder', scriptURL);
+    await System.import('babel-plugin-doit-result');
+    await System.import('babel-plugin-doit-this-ref');
+    await System.import('babel-plugin-locals');
+    await System.import('babel-plugin-var-recorder');
+    // await System.import('workspace-loader');
     
     SystemJS.config({
       meta: {
@@ -109,23 +110,22 @@ if (window.lively && window.lively4url) {
               'babel-plugin-locals',
               'babel-plugin-var-recorder'
             ]
-          }
-        }
-      },
-      
-      'workspace:*': {
-        babelOptions: {
-          es2015: false,
-          stage2: false,
-          stage3: false,
-          plugins: [
-            'babel-plugin-locals',
-            'babel-plugin-doit-result',
-            'babel-plugin-doit-this-ref',
-            'babel-plugin-var-recorder'
-          ]
+          },
+        }, 
+        'workspace:*': {
+          babelOptions: {
+            es2015: false,
+            stage2: false,
+            stage3: false,
+            plugins: [
+              'babel-plugin-locals',
+              'babel-plugin-doit-result',
+              'babel-plugin-doit-this-ref',
+              'babel-plugin-var-recorder'
+            ]
+          },
+          loader: 'workspace-loader'
         },
-        loader: 'workspace-loader'
       }
     });
 

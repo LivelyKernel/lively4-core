@@ -13,6 +13,7 @@ export default function({ types: t }) {
 
                 // console.log('locals expanded to', Object.keys(path.scope.getAllBindings()));
 
+
                 let vars = Object.keys(path.scope.getAllBindings())
                         .map(label => t.objectProperty(
                         t.identifier(label), // key

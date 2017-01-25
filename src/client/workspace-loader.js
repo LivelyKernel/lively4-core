@@ -3,6 +3,7 @@ import { translate as babelTranslate } from 'plugin-babel';
 import { getCode } from './workspaces.js';
 
 export function fetch(load, fetch) {
+  console.log("workspace fetch: " + fetch)
   if(load.name.startsWith('workspace:')) {
     var id = decodeURI(load.name.replace(/^workspace:/, ''));
     var code = getCode(id);

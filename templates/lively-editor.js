@@ -101,8 +101,12 @@ export default class Editor extends Morph {
   }
 
   setURL(urlString) {
-    var url = new URL(urlString);
-    this.getSubmorph("#filename").value = url.href;
+    if (!urlString) {
+      this.getSubmorph("#filename").value = "";
+    } else {
+      var url = new URL(urlString);
+      this.getSubmorph("#filename").value = url.href;
+    }
   }
 
   setText(text) {
