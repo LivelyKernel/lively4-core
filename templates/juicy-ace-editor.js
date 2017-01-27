@@ -1,5 +1,5 @@
 import generateUUID from './../src/client/uuid.js';
-import { setCode } from './../src/client/workspaces.js';
+import boundEval from './../src/client/code-evaluation/bound-eval.js';
 
 export default class AceEditor extends HTMLElement {
 
@@ -321,23 +321,8 @@ export default class AceEditor extends HTMLElement {
     // return lively.vm.runEval(str, {targetModule: this.getTargetModule(), context: context})
     
     // src, topLevelVariables, thisReference, <- finalStatement
-    
-    // TODO: provide a module identifier (use id for now)
-    function prepareContainer(id) {
-      
-    }
-    
-    try {
-      window.__global_this__ = this.getDoitContext();
-      this.__module_recording_id__  = this.__module_recording_id__ || 'module_' + generateUUID().replace(/-/g, '_');
-      window.__topLevelVarRecorder_ModuleName__ = this.__module_recording_id__;
-      // TODO: we currently use a newly generated UUID on each evaluation to trick SystemJS into actually loading it (therefore, we use codeId):
-      let codeId = generateUUID();
-      setCode(codeId, str);
-      return System.import('workspace:' + encodeURI(codeId)).then(m => ({ value: m.__result__ }));
-    } catch(err) {
-      return Promise.resolve({ value: err, isError: true });
-    }
+    this.__module_recording_id__ = this.__module_recording_id__ || 'module_' + generateUUID().replace(/-/g, '_');
+    return boundEval(str, this.getDoitContext(), this.__module_recording_id__);
   }
 
   printResult(result) {

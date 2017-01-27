@@ -54,7 +54,6 @@ var exportmodules = [
 // #LiveProgramming #Syntax #ES6Modules #Experiment #Jens
 // By structuring our modules differently, we still can act as es6 module to the outside but develop at runtime
 // #IDEA: I refactored from "static module and function style" to "dynamic object" style
-debugger;
 export default class Lively {
   
   static get location() {

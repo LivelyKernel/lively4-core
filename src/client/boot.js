@@ -1,5 +1,5 @@
 /**
- * boot.js -- loads lively in any page that inserts throug a script tag
+ * boot.js -- loads lively in any page that inserts through a script tag
  *
  **/
  
@@ -97,7 +97,8 @@ if (window.lively && window.lively4url) {
     await System.import('babel-plugin-doit-this-ref');
     await System.import('babel-plugin-locals');
     await System.import('babel-plugin-var-recorder');
-    // await System.import('workspace-loader');
+    //await System.import(lively4url + '/src/client/workspaces.js');
+    //await System.import('workspace-loader');
     
     SystemJS.config({
       meta: {
@@ -110,8 +111,8 @@ if (window.lively && window.lively4url) {
               'babel-plugin-locals',
               'babel-plugin-var-recorder'
             ]
-          },
-        }, 
+          }
+        },
         'workspace:*': {
           babelOptions: {
             es2015: false,

@@ -1,9 +1,5 @@
-import { translate as babelTranslate } from 'plugin-babel';
-
-import { getCode } from './workspaces.js';
-
 export function fetch(load, fetch) {
-  console.log('fetch', load, fetch);
+  console.log('fetch2', load, fetch);
   if(load.name.startsWith('workspace:')) {
     var id = decodeURI(load.name.replace(/^workspace:/, ''));
     console.log(`fetch workspace code for id: ${id}`);
@@ -16,6 +12,8 @@ export function fetch(load, fetch) {
     throw new Error('unknown type of code evaluation: ' + load.name);
   }
 }
+
+import { translate as babelTranslate } from 'plugin-babel';
 
 export function translate(...args) {
   console.log('translate', ...args);

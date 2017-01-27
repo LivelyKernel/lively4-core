@@ -1,3 +1,17 @@
+const moduleNameToVarRecorderName = new Map();
+
+function randomModuleId() {
+  return (`_module_${Math.random()}`).replace('.', '');
+}
+
+function getScopeIdForModule(moduleName) {
+  if(!moduleNameToVarRecorderName.has(moduleName)) {
+    moduleNameToVarRecorderName.set(moduleName, randomModuleId());
+  }
+
+  return moduleNameToVarRecorderName.get(moduleName);
+}
+
 export default function({ types: t, template, traverse, }) {
   
   const GENERATED = Symbol('generated');
@@ -63,17 +77,34 @@ export default function({ types: t, template, traverse, }) {
       console.log('XXXX', ...args);
       //console.clear();
     },
+    post(...args) {
+      console.log('YYYY', ...args);
+    },
     visitor: {
-      Program(program) {
-        console.log('visitor!')
-        const VAR_RECORDER_NAME = '_recorder_' || '__varRecorder__',
-              MODULE_IDENTIFIER = ('_' + Math.random()).replace('.', '') || window.__topLevelVarRecorder_ModuleName__ || '_module_' || '__defaultModule__',
-              varToRecordTemplate = template(`${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference = reference`),
+      Program(program, { file }) {
+        const DOIT_MATCHER = /^workspace:/;
+        const MODULE_MATCHER = /.js$/;
+        
+        let filename = file.log.filename;
+        console.log('visitor!', program, filename);
+        
+        const VAR_RECORDER_NAME = '_recorder_' || '__varRecorder__';
+        let MODULE_NAME;
+        if(DOIT_MATCHER.test(filename) && !MODULE_MATCHER.test(filename)) {
+          // eval in workspace
+          MODULE_NAME = window.__topLevelVarRecorder_ModuleName__;
+        } else if (!DOIT_MATCHER.test(filename) && MODULE_MATCHER.test(filename)) {
+          // eval a .js file
+          MODULE_NAME = filename;
+        } else {
+          throw new Error('Transpiling neither a .js module nor workspace code');
+        }
+        let MODULE_IDENTIFIER = getScopeIdForModule(MODULE_NAME);
+
+        const varToRecordTemplate = template(`${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference = reference`),
               recordToVarTemplate = template(`reference = ${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference`),
               referenceTemplate = template(`${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference`);
-      
         function replaceReference(ref) {
-          log(ref)
           ref.replaceWith(referenceTemplate({ reference: ref.node }).expression);
           ref.skip();
         }
