@@ -20,7 +20,7 @@
     flex-direction: column;
   }
 
-  #contentPane {
+  #firstRow, #secondRow {
     display: flex;
     flex-direction: rows;
     flex: 0.5;
@@ -31,14 +31,24 @@
   }
   
   #sourcePane {
-    flex: 0.5;
+    flex: 0.33;
   }
   
   #outputPane {
+    flex: 0.33;
+  }
+  
+  
+  #astPane {
+    flex: 0.33;
+  }
+  
+  
+  #resultPane {
     flex: 0.5;
   }
 
-  #outputPane, #sourcePane, #pluginPane {
+  #outputPane, #sourcePane, #pluginPane, #resultPane, #astPane {
     display: flex;
     flex-direction: column;
   }
@@ -50,25 +60,46 @@
   lively-editor {
     flex: 1;
   }
+  
+  lively-inspector {
+    flex: 1;
+    height: 100%;
+  }
+  
+  #resultPane pre {
+    margin-left: 15px;
+  }
+
   </style>
-<div id="contentPane">
+<div id="firstRow">
   <div id="sourcePane">
     <div>Source <button id="acceptSource">accept</button></div>
     <juicy-ace-editor id="source">var a = 3;
   console.log(a + 4)
     </juicy-ace-editor>      
   </div>
+  <div id="astPane">
+    <lively-inspector id="astInspector" type="ast"></lively-inspector>
+  </div>
   <lively-separator leftselector="#sourcePane" rightselector="#outputPane"></lively-separator>
   <div id="outputPane">
-    <div>Output <button id="astInspect">inspect AST</button></div>
+    <div>Output <span  id="eval">
+          <input type="checkbox" id="live" title="continous eval" checked/> run
+      </span></div>
     <juicy-ace-editor  id="output"></juicy-ace-editor>
   </div>   
 </div>
 
-<div id="pluginPane">
-  <div>Plugin</div>
-  <lively-editor  id="plugin"></lively-editor>
+<div id="secondRow">
+  <div id="pluginPane">
+    <div>Plugin</div>
+    <lively-editor  id="plugin"></lively-editor>
+  </div>
+  <div id="resultPane">
+    <div>Result</div>
+      <pre id="result"></pre>
+  </div>
 </div>
-  
+
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

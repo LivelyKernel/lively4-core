@@ -10,7 +10,7 @@ export default class Inspector   extends Morph {
     if (this.getAttribute("target")) {
       this.inspect(document.querySelector(this.getAttribute("target")))
     }
-    lively.notify("[inspector] intialize");  
+    // lively.notify("[inspector] intialize");  
     this.get("#editor").enableAutocompletion();
   }
 
@@ -343,7 +343,8 @@ export default class Inspector   extends Morph {
         keys.push(i);
       }
     }
-    keys.push("__proto__")
+    if (this.getAttribute("type") != "ast")
+      keys.push("__proto__")
     return _.sortBy(keys)
   }
   

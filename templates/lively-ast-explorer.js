@@ -81,6 +81,27 @@ export default class AstExplorer extends Morph {
   }
   
   async updateAST() {
+
+    var src = this.get("#source").editor.getValue();
+    
+    // get pure ast
+    this.ast = babel.transform(src, {
+        babelrc: false,
+        plugins: [],
+        presets: [],
+        filename: undefined,
+        sourceFileName: undefined,
+        moduleIds: false,
+        sourceMaps: true,
+        // inputSourceMap: load.metadata.sourceMap,
+        compact: false,
+        comments: true,
+        code: true,
+        ast: true,
+        resolveModuleSource: undefined
+    }).ast
+    this.get("#astInspector").inspect(this.ast)
+
     var pluginSrc = this.get("#plugin").currentEditor().getValue();
     var moduleId = generateUUID();
     //"workspace:" + Date.now();
@@ -136,14 +157,27 @@ export default class AstExplorer extends Morph {
     }
     
     this.get("#output").editor.setValue(this.result.code) 
-  }
+    this.get("#result").textContent = ""
+    if (this.get("#live").checked) {
+      var oldLog = console.log
+      var logNode = this.get("#result");
+      try {
+        console.log = (s) => {
+          oldLog.apply(console, arguments)
+          logNode.textContent += s + "\n"
+        }
+        var result =  eval('' +this.result.code)
+        this.get("#result").textContent += "  -> " + result       
+      } catch(e) {
+        this.get("#result").textContent = "Error: " + e
+      } finally {
+        console.log = oldLog
+      }
+    }
+}
   
   onAcceptSource() {
     this.updateAST()
-  }
-  
-  onAstInspect() {
-    lively.openInspector(this.result)
   }
   
   livelyMigrate(other) {
