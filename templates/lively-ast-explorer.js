@@ -88,7 +88,7 @@ export default class AstExplorer extends Morph {
     setCode(moduleId, pluginSrc)
     var plugin = await System.import('workspace:' + encodeURI(moduleId)).then(m => m.default)
   
-    this.get("#plugin").editor.getSession().setAnnotations([]);
+    this.get("#plugin").currentEditor().getSession().setAnnotations([]);
     
     try {
       // var plugin = eval(pluginSrc);

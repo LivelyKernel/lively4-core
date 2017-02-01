@@ -14,34 +14,61 @@
     height: 50%;
   }
   
-  juicy-ace-editor {
-    height: calc(100% - 30px);
+  
+  :host {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #contentPane {
+    display: flex;
+    flex-direction: rows;
+    flex: 0.5;
   }
   
+  #pluginPane {
+    flex: 0.5;
+  }
+  
+  #sourcePane {
+    flex: 0.5;
+  }
+  
+  #outputPane {
+    flex: 0.5;
+  }
+
+  #outputPane, #sourcePane, #pluginPane {
+    display: flex;
+    flex-direction: column;
+  }
+
+  juicy-ace-editor {
+    flex: 1;
+  }
+
+  lively-editor {
+    flex: 1;
+  }
   </style>
-  <table>
-    <tr><td>
-Source <button id="acceptSource">accept</button>
-  <juicy-ace-editor id="source">var a = 3;
-console.log(a + 4)</juicy-ace-editor>      
-    </td><td>
-    AST nice pretty print... #ToBeImplemented
-    </td></tr>
-    <tr><td>
-  Plugin
-  <lively-editor  id="plugin">
-</lively-editor>
-      
-    </td><td>
-  Output <button id="astInspect">inspect AST</button>
-  <juicy-ace-editor  id="output"></juicy-ace-editor>
-      
-    </td></tr>
-  </table>
-  
-  
-  
-  
+<div id="contentPane">
+  <div id="sourcePane">
+    <div>Source <button id="acceptSource">accept</button></div>
+    <juicy-ace-editor id="source">var a = 3;
+  console.log(a + 4)
+    </juicy-ace-editor>      
+  </div>
+  <lively-separator leftselector="#sourcePane" rightselector="#outputPane"></lively-separator>
+  <div id="outputPane">
+    <div>Output <button id="astInspect">inspect AST</button></div>
+    <juicy-ace-editor  id="output"></juicy-ace-editor>
+  </div>   
+</div>
+
+<div id="pluginPane">
+  <div>Plugin</div>
+  <lively-editor  id="plugin"></lively-editor>
+</div>
   
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

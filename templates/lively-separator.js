@@ -21,8 +21,23 @@ export default class Separator extends Morph {
   }
   
   setLeftWidth(w) {
-    this.getLeftTarget().style.width = w + "px";
+    var target = this.getLeftTarget();
+    target.style.width = w + "px";
   }
+
+  getRightTarget() {
+    return this.parentElement.querySelector(this.getAttribute("leftselector"));
+  }
+
+  getRightWidth() {
+    return this.getRightTarget().getBoundingClientRect().width
+  }
+  
+  setRightWidth(w) {
+    this.getRightTarget().style.width = w + "px";
+  }
+
+
 
   onDragStart(evt) {
     this.originalWidth =  this.getLeftWidth();
