@@ -9,7 +9,6 @@ import components from "src/client/morphic/component-loader.js"
 // import * as cop  from "src/external/ContextJS/src/contextjs.js";
 // import ScopedScripts from "./ScopedScripts.js";
 
-
 export default class Container extends Morph {
 
   initialize() {
@@ -1150,7 +1149,7 @@ export default class Container extends Morph {
         this.showCancelAndSave();
     
         if ((""+url).match(/\.js$/)) {
-          aceComp.targetModule = "" + url; // for editing
+          aceComp.setTargetModule("" + url); // for editing
         }
         // livelyEditor.loadFile() // ALT: Load the file again?
       });

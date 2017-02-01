@@ -316,6 +316,10 @@ export default class AceEditor extends HTMLElement {
     return this.targetModule || "workspace://1"
   }
 
+  setTargetModule(module) {
+    return this.targetModule = module;
+  }
+
   async boundEval(str, context) {
     // using lively vm:
     // return lively.vm.runEval(str, {targetModule: this.getTargetModule(), context: context})
