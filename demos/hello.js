@@ -1,5 +1,7 @@
+var a = 3
 
-var log = document.querySelector("#log")
-if (log) log.textContent += "\n" + "Hello " + new Date()
+function b(c) {
+	return 3 + c
+}
 
-console.log("HELLO")
+b()
