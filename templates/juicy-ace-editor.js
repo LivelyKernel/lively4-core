@@ -313,7 +313,7 @@ export default class AceEditor extends HTMLElement {
   }
 
   getTargetModule() {
-    return this.targetModule || "workspace://1"
+    return this.targetModule;
   }
 
   setTargetModule(module) {
@@ -325,8 +325,8 @@ export default class AceEditor extends HTMLElement {
     // return lively.vm.runEval(str, {targetModule: this.getTargetModule(), context: context})
     
     // src, topLevelVariables, thisReference, <- finalStatement
-    this.__module_recording_id__ = this.__module_recording_id__ || 'module_' + generateUUID().replace(/-/g, '_');
-    return boundEval(str, this.getDoitContext(), this.__module_recording_id__);
+    this.setTargetModule(this.getTargetModule() || 'module_' + generateUUID().replace(/-/g, '_'));
+    return boundEval(str, this.getDoitContext(), this.getTargetModule());
   }
 
   printResult(result) {
