@@ -325,15 +325,14 @@ export default class AceEditor extends HTMLElement {
   }
 
   async boundEval(str, context) {
-    // using lively vm:
-    // return lively.vm.runEval(str, {targetModule: this.getTargetModule(), context: context})
-    
-    // src, topLevelVariables, thisReference, <- finalStatement
+    // Ensure target module loaded (for .js files only)
     // TODO: duplicate with var recorder plugin
     const MODULE_MATCHER = /.js$/;
     if(MODULE_MATCHER.test(this.getTargetModule())) {
       await System.import(this.getTargetModule())
     }
+
+    // src, topLevelVariables, thisReference, <- finalStatement
     return boundEval(str, this.getDoitContext(), this.getTargetModule());
   }
 
