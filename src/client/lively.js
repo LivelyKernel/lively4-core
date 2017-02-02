@@ -24,6 +24,8 @@ import authGoogledrive  from './auth-googledrive.js';
 
 import expose from './expose.js';
 
+import generateUUID from './uuid.js';
+
 /* expose external modules */
 import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
@@ -235,6 +237,7 @@ export default class Lively {
       comp.enableAutocompletion();
       // comp.setAttribute("persistent", "true"); #TODO slows down typing?
       comp.editor.setValue(string);
+      comp.setTargetModule('workspace_module_' + generateUUID().replace(/-/g, '_'));
       lively.setPosition(container,pos);
       container.setAttribute("title", "Workspace");
     }).then( () => {
