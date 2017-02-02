@@ -35,7 +35,7 @@ export default function (babel) {
 	  	};
 	  	var __tr_depth__=0; 
 	  	var __tr_root__  = { children: [] };
-	  	window.__tr__root = __tr_root__
+	  	window.__tr__root__ = __tr_root__
 	  	var __tr_current__=__tr_root__`)())
 	  	
 

@@ -134,9 +134,9 @@ export default class Inspector   extends Morph {
       }
     })
     var tagNode = node.querySelector("#tagname");
-    if (tagNode) tagNode.onclick = (evt) => {
+    if (tagNode) tagNode.addEventListener('click',(evt) => {
       this.onSelect(node, obj);
-    };
+    });
   }
   
   renderAttributes(node, obj) {
@@ -177,7 +177,7 @@ export default class Inspector   extends Morph {
     var gt = "<span class='syntax'>&gt;</span>";
     node.innerHTML = this.expandTemplate(node)  + 
       (obj.tagName && !obj.livelyIsParentPlaceholder ? lt : "")+
-      `<a id='tagname' class='tagname'>${tagName.toLowerCase()}</a>`+
+      `<a id='tagname' class='expand tagname'>${tagName.toLowerCase()}</a>`+
       `<span id='attributes'></span>` +
       (obj.tagName && !obj.livelyIsParentPlaceholder ? gt : "")+
       this.contentTemplate +
