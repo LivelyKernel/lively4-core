@@ -312,6 +312,10 @@ export default class AceEditor extends HTMLElement {
     return this.doitContext
   }
 
+  setDoitContext(context) {
+    return this.doitContext = context;
+  }
+
   getTargetModule() {
     return this.targetModule;
   }
@@ -565,6 +569,8 @@ export default class AceEditor extends HTMLElement {
   }
   
   livelyMigrate(other) {
+    this.editor.setValue(other.editor.getValue())
+    this.editor.setValue(other.editor.getValue())
     this.editor.setValue(other.editor.getValue())
   }
   
