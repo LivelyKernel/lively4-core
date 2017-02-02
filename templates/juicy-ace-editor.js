@@ -334,7 +334,7 @@ export default class AceEditor extends HTMLElement {
     if(MODULE_MATCHER.test(this.getTargetModule())) {
       await System.import(this.getTargetModule())
     }
-    return () => boundEval(str, this.getDoitContext(), this.getTargetModule());
+    return boundEval(str, this.getDoitContext(), this.getTargetModule());
   }
 
   printResult(result) {
