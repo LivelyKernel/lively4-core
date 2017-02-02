@@ -8,7 +8,7 @@ export default async function boundEval(source, thisReference, bindingModule) {
     
     // binding module
     window.__topLevelVarRecorder_ModuleName__ = bindingModule;
-
+    debugger
     // source
     // TODO: we currently use a newly generated UUID on each evaluation to trick SystemJS into actually loading it (therefore, we use codeId):
     let codeId = generateUUID();
