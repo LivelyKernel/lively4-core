@@ -22,7 +22,6 @@ export default class AstExplorer extends Morph {
   initialize() {
 
     this.windowTitle = "AST Explorer";  // #TODO why does it not work?
-    this.dispatchEvent(new CustomEvent("initialize"));
 
     // lets work with properties until we get access to the module state again
     this.babel = babel
@@ -79,6 +78,8 @@ export default class AstExplorer extends Morph {
     //  console.error(e);
       // throw new Error("Could not initialize AST-Explorer " + e);
     //}
+    this.dispatchEvent(new CustomEvent("initialize"));
+
   }
   
   async updateAST() {
@@ -168,7 +169,7 @@ export default class AstExplorer extends Morph {
           logNode.textContent += s + "\n"
         }
         var result =  eval('' +this.result.code);
-        this.get("#result").textContent += "  -> " + result;       
+        this.get("#result").textContent += "-> " + result;       
       } catch(e) {
         this.get("#result").textContent = "Error: " + e
       } finally {
@@ -184,8 +185,11 @@ export default class AstExplorer extends Morph {
   livelyMigrate(other) {
     this.addEventListener("initialize", () => {
       this.get("#source").editor.setValue(other.get("#source").editor.getValue())
+      this.get("#plugin").setURL(other.get("#plugin").getURL())
+      debugger
       this.get("#plugin").currentEditor().setValue(
         other.get("#plugin").currentEditor().getValue())
+      
       this.get("#output").editor.setValue(other.get("#output").editor.getValue()) 
     
       this.result = other.result
