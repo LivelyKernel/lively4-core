@@ -57,7 +57,8 @@ export default class Inspector   extends Morph {
     var className = obj.constructor.name;
     
     node.innerHTML = `${this.expandTemplate(node)}`+
-      ` <a id='tagname' class='tagname'>${name} ${className}</a> `+
+      ` <span class='attrName expand'> ${name}</span><span class="syntax">:</span>
+      <a id='tagname' class='tagname'>${className}</a> `+
       '<span class="syntax">{'+"</span>" +
        this.contentTemplate +
       '<span class="syntax">}'+"</span>";
@@ -106,7 +107,7 @@ export default class Inspector   extends Morph {
   }
   
   expandTemplate(node) {
-    return "<span class='syntax'><a id='expand'>" +
+    return "<span class='syntax'><a class='expand'>" +
       (node.isExpanded ? 
         "<span style='font-size:9pt'>&#9660;</span>" : 
         "<span style='font-size:7pt'>&#9654</span>") + "</span></a></span>";
@@ -127,10 +128,11 @@ export default class Inspector   extends Morph {
     if (moreNode) moreNode.onclick = (evt) => {
       this[renderCall](node, obj, true, name);
     };
-    var expandNode = node.querySelector("#expand");
-    if (expandNode) expandNode.onclick = (evt) => {
-      this[renderCall](node, obj, !node.isExpanded, name);
-    };
+    node.querySelectorAll(".expand").forEach(expandNode => {
+      expandNode.onclick = (evt) => {
+        this[renderCall](node, obj, !node.isExpanded, name);
+      }
+    })
     var tagNode = node.querySelector("#tagname");
     if (tagNode) tagNode.onclick = (evt) => {
       this.onSelect(node, obj);
@@ -343,8 +345,10 @@ export default class Inspector   extends Morph {
         keys.push(i);
       }
     }
-    if (this.getAttribute("type") != "ast")
-      keys.push("__proto__")
+    if (this.getAttribute("type") != "ast") {
+      if (obj && this.allKeys(obj.__proto__).length > 0)
+        keys.push("__proto__")
+    }
     return _.sortBy(keys)
   }
   
