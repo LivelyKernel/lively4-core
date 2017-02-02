@@ -93,15 +93,24 @@ if (window.lively && window.lively4url) {
       transpiler: 'plugin-babel'
     })
     
-    await System.import('babel-plugin-doit-result');
+/*    await System.import('babel-plugin-doit-result');
     await System.import('babel-plugin-doit-this-ref');
     await System.import('babel-plugin-locals');
     await System.import('babel-plugin-var-recorder');
-    //await System.import(lively4url + '/src/client/workspaces.js');
+  */  //await System.import(lively4url + '/src/client/workspaces.js');
     //await System.import('workspace-loader');
     
     SystemJS.config({
       meta: {
+        // plugins are not transpiled with other plugins, except for SystemJS-internal plugins
+        [lively4url + '/src/external/babel-plugin-*.js']: {
+          babelOptions: {
+            es2015: false,
+            stage2: false,
+            stage3: false,
+            plugins: []
+          }
+        },
         '*.js': {
           babelOptions: {
             es2015: false,
