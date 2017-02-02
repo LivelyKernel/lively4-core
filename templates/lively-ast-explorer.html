@@ -26,10 +26,7 @@
     flex: 0.5;
   }
   
-  #pluginPane {
-    flex: 0.5;
-  }
-  
+
   #sourcePane {
     flex: 0.33;
   }
@@ -44,8 +41,12 @@
   }
   
   
+  #pluginPane {
+    flex: 0.66;
+  }
+  
   #resultPane {
-    flex: 0.5;
+    flex: 0.33;
   }
 
   #outputPane, #sourcePane, #pluginPane, #resultPane, #astPane {
@@ -67,7 +68,11 @@
   }
   
   #resultPane pre {
-    margin-left: 15px;
+    flex: 1;
+    margin-left: 15px
+  }
+  #resultPane {
+    overflow: scroll;
   }
 
   </style>
@@ -78,14 +83,17 @@
   console.log(a + 4)
     </juicy-ace-editor>      
   </div>
+  <lively-separator leftselector="#sourcePane" leftflex="0.33" rightselector="#astPane" rightflex="0.33"></lively-separator>
   <div id="astPane">
     <lively-inspector id="astInspector" type="ast"></lively-inspector>
   </div>
-  <lively-separator leftselector="#sourcePane" rightselector="#outputPane"></lively-separator>
+  <lively-separator leftselector="#astPane" leftflex="0.33" rightselector="#outputPane" rightflex="0.33"></lively-separator>
   <div id="outputPane">
+    
     <div>Output <span  id="eval">
           <input type="checkbox" id="live" title="continous eval" checked/> run
       </span></div>
+    
     <juicy-ace-editor  id="output"></juicy-ace-editor>
   </div>   
 </div>
@@ -95,6 +103,7 @@
     <div>Plugin</div>
     <lively-editor  id="plugin"></lively-editor>
   </div>
+  <lively-separator leftselector="#pluginPane" leftflex="0.66" rightselector="#resultPane" rightflex="0.33"></lively-separator>
   <div id="resultPane">
     <div>Result</div>
       <pre id="result"></pre>

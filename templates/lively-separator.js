@@ -22,7 +22,14 @@ export default class Separator extends Morph {
   
   setLeftWidth(w) {
     var target = this.getLeftTarget();
-    target.style.width = w + "px";
+    var flex = this.getAttribute("leftflex")
+    if (flex !== undefined) {
+      flex = parseFloat(flex) 
+      var newFlex = w / this.originalWidth * flex
+      target.style.flex = newFlex
+    } else {
+      target.style.width = w + "px";
+    }
   }
 
   getRightTarget() {
@@ -41,6 +48,7 @@ export default class Separator extends Morph {
 
   onDragStart(evt) {
     this.originalWidth =  this.getLeftWidth();
+    // this.originalFlexLeft = this.getAttribute("leftflex")
     this.dragOffset = evt.clientX;
     evt.dataTransfer.setDragImage(document.createElement("div"), 0, 0); 
     evt.stopPropagation();
@@ -68,6 +76,7 @@ export default class Separator extends Morph {
   onDragEnd(evt) {
     // console.log("[separator] drag end")
     // Do nothing... 
+    this.setAttribute("leftflex", this.getLeftTarget().style.flex) 
 	  evt.stopPropagation();
   }
 

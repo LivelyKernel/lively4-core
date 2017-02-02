@@ -38,6 +38,7 @@ export default class AstExplorer extends Morph {
     lively.html.registerButtons(this);
 
     this.get("#plugin").get("juicy-ace-editor").doSave = () => {
+      this.get("#plugin").saveFile()
       this.updateAST()      
     };
     
@@ -166,8 +167,8 @@ export default class AstExplorer extends Morph {
           oldLog.apply(console, arguments)
           logNode.textContent += s + "\n"
         }
-        var result =  eval('' +this.result.code)
-        this.get("#result").textContent += "  -> " + result       
+        var result =  eval('' +this.result.code);
+        this.get("#result").textContent += "  -> " + result;       
       } catch(e) {
         this.get("#result").textContent = "Error: " + e
       } finally {
@@ -193,6 +194,7 @@ export default class AstExplorer extends Morph {
       
     })
   }
+  
   
   originalPositionFor(line, column) {
     var smc =  new sourcemap.SourceMapConsumer(this.result.map)
