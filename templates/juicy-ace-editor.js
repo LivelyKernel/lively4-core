@@ -329,7 +329,7 @@ export default class AceEditor extends HTMLElement {
     // return lively.vm.runEval(str, {targetModule: this.getTargetModule(), context: context})
     
     // src, topLevelVariables, thisReference, <- finalStatement
-    this.setTargetModule(this.getTargetModule() || 'module_' + generateUUID().replace(/-/g, '_'));
+    this.setTargetModule(this.getTargetModule());
     return boundEval(str, this.getDoitContext(), this.getTargetModule());
   }
 
