@@ -49,7 +49,17 @@ if (window.lively && window.lively4url) {
   Promise.resolve().then( () => {
     return loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/systemjs/system.src.js");
   }).then(async () => {
+    // setup var recorder object
     window._recorder_ = {_module_:{}}
+
+    const moduleOptionsNon = {
+      babelOptions: {
+        es2015: false,
+        stage2: false,
+        stage3: false,
+        plugins: []
+      }
+    };
     
     System.trace = true; // does not work in config
     
@@ -68,14 +78,7 @@ if (window.lively && window.lively4url) {
         plugins: []
       },
       meta: {
-        '*.js': {
-          babelOptions: {
-            es2015: false,
-            stage2: false,
-            stage3: false,
-            plugins: []
-          }
-        }
+        '*.js': moduleOptionsNon
       },
       map: {
         // #Discussion have to use absolute paths here, because it is not clear what the baseURL is
@@ -103,14 +106,7 @@ if (window.lively && window.lively4url) {
     SystemJS.config({
       meta: {
         // plugins are not transpiled with other plugins, except for SystemJS-internal plugins
-        [lively4url + '/src/external/babel-plugin-*.js']: {
-          babelOptions: {
-            es2015: false,
-            stage2: false,
-            stage3: false,
-            plugins: []
-          }
-        },
+        [lively4url + '/src/external/babel-plugin-*.js']: moduleOptionsNon,
         '*.js': {
           babelOptions: {
             es2015: false,
