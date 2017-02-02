@@ -331,11 +331,10 @@ export default class AceEditor extends HTMLElement {
     // src, topLevelVariables, thisReference, <- finalStatement
     // TODO: duplicate with var recorder plugin
     const MODULE_MATCHER = /.js$/;
-    return Promise.resolve(MODULE_MATCHER.test(this.getTargetModule() ?
-      System.import(this.getTargetModule()) :
-      {}
-    ))
-      .then(() => boundEval(str, this.getDoitContext(), this.getTargetModule()));
+    if(MODULE_MATCHER.test(this.getTargetModule())) {
+      await System.import(this.getTargetModule())
+    }
+    return () => boundEval(str, this.getDoitContext(), this.getTargetModule());
   }
 
   printResult(result) {
