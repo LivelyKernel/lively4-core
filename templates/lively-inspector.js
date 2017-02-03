@@ -4,6 +4,15 @@
  */
 import Morph from './Morph.js';
 
+
+function truncateString(s, length, truncation) {
+  length = length || 30;
+  truncation = truncation === undefined ? '...' : truncation;
+  return s.length > length ? s.slice(0, length - truncation.length) + truncation : String(s);
+}
+// truncateString("Hello World", 8, "...")
+
+
 export default class Inspector   extends Morph {
 
   initialize() {
@@ -12,6 +21,8 @@ export default class Inspector   extends Morph {
     }
     // lively.notify("[inspector] intialize");  
     this.get("#editor").enableAutocompletion();
+  
+    this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
   }
 
   displayValue(value, expand, name) {
@@ -26,6 +37,15 @@ export default class Inspector   extends Morph {
       return node;
     }
   }
+
+  onContextMenu(evt) {
+    if (!evt.shiftKey) { 
+      evt.preventDefault();
+	    lively.openContextMenu(document.body, evt, this);
+	    return false;
+    } 
+  }
+
 
   displayFunction(value, expand, name) {
     var node = document.createElement("div");
@@ -60,7 +80,7 @@ export default class Inspector   extends Morph {
       ` <span class='attrName expand'> ${name}</span><span class="syntax">:</span>
       <a id='tagname' class='tagname'>${className}</a> `+
       '<span class="syntax">{'+"</span>" +
-       this.contentTemplate +
+       this.contentTemplate() +
       '<span class="syntax">}'+"</span>";
   
     this.attachHandlers(node, obj, name, "renderObject");
@@ -113,8 +133,8 @@ export default class Inspector   extends Morph {
         "<span style='font-size:7pt'>&#9654</span>") + "</span></a></span>";
   }
   
-  get contentTemplate() {
-    return "<span id='content'><a id='more' class='more'>...</a></span>";
+  contentTemplate(content) {
+    return "<span id='content'><a id='more' class='more'>"+ (content ? content : "...")+ "</a></span>";
   }
 
   get quoteTemplate() {
@@ -180,17 +200,17 @@ export default class Inspector   extends Morph {
       `<a id='tagname' class='expand tagname'>${tagName.toLowerCase()}</a>`+
       `<span id='attributes'></span>` +
       (obj.tagName && !obj.livelyIsParentPlaceholder ? gt : "")+
-      this.contentTemplate +
+      this.contentTemplate(truncateString(obj.textContent, 40, "..")) +
       (obj.tagName && !obj.livelyIsParentPlaceholder ? 
         `${lt}/<span class='tagname'>${tagName.toLowerCase()}</span>${gt}` : "");
     if (tagName == "shadowroot") {
       node.innerHTML = this.expandTemplate(node) + "<a id='tagname' class='tagname'> #shadow-root</a>" +
-        this.contentTemplate; 
+        this.contentTemplate(); 
     }
     
     if (tagName == "comment") {
       node.innerHTML = "<a id='tagname' class='tagname'>&lt!-- </a>" + 
-        this.contentTemplate +" --&gt" ;
+        this.contentTemplate() +" --&gt" ;
     }
     // if (!node.isAutoExpanded) html = this.expandTemplate + html
   }
@@ -248,7 +268,7 @@ export default class Inspector   extends Morph {
   }
   
   displayText(obj, expanded, parent) {
-    node = document.createElement("span");
+    var node = document.createElement("span");
     node.setAttribute("class","element");
     this.render(node, obj, expanded); 
     return node;
@@ -352,6 +372,15 @@ export default class Inspector   extends Morph {
     return _.sortBy(keys)
   }
   
+  hideWorkspace() {
+    this.get("#container").style.flex = 1
+    this.get("#editor").style.display = "none"
+  }
+
+  showWorkspace() {
+    this.get("#container").style.flex = 0.66
+    this.get("#editor").style.display = "block"
+  }
   
   livelyMigrate(oldInstance) {
     this.inspect(oldInstance.targetObject) ;   

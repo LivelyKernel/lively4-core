@@ -14,14 +14,14 @@ export default class ContinuousEditor extends Morph {
 
     lively.html.registerButtons(this);
 
-    this.get("#traceInspector").get("#editor").style.display = "none";
+    this.get("#traceInspector").hideWorkspace()
 
     this.editorComp().doSave = () => {
       this.get("#source").saveFile();
       this.runCode();      
     };
     
-    this.editorComp.addEventListener("change", evt => 
+    this.editorComp().addEventListener("change", evt => 
       SyntaxChecker.checkForSyntaxErrors(this.editor()));
 
     // this.get("#source").get("juicy-ace-editor").editor.session.selection.on("changeSelection", (evt) => {
@@ -52,11 +52,9 @@ export default class ContinuousEditor extends Morph {
   }
   
   async runCode() {
-    debugger
     var src = this.editor().getValue();
   
     // this.get("#astInspector").inspect(this.ast)
-
     try {
       var src = this.editor().getValue();
       this.result = babel.transform(src, {
@@ -101,15 +99,19 @@ export default class ContinuousEditor extends Morph {
     } finally {
     
     }
-    if (window.__tr__root__)   
+    if (window.__tr__root__)   {
       this.get("#traceInspector").inspect(window.__tr__root__)
     
+  
+  
+    }
   }
 
   livelyMigrate(other) {
     this.addEventListener("initialize", () => {
       this.get("#source").setURL(other.get("#source").getURL())
       this.editor().setValue(other.editor().getValue())
+      this.runCode()
     })
   }
   

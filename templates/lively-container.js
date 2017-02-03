@@ -95,7 +95,7 @@ export default class Container extends Morph {
       evt.preventDefault();
 	    lively.openContextMenu(document.body, evt, undefined, this);
 	    return false;
-    } // Hallo Jens! Was macht Lively so?
+    } 
   }
   
   onFullscreen(evt) {
