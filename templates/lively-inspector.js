@@ -67,6 +67,7 @@ export default class Inspector   extends Morph {
     lively.showElement(obj);
     window.that = obj; // #Experimental
     this.get("#editor").doitContext = obj;
+    this.dispatchEvent(new CustomEvent("select-object", {detail: {node: node, object: obj}}));
   }
   
   renderObject(node, obj, expanded, name) {

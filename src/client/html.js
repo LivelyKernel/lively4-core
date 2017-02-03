@@ -4,13 +4,9 @@
  * Kitchensink for all HTML manipulation utilities
  */
 
+
 export default class HTML {
-  
-  static hello() {
-    alert("Hello World...");
-  }
-  
-  
+
   static findAllNodes(visit, all) {
   	if (!all) { all = new Set() }
   	if (!visit) { visit = document.querySelectorAll('*') }
@@ -204,3 +200,4 @@ export default class HTML {
     })
   }
 }
+

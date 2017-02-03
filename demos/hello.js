@@ -4,4 +4,9 @@ function b(c) {
 	return 3 + c
 }
 
-b()
+
+function d(c) {
+	return b(c) + 1
+}
+
+d()

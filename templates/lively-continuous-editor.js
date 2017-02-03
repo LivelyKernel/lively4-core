@@ -8,13 +8,16 @@ import traceBabelPlugin from "./lively-continuous-editor-plugin.js"
 export default class ContinuousEditor extends Morph {
 
   initialize() {
-    this.windowTitle = "Continos Editor";  // #TODO why does it not work?
+    this.windowTitle = "Continuous Editor";  // #TODO why does it not work?
     this.get("#source").setURL("https://lively-kernel.org/lively4/lively4-jens/demos/hello.js")
     this.get("#source").loadFile()
 
     lively.html.registerButtons(this);
 
     this.get("#traceInspector").hideWorkspace()
+
+    this.get("#traceInspector").addEventListener("select-object", 
+      evt => this.selectCallTraceNode(evt))
 
     this.editorComp().doSave = () => {
       this.get("#source").saveFile();
@@ -41,6 +44,27 @@ export default class ContinuousEditor extends Morph {
 		// }));
 		
     this.dispatchEvent(new CustomEvent("initialize"));
+  }
+  
+  hideMarker(markId) {
+    var marker = this.editorComp().shadowRoot.querySelector("." + markId)
+    if (marker) marker.style.backgroundColor = ''
+  }
+  
+  showMarker(markId) {
+    if (this.lastMarkId) {
+      this.hideMarker(this.lastMarkId)
+    }
+    this.lastMarkId = markId
+    var marker = this.editorComp().shadowRoot.querySelector("." + markId)
+    if (marker) marker.style.backgroundColor = 'blue'
+  }
+  
+  selectCallTraceNode(evt) {
+    var node = evt.detail.object;
+    if (node.markId) {
+      this.showMarker(node.markId)
+    }
   }
   
   editorComp() {
@@ -101,11 +125,38 @@ export default class ContinuousEditor extends Morph {
     }
     if (window.__tr__root__)   {
       this.get("#traceInspector").inspect(window.__tr__root__)
-    
-  
-  
+      this.clearMarkers()
+      this.markCallTree(window.__tr__root__)  
     }
   }
+
+  clearMarkers() {
+    this.lastMarkCounter = 0
+    var editor = this.editor();
+    var markers = editor.getSession().getMarkers();
+    for(var i in markers) {
+        if (markers[i].clazz == "marked") {
+            editor.getSession().removeMarker(i);
+        }
+    }
+  }
+
+  markCallTree(node) {
+    var Range = ace.require('ace/range').Range;
+    if (node.start && node.end) {
+    if (!node.markId) node.markId = 'tracemark' + this.lastMarkCounter++
+
+      var editor = this.editor()
+      var doc = editor.getSession().getDocument()
+      editor.session.addMarker(Range.fromPoints(
+        doc.indexToPosition(node.start),
+        doc.indexToPosition(node.end)), "marked " +  node.markId, "text", false); 
+    }
+    node.children.forEach(ea => {
+      this.markCallTree(ea)
+    })
+  }
+
 
   livelyMigrate(other) {
     this.addEventListener("initialize", () => {
