@@ -312,8 +312,12 @@ export default class AceEditor extends HTMLElement {
     return this.doitContext
   }
 
+  setDoitContext(context) {
+    return this.doitContext = context;
+  }
+
   getTargetModule() {
-    return this.targetModule || "workspace://1"
+    return this.targetModule;
   }
 
   setTargetModule(module) {
@@ -321,12 +325,15 @@ export default class AceEditor extends HTMLElement {
   }
 
   async boundEval(str, context) {
-    // using lively vm:
-    // return lively.vm.runEval(str, {targetModule: this.getTargetModule(), context: context})
-    
+    // Ensure target module loaded (for .js files only)
+    // TODO: duplicate with var recorder plugin
+    const MODULE_MATCHER = /.js$/;
+    if(MODULE_MATCHER.test(this.getTargetModule())) {
+      await System.import(this.getTargetModule())
+    }
+
     // src, topLevelVariables, thisReference, <- finalStatement
-    this.__module_recording_id__ = this.__module_recording_id__ || 'module_' + generateUUID().replace(/-/g, '_');
-    return boundEval(str, this.getDoitContext(), this.__module_recording_id__);
+    return boundEval(str, this.getDoitContext(), this.getTargetModule());
   }
 
   printResult(result) {
@@ -565,6 +572,8 @@ export default class AceEditor extends HTMLElement {
   }
   
   livelyMigrate(other) {
+    this.editor.setValue(other.editor.getValue())
+    this.editor.setValue(other.editor.getValue())
     this.editor.setValue(other.editor.getValue())
   }
   
