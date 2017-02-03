@@ -45,6 +45,11 @@ export default class Container extends Morph {
       };
       var path = lively.preferences.getURLParameter("load");
       var edit = lively.preferences.getURLParameter("edit");
+      // force read mode
+      if(this.getAttribute("mode") == "read") {
+        path = edit
+        edit = undefined
+      }
       if (path) {
           this.setPath(path);
       } else if (edit) {
@@ -891,10 +896,15 @@ export default class Container extends Morph {
         this.sourceContent = content;
         if (render) return this.appendHtml("<pre><code>" + content +"</code></pre>");
       }
-    }).catch(function(err){
+    }).then(() => {
+      this.dispatchEvent(new CustomEvent("path-changed", {url: this.getURL()}));
+    })
+    .catch(function(err){
       console.log("Error: ", err);
       lively.notify("ERROR: Could not set path: " + path,  "because of: ", err);
     });
+    
+    
   }
 
   navigateToName(name) {
