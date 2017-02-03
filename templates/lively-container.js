@@ -46,7 +46,7 @@ export default class Container extends Morph {
       var path = lively.preferences.getURLParameter("load");
       var edit = lively.preferences.getURLParameter("edit");
       // force read mode
-      if(this.getAttribute("mode") == "read") {
+      if(this.getAttribute("mode") == "read" && edit) {
         path = edit
         edit = undefined
       }
