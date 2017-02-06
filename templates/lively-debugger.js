@@ -10,7 +10,7 @@ export default class Debugger extends Morph {
     this.currentCallFrame = null;
     this.highlightedLineId = null;
     this.scopeList = document.createElement('ul');
-    this.breakPoints = {}; // mapping: scriptId => {lineNumber => breakpointId}
+    this.breakPoints = {}; // mapping: scriptId => {lineNumberN0 => breakpointId}
     this.Range = ace.require('ace/range').Range;
 
     this.targetList = this.getSubmorph('#targetList');
@@ -83,21 +83,23 @@ export default class Debugger extends Morph {
       let text,
           editor = this.codeEditor,
           sel = editor.getSelectionRange(),
-          start = sel.start.row,
+          start = sel.start.row + 1, // 0-based
           bracketCount = null,
-          currline = start;
+          currlineNumber = start;
+      var line = editor.session.getLine(currlineNumber);
       while (!bracketCount || bracketCount > 0) {
-        var line = editor.session.getLine(currline);
-        if (line.length == 0) {
-          break;
+        if (Math.abs(bracketCount) > 2000) {
+          alert('Unable to match brackets');
         }
         bracketCount += (line.match(/{/g) || []).length;
         bracketCount -= (line.match(/}/g) || []).length;
-        currline += 1;
+        currlineNumber += 1;
+        line = editor.session.getLine(currlineNumber);
+        if (line.length == 0) break;
       }
       return {
-        start: start + 2,
-        end: currline
+        start: start + 1, // next line
+        end: currlineNumber
       };
     };
     this.codeEditor.commands.addCommand({
@@ -120,34 +122,34 @@ export default class Debugger extends Morph {
     this.codeEditor.on("guttermousedown", (e) => {
       if (!this._ensureCurrentCallFrame()) return;
       var scriptId = this._selectedScriptId();
-      var lineNumber = e.getDocumentPosition().row;
+      var lineNumberN0 = e.getDocumentPosition().row; // 0-based
       var method, params;
-      if (lineNumber in this.codeEditor.session.getBreakpoints()) {
+      if (lineNumberN0 in this.codeEditor.session.getBreakpoints()) {
         method = 'Debugger.removeBreakpoint';
-        if (!(scriptId in this.breakPoints) || !(lineNumber in this.breakPoints[scriptId])) {
-          alert(`Cannot find breakpointId for line #${lineNumber}`);
+        if (!(scriptId in this.breakPoints) || !(lineNumberN0 in this.breakPoints[scriptId])) {
+          alert(`Cannot find breakpointId for line #${lineNumberN0 + 1}`);
           debugger;
           return;
         }
-        var breakPointId = this.breakPoints[scriptId][lineNumber];
-        delete this.breakPoints[scriptId][lineNumber];
+        var breakPointId = this.breakPoints[scriptId][lineNumberN0];
+        delete this.breakPoints[scriptId][lineNumberN0];
         params = { breakpointId: breakPointId };
       } else {
         method = 'Debugger.setBreakpoint';
         params = {
           location: {
             scriptId: scriptId,
-            lineNumber: lineNumber + 2 // ace rows start at 0
+            lineNumber: lineNumberN0 // expects 0-based lineNumber
           }
         };
       }
       this.sendCommandToDebugger(method, params).then((res) => {
-        this.dispatchBreakpointResult(scriptId, res);
+        this.dispatchBreakpointResult(scriptId, lineNumberN0, res);
       });
     });
   }
   
-  dispatchBreakpointResult(scriptId, res) {
+  dispatchBreakpointResult(scriptId, lineNumberN0, res) {
     if (!res) return; // command failed on background page
     if (res.actualLocation) {
       if (scriptId != res.actualLocation.scriptId) {
@@ -155,14 +157,14 @@ export default class Debugger extends Morph {
         debugger;
         return;
       }
-      var actualLineNumber = res.actualLocation.lineNumber;
+      var actualLineNumberN0 = res.actualLocation.lineNumber; // 0-based
       if (!(scriptId in this.breakPoints)) {
         this.breakPoints[scriptId] = {};
       }
-      this.breakPoints[scriptId][actualLineNumber - 2] = res.breakpointId;
-      this.codeEditor.session.setBreakpoint(actualLineNumber - 2);
+      this.breakPoints[scriptId][actualLineNumberN0] = res.breakpointId;
+      this.codeEditor.session.setBreakpoint(actualLineNumberN0);
     } else {
-      this.codeEditor.session.clearBreakpoint(lineNumber);
+      this.codeEditor.session.clearBreakpoint(lineNumberN0);
     }
   }
   
@@ -266,14 +268,14 @@ export default class Debugger extends Morph {
     if (!this._ensureCurrentCallFrame()) return;
     var scriptId = this._selectedScriptId();
     var startEnd = this.codeEditor.currentLocationToScropeEnd();
-    for (var i = startEnd.start; i < startEnd.end; i++) {
+    for (var i = startEnd.start; i <= startEnd.end; i++) {
       this.sendCommandToDebugger('Debugger.setBreakpoint', {
           location: {
             scriptId: scriptId,
-            lineNumber: i + 1
+            lineNumber: i - 1 // expects 0-based lineNumber
           }
       }).then((res) => {
-        this.dispatchBreakpointResult(scriptId, res);
+        this.dispatchBreakpointResult(scriptId, i - 1, res);
       });
     }
     this.sendCommandToDebugger('Debugger.resume');
@@ -288,6 +290,13 @@ export default class Debugger extends Morph {
         this.sendCommandToDebugger(`Debugger.${debugMethod}`);
       }, millisecondsBetweenSteps * i);
     }
+  }
+  
+  scriptableDebuggerButtonClick(evt) {
+    lively.openWorkspace("this.sendCommandToDebugger('Debugger.stepOver', {});",0).then((cmp) => {
+    	cmp.parentElement.setAttribute("title", 'Debugger Fun');
+    	cmp.setDoitContext(this);
+    })
   }
   
   restartFrameButtonClick(evt) {
@@ -307,8 +316,8 @@ export default class Debugger extends Morph {
   }
   
   breakpointsButtonClick(evt) {
-    var active = evt.target.classList.toggle('active');
-    this.sendCommandToDebugger('Debugger.setBreakpointsActive', {active: active });
+    var active = !evt.target.classList.toggle('active');
+    this.sendCommandToDebugger('Debugger.setBreakpointsActive', { active: active });
   }
   
   profilerButtonClick(evt) {
@@ -353,6 +362,10 @@ export default class Debugger extends Morph {
     }).then((res) => {
       if (res && res.scriptSource) {
         this.codeEditor.setValue(res.scriptSource);
+        this.codeEditor.session.clearBreakpoints();
+        if (this.highlightedLineId) {
+          this.codeEditor.session.removeMarker(this.highlightedLineId);
+        }
       } else {
         alert('Unable to retrieve scriptSource:', res);
         debugger;
@@ -399,7 +412,7 @@ export default class Debugger extends Morph {
       scriptId: currentScriptId
     }).then((res) => {
       if (res && res.scriptSource) {
-        var lineNumber = this.currentCallFrame.location.lineNumber - 2; // Chrome debugger to ace
+        var lineNumber = this.currentCallFrame.location.lineNumber + 1; // 0-based
         this._setScriptId(currentScriptId);
         this.codeEditor.setValue(res.scriptSource);
         this.codeEditor.gotoLine(lineNumber);
@@ -522,6 +535,7 @@ export default class Debugger extends Morph {
     this.scriptList.innerHTML = '';
     this.callFrameList.innerHTML = '';
     this.scopeList.innerHTML = '';
+    this.breakPoints = {};
   }
   
   _selectedTargetId() {
