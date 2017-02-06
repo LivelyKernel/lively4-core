@@ -17,7 +17,7 @@ export default class ContinuousEditor extends Morph {
     this.get("#traceInspector").hideWorkspace()
 
     this.get("#traceInspector").addEventListener("select-object", 
-      evt => this.selectCallTraceNode(evt))
+      evt => this.selectCallTraceNode(evt.detail.object))
 
     this.editorComp().doSave = () => {
       this.get("#source").saveFile();
@@ -27,28 +27,22 @@ export default class ContinuousEditor extends Morph {
     this.editorComp().addEventListener("change", evt => 
       SyntaxChecker.checkForSyntaxErrors(this.editor()));
 
-    // this.get("#source").get("juicy-ace-editor").editor.session.selection.on("changeSelection", (evt) => {
-    //   this.onSourceSelectionChanged(evt)
-    // });
-    
-    // this.get("#source").get("juicy-ace-editor").editor.session.selection.on("changeCursor", (evt) => {
-    //   this.onSourceSelectionChanged(evt)
-    // });
-
-
-    // this.get("#plugin").currentEditor()
-  //   [this.get("#source").get("juicy-ace-editor")].forEach(ea => ea.editor.session.setOptions({
-		// 	mode: "ace/mode/javascript",
-  //   	tabSize: 2,
-  //   	useSoftTabs: true
-		// }));
-		
     this.dispatchEvent(new CustomEvent("initialize"));
   }
   
   hideMarker(markId) {
     var marker = this.editorComp().shadowRoot.querySelector("." + markId)
     if (marker) marker.style.backgroundColor = ''
+    
+    var traceNode = this.get("#traceView").querySelector("#" + markId)
+    if (traceNode ) {
+       traceNode.classList.remove("selected")
+    }
+    
+    var resultNode = this.get("#markerLayer").querySelector("#" + markId)
+    if (resultNode ) {
+       resultNode.classList.remove("selected")
+    }
   }
   
   showMarker(markId) {
@@ -57,16 +51,26 @@ export default class ContinuousEditor extends Morph {
     }
     this.lastMarkId = markId
     var marker = this.editorComp().shadowRoot.querySelector("." + markId)
-    if (marker) marker.style.backgroundColor = 'blue'
+    if (marker) marker.style.backgroundColor = 'rgba(0,0,255,0.5)'
+
+    var traceNode = this.get("#traceView").querySelector("#" + markId)
+    if (traceNode ) {
+       traceNode.classList.add("selected")
+    }
+    
+    var resultNode = this.get("#markerLayer").querySelector("#" + markId)
+    if (resultNode ) {
+       resultNode.classList.add("selected")
+    }
   }
   
-  selectCallTraceNode(evt) {
-    var node = evt.detail.object;
+  selectCallTraceNode(node) {
+    this.selectedNode = node
     if (node.markId) {
       this.showMarker(node.markId)
     }
   }
-  
+
   editorComp() {
     return this.get("#source").get("juicy-ace-editor");
   }
@@ -143,10 +147,9 @@ export default class ContinuousEditor extends Morph {
     var node = document.createElement("div");
     node.setAttribute("class", "traceNode")
     node.innerHTML = "<div class='traceLabel'> " + tree.code +" -> "  + tree.value + "</div>"
+    node.id = tree.markId
     node.addEventListener("click", (evt) => {
-      if (tree.markId) {
-        this.showMarker(tree.markId)
-      }
+      this.selectCallTraceNode(tree)
       evt.stopPropagation()
     })
 
@@ -162,7 +165,7 @@ export default class ContinuousEditor extends Morph {
     var editor = this.editor();
     var markers = editor.getSession().getMarkers();
     for(var i in markers) {
-        if (markers[i].clazz == "marked") {
+        if (markers[i].clazz == "marked_invisible") {
             editor.getSession().removeMarker(i);
         }
     }
@@ -177,7 +180,7 @@ export default class ContinuousEditor extends Morph {
       var doc = editor.getSession().getDocument()
       editor.session.addMarker(Range.fromPoints(
         doc.indexToPosition(node.start),
-        doc.indexToPosition(node.end)), "marked " +  node.markId, "text", false); 
+        doc.indexToPosition(node.end)), "marked_invisible " +  node.markId, "text", false); 
     }
     node.children.forEach(ea => {
       this.markCallTree(ea)
@@ -211,9 +214,17 @@ export default class ContinuousEditor extends Morph {
         resultNode.style.margin = "2px"
         resultNode.style.paddingLeft = "1px"
         resultNode.style.paddingRight = "1px"
+        resultNode.classList.add(node.markId)
 
         resultNode.style.border = "solid 1px gray"
         resultNode.innerHTML =  node.code + " = " + node.value ;
+        resultNode.id = node.markId
+        resultNode.addEventListener("click", (evt) => {
+            this.selectCallTraceNode(node)
+            evt.stopPropagation()
+        })
+      
+
         markerLine.insertBefore(resultNode, markerLine.childNodes[0]);
       }
     }    

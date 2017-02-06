@@ -6,7 +6,7 @@ function b(c) {
 
 
 function d(c) {
-	return b(c) + 1
+	return b(c) *2
 }
 
 d(1) + d(2)
