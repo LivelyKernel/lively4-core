@@ -18,11 +18,11 @@
   }
   
   #sourcePane {
-    flex: 1;
+    flex: 0.5;
   }
   
   #tracePane {
-    flex: 1;
+    flex: 0.5;
   }
   
   #sourcePane, #tracePane {
@@ -39,16 +39,50 @@
     height: 100%;
   }
   
+  #traceView {
+    flex: 0.5;
+    background-color: lightgray; 
+    overflow: scroll;
+  }
+  
+  .traceLabel {
+    background-color: rgba(0,0,255,0.1);
+    border: 1px solid gray;
+    padding: 1px;
+  }
+  .traceNode {
+    patting-top: 10px;
+    patting-bottom: 10px;
+    padding-right: 10px;
+    padding-left: 10px;
+    float: left;
+  }
+  
+  #resultPane {
+
+  }
+  
+  #markerLayer {
+    background-color: rgba(0,0,255,0.1);
+
+    overflow: visible;
+  }
+
   </style>
   <div id="firstRow">
     <div id="sourcePane">
       <lively-editor  id="source"></lively-editor>
+    </div>
+    <div id="resultPane">
+      <div id="markerLayer">....</div>
     </div>
 </div>
 
 <div id="secondRow">
   <div id="tracePane">
     <lively-inspector id="traceInspector" type="ast"></lively-inspector>
+  </div>
+  <div id="traceView"></div>
   </div>
 </div>
 

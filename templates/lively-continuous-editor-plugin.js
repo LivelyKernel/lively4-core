@@ -1,6 +1,6 @@
 export default function (babel) {
   const { types: t, template, transformFromAst } = babel;
-  let log = template("_tr_(NAME,() => EXPSTATE, START, END)")
+  let log = template("_tr_(NAME,CODE,() => EXPSTATE, START, END)")
   return {
     name: "ast-transform", // not required
     visitor: { 
@@ -12,7 +12,7 @@ export default function (babel) {
         	/* ... */
         });
 
-	  	path.unshiftContainer('body', template(`function _tr_(code, exp, start, end) {
+	  	path.unshiftContainer('body', template(`function _tr_(name, code, exp, start, end) {
 	  			console.log("  ".repeat(__tr_depth__) + code)
 	  			
 	  			var node = {start: start, end: end, children: []}
@@ -25,7 +25,8 @@ export default function (babel) {
 	  			__tr_depth__++
 	  			var value = exp()
 	  			__tr_depth__--
-	  			
+	  			node.code = code
+	  			node.name = name
 	  			node.value = value;
 	  			
 	  			__tr_current__ = parent
@@ -51,7 +52,8 @@ export default function (babel) {
 			
         	ea.replaceWith(log({
         		EXPSTATE: ea,
-        		NAME: t.stringLiteral("" + ast.code),
+        		NAME: t.stringLiteral("" + ea.node.operator),
+        		CODE: t.stringLiteral("" + ast.code),
         		START: t.numberLiteral(ea.node.start !== undefined ? ea.node.start : -1),
         		END: t.numberLiteral(ea.node.end  !== undefined ? ea.node.end : -1)
         	}))

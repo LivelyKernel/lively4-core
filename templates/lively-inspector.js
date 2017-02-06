@@ -76,6 +76,9 @@ export default class Inspector   extends Morph {
       name = "";
     }
     var className = obj.constructor.name;
+    if (this.isAstMode() && obj.type) {
+      className = obj.type
+    }
     
     node.innerHTML = `${this.expandTemplate(node)}`+
       ` <span class='attrName expand'> ${name}</span><span class="syntax">:</span>
@@ -366,11 +369,15 @@ export default class Inspector   extends Morph {
         keys.push(i);
       }
     }
-    if (this.getAttribute("type") != "ast") {
+    if (!this.isAstMode()) {
       if (obj && this.allKeys(obj.__proto__).length > 0)
         keys.push("__proto__")
     }
     return _.sortBy(keys)
+  }
+  
+  isAstMode() {
+    return this.getAttribute("type") == "ast"
   }
   
   hideWorkspace() {

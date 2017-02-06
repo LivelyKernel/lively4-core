@@ -126,9 +126,36 @@ export default class ContinuousEditor extends Morph {
     if (window.__tr__root__)   {
       this.get("#traceInspector").inspect(window.__tr__root__)
       this.clearMarkers()
-      this.markCallTree(window.__tr__root__)  
+      this.traceRoot = window.__tr__root__
+      this.markCallTree(this.traceRoot)
+      this.updateTraceView(this.traceRoot)
+      
+      setTimeout(() => this.updateMarkerResults(this.traceRoot),0 )
     }
   }
+
+  updateTraceView(tree) {
+    this.get("#traceView").innerHTML = ""
+    this.printTraceNode(this.get("#traceView"), tree)
+  }
+
+  printTraceNode(parent, tree) {
+    var node = document.createElement("div");
+    node.setAttribute("class", "traceNode")
+    node.innerHTML = "<div class='traceLabel'> " + tree.code +" -> "  + tree.value + "</div>"
+    node.addEventListener("click", (evt) => {
+      if (tree.markId) {
+        this.showMarker(tree.markId)
+      }
+      evt.stopPropagation()
+    })
+
+    parent.appendChild(node)
+    tree.children.forEach( ea => {
+      this.printTraceNode(node, ea)
+    })
+  }
+
 
   clearMarkers() {
     this.lastMarkCounter = 0
@@ -157,11 +184,47 @@ export default class ContinuousEditor extends Morph {
     })
   }
 
+  updateMarkerResults(node) {
+    // this.updateMarkerResults(this.traceRoot)
+    this.get('#markerLayer').innerHTML = ""
+    this.markerLines = {};
+
+    var parentBounds = this.getBoundingClientRect()
+    this.updateMarkerResultsEach(this.get('#markerLayer'), node, parentBounds)
+  }
+  
+  updateMarkerResultsEach(markerLayer, node, parentBounds) {
+    if (node.markId) {
+      var marker = this.editorComp().shadowRoot.querySelector("." + node.markId)
+      if (marker) {
+        var bounds = marker.getBoundingClientRect();
+        var markerLine = this.markerLines[bounds.top]
+        if (!markerLine) {
+          var markerLine = document.createElement("div");
+          markerLine.style.position = "absolute";
+          markerLine.style.top  = (bounds.top - parentBounds.top) + "px";
+          this.markerLines[bounds.top] = markerLine;
+          markerLayer.appendChild(markerLine);
+        }
+        var resultNode = document.createElement("div");
+        resultNode.style.float = "left"
+        resultNode.style.margin = "2px"
+        resultNode.style.paddingLeft = "1px"
+        resultNode.style.paddingRight = "1px"
+
+        resultNode.style.border = "solid 1px gray"
+        resultNode.innerHTML =  node.code + " = " + node.value ;
+        markerLine.insertBefore(resultNode, markerLine.childNodes[0]);
+      }
+    }    
+    node.children.forEach(ea => this.updateMarkerResultsEach(markerLayer, ea, parentBounds))
+  }
 
   livelyMigrate(other) {
     this.addEventListener("initialize", () => {
       this.get("#source").setURL(other.get("#source").getURL())
       this.editor().setValue(other.editor().getValue())
+      this.editor().selection.setRange(other.editor().selection.getRange())
       this.runCode()
     })
   }

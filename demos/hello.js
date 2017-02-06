@@ -9,4 +9,14 @@ function d(c) {
 	return b(c) + 1
 }
 
-d()
+d(1) + d(2)
+
+
+
+
+
+
+
+
+
+
