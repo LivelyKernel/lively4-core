@@ -1,0 +1,55 @@
+<h1>Dreiecksproblem</h1>
+
+
+
+
+<div id="result"></div>
+
+
+<script>
+
+var triangleSet= new Set()
+var triangles = []
+
+// simple edges
+var graph = `AB,AC,AD,AE,BC,BP,CD,CG,DH,DE,EK,EH,FG,FI,GH,GI,HJ,IJ,JK,`  
+
+// longer edges
+graph += `AF,AG,AH,AI,AJ,AK,BD,BE,CE,CI,CE,DJ,EG,EF,FH,FJ,FK,IK`
+
+var edges = graph.split(/,/)
+
+function triangle(e1,e2,e3) {
+  var hist = {};
+  // every point ocurs 2 times in all three edges
+  (e1 + e2 + e3).split("").forEach(ea => {
+    if (!hist[ea]) hist[ea] = 0;
+    hist[ea] += 1
+  })
+  if (Object.keys(hist).length == 3 && !Object.values(hist).find( ea => ea != 2)) {
+   return "[" +[e1, e2, e3].sort() +"]"
+  }
+}
+
+
+edges.forEach( e1 => {
+  edges.forEach( e2 => {
+    edges.forEach( e3 => {
+      var t = triangle(e1,e2,e3)
+      var key = t
+      if (t && !triangleSet.has(key)) {
+        triangleSet.add(key)
+        triangles.push(t)
+      }
+    })
+  })
+})
+
+// var triangles = []
+// triangleSet.forEach( ea => triangles.push(ea))
+
+document.querySelector("#result").innerHTML = "Graph: " + graph + " Triangles: " + triangles + "SUM"+  triangles.length + " PROBLEM: This finds degenerated triangles.... better would have been to model them not with a edges of a graph, but by using lines..." 
+
+</script>
+
+

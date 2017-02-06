@@ -104,6 +104,7 @@ export default class ContextMenu {
       ["TestRunner",         (evt) => this.openComponentInWindow("lively-testrunner", evt)],
       ["Component Bin",   (evt) => this.openComponentInWindow("lively-component-bin", evt),
        "CMD+O"],
+      ['Debugger',     (evt) => this.openComponentInWindow("lively-debugger", evt)],
       !document.webkitIsFullScreen ?
         ["Enter fullscreen", (evt) => 
           document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)] :

@@ -116,6 +116,27 @@ function getItem(key) {
   });
 }
 
+function getItems() {
+  return new Promise(function (resolve, reject) {
+    return openStore('readonly').then(function (store) {
+      var req = store.getAll();
+
+      req.onsuccess = function () {
+        var value = req.result;
+        if (value === undefined) {
+          value = null;
+        }
+
+        resolve(value);
+      };
+
+      req.onerror = function () {
+        reject(req.error);
+      };
+    }).catch(reject);
+  });
+}
+
 function setItem(key, value) {
   return new Promise(function (resolve, reject) {
     return openTransaction('readwrite').then(function (transaction) {
@@ -300,6 +321,7 @@ var focalStorage = {
   INDEXEDDB: 0,
   LOCALSTORAGE: 1,
   getItem: getItem,
+  getItems: getItems,
   setItem: setItem,
   removeItem: removeItem,
   clear: clear,

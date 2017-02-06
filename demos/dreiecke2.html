@@ -1,0 +1,31 @@
+<h1>Dreiecksproblem</h1>
+
+
+
+
+<pre id="result"></pre>
+
+
+<script>
+
+var triangles = []
+var lines = ["ABF", "ACGI", "ADHJ", "AEK", "BCDE", "FGHE", "FIJK"]
+var points = "ABCDEFGHIJK".split("")
+
+points.forEach( (p1, i1) => {
+  points.forEach( (p2, i2) => {
+    points.forEach( (p3, i3) => {
+      if (! (i1 < i2 && i2 < i3)) return
+      var l = lines.filter( ea => 
+        (ea.match(p1) && ea.match(p2)) 
+        || (ea.match(p1) && ea.match(p3)) 
+        || (ea.match(p2) && ea.match(p3)))
+      if (l.length == 3) triangles.push(p1 + p2 + p3)
+    })
+  })
+})
+
+document.querySelector("#result").innerHTML = "Triangles: " + triangles.join(", ") + "\nSUM:"+  triangles.length
+</script>
+
+
