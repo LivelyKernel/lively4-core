@@ -148,7 +148,8 @@ export default class ContinuousEditor extends Morph {
   printTraceNode(parent, tree) {
     var node = document.createElement("div");
     node.setAttribute("class", "traceNode")
-    node.innerHTML = "<div class='traceLabel'> " + tree.code +" -> "  + tree.value + "</div>"
+    node.innerHTML = "<div class='traceLabel'> " + (tree.code ? tree.code : "") + 
+      (tree.value ? ":"  + tree.value : "") + "</div>"
     node.id = tree.markId
     node.addEventListener("click", (evt) => {
       this.selectCallTraceNode(tree)
@@ -206,17 +207,18 @@ export default class ContinuousEditor extends Morph {
         var markerLine = this.markerLines[bounds.top]
         if (!markerLine) {
           var markerLine = document.createElement("div");
+          markerLine.classList.add("markerLine")      
           markerLine.style.position = "absolute";
           markerLine.style.top  = (bounds.top - parentBounds.top) + "px";
           this.markerLines[bounds.top] = markerLine;
           markerLayer.appendChild(markerLine);
         }
-        var resultNode = document.createElement("div");
+        var resultNode = document.createElement("span");
         resultNode.classList.add("markerResult")
         resultNode.classList.add(node.markId)
 
-      
-        resultNode.innerHTML =  node.code + " = " + node.value ;
+        // node.code + " = " +
+        resultNode.innerHTML = node.value ;
         resultNode.id = node.markId
         resultNode.addEventListener("click", (evt) => {
             this.selectCallTraceNode(node)
@@ -224,7 +226,8 @@ export default class ContinuousEditor extends Morph {
         })
       
 
-        markerLine.insertBefore(resultNode, markerLine.childNodes[0]);
+        markerLine.appendChild(resultNode)
+        // markerLine.insertBefore(resultNode, markerLine.childNodes[0]);
       }
     }    
     node.children.forEach(ea => this.updateMarkerResultsEach(markerLayer, ea, parentBounds))
