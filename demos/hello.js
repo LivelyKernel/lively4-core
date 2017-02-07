@@ -1,15 +1,33 @@
-var a = 3
+var a = 0
 
 function b(c) {
-	return 3 + c
+	return c * c
 }
 
+for (var i=0; i < 2; i++) {
+  a = a + b(i)
+}
+a
 
-function d(c) {
-	return b(c) *2
+
+
+
+
+
+
+
+
+
+var a = 0
+
+function b(c) {
+	return c * c
 }
 
-d(1) + d(2)
+for (var i=0; i < 2; i++) {
+  a = a + b(i)
+}
+a
 
 
 

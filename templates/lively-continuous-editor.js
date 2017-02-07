@@ -3,6 +3,8 @@ import {babel} from 'systemjs-babel-build';
 import SyntaxChecker from 'src/client/syntax.js'
 import traceBabelPlugin from "./lively-continuous-editor-plugin.js"
 
+import localsBabelPlugin from 'babel-plugin-locals'
+
 //import lively from './../src/client/lively.js';
 
 export default class ContinuousEditor extends Morph {
@@ -87,7 +89,7 @@ export default class ContinuousEditor extends Morph {
       var src = this.editor().getValue();
       this.result = babel.transform(src, {
         babelrc: false,
-        plugins: [traceBabelPlugin],
+        plugins: [traceBabelPlugin, localsBabelPlugin],
         presets: [],
         filename: undefined,
         sourceFileName: undefined,
@@ -210,13 +212,10 @@ export default class ContinuousEditor extends Morph {
           markerLayer.appendChild(markerLine);
         }
         var resultNode = document.createElement("div");
-        resultNode.style.float = "left"
-        resultNode.style.margin = "2px"
-        resultNode.style.paddingLeft = "1px"
-        resultNode.style.paddingRight = "1px"
+        resultNode.classList.add("markerResult")
         resultNode.classList.add(node.markId)
 
-        resultNode.style.border = "solid 1px gray"
+      
         resultNode.innerHTML =  node.code + " = " + node.value ;
         resultNode.id = node.markId
         resultNode.addEventListener("click", (evt) => {
