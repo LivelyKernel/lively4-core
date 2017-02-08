@@ -294,7 +294,7 @@ export default class Debugger extends Morph {
   
   scriptableDebuggerButtonClick(evt) {
     lively.openWorkspace("this.sendCommandToDebugger('Debugger.stepOver', {});",0).then((cmp) => {
-    	cmp.parentElement.setAttribute("title", 'Debugger Fun');
+    	cmp.parentElement.setAttribute("title", 'Debugger Workspace');
     	cmp.setDoitContext(this);
     })
   }
