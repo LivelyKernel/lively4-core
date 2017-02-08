@@ -12,6 +12,9 @@ export default class Separator extends Morph {
     lively.addEventListener('lively', this,'drag', evt => this.onDrag(evt));
     lively.addEventListener('lively', this,'dragend', evt => this.onDragEnd(evt));
     lively.addEventListener('lively', this,'click', evt => this.onClick(evt));
+    
+    this.originalLengths = new Map()
+    this.originalFlexs = new Map()
   }
 
   getLeftTarget() {
@@ -65,9 +68,48 @@ export default class Separator extends Morph {
     return element.getBoundingClientRect().height
   }
 
+  getOriginalLength(element) {
+    if (!element) return 0
+    return this.originalLengths.get(element)
+  }
+
+  setOriginalLength(element, l) {
+    if (!element) return
+    return this.originalLengths.set(element, l)
+  }
+
+  getOriginalFlex(element) {
+    if (!element) return 0
+    return this.originalFlexs.get(element)
+  }
+
+  setOriginalFlex(element, l) {
+    if (!element) return
+    return this.originalFlexs.set(element, l)
+  }
+
+
+
   setHeight(element, h) {
     if (!element) return
-    element.style.height = h + "px";
+    var flex = this.getOriginalFlex(element)
+    if (flex > 0 ) {
+      var newFlex = h / this.getOriginalLength(element) * flex
+      // console.log("new flex " + newFlex)
+      this.setFlex(element, newFlex)
+    } else {
+      element.style.height = h + "px";
+    }
+  }
+
+  getFlex(element) {
+    if (!element) return 0
+    return parseFloat(getComputedStyle(element).flexGrow)
+  }
+
+  setFlex(element, f) {
+    if (!element) return
+    element.style.flex = f
   }
 
   onDragStart(evt) {
@@ -75,12 +117,17 @@ export default class Separator extends Morph {
     if (this.isHorizontal()) {
       var bottom = this.getBottomTarget();
       var top = this.getTopTarget();
-      if (top) this.originalTopHeight = this.getHeight(top);
-      if (bottom) this.originalBottomHeight = this.getHeight(bottom);
+
+      this.setOriginalLength(bottom, this.getHeight(bottom))
+      this.setOriginalLength(top, this.getHeight(top))
+
+      this.setOriginalFlex(bottom, this.getFlex(bottom))
+      this.setOriginalFlex(top, this.getFlex(top))
+
+
       this.dragOffsetY = evt.clientY;
     } else {
       this.originalWidth =  this.getLeftWidth();
-      // this.originalFlexLeft = this.getAttribute("leftflex")
       this.dragOffset = evt.clientX;
     }
     evt.dataTransfer.setDragImage(document.createElement("div"), 0, 0); 
@@ -142,8 +189,8 @@ export default class Separator extends Morph {
       var top = this.getTopTarget();
       var bottom = this.getBottomTarget()
       
-      var newTop = this.originalTopHeight + deltaY
-      var newBottom = this.originalBottomHeight - deltaY
+      var newTop = this.getOriginalLength(top) + deltaY
+      var newBottom = this.getOriginalLength(bottom) - deltaY
       
       // 2. constrain new values
       if (newTop < 0) {
