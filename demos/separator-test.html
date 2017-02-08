@@ -1,0 +1,69 @@
+<head>
+
+<style>
+  .container {
+    background-color: rgba(10,10,10,0.1);
+    padding: 0px;
+    width: 140px;
+  }
+  #a {
+    height: 100px;
+  }
+  #b {
+    height: 150px;
+  }
+
+  .a {
+    background-color: rgba(10,10,200,0.1);
+  }
+  .b {
+    background-color: rgba(10,200,10,0.1);
+  }
+  
+  #c2 {
+    display: flex;
+    flex-direction: column;
+    height: 200px;
+  }
+  
+  #a2 {
+    flex: 0.66;
+  }
+  
+  #b2 {
+    flex: 0.33;
+  }
+
+  td {
+    vertical-align: top;
+  }
+  
+</style>
+</head>
+
+<body>
+<h1>Interactive Separator Test Page</h1>
+
+<table>
+  <tr>
+    <td>
+      <h2>Fixed</h2>
+<div class="container">
+  <div id="a" class="a">This is object a</div>
+  <lively-separator id="s1" class="horizontal" topselector="#a" bottomselector="#b"></lively-separator>
+  <div id="b" class="b">This is object b</div>
+</div>
+    </td>
+    <td><h2>Flex</h2>
+<div id="c2" class="container">
+  <div id="a2" class="a">This is object a</div>
+  <lively-separator id="s2" class="horizontal" topselector="#a2" bottomselector="#b2"></lively-separator>
+  <div id="b2" class="b">This is object b</div>
+</div></td>
+  </tr>
+</table>
+
+
+
+
+</body>

@@ -185,7 +185,14 @@ export default class AceEditor extends HTMLElement {
   changeModeForFile(filename) {
     var modelist = ace.require("ace/ext/modelist");
     var mode = modelist.getModeForPath(filename).name;
+    
     this.changeMode(mode);
+    if (mode == "javascript" ) {
+      this.editor.session.setOptions({
+          	tabSize: 2,
+          	useSoftTabs: true
+      })
+    }
   }
 
   changeMode(mode) {

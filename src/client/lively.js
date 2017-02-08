@@ -572,6 +572,7 @@ export default class Lively {
     comp.style.height = "5px";
     comp.style.padding = "1px";
     comp.style.backgroundColor = 'rgba(255,0,0,0.5)';
+    comp.style.zIndex = 1000;
     comp.isMetaNode = true;
     document.body.appendChild(comp);
     lively.setPosition(comp, point);
@@ -579,6 +580,7 @@ export default class Lively {
 
     setTimeout( () => $(comp).remove(), 3000);
     // ea.getBoundingClientRect
+    return comp
   }
 
   static showSource(object, evt) {
