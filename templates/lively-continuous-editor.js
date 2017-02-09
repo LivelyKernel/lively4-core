@@ -29,6 +29,9 @@ export default class ContinuousEditor extends Morph {
     this.editorComp().addEventListener("change", evt => 
       SyntaxChecker.checkForSyntaxErrors(this.editor()));
 
+    this.editorComp().addEventListener("change", evt => 
+      this.onSourceChange(evt));
+
     this.dispatchEvent(new CustomEvent("initialize"));
   }
   
@@ -81,7 +84,13 @@ export default class ContinuousEditor extends Morph {
     return this.editorComp().editor
   }
   
+  onSourceChange(evt) {
+    this.runCode()
+  }
+  
   async runCode() {
+    this.ast = null; // clear
+    this.get("#log").innerHTML = ""
     var src = this.editor().getValue();
   
     // this.get("#astInspector").inspect(this.ast)
@@ -102,30 +111,27 @@ export default class ContinuousEditor extends Morph {
         resolveModuleSource: undefined
       })
     } catch(err) {
-      console.error(err);
-      lively.notify(err.name, err.message, 5, ()=>{}, 'red');
-      return;
+      this.get("#log").innerHTML = "" + err
     }
     
     try {
       // lively.notify("output: " + this.result.code)
       var result =  eval('' +this.result.code);
       // this.get("#result").textContent += "-> " + result;       
-    } catch(e) {
+    } catch(err) {
         
-      this.get("#source").currentEditor().getSession().setAnnotations(err.stack.split('\n')
-        .filter(line => line.match('runCode???'))
-        .map(line => {
-          let [row, column] = line
-            .replace(/.*<.*>:/, '')
-            .replace(/\)/, '')
-            .split(':')
-          return {
-            row: parseInt(row) - 1, column: parseInt(column), text: err.message, type: "error"
-          }
-        }));
-      throw e
-      // this.get("#result").textContent = "Error: " + e
+      // this.get("#source").currentEditor().getSession().setAnnotations(err.stack.split('\n')
+      //   .filter(line => line.match('runCode???'))
+      //   .map(line => {
+      //     let [row, column] = line
+      //       .replace(/.*<.*>:/, '')
+      //       .replace(/\)/, '')
+      //       .split(':')
+      //     return {
+      //       row: parseInt(row) - 1, column: parseInt(column), text: err.message, type: "error"
+      //     }
+      //   }));
+      this.get("#log").textContent = "" + err
     } finally {
     
     }
@@ -133,7 +139,7 @@ export default class ContinuousEditor extends Morph {
       this.ast = window.__tr_last_ast__
       this.clearMarkers()
       this.traceRoot = this.ast.calltrace
-      this.get("#traceInspector").inspect(this.traceRoot)
+      this.get("#traceInspector").inspect(this.ast)
 
       this.markCallTree(this.traceRoot)
       this.updateTraceView(this.traceRoot)
@@ -175,7 +181,7 @@ export default class ContinuousEditor extends Morph {
     var editor = this.editor();
     var markers = editor.getSession().getMarkers();
     for(var i in markers) {
-        if (markers[i].clazz == "marked_invisible") {
+        if (markers[i].clazz.match("marked_invisible")) {
             editor.getSession().removeMarker(i);
         }
     }
@@ -192,7 +198,7 @@ export default class ContinuousEditor extends Morph {
       var doc = editor.getSession().getDocument()
       editor.session.addMarker(Range.fromPoints(
         doc.indexToPosition(ast_node.start),
-        doc.indexToPosition(ast_node.end)), "marked_invisible " +  call.markId, "text", false); 
+        doc.indexToPosition(ast_node.end)), "marked marked_invisible " +  call.markId, "text", false); 
     }
     call.children.forEach(ea => {
       this.markCallTree(ea)
@@ -218,8 +224,12 @@ export default class ContinuousEditor extends Morph {
         var markerLine = this.markerLines[bounds.top]
         if (!markerLine) {
           var markerLine = document.createElement("div");
-          markerLine.classList.add("markerLine")      
+          markerLine.classList.add("markerLine")  // markerLine    
+
+          markerLine.classList.add("marker") 
+
           markerLine.style.position = "absolute";
+
           markerLine.style.top  = (bounds.top - parentBounds.top) + "px";
           this.markerLines[bounds.top] = markerLine;
           markerLayer.appendChild(markerLine);

@@ -4,8 +4,7 @@
     width: 50px;
     height: 25px;
   }
-  
-  
+
   :host {
     display: flex;
     flex-direction: column;
@@ -45,8 +44,6 @@
     overflow: scroll;
   }
 
-
-
   .traceLabel {
     font-size: 10px;
     background-color: rgba(0,0,255,0.1);
@@ -63,8 +60,7 @@
     background-color: rgba(0,0,255,0.1);
     white-space: nowrap;
   }
-  
-  
+
   #traceView {
     width: 2000px;
   }
@@ -124,7 +120,10 @@
   <lively-separator></lively-separator>
   <div id="traceViewPane">
     <div id="traceView"></div>
+    <lively-separator></lively-separator>
+    <pre id="log"></pre>
   </div>
+  
 </div>
 
 </template>
