@@ -142,7 +142,7 @@ export default class Window extends Morph {
   render() {
     if (this.created) {
       if (this.attributes['title']) {
-        this.titleSpan.innerHTML = this.attributes['title'].value;
+        this.titleSpan.innerHTML = this.attributes['title'].value.slice(0, 50);
       }
     }
   }

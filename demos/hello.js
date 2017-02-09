@@ -1,15 +1,9 @@
-var a = 0
+var a = 3;
 
-function c() {
-	var b = 0;
-	[1,2,3,4,5,6,7].forEach( ea => b += ea * ea)
-	return b
-}
+function b(n) {
+  return n * n
+};
 
-c()
+b(3)
 
 
-
-for (var i=0; i < 10; i++) {
-  a = a + i
-}

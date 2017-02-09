@@ -3,7 +3,7 @@ import {babel} from 'systemjs-babel-build';
 import SyntaxChecker from 'src/client/syntax.js'
 import traceBabelPlugin from "./lively-continuous-editor-plugin.js"
 
-import localsBabelPlugin from 'babel-plugin-locals'
+// import localsBabelPlugin from 'babel-plugin-locals'
 
 //import lively from './../src/client/lively.js';
 
@@ -89,7 +89,7 @@ export default class ContinuousEditor extends Morph {
       var src = this.editor().getValue();
       this.result = babel.transform(src, {
         babelrc: false,
-        plugins: [traceBabelPlugin, localsBabelPlugin],
+        plugins: [traceBabelPlugin],
         presets: [],
         filename: undefined,
         sourceFileName: undefined,
@@ -129,10 +129,12 @@ export default class ContinuousEditor extends Morph {
     } finally {
     
     }
-    if (window.__tr__root__)   {
-      this.get("#traceInspector").inspect(window.__tr__root__)
+    if (window.__tr_last_ast__)   {
+      this.ast = window.__tr_last_ast__
       this.clearMarkers()
-      this.traceRoot = window.__tr__root__
+      this.traceRoot = this.ast.calltrace
+      this.get("#traceInspector").inspect(this.traceRoot)
+
       this.markCallTree(this.traceRoot)
       this.updateTraceView(this.traceRoot)
       
@@ -145,19 +147,24 @@ export default class ContinuousEditor extends Morph {
     this.printTraceNode(this.get("#traceView"), tree)
   }
 
-  printTraceNode(parent, tree) {
+  astNode(id) {
+    return this.ast.node_map[id] 
+  }
+
+  printTraceNode(parent, call) {
+    var astnode = this.astNode(call.id) 
+
     var node = document.createElement("div");
     node.setAttribute("class", "traceNode")
-    node.innerHTML = "<div class='traceLabel'> " + (tree.code ? tree.code : "") + 
-      (tree.value ? ":"  + tree.value : "") + "</div>"
-    node.id = tree.markId
+    node.innerHTML = "<div class='traceLabel'> " + (astnode ? astnode.type : "") + (call.value ? ":"  + call.value : "") + "</div>"
+    node.id = call.markId
     node.addEventListener("click", (evt) => {
-      this.selectCallTraceNode(tree)
+      this.selectCallTraceNode(call)
       evt.stopPropagation()
     })
 
     parent.appendChild(node)
-    tree.children.forEach( ea => {
+    call.children.forEach( ea => {
       this.printTraceNode(node, ea)
     })
   }
@@ -174,18 +181,20 @@ export default class ContinuousEditor extends Morph {
     }
   }
 
-  markCallTree(node) {
+  markCallTree(call) {
     var Range = ace.require('ace/range').Range;
-    if (node.start && node.end) {
-    if (!node.markId) node.markId = 'tracemark' + this.lastMarkCounter++
+    var ast_node = this.astNode(call.id)
+
+    if (ast_node && ast_node.start && ast_node.end) {
+      if (!call.markId) call.markId = 'tracemark' + this.lastMarkCounter++
 
       var editor = this.editor()
       var doc = editor.getSession().getDocument()
       editor.session.addMarker(Range.fromPoints(
-        doc.indexToPosition(node.start),
-        doc.indexToPosition(node.end)), "marked_invisible " +  node.markId, "text", false); 
+        doc.indexToPosition(ast_node.start),
+        doc.indexToPosition(ast_node.end)), "marked_invisible " +  call.markId, "text", false); 
     }
-    node.children.forEach(ea => {
+    call.children.forEach(ea => {
       this.markCallTree(ea)
     })
   }
@@ -201,6 +210,8 @@ export default class ContinuousEditor extends Morph {
   
   updateMarkerResultsEach(markerLayer, node, parentBounds) {
     if (node.markId) {
+      var ast_node = this.astNode(node.id)
+    
       var marker = this.editorComp().shadowRoot.querySelector("." + node.markId)
       if (marker) {
         var bounds = marker.getBoundingClientRect();
@@ -218,7 +229,7 @@ export default class ContinuousEditor extends Morph {
         resultNode.classList.add(node.markId)
 
         // node.code + " = " +
-        resultNode.innerHTML = node.value ;
+        resultNode.innerHTML =  ast_node.type +":" + node.value ;
         resultNode.id = node.markId
         resultNode.addEventListener("click", (evt) => {
             this.selectCallTraceNode(node)
