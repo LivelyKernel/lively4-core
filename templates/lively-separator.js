@@ -17,29 +17,20 @@ export default class Separator extends Morph {
     this.originalFlexs = new Map()
   }
 
-  getLeftTarget() {
-    var selector = this.getAttribute("leftselector");
-    if (selector) return this.parentElement.querySelector(selector);
-    return this.previousElementSibling
-  }
-
-  getRightTarget() {
-    var selector = this.getAttribute("rightselector");
-    if (selector) return this.parentElement.querySelector(selector);
-    return this.nextElementSibling
-
-  }
-
-  getTopTarget() {
-    var selector = this.getAttribute("topselector");
+  getPreviousElement() {
+    var selector = this.getAttribute("prev")
     if (selector) return this.parentElement.querySelector(selector);
     return this.previousElementSibling
   }
   
-  getBottomTarget() {
-    var selector = this.getAttribute("bottomselector");
+  getNextElement() {
+    var selector = this.getAttribute("next") 
     if (selector) return this.parentElement.querySelector(selector);
     return this.nextElementSibling
+  }
+  
+  isHorizontal() {
+    return this.getWidth(this) > this.getHeight(this)
   }
 
   getWidth(element) {
@@ -102,143 +93,107 @@ export default class Separator extends Morph {
   }
 
   setFlex(element, f) {
+    if (f  == 0) {
+      f = 0.1; // we cannot distinguish between flex and not flex otherwise...
+    }
     if (!element) return
     element.style.flex = f
   }
 
+  getLength(element) {
+    if (this.isHorizontal()) {
+      return this.getHeight(element)
+    } else {
+      return this.getWidth(element)
+    }
+  }
+
+  setLength(element, value) {
+    if (this.isHorizontal()) {
+      this.setHeight(element, value)
+    } else {
+      this.setWidth(element, value)
+    }
+  }
+
+
+  getEventLength(evt) {
+    if (this.isHorizontal()) {
+      return evt.clientY;
+    } else {
+      return evt.clientX;
+    }
+  }
+  
   onDragStart(evt) {
     this.count = 0
-    if (this.isHorizontal()) {
-      var bottom = this.getBottomTarget();
-      var top = this.getTopTarget();
-
-      this.setOriginalLength(bottom, this.getHeight(bottom))
-      this.setOriginalLength(top, this.getHeight(top))
-
-      this.setOriginalFlex(bottom, this.getFlex(bottom))
-      this.setOriginalFlex(top, this.getFlex(top))
-      
-      this.dragOffsetY = evt.clientY;
-    } else {
-      var left = this.getLeftTarget()
-      var right = this.getRightTarget()
-      
-      this.setOriginalLength(left, this.getWidth(left))
-      this.setOriginalLength(right, this.getWidth(right))
-
-      this.setOriginalFlex(left, this.getFlex(left))
-      this.setOriginalFlex(right, this.getFlex(right))
-      
-      this.dragOffsetX = evt.clientX;
-    }
+    var prev = this.getPreviousElement()
+    var next = this.getNextElement()
     
+    this.setOriginalLength(prev, this.getLength(prev))
+    this.setOriginalLength(next, this.getLength(next))
+
+    this.setOriginalFlex(prev, this.getFlex(prev))
+    this.setOriginalFlex(next, this.getFlex(next))
+      
+    this.dragOffset = this.getEventLength(evt);
+
     evt.dataTransfer.setDragImage(document.createElement("div"), 0, 0); 
     evt.stopPropagation();
   }
+  
   /*
-   * (un-)collabses left target on click
+   * (un-)collabses prev element on click
    */
   onClick() {
-    if (this.isHorizontal()) {
-      var top = this.getTopTarget()
-      var bottom = this.getBottomTarget()
-      if (top) {
-        if (this.targetLastTopHeight) {
-          this.setHeight(top, this.targetLastTopHeight);
-          this.setHeight(bottom, this.targetLastBottomHeight);
-
-          delete this.targetLastTopHeight;
-        } else {
-          this.targetLastTopHeight = this.getHeight(top);
-          this.targetLastBottomHeight = this.getHeight(bottom);
-          this.setHeight(top, 0)
-          this.setHeight(bottom, this.targetLastTopHeight + this.targetLastBottomHeight)
-        }
-      }
+    var prev = this.getPreviousElement()
+    var next = this.getNextElement()
+    if (this.lastPrevLength) {
+      this.setLength(prev, this.lastPrevLength);
+      this.setLength(next, this.lastNextLength);
+      delete this.lastPrevLength
+      delete this.lastNextLength;
     } else {
-      var left = this.getLeftTarget()
-      var right = this.getRightTarget()
-      
-      if (this.targetLastLeftWidth) {
-        this.setWidth(left, this.targetLastLeftWidth);
-        this.setWidth(right, this.targetLastRightWidth);
-
-        delete this.targetLastLeftWidth;
-        delete this.targetLastRightWidth;
-      } else {
-        this.targetLastLeftWidth = this.getWidth(left);
-        this.targetLastRightWidth = this.getWidth(right);
-
-        this.setWidth(left, 0)
-        this.setWidth(right, this.targetLastLeftWidth + this.targetLastRightWidth)
-
-      }
+      this.lastPrevLength = this.getLength(prev);
+      this.lastNextLength = this.getLength(next);
+      this.setLength(prev, 0)
+      this.setLength(next, this.lastPrevLength + this.lastNextLength)
     }
   }
   
-  isHorizontal() {
-    // return this.classList.contains("horizontal")
-    return this.getWidth(this) > this.getHeight(this)
-  }
+  
   
   onDrag(evt) {
     if (!evt.clientX) return
-
     this.count++ 
     if (this.count == 1) return; // ignore the first event because it seems to be off
     
     // DEBUG with: 
     // lively.showPoint(pt(evt.clientX, evt.clientY)).innerHTML = "" + this.count
 
-    if (this.isHorizontal()) {
-      // this is a bit complicated because of optional arugments
-      // 4 cases: nothgin | top | bottom | top and bottom
-      // but we can do it in three steps...
-
-      // 1. calculate values
-      var deltaY = evt.clientY - this.dragOffsetY
-      var top = this.getTopTarget();
-      var bottom = this.getBottomTarget()
+    var prev = this.getPreviousElement()
+    var next = this.getNextElement()
+    
+    // 1. calculate values
+    var delta = this.getEventLength(evt) - this.dragOffset
       
-      var newTop = this.getOriginalLength(top) + deltaY
-      var newBottom = this.getOriginalLength(bottom) - deltaY
-      
-      // 2. constrain new values
-      if (newTop < 0) {
-        if (bottom) newBottom += newTop 
-        newTop = 0;
-      }
-      if (newBottom < 0) {
-        if (top) newTop += newBottom; // jump to the max
-        newBottom = 0;
-      }
-      // 3. update new values
-      this.setHeight(top, newTop)
-      this.setHeight(bottom, newBottom)
-      
-    } else {
-      // 1. calculate values
-      var deltaX = evt.clientX - this.dragOffsetX
-      var left = this.getLeftTarget();
-      var right = this.getRightTarget()
-
-      var newLeft = this.getOriginalLength(left) + deltaX
-      var newRight = this.getOriginalLength(right) - deltaX
-      
-      // 2. constrain new values
-      if (newLeft < 0) {
-        if (right) newRight += newLeft 
-        newLeft = 0;
-      }
-      if (newRight < 0) {
-        if (top) newLeft += newRight; // jump to the max
-        newRight = 0;
-      }
-      // 3. update new values
-      this.setWidth(left, newLeft)
-      this.setWidth(right, newRight)
+    var newNext = this.getOriginalLength(next) - delta
+    var newPrev = this.getOriginalLength(prev) + delta
+    
+    // 2. constrain new values
+    if (newPrev < 0) {
+      if (next) newNext += newPrev 
+      newPrev = 0;
     }
-	  evt.stopPropagation();
+    if (newNext < 0) {
+      if (prev) newPrev += newNext; // jump to the max
+      newNext = 0;
+    }
+    // 3. update new values
+    this.setLength(prev, newPrev)
+    this.setLength(next, newNext)
+      
+    evt.stopPropagation();
   }
   
   onDragEnd(evt) {
