@@ -83,12 +83,12 @@
   console.log(a + 4)
     </juicy-ace-editor>      
   </div>
-  <lively-separator leftselector="#sourcePane" leftflex="0.33" rightselector="#astPane" rightflex="0.33"></lively-separator>
+  <lively-separator></lively-separator>
   <div id="astPane">
     <lively-inspector id="astInspector" type="ast"></lively-inspector>
   </div>
   
-  <lively-separator leftselector="#astPane" leftflex="0.33" rightselector="#outputPane" rightflex="0.33"></lively-separator>
+  <lively-separator></lively-separator>
   <div id="outputPane">
     
     <div>Output <span  id="eval">
@@ -98,13 +98,13 @@
     <juicy-ace-editor  id="output"></juicy-ace-editor>
   </div>   
 </div>
-<lively-separator class='horizontal' topselector="#firstRow" topflex="0.5" bottomselector="#secondRow" bottomflex="0.5"></lively-separator>
+<lively-separator></lively-separator>
 <div id="secondRow">
   <div id="pluginPane">
     <div>Plugin</div>
     <lively-editor  id="plugin"></lively-editor>
   </div>
-  <lively-separator leftselector="#pluginPane" leftflex="0.66" rightselector="#resultPane" rightflex="0.33"></lively-separator>
+  <lively-separator ></lively-separator>
   <div id="resultPane">
     <div>Result</div>
       <pre id="result"></pre>
