@@ -1,11 +1,8 @@
 
 
-var a = 3;
-var c= 4;
+var s = 0;
+for (var i=0; i<4; i++) {
+  s += i
+}
 
-function b(n) {
-  return n * n
-};
-
-b(4)
-
+s

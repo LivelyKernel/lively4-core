@@ -23,6 +23,8 @@ export default function (babel) {
 			    },
         	BinaryExpression(path) {expressions.push(path) },
         	CallExpression(path) {expressions.push(path)}, 
+        	UnaryExpression(path) {expressions.push(path)},
+        	UpdateExpression(path) {expressions.push(path)},
         	VariableDeclaration(path) { declarations.push(path) },
         	FunctionDeclaration(path) { declarations.push(path) },
         	ExpressionStatement(path) {statements.push(path) },
@@ -44,7 +46,7 @@ export default function (babel) {
 
     		traverse({"type": "File", "program": programast}, {
       			enter(path) {
-      			  console.log("enter " + path.node.type)
+      			  // console.log("enter " + path.node.type)
       				programast.node_map[path.node.traceid] = path.node
       				path.node.trace_counter = 0;
       			},
@@ -54,6 +56,8 @@ export default function (babel) {
 	        var __tr_ast__ = window.__tr_ast_registry__[ASTID]
 
 	  		  function _tr_(id, exp) {
+            var astnode =  __tr_ast__ .node_map[id]
+  	  		  console.log("enter " + astnode.type )
 
 	  			  var node = {parent: __tr_current__, id: id, children: []}
 				    node.parent.children.push(node)
@@ -71,7 +75,7 @@ export default function (babel) {
     	  	
     	  	function _tr_begin_(id) {
             var astnode =  __tr_ast__ .node_map[id]
-            console.log("BEGIN " + astnode.type )
+            console.log("begin " + astnode.type )
             
             var callnode = {parent: __tr_current__, id: id, children: []}
 				    callnode.parent.children.push(callnode)
@@ -97,15 +101,16 @@ export default function (babel) {
          		NODEID: t.numericLiteral(ea.node.traceid)
          	}))
         })
+
         
-        declarations.forEach(ea => {
-       		ea.insertBefore(begin({
-         		NODEID: t.numericLiteral(ea.node.traceid)
-         	}))
-         	ea.insertAfter(end({
-         		NODEID: t.numericLiteral(ea.node.traceid)
-         	}))
-        })
+        // declarations.forEach(ea => {
+       	// 	ea.insertBefore(begin({
+        // 		NODEID: t.numericLiteral(ea.node.traceid)
+        // 	}))
+        // 	ea.insertAfter(end({
+        // 		NODEID: t.numericLiteral(ea.node.traceid)
+        // 	}))
+        // })
      
      
         expressions.forEach(ea => {
