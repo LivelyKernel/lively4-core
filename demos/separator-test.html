@@ -4,7 +4,7 @@
   .container {
     background-color: rgba(10,10,10,0.1);
     padding: 0px;
-    width: 140px;
+    width: 150px;
   }
   #a {
     height: 100px;
@@ -13,6 +13,25 @@
     height: 150px;
   }
 
+
+  #c4, #a4, #b4, #s4 {
+    height: 200px;
+  }
+
+  #a4 {
+    width: 50px;
+    float: left;
+  }
+  
+  #b4 {
+    width: 150px;
+  }
+
+  #s4 {
+    float: left;
+  }
+
+
   .a {
     background-color: rgba(10,10,200,0.1);
   }
@@ -20,17 +39,23 @@
     background-color: rgba(10,200,10,0.1);
   }
   
-  #c2 {
+  #c2, #c3 {
     display: flex;
     flex-direction: column;
     height: 200px;
   }
   
-  #a2 {
+  #c5, #c6 {
+    display: flex;
+    flex-direction: row;
+    height: 200px;
+  }
+
+  #a2, #a3, #a5, #a6 {
     flex: 0.66;
   }
   
-  #b2 {
+  #b2, #b3,  #b5, #b5 {
     flex: 0.33;
   }
 
@@ -48,19 +73,56 @@
   <tr>
     <td>
       <h2>Fixed</h2>
-<div class="container">
-  <div id="a" class="a">This is object a</div>
-  <lively-separator id="s1" class="horizontal" topselector="#a" bottomselector="#b"></lively-separator>
-  <div id="b" class="b">This is object b</div>
-</div>
+      <div class="container">
+        <div id="a" class="a">This is object a</div>
+        <lively-separator id="s1" topselector="#a" bottomselector="#b"></lively-separator>
+        <div id="b" class="b">This is object b</div>
+      </div>
     </td>
-    <td><h2>Flex</h2>
-<div id="c2" class="container">
-  <div id="a2" class="a">This is object a</div>
-  <lively-separator id="s2" class="horizontal" topselector="#a2" bottomselector="#b2"></lively-separator>
-  <div id="b2" class="b">This is object b</div>
-</div></td>
+    <td>
+      <h2>Flex</h2>
+      <div id="c2" class="container">
+        <div id="a2" class="a">This is object a</div>
+        <lively-separator id="s2" topselector="#a2" bottomselector="#b2"></lively-separator>
+        <div id="b2" class="b">This is object b</div>
+      </div>
+    </td>
+    <td>
+      <h2>Plain</h2>
+      <div id="c3" class="container">
+        <div id="a3" class="a">This is object a</div>
+        <lively-separator></lively-separator>
+        <div id="b3" class="b">This is object b</div>
+      </div>
+    </td>
   </tr>
+  <tr>
+    <td>
+      <h2>Fixed Vertical</h2>
+      <div id="c4" class="container">
+        <div id="a4" class="a">This is object a</div>
+        <lively-separator id="s4" topselector="#a4" bottomselector="#b4"></lively-separator>
+        <div id="b4" class="b">This is object b</div>
+      </div>
+    </td>
+    <td>
+      <h2>Flex Vertical</h2>
+      <div id="c5" class="container">
+        <div id="a5" class="a">This is object a</div>
+        <lively-separator id="s2" topselector="#a5" bottomselector="#b5"></lively-separator>
+        <div id="b5" class="b">This is object b</div>
+      </div>
+    </td>
+    <td>
+      <h2>Plain Vertical</h2>
+      <div id="c6" class="container">
+        <div id="a6" class="a">This is object a</div>
+        <lively-separator></lively-separator>
+        <div id="b6" class="b">This is object b</div>
+      </div>
+    </td>
+  </tr>
+  
 </table>
 
 

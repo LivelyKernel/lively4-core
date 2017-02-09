@@ -18,49 +18,33 @@ export default class Separator extends Morph {
   }
 
   getLeftTarget() {
-    return this.parentElement.querySelector(this.getAttribute("leftselector"));
-  }
-
-  getLeftWidth() {
-    return this.getLeftTarget().getBoundingClientRect().width
-  }
-  
-  setLeftWidth(w) {
-    var target = this.getLeftTarget();
-    var flex = this.getAttribute("leftflex")
-    if (flex !== undefined) {
-      flex = parseFloat(flex) 
-      var newFlex = w / this.originalWidth * flex
-      target.style.flex = newFlex
-    } else {
-      target.style.width = w + "px";
-    }
+    var selector = this.getAttribute("leftselector");
+    if (selector) return this.parentElement.querySelector(selector);
+    return this.previousElementSibling
   }
 
   getRightTarget() {
-    return this.parentElement.querySelector(this.getAttribute("rightselector"));
-  }
+    var selector = this.getAttribute("rightselector");
+    if (selector) return this.parentElement.querySelector(selector);
+    return this.nextElementSibling
 
-  getRightWidth() {
-    return this.getRightTarget().getBoundingClientRect().width
   }
-  
-  setRightWidth(w) {
-    this.getRightTarget().style.width = w + "px";
-  }
-
 
   getTopTarget() {
-    return this.parentElement.querySelector(this.getAttribute("topselector"));
-  }
-
-
-  setTopHeight(h) {
-    this.getTopTarget().style.height = h + "px";
+    var selector = this.getAttribute("topselector");
+    if (selector) return this.parentElement.querySelector(selector);
+    return this.previousElementSibling
   }
   
   getBottomTarget() {
-    return this.parentElement.querySelector(this.getAttribute("bottomselector"));
+    var selector = this.getAttribute("bottomselector");
+    if (selector) return this.parentElement.querySelector(selector);
+    return this.nextElementSibling
+  }
+
+  getWidth(element) {
+    if (!element) return 0
+    return element.getBoundingClientRect().width
   }
 
   getHeight(element) {
@@ -88,8 +72,6 @@ export default class Separator extends Morph {
     return this.originalFlexs.set(element, l)
   }
 
-
-
   setHeight(element, h) {
     if (!element) return
     var flex = this.getOriginalFlex(element)
@@ -99,6 +81,18 @@ export default class Separator extends Morph {
       this.setFlex(element, newFlex)
     } else {
       element.style.height = h + "px";
+    }
+  }
+
+  setWidth(element, w) {
+    if (!element) return
+    var flex = this.getOriginalFlex(element)
+    if (flex > 0 ) {
+      var newFlex = w / this.getOriginalLength(element) * flex
+      // console.log("new flex " + newFlex)
+      this.setFlex(element, newFlex)
+    } else {
+      element.style.width = w + "px";
     }
   }
 
@@ -123,13 +117,21 @@ export default class Separator extends Morph {
 
       this.setOriginalFlex(bottom, this.getFlex(bottom))
       this.setOriginalFlex(top, this.getFlex(top))
-
-
+      
       this.dragOffsetY = evt.clientY;
     } else {
-      this.originalWidth =  this.getLeftWidth();
-      this.dragOffset = evt.clientX;
+      var left = this.getLeftTarget()
+      var right = this.getRightTarget()
+      
+      this.setOriginalLength(left, this.getWidth(left))
+      this.setOriginalLength(right, this.getWidth(right))
+
+      this.setOriginalFlex(left, this.getFlex(left))
+      this.setOriginalFlex(right, this.getFlex(right))
+      
+      this.dragOffsetX = evt.clientX;
     }
+    
     evt.dataTransfer.setDragImage(document.createElement("div"), 0, 0); 
     evt.stopPropagation();
   }
@@ -154,18 +156,29 @@ export default class Separator extends Morph {
         }
       }
     } else {
-      if (this.targetLastWidth) {
-        this.setLeftWidth(this.targetLastWidth);
-        delete this.targetLastWidth;
+      var left = this.getLeftTarget()
+      var right = this.getRightTarget()
+      
+      if (this.targetLastLeftWidth) {
+        this.setWidth(left, this.targetLastLeftWidth);
+        this.setWidth(right, this.targetLastRightWidth);
+
+        delete this.targetLastLeftWidth;
+        delete this.targetLastRightWidth;
       } else {
-        this.targetLastWidth = this.getLeftWidth();
-        this.getLeftTarget().style.width = "0px";
+        this.targetLastLeftWidth = this.getWidth(left);
+        this.targetLastRightWidth = this.getWidth(right);
+
+        this.setWidth(left, 0)
+        this.setWidth(right, this.targetLastLeftWidth + this.targetLastRightWidth)
+
       }
     }
   }
   
   isHorizontal() {
-    return this.classList.contains("horizontal")
+    // return this.classList.contains("horizontal")
+    return this.getWidth(this) > this.getHeight(this)
   }
   
   onDrag(evt) {
@@ -178,8 +191,6 @@ export default class Separator extends Morph {
     // lively.showPoint(pt(evt.clientX, evt.clientY)).innerHTML = "" + this.count
 
     if (this.isHorizontal()) {
-      
-      
       // this is a bit complicated because of optional arugments
       // 4 cases: nothgin | top | bottom | top and bottom
       // but we can do it in three steps...
@@ -206,25 +217,32 @@ export default class Separator extends Morph {
       this.setHeight(bottom, newBottom)
       
     } else {
-      var delta = evt.clientX - this.dragOffset
-      this.setLeftWidth(Math.max(this.originalWidth + delta, 0))
+      // 1. calculate values
+      var deltaX = evt.clientX - this.dragOffsetX
+      var left = this.getLeftTarget();
+      var right = this.getRightTarget()
+
+      var newLeft = this.getOriginalLength(left) + deltaX
+      var newRight = this.getOriginalLength(right) - deltaX
+      
+      // 2. constrain new values
+      if (newLeft < 0) {
+        if (right) newRight += newLeft 
+        newLeft = 0;
+      }
+      if (newRight < 0) {
+        if (top) newLeft += newRight; // jump to the max
+        newRight = 0;
+      }
+      // 3. update new values
+      this.setWidth(left, newLeft)
+      this.setWidth(right, newRight)
     }
 	  evt.stopPropagation();
   }
   
   onDragEnd(evt) {
-    // console.log("[separator] drag end")
     // Do nothing...
-    if (this.getAttribute("leftflex"))
-      this.setAttribute("leftflex", this.getLeftTarget().style.flex) 
-	  if (this.getAttribute("rightflex"))
-      this.setAttribute("rightflex", this.getRightTarget().style.flex) 
-	  
-	  if (this.getAttribute("topflex"))
-      this.setAttribute("topflex", this.getBottomTarget().style.flex) 
-	  if (this.getAttribute("bottomflex"))
-      this.setAttribute("bottomflex", this.getBottomTarget().style.flex) 
-	  
 	  evt.stopPropagation();
   }
 
