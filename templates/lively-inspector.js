@@ -46,7 +46,6 @@ export default class Inspector   extends Morph {
     } 
   }
 
-
   displayFunction(value, expand, name) {
     var node = document.createElement("div");
     node.classList.add("element");
@@ -71,6 +70,7 @@ export default class Inspector   extends Morph {
   }
   
   renderObject(node, obj, expanded, name) {
+    node.type = "Object"
     node.isExpanded = expanded;
     if (!name) {
       name = "";
@@ -121,6 +121,8 @@ export default class Inspector   extends Morph {
     
     var node = document.createElement("div");
     node.classList.add("element");
+    node.pattern = "NAME " + name
+    node.name = name
     this.renderObject(node, obj, expand, name);
     return node;
   }
@@ -146,6 +148,7 @@ export default class Inspector   extends Morph {
   }
   
   attachHandlers(node, obj, name, renderCall) {
+    node.target = obj
     renderCall = renderCall || "render"    
     // jqyery would make this cleaner here...
     var moreNode = node.querySelector("#more");
@@ -236,7 +239,7 @@ export default class Inspector   extends Morph {
 
     var contentNode = node.querySelector("#content");
     this.attachHandlers(node, obj);
-
+    
     var expandChildren = obj.livelyIsParentPlaceholder || false;
 
     if (node.isExpanded) {
@@ -292,7 +295,6 @@ export default class Inspector   extends Morph {
       if (tagNode) tagNode.onclick = (evt) => {
         this.inspect(parentNode);
       };
-      node.target = parentNode;
       return node;
     } else if (obj.tagName) {
       node = document.createElement("div");
@@ -311,7 +313,6 @@ export default class Inspector   extends Morph {
       node = document.createElement("span");
       node.setAttribute("class","element");
     }
-    node.target = obj;
     this.render(node, obj, expanded); 
     return node;
   }
@@ -323,10 +324,10 @@ export default class Inspector   extends Morph {
   render(node, obj, expanded) {
     if (obj instanceof Text) {
       return this.renderText(node, obj, expanded);
-    } else if (this.isNode(obj)) {
+    } else if (this.isNode(obj) && node.type != "Object") {
       return this.renderNode(node, obj, expanded);
     } else if (typeof(obj) == "object") {
-      return this.renderObject(node, obj, expanded, name);
+      return this.renderObject(node, obj, expanded, node.name);
     } else if (typeof(obj) == "function"){
       // return this.renderFunction(node, obj, expanded, name);
     } else {
@@ -353,12 +354,21 @@ export default class Inspector   extends Morph {
     if (obj.id) {
       this.setAttribute("target", "#" + obj.id);
     }
+    if (this.targetObject) {
+      var oldViewState = this.getViewState()
+    }
+    
     this.targetObject = obj;
     this.get("#editor").doitContext = obj;
     this.get("#container").innerHTML = "";
     // special case for inspecting single dom nodes
     var content= this.display(obj, true, null, null);
     this.get("#container").appendChild(content);
+    this.updatePatterns(this.get("#container").childNodes[0])
+    
+    if (oldViewState) {
+      this.setViewState(oldViewState)
+    }
     return content;
   }
   
@@ -390,7 +400,84 @@ export default class Inspector   extends Morph {
     this.get("#editor").style.display = "block"
   }
   
+  
+  updatePatterns(node) {
+    var obj = node.target
+    if (node.target) {
+      if(node.pattern) {
+        // do nothing
+      } else if(obj.id) {
+        node.pattern = "ID " + obj.id
+      } else if(obj instanceof ShadowRoot) {
+        node.pattern = "shadow-root"
+      } else {
+        node.pattern = "tag " + obj.tagName + " " + obj.id
+        // check if siblings have same pattern
+      }
+      if (node.parentElement) {
+      if (_.find(node.parentElement.childNodes, ea => ea && ea !== node && (ea.pattern == node.pattern))) {
+          node.pattern += " X" // unique... but repeatable
+        }
+      }
+    } else {
+      node.pattern = "NOTARGET"
+    }
+    // lively.showElement(node).textContent = "U=" + node.pattern
+    var content = node.querySelector("#content")
+    if (content) content.childNodes.forEach( ea => {
+      this.updatePatterns(ea)
+    })
+  }
+  
+  // JSON.stringify(this.getViewState())
+  getViewState() {
+    return this.caputureViewState(this.get("#container").childNodes[0])
+  }
+  
+  /*
+    this.setViewState( {"children":[{"pattern":"","children":[{"pattern":"shadowRoot","children":[{"pattern":"","children":[]}]},{"pattern":"#Properties","children":[{"pattern":"attributes","children":[]}]}]}]})
+  */
+  setViewState(state) {
+    return this.applyViewState(this.get("#container").childNodes[0], state)
+  }
+  
+  applyViewState(node, state) {
+    // lively.showElement(node).textContent = "P=" + state.pattern
+    this.expandNode(node)
+    var content = node.querySelector("#content")
+    if (content) {
+      var children = _.filter(content.childNodes, 
+        ea => ea.classList.contains("element"))
+      state.children.forEach( ea => {
+        var child = children.find( c => c.pattern == ea.pattern)
+        if (child) this.applyViewState(child, ea) 
+      })
+    }
+  }
+  
+  expandNode(node) {
+    if (node.isExpanded) return
+    this.render(node, node.target, true)
+  }
+  
+  caputureViewState(node) {
+    var result =  { 
+      pattern: node.pattern,
+      children: []}
+      
+  
+    var content = node.querySelector("#content")
+    if (content) {
+      _.filter(content.childNodes, ea => ea.isExpanded).forEach(ea => {
+        result.children.push(this.caputureViewState(ea))        
+      })
+    }
+    return result
+  }
+  
   livelyMigrate(oldInstance) {
-    this.inspect(oldInstance.targetObject) ;   
+    this.inspect(oldInstance.targetObject) ;
+    var viewState  = oldInstance.getViewState()
+    this.setViewState(viewState)
   } 
 }

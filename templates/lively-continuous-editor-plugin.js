@@ -15,6 +15,9 @@ export default function (babel) {
         var expressions = []
         var statements = []
         var declarations = []
+        var declarators = []
+        var assignments = []
+        
         
         path.traverse({
         	enter(path) { 
@@ -25,10 +28,11 @@ export default function (babel) {
         	CallExpression(path) {expressions.push(path)}, 
         	UnaryExpression(path) {expressions.push(path)},
         	UpdateExpression(path) {expressions.push(path)},
-        	VariableDeclaration(path) { declarations.push(path) },
+        	VariableDeclarator(path) { declarators.push(path) },
         	FunctionDeclaration(path) { declarations.push(path) },
         	ExpressionStatement(path) {statements.push(path) },
-
+          AssignmentExpression(path) { assignments.push(path) },
+        	
         	/* ... */
         });
 
@@ -112,13 +116,18 @@ export default function (babel) {
         // 	}))
         // })
      
+        assignments.forEach(ea => {
+        	ea.replaceWith(log({
+        	  NODEID: t.numericLiteral(ea.node.traceid),
+        		EXPSTATE: ea
+        	}))
+        })
+     
+        
+     
+        declarators
      
         expressions.forEach(ea => {
-       		// babel modifies ast during transform, so we copy it through serialization
-       		var ast = transformFromAst({
-  			    "type": "Program",
-  			    "body": [JSON.parse(JSON.stringify(ea.node))]})
-        	
         	ea.replaceWith(log({
         	  NODEID: t.numericLiteral(ea.node.traceid),
         		EXPSTATE: ea

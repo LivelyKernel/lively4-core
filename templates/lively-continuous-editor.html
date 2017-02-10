@@ -24,6 +24,10 @@
     flex: 0.5;
   }
   
+  #objectsPane {
+    flex: 0.5;
+  }
+  
   #sourcePane, #tracePane {
     display: flex;
     flex-direction: column;
@@ -58,17 +62,21 @@
     padding-left: 10px;
 
     background-color: rgba(0,0,255,0.1);
+    /*
     white-space: nowrap;
+    */
   }
 
   #traceView {
-    width: 2000px;
   }
   
   .traceNode {
     display: inline-block;
     vertical-align: top; 
+  float: left;
+  clear: both;
   }
+  
   
   .selected > .traceLabel {
     background-color: rgba(0,0,255,0.5);
@@ -83,7 +91,7 @@
     white-space: nowrap;
   }
   
-  #resultPane {
+  #markerPane {
 
   }
   
@@ -102,14 +110,21 @@
   }
 
 
+
+
   </style>
 <div id="firstRow">
   <div id="sourcePane">
     <lively-editor  id="source"></lively-editor>
   </div>
   <lively-separator></lively-separator>
-  <div id="resultPane">
+  <div id="markerPane">
     <div id="markerLayer">....</div>
+  </div>
+  <lively-separator></lively-separator>
+  <div id="runtimePane">
+    <canvas id="canvas" width="300px" height="300px"></canvas>
+    <pre id="log"></pre>
   </div>
 </div>
 <lively-separator></lively-separator>
@@ -120,10 +135,11 @@
   <lively-separator></lively-separator>
   <div id="traceViewPane">
     <div id="traceView"></div>
-    <lively-separator></lively-separator>
-    <pre id="log"></pre>
   </div>
-  
+  <lively-separator></lively-separator>
+  <div id="objectsPane">
+    <lively-inspector id="objectInspector" type="ast"></lively-inspector>
+  </div>
 </div>
 
 </template>
