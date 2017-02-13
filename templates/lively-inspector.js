@@ -4,6 +4,7 @@
  */
 import Morph from './Morph.js';
 
+import {sortAlphaNum} from "../src/client/sort.js"
 
 function truncateString(s, length, truncation) {
   length = length || 30;
@@ -96,8 +97,8 @@ export default class Inspector   extends Morph {
         var childNode = this.displayFunction(obj, expand, name)
         if (childNode) contentNode.appendChild(childNode); 
       }
-
-      this.allKeys(obj).forEach( ea => { 
+      
+      this.allKeys(obj).sort(sortAlphaNum).forEach( ea => { 
         try {
           var value = obj[ea]
         } catch(e) {

@@ -162,7 +162,23 @@ export default class ContinuousEditor extends Morph {
 
     var node = document.createElement("div");
     node.setAttribute("class", "traceNode")
-    node.innerHTML = "<div class='traceLabel'> " + (astnode ? astnode.type : "") + (call.value ? ":"  + call.value : "") + "</div>"
+    
+    var label = "";
+    
+    
+    if (astnode.id) {
+      label += astnode.id.name
+    } else {
+      if (astnode)
+        label += astnode.type;
+    }
+    
+    if (call.value !== undefined)
+      label += "="  + call.value;
+    
+    node.innerHTML = "<div class='traceLabel'> " + label +"</div>"
+    
+    
     node.id = call.markId
     node.addEventListener("click", (evt) => {
       this.selectCallTraceNode(call)
@@ -259,7 +275,11 @@ export default class ContinuousEditor extends Morph {
       this.get("#source").setURL(other.get("#source").getURL())
       this.editor().setValue(other.editor().getValue())
       this.editor().selection.setRange(other.editor().selection.getRange())
+      var viewState = other.get("#traceInspector").getViewState()
+      
       this.runCode()
+      
+      this.get("#traceInspector").setViewState(viewState)
     })
   }
   

@@ -1,6 +1,14 @@
 import generateUUID from 'src/client/uuid.js'; 
 import {babel} from 'systemjs-babel-build';
 
+var expressions = []
+var statements = []
+var declarations = []
+var declarators = []
+var assignments = []
+
+
+
 export default function (babel) {
   const { types: t, template, transformFromAst, traverse } = babel;
   let log = template("_tr_(NODEID,() => EXPSTATE)")
@@ -12,11 +20,13 @@ export default function (babel) {
     visitor: { 
       Program(path) {
         var idcounter = 0;
-        var expressions = []
-        var statements = []
-        var declarations = []
-        var declarators = []
-        var assignments = []
+
+        expressions = []
+        statements = []
+        declarations = []
+        declarators = []
+        assignments = []
+
         
         
         path.traverse({
@@ -63,16 +73,16 @@ export default function (babel) {
             var astnode =  __tr_ast__ .node_map[id]
   	  		  console.log("enter " + astnode.type )
 
-	  			  var node = {parent: __tr_current__, id: id, children: []}
-				    node.parent.children.push(node)
-	  			  __tr_current__=node
+	  			  var callnode = {parent: __tr_current__, id: id, children: []}
+				    callnode.parent.children.push(callnode)
+	  			  __tr_current__=callnode
 	  			  
   	  			var value = exp()
 
-            node.id = id
-  	  			node.value = value;
+            callnode.id = id
+  	  			callnode.value = value;
   	  			
-  	  			__tr_current__ = node.parent
+  	  			__tr_current__ = callnode.parent
   	  			
   	  			return value
     	  	};
@@ -123,10 +133,14 @@ export default function (babel) {
         	}))
         })
      
-        
-     
-        declarators
-     
+        declarators.forEach(ea => {
+        	var init = ea.get('init');
+        	init.replaceWith(log({
+        	  NODEID: t.numericLiteral(ea.node.traceid),
+        		EXPSTATE: init
+        	}))
+        })
+
         expressions.forEach(ea => {
         	ea.replaceWith(log({
         	  NODEID: t.numericLiteral(ea.node.traceid),
