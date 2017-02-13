@@ -47,7 +47,7 @@ module.exports = function(config) {
       {pattern: 'package.json', included: false},
 
       {pattern: 'src/external/focalStorage.js', included: false},
-      'test-loader.js'
+      'test-loader.js' // BOOT STARTS HERE
     ],
 
     proxies: {

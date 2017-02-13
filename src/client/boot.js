@@ -112,7 +112,7 @@ if (window.lively && window.lively4url) {
             es2015: false,
             stage2: false,
             stage3: false,
-            plugins: [
+            plugins: window.__karma__ ? [] : [ // #TODO disable plugins while testing... for now
               'babel-plugin-locals',
               'babel-plugin-var-recorder'
             ]
