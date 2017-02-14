@@ -1,9 +1,10 @@
 import * as babel from 'babel';
 export { babel };
 
+import dynamicImportSyntax from 'babel-plugin-syntax-dynamic-import';
 import modulesRegisterPlugin from 'babel-plugin-transform-es2015-modules-systemjs';
 export let modulesRegister = {
-  plugins: [modulesRegisterPlugin]
+  plugins: [dynamicImportSyntax, modulesRegisterPlugin]
 };
 
 import externalHelpersPlugin from 'babel-plugin-external-helpers';
@@ -66,9 +67,9 @@ let es2015Plugins = [
 let regeneratorPlugin = [regenerator, { async: false, asyncGenerators: false }];
 
 export let presetES2015 = {
-  plugins: [...es2015Plugins, regeneratorPlugin]
+  plugins: [dynamicImportSyntax, ...es2015Plugins, regeneratorPlugin]
 };
 
 export let presetES2015Register = {
-  plugins: [...es2015Plugins, modulesRegisterPlugin, regeneratorPlugin]
+  plugins: [dynamicImportSyntax, ...es2015Plugins, modulesRegisterPlugin, regeneratorPlugin]
 };

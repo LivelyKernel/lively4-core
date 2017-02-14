@@ -17,7 +17,8 @@ var global$1 = typeof self !== 'undefined' ? self : global;
  */
 var hasSymbol = typeof Symbol !== 'undefined';
 function createSymbol (name) {
-  return hasSymbol ? Symbol() : '@@' + name;
+  //return hasSymbol ? Symbol() : '@@' + name;
+  return '@@' + name; // #Hack for debugging
 }
 
 /*
@@ -670,6 +671,7 @@ Registry.prototype.delete = function (key) {
   if (this._registry[key]) {
     //delete this._registry[key];
     // much faster...
+SystemJSLoader.prototype.registerDynamic 
     this._registry[key] = undefined;
     return true;
   }
@@ -1260,6 +1262,7 @@ function instantiateDeps (loader, load, link, registry, registerRegistry, seen) 
 
 // clears an errored load and all its errored dependencies from the loads registry
 function clearLoadErrors (loader, load) {
+  debugger
   // clear from loads
   if (loader[REGISTER_REGISTRY][load.key] === load)
     loader[REGISTER_REGISTRY][load.key] = undefined;

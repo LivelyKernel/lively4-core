@@ -201,6 +201,7 @@ exports.translate = function(load, traceOpts) {
         return m;
       }
     });
+    console.log(`load: ${load.address}`, plugins);
 
     // add babelHelpers as a dependency for non-modular runtime
     if (!babelOptions.modularRuntime)

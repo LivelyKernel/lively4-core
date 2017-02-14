@@ -1,5 +1,5 @@
 /**
- * boot.js -- loads lively in any page that inserts throug a script tag
+ * boot.js -- loads lively in any page that inserts through a script tag
  *
  **/
  
@@ -47,47 +47,118 @@ if (window.lively && window.lively4url) {
   }
   
   Promise.resolve().then( () => {
-    return loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/system.src.js");
-  }).then( () => {
-    return loadJavaScriptThroughDOM("regenerator", lively4url + "/vendor/regenerator-runtime.js");
-  }).then( () => {
-    // configure babel
-    System.paths.babel = lively4url + '/src/external/babel-browser.js';
-    System.config({
-      baseURL: lively4url + '/',
-      transpiler: 'babel',
-      babelOptions: { },
+    return loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/systemjs/system.src.js");
+  }).then(async () => {
+    // setup var recorder object
+    window._recorder_ = {_module_:{}}
+
+    const moduleOptionsNon = {
+      babelOptions: {
+        es2015: false,
+        stage2: false,
+        stage3: false,
+        plugins: []
+      }
+    };
+    
+    System.trace = true; // does not work in config
+    
+    // config for loading babal plugins
+    SystemJS.config({
+      baseURL: lively4url + '/', // needed for global refs like "src/client/lively.js", we have to refactor those before disabling this here. #TODO #Discussion
+      babelOptions: {
+        // stage2: false,
+        // stage3: false,
+        // es2015: false,
+        // stage0: true,
+        // stage1: true
+        //presets: [
+        //    ["es2015", { "loose": true, "modules": false }]
+        //],
+        plugins: []
+      },
+      meta: {
+        '*.js': moduleOptionsNon
+      },
       map: {
-        babel: lively4url + '/src/external/babel-browser.js',
-        kernel: lively4url + '/src/client/legacy-kernel.js'
+        // #Discussion have to use absolute paths here, because it is not clear what the baseURL is
+        'plugin-babel': lively4url + '/src/external/babel/plugin-babel2.js',
+        'systemjs-plugin-babel': lively4url + '/src/external/babel/plugin-babel.js',
+        'systemjs-babel-build': lively4url + '/src/external/babel/systemjs-babel-browser.js',
+        'kernel': lively4url + '/src/client/legacy-kernel.js',
+        'babel-plugin-doit-result': lively4url + '/src/external/babel-plugin-doit-result.js',
+        'babel-plugin-doit-this-ref': lively4url + '/src/external/babel-plugin-doit-this-ref.js',
+        'babel-plugin-locals': lively4url + '/src/external/babel-plugin-locals.js',
+        'babel-plugin-var-recorder': lively4url + '/src/external/babel-plugin-var-recorder.js',
+        'workspace-loader': lively4url + '/src/client/workspace-loader.js'
+      },
+      trace: true,
+      transpiler: 'plugin-babel'
+    })
+    
+/*    await System.import('babel-plugin-doit-result');
+    await System.import('babel-plugin-doit-this-ref');
+    await System.import('babel-plugin-locals');
+    await System.import('babel-plugin-var-recorder');
+  */  //await System.import(lively4url + '/src/client/workspaces.js');
+    //await System.import('workspace-loader');
+    
+    SystemJS.config({
+      meta: {
+        // plugins are not transpiled with other plugins, except for SystemJS-internal plugins
+        [lively4url + '/src/external/babel-plugin-*.js']: moduleOptionsNon,
+        '*.js': {
+          babelOptions: {
+            es2015: false,
+            stage2: false,
+            stage3: false,
+            plugins: window.__karma__ ? [] : [ // #TODO disable plugins while testing... for now
+              'babel-plugin-locals',
+              'babel-plugin-var-recorder'
+            ]
+          }
+        },
+        'workspace:*': {
+          babelOptions: {
+            es2015: false,
+            stage2: false,
+            stage3: false,
+            plugins: [
+              'babel-plugin-locals',
+              'babel-plugin-doit-result',
+              'babel-plugin-doit-this-ref',
+              'babel-plugin-var-recorder'
+            ]
+          },
+          loader: 'workspace-loader'
+        },
       }
     });
-    
-    System.import(lively4url + "/src/client/load.js").then((load) => {
-      console.group("Lively1/3")
-      console.log("Wait for service worker....");
-      return new Promise((resolve, reject) => {
-        load.whenLoaded(function(){
-          resolve();
-        });
-      });
-    }).then(() => {
+
+    try {
+      let { whenLoaded } = await System.import(lively4url + "/src/client/load.js")
+      
+      console.group("1/3: Wait for Service Worker...")
+      await new Promise(whenLoaded);
       console.groupEnd();
-      console.group("Lively2/3");
-      console.log("Look for uninitialized instances of web compoments");
-      return lively.components.loadUnresolved();
-    }).then(function() {
+      
+      console.group("2/3: Look for uninitialized instances of Web Compoments");
+      await lively.components.loadUnresolved();
       console.groupEnd();
-      console.group("Lively3/3")
-      console.log("Initialize document");
-      return lively.initializeDocument(document, false, loadContainer);
-    }).then(() => {
+      
+      console.group("3/3: Initialize Document")
+      await lively.initializeDocument(document, window.lively4chrome, loadContainer);
       console.groupEnd();
+      
       console.log("Finally loaded!");
+      
+      document.dispatchEvent(new Event("livelyloaded"))
+      
       console.groupEnd(); // BOOT
-    }).catch(function(err) {
-      console.log("Lively Loaging failed", err);
+    } catch(err) {
+      console.error("Lively Loading failed");
+      console.error(err);
       alert("load Lively4 failed:" + err);
-    });
+    }
   });
 }

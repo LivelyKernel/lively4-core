@@ -2,7 +2,7 @@ import Sync from '../../templates/lively-sync.js';
 import {expect} from '../../node_modules/chai/chai.js';
 import {testWorld, loadComponent} from './templates-fixture.js';
 
-import {pt} from "lively.graphics"
+import {pt} from "src/client/graphics.js"
 
 describe("Lively Connectors Component",  function() {
 
@@ -20,7 +20,7 @@ describe("Lively Connectors Component",  function() {
     lively.setPosition(testWorld(), {x: 1000, y: 350});
   });
 
-  createNode = (name, p) => {
+  var createNode = (name, p) => {
     var node = document.createElement("div")
     node.textContent = name
     node.id = name

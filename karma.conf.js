@@ -21,9 +21,9 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'src/external/system.src.js',
-      'src/external/babel-browser.js',
-      'vendor/regenerator-runtime.js',
+      // 'src/external/system.src.js',
+      // 'src/external/babel-browser.js',
+      // 'vendor/regenerator-runtime.js',
 
       
       // #Jens, cannot load lively.modules here, because we configure System.js later
@@ -37,7 +37,7 @@ module.exports = function(config) {
       {pattern: 'node_modules/mocha/mocha.js', included: false},
       {pattern: 'src/**/*.js*', included: false},
       {pattern: 'src/**/*.css*', included: false},
-      {pattern: 'swx-loader.js', included: false},
+      {pattern: 'swx-*.js', included: false},
       
       {pattern: 'test/**/*.js', included: false},
       
@@ -47,7 +47,7 @@ module.exports = function(config) {
       {pattern: 'package.json', included: false},
 
       {pattern: 'src/external/focalStorage.js', included: false},
-      'test-loader.js'
+      'test-loader.js' // BOOT STARTS HERE
     ],
 
     proxies: {
@@ -59,7 +59,11 @@ module.exports = function(config) {
       '/templates/': '/base/templates/',
       '/vendor/': '/base/vendor/',
       '/package.json': '/base/package.json',
+      '/swx-boot.js': '/base/swx-boot.js',
+      '/swx-kernel.js': '/base/swx-kernel.js',
       '/swx-loader.js': '/base/swx-loader.js',
+      '/swx-post.js': '/base/swx-post.js',
+      '/swx-pre.js': '/base/swx-pre.js',
     },
 
 

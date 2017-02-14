@@ -1,6 +1,6 @@
 {
   "name": "systemjs-plugin-babel",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "registry": "npm",
   "jspmPackage": true,
   "repository": {
@@ -40,7 +40,7 @@
   ],
   "devDependencies": {
     "browser-run": "^3.2.0",
-    "systemjs": "^0.19.29",
+    "systemjs": "^0.20.0-alpha.1",
     "tape": "^4.6.0"
   }
 }

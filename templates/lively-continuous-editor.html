@@ -1,0 +1,146 @@
+<template id="lively-continuous-editor" data-class="LivelyContinuousEditor">
+  <style>
+  :host {
+    width: 50px;
+    height: 25px;
+  }
+
+  :host {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #firstRow, #secondRow {
+    display: flex;
+    flex-direction: rows;
+    flex: 0.5;
+  }
+  
+  #sourcePane {
+    flex: 0.5;
+  }
+  
+  #tracePane {
+    flex: 0.5;
+  }
+  
+  #objectsPane {
+    flex: 0.5;
+  }
+  
+  #sourcePane, #tracePane {
+    display: flex;
+    flex-direction: column;
+  }
+
+  lively-editor {
+    flex: 1;
+  }
+  
+  lively-inspector {
+    flex: 1;
+    height: 100%;
+  }
+  
+  #traceViewPane {
+    flex: 0.5;
+    background-color: lightgray; 
+    overflow: scroll;
+  }
+
+  .traceLabel {
+    font-size: 10px;
+    background-color: rgba(0,0,255,0.1);
+    border: 1px solid gray;
+    padding: 1px;
+  }
+
+  .traceNode {
+    patting-top: 10px;
+    patting-bottom: 10px;
+    padding-right: 10px;
+    padding-left: 10px;
+
+    background-color: rgba(0,0,255,0.1);
+    /*
+    white-space: nowrap;
+    */
+  }
+
+  #traceView {
+  }
+  
+  .traceNode {
+    display: inline-block;
+    vertical-align: top; 
+  float: left;
+  clear: both;
+  }
+  
+  
+  .selected > .traceLabel {
+    background-color: rgba(0,0,255,0.5);
+  }
+
+  #markerLayer .selected {
+    background-color: rgba(0,0,255,0.5);
+  }
+
+  .markerLine {
+    overflow-x: hidden;
+    white-space: nowrap;
+  }
+  
+  #markerPane {
+
+  }
+  
+  #markerLayer {
+    background-color: rgba(0,0,255,0.1);
+    overflow: visible;
+  }
+
+
+  .markerResult {
+    font-size: 10px;
+    border: solid 0.5px gray;
+    margin: 0.5px;
+    display: inline-block;
+    white-space: normal;
+  }
+
+
+
+
+  </style>
+<div id="firstRow">
+  <div id="sourcePane">
+    <lively-editor  id="source"></lively-editor>
+  </div>
+  <lively-separator></lively-separator>
+  <div id="markerPane">
+    <div id="markerLayer">....</div>
+  </div>
+  <lively-separator></lively-separator>
+  <div id="runtimePane">
+    <canvas id="canvas" width="300px" height="300px"></canvas>
+    <pre id="log"></pre>
+  </div>
+</div>
+<lively-separator></lively-separator>
+<div id="secondRow">
+  <div id="tracePane">
+    <lively-inspector id="traceInspector" type="ast"></lively-inspector>
+  </div>
+  <lively-separator></lively-separator>
+  <div id="traceViewPane">
+    <div id="traceView"></div>
+  </div>
+  <lively-separator></lively-separator>
+  <div id="objectsPane">
+    <lively-inspector id="objectInspector" type="ast"></lively-inspector>
+  </div>
+</div>
+
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>

@@ -1,5 +1,5 @@
 import * as nodes from './node-helpers.js';
-import {pt} from 'lively.graphics';
+import {pt} from '../graphics.js';
 
 // todo: export class wrappers
 

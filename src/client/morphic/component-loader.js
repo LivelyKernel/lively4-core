@@ -1,7 +1,7 @@
 import scriptManager from  "src/client/script-manager.js";
 import * as persistence from  "src/client/persistence.js";
 import Morph from "templates/Morph.js";
-import {pt} from 'lively.graphics';
+import {pt} from '../graphics.js';
 
 import * as kernel from 'kernel';
 
@@ -368,6 +368,6 @@ export default class ComponentLoader {
     var templateClone = document.importNode(template.content, true);
     lively.components.templates[name] = templateClone;
     
-    return lively.fillTemplateStyles(templateClone, "source: " + componentName).then( () => name);
+    return lively.fillTemplateStyles(templateClone, "source: " + name).then( () => name);
   }
 }

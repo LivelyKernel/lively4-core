@@ -33,6 +33,10 @@ export default class Morph extends HTMLDivElement {
   get windowTitle(){
     return this._windowTitle;
   }
+  
+  bar() {
+    return 5
+  }
 
   getAllSubmorphs(selector) {
     var morphs = this.querySelectorAll(selector);

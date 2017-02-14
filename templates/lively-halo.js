@@ -6,7 +6,7 @@ import * as events from 'src/client/morphic/event-helpers.js';
 
 import selecting from 'src/client/morphic/selecting.js';
 
-import {pt, rect, Rectangle} from 'lively.graphics';
+import {pt, rect, Rectangle} from 'src/client/graphics.js';
 
 
 /*
@@ -21,6 +21,7 @@ export default class Halo extends Morph {
     Halo.halo = $(this);
     Halo.halo.hide();
     window.HaloService = Halo;
+    var targetContext = document.body
     this.registerBodyDragAndDrop(document.body);
   
     lively.removeEventListener("Halo", targetContext);

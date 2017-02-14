@@ -4,14 +4,26 @@
  */
 import Morph from './Morph.js';
 
+import {sortAlphaNum} from "../src/client/sort.js"
+
+function truncateString(s, length, truncation) {
+  length = length || 30;
+  truncation = truncation === undefined ? '...' : truncation;
+  return s.length > length ? s.slice(0, length - truncation.length) + truncation : String(s);
+}
+// truncateString("Hello World", 8, "...")
+
+
 export default class Inspector   extends Morph {
 
   initialize() {
     if (this.getAttribute("target")) {
       this.inspect(document.querySelector(this.getAttribute("target")))
     }
-    lively.notify("[inspector] intialize");  
+    // lively.notify("[inspector] intialize");  
     this.get("#editor").enableAutocompletion();
+  
+    this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
   }
 
   displayValue(value, expand, name) {
@@ -25,6 +37,14 @@ export default class Inspector   extends Morph {
       node.innerHTML = JSON.stringify(value);
       return node;
     }
+  }
+
+  onContextMenu(evt) {
+    if (!evt.shiftKey) { 
+      evt.preventDefault();
+	    lively.openContextMenu(document.body, evt, this);
+	    return false;
+    } 
   }
 
   displayFunction(value, expand, name) {
@@ -47,19 +67,25 @@ export default class Inspector   extends Morph {
     lively.showElement(obj);
     window.that = obj; // #Experimental
     this.get("#editor").doitContext = obj;
+    this.dispatchEvent(new CustomEvent("select-object", {detail: {node: node, object: obj}}));
   }
   
   renderObject(node, obj, expanded, name) {
+    node.type = "Object"
     node.isExpanded = expanded;
     if (!name) {
       name = "";
     }
     var className = obj.constructor.name;
+    if (this.isAstMode() && obj.type) {
+      className = obj.type
+    }
     
     node.innerHTML = `${this.expandTemplate(node)}`+
-      ` <a id='tagname' class='tagname'>${name} ${className}</a> `+
+      ` <span class='attrName expand'> ${name}</span><span class="syntax">:</span>
+      <a id='tagname' class='tagname'>${className}</a> `+
       '<span class="syntax">{'+"</span>" +
-       this.contentTemplate +
+       this.contentTemplate() +
       '<span class="syntax">}'+"</span>";
   
     this.attachHandlers(node, obj, name, "renderObject");
@@ -71,8 +97,8 @@ export default class Inspector   extends Morph {
         var childNode = this.displayFunction(obj, expand, name)
         if (childNode) contentNode.appendChild(childNode); 
       }
-
-      this.allKeys(obj).forEach( ea => { 
+      
+      this.allKeys(obj).sort(sortAlphaNum).forEach( ea => { 
         try {
           var value = obj[ea]
         } catch(e) {
@@ -96,6 +122,8 @@ export default class Inspector   extends Morph {
     
     var node = document.createElement("div");
     node.classList.add("element");
+    node.pattern = "NAME " + name
+    node.name = name
     this.renderObject(node, obj, expand, name);
     return node;
   }
@@ -106,14 +134,14 @@ export default class Inspector   extends Morph {
   }
   
   expandTemplate(node) {
-    return "<span class='syntax'><a id='expand'>" +
+    return "<span class='syntax'><a class='expand'>" +
       (node.isExpanded ? 
         "<span style='font-size:9pt'>&#9660;</span>" : 
         "<span style='font-size:7pt'>&#9654</span>") + "</span></a></span>";
   }
   
-  get contentTemplate() {
-    return "<span id='content'><a id='more' class='more'>...</a></span>";
+  contentTemplate(content) {
+    return "<span id='content'><a id='more' class='more'>"+ (content ? content : "...")+ "</a></span>";
   }
 
   get quoteTemplate() {
@@ -121,20 +149,22 @@ export default class Inspector   extends Morph {
   }
   
   attachHandlers(node, obj, name, renderCall) {
+    node.target = obj
     renderCall = renderCall || "render"    
     // jqyery would make this cleaner here...
     var moreNode = node.querySelector("#more");
     if (moreNode) moreNode.onclick = (evt) => {
       this[renderCall](node, obj, true, name);
     };
-    var expandNode = node.querySelector("#expand");
-    if (expandNode) expandNode.onclick = (evt) => {
-      this[renderCall](node, obj, !node.isExpanded, name);
-    };
+    node.querySelectorAll(".expand").forEach(expandNode => {
+      expandNode.onclick = (evt) => {
+        this[renderCall](node, obj, !node.isExpanded, name);
+      }
+    })
     var tagNode = node.querySelector("#tagname");
-    if (tagNode) tagNode.onclick = (evt) => {
+    if (tagNode) tagNode.addEventListener('click',(evt) => {
       this.onSelect(node, obj);
-    };
+    });
   }
   
   renderAttributes(node, obj) {
@@ -175,20 +205,20 @@ export default class Inspector   extends Morph {
     var gt = "<span class='syntax'>&gt;</span>";
     node.innerHTML = this.expandTemplate(node)  + 
       (obj.tagName && !obj.livelyIsParentPlaceholder ? lt : "")+
-      `<a id='tagname' class='tagname'>${tagName.toLowerCase()}</a>`+
+      `<a id='tagname' class='expand tagname'>${tagName.toLowerCase()}</a>`+
       `<span id='attributes'></span>` +
       (obj.tagName && !obj.livelyIsParentPlaceholder ? gt : "")+
-      this.contentTemplate +
+      this.contentTemplate(truncateString(obj.textContent, 40, "..")) +
       (obj.tagName && !obj.livelyIsParentPlaceholder ? 
         `${lt}/<span class='tagname'>${tagName.toLowerCase()}</span>${gt}` : "");
     if (tagName == "shadowroot") {
       node.innerHTML = this.expandTemplate(node) + "<a id='tagname' class='tagname'> #shadow-root</a>" +
-        this.contentTemplate; 
+        this.contentTemplate(); 
     }
     
     if (tagName == "comment") {
       node.innerHTML = "<a id='tagname' class='tagname'>&lt!-- </a>" + 
-        this.contentTemplate +" --&gt" ;
+        this.contentTemplate() +" --&gt" ;
     }
     // if (!node.isAutoExpanded) html = this.expandTemplate + html
   }
@@ -210,7 +240,7 @@ export default class Inspector   extends Morph {
 
     var contentNode = node.querySelector("#content");
     this.attachHandlers(node, obj);
-
+    
     var expandChildren = obj.livelyIsParentPlaceholder || false;
 
     if (node.isExpanded) {
@@ -246,7 +276,7 @@ export default class Inspector   extends Morph {
   }
   
   displayText(obj, expanded, parent) {
-    node = document.createElement("span");
+    var node = document.createElement("span");
     node.setAttribute("class","element");
     this.render(node, obj, expanded); 
     return node;
@@ -266,7 +296,6 @@ export default class Inspector   extends Morph {
       if (tagNode) tagNode.onclick = (evt) => {
         this.inspect(parentNode);
       };
-      node.target = parentNode;
       return node;
     } else if (obj.tagName) {
       node = document.createElement("div");
@@ -285,7 +314,6 @@ export default class Inspector   extends Morph {
       node = document.createElement("span");
       node.setAttribute("class","element");
     }
-    node.target = obj;
     this.render(node, obj, expanded); 
     return node;
   }
@@ -297,10 +325,10 @@ export default class Inspector   extends Morph {
   render(node, obj, expanded) {
     if (obj instanceof Text) {
       return this.renderText(node, obj, expanded);
-    } else if (this.isNode(obj)) {
+    } else if (this.isNode(obj) && node.type != "Object") {
       return this.renderNode(node, obj, expanded);
     } else if (typeof(obj) == "object") {
-      return this.renderObject(node, obj, expanded, name);
+      return this.renderObject(node, obj, expanded, node.name);
     } else if (typeof(obj) == "function"){
       // return this.renderFunction(node, obj, expanded, name);
     } else {
@@ -327,12 +355,21 @@ export default class Inspector   extends Morph {
     if (obj.id) {
       this.setAttribute("target", "#" + obj.id);
     }
+    if (this.targetObject) {
+      var oldViewState = this.getViewState()
+    }
+    
     this.targetObject = obj;
     this.get("#editor").doitContext = obj;
     this.get("#container").innerHTML = "";
     // special case for inspecting single dom nodes
     var content= this.display(obj, true, null, null);
     this.get("#container").appendChild(content);
+    this.updatePatterns(this.get("#container").childNodes[0])
+    
+    if (oldViewState) {
+      this.setViewState(oldViewState)
+    }
     return content;
   }
   
@@ -343,12 +380,105 @@ export default class Inspector   extends Morph {
         keys.push(i);
       }
     }
-    keys.push("__proto__")
+    if (!this.isAstMode()) {
+      if (obj && this.allKeys(obj.__proto__).length > 0)
+        keys.push("__proto__")
+    }
     return _.sortBy(keys)
   }
   
+  isAstMode() {
+    return this.getAttribute("type") == "ast"
+  }
+  
+  hideWorkspace() {
+    this.get("#container").style.flex = 1
+    this.get("#editor").style.display = "none"
+  }
+
+  showWorkspace() {
+    this.get("#container").style.flex = 0.66
+    this.get("#editor").style.display = "block"
+  }
+  
+  
+  updatePatterns(node) {
+    var obj = node.target
+    if (node.target) {
+      if(node.pattern) {
+        // do nothing
+      } else if(obj.id) {
+        node.pattern = "ID " + obj.id
+      } else if(obj instanceof ShadowRoot) {
+        node.pattern = "shadow-root"
+      } else {
+        node.pattern = "tag " + obj.tagName + " " + obj.id
+        // check if siblings have same pattern
+      }
+      if (node.parentElement) {
+      if (_.find(node.parentElement.childNodes, ea => ea && ea !== node && (ea.pattern == node.pattern))) {
+          node.pattern += " X" // unique... but repeatable
+        }
+      }
+    } else {
+      node.pattern = "NOTARGET"
+    }
+    // lively.showElement(node).textContent = "U=" + node.pattern
+    var content = node.querySelector("#content")
+    if (content) content.childNodes.forEach( ea => {
+      this.updatePatterns(ea)
+    })
+  }
+  
+  // JSON.stringify(this.getViewState())
+  getViewState() {
+    return this.caputureViewState(this.get("#container").childNodes[0])
+  }
+  
+  /*
+    this.setViewState( {"children":[{"pattern":"","children":[{"pattern":"shadowRoot","children":[{"pattern":"","children":[]}]},{"pattern":"#Properties","children":[{"pattern":"attributes","children":[]}]}]}]})
+  */
+  setViewState(state) {
+    return this.applyViewState(this.get("#container").childNodes[0], state)
+  }
+  
+  applyViewState(node, state) {
+    // lively.showElement(node).textContent = "P=" + state.pattern
+    this.expandNode(node)
+    var content = node.querySelector("#content")
+    if (content) {
+      var children = _.filter(content.childNodes, 
+        ea => ea.classList.contains("element"))
+      state.children.forEach( ea => {
+        var child = children.find( c => c.pattern == ea.pattern)
+        if (child) this.applyViewState(child, ea) 
+      })
+    }
+  }
+  
+  expandNode(node) {
+    if (node.isExpanded) return
+    this.render(node, node.target, true)
+  }
+  
+  caputureViewState(node) {
+    var result =  { 
+      pattern: node.pattern,
+      children: []}
+      
+  
+    var content = node.querySelector("#content")
+    if (content) {
+      _.filter(content.childNodes, ea => ea.isExpanded).forEach(ea => {
+        result.children.push(this.caputureViewState(ea))        
+      })
+    }
+    return result
+  }
   
   livelyMigrate(oldInstance) {
-    this.inspect(oldInstance.targetObject) ;   
+    this.inspect(oldInstance.targetObject) ;
+    var viewState  = oldInstance.getViewState()
+    this.setViewState(viewState)
   } 
 }

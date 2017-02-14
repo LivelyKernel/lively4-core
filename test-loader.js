@@ -1,23 +1,14 @@
 console.log("TEST LOADER ")
-System.config({
-  transpiler: 'babel',
-  baseURL: '/base',
-  map: {
-    babel: 'src/external/babel-browser.js'
-    ,
-    kernel: 'src/client/legacy-kernel.js'
-  }
-});
-
 // make it async
 window.__karma__.loaded = function() {};
 
 
-System.import('test-main.js')
-  .catch(e => console.log(
-    e,
-    e.name,
-    e.message,
-    e.stack
-  )
-);
+var script = document.createElement("script");
+script.charset = "utf-8";
+script.type = "text/javascript";
+script.src = 'src/client/boot.js';
+document.head.appendChild(script);
+
+document.addEventListener("livelyloaded", function(evt) {
+  System.import("./base/test-main.js")
+})

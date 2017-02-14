@@ -1,3 +1,5 @@
+import generateUUID from './../src/client/uuid.js';
+import boundEval from './../src/client/code-evaluation/bound-eval.js';
 
 export default class AceEditor extends HTMLElement {
 
@@ -183,7 +185,14 @@ export default class AceEditor extends HTMLElement {
   changeModeForFile(filename) {
     var modelist = ace.require("ace/ext/modelist");
     var mode = modelist.getModeForPath(filename).name;
+    
     this.changeMode(mode);
+    if (mode == "javascript" ) {
+      this.editor.session.setOptions({
+          	tabSize: 2,
+          	useSoftTabs: true
+      })
+    }
   }
 
   changeMode(mode) {
@@ -310,12 +319,28 @@ export default class AceEditor extends HTMLElement {
     return this.doitContext
   }
 
+  setDoitContext(context) {
+    return this.doitContext = context;
+  }
+
   getTargetModule() {
-    return this.targetModule || "workspace://1"
+    return this.targetModule;
+  }
+
+  setTargetModule(module) {
+    return this.targetModule = module;
   }
 
   async boundEval(str, context) {
-    return lively.vm.runEval(str, {targetModule: this.getTargetModule(), context: context})
+    // Ensure target module loaded (for .js files only)
+    // TODO: duplicate with var recorder plugin
+    const MODULE_MATCHER = /.js$/;
+    if(MODULE_MATCHER.test(this.getTargetModule())) {
+      await System.import(this.getTargetModule())
+    }
+
+    // src, topLevelVariables, thisReference, <- finalStatement
+    return boundEval(str, this.getDoitContext(), this.getTargetModule());
   }
 
   printResult(result) {
@@ -330,9 +355,9 @@ export default class AceEditor extends HTMLElement {
     editor.selection.selectToPosition(toSel)
   }
 
-  async tryBoundEval(str, printResult) {
+ async tryBoundEval(str, printResult) {
     var resp;
-    resp = await this.boundEval(str, this.getDoitContext()) 
+    resp = await this.boundEval(str, this.getDoitContext())
     if (resp.isError) {
       var e = resp.value
       console.error(e)
@@ -438,7 +463,7 @@ export default class AceEditor extends HTMLElement {
 
     // Load the dictionary.
     // We have to load the dictionary files sequentially to ensure
-    lively.import("typo").then(() => {
+    System.import("src/external/typo.js").then(() => {
       $.get(dicPath, (data) => {
       	dicData = data;
       }).done(() => {
@@ -554,6 +579,8 @@ export default class AceEditor extends HTMLElement {
   }
   
   livelyMigrate(other) {
+    this.editor.setValue(other.editor.getValue())
+    this.editor.setValue(other.editor.getValue())
     this.editor.setValue(other.editor.getValue())
   }
   

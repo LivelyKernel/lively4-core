@@ -1,0 +1,115 @@
+<template id="lively-ast-explorer" data-class="LivelyAstExplorer">
+  <style>
+  :host {
+    width: 50px;
+    height: 25px;
+  }
+  table {
+    width: 100%;
+    height: 100%;
+  }
+  
+  td {
+    width: 50%;
+    height: 50%;
+  }
+  
+  
+  :host {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #firstRow, #secondRow {
+    display: flex;
+    flex-direction: rows;
+    flex: 0.5;
+  }
+  
+
+  #sourcePane {
+    flex: 0.33;
+  }
+  
+  #outputPane {
+    flex: 0.33;
+  }
+  
+  
+  #astPane {
+    flex: 0.33;
+  }
+  
+  
+  #pluginPane {
+    flex: 0.66;
+  }
+  
+  #resultPane {
+    flex: 0.33;
+  }
+
+  #outputPane, #sourcePane, #pluginPane, #resultPane, #astPane {
+    display: flex;
+    flex-direction: column;
+  }
+
+  juicy-ace-editor {
+    flex: 1;
+  }
+
+  lively-editor {
+    flex: 1;
+  }
+  
+  lively-inspector {
+    flex: 1;
+    height: 100%;
+  }
+  
+  #resultPane pre {
+    flex: 1;
+    margin-left: 15px
+  }
+  #resultPane {
+    overflow: scroll;
+  }
+
+  </style>
+<div id="firstRow">
+  <div id="sourcePane">
+    <div>Source <button id="acceptSource">accept</button></div>
+    <juicy-ace-editor id="source">var a = 3;
+  console.log(a + 4)
+    </juicy-ace-editor>      
+  </div>
+  <lively-separator></lively-separator>
+  <div id="astPane">
+    <lively-inspector id="astInspector" type="ast"></lively-inspector>
+  </div>
+  
+  <lively-separator></lively-separator>
+  <div id="outputPane">
+    
+    <div>Output <span  id="eval">
+          <input type="checkbox" id="live" title="continous eval" checked/> run
+      </span></div>
+    
+    <juicy-ace-editor  id="output"></juicy-ace-editor>
+  </div>   
+</div>
+<lively-separator></lively-separator>
+<div id="secondRow">
+  <div id="pluginPane">
+    <div>Plugin</div>
+    <lively-editor  id="plugin"></lively-editor>
+  </div>
+  <lively-separator ></lively-separator>
+  <div id="resultPane">
+    <div>Result</div>
+      <pre id="result"></pre>
+  </div>
+</div>
+
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>

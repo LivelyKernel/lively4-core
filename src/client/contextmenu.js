@@ -3,8 +3,10 @@
  * - creates the "world menu" for Lively4
  */ 
   
-import html from 'src/client/html.js';
-import {pt} from 'lively.graphics';
+import html from './html.js';
+import {pt} from './graphics.js';
+
+// import lively from './lively.js'; #TODO resinsert after we support cycles again
 
 export default class ContextMenu {
   
@@ -110,7 +112,7 @@ export default class ContextMenu {
           document.webkitCancelFullScreen()],
       ["Customize Page",   (evt) => {
         this.hide();
-        lively.import("customize").then(c => c.openCustomizeWorkspace(evt));
+        System.import("src/client/customize.js").then(c => c.openCustomizeWorkspace(evt));
       }],
       // #TODO use sub menues here
       ["Devdocs.io",     (evt) => {

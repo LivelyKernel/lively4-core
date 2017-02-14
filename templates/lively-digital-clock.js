@@ -4,6 +4,12 @@ import Morph from './Morph.js';
 
 export default class DigitalClock extends Morph {
 
+  initialize() {
+    this.style.backgroundColor = 'red'
+    if (!this.start)
+      this.start = Date.now()
+  }
+
   /*
    * HTMLElement callbacks
    */
@@ -52,7 +58,14 @@ export default class DigitalClock extends Morph {
   }
   
   updateTime() {
-    let date = new Date();
-    this.shadowRoot.innerHTML = this.formatTime(date);
+    var date = new Date()
+    var time = date.getTime() - this.start
+    this.shadowRoot.innerHTML = "It is " + this.formatTime(date) + ", running " + (time / 1000) +"s" ;
   }
+  
+  livelyMigrate(oldInstance) {
+    
+    this.start = oldInstance.start
+  }
+  
 }

@@ -1,4 +1,4 @@
-import {pt,rect} from 'lively.graphics'
+import {pt,rect} from '../graphics.js'
 
 export function setPosition(node, pos) {
   node.style.left = '' + pos.x + 'px';

@@ -1,15 +1,13 @@
 import Morph from './Morph.js';
 import highlight from 'src/external/highlight.js';
-import {pt} from 'lively.graphics';
-
+import {pt} from 'src/client/graphics.js';
 import halo from 'templates/lively-halo.js';
-
 import ContextMenu from 'src/client/contextmenu.js';
-
-import * as cop  from "src/external/ContextJS/src/contextjs.js";
-import ScopedScripts from "./ScopedScripts.js";
-
+import SyntaxChecker from 'src/client/syntax.js'
 import components from "src/client/morphic/component-loader.js"
+
+// import * as cop  from "src/external/ContextJS/src/contextjs.js";
+// import ScopedScripts from "./ScopedScripts.js";
 
 export default class Container extends Morph {
 
@@ -102,7 +100,7 @@ export default class Container extends Morph {
       evt.preventDefault();
 	    lively.openContextMenu(document.body, evt, undefined, this);
 	    return false;
-    } // Hallo Jens! Was macht Lively so?
+    } 
   }
   
   onFullscreen(evt) {
@@ -156,7 +154,12 @@ export default class Container extends Morph {
   }
 
   reloadModule(url) {
-    System.import(url.toString()).then( m => {
+    var urlString = url.toString()
+    // #Hack #issue in SystemJS babel syntax errors do not clear errors
+    System['@@registerRegistry'][System.normalizeSync(urlString)] = undefined
+    System.registry.delete(System.normalizeSync(urlString))
+    debugger
+    System.import(urlString).then( m => {
         this.shadowRoot.querySelector("#live").disabled =false;
         lively.notify({
           title: "Loaded " + url, color: "green"});
@@ -184,7 +187,7 @@ export default class Container extends Morph {
   
   loadModule(url) {
     lively.reloadModule("" + url).then(module => {
-      lively.notify("","Module " + moduleName + " reloaded!", 3, null, "green");
+      lively.notify("","Module " + url + " reloaded!", 3, null, "green");
       if (this.getPath().match(/templates\/.*js/)) {
         var templateURL = this.getPath().replace(/\.js$/,".html");
         try {
@@ -197,7 +200,7 @@ export default class Container extends Morph {
       }
       this.resetLoadingFailed();
     }, err => {
-      this.loadingFailed(moduleName, err);
+      this.loadingFailed(url, err);
     });
   }
   
@@ -205,9 +208,13 @@ export default class Container extends Morph {
     // that.resetLoadingFailed()
     // System.import(urlString)
     var urlString = this.getURL().toString();
-    if (urlString.match(/\.js$/)) {
-      var m = lively.modules.module(urlString);
-      this.get("#live").disabled = !m.isLoaded();
+    
+    // #TODO #babel6refactoring
+    if (lively.modules) {
+      if (urlString.match(/\.js$/)) {
+        var m = lively.modules.module(urlString);
+        this.get("#live").disabled = !m.isLoaded();
+      }
     }
     this.lastLoadingFailed = false;
     var b = this.get("#apply"); if (b) b.style.border = "";
@@ -335,46 +342,6 @@ export default class Container extends Morph {
     lively.notify("Save as... not implemented yet");
   }
 
-  checkForSyntaxErrors() {
-    if (!this.getURL().pathname.match(/\.js$/)) {
-      return
-    }
-    var Range = ace.require('ace/range').Range;
-    var editor = this.get("#editor").currentEditor();
-    var doc = editor.getSession().getDocument(); 
-    var src = editor.getValue();
-    
-    // clear annotations
-    editor.getSession().setAnnotations([]);
-    
-    // clear markers
-    var markers = editor.getSession().getMarkers();
-    for(var i in markers) {
-        if (markers[i].clazz == "marked") {
-            editor.getSession().removeMarker(i);
-        }
-    }
-    
-    try {
-        var ast = lively.ast.parse(src);
-        return false;
-    } catch(e) {
-      editor.session.addMarker(Range.fromPoints(
-        doc.indexToPosition(e.pos),
-        doc.indexToPosition(e.raisedAt)), "marked", "text", false); 
-
-      editor.getSession().setAnnotations([{
-        row: e.loc.line - 1,
-        column: e.loc.column,
-        text: e.message,
-        type: "error"
-      }]);
-      
-      return true
-    }
-          
-  }
-  
   onSave(doNotQuit) {
     if (!this.isEditing()) {
       this.saveEditsInView();
@@ -401,7 +368,7 @@ export default class Container extends Morph {
       if (moduleName) {
         moduleName = moduleName[1];
         
-        if (this.checkForSyntaxErrors()){
+        if (SyntaxChecker.checkForSyntaxErrors(this.getAceEditor().editor)){
           lively.notify("found syntax error")
           return // don't try any further...
         };
@@ -446,7 +413,7 @@ export default class Container extends Morph {
   }
 
   onNewfile() {
-    newfile(this.getPath())
+    this.newfile(this.getPath())
   }
   
   async newfile(path) {
@@ -729,6 +696,9 @@ export default class Container extends Morph {
         aceComp.getDoitContext = () => {
           return window.that;
         };
+        // aceComp.getDoitContextModuleUrl = () => {
+        //   return this.getURL()
+        // }
         aceComp.aceRequire('ace/ext/searchbox');
         aceComp.doSave = text => {
           this.onSave();
@@ -1163,7 +1133,6 @@ export default class Container extends Morph {
         
         aceComp.addEventListener("change", evt => this.onTextChanged(evt))
         
-        
         var url = this.getURL();
         livelyEditor.setURL(url);
         aceComp.changeModeForFile(url.pathname);
@@ -1190,7 +1159,7 @@ export default class Container extends Morph {
         this.showCancelAndSave();
     
         if ((""+url).match(/\.js$/)) {
-          aceComp.targetModule = "" + url; // for editing
+          aceComp.setTargetModule("" + url); // for editing
         }
         // livelyEditor.loadFile() // ALT: Load the file again?
       });
@@ -1255,8 +1224,12 @@ export default class Container extends Morph {
     });
   }
   
-  onTextChanged() {
-    this.checkForSyntaxErrors();
+  async onTextChanged() {
+    var editor = this.getAceEditor().editor;
+    if (!this.getURL().pathname.match(/\.js$/)) {
+      return
+    }
+    SyntaxChecker.checkForSyntaxErrors(editor);
   }
   
   livelyPreMigrate() {

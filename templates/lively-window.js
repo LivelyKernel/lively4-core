@@ -1,9 +1,12 @@
 'use strict';
 
 import Morph from './Morph.js';
-import { AExpr } from 'active-expressions';
+// import { AExpr } from 'src/external/active-expressions/src/active-expressions.js';
 
-import {pt} from 'lively.graphics'
+// import { AExpr } from 'src/external/active-expressions/src/active-view.js';
+
+
+import {pt} from 'src/client/graphics.js'
 
 
 function getScroll() {
@@ -67,19 +70,19 @@ export default class Window extends Morph {
       this.displayResizeHandle(false);
 
     // Capture in window
-    this._capture_expr = new AExpr(win =>
-      parseInt(win.style.top) < 0 || parseInt(win.style.left) < 0
-    );
-    this._capture_expr
-    .applyOn(this)
-    .onChange(win => {
-      if (parseInt(win.style.top) < 0) {
-        win.style.top = 0;
-      }
-      if (parseInt(win.style.left) < 0) {
-        win.style.left = 0;
-      }
-    });
+    // this._capture_expr = new AExpr(win =>
+    //   parseInt(win.style.top) < 0 || parseInt(win.style.left) < 0
+    // );
+    // this._capture_expr
+    // .applyOn(this)
+    // .onChange(win => {
+    //   if (parseInt(win.style.top) < 0) {
+    //     win.style.top = 0;
+    //   }
+    //   if (parseInt(win.style.left) < 0) {
+    //     win.style.left = 0;
+    //   }
+    // });
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
@@ -139,7 +142,7 @@ export default class Window extends Morph {
   render() {
     if (this.created) {
       if (this.attributes['title']) {
-        this.titleSpan.innerHTML = this.attributes['title'].value;
+        this.titleSpan.innerHTML = this.attributes['title'].value.slice(0, 50);
       }
     }
   }

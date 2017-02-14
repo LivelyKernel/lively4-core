@@ -2,5 +2,5 @@
 
 
 export function hello() {
-  return "World! Today is the " + new Date() ;
+  return "X World! Today is the"  + new Date() ;
 }

@@ -8,5 +8,5 @@
       },
       transpiler: 'plugin-babel'
     });
-    System.import('./manual.js').then(console.log.bind(console));
+    System.import('./testing-code.js').then(m => m.p()).then(console.log.bind(console));
   </script>
