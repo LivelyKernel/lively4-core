@@ -7,7 +7,7 @@
   <script type="lively4script" data-name="initialize">
     () =>
     {
-      this.canvas = $(this.shadowRoot).find("canvas")[0];
+      this.canvas = this.shadowRoot).querySelector("canvas");
       this.context = this.canvas.getContext("2d");
       
       this.turtle = {
