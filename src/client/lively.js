@@ -210,8 +210,8 @@ export default class Lively {
     this.exportModules()
 
     if (!window.lively4chrome) {
-    // for container content... But this will lead to conflicts with lively4chrome  ?? #Jens
-      // lively.loadCSSThroughDOM("livelystyle", lively4url + "/templates/lively4.css");
+      // for container content... But this will lead to conflicts with lively4chrome  ?? #Jens
+      lively.loadCSSThroughDOM("livelystyle", lively4url + "/templates/lively4.css");
     }    
     // preload some components
     components.loadByName("lively-window");
