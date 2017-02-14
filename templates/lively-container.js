@@ -6,8 +6,8 @@ import ContextMenu from 'src/client/contextmenu.js';
 import SyntaxChecker from 'src/client/syntax.js'
 import components from "src/client/morphic/component-loader.js"
 
-// import * as cop  from "src/external/ContextJS/src/contextjs.js";
-// import ScopedScripts from "./ScopedScripts.js";
+import * as cop  from "src/external/ContextJS/src/contextjs.js";
+import ScopedScripts from "./ScopedScripts.js";
 
 export default class Container extends Morph {
 
