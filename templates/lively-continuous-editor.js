@@ -167,11 +167,14 @@ export default class ContinuousEditor extends Morph {
     
     
     if (astnode.id) {
-      label += astnode.id.name
-    } else {
-      if (astnode)
+      label += astnode.id.name +""
+    } else if (astnode.left && astnode.left.name) {
+      label += astnode.left.name + ""
+    } else if (astnode.argument && astnode.operator) {
+        label += astnode.argument.name + "";
+    } else if (astnode) {
         label += astnode.type;
-    }
+    } 
     
     if (call.value !== undefined)
       label += "="  + call.value;

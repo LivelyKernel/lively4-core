@@ -107,6 +107,8 @@ export default class Editor extends Morph {
       var url = new URL(urlString);
       this.getSubmorph("#filename").value = url.href;
     }
+    
+    this.dispatchEvent(new CustomEvent("url-changed", {detail: {url: urlString}}))
   }
 
   setText(text) {

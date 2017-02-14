@@ -28,19 +28,26 @@ export default class AstExplorer extends Morph {
     //this.smc = smc
 
     // try {    
-
-    this.get("#plugin").setURL("https://lively-kernel.org/lively4/lively4-jens/demos/astplugin.js")
+    
+    var src =  this.getAttribute("src")
+    if (!src) src = "https://lively-kernel.org/lively4/lively4-jens/demos/astplugin.js"
+    this.get("#plugin").setURL(src)
 
     this.get("#plugin").loadFile()
 
 
     lively.html.registerButtons(this);
 
-    this.get("#plugin").get("juicy-ace-editor").doSave = () => {
-      this.get("#plugin").saveFile()
+    this.get("#plugin").get("juicy-ace-editor").doSave = async () => {
+      await this.get("#plugin").saveFile()
+      await lively.reloadModule("" + this.get("#plugin").getURL())
       this.updateAST()      
     };
     
+    this.get("#plugin").addEventListener("url-changed", (evt) => {
+      this.onPluginUrlChanged(evt.detail)      
+    })
+
     this.get("#source").doSave = () => {
       this.updateAST()      
     };
@@ -80,6 +87,10 @@ export default class AstExplorer extends Morph {
     //}
     this.dispatchEvent(new CustomEvent("initialize"));
 
+  }
+  
+  onPluginUrlChanged(details) {
+    this.setAttribute("src", details.url)
   }
   
   async updateAST() {
