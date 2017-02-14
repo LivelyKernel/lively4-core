@@ -2,6 +2,7 @@
 
 ## Projects:
 
+[Github Wikipage](https://lively-kernel.org/lively4/Lively4.wiki/SWD16.md)
 
 * [Blackbox Constraint Solving]()
 * [Lively4 Chrome Debugger]()
