@@ -37,6 +37,7 @@ function checkRemovedNodes(nodes, orphans) {
 }
 
 function initialize(){
+    return; // currently does not work in Chrome :(
     resetPersistenceSessionStore();
     loadPreferences();
 
@@ -164,8 +165,8 @@ function restartPersistenceTimerInterval() {
 }
 
 function resetPersistenceSessionStore() {
-    sessionStorage["lively.scriptMutationsDetected"] = 'false';
-    sessionStorage["lively.persistenceCurrentlyCloning"] = 'false';
+    //sessionStorage["lively.scriptMutationsDetected"] = 'false';
+    //sessionStorage["lively.persistenceCurrentlyCloning"] = 'false';
 }
 
 function checkForMutationsToSave() {
