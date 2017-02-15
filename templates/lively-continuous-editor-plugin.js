@@ -9,13 +9,14 @@ var assignments
 var functions
 var loops
 
-
 export default function (babel) {
   const { types: t, template, transformFromAst, traverse } = babel;
   let log = template("_tr_(NODEID,() => EXPSTATE)")
   let begin = template("_tr_begin_(NODEID)")
   let end = template("_tr_end_(NODEID)")
   let logstatement = template("_tr_log_(NODEID)")
+
+  let checkRuntime = template('if (performance.now() - _tr_time > _tr_time_max) throw new Error("Run to long! Endless loop?");')
 
   return {
     name: "ast-transform", // not required
@@ -75,6 +76,8 @@ export default function (babel) {
 	      path.unshiftContainer('body', template(`
 	        var __tr_ast__ = window.__tr_ast_registry__[ASTID]
 
+          var _tr_time = performance.now();
+          var _tr_time_max = 1000;
 	  		  function _tr_(id, exp) {
             var astnode =  __tr_ast__ .node_map[id]
   	  		  console.log("enter " + astnode.type )
@@ -176,11 +179,19 @@ export default function (babel) {
         	}))
         })
 
+        loops.forEach(ea => {
+            ea.get('body').unshiftContainer('body', checkRuntime())
+        })
+
         functions.forEach(ea => {
         	var body = ea.get('body');
         	body.replaceWith(template("{ return _tr_( NODEIDX , () => BLOCK)}")({
         	  NODEIDX: t.numericLiteral(ea.node.traceid), BLOCK: body}))
         });
+
+        functions.forEach(ea => {
+            ea.get('body').unshiftContainer('body', checkRuntime())
+        })
 
         expressions.forEach(ea => {
         	ea.replaceWith(log({

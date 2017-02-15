@@ -182,7 +182,7 @@ export default class AstExplorer extends Morph {
         var result =  eval('' +this.result.code);
         this.get("#result").textContent += "-> " + result;       
       } catch(e) {
-        this.get("#result").textContent = "Error: " + e
+        this.get("#result").textContent += "Error: " + e
       } finally {
         console.log = oldLog
       }
