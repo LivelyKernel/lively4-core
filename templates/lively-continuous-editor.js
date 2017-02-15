@@ -156,16 +156,10 @@ export default class ContinuousEditor extends Morph {
   astNode(id) {
     return this.ast.node_map[id] 
   }
-
-  printTraceNode(parent, call) {
+  
+  nodeToString(call) {
     var astnode = this.astNode(call.id) 
-
-    var node = document.createElement("div");
-    node.setAttribute("class", "traceNode")
-    
-    var label = "";
-    
-    
+    var label = ""
     if (astnode.id) {
       label += astnode.id.name +""
     } else if (astnode.left && astnode.left.name) {
@@ -175,9 +169,16 @@ export default class ContinuousEditor extends Morph {
     } else if (astnode) {
         label += astnode.type;
     } 
-    
     if (call.value !== undefined)
       label += "="  + call.value;
+    return label
+  }
+
+  printTraceNode(parent, call) {
+    var node = document.createElement("div");
+    node.setAttribute("class", "traceNode")
+    
+    var label = this.nodeToString(call);
     
     node.innerHTML = "<div class='traceLabel'> " + label +"</div>"
     
@@ -217,7 +218,8 @@ export default class ContinuousEditor extends Morph {
       var doc = editor.getSession().getDocument()
       editor.session.addMarker(Range.fromPoints(
         doc.indexToPosition(ast_node.start),
-        doc.indexToPosition(ast_node.end)), "marked marked_invisible " +  call.markId, "text", false); 
+        // marked
+        doc.indexToPosition(ast_node.end)), "marked_invisible " +  call.markId, "text", false); 
     }
     call.children.forEach(ea => {
       this.markCallTree(ea)
@@ -245,8 +247,6 @@ export default class ContinuousEditor extends Morph {
           var markerLine = document.createElement("div");
           markerLine.classList.add("markerLine")  // markerLine    
 
-          markerLine.classList.add("marker") 
-
           markerLine.style.position = "absolute";
 
           markerLine.style.top  = (bounds.top - parentBounds.top) + "px";
@@ -258,7 +258,9 @@ export default class ContinuousEditor extends Morph {
         resultNode.classList.add(node.markId)
 
         // node.code + " = " +
-        resultNode.innerHTML =  ast_node.type +":" + node.value ;
+        // resultNode.innerHTML =  ast_node.type +":" + node.value ;
+        resultNode.innerHTML =  this.nodeToString(node);
+        
         resultNode.id = node.markId
         resultNode.addEventListener("click", (evt) => {
             this.selectCallTraceNode(node)

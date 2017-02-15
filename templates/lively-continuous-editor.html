@@ -10,7 +10,7 @@
     flex-direction: column;
   }
 
-  #firstRow, #secondRow {
+  #firstRow, #secondRow, #thirdRow {
     display: flex;
     flex-direction: rows;
     flex: 0.5;
@@ -43,14 +43,18 @@
   }
   
   #traceViewPane {
-    flex: 0.5;
-    background-color: lightgray; 
+    flex: 1;
+    /*
+      background-color: lightgray; 
+    */
     overflow: scroll;
   }
 
   .traceLabel {
     font-size: 10px;
-    background-color: rgba(0,0,255,0.1);
+    /*
+      background-color: rgba(0,0,255,0.1);
+    */
     border: 1px solid gray;
     padding: 1px;
   }
@@ -61,9 +65,14 @@
     padding-right: 10px;
     padding-left: 10px;
 
-    background-color: rgba(0,0,255,0.1);
+
+
     /*
+      background-color: rgba(0,0,255,0.1);
+    */
     white-space: nowrap;
+
+    /*
     */
   }
 
@@ -73,8 +82,13 @@
   .traceNode {
     display: inline-block;
     vertical-align: top; 
-  float: left;
-  clear: both;
+    float: left;
+    margin: 1px;
+    padding: 0px;
+
+/*  
+    clear: both;
+*/
   }
   
   
@@ -108,9 +122,10 @@
     display: inline-block;
     white-space: normal;
   }
-
-
-
+  
+  #traceView {
+    width: max-content;
+  }
 
   </style>
 <div id="firstRow">
@@ -133,12 +148,14 @@
     <lively-inspector id="traceInspector" type="ast"></lively-inspector>
   </div>
   <lively-separator></lively-separator>
-  <div id="traceViewPane">
-    <div id="traceView"></div>
-  </div>
-  <lively-separator></lively-separator>
   <div id="objectsPane">
     <lively-inspector id="objectInspector" type="ast"></lively-inspector>
+  </div>
+</div>
+<lively-separator></lively-separator>
+<div id="thirdRow">
+  <div id="traceViewPane">
+    <div id="traceView"></div>
   </div>
 </div>
 
