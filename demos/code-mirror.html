@@ -1,0 +1,33 @@
+
+<html>
+<head>
+  <script src="../src/external/code-mirror/lib/codemirror.js"></script>
+  <script src="../src/external/code-mirror/mode/javascript/javascript.js"></script>
+  <style>
+    #codemirrorpane {
+      width: 300px;
+      height: 300px;
+      background-color: gray;
+    }
+  </style>
+
+</head>
+<body>
+
+Code mirror:
+
+<div id='codemirrorpane'>
+  xxxxx
+</div>
+
+  
+<script>
+// lively.loadCSSThroughDOM("codemirror", lively4url + "/src/external/code-mirror/lib/codemirror.css")
+var myCodeMirror = CodeMirror(document.querySelector("#codemirrorpane"), {
+  value: "function myScript(){return 100;}\n",
+  mode:  "javascript"
+});
+
+</script>
+</body>
+</html>

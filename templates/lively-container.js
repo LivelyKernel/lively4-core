@@ -554,6 +554,12 @@ export default class Container extends Morph {
     // content = content.replace(/\<\!-- BEGIN SYSTEM\.JS(.|\n)*\<\!-- END SYSTEM.JS--\>/,"");
     // content = content.replace(/\<\!-- BEGIN LIVELY BOOT(.|\n)*\<\!-- END LIVELY BOOT --\>/,"");
     
+    if (content.match("<template")) {
+      
+      content = "<pre> " + content.replace(/</g,"&lt;") +"</pre"
+    }
+    
+    
     if (content.match(/<script src=".*d3\.v3(.min)?\.js".*>/)) {
       if (!window.d3) {
         console.log("LOAD D3");

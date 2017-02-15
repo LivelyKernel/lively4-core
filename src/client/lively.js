@@ -562,6 +562,14 @@ export default class Lively {
       if (newInstance.livelyMigrate) {
         newInstance.livelyMigrate(oldInstance); // give instances a chance to take over old state...
       }
+      
+      // #LiveProgrammingHack
+      document.querySelectorAll("lively-inspector").forEach(inspector => {
+        if (inspector.targetObject === oldInstance) {
+          inspector.inspect(newInstance)
+        }
+      })
+
     });
   }
 
