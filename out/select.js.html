@@ -580,7 +580,7 @@
     function select(Class, predicate, context) {
         var newSelection = new View();
 
-        new FilterOperator(Class.__livingSet__, newSelection, predicate, context);
+        new FilterOperator(Class._instances_, newSelection, predicate, context);
 
         return newSelection;
     }
