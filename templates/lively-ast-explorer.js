@@ -177,8 +177,8 @@ export default class AstExplorer extends Morph {
       var oldLog = console.log
       var logNode = this.get("#result");
       try {
-        console.log = (s) => {
-          oldLog.apply(console, arguments)
+        console.log = (s, ...rest) => {
+          oldLog.call(console, s, ...rest)
           logNode.textContent += s + "\n"
         }
         var result ='' + (await this.get("#output").boundEval(this.get("#output").editor.getValue())).value;

@@ -10,7 +10,7 @@ import traceBabelPlugin from "./lively-continuous-editor-plugin.js"
 export default class ContinuousEditor extends Morph {
 
   initialize() {
-    this.windowTitle = "Continuous Editor";  // #TODO why does it not work?
+    this.windowTitle = "Continuous Editor";  
     this.get("#source").setURL("https://lively-kernel.org/lively4/lively4-jens/demos/hello.js")
     this.get("#source").loadFile()
 
@@ -32,7 +32,10 @@ export default class ContinuousEditor extends Morph {
     this.editorComp().addEventListener("change", evt => 
       this.onSourceChange(evt));
 
-    this.dispatchEvent(new CustomEvent("initialize"));
+
+    this.editorComp().addEventListener("editor-loaded", evt => 
+      this.dispatchEvent(new CustomEvent("initialize")));
+
   }
   
   hideMarker(markId) {
@@ -77,7 +80,7 @@ export default class ContinuousEditor extends Morph {
   }
 
   editorComp() {
-    return this.get("#source").get("juicy-ace-editor");
+    return this.get("#source").get("lively-code-mirror");
   }
   
   editor() {
@@ -137,14 +140,14 @@ export default class ContinuousEditor extends Morph {
     }
     if (window.__tr_last_ast__)   {
       this.ast = window.__tr_last_ast__
-      this.clearMarkers()
+      // this.clearMarkers()
       this.traceRoot = this.ast.calltrace
       this.get("#traceInspector").inspect(this.ast)
 
-      this.markCallTree(this.traceRoot)
-      this.updateTraceView(this.traceRoot)
+      // this.markCallTree(this.traceRoot)
+      // this.updateTraceView(this.traceRoot)
       
-      setTimeout(() => this.updateMarkerResults(this.traceRoot),0 )
+      // setTimeout(() => this.updateMarkerResults(this.traceRoot),0 )
     }
   }
 
@@ -279,12 +282,12 @@ export default class ContinuousEditor extends Morph {
     this.addEventListener("initialize", () => {
       this.get("#source").setURL(other.get("#source").getURL())
       this.editor().setValue(other.editor().getValue())
-      this.editor().selection.setRange(other.editor().selection.getRange())
-      var viewState = other.get("#traceInspector").getViewState()
+      // this.editor().selection.setRange(other.editor().selection.getRange())
+      // var viewState = other.get("#traceInspector").getViewState()
       
       this.runCode()
       
-      this.get("#traceInspector").setViewState(viewState)
+      // this.get("#traceInspector").setViewState(viewState)
     })
   }
   

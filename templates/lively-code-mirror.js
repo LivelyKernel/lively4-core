@@ -3,7 +3,6 @@ import boundEval from './../src/client/code-evaluation/bound-eval.js';
 
 import Morph from "./Morph.js"
 
-import './lively-code-mirror-hint.js'
 
 export default class LivelyCodeMirror extends Morph {
   
@@ -26,6 +25,9 @@ export default class LivelyCodeMirror extends Morph {
     await this.loadModule("addon/search/search.js")
     await this.loadModule("addon/search/jump-to-line.js")
     await this.loadModule("addon/dialog/dialog.js")
+
+    await System.import(lively4url + '/templates/lively-code-mirror-hint.js')
+
 
     this.loadCSS("addon/hint/show-hint.css")
     this.loadCSS("../../../templates/lively-code-mirror.css")

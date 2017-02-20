@@ -36,6 +36,11 @@
   lively-editor {
     flex: 1;
   }
+
+  lively-code-editor {
+    flex: 1;
+  }
+
   
   lively-inspector {
     flex: 1;
@@ -130,11 +135,7 @@
   </style>
 <div id="firstRow">
   <div id="sourcePane">
-    <lively-editor  id="source"></lively-editor>
-  </div>
-  <lively-separator></lively-separator>
-  <div id="markerPane">
-    <div id="markerLayer">....</div>
+    <lively-code-editor  id="source" ></lively-editor>
   </div>
   <lively-separator></lively-separator>
   <div id="runtimePane">
