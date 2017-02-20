@@ -108,6 +108,7 @@ if (window.lively && window.lively4url) {
         // plugins are not transpiled with other plugins, except for SystemJS-internal plugins
         [lively4url + '/src/external/babel-plugin-*.js']: moduleOptionsNon,
         [lively4url + '/src/external/ContextJS/src/*.js']: moduleOptionsNon,
+        //['']: moduleOptionsNon,
         '*.js': {
           babelOptions: {
             es2015: false,

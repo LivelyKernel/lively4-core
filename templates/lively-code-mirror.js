@@ -3,23 +3,185 @@ import boundEval from './../src/client/code-evaluation/bound-eval.js';
 
 import Morph from "./Morph.js"
 
+import './lively-code-mirror-hint.js'
+
 export default class LivelyCodeMirror extends Morph {
+  
+  async loadModule(path) {
+    return lively.loadJavaScriptThroughDOM("codemirror_"+path.replace(/[^A-Za-z]/g,""), 
+      "src/external/code-mirror/" + path)
+  }
+  
+  async loadCSS(path) {
+    return lively.loadCSSThroughDOM("codemirror_" + path.replace(/[^A-Za-z]/g,""), "src/external/code-mirror/" + path)
+  }
+  
+  
+  async loadModules() {
+    await this.loadModule("lib/codemirror.js")
+    await this.loadModule("mode/javascript/javascript.js")
+    await this.loadModule("addon/hint/show-hint.js")
+    await this.loadModule("addon/hint/javascript-hint.js")
+    await this.loadModule("addon/search/searchcursor.js")
+    await this.loadModule("addon/search/search.js")
+    await this.loadModule("addon/search/jump-to-line.js")
+    await this.loadModule("addon/dialog/dialog.js")
+
+    this.loadCSS("addon/hint/show-hint.css")
+    this.loadCSS("../../../templates/lively-code-mirror.css")
+  }
 
   initialize() {
-   }
+   
+  }
   
-  attachedCallback() {
-   var text = this.childNodes[0];
+  async attachedCallback() {
+   
+    
+    if (this.editor) return;
+    
+    var text = this.childNodes[0];
     var container = this.container;
     var element = this;
+      
+    await this.loadModules()
 
-    var value = (text && text.textContent) || this.value;
+    var value = (text && text.textContent) || this.value || "no content";
 
     this.editor = CodeMirror(this.get("#code-mirror-container"), {
-      value: "function myScript(){return 100;}\n",
-      mode:  "javascript"
+      value: value,
+      lineNumbers: true,
+      dialog: {
+        closeOnEnter: false,
+        closeOnBlur: false,
+        onClose: () => {
+          lively.notify("closed dialog")
+          
+        }
+      },
+      mode: {name: "javascript", globalVars: true},
     });  
+    
+    this.editor.setOption("extraKeys", {
+      "Alt-F": "findPersistent",
+      "Ctrl-Space": "autocomplete",
+      "Ctrl-P": (cm) => {
+          let text = this.getSelectionOrLine()
+          this.tryBoundEval(text, true);
+      },
+      "Ctrl-D": (cm) => {
+          let text = this.getSelectionOrLine()
+          this.tryBoundEval(text, false);
+      }
+    });
+    
+    this.dispatchEvent(new CustomEvent("editor-loaded"))
   };
+
+  getSelectionOrLine() {
+    var text = this.editor.getSelection()
+    if (text.length > 0)
+      return text
+    else
+      return this.editor.getLine(this.editor.getCursor("end").line)
+  }
+  
+  getDoitContext() {
+    return this.doitContext
+  }
+
+  setDoitContext(context) {
+    return this.doitContext = context;
+  }
+
+  getTargetModule() {
+    return this.targetModule;
+  }
+
+  setTargetModule(module) {
+    return this.targetModule = module;
+  }
+
+  async boundEval(str, context) {
+    // Ensure target module loaded (for .js files only)
+    // TODO: duplicate with var recorder plugin
+    const MODULE_MATCHER = /.js$/;
+    if(MODULE_MATCHER.test(this.getTargetModule())) {
+      await System.import(this.getTargetModule())
+    }
+
+    // src, topLevelVariables, thisReference, <- finalStatement
+    return boundEval(str, this.getDoitContext(), this.getTargetModule());
+  }
+
+  printResult(result) {
+    var editor = this.editor;
+    var text = result
+    this.editor.setCursor(this.editor.getCursor("end"))
+    // don't replace existing selection
+    this.editor.replaceSelection(result, "around")
+
+  }
+
+ async tryBoundEval(str, printResult) {
+    var resp;
+    resp = await this.boundEval(str, this.getDoitContext())
+    if (resp.isError) {
+      var e = resp.value
+      console.error(e)
+      if (printResult) {
+        window.LastError = e
+        this.printResult("" +e)
+      } else {
+        lively.handleError(e)
+      }
+      return e
+    }
+    var result = resp.value
+    var obj2string = function(obj) {
+      var s = "";
+      try {
+        s += obj // #HACK some objects cannot be printed any more
+      } catch(e) {
+        s += "UnprintableObject["+ Object.keys(e) + "]" // so we print something else
+      }
+      return s
+    }
+    
+    if (printResult) {
+      // alaways wait on promises.. when interactively working...
+      if (result && result.then) { 
+        // we will definitly return a promise on which we can wait here
+        result
+          .then( result => {
+            this.printResult("RESOLVED: " + obj2string(result))
+          })
+          .catch( error => {
+            console.error(error);
+            // window.LastError = error;
+            this.printResult("Error in Promise: \n" +error)
+          })
+      } else {
+        this.printResult(" " + obj2string(result))
+        if (result instanceof HTMLElement ) {
+          lively.showElement(result)
+        }
+      }
+    }
+    return result
+  }
+  
+  async inspectIt(str) {
+    var result =  await this.boundEval(str, this.getDoitContext()) 
+    if (!result.isError) {
+      lively.openInspector(result.value, null, str)
+    }
+  }
+
+  doSave(text) {
+    this.tryBoundEval(text) // just a default implementation...
+  }
+  
 
   detachedCallback() {
     this._attached = false;
@@ -39,9 +201,11 @@ export default class LivelyCodeMirror extends Morph {
     return this.editor && this.editor.setValue(text) 
   }
 
-  livelyMigrate(other) {
-    
-    this.value = other.value
+  async livelyMigrate(other) {
+   this.addEventListener("editor-loaded", () => {
+      this.value = other.value
+   })
   }
-  
 }
+
+

@@ -1,12 +1,29 @@
-<script src="../src/external/code-mirror/lib/codemirror.js" type="text/javascript" charset="utf-8"></script>
-<script src="../src/external/code-mirror/mode/javascript/javascript.js" type="text/javascript" charset="utf-8"></script>
-
 <template id="lively-code-mirror" data-class="LivelyCodeMirror">
-    <style data-src="/src/external/code-mirror/lib/codemirror.css">
-    </style>
+    <style data-src="/src/external/code-mirror/lib/codemirror.css"></style>
+    <style data-src="/src/external/code-mirror/addon/hint/show-hint.css"></style>
+    <style data-src="/src/external/code-mirror/addon/dialog/dialog.css"></style>
+
+
     <style>
         :host {
+          
         }
+    #code-mirror-container {
+      width: 100%;
+      height: 100%;
+      opacity: 0.9;
+    }
+    
+    .CodeMirror {
+      width: 100%;
+      height: 100%;
+    }
+    
+    
+    
+      .CodeMirror-dialog  {
+        z-index: 1000;
+      }
     </style>
     <div id="code-mirror-container"></div>
     <content></content>

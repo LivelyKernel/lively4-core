@@ -104,6 +104,11 @@ export default class Lively {
   static loadJavaScriptThroughDOM(name, src, force) {
     return new Promise((resolve) => {
       var scriptNode = document.querySelector("#"+name);
+      if (!force && scriptNode) {
+        resolve() // nothing to be done here
+        return 
+      }
+      
       if (scriptNode) {
         scriptNode.remove();
       }

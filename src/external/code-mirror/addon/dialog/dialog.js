@@ -11,6 +11,7 @@
   else // Plain browser env
     mod(CodeMirror);
 })(function(CodeMirror) {
+  
   function dialogDiv(cm, template, bottom) {
     var wrap = cm.getWrapperElement();
     var dialog;
@@ -35,6 +36,7 @@
   }
 
   CodeMirror.defineExtension("openDialog", function(template, callback, options) {
+   
     if (!options) options = {};
 
     closeNotification(this, null);
@@ -75,12 +77,13 @@
         if (e.keyCode == 27 || (options.closeOnEnter !== false && e.keyCode == 13)) {
           inp.blur();
           CodeMirror.e_stop(e);
-          close();
+          close(); 
         }
         if (e.keyCode == 13) callback(inp.value, e);
       });
-
-      if (options.closeOnBlur !== false) CodeMirror.on(inp, "blur", close);
+        
+      // # HACK
+      // if (options.closeOnBlur !== false) CodeMirror.on(inp, "blur", close);
     } else if (button = dialog.getElementsByTagName("button")[0]) {
       CodeMirror.on(button, "click", function() {
         close();
@@ -102,7 +105,7 @@
     function close() {
       if (closed) return;
       closed = true;
-      dialog.parentNode.removeChild(dialog);
+      // dialog.parentNode.removeChild(dialog);
       me.focus();
     }
     buttons[0].focus();
