@@ -11,6 +11,14 @@
   }
 
   #firstRow, #secondRow, #thirdRow {
+    border: 1px gray solid;
+  }
+
+  #runtimePane, #objectsPane {
+     border-left: 2px gray solid;
+  }
+
+  #firstRow, #secondRow, #thirdRow {
     display: flex;
     flex-direction: rows;
     flex: 0.5;
@@ -20,6 +28,11 @@
     flex: 0.5;
   }
   
+  #runtimePane {
+    flex: 0.5;
+  }
+
+
   #tracePane {
     flex: 0.5;
   }
@@ -135,7 +148,7 @@
   </style>
 <div id="firstRow">
   <div id="sourcePane">
-    <lively-code-editor  id="source" ></lively-editor>
+    <lively-code-editor  id="source" ></lively-code-editor>
   </div>
   <lively-separator></lively-separator>
   <div id="runtimePane">

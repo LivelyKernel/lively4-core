@@ -53,14 +53,7 @@ export default class LivelyCodeMirror extends Morph {
     this.editor = CodeMirror(this.get("#code-mirror-container"), {
       value: value,
       lineNumbers: true,
-      dialog: {
-        closeOnEnter: false,
-        closeOnBlur: false,
-        onClose: () => {
-          lively.notify("closed dialog")
-          
-        }
-      },
+      gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter"],
       mode: {name: "javascript", globalVars: true},
     });  
     
@@ -74,11 +67,19 @@ export default class LivelyCodeMirror extends Morph {
       "Ctrl-D": (cm) => {
           let text = this.getSelectionOrLine()
           this.tryBoundEval(text, false);
-      }
+      },
+      "Ctrl-S": (cm) => {          
+        this.doSave(this.editor.getValue());
+      },
     });
-    
+    debugger
+    this.editor.doc.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))    
     this.dispatchEvent(new CustomEvent("editor-loaded"))
   };
+
+  doSave(text) {
+    this.tryBoundEval(text) // just a default implementation...
+  }
 
   getSelectionOrLine() {
     var text = this.editor.getSelection()
