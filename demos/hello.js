@@ -1,18 +1,18 @@
+var ctx = this.getContext("2d");
+// this rest is implicit in most live programming environmens
+ctx.fillStyle = "white";
+ctx.fillRect(0, 0, 300, 300);
 
-function b(n) {
-  return n*n
-};
-
-b(1+3)
-var j=0
-while(j<2) {
-  j++
+function draw() {
+  for (var i = 0; i < 3; i++) {
+    for (var j = 0; j < 3; j++) {
+      ctx.save();
+      ctx.fillStyle = 'rgb(' + (51 * i) + ', ' + (255 - 51 * i) + ', 255)';
+      ctx.translate(10 + j * 50, 10 + i * 50);
+      ctx.fillRect(0, 0, 25, 25);
+      ctx.restore();
+    }
+  }
 }
-var s = 0;
-s=s+1
+draw()
 
-// var c = b(3);
-
-for (var i=0; i<4; i++) {
-  s += i
-}

@@ -33,8 +33,11 @@ export default class CodeEditor extends Morph {
   }
 
   updateChangeIndicator() {
+    var editor = this.currentEditor();
+    if(!editor) return;
+    
     if (!this.lastText) return;
-    var newText = this.currentEditor().getValue();
+    var newText = editor.getValue();
     if (newText != this.lastText) {
       this.get("#changeIndicator").style.backgroundColor = "rgb(220,30,30)";
       this.textChanged = true;

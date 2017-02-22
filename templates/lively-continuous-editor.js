@@ -2,6 +2,7 @@ import Morph from './Morph.js';
 import {babel} from 'systemjs-babel-build';
 import SyntaxChecker from 'src/client/syntax.js'
 import traceBabelPlugin from "./lively-continuous-editor-plugin.js"
+import boundEval from './../src/client/code-evaluation/bound-eval.js';
 
 // import localsBabelPlugin from 'babel-plugin-locals'
 
@@ -110,8 +111,12 @@ export default class ContinuousEditor extends Morph {
     
     try {
       // lively.notify("output: " + this.result.code)
-      var result =  eval('' +this.result.code);
-      // this.get("#result").textContent += "-> " + result;       
+      var ctx = this.get("#canvas").getContext("2d")
+      ctx.fillStyle = "white"
+      ctx.fillRect(0, 0, 300, 300);
+      
+      var result =  (await boundEval(""+this.result.code, this.get("#canvas"))).value ; 
+      // this.get("#log").textContent += "-> " + result;       
     } catch(err) {
         
       // this.get("#source").currentEditor().getSession().setAnnotations(err.stack.split('\n')
@@ -229,7 +234,8 @@ export default class ContinuousEditor extends Morph {
   
   addMarkerResult(line, text, node) {
     var editor = this.editor()
-    var gutterMarkers = editor.lineInfo(line).gutterMarkers;
+    var info = editor.lineInfo(line)
+    var gutterMarkers = info && info.gutterMarkers;
     var markerLine = gutterMarkers && gutterMarkers.rightgutter
     if (!markerLine) {
         var markerLine = document.createElement("div")
