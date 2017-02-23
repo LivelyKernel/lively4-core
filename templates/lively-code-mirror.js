@@ -4,22 +4,9 @@ import boundEval from './../src/client/code-evaluation/bound-eval.js';
 import Morph from "./Morph.js"
 
 export default class LivelyCodeMirror extends HTMLElement {
-  
-  
-  // createdCallback() {
-  //   // this.oldRoot = this.shadowRoot
-  //   // this.root = this.createShadowRoot();
-  //   // var div = document.createElement("div")
-  //   // this.shadowRoot.appendChild(div)
-  //   this.shadowRoot.innerHTML = `<link rel=stylesheet href="../codemirror/lib/codemirror.css">
-  //     <link rel=stylesheet href="../codemirror/addon/dialog/dialog.css">
-  //     <div id="code-mirror-container"></code>`
-   
-  // }
-  
+
   get codeMirrorPath() {
      return  "src/external/code-mirror/"
-     // return  "src/../../codemirror/" // "src/external/code-mirror/"
   }
   
   async loadModule(path) {

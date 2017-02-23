@@ -8,6 +8,8 @@ import boundEval from './../src/client/code-evaluation/bound-eval.js';
 
 //import lively from './../src/client/lively.js';
 
+import DelayedCall from 'src/client/delay.js'
+
 export default class ContinuousEditor extends Morph {
 
   initialize() {
@@ -15,10 +17,12 @@ export default class ContinuousEditor extends Morph {
     this.get("#source").setURL("https://lively-kernel.org/lively4/lively4-jens/demos/hello.js")
     this.get("#source").loadFile()
 
+    this.sourceCodeChangedDelay = new DelayedCall();
+
     lively.html.registerButtons(this);
 
     this.get("#traceInspector").hideWorkspace()
-    this.get("#objectInspector").hideWorkspace()
+    // this.get("#objectInspector").hideWorkspace()
 
     this.get("#traceInspector").addEventListener("select-object", 
       evt => this.selectCallTraceNode(evt.detail.object))
@@ -28,9 +32,6 @@ export default class ContinuousEditor extends Morph {
       this.runCode();      
     };
     
-    this.editorComp().addEventListener("change", evt => 
-      SyntaxChecker.checkForSyntaxErrorsCodeMirror(this.editor()));
-
     this.editorComp().addEventListener("change", evt => 
       this.onSourceChange(evt));
 
@@ -80,8 +81,12 @@ export default class ContinuousEditor extends Morph {
   }
   
   onSourceChange(evt) {
-    this.runCode()
+    this.sourceCodeChangedDelay.call(() => {
+      SyntaxChecker.checkForSyntaxErrorsCodeMirror(this.editor())
+      this.runCode()
+    })
   }
+
   
   async runCode() {
     this.ast = null; // clear
@@ -172,8 +177,13 @@ export default class ContinuousEditor extends Morph {
     return label
   }
 
+  get maxCallId() {
+    return 200
+  }
+
 
   printTraceNode(parent, call) {
+    if (call.id > this.maxCallId) return
     
     var astnode = this.astNode(call.id) 
     
@@ -239,8 +249,10 @@ export default class ContinuousEditor extends Morph {
     var markerLine = gutterMarkers && gutterMarkers.rightgutter
     if (!markerLine) {
         var markerLine = document.createElement("div")
-        markerLine.style.backgroundColor = "rgb(240,240,240)"
+        // markerLine.style.backgroundColor = "rgb(240,240,240)"
         markerLine.style.fontSize = "8pt"
+        markerLine.style.whiteSpace = "nowrap"
+        // markerLine.style.overflow = "hidden"
         markerLine.classList.add("markerLine")  // markerLine    
         editor.setGutterMarker(line, "rightgutter", markerLine)
     }
@@ -270,16 +282,19 @@ export default class ContinuousEditor extends Morph {
         ast_node.id.name + "=" + node.value + ";", node)
     }
     if (ast_node.type == "AssignmentExpression") {
+      var name = ast_node.left.name
+      if (!name && ast_node.left.property)  
+        name = ast_node.left.property.name;
       this.addMarkerResult(ast_node.loc.start.line - 1, 
-        ast_node.left.name + "=" + node.value + ";", node)
+        name   + "=" + node.value + ";", node)
     }
-    if (ast_node.type == "CallExpression") {
-      this.addMarkerResult(ast_node.loc.start.line - 1, 
-        ast_node.callee.name + "("+ ast_node.arguments.map( ea => {
-          var eaCall = this.findBroadCallNode(ea.traceid, node) 
-          return eaCall && eaCall.value 
-        }).join(",")+")=>" + node.value + ";", node)
-    }
+    // if (ast_node.type == "CallExpression") {
+    //   this.addMarkerResult(ast_node.loc.start.line - 1, 
+    //     ast_node.callee.name + "("+ ast_node.arguments.map( ea => {
+    //       var eaCall = this.findBroadCallNode(ea.traceid, node) 
+    //       return eaCall && eaCall.value 
+    //     }).join(",")+")=>" + node.value + ";", node)
+    // }
     node.children.forEach(ea => this.updateMarkerResultsEach(markerLayer, ea, parentBounds))
   }
   
