@@ -1,11 +1,12 @@
+
 <template id="lively-code-mirror" data-class="LivelyCodeMirror">
     <style data-src="/src/external/code-mirror/lib/codemirror.css"></style>
     <style data-src="/src/external/code-mirror/addon/hint/show-hint.css"></style>
     <style data-src="/src/external/code-mirror/addon/dialog/dialog.css"></style>
-
-
+    
     <style>
         :host {
+          opacity: 0.5;
           
         }
     #code-mirror-container {
@@ -38,6 +39,7 @@
       font-size: 9pt;
       /* line-height:21px; */
     }
+
     /*
     .CodeMirror .cm-keyword {
       line-height:51px; 
@@ -48,6 +50,7 @@
     .marked {
       line-height:51px; 
     }*/
+
     .rightgutter {
       left: 550px;
       width: 100px;
@@ -60,3 +63,4 @@
     <content></content>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
+

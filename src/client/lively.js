@@ -831,6 +831,19 @@ export default class Lively {
     return s
   }
   
+  static currentStack() {
+  try {
+    throw new Error("XYZError")
+  } catch(e) {
+    return e.stack.split("\n")
+      .filter(ea => !ea.match("src/external/ContextJS/src/Layers.js") )
+      .filter(ea => !ea.match("XYZError") )
+      .filter(ea => !ea.match("currentStack") )
+      .map(ea => ea.replace(/\(.*?\)/,""))
+      .join("\n")
+  }
+}
+  
 }
 
 if (!window.lively || window.lively.name != "Lively") {

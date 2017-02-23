@@ -3,18 +3,34 @@ import boundEval from './../src/client/code-evaluation/bound-eval.js';
 
 import Morph from "./Morph.js"
 
-
-export default class LivelyCodeMirror extends Morph {
+export default class LivelyCodeMirror extends HTMLElement {
+  
+  
+  // createdCallback() {
+  //   // this.oldRoot = this.shadowRoot
+  //   // this.root = this.createShadowRoot();
+  //   // var div = document.createElement("div")
+  //   // this.shadowRoot.appendChild(div)
+  //   this.shadowRoot.innerHTML = `<link rel=stylesheet href="../codemirror/lib/codemirror.css">
+  //     <link rel=stylesheet href="../codemirror/addon/dialog/dialog.css">
+  //     <div id="code-mirror-container"></code>`
+   
+  // }
+  
+  get codeMirrorPath() {
+     return  "src/external/code-mirror/"
+     // return  "src/../../codemirror/" // "src/external/code-mirror/"
+  }
   
   async loadModule(path) {
     return lively.loadJavaScriptThroughDOM("codemirror_"+path.replace(/[^A-Za-z]/g,""), 
-      "src/external/code-mirror/" + path)
+      this.codeMirrorPath + path) // 
   }
   
   async loadCSS(path) {
-    return lively.loadCSSThroughDOM("codemirror_" + path.replace(/[^A-Za-z]/g,""), "src/external/code-mirror/" + path)
+    return lively.loadCSSThroughDOM("codemirror_" + path.replace(/[^A-Za-z]/g,""), 
+       this.codeMirrorPath + path)
   }
-  
   
   async loadModules() {
     await this.loadModule("lib/codemirror.js")
@@ -25,9 +41,8 @@ export default class LivelyCodeMirror extends Morph {
     await this.loadModule("addon/search/search.js")
     await this.loadModule("addon/search/jump-to-line.js")
     await this.loadModule("addon/dialog/dialog.js")
-
+    
     await System.import(lively4url + '/templates/lively-code-mirror-hint.js')
-
 
     this.loadCSS("addon/hint/show-hint.css")
     this.loadCSS("../../../templates/lively-code-mirror.css")
@@ -38,9 +53,8 @@ export default class LivelyCodeMirror extends Morph {
   }
   
   async attachedCallback() {
-   
-    
     if (this.editor) return;
+    this.root = this.shadowRoot // used in code mirror to find current element
     
     var text = this.childNodes[0];
     var container = this.container;
@@ -50,7 +64,7 @@ export default class LivelyCodeMirror extends Morph {
 
     var value = (text && text.textContent) || this.value || "no content";
 
-    this.editor = CodeMirror(this.get("#code-mirror-container"), {
+    this.editor = CodeMirror(this.shadowRoot.querySelector("#code-mirror-container"), {
       value: value,
       lineNumbers: true,
       gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter"],
@@ -59,6 +73,7 @@ export default class LivelyCodeMirror extends Morph {
     
     this.editor.setOption("extraKeys", {
       "Alt-F": "findPersistent",
+      "Ctrl-F": "search",
       "Ctrl-Space": "autocomplete",
       "Ctrl-P": (cm) => {
           let text = this.getSelectionOrLine()
@@ -72,7 +87,6 @@ export default class LivelyCodeMirror extends Morph {
         this.doSave(this.editor.getValue());
       },
     });
-    debugger
     this.editor.doc.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))    
     this.dispatchEvent(new CustomEvent("editor-loaded"))
   };
