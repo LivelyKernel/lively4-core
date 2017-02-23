@@ -13,11 +13,12 @@ import DelayedCall from 'src/client/delay.js'
 export default class ContinuousEditor extends Morph {
 
   initialize() {
-    this.windowTitle = "Continuous Editor";  
+    this.windowTitle = "Continuous Feedback Editor";  
     this.get("#source").setURL("https://lively-kernel.org/lively4/lively4-jens/demos/hello.js")
     this.get("#source").loadFile()
 
-    this.sourceCodeChangedDelay = new DelayedCall();
+    this.sourceCodeChangedDelay = new DelayedCall()
+
 
     lively.html.registerButtons(this);
 
@@ -161,19 +162,48 @@ export default class ContinuousEditor extends Morph {
   }
   
   nodeToString(call) {
+    var node = call
     var astnode = this.astNode(call.id) 
+    var ast_node = astnode;
     var label = ""
-    if (astnode.id) {
-      label += astnode.id.name +""
-    } else if (astnode.left && astnode.left.name) {
-      label += astnode.left.name + ""
-    } else if (astnode.argument && astnode.operator) {
-        label += astnode.argument.name + "";
-    } else if (astnode) {
-        label += astnode.type;
-    } 
-    if (call.value !== undefined)
-      label += "="  + call.value;
+    
+    switch(ast_node.type) {
+      case "UpdateExpression":
+        label = ast_node.argument.name + "=" + node.value 
+        break;
+      case "VariableDeclarator":
+        label = ast_node.id.name + "=" + node.value
+        break
+      case "ExpressionStatement":
+        label = ""
+        break
+      case "FunctionDeclaration":
+        // label = "" + ast_node.id.name + "()"
+        label = ""
+        break
+      case "CallExpression":
+        // label = "" + ast_node.id.name + "()"
+        if (ast_node.callee.object)
+          label = ast_node.callee.object.name + ".";
+        if (ast_node.callee.property)
+          label += ast_node.callee.property.name + "()"
+        break
+       case "ForStatement":
+          label = "for{}"
+        break
+       case "BinaryExpression":
+          label = ""
+        break
+
+      case "AssignmentExpression":
+        var name = ast_node.left.name
+        if (!name && ast_node.left.property)  
+          name = ast_node.left.property.name;
+        label = name + "=" + call.value
+        break
+      default:
+        label = ast_node.type
+    }
     return label
   }
 
