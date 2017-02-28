@@ -16,8 +16,8 @@
     }
     #commandlineholder {
         margin: 2px;
-        height: 20px;
-        width: 100%;
+        height: 25px;
+        width: cont%;
         display: flex;
         flex-direction: row;
     }
@@ -26,17 +26,26 @@
         margin-right: 2px;
         font-family: monospace;
         flex: 1;
+        padding-top: 3px;
+        border-top: 1px solid grey;
+    }`
     }
     #evalbutton {
+    }
+    
+    #inputMark {
+      padding-top: 3px;
+      font-size: 10pt;
+      color: blue;
     }
     </style>
 
     <div class="container">
-      <!-- <pre id="console"></pre> -->
       <lively-code-mirror id="console"></lively-code-mirror>
     
       <div id="commandlineholder">
-        <juicy-ace-editor id="commandline"></juicy-ace-editor>
+        <span id="inputMark"><i class="fa fa-angle-right" aria-hidden="true"></i></span>
+        <lively-code-mirror id="commandline"></lively-code-mirror>
         <button id="clear"><i class="fa fa-ban" aria-hidden="true"></i></button>
       </div>
     
