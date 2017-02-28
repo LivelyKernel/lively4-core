@@ -12,9 +12,12 @@ export default class ComponentBin extends Morph {
       this.showTiles(this.sortAlphabetically(this.componentList));
     });
 
-    this.searchField = this.getSubmorph("#search-field");
+    this.searchField = this.get("#search-field");
     this.searchField.addEventListener('keyup', (e) => { this.searchFieldChanged(e) });
     this.searchField.addEventListener('focus', (e) => { e.target.select(); });
+    
+    this.searchField.focus()
+    
   }
 
   loadComponentList() {
@@ -28,6 +31,7 @@ export default class ComponentBin extends Morph {
         } catch (e) {
           // it was already json
         }
+        if (!response) resolve([])
 
         resolve(response.contents.filter(file => {
             return file.type === "file" && file.name.match(/\.html$/);
@@ -94,8 +98,16 @@ export default class ComponentBin extends Morph {
   }
 
   findByName(string) {
+    if (!this.componentList) return []
     return this.componentList.filter((comp) => {
       return comp.name.toLowerCase().indexOf(string.toLowerCase()) >= 0;
     });
   }
+  
+  close() {
+    if (this.parentElement && this.parentElement.isWindow) {
+      this.parentElement.remove()
+    }
+  }
+  
 }

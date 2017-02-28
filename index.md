@@ -1,7 +1,7 @@
 # Welcome to <img alt="Lively 4" style="position:relative; top: 25px" src="media/lively4_logo_smooth_100.png" />
 
 * Sofware Architecture Group, Hasso Plattner Institute,  2015, 2016 [MIT LICENSE](LICENSE)
-* Stefan Lehmann, Jens Lincke, Tim Felgentreff, Marcel Taeumel et al
+* Stefan Lehmann, Jens Lincke, Tim Felgentreff, Robert Hirschfeld, Marcel Taeumel et al
 * Seminars
   * Software Design  [SWD 2015](https://lively-kernel.org/lively4/Lively4.wiki/SWD15.md) 
    [SWD 2016](https://lively-kernel.org/lively4/Lively4.wiki/SWD16.md)

@@ -74,18 +74,19 @@ export default class Lively {
       console.log("Don't reload non-loaded module")
       return   
     }
-    
+    var modulePaths = [path]
     System.registry.delete(System.normalizeSync(path))
     return System.import(path).then( m => {
       // Find all modules that depend on me
       var dependedModules = Object.values(System.loads).filter( ea => 
         ea.dependencies.find(dep => System.normalizeSync(dep, ea.key) == changedModule))
       // and update them
-      dependedModules.forEach( ea => {
+      for(var ea of dependedModules) {
+        modulePaths.push(ea.key)
         console.log("reload " + path + " triggers reload of " + ea.key)
         System.registry.delete(ea.key)  
         System.import(ea.key)
-      })
+      }
       return m
     }).then( mod => {
       var moduleName = path.replace(/[^\/]*/,"");
@@ -98,7 +99,25 @@ export default class Lively {
       }
    
       return mod;
-    });
+    }).then(async (mod) => {
+      modulePaths.forEach(eaPath => {
+        // lively.notify("update dependend: ", eaPath, 3, "blue")
+        if (eaPath.match(/templates\/.*js/)) {
+          var templateURL = eaPath.replace(/\.js$/,".html");
+          try {
+            console.log("[templates] update template " + templateURL);
+            setTimeout(() => {
+              lively.files.loadFile(templateURL).then( sourceCode => 
+                lively.updateTemplate(sourceCode));
+            },100)
+            
+          } catch(e) {
+            lively.notify("[templates] could not update template " + templateURL, ""+e);
+          }
+        }
+      })
+      return mod
+    })
   }
 
   static loadJavaScriptThroughDOM(name, src, force) {
@@ -777,6 +796,8 @@ export default class Lively {
   
   // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
   static async openBrowser(url, edit, pattern, replaceExisting) {
+    if (!url || !url.match(/^http/))
+      url = lively4url
     var editorComp;
     var containerPromise;
     if (replaceExisting) {

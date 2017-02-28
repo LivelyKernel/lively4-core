@@ -80,7 +80,7 @@ export default function (babel) {
           var _tr_time_max = 1000;
 	  		  function _tr_(id, exp) {
             var astnode =  __tr_ast__ .node_map[id]
-  	  		  console.log("enter " + astnode.type )
+  	  		  // console.log("enter " + astnode.type )
 
 	  			  var callnode = {parent: __tr_current__, id: id, children: []}
 				    callnode.parent.children.push(callnode)
@@ -100,7 +100,7 @@ export default function (babel) {
     	  	
     	  	function _tr_log_(id) {
             var astnode =  __tr_ast__ .node_map[id]
-            console.log("logst " + astnode.type )
+            // console.log("logst " + astnode.type )
             
             var callnode = {parent: __tr_current__, id: id, children: []}
 				    callnode.parent.children.push(callnode)
@@ -109,7 +109,7 @@ export default function (babel) {
     	  	
     	  	function _tr_begin_(id) {
             var astnode =  __tr_ast__ .node_map[id]
-            console.log("begin " + astnode.type )
+            // console.log("begin " + astnode.type )
             
             var callnode = {parent: __tr_current__, id: id, children: []}
 				    callnode.parent.children.push(callnode)

@@ -204,6 +204,14 @@ export default class LivelyCodeMirror extends HTMLElement {
   set value(text) {
     return this.editor && this.editor.setValue(text) 
   }
+  
+  setCustomStyle(source) {
+    this.shadowRoot.querySelector("#customStyle").textContent = source
+  }
+  
+  getCustomStyle(source) {
+    return this.shadowRoot.querySelector("#customStyle").textContent
+  }
 
   async livelyMigrate(other) {
    this.addEventListener("editor-loaded", () => {

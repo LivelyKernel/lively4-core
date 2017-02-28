@@ -38,8 +38,14 @@ export function log(string) {
  * Private State
  */
 
-export const proceedStack = [];
-export const GlobalLayers = [];
+
+// #HACK TODO
+window.proceedStack = []
+window.GlobalLayers = []
+
+// export const proceedStack = [];
+// export const GlobalLayers = [];
+
 // hack, to work around absence of identity dictionaries in JavaScript
 // we could perhaps limit ourselfs to layer only those objects that respond to object.id()
 // because working with objects is a serialization problem in itself, perhaps we should

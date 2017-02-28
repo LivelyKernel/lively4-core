@@ -7,6 +7,8 @@ function ellipse(x, y, r1, r2) {
   ctx.stroke();
 }
 
+
+
 // ellipse(50,100,10,10)
 
 // ball animation from Victor2012

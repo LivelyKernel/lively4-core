@@ -1,6 +1,6 @@
 'use strict';
 
-import * as cop from 'src/external/ContextJS.js';
+import * as cop from "src/external/ContextJS/src/contextjs.js"
 
 
 //     Mocha.utils.parseQuery()

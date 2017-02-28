@@ -167,7 +167,7 @@ exports.translate = function(load, traceOpts) {
           plugins.push(plugin);
       });
 
-    console.log(`load: ${load.address}`, plugins);
+    // console.log(`load: ${load.address}`, plugins);
     var output = babel.transform(load.source, {
       babelrc: false,
       plugins: plugins,

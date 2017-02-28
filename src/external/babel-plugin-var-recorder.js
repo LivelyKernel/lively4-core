@@ -74,11 +74,11 @@ export default function({ types: t, template, traverse, }) {
   return {
     name: "top-level-var-recorder",
     pre(...args) {
-      console.log('XXXX', ...args);
+      // console.log('XXXX', ...args);
       //console.clear();
     },
     post(...args) {
-      console.log('YYYY', ...args);
+      // console.log('YYYY', ...args);
     },
     visitor: {
       Program(program, { file }) {
@@ -86,7 +86,7 @@ export default function({ types: t, template, traverse, }) {
         const MODULE_MATCHER = /.js$/;
         
         let filename = file.log.filename;
-        console.log('visitor!', program, filename);
+        // console.log('visitor!', program, filename);
         
         const VAR_RECORDER_NAME = '_recorder_' || '__varRecorder__';
         let MODULE_NAME;
@@ -112,7 +112,7 @@ export default function({ types: t, template, traverse, }) {
         window[VAR_RECORDER_NAME] = window[VAR_RECORDER_NAME] || {};
         window[VAR_RECORDER_NAME][MODULE_IDENTIFIER] = window[VAR_RECORDER_NAME][MODULE_IDENTIFIER] || {};
         let moduleBoundGlobals = Object.keys(window[VAR_RECORDER_NAME][MODULE_IDENTIFIER]);
-        console.log('bound names:', ...moduleBoundGlobals);
+        // console.log('bound names:', ...moduleBoundGlobals);
 
         let bindings = program.scope.getAllBindings();
 

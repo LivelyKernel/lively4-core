@@ -1,4 +1,4 @@
-import * as cop from 'src/external/ContextJS.js';
+import * as cop from "src/external/ContextJS/src/contextjs.js"
 
 /**
  * Tracer -- An example for using ContextJS

@@ -188,16 +188,7 @@ export default class Container extends Morph {
   loadModule(url) {
     lively.reloadModule("" + url).then(module => {
       lively.notify("","Module " + url + " reloaded!", 3, null, "green");
-      if (this.getPath().match(/templates\/.*js/)) {
-        var templateURL = this.getPath().replace(/\.js$/,".html");
-        try {
-          console.log("[container] update template " + templateURL);
-          lively.files.loadFile(templateURL).then( sourceCode => 
-            lively.updateTemplate(sourceCode));
-        } catch(e) {
-          lively.notify("[container] could not update template " + templateURL, ""+e);
-        }
-      }
+      
       this.resetLoadingFailed();
     }, err => {
       this.loadingFailed(url, err);
@@ -235,16 +226,16 @@ export default class Container extends Morph {
   }
 
   openTemplateInstance(url) {
-      var name = url.toString().replace(/.*\//,"").replace(/\.html$/,"");
+      var name = url.toString().replace(/.*\//,"").replace(/\.((html)|(js))$/,"");
       lively.openComponentInWindow(name);
   }
 
   onApply() {
     var url = this.getURL().toString();
-    if (url.match(/\.js$/))  {
-      this.reloadModule(url);
-    } else if (url.match(/templates\/.*\.html$/)) {
+    if (url.match(/templates\/.*\.(html)|(js)$/)) {
       this.openTemplateInstance(url);
+    } else if (url.match(/\.js$/))  {
+      this.reloadModule(url);
     } else {
       lively.openBrowser(url);
     }
@@ -787,7 +778,7 @@ export default class Container extends Morph {
   async setPath(path, donotrender) {
     this.get('#container-content').style.display = "block";
     this.get('#container-editor').style.display = "none";
-
+    this.windowTitle = path.replace(/.*\//,"")
     if (!path) {
         path = "";
     }

@@ -92,7 +92,7 @@ export default class ContextMenu {
           comp.parentElement.style.width = "850px";
           comp.parentElement.style.height = "600px";
         });
-      }, "CMD+B"],
+      }, "CMD+SHIFT+B"],
       // ["File Editor",     (evt) => this.openComponentInWindow("lively-editor", evt)],
       // ["File Browser",    (evt) => this.openComponentInWindow("lively-file-browser", evt)],
       ["Mount",     (evt) => this.openComponentInWindow("lively-filesystems", evt)],

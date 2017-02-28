@@ -4,6 +4,8 @@ import SyntaxChecker from 'src/client/syntax.js'
 import traceBabelPlugin from "./lively-continuous-editor-plugin.js"
 import boundEval from './../src/client/code-evaluation/bound-eval.js';
 
+import ShowPerformance from "demos/showperformancelayer.js";
+
 // import localsBabelPlugin from 'babel-plugin-locals'
 
 //import lively from './../src/client/lively.js';
@@ -358,5 +360,7 @@ export default class ContinuousEditor extends Morph {
       // this.get("#traceInspector").setViewState(viewState)
     })
   }
-  
 }
+
+
+ShowPerformance.measure(ContinuousEditor, "runCode")

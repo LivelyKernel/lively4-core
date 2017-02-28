@@ -17,6 +17,12 @@ function getScroll() {
 }
 
 export default class Window extends Morph {
+  
+  
+  
+  get isWindow() {
+    return true
+  }
 
   // how to move this into the template CSS? #Jens
   get minimizedWindowWidth() { return 300 }
@@ -83,6 +89,9 @@ export default class Window extends Morph {
     //     win.style.left = 0;
     //   }
     // });
+    
+    
+    this.setAttribute("tabindex", 0)
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
@@ -128,6 +137,15 @@ export default class Window extends Morph {
     this.pinButton.addEventListener('click', (e) => { this.pinButtonClicked(e); });
     this.resizeButton.addEventListener('mousedown', (e) => { this.resizeMouseDown(e); });
     this.closeButton.addEventListener('click', (e) => { this.closeButtonClicked(e); });
+    this.addEventListener('keyup', (e) => { this.onKeyUp(e); });
+  }
+  
+  onKeyUp(evt) {
+    var char = String.fromCharCode(evt.keyCode || evt.charCode);
+    if (evt.altKey && char == "W") {
+      if (confirm("close window?")) this.remove()
+      evt.preventDefault();
+    }
   }
 
   setup() {
@@ -196,7 +214,11 @@ export default class Window extends Morph {
     this.setAttribute('active', true);
     
     this.bringMinimizedWindowsToFront()
+    
+    if (this.target) this.target.focus()
   }
+
+
 
 	bringMinimizedWindowsToFront() {
 	  var allWindows = this.allWindows();
@@ -485,5 +507,6 @@ export default class Window extends Morph {
   	lively.setPosition(content, pos);
   	this.remove()
   }
+
 
 }
