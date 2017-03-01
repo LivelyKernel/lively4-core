@@ -172,14 +172,14 @@ export default class Window extends Morph {
       this.setPosition(rect.left, rect.top);
 
       this.classList.add('window-fixed');
-      this.pinButton.classList.add('active');
+      // this.pinButton.classList.add('active');
     } else {
       let scroll = getScroll();
 
       this.setPosition(rect.left + scroll.x, rect.top + scroll.y);
 
       this.classList.remove('window-fixed');
-      this.pinButton.classList.remove('active');
+      // this.pinButton.classList.remove('active');
     }
   }
 
@@ -232,7 +232,11 @@ export default class Window extends Morph {
   }
 
   maxButtonClicked(e) {
-    this.toggleMaximize()
+    if (e.shiftKey) {
+      this.togglePined() 
+    } else {
+      this.toggleMaximize()
+    }
   }
 
   toggleMaximize() {
@@ -355,16 +359,19 @@ export default class Window extends Morph {
   }
 
   pinButtonClicked(e) {
-    let isPinned = this.pinButton.classList.toggle('active');
+     this.togglePined()
+  }
+
+  togglePined() {
+    let isPinned = this.style.position == "fixed"
+    //this.pinButton.classList.toggle('active');
     if (isPinned) {
-      this.setAttribute('fixed', '');
-      this.style.position = "fixed" // does not seem to work with css? #Jens
-    } else {
       this.removeAttribute('fixed');
       this.style.position = "absolute" // does not seem to work with css? #Jens
-
+    } else {
+      this.setAttribute('fixed', '');
+      this.style.position = "fixed" // does not seem to work with css? #Jens
     }
-    // this.reposition()
   }
 
   get target() {

@@ -52,7 +52,7 @@
     position: relative;
     display: flex;
     flex-grow: 0;
-    height: 1.3em;
+    height: 1.2em;
     width: 100%;
     border: 0;
     border-bottom: 1px #e9e9e9 solid;
@@ -63,27 +63,28 @@
   .window-title {
     flex-grow: 1;
     font-weight: 600;
-    padding-top: 0.0.5em;
+    padding-top: 0em;
     vertical-align: middle;
     cursor: move;
     overflow: hidden;
   }
   .window-title span {
-    vertical-align: middle;
     font-size: 0.8em;
-    line-height: 1.0rem;
     margin-left: 6px;
-  }
-  .focused .window-title span {
-    color: white;
+    color: #47515b;
   }
   .window-title span small {
     font-style: italic;
     color: #333;
   }
-  .focused .window-title span small {
-    color: white;
+
+  .focused .window-title span {
+    color: #f1f3f4;
   }
+  .focused .window-title span small {
+    color: #f1f3f4;
+  }
+
   .window-controls {
     flex-grow: 0;
   }
@@ -92,19 +93,23 @@
     color: #777777;
     background-color: rgba(0,0,0,0);
 
-    width: 1.5rem;
+    width: 1.3rem;
     text-align: center;
     font-weight: 500;
     cursor: pointer;
-    line-height: 1.5rem;
+    line-height: 1.0rem;
     font-size: 0.8em;
   }
   .window-close {
       font-size: 0.9em;
   }
   
+  .window-menu {
+    padding-top: 2px;  
+  }
+
   .window-button .fa {
-    padding: 4px;
+    padding: 2px;
   }
   .focused .window-button {
     color: white;
