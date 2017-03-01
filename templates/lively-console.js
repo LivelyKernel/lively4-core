@@ -26,11 +26,12 @@ export default class Console extends Morph {
     
     this.get("#console").setCustomStyle(`.CodeMirror pre { 
       border-bottom: 1px solid lightgrey;
-      padding: 2px
+      padding: 2px;
+      padding-left: 10px
     }
      
     .leftgutter {
-      width: 15px;
+      width: 0px;
       background-color: white;
     }
     .rightgutter {
@@ -49,6 +50,8 @@ export default class Console extends Morph {
     editor.setOption("lineWrapping", true)
     editor.setOption("readOnly",  true);
     editor.setOption("gutters",  ["leftgutter"]);
+    editor.setOption("mode",  null);
+     
   
   }
    
@@ -155,9 +158,25 @@ export default class Console extends Morph {
 
     args.forEach(ea => {
       if (ea.stack && ea.message) {
-        
+        editor.replaceSelection("ERROR: " + ea.message + " " + ea.stack, "E" );
       } else {
-        editor.replaceSelection(ea + " ");
+        var s = "" + ea
+        s.split("\n").forEach((line, index, lines) => {
+          editor.replaceSelection(line);
+          if (index < lines.length - 1) {
+            var from = editor.getCursor()
+            editor.replaceSelection("\n")
+            var widget = document.createElement("span")
+            widget.innerHTML ="<br>"
+            editor.markText(from,editor.getCursor(),
+            {
+              replacedWith: widget,
+              handleMouseEvents: false,
+              atomic: true
+            })
+          }
+        })
+        editor.replaceSelection(" ")
       }
     })
     
