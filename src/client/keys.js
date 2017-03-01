@@ -54,7 +54,10 @@ export default class Keys {
       } else if ((evt.ctrlKey || evt.metaKey) && char == "O") {
         lively.openComponentInWindow("lively-component-bin");
         evt.preventDefault();
-      }  else if ((evt.ctrlKey || evt.metaKey)  && char == "H") {
+      } else if (!evt.shiftKey && (evt.ctrlKey || evt.metaKey) && char == "J") {
+        lively.openComponentInWindow("lively-console");
+        evt.preventDefault();
+      } else if ((evt.ctrlKey || evt.metaKey)  && char == "H") {
         lively.openHelpWindow(this.getTextSelection());
         evt.preventDefault();
       } else if (evt.keyCode == 27) {

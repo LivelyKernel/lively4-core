@@ -46,6 +46,7 @@ export default class Console extends Morph {
     editor.setValue("")
 
     editor.setOption("lineNumbers", false);
+    editor.setOption("lineWrapping", true)
     editor.setOption("readOnly",  true);
     editor.setOption("gutters",  ["leftgutter"]);
   
@@ -61,6 +62,8 @@ export default class Console extends Morph {
     editor.setValue("")
 
     editor.setOption("lineNumbers", false);
+    editor.setOption("lineWrapping", true);
+    
     editor.setOption("gutters",  []);
     editor.setOption("extraKeys", {
       "Enter": async (cm) => {
@@ -118,7 +121,8 @@ export default class Console extends Morph {
     if (!editor) return
     var doc = editor.getDoc();
 
-    var s = args.join(" ")
+    var s = ""
+    args.forEach(ea => s += ea + " ")
     if (editor.getValue().length  > 0)
       editor.replaceSelection("\n")
 
@@ -133,7 +137,16 @@ export default class Console extends Morph {
       
       var annotation = document.createElement("a")
       annotation.style.display = "inline-block"
+      // annotation.style.position = "relative"
+      annotation.style.color = "grey"
+      
       annotation.textContent = "" + right
+      
+      // annotation.style.position = "relative"
+      annotation.style.right = "0px"
+      // annotation.style.clear = "both"
+      annotation.style.float = "right"
+     
       
       var url = right.replace(/\!.*/,"")
       var args = right.replace(/.*\!/,"").split(/:/)
@@ -176,6 +189,8 @@ export default class Console extends Morph {
           handleMouseEvents: false
         })
       
+      // annotation.style.left = (c.getBoundingClientRect().right - annotation.getBoundingClientRect().right - 20) + "px"
+
     }
 
     if (left) {
@@ -228,7 +243,16 @@ export default class Console extends Morph {
   
   livelyMigrate(other) {
     this.addEventListener("console-loaded", () => {
-      this.get("#console").editor.setValue(other.get("#console").editor.getValue())
+      
+      other.get("#console").editor.getValue().split("\n").forEach( line => {
+        var m = line.match(/^(.*)(https?:\/\/.*[0-9]+:[0-9]+$)/)
+        if (m) {
+          this.logWithLeftAndRight(m[1], null, m[1])
+        } else {
+          this.logWithLeftAndRight(line)
+        }
+      })
+      
       this.get("#commandline").editor.setValue(other.get("#commandline").editor.getValue())
     })
   }

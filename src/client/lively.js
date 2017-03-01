@@ -564,11 +564,11 @@ export default class Lively {
       _.each(oldInstance.childNodes, function(ea) {
         if (ea) { // there are "undefined" elemented in childNodes... sometimes #TODO
           newInstance.appendChild(ea);
-          console.log("append old child: " + ea);
+          // console.log("append old child: " + ea);
         }
       });
       _.each(oldInstance.attributes, function(ea) {
-        console.log("set old attribute " + ea.name + " to: " + ea.value);
+        // console.log("set old attribute " + ea.name + " to: " + ea.value);
         newInstance.setAttribute(ea.name, ea.value);
       });
 
@@ -774,7 +774,6 @@ export default class Lively {
     if (lastWindow) {
       var lastPos = lively.getPosition(lastWindow);
       var windowWidth = w.getBoundingClientRect().width;
-      console.log("window width")
       if (lastPos !== undefined && windowWidth !== undefined) {
         if (lastPos.x > windowWidth) {
           lively.setPosition(w, lastPos.subPt(pt(windowWidth + 25, 0)));
