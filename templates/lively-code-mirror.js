@@ -3,36 +3,43 @@ import boundEval from './../src/client/code-evaluation/bound-eval.js';
 
 import Morph from "./Morph.js"
 
+let loadPromise = undefined;
+
 export default class LivelyCodeMirror extends HTMLElement {
 
-  get codeMirrorPath() {
+  static get codeMirrorPath() {
      return  "src/external/code-mirror/"
   }
   
-  async loadModule(path) {
+  static async loadModule(path) {
     return lively.loadJavaScriptThroughDOM("codemirror_"+path.replace(/[^A-Za-z]/g,""), 
       this.codeMirrorPath + path) // 
   }
   
-  async loadCSS(path) {
+  static async loadCSS(path) {
     return lively.loadCSSThroughDOM("codemirror_" + path.replace(/[^A-Za-z]/g,""), 
        this.codeMirrorPath + path)
   }
   
-  async loadModules() {
-    await this.loadModule("lib/codemirror.js")
-    await this.loadModule("mode/javascript/javascript.js")
-    await this.loadModule("addon/hint/show-hint.js")
-    await this.loadModule("addon/hint/javascript-hint.js")
-    await this.loadModule("addon/search/searchcursor.js")
-    await this.loadModule("addon/search/search.js")
-    await this.loadModule("addon/search/jump-to-line.js")
-    await this.loadModule("addon/dialog/dialog.js")
+  static async loadModules() {
+    if (loadPromise) return loadPromise
     
-    await System.import(lively4url + '/templates/lively-code-mirror-hint.js')
-
-    this.loadCSS("addon/hint/show-hint.css")
-    this.loadCSS("../../../templates/lively-code-mirror.css")
+    loadPromise = (async () => {
+      await this.loadModule("lib/codemirror.js")
+      await this.loadModule("mode/javascript/javascript.js")
+      await this.loadModule("addon/hint/show-hint.js")
+      await this.loadModule("addon/hint/javascript-hint.js")
+      await this.loadModule("addon/search/searchcursor.js")
+      await this.loadModule("addon/search/search.js")
+      await this.loadModule("addon/search/jump-to-line.js")
+      await this.loadModule("addon/dialog/dialog.js")
+      
+      await System.import(lively4url + '/templates/lively-code-mirror-hint.js')
+  
+      this.loadCSS("addon/hint/show-hint.css")
+      this.loadCSS("../../../templates/lively-code-mirror.css")
+    })()
+    return loadPromise
   }
 
   initialize() {
@@ -47,7 +54,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     var container = this.container;
     var element = this;
       
-    await this.loadModules()
+    await LivelyCodeMirror.loadModules()
 
     var value = (text && text.textContent) || this.value || "no content";
 

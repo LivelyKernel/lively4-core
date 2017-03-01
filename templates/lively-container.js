@@ -460,7 +460,7 @@ export default class Container extends Morph {
       var htmlSource = converter.makeHtml(enhancedMarkdown);
       var html = $.parseHTML(htmlSource);
       lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path));
-      console.log("html", html);
+      // console.log("html", html);
       var root = this.getContentRoot();
       html.forEach((ea) => {
         root.appendChild(ea);

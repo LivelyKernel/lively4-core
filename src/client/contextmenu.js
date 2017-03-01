@@ -95,21 +95,17 @@ export default class ContextMenu {
       }, "CMD+SHIFT+B"],
       // ["File Editor",     (evt) => this.openComponentInWindow("lively-editor", evt)],
       // ["File Browser",    (evt) => this.openComponentInWindow("lively-file-browser", evt)],
-      ["Mount",     (evt) => this.openComponentInWindow("lively-filesystems", evt)],
-      ["Sync",     (evt) => this.openComponentInWindow("lively-sync", evt)],
-      ["Services",     (evt) => this.openComponentInWindow("lively-services", evt)],
-      // ["Terminal",        (evt) => this.openComponentInWindow("lively-terminal", evt)],
-      // ["Console",         (evt) => this.openComponentInWindow("lively-console", evt)],
-      ["File Search",         (evt) => this.openComponentInWindow("lively-search", evt)],
-      ["TestRunner",         (evt) => this.openComponentInWindow("lively-testrunner", evt)],
       ["Component Bin",   (evt) => this.openComponentInWindow("lively-component-bin", evt),
        "CMD+O"],
-      ['Debugger',     (evt) => this.openComponentInWindow("lively-debugger", evt)],
-      !document.webkitIsFullScreen ?
-        ["Enter fullscreen", (evt) => 
-          document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)] :
-          ["Cancel fullscreen", (evt) => 
-          document.webkitCancelFullScreen()],
+
+      ["Sync",     (evt) => this.openComponentInWindow("lively-sync", evt)],
+      // ["Services",     (evt) => this.openComponentInWindow("lively-services", evt)],
+      // ["Terminal",        (evt) => this.openComponentInWindow("lively-terminal", evt)],
+      ["Console",         (evt) => this.openComponentInWindow("lively-console", evt)],
+      ["File Search",         (evt) => this.openComponentInWindow("lively-search", evt)],
+      ["TestRunner",         (evt) => this.openComponentInWindow("lively-testrunner", evt)],
+      // ['Debugger',     (evt) => this.openComponentInWindow("lively-debugger", evt)],
+      ["Mount",     (evt) => this.openComponentInWindow("lively-filesystems", evt)],
       ["Customize Page",   (evt) => {
         this.hide();
         System.import("src/client/customize.js").then(c => c.openCustomizeWorkspace(evt));
@@ -123,11 +119,11 @@ export default class ContextMenu {
           comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Home.md");
       });
       }],
-      ["Journal",     (evt) => {
-        this.openComponentInWindow("lively-container", evt).then(comp => {
-          comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Journal.md");
-      });
-      }],
+      // ["Journal",     (evt) => {
+      //   this.openComponentInWindow("lively-container", evt).then(comp => {
+      //     comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Journal.md");
+      // });
+      // }],
       ["Issues", (evt) => {
         window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
       }],
@@ -154,6 +150,11 @@ export default class ContextMenu {
         worldContext.appendChild(morph);
         this.hide();
       }],
+      !document.webkitIsFullScreen ?
+      ["Enter fullscreen", (evt) => 
+          document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)] :
+          ["Cancel fullscreen", (evt) => 
+          document.webkitCancelFullScreen()],
       ["save as ..", (evt) => {
         if (worldContext.onSaveAs)
           worldContext.onSaveAs() 
