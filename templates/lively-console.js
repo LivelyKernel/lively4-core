@@ -115,8 +115,15 @@ export default class Console extends Morph {
   }
   
   parseSourceReference(ref) {
-    var url = ref.replace(/\!.*/,"")
-    var args = ref.replace(/.*\!/,"").split(/:/)
+    if(ref.match("!")) {
+      var url = ref.replace(/\!.*/,"")
+      var args = ref.replace(/.*\!/,"").split(/:/)
+    } else {
+      var m = ref.match(/(.*):([0-9]+):([0-9]+)$/)
+      args = [m[2], m[3]]
+      url = m[1]
+    }
+    
     var lineAndColumn
     if (args[0] == "transpiled") {
       // hide transpilation in display and links
@@ -141,6 +148,49 @@ export default class Console extends Morph {
     return lineAndColumn
   }
   
+  errorStackToSpan(stack) {
+    let span = document.createElement("span") 
+    stack.split("\n").forEach( line => {
+      let lineSpan = document.createElement("span") 
+      var m = line.match(/(.*?)\(?(https?:\/\/.*:[0-9]+:[0-9]+)/)
+      if (m) {
+        var call = m[1]
+        var ref = this.parseSourceReference(m[2])
+        lineSpan.textContent = call
+        var link = document.createElement("a")
+        link.textContent = ref.url.replace(lively4url, "") + "\n"
+        link.href = ref.url
+        link.addEventListener("click", (evt) => {
+          evt.preventDefault()
+          lively.openBrowser(ref.url, true, ref)
+          return true
+        })
+        
+        lineSpan.appendChild(link)
+      } else {
+        lineSpan.textContent = "" + line + "\n"
+      }
+      span.appendChild(lineSpan)
+    })
+    return span
+  }
+  
+  printError(editor, err) {
+    let from = editor.getCursor()
+    // editor.replaceSelection("" + err.stack);
+    editor.replaceSelection("XXX");
+    let to = editor.getCursor()
+
+    let widget = document.createElement("pre")
+    widget.style.color = "red"
+    widget.appendChild(this.errorStackToSpan(err.stack))
+    editor.markText(from, to, {
+      replacedWith: widget,
+      handleMouseEvents: false,
+      atomic: true
+    })
+  }
+  
     
   log() {
     this.logWithLeftAndRight(lively.array(arguments), null, this.calledFrom(4))
@@ -157,8 +207,8 @@ export default class Console extends Morph {
       editor.replaceSelection("\n")
 
     args.forEach(ea => {
-      if (ea.stack && ea.message) {
-        editor.replaceSelection("ERROR: " + ea.message + " " + ea.stack, "E" );
+      if (ea && ea.stack && ea.message) {
+        this.printError(editor, ea)
       } else {
         var s = "" + ea
         s.split("\n").forEach((line, index, lines) => {
@@ -258,6 +308,8 @@ export default class Console extends Morph {
     try {
       throw new Error("XYZError")
     } catch(e) {
+      // return e.stack
+      /// console.log("DEBUG " + e.stack)
       return e.stack.split("\n")
         .filter(ea => !ea.match("src/external/ContextJS/src/Layers.js") )
         .filter(ea => !ea.match("XYZError") )
@@ -295,7 +347,18 @@ cop.layer(window, "ConsoleLayer").refineObject(console, {
   log() {
     var consoles = document.body.querySelectorAll("lively-console")
     try {
-      consoles.forEach(ea => ea.log.apply(ea, arguments))
+      var args = arguments
+      // #TODO chrome cuts off stack ath a given level so the information is lost
+      // if we increase it further with "withoutLayers"
+      // cop.withoutLayers([ConsoleLayer], () => {
+      try {
+        consoles.forEach(ea => ea.log.apply(ea, args))
+      } catch(e) {
+        cop.withoutLayers([ConsoleLayer], () => {
+          console.log(e)
+        })
+      }  
+      // })
     } finally {    
       return cop.proceed.apply(this, arguments)
     }

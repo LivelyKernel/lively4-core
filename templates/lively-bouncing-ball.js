@@ -38,9 +38,11 @@ export default class Ball extends Morph {
 
   collisionTest(ball) {
     if( ball.x<0 || ball.x>300) {
+      
       ball.dx =- ball.dx;
       this.hits++
       console.log("[ball] collide x")
+
     }
     if( ball.y<0 || ball.y>300) {
       ball.dy =- ball.dy;

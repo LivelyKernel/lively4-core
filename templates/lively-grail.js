@@ -15,6 +15,9 @@ export default class LivelyGrail extends LivelyPaper {
     this.grail.SetCharacterCallback((character, justifications) => {
     	  this.get("#result").innerHTML = "recognized " + character;
     });
+    
+    
+    throw new Error("grr")
   }
 
   mousePos(evt) {

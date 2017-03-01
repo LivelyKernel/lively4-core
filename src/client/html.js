@@ -199,5 +199,11 @@ export default class HTML {
       lively.notify("Saved " + url)
     })
   }
+  
+  static foo() {
+    console.log("that " + that.calledFrom(1))
+    bar.grrr()
+  }
+  
 }
 

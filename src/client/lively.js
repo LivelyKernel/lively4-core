@@ -194,9 +194,13 @@ export default class Lively {
   static handleError(error) {
     lively.LastError = error;
     if (!error) return; // hmm... this is currious...
-    lively.notify("Error: ", error.message, 10, () =>
-    		  lively.openWorkspace("Error:" + error.message + "\nLine:" + error.lineno + " Col: " + error.colno+"\nSource:" + error.source + "\nError:" + error.stack), 
-          "red");
+    if (document.querySelector("lively-console")) {
+      console.log(error) 
+    } else {
+      lively.notify("Error: ", error, 10, () =>
+      		  lively.openWorkspace("Error:" + error.message + "\nLine:" + error.lineno + " Col: " + error.colno+"\nSource:" + error.source + "\nError:" + error.stack), 
+            "red");
+    }
   }
 
   static loaded() {
