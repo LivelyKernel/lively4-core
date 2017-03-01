@@ -149,13 +149,19 @@ export default class Console extends Morph {
     if (!editor) return
     var doc = editor.getDoc();
 
-    var s = ""
-    args.forEach(ea => s += ea + " ")
+    editor.execCommand("goDocEnd")
     if (editor.getValue().length  > 0)
       editor.replaceSelection("\n")
 
-    editor.execCommand("goDocEnd")
-    editor.replaceSelection(s);
+    args.forEach(ea => {
+      if (ea.stack && ea.message) {
+        
+      } else {
+        editor.replaceSelection(ea + " ");
+      }
+    })
+    
+    
     
     if (right) {
       editor.replaceSelection(" ")
