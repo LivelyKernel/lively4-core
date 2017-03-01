@@ -775,11 +775,7 @@ export default class Lively {
       var lastPos = lively.getPosition(lastWindow);
       var windowWidth = w.getBoundingClientRect().width;
       if (lastPos !== undefined && windowWidth !== undefined) {
-        if (lastPos.x > windowWidth) {
-          lively.setPosition(w, lastPos.subPt(pt(windowWidth + 25, 0)));
-        } else {
-          lively.setPosition(w, lastPos.addPt(pt(25,25)));
-        }
+        lively.setPosition(w, lastPos.addPt(pt(25,25)));
       }      
     }
     return components.openInBody(w).then((w) => {

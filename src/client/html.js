@@ -71,7 +71,7 @@ export default class HTML {
       var funcName = name.replace(/^./, function (c) {
             return "on" + c.toUpperCase() ;
           }) + "Changed";
-      console.log("register input " + name)
+        // console.log("register input " + name)
         node.addEventListener("input", function(evt) {
           var value = node.value
           var func = parent[funcName];

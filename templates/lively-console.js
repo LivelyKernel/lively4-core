@@ -110,6 +110,34 @@ export default class Console extends Morph {
     this.log("" + src)
     this.log("// " + result)
   }
+  
+  parseSourceReference(ref) {
+    var url = ref.replace(/\!.*/,"")
+    var args = ref.replace(/.*\!/,"").split(/:/)
+    var lineAndColumn
+    if (args[0] == "transpiled") {
+      // hide transpilation in display and links
+      var moduleData = System["@@registerRegistry"][url]
+      if (moduleData) {
+      var map = moduleData.metadata.load.sourceMap
+      var smc =  new sourcemap.SourceMapConsumer(map)
+      lineAndColumn = smc.originalPositionFor({
+          line: Number(args[1]),
+          column: Number(args[2])
+        })
+      } else {
+        lineAndColumn = {line: args[1], column: args[2]}
+      }
+    } else {
+      lineAndColumn = {line: args[0], column: args[1]}
+    }
+    lineAndColumn.url = url
+    lineAndColumn.toString = function() {
+        return "" + this.url.replace(lively4url, "") + ":" + this.line + ":" + this.column
+    }
+    return lineAndColumn
+  }
+  
     
   log() {
     this.logWithLeftAndRight(lively.array(arguments), null, this.calledFrom(4))
@@ -147,36 +175,16 @@ export default class Console extends Morph {
       // annotation.style.clear = "both"
       annotation.style.float = "right"
      
-      
-      var url = right.replace(/\!.*/,"")
-      var args = right.replace(/.*\!/,"").split(/:/)
-      var lineAndColumn
-      if (args[0] == "transpiled") {
-        // hide transpilation in display and links
-        var moduleData = System["@@registerRegistry"][url]
-        if (moduleData) {
-        var map = moduleData.metadata.load.sourceMap
-        var smc =  new sourcemap.SourceMapConsumer(map)
-        lineAndColumn = smc.originalPositionFor({
-            line: Number(args[1]),
-            column: Number(args[2])
-          })
-        } else {
-          lineAndColumn = {line: args[1], column: args[2]}
-        }
-      } else {
-        lineAndColumn = {line: args[0], column: args[1]}
+      var ref =  this.parseSourceReference(right) 
+      if (ref) {
+        annotation.textContent = "" + ref
       }
-  
-      if (lineAndColumn) {
-        var text = "" + url.replace(lively4url, "") + ":" + lineAndColumn.line + ":" +lineAndColumn.column 
-        annotation.textContent = text
-      }
+      var url = (ref && ref.url) || right
     
       annotation.setAttribute("href", "" + right)
       annotation.addEventListener("click", (evt) => {
         evt.preventDefault()
-        lively.openBrowser(url, true, lineAndColumn)
+        lively.openBrowser(url, true, ref)
         return true
       }, true) 
 
@@ -247,9 +255,9 @@ export default class Console extends Morph {
       other.get("#console").editor.getValue().split("\n").forEach( line => {
         var m = line.match(/^(.*)(https?:\/\/.*[0-9]+:[0-9]+$)/)
         if (m) {
-          this.logWithLeftAndRight(m[1], null, m[1])
+          this.logWithLeftAndRight([m[1]], null, m[2])
         } else {
-          this.logWithLeftAndRight(line)
+          this.logWithLeftAndRight([line])
         }
       })
       
