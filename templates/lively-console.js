@@ -1,6 +1,7 @@
 import Morph from "./Morph.js"
 
 import * as cop from "src/external/ContextJS/src/contextjs.js"
+import sourcemap from 'https://raw.githubusercontent.com/mozilla/source-map/master/dist/source-map.min.js'
 
 
 export default class Console extends Morph {
@@ -118,6 +119,8 @@ export default class Console extends Morph {
     var doc = editor.getDoc();
 
     var s = args.join(" ")
+    if (editor.getValue().length  > 0)
+      editor.replaceSelection("\n")
 
     editor.execCommand("goDocEnd")
     editor.replaceSelection(s);
@@ -131,10 +134,36 @@ export default class Console extends Morph {
       var annotation = document.createElement("a")
       annotation.style.display = "inline-block"
       annotation.textContent = "" + right
+      
+      var url = right.replace(/\!.*/,"")
+      var args = right.replace(/.*\!/,"").split(/:/)
+      var lineAndColumn
+      if (args[0] == "transpiled") {
+        // hide transpilation in display and links
+        var moduleData = System["@@registerRegistry"][url]
+        if (moduleData) {
+        var map = moduleData.metadata.load.sourceMap
+        var smc =  new sourcemap.SourceMapConsumer(map)
+        lineAndColumn = smc.originalPositionFor({
+            line: Number(args[1]),
+            column: Number(args[2])
+          })
+        } else {
+          lineAndColumn = {line: args[1], column: args[2]}
+        }
+      } else {
+        lineAndColumn = {line: args[0], column: args[1]}
+      }
+  
+      if (lineAndColumn) {
+        var text = "" + url.replace(lively4url, "") + ":" + lineAndColumn.line + ":" +lineAndColumn.column 
+        annotation.textContent = text
+      }
+    
       annotation.setAttribute("href", "" + right)
       annotation.addEventListener("click", (evt) => {
         evt.preventDefault()
-        lively.notify("clicked marker " + right )
+        lively.openBrowser(url, true, lineAndColumn)
         return true
       }, true) 
 
@@ -148,7 +177,6 @@ export default class Console extends Morph {
         })
       
     }
-    editor.replaceSelection("\n")
 
     if (left) {
       var leftAnnotation = document.createElement("div")
@@ -186,6 +214,9 @@ export default class Console extends Morph {
         .filter(ea => !ea.match("src/external/ContextJS/src/Layers.js") )
         .filter(ea => !ea.match("XYZError") )
         .filter(ea => !ea.match("currentStack"))
+        .filter(ea => !ea.match("notify"))
+        
+        
         .slice(offset,offset + 1)
         // .map(ea => ea.replace(/\(.*?\)/,""))
         .join("")

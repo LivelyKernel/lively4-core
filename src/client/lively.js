@@ -795,7 +795,12 @@ export default class Lively {
   }
   
   // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
-  static async openBrowser(url, edit, pattern, replaceExisting) {
+  static async openBrowser(url, edit, patternOrPostion, replaceExisting) {
+    if (patternOrPostion && patternOrPostion.line)
+      var lineAndColumn = patternOrPostion
+    else 
+      var pattern = patternOrPostion
+
     if (!url || !url.match(/^http/))
       url = lively4url
     var editorComp;
@@ -827,13 +832,18 @@ export default class Lively {
         comp.hideNavbar();
       }
       return comp.followPath(url)
-    }).then(() => {
-      if (edit && pattern) {
-        editorComp.asyncGet("#editor").then(livelyEditor => {
+    }).then(async () => {
+      if (edit) {
+        await editorComp.asyncGet("#editor").then(livelyEditor => {
           var ace = livelyEditor.currentEditor();
-          ace.find(pattern);
+          if(pattern)
+            ace.find(pattern);
+          else if (lineAndColumn) {
+            ace.gotoLine(lineAndColumn.line, lineAndColumn.column)
+          }
         });
       }
+      return editorComp
     });
   }
   
