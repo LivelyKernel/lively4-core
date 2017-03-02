@@ -5,7 +5,8 @@ const debuggerGitHubURL = 'https://github.com/LivelyKernel/lively4-chrome-debugg
 export default class Debugger extends Morph {
 
   initialize() {
-    this.windowTitle = '<i class="fa fa-chrome" aria-hidden="true"></i> Debugger';
+    this.windowTitle = 'Debugger';
+    this.windowIcon = '<i class="fa fa-chrome" aria-hidden="true"></i>';
     this.lastDebuggerPausedResult = null;
     this.currentCallFrame = null;
     this.highlightedLineId = null;

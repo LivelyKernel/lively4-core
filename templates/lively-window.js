@@ -99,6 +99,9 @@ export default class Window extends Morph {
       case 'title':
         this.render();
         break;
+      case 'icon':
+        this.render();
+        break;
       case 'fixed':
         this.reposition();
         break;
@@ -159,9 +162,17 @@ export default class Window extends Morph {
    */
   render() {
     if (this.created) {
-      if (this.attributes['title']) {
-        this.titleSpan.innerHTML = this.attributes['title'].value.slice(0, 50);
+      var icon = this.attributes['icon'];
+      var title = this.attributes['title'];
+      var content = '';
+      if (icon && title) {
+        content = icon.value + ' ' + title.value.slice(0, 50);
+      } else if (icon) {
+        content = icon.value;
+      } else if (title) {
+        content = title.value.slice(0, 50);
       }
+      this.titleSpan.innerHTML = content;
     }
   }
 
