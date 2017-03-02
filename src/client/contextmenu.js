@@ -81,91 +81,116 @@ export default class ContextMenu {
       ["Workspace", (evt) => {
         this.hide();
         lively.openWorkspace("", pt(evt.pageX, evt.pageY));
-      }, "CMD+K"],
-      ["Browser",     (evt) => {
-        this.openComponentInWindow("lively-container", evt).then(comp => {
-          var container = _.last(document.querySelectorAll("lively-container"));
-          if (container)
-            comp.followPath("" +container.getURL());
-          else
-            comp.followPath(lively4url +"/");
-          comp.parentElement.style.width = "850px";
-          comp.parentElement.style.height = "600px";
-        });
-      }, "CMD+SHIFT+B"],
-      // ["File Editor",     (evt) => this.openComponentInWindow("lively-editor", evt)],
-      // ["File Browser",    (evt) => this.openComponentInWindow("lively-file-browser", evt)],
-      ["Component Bin",   (evt) => this.openComponentInWindow("lively-component-bin", evt),
-       "CMD+O"],
-
-      ["Sync",     (evt) => this.openComponentInWindow("lively-sync", evt)],
-      // ["Services",     (evt) => this.openComponentInWindow("lively-services", evt)],
-      // ["Terminal",        (evt) => this.openComponentInWindow("lively-terminal", evt)],
-      ["Console",         (evt) => this.openComponentInWindow("lively-console", evt)],
-      ["File Search",         (evt) => this.openComponentInWindow("lively-search", evt)],
-      ["TestRunner",         (evt) => this.openComponentInWindow("lively-testrunner", evt)],
-      ['Debugger',     (evt) => lively.openDebugger()],
-      ["Mount",     (evt) => this.openComponentInWindow("lively-filesystems", evt)],
-      ["Customize Page",   (evt) => {
-        this.hide();
-        System.import("src/client/customize.js").then(c => c.openCustomizeWorkspace(evt));
-      }],
+      }, "CMD+K", '<i class="fa fa-window-maximize" aria-hidden="true"></i>'],
+      ["Browse/Edit", (evt) => {
+          this.openComponentInWindow("lively-container", evt).then(comp => {
+            var container = _.last(document.querySelectorAll("lively-container"));
+            if (container)
+              comp.followPath("" +container.getURL());
+            else
+              comp.followPath(lively4url +"/");
+            comp.parentElement.style.width = "850px";
+            comp.parentElement.style.height = "600px";
+          });
+        }, 
+        "CMD+SHIFT+B", '<i class="fa fa-cogs" aria-hidden="true"></i>'],
+      // ["File Editor", (evt) => this.openComponentInWindow("lively-editor", evt)],
+      // ["File Browser", (evt) => this.openComponentInWindow("lively-file-browser", evt)],
+      ["Component Bin", (evt) => this.openComponentInWindow("lively-component-bin", evt),
+       "CMD+O", '<i class="fa fa-th" aria-hidden="true"></i>'],
+      ["Insert", [
+        ["Text", (evt) => {
+          var text  = document.createElement("p");
+          text.innerHTML = "Hello";
+          text.contentEditable = true;
+          worldContext.appendChild(text);
+          var pos = pt(evt.pageX, evt.pageY);
+          if (worldContext.localizePosition) pos = worldContext.localizePosition(pos);
+  
+          lively.setPosition(text, pos);
+          this.hide();
+        }],
+        ["Rectangle", (evt) => {
+          var morph  = document.createElement("div");
+          morph.style.width = "200px";
+          morph.style.height = "100px";
+          var pos = pt(evt.pageX, evt.pageY);
+          if (worldContext.localizePosition) pos = worldContext.localizePosition(pos);
+          lively.setPosition(morph, pos);
+          // morph.style.backgroundColor = "blue";
+          morph.style.backgroundColor = 'rgba(40,40,40,0.5)';
+          worldContext.appendChild(morph);
+          this.hide();
+        }]
+      ]],
+      ["Tools", [
+        // ["Services", (evt) => this.openComponentInWindow("lively-services", evt)],
+        // ["Terminal", (evt) => this.openComponentInWindow("lively-terminal", evt)],
+        ["Console", (evt) => this.openComponentInWindow("lively-console", evt), 
+          "CMD+J", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
+        ["Search", (evt) => this.openComponentInWindow("lively-search", evt),
+          "CMD+SHIFT+F",'<i class="fa fa-search" aria-hidden="true"></i>'],
+        ['Debugger', (evt) => lively.openDebugger(), 
+          "", '<i class="fa fa-chrome" aria-hidden="true"></i>'],
+        ['Inspector', (evt) => lively.openInspector(document.body), 
+          "", '<i class="fa fa-info-circle" aria-hidden="true"></i>'],
+        ["Test Runner", (evt) => this.openComponentInWindow("lively-testrunner", evt),
+          "", '<i class="fa fa-check-square-o" aria-hidden="true"></i>'],
+        ["Storage Setup", (evt) => this.openComponentInWindow("lively-filesystems", evt),
+          "", '<i class="fa fa-cloud" aria-hidden="true"></i>'],
+      ]],
+      ["Documentation", [
+        ["Devdocs.io", (evt) => {
+            this.openComponentInWindow("lively-help",  pt(evt.pageX, evt.pageY));
+          }, 
+          "CMD+H", '<i class="fa fa-book" aria-hidden="true"></i>'],
+        ["Wiki (Docs)", (evt) => {
+          this.openComponentInWindow("lively-container", evt).then(comp => {
+              comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Home.md");
+            });
+          },
+          "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'
+        ],
+        // ["Journal", (evt) => {
+        //   this.openComponentInWindow("lively-container", evt).then(comp => {
+        //     comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Journal.md");
+        // });
+        // }],
+        ["Issues", (evt) => {
+          window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
+        },, '<i class="fa fa-bug" aria-hidden="true"></i>']
+      ]],
+      // ["Customize Page", (evt) => {
+      //     this.hide();
+      //     System.import("src/client/customize.js").then(c => c.openCustomizeWorkspace(evt))
+      //   },
+      //   "",'<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'
+      //   ],
       // #TODO use sub menues here
-      ["Devdocs.io",     (evt) => {
-        this.openComponentInWindow("lively-help",  pt(evt.pageX, evt.pageY));
-      }, "CMD+H"],
-      ["Wiki (Docs)",     (evt) => {
-        this.openComponentInWindow("lively-container", evt).then(comp => {
-          comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Home.md");
-      });
-      }],
-      // ["Journal",     (evt) => {
-      //   this.openComponentInWindow("lively-container", evt).then(comp => {
-      //     comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Journal.md");
-      // });
-      // }],
-      ["Issues", (evt) => {
-        window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
-      }],
-      ["Text", (evt) => {
-        var text  = document.createElement("p");
-        text.innerHTML = "Hello";
-        text.contentEditable = true;
-        worldContext.appendChild(text);
-        var pos = pt(evt.pageX, evt.pageY);
-        if (worldContext.localizePosition) pos = worldContext.localizePosition(pos);
-
-        lively.setPosition(text, pos);
-        this.hide();
-      }],
-      ["Rectangle", (evt) => {
-        var morph  = document.createElement("div");
-        morph.style.width = "200px";
-        morph.style.height = "100px";
-        var pos = pt(evt.pageX, evt.pageY);
-        if (worldContext.localizePosition) pos = worldContext.localizePosition(pos);
-        lively.setPosition(morph, pos);
-        // morph.style.backgroundColor = "blue";
-        morph.style.backgroundColor = 'rgba(40,40,40,0.5)';
-        worldContext.appendChild(morph);
-        this.hide();
-      }],
+      
       !document.webkitIsFullScreen ?
-      ["Enter fullscreen", (evt) => 
-          document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)] :
-          ["Cancel fullscreen", (evt) => 
-          document.webkitCancelFullScreen()],
-      ["save as ..", (evt) => {
-        if (worldContext.onSaveAs)
-          worldContext.onSaveAs() 
-        else html.saveCurrentPageAs();
-      }],
+          ["Enter Fullscreen", (evt) => {
+              document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)
+            },
+            "F11", '<i class="fa fa-arrows-alt" aria-hidden="true"></i>'
+          ] :
+          ["Cancel Fullscreen", (evt) => document.webkitCancelFullScreen(),
+            "F11", '<i class="fa fa-times-circle-o" aria-hidden="true"></i>'
+          ],
+      // ["save as ..", (evt) => {
+      //   if (worldContext.onSaveAs)
+      //     worldContext.onSaveAs() 
+      //   else html.saveCurrentPageAs();
+      // }],
+      ["Sync Repositories", (evt) => this.openComponentInWindow("lively-sync", evt), 
+        "CMD+SHIFT+G",'<i class="fa fa-github" aria-hidden="true"></i>'],
       ["save", (evt) => {
-        if (worldContext.onSave)
-          worldContext.onSave()
-        else
-          html.saveCurrentPage();
-      }]
+          if (worldContext.onSave)
+            worldContext.onSave()
+          else
+            html.saveCurrentPage();
+        },
+        "CMD+S", '<i class="fa fa-cloud-upload" aria-hidden="true"></i>']
     ];
   }
   
