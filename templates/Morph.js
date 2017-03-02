@@ -33,9 +33,18 @@ export default class Morph extends HTMLDivElement {
   get windowTitle(){
     return this._windowTitle;
   }
+
+  set windowIcon(string){
+    this._windowIcon = string;
+    // #TOTO replace with connections
+    debugger;
+    if (this.parentElement && this.parentElement.titleSpan) { // check for window?
+      this.parentElement.setAttribute("icon", string);
+    }
+  }
   
-  bar() {
-    return 5
+  get windowIcon(){
+    return this._windowIcon;
   }
 
   getAllSubmorphs(selector) {
