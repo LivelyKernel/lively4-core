@@ -164,7 +164,6 @@ export default class Window extends Morph {
     if (this.created) {
       var icon = this.attributes['icon'];
       var title = this.attributes['title'];
-      debugger;
       var content = '';
       if (icon && title) {
         content = icon.value + ' ' + title.value.slice(0, 50);

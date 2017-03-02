@@ -37,7 +37,6 @@ export default class Morph extends HTMLDivElement {
   set windowIcon(string){
     this._windowIcon = string;
     // #TOTO replace with connections
-    debugger;
     if (this.parentElement && this.parentElement.titleSpan) { // check for window?
       this.parentElement.setAttribute("icon", string);
     }
