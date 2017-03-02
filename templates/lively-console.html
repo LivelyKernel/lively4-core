@@ -1,4 +1,5 @@
-<template id="lively-console">
+  <template id="lively-console" data-class="LivelyConsole">
+    <style data-src="/src/external/font-awesome/css/font-awesome.min.css"></style>
     <style>
     .container {
         width: 100%;
@@ -15,8 +16,8 @@
     }
     #commandlineholder {
         margin: 2px;
-        height: 20px;
-        width: 100%;
+        height: 25px;
+        width: cont%;
         display: flex;
         flex-direction: row;
     }
@@ -25,111 +26,31 @@
         margin-right: 2px;
         font-family: monospace;
         flex: 1;
+        padding-top: 3px;
+        border-top: 1px solid grey;
+    }`
     }
     #evalbutton {
     }
-    </style>
-    <div class="container">
-      <!-- <pre id="console"></pre> -->
-      <juicy-ace-editor id="console" wrapmode="true"></juicy-ace-editor>
-      <div id="commandlineholder">
-        <button id="clear">clear</button>
-        <button id="eval">eval</button>
-        <!-- <input type="text" id="commandline" value=""> -->
-        <juicy-ace-editor id="commandline" ></juicy-ace-editor>
-      </div>
-    </div>
-
-    <script type="lively4script" data-name="initialize">
-    () => {
-      this.windowTitle = "Console"
-      var container = $(this.shadowRoot).find(".container")[0];
-      var editor = this.getSubmorph('#console').editor
-
-      // from: http://stackoverflow.com/questions/32315244/single-line-ace-editor
-      this.getSubmorph('#commandline').editor.setOptions({
-          maxLines: 1, // make it 1 line
-          autoScrollEditorIntoView: true,
-          highlightActiveLine: false,
-          printMargin: false,
-          showGutter: false,
-          /* mode: "ace/mode/javascript", */
-          /* theme: "ace/theme/tomorrow_night_eighties" */
-      });
-      // remove newlines in pasted text
-      editor.on("paste", function(e) {
-          e.text = e.text.replace(/[\r\n]+/g, " ");
-      });
-      // make mouse position clipping nicer
-      editor.renderer.screenToTextCoordinates = function(x, y) {
-          var pos = this.pixelToScreenCoordinates(x, y);
-          return this.session.screenToDocumentPosition(
-              Math.min(this.session.getScreenLength() - 1, Math.max(pos.row, 0)),
-              Math.max(pos.column, 0)
-          );
-      };
-      // disable Enter Shift-Enter keys
-      editor.commands.bindKey("Enter|Shift-Enter", "null")
-
-
-      this.getSubmorph('#console').editor.setOptions({
-          readOnly: true,
-          highlightActiveLine: false,
-          highlightGutterLine: false
-      });
-      this.getSubmorph('#console').editor.renderer.$cursorLayer.element.style.opacity=0
-
-      $(this.getSubmorph('#commandline')).keyup((evt) => {
-        if(evt.keyCode == 13) { this.evalInput() }})
-        
-      lively.html.registerButtons(this)
+    
+    #inputMark {
+      padding-top: 4px;
+      font-size: 10pt;
+      font-weight: 900;
+      color: #708090;
     }
-    </script>
+    </style>
 
-    <script type="lively4script" data-name="onClear">
-    () => {
-      this.getSubmorph('#console').editor.setValue("")
-    }    
-    </script>
+    <div class="container">
+      <lively-code-mirror id="console"></lively-code-mirror>
+    
+      <div id="commandlineholder">
+        <span id="inputMark"><i class="fa fa-angle-right" aria-hidden="true"></i></span>
+        <lively-code-mirror id="commandline"></lively-code-mirror>
+        <button id="clear"><i class="fa fa-ban" aria-hidden="true"></i></button>
+      </div>
+    
 
-
-    <script type="lively4script" data-name="onEval">
-    () => {
-      this.evalInput()
-    }    
-    </script>
-
-
-    <script type="lively4script" data-name="evalInput">
-      function() {
-          var src = this.getSubmorph('#commandline').editor.getValue()
-          try { var result = eval(src) } catch(e) { result = "ERROR:" + e }
-          this.log("" + src)
-          this.log("// " + result)
-      }
-    </script>
-
-    <script type="lively4script" data-name="log">
-      function(/* varargs */) {
-        var c = this.getSubmorph('#console')
-        var editor  = c.editor
-        if (!editor || !editor.session ) return
-        Array.prototype.forEach.call(arguments, function(s) {
-          if (s.message) s = s.message
-          if (s.stack) s += s.stack
-
-          // c.editor.setValue(c.editor.getValue() + "\n" + s, 1)
-          var session = editor.session
-          session.insert({
-             row: session.getLength(),
-             column: 0
-          }, "\n" + s)
-        })
-        this.getSubmorph('#console').editor.scrollToRow(1000000000000)
-      }
-    </script>
-
-
+    </div>
 </template>
-
 <script class="registrationScript">lively.registerTemplate()</script>

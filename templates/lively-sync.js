@@ -289,7 +289,7 @@ export default class Sync extends Morph {
       .filter(ea => ! ea.match("HEAD "))
       .map(ea => ea.replace(remoteRegEx,""))
     this.get("#gitbranches").innerHTML = branches.map(ea => "<option>" + ea).join("\n")
-    console.log("branches: " + branches)
+    // console.log("branches: " + branches)
   }
 
   get repositoryBlacklist() {
@@ -302,7 +302,7 @@ export default class Sync extends Morph {
     var list = await this.getGitRepositoryNames()
     var exists = _.include(list, repository)
     
-    console.log("delete " + this.get("#deleteButton").disabled)
+    // console.log("delete " + this.get("#deleteButton").disabled)
 
     if (exists) {
       

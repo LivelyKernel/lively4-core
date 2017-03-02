@@ -49,7 +49,7 @@ export default class Search extends Morph {
       var item = document.createElement("tr");
       var filename = file.replace(/.*\//,"")
       item.innerHTML = `<td><a>${filename}</a></td><td><span ="pattern">${
-        pattern.replace(/</,"&lt;")}</span></td>`;
+        pattern.replace(/</g,"&lt;")}</span></td>`;
       var link = item.querySelector("a");
       link.href = entry;
       link.onclick = () => {

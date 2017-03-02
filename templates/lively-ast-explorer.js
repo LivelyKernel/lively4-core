@@ -16,6 +16,7 @@ import {setCode} from 'src/client/workspaces.js'
 import sourcemap from 'https://raw.githubusercontent.com/mozilla/source-map/master/dist/source-map.min.js'
 import generateUUID from './../src/client/uuid.js';
 
+import {modulesRegister} from 'systemjs-babel-build';
 
 export default class AstExplorer extends Morph {
 
@@ -169,20 +170,22 @@ export default class AstExplorer extends Morph {
       return;
     }
     
-    this.get("#output").editor.setValue(this.result.code) 
+    this.get("#output").editor.setValue(this.result.code);
+    
     this.get("#result").textContent = ""
     if (this.get("#live").checked) {
       var oldLog = console.log
       var logNode = this.get("#result");
       try {
-        console.log = (s) => {
-          oldLog.apply(console, arguments)
+        console.log = (s, ...rest) => {
+          oldLog.call(console, s, ...rest)
           logNode.textContent += s + "\n"
         }
-        var result =  eval('' +this.result.code);
+        var result ='' + (await this.get("#output").boundEval(this.get("#output").editor.getValue())).value;
         this.get("#result").textContent += "-> " + result;       
       } catch(e) {
-        this.get("#result").textContent = "Error: " + e
+        console.error(e);
+        this.get("#result").textContent += "Error: " + e
       } finally {
         console.log = oldLog
       }

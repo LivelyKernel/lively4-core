@@ -2,21 +2,30 @@ import Morph from './Morph.js';
 import {babel} from 'systemjs-babel-build';
 import SyntaxChecker from 'src/client/syntax.js'
 import traceBabelPlugin from "./lively-continuous-editor-plugin.js"
+import boundEval from './../src/client/code-evaluation/bound-eval.js';
+
+import ShowPerformance from "demos/showperformancelayer.js";
 
 // import localsBabelPlugin from 'babel-plugin-locals'
 
 //import lively from './../src/client/lively.js';
 
+import DelayedCall from 'src/client/delay.js'
+
 export default class ContinuousEditor extends Morph {
 
   initialize() {
-    this.windowTitle = "Continuous Editor";  // #TODO why does it not work?
+    this.windowTitle = "Continuous Feedback Editor";  
     this.get("#source").setURL("https://lively-kernel.org/lively4/lively4-jens/demos/hello.js")
     this.get("#source").loadFile()
+
+    this.sourceCodeChangedDelay = new DelayedCall()
+
 
     lively.html.registerButtons(this);
 
     this.get("#traceInspector").hideWorkspace()
+    // this.get("#objectInspector").hideWorkspace()
 
     this.get("#traceInspector").addEventListener("select-object", 
       evt => this.selectCallTraceNode(evt.detail.object))
@@ -27,12 +36,12 @@ export default class ContinuousEditor extends Morph {
     };
     
     this.editorComp().addEventListener("change", evt => 
-      SyntaxChecker.checkForSyntaxErrors(this.editor()));
-
-    this.editorComp().addEventListener("change", evt => 
       this.onSourceChange(evt));
 
-    this.dispatchEvent(new CustomEvent("initialize"));
+
+    this.editorComp().addEventListener("editor-loaded", evt => 
+      this.dispatchEvent(new CustomEvent("initialize")));
+
   }
   
   hideMarker(markId) {
@@ -42,11 +51,6 @@ export default class ContinuousEditor extends Morph {
     var traceNode = this.get("#traceView").querySelector("#" + markId)
     if (traceNode ) {
        traceNode.classList.remove("selected")
-    }
-    
-    var resultNode = this.get("#markerLayer").querySelector("#" + markId)
-    if (resultNode ) {
-       resultNode.classList.remove("selected")
     }
   }
   
@@ -60,12 +64,7 @@ export default class ContinuousEditor extends Morph {
 
     var traceNode = this.get("#traceView").querySelector("#" + markId)
     if (traceNode ) {
-       traceNode.classList.add("selected")
-    }
-    
-    var resultNode = this.get("#markerLayer").querySelector("#" + markId)
-    if (resultNode ) {
-       resultNode.classList.add("selected")
+      traceNode.classList.add("selected")
     }
   }
   
@@ -77,7 +76,7 @@ export default class ContinuousEditor extends Morph {
   }
 
   editorComp() {
-    return this.get("#source").get("juicy-ace-editor");
+    return this.get("#source").get("lively-code-mirror");
   }
   
   editor() {
@@ -85,8 +84,12 @@ export default class ContinuousEditor extends Morph {
   }
   
   onSourceChange(evt) {
-    this.runCode()
+    this.sourceCodeChangedDelay.call(() => {
+      SyntaxChecker.checkForSyntaxErrorsCodeMirror(this.editor())
+      this.runCode()
+    })
   }
+
   
   async runCode() {
     this.ast = null; // clear
@@ -116,8 +119,12 @@ export default class ContinuousEditor extends Morph {
     
     try {
       // lively.notify("output: " + this.result.code)
-      var result =  eval('' +this.result.code);
-      // this.get("#result").textContent += "-> " + result;       
+      var ctx = this.get("#canvas").getContext("2d")
+      ctx.fillStyle = "white"
+      ctx.fillRect(0, 0, 300, 300);
+      
+      var result =  (await boundEval(""+this.result.code, this.get("#canvas"))).value ; 
+      // this.get("#log").textContent += "-> " + result;       
     } catch(err) {
         
       // this.get("#source").currentEditor().getSession().setAnnotations(err.stack.split('\n')
@@ -143,8 +150,7 @@ export default class ContinuousEditor extends Morph {
 
       this.markCallTree(this.traceRoot)
       this.updateTraceView(this.traceRoot)
-      
-      setTimeout(() => this.updateMarkerResults(this.traceRoot),0 )
+      this.updateMarkerResults(this.traceRoot)
     }
   }
 
@@ -156,31 +162,70 @@ export default class ContinuousEditor extends Morph {
   astNode(id) {
     return this.ast.node_map[id] 
   }
+  
+  nodeToString(call) {
+    var node = call
+    var astnode = this.astNode(call.id) 
+    var ast_node = astnode;
+    var label = ""
+    
+    switch(ast_node.type) {
+      case "UpdateExpression":
+        label = ast_node.argument.name + "=" + node.value 
+        break;
+      case "VariableDeclarator":
+        label = ast_node.id.name + "=" + node.value
+        break
+      case "ExpressionStatement":
+        label = ""
+        break
+      case "FunctionDeclaration":
+        // label = "" + ast_node.id.name + "()"
+        label = ""
+        break
+      case "CallExpression":
+        // label = "" + ast_node.id.name + "()"
+        if (ast_node.callee.object)
+          label = ast_node.callee.object.name + ".";
+        if (ast_node.callee.property)
+          label += ast_node.callee.property.name + "()"
+        break
+       case "ForStatement":
+          label = "for{}"
+        break
+       case "BinaryExpression":
+          label = ""
+        break
+
+      case "AssignmentExpression":
+        var name = ast_node.left.name
+        if (!name && ast_node.left.property)  
+          name = ast_node.left.property.name;
+        label = name + "=" + call.value
+        break
+      default:
+        label = ast_node.type
+    }
+    return label
+  }
+
+  get maxCallId() {
+    return 200
+  }
+
 
   printTraceNode(parent, call) {
+    if (call.id > this.maxCallId) return
+    
     var astnode = this.astNode(call.id) 
-
+    
     var node = document.createElement("div");
     node.setAttribute("class", "traceNode")
     
-    var label = "";
-    
-    
-    if (astnode.id) {
-      label += astnode.id.name +""
-    } else if (astnode.left && astnode.left.name) {
-      label += astnode.left.name + ""
-    } else if (astnode.argument && astnode.operator) {
-        label += astnode.argument.name + "";
-    } else if (astnode) {
-        label += astnode.type;
-    } 
-    
-    if (call.value !== undefined)
-      label += "="  + call.value;
+    var label = this.nodeToString(call);
     
     node.innerHTML = "<div class='traceLabel'> " + label +"</div>"
-    
+    node.setAttribute("title", "" + astnode.type)
     
     node.id = call.markId
     node.addEventListener("click", (evt) => {
@@ -194,96 +239,128 @@ export default class ContinuousEditor extends Morph {
     })
   }
 
-
   clearMarkers() {
     this.lastMarkCounter = 0
-    var editor = this.editor();
-    var markers = editor.getSession().getMarkers();
-    for(var i in markers) {
-        if (markers[i].clazz.match("marked_invisible")) {
-            editor.getSession().removeMarker(i);
-        }
-    }
+    this.editor().getAllMarks()
+      .filter(ea => ea.isTraceMark)
+      .forEach(ea => ea.clear())
   }
 
   markCallTree(call) {
-    var Range = ace.require('ace/range').Range;
     var ast_node = this.astNode(call.id)
 
     if (ast_node && ast_node.start && ast_node.end) {
       if (!call.markId) call.markId = 'tracemark' + this.lastMarkCounter++
 
       var editor = this.editor()
-      var doc = editor.getSession().getDocument()
-      editor.session.addMarker(Range.fromPoints(
-        doc.indexToPosition(ast_node.start),
-        doc.indexToPosition(ast_node.end)), "marked marked_invisible " +  call.markId, "text", false); 
-    }
+      editor.markText( 
+        {line: ast_node.loc.start.line - 1, ch: ast_node.loc.start.column}, 
+        {line: ast_node.loc.end.line - 1, ch: ast_node.loc.end.column}, 
+        {
+          isTraceMark: true,
+          className: "marked " +  call.markId,
+          css: "background-color: rgba(0,0,255,0.05)",
+          title: ast_node.type
+        })
+    } 
     call.children.forEach(ea => {
       this.markCallTree(ea)
     })
   }
 
   updateMarkerResults(node) {
-    // this.updateMarkerResults(this.traceRoot)
-    this.get('#markerLayer').innerHTML = ""
-    this.markerLines = {};
-
+    this.editor().clearGutter("rightgutter")
     var parentBounds = this.getBoundingClientRect()
     this.updateMarkerResultsEach(this.get('#markerLayer'), node, parentBounds)
   }
   
-  updateMarkerResultsEach(markerLayer, node, parentBounds) {
-    if (node.markId) {
-      var ast_node = this.astNode(node.id)
+  addMarkerResult(line, text, node) {
+    var editor = this.editor()
+    var info = editor.lineInfo(line)
+    var gutterMarkers = info && info.gutterMarkers;
+    var markerLine = gutterMarkers && gutterMarkers.rightgutter
+    if (!markerLine) {
+        var markerLine = document.createElement("div")
+        // markerLine.style.backgroundColor = "rgb(240,240,240)"
+        markerLine.style.fontSize = "8pt"
+        markerLine.style.whiteSpace = "nowrap"
+        // markerLine.style.overflow = "hidden"
+        markerLine.classList.add("markerLine")  // markerLine    
+        editor.setGutterMarker(line, "rightgutter", markerLine)
+    }
+    var resultNode = document.createElement("span");
+    resultNode.classList.add("markerResult")
+    resultNode.classList.add(node.markId)
     
-      var marker = this.editorComp().shadowRoot.querySelector("." + node.markId)
-      if (marker) {
-        var bounds = marker.getBoundingClientRect();
-        var markerLine = this.markerLines[bounds.top]
-        if (!markerLine) {
-          var markerLine = document.createElement("div");
-          markerLine.classList.add("markerLine")  // markerLine    
-
-          markerLine.classList.add("marker") 
-
-          markerLine.style.position = "absolute";
-
-          markerLine.style.top  = (bounds.top - parentBounds.top) + "px";
-          this.markerLines[bounds.top] = markerLine;
-          markerLayer.appendChild(markerLine);
-        }
-        var resultNode = document.createElement("span");
-        resultNode.classList.add("markerResult")
-        resultNode.classList.add(node.markId)
-
-        // node.code + " = " +
-        resultNode.innerHTML =  ast_node.type +":" + node.value ;
-        resultNode.id = node.markId
-        resultNode.addEventListener("click", (evt) => {
-            this.selectCallTraceNode(node)
-            evt.stopPropagation()
-        })
-      
-
-        markerLine.appendChild(resultNode)
-        // markerLine.insertBefore(resultNode, markerLine.childNodes[0]);
-      }
-    }    
+    // node.code + " = " +
+    resultNode.textContent =  text
+    
+    resultNode.id = node.markId
+    resultNode.addEventListener("click", (evt) => {
+        this.selectCallTraceNode(node)
+        evt.stopPropagation()
+    })
+    markerLine.appendChild(resultNode)
+  }
+  
+  updateMarkerResultsEach(markerLayer, node, parentBounds) {
+    var ast_node = this.astNode(node.id)
+    if (ast_node.type == "UpdateExpression") {
+      this.addMarkerResult(ast_node.loc.start.line - 1, 
+        ast_node.argument.name + "=" + node.value + ";", node)
+    }
+    if (ast_node.type == "VariableDeclarator") {
+      this.addMarkerResult(ast_node.loc.start.line - 1, 
+        ast_node.id.name + "=" + node.value + ";", node)
+    }
+    if (ast_node.type == "AssignmentExpression") {
+      var name = ast_node.left.name
+      if (!name && ast_node.left.property)  
+        name = ast_node.left.property.name;
+      this.addMarkerResult(ast_node.loc.start.line - 1, 
+        name   + "=" + node.value + ";", node)
+    }
+    // if (ast_node.type == "CallExpression") {
+    //   this.addMarkerResult(ast_node.loc.start.line - 1, 
+    //     ast_node.callee.name + "("+ ast_node.arguments.map( ea => {
+    //       var eaCall = this.findBroadCallNode(ea.traceid, node) 
+    //       return eaCall && eaCall.value 
+    //     }).join(",")+")=>" + node.value + ";", node)
+    // }
     node.children.forEach(ea => this.updateMarkerResultsEach(markerLayer, ea, parentBounds))
+  }
+  
+  findBroadCallNode(id, node) {
+    return this.findBroadCallNodes(id, [node], new Map())
+  }
+
+  findBroadCallNodes(id, nodes, visited) {
+    while(nodes.length > 0) {
+      var ea = nodes.shift()  
+      if (ea.id == id) return ea
+      ea.children.forEach(child => {
+        if (!visited.get(child)) {
+          nodes.push(child)
+        }
+      })
+    }
+    return null
   }
 
   livelyMigrate(other) {
     this.addEventListener("initialize", () => {
       this.get("#source").setURL(other.get("#source").getURL())
       this.editor().setValue(other.editor().getValue())
-      this.editor().selection.setRange(other.editor().selection.getRange())
-      var viewState = other.get("#traceInspector").getViewState()
+      // this.editor().selection.setRange(other.editor().selection.getRange())
+      // var viewState = other.get("#traceInspector").getViewState()
       
-      this.runCode()
+      // #TODO time dependency... on what should we wait here?
+      setTimeout(() => this.runCode(),200)
       
-      this.get("#traceInspector").setViewState(viewState)
+      // this.get("#traceInspector").setViewState(viewState)
     })
   }
-  
 }
+
+
+ShowPerformance.measure(ContinuousEditor, "runCode")

@@ -7,13 +7,14 @@
 
 // #Duplication with shortcuts.js #TODO
 
-import lively from "./lively.js";
+// import lively from "./lively.js"; #TODO does not work anymore...
 
 export default class Keys {
 
   static getChar(evt) {
     return String.fromCharCode(evt.keyCode || evt.charCode);
   }
+
 
   static logEvent(evt) {
     console.log("key: "
@@ -30,7 +31,7 @@ export default class Keys {
   }
 
   static handle(evt) {
-    // lively.notify("handle " + this.getChar(evt))
+    // lively.notify("handle " + this.getChar(evt) + "" + evt.keyCode  + " "+ evt.charCode)
     try {
       var char = this.getChar(evt);
       // this.logEvent(evt)
@@ -44,12 +45,19 @@ export default class Keys {
         lively.openSearchWidget(this.getTextSelection());
         evt.preventDefault();
       } else if (evt.shiftKey && (evt.ctrlKey || evt.metaKey) && char == "B") {
+        lively.notify("open browser")
         lively.openBrowser(this.getTextSelection());
+        evt.preventDefault();
+      } else if (evt.shiftKey && (evt.ctrlKey || evt.metaKey) && char == "G") {
+        lively.openComponentInWindow("lively-sync");
         evt.preventDefault();
       } else if ((evt.ctrlKey || evt.metaKey) && char == "O") {
         lively.openComponentInWindow("lively-component-bin");
         evt.preventDefault();
-      }  else if ((evt.ctrlKey || evt.metaKey)  && char == "H") {
+      } else if (!evt.shiftKey && (evt.ctrlKey || evt.metaKey) && char == "J") {
+        lively.openComponentInWindow("lively-console");
+        evt.preventDefault();
+      } else if ((evt.ctrlKey || evt.metaKey)  && char == "H") {
         lively.openHelpWindow(this.getTextSelection());
         evt.preventDefault();
       } else if (evt.keyCode == 27) {

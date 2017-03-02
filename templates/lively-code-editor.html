@@ -1,0 +1,84 @@
+<template id="lively-code-editor" data-class="LivelyCodeEditor">
+    <style>
+    :host {
+      width: 100%;
+      height: 100%;
+    }
+    .container {
+      
+        width: 100%;
+        height: 100%;
+        
+        /*
+        box-sizing: border-box;
+        padding-top: 25px; */
+        display: flex;
+        flex-direction: column;
+        
+    }
+    .toolbar {
+        /* position: absolute;
+        left: 0px;
+        top: 0px;
+        width: 100%; */
+        /* min-height: 25px; */
+        /*flex: 0;*/
+        display: flex;
+        flex-direction: row;
+        min-height: max-content;
+    }
+
+    #filename {
+        width: 100%;
+        flex: 1;
+    }
+    #editor {
+        /* box-sizing: border-box; */
+        /*
+        width: 100%;
+        height: 100%;
+        */
+        flex: 1;   /* ACE does not display right with "flex" */
+    
+      overflow: hidden;
+    }
+    #versionControl {
+      position: absolute;
+      top: 40px;
+      right: 10px;
+      width: 400px;
+      height: calc(100% - 100px);
+      z-index: 200;
+      display: none; 
+      background: white;
+    }
+    #changeIndicator {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      right: 17px;
+      top: 0px;
+      z-index: 10;
+      background: rgb(220,30,30)
+    }
+    </style>
+    <div class="container">
+        <div class="toolbar" id="toolbar">
+          <button id="versionsButton">versions</button>
+          <button id="loadButton">load</button>
+          <button id="saveButton">save</button>
+          <input type="text" id="filename" value="https://lively4/README.md">
+        </div>
+        <lively-code-mirror id="editor"></lively-code-mirror>
+        <div id="changeIndicator"></div>
+        <div id="versionControl">
+          <button id="loadVersionButton">load</button>
+          <button id="closeVersionsButton">close</button>
+          <lively-version-control id="versions"></lively-version-control>
+        </div>
+    </div>
+
+
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

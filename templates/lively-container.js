@@ -188,16 +188,7 @@ export default class Container extends Morph {
   loadModule(url) {
     lively.reloadModule("" + url).then(module => {
       lively.notify("","Module " + url + " reloaded!", 3, null, "green");
-      if (this.getPath().match(/templates\/.*js/)) {
-        var templateURL = this.getPath().replace(/\.js$/,".html");
-        try {
-          console.log("[container] update template " + templateURL);
-          lively.files.loadFile(templateURL).then( sourceCode => 
-            lively.updateTemplate(sourceCode));
-        } catch(e) {
-          lively.notify("[container] could not update template " + templateURL, ""+e);
-        }
-      }
+      
       this.resetLoadingFailed();
     }, err => {
       this.loadingFailed(url, err);
@@ -235,16 +226,16 @@ export default class Container extends Morph {
   }
 
   openTemplateInstance(url) {
-      var name = url.toString().replace(/.*\//,"").replace(/\.html$/,"");
+      var name = url.toString().replace(/.*\//,"").replace(/\.((html)|(js))$/,"");
       lively.openComponentInWindow(name);
   }
 
   onApply() {
     var url = this.getURL().toString();
-    if (url.match(/\.js$/))  {
-      this.reloadModule(url);
-    } else if (url.match(/templates\/.*\.html$/)) {
+    if (url.match(/templates\/.*\.(html)|(js)$/)) {
       this.openTemplateInstance(url);
+    } else if (url.match(/\.js$/))  {
+      this.reloadModule(url);
     } else {
       lively.openBrowser(url);
     }
@@ -469,7 +460,7 @@ export default class Container extends Morph {
       var htmlSource = converter.makeHtml(enhancedMarkdown);
       var html = $.parseHTML(htmlSource);
       lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path));
-      console.log("html", html);
+      // console.log("html", html);
       var root = this.getContentRoot();
       html.forEach((ea) => {
         root.appendChild(ea);
@@ -553,6 +544,12 @@ export default class Container extends Morph {
     
     // content = content.replace(/\<\!-- BEGIN SYSTEM\.JS(.|\n)*\<\!-- END SYSTEM.JS--\>/,"");
     // content = content.replace(/\<\!-- BEGIN LIVELY BOOT(.|\n)*\<\!-- END LIVELY BOOT --\>/,"");
+    
+    if (content.match("<template")) {
+      
+      content = "<pre> " + content.replace(/</g,"&lt;") +"</pre"
+    }
+    
     
     if (content.match(/<script src=".*d3\.v3(.min)?\.js".*>/)) {
       if (!window.d3) {
@@ -781,7 +778,7 @@ export default class Container extends Morph {
   async setPath(path, donotrender) {
     this.get('#container-content').style.display = "block";
     this.get('#container-editor').style.display = "none";
-
+    this.windowTitle = path.replace(/.*\//,"")
     if (!path) {
         path = "";
     }

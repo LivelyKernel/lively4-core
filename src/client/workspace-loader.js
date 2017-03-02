@@ -3,12 +3,12 @@ import { translate as babelTranslate } from 'plugin-babel';
 import { getCode } from './workspaces.js';
 
 export function fetch(load, fetch) {
-  console.log('fetch', load, fetch);
+  // console.log('fetch', load, fetch);
   if(load.name.startsWith('workspace:')) {
     var id = decodeURI(load.name.replace(/^workspace:/, ''));
-    console.log(`fetch workspace code for id: ${id}`);
+    // console.log(`fetch workspace code for id: ${id}`);
     var code = getCode(id);
-    console.log('Found code', code)
+    // console.log('Found code', code)
     return Promise.resolve(code);
   } else if(load.name.endsWith('.js')) {
     return fetch.call(this, load);
@@ -18,7 +18,7 @@ export function fetch(load, fetch) {
 }
 
 export function translate(...args) {
-  console.log('translate', ...args);
+  // console.log('translate', ...args);
   var result = babelTranslate.apply(this, args);
   return result;
 }

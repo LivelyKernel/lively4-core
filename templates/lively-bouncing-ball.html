@@ -1,4 +1,4 @@
-<template id="lively-bouncing-ball">
+<template id="lively-bouncing-ball" data-class="LivelyBouncingBall">
 <style type="text/css">
   #bouncing-ball { 
     background:white; 
@@ -11,51 +11,6 @@
 <div id="container">
   <canvas id="bouncing-ball" width="300" height="300"></canvas>
 </div>
-
-<script type="lively4script" data-name="initialize">
-function() {
-    this.windowTitle = "Bouncing Ball"
-
-    var context;
-    var hits = 0
-    var start = Date.now()
-    this.balls =  [{dx: 2, dy: 4, y: 150, x: 10}]
-
-    var draw = () => {
-      context = $(this.shadowRoot).find("#bouncing-ball")[0].getContext('2d');
-      context.clearRect(0, 0, 300, 300);
-
-      this.balls.forEach(ball => {
-          context.beginPath();
-          context.fillStyle = "gray";
-          context.arc(ball.x, ball.y, 10, 0, Math.PI*2, true);
-          context.closePath();
-          context.fill();
-          if( ball.x<0 || ball.x>300) {
-            ball.dx =- ball.dx;
-            hits++
-          }
-          if( ball.y<0 || ball.y>300) {
-            ball.dy =- ball.dy;
-            hits++
-          }
-          ball.x += ball.dx;
-          ball.y += ball.dy;
-      })
-      this.shadowRoot.querySelector("#hits").innerHTML = "Hits: " + hits
-    }
-    setInterval(draw, 2);
-  }
-</script>
-
-<script type="lively4script" data-name="livelyMigrate">
-function(oldInstance) {
-    this.balls = oldInstance.balls
-    debugger
-}
-</script>
-
-
 
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

@@ -32,14 +32,20 @@
   margin: 5px;
 }
 
+#options {
+  margin: 5px;
+}
+
 </style>
 <div class="container">
-  <label for="open-in-checkbox">
-    <input type="text" id="search-field" placeholder="search ..." autofocus/>
-    open in window
-    <input type="checkbox" id="open-in-checkbox" checked="true">
-  </label>
+  <input type="text" id="search-field" placeholder="search ..." autofocus/>
   <ul class="tile-pane" title="Components"></ul>
+  <div id="options">
+    <label  for="open-in-checkbox">
+      open in window
+      <input type="checkbox" id="open-in-checkbox" checked="true">
+    </label>
+  </div>
   <!--
   <lively-tab-view>
     <div title="Shapes">Hello</div>

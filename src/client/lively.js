@@ -74,18 +74,19 @@ export default class Lively {
       console.log("Don't reload non-loaded module")
       return   
     }
-    
+    var modulePaths = [path]
     System.registry.delete(System.normalizeSync(path))
     return System.import(path).then( m => {
       // Find all modules that depend on me
       var dependedModules = Object.values(System.loads).filter( ea => 
         ea.dependencies.find(dep => System.normalizeSync(dep, ea.key) == changedModule))
       // and update them
-      dependedModules.forEach( ea => {
+      for(var ea of dependedModules) {
+        modulePaths.push(ea.key)
         console.log("reload " + path + " triggers reload of " + ea.key)
         System.registry.delete(ea.key)  
         System.import(ea.key)
-      })
+      }
       return m
     }).then( mod => {
       var moduleName = path.replace(/[^\/]*/,"");
@@ -98,12 +99,35 @@ export default class Lively {
       }
    
       return mod;
-    });
+    }).then(async (mod) => {
+      modulePaths.forEach(eaPath => {
+        // lively.notify("update dependend: ", eaPath, 3, "blue")
+        if (eaPath.match(/templates\/.*js/)) {
+          var templateURL = eaPath.replace(/\.js$/,".html");
+          try {
+            console.log("[templates] update template " + templateURL);
+            setTimeout(() => {
+              lively.files.loadFile(templateURL).then( sourceCode => 
+                lively.updateTemplate(sourceCode));
+            },100)
+            
+          } catch(e) {
+            lively.notify("[templates] could not update template " + templateURL, ""+e);
+          }
+        }
+      })
+      return mod
+    })
   }
 
   static loadJavaScriptThroughDOM(name, src, force) {
     return new Promise((resolve) => {
       var scriptNode = document.querySelector("#"+name);
+      if (!force && scriptNode) {
+        resolve() // nothing to be done here
+        return 
+      }
+      
       if (scriptNode) {
         scriptNode.remove();
       }
@@ -170,9 +194,13 @@ export default class Lively {
   static handleError(error) {
     lively.LastError = error;
     if (!error) return; // hmm... this is currious...
-    lively.notify("Error: ", error.message, 10, () =>
-    		  lively.openWorkspace("Error:" + error.message + "\nLine:" + error.lineno + " Col: " + error.colno+"\nSource:" + error.source + "\nError:" + error.stack), 
-          "red");
+    if (document.querySelector("lively-console")) {
+      console.log(error) 
+    } else {
+      lively.notify("Error: ", error, 10, () =>
+      		  lively.openWorkspace("Error:" + error.message + "\nLine:" + error.lineno + " Col: " + error.colno+"\nSource:" + error.source + "\nError:" + error.stack), 
+            "red");
+    }
   }
 
   static loaded() {
@@ -540,11 +568,11 @@ export default class Lively {
       _.each(oldInstance.childNodes, function(ea) {
         if (ea) { // there are "undefined" elemented in childNodes... sometimes #TODO
           newInstance.appendChild(ea);
-          console.log("append old child: " + ea);
+          // console.log("append old child: " + ea);
         }
       });
       _.each(oldInstance.attributes, function(ea) {
-        console.log("set old attribute " + ea.name + " to: " + ea.value);
+        // console.log("set old attribute " + ea.name + " to: " + ea.value);
         newInstance.setAttribute(ea.name, ea.value);
       });
 
@@ -562,6 +590,14 @@ export default class Lively {
       if (newInstance.livelyMigrate) {
         newInstance.livelyMigrate(oldInstance); // give instances a chance to take over old state...
       }
+      
+      // #LiveProgrammingHack
+      document.querySelectorAll("lively-inspector").forEach(inspector => {
+        if (inspector.targetObject === oldInstance) {
+          inspector.inspect(newInstance)
+        }
+      })
+
     });
   }
 
@@ -742,13 +778,8 @@ export default class Lively {
     if (lastWindow) {
       var lastPos = lively.getPosition(lastWindow);
       var windowWidth = w.getBoundingClientRect().width;
-      console.log("window width")
       if (lastPos !== undefined && windowWidth !== undefined) {
-        if (lastPos.x > windowWidth) {
-          lively.setPosition(w, lastPos.subPt(pt(windowWidth + 25, 0)));
-        } else {
-          lively.setPosition(w, lastPos.addPt(pt(25,25)));
-        }
+        lively.setPosition(w, lastPos.addPt(pt(25,25)));
       }      
     }
     return components.openInBody(w).then((w) => {
@@ -763,7 +794,14 @@ export default class Lively {
   }
   
   // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
-  static async openBrowser(url, edit, pattern, replaceExisting) {
+  static async openBrowser(url, edit, patternOrPostion, replaceExisting) {
+    if (patternOrPostion && patternOrPostion.line)
+      var lineAndColumn = patternOrPostion
+    else 
+      var pattern = patternOrPostion
+
+    if (!url || !url.match(/^http/))
+      url = lively4url
     var editorComp;
     var containerPromise;
     if (replaceExisting) {
@@ -793,13 +831,18 @@ export default class Lively {
         comp.hideNavbar();
       }
       return comp.followPath(url)
-    }).then(() => {
-      if (edit && pattern) {
-        editorComp.asyncGet("#editor").then(livelyEditor => {
+    }).then(async () => {
+      if (edit) {
+        await editorComp.asyncGet("#editor").then(livelyEditor => {
           var ace = livelyEditor.currentEditor();
-          ace.find(pattern);
+          if(pattern)
+            ace.find(pattern);
+          else if (lineAndColumn) {
+            ace.gotoLine(lineAndColumn.line, lineAndColumn.column)
+          }
         });
       }
+      return editorComp
     });
   }
   
@@ -817,6 +860,19 @@ export default class Lively {
     s +"}"
     return s
   }
+  
+  static currentStack() {
+  try {
+    throw new Error("XYZError")
+  } catch(e) {
+    return e.stack.split("\n")
+      .filter(ea => !ea.match("src/external/ContextJS/src/Layers.js") )
+      .filter(ea => !ea.match("XYZError") )
+      .filter(ea => !ea.match("currentStack") )
+      .map(ea => ea.replace(/\(.*?\)/,""))
+      .join("\n")
+  }
+}
   
 }
 
