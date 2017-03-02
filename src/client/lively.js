@@ -846,6 +846,12 @@ export default class Lively {
     });
   }
   
+  static openDebugger() {
+    lively4ChromeDebugger.getCurrentTabId().then((tabId) => {
+    	window.open(lively4url + '/debugger.html?tabid=' + tabId, '', 'width=800,height=600');
+    });
+  }
+  
   static get(query) {
     return document.querySelector(query)
   }
