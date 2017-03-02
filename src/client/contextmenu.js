@@ -174,7 +174,7 @@ export default class ContextMenu {
             },
             "F11", '<i class="fa fa-arrows-alt" aria-hidden="true"></i>'
           ] :
-          ["Cancel Fullscreen", (evt) => document.webkitCancelFullScreen(),
+          ["Leave Fullscreen", (evt) => document.webkitCancelFullScreen(),
             "F11", '<i class="fa fa-times-circle-o" aria-hidden="true"></i>'
           ],
       // ["save as ..", (evt) => {
@@ -182,9 +182,9 @@ export default class ContextMenu {
       //     worldContext.onSaveAs() 
       //   else html.saveCurrentPageAs();
       // }],
-      ["Sync Repositories", (evt) => this.openComponentInWindow("lively-sync", evt), 
+      ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt), 
         "CMD+SHIFT+G",'<i class="fa fa-github" aria-hidden="true"></i>'],
-      ["save", (evt) => {
+      ["Save", (evt) => {
           if (worldContext.onSave)
             worldContext.onSave()
           else

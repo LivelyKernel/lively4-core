@@ -847,6 +847,10 @@ export default class Lively {
   }
   
   static openDebugger() {
+    if(!window.lively4ChromeDebugger) {
+      
+      return lively.notify("Please install Lively4Chrome Extension for debugger support.")
+    } 
     lively4ChromeDebugger.getCurrentTabId().then((tabId) => {
     	window.open(lively4url + '/debugger.html?tabid=' + tabId, '', 'width=800,height=600');
     });
