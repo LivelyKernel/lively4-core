@@ -851,8 +851,9 @@ export default class Lively {
       
       return lively.notify("Please install Lively4Chrome Extension for debugger support.")
     } 
-    lively4ChromeDebugger.getCurrentTabId().then((tabId) => {
-    	window.open(lively4url + '/debugger.html?tabid=' + tabId, '', 'width=800,height=600');
+    lively4ChromeDebugger.getCurrentDebuggingTarget().then((res) => {
+    	window.open(
+    	  lively4url + '/debugger.html?targetId=' + res.targetId, '', 'width=800,height=600');
     });
   }
   
