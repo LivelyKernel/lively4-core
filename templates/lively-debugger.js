@@ -8,6 +8,7 @@ export default class Debugger extends Morph {
     this.windowTitle = 'Debugger';
     this.windowIcon = '<i class="fa fa-chrome" aria-hidden="true"></i>';
     this.lastDebuggerPausedResult = null;
+    this.currentTarget = null;
     this.currentCallFrame = null;
     this.highlightedLineId = null;
     this.scopeList = document.createElement('ul');
@@ -40,6 +41,7 @@ export default class Debugger extends Morph {
         this.detachDebugger();
       }
     };
+    this.dispatchEvent(new CustomEvent('loaded'));
   }
 
   /*
@@ -75,7 +77,15 @@ export default class Debugger extends Morph {
           this.targetList.appendChild(option);
         }
       }
-    ));
+    )).catch((error) => {
+      console.log(error);
+      debugger;
+    });
+    this.targetList.addEventListener('changed', () => {
+      this.currentTarget = {
+        targetId: this._selectedTargetId()
+      };
+    });
   }
   
   initializeCodeEditor() {
@@ -324,15 +334,21 @@ export default class Debugger extends Morph {
   */
 
   attachDebugger() {
-    return lively4ChromeDebugger.debuggerAttach(this._selectedTargetId());
+    return lively4ChromeDebugger.debuggerAttach(this.currentTarget);
+  }
+
+  attachDebuggerFromTabId(tabId) {
+    this.currentTarget = { tabId: tabId };
+    return this.attachDebugger();
   }
 
   detachDebugger() {
-    return lively4ChromeDebugger.debuggerDetach(this._selectedTargetId());
+    return lively4ChromeDebugger.debuggerDetach(this.currentTarget);
   }
 
   sendCommandToDebugger(method, args) {
-    return lively4ChromeDebugger.debuggerSendCommand(this._selectedTargetId(), method, args);
+    return lively4ChromeDebugger.debuggerSendCommand(
+      this.currentTarget, method, args);
   }
   
   dispatchDebuggerPaused(result) {
