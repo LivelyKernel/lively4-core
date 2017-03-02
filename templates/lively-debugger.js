@@ -337,9 +337,11 @@ export default class Debugger extends Morph {
     return lively4ChromeDebugger.debuggerAttach(this.currentTarget);
   }
 
-  attachDebuggerFromTabId(tabId) {
+  attachAndEnableDebuggerFromTabId(tabId) {
     this.currentTarget = { tabId: tabId };
-    return this.attachDebugger();
+    return this.attachDebugger().then(() => {
+      this.sendCommandToDebugger('Debugger.enable');
+    });
   }
 
   detachDebugger() {

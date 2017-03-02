@@ -28,7 +28,7 @@
         var debuggerNode = document.querySelector('#debugger');
         debuggerNode.addEventListener('loaded', () => {
           var tabId = lively.preferences.getURLParameter('tabid');
-          debuggerNode.attachDebuggerFromTabId(tabId);
+          debuggerNode.attachAndEnableDebuggerFromTabId(tabId);
         });
       </script>
     </div>
