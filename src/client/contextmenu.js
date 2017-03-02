@@ -104,7 +104,7 @@ export default class ContextMenu {
       ["Console",         (evt) => this.openComponentInWindow("lively-console", evt)],
       ["File Search",         (evt) => this.openComponentInWindow("lively-search", evt)],
       ["TestRunner",         (evt) => this.openComponentInWindow("lively-testrunner", evt)],
-      // ['Debugger',     (evt) => this.openComponentInWindow("lively-debugger", evt)],
+      ['Debugger',     (evt) => lively.openDebugger()],
       ["Mount",     (evt) => this.openComponentInWindow("lively-filesystems", evt)],
       ["Customize Page",   (evt) => {
         this.hide();
