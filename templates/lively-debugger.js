@@ -81,7 +81,7 @@ export default class Debugger extends Morph {
       console.log(error);
       debugger;
     });
-    this.targetList.addEventListener('changed', () => {
+    this.targetList.addEventListener('change', () => {
       this.currentTarget = {
         targetId: this._selectedTargetId()
       };
