@@ -1,0 +1,31 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <!-- booting lively just came down to this one line -->
+    <script src="src/client/boot.js"></script>
+    <style>
+    html {
+      height: 100%;
+    }
+    body {
+      min-height: 100%;
+    }
+    
+    #debuggerContainer {
+      position: absolute;
+      width: 100%;
+      height: calc(100% - 30px);
+      background-color: white;
+    }
+    
+    </style>
+  </head>
+  <body>
+    <div id="debuggerContainer">
+      <lively-debugger id="debugger"></lively-debugger>
+    </div>
+  </body>
+</html>
+

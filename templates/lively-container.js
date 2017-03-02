@@ -955,7 +955,7 @@ export default class Container extends Morph {
       _.keys(links).forEach( name => {
         var item = links[name];
         var element = document.createElement("li");
-  	    element.innerHTML = name;
+  	    element.textContent = name.replace(/<.*?>/g,"");
   	    element.classList.add("link");
   	    element.classList.add("subitem");
   	    element.classList.add("level" + item.level);

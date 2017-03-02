@@ -1,60 +1,23 @@
+<!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Lively 4</title>
-    <style type="text/css" media="screen">
-      html, body {
-        margin: 0;
-        padding: 0;
-        font-family: sans-serif;
-      }
-      h1 {
-        color: #2B65EC;
-      }
-    </style>
-
-    <link rel="stylesheet" href="src/external/font-awesome/css/font-awesome.min.css">
-
-    <!-- BEGIN SYSTEM.JS: should go away, until then we use a "static" global source -->
-    <script src="src/external/system.src.js" type="text/javascript" charset="utf-8"></script>
-    <script src="vendor/regenerator-runtime.js" type="text/javascript" charset="utf-8"></script>
-    <script>
-      var lively4yourself = /\/[^\/]*\.html/ // ADAPT THIS
-        // some little reflection... help to find your inner self!
-      var lively4url = window.location.origin + window.location.pathname.replace(lively4yourself,"")
-      System.paths['babel'] =lively4url + '/src/external/babel-browser.js'
-      // System.defaultJSExtensions = true;
-      System.config({
-        baseURL: lively4url + '/',
-        transpiler: 'babel',
-        babelOptions: { },
-        map: {
-            babel: lively4url + '/src/external/babel-browser.js',
-            kernel: lively4url + '/src/client/legacy-kernel.js'
-        }
-      });
-    </script>
-    <!-- END SYSTEM.JS-->
+    <meta charset="utf-8">
+    <!-- booting lively just came down to this one line -->
+    <script src="src/client/boot.js" ></script>
   </head>
-  <body>
-    <!-- BEGIN LIVELY BOOT -->
-    <script>
-      System.import(lively4url + "/src/client/load.js").then(function(load){
-        load.whenLoaded(function(){
-          var url = lively.preferences.getURLParameter("page");
-          lively.files.loadFile(url).then((content) => {
-            var container = document.createElement("div")
-            container.innerHTML = content
-            lively.array(container.childNodes).forEach(ea => {
-              document.body.appendChild(ea)
-            })
-            lively.components.loadUnresolved().then(function() {
-              lively.initializeDocument(document)
-            })
-          })
-      })}).catch(function(err) {
-          lively.notify("Lively Loaging failed", err)
-      });
-    </script>
-    <!-- END LIVELY BOOT -->
-  </body>
 </html>
+<script>
+document.addEventListener("livelyloaded", () => {
+  var url = lively.preferences.getURLParameter("page");
+  lively.files.loadFile(url).then((content) => {
+    var container = document.createElement("div")
+    container.innerHTML = content
+    lively.array(container.childNodes).forEach(ea => {
+      document.body.appendChild(ea)
+    })
+    lively.components.loadUnresolved().then(function() {
+      lively.initializeDocument(document)
+    })
+  })
+}
+</script>
