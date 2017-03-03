@@ -5,10 +5,10 @@ import Morph from "./Morph.js"
 export default class Ball extends Morph {
 
   initialize() {
-    this.windowTitle = "Bouncing Ball " + this.bar()
-
+    this.windowTitle = "Bouncing Ball"
     this.hits = 0
-    this.balls =  [{dx: 1, dy: 2, y: 150, x: 10}]
+    if (!this.balls)
+      this.balls =  [{dx: 1, dy: 2, y: 150, x: 10}]
   }
   
   attachedCallback() {
@@ -52,8 +52,8 @@ export default class Ball extends Morph {
   }
 
   livelyMigrate(oldInstance) {
-    // if (oldInstance.balls)
-    //   this.balls = oldInstance.balls
+    if (oldInstance.balls)
+       this.balls = oldInstance.balls
   }
 
 }
