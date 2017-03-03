@@ -99,8 +99,15 @@ function() {
           this.turtle.heading = head;
         }
       };
+
+      this.clearCanvas = (color = '#FFFFFF') =>
+      {
+        this.context.fillStyle = color;
+        this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+      };
     }
   </script>
+  <!--
   <script type="lively4script" data-name="execute">
     (code) =>
     {
@@ -111,13 +118,7 @@ function() {
       return eval(code);
     }
   </script>
-  <script type="lively4script" data-name="clearCanvas">
-    (color = '#FFFFFF') =>
-    {
-      this.context.fillStyle = color;
-      this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    }
-  </script>
+  -->
 </template>
 <script>
   lively.registerTemplate()
