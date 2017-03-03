@@ -848,11 +848,18 @@ export default class Lively {
   
   static openDebugger() {
     if(!window.lively4ChromeDebugger) {
-      
-      return lively.notify("Please install Lively4Chrome Extension for debugger support.")
+      return lively.notify("Please install Lively4Chrome Extension for debugger support.");
     } 
-    lively4ChromeDebugger.getCurrentTabId().then((tabId) => {
-    	window.open(lively4url + '/debugger.html?tabid=' + tabId, '', 'width=800,height=600');
+    lively4ChromeDebugger.getCurrentDebuggingTarget().then((res) => {
+      // Use chrome.window.create to create an independent window, window.open does not work
+      lively4ChromeDebugger.createWindow({
+      	url: lively4url + '/debugger.html?targetId=' + res.targetId,
+      	width: 1000, left: parseInt((screen.width - 1000)/2),
+      	height: 750, top: parseInt((screen.height - 750)/2),
+      	type: 'popup'
+      }).catch((error) => {
+        lively.notify("Unable to create new window for debugger.")
+      });
     });
   }
   
