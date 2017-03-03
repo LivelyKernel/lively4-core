@@ -31,6 +31,7 @@ export default class Debugger extends Morph {
       return;
     }
 
+    this.onTargetsInitialized;
     this.initializeButtonBar();
     this.initializeTargets();
     this.initializeCodeEditor();
@@ -75,6 +76,9 @@ export default class Debugger extends Morph {
           }
           option.value = ea.id;
           this.targetList.appendChild(option);
+          if (this.onTargetsInitialized) {
+            this.onTargetsInitialized()
+          }
         }
       }
     )).catch((error) => {
@@ -338,7 +342,7 @@ export default class Debugger extends Morph {
   }
 
   attachAndEnableDebuggerFromTargetId(targetId) {
-    this.targetList.value = targetId;
+    this.onTargetsInitialized = () => { this.targetList.value = targetId; }
     this.currentTarget = { targetId: targetId };
     this.debugButtonClick();
   }
