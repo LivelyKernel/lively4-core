@@ -23,6 +23,7 @@ export default class Ball extends Morph {
     var context = $(this.shadowRoot).find("#bouncing-ball")[0].getContext('2d');
     context.clearRect(0, 0, 300, 300);
 
+    if (!this.balls) return
     this.balls.forEach(ball => {
         context.beginPath();
         context.fillStyle = "gray";
@@ -38,7 +39,6 @@ export default class Ball extends Morph {
 
   collisionTest(ball) {
     if( ball.x<0 || ball.x>300) {
-      
       ball.dx =- ball.dx;
       this.hits++
       console.log("[ball] collide x")
@@ -52,7 +52,8 @@ export default class Ball extends Morph {
   }
 
   livelyMigrate(oldInstance) {
-    this.balls = oldInstance.balls
+    // if (oldInstance.balls)
+    //   this.balls = oldInstance.balls
   }
 
 }
