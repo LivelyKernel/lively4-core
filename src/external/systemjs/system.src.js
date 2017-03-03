@@ -1262,7 +1262,6 @@ function instantiateDeps (loader, load, link, registry, registerRegistry, seen) 
 
 // clears an errored load and all its errored dependencies from the loads registry
 function clearLoadErrors (loader, load) {
-  debugger
   // clear from loads
   if (loader[REGISTER_REGISTRY][load.key] === load)
     loader[REGISTER_REGISTRY][load.key] = undefined;
