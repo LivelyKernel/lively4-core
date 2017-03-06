@@ -1,8 +1,21 @@
 import Morph from './Morph.js';
+import sourcemap from 'https://raw.githubusercontent.com/mozilla/source-map/master/dist/source-map.min.js'
+
+import {babel, modulesRegister} from 'systemjs-babel-build';
+
+import babelPluginLocals from 'babel-plugin-locals';
+import babelPluginVarRecorder from 'babel-plugin-var-recorder';
+
+/*
+ * See https://chromedevtools.github.io/debugger-protocol-viewer/v8/Debugger/
+ */ 
+
+
 
 const debuggerGitHubURL = 'https://github.com/LivelyKernel/lively4-chrome-debugger';
 
 export default class Debugger extends Morph {
+  
 
   initialize() {
     this.windowTitle = 'Debugger';
@@ -22,6 +35,8 @@ export default class Debugger extends Morph {
     this.scopeList = this.getSubmorph('#scopeList');
     this.codeEditor = this.getSubmorph('#codeEditor').editor;
     this.debuggerWorkspace = this.getSubmorph('#debuggerWorkspace').editor;
+
+
 
     // ensure the extension is installed    
     if (!lively4ChromeDebugger) {
@@ -48,6 +63,18 @@ export default class Debugger extends Morph {
   /*
   * Initialization
   */
+  
+  getScriptSource(id) {
+    return window.livelyDebuggerScriptSources && window.livelyDebuggerScriptSources[id]
+  }
+  
+  setScriptSource(id, source) {
+    console.log("setScriptSource " + id)
+    if (!window.livelyDebuggerScriptSources) 
+      window.livelyDebuggerScriptSources = {}
+    window.livelyDebuggerScriptSources[id] = source
+  }
+  
   
   initializeButtonBar() {
     var buttons = this.getSubmorph('#debugger-top').getElementsByTagName('button');
@@ -121,46 +148,112 @@ export default class Debugger extends Morph {
       name: "saveIt",
       bindKey: {win: "Ctrl-S", mac: "Command-S"},
       exec: (editor) => {
-        if (!this._ensureCurrentCallFrame()) return;
-        this.sendCommandToDebugger('Debugger.setScriptSource', {
-          scriptId: this._selectedScriptId(),
-          scriptSource: editor.getValue()
-        }).then((res) => {
-          if (res && res.exceptionDetails) {
-            alert(res.exceptionDetails.text); 
-          } else {
-            console.log('Debugger.setScriptSource', res);
-          }
-        });
+        this.onSave(editor)
       }
     });
     this.codeEditor.on("guttermousedown", (e) => {
-      if (!this._ensureCurrentCallFrame()) return;
-      var scriptId = this._selectedScriptId();
-      var lineNumberN0 = e.getDocumentPosition().row; // 0-based
-      var method, params;
-      if (lineNumberN0 in this.codeEditor.session.getBreakpoints()) {
-        method = 'Debugger.removeBreakpoint';
-        if (!(scriptId in this.breakPoints) || !(lineNumberN0 in this.breakPoints[scriptId])) {
-          alert(`Cannot find breakpointId for line #${lineNumberN0 + 1}`);
-          debugger;
-          return;
-        }
-        var breakPointId = this.breakPoints[scriptId][lineNumberN0];
-        delete this.breakPoints[scriptId][lineNumberN0];
-        params = { breakpointId: breakPointId };
-      } else {
-        method = 'Debugger.setBreakpoint';
-        params = {
-          location: {
-            scriptId: scriptId,
-            lineNumber: lineNumberN0 // expects 0-based lineNumber
-          }
-        };
+      this.onSetBreakpoint()
+    });
+  }
+  
+  transpile(filename, src) {
+    debugger
+    var result = babel.transform(src, {
+        babelrc: false,
+        plugins: [babelPluginLocals, babelPluginVarRecorder],
+        presets: [modulesRegister],
+        filename: filename.replace(/\!transpiled$/,""),
+        sourceFileName: filename.replace(/\!transpiled$/,""),
+        moduleIds: false,
+        sourceMaps: true,
+        compact: false,
+        comments: true,
+        code: true,
+        ast: true,
+        resolveModuleSource: undefined
+      })
+    return result.code
+  }
+  
+  
+  async onSave(editor) {
+    if (!this._ensureCurrentCallFrame()) return;
+    
+    if (true) {
+      var source = this.transpile(this.currenSourceURL, editor.getValue())
+      
+      
+      lively.openWorkspace(source)
+
+      console.log("new source: " + source)
+    } else {
+      source  = editor.getValue()
+    }
+    var scriptId = this.currentScriptId 
+  
+    var dryRunResult = await this.sendCommandToDebugger('Debugger.setScriptSource', {
+      scriptId: scriptId,
+      scriptSource: source,
+      dryRun: true
+    })
+
+    if (!dryRunResult) {
+      lively.notify("[Debugger] dry run failed for script: " + scriptId)
+      return 
+    }
+    
+    // var workingSource = this.getScriptSource(scriptId)
+    var res = await this.sendCommandToDebugger('Debugger.setScriptSource', {
+      scriptId: scriptId,
+      scriptSource: source,
+      dryRun: false
+    })
+
+    if (res && res.exceptionDetails) {
+        alert(res.exceptionDetails.text);
+        return 
+    } 
+  
+    if (!res) {
+      lively.notify("PROBLEM:", "Debugger.setScriptSource fails on hot run, without indicating this in the dry run!",10,null,"red")
+      this.updateCodeEditor()
+    } else { 
+      window.LastRes = res
+      this.setScriptSource(scriptId, source);
+      
+      // Experiment
+      this.setScriptSource(res.callFrames[0].location.scriptId, source);
+  
+      // this.currentCallFrame = res.callFrames[0]
+    }
+  }
+  
+  onSetBreakpoint() {
+    if (!this._ensureCurrentCallFrame()) return;
+    var scriptId = this._selectedScriptId();
+    var lineNumberN0 = e.getDocumentPosition().row; // 0-based
+    var method, params;
+    if (lineNumberN0 in this.codeEditor.session.getBreakpoints()) {
+      method = 'Debugger.removeBreakpoint';
+      if (!(scriptId in this.breakPoints) || !(lineNumberN0 in this.breakPoints[scriptId])) {
+        alert(`Cannot find breakpointId for line #${lineNumberN0 + 1}`);
+        debugger;
+        return;
       }
-      this.sendCommandToDebugger(method, params).then((res) => {
-        this.dispatchBreakpointResult(scriptId, lineNumberN0, res);
-      });
+      var breakPointId = this.breakPoints[scriptId][lineNumberN0];
+      delete this.breakPoints[scriptId][lineNumberN0];
+      params = { breakpointId: breakPointId };
+    } else {
+      method = 'Debugger.setBreakpoint';
+      params = {
+        location: {
+          scriptId: scriptId,
+          lineNumber: lineNumberN0 // expects 0-based lineNumber
+        }
+      };
+    }
+    this.sendCommandToDebugger(method, params).then((res) => {
+      this.dispatchBreakpointResult(scriptId, lineNumberN0, res);
     });
   }
   
@@ -320,7 +413,7 @@ export default class Debugger extends Morph {
       callFrameId: this.currentCallFrame.callFrameId
     }).then((res) => {
       if (!res) {
-        alert('Failed to restart frame.');
+        lively.notify('Failed to restart frame.',"",null,null,"red");
       } else if (res.callFrames && res.callFrames.length > 0){
         this.currentCallFrame = res.callFrames[0];
         this.updateCodeEditor();
@@ -344,7 +437,7 @@ export default class Debugger extends Morph {
             if (res && res.profile) {
               lively.openInspector(res.profile);
             } else {
-              alert('Failed to retrieve profile.');
+              lively.notify('Failed to retrieve profile.',"",10,null,"red");
               debugger;
             }
             this.sendCommandToDebugger('Profiler.disable');
@@ -372,9 +465,14 @@ export default class Debugger extends Morph {
   }
   
   scriptListChanged(evt) {
+    var scriptId = this._selectedScriptId()
     this.sendCommandToDebugger('Debugger.getScriptSource', {
-      scriptId: this._selectedScriptId()
+      scriptId: scriptId
     }).then((res) => {
+      if (!res) {
+        res = {scriptSource: this.getScriptSources(scriptId)}
+      }
+      
       if (res && res.scriptSource) {
         this.codeEditor.setValue(res.scriptSource);
         this.codeEditor.session.clearBreakpoints();
@@ -423,26 +521,71 @@ export default class Debugger extends Morph {
     this.updateScopeList();
   }
   
+  async extractSourceMap(code) {
+    var m = code.match(/\/\/# sourceMappingURL=(.*)(\n|$)/)
+    if (!m) return false
+  	var sourceMappingURL = m[1]
+	  return (await fetch(sourceMappingURL)).json()
+  }
+
+  async extractSourceURL(code) {
+    var m = code.match(/\/\/# sourceURL=(.*)(\n|$)/);
+    if (!m) return false
+  	return m[1]
+  }
+
   /*
   * Dynamic UI updating
   */
   
-  updateCodeEditor(pausedResult) {
+  async updateCodeEditor(pausedResult) {
     if (!this._ensureCurrentCallFrame()) return;
     var currentScriptId = this.currentCallFrame.location.scriptId;
-    this.sendCommandToDebugger('Debugger.getScriptSource', {
+    var res = await this.sendCommandToDebugger('Debugger.getScriptSource', {
       scriptId: currentScriptId
-    }).then((res) => {
-      if (res && res.scriptSource) {
-        var lineNumber = this.currentCallFrame.location.lineNumber + 1; // 0-based
-        this._setScriptId(currentScriptId);
-        this.codeEditor.setValue(res.scriptSource);
-        this.codeEditor.gotoLine(lineNumber);
-        this._updateHighlightLine(this.codeEditor.session, lineNumber);
+    })
+    this.currentScriptId = currentScriptId
+    
+    if (!res) {
+      // #RageModeOn #Hack #ChromeBug #DebuggerAPI
+      res = {scriptSource: this.getScriptSource(currentScriptId)} ;
+    }
+
+    this.backupScriptResource = res
+    
+    if (res && res.scriptSource) {
+      var lineNumber = this.currentCallFrame.location.lineNumber + 1; // 0-based
+      var columnNumber = this.currentCallFrame.location.columnNumber
+      this._setScriptId(currentScriptId);
+  
+      
+      var sourceURL = await this.extractSourceURL(res.scriptSource)
+      if (sourceURL) {
+        lively.openWorkspace(res.scriptSource)
+
+
+        this.currenSourceURL = sourceURL
+        var sourceMap = await this.extractSourceMap(res.scriptSource)
+        var smc = sourcemap.SourceMapConsumer(sourceMap)
+        this.codeEditor.setValue(smc.sourcesContent[0]);
+        var pos = smc.originalPositionFor({
+          line: lineNumber,
+          column: columnNumber
+        })
+        // debugger
+        this.codeEditor.gotoLine(pos.line, pos.column);
+        this._updateHighlightLine(this.codeEditor.session, pos.line );
       } else {
-        alert(`Failed to getScriptSource for ${this.currentCallFrame.location.scriptId}`);
+        // fall back on raw data
+        this.codeEditor.gotoLine(lineNumber, columnNumber);
+        this.codeEditor.setValue(res.scriptSource);
+        this._updateHighlightLine(this.codeEditor.session, lineNumber );
       }
-    });
+    } else {
+      console.log("res: ", res)
+      lively.notify(`Failed to getScriptSource for ${this.currentCallFrame.location.scriptId}`,
+        "",10, null, "red");
+    }
   }
   
   updateCallFrameList() {
