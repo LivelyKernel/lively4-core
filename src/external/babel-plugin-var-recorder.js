@@ -86,7 +86,7 @@ export default function({ types: t, template, traverse, }) {
         const MODULE_MATCHER = /.js$/;
         
         let filename = file.log.filename;
-        // console.log('visitor!', program, filename);
+        console.log('visitor!', program, filename);
         
         const VAR_RECORDER_NAME = '_recorder_' || '__varRecorder__';
         let MODULE_NAME;

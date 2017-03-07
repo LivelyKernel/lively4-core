@@ -9,6 +9,8 @@ import components from "src/client/morphic/component-loader.js"
 import * as cop  from "src/external/ContextJS/src/contextjs.js";
 import ScopedScripts from "./ScopedScripts.js";
 
+import DelayedCall from 'src/client/delay.js'
+
 export default class Container extends Morph {
 
   initialize() {
@@ -22,6 +24,8 @@ export default class Container extends Morph {
     if (this.isSearchBrowser) {
       this.windowTitle = "Search Browser";
     }
+    
+    this.sourceCodeChangedDelay = new DelayedCall()
 
     // make sure the global css is there...
     lively.loadCSSThroughDOM("hightlight", lively4url + "/src/external/highlight.css");
@@ -1222,12 +1226,15 @@ export default class Container extends Morph {
   }
   
   async onTextChanged() {
-    var editor = this.getAceEditor().editor;
     if (!this.getURL().pathname.match(/\.js$/)) {
       return
     }
-    SyntaxChecker.checkForSyntaxErrors(editor);
-  }
+    
+    this.sourceCodeChangedDelay.call(() => {
+      var editor = this.getAceEditor().editor;
+      SyntaxChecker.checkForSyntaxErrors(editor);
+    })
+}
   
   livelyPreMigrate() {
     // do something before I got replaced  

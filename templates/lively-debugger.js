@@ -10,8 +10,6 @@ import babelPluginVarRecorder from 'babel-plugin-var-recorder';
  * See https://chromedevtools.github.io/debugger-protocol-viewer/v8/Debugger/
  */ 
 
-
-
 const debuggerGitHubURL = 'https://github.com/LivelyKernel/lively4-chrome-debugger';
 
 export default class Debugger extends Morph {
@@ -69,10 +67,20 @@ export default class Debugger extends Morph {
   }
   
   setScriptSource(id, source) {
-    console.log("setScriptSource " + id)
     if (!window.livelyDebuggerScriptSources) 
       window.livelyDebuggerScriptSources = {}
     window.livelyDebuggerScriptSources[id] = source
+  }
+
+
+  getOriginalScriptSource(id) {
+    return window.livelyDebuggerOriginalScriptSources && window.livelyDebuggerOriginalScriptSources[id]
+  }
+  
+  setOriginalScriptSource(id, source) {
+    if (!window.livelyDebuggerOriginalScriptSources) 
+      window.livelyDebuggerOriginalScriptSources = {}
+    window.livelyDebuggerOriginalScriptSources[id] = source
   }
   
   
@@ -157,7 +165,6 @@ export default class Debugger extends Morph {
   }
   
   transpile(filename, src) {
-    debugger
     var result = babel.transform(src, {
         babelrc: false,
         plugins: [babelPluginLocals, babelPluginVarRecorder],
@@ -179,11 +186,27 @@ export default class Debugger extends Morph {
   async onSave(editor) {
     if (!this._ensureCurrentCallFrame()) return;
     
-    if (true) {
-      var source = this.transpile(this.currenSourceURL, editor.getValue())
+    if (this.currenSourceURL) {
+      var originalURL = this.currenSourceURL.replace(/\!transpiled$/,"")
+      var editedSource = editor.getValue()
+      var source = this.transpile(this.currenSourceURL, editedSource)
+
+      var original = this.getOriginalScriptSource(this.currentScriptId)
       
       
-      lively.openWorkspace(source)
+      // give debugger a chance to figure out the change
+      var m = original.match(/_recorder_._module_([0-9]+)/)
+      if (m) {
+        var recorderModuleId = m[1] 
+        var regExp = new RegExp("_recorder_\._module_[0-9]+","g")
+        source = source.replace(regExp, "_recorder_._module_" + recorderModuleId)
+        var postfix = original.match(/(\}\)\(System, System\);(.|\n)*)/)[1]
+        source  = "(function(System, SystemJS) {" + source + postfix
+        
+        
+      }
+      
+      // lively.openWorkspace(source)
 
       console.log("new source: " + source)
     } else {
@@ -219,10 +242,17 @@ export default class Debugger extends Morph {
       this.updateCodeEditor()
     } else { 
       window.LastRes = res
-      this.setScriptSource(scriptId, source);
-      
+      this.setScriptSource(scriptId, editedSource || source);
+
+      var saveFileURL =  originalURL || this.currenSourceURL;
+      fetch(saveFileURL, {
+        method: "PUT",
+        body: editedSource || source}).then(() => {
+          lively.notify("saved " + saveFileURL )
+        })
+
       // Experiment
-      this.setScriptSource(res.callFrames[0].location.scriptId, source);
+      // this.setScriptSource(res.callFrames[0].location.scriptId, source);
   
       // this.currentCallFrame = res.callFrames[0]
     }
@@ -546,6 +576,11 @@ export default class Debugger extends Morph {
     })
     this.currentScriptId = currentScriptId
     
+    if (res) {
+      this.setOriginalScriptSource(currentScriptId, res.scriptSource)
+    }
+    
+    
     if (!res) {
       // #RageModeOn #Hack #ChromeBug #DebuggerAPI
       res = {scriptSource: this.getScriptSource(currentScriptId)} ;
@@ -558,10 +593,11 @@ export default class Debugger extends Morph {
       var columnNumber = this.currentCallFrame.location.columnNumber
       this._setScriptId(currentScriptId);
   
+  
       
       var sourceURL = await this.extractSourceURL(res.scriptSource)
       if (sourceURL) {
-        lively.openWorkspace(res.scriptSource)
+        // lively.openWorkspace(res.scriptSource)
 
 
         this.currenSourceURL = sourceURL
