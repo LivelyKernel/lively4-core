@@ -90,7 +90,9 @@ if (window.lively && window.lively4url) {
         'babel-plugin-doit-this-ref': lively4url + '/src/external/babel-plugin-doit-this-ref.js',
         'babel-plugin-locals': lively4url + '/src/external/babel-plugin-locals.js',
         'babel-plugin-var-recorder': lively4url + '/src/external/babel-plugin-var-recorder.js',
-        'workspace-loader': lively4url + '/src/client/workspace-loader.js'
+        'workspace-loader': lively4url + '/src/client/workspace-loader.js',
+        'babel-plugin-reflective': lively4url + '/src/external/reflective-js/transform/transform.js',
+        'reflective-js': lively4url + '/src/external/reflective-js/reflective.js'
       },
       trace: true,
       transpiler: 'plugin-babel'
@@ -107,8 +109,11 @@ if (window.lively && window.lively4url) {
       meta: {
         // plugins are not transpiled with other plugins, except for SystemJS-internal plugins
         [lively4url + '/src/external/babel-plugin-*.js']: moduleOptionsNon,
+        [lively4url + '/src/external/reflective-js/transform/transform.js']: moduleOptionsNon,
+        // do not reflect on reflective.js
+        [lively4url + '/src/external/reflective-js/reflective.js']: moduleOptionsNon,
+        // do not intermingle with other meta programming concepts
         [lively4url + '/src/external/ContextJS/src/*.js']: moduleOptionsNon,
-        //['']: moduleOptionsNon,
         '*.js': {
           babelOptions: {
             es2015: false,
@@ -116,7 +121,8 @@ if (window.lively && window.lively4url) {
             stage3: false,
             plugins: window.__karma__ ? [] : [ // #TODO disable plugins while testing... for now
               'babel-plugin-locals',
-              'babel-plugin-var-recorder'
+              'babel-plugin-var-recorder',
+              'babel-plugin-reflective'
             ]
           }
         },
@@ -129,7 +135,8 @@ if (window.lively && window.lively4url) {
               'babel-plugin-locals',
               'babel-plugin-doit-result',
               'babel-plugin-doit-this-ref',
-              'babel-plugin-var-recorder'
+              'babel-plugin-var-recorder',
+              'babel-plugin-reflective'
             ]
           },
           loader: 'workspace-loader'
