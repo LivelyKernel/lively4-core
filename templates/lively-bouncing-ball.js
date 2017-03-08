@@ -8,7 +8,7 @@ export default class Ball extends Morph {
     
     document.title = "Lively 4 Debug Target"
     
-    this.windowTitle = "Bouncing Ball"
+    this.windowTitle = "Bouncing Ball 2"
     this.hits = 0
     if (!this.balls)
       this.balls =  [{dx: 1, dy: 2, y: 150, x: 10}]
