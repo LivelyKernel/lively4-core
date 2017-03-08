@@ -5,6 +5,9 @@ import Morph from "./Morph.js"
 export default class Ball extends Morph {
 
   initialize() {
+    
+    document.title = "Lively 4 Debug Target"
+    
     this.windowTitle = "Bouncing Ball"
     this.hits = 0
     if (!this.balls)
@@ -21,14 +24,16 @@ export default class Ball extends Morph {
   
   draw() {
     var context = $(this.shadowRoot).find("#bouncing-ball")[0].getContext('2d');
+    
+    debugger
     context.clearRect(0, 0, 300, 300);
 
     if (!this.balls) return
     this.balls.forEach(ball => {
-        debugger
+
         context.beginPath();
-        context.fillStyle = "gray";
-        context.arc(ball.x, ball.y, 10, 0, Math.PI*2, true);
+        context.fillStyle = "blue";
+        context.arc(ball.x, ball.y, 30, 0, Math.PI*2, true);
         context.closePath();
         context.fill();
         this.collisionTest(ball)
