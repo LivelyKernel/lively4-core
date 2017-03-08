@@ -177,13 +177,14 @@ export default class ContextMenu {
           ["Leave Fullscreen", (evt) => document.webkitCancelFullScreen(),
             "F11", '<i class="fa fa-times-circle-o" aria-hidden="true"></i>'
           ],
-      // ["save as ..", (evt) => {
-      //   if (worldContext.onSaveAs)
-      //     worldContext.onSaveAs() 
-      //   else html.saveCurrentPageAs();
-      // }],
       ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt), 
         "CMD+SHIFT+G",'<i class="fa fa-github" aria-hidden="true"></i>'],
+      ["save as ..", (evt) => {
+        if (worldContext.onSaveAs)
+          worldContext.onSaveAs() 
+        else html.saveCurrentPageAs();
+      }],
+
       ["Save", (evt) => {
           if (worldContext.onSave)
             worldContext.onSave()
