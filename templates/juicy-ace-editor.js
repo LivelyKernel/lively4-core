@@ -406,8 +406,16 @@ export default class AceEditor extends HTMLElement {
   async inspectIt(str) {
     var result =  await this.boundEval(str, this.getDoitContext()) 
     if (!result.isError) {
-      lively.openInspector(result.value, null, str)
+      result = result.value
+      
     }
+    
+    if (result.then) {
+      result = await result; // wait on any promise
+    }
+  
+    lively.openInspector(result, null, str)
+    
   }
 
   doSave(text) {

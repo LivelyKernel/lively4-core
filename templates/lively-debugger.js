@@ -61,6 +61,11 @@ export default class Debugger extends Morph {
   /*
   * Initialization
   */
+
+  async evalInRuntime(str) {  
+    return (await this.sendCommandToDebugger('Runtime.evaluate', {expression: "str"})).result.value
+  }
+
   
   getScriptSource(id) {
     return window.livelyDebuggerScriptSources && window.livelyDebuggerScriptSources[id]

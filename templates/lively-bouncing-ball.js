@@ -32,8 +32,8 @@ export default class Ball extends Morph {
     this.balls.forEach(ball => {
 
         context.beginPath();
-        context.fillStyle = "blue";
-        context.arc(ball.x, ball.y, 30, 0, Math.PI*2, true);
+        context.fillStyle = "green";
+        context.arc(ball.x, ball.y, 10, 0, Math.PI*2, true);
         context.closePath();
         context.fill();
         this.collisionTest(ball)

@@ -31,11 +31,11 @@
         width: 100%;
         display: flex;
         flex-direction: column;
+        flex: 0.7;
       }
 
       .column-right {
-        width: 225px;
-        flex: 0 0 225px;
+        flex: 0.3;
         display: flex;
         flex-direction: column;
         overflow: scroll;
@@ -60,11 +60,11 @@
       }
       
       #debuggerWorkspace {
-        min-height: 50px;
+        flex: 0.2;
       }
 
       #codeEditor {
-        flex: 1;
+        flex: 0.8;
         width: 100%;
         border-top: 1px solid rgb(120, 118, 116);
         border-bottom: 1px solid rgb(120, 118, 116);
@@ -132,8 +132,10 @@
         <div class="column-left">
           <select id="scriptList"></select>
           <juicy-ace-editor id="codeEditor"></juicy-ace-editor>
+          <lively-separator></lively-separator>
           <juicy-ace-editor id="debuggerWorkspace"></juicy-ace-editor>
         </div>
+        <lively-separator></lively-separator>
         <div class="column-right">
           <div id="details">
             <b>Call Frames</b>
