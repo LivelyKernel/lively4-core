@@ -293,7 +293,7 @@ export default class AceEditor extends HTMLElement {
       bindKey: {win: "Ctrl-Shift-F", mac: "Command-Shift-P"},
       exec: (editor) => {
           let text = editor.currentSelectionOrLine()
-          lively.openSearchWidget(text)
+          lively.openSearchWidget(text, lively.findWorldContext(this))
       }
     });
 
@@ -592,6 +592,10 @@ export default class AceEditor extends HTMLElement {
     this.editor.setValue(other.editor.getValue())
   }
   
+  livelyPrepareSave() {
+    this.textContent = this.editor.getValue().replace(/</g,"&lt;")
+  }
+  
   get persistent() {
     return this.getAttribute("persistent")
   }
@@ -601,11 +605,11 @@ export default class AceEditor extends HTMLElement {
   }
   
   onChanged(evt) {
-    if (this.persistent) {
-      this.textContent = this.editor.getValue().replace(/</g,"&lt;")
-      this.editor.focus()
-      // lively.notify("change ",  lively.print(evt))
-    }
+    // if (this.persistent) {
+    //   this.textContent = this.editor.getValue().replace(/</g,"&lt;")
+    //   this.editor.focus()
+    //   // lively.notify("change ",  lively.print(evt))
+    // }
   }
   
 }

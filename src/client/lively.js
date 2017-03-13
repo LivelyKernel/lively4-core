@@ -36,6 +36,8 @@ let $ = window.$; // known global variables.
 
 import {pt} from './graphics.js';
 
+import Dialog from 'templates/lively-dialog.js'
+
 // a) Special shorthands for interactive development
 // b) this is the only reasonable way to use modules in template scripts, due to no shared lexical scope #TODO
 // c) This indirection is also needed to let old events listeners signal to code in current modules 
@@ -256,28 +258,29 @@ export default class Lively {
     return Array.prototype.slice.call(anyList);
   }
 
-  static openWorkspace(string, pos) {
+  static openWorkspace(string, pos, worldContext) {
     var name = "juicy-ace-editor";
-    var comp  = document.createElement(name);
-    return components.openInWindow(comp).then((container) => {
+    return  lively.openComponentInWindow(name, null, pt(400,500), worldContext).then((comp) => {
       pos = pos || lively.pt(100,100);
       comp.changeMode("javascript");
       comp.enableAutocompletion();
       // comp.setAttribute("persistent", "true"); #TODO slows down typing?
       comp.editor.setValue(string);
       comp.setTargetModule('workspace_module_' + generateUUID().replace(/-/g, '_'));
+      var container = comp.parentElement
       lively.setPosition(container,pos);
       container.setAttribute("title", "Workspace");
-    }).then( () => {
+    // }).then( () => {
       comp.editor.focus();
       return comp;
     });
   }
   
-  static openInspector(object, pos, str) {
-    lively.openComponentInWindow("lively-inspector", null, pt(400,500)).then( inspector => {
+  static openInspector(object, pos, str, worldContext) {
+    return lively.openComponentInWindow("lively-inspector", null, pt(400,500), worldContext).then( inspector => {
         inspector.windowTitle = "Inspect: " + str;
         inspector.inspect(object);
+        return inspector
     });
   }
 
@@ -736,10 +739,10 @@ export default class Lively {
     });
   }
 
-  static openSearchWidget(text) {
+  static openSearchWidget(text, worldContext) {
     // index based search is not useful at the moment
     if (true) {
-      this.openComponentInWindow("lively-search").then( comp => {
+      this.openComponentInWindow("lively-search", undefined, undefined, worldContext).then( comp => {
          comp.searchFile(text);
       });
     } else {
@@ -766,8 +769,9 @@ export default class Lively {
     });
   }
 
-  static openComponentInWindow(name, pos, extent) {
-    var lastWindow = _.first(lively.array(document.body.querySelectorAll("lively-window")));
+  static openComponentInWindow(name, pos, extent, worldContext) {
+    worldContext = worldContext || document.body
+    var lastWindow = _.first(lively.array(worldContext.querySelectorAll("lively-window")));
   
   
     var w = document.createElement("lively-window");
@@ -782,7 +786,7 @@ export default class Lively {
         lively.setPosition(w, lastPos.addPt(pt(25,25)));
       }      
     }
-    return components.openInBody(w).then((w) => {
+    return components.openIn(worldContext, w, true).then((w) => {
     	return components.openIn(w, document.createElement(name)).then((comp) => {
     	  if (pos) 
           lively.setPosition(w, pos);
@@ -794,7 +798,8 @@ export default class Lively {
   }
   
   // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
-  static async openBrowser(url, edit, patternOrPostion, replaceExisting) {
+  static async openBrowser(url, edit, patternOrPostion, replaceExisting, worldContext) {
+    worldContext = worldContext || document.body
     if (patternOrPostion && patternOrPostion.line)
       var lineAndColumn = patternOrPostion
     else 
@@ -805,15 +810,15 @@ export default class Lively {
     var editorComp;
     var containerPromise;
     if (replaceExisting) {
-      editorComp = _.detect(document.querySelectorAll("lively-container"), 
+      editorComp = _.detect(worldContext.querySelectorAll("lively-container"), 
         ea => ea.isSearchBrowser);
     } 
  
-    var lastWindow = _.first(lively.array(document.body.querySelectorAll("lively-window"))
+    var lastWindow = _.first(lively.array(worldContext.querySelectorAll("lively-window"))
       .filter(  ea => ea.childNodes[0].isSearchBrowser));
       
     containerPromise = editorComp ? Promise.resolve(editorComp) :
-      lively.openComponentInWindow("lively-container");
+      lively.openComponentInWindow("lively-container", undefined, undefined, worldContext);
 
     return containerPromise.then(comp => {
       editorComp = comp;
@@ -866,6 +871,23 @@ export default class Lively {
   static get(query) {
     return document.querySelector(query)
   }
+  
+  static confirm(msg) {
+    return Dialog.confirm(msg)
+  }
+  
+  static prompt(msg, value) {
+    return Dialog.prompt(msg, value)
+  }
+  
+  static findWorldContext(element) {
+    if (!element) return document.body
+    if (element.tagName == "BODY" || element.tagName == "LIVELY-CONTAINER")
+      return element
+    else
+      return this.findWorldContext(element.parentElement)
+  }
+
   
   // lively.print(document)
   static print(obj) {

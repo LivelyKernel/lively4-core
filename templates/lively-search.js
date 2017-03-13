@@ -34,8 +34,7 @@ export default class Search extends Morph {
   }
 
   browseSearchResult(url, pattern) {
-    // lively.notify("pattern" + pattern)
-    return lively.openBrowser(url, true, pattern);
+    return lively.openBrowser(url, true, pattern, undefined, lively.findWorldContext(this));
   }
 
   log(s) {

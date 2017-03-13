@@ -1,17 +1,55 @@
 <template id="lively-dialog" data-class="LivelyDialog">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style>
+  :host {
+    position: fixed;
+    z-index: 500;
+    background-color:  lightgray;
+    min-width: 200px;
+    min-height: 100px;
+    border: solid 2px darkgray;
+  }
+  
+  #message {
+    flow: 1;
+    margin: 20px;
+  }
+  
+  #prompt {
+    flow: 1;
+    width: calc(100% - 40px);
+    margin: 20px;
+  }
+  
+  #buttons {
+    width: 100%
+    padding: 10px;
+    margin: 5px;
+    float: right;
+  }
+  
+  #buttons button {
+    margin: 10px;
+  }
 
-#dialog {
-  width: 500px;
-  height: 300px;
-}
+  #container {
+    display: flow;
+  }
+
+  #close {
+    background:none;
+    border: none;
+    float: right;
+    vertical-align: top;
+  }
 
 </style>
-
-<div id="dialog">
-  <h2>Confirm?</h2>
+<button id="close"><i class="fa fa-close" aria-hidden="true"></i></button>
+<div id="container">
+  <div id="message">Dialog</div>
+  <input id="prompt"></input>
+  <div id="buttons"><button id="ok">OK</button><button id="cancel">Cancel</button></div>
 </div>
-
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

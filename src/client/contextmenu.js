@@ -24,9 +24,9 @@ export default class ContextMenu {
     lively.removeEventListener("contextMenu",  document.documentElement);
   }
   
-  static openComponentInWindow (name, evt) {
+  static openComponentInWindow (name, evt, worldContext) {
     this.hide();
-    return lively.openComponentInWindow(name, pt(evt.pageX, evt.pageY));
+    return lively.openComponentInWindow(name, pt(evt.pageX, evt.pageY), undefined, worldContext);
   }
   
   static openInWindow(comp, evt) {
@@ -80,10 +80,10 @@ export default class ContextMenu {
     return  [
       ["Workspace", (evt) => {
         this.hide();
-        lively.openWorkspace("", pt(evt.pageX, evt.pageY));
+        lively.openWorkspace("", pt(evt.pageX, evt.pageY), worldContext);
       }, "CMD+K", '<i class="fa fa-window-maximize" aria-hidden="true"></i>'],
       ["Browse/Edit", (evt) => {
-          this.openComponentInWindow("lively-container", evt).then(comp => {
+          this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
             var container = _.last(document.querySelectorAll("lively-container"));
             if (container)
               comp.followPath("" +container.getURL());
@@ -126,26 +126,27 @@ export default class ContextMenu {
       ["Tools", [
         // ["Services", (evt) => this.openComponentInWindow("lively-services", evt)],
         // ["Terminal", (evt) => this.openComponentInWindow("lively-terminal", evt)],
-        ["Console", (evt) => this.openComponentInWindow("lively-console", evt), 
+        ["Console", (evt) => this.openComponentInWindow("lively-console", evt, worldContext), 
           "CMD+J", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
-        ["Search", (evt) => this.openComponentInWindow("lively-search", evt),
+        ["Search", (evt) => this.openComponentInWindow("lively-search", evt, worldContext),
           "CMD+SHIFT+F",'<i class="fa fa-search" aria-hidden="true"></i>'],
-        ['Debugger', (evt) => lively.openDebugger(), 
+        ['Debugger', (evt) => lively.openDebugger().then( cmp), 
           "", '<i class="fa fa-chrome" aria-hidden="true"></i>'],
-        ['Inspector', (evt) => lively.openInspector(document.body), 
+        ['Inspector', (evt) => 
+          lively.openInspector(worldContext, undefined, undefined, worldContext), 
           "", '<i class="fa fa-info-circle" aria-hidden="true"></i>'],
-        ["Test Runner", (evt) => this.openComponentInWindow("lively-testrunner", evt),
+        ["Test Runner", (evt) => this.openComponentInWindow("lively-testrunner", evt, worldContext),
           "", '<i class="fa fa-check-square-o" aria-hidden="true"></i>'],
-        ["Storage Setup", (evt) => this.openComponentInWindow("lively-filesystems", evt),
+        ["Storage Setup", (evt) => this.openComponentInWindow("lively-filesystems", evt, worldContext),
           "", '<i class="fa fa-cloud" aria-hidden="true"></i>'],
       ]],
       ["Documentation", [
         ["Devdocs.io", (evt) => {
-            this.openComponentInWindow("lively-help",  pt(evt.pageX, evt.pageY));
+            this.openComponentInWindow("lively-help",  pt(evt.pageX, evt.pageY), worldContext);
           }, 
           "CMD+H", '<i class="fa fa-book" aria-hidden="true"></i>'],
         ["Wiki (Docs)", (evt) => {
-          this.openComponentInWindow("lively-container", evt).then(comp => {
+          this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
               comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Home.md");
             });
           },
@@ -177,7 +178,7 @@ export default class ContextMenu {
           ["Leave Fullscreen", (evt) => document.webkitCancelFullScreen(),
             "F11", '<i class="fa fa-times-circle-o" aria-hidden="true"></i>'
           ],
-      ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt), 
+      ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt, worldContext), 
         "CMD+SHIFT+G",'<i class="fa fa-github" aria-hidden="true"></i>'],
       ["save as ..", (evt) => {
         if (worldContext.onSaveAs)

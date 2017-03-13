@@ -333,8 +333,24 @@ export default class Container extends Morph {
     comp.editFile("" + url);
   }
 
-  onSaveAs() {
-    lively.notify("Save as... not implemented yet");
+  async onSaveAs() {
+    var newPath = await lively.prompt("Save as..", this.getPath())
+    if (newPath === undefined) return;
+    
+    if (!this.isEditing()) {
+      lively.notify("save as " + newPath)
+      var result = await fetch(newPath, {
+        method: "get"
+      })
+      this.lastVersion = result.headers.get("fileversion")
+      
+      this.saveEditsInView(newPath);
+      
+      
+      this.get("#container-path").value = newPath
+      return; 
+    }
+    lively.notify("Save as... in EditMode not implemented yet");
   }
 
   onSave(doNotQuit) {
@@ -1167,27 +1183,36 @@ export default class Container extends Morph {
     });
   }
 
-  saveHTML() {
+  saveHTML(url) {
+    this.getContentRoot()
+    
+    this.querySelectorAll("*").forEach( ea => {
+      if (ea.livelyPrepareSave)
+        ea.livelyPrepareSave()
+    })
+    
     var source  = this.getContentRoot().innerHTML;
     return this.getEditor().then( editor => {
-      editor.setURL(this.getURL());
+      editor.setURL(url);
       editor.setText(source);
       editor.lastVersion = this.lastVersion;
       editor.saveFile().then( () => {
         this.lastVersion = editor.lastVersion
         // #TODO we should update here after conflict resolution?
         this.updateOtherContainers()
-      });
+      }).then(() => {
+        lively.notify("saved html world.")        
+      })
     });
     
   }
   
-  saveEditsInView() {
-    var url = this.getURL().toString();
+  saveEditsInView(url) {
+    url = (url || this.getURL()).toString();
     if (url.match(/template.*\.html$/)) {
         return lively.notify("Editing templates in View not supported yet!");
     } else if (url.match(/\.html$/)) {
-       this.saveHTML().then( () => {
+      this.saveHTML(new URL(url)).then( () => {
         // lively.notify({
         //   title: "saved HTML",
         //   color: "green"});
