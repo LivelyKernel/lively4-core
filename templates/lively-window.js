@@ -93,6 +93,14 @@ export default class Window extends Morph {
     
     this.setAttribute("tabindex", 0)
   }
+  
+  attachedCallback() {
+    if (this.parentElement === document.body) {
+       this.classList.add("global")
+    } else {
+       this.classList.remove("global")
+    }
+  }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
     switch (attrName) {

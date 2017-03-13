@@ -218,6 +218,16 @@
         /* background-color: white; */
       }
       
+      #changeIndicator {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        right: 17px;
+        top: 0px;
+        z-index: 10;
+        background: rgb(220,30,30)
+      }
+      
     </style>
     <div id="container-navigation" class="fill">
       <button id="back"><i class="fa fa-arrow-left" title="Back" aria-hidden="true"></i></button>
@@ -259,6 +269,7 @@
       <div id="container-leftpane"></div>
       <lively-separator></lively-separator>
       <div id="container-rightpane">
+        <div id="changeIndicator"></div>
         <div id="container-content">
           <div id="container-root">
           <!-- by default the content is hidden-->

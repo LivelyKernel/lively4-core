@@ -24,6 +24,8 @@
     width: 100%;
   }
 
+
+
   .window {
     /* border-radius: 4px 4px 0px 0px; */
     width: 100%;
@@ -41,6 +43,14 @@
     background-color: #778899;
     border-color: rgb(120, 118, 116);
   }
+  
+  :host(.global) .window {
+    box-shadow: 4px 4px 4px 0 rgba(0, 0, 200, 0.3);
+    border: 2px rgba(0, 0, 200, 0.3) solid;
+
+  }
+
+  
   .window.dragging  *, .window.resizing  * {
     -webkit-touch-callout: none;
     -webkit-user-select: none;

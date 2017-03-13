@@ -623,7 +623,16 @@ export default class Container extends Morph {
        this.get("#container-content").scrollTop = this.preserveContentScroll
       delete this.preserveContentScroll
     }
+    setTimeout(() => {
+      this.contentChanged = false
+      this.updateChangeIndicator()
+      this.observeHTMLChanges()
+    }, 0)
   }
+  
+  
+  
+  
 
   appendTemplate(name) {
     try {
@@ -1183,6 +1192,10 @@ export default class Container extends Morph {
     });
   }
 
+  getHTMLSource() {
+    return this.getContentRoot().innerHTML
+  }
+
   saveHTML(url) {
     this.getContentRoot()
     
@@ -1191,7 +1204,7 @@ export default class Container extends Morph {
         ea.livelyPrepareSave()
     })
     
-    var source  = this.getContentRoot().innerHTML;
+    var source  = this.getHTMLSource();
     return this.getEditor().then( editor => {
       editor.setURL(url);
       editor.setText(source);
@@ -1201,6 +1214,9 @@ export default class Container extends Morph {
         // #TODO we should update here after conflict resolution?
         this.updateOtherContainers()
       }).then(() => {
+        this.contentChanged = false
+        this.updateChangeIndicator()
+
         lively.notify("saved html world.")        
       })
     });
@@ -1225,9 +1241,11 @@ export default class Container extends Morph {
   
   unsavedChanges() {
     var editor = this.get("#editor");
-    if (!editor) return false;
+    if (!editor) return this.contentChanged;
     return  editor.textChanged;
   }
+  
+  
   
   // make a gloval position relative, so it can be used in local content
   localizePosition(pos) {
@@ -1259,7 +1277,74 @@ export default class Container extends Morph {
       var editor = this.getAceEditor().editor;
       SyntaxChecker.checkForSyntaxErrors(editor);
     })
-}
+  }
+  
+  onMutation(mutations, observer) {
+    mutations.forEach(record => {
+      
+      // if (record.target.id == 'console'
+      //     || record.target.id == 'editor') return;
+      this.contentChanged = true
+      this.updateChangeIndicator()
+
+      // let shouldSave = true;
+      if (record.type == 'childList') {
+      //     let addedNodes = [...record.addedNodes],
+      //         removedNodes = [...record.removedNodes],
+      //         nodes = addedNodes.concat(removedNodes);
+  
+      //     //removed nodes never have a parent, so remeber orphans when they are created
+      //     for (let node of addedNodes) {
+      //         if (hasParentTag(node) == false) {
+      //             orphans.add(node);
+      //         }
+      //     }
+  
+      //     // shouldSave = hasNoDonotpersistFlagInherited(addedNodes) || checkRemovedNodes(removedNodes, orphans);
+  
+      //     //remove removed orphan nodes from orphan set
+      //     for (let node of removedNodes) {
+      //         if (orphans.has(node)) {
+      //             orphans.delete(node);
+      //         }
+      //     }
+      }
+      else if (record.type == 'attributes'
+          || record.type == 'characterData') {
+          
+      
+          // shouldSave = hasNoDonotpersistFlagInherited([record.target]);
+      }
+  
+      // if (shouldSave) {
+          // sessionStorage["lively.scriptMutationsDetected"] = 'true';
+          // restartPersistenceTimerInterval();
+      // }
+    })  
+  }
+  
+  
+  observeHTMLChanges() {
+
+    if (this.mutationObserver) this.mutationObserver.disconnect()
+    this.mutationObserver = new MutationObserver((mutations, observer) => {
+        this.onMutation(mutations, observer)
+    });
+     this.mutationObserver.observe(this, {
+      childList: true, 
+      subtree: true, 
+      characterData: true, 
+      attributes: true});
+  }
+  
+  updateChangeIndicator() {
+    if (this.contentChanged) {
+      this.get("#changeIndicator").style.backgroundColor = "rgb(220,30,30)";
+    } else {
+      this.get("#changeIndicator").style.backgroundColor = "rgb(200,200,200)";
+    }
+  }
+  
   
   livelyPreMigrate() {
     // do something before I got replaced  
