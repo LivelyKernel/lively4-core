@@ -213,6 +213,10 @@ export default class AstExplorer extends Morph {
     })
   }
   
+  livelyPrepareSave() {
+    this.setAttribute('src', this.get('#plugin').getURLString());
+  }
+  
   
   originalPositionFor(line, column) {
     var smc =  new sourcemap.SourceMapConsumer(this.result.map)

@@ -1,6 +1,130 @@
-'use strict';
-
 import * as preferences from './preferences.js';
+import focalStorage from 'src/external/focalStorage.js'
+import DelayedCall from 'src/client/delay.js'
+
+export function isCurrentlyCloning() {
+    return sessionStorage["lively.persistenceCurrentlyCloning"] === 'true';
+}
+
+export default class Persistence {
+  
+  constructor() {
+    this.saveDelay = new DelayedCall()
+    this.saveDelay.delay = 1000
+  }
+
+  // work around non stavle module global state
+  static get current() {
+    if (!window.lively4persistence) {
+      window.lively4persistence = new Persistence()
+    }
+    return window.lively4persistence
+  }
+  static set current(obj) {
+    window.lively4persistence = obj
+  }
+
+  static enable() {
+    this.disable()
+    this.current = new Persistence()
+    this.current.start()
+  }
+  
+  static disable() {
+    if (this.current) {
+      this.current.stop()
+    }
+  }
+  
+  start() {
+    this.observeHTMLChanges()
+  }
+  
+  stop() {
+    if (this.mutationObserver) this.mutationObserver.disconnect()
+  }
+  
+  urlToKey(urlString) {
+    urlString = "" + urlString
+    return "livelyWindows_"+urlString.replace(/^https?:\/\//,"").replace(/[^A-Za-z0-9]/,"_")
+  }
+
+  defaultTarget() {
+    return document.body
+  }
+
+  defaultURL() {
+    return (document.location.protocol + "//" + document.location.hostname + document.location.pathname) 
+  }
+
+  getLivelyContentForURL(url) {
+    url = url || this.defaultURL()   
+    return focalStorage.getItem(this.urlToKey(url.toString()))
+  }
+  
+  
+  setLivelyContentForURL(url, source) {
+    url = url || this.defaultURL()   
+    return focalStorage.setItem(this.urlToKey(url.toString()), source)
+  }
+
+  async loadLivelyContentForURL(url, target) {
+    var source = await this.getLivelyContentForURL() 
+    target = target || this.defaultTarget()
+    var div = document.createElement("div")
+    div.innerHTML = source
+    lively.array(div.childNodes).forEach(ea => {
+      target.appendChild(ea)
+    })
+  }
+  
+  async storeLivelyContentForURL(url, target) {
+    target = target || this.defaultTarget()
+    var source = lively.html.getGlobalSource(target)
+    this.setLivelyContentForURL(url, source)
+    return source
+  }
+  
+  async saveLivelyContent() {
+  
+    var start = Date.now()   
+    await this.storeLivelyContentForURL()
+    console.log("[peristence] saved lively content into focalStorage " + (Date.now() - start) +"ms")
+  }
+  
+  onMutation(mutations, observer) {
+    if (this.isPersisting) return // we mutate while persisting 
+    
+    mutations.forEach(record => {
+      // var indicator = this.get("#changeIndicator")
+      // if (indicator ) {
+      //   indicator.style.backgroundColor = "rgb(250,250,0)";
+      // }
+    })  
+    this.saveDelay.call(() => {
+      this.saveLivelyContent()
+    })
+  }
+  
+  
+  observeHTMLChanges(target) {
+    target = target || this.defaultTarget()
+    if (this.mutationObserver) this.mutationObserver.disconnect()
+    this.mutationObserver = new MutationObserver((mutations, observer) => {
+        this.onMutation(mutations, observer)
+    });
+    this.mutationObserver.observe(target, {
+      childList: true, 
+      subtree: true, 
+      characterData: true, 
+      attributes: true});
+  }
+  
+}
+
+
+/*
+
 
 var persistenceTimerInterval;
 var persistenceTimerEnforceSaveInterval;
@@ -58,6 +182,7 @@ function initialize(){
 
                 //removed nodes never have a parent, so remeber orphans when they are created
                 for (let node of addedNodes) {
+              
                     if (hasParentTag(node) == false) {
                         orphans.add(node);
                     }
@@ -198,9 +323,6 @@ export function setPersistenceTarget(target) {
     preferences.write('persistenceTarget', target);
 }
 
-export function isCurrentlyCloning() {
-    return sessionStorage["lively.persistenceCurrentlyCloning"] === 'true';
-}
 
 export function saveDOM(async = true) {
     var world;
@@ -246,3 +368,5 @@ function writeFile(content, async = true) {
 }
 
 initialize();
+
+*/

@@ -150,6 +150,8 @@ if (window.lively && window.lively4url) {
       
       console.group("3/3: Initialize Document")
       await lively.initializeDocument(document, window.lively4chrome, loadContainer);
+      
+      await lively.initializeLocalContent();
       console.groupEnd();
       
       console.log("Finally loaded!");

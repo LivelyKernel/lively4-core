@@ -1,5 +1,5 @@
 import scriptManager from  "src/client/script-manager.js";
-import * as persistence from  "src/client/persistence.js";
+// import * as persistence from  "src/client/persistence.js";
 import Morph from "templates/Morph.js";
 import {pt} from '../graphics.js';
 
@@ -53,9 +53,9 @@ export default class ComponentLoader {
   }
 
   static onCreatedCallback(object, componentName) {
-    if (persistence.isCurrentlyCloning()) {
-      return;
-    }
+    // if (persistence.isCurrentlyCloning()) {
+    //   return;
+    // }
 
     var shadow = object.createShadowRoot();
 

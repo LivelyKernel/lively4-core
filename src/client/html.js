@@ -199,11 +199,23 @@ export default class HTML {
       lively.notify("Saved " + url)
     })
   }
-  
-  static foo() {
-    console.log("that " + that.calledFrom(1))
-    bar.grrr()
+
+
+  static getGlobalSource(worldContext) {
+    worldContext= worldContext || document.body
+    var source = ""
+    var oldActiveElement = document.activeElement
+    worldContext.querySelectorAll("*").forEach( ea => {
+      if (ea.livelyPrepareSave) ea.livelyPrepareSave();
+    });
+    if (oldActiveElement) oldActiveElement.focus()
+      
+    worldContext.querySelectorAll(":scope > lively-window").forEach( ea => {
+      source += ea.outerHTML + "\n"
+    });
+    return source
   }
-  
+
+
 }
 

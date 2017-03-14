@@ -100,6 +100,10 @@ export default class Editor extends Morph {
     return new URL(filename);
   }
 
+  getURLString() {
+    return $(this.getSubmorph('#filename')).val();
+  }
+
   setURL(urlString) {
     if (!urlString) {
       this.getSubmorph("#filename").value = "";

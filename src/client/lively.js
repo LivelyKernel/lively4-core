@@ -7,7 +7,7 @@ import * as _ from '../external/underscore.js';
 import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
 import * as preferences from './preferences.js';
-import * as persistence from './persistence.js';
+import persistence from './persistence.js';
 
 import html from './html.js';
 import files from './files.js';
@@ -48,6 +48,7 @@ var exportmodules = [
   "paths",
   "html",
   "components",
+  "persistence",
   "color",
   "focalStorage",
   "authGithub",
@@ -57,7 +58,7 @@ var exportmodules = [
 
 // #LiveProgramming #Syntax #ES6Modules #Experiment #Jens
 // By structuring our modules differently, we still can act as es6 module to the outside but develop at runtime
-// #IDEA: I refactored from "static module and function style" to "dynamic object" style
+// #IDEA: I refactored from "sltatic module and function style" to "dynamic object" style
 export default class Lively {
   
   static get location() {
@@ -264,6 +265,8 @@ export default class Lively {
       pos = pos || lively.pt(100,100);
       comp.changeMode("javascript");
       comp.enableAutocompletion();
+      comp.editor.setOption("wrap", true)
+
       // comp.setAttribute("persistent", "true"); #TODO slows down typing?
       comp.editor.setValue(string);
       comp.setTargetModule('workspace_module_' + generateUUID().replace(/-/g, '_'));
@@ -479,8 +482,9 @@ export default class Lively {
 
   }
 
-  static initializeDocument(doc, loadedAsExtension, loadContainer) {
+  static async initializeDocument(doc, loadedAsExtension, loadContainer) {
     console.log("Lively4 initializeDocument");
+
     lively.loadCSSThroughDOM("font-awesome", lively4url + "/src/external/font-awesome/css/font-awesome.min.css");
     
     doc.addEventListener('contextmenu', function(evt) {
@@ -492,6 +496,8 @@ export default class Lively {
     }, false);
     doc.addEventListener('click', function(evt){lively.hideContextMenu(evt)}, false);
     doc.addEventListener('keydown', function(evt){lively.keys.handle(evt)}, false);
+
+
 
     if (loadedAsExtension) {
       System.import("src/client/customize.js").then(customize => {
@@ -521,12 +527,21 @@ export default class Lively {
         container.style.position = "fixed";
         container.setAttribute("data-lively4-donotpersist","all");
 
-        return components.openIn(document.body, container).then( () => {
+        await components.openIn(document.body, container).then( () => {
           container.__ingoreUpdates = true; // a hack... since I am missing DevLayers...
           container.get('#container-content').style.overflow = "visible";
         });
+    
+        return 
       } 
     }
+  }
+  
+  static async initializeLocalContent() {
+    console.log("load local lively content ")
+    await persistence.current.loadLivelyContentForURL()
+    console.log("lively persistence start ")
+    setTimeout(() => {persistence.current.start()}, 2000)
   }
 
   static initializeHalos() {

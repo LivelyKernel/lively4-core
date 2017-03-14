@@ -3,13 +3,13 @@ import highlight from 'src/external/highlight.js';
 import {pt} from 'src/client/graphics.js';
 import halo from 'templates/lively-halo.js';
 import ContextMenu from 'src/client/contextmenu.js';
-import SyntaxChecker from 'src/client/syntax.js'
-import components from "src/client/morphic/component-loader.js"
+import SyntaxChecker from 'src/client/syntax.js';
+import components from "src/client/morphic/component-loader.js";
 
 import * as cop  from "src/external/ContextJS/src/contextjs.js";
 import ScopedScripts from "./ScopedScripts.js";
 
-import DelayedCall from 'src/client/delay.js'
+import DelayedCall from 'src/client/delay.js';
 
 export default class Container extends Morph {
 
@@ -25,8 +25,8 @@ export default class Container extends Morph {
       this.windowTitle = "Search Browser";
     }
     
-    this.sourceCodeChangedDelay = new DelayedCall()
-    this.contentChangedDelay = new DelayedCall()
+    this.sourceCodeChangedDelay = new DelayedCall();
+    this.contentChangedDelay = new DelayedCall();
     this.contentChangedDelay.delay = 1000;
 
     // make sure the global css is there...
@@ -53,8 +53,8 @@ export default class Container extends Morph {
       
       // force read mode
       if(this.getAttribute("mode") == "read" && edit) {
-        path = edit
-        edit = undefined
+        path = edit;
+        edit = undefined;
       }
       if (path) {
           this.setPath(path);
@@ -106,7 +106,13 @@ export default class Container extends Morph {
     // fall back to system context menu if shift pressed
     if (!evt.shiftKey) { 
       evt.preventDefault();
-	    lively.openContextMenu(document.body, evt, undefined, this);
+      var worldContext = document.body; // default to opening context menu content globally
+      // opening in the content makes only save if that content could be persisted and is displayed
+      if (this.contentIsEditable() && !this.isEditing()) {
+        worldContext = this
+      }
+      
+	    lively.openContextMenu(document.body, evt, undefined, worldContext);
 	    return false;
     } 
   }
@@ -1367,7 +1373,16 @@ export default class Container extends Morph {
       attributes: true});
   }
   
+  contentIsEditable() {
+    return this.getPath().match(/\.html$/)
+  }
+  
   checkForContentChanges() {
+    if (!this.contentIsEditable()) {
+      this.contentChanged = false
+      return 
+    }
+    
     if (this.isPersisting) return;
     this.isPersisting = true;
     // console.log("checkForContentChanges " + (Date.now() - this.lastChecked) + "ms " + document.activeElement)
@@ -1408,6 +1423,14 @@ export default class Container extends Morph {
     } else {
       indicator.style.backgroundColor = "rgb(200,200,200)";
     }
+  }
+  
+  focus() {
+    var editor = this.getAceEditor();
+    if (editor) {
+      editor.focus()
+    }
+
   }
   
   

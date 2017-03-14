@@ -613,4 +613,9 @@ export default class AceEditor extends HTMLElement {
     // }
   }
   
+  focus() {
+    this.editor && this.editor.focus()
+  }
+  
+  
 }
