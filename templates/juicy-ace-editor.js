@@ -1,7 +1,13 @@
 import generateUUID from './../src/client/uuid.js';
 import boundEval from './../src/client/code-evaluation/bound-eval.js';
 
-export default class AceEditor extends HTMLElement {
+import Morph from "./Morph.js"
+
+export default class AceEditor extends Morph {
+  
+  initialize() {
+    
+  }
 
   // Fires when an instance was inserted into the document
   attachedCallback() {
@@ -43,7 +49,7 @@ export default class AceEditor extends HTMLElement {
         session.setMode( this.getAttribute("mode") );
         session.setUseSoftTabs( this.getAttribute("softtabs") );
         this.getAttribute("tabsize") && session.setTabSize( this.getAttribute("tabsize") );
-        session.setUseWrapMode( this.hasAttribute("wrapmode") );
+        // session.setUseWrapMode( this.hasAttribute("wrapmode") );
 
 
     // prevent error message when CTRL+P

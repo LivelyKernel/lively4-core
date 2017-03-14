@@ -137,6 +137,8 @@ export default class ContextMenu {
           "", '<i class="fa fa-info-circle" aria-hidden="true"></i>'],
         ["Test Runner", (evt) => this.openComponentInWindow("lively-testrunner", evt, worldContext),
           "", '<i class="fa fa-check-square-o" aria-hidden="true"></i>'],
+        ["Paper", (evt) => this.openComponentInWindow("lively-paper", evt, worldContext),
+          "", '<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'],
         ["Storage Setup", (evt) => this.openComponentInWindow("lively-filesystems", evt, worldContext),
           "", '<i class="fa fa-cloud" aria-hidden="true"></i>'],
       ]],

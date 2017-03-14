@@ -902,6 +902,14 @@ export default class Lively {
     else
       return this.findWorldContext(element.parentElement)
   }
+  
+  static activeElement(worldContext) {
+    worldContext = worldContext || document
+    var element = worldContext.activeElement  
+    if (element.shadowRoot && element.shadowRoot.activeElement)
+      return this.activeElement(element.shadowRoot); // probe if we want to go deeper
+    return element
+  }
 
   
   // lively.print(document)

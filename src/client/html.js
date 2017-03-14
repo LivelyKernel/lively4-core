@@ -4,7 +4,6 @@
  * Kitchensink for all HTML manipulation utilities
  */
 
-
 export default class HTML {
 
   static findAllNodes(visit, all) {
@@ -204,7 +203,7 @@ export default class HTML {
   static getGlobalSource(worldContext) {
     worldContext= worldContext || document.body
     var source = ""
-    var oldActiveElement = document.activeElement
+    var oldActiveElement = lively.activeElement()
     worldContext.querySelectorAll("*").forEach( ea => {
       if (ea.livelyPrepareSave) ea.livelyPrepareSave();
     });
