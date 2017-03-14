@@ -605,6 +605,7 @@ export default class AceEditor extends HTMLElement {
   }
   
   onChanged(evt) {
+    this.setAttribute("last-changed", Date.now())
     // if (this.persistent) {
     //   this.textContent = this.editor.getValue().replace(/</g,"&lt;")
     //   this.editor.focus()

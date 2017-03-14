@@ -26,6 +26,8 @@ export default class Container extends Morph {
     }
     
     this.sourceCodeChangedDelay = new DelayedCall()
+    this.contentChangedDelay = new DelayedCall()
+    this.contentChangedDelay.delay = 1000;
 
     // make sure the global css is there...
     lively.loadCSSThroughDOM("hightlight", lively4url + "/src/external/highlight.css");
@@ -47,6 +49,8 @@ export default class Container extends Morph {
       };
       var path = lively.preferences.getURLParameter("load");
       var edit = lively.preferences.getURLParameter("edit");
+      var fullsreen = lively.preferences.getURLParameter("fullscreen");
+      
       // force read mode
       if(this.getAttribute("mode") == "read" && edit) {
         path = edit
@@ -93,7 +97,7 @@ export default class Container extends Morph {
     this.setAttribute("tabindex", 0);
     this.hideCancelAndSave();
     
-    if(this.getAttribute("controls") =="hidden") {
+    if(this.getAttribute("controls") =="hidden" || fullsreen) {
       this.hideControls()
     }
   }
@@ -624,8 +628,7 @@ export default class Container extends Morph {
       delete this.preserveContentScroll
     }
     setTimeout(() => {
-      this.contentChanged = false
-      this.updateChangeIndicator()
+      this.resetContentChanges()
       this.observeHTMLChanges()
     }, 0)
   }
@@ -667,13 +670,19 @@ export default class Container extends Morph {
 
     if (_.last(this.history()) !== path)
       this.history().push(path);
+      
+    var opts = ""
+    if (this.useBrowserHistory() && this.isFullscreen()) {
+      opts="&fullscreen=true"
+    }
+    
     if (this.isEditing() && !path.match(/\/$/)) {
       if (this.useBrowserHistory())
-        window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?edit="+path);
+        window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?edit="+path  + opts);
       return this.setPath(path, true).then(() => this.editFile());
     } else {
       if (this.useBrowserHistory())
-        window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?load="+path);
+        window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?load="+path  + opts);
       // #TODO replace this with a dynamic fetch
       return this.setPath(path);
     }
@@ -1112,13 +1121,25 @@ export default class Container extends Morph {
       this.showNavbarSublist(targetItem);
     }
   }
+  isFullscreen() {
+    return this.get("#container-navigation").style.display  == "none"
+  }
   
+  isFullscreen() {
+    return this.get("#container-navigation").style.display  == "none"
+  }
   
   toggleControls() {
-    if (this.get("#container-navigation").style.display  == "none") {
+    var showsControls = this.get("#container-navigation").style.display  == "none"
+    if (showsControls) {
       this.showControls();
     } else {
       this.hideControls();
+    }
+    // remember the toggle fullscreen in the url parameters
+    var path = this.getPath()
+    if (this.useBrowserHistory()) {
+      window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?edit=" + path  + "&fullscreen=" + !showsControls);  
     }
   }
   
@@ -1193,17 +1214,16 @@ export default class Container extends Morph {
   }
 
   getHTMLSource() {
+    this.querySelectorAll("*").forEach( ea => {
+      if (ea.livelyPrepareSave) 
+        ea.livelyPrepareSave();
+    });
     return this.getContentRoot().innerHTML
   }
 
   saveHTML(url) {
     this.getContentRoot()
-    
-    this.querySelectorAll("*").forEach( ea => {
-      if (ea.livelyPrepareSave)
-        ea.livelyPrepareSave()
-    })
-    
+  
     var source  = this.getHTMLSource();
     return this.getEditor().then( editor => {
       editor.setURL(url);
@@ -1214,8 +1234,7 @@ export default class Container extends Morph {
         // #TODO we should update here after conflict resolution?
         this.updateOtherContainers()
       }).then(() => {
-        this.contentChanged = false
-        this.updateChangeIndicator()
+        this.resetContentChanges()
 
         lively.notify("saved html world.")        
       })
@@ -1279,13 +1298,24 @@ export default class Container extends Morph {
     })
   }
   
+ 
+  
   onMutation(mutations, observer) {
+    if (this.isPersisting) return // we mutate while persisting 
+    
     mutations.forEach(record => {
+      
+      var indicator = this.get("#changeIndicator")
+      if (indicator ) {
+        indicator.style.backgroundColor = "rgb(250,250,0)";
+      }
       
       // if (record.target.id == 'console'
       //     || record.target.id == 'editor') return;
-      this.contentChanged = true
-      this.updateChangeIndicator()
+     
+      this.contentChangedDelay.call(() => {
+        this.checkForContentChanges()
+      })
 
       // let shouldSave = true;
       if (record.type == 'childList') {
@@ -1337,11 +1367,46 @@ export default class Container extends Morph {
       attributes: true});
   }
   
+  checkForContentChanges() {
+    if (this.isPersisting) return;
+    this.isPersisting = true;
+    // console.log("checkForContentChanges " + (Date.now() - this.lastChecked) + "ms " + document.activeElement)
+    this.lastChecked = Date.now()
+
+    try {
+      window.oldActiveElement = document.activeElement
+      var currentSource = this.getHTMLSource()
+      
+      if (!this.lastSource || this.lastSource != currentSource) 
+        this.contentChanged = true
+      else
+        this.contentChanged = false
+      this.updateChangeIndicator()
+    } finally {
+      // setTimeout(() => {
+        // console.log("refocus " + oldActiveElement)
+        
+        if (oldActiveElement && oldActiveElement.editor) oldActiveElement.editor.focus()
+      
+        // we don't want to catch our own mutations... that were cause
+        // by detecting some mutations in the first place
+        this.isPersisting = false
+      // }, 0)
+    }
+  }
+
+  resetContentChanges() {
+    this.lastSource  =  this.getHTMLSource();
+    this.contentChanged = false
+    this.updateChangeIndicator()
+  }
+
   updateChangeIndicator() {
-    if (this.contentChanged) {
-      this.get("#changeIndicator").style.backgroundColor = "rgb(220,30,30)";
+    var indicator = this.get("#changeIndicator")
+    if (indicator && this.contentChanged) {
+      indicator.style.backgroundColor = "rgb(220,30,30)";
     } else {
-      this.get("#changeIndicator").style.backgroundColor = "rgb(200,200,200)";
+      indicator.style.backgroundColor = "rgb(200,200,200)";
     }
   }
   
