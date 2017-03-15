@@ -15,7 +15,7 @@ export default class HaloInspectItem extends HaloItem {
           editor.targetElement    = inspectTarget;
         
           
-          editor.parentElement.centerInWindow(); 
+         
         });
       }
       this.hideHalo();

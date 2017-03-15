@@ -36,7 +36,6 @@ export default class LivelyPaper extends Morph {
     lively.addEventListener("drawboard", this.canvas, "pointerup", 
       (e) => this.onPointerUp(e));
       
-    this.load();
     this.strokes = new CommandHistory();
     
     lively.html.registerButtons(this);
@@ -72,29 +71,46 @@ export default class LivelyPaper extends Morph {
         return true;
       }
     }, false);
+    
+    // setTimeout(() => {
+    //  this.load(); // #Hack I don't get it when is paper.js ready? #Issue
+    // },10000)
+
+    var obj  =this
+    window.setTimeout(function()  {
+      try {
+        obj.load(); // #Hack I don't get it when is paper.js ready? #Issue
+      } catch(e) {
+        console.log("Load Paper error: " + e)
+      }
+    },1000)
+
   }
+  
+  
   
   load() {
     // #TODO we know that the state of the svg might diverge frome the state of paper
     var svg = this.querySelector("svg");
-    if (svg) {
-      this.paper.project.importSVG(svg);
-    }
+    //if (!svg || !this.paper.project) {
+    //  setTimeout(() => this.load(), 100) // load later
+    //  return
+    // }
+    // lively.notify("[paper] loaded!")
+    // console.log("project", this.paper.project)
+    this.paper.project.importSVG(svg);
   }
 
   clear() {
     this.paper.project.clear();
-    this.save();
   }
   
   undoStroke() {
     this.strokes.undo();
-    this.save();
   }
 
   redoStroke() {
     this.strokes.redo();
-    this.save();
   }
   
   onUndoStroke() {
@@ -208,7 +224,6 @@ export default class LivelyPaper extends Morph {
       lively.removeEventListener("drawboard", this.canvas, "pointermove");    
       delete this.lastPath[id];
 
-      this.save();
     }
   }
   
@@ -217,6 +232,9 @@ export default class LivelyPaper extends Morph {
     this.appendChild(this.paper.project.exportSVG());
   }
   
+  livelyPrepareSave() {
+    this.save()
+  }
   
   livelyMigrate(other) {
     var svg = other.paper.project.exportSVG();

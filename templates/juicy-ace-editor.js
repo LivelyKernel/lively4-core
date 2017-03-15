@@ -49,7 +49,7 @@ export default class AceEditor extends Morph {
         session.setMode( this.getAttribute("mode") );
         session.setUseSoftTabs( this.getAttribute("softtabs") );
         this.getAttribute("tabsize") && session.setTabSize( this.getAttribute("tabsize") );
-        // session.setUseWrapMode( this.hasAttribute("wrapmode") );
+        session.setUseWrapMode( this.hasAttribute("wrapmode") );
 
 
     // prevent error message when CTRL+P

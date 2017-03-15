@@ -209,7 +209,7 @@ export default class HTML {
     });
     if (oldActiveElement) oldActiveElement.focus()
       
-    worldContext.querySelectorAll(":scope > lively-window").forEach( ea => {
+    worldContext.querySelectorAll(":scope > lively-window, :scope > .lively-content").forEach( ea => {
       source += ea.outerHTML + "\n"
     });
     return source

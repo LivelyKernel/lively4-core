@@ -9,4 +9,8 @@
       #main-content {
       }
       
+      /* does not seem to work *
+      .lively-content {
+        border: 1px blue solid;
+      }
       

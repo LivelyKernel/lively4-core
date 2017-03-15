@@ -7,6 +7,11 @@ export function whenLoaded(cb) {
 var mybase = window.location.host  + window.location.pathname.replace(/\/[^\/]+$/,"");
 var externalSite = ! lively4url.match(mybase); // I am not somewhere below lively4url
 
+if (document.location.search.match("noserviceworker")) {
+  externalSite=true
+}
+
+
 function loadJavaScriptThroughDOM(name, src, force) {
   return new Promise(function (resolve) {
     var scriptNode = document.querySelector(name);

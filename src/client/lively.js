@@ -38,6 +38,7 @@ import {pt} from './graphics.js';
 
 import Dialog from 'templates/lively-dialog.js'
 
+
 // a) Special shorthands for interactive development
 // b) this is the only reasonable way to use modules in template scripts, due to no shared lexical scope #TODO
 // c) This indirection is also needed to let old events listeners signal to code in current modules 

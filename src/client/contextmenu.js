@@ -106,7 +106,9 @@ export default class ContextMenu {
           worldContext.appendChild(text);
           var pos = pt(evt.pageX, evt.pageY);
           if (worldContext.localizePosition) pos = worldContext.localizePosition(pos);
-  
+          if (worldContext === document.body) {
+            text.classList.add("lively-content")
+          }
           lively.setPosition(text, pos);
           this.hide();
         }],
@@ -118,7 +120,25 @@ export default class ContextMenu {
           if (worldContext.localizePosition) pos = worldContext.localizePosition(pos);
           lively.setPosition(morph, pos);
           // morph.style.backgroundColor = "blue";
+          if (worldContext === document.body) {
+            morph.classList.add("lively-content")
+          }
           morph.style.backgroundColor = 'rgba(40,40,40,0.5)';
+          worldContext.appendChild(morph);
+          this.hide();
+        }],
+         ["Paper", (evt) => {
+          var morph  = document.createElement("lively-paper");
+          morph.setAttribute("width", "400px");
+          morph.setAttribute("height", "400px");
+          var pos = pt(evt.pageX, evt.pageY);
+          if (worldContext.localizePosition) pos = worldContext.localizePosition(pos);
+          lively.setPosition(morph, pos);
+          // morph.style.backgroundColor = "blue";
+          if (worldContext === document.body) {
+            morph.classList.add("lively-content")
+          }
+          morph.style.backgroundColor = 'rgb(255,250,205)';
           worldContext.appendChild(morph);
           this.hide();
         }]
