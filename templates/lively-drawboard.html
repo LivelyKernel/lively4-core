@@ -4,23 +4,23 @@
     width: 800px;
     height: 600px;
     touch-action: none;
+    overflow: hidden;
   }
 
-  #canvas, #svg {
+  #canvas {
     position: absolute;
     top: 0px;
     left: 0px;
     width: 800px;
     height: 600px;
-    border:1px solid black;
-    opacity: 0.5;
+    border: none;
     touch-action: none;
   }
 
   </style>
-  <svg id="svg"></svg>
-  <canvas id="canvas" width="800" height="600" ></canvas>
   <content></content>
+  <canvas id="canvas" width="800" height="600" ></canvas>
+  
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

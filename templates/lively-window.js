@@ -61,6 +61,10 @@ export default class Window extends Morph {
   setSize(width, height) {
     this.style.width = width + 'px';
     this.style.height = height + 'px';
+  
+    if (this.target) 
+      this.target.dispatchEvent(new CustomEvent("size-changed"))
+    
   }
 
   /*

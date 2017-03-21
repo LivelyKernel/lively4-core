@@ -10,7 +10,7 @@ export default class Persistence {
   
   constructor() {
     this.saveDelay = new DelayedCall()
-    this.saveDelay.delay = 1000
+    this.saveDelay.delay = 3000
   }
 
   // work around non stavle module global state
@@ -80,32 +80,47 @@ export default class Persistence {
   
   async storeLivelyContentForURL(url, target) {
     target = target || this.defaultTarget()
+    this.isPersisting = true
     var source = lively.html.getGlobalSource(target)
     this.setLivelyContentForURL(url, source)
+    setTimeout(() => {
+      this.isPersisting = false
+    }, 0) // the mutation events triggered are still pending here...
     return source
   }
   
   async saveLivelyContent() {
-  
-    var start = Date.now()   
+    console.log("[peristence] save after " + 
+      (Date.now() - this.lastSaved) +"ms")
+    this.lastSaved = Date.now()   
     await this.storeLivelyContentForURL()
-    console.log("[peristence] saved lively content into focalStorage " + (Date.now() - start) +"ms")
+    console.log("[peristence] saved lively content into focalStorage " + 
+      (Date.now() - this.lastSaved) +"ms")
+  }
+  
+  isBlacklisted(mutation) {
+    if (mutation.target.tagName == "BODY") return true
+    if (mutation.target.tagName == "LIVELY-NOTIFICATION-LIST") return true
+    return false
   }
   
   onMutation(mutations, observer) {
-    if (this.isPersisting) return // we mutate while persisting 
+    if (this.isPersisting) {
+      // console.log("ignore mutation ", mutations)
+      return // we mutate while persisting 
+    }
     
-    mutations.forEach(record => {
+    mutations.filter(ea => !this.isBlacklisted(ea)).forEach(record => {
+      // console.log("mutation: ", record)
+      this.saveDelay.call(() => {
+        this.saveLivelyContent()
+      })
       // var indicator = this.get("#changeIndicator")
       // if (indicator ) {
       //   indicator.style.backgroundColor = "rgb(250,250,0)";
       // }
     })  
-    this.saveDelay.call(() => {
-      this.saveLivelyContent()
-    })
   }
-  
   
   observeHTMLChanges(target) {
     target = target || this.defaultTarget()
@@ -121,7 +136,8 @@ export default class Persistence {
   }
   
 }
-
+Persistence.disable()
+Persistence.enable()
 
 /*
 

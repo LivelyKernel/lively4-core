@@ -23,7 +23,7 @@ export default class ShowPerformance {
       var result = cop.proceed.apply(this, arguments)
       if (result.then) {
         result.then(() => {
-        lively.notify("Hi! 2")
+        // lively.notify("Hi! 2")
 
         var label = document.createElement("div")
         label.textContent = "" + Math.round(performance.now() - start) + "ms"

@@ -30,6 +30,8 @@ export default class LivelyPaper extends Morph {
     this.lastPath = {};
     this.initPaper();
 
+    this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
+
     lively.addEventListener("drawboard", this.canvas, "pointerdown", 
       (e) => this.onPointerDown(e));
 
@@ -40,37 +42,8 @@ export default class LivelyPaper extends Morph {
     
     lively.html.registerButtons(this);
     
-    var height = this.getAttribute("height")
-    if (height) {
-      this.canvas.style.height = height
-      this.canvas.setAttribute("height", height)
-    }
-    
-    var width = this.getAttribute("width")
-    if (width) {
-      this.canvas.style.width = width
-      this.canvas.setAttribute("width", width)
-    }
-    
-    this.addEventListener('contextmenu', (evt) => {
-      if (this.lastPointerUp && (this.lastPointerUp - Date.now() < 1000)) {
-        evt.stopPropagation();
-        evt.preventDefault();
-        return; // #HACK custom prevent default....
-      }
-      
-      if (!evt.shiftKey) {
-        evt.stopPropagation();
-        evt.preventDefault();
-
-        var menu = new ContextMenu(this, [
-              ["clear", () => this.clear()],
-              ["undo stroke", () => this.undoStroke()],
-            ]);
-        menu.openIn(document.body, evt, this);
-        return true;
-      }
-    }, false);
+    this.adaptCanvasSize()
+   
     
     // setTimeout(() => {
     //  this.load(); // #Hack I don't get it when is paper.js ready? #Issue
@@ -87,7 +60,14 @@ export default class LivelyPaper extends Morph {
 
   }
   
-  
+  adaptCanvasSize() {
+    var bounds = this.getBoundingClientRect()
+    this.canvas.style.width = bounds.width + "px"
+    this.canvas.setAttribute("width", bounds.width + "px")
+    this.canvas.style.height = bounds.height + "px"
+    this.canvas.setAttribute("height", bounds.height + "px")
+    this.paper.view.viewSize = { width: bounds.width, height: bounds.height }
+  }
   
   load() {
     // #TODO we know that the state of the svg might diverge frome the state of paper
@@ -150,8 +130,8 @@ export default class LivelyPaper extends Morph {
     }
 
     this.lastPath[id] = path;
-    var x = evt.pageX - this.offset.left;
-    var y = evt.pageY - this.offset.top;
+    var x = evt.clientX - this.offset.left;
+    var y = evt.clientY - this.offset.top;
 
     path.moveTo([x, y]); 
 
@@ -164,8 +144,8 @@ export default class LivelyPaper extends Morph {
     var path = this.lastPath[id];
     if (path) {
       
-      var x = evt.pageX - this.offset.left;
-      var y = evt.pageY - this.offset.top;
+      var x = evt.clientX - this.offset.left;
+      var y = evt.clientY - this.offset.top;
       
       var p = {x:x, y:y};
     
@@ -174,6 +154,7 @@ export default class LivelyPaper extends Morph {
   }
 
   onPointerUp(evt) {
+    this.setAttribute("last-changed", Date.now())
     this.lastPointerUp = Date.now(); // #Hack custom prevent default
     evt.stopPropagation();
     evt.preventDefault();
@@ -225,6 +206,27 @@ export default class LivelyPaper extends Morph {
       delete this.lastPath[id];
 
     }
+  }
+  
+  onContextMenu(evt) {
+    // if (this.lastPointerUp && (this.lastPointerUp - Date.now() < 1000)) {
+    //     evt.stopPropagation();
+    //     evt.preventDefault();
+    //     return; // #HACK custom prevent default....
+    //   }
+      
+      if (!evt.shiftKey) {
+        evt.stopPropagation();
+        evt.preventDefault();
+
+        var menu = new ContextMenu(this, [
+              ["clear", () => this.clear()],
+              ["undo stroke", () => this.undoStroke()],
+            ]);
+        menu.openIn(document.body, evt, this);
+        return true;
+      }
+
   }
   
   save() {
