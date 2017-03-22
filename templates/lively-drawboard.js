@@ -13,6 +13,23 @@ export default class LivelyDrawboard extends Morph {
     return  obj.getBoundingClientRect()
   } 
   
+  get canvas() {
+    return this.get("#canvas");
+  }
+  
+  get svg() {
+    return this.get("#svg");
+  }
+  
+  
+  get paper() {
+    if (!this._paper) {
+      paper.setup(document.createElement("canvas"))
+      this._paper = paper
+    }
+    return this._paper
+  }
+  
   initialize() {
     this.lastPath = new Object();
     this.lastPt = new Object();
@@ -33,7 +50,7 @@ export default class LivelyDrawboard extends Morph {
       this.appendChild(svg)
     }
     
-    this.canvas = this.get("#canvas");
+    
     this.ctx = this.canvas.getContext("2d");
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
 
@@ -59,6 +76,12 @@ export default class LivelyDrawboard extends Morph {
     
   }
   
+  attachedCallback() {
+    setTimeout(() => {
+      this.updateCanvasExtent()  
+    }, 1000)
+  }
+  
   onSizeChanged() {
     this.updateCanvasExtent()
   }
@@ -69,6 +92,10 @@ export default class LivelyDrawboard extends Morph {
     this.canvas.setAttribute("width", bounds.width + "px")
     this.canvas.style.height = bounds.height + "px"
     this.canvas.setAttribute("height", bounds.height + "px")
+  
+    this.svg.style.width = bounds.width + "px"
+    this.svg.style.height = bounds.height + "px"
+
   }
   
   observeHTMLChanges() {
@@ -89,10 +116,11 @@ export default class LivelyDrawboard extends Morph {
 
 
   onPointerDown(evt) {
-    if (evt.pointerType == "mouse" && evt.button == 2) {
+    if ((evt.pointerType == "mouse" && evt.button == 2) || ContextMenu.visible()) {
       // context menu
       return;
     }
+    
     
     evt.stopPropagation();
     evt.preventDefault();
@@ -179,8 +207,8 @@ export default class LivelyDrawboard extends Morph {
 
     delete this.lastPt[id];
     delete this.lastPath[id];
-    
-    var paperPath =  new paper.Path(path.getAttribute("d"))
+    debugger
+    var paperPath =  new this.paper.Path(path.getAttribute("d"))
     
     if (path.command == "delete") {
         lively.array(this.get("#svg").querySelectorAll("path"))
@@ -228,10 +256,8 @@ export default class LivelyDrawboard extends Morph {
   }
   
   simplifyPath(path) {
-    var canvas = document.createElement("canvas")
-    paper.setup(canvas)
-    paper.project.activeLayer.removeChildren();
-    paper.project.importSVG(path)
+    this.paper.project.activeLayer.removeChildren();
+    this.paper.project.importSVG(path)
     var paperPath = paper.project.getItems({class: paper.Path})[0]
     paperPath.simplify(1)
     var paperSVG = paper.project.exportSVG()

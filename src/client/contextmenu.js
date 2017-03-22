@@ -22,6 +22,11 @@ export default class ContextMenu {
   static hide() {
     if (this.menu) this.menu.remove();
     lively.removeEventListener("contextMenu",  document.documentElement);
+    delete this.menu
+  }
+  
+  static visible() {
+    return this.menu && this.menu.parentElement
   }
   
   static openComponentInWindow (name, evt, worldContext) {
@@ -57,6 +62,12 @@ export default class ContextMenu {
          System.import("src/client/tracer.js").then(tracer => {
            tracer.default.traceObject(target);
          });
+         this.hide();
+      }],
+      ["remove", (evt) => {
+         target.remove()
+         
+         
          this.hide();
       }],
       [wasEditable ? "make uneditable" : "make editable", (evt) => {

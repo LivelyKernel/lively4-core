@@ -42,7 +42,7 @@ export default class Inspector   extends Morph {
   onContextMenu(evt) {
     if (!evt.shiftKey) { 
       evt.preventDefault();
-	    lively.openContextMenu(document.body, evt, this);
+	    lively.openContextMenu(document.body, evt, this.selection || this.targetObject);
 	    return false;
     } 
   }

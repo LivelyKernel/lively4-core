@@ -101,7 +101,7 @@ export default class Halo extends Morph {
   
     document.body.appendChild(this);
     
-    if (!target.getBoundingClientRect) {
+    if (!target || !target.getBoundingClientRect) {
       $(this).show();
       return;
     }

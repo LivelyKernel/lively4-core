@@ -49,6 +49,8 @@ export default class HaloGrabItem extends HaloItem {
     if (this.grabTarget && !this.isDragging && 
       events.noticableDistanceTo(evt, this.grabStartEventPosition)) {
       // drag detected
+      
+      lively.showElement(this.grabTarget)
         if (this.grabTarget.haloGrabStart) {
           this.grabTarget.haloGrabStart(evt, this)
         } else {
@@ -102,6 +104,8 @@ export default class HaloGrabItem extends HaloItem {
   }
   
   moveGrabbedNodeToEvent(evt) {
+  
+  
     var eventPosition = events.globalPosition(evt);
     this.dropAtEvent(this.grabShadow, evt);
     nodes.setPosition(this.grabTarget, eventPosition.subPt(this.grabOffset))
@@ -132,6 +136,12 @@ export default class HaloGrabItem extends HaloItem {
     var droptarget = this.droptargetAtEvent(node, evt);
     if (droptarget) {
       this.moveGrabShadowToTargetAtEvent(droptarget, evt);
+      if (this.dropIndicator) this.dropIndicator.remove()
+      this.dropIndicator = lively.showElement(droptarget)
+      
+      this.dropIndicator.style.border = "3px solid green"
+      this.dropIndicator.querySelector("pre").style.color = "green"
+      
     }
   }
   
@@ -192,7 +202,8 @@ export default class HaloGrabItem extends HaloItem {
     return node !== targetNode &&
       !Array.from(node.getElementsByTagName('*')).includes(targetNode) &&
       !(this.droppingBlacklist[node.tagName.toLowerCase()] || []).includes(targetTag) &&
-      !(this.droppingBlacklist['*'] || []).includes(targetTag)
+      !(this.droppingBlacklist['*'] || []).includes(targetTag) && 
+      (!targetNode.livelyAcceptsDrop || targetNode.livelyAcceptsDrop(node))
   }
   
   nodeComesBehind(node, pos) {

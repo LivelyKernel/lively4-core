@@ -6,15 +6,13 @@ export function setPosition(node, pos) {
 }
 
 export function getPosition(node) {
-  return pt(
-    parseInt(node.style.left) || 0,
-    parseInt(node.style.top) || 0)
+  var bounds = node.getBoundingClientRect()
+  return pt(bounds.left, bounds.top)
 }
 
 export function getExtent(node) {
-  return pt(
-    parseInt(node.style.width) || 0,
-    parseInt(node.style.height) || 0)
+  var bounds = node.getBoundingClientRect()
+  return pt(bounds.width, bounds.height)
 }
 
 export function setExtent(node, extent) {

@@ -1433,6 +1433,10 @@ export default class Container extends Morph {
 
   }
   
+  livelyAcceptsDrop() {
+    return this.contentIsEditable() && !this.isEditing()
+  }
+  
   
   livelyPreMigrate() {
     // do something before I got replaced  
