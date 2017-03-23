@@ -831,7 +831,7 @@ export default class Lively {
     } 
  
     var lastWindow = _.first(lively.array(worldContext.querySelectorAll("lively-window"))
-      .filter(  ea => ea.childNodes[0].isSearchBrowser));
+      .filter(  ea => ea.childNodes[0] && ea.childNodes[0].isSearchBrowser));
       
     containerPromise = editorComp ? Promise.resolve(editorComp) :
       lively.openComponentInWindow("lively-container", undefined, undefined, worldContext);

@@ -56,14 +56,15 @@ export default class Selecting {
         grabTarget = e.path[0];
     var that = window.that;
     // console.log("onMagnify " + grabTarget + " that: " + that);
+    var parents = _.reject(e.path, 
+        ea =>  ea instanceof ShadowRoot || ea instanceof HTMLContentElement || !(ea instanceof HTMLElement));
     if (that && this.areHalosActive()) {
-      var parents = _.reject(e.path, ea =>  ea instanceof ShadowRoot);
       var index = parents.indexOf(that);
       grabTarget = parents[index + 1] || grabTarget;
     }
     // if there was no suitable parent, cycle back to the clicked element itself
     window.that = grabTarget;
-    this.showHalos(grabTarget, e.path);
+    this.showHalos(grabTarget, parents || e.path);
   }
 
 
@@ -71,6 +72,14 @@ export default class Selecting {
   static showHalos(el, path) {
     if (this.lastIndicator) $(this.lastIndicator).remove();
     this.lastIndicator = lively.showElement(el);
+    var div = document.createElement("div")
+    
+    div.innerHTML = path.reverse().map(ea => (ea === el ? "<b>" : "") + (ea.tagName ? ea.tagName : "") + " " + (ea.id ? ea.id : "") 
+      + " " + (ea.getAttribute && ea.getAttribute("class")) + (ea === el ? "</b>" : "")).join("<br>")
+    this.lastIndicator.appendChild(div)
+    
+    div.style.fontSize = "8pt"
+    div.style.color = "gray"
     HaloService.showHalos(el, path);
   }
 

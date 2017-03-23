@@ -17,7 +17,7 @@ export default class HaloDragItem extends HaloItem {
   start(evt) {
     this.dragTarget = window.that;
     if (this.dragTarget) {
-      this.dragStartNodePosition = nodes.getPosition(this.dragTarget);
+      this.dragStartNodePosition = lively.getPosition(this.dragTarget);
       this.dragStartEventPosition = events.globalPosition(evt);
       evt.preventDefault();
     }
@@ -55,7 +55,7 @@ export default class HaloDragItem extends HaloItem {
       //   x: eventPosition.x - this.dragStartEventPosition.x + this.dragStartNodePosition.x,
       //   y: eventPosition.y - this.dragStartEventPosition.y + this.dragStartNodePosition.y
       // }
-      nodes.setPosition(this.dragTarget, newPosition);
+      lively.setPosition(this.dragTarget, newPosition);
     }
     evt.preventDefault();
   }

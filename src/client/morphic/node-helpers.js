@@ -1,13 +1,11 @@
 import {pt,rect} from '../graphics.js'
 
 export function setPosition(node, pos) {
-  node.style.left = '' + pos.x + 'px';
-  node.style.top = '' + pos.y + 'px';
+  return lively.setPosition(node, pos)
 }
 
 export function getPosition(node) {
-  var bounds = node.getBoundingClientRect()
-  return pt(bounds.left, bounds.top)
+  return lively.getPosition(node)
 }
 
 export function getExtent(node) {

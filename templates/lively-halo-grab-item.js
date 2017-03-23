@@ -49,8 +49,6 @@ export default class HaloGrabItem extends HaloItem {
     if (this.grabTarget && !this.isDragging && 
       events.noticableDistanceTo(evt, this.grabStartEventPosition)) {
       // drag detected
-      
-      lively.showElement(this.grabTarget)
         if (this.grabTarget.haloGrabStart) {
           this.grabTarget.haloGrabStart(evt, this)
         } else {
@@ -113,13 +111,21 @@ export default class HaloGrabItem extends HaloItem {
   }
   
   stopGrabbingAtEvent(evt) {
+    if (this.dropIndicator) this.dropIndicator.remove()
+    if (this.dropTargetIndicator) this.dropTargetIndicator.remove()
+      
     this.grabTarget.classList.remove("lively4-grabbed")
-    this.insertGrabTargetBeforeShadow();
-    this.removeGrabShadow();
     if (this.grabShadow.style.position == 'absolute') {
-        this.grabTarget.style.position = 'absolute';
-        nodes.setPosition(this.grabTarget, nodes.getPosition(this.grabShadow))
+        lively.notify("absolute...")
+        this.insertGrabTargetBeforeShadow();
+        this.removeGrabShadow();
+    
+        // this.grabTarget.style.position = 'absolute';
+        lively.setPosition(this.grabTarget, lively.getPosition(this.grabShadow))
     } else {    
+      this.insertGrabTargetBeforeShadow();
+      this.removeGrabShadow();
+    
       this.grabTarget.style.position = 'relative';
       this.grabTarget.style.removeProperty('top');
       this.grabTarget.style.removeProperty('left');
@@ -138,9 +144,14 @@ export default class HaloGrabItem extends HaloItem {
       this.moveGrabShadowToTargetAtEvent(droptarget, evt);
       if (this.dropIndicator) this.dropIndicator.remove()
       this.dropIndicator = lively.showElement(droptarget)
-      
       this.dropIndicator.style.border = "3px solid green"
       this.dropIndicator.querySelector("pre").style.color = "green"
+      
+      if (this.dropTargetIndicator) this.dropTargetIndicator.remove()
+      this.dropTargetIndicator = lively.showElement(node)
+      this.dropTargetIndicator.style.border = "1px solid blue"
+      this.dropTargetIndicator.querySelector("pre").style.color = "blue"
+      this.dropTargetIndicator.querySelector("pre").textContent = "drop"
       
     }
   }
@@ -182,6 +193,8 @@ export default class HaloGrabItem extends HaloItem {
 
     if (evt.shiftKey || 
       nodes.globalPosition(this.grabShadow).dist(nodes.globalPosition(this.grabTarget)) > 300) {
+      this.grabShadow.parentElement.appendChild(this.grabShadow)
+        
       this.grabShadow.style.opacity = 0;
       this.grabShadow.style.position = 'absolute';
       var pos = nodes.globalPosition(this.grabTarget);

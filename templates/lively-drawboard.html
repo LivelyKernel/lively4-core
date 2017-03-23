@@ -1,15 +1,23 @@
 <template id="lively-drawboard" data-class="LivelyDrawboard">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  
   <style>
   :host {
+    min-width: 50px;
+    min-height: 50px;
     width: 400px;
     height: 400px;
+    display: block;
     touch-action: none;
-    overflow: hidden;
+    overflow: visible;
     border: 1px solid gray;
   }
 
   #canvas {
     position: absolute;
+    min-width: 50px;
+    min-height: 50px;
     top: 0px;
     left: 0px;
     width: 800px;
@@ -17,11 +25,52 @@
     border: none;
     touch-action: none;
   }
-
+  
+  #controls {
+    position: absolute;
+    top: -28pt;
+    right: 0pt;
+    background: white;
+    border: 1px gray solid;
+    width: 100%;
+  }
+  
+  #close {
+    float: right;
+  }
+  
+  #penColor, #backgroundColor {
+    margin: 3px;
+  }
+  
+  button {
+    vertical-align: top
+  }
+  
+  #penSize {
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+    margin: 3px;
+    padding: 0px;
+    font-size: 0;
+    vertical-align: top
+  }
+  
   </style>
   <content></content>
-  <canvas id="canvas" width="800" height="600" ></canvas>
   
+  <canvas id="canvas" width="800" height="600" ></canvas>
+  <div id="controls">
+    <button id="undoStroke">
+      <i class="fa fa-arrow-left" title="undo stroke" aria-hidden="true"></i></button>
+    <button id="redoStroke">
+      <i class="fa fa-arrow-right" title="redo stroke" aria-hidden="true"></i></button>
+    <lively-crayoncolors id="backgroundColor" title="background"></lively-crayoncolors>
+    <lively-crayoncolors id="penColor" title="pen"></lively-crayoncolors>
+    <lively-penchooser id="penSize"></lively-penchooser>
+    <button id="close"><i class="fa fa-close" title="redo stroke" aria-hidden="true"></i></button>
+  </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

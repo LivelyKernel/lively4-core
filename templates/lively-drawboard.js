@@ -1,17 +1,54 @@
 import Morph from './Morph.js';
+
 import ContextMenu from 'src/client/contextmenu.js';
 import CommandHistory  from "src/client/command-history.js";
 
 import paper from "src/external/paperjs/paper-core.js";
 
 
+import {pt} from "src/client/graphics.js"
+
 window.paper = paper 
 
 export default class LivelyDrawboard extends Morph {
-      
+  
+  
+  // Lively Window API
+  get isWindow() {
+    return this.parentElement && !this.parentElement.isWindow
+  }
+  
+  isMinimized() {
+    return false
+  }
+  
   getOffset(obj) {
     return  obj.getBoundingClientRect()
   } 
+  
+  get color() {
+    return this.getAttribute("color")
+  }
+  
+  set color(value) {
+    this.setAttribute("color", value)
+  }
+  
+  get penSize() {
+    return this.getAttribute("pen-size")
+  }
+  
+  set penSize(value) {
+    this.setAttribute("pen-size", value)
+  }
+  
+  get background() {
+    return this.style.backgroundColor
+  }
+  
+  set background(value) {
+    this.style.backgroundColor = value
+  }
   
   get canvas() {
     return this.get("#canvas");
@@ -20,7 +57,6 @@ export default class LivelyDrawboard extends Morph {
   get svg() {
     return this.get("#svg");
   }
-  
   
   get paper() {
     if (!this._paper) {
@@ -39,17 +75,17 @@ export default class LivelyDrawboard extends Morph {
       svg =  document.createElementNS("http://www.w3.org/2000/svg", "svg");
       svg.id = "svg"
       svg.style = `position: absolute;
-    top: 0px;
-    left: 0px;
-    width: 100%;
-    height: 100%;
-    border: none;
-    opacity: 1;
-    touch-action: none;`
-
+        top: 0px;
+        left: 0px;
+        width: 100%;
+        height: 100%;
+        border: none;
+        opacity: 1;
+        touch-action: none;`
       this.appendChild(svg)
     }
-    
+  
+
     
     this.ctx = this.canvas.getContext("2d");
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
@@ -57,28 +93,57 @@ export default class LivelyDrawboard extends Morph {
 
     lively.addEventListener("drawboard", this.canvas, "pointerdown", 
       (e) => this.onPointerDown(e));
-
     lively.addEventListener("drawboard", this.canvas, "pointerup", 
       (e) => this.onPointerUp(e));
-    
     lively.addEventListener("drawboard", this, "size-changed", 
       (e) => this.onSizeChanged(e));
+    lively.addEventListener("drawboard", this, "focus", 
+      (e) => this.onFocus(e));
+    lively.addEventListener("drawboard", this, "blur", 
+      (e) => this.onBlur(e));
+    lively.addEventListener("drawboard", this.get('#backgroundColor'), "value-changed", 
+      (e) => this.onBackgroundColor(e.detail.value));  
+    lively.addEventListener("drawboard", this.get('#penColor'), "value-changed", 
+      (e) => this.onPenColor(e.detail.value));  
+    lively.addEventListener("drawboard", this.get('#penSize'), "value-changed", 
+      (e) => this.onPenSize(e.detail.value));  
+
     
-      
+    this.get('#controls').draggable = true
+    lively.addEventListener("drawboard", this.get('#controls'), "dragstart", 
+      (e) => this.onDragStart(e));  
+    lively.addEventListener("dragboard", this.get('#controls'), "drag", 
+      (e) => this.onDrag(e));  
+    lively.addEventListener("dragboard", this.get('#controls'), "dragend", 
+      (e) => this.onDragEnd(e));  
+
+
+    
     this.color = "black"
     
     this.updateCanvasExtent()
     this.observeHTMLChanges()
    
+    this.get("#backgroundColor").value = this.background
+    this.get("#penColor").value = this.color
+   this.get("#penSize").value = this.penSize
    
     this.strokes = new CommandHistory();
-
+    lively.html.registerButtons(this)
     
+    this.setAttribute("tabindex", 0)
   }
   
   attachedCallback() {
+    if (this.parentElement.isWindow) {
+      this.fixedControls = true 
+      this.get("#controls").hidden =false 
+    } else {
+      this.fixedControls = false 
+      this.get("#controls").hidden = true 
+    }
     setTimeout(() => {
-      this.updateCanvasExtent()  
+       this.updateCanvasExtent()  
     }, 1000)
   }
   
@@ -87,15 +152,30 @@ export default class LivelyDrawboard extends Morph {
   }
   
   updateCanvasExtent() {
+    var offsetY = 0;
+    var offsetX = 0;
+    if (this.fixedControls) {
+      offsetY = 30
+      this.get("#controls").style.top = "0px"
+    } else {
+      this.get("#controls").style.top = "-28px"
+    }
+    
     var bounds = this.getBoundingClientRect()
-    this.canvas.style.width = bounds.width + "px"
-    this.canvas.setAttribute("width", bounds.width + "px")
-    this.canvas.style.height = bounds.height + "px"
-    this.canvas.setAttribute("height", bounds.height + "px")
-  
-    this.svg.style.width = bounds.width + "px"
-    this.svg.style.height = bounds.height + "px"
-
+    var width = (bounds.width - offsetX) + "px"
+    var height = (bounds.height - offsetY) + "px"
+    if (this.canvas) {
+      lively.setPosition(this.canvas, pt(offsetX, offsetY))
+      this.canvas.style.width = width
+      this.canvas.setAttribute("width", width)
+      this.canvas.style.height = height
+      this.canvas.setAttribute("height", height)
+    }
+    if (this.svg) {
+      lively.setPosition(this.svg, pt(offsetX, offsetY))
+      this.svg.style.width = width
+      this.svg.style.height = height
+    }
   }
   
   observeHTMLChanges() {
@@ -116,7 +196,15 @@ export default class LivelyDrawboard extends Morph {
 
 
   onPointerDown(evt) {
-    if ((evt.pointerType == "mouse" && evt.button == 2) || ContextMenu.visible()) {
+    var isFocused = document.activeElement == this
+    if (!isFocused) {
+      this.style['z-index'] = 200
+      return this.focus()
+    }
+    
+    if ((evt.pointerType == "mouse" && evt.button == 2) 
+        || evt.ctrlKey 
+        || ContextMenu.visible()) {
       // context menu
       return;
     }
@@ -139,7 +227,7 @@ export default class LivelyDrawboard extends Morph {
       path.setAttribute("stroke-width", 4);        
     } else {
       path.setAttribute("stroke", this.color);
-      path.setAttribute("stroke-width", 1.3);        
+      path.setAttribute("stroke-width", this.penSize);        
     }
     
     
@@ -176,7 +264,7 @@ export default class LivelyDrawboard extends Morph {
     
     } else {
       this.ctx.strokeStyle = this.color
-      this.ctx.lineWidth=1; 
+      this.ctx.lineWidth = this.penSize; 
     }
     this.ctx.stroke();
     var p = {x:x, y:y}
@@ -289,6 +377,14 @@ export default class LivelyDrawboard extends Morph {
     this.strokes.redo();
   }
   
+  onUndoStroke() {
+    this.undoStroke();
+  }
+  
+  onRedoStroke() {
+    this.redoStroke();
+  }
+  
   onContextMenu(evt) {
     // if (this.lastPointerUp && (this.lastPointerUp - Date.now() < 1000)) {
     //     evt.stopPropagation();
@@ -311,6 +407,50 @@ export default class LivelyDrawboard extends Morph {
 
   }
   
+  onFocus() {
+    if (!this.fixedControls)
+      this.get("#controls").hidden = false
+  }
+  
+  onBlur() {
+    if (!this.fixedControls)
+      this.get("#controls").hidden = true
+  }
+  
+  onBackgroundColor(color) {
+    this.style.backgroundColor = color
+  }
+  
+  onPenColor(color) {
+    this.color = color
+  }
+  
+  onPenSize(size) {
+    this.penSize = size
+  }
+  
+  async onClose() {
+    if (await lively.confirm("Remove drawing?")) {
+      this.remove()
+    }
+  }
+  
+  onDragStart(evt) {
+    this.dragOffset = lively.getPosition(this).subPt(pt(evt.clientX, evt.clientY))
+
+    evt.dataTransfer.setDragImage(document.createElement("div"), 0, 0); 
+    evt.stopPropagation(); 
+  }
+  
+  onDrag(evt) {
+    if (evt.clientX == 0) return // #Issue bug in browser? Ignore garbage event
+    var pos = pt(evt.clientX, evt.clientY)
+    lively.setPosition(this, pos.addPt(this.dragOffset))
+  }
+  
+  onDragEnd() {
+    
+  }
   
   
   livelyMigrate(other) {

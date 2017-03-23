@@ -211,7 +211,9 @@ export default class Window extends Morph {
 	}
 	
 	allWindows() {
-		return Array.from(document.querySelectorAll('lively-window'));
+		// return Array.from(document.querySelectorAll('lively-window'));
+	  return Array.from(document.querySelectorAll('*')).filter(ea => ea.isWindow);
+	  
 	}
 
   focus(e) {
@@ -226,6 +228,7 @@ export default class Window extends Morph {
     });
 
     allWindowsButThis.forEach((win, index) => {
+      // lively.showElement(win).innerHTML = "INDEX " + index
       win.style['z-index'] = this.minZIndex + index;
       if (win.window)
         win.window.classList.remove('focused');

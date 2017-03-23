@@ -1,0 +1,51 @@
+<template id="lively-crayoncolors" data-class="LivelyCrayoncolors">
+  <style>
+  :host {
+    display: inline-block;
+  }
+  
+  
+  #colorChooser {
+    position: absolute;
+    top: 22px;
+    display: block;
+    width: max-content;
+    height: max-content;
+    border: 1px solid gray;
+    padding: 0px;
+    background: white;
+  }
+  
+
+  #field {
+    display: block;
+    width: 20px;
+    height: 20px;
+    border: 1px solid gray;
+  }
+  
+  .color {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 1px solid gray;
+    margin: 0.5px;
+    padding: 0px;
+  }
+  
+  .row {
+    display: block;
+    margin: 0px;
+    padding: 0px;
+    font-size: 0;
+  }
+  
+  </style>
+
+  <div id="field"></div>
+  <div id="colorChooser"></div>
+  <content></content>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+
+ 
