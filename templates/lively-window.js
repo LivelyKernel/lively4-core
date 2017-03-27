@@ -241,7 +241,7 @@ export default class Window extends Morph {
     
     this.bringMinimizedWindowsToFront()
     
-    if (this.target) this.target.focus()
+    if (this.target && this.target.focus) this.target.focus()
   }
 
 

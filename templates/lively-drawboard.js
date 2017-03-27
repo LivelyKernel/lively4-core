@@ -251,6 +251,9 @@ export default class LivelyDrawboard extends Morph {
     var id = evt.pointerId;   
     var path = this.lastPath[id];
     
+    if (!path) return
+    
+    
     var x = evt.clientX - this.offset.left;
     var y = evt.clientY - this.offset.top;
     

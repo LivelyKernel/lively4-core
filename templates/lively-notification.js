@@ -11,6 +11,7 @@ export default class Notification extends Morph {
       "click", evt => this.onClose(evt))
     lively.addEventListener("lively", this.shadowRoot.querySelector("#moreButton"), 
       "click", evt => this.onMore(evt))
+    this.counter = 0
   }
   
   // #TODO get rid of this and replace it with lively.bindings
@@ -73,6 +74,11 @@ export default class Notification extends Morph {
     this.shadowRoot.querySelector("#title").textContent = this.title
     this.shadowRoot.querySelector("#message").textContent = this.message
     this.shadowRoot.querySelector("#moreButton").hidden = ! this.more
+    
+    if (this.counter > 1) {
+      this.shadowRoot.querySelector("#counter").textContent = this.counter
+    }
+    
   }
   
 }

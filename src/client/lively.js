@@ -473,9 +473,23 @@ export default class Lively {
       });
     } else {
       if (this.notificationList.addNotification) {
-       this.notificationList.addNotification(title, text, timeout, cb, color);
+      
+      var duplicateNotification = lively.array(lively.notificationList.querySelectorAll("lively-notification")).find(ea => {
+      console.log("ea title: " + title + " text: " + text)
+       return ea.title == title && ea.message == text}
+      )
+      console.log("title: " + title + " text: " + text + " duplicate: " + duplicateNotification)
+
+      if (duplicateNotification) {
+      	duplicateNotification.counter++
+      	duplicateNotification.render()
+        console.log(title  + ":" + text);
       } else {
-        console.log("Notification List not initialized yet");
+        this.notificationList.addNotification(title, text, timeout, cb, color);
+      }
+      } else {
+        // "Notification List not initialized yet: ""
+        console.log(title  + ":" + text);
       }
     }
 
