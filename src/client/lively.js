@@ -937,19 +937,30 @@ export default class Lively {
     s +"}"
     return s
   }
-  
-  static currentStack() {
-  try {
-    throw new Error("XYZError")
-  } catch(e) {
-    return e.stack.split("\n")
-      .filter(ea => !ea.match("src/external/ContextJS/src/Layers.js") )
-      .filter(ea => !ea.match("XYZError") )
-      .filter(ea => !ea.match("currentStack") )
-      .map(ea => ea.replace(/\(.*?\)/,""))
-      .join("\n")
+
+
+  static allKeys(obj) {
+    var keys = []
+    for(var i in obj) {
+      if (obj.hasOwnProperty(i) || obj.__lookupGetter__(i)) {
+        keys.push(i);
+      }
+    }
+    return keys
   }
-}
+
+  static currentStack() {
+    try {
+      throw new Error("XYZError")
+    } catch(e) {
+      return e.stack.split("\n")
+        .filter(ea => !ea.match("src/external/ContextJS/src/Layers.js") )
+        .filter(ea => !ea.match("XYZError") )
+        .filter(ea => !ea.match("currentStack") )
+        .map(ea => ea.replace(/\(.*?\)/,""))
+        .join("\n")
+    }
+  }
   
 }
 

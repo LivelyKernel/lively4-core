@@ -3,6 +3,7 @@
  * A tool similar to the chrome "Elements" pane and the JavaScript object explorer
  */
 import Morph from './Morph.js';
+import ContextMenu from 'src/client/contextmenu.js';
 
 import {sortAlphaNum} from "../src/client/sort.js"
 
@@ -40,9 +41,16 @@ export default class Inspector   extends Morph {
   }
 
   onContextMenu(evt) {
-    if (!evt.shiftKey) { 
+    if (this.targetObject && !evt.shiftKey) { 
       evt.preventDefault();
-	    lively.openContextMenu(document.body, evt, this.selection || this.targetObject);
+      if (this.targetObject instanceof Array) {
+        var menu = new ContextMenu(this, [
+              ["inspect as table", () => Inspector.inspectArrayAsTable(this.targetObject)],
+            ]);
+        menu.openIn(document.body, evt, this);
+      } else if (this.tagName) {
+  	    lively.openContextMenu(document.body, evt, this.selection || this.targetObject);
+      }
 	    return false;
     } 
   }
@@ -474,6 +482,16 @@ export default class Inspector   extends Morph {
       })
     }
     return result
+  }
+  
+  static inspectArrayAsTable(array) {
+    var div = document.createElement("div")
+    div.innerHTML = "<table>" +lively.allKeys(array[0]).map( key => {
+    	return "<tr><td><b>" + key +"</b></td>" + array.map( ea =>  "<td>" + (ea[key] + "").slice(0, 50) +"</td>").join("")+"</tr>"
+    }).join("\n") + "</table>"
+    div.style.overflow = "auto"
+    lively.components.openInWindow(div, undefined, "Inspect Array")
+    
   }
   
   livelyMigrate(oldInstance) {

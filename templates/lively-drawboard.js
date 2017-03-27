@@ -208,7 +208,9 @@ export default class LivelyDrawboard extends Morph {
       // context menu
       return;
     }
-    
+    console.log("pointer down " + evt.button)
+    // window.eventRecorder = []
+    window.eventRecorder && window.eventRecorder.push(evt)
     
     evt.stopPropagation();
     evt.preventDefault();
