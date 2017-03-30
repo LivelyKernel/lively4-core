@@ -1,14 +1,10 @@
 import Morph from './Morph.js';
-
 import ContextMenu from 'src/client/contextmenu.js';
 import CommandHistory  from "src/client/command-history.js";
-
 import paper from "src/external/paperjs/paper-core.js";
+import {pt} from "src/client/graphics.js";
 
-
-import {pt} from "src/client/graphics.js"
-
-window.paper = paper 
+// window.paper = paper;
 
 export default class LivelyDrawboard extends Morph {
   
@@ -51,10 +47,7 @@ export default class LivelyDrawboard extends Morph {
     this.style.backgroundColor = value
   }
   
-  get canvas() {
-    return this.get("#canvas");
-  }
-  
+
   get svg() {
     return this.get("#svg");
   }
@@ -85,12 +78,11 @@ export default class LivelyDrawboard extends Morph {
       this.appendChild(svg)
     }
     
-    this.ctx = this.canvas.getContext("2d");
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
 
-    lively.addEventListener("drawboard", this.canvas, "pointerdown", 
+    lively.addEventListener("drawboard", this.svg, "pointerdown", 
       (e) => this.onPointerDown(e));
-    lively.addEventListener("drawboard", this.canvas, "pointerup", 
+    lively.addEventListener("drawboard", this.svg, "pointerup", 
       (e) => this.onPointerUp(e));
     lively.addEventListener("drawboard", this, "size-changed", 
       (e) => this.onSizeChanged(e));
@@ -128,6 +120,8 @@ export default class LivelyDrawboard extends Morph {
     this.strokes = new CommandHistory();
     lively.html.registerButtons(this)
     
+    this.get("lively-resizer").target = this // shadow root cannot look outside
+    
     this.setAttribute("tabindex", 0)
   }
   
@@ -162,13 +156,6 @@ export default class LivelyDrawboard extends Morph {
     var bounds = this.getBoundingClientRect()
     var width = (bounds.width - offsetX) + "px"
     var height = (bounds.height - offsetY) + "px"
-    if (this.canvas) {
-      lively.setPosition(this.canvas, pt(offsetX, offsetY))
-      this.canvas.style.width = width
-      this.canvas.setAttribute("width", width)
-      this.canvas.style.height = height
-      this.canvas.setAttribute("height", height)
-    }
     if (this.svg) {
       lively.setPosition(this.svg, pt(offsetX, offsetY))
       this.svg.style.width = width
@@ -200,9 +187,10 @@ export default class LivelyDrawboard extends Morph {
     var isFocused = document.activeElement == this
     if (!isFocused) {
       this.style['z-index'] = 200
-      evt.preventDefault()
+      // evt.preventDefault()
       
-      return this.focus()
+      this.focus()
+      // return 
     }
     
     if (evt.pointerType == "touch") {
@@ -250,7 +238,7 @@ export default class LivelyDrawboard extends Morph {
     path.points.push(pos)
     this.renderPath(path)
     
-    lively.addEventListener("drawboard", this.canvas, "pointermove", (e) => this.onPointerMove(e), false);
+    lively.addEventListener("drawboard", this, "pointermove", (e) => this.onPointerMove(e), false);
     
     // this.setPointerCapture(evt.pointerId);
   }  
@@ -308,7 +296,7 @@ export default class LivelyDrawboard extends Morph {
     // path.setAttribute("d", path.getAttribute("d") + 
     //   path.points.map( ea => " L "+ ea.x +" " + ea.y ).join(""))
 
-    lively.removeEventListener("drawboard", this.canvas, "pointermove")    
+    lively.removeEventListener("drawboard", this, "pointermove")    
 
 
     delete this.lastPath[id];
@@ -357,7 +345,6 @@ export default class LivelyDrawboard extends Morph {
       }
       this.strokes.addCommand(command)
     }    
-    this.clearTempCanvas()
   }
   
   simplifyPath(path) {
@@ -370,18 +357,7 @@ export default class LivelyDrawboard extends Morph {
     path.setAttribute("d", paperSVGPath.getAttribute("d"))
   }
   
-  clearTempCanvas() {
-    // Store the current transformation matrix
-    this.ctx.save();
-    
-    // Use the identity matrix while clearing the canvas
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    
-    // Restore the transform
-    this.ctx.restore();
-  }
-  
+
   clear() {
     this.get("#svg").innerHTML = ""
   }
@@ -491,7 +467,6 @@ export default class LivelyDrawboard extends Morph {
     if (this.fixedControls) return
 
     if (evt.clientX == 0) return // #Issue bug in browser? Ignore garbage event
-    console.log("drag " + evt.clientX)
     
     var pos = this.eventPos(evt)
     // console.log("drag " + pos.x)

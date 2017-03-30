@@ -84,6 +84,10 @@ layer(ScopedScripts, "LocalLayer").refineObject(lively, {
 
 
 layer(ScopedScripts, "DocumentLayer").refineObject(document, {
+  get body() {
+    return ScopedScripts.documentRoot
+  },
+  
 	write(a) {
     console.log("document.write " + a);
     // console.log("BEGIN")

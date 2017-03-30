@@ -201,7 +201,7 @@ export default class Lively {
     if (document.querySelector("lively-console")) {
       console.log(error) 
     } else {
-      lively.notify("Error: ", error, 10, () =>
+      lively.notify("Error: ", ""+ error, 10, () =>
       		  lively.openWorkspace("Error:" + error.message + "\nLine:" + error.lineno + " Col: " + error.colno+"\nSource:" + error.source + "\nError:" + error.stack), 
             "red");
     }
@@ -466,18 +466,20 @@ export default class Lively {
     // this.nativeNotify(title, text, timeout, cb) 
     console.log("Note: " + title + "\n" + text);
 
-    if (!this.notificationList || !this.notificationList.parentElement) {
-      this.notificationList = document.createElement("lively-notification-list");
-      components.openIn(document.body, this.notificationList).then( () => {
-        this.notificationList.addNotification(title, text, timeout, cb, color);
+    var notificationList = document.querySelector("lively-notification-list")
+
+    if (!notificationList) {
+      
+     notificationList = document.createElement("lively-notification-list");
+      components.openIn(document.body, notificationList).then( () => {
+        notificationList.addNotification(title, text, timeout, cb, color);
       });
     } else {
-      if (this.notificationList.addNotification) {
       
-      var duplicateNotification = lively.array(lively.notificationList.querySelectorAll("lively-notification")).find(ea => {
-      console.log("ea title: " + title + " text: " + text)
-       return ea.title == title && ea.message == text}
-      )
+      var duplicateNotification = lively.array(document.querySelectorAll("lively-notification")).find(ea => {
+        console.log("ea title: " + title + " text: " + text)
+        return ea.title == title && ea.message == text
+      })
       console.log("title: " + title + " text: " + text + " duplicate: " + duplicateNotification)
 
       if (duplicateNotification) {
@@ -485,14 +487,9 @@ export default class Lively {
       	duplicateNotification.render()
         console.log(title  + ":" + text);
       } else {
-        this.notificationList.addNotification(title, text, timeout, cb, color);
-      }
-      } else {
-        // "Notification List not initialized yet: ""
-        console.log(title  + ":" + text);
+        notificationList.addNotification(title, text, timeout, cb, color);
       }
     }
-
 
 
   }

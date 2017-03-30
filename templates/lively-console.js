@@ -27,7 +27,7 @@ export default class Console extends Morph {
     this.get("#console").setCustomStyle(`.CodeMirror pre { 
       border-bottom: 1px solid lightgrey;
       padding: 2px;
-      padding-left: 10px
+      padding-left: 20px
     }
      
     .leftgutter {
@@ -193,12 +193,27 @@ export default class Console extends Morph {
   
     
   log() {
-    this.logWithLeftAndRight(lively.array(arguments), null, this.calledFrom(4))
+    var args = lively.array(arguments)
+    
+    if (this.lastLog && (this.lastLog.join("") == args.join(""))) {
+      this.lastLogCounter++
+      // this.logWithLeftAndRight(args, "" + this.lastLogCounter, this.calledFrom(4))
+      this.setLeftAnnotation("" +this.lastLogCounter)
+    } else {
+      this.logWithLeftAndRight(args, null, this.calledFrom(4))
+      this.lastLogCounter=1
+    }
+    this.lastLog = args
+    
+  }
+  
+  get editor() {
+    var c = this.getSubmorph('#console')
+    return c.editor
   }
 
   logWithLeftAndRight(args, left, right ) {
-    var c = this.getSubmorph('#console')
-    var editor  = c.editor
+    var editor = this.editor
     if (!editor) return
     var doc = editor.getDoc();
 
@@ -230,9 +245,39 @@ export default class Console extends Morph {
       }
     })
     
-    
-    
     if (right) {
+      this.setRightAnnotation(right)
+    }
+
+    if (left) {
+      this.setLeftAnnotation(left)
+    }
+    // session.insert({
+    //     row: session.getLength(),
+    //     column: 0
+    //   }, "\n" + this.currentStack())
+    
+    // this.getSubmorph('#console').editor.scrollToRow(1000000000000)
+  }
+
+  setLeftAnnotation(left) {
+    var editor = this.editor
+    var leftAnnotation = document.createElement("div")
+    leftAnnotation.style.fontSize = "8pt"
+    leftAnnotation.style.whiteSpace = "nowrap"
+    leftAnnotation.innerHTML = "<b>" + left +"<b>"
+    
+    leftAnnotation.style.color = "gray";
+    leftAnnotation.style.marginTop = "2px"
+
+    leftAnnotation.style.marginLeft = "2px"
+    leftAnnotation.classList.add("errorMark")
+      
+    editor.setGutterMarker(editor.getCursor().line , "leftgutter", leftAnnotation);
+  }
+
+  setRightAnnotation(right) {
+      var editor = this.editor
       editor.replaceSelection(" ")
       var from = editor.getCursor()
       editor.replaceSelection(right);
@@ -273,36 +318,7 @@ export default class Console extends Morph {
         })
       
       // annotation.style.left = (c.getBoundingClientRect().right - annotation.getBoundingClientRect().right - 20) + "px"
-
-    }
-
-    if (left) {
-      var leftAnnotation = document.createElement("div")
-      leftAnnotation.style.fontSize = "8pt"
-      leftAnnotation.style.whiteSpace = "nowrap"
-      leftAnnotation.innerHTML = "<b>" + left +"<b>"
-      
-      leftAnnotation.style.color = "gray";
-      leftAnnotation.style.marginTop = "2px"
-
-      leftAnnotation.style.marginLeft = "2px"
-      leftAnnotation.classList.add("errorMark")
-        
-      editor.setGutterMarker(editor.getCursor().line - 1, "leftgutter", leftAnnotation);
-    }
-
-
-      
-    
-      
-    // session.insert({
-    //     row: session.getLength(),
-    //     column: 0
-    //   }, "\n" + this.currentStack())
-    
-    // this.getSubmorph('#console').editor.scrollToRow(1000000000000)
   }
-
    
   calledFrom(offset) {
     try {
@@ -367,7 +383,6 @@ cop.layer(window, "ConsoleLayer").refineObject(console, {
 
 ConsoleLayer.beGlobal()
 
-console.log("hi")
 
 
 

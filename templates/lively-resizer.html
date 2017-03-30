@@ -1,0 +1,39 @@
+<template id="lively-resizer" data-class="LivelyResizer">
+    <style data-src="/templates/livelystyle.css"></style>
+    <style>
+    :host {
+      position: absolute;
+      
+      width: 10px;
+      height: 10px;
+
+
+      
+      right: 0px;
+      bottom: 0px;
+      
+      /*
+      background-color: rgba(1,255,1,0.2);
+      */
+      transition: background-color 150ms ease-in-out; 
+    }
+    :host(.horizontal) {
+      
+    }
+    
+    :host(:hover) {
+      cursor: nw-resize;
+      background-color: rgba(1,1,1,0.2);
+    }
+
+    :host(.horizontal:hover) {
+      
+    }
+
+    </style>
+</template>
+
+<script class="registrationScript">lively.registerTemplate()</script>
+
+
+
