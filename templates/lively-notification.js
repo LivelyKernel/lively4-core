@@ -72,7 +72,16 @@ export default class Notification extends Morph {
 
   render() {  
     this.shadowRoot.querySelector("#title").textContent = this.title
-    this.shadowRoot.querySelector("#message").textContent = this.message
+    if (this.message instanceof Error) {
+      var messageContainer = this.shadowRoot.querySelector("#message")
+      messageContainer.innerHTML = ""
+      let widget = document.createElement("lively-error")
+      lively.components.openIn(messageContainer, widget).then( () => {
+        widget.stack =  this.message.stack
+      })
+    } else {
+      this.shadowRoot.querySelector("#message").textContent = this.message
+    }
     this.shadowRoot.querySelector("#moreButton").hidden = ! this.more
     
     if (this.counter > 1) {

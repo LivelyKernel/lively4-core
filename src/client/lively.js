@@ -485,7 +485,7 @@ export default class Lively {
       
       var duplicateNotification = lively.array(document.querySelectorAll("lively-notification")).find(ea => {
         console.log("ea title: " + title + " text: " + text)
-        return ea.title == title && ea.message == text
+        return ("" +ea.title == ""+title) && ("" + ea.message == "" +text)
       })
       console.log("title: " + title + " text: " + text + " duplicate: " + duplicateNotification)
 

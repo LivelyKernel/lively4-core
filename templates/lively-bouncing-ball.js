@@ -24,6 +24,8 @@ export default class Ball extends Morph {
   }
   
   draw() {
+    
+    foo.bar()
     var context = $(this.shadowRoot).find("#bouncing-ball")[0].getContext('2d');
     context.clearRect(0, 0, 300, 300);
 
