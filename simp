@@ -17,6 +17,10 @@ export default class HTML {
   		}
   	}
   	return Array.from(all);
+  } 
+  
+  static foo() {
+    return 3
   }
   
   // #JENS #ContinueWork here #NotFinished... load/save for tim

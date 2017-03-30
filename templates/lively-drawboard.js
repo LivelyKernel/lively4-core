@@ -23,7 +23,8 @@ export default class LivelyDrawboard extends Morph {
   }
   
   getOffset(obj) {
-    return  obj.getBoundingClientRect()
+    var bounds = obj.getBoundingClientRect()
+    return  pt(bounds.left, bounds.top)
   } 
   
   get color() {
@@ -68,7 +69,6 @@ export default class LivelyDrawboard extends Morph {
   
   initialize() {
     this.lastPath = new Object();
-    this.lastPt = new Object();
 
     var svg = this.get("#svg");
     if (!svg) {
@@ -84,12 +84,9 @@ export default class LivelyDrawboard extends Morph {
         touch-action: none;`
       this.appendChild(svg)
     }
-  
-
     
     this.ctx = this.canvas.getContext("2d");
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
-
 
     lively.addEventListener("drawboard", this.canvas, "pointerdown", 
       (e) => this.onPointerDown(e));
@@ -126,7 +123,7 @@ export default class LivelyDrawboard extends Morph {
    
     this.get("#backgroundColor").value = this.background
     this.get("#penColor").value = this.color
-   this.get("#penSize").value = this.penSize
+    this.get("#penSize").value = this.penSize
    
     this.strokes = new CommandHistory();
     lively.html.registerButtons(this)
@@ -138,9 +135,10 @@ export default class LivelyDrawboard extends Morph {
     if (this.parentElement.isWindow) {
       this.fixedControls = true 
       this.get("#controls").hidden =false 
+
     } else {
+      this.get('#controls').draggable = false
       this.fixedControls = false 
-      this.get("#controls").hidden = true 
     }
     setTimeout(() => {
        this.updateCanvasExtent()  
@@ -196,31 +194,39 @@ export default class LivelyDrawboard extends Morph {
 
 
   onPointerDown(evt) {
+
+    
+    
     var isFocused = document.activeElement == this
     if (!isFocused) {
       this.style['z-index'] = 200
+      evt.preventDefault()
+      
       return this.focus()
     }
     
+    if (evt.pointerType == "touch") {
+      // console.log("ignor touch events for drawing...")
+      return
+    }
+
     if ((evt.pointerType == "mouse" && evt.button == 2) 
         || evt.ctrlKey 
         || ContextMenu.visible()) {
       // context menu
       return;
     }
-    console.log("pointer down " + evt.button)
-    // window.eventRecorder = []
-    window.eventRecorder && window.eventRecorder.push(evt)
     
     evt.stopPropagation();
     evt.preventDefault();
+    
     var id = evt.pointerId;   
-    this.offset  = this.getOffset(this.canvas);
+    this.offset  = this.getOffset(this.svg);
     var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
     path.setAttribute("stroke", this.color);
     path.setAttribute("stroke-width", 2);        
     path.setAttribute("fill", "none");        
-    
+    this.get("#svg").appendChild(path)
     
     if ((evt.pointerType == "pen" && evt.button == 2)
       || evt.altKey ) {
@@ -234,73 +240,79 @@ export default class LivelyDrawboard extends Morph {
     
     
     this.lastPath[id] = path;
-    var x = evt.clientX - this.offset.left;
-    var y = evt.clientY - this.offset.top;
-    
-    this.lastPt[id] = {x: x, y: y} // for canvas
-
-    path.setAttribute("d", "M "+ x +" " + y)
     path.points = []
-    this.get("#svg").appendChild(path)
+    var eventPos = this.eventPos(evt)
+    this.screenOffset = this.eventPos(evt).subPt( pt(evt.clientX, evt.clientY))
 
+    // use screenX and screenY for higher resolution
+    var pos = eventPos.subPt(this.offset).subPt(this.screenOffset)
 
+    path.points.push(pos)
+    this.renderPath(path)
+    
     lively.addEventListener("drawboard", this.canvas, "pointermove", (e) => this.onPointerMove(e), false);
+    
+    // this.setPointerCapture(evt.pointerId);
   }  
+  
+  renderPath(path) {
+    if (!path.points || path.points.length == 0) return 
+    // console.log("render " + path.points)
+    var first, rest;
+    [first, ...rest]= path.points
+    path.setAttribute("d", "M "+ first.x +" " + first.y + 
+      rest.map(ea => "L " + ea.x + " "+ ea.y).join(" "))
+  }
   
   // Event handler called for each pointerdown event:
   onPointerMove(evt) {
-
+    // console.log("move " + (Date.now() - this.lastMove))
+    // this.lastMove = Date.now()
+    
+    // DEBUG
+    // window.eventRecorder = []
+    // window.eventRecorder && window.eventRecorder.push(evt)
     var id = evt.pointerId;   
     var path = this.lastPath[id];
     
     if (!path) return
     
-    
-    var x = evt.clientX - this.offset.left;
-    var y = evt.clientY - this.offset.top;
-    
-    var lastPt = this.lastPt[id];
-    this.ctx.beginPath();
-    this.ctx.moveTo(lastPt.x, lastPt.y);
-    this.ctx.lineTo(x, y);
-    if (path.command == "delete") {
-      this.ctx.strokeStyle = "red"
-      this.ctx.lineWidth=5; 
-    
-    } else {
-      this.ctx.strokeStyle = this.color
-      this.ctx.lineWidth = this.penSize; 
-    }
-    this.ctx.stroke();
-    var p = {x:x, y:y}
-    path.points.push(p)
-    this.lastPt[id] = p;
+    var eventPos = this.eventPos(evt)
+    var pos = eventPos.subPt(this.offset).subPt(this.screenOffset)
+
+    path.points.push(pos)
+    this.renderPath(path)
+
   }
-  
-  
 
   onPointerUp(evt) {
+    // this.releasePointerCapture(evt.pointerId)
+    
+    
     var id = evt.pointerId;
     var path = this.lastPath[id];
     if (!path) return;
-    
-    if (path.points.length == 0) {
-     var x = evt.clientX - this.offset.left;
-     var y = evt.clientY - this.offset.top;
-     // ensure a visible stroke if no pointer was not moved
-     path.points.push({x: x + 1, y: y + 1})
-    }
-    
-    path.setAttribute("d", path.getAttribute("d") + 
-      path.points.map( ea => " L "+ ea.x +" " + ea.y ).join(""))
-  
+    this.lastPointerUp  = Date.now()
 
+    
+    if (path.points.length ==  1) {
+     var pos = this.eventPos(evt).subPt(this.offset).subPt(this.screenOffset)
+     // ensure a visible stroke if no pointer was not moved
+     path.points.push(pos.addPt(pt(1,1)))
+    }
+
+    this.renderPath(path)
+
+    // lively.notify("strokes: " + path.points.length )
+    
+    // path.setAttribute("d", path.getAttribute("d") + 
+    //   path.points.map( ea => " L "+ ea.x +" " + ea.y ).join(""))
 
     lively.removeEventListener("drawboard", this.canvas, "pointermove")    
 
-    delete this.lastPt[id];
+
     delete this.lastPath[id];
-    debugger
+    
     var paperPath =  new this.paper.Path(path.getAttribute("d"))
     
     if (path.command == "delete") {
@@ -330,8 +342,8 @@ export default class LivelyDrawboard extends Morph {
         path.remove();
     } else {
       this.simplifyPath(path)
-      
-    
+      this.get("#svg").appendChild(path)
+
       var command = {
         type: "stroke",
         stroke: path,
@@ -391,11 +403,11 @@ export default class LivelyDrawboard extends Morph {
   }
   
   onContextMenu(evt) {
-    // if (this.lastPointerUp && (this.lastPointerUp - Date.now() < 1000)) {
-    //     evt.stopPropagation();
-    //     evt.preventDefault();
-    //     return; // #HACK custom prevent default....
-    //   }
+      if (this.lastPointerUp && (Date.now() - this.lastPointerUp < 1000)) {
+        evt.stopPropagation();
+        evt.preventDefault();
+        return; // #HACK custom prevent default....
+      }
       
       if (!evt.shiftKey) {
         evt.stopPropagation();
@@ -440,20 +452,61 @@ export default class LivelyDrawboard extends Morph {
     }
   }
   
+  /*
+    // 100% NoPinch
+    window.outerWidth // 1440
+    window.innerWidth  // 1440
+    document.documentElement.clientWidth // 1440
+    
+    // 100% MaxPinch
+    window.outerWidth // 1440
+    window.innerWidth // 360
+    document.documentElement.clientWidth // 1440
+    
+    // 200% NoPinch
+    window.outerWidth // 1440 
+    window.innerWidth // 720
+    document.documentElement.clientWidth // 712
+  */
+  getScreenScale() {
+    return window.innerWidth / window.outerWidth;
+  }
+  
+  eventPos(evt) {
+    // return pt(evt.clientX, evt.clientY)
+
+    var scale = this.getScreenScale()
+    return pt(evt.screenX * scale, evt.screenY * scale)
+  }
+  
   onDragStart(evt) {
-    this.dragOffset = lively.getPosition(this).subPt(pt(evt.clientX, evt.clientY))
+    if (this.fixedControls) return
+    this.dragOffset = lively.getPosition(this).subPt(this.eventPos(evt))
 
     evt.dataTransfer.setDragImage(document.createElement("div"), 0, 0); 
     evt.stopPropagation(); 
   }
   
   onDrag(evt) {
+    if (this.fixedControls) return
+
     if (evt.clientX == 0) return // #Issue bug in browser? Ignore garbage event
-    var pos = pt(evt.clientX, evt.clientY)
+    console.log("drag " + evt.clientX)
+    
+    var pos = this.eventPos(evt)
+    // console.log("drag " + pos.x)
+    
+        // DEBUG
+    // window.eventRecorder = []
+    // window.eventRecorder && window.eventRecorder.push(evt)
+
+    
+    
     lively.setPosition(this, pos.addPt(this.dragOffset))
   }
   
   onDragEnd() {
+    if (this.fixedControls) return
     
   }
   

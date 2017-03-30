@@ -8,10 +8,11 @@ export default class Ball extends Morph {
     
     document.title = "Lively 4 Debug Target"
     
-    this.windowTitle = "Bouncing Ball 2"
+    this.windowTitle = "Bouncing Ball"
     this.hits = 0
-    if (!this.balls)
+    if (!this.balls) {
       this.balls =  [{dx: 1, dy: 2, y: 150, x: 10}]
+    }
   }
   
   attachedCallback() {
@@ -24,15 +25,13 @@ export default class Ball extends Morph {
   
   draw() {
     var context = $(this.shadowRoot).find("#bouncing-ball")[0].getContext('2d');
-    
-    debugger
     context.clearRect(0, 0, 300, 300);
 
     if (!this.balls) return
     this.balls.forEach(ball => {
 
         context.beginPath();
-        context.fillStyle = "green";
+        context.fillStyle = "red";
         context.arc(ball.x, ball.y, 10, 0, Math.PI*2, true);
         context.closePath();
         context.fill();
@@ -60,6 +59,9 @@ export default class Ball extends Morph {
   livelyMigrate(oldInstance) {
     if (oldInstance.balls)
        this.balls = oldInstance.balls
+    if (oldInstance.hits)
+       this.hits = oldInstance.hits
+
   }
 
 }
