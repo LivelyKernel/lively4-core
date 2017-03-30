@@ -201,9 +201,16 @@ export default class Lively {
     if (document.querySelector("lively-console")) {
       console.log(error) 
     } else {
-      lively.notify("Error: ", ""+ error, 10, () =>
-      		  lively.openWorkspace("Error:" + error.message + "\nLine:" + error.lineno + " Col: " + error.colno+"\nSource:" + error.source + "\nError:" + error.stack), 
-            "red");
+      lively.notify("Error: ", error, 10, () => {
+      		lively.openComponentInWindow("lively-error").then( comp => {
+            comp.stack =  error.stack
+            comp.parentElement.setAttribute("title",  "" + error.message)
+            comp.style.height = "max-content"
+            var bounds = comp.getBoundingClientRect()
+            comp.parentElement.style.height = (bounds.height + 20)+ "px"
+            comp.parentElement.style.width = bounds.width + "px"
+          })
+        }, "red");
     }
   }
 

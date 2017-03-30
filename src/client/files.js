@@ -3,7 +3,45 @@
 import focalStorage from './../external/focalStorage.js'
 import generateUuid from './uuid.js'
 
+import sourcemap from 'https://raw.githubusercontent.com/mozilla/source-map/master/dist/source-map.min.js'
+
+
 export default class Files {
+  static parseSourceReference(ref) {
+    if(ref.match("!")) {
+      var url = ref.replace(/\!.*/,"")
+      var args = ref.replace(/.*\!/,"").split(/:/)
+    } else {
+      var m = ref.match(/(.*):([0-9]+):([0-9]+)$/)
+      args = [m[2], m[3]]
+      url = m[1]
+    }
+    
+    var lineAndColumn
+    if (args[0] == "transpiled") {
+      // hide transpilation in display and links
+      var moduleData = System["@@registerRegistry"][url]
+      if (moduleData) {
+      var map = moduleData.metadata.load.sourceMap
+      var smc =  new sourcemap.SourceMapConsumer(map)
+      lineAndColumn = smc.originalPositionFor({
+          line: Number(args[1]),
+          column: Number(args[2])
+        })
+      } else {
+        lineAndColumn = {line: args[1], column: args[2]}
+      }
+    } else {
+      lineAndColumn = {line: args[0], column: args[1]}
+    }
+    lineAndColumn.url = url
+    lineAndColumn.toString = function() {
+        return "" + this.url.replace(lively4url, "") + ":" + this.line + ":" + this.column
+    }
+    return lineAndColumn
+  }
+  
+  
   static fetchChunks(fetchPromise, eachChunkCB, doneCB) {
     fetchPromise.then(function(response) {
         var reader = response.body.getReader();

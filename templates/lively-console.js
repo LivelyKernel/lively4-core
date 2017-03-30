@@ -1,7 +1,9 @@
 import Morph from "./Morph.js"
 
 import * as cop from "src/external/ContextJS/src/contextjs.js"
-import sourcemap from 'https://raw.githubusercontent.com/mozilla/source-map/master/dist/source-map.min.js'
+
+
+import Files from "src/client/files.js"
 
 
 export default class Console extends Morph {
@@ -113,77 +115,19 @@ export default class Console extends Morph {
     this.log("" + src)
     this.log("// " + result)
   }
-  
-  parseSourceReference(ref) {
-    if(ref.match("!")) {
-      var url = ref.replace(/\!.*/,"")
-      var args = ref.replace(/.*\!/,"").split(/:/)
-    } else {
-      var m = ref.match(/(.*):([0-9]+):([0-9]+)$/)
-      args = [m[2], m[3]]
-      url = m[1]
-    }
-    
-    var lineAndColumn
-    if (args[0] == "transpiled") {
-      // hide transpilation in display and links
-      var moduleData = System["@@registerRegistry"][url]
-      if (moduleData) {
-      var map = moduleData.metadata.load.sourceMap
-      var smc =  new sourcemap.SourceMapConsumer(map)
-      lineAndColumn = smc.originalPositionFor({
-          line: Number(args[1]),
-          column: Number(args[2])
-        })
-      } else {
-        lineAndColumn = {line: args[1], column: args[2]}
-      }
-    } else {
-      lineAndColumn = {line: args[0], column: args[1]}
-    }
-    lineAndColumn.url = url
-    lineAndColumn.toString = function() {
-        return "" + this.url.replace(lively4url, "") + ":" + this.line + ":" + this.column
-    }
-    return lineAndColumn
-  }
-  
-  errorStackToSpan(stack) {
-    let span = document.createElement("span") 
-    stack.split("\n").forEach( line => {
-      let lineSpan = document.createElement("span") 
-      var m = line.match(/(.*?)\(?(https?:\/\/.*:[0-9]+:[0-9]+)/)
-      if (m) {
-        var call = m[1]
-        var ref = this.parseSourceReference(m[2])
-        lineSpan.textContent = call
-        var link = document.createElement("a")
-        link.textContent = ref.url.replace(lively4url, "") + "\n"
-        link.href = ref.url
-        link.addEventListener("click", (evt) => {
-          evt.preventDefault()
-          lively.openBrowser(ref.url, true, ref)
-          return true
-        })
-        
-        lineSpan.appendChild(link)
-      } else {
-        lineSpan.textContent = "" + line + "\n"
-      }
-      span.appendChild(lineSpan)
-    })
-    return span
-  }
-  
+
   printError(editor, err) {
     let from = editor.getCursor()
     // editor.replaceSelection("" + err.stack);
     editor.replaceSelection("XXX");
     let to = editor.getCursor()
 
-    let widget = document.createElement("pre")
-    widget.style.color = "red"
-    widget.appendChild(this.errorStackToSpan(err.stack))
+    let widget = document.createElement("lively-error")
+    
+    lively.components.openIn(document.body, widget).then( comp => {
+      widget.stack =  err.stack
+    })
+    widget.remove()
     editor.markText(from, to, {
       replacedWith: widget,
       handleMouseEvents: false,
@@ -295,7 +239,7 @@ export default class Console extends Morph {
       // annotation.style.clear = "both"
       annotation.style.float = "right"
      
-      var ref =  this.parseSourceReference(right) 
+      var ref =  Files.parseSourceReference(right) 
       if (ref) {
         annotation.textContent = "" + ref
       }
