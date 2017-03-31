@@ -35,11 +35,27 @@ export default class ContextMenu {
     return lively.openComponentInWindow(name, pt(evt.pageX, evt.pageY), undefined, worldContext);
   }
   
-  static openInWindow(comp, evt) {
+  static openInWindow(comp, worldContext, evt) {
     var pos = lively.getPosition(comp);
 	  lively.components.openInWindow(comp, pos).then( comp => {
 	     lively.setPosition(comp, pt(0,0));
 	  });
+  }
+  
+  static positionElementAtEvent(element,worldContext,  evt) {
+    evt = this.firstEvent || evt;
+    
+    var pos = pt(evt.clientX, evt.clientY);
+    var bodyBounds = document.body.getBoundingClientRect()
+    var offset = pt(bodyBounds.left, bodyBounds.top)
+    
+    if (worldContext.localizePosition) { 
+      pos = worldContext.localizePosition(pos);
+    } else {
+      var bodyBounds = document.body.getBoundingClientRect()
+      pos = pos.subPt(pt(bodyBounds.left, bodyBounds.top))
+    }
+    lively.setPosition(element, pos);
   }
   
   static targetMenuItems(target) {
@@ -116,36 +132,37 @@ export default class ContextMenu {
           text.innerHTML = "Hello";
           text.contentEditable = true;
           worldContext.appendChild(text);
-          var pos = pt(evt.pageX, evt.pageY);
-          if (worldContext.localizePosition) pos = worldContext.localizePosition(pos);
+          this.positionElementAtEvent(text, worldContext, evt)
+
           if (worldContext === document.body) {
             text.classList.add("lively-content")
           }
-          lively.setPosition(text, pos);
           this.hide();
         }],
         ["Rectangle", (evt) => {
           var morph  = document.createElement("div");
           morph.style.width = "200px";
           morph.style.height = "100px";
-          var pos = pt(evt.pageX, evt.pageY);
-          if (worldContext.localizePosition) pos = worldContext.localizePosition(pos);
-          lively.setPosition(morph, pos);
+          morph.style.border = "1px solid black"
+          this.positionElementAtEvent(morph, worldContext, evt)
+    
           // morph.style.backgroundColor = "blue";
           if (worldContext === document.body) {
             morph.classList.add("lively-content")
           }
-          morph.style.backgroundColor = 'rgba(40,40,40,0.5)';
+          morph.style.backgroundColor = 'rgba(40,40,80,0.5)';
           worldContext.appendChild(morph);
+          window.that = morph
+          HaloService.showHalos(morph);
+
           this.hide();
         }],
          ["Drawing", (evt) => {
           var morph  = document.createElement("lively-drawboard");
           morph.setAttribute("width", "400px");
           morph.setAttribute("height", "400px");
-          var pos = pt(evt.pageX, evt.pageY);
-          if (worldContext.localizePosition) pos = worldContext.localizePosition(pos);
-          lively.setPosition(morph, pos);
+          this.positionElementAtEvent(morph, worldContext, evt)
+
           // morph.style.backgroundColor = "blue";
           if (worldContext === document.body) {
             morph.classList.add("lively-content")
@@ -244,6 +261,7 @@ export default class ContextMenu {
   
   static openIn(container, evt, target, worldContext, optItems) {
     this.hide();
+    this.firstEvent = evt
     lively.addEventListener("contextMenu", document.documentElement, "click", () => {
       this.hide();
     }, true);

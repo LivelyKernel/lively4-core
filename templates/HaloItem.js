@@ -50,8 +50,8 @@ export default class HaloItem extends Morph {
     this.start(evt);
 
     // attach mousemove handler to body only after mousedown occured
-    lively.removeEventListener("Drag", document.body, 'mousemove')
-    lively.addEventListener("Drag", document.body, 'mousemove', (dragEvt) => {
+    lively.removeEventListener("Drag", document.body.parentElement, 'mousemove')
+    lively.addEventListener("Drag", document.body.parentElement, 'mousemove', (dragEvt) => {
       this.move(dragEvt);
       // update position of halos on mousemove
       HaloService.showHalos(window.that);
@@ -64,7 +64,7 @@ export default class HaloItem extends Morph {
       var wasDragging = this.isDragging;
       this.stop(evt);
       // detach mousemove handler from body
-      lively.removeEventListener("Drag", document.body, 'mousemove')
+      lively.removeEventListener("Drag", document.body.parentElement, 'mousemove')
     
       if (wasDragging) {
         HaloService.showHalos(window.that);

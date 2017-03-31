@@ -696,9 +696,9 @@ export default class Lively {
     if (!elem || !elem.getBoundingClientRect) return ;
     var comp = document.createElement("div");
     var bounds = elem.getBoundingClientRect();
-    var pos = lively.pt(
-      bounds.left +  $(document).scrollLeft(),
-      bounds.top +  $(document).scrollTop());
+    var bodyBounds = document.body.getBoundingClientRect()
+    var offset = pt(bodyBounds.left, bodyBounds.top)
+    var pos = pt(bounds.left, bounds.top).subPt(offset);
 
     comp.style.width = bounds.width +"px";
     comp.style.height = bounds.height +"px";
@@ -814,7 +814,7 @@ export default class Lively {
 
   static openComponentInWindow(name, pos, extent, worldContext) {
     worldContext = worldContext || document.body
-    var lastWindow = _.first(lively.array(worldContext.querySelectorAll("lively-window")));
+    // var lastWindow = _.first(lively.array(worldContext.querySelectorAll("lively-window")));
   
   
     var w = document.createElement("lively-window");
@@ -822,13 +822,13 @@ export default class Lively {
       w.style.width = extent.x;
       w.style.height = extent.y;
     }
-    if (lastWindow) {
-      var lastPos = lively.getPosition(lastWindow);
-      var windowWidth = w.getBoundingClientRect().width;
-      if (lastPos !== undefined && windowWidth !== undefined) {
-        lively.setPosition(w, lastPos.addPt(pt(25,25)));
-      }      
-    }
+    // if (lastWindow) {
+    //   var lastPos = lively.getPosition(lastWindow);
+    //   var windowWidth = w.getBoundingClientRect().width;
+    //   if (lastPos !== undefined && windowWidth !== undefined) {
+    //     lively.setPosition(w, lastPos.addPt(pt(25,25)));
+    //   }      
+    // }
     return components.openIn(worldContext, w, true).then((w) => {
     	return components.openIn(w, document.createElement(name)).then((comp) => {
     	  if (pos) 

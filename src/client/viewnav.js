@@ -40,8 +40,9 @@ export default class ViewNav {
   }
   
   onPointerDown(evt) {
-    if (!evt.ctrlKey)
+    if (!evt.ctrlKey || evt.button != 0)
       return;
+      
     this.showDocumentGrid()
     this.eventOffset = this.eventPos(evt)
     this.originalPos = lively.getPosition(this.target)
@@ -79,6 +80,7 @@ export default class ViewNav {
     		div.livelyAcceptsDrop = function() {}
     		div.setAttribute("data-lively4-donotpersist", "all")
     		div.style.pointerEvents = "none"
+    		div.style.zIndex = -100
     		div.classList.add("document-grid")
     		document.body.appendChild(div)
     	})
@@ -98,3 +100,5 @@ export default class ViewNav {
 } 
 
 // ViewNav.enable(document.body)
+
+

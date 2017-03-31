@@ -78,6 +78,11 @@ export default class LivelyDrawboard extends Morph {
       this.appendChild(svg)
     }
     
+    // we cannot disable the events here, because we need them for drawing
+    // the downside is, that the SVG element shows up in the Halo
+    // svg.style.pointerEvents = "none"
+    
+    
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
 
     lively.addEventListener("drawboard", this.svg, "pointerdown", 
@@ -457,7 +462,7 @@ export default class LivelyDrawboard extends Morph {
   
   onDragStart(evt) {
     if (this.fixedControls) return
-    this.dragOffset = lively.getPosition(this).subPt(this.eventPos(evt))
+    this.dragOffset = lively.getPosition(this).subPt( pt(evt.clientX, evt.clientY))
 
     evt.dataTransfer.setDragImage(document.createElement("div"), 0, 0); 
     evt.stopPropagation(); 
@@ -468,7 +473,7 @@ export default class LivelyDrawboard extends Morph {
 
     if (evt.clientX == 0) return // #Issue bug in browser? Ignore garbage event
     
-    var pos = this.eventPos(evt)
+    var pos =  pt(evt.clientX, evt.clientY)
     // console.log("drag " + pos.x)
     
         // DEBUG

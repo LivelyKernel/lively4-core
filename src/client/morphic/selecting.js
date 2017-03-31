@@ -7,11 +7,11 @@ export default class Selecting {
     // use capture to prevent the default behavior...
     lively.removeEventListener("selecting"); // in case of a reload
     // #UseCase #COP get rid of the explict "selecting" context/domain and replace it with the context of the module "Selecting.js"
-    lively.addEventListener("selecting", document.body, 'mousedown', 
+    lively.addEventListener("selecting", document.body.parentElement, 'mousedown', 
       (evt) => this.handleMouseDown(evt), true);
-    lively.addEventListener("selecting", document.body, 'mouseup', 
+    lively.addEventListener("selecting", document.body.parentElement, 'mouseup', 
       (evt) => this.handleMouseUp(evt), true);
-    lively.addEventListener("selecting", document.body, 'click', 
+    lively.addEventListener("selecting", document.body.parentElement, 'click', 
       (evt) => this.handleSelect(evt), true);
   }
 
@@ -70,6 +70,7 @@ export default class Selecting {
 
 
   static showHalos(el, path) {
+    path = path || []
     if (this.lastIndicator) $(this.lastIndicator).remove();
     this.lastIndicator = lively.showElement(el);
     var div = document.createElement("div")
