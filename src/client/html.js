@@ -208,10 +208,20 @@ export default class HTML {
     });
     if (oldActiveElement) oldActiveElement.focus()
       
-    worldContext.querySelectorAll(":scope > lively-window, :scope > .lively-content").forEach( ea => {
+    lively.array(worldContext.querySelectorAll(":scope > lively-window, :scope > .lively-content")).filter(ea => {
+      return !this.hasDoNotPersistTag(ea)
+    }).forEach( ea => {
       source += ea.outerHTML + "\n"
     });
     return source
+  }
+  
+  static hasDoNotPersistTag(node, checkForChildrenValueToo = false) {
+    return node.attributes
+        && node.attributes.hasOwnProperty('data-lively4-donotpersist')
+        && (checkForChildrenValueToo ?
+            node.dataset.lively4Donotpersist == 'children' || node.dataset.lively4Donotpersist == 'all' :
+            node.dataset.lively4Donotpersist == 'all');
   }
 
 

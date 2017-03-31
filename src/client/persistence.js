@@ -6,6 +6,8 @@ export function isCurrentlyCloning() {
     return sessionStorage["lively.persistenceCurrentlyCloning"] === 'true';
 }
 
+
+
 export default class Persistence {
   
   constructor() {
@@ -134,6 +136,9 @@ export default class Persistence {
       characterData: true, 
       attributes: true});
   }
+  
+  
+  
   
 }
 Persistence.disable()

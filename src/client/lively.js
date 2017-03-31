@@ -38,6 +38,8 @@ import {pt} from './graphics.js';
 
 import Dialog from 'templates/lively-dialog.js'
 
+import ViewNav from 'src/client/viewnav.js'
+
 
 // a) Special shorthands for interactive development
 // b) this is the only reasonable way to use modules in template scripts, due to no shared lexical scope #TODO
@@ -537,22 +539,29 @@ export default class Lively {
         document.head.appendChild(titleTag);
       }
 
+      document.body.style.backgroundColor = "rgb(240,240,240)"
+      ViewNav.enable(document.body)
+
       if (loadContainer) {
+        
         var container = document.createElement("lively-container");
         container.id = 'main-content';
         container.setAttribute("load", "auto");
-        container.style.width = "calc(100%)";
-        container.style.height = "calc(100%)";
-        container.style.position = "fixed";
-        container.setAttribute("data-lively4-donotpersist","all");
-
-        await components.openIn(document.body, container).then( () => {
+        
+        
+        
+        await components.openInWindow(container).then( () => {
           container.__ingoreUpdates = true; // a hack... since I am missing DevLayers...
           container.get('#container-content').style.overflow = "visible";
+          container.parentElement.toggleMaximize()
+          container.parentElement.setAttribute("data-lively4-donotpersist","all");
+
         });
+
     
         return 
       } 
+      
     }
   }
   

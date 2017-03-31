@@ -316,7 +316,7 @@ export default class ComponentLoader {
     } else {
       parent.appendChild(component);
     }
-    this.loadUnresolved(document.body, true, "openIn " + component);
+    this.loadUnresolved(parent, true, "openIn " + component);
 
     return compPromise;
   }

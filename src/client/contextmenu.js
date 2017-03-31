@@ -5,6 +5,7 @@
   
 import html from './html.js';
 import {pt} from './graphics.js';
+import ViewNav from 'src/client/viewnav.js'
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
@@ -201,6 +202,9 @@ export default class ContextMenu {
       //   "",'<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'
       //   ],
       // #TODO use sub menues here
+
+      ["Reset View", (evt) => ViewNav.resetView(), 
+        "",'<i class="fa fa-window-restore" aria-hidden="true"></i>'],
       
       !document.webkitIsFullScreen ?
           ["Enter Fullscreen", (evt) => {
@@ -249,13 +253,21 @@ export default class ContextMenu {
       if (this.menu) this.menu.remove()
       this.menu = menu;
       if (evt) {
-        var xOffset = 0;
+        var offset = pt(0, 0);
+        offset = offset.addPt(pt(menuWidth,0));
+
+        // #TODO implement global to local transformations...
+        var bodyBounds = document.body.getBoundingClientRect()
+        offset = offset.addPt(pt(bodyBounds.left, bodyBounds.top));
+        
         var menuWidth = menu.clientWidth;
-        var bodyWidth = $('body')[0].clientWidth;
-        if (evt.pageX + menuWidth > bodyWidth) {
-          xOffset = menuWidth;
+        var bodyWidth = bodyBounds.clientWidth;
+        // #TODO does it work for transformations?
+        if (evt.clientX + menuWidth > bodyWidth) {
+          offset = offset.addPt(pt(menuWidth,0));
         }
-        lively.setPosition(menu, pt(evt.pageX - xOffset, evt.pageY));
+        
+        lively.setPosition(menu, pt(evt.clientX, evt.clientY).subPt(offset));
       }
       menu.openOn(optItems || this.items(target, worldContext), evt).then(() => {
       });
