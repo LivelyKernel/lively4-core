@@ -86,6 +86,15 @@ if (window.lively && window.lively4url) {
         'systemjs-plugin-babel': lively4url + '/src/external/babel/plugin-babel.js',
         'systemjs-babel-build': lively4url + '/src/external/babel/systemjs-babel-browser.js',
         'kernel': lively4url + '/src/client/legacy-kernel.js',
+
+        // aexpr support
+        'active-expressions': lively4url + '/src/external/aexpr/active-expressions/src/active-expressions.js',
+        'aexpr-source-transformation-propagation': lively4url + '/src/external/aexpr/aexpr-source-transformation-propagation/src/aexpr-source-transformation-propagation.js',
+        'babel-plugin-aexpr-source-transformation': lively4url + '/src/external/aexpr/babel-plugin-aexpr-source-transformation/index.js',
+        'babel-plugin-locals': lively4url + '/src/external/aexpr/babel-plugin-locals/index.js',
+        'stack-es2015-modules': lively4url + '/src/external/aexpr/stack-es2015-module/src/stack.js',
+
+        // support for doits
         'babel-plugin-doit-result': lively4url + '/src/external/babel-plugin-doit-result.js',
         'babel-plugin-doit-this-ref': lively4url + '/src/external/babel-plugin-doit-this-ref.js',
         'babel-plugin-locals': lively4url + '/src/external/babel-plugin-locals.js',
@@ -109,6 +118,8 @@ if (window.lively && window.lively4url) {
         [lively4url + '/src/external/babel-plugin-*.js']: moduleOptionsNon,
         [lively4url + '/src/external/ContextJS/src/*.js']: moduleOptionsNon,
         //['']: moduleOptionsNon,
+        // blacklist all projects included for active expressions
+        [lively4url + '/src/external/aexpr/*.js']: moduleOptionsNon,
         '*.js': {
           babelOptions: {
             es2015: false,
@@ -129,7 +140,8 @@ if (window.lively && window.lively4url) {
               'babel-plugin-locals',
               'babel-plugin-doit-result',
               'babel-plugin-doit-this-ref',
-              'babel-plugin-var-recorder'
+              'babel-plugin-var-recorder',
+              'babel-plugin-aexpr-source-transformation'
             ]
           },
           loader: 'workspace-loader'
