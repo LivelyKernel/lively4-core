@@ -1,0 +1,1 @@
+let r = Number.POSITIVE_INFINITY;
