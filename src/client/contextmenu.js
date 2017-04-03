@@ -168,7 +168,7 @@ export default class ContextMenu {
             morph.classList.add("lively-content")
           }
           morph.style.backgroundColor = 'rgb(255,250,205)';
-          worldContext.appendChild(morph);
+          lively.components.openIn(worldContext, morph);
           this.hide();
         }]
       ]],

@@ -15,18 +15,6 @@ export default class Selecting {
       (evt) => this.handleSelect(evt), true);
   }
 
-  static handleSelect(e) {
-    
-    if (e.ctrlKey || e.metaKey) {
-      if (e.target.getAttribute("data-is-meta") === "true") {
-          return;
-      }
-      // console.log("click" + e.path[0])
-      this.onMagnify(e);
-      e.stopPropagation();
-      e.preventDefault();
-    }
-  }
 
   static handleMouseDown(e) {
     // lively.showElement(e.path[0])
@@ -49,22 +37,48 @@ export default class Selecting {
       }
     }
   }
+  
+  static isIgnoredOnMagnify(element) {
+    return !(element instanceof HTMLElement) 
+      || element instanceof ShadowRoot 
+      || element instanceof HTMLContentElement 
+      || element.getAttribute("data-is-meta") 
+      || (element.tagName == "I" && element.classList.contains("fa")) // font-awesome icons
+      || (element.tagName == "A") // don't go into text, just structural 
+      || element === window 
+      || element === document 
+      || element === document.body 
+      || element === document.body.parentElement // <HTML> element
+  }
 
-  static onMagnify(e) {
-    var grabTarget = e.target;
-    if (e.shiftKey)
-        grabTarget = e.path[0];
+  static handleSelect(e) {
+    lively.notify("select " + e.target)
+    if (e.ctrlKey || e.metaKey) {
+      var path = e.path.reverse().filter(ea => ! this.isIgnoredOnMagnify(ea))
+      if (e.shiftKey) {
+        var idx = e.path.indexOf(document.body);
+        path= path.reverse();
+      }
+      this.onMagnify(path[0], e, path);
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }
+
+  static onMagnify(target, e, path) {
+
+    var grabTarget = target;
     var that = window.that;
     // console.log("onMagnify " + grabTarget + " that: " + that);
-    var parents = _.reject(e.path, 
-        ea =>  ea instanceof ShadowRoot || ea instanceof HTMLContentElement || !(ea instanceof HTMLElement));
+    var parents = _.reject(path, 
+        ea =>  this.isIgnoredOnMagnify(ea))
     if (that && this.areHalosActive()) {
       var index = parents.indexOf(that);
       grabTarget = parents[index + 1] || grabTarget;
     }
     // if there was no suitable parent, cycle back to the clicked element itself
     window.that = grabTarget;
-    this.showHalos(grabTarget, parents || e.path);
+    this.showHalos(grabTarget, parents || path);
   }
 
 

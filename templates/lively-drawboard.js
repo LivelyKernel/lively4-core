@@ -78,6 +78,8 @@ export default class LivelyDrawboard extends Morph {
       this.appendChild(svg)
     }
     
+    svg.setAttribute("data-is-meta", true)
+    
     // we cannot disable the events here, because we need them for drawing
     // the downside is, that the SVG element shows up in the Halo
     // svg.style.pointerEvents = "none"
