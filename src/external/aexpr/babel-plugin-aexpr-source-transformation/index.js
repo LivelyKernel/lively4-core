@@ -185,6 +185,14 @@ export default function(param) {
                                 return;
                             }
 
+                            // property local of ExportStatement
+                            if(
+                                t.isExportSpecifier(path.parent) &&
+                                path.parentKey === 'local'
+                            ) {
+                                return;
+                            }
+
                             if(
                                 // TODO: is there a general way to exclude non-variables?
                             !(t.isImportNamespaceSpecifier(path.parent) && path.parentKey === 'local') &&
@@ -205,6 +213,7 @@ export default function(param) {
                             !t.isVariableDeclarator(path.parent) &&
                             !t.isFunctionDeclaration(path.parent) &&
                             !(t.isArrowFunctionExpression(path.parent) && path.parentKey === 'params') &&
+                            !(t.isExportSpecifier(path.parent) && path.parentKey === 'exported') &&
                             !(t.isFunctionExpression(path.parent) && path.parentKey === 'params') &&
                             !t.isRestElement(path.parent) &&
                             (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
