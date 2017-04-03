@@ -52,7 +52,6 @@ export default class Selecting {
   }
 
   static handleSelect(e) {
-    lively.notify("select " + e.target)
     if (e.ctrlKey || e.metaKey) {
       var path = e.path.reverse().filter(ea => ! this.isIgnoredOnMagnify(ea))
       if (e.shiftKey) {
@@ -87,14 +86,16 @@ export default class Selecting {
     path = path || []
     if (this.lastIndicator) $(this.lastIndicator).remove();
     this.lastIndicator = lively.showElement(el);
-    var div = document.createElement("div")
     
-    div.innerHTML = path.reverse().map(ea => (ea === el ? "<b>" : "") + (ea.tagName ? ea.tagName : "") + " " + (ea.id ? ea.id : "") 
-      + " " + (ea.getAttribute && ea.getAttribute("class")) + (ea === el ? "</b>" : "")).join("<br>")
-    this.lastIndicator.appendChild(div)
-    
-    div.style.fontSize = "8pt"
-    div.style.color = "gray"
+    if (this.lastIndicator) {
+      var div = document.createElement("div")
+      div.innerHTML = path.reverse().map(ea => (ea === el ? "<b>" : "") + (ea.tagName ? ea.tagName : "") + " " + (ea.id ? ea.id : "") 
+        + " " + (ea.getAttribute && ea.getAttribute("class")) + (ea === el ? "</b>" : "")).join("<br>")
+      this.lastIndicator.appendChild(div)
+      
+      div.style.fontSize = "8pt"
+      div.style.color = "gray"
+    }
     HaloService.showHalos(el, path);
   }
 
