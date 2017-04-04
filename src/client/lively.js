@@ -656,8 +656,12 @@ export default class Lively {
     comp.style.backgroundColor = 'rgba(255,0,0,0.5)';
     comp.style.zIndex = 1000;
     comp.isMetaNode = true;
+
+    var bodyBounds = document.body.getBoundingClientRect()
+    
+
     document.body.appendChild(comp);
-    lively.setPosition(comp, point);
+    lively.setPosition(comp, point.subPt(pt(bodyBounds.left, bodyBounds.top)));
     comp.setAttribute("data-is-meta", "true");
 
     setTimeout( () => $(comp).remove(), 3000);

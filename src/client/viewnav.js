@@ -22,23 +22,51 @@ export default class ViewNav {
   enable() {
     this.eventSource =  document.body.parentElement
     lively.addEventListener("ViewNav", this.eventSource, "pointerdown", e => this.onPointerDown(e))
-    lively.addEventListener("ViewNav", this.eventSource, "resize", e => this.onResize(e))
+
+    lively.addEventListener("ViewNav", window, "resize", e => this.onResize(e))
+    // lively.addEventListener("ViewNav", window, "keydown", e => this.onKeyDown(e))
+    // lively.addEventListener("ViewNav", window, "keyup", e => this.onKeyUp(e))
+
+    lively.addEventListener("ViewNav", window, "mousewheel", e => this.onMouseWheel(e))
+
 
   }
   
   disable() {
     lively.removeEventListener("ViewNav", this.eventSource)
-    
+    lively.removeEventListener("ViewNav", window, "resize")
+    lively.removeEventListener("ViewNav", window, "keydown")
+    lively.removeEventListener("ViewNav", window, "keyup")
+    lively.removeEventListener("ViewNav", window, "mousewheel")
   }
   
   eventPos(evt) {
     return pt(evt.clientX, evt.clientY)
   }
-  
-  onResize(evt) {
-    lively.notify("resize")
+
+  onKeyDown(evt) {
+    if (event.keyCode == 17) {
+        lively.notify("ctrl down ")     
+      // lively.addEventListener("ViewNav", this.eventSource, "pointermove", 
+      //   e => this.onPointerMoveZoom(e))   
+    }
   }
   
+  onKeyUp(evt) {
+    if (event.keyCode == 17) {
+        lively.notify("ctrl up ")
+        lively.removeEventListener("ViewNav", this.eventSource, "pointermove")   
+
+    }
+  }
+
+  onPointerMoveZoom(evt) {
+    var pos = this.eventPos(evt)
+    lively.showPoint(pos)
+  }
+  
+
+
   onPointerDown(evt) {
     if (!evt.ctrlKey || evt.button != 0)
       return;
@@ -60,6 +88,37 @@ export default class ViewNav {
     this.hideDocumentGrid()
     lively.removeEventListener("ViewNav", this.eventSource, "pointermove")
     lively.removeEventListener("ViewNav", this.eventSource, "pointerup")
+  }
+  
+  onResize(evt) {
+
+
+    // this.lastPoint = pt(LastEvt.clientX, LastEvt.clientY)
+    var scale = window.innerWidth / window.outerWidth
+    // lively.notify("scale " + (scale / this.lastScale))
+
+    var newPos = this.lastPoint.scaleBy(scale / this.lastScale)
+    var offset = this.lastPoint.subPt(newPos)
+    lively.setPosition(document.body, lively.getPosition(document.body).subPt(offset) )
+
+    // lively.showPoint(newPos).style.backgroundColor = "green"
+  }
+  
+  onMouseWheel(evt) {
+    // window.LastEvt = evt
+    var bounds = document.body.getBoundingClientRect()
+    // lively.notify("wheel bounds " + pt(bounds.left, bounds.top))
+
+    this.lastPoint = pt(evt.clientX, evt.clientY)
+    this.lastScale = window.innerWidth / window.outerWidth
+    
+    // lively.showPoint(this.lastPoint).style.backgroundColor = "blue"
+    // lively.showPoint(pt(LastEvt.pageX, LastEvt.pageY))
+    
+    if (evt.altKey) {
+      
+    }
+    
   }
   
   showDocumentGrid() {
@@ -99,6 +158,7 @@ export default class ViewNav {
   
 } 
 
-// ViewNav.enable(document.body)
+if (window.lively)
+  ViewNav.enable(document.body)
 
 
