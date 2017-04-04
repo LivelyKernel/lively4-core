@@ -590,8 +590,9 @@ export default class Lively {
     components.loadUnresolved();
   }
 
-   static unload() {
-      lively.notify("unloading Lively is not supported yet! Please reload page....");
+  static unload() {
+      
+    lively.notify("unloading Lively is not supported yet! Please reload page....");
   }
 
   static async updateTemplate(html) {
@@ -977,6 +978,13 @@ export default class Lively {
         .map(ea => ea.replace(/\(.*?\)/,""))
         .join("\n")
     }
+  }
+  
+  static onUnload() {
+    // #TODO How to deal with multiple open lively pages? 
+    // last closing site wins!
+    // #IDEA: we could versionize the local content and saving to it will merge in conflicting changes first? But for this to work, we would need a change history in our local storage, too?
+    persistence.current().saveLivelyContent()
   }
   
 }

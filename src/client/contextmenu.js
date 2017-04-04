@@ -111,10 +111,10 @@ export default class ContextMenu {
         lively.openWorkspace("", pt(evt.pageX, evt.pageY), worldContext);
       }, "CMD+K", '<i class="fa fa-window-maximize" aria-hidden="true"></i>'],
       ["Browse/Edit", (evt) => {
+          var container = _.last(document.querySelectorAll("lively-container"));
           this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
-            var container = _.last(document.querySelectorAll("lively-container"));
             if (container)
-              comp.followPath("" +container.getURL());
+              comp.followPath("" + container.getURL());
             else
               comp.followPath(lively4url +"/");
             comp.parentElement.style.width = "850px";
@@ -218,7 +218,6 @@ export default class ContextMenu {
       //   },
       //   "",'<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'
       //   ],
-      // #TODO use sub menues here
 
       ["Reset View", (evt) => ViewNav.resetView(), 
         "",'<i class="fa fa-window-restore" aria-hidden="true"></i>'],

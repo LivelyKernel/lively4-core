@@ -105,7 +105,9 @@ export default class ViewNav {
   }
   
   onMouseWheel(evt) {
-    // window.LastEvt = evt
+    window.LastEvt = evt
+    
+    
     var bounds = document.body.getBoundingClientRect()
     // lively.notify("wheel bounds " + pt(bounds.left, bounds.top))
 
@@ -116,7 +118,19 @@ export default class ViewNav {
     // lively.showPoint(pt(LastEvt.pageX, LastEvt.pageY))
     
     if (evt.altKey) {
+      // finder granular zoom? using non standard feature
+      var zoom = Number(getComputedStyle(document.body).zoom) + (evt.wheelDelta / 1000 / 10)
+      document.body.style.zoom= zoom
+
+
+      // // zoom using CSS Transform
+      // var scale = document.body._scale || 1
+      // scale = scale + (evt.wheelDelta / 1000 / 5)
+      // document.body._scale = scale
+      // document.body.style.transform= "scale(" + scale + ")"
       
+      lively.notify("zoom " + zoom)
+      evt.preventDefault()
     }
     
   }

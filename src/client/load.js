@@ -67,8 +67,13 @@ if ('serviceWorker' in navigator || window.lively4chrome) {
         });
         if (!window.__karma__) {
           window.onbeforeunload = function(e) {
-            return 'Do you really want to leave this page?';
+            return 'Do you really want to leave this page?'; // gets overriden by Chrome native
           };
+          
+          window.onunload = function(e) {
+            lively.onUnload && lively.onUnload()
+          };
+          
         }
         console.log("lively loaded");
       });

@@ -144,6 +144,8 @@ export default class Halo extends Morph {
   
   
   static hideHalos() {
+    if (HaloService.lastIndicator)
+      HaloService.lastIndicator.remove()
     if (this.areHalosActive())
       this.halosHidden = Date.now();
     this.halo.offset({left:0, top: 0});

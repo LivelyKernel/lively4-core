@@ -84,18 +84,24 @@ export default class Selecting {
 
   static showHalos(el, path) {
     path = path || []
-    if (this.lastIndicator) $(this.lastIndicator).remove();
-    this.lastIndicator = lively.showElement(el);
     
-    if (this.lastIndicator) {
-      var div = document.createElement("div")
-      div.innerHTML = path.reverse().map(ea => (ea === el ? "<b>" : "") + (ea.tagName ? ea.tagName : "") + " " + (ea.id ? ea.id : "") 
-        + " " + (ea.getAttribute && ea.getAttribute("class")) + (ea === el ? "</b>" : "")).join("<br>")
-      this.lastIndicator.appendChild(div)
+    if (HaloService.lastIndicator) $(this.lastIndicator).remove();
+    HaloService.lastIndicator = lively.showElement(el);
+  
+    
+    if (HaloService.lastIndicator) {
+      HaloService.lastIndicator.style.border = "1px dashed blue"
+      HaloService.lastIndicator.querySelector("pre").style.color = "blue"
+
+    //   var div = document.createElement("div")
+    //   div.innerHTML = path.reverse().map(ea => (ea === el ? "<b>" : "") + (ea.tagName ? ea.tagName : "") + " " + (ea.id ? ea.id : "") 
+    //     + " " + (ea.getAttribute && ea.getAttribute("class")) + (ea === el ? "</b>" : "")).join("<br>")
+    //   this.lastIndicator.appendChild(div)
       
-      div.style.fontSize = "8pt"
-      div.style.color = "gray"
+    //   div.style.fontSize = "8pt"
+    //   div.style.color = "gray"
     }
+    
     HaloService.showHalos(el, path);
   }
 
