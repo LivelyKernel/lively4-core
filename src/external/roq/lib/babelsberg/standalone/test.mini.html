@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+	<head>
+	<title>Babelsberg/JS</title>
+	<script src="babelsberg.mini.prototype.js"></script>
+	<!-- // Tests -->
+	<script src="test_harness.js"></script>
+	<script src="../babelsberg/tests.js"></script>
+	
+	<script type="text/javascript">
+		obj = {a: 1, b: 2}
+		s = new ClSimplexSolver();
+		bbb.always({solver: s, ctx: {obj: obj}}, function () {
+			return obj.a + 7 <= obj.b
+		});
+		obj.a = 10;
+		console.log(obj.a, obj.b);
+		
+		ct = new users.timfelgentreff.babelsberg.tests.ConstraintTest();
+		ct.runAll();
+		p = new users.timfelgentreff.babelsberg.tests.PropagationTest();
+		p.runAll();
+		it = new users.timfelgentreff.babelsberg.tests.InteractionTest();
+		it.runAll();
+	</script>
+	
+	</head>
+	<body>
+	</body>
+</html>

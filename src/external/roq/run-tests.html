@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Tests</title>
+    <link type="text/css" rel="stylesheet" href="node_modules/mocha/mocha.css" />
+    <meta http-equiv="cache-control" content="no-cache" />
+    <meta http-equiv="pragma" content="no-cache" />
+  </head>
+  <body>
+    <div id="mocha"></div>
+    <!-- // polyfilling for phantom js -->
+    <script type="text/javascript" src="node_modules/smap/smap-shim.js"></script>
+    <script type="text/javascript" src="node_modules/es6-collections/es6-collections.js"></script>
+    <script type="text/javascript" src="polyfills/array.include.js"></script>
+
+    <!-- // test helper-->
+    <script type="text/javascript" src="tests/helper.js"></script>
+    <script type="text/javascript" src="tests/mocha-bundle.js"></script>
+
+    <!-- // mini lively -->
+    <script src="lib/babelsberg/standalone/prototype.js"></script>
+    <script src="lib/babelsberg/standalone/minilively.js"></script>
+
+    <!-- // cop.Layers -->
+    <script src="lib/babelsberg/cop/Layers.js"></script>
+
+    <!-- // ometa.lively -->
+    <script src="lib/babelsberg/ometa/lib.js"></script>
+    <script src="lib/babelsberg/ometa/ometa-base.js"></script>
+    <script src="lib/babelsberg/ometa/parser.js"></script>
+    <script src="lib/babelsberg/ometa/ChunkParser.js"></script>
+    <script src="lib/babelsberg/ometa/bs-ometa-compiler.js"></script>
+    <script src="lib/babelsberg/ometa/bs-js-compiler.js"></script>
+    <script src="lib/babelsberg/ometa/bs-ometa-js-compiler.js"></script>
+    <script src="lib/babelsberg/ometa/bs-ometa-optimizer.js"></script>
+    <script src="lib/babelsberg/ometa/lk-parser-extensions.js"></script>
+    <!-- // lively.Ometa -->
+    <script src="lib/babelsberg/ometa/Ometa.js"></script>
+    <!-- // lively.Interpreter -->
+    <script src="lib/babelsberg/jsinterpreter/generated/Nodes.js"></script>
+    <script src="lib/babelsberg/jsinterpreter/generated/Translator.js"></script>
+    <script src="lib/babelsberg/jsinterpreter/LivelyJSParser.js"></script>
+    <script src="lib/babelsberg/jsinterpreter/Parser.js"></script>
+    <script src="lib/babelsberg/jsinterpreter/Meta.js"></script>
+    <script src="lib/babelsberg/jsinterpreter/Rewriting.js"></script>
+    <script src="lib/babelsberg/jsinterpreter/Interpreter.js"></script>
+    <!-- // Babelsberg/js -->
+    <script src="lib/babelsberg/babelsberg/core_ext.js"></script>
+    <script src="lib/babelsberg/babelsberg/constraintinterpreter.js"></script>
+    <script src="lib/babelsberg/standalone/test_harness.js"></script>
+    <!-- // src transform -->
+    <script src="lib/babelsberg/babelsberg/uglify.js"></script>
+    <script src="lib/babelsberg/babelsberg/src_transform.js"></script>
+    <script src="lib/babelsberg/standalone/babelsbergscript.js"></script>
+
+
+    <script type="text/javascript" src="lib/ac_transform.js"></script>
+
+    <script src="lib/require-hacked.js"></script>
+    <script type="text/javascript" >
+      mocha.setup("bdd");
+      var urls = [
+        'tests/complex-test.js',
+        'tests/operators/cross-test.js',
+        'tests/operators/delay-test.js',
+        'tests/operators/filter-test.js',
+        'tests/operators/layer-test.js',
+        'tests/operators/reduce-test.js',
+        'tests/operators/union-test.js'
+      ];
+      require(urls, function() {
+        mocha.checkLeaks();
+        if (window.mochaPhantomJS) { mochaPhantomJS.run(); }
+        else { mocha.run(); }
+      });
+    </script>
+  </body>
+</html>

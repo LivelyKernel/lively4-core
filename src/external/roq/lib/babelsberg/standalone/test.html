@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+	<head>
+	<title>Babelsberg/JS Tests</title>
+	<script src="prototype.js"></script>
+	<script src="minilively.js"></script>
+	
+	<!-- // cop.Layers -->
+	<script src="../cop/Layers.js"></script>
+	
+	<!-- // ometa.lively -->
+	<script src="../ometa/lib.js"></script>
+	<script src="../ometa/ometa-base.js"></script>
+	<script src="../ometa/parser.js"></script>
+	<script src="../ometa/ChunkParser.js"></script>
+	<script src="../ometa/bs-ometa-compiler.js"></script>
+	<script src="../ometa/bs-js-compiler.js"></script>
+	<script src="../ometa/bs-ometa-js-compiler.js"></script>
+	<script src="../ometa/bs-ometa-optimizer.js"></script>
+	<script src="../ometa/lk-parser-extensions.js"></script>
+	<!-- // lively.Ometa -->
+	<script src="../ometa/Ometa.js"></script>
+	<!-- // lively.Interpreter -->
+	<script src="../jsinterpreter/generated/Nodes.js"></script>
+	<script src="../jsinterpreter/generated/Translator.js"></script>
+	<script src="../jsinterpreter/LivelyJSParser.js"></script>
+	<script src="../jsinterpreter/Parser.js"></script>
+	<script src="../jsinterpreter/Meta.js"></script>
+	<script src="../jsinterpreter/Rewriting.js"></script>
+	<script src="../jsinterpreter/Interpreter.js"></script>
+	<!-- // Cassowary -->
+	<script src="../cassowary/Hashtable.js"></script>
+	<script src="../cassowary/HashSet.js"></script>
+	<script src="../cassowary/DwarfCassowary.js"></script>
+	<script src="../babelsberg/cassowary_ext.js"></script>
+	<!-- // DeltaBlue -->
+	<script src="../deltablue/deltablue.js"></script>
+	<script src="../babelsberg/deltablue_ext.js"></script>
+	<!-- // CSP -->
+	<script src="../csp/underscore-min.js"></script>
+	<script src="../csp/csp.js"></script>
+	<script src="../babelsberg/csp_ext.js"></script>
+	<!-- // Babelsberg/js -->
+	<script src="../babelsberg/core_ext.js"></script>
+	<script src="../babelsberg/constraintinterpreter.js"></script>
+	<!-- // Relax -->
+	<script src="../sutherland/relax.js"></script>
+	<script src="../sutherland/relax_bbb.js"></script>
+	<!-- // reactive: assert, trigger, layer.activeOn, layer.always, ... -->
+	<script src="../reactive/reactive.js"></script>
+	<!-- // Tests -->
+	<script src="test_harness.js"></script>
+	<script src="../reactive/reactive_test.js"></script>
+	<script src="../babelsberg/tests.js"></script>
+	<script src="../babelsberg/src_transform_test.js"></script>
+	<script src="../ohshima/ElectricalComponents.js"></script>
+	<script src="../ohshima/ElectricalComponentsTests.js"></script>
+	<script src="../ohshima/ElectricalCircuitTests.js"></script>
+	<!-- // src transform -->
+	<script src="../babelsberg/uglify.js"></script>
+	<script src="../babelsberg/src_transform.js"></script>
+	<script src="babelsbergscript.js"></script>
+	<!-- // BackTalk -->
+	<script src="../backtalk/backtalk.js"></script>
+	<script src="../backtalk/constraints.js"></script>
+	<script src="../backtalk/backtalk_ext.js"></script>
+	<script src="../backtalk/tests.js"></script>
+	
+	<script type="text/javascript">
+		obj = {a: 1, b: 2}
+		s = new ClSimplexSolver();
+		bbb.always({solver: s, ctx: {obj: obj}}, function () {
+			return obj.a + 7 <= obj.b
+		});
+		obj.a = 10;
+		console.log(obj.a, obj.b);
+		
+		new users.timfelgentreff.babelsberg.tests.ConstraintTest().runAll();
+		new users.timfelgentreff.babelsberg.tests.PropagationTest().runAll();
+		new users.timfelgentreff.babelsberg.tests.InteractionTest().runAll();
+		new users.timfelgentreff.babelsberg.src_transform_test.TransformTest().runAll();
+		new users.timfelgentreff.babelsberg.tests.CSPTest().runAll();
+		new users.timfelgentreff.babelsberg.tests.OnErrorTest().runAll();
+
+		new users.timfelgentreff.reactive.reactive_test.AssertTest().runAll();
+		new users.timfelgentreff.reactive.reactive_test.TriggerTest().runAll();
+		new users.timfelgentreff.reactive.reactive_test.LayerActivationTest().runAll();
+		new users.timfelgentreff.reactive.reactive_test.ScopedConstraintsTest().runAll();
+		new users.timfelgentreff.reactive.reactive_test.UnifiedNotationTest().runAll();
+
+		new users.ohshima.ElectricalCircuitTests.Test1().runAll();
+		new users.ohshima.ElectricalComponentsTests.Test1().runAll();
+		
+		new backtalk.BabelsbergTest().runAll();
+		new backtalk.BinaryConstraintTest().runAll();
+		new backtalk.SolverTest().runAll();
+		new backtalk.VariableTest().runAll();
+	</script>
+	
+	<script type="text/babelsbergscript">
+		obj = {a: 1, b: 2}
+		s = new ClSimplexSolver();
+		always: { solver: s
+			obj.a + 7 <= obj.b
+		}
+		obj.a = 10;
+		console.log(obj.a, obj.b);
+	</script>
+	
+	</head>
+	<body>
+	</body>
+</html>
