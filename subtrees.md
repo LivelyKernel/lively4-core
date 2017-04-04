@@ -25,6 +25,13 @@ All subtrees currently in use:
   - master
 
 - Reactive Object Queries
+  - reactive-object-queries
   - src/external/roq
   - https://github.com/active-expressions/reactive-object-queries.git
+  - master
+
+- Triggers
+  - aexpr-trigger
+  - src/external/aexpr/trigger
+  - https://github.com/active-expressions/aexpr-trigger.git
   - master
