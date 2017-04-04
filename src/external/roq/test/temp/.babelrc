@@ -1,0 +1,8 @@
+{
+  "presets": [
+    //"stage-0"
+  ],
+  "plugins": [
+    "aexpr-source-transformation"
+  ]
+}
