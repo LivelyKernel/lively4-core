@@ -82,6 +82,21 @@ Since Lively4 commits just to html5, we are agnostic when it comes to canvas or 
 - [p5.js](http://p5js.org/)(#LGPL)
 - [ZinoCanvas](http://zinoui.com/demos/canvas)(#GPL #Commercial)
 
+# Data-base and Synchronization
+
+- indexdb, raw native browser API, nobody wants to work with directly
+- focalStorage, simple async localStorage replacement that is accessible in the service worker
+- [synceddb](https://github.com/paldepind/synceddb) wrapper around indexdb that supports syncing with own node.js client over websockets
+- git-js
+
+
+
+
+
+
+
+
+
 
 
 
