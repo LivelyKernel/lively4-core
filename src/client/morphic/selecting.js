@@ -53,15 +53,27 @@ export default class Selecting {
 
   static handleSelect(e) {
     if (e.ctrlKey || e.metaKey) {
-      var path = e.path.reverse().filter(ea => ! this.isIgnoredOnMagnify(ea))
+      var rootNode = this.findRootNode(document.body)
+
+      var path = e.path.reverse()
+        .filter(ea => ! this.isIgnoredOnMagnify(ea))
+      
       if (e.shiftKey) {
         var idx = e.path.indexOf(document.body);
         path= path.reverse();
+      } else {
+        // by default: don't go into the shadows
+        path = path.filter(ea => rootNode === this.findRootNode(ea))
       }
       this.onMagnify(path[0], e, path);
       e.stopPropagation();
       e.preventDefault();
     }
+  }
+  
+  static findRootNode(node) {
+    if (!node.parentNode) return node
+    return this.findRootNode(node.parentNode)
   }
 
   static onMagnify(target, e, path) {
@@ -85,7 +97,7 @@ export default class Selecting {
   static showHalos(el, path) {
     path = path || []
     
-    if (HaloService.lastIndicator) $(this.lastIndicator).remove();
+    if (HaloService.lastIndicator) HaloService.lastIndicator.remove();
     HaloService.lastIndicator = lively.showElement(el);
   
     
