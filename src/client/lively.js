@@ -1,30 +1,25 @@
-
 import './patches.js'; // monkey patch the meta sytem....
-
 import * as jquery from '../external/jquery.js';
 import * as _ from '../external/underscore.js';
-
 import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
 import * as preferences from './preferences.js';
 import persistence from './persistence.js';
-
 import html from './html.js';
 import files from './files.js';
 import paths from './paths.js';
-
 import contextmenu from './contextmenu.js';
-
 import keys from './keys.js';
 import components from './morphic/component-loader.js';
-
 import authGithub from './auth-github.js';
 import authDropbox from './auth-dropbox.js';
 import authGoogledrive  from './auth-googledrive.js';
-
 import expose from './expose.js';
-
 import generateUUID from './uuid.js';
+import {pt} from './graphics.js';
+import Dialog from 'templates/lively-dialog.js'
+import ViewNav from 'src/client/viewnav.js'
+
 
 /* expose external modules */
 import color from '../external/tinycolor.js';
@@ -33,13 +28,6 @@ import focalStorage from '../external/focalStorage.js';
 import * as kernel from 'kernel';
 
 let $ = window.$; // known global variables.
-
-import {pt} from './graphics.js';
-
-import Dialog from 'templates/lively-dialog.js'
-
-import ViewNav from 'src/client/viewnav.js'
-
 
 // a) Special shorthands for interactive development
 // b) this is the only reasonable way to use modules in template scripts, due to no shared lexical scope #TODO
@@ -59,9 +47,11 @@ var exportmodules = [
   "authGoogledrive"
 ];
 
-// #LiveProgramming #Syntax #ES6Modules #Experiment #Jens
-// By structuring our modules differently, we still can act as es6 module to the outside but develop at runtime
-// #IDEA: I refactored from "sltatic module and function style" to "dynamic object" style
+/*
+ * The "lively" module is currently the kitchen-sink of this environment.
+ * 
+ * #TODO refactor so that methods go into more specific modules. 
+ */
 export default class Lively {
   
   static get location() {
@@ -272,16 +262,10 @@ export default class Lively {
   static openWorkspace(string, pos, worldContext) {
     var name = "juicy-ace-editor";
     return  lively.openComponentInWindow(name, null, pt(400,500), worldContext).then((comp) => {
-      pos = pos || lively.pt(100,100);
-      comp.changeMode("javascript");
-      comp.enableAutocompletion();
-      comp.editor.setOption("wrap", true)
-
-      // comp.setAttribute("persistent", "true"); #TODO slows down typing?
+      comp.mode = "javascript";
       comp.editor.setValue(string);
-      comp.setTargetModule('workspace_module_' + generateUUID().replace(/-/g, '_'));
       var container = comp.parentElement
-      lively.setPosition(container,pos);
+      if (pos) lively.setPosition(container,pos);
       container.setAttribute("title", "Workspace");
     // }).then( () => {
       comp.editor.focus();
@@ -353,14 +337,31 @@ export default class Lively {
     return pos;
   }
   
-  // static getPosition(obj) {
-  //     if (obj.clientX)
-  //       return {x: obj.clientX, y: obj.clientY}
-  //     else if (obj.style)
-  //       return {x: parseFloat(obj.style.left), y: parseFloat(obj.style.top)}
-  //     throw Error("" + obj + " has not position");
-  // }
+  static  getExtent(node) {
+    if (node === window) {
+      return pt(window.innerWidth, window.innerHeight)
+    }
+    var bounds = node.getBoundingClientRect()
+    return pt(bounds.width, bounds.height)
+  }
   
+  static  setExtent(node, extent) {
+    node.style.width = '' + extent.x + 'px';
+    node.style.height = '' + extent.y + 'px';
+  }
+
+  static  getGlobalPosition(node) {
+    var bounds = node.getBoundingClientRect()
+    return pt(bounds.left, bounds.top)
+  }
+
+  static  setGlobalPosition(node, pos) {
+    if (!node.parentElement) return
+    var parentPos = this.getGlobalPosition(node.parentElement)
+    this.setPosition(node, pos.subPt(parentPos))
+  }
+
+
   static openFile(url) {
     if (url.hostname == "lively4"){
       var container  = $('lively-container')[0];
@@ -649,10 +650,15 @@ export default class Lively {
   }
 
   static showPoint(point) {
+    return this.showRect(point, pt(5,5))
+  }
+
+  static showRect(point, extent) {
+    if (!point || !point.subPt) return
     var comp = document.createElement("div");
     comp.style['pointer-events'] = "none";
-    comp.style.width = "5px";
-    comp.style.height = "5px";
+    comp.style.width = extent.x + "px";
+    comp.style.height = extent.x + "px";
     comp.style.padding = "1px";
     comp.style.backgroundColor = 'rgba(255,0,0,0.5)';
     comp.style.zIndex = 1000;
@@ -816,24 +822,38 @@ export default class Lively {
       comp.getHelp(text);
     });
   }
-
+  
+  
+  
   static openComponentInWindow(name, pos, extent, worldContext) {
     worldContext = worldContext || document.body
-    // var lastWindow = _.first(lively.array(worldContext.querySelectorAll("lively-window")));
-  
   
     var w = document.createElement("lively-window");
     if (extent) {
       w.style.width = extent.x;
       w.style.height = extent.y;
     }
+    
+    // #Problem: we cannot open last window here because we can be scrolled to the other end of the world
     // if (lastWindow) {
     //   var lastPos = lively.getPosition(lastWindow);
-    //   var windowWidth = w.getBoundingClientRect().width;
-    //   if (lastPos !== undefined && windowWidth !== undefined) {
-    //     lively.setPosition(w, lastPos.addPt(pt(25,25)));
-    //   }      
-    // }
+      
+    if (!pos) {
+      // this gets complicated: find a free spot starting top left going down right
+      var windows = lively.array(worldContext.querySelectorAll(":scope > lively-window"))
+      var offset = 20
+      for(var i=0; !pos; i++) {
+        var found = windows.find( ea => {
+          // var ea = that; var i =0 
+          var eaPos = lively.getGlobalPosition(ea)
+          // find free space in direction bottom right
+          return (i * offset <= eaPos.x) && (eaPos.x < (i + 1) * offset ) && (i * offset <= eaPos.y) && (eaPos.y < (i + 1) * offset)
+        });
+        if (!found) pos = pt(i * offset,i* offset)
+      }
+      pos = pos.subPt(lively.getPosition(worldContext))
+    }
+    
     return components.openIn(worldContext, w, true).then((w) => {
     	return components.openIn(w, document.createElement(name)).then((comp) => {
     	  if (pos) 
@@ -999,6 +1019,7 @@ if (!window.lively || window.lively.name != "Lively") {
   Lively.previous = oldLively
   window.lively = Lively;
 }
+
 
 Lively.exportModules();
   

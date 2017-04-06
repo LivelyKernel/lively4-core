@@ -32,7 +32,10 @@ export default class ContextMenu {
   
   static openComponentInWindow (name, evt, worldContext) {
     this.hide();
-    return lively.openComponentInWindow(name, pt(evt.pageX, evt.pageY), undefined, worldContext);
+    return lively.openComponentInWindow(name, null, undefined, worldContext).then( comp => {
+      this.positionElementAtEvent(comp.parentElement, worldContext, evt)
+      return comp
+    });
   }
   
   static openInWindow(comp, worldContext, evt) {
@@ -42,7 +45,7 @@ export default class ContextMenu {
 	  });
   }
   
-  static positionElementAtEvent(element,worldContext,  evt) {
+  static positionElementAtEvent(element, worldContext, evt) {
     evt = this.firstEvent || evt;
     
     var pos = pt(evt.clientX, evt.clientY);
@@ -52,8 +55,7 @@ export default class ContextMenu {
     if (worldContext.localizePosition) { 
       pos = worldContext.localizePosition(pos);
     } else {
-      var bodyBounds = document.body.getBoundingClientRect()
-      pos = pos.subPt(pt(bodyBounds.left, bodyBounds.top))
+      pos = pos.subPt(lively.getGlobalPosition(worldContext))
     }
     lively.setPosition(element, pos);
   }
@@ -108,7 +110,9 @@ export default class ContextMenu {
     return  [
       ["Workspace", (evt) => {
         this.hide();
-        lively.openWorkspace("", pt(evt.pageX, evt.pageY), worldContext);
+        lively.openWorkspace("", null, worldContext).then(comp => {
+          this.positionElementAtEvent(comp.parentElement, worldContext, evt)
+        });
       }, "CMD+K", '<i class="fa fa-window-maximize" aria-hidden="true"></i>'],
       ["Browse/Edit", (evt) => {
           var container = _.last(document.querySelectorAll("lively-container"));
@@ -119,12 +123,14 @@ export default class ContextMenu {
               comp.followPath(lively4url +"/");
             comp.parentElement.style.width = "850px";
             comp.parentElement.style.height = "600px";
+            this.positionElementAtEvent(comp.parentElement, worldContext, evt)
           });
         }, 
         "CMD+SHIFT+B", '<i class="fa fa-cogs" aria-hidden="true"></i>'],
       // ["File Editor", (evt) => this.openComponentInWindow("lively-editor", evt)],
       // ["File Browser", (evt) => this.openComponentInWindow("lively-file-browser", evt)],
-      ["Component Bin", (evt) => this.openComponentInWindow("lively-component-bin", evt),
+      ["Component Bin", (evt) => 
+        this.openComponentInWindow("lively-component-bin", evt, worldContext),
        "CMD+O", '<i class="fa fa-th" aria-hidden="true"></i>'],
       ["Insert", [
         ["Text", (evt) => {
@@ -182,7 +188,9 @@ export default class ContextMenu {
         ['Debugger', (evt) => lively.openDebugger().then( cmp), 
           "", '<i class="fa fa-chrome" aria-hidden="true"></i>'],
         ['Inspector', (evt) => 
-          lively.openInspector(worldContext, undefined, undefined, worldContext), 
+          lively.openInspector(worldContext, undefined, undefined, worldContext).then(comp => {
+            this.positionElementAtEvent(comp.parentElement, worldContext, evt)
+          }), 
           "", '<i class="fa fa-info-circle" aria-hidden="true"></i>'],
         ["Test Runner", (evt) => this.openComponentInWindow("lively-testrunner", evt, worldContext),
           "", '<i class="fa fa-check-square-o" aria-hidden="true"></i>'],
@@ -190,6 +198,45 @@ export default class ContextMenu {
           "", '<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'],
         ["Storage Setup", (evt) => this.openComponentInWindow("lively-filesystems", evt, worldContext),
           "", '<i class="fa fa-cloud" aria-hidden="true"></i>'],
+      ]],
+      ["View", [
+        ["Reset View", (evt) => ViewNav.resetView(), 
+          "",'<i class="fa fa-window-restore" aria-hidden="true"></i>'],
+        
+        !document.webkitIsFullScreen ?
+            ["Enter Fullscreen", (evt) => {
+                document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)
+              },
+              "F11", '<i class="fa fa-arrows-alt" aria-hidden="true"></i>'
+            ] :
+            ["Leave Fullscreen", (evt) => document.webkitCancelFullScreen(),
+              "F11", '<i class="fa fa-times-circle-o" aria-hidden="true"></i>'
+          ],
+
+        ["Gather Windows", (evt) => {
+            var pos = pt(0,0)
+            _.sortBy(worldContext.querySelectorAll(":scope > lively-window"), ea => {
+              return getComputedStyle(ea).zIndex
+            }).forEach(ea => {
+              lively.setPosition(ea, pos)
+              pos = pos.addPt(pt(20,20))
+            })
+          },
+          "", '<i class="fa fa-window-restore" aria-hidden="true"></i>'
+        ],
+        ["Show Windows", (evt) => {
+            var pos = pt(0,0)
+            var windowsByWidth = _.groupBy(document.body.querySelectorAll("lively-window"), ea => ea.clientWidth) 
+            Object.keys(windowsByWidth).forEach( width => {
+              windowsByWidth[width].forEach( ea => {
+                lively.setPosition(ea, pos)
+                pos = pos.addPt(pt(0, Math.max(lively.getExtent(ea).y, 50) + 10))
+              })
+              pos = pt(pos.x + Math.min(1000, Number(width)), 0)
+            })
+          },
+          "", '<i class="fa fa-window-restore" aria-hidden="true"></i>',
+        ],
       ]],
       ["Documentation", [
         ["Devdocs.io", (evt) => {
@@ -219,18 +266,6 @@ export default class ContextMenu {
       //   "",'<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'
       //   ],
 
-      ["Reset View", (evt) => ViewNav.resetView(), 
-        "",'<i class="fa fa-window-restore" aria-hidden="true"></i>'],
-      
-      !document.webkitIsFullScreen ?
-          ["Enter Fullscreen", (evt) => {
-              document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)
-            },
-            "F11", '<i class="fa fa-arrows-alt" aria-hidden="true"></i>'
-          ] :
-          ["Leave Fullscreen", (evt) => document.webkitCancelFullScreen(),
-            "F11", '<i class="fa fa-times-circle-o" aria-hidden="true"></i>'
-          ],
       ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt, worldContext), 
         "CMD+SHIFT+G",'<i class="fa fa-github" aria-hidden="true"></i>'],
       ["save as ..", (evt) => {

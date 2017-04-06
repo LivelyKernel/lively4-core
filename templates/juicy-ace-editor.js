@@ -6,7 +6,28 @@ import Morph from "./Morph.js"
 export default class AceEditor extends Morph {
   
   initialize() {
+    this._attrObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+          // console.log("observation", mutation.type, arguments, mutations, editor, text);
+          if(mutation.type == "attributes"){
+
+              this.attributeChangedCallback(
+                mutation.attributeName,
+                mutation.oldValue,
+                mutation.target.getAttribute(mutation.attributeName))
+          }
+        });
+      });
+    this._attrObserver.observe(this, { attributes: true });
     
+    _.map(this.attributes, ea => ea.name).forEach(ea => this.applyAttribute(ea))
+  }
+
+  applyAttribute(attr) {
+    var value =this.getAttribute(attr)
+    if (value !== undefined) {
+      this.setAttribute(attr, value)
+    }
   }
 
   // Fires when an instance was inserted into the document
@@ -16,8 +37,9 @@ export default class AceEditor extends Morph {
     var element = this;
 
     if(this.editor) {
-        var editor = this.editor;
-        this.value = (text && text.textContent) || this.value;
+      var editor = this.editor;
+      this.value = (text && text.textContent) || this.value;
+   
     } else {
         // container.appendChild(text);
         container.innerHTML = this.innerHTML || this.value;
@@ -35,39 +57,29 @@ export default class AceEditor extends Morph {
         });
         
     }
+    
+
+    
     this.addEventListener("change", evt => this.onChanged(evt))
 
     // handle theme changes
     editor.renderer.addEventListener("themeLoaded", this.onThemeLoaded.bind(this));
 
-    // initial attributes
-        editor.setTheme( this.getAttribute("theme") );
-        editor.setFontSize( this.getAttribute("fontsize") );
-        editor.setReadOnly( this.getAttribute("readonly") );
-        var session = editor.getSession();
-        session.setNewLineMode("unix");
-        session.setMode( this.getAttribute("mode") );
-        session.setUseSoftTabs( this.getAttribute("softtabs") );
-        this.getAttribute("tabsize") && session.setTabSize( this.getAttribute("tabsize") );
-        session.setUseWrapMode( this.hasAttribute("wrapmode") );
-
-
     // prevent error message when CTRL+P
     editor.$blockScrolling = Infinity
 
 
-
     // Observe input textNode changes
     // Could be buggy as editor was also added to Light DOM;
-        var observer = new MutationObserver(function(mutations) {
-          mutations.forEach(function(mutation) {
-            // console.log("observation", mutation.type, arguments, mutations, editor, text);
-            if(mutation.type == "characterData"){
-                element.value = text.data;
-            }
-          });
-        });
-        text && observer.observe(text, { characterData: true });
+    var observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        // console.log("observation", mutation.type, arguments, mutations, editor, text);
+        if(mutation.type == "characterData"){
+            element.value = text.data;
+        }
+      });
+    });
+    text && observer.observe(text, { characterData: true });
     // container.appendChild(text);
     this._attached = true;
 
@@ -75,7 +87,6 @@ export default class AceEditor extends Morph {
 
     // this.loadSpellcheck()
     // this.enableSpellcheck()
-
 
     // editor.resize()
     window.setTimeout(() => {
@@ -98,6 +109,7 @@ export default class AceEditor extends Morph {
 
   // Fires when an attribute was added, removed, or updated
   attributeChangedCallback(attr, oldVal, newVal) {
+    // lively.notify("attributeChanged" + attr)
     if(!this._attached){
         return false;
     }
@@ -106,7 +118,7 @@ export default class AceEditor extends Morph {
           this.editor.setTheme( newVal );
           break;
       case "mode":
-          this.editor.getSession().setMode( newVal );
+          this.changeMode( newVal );
           break;
       case "fontsize":
           this.editor.setFontSize( newVal );
@@ -189,19 +201,25 @@ export default class AceEditor extends Morph {
   }
   
   changeModeForFile(filename) {
+    
     var modelist = ace.require("ace/ext/modelist");
     var mode = modelist.getModeForPath(filename).name;
     
     this.changeMode(mode);
-    if (mode == "javascript" ) {
-      this.editor.session.setOptions({
-          	tabSize: 2,
-          	useSoftTabs: true
-      })
-    }
+    
+  }
+
+  get mode() {
+    return this.getAttribute("mode")
+  }
+
+  set mode(mode) {
+    this.setAttribute("mode", mode)
   }
 
   changeMode(mode) {
+    // lively.notify("changeMode" + mode)
+    if (mode == null) return;
     var Mode;
     try {
       Mode = ace.require("ace/mode/" + mode).Mode;
@@ -222,6 +240,18 @@ export default class AceEditor extends Morph {
       };
       document.head.appendChild(script);
     }
+    
+    if (mode == "javascript" ) {
+      this.enableAutocompletion();
+      this.editor.setOption("wrap", true)
+      this.setTargetModule('workspace_module_' + generateUUID().replace(/-/g, '_'));
+
+      this.editor.session.setOptions({
+          	tabSize: 2,
+          	useSoftTabs: true
+      })
+    }
+    
   }
 
   aceRequire(modulePath) {
