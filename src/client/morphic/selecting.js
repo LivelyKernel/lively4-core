@@ -31,10 +31,7 @@ export default class Selecting {
       e.stopPropagation();
       e.preventDefault();
     } else {
-      // hide halos if the user clicks somewhere else
-      if (window.that && !$(e.target).is("lively-halos")) {
-        this.hideHalos();
-      }
+      
     }
   }
   
@@ -52,7 +49,10 @@ export default class Selecting {
   }
 
   static handleSelect(e) {
+     
     if (e.ctrlKey || e.metaKey) {
+
+
       var rootNode = this.findRootNode(document.body)
 
       var path = e.path.reverse()
@@ -77,9 +77,13 @@ export default class Selecting {
   }
 
   static onMagnify(target, e, path) {
-
+    if (!target) {
+      this.hideHalos()
+      return 
+    }
     var grabTarget = target;
     var that = window.that;
+
     // console.log("onMagnify " + grabTarget + " that: " + that);
     var parents = _.reject(path, 
         ea =>  this.isIgnoredOnMagnify(ea))

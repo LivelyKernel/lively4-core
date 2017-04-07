@@ -11,6 +11,18 @@ export default class Selection extends Morph {
   
   get isMetaNode() { return true}
  
+  static load() {
+    lively.notify("load")
+    if (!this.current){
+      this.current = document.createElement("lively-selection")
+      lively.components.openInBody(this.current)
+      this.current.remove()
+    }
+    
+    lively.removeEventListener("Selection", document.body.parentElement)
+    lively.addEventListener("Selection", document.body.parentElement, "mousedown", 
+      e => this.current.onPointerDown(e))
+  }
  
   initialize() {
     // super.initialize()
@@ -20,32 +32,51 @@ export default class Selection extends Morph {
     this.originalOffset = new Map();
   }
 
-  onSelectionDragStart(evt, windowContext) {
-    this.selectionOffset = events.globalPosition(evt);
-    nodes.setPosition(this,  this.selectionOffset);
+  onPointerDown(evt) {
+    if (evt.ctrlKey || evt.altKey) return;
+    
+    this.selectionOffset = pt(evt.clientX, evt.clientY)
 
-    this.context = windowContext || document.body;
-    if (window.that && that !== this 
-        && HaloService.areHalosActive()
-        && !that.isMeta) {
-      this.context = that;
-    }
+    lively.addEventListener("Selection", document.body.parentElement, "pointermove", 
+      e => this.onPointerMove(e))
+    lively.addEventListener("Selection", document.body.parentElement, "pointerup", 
+      e => this.onPointerUp(e))
+
+    this.context = document.body;
+    // if (window.that && that !== this 
+    //     && HaloService.areHalosActive()
+    //     && !that.isMeta) {
+    //   this.context = that;
+    // }
     this.nodes = [];
     console.log("selection drag start");
+    evt.preventDefault()
   }
-  
-  onSelectionDrag(evt) {
-    var evtPos =  events.globalPosition(evt);
-    if (evtPos.eqPt(pt(0,0))) {
-      return; // last drag... is wiered. Is it a bug?
-    } 
+
+  onPointerMove(evt) {
+    var evtPos =  pt(evt.clientX, evt.clientY);
+
+    if (!this.parentElement) {  
+      document.body.appendChild(this)
+      lively.setGlobalPosition(this, this.selectionOffset);
+    }
+
+    // if (evtPos.eqPt(pt(0,0))) {
+    //   return; // last drag... is wiered. Is it a bug?
+    // } 
     
     var topLeft = this.selectionOffset.minPt(evtPos);
     var bottomRight = this.selectionOffset.maxPt(evtPos);
+  
+    // lively.showPoint(topLeft)
+    // lively.showPoint(bottomRight)
+  
     this.selectionBounds = rect(topLeft, bottomRight);
 
-    nodes.setPosition(this,  topLeft);
-    nodes.setExtent(this, bottomRight.subPt(topLeft));
+
+
+    lively.setGlobalPosition(this,  topLeft);
+    lively.setExtent(this, bottomRight.subPt(topLeft));
   
     this.nodes = Array.from(this.context.childNodes).filter( ea => {
       if (!ea.getBoundingClientRect || ea.isMetaNode) return false;
@@ -56,13 +87,17 @@ export default class Selection extends Morph {
       return this.selectionBounds.containsRect(eaRect);
     });
 
-    // console.log("drag " + this.context +" "+ this.nodes.length);
+    // lively.notify("drag " + this.context +" "+ this.nodes.length);
     
+
   }
-  
-  onSelectionDragEnd(evt) {
+
+  onPointerUp(evt) {
+    lively.removeEventListener("Selection", document.body.parentElement, "pointermove")
+    lively.removeEventListener("Selection", document.body.parentElement, "pointerup")
+
+    
     if (this.nodes.length > 0) {
-      
       var minP=this.selectionBounds.bottomRight(); 
       var maxP=this.selectionBounds.topLeft();
         
@@ -72,8 +107,8 @@ export default class Selection extends Morph {
         minP = eaRect.topLeft().minPt(minP);
         maxP = eaRect.bottomRight().maxPt(maxP);
       });
-      nodes.setPosition(this, minP);
-      nodes.setExtent(this, maxP.subPt(minP));
+      lively.setGlobalPosition(this, minP);
+      lively.setExtent(this, maxP.subPt(minP));
     
       window.that=this;
       Halo.showHalos(this);
@@ -81,8 +116,10 @@ export default class Selection extends Morph {
       this.remove();
     }
     // console.log("drag end")
+
   }
-  
+
+
   haloRemove() {
     this.nodes.forEach(ea => {
       console.log("selection.remove " + ea);
@@ -203,4 +240,4 @@ export default class Selection extends Morph {
   
 }  
   
-  
+Selection.load()

@@ -20,7 +20,6 @@ import {pt} from './graphics.js';
 import Dialog from 'templates/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
 
-
 /* expose external modules */
 import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
@@ -251,7 +250,7 @@ export default class Lively {
   
   
   static exportModules() {
-    exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expected
+    exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expectednit
   }
   
 
@@ -267,7 +266,6 @@ export default class Lively {
       var container = comp.parentElement
       if (pos) lively.setPosition(container,pos);
       container.setAttribute("title", "Workspace");
-    // }).then( () => {
       comp.editor.focus();
       return comp;
     });
@@ -482,7 +480,8 @@ export default class Lively {
       
      notificationList = document.createElement("lively-notification-list");
       components.openIn(document.body, notificationList).then( () => {
-        notificationList.addNotification(title, text, timeout, cb, color);
+        if (notificationList.addNotification)
+          notificationList.addNotification(title, text, timeout, cb, color);
       });
     } else {
       
@@ -503,6 +502,14 @@ export default class Lively {
 
 
   }
+  
+  static get hand() {
+    return document.body.querySelector(":scope > lively-hand")
+  }
+
+  static get selection() {
+    return document.body.querySelector(":scope > lively-selection")
+  }
 
   static async initializeDocument(doc, loadedAsExtension, loadContainer) {
     console.log("Lively4 initializeDocument");
@@ -519,6 +526,13 @@ export default class Lively {
     doc.addEventListener('click', function(evt){lively.hideContextMenu(evt)}, false);
     doc.addEventListener('keydown', function(evt){lively.keys.handle(evt)}, false);
 
+    
+    // initialize hand
+    if (!lively.hand)    
+      lively.components.openInBody(document.createElement("lively-hand"));
+
+    if (!lively.selection)    
+      lively.components.openInBody(document.createElement("lively-selection"));
 
 
     if (loadedAsExtension) {
@@ -542,6 +556,9 @@ export default class Lively {
 
       document.body.style.backgroundColor = "rgb(240,240,240)"
       ViewNav.enable(document.body)
+
+
+
 
       if (loadContainer) {
         
@@ -839,19 +856,7 @@ export default class Lively {
     //   var lastPos = lively.getPosition(lastWindow);
       
     if (!pos) {
-      // this gets complicated: find a free spot starting top left going down right
-      var windows = lively.array(worldContext.querySelectorAll(":scope > lively-window"))
-      var offset = 20
-      for(var i=0; !pos; i++) {
-        var found = windows.find( ea => {
-          // var ea = that; var i =0 
-          var eaPos = lively.getGlobalPosition(ea)
-          // find free space in direction bottom right
-          return (i * offset <= eaPos.x) && (eaPos.x < (i + 1) * offset ) && (i * offset <= eaPos.y) && (eaPos.y < (i + 1) * offset)
-        });
-        if (!found) pos = pt(i * offset,i* offset)
-      }
-      pos = pos.subPt(lively.getPosition(worldContext))
+      pos = this.findPositionForWindow(worldContext)
     }
     
     return components.openIn(worldContext, w, true).then((w) => {
@@ -863,6 +868,23 @@ export default class Lively {
         return comp
     	})
     })
+  }
+  
+  static findPositionForWindow(worldContext) {
+     // this gets complicated: find a free spot starting top left going down right
+      var windows = lively.array(worldContext.querySelectorAll(":scope > lively-window"))
+      var offset = 20
+      var pos
+      for(var i=0; !pos; i++) {
+        var found = windows.find( ea => {
+          // var ea = that; var i =0 
+          var eaPos = lively.getGlobalPosition(ea)
+          // find free space in direction bottom right
+          return (i * offset <= eaPos.x) && (eaPos.x < (i + 1) * offset ) && (i * offset <= eaPos.y) && (eaPos.y < (i + 1) * offset)
+        });
+        if (!found) pos = pt(i * offset,i* offset)
+      }
+      return pos.subPt(lively.getPosition(worldContext))
   }
   
   // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
@@ -986,6 +1008,16 @@ export default class Lively {
     }
     return keys
   }
+  
+  static createElement(name) {
+    var tempContainer = document.createElement("div")
+    var element = document.createElement("lively-hand")
+    
+    tempContainer.appendChild(element)
+    tempContainer.querySelector(":scope > :unresolved")
+    
+
+  }
 
   static currentStack() {
     try {
@@ -999,6 +1031,7 @@ export default class Lively {
         .join("\n")
     }
   }
+  
   
   static onUnload() {
     // #TODO How to deal with multiple open lively pages? 

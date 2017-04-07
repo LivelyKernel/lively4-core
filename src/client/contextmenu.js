@@ -106,6 +106,13 @@ export default class ContextMenu {
     ];
   }
   
+  static openCenteredAt(morph, worldContext, evt) {
+    worldContext.appendChild(morph);
+    lively.setGlobalPosition(morph, pt(evt.clientX, evt.clientY)
+      .subPt(lively.getExtent(morph).scaleBy(0.5)))
+  }
+  
+  
   static worldMenuItems(worldContext) {
     return  [
       ["Workspace", (evt) => {
@@ -134,14 +141,14 @@ export default class ContextMenu {
        "CMD+O", '<i class="fa fa-th" aria-hidden="true"></i>'],
       ["Insert", [
         ["Text", (evt) => {
-          var text  = document.createElement("p");
-          text.innerHTML = "Hello";
-          text.contentEditable = true;
-          worldContext.appendChild(text);
-          this.positionElementAtEvent(text, worldContext, evt)
-
+          var morph  = document.createElement("p");
+          morph.innerHTML = "Hello";
+          morph.contentEditable = true;
+          worldContext.appendChild(morph);
+          this.openCenteredAt(morph, worldContext, evt)          
+          lively.hand.startGrabbing(morph, evt)
           if (worldContext === document.body) {
-            text.classList.add("lively-content")
+            morph.classList.add("lively-content")
           }
           this.hide();
         }],
@@ -150,31 +157,31 @@ export default class ContextMenu {
           morph.style.width = "200px";
           morph.style.height = "100px";
           morph.style.border = "1px solid black"
-          this.positionElementAtEvent(morph, worldContext, evt)
-    
+          
+          this.openCenteredAt(morph, worldContext, evt)          
           // morph.style.backgroundColor = "blue";
           if (worldContext === document.body) {
             morph.classList.add("lively-content")
           }
           morph.style.backgroundColor = 'rgba(40,40,80,0.5)';
-          worldContext.appendChild(morph);
-          window.that = morph
-          HaloService.showHalos(morph);
+          lively.hand.startGrabbing(morph, evt)
+          
 
           this.hide();
         }],
-         ["Drawing", (evt) => {
+         ["Drawing", async (evt) => {
           var morph  = document.createElement("lively-drawboard");
           morph.setAttribute("width", "400px");
           morph.setAttribute("height", "400px");
-          this.positionElementAtEvent(morph, worldContext, evt)
+          await lively.components.openIn(worldContext, morph);
 
+          this.openCenteredAt(morph, worldContext, evt)          
+          lively.hand.startGrabbing(morph, evt)
           // morph.style.backgroundColor = "blue";
           if (worldContext === document.body) {
             morph.classList.add("lively-content")
           }
           morph.style.backgroundColor = 'rgb(255,250,205)';
-          lively.components.openIn(worldContext, morph);
           this.hide();
         }]
       ]],

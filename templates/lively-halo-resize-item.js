@@ -14,16 +14,17 @@ export default class HaloResizeItem extends HaloItem {
     this.start(evt);
 
     // attach mousemove handler to body only after mousedown occured
-    lively.addEventListener("HaloResize", document, 'mousemove', (evt) => {
+    lively.addEventListener("HaloResize", document.body.parentElement, 'pointermove', (evt) => {
       this.move(evt);
     });
     // and capture the following mouse up anywere 
-    lively.addEventListener("HaloResize", document.body, 'mouseup',  e => this.onMouseUp(e));
+    lively.addEventListener("HaloResize", document.body.parentElement, 'pointerup',  e => this.onPointerUp(e));
   }
 
-  onMouseUp(evt) {
-    lively.removeEventListener("HaloResize", document.body, 'mouseup');
-    lively.removeEventListener("HaloResize", document, 'mousemove');
+  onPointerUp(evt) {
+    lively.removeEventListener("HaloResize", document.body.parentElement, 'pointerup');
+    lively.removeEventListener("HaloResize", document.body.parentElement, 'pointermove');
+
     this.stop(evt);
   }
 
@@ -52,8 +53,8 @@ export default class HaloResizeItem extends HaloItem {
     }
   }
 
-  stop(e) {
-    e.preventDefault();
+  stop(evt) {
+    evt.preventDefault();
     if (this.target.haloResizeStop) {
       this.target.haloResizeStop(evt, this)
     } else {

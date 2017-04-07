@@ -24,6 +24,7 @@
     }})
     
     var draw = () => {
+
       context = $(this.shadowRoot).find("#gastank")[0].getContext('2d');
       context.clearRect(0, 0, 300, 300);
       
@@ -46,8 +47,9 @@
           molecule.y += molecule.dy;
       })
       this.shadowRoot.querySelector("#hits").innerHTML = "" + hits
+      setTimeout(draw, 10);
     }
-    setInterval(draw, 10);
+    draw()
   }
 </script>
 

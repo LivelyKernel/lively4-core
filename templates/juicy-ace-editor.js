@@ -619,6 +619,7 @@ export default class AceEditor extends Morph {
   }
   
   unsavedChanges() {
+    if (this.editor.getValue() === "") return false
     return  true // workspaces should be treated carefully
   }
   
