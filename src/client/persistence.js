@@ -103,8 +103,28 @@ export default class Persistence {
   isBlacklisted(mutation) {
     if (mutation.target.tagName == "BODY") return true
     if (mutation.target.tagName == "LIVELY-NOTIFICATION-LIST") return true
+    if (mutation.target.id == "mutationIndicator") return true
     return false
   }
+  
+  showMutationIndicator() {
+    var indicator = document.body.querySelector("#mutationIndicator")
+    if (!indicator)  {
+      var div = document.createElement("div")
+      div.id = "mutationIndicator"
+      document.body.appendChild(div)
+      div.style.position = "fixed"
+      div.style.right = "0px"
+      div.style.top = "0px"
+      div.style.width = "10px"
+      div.style.height = "10px"
+      div.style.backgroundColor = "blue"
+      div.style.pointerEvents = "none"
+      indicator = div
+    }
+    return indicator
+  }
+  
   
   onMutation(mutations, observer) {
     if (this.isPersisting) {
@@ -114,8 +134,11 @@ export default class Persistence {
     
     mutations.filter(ea => !this.isBlacklisted(ea)).forEach(record => {
       // console.log("mutation: ", record)
+      this.showMutationIndicator().style.backgroundColor = "rgba(200,0,0,0.5)"
       this.saveDelay.call(() => {
         this.saveLivelyContent()
+          this.showMutationIndicator().style.backgroundColor = "rgba(10,10,10,0.3)"
+
       })
       // var indicator = this.get("#changeIndicator")
       // if (indicator ) {

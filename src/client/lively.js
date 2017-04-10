@@ -261,6 +261,7 @@ export default class Lively {
   }
 
   static openWorkspace(string, pos, worldContext) {
+    string = string || "";
     var name = "juicy-ace-editor";
     return  lively.openComponentInWindow(name, null, pt(400,500), worldContext).then((comp) => {
       comp.mode = "javascript";

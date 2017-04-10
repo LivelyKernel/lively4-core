@@ -349,6 +349,15 @@ export default class AceEditor extends Morph {
           this.doSave(this.editor.getValue());
       }
     });
+    
+    editor.commands.addCommand({
+      name: "openWorkspace",
+      bindKey: {win: "Ctrl-K", mac: "Command-K"},
+      exec: (editor) => {
+          lively.openWorkspace()
+      }
+    });
+
   };
 
   getDoitContext() {

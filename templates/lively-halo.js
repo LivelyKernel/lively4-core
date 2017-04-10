@@ -146,7 +146,6 @@ export default class Halo extends Morph {
   
   
   static hideHalos() {
-    debugger
     if (HaloService.lastIndicator)
       HaloService.lastIndicator.remove()
     if (this.areHalosActive())

@@ -1,4 +1,4 @@
-'use strict';
+import components from './morphic/component-loader.js';
 
 var prefsNode;
 
@@ -16,9 +16,10 @@ function initialize() {
 
 function createOrGetPreferenceNode() {
   let node = document.querySelectorAll('lively-preferences');
-
   if (node.length == 0) {
-    document.body.appendChild(document.createElement('lively-preferences'));
+    var comp = document.createElement('lively-preferences')
+    comp.classList.add("lively-content")
+    components.openInBody(comp)
   }
 
   return document.querySelector('lively-preferences');

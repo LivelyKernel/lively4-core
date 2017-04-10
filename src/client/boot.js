@@ -21,6 +21,13 @@ if (window.lively && window.lively4url) {
   
   var loadContainer = script.getAttribute("data-container") // some simple configuration 
   console.log("lively4url: " + lively4url);
+  if (window.location.search.match(/[?&]nomain/)) {
+    loadContainer = false
+  }
+  
+  
+  
+  
   
    
   // COPIED HERE BECAUSE resuse through libs does not work yet
