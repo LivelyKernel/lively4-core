@@ -25,10 +25,6 @@ if (window.lively && window.lively4url) {
     loadContainer = false
   }
   
-  
-  
-  
-  
    
   // COPIED HERE BECAUSE resuse through libs does not work yet
   function loadJavaScriptThroughDOM(name, src, force) {

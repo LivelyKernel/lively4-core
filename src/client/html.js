@@ -1,5 +1,7 @@
 'use strict';
 
+import Preferences from "src/client/preferences.js"
+
 /*
  * Kitchensink for all HTML manipulation utilities
  */
@@ -200,6 +202,8 @@ export default class HTML {
 
   static getGlobalSource(worldContext) {
     worldContext= worldContext || document.body
+    Preferences.write("bodyPosition", JSON.stringify(lively.getPosition(document.body)))
+    
     var source = ""
     var oldActiveElement = lively.activeElement()
     worldContext.querySelectorAll("*").forEach( ea => {

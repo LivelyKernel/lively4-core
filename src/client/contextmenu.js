@@ -7,6 +7,8 @@ import html from './html.js';
 import {pt} from './graphics.js';
 import ViewNav from 'src/client/viewnav.js'
 
+import Preferences from './preferences.js';
+
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
 export default class ContextMenu {
@@ -110,6 +112,18 @@ export default class ContextMenu {
     worldContext.appendChild(morph);
     lively.setGlobalPosition(morph, pt(evt.clientX, evt.clientY)
       .subPt(lively.getExtent(morph).scaleBy(0.5)))
+  }
+  
+  static preferenceEntry(preferenceKey) {
+    return Preferences.isEnabled(preferenceKey) ? [
+      "[X] " + preferenceKey, () => {
+        Preferences.disable(preferenceKey)
+      }
+    ] : [
+      "[ ] " + preferenceKey, async () => {
+        Preferences.enable(preferenceKey)
+      }
+    ]
   }
   
   
@@ -266,6 +280,10 @@ export default class ContextMenu {
           window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
         },, '<i class="fa fa-bug" aria-hidden="true"></i>']
       ]],
+      ["Preferences", 
+          ["InteractiveLayer"].map(ea => this.preferenceEntry(ea))
+      ],
+      
       // ["Customize Page", (evt) => {
       //     this.hide();
       //     System.import("src/client/customize.js").then(c => c.openCustomizeWorkspace(evt))

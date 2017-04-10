@@ -2,7 +2,7 @@
 
 import Morph from './Morph.js';
 import componentLoader from 'src/client/morphic/component-loader.js';
-import * as preferences from 'src/client/preferences.js';
+import preferences from 'src/client/preferences.js';
 
 import {pt} from 'src/client/graphics.js';
 

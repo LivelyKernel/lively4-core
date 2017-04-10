@@ -3,7 +3,7 @@ import * as jquery from '../external/jquery.js';
 import * as _ from '../external/underscore.js';
 import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
-import * as preferences from './preferences.js';
+import preferences from './preferences.js';
 import persistence from './persistence.js';
 import html from './html.js';
 import files from './files.js';
@@ -596,8 +596,10 @@ export default class Lively {
   }
   
   static async initializeLocalContent() {
+    
     console.log("load local lively content ")
     await persistence.current.loadLivelyContentForURL()
+    preferences.loadPreferences()
     console.log("lively persistence start ")
     setTimeout(() => {persistence.current.start()}, 2000)
   }
@@ -1043,6 +1045,29 @@ export default class Lively {
     persistence.current().saveLivelyContent()
   }
   
+  
+  static async onInteractiveLayerPreference(enabled) {
+    if (enabled) {
+      lively.notify("enable interactie...")
+      await System.import("src/client/interactive.js");
+      InteractiveLayer.beGlobal()
+    } else {
+      lively.notify("disable interactie...")
+      InteractiveLayer.beNotGlobal()
+    }
+  }
+
+  static async onBodyPositionPreference(pos) {
+    lively.setPosition(document.body, pos)
+  }
+
+  //  lively.allPreferences()
+  static allPreferences() {
+    var regexp = /on(.*)Preference/
+    return Object.getOwnPropertyNames(lively)
+      .filter(ea => ea.match(regexp))
+      .map(ea => ea.match(regexp)[1])
+  }
 }
 
 if (!window.lively || window.lively.name != "Lively") {

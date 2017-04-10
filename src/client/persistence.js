@@ -1,4 +1,4 @@
-import * as preferences from './preferences.js';
+import preferences from './preferences.js';
 import focalStorage from 'src/external/focalStorage.js'
 import DelayedCall from 'src/client/delay.js'
 
@@ -120,6 +120,8 @@ export default class Persistence {
       div.style.height = "10px"
       div.style.backgroundColor = "blue"
       div.style.pointerEvents = "none"
+      div.style.zIndex = 2000
+      
       indicator = div
     }
     return indicator
