@@ -7,13 +7,15 @@ import components from './morphic/component-loader.js';
 export default class Preferences {
 
   static get prefsNode() {
-    let node = document.querySelector('lively-preferences');
-    if (!node) {
-      node = document.createElement('lively-preferences')
-      node.classList.add("lively-content")
-      components.openInBody(node)
+    if (this.node) return this.node
+    
+    this.node = document.body.querySelector('lively-preferences');
+    if (!this.node) {
+      this.node = document.createElement('lively-preferences')
+      this.node.classList.add("lively-content")
+      components.openInBody(this.node)
     }
-    return node
+    return this.node
   }
   
   static  read(preferenceKey) {
@@ -24,8 +26,10 @@ export default class Preferences {
     this.prefsNode.dataset[preferenceKey] = preferenceValue;
   }
   
-  static isEnabled(preferenceKey) {
-    return this.read(preferenceKey) == "true"
+  static isEnabled(preferenceKey, defaultValue) {
+    var pref =  this.read(preferenceKey);
+    if (pref === undefined) return defaultValue;
+    return pref == "true"
   }
 
   static enable(preferenceKey) {

@@ -543,6 +543,10 @@ export default class Lively {
     doc.addEventListener('keydown', function(evt){lively.keys.handle(evt)}, false);
 
     
+    console.log("load local lively content ")
+    await persistence.current.loadLivelyContentForURL()
+    preferences.loadPreferences()
+    
     // lazy initialize hand and selection
     lively.hand;
     // lively.selection;
@@ -569,39 +573,32 @@ export default class Lively {
       document.body.style.backgroundColor = "rgb(240,240,240)"
       ViewNav.enable(document.body)
 
-
-
-
-      if (loadContainer) {
-        
-        var container = document.createElement("lively-container");
-        container.id = 'main-content';
-        container.setAttribute("load", "auto");
-        
-        
-        
-        await components.openInWindow(container).then( () => {
-          container.__ingoreUpdates = true; // a hack... since I am missing DevLayers...
-          container.get('#container-content').style.overflow = "visible";
-          container.parentElement.toggleMaximize()
-          container.parentElement.setAttribute("data-lively4-donotpersist","all");
-
-        });
-
-    
-        return 
+      if (loadContainer && lively.preferences.isEnabled("ShowFixedBrowser", true)) {
+        this.showMainContainer()
       } 
-      
     }
-  }
-  
-  static async initializeLocalContent() {
     
-    console.log("load local lively content ")
-    await persistence.current.loadLivelyContentForURL()
-    preferences.loadPreferences()
     console.log("lively persistence start ")
     setTimeout(() => {persistence.current.start()}, 2000)
+
+    
+  }
+  
+  static async showMainContainer() {
+    var container = document.querySelector('main-content')
+    if (container) return container;
+    
+    container = document.createElement("lively-container");
+    container.id = 'main-content';
+    container.setAttribute("load", "auto");
+
+    await components.openInWindow(container).then( () => {
+      container.__ingoreUpdates = true; // a hack... since I am missing DevLayers...
+      container.get('#container-content').style.overflow = "visible";
+      container.parentElement.toggleMaximize()
+      container.parentElement.setAttribute("data-lively4-donotpersist","all");
+    });
+    return container
   }
 
   static initializeHalos() {
@@ -1042,20 +1039,30 @@ export default class Lively {
     // #TODO How to deal with multiple open lively pages? 
     // last closing site wins!
     // #IDEA: we could versionize the local content and saving to it will merge in conflicting changes first? But for this to work, we would need a change history in our local storage, too?
-    persistence.current().saveLivelyContent()
+    persistence.current.saveLivelyContent()
   }
   
   
   static async onInteractiveLayerPreference(enabled) {
     if (enabled) {
-      lively.notify("enable interactie...")
       await System.import("src/client/interactive.js");
       InteractiveLayer.beGlobal()
     } else {
-      lively.notify("disable interactie...")
       InteractiveLayer.beNotGlobal()
     }
   }
+
+  static async onShowFixedBrowserPreference(enabled) {
+    if (enabled) {
+      this.showMainContainer()
+    } else {
+      var content = document.querySelector("#main-content")
+      if (content && content.parentElement.isWindow ) {
+        content.parentElement.remove()
+      }
+    }
+  }
+
 
   static async onBodyPositionPreference(pos) {
     lively.setPosition(document.body, pos)

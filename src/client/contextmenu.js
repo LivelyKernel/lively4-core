@@ -281,7 +281,7 @@ export default class ContextMenu {
         },, '<i class="fa fa-bug" aria-hidden="true"></i>']
       ]],
       ["Preferences", 
-          ["InteractiveLayer"].map(ea => this.preferenceEntry(ea))
+          ["InteractiveLayer", "ShowFixedBrowser"].map(ea => this.preferenceEntry(ea))
       ],
       
       // ["Customize Page", (evt) => {

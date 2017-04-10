@@ -21,10 +21,7 @@ if (window.lively && window.lively4url) {
   
   var loadContainer = script.getAttribute("data-container") // some simple configuration 
   console.log("lively4url: " + lively4url);
-  if (window.location.search.match(/[?&]nomain/)) {
-    loadContainer = false
-  }
-  
+
    
   // COPIED HERE BECAUSE resuse through libs does not work yet
   function loadJavaScriptThroughDOM(name, src, force) {
@@ -165,9 +162,7 @@ if (window.lively && window.lively4url) {
       
       console.group("3/3: Initialize Document")
       await lively.initializeDocument(document, window.lively4chrome, loadContainer);
-      
-      await lively.initializeLocalContent();
-      console.groupEnd();
+            console.groupEnd();
       
       console.log("Finally loaded!");
       

@@ -100,10 +100,25 @@ export default class Persistence {
       (Date.now() - this.lastSaved) +"ms")
   }
   
+  
+  hasDoNotPersistTag(node,) {
+    var donotperist =  node.attributes && 
+      node.attributes.hasOwnProperty('data-lively4-donotpersist');
+    if (donotperist) return true
+    if (!node.parentElement) return false
+    return this.hasDoNotPersistTag(node.parentElement)
+  }
+  
   isBlacklisted(mutation) {
     if (mutation.target.tagName == "BODY") return true
+    if (mutation.target.tagName == "LIVELY-MENU") return true
+    if (mutation.target.tagName == "LIVELY-SELECTION") return true
+    if (mutation.target.tagName == "LIVELY-HAND") return true
+    if (mutation.target.tagName == "LIVELY-HALO") return true
     if (mutation.target.tagName == "LIVELY-NOTIFICATION-LIST") return true
     if (mutation.target.id == "mutationIndicator") return true
+    if (mutation.target.getAttribute("data-is-meta")) return true
+    if (this.hasDoNotPersistTag(mutation.target)) return true
     return false
   }
   
@@ -135,7 +150,7 @@ export default class Persistence {
     }
     
     mutations.filter(ea => !this.isBlacklisted(ea)).forEach(record => {
-      // console.log("mutation: ", record)
+      // console.log("mutation: ", record.target)
       this.showMutationIndicator().style.backgroundColor = "rgba(200,0,0,0.5)"
       this.saveDelay.call(() => {
         this.saveLivelyContent()
