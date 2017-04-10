@@ -4,6 +4,9 @@
 export default class Selecting {
 
   static load() {
+     if (!window.lively) {
+      return setTimeout(() => {Selecting.load()}, 100) // defere
+    }
     // use capture to prevent the default behavior...
     lively.removeEventListener("selecting"); // in case of a reload
     // #UseCase #COP get rid of the explict "selecting" context/domain and replace it with the context of the module "Selecting.js"

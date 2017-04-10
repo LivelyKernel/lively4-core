@@ -26,6 +26,8 @@ import focalStorage from '../external/focalStorage.js';
 
 import * as kernel from 'kernel';
 
+import Selection from 'templates/lively-selection.js'
+
 let $ = window.$; // known global variables.
 
 // a) Special shorthands for interactive development
@@ -503,12 +505,25 @@ export default class Lively {
 
   }
   
+  
+  // we do it lazy, because a hand can be broken or gone missing... 
   static get hand() {
-    return document.body.querySelector(":scope > lively-hand")
+    var hand =  document.body.querySelector(":scope > lively-hand")
+    if (!hand){
+        hand = document.createElement("lively-hand")
+        lively.components.openInBody(hand); // will not be initialized ... should we always return promise?
+    }
+    return hand
   }
 
   static get selection() {
-    return document.body.querySelector(":scope > lively-selection")
+    return Selection.current
+    // var selection = document.body.querySelector(":scope > lively-selection")
+    // if (!selection) {
+    //   selection = document.createElement("lively-selection")
+    //   lively.components.openInBody(selection);
+    // }
+    // return selection
   }
 
   static async initializeDocument(doc, loadedAsExtension, loadContainer) {
@@ -527,13 +542,9 @@ export default class Lively {
     doc.addEventListener('keydown', function(evt){lively.keys.handle(evt)}, false);
 
     
-    // initialize hand
-    if (!lively.hand)    
-      lively.components.openInBody(document.createElement("lively-hand"));
-
-    if (!lively.selection)    
-      lively.components.openInBody(document.createElement("lively-selection"));
-
+    // lazy initialize hand and selection
+    lively.hand;
+    // lively.selection;
 
     if (loadedAsExtension) {
       System.import("src/client/customize.js").then(customize => {
@@ -1009,15 +1020,6 @@ export default class Lively {
     return keys
   }
   
-  static createElement(name) {
-    var tempContainer = document.createElement("div")
-    var element = document.createElement("lively-hand")
-    
-    tempContainer.appendChild(element)
-    tempContainer.querySelector(":scope > :unresolved")
-    
-
-  }
 
   static currentStack() {
     try {

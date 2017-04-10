@@ -19,7 +19,6 @@ export default class HTML {
   	return Array.from(all);
   }
   
-  // #JENS #ContinueWork here #NotFinished... load/save for tim
   static getFilter(ea) {
     return !['SCRIPT', 'LIVELY-PREFERENCES', 'LIVELY-HALOS'].includes(ea.tagName);
   }

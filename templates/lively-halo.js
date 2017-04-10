@@ -1,4 +1,4 @@
-import lively from 'src/client/lively.js';
+
 import Morph from './Morph.js';
 
 import * as nodes from 'src/client/morphic/node-helpers.js';
@@ -8,6 +8,8 @@ import selecting from 'src/client/morphic/selecting.js';
 
 import {pt, rect, Rectangle} from 'src/client/graphics.js';
 
+
+// import lively from 'src/client/lively.js'; // #TODO does not work
 
 /*
  * Halo, the container for HaloItems

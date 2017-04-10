@@ -71,7 +71,7 @@ export default class Persistence {
   }
 
   async loadLivelyContentForURL(url, target) {
-    var source = await this.getLivelyContentForURL() 
+    var source = await this.getLivelyContentForURL(url) 
     target = target || this.defaultTarget()
     var div = document.createElement("div")
     div.innerHTML = source

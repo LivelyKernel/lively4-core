@@ -62,7 +62,7 @@ export default class LivelyHand extends Morph {
   }
 
   onPointerDown(evt) {
-    document.body.parentElement.setPointerCapture(evt.pointerId)
+    // document.body.parentElement.setPointerCapture(evt.pointerId)
     if (evt.altKey) {
       var target = this.elementUnderHand(evt)
       if (!target) return;
@@ -87,7 +87,7 @@ export default class LivelyHand extends Morph {
  
 
   onPointerUp(evt) {
-    document.body.parentElement.releasePointerCapture(evt.pointerId)
+    // document.body.parentElement.releasePointerCapture(evt.pointerId)
     lively.removeEventListener("Hand", document.body.parentElement, "pointermove")
     lively.removeEventListener("Hand", document.body.parentElement, "pointerup")
     this.drop()

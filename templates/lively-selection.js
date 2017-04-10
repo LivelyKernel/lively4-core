@@ -11,7 +11,11 @@ export default class Selection extends Morph {
   
   get isMetaNode() { return true}
  
-  static load() {
+  static async load() {
+    if (!window.lively) {
+      return setTimeout(() => {Selection.load()}, 100) // defere
+    }
+    
     lively.notify("load")
     if (!this.current){
       this.current = document.createElement("lively-selection")
@@ -239,5 +243,6 @@ export default class Selection extends Morph {
   
   
 }  
-  
+
 Selection.load()
+
