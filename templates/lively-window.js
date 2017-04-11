@@ -270,9 +270,8 @@ export default class Window extends Morph {
       $('i', this.maxButton).removeClass('fa-compress').addClass('fa-expand');
 
       this.style.position = "absolute"
-      this.setPosition(
-          this.positionBeforeMaximize.x,
-          this.positionBeforeMaximize.y
+      lively.setGlobalPosition(this, 
+        pt(this.positionBeforeMaximize.x, this.positionBeforeMaximize.y)
       );
       this.setSize(
         this.positionBeforeMaximize.width,
@@ -326,9 +325,8 @@ export default class Window extends Morph {
     var content = this.shadowRoot.querySelector('#window-content');
     if (this.positionBeforeMinimize) {
       this.style.position = "absolute"
-      this.setPosition(
-          this.positionBeforeMinimize.x,
-          this.positionBeforeMinimize.y
+      lively.setGlobalPosition(this, 
+        pt(this.positionBeforeMinimize.x, this.positionBeforeMinimize.y)
       );
       this.setSize(
         this.positionBeforeMinimize.width,
