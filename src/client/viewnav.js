@@ -1,4 +1,5 @@
-import {pt} from 'src/client/graphics.js';
+import {pt} from './graphics.js';
+import Preferences from './preferences.js';
 
 /*
  * Implements World (html body) panning!
@@ -71,7 +72,8 @@ export default class ViewNav {
     if (!evt.ctrlKey || evt.button != 0)
       return;
       
-    this.showDocumentGrid()
+    if (!Preferences.isEnabled("ShowDocumentGrid", false))
+      ViewNav.showDocumentGrid(); // 
     this.eventOffset = this.eventPos(evt)
     this.originalPos = lively.getPosition(this.target)
       
@@ -85,14 +87,13 @@ export default class ViewNav {
   }
   
   onPointerUp(evt) {
-    this.hideDocumentGrid()
+    if (!Preferences.isEnabled("ShowDocumentGrid", false))
+      ViewNav.hideDocumentGrid()
     lively.removeEventListener("ViewNav", this.eventSource, "pointermove")
     lively.removeEventListener("ViewNav", this.eventSource, "pointerup")
   }
   
   onResize(evt) {
-
-
     // this.lastPoint = pt(LastEvt.clientX, LastEvt.clientY)
     var scale = window.innerWidth / window.outerWidth
     // lively.notify("scale " + (scale / this.lastScale))
@@ -134,33 +135,45 @@ export default class ViewNav {
     }
     
   }
-  
-  showDocumentGrid() {
-    ([-2,-1,0,1,2]).forEach(i => {
-    	([-2,-1,0,1,2]).forEach(j => {
-    		var w = 1980
-    		var h = 1020
-    		var div = document.createElement("div")
-    		if (i ==0 && j == 0) {
-    			div.style.background = "white"
-    		} else {
-    			div.style.background = "rgb(245,245,245)"
-    		}
-    		lively.setPosition(div, {x: i*w, y: j*h})
-    		div.style.border = "1px dashed gray"
-    		div.style.width = w  +"px"
-    		div.style.height = h +"px"
-    		div.livelyAcceptsDrop = function() {}
-    		div.setAttribute("data-lively4-donotpersist", "all")
-    		div.style.pointerEvents = "none"
-    		div.style.zIndex = -100
-    		div.classList.add("document-grid")
-    		document.body.appendChild(div)
-    	})
-    })
+
+  static showDocumentGridItem(pos, color,border, w, h, parent) {
+      var div = document.createElement("div")
+  		lively.setPosition(div, pos)
+  		div.style.backgroundColor = color
+  		div.style.border = border
+  		div.style.width = w  +"px"
+  		div.style.height = h +"px"
+  		div.livelyAcceptsDrop = function() {}
+  		div.setAttribute("data-lively4-donotpersist", "all")
+  		div.style.pointerEvents = "none"
+  		div.style.zIndex = -100
+  		div.classList.add("document-grid")
+  		// div.style.overflow = "hidden"
+  		parent.appendChild(div)
+  		return div
   }
   
-  hideDocumentGrid() {
+  static showDocumentGrid() {
+    let w = 3000,
+       h = 2000,
+       smallGridSize = 100;
+    var quadrants =[0] 
+    quadrants.forEach(i => {
+    	quadrants.forEach(j => {
+    		var color = (i ==0 && j == 0) ? "white" : "rgb(245,245,245)";
+        var bigGrid = this.showDocumentGridItem(pt(i*w, j*h), color, "1px dashed gray", w, h, document.body)
+    	})
+    })
+    for (var k=0; k < w; k += smallGridSize) {
+      for (var l=0; l < h; l += smallGridSize) {
+        this.showDocumentGridItem(pt(k, l), 
+          undefined, "0.5px dashed rgb(240,240,240)", smallGridSize, smallGridSize, document.body)
+      }  
+    }
+    
+  }
+  
+  static hideDocumentGrid() {
     document.body.querySelectorAll(".document-grid").forEach(ea => {
       ea.remove()
     })

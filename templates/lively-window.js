@@ -514,7 +514,7 @@ export default class Window extends Morph {
     let bounds = this.getBoundingClientRect();
     var s= getScroll();
 
-    lively.setPosition(this,
+    lively.setGlobalPosition(this,
       pt(s.x + document.body.clientWidth / 2 - bounds.width /2,
         s.y + document.body.clientHeight / 2 - bounds.height  /2));
   }

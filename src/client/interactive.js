@@ -1,5 +1,6 @@
 import * as cop from "src/external/ContextJS/src/contextjs.js";
 import {pt,rect, Point, Rectangle} from "src/client/graphics.js"
+import Preferences from './preferences.js';
 
 /* Layer for interactive development, that will not be active by default 
  *
@@ -59,4 +60,8 @@ cop.layer(window, "InteractiveLayer")
   get rect() {
     return rect
   },
+  get Preferences() {
+    return Preferences
+  },
+  
 })

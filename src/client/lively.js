@@ -513,6 +513,7 @@ export default class Lively {
     if (!hand){
         hand = document.createElement("lively-hand")
         lively.components.openInBody(hand); // will not be initialized ... should we always return promise?
+         hand.style.display = "none"
     }
     return hand
   }
@@ -895,7 +896,7 @@ export default class Lively {
         });
         if (!found) pos = pt(i * offset,i* offset)
       }
-      return pos.subPt(lively.getPosition(worldContext))
+      return pos.subPt(lively.getGlobalPosition(worldContext))
   }
   
   // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
@@ -1042,6 +1043,7 @@ export default class Lively {
     persistence.current.saveLivelyContent()
   }
   
+  /* Change Preference Callbacks */
   
   static async onInteractiveLayerPreference(enabled) {
     if (enabled) {
@@ -1063,10 +1065,20 @@ export default class Lively {
     }
   }
 
+  static async onShowDocumentGridPreference(enabled) {
+    if (enabled) {
+      ViewNav.showDocumentGrid()
+    } else {
+      ViewNav.hideDocumentGrid()
+    }
+  }
+
 
   static async onBodyPositionPreference(pos) {
     lively.setPosition(document.body, pos)
   }
+
+
 
   //  lively.allPreferences()
   static allPreferences() {
