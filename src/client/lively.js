@@ -362,6 +362,11 @@ export default class Lively {
     this.setPosition(node, pos.subPt(parentPos))
   }
 
+  static getScroll() {
+    return pt(
+      document.scrollingElement.scrollLeft || 0,
+      document.scrollingElement.scrollTop || 0);
+  }
 
   static openFile(url) {
     if (url.hostname == "lively4"){

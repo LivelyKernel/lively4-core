@@ -57,7 +57,6 @@ export default class ViewNav {
     if (event.keyCode == 17) {
         lively.notify("ctrl up ")
         lively.removeEventListener("ViewNav", this.eventSource, "pointermove")   
-
     }
   }
 
@@ -66,8 +65,6 @@ export default class ViewNav {
     lively.showPoint(pos)
   }
   
-
-
   onPointerDown(evt) {
     if (!evt.ctrlKey || evt.button != 0)
       return;
@@ -148,29 +145,33 @@ export default class ViewNav {
   		div.style.pointerEvents = "none"
   		div.style.zIndex = -100
   		div.classList.add("document-grid")
-  		// div.style.overflow = "hidden"
   		parent.appendChild(div)
   		return div
   }
   
   static showDocumentGrid() {
     let w = 3000,
-       h = 2000,
-       smallGridSize = 100;
-    var quadrants =[0] 
+      h = 2000,
+      smallGridSize = 100,
+      quadrants =[0]
+    
+    let grid = document.createElement("div")
+  	grid.setAttribute("data-lively4-donotpersist", "all")
+    lively.setPosition(grid, pt(0,0))
+    document.body.appendChild(grid)
+
     quadrants.forEach(i => {
     	quadrants.forEach(j => {
     		var color = (i ==0 && j == 0) ? "white" : "rgb(245,245,245)";
-        var bigGrid = this.showDocumentGridItem(pt(i*w, j*h), color, "1px dashed gray", w, h, document.body)
+        var bigGrid = this.showDocumentGridItem(pt(i*w, j*h), color, "1px dashed gray", w, h, grid)
     	})
     })
     for (var k=0; k < w; k += smallGridSize) {
       for (var l=0; l < h; l += smallGridSize) {
         this.showDocumentGridItem(pt(k, l), 
-          undefined, "0.5px dashed rgb(240,240,240)", smallGridSize, smallGridSize, document.body)
+          undefined, "0.5px dashed rgb(240,240,240)", smallGridSize, smallGridSize, grid)
       }  
     }
-    
   }
   
   static hideDocumentGrid() {
@@ -182,7 +183,6 @@ export default class ViewNav {
   static resetView() {
     lively.setPosition(document.body,pt(0,0)) 
   }
-  
 } 
 
 if (window.lively)

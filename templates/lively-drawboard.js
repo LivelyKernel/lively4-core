@@ -91,8 +91,8 @@ export default class LivelyDrawboard extends Morph {
       (e) => this.onPointerDown(e));
     lively.addEventListener("drawboard", this.svg, "pointerup", 
       (e) => this.onPointerUp(e));
-    lively.addEventListener("drawboard", this, "size-changed", 
-      (e) => this.onSizeChanged(e));
+    lively.addEventListener("drawboard", this, "extent-changed", 
+      (e) => this.onExtentChanged(e));
     lively.addEventListener("drawboard", this, "focus", 
       (e) => this.onFocus(e));
     lively.addEventListener("drawboard", this, "blur", 
@@ -136,17 +136,18 @@ export default class LivelyDrawboard extends Morph {
     if (this.parentElement.isWindow) {
       this.fixedControls = true 
       this.get("#controls").hidden =false 
-
+      this.get("lively-resizer").hidden = true
     } else {
       this.get('#controls').draggable = false
       this.fixedControls = false 
+      this.get("lively-resizer").hidden = false
     }
     setTimeout(() => {
        this.updateCanvasExtent()  
     }, 1000)
   }
   
-  onSizeChanged() {
+  onExtentChanged() {
     this.updateCanvasExtent()
   }
   
@@ -175,7 +176,7 @@ export default class LivelyDrawboard extends Morph {
     this.mutationObserver = new MutationObserver((mutations, observer) => {
         mutations.forEach(record => {
           if (record.target == this) {
-            this.onSizeChanged()
+            this.onExtentChanged()
           }
         })
     });
