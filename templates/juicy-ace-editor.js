@@ -204,7 +204,6 @@ export default class AceEditor extends Morph {
     
     var modelist = ace.require("ace/ext/modelist");
     var mode = modelist.getModeForPath(filename).name;
-    
     this.changeMode(mode);
     
   }
@@ -230,7 +229,7 @@ export default class AceEditor extends Morph {
       // there must be a way to make ace do all this stuff as with themes... :(
       var script = document.createElement("Script");
       script.type = "text/javascript";
-      script.src = lively4url + "/src/external/ace/mode-" + mode + ".js";
+      script.src = lively4url + "/src/external/ace/mode-" + mode.replace(/.*\//,"") + ".js";
       script.onerror = function loadError(err) {
         throw new URIError("Ace config " + err.target.src + " not found. ");
       };
