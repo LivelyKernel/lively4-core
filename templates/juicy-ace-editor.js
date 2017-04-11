@@ -219,6 +219,7 @@ export default class AceEditor extends Morph {
   changeMode(mode) {
     // lively.notify("changeMode" + mode)
     if (mode == null) return;
+    mode =  mode.replace(/.*\//,""); // strip prefixes...
     var Mode;
     try {
       Mode = ace.require("ace/mode/" + mode).Mode;
@@ -229,7 +230,7 @@ export default class AceEditor extends Morph {
       // there must be a way to make ace do all this stuff as with themes... :(
       var script = document.createElement("Script");
       script.type = "text/javascript";
-      script.src = lively4url + "/src/external/ace/mode-" + mode.replace(/.*\//,"") + ".js";
+      script.src = lively4url + "/src/external/ace/mode-" + mode + ".js";
       script.onerror = function loadError(err) {
         throw new URIError("Ace config " + err.target.src + " not found. ");
       };
