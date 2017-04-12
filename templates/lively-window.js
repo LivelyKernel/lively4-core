@@ -1,6 +1,8 @@
 import Morph from './Morph.js';
 import {Grid,pt} from 'src/client/graphics.js'
 
+import Preferences from 'src/client/preferences.js';
+
 // #TODO implement this again with the new AExp lib #Stefan? 
 // import { AExpr } from 'src/external/active-expressions/src/active-expressions.js';
 // import { AExpr } from 'src/external/active-expressions/src/active-view.js';
