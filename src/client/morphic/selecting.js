@@ -4,6 +4,9 @@
 export default class Selecting {
 
   static load() {
+     if (!window.lively) {
+      return setTimeout(() => {Selecting.load()}, 100) // defere
+    }
     // use capture to prevent the default behavior...
     lively.removeEventListener("selecting"); // in case of a reload
     // #UseCase #COP get rid of the explict "selecting" context/domain and replace it with the context of the module "Selecting.js"
@@ -31,10 +34,7 @@ export default class Selecting {
       e.stopPropagation();
       e.preventDefault();
     } else {
-      // hide halos if the user clicks somewhere else
-      if (window.that && !$(e.target).is("lively-halos")) {
-        this.hideHalos();
-      }
+      
     }
   }
   
@@ -52,23 +52,41 @@ export default class Selecting {
   }
 
   static handleSelect(e) {
-    lively.notify("select " + e.target)
+     
     if (e.ctrlKey || e.metaKey) {
-      var path = e.path.reverse().filter(ea => ! this.isIgnoredOnMagnify(ea))
+
+
+      var rootNode = this.findRootNode(document.body)
+
+      var path = e.path.reverse()
+        .filter(ea => ! this.isIgnoredOnMagnify(ea))
+      
       if (e.shiftKey) {
         var idx = e.path.indexOf(document.body);
         path= path.reverse();
+      } else {
+        // by default: don't go into the shadows
+        path = path.filter(ea => rootNode === this.findRootNode(ea))
       }
       this.onMagnify(path[0], e, path);
       e.stopPropagation();
       e.preventDefault();
     }
   }
+  
+  static findRootNode(node) {
+    if (!node.parentNode) return node
+    return this.findRootNode(node.parentNode)
+  }
 
   static onMagnify(target, e, path) {
-
+    if (!target) {
+      this.hideHalos()
+      return 
+    }
     var grabTarget = target;
     var that = window.that;
+
     // console.log("onMagnify " + grabTarget + " that: " + that);
     var parents = _.reject(path, 
         ea =>  this.isIgnoredOnMagnify(ea))
@@ -85,16 +103,24 @@ export default class Selecting {
 
   static showHalos(el, path) {
     path = path || []
-    if (this.lastIndicator) $(this.lastIndicator).remove();
-    this.lastIndicator = lively.showElement(el);
-    var div = document.createElement("div")
     
-    div.innerHTML = path.reverse().map(ea => (ea === el ? "<b>" : "") + (ea.tagName ? ea.tagName : "") + " " + (ea.id ? ea.id : "") 
-      + " " + (ea.getAttribute && ea.getAttribute("class")) + (ea === el ? "</b>" : "")).join("<br>")
-    this.lastIndicator.appendChild(div)
+    if (HaloService.lastIndicator) HaloService.lastIndicator.remove();
+    HaloService.lastIndicator = lively.showElement(el);
+  
     
-    div.style.fontSize = "8pt"
-    div.style.color = "gray"
+    if (HaloService.lastIndicator) {
+      HaloService.lastIndicator.style.border = "1px dashed blue"
+      HaloService.lastIndicator.querySelector("pre").style.color = "blue"
+
+    //   var div = document.createElement("div")
+    //   div.innerHTML = path.reverse().map(ea => (ea === el ? "<b>" : "") + (ea.tagName ? ea.tagName : "") + " " + (ea.id ? ea.id : "") 
+    //     + " " + (ea.getAttribute && ea.getAttribute("class")) + (ea === el ? "</b>" : "")).join("<br>")
+    //   this.lastIndicator.appendChild(div)
+      
+    //   div.style.fontSize = "8pt"
+    //   div.style.color = "gray"
+    }
+    
     HaloService.showHalos(el, path);
   }
 

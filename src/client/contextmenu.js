@@ -7,6 +7,8 @@ import html from './html.js';
 import {pt} from './graphics.js';
 import ViewNav from 'src/client/viewnav.js'
 
+import Preferences from './preferences.js';
+
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
 export default class ContextMenu {
@@ -32,7 +34,10 @@ export default class ContextMenu {
   
   static openComponentInWindow (name, evt, worldContext) {
     this.hide();
-    return lively.openComponentInWindow(name, pt(evt.pageX, evt.pageY), undefined, worldContext);
+    return lively.openComponentInWindow(name, null, undefined, worldContext).then( comp => {
+      this.positionElementAtEvent(comp.parentElement, worldContext, evt)
+      return comp
+    });
   }
   
   static openInWindow(comp, worldContext, evt) {
@@ -42,7 +47,7 @@ export default class ContextMenu {
 	  });
   }
   
-  static positionElementAtEvent(element,worldContext,  evt) {
+  static positionElementAtEvent(element, worldContext, evt) {
     evt = this.firstEvent || evt;
     
     var pos = pt(evt.clientX, evt.clientY);
@@ -52,8 +57,7 @@ export default class ContextMenu {
     if (worldContext.localizePosition) { 
       pos = worldContext.localizePosition(pos);
     } else {
-      var bodyBounds = document.body.getBoundingClientRect()
-      pos = pos.subPt(pt(bodyBounds.left, bodyBounds.top))
+      pos = pos.subPt(lively.getGlobalPosition(worldContext))
     }
     lively.setPosition(element, pos);
   }
@@ -61,7 +65,7 @@ export default class ContextMenu {
   static targetMenuItems(target) {
     var wasEditable = (target.contentEditable == "true");
     var wasDisabled = (target.disabled == "true");
-    var targetInWindow = target.parentElement.tagName == 'LIVELY-WINDOW';
+    var targetInWindow = target.parentElement && target.parentElement.tagName == 'LIVELY-WINDOW';
     return [
       ["show", (evt) => {
          this.hide();
@@ -104,38 +108,62 @@ export default class ContextMenu {
     ];
   }
   
+  static openCenteredAt(morph, worldContext, evt) {
+    worldContext.appendChild(morph);
+    lively.setGlobalPosition(morph, pt(evt.clientX, evt.clientY)
+      .subPt(lively.getExtent(morph).scaleBy(0.5)))
+  }
+  
+  static preferenceEntry(preferenceKey) {
+    return Preferences.isEnabled(preferenceKey) ? [
+      Preferences.shortDescription(preferenceKey), () => {
+        Preferences.disable(preferenceKey)
+      },"",
+      '<i class="fa fa-check-square-o" aria-hidden="true"></i>'
+      ] : [
+      Preferences.shortDescription(preferenceKey), async () => {
+        Preferences.enable(preferenceKey)
+      }, "",  '<i class="fa fa-square-o" aria-hidden="true"></i>'
+    ]
+  }
+  
+  
   static worldMenuItems(worldContext) {
     return  [
       ["Workspace", (evt) => {
         this.hide();
-        lively.openWorkspace("", pt(evt.pageX, evt.pageY), worldContext);
+        lively.openWorkspace("", null, worldContext).then(comp => {
+          this.positionElementAtEvent(comp.parentElement, worldContext, evt)
+        });
       }, "CMD+K", '<i class="fa fa-window-maximize" aria-hidden="true"></i>'],
       ["Browse/Edit", (evt) => {
+          var container = _.last(document.querySelectorAll("lively-container"));
           this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
-            var container = _.last(document.querySelectorAll("lively-container"));
             if (container)
-              comp.followPath("" +container.getURL());
+              comp.followPath("" + container.getURL());
             else
               comp.followPath(lively4url +"/");
             comp.parentElement.style.width = "850px";
             comp.parentElement.style.height = "600px";
+            this.positionElementAtEvent(comp.parentElement, worldContext, evt)
           });
         }, 
         "CMD+SHIFT+B", '<i class="fa fa-cogs" aria-hidden="true"></i>'],
       // ["File Editor", (evt) => this.openComponentInWindow("lively-editor", evt)],
       // ["File Browser", (evt) => this.openComponentInWindow("lively-file-browser", evt)],
-      ["Component Bin", (evt) => this.openComponentInWindow("lively-component-bin", evt),
+      ["Component Bin", (evt) => 
+        this.openComponentInWindow("lively-component-bin", evt, worldContext),
        "CMD+O", '<i class="fa fa-th" aria-hidden="true"></i>'],
       ["Insert", [
         ["Text", (evt) => {
-          var text  = document.createElement("p");
-          text.innerHTML = "Hello";
-          text.contentEditable = true;
-          worldContext.appendChild(text);
-          this.positionElementAtEvent(text, worldContext, evt)
-
+          var morph  = document.createElement("p");
+          morph.innerHTML = "Hello";
+          morph.contentEditable = true;
+          worldContext.appendChild(morph);
+          this.openCenteredAt(morph, worldContext, evt)          
+          lively.hand.startGrabbing(morph, evt)
           if (worldContext === document.body) {
-            text.classList.add("lively-content")
+            morph.classList.add("lively-content")
           }
           this.hide();
         }],
@@ -144,31 +172,31 @@ export default class ContextMenu {
           morph.style.width = "200px";
           morph.style.height = "100px";
           morph.style.border = "1px solid black"
-          this.positionElementAtEvent(morph, worldContext, evt)
-    
+          
+          this.openCenteredAt(morph, worldContext, evt)          
           // morph.style.backgroundColor = "blue";
           if (worldContext === document.body) {
             morph.classList.add("lively-content")
           }
           morph.style.backgroundColor = 'rgba(40,40,80,0.5)';
-          worldContext.appendChild(morph);
-          window.that = morph
-          HaloService.showHalos(morph);
+          lively.hand.startGrabbing(morph, evt)
+          
 
           this.hide();
         }],
-         ["Drawing", (evt) => {
+         ["Drawing", async (evt) => {
           var morph  = document.createElement("lively-drawboard");
           morph.setAttribute("width", "400px");
           morph.setAttribute("height", "400px");
-          this.positionElementAtEvent(morph, worldContext, evt)
+          await lively.components.openIn(worldContext, morph);
 
+          this.openCenteredAt(morph, worldContext, evt)          
+          lively.hand.startGrabbing(morph, evt)
           // morph.style.backgroundColor = "blue";
           if (worldContext === document.body) {
             morph.classList.add("lively-content")
           }
           morph.style.backgroundColor = 'rgb(255,250,205)';
-          lively.components.openIn(worldContext, morph);
           this.hide();
         }]
       ]],
@@ -182,7 +210,9 @@ export default class ContextMenu {
         ['Debugger', (evt) => lively.openDebugger().then( cmp), 
           "", '<i class="fa fa-chrome" aria-hidden="true"></i>'],
         ['Inspector', (evt) => 
-          lively.openInspector(worldContext, undefined, undefined, worldContext), 
+          lively.openInspector(worldContext, undefined, undefined, worldContext).then(comp => {
+            this.positionElementAtEvent(comp.parentElement, worldContext, evt)
+          }), 
           "", '<i class="fa fa-info-circle" aria-hidden="true"></i>'],
         ["Test Runner", (evt) => this.openComponentInWindow("lively-testrunner", evt, worldContext),
           "", '<i class="fa fa-check-square-o" aria-hidden="true"></i>'],
@@ -190,6 +220,45 @@ export default class ContextMenu {
           "", '<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'],
         ["Storage Setup", (evt) => this.openComponentInWindow("lively-filesystems", evt, worldContext),
           "", '<i class="fa fa-cloud" aria-hidden="true"></i>'],
+      ]],
+      ["View", [
+        ["Reset View", (evt) => ViewNav.resetView(), 
+          "",'<i class="fa fa-window-restore" aria-hidden="true"></i>'],
+        
+        !document.webkitIsFullScreen ?
+            ["Enter Fullscreen", (evt) => {
+                document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)
+              },
+              "F11", '<i class="fa fa-arrows-alt" aria-hidden="true"></i>'
+            ] :
+            ["Leave Fullscreen", (evt) => document.webkitCancelFullScreen(),
+              "F11", '<i class="fa fa-times-circle-o" aria-hidden="true"></i>'
+          ],
+
+        ["Gather Windows", (evt) => {
+            var pos = pt(0,0)
+            _.sortBy(worldContext.querySelectorAll(":scope > lively-window"), ea => {
+              return getComputedStyle(ea).zIndex
+            }).forEach(ea => {
+              lively.setPosition(ea, pos)
+              pos = pos.addPt(pt(20,20))
+            })
+          },
+          "", '<i class="fa fa-window-restore" aria-hidden="true"></i>'
+        ],
+        ["Show Windows", (evt) => {
+            var pos = pt(0,0)
+            var windowsByWidth = _.groupBy(document.body.querySelectorAll("lively-window"), ea => ea.clientWidth) 
+            Object.keys(windowsByWidth).forEach( width => {
+              windowsByWidth[width].forEach( ea => {
+                lively.setPosition(ea, pos)
+                pos = pos.addPt(pt(0, Math.max(lively.getExtent(ea).y, 50) + 10))
+              })
+              pos = pt(pos.x + Math.min(1000, Number(width)), 0)
+            })
+          },
+          "", '<i class="fa fa-window-restore" aria-hidden="true"></i>',
+        ],
       ]],
       ["Documentation", [
         ["Devdocs.io", (evt) => {
@@ -212,26 +281,17 @@ export default class ContextMenu {
           window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
         },, '<i class="fa fa-bug" aria-hidden="true"></i>']
       ]],
+      ["Preferences", 
+          ["ShowDocumentGrid", "InteractiveLayer", "ShowFixedBrowser", "SnapWindowsInGrid"].map(ea => this.preferenceEntry(ea))
+      ],
+      
       // ["Customize Page", (evt) => {
       //     this.hide();
       //     System.import("src/client/customize.js").then(c => c.openCustomizeWorkspace(evt))
       //   },
       //   "",'<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'
       //   ],
-      // #TODO use sub menues here
 
-      ["Reset View", (evt) => ViewNav.resetView(), 
-        "",'<i class="fa fa-window-restore" aria-hidden="true"></i>'],
-      
-      !document.webkitIsFullScreen ?
-          ["Enter Fullscreen", (evt) => {
-              document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)
-            },
-            "F11", '<i class="fa fa-arrows-alt" aria-hidden="true"></i>'
-          ] :
-          ["Leave Fullscreen", (evt) => document.webkitCancelFullScreen(),
-            "F11", '<i class="fa fa-times-circle-o" aria-hidden="true"></i>'
-          ],
       ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt, worldContext), 
         "CMD+SHIFT+G",'<i class="fa fa-github" aria-hidden="true"></i>'],
       ["save as ..", (evt) => {

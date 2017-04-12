@@ -2,7 +2,7 @@
 
 import Morph from './Morph.js';
 
-import {pt}  from 'src/client/graphics.js';
+import {Grid, pt}  from 'src/client/graphics.js';
 
 export default class Resizer extends Morph {
   initialize() {
@@ -16,9 +16,18 @@ export default class Resizer extends Morph {
     this.originalLengths = new Map()
     this.originalFlexs = new Map()
   }
+  
 
   getElement() {
-    return this.target || this.parentElement
+    if (this.target) {
+      return this.target
+    } else if (this.parentElement) {
+      return this.parentElement 
+    } else if (this.parentNode && this.parentNode.host) {
+      return this.parentNode.host
+
+    }
+    return null
   }
 
   getWidth(element) {
@@ -95,20 +104,19 @@ export default class Resizer extends Morph {
   setLength(element, value) {
     this.setWidth(element, value.x)
     this.setHeight(element, value.y)
-    
+    element.dispatchEvent(new CustomEvent("extent-changed"))
   }
 
 
   getEventLength(evt) {
-    return pt(evt.clientX, evt.clientY)
+    return pt(evt.clientX, evt.clientY).subPt(lively.getGlobalPosition(document.body))
   }
   
   onDragStart(evt) {
     this.count = 0
     var element = this.getElement()
+    if (!element) return; // do nothging... should this happen?
     
-    
-        
     this.setOriginalLength(element, this.getLength(element))
     // this.setOriginalFlex(element, this.getFlex(element))  
       
@@ -137,22 +145,31 @@ export default class Resizer extends Morph {
     }
   }
   
-  
-  
   onDrag(evt) {
     if (!evt.clientX) return
+
+    var element = this.getElement()
+    if (!element) return; // do nothging... should this happen?
+
     this.count++ 
     if (this.count == 1) return; // ignore the first event because it seems to be off
     
     // DEBUG with: 
     // lively.showPoint(pt(evt.clientX, evt.clientY)).innerHTML = "" + this.count
 
-    var element = this.getElement()
-    
     // 1. calculate values
-    var delta = this.getEventLength(evt).subPt(this.dragOffset)
-      
+    var pos = this.getEventLength(evt)
+    // lively.showPoint(pos.addPt(lively.getGlobalPosition(document.body)))
+    
+    var delta = pos.subPt(this.dragOffset)
+
     var newExtent = this.getOriginalLength(element).addPt(delta)    
+
+    newExtent = Grid.snapPt(newExtent,100,10)
+
+
+    // lively.notify("pos " + pos + " newExtent " + newExtent)
+    
     
     // 2. constrain new values
     if (newExtent.x < 0) {
@@ -161,8 +178,6 @@ export default class Resizer extends Morph {
     if (newExtent.y < 0) {
       newExtent.y = 0
     }
-
-    
     // 3. update new values
     this.setLength(element, newExtent)
       

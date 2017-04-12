@@ -1,24 +1,11 @@
-'use strict';
-
 import Morph from './Morph.js';
-// import { AExpr } from 'src/external/active-expressions/src/active-expressions.js';
+import {Grid,pt} from 'src/client/graphics.js'
 
+// #TODO implement this again with the new AExp lib #Stefan? 
+// import { AExpr } from 'src/external/active-expressions/src/active-expressions.js';
 // import { AExpr } from 'src/external/active-expressions/src/active-view.js';
 
-
-import {pt} from 'src/client/graphics.js'
-
-
-function getScroll() {
-  return {
-    x: document.scrollingElement.scrollLeft || 0,
-    y: document.scrollingElement.scrollTop || 0
-  };
-}
-
 export default class Window extends Morph {
-  
-  
   
   get isWindow() {
     return true
@@ -51,20 +38,14 @@ export default class Window extends Morph {
     return this.shadowRoot.querySelector('.window-title span');
   }
 
-  setPosition(left, top) { // x, y
-    this.style.top = top + 'px';
-    this.style.left = left + 'px';
-    this.style.right = "";
-    this.style.bottom = "";
+  get target() {
+    return this.childNodes[0]
   }
 
-  setSize(width, height) {
-    this.style.width = width + 'px';
-    this.style.height = height + 'px';
-  
+  setExtent(extent) {
+    lively.setExtent(this, extent)
     if (this.target) 
-      this.target.dispatchEvent(new CustomEvent("size-changed"))
-    
+      this.target.dispatchEvent(new CustomEvent("extent-changed"))
   }
 
   /*
@@ -72,7 +53,7 @@ export default class Window extends Morph {
    */
   initialize() {
     this.setup();
-
+    
     this.created = true;
     this.render();
 
@@ -93,8 +74,7 @@ export default class Window extends Morph {
     //     win.style.left = 0;
     //   }
     // });
-    
-    
+
     this.setAttribute("tabindex", 0)
   }
   
@@ -125,34 +105,35 @@ export default class Window extends Morph {
   /*
    * Initialization
    */
-
   defineShortcuts() {
     this.window = this.shadowRoot.querySelector('.window');
 
     this.menuButton = this.shadowRoot.querySelector('.window-menu');
     this.minButton = this.shadowRoot.querySelector('.window-min');
     this.maxButton = this.shadowRoot.querySelector('.window-max');
-    this.pinButton = this.shadowRoot.querySelector('.window-pin');
-    this.resizeButton = this.shadowRoot.querySelector('.window-resize');
-    this.closeButton = this.shadowRoot.querySelector('.window-close');
 
     this.contentBlock = this.shadowRoot.querySelector('#window-content');
   }
 
   bindEvents() {
-    this.addEventListener('mousedown', (e) => { this.focus(); });
-    this.addEventListener('created', (e) => { this.focus(); });
-    
-    this.shadowRoot.querySelector('.window-title')
-      .addEventListener('mousedown', (e) => { this.titleMouseDown(e); });
+    try {
+      this.addEventListener('mousedown', (e) => { this.focus(); });
+      this.addEventListener('created', (e) => { this.focus(); });
+      
+      this.addEventListener('extent-changed', (e) => { this.onExtentChanged(); });
 
-    this.menuButton.addEventListener('click', (e) => { this.menuButtonClicked(e); });
-    this.minButton.addEventListener('click', (e) => { this.minButtonClicked(e); });
-    this.maxButton.addEventListener('click', (e) => { this.maxButtonClicked(e); });
-    // this.pinButton.addEventListener('click', (e) => { this.pinButtonClicked(e); });
-    this.resizeButton.addEventListener('mousedown', (e) => { this.resizeMouseDown(e); });
-    this.closeButton.addEventListener('click', (e) => { this.closeButtonClicked(e); });
-    this.addEventListener('keyup', (e) => { this.onKeyUp(e); });
+
+      this.shadowRoot.querySelector('.window-title')
+        .addEventListener('mousedown', (e) => { this.onTitleMouseDown(e); });
+  
+      this.menuButton.addEventListener('click', (e) => { this.onMenuButtonClicked(e); });
+      this.minButton.addEventListener('click', (e) => { this.onMinButtonClicked(e); });
+      this.maxButton.addEventListener('click', (e) => { this.onMaxButtonClicked(e); });
+      this.get('.window-close').addEventListener('click', (e) => { this.onCloseButtonClicked(e); });
+      this.addEventListener('keyup', (e) => { this.onKeyUp(e); });
+    } catch(err) {
+      console.log("Error, binding events! Continue anyway!", err)
+    }
   }
   
   onKeyUp(evt) {
@@ -189,20 +170,13 @@ export default class Window extends Morph {
   }
 
   reposition() {
-    let rect = this.getBoundingClientRect();
-
+    let pos = lively.getGlobalPosition(this);
     if (this.isFixed) {
-      this.setPosition(rect.left, rect.top);
-
+      lively.setPosition(pos);
       this.classList.add('window-fixed');
-      // this.pinButton.classList.add('active');
     } else {
-      let scroll = getScroll();
-
-      this.setPosition(rect.left + scroll.x, rect.top + scroll.y);
-
-      this.classList.remove('window-fixed');
-      // this.pinButton.classList.remove('active');
+      lively.setPosition(pos.addPt(lively.getScroll()))
+      this.classList.remove('window-fixed') 
     }
   }
 
@@ -210,25 +184,20 @@ export default class Window extends Morph {
 		return 100
 	}
 	
-	allWindows() {
-		// return Array.from(document.querySelectorAll('lively-window'));
-	  return Array.from(document.querySelectorAll('*')).filter(ea => ea.isWindow);
-	  
+  allWindows() {
+    return Array.from(document.querySelectorAll('*')).filter(ea => ea.isWindow);
 	}
 
   focus(e) {
     let allWindows = this.allWindows();
     let thisIdx = allWindows.indexOf(this);
-
     let allWindowsButThis = allWindows;
     allWindowsButThis.splice(thisIdx, 1);
-
     allWindowsButThis.sort((a, b) => {
       return parseInt(a.style['z-index']) - parseInt(b.style['z-index']);
     });
 
     allWindowsButThis.forEach((win, index) => {
-      // lively.showElement(win).innerHTML = "INDEX " + index
       win.style['z-index'] = this.minZIndex + index;
       if (win.window)
         win.window.classList.remove('focused');
@@ -243,8 +212,6 @@ export default class Window extends Morph {
     
     if (this.target && this.target.focus) this.target.focus()
   }
-
-
 
 	bringMinimizedWindowsToFront() {
 	  var allWindows = this.allWindows();
@@ -270,14 +237,10 @@ export default class Window extends Morph {
       $('i', this.maxButton).removeClass('fa-compress').addClass('fa-expand');
 
       this.style.position = "absolute"
-      this.setPosition(
-          this.positionBeforeMaximize.x,
-          this.positionBeforeMaximize.y
+      lively.setGlobalPosition(this, 
+        pt(this.positionBeforeMaximize.x, this.positionBeforeMaximize.y)
       );
-      this.setSize(
-        this.positionBeforeMaximize.width,
-        this.positionBeforeMaximize.height
-      );
+      this.setExtent(pt(this.positionBeforeMaximize.width, this.positionBeforeMaximize.height))
       document.body.style.overflow = this.positionBeforeMaximize.bodyOverflow
 
       this.positionBeforeMaximize = null
@@ -311,7 +274,7 @@ export default class Window extends Morph {
 
   displayResizeHandle(bool) {
     if (bool === undefined) bool = true;
-    this.shadowRoot.querySelector('.window-resize').style.display =
+    this.shadowRoot.querySelector('lively-resizer').style.display =
       bool ? "block" : "none";
   }
 
@@ -326,14 +289,10 @@ export default class Window extends Morph {
     var content = this.shadowRoot.querySelector('#window-content');
     if (this.positionBeforeMinimize) {
       this.style.position = "absolute"
-      this.setPosition(
-          this.positionBeforeMinimize.x,
-          this.positionBeforeMinimize.y
+      lively.setGlobalPosition(this, 
+        pt(this.positionBeforeMinimize.x, this.positionBeforeMinimize.y)
       );
-      this.setSize(
-        this.positionBeforeMinimize.width,
-        this.positionBeforeMinimize.height
-      );  
+      this.setExtent(pt(this.positionBeforeMinimize.width, this.positionBeforeMinimize.height));  
       content.style.display = "block";
       this.displayResizeHandle(true)
       this.positionBeforeMinimize = null
@@ -384,13 +343,8 @@ export default class Window extends Morph {
     return !!this.positionBeforeMaximize;
   }
 
-  pinButtonClicked(e) {
-     this.togglePined()
-  }
-
   togglePined() {
     let isPinned = this.style.position == "fixed"
-    //this.pinButton.classList.toggle('active');
     if (isPinned) {
       this.removeAttribute('fixed');
       this.style.position = "absolute" // does not seem to work with css? #Jens
@@ -400,139 +354,86 @@ export default class Window extends Morph {
     }
   }
 
-  get target() {
-    return this.childNodes[0]
-  }
 
-  closeButtonClicked(e) {
+  onCloseButtonClicked(e) {
     if (this.target && this.target.unsavedChanges && this.target.unsavedChanges()) {
       if(!window.confirm("Window contains unsaved changes, close anyway?"))  {
         return 
       }
     }
-    
     if (this.positionBeforeMaximize)
       this.toggleMaximize()
 
     this.parentNode.removeChild(this);
   }
 
-  menuButtonClicked(e) {
+  onMenuButtonClicked(e) {
     lively.openContextMenu(document.body, e, this.childNodes[0]);
   }
 
-  titleMouseDown(e) {
+  onTitleMouseDown(e) {
     e.preventDefault();
 
     if(this.positionBeforeMaximize) return; // no dragging when maximized
 
     if (this.isFixed) {
       let offsetWindow =  this.getBoundingClientRect()
-      this.dragging = {
-        left: e.pageX - offsetWindow.left,
-        top: e.pageY - offsetWindow.top
-      };
+      this.dragging = pt(e.pageX - offsetWindow.left, e.pageY - offsetWindow.top)
+
     } else {
       this.draggingStart = lively.getPosition(this)
       if (isNaN(this.draggingStart.x) || isNaN(this.draggingStart.y)){
         throw new Error("Drag failed, because window Position is not a number")
       }
-      this.dragging = {
-        left: e.clientX,
-        top: e.clientY
-      };
+      this.dragging = pt(e.clientX, e.clientY)
     }
-    this.startMyDrag()
+        lively.removeEventListener('lively-window', document)
+    
+    lively.addEventListener('lively-window', document, 'mousemove', (e) => { this.onWindowMouseMove(e); });
+    lively.addEventListener('lively-window', document, 'mouseup', (e) => { this.onWindowMouseUp(e); });
     this.window.classList.add('dragging');
   }
 
-  startMyDrag() {
-    lively.removeEventListener('lively-window', document)
-    
-    lively.addEventListener('lively-window', document, 'mousemove', (e) => { this.windowMouseMove(e); });
-    lively.addEventListener('lively-window', document, 'mouseup', (e) => { this.windowMouseUp(e); });
-  } 
-
-  stopMyDrag() {
-    lively.removeEventListener('lively-window', document)
-  } 
-
-
-  resizeMouseDown(e) {
-    e.preventDefault();
-
-    let offsetWindow = $(this).offset();
-
-    this.resizing = {
-      left: offsetWindow.left,
-      top: offsetWindow.top
-    };
-
-    this.window.classList.add('resizing');
-    this.startMyDrag()
-  }
-
-  windowMouseUp(e) {
-    e.preventDefault();
-
-    this.dragging = false;
-    this.resizing = false;
-
-    this.window.classList.remove('dragging');
-    this.window.classList.remove('resizing');
-    
-    this.stopMyDrag()
-  }
-
-  windowMouseMove(e) {
+  onWindowMouseMove(e) {
     if (this.dragging) {
       e.preventDefault();
 
       if (this.isFixed) {
-        this.setPosition(
-          e.clientX - this.dragging.left,
-          e.clientY - this.dragging.top
-        );
+        lively.setPosition(this, pt(e.clientX, e.clientY).subPt(this.dragging));
       } else {
-        let scroll = getScroll();
-        this.setPosition(
-          this.draggingStart.x + e.pageX - this.dragging.left - scroll.x,
-          this.draggingStart.y + e.pageY - this.dragging.top - scroll.y
-        );
+        var pos = this.draggingStart.addPt(pt(e.pageX, e.pageY))
+          .subPt(this.dragging).subPt(lively.getScroll())
+        
+        if (Preferences.get("SnapWindowsInGrid")) {
+          pos = Grid.snapPt(pos)
+        }
+        lively.setPosition(this, pos)
       }
-    } else if (this.resizing) {
-      e.preventDefault();
-      this.setSize(
-        e.pageX - this.resizing.left,
-        e.pageY - this.resizing.top
-      );
     }
   }
 
-  /*
-   * Public interface
-   */
-  centerInWindow() {
-    let bounds = this.getBoundingClientRect();
-    var s= getScroll();
+  onWindowMouseUp(e) {
+    e.preventDefault();
+    this.dragging = false;
 
-    lively.setPosition(this,
-      pt(s.x + document.body.clientWidth / 2 - bounds.width /2,
-        s.y + document.body.clientHeight / 2 - bounds.height  /2));
+    this.window.classList.remove('dragging');
+    this.window.classList.remove('resizing');
+    lively.removeEventListener('lively-window', document)
   }
 
-  /*
-   * Live Programming / Instance Migration
-   */
+  onExtentChanged(evt) {
+    if (this.target) {
+      this.target.dispatchEvent(new CustomEvent("extent-changed"))
+    }
+  }
+
   livelyMigrate(oldInstance) {
     // this is crucial state
     this.positionBeforeMaximize = oldInstance.positionBeforeMaximize;
     this.positionBeforeMinimize = oldInstance.positionBeforeMinimize;
   }
   
-  /*
-   * embed content in parent and remove yourself
-   */
+  /* embed content in parent and remove yourself */
   embedContentInParent() {
   	var content = this.querySelector("*")
   	var pos = lively.getPosition(this);

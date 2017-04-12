@@ -55,7 +55,7 @@ export default class TestRunner extends HTMLDivElement {
     }
 
     return files
-    // #WhyNotThis #ContinueHere
+    // #WhyNotThis
     // return ["/test/", "/test/templates/"].reduce(async (sum, ea) => {
     //     return sum.concat(await this.findTestFilesInDir(ea))
     // }, [])

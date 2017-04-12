@@ -2,9 +2,11 @@
 
 import Morph from './Morph.js';
 import componentLoader from 'src/client/morphic/component-loader.js';
-import * as preferences from 'src/client/preferences.js';
+import preferences from 'src/client/preferences.js';
 
 import {pt} from 'src/client/graphics.js';
+
+
 
 export default class ComponentBinTile extends Morph {
   initialize() {
@@ -48,19 +50,35 @@ export default class ComponentBinTile extends Morph {
   }
   
   async onClick(evt) {
-    var comp  = await this.createComponent();
-    lively.setPosition(comp, {x: evt.clientX - 300, y: evt.clientY - 10})
+    var comp  = await this.createComponent(evt);
   } 
   
   
   
-  createComponent() {
-    var comp = componentLoader.createComponent(this.htmlTag);
-    this.component = comp;
+  createComponent(evt) {
+    var worldContext = document.body
+      var comp = componentLoader.createComponent(this.htmlTag);
+      this.component = comp;
+
     if (this.componentBin.inWindow()) {
-      return componentLoader.openInWindow(comp);
+      return componentLoader.openInWindow(comp).then(comp => {
+        var pos = lively.findPositionForWindow(worldContext)
+        lively.notify("pos" + pos)
+        lively.setPosition(comp, pos)
+        return comp
+      })
+      
+      // return componentLoader.openInWindow(comp).then(() => {
+      //   return comp
+      // })
     } else {
-      return componentLoader.openInBody(comp);
+    
+      var pos = lively.getGlobalPosition(this)
+    
+      return componentLoader.openInBody(comp).then( () => {
+        lively.setGlobalPosition(comp, pos.subPt(lively.getExtent(comp).scaleBy(0.5)))
+        lively.hand.startGrabbing(comp, evt)
+      })
     }
   }
   

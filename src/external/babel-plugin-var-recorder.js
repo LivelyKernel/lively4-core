@@ -157,6 +157,12 @@ export default function({ types: t, template, traverse, }) {
               .find(path => path.isProgram())
               .unshiftContainer('body', varToRecord);
           } else {
+            // #DesignQuestion
+            // a) should we add a guard here and check if the variable was recorded and we are reloaded
+            // b) change the semantics of variable declarations to be assigned with "undefined" if first time loaded [as implemented below]
+            if (!binding.path.node.init)
+              binding.path.node.init = referenceTemplate({
+                reference: t.identifier(binding.identifier.name)}).expression;
             binding.path
               .getStatementParent()
               .insertAfter(varToRecord)

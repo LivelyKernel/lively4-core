@@ -23,7 +23,7 @@ class ServiceWorker {
     this.filesystem = new fs.Filesystem()
 
     // default file system
-    this.filesystem.mount('/', githubfs, {repo: 'LivelyKernel/lively4-core', branch: 'gh-pages'})
+    this.filesystem.mount('/', githubfs, {repo: 'LivelyKernel/Lively4', branch: 'master'}) // mounting lively4-core is to irritating
     this.filesystem.mount('/sys', sysfs, this)
     this.filesystem.mount('/local', html5fs)
 

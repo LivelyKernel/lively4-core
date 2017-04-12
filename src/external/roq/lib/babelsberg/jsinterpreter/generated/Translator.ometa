@@ -1,0 +1,120 @@
+ometa JSTranslator <: Parser {
+trans = [:t apply(t):ans] -> ans,
+begin =
+	:pos trans*:children end
+	-> { new users.timfelgentreff.jsinterpreter.Sequence(pos, children) },
+number =
+	:pos :value
+	-> { new users.timfelgentreff.jsinterpreter.Number(pos, value) },
+string =
+	:pos :value
+	-> { new users.timfelgentreff.jsinterpreter.String(pos, value) },
+condExpr =
+	:pos trans:condExpr trans:trueExpr trans:falseExpr
+	-> { new users.timfelgentreff.jsinterpreter.Cond(pos, condExpr, trueExpr, falseExpr) },
+if =
+	:pos trans:condExpr trans:trueExpr trans:falseExpr
+	-> { new users.timfelgentreff.jsinterpreter.If(pos, condExpr, trueExpr, falseExpr) },
+while =
+	:pos trans:condExpr trans:body
+	-> { new users.timfelgentreff.jsinterpreter.While(pos, condExpr, body) },
+doWhile =
+	:pos trans:body trans:condExpr
+	-> { new users.timfelgentreff.jsinterpreter.DoWhile(pos, body, condExpr) },
+for =
+	:pos trans:init trans:condExpr trans:body trans:upd
+	-> { new users.timfelgentreff.jsinterpreter.For(pos, init, condExpr, body, upd) },
+forIn =
+	:pos trans:name trans:obj trans:body
+	-> { new users.timfelgentreff.jsinterpreter.ForIn(pos, name, obj, body) },
+set =
+	:pos trans:left trans:right
+	-> { new users.timfelgentreff.jsinterpreter.Set(pos, left, right) },
+mset =
+	:pos trans:left :name trans:right
+	-> { new users.timfelgentreff.jsinterpreter.ModifyingSet(pos, left, name, right) },
+binop =
+	:pos :name trans:left trans:right
+	-> { new users.timfelgentreff.jsinterpreter.BinaryOp(pos, name, left, right) },
+unop =
+	:pos :name trans:expr
+	-> { new users.timfelgentreff.jsinterpreter.UnaryOp(pos, name, expr) },
+preop =
+	:pos :name trans:expr
+	-> { new users.timfelgentreff.jsinterpreter.PreOp(pos, name, expr) },
+postop =
+	:pos :name trans:expr
+	-> { new users.timfelgentreff.jsinterpreter.PostOp(pos, name, expr) },
+this =
+	:pos
+	-> { new users.timfelgentreff.jsinterpreter.This(pos) },
+get =
+	:pos :name
+	-> { new users.timfelgentreff.jsinterpreter.Variable(pos, name) },
+getp =
+	:pos trans:slotName trans:obj
+	-> { new users.timfelgentreff.jsinterpreter.GetSlot(pos, slotName, obj) },
+break =
+	:pos
+	-> { new users.timfelgentreff.jsinterpreter.Break(pos) },
+debugger =
+	:pos
+	-> { new users.timfelgentreff.jsinterpreter.Debugger(pos) },
+continue =
+	:pos
+	-> { new users.timfelgentreff.jsinterpreter.Continue(pos) },
+arr =
+	:pos trans*:elements
+	-> { new users.timfelgentreff.jsinterpreter.ArrayLiteral(pos, elements) },
+return =
+	:pos trans:expr
+	-> { new users.timfelgentreff.jsinterpreter.Return(pos, expr) },
+with =
+	:pos trans:obj trans:body
+	-> { new users.timfelgentreff.jsinterpreter.With(pos, obj, body) },
+send =
+	:pos trans:property trans:recv trans*:args
+	-> { new users.timfelgentreff.jsinterpreter.Send(pos, property, recv, args) },
+call =
+	:pos trans:fn trans*:args
+	-> { new users.timfelgentreff.jsinterpreter.Call(pos, fn, args) },
+new =
+	:pos trans:clsExpr
+	-> { new users.timfelgentreff.jsinterpreter.New(pos, clsExpr) },
+var =
+	:pos :name trans:val
+	-> { new users.timfelgentreff.jsinterpreter.VarDeclaration(pos, name, val) },
+throw =
+	:pos trans:expr
+	-> { new users.timfelgentreff.jsinterpreter.Throw(pos, expr) },
+try =
+	:pos trans:trySeq trans:err trans:catchSeq trans:finallySeq
+	-> { new users.timfelgentreff.jsinterpreter.TryCatchFinally(pos, trySeq, err, catchSeq, finallySeq) },
+func =
+	:pos trans:body trans*:args
+	-> { new users.timfelgentreff.jsinterpreter.Function(pos, body, args) },
+json =
+	:pos trans*:properties
+	-> { new users.timfelgentreff.jsinterpreter.ObjectLiteral(pos, properties) },
+binding =
+	:pos :name trans:property
+	-> { new users.timfelgentreff.jsinterpreter.ObjProperty(pos, name, property) },
+jsonGetter =
+	:pos :name trans:body
+	-> { new users.timfelgentreff.jsinterpreter.ObjPropertyGet(pos, name, body) },
+jsonSetter =
+	:pos :name trans:body :arg
+	-> { new users.timfelgentreff.jsinterpreter.ObjPropertySet(pos, name, body, arg) },
+switch =
+	:pos trans:expr trans*:cases
+	-> { new users.timfelgentreff.jsinterpreter.Switch(pos, expr, cases) },
+case =
+	:pos trans:condExpr trans:thenExpr
+	-> { new users.timfelgentreff.jsinterpreter.Case(pos, condExpr, thenExpr) },
+default =
+	:pos trans:defaultExpr
+	-> { new users.timfelgentreff.jsinterpreter.Default(pos, defaultExpr) },
+regex =
+	:pos :exprString :flags
+	-> { new users.timfelgentreff.jsinterpreter.Regex(pos, exprString, flags) }
+}

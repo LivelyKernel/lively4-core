@@ -1,5 +1,5 @@
 import * as componentLoader from "./component-loader.js";
-import * as preferences from '../preferences.js';
+import preferences from '../preferences.js';
 
 var htmlBeautify;
 System.import(lively4url + "/src/external/beautify-html.js").then(function(obj){
@@ -77,7 +77,7 @@ function saveTemplate(template, info) {
 
   var templateEditor = componentLoader.createComponent("lively-editor");
   componentLoader.openInWindow(templateEditor).then((w) => {
-    templateEditor.setURL(preferences.getBaseURL() + "/templates/" + template.id + ".html");
+    templateEditor.setURL(lively4url + "/templates/" + template.id + ".html");
     templateEditor.setText(completeHTML);
     w.style.left = "0px";
     w.style.top = "0px";
@@ -85,7 +85,7 @@ function saveTemplate(template, info) {
 
   var jsonEditor = componentLoader.createComponent("lively-editor");
   componentLoader.openInWindow(jsonEditor).then((w) => {
-    jsonEditor.setURL(preferences.getBaseURL() + "/templates/" + template.id + ".json");
+    jsonEditor.setURL(lively4url + "/templates/" + template.id + ".json");
     jsonEditor.setText(JSON.stringify(info, null, 2));
     w.style.left = "100px";
     w.style.top =  "100px";

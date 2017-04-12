@@ -1,4 +1,4 @@
-import lively from 'src/client/lively.js';
+
 import Morph from './Morph.js';
 
 import * as nodes from 'src/client/morphic/node-helpers.js';
@@ -8,6 +8,8 @@ import selecting from 'src/client/morphic/selecting.js';
 
 import {pt, rect, Rectangle} from 'src/client/graphics.js';
 
+
+// import lively from 'src/client/lively.js'; // #TODO does not work
 
 /*
  * Halo, the container for HaloItems
@@ -21,8 +23,8 @@ export default class Halo extends Morph {
     Halo.halo = $(this);
     Halo.halo.hide();
     window.HaloService = Halo;
-    var targetContext = document.body
-    this.registerBodyDragAndDrop(document.body);
+    var targetContext = document.body.parentElement
+    this.registerBodyDragAndDrop(document.body.parentElement);
   
     lively.removeEventListener("Halo", targetContext);
     lively.addEventListener("Halo", document.body, "mousedown", 
@@ -31,13 +33,13 @@ export default class Halo extends Morph {
   
   registerBodyDragAndDrop(targetContext) {
     // document.body.draggable=true; 
-    lively.removeEventListener("HaloDrag", targetContext);
-    lively.addEventListener("HaloDrag", targetContext, "dragstart", 
-      evt => this.onBodyDragStart(evt, targetContext));
-    lively.addEventListener("HaloDrag", targetContext, "drag", 
-      evt => this.onBodyDrag(evt, targetContext));
-    lively.addEventListener("HaloDrag", targetContext, "dragend", 
-      evt => this.onBodyDragEnd(evt, targetContext));
+    // lively.removeEventListener("HaloDrag", targetContext);
+    // lively.addEventListener("HaloDrag", targetContext, "dragstart", 
+    //   evt => this.onBodyDragStart(evt, targetContext));
+    // lively.addEventListener("HaloDrag", targetContext, "drag", 
+    //   evt => this.onBodyDrag(evt, targetContext));
+    // lively.addEventListener("HaloDrag", targetContext, "dragend", 
+    //   evt => this.onBodyDragEnd(evt, targetContext));
   }
   
   onBodyMouseDown(evt, targetContext) {
@@ -144,6 +146,8 @@ export default class Halo extends Morph {
   
   
   static hideHalos() {
+    if (HaloService.lastIndicator)
+      HaloService.lastIndicator.remove()
     if (this.areHalosActive())
       this.halosHidden = Date.now();
     this.halo.offset({left:0, top: 0});

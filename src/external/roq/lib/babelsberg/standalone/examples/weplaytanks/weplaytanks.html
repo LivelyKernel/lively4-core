@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta charset="UTF-8">
+        <link rel="shortcut icon" href="../../../standalone/examples/weplaytanks/assets/images/favicon.ico" type="image/x-icon" />
+        <title>We play Tanks</title>
+        <link rel="stylesheet" type="text/css" href="../../../standalone/examples/weplaytanks/game.css"/>
+
+		<script src="../../../standalone/prototype.js"></script>
+		<script src="../../../standalone/minilively.js"></script>
+		
+		<!-- // cop.Layers -->
+		<script src="../../../cop/Layers.js"></script>
+		
+		<!-- // ometa.lively -->
+		<script src="../../../ometa/lib.js"></script>
+		<script src="../../../ometa/ometa-base.js"></script>
+		<script src="../../../ometa/parser.js"></script>
+		<script src="../../../ometa/ChunkParser.js"></script>
+		<script src="../../../ometa/bs-ometa-compiler.js"></script>
+		<script src="../../../ometa/bs-js-compiler.js"></script>
+		<script src="../../../ometa/bs-ometa-js-compiler.js"></script>
+		<script src="../../../ometa/bs-ometa-optimizer.js"></script>
+		<script src="../../../ometa/lk-parser-extensions.js"></script>
+		<!-- // lively.Ometa -->
+		<script src="../../../ometa/Ometa.js"></script>
+		<!-- // lively.Interpreter -->
+		<script src="../../../jsinterpreter/generated/Nodes.js"></script>
+		<script src="../../../jsinterpreter/generated/Translator.js"></script>
+		<script src="../../../jsinterpreter/LivelyJSParser.js"></script>
+		<script src="../../../jsinterpreter/Parser.js"></script>
+		<script src="../../../jsinterpreter/Meta.js"></script>
+		<script src="../../../jsinterpreter/Rewriting.js"></script>
+		<script src="../../../jsinterpreter/Interpreter.js"></script>
+		<!-- // Cassowary -->
+		<script src="../../../cassowary/Hashtable.js"></script>
+		<script src="../../../cassowary/HashSet.js"></script>
+		<script src="../../../cassowary/DwarfCassowary.js"></script>
+		<script src="../../../babelsberg/cassowary_ext.js"></script>
+		<!-- // DeltaBlue -->
+		<script src="../../../deltablue/deltablue.js"></script>
+		<script src="../../../babelsberg/deltablue_ext.js"></script>
+		<!-- // CSP -->
+		<script src="../../../csp/underscore-min.js"></script>
+		<script src="../../../csp/csp.js"></script>
+		<script src="../../../babelsberg/csp_ext.js"></script>
+		<!-- // Babelsberg/js -->
+		<script src="../../../babelsberg/core_ext.js"></script>
+		<script src="../../../babelsberg/constraintinterpreter.js"></script>
+        <script src="../../../standalone/test_harness.js"></script>
+		<!-- // reactive -->
+		<script src="../../../reactive/reactive.js"></script>
+		<!-- // src transform -->
+		<script src="../../../babelsberg/uglify.js"></script>
+		<script src="../../../babelsberg/src_transform.js"></script>
+		<script src="../../../standalone/babelsbergscript.js"></script>
+
+		<!-- // misc helper -->
+		<script src="../../../standalone/examples/weplaytanks/lib/helper/stats.js"></script>
+		<script src="../../../standalone/examples/weplaytanks/lib/helper/queue.v1.min.js"></script>
+		
+		<!-- // math helper -->
+        <script type="text/javascript" src="../../../standalone/examples/weplaytanks/lib/math/vector2.js"></script>
+        <script type="text/javascript" src="../../../standalone/examples/weplaytanks/lib/math/affinetransformation.js"></script>
+		<script type="text/javascript" src="../../../standalone/examples/weplaytanks/lib/math/aabb.js"></script>
+	</head>
+	<body>
+        <canvas id="game" width=568 height=600 resize style="width:568px; height:600px; background-color:black; cursor:none"></canvas>
+        <div style="float: right; max-width: 30%">
+            This Demo is an adaption of the Tanks mini game in Wii Play.<br/><br/>
+
+            Move your tank (green) with W,S,A,D or the arrow keys.
+            Target enemy tanks (red) with your mouse.
+            Shoot with a left click to destroy enemy tanks.
+            Bullets will bounce off walls.
+
+            The object of each level is to defeat all enemy tanks.
+            The abilities and the intelligence of enemy tanks vary.<br/><br/>
+
+            This demo shows how constraints and object-oriented paradigms can interact using Babelsberg.
+        </div>
+        <script data-main="../../../standalone/examples/weplaytanks/lib/weplaytanks" src="../../../standalone/examples/weplaytanks/lib/helper/require.js"></script>
+    </body>
+</html>

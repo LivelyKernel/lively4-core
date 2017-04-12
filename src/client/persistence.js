@@ -1,4 +1,4 @@
-import * as preferences from './preferences.js';
+import preferences from './preferences.js';
 import focalStorage from 'src/external/focalStorage.js'
 import DelayedCall from 'src/client/delay.js'
 
@@ -71,7 +71,7 @@ export default class Persistence {
   }
 
   async loadLivelyContentForURL(url, target) {
-    var source = await this.getLivelyContentForURL() 
+    var source = await this.getLivelyContentForURL(url) 
     target = target || this.defaultTarget()
     var div = document.createElement("div")
     div.innerHTML = source
@@ -100,11 +100,48 @@ export default class Persistence {
       (Date.now() - this.lastSaved) +"ms")
   }
   
+  
+  hasDoNotPersistTag(node,) {
+    var donotperist =  node.attributes && 
+      node.attributes.hasOwnProperty('data-lively4-donotpersist');
+    if (donotperist) return true
+    if (!node.parentElement) return false
+    return this.hasDoNotPersistTag(node.parentElement)
+  }
+  
   isBlacklisted(mutation) {
     if (mutation.target.tagName == "BODY") return true
+    if (mutation.target.tagName == "LIVELY-MENU") return true
+    if (mutation.target.tagName == "LIVELY-SELECTION") return true
+    if (mutation.target.tagName == "LIVELY-HAND") return true
+    if (mutation.target.tagName == "LIVELY-HALO") return true
     if (mutation.target.tagName == "LIVELY-NOTIFICATION-LIST") return true
+    if (mutation.target.id == "mutationIndicator") return true
+    if (mutation.target.getAttribute("data-is-meta")) return true
+    if (this.hasDoNotPersistTag(mutation.target)) return true
     return false
   }
+  
+  showMutationIndicator() {
+    var indicator = document.body.querySelector("#mutationIndicator")
+    if (!indicator)  {
+      var div = document.createElement("div")
+      div.id = "mutationIndicator"
+      document.body.appendChild(div)
+      div.style.position = "fixed"
+      div.style.right = "0px"
+      div.style.top = "0px"
+      div.style.width = "10px"
+      div.style.height = "10px"
+      div.style.backgroundColor = "blue"
+      div.style.pointerEvents = "none"
+      div.style.zIndex = 2000
+      
+      indicator = div
+    }
+    return indicator
+  }
+  
   
   onMutation(mutations, observer) {
     if (this.isPersisting) {
@@ -113,9 +150,12 @@ export default class Persistence {
     }
     
     mutations.filter(ea => !this.isBlacklisted(ea)).forEach(record => {
-      // console.log("mutation: ", record)
+      // console.log("mutation: ", record.target)
+      this.showMutationIndicator().style.backgroundColor = "rgba(200,0,0,0.5)"
       this.saveDelay.call(() => {
         this.saveLivelyContent()
+          this.showMutationIndicator().style.backgroundColor = "rgba(10,10,10,0.3)"
+
       })
       // var indicator = this.get("#changeIndicator")
       // if (indicator ) {

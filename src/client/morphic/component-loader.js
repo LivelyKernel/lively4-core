@@ -2,12 +2,13 @@ import scriptManager from  "src/client/script-manager.js";
 // import * as persistence from  "src/client/persistence.js";
 import Morph from "templates/Morph.js";
 import {pt} from '../graphics.js';
-
 import * as kernel from 'kernel';
 
 // store promises of loaded and currently loading templates
 export var loadingPromises = {};
 
+
+// #MetaNote #UserCase this is an example for preserving module internal state while reloading a module
 var _templates;
 var _prototypes;
 var _proxies;
@@ -16,6 +17,20 @@ var _proxies;
 export function register(componentName, template, prototype) {
   return ComponentLoader.register(componentName, template, prototype);
 }
+
+/* #FutureWork should interactive state change of "(module) global" state be preserved while reloading / developing modules
+    ComponentLoader.foo = 3
+    ComponentLoader.foo
+
+#Discussion
+
+pro) expected in Smalltalk-like developent and live-programmning experience
+contra) gap between development-time and runtime (those manualy changes could make something work that without it won't...)
+
+synthese) if modules and classes are also objects that can have run-time-specific state they should be migrated the same as objects. 
+
+*/
+
 
 export default class ComponentLoader {
 
@@ -98,6 +113,11 @@ export default class ComponentLoader {
   }
   
   static onAttachedCallback(object, componentName) {
+    // if (ComponentLoader.proxies[componentName]) {
+    //   console.log("[component loader] WARNING: no proxy for " + componentName )
+    //   return 
+    // }
+
     if (object.attachedCallback && 
       ComponentLoader.proxies[componentName].attachedCallback != object.attachedCallback) {
         object.attachedCallback.call(object);
@@ -108,7 +128,13 @@ export default class ComponentLoader {
   }
   
   static onDetachedCallback(object, componentName) {
-    if (object.detachedCallback && ComponentLoader.proxies[componentName].detachedCallback != object.detachedCallback) {
+    // if (ComponentLoader.proxies[componentName]) {
+    //   console.log("[component loader] WARNING: no proxy for " + componentName )
+    //   return 
+    // }
+    
+    if (object.detachedCallback 
+    && ComponentLoader.proxies[componentName].detachedCallback != object.detachedCallback) {
       object.detachedCallback.call(object);
     } else if (ComponentLoader.prototypes[componentName].detachedCallback) {
       ComponentLoader.prototypes[componentName].detachedCallback.call(object);
@@ -370,4 +396,16 @@ export default class ComponentLoader {
     
     return lively.fillTemplateStyles(templateClone, "source: " + name).then( () => name);
   }
+  
+  // #Design #Draft Migration of class-side state (classes are objects themselve)
+  static livelyMigrate(other) {
+  
+  }
 }
+
+// #Design #Draft Migration of module-side state (modules are objects themselve)
+export function livelyMigrate(other) {
+// Problem: we cannot look into internal "other" state, we can do this with objects but not with
+// variable declarations, therefore we let our module system automigrate the module global variable state
+}
+

@@ -172,8 +172,7 @@ export default class Container extends Morph {
     // #Hack #issue in SystemJS babel syntax errors do not clear errors
     System['@@registerRegistry'][System.normalizeSync(urlString)] = undefined
     System.registry.delete(System.normalizeSync(urlString))
-    debugger
-    System.import(urlString).then( m => {
+    return System.import(urlString).then( m => {
         this.shadowRoot.querySelector("#live").disabled =false;
         lively.notify({
           title: "Loaded " + url, color: "green"});
@@ -183,17 +182,13 @@ export default class Container extends Morph {
       });
   }
 
-  loadTestModule(url) {
+  async loadTestModule(url) {
     var testRunner = document.body.querySelector("lively-testrunner");
     if (testRunner) {
       console.group("run test: " + this.getPath());
       testRunner.clearTests();
-      var module = lively.modules.module(url.toString());
-      if (module) module.reload();
-      System.import(url.toString()).then( () => {
-        testRunner.runTests();
-        console.groupEnd();
-      });
+      await this.reloadModule(url.toString())
+      testRunner.runTests();
     } else {
       lively.notify("no rest-runner to run " + url.toString().replace(/.*\//,""));
     }
