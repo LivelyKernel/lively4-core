@@ -2,7 +2,7 @@
 
 import Morph from './Morph.js';
 
-import {pt}  from 'src/client/graphics.js';
+import {Grid, pt}  from 'src/client/graphics.js';
 
 export default class Resizer extends Morph {
   initialize() {
@@ -16,6 +16,7 @@ export default class Resizer extends Morph {
     this.originalLengths = new Map()
     this.originalFlexs = new Map()
   }
+  
 
   getElement() {
     if (this.target) {
@@ -108,7 +109,7 @@ export default class Resizer extends Morph {
 
 
   getEventLength(evt) {
-    return pt(evt.clientX, evt.clientY)
+    return pt(evt.clientX, evt.clientY).subPt(lively.getGlobalPosition(document.body))
   }
   
   onDragStart(evt) {
@@ -157,9 +158,18 @@ export default class Resizer extends Morph {
     // lively.showPoint(pt(evt.clientX, evt.clientY)).innerHTML = "" + this.count
 
     // 1. calculate values
-    var delta = this.getEventLength(evt).subPt(this.dragOffset)
-      
+    var pos = this.getEventLength(evt)
+    // lively.showPoint(pos.addPt(lively.getGlobalPosition(document.body)))
+    
+    var delta = pos.subPt(this.dragOffset)
+
     var newExtent = this.getOriginalLength(element).addPt(delta)    
+
+    newExtent = Grid.snapPt(newExtent,100,10)
+
+
+    // lively.notify("pos " + pos + " newExtent " + newExtent)
+    
     
     // 2. constrain new values
     if (newExtent.x < 0) {

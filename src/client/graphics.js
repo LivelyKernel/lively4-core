@@ -3,6 +3,33 @@
 
 /* copied from lively.graphics and removed dependency to lively.lang */
 
+
+// #TODO referencing "Preferences" does not work #BUG
+// import Preferences from "./preferences.js";
+
+
+
+export class Grid {
+  static snap(value, gridSize, snapSize) {
+    return value // #Continue here... 
+    
+    if (gridSize === undefined)
+      gridSize = lively.preferences.get("gridSize");
+    if (snapSize === undefined)
+      snapSize = lively.preferences.get("snapSize");
+    var rest = value % gridSize
+    if (rest > snapSize / 2) return value + rest;
+    if (rest < snapSize / 2) return value - rest;
+    return value
+  }
+
+  static snapPt(p, gridSize, snapSize) {
+    return pt(this.snap(p.x, gridSize, snapSize), this.snap(p.y, gridSize, snapSize))
+  }
+
+} 
+
+
 export var Point = class Point {
 
   static ensure(duck) {

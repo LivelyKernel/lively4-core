@@ -2,15 +2,16 @@ import scriptManager from  "src/client/script-manager.js";
 // import * as persistence from  "src/client/persistence.js";
 import Morph from "templates/Morph.js";
 import {pt} from '../graphics.js';
-
 import * as kernel from 'kernel';
 
 // store promises of loaded and currently loading templates
 export var loadingPromises = {};
 
+/* #TODO does not work and store reliably #BUG #Stefan?
 var _templates;
 var _prototypes;
 var _proxies;
+*/
 
 // for compatibility
 export function register(componentName, template, prototype) {
@@ -20,18 +21,18 @@ export function register(componentName, template, prototype) {
 export default class ComponentLoader {
 
   static get templates() {
-    if (!_templates) _templates = {};
-    return _templates;
+    if (!window.lively4_templates) window.lively4_templates = {};
+    return window.lively4_templates;
   }
 
   static get prototypes() {
-    if (!_prototypes) _prototypes = {};
-    return _prototypes;
+    if (!window.lively4_prototypes) window.lively4_prototypes = {};
+    return window.lively4_prototypes;
   }
 
   static get proxies() {
-     if (!_proxies) _proxies = {};
-    return _proxies;
+     if (!window.lively4_proxies) window.lively4_proxies = {};
+    return window.lively4_proxies;
   }
 
   static protypeToComponentName(prototype) {
@@ -98,6 +99,11 @@ export default class ComponentLoader {
   }
   
   static onAttachedCallback(object, componentName) {
+    // if (ComponentLoader.proxies[componentName]) {
+    //   console.log("[component loader] WARNING: no proxy for " + componentName )
+    //   return 
+    // }
+
     if (object.attachedCallback && 
       ComponentLoader.proxies[componentName].attachedCallback != object.attachedCallback) {
         object.attachedCallback.call(object);
@@ -108,7 +114,13 @@ export default class ComponentLoader {
   }
   
   static onDetachedCallback(object, componentName) {
-    if (object.detachedCallback && ComponentLoader.proxies[componentName].detachedCallback != object.detachedCallback) {
+    // if (ComponentLoader.proxies[componentName]) {
+    //   console.log("[component loader] WARNING: no proxy for " + componentName )
+    //   return 
+    // }
+    
+    if (object.detachedCallback 
+    && ComponentLoader.proxies[componentName].detachedCallback != object.detachedCallback) {
       object.detachedCallback.call(object);
     } else if (ComponentLoader.prototypes[componentName].detachedCallback) {
       ComponentLoader.prototypes[componentName].detachedCallback.call(object);

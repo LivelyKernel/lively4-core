@@ -65,7 +65,7 @@ export default class ContextMenu {
   static targetMenuItems(target) {
     var wasEditable = (target.contentEditable == "true");
     var wasDisabled = (target.disabled == "true");
-    var targetInWindow = target.parentElement.tagName == 'LIVELY-WINDOW';
+    var targetInWindow = target.parentElement && target.parentElement.tagName == 'LIVELY-WINDOW';
     return [
       ["show", (evt) => {
          this.hide();

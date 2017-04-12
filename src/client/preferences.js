@@ -4,8 +4,26 @@ import components from './morphic/component-loader.js';
  * Stores page-specific preferences in the body, so it gets saved/loaded with other content
  */
 
-export default class Preferences {
 
+export default class Preferences {
+  
+  static load() {
+    this.defaults = {
+      gridSize: 100,
+      snapSize: 10
+    };
+  }
+
+  
+  /* get preference, consider defaults */
+  static get(preferenceKey) {
+    var pref = this.read(preferenceKey)     
+    if (pref === undefined) 
+      return this.defaults[preferenceKey]
+    else 
+      return pref
+  }
+  
   static get prefsNode() {
     if (this.node) return this.node
     
@@ -76,4 +94,5 @@ export default class Preferences {
   }
 }
 
+Preferences.load()
 
