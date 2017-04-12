@@ -518,7 +518,7 @@ export default class Lively {
     doc.addEventListener('click', function(evt){lively.hideContextMenu(evt)}, false);
     doc.addEventListener('keydown', function(evt){lively.keys.handle(evt)}, false);
 
-
+    this.initializeHalos();
 
     if (loadedAsExtension) {
       System.import("src/client/customize.js").then(customize => {
@@ -573,23 +573,16 @@ export default class Lively {
   }
 
   static initializeHalos() {
-    if ($('lively-halo').size() === 0) {
-        $('<lively-halo>')
-            .attr('data-lively4-donotpersist', 'all')
-            .appendTo($('body'));
+    if (!window.lively) {
+      return setTimeout(() => { this.initializeHalos() }, 100)
     }
-    components.loadUnresolved();
+    if (!document.body.querySelector('lively-halo')) {
+      lively.components.openInBody(document.createElement('lively-halo')).then(comp => {
+        comp.setAttribute('data-lively4-donotpersist', 'all')
+      })
+    }
   }
   
-  static initializeSearch() {
-    if ($('lively-search-widget').size() === 0) {
-      $('<lively-search-widget>')
-          .attr('data-lively4-donotpersist', 'all')
-          .appendTo($('body'));
-    }
-    components.loadUnresolved();
-  }
-
    static unload() {
       lively.notify("unloading Lively is not supported yet! Please reload page....");
   }

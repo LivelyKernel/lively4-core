@@ -52,7 +52,7 @@ if ('serviceWorker' in navigator || window.lively4chrome) {
         console.log("lively.modules loaded... now try to load lively4");
         return System.import("src/client/lively.js")})
       .then(function(module) {
-        lively.initializeHalos(); // #TODO make halo it latebound but fast? (get rid of flickering when halo are eagerly loaded....)
+       
         // disable search widget for now
         // if (!window.lively4chrome)
         //   lively.initializeSearch(); // disable search widget in chrome extension setting
