@@ -116,13 +116,14 @@ export default class ContextMenu {
   
   static preferenceEntry(preferenceKey) {
     return Preferences.isEnabled(preferenceKey) ? [
-      "[X] " + preferenceKey, () => {
+      Preferences.shortDescription(preferenceKey), () => {
         Preferences.disable(preferenceKey)
-      }
-    ] : [
-      "[ ] " + preferenceKey, async () => {
+      },"",
+      '<i class="fa fa-check-square-o" aria-hidden="true"></i>'
+      ] : [
+      Preferences.shortDescription(preferenceKey), async () => {
         Preferences.enable(preferenceKey)
-      }
+      }, "",  '<i class="fa fa-square-o" aria-hidden="true"></i>'
     ]
   }
   
@@ -281,7 +282,7 @@ export default class ContextMenu {
         },, '<i class="fa fa-bug" aria-hidden="true"></i>']
       ]],
       ["Preferences", 
-          ["ShowDocumentGrid", "InteractiveLayer", "ShowFixedBrowser"].map(ea => this.preferenceEntry(ea))
+          ["ShowDocumentGrid", "InteractiveLayer", "ShowFixedBrowser", "SnapWindowsInGrid"].map(ea => this.preferenceEntry(ea))
       ],
       
       // ["Customize Page", (evt) => {

@@ -9,19 +9,34 @@ export default class Preferences {
   
   static load() {
     this.defaults = {
-      gridSize: 100,
-      snapSize: 10
+      gridSize: {default: 100, short: "grid size"},
+      snapSize: {default: 20, short: "snap size"},
+      SnapWindowsInGrid: {default: false, short: "snap windows in grid"},
+      ShowFixedBrowser: {default: true, short: "show fixed browser"},
+      InteractiveLayer: {default: false, short: "dev methods"},
+      ShowDocumentGrid: {default: false, short: "show grid"},
     };
   }
+
+  static shortDescription(preferenceKey) {
+    var pref =  this.defaults[preferenceKey]
+    if (pref && pref.short) 
+      return pref.short
+    else
+      return preferenceKey
+  }
+
 
   
   /* get preference, consider defaults */
   static get(preferenceKey) {
     var pref = this.read(preferenceKey)     
-    if (pref === undefined) 
-      return this.defaults[preferenceKey]
-    else 
+    if (pref === undefined) {
+      var pref =  this.defaults[preferenceKey]
+      if (pref) return pref.default
+    } else  {
       return pref
+    }
   }
   
   static get prefsNode() {

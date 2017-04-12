@@ -11,15 +11,16 @@
 
 export class Grid {
   static snap(value, gridSize, snapSize) {
-    return value // #Continue here... 
-    
     if (gridSize === undefined)
       gridSize = lively.preferences.get("gridSize");
     if (snapSize === undefined)
       snapSize = lively.preferences.get("snapSize");
-    var rest = value % gridSize
-    if (rest > snapSize / 2) return value + rest;
-    if (rest < snapSize / 2) return value - rest;
+    
+    var rest = Math.abs(value % gridSize)
+    if (Math.abs(gridSize - rest) < snapSize) 
+      return value - rest + gridSize
+    if (rest < snapSize) return value - rest;
+
     return value
   }
 

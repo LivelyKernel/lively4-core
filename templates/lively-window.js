@@ -404,7 +404,10 @@ export default class Window extends Morph {
         var pos = this.draggingStart.addPt(pt(e.pageX, e.pageY))
           .subPt(this.dragging).subPt(lively.getScroll())
         
-        lively.setPosition(this, Grid.snapPt(pos))
+        if (Preferences.get("SnapWindowsInGrid")) {
+          pos = Grid.snapPt(pos)
+        }
+        lively.setPosition(this, pos)
       }
     }
   }

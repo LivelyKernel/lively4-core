@@ -153,7 +153,7 @@ export default class ViewNav {
     let w = 3000,
       h = 2000,
       smallGridSize = 100,
-      quadrants =[-2,-1,0,1,2]
+      quadrants =[-1,0,1]
     
     let grid = document.createElement("div")
   	grid.setAttribute("data-lively4-donotpersist", "all")
