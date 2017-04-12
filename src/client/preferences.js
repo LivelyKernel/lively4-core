@@ -35,8 +35,13 @@ export default class Preferences {
       var pref =  this.defaults[preferenceKey]
       if (pref) return pref.default
     } else  {
-      return pref
+      return JSON.parse(pref)
     }
+  }
+  
+  
+  static set(preferenceKey, value) {
+    var pref = this.write(preferenceKey, JSON.stringify(value))     
   }
   
   static get prefsNode() {
