@@ -98,13 +98,15 @@ export default class AstExplorer extends Morph {
 
     var src = this.get("#source").editor.getValue();
     
+    var filename = "tempfile.js"
+    
     // get pure ast
     this.ast = babel.transform(src, {
         babelrc: false,
         plugins: [],
         presets: [],
-        filename: undefined,
-        sourceFileName: undefined,
+        filename: filename,
+        sourceFileName: filename,
         moduleIds: false,
         sourceMaps: true,
         // inputSourceMap: load.metadata.sourceMap,
@@ -141,8 +143,8 @@ export default class AstExplorer extends Morph {
         babelrc: false,
         plugins: [plugin],
         presets: [],
-        filename: undefined,
-        sourceFileName: undefined,
+        filename: filename,
+        sourceFileName: filename,
         moduleIds: false,
         sourceMaps: true,
         // inputSourceMap: load.metadata.sourceMap,

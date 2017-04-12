@@ -7,32 +7,46 @@ import * as kernel from 'kernel';
 // store promises of loaded and currently loading templates
 export var loadingPromises = {};
 
-/* #TODO does not work and store reliably #BUG #Stefan?
+
+// #MetaNote #UserCase this is an example for preserving module internal state while reloading a module
 var _templates;
 var _prototypes;
 var _proxies;
-*/
 
 // for compatibility
 export function register(componentName, template, prototype) {
   return ComponentLoader.register(componentName, template, prototype);
 }
 
+/* #FutureWork should interactive state change of "(module) global" state be preserved while reloading / developing modules
+    ComponentLoader.foo = 3
+    ComponentLoader.foo
+
+#Discussion
+
+pro) expected in Smalltalk-like developent and live-programmning experience
+contra) gap between development-time and runtime (those manualy changes could make something work that without it won't...)
+
+synthese) if modules and classes are also objects that can have run-time-specific state they should be migrated the same as objects. 
+
+*/
+
+
 export default class ComponentLoader {
 
   static get templates() {
-    if (!window.lively4_templates) window.lively4_templates = {};
-    return window.lively4_templates;
+    if (!_templates) _templates = {};
+    return _templates;
   }
 
   static get prototypes() {
-    if (!window.lively4_prototypes) window.lively4_prototypes = {};
-    return window.lively4_prototypes;
+    if (!_prototypes) _prototypes = {};
+    return _prototypes;
   }
 
   static get proxies() {
-     if (!window.lively4_proxies) window.lively4_proxies = {};
-    return window.lively4_proxies;
+     if (!_proxies) _proxies = {};
+    return _proxies;
   }
 
   static protypeToComponentName(prototype) {
@@ -382,4 +396,16 @@ export default class ComponentLoader {
     
     return lively.fillTemplateStyles(templateClone, "source: " + name).then( () => name);
   }
+  
+  // #Design #Draft Migration of class-side state (classes are objects themselve)
+  static livelyMigrate(other) {
+  
+  }
 }
+
+// #Design #Draft Migration of module-side state (modules are objects themselve)
+export function livelyMigrate(other) {
+// Problem: we cannot look into internal "other" state, we can do this with objects but not with
+// variable declarations, therefore we let our module system automigrate the module global variable state
+}
+

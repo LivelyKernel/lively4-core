@@ -1,3 +1,7 @@
+/*
+ * #DevelopmentNote, don't edit it directly in ASTExplorer due to metacircularity issues ...
+ */
+
 const moduleNameToVarRecorderName = new Map();
 
 function randomModuleId() {
