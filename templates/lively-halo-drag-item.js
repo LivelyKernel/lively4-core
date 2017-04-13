@@ -1,11 +1,9 @@
 import lively from 'src/client/lively.js'
-
 import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
-
-import {pt} from 'src/client/graphics.js'
-
+import {Grid, pt} from 'src/client/graphics.js'
 import HaloItem from './HaloItem.js';
+import Preferences from 'src/client/preferences.js'; 
 
 export default class HaloDragItem extends HaloItem {
 
@@ -50,16 +48,10 @@ export default class HaloDragItem extends HaloItem {
       this.dragTarget.haloDragTo(events.globalPosition(evt), this.dragStartEventPosition)
     } else {
       var eventPos = events.globalPosition(evt);
-      var newPosition = eventPos.subPt(this.dragStartEventPosition).addPt(this.dragStartNodePosition)
-      // {
-      //   x: eventPosition.x - this.dragStartEventPosition.x + this.dragStartNodePosition.x,
-      //   y: eventPosition.y - this.dragStartEventPosition.y + this.dragStartNodePosition.y
-      // }
-      lively.setPosition(this.dragTarget, newPosition);
+      var newPosition = eventPos.subPt(this.dragStartEventPosition).
+        addPt(this.dragStartNodePosition)
+      lively.setPosition(this.dragTarget, Grid.optSnapPosition(newPosition, evt));
     }
     evt.preventDefault();
   }
-  
-
-
 }

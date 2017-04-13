@@ -119,20 +119,16 @@ export default class Window extends Morph {
 
   bindEvents() {
     try {
-      this.addEventListener('mousedown', (e) => { this.focus(); });
-      this.addEventListener('created', (e) => { this.focus(); });
-      
-      this.addEventListener('extent-changed', (e) => { this.onExtentChanged(); });
-
-
+      this.addEventListener('created', (evt) => this.focus());
+      this.addEventListener('extent-changed', (evt) => { this.onExtentChanged(); });
       this.shadowRoot.querySelector('.window-title')
-        .addEventListener('mousedown', (e) => { this.onTitleMouseDown(e); });
-  
-      this.menuButton.addEventListener('click', (e) => { this.onMenuButtonClicked(e); });
-      this.minButton.addEventListener('click', (e) => { this.onMinButtonClicked(e); });
-      this.maxButton.addEventListener('click', (e) => { this.onMaxButtonClicked(e); });
-      this.get('.window-close').addEventListener('click', (e) => { this.onCloseButtonClicked(e); });
-      this.addEventListener('keyup', (e) => { this.onKeyUp(e); });
+        .addEventListener('mousedown', (evt) => { this.onTitleMouseDown(evt); });
+      this.addEventListener('mousedown', (evt) => this.focus(), true);
+      this.menuButton.addEventListener('click', evt => { this.onMenuButtonClicked(evt); });
+      this.minButton.addEventListener('click', evt => { this.onMinButtonClicked(evt); });
+      this.maxButton.addEventListener('click', evt => { this.onMaxButtonClicked(evt); });
+      this.get('.window-close').addEventListener('click', evt => { this.onCloseButtonClicked(evt); });
+      this.addEventListener('keyup', evt => { this.onKeyUp(evt); });
     } catch(err) {
       console.log("Error, binding events! Continue anyway!", err)
     }
@@ -190,7 +186,7 @@ export default class Window extends Morph {
     return Array.from(document.querySelectorAll('*')).filter(ea => ea.isWindow);
 	}
 
-  focus(e) {
+  focus(evt) {
     let allWindows = this.allWindows();
     let thisIdx = allWindows.indexOf(this);
     let allWindowsButThis = allWindows;
@@ -222,12 +218,12 @@ export default class Window extends Morph {
     });
 	}
 	
-  minButtonClicked(e) {
+  minButtonClicked(evt) {
     this.toggleMinimize()
   }
 
-  maxButtonClicked(e) {
-    if (e.shiftKey) {
+  maxButtonClicked(evt) {
+    if (evt.shiftKey) {
       this.togglePined() 
     } else {
       this.toggleMaximize()
@@ -357,7 +353,7 @@ export default class Window extends Morph {
   }
 
 
-  onCloseButtonClicked(e) {
+  onCloseButtonClicked(evt) {
     if (this.target && this.target.unsavedChanges && this.target.unsavedChanges()) {
       if(!window.confirm("Window contains unsaved changes, close anyway?"))  {
         return 
@@ -369,53 +365,51 @@ export default class Window extends Morph {
     this.parentNode.removeChild(this);
   }
 
-  onMenuButtonClicked(e) {
-    lively.openContextMenu(document.body, e, this.childNodes[0]);
+  onMenuButtonClicked(evt) {
+    lively.openContextMenu(document.body, evt, this.childNodes[0]);
   }
 
-  onTitleMouseDown(e) {
-    e.preventDefault();
+  onTitleMouseDown(evt) {
+    evt.preventDefault();
 
     if(this.positionBeforeMaximize) return; // no dragging when maximized
 
     if (this.isFixed) {
       let offsetWindow =  this.getBoundingClientRect()
-      this.dragging = pt(e.pageX - offsetWindow.left, e.pageY - offsetWindow.top)
+      this.dragging = pt(evt.pageX - offsetWindow.left, evt.pageY - offsetWindow.top)
 
     } else {
       this.draggingStart = lively.getPosition(this)
       if (isNaN(this.draggingStart.x) || isNaN(this.draggingStart.y)){
         throw new Error("Drag failed, because window Position is not a number")
       }
-      this.dragging = pt(e.clientX, e.clientY)
+      this.dragging = pt(evt.clientX, evt.clientY)
     }
         lively.removeEventListener('lively-window', document)
     
-    lively.addEventListener('lively-window', document, 'mousemove', (e) => { this.onWindowMouseMove(e); });
-    lively.addEventListener('lively-window', document, 'mouseup', (e) => { this.onWindowMouseUp(e); });
+    lively.addEventListener('lively-window', document, 'mousemove', 
+      evt => this.onWindowMouseMove(evt));
+    lively.addEventListener('lively-window', document, 'mouseup', 
+      evt => this.onWindowMouseUp(evt));
     this.window.classList.add('dragging');
   }
 
-  onWindowMouseMove(e) {
+  onWindowMouseMove(evt) {
     if (this.dragging) {
-      e.preventDefault();
+      evt.preventDefault();
 
       if (this.isFixed) {
-        lively.setPosition(this, pt(e.clientX, e.clientY).subPt(this.dragging));
+        lively.setPosition(this, pt(evt.clientX, evt.clientY).subPt(this.dragging));
       } else {
-        var pos = this.draggingStart.addPt(pt(e.pageX, e.pageY))
+        var pos = this.draggingStart.addPt(pt(evt.pageX, evt.pageY))
           .subPt(this.dragging).subPt(lively.getScroll())
-        
-        if (Preferences.get("SnapWindowsInGrid")) {
-          pos = Grid.snapPt(pos)
-        }
-        lively.setPosition(this, pos)
+        lively.setPosition(this, Grid.optSnapPosition(pos, evt))
       }
     }
   }
 
-  onWindowMouseUp(e) {
-    e.preventDefault();
+  onWindowMouseUp(evt) {
+    evt.preventDefault();
     this.dragging = false;
 
     this.window.classList.remove('dragging');

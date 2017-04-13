@@ -1,9 +1,8 @@
-
 import HaloItem from './HaloItem.js';
-
 import * as nodes from 'src/client/morphic/node-helpers.js'
 import * as events from 'src/client/morphic/event-helpers.js'
-
+import {Grid, pt} from 'src/client/graphics.js';
+import Preferences from 'src/client/preferences.js';
 
 export default class HaloResizeItem extends HaloItem {
   initialize() {
@@ -48,7 +47,9 @@ export default class HaloResizeItem extends HaloItem {
     } else {
       var delta = events.globalPosition(evt).subPt(this.eventOffset)
       console.log("this.initialExtent " + this.initialExtent)
-      nodes.setExtent(this.target, this.initialExtent.addPt(delta)) 
+
+      var newextent =  this.initialExtent.addPt(delta);
+      nodes.setExtent(this.target, Grid.optSnapPosition(newextent, evt)) 
       HaloService.showHalos(window.that);
     }
   }
@@ -68,6 +69,5 @@ export default class HaloResizeItem extends HaloItem {
     node.style.maxWidth = null;
     node.style.maxHeight = null;
   }
-    
     
 }
