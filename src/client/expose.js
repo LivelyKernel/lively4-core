@@ -60,6 +60,7 @@ export default class Expose {
     let paddingV = 20;
     let paddingH = 20;
 
+    let topLeft = pt(100,100)
     for (var i = 0; i < windows.length; i++) {
       let win = windows[i];
       let row = Math.floor(i / (Expose.windowsPerRows));
@@ -70,14 +71,36 @@ export default class Expose {
       win.style.transition = 'all 200ms';
       win.style.cursor = 'pointer';
 
-      win.style.position = 'fixed';
-      win.style.width = `calc(${1 / Expose.windowsPerRows * 100}% - ${1 * marginH}px - ${(Expose.windowsPerRows - 1) * paddingH}px)`;
-      win.style.height = `calc(${1 / rows * 100}% - ${2 * marginV}px - ${(0) * paddingV}px)`;
+  
+      // win.style.width = `calc(${1 / Expose.windowsPerRows * 100}% - ${1 * marginH}px - ${(Expose.windowsPerRows - 1) * paddingH}px)`;
+      // win.style.height = `calc(${1 / rows * 100}% - ${2 * marginV}px - ${(0) * paddingV}px)`;
 
-      win.style.top = `calc(${marginV}px + ${row} * (${1 / rows * 100}% - ${paddingV}px))`;
-      win.style.left = `calc(${marginH}px + ${column} * (${1 / Expose.windowsPerRows * 100}% - ${1 * marginH}px))`;
-      win.style.right = 'auto';
-      win.style.bottom = 'auto';
+      // win.style.top = `calc(${marginV}px + ${row} * (${1 / rows * 100 }% - ${paddingV}px))`;
+      // win.style.left = `calc(${marginH}px + ${column} * (${1 / Expose.windowsPerRows * 100 }% - ${1 * marginH}px))`;
+      // win.style.right = 'auto';
+      // win.style.bottom = 'auto';
+      this.exposeScale = 0.5
+      var elementWidth = 300 
+      
+      var oldExtent = lively.getExtent(win)
+      // scale with origin topleft
+
+      if (oldExtent.x > oldExtent.y) {
+        var scaledElementWidth = elementWidth / this.exposeScale
+        var scaledElementHeight = oldExtent.y / oldExtent.x  * scaledElementWidth
+      } else {
+        scaledElementHeight = elementWidth / this.exposeScale
+        scaledElementWidth = oldExtent.x / oldExtent.y  * scaledElementHeight
+      }
+      
+      var newExtent = pt(scaledElementWidth, scaledElementHeight)
+      lively.setExtent(win, newExtent)
+      win.tempScaledExtent = newExtent
+      this.setScaleTransform(this.exposeScale, win, newExtent)
+  
+      var pos = topLeft.addPt(pt(column * (elementWidth + 20), row * (elementWidth + 20)))
+      
+      lively.setGlobalPosition(win, pos)
 
       win.addEventListener('mouseenter', Expose.windowMouseEnter);
       win.addEventListener('mouseleave', Expose.windowMouseLeave);
@@ -85,6 +108,13 @@ export default class Expose {
     }
 
     Expose.windowMouseEnter.call(Expose.selectedWin);
+  }
+
+  static setScaleTransform(scale, win, ext) {
+    ext = ext || lively.getExtent(win)
+    win.style.transform = 
+      `translate(-${ext.x}px, -${ext.y}px) scale(${scale}) translate(${ext.x * (1 + this.exposeScale)}px, ${ext.y *(1 + this.exposeScale)}px)`
+  
   }
 
   static close() {
@@ -101,6 +131,8 @@ export default class Expose {
       win.removeEventListener('mouseenter', Expose.windowMouseEnter);
       win.removeEventListener('mouseleave', Expose.windowMouseLeave);
       win.removeEventListener('click', Expose.windowClick);
+      
+      delete win.tempScaledExtent
     });
 
     Expose.undimWindow();
@@ -192,11 +224,11 @@ export default class Expose {
   }
 
   static windowHighlight(w) {
-    w.style.transform = 'scale(1.05)';
+     this.setScaleTransform(this.exposeScale * 1.2 , w,w.tempScaledExtent.scaleBy(2))
   }
 
   static windowRemoveHighlight(w) {
-    w.style.transform = 'scale(1)';
+     this.setScaleTransform(this.exposeScale, w, w.tempScaledExtent)
   }
 
   static windowClick(e) {
@@ -251,7 +283,7 @@ export default class Expose {
       console.log("Post load expose")
       // basic class configuration
       Expose.isOpen = false;
-      Expose.windowsPerRows = 3;
+      Expose.windowsPerRows = 5;
 
       lively.removeEventListener("expose")
       lively.addEventListener("expose", document.body, 'keydown', Expose.bodyKeyDown)
