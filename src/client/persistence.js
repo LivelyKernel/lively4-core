@@ -117,7 +117,7 @@ export default class Persistence {
     if (mutation.target.tagName == "LIVELY-HALO") return true
     if (mutation.target.tagName == "LIVELY-NOTIFICATION-LIST") return true
     if (mutation.target.id == "mutationIndicator") return true
-    if (mutation.target.getAttribute("data-is-meta")) return true
+    if (mutation.target.getAttribute && mutation.target.getAttribute("data-is-meta")) return true
     if (this.hasDoNotPersistTag(mutation.target)) return true
     return false
   }

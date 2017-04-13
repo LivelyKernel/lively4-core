@@ -862,6 +862,8 @@ export default class Lively {
       w.style.height = extent.y;
     }
     
+    
+    
     // #Problem: we cannot open last window here because we can be scrolled to the other end of the world
     // if (lastWindow) {
     //   var lastPos = lively.getPosition(lastWindow);
@@ -869,11 +871,12 @@ export default class Lively {
     if (!pos) {
       pos = this.findPositionForWindow(worldContext)
     }
+    if (pos) 
+      lively.setPosition(w, pos);
+
     
     return components.openIn(worldContext, w, true).then((w) => {
     	return components.openIn(w, document.createElement(name)).then((comp) => {
-    	  if (pos) 
-          lively.setPosition(w, pos);
         
         if (comp.windowTitle) w.setAttribute("title", "" + comp.windowTitle);
         return comp

@@ -34,8 +34,10 @@ export default class ContextMenu {
   
   static openComponentInWindow (name, evt, worldContext) {
     this.hide();
-    return lively.openComponentInWindow(name, null, undefined, worldContext).then( comp => {
-      this.positionElementAtEvent(comp.parentElement, worldContext, evt)
+    return lively.openComponentInWindow(name, 
+      this.eventPosition(worldContext, evt), 
+      undefined, worldContext).then( comp => {
+      
       return comp
     });
   }
@@ -47,7 +49,7 @@ export default class ContextMenu {
 	  });
   }
   
-  static positionElementAtEvent(element, worldContext, evt) {
+  static eventPosition(worldContext, evt) {
     evt = this.firstEvent || evt;
     
     var pos = pt(evt.clientX, evt.clientY);
@@ -59,7 +61,11 @@ export default class ContextMenu {
     } else {
       pos = pos.subPt(lively.getGlobalPosition(worldContext))
     }
-    lively.setPosition(element, pos);
+    return pos
+  }
+  
+  static positionElementAtEvent(element, worldContext, evt) {
+    lively.setPosition(element, this.eventPosition(worldContext, evt));
   }
   
   static targetMenuItems(target) {
