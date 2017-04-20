@@ -22,6 +22,24 @@ export class Intersection {
     }
     return intersections
   }
+  
+  static windows(windows) {
+    var bounds = new Map()
+    windows.forEach( ea => bounds.set(ea, lively.getGlobalBounds(ea)))
+    var intersections = []
+    for(var i=0; i < windows.length; i++) {
+      for(var j=i; j < windows.length; j++) {
+        if (i !== j) {
+          
+          var intersection = bounds.get(windows[i]).intersection(bounds.get(windows[j]))
+          if (intersection && intersection.width > 0 && intersection.height > 0)
+            intersections.push({intersection: intersection, a:windows[i], b: windows[i] })
+        }
+      }  
+    }
+    return intersections
+  }
+  
 }
 
 

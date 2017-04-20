@@ -361,6 +361,10 @@ export default class Lively {
     var parentPos = this.getGlobalPosition(node.parentElement)
     this.setPosition(node, pos.subPt(parentPos))
   }
+  
+  static moveBy(node, delta) {
+    this.setPosition(node, this.getPosition(node).addPt(delta))
+  }
 
   static  getGlobalBounds(node) {
     var bounds = node.getBoundingClientRect()
@@ -688,6 +692,12 @@ export default class Lively {
   }
 
   static showRect(point, extent) {
+    // check for alternative args
+    if (point && !extent) {
+      extent = point.extent()
+      point = point.topLeft()
+    }
+    
     if (!point || !point.subPt) return
     var comp = document.createElement("div");
     comp.style['pointer-events'] = "none";
