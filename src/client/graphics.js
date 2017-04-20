@@ -7,6 +7,23 @@
 // #TODO referencing "Preferences" does not work #BUG
 // import Preferences from "./preferences.js";
 
+export class Intersection {
+  
+  static rects(rects) {
+    var intersections = []
+    for(var i=0; i < rects.length; i++) {
+      for(var j=i; j < rects.length; j++) {
+        if (i !== j) {
+          var intersection = rects[i].intersection(rects[j])
+          if (intersection && intersection.width > 0 && intersection.height > 0)
+            intersections.push(intersection)
+        }
+      }  
+    }
+    return intersections
+  }
+}
+
 
 
 export class Grid {

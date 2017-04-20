@@ -362,6 +362,12 @@ export default class Lively {
     this.setPosition(node, pos.subPt(parentPos))
   }
 
+  static  getGlobalBounds(node) {
+    var bounds = node.getBoundingClientRect()
+    return rect(bounds.left, bounds.top, bounds.width, bounds.height)
+  }
+
+
   static getScroll() {
     return pt(
       document.scrollingElement.scrollLeft || 0,
@@ -686,7 +692,7 @@ export default class Lively {
     var comp = document.createElement("div");
     comp.style['pointer-events'] = "none";
     comp.style.width = extent.x + "px";
-    comp.style.height = extent.x + "px";
+    comp.style.height = extent.y + "px";
     comp.style.padding = "1px";
     comp.style.backgroundColor = 'rgba(255,0,0,0.5)';
     comp.style.zIndex = 1000;
@@ -703,6 +709,48 @@ export default class Lively {
     // ea.getBoundingClientRect
     return comp
   }
+
+  static showPath(path, color) {
+    if (!path || path.length < 1) return
+   
+   
+    color = color || "red"
+
+    var comp = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    comp.style = `position: absolute;
+        top: 0px;
+        left: 0px;
+        width: 100px;
+        height: 100px;
+        border: none;
+        opacity: 1;
+        overflow: visible;
+        pointer-events: none;
+        z-index: 1000;
+        touch-action: none;`
+    comp.isMetaNode = true;
+    
+    var dpath = path.map((ea,i) => (i == 0 ? "M " : "L ") + ea.x + " " + ea.y).join(" ")
+    var defs = 
+`      <defs>
+          <marker id="markerArrow" markerWidth="13" markerHeight="13" refX="2" refY="6"
+                 orient="auto">
+              <path d="M2,2 L2,11 L10,6 L2,2" style="fill: ${color};" />
+          </marker>
+      </defs>`;
+    
+    comp.innerHTML = defs + `<path stroke='${color}' d='${dpath}' 
+      style='marker-end: url(#markerArrow);'></path>`
+
+    document.body.appendChild(comp);
+    lively.setGlobalPosition(comp, pt(0,0));
+    comp.setAttribute("data-is-meta", "true");
+
+    setTimeout( () => $(comp).remove(), 3000);
+
+    return comp
+  }
+
 
   static showSource(object, evt) {
     if (object instanceof HTMLElement) {

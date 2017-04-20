@@ -1421,11 +1421,10 @@ export default class Container extends Morph {
   }
   
   focus() {
-    var editor = this.getAceEditor();
-    if (editor) {
-      editor.focus()
-    }
-
+    // var editor = this.getAceEditor();
+    // if (editor) {
+    //   editor.focus()
+    // }
   }
   
   livelyAcceptsDrop() {

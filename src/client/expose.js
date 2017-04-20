@@ -80,25 +80,23 @@ export default class Expose {
       // win.style.right = 'auto';
       // win.style.bottom = 'auto';
       this.exposeScale = 0.5
-      var elementWidth = 300 
+      this.elementLength = 300 
+      win.style.border = ""
       
-      var oldExtent = lively.getExtent(win)
-      // scale with origin topleft
 
-      if (oldExtent.x > oldExtent.y) {
-        var scaledElementWidth = elementWidth / this.exposeScale
-        var scaledElementHeight = oldExtent.y / oldExtent.x  * scaledElementWidth
+    
+      var ext = lively.getExtent(win)
+      if (ext.x > ext.y) {
+        var realScale = this.elementLength / ext.x
       } else {
-        scaledElementHeight = elementWidth / this.exposeScale
-        scaledElementWidth = oldExtent.x / oldExtent.y  * scaledElementHeight
+        realScale = this.elementLength / ext.y
       }
-      
-      var newExtent = pt(scaledElementWidth, scaledElementHeight)
-      lively.setExtent(win, newExtent)
-      win.tempScaledExtent = newExtent
-      this.setScaleTransform(this.exposeScale, win, newExtent)
-  
-      var pos = topLeft.addPt(pt(column * (elementWidth + 20), row * (elementWidth + 20)))
+      realScale = Math.min(1, realScale)
+      this.tempScale = realScale
+
+      // scale with origin topleft
+      this.setScaleTransform(realScale, win, ext)
+      var pos = topLeft.addPt(pt(column * (this.elementLength + 20), row * (this.elementLength + 20)))
       
       lively.setGlobalPosition(win, pos)
 
@@ -111,10 +109,9 @@ export default class Expose {
   }
 
   static setScaleTransform(scale, win, ext) {
-    ext = ext || lively.getExtent(win)
-    win.style.transform = 
-      `translate(-${ext.x}px, -${ext.y}px) scale(${scale}) translate(${ext.x * (1 + this.exposeScale)}px, ${ext.y *(1 + this.exposeScale)}px)`
-  
+    
+    win.style.transformOrigin = "0 0";
+    win.style.transform = `scale(${scale})`
   }
 
   static close() {
@@ -133,6 +130,7 @@ export default class Expose {
       win.removeEventListener('click', Expose.windowClick);
       
       delete win.tempScaledExtent
+      delete win.tempScale
     });
 
     Expose.undimWindow();
@@ -223,12 +221,15 @@ export default class Expose {
     Expose.windowRemoveHighlight(this);
   }
 
+  /* Highlights */
   static windowHighlight(w) {
-     this.setScaleTransform(this.exposeScale * 1.2 , w,w.tempScaledExtent.scaleBy(2))
+    w.style.border = "2px solid red"
+    this.setScaleTransform(w.tempScale + 0.1, w, w.tempScaledExtent)
   }
 
   static windowRemoveHighlight(w) {
-     this.setScaleTransform(this.exposeScale, w, w.tempScaledExtent)
+    w.style.border =""
+    this.setScaleTransform(w.tempScale, w, w.tempScaledExtent)
   }
 
   static windowClick(e) {
@@ -244,32 +245,26 @@ export default class Expose {
     }
 
     if (Expose.isOpen) {
-
       // Left
       if (e.keyCode === 37) {
         Expose.selectPrev();
       }
-
       // Up
       if (e.keyCode === 38) {
         Expose.selectUp();
       }
-
       // Right
       if (e.keyCode === 39) {
         Expose.selectNext();
       }
-
       // Down
       if (e.keyCode === 40) {
         Expose.selectDown();
       }
-
       // Enter
       if (e.keyCode === 13) {
         Expose.windowClick.call(Expose.selectedWin, e);
       }
-
       // Esc
       if (e.keyCode === 27) {
         Expose.close();

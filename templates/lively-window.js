@@ -183,6 +183,10 @@ export default class Window extends Morph {
 	}
 	
   allWindows() {
+    return Window.allWindows()
+	}
+
+  static allWindows() {
     return Array.from(document.querySelectorAll('*')).filter(ea => ea.isWindow);
 	}
 
