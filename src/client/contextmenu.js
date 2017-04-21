@@ -6,7 +6,7 @@
 import html from './html.js';
 import {pt} from './graphics.js';
 import ViewNav from 'src/client/viewnav.js'
-
+import Layout from "src/client/layout.js"
 import Preferences from './preferences.js';
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
@@ -93,10 +93,14 @@ export default class ContextMenu {
       }],
       ["remove", (evt) => {
          target.remove()
-         
-         
          this.hide();
       }],
+      [
+        "make space", (evt) => {
+          Layout.makeLocalSpace(target)
+          this.hide()
+        }
+      ],
       [wasEditable ? "make uneditable" : "make editable", (evt) => {
          this.hide();
          target.contentEditable = !wasEditable;
@@ -249,6 +253,11 @@ export default class ContextMenu {
               lively.setPosition(ea, pos)
               pos = pos.addPt(pt(20,20))
             })
+          },
+          "", '<i class="fa fa-window-restore" aria-hidden="true"></i>'
+        ],
+        ["Explode Windows", (evt) => {
+            Layout.expandUntilNoIntersectionsExplosion()
           },
           "", '<i class="fa fa-window-restore" aria-hidden="true"></i>'
         ],

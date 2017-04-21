@@ -355,13 +355,21 @@ export default class Lively {
     var bounds = node.getBoundingClientRect()
     return pt(bounds.left, bounds.top)
   }
-
+  
   static  setGlobalPosition(node, pos) {
     if (!node.parentElement) return
     var parentPos = this.getGlobalPosition(node.parentElement)
     this.setPosition(node, pos.subPt(parentPos))
   }
   
+  static  getGlobalCenter(node) {
+    return this.getGlobalPosition(node).addPt(this.getExtent(node).scaleBy(0.5))
+  }
+  
+  static  setGlobalCenter(node, pos) {
+    this.setGlobalPosition(node, pos.subPt(this.getExtent(node).scaleBy(0.5)))
+  }
+
   static moveBy(node, delta) {
     this.setPosition(node, this.getPosition(node).addPt(delta))
   }

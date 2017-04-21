@@ -1,14 +1,15 @@
 import Relax from "src/external/relax.js"
 import {RelaxNode} from "src/external/relax.js"
 import Windows from "templates/lively-window.js"
-import {pt, rects, Intersection} from "src/client/graphics.js"
+import {pt, rects} from "src/client/graphics.js"
+import {Intersection} from "src/client/layout.js"
 
 export default class RelaxWindows {
   
   static relax() {
-    // var windows  = Windows.allWindows()
+    var windows  = Windows.allWindows()
     
-    var windows = lively.array(that.childNodes)
+    // var windows = lively.array(that.childNodes)
     var solver = new Relax()
     
     /* make active solver variables */

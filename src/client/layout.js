@@ -2,7 +2,59 @@
 /* Little Window Layout Helper */
 
 
-import {pt, rects, Intersection} from "src/client/graphics.js"
+import {pt, rects} from "src/client/graphics.js"
+import Windows from "templates/lively-window.js"
+
+
+export class Intersection {
+  
+  static rects(rects) {
+    var intersections = []
+    for(var i=0; i < rects.length; i++) {
+      for(var j=i; j < rects.length; j++) {
+        if (i !== j) {
+          var intersection = rects[i].intersection(rects[j])
+          if (intersection && intersection.width > 0 && intersection.height > 0)
+            intersections.push(intersection)
+        }
+      }  
+    }
+    return intersections
+  }
+  
+  static windows(windows) {
+    
+    var bounds = new Map()
+    windows.forEach( ea => bounds.set(ea, lively.getGlobalBounds(ea)))
+    var intersections = []
+    for(var i=0; i < windows.length; i++) {
+      for(var j=i; j < windows.length; j++) {
+        if (i !== j) {
+          
+          var intersection = bounds.get(windows[i]).intersection(bounds.get(windows[j]))
+          if (intersection && intersection.width > 0 && intersection.height > 0)
+            intersections.push({intersection: intersection, a:windows[i], b: windows[i] })
+        }
+      }  
+    }
+    return intersections
+  }
+
+  static withWindows(obj, windows) {
+    var intersections = []
+    var objBounds = lively.getGlobalBounds(obj)
+    for(var i=0; i < windows.length; i++) {
+      if (windows[i] !== obj) {
+        var intersection = lively.getGlobalBounds(windows[i]).intersection(objBounds)
+        if (intersection && intersection.width > 0 && intersection.height > 0)
+          intersections.push({intersection: intersection, element: windows[i], })
+      }
+    }
+    return intersections
+  }
+  
+  
+}
 
 
 export default class Layout {
@@ -38,6 +90,8 @@ export default class Layout {
   
   
   static expandUntilNoIntersectionsToBottomLeft(windows, maxiterations) {
+    windows = windows || Windows.allWindows()
+
     if (maxiterations === undefined) maxiterations = 100;
     var i=0
     do {
@@ -63,7 +117,8 @@ export default class Layout {
   }
   
   static expandUntilNoIntersectionsExplosion(windows, maxiterations) {
-    if (maxiterations === undefined) maxiterations = 10;
+    windows = windows || Windows.allWindows()
+    if (maxiterations === undefined) maxiterations = 200;
     var center = this.getCenter(windows)
     lively.showPoint(center)
     var i=0
@@ -81,6 +136,28 @@ export default class Layout {
       })
     } while(intersections.length > 0 && i < maxiterations)
   }
+  
+  /*
+   * Move overlapping windows away until it does not touch any more
+   */
+  static makeLocalSpace(obj) {
+    var intersections = Intersection.withWindows(obj, Windows.allWindows())
+    var objCenter =   lively.getGlobalCenter(obj)
+    var objBounds = lively.getGlobalBounds(obj)
+    intersections.forEach(ea => {
+      var other = ea.element
+      var intersection
+      while (
+        (intersection = lively.getGlobalBounds(other).intersection(objBounds)) &&
+        intersection.width > 0 && intersection.height > 0) {
+        var otherCenter = lively.getGlobalCenter(other);
+        var delta = otherCenter.subPt(objCenter).normalized().scaleBy(10)
+        lively.moveBy(other, delta)
+        lively.showPath([otherCenter, otherCenter.addPt(delta)])
+      } 
+    })
+  }
+
   
   // just for development and testing
   static randomizeContentPosition(node) {
