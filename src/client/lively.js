@@ -27,6 +27,8 @@ import focalStorage from '../external/focalStorage.js';
 import * as kernel from 'kernel';
 
 import Selection from 'templates/lively-selection.js'
+import windows from "templates/lively-window.js"
+
 
 let $ = window.$; // known global variables.
 
@@ -45,7 +47,8 @@ var exportmodules = [
   "focalStorage",
   "authGithub",
   "authDropbox",
-  "authGoogledrive"
+  "authGoogledrive",
+  "windows"
 ];
 
 /*

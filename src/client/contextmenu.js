@@ -8,6 +8,7 @@ import {pt} from './graphics.js';
 import ViewNav from 'src/client/viewnav.js'
 import Layout from "src/client/layout.js"
 import Preferences from './preferences.js';
+import Windows from "templates/lively-window.js"
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
@@ -137,6 +138,13 @@ export default class ContextMenu {
     ]
   }
   
+  static gotoWindow(element) {
+    element.focus()
+    document.body.scrollTop = 0
+    document.body.scrollLeft = 0
+    var pos = lively.getPosition(element).subPt(pt(100,100))
+    lively.setPosition(document.body, pos.scaleBy(-1))
+  }
   
   static worldMenuItems(worldContext) {
     return  [
@@ -231,6 +239,14 @@ export default class ContextMenu {
         ["Storage Setup", (evt) => this.openComponentInWindow("lively-filesystems", evt, worldContext),
           "", '<i class="fa fa-cloud" aria-hidden="true"></i>'],
       ]],
+      [
+        "Windows", 
+        Windows.allWindows().map(ea => [
+          "" + ea.getAttribute("title"), () => {
+            this.gotoWindow(ea)
+          }
+        ])
+      ],
       ["View", [
         ["Reset View", (evt) => ViewNav.resetView(), 
           "",'<i class="fa fa-window-restore" aria-hidden="true"></i>'],
@@ -362,6 +378,7 @@ export default class ContextMenu {
         
         lively.setPosition(menu, pt(evt.clientX, evt.clientY).subPt(offset));
       }
+      menu.focus()
       menu.openOn(optItems || this.items(target, worldContext), evt).then(() => {
       });
       return menu;
