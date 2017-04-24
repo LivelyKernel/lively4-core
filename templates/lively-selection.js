@@ -39,6 +39,8 @@ export default class Selection extends Morph {
   onPointerDown(evt) {
     if (evt.ctrlKey || evt.altKey) return;
     
+    if (lively.hand && lively.hand.childNodes.length > 0) return; // in drag
+    
     this.selectionOffset = pt(evt.clientX, evt.clientY)
 
     lively.addEventListener("Selection", document.body.parentElement, "pointermove", 

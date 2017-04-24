@@ -593,7 +593,7 @@ export default class Lively {
       lively.loadCSSThroughDOM("lively4", lively4url +"/src/client/lively.css");
       
       // only scroll thrugh CTRL+drag #TODO what does UX say?
-      document.body.style.overflow = "hidden"
+      // document.body.style.overflow = "hidden"
       
       var titleTag = document.querySelector("title");
       if (!titleTag) {

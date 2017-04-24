@@ -189,9 +189,6 @@ export default class LivelyDrawboard extends Morph {
 
 
   onPointerDown(evt) {
-
-    
-    
     var isFocused = document.activeElement == this
     if (!isFocused) {
       this.style['z-index'] = 200
@@ -262,6 +259,15 @@ export default class LivelyDrawboard extends Morph {
   
   // Event handler called for each pointerdown event:
   onPointerMove(evt) {
+    
+    if (evt.getCoalescedEvents) {
+      var missedEvents = evt.getCoalescedEvents()
+      // lively.showPath(missedEvents.map( ea => pt(ea.clientX, ea.clientY)))
+      missedEvents.forEach(ea => {
+        this.onPointerMove(ea)
+      })
+    }
+    
     // console.log("move " + (Date.now() - this.lastMove))
     // this.lastMove = Date.now()
     
