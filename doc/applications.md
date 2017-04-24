@@ -21,3 +21,8 @@ We are not alone!
   - Collaborative
   - Cloud/REST API
 - Google Docs #Propriatary
+
+
+# Ideas
+
+- "a Wiki of active objects editable through wires and scripts" (Dan, Lively Wiki Vision)

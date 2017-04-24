@@ -2,7 +2,6 @@
 
 [libraries](libraries.md) | [applications](applications.md) | [notes](notes.md)
 
-
 Lively4 is a self-supporting collaborative development environment. It runs in the browser on the client side and uses DOM elements and JavaScript as its building blocks. We use web-components and babels client side JavaScript source code transformation. It can be used and three ways:
 
 1. It can be statically servered from a github.io page, from where it can be used to edit files on github and other cloud storage. We employ a custom service worker that provides use with a unified layer over the various cloud services and storage APIs. 
