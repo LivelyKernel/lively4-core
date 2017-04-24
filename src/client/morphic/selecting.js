@@ -34,7 +34,7 @@ export default class Selecting {
       e.stopPropagation();
       e.preventDefault();
     } else {
-      
+       this.hideHalos()
     }
   }
   

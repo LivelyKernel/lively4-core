@@ -91,9 +91,15 @@ export default class ViewNav {
   }
   
   onResize(evt) {
+    if (!this.lastScaleTime || (Date.now() - this.lastScaleTime) > 1000) {
+      return // there was no previous scale with mouse wheel
+    }
+
     // this.lastPoint = pt(LastEvt.clientX, LastEvt.clientY)
     var scale = window.innerWidth / window.outerWidth
     // lively.notify("scale " + (scale / this.lastScale))
+
+
 
     var newPos = this.lastPoint.scaleBy(scale / this.lastScale)
     var offset = this.lastPoint.subPt(newPos)
@@ -111,6 +117,7 @@ export default class ViewNav {
 
     this.lastPoint = pt(evt.clientX, evt.clientY)
     this.lastScale = window.innerWidth / window.outerWidth
+    this.lastScaleTime = Date.now()
     
     // lively.showPoint(this.lastPoint).style.backgroundColor = "blue"
     // lively.showPoint(pt(LastEvt.pageX, LastEvt.pageY))
@@ -157,6 +164,8 @@ export default class ViewNav {
     
     let grid = document.createElement("div")
   	grid.setAttribute("data-lively4-donotpersist", "all")
+    grid.isMetaNode = true
+    grid.id = "DocumentGrid"
     lively.setPosition(grid, pt(0,0))
     document.body.appendChild(grid)
 

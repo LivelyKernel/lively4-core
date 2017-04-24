@@ -443,6 +443,15 @@ export default class AceEditor extends Morph {
         if (result instanceof HTMLElement ) {
           lively.showElement(result)
         }
+        // show also html elements in a collections
+        if (result && result.forEach ) {
+          result.forEach( ea => {
+            if (ea instanceof HTMLElement ) {
+              lively.showElement(ea)
+            }
+          })
+        }
+        
       }
     }
     return result

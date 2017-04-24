@@ -1,8 +1,11 @@
-'use strict';
+
+import html from "src/client/html.js"
 
 // import lively from './lively.js'
 
 export default class Expose {
+
+
 
   static get _stylesToSave() {
     return [
@@ -28,6 +31,11 @@ export default class Expose {
   }
 
   static open() {
+
+    if (!Expose.current) return
+    
+    html.registerKeys(document.body, "expose", Expose.current, true)
+    
     if (Expose.isOpen) {
       return;
     }
@@ -60,6 +68,7 @@ export default class Expose {
     let paddingV = 20;
     let paddingH = 20;
 
+    let topLeft = pt(100,100)
     for (var i = 0; i < windows.length; i++) {
       let win = windows[i];
       let row = Math.floor(i / (Expose.windowsPerRows));
@@ -70,14 +79,34 @@ export default class Expose {
       win.style.transition = 'all 200ms';
       win.style.cursor = 'pointer';
 
-      win.style.position = 'fixed';
-      win.style.width = `calc(${1 / Expose.windowsPerRows * 100}% - ${1 * marginH}px - ${(Expose.windowsPerRows - 1) * paddingH}px)`;
-      win.style.height = `calc(${1 / rows * 100}% - ${2 * marginV}px - ${(0) * paddingV}px)`;
+  
+      // win.style.width = `calc(${1 / Expose.windowsPerRows * 100}% - ${1 * marginH}px - ${(Expose.windowsPerRows - 1) * paddingH}px)`;
+      // win.style.height = `calc(${1 / rows * 100}% - ${2 * marginV}px - ${(0) * paddingV}px)`;
 
-      win.style.top = `calc(${marginV}px + ${row} * (${1 / rows * 100}% - ${paddingV}px))`;
-      win.style.left = `calc(${marginH}px + ${column} * (${1 / Expose.windowsPerRows * 100}% - ${1 * marginH}px))`;
-      win.style.right = 'auto';
-      win.style.bottom = 'auto';
+      // win.style.top = `calc(${marginV}px + ${row} * (${1 / rows * 100 }% - ${paddingV}px))`;
+      // win.style.left = `calc(${marginH}px + ${column} * (${1 / Expose.windowsPerRows * 100 }% - ${1 * marginH}px))`;
+      // win.style.right = 'auto';
+      // win.style.bottom = 'auto';
+      this.exposeScale = 0.5
+      this.elementLength = 300 
+      win.style.border = ""
+      
+
+    
+      var ext = lively.getExtent(win)
+      if (ext.x > ext.y) {
+        var realScale = this.elementLength / ext.x
+      } else {
+        realScale = this.elementLength / ext.y
+      }
+      realScale = Math.min(1, realScale)
+      win.tempScale = realScale
+
+      // scale with origin topleft
+      this.setScaleTransform(realScale, win, ext)
+      var pos = topLeft.addPt(pt(column * (this.elementLength + 20), row * (this.elementLength + 20)))
+      
+      lively.setGlobalPosition(win, pos)
 
       win.addEventListener('mouseenter', Expose.windowMouseEnter);
       win.addEventListener('mouseleave', Expose.windowMouseLeave);
@@ -87,7 +116,16 @@ export default class Expose {
     Expose.windowMouseEnter.call(Expose.selectedWin);
   }
 
+  static setScaleTransform(scale, win, ext) {
+    
+    win.style.transformOrigin = "0 0";
+    win.style.transform = `scale(${scale})`
+  }
+
   static close() {
+
+    lively.removeEventListener("expose", document.body)
+
     if (!Expose.isOpen) {
       return;
     }
@@ -101,6 +139,9 @@ export default class Expose {
       win.removeEventListener('mouseenter', Expose.windowMouseEnter);
       win.removeEventListener('mouseleave', Expose.windowMouseLeave);
       win.removeEventListener('click', Expose.windowClick);
+      
+      delete win.tempScaledExtent
+      delete win.tempScale
     });
 
     Expose.undimWindow();
@@ -172,7 +213,7 @@ export default class Expose {
     if (overlay) {
       overlay.style.opacity = 0;
       setTimeout(() => {
-        document.body.removeChild(overlay);
+        overlay.remove()
       }, 200);
     }
   }
@@ -191,12 +232,14 @@ export default class Expose {
     Expose.windowRemoveHighlight(this);
   }
 
+  /* Highlights */
   static windowHighlight(w) {
-    w.style.transform = 'scale(1.05)';
+    this.setScaleTransform(w.tempScale + 0.2, w, w.tempScaledExtent)
   }
 
   static windowRemoveHighlight(w) {
-    w.style.transform = 'scale(1)';
+    w.style.border =""
+    this.setScaleTransform(w.tempScale, w, w.tempScaledExtent)
   }
 
   static windowClick(e) {
@@ -205,56 +248,58 @@ export default class Expose {
     Expose.close();
   }
 
-  static bodyKeyDown(e) {
-    // (cmd|ctrl)+E || alt+q
-    if ((e.keyCode === 69 && (e.metaKey || e.ctrlKey)) || (e.keyCode === 81 && e.altKey)) {
+  static onKeyDown(evt, key) {
+    if ((key === "E" && (evt.metaKey || evt.ctrlKey)) || (key === "Q" && evt.altKey)) {
       Expose.toggle();
-    }
-
-    if (Expose.isOpen) {
-
-      // Left
-      if (e.keyCode === 37) {
-        Expose.selectPrev();
-      }
-
-      // Up
-      if (e.keyCode === 38) {
-        Expose.selectUp();
-      }
-
-      // Right
-      if (e.keyCode === 39) {
-        Expose.selectNext();
-      }
-
-      // Down
-      if (e.keyCode === 40) {
-        Expose.selectDown();
-      }
-
-      // Enter
-      if (e.keyCode === 13) {
-        Expose.windowClick.call(Expose.selectedWin, e);
-      }
-
-      // Esc
-      if (e.keyCode === 27) {
-        Expose.close();
-      }
-
+      evt.preventDefault()
+      evt.stopPropagation();
     }
   }
+
+  onLeftDown(evt) {
+    if (!Expose.isOpen) return
+    Expose.selectPrev();
+  }
+  
+  onUpDown(evt) {
+    if (!Expose.isOpen) return
+    Expose.selectUp();
+  }
+  
+  onRightDown(evt) {
+    if (!Expose.isOpen) return
+    Expose.selectNext();
+  }
+
+  onDownDown(evt) {
+    if (!Expose.isOpen) return
+    Expose.selectDown();
+  }
+  
+  onEnterDown(evt) {
+    if (!Expose.isOpen) return
+    Expose.windowClick.call(Expose.selectedWin, evt);
+  }
+
+  onEscDown(evt) {
+    if (!Expose.isOpen) return
+    Expose.close();
+  }
+
 
   static postLoad() {
     if (window.lively && lively.removeEventListener) {
       console.log("Post load expose")
       // basic class configuration
       Expose.isOpen = false;
-      Expose.windowsPerRows = 3;
+      Expose.windowsPerRows = 5;
+      lively.removeEventListener("ToggleExpose", document.body)
+      html.registerKeys(document.body, "ToggleExpose", Expose, false)
 
-      lively.removeEventListener("expose")
-      lively.addEventListener("expose", document.body, 'keydown', Expose.bodyKeyDown)
+
+      Expose.current = new Expose()
+
+      // lively.addEventListener("expose", document.body, 'keydown', Expose.bodyKeyDown)
     } else {
       console.log("defere Post load expose")
       window.setTimeout(this.postLoad, 100)

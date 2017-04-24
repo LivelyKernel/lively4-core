@@ -1,22 +1,15 @@
-"use strict";
-
 /*
-# LivelyHaloGrabItem
-
-The GrabHaloItem removes the selected node from its parent element
-drags it to a new position and places it relative or aboslute 
-(distance or holding shift pressed) into another node. 
-
-*/
-
+ * # LivelyHaloGrabItem
+ * The GrabHaloItem removes the selected node from its parent element
+ * drags it to a new position and places it relative or aboslute 
+ * (distance or holding shift pressed) into another node. 
+ */
+ 
 import HaloItem from './HaloItem.js';
 import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
-import {pt} from 'src/client/graphics.js';
-
-// window.that = document.querySelector('lively-halo').shadowRoot.querySelector('lively-halo-grab-item')
-
-// this.isDragging = false
+import {Grid, pt} from 'src/client/graphics.js';
+import Preferences from 'src/client/preferences.js';
 
 export default class HaloGrabItem extends HaloItem {
  
@@ -31,7 +24,6 @@ export default class HaloGrabItem extends HaloItem {
 
   // DRAG API
 
-  
   start(evt) {
     if (this.isDragging) {
       console.log("isDragging " + this.isDragging)
@@ -102,11 +94,10 @@ export default class HaloGrabItem extends HaloItem {
   }
   
   moveGrabbedNodeToEvent(evt) {
-  
-  
     var eventPosition = events.globalPosition(evt);
     this.dropAtEvent(this.grabShadow, evt);
-    nodes.setPosition(this.grabTarget, eventPosition.subPt(this.grabOffset))
+    var pos = eventPosition.subPt(this.grabOffset)
+    nodes.setPosition(this.grabTarget, Grid.optSnapPosition(pos, evt))
     evt.preventDefault();
   }
   
@@ -119,8 +110,6 @@ export default class HaloGrabItem extends HaloItem {
         lively.notify("absolute...")
         this.insertGrabTargetBeforeShadow();
         this.removeGrabShadow();
-    
-        // this.grabTarget.style.position = 'absolute';
         lively.setPosition(this.grabTarget, lively.getPosition(this.grabShadow))
     } else {    
       this.insertGrabTargetBeforeShadow();
@@ -192,7 +181,7 @@ export default class HaloGrabItem extends HaloItem {
     this.grabShadow.style.removeProperty('left'); 
 
     if (evt.shiftKey || 
-      nodes.globalPosition(this.grabShadow).dist(nodes.globalPosition(this.grabTarget)) > 300) {
+      nodes.globalPosition(this.grabShadow).dist(nodes.globalPosition(this.grabTarget)) > 100) {
       this.grabShadow.parentElement.appendChild(this.grabShadow)
         
       this.grabShadow.style.opacity = 0;

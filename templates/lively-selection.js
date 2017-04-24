@@ -39,6 +39,8 @@ export default class Selection extends Morph {
   onPointerDown(evt) {
     if (evt.ctrlKey || evt.altKey) return;
     
+    if (lively.hand && lively.hand.childNodes.length > 0) return; // in drag
+    
     this.selectionOffset = pt(evt.clientX, evt.clientY)
 
     lively.addEventListener("Selection", document.body.parentElement, "pointermove", 
@@ -82,7 +84,11 @@ export default class Selection extends Morph {
     lively.setGlobalPosition(this,  topLeft);
     lively.setExtent(this, bottomRight.subPt(topLeft));
   
-    this.nodes = Array.from(this.context.childNodes).filter( ea => {
+    this.nodes = Array.from(this.context.childNodes)
+      .filter( ea => {
+        return !ea.isMetaNode
+      })
+      .filter( ea => {
       if (!ea.getBoundingClientRect || ea.isMetaNode) return false;
       var r = ea.getBoundingClientRect();
       var eaRect = rect(r.left, r.top,  r.width, r.height);

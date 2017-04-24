@@ -9,6 +9,7 @@
 
 
 
+
 export class Grid {
   static snap(value, gridSize, snapSize) {
     if (gridSize === undefined)
@@ -27,6 +28,17 @@ export class Grid {
   static snapPt(p, gridSize, snapSize) {
     return pt(this.snap(p.x, gridSize, snapSize), this.snap(p.y, gridSize, snapSize))
   }
+
+  static optSnapPosition(pos, evt) {
+    // snap if preference is "on" and 'alt' take the opposite
+    if ((Preferences.get("SnapWindowsInGrid") && !evt.altKey) ||
+        (!Preferences.get("SnapWindowsInGrid") && evt.altKey)) {
+      return this.snapPt(pos)
+    } else {
+      return pos
+    }
+  }
+
 
 } 
 

@@ -117,22 +117,25 @@ export default class Window extends Morph {
     this.contentBlock = this.shadowRoot.querySelector('#window-content');
   }
 
+    
+
   bindEvents() {
     try {
-      this.addEventListener('mousedown', (e) => { this.focus(); });
-      this.addEventListener('created', (e) => { this.focus(); });
-      
-      this.addEventListener('extent-changed', (e) => { this.onExtentChanged(); });
-
-
+      this.addEventListener('created', (evt) => this.focus());
+      this.addEventListener('extent-changed', (evt) => { this.onExtentChanged(); });
       this.shadowRoot.querySelector('.window-title')
-        .addEventListener('mousedown', (e) => { this.onTitleMouseDown(e); });
-  
-      this.menuButton.addEventListener('click', (e) => { this.onMenuButtonClicked(e); });
-      this.minButton.addEventListener('click', (e) => { this.onMinButtonClicked(e); });
-      this.maxButton.addEventListener('click', (e) => { this.onMaxButtonClicked(e); });
-      this.get('.window-close').addEventListener('click', (e) => { this.onCloseButtonClicked(e); });
-      this.addEventListener('keyup', (e) => { this.onKeyUp(e); });
+        .addEventListener('mousedown', (evt) => { this.onTitleMouseDown(evt); });
+      this.shadowRoot.querySelector('.window-title')
+        .addEventListener('dblclick', (evt) => { this.onTitleDoubleClick(evt); });
+    
+      this.addEventListener('mousedown', (evt) => this.focus(), true);
+      this.menuButton.addEventListener('click', evt => { this.onMenuButtonClicked(evt); });
+      this.minButton.addEventListener('click', evt => { this.onMinButtonClicked(evt); });
+      this.maxButton.addEventListener('click', evt => { this.onMaxButtonClicked(evt); });
+      this.addEventListener('dblclick', evt => { this.onDoubleClick(evt); });
+
+      this.get('.window-close').addEventListener('click', evt => { this.onCloseButtonClicked(evt); });
+      this.addEventListener('keyup', evt => { this.onKeyUp(evt); });
     } catch(err) {
       console.log("Error, binding events! Continue anyway!", err)
     }
@@ -174,10 +177,10 @@ export default class Window extends Morph {
   reposition() {
     let pos = lively.getGlobalPosition(this);
     if (this.isFixed) {
-      lively.setPosition(pos);
+      lively.setPosition(this, pos);
       this.classList.add('window-fixed');
     } else {
-      lively.setPosition(pos.addPt(lively.getScroll()))
+      lively.setPosition(this, pos.addPt(lively.getScroll()))
       this.classList.remove('window-fixed') 
     }
   }
@@ -187,10 +190,14 @@ export default class Window extends Morph {
 	}
 	
   allWindows() {
+    return Window.allWindows()
+	}
+
+  static allWindows() {
     return Array.from(document.querySelectorAll('*')).filter(ea => ea.isWindow);
 	}
 
-  focus(e) {
+  focus(evt) {
     let allWindows = this.allWindows();
     let thisIdx = allWindows.indexOf(this);
     let allWindowsButThis = allWindows;
@@ -210,7 +217,7 @@ export default class Window extends Morph {
     this.window.classList.add('focused');
     this.setAttribute('active', true);
     
-    this.bringMinimizedWindowsToFront()
+    // this.bringMinimizedWindowsToFront()
     
     if (this.target && this.target.focus) this.target.focus()
   }
@@ -222,12 +229,13 @@ export default class Window extends Morph {
     });
 	}
 	
-  minButtonClicked(e) {
+  onMinButtonClicked(evt) {
     this.toggleMinimize()
+    evt.stopPropagation()
   }
 
-  maxButtonClicked(e) {
-    if (e.shiftKey) {
+  onMaxButtonClicked(evt) {
+    if (evt.shiftKey) {
       this.togglePined() 
     } else {
       this.toggleMaximize()
@@ -248,7 +256,7 @@ export default class Window extends Morph {
       this.positionBeforeMaximize = null
     } else {
       if (this.isMinimized()) {
-        this.toggleMinimize()
+        return this.toggleMinimize()
       }
 
       $('i', this.maxButton).removeClass('fa-expand').addClass('fa-compress');
@@ -290,51 +298,50 @@ export default class Window extends Morph {
       
     var content = this.shadowRoot.querySelector('#window-content');
     if (this.positionBeforeMinimize) {
-      this.style.position = "absolute"
-      lively.setGlobalPosition(this, 
-        pt(this.positionBeforeMinimize.x, this.positionBeforeMinimize.y)
-      );
-      this.setExtent(pt(this.positionBeforeMinimize.width, this.positionBeforeMinimize.height));  
+      this.minimizedPosition = lively.getPosition(this)
+
+
+      lively.setPosition(this, this.positionBeforeMinimize)
+      // this.setExtent(this.extentBeforeMinimize);  
       content.style.display = "block";
       this.displayResizeHandle(true)
       this.positionBeforeMinimize = null
       
       // this.classList.removed("minimized")
+      this.style.transformOrigin = "" 
+      this.style.transform = "" 
+
+      content.style.pointerEvents = ""
+
     } else {
       if (this.isMaximized()) {
-        this.toggleMaximize()
+        return this.toggleMaximize()
       }
-      this.style['z-index'] = 100
-      var bounds = this.getBoundingClientRect();
-      this.positionBeforeMinimize = {
-        x: bounds.left,
-        y: bounds.top,
-        width: bounds.width,
-        height: bounds.height,
-      };
-    
-      this.style.position = "fixed";
-      this.style.top = this.minimizedWindowPadding +"px";
-      this.style.left = "";
-      this.style.right = this.minimizedWindowPadding + "px";
-      this.style.width = "300px";
-      this.style.height= "30px";
-      content.style.display = "none";
-      this.displayResizeHandle(false)
+      // this.style['z-index'] = 100
+      this.positionBeforeMinimize = lively.getPosition(this)
+      // this.extentBeforeMinimize = lively.getExtent(this)
       
-      this.sortMinimizedWindows();
+      
+      
+      if (this.minimizedPosition) {
+        lively.setPosition(this, this.minimizedPosition) 
+      }
+    
+      // this.style.position = "fixed";
+      // this.style.left = "";
+      // this.style.top = this.minimizedWindowPadding +"px";
+      // this.style.right = this.minimizedWindowPadding + "px";
+      // lively.setGlobalPosition()
+      
+      this.style.transformOrigin = "0 0" 
+      this.style.transform = "scale(0.4)" 
+      
+      content.style.pointerEvents = "none"
+      
+      this.displayResizeHandle(false)
+   
     }
     this.bringMinimizedWindowsToFront()
-  }
-
-  sortMinimizedWindows() {
-    var x = 100;
-    var windowBarHeight = this.shadowRoot.querySelector('.window-titlebar').clientHeight
-    
-    _.filter(document.body.querySelectorAll("lively-window"), ea => ea.isMinimized()).forEach(ea => {
-      ea.style.top= x + "px" ;
-      x += windowBarHeight + this.minimizedWindowPadding
-    })
   }
 
   isMinimized() {
@@ -357,7 +364,7 @@ export default class Window extends Morph {
   }
 
 
-  onCloseButtonClicked(e) {
+  onCloseButtonClicked(evt) {
     if (this.target && this.target.unsavedChanges && this.target.unsavedChanges()) {
       if(!window.confirm("Window contains unsaved changes, close anyway?"))  {
         return 
@@ -369,53 +376,51 @@ export default class Window extends Morph {
     this.parentNode.removeChild(this);
   }
 
-  onMenuButtonClicked(e) {
-    lively.openContextMenu(document.body, e, this.childNodes[0]);
+  onMenuButtonClicked(evt) {
+    lively.openContextMenu(document.body, evt, this.childNodes[0]);
   }
 
-  onTitleMouseDown(e) {
-    e.preventDefault();
+  onTitleMouseDown(evt) {
+    evt.preventDefault();
 
     if(this.positionBeforeMaximize) return; // no dragging when maximized
 
     if (this.isFixed) {
       let offsetWindow =  this.getBoundingClientRect()
-      this.dragging = pt(e.pageX - offsetWindow.left, e.pageY - offsetWindow.top)
+      this.dragging = pt(evt.pageX - offsetWindow.left, evt.pageY - offsetWindow.top)
 
     } else {
       this.draggingStart = lively.getPosition(this)
       if (isNaN(this.draggingStart.x) || isNaN(this.draggingStart.y)){
         throw new Error("Drag failed, because window Position is not a number")
       }
-      this.dragging = pt(e.clientX, e.clientY)
+      this.dragging = pt(evt.clientX, evt.clientY)
     }
         lively.removeEventListener('lively-window', document)
     
-    lively.addEventListener('lively-window', document, 'mousemove', (e) => { this.onWindowMouseMove(e); });
-    lively.addEventListener('lively-window', document, 'mouseup', (e) => { this.onWindowMouseUp(e); });
+    lively.addEventListener('lively-window', document, 'mousemove', 
+      evt => this.onWindowMouseMove(evt));
+    lively.addEventListener('lively-window', document, 'mouseup', 
+      evt => this.onWindowMouseUp(evt));
     this.window.classList.add('dragging');
   }
 
-  onWindowMouseMove(e) {
+  onWindowMouseMove(evt) {
     if (this.dragging) {
-      e.preventDefault();
+      evt.preventDefault();
 
       if (this.isFixed) {
-        lively.setPosition(this, pt(e.clientX, e.clientY).subPt(this.dragging));
+        lively.setPosition(this, pt(evt.clientX, evt.clientY).subPt(this.dragging));
       } else {
-        var pos = this.draggingStart.addPt(pt(e.pageX, e.pageY))
+        var pos = this.draggingStart.addPt(pt(evt.pageX, evt.pageY))
           .subPt(this.dragging).subPt(lively.getScroll())
-        
-        if (Preferences.get("SnapWindowsInGrid")) {
-          pos = Grid.snapPt(pos)
-        }
-        lively.setPosition(this, pos)
+        lively.setPosition(this, Grid.optSnapPosition(pos, evt))
       }
     }
   }
 
-  onWindowMouseUp(e) {
-    e.preventDefault();
+  onWindowMouseUp(evt) {
+    evt.preventDefault();
     this.dragging = false;
 
     this.window.classList.remove('dragging');
@@ -428,6 +433,19 @@ export default class Window extends Morph {
       this.target.dispatchEvent(new CustomEvent("extent-changed"))
     }
   }
+
+  onDoubleClick(evt) {
+    if (this.isMinimized()) {
+      this.toggleMinimize()
+    }
+  }
+
+  onTitleDoubleClick(evt) {
+    this.toggleMaximize()
+    evt.stopPropagation()
+  }
+
+
 
   livelyMigrate(oldInstance) {
     // this is crucial state

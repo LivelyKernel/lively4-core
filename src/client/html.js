@@ -1,10 +1,47 @@
-'use strict';
-
 import Preferences from "src/client/preferences.js"
 
 /*
  * Kitchensink for all HTML manipulation utilities
  */
+
+
+class KeyboardHandler {
+  
+  // Generic Keyboad handler to get rid of the magic keycode numbers 
+  static getDispatchHandler(key) {
+    return ({
+      "37": "onLeft",
+      "38": "onUp",
+      "39": "onRight",
+      "40": "onDown",
+      "13": "onEnter",
+      "27": "onEsc",
+    })[key]
+  }
+  
+  static dispatchKey(evt, object, upOrDown, stopAndPreventDefault) {
+    var handler = this.getDispatchHandler(evt.keyCode)
+    if (handler) {
+      handler += upOrDown
+      if (object[handler]) {
+        object[handler](evt)
+        if (stopAndPreventDefault) {
+          evt.preventDefault();
+          evt.stopPropagation();
+        }
+      }
+    }
+    var keyUpOrDown = "onKey" + upOrDown
+    if (object[keyUpOrDown]) {
+        var key = String.fromCharCode(evt.keyCode)
+        object[keyUpOrDown](evt, key)
+        if (stopAndPreventDefault) {
+          evt.preventDefault();
+          evt.stopPropagation();
+        }
+    }
+  }
+}
 
 export default class HTML {
 
@@ -41,6 +78,11 @@ export default class HTML {
     })
   }
   
+  static enhanceMarkdown(source) {
+    return source.replace(/([ ])#([A-Za-z09]+)/g,
+       "$1[#$2](javascript:lively.openSearchWidget('#$2'))");
+  }
+  
   static registerButtons(parent) {
     // Just an experiment for having to write lesser code.... which ended up in having more code here ;-) #Jens
     Array.prototype.forEach.call(parent.shadowRoot.querySelectorAll("button"), node => {
@@ -58,10 +100,17 @@ export default class HTML {
     })
   }
   
-  static enhanceMarkdown(source) {
-    return source.replace(/([ ])#([A-Za-z09]+)/g,
-       "$1[#$2](javascript:lively.openSearchWidget('#$2'))");
+  static registerKeys(obj, domain, target, stopAndPreventDefault) {
+    domain = domain || "Keys"
+    target = target || obj
+    lively.addEventListener(domain, obj, "keydown", evt => {
+      KeyboardHandler.dispatchKey(evt, target, "Down", stopAndPreventDefault)
+    })
+    lively.addEventListener(domain, obj, "keyup", evt => {
+      KeyboardHandler.dispatchKey(evt, target, "Up", stopAndPreventDefault)
+    })
   }
+  
        
   
   static registerInputs(parent) {
@@ -198,7 +247,6 @@ export default class HTML {
       lively.notify("Saved " + url)
     })
   }
-
 
   static getGlobalSource(worldContext) {
     worldContext= worldContext || document.body

@@ -6,8 +6,9 @@
 import html from './html.js';
 import {pt} from './graphics.js';
 import ViewNav from 'src/client/viewnav.js'
-
+import Layout from "src/client/layout.js"
 import Preferences from './preferences.js';
+import Windows from "templates/lively-window.js"
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
@@ -34,8 +35,10 @@ export default class ContextMenu {
   
   static openComponentInWindow (name, evt, worldContext) {
     this.hide();
-    return lively.openComponentInWindow(name, null, undefined, worldContext).then( comp => {
-      this.positionElementAtEvent(comp.parentElement, worldContext, evt)
+    return lively.openComponentInWindow(name, 
+      this.eventPosition(worldContext, evt), 
+      undefined, worldContext).then( comp => {
+      
       return comp
     });
   }
@@ -47,7 +50,7 @@ export default class ContextMenu {
 	  });
   }
   
-  static positionElementAtEvent(element, worldContext, evt) {
+  static eventPosition(worldContext, evt) {
     evt = this.firstEvent || evt;
     
     var pos = pt(evt.clientX, evt.clientY);
@@ -59,7 +62,11 @@ export default class ContextMenu {
     } else {
       pos = pos.subPt(lively.getGlobalPosition(worldContext))
     }
-    lively.setPosition(element, pos);
+    return pos
+  }
+  
+  static positionElementAtEvent(element, worldContext, evt) {
+    lively.setPosition(element, this.eventPosition(worldContext, evt));
   }
   
   static targetMenuItems(target) {
@@ -87,10 +94,14 @@ export default class ContextMenu {
       }],
       ["remove", (evt) => {
          target.remove()
-         
-         
          this.hide();
       }],
+      [
+        "make space", (evt) => {
+          Layout.makeLocalSpace(target)
+          this.hide()
+        }
+      ],
       [wasEditable ? "make uneditable" : "make editable", (evt) => {
          this.hide();
          target.contentEditable = !wasEditable;
@@ -127,6 +138,13 @@ export default class ContextMenu {
     ]
   }
   
+  static gotoWindow(element) {
+    element.focus()
+    document.body.scrollTop = 0
+    document.body.scrollLeft = 0
+    var pos = lively.getPosition(element).subPt(pt(100,100))
+    lively.setPosition(document.body, pos.scaleBy(-1))
+  }
   
   static worldMenuItems(worldContext) {
     return  [
@@ -221,6 +239,14 @@ export default class ContextMenu {
         ["Storage Setup", (evt) => this.openComponentInWindow("lively-filesystems", evt, worldContext),
           "", '<i class="fa fa-cloud" aria-hidden="true"></i>'],
       ]],
+      [
+        "Windows", 
+        Windows.allWindows().map(ea => [
+          "" + ea.getAttribute("title"), () => {
+            this.gotoWindow(ea)
+          }
+        ])
+      ],
       ["View", [
         ["Reset View", (evt) => ViewNav.resetView(), 
           "",'<i class="fa fa-window-restore" aria-hidden="true"></i>'],
@@ -243,6 +269,11 @@ export default class ContextMenu {
               lively.setPosition(ea, pos)
               pos = pos.addPt(pt(20,20))
             })
+          },
+          "", '<i class="fa fa-window-restore" aria-hidden="true"></i>'
+        ],
+        ["Explode Windows", (evt) => {
+            Layout.expandUntilNoIntersectionsExplosion()
           },
           "", '<i class="fa fa-window-restore" aria-hidden="true"></i>'
         ],
@@ -331,22 +362,9 @@ export default class ContextMenu {
       if (this.menu) this.menu.remove()
       this.menu = menu;
       if (evt) {
-        var offset = pt(0, 0);
-        offset = offset.addPt(pt(menuWidth,0));
-
-        // #TODO implement global to local transformations...
-        var bodyBounds = document.body.getBoundingClientRect()
-        offset = offset.addPt(pt(bodyBounds.left, bodyBounds.top));
-        
-        var menuWidth = menu.clientWidth;
-        var bodyWidth = bodyBounds.clientWidth;
-        // #TODO does it work for transformations?
-        if (evt.clientX + menuWidth > bodyWidth) {
-          offset = offset.addPt(pt(menuWidth,0));
-        }
-        
-        lively.setPosition(menu, pt(evt.clientX, evt.clientY).subPt(offset));
+        lively.setGlobalPosition(menu, pt(evt.clientX, evt.clientY))
       }
+      menu.focus()
       menu.openOn(optItems || this.items(target, worldContext), evt).then(() => {
       });
       return menu;
