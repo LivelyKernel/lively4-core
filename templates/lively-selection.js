@@ -82,7 +82,11 @@ export default class Selection extends Morph {
     lively.setGlobalPosition(this,  topLeft);
     lively.setExtent(this, bottomRight.subPt(topLeft));
   
-    this.nodes = Array.from(this.context.childNodes).filter( ea => {
+    this.nodes = Array.from(this.context.childNodes)
+      .filter( ea => {
+        return !ea.isMetaNode
+      })
+      .filter( ea => {
       if (!ea.getBoundingClientRect || ea.isMetaNode) return false;
       var r = ea.getBoundingClientRect();
       var eaRect = rect(r.left, r.top,  r.width, r.height);

@@ -164,6 +164,8 @@ export default class ViewNav {
     
     let grid = document.createElement("div")
   	grid.setAttribute("data-lively4-donotpersist", "all")
+    grid.isMetaNode = true
+    grid.id = "DocumentGrid"
     lively.setPosition(grid, pt(0,0))
     document.body.appendChild(grid)
 
