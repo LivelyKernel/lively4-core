@@ -592,6 +592,9 @@ export default class Lively {
       // don't want to change style of external web-sites...
       lively.loadCSSThroughDOM("lively4", lively4url +"/src/client/lively.css");
       
+      // only scroll thrugh CTRL+drag #TODO what does UX say?
+      document.body.style.overflow = "hidden"
+      
       var titleTag = document.querySelector("title");
       if (!titleTag) {
         titleTag = document.createElement("title");
