@@ -1,44 +1,19 @@
 import Morph from './Morph.js';
 import {pt} from 'src/client/graphics.js';
-
-class KeyboardHandler {
-  
-  static getDispatchHandler(key) {
-    return ({
-      "37": "onLeft",
-      "38": "onUp",
-      "39": "onRight",
-      "40": "onDown",
-      "13": "onEnter",
-      "27": "onEsc",
-    })[key]
-  }
-  
-  static dispatchKey(evt, object) {
-    var handler = this.getDispatchHandler(evt.keyCode)
-    if (handler && object[handler]) {
-      object[handler](evt)
-      evt.preventDefault()
-      evt.stopPropagation();
-    }
-  }
-}
-
+import html from  'src/client/html.js'
 
 export default class LivelyMenu extends Morph {
 
   initialize() {
   	this.setAttribute("tabindex", 0) // we want keuboard events
-  	lively.addEventListener("menu", this, "keydown", evt => {
-      KeyboardHandler.dispatchKey(evt, this)
-  	})
+  	html.registerKeys(this)
   }
   
-  onUp(evt) {
+  onUpDown(evt) {
     this.sellectUpOrDown(evt, -1)
   }
 
-  onDown(evt) {
+  onDownDown(evt) {
     this.sellectUpOrDown(evt, 1)
   }
   
@@ -53,7 +28,7 @@ export default class LivelyMenu extends Morph {
     }
   }
 
-  onLeft(evt) {
+  onLeftDown(evt) {
     if (this.parentMenu) {
       this.parentMenu.focus()
       this.parentMenu.sellectUpOrDown(evt, 0)
@@ -61,7 +36,7 @@ export default class LivelyMenu extends Morph {
   }
 
   
-  onRight(evt) {
+  onRightDown(evt) {
     if (!this.currentItem) return
   
     var entry = this.currentItem.entry
@@ -71,7 +46,7 @@ export default class LivelyMenu extends Morph {
     }
   }
 
-  onEnter(evt) {
+  onEnterDown(evt) {
     if (!this.currentItem) return
 
     var entry = this.currentItem.entry

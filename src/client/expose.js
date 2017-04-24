@@ -1,8 +1,11 @@
-'use strict';
+
+import html from "src/client/html.js"
 
 // import lively from './lively.js'
 
 export default class Expose {
+
+
 
   static get _stylesToSave() {
     return [
@@ -28,6 +31,11 @@ export default class Expose {
   }
 
   static open() {
+
+    if (!Expose.current) return
+    
+    html.registerKeys(document.body, "expose", Expose.current)
+    
     if (Expose.isOpen) {
       return;
     }
@@ -92,7 +100,7 @@ export default class Expose {
         realScale = this.elementLength / ext.y
       }
       realScale = Math.min(1, realScale)
-      this.tempScale = realScale
+      win.tempScale = realScale
 
       // scale with origin topleft
       this.setScaleTransform(realScale, win, ext)
@@ -115,6 +123,9 @@ export default class Expose {
   }
 
   static close() {
+
+    lively.removeEventListener("expose", document.body)
+
     if (!Expose.isOpen) {
       return;
     }
@@ -202,7 +213,7 @@ export default class Expose {
     if (overlay) {
       overlay.style.opacity = 0;
       setTimeout(() => {
-        document.body.removeChild(overlay);
+        overlay.remove()
       }, 200);
     }
   }
@@ -223,8 +234,7 @@ export default class Expose {
 
   /* Highlights */
   static windowHighlight(w) {
-    w.style.border = "2px solid red"
-    this.setScaleTransform(w.tempScale + 0.1, w, w.tempScaledExtent)
+    this.setScaleTransform(w.tempScale + 0.2, w, w.tempScaledExtent)
   }
 
   static windowRemoveHighlight(w) {
@@ -238,40 +248,44 @@ export default class Expose {
     Expose.close();
   }
 
-  static bodyKeyDown(e) {
-    // (cmd|ctrl)+E || alt+q
-    if ((e.keyCode === 69 && (e.metaKey || e.ctrlKey)) || (e.keyCode === 81 && e.altKey)) {
+  static onKeyDown(evt, key) {
+    if ((key === "E" && (evt.metaKey || evt.ctrlKey)) || (key === "Q" && evt.altKey)) {
       Expose.toggle();
-    }
-
-    if (Expose.isOpen) {
-      // Left
-      if (e.keyCode === 37) {
-        Expose.selectPrev();
-      }
-      // Up
-      if (e.keyCode === 38) {
-        Expose.selectUp();
-      }
-      // Right
-      if (e.keyCode === 39) {
-        Expose.selectNext();
-      }
-      // Down
-      if (e.keyCode === 40) {
-        Expose.selectDown();
-      }
-      // Enter
-      if (e.keyCode === 13) {
-        Expose.windowClick.call(Expose.selectedWin, e);
-      }
-      // Esc
-      if (e.keyCode === 27) {
-        Expose.close();
-      }
-
+      evt.preventDefault()
+      evt.stopPropagation();
     }
   }
+
+  onLeftDown(evt) {
+    if (!Expose.isOpen) return
+    Expose.selectPrev();
+  }
+  
+  onUpDown(evt) {
+    if (!Expose.isOpen) return
+    Expose.selectUp();
+  }
+  
+  onRightDown(evt) {
+    if (!Expose.isOpen) return
+    Expose.selectNext();
+  }
+
+  onDownDown(evt) {
+    if (!Expose.isOpen) return
+    Expose.selectDown();
+  }
+  
+  onEnterDown(evt) {
+    if (!Expose.isOpen) return
+    Expose.windowClick.call(Expose.selectedWin, evt);
+  }
+
+  onEscDown(evt) {
+    if (!Expose.isOpen) return
+    Expose.close();
+  }
+
 
   static postLoad() {
     if (window.lively && lively.removeEventListener) {
@@ -279,9 +293,13 @@ export default class Expose {
       // basic class configuration
       Expose.isOpen = false;
       Expose.windowsPerRows = 5;
+      lively.removeEventListener("ToggleExpose", document.body)
+      html.registerKeys(document.body, "ToggleExpose", Expose)
 
-      lively.removeEventListener("expose")
-      lively.addEventListener("expose", document.body, 'keydown', Expose.bodyKeyDown)
+
+      Expose.current = new Expose()
+
+      // lively.addEventListener("expose", document.body, 'keydown', Expose.bodyKeyDown)
     } else {
       console.log("defere Post load expose")
       window.setTimeout(this.postLoad, 100)
