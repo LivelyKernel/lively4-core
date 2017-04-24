@@ -362,21 +362,7 @@ export default class ContextMenu {
       if (this.menu) this.menu.remove()
       this.menu = menu;
       if (evt) {
-        var offset = pt(0, 0);
-        offset = offset.addPt(pt(menuWidth,0));
-
-        // #TODO implement global to local transformations...
-        var bodyBounds = document.body.getBoundingClientRect()
-        offset = offset.addPt(pt(bodyBounds.left, bodyBounds.top));
-        
-        var menuWidth = menu.clientWidth;
-        var bodyWidth = bodyBounds.clientWidth;
-        // #TODO does it work for transformations?
-        if (evt.clientX + menuWidth > bodyWidth) {
-          offset = offset.addPt(pt(menuWidth,0));
-        }
-        
-        lively.setPosition(menu, pt(evt.clientX, evt.clientY).subPt(offset));
+        lively.setGlobalPosition(menu, pt(evt.clientX, evt.clientY))
       }
       menu.focus()
       menu.openOn(optItems || this.items(target, worldContext), evt).then(() => {

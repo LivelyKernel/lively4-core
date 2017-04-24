@@ -17,6 +17,10 @@ export default class LivelyMenu extends Morph {
     this.sellectUpOrDown(evt, 1)
   }
   
+  onEscDown(evt) {
+   this.remove() 
+  }
+  
   sellectUpOrDown(evt, offset) {
     var menu = this.get(".container")
     if (!this.currentItem) {
