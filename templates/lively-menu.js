@@ -6,7 +6,7 @@ export default class LivelyMenu extends Morph {
 
   initialize() {
   	this.setAttribute("tabindex", 0) // we want keuboard events
-  	html.registerKeys(this)
+  	html.registerKeys(this, "Menu", this, true)
   }
   
   onUpDown(evt) {

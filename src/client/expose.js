@@ -34,7 +34,7 @@ export default class Expose {
 
     if (!Expose.current) return
     
-    html.registerKeys(document.body, "expose", Expose.current)
+    html.registerKeys(document.body, "expose", Expose.current, true)
     
     if (Expose.isOpen) {
       return;
@@ -294,7 +294,7 @@ export default class Expose {
       Expose.isOpen = false;
       Expose.windowsPerRows = 5;
       lively.removeEventListener("ToggleExpose", document.body)
-      html.registerKeys(document.body, "ToggleExpose", Expose)
+      html.registerKeys(document.body, "ToggleExpose", Expose, false)
 
 
       Expose.current = new Expose()

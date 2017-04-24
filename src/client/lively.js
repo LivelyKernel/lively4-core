@@ -560,7 +560,8 @@ export default class Lively {
     lively.loadCSSThroughDOM("font-awesome", lively4url + "/src/external/font-awesome/css/font-awesome.min.css");
     
     doc.addEventListener('contextmenu', function(evt) {
-        if (evt.ctrlKey) {
+        
+        if (!evt.shiftKey) { // evt.ctrlKey
           evt.preventDefault();
           lively.openContextMenu(document.body, evt);
           return false;

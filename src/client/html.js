@@ -7,6 +7,7 @@ import Preferences from "src/client/preferences.js"
 
 class KeyboardHandler {
   
+  // Generic Keyboad handler to get rid of the magic keycode numbers 
   static getDispatchHandler(key) {
     return ({
       "37": "onLeft",
@@ -18,23 +19,28 @@ class KeyboardHandler {
     })[key]
   }
   
-  static dispatchKey(evt, object, upOrDown) {
+  static dispatchKey(evt, object, upOrDown, stopAndPreventDefault) {
     var handler = this.getDispatchHandler(evt.keyCode)
     if (handler) {
       handler += upOrDown
       if (object[handler]) {
         object[handler](evt)
-        evt.preventDefault()
-        evt.stopPropagation();
+        if (stopAndPreventDefault) {
+          evt.preventDefault();
+          evt.stopPropagation();
+        }
       }
     }
     var keyUpOrDown = "onKey" + upOrDown
     if (object[keyUpOrDown]) {
         var key = String.fromCharCode(evt.keyCode)
         object[keyUpOrDown](evt, key)
+        if (stopAndPreventDefault) {
+          evt.preventDefault();
+          evt.stopPropagation();
+        }
     }
   }
-  
 }
 
 export default class HTML {
@@ -94,14 +100,14 @@ export default class HTML {
     })
   }
   
-  static registerKeys(obj, domain, target) {
+  static registerKeys(obj, domain, target, stopAndPreventDefault) {
     domain = domain || "Keys"
     target = target || obj
     lively.addEventListener(domain, obj, "keydown", evt => {
-      KeyboardHandler.dispatchKey(evt, target, "Down")
+      KeyboardHandler.dispatchKey(evt, target, "Down", stopAndPreventDefault)
     })
     lively.addEventListener(domain, obj, "keyup", evt => {
-      KeyboardHandler.dispatchKey(evt, target, "Up")
+      KeyboardHandler.dispatchKey(evt, target, "Up", stopAndPreventDefault)
     })
   }
   
