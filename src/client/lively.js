@@ -77,6 +77,13 @@ export default class Lively {
     var modulePaths = [path]
     System.registry.delete(System.normalizeSync(path))
     return System.import(path).then( m => {
+      
+      // #TODO how can we make the dependecy loading optional... I don't need the whole environment to relaod while developing a core module everybody depends on
+      // if (path.match("graphics.js")) {
+      //   console.log("[reloadModule] don't load dependencies of " + path)
+      //   return m
+      // }
+      
       // Find all modules that depend on me
       var dependedModules = Object.values(System.loads).filter( ea => 
         ea.dependencies.find(dep => System.normalizeSync(dep, ea.key) == changedModule))

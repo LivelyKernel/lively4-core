@@ -39,10 +39,12 @@ export default class Selecting {
   }
   
   static isIgnoredOnMagnify(element) {
+    
     return !(element instanceof HTMLElement) 
       || element instanceof ShadowRoot 
       || element instanceof HTMLContentElement 
       || element.getAttribute("data-is-meta") 
+      || element.isMetaNode
       || (element.tagName == "I" && element.classList.contains("fa")) // font-awesome icons
       || (element.tagName == "A") // don't go into text, just structural 
       || element === window 
@@ -52,7 +54,6 @@ export default class Selecting {
   }
 
   static handleSelect(e) {
-     
     if (e.ctrlKey || e.metaKey) {
 
 
