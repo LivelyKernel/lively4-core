@@ -31,8 +31,8 @@ export class Grid {
 
   static optSnapPosition(pos, evt) {
     // snap if preference is "on" and 'alt' take the opposite
-    if ((Preferences.get("SnapWindowsInGrid") && !evt.altKey) ||
-        (!Preferences.get("SnapWindowsInGrid") && evt.altKey)) {
+    if ((lively.preferences.get("SnapWindowsInGrid") && !evt.altKey) ||
+        (!lively.preferences.get("SnapWindowsInGrid") && evt.altKey)) {
       return this.snapPt(pos)
     } else {
       return pos
