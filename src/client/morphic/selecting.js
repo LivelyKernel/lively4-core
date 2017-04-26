@@ -39,6 +39,7 @@ export default class Selecting {
   }
   
   static isIgnoredOnMagnify(element) {
+    debugger
     return !(element instanceof HTMLElement) 
       || element instanceof ShadowRoot 
       || element instanceof HTMLContentElement 
