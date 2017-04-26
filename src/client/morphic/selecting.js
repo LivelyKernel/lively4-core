@@ -43,6 +43,7 @@ export default class Selecting {
       || element instanceof ShadowRoot 
       || element instanceof HTMLContentElement 
       || element.getAttribute("data-is-meta") 
+      || element.isMetaNode
       || (element.tagName == "I" && element.classList.contains("fa")) // font-awesome icons
       || (element.tagName == "A") // don't go into text, just structural 
       || element === window 
