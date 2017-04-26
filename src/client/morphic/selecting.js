@@ -54,7 +54,7 @@ export default class Selecting {
   }
 
   static handleSelect(e) {
-     
+    debugger
     if (e.ctrlKey || e.metaKey) {
 
 
