@@ -27,9 +27,7 @@ export default class ViewNav {
     lively.addEventListener("ViewNav", window, "resize", e => this.onResize(e))
     // lively.addEventListener("ViewNav", window, "keydown", e => this.onKeyDown(e))
     // lively.addEventListener("ViewNav", window, "keyup", e => this.onKeyUp(e))
-
     lively.addEventListener("ViewNav", window, "mousewheel", e => this.onMouseWheel(e))
-
 
   }
   
@@ -81,6 +79,7 @@ export default class ViewNav {
   onPointerMove(evt) {
     var delta = this.eventOffset.subPt(this.eventPos(evt))
     lively.setPosition(this.target, this.originalPos.subPt(delta))
+    ViewNav.updateDocumentGrid()
   }
   
   onPointerUp(evt) {
@@ -99,13 +98,14 @@ export default class ViewNav {
     var scale = window.innerWidth / window.outerWidth
     // lively.notify("scale " + (scale / this.lastScale))
 
-
-
     var newPos = this.lastPoint.scaleBy(scale / this.lastScale)
     var offset = this.lastPoint.subPt(newPos)
     lively.setPosition(document.body, lively.getPosition(document.body).subPt(offset) )
 
     // lively.showPoint(newPos).style.backgroundColor = "green"
+
+    ViewNav.updateDocumentGrid(true)
+    
   }
   
   onMouseWheel(evt) {
@@ -140,8 +140,9 @@ export default class ViewNav {
     
   }
 
-  static showDocumentGridItem(pos, color,border, w, h, parent) {
+  static showDocumentGridItem(pos, color, border, w, h, parent) {
       var div = document.createElement("div")
+      
   		lively.setPosition(div, pos)
   		div.style.backgroundColor = color
   		div.style.border = border
@@ -156,34 +157,75 @@ export default class ViewNav {
   		return div
   }
   
-  static showDocumentGrid() {
-    let w = 3000,
-      h = 2000,
-      smallGridSize = 100,
-      quadrants =[-1,0,1]
+  static updateDocumentGrid(zoomed) {
+    if (!this.documentGrid) return;
     
-    let grid = document.createElement("div")
-  	grid.setAttribute("data-lively4-donotpersist", "all")
-    grid.isMetaNode = true
-    grid.id = "DocumentGrid"
-    lively.setPosition(grid, pt(0,0))
-    document.body.appendChild(grid)
+    if (zoomed) {
+      this.hideDocumentGrid()
+      this.showDocumentGrid()
+    }
+    
+    
+    lively.setGlobalPosition(this.documentGrid, pt(0,0))
+    lively.setExtent(this.documentGrid, pt(window.innerWidth - 20, window.innerHeight -20))
+    var pos = lively.getGlobalPosition(document.body)
+    var grid = this.documentGrid.grid
+    lively.setPosition(grid, pt( pos.x % grid.gridSize - 100, pos.y % grid.gridSize - 100) )
+    
+    lively.setGlobalPosition(this.documentGrid.documentSquare, pos)
+    
+    // lively.setGlobalPosition(grid, pos )
+    
+    
+  }
+  
+  static showDocumentGrid() {
+    this.documentGrid = document.createElement("div")
+    this.documentGrid.isMetaNode = true
+    this.documentGrid.id = "DocumentGrid"
+  	this.documentGrid.setAttribute("data-lively4-donotpersist", "all")
+  	this.documentGrid.style.overflow = "hidden"
 
-    quadrants.forEach(i => {
-    	quadrants.forEach(j => {
-    		var color = (i ==0 && j == 0) ? "white" : "rgb(245,245,245)";
-        var bigGrid = this.showDocumentGridItem(pt(i*w, j*h), color, "1px dashed gray", w, h, grid)
-    	})
-    })
-    for (var k=0; k < w; k += smallGridSize) {
-      for (var l=0; l < h; l += smallGridSize) {
+    document.body.appendChild(this.documentGrid)
+
+    let gridSize = 100,
+      w = window.innerWidth + gridSize,
+      h =  window.innerHeight + gridSize
+      
+    let grid = document.createElement("div")
+    grid.gridSize = gridSize
+    grid.isMetaNode = true
+    
+    lively.setExtent(this.documentGrid, pt(window.innerWidth, window.innerHeight))
+
+
+
+    this.documentGrid.documentSquare = this.showDocumentGridItem(pt(0, 0), 
+          "white", "0.5px dashed rgb(50,50,50)", 4000, 2000,  this.documentGrid )
+
+    this.documentGrid.grid = grid
+    
+    this.documentGrid.appendChild(grid)
+    lively.setPosition(grid, pt(0,0))
+    
+
+    
+    for (var k=0; k < w; k += gridSize) {
+      for (var l=0; l < h; l += gridSize) {
         this.showDocumentGridItem(pt(k, l), 
-          undefined, "0.5px dashed rgb(240,240,240)", smallGridSize, smallGridSize, grid)
+          undefined, "0.2px dashed rgb(190,190,190)", gridSize, gridSize, grid)
       }  
     }
+    
+    
+    
+    
+    lively.addEventListener("ViewNav", window, "scroll", () => this.updateDocumentGrid())
+    ViewNav.updateDocumentGrid()
   }
   
   static hideDocumentGrid() {
+    lively.addEventListener("ViewNav", window)
     document.body.querySelectorAll(".document-grid").forEach(ea => {
       ea.remove()
     })
@@ -194,7 +236,10 @@ export default class ViewNav {
   }
 } 
 
-if (window.lively)
+if (window.lively) {
   ViewNav.enable(document.body)
+  ViewNav.hideDocumentGrid()
+  ViewNav.showDocumentGrid()
+}
 
 

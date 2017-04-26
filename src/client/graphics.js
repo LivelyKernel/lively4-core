@@ -8,20 +8,27 @@
 // import Preferences from "./preferences.js";
 
 
-
-
 export class Grid {
   static snap(value, gridSize, snapSize) {
     if (gridSize === undefined)
       gridSize = lively.preferences.get("gridSize");
     if (snapSize === undefined)
       snapSize = lively.preferences.get("snapSize");
-    
+  
+  
+    // #TODO make treatment of negative numbers easier while keping the [tests](test/graphics-test.js) green
     var rest = Math.abs(value % gridSize)
-    if (Math.abs(gridSize - rest) < snapSize) 
-      return value - rest + gridSize
-    if (rest < snapSize) return value - rest;
-
+    if (value >  0 ) {
+      if (Math.abs(gridSize - Math.abs(rest)) < snapSize) 
+         return value - rest + gridSize
+      if (rest < snapSize) 
+        return value - rest;
+    } else {
+      if (Math.abs(gridSize - Math.abs(rest)) < snapSize) 
+         return value + rest - gridSize
+      if (rest < snapSize) 
+        return value + rest;
+    }
     return value
   }
 
@@ -38,8 +45,6 @@ export class Grid {
       return pos
     }
   }
-
-
 } 
 
 
