@@ -29,6 +29,7 @@ export default class Selecting {
   }
 
   static handleMouseUp(e) {
+    lively.notify("haha")
     if (e.ctrlKey || e.metaKey) {
       // console.log("mouse up " + e.target.tagName)
       e.stopPropagation();
