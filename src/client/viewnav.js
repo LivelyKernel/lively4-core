@@ -67,8 +67,8 @@ export default class ViewNav {
     if (!evt.ctrlKey || evt.button != 0)
       return;
       
-    if (!Preferences.isEnabled("ShowDocumentGrid", false))
-      ViewNav.showDocumentGrid(); // 
+    // if (!Preferences.isEnabled("ShowDocumentGrid", false))
+    //   ViewNav.showDocumentGrid(); // 
     this.eventOffset = this.eventPos(evt)
     this.originalPos = lively.getPosition(this.target)
       
@@ -83,8 +83,8 @@ export default class ViewNav {
   }
   
   onPointerUp(evt) {
-    if (!Preferences.isEnabled("ShowDocumentGrid", false))
-      ViewNav.hideDocumentGrid()
+    // if (!Preferences.isEnabled("ShowDocumentGrid", false))
+    //   ViewNav.hideDocumentGrid()
     lively.removeEventListener("ViewNav", this.eventSource, "pointermove")
     lively.removeEventListener("ViewNav", this.eventSource, "pointerup")
   }
@@ -151,7 +151,6 @@ export default class ViewNav {
   		div.livelyAcceptsDrop = function() {}
   		div.setAttribute("data-lively4-donotpersist", "all")
   		div.style.pointerEvents = "none"
-  		div.style.zIndex = -100
   		div.classList.add("document-grid")
   		parent.appendChild(div)
   		return div
@@ -181,10 +180,15 @@ export default class ViewNav {
   
   static showDocumentGrid() {
     this.documentGrid = document.createElement("div")
+  	this.documentGrid.style["z-index"] = -200
+
     this.documentGrid.isMetaNode = true
     this.documentGrid.id = "DocumentGrid"
   	this.documentGrid.setAttribute("data-lively4-donotpersist", "all")
   	this.documentGrid.style.overflow = "hidden"
+  	this.documentGrid.style.pointerEvents = "none"
+  	this.documentGrid.livelyAcceptsDrop = function() {}
+
 
     document.body.appendChild(this.documentGrid)
 
@@ -195,13 +199,16 @@ export default class ViewNav {
     let grid = document.createElement("div")
     grid.gridSize = gridSize
     grid.isMetaNode = true
+    grid.style.pointerEvents = "none"
+    grid.livelyAcceptsDrop = function() {}
     
     lively.setExtent(this.documentGrid, pt(window.innerWidth, window.innerHeight))
 
-
-
     this.documentGrid.documentSquare = this.showDocumentGridItem(pt(0, 0), 
           "white", "0.5px dashed rgb(50,50,50)", 4000, 2000,  this.documentGrid )
+
+    this.documentGrid.documentSquare.livelyAcceptsDrop = function() {}
+
 
     this.documentGrid.grid = grid
     

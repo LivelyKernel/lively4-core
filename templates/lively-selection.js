@@ -25,7 +25,7 @@ export default class Selection extends Morph {
     
     lively.removeEventListener("Selection", document.body.parentElement)
     lively.addEventListener("Selection", document.body.parentElement, "mousedown", 
-      e => this.current.onPointerDown(e))
+      e => Selection.current.onPointerDown(e))  // select in bubling phase ...
   }
  
   initialize() {
@@ -37,6 +37,8 @@ export default class Selection extends Morph {
   }
 
   onPointerDown(evt) {
+    lively.notify("pointer down")
+    
     if (evt.ctrlKey || evt.altKey) return;
     
     if (lively.hand && lively.hand.childNodes.length > 0) return; // in drag
