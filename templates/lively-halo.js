@@ -20,6 +20,10 @@ export default class Halo extends Morph {
   get isMetaNode() { return true}
 
   initialize() {
+    this.shadowRoot.querySelectorAll("*").forEach(ea => {
+      if (ea.isMetaNode === undefined) ea.isMetaNode = true
+    })
+    
     Halo.halo = $(this);
     Halo.halo.hide();
     window.HaloService = Halo;

@@ -5,18 +5,15 @@ import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
 import {pt, rect} from 'src/client/graphics.js';
 
-import Halo from './lively-halo.js'; // #TODO cyclic dependencies still does not seem to work
-
 export default class Selection extends Morph {
   
   get isMetaNode() { return true}
+  get isSelection() { return true}
  
   static async load() {
     if (!window.lively) {
       return setTimeout(() => {Selection.load()}, 100) // defere
     }
-    
-    lively.notify("load")
     if (!this.current){
       this.current = document.createElement("lively-selection")
       lively.components.openInBody(this.current)
@@ -37,10 +34,7 @@ export default class Selection extends Morph {
   }
 
   onPointerDown(evt) {
-    lively.notify("pointer down")
-    
     if (evt.ctrlKey || evt.altKey) return;
-    
     if (lively.hand && lively.hand.childNodes.length > 0) return; // in drag
     
     this.selectionOffset = pt(evt.clientX, evt.clientY)
@@ -123,7 +117,9 @@ export default class Selection extends Morph {
       lively.setExtent(this, maxP.subPt(minP));
     
       window.that=this;
-      Halo.showHalos(this);
+      setTimeout(()=> {
+        HaloService.showHalos(this);
+      },0 )
     } else {
       this.remove();
     }

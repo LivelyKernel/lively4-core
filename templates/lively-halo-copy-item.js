@@ -12,6 +12,7 @@ export default class HaloCopyItem extends HaloGrabItem {
     return true;
   }
   
+  
   onClick() {
     if (!this.copiedObject) {
       this.copyObject(window.that);
