@@ -29,7 +29,6 @@ export default class Selecting {
   }
 
   static handleMouseUp(e) {
-    lively.notify("haha")
     if (e.ctrlKey || e.metaKey) {
       // console.log("mouse up " + e.target.tagName)
       e.stopPropagation();
@@ -40,12 +39,10 @@ export default class Selecting {
   }
   
   static isIgnoredOnMagnify(element) {
-    debugger
     return !(element instanceof HTMLElement) 
       || element instanceof ShadowRoot 
       || element instanceof HTMLContentElement 
       || element.getAttribute("data-is-meta") 
-      || element.isMetaNode
       || (element.tagName == "I" && element.classList.contains("fa")) // font-awesome icons
       || (element.tagName == "A") // don't go into text, just structural 
       || element === window 
@@ -55,7 +52,7 @@ export default class Selecting {
   }
 
   static handleSelect(e) {
-    debugger
+     
     if (e.ctrlKey || e.metaKey) {
 
 
