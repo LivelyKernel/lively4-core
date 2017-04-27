@@ -57,6 +57,23 @@
     vertical-align: top
   }
   
+  #recognizedResult {
+    display: inline-block;
+    vertical-align: top
+  }
+  
+  #stateIndicator {
+    position:absolute;
+    z-index: 2000;
+    background-color: rgba(122,120,120,0.9);
+    top: 0px;
+    right: 0px;
+    margin: 0px;
+    padding: 0px;
+    width: 10px;
+    height: 10px;
+  }
+  
   </style>
   <content></content>
   
@@ -68,7 +85,9 @@
     <lively-crayoncolors id="backgroundColor" title="background"></lively-crayoncolors>
     <lively-crayoncolors id="penColor" title="pen"></lively-crayoncolors>
     <lively-penchooser id="penSize"></lively-penchooser>
+    <div id="recognizedResult">nothing yet</div>
     <button id="close"><i class="fa fa-close" title="redo stroke" aria-hidden="true"></i></button>
+    <div id="stateIndicator"></div>
   </div>
   <lively-resizer></lively-resizer>
   

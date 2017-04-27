@@ -1,5 +1,7 @@
 import {pt} from './graphics.js';
 import Preferences from './preferences.js';
+import Windows from "templates/lively-window.js"
+
 
 /*
  * Implements World (html body) panning!
@@ -28,6 +30,7 @@ export default class ViewNav {
     // lively.addEventListener("ViewNav", window, "keydown", e => this.onKeyDown(e))
     // lively.addEventListener("ViewNav", window, "keyup", e => this.onKeyUp(e))
     lively.addEventListener("ViewNav", window, "mousewheel", e => this.onMouseWheel(e))
+    lively.addEventListener("ViewNav", window, "scroll", () => ViewNav.updateDocumentGrid())
 
   }
   
@@ -87,6 +90,7 @@ export default class ViewNav {
     //   ViewNav.hideDocumentGrid()
     lively.removeEventListener("ViewNav", this.eventSource, "pointermove")
     lively.removeEventListener("ViewNav", this.eventSource, "pointerup")
+    this.fixScrollAfterNavigation()
   }
   
   onResize(evt) {
@@ -140,6 +144,29 @@ export default class ViewNav {
     
   }
 
+  fixScrollAfterNavigation() {
+   
+    // #DoesNotWork
+    // if ((document.body.scrollHeight > document.body.scrollTop + window.innerHeight) ||
+    //   (document.body.scrollWidth > document.body.scrollLeft + window.innerWith))
+    //   return; // don't fix when scrolled to bottom to let users pan into the void
+    
+    // console.log("fix scroll ")
+    ViewNav.lastFixedScroll = Date.now()
+    var pos = lively.getGlobalPosition(document.body).scaleBy(-1)
+    var topLeft = pt(0,0).minPt(pos)
+    Windows.allWindows().forEach(ea => {
+      topLeft = topLeft.minPt(lively.getPosition(ea))
+    })
+    
+    lively.setPosition(document.body, topLeft.scaleBy(-1))
+    
+    var delta = topLeft.scaleBy(-1).subPt(pos.scaleBy(-1))
+    document.body.scrollLeft = delta.x 
+    document.body.scrollTop = delta.y
+  }
+
+
   static showDocumentGridItem(pos, color, border, w, h, parent) {
       var div = document.createElement("div")
       
@@ -157,6 +184,10 @@ export default class ViewNav {
   }
   
   static updateDocumentGrid(zoomed) {
+    if (this.lastFixedScroll && (Date.now() - this.lastFixedScroll) < 1000) return
+    
+    // console.log("update document grid "  + (Date.now() - this.lastFixedScroll) )
+
     if (!this.documentGrid) return;
     
     if (zoomed) {
@@ -170,12 +201,7 @@ export default class ViewNav {
     var pos = lively.getGlobalPosition(document.body)
     var grid = this.documentGrid.grid
     lively.setPosition(grid, pt( pos.x % grid.gridSize - 100, pos.y % grid.gridSize - 100) )
-    
     lively.setGlobalPosition(this.documentGrid.documentSquare, pos)
-    
-    // lively.setGlobalPosition(grid, pos )
-    
-    
   }
   
   static showDocumentGrid() {
@@ -184,6 +210,7 @@ export default class ViewNav {
 
     this.documentGrid.isMetaNode = true
     this.documentGrid.id = "DocumentGrid"
+    this.documentGrid.classList.add("document-grid")
   	this.documentGrid.setAttribute("data-lively4-donotpersist", "all")
   	this.documentGrid.style.overflow = "hidden"
   	this.documentGrid.style.pointerEvents = "none"
@@ -205,17 +232,13 @@ export default class ViewNav {
     lively.setExtent(this.documentGrid, pt(window.innerWidth, window.innerHeight))
 
     this.documentGrid.documentSquare = this.showDocumentGridItem(pt(0, 0), 
-          "white", "0.5px dashed rgb(50,50,50)", 4000, 2000,  this.documentGrid )
+          "white", "0.5px solid rgb(50,50,50)", 4000, 2000,  this.documentGrid )
 
     this.documentGrid.documentSquare.livelyAcceptsDrop = function() {}
 
-
     this.documentGrid.grid = grid
-    
     this.documentGrid.appendChild(grid)
     lively.setPosition(grid, pt(0,0))
-    
-
     
     for (var k=0; k < w; k += gridSize) {
       for (var l=0; l < h; l += gridSize) {
@@ -223,16 +246,10 @@ export default class ViewNav {
           undefined, "0.2px dashed rgb(190,190,190)", gridSize, gridSize, grid)
       }  
     }
-    
-    
-    
-    
-    lively.addEventListener("ViewNav", window, "scroll", () => this.updateDocumentGrid())
     ViewNav.updateDocumentGrid()
   }
   
   static hideDocumentGrid() {
-    lively.addEventListener("ViewNav", window)
     document.body.querySelectorAll(".document-grid").forEach(ea => {
       ea.remove()
     })

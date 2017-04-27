@@ -305,7 +305,7 @@ export default class LivelyDrawboard extends Morph {
 
     this.renderPath(path)
 
-    // lively.notify("strokes: " + path.points.length )
+    lively.notify("strokes: " + path.points.length )
     
     // path.setAttribute("d", path.getAttribute("d") + 
     //   path.points.map( ea => " L "+ ea.x +" " + ea.y ).join(""))
@@ -466,7 +466,9 @@ export default class LivelyDrawboard extends Morph {
     // return pt(evt.clientX, evt.clientY)
 
     var scale = this.getScreenScale()
-    return pt(evt.screenX * scale, evt.screenY * scale)
+    return pt(evt.clientX, evt.clientY)
+    // #HACK for subpixel precision
+    // return pt(evt.screenX * scale, evt.screenY * scale)
   }
   
   onDragStart(evt) {

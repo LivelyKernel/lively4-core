@@ -1,3 +1,9 @@
 # Lively4 Development Journal
 
-[2016](2016.md)
+
+<lively-script>
+
+
+3 + 4
+
+</lively-script>
