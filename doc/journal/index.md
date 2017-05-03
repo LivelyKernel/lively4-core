@@ -1,6 +1,0 @@
-# Lively4 Development Journal
-
-xx
-<lively-script>
-3 + 4
-</lively-script>
