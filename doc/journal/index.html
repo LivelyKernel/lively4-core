@@ -1,0 +1,34 @@
+<h1>Lively4 Development Journal</h1>
+
+
+
+<lively-script>
+var div = document.createElement("button");
+div.innerHTML = "hello";
+div.onclick = () => alert("Hey!");
+div
+</lively-script>
+
+
+
+<lively-script>
+(async () => {
+  var path = "" + this.parentElement.getPath()
+
+  var opts = JSON.parse(await lively.files.statFile(path))
+  var ul = document.createElement("ul")
+  opts.contents && opts.contents.forEach(ea => {
+    var li = document.createElement("li")
+    var a =  document.createElement("a")
+    a.textContent = ea.name
+    a.href = ea.name
+    li.appendChild(a)
+  
+    // lively.html.fixLinks([a], path,  p => this.parentElement.followPath(p))
+    
+    ul.appendChild(li)
+  })
+  
+  return ul
+})()
+</lively-script>
