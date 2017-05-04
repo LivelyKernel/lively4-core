@@ -30,6 +30,10 @@ import Selection from 'templates/lively-selection.js'
 import windows from "templates/lively-window.js"
 
 
+import boundEval from "src/client/code-evaluation/bound-eval.js"
+
+
+
 let $ = window.$; // known global variables.
 
 // a) Special shorthands for interactive development
@@ -292,26 +296,11 @@ export default class Lively {
     });
   }
 
+
   static boundEval(str, ctx) {
-    // just a hack... to get rid of some async....
-    // #TODO make this more general
-    // works: await new Promise((r) => r(3))
-    // does not work yet: console.log(await new Promise((r) => r(3)))
-    // if (str.match(/^await /)) {
-    //   str = "(async () => window._ = " + str +")()"
-    // }
-
-    // #Hack #Hammer #Jens Wrap and Unwrap code into function to preserve "this"
-    var transpiledSource = babel.transform('(function(){/*lively.code.start*/' + str+'})').code
-        .replace(/^(?:[\s\n]*["']use strict["'];[\s\n]*)([\S\s]*?)(?:\(function\s*\(\)\s*\{\s*\/\*lively.code.start\*\/)/, "$1") // strip prefix
-        .replace(/\}\);[\s\n]*$/,""); // strip postfix
-
-    console.log("code: " + transpiledSource);
-    console.log("context: " + ctx);
-    var interactiveEval = function interactiveEval(code) {
-      return eval(code);
-    };
-    return interactiveEval.call(ctx, transpiledSource);
+    // #TODO refactor away
+    // lively.notify("lively.boundEval is depricated")
+    return eval(str)
   }
 
   static pt(x,y) {
