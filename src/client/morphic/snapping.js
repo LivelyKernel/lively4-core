@@ -11,15 +11,21 @@ export default class Snapping {
   constructor(target) {
     this.target = target
     this.helpers = []
-    this.snapDistance = 20
+    this.snapDistance = 5
   }
 
   snap() {
     this.clearHelpers()
-    this.snapBorder("left")
-    this.snapBorder("top")
-    this.snapBorder("right")
-    this.snapBorder("bottom")
+    this.snapTo("left", "left")
+    this.snapTo("left", "right")
+    this.snapTo("top", "top")
+    this.snapTo("top", "bottom")
+
+    this.snapTo("right", "right")
+    this.snapTo("right", "left")
+
+    this.snapTo("bottom", "bottom")
+    this.snapTo("bottom", "top")
 
   }
 
@@ -39,18 +45,23 @@ export default class Snapping {
     return this._all
   }
 
-  snapBorder(leftRightTopOrBottom) {
+  
+
+  snapTo(leftRightTopOrBottom, otherLeftRightTopOrBottom) {
     var isHorizontal = leftRightTopOrBottom == "top" || leftRightTopOrBottom == "bottom" 
+    
+    if (!otherLeftRightTopOrBottom) otherLeftRightTopOrBottom = leftRightTopOrBottom
     var target = this.target
-    var snap  =_.groupBy(this.all, ea => Math.round(lively.getGlobalBounds(ea)[leftRightTopOrBottom]()));
+    var snap  =_.groupBy(this.all, ea => Math.round(lively.getGlobalBounds(ea)[otherLeftRightTopOrBottom]()));
     
     var old = lively.getGlobalBounds(target)[leftRightTopOrBottom]();
     
     var snapped = _.sortBy(
-      Object.keys(snap).filter(ea => Math.abs(ea - old) < 20),
+      Object.keys(snap).filter(ea => Math.abs(ea - old) < this.snapDistance),
       ea => Math.abs(ea - old))[0];
       
     if (snapped !== undefined) {
+      // show snapped with a helper
       Object.keys(snap)
         .filter(ea => ea  == snapped)
         .forEach( ea => {
@@ -63,9 +74,14 @@ export default class Snapping {
                  pt(Math.max(
                   lively.getGlobalBounds(eaElement).right(),
                   lively.getGlobalBounds(this.target).right()), ea)]:
-                [pt(ea, 0), pt(ea,window.innerHeight)] 
-              
-              return lively.showPath(line, "rgba(100,255,100,0.5)", false)
+                [pt(ea, Math.min(
+                  lively.getGlobalBounds(eaElement).top(),
+                  lively.getGlobalBounds(this.target).top())), 
+                 pt(ea, Math.max(
+                  lively.getGlobalBounds(eaElement).bottom(),
+                  lively.getGlobalBounds(this.target).bottom()))]
+
+              return lively.showPath(line, "rgba(80,80,80,0.8)", false)
             }));
         })
       var pos = lively.getGlobalPosition(target)
