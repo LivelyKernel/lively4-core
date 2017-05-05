@@ -5,6 +5,8 @@ import {Grid, pt} from 'src/client/graphics.js'
 import HaloItem from './HaloItem.js';
 import Preferences from 'src/client/preferences.js'; 
 
+import Snapping from "src/client/morphic/snapping.js"
+
 export default class HaloDragItem extends HaloItem {
 
   initialize() {
@@ -18,6 +20,8 @@ export default class HaloDragItem extends HaloItem {
       this.dragStartNodePosition = lively.getPosition(this.dragTarget);
       this.dragStartEventPosition = events.globalPosition(evt);
       evt.preventDefault();
+    
+     this.snapping = new Snapping(this.dragTarget) 
     }
   }
   
@@ -41,6 +45,8 @@ export default class HaloDragItem extends HaloItem {
     this.dragTarget = null;
     this.dragStartEventPosition = null;
     this.dragStartNodePosition = null;
+    this.snapping.clearHelpers()
+    this.snapping = null
   }
 
   dragTo(evt) {
@@ -51,6 +57,7 @@ export default class HaloDragItem extends HaloItem {
       var newPosition = eventPos.subPt(this.dragStartEventPosition).
         addPt(this.dragStartNodePosition)
       lively.setPosition(this.dragTarget, Grid.optSnapPosition(newPosition, evt));
+      this.snapping.snap()
     }
     evt.preventDefault();
   }

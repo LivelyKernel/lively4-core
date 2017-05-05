@@ -360,6 +360,10 @@ export default class Inspector   extends Morph {
   }
 
   inspect(obj) {
+    if (!obj) {
+      return 
+    }
+    
     if (obj.id) {
       this.setAttribute("target", "#" + obj.id);
     }

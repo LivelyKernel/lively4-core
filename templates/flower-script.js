@@ -1,7 +1,8 @@
 import Morph from "./Morph.js"
 import boundEval from "src/client/code-evaluation/bound-eval.js"
 import Window from "./lively-window.js"
-
+import {pt} from "src/client/graphics.js" 
+import DragBehavior from "src/client/morphic/dragbehavior.js"
 
 export default class FlowerScript extends Morph {
 
@@ -15,7 +16,10 @@ export default class FlowerScript extends Morph {
     this.value = this.getAttribute("value")
     
     this.classList.add("lively-content")
+    DragBehavior.on(this)
   }
+  
+
   
   toString() {
     return "[FlowerScript]"
@@ -106,6 +110,20 @@ export default class FlowerScript extends Morph {
       return this.parentElement.parentElement
     else
       return this.parentElement
+  }
+
+  snapToOtputDependents() {
+    var other = this.outputDependents()[0]
+    if (!other) return;
+    var offsetY = lively.getGlobalBounds(other).top() - lively.getGlobalBounds(this).bottom()
+    lively.moveBy(this, pt(0,offsetY))
+  }
+
+  snapToInputDependencies() {
+    var other = this.inputDependencies()[0]
+    if (!other) return;
+    var offsetY = lively.getGlobalBounds(other).bottom() - lively.getGlobalBounds(this).top()
+    lively.moveBy(this, pt(0,offsetY))
   }
 
 

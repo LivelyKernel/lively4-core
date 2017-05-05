@@ -702,6 +702,11 @@ export default class Lively {
     return this.showRect(point, pt(5,5))
   }
 
+  static showEvent(evt) {
+    var r = lively.showPoint(pt(evt.clientX, evt.clientY))
+    r.style.backgroundColor = "rgba(100,100,255,05)"
+  }
+
   static showRect(point, extent) {
     // check for alternative args
     if (point && !extent) {
@@ -731,9 +736,9 @@ export default class Lively {
     return comp
   }
 
-  static showPath(path, color) {
-    if (!path || path.length < 1) return
-   
+  static showPath(path, color, printArrow) {
+    if (!path || path.length < 1) return;
+    if (printArrow === undefined) printArrow = true;
    
     color = color || "red"
 
@@ -761,7 +766,9 @@ export default class Lively {
       </defs>`;
     
     comp.innerHTML = defs + `<path stroke='${color}' d='${dpath}' 
-      style='marker-end: url(#markerArrow);'></path>`
+      style='${ 
+        printArrow ? 'marker-end: url(#markerArrow);' : ""
+      }'></path>`
 
     document.body.appendChild(comp);
     lively.setGlobalPosition(comp, pt(0,0));

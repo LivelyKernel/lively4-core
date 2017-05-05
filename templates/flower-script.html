@@ -6,7 +6,9 @@
 <style type="text/css">
   :host {
     border: 2px solid gray;
-    
+    padding: 10px;
+    border-radius: 10px;
+    background: rgb(230,230,230);
   }
   
   #pane {
@@ -45,7 +47,9 @@
   
   
   #editor {
-    flex: 1
+    flex: 1;
+    border-radius: 10px;
+    overflow: hidden;
   }
 </style>
 <div id="pane">
@@ -53,6 +57,7 @@
   <lively-code-mirror id="editor"></lively-code-mirror>
   <flower-values id="output"></flower-values>
 </div>
+<lively-resizer></lively-resizer>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 
