@@ -29,6 +29,17 @@ export default class Snapping {
 
   }
 
+  snapBounds(corner) {
+    this.clearHelpers()
+
+    this.snapTo("right", "right")
+    this.snapTo("right", "left")
+
+    this.snapTo("bottom", "bottom")
+    this.snapTo("bottom", "top")
+
+  }
+
     
   clearHelpers() {
     if (this.helpers) {
@@ -43,6 +54,57 @@ export default class Snapping {
         .filter(ea => (ea !== this.target) && ea.classList.contains("lively-content"));
     }
     return this._all
+  }
+
+  showHelpers(snap, snapped, isHorizontal) {
+    Object.keys(snap)
+      .filter(ea => ea  == snapped)
+      .forEach( ea => {
+        this.helpers = this.helpers.concat(
+          snap[ea].map(eaElement => {
+            var line = isHorizontal ? 
+              [pt(Math.min(
+                lively.getGlobalBounds(eaElement).left(),
+                lively.getGlobalBounds(this.target).left()), ea), 
+               pt(Math.max(
+                lively.getGlobalBounds(eaElement).right(),
+                lively.getGlobalBounds(this.target).right()), ea)]:
+              [pt(ea, Math.min(
+                lively.getGlobalBounds(eaElement).top(),
+                lively.getGlobalBounds(this.target).top())), 
+               pt(ea, Math.max(
+                lively.getGlobalBounds(eaElement).bottom(),
+                lively.getGlobalBounds(this.target).bottom()))]
+
+            return lively.showPath(line, "rgba(80,180,80,0.8)", false)
+          }));
+      })
+  }
+
+
+  snapTo(leftRightTopOrBottom, otherLeftRightTopOrBottom) {
+    var isHorizontal = leftRightTopOrBottom == "top" || leftRightTopOrBottom == "bottom" 
+    
+    if (!otherLeftRightTopOrBottom) otherLeftRightTopOrBottom = leftRightTopOrBottom
+    var target = this.target
+    var snap  =_.groupBy(this.all, ea => Math.round(lively.getGlobalBounds(ea)[otherLeftRightTopOrBottom]()));
+    
+    var old = lively.getGlobalBounds(target)[leftRightTopOrBottom]();
+    
+    var snapped = _.sortBy(
+      Object.keys(snap).filter(ea => Math.abs(ea - old) < this.snapDistance),
+      ea => Math.abs(ea - old))[0];
+      
+    if (snapped !== undefined) {
+      // show snapped with a helper
+      this.showHelpers(snap, snapped, isHorizontal)
+      
+      var pos = lively.getGlobalPosition(target)
+      if (isHorizontal)
+        lively.moveBy(target, pt(0, snapped - old))
+      else
+        lively.moveBy(target, pt(snapped - old, 0))
+    }
   }
 
   
@@ -61,29 +123,7 @@ export default class Snapping {
       ea => Math.abs(ea - old))[0];
       
     if (snapped !== undefined) {
-      // show snapped with a helper
-      Object.keys(snap)
-        .filter(ea => ea  == snapped)
-        .forEach( ea => {
-          this.helpers = this.helpers.concat(
-            snap[ea].map(eaElement => {
-              var line = isHorizontal ? 
-                [pt(Math.min(
-                  lively.getGlobalBounds(eaElement).left(),
-                  lively.getGlobalBounds(this.target).left()), ea), 
-                 pt(Math.max(
-                  lively.getGlobalBounds(eaElement).right(),
-                  lively.getGlobalBounds(this.target).right()), ea)]:
-                [pt(ea, Math.min(
-                  lively.getGlobalBounds(eaElement).top(),
-                  lively.getGlobalBounds(this.target).top())), 
-                 pt(ea, Math.max(
-                  lively.getGlobalBounds(eaElement).bottom(),
-                  lively.getGlobalBounds(this.target).bottom()))]
-
-              return lively.showPath(line, "rgba(80,80,80,0.8)", false)
-            }));
-        })
+      this.showHelpers(snap, snapped, isHorizontal)
       var pos = lively.getGlobalPosition(target)
       if (isHorizontal)
         lively.moveBy(target, pt(0, snapped - old))

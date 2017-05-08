@@ -3,6 +3,8 @@ import * as nodes from 'src/client/morphic/node-helpers.js'
 import * as events from 'src/client/morphic/event-helpers.js'
 import {Grid, pt} from 'src/client/graphics.js';
 import Preferences from 'src/client/preferences.js';
+import Snapping from "src/client/morphic/snapping.js"
+
 
 export default class HaloResizeItem extends HaloItem {
   initialize() {
@@ -30,7 +32,10 @@ export default class HaloResizeItem extends HaloItem {
   start(evt) {
     evt.preventDefault();
     this.target = window.that
-    
+    this.snapping = new Snapping(this.target) 
+   
+    this.info = lively.showInfoBox(this.target)
+
     if (this.target.haloResizeStart) {
       this.target.haloResizeStart(evt, this)
     } else {
@@ -41,6 +46,7 @@ export default class HaloResizeItem extends HaloItem {
   }
 
   move(evt) {
+    
     evt.preventDefault();
     if (this.target.haloResizeMove) {
       this.target.haloResizeMove(evt, this)
@@ -49,12 +55,18 @@ export default class HaloResizeItem extends HaloItem {
       console.log("this.initialExtent " + this.initialExtent)
 
       var newextent =  this.initialExtent.addPt(delta);
+      newextent = newextent.rounded()
       nodes.setExtent(this.target, Grid.optSnapPosition(newextent, evt)) 
+      this.snapping.snapBounds("bottmRight")
+      
+      this.info.innerHTML = "resize w=" + newextent.x + " w=" + newextent.y 
+
       HaloService.showHalos(window.that);
     }
   }
 
   stop(evt) {
+    this.info.stop()
     evt.preventDefault();
     if (this.target.haloResizeStop) {
       this.target.haloResizeStop(evt, this)

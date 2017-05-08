@@ -318,6 +318,7 @@ export default class Lively {
       // obj.style.top = "" + ((obj.style.top || 0) - deltay) + "px";
       obj.style.left = ""+  point.x + "px";
       obj.style.top = "" +  point.y + "px";
+      obj.dispatchEvent(new CustomEvent("position-changed"))
   }
   
   
@@ -348,6 +349,7 @@ export default class Lively {
   static  setExtent(node, extent) {
     node.style.width = '' + extent.x + 'px';
     node.style.height = '' + extent.y + 'px';
+    node.dispatchEvent(new CustomEvent("extent-changed"))
   }
 
   static  getGlobalPosition(node) {
@@ -697,6 +699,32 @@ export default class Lively {
 
     });
   }
+  
+  static showInfoBox(target) {
+    var info = document.createElement("div")
+    info.classList.add("draginfo")
+    info.target = target
+    info.isMetaNode = true
+    info.style.width = "300px"
+    info.style['pointer-events'] = "none";
+    info.setAttribute("data-is-meta", "true");
+    info.style.color = "darkblue"
+    info.update = function() {
+      lively.setPosition(this, lively.getPosition(this.target).subPt(pt(0, 50)))
+    }
+    info.update()
+    lively.addEventListener("ShowInfoBox", target, "position-changed", () => {
+      info.update()
+    })
+    info.stop = function() {
+      this.remove()
+      lively.removeEventListener("ShowInfoBox", target, "position-changed")
+    }
+
+    document.body.appendChild(info)
+    return info
+  }
+
 
   static showPoint(point) {
     return this.showRect(point, pt(5,5))

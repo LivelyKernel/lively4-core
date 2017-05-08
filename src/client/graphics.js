@@ -224,6 +224,9 @@ export var Point = class Point {
   //   return new Point(num.roundTo(this.x, quantum), num.roundTo(this.y, quantum));
   // }
 
+  rounded() {
+    return pt(Math.round(this.x), Math.round(this.y))
+  }
 
   dist(p) {
     var dx = this.x - p.x,
