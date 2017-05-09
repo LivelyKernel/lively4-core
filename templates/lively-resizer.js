@@ -1,8 +1,9 @@
 'use strict';
 
 import Morph from './Morph.js';
+import {pt}  from 'src/client/graphics.js';
+import {Grid} from 'src/client/morphic/snapping.js';
 
-import {Grid, pt}  from 'src/client/graphics.js';
 
 export default class Resizer extends Morph {
   initialize() {

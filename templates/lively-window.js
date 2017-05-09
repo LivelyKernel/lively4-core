@@ -1,6 +1,6 @@
 import Morph from './Morph.js';
-import {Grid,pt} from 'src/client/graphics.js'
-
+import {pt} from 'src/client/graphics.js'
+import {Grid} from 'src/client/morphic/snapping.js';
 import Preferences from 'src/client/preferences.js';
 
 // #TODO implement this again with the new AExp lib #Stefan? 

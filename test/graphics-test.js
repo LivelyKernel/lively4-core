@@ -1,5 +1,6 @@
 import {expect} from '../node_modules/chai/chai.js';
-import {Grid, Point, rect, pt} from 'src/client/graphics.js'
+import {Point, rect, pt} from 'src/client/graphics.js'
+import {Grid} from 'src/client/morphic/snapping.js';
 
 
 describe('graphics', () => {

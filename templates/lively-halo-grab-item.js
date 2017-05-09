@@ -8,8 +8,10 @@
 import HaloItem from './HaloItem.js';
 import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
-import {Grid, pt} from 'src/client/graphics.js';
+import {pt} from 'src/client/graphics.js';
 import Preferences from 'src/client/preferences.js';
+import {Grid} from 'src/client/morphic/snapping.js';
+
 
 export default class HaloGrabItem extends HaloItem {
  

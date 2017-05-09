@@ -1,11 +1,11 @@
 import lively from 'src/client/lively.js'
 import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
-import {Grid, pt} from 'src/client/graphics.js'
+import {pt} from 'src/client/graphics.js'
 import HaloItem from './HaloItem.js';
 import Preferences from 'src/client/preferences.js'; 
-
 import Snapping from "src/client/morphic/snapping.js"
+import {Grid} from 'src/client/morphic/snapping.js';
 
 export default class HaloDragItem extends HaloItem {
 
