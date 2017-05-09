@@ -1,12 +1,12 @@
 
 import Morph from './Morph.js';
-
 import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
 
 import selecting from 'src/client/morphic/selecting.js';
 
 import {pt, rect, Rectangle} from 'src/client/graphics.js';
+
 
 
 // import lively from 'src/client/lively.js'; // #TODO does not work
@@ -23,6 +23,7 @@ export default class Halo extends Morph {
     this.shadowRoot.querySelectorAll("*").forEach(ea => {
       if (ea.isMetaNode === undefined) ea.isMetaNode = true
     })
+    this.setAttribute("tabindex", 0)
     
     Halo.halo = $(this);
     Halo.halo.hide();
@@ -104,13 +105,18 @@ export default class Halo extends Morph {
     
   
   showHalo(target, path) {
-  
     document.body.appendChild(this);
-    
+    lively.html.registerKeys(document.body, "HaloKeys", this)
+    this.focus()
     if (!target || !target.getBoundingClientRect) {
       $(this).show();
       return;
     }
+    $(this).show();
+    this.alignHaloToBounds(target)
+  }
+  
+  alignHaloToBounds(target) {
     var bounds = target.getBoundingClientRect();
     var offset = {
       top: bounds.top +  $(document).scrollTop(), 
@@ -137,8 +143,8 @@ export default class Halo extends Morph {
     height = offsetBottom - offsetTop;
 
     // set position and dimensions of halo
-    $(this).show();
     $(this).offset(offset);
+
     $(this).outerWidth(width);
     $(this).outerHeight(height);
   }
@@ -148,8 +154,8 @@ export default class Halo extends Morph {
     this.halo[0].showHalo(target, path);
   }
   
-  
   static hideHalos() {
+    lively.removeEventListener("HaloKeys", document.body)
     if (HaloService.lastIndicator)
       HaloService.lastIndicator.remove()
     if (this.areHalosActive())
@@ -157,8 +163,43 @@ export default class Halo extends Morph {
     this.halo.offset({left:0, top: 0});
     this.halo.hide();
   }
+  
+  
+  // Positioning of Elments with arrow keys
+  //
+  //
+  moveTargetOnEventWithKey(evt, delta) {
+    if (evt.altKey) {
+      delta = delta.scaleBy(25)
+    }
+    
+    if (evt.shiftKey) {
+      lively.setExtent(that, lively.getExtent(that).addPt(delta))
+    } else {    
+      lively.moveBy(that, delta)
+    }
+    evt.preventDefault()
+    evt.stopPropagation()
+    this.alignHaloToBounds(that)
+  }
+  
+  onLeftDown(evt) {
+    this.moveTargetOnEventWithKey(evt, pt(-1,0))
+  }
+
+  onRightDown(evt) {
+    this.moveTargetOnEventWithKey(evt, pt(1,0))
+  }
+
+  onUpDown(evt) {
+    this.moveTargetOnEventWithKey(evt, pt(0,-1))
+  }
+  
+  onDownDown(evt) {
+    this.moveTargetOnEventWithKey(evt, pt(0,1))
+  }
 
   static areHalosActive() {
-    return this.halo && this.halo.is(":visible");
+    return Halo.halo && this.halo.is(":visible");
   }
 }
