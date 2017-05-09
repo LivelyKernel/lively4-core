@@ -144,6 +144,10 @@ export default class Halo extends Morph {
 
     $(this).outerWidth(width);
     $(this).outerHeight(height);
+    
+    var boundsRect = lively.getGlobalBounds(that) 
+    lively.setGlobalPosition(this.get("#topLeft"), boundsRect.topLeft())
+
   }
   
   static showHalos(target, path) {
@@ -220,11 +224,24 @@ export default class Halo extends Morph {
     this.moveTargetOnEventWithKey(evt, pt(0,1))
   }
 
-  onKeyUp(evt) {
-    // if(this.info) this.info.stop()
-  }
+  // onKeyUp(evt) {
+  //   if(this.info) this.info.stop()
+  // }
 
   static areHalosActive() {
     return Halo.halo && this.halo.is(":visible");
   }
+  
+  static migrate() {
+    var old = document.querySelector("lively-halo")
+    if (old) {
+      old.remove()
+      lively.initializeHalos()
+    }
+  }
+  
 }
+
+
+
+

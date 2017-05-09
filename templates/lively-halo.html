@@ -33,14 +33,22 @@
       text-align: center;
       vertical-align: bottom;
     }
-    #keyevents {
-      position: absolute;
+    #handles {
+    }
+    
+    #topLeft {
       top: 0px;
       left: 0px;
-      width: 1px;
-      height: 1px;
     }
+    
+    .handle {
+      position: absolute;
+    }
+    
     </style>
+    <div id="handles">
+      <lively-halo-handle-item id="topLeft"  class="halo handle"></lively-halo-handle-item>
+    </div>
     <div class="container">
       <div class="row" id="row1">
         <lively-halo-grab-item class="halo"></lively-halo-grab-item>
