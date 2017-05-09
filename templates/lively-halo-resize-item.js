@@ -59,6 +59,7 @@ export default class HaloResizeItem extends HaloItem {
       nodes.setExtent(this.target, Grid.optSnapPosition(newextent, evt)) 
       this.snapping.snapBounds("bottmRight")
       
+      newextent = lively.getExtent(this.target)
       this.info.innerHTML = "resize w=" + newextent.x + " h=" + newextent.y 
 
       HaloService.showHalos(window.that);

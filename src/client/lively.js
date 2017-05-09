@@ -342,8 +342,9 @@ export default class Lively {
     if (node === window) {
       return pt(window.innerWidth, window.innerHeight)
     }
-    var bounds = node.getBoundingClientRect()
-    return pt(bounds.width, bounds.height)
+    // using the getBoundingClientRect produces the wrong extent
+    var style = getComputedStyle(node); 
+    return pt(parseFloat(style.width), parseFloat(style.height))
   }
   
   static  setExtent(node, extent) {

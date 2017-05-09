@@ -116,7 +116,6 @@ export default class Snapping {
           snap[ea].map(eaElement => {
             var line;
             var parentPos = lively.getGlobalPosition(this.target.parentElement)
-            debugger
             if (isHorizontal) {
               let globalY = Number(ea) + parentPos.y 
               lively.notify("globalY " + parentPos.y)
@@ -140,9 +139,9 @@ export default class Snapping {
             return lively.showPath(line, "rgba(80,180,80,0.8)", false)
           }));
           
-        this.helpers = this.helpers.concat(
-          snap[ea].map(eaElement => {
-            return lively.showElement(eaElement) }))
+        // this.helpers = this.helpers.concat(
+        //   snap[ea].map(eaElement => {
+        //     return lively.showElement(eaElement) }))
         
       })
   }
