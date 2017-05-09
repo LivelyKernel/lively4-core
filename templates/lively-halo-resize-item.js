@@ -59,7 +59,7 @@ export default class HaloResizeItem extends HaloItem {
       nodes.setExtent(this.target, Grid.optSnapPosition(newextent, evt)) 
       this.snapping.snapBounds("bottmRight")
       
-      this.info.innerHTML = "resize w=" + newextent.x + " w=" + newextent.y 
+      this.info.innerHTML = "resize w=" + newextent.x + " h=" + newextent.y 
 
       HaloService.showHalos(window.that);
     }

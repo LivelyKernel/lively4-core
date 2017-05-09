@@ -375,6 +375,13 @@ export default class Lively {
     this.setPosition(node, this.getPosition(node).addPt(delta))
   }
 
+  static  getBounds(node) {
+    var pos = lively.getPosition(node)
+    var extent = lively.getExtent(node)
+    return rect(pos, pos.addPt(extent))
+  }
+
+
   static  getGlobalBounds(node) {
     var bounds = node.getBoundingClientRect()
     return rect(bounds.left, bounds.top, bounds.width, bounds.height)

@@ -63,7 +63,7 @@ export default class HaloDragItem extends HaloItem {
       lively.setPosition(this.dragTarget, Grid.optSnapPosition(newPosition, evt));
       this.snapping.snap()
       
-        this.info.innerHTML = "drag " + newPosition
+      this.info.innerHTML = "drag " + lively.getPosition(this.dragTarget)
     }
     evt.preventDefault();
   }

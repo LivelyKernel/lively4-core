@@ -9,6 +9,8 @@ import ViewNav from 'src/client/viewnav.js'
 import Layout from "src/client/layout.js"
 import Preferences from './preferences.js';
 import Windows from "templates/lively-window.js"
+import {Grid} from "src/client/morphic/snapping.js"
+
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
@@ -290,6 +292,11 @@ export default class ContextMenu {
           },
           "", '<i class="fa fa-window-restore" aria-hidden="true"></i>',
         ],
+        ["Snap All to Grid Now", (evt) => {
+          Grid.snapAllTopLevelContent()
+        },
+        "", '<i class="fa fa-th" aria-hidden="true"></i>'
+        ]
       ]],
       ["Documentation", [
         ["Devdocs.io", (evt) => {
