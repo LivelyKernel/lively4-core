@@ -64,40 +64,56 @@ export default class Snapping {
   }
 
   snap() {
+    var padding = lively.preferences.get("SnapPaddingSize")
     this.clearHelpers()
     this.snapTo("left", "left")
+
     this.snapTo("left", "right")
+    this.snapTo("left", "right", padding)
+
+    this.snapTo("left", "centerX")
+    
+
     this.snapTo("top", "top")
     this.snapTo("top", "bottom")
+    this.snapTo("top", "bottom", padding)
+
+    this.snapTo("top", "centerY")
+    
+
 
     this.snapTo("right", "right")
     this.snapTo("right", "left")
+    this.snapTo("right", "left", -padding)
 
+    this.snapTo("right", "centerX")
+
+    
     this.snapTo("bottom", "bottom")
     this.snapTo("bottom", "top")
+    this.snapTo("bottom", "top", -padding)
+
+    this.snapTo("bottom", "centerY")
 
   }
 
   snapBounds(corner) {
+    // #TODO for find an alorithm that computes all the existing paddings in the world and use them here, so that it works like in PowerPoint and others
+    var padding = lively.preferences.get("SnapPaddingSize")
     this.clearHelpers()
-
     // #TODO implement snapping to changing top, left when there is a UI for it
-
     this.snapToExtent("right", "right")
     this.snapToExtent("right", "left")
+    this.snapToExtent("right", "left", -padding)
+    this.snapToExtent("right", "centerX")
 
 
     this.snapToExtent("bottom", "bottom")
     this.snapToExtent("bottom", "top")
+    this.snapToExtent("bottom", "top", -padding)
 
-  }
+    this.snapToExtent("bottom", "centerY")
 
-    
-  clearHelpers() {
-    if (this.helpers) {
-      this.helpers.forEach(ea => ea.remove())
-    }
-    this.helpers = []
   }
 
   get all() {
@@ -142,17 +158,27 @@ export default class Snapping {
         // this.helpers = this.helpers.concat(
         //   snap[ea].map(eaElement => {
         //     return lively.showElement(eaElement) }))
-        
       })
   }
 
+  clearHelpers() {
+    if (this.helpers) {
+      this.helpers.forEach(ea => ea.remove())
+    }
+    this.helpers = []
+  }
 
-  snapToExtent(leftRightTopOrBottom, otherLeftRightTopOrBottom) {
+  /*
+   * Snap the extent (for resizing) of target to sides of other objects
+   */
+  snapToExtent(leftRightTopOrBottom, otherLeftRightTopOrBottom, padding) {
+    if (padding === undefined) padding = 0;
     var isHorizontal = leftRightTopOrBottom == "top" || leftRightTopOrBottom == "bottom" 
     
     if (!otherLeftRightTopOrBottom) otherLeftRightTopOrBottom = leftRightTopOrBottom
     var target = this.target
-    var snap  =_.groupBy(this.all, ea => Math.round(lively.getBounds(ea)[otherLeftRightTopOrBottom]()));
+    var snap  =_.groupBy(this.all, ea => 
+      Math.round(lively.getBounds(ea)[otherLeftRightTopOrBottom]() + padding));
     
     var oldBounds = lively.getBounds(target)
     var old = oldBounds[leftRightTopOrBottom]();
@@ -172,23 +198,26 @@ export default class Snapping {
       if (leftRightTopOrBottom == "right") {
         lively.setExtent(this.target, pt(oldExtent.x + delta, oldExtent.y))
       }
-
     }
   }
 
-  snapTo(leftRightTopOrBottom, otherLeftRightTopOrBottom) {
+  /*
+   * Snap the position of target to sides of other objects
+   */
+  snapTo(leftRightTopOrBottom, otherLeftRightTopOrBottom, padding) {
+    if (padding === undefined) padding = 0;
     var isHorizontal = leftRightTopOrBottom == "top" || leftRightTopOrBottom == "bottom" 
     
     if (!otherLeftRightTopOrBottom) otherLeftRightTopOrBottom = leftRightTopOrBottom
     var target = this.target
-    var snap  =_.groupBy(this.all, ea => Math.round(lively.getBounds(ea)[otherLeftRightTopOrBottom]()));
-    
-    var oldBounds = lively.getBounds(target)
+    var snap  =_.groupBy(this.all, ea => 
+          Math.round(lively.getBounds(ea)[otherLeftRightTopOrBottom]() + padding));
+    var oldBounds = lively.getBounds(target);
     var old = oldBounds[leftRightTopOrBottom]();
     
     var snapped = _.sortBy(
-      Object.keys(snap).filter(ea => Math.abs(ea - old) < this.snapDistance),
-      ea => Math.abs(ea - old))[0];
+        Object.keys(snap).filter(ea => Math.abs(ea - old) < this.snapDistance),
+        ea => Math.abs(ea - old))[0];
       
     if (snapped !== undefined) {
       this.showHelpers(snap, snapped, isHorizontal)
@@ -199,14 +228,4 @@ export default class Snapping {
         lively.moveBy(target, pt(snapped - old, 0))
     }
   }
-  
-
-  
-  
 }
-
-
-
-  
-  
-  

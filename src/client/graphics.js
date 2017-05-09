@@ -738,6 +738,15 @@ export var Rectangle = class Rectangle {
     return {x: this.x, y: this.y, width: this.width, height: this.height};
   }
 
+  // additions to the left,right,bottom,top shorthands, needed for layouting
+  centerX() {
+    return this.center().x
+  }
+
+  centerY() {
+    return this.center().y
+  }
+
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // part support
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
