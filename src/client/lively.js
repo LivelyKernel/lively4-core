@@ -718,8 +718,9 @@ export default class Lively {
     info.setAttribute("data-is-meta", "true");
     info.style.color = "darkblue"
     info.update = function() {
-      lively.setPosition(this, lively.getPosition(this.target).subPt(pt(0, 50)))
+      lively.setGlobalPosition(this, lively.getGlobalPosition(this.target).subPt(pt(0, 20)))
     }
+    info.style['z-index'] = 10000
     info.update()
     lively.addEventListener("ShowInfoBox", target, "position-changed", () => {
       info.update()

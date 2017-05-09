@@ -22,7 +22,7 @@ export default class HaloDragItem extends HaloItem {
       evt.preventDefault();
     
      this.snapping = new Snapping(this.dragTarget) 
-     this.info =  lively.showInfoBox(this.dragTarget)
+     this.halo.info =  lively.showInfoBox(this.dragTarget)
     }
   }
   
@@ -38,7 +38,7 @@ export default class HaloDragItem extends HaloItem {
   }
    
   stop(evt) {
-    this.info.stop()
+    this.halo.info.stop()
     //  STOP DRAGGING
     if (this.isDragging) {    
       this.isDragging = false;
@@ -61,9 +61,10 @@ export default class HaloDragItem extends HaloItem {
         
       newPosition = newPosition.rounded()
       lively.setPosition(this.dragTarget, Grid.optSnapPosition(newPosition, evt));
-      this.snapping.snap()
-      
-      this.info.innerHTML = "drag " + lively.getPosition(this.dragTarget)
+      if(!evt.altKey) {
+        this.snapping.snap()
+      }
+      this.halo.info.innerHTML = "drag " + lively.getPosition(this.dragTarget)
     }
     evt.preventDefault();
   }

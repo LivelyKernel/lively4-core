@@ -1,20 +1,14 @@
-
 import Morph from './Morph.js';
 import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
-
 import selecting from 'src/client/morphic/selecting.js';
-
 import {pt, rect, Rectangle} from 'src/client/graphics.js';
-
-
-
-// import lively from 'src/client/lively.js'; // #TODO does not work
+import preferences from 'src/client/preferences.js';
+import {Grid} from 'src/client/morphic/snapping.js';
 
 /*
  * Halo, the container for HaloItems
  */
-
 export default class Halo extends Morph {
   
   get isMetaNode() { return true}
@@ -23,9 +17,8 @@ export default class Halo extends Morph {
     this.shadowRoot.querySelectorAll("*").forEach(ea => {
       if (ea.isMetaNode === undefined) ea.isMetaNode = true
     })
-    this.setAttribute("tabindex", 0)
-    
-    Halo.halo = $(this);
+ 
+    Halo.halo = $(this); // #TODO Refeactor away jQuery in Halo
     Halo.halo.hide();
     window.HaloService = Halo;
     var targetContext = document.body.parentElement
@@ -34,6 +27,8 @@ export default class Halo extends Morph {
     lively.removeEventListener("Halo", targetContext);
     lively.addEventListener("Halo", document.body, "mousedown", 
       evt => this.onBodyMouseDown(evt, targetContext));
+      
+    this.shadowRoot.querySelectorAll(".halo").forEach(ea => ea.halo = this)
   }
   
   registerBodyDragAndDrop(targetContext) {
@@ -107,12 +102,14 @@ export default class Halo extends Morph {
   showHalo(target, path) {
     document.body.appendChild(this);
     lively.html.registerKeys(document.body, "HaloKeys", this)
-    this.focus()
     if (!target || !target.getBoundingClientRect) {
       $(this).show();
       return;
     }
     $(this).show();
+    document.body.setAttribute("tabindex", 0)
+    document.body.focus()
+  
     this.alignHaloToBounds(target)
   }
   
@@ -155,6 +152,9 @@ export default class Halo extends Morph {
   }
   
   static hideHalos() {
+    if(this.halo[0].info) {
+      this.halo[0].info.stop()
+    }
     lively.removeEventListener("HaloKeys", document.body)
     if (HaloService.lastIndicator)
       HaloService.lastIndicator.remove()
@@ -164,23 +164,44 @@ export default class Halo extends Morph {
     this.halo.hide();
   }
   
-  
+  // 
   // Positioning of Elments with arrow keys
   //
-  //
+  
+  /*
+   * Arrow Keys     .... move halo target
+   * holding SHIFT  .... resize halo target
+   * holding ALT    .... align to in bigger steps to grid (resize and move)
+   */
   moveTargetOnEventWithKey(evt, delta) {
+   var gridSize = lively.preferences.get("gridSize") * 0.25;
     if (evt.altKey) {
-      delta = delta.scaleBy(25)
+      delta = delta.scaleBy(gridSize)
     }
     
     if (evt.shiftKey) {
-      lively.setExtent(that, lively.getExtent(that).addPt(delta))
-    } else {    
+      var newExtent =lively.getExtent(that).addPt(delta)
+      lively.setExtent(that, newExtent)
+
+      if (evt.altKey) {
+        lively.setExtent(that, Grid.snapPt(lively.getExtent(that), gridSize, gridSize / 2))
+      }
+    } else {
       lively.moveBy(that, delta)
+      if (evt.altKey) {
+        lively.setPosition(that, Grid.snapPt(lively.getPosition(that), gridSize, gridSize * 0.5))
+      }
+      
     }
     evt.preventDefault()
     evt.stopPropagation()
     this.alignHaloToBounds(that)
+    
+    if(this.info) this.info.stop()
+    this.info = lively.showInfoBox(that)
+
+    if (that)
+      this.info.innerHTML=`x=${lively.getPosition(that).x} y=${lively.getPosition(that).y} w=${lively.getExtent(that).x} h=${lively.getExtent(that).y}`
   }
   
   onLeftDown(evt) {
@@ -197,6 +218,10 @@ export default class Halo extends Morph {
   
   onDownDown(evt) {
     this.moveTargetOnEventWithKey(evt, pt(0,1))
+  }
+
+  onKeyUp(evt) {
+    // if(this.info) this.info.stop()
   }
 
   static areHalosActive() {

@@ -105,8 +105,8 @@ export default class Selecting {
   static showHalos(el, path) {
     path = path || []
     
-    if (HaloService.lastIndicator) HaloService.lastIndicator.remove();
-    HaloService.lastIndicator = lively.showElement(el);
+    // if (HaloService.lastIndicator) HaloService.lastIndicator.remove();
+    // HaloService.lastIndicator = lively.showElement(el);
   
     
     if (HaloService.lastIndicator) {

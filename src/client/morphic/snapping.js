@@ -66,33 +66,25 @@ export default class Snapping {
   snap() {
     var padding = lively.preferences.get("SnapPaddingSize")
     this.clearHelpers()
+    
     this.snapTo("left", "left")
-
     this.snapTo("left", "right")
     this.snapTo("left", "right", padding)
-
     this.snapTo("left", "centerX")
     
-
     this.snapTo("top", "top")
     this.snapTo("top", "bottom")
     this.snapTo("top", "bottom", padding)
-
     this.snapTo("top", "centerY")
     
-
-
     this.snapTo("right", "right")
     this.snapTo("right", "left")
     this.snapTo("right", "left", -padding)
-
     this.snapTo("right", "centerX")
 
-    
     this.snapTo("bottom", "bottom")
     this.snapTo("bottom", "top")
     this.snapTo("bottom", "top", -padding)
-
     this.snapTo("bottom", "centerY")
 
   }
@@ -111,7 +103,6 @@ export default class Snapping {
     this.snapToExtent("bottom", "bottom")
     this.snapToExtent("bottom", "top")
     this.snapToExtent("bottom", "top", -padding)
-
     this.snapToExtent("bottom", "centerY")
 
   }
@@ -134,7 +125,6 @@ export default class Snapping {
             var parentPos = lively.getGlobalPosition(this.target.parentElement)
             if (isHorizontal) {
               let globalY = Number(ea) + parentPos.y 
-              lively.notify("globalY " + parentPos.y)
               let minLeft = Math.min(
                   lively.getGlobalBounds(eaElement).left(),
                   lively.getGlobalBounds(this.target).left())

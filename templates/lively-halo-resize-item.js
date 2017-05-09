@@ -33,8 +33,11 @@ export default class HaloResizeItem extends HaloItem {
     evt.preventDefault();
     this.target = window.that
     this.snapping = new Snapping(this.target) 
-   
-    this.info = lively.showInfoBox(this.target)
+    
+    if(this.halo.info)
+      this.halo.info.stop();
+    this.halo.info = lively.showInfoBox(this.target)
+    this.halo.info.update()
 
     if (this.target.haloResizeStart) {
       this.target.haloResizeStart(evt, this)
@@ -57,17 +60,18 @@ export default class HaloResizeItem extends HaloItem {
       var newextent =  this.initialExtent.addPt(delta);
       newextent = newextent.rounded()
       nodes.setExtent(this.target, Grid.optSnapPosition(newextent, evt)) 
-      this.snapping.snapBounds("bottmRight")
-      
+      if(!evt.altKey) {
+        this.snapping.snapBounds("bottomRight")
+      }
       newextent = lively.getExtent(this.target)
-      this.info.innerHTML = "resize w=" + newextent.x + " h=" + newextent.y 
+      this.halo.info.innerHTML = "resize w=" + newextent.x + " h=" + newextent.y 
 
       HaloService.showHalos(window.that);
     }
   }
 
   stop(evt) {
-    this.info.stop()
+    this.halo.info.stop()
     evt.preventDefault();
     if (this.target.haloResizeStop) {
       this.target.haloResizeStop(evt, this)
