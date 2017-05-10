@@ -145,9 +145,11 @@ export default class Halo extends Morph {
     $(this).outerWidth(width);
     $(this).outerHeight(height);
     
-    var boundsRect = lively.getGlobalBounds(that) 
-    lively.setGlobalPosition(this.get("#topLeft"), boundsRect.topLeft())
-
+    var boundsRect = lively.getGlobalBounds(that);
+    ["topLeft", "bottomLeft", "bottomRight", "topRight"].forEach(ea => {
+      lively.setGlobalPosition(this.get("#" + ea), boundsRect[ea]())  
+    })
+    
   }
   
   static showHalos(target, path) {

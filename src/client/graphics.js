@@ -382,7 +382,7 @@ export var Rectangle = class Rectangle {
   }
 
   withTopRight(p) {
-    return rect(p.addXY(-this.width,0), p.addXY(0, this.height));
+    return Rectangle.fromAny(p, this.bottomLeft())
   }
 
   withBottomRight(p) {

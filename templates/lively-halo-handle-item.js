@@ -5,6 +5,7 @@ import {pt} from 'src/client/graphics.js';
 import Preferences from 'src/client/preferences.js';
 import Snapping from "src/client/morphic/snapping.js"
 import {Grid} from 'src/client/morphic/snapping.js';
+import Strings from 'src/client/strings.js';
 
 export default class HaloHandleItem extends HaloItem {
   initialize() {
@@ -42,9 +43,7 @@ export default class HaloHandleItem extends HaloItem {
     if (this.target.haloResizeStart) {
       this.target.haloResizeStart(evt, this)
     } else {
-      this.initialExtent = lively.getExtent(this.target)
-      this.initialPosition = lively.getPosition(this.target)
-
+      this.initialBounds = lively.getBounds(this.target)
       this.eventOffset = events.globalPosition(evt)
       this.removeRestrictions(this.target)
     }
@@ -55,21 +54,17 @@ export default class HaloHandleItem extends HaloItem {
     evt.preventDefault();
     
     var delta = events.globalPosition(evt).subPt(this.eventOffset)
-    console.log("this.initialExtent " + this.initialExtent)
 
-    var newextent =  this.initialExtent.subPt(delta);
-    newextent = newextent.rounded()
-    nodes.setExtent(this.target, Grid.optSnapPosition(newextent, evt)) 
+    var cornerOrSide = this.id
+    var newPos = this.initialBounds[cornerOrSide]().addPt(delta).rounded()
+    var newBounds = this.initialBounds[Strings.prefixSelector("with", cornerOrSide)](newPos)
+    lively.setBounds(this.target, newBounds)
+
     if(!evt.altKey) {
-      this.snapping.snapBounds("bottomRight")
+       this.snapping.snapBounds(cornerOrSide)
     }
-    newextent = lively.getExtent(this.target)
     
-    
-    lively.setPosition(this.target, this.initialPosition.subPt(newextent.subPt(this.initialExtent)))
-
-    this.halo.info.innerHTML = "resize w=" + newextent.x + " h=" + newextent.y 
-
+    this.halo.info.innerHTML = `${newPos.x}, ${newPos.y}`
     HaloService.showHalos(window.that);
   
   }
