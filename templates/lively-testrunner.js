@@ -19,6 +19,8 @@ export default class TestRunner extends HTMLDivElement {
       this.mochadiv = document.createElement("div");
       this.mochadiv.id = "mocha"
       this.appendChild(this.mochadiv)
+    } else {
+      this.mochadiv = this.querySelector("#mocha")
     }
     this.querySelector("#mocha").innerHTML= ""
     

@@ -1,4 +1,5 @@
 import {pt} from "src/client/graphics.js"
+import Strings from 'src/client/strings.js';
 
 export class Grid {
   static snapAllTopLevelContent() {
@@ -93,17 +94,34 @@ export default class Snapping {
     // #TODO for find an alorithm that computes all the existing paddings in the world and use them here, so that it works like in PowerPoint and others
     var padding = lively.preferences.get("SnapPaddingSize")
     this.clearHelpers()
-    // #TODO implement snapping to changing top, left when there is a UI for it
-    this.snapToExtent("right", "right")
-    this.snapToExtent("right", "left")
-    this.snapToExtent("right", "left", -padding)
-    this.snapToExtent("right", "centerX")
 
+    if (corner.match("Left")) {
+      this.snapToExtent(corner, "left", "left")
+      this.snapToExtent(corner, "left", "right")
+      this.snapToExtent(corner, "left", "right", padding)
+      this.snapToExtent(corner, "left", "centerX")
+    }
 
-    this.snapToExtent("bottom", "bottom")
-    this.snapToExtent("bottom", "top")
-    this.snapToExtent("bottom", "top", -padding)
-    this.snapToExtent("bottom", "centerY")
+    if (corner.match("Right")) {
+      this.snapToExtent(corner, "right", "right")
+      this.snapToExtent(corner, "right", "left")
+      this.snapToExtent(corner, "right", "left", -padding)
+      this.snapToExtent(corner, "right", "centerX")
+    }
+
+    if (corner.match("top")) {
+      this.snapToExtent(corner, "top", "top")
+      this.snapToExtent(corner, "top", "bottom")
+      this.snapToExtent(corner, "top", "bottom", padding)
+      this.snapToExtent(corner, "top", "centerY")
+    }
+    
+    if (corner.match("bottom")) {
+      this.snapToExtent(corner, "bottom", "bottom")
+      this.snapToExtent(corner, "bottom", "top")
+      this.snapToExtent(corner, "bottom", "top", -padding)
+      this.snapToExtent(corner, "bottom", "centerY")
+    }
 
   }
 
@@ -161,7 +179,7 @@ export default class Snapping {
   /*
    * Snap the extent (for resizing) of target to sides of other objects
    */
-  snapToExtent(leftRightTopOrBottom, otherLeftRightTopOrBottom, padding) {
+  snapToExtent(cornerOrSide, leftRightTopOrBottom, otherLeftRightTopOrBottom, padding) {
     if (padding === undefined) padding = 0;
     var isHorizontal = leftRightTopOrBottom == "top" || leftRightTopOrBottom == "bottom" 
     
@@ -181,13 +199,11 @@ export default class Snapping {
       // show snapped with a helper
       this.showHelpers(snap, snapped, isHorizontal)
       var delta = snapped - old; 
-      var oldExtent = lively.getExtent(this.target); // somehow different from bounds
-      if (leftRightTopOrBottom == "bottom") {
-        lively.setExtent(this.target, pt(oldExtent.x, oldExtent.y + delta))
-      }
-      if (leftRightTopOrBottom == "right") {
-        lively.setExtent(this.target, pt(oldExtent.x + delta, oldExtent.y))
-      }
+      var deltaPt = isHorizontal ? pt(0, delta) : pt(delta, 0);
+      
+      var newPos = oldBounds[cornerOrSide]().addPt(deltaPt).rounded()
+      var newBounds = oldBounds[Strings.prefixSelector("with", cornerOrSide)](newPos)
+      lively.setBounds(target, newBounds)
     }
   }
 

@@ -331,6 +331,7 @@ export default class Lively {
     if (obj.style) {
       pos = pt(parseFloat(obj.style.left), parseFloat(obj.style.top));
     }
+    // #TODO #Idea use getComputedStyle get rid of jQuery flallback in getPosition
     if (isNaN(pos.x) || isNaN(pos.y)) {
       pos = $(obj).position(); // fallback to jQuery...
       pos = pt(pos.left, pos.top);

@@ -15,7 +15,6 @@ describe("Lively Inspector Component",  function() {
     done();
   });
 
-
   after("cleanup", function() {
     testWorld().innerHTML = "";
   });

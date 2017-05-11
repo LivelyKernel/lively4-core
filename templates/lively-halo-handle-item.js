@@ -8,6 +8,11 @@ import {Grid} from 'src/client/morphic/snapping.js';
 import Strings from 'src/client/strings.js';
 
 export default class HaloHandleItem extends HaloItem {
+  
+  get isMetaNode() {
+    return true
+  }
+  
   initialize() {
     lively.addEventListener("Morphic", this, 'mousedown',  e => this.onMouseDown(e));
   }
@@ -57,6 +62,9 @@ export default class HaloHandleItem extends HaloItem {
 
     var cornerOrSide = this.id
     var newPos = this.initialBounds[cornerOrSide]().addPt(delta).rounded()
+    
+    newPos = Grid.optSnapPosition(newPos, evt) 
+
     var newBounds = this.initialBounds[Strings.prefixSelector("with", cornerOrSide)](newPos)
     lively.setBounds(this.target, newBounds)
 

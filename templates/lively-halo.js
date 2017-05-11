@@ -5,6 +5,7 @@ import selecting from 'src/client/morphic/selecting.js';
 import {pt, rect, Rectangle} from 'src/client/graphics.js';
 import preferences from 'src/client/preferences.js';
 import {Grid} from 'src/client/morphic/snapping.js';
+import DragBehavior from "src/client/morphic/dragbehavior.js"
 
 /*
  * Halo, the container for HaloItems
@@ -17,30 +18,19 @@ export default class Halo extends Morph {
     this.shadowRoot.querySelectorAll("*").forEach(ea => {
       if (ea.isMetaNode === undefined) ea.isMetaNode = true
     })
- 
     Halo.halo = $(this); // #TODO Refeactor away jQuery in Halo
     Halo.halo.hide();
     window.HaloService = Halo;
     var targetContext = document.body.parentElement
-    this.registerBodyDragAndDrop(document.body.parentElement);
-  
+    
     lively.removeEventListener("Halo", targetContext);
     lively.addEventListener("Halo", document.body, "mousedown", 
       evt => this.onBodyMouseDown(evt, targetContext));
-      
+
     this.shadowRoot.querySelectorAll(".halo").forEach(ea => ea.halo = this)
+    DragBehavior.on(this)
   }
   
-  registerBodyDragAndDrop(targetContext) {
-    // document.body.draggable=true; 
-    // lively.removeEventListener("HaloDrag", targetContext);
-    // lively.addEventListener("HaloDrag", targetContext, "dragstart", 
-    //   evt => this.onBodyDragStart(evt, targetContext));
-    // lively.addEventListener("HaloDrag", targetContext, "drag", 
-    //   evt => this.onBodyDrag(evt, targetContext));
-    // lively.addEventListener("HaloDrag", targetContext, "dragend", 
-    //   evt => this.onBodyDragEnd(evt, targetContext));
-  }
   
   onBodyMouseDown(evt, targetContext) {
     // lively.notify("down " + targetContext);
@@ -66,39 +56,9 @@ export default class Halo extends Morph {
       document.body.draggable=false; 
       return false;
     }
-    // this.registerBodyDragAndDrop(targetContext);
     document.body.draggable=true; 
   }
-  
-  onBodyDragStart(evt) {
-    // lively.notify("drag start")
-    if (this.selection) this.selection.remove(); // #TODO reuse eventually?
-    this.selection = lively.components.createComponent("lively-selection");
-    lively.components.openIn(document.body, this.selection).then(comp => {
-      comp.onSelectionDragStart(evt, this.targetContext);
-    });
-    
-    // give it something to drag
-    var div = document.createElement("div");
-    evt.dataTransfer.setDragImage(div, 0, 0);
-  }
-  
-  onBodyDrag(evt, targetContext) {
-    // lively.notify("drag")
-    //evt.preventDefault();
-    // return false
-    if (!this.selection) return;
-    this.selection.onSelectionDrag && this.selection.onSelectionDrag(evt)
-  } 
-  
-  onBodyDragEnd(evt, targetContext) {
-    // evt.preventDefault();
-    // return false
-    if (!this.selection) return;
-    this.selection.onSelectionDragEnd && this.selection.onSelectionDragEnd(evt)
-  }
-    
-  
+
   showHalo(target, path) {
     document.body.appendChild(this);
     lively.html.registerKeys(document.body, "HaloKeys", this)
@@ -229,6 +189,17 @@ export default class Halo extends Morph {
   // onKeyUp(evt) {
   //   if(this.info) this.info.stop()
   // }
+  
+  // Override defdault DragBehavior
+  dragBehaviorStart(evt, pos) {
+    this.dragOffset = lively.getPosition(that).subPt(pos)
+    this.alignHaloToBounds(that)
+  }
+  
+  dragBehaviorMove(evt, pos) {
+    lively.setPosition(that, pos.addPt(this.dragOffset));
+    this.alignHaloToBounds(that)
+  }
 
   static areHalosActive() {
     return Halo.halo && this.halo.is(":visible");
@@ -245,5 +216,6 @@ export default class Halo extends Morph {
 }
 
 
+Halo.migrate()
 
 

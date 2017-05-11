@@ -303,18 +303,18 @@ export default class ContextMenu {
             this.openComponentInWindow("lively-help",  pt(evt.pageX, evt.pageY), worldContext);
           }, 
           "CMD+H", '<i class="fa fa-book" aria-hidden="true"></i>'],
-        ["Wiki (Docs)", (evt) => {
+        ["Docs", (evt) => {
           this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
-              comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Home.md");
+              comp.followPath(lively4url + "/doc/index.md");
             });
           },
           "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'
         ],
-        // ["Journal", (evt) => {
-        //   this.openComponentInWindow("lively-container", evt).then(comp => {
-        //     comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Journal.md");
-        // });
-        // }],
+        ["Journal", (evt) => {
+          this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
+            comp.followPath(lively4url + "/doc/journal/index.html");
+          });
+        }],
         ["Issues", (evt) => {
           window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
         },, '<i class="fa fa-bug" aria-hidden="true"></i>']

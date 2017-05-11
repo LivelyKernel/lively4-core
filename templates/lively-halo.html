@@ -2,8 +2,10 @@
     <style>
     :host {
       position: absolute;
-      pointer-events: none;
       min-width: 90px;
+      /* pointer-events: none; */
+      /* background-color: rgba(0,0,0,0.05); */
+      
     }
     .container {
       width: 100%;
@@ -34,6 +36,9 @@
       vertical-align: bottom;
     }
     #handles {
+      position: absolute;
+      top: 0px;
+      left: 0px;
     }
     
     #topLeft {
@@ -46,13 +51,6 @@
     }
     
     </style>
-    <div id="handles">
-      <lively-halo-handle-item id="topLeft" class="halo handle"></lively-halo-handle-item>
-      <lively-halo-handle-item id="bottomLeft" class="halo handle"></lively-halo-handle-item>
-      <lively-halo-handle-item id="bottomRight" class="halo handle"></lively-halo-handle-item>
-      <lively-halo-handle-item id="topRight" class="halo handle"></lively-halo-handle-item>
-
-    </div>
     <div class="container">
       <div class="row" id="row1">
         <lively-halo-grab-item class="halo"></lively-halo-grab-item>
@@ -69,6 +67,13 @@
         <lively-halo-resize-item class="halo"></lively-halo-resize-item>
       </div>
     </div>
+    <div id="handles">
+      <lively-halo-handle-item id="topLeft" class="halo handle"></lively-halo-handle-item>
+      <lively-halo-handle-item id="bottomLeft" class="halo handle"></lively-halo-handle-item>
+      <lively-halo-handle-item id="bottomRight" class="halo handle"></lively-halo-handle-item>
+      <lively-halo-handle-item id="topRight" class="halo handle"></lively-halo-handle-item>
+    </div>
+
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

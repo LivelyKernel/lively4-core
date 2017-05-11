@@ -14,13 +14,18 @@ export default class DragBehavior {
   }
   
   onDragStart(evt) {
-    this.offset = lively.getPosition(this.target).subPt(pt(evt.clientX, evt.clientY))
+    this.originalPosition = lively.getPosition(this.target)
+    this.offset = this.originalPosition.subPt(pt(evt.clientX, evt.clientY))
     evt.dataTransfer.setDragImage(document.createElement("div"), 0, 0); 
 
     lively.addEventListener("DragBehavior", this.target, "drag", 
       (evt) => this.onDrag(evt))
     lively.addEventListener("DragBehavior", this.target, "dragend", 
       (evt) => this.onDragEnd(evt))
+      
+    if (this.target.dragBehaviorStart) {
+      this.target.dragBehaviorStart(evt, this.originalPosition)
+    }
   }
   
   onDrag(evt) {
@@ -29,13 +34,19 @@ export default class DragBehavior {
     if (evt.offsetX < 0) return; // another #Garbage event
 
     var pos = pt(evt.clientX, evt.clientY).addPt(this.offset)
-    lively.setPosition(this.target, pos)
+    if (this.target.dragBehaviorMove) {
+      this.target.dragBehaviorMove(evt, pos, this.originalPosition)
+    } else {
+      lively.setPosition(this.target, pos)
+    }
   }
 
   onDragEnd(evt) {
     lively.removeEventListener("DragBehavior", this.target, "drag")
     lively.removeEventListener("DragBehavior", this.target, "dragend")
 
-
+    if (this.target.dragBehaviorEnd) {
+      this.target.dragBehaviorEnd(evt, this.originalPosition)
+    }
   }
 }
