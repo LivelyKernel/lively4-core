@@ -29,6 +29,16 @@ export default class AceEditor extends Morph {
       this.setAttribute(attr, value)
     }
   }
+  
+  
+  encodeHTML(s) {
+    return s.replace("&", "&amp;").replace("<", "&lt;") 
+  }
+  
+  decodeHTML(s) {
+    return s.replace("&lt;", "<").replace("&amp;", "&") 
+  }
+  
 
   // Fires when an instance was inserted into the document
   attachedCallback() {
@@ -38,11 +48,17 @@ export default class AceEditor extends Morph {
 
     if(this.editor) {
       var editor = this.editor;
-      this.value = (text && text.textContent) || this.value;
-   
+      if (text && text.textContent) {
+        this.value = this.decodeHTML(text.textContent)
+      }
     } else {
         // container.appendChild(text);
-        container.innerHTML = this.innerHTML || this.value;
+        
+        if (this.innerHTML) {
+          container.textContent = this.decodeHTML(text.textContent);
+        } else {
+          container.textContent = this.value;
+        }
         editor = ace.edit(container);
         this.dispatchEvent(new CustomEvent("editor-ready", {detail: editor}));
         this.editor = editor;
@@ -105,7 +121,7 @@ export default class AceEditor extends Morph {
   // Fires when an instance was removed from the document
   detachedCallback() {
     this._attached = false;
-  };
+  }
 
   // Fires when an attribute was added, removed, or updated
   attributeChangedCallback(attr, oldVal, newVal) {
@@ -648,7 +664,7 @@ export default class AceEditor extends Morph {
   }
   
   livelyPrepareSave() {
-    this.textContent = this.editor.getValue().replace(/</g,"&lt;")
+    this.textContent = this.encodeHTML(this.editor.getValue())
   }
   
   get persistent() {
