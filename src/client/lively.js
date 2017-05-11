@@ -70,6 +70,15 @@ export default class Lively {
     return window.location = url;
   }
 
+  static findDependedModules(path) {
+     var mod = System.normalizeSync(path);
+     return Object.values(System.loads)
+      .filter( ea => 
+        ea.dependencies.find(dep => System.normalizeSync(dep, ea.key) == mod))
+      .map( ea => ea.key)
+  }
+
+
   static async reloadModule(path) {
     path = "" + path;
     var changedModule = System.normalizeSync(path);
@@ -89,14 +98,13 @@ export default class Lively {
       // }
       
       // Find all modules that depend on me
-      var dependedModules = Object.values(System.loads).filter( ea => 
-        ea.dependencies.find(dep => System.normalizeSync(dep, ea.key) == changedModule))
+      var dependedModules = lively.findDependedModules(path)
       // and update them
       for(var ea of dependedModules) {
-        modulePaths.push(ea.key)
-        console.log("reload " + path + " triggers reload of " + ea.key)
-        System.registry.delete(ea.key)  
-        System.import(ea.key)
+        modulePaths.push(ea)
+        console.log("reload " + path + " triggers reload of " + ea)
+        System.registry.delete(ea)  
+        System.import(ea)
       }
       return m
     }).then( mod => {

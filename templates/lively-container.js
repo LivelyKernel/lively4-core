@@ -370,7 +370,7 @@ export default class Container extends Morph {
     }
     this.get("#editor").setURL(this.getURL());
     
-    return this.get("#editor").saveFile().then( () => {
+    return this.get("#editor").saveFile().then( async () => {
       var sourceCode = this.get("#editor").currentEditor().getValue();
       if (this.getPath().match(/templates\/.*html/)) {
         lively.updateTemplate(sourceCode);
@@ -393,8 +393,17 @@ export default class Container extends Morph {
         } else if (this.getPath().match(/test\/.*js/)) {
           this.loadTestModule(url); 
         } else if ((this.get("#live").checked && !this.get("#live").disabled)) {
-          this.loadModule(url);
+          await this.loadModule("" + url)
+          
+          
+          lively.findDependedModules("" + url).forEach(ea => {
+            if (ea.match(/test\/.*js/)) {
+              this.loadTestModule(ea); 
+            } 
+          })
         }
+        
+        
       }
     }).then(() => this.showNavbar());
   }

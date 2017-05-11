@@ -1,6 +1,6 @@
-import Sync from '../../templates/lively-sync.js';
 import {expect} from '../../node_modules/chai/chai.js';
 import {testWorld, loadComponent} from './templates-fixture.js';
+
 
 describe("Lively Editor Component",  function() {
 
