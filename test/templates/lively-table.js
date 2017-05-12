@@ -86,6 +86,27 @@ describe("LivelyTable Component",  () => {
       expect(that.currentCell.textContent).to.equal("two")
       done()
     });
+    
+    it("should sellect a two cells on SHIFT + left", done => {
+      fillTableWithNumber(that)
+      that.selectCell(that.cellAt(1,2))
+      that.onLeftDown(new MockEvent(that, {shiftKey: true})) 
+      expect(that.selectedCells.length).to.equal(2)
+      done()
+    });
+   
+   
+    // #TODO #Continue here...  
+    // it("should sellect a four cells on SHIFT + left and SHIFT + down", done => {
+    //   fillTableWithNumber(that)
+    //   that.selectCell(that.cellAt(2,1))
+    //   that.onLeftDown(new MockEvent(that, {shiftKey: true})) 
+    //   that.onDownDown(new MockEvent(that, {shiftKey: true})) 
+    //   expect(that.selectedCells.length).to.equal(4)
+    //   done()
+    // });
+    
+    
   })
   
   describe("Navigation",  () => {

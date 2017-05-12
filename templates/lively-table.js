@@ -37,7 +37,7 @@ export default class LivelyTable extends Morph {
     return row.querySelectorAll("td,th")[columnIndex]
   }
 
-  selectCell(element) {
+  selectCell(element, multipleSelection) {
     if (this.currentCell  && this.currentCell != element) {
       this.currentCell.contentEditable = false
       this.currentCell.classList.remove("selected")
@@ -53,7 +53,16 @@ export default class LivelyTable extends Morph {
     this.currentColumnIndex = rowCells.indexOf(element)
     this.currentColumn = rows.map(ea => ea[this.currentColumnIndex])
 
-    this.currentCell.classList.add("selected")
+    if (multipleSelection) {
+      if (!this.selectedCells) this.selectedCells = []
+      this.selectedCells.push(this.currentCell)
+      this.selectedCells.forEach(ea => ea.classList.add("selected"))
+    } else {
+      if (this.selectedCells)
+        this.selectedCells.forEach(ea => ea.classList.remove("selected"));
+      this.selectedCells = [this.currentCell]
+      this.currentCell.classList.add("selected")
+    }
   }
 
   onClick(evt) {
@@ -66,15 +75,17 @@ export default class LivelyTable extends Morph {
   }
 
 
-  navigateRelative(columnDelta, rowDelta) {
+  navigateRelative(columnDelta, rowDelta, multipleSelection) {
     if (this.currentColumnIndex === undefined) return
     var cells = this.cells()
     var row = cells[this.currentRowIndex + rowDelta]
     if (!row) return
     var newCell = row[this.currentColumnIndex + columnDelta]
     if (newCell) {
-      this.selectCell(newCell)
+      this.selectCell(newCell, multipleSelection)
     }
+    
+
   }
   
   onEnterDown(evt) {
@@ -115,21 +126,21 @@ export default class LivelyTable extends Morph {
 
   onLeftDown(evt) {
     if (evt.srcElement != this) return
-    this.navigateRelative(-1, 0)
+    this.navigateRelative(-1, 0, evt.shiftKey == true)
     evt.stopPropagation()
     evt.preventDefault()
   }
 
   onRightDown(evt) {
     if (evt.srcElement != this) return
-    this.navigateRelative(1, 0)
+    this.navigateRelative(1, 0, evt.shiftKey == true)
     evt.stopPropagation()
     evt.preventDefault()
   }
 
   onUpDown(evt) {
     if (evt.srcElement != this) return
-    this.navigateRelative(0, -1)
+    this.navigateRelative(0, -1, evt.shiftKey == true)
     evt.stopPropagation()
     evt.preventDefault()
   }
@@ -137,7 +148,7 @@ export default class LivelyTable extends Morph {
   onDownDown(evt) {
     if (evt.srcElement != this) return
 
-    this.navigateRelative(0, 1)
+    this.navigateRelative(0, 1, evt.shiftKey == true)
     evt.stopPropagation()
     evt.preventDefault()
   }
