@@ -18,9 +18,13 @@ h1 {
 }
 */
 
-
-  
 lively-table table, lively-table tr, lively-table  th, lively-table  td {
   border: 1px solid black;
+  border-collapse: collapse;
+}
+ 
+lively-table .selected {
+  margin: -2px;
+  border: 2px solid blue;
   border-collapse: collapse;
 }

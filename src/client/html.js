@@ -103,6 +103,11 @@ export default class HTML {
   static registerKeys(obj, domain, target, stopAndPreventDefault) {
     domain = domain || "Keys"
     target = target || obj
+    
+    if (!target || !target.getAttribute) return;
+    if (target.getAttribute("tabindex") === null) {
+      target.setAttribute("tabindex", 0)
+    }
     lively.addEventListener(domain, obj, "keydown", evt => {
       KeyboardHandler.dispatchKey(evt, target, "Down", stopAndPreventDefault)
     })

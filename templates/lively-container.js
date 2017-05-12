@@ -234,9 +234,10 @@ export default class Container extends Morph {
     console.error(err);
   }
 
-  openTemplateInstance(url) {
+  async openTemplateInstance(url) {
       var name = url.toString().replace(/.*\//,"").replace(/\.((html)|(js))$/,"");
-      lively.openComponentInWindow(name);
+      var comp = await lively.openComponentInWindow(name);
+      if (comp.livelyExample) comp.livelyExample(); // fill in with example content
   }
 
   onApply() {

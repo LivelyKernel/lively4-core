@@ -22,8 +22,15 @@ export class MockEvent {
   }
 
   preventDefault() {
-    
+    // nothing to do
   }
+
+  stopPropagation() {
+    // nothing to do
+  }
+
+  
+  
 }
 
 

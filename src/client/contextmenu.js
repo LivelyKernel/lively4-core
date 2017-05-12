@@ -12,6 +12,8 @@ import Windows from "templates/lively-window.js"
 import {Grid} from "src/client/morphic/snapping.js"
 
 
+import Info from "src/client/info.js"
+    
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
 export default class ContextMenu {
@@ -317,7 +319,10 @@ export default class ContextMenu {
         }],
         ["Issues", (evt) => {
           window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
-        },, '<i class="fa fa-bug" aria-hidden="true"></i>']
+        },, '<i class="fa fa-bug" aria-hidden="true"></i>'],
+        ["Module Info", (evt) => {
+          Info.showModuleInfo()
+          },, '<i class="fa fa-info" aria-hidden="true"></i>']
       ]],
       ["Preferences", 
           ["ShowDocumentGrid", "InteractiveLayer", "ShowFixedBrowser", "SnapWindowsInGrid"].map(ea => this.preferenceEntry(ea))
