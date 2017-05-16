@@ -12,11 +12,14 @@ export default class LivelyTable extends Morph {
     this.addEventListener("cut", (evt) => this.onCut(evt))
     this.addEventListener("paste", (evt) => this.onPaste(evt))
   }
+  
 
   livelyExample() {
-    this.innerHTML = `<table><tr><th>First</th><th>Second</th></tr>
-<tr><td>Hello</td><td>World</td></tr>
-<tr><td>Foo</td><td>Bar</td></tr></table>`
+    this.setFromArray([
+      ['A','B','C','D','E'],
+      ['First', 'Second', 'Third', 'Fourth',''],
+      ['Hello', 'World','','',''],
+      ['Foo', 'Bar','','','']])
   }
 
   rows() {
@@ -36,11 +39,49 @@ export default class LivelyTable extends Morph {
     if (!row) return undefined;
     return row.querySelectorAll("td,th")[columnIndex]
   }
+  
+  
+  clearSelection() {
+    if (this.currentCell) {
+      this.currentCell.contentEditable = false
+      this.currentCell.classList.remove("selected")
+    }
+    this.currentCell = undefined
+    this.currentRow = undefined
+    this.currentRowIndex = undefined
+    this.currentColumnIndex = undefined
+    this.currentColumn = undefined
+    this.startCell = undefined
+    this.startRowIndex = undefined
+    this.startColumnIndex = undefined
+    if (this.selectedCells) {
+      this.selectedCells.forEach(ea => {
+        ea.classList.remove("selected")
+        ea.classList.remove("star-selection")
+      })
+    }
+  }
+
+  addSelectedCell(element) {
+    if (!this.selectedCells) this.selectedCells = []
+      if (this.selectedCells.indexOf(element) < 0) {
+        this.selectedCells.push(element)
+      }
+      element.classList.add("selected")
+  }
+
+  removeSelectedCell(element) {
+    if (!this.selectedCells) this.selectedCells = []
+      this.selectedCells.push(element)
+    this.selectedCells = this.selectedCells.filter( ea => ea !== element)
+    element.classList.remove("selected")
+  }
 
   selectCell(element, multipleSelection) {
     if (this.currentCell  && this.currentCell != element) {
       this.currentCell.contentEditable = false
-      this.currentCell.classList.remove("selected")
+      if (!multipleSelection)
+        this.currentCell.classList.remove("selected")
     }
     if (!element.parentElement) return; // cell must be one of mine
 
@@ -54,14 +95,20 @@ export default class LivelyTable extends Morph {
     this.currentColumn = rows.map(ea => ea[this.currentColumnIndex])
 
     if (multipleSelection) {
-      if (!this.selectedCells) this.selectedCells = []
-      this.selectedCells.push(this.currentCell)
-      this.selectedCells.forEach(ea => ea.classList.add("selected"))
+      this.addSelectedCell( this.currentCell)
     } else {
-      if (this.selectedCells)
-        this.selectedCells.forEach(ea => ea.classList.remove("selected"));
+      if (this.selectedCells) 
+        this.selectedCells.forEach(ea => {
+          ea.classList.remove("start-selection")
+          ea.classList.remove("selected")
+        });
       this.selectedCells = [this.currentCell]
       this.currentCell.classList.add("selected")
+      this.startCell = this.currentCell
+      this.startRowIndex = rows.indexOf(row)
+      this.startColumnIndex = rowCells.indexOf(element)
+      this.startCell.classList.add("start-selection")
+      
     }
   }
 
@@ -74,23 +121,61 @@ export default class LivelyTable extends Morph {
     }    
   }
 
+  changeSelection(columnDelta, rowDelta, removeSelection) {
+    var cells = this.cells()
+    
+    let columnA = this.startColumnIndex,
+      columnB = this.currentColumnIndex + columnDelta,
+      columnMin = Math.min(columnA, columnB),
+      columnMax = Math.max(columnA, columnB),
+      rowA = this.startRowIndex,
+      rowB = this.currentRowIndex + rowDelta,
+      rowMin = Math.min(rowA, rowB),
+      rowMax = Math.max(rowA, rowB)
+    
+    for(var rowIndex = rowMin; rowIndex <= rowMax; rowIndex++) {
+      var row = cells[rowIndex]
+      if (row) {
+        for(var columnIndex = columnMin; columnIndex <= columnMax; columnIndex++) {
+          var cell = row[columnIndex]
+          // lively.showElement(cell)
+          if (cell) {
+            if (removeSelection) {
+              this.removeSelectedCell(cell)
+            } else {
+              this.addSelectedCell(cell)
+            }
+          }
+        }
+      }
+    }
+  }
+
 
   navigateRelative(columnDelta, rowDelta, multipleSelection) {
     if (this.currentColumnIndex === undefined) return
     var cells = this.cells()
+    if (multipleSelection) {
+      this.changeSelection(-columnDelta, -rowDelta, true)
+
+      this.changeSelection(columnDelta, rowDelta)
+    } 
     var row = cells[this.currentRowIndex + rowDelta]
     if (!row) return
     var newCell = row[this.currentColumnIndex + columnDelta]
+  
     if (newCell) {
-      this.selectCell(newCell, multipleSelection)
+        this.selectCell(newCell, multipleSelection)
     }
-    
-
   }
   
   onEnterDown(evt) {
     if (evt.srcElement != this) return
     if (!this.currentCell) return
+    
+    var cell = this.currentCell
+    this.clearSelection()
+    this.selectCell(cell)
     this.currentCell.contentEditable = true
     this.currentCell.focus()
     

@@ -10,6 +10,7 @@ function fillTableWithNumber(table) {
       ["A", "B", "C", "D"],
       ["1", "2", "3", "4"],
       ["one", "two", "three", "four"]])
+  table.clearSelection()
 }
 
 
@@ -87,7 +88,7 @@ describe("LivelyTable Component",  () => {
       done()
     });
     
-    it("should sellect a two cells on SHIFT + left", done => {
+    it("should sellect two cells on SHIFT + left", done => {
       fillTableWithNumber(that)
       that.selectCell(that.cellAt(1,2))
       that.onLeftDown(new MockEvent(that, {shiftKey: true})) 
@@ -96,16 +97,31 @@ describe("LivelyTable Component",  () => {
     });
    
    
-    // #TODO #Continue here...  
-    // it("should sellect a four cells on SHIFT + left and SHIFT + down", done => {
-    //   fillTableWithNumber(that)
-    //   that.selectCell(that.cellAt(2,1))
-    //   that.onLeftDown(new MockEvent(that, {shiftKey: true})) 
-    //   that.onDownDown(new MockEvent(that, {shiftKey: true})) 
-    //   expect(that.selectedCells.length).to.equal(4)
-    //   done()
-    // });
+    it("should sellect a four cells on SHIFT + left and SHIFT + down", done => {
+      fillTableWithNumber(that)
+      that.selectCell(that.cellAt(2,1))
+      expect(that.currentColumnIndex, "currentColumnIndex").to.equal(2)
+      expect(that.currentRowIndex, "currentRowIndex").to.equal(1)
+      that.onLeftDown(new MockEvent(that, {shiftKey: true})) 
+      expect(that.currentColumnIndex, "currentColumnIndex").to.equal(1)
+      that.onDownDown(new MockEvent(that, {shiftKey: true})) 
+      expect(that.currentRowIndex, "currentRowIndex").to.equal(2)
+
+      expect(that.selectedCells.length).to.equal(4)
+      done()
+    });
     
+    it("should desellect a four cells on SHIFT + left and SHIFT + down and SHIFT + up", done => {
+      fillTableWithNumber(that)
+      that.selectCell(that.cellAt(2,1))
+      that.onLeftDown(new MockEvent(that, {shiftKey: true})) 
+      that.onDownDown(new MockEvent(that, {shiftKey: true})) 
+      that.onUpDown(new MockEvent(that, {shiftKey: true})) 
+      expect(that.currentRowIndex, "currentRowIndex").to.equal(1)
+      expect(that.selectedCells.length, "number of selected cells").to.equal(2)
+      done()
+    });
+
     
   })
   

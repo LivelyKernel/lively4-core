@@ -27,4 +27,13 @@ lively-table .selected {
   margin: -2px;
   border: 2px solid blue;
   border-collapse: collapse;
+  background-color: rgba(100,100,200,0.3);
+  
+}
+
+lively-table .start-selection {
+  margin: -2px;
+  border: 2px solid blue;
+  border-collapse: collapse;
+  background-color: rgba(100,100,200,0.1);
 }
