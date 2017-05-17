@@ -28,13 +28,13 @@ describe("LivelyTable Component",  () => {
 
 
   describe("Array",  () => {
-    it("shouuld set array contents", done => {
+    it("should set array contents", done => {
       that.setFromArray([["hello", "world"],["one", "two"]])
       expect(that.innerHTML).to.match(/hello/)
       expect(that.querySelectorAll("td").length).to.equal(2)
       done()
     });
-    it("shouuld get contents as array", done => {
+    it("should get contents as array", done => {
       that.setFromArray([["hello", "world"],["one", "two"]])
       var a = that.asArray()
       expect(a[0][0]).to.equal("hello")
@@ -44,7 +44,7 @@ describe("LivelyTable Component",  () => {
   })
 
   describe("JSO",  () => {
-    it("shouuld set jso contents", done => {
+    it("should set jso contents", done => {
       that.innerHTML = ""
       that.setFromJSO([{json_hello: "json_one", world: "two"}, {world: "uno", hello: "dos"}, {world: "zwei"}])
       var a = that.asArray()
@@ -52,7 +52,7 @@ describe("LivelyTable Component",  () => {
       expect(a[1][0]).to.equal("json_one")
       done()
     });
-    it("shouuld get contents as jso", done => {
+    it("should get contents as jso", done => {
       that.innerHTML = ""
       that.setFromArray([["hello", "world"],["uno", "dos"]])
       var a = that.asJSO()
@@ -63,17 +63,17 @@ describe("LivelyTable Component",  () => {
 
   describe("CSV",  () => {
     it("shouuld set CSV contents", done => {
-      that.setFromCSV("a;b;c\n1;2;3\neins;zwei")
+      that.setFromCSV("a\tb\tc\n1\t2\t3\neins\tzwei")
       var a = that.asArray()
       expect(a[0][0]).to.equal("a")
       expect(a[1][0]).to.equal("1")
       expect(a[2][1]).to.equal("zwei")
       done()
     });
-    it("shouuld get contents as csv", done => {
+    it("should get contents as csv", done => {
       that.setFromArray([["hello", "world"],["one", "two"]])
       var s = that.asCSV()
-      expect(s).to.match(/hello;world\none;two/)
+      expect(s).to.match(/hello\tworld\none\ttwo/)
       done()
     });
   })
@@ -121,8 +121,6 @@ describe("LivelyTable Component",  () => {
       expect(that.selectedCells.length, "number of selected cells").to.equal(2)
       done()
     });
-
-    
   })
   
   describe("Navigation",  () => {
@@ -158,6 +156,29 @@ describe("LivelyTable Component",  () => {
       done()
     });
 
+  })
+  
+  describe("Position",  () => {
+    it("should get right column and row of cell", done => {
+      fillTableWithNumber(that)
+      var cell = that.cellAt(2,1)
+      expect(that.columnOfCell(cell), "columnOfCell").to.equal(2)
+      expect(that.rowOfCell(cell), "rowOfCell").to.equal(1)
+
+      done()
+    });
+  })
+  
+  describe("Navigation",  () => {
+    it("should selection as CSV", done => {
+      fillTableWithNumber(that)
+      that.selectCell(that.cellAt(2,1))
+      that.onLeftDown(new MockEvent(that, {shiftKey: true})) 
+      that.onDownDown(new MockEvent(that, {shiftKey: true})) 
+    
+      expect(that.getSelectionAsCSV()).to.equal("2\t3\ntwo\tthree")
+      done()
+    });
   })
   
   after("cleanup", () => {

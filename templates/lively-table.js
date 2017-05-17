@@ -1,7 +1,20 @@
 import Morph from './Morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 
+
 export default class LivelyTable extends Morph {
+
+  static create() {
+    // return Object.create(LivelyTable.prototype, {})
+    return document.createElement("lively-table")
+  }
+
+  constructor() {
+    
+    super()  
+    
+  }
+      
       
   initialize() {
     this.addEventListener("click", evt => this.onClick(evt))
@@ -40,6 +53,15 @@ export default class LivelyTable extends Morph {
     return row.querySelectorAll("td,th")[columnIndex]
   }
   
+  columnOfCell(cell) {
+    return this.cellsIn(cell.parentElement).indexOf(cell)
+  }
+  
+  rowOfCell(cell) {
+    var row = cell.parentElement
+    return this.rows().indexOf(row)
+  }
+
   
   clearSelection() {
     if (this.currentCell) {
@@ -258,10 +280,10 @@ export default class LivelyTable extends Morph {
   
 
   asCSV() {
-    return this.asArray().map(eaRow => eaRow.join(";")).join("\n")
+    return this.asArray().map(eaRow => eaRow.join("\t")).join("\n")
   }
   
-  setFromCSV(csv, separator = ";") {
+  setFromCSV(csv, separator = /[;\t,]/) {
     var rows = csv.split("\n").map(line => {
       
       return line.split(separator)
@@ -280,6 +302,20 @@ export default class LivelyTable extends Morph {
       })
       return obj
     })
+  }
+  
+  
+  copySelectionAsTable() {
+    var tmp = LivelyTable.create()
+    tmp.setFromArray(
+      _.values(_.groupBy(this.selectedCells, ea => this.rowOfCell(ea)))
+        .map(row =>
+          _.sortBy(row, ea => this.rowOfCell(ea)).map(ea => ea.textContent) ))
+    return tmp
+  }
+  
+  getSelectionAsCSV() {
+    return this.copySelectionAsTable().asCSV()
   }
   
   /*
@@ -306,7 +342,13 @@ export default class LivelyTable extends Morph {
   
   onCopy(evt) {
     if (!this.currentCell) return
-    evt.clipboardData.setData('text/plain', this.currentCell.textContent);
+    if (this.selectedCells && this.selectedCells.length > 1) {
+      var data = this.getSelectionAsCSV()
+      lively.notify("data " + data)
+      evt.clipboardData.setData('text/plain', data);
+    } else {
+      evt.clipboardData.setData('text/plain', this.currentCell.textContent);
+    }
     evt.stopPropagation()
     evt.preventDefault()
   }
@@ -325,7 +367,7 @@ export default class LivelyTable extends Morph {
 
 
   livelyMigrate(other) {
-    this.querySelectorAll("td,th").forEach(ea => ea.classList.remove("selected"))
+    this.clearSelection()
     var selection = this.cellAt(other.currenColumnIndex, other.currentRowIndex)
     if (selection) this.selectCell(selection)
   }
