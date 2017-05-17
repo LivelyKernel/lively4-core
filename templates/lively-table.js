@@ -268,22 +268,58 @@ export default class LivelyTable extends Morph {
   }
 
   setFromArray(array) {
+    var maxColumns = array.reduce((sum, ea) => Math.max(sum, ea.length), 0)
+    
     this.innerHTML = "<table>" +
-      array.map((row,rowIndex) => "<tr>" + 
-        row.map(ea => 
-          rowIndex == 0 ? // header 
+      array.map((row,rowIndex) => {
+        var html = ""
+        for(var i=0; i < maxColumns; i++) {
+         var ea = row[i] || "";
+         html += rowIndex == 0 ? // header 
             `<th>${ea}</th>` : 
-            `<td>${ea}</th>`).join("")   
-        +"</tr>").join("\n")
+            `<td>${ea}</th>`
+        }
+        return "<tr>" + html+"</tr>"
+      }).join("\n")
     + "</table>"
   }
   
+
+  setFromArrayAt(array, columnOffset, rowOffset) {
+    var table = this.asArray()
+    for (var i=0; i < array.length; i++) {
+      var row = table[rowOffset + i]
+      if (!row) {
+        row = []
+        table[rowOffset + i] = row
+      }
+      var fromRow = array[i]
+      for (var j=0; j < fromRow.length; j++) {
+        row[columnOffset + j] = fromRow[j]     
+      }
+    }
+    this.setFromArray(table)
+  }
+
+
 
   asCSV() {
     return this.asArray().map(eaRow => eaRow.join("\t")).join("\n")
   }
   
-  setFromCSV(csv, separator = /[;\t,]/) {
+  splitIntoRows(csv, separator= /[;\t,]/) {
+    return csv.split("\n").map(line => {
+      return line.split(separator)
+    })
+  }
+  
+  setFromCSV(csv, separator ) {
+    this.setFromArray(this.splitIntoRows(csv, separator))
+  }
+  setFromCSVat(csv, column, row, separator) {
+    this.setFromArrayAt(this.splitIntoRows(csv, separator), column, row)
+  }
+  setFromCSVAt(csv, separator = /[;\t,]/) {
     var rows = csv.split("\n").map(line => {
       
       return line.split(separator)
@@ -291,6 +327,7 @@ export default class LivelyTable extends Morph {
     this.setFromArray(rows)
   }
 
+  
   asJSO() {
     var all = this.asArray()
     var header = all[0]
@@ -360,7 +397,12 @@ export default class LivelyTable extends Morph {
 
   onPaste(evt) {
     if (!this.currentCell) return
-    this.currentCell.textContent = evt.clipboardData.getData('text/plain');
+    var pos = this.cellP
+    
+    this.setFromCSVat(
+      evt.clipboardData.getData('text/plain'), 
+      this.columnOfCell(this.currentCell),
+      this.rowOfCell(this.currentCell))
     evt.stopPropagation()
     evt.preventDefault()
   }

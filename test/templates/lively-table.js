@@ -13,9 +13,7 @@ function fillTableWithNumber(table) {
   table.clearSelection()
 }
 
-
 describe("LivelyTable Component",  () => {
-
   var that;
   before("load",  function(done) {
     this.timeout(35000);
@@ -25,7 +23,6 @@ describe("LivelyTable Component",  () => {
       done();
     }).catch(e => done(e));
   });
-
 
   describe("Array",  () => {
     it("should set array contents", done => {
@@ -39,6 +36,15 @@ describe("LivelyTable Component",  () => {
       var a = that.asArray()
       expect(a[0][0]).to.equal("hello")
       expect(a.length).to.equal(2)
+      done()
+    });
+    it("should get contents as array at position", done => {
+      that.setFromArray([[1, 2, 3, 4],["a", "b", "c", "d"],["A", "B", "C", "D"]])
+      that.setFromArrayAt([["hello", "world"],["one", "two"]], 1,1)
+      var a = that.asArray()
+      expect(a[0][0]).to.equal("1")
+      expect(a[1][1]).to.equal("hello")
+      expect(a[2][1]).to.equal("one")
       done()
     });
   })
@@ -76,6 +82,17 @@ describe("LivelyTable Component",  () => {
       expect(s).to.match(/hello\tworld\none\ttwo/)
       done()
     });
+    
+    it("should set CSV contents as array at position", done => {
+      that.setFromArray([[1, 2, 3, 4],["a", "b", "c", "d"],["A", "B", "C", "D"]])
+      that.setFromCSVat("hello\tworld\none\ttwo", 1,1)
+      var a = that.asArray()
+      expect(a[0][0]).to.equal("1")
+      expect(a[1][1]).to.equal("hello")
+      expect(a[2][1]).to.equal("one")
+      done()
+    });
+
   })
   
   describe("Selection",  () => {
@@ -164,7 +181,6 @@ describe("LivelyTable Component",  () => {
       var cell = that.cellAt(2,1)
       expect(that.columnOfCell(cell), "columnOfCell").to.equal(2)
       expect(that.rowOfCell(cell), "rowOfCell").to.equal(1)
-
       done()
     });
   })
