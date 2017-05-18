@@ -9,7 +9,11 @@ import ViewNav from 'src/client/viewnav.js'
 import Layout from "src/client/layout.js"
 import Preferences from './preferences.js';
 import Windows from "templates/lively-window.js"
+import {Grid} from "src/client/morphic/snapping.js"
 
+
+import Info from "src/client/info.js"
+    
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
 export default class ContextMenu {
@@ -291,27 +295,35 @@ export default class ContextMenu {
           },
           "", '<i class="fa fa-window-restore" aria-hidden="true"></i>',
         ],
+        ["Snap All to Grid Now", (evt) => {
+          Grid.snapAllTopLevelContent()
+        },
+        "", '<i class="fa fa-th" aria-hidden="true"></i>'
+        ]
       ]],
       ["Documentation", [
         ["Devdocs.io", (evt) => {
             this.openComponentInWindow("lively-help",  pt(evt.pageX, evt.pageY), worldContext);
           }, 
           "CMD+H", '<i class="fa fa-book" aria-hidden="true"></i>'],
-        ["Wiki (Docs)", (evt) => {
+        ["Docs", (evt) => {
           this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
-              comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Home.md");
+              comp.followPath(lively4url + "/doc/index.md");
             });
           },
           "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'
         ],
-        // ["Journal", (evt) => {
-        //   this.openComponentInWindow("lively-container", evt).then(comp => {
-        //     comp.followPath("https://lively-kernel.org/lively4/Lively4.wiki/Journal.md");
-        // });
-        // }],
+        ["Journal", (evt) => {
+          this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
+            comp.followPath(lively4url + "/doc/journal/index.html");
+          });
+        }],
         ["Issues", (evt) => {
           window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
-        },, '<i class="fa fa-bug" aria-hidden="true"></i>']
+        },, '<i class="fa fa-bug" aria-hidden="true"></i>'],
+        ["Module Info", (evt) => {
+          Info.showModuleInfo()
+          },, '<i class="fa fa-info" aria-hidden="true"></i>']
       ]],
       ["Preferences", 
           ["ShowDocumentGrid", "InteractiveLayer", "ShowFixedBrowser", "SnapWindowsInGrid"].map(ea => this.preferenceEntry(ea))

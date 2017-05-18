@@ -1,0 +1,169 @@
+<template id="tps-node" data-class="TpsNode">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  
+  <style>
+  :host {
+    min-width: 50px;
+    min-height: 50px;
+    width: 400px;
+    height: 400px;
+    display: block;
+    overflow: visible;
+    border: 1px solid gray;
+    /*     touch-action: none; */
+
+  }
+
+  #back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    margin: 0px;
+    padding: 0px;
+  }
+  
+  #canvas {
+    position: absolute;
+    min-width: 50px;
+    min-height: 50px;
+    top: 0px;
+    left: 0px;
+    width: 800px;
+    height: 600px;
+    border: none;
+  }
+  
+  #controls {
+    position: absolute;
+    top: -28pt;
+    right: 0pt;
+    background: white;
+    border: 1px gray solid;
+    width: 100%;
+  }
+  
+  #penColor, #backgroundColor {
+    margin: 3px;
+  }
+  
+  button {
+    vertical-align: top
+  }
+  
+  #penSize {
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+    margin: 3px;
+    padding: 0px;
+    font-size: 0;
+    vertical-align: top
+  }
+  
+  #recognizedResult {
+    display: inline-block;
+    vertical-align: top
+  }
+  
+  #stateIndicator {
+    position:absolute;
+    z-index: 2000;
+    background-color: rgba(122,120,120,0.9);
+    top: 0px;
+    right: 0px;
+    margin: 0px;
+    padding: 0px;
+    width: 10px;
+    height: 10px;
+  }
+  
+  #close, #rightPorts, #leftPorts, #bottomPorts {
+    position:absolute;
+    overflow:visible;
+    z-index: 2000;
+  }
+  #close {
+    color: #b33630;
+
+    top: 0px;
+    right: 0px;
+    transform:translateX(50%) translateY(-50%);
+  }
+  #close:hover {
+    background:  linear-gradient(#dc5f59, #b33630);
+    color: white;
+  }
+  
+  #rightPorts {
+    top: 50%;
+    transform:translateX(50%) translateY(-50%);
+    right: 0px;
+  }
+  
+  #leftPorts {
+    top: 50%;
+    transform:translateX(-50%) translateY(-50%);
+    left: 0px;
+  }
+  
+  #bottomPorts {
+    left: 50%;
+    bottom: 0px;
+    transform:translateX(-50%) translateY(50%);
+  }
+  
+  #leftPorts button, #rightPorts button {
+    display:block;
+  }
+
+  /* show on hover */
+  .overlay {
+    display:none;
+  }
+  :hover ~ .overlay,
+  .overlay:hover,
+  :focus ~ .overlay,
+  .overlay:focus {
+    display:block;
+  }
+
+  </style>
+  <content></content>
+  
+  <div id="back"></div>
+  <p>title</p>
+  <div id="controls">
+    <button id="undoStroke">
+      <i class="fa fa-arrow-left" title="undo stroke" aria-hidden="true"></i></button>
+    <button id="redoStroke">
+      <i class="fa fa-arrow-right" title="redo stroke" aria-hidden="true"></i></button>
+    <lively-crayoncolors id="backgroundColor" title="background"></lively-crayoncolors>
+    <lively-crayoncolors id="penColor" title="pen"></lively-crayoncolors>
+    <lively-penchooser id="penSize"></lively-penchooser>
+    <div id="recognizedResult">nothing yet</div>
+    <div id="stateIndicator"></div>
+  </div>
+  <lively-resizer></lively-resizer>
+  
+  <div class="overlay">
+    <button id="close"><i class="fa fa-close" title="redo stroke" aria-hidden="true"></i></button>
+    <div id="leftPorts">
+      <button><i class="fa fa-bars" title="view stuff" aria-hidden="true"></i></button>
+      <button><i class="fa fa-bars" title="view stuff" aria-hidden="true"></i></button>
+    </div>
+    <div id="rightPorts">
+      <button><i class="fa fa-eye" title="view stuff" aria-hidden="true"></i></button>
+      <button><i class="fa fa-eye" title="view stuff" aria-hidden="true"></i></button>
+      <button><i class="fa fa-eye" title="view stuff" aria-hidden="true"></i></button>
+    </div>
+    <div id="bottomPorts">
+      <button><i class="fa fa-eye" title="view stuff" aria-hidden="true"></i></button>
+      <button><i class="fa fa-eye" title="view stuff" aria-hidden="true"></i></button>
+    </div>
+  </div>
+  
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+
+ 

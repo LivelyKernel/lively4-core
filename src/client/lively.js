@@ -30,6 +30,10 @@ import Selection from 'templates/lively-selection.js'
 import windows from "templates/lively-window.js"
 
 
+import boundEval from "src/client/code-evaluation/bound-eval.js"
+
+
+
 let $ = window.$; // known global variables.
 
 // a) Special shorthands for interactive development
@@ -76,6 +80,15 @@ export default class Lively {
     return window.location = url;
   }
 
+  static findDependedModules(path) {
+     var mod = System.normalizeSync(path);
+     return Object.values(System.loads)
+      .filter( ea => 
+        ea.dependencies.find(dep => System.normalizeSync(dep, ea.key) == mod))
+      .map( ea => ea.key)
+  }
+
+
   static async reloadModule(path) {
     path = "" + path;
     var changedModule = System.normalizeSync(path);
@@ -95,14 +108,13 @@ export default class Lively {
       // }
       
       // Find all modules that depend on me
-      var dependedModules = Object.values(System.loads).filter( ea => 
-        ea.dependencies.find(dep => System.normalizeSync(dep, ea.key) == changedModule))
+      var dependedModules = lively.findDependedModules(path)
       // and update them
       for(var ea of dependedModules) {
-        modulePaths.push(ea.key)
-        console.log("reload " + path + " triggers reload of " + ea.key)
-        System.registry.delete(ea.key)  
-        System.import(ea.key)
+        modulePaths.push(ea)
+        console.log("reload " + path + " triggers reload of " + ea)
+        System.registry.delete(ea)  
+        System.import(ea)
       }
       return m
     }).then( mod => {
@@ -319,26 +331,11 @@ export default class Lively {
     });
   }
 
+
   static boundEval(str, ctx) {
-    // just a hack... to get rid of some async....
-    // #TODO make this more general
-    // works: await new Promise((r) => r(3))
-    // does not work yet: console.log(await new Promise((r) => r(3)))
-    // if (str.match(/^await /)) {
-    //   str = "(async () => window._ = " + str +")()"
-    // }
-
-    // #Hack #Hammer #Jens Wrap and Unwrap code into function to preserve "this"
-    var transpiledSource = babel.transform('(function(){/*lively.code.start*/' + str+'})').code
-        .replace(/^(?:[\s\n]*["']use strict["'];[\s\n]*)([\S\s]*?)(?:\(function\s*\(\)\s*\{\s*\/\*lively.code.start\*\/)/, "$1") // strip prefix
-        .replace(/\}\);[\s\n]*$/,""); // strip postfix
-
-    console.log("code: " + transpiledSource);
-    console.log("context: " + ctx);
-    var interactiveEval = function interactiveEval(code) {
-      return eval(code);
-    };
-    return interactiveEval.call(ctx, transpiledSource);
+    // #TODO refactor away
+    // lively.notify("lively.boundEval is depricated")
+    return eval(str)
   }
 
   static pt(x,y) {
@@ -356,6 +353,7 @@ export default class Lively {
       // obj.style.top = "" + ((obj.style.top || 0) - deltay) + "px";
       obj.style.left = ""+  point.x + "px";
       obj.style.top = "" +  point.y + "px";
+      obj.dispatchEvent(new CustomEvent("position-changed"))
   }
   
   
@@ -368,6 +366,7 @@ export default class Lively {
     if (obj.style) {
       pos = pt(parseFloat(obj.style.left), parseFloat(obj.style.top));
     }
+    // #TODO #Idea use getComputedStyle get rid of jQuery flallback in getPosition
     if (isNaN(pos.x) || isNaN(pos.y)) {
       pos = $(obj).position(); // fallback to jQuery...
       pos = pt(pos.left, pos.top);
@@ -379,13 +378,15 @@ export default class Lively {
     if (node === window) {
       return pt(window.innerWidth, window.innerHeight)
     }
-    var bounds = node.getBoundingClientRect()
-    return pt(bounds.width, bounds.height)
+    // using the getBoundingClientRect produces the wrong extent
+    var style = getComputedStyle(node); 
+    return pt(parseFloat(style.width), parseFloat(style.height))
   }
   
   static  setExtent(node, extent) {
     node.style.width = '' + extent.x + 'px';
     node.style.height = '' + extent.y + 'px';
+    node.dispatchEvent(new CustomEvent("extent-changed"))
   }
 
   static  getGlobalPosition(node) {
@@ -410,6 +411,18 @@ export default class Lively {
   static moveBy(node, delta) {
     this.setPosition(node, this.getPosition(node).addPt(delta))
   }
+
+  static  getBounds(node) {
+    var pos = lively.getPosition(node)
+    var extent = lively.getExtent(node)
+    return rect(pos, pos.addPt(extent))
+  }
+
+  static  setBounds(node, bounds) {
+    lively.setPosition(node, bounds.topLeft())
+    lively.setExtent(node, bounds.extent())
+  }
+
 
   static  getGlobalBounds(node) {
     var bounds = node.getBoundingClientRect()
@@ -737,9 +750,41 @@ export default class Lively {
 
     });
   }
+  
+  static showInfoBox(target) {
+    var info = document.createElement("div")
+    info.classList.add("draginfo")
+    info.target = target
+    info.isMetaNode = true
+    info.style.width = "300px"
+    info.style['pointer-events'] = "none";
+    info.setAttribute("data-is-meta", "true");
+    info.style.color = "darkblue"
+    info.update = function() {
+      lively.setGlobalPosition(this, lively.getGlobalPosition(this.target).subPt(pt(0, 20)))
+    }
+    info.style['z-index'] = 10000
+    info.update()
+    lively.addEventListener("ShowInfoBox", target, "position-changed", () => {
+      info.update()
+    })
+    info.stop = function() {
+      this.remove()
+      lively.removeEventListener("ShowInfoBox", target, "position-changed")
+    }
+
+    document.body.appendChild(info)
+    return info
+  }
+
 
   static showPoint(point) {
     return this.showRect(point, pt(5,5))
+  }
+
+  static showEvent(evt) {
+    var r = lively.showPoint(pt(evt.clientX, evt.clientY))
+    r.style.backgroundColor = "rgba(100,100,255,05)"
   }
 
   static showRect(point, extent) {
@@ -771,9 +816,9 @@ export default class Lively {
     return comp
   }
 
-  static showPath(path, color) {
-    if (!path || path.length < 1) return
-   
+  static showPath(path, color, printArrow) {
+    if (!path || path.length < 1) return;
+    if (printArrow === undefined) printArrow = true;
    
     color = color || "red"
 
@@ -801,7 +846,9 @@ export default class Lively {
       </defs>`;
     
     comp.innerHTML = defs + `<path stroke='${color}' d='${dpath}' 
-      style='marker-end: url(#markerArrow);'></path>`
+      style='${ 
+        printArrow ? 'marker-end: url(#markerArrow);' : ""
+      }'></path>`
 
     document.body.appendChild(comp);
     lively.setGlobalPosition(comp, pt(0,0));

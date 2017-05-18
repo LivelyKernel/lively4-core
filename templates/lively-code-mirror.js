@@ -43,11 +43,11 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   initialize() {
-   
   }
   
   async attachedCallback() {
-    if (this.editor) return;
+    if (this.isLoading || this.editor ) return;
+    this.isLoading = true
     this.root = this.shadowRoot // used in code mirror to find current element
     
     var text = this.childNodes[0];
@@ -81,7 +81,8 @@ export default class LivelyCodeMirror extends HTMLElement {
         this.doSave(this.editor.getValue());
       },
     });
-    this.editor.doc.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))    
+    this.editor.doc.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))
+    this.isLoading = false
     this.dispatchEvent(new CustomEvent("editor-loaded"))
   };
 
@@ -205,11 +206,19 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   get value() {
-    return this.editor && this.editor.getValue()  
+    if (this.editor) {
+      return this.editor.getValue()
+    } else {
+      return this._value
+    }
   }
 
   set value(text) {
-    return this.editor && this.editor.setValue(text) 
+    if (this.editor) {
+      this.editor.setValue(text)
+    } else {
+      this._value = text
+    }
   }
   
   setCustomStyle(source) {

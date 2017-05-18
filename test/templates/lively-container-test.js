@@ -1,4 +1,3 @@
-import Sync from '../../templates/lively-sync.js';
 import {expect} from '../../node_modules/chai/chai.js';
 import {loadComponent} from './templates-fixture.js';
 

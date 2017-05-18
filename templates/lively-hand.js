@@ -11,18 +11,21 @@ export default class LivelyHand extends Morph {
   
   initialize() {
     this.setAttribute("data-lively4-donotpersist","all");
-
-    lively.removeEventListener("Hand", document.body.parentElement)
-    lively.addEventListener("Hand", document.body.parentElement, "pointerdown", 
+    lively.removeEventListener("Hand", this.outerWorldContext())
+    lively.addEventListener("Hand", this.outerWorldContext(), "pointerdown", 
       e => this.onPointerDown(e))
   }
-  
+
+  outerWorldContext() {
+    var world = this.worldContext()
+    return world.isWorld ? 
+     world :
+     document.body.parentElement
+  }
+
+
   worldContext() {
     return this.parentNode || document.body
-  }
-  
-  toString() {
-   return "[LivelyHand]" 
   }
   
   grab(element) {
@@ -42,7 +45,8 @@ export default class LivelyHand extends Morph {
   } 
 
   elementUnderHand(evt) {
-    var path = evt.path
+    
+    var path = evt.path.slice(evt.path.indexOf(evt.srcElement))
         .filter(ea => ! Selecting.isIgnoredOnMagnify(ea))
     return path[0]
   }
@@ -64,6 +68,8 @@ export default class LivelyHand extends Morph {
   onPointerDown(evt) {
     // document.body.parentElement.setPointerCapture(evt.pointerId)
     if (evt.altKey) {
+    window.LastEvent2 = evt
+
       var target = this.elementUnderHand(evt)
       if (!target) return;
       // lively.notify("grab this" + target)
@@ -85,16 +91,26 @@ export default class LivelyHand extends Morph {
     lively.setGlobalPosition(this, pt(evt.clientX, evt.clientY))
   }
  
-
   onPointerUp(evt) {
+    if (this.dropIndicator) this.dropIndicator.remove()
+
     // document.body.parentElement.releasePointerCapture(evt.pointerId)
     lively.removeEventListener("Hand", document.body.parentElement, "pointermove")
     lively.removeEventListener("Hand", document.body.parentElement, "pointerup")
     this.drop()
     this.style.display = "none"
-
   }
- 
- 
+
+  static migrate() {
+    var hand = document.body.querySelector(":scope > lively-hand")
+    if (hand) {
+      hand.remove()
+      lively.hand // lazy... reinitialize
+    }
+  }
   
 }
+
+LivelyHand.migrate()
+
+

@@ -57,4 +57,8 @@ export default class Morph extends HTMLDivElement {
       return m;
     });
   }
+  
+  toString() {
+    return "[" + this.constructor.name + "]"
+  }
 }

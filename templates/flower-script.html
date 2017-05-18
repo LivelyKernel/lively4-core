@@ -1,0 +1,63 @@
+<template id="flower-script" data-class="FlowerScript">
+<!--
+  This is a "Flower" clone... which was a clone of "A summer wasted" which was clone of some livley fabrik ideas. Or something like this.
+-->
+
+<style type="text/css">
+  :host {
+    border: 2px solid gray;
+    padding: 10px;
+    border-radius: 10px;
+    background: rgb(230,230,230);
+  }
+  
+  #pane {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+  
+  #input, #output {
+    background-color: rgb(240,240,240);
+    height: 20px;
+    margin: 0;
+    padding: 5px;
+    font-style:italic;
+    color: gray;
+    position: absolute;
+    font-size: 8px;
+    overflow: hidden;
+    width: 15px;
+    height 15px;
+    z-index: 100;
+  }
+  
+  #input {
+    top: 0px;
+    left: 0px;
+    background-color: rgba(100,100,150, 0.5);
+  }
+  #output {
+    bottom: 0px;
+    left: 0px;
+    background-color: rgba(100,150,100, 0.5);
+  }
+  
+  
+  #editor {
+    flex: 1;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+</style>
+<div id="pane">
+  <flower-values id="input"></flower-values>
+  <lively-code-mirror id="editor"></lively-code-mirror>
+  <flower-values id="output"></flower-values>
+</div>
+<lively-resizer></lively-resizer>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

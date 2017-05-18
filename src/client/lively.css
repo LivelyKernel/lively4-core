@@ -1,13 +1,39 @@
-  html, body {
-    margin: 0;
-    padding: 0;
-    font-family: sans-serif;
-  }
-  h1 {
-    color: #2B65EC;
-  }
-  /*
-  ::-webkit-scrollbar { 
-    display: none; 
-  }
-  */
+/*
+ * #TODO hook css auto loading into lively-container
+ lively.loadCSSThroughDOM("LivelyCSS", "https://lively-kernel.org/lively4/lively4-jens/src/client/lively.css")
+ */
+
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+}
+h1 {
+  color: #2B65EC;
+}
+/*
+::-webkit-scrollbar { 
+  display: none; 
+}
+*/
+
+lively-table table, lively-table tr, lively-table  th, lively-table  td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+ 
+lively-table .table-selected {
+  margin: -2px;
+  border: 2px solid blue;
+  border-collapse: collapse;
+  background-color: rgba(100,100,200,0.3);
+  
+}
+
+lively-table .start-selection {
+  margin: -2px;
+  border: 2px solid blue;
+  border-collapse: collapse;
+  background-color: rgba(100,100,200,0.1);
+}

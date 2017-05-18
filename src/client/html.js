@@ -103,6 +103,11 @@ export default class HTML {
   static registerKeys(obj, domain, target, stopAndPreventDefault) {
     domain = domain || "Keys"
     target = target || obj
+    
+    if (!target || !target.getAttribute) return;
+    if (target.getAttribute("tabindex") === null) {
+      target.setAttribute("tabindex", 0)
+    }
     lively.addEventListener(domain, obj, "keydown", evt => {
       KeyboardHandler.dispatchKey(evt, target, "Down", stopAndPreventDefault)
     })
@@ -111,6 +116,17 @@ export default class HTML {
     })
   }
   
+  
+  static registerDrag(obj, domain, target) {
+    target.draggable=true; 
+    lively.removeEventListener(domain, target);
+    lively.addEventListener(domain, target, "dragstart", 
+      evt => obj.onDragStart && obj.onDragStart(evt));
+    lively.addEventListener(domain, target, "drag", 
+      evt => obj.onDrag && obj.onDrag(evt));
+    lively.addEventListener(domain, target, "dragend", 
+      evt => obj.onDragEnd && obj.onDragEnd(evt));
+  }
        
   
   static registerInputs(parent) {

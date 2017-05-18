@@ -360,6 +360,10 @@ export default class Inspector   extends Morph {
   }
 
   inspect(obj) {
+    if (!obj) {
+      return 
+    }
+    
     if (obj.id) {
       this.setAttribute("target", "#" + obj.id);
     }
@@ -402,11 +406,15 @@ export default class Inspector   extends Morph {
   hideWorkspace() {
     this.get("#container").style.flex = 1
     this.get("#editor").style.display = "none"
+    this.get("lively-separator").style.display = "none"
+
   }
 
   showWorkspace() {
     this.get("#container").style.flex = 0.66
     this.get("#editor").style.display = "block"
+    this.get("lively-separator").style.display = "block"
+
   }
   
   
