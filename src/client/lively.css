@@ -19,17 +19,20 @@ h1 {
 */
 
 lively-table table, lively-table tr, lively-table  th, lively-table  td {
-  border: 1px solid black;
+  border: 1px solid gray;
   border-collapse: collapse;
 }
  
 lively-table .table-selected {
-  margin: -2px;
-  border: 2px solid blue;
+  margin: -1px;
   border-collapse: collapse;
-  background-color: rgba(100,100,200,0.3);
+  background-color: rgba(190,190,190,0.3);
+  border: 1px solid gray;
   
 }
+
+
+
 
 lively-table .start-selection {
   margin: -2px;

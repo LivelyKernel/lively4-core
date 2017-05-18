@@ -31,14 +31,14 @@ describe("LivelyTable Component",  () => {
       expect(that.querySelectorAll("td").length).to.equal(2)
       done()
     });
-    it("should get contents as array", done => {
+    it("should set contents as array", done => {
       that.setFromArray([["hello", "world"],["one", "two"]])
       var a = that.asArray()
       expect(a[0][0]).to.equal("hello")
       expect(a.length).to.equal(2)
       done()
     });
-    it("should get contents as array at position", done => {
+    it("should set contents as array at position", done => {
       that.setFromArray([[1, 2, 3, 4],["a", "b", "c", "d"],["A", "B", "C", "D"]])
       that.setFromArrayAt([["hello", "world"],["one", "two"]], 1,1)
       var a = that.asArray()
@@ -47,6 +47,16 @@ describe("LivelyTable Component",  () => {
       expect(a[2][1]).to.equal("one")
       done()
     });
+
+    it("should set contents as array at position amd keep cell elements", done => {
+      that.setFromArray([[1, 2, 3, 4],["a", "b", "c", "d"],["A", "B", "C", "D"]])
+      var cellA = that.cellAt(0,0)
+      that.setFromArrayAt([["hello", "world"],["one", "two"]], 1,1)
+      var cellB = that.cellAt(0,0)
+      expect(cellA).to.equal(cellB)
+      done()
+    });
+
   })
 
   describe("JSO",  () => {
@@ -196,7 +206,8 @@ describe("LivelyTable Component",  () => {
       done()
     });
   })
-  
+
+
   after("cleanup", () => {
     testWorld().innerHTML = "";
   });
