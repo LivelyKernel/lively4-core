@@ -4,10 +4,32 @@ import CommandHistory  from "src/client/command-history.js";
 import paper from "src/external/paperjs/paper-core.js";
 import {pt} from "src/client/graphics.js";
 
-// window.paper = paper;
+import _ from "src/external/underscore.js"
+
+const debouncedObjects = new WeakMap();
+function debounceMember(that, func, ...args) {
+  if(!debouncedObjects.has(that)) {
+    debouncedObjects.set(that, new Map());
+  }
+  let debouncedObject = debouncedObjects.get(that);
+  if(debouncedObject.has(func)) {
+    clearTimeout(debouncedObject.get(func));
+  }
+  
+  let clearId = setTimeout(() => {
+    that[func](...args);
+  }, 1000);
+  debouncedObject.set(func, clearId);
+}
 
 export default class LivelyDrawboard extends Morph {
   
+  initSVGInteraction() {
+    lively.addEventListener("drawboard", this.svg, "pointerdown", 
+      (e) => this.onPointerDown(e));
+    lively.addEventListener("drawboard", this.svg, "pointerup", 
+      (e) => this.onPointerUp(e));
+  }
   
   // Lively Window API
   get isWindow() {
@@ -54,19 +76,22 @@ export default class LivelyDrawboard extends Morph {
   
   get paper() {
     if (!this._paper) {
-      paper.setup(document.createElement("canvas"))
-      this._paper = paper
+      paper.setup(document.createElement("canvas"));
+      this._paper = paper;
     }
-    return this._paper
+    return this._paper;
   }
   
   initialize() {
+    this.resetWindowTitle();
+
     this.lastPath = new Object();
 
     var svg = this.get("#svg");
     if (!svg) {
       svg =  document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.id = "svg"
+      svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      svg.id = "svg";
       svg.style = `position: absolute;
         top: 0px;
         left: 0px;
@@ -74,11 +99,11 @@ export default class LivelyDrawboard extends Morph {
         height: 100%;
         border: none;
         opacity: 1;
-        touch-action: none;`
-      this.appendChild(svg)
+        touch-action: none;`;
+      this.appendChild(svg);
     }
     
-    svg.setAttribute("data-is-meta", true)
+    svg.setAttribute("data-is-meta", true);
     
     // we cannot disable the events here, because we need them for drawing
     // the downside is, that the SVG element shows up in the Halo
@@ -87,10 +112,7 @@ export default class LivelyDrawboard extends Morph {
     
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
 
-    lively.addEventListener("drawboard", this.svg, "pointerdown", 
-      (e) => this.onPointerDown(e));
-    lively.addEventListener("drawboard", this.svg, "pointerup", 
-      (e) => this.onPointerUp(e));
+    this.initSVGInteraction();
     lively.addEventListener("drawboard", this, "extent-changed", 
       (e) => this.onExtentChanged(e));
     lively.addEventListener("drawboard", this, "focus", 
@@ -113,42 +135,48 @@ export default class LivelyDrawboard extends Morph {
     lively.addEventListener("dragboard", this.get('#controls'), "dragend", 
       (e) => this.onDragEnd(e));  
 
+    /*
+    var input = this.get("#file-path");
+    $(input).keyup(event => {
+      if (event.keyCode == 13) { // ENTER
+        this.onPathEntered(input.value);
+      }
+    });
+    */
 
     
-    this.color = "black"
+    this.color = "black";
     
-    this.updateCanvasExtent()
-    this.observeHTMLChanges()
+    this.updateCanvasExtent();
+    this.observeHTMLChanges();
    
-    this.get("#backgroundColor").value = this.background
-    this.get("#penColor").value = this.color
-    this.get("#penSize").value = this.penSize
+    this.get("#backgroundColor").value = this.background;
+    this.get("#penColor").value = this.color;
+    this.get("#penSize").value = this.penSize;
    
     this.strokes = new CommandHistory();
-    lively.html.registerButtons(this)
+    lively.html.registerButtons(this);
     
-    this.get("lively-resizer").target = this // shadow root cannot look outside
+    this.get("lively-resizer").target = this; // shadow root cannot look outside
     
-    this.setAttribute("tabindex", 0)
+    this.setAttribute("tabindex", 0);
   }
   
   attachedCallback() {
     if (this.parentElement.isWindow) {
-      this.fixedControls = true 
-      this.get("#controls").hidden =false 
-      this.get("lively-resizer").hidden = true
+      this.fixedControls = true;
+      this.get("#controls").hidden = false ;
+      this.get("lively-resizer").hidden = true;
     } else {
-      this.get('#controls').draggable = false
-      this.fixedControls = false 
-      this.get("lively-resizer").hidden = false
+      this.get('#controls').draggable = false;
+      this.fixedControls = false;
+      this.get("lively-resizer").hidden = false;
     }
-    setTimeout(() => {
-       this.updateCanvasExtent()  
-    }, 1000)
+    setTimeout(() => this.updateCanvasExtent(), 1000);
   }
   
   onExtentChanged() {
-    this.updateCanvasExtent()
+    this.updateCanvasExtent();
   }
   
   updateCanvasExtent() {
@@ -204,7 +232,7 @@ export default class LivelyDrawboard extends Morph {
     }
 
     if ((evt.pointerType == "mouse" && evt.button == 2) 
-        || evt.ctrlKey 
+        || evt.ctrlKey
         || ContextMenu.visible()) {
       // context menu
       return;
@@ -358,7 +386,8 @@ export default class LivelyDrawboard extends Morph {
         }
       }
       this.strokes.addCommand(command)
-    }    
+    }
+    debounceMember(this, "saveSVG");
   }
   
   simplifyPath(path) {
@@ -500,12 +529,70 @@ export default class LivelyDrawboard extends Morph {
     if (this.fixedControls) return
     
   }
-  
-  
-  livelyMigrate(other) {
 
+  async onLoadFile() {
+    let fileName = window.prompt('Load the following file:', 'https://lively4/dropbox/_test.svg');
+    if(!fileName) { return; }
+
+    this.svg && this.svg.remove();
+    
+    let s = await fetch(fileName);
+    let svgString = await s.text();
+    
+    // svgString to html element
+    let div = document.createElement('div');
+    div.innerHTML = svgString;
+    this.appendChild(div.firstChild);
+    
+    this.initSVGInteraction();
+    this.setAutosaveTarget(fileName);
+    this.strokes.clear();
   }
   
+  setAutosaveTarget(fileName) {
+    this.autosaveTo = fileName;
+
+    this.resetWindowTitle();
+    this.windowTitle += ": " + fileName;
+  }
+  
+  resetWindowTitle() {
+    this.windowTitle = "Draw Board";
+  }
+  
+  onActivateSave() {
+    let fileName = window.prompt('Choose file to sync with:', 'https://lively4/dropbox/_test.svg');
+    this.autosaveTo = undefined;
+    this.resetWindowTitle();
+    
+    if(fileName) {
+      this.setAutosaveTarget(fileName);
+      this.saveSVG();
+    }
+  }
+  
+  async saveSVG() {
+    let urlString = this.autosaveTo;
+
+    if(!urlString || urlString === '') { return; }
+    
+    let svg = this.get('#svg').outerHTML;
+    
+    try {
+      new URL(urlString);
+      await lively.files.saveFile(urlString, svg);
+      lively.notify("saved drawboard", urlString);
+    } catch(err) {
+      lively.notify(err);
+    }
+  }
+
+  livelyMigrate(other) {
+    // TODO: should include:
+    // - strokes
+    // - autosave path
+    // (- history)
+  }
 }
       
 
