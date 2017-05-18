@@ -134,6 +134,7 @@ export default class ContextMenu {
       ] : [
       Preferences.shortDescription(preferenceKey), async () => {
         Preferences.enable(preferenceKey)
+        this.hide()
       }, "",  '<i class="fa fa-square-o" aria-hidden="true"></i>'
     ]
   }

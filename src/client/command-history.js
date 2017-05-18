@@ -2,8 +2,7 @@
 export default class CommandHistory {
   
   constructor() {
-    this.stack = [];
-    this.undoIndex = null;
+    this.clear();
   }
   
   addCommand(command) {
@@ -32,5 +31,10 @@ export default class CommandHistory {
     if(cmd) { 
       cmd.execute();
     }
+  }
+  
+  clear() {
+    this.stack = [];
+    this.undoIndex = null;
   }
 }

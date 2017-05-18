@@ -51,6 +51,16 @@ var exportmodules = [
   "windows"
 ];
 
+class LivelyNotification {
+  constructor(data) {
+    this.data = data;
+  }
+  
+  displayOnConsole() {
+    console.log('%cLively Notification', "color: gray; font-size: x-small", this.data);
+  }
+}
+
 /*
  * The "lively" module is currently the kitchen-sink of this environment.
  * 
@@ -269,6 +279,23 @@ export default class Lively {
   static array(anyList){
     return Array.prototype.slice.call(anyList);
   }
+
+  static asUL(anyList){
+    var ul = document.createElement("ul")
+    ul.style.minWidth = "50px"
+    ul.style.minHeight = "50px"
+    ul.style.backgroundColor = "gray"
+    
+    anyList.forEach(ea => {
+      var item = document.createElement("li")
+      item.textContent = ea
+      item.value = ea
+      ul.appendChild(item)
+    })
+
+    return ul
+  }
+
 
   static openWorkspace(string, pos, worldContext) {
     string = string || "";
@@ -508,7 +535,7 @@ export default class Lively {
     }
     // #TODO make native notifications opitional?
     // this.nativeNotify(title, text, timeout, cb) 
-    console.log("Note: " + title + "\n" + text);
+    new LivelyNotification({ title, text }).displayOnConsole();
 
     var notificationList = document.querySelector("lively-notification-list")
 
@@ -522,15 +549,17 @@ export default class Lively {
     } else {
       
       var duplicateNotification = lively.array(document.querySelectorAll("lively-notification")).find(ea => {
-        console.log("ea title: " + title + " text: " + text)
+        new LivelyNotification({ "ea title": title, text }).displayOnConsole();
+
         return ("" +ea.title == ""+title) && ("" + ea.message == "" +text)
-      })
-      console.log("title: " + title + " text: " + text + " duplicate: " + duplicateNotification)
+      });
+      new LivelyNotification({ title, text, " duplicate": duplicateNotification }).displayOnConsole();
 
       if (duplicateNotification) {
       	duplicateNotification.counter++
       	duplicateNotification.render()
-        console.log(title  + ":" + text);
+        new LivelyNotification({ title, text }).displayOnConsole();
+
       } else {
         notificationList.addNotification(title, text, timeout, cb, color);
       }
@@ -861,7 +890,7 @@ export default class Lively {
     if (className) {
       // className = "LivelyFooBar"
       let baseName = this.templateClassNameToTemplateName(className);
-      var module= await System.import(lively4url +'/templates/' + baseName +".js");
+      var module = await System.import(lively4url +'/templates/' + baseName +".js");
       proto =  Object.create(module.prototype || module.default.prototype);
     }
     components.register(template.id, clone, proto);

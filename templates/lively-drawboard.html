@@ -57,37 +57,28 @@
     vertical-align: top
   }
   
-  #recognizedResult {
+  #file-path {
     display: inline-block;
-    vertical-align: top
+    vertical-align: bottom
   }
-  
-  #stateIndicator {
-    position:absolute;
-    z-index: 2000;
-    background-color: rgba(122,120,120,0.9);
-    top: 0px;
-    right: 0px;
-    margin: 0px;
-    padding: 0px;
-    width: 10px;
-    height: 10px;
-  }
-  
+
   </style>
   <content></content>
   
   <div id="controls">
-    <button id="undoStroke">
+    <button id="v">
       <i class="fa fa-arrow-left" title="undo stroke" aria-hidden="true"></i></button>
     <button id="redoStroke">
       <i class="fa fa-arrow-right" title="redo stroke" aria-hidden="true"></i></button>
     <lively-crayoncolors id="backgroundColor" title="background"></lively-crayoncolors>
     <lively-crayoncolors id="penColor" title="pen"></lively-crayoncolors>
     <lively-penchooser id="penSize"></lively-penchooser>
-    <div id="recognizedResult">nothing yet</div>
+    <button id="loadFile"><i class="fa fa-file-o" title="load file and active automatic save" aria-hidden="true"></i></button>
+    <button id="activateSave"><i class="fa fa-save" title="activate automatic save" aria-hidden="true"></i></button>
+    <!--
+      <input type="text" id="file-path" placeholder="File path" value="" />
+    -->
     <button id="close"><i class="fa fa-close" title="redo stroke" aria-hidden="true"></i></button>
-    <div id="stateIndicator"></div>
   </div>
   <lively-resizer></lively-resizer>
   
