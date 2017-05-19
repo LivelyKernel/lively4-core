@@ -4,8 +4,8 @@ import d3 from 'src/external/d3.v4.js';
 
 import loadDropbox from 'src/client/triples/triples.js';
 
-//const MIN_MAGNIFICATION = 0.01;
-//const MAX_MAGNIFICATION = 4;
+const MIN_MAGNIFICATION = 0.01;
+const MAX_MAGNIFICATION = 4;
 
 class Node {
   constructor(label) {
@@ -23,13 +23,15 @@ export default class TripleNotes extends Morph {
   initialize() {
     this.windowTitle = "Triple Notes";
     
+    let parentElement = this.get('#graph');
     var width,height;
     var chartWidth, chartHeight;
     var margin;
-    var svg = d3.select(this.get('#graph'))
+    var svg = d3.select(parentElement)
       .append("svg");
-    var chartLayer = svg;//.append("g").classed("chartLayer", true);
+    var graphContainer = svg.append("g").classed("graphContainer", true);
 
+    setSize();
     main.call(this);
 			
     function getNodes(graph) {
@@ -62,27 +64,35 @@ export default class TripleNotes extends Morph {
             links        
         }
         
-        setSize.call(this, data);
         drawChart(data);
     }
     
-    function setSize(data) {
-        width = this.get("#graph").clientWidth;
-        height = this.get("#graph").clientHeight;
+    function setSize() {
+        width = parentElement.clientWidth;
+        height = parentElement.clientHeight;
         margin = {top:0, left:0, bottom:0, right:0 };
         
         
         chartWidth = width - (margin.left+margin.right)
         chartHeight = height - (margin.top+margin.bottom)
         
-        //chartLayer.attr("width", width).attr("height", height)
+        //graphContainer.attr("width", width).attr("height", height)
         
-        chartLayer
+        svg
             .attr("width", chartWidth)
             .attr("height", chartHeight)
             //.call(zoom)
             .attr("transform", "translate("+[margin.left, margin.top]+")")
     }
+    
+    function zoomed() {
+      graphContainer.attr("transform", d3.event.transform);
+    }
+    let zoom = d3.zoom()
+			.duration(150)
+	    	.scaleExtent([MIN_MAGNIFICATION, MAX_MAGNIFICATION])
+      .on("zoom", zoomed);
+    svg.call(zoom);
     
     function drawChart(data) {
         
@@ -94,13 +104,13 @@ export default class TripleNotes extends Morph {
             .force("y", d3.forceY(0))
             .force("x", d3.forceX(0))
     
-        let linkContainer = chartLayer.append("g").classed("linkContainer", true);
+        let linkContainer = graphContainer.append("g").classed("linkContainer", true);
         var link = linkContainer.selectAll("line")
             .data(data.links).enter()
             .append("line")
             .attr("stroke", "black")
         
-        let nodeContainer = chartLayer.append("g").classed("nodeContainer", true);
+        let nodeContainer = graphContainer.append("g").classed("nodeContainer", true);
         let node = nodeContainer.selectAll(".node")
           .data(data.nodes).enter()
           .append("g")

@@ -34,6 +34,12 @@ class Triple extends Knot {
     super(fileName, JSON.parse(content));
   }
   
+  label() {
+    if(this.predicate) {
+      return 't:' + this.predicate.label();
+    }
+    return this.filename.replace('.triple.json', '');
+  }
   isTriple() { return true; }
 }
 
@@ -90,7 +96,6 @@ class LateBoundReference {
 export default async function loadDropbox(directory) {
   let directoryURL = new URL(directory);
   let text = await cachedFetch(directory, { method: 'OPTIONS' });
-  lively.notify(text);
   let json = JSON.parse(text);
   let fileDescriptors = json.contents;
   fileDescriptors = fileDescriptors.filter(desc => desc.type === "file");
