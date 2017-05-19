@@ -406,14 +406,14 @@ export default class AceEditor extends Morph {
 
   printResult(result) {
     var editor = this.editor;
-    var text = result
+    var text = result;
     var fromSel =  editor.getSelectionRange().end;
-    editor.selection.moveCursorToPosition(fromSel)
+    editor.selection.moveCursorToPosition(fromSel);
     editor.selection.clearSelection() // don't replace existing selection
-    editor.insert(text)
+    editor.insert(text);
     var toSel =  editor.getSelectionRange().start;
-    editor.selection.moveCursorToPosition(fromSel)
-    editor.selection.selectToPosition(toSel)
+    editor.selection.moveCursorToPosition(fromSel);
+    editor.selection.selectToPosition(toSel);
   }
 
  async tryBoundEval(str, printResult) {
@@ -442,6 +442,8 @@ export default class AceEditor extends Morph {
     }
     
     if (printResult) {
+      console.log("%cPrintIt", "color: gray; font-size: x-small", result);
+      
       // alaways wait on promises.. when interactively working...
       if (result && result.then) { 
         // we will definitly return a promise on which we can wait here
