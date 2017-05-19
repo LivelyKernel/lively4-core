@@ -24,97 +24,22 @@ export default class LivelyTable extends Morph {
     return cell.tagName == "TD" || cell.tagName == "TH"
   }
   
-  onMouseDown(evt) {
-    
-    var cell = evt.path[0]
-    if(cell === this.currentCell) return;
-    
-    if (cell !== this.currentCell) {
-      this.clearSelection(true)
-      this.selectCell(cell)
-    }
-      
-    lively.addEventListener("LivelyTable", document.body, "mousemove", 
-      evt => this.onMouseMove(evt))
-    lively.addEventListener("LivelyTable", document.body, "mouseup", 
-      evt => this.onMouseUp(evt))
-    
-    // evt.stopPropagation()
-    evt.preventDefault()
-    
-    lively.notify("mouse down")
-
-  }
-  
-  onMouseMove(evt) {
-    var cell =evt.path[0];
-    if (this.isCell(cell)) {
-      if (cell === this.currentCell) return;
-    
-      this.clearSelection(true)
-
-      var column = this.columnOfCell(cell)
-      var row = this.rowOfCell(cell)
-
-      
-      this.changeSelectionBetween(
-          this.startColumnIndex, column,
-          this.startRowIndex, row)
-      
-      
-      lively.notify("mouse move")
-
-    }
-
-  }
-
-
-  onMouseUp(evt) {
-    lively.removeEventListener("LivelyTable", document.body, "mousemove")
-    lively.removeEventListener("LivelyTable", document.body, "mouseup")
-
-     
-    var cell = evt.path[0];
-    if (cell === this.currentCell) return;
-    
-    // var sel = window.getSelection();
-    // sel.removeAllRanges();
-    // var range = document.createRange();
-    // this.currentCell.focus()
-    // range.selectNodeContents(this.currentCell);  
-    // sel.addRange(range);
-  }
-
-  onClick(evt) {
-    // var cell = evt.path[0];
-    // if (cell === this.currentCell) return 
-    lively.notify("click")
-
-
-    if (this.currentCell === evt.srcElement) {
-      this.currentCell.contentEditable = true; // edit only on second click into selection
-    } else {
-      this.selectCell(evt.srcElement)
-    } 
-    
-    this.setFocusAndTextSelection(evt.srcElmenet)
-
-    evt.stopPropagation()
-    evt.preventDefault()
-  }  
+   
   
   setFocusAndTextSelection(element) {
     if (!element) return;
+    this.querySelectorAll("td").forEach(ea => {
+      ea.classList.remove("editing")
+      ea.contentEditable = false
+    })
+
     element.contentEditable = true
     element.focus()
     var sel = window.getSelection();
     sel.selectAllChildren(element)
     
   }
-  
-  
-  
-  
+
   livelyExample() {
     this.setFromArray([
       ['A','B','C','D','E'],
@@ -150,14 +75,12 @@ export default class LivelyTable extends Morph {
     return this.rows().indexOf(row)
   }
 
-  
   clearSelection(doNotClearStart) {
     if (this.currentCell) {
       this.currentCell.contentEditable = false
       this.currentCell.classList.remove("table-selected")
     }
     if (!doNotClearStart) {
-    
       this.currentCell = undefined
       this.currentRow = undefined
       this.currentRowIndex = undefined
@@ -221,11 +144,7 @@ export default class LivelyTable extends Morph {
       this.startRowIndex = rows.indexOf(row)
       this.startColumnIndex = rowCells.indexOf(element)
       this.startCell.classList.add("start-selection")
-      
     }
-    
-   
-    
   }
 
 
@@ -285,78 +204,160 @@ export default class LivelyTable extends Morph {
     }
   }
   
-  onEnterDown(evt) {
-    if (evt.srcElement != this) return
-    if (!this.currentCell) return
-    
-    var cell = this.currentCell
-    this.clearSelection()
-    this.selectCell(cell)
-    this.currentCell.contentEditable = true
-    this.currentCell.focus()
-    
-    // set text selection
+  
+  setTextSelectionOfCellContents(cell) {
     var range = document.createRange();
     var sel = window.getSelection();
     try {
       // #TODO find a more correct way to set selection.... 
-      range.setStart(this.currentCell, 0);
+      range.setStart(cell, 0);
       // I have problems setting this to the end... so lets go as far as we can in small steps
-      for(var i=0; i <= this.currentCell.textContent.length; i++) {
-        range.setStart(this.currentCell, i);
+      for(var i=0; i <= cell.textContent.length; i++) {
+        range.setStart(cell, i);
       }
     } catch(e) {
-      
     }
     range.collapse(true);
     sel.removeAllRanges();
     sel.addRange(range);
     
+  }
+  
+  //
+  // Keyboard Events
+  //
+  
+  onEnterDown(evt) {
+
+    if (!this.currentCell) return
+    var cell = evt.srcElement
+    if (this.currentCell != cell) return
+    var wasEditing = this.isInEditing(cell)
+
+    this.clearSelection(true)
+    this.setFocusAndTextSelection(cell)
+    this.setTextSelectionOfCellContents(cell)
+
+    if (wasEditing) {
+      cell.classList.remove("editing")
+    } else {
+      cell.classList.add("editing")
+    }
     evt.stopPropagation()
     evt.preventDefault()
   }
 
   onEscDown(evt) {
     if (!this.currentCell) return
-    this.currentCell.contentEditable = false
-    this.focus()
+    this.setFocusAndTextSelection(this.currentCell)
     evt.stopPropagation()
     evt.preventDefault()
   }
 
+  isInEditing(cell) {
+    return cell.classList.contains("editing")
+  }
 
-  onLeftDown(evt) {
-    // if (evt.srcElement != this) return
-    this.navigateRelative(-1, 0, evt.shiftKey == true)
+  handleArrowKey(evt, deltaColumn, deltaRow) {
+    if (this.isInEditing(this.currentCell)) return
+    this.navigateRelative(deltaColumn, deltaRow, evt.shiftKey == true)
     this.setFocusAndTextSelection(this.currentCell)
     evt.stopPropagation()
     evt.preventDefault()
+  }
+
+  onLeftDown(evt) {
+    this.handleArrowKey(evt, -1, 0)
   }
 
   onRightDown(evt) {
-    // if (evt.srcElement != this) return
-    this.navigateRelative(1, 0, evt.shiftKey == true)
-    this.setFocusAndTextSelection(this.currentCell)
-    evt.stopPropagation()
-    evt.preventDefault()
+    this.handleArrowKey(evt, 1, 0)
   }
 
   onUpDown(evt) {
-    // if (evt.srcElement != this) return
-    this.navigateRelative(0, -1, evt.shiftKey == true)
-    this.setFocusAndTextSelection(this.currentCell)
-    evt.stopPropagation()
-    evt.preventDefault()
+    this.handleArrowKey(evt, 0, -1)
   }
 
   onDownDown(evt) {
-    // if (evt.srcElement != this) return
-    this.navigateRelative(0, 1, evt.shiftKey == true)
-    this.setFocusAndTextSelection(this.currentCell)
-    evt.stopPropagation()
+    this.handleArrowKey(evt, 0, 1)
+  }
+  
+  onMouseDown(evt) {
+    
+    var cell = evt.path[0]
+    if(cell === this.currentCell) return;
+    
+    if (cell !== this.currentCell) {
+      this.clearSelection(true)
+      this.selectCell(cell)
+    }
+      
+    lively.addEventListener("LivelyTable", document.body, "mousemove", 
+      evt => this.onMouseMove(evt))
+    lively.addEventListener("LivelyTable", document.body, "mouseup", 
+      evt => this.onMouseUp(evt))
+    
+    // evt.stopPropagation()
     evt.preventDefault()
+    
+    // lively.notify("mouse down")
+
+  }
+  
+  onMouseMove(evt) {
+    var cell =evt.path[0];
+    if (this.isCell(cell)) {
+      if (cell === this.currentCell) return;
+    
+      this.clearSelection(true)
+
+      var column = this.columnOfCell(cell)
+      var row = this.rowOfCell(cell)
+
+      
+      this.changeSelectionBetween(
+          this.startColumnIndex, column,
+          this.startRowIndex, row)
+      
+      // lively.notify("mouse move")
+    }
+
+  }
+  
+  //
+  // Mouse Events
+  //
+  
+  onMouseUp(evt) {
+    lively.removeEventListener("LivelyTable", document.body, "mousemove")
+    lively.removeEventListener("LivelyTable", document.body, "mouseup")
+
+     
+    var cell = evt.path[0];
+    if (cell === this.currentCell) return;
+    
+    this.setFocusAndTextSelection(this.currentCell)
+    
+    // var sel = window.getSelection();
+    // sel.removeAllRanges();
+    // var range = document.createRange();
+    // this.currentCell.focus()
+    // range.selectNodeContents(this.currentCell);  
+    // sel.addRange(range);
   }
 
+  onClick(evt) {
+    if (this.currentCell === evt.srcElement) {
+      this.currentCell.contentEditable = true; // edit only on second click into selection
+    } else {
+      this.selectCell(evt.srcElement)
+    } 
+    
+    this.setFocusAndTextSelection(this.currentCell)
+
+    evt.stopPropagation()
+    evt.preventDefault()
+  } 
 
   asArray() {
     return lively.array(this.querySelectorAll("tr")).map(eaRow => {
@@ -364,16 +365,18 @@ export default class LivelyTable extends Morph {
     })
   }
 
-  setFromArray(array) {
-    var maxColumns = array.reduce((sum, ea) => Math.max(sum, ea.length), 0)
-    
+  maxColumnsIn(array) {
+    return array.reduce((sum, ea) => Math.max(sum, ea.length), 0)
+  }
+  setFromArrayClean(array) {
+    var maxColumns = this.maxColumnsIn(array)
     this.innerHTML = "<table>" +
       array.map((row,rowIndex) => {
         var html = ""
         for(var i=0; i < maxColumns; i++) {
          var ea = row[i] || "";
          html += rowIndex == 0 ? // header 
-            `<th style="width: 20px">${ea}</th>` : 
+            `<th style="width: 40px">${ea}</th>` : 
             `<td>${ea}</th>`
         }
         return "<tr>" + html+"</tr>"
@@ -381,35 +384,57 @@ export default class LivelyTable extends Morph {
     + "</table>"
   }
   
-
-  // setFromArrayAt(array, columnOffset, rowOffset) {
-  //   var table = this.asArray()
-  //   for (var i=0; i < array.length; i++) {
-  //     var row = table[rowOffset + i]
-  //     if (!row) {
-  //       row = []
-  //       table[rowOffset + i] = row
-  //     }
-  //     var fromRow = array[i]
-  //     for (var j=0; j < fromRow.length; j++) {
-  //       row[columnOffset + j] = fromRow[j]     
-  //     }
-  //   }
-  //   this.setFromArray(table)
-  // }
-
+  setFromArray(array, force) {
+    if (!this.querySelector("tbody") || force) {
+      this.setFromArrayClean(array)
+    } else {
+      var maxColumns  = this.maxColumnsIn(array)
+      this.rows().filter((ea,index) => index >= array.length).forEach( ea => ea.remove())
+      this.cells().forEach( row => {
+        row.filter((cell, index) => {
+          return index >= maxColumns
+        }).forEach( ea => ea.remove())
+      })
+      this.querySelectorAll("td,th").forEach(ea => ea.textContent = "")
+      this.setFromArrayAt(array, 0, 0) 
+    }
+  }
+  
+  
+  
   setFromArrayAt(array, columnOffset, rowOffset) {
     var cells = this.cells()
+    var header = cells[0]
+    var tableLength = columnOffset + array[0].length
+    // lively.notify("grow table? " + tableLength  + " " + header.length + " | " + columnOffset + " " + array.length )
+    if (tableLength > header.length) {
+      var rows = this.rows()
+      // we have to grow wider
+      rows.forEach((row, index) => {
+        for(var i=0; i < (tableLength - header.length); i++) {
+          var cell = document.createElement("td")
+          row.appendChild(cell)          
+        }
+      })
+      // we changed this contents and have to update
+      cells = this.cells()
+      header = cells[0]
+    }
     for (var i=0; i < array.length; i++) {
       var row = cells[rowOffset + i]
       if (!row) {
-        throw new Error("#ToBeImplemented")
-        // row = []
-        // table[rowOffset + i] = row
+        var rowElement = document.createElement("tr")
+        rowElement.innerHTML = header.map( ea => "<td></td>").join("")
+        this.querySelector("tbody").appendChild(rowElement)
+        var row = rowElement.querySelectorAll("td")
+        cells.push(row)
       }
       var fromRow = array[i]
       for (var j=0; j < fromRow.length; j++) {
-        row[columnOffset + j].textContent = fromRow[j]     
+        var index = columnOffset + j
+        var cell = row[index];
+        if (!cell) throw new Error("No cell at " + index + ", in " + row)
+        cell.textContent = fromRow[j]     
       }
     }
   }
@@ -490,12 +515,12 @@ export default class LivelyTable extends Morph {
   
   
   onCopy(evt) {
-    lively.notify("on copy")
+    // lively.notify("on copy")
 
     if (!this.currentCell) return
     if (this.selectedCells && this.selectedCells.length > 1) {
       var data = this.getSelectionAsCSV()
-      lively.notify("data " + data)
+      // lively.notify("data " + data)
       evt.clipboardData.setData('text/plain', data);
     } else {
       var selString = window.getSelection().toString();
@@ -523,7 +548,7 @@ export default class LivelyTable extends Morph {
   }
 
   onPaste(evt) {
-    lively.notify("on paste")
+    // lively.notify("on paste")
 
     if (!this.currentCell) return
     
