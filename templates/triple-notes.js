@@ -32,42 +32,31 @@ export default class TripleNotes extends Morph {
 
     main.call(this);
 			
-    function getGraph() {
-      let king1 = { label: 'Arthur' };
-      let king2 = { label: 'Bob' };
-      let king3 = { label: 'Ceasar' };
-      let successor = { label: 'successor' };
-      let successor2 = { label: 'successor2' };
-      let successor3 = { label: 'successor3' };
-      let since = { label: 'since' };
-      let t1 = { isTriple: true, s: king2, p: successor, o: king1}
-      let t2 = { isTriple: true, s: king3, p: successor, o: king2}
-      let t3 = { isTriple: true, s: king3, p: successor2, o: king2}
-      let t4 = { isTriple: true, s: king3, p: successor3, o: king2}
-      return [
-        king1, king2, king3, successor, since, t1, t2, t3, t4
-      ];
+    function getNodes(graph) {
+      return graph.knots;
     }
     
     async function main() {
-        let //knots = await loadDropbox("https://lively4/dropbox/");
+        let graph = await loadDropbox("https://lively4/dropbox/");
         
-        knots = getGraph();
+        let knots = getNodes(graph);
         let nodes = knots.map(knot => knot );
         let links = [];
+
         knots
-          .filter(knot => knot.isTriple)
+          .filter(knot => knot.isTriple())
+          .filter(triple => triple.subject)
           .forEach(triple => {
             links.push({
-              source: triple.s,
+              source: triple.subject,
               target: triple
             });
             links.push({
-              source: triple,
-              target: triple.o
+              source: triple.object,
+              target: triple
             });
           });
-          //:d3.range(0, range).map(function(){ return {source:~~d3.randomUniform(range)(), target:~~d3.randomUniform(range)()} })
+
         var data = {
             nodes,
             links        
@@ -127,7 +116,7 @@ export default class TripleNotes extends Morph {
         node.append("text")
           .attr("dx", 12)
           .attr("dy", ".35em")
-          .text(d => d.label || d.p && 'TRIPLE' + d.p.label);
+          .text(d => d.label());
 
         function recalculatePositions() {
             node.attr("transform", d => "translate(" + d.x + "," + d.y + ")");
