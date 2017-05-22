@@ -23,6 +23,7 @@ lively-table table, lively-table tr, lively-table  th, lively-table  td {
   border-collapse: collapse;
 }
  
+ 
 lively-table .table-selected {
   margin: -1px;
   border-collapse: collapse;
@@ -31,12 +32,15 @@ lively-table .table-selected {
   
 }
 
-
-
-
 lively-table .start-selection {
   margin: -2px;
   border: 2px solid blue;
   border-collapse: collapse;
   background-color: rgba(100,100,200,0.1);
+}
+
+
+lively-table .editing {
+  background-color: white;
+  border: 2px solid red;
 }

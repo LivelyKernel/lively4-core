@@ -38,6 +38,15 @@ describe("LivelyTable Component",  () => {
       expect(a.length).to.equal(2)
       done()
     });
+    it("should set contents as array preseve formatting", done => {
+      that.setFromArray([["hello", "world"],["one", "two"]])
+      var cells1 = that.cells() 
+      that.setFromArray([["hello2", "world2"],["one2", "two2"]])
+      var cells2 = that.cells() 
+      expect(cells1[0][0]).to.equal(cells2[0][0])
+      done()
+    });
+
     it("should set contents as array at position", done => {
       that.setFromArray([[1, 2, 3, 4],["a", "b", "c", "d"],["A", "B", "C", "D"]])
       that.setFromArrayAt([["hello", "world"],["one", "two"]], 1,1)
@@ -47,6 +56,24 @@ describe("LivelyTable Component",  () => {
       expect(a[2][1]).to.equal("one")
       done()
     });
+
+    it("should set contents as array at position should grow table", done => {
+      that.setFromArray([[1, 2, 3, 4],["a", "b", "c", "d"],["A", "B", "C", "D"]])
+      that.setFromArrayAt([["hello", "world"],["one", "two"],["uno", "dos"],["un", "deux"]], 1,1)
+      var a = that.asArray()
+      expect(a[4][1]).to.equal("un")
+      done()
+    });
+
+    it("should set contents as array at position should grow table (wider)", done => {
+      that.setFromArray([[1, 2],["a", "b"],["A", "B"]])
+      that.setFromArrayAt([["hello", "world","how","are","you"]], 1,1)
+      var a = that.asArray()
+      expect(a[1][3]).to.equal("how")
+      expect(a[2][3], "empty cell").to.equal("")
+      done()
+    });
+
 
     it("should set contents as array at position amd keep cell elements", done => {
       that.setFromArray([[1, 2, 3, 4],["a", "b", "c", "d"],["A", "B", "C", "D"]])
