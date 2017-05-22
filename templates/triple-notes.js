@@ -2,7 +2,7 @@ import Morph from "./Morph.js"
 
 import d3 from 'src/external/d3.v4.js';
 
-import loadDropbox from 'src/client/triples/triples.js';
+import loadDropbox from 'src/client/triples/triplesOLD.js';
 import * as drawTools from 'src/client/triples/drawTools.js';
 
 const MIN_MAGNIFICATION = 0.01;

@@ -1,6 +1,6 @@
 import Morph from "./Morph.js"
 
-import loadDropbox, { Graph } from 'src/client/triples/triplesNew.js';
+import loadDropbox, { Graph } from 'src/client/triples/triples.js';
 import lively from 'src/client/lively.js';
 
 export default class TripleList extends Morph {
@@ -24,6 +24,7 @@ export default class TripleList extends Morph {
 
     let graph = Graph.getInstance();
     await graph.loadFromDir(path);
+
     graph.knots.forEach(knot => {
       let listItem = document.createElement('li');
       listItem.innerHTML = knot.label();
