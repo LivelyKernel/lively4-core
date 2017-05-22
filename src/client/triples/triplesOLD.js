@@ -1,3 +1,4 @@
+
 import focalStorage from 'src/external/focalStorage.js'
 const STORAGE_PREFIX = 'triple-notes:';
 const STORAGE_PREFIX_ITEMS = STORAGE_PREFIX + 'items:';
@@ -42,14 +43,9 @@ class Triple extends Knot {
   isTriple() { return true; }
 }
 
-export class Graph {
+class Graph {
   constructor() {
     this.knots = [];
-    this.loadedDirectories = [];
-  }
-  
-  get triples() {
-    return this.knots.filter(knot => knot.isTriple());
   }
 
   deserializeKnot(fileName, text) {
@@ -84,68 +80,7 @@ export class Graph {
         createReferree(this, triple, 'object');
       });
   }
-  
-  static getInstance() {
-    if(!this.instance) {
-      this.instance = new Graph();
-    }
-    return this.instance;
-  }
-  static clearInstance() {
-    this.instance = undefined;
-  }
-  
-  query(s, p, o) {
-    let matchingTriples = [];
-    this.triples.forEach(triple => {
-      if(s === _ || triple.subject === s) {
-        if(p === _ || triple.predicate === p) {
-          if(o === _ || triple.object === o) {
-            matchingTriples.push(triple);
-          }
-        }
-      }
-    });
-
-    return matchingTriples;
-  }
-  
-  getUrlsByKnot(knot) {
-    // TODO: we simply return the single reference url for now
-    return [knot.fileName];
-  }
-  getKnotByUrl(url) {
-    let searchString = url.toString();
-    let knot = this.knots.find(knot => knot.fileName === searchString);
-    if(knot) {
-      return knot;
-    } else {
-      throw new Error('No knot for ' + searchString + ' found!');
-    }
-  }
-  
-  async loadFromDir(directory) {
-    if(this.loadedDirectories.includes(directory)) {
-      return;
-    }
-    this.loadedDirectories.push(directory);
-    let directoryURL = new URL(directory);
-    let text = await cachedFetch(directory, { method: 'OPTIONS' });
-    let json = JSON.parse(text);
-    let fileDescriptors = json.contents;
-    fileDescriptors = fileDescriptors.filter(desc => desc.type === "file");
-    let fileNames = fileDescriptors.map(desc => desc.name);
-    let knotDescriptors = await Promise.all(fileNames.map(fileName => {
-      let path = new URL(fileName, directoryURL);
-      return cachedFetch(path)
-        .then(text => ({ text, fileName: path.toString() }));
-    }));
-    knotDescriptors.forEach(({ text, fileName}) => this.deserializeKnot(fileName, text));
-    this.linkUpTriples();
-  }
 }
-
-export const _ = {};
 
 // Have to be transparent
 class LateBoundReference {
@@ -156,4 +91,22 @@ class LateBoundReference {
   get() {
     
   }
+}
+
+export default async function loadDropbox(directory) {
+  let directoryURL = new URL(directory);
+  let text = await cachedFetch(directory, { method: 'OPTIONS' });
+  let json = JSON.parse(text);
+  let fileDescriptors = json.contents;
+  fileDescriptors = fileDescriptors.filter(desc => desc.type === "file");
+  let fileNames = fileDescriptors.map(desc => desc.name);
+  let knotDescriptors = await Promise.all(fileNames.map(fileName => {
+    let path = new URL(fileName, directoryURL);
+    return cachedFetch(path)
+      .then(text => ({ text, fileName: path.toString() }));
+  }));
+  let graph = new Graph();
+  knotDescriptors.forEach(({ text, fileName}) => graph.deserializeKnot(fileName, text));
+  graph.linkUpTriples();
+  return graph;
 }

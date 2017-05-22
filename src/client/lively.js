@@ -289,7 +289,7 @@ export default class Lively {
   
 
   static array(anyList){
-    return Array.prototype.slice.call(anyList);
+    return Array.prototype.slice.call(anyList); // TODO: use Array.from
   }
 
   static asUL(anyList){
