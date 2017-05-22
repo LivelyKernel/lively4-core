@@ -1,0 +1,49 @@
+<template id="knot-view" data-class="KnotView">
+<style type="text/css">
+
+</style>
+<input type="text" id="path-to-load" placeholder="path to load" title="path to load">
+
+<h1 id="label"></h1>
+
+<h2>URLs</h2>
+<ul id ="url-list"></ul>
+
+<h2>Relations</h2>
+
+<h3 id="As Subject">As Subject</h3>
+<table id ="po-table">
+  <thead>
+    <tr>
+      <th>Predicate</th>
+      <th>Object</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+<h3 id="As Predicate">As Predicate</h3>
+<table id ="so-table">
+  <thead>
+    <tr>
+      <th>Subject</th>
+      <th>Object</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+<h3 id="As Object">As Object</h3>
+<table id ="sp-table">
+  <thead>
+    <tr>
+      <th>Subject</th>
+      <th>Predicate</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<ul id ="triple-list"></ul>
+
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

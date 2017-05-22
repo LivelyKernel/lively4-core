@@ -45,6 +45,11 @@ class Triple extends Knot {
 export class Graph {
   constructor() {
     this.knots = [];
+    this.loadedDirectories = [];
+  }
+  
+  get triples() {
+    return this.knots.filter(knot => knot.isTriple());
   }
 
   deserializeKnot(fileName, text) {
@@ -91,14 +96,39 @@ export class Graph {
   }
   
   query(s, p, o) {
-    
+    let matchingTriples = [];
+    this.triples.forEach(triple => {
+      if(s === _ || triple.subject === s) {
+        if(p === _ || triple.predicate === p) {
+          if(o === _ || triple.object === o) {
+            matchingTriples.push(triple);
+          }
+        }
+      }
+    });
+
+    return matchingTriples;
   }
   
-  getByUrl(url) {
-    return "A late-bound reference";
+  getUrlsByKnot(knot) {
+    // TODO: we simply return the single reference url for now
+    return [knot.fileName];
+  }
+  getKnotByUrl(url) {
+    let searchString = url.toString();
+    let knot = this.knots.find(knot => knot.fileName === searchString);
+    if(knot) {
+      return knot;
+    } else {
+      throw new Error('No knot for ' + searchString + ' found!');
+    }
   }
   
   async loadFromDir(directory) {
+    if(this.loadedDirectories.includes(directory)) {
+      return;
+    }
+    this.loadedDirectories.push(directory);
     let directoryURL = new URL(directory);
     let text = await cachedFetch(directory, { method: 'OPTIONS' });
     let json = JSON.parse(text);
@@ -110,10 +140,8 @@ export class Graph {
       return cachedFetch(path)
         .then(text => ({ text, fileName: path.toString() }));
     }));
-    let graph = Graph.getInstance();
-    knotDescriptors.forEach(({ text, fileName}) => graph.deserializeKnot(fileName, text));
-    graph.linkUpTriples();
-    return graph;
+    knotDescriptors.forEach(({ text, fileName}) => this.deserializeKnot(fileName, text));
+    this.linkUpTriples();
   }
 }
 
