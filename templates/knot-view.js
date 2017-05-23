@@ -19,26 +19,39 @@ export default class KnotView extends Morph {
       }
     });
 
+    // TODO: Update this
    pathToLoad.value="https://lively4/dropbox/Traveling_through_Time_and_Code_-_Omniscient_Debugging_and_Beyond.md" 
     this.loadKnot(pathToLoad.value);
   }
   
-  buildTableDataFor(knot) {
-    let tableData = document.createElement('td');
-
+  buildRefFor(knot) {
     let ref = document.createElement('a');
     ref.innerHTML = knot.label();
     ref.addEventListener("click", e => {
-      lively.openInspector(knot, undefined, knot.label());
-    })
+      this.loadKnot(knot.fileName);
+    });
+    
+    return ref;
+  }
+  buildTableDataFor(knot) {
+    let tableData = document.createElement('td');
 
-    tableData.appendChild(ref);
+    tableData.appendChild(this.buildRefFor(knot));
+    
+    let icon = document.createElement('i');
+    icon.classList.add('fa', 'fa-info');
+    icon.addEventListener("click", e => {
+      lively.openInspector(knot, undefined, knot.label());
+    });
+    tableData.appendChild(icon);
+
     return tableData;
   }
-  buildTableRowFor(knot1, knot2) {
+  buildTableRowFor(triple, knot1, knot2) {
     let tableRow = document.createElement('tr');
     tableRow.appendChild(this.buildTableDataFor(knot1));
     tableRow.appendChild(this.buildTableDataFor(knot2));
+    tableRow.appendChild(this.buildTableDataFor(triple));
     return tableRow;
   }
   replaceTableBodyFor(selector, s, p, o, propForFirstCell, propForSecondCell) {
@@ -48,13 +61,13 @@ export default class KnotView extends Morph {
     graph.query(s, p, o).forEach(triple => {
       poTableBody.appendChild(
         this.buildTableRowFor(
+          triple,
           triple[propForFirstCell],
           triple[propForSecondCell]
         )
       );
     });
   }
-  
   
   async loadKnot(url) {
     let graph = Graph.getInstance();
@@ -78,7 +91,46 @@ export default class KnotView extends Morph {
     this.replaceTableBodyFor('#po-table', knot, _, _, 'predicate', 'object');
     this.replaceTableBodyFor('#so-table', _, knot, _, 'subject', 'object');
     this.replaceTableBodyFor('#sp-table', _, _, knot, 'subject', 'predicate');
+    
+    // content
+    this.buildContentFor(knot);
+
   }
+
+  buildListItemFor(knot, role) {
+    let li = document.createElement('li');
+    li.innerHTML = `${role}: `;
+    li.appendChild(this.buildRefFor(knot));
+    
+    return li;
+  }
+  buildContentFor(knot) {
+    let aceComp = this.get('#content-editor');
+    let spoList = this.get('#spo-list');
+    if(knot.isTriple()) {
+      this.hide(aceComp);
+      this.show(spoList);
+      spoList.innerHTML = '';
+      spoList.appendChild(this.buildListItemFor(knot.subject, 'Subject'));
+      spoList.appendChild(this.buildListItemFor(knot.predicate, 'Predicate'));
+      spoList.appendChild(this.buildListItemFor(knot.object, 'Object'));
+    } else {
+      this.show(aceComp);
+      this.hide(spoList);
+      aceComp.editor.setValue(knot.content);
+      aceComp.enableAutocompletion();
+      aceComp.getDoitContext = () => {
+        return window.that;
+      };
+      aceComp.aceRequire('ace/ext/searchbox');
+      aceComp.doSave = text => {
+        lively.notify('TEXT:'+text)
+      };
+    }
+  }
+  
+  hide(element) { element.style.display = "none"; }
+  show(element) { element.style.display = "block"; }
 
   onPathEntered(path) {
     this.loadKnot(path);

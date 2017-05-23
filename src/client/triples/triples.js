@@ -18,6 +18,9 @@ class Knot {
     this.fileName = fileName;
     this.content = content;
   }
+  get url() {
+    return this.fileName;
+  }
   
   label() {
     if(this.fileName.endsWith('.md')) {

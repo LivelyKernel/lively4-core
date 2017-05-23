@@ -1,5 +1,42 @@
 <template id="knot-view" data-class="KnotView">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style type="text/css">
+
+#path-to-load {
+  width: 100%;
+}
+
+th {
+  background-color: grey;
+}
+
+th.triple-header {
+  min-width: 10%;
+  width:20%;
+  max-width: 200px;
+}
+
+table {
+  width: 100%;
+}
+
+table, thead, tbody, tr, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+
+tr:hover {
+  background-color: lightgrey;
+}
+
+td i {
+  color: grey;
+}
+
+#content-editor {
+  height: 100%;
+}
+
 
 </style>
 <input type="text" id="path-to-load" placeholder="path to load" title="path to load">
@@ -17,6 +54,7 @@
     <tr>
       <th>Predicate</th>
       <th>Object</th>
+      <th class="triple-header">Triple</th>
     </tr>
   </thead>
   <tbody></tbody>
@@ -27,6 +65,7 @@
     <tr>
       <th>Subject</th>
       <th>Object</th>
+      <th class="triple-header">Triple</th>
     </tr>
   </thead>
   <tbody></tbody>
@@ -37,12 +76,15 @@
     <tr>
       <th>Subject</th>
       <th>Predicate</th>
+      <th class="triple-header">Triple</th>
     </tr>
   </thead>
   <tbody></tbody>
 </table>
 
-<ul id ="triple-list"></ul>
+<h2>Content</h2>
+<ul id ="spo-list"></ul>
+<juicy-ace-editor id="content-editor"></juicy-ace-editor>
 
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
