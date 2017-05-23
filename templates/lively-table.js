@@ -18,13 +18,30 @@ export default class LivelyTable extends Morph {
     this.addEventListener("copy", (evt) => this.onCopy(evt))
     this.addEventListener("cut", (evt) => this.onCut(evt))
     this.addEventListener("paste", (evt) => this.onPaste(evt))
+    
+    this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
   }
   
   isCell(cell) {
     return cell.tagName == "TD" || cell.tagName == "TH"
   }
   
-   
+    
+  onContextMenu(evt) {
+    if (!evt.shiftKey) {
+      evt.stopPropagation();
+      evt.preventDefault();
+      var menu = new ContextMenu(this, [
+            ["add column", (evt) => this.insertColumnAt(this.currentColumnIndex)],
+            ["remove column", (evt) => this.removeColumnAt(this.currentColumnIndex)],
+            ["add row", (evt) => this.insertRowAt(this.currentRowIndex)],
+            ["remove row", (evt) => this.removeRowAt(this.currentRowIndex)]
+
+          ]);
+      menu.openIn(document.body, evt, this);
+      return true;
+    }
+  }
   
   setFocusAndTextSelection(element) {
     if (!element) return;
@@ -95,6 +112,8 @@ export default class LivelyTable extends Morph {
       ea.classList.remove("table-selected")
       ea.classList.remove("start-selection")
     })
+    
+    this.selectedCells = []
   }
 
   addSelectedCell(element) {
@@ -145,6 +164,24 @@ export default class LivelyTable extends Morph {
       this.startColumnIndex = rowCells.indexOf(element)
       this.startCell.classList.add("start-selection")
     }
+  }
+  
+  selectRow(rowIndex, multiselection) {
+    if (!multiselection) {
+      this.clearSelection()
+    }
+    this.cells()[rowIndex].forEach(cell => {
+      this.selectCell(cell, true)
+    })
+  }
+  
+  selectColumn(columnIndex, multiselection) {
+    if (!multiselection) {
+      this.clearSelection()
+    }
+    this.cells().forEach(row => {
+      this.selectCell(row[columnIndex], true)
+    })
   }
 
 
@@ -293,9 +330,9 @@ export default class LivelyTable extends Morph {
     }
       
     lively.addEventListener("LivelyTable", document.body, "mousemove", 
-      evt => this.onMouseMove(evt))
+      evt => this.onMouseMoveSelection(evt))
     lively.addEventListener("LivelyTable", document.body, "mouseup", 
-      evt => this.onMouseUp(evt))
+      evt => this.onMouseUpSelection(evt))
     
     // evt.stopPropagation()
     evt.preventDefault()
@@ -304,8 +341,8 @@ export default class LivelyTable extends Morph {
 
   }
   
-  onMouseMove(evt) {
-    var cell =evt.path[0];
+  onMouseMoveSelection(evt) {
+    var cell = evt.path[0];
     if (this.isCell(cell)) {
       if (cell === this.currentCell) return;
     
@@ -328,7 +365,7 @@ export default class LivelyTable extends Morph {
   // Mouse Events
   //
   
-  onMouseUp(evt) {
+  onMouseUpSelection(evt) {
     lively.removeEventListener("LivelyTable", document.body, "mousemove")
     lively.removeEventListener("LivelyTable", document.body, "mouseup")
 
@@ -358,6 +395,40 @@ export default class LivelyTable extends Morph {
     evt.stopPropagation()
     evt.preventDefault()
   } 
+
+  insertColumnAt(index) {
+    this.cells().forEach(cellArray => {
+        var oldCell = cellArray[index]
+        var newCell = document.createElement(oldCell.tagName)
+        oldCell.parentElement.insertBefore(newCell, oldCell)
+        newCell.style.width = oldCell.style.width
+        
+    })
+  }
+
+  removeColumnAt(index) {
+    this.cells().forEach(cellArray => {
+        var oldCell = cellArray[index]
+        oldCell.remove()
+    })
+  }
+
+  insertRowAt(index) {
+    var oldRow = this.rows()[index]
+    var newRow = document.createElement("tr")
+    newRow.innerHTML = oldRow.innerHTML
+    newRow.querySelectorAll("th,td").forEach( ea => ea.textContent = "")
+    oldRow.parentElement.insertBefore(newRow, oldRow)
+    return newRow
+  }
+
+
+  removeRowAt(index) {
+    var oldRow = this.rows()[index]
+    oldRow.remove()
+  }
+
+
 
   asArray() {
     return lively.array(this.querySelectorAll("tr")).map(eaRow => {

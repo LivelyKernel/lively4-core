@@ -175,6 +175,19 @@ describe("LivelyTable Component",  () => {
       expect(that.selectedCells.length, "number of selected cells").to.equal(2)
       done()
     });
+    it("should select a row", done => {
+      fillTableWithNumber(that)
+      that.selectRow(1)
+      expect(that.selectedCells.length, "number of selected cells").to.equal(that.cells()[0].length)
+      done()
+    });
+    it("should select a column", done => {
+      fillTableWithNumber(that)
+      that.selectColumn(1)
+      expect(that.selectedCells.length, "number of selected cells").to.equal(that.cells().length)
+      done()
+    });
+
   })
   
   describe("Navigation",  () => {
@@ -234,6 +247,51 @@ describe("LivelyTable Component",  () => {
     });
   })
 
+
+  describe("Add/Remove Column",  () => {
+    it("should add column at an index", done => {
+      fillTableWithNumber(that)
+      var cells1 = that.cells()
+      that.insertColumnAt(1)
+      var cell1 = that.cellAt(1,0)
+      var cells2 = that.cells()
+      expect(cells1[0].length + 1).to.equal(cells2[0].length)
+      done()
+    });
+    it("should remove column at an index", done => {
+      fillTableWithNumber(that)
+      var cells1 = that.cells()
+      that.removeColumnAt(1)
+      var cell1 = that.cellAt(1,0)
+      var cells2 = that.cells()
+      expect(cells1[0].length - 1).to.equal(cells2[0].length)
+      done()
+    });
+    
+  })
+
+
+  describe("Add/Remove Row",  () => {
+    it("should add a row at an index", done => {
+      fillTableWithNumber(that)
+      var cells1 = that.cells()
+      that.insertRowAt(1)
+      var cell1 = that.cellAt(1,0)
+      var cells2 = that.cells()
+      expect(cells1.length + 1).to.equal(cells2.length)
+      done()
+    });
+    it("should remove a row at an index", done => {
+      fillTableWithNumber(that)
+      var cells1 = that.cells()
+      that.removeRowAt(1)
+      var cell1 = that.cellAt(1,0)
+      var cells2 = that.cells()
+      expect(cells1.length - 1).to.equal(cells2.length)
+      done()
+    });
+
+  })
 
   after("cleanup", () => {
     testWorld().innerHTML = "";

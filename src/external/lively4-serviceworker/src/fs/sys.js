@@ -49,11 +49,14 @@ export default class SysFilesystem extends Base {
     if(!name)
       throw new Error('<name> is missing')
 
-    let fs = await System.import('/fs/' + name + '.js')
+    let prefixHack = "https://lively-kernel.org/lively4/lively4-jens/src/external/lively4-serviceworker/src/"
 
-    swx.instance().filesystem.mount(path, fs.default, opts)
+    let fs = await System.import(prefixHack + '/fs/' + name + '.js')
 
-    swx.instance().filesystem.persistMounts()
+    var swxInstance = await swx.instance()
+    swxInstance.filesystem.mount(path, fs.default, opts)
+
+    swxInstance.filesystem.persistMounts()
 
     return json
   }

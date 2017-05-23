@@ -4,9 +4,15 @@ importScripts("./src/external/systemjs/system.js");
 SystemJS.config({
   meta: {
     "*.js": { 
+      // babelOptions: {
+      //   stage0: true,
+      //   stage1: true
+      // }
       babelOptions: {
-        stage0: true,
-        stage1: true
+        es2015: false,
+        stage2: false,
+        stage3: false,
+        plugins: []
       }
     }
   },
