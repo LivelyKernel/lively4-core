@@ -574,7 +574,11 @@ export default class Lively {
         new LivelyNotification({ title, text }).displayOnConsole();
 
       } else {
-        notificationList.addNotification(title, text, timeout, cb, color);
+        if(notificationList && notificationList.addNotification) {
+          notificationList.addNotification(title, text, timeout, cb, color);
+        } else {
+          console.log('%ccould not notify about', 'font-size: 9px; color: red', title, text);
+        }
       }
     }
 
