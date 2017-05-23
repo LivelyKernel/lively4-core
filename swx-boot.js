@@ -1,6 +1,8 @@
 
 importScripts("./src/external/systemjs/system.js");
 
+self.lively4swx = new URL('./src/external/lively4-serviceworker/src/', self.location.href).toString()
+
 SystemJS.config({
   meta: {
     "*.js": { 
@@ -24,7 +26,7 @@ SystemJS.config({
 )
 
 function init() {
-  return System.import("./src/external/lively4-serviceworker/src/swx.js")
+  return System.import(lively4swx + "./swx.js?1")
 }
 console.log("Base system loaded after  " + (Date.now() - startSwxTime) + "ms")
 

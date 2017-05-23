@@ -3,7 +3,6 @@
  */
 
 import { Base } from './base.js'
-import * as swx from '../swx.js'
 
 export default class SysFilesystem extends Base {
   constructor(path, swx) {
@@ -49,14 +48,9 @@ export default class SysFilesystem extends Base {
     if(!name)
       throw new Error('<name> is missing')
 
-    let prefixHack = "https://lively-kernel.org/lively4/lively4-jens/src/external/lively4-serviceworker/src/"
-
-    let fs = await System.import(prefixHack + '/fs/' + name + '.js')
-
-    var swxInstance = await swx.instance()
-    swxInstance.filesystem.mount(path, fs.default, opts)
-
-    swxInstance.filesystem.persistMounts()
+    let fs = await System.import(lively4swx + './fs/' + name + '.js')
+    this.swx.filesystem.mount(path, fs.default, opts)
+    this.swx.filesystem.persistMounts()
 
     return json
   }
@@ -69,7 +63,8 @@ export default class SysFilesystem extends Base {
     if(!path)
       throw new Error('<path> is missing')
 
-    swx.instance().filesystem.umount(path)
+    this.swx.filesystem.umount(path)
+    this.swx.filesystem.persistMounts()
 
     return json
   }

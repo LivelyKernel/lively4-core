@@ -217,7 +217,7 @@ export default class LivleyFilesystems extends Morph {
         this.updateMountList()
       },
       error: function(xhr, status, error) {
-        alert("could not unmount path: "  + path, error)
+        alert("could not unmount path: "  + path +  error)
       }
     });
   }
