@@ -20,26 +20,23 @@ export default class LivelyModuleGraph extends Morph {
       var scale = 0.3;
       var zoom = d3.behavior.zoom();
       
-      
       var zoomWidth = (width-scale*width)/2
       var zoomHeight = (height-scale*height)/2
-      
       zoom.translate([zoomWidth,zoomHeight]).scale(scale);
-
-      var outer = d3.select(this.shadowRoot).append("svg")
+      this.shadowRoot.querySelector("svg").innerHTML = ""
+      
+      var outer = d3.select(this.shadowRoot.querySelector("svg"))
           .attr({ width: width, height: height, "pointer-events": "all" });
-
       outer.append('rect')
           .attr({ class: 'background', width: "100%", height: "100%" })
           .call(zoom.on("zoom", () => this.redraw()));
-          
+
+      
 
       this.vis = outer
           .append('g')
           .attr('transform', "translate("+zoomWidth+","+zoomHeight+") scale(" + scale +' )');
 
-
-      
       outer.append('svg:defs').append('svg:marker')
           .attr({
               id: 'end-arrow',
@@ -56,10 +53,6 @@ export default class LivelyModuleGraph extends Morph {
               fill: '#000'});
 
         this.render()
-        
-        this.shadowRoot.querySelector("h1").onclick = () => {
-          this.initialize()
-        }
     }
     
     render() {
@@ -69,28 +62,26 @@ export default class LivelyModuleGraph extends Morph {
       var graph = {nodes: [], links: []},
           graphModules = [];
           
-          Object.values(System.loads).map( ea => ea.key).map(function (moduleName) {
+      Object.values(System.loads).map( ea => ea.key).map(function (moduleName) {
         if (moduleName.match(/\.js\?[0-9]+/)) return;
         
-        // if (!moduleName.match(/babelsberg/)) return;
+        
         
         graphModules.push(moduleName);
         graph.nodes.push({name: moduleName, id: graphModules.length - 1});
         return moduleName;
       }).forEach(function (moduleName) {
-        if (!moduleName) return;
-        var mod = System.loads[moduleName]
-        mod.dependencies.forEach(function (dependency) {
-            
-          var depKey = System.normalizeSync(dependency, mod.key)
-          
-          var targetIdx = graphModules.indexOf(depKey);
-          if (targetIdx < 0) return;
-          graph.links.push({
-            source: targetIdx,
-            target: graphModules.indexOf(moduleName), value: 1
+          if (!moduleName) return;
+          var mod = System.loads[moduleName]
+          mod.dependencies.forEach(function (dependency) {
+            var depKey = System.normalizeSync(dependency, mod.key)
+            var targetIdx = graphModules.indexOf(depKey);
+            if (targetIdx < 0) return;
+            graph.links.push({
+              source: targetIdx,
+              target: graphModules.indexOf(moduleName), value: 1
+            });
           });
-        });
       })
       var nodes = graph.nodes;
       var edges = graph.links;
@@ -99,7 +90,7 @@ export default class LivelyModuleGraph extends Morph {
           .avoidOverlaps(true)
           .convergenceThreshold(1e-3)
           .flowLayout('x', 350)
-          .size([this.width, this.height])
+          .size([width, height])
           .nodes(nodes)
           .links(edges)
           .jaccardLinkLengths(250);
@@ -145,9 +136,10 @@ export default class LivelyModuleGraph extends Morph {
           .y(function (d) { return d.y; })
           .interpolate("linear");
 
-      var routeEdges = function () {
+      var routeEdges = () => {
           this.d3cola.prepareEdgeRouting();
-          link.attr("d", function (d) {
+          link.attr("d", (d) => {
+            
               return lineFunction(this.d3cola.routeEdge(d
               // show visibility graph
                   //, function (g) {
@@ -162,6 +154,7 @@ export default class LivelyModuleGraph extends Morph {
               ));
           });
         }
+        
       this.d3cola.start(50, 100, 200).on("tick", function () {
           node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin); })
               .attr("x", function (d) { return d.innerBounds.x; })
@@ -180,11 +173,17 @@ export default class LivelyModuleGraph extends Morph {
               .attr("x", function (d) { return d.x })
               .attr("y", function (d) { return d.y + (margin + pad) / 2 });
 
-      }).on("end", routeEdges);
+      }).on("end", () => {
+        try {
+          routeEdges()
+        } catch(e) {
+          lively.showError(e)
+        }
+      });
     }
     
     redraw() {
-          // console.log("translate " + d3.event.translate + " scale " + d3.event.scale)
+      // console.log("translate " + d3.event.translate + " scale " + d3.event.scale)
         
       this.vis.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
     }
