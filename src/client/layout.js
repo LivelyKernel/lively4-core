@@ -2,7 +2,7 @@
 /* Little Window Layout Helper */
 
 
-import {pt, rects} from "src/client/graphics.js"
+import {pt, rect} from "src/client/graphics.js"
 import Windows from "templates/lively-window.js"
 
 

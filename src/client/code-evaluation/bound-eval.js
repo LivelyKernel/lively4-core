@@ -14,8 +14,11 @@ export default async function boundEval(source, thisReference, targetModule) {
     let codeId = generateUUID();
     setCode(codeId, source);
     
-    return System.import('workspace:' + encodeURI(codeId))
-      .then(m => ({ value: m.__result__ }));
+    var path = 'workspace:' + encodeURI(codeId)
+    return System.import(path)
+      .then(m => {
+        lively.unloadModule(path)
+        return ({value: m.__result__ })});
   } catch(err) {
     return Promise.resolve({ value: err, isError: true });
   }

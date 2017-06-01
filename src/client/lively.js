@@ -16,7 +16,7 @@ import authDropbox from './auth-dropbox.js';
 import authGoogledrive  from './auth-googledrive.js';
 import expose from './expose.js';
 import generateUUID from './uuid.js';
-import {pt} from './graphics.js';
+import {pt, rect} from './graphics.js';
 import Dialog from 'templates/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
 
@@ -87,7 +87,12 @@ export default class Lively {
         ea.dependencies.find(dep => System.normalizeSync(dep, ea.key) == mod))
       .map( ea => ea.key)
   }
-
+  
+  static async unloadModule(path) {
+    var normalizedPath = System.normalizeSync(path)
+    System.registry.delete(normalizedPath);
+    delete System.loads[normalizedPath] 
+  }
 
   static async reloadModule(path) {
     path = "" + path;
@@ -98,7 +103,7 @@ export default class Lively {
       return   
     }
     var modulePaths = [path]
-    System.registry.delete(System.normalizeSync(path))
+    this.unloadModule(path)
     return System.import(path).then( m => {
       
       // #TODO how can we make the dependecy loading optional... I don't need the whole environment to relaod while developing a core module everybody depends on
@@ -115,6 +120,7 @@ export default class Lively {
         console.log("reload " + path + " triggers reload of " + ea)
         System.registry.delete(ea)  
         System.import(ea)
+        // #TODO think about if this is ennough or if we need some kind of recursion
       }
       return m
     }).then( mod => {
