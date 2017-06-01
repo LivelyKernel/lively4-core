@@ -28,9 +28,12 @@ export default class TripleList extends Morph {
     graph.knots.forEach(knot => {
       let listItem = document.createElement('li');
       listItem.innerHTML = knot.label();
-      listItem.addEventListener("click", e => {
-        lively.openInspector(knot, undefined, knot.label());
-      })
+      listItem.addEventListener("click", async e => {
+        // lively.openInspector(knot, undefined, knot.label());
+        
+        let knotView = await lively.openComponentInWindow("knot-view");
+        knotView.loadKnot(knot.url);
+      });
       list.appendChild(listItem);
     });
   }

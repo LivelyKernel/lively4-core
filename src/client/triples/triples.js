@@ -2,7 +2,7 @@ import focalStorage from 'src/external/focalStorage.js'
 const STORAGE_PREFIX = 'triple-notes:';
 const STORAGE_PREFIX_ITEMS = STORAGE_PREFIX + 'items:';
 
-async function cachedFetch(url, options) {
+export async function cachedFetch(url, options) {
   const key = STORAGE_PREFIX_ITEMS + url.toString();
   if(null === await focalStorage.getItem(key)) {
     let text = await fetch(url, options).then(r => r.text())
@@ -11,6 +11,10 @@ async function cachedFetch(url, options) {
   } else {
     return focalStorage.getItem(key);
   }
+}
+
+export function invalidateFetchCache(url) {
+  const key = STORAGE_PREFIX_ITEMS + url.toString();
 }
 
 class Knot {
@@ -146,17 +150,38 @@ export class Graph {
     knotDescriptors.forEach(({ text, fileName}) => this.deserializeKnot(fileName, text));
     this.linkUpTriples();
   }
-}
-
-export const _ = {};
-
-// Have to be transparent
-class LateBoundReference {
-  constructor(url) {
-    
-  }
   
-  get() {
+  async getNonCollidableURL(directory, name, fileEnding) {
+    const maxTries = 10;
+    let fileName = name.replace(/\s/g, '_');
+    let offset = 0;
     
+    for(let i = 0; i < maxTries; i++) {
+      let bust = offset === 0 ? '' : offset;
+      let url = new URL(`${fileName}${bust}.${fileEnding}`, directory);
+      let fileExists = (await fetch(url)).status === 200;
+      if(fileExists) {
+        offset++;
+      } else {
+        return url;
+      }
+    }
+    throw new Error('too many tries for '); // TODO: improve error message
+  }
+  async createKnot(directory, name, fileEnding) {
+    if(fileEnding !== 'md') { throw new Error('only .md files supported by now, instead found ', + fileEnding); }
+
+    let url = await this.getNonCollidableURL(directory, name, fileEnding);
+    let content = `# ${name}`;
+    await lively.files.saveFile(url, content);
+    
+    invalidateFetchCache(directory);
+    
+    // TODO: load as knot
+    // TODO: update graph
+    // TODO: open editor or knot view
   }
 }
+
+// wild card for querying
+export const _ = {};

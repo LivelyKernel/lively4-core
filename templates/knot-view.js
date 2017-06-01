@@ -20,7 +20,7 @@ export default class KnotView extends Morph {
     });
 
     // TODO: Update this
-   pathToLoad.value="https://lively4/dropbox/Traveling_through_Time_and_Code_-_Omniscient_Debugging_and_Beyond.md" 
+   pathToLoad.value="https://lively4/dropbox/Traveling_through_Time_and_Code_-_Omniscient_Debugging_and_Beyond.md";
     this.loadKnot(pathToLoad.value);
   }
   
