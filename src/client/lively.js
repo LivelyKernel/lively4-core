@@ -120,6 +120,7 @@ export default class Lively {
         console.log("reload " + path + " triggers reload of " + ea)
         System.registry.delete(ea)  
         System.import(ea)
+        // #TODO think about if this is ennough or if we need some kind of recursion
       }
       return m
     }).then( mod => {
