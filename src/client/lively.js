@@ -87,7 +87,12 @@ export default class Lively {
         ea.dependencies.find(dep => System.normalizeSync(dep, ea.key) == mod))
       .map( ea => ea.key)
   }
-
+  
+  static async unloadModule(path) {
+    var normalizedPath = System.normalizeSync(path)
+    System.registry.delete(normalizedPath);
+    delete System.loads[normalizedPath] 
+  }
 
   static async reloadModule(path) {
     path = "" + path;
@@ -98,7 +103,7 @@ export default class Lively {
       return   
     }
     var modulePaths = [path]
-    System.registry.delete(System.normalizeSync(path))
+    this.unloadModule(path)
     return System.import(path).then( m => {
       
       // #TODO how can we make the dependecy loading optional... I don't need the whole environment to relaod while developing a core module everybody depends on
@@ -111,16 +116,10 @@ export default class Lively {
       var dependedModules = lively.findDependedModules(path)
       // and update them
       for(var ea of dependedModules) {
-        
-        if (!ea.match(/workspace\:/)) { // ignore some modules
-          modulePaths.push(ea)
-          console.log("reload " + path + " triggers reload of " + ea)
-          System.registry.delete(ea)  
-          System.import(ea)
-        } else {
-          console.log("ignored " + ea+ " while loading " + path)
-          
-        }
+        modulePaths.push(ea)
+        console.log("reload " + path + " triggers reload of " + ea)
+        System.registry.delete(ea)  
+        System.import(ea)
       }
       return m
     }).then( mod => {
