@@ -1,11 +1,10 @@
 
 import html from "src/client/html.js"
+import {pt,rect} from "src/client/graphics.js"
 
 // import lively from './lively.js'
 
 export default class Expose {
-
-
 
   static get _stylesToSave() {
     return [
@@ -34,8 +33,9 @@ export default class Expose {
 
     if (!Expose.current) return
     
-    html.registerKeys(document.body, "expose", Expose.current, true)
-    
+    lively.html.registerKeys(document.body, "expose", Expose.current, true)
+    document.body.focus()
+
     if (Expose.isOpen) {
       return;
     }
@@ -248,7 +248,9 @@ export default class Expose {
     Expose.close();
   }
 
-  static onKeyDown(evt, key) {
+  // Single Global Event
+  static onKeyDown(evt) {
+    var key = String.fromCharCode(evt.keyCode)
     if ((key === "E" && (evt.metaKey || evt.ctrlKey)) || (key === "Q" && evt.altKey)) {
       Expose.toggle();
       evt.preventDefault()
@@ -257,32 +259,26 @@ export default class Expose {
   }
 
   onLeftDown(evt) {
-    if (!Expose.isOpen) return
     Expose.selectPrev();
   }
   
   onUpDown(evt) {
-    if (!Expose.isOpen) return
     Expose.selectUp();
   }
   
   onRightDown(evt) {
-    if (!Expose.isOpen) return
     Expose.selectNext();
   }
 
   onDownDown(evt) {
-    if (!Expose.isOpen) return
     Expose.selectDown();
   }
   
   onEnterDown(evt) {
-    if (!Expose.isOpen) return
     Expose.windowClick.call(Expose.selectedWin, evt);
   }
 
   onEscDown(evt) {
-    if (!Expose.isOpen) return
     Expose.close();
   }
 
@@ -293,13 +289,11 @@ export default class Expose {
       // basic class configuration
       Expose.isOpen = false;
       Expose.windowsPerRows = 5;
-      lively.removeEventListener("ToggleExpose", document.body)
-      html.registerKeys(document.body, "ToggleExpose", Expose, false)
-
-
+      lively.removeEventListener("ToggleExpose", document)
+      lively.addEventListener("ToggleExpose",document, "keydown", evt => {
+        Expose.onKeyDown(evt)
+      })
       Expose.current = new Expose()
-
-      // lively.addEventListener("expose", document.body, 'keydown', Expose.bodyKeyDown)
     } else {
       console.log("defere Post load expose")
       window.setTimeout(this.postLoad, 100)

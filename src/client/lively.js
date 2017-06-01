@@ -16,7 +16,7 @@ import authDropbox from './auth-dropbox.js';
 import authGoogledrive  from './auth-googledrive.js';
 import expose from './expose.js';
 import generateUUID from './uuid.js';
-import {pt} from './graphics.js';
+import {pt, rect} from './graphics.js';
 import Dialog from 'templates/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
 

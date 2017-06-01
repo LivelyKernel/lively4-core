@@ -104,9 +104,11 @@ export default class HTML {
     domain = domain || "Keys"
     target = target || obj
     
-    if (!target || !target.getAttribute) return;
-    if (target.getAttribute("tabindex") === null) {
-      target.setAttribute("tabindex", 0)
+    // enable keyboard events
+    if (obj && obj.getAttribute) {
+      if (obj.getAttribute("tabindex") === null) {
+        obj.setAttribute("tabindex", 0)
+      }
     }
     lively.addEventListener(domain, obj, "keydown", evt => {
       KeyboardHandler.dispatchKey(evt, target, "Down", stopAndPreventDefault)
