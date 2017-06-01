@@ -111,10 +111,16 @@ export default class Lively {
       var dependedModules = lively.findDependedModules(path)
       // and update them
       for(var ea of dependedModules) {
-        modulePaths.push(ea)
-        console.log("reload " + path + " triggers reload of " + ea)
-        System.registry.delete(ea)  
-        System.import(ea)
+        
+        if (!ea.match(/workspace\:/)) { // ignore some modules
+          modulePaths.push(ea)
+          console.log("reload " + path + " triggers reload of " + ea)
+          System.registry.delete(ea)  
+          System.import(ea)
+        } else {
+          console.log("ignored " + ea+ " while loading " + path)
+          
+        }
       }
       return m
     }).then( mod => {

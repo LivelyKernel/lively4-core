@@ -5,7 +5,6 @@ import generateUuid from './uuid.js'
 
 import sourcemap from 'https://raw.githubusercontent.com/mozilla/source-map/master/dist/source-map.min.js'
 
-
 export default class Files {
   static parseSourceReference(ref) {
     if(ref.match("!")) {
