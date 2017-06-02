@@ -32,7 +32,7 @@ export default class TripleList extends Morph {
         // lively.openInspector(knot, undefined, knot.label());
         
         let knotView = await lively.openComponentInWindow("knot-view");
-        knotView.loadKnot(knot.url);
+        knotView.loadKnotForURL(knot.url);
       });
       list.appendChild(listItem);
     });

@@ -1,0 +1,81 @@
+<template id="add-knot" data-class="AddKnot">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style type="text/css">
+  :host {
+    display: flex;
+    flex-direction: row;
+  }
+  #title {
+    flex: 1;
+  }
+    p {
+      padding-left: 5px;
+      padding-right: 5px;
+      margin-top: 5px;
+      margin-bottom: 5px;
+    }
+    
+    p.fill {
+      display: flex;
+      flex-direction: row;
+    }
+    
+    input {
+      width: 40px;
+      flex: 1;
+      margin: 2px;
+    }
+    
+    input:disabled {
+      color: #aaaaaa
+    }
+    
+    #gitrepositoryurl {
+      width: 300px; 
+    }
+    
+    #log {
+      flex: 1;
+      width: 100%;
+    }
+    
+    #travisLink {
+      float: right;
+      margin-right: 5px;
+    }
+    label {
+      padding: 3px;
+      padding-top: 6px;
+      font-size: 13px;
+      color: #555555;
+    }
+
+    #loginButton, #cloneButton, #branchButton, #commitButton {
+      width: 60px;
+    }
+    
+    label.medium {
+      width: 70px;
+    }
+
+    label.small {
+      width: 40px;
+    }
+    
+</style>
+  <select id="directory" >
+    <option>https://lively4/dropbox/</option>
+    <option>https://lively4/references/</option>
+  </select>
+  <input type="text" id="title" value="00 test 31" placeholder="title" title="title">
+  <select id="file-ending" >
+    <option value="md">Markdown</option>
+    <option value="json">JSON</option>
+  </select>
+  <button id="save" title="create knot">
+    <i class="fa fa-check-circle" aria-hidden="true"></i>
+  </button>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

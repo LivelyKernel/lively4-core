@@ -13,8 +13,9 @@ export async function cachedFetch(url, options) {
   }
 }
 
-export function invalidateFetchCache(url) {
+export async function invalidateFetchCache(url) {
   const key = STORAGE_PREFIX_ITEMS + url.toString();
+  await focalStorage.removeItem(key);
 }
 
 class Knot {
@@ -33,6 +34,11 @@ class Knot {
     return this.fileName;
   }
   isTriple() { return false; }
+  async save(newContent) {
+    invalidateFetchCache(this.url);
+    this.content = newContent;
+    await lively.files.saveFile(this.url, newContent);
+  }
 }
 
 class Triple extends Knot {
@@ -53,45 +59,53 @@ export class Graph {
   constructor() {
     this.knots = [];
     this.loadedDirectories = [];
+    // url string -> Promise for Knot
+    this.requestedKnots = new Map();
   }
   
   get triples() {
     return this.knots.filter(knot => knot.isTriple());
   }
 
-  deserializeKnot(fileName, text) {
+  async deserializeKnot(fileName, text) {
     function isTriple(fileName, text) {
       return fileName.endsWith(".triple.json");
     }
     
-    let knot = isTriple(fileName, text) ?
-      new Triple(fileName, text) :
-      new Knot(fileName, text);
+    let knot;
+    if(isTriple(fileName, text)) {
+      knot = new Triple(fileName, text);
+      await this.linkUpTriple(knot);
+    } else {
+      knot = new Knot(fileName, text);
+    }
       
     this.knots.push(knot);
-  }
-  linkUpTriples() {
-    function createReferree(graph, triple, propName) {
-      let subjectUrlString = triple.content[propName];
-      let subjectUrl = new URL(subjectUrlString, triple.fileName);
-      let searchString = subjectUrl.toString();
-      
-      let subject = graph.knots.find(knot => knot.fileName === searchString);
-      if(subject) {
-        triple[propName] = subject;
-      } else {
-        throw new Error(searchString +' '+ triple.fileName+ 'external referrees not yet implemented!');
-      }
-    }
-    this.knots
-      .filter(knot => knot.isTriple())
-      .forEach(triple => {
-        createReferree(this, triple, 'subject');
-        createReferree(this, triple, 'predicate');
-        createReferree(this, triple, 'object');
-      });
+    
+    return knot;
   }
   
+  async createReferree(triple, propName) {
+    let subjectUrlString = triple.content[propName];
+    let subjectUrl = new URL(subjectUrlString, triple.fileName);
+    let searchString = subjectUrl.toString();
+    
+    let subject = await this.requestKnot(subjectUrl);
+    //let subject = this.knots.find(knot => knot.fileName === searchString);
+    if(subject) {
+      triple[propName] = subject;
+    } else {
+      throw new Error(searchString +' '+ triple.fileName+ 'external referrees not yet implemented!');
+    }
+  }
+  async linkUpTriple(triple) {
+    return Promise.all([
+      this.createReferree(triple, 'subject'),
+      this.createReferree(triple, 'predicate'),
+      this.createReferree(triple, 'object')
+    ]);
+  }
+
   static getInstance() {
     if(!this.instance) {
       this.instance = new Graph();
@@ -121,14 +135,22 @@ export class Graph {
     // TODO: we simply return the single reference url for now
     return [knot.fileName];
   }
-  getKnotByUrl(url) {
-    let searchString = url.toString();
-    let knot = this.knots.find(knot => knot.fileName === searchString);
-    if(knot) {
-      return knot;
-    } else {
-      throw new Error('No knot for ' + searchString + ' found!');
+
+  // returns a promise for the Knot
+  async requestKnot(url) {
+    const filePath = url.toString();
+    if(!this.requestedKnots.has(filePath)) {
+      this.requestedKnots.set(filePath, this.loadSingleKnot(url));
     }
+    return this.requestedKnots.get(filePath);
+  }
+  
+  async loadSingleKnot(url) {
+    return cachedFetch(url)
+      .then(text => {
+        const fileName = url.toString();
+        return this.deserializeKnot(fileName, text);
+      });
   }
   
   async loadFromDir(directory) {
@@ -142,13 +164,13 @@ export class Graph {
     let fileDescriptors = json.contents;
     fileDescriptors = fileDescriptors.filter(desc => desc.type === "file");
     let fileNames = fileDescriptors.map(desc => desc.name);
-    let knotDescriptors = await Promise.all(fileNames.map(fileName => {
-      let path = new URL(fileName, directoryURL);
-      return cachedFetch(path)
-        .then(text => ({ text, fileName: path.toString() }));
+    
+    await Promise.all(fileNames.map(fileName => {
+      let knotURL = new URL(fileName, directoryURL);
+      return this.requestKnot(knotURL);
     }));
-    knotDescriptors.forEach(({ text, fileName}) => this.deserializeKnot(fileName, text));
-    this.linkUpTriples();
+    
+    //await this.linkUpTriples();
   }
   
   async getNonCollidableURL(directory, name, fileEnding) {
@@ -175,11 +197,11 @@ export class Graph {
     let content = `# ${name}`;
     await lively.files.saveFile(url, content);
     
-    invalidateFetchCache(directory);
+    await invalidateFetchCache(directory);
     
-    // TODO: load as knot
-    // TODO: update graph
-    // TODO: open editor or knot view
+    let knot = await this.requestKnot(url);
+    let knotView = await lively.openComponentInWindow("knot-view");
+    knotView.loadKnotForURL(knot.url);
   }
 }
 
