@@ -85,7 +85,7 @@ layer(ScopedScripts, "LocalLayer").refineObject(lively, {
 
 layer(ScopedScripts, "DocumentLayer").refineObject(document, {
   get body() {
-    return ScopedScripts.documentRoot
+    return ScopedScripts.documentBody
   },
   
 	write(a) {

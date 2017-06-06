@@ -1,34 +1,69 @@
 <h1>Lively4 Development Journal</h1>
 
 
+<lively-script><script>
+import moment from "src/external/moment.js";
+// #TODO how to do instance-specific behabior here?
+var createEntry = async () => {
+  var container = this.parentElement;
+  var path = "" + container.getPath();
+  var dir = path.replace(/[^/]*$/,"");
+  
+  var dateStr = moment(new Date()).format("YYYY-MM-DD")
+  var filename =  dateStr + ".md"
+  var url = dir  + "/" + filename
 
-<lively-script>
-var div = document.createElement("button");
-div.innerHTML = "hello";
-div.onclick = () => alert("Hey!");
-div
-</lively-script>
+  lively.notify("create " + url)
+  if (false && await lively.files.existFile(url)) {
+    lively.notify("Could not create " + url + ", beacuse it already exists!")
+  } else {
+    var src = "## " + dateStr + "\n\n"
+    
+    lively.files.saveFile(url, src)
+  }
+  container.followPath(url)
+  await container.editFile(url)
+  container.getAceEditor().focus()
+  container.getAceEditor().editor.selection.moveCursorDown()
+  container.getAceEditor().editor.selection.moveCursorDown()
+  container.getAceEditor().editor.selection.clearSelection()
 
+}
+var button = document.createElement("button")
+button.addEventListener("click", () => {createEntry()})
+button.innerHTML = "new"
+button
+</script></lively-script>
 
 
 <lively-script>
 (async () => {
-  var path = "" + this.parentElement.getPath()
-
-  var opts = JSON.parse(await lively.files.statFile(path))
-  var ul = document.createElement("ul")
-  opts.contents && opts.contents.forEach(ea => {
-    var li = document.createElement("li")
-    var a =  document.createElement("a")
-    a.textContent = ea.name
-    a.href = ea.name
-    li.appendChild(a)
-  
-    // lively.html.fixLinks([a], path,  p => this.parentElement.followPath(p))
-    
-    ul.appendChild(li)
-  })
-  
-  return ul
+  var container = this.parentElement
+  var path = "" + container.getPath();
+  var dir = path.replace(/[^/]*$/,"")
+  var opts = JSON.parse(await lively.files.statFile(dir))
+  var list = document.createElement("ul")
+  _.sortBy(opts.contents, ea => ea.name)
+    .reverse()
+    .filter(ea => ea.name.match(/\d\d\d\d-\d\d-\d\d/))
+    .forEach(ea => {
+      var li = document.createElement("li")
+      var a = document.createElement("a")
+      a.innerHTML = ea.name.replace(/\.md/,"")
+      a.href = ea.name
+      a.onclick = (evt) => {
+        evt.preventDefault()
+        container.followPath(dir + "/" + ea.name)
+        return true
+      }
+      li.appendChild(a)
+      list.appendChild(li)
+    })
+  return list
 })()
 </lively-script>
+
+
+
+
+

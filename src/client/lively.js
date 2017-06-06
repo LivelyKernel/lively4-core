@@ -341,7 +341,7 @@ export default class Lively {
   static boundEval(str, ctx) {
     // #TODO refactor away
     // lively.notify("lively.boundEval is depricated")
-    return eval(str)
+    return boundEval(str, ctx)
   }
 
   static pt(x,y) {
@@ -1110,9 +1110,13 @@ export default class Lively {
       if (edit) {
         await editorComp.asyncGet("#editor").then(livelyEditor => {
           var ace = livelyEditor.currentEditor();
-          if(pattern)
-            ace.find(pattern);
-          else if (lineAndColumn) {
+          if(pattern) {
+            // #Hack ontop #Hack, sorry... The editor has still things to do
+            setTimeout(() => {
+              ace.find(pattern);
+            }, 500)
+            
+          } else if (lineAndColumn) {
             ace.gotoLine(lineAndColumn.line, lineAndColumn.column)
           }
         });

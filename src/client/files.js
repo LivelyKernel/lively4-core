@@ -89,4 +89,10 @@ export default class Files {
   	return fetch(urlString, {method: 'OPTIONS'}).then(resp => resp.text())
   }
 
+  static async existFile(urlString){
+  	return fetch(urlString, {method: 'OPTIONS'}).then(resp => resp.status == 200)
+  }
+
+
+
 }

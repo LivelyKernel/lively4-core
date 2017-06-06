@@ -64,7 +64,9 @@ export default class LivelyModuleGraph extends Morph {
           
       Object.values(System.loads).map( ea => ea.key).map(function (moduleName) {
         if (moduleName.match(/\.js\?[0-9]+/)) return;
-        
+        if (moduleName.match(/lively.js/)) return;
+        if (moduleName.match(/graphics.js/)) return;
+        if (moduleName.match(/Morph.js/)) return;
         
         
         graphModules.push(moduleName);
