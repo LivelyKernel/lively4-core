@@ -1,6 +1,6 @@
 import Morph from "./Morph.js"
 
-import loadDropbox, { Graph, _ } from 'src/client/triples/triples.js';
+import { Graph, _ } from 'src/client/triples/triples.js';
 import lively from 'src/client/lively.js';
 
 export default class KnotView extends Morph {
@@ -8,7 +8,6 @@ export default class KnotView extends Morph {
   async initialize() {
     this.windowTitle = "Knot View";
 
-    //Graph.clearInstance();
     let graph = Graph.getInstance();
     await graph.loadFromDir("https://lively4/dropbox/");
 
@@ -18,17 +17,20 @@ export default class KnotView extends Morph {
         this.onPathEntered(pathToLoad.value);
       }
     });
+    
+        let aceComp = this.get('#content-editor');
+aceComp.editor.setOptions({maxLines:Infinity});
 
     // TODO: Update this
-   pathToLoad.value="https://lively4/dropbox/Traveling_through_Time_and_Code_-_Omniscient_Debugging_and_Beyond.md" 
-    this.loadKnot(pathToLoad.value);
+    //pathToLoad.value="https://lively4/dropbox/Traveling_through_Time_and_Code_-_Omniscient_Debugging_and_Beyond.md";
+    //this.loadKnotForURL(pathToLoad.value);
   }
   
   buildRefFor(knot) {
     let ref = document.createElement('a');
     ref.innerHTML = knot.label();
     ref.addEventListener("click", e => {
-      this.loadKnot(knot.fileName);
+      this.loadKnotForURL(knot.fileName);
     });
     
     return ref;
@@ -69,15 +71,19 @@ export default class KnotView extends Morph {
     });
   }
   
+  async loadKnotForURL(url) {
+    return this.loadKnot(url);
+  }
   async loadKnot(url) {
     let graph = Graph.getInstance();
-    let knot = graph.getKnotByUrl(url);
+    let knot = await graph.requestKnot(new URL(url));
     
+    this.get("#path-to-load").value = knot.url;
     this.get("#label").innerHTML = knot.label();
     
     let urlList = this.get("#url-list");
     urlList.innerHTML = "";
-    graph.getUrlsByKnot(knot).forEach(url => {
+    Graph.getInstance().getUrlsByKnot(knot).forEach(url => {
       let listItem = document.createElement('li');
       listItem.innerHTML = url;
       listItem.addEventListener("click", e => {
@@ -119,13 +125,8 @@ export default class KnotView extends Morph {
       this.hide(spoList);
       aceComp.editor.setValue(knot.content);
       aceComp.enableAutocompletion();
-      aceComp.getDoitContext = () => {
-        return window.that;
-      };
       aceComp.aceRequire('ace/ext/searchbox');
-      aceComp.doSave = text => {
-        lively.notify('TEXT:'+text)
-      };
+      aceComp.doSave = text => knot.save(text);
     }
   }
   
@@ -133,6 +134,11 @@ export default class KnotView extends Morph {
   show(element) { element.style.display = "block"; }
 
   onPathEntered(path) {
-    this.loadKnot(path);
+    this.loadKnotForURL(path);
+  }
+  
+  livelyMigrate(oldView) {
+    let oldPath = oldView.get("#path-to-load").value;
+    this.loadKnotForURL(oldPath);
   }
 }

@@ -1,9 +1,23 @@
 <template id="triple-list" data-class="TripleList">
 <style type="text/css">
-
+  #container {
+    overflow-x: auto;
+    word-wrap: break-word;
+  }
+  
+  #path-to-load {
+    width: 100%;
+  }
+  
+  :host {
+    display: flex;
+    flex-direction: column;
+  }
 </style>
 <input type="text" id="path-to-load" value="https://lively4/dropbox/" placeholder="path to load" title="path to load">
-<ul id ="triple-list"></ul>
+<div id="container">
+  <ul id ="triple-list"></ul>
+</div>
 
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
