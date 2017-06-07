@@ -23,6 +23,14 @@ lively-table table, lively-table tr, lively-table  th, lively-table  td {
   border-collapse: collapse;
 }
  
+lively-table td {
+      white-space: nowrap;
+}
+
+lively-table td.number {
+  text-align: right;
+}
+
  
 lively-table .table-selected {
   margin: -1px;

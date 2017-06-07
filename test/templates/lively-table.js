@@ -270,6 +270,23 @@ describe("LivelyTable Component",  () => {
     
   })
 
+  describe("Access Columns",  () => {
+    it("should get a column", done => {
+      fillTableWithNumber(that)
+      expect(that.column(1)[0], "column by index").to.equal(that.cells()[0][1])
+      expect(that.column("B")[0], "column by label").to.equal(that.cells()[0][1])
+      done()
+    });
+
+    it("should return undefined if label not in header", done => {
+      fillTableWithNumber(that)
+      expect(that.column("NotInHeader"), "column by label").to.equal(undefined)
+      done()
+    });
+
+  })
+  
+
 
   describe("Add/Remove Row",  () => {
     it("should add a row at an index", done => {
@@ -290,6 +307,8 @@ describe("LivelyTable Component",  () => {
       expect(cells1.length - 1).to.equal(cells2.length)
       done()
     });
+
+
 
   })
 

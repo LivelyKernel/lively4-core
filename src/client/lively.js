@@ -1222,7 +1222,8 @@ export default class Lively {
       await System.import("src/client/interactive.js");
       InteractiveLayer.beGlobal()
     } else {
-      InteractiveLayer.beNotGlobal()
+      if (window.InteractiveLayer)
+        InteractiveLayer.beNotGlobal()
     }
   }
 

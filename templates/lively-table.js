@@ -68,6 +68,18 @@ export default class LivelyTable extends Morph {
   rows() {
     return lively.array(this.querySelectorAll("tr"))
   }
+  
+  column(indexOrLabel) {
+    var index
+    if (Number.isInteger(indexOrLabel)) {
+      index = indexOrLabel
+    } else {
+      index = this.header().indexOf(indexOrLabel)
+      if (index == -1) return undefined;
+    }
+
+    return this.cells().map( row => row[index])
+  }
 
   cells() {
     return this.rows().map(ea => this.cellsIn(ea))

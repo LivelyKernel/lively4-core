@@ -14,12 +14,12 @@ var createEntry = async () => {
   var url = dir  + "/" + filename
 
   lively.notify("create " + url)
-  if (false && await lively.files.existFile(url)) {
+  if (await lively.files.existFile(url)) {
     lively.notify("Could not create " + url + ", beacuse it already exists!")
   } else {
     var src = "## " + dateStr + "\n\n"
     
-    lively.files.saveFile(url, src)
+    await lively.files.saveFile(url, src)
   }
   container.followPath(url)
   await container.editFile(url)

@@ -4,8 +4,8 @@ import { getCode } from './workspaces.js';
 
 export function fetch(load, fetch) {
   // console.log('fetch', load, fetch);
-  if(load.name.startsWith('workspace:')) {
-    var id = decodeURI(load.name.replace(/^workspace:/, ''));
+  if(load.name.match(/^workspace(js)?:/)) {
+    var id = decodeURI(load.name.replace(/^workspace(js)?:/, ''));
     // console.log(`fetch workspace code for id: ${id}`);
     var code = getCode(id);
     // console.log('Found code', code)

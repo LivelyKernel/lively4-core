@@ -82,7 +82,7 @@ export default function({ types: t, template, traverse, }) {
     },
     visitor: {
       Program(program, { file }) {
-        const DOIT_MATCHER = /^workspace:/;
+        const DOIT_MATCHER = /^workspace(js)?:/;
         const MODULE_MATCHER = /.js$/;
         
         let filename = file.log.filename;

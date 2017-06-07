@@ -1,5 +1,6 @@
 import generateUUID from './../uuid.js';
 import { setCode } from './../workspaces.js';
+import Preferences from "./../preferences.js";
 
 export default async function boundEval(source, thisReference, targetModule) {
   try {
@@ -15,6 +16,9 @@ export default async function boundEval(source, thisReference, targetModule) {
     setCode(codeId, source);
     
     var path = 'workspace:' + encodeURI(codeId)
+    if (Preferences.get('DisableAExpWorkspace')) {
+      path = path.replace(/^workspace/, "workspacejs")
+    }
     return System.import(path)
       .then(m => {
         lively.unloadModule(path)
