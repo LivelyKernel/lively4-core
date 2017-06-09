@@ -1,5 +1,5 @@
 <html>
-  <h1>Tests</h1>
+  <h1>Templates</h1>
   
 <lively-script><script>
 import moment from "src/external/moment.js";
@@ -31,16 +31,17 @@ async function copyTemplate(dir, component, type) {
 async function createEntry(container, input) {
   var path = "" + container.getPath();
   var dir = path.replace(/[^/]*$/,"");
-  var test = input.value + "-test"
+  var component = input.value
   
-  await copyTemplate(dir, test, "js")
-  visitURL(container, dir + "/" + test + ".js")
+  await copyTemplate(dir, component, "js")
+  await copyTemplate(dir, component, "html")
+  visitURL(container, dir + "/" + component + ".js")
 }
 
 async function createUI(container) { 
   var div  = document.createElement("div");
   var input = document.createElement("input");
-  input.value= "lively-component";
+  input.value= "lively-new-component";
   div.appendChild(input);
   var button = document.createElement("button");
   button.addEventListener("click", () => {
@@ -62,20 +63,20 @@ createUI(this.parentElement)
   var dir = path.replace(/[^/]*$/,"")
   var opts = JSON.parse(await lively.files.statFile(dir))
   var testdir = dir + "../test/templates/"
-  // var tests = JSON.parse(await lively.files.statFile(testdir)).contents.map(ea => ea.name)
+  var tests = JSON.parse(await lively.files.statFile(testdir)).contents.map(ea => ea.name)
   
   var list = document.createElement("ul")
   _.sortBy(opts.contents, ea => ea.name)
-    .filter(ea => ea.name.match(/-test.js$/))
+    .filter(ea => ea.name.match(/html$/))
     .forEach(ea => {
       var li = document.createElement("li")
       
       var span = document.createElement("span")
-      span.textContent = ea.name.replace(/\-test.js/," ")
+      span.textContent = ea.name.replace(/\.html/," ")
       li.appendChild(span)
       
       var a = document.createElement("a")
-      a.innerHTML = "js"
+      a.innerHTML = "html"
       a.href = ea.name
       a.onclick = (evt) => {
         evt.preventDefault()
@@ -88,24 +89,35 @@ createUI(this.parentElement)
       span.textContent = " "
       li.appendChild(span)
       
-     
+      var classFile =  ea.name.replace(/\.html/,".js")
+      if (opts.contents.find(ea => ea.name == classFile)) {
+        var classLink = document.createElement("a")
+        classLink.innerHTML = "js"
+        classLink.href = classFile
+        classLink.onclick = (evt) => {
+          evt.preventDefault()
+          container.followPath(dir + "/" + classFile)
+          return true
+        }
+        li.appendChild(classLink)
+      }
         
-      // var span = document.createElement("span")
-      // span.textContent = " "
-      // li.appendChild(span)
+      var span = document.createElement("span")
+      span.textContent = " "
+      li.appendChild(span)
       
-      // var testFile =  ea.name.replace(/\.html/,"-test.js")
-      // if (tests.indexOf(testFile) !== -1) {
-      //   var testLink = document.createElement("a")
-      //   testLink.innerHTML = "test"
-      //   testLink.href = testFile
-      //   testLink.onclick = (evt) => {
-      //     evt.preventDefault()
-      //     container.followPath(testdir + "/" + testFile)
-      //     return true
-      //   }
-      //   li.appendChild(testLink)
-      // }
+      var testFile =  ea.name.replace(/\.html/,"-test.js")
+      if (tests.indexOf(testFile) !== -1) {
+        var testLink = document.createElement("a")
+        testLink.innerHTML = "test"
+        testLink.href = testFile
+        testLink.onclick = (evt) => {
+          evt.preventDefault()
+          container.followPath(testdir + "/" + testFile)
+          return true
+        }
+        li.appendChild(testLink)
+      }
       
       
       list.appendChild(li)
@@ -115,4 +127,3 @@ createUI(this.parentElement)
 </script></lively-script>
   
 </html>
-

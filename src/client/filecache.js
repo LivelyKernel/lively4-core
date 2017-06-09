@@ -42,6 +42,9 @@ export default class FileCache {
     this.db.files.where("name").notEqual("").modify(function(ea) {
        this.extractTitleAndTags(ea)
     })
+    this.db.files.where("type").equal("js").modify(function(ea) {
+      this.extractFunctionsAndClasses(ea)
+    })
   }
 
   extractTitleAndTags(file) {
@@ -64,7 +67,9 @@ export default class FileCache {
     var classes = []
     babel.traverse(ast,{
       Function(path) {
-        if (path.node.id) {
+        if (path.node.key) {
+          functions.push(path.node.key.name)
+        } else if (path.node.id) {
           functions.push(path.node.id.name)
         }
       },
