@@ -12,4 +12,14 @@ export default class Strings {
   static prefixSelector(prefix, s) {
     return prefix + this.toUpperCaseFirst(s)
   }
+  
+  static matchAll(regExString, s) {
+    var all  =[]
+    var regEx = new RegExp(regExString, "g")
+    do {
+      var m = regEx.exec(s)
+      if (m) all.push(m)
+    } while(m)
+    return all
+  }
 }

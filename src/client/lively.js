@@ -226,22 +226,30 @@ export default class Lively {
     this.handleError(error);
   }
   
-  static handleError(error) {
+   static async handleError(error) {
     lively.LastError = error;
-    if (!error) return; // hmm... this is currious...
-    if (document.querySelector("lively-console")) {
-      console.log(error) 
-    } else {
-      lively.notify("Error: ", error, 10, () => {
-      		lively.openComponentInWindow("lively-error").then( comp => {
-            comp.stack =  error.stack
-            comp.parentElement.setAttribute("title",  "" + error.message)
-            comp.style.height = "max-content"
-            var bounds = comp.getBoundingClientRect()
-            comp.parentElement.style.height = (bounds.height + 20)+ "px"
-            comp.parentElement.style.width = bounds.width + "px"
-          })
-        }, "red");
+    try {
+      if (!error) return; // hmm... this is currious...
+      if (error.message.match("Maximum call stack size exceeded")) {
+        console.log(error)
+        return 
+      }
+      if (document.querySelector("lively-console")) {
+        console.log(error) 
+      } else {
+        await lively.notify("Error: ", error, 10, () => {
+        		lively.openComponentInWindow("lively-error").then( comp => {
+              comp.stack =  error.stack
+              comp.parentElement.setAttribute("title",  "" + error.message)
+              comp.style.height = "max-content"
+              var bounds = comp.getBoundingClientRect()
+              comp.parentElement.style.height = (bounds.height + 20)+ "px"
+              comp.parentElement.style.width = bounds.width + "px"
+            })
+          }, "red");
+      }
+    } catch(e) {
+      console.log("An error happend while handling and error: " + e)
     }
   }
 
@@ -534,6 +542,8 @@ export default class Lively {
       	details: "what's up?"})
    */
   static notify(titleOrOptions, text, timeout, cb, color) {
+    try {
+      console.log("notify:" + titleOrOptions)
     var title = titleOrOptions;
     if (titleOrOptions && titleOrOptions.title) {
       title = titleOrOptions.title;
@@ -557,16 +567,13 @@ export default class Lively {
     new LivelyNotification({ title, text }).displayOnConsole();
 
     var notificationList = document.querySelector("lively-notification-list")
-
     if (!notificationList) {
-      
      notificationList = document.createElement("lively-notification-list");
       components.openIn(document.body, notificationList).then( () => {
         if (notificationList.addNotification)
           notificationList.addNotification(title, text, timeout, cb, color);
       });
     } else {
-      
       var duplicateNotification = lively.array(document.querySelectorAll("lively-notification")).find(ea => {
         new LivelyNotification({ "ea title": title, text }).displayOnConsole();
 
@@ -578,7 +585,6 @@ export default class Lively {
       	duplicateNotification.counter++
       	duplicateNotification.render()
         new LivelyNotification({ title, text }).displayOnConsole();
-
       } else {
         if(notificationList && notificationList.addNotification) {
           notificationList.addNotification(title, text, timeout, cb, color);
@@ -587,8 +593,9 @@ export default class Lively {
         }
       }
     }
-
-
+    } catch(e) {
+      console.log("ERROR in lively.notify: " + e)
+    }
   }
   
   

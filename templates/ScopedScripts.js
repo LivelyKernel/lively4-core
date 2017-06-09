@@ -23,43 +23,45 @@ export default class ScopedScripts {
 /*
  * Captures the layer activation on Promise definition and replays it when resolving the promise
  */
-layer(ScopedScripts, "PropagateLayerActicationLayer").refineClass(Promise, {
-	then(onresolve, onerror) {
-	  // return cop.proceed(onresolve, onerror)
+// #TODO it seems, we cannot layer "then" because it will sometimes result in an maximum stack size exeception
+// layer(ScopedScripts, "PropagateLayerActicationLayer").refineClass(Promise, {
+// 	then(onresolve, onerror) {
+// 	  // return cop.proceed(onresolve, onerror)
 
-    var layers = Layers.currentLayers();
-    // console.log("Promise.then ... ");
-		var newResolve = function(){
-		    var args = arguments;
-		    // console.log("replay layers..." + layers);
-		    return cop.withLayers(layers, () => onresolve.apply(window, args));
-		  };
-		var newError = function() {
-		    var args = arguments;
-		    return cop.withLayers(layers, () => onerror.apply(window, args));
-		}; 
-		return cop.proceed(onresolve ? newResolve : undefined,
-		  onerror ? newError : undefined);
-	}
-}).refineObject(lively, {
-  loadJavaScriptThroughDOM(name, url, force) {
-    var globalLayers = Layers.currentLayers();
-    globalLayers.forEach( ea => {
-      // console.log("Layer enable: " + ea)
-      ea.beGlobal();
-    });
-    return cop.proceed(name, url, force).then( (result) => {
-      globalLayers.forEach( ea => {
-        // console.log("Layer disable: " + ea)
-        ea.beNotGlobal();
-      });
-      return result;
-    }, (error) => {
-      globalLayers.forEach( ea => ea.beNotGlobal());
-      return error;
-    });
-  }  
-});
+//     var layers = Layers.currentLayers();
+//     console.log("Promise.then ... ");
+// 		var newResolve = function(){
+		
+// 		    var args = arguments;
+// 		    console.log("replay layers..." + layers);
+// 		    return cop.withLayers(layers, () => onresolve.apply(window, args));
+// 		  };
+// 		var newError = function() {
+// 		    var args = arguments;
+// 		    return cop.withLayers(layers, () => onerror.apply(window, args));
+// 		}; 
+// 		return cop.proceed(onresolve ? newResolve : undefined,
+// 		  onerror ? newError : undefined);
+// 	}
+// }).refineObject(lively, {
+//   loadJavaScriptThroughDOM(name, url, force) {
+//     var globalLayers = Layers.currentLayers();
+//     globalLayers.forEach( ea => {
+//       // console.log("Layer enable: " + ea)
+//       ea.beGlobal();
+//     });
+//     return cop.proceed(name, url, force).then( (result) => {
+//       globalLayers.forEach( ea => {
+//         // console.log("Layer disable: " + ea)
+//         ea.beNotGlobal();
+//       });
+//       return result;
+//     }, (error) => {
+//       globalLayers.forEach( ea => ea.beNotGlobal());
+//       return error;
+//     });
+//   }  
+// });
 
 
 layer(ScopedScripts, "ImportLayer").refineObject(System, {
