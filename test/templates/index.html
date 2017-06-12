@@ -1,6 +1,8 @@
 <html>
   <h1>Tests</h1>
   
+  
+  
 <lively-script><script>
 import moment from "src/external/moment.js";
 import Strings from "src/client/strings.js"
@@ -23,7 +25,7 @@ async function copyTemplate(dir, component, type) {
   } else {
     var templatejs_src = await lively.files.loadFile(dir + "/template." + type)
     templatejs_src = templatejs_src.replace(/\$\$TEMPLATE_CLASS/g, classname)
-    templatejs_src = templatejs_src.replace(/\$\$TEMPLATE_ID/g, component)
+    templatejs_src = templatejs_src.replace(/\$\$TEMPLATE_ID/g, component.replace(/-test/,""))
     await lively.files.saveFile(url, templatejs_src)
   }
 }
@@ -46,15 +48,15 @@ async function createUI(container) {
   button.addEventListener("click", () => {
     createEntry(container, input)
   });
-  button.innerHTML = "create";
+  button.innerHTML = "create test";
   div.appendChild(button);
   return div;
 }
 
-
 createUI(this.parentElement)
 </script></lively-script>
 
+  
 <lively-script><script>
 (async () => {
  var container = this.parentElement
@@ -112,6 +114,19 @@ createUI(this.parentElement)
     })
   return list
 })()
+</script></lively-script>
+
+
+
+<lively-script><script>
+(async (container) => { 
+  var button = document.createElement("button");
+  button.addEventListener("click", () => {
+    lively.openComponentInWindow("lively-testrunner")
+  });
+  button.innerHTML = "run tests";
+  return button;
+})(this.parentElement)
 </script></lively-script>
   
 </html>

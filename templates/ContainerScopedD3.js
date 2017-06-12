@@ -1,8 +1,6 @@
+/* A COP Layer that adapts D3 and Lively Containers to display D3 examples inline */
 import {proceed, layer}  from "src/external/ContextJS/src/contextjs.js"
 import * as cop  from "src/external/ContextJS/src/contextjs.js"
-
-
-/* A COP Layer that adapts D3 and Lively Containers to display D3 examples inline */
 
 layer(window, "ScopedD3").refineObject(d3, {
   select(name, ...rest) {
