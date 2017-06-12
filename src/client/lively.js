@@ -1,3 +1,7 @@
+/* Lively4 core module 
+ * #Lively4 #Singleton #KitchenSink #CyclicDependecies #RefactoringNeeded
+ * 
+ */
 import './patches.js'; // monkey patch the meta sytem....
 import * as jquery from '../external/jquery.js';
 import * as _ from '../external/underscore.js';
@@ -23,16 +27,10 @@ import ViewNav from 'src/client/viewnav.js'
 /* expose external modules */
 import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
-
 import * as kernel from 'kernel';
-
 import Selection from 'templates/lively-selection.js'
 import windows from "templates/lively-window.js"
-
-
 import boundEval from "src/client/code-evaluation/bound-eval.js"
-
-
 
 let $ = window.$; // known global variables.
 
@@ -931,6 +929,25 @@ export default class Lively {
 
     setTimeout( () => $(comp).remove(), timeout || 3000);
     return comp;
+  }
+
+  static async showProgress(label) {
+    var progressContainer  = document.querySelector("#progressContainer")
+    if (!progressContainer) {
+      progressContainer = document.createElement("div")
+      progressContainer.id = "progressContainer"
+      progressContainer.isMetaNode = true
+      // progressContainer.style['pointer-events'] = "none";
+      progressContainer.style.zIndex = 1000
+      document.body.appendChild(progressContainer)
+      lively.setGlobalPosition(progressContainer, pt(50, 50))
+    }
+    
+    var progress = document.createElement("lively-progress")
+    await components.openIn(progressContainer, progress)
+    lively.setExtent(progress, pt(300,20))
+    progress.textContent = label
+    return progress
   }
 
   static allProperties(obj, result) {
