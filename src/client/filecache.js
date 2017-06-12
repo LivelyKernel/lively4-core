@@ -65,7 +65,7 @@ export default class FileCache {
 
   extractTitleAndTags(file) {
     file.title = file.content.split("\n")[0].replace(/## /,"") 
-    file.tags = Strings.matchAll('#[A-Za-z0-9]+', file.content)
+    file.tags = Strings.matchAll('#[A-Za-z0-9]+', file.content).map(ea => "" + ea)
   }
   
   extractFunctionsAndClasses(file) {
