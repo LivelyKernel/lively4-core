@@ -704,7 +704,7 @@ export default class Container extends Morph {
   }
 
   getContentRoot() {
-    // #Design #Livley4 The container should hide all its contents. The styles defined here should not affect others. 
+    // #Design #Lively4 The container should hide all its contents. The styles defined here should not affect others. 
     // return this.get('#container-root');
     
     // #BUT #TODO Blockly and connectors just work globally...

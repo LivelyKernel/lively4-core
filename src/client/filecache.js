@@ -41,15 +41,23 @@ export default class FileCache {
   }
 
   async update() {
-    await this.showProgress("update title", () => {
-      return this.db.files.where("name").notEqual("").modify((ea) => {
-         this.extractTitleAndTags(ea)
-      });
-    })
-    await this.showProgress("extract functions and classes", () => {
+    await this.updateTitleAndTags()
+    await this.updateFunctionAndClasses()
+  }
+
+  async updateFunctionAndClasses() {
+    return this.showProgress("extract functions and classes", () => {
       return this.db.files.where("type").equals("js").modify((ea) => {
         this.extractFunctionsAndClasses(ea)
       })
+    })
+  }
+
+  async updateTitleAndTags() {
+    return this.showProgress("update title", () => {
+      return this.db.files.where("name").notEqual("").modify((ea) => {
+         this.extractTitleAndTags(ea)
+      });
     })
   }
 
@@ -60,12 +68,10 @@ export default class FileCache {
     })
   }
 
-
-
-
   extractTitleAndTags(file) {
     file.title = file.content.split("\n")[0].replace(/## /,"") 
-    file.tags = Strings.matchAll('#[A-Za-z0-9]+', file.content).map(ea => "" + ea)
+    file.tags = Strings.matchAll('(?: )(#[A-Za-z0-9]+)(?=[ \n])(?! ?{)', file.content)
+      .map(ea => ea[1])
   }
   
   extractFunctionsAndClasses(file) {
