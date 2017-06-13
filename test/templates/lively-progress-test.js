@@ -16,9 +16,8 @@ describe("LivelyProgressTest",  function() {
   });
 
   it("should update progress bar", function(done) {
-    that.style.width = "100px"
     that.value = 0.5
-    expect(that.get("#progress").style.width).to.equal("50%")
+    expect(that.get("#progress").style.width).to.equal("150px")
     done();
   });
 
