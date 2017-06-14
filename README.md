@@ -44,4 +44,12 @@ To edit files directly, one can use "edit" instead of "load":
 https://livelykernel.github.io/lively4-core/start.html?edit=/README.md
 ```
 
+# Subtrees
+
+```
+# #TODO refactor this into lively4-server
+git subtree add -P src/external/lively4-search https://github.com/LivelyKernel/lively4-search.git master
+```
+
+
 

@@ -8,6 +8,7 @@ import * as cop from "src/external/ContextJS/src/contextjs.js";
 export default class FileCache {
   
   static current() {
+    // FileCache._current = null
     if (!this._current) {
       this._current = new FileCache("file_cache")
     }
@@ -30,9 +31,17 @@ export default class FileCache {
   
   fileCacheDB() {
     var db = new Dexie(this.name);
-    db.version(1).stores({
+    db.version("1").stores({
         files: 'url,name,type,content,version,options,title,tags,classes,functions'
     })
+    db.version("2").stores({
+        files: 'url,name,type,content,version,options,title,tags,classes,functions',
+        modules: '++id,url,name,dependencies',
+        classes: '++id,url,name,methods',
+        methods: '++id,url,name'
+    }).upgrade(function () {
+    })
+
     return db
   }
   
@@ -218,8 +227,6 @@ export default class FileCache {
     })
   }
 }
-
-
 
 cop.layer(window, "ShowDexieProgress").refineClass(FileCache.current().db.Collection, {
   async modify(func) {
