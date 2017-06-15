@@ -21,6 +21,7 @@ export default class LivelyPDF extends Morph {
   }
 
   async setURL(url) {
+    this.setAttribute("src", url)
     this.pdf = await PDFJS.getDocument(url);
     this.gotoPage(1);
   }
@@ -122,6 +123,10 @@ export default class LivelyPDF extends Morph {
     
     evt.stopPropagation()
     evt.preventDefault()
+  }
+  
+  livelyMigrate(other) {
+    //  this.setURL(other.getURL())
   }
 
 
