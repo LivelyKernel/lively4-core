@@ -2687,7 +2687,7 @@ function webViewerKeyDown(evt) {
   }
 }
 localized.then(function webViewerLocalized() {
-  document.getElementsByTagName('html')[0].dir = mozL10n.getDirection();
+  // document.getElementsByTagName('html')[0].dir = mozL10n.getDirection();
 });
 var PDFPrintServiceFactory = {
   instance: {
@@ -3349,37 +3349,37 @@ PDFPrintService.prototype = {
     }
   }
 };
-var print = window.print;
-window.print = function print() {
-  if (activeService) {
-    console.warn('Ignored window.print() because of a pending print job.');
-    return;
-  }
-  ensureOverlay().then(function () {
-    if (activeService) {
-      OverlayManager.open('printServiceOverlay');
-    }
-  });
-  try {
-    dispatchEvent('beforeprint');
-  } finally {
-    if (!activeService) {
-      console.error('Expected print service to be initialized.');
-      if (OverlayManager.active === 'printServiceOverlay') {
-        OverlayManager.close('printServiceOverlay');
-      }
-      return;
-    }
-    var activeServiceOnEntry = activeService;
-    activeService.renderPages().then(function () {
-      return activeServiceOnEntry.performPrint();
-    }).catch(function () {}).then(function () {
-      if (activeServiceOnEntry.active) {
-        abort();
-      }
-    });
-  }
-};
+// var print = window.print;
+// window.print = function print() {
+//   if (activeService) {
+//     console.warn('Ignored window.print() because of a pending print job.');
+//     return;
+//   }
+//   ensureOverlay().then(function () {
+//     if (activeService) {
+//       OverlayManager.open('printServiceOverlay');
+//     }
+//   });
+//   try {
+//     dispatchEvent('beforeprint');
+//   } finally {
+//     if (!activeService) {
+//       console.error('Expected print service to be initialized.');
+//       if (OverlayManager.active === 'printServiceOverlay') {
+//         OverlayManager.close('printServiceOverlay');
+//       }
+//       return;
+//     }
+//     var activeServiceOnEntry = activeService;
+//     activeService.renderPages().then(function () {
+//       return activeServiceOnEntry.performPrint();
+//     }).catch(function () {}).then(function () {
+//       if (activeServiceOnEntry.active) {
+//         abort();
+//       }
+//     });
+//   }
+// };
 function dispatchEvent(eventType) {
   var event = document.createEvent('CustomEvent');
   event.initCustomEvent(eventType, false, false, 'custom');
@@ -3400,30 +3400,30 @@ function renderProgress(index, total) {
   progressPerc.textContent = mozL10n.get('print_progress_percent', { progress: progress }, progress + '%');
 }
 var hasAttachEvent = !!document.attachEvent;
-window.addEventListener('keydown', function (event) {
-  if (event.keyCode === 80 && (event.ctrlKey || event.metaKey) && !event.altKey && (!event.shiftKey || window.chrome || window.opera)) {
-    window.print();
-    if (hasAttachEvent) {
-      return;
-    }
-    event.preventDefault();
-    if (event.stopImmediatePropagation) {
-      event.stopImmediatePropagation();
-    } else {
-      event.stopPropagation();
-    }
-    return;
-  }
-}, true);
-if (hasAttachEvent) {
-  document.attachEvent('onkeydown', function (event) {
-    event = event || window.event;
-    if (event.keyCode === 80 && event.ctrlKey) {
-      event.keyCode = 0;
-      return false;
-    }
-  });
-}
+// window.addEventListener('keydown', function (event) {
+//   if (event.keyCode === 80 && (event.ctrlKey || event.metaKey) && !event.altKey && (!event.shiftKey || window.chrome || window.opera)) {
+//     window.print();
+//     if (hasAttachEvent) {
+//       return;
+//     }
+//     event.preventDefault();
+//     if (event.stopImmediatePropagation) {
+//       event.stopImmediatePropagation();
+//     } else {
+//       event.stopPropagation();
+//     }
+//     return;
+//   }
+// }, true);
+// if (hasAttachEvent) {
+//   document.attachEvent('onkeydown', function (event) {
+//     event = event || window.event;
+//     if (event.keyCode === 80 && event.ctrlKey) {
+//       event.keyCode = 0;
+//       return false;
+//     }
+//   });
+// }
 if ('onbeforeprint' in window) {
   var stopPropagationIfNeeded = function (event) {
     if (event.detail !== 'custom' && event.stopImmediatePropagation) {
@@ -7821,9 +7821,9 @@ function webViewerLoad() {
   pdfjsWebApp.PDFViewerApplication.run(config);
 }
 if (document.readyState === 'interactive' || document.readyState === 'complete') {
-  webViewerLoad();
+  // webViewerLoad();
 } else {
-  document.addEventListener('DOMContentLoaded', webViewerLoad, true);
+  // document.addEventListener('DOMContentLoaded', webViewerLoad, true);
 }
 
 /***/ })

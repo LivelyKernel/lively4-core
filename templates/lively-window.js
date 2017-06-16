@@ -276,7 +276,8 @@ export default class Window extends Morph {
       this.style.width = "100%";
       this.style.height= "100%";
       document.body.style.overflow = "hidden"
-
+      if (this.target) 
+        this.target.dispatchEvent(new CustomEvent("extent-changed"))
     }
     this.bringMinimizedWindowsToFront()
     this.displayResizeHandle(!this.isMaximized())

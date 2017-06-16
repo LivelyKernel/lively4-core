@@ -9,9 +9,15 @@
       overflow: auto;
     }
   </style>
+  <style  data-src="/src/external/pdfjs/web/viewer.css"></style>
   <pre id="log"></pre>
+
   <div id="container">
-    <canvas id="canvas"></canvas>
+    <div id="viewerContainer"><div class="pdfViewer"></div></div>
+    <!--
+    <div id="text-layer" class="textLayer"></div>
+    -->
+  </div>
   </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
