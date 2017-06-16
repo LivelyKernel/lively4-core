@@ -18,12 +18,16 @@ export default class KnotView extends Morph {
       }
     });
     
-        let aceComp = this.get('#content-editor');
-aceComp.editor.setOptions({maxLines:Infinity});
+    let aceComp = this.get('#content-editor');
+    aceComp.editor.setOptions({maxLines:Infinity});
 
-    // TODO: Update this
-    //pathToLoad.value="https://lively4/dropbox/Traveling_through_Time_and_Code_-_Omniscient_Debugging_and_Beyond.md";
-    //this.loadKnotForURL(pathToLoad.value);
+    if(this.innerHTML !== '') {
+      lively.notify('load from innerHTML ' + this.innerHTML);
+      pathToLoad.value = this.innerHTML;
+      this.innerHTML = '';
+      //"https://lively4/dropbox/Traveling_through_Time_and_Code_-_Omniscient_Debugging_and_Beyond.md";
+      this.loadKnotForURL(pathToLoad.value);
+    }
   }
   
   buildRefFor(knot) {
@@ -135,6 +139,11 @@ aceComp.editor.setOptions({maxLines:Infinity});
 
   onPathEntered(path) {
     this.loadKnotForURL(path);
+  }
+  
+  livelyPrepareSave() {
+    lively.notify('prepare save for: ' + this.get("#path-to-load").value)
+    this.innerHTML = this.get("#path-to-load").value;
   }
   
   livelyMigrate(oldView) {
