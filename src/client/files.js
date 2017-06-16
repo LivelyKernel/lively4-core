@@ -1,11 +1,9 @@
-'use strict';
-
 import focalStorage from './../external/focalStorage.js'
 import generateUuid from './uuid.js'
-
 import sourcemap from 'https://raw.githubusercontent.com/mozilla/source-map/master/dist/source-map.min.js'
 
 export default class Files {
+  
   static parseSourceReference(ref) {
     if(ref.match("!")) {
       var url = ref.replace(/\!.*/,"")
@@ -88,5 +86,11 @@ export default class Files {
   static async statFile(urlString){
   	return fetch(urlString, {method: 'OPTIONS'}).then(resp => resp.text())
   }
+
+  static async existFile(urlString){
+  	return fetch(urlString, {method: 'OPTIONS'}).then(resp => resp.status == 200)
+  }
+
+
 
 }

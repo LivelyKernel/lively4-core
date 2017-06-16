@@ -146,6 +146,20 @@ if (window.lively && window.lively4url) {
           },
           loader: 'workspace-loader'
         },
+        'workspacejs:*': {
+          babelOptions: {
+            es2015: false,
+            stage2: false,
+            stage3: false,
+            plugins: [
+              'babel-plugin-locals',
+              'babel-plugin-doit-result',
+              'babel-plugin-doit-this-ref',
+              'babel-plugin-var-recorder'
+            ]
+          },
+          loader: 'workspace-loader'
+        },
       }
     });
 

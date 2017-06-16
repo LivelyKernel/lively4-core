@@ -16,6 +16,7 @@ export default class Preferences {
       ShowFixedBrowser: {default: true, short: "show fixed browser"},
       InteractiveLayer: {default: false, short: "dev methods"},
       ShowDocumentGrid: {default: false, short: "show grid"},
+      DisableAExpWorkspace: {default: false, short: "disable AExp in workspace"}
     };
   }
 

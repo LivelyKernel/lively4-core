@@ -1,3 +1,7 @@
+/* Lively4 core module 
+ * #Lively4 #Singleton #KitchenSink #CyclicDependecies #RefactoringNeeded
+ * 
+ */
 import './patches.js'; // monkey patch the meta sytem....
 import * as jquery from '../external/jquery.js';
 import * as _ from '../external/underscore.js';
@@ -23,16 +27,10 @@ import ViewNav from 'src/client/viewnav.js'
 /* expose external modules */
 import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
-
 import * as kernel from 'kernel';
-
 import Selection from 'templates/lively-selection.js'
 import windows from "templates/lively-window.js"
-
-
 import boundEval from "src/client/code-evaluation/bound-eval.js"
-
-
 
 let $ = window.$; // known global variables.
 
@@ -226,22 +224,30 @@ export default class Lively {
     this.handleError(error);
   }
   
-  static handleError(error) {
+   static async handleError(error) {
     lively.LastError = error;
-    if (!error) return; // hmm... this is currious...
-    if (document.querySelector("lively-console")) {
-      console.log(error) 
-    } else {
-      lively.notify("Error: ", error, 10, () => {
-      		lively.openComponentInWindow("lively-error").then( comp => {
-            comp.stack =  error.stack
-            comp.parentElement.setAttribute("title",  "" + error.message)
-            comp.style.height = "max-content"
-            var bounds = comp.getBoundingClientRect()
-            comp.parentElement.style.height = (bounds.height + 20)+ "px"
-            comp.parentElement.style.width = bounds.width + "px"
-          })
-        }, "red");
+    try {
+      if (!error) return; // hmm... this is currious...
+      if (error.message.match("Maximum call stack size exceeded")) {
+        console.log(error)
+        return 
+      }
+      if (document.querySelector("lively-console")) {
+        console.log(error) 
+      } else {
+        await lively.notify("Error: ", error, 10, () => {
+        		lively.openComponentInWindow("lively-error").then( comp => {
+              comp.stack =  error.stack
+              comp.parentElement.setAttribute("title",  "" + error.message)
+              comp.style.height = "max-content"
+              var bounds = comp.getBoundingClientRect()
+              comp.parentElement.style.height = (bounds.height + 20)+ "px"
+              comp.parentElement.style.width = bounds.width + "px"
+            })
+          }, "red");
+      }
+    } catch(e) {
+      console.log("An error happend while handling and error: " + e)
     }
   }
 
@@ -341,7 +347,7 @@ export default class Lively {
   static boundEval(str, ctx) {
     // #TODO refactor away
     // lively.notify("lively.boundEval is depricated")
-    return eval(str)
+    return boundEval(str, ctx)
   }
 
   static pt(x,y) {
@@ -534,6 +540,8 @@ export default class Lively {
       	details: "what's up?"})
    */
   static notify(titleOrOptions, text, timeout, cb, color) {
+    try {
+      console.log("notify:" + titleOrOptions)
     var title = titleOrOptions;
     if (titleOrOptions && titleOrOptions.title) {
       title = titleOrOptions.title;
@@ -557,16 +565,13 @@ export default class Lively {
     new LivelyNotification({ title, text }).displayOnConsole();
 
     var notificationList = document.querySelector("lively-notification-list")
-
     if (!notificationList) {
-      
      notificationList = document.createElement("lively-notification-list");
       components.openIn(document.body, notificationList).then( () => {
         if (notificationList.addNotification)
           notificationList.addNotification(title, text, timeout, cb, color);
       });
     } else {
-      
       var duplicateNotification = lively.array(document.querySelectorAll("lively-notification")).find(ea => {
         new LivelyNotification({ "ea title": title, text }).displayOnConsole();
 
@@ -578,7 +583,6 @@ export default class Lively {
       	duplicateNotification.counter++
       	duplicateNotification.render()
         new LivelyNotification({ title, text }).displayOnConsole();
-
       } else {
         if(notificationList && notificationList.addNotification) {
           notificationList.addNotification(title, text, timeout, cb, color);
@@ -587,8 +591,9 @@ export default class Lively {
         }
       }
     }
-
-
+    } catch(e) {
+      console.log("ERROR in lively.notify: " + e)
+    }
   }
   
   
@@ -926,6 +931,25 @@ export default class Lively {
     return comp;
   }
 
+  static async showProgress(label) {
+    var progressContainer  = document.querySelector("#progressContainer")
+    if (!progressContainer) {
+      progressContainer = document.createElement("div")
+      progressContainer.id = "progressContainer"
+      progressContainer.isMetaNode = true
+      // progressContainer.style['pointer-events'] = "none";
+      progressContainer.style.zIndex = 1000
+      document.body.appendChild(progressContainer)
+      lively.setGlobalPosition(progressContainer, pt(50, 50))
+    }
+    
+    var progress = document.createElement("lively-progress")
+    await components.openIn(progressContainer, progress)
+    lively.setExtent(progress, pt(300,20))
+    progress.textContent = label
+    return progress
+  }
+
   static allProperties(obj, result) {
     result = result || {};
     Object.getOwnPropertyNames(obj).forEach( name => {result[name] = obj.constructor.name});
@@ -1110,9 +1134,13 @@ export default class Lively {
       if (edit) {
         await editorComp.asyncGet("#editor").then(livelyEditor => {
           var ace = livelyEditor.currentEditor();
-          if(pattern)
-            ace.find(pattern);
-          else if (lineAndColumn) {
+          if(pattern) {
+            // #Hack ontop #Hack, sorry... The editor has still things to do
+            setTimeout(() => {
+              ace.find(pattern);
+            }, 500)
+            
+          } else if (lineAndColumn) {
             ace.gotoLine(lineAndColumn.line, lineAndColumn.column)
           }
         });
@@ -1218,7 +1246,8 @@ export default class Lively {
       await System.import("src/client/interactive.js");
       InteractiveLayer.beGlobal()
     } else {
-      InteractiveLayer.beNotGlobal()
+      if (window.InteractiveLayer)
+        InteractiveLayer.beNotGlobal()
     }
   }
 

@@ -1,0 +1,51 @@
+<!-- Simple Progress Bar
+-->
+<template id="lively-progress" data-class="LivelyProgress">
+	<style>
+	:host {
+    position: relative;
+	 }
+	
+	#bar {
+	  background-color: rgba(10,10,10,0.6);
+	
+	  border-radius: 5px; 
+	  overflow: hidden;
+	  width: 300px;
+	  height: 20px; 
+	  margin: 2px;
+	}
+	#progress {
+    position: absolute;
+    top: 0px;
+    left: 2px;
+    height: 20px;
+	  width: 170px;
+	  background-color:  rgb(0,78,251);
+	  border-radius: 5px; 
+	  z-index: -1;
+	}
+	
+	#label {
+	  color: white;
+	  text-align: center;
+    width: 100%;
+	  overflow: hidden;
+	}
+	
+	</style>
+
+	<div id="bar2">
+	<div id="bar">
+  	<div id="progress">
+	  </div>
+    <div id="label">
+      <content></content>  
+    </div>
+
+  </div>
+  </div>
+
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

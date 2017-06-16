@@ -15,4 +15,10 @@ describe('strings', () => {
       expect(Strings.prefixSelector("with", "topLeft")).to.equal("withTopLeft");
     });
   })
+  
+  describe('matchAll', () => {
+    it('match a regex', () => {
+      expect(Strings.matchAll(/a[0-9]/, "a1 b1 a2 b2 c2 a")[0][0]).to.equal("a1");
+    });
+  })
 });

@@ -23,15 +23,17 @@ export default class ScopedScripts {
 /*
  * Captures the layer activation on Promise definition and replays it when resolving the promise
  */
+// #TODO it seems, we cannot layer "then" because it will sometimes result in an maximum stack size exeception
 layer(ScopedScripts, "PropagateLayerActicationLayer").refineClass(Promise, {
 	then(onresolve, onerror) {
 	  // return cop.proceed(onresolve, onerror)
 
     var layers = Layers.currentLayers();
-    // console.log("Promise.then ... ");
+    console.log("Promise.then ... ");
 		var newResolve = function(){
+		
 		    var args = arguments;
-		    // console.log("replay layers..." + layers);
+		    console.log("replay layers..." + layers);
 		    return cop.withLayers(layers, () => onresolve.apply(window, args));
 		  };
 		var newError = function() {
@@ -85,7 +87,7 @@ layer(ScopedScripts, "LocalLayer").refineObject(lively, {
 
 layer(ScopedScripts, "DocumentLayer").refineObject(document, {
   get body() {
-    return ScopedScripts.documentRoot
+    return ScopedScripts.documentBody
   },
   
 	write(a) {
