@@ -1,5 +1,5 @@
 import Morph from "./Morph.js"
-import boundEval from "src/client/code-evaluation/bound-eval.js"
+import boundEval from "src/client/bound-eval.js"
 import Window from "./lively-window.js"
 import {pt} from "src/client/graphics.js" 
 import DragBehavior from "src/client/morphic/dragbehavior.js"

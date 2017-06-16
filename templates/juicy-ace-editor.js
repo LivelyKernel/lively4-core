@@ -1,5 +1,5 @@
 import generateUUID from './../src/client/uuid.js';
-import boundEval from './../src/client/code-evaluation/bound-eval.js';
+import boundEval from './../src/client/bound-eval.js';
 
 import Morph from "./Morph.js"
 

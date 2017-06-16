@@ -2,7 +2,7 @@ import Morph from './Morph.js';
 import {babel} from 'systemjs-babel-build';
 import SyntaxChecker from 'src/client/syntax.js'
 import traceBabelPlugin from "./lively-continuous-editor-plugin.js"
-import boundEval from './../src/client/code-evaluation/bound-eval.js';
+import boundEval from './../src/client/bound-eval.js';
 
 import ShowPerformance from "demos/showperformancelayer.js";
 
