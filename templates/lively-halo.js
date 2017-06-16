@@ -28,6 +28,9 @@ export default class Halo extends Morph {
       evt => this.onBodyMouseDown(evt, targetContext));
 
     this.shadowRoot.querySelectorAll(".halo").forEach(ea => ea.halo = this)
+    
+   
+    
     DragBehavior.on(this)
   }
   
@@ -204,6 +207,8 @@ export default class Halo extends Morph {
   static areHalosActive() {
     return Halo.halo && this.halo.is(":visible");
   }
+  
+
   
   static migrate() {
     var old = document.querySelector("lively-halo")
