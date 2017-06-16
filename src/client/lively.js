@@ -32,6 +32,7 @@ import Selection from 'templates/lively-selection.js'
 import windows from "templates/lively-window.js"
 import boundEval from "src/client/code-evaluation/bound-eval.js"
 
+
 let $ = window.$; // known global variables.
 
 // a) Special shorthands for interactive development
@@ -292,6 +293,8 @@ export default class Lively {
     // preload some components
     components.loadByName("lively-window");
     components.loadByName("lively-editor");
+    
+    System.import("src/client/clipboard.js") // depends on me
   }
   
   

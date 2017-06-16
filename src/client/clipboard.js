@@ -4,21 +4,15 @@ export default class Clipboard {
   
   
   static load() {
-
     lively.removeEventListener("Clipboard", document)
     lively.removeEventListener("Clipboard", document.body)
-    
     lively.addEventListener("Clipboard", document, "click", evt => this.onBodyClick(evt))
     lively.addEventListener("Clipboard", document.body, "paste", evt => this.onPaste(evt))
     document.body.setAttribute("tabindex", 0) // just ensure focusabiltity
   }
   
   static onPaste(evt) {
-    lively.notify("onpaste")
-    debugger
     if (!this.lastClickPos) return; // we don't know where to paste it...this.lastClickPos
-
-    
     var data = evt.clipboardData.getData('text/plain')
     if (data) {
       var div = document.createElement("div")
@@ -27,12 +21,12 @@ export default class Clipboard {
       lively.setGlobalPosition(div, this.lastClickPos)
       return 
     }
- var items = (event.clipboardData || evt.clipboardData).items;
+    
+    var items = (event.clipboardData || evt.clipboardData).items;
     if (items.length> 0) {
       for (var index in items) {
         var item = items[index];
         if (item.kind === 'file') {
-          lively.notify("paste " + index)
           var blob = item.getAsFile();
           var reader = new FileReader();
           reader.onload = (event) => {
