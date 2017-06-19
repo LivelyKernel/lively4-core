@@ -1278,7 +1278,14 @@ export default class Lively {
     lively.setPosition(document.body, pos)
   }
 
-
+  static globalFocus() {
+    var scrollTop = document.body.scrollTop
+    var scrollLeft = document.body.scrollLeft
+    document.body.focus() 
+    // the focus scrolls as a side affect, but we don't want that
+    document.body.scrollTop = scrollTop
+    document.body.scrollLeft = scrollLeft
+  }
 
   //  lively.allPreferences()
   static allPreferences() {

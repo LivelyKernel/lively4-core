@@ -34,7 +34,7 @@ export default class Expose {
     if (!Expose.current) return
     
     lively.html.registerKeys(document.body, "expose", Expose.current, true)
-    document.body.focus()
+    lively.globalFocus()
 
     if (Expose.isOpen) {
       return;

@@ -70,8 +70,7 @@ export default class Halo extends Morph {
       return;
     }
     $(this).show();
-    document.body.setAttribute("tabindex", 0)
-    document.body.focus()
+    lively.globalFocus()
   
     this.alignHaloToBounds(target)
   }

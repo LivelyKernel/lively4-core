@@ -7,7 +7,7 @@ export default class Clipboard {
   static load() {
     lively.removeEventListener("Clipboard", document)
     lively.removeEventListener("Clipboard", document.body)
-    lively.addEventListener("Clipboard", document, "click", evt => this.onBodyClick(evt))
+    lively.addEventListener("Clipboard", document, "mousedown", evt => this.onBodyMouseDown(evt))
     lively.addEventListener("Clipboard", document.body, "paste", evt => this.onPaste(evt))
     lively.addEventListener("Clipboard", document.body, "cut", evt => this.onCut(evt))
     lively.addEventListener("Clipboard", document.body, "copy", evt => this.onCopy(evt))
@@ -16,14 +16,26 @@ export default class Clipboard {
   }
   
   static onCut(evt) {
-    if ((!HaloService.areHalosActive() || !that)) 
-      return 
+    if ((!HaloService.areHalosActive() || !that)) {
+      return;
+    }
     this.onCopy(evt)
-    that.remove()
+    if (lively.selection.nodes.length > 0) {
+      var html = lively.selection.nodes.forEach(ea => {
+        ea.remove()
+      })
+      lively.selection.remove()
+       
+    } else {
+      that.remove()
+    }
     Halo.hideHalos()
   }
   
   static onCopy(evt) {
+    if ((!HaloService.areHalosActive() || !that)) {
+      return;
+    }
     if (lively.selection.nodes.length > 0) {
       var html = lively.selection.nodes.map(ea => ea.outerHTML).join("\n")
       evt.clipboardData.setData('text/plain', html);
@@ -32,7 +44,7 @@ export default class Clipboard {
       return 
     }
 
-    if (HaloService.areHalosActive()  && (that !== undefined)) {
+    if ((that !== undefined)) {
         evt.clipboardData.setData('text/plain', that.outerHTML);
         evt.clipboardData.setData('text/html', that.outerHTML);
         lively.notify("data: " + that.outerHTML)
@@ -107,9 +119,9 @@ export default class Clipboard {
     }
   }
 
-  static onBodyClick(evt) {
+  static onBodyMouseDown(evt) {
     if(document.body.parentElement ===  evt.path[0]) {
-      document.body.focus()
+      lively.globalFocus()
       this.lastClickPos = pt(evt.clientX,evt.clientY)
       // lively.showPoint(this.lastClickPos)
     }
