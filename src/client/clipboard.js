@@ -59,31 +59,36 @@ export default class Clipboard {
     
     var data = evt.clipboardData.getData('text/html')
     if (data) {
-      
-      // lively.notify("paste html: " + data)
-      // data = data.replace(/.*<!--StartFragment-->/,"")
-      // data = data.replace(/<!--StartFragment-->.*/,"")
-      
+      // temporarily add everthing into a container 
       var div = document.createElement("div")
       div.style.backgroundColor = "red"
       lively.setExtent(div, pt(100,100))
       div.innerHTML = data
       document.body.appendChild(div)
-      lively.setGlobalPosition(div, this.lastClickPos)
+      lively.setGlobalPosition(div, pt(0,0))
   
-      
-      // only add a div as container when it is needed, otherwise get rid of it
-      var lastPos
-      div.querySelectorAll(":scope > *").forEach(child => {
+      // paste oriented at a shared topLeft
+      var all = lively.array(div.querySelectorAll(":scope > *"))
+       all.forEach(child => {
         document.body.appendChild(child)
-        if(!lastPos) lastPos = lively.getPosition(child)
-        var pos = lively.getPosition(child)
-        lively.setGlobalPosition(child, this.lastClickPos)
-        // keep relative positions...
-        lively.setPosition(child, lively.getPosition(child).addPt(lastPos.subPt(pos)))
-        lastPos = pos
+       })
+      var topLeft
+      all.forEach(ea => {
+        if (!topLeft) 
+          topLeft = lively.getGlobalPosition(ea);
+        else
+          topLeft = topLeft.minPt(lively.getGlobalPosition(ea))
       })
-      div.remove()
+      var offset = this.lastClickPos.subPt(topLeft)
+      all.forEach(child => {
+        document.body.appendChild(child)
+        lively.setPosition(child, lively.getPosition(child).addPt(offset))
+        // lively.showPath([
+        //   lively.getGlobalPosition(child,),
+        //   lively.getGlobalPosition(child).addPt(offset)
+        // ])
+      })
+      div.remove() // and get rid of the tmp container
       return 
     }
   
