@@ -43,8 +43,9 @@ export default class AddTriple extends Morph {
     let title = this.get('#title').value;
     let fileEnding = this.get('#file-ending').value;
 
-    graph.createKnot(directory, title, fileEnding);
+    //graph.createTriple();
     
+    lively.notify(this.get('#subject').value)
     return;
 
     // open the created knot in knot view
