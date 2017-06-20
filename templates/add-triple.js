@@ -7,37 +7,15 @@ export default class AddTriple extends Morph {
   async initialize() {
     this.windowTitle = "Add Triple";
 
-    let title = this.get("#title");
-    title.addEventListener('keyup',  event => {
+    let input = this.get("#inputSubject");
+    input.addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
         this.save();
       }
     });
     
-    let input = this.get("#inputSubject");
-    let list = this.get("#subject");
-    input.addEventListener('keyup',  event => {
-      if (event.keyCode == 13) { // ENTER
-        // https://derickbailey.com/2016/03/23/get-a-data-attribute-value-from-the-selected-datalist-option/
-        var value = input.value;
-        lively.notify('input value: ' + value);
-        // TODO: value could be a literal or a url
-        var option = this.get("#subject [value='" + value + "']");
-        // value could also be an external url
-        if(!option) return;
-        lively.notify(option.innerHTML)
-        window.myOption = option;
-        let id = option.dataset.url;
-        lively.notify('url: ' + id);
-      }
-    });
-    
     let button = this.get('#save');
     button.addEventListener('click', event => this.save());
-    
-    this.prepareOptions('#subject2');
-    this.prepareOptions('#predicate2');
-    this.prepareOptions('#object2');
     
     this.selectors.forEach(({ list }) => this.prepareDatalist(list));
   }
