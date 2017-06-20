@@ -18,12 +18,14 @@ export default class AddTriple extends Morph {
     button.addEventListener('click', event => this.save());
     
     this.prepareOptions('#subject');
+    this.prepareOptions('#predicate');
+    this.prepareOptions('#object');
   }
   
   async prepareOptions(listSelector) {
     let graph = Graph.getInstance();
     
-    let selection = this.get('#subject');
+    let selection = this.get(listSelector);
     
     graph.getKnots().forEach(knot => {
       let option = document.createElement('option');
