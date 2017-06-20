@@ -18,6 +18,7 @@ export default class AddTriple extends Morph {
     let list = this.get("#subject");
     input.addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
+        // https://derickbailey.com/2016/03/23/get-a-data-attribute-value-from-the-selected-datalist-option/
         var value = input.value;
         var option = this.get("[value='" + value + "']");
         if(!option) return;
@@ -58,6 +59,7 @@ export default class AddTriple extends Morph {
     let selection = this.get(listSelector);
     graph.getKnots().forEach(knot => {
       let option = document.createElement('option');
+      
       option.innerHTML = knot.label();
       option.value = knot.url;
       option.setAttribute('data-url', knot.url);
