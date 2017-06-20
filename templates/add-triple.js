@@ -59,6 +59,7 @@ export default class AddTriple extends Morph {
     
     var value = input.value;
     lively.notify('input value: ' + value);
+    // TODO: check for empty value ('')
     // TODO: value could be a literal or a url
     var option = this.get(`${listSelector} [value='${value}']`);
     // value could also be an external url
