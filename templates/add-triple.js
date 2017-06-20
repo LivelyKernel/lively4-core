@@ -73,10 +73,6 @@ export default class AddTriple extends Morph {
   async save() {
     let graph = Graph.getInstance();
 
-    let directory = this.get('#directory').value;
-    let title = this.get('#title').value;
-    let fileEnding = this.get('#file-ending').value;
-
     graph.createTriple(
       this.getURLFor('#inputSubject', '#subject'),
       this.getURLFor('#inputPredicate', '#predicate'),
