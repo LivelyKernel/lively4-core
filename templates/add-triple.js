@@ -14,8 +14,8 @@ export default class AddTriple extends Morph {
       }
     });
     
-    let input = this.get("#input-subject");
-    let list = this.get("#subject");
+    let input = this.get("#inpChocType");
+    let list = this.get("#choType");
     input.addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
         var value = input.value;
