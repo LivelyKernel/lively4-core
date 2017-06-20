@@ -32,6 +32,9 @@ export default class AddTriple extends Morph {
     this.prepareOptions('#subject2');
     this.prepareOptions('#predicate2');
     this.prepareOptions('#object2');
+    this.prepareDatalist('#subject');
+    this.prepareDatalist('#predicate');
+    this.prepareDatalist('#object');
   }
   
   async prepareOptions(listSelector) {
@@ -55,8 +58,9 @@ export default class AddTriple extends Morph {
     let selection = this.get(listSelector);
     graph.getKnots().forEach(knot => {
       let option = document.createElement('option');
+      option.innerHTML = knot.label();
       option.value = knot.url;
-      option.text = knot.label();
+      option.setAttribute('data-url', knot.url);
       
       selection.appendChild(option);
     });
