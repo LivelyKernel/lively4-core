@@ -90,7 +90,20 @@ export default class AddTriple extends Morph {
   }
   
   getURLFor(inputSelector, listSelector) {
-    
+    let input = this.get(inputSelector);
+    let list = this.get(listSelector);
+    // https://derickbailey.com/2016/03/23/get-a-data-attribute-value-from-the-selected-datalist-option/
+    var value = input.value;
+    lively.notify('input value: ' + value);
+    // TODO: value could be a literal or a url
+    var option = this.get("#subject [value='" + value + "']");
+    // value could also be an external url
+    if(!option) return;
+    lively.notify(option.innerHTML)
+    window.myOption = option;
+    let id = option.dataset.url;
+    lively.notify('url: ' + id);
+    return id;
   }
   
   async save() {
