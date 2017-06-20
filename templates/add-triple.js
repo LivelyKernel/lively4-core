@@ -14,8 +14,8 @@ export default class AddTriple extends Morph {
       }
     });
     
-    
-    chocType.addEventListener('keyup',  event => {
+    let inpChocType = this.get("#inpChocType");
+    inpChocType.addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
         let chocType = this.get("#chocType");
         lively.notify(chocType.value);
