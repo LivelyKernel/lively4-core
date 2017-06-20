@@ -19,7 +19,6 @@ export default class AddTriple extends Morph {
     input.addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
         var value = input.value;
-        lively.notify(value);
         var option = this.get("[value='" + value + "']");
         if(!option) return;
         let id = option.getAttribute("data-id");
