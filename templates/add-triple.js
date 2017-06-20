@@ -22,15 +22,8 @@ export default class AddTriple extends Morph {
         lively.notify(value);
         var opt = this.get("[value='" + value + "']");
         if(!opt) return;
-        lively.notify(opt.getAttribute("data-id"));
-        return;
-        var option = this.ui.attributeList.find("[value='" + value + "']");
-        
-        if (option.length > 0) {
-          var id = option.data("id");
-          // do stuff with the id
-        }
-        lively.notify(list.value);
+        let id = opt.getAttribute("data-id");
+        lively.notify(id);
       }
     });
     
