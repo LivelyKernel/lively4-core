@@ -54,7 +54,7 @@ export default class AddTriple extends Morph {
   }
   
   // https://derickbailey.com/2016/03/23/get-a-data-attribute-value-from-the-selected-datalist-option/
-  getURLFor(inputSelector, listSelector) {
+  getURLStringFor(inputSelector, listSelector) {
     let input = this.get(inputSelector);
     let list = this.get(listSelector);
     
@@ -81,14 +81,14 @@ export default class AddTriple extends Morph {
       }
     });
     
-    const subjectURL = this.getURLFor('#inputSubject', '#subject');
-    const predicateURL = this.getURLFor('#inputPredicate', '#predicate');
-    const objectURL = this.getURLFor('#inputObject', '#object');
+    const subjectURLString = this.getURLStringFor('#inputSubject', '#subject');
+    const predicateURLString = this.getURLStringFor('#inputPredicate', '#predicate');
+    const objectURLString = this.getURLStringFor('#inputObject', '#object');
     
     graph.createTriple(
-      subjectURL,
-      predicateURL,
-      objectURL
+      subjectURLString,
+      predicateURLString,
+      objectURLString
     );
   }
 }
