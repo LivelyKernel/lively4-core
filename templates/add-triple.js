@@ -26,7 +26,7 @@ export default class AddTriple extends Morph {
     let graph = Graph.getInstance();
     
     let selection = this.get(listSelector);
-    
+    lively.notify('foo');
     graph.getKnots().forEach(knot => {
       let option = document.createElement('option');
       option.value = knot.url;
