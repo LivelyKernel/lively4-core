@@ -26,13 +26,16 @@ export default class AddTriple extends Morph {
   get selectors() {
     return [{
       input: '#inputSubject',
-      list: '#subject'
+      list: '#subject',
+      debugLabel: 'subject'
     }, {
       input: '#inputPredicate',
-      list: '#predicate'
+      list: '#predicate',
+      debugLabel: 'predicate'
     }, {
       input: '#inputObject',
-      list: '#object'
+      list: '#object',
+      debugLabel: 'object'
     }]
   }
   
@@ -65,9 +68,9 @@ export default class AddTriple extends Morph {
     // value could also be an external url
     if(!option) return;
     lively.notify(option.innerHTML)
-    let id = option.dataset.url;
-    lively.notify('url: ' + id);
-    return id;
+    let url = option.dataset.url;
+    lively.notify('url: ' + url);
+    return url;
   }
   
   async save() {
