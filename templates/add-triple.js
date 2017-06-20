@@ -29,9 +29,9 @@ export default class AddTriple extends Morph {
     let button = this.get('#save');
     button.addEventListener('click', event => this.save());
     
-    this.prepareOptions('#subject');
-    this.prepareOptions('#predicate');
-    this.prepareOptions('#object');
+    this.prepareOptions('#subject2');
+    this.prepareOptions('#predicate2');
+    this.prepareOptions('#object2');
   }
   
   async prepareOptions(listSelector) {
@@ -56,9 +56,9 @@ export default class AddTriple extends Morph {
     let fileEnding = this.get('#file-ending').value;
 
     graph.createTriple(
-      this.get('#subject').value,
-      this.get('#predicate').value,
-      this.get('#object').value
+      this.get('#subject2').value,
+      this.get('#predicate2').value,
+      this.get('#object2').value
     );
   }
 }
