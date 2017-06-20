@@ -26,6 +26,8 @@ export default class AddTriple extends Morph {
     let option = document.createElement('option');
     option.value = 'World';
     option.text = 'Hello';
+    
+    selection.appendChild(option)
 
   }
   
