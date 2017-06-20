@@ -48,11 +48,5 @@ export default class AddTriple extends Morph {
       this.get('#predicate').value,
       this.get('#object').value
     );
-    
-    return;
-
-    // open the created knot in knot view
-    let knotView = await lively.openComponentInWindow("knot-view");
-    knotView.loadKnotForURL(knot.url);
   }
 }
