@@ -27,11 +27,10 @@ export default class AddTriple extends Morph {
     
     graph.getKnots().forEach(knot => {
       let option = document.createElement('option');
-      option.value = 'World';
-      option.text = 'Hello';
+      option.value = knot.url;
+      option.text = knot.label();
       
-      selection.appendChild(option)
-    
+      selection.appendChild(option);
     });
   }
   
