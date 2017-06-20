@@ -43,6 +43,23 @@ export default class AddTriple extends Morph {
     this.prepareDatalist('#object');
   }
   
+  get selectors() {
+    return [{
+      input: '#inputSubject',
+      list: '#subject'
+    }, {
+      input: '#inputPredicate',
+      list: '#predicate'
+    }, {
+      input: '#inputObject',
+      list: '#object'
+    }]
+  }
+  
+  setupSaveEventListeners() {
+    
+  }
+  
   async prepareOptions(listSelector) {
     let graph = Graph.getInstance();
     await graph.loadFromDir('https://lively4/dropbox/');
@@ -71,6 +88,10 @@ export default class AddTriple extends Morph {
       
       selection.appendChild(option);
     });
+  }
+  
+  getURLFor(inputSelector, listSelector) {
+    
   }
   
   async save() {
