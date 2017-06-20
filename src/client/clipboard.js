@@ -36,26 +36,33 @@ export default class Clipboard {
     if ((!HaloService.areHalosActive() || !that)) {
       return;
     }
+    evt.preventDefault(); 
+    evt.stopPropagation()
+    var nodes = []
     if (lively.selection.nodes.length > 0) {
-      var html = lively.selection.nodes.map(ea => ea.outerHTML).join("\n")
-      evt.clipboardData.setData('text/plain', html);
-      evt.clipboardData.setData('text/html', html);
-      evt.preventDefault(); 
-      return 
+      nodes = lively.selection.nodes
+    } else if ((that !== undefined)) {
+      nodes = [that]
     }
 
-    if ((that !== undefined)) {
-        evt.clipboardData.setData('text/plain', that.outerHTML);
-        evt.clipboardData.setData('text/html', that.outerHTML);
-        lively.notify("data: " + that.outerHTML)
-        evt.preventDefault(); 
-    }
+    // prepare for serialization
+    nodes.forEach(node => {
+      node.querySelectorAll("*").forEach( ea => {
+        if (ea.livelyPrepareSave) ea.livelyPrepareSave();
+      });
+    })
+    
+    var html = nodes.map(ea => ea.outerHTML).join("\n")
+    evt.clipboardData.setData('text/plain', html);
+    evt.clipboardData.setData('text/html', html);
   }
 
   static onPaste(evt) {
     if (!this.lastClickPos) return; // we don't know where to paste it...this.lastClickPos
     
     if (document.activeElement !== document.body) return
+    evt.stopPropagation()
+    evt.preventDefault(); 
     
     var data = evt.clipboardData.getData('text/html')
     if (data) {
@@ -89,17 +96,18 @@ export default class Clipboard {
         // ])
       })
       div.remove() // and get rid of the tmp container
+
       return 
     }
-  
-  
-  
+
     var data = evt.clipboardData.getData('text/plain')
     if (data) {
       var div = document.createElement("div")
       div.innerHTML = data
       document.body.appendChild(div)
       lively.setGlobalPosition(div, this.lastClickPos)
+      evt.stopPropagation()
+      evt.preventDefault(); 
       return 
     }
     
@@ -120,8 +128,11 @@ export default class Clipboard {
           reader.readAsDataURL(blob);
         }
       }
+      evt.stopPropagation()
+      evt.preventDefault(); 
       return 
     }
+ 
   }
 
   static onBodyMouseDown(evt) {
