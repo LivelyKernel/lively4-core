@@ -209,7 +209,7 @@ export class Graph {
   }
   async createTriple(subjectURL, predicateURL, objectURL) {
     const directory = 'https://lively4/dropbox/';
-    let url = await this.getNonCollidableURL(directory, 'triple', '.triple.json');
+    let url = await this.getNonCollidableURL(directory, 'triple', 'triple.json');
     let content = JSON.stringify({
       subject: subjectURL,
       predicate: predicateURL,
