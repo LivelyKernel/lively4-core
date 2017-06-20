@@ -76,6 +76,11 @@ export default class AddTriple extends Morph {
   async save() {
     let graph = Graph.getInstance();
 
+    this.spo.forEach(({ input, debugLabel }) => {
+      if(this.get(input).value === '') {
+        lively.notify(`${debugLabel} not specified!`, null, 2000, null, 'red');
+      }
+    })
     const subjectURL = this.getURLFor('#inputSubject', '#subject');
     const predicateURL = this.getURLFor('#inputPredicate', '#predicate');
     const objectURL = this.getURLFor('#inputObject', '#object');
