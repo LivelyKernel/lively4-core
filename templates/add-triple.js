@@ -38,9 +38,8 @@ export default class AddTriple extends Morph {
     this.prepareOptions('#subject2');
     this.prepareOptions('#predicate2');
     this.prepareOptions('#object2');
-    this.prepareDatalist('#subject');
-    this.prepareDatalist('#predicate');
-    this.prepareDatalist('#object');
+    
+    this.selectors.forEach(({ list }) => this.prepareDatalist(list));
   }
   
   get selectors() {
