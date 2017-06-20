@@ -16,6 +16,17 @@ export default class AddTriple extends Morph {
     
     let button = this.get('#save');
     button.addEventListener('click', event => this.save());
+    
+    this.prepareOptions('#subject');
+  }
+  
+  prepareOptions(listSelector) {
+    let selection = this.get('#subject');
+    
+    let option = document.createElement('option');
+    option.value = 'World';
+    option.text = 'Hello';
+
   }
   
   async save() {
