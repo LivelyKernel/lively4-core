@@ -14,6 +14,13 @@ export default class AddTriple extends Morph {
       }
     });
     
+    let chocType = this.get("#chocType");
+    chocType.addEventListener('keyup',  event => {
+      if (event.keyCode == 13) { // ENTER
+        lively.notify(chocType.value);
+      }
+    });
+    
     let button = this.get('#save');
     button.addEventListener('click', event => this.save());
     
