@@ -14,11 +14,18 @@ export default class AddTriple extends Morph {
       }
     });
     
-    let inpChocType = this.get("#inpChocType");
-    inpChocType.addEventListener('keyup',  event => {
+    let input = this.get("#inpChocType");
+    let list = this.get("#chocType");
+    input.addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
-        let chocType = this.get("#chocType");
-        lively.notify(chocType.value);
+        var value = input.val();
+        var option = this.ui.attributeList.find("[value='" + value + "']");
+        
+        if (option.length > 0) {
+          var id = option.data("id");
+          // do stuff with the id
+        }
+        lively.notify(list.value);
       }
     });
     
