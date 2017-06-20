@@ -24,7 +24,8 @@ export default class AddTriple extends Morph {
   
   async prepareOptions(listSelector) {
     let graph = Graph.getInstance();
-    
+    await graph.loadFromDir('https://lively4/dropbox/');
+
     let selection = this.get(listSelector);
     graph.getKnots().forEach(knot => {
       lively.notify('foo');
@@ -38,7 +39,7 @@ export default class AddTriple extends Morph {
   
   async save() {
     let graph = Graph.getInstance();
-    
+
     let directory = this.get('#directory').value;
     let title = this.get('#title').value;
     let fileEnding = this.get('#file-ending').value;
