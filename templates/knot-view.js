@@ -142,7 +142,7 @@ export default class KnotView extends Morph {
   }
   
   livelyPrepareSave() {
-    lively.notify('prepare save for: ' + this.get("#path-to-load").value)
+    //lively.notify('prepare save for: ' + this.get("#path-to-load").value)
     this.innerHTML = this.get("#path-to-load").value;
   }
   
