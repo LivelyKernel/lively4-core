@@ -207,13 +207,13 @@ export class Graph {
     let knotView = await lively.openComponentInWindow("knot-view");
     knotView.loadKnotForURL(knot.url);
   }
-  async createTriple(subjectURL, predicateURL, objectURL) {
+  async createTriple(subjectUrlString, predicateURLString, objectURLString) {
     const directory = 'https://lively4/dropbox/';
     let url = await this.getNonCollidableURL(directory, 'triple', 'triple.json');
     let content = JSON.stringify({
-      subject: subjectURL,
-      predicate: predicateURL,
-      object: objectURL
+      subject: subjectUrlString,
+      predicate: predicateURLString,
+      object: objectURLString
     });
     await lively.files.saveFile(url, content);
     
