@@ -20,9 +20,9 @@ export default class AddTriple extends Morph {
       if (event.keyCode == 13) { // ENTER
         var value = input.value;
         lively.notify(value);
-        var opt = this.get("[value='" + value + "']");
-        if(!opt) return;
-        let id = opt.getAttribute("data-id");
+        var option = this.get("[value='" + value + "']");
+        if(!option) return;
+        let id = option.getAttribute("data-id");
         lively.notify(id);
       }
     });
