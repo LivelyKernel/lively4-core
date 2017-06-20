@@ -63,6 +63,10 @@ export class Graph {
     this.requestedKnots = new Map();
   }
   
+  
+  getKnots() {
+    return this.knots;
+  }
   get triples() {
     return this.knots.filter(knot => knot.isTriple());
   }
