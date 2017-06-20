@@ -7,12 +7,11 @@ export default class AddTriple extends Morph {
   async initialize() {
     this.windowTitle = "Add Triple";
 
-    let input = this.get("#inputSubject");
-    input.addEventListener('keyup',  event => {
+    this.selectors.forEach(({ input }) => input.addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
         this.save();
       }
-    });
+    }));
     
     let button = this.get('#save');
     button.addEventListener('click', event => this.save());
@@ -76,6 +75,7 @@ export default class AddTriple extends Morph {
     const subjectURL = this.getURLFor('#inputSubject', '#subject');
     const predicateURL = this.getURLFor('#inputPredicate', '#predicate');
     const objectURL = this.getURLFor('#inputObject', '#object');
+    
     graph.createTriple(
       subjectURL,
       predicateURL,
