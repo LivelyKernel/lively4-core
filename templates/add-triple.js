@@ -8,7 +8,7 @@ export default class AddTriple extends Morph {
     this.windowTitle = "Add Triple";
 
     let input = this.get("#inputSubject");
-    this.selectors.forEach(({ input }) => this.get(input).addEventListener('keyup',  event => {
+    this.spo.forEach(({ input }) => this.get(input).addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
         this.save();
       }
@@ -17,13 +17,11 @@ export default class AddTriple extends Morph {
     let button = this.get('#save');
     button.addEventListener('click', event => this.save());
     
-    this.selectors.forEach(({ list }) => this.prepareDatalist(list));
+    this.spo.forEach(({ list }) => this.prepareDatalist(list));
   }
   
   /** subject, predicate, object */
-  get spo() { return this.selectors; }
-  
-  get selectors() {
+  get spo() {
     return [{
       input: '#inputSubject',
       list: '#subject',
