@@ -22,7 +22,7 @@ export default class AddTriple extends Morph {
         var value = input.value;
         lively.notify('input value: ' + value);
         // TODO: value could be a literal or a url
-        var option = this.get("[value='" + value + "']");
+        var option = this.get("#subject [value='" + value + "']");
         // value could also be an external url
         if(!option) return;
         lively.notify(option.innerHTML)
