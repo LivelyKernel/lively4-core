@@ -1,4 +1,6 @@
-import focalStorage from 'src/external/focalStorage.js'
+import focalStorage from 'src/external/focalStorage.js';
+import uuid from '../uuid.js';
+
 const STORAGE_PREFIX = 'triple-notes:';
 const STORAGE_PREFIX_ITEMS = STORAGE_PREFIX + 'items:';
 
