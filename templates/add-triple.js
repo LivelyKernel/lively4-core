@@ -20,6 +20,7 @@ export default class AddTriple extends Morph {
       if (event.keyCode == 13) { // ENTER
         // https://derickbailey.com/2016/03/23/get-a-data-attribute-value-from-the-selected-datalist-option/
         var value = input.value;
+        lively.notify('input value: ' + value);
         // TODO: value could be a literal or a url
         var option = this.get("[value='" + value + "']");
         // value could also be an external url
