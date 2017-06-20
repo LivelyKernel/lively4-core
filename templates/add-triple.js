@@ -25,7 +25,7 @@ export default class AddTriple extends Morph {
         var option = this.get("[value='" + value + "']");
         // value could also be an external url
         if(!option) return;
-        lively.inspect(option)
+        lively(option.innerHTML)
         let id = option.dataset.url;
         lively.notify('url: ' + id);
       }
