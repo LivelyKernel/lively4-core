@@ -14,9 +14,6 @@ export default class AddTriple extends Morph {
       }
     }));
     
-    let button = this.get('#save');
-    button.addEventListener('click', event => this.save());
-    
     this.spo.forEach(({ list }) => this.prepareDatalist(list));
   }
   
