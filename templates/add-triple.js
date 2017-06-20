@@ -20,6 +20,9 @@ export default class AddTriple extends Morph {
     this.selectors.forEach(({ list }) => this.prepareDatalist(list));
   }
   
+  /** subject, predicate, object */
+  get spo() { return this.selectors; }
+  
   get selectors() {
     return [{
       input: '#inputSubject',
