@@ -18,7 +18,7 @@ export default class AddTriple extends Morph {
     let list = this.get("#chocType");
     input.addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
-        var value = input.val();
+        var value = input.value;
         lively.notify(value);
         var option = this.ui.attributeList.find("[value='" + value + "']");
         
