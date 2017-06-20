@@ -67,7 +67,7 @@ export default class AddTriple extends Morph {
       
       option.innerHTML = knot.label();
       option.value = knot.url;
-      option.dataset.url = 123;knot.url;
+      option.setAttribute('23');knot.url;
       
       selection.appendChild(option);
     });
