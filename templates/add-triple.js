@@ -79,6 +79,7 @@ export default class AddTriple extends Morph {
     this.spo.forEach(({ input, debugLabel }) => {
       if(this.get(input).value === '') {
         lively.notify(`${debugLabel} not specified!`, null, 2000, null, 'red');
+        throw new RangeError(`No ${debugLabel} specified in Add Triple.`);
       }
     })
     const subjectURL = this.getURLFor('#inputSubject', '#subject');
