@@ -20,15 +20,19 @@ export default class AddTriple extends Morph {
     this.prepareOptions('#subject');
   }
   
-  prepareOptions(listSelector) {
+  async prepareOptions(listSelector) {
+    let graph = Graph.getInstance();
+    
     let selection = this.get('#subject');
     
-    let option = document.createElement('option');
-    option.value = 'World';
-    option.text = 'Hello';
+    graph.getKnots().forEach(knot => {
+      let option = document.createElement('option');
+      option.value = 'World';
+      option.text = 'Hello';
+      
+      selection.appendChild(option)
     
-    selection.appendChild(option)
-
+    });
   }
   
   async save() {
