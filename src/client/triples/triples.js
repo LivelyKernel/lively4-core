@@ -207,6 +207,22 @@ export class Graph {
     let knotView = await lively.openComponentInWindow("knot-view");
     knotView.loadKnotForURL(knot.url);
   }
+  async createTriple(subject, predicate, object) {
+    const directory = 'https://lively4/dropbox/';
+    let url = await this.getNonCollidableURL(directory, name, '.triple.json');
+    let content = JSON.stringify({
+      subject: subject.url,
+      predicate: predicate.url,
+      object: object.url
+    });
+    await lively.files.saveFile(url, content);
+    
+    await invalidateFetchCache(directory);
+    
+    let triple = await this.requestKnot(url);
+    let knotView = await lively.openComponentInWindow("knot-view");
+    knotView.loadKnotForURL(triple.url);
+  }
 }
 
 // wild card for querying
