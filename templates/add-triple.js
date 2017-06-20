@@ -37,20 +37,6 @@ export default class AddTriple extends Morph {
     
   }
   
-  async prepareOptions(listSelector) {
-    let graph = Graph.getInstance();
-    await graph.loadFromDir('https://lively4/dropbox/');
-
-    let selection = this.get(listSelector);
-    graph.getKnots().forEach(knot => {
-      let option = document.createElement('option');
-      option.value = knot.url;
-      option.text = knot.label();
-      
-      selection.appendChild(option);
-    });
-  }
-  
   async prepareDatalist(listSelector) {
     let graph = Graph.getInstance();
     await graph.loadFromDir('https://lively4/dropbox/');
