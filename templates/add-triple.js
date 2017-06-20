@@ -21,6 +21,8 @@ export default class AddTriple extends Morph {
         var value = input.value;
         lively.notify(value);
         var opt = this.get("[value='" + value + "']");
+        lively.notify(opt.data('id'));
+        return;
         var option = this.ui.attributeList.find("[value='" + value + "']");
         
         if (option.length > 0) {
