@@ -101,9 +101,9 @@ export default class AddTriple extends Morph {
     let fileEnding = this.get('#file-ending').value;
 
     graph.createTriple(
-      this.get('#subject2').value,
-      this.get('#predicate2').value,
-      this.get('#object2').value
+      this.getURLFor('#inputSubject', '#subject'),
+      this.getURLFor('#inputPredicate', '#predicate'),
+      this.getURLFor('#inputObject', '#object')
     );
   }
 }
