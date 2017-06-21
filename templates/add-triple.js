@@ -92,9 +92,9 @@ export default class AddTriple extends Morph {
       }
     });
     
-    const subjectURLString = this.getURLStringFor('#inputSubject', '#subject');
-    const predicateURLString = this.getURLStringFor('#inputPredicate', '#predicate');
-    const objectURLString = this.getURLStringFor('#inputObject', '#object');
+    const subjectURLString = this.get('subject2').getURLStringFor();
+    const predicateURLString = this.get('predicate2').getURLStringFor();
+    const objectURLString = this.get('object2').getURLStringFor();
     
     graph.createTriple(
       subjectURLString,
