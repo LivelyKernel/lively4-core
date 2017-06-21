@@ -13,13 +13,6 @@ export default class AddTriple extends Morph {
       input.setPlaceholder(placeholder);
       input.onEnter = () => this.save();
     });
-    this.spo.forEach(({ input }) => this.get(input).addEventListener('keyup',  event => {
-      if (event.keyCode == 13) { // ENTER
-        this.save();
-      }
-    }));
-    
-    this.spo.forEach(({ list }) => this.prepareDatalist(list));
   }
   
   /** subject, predicate, object */
