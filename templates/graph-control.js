@@ -31,9 +31,6 @@ export default class GraphControl extends Morph {
   }
   
   async launchTripleList() {
-    lively.notify(123)
-    let tripleList = await lively.openComponentInWindow("triple-list");
-    //tripleList.loadKnotForURL(knot.url);
-
+    await lively.openComponentInWindow("triple-list");
   }
 }
