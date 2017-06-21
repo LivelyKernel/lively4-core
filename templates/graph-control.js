@@ -17,6 +17,9 @@ export default class GraphControl extends Morph {
 
     let button = this.get('#addDirectory');
     button.addEventListener('click', event => this.addDirectory());
+
+    let button2 = this.get('#addDirectory');
+    button2.addEventListener('click', event => this.addDirectory());
   }
   
   async addDirectory() {
