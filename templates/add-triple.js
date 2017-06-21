@@ -7,10 +7,12 @@ export default class AddTriple extends Morph {
   async initialize() {
     this.windowTitle = "Add Triple";
 
-    let subject = this.get('#subject2');
-    subject.setLabel('Subject');
-    subject.setPlaceholder('subject');
-    
+    this.spo.forEach(() => {
+      let subject = this.get('#subject2');
+      subject.setLabel('Subject');
+      subject.setPlaceholder('subject');
+      subject.onEnter = () => this.save();
+    });
     this.spo.forEach(({ input }) => this.get(input).addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
         this.save();
@@ -23,16 +25,22 @@ export default class AddTriple extends Morph {
   /** subject, predicate, object */
   get spo() {
     return [{
+      label: 'Subject',
+      placeholder: 'subject',
       input: '#inputSubject',
       list: '#subject',
       debugLabel: 'subject',
       selector: '#subject2'
     }, {
+      label: 'Predicate',
+      placeholder: 'predicate',
       input: '#inputPredicate',
       list: '#predicate',
       debugLabel: 'predicate',
       selector: '#predicate2'
     }, {
+      label: 'Object',
+      placeholder: 'object',
       input: '#inputObject',
       list: '#object',
       debugLabel: 'object',
