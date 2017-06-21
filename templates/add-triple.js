@@ -21,17 +21,17 @@ export default class AddTriple extends Morph {
       label: 'Subject',
       placeholder: 'subject',
       debugLabel: 'subject',
-      selector: '#subject2'
+      selector: '#subject'
     }, {
       label: 'Predicate',
       placeholder: 'predicate',
       debugLabel: 'predicate',
-      selector: '#predicate2'
+      selector: '#predicate'
     }, {
       label: 'Object',
       placeholder: 'object',
       debugLabel: 'object',
-      selector: '#object2'
+      selector: '#object'
     }]
   }
   
