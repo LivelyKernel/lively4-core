@@ -1132,9 +1132,6 @@ export default class Container extends Morph {
       this.showNavbarSublist(targetItem);
     }
   }
-  isFullscreen() {
-    return this.get("#container-navigation").style.display  == "none"
-  }
   
   isFullscreen() {
     return this.get("#container-navigation").style.display  == "none"
