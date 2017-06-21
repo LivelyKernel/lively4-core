@@ -36,7 +36,7 @@ export default class KnotInput extends Morph {
   }
   
   // https://derickbailey.com/2016/03/23/get-a-data-attribute-value-from-the-selected-datalist-option/
-  getURLStringFor() {
+  getURLString() {
     var value = this.input.value;
     lively.notify('input value: ' + value);
     // TODO: check for empty value ('')
