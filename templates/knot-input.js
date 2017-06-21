@@ -15,7 +15,7 @@ export default class KnotInput extends Morph {
       }
     });
     
-    this.prepareDatalist(listSelector);
+    this.prepareDatalist(this.listSelector);
   }
   async prepareDatalist(listSelector) {
     let graph = Graph.getInstance();
