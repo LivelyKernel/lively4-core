@@ -18,8 +18,6 @@ export default class KnotInput extends Morph {
     });
     
     await this.prepareDatalist();
-    this.setLabel('Foo');
-    this.setPlaceholder('Foo');
   }
   
   async prepareDatalist() {
