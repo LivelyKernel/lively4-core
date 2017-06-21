@@ -41,7 +41,7 @@ export default class GraphControl extends Morph {
   
   async openKnotView() {
     const knotView = await lively.openComponentInWindow("knot-view");
-    const knotURL = this.get('#open-knot-view').getURLStringFor();
+    const knotURL = this.get('#open-knot-view').getURLString();
     
     knotView.loadKnotForURL(knotURL);
   }
