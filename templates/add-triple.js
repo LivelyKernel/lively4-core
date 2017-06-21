@@ -85,8 +85,8 @@ export default class AddTriple extends Morph {
   async save() {
     let graph = Graph.getInstance();
 
-    this.spo.forEach(({ input, debugLabel }) => {
-      if(this.get(input).value === '') {
+    this.spo.forEach(({ selector, debugLabel }) => {
+      if(this.get(selector).getValue() === '') {
         lively.notify(`${debugLabel} not specified!`, null, 2, null, 'red');
         throw new RangeError(`No ${debugLabel} specified in Add Triple.`);
       }
