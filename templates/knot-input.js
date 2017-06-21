@@ -54,6 +54,6 @@ export default class KnotInput extends Morph {
   setLabel(text) { this.label.innerHTML = text; }
   setPlaceholder(text) { this.input.setAttribute('placeholder', text); }
   onEnter() {
-    lively.notify(123 + this.getURLStringFor(this.inputSelector, this.listSelector))
+    lively.notify(123 + this.getURLStringFor())
   }
 }
