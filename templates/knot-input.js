@@ -7,6 +7,7 @@ export default class KnotInput extends Morph {
   get listSelector() { return '#list'}
   get input() { return this.get(this.inputSelector); }
   get list() { return this.get(this.listSelector); }
+  get label() { return this.get('#label'); }
 
   async initialize() {
     this.windowTitle = "Knot Input";
@@ -18,6 +19,7 @@ export default class KnotInput extends Morph {
     });
     
     await this.prepareDatalist();
+    this.setLabel('Foo')
   }
   
   async prepareDatalist() {
@@ -52,7 +54,7 @@ export default class KnotInput extends Morph {
     lively.notify('url: ' + url);
     return url;
   }
-  setLabel(text) {}
+  setLabel(text) { this.label.innerHTML = text; }
   setPlaceholder(text) {
     
   }
