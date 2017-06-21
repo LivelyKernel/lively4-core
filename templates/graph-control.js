@@ -15,11 +15,11 @@ export default class GraphControl extends Morph {
       }
     });
 
-    let button = this.get('#addDirectory');
-    button.addEventListener('click', event => this.addDirectory());
+    let loadDirectory = this.get('#addDirectory');
+    loadDirectory.addEventListener('click', event => this.addDirectory());
 
-    let button2 = this.get('#launchTripleList');
-    button2.addEventListener('click', event => this.launchTripleList());
+    let launchTripleList = this.get('#launchTripleList');
+    launchTripleList.addEventListener('click', event => this.launchTripleList());
   }
   
   async addDirectory() {
