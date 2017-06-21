@@ -5,11 +5,13 @@ import { Graph } from 'src/client/triples/triples.js';
 export default class KnotInput extends Morph {
   get inputSelector() { return '#input'}
   get listSelector() { return '#list'}
+  get input() { return this.get(this.inputSelector); }
+  get list() { return this.get(this.listSelector); }
 
   async initialize() {
     this.windowTitle = "Knot Input";
 
-    this.get(this.inputSelector).addEventListener('keyup',  event => {
+    this.input.addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
         this.onEnter();
       }
