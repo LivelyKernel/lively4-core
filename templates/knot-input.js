@@ -17,13 +17,13 @@ export default class KnotInput extends Morph {
       }
     });
     
-    this.prepareDatalist(this.listSelector);
+    await this.prepareDatalist();
   }
-  async prepareDatalist(listSelector) {
+  
+  async prepareDatalist() {
     let graph = Graph.getInstance();
     await graph.loadFromDir('https://lively4/dropbox/');
 
-    let list = this.get(listSelector);
     graph.getKnots().forEach(knot => {
       let option = document.createElement('option');
       
@@ -31,7 +31,7 @@ export default class KnotInput extends Morph {
       option.value = knot.url;
       option.dataset.url = knot.url;
       
-      list.appendChild(option);
+      this.list.appendChild(option);
     });
   }
   
