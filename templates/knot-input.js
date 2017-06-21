@@ -51,5 +51,7 @@ export default class KnotInput extends Morph {
   setPlaceholder(text) {
     
   }
-  onEnter() {}
+  onEnter() {
+    lively.notify(123)
+  }
 }
