@@ -1,4 +1,5 @@
-import focalStorage from 'src/external/focalStorage.js'
+import focalStorage from 'src/external/focalStorage.js';
+import uuid from 'src/client/uuid.js';
 const STORAGE_PREFIX = 'triple-notes:';
 const STORAGE_PREFIX_ITEMS = STORAGE_PREFIX + 'items:';
 
@@ -63,6 +64,10 @@ export class Graph {
     this.requestedKnots = new Map();
   }
   
+  
+  getKnots() {
+    return this.knots;
+  }
   get triples() {
     return this.knots.filter(knot => knot.isTriple());
   }
@@ -202,6 +207,22 @@ export class Graph {
     let knot = await this.requestKnot(url);
     let knotView = await lively.openComponentInWindow("knot-view");
     knotView.loadKnotForURL(knot.url);
+  }
+  async createTriple(subjectUrlString, predicateURLString, objectURLString) {
+    const directory = 'https://lively4/dropbox/';
+    let url = await this.getNonCollidableURL(directory, 'triple-' + uuid(), 'triple.json');
+    let content = JSON.stringify({
+      subject: subjectUrlString,
+      predicate: predicateURLString,
+      object: objectURLString
+    });
+    await lively.files.saveFile(url, content);
+    
+    await invalidateFetchCache(directory);
+    
+    let triple = await this.requestKnot(url);
+    let knotView = await lively.openComponentInWindow("knot-view");
+    knotView.loadKnotForURL(triple.url);
   }
 }
 
