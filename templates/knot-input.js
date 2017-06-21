@@ -3,16 +3,19 @@ import Morph from './Morph.js';
 import { Graph } from 'src/client/triples/triples.js';
 
 export default class KnotInput extends Morph {
+  get inputSelector() { return '#input'}
+  get listSelector() { return '#list'}
+
   async initialize() {
     this.windowTitle = "Knot Input";
 
-    this.get('#input').addEventListener('keyup',  event => {
+    this.get(this.inputSelector).addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
         this.onEnter();
       }
     });
     
-    this.prepareDatalist('#list');
+    this.prepareDatalist(listSelector);
   }
   async prepareDatalist(listSelector) {
     let graph = Graph.getInstance();
@@ -52,6 +55,6 @@ export default class KnotInput extends Morph {
     
   }
   onEnter() {
-    lively.notify(123)
+    lively.notify(123 + this.getURLStringFor(this.inputSelector, this.listSelector))
   }
 }
