@@ -100,6 +100,19 @@ export default class Container extends Morph {
     if(this.getAttribute("controls") =="hidden" || fullsreen) {
       this.hideControls()
     }
+    
+    this.withAttributeDo("leftpane-flex", value => 
+      this.get("#container-leftpane").style.flex = value)
+    this.withAttributeDo("rightpane-flex", value => 
+      this.get("#container-rightpane").style.flex = value)
+
+  }
+  
+  withAttributeDo(name, func) {
+    var value = this.getAttribute(name) 
+    if (value !== undefined) {
+      func(value)
+    }
   }
   
   onContextMenu(evt) {
@@ -1438,6 +1451,11 @@ export default class Container extends Morph {
     return this.contentIsEditable() && !this.isEditing()
   }
   
+  
+  livelyPrepareSave() {
+    this.setAttribute("leftpane-flex", this.get("#container-leftpane").style.flex)
+    this.setAttribute("rightpane-flex", this.get("#container-rightpane").style.flex)
+  }
   
   livelyPreMigrate() {
     // do something before I got replaced  

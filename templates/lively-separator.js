@@ -196,9 +196,32 @@ export default class Separator extends Morph {
     evt.stopPropagation();
   }
   
+  
   onDragEnd(evt) {
     // Do nothing...
 	  evt.stopPropagation();
   }
+
+
+  // replace yourself with an example showing yourself working in context
+  livelyExample() {
+    var a = document.createElement("div")
+    a.style.backgroundColor = "red"
+    a.textContent = "a"
+    a.style.flex = 0.2
+    var b = document.createElement("div")
+    b.style.backgroundColor = "blue"
+    b.textContent = "b"
+    b.style.flex = 0.8
+    var c = document.createElement("div")
+    this.parentElement.appendChild(c)
+    c.style.display = "flex"
+    c.style.flexDirection = "row";
+    c.appendChild(a)
+    c.appendChild(this)
+    c.appendChild(b)
+  }
+  
+
 
 }
