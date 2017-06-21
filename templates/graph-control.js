@@ -28,6 +28,8 @@ export default class GraphControl extends Morph {
   }
   
   async launchTripleList() {
-    
+    let tripleList = await lively.openComponentInWindow("triple-list");
+    //tripleList.loadKnotForURL(knot.url);
+
   }
 }
