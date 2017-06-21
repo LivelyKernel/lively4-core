@@ -7,6 +7,9 @@ export default class AddTriple extends Morph {
   async initialize() {
     this.windowTitle = "Add Triple";
 
+    let subject = this.get('#subject2');
+    subject.setLabel('Subject')
+    
     this.spo.forEach(({ input }) => this.get(input).addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
         this.save();
