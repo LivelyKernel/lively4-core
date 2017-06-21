@@ -24,7 +24,7 @@ export default class GraphControl extends Morph {
     let input = this.get('#open-knot-view');
     input.setLabel('Open Knot');
     input.setPlaceholder('knot');
-    input.onEnter = () => this.save();
+    input.onEnter = () => this.openKnotView();
   }
   
   async addDirectory() {
