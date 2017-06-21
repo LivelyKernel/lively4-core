@@ -4,13 +4,13 @@ export default class KnotInput extends Morph {
   async initialize() {
     this.windowTitle = "Knot Input";
 
-    this.spo.forEach(({ input }) => this.get(input).addEventListener('keyup',  event => {
+    this.get('#input').addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
-        this.save();
+        this.onEnter();
       }
-    }));
+    });
     
-    this.spo.forEach(({ list }) => this.prepareDatalist(list));
+    this.prepareDatalist('#list');
   }
   async prepareDatalist(listSelector) {
     let graph = Graph.getInstance();
@@ -49,4 +49,5 @@ export default class KnotInput extends Morph {
   setPlaceholder(text) {
     
   }
+  onEnter() {}
 }
