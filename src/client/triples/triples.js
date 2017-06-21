@@ -44,6 +44,7 @@ class Knot {
 
 class Triple extends Knot {
   constructor(fileName, content) {
+    console.log(fileName);
     super(fileName, JSON.parse(content));
   }
   
