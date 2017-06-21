@@ -1,5 +1,7 @@
 import Morph from './Morph.js';
 
+import { Graph } from 'src/client/triples/triples.js';
+
 export default class KnotInput extends Morph {
   async initialize() {
     this.windowTitle = "Knot Input";
