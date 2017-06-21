@@ -7,7 +7,6 @@ export default class AddTriple extends Morph {
   async initialize() {
     this.windowTitle = "Add Triple";
 
-    let input = this.get("#inputSubject");
     this.spo.forEach(({ input }) => this.get(input).addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
         this.save();
@@ -38,7 +37,7 @@ export default class AddTriple extends Morph {
     let graph = Graph.getInstance();
     await graph.loadFromDir('https://lively4/dropbox/');
 
-    let selection = this.get(listSelector);
+    let list = this.get(listSelector);
     graph.getKnots().forEach(knot => {
       let option = document.createElement('option');
       
@@ -46,7 +45,7 @@ export default class AddTriple extends Morph {
       option.value = knot.url;
       option.dataset.url = knot.url;
       
-      selection.appendChild(option);
+      list.appendChild(option);
     });
   }
   

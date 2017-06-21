@@ -1,4 +1,5 @@
 import focalStorage from 'src/external/focalStorage.js';
+import uuid from 'src/client/uuid.js';
 const STORAGE_PREFIX = 'triple-notes:';
 const STORAGE_PREFIX_ITEMS = STORAGE_PREFIX + 'items:';
 
@@ -209,7 +210,7 @@ export class Graph {
   }
   async createTriple(subjectUrlString, predicateURLString, objectURLString) {
     const directory = 'https://lively4/dropbox/';
-    let url = await this.getNonCollidableURL(directory, 'triple', 'triple.json');
+    let url = await this.getNonCollidableURL(directory, 'triple-' + uuid(), 'triple.json');
     let content = JSON.stringify({
       subject: subjectUrlString,
       predicate: predicateURLString,
