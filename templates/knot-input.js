@@ -3,8 +3,9 @@ import Morph from './Morph.js';
 import { Graph } from 'src/client/triples/triples.js';
 
 export default class KnotInput extends Morph {
+  get listSelector() { return '#list'}
   get input() { return this.get('#input'); }
-  get list() { return this.get('#list'); }
+  get list() { return this.get(this.listSelector); }
   get label() { return this.get('#label'); }
 
   async initialize() {
