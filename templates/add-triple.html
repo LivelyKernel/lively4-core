@@ -3,19 +3,38 @@
   :host {
     margin: 0px;
     padding: 0px;
+    width: 100%;
+    height: 100%;
   }
+  
+  div {
+    display: flex;
+    flex-direction: row;
+  }
+      
+  input {
+    flex: 1;
+  }
+      
+  label {
+    padding-right: 5px;
+  }
+
   </style>
+  <div>
   <label for="inputSubject">Subject</label>
   <input type="text" id="inputSubject" placeholder="subject" list="subject">
-  <datalist id="subject">
-  </datalist>
+  <datalist id="subject"></datalist>
+  </div>
+  <div>
   <label for="inputPredicate">Predicate</label>
   <input type="text" id="inputPredicate" placeholder="predicate" list="predicate">
-  <datalist id="predicate">
-  </datalist>
+  <datalist id="predicate"></datalist>
+  </div>
+  <div>
   <label for="inputObject">Object</label>
   <input type="text" id="inputObject" placeholder="object" list="object">
-  <datalist id="object">
-  </datalist>
+  <datalist id="object"></datalist>
+  </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
