@@ -1,11 +1,25 @@
 <template id="knot-input" data-class="KnotInput">
 	<style>
-	:host {
-	  
-	}
-	#content {
-	  background-color: blue;
-	}
+  :host {
+    margin: 0px;
+    padding: 0px;
+    width: 100%;
+    height: 100%;
+  }
+  
+  div {
+    display: flex;
+    flex-direction: row;
+  }
+      
+  input {
+    flex: 1;
+  }
+      
+  label {
+    padding-right: 5px;
+  }
+
 	</style>
   <div>
   <label id="label" for="input">Subject</label>
