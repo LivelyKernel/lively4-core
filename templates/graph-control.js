@@ -20,6 +20,11 @@ export default class GraphControl extends Morph {
 
     let launchTripleList = this.get('#launchTripleList');
     launchTripleList.addEventListener('click', event => this.launchTripleList());
+    
+    let input = this.get('#open-knot-view');
+    input.setLabel('Open Knot');
+    input.setPlaceholder('knot');
+    input.onEnter = () => this.save();
   }
   
   async addDirectory() {
@@ -32,5 +37,12 @@ export default class GraphControl extends Morph {
   
   async launchTripleList() {
     await lively.openComponentInWindow("triple-list");
+  }
+  
+  async openKnotView() {
+    const knotView = await lively.openComponentInWindow("knot-view");
+    const knotURL = this.get('#open-knot-view').getURLStringFor();
+    
+    knotView.loadKnotForURL(knotURL);
   }
 }
