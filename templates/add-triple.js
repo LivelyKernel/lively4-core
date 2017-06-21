@@ -21,15 +21,18 @@ export default class AddTriple extends Morph {
     return [{
       input: '#inputSubject',
       list: '#subject',
-      debugLabel: 'subject'
+      debugLabel: 'subject',
+      selector: '#subject2'
     }, {
       input: '#inputPredicate',
       list: '#predicate',
-      debugLabel: 'predicate'
+      debugLabel: 'predicate',
+      selector: '#predicate2'
     }, {
       input: '#inputObject',
       list: '#object',
-      debugLabel: 'object'
+      debugLabel: 'object',
+      selector: '#object2'
     }]
   }
   
