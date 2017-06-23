@@ -13,10 +13,17 @@ export async function cachedFetch(url, options) {
     return focalStorage.getItem(key);
   }
 }
-
 export async function invalidateFetchCache(url) {
   const key = STORAGE_PREFIX_ITEMS + url.toString();
   await focalStorage.removeItem(key);
+}
+export async function invalidateWholeCache() {
+  const keys = await focalStorage.keys();
+  const removeActions = keys
+    .filter(key => key.startsWith(STORAGE_PREFIX))
+    .map(key => focalStorage.removeItem(key))
+  
+  return await Promise.all(removeActions);
 }
 
 class Knot {
@@ -27,7 +34,6 @@ class Knot {
   get url() {
     return this.fileName;
   }
-  
   label() {
     if(this.fileName.endsWith('.md')) {
       return this.content.split('\n')[0];
@@ -65,11 +71,13 @@ class Triple extends Knot {
 export class Graph {
   constructor() {
     this.knots = [];
-    this.loadedDirectories = [];
+    this.loadedDirectoryPromises = new Map();
     // url string -> Promise for Knot
     this.requestedKnots = new Map();
   }
-  
+  async prepare() {
+    return this.loadFromDir('https://lively4/dropbox/');
+  }
   
   getKnots() {
     return this.knots;
@@ -117,10 +125,13 @@ export class Graph {
     ]);
   }
 
-  static getInstance() {
+  static async getInstance() {
     if(!this.instance) {
       this.instance = new Graph();
     }
+    
+    await this.instance.prepare();
+    
     return this.instance;
   }
   static clearInstance() {
@@ -165,23 +176,22 @@ export class Graph {
   }
   
   async loadFromDir(directory) {
-    if(this.loadedDirectories.includes(directory)) {
-      return;
+    if(!this.loadedDirectoryPromises.has(directory)) {
+      this.loadedDirectoryPromises.set(directory, new Promise(async resolve => {
+        let directoryURL = new URL(directory);
+        let text = await cachedFetch(directory, { method: 'OPTIONS' });
+        let json = JSON.parse(text);
+        let fileDescriptors = json.contents;
+        fileDescriptors = fileDescriptors.filter(desc => desc.type === "file");
+        let fileNames = fileDescriptors.map(desc => desc.name);
+        
+        Promise.all(fileNames.map(fileName => {
+          let knotURL = new URL(fileName, directoryURL);
+          return this.requestKnot(knotURL);
+        })).then(resolve);
+      }));
     }
-    this.loadedDirectories.push(directory);
-    let directoryURL = new URL(directory);
-    let text = await cachedFetch(directory, { method: 'OPTIONS' });
-    let json = JSON.parse(text);
-    let fileDescriptors = json.contents;
-    fileDescriptors = fileDescriptors.filter(desc => desc.type === "file");
-    let fileNames = fileDescriptors.map(desc => desc.name);
-    
-    await Promise.all(fileNames.map(fileName => {
-      let knotURL = new URL(fileName, directoryURL);
-      return this.requestKnot(knotURL);
-    }));
-    
-    //await this.linkUpTriples();
+    return this.loadedDirectoryPromises.get(directory);
   }
   
   async getNonCollidableURL(directory, name, fileEnding) {
@@ -212,7 +222,7 @@ export class Graph {
     
     let knot = await this.requestKnot(url);
     let knotView = await lively.openComponentInWindow("knot-view");
-    knotView.loadKnotForURL(knot.url);
+    return await knotView.loadKnotForURL(knot.url);
   }
   async createTriple(subjectUrlString, predicateURLString, objectURLString) {
     const directory = 'https://lively4/dropbox/';

@@ -35,6 +35,7 @@ export default class AddTriple extends Morph {
     }]
   }
   
+  focus() { this.get('#subject').focus(); }
   async save() {
     this.spo.forEach(({ selector, debugLabel }) => {
       if(this.get(selector).getValue() === '') {
@@ -43,15 +44,20 @@ export default class AddTriple extends Morph {
       }
     });
     
-    const subjectURLString = this.get('#subject2').getURLString();
-    const predicateURLString = this.get('#predicate2').getURLString();
-    const objectURLString = this.get('#object2').getURLString();
+    const subjectURLString = this.get('#subject').getURLString();
+    const predicateURLString = this.get('#predicate').getURLString();
+    const objectURLString = this.get('#object').getURLString();
     
-    let graph = Graph.getInstance();
-    graph.createTriple(
+    let graph = await Graph.getInstance();
+    await graph.createTriple(
       subjectURLString,
       predicateURLString,
       objectURLString
     );
+    
+    this.afterSubmit()
   }
+  
+  // TODO: employ nice event-based approach or AOP/COP
+  afterSubmit() {}
 }

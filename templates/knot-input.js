@@ -21,8 +21,10 @@ export default class KnotInput extends Morph {
   }
   
   async prepareDatalist() {
-    let graph = Graph.getInstance();
-    await graph.loadFromDir('https://lively4/dropbox/');
+    lively.notify('KnotInput.prepareDatalist1');
+    let graph = await Graph.getInstance();
+    console.assert(graph.knots.length === 443, 'Problem')
+    lively.notify('KnotInput.prepareDatalist2', graph.knots.length);
 
     graph.getKnots().forEach(knot => {
       let option = document.createElement('option');
@@ -56,4 +58,6 @@ export default class KnotInput extends Morph {
   onEnter() {
     lively.notify(123 + this.getURLString());
   }
+  
+  focus() { this.get('#input').focus(); }
 }

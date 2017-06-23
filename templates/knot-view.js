@@ -8,8 +8,7 @@ export default class KnotView extends Morph {
   async initialize() {
     this.windowTitle = "Knot View";
 
-    let graph = Graph.getInstance();
-    await graph.loadFromDir("https://lively4/dropbox/");
+    let graph = await Graph.getInstance();
 
     var pathToLoad = this.get("#path-to-load");
     pathToLoad.addEventListener('keyup',  event => {
@@ -60,8 +59,8 @@ export default class KnotView extends Morph {
     tableRow.appendChild(this.buildTableDataFor(triple));
     return tableRow;
   }
-  replaceTableBodyFor(selector, s, p, o, propForFirstCell, propForSecondCell) {
-    let graph = Graph.getInstance();
+  async replaceTableBodyFor(selector, s, p, o, propForFirstCell, propForSecondCell) {
+    let graph = await Graph.getInstance();
     let poTableBody = this.get(selector + ' tbody');
     poTableBody.innerHTML = "";
     graph.query(s, p, o).forEach(triple => {
@@ -79,7 +78,7 @@ export default class KnotView extends Morph {
     return this.loadKnot(url);
   }
   async loadKnot(url) {
-    let graph = Graph.getInstance();
+    let graph = await Graph.getInstance();
     let knot = await graph.requestKnot(new URL(url));
     
     this.get("#path-to-load").value = knot.url;
@@ -87,7 +86,7 @@ export default class KnotView extends Morph {
     
     let urlList = this.get("#url-list");
     urlList.innerHTML = "";
-    Graph.getInstance().getUrlsByKnot(knot).forEach(url => {
+    graph.getUrlsByKnot(knot).forEach(url => {
       let listItem = document.createElement('li');
       listItem.innerHTML = url;
       listItem.addEventListener("click", e => {

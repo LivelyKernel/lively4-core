@@ -16,21 +16,32 @@
 }
 
 </style>
-<label for="inputAddDirectory">Directory to load</label>
-<input type="text" id="inputAddDirectory" placeholder="directory url">
-
-<button id="addDirectory" title="load directory">
-  <i class="fa fa-check-circle" aria-hidden="true"></i> Load Directory
-</button>
+<knot-input id="open-knot-view"></knot-input>
 <button id="launchTripleList" title="launch triple list">
   <i class="fa fa-bars" aria-hidden="true"></i> Launch Triple List
 </button>
-<button id="1" class="todo" title="launch triple list">
+<button id="launchGraph" title="launch graph">
+  <i class="fa fa-bars" aria-hidden="true"></i> Launch Graph
+</button>
+<hr>
+<button id="add-knot" title="add knot">
+  <i class="fa fa-circle" aria-hidden="true"></i> Add Knot
+</button>
+<button id="add-triple" title="add triple">
+  <i class="fa fa-plug" aria-hidden="true"></i> Add Triple
+</button>
+<hr>
+<button id="clear-cache" title="clear whole triple cache">
   <i class="fa fa-bars" aria-hidden="true"></i> Clear File Cache
 </button>
-<button id="2" class="todo" title="launch triple list">
-  <i class="fa fa-bars" aria-hidden="true"></i> Clear Graph Instance
+<button id="reset-graph" title="reset graph instance">
+  <i class="fa fa-bars" aria-hidden="true"></i> Reset Graph Instance
 </button>
-<knot-input id="open-knot-view"></knot-input>
+<hr>
+<label for="inputAddDirectory" class="todo">Directory to load</label>
+<input type="text" class="todo" id="inputAddDirectory" placeholder="directory url">
+<button id="addDirectory" class="todo" title="load directory">
+  <i class="fa fa-check-circle" aria-hidden="true"></i> Load Directory
+</button>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
