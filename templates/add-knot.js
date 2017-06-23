@@ -19,19 +19,22 @@ export default class AddKnot extends Morph {
     button.addEventListener('click', event => this.save());
   }
   
+  focus() {
+    this.get("#title").focus();
+  }
+  
   async save() {
-    let graph = Graph.getInstance();
+    let graph = await Graph.getInstance();
     
     let directory = this.get('#directory').value;
     let title = this.get('#title').value;
     let fileEnding = this.get('#file-ending').value;
 
-    graph.createKnot(directory, title, fileEnding);
+    await graph.createKnot(directory, title, fileEnding);
     
-    return;
-
-    // open the created knot in knot view
-    let knotView = await lively.openComponentInWindow("knot-view");
-    knotView.loadKnotForURL(knot.url);
+    this.afterSubmit();
   }
+  
+  // TODO: employ nice event-based approach or AOP/COP
+  afterSubmit() {}
 }
