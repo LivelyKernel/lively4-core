@@ -275,8 +275,8 @@ export default class HTML {
     worldContext.querySelectorAll("*").forEach( ea => {
       if (ea.livelyPrepareSave) ea.livelyPrepareSave();
     });
-    if (oldActiveElement) oldActiveElement.focus()
-      
+    lively.focusWithoutScroll(oldActiveElement)
+
     lively.array(worldContext.querySelectorAll(":scope > lively-window, :scope > .lively-content")).filter(ea => {
       return !this.hasDoNotPersistTag(ea)
     }).forEach( ea => {

@@ -162,6 +162,7 @@ export default class ViewNav {
     lively.setPosition(document.body, topLeft.scaleBy(-1))
     
     var delta = topLeft.scaleBy(-1).subPt(pos.scaleBy(-1))
+
     document.body.scrollLeft = delta.x 
     document.body.scrollTop = delta.y
   }

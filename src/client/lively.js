@@ -1279,13 +1279,19 @@ export default class Lively {
   }
 
   static globalFocus() {
+    this.focusWithoutScroll(document.body)
+  }
+  
+  static focusWithoutScroll(element) {
+    if (!element) return;
     var scrollTop = document.body.scrollTop
     var scrollLeft = document.body.scrollLeft
-    document.body.focus() 
+    element.focus() 
     // the focus scrolls as a side affect, but we don't want that
     document.body.scrollTop = scrollTop
     document.body.scrollLeft = scrollLeft
   }
+  
 
   //  lively.allPreferences()
   static allPreferences() {
