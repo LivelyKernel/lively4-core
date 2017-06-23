@@ -834,11 +834,23 @@ export default class Lively {
     return comp
   }
 
+
   static showPath(path, color, printArrow) {
+    color = color || "red"
+    var comp = this.createPath(path, color, printArrow)
+    document.body.appendChild(comp);
+    comp.style.zIndex = 1000;
+    lively.setGlobalPosition(comp, pt(0,0));
+    comp.setAttribute("data-is-meta", "true");
+    comp.isMetaNode = true;
+    comp.style.pointerEvents = "none";
+    comp.style.touchAction = "none";    
+    setTimeout( () => comp.remove(), 3000);
+  }
+
+  static createPath(path, color, printArrow) {
     if (!path || path.length < 1) return;
     if (printArrow === undefined) printArrow = true;
-   
-    color = color || "red"
 
     var comp = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     comp.style = `position: absolute;
@@ -848,11 +860,7 @@ export default class Lively {
         height: 100px;
         border: none;
         opacity: 1;
-        overflow: visible;
-        pointer-events: none;
-        z-index: 1000;
-        touch-action: none;`
-    comp.isMetaNode = true;
+        overflow: visible;`
     
     var dpath = path.map((ea,i) => (i == 0 ? "M " : "L ") + ea.x + " " + ea.y).join(" ")
     var defs = 
@@ -863,16 +871,10 @@ export default class Lively {
           </marker>
       </defs>`;
     
-    comp.innerHTML = defs + `<path stroke='${color}' d='${dpath}' 
+    comp.innerHTML = defs + `<path id="path" stroke='${color}' d='${dpath}' 
       style='${ 
         printArrow ? 'marker-end: url(#markerArrow);' : ""
       }'></path>`
-
-    document.body.appendChild(comp);
-    lively.setGlobalPosition(comp, pt(0,0));
-    comp.setAttribute("data-is-meta", "true");
-
-    setTimeout( () => $(comp).remove(), 3000);
 
     return comp
   }

@@ -9,15 +9,15 @@ export default class Graffle {
     lively.removeEventListener("Graffle", document.body)
     lively.addEventListener("Graffle", document.body, "keydown", (evt) => {
       this.onKeyDown(evt)
-    })
+    }, true)
     lively.addEventListener("Graffle", document.body, "keyup", (evt) => {
       this.onKeyUp(evt)
-    })
+    }, true)
 
     lively.removeEventListener("GraffleMouse", document)
     lively.addEventListener("GraffleMouse", document, "mousedown", (evt) => {
       this.onMouseDown(evt)
-    })
+    }, true)
     lively.addEventListener("GraffleMouse", document, "mousemove", (evt) => {
       this.onMouseMove(evt)
     })
@@ -35,16 +35,18 @@ export default class Graffle {
     // lively.notify("down: " + key)
     if (this.specialKeyDown()) {
       lively.selection.disabled = true
+      if (!evt.crtlKey && !evt.altKey && !evt.altKey) {
+        evt.stopPropagation()
+        evt.preventDefault()
+      }
     }
   }
 
   static onKeyUp(evt) {
-    if (evt.path[0] !== document.body) return; 
     var key = String.fromCharCode(evt.keyCode)
     this.keysDown[key] = false
-    lively.notify("up: " + key)
+    // lively.notify("up: " + key)
     lively.selection.disabled = false
-    
     
     // if (this.lastElement)
     //   this.lastElement.focus(); // no, we can focus.... and continue typing
@@ -52,7 +54,7 @@ export default class Graffle {
   
   
   static specialKeyDown() {
-    return this.keysDown["S"] || this.keysDown["T"]
+    return this.keysDown["S"] || this.keysDown["T"] || this.keysDown["C"]
   }
   
   static eventPosition(evt) {
@@ -61,8 +63,6 @@ export default class Graffle {
   
   static onMouseDown(evt) {
     if (!this.specialKeyDown()) return
-    lively.notify("dowsn")
-    
     
     var div
     if (this.keysDown["S"]) {
@@ -79,6 +79,19 @@ export default class Graffle {
       div.contentEditable = true
 
     
+    }  else if (this.keysDown["C"]) {
+      // div = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      // div.style.overflow = "visible"
+      // var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      // path.setAttribute("d", "M 0 0 L 250 50")
+      // path.setAttribute("stroke", "black");
+      // path.setAttribute("stroke-width", "3")
+      // this.currentPath = path
+      // path.setAttribute("fill", "none")
+      // div.appendChild(path)
+      
+      div = lively.createPath([pt(0,0),pt(100,0)], "black", true)
+      this.currentPath = div.querySelector("#path")
     }
     
     if (!div) return
@@ -100,9 +113,14 @@ export default class Graffle {
     // lively.showPoint(pos)
     
     if (!this.lastMouseDown) return 
+      var extent = this.eventPosition(evt).subPt(this.lastMouseDown)
     
-    var extent = this.eventPosition(evt).subPt(this.lastMouseDown)
-    lively.setExtent(this.currentElement, extent)
+    if (this.currentElement instanceof SVGElement &&  this.currentPath) {
+      var d= `M 0 0 L ${extent.x} ${extent.y}`
+      this.currentPath.setAttribute("d", d)
+    } else {
+      lively.setExtent(this.currentElement, extent)
+    }
   }
 
   static onMouseUp(evt) {

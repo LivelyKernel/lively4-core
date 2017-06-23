@@ -458,7 +458,7 @@ export default class AceEditor extends Morph {
           })
       } else {
         this.printResult(" " + obj2string(result))
-        if (result instanceof HTMLElement ) {
+        if (result instanceof HTMLElement || result instanceof SVGElement ) {
           lively.showElement(result)
         }
         // show also html elements in a collections
