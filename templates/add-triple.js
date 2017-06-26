@@ -35,7 +35,12 @@ export default class AddTriple extends Morph {
     }]
   }
   
-  focus() { this.get('#subject').focus(); }
+  focus(id = 'subject') { this.get('#' + id).focus(); }
+  
+  setField(id, urlString) {
+    let knotInput = this.get('#' + id);
+    knotInput.setValue(urlString);
+  }
   async save() {
     this.spo.forEach(({ selector, debugLabel }) => {
       if(this.get(selector).getValue() === '') {

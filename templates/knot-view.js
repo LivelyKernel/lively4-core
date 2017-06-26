@@ -4,7 +4,8 @@ import { Graph, _ } from 'src/client/triples/triples.js';
 import lively from 'src/client/lively.js';
 
 export default class KnotView extends Morph {
-
+  get tagURLString() { return 'https://lively4/dropbox/tag.md'; }
+  
   async initialize() {
     this.windowTitle = "Knot View";
 
@@ -29,7 +30,7 @@ export default class KnotView extends Morph {
     }
   }
   
-  buildRefFor(knot) {
+  buildNavigatableLinkFor(knot) {
     let ref = document.createElement('a');
     ref.innerHTML = knot.label();
     ref.addEventListener("click", e => {
@@ -37,6 +38,9 @@ export default class KnotView extends Morph {
     });
     
     return ref;
+  }
+  buildRefFor(knot) {
+    return this.buildNavigatableLinkFor(knot);
   }
   buildTableDataFor(knot) {
     let tableData = document.createElement('td');
@@ -97,6 +101,18 @@ export default class KnotView extends Morph {
       urlList.appendChild(listItem);
     });
     
+    // tags
+    let tag = await graph.requestKnot(new URL('https://lively4/dropbox/tag.md'));
+    let tagContainer = this.get('#tag-container');
+    tagContainer.innerHTML = "";
+    graph.query(knot, tag, _).forEach(triple => {
+      let tagElement = this.buildTagWidget(triple.object);
+      tagContainer.appendChild(tagElement);
+    });
+    let addTagButton = this.get('#add-tag');
+    addTagButton.addEventListener('click', event => this.addTag(event));
+
+    // spo tables
     this.replaceTableBodyFor('#po-table', knot, _, _, 'predicate', 'object');
     this.replaceTableBodyFor('#so-table', _, knot, _, 'subject', 'object');
     this.replaceTableBodyFor('#sp-table', _, _, knot, 'subject', 'predicate');
@@ -104,6 +120,31 @@ export default class KnotView extends Morph {
     // content
     this.buildContentFor(knot);
 
+  }
+  
+  buildTagWidget(tag) {
+    let tagElement = document.createElement('div');
+    tagElement.appendChild(this.buildNavigatableLinkFor(tag));
+
+    return tagElement;
+  }
+
+
+  refresh() {
+    this.loadKnot(this.get("#path-to-load").value);
+  }
+  async addTag(event) {
+    lively.notify(event.type);
+    const addTriple = await lively.openComponentInWindow("add-triple");
+    addTriple.focus('object');
+    addTriple.afterSubmit = () => {
+      addTriple.parentElement.remove();
+      this.refresh();
+    }
+    
+    let urlString = this.get("#path-to-load").value;
+    addTriple.setField('subject', urlString);
+    addTriple.setField('predicate', this.tagURLString);
   }
 
   buildListItemFor(knot, role) {
