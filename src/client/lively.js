@@ -295,6 +295,7 @@ export default class Lively {
     components.loadByName("lively-editor");
     
     System.import("src/client/clipboard.js") // depends on me
+    System.import("src/client/graffle.js") // depends on me
   }
   
   
@@ -846,6 +847,7 @@ export default class Lively {
     comp.style.pointerEvents = "none";
     comp.style.touchAction = "none";    
     setTimeout( () => comp.remove(), 3000);
+    return comp
   }
 
   static createPath(path, color, printArrow) {
