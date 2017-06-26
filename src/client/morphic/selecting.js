@@ -40,7 +40,7 @@ export default class Selecting {
   
   static isIgnoredOnMagnify(element) {
     
-    return !(element instanceof HTMLElement) 
+    return !((element instanceof HTMLElement) || (element instanceof SVGElement))
       || element instanceof ShadowRoot 
       || element instanceof HTMLContentElement 
       || element.getAttribute("data-is-meta") 

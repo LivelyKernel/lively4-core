@@ -144,6 +144,7 @@ export default class ContextMenu {
   }
   
   static gotoWindow(element) {
+    console.log("gotoWindow")
     element.focus()
     document.body.scrollTop = 0
     document.body.scrollLeft = 0

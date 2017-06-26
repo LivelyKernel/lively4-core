@@ -171,7 +171,7 @@ export default class Snapping {
 
   clearHelpers() {
     if (this.helpers) {
-      this.helpers.forEach(ea => ea.remove())
+      this.helpers.forEach(ea => ea && ea.remove())
     }
     this.helpers = []
   }
