@@ -8,7 +8,6 @@ export default class SVG {
   
    static getPathVertices(p) {
     return p.getAttribute("d").split(/(?=[A-Za-z] +)/).map( ea => {
-      console.log("ea " + ea)
       var m = ea.split(/ +/)
       var pos = {c: m[0], x1: parseFloat(m[1]), y1: parseFloat(m[2]), toString: function() { return JSON.stringify(this)}}
       if (m[3]) {

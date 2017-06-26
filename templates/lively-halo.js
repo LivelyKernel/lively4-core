@@ -6,6 +6,8 @@ import {pt, rect, Rectangle} from 'src/client/graphics.js';
 import preferences from 'src/client/preferences.js';
 import {Grid} from 'src/client/morphic/snapping.js';
 import DragBehavior from "src/client/morphic/dragbehavior.js"
+import svg from "src/client/svg.js"
+
 
 /*
  * Halo, the container for HaloItems
@@ -28,9 +30,6 @@ export default class Halo extends Morph {
       evt => this.onBodyMouseDown(evt, targetContext));
 
     this.shadowRoot.querySelectorAll(".halo").forEach(ea => ea.halo = this)
-    
-   
-    
     DragBehavior.on(this)
   }
   
@@ -62,7 +61,33 @@ export default class Halo extends Morph {
     document.body.draggable=true; 
   }
 
+  updateHandles(target) {
+    this.shadowRoot.querySelectorAll("lively-halo-handle-item").forEach(ea => {
+      ea.style.visibility = null
+    })  
+    if (target instanceof SVGSVGElement) {
+      this.shadowRoot.querySelectorAll("lively-halo-handle-item").forEach(ea => {
+        // lively.notify("hide handles" + ea)
+        ea.style.visibility = "hidden"
+      })
+    }
+    
+    this.shadowRoot.querySelectorAll("lively-halo-control-point-item")
+      .forEach(ea =>  ea.remove())
+    
+    target.querySelectorAll("path#path").forEach(ea => {
+      svg.getPathVertices(ea).forEach( (p, index) => {
+        var controlPoint = document.createElement("lively-halo-control-point-item")
+        lively.components.openIn(this.shadowRoot, controlPoint).then( () => {
+          controlPoint.setup(this, ea, index)
+        })
+      })
+    })    
+
+  }
+
   showHalo(target, path) {
+    
     document.body.appendChild(this);
     lively.html.registerKeys(document.body, "HaloKeys", this)
     if (!target || !target.getBoundingClientRect) {
@@ -73,6 +98,7 @@ export default class Halo extends Morph {
     lively.globalFocus()
   
     this.alignHaloToBounds(target)
+    this.updateHandles(target) 
   }
   
   alignHaloToBounds(target) {
