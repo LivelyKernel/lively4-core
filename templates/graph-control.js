@@ -78,10 +78,12 @@ export default class GraphControl extends Morph {
   }
   
   async onClearCache() {
-    return await invalidateWholeCache();
+    await invalidateWholeCache();
+    lively.notify('cleared graph cache');
   }
   
   async onResetGraph() {
-    return Graph.clearInstance();
+    await Graph.clearInstance();
+    lively.notify('resetted graph');
   }
 }

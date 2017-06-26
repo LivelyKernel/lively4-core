@@ -22,7 +22,7 @@ export async function invalidateWholeCache() {
   const removeActions = keys
     .filter(key => key.startsWith(STORAGE_PREFIX))
     .map(key => focalStorage.removeItem(key))
-  
+  lively.notify(removeActions.length);
   return await Promise.all(removeActions);
 }
 
@@ -168,11 +168,9 @@ export class Graph {
   }
   
   async loadSingleKnot(url) {
-    return cachedFetch(url)
-      .then(text => {
-        const fileName = url.toString();
-        return this.deserializeKnot(fileName, text);
-      });
+    let text = await cachedFetch(url)
+    const fileName = url.toString();
+    return this.deserializeKnot(fileName, text);
   }
   
   async loadFromDir(directory) {

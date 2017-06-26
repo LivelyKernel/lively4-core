@@ -1,5 +1,6 @@
 <template id="knot-view" data-class="KnotView">
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
 <style type="text/css">
   #container {
     overflow-x: auto;
@@ -47,6 +48,24 @@ td i {
   height: 100%;
 }
 
+.todo {
+  color: #b33630;
+}
+
+.todo:hover {
+  background:  linear-gradient(#dc5f59, #b33630);
+  color: white;
+}
+
+#tag-container {
+  float: left;
+}
+
+#tag-container div {
+  margin: 5px;
+  float: left;
+}
+
 </style>
 <input type="text" id="path-to-load" placeholder="path to load" title="path to load">
 <div id="container">
@@ -55,9 +74,20 @@ td i {
   <h2>URLs</h2>
   <ul id ="url-list"></ul>
   
+  <h2>Tags</h2>
+  <div id ="tag-container"></div>
+  <button id="add-tag" class="todo" title="add tag">
+    <i class="fa fa-plus" aria-hidden="true"></i> Add Tag
+  </button>
+  
   <h2>Relations</h2>
   
-  <h3 id="As Subject">As Subject</h3>
+  <h3 id="As Subject">
+    As Subject
+    <button id="add-triple-as-subject" class="todo" title="add triple with this as subject">
+      <i class="fa fa-plus" aria-hidden="true"></i>
+    </button>
+  </h3>
   <table id ="po-table">
     <thead>
       <tr>
@@ -68,7 +98,12 @@ td i {
     </thead>
     <tbody></tbody>
   </table>
-  <h3 id="As Predicate">As Predicate</h3>
+  <h3 id="As Predicate">
+    As Predicate
+    <button id="add-triple-as-predicate" class="todo" title="add triple with this as predicate">
+      <i class="fa fa-plus" aria-hidden="true"></i>
+    </button>
+  </h3>
   <table id ="so-table">
     <thead>
       <tr>
@@ -79,7 +114,12 @@ td i {
     </thead>
     <tbody></tbody>
   </table>
-  <h3 id="As Object">As Object</h3>
+  <h3 id="As Object">
+    As Object
+    <button id="add-triple-as-object" class="todo" title="add triple with this as object">
+      <i class="fa fa-plus" aria-hidden="true"></i>
+    </button>
+  </h3>
   <table id ="sp-table">
     <thead>
       <tr>
