@@ -2,7 +2,7 @@ import Morph from "./Morph.js"
 
 import d3 from 'src/external/d3.v4.js';
 
-import loadDropbox from 'src/client/triples/triplesOLD.js';
+import { Graph } from 'src/client/triples/triples.js';
 import * as drawTools from 'src/client/triples/drawTools.js';
 
 const MIN_MAGNIFICATION = 0.01;
@@ -40,7 +40,7 @@ export default class TripleNotes extends Morph {
     }
     
     async function main() {
-        let graph = await loadDropbox("https://lively4/dropbox/");
+        let graph = await Graph.getInstance();
         
         let knots = getNodes(graph);
         let nodes = knots.map(knot => knot );
