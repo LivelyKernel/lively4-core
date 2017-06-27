@@ -4,6 +4,7 @@ import { Graph, _ } from 'src/client/triples/triples.js';
 import lively from 'src/client/lively.js';
 
 export default class KnotView extends Morph {
+  get urlString() { return this.get("#path-to-load").value; }
   get tagURLString() { return 'https://lively4/dropbox/tag.md'; }
   
   async initialize() {
@@ -21,12 +22,10 @@ export default class KnotView extends Morph {
     let aceComp = this.get('#content-editor');
     aceComp.editor.setOptions({maxLines:Infinity});
 
-    if(this.innerHTML !== '') {
-      lively.notify('load from innerHTML ' + this.innerHTML);
-      pathToLoad.value = this.innerHTML;
-      this.innerHTML = '';
-      //"https://lively4/dropbox/Traveling_through_Time_and_Code_-_Omniscient_Debugging_and_Beyond.md";
-      this.loadKnotForURL(pathToLoad.value);
+    let urlToLoad = this.getAttribute('data-knot-url');
+    if (urlToLoad && urlToLoad !== "") {
+      this.loadKnotForURL(urlToLoad);
+      this.setAttribute("data-knot-url", undefined);
     }
   }
   
@@ -48,7 +47,7 @@ export default class KnotView extends Morph {
     tableData.appendChild(this.buildRefFor(knot));
     
     let icon = document.createElement('i');
-    icon.classList.add('fa', 'fa-info');
+    icon.classList.add('fa', 'fa-file-o');
     icon.addEventListener("click", e => {
       lively.openInspector(knot, undefined, knot.label());
     });
@@ -110,13 +109,21 @@ export default class KnotView extends Morph {
       tagContainer.appendChild(tagElement);
     });
     let addTagButton = this.get('#add-tag');
-    addTagButton.addEventListener('click', event => this.addTag(event));
+    addTagButton.onclick = event => this.addTag(event);
 
     // spo tables
     this.replaceTableBodyFor('#po-table', knot, _, _, 'predicate', 'object');
     this.replaceTableBodyFor('#so-table', _, knot, _, 'subject', 'object');
     this.replaceTableBodyFor('#sp-table', _, _, knot, 'subject', 'predicate');
-    
+
+    // add buttons
+    let addTripleWithKnotAsSubject = this.get('#add-triple-as-subject');
+    addTripleWithKnotAsSubject.onclick = event => this.addTripleWithKnotAsSubject(event);
+    let addTripleWithKnotAsPredicate = this.get('#add-triple-as-predicate');
+    addTripleWithKnotAsPredicate.onclick = event => this.addTripleWithKnotAsPredicate(event);
+    let addTripleWithKnotAsObject = this.get('#add-triple-as-object');
+    addTripleWithKnotAsObject.onclick = event => this.addTripleWithKnotAsObject(event);
+
     // content
     this.buildContentFor(knot);
 
@@ -142,9 +149,44 @@ export default class KnotView extends Morph {
       this.refresh();
     }
     
-    let urlString = this.get("#path-to-load").value;
-    addTriple.setField('subject', urlString);
+    addTriple.setField('subject', this.urlString);
     addTriple.setField('predicate', this.tagURLString);
+  }
+  
+  async addTripleWithKnotAsSubject() {
+    lively.notify(123);
+    const addTriple = await lively.openComponentInWindow("add-triple");
+    addTriple.focus('predicate');
+    addTriple.afterSubmit = () => {
+      addTriple.parentElement.remove();
+      this.refresh();
+    }
+    
+    addTriple.setField('subject', this.urlString);
+  }
+
+  async addTripleWithKnotAsPredicate() {
+    lively.notify(123);
+    const addTriple = await lively.openComponentInWindow("add-triple");
+    addTriple.focus('subject');
+    addTriple.afterSubmit = () => {
+      addTriple.parentElement.remove();
+      this.refresh();
+    }
+    
+    addTriple.setField('predicate', this.urlString);
+  }
+
+  async addTripleWithKnotAsObject() {
+    lively.notify(123);
+    const addTriple = await lively.openComponentInWindow("add-triple");
+    addTriple.focus('subject');
+    addTriple.afterSubmit = () => {
+      addTriple.parentElement.remove();
+      this.refresh();
+    }
+    
+    addTriple.setField('object', this.urlString);
   }
 
   buildListItemFor(knot, role) {
@@ -182,8 +224,8 @@ export default class KnotView extends Morph {
   }
   
   livelyPrepareSave() {
-    //lively.notify('prepare save for: ' + this.get("#path-to-load").value)
-    this.innerHTML = this.get("#path-to-load").value;
+    let knotUrl = this.get("#path-to-load").value;
+    this.setAttribute("data-knot-url", knotUrl);
   }
   
   livelyMigrate(oldView) {
