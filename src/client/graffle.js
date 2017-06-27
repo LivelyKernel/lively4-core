@@ -1,5 +1,6 @@
 import {pt} from 'src/client/graphics.js';
 import Halo from "templates/lively-halo.js"
+import svg from "src/client/svg.js"
 
 export default class Graffle {
   
@@ -126,9 +127,13 @@ export default class Graffle {
   static onMouseUp(evt) {
     if (!this.specialKeyDown()) return
     if(this.currentElement) {
+      if (this.currentPath) {
+        svg.resetBounds(this.currentElement, this.currentPath )
+      }
       this.lastMouseDown = null
       this.currentElement = null
       this.lastElement = this.currentElement
+      this.currentPath = null
     } else {
       this.lastElement = null
     }
