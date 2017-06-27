@@ -92,6 +92,7 @@ export default class Graffle {
       // div.appendChild(path)
       
       div = lively.createPath([pt(0,0),pt(100,0)], "black", true)
+      div.style.zIndex = 1
       this.currentPath = div.querySelector("#path")
     }
     
