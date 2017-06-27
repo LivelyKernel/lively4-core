@@ -130,10 +130,7 @@ export default class SVG {
   }
   
   static connectTo(path, b) {
-    path.fromElement = a
     path.toElement = b
-    
-    this.observePositionChange(a, path, "fromObjectObserver", () => this.updateConnector(path))
     this.observePositionChange(b, path, "toObjectObserver", () => this.updateConnector(path))
   }
 
