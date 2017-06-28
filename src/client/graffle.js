@@ -91,9 +91,9 @@ export default class Graffle {
       // path.setAttribute("fill", "none")
       // div.appendChild(path)
       
-      div = lively.createPath([pt(0,0),pt(100,0)], "black", true)
-      div.style.zIndex = 1
-      this.currentPath = div.querySelector("#path")
+      div = document.createElement("lively-connector")
+      lively.components.openIn(document.body, div)
+      this.currentPath = div
     }
     
     if (!div) return
@@ -117,9 +117,9 @@ export default class Graffle {
     if (!this.lastMouseDown) return 
       var extent = this.eventPosition(evt).subPt(this.lastMouseDown)
     
-    if (this.currentElement instanceof SVGElement &&  this.currentPath) {
-      var d= `M 0 0 L ${extent.x} ${extent.y}`
-      this.currentPath.setAttribute("d", d)
+    if (this.currentPath) {
+      if (this.currentPath.pointTo)
+      this.currentPath.pointTo(extent)
     } else {
       lively.setExtent(this.currentElement, extent)
     }
@@ -129,7 +129,7 @@ export default class Graffle {
     if (!this.specialKeyDown()) return
     if(this.currentElement) {
       if (this.currentPath) {
-        svg.resetBounds(this.currentElement, this.currentPath )
+        this.currentPath.resetBounds()
       }
       this.lastMouseDown = null
       this.currentElement = null

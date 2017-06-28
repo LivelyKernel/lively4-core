@@ -22,8 +22,9 @@ export default class HaloControlPointItem extends HaloItem {
     this.halo = halo
     this.path = path
     this.index = index
-    // var pos = lively.getGlobalPosition(path)
-    this.offset = pt(30,30) // #TODO compute offset
+
+    this.offset = lively.getGlobalPosition(path)
+    // lively.showPoint(this.offset)
     
     this.updatePositon()
   }
@@ -31,7 +32,12 @@ export default class HaloControlPointItem extends HaloItem {
   updatePositon() {
     var v = svg.getPathVertices(this.path)
     var cp = v[this.index]
-    lively.setPosition(this, this.offset.addPt(pt(cp.x1, cp.y1)))
+    // lively.setGlobalPosition(this, this.offset.addPt(pt(cp.x1, cp.y1)))
+    // lively.setGlobalPosition(this, pt(0,0))
+    
+    lively.setPosition(this, pt(0,0))
+    
+    lively.showPoint(lively.getGlobalPosition(this))
   }
 
   onMouseDown(evt) {

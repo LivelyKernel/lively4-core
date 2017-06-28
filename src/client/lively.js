@@ -30,8 +30,7 @@ import focalStorage from '../external/focalStorage.js';
 import * as kernel from 'kernel';
 import Selection from 'templates/lively-selection.js'
 import windows from "templates/lively-window.js"
-import boundEval from "src/client/bound-eval.js"
-
+import boundEval from "src/client/bound-eval.js";
 
 let $ = window.$; // known global variables.
 
@@ -1295,7 +1294,21 @@ export default class Lively {
     document.body.scrollTop = scrollTop
     document.body.scrollLeft = scrollLeft
   }
-  
+
+  static ensureID(element) {
+    var id = element.getAttribute("data-lively-id")
+    if (!id) {
+      id = generateUUID()
+      element.setAttribute("data-lively-id", id)
+    }
+    return id
+  }
+
+  static elementByID(id) {
+    if (!id) return;
+    return document.querySelector('[data-lively-id="' + id + '"]');
+  }
+
 
   //  lively.allPreferences()
   static allPreferences() {
