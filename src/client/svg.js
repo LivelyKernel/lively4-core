@@ -74,8 +74,8 @@ export default class SVG {
   
   static updateConnector(path) {
     
-    var b1 = lively.getGlobalBounds(path.fromElement)
-    var b2 = lively.getGlobalBounds(path.toElement)
+    var b1 = lively.getGlobalBounds(path.fromElement || path); // path is fallback...
+    var b2 = lively.getGlobalBounds(path.toElement || path)
     
     var dist = b1.center().subPt(b2.center())
     var selectorA, selectorB;
@@ -130,10 +130,7 @@ export default class SVG {
   }
   
   static connectTo(path, b) {
-    path.fromElement = a
     path.toElement = b
-    
-    this.observePositionChange(a, path, "fromObjectObserver", () => this.updateConnector(path))
     this.observePositionChange(b, path, "toObjectObserver", () => this.updateConnector(path))
   }
 

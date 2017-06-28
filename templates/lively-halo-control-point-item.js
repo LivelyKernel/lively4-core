@@ -65,12 +65,28 @@ export default class HaloControlPointItem extends HaloItem {
     this.halo.shadowRoot.querySelectorAll(".halo").forEach(ea => {
       if (ea !== this) ea.style.visibility = "hidden"
     })
+    this.style.pointerEvents = "none"
+
+    this.targetPointerEvents = this.target.style.pointerEvents
+    this.target.style.pointerEvents = "none"; // disable mouse events while dragging...
   }
 
   move(evt) {
     
+    
     evt.preventDefault();
     var delta = events.globalPosition(evt).subPt(this.eventOffset)
+
+
+    if (this.highlight) this.highlight.remove();
+      
+    var element = evt.path.find(ea => ea.classList && ea.classList.contains("lively-content"))
+    if (element !== this) {
+      this.highlight = lively.showElement(element)
+      this.targetElement = element
+    } else {
+      if (this.targetElement) this.targetElement = null
+    }
 
     var cp = this.vertices[this.index]
     cp.x1 = this.original.x + delta.x
@@ -85,6 +101,18 @@ export default class HaloControlPointItem extends HaloItem {
   }
 
   stop(evt) {
+    this.style.pointerEvents = null
+    this.target.style.pointerEvents = this.targetPointerEvents; // receive mouse events again
+    
+    if (this.targetElement) {
+      if (this.index == 0) {
+        svg.connectFrom(this.target, this.targetElement)
+      } else {
+        svg.connectTo(this.target, this.targetElement)
+      }
+      svg.updateConnector(this.target);
+    }
+    
     svg.resetBounds(window.that, this.path)
     this.halo.shadowRoot.querySelectorAll(".halo").forEach(ea => {
       if (ea !== this) ea.style.visibility = null
