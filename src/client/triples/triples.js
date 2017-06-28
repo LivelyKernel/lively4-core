@@ -176,6 +176,9 @@ export class Graph {
   async loadFromDir(directory) {
     if(!this.loadedDirectoryPromises.has(directory)) {
       this.loadedDirectoryPromises.set(directory, new Promise(async resolve => {
+        let progress = await lively.showProgress("loading dir " + directory);
+        progress.value = 0;
+        
         let directoryURL = new URL(directory);
         let text = await cachedFetch(directory, { method: 'OPTIONS' });
         let json = JSON.parse(text);
@@ -183,10 +186,18 @@ export class Graph {
         fileDescriptors = fileDescriptors.filter(desc => desc.type === "file");
         let fileNames = fileDescriptors.map(desc => desc.name);
         
-        Promise.all(fileNames.map(fileName => {
-          let knotURL = new URL(fileName, directoryURL);
-          return this.requestKnot(knotURL);
-        })).then(resolve);
+        let total = fileNames.length;
+        let i=0;
+        Promise
+          .all(fileNames.map(fileName => {
+            let knotURL = new URL(fileName, directoryURL);
+            return this.requestKnot(knotURL).then(val => {
+              progress.value = i++ / total;
+              return val;
+            });
+          }))
+          .then(resolve)
+          .then(() => progress.remove());
       }));
     }
     return this.loadedDirectoryPromises.get(directory);
