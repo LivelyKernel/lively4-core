@@ -10,12 +10,10 @@ export default class KnotView extends Morph {
   async initialize() {
     this.windowTitle = "Knot View";
 
-    let graph = await Graph.getInstance();
-
     var pathToLoad = this.get("#path-to-load");
     pathToLoad.addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
-        this.onPathEntered(pathToLoad.value);
+        this.onPathEntered(this.urlString);
       }
     });
     
@@ -25,7 +23,6 @@ export default class KnotView extends Morph {
     let urlToLoad = this.getAttribute('data-knot-url');
     if (urlToLoad && urlToLoad !== "") {
       this.loadKnotForURL(urlToLoad);
-      this.setAttribute("data-knot-url", undefined);
     }
   }
   
@@ -138,55 +135,44 @@ export default class KnotView extends Morph {
 
 
   refresh() {
-    this.loadKnot(this.get("#path-to-load").value);
+    this.loadKnot(this.urlString);
   }
-  async addTag(event) {
-    lively.notify(event.type);
+  
+  async createAddTriple() {
     const addTriple = await lively.openComponentInWindow("add-triple");
-    addTriple.focus('object');
     addTriple.afterSubmit = () => {
       addTriple.parentElement.remove();
       this.refresh();
     }
-    
+    return addTriple;
+  }
+  async addTag(event) {
+    const addTriple = await this.createAddTriple();
+
     addTriple.setField('subject', this.urlString);
     addTriple.setField('predicate', this.tagURLString);
+    addTriple.focus('object');
   }
   
   async addTripleWithKnotAsSubject() {
-    lively.notify(123);
-    const addTriple = await lively.openComponentInWindow("add-triple");
-    addTriple.focus('predicate');
-    addTriple.afterSubmit = () => {
-      addTriple.parentElement.remove();
-      this.refresh();
-    }
-    
+    const addTriple = await this.createAddTriple();
+
     addTriple.setField('subject', this.urlString);
+    addTriple.focus('predicate');
   }
 
   async addTripleWithKnotAsPredicate() {
-    lively.notify(123);
-    const addTriple = await lively.openComponentInWindow("add-triple");
-    addTriple.focus('subject');
-    addTriple.afterSubmit = () => {
-      addTriple.parentElement.remove();
-      this.refresh();
-    }
-    
+    const addTriple = await this.createAddTriple();
+
     addTriple.setField('predicate', this.urlString);
+    addTriple.focus('subject');
   }
 
   async addTripleWithKnotAsObject() {
-    lively.notify(123);
-    const addTriple = await lively.openComponentInWindow("add-triple");
-    addTriple.focus('subject');
-    addTriple.afterSubmit = () => {
-      addTriple.parentElement.remove();
-      this.refresh();
-    }
-    
+    const addTriple = await this.createAddTriple();
+
     addTriple.setField('object', this.urlString);
+    addTriple.focus('subject');
   }
 
   buildListItemFor(knot, role) {
@@ -212,7 +198,10 @@ export default class KnotView extends Morph {
       aceComp.editor.setValue(knot.content);
       aceComp.enableAutocompletion();
       aceComp.aceRequire('ace/ext/searchbox');
-      aceComp.doSave = text => knot.save(text);
+      aceComp.doSave = async text => {
+        await knot.save(text);
+        this.refresh();
+      }
     }
   }
   
@@ -224,12 +213,6 @@ export default class KnotView extends Morph {
   }
   
   livelyPrepareSave() {
-    let knotUrl = this.get("#path-to-load").value;
-    this.setAttribute("data-knot-url", knotUrl);
-  }
-  
-  livelyMigrate(oldView) {
-    let oldPath = oldView.get("#path-to-load").value;
-    this.loadKnotForURL(oldPath);
+    this.setAttribute("data-knot-url", this.urlString);
   }
 }
