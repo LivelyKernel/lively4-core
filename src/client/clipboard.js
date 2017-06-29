@@ -33,6 +33,8 @@ export default class Clipboard {
   }
   
   static onCopy(evt) {
+    lively.notify("on copy")
+
     if ((!HaloService.areHalosActive() || !that)) {
       return;
     }
@@ -60,7 +62,7 @@ export default class Clipboard {
   static onPaste(evt) {
     if (!this.lastClickPos) return; // we don't know where to paste it...this.lastClickPos
     
-    if (document.activeElement !== document.body) return
+    if (!lively.hasGlobalFocus()) return
     evt.stopPropagation()
     evt.preventDefault(); 
     
@@ -137,6 +139,7 @@ export default class Clipboard {
 
   static onBodyMouseDown(evt) {
     if(document.body.parentElement ===  evt.path[0]) {
+     
       lively.globalFocus()
       this.lastClickPos = pt(evt.clientX,evt.clientY)
       // lively.showPoint(this.lastClickPos)

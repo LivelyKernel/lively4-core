@@ -30,8 +30,7 @@ import focalStorage from '../external/focalStorage.js';
 import * as kernel from 'kernel';
 import Selection from 'templates/lively-selection.js'
 import windows from "templates/lively-window.js"
-import boundEval from "src/client/bound-eval.js"
-
+import boundEval from "src/client/bound-eval.js";
 
 let $ = window.$; // known global variables.
 
@@ -1277,14 +1276,31 @@ export default class Lively {
     }
   }
 
-
   static async onBodyPositionPreference(pos) {
     lively.setPosition(document.body, pos)
   }
 
-  static globalFocus() {
-    this.focusWithoutScroll(document.body)
+  static hasGlobalFocus() {
+    return document.activeElement === document.body || (document.activeElement && (document.activeElement.id == "copy-hack-element"))
   }
+
+  static globalFocus() {
+    // document.querySelector('#copy-hack-element').remove()
+     var copyHack = document.querySelector('#copy-hack-element')
+      if (!copyHack) {
+        copyHack = document.createElement("input")
+        lively.setPosition(copyHack, pt(0,0))
+        lively.setExtent(copyHack, pt(0,0))
+        copyHack.style.backgroundColor = "red"
+        copyHack.id = "copy-hack-element"
+        copyHack.isMetaNode = true
+        document.body.appendChild(copyHack)
+      }
+    lively.focusWithoutScroll(copyHack)
+    // this.focusWithoutScroll(document.body)
+  }
+  
+  
   
   static focusWithoutScroll(element) {
     if (!element) return;
@@ -1295,7 +1311,21 @@ export default class Lively {
     document.body.scrollTop = scrollTop
     document.body.scrollLeft = scrollLeft
   }
-  
+
+  static ensureID(element) {
+    var id = element.getAttribute("data-lively-id")
+    if (!id) {
+      id = generateUUID()
+      element.setAttribute("data-lively-id", id)
+    }
+    return id
+  }
+
+  static elementByID(id) {
+    if (!id) return;
+    return document.querySelector('[data-lively-id="' + id + '"]');
+  }
+
 
   //  lively.allPreferences()
   static allPreferences() {

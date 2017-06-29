@@ -65,7 +65,7 @@ export default class Halo extends Morph {
     this.shadowRoot.querySelectorAll("lively-halo-handle-item").forEach(ea => {
       ea.style.visibility = null
     })  
-    if (target instanceof SVGSVGElement) {
+    if (target instanceof SVGSVGElement || target.isConnector) {
       this.shadowRoot.querySelectorAll("lively-halo-handle-item").forEach(ea => {
         // lively.notify("hide handles" + ea)
         ea.style.visibility = "hidden"
@@ -79,11 +79,25 @@ export default class Halo extends Morph {
       svg.getPathVertices(ea).forEach( (p, index) => {
         var controlPoint = document.createElement("lively-halo-control-point-item")
         lively.components.openIn(this.shadowRoot, controlPoint).then( () => {
+          
           controlPoint.setup(this, ea, index)
         })
       })
     })    
 
+    if (target.isConnector) {
+      var path = target.getPath()
+      // this.get("lively-halo-drag-item").style.visibility= "hidden"
+      
+      var controlPoint = document.createElement("lively-halo-control-point-item")
+      lively.components.openIn(this.shadowRoot, controlPoint).then( () => {
+        controlPoint.setup(this, path, 0)
+      })
+      var controlPoint2 = document.createElement("lively-halo-control-point-item")
+      lively.components.openIn(this.shadowRoot, controlPoint2).then( () => {
+        controlPoint2.setup(this, path, 1)
+      })
+    }
   }
 
   showHalo(target, path) {

@@ -3,6 +3,8 @@ import {pt} from "src/client/graphics.js"
 
 import Selecting from "src/client/morphic/selecting.js"
 
+import GrabItem from "templates/lively-halo-grab-item.js"
+
 /*
  * Classic old Morphic-like drag and drop of graphical elements
  */
@@ -10,6 +12,7 @@ import Selecting from "src/client/morphic/selecting.js"
 export default class LivelyHand extends Morph {
   
   initialize() {
+    
     this.setAttribute("data-lively4-donotpersist","all");
     lively.removeEventListener("Hand", this.outerWorldContext())
     lively.addEventListener("Hand", this.outerWorldContext(), "pointerdown", 
@@ -47,7 +50,9 @@ export default class LivelyHand extends Morph {
   elementUnderHand(evt) {
     
     var path = evt.path.slice(evt.path.indexOf(evt.srcElement))
-        .filter(ea => ! Selecting.isIgnoredOnMagnify(ea))
+        .filter(ea => ! Selecting.isIgnoredOnMagnify(ea) 
+           && GrabItem.canDropInto(this, ea)
+          )
     return path[0]
   }
 
