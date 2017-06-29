@@ -22,22 +22,20 @@ export default class HaloControlPointItem extends HaloItem {
     this.halo = halo
     this.path = path
     this.index = index
-
-    this.offset = lively.getGlobalPosition(path)
-    // lively.showPoint(this.offset)
-    
+    lively.setPosition(this, pt(0,0))
+    this.offset = lively.getGlobalPosition(this.path).subPt(lively.getGlobalPosition(this))
     this.updatePositon()
   }
   
   updatePositon() {
     var v = svg.getPathVertices(this.path)
     var cp = v[this.index]
-    // lively.setGlobalPosition(this, this.offset.addPt(pt(cp.x1, cp.y1)))
-    // lively.setGlobalPosition(this, pt(0,0))
+    lively.setPosition(this, this.offset.addPt(pt(cp.x1, cp.y1)))
+    //lively.setGlobalPosition(this, pt(0,0))
     
-    lively.setPosition(this, pt(0,0))
+    // lively.setPosition(this, pt(0,0))
     
-    lively.showPoint(lively.getGlobalPosition(this))
+    
   }
 
   onMouseDown(evt) {
@@ -112,14 +110,19 @@ export default class HaloControlPointItem extends HaloItem {
     
     if (this.targetElement) {
       if (this.index == 0) {
-        svg.connectFrom(this.target, this.targetElement)
+        this.target.connectFrom(this.targetElement)
       } else {
-        svg.connectTo(this.target, this.targetElement)
-      }
-      svg.updateConnector(this.target);
+        this.target.connectTo(this.targetElement)
+      } 
+    } else {
+      if (this.index == 0) {
+        this.target.disconnectFromElement()
+      } else {
+        this.target.disconnectToElement()
+      } 
     }
     
-    svg.resetBounds(window.that, this.path)
+    this.target.resetBounds()
     this.halo.shadowRoot.querySelectorAll(".halo").forEach(ea => {
       if (ea !== this) ea.style.visibility = null
     })

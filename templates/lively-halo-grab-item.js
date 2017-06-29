@@ -15,13 +15,17 @@ import {Grid} from 'src/client/morphic/snapping.js';
 
 export default class HaloGrabItem extends HaloItem {
  
+ static get droppingBlacklist() {
+      return {"*": 
+        ["button", "input", "lively-halo", "html",  "lively-selection", "lively-connector"]
+      }
+  };
+ 
   initialize() {
     this.registerMouseEvents()
     this.startCustomDragging();
     
-    this.droppingBlacklist = {
-      "*": ["button", "input", "lively-halo", "html",  "lively-selection"]
-    };
+    
   }
 
   // DRAG API
@@ -159,7 +163,7 @@ export default class HaloGrabItem extends HaloItem {
     });
     for (var i = 0; i < elementsUnderCursor.length; i++) {
       var targetNode = elementsUnderCursor[i];
-      if (this.canDropInto(node, targetNode) ) {
+      if (HaloGrabItem.canDropInto(node, targetNode) ) {
         return targetNode;
       }
     }
@@ -201,7 +205,8 @@ export default class HaloGrabItem extends HaloItem {
     }
   }
   
-  canDropInto(node, targetNode) {
+  static canDropInto(node, targetNode) {
+    if (!targetNode || !node) return false
     var targetTag = targetNode.tagName.toLowerCase();
     return node !== targetNode &&
       !Array.from(node.getElementsByTagName('*')).includes(targetNode) &&

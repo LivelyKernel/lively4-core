@@ -1,5 +1,6 @@
 import Morph from './Morph.js';
 import SVG from "src/client/svg.js"
+import DelayedCall from 'src/client/delay.js'
  
 export default class LivelyConnector extends Morph {
  
@@ -11,6 +12,10 @@ export default class LivelyConnector extends Morph {
     this.fromElement = lively.elementByID(this.getAttribute("fromElement"))
     this.toElement = lively.elementByID(this.getAttribute("toElement"))
     this.connect(this.fromElement, this.toElement)
+    
+    this.resetBoundsDelay = new DelayedCall()
+    this.resetBoundsDelay.delay = 500
+
   } 
 
   livelyExample() {
@@ -89,6 +94,9 @@ export default class LivelyConnector extends Morph {
     }
     
     this.updationPathConnection(path, path.fromElement, selectorA, path.toElement, selectorB)
+    this.resetBoundsDelay && this.resetBoundsDelay.call(() => {
+      this.resetBounds()
+    })
   }
   
   observePositionChange(a, obervername, cb) {
@@ -112,26 +120,27 @@ export default class LivelyConnector extends Morph {
   }
   
   connect(a, b) {
-    this.connectFrom(a)
+    this.connectFrom(a, false)
     this.connectTo(b)
-    this.updateConnector()
   }
   
-  
-  
-  
-  connectFrom(a) {
+  connectFrom(a, doNotUpdate) {
     if (!a) return
     this.setAttribute("fromElement", lively.ensureID(a))
     this.fromElement = a
     this.observePositionChange(a,  "fromObjectObserver", () => this.updateConnector())
+  
+    if (!doNotUpdate)
+      this.updateConnector(); // just don't do it twice
   }
   
-  connectTo( b) {
+  connectTo(b, doNotUpdate) {
     if (!b) return
     this.toElement = b
     this.setAttribute("toElement", lively.ensureID(b))
     this.observePositionChange(b,  "toObjectObserver", () => this.updateConnector())
+    if (!doNotUpdate)
+      this.updateConnector(); // just don't do it twice
   }
 
   disconnect() {
@@ -170,11 +179,9 @@ export default class LivelyConnector extends Morph {
     var svg = this.get("#svg")
     SVG.resetBounds(svg, this.getPath())
     lively.setExtent(this, lively.getExtent(svg))
-    
     var pos = lively.getPosition(svg)
     lively.moveBy(this, pos)
     lively.setPosition(svg, pt(0,0))
-
   }
   
   
