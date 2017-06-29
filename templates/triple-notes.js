@@ -105,11 +105,10 @@ export default class TripleNotes extends Morph {
     function zoomed() {
       graphContainer.attr("transform", d3.event.transform);
     }
-    let zoom = d3.zoom()
+    svg.call(d3.zoom()
 			.duration(150)
-	    	.scaleExtent([MIN_MAGNIFICATION, MAX_MAGNIFICATION])
-      .on("zoom", zoomed);
-    svg.call(zoom);
+    	.scaleExtent([MIN_MAGNIFICATION, MAX_MAGNIFICATION])
+      .on("zoom", zoomed));
     
     function drawChart(data) {
         
@@ -125,7 +124,7 @@ export default class TripleNotes extends Morph {
         var hiddenLinkElements = linkContainer.selectAll("line")
             .data(data.links).enter()
             .append("line")
-            .attr("stroke", "black")
+            .attr("stroke", "blue")
         
         let nodeContainer = graphContainer.append("g").classed("nodeContainer", true);
         let nodeElements = nodeContainer.selectAll(".node")
@@ -135,7 +134,13 @@ export default class TripleNotes extends Morph {
           .call(d3.drag()
             .on("start", dragstarted)
             .on("drag", dragged)
-            .on("end", dragended));
+            .on("end", dragended))
+            .on("dblclick", async knot => { 
+              d3.event.stopPropagation();
+
+              let knotView = await lively.openComponentInWindow("knot-view");
+              knotView.loadKnotForURL(knot.url);
+            });;
 
         nodeElements.each(function (node) {
 			node.draw(d3.select(this));
