@@ -84,6 +84,9 @@ export default class KnotView extends Morph {
     this.get("#path-to-load").value = knot.url;
     this.get("#label").innerHTML = knot.label();
     
+    let deleteKnot = this.get('#delete-button');
+    deleteKnot.onclick = event => this.deleteKnot(event);
+
     let urlList = this.get("#url-list");
     urlList.innerHTML = "";
     graph.getUrlsByKnot(knot).forEach(url => {
@@ -102,7 +105,7 @@ export default class KnotView extends Morph {
     let tagContainer = this.get('#tag-container');
     tagContainer.innerHTML = "";
     graph.query(knot, tag, _).forEach(triple => {
-      let tagElement = this.buildTagWidget(triple.object);
+      let tagElement = this.buildTagWidget(triple.object, triple);
       tagContainer.appendChild(tagElement);
     });
     let addTagButton = this.get('#add-tag');
@@ -126,16 +129,47 @@ export default class KnotView extends Morph {
 
   }
   
-  buildTagWidget(tag) {
+  buildTagWidget(tag, triple) {
     let tagElement = document.createElement('div');
     tagElement.appendChild(this.buildNavigatableLinkFor(tag));
+    tagElement.appendChild(this.buildDeleteTagElement(triple));
 
     return tagElement;
+  }
+  buildDeleteTagElement(triple) {
+    let ref = document.createElement('i');
+    ref.classList.add('fa', 'fa-trash');
+    ref.addEventListener("click", e => {
+      this.deleteTagTriple(triple);
+    });
+    
+    return ref;
+  }
+  async deleteTagTriple(triple) {
+    const graph = await Graph.getInstance();
+    const knot = await graph.requestKnot(new URL(triple.fileName));
+    
+    if(await graph.deleteKnot(knot)) {
+      this.refresh();
+    } else {
+      lively.notify('did not delete tag ' + triple.object.fileName);
+    }
   }
 
 
   refresh() {
     this.loadKnot(this.urlString);
+  }
+  async deleteKnot() {
+    const graph = await Graph.getInstance();
+    const knot = await graph.requestKnot(new URL(this.urlString));
+    
+    if(await graph.deleteKnot(knot)) {
+      const elementToRemove = this.parentElement.isWindow ? this.parentElement : this;
+      elementToRemove.remove();
+    } else {
+      lively.notify('did not delete knot ' + this.urlString);
+    }
   }
   
   async createAddTriple() {

@@ -36,7 +36,8 @@ class Knot {
   }
   label() {
     if(this.fileName.endsWith('.md')) {
-      return this.content.split('\n')[0];
+      const firstLine = this.content.split('\n')[0];
+      return firstLine.replace(/^#\s/, '');
     }
     return this.fileName;
   }
@@ -61,7 +62,7 @@ class Triple extends Knot {
   
   label() {
     if(this.predicate) {
-      return 't:' + this.predicate.label();
+      return 't: ' + this.predicate.label();
     }
     return this.filename.replace('.triple.json', '');
   }
@@ -84,6 +85,30 @@ export class Graph {
   }
   get triples() {
     return this.knots.filter(knot => knot.isTriple());
+  }
+  async deleteKnot(knot) {
+    // check for triples on top of the knot
+    const referingTriples = this.query(knot, _, _)
+      .concat(this.query(_, knot, _))
+      .concat(this.query(_, _, knot));
+    if(referingTriples.length > 0) {
+      lively.notify('Deletion aborted!', referingTriples.length + ' triples refer to this knot.');
+      return false;
+    }
+
+    let url = knot.url;
+    if (!window.confirm("delete knot " + url)) { return false; }
+    
+    let index = this.knots.indexOf(knot);
+    if (index > -1) {
+      this.knots.splice(index, 1);
+    }
+    var result = await fetch(url, {method: 'DELETE'})
+      .then(r => r.text());
+
+    lively.notify("deleted knot " + url, result);
+    
+    return true;
   }
 
   async deserializeKnot(fileName, text) {

@@ -57,6 +57,16 @@ td i {
   color: white;
 }
 
+#delete-button {
+  float: right;
+  color: #b33630;
+}
+
+#delete-button:hover {
+  background:  linear-gradient(#dc5f59, #b33630);
+  color: white;
+}
+
 #tag-container {
   float: left;
 }
@@ -69,7 +79,12 @@ td i {
 </style>
 <input type="text" id="path-to-load" placeholder="path to load" title="path to load">
 <div id="container">
-  <h1 id="label"></h1>
+  <div>
+    <h1 id="label"></h1>
+    <button id="delete-button" title="delete this knot">
+      <i class="fa fa-trash" aria-hidden="true"></i>
+    </button>
+  </div>
   
   <h2>URLs</h2>
   <ul id ="url-list"></ul>
