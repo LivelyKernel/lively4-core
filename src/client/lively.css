@@ -47,8 +47,24 @@ lively-table .start-selection {
   background-color: rgba(100,100,200,0.1);
 }
 
-
 lively-table .editing {
   background-color: white;
   border: 2px solid red;
+}
+
+
+.lively-text:empty:before {
+  content: "<insert text here>";
+  color: lightgray;
+  border: none;
+}
+
+
+.lively-text:empty {
+  border: 1px solid lightgray;
+  content: "haha";
+}
+
+.lively-text {
+  background-color: none;
 }

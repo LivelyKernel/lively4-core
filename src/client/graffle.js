@@ -30,13 +30,16 @@ export default class Graffle {
   }
   
   static onKeyDown(evt) {
-    if (evt.path[0] !== document.body) return; 
+    // console.log('down ' + evt.keyCode)
+    if (!lively.isGlobalKeyboardFocusElement(evt.path[0])) 
+      return; 
     var key = String.fromCharCode(evt.keyCode)
     this.keysDown[key] = true
     // lively.notify("down: " + key)
     if (this.specialKeyDown()) {
       lively.selection.disabled = true
-      if (!evt.crtlKey && !evt.altKey && !evt.altKey) {
+      if (!evt.ctrlKey && !evt.altKey && !evt.altKey) {
+        // console.log('disable ' + evt.keyCode)
         evt.stopPropagation()
         evt.preventDefault()
       }
@@ -73,13 +76,11 @@ export default class Graffle {
     
     } else if (this.keysDown["T"]) {
       div= document.createElement("div")
-      div.textContent = "text"
-      div.style.backgroundColor = "white"
+      div.textContent = ""
+      div.classList.add("lively-text")
       div.style.padding = "3px"
-      
       div.contentEditable = true
-
-    
+      
     }  else if (this.keysDown["C"]) {
       // div = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       // div.style.overflow = "visible"
@@ -131,6 +132,10 @@ export default class Graffle {
       if (this.currentPath) {
         this.currentPath.resetBounds()
       }
+      if (this.currentElement.classList.contains("lively-text")) {
+        // this.currentElement.focus()
+      }
+
       this.lastMouseDown = null
       this.currentElement = null
       this.lastElement = this.currentElement

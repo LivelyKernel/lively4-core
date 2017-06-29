@@ -239,6 +239,7 @@ export default class Halo extends Morph {
   }
   
   dragBehaviorMove(evt, pos) {
+    if (!that || that.isConnector) return;
     lively.setPosition(that, pos.addPt(this.dragOffset));
     this.alignHaloToBounds(that)
   }
