@@ -8,21 +8,36 @@ import * as drawTools from 'src/client/triples/drawTools.js';
 const MIN_MAGNIFICATION = 0.01;
 const MAX_MAGNIFICATION = 4;
 
+const NODE_BY_KNOT = new Map();
+function getNodeByKnot(knot) {
+  if(!NODE_BY_KNOT.has(knot)) {
+    NODE_BY_KNOT.set(knot, new Node(knot));
+  }
+  //return knot;
+  return NODE_BY_KNOT.get(knot);
+}
 class Node {
-  constructor(label) {
-    this._label = label
+  constructor(knot, label) {
+    this.knot = knot;
     this.r = ~~d3.randomUniform(8, 28)();
   }
   label() {
-    return this._label;
+    return this.knot.label();
+  }
+  isTriple() {
+    return this.knot.isTriple();
   }
 }
-class Link {}
+class Link {
+  constructor(triple) {
+    
+  }
+}
 
 export default class TripleNotes extends Morph {
 
-  initialize() {
-    this.windowTitle = "Triple Notes";
+  async initialize() {
+    this.windowTitle = "Knot Explorer";
     
     let parentElement = this.get('#graph');
     var width,height;
@@ -33,55 +48,51 @@ export default class TripleNotes extends Morph {
     var graphContainer = svg.append("g").classed("graphContainer", true);
 
     setSize();
-    main.call(this);
-			
-    function getNodes(graph) {
-      return graph.knots;
-    }
-    
-    async function main() {
-        let graph = await Graph.getInstance();
-        
-        let knots = getNodes(graph);
-        let nodes = knots.map(knot => knot );
-        let links = [];
 
-        nodes.forEach(n => n.draw = function (parentElement, additionalCssClasses) {
-    			var cssClasses = [];// that.collectCssClasses();
+    let graph = await Graph.getInstance();
     
-    			//that.nodeElement(parentElement);
+    let knots = graph.knots;
+    this.updateStatistics(knots);
     
-    			//if (additionalCssClasses instanceof Array) {
-    			//	cssClasses = cssClasses.concat(additionalCssClasses);
-    			//}
+    let nodes = knots.map(knot => {
+      return knot
+      return getNodeByKnot(knot);
+    });
+    let links = [];
+    
 
-    			drawTools.appendCircularClass(parentElement, 40, cssClasses, n.label(), 'lightblue');
-    
-    			//that.postDrawActions(parentElement);
-    		});
+    nodes.forEach(n => n.draw = function (parentElement, additionalCssClasses) {
+			var cssClasses = [];// that.collectCssClasses();
 
-        knots
-          .filter(knot => knot.isTriple())
-          .filter(triple => triple.subject)
-          .forEach(triple => {
-            links.push({
-              source: triple.subject,
-              target: triple
-            });
-            links.push({
-              source: triple.object,
-              target: triple
-            });
-          });
+			//that.nodeElement(parentElement);
 
-        var data = {
-            nodes,
-            links        
-        }
-        
-        drawChart(data);
-    }
-    
+			//if (additionalCssClasses instanceof Array) {
+			//	cssClasses = cssClasses.concat(additionalCssClasses);
+			//}
+
+			drawTools.appendCircularClass(parentElement, 40, cssClasses, n.label(), 'lightblue');
+
+			//that.postDrawActions(parentElement);
+		});
+
+    knots
+      .filter(knot => knot.isTriple())
+      .forEach(triple => {
+        links.push({
+          source: triple.subject,
+          target: triple
+        });
+        links.push({
+          source: triple.object,
+          target: triple
+        });
+      });
+
+    drawChart({
+        nodes,
+        links        
+    });
+
     lively.addEventListener("triple-notes", this, "extent-changed", e => { setSize(); });
 
     function setSize() {
@@ -105,12 +116,13 @@ export default class TripleNotes extends Morph {
     function zoomed() {
       graphContainer.attr("transform", d3.event.transform);
     }
+    
     svg.call(d3.zoom()
 			.duration(150)
     	.scaleExtent([MIN_MAGNIFICATION, MAX_MAGNIFICATION])
       .on("zoom", zoomed));
     
-    function drawChart(data) {
+    function drawChart({ nodes, links }) {
         
         var simulation = d3.forceSimulation()
             .force("link", d3.forceLink().id(d => d.index).distance(200))
@@ -118,17 +130,18 @@ export default class TripleNotes extends Morph {
             .force("charge", d3.forceManyBody().strength(node => node.isTriple() ? -190*0.5 : -190))
             .force("center", d3.forceCenter(chartWidth / 2, chartWidth / 2))
             .force("y", d3.forceY(0).strength(0.001))
-            .force("x", d3.forceX(0).strength(0.001))
+            .force("x", d3.forceX(0).strength(0.001));
 
         let linkContainer = graphContainer.append("g").classed("linkContainer", true);
         var hiddenLinkElements = linkContainer.selectAll("line")
-            .data(data.links).enter()
+            .data(links).enter()
             .append("line")
-            .attr("stroke", "blue")
+            .style("stroke", "blue")
+            .style("stroke-width", "23");
         
         let nodeContainer = graphContainer.append("g").classed("nodeContainer", true);
         let nodeElements = nodeContainer.selectAll(".node")
-          .data(data.nodes).enter()
+          .data(nodes).enter()
           .append("g")
           .attr("class", "node")
           .call(d3.drag()
@@ -140,11 +153,11 @@ export default class TripleNotes extends Morph {
 
               let knotView = await lively.openComponentInWindow("knot-view");
               knotView.loadKnotForURL(knot.url);
-            });;
+            });
 
         nodeElements.each(function (node) {
-			node.draw(d3.select(this));
-});
+    			node.draw(d3.select(this));
+        });
 
         nodeElements.append("text")
           .attr("class", "text")
@@ -157,16 +170,16 @@ export default class TripleNotes extends Morph {
             hiddenLinkElements
                 .attr("x1", d => d.source.x)
                 .attr("y1", d => d.source.y)
-                .attr("x2", d => d.target.x)
-                .attr("y2", d => d.target.y);
+                .attr("x2", d => d.target.x + 30)
+                .attr("y2", d => d.target.y + 30);
         }  
         
         simulation
-            .nodes(data.nodes)
+            .nodes(nodes)
             .on("tick", recalculatePositions);
     
         simulation.force("link")
-            .links(data.links);    
+            .links(links);
         
         function dragstarted(d) {
           if (!d3.event.active) simulation.alphaTarget(0.3).restart();
@@ -186,5 +199,10 @@ export default class TripleNotes extends Morph {
         }
         
     }
+  }
+  
+  updateStatistics(knots) {
+    this.get('#number-of-knots').innerHTML = knots.length;
+    this.get('#number-of-triples').innerHTML = knots.filter(k => k.isTriple()).length;
   }
 }
