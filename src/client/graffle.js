@@ -30,13 +30,16 @@ export default class Graffle {
   }
   
   static onKeyDown(evt) {
-    if (evt.path[0] !== document.body) return; 
+    // console.log('down ' + evt.keyCode)
+    if (!lively.isGlobalKeyboardFocusElement(evt.path[0])) 
+      return; 
     var key = String.fromCharCode(evt.keyCode)
     this.keysDown[key] = true
     // lively.notify("down: " + key)
     if (this.specialKeyDown()) {
       lively.selection.disabled = true
-      if (!evt.crtlKey && !evt.altKey && !evt.altKey) {
+      if (!evt.ctrlKey && !evt.altKey && !evt.altKey) {
+        // console.log('disable ' + evt.keyCode)
         evt.stopPropagation()
         evt.preventDefault()
       }

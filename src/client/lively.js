@@ -1280,24 +1280,29 @@ export default class Lively {
     lively.setPosition(document.body, pos)
   }
 
+
+  static isGlobalKeyboardFocusElement(element) {
+    return element === document.body || (element && (element.id == "copy-hack-element"))
+  }
+
   static hasGlobalFocus() {
-    return document.activeElement === document.body || (document.activeElement && (document.activeElement.id == "copy-hack-element"))
+    return this.isGlobalKeyboardFocusElement(document.activeElement)
   }
 
   static globalFocus() {
     // document.querySelector('#copy-hack-element').remove()
-     var copyHack = document.querySelector('#copy-hack-element')
-      if (!copyHack) {
-        copyHack = document.createElement("input")
-        lively.setPosition(copyHack, pt(0,0))
-        lively.setExtent(copyHack, pt(0,0))
-        copyHack.style.backgroundColor = "red"
-        copyHack.id = "copy-hack-element"
-        copyHack.isMetaNode = true
-        document.body.appendChild(copyHack)
-      }
-    lively.focusWithoutScroll(copyHack)
-    // this.focusWithoutScroll(document.body)
+    // var copyHack = document.querySelector('#copy-hack-element')
+    //   if (!copyHack) {
+    //     copyHack = document.createElement("input")
+    //     lively.setPosition(copyHack, pt(0,0))
+    //     lively.setExtent(copyHack, pt(30,30))
+    //     copyHack.style.backgroundColor = "red"
+    //     copyHack.id = "copy-hack-element"
+    //     copyHack.isMetaNode = true
+    //     document.body.appendChild(copyHack)
+    //   }
+    // lively.focusWithoutScroll(copyHack)
+    this.focusWithoutScroll(document.body)
   }
   
   
