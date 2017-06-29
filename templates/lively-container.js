@@ -391,6 +391,10 @@ export default class Container extends Morph {
       }
       var url = this.getURL();
       
+      if (this.getPath().match(/.*css/)) {
+        this.updateCSS();
+      }
+      
       this.updateOtherContainers();
       
     
@@ -420,6 +424,17 @@ export default class Container extends Morph {
         
       }
     }).then(() => this.showNavbar());
+  }
+  
+  updateCSS() {
+    var url = "" + this.getURL()
+    // lively.notify("update " + url)
+    // var url = "https://lively-kernel.org/lively4/lively4-jens/src/client/lively.css"
+    var style = document.head.querySelector('link[href="'+ url  + '"]')
+    if (style && style.id) {
+      lively.notify("reload " + style.id)
+      lively.loadCSSThroughDOM(style.id, url)
+    }
   }
 
   updateOtherContainers() {

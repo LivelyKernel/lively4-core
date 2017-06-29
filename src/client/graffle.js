@@ -76,13 +76,11 @@ export default class Graffle {
     
     } else if (this.keysDown["T"]) {
       div= document.createElement("div")
-      div.textContent = "text"
-      div.style.backgroundColor = "white"
+      div.textContent = ""
+      div.classList.add("lively-text")
       div.style.padding = "3px"
-      
       div.contentEditable = true
-
-    
+      
     }  else if (this.keysDown["C"]) {
       // div = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       // div.style.overflow = "visible"
@@ -134,6 +132,10 @@ export default class Graffle {
       if (this.currentPath) {
         this.currentPath.resetBounds()
       }
+      if (this.currentElement.classList.contains("lively-text")) {
+        // this.currentElement.focus()
+      }
+
       this.lastMouseDown = null
       this.currentElement = null
       this.lastElement = this.currentElement
