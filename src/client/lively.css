@@ -52,6 +52,19 @@ lively-table .editing {
   border: 2px solid red;
 }
 
+
+.lively-text:empty:before {
+  content: "<insert text here>";
+  color: lightgray;
+  border: none;
+}
+
+
+.lively-text:empty {
+  border: 1px solid lightgray;
+  content: "haha";
+}
+
 .lively-text {
-  background-color: gray;
+  background-color: none;
 }
