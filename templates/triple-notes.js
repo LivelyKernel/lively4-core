@@ -44,7 +44,7 @@ class Node {
 		//that.postDrawActions(parentElement);
 	}
 	
-	actualRadius() { return 40; }
+	actualRadius() { return this.knot.content.split(/\r?\n/).length; }
 	distanceToBorder() { return this.actualRadius(); }
 }
 
