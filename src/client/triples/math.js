@@ -47,7 +47,7 @@ export function calculateLoopPath(link) {
 	var node = link.subject,
 		label = link.triple;
 
-	var fairShareLoopAngle = 360 / 1, //link.loops().length,
+	var fairShareLoopAngle = 360 / link.loops(),
 		fairShareLoopAngleWithMargin = fairShareLoopAngle * 0.8,
 		loopAngle = Math.min(60, fairShareLoopAngleWithMargin);
 
