@@ -203,6 +203,31 @@ export default class TripleNotes extends Morph {
 
       let linkContainer = graphContainer.append("g").classed("linkContainer", true);
       let markerContainer = linkContainer.append("defs");
+      createPropertyMarker(markerContainer);
+      function createPropertyMarker(markerContainer) {
+      	var marker = appendBasicMarker(markerContainer);
+      	//marker.attr("refX", 12);
+          var m1X = -12 ;
+          var m1Y = 8 ;
+          var m2X = -12;
+          var m2Y = -8 ;
+      	marker.append("path")
+      		//.attr("d", "M0,-8L12,0L0,8Z")
+              .attr("d", "M0,0L " + m1X + "," + m1Y + "L" + m2X + "," + m2Y + "L" + 0 + "," + 0 )
+      		.classed("basic-triple-link", true);
+      }
+      
+      function appendBasicMarker(markerContainer) {
+      	return markerContainer.append("marker")
+      		.datum({})
+      		.attr("id", "triple-notes-basic-triple-link")
+      
+      		.attr("viewBox", "-14 -10 28 20")
+      		.attr("markerWidth",10)
+      		.attr("markerHeight", 10)
+      		//.attr("markerUnits", "userSpaceOnUse")
+      		.attr("orient", "auto");
+      }
       
   		// Draw links
   		let linkGroups = linkContainer.selectAll(".link")
@@ -211,6 +236,7 @@ export default class TripleNotes extends Morph {
   			.classed("link", true);
   
   		linkGroups.each(function (link) {
+  		  d3.select(this).attr("marker-end", "url(#triple-notes-basic-triple-link)");
   			link.draw(d3.select(this), markerContainer);
   		});
   
@@ -224,7 +250,7 @@ export default class TripleNotes extends Morph {
   			.y(function (d) {
   				return d.y;
   			})
-        .curve(d3.curveCardinal);
+        .curve(d3.curveNatural);
       function recalculatePositions() {
         nodeElements.attr("transform", d => "translate(" + d.x + "," + d.y + ")");
 
