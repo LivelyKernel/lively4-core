@@ -73,7 +73,7 @@ class Link extends Node {
   
   //TODO: support loops specially
   isLoop() {
-    return false;
+    return this.subject === this.object;
   }
   linkParts() {
     return [this.frontPart, this.backPart];

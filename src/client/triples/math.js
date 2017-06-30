@@ -12,7 +12,7 @@ let loopFunction = d3.line()
 	.y(function (d) {
 		return d.y;
 	})
-	.curve(d3.curveCardinalClosed)
+	.curve(d3.curveNatural)
 //	.interpolate("cardinal")
 	//.tension(-1);
 
@@ -44,10 +44,10 @@ export function calculateNormalVector(source, target, length) {
  * @returns {*}
  */
 export function calculateLoopPath(link) {
-	var node = link.domain(),
-		label = link.label();
+	var node = link.subject,
+		label = link.triple;
 
-	var fairShareLoopAngle = 360 / link.loops().length,
+	var fairShareLoopAngle = 360 / 8, //link.loops().length,
 		fairShareLoopAngleWithMargin = fairShareLoopAngle * 0.8,
 		loopAngle = Math.min(60, fairShareLoopAngleWithMargin);
 
@@ -71,7 +71,7 @@ export function calculateLoopPath(link) {
 		fixPoint1 = {"x": node.x + x1, "y": node.y + y1},
 		fixPoint2 = {"x": node.x + x2, "y": node.y + y2};
 
-	return loopFunction([fixPoint1, link.label(), fixPoint2]);
+	return loopFunction([fixPoint1, link.triple, fixPoint2]);
 };
 
 /**
