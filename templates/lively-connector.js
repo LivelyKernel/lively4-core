@@ -10,12 +10,15 @@ export default class LivelyConnector extends Morph {
   }
  
   initialize() {
+    this.loadVertices() // if not connected
+    
     this.fromElement = lively.elementByID(this.getAttribute("fromElement"))
     this.toElement = lively.elementByID(this.getAttribute("toElement"))
     this.connect(this.fromElement, this.toElement)
     
     this.resetBoundsDelay = new DelayedCall()
     this.resetBoundsDelay.delay = 500
+
 
   } 
 
@@ -42,7 +45,7 @@ export default class LivelyConnector extends Morph {
   }
  
 
-/*
+  /*
    * Simple Path Based Connector.... should we make this a template? #TODO
    */
    updationPathConnection(c, a, selectorA, b, selectorB) {
@@ -167,6 +170,15 @@ export default class LivelyConnector extends Morph {
     return this.shadowRoot.querySelector("path#path")
   }
   
+  getVertices() {
+    return SVG.getPathVertices(this.getPath())
+  }
+
+  setVertices(vertices) {
+    return SVG.setPathVertices(this.getPath(), vertices)
+  }
+
+  
   pointTo(p) {
     this.disconnectToElement()
     var path = this.getPath()
@@ -175,6 +187,8 @@ export default class LivelyConnector extends Morph {
     v[1].y1 = p.y
     var v = SVG.setPathVertices(path, v)
   }
+  
+  
   
   resetBounds() {
     var svg = this.get("#svg")
@@ -185,6 +199,38 @@ export default class LivelyConnector extends Morph {
     lively.setPosition(svg, pt(0,0))
   }
   
+  
+  
+  saveVertices() {
+    var vertices = this.getVertices()
+    this.setAttribute("x1", vertices[0].x1)
+    this.setAttribute("y1", vertices[0].y1)
+    this.setAttribute("x2", vertices[1].x1)
+    this.setAttribute("y2", vertices[1].y1)
+  }
+  
+
+  loadVertices() {
+    var vertices = this.getVertices()
+    
+    var x1 = this.getAttribute("x1")
+    if (x1 !== null) { vertices[0].x1 = x1}
+    var y1 = this.getAttribute("y1")
+    if (y1 !== null) { vertices[0].y1 = y1}
+
+    var x2 = this.getAttribute("x2")
+    if (x2 !== null) { vertices[1].x1 = x2}
+    var y2 = this.getAttribute("y2")
+    if (y2 !== null) { vertices[1].y1 = y2}
+    
+    this.setVertices(vertices)
+  }
+
+  
+  livelyPrepareSave() {
+    this.saveVertices()
+  }
+
   
   livelyMigrate(other) {
     // this.fromElement = other.fromElement

@@ -39,10 +39,12 @@ export default class HaloControlPointItem extends HaloItem {
   }
 
   onMouseDown(evt) {
+    evt.preventDefault();
     this.start(evt);
 
     // attach mousemove handler to body only after mousedown occured
     lively.addEventListener("HaloControlPoint", document.body.parentElement, 'mousemove', (evt) => {
+      evt.preventDefault();
       this.move(evt);
     });
     // and capture the following mouse up anywere 
@@ -56,9 +58,8 @@ export default class HaloControlPointItem extends HaloItem {
     this.stop(evt);
   }
 
-  start(evt) {
-    evt.preventDefault();
-    this.target = window.that
+  start(evt, target) {
+    this.target = target || window.that
     // this.snapping = new Snapping(this.target) 
     
     this.vertices = svg.getPathVertices(this.path)
@@ -73,38 +74,55 @@ export default class HaloControlPointItem extends HaloItem {
 
     this.targetPointerEvents = this.target.style.pointerEvents
     this.target.style.pointerEvents = "none"; // disable mouse events while dragging...
+    
+    
+    this.findTargetAt(evt) 
   }
 
-  move(evt) {
-    
-    
-    evt.preventDefault();
-    var delta = events.globalPosition(evt).subPt(this.eventOffset)
+  showHighlight(element) {
+    this.highlight = lively.showElement(that,100000)
+    this.highlight.innerHTML = ""
+    lively.moveBy(this.highlight, pt(-2,-2))
+    this.highlight.style.border = "1px dashed rgba(0,0,100,0.5)"
+    lively.setExtent(this.highlight, lively.getExtent(this.highlight).addPt(pt(2,2)))
+    return this.highlight
+  }
 
-
+  hideHighlight() {
     if (this.highlight) this.highlight.remove();
-      
-    var element = evt.path.find(ea => ea.classList && ea.classList.contains("lively-content"))
-    if (element !== this) {
-      this.highlight = lively.showElement(element)
+  }
+
+  findTargetAt(evt) {
+    this.hideHighlight()
+    var element = evt.path.find(ea => 
+      ea.classList && ea.classList.contains("lively-content") && ea !== this)
+    if (element) {
+      this.showHighlight()
       this.targetElement = element
     } else {
       if (this.targetElement) this.targetElement = null
     }
+  }
 
+  move(evt) {
+    var delta = events.globalPosition(evt).subPt(this.eventOffset)
+    this.findTargetAt(evt) 
+    this.setVerticePosition(pt(this.original.x + delta.x, this.original.y + delta.y))
+  }
+
+  setVerticePosition(pos) {
+    if (!this.vertices)
+      this.vertices = svg.getPathVertices(this.path);
+    
     var cp = this.vertices[this.index]
-    cp.x1 = this.original.x + delta.x
-    cp.y1 = this.original.y + delta.y
-    
+    cp.x1 = pos.x 
+    cp.y1 = pos.y
     svg.setPathVertices(this.path, this.vertices)
-
     this.updatePositon()
-    
-    // this.halo.info.innerHTML = `${newPos.x}, ${newPos.y}`
-    // HaloService.showHalos(window.that);
   }
 
   stop(evt) {
+    this.hideHighlight()
     this.style.pointerEvents = null
     this.target.style.pointerEvents = this.targetPointerEvents; // receive mouse events again
     

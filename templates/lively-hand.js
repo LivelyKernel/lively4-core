@@ -19,6 +19,11 @@ export default class LivelyHand extends Morph {
       e => this.onPointerDown(e))
   }
 
+  get info() {
+    return this.get("#info")
+  }
+
+
   outerWorldContext() {
     var world = this.worldContext()
     return world.isWorld ? 
