@@ -4,6 +4,7 @@ import svg from "src/client/svg.js"
 
 export default class Graffle {
   
+  // Graffle.keysDown
   
   static load() {
     lively.notify("load graffle")
@@ -43,6 +44,19 @@ export default class Graffle {
         evt.stopPropagation()
         evt.preventDefault()
       }
+
+      lively.hand.style.display = "block"
+      var info = ""
+      if (this.keysDown["S"]) {
+        info = "shape"
+      }
+      if (this.keysDown["C"]) {
+        info = "connect"
+      }
+      if (this.keysDown["T"]) {
+        info = "text"
+      }
+      lively.hand.info.textContent = info  
     }
   }
 
@@ -51,6 +65,9 @@ export default class Graffle {
     this.keysDown[key] = false
     // lively.notify("up: " + key)
     lively.selection.disabled = false
+  
+    lively.hand.style.display = "none"
+    lively.hand.info.textContent = ""
     
     // if (this.lastElement)
     //   this.lastElement.focus(); // no, we can focus.... and continue typing
@@ -93,7 +110,19 @@ export default class Graffle {
       // div.appendChild(path)
       
       div = document.createElement("lively-connector")
-      lively.components.openIn(document.body, div)
+      lively.components.openIn(document.body, div).then(() => {
+        window.that = div
+        HaloService.showHalos(div)
+        HaloService.halo[0].shadowRoot.querySelectorAll(".halo").forEach(ea => {
+          ea.style.visibility = "hidden"
+        })
+        this.currentControlPoint  = HaloService.halo[0].ensureControlPoint(div.getPath(), 1)
+        this.currentControlPoint.setVerticePosition(pt(0,0))
+        this.currentControlPoint.start(evt, div)
+        if (this.currentControlPoint.targetElement) {
+          this.currentConnectFrom = this.currentControlPoint.targetElement
+        }
+      })
       this.currentPath = div
     }
     
@@ -110,24 +139,39 @@ export default class Graffle {
   }
   
   static onMouseMove(evt) {
-    if (!this.specialKeyDown()) return
+    if (this.specialKeyDown()) {
+        lively.setGlobalPosition(lively.hand, pt(evt.clientX, evt.clientY)) 
+        
+    }
 
+    if (this.currentControlPoint) {
+      this.currentControlPoint.move(evt)
+    }
+  
     var pos = pt(evt.clientX, evt.clientY)
     // lively.showPoint(pos)
     
     if (!this.lastMouseDown) return 
       var extent = this.eventPosition(evt).subPt(this.lastMouseDown)
+
     
     if (this.currentPath) {
-      if (this.currentPath.pointTo)
-      this.currentPath.pointTo(extent)
+      // if (this.currentPath.pointTo)
+      // this.currentPath.pointTo(extent)
     } else {
       lively.setExtent(this.currentElement, extent)
     }
   }
 
   static onMouseUp(evt) {
-    if (!this.specialKeyDown()) return
+
+    if (this.currentControlPoint) {
+      if (this.currentConnectFrom) { 
+        this.currentElement.connectFrom(this.currentConnectFrom)
+      }
+      this.currentControlPoint.stop(evt)
+    }
+
     if(this.currentElement) {
       if (this.currentPath) {
         this.currentPath.resetBounds()
@@ -135,14 +179,16 @@ export default class Graffle {
       if (this.currentElement.classList.contains("lively-text")) {
         // this.currentElement.focus()
       }
-
       this.lastMouseDown = null
       this.currentElement = null
       this.lastElement = this.currentElement
-      this.currentPath = null
+
     } else {
       this.lastElement = null
     }
+    this.currentPath = null
+    this.currentControlPoint = null
+    this.currentConnectFrom = null
   }
   
 }

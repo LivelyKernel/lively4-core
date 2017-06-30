@@ -62,6 +62,7 @@ export default class Halo extends Morph {
   }
 
   updateHandles(target) {
+    // console.log("update handles")
     this.shadowRoot.querySelectorAll("lively-halo-handle-item").forEach(ea => {
       ea.style.visibility = null
     })  
@@ -77,31 +78,33 @@ export default class Halo extends Morph {
     
     target.querySelectorAll("path#path").forEach(ea => {
       svg.getPathVertices(ea).forEach( (p, index) => {
-        var controlPoint = document.createElement("lively-halo-control-point-item")
-        lively.components.openIn(this.shadowRoot, controlPoint).then( () => {
-          
-          controlPoint.setup(this, ea, index)
-        })
+        this.ensureControlPoint(p, index)
       })
     })    
 
     if (target.isConnector) {
       var path = target.getPath()
       // this.get("lively-halo-drag-item").style.visibility= "hidden"
-      
-      var controlPoint = document.createElement("lively-halo-control-point-item")
-      lively.components.openIn(this.shadowRoot, controlPoint).then( () => {
-        controlPoint.setup(this, path, 0)
-      })
-      var controlPoint2 = document.createElement("lively-halo-control-point-item")
-      lively.components.openIn(this.shadowRoot, controlPoint2).then( () => {
-        controlPoint2.setup(this, path, 1)
-      })
+      this.ensureControlPoint(path, 0)
+      this.ensureControlPoint(path, 1)
     }
   }
 
+  ensureControlPoint(path, index) {
+    var id = "controlPoint" + index
+    var controlPoint = this.shadowRoot.querySelector('#' +id)
+    if (!controlPoint) {
+      controlPoint = document.createElement("lively-halo-control-point-item")
+      controlPoint.id = id
+      this.shadowRoot.appendChild(controlPoint)
+    }
+    controlPoint.setup(this, path, index)
+    controlPoint.style.visibility= ""
+    return controlPoint
+  }
+
   showHalo(target, path) {
-    
+    // console.log("show Halo")
     document.body.appendChild(this);
     lively.html.registerKeys(document.body, "HaloKeys", this)
     if (!target || !target.getBoundingClientRect) {

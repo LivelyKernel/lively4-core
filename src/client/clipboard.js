@@ -1,5 +1,6 @@
 import {pt} from 'src/client/graphics.js';
 import Halo from "templates/lively-halo.js"
+import generateUUID from './uuid.js';
 
 export default class Clipboard {
   
@@ -33,7 +34,7 @@ export default class Clipboard {
   }
   
   static onCopy(evt) {
-    lively.notify("on copy")
+    // lively.notify("on copy")
 
     if ((!HaloService.areHalosActive() || !that)) {
       return;
@@ -79,6 +80,26 @@ export default class Clipboard {
       // paste oriented at a shared topLeft
       var all = lively.array(div.querySelectorAll(":scope > *"))
        all.forEach(child => {
+        var id = child.getAttribute("data-lively-id")
+        child.remove()
+        // if we have an ID, some other me might be lying around somewhere...
+        if (id) {
+          var otherMe = lively.elementByID(id)
+          if (otherMe) {
+            // so there is an identiy crysis... so we have to become somebody new...
+            var newId = generateUUID()
+            // ... and I have to notify my buddies that I am no longer myself
+            all.forEach(other => {
+              for(var i=0; i < other.attributes.length; i++) {
+                var attr = other.attributes[i]
+                if (attr.value == id) {
+                  // lively.notify("found a reference to me: " + other + "." + attr.name)
+                  attr.value = newId
+                }
+              }
+            })
+          }
+        }
         document.body.appendChild(child)
        })
       var topLeft
