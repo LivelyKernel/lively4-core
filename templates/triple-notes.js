@@ -86,6 +86,11 @@ class Link extends Node {
   		//.classed(this.range().cssClassOfNode(), true)
       //.classed(property.linkType(), true);
   }
+  
+  // TODO: if we are self-referencial: compute the number of self references from the graph
+  loops() {
+    return 3;
+  }
 }
 
 class LinkPart {
