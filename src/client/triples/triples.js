@@ -249,7 +249,9 @@ export class Graph {
     if(fileEnding !== 'md') { throw new Error('only .md files supported by now, instead found ', + fileEnding); }
 
     let url = await this.getNonCollidableURL(directory, name, fileEnding);
-    let content = `# ${name}`;
+    let content = `# ${name}
+
+`;
     await lively.files.saveFile(url, content);
     
     await invalidateFetchCache(directory);
