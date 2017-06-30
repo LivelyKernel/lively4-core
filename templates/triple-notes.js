@@ -22,7 +22,7 @@ class Node {
     this.knot = knot;
     //this.r = ~~d3.randomUniform(8, 28)();
     this._radius = this.knot.content && this.knot.content.split ?
-	    Math.min(this.knot.content.split(/\r?\n/).length, 40) :
+	    Math.min(this.knot.content.split(/\r?\n/).length, 100) :
 	    40;
   }
   label() {
