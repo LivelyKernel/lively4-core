@@ -21,6 +21,9 @@ class Node {
   constructor(knot, label) {
     this.knot = knot;
     //this.r = ~~d3.randomUniform(8, 28)();
+    this._radius = this.knot.content ?
+	    this.knot.content.split(/\r?\n/).length :
+	    40;
   }
   label() {
     return this.knot.label();
@@ -44,7 +47,9 @@ class Node {
 		//that.postDrawActions(parentElement);
 	}
 	
-	actualRadius() { return this.knot.content.split(/\r?\n/).length; }
+	actualRadius() {
+	  return this._radius;
+	}
 	distanceToBorder() { return this.actualRadius(); }
 }
 
