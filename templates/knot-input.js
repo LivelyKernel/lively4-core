@@ -39,11 +39,24 @@ export default class KnotInput extends Morph {
     var value = this.input.value;
     // TODO: check for empty value ('')
     // TODO: value could be a literal or a url
+    
+    // check if value is a URL
+    try {
+      new URL(value);
+    } catch(e) {
+      lively.notify(value + ' is no URL');
+      throw e;
+    }
+
+    // check for external url
     var option = this.get(`${this.listSelector} [value='${value}']`);
     // value could also be an external url
-    if(!option) return;
-    let url = option.dataset.url;
-    return url;
+    if(option) {
+      let url = option.dataset.url;
+      return url;
+    } else {
+      throw new Error(`${value} is an external URL. Thus, it probably does not support 'Access-Control-Allow-Origin' header and/or https.`);
+    }
   }
   getValue() { return this.input.value; }
   
