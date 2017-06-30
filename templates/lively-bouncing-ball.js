@@ -33,8 +33,8 @@ export default class Ball extends Morph {
         context.closePath();
         context.fill();
         this.collisionTest(ball)
-        ball.x += ball.dx * 2;
-        ball.y += ball.dy * 2;
+        ball.x += ball.dx * 4;
+        ball.y += ball.dy * 4;
     })
     this.shadowRoot.querySelector("#hits").innerHTML = "_Hits: " + this.hits
   }
