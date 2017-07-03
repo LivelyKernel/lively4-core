@@ -1,0 +1,3 @@
+# Lively-Content
+
+Lively4 is designed to not only work stand-alone, but to be (post-)loaded on other websites too. This could be either through explicitly loading it, or through our lively-extension that forcefully boots lively into any website. This introduces a new challenge: should lively be able to change or add content into any websites? And is this always meaningful? We have no final answer to this more general annotation problem, but we have a simple technique to work with in the meantime. We tag some html elements explicitly as ours by adding "lively-content" as a class attribute. This allows us to take care of all those elements ourselve, for example by persisting them in each userslocal browser storage. 
