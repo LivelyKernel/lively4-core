@@ -137,7 +137,6 @@ export default class Selection extends Morph {
   }
 
   haloCopyObject(haloItem) {
-    console.log("copy object");
     this.nodes = this.nodes.map(ea => {
       var copy = ea.cloneNode();
       ea.parentNode.appendChild(copy); 

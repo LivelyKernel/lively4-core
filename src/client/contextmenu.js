@@ -10,8 +10,6 @@ import Layout from "src/client/layout.js"
 import Preferences from './preferences.js';
 import Windows from "templates/lively-window.js"
 import {Grid} from "src/client/morphic/snapping.js"
-
-
 import Info from "src/client/info.js"
     
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
