@@ -249,7 +249,9 @@ export class Graph {
     if(fileEnding !== 'md') { throw new Error('only .md files supported by now, instead found ', + fileEnding); }
 
     let url = await this.getNonCollidableURL(directory, name, fileEnding);
-    let content = `# ${name}`;
+    let content = `# ${name}
+
+`;
     await lively.files.saveFile(url, content);
     
     await invalidateFetchCache(directory);
@@ -259,6 +261,10 @@ export class Graph {
     return await knotView.loadKnotForURL(knot.url);
   }
   async createTriple(subjectUrlString, predicateURLString, objectURLString) {
+    await this.requestKnot(subjectUrlString);
+    await this.requestKnot(predicateURLString);
+    await this.requestKnot(objectURLString);
+    
     const directory = 'https://lively4/dropbox/';
     let url = await this.getNonCollidableURL(directory, 'triple-' + uuid(), 'triple.json');
     let content = JSON.stringify({

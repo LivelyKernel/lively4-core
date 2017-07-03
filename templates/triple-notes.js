@@ -4,6 +4,7 @@ import d3 from 'src/external/d3.v4.js';
 
 import { Graph } from 'src/client/triples/triples.js';
 import * as drawTools from 'src/client/triples/drawTools.js';
+import * as math from 'src/client/triples/math.js';
 
 const MIN_MAGNIFICATION = 0.01;
 const MAX_MAGNIFICATION = 4;
@@ -38,32 +39,52 @@ class Node {
 		//	cssClasses = cssClasses.concat(additionalCssClasses);
 		//}
 
-		drawTools.appendCircularClass(parentElement, 40, cssClasses, this.label(), 'lightblue');
+		drawTools.appendCircularClass(parentElement, this.actualRadius(), cssClasses, this.label(), 'lightblue');
 
 		//that.postDrawActions(parentElement);
 	}
+	
+	actualRadius() { return 40; }
+	distanceToBorder() { return this.actualRadius(); }
 }
 
 class Link extends Node {
   constructor(node) {
     super(node.getKnot());
     
+    this._subject = getNodeByKnot(this.getKnot().subject);
+    this._predicate = getNodeByKnot(this.getKnot().predicate);
+    this._object = getNodeByKnot(this.getKnot().object);
+    this._triple = getNodeByKnot(this.getKnot());
+
     this.frontPart = new LinkPart({
-      source: getNodeByKnot(this.getKnot().subject),
-      target: getNodeByKnot(this.getKnot())
+      source: this._subject,
+      target: this._triple
     });
     this.backPart = new LinkPart({
-      source: getNodeByKnot(this.getKnot()),
-      target: getNodeByKnot(this.getKnot().object)
+      source: this._triple,
+      target: this._object
     });
   }
-  subject() {}
-  predicate() {}
-  object() {}
-  triple() {}
+  get subject() { return this._subject; }
+  get predicate() { return this._predicate; }
+  get object() { return this._object; }
+  get triple() { return this._triple; }
   
+  //TODO: support loops specially
+  isLoop() {
+    return this.subject === this.object;
+  }
   linkParts() {
     return [this.frontPart, this.backPart];
+  }
+  
+  draw(linkGroup, markerContainer) {
+  	linkGroup.append("path")
+  		//.classed("link-path", true)
+  		//.classed(this.domain().cssClassOfNode(), true)
+  		//.classed(this.range().cssClassOfNode(), true)
+      //.classed(property.linkType(), true);
   }
 }
 
@@ -147,12 +168,13 @@ export default class TripleNotes extends Morph {
         .force("y", d3.forceY(0).strength(0.001))
         .force("x", d3.forceX(0).strength(0.001));
 
-      let linkContainer = graphContainer.append("g").classed("linkContainer", true);
-      var hiddenLinkElements = linkContainer.selectAll("line")
+      let linkPartContainer = graphContainer.append("g").classed("linkPartContainer", true);
+      var hiddenLinkElements = linkPartContainer.selectAll("line")
         .data(hiddenLinks).enter()
         .append("line")
-        .style("stroke", "blue")
-        .style("stroke-width", "23");
+        .style("stroke", "black")
+        .style("stroke-opacity", 0.3)
+        .style("stroke-width", 10);
       
       let nodeContainer = graphContainer.append("g").classed("nodeContainer", true);
       let nodeElements = nodeContainer.selectAll(".node")
@@ -179,14 +201,76 @@ export default class TripleNotes extends Morph {
         .style("text-anchor", "middle")
         .text(d => d.label());
 
+      let linkContainer = graphContainer.append("g").classed("linkContainer", true);
+      let markerContainer = linkContainer.append("defs");
+      createPropertyMarker(markerContainer);
+      function createPropertyMarker(markerContainer) {
+      	var marker = appendBasicMarker(markerContainer);
+      	//marker.attr("refX", 12);
+          var m1X = -12 ;
+          var m1Y = 8 ;
+          var m2X = -12;
+          var m2Y = -8 ;
+      	marker.append("path")
+      		//.attr("d", "M0,-8L12,0L0,8Z")
+              .attr("d", "M0,0L " + m1X + "," + m1Y + "L" + m2X + "," + m2Y + "L" + 0 + "," + 0 )
+      		.classed("basic-triple-link", true);
+      }
+      
+      function appendBasicMarker(markerContainer) {
+      	return markerContainer.append("marker")
+      		.datum({})
+      		.attr("id", "triple-notes-basic-triple-link")
+      
+      		.attr("viewBox", "-14 -10 28 20")
+      		.attr("markerWidth",10)
+      		.attr("markerHeight", 10)
+      		//.attr("markerUnits", "userSpaceOnUse")
+      		.attr("orient", "auto");
+      }
+      
+  		// Draw links
+  		let linkGroups = linkContainer.selectAll(".link")
+  			.data(links).enter()
+  			.append("g")
+  			.classed("link", true);
+  
+  		linkGroups.each(function (link) {
+  		  d3.select(this).attr("marker-end", "url(#triple-notes-basic-triple-link)");
+  			link.draw(d3.select(this), markerContainer);
+  		});
+  
+  		// Select the path for direct access to receive a better performance
+      let linkPathElements = linkGroups.selectAll("path");
+      
+      let curveFunction = d3.line()
+  			.x(function (d) {
+  				return d.x;
+  			})
+  			.y(function (d) {
+  				return d.y;
+  			})
+        .curve(d3.curveNatural);
       function recalculatePositions() {
         nodeElements.attr("transform", d => "translate(" + d.x + "," + d.y + ")");
 
         hiddenLinkElements
           .attr("x1", d => d.source.x)
           .attr("y1", d => d.source.y)
-          .attr("x2", d => d.target.x + 30)
-          .attr("y2", d => d.target.y + 30);
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
+
+    		// Set link paths and calculate additional information
+    		linkPathElements.attr("d", function (link) {
+    			if (link.isLoop()) {
+    				return math.calculateLoopPath(link);
+    			}
+    			var curvePoint = link.triple;
+    			var pathStart = math.calculateIntersection(curvePoint, link.subject, 1);
+    			var pathEnd = math.calculateIntersection(curvePoint, link.object, 1);
+    
+    			return curveFunction([pathStart, curvePoint, pathEnd]);
+        });
       }  
       
       simulation
