@@ -64,17 +64,17 @@ export default class Clipboard {
   
   
   static pasteHTMLDataInto(data, container) {
-    // temporarily add everthing into a container 
+    // add everthing into a container 
     var div = document.createElement("div")
-    div.style.backgroundColor = "red"
-    lively.setExtent(div, pt(100,100))
+    div.classList.add("lively-content")
+    lively.setExtent(div, pt(800,10))
     div.innerHTML = data
     container.appendChild(div)
-    lively.setGlobalPosition(div, pt(0,0))
+    lively.setPosition(div, pt(0,0))
 
     // paste oriented at a shared topLeft
     var all = lively.array(div.querySelectorAll(":scope > *"))
-     all.forEach(child => {
+    all.forEach(child => {
       var id = child.getAttribute("data-lively-id")
       child.remove()
       
@@ -106,16 +106,29 @@ export default class Clipboard {
         topLeft = topLeft.minPt(lively.getGlobalPosition(ea))
     })
     var offset = this.lastClickPos.subPt(topLeft)
+    
+
     all.forEach(child => {
-      container.appendChild(child)
-      child.classList.add("lively-content")
-      lively.setPosition(child, lively.getPosition(child).addPt(offset))
+      if (child.classList.contains("lively-content") || child.tagName == "LIVELY-WINDOW") {
+        container.appendChild(child)
+        lively.moveBy(child, offset)
+      } else {
+        // child.classList.add("lively-content")
+      }
       // lively.showPath([
       //   lively.getGlobalPosition(child,),
       //   lively.getGlobalPosition(child).addPt(offset)
       // ])
     })
-    div.remove() // and get rid of the tmp container
+    
+    // clean up if neccesary
+    if (div.childNodes.length == 0) {
+      div.remove() // and get rid of the tmp container
+    } else {
+      // ajust position and content size
+      lively.setGlobalPosition(div, this.lastClickPos)
+      div.style.height = "max-content"
+    }
   }
   
   static pasteTextDataInto(data, container) {
