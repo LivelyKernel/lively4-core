@@ -158,6 +158,7 @@ export default class Selection extends Morph {
     this.nodes.concat([this]).forEach(ea => {
       nodes.setPosition(ea, this.startPositions.get(ea).addPt(delta));
     });
+    window.that = this
     HaloService.showHalos(this);
   }
  

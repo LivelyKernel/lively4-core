@@ -7,7 +7,6 @@ describe("LivelySelectionTest",  function() {
   var that;
   var a,b, container;
 
-
   function setup() {
     a = document.createElement("div")
     a.style.backgroundColor = "red"
@@ -26,22 +25,24 @@ describe("LivelySelectionTest",  function() {
     container.appendChild(a)
     container.appendChild(b)
   }
-
-
   
-  before("load", function(done){
+  before("load",function(done){
     this.timeout(35000);
     var templateName = "lively-selection";
-    loadComponent(templateName).then(c => {that = c; done()}).catch(e => done(e));
+    loadComponent(templateName).then(c => {
+      that = c; 
+      setup();
+      done();
+    }).catch(e => done(e));
     
-    setup()
+    
   });
 
   it("should load", function(done) {
     done();
   });
 
-  it("should drag select elements", () => {
+  it("should drag select elements", (done) => {
     that.nodes = [a,b]
     
     lively.setPosition(a, pt(100,100))
@@ -52,6 +53,7 @@ describe("LivelySelectionTest",  function() {
     that.haloDragTo(pt(100,200),pt(100,100))
     expect(lively.getPosition(a).y).to.equal(200)
     expect(lively.getPosition(b).y).to.equal(250)
+    done();
   })
 
 
