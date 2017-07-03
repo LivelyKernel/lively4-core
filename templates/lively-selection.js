@@ -145,16 +145,18 @@ export default class Selection extends Morph {
     return this;
   }
  
+ 
+  haloDragStart(fromPos) {
+    this.startPositions = new Map();
+    this.nodes.concat([this]).forEach(ea => {
+      this.startPositions.set(ea, nodes.getPosition(ea));
+    })
+ }
+ 
   haloDragTo(toPos, fromPos) {
     var delta = toPos.subPt(fromPos);
     this.nodes.concat([this]).forEach(ea => {
-      var startPos = this.startPositions.get(ea);
-      if (!startPos) {
-        ea.style.position = "absolute";
-        startPos = nodes.getPosition(ea);
-        this.startPositions.set(ea, startPos);
-      }
-      nodes.setPosition(ea, startPos.addPt(delta));
+      nodes.setPosition(ea, this.startPositions.get(ea).addPt(delta));
     });
     HaloService.showHalos(this);
   }
