@@ -17,6 +17,29 @@ function getNodeByKnot(knot) {
   return NODE_BY_KNOT.get(knot);
 }
 
+class RectangleTools {
+  static distanceToBorder(rect, dx, dy) {
+  	var width = rect.width(),
+  		height = rect.height();
+  
+  	var innerDistance,
+  		m_link = Math.abs(dy / dx),
+  		m_rect = height / width;
+  
+  	if (m_link <= m_rect) {
+  		var timesX = dx / (width / 2),
+  			rectY = dy / timesX;
+  		innerDistance = Math.sqrt(Math.pow(width / 2, 2) + Math.pow(rectY, 2));
+  	} else {
+  		var timesY = dy / (height / 2),
+  			rectX = dx / timesY;
+  		innerDistance = Math.sqrt(Math.pow(height / 2, 2) + Math.pow(rectX, 2));
+  	}
+  
+  	return innerDistance;
+  };
+}
+
 class Node {
   constructor(knot, label) {
     this.knot = knot;
@@ -24,6 +47,8 @@ class Node {
     this._radius = this.knot.content && this.knot.content.split ?
 	    Math.min(this.knot.content.split(/\r?\n/).length, 100) :
 	    40;
+	 this._width = 60;
+	 this._height = 20;
   }
   label() {
     return this.knot.label();
@@ -54,7 +79,12 @@ class Node {
 	actualRadius() {
 	  return this._radius;
 	}
-	distanceToBorder() { return this.actualRadius(); }
+	width() { return this._width; }
+	height() { return this._height; }
+	distanceToBorder(dx, dy) { return this.isTriple() ?
+	  RectangleTools.distanceToBorder(this, dx, dy) :
+	  this.actualRadius();
+	}
 }
 
 class Link extends Node {
