@@ -375,7 +375,7 @@ export default class TripleNotes extends Morph {
       
       
       var linkDistance = this.get('#link-distance');
-      linkDistance.addEventListener('onchange', function () {
+      linkDistance.addEventListener('change', function () {
         lively.notify('dwdw' +linkDistance.value);
         return;
         document.getElementById('currentValue').innerHtml = slider.value; 
