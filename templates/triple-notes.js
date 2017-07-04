@@ -330,16 +330,7 @@ export default class TripleNotes extends Morph {
         .style("alignment-baseline", "middle")
         .text(d => d.label());
 
-        
-        
-        
-        
-
-      
-      
-      
-      
-      
+      // Define Simulation
       simulation
         .nodes(nodes)
         .on("tick", function recalculatePositions() {
