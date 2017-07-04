@@ -198,7 +198,7 @@ export default class TripleNotes extends Morph {
     let hiddenLinks = [];
 		links.forEach(link => hiddenLinks = hiddenLinks.concat(link.linkParts()));
 
-    drawChart({
+    drawChart.call(this, {
       nodes,
       links,
       hiddenLinks
