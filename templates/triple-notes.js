@@ -41,7 +41,7 @@ class RectangleTools {
 }
 
 const cssClassesByFileType = {
-  'md': ['md']
+  'md': ['literal']
 }
 class Node {
   static getCSSClassesByType(node) {
