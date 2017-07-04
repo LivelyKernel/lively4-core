@@ -42,7 +42,11 @@ class Node {
 		//	cssClasses = cssClasses.concat(additionalCssClasses);
 		//}
 
-		drawTools.appendCircularClass(parentElement, this.actualRadius(), cssClasses, this.label(), 'lightblue');
+    if(this.knot.isTriple()) {
+      drawTools.appendCircularClass(parentElement, 60, 20, cssClasses, this.label());
+    } else {
+		  drawTools.appendCircularClass(parentElement, this.actualRadius(), cssClasses, this.label(), 'lightblue');
+    }
 
 		//that.postDrawActions(parentElement);
 	}
