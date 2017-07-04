@@ -70,6 +70,7 @@ class Node {
 		var cssClasses = cssClassesByFileType[fileEnding] ?
 		  cssClassesByFileType[fileEnding] :
 		  ['deprecated'];
+		lively.notify(cssClasses);
 	  // that.collectCssClasses();
 
 		//that.nodeElement(parentElement);
