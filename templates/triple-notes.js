@@ -259,32 +259,7 @@ export default class TripleNotes extends Morph {
         .style("stroke-opacity", 0.1)
         .style("stroke-width", 10);
       
-      let nodeContainer = graphContainer.append("g").classed("nodeContainer", true);
-      let nodeElements = nodeContainer.selectAll(".node")
-        .data(nodes).enter()
-        .append("g")
-        .attr("class", "node")
-        .call(d3.drag()
-          .on("start", dragstarted)
-          .on("drag", dragged)
-          .on("end", dragended))
-          .on("dblclick", async node => { 
-            d3.event.stopPropagation();
-
-            let knotView = await lively.openComponentInWindow("knot-view");
-            knotView.loadKnotForURL(node.getKnot().url);
-          });
-
-      nodeElements.each(function (node) {
-  			node.draw(d3.select(this));
-      });
-
-      nodeElements.append("text")
-        .attr("class", "text")
-        .style("text-anchor", "middle")
-        .style("alignment-baseline", "middle")
-        .text(d => d.label());
-
+      // Curved, visible  Links
       let linkContainer = graphContainer.append("g").classed("linkContainer", true);
       let markerContainer = linkContainer.append("defs");
       createPropertyMarker(markerContainer);
@@ -335,10 +310,34 @@ export default class TripleNotes extends Morph {
   				return d.y;
   			})
         .curve(d3.curveNatural);
-        
-        
-        
-        
+
+      // Visible Knots -> Nodes
+      let nodeContainer = graphContainer.append("g").classed("nodeContainer", true);
+      let nodeElements = nodeContainer.selectAll(".node")
+        .data(nodes).enter()
+        .append("g")
+        .attr("class", "node")
+        .call(d3.drag()
+          .on("start", dragstarted)
+          .on("drag", dragged)
+          .on("end", dragended))
+          .on("dblclick", async node => { 
+            d3.event.stopPropagation();
+
+            let knotView = await lively.openComponentInWindow("knot-view");
+            knotView.loadKnotForURL(node.getKnot().url);
+          });
+
+      nodeElements.each(function (node) {
+  			node.draw(d3.select(this));
+      });
+
+      nodeElements.append("text")
+        .attr("class", "text")
+        .style("text-anchor", "middle")
+        .style("alignment-baseline", "middle")
+        .text(d => d.label());
+
         
         
         
