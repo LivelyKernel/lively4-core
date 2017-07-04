@@ -73,7 +73,7 @@ class Node {
     const shouldRenderSizeAware = (fileEnding === 'md' || fileEnding === 'html') &&
      this.knot.content && this.knot.content.split;
     this._radius = shouldRenderSizeAware ?
-      Math.min(this.knot.content.split(/\r?\n/).length, 100) :
+      Math.min((this.knot.content.split(/\r?\n/).length + 10) * 0.9, 100) :
 	    40;
 	 this._width = 60;
 	 this._height = 20;
