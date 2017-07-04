@@ -414,16 +414,22 @@ export default class TripleNotes extends Morph {
       });
       
       // x and y
+      var forceXTarget = this.get('#force-x-target');
+      forceXTarget.addEventListener('input', () => {
+        lively.notify(`New force x target is ${forceXTarget.value}`);
+        simulation.force("x").x(forceXTarget.value);
+        simulation.alpha(1).restart();
+      });
       var forceYTarget = this.get('#force-y-target');
       forceYTarget.addEventListener('input', () => {
         lively.notify(`New force y target is ${forceYTarget.value}`);
         simulation.force("y").y(forceYTarget.value);
         simulation.alpha(1).restart();
       });
-      var forceXTarget = this.get('#force-x-target');
-      forceXTarget.addEventListener('input', () => {
-        lively.notify(`New force x target is ${forceXTarget.value}`);
-        simulation.force("x").x(forceXTarget.value);
+      var forceXStrength = this.get('#force-x-strength');
+      forceXStrength.addEventListener('input', () => {
+        lively.notify(`New force x strength is ${forceXStrength.value}`);
+        simulation.force("x").strength(forceXStrength.value);
         simulation.alpha(1).restart();
       });
     }
