@@ -50,6 +50,7 @@ const cssClassesByFileType = {
   'mp4': ['movie'],
   'avi': ['movie'],
   'md': ['markdown'],
+  'htm': ['html'],
   'html': ['html'],
 }
 class Node {
