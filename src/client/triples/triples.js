@@ -192,9 +192,12 @@ export class Graph {
     return this.requestedKnots.get(filePath);
   }
   
+  static isExternalURL(url) {
+    return url.origin !== 'https://lively4';
+  }
   async loadSingleKnot(urlOrString) {
     const url = new URL(urlOrString);
-    if(url.origin !== 'https://lively4') {
+    if(Graph.isExternalURL(url)) {
       // external url
       return this.deserializeKnot(url.toString(), url.hostname + url.pathname)
     }
