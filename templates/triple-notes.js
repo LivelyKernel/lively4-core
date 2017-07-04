@@ -66,7 +66,7 @@ class Node {
   
   draw(parentElement, additionalCssClasses) {
     const fileEnding = this.knot.url.split('#').shift().split('?').shift().split('.').pop();
-    
+    lively.notify(fileEnding)
 		var cssClasses = cssClassesByFileType[fileEnding] ?
 		  cssClassesByFileType[fileEnding] :
 		  ['deprecated'];
