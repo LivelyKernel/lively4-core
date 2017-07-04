@@ -198,8 +198,7 @@ export class Graph {
   async loadSingleKnot(urlOrString) {
     const url = new URL(urlOrString);
     if(Graph.isExternalURL(url)) {
-      // external url
-      return this.deserializeKnot(url.toString(), url.hostname + url.pathname)
+      return this.deserializeKnot(url.toString(), url.hostname + url.pathname);
     }
     
     let text = await cachedFetch(url)
