@@ -50,7 +50,7 @@ const cssClassesByFileType = {
   'mp4': ['movie'],
   'avi': ['movie'],
   'pptx': ['presentation'],
-  'md': ['markdown'],
+  'md': ['markdown', 'fineline'],
   'htm': ['html'],
   'html': ['html'],
   'json': ['data'],
@@ -75,6 +75,7 @@ class Node {
   isTriple() {
     return this.knot.isTriple();
   }
+  isExternal() {}
   getKnot() { return this.knot; }
   
   draw(parentElement, additionalCssClasses) {
