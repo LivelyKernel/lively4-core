@@ -375,14 +375,10 @@ export default class TripleNotes extends Morph {
       
       
       var linkDistance = this.get('#link-distance');
-      linkDistance.addEventListener('input', function () {
+      linkDistance.addEventListener('input', () => {
+        lively.notify(`New link distance is ${linkDistance.value}`);
         simulation.force("link").distance(linkDistance.value);
         simulation.alpha(1).restart();
-        lively.notify('dwdw' +linkDistance.value);
-        return;
-        document.getElementById('currentValue').innerHtml = slider.value; 
-        window.resizeTo( slider.value, 400 );
-        
       });
     }
   }
