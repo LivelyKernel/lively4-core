@@ -235,7 +235,7 @@ export default class TripleNotes extends Morph {
       var simulation = d3.forceSimulation()
         .force("link", d3.forceLink().id(d => d.index).distance(200))
         //.force("collide",d3.forceCollide(d => d.r + 8).iterations(16) )
-        .force("charge", d3.forceManyBody().strength(node => node.isTriple() ? -190*0.5 : -190))
+        .force("charge", d3.forceManyBody().strength(node => node.isTriple() ? -190*1 : -190))
         .force("center", d3.forceCenter(chartWidth / 2, chartWidth / 2))
         .force("y", d3.forceY(0).strength(0.001))
         .force("x", d3.forceX(0).strength(0.001));
