@@ -70,7 +70,7 @@ class Node {
     if(this.knot.isTriple()) {
       drawTools.appendRectangularClass(parentElement, 60, 20, cssClasses, this.label());
     } else {
-		  drawTools.appendCircularClass(parentElement, this.actualRadius(), cssClasses, this.label(), 'lightblue');
+		  drawTools.appendCircularClass(parentElement, this.actualRadius(), cssClasses, this.label());
     }
 
 		//that.postDrawActions(parentElement);
