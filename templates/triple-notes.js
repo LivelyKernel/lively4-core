@@ -48,6 +48,7 @@ const cssClassesByFileType = {
   'mp3': ['audio'],
   'mov': ['movie'],
   'mp4': ['movie'],
+  'avi': ['movie'],
 }
 class Node {
   static getCSSClassesByType(node) {
