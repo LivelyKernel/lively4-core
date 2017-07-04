@@ -373,19 +373,24 @@ export default class TripleNotes extends Morph {
         d.fy = null;
       }
       
+
+      // links
+      var linkDistance = this.get('#link-distance');
+      linkDistance.addEventListener('input', () => {
+        lively.notify(`New link distance is ${linkDistance.value}`);
+        simulation.force("link").distance(linkDistance.value);
+        simulation.alpha(1).restart();
+      });
       
-      var linkDistance = this.get('#link-distance');
-      linkDistance.addEventListener('input', () => {
-        lively.notify(`New link distance is ${linkDistance.value}`);
-        simulation.force("link").distance(linkDistance.value);
+      // nbody
+      var tripleCharge = this.get('#nbody-triple-strength');
+      tripleCharge.addEventListener('input', () => {
+        lively.notify(`New triple charge is ${tripleCharge.value}`);
+        simulation.force("charge").strength(node => node.isTriple() ? -tripleCharge.value : -190);
         simulation.alpha(1).restart();
       });
-      var linkDistance = this.get('#link-distance');
-      linkDistance.addEventListener('input', () => {
-        lively.notify(`New link distance is ${linkDistance.value}`);
-        simulation.force("link").distance(linkDistance.value);
-        simulation.alpha(1).restart();
-      });
+
+      // center
       var forceCenterX = this.get('#force-center-x');
       forceCenterX.addEventListener('input', () => {
         lively.notify(`New center x is ${forceCenterX.value}`);
@@ -398,6 +403,7 @@ export default class TripleNotes extends Morph {
         simulation.force("center").y(forceCenterY.value);
         simulation.alpha(1).restart();
       });
+      // x and y
       var linkDistance = this.get('#link-distance');
       linkDistance.addEventListener('input', () => {
         lively.notify(`New link distance is ${linkDistance.value}`);
