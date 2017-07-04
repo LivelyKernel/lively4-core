@@ -1,0 +1,34 @@
+<h1>Lively4-core Issues</h1>
+
+<lively-script><script>
+import authGithub from "src/client/auth-github.js"
+
+
+
+new Promise(resolve => {
+  authGithub.challengeForAuth(Date.now(), async (token) => {
+    
+    
+    
+    var issues = await fetch("https://api.github.com" + "/repos/LivelyKernel/lively4-core/issues", {
+      method: "GET",
+      headers: {
+        Authorization: "token " + token
+      }
+    }).then(r => r.json())  
+    var list = document.createElement("ul")
+    issues.forEach(ea => {
+      var issue = document.createElement("li")
+      issue.innerHTML = "<a href='" + ea.html_ul +"'>" + ea.title + "</a> #"+ ea.id
+      issue.querySelector("a").onclick = (evt) => {
+        evt.preventDefault()
+        window.open(ea.html_url)
+      }
+      list.appendChild(issue)
+    })
+    resolve(list)
+  })
+  
+  
+})
+</script></lively-script>
