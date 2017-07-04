@@ -41,7 +41,8 @@ class RectangleTools {
 }
 
 const cssClassesByFileType = {
-  'png': ['rdf']
+  'png': ['rdf'],
+  'PNG': ['rdf'],
 }
 class Node {
   static getCSSClassesByType(node) {
