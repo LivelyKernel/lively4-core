@@ -213,6 +213,7 @@ export default class TripleNotes extends Morph {
       nodeElements.append("text")
         .attr("class", "text")
         .style("text-anchor", "middle")
+        .style("alignment-baseline", "middle")
         .text(d => d.label());
 
       let linkContainer = graphContainer.append("g").classed("linkContainer", true);
