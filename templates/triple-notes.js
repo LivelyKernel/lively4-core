@@ -335,31 +335,43 @@ export default class TripleNotes extends Morph {
   				return d.y;
   			})
         .curve(d3.curveNatural);
-      function recalculatePositions() {
-        nodeElements.attr("transform", d => "translate(" + d.x + "," + d.y + ")");
+        
+        
+        
+        
+        
+        
+        
+        
 
-        hiddenLinkElements
-          .attr("x1", d => d.source.x)
-          .attr("y1", d => d.source.y)
-          .attr("x2", d => d.target.x)
-          .attr("y2", d => d.target.y);
-
-    		// Set link paths and calculate additional information
-    		linkPathElements.attr("d", function (link) {
-    			if (link.isLoop()) {
-    				return math.calculateLoopPath(link);
-    			}
-    			var curvePoint = link.triple;
-    			var pathStart = math.calculateIntersection(curvePoint, link.subject, 1);
-    			var pathEnd = math.calculateIntersection(curvePoint, link.object, 1);
-    
-    			return curveFunction([pathStart, curvePoint, pathEnd]);
-        });
-      }  
+      
+      
+      
+      
       
       simulation
         .nodes(nodes)
-        .on("tick", recalculatePositions);
+        .on("tick", function recalculatePositions() {
+          nodeElements.attr("transform", d => "translate(" + d.x + "," + d.y + ")");
+  
+          hiddenLinkElements
+            .attr("x1", d => d.source.x)
+            .attr("y1", d => d.source.y)
+            .attr("x2", d => d.target.x)
+            .attr("y2", d => d.target.y);
+  
+      		// Set link paths and calculate additional information
+      		linkPathElements.attr("d", function (link) {
+      			if (link.isLoop()) {
+      				return math.calculateLoopPath(link);
+      			}
+      			var curvePoint = link.triple;
+      			var pathStart = math.calculateIntersection(curvePoint, link.subject, 1);
+      			var pathEnd = math.calculateIntersection(curvePoint, link.object, 1);
+      
+      			return curveFunction([pathStart, curvePoint, pathEnd]);
+          });
+        });
   
       simulation.force("link")
         .links(hiddenLinks);
