@@ -420,6 +420,12 @@ export default class TripleNotes extends Morph {
         simulation.force("y").y(forceYTarget.value);
         simulation.alpha(1).restart();
       });
+      var forceXTarget = this.get('#force-x-target');
+      forceXTarget.addEventListener('input', () => {
+        lively.notify(`New force x target is ${forceXTarget.value}`);
+        simulation.force("x").x(forceXTarget.value);
+        simulation.alpha(1).restart();
+      });
     }
   }
   
