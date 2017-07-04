@@ -432,6 +432,12 @@ export default class TripleNotes extends Morph {
         simulation.force("x").strength(forceXStrength.value);
         simulation.alpha(1).restart();
       });
+      var forceYStrength = this.get('#force-y-strength');
+      forceYStrength.addEventListener('input', () => {
+        lively.notify(`New force y strength is ${forceYStrength.value}`);
+        simulation.force("y").strength(forceYStrength.value);
+        simulation.alpha(1).restart();
+      });
     }
   }
   
