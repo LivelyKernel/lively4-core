@@ -78,11 +78,17 @@ class Node {
   getKnot() { return this.knot; }
   
   draw(parentElement, additionalCssClasses) {
-    const fileEnding = this.knot.url.split('#').shift().split('?').shift().split('.').pop();
-    //lively.notify(fileEnding)
-		var cssClasses = cssClassesByFileType[fileEnding] ?
-		  cssClassesByFileType[fileEnding] :
-		  (lively.notify(fileEnding), ['white']);
+    let cssClasses;
+    
+    if(this.knot.isTriple()) {
+      
+    } else {
+      const fileEnding = this.knot.url.split('#').shift().split('?').shift().split('.').pop();
+      //lively.notify(fileEnding)
+  		cssClasses = cssClassesByFileType[fileEnding] ?
+  		  cssClassesByFileType[fileEnding] :
+  		  (lively.notify(fileEnding), ['white']);
+    }
 		
 	  // that.collectCssClasses();
 
