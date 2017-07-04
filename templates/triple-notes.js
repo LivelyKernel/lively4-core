@@ -151,7 +151,7 @@ class Link extends Node {
   
   draw(linkGroup, markerContainer) {
   	linkGroup.append("path")
-  		//.classed("link-path", true)
+  		.classed("link-path", true)
   		//.classed(this.domain().cssClassOfNode(), true)
   		//.classed(this.range().cssClassOfNode(), true)
       //.classed(property.linkType(), true);
