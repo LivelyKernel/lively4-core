@@ -392,6 +392,12 @@ export default class TripleNotes extends Morph {
         simulation.force("center").x(forceCenterX.value);
         simulation.alpha(1).restart();
       });
+      var forceCenterY = this.get('#force-center-y');
+      forceCenterY.addEventListener('input', () => {
+        lively.notify(`New center y is ${forceCenterY.value}`);
+        simulation.force("center").y(forceCenterY.value);
+        simulation.alpha(1).restart();
+      });
       var linkDistance = this.get('#link-distance');
       linkDistance.addEventListener('input', () => {
         lively.notify(`New link distance is ${linkDistance.value}`);
