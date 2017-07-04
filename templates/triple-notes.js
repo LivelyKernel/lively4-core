@@ -40,7 +40,13 @@ class RectangleTools {
   };
 }
 
+const cssClassesByFileType = {
+  'md': ['md']
+}
 class Node {
+  static getCSSClassesByType(node) {
+    
+  }
   constructor(knot, label) {
     this.knot = knot;
     //this.r = ~~d3.randomUniform(8, 28)();
@@ -59,7 +65,12 @@ class Node {
   getKnot() { return this.knot; }
   
   draw(parentElement, additionalCssClasses) {
-		var cssClasses = ['literal', 'dashed'];// that.collectCssClasses();
+    const fileEnding = this.knot.url.split('#').shift().split('?').shift().split('.').pop();
+    
+		var cssClasses = cssClassesByFileType[fileEnding] ?
+		  cssClassesByFileType[fileEnding] :
+		  ['deprecated'];
+	  // that.collectCssClasses();
 
 		//that.nodeElement(parentElement);
 
