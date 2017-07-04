@@ -54,7 +54,7 @@ const cssClassesByFileType = {
   'htm': ['html'],
   'html': ['html'],
   'txt': ['other'],
-  'txt': ['data'],
+  'json': ['data'],
   'txt': ['other'],
   'txt': ['other'],
 }
