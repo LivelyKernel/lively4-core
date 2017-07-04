@@ -108,7 +108,7 @@ export class Graph {
     }
     
     let urlURL = new URL(url);
-    if(Graph.isExternalURL(urlURL)) {
+    if(!Graph.isExternalURL(urlURL)) {
       var result = await fetch(url, {method: 'DELETE'})
         .then(r => r.text());
       lively.notify(`Deleted knot ${url} in remote storage`, result);
