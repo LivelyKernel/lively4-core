@@ -59,7 +59,7 @@ class Node {
   getKnot() { return this.knot; }
   
   draw(parentElement, additionalCssClasses) {
-		var cssClasses = ['white'];// that.collectCssClasses();
+		var cssClasses = ['red'];// that.collectCssClasses();
 
 		//that.nodeElement(parentElement);
 
