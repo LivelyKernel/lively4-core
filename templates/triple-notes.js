@@ -209,14 +209,11 @@ export default class TripleNotes extends Morph {
     function setSize() {
       width = parentElement.clientWidth;
       height = parentElement.clientHeight;
-      //console.log(`%cwidth: ${width} height: ${height}`, 'font-size: 20pt')
 
       margin = {top:0, left:0, bottom:0, right:0 };
 
       chartWidth = width - (margin.left+margin.right)
       chartHeight = height - (margin.top+margin.bottom)
-
-      //graphContainer.attr("width", width).attr("height", height)
 
       svg
         .attr("width", chartWidth)
