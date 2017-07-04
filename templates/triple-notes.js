@@ -78,14 +78,10 @@ class Node {
 	 this._width = 60;
 	 this._height = 20;
   }
-  label() {
-    return this.knot.label();
-  }
-  isTriple() {
-    return this.knot.isTriple();
-  }
-  isExternal() {  return Graph.isExternalURL(new URL(this.knot.url)); }
   getKnot() { return this.knot; }
+  label() { return this.knot.label(); }
+  isTriple() { return this.knot.isTriple(); }
+  isExternal() {  return Graph.isExternalURL(new URL(this.knot.url)); }
   getFileEnding() { return this.knot.url.split('#').shift().split('?').shift().split('.').pop(); }
   
   draw(parentElement, additionalCssClasses) {
