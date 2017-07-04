@@ -83,6 +83,7 @@ class Node {
   }
   isExternal() {  return Graph.isExternalURL(new URL(this.knot.url)); }
   getKnot() { return this.knot; }
+  getFileEnding() { return this.knot.url.split('#').shift().split('?').shift().split('.').pop(); }
   
   draw(parentElement, additionalCssClasses) {
     let cssClasses;
@@ -91,7 +92,7 @@ class Node {
       cssClasses = cssClassesByTagURL[this.knot.predicate.url] || ['unspecified'];
       cssClasses.push('nostroke')
     } else {
-      const fileEnding = this.knot.url.split('#').shift().split('?').shift().split('.').pop();
+      const fileEnding = this.getFileEnding();
       //lively.notify(fileEnding)
   		cssClasses = cssClassesByFileType[fileEnding] ?
   		  cssClassesByFileType[fileEnding] :
