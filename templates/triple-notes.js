@@ -75,7 +75,7 @@ class Node {
   isTriple() {
     return this.knot.isTriple();
   }
-  isExternal() {}
+  isExternal() {  return Graph.isExternalURL(new URL(this.knot.url)); }
   getKnot() { return this.knot; }
   
   draw(parentElement, additionalCssClasses) {
