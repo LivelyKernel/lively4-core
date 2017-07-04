@@ -417,7 +417,7 @@ export default class TripleNotes extends Morph {
       var forceYTarget = this.get('#force-y-target');
       forceYTarget.addEventListener('input', () => {
         lively.notify(`New force y target is ${forceYTarget.value}`);
-        simulation.force("link").distance(forceYTarget.value);
+        simulation.force("y").y(forceYTarget.value);
         simulation.alpha(1).restart();
       });
     }
