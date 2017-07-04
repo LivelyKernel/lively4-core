@@ -53,10 +53,8 @@ const cssClassesByFileType = {
   'md': ['markdown'],
   'htm': ['html'],
   'html': ['html'],
-  'txt': ['other'],
   'json': ['data'],
-  'txt': ['other'],
-  'txt': ['other'],
+  'csv': ['data']
 }
 class Node {
   static getCSSClassesByType(node) {
