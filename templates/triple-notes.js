@@ -98,14 +98,6 @@ class Node {
   		  (lively.notify(fileEnding), ['white']);
     }
 		
-	  // that.collectCssClasses();
-
-		//that.nodeElement(parentElement);
-
-		//if (additionalCssClasses instanceof Array) {
-		//	cssClasses = cssClasses.concat(additionalCssClasses);
-		//}
-
     if(this.knot.isTriple()) {
       drawTools.appendRectangularClass(parentElement, 60, 20, cssClasses, this.label());
     } else {
