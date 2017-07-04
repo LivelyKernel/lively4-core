@@ -102,11 +102,19 @@ export class Graph {
     let index = this.knots.indexOf(knot);
     if (index > -1) {
       this.knots.splice(index, 1);
+      lively.notify(`Removed knot ${url} in local graph instance.`);
+    } else {
+      lively.notify(`Did not find knot ${url} in local graph instance.`);
     }
-    var result = await fetch(url, {method: 'DELETE'})
-      .then(r => r.text());
-
-    lively.notify("deleted knot " + url, result);
+    
+    let urlURL = new URL(url);
+    if(Graph.isExternalURL(urlURL)) {
+      var result = await fetch(url, {method: 'DELETE'})
+        .then(r => r.text());
+      lively.notify(`Deleted knot ${url} in remote storage`, result);
+    }
+    
+    lively.notify('Knot removed from graph.');
     
     return true;
   }
