@@ -256,7 +256,7 @@ export default class TripleNotes extends Morph {
         .data(hiddenLinks).enter()
         .append("line")
         .style("stroke", "black")
-        .style("stroke-opacity", 0.3)
+        .style("stroke-opacity", 0.1)
         .style("stroke-width", 10);
       
       let nodeContainer = graphContainer.append("g").classed("nodeContainer", true);
