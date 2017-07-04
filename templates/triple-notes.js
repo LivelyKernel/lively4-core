@@ -41,7 +41,7 @@ class RectangleTools {
 }
 
 const cssClassesByFileType = {
-  'md': ['literal']
+  'png': ['rdf']
 }
 class Node {
   static getCSSClassesByType(node) {
@@ -69,7 +69,7 @@ class Node {
     //lively.notify(fileEnding)
 		var cssClasses = cssClassesByFileType[fileEnding] ?
 		  cssClassesByFileType[fileEnding] :
-		  ['deprecated'];
+		  ['external'];
 		lively.notify(cssClasses);
 	  // that.collectCssClasses();
 
