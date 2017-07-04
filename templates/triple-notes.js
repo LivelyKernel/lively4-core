@@ -373,6 +373,9 @@ export default class TripleNotes extends Morph {
         d.fy = null;
       }
       
+      /**
+       * CONFIG
+       */
 
       // links
       var linkDistance = this.get('#link-distance');
@@ -409,11 +412,12 @@ export default class TripleNotes extends Morph {
         simulation.force("center").y(forceCenterY.value);
         simulation.alpha(1).restart();
       });
+      
       // x and y
-      var linkDistance = this.get('#link-distance');
-      linkDistance.addEventListener('input', () => {
-        lively.notify(`New link distance is ${linkDistance.value}`);
-        simulation.force("link").distance(linkDistance.value);
+      var forceYTarget = this.get('#force-y-target');
+      forceYTarget.addEventListener('input', () => {
+        lively.notify(`New force y target is ${forceYTarget.value}`);
+        simulation.force("link").distance(forceYTarget.value);
         simulation.alpha(1).restart();
       });
     }
