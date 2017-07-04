@@ -49,6 +49,7 @@ const cssClassesByFileType = {
   'mov': ['movie'],
   'mp4': ['movie'],
   'avi': ['movie'],
+  'pptx': ['presentation'],
   'md': ['markdown'],
   'htm': ['html'],
   'html': ['html'],
