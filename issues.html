@@ -1,34 +1,40 @@
 <h1>Lively4-core Issues</h1>
 
+
 <lively-script><script>
-import authGithub from "src/client/auth-github.js"
-
-
-
-new Promise(resolve => {
-  authGithub.challengeForAuth(Date.now(), async (token) => {
-    
-    
-    
-    var issues = await fetch("https://api.github.com" + "/repos/LivelyKernel/lively4-core/issues", {
-      method: "GET",
-      headers: {
-        Authorization: "token " + token
-      }
-    }).then(r => r.json())  
-    var list = document.createElement("ul")
-    issues.forEach(ea => {
-      var issue = document.createElement("li")
-      issue.innerHTML = "<a href='" + ea.html_ul +"'>" + ea.title + "</a> #"+ ea.id
-      issue.querySelector("a").onclick = (evt) => {
-        evt.preventDefault()
-        window.open(ea.html_url)
-      }
-      list.appendChild(issue)
-    })
-    resolve(list)
+import github from "src/client/github.js"
+new Promise(async (resolve) => {
+  var issues = await github.current().issues()  
+  var list = document.createElement("ul")
+  var style = document.createElement("style")
+  style.textContent = `
+    .number { font-size: 10pt; color: gray }
+    .label { 
+      background-color: lightgray;
+      font-size: 10pt;
+      padding: 1px 6px 1px 6px;
+      border-radius: 6px;
+      color: white;
+      white-space: nowrap;
+    }
+  `
+  list.appendChild(style)
+  
+  function formatLabel(label) {
+    return label.replace(/.*: /,"").replace(/ \(.*/,"")
+  }
+  
+  issues.forEach(ea => {
+    var issue = document.createElement("li")
+    issue.innerHTML = "<a class='title' href='" + ea.html_ul +"'>" + ea.title + "</a> "
+      + ea.labels.map(ea => "<span class='label'>" + formatLabel(ea.name) + "</span>").join(" ")
+      + " <span class='number'>#" + ea.number + "</span>"
+    issue.querySelector("a").onclick = (evt) => {
+      evt.preventDefault()
+      window.open(ea.html_url)
+    }
+    list.appendChild(issue)
   })
-  
-  
+  resolve(list)
 })
 </script></lively-script>

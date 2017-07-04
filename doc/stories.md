@@ -1,10 +1,11 @@
 # User Stories #BrainDump
 
-- Story Estimation in relative points: 1P, 2P, ... ?P (simple to unknown)
-- What to do with this list?
- - take the first, implement it and repeat.
- - Extract suitable seminar/master thesis topics
- - Bring it to github and sync establish bidirectional connection via issue tag #123
+Story Estimation in relative points: 1P, 2P, ... ?P (simple to unknown)
+What to do with this list?
+
+1. take the first, implement it and repeat.
+2. Extract suitable seminar/master thesis topics
+3. Bring it to github and sync establish bidirectional connection via issue tag #123
 
 ## Lively UI
 
@@ -72,8 +73,6 @@
 ## Lively Container
 
 
-
-
 ## Student Projects
 
 - build a gallery 10P
@@ -106,6 +105,7 @@
 ## Lively Sync
 
 - Trasher-like splitting of commits
+- [lively-sync] replace merge button with dropdown button #46
 
 ## Lively PDF
 
@@ -187,6 +187,5 @@
 
  
   
-
 
 
