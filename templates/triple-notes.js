@@ -76,7 +76,7 @@ class Node {
     //lively.notify(fileEnding)
 		var cssClasses = cssClassesByFileType[fileEnding] ?
 		  cssClassesByFileType[fileEnding] :
-		  (lively.notify(cssClasses), ['white']);
+		  (lively.notify(fileEnding), ['white']);
 		
 	  // that.collectCssClasses();
 
