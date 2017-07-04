@@ -56,6 +56,12 @@ const cssClassesByFileType = {
   'json': ['data'],
   'csv': ['data']
 }
+const cssClassesByTagURL = {
+  'https://lively4/dropbox/tag.md': ['tag'],
+  'https://lively4/dropbox/is_a.md': ['is-a'],
+  'https://lively4/dropbox/same_as.md': ['same-as'],
+  'https://lively4/dropbox/contains.md': ['contains'],
+}
 class Node {
   static getCSSClassesByType(node) {
     
