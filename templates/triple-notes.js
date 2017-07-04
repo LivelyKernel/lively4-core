@@ -89,6 +89,7 @@ class Node {
     
     if(this.knot.isTriple()) {
       cssClasses = cssClassesByTagURL[this.knot.predicate.url] || ['white'];
+      cssClasses.push('nostroke')
     } else {
       const fileEnding = this.knot.url.split('#').shift().split('?').shift().split('.').pop();
       //lively.notify(fileEnding)
