@@ -232,14 +232,7 @@ export default class TripleNotes extends Morph {
     
     function drawChart({ nodes, links, hiddenLinks }) {
         
-      var simulation = d3.forceSimulation()
-        .force("link", d3.forceLink().id(d => d.index).distance(200))
-        //.force("collide",d3.forceCollide(d => d.r + 8).iterations(16) )
-        .force("charge", d3.forceManyBody().strength(node => node.isTriple() ? -190*0.5 : -190))
-        .force("center", d3.forceCenter(chartWidth / 2, chartWidth / 2))
-        .force("y", d3.forceY(0).strength(0.001))
-        .force("x", d3.forceX(0).strength(0.001));
-
+      // hidden link parts
       let linkPartContainer = graphContainer.append("g").classed("linkPartContainer", true);
       var hiddenLinkElements = linkPartContainer.selectAll("line")
         .data(hiddenLinks).enter()
@@ -327,6 +320,14 @@ export default class TripleNotes extends Morph {
         .style("alignment-baseline", "middle")
         .text(d => d.label());
 
+      var simulation = d3.forceSimulation()
+        .force("link", d3.forceLink().id(d => d.index).distance(200))
+        //.force("collide",d3.forceCollide(d => d.r + 8).iterations(16) )
+        .force("charge", d3.forceManyBody().strength(node => node.isTriple() ? -190*0.5 : -190))
+        .force("center", d3.forceCenter(chartWidth / 2, chartWidth / 2))
+        .force("y", d3.forceY(0).strength(0.001))
+        .force("x", d3.forceX(0).strength(0.001));
+
       // Define Simulation
       simulation
         .nodes(nodes)
@@ -371,6 +372,14 @@ export default class TripleNotes extends Morph {
         d.fx = null;
         d.fy = null;
       }
+      
+      
+      var linkDistance = this.get('link-distance');
+      slider.addEventListener('onchange', function () {
+        document.getElementById('currentValue').innerHtml = slider.value; 
+        window.resizeTo( slider.value, 400 );
+        
+      });
     }
   }
   
