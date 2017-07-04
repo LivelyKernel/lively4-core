@@ -70,7 +70,7 @@ class Node {
     //lively.notify(fileEnding)
 		var cssClasses = cssClassesByFileType[fileEnding] ?
 		  cssClassesByFileType[fileEnding] :
-		  ['label'];
+		  ['white'];
 		lively.notify(cssClasses);
 	  // that.collectCssClasses();
 
