@@ -88,7 +88,7 @@ class Node {
     let cssClasses;
     
     if(this.knot.isTriple()) {
-      
+      cssClasses = cssClassesByTagURL[this.knot.url] || [];
     } else {
       const fileEnding = this.knot.url.split('#').shift().split('?').shift().split('.').pop();
       //lively.notify(fileEnding)
