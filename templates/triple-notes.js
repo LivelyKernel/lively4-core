@@ -386,20 +386,21 @@ export default class TripleNotes extends Morph {
       });
       
       // nbody
-      var knotCharge = this.get('#nbody-knot-strength');
-      knotCharge.addEventListener('input', () => {
-        lively.notify(`New knot charge is ${knotCharge.value}`);
+      function updateCharge() {
         let knotChargeValue = knotCharge.value;
         let tripleChargeValue = tripleCharge.value;
         simulation.force("charge").strength(node => node.isTriple() ? -tripleChargeValue : -knotChargeValue);
+      }
+      var knotCharge = this.get('#nbody-knot-strength');
+      knotCharge.addEventListener('input', () => {
+        lively.notify(`New knot charge is ${knotCharge.value}`);
+        updateCharge();
         simulation.alpha(1).restart();
       });
       var tripleCharge = this.get('#nbody-triple-strength');
       tripleCharge.addEventListener('input', () => {
         lively.notify(`New triple charge is ${tripleCharge.value}`);
-        let knotChargeValue = knotCharge.value;
-        let tripleChargeValue = tripleCharge.value;
-        simulation.force("charge").strength(node => node.isTriple() ? -tripleChargeValue : -knotChargeValue);
+        updateCharge();
         simulation.alpha(1).restart();
       });
 
