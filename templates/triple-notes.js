@@ -141,7 +141,6 @@ class Link extends Node {
   get object() { return this._object; }
   get triple() { return this._triple; }
   
-  //TODO: support loops specially
   isLoop() {
     return this.subject === this.object;
   }
