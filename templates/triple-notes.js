@@ -122,10 +122,6 @@ class Link extends Node {
   constructor(node) {
     super(node.getKnot());
     
-    this.get('#reload').addEventListener('click', e => {
-      lively.notify(123)
-    });
-    
     this._subject = getNodeByKnot(this.getKnot().subject);
     this._predicate = getNodeByKnot(this.getKnot().predicate);
     this._object = getNodeByKnot(this.getKnot().object);
@@ -178,6 +174,10 @@ export default class TripleNotes extends Morph {
 
   async initialize() {
     this.windowTitle = "Knot Explorer";
+    
+    this.get('#reload').addEventListener('click', e => {
+      lively.notify(123)
+    });
     
     let parentElement = this.get('#graph');
     var width,height;
