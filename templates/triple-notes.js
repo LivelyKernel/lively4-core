@@ -179,11 +179,11 @@ export default class TripleNotes extends Morph {
       lively.notify(123)
     });
     
-    let parentElement = this.get('#graph');
+    this.parentElement = this.get('#graph');
     var width,height;
     var chartWidth, chartHeight;
     var margin;
-    this.svg = d3.select(parentElement)
+    this.svg = d3.select(this.parentElement)
       .append("svg");
       
     this.graphContainer = this.svg.append("g")
@@ -213,8 +213,8 @@ export default class TripleNotes extends Morph {
     lively.addEventListener("triple-notes", this, "extent-changed", e => { setSize(); });
 
     function setSize() {
-      width = parentElement.clientWidth;
-      height = parentElement.clientHeight;
+      width = this.parentElement.clientWidth;
+      height = this.parentElement.clientHeight;
 
       margin = {top:0, left:0, bottom:0, right:0 };
 
