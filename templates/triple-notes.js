@@ -389,7 +389,7 @@ export default class TripleNotes extends Morph {
       });
       
       // nbody
-      function updateCharge() {
+      let updateCharge = () => {
         let knotChargeValue = knotCharge.value;
         let tripleChargeValue = tripleCharge.value;
         this.simulation.force("charge").strength(node => node.isTriple() ? -tripleChargeValue : -knotChargeValue);
