@@ -209,7 +209,7 @@ export default class TripleNotes extends Morph {
       hiddenLinks
     });
 
-    lively.addEventListener("triple-notes", this, "extent-changed", e => { setSize(); });
+    lively.addEventListener("triple-notes", this, "extent-changed", e => { setSize.call(this); });
 
     function setSize() {
       let parentElement = this.get('#graph');
