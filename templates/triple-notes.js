@@ -122,6 +122,10 @@ class Link extends Node {
   constructor(node) {
     super(node.getKnot());
     
+    this.get('#reload').addEventListener('click', e => {
+      lively.notify(123)
+    });
+    
     this._subject = getNodeByKnot(this.getKnot().subject);
     this._predicate = getNodeByKnot(this.getKnot().predicate);
     this._object = getNodeByKnot(this.getKnot().object);
@@ -444,10 +448,6 @@ export default class TripleNotes extends Morph {
         simulation.alpha(1).restart();
       });
     }
-    
-    this.get('#reload').addEventListener('click', e => {
-      lively.notify(123)
-    });
   }
   
   updateStatistics(knots) {
