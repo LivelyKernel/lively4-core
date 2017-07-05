@@ -183,9 +183,11 @@ export default class TripleNotes extends Morph {
     var width,height;
     var chartWidth, chartHeight;
     var margin;
-    var svg = d3.select(parentElement)
+    this.svg = d3.select(parentElement)
       .append("svg");
-    this.graphContainer = svg.append("g").classed("graphContainer", true);
+      
+    this.graphContainer = this.svg.append("g")
+      .classed("graphContainer", true);
 
     setSize();
 
@@ -219,13 +221,13 @@ export default class TripleNotes extends Morph {
       chartWidth = width - (margin.left+margin.right)
       chartHeight = height - (margin.top+margin.bottom)
 
-      svg
+      this.svg
         .attr("width", chartWidth)
         .attr("height", chartHeight)
         .attr("transform", "translate("+[margin.left, margin.top]+")");
     }
 
-    svg.call(d3.zoom()
+    this.svg.call(d3.zoom()
 			.duration(150)
     	.scaleExtent([MIN_MAGNIFICATION, MAX_MAGNIFICATION])
       .on("zoom", () => this.graphContainer.attr("transform", d3.event.transform)));
