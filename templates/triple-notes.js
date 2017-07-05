@@ -189,7 +189,7 @@ export default class TripleNotes extends Morph {
     this.graphContainer = this.svg.append("g")
       .classed("graphContainer", true);
 
-    setSize();
+    setSize.call(this);
 
     let graph = await Graph.getInstance();
     
