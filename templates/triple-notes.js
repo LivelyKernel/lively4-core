@@ -445,7 +445,7 @@ export default class TripleNotes extends Morph {
       });
     }
     
-    this.get('#reload').addEventListener('click', e => lively.notify(123)
+    this.get('#reload').addEventListener('click', e => lively.notify(123))
   }
   
   updateStatistics(knots) {
