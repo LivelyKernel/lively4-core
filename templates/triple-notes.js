@@ -299,16 +299,13 @@ export default class TripleNotes extends Morph {
         .data(nodes).enter()
         .append("g")
         .attr("class", "node")
-        .call(d3.drag()
-          .on("start", dragstarted)
-          .on("drag", dragged)
-          .on("end", dragended))
-          .on("dblclick", async node => { 
-            d3.event.stopPropagation();
+        .call(this.dragBehavior())
+        .on("dblclick", async node => { 
+          d3.event.stopPropagation();
 
-            let knotView = await lively.openComponentInWindow("knot-view");
-            knotView.loadKnotForURL(node.getKnot().url);
-          });
+          let knotView = await lively.openComponentInWindow("knot-view");
+          knotView.loadKnotForURL(node.getKnot().url);
+        });
 
       nodeElements.each(function (node) {
   			node.draw(d3.select(this));
@@ -355,23 +352,6 @@ export default class TripleNotes extends Morph {
   
       this.simulation.force("link")
         .links(hiddenLinks);
-      
-      function dragstarted(d) {
-        if (!d3.event.active) this.simulation.alphaTarget(0.3).restart();
-        d.fx = d.x;
-        d.fy = d.y;
-      }
-      
-      function dragged(d) {
-        d.fx = d3.event.x;
-        d.fy = d3.event.y;
-      }
-      
-      function dragended(d) {
-        if (!d3.event.active) this.simulation.alphaTarget(0);
-        d.fx = null;
-        d.fy = null;
-      }
     }
     
     this.prepareConfig();
@@ -455,6 +435,24 @@ export default class TripleNotes extends Morph {
 			.duration(150)
     	.scaleExtent([MIN_MAGNIFICATION, MAX_MAGNIFICATION])
       .on("zoom", () => this.graphContainer.attr("transform", d3.event.transform));
+  }
+
+  dragBehavior() {
+    return d3.drag()
+      .on("start", d => {
+        if (!d3.event.active) this.simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      })
+      .on("drag", d => {
+        d.fx = d3.event.x;
+        d.fy = d3.event.y;
+      })
+      .on("end", d => {
+        if (!d3.event.active) this.simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      });
   }
 
   updateStatistics(knots) {
