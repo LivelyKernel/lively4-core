@@ -375,78 +375,82 @@ export default class TripleNotes extends Morph {
         d.fx = null;
         d.fy = null;
       }
-      
-      /**
-       * CONFIG
-       */
-
-      // links
-      var linkDistance = this.get('#link-distance');
-      linkDistance.addEventListener('input', () => {
-        lively.notify(`New link distance is ${linkDistance.value}`);
-        this.simulation.force("link").distance(linkDistance.value);
-        this.simulation.alpha(1).restart();
-      });
-      
-      // nbody
-      let updateCharge = () => {
-        let knotChargeValue = knotCharge.value;
-        let tripleChargeValue = tripleCharge.value;
-        this.simulation.force("charge").strength(node => node.isTriple() ? -tripleChargeValue : -knotChargeValue);
-      }
-      var knotCharge = this.get('#nbody-knot-strength');
-      knotCharge.addEventListener('input', () => {
-        lively.notify(`New knot charge is ${knotCharge.value}`);
-        updateCharge();
-        this.simulation.alpha(1).restart();
-      });
-      var tripleCharge = this.get('#nbody-triple-strength');
-      tripleCharge.addEventListener('input', () => {
-        lively.notify(`New triple charge is ${tripleCharge.value}`);
-        updateCharge();
-        this.simulation.alpha(1).restart();
-      });
-
-      // center
-      var forceCenterX = this.get('#force-center-x');
-      forceCenterX.addEventListener('input', () => {
-        lively.notify(`New center x is ${forceCenterX.value}`);
-        this.simulation.force("center").x(forceCenterX.value);
-        this.simulation.alpha(1).restart();
-      });
-      var forceCenterY = this.get('#force-center-y');
-      forceCenterY.addEventListener('input', () => {
-        lively.notify(`New center y is ${forceCenterY.value}`);
-        this.simulation.force("center").y(forceCenterY.value);
-        this.simulation.alpha(1).restart();
-      });
-      
-      // x and y
-      var forceXTarget = this.get('#force-x-target');
-      forceXTarget.addEventListener('input', () => {
-        lively.notify(`New force x target is ${forceXTarget.value}`);
-        this.simulation.force("x").x(forceXTarget.value);
-        this.simulation.alpha(1).restart();
-      });
-      var forceYTarget = this.get('#force-y-target');
-      forceYTarget.addEventListener('input', () => {
-        lively.notify(`New force y target is ${forceYTarget.value}`);
-        this.simulation.force("y").y(forceYTarget.value);
-        this.simulation.alpha(1).restart();
-      });
-      var forceXStrength = this.get('#force-x-strength');
-      forceXStrength.addEventListener('input', () => {
-        lively.notify(`New force x strength is ${forceXStrength.value}`);
-        this.simulation.force("x").strength(forceXStrength.value);
-        this.simulation.alpha(1).restart();
-      });
-      var forceYStrength = this.get('#force-y-strength');
-      forceYStrength.addEventListener('input', () => {
-        lively.notify(`New force y strength is ${forceYStrength.value}`);
-        this.simulation.force("y").strength(forceYStrength.value);
-        this.simulation.alpha(1).restart();
-      });
     }
+    
+    this.prepareConfig();
+  }
+  
+  prepareConfig() {
+    /**
+     * CONFIG
+     */
+
+    // links
+    var linkDistance = this.get('#link-distance');
+    linkDistance.addEventListener('input', () => {
+      lively.notify(`New link distance is ${linkDistance.value}`);
+      this.simulation.force("link").distance(linkDistance.value);
+      this.simulation.alpha(1).restart();
+    });
+    
+    // nbody
+    let updateCharge = () => {
+      let knotChargeValue = knotCharge.value;
+      let tripleChargeValue = tripleCharge.value;
+      this.simulation.force("charge").strength(node => node.isTriple() ? -tripleChargeValue : -knotChargeValue);
+    }
+    var knotCharge = this.get('#nbody-knot-strength');
+    knotCharge.addEventListener('input', () => {
+      lively.notify(`New knot charge is ${knotCharge.value}`);
+      updateCharge();
+      this.simulation.alpha(1).restart();
+    });
+    var tripleCharge = this.get('#nbody-triple-strength');
+    tripleCharge.addEventListener('input', () => {
+      lively.notify(`New triple charge is ${tripleCharge.value}`);
+      updateCharge();
+      this.simulation.alpha(1).restart();
+    });
+
+    // center
+    var forceCenterX = this.get('#force-center-x');
+    forceCenterX.addEventListener('input', () => {
+      lively.notify(`New center x is ${forceCenterX.value}`);
+      this.simulation.force("center").x(forceCenterX.value);
+      this.simulation.alpha(1).restart();
+    });
+    var forceCenterY = this.get('#force-center-y');
+    forceCenterY.addEventListener('input', () => {
+      lively.notify(`New center y is ${forceCenterY.value}`);
+      this.simulation.force("center").y(forceCenterY.value);
+      this.simulation.alpha(1).restart();
+    });
+    
+    // x and y
+    var forceXTarget = this.get('#force-x-target');
+    forceXTarget.addEventListener('input', () => {
+      lively.notify(`New force x target is ${forceXTarget.value}`);
+      this.simulation.force("x").x(forceXTarget.value);
+      this.simulation.alpha(1).restart();
+    });
+    var forceYTarget = this.get('#force-y-target');
+    forceYTarget.addEventListener('input', () => {
+      lively.notify(`New force y target is ${forceYTarget.value}`);
+      this.simulation.force("y").y(forceYTarget.value);
+      this.simulation.alpha(1).restart();
+    });
+    var forceXStrength = this.get('#force-x-strength');
+    forceXStrength.addEventListener('input', () => {
+      lively.notify(`New force x strength is ${forceXStrength.value}`);
+      this.simulation.force("x").strength(forceXStrength.value);
+      this.simulation.alpha(1).restart();
+    });
+    var forceYStrength = this.get('#force-y-strength');
+    forceYStrength.addEventListener('input', () => {
+      lively.notify(`New force y strength is ${forceYStrength.value}`);
+      this.simulation.force("y").strength(forceYStrength.value);
+      this.simulation.alpha(1).restart();
+    });
   }
   
   updateStatistics(knots) {
