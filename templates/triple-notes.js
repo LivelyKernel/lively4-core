@@ -353,10 +353,6 @@ export default class TripleNotes extends Morph {
   }
   
   prepareConfig() {
-    /**
-     * CONFIG
-     */
-
     // links
     var linkDistance = this.get('#link-distance');
     linkDistance.addEventListener('input', () => {
