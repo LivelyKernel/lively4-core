@@ -285,12 +285,8 @@ export default class TripleNotes extends Morph {
       let linkPathElements = linkGroups.selectAll("path");
       
       let curveFunction = d3.line()
-  			.x(function (d) {
-  				return d.x;
-  			})
-  			.y(function (d) {
-  				return d.y;
-  			})
+  			.x(d => d.x)
+  			.y(d => d.y)
         .curve(d3.curveNatural);
 
       // Visible Knots -> Nodes
