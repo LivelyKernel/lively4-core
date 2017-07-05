@@ -444,6 +444,8 @@ export default class TripleNotes extends Morph {
         simulation.alpha(1).restart();
       });
     }
+    
+    this.get('#reload').addEventListener('click', e => lively.notify(123)
   }
   
   updateStatistics(knots) {
