@@ -185,7 +185,7 @@ export default class TripleNotes extends Morph {
     var margin;
     var svg = d3.select(parentElement)
       .append("svg");
-    var graphContainer = svg.append("g").classed("graphContainer", true);
+    this.graphContainer = svg.append("g").classed("graphContainer", true);
 
     setSize();
 
@@ -225,19 +225,15 @@ export default class TripleNotes extends Morph {
         .attr("transform", "translate("+[margin.left, margin.top]+")");
     }
 
-    function zoomed() {
-      graphContainer.attr("transform", d3.event.transform);
-    }
-    
     svg.call(d3.zoom()
 			.duration(150)
     	.scaleExtent([MIN_MAGNIFICATION, MAX_MAGNIFICATION])
-      .on("zoom", zoomed));
+      .on("zoom", () => this.graphContainer.attr("transform", d3.event.transform)));
     
     function drawChart({ nodes, links, hiddenLinks }) {
         
       // hidden link parts
-      let linkPartContainer = graphContainer.append("g").classed("linkPartContainer", true);
+      let linkPartContainer = this.graphContainer.append("g").classed("linkPartContainer", true);
       var hiddenLinkElements = linkPartContainer.selectAll("line")
         .data(hiddenLinks).enter()
         .append("line")
@@ -246,7 +242,7 @@ export default class TripleNotes extends Morph {
         .style("stroke-width", 10);
       
       // Curved, visible  Links
-      let linkContainer = graphContainer.append("g").classed("linkContainer", true);
+      let linkContainer = this.graphContainer.append("g").classed("linkContainer", true);
       let markerContainer = linkContainer.append("defs");
       createPropertyMarker(markerContainer);
       function createPropertyMarker(markerContainer) {
@@ -298,7 +294,7 @@ export default class TripleNotes extends Morph {
         .curve(d3.curveNatural);
 
       // Visible Knots -> Nodes
-      let nodeContainer = graphContainer.append("g").classed("nodeContainer", true);
+      let nodeContainer = this.graphContainer.append("g").classed("nodeContainer", true);
       let nodeElements = nodeContainer.selectAll(".node")
         .data(nodes).enter()
         .append("g")
