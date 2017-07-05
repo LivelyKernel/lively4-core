@@ -228,10 +228,7 @@ export default class TripleNotes extends Morph {
         .attr("transform", "translate("+[margin.left, margin.top]+")");
     }
 
-    this.svg.call(d3.zoom()
-			.duration(150)
-    	.scaleExtent([MIN_MAGNIFICATION, MAX_MAGNIFICATION])
-      .on("zoom", () => this.graphContainer.attr("transform", d3.event.transform)));
+    this.svg.call(this.zoomBehavior());
     
     function drawChart({ nodes, links, hiddenLinks }) {
         
@@ -452,7 +449,14 @@ export default class TripleNotes extends Morph {
       this.simulation.alpha(1).restart();
     });
   }
-  
+
+  zoomBehavior() {
+    return d3.zoom()
+			.duration(150)
+    	.scaleExtent([MIN_MAGNIFICATION, MAX_MAGNIFICATION])
+      .on("zoom", () => this.graphContainer.attr("transform", d3.event.transform));
+  }
+
   updateStatistics(knots) {
     this.get('#number-of-knots').innerHTML = knots.length;
     this.get('#number-of-triples').innerHTML = knots.filter(k => k.isTriple()).length;
