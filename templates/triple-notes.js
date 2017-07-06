@@ -188,7 +188,6 @@ export default class TripleNotes extends Morph {
       lively.notify(123)
     });
     
-    var width,height;
     var margin;
     this.svg = d3.select(this.get('#graph'))
       .append("svg");
@@ -220,13 +219,13 @@ export default class TripleNotes extends Morph {
     function setSize() {
       let parentElement = this.get('#graph');
       
-      width = parentElement.clientWidth;
-      height = parentElement.clientHeight;
+      this.width = parentElement.clientWidth;
+      this.height = parentElement.clientHeight;
 
       margin = {top:0, left:0, bottom:0, right:0 };
 
-      this.chartWidth = width - (margin.left+margin.right)
-      this.chartHeight = height - (margin.top+margin.bottom)
+      this.chartWidth = this.width - (margin.left+margin.right)
+      this.chartHeight = this.height - (margin.top+margin.bottom)
 
       this.svg
         .attr("width", this.chartWidth)
