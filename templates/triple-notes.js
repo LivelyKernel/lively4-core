@@ -221,10 +221,10 @@ export default class TripleNotes extends Morph {
       this.width = parentElement.clientWidth;
       this.height = parentElement.clientHeight;
 
-      let margin = {top:0, left:0, bottom:0, right:0 };
+      let margin = { top: 0, left: 0, bottom: 0, right: 0 };
 
-      this.chartWidth = this.width - (margin.left+margin.right)
-      this.chartHeight = this.height - (margin.top+margin.bottom)
+      this.chartWidth = this.width - (margin.left + margin.right)
+      this.chartHeight = this.height - (margin.top + margin.bottom)
 
       this.svg
         .attr("width", this.chartWidth)
