@@ -169,7 +169,17 @@ class LinkPart {
   }
 }
 
+/*
+ * ========================================================
+ * ========================================================
+ * ========================================================
+ */
 export default class TripleNotes extends Morph {
+
+  async getKnots() {
+    let graph = await Graph.getInstance();
+    return graph.knots;
+  }
 
   async initialize() {
     this.windowTitle = "Knot Explorer";
@@ -189,9 +199,7 @@ export default class TripleNotes extends Morph {
 
     setSize.call(this);
 
-    let graph = await Graph.getInstance();
-    
-    let knots = graph.knots;
+    let knots = await this.getKnots();
     this.updateStatistics(knots);
     
     let nodes = knots.map(getNodeByKnot);
