@@ -189,7 +189,7 @@ export default class TripleNotes extends Morph {
     });
     
     var width,height;
-    var chartWidth, chartHeight;
+    var chartHeight;
     var margin;
     this.svg = d3.select(this.get('#graph'))
       .append("svg");
@@ -226,11 +226,11 @@ export default class TripleNotes extends Morph {
 
       margin = {top:0, left:0, bottom:0, right:0 };
 
-      chartWidth = width - (margin.left+margin.right)
+      this.chartWidth = width - (margin.left+margin.right)
       chartHeight = height - (margin.top+margin.bottom)
 
       this.svg
-        .attr("width", chartWidth)
+        .attr("width", this.chartWidth)
         .attr("height", chartHeight)
         .attr("transform", "translate("+[margin.left, margin.top]+")");
     }
@@ -324,7 +324,7 @@ export default class TripleNotes extends Morph {
         .force("link", d3.forceLink().id(d => d.index).distance(200))
         //.force("collide",d3.forceCollide(d => d.r + 8).iterations(16) )
         .force("charge", d3.forceManyBody().strength(node => node.isTriple() ? -190*0.5 : -190))
-        .force("center", d3.forceCenter(chartWidth / 2, chartHeight / 2))
+        .force("center", d3.forceCenter(this.chartWidth / 2, chartHeight / 2))
         .force("y", d3.forceY(0).strength(0.001))
         .force("x", d3.forceX(0).strength(0.001));
 
