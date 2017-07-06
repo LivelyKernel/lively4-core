@@ -230,7 +230,7 @@ export default class TripleNotes extends Morph {
       hiddenLinks
     });
 
-    lively.addEventListener("triple-notes", this, "extent-changed", e => { setSize.call(this); });
+    lively.addEventListener("triple-notes", this, "extent-changed", e => this.setSize());
 
     this.svg.call(this.zoomBehavior());
     
