@@ -181,6 +181,23 @@ export default class TripleNotes extends Morph {
     return graph.knots;
   }
 
+  setSize() {
+    let parentElement = this.get('#graph');
+    
+    this.width = parentElement.clientWidth;
+    this.height = parentElement.clientHeight;
+
+    let margin = { top: 0, left: 0, bottom: 0, right: 0 };
+
+    this.chartWidth = this.width - (margin.left + margin.right)
+    this.chartHeight = this.height - (margin.top + margin.bottom)
+
+    this.svg
+      .attr("width", this.chartWidth)
+      .attr("height", this.chartHeight)
+      .attr("transform", "translate("+[margin.left, margin.top]+")");
+  }
+
   async initialize() {
     this.windowTitle = "Knot Explorer";
     
@@ -214,23 +231,6 @@ export default class TripleNotes extends Morph {
     });
 
     lively.addEventListener("triple-notes", this, "extent-changed", e => { setSize.call(this); });
-
-    function setSize() {
-      let parentElement = this.get('#graph');
-      
-      this.width = parentElement.clientWidth;
-      this.height = parentElement.clientHeight;
-
-      let margin = { top: 0, left: 0, bottom: 0, right: 0 };
-
-      this.chartWidth = this.width - (margin.left + margin.right)
-      this.chartHeight = this.height - (margin.top + margin.bottom)
-
-      this.svg
-        .attr("width", this.chartWidth)
-        .attr("height", this.chartHeight)
-        .attr("transform", "translate("+[margin.left, margin.top]+")");
-    }
 
     this.svg.call(this.zoomBehavior());
     
