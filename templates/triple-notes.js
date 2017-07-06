@@ -211,7 +211,7 @@ export default class TripleNotes extends Morph {
     this.graphContainer = this.svg.append("g")
       .classed("graphContainer", true);
 
-    setSize.call(this);
+    this.setSize();
 
     let knots = await this.getKnots();
     this.updateStatistics(knots);
