@@ -43,6 +43,7 @@ async function createUI(container) {
   var input = document.createElement("input");
   input.placeholder = "lively-new-component";
   input.focus();
+  input.select();
   div.appendChild(input);
   var button = document.createElement("button");
   button.addEventListener("click", () => {
