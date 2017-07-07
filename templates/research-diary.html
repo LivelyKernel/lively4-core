@@ -83,79 +83,7 @@ td i {
 </style>
 <input type="text" id="path-to-load" placeholder="path to load" title="path to load">
 <div class="container-fluid">
-  ...
-</div>
-<div id="container">
-  <div>
-    <h1 id="label"></h1>
-    <button id="delete-button" title="delete this knot">
-      <i class="fa fa-trash" aria-hidden="true"></i>
-    </button>
-  </div>
   
-  <h2>URLs</h2>
-  <ul id ="url-list"></ul>
-  
-  <h2>Tags</h2>
-  <div id ="tag-container"></div>
-  <button id="add-tag" title="add tag">
-    <i class="fa fa-plus" aria-hidden="true"></i> Add Tag
-  </button>
-  
-  <h2>Relations</h2>
-  
-  <h3 id="As Subject">
-    As Subject
-    <button id="add-triple-as-subject" title="add triple with this as subject">
-      <i class="fa fa-plus" aria-hidden="true"></i>
-    </button>
-  </h3>
-  <table id ="po-table">
-    <thead>
-      <tr>
-        <th>Predicate</th>
-        <th>Object</th>
-        <th class="triple-header">Triple</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-  <h3 id="As Predicate">
-    As Predicate
-    <button id="add-triple-as-predicate" title="add triple with this as predicate">
-      <i class="fa fa-plus" aria-hidden="true"></i>
-    </button>
-  </h3>
-  <table id ="so-table">
-    <thead>
-      <tr>
-        <th>Subject</th>
-        <th>Object</th>
-        <th class="triple-header">Triple</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-  <h3 id="As Object">
-    As Object
-    <button id="add-triple-as-object" title="add triple with this as object">
-      <i class="fa fa-plus" aria-hidden="true"></i>
-    </button>
-  </h3>
-  <table id ="sp-table">
-    <thead>
-      <tr>
-        <th>Subject</th>
-        <th>Predicate</th>
-        <th class="triple-header">Triple</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-  
-  <h2>Content</h2>
-  <ul id ="spo-list"></ul>
-  <juicy-ace-editor id="content-editor" wrapmode="true"></juicy-ace-editor>
 </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
