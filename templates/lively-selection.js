@@ -137,7 +137,6 @@ export default class Selection extends Morph {
   }
 
   haloCopyObject(haloItem) {
-    console.log("copy object");
     this.nodes = this.nodes.map(ea => {
       var copy = ea.cloneNode();
       ea.parentNode.appendChild(copy); 
@@ -146,17 +145,20 @@ export default class Selection extends Morph {
     return this;
   }
  
+ 
+  haloDragStart(fromPos) {
+    this.startPositions = new Map();
+    this.nodes.concat([this]).forEach(ea => {
+      this.startPositions.set(ea, nodes.getPosition(ea));
+    })
+ }
+ 
   haloDragTo(toPos, fromPos) {
     var delta = toPos.subPt(fromPos);
     this.nodes.concat([this]).forEach(ea => {
-      var startPos = this.startPositions.get(ea);
-      if (!startPos) {
-        ea.style.position = "absolute";
-        startPos = nodes.getPosition(ea);
-        this.startPositions.set(ea, startPos);
-      }
-      nodes.setPosition(ea, startPos.addPt(delta));
+      nodes.setPosition(ea, this.startPositions.get(ea).addPt(delta));
     });
+    window.that = this
     HaloService.showHalos(this);
   }
  

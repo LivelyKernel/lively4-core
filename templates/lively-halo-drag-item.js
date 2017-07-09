@@ -21,8 +21,12 @@ export default class HaloDragItem extends HaloItem {
       this.dragStartEventPosition = events.globalPosition(evt);
       evt.preventDefault();
     
-     this.snapping = new Snapping(this.dragTarget) 
-     this.halo.info =  lively.showInfoBox(this.dragTarget)
+      this.snapping = new Snapping(this.dragTarget) 
+      this.halo.info =  lively.showInfoBox(this.dragTarget)
+     
+      if (this.dragTarget.haloDragStart) {
+        this.dragTarget.haloDragStart(this.dragStartEventPosition)
+      }
     }
   }
   

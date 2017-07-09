@@ -1,3 +1,5 @@
+// #Clipboard - Cut,Copy, and Paste for Lively4
+
 import {pt} from 'src/client/graphics.js';
 import Halo from "templates/lively-halo.js"
 import generateUUID from './uuid.js';
@@ -59,6 +61,83 @@ export default class Clipboard {
     evt.clipboardData.setData('text/plain', html);
     evt.clipboardData.setData('text/html', html);
   }
+  
+  
+  static pasteHTMLDataInto(data, container) {
+    // add everthing into a container 
+    var div = document.createElement("div")
+    div.classList.add("lively-content")
+    lively.setExtent(div, pt(800,10))
+    div.innerHTML = data
+    container.appendChild(div)
+    lively.setPosition(div, pt(0,0))
+
+    // paste oriented at a shared topLeft
+    var all = lively.array(div.querySelectorAll(":scope > *"))
+    all.forEach(child => {
+      var id = child.getAttribute("data-lively-id")
+      child.remove()
+      
+      // if we have an ID, some other me might be lying around somewhere...
+      if (id) {
+        var otherMe = lively.elementByID(id)
+        if (otherMe) {
+          // so there is an identiy crysis... so we have to become somebody new...
+          var newId = generateUUID()
+          // ... and I have to notify my buddies that I am no longer myself
+          all.forEach(other => {
+            for(var i=0; i < other.attributes.length; i++) {
+              var attr = other.attributes[i]
+              if (attr.value == id) {
+                // lively.notify("found a reference to me: " + other + "." + attr.name)
+                attr.value = newId
+              }
+            }
+          })
+        }
+      }
+      div.appendChild(child)
+     })
+    var topLeft
+    all.forEach(ea => {
+      if (!topLeft) 
+        topLeft = lively.getGlobalPosition(ea);
+      else
+        topLeft = topLeft.minPt(lively.getGlobalPosition(ea))
+    })
+    var offset = this.lastClickPos.subPt(topLeft)
+    
+
+    all.forEach(child => {
+      if (child.classList.contains("lively-content") || child.tagName == "LIVELY-WINDOW") {
+        container.appendChild(child)
+        lively.moveBy(child, offset)
+      } else {
+        // child.classList.add("lively-content")
+      }
+      // lively.showPath([
+      //   lively.getGlobalPosition(child,),
+      //   lively.getGlobalPosition(child).addPt(offset)
+      // ])
+    })
+    
+    // clean up if neccesary
+    if (div.childNodes.length == 0) {
+      div.remove() // and get rid of the tmp container
+    } else {
+      // ajust position and content size
+      lively.setGlobalPosition(div, this.lastClickPos)
+      div.style.height = "max-content"
+    }
+  }
+  
+  static pasteTextDataInto(data, container) {
+    var div = document.createElement("div")
+    div.innerHTML = data
+    div.classList.add("lively-content")
+    container.appendChild(div)
+    lively.setGlobalPosition(div, this.lastClickPos)
+  }
 
   static onPaste(evt) {
     if (!this.lastClickPos) return; // we don't know where to paste it...this.lastClickPos
@@ -69,68 +148,13 @@ export default class Clipboard {
     
     var data = evt.clipboardData.getData('text/html')
     if (data) {
-      // temporarily add everthing into a container 
-      var div = document.createElement("div")
-      div.style.backgroundColor = "red"
-      lively.setExtent(div, pt(100,100))
-      div.innerHTML = data
-      document.body.appendChild(div)
-      lively.setGlobalPosition(div, pt(0,0))
-  
-      // paste oriented at a shared topLeft
-      var all = lively.array(div.querySelectorAll(":scope > *"))
-       all.forEach(child => {
-        var id = child.getAttribute("data-lively-id")
-        child.remove()
-        // if we have an ID, some other me might be lying around somewhere...
-        if (id) {
-          var otherMe = lively.elementByID(id)
-          if (otherMe) {
-            // so there is an identiy crysis... so we have to become somebody new...
-            var newId = generateUUID()
-            // ... and I have to notify my buddies that I am no longer myself
-            all.forEach(other => {
-              for(var i=0; i < other.attributes.length; i++) {
-                var attr = other.attributes[i]
-                if (attr.value == id) {
-                  // lively.notify("found a reference to me: " + other + "." + attr.name)
-                  attr.value = newId
-                }
-              }
-            })
-          }
-        }
-        document.body.appendChild(child)
-       })
-      var topLeft
-      all.forEach(ea => {
-        if (!topLeft) 
-          topLeft = lively.getGlobalPosition(ea);
-        else
-          topLeft = topLeft.minPt(lively.getGlobalPosition(ea))
-      })
-      var offset = this.lastClickPos.subPt(topLeft)
-      all.forEach(child => {
-        document.body.appendChild(child)
-        lively.setPosition(child, lively.getPosition(child).addPt(offset))
-        // lively.showPath([
-        //   lively.getGlobalPosition(child,),
-        //   lively.getGlobalPosition(child).addPt(offset)
-        // ])
-      })
-      div.remove() // and get rid of the tmp container
-
+      this.pasteHTMLDataInto(data, document.body) 
       return 
     }
 
     var data = evt.clipboardData.getData('text/plain')
     if (data) {
-      var div = document.createElement("div")
-      div.innerHTML = data
-      document.body.appendChild(div)
-      lively.setGlobalPosition(div, this.lastClickPos)
-      evt.stopPropagation()
-      evt.preventDefault(); 
+       this.pasteTextDataInto(data, document.body) 
       return 
     }
     
