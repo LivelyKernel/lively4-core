@@ -28,13 +28,13 @@ export default class Ball extends Morph {
     this.balls.forEach(ball => {
 
         context.beginPath();
-        context.fillStyle = "blue";
+        context.fillStyle = "red";
         context.arc(ball.x, ball.y, 10, 0, Math.PI*2, true);
         context.closePath();
         context.fill();
         this.collisionTest(ball)
-        ball.x += ball.dx;
-        ball.y += ball.dy;
+        ball.x += ball.dx * 4;
+        ball.y += ball.dy * 4;
     })
     this.shadowRoot.querySelector("#hits").innerHTML = "_Hits: " + this.hits
   }

@@ -9,6 +9,7 @@ export default class ResearchDiary extends Morph {
   
   async initialize() {
     this.windowTitle = "Research Diary";
+    return;
 
     var pathToLoad = this.get("#path-to-load");
     pathToLoad.addEventListener('keyup',  event => {

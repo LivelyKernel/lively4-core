@@ -41,7 +41,7 @@ async function createEntry(container, input) {
 async function createUI(container) { 
   var div  = document.createElement("div");
   var input = document.createElement("input");
-  input.value= "lively-new-component";
+  input.placeholder = "lively-new-component";
   div.appendChild(input);
   var button = document.createElement("button");
   button.addEventListener("click", () => {
@@ -49,6 +49,8 @@ async function createUI(container) {
   });
   button.innerHTML = "create";
   div.appendChild(button);
+  input.focus();
+  input.select();
   return div;
 }
 

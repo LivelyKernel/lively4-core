@@ -1,4 +1,6 @@
 <template id="triple-notes" data-class="TripleNotes">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
 <style type="text/css">
 :host {
   display: flex;
@@ -26,7 +28,7 @@
 }
 
 .node circle {
-  fill: lightgrey;
+  /*fill: lightgrey;*/
 }
 
 /* overwrites other selectors for text */
@@ -55,6 +57,8 @@
 }
 
 /*------- Colors ------*/
+
+
 .class, .object, .disjoint, .objectproperty, .disjointwith, .equivalentproperty, .transitiveproperty, .functionalproperty, .inversefunctionalproperty, .symmetricproperty, .allvaluesfromproperty, .somevaluesfromproperty {
     fill: #acf;
 }
@@ -72,6 +76,40 @@
 }
 .external, .externalproperty {
     fill: #36c;
+}
+/* own knot types, mostly file endings */
+.image {
+  fill: #f3f;
+}
+.audio {
+  fill: #0f3;
+}
+.movie {
+  fill: #ff3;
+}
+.presentation {
+  fill: #f66;
+}
+.markdown {
+  fill: #ccc;
+}
+.html {
+  fill: #00f;
+}
+.tag {
+  fill: #fff;
+}
+.is-a {
+  fill: #9c6;
+}
+.same-as {
+  fill: #fc3;
+}
+.contains {
+  fill: #36c;
+}
+.unspecified {
+  fill: #acf;
 }
 path, .nofill {
 	fill: none;
@@ -197,7 +235,7 @@ marker path {
 .dotted {
 	stroke-dasharray: 3;
 }
-rect.focused, circle.focused {
+rect:hover, circle:hover {
 	stroke-width: 4px;
 }
 .nostroke {
@@ -216,9 +254,53 @@ marker path {
 </style>
 
 <div id="graph"></div>
-<lively-separator></lively-separator>
 <div id="meta">
   <!--<h1>Meta</h1>-->
+  <div>
+  <button id="reload" title="Reload Graph">
+    <i class="fa fa-refresh" aria-hidden="true"></i>
+  </button>
+  </div>
+
+  <h2>Config</h2>
+  <div>
+    <div>
+      <label for="link-distance">Link Distance</label>
+      <input type="range" id="link-distance" min ="100" max="500" step ="50" value ="200">
+    </div>
+    <div>
+      <label for="nbody-knot-strength">NBody Knot</label>
+      <input type="range" id="nbody-knot-strength" min ="100" max="500" step ="50" value ="200">
+    </div>
+    <div>
+      <label for="nbody-triple-strength">NBody Triple</label>
+      <input type="range" id="nbody-triple-strength" min ="100" max="500" step ="50" value ="200">
+    </div>
+    <div>
+      <label for="force-center-x">Center X</label>
+      <input type="range" id="force-center-x" min ="100" max="500" step ="50" value ="200">
+    </div>
+    <div>
+      <label for="force-center-y">Center Y</label>
+      <input type="range" id="force-center-y" min ="100" max="500" step ="50" value ="200">
+    </div>
+    <div>
+      <label for="force-x-target">X</label>
+      <input type="range" id="force-x-target" min ="-500" max="500" step ="100" value ="0">
+    </div>
+    <div>
+      <label for="force-x-strength">X Strength</label>
+      <input type="range" id="force-x-strength" min ="0" max="0.2" step ="0.001" value ="0.001">
+    </div>
+    <div>
+      <label for="force-y-target">Y</label>
+      <input type="range" id="force-y-target" min ="-500" max="500" step ="100" value ="0">
+    </div>
+    <div>
+      <label for="force-y-strength">Y Strength</label>
+      <input type="range" id="force-y-strength" min ="0" max="0.2" step ="0.001" value ="0.001">
+    </div>
+  </div>
   <h2>Statistics</h2>
     <table id ="po-table">
     <tbody>

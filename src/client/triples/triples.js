@@ -102,11 +102,19 @@ export class Graph {
     let index = this.knots.indexOf(knot);
     if (index > -1) {
       this.knots.splice(index, 1);
+      lively.notify(`Removed knot ${url} in local graph instance.`);
+    } else {
+      lively.notify(`Did not find knot ${url} in local graph instance.`);
     }
-    var result = await fetch(url, {method: 'DELETE'})
-      .then(r => r.text());
-
-    lively.notify("deleted knot " + url, result);
+    
+    let urlURL = new URL(url);
+    if(!Graph.isExternalURL(urlURL)) {
+      var result = await fetch(url, {method: 'DELETE'})
+        .then(r => r.text());
+      lively.notify(`Deleted knot ${url} in remote storage`, result);
+    }
+    
+    lively.notify('Knot removed from graph.');
     
     return true;
   }
@@ -192,7 +200,15 @@ export class Graph {
     return this.requestedKnots.get(filePath);
   }
   
-  async loadSingleKnot(url) {
+  static isExternalURL(url) {
+    return url.origin !== 'https://lively4';
+  }
+  async loadSingleKnot(urlOrString) {
+    const url = new URL(urlOrString);
+    if(Graph.isExternalURL(url)) {
+      return this.deserializeKnot(url.toString(), url.hostname + url.pathname);
+    }
+    
     let text = await cachedFetch(url)
     const fileName = url.toString();
     return this.deserializeKnot(fileName, text);
