@@ -4,7 +4,7 @@
 <lively-script><script>
 import github from "src/client/github.js"
 new Promise(async (resolve) => {
-  var issues = await github.current().issues()  
+  var issues = await github.current().issues(true)  
   var list = document.createElement("ul")
   var style = document.createElement("style")
   style.textContent = `
