@@ -9,6 +9,13 @@ export default class Strings {
     return s[0].toUpperCase() + s.slice(1)
   }
   
+  static toCamelCase(string, delimiter = " ") {
+    return string
+      .split(delimiter)
+      .map((ea, index) => index === 0 ? ea : this.toUpperCaseFirst(ea))
+      .join("")
+  }
+  
   static prefixSelector(prefix, s) {
     return prefix + this.toUpperCaseFirst(s)
   }

@@ -10,6 +10,15 @@ describe('strings', () => {
     });
   })
   
+  describe('toCamelCase', () => {
+    it('convert string to camelcase', () => {
+      expect(Strings.toCamelCase("lively-bla", "-")).to.equal("livelyBla");
+    });
+    it('convert string to camelcase with three words', () => {
+      expect(Strings.toCamelCase("foo bar bla")).to.equal("fooBarBla");
+    });
+  })
+
   describe('prefixSelector', () => {
     it('prefix a selector', () => {
       expect(Strings.prefixSelector("with", "topLeft")).to.equal("withTopLeft");

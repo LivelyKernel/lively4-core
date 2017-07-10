@@ -26,7 +26,10 @@ function setupGithub() {
       "site_admin": false
     },
     "labels": [
-      
+       {"id":365044053,"name":"comp: lively sync","color":"bfd4f2","default":false},
+       {"id":412921943,"name":"effort1: easy (hour)","color":"c2e0c6","default":false},
+       {"id":412921768,"name":"P0: critical","color":"b60205","default":false},
+       {"id":266209579,"name":"type: bug","color":"e6e6e6","default":false}
     ],
     "state": "open",
     "locked": false,
@@ -108,13 +111,13 @@ describe('Github Stories', () => {
     it('parses a story with rest', () => {
       var result = that.parseMarkdownStories("- a story 3P #Foo bla #123")
       expect(result[0].title).to.equals("a story")
-      expect(result[0].rest).to.equals("3P #Foo bla")
+      expect(result[0].rest).to.equals("3P bla")
     });
     
     it('parses a story with rest and whitespace', () => {
       var result = that.parseMarkdownStories("- a story     3P #Foo bla #123")
       expect(result[0].title).to.equals("a story")
-      expect(result[0].rest).to.equals("3P #Foo bla")
+      expect(result[0].rest).to.equals("3P bla")
     });
 
     it('parses an item', () => {
@@ -125,12 +128,70 @@ describe('Github Stories', () => {
       var result = that.parseMarkdownStories("## a project\n- a story")
       expect(result[1].project).to.equals("a project")
     });
+    it('parses a story with labels', () => {
+      var result = that.parseMarkdownStories("- a story #bug")
+      expect(result[0].labels).to.be.a("array")
+      expect(result[0].labels).to.have.length(1)
+      expect(result[0].labels[0]).to.equals("type: bug")
+    });
+    it('parses a story with comp labels', () => {
+      var result = that.parseMarkdownStories("- a story #LivelySync")
+      expect(result[0].labels[0]).to.equals("comp: lively sync")
+    });
+
+    it('parses a story with effort labels', () => {
+      var result = that.parseMarkdownStories("- a story #easy")
+      expect(result[0].labels[0]).to.equals("effort1: easy (hour)")
+    });
+
+    it('parses a story with unknow labels', () => {
+      var result = that.parseMarkdownStories("- a story #FooBarBaz")
+      expect(result[0].labels[0]).to.equals("comp: foo bar baz")
+    });
+
     it('parses a story with items', () => {
       var result = that.parseMarkdownStories("- a story\n - an item")
       expect(result[0].items[0].item).to.equals("- an item")
     });
   })
   
+  describe('fix label', () => {
+    it('bug', () => {
+      expect(that.labelToTag("type: bug")).to.equals("#bug")
+    })
+    it('comp: lively sync', () => {
+      expect(that.labelToTag("comp: lively sync")).to.equals("#LivelySync")
+    })
+    it('effort1: easy (hour)', () => {
+      expect(that.labelToTag("effort1: easy (hour)")).to.equals("#easy")
+    })
+    it('P0: critical', () => {
+      expect(that.labelToTag("P0: critical")).to.equals("#critical")
+    })
+  })
+  
+  describe('tagToLabel', () => {
+    it('bug', () => {
+      expect(that.tagToLabel("#bug")).to.equals("type: bug")
+    })
+    it('comp: lively sync', () => {
+      expect(that.tagToLabel("#LivelySync")).to.equals("comp: lively sync")
+    })
+    it('effort1: easy (hour)', () => {
+      expect(that.tagToLabel("#easy")).to.equals("effort1: easy (hour)")
+    })
+    it('P0: critical', () => {
+      expect(that.tagToLabel("#critical")).to.equals("P0: critical")
+    })
+
+    it('Priority', () => {
+      expect(that.tagToLabel("#urgent")).to.equals("P1: urgent")
+      expect(that.tagToLabel("#required")).to.equals("P2: required")
+      expect(that.tagToLabel("#important")).to.equals("P3: important")
+      expect(that.tagToLabel("#NiceToHave")).to.equals("P4: nice to have")
+    })
+  })
+
   describe('stringifyMarkdownStories', () => {
     it('prints a project', () => {
       var result = that.stringifyMarkdownStories([{project: "A Project"}])
@@ -165,6 +226,13 @@ describe('Github Stories', () => {
     });
 
 
+    it('prints a story with labels', () => {
+      var result = that.stringifyMarkdownStories([
+        {title: "a story", state: "closed", labels: ["type: bug"]}])
+      expect(result).to.equals("- a story #bug #closed")
+    });
+
+
     it('prints an item', () => {
       var result = that.stringifyMarkdownStories([{item: "- an item"}])
       expect(result).to.equals("  - an item")
@@ -195,6 +263,29 @@ describe('Github Stories', () => {
       }
       done()
     });
+
+    it("update labels from github", async (done) => {
+      try {
+        var stories = [{title: "found a bug", number: 108}];
+        await that.syncMarkdownStories(stories)
+        expect(stories[0].labels).to.contain("comp: lively sync")
+      } catch(e) {
+        return done(e)
+      }
+      done()
+    });
+
+    it("dont throw away local labels", async (done) => {
+      try {
+        var stories = [{title: "found a bug", labels: ["comp: foo bar"], number: 108}];
+        await that.syncMarkdownStories(stories)
+        expect(stories[0].labels).to.contain("comp: foo bar")
+      } catch(e) {
+        return done(e)
+      }
+      done()
+    });
+
 
     it("don't create new issue if exact title is there", async (done) => {
       try {

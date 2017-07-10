@@ -117,6 +117,7 @@ export default class Github {
         })
         if (!title) title = issue.replace(rest, "")
         var number;
+        var labels = []
         if (rest) {
           Strings.matchDo(/(#([0-9]+))/, rest, (a,b) => {
             rest = rest.replace(a,"") 
@@ -128,13 +129,23 @@ export default class Github {
             rest = rest.replace(a,"") 
             state = b
           })
-          }
+        }
+        if (rest) {
+          Strings.matchDo(/( ?#([A-Za-z]+))/, rest, (all,tag) => {
+            var label = this.tagToLabel(tag)
+            if (label) {
+              rest = rest.replace(all,"")
+              labels.push(label)
+            }
+          })
+        }
 
         return   {
           title: title.replace(/ *$/,""), 
           rest: rest && rest.replace(/ *$/,""),
           number: number ? parseInt(number) : undefined,
           state: state,
+          labels: labels,
           items: []
         }
       })
@@ -147,6 +158,7 @@ export default class Github {
     // now, make sense of the parsing...
     var lastProject
     var lastStory
+    
     stories.forEach(ea => {
       if (ea.project) lastProject = ea;
       if (ea.title) lastStory = ea
@@ -162,11 +174,60 @@ export default class Github {
     return stories.map(ea => JSON.stringify(ea)).join("\n")
   }
   
+  labelToTag(l) {
+    var tag = l
+        .replace("type: ", "")
+        .replace(/P[0-9]\: /, "")
+        .replace(/effort[0-9]\: /, "")
+        .replace(/ \(hour\)/, "")
+        .replace(/comp\: /, "")
+    if (tag.match(" ")) {
+      tag = Strings.toUpperCaseFirst(Strings.toCamelCase(tag, " "))
+    }
+    return "#" + tag
+  }
+  
+  tagToLabel(tag) {
+    var label = tag.replace("#", "")
+    if (label == "bug") return "type: bug"
+    if (label == "chore") return "type: chore"
+    if (label == "feature") return "type: feature"
+    if (label == "performance") return "type: performance"
+    if (label == "refactor") return "type: refactor"
+    if (label == "discussion") return "type: RFC / discussion / question"
+    
+    if (label == "easy") return "effort1: easy (hour)"
+    if (label == "medium") return "effort2: medium (day)"
+    if (label == "hard") return "effort3: hard (week)"
+     
+    if (label == "critical") return "P0: critical"
+    if (label == "critical") return "P0: critical"
+    if (label == "critical") return "P0: critical"
+    if (label == "critical") return "P0: critical"
+    if (label == "critical") return "P0: critical"
+    
+    if (label == "urgent") return "P1: urgent"
+    if (label == "required") return "P2: required"
+    if (label == "important") return "P3: important"
+    if (label == "NiceToHave") return "P4: nice to have"
+
+
+    if (label == "duplicate") return "duplicate"
+    if (label == "FollowUp") return "follow up"
+    if (label == "HelpWanted") return "help wanted"
+
+    if (label.match(/[A-Z][a-z]+[A-Z]/)) 
+      return "comp: " + label.split(/(?=[A-Z])/).map(ea => ea.toLowerCase()).join(" ")
+
+    return label
+  }
+  
   stringifyMarkdownStories(stories) {
     return stories.map(ea => {
       if (ea.title  != undefined) 
         return "- " + ea.title + 
           (ea.rest ? " " + ea.rest : "") + 
+          (ea.labels ? " " +ea.labels.map(l => this.labelToTag(l)).join(" ")  : "") + 
           (ea.state ? " #" + ea.state : "") + 
           (ea.number ? " #" + ea.number : "");
       if (ea.comment != undefined) return  ea.comment;
@@ -197,9 +258,21 @@ export default class Github {
         }
         
         if (issue && issue.state) {
-
           ea.state = issue.state
         }
+        
+        if (ea && issue && issue.labels) {
+          if (!ea.labels) ea.labels = []; 
+          issue.labels.forEach(l => {
+            if (!ea.labels.includes(l.name)) {
+              ea.labels.push(l.name)
+            }
+          })
+          
+          // local labels are thrown away... ?
+          // #TODO what about labels that are not in github?
+        }
+        
       }
     }
     for(var issue of issues) {
