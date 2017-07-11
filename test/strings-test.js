@@ -30,4 +30,15 @@ describe('strings', () => {
       expect(Strings.matchAll(/a[0-9]/, "a1 b1 a2 b2 c2 a")[0][0]).to.equal("a1");
     });
   })
+  
+  describe('matchAllDo', () => {
+    it("matches", () => {
+      var result = []
+      Strings.matchAllDo(/(a.)/g, "babcacafae", (x) => {
+        result.push(x)
+      })
+      expect(result).to.deep.equals(["ab","ac","af","ae"])
+    })
+  })
+  
 });

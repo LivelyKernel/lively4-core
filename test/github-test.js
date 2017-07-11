@@ -9,40 +9,43 @@ function setupGithub() {
   that = new Github()    
   that._token = "xxx_this_is_not_a_token"
   that.issues = function() {
-    this._issues = [{
-    "url": "https:\/\/api.github.com\/repos\/LivelyKernel\/lively4-core\/issues\/108",
-    "repository_url": "https:\/\/api.github.com\/repos\/LivelyKernel\/lively4-core",
-    "labels_url": "https:\/\/api.github.com\/repos\/LivelyKernel\/lively4-core\/issues\/108\/labels{\/name}",
-    "comments_url": "https:\/\/api.github.com\/repos\/LivelyKernel\/lively4-core\/issues\/108\/comments",
-    "events_url": "https:\/\/api.github.com\/repos\/LivelyKernel\/lively4-core\/issues\/108\/events",
-    "html_url": "https:\/\/github.com\/LivelyKernel\/lively4-core\/issues\/108",
-    "id": 240440332,
-    "number": 108,
-    "title": "found a bug",
-    "user": {
-      "login": "JensLincke",
-      "id": 1466247, /* ... */
-      "type": "User",
-      "site_admin": false
-    },
-    "labels": [
-       {"id":365044053,"name":"comp: lively sync","color":"bfd4f2","default":false},
-       {"id":412921943,"name":"effort1: easy (hour)","color":"c2e0c6","default":false},
-       {"id":412921768,"name":"P0: critical","color":"b60205","default":false},
-       {"id":266209579,"name":"type: bug","color":"e6e6e6","default":false}
-    ],
-    "state": "open",
-    "locked": false,
-    "assignee": null,
-    "assignees": [
-    ],
-    "milestone": null,
-    "comments": 0,
-    "created_at": "2017-07-04T14:42:36Z",
-    "updated_at": "2017-07-04T14:42:36Z",
-    "closed_at": null,
-    "body": "just kidding"
-  }];
+    if (!this._issues) {
+      this._issues = [{
+      "url": "https:\/\/api.github.com\/repos\/LivelyKernel\/lively4-core\/issues\/108",
+      "repository_url": "https:\/\/api.github.com\/repos\/LivelyKernel\/lively4-core",
+      "labels_url": "https:\/\/api.github.com\/repos\/LivelyKernel\/lively4-core\/issues\/108\/labels{\/name}",
+      "comments_url": "https:\/\/api.github.com\/repos\/LivelyKernel\/lively4-core\/issues\/108\/comments",
+      "events_url": "https:\/\/api.github.com\/repos\/LivelyKernel\/lively4-core\/issues\/108\/events",
+      "html_url": "https:\/\/github.com\/LivelyKernel\/lively4-core\/issues\/108",
+      "id": 240440332,
+      "number": 108,
+      "title": "found a bug",
+      "user": {
+        "login": "JensLincke",
+        "id": 1466247, /* ... */
+        "type": "User",
+        "site_admin": false
+      },
+      "labels": [
+         {"id":365044053,"name":"comp: lively sync","color":"bfd4f2","default":false},
+         {"id":412921943,"name":"effort1: easy (hour)","color":"c2e0c6","default":false},
+         {"id":412921768,"name":"P0: critical","color":"b60205","default":false},
+         {"id":266209579,"name":"type: bug","color":"e6e6e6","default":false}
+      ],
+      "state": "open",
+      "locked": false,
+      "assignee": null,
+      "assignees": [
+      ],
+      "milestone": null,
+      "comments": 0,
+      "created_at": "2017-07-04T14:42:36Z",
+      "updated_at": "2017-07-04T14:42:36Z",
+      "closed_at": null,
+      "body": "just kidding"
+    }];
+        
+    }
    return Promise.resolve(this._issues) 
   }
 }
@@ -77,6 +80,20 @@ describe('Github Stories', () => {
         number: lastStoryNumber++,
         title, 
         body,
+      })
+    }
+    
+    that.patch = function(number, issuePatch) {
+      var labels = issuePatch.labels && issuePatch.labels.map(l => ({ id: 0, name: l})) 
+      var issue = this._issues.find(ea => ea.number == number)
+      // lively.notify("patch issue " + number)
+      if (!issue) throw new Error("issue not there (" + number + ")")
+      issue.labels = labels
+      return Promise.resolve({
+        number: lastStoryNumber,
+        title: issuePatch.title, 
+        body: issuePatch.body,
+        labels: labels
       })
     }
   });
@@ -153,6 +170,16 @@ describe('Github Stories', () => {
       var result = that.parseMarkdownStories("- a story\n - an item")
       expect(result[0].items[0].item).to.equals("- an item")
     });
+    
+    
+    it("removes duplicate entries on parsing", () => {
+      var result = that.parseMarkdownStories("- a story #easy #LivelyUi #LivelyUi #easy #open #115")
+      expect(result[0].title).to.equals("a story")
+      expect(result[0].labels).length(2)
+      expect(result[0].labels, "label").to.deep.equals(["effort1: easy (hour)", "comp: lively ui"])
+      expect(result[0].rest, "rest").to.equals("")
+    })
+    
   })
   
   describe('fix label', () => {
@@ -164,6 +191,9 @@ describe('Github Stories', () => {
     })
     it('effort1: easy (hour)', () => {
       expect(that.labelToTag("effort1: easy (hour)")).to.equals("#easy")
+      expect(that.labelToTag("effort2: medium (day)")).to.equals("#medium")
+      expect(that.labelToTag("effort3: hard (week)")).to.equals("#hard")
+
     })
     it('P0: critical', () => {
       expect(that.labelToTag("P0: critical")).to.equals("#critical")
@@ -174,8 +204,9 @@ describe('Github Stories', () => {
     it('bug', () => {
       expect(that.tagToLabel("#bug")).to.equals("type: bug")
     })
-    it('comp: lively sync', () => {
+    it('comp', () => {
       expect(that.tagToLabel("#LivelySync")).to.equals("comp: lively sync")
+      expect(that.tagToLabel("#LivelyUi")).to.equals("comp: lively ui")
     })
     it('effort1: easy (hour)', () => {
       expect(that.tagToLabel("#easy")).to.equals("effort1: easy (hour)")
@@ -197,6 +228,7 @@ describe('Github Stories', () => {
       var result = that.stringifyMarkdownStories([{project: "A Project"}])
       expect(result).to.equals("## A Project")
     });
+    
     it('prints a story', () => {
       var result = that.stringifyMarkdownStories([{title: "a story"}])
       expect(result).to.equals("- a story")
@@ -233,10 +265,19 @@ describe('Github Stories', () => {
     });
 
 
+    it('prints a story without project in label', () => {
+      var result = that.stringifyMarkdownStories([
+        {title: "a story", project: "A Project", labels: ["comp: a project", "type: bug"]}])
+      expect(result).to.equals("- a story #bug")
+    });
+
+
+
     it('prints an item', () => {
       var result = that.stringifyMarkdownStories([{item: "- an item"}])
       expect(result).to.equals("  - an item")
     });
+
 
   })
   
@@ -305,7 +346,7 @@ describe('Github Stories', () => {
     });
 
 
-    it("add issues that were in github, but not ins stories", async (done) => {
+    it("add issues that were in github, but not in stories", async (done) => {
       try {
         var stories = [{title: "a new story", number: 301}];
         await that.syncMarkdownStories(stories)
@@ -316,6 +357,38 @@ describe('Github Stories', () => {
       }
       done()
     });
+
+    it("add issues that were in github, but not in stories", async (done) => {
+      try {
+        var stories = [{title: "a new story", number: 301}];
+        await that.syncMarkdownStories(stories)
+        expect(stories.length, "size of stories").to.equal(2)
+        expect(stories[1].number).to.equal(108)
+      } catch(e) {
+        return done(e)
+      }
+      done()
+    });
+
+    it("updates project as label", async (done) => {
+      try {
+        var stories = [{project: "a project", labels: [], title: "found a bug", number: 108}];
+        expect(that._issues[0].labels.length).to.equal(4)
+        await that.syncMarkdownStories(stories)
+        expect(that._issues[0].labels.length, "normal sync").to.equal(5)
+        
+        await that.syncMarkdownStories(stories)
+        expect(that._issues[0].labels.length, "wrong issues: " + 
+          that._issues[0].labels.map(ea => ea.name)).to.equal(5)
+        
+        expect(stories[0].labels).to.be.of.length(5)
+      } catch(e) {
+        return done(e)
+      }
+      done()
+    });
+
+
 
     
   })

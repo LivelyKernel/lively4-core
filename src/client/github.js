@@ -56,6 +56,21 @@ export default class Github {
       }).then(r => r.json())
   }
   
+  async patch(number, issuePatch) {
+    if (!number) throw new Error("number is missing") 
+    if (!issuePatch) throw new Error("issuePatch is missing") 
+
+    return fetch("https://api.github.com/repos/" 
+        + this.user+ "/" + this.repo + "/issues/" + number, {
+        method: "PATCH",
+        body: JSON.stringify(issuePatch),
+        headers: {
+          Authorization: "token " + await this.token(),
+          'Content-Type': 'application/json'
+        }
+      }).then(r => r.json())
+  }
+
   
   parseLinkHeader(header) {
     var parts = header.split(',');
@@ -118,6 +133,7 @@ export default class Github {
         if (!title) title = issue.replace(rest, "")
         var number;
         var labels = []
+        var tags = []
         if (rest) {
           Strings.matchDo(/(#([0-9]+))/, rest, (a,b) => {
             rest = rest.replace(a,"") 
@@ -131,13 +147,20 @@ export default class Github {
           })
         }
         if (rest) {
-          Strings.matchDo(/( ?#([A-Za-z]+))/, rest, (all,tag) => {
+          // lively.notify("rest " + rest)
+          Strings.matchAllDo(/(#[A-Za-z]+)/, rest, (tag) => {
             var label = this.tagToLabel(tag)
-            if (label) {
-              rest = rest.replace(all,"")
+            if (label && !labels.includes(label)) {
               labels.push(label)
             }
+            tags.push(tag)
+
           })
+          tags.forEach(tag => {
+            // lively.notify("replace tag " + tag)
+            rest = rest.replace(new RegExp(" ?" + tag, "g"),"")
+          })
+
         }
 
         return   {
@@ -180,6 +203,8 @@ export default class Github {
         .replace(/P[0-9]\: /, "")
         .replace(/effort[0-9]\: /, "")
         .replace(/ \(hour\)/, "")
+        .replace(/ \(day\)/, "")
+        .replace(/ \(week\)/, "")
         .replace(/comp\: /, "")
     if (tag.match(" ")) {
       tag = Strings.toUpperCaseFirst(Strings.toCamelCase(tag, " "))
@@ -188,6 +213,7 @@ export default class Github {
   }
   
   tagToLabel(tag) {
+    if (!tag) return 
     var label = tag.replace("#", "")
     if (label == "bug") return "type: bug"
     if (label == "chore") return "type: chore"
@@ -227,7 +253,9 @@ export default class Github {
       if (ea.title  != undefined) 
         return "- " + ea.title + 
           (ea.rest ? " " + ea.rest : "") + 
-          (ea.labels ? " " +ea.labels.map(l => this.labelToTag(l)).join(" ")  : "") + 
+          (ea.labels ? " " +ea.labels
+            .filter(l => l !== ("comp: " + ea.project).toLowerCase())
+            .map(l => this.labelToTag(l)).join(" ")  : "") + 
           (ea.state ? " #" + ea.state : "") + 
           (ea.number ? " #" + ea.number : "");
       if (ea.comment != undefined) return  ea.comment;
@@ -241,7 +269,7 @@ export default class Github {
   
   async syncMarkdownStories(stories) {
     var issues = await this.issues(true)
-    lively.notify("found " + issues.length + " issues")
+    // lively.notify("found " + issues.length + " issues")
     for(var ea of stories){
       var issue = null
       if (ea.title && ea.number === undefined) {
@@ -265,9 +293,16 @@ export default class Github {
           if (!ea.labels) ea.labels = []; 
           issue.labels.forEach(l => {
             if (!ea.labels.includes(l.name)) {
+              
+              // lively.notify("add " + l.name)
               ea.labels.push(l.name)
             }
           })
+          var projectLabel = "comp: "+ ea.project
+          if (ea.project && !issue.labels.find(ea => ea.name == projectLabel)) {
+            var patch = {labels: issue.labels.map(ea => ea.name).concat([projectLabel])};
+            await this.patch(issue.number, patch)
+          }
           
           // local labels are thrown away... ?
           // #TODO what about labels that are not in github?

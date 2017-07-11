@@ -77,7 +77,7 @@ button
   - format for file
   - delete/create file
   - what is filename?  What is id?
-- allow links to github stories tags   e.g. useable in this list  #open #123
+- allow links to github stories tags e.g. useable in this list #LivelyTools #open #123
   - the repository should be defined in the context and not the link
   - explicit global links should be possible
 - use story tags in commit messages  #open #141
@@ -87,9 +87,9 @@ button
 
 ## Student Projects
 
-- build a gallery 10P  #open #142
-- was there anything more?  #open #143
-- new topics? 8P  #open #144
+- build a gallery 10P #StudentProjects #open #142
+- was there anything more? #StudentProjects #open #143
+- new topics? 8P #StudentProjects #open #144
 
 ## Lively Service Worker
 
@@ -102,7 +102,7 @@ button
 - put lively services into sandbox (use heroku) and create usable example 10  #open #148
 - quick lively termeinal (example usecase)  #open #149
 - deploy lively4-server as lively-service  #open #150
-- playback local media center  #Hobby #Jens #Example #open #151
+- playback local media center #Hobby #Jens #Example #open #151
 
 ## Lively Server
 
@@ -110,7 +110,7 @@ button
 - remove dependency on bash scripts? Or make it explicit (e.g. linux subsystem for windows is needed)  #open #153
 
 ## Lively Debugger
-- revisit lively debugger 10P  #open #154
+- revisit lively debugger 10P #LivelyDebugger #open #154
   - (main issue: starting time to long and fragile)
   - publish chrome extensiosn 2P
 
@@ -131,11 +131,11 @@ button
 - create links (and optionally open container) for arbitrary browser drag and drop API ?P  #open #160
 - provide hooks ourselve that can be dragged and drop (onDragStart, onDrag, onDragEnd) ?P  #open #161
 
-## Misc Issues:
-- to many green helper lines  #open #162
-- no backup of local lively content combined with auto-save can make an explosive mixture #TODO #open #163
-- unwanted world scrolls (in panning code)  #open #164
-- data-urls in markdown are broken  #open #165
+## Misc Issues
+- to many green helper lines : #MiscIssues #open #162
+- no backup of local lively content combined with auto-save can make an explosive mixture : #MiscIssues #open #163
+- unwanted world scrolls (in panning code) : #MiscIssues #open #164
+- data-urls in markdown are broken : #MiscIssues #open #165
   - side effect of "fixing" links
   - remove absolute positioning 
 
@@ -146,7 +146,7 @@ button
 
 ## Lively Tag and Search 
 
-- Connect all content via  and search... #tags #open #168
+- Connect all content via  and search... #LivelyTagAndSearch #tags #LivelyTagAndSearch #open #168
 - Make structured search  possible  #open #169
   - Methods, Classes, Modules
   - Headlines, Text, Nodes
@@ -158,12 +158,12 @@ button
 - provide a graffle like whiteboard feeling text/shape/connectors #WIP #open #171
 
 
-## Write a #Lively4Paper
+## Write a Paper
 
-- what was/is our motivation?  #open #172
-- document our design desciions  #open #173
-- evaluate our design decisions  #open #174
-- what is open? Where do we want to go?  #open #175
+- what was/is our motivation? #WriteAPaper #open #172
+- document our design desciions #WriteAPaper #open #173
+- evaluate our design decisions #WriteAPaper #open #174
+- what is open? Where do we want to go? #WriteAPaper #open #175
 
 ## Old Stories
 
@@ -192,45 +192,48 @@ button
 - Collaborative Lively Session (Synchronous) RW: Webstrates  #open #188
 - Annotations for classes/methods (public/private)  #open #189
 - event system / bindings are missing (use lively bindings again) current: new CustomEvent(...)  #open #190
-- write paper (section) about: heap vs document persistens 4Paper #Lively #open #191
+- write paper (section) about: heap vs document persistens #Lively #open #191
 - Lively Software Viz Current: Only Module  #open #192
 - Energy Simulation  #open #193
-- Diffing and merging  (object/graph/heap vs. text/tree/document) 4Paper #Lively #FutureWork #open #194
+- Diffing and merging  (object/graph/heap vs. text/tree/document) #FutureWork #Lively #open #194
 
 
-# Stories in Github
+## Stories only in Github
 
-- Webcomponents do not update when internal components change  #NiceToHave #feature #HtmlTemplates #NiceToHave #feature #open #101
-- bind (::) operator  #easy #FollowUp #NiceToHave #feature #transpilation #transpilation #easy #FollowUp #NiceToHave #feature #open #100
-- do expressions  #easy #NiceToHave #feature #transpilation #transpilation #easy #NiceToHave #feature #open #99
-- boundEval of "a string" returns undefined  #Medium(day) #NiceToHave #feature #transpilation #transpilation #Medium(day) #NiceToHave #feature #open #98
-- Allow await on top level in Workspace  #Hard(week) #important #feature #transpilation #transpilation #Hard(week) #important #feature #open #97
-- Blink DevTools show old source content (day) #NiceToHave #bug #Medium #Medium(day) #NiceToHave #bug #open #96
-- add spell checking to editor  #open #95
-- make code mirror default editor  #open #94
-- Support Circular Dependencies  #Hard(week) #required #feature #ModuleSystem #Hard(week) #required #feature #open #93
-- Update focalStorage  #FollowUp #important #chore #easy #FollowUp #important #chore #open #91
-- Support template loading from non-core repositories  #Medium(day) #important #feature #HtmlTemplates #Medium(day) #important #feature #open #89
-- see what lively was back in time back in time #feature #open #88
-- [sync] autocommits use wrong author  #bug #LivelySync #bug #open #87
-- [connection] implement first draft #feature #open #85
-- [application-bar] make it optionally loadable  #open #83
-- [templates] allow external repositories/applications to define their own templates in a different location  #duplicate #Medium(day) #important #feature #HtmlTemplates #duplicate #Medium(day) #important #feature #open #82
-- Make git commit author name and e-mail configurable  #feature #LivelySync #feature #open #76
-- Replace jQuery with html5 features #feature #open #74
-- Remove underscore.js #feature #open #73
-- Update all module dependents when reloading a single module /Discussion/Question #RFC #RFC/Discussion/Question #open #71
-- target.new not working #bug #open #66
-- Import and Handling User-defined Code  #open #64
-- [lively-container] same file name, different file extension #bug #open #56
-- Distinguish between error end info popups  #open #55
-- Properly reset overflow style attribute when maximizing multiple windows #bug #open #54
-- fuction parsing is broken #bug #open #53
-- Cannot use "/" in commit messages  #bug #LivelySync #bug #open #52
-- Caching too strict on imported modules  #feature #HelpWanted #feature #open #51
-- Commits have wrong author #LivelySync #open #48
-- use "firebase" as cloud variables #feature #open #45
-- create global file/content search widget #feature #open #44
-- [lively-container] search bar in left bar #feature #open #42
-- Load lively from external web pages #feature #open #41
-- Inspector missing/make ObjectEditor better #feature #open #38
+- Update browser plugin(s) #plugin #important #chore #medium #plugin #StoriesOnlyInGithub #open #200
+- Preview for Component Bin #HtmlTemplates #HelpWanted #NiceToHave #feature #medium #StoriesOnlyInGithub #open #199
+- Recognize too large files in editor #TextEditor #FollowUp #NiceToHave #feature #medium #StoriesOnlyInGithub #open #197
+- Webcomponents do not update when internal components change #HtmlTemplates #NiceToHave #feature #StoriesOnlyInGithub #open #101
+- bind (::) operator #transpilation #easy #FollowUp #NiceToHave #feature #StoriesOnlyInGithub #transpilation #open #100
+- do expressions #transpilation #easy #NiceToHave #feature #StoriesOnlyInGithub #transpilation #open #99
+- boundEval of "a string" returns undefined #transpilation #NiceToHave #feature #medium #StoriesOnlyInGithub #transpilation #open #98
+- Allow await on top level in Workspace #transpilation #Hard #important #feature #hard #StoriesOnlyInGithub #transpilation #open #97
+- Blink DevTools show old source content #NiceToHave #bug #medium #StoriesOnlyInGithub #open #96
+- add spell checking to editor #StoriesOnlyInGithub #open #95
+- make code mirror default editor #StoriesOnlyInGithub #open #94
+- Support Circular Dependencies #ModuleSystem #Hard #required #feature #hard #StoriesOnlyInGithub #open #93
+- Update focalStorage #easy #FollowUp #important #chore #StoriesOnlyInGithub #open #91
+- Support template loading from non-core repositories #HtmlTemplates #important #feature #medium #StoriesOnlyInGithub #open #89
+- see what lively was back in time back in time #feature #StoriesOnlyInGithub #open #88
+- [sync] autocommits use wrong author #LivelySync #bug #StoriesOnlyInGithub #open #87
+- [connection] implement first draft #feature #StoriesOnlyInGithub #open #85
+- [application-bar] make it optionally loadable #StoriesOnlyInGithub #open #83
+- [templates] allow external repositories/applications to define their own templates in a different location #HtmlTemplates #duplicate #important #feature #medium #StoriesOnlyInGithub #open #82
+- Make git commit author name and e-mail configurable #LivelySync #feature #StoriesOnlyInGithub #open #76
+- Replace jQuery with html5 features #feature #StoriesOnlyInGithub #open #74
+- Remove underscore.js #feature #StoriesOnlyInGithub #open #73
+- Update all module dependents when reloading a single module /Discussion/Question /Discussion/Question /Discussion/Question /Discussion/Question /Discussion/Question /Discussion/Question #RFC #StoriesOnlyInGithub #RFC/Discussion/Question #open #71
+- target.new not working #bug #StoriesOnlyInGithub #open #66
+- Import and Handling User-defined Code #StoriesOnlyInGithub #open #64
+- [lively-container] same file name, different file extension #bug #StoriesOnlyInGithub #open #56
+- Distinguish between error end info popups #StoriesOnlyInGithub #open #55
+- Properly reset overflow style attribute when maximizing multiple windows #bug #StoriesOnlyInGithub #open #54
+- fuction parsing is broken #bug #StoriesOnlyInGithub #open #53
+- Cannot use "/" in commit messages #LivelySync #bug #StoriesOnlyInGithub #open #52
+- Caching too strict on imported modules #HelpWanted #feature #StoriesOnlyInGithub #open #51
+- Commits have wrong author #LivelySync #StoriesOnlyInGithub #open #48
+- use "firebase" as cloud variables #feature #StoriesOnlyInGithub #open #45
+- create global file/content search widget #feature #StoriesOnlyInGithub #open #44
+- [lively-container] search bar in left bar #feature #StoriesOnlyInGithub #open #42
+- Load lively from external web pages #feature #StoriesOnlyInGithub #open #41
+- Inspector missing/make ObjectEditor better #feature #StoriesOnlyInGithub #open #38
