@@ -174,6 +174,7 @@ export default class Github {
       })
       if (!result) result = Strings.matchDo(/^ +(- .*)/, ea, item => ({item: item}))
     
+    
       if (!result) result = {comment: ea}
       return result
     })
@@ -188,6 +189,9 @@ export default class Github {
       if (ea.title && lastProject) lastStory.project = lastProject.project
       if (ea.item && lastStory) {
         lastStory.items.push(ea)
+      }
+      if (ea.comment == "<!--NoProject-->") {
+        lastProject = undefined
       }
     })
     return stories

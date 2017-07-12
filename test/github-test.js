@@ -145,6 +145,12 @@ describe('Github Stories', () => {
       var result = that.parseMarkdownStories("## a project\n- a story")
       expect(result[1].project).to.equals("a project")
     });
+
+    it('parses a story with no project', () => {
+      var result = that.parseMarkdownStories("## a project\n<!--NoProject-->\n- a story")
+      expect(result[2].project).to.equals(undefined)
+    });
+
     it('parses a story with labels', () => {
       var result = that.parseMarkdownStories("- a story #bug")
       expect(result[0].labels).to.be.a("array")
