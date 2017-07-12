@@ -1,6 +1,38 @@
 import authGithub from "src/client/auth-github.js"
 import Strings from "src/client/strings.js"
 
+export class Issue {
+  constructor(props) {
+    for(var ea in props) {
+      this[ea] = props[ea]
+    }
+  }
+}
+
+export class Project extends Issue {
+  toString() {
+    return "Project: " + this.project
+  }
+}
+
+export class Story extends Issue {
+  toString() {
+    return "Story: " + this.title
+  }
+}
+
+export class Item extends Issue {
+  toString() {
+    return "Items: " + this.item
+  }
+}
+
+export class Comment extends Issue {
+  toString() {
+    return "Comment: " + this.comment
+  }
+}
+
 
 export default class Github {
   
@@ -120,11 +152,15 @@ export default class Github {
     }
     return this._issues
   }
-  
-  parseMarkdownStories(source) {
+  /*
+   * source    ... stories in markdown list item syntax 
+   * recursive ... items are only referenced in their parent projects, otherwise it is a flat list
+   */
+  parseMarkdownStories(source, recursive) {
     var lines = source.split(/\r?\n/)
     var stories = lines.map((ea, index) => {
-      var result =  Strings.matchDo(/^## +(.*)/, ea, title => ({project: title}))
+      var result =  Strings.matchDo(/^## +(.*)/, ea, title => 
+        new Project({isProject: true, project: title, stories: [], comments: []}))
       if (!result) result = Strings.matchDo(/^(- )(.*)/, ea, (prefix, issue) => {
         var title, rest, state;
         Strings.matchDo(/ ((#|(?:[0-9]+P)|(?:\?+P)).*)$/, issue, (a) => {
@@ -163,19 +199,20 @@ export default class Github {
 
         }
 
-        return   {
+        return   new Story({
+          isStory: true,
           title: title.replace(/ *$/,""), 
           rest: rest && rest.replace(/ *$/,""),
           number: number ? parseInt(number) : undefined,
           state: state,
           labels: labels,
           items: []
-        }
+        })
       })
-      if (!result) result = Strings.matchDo(/^ +(- .*)/, ea, item => ({item: item}))
+      if (!result) result = Strings.matchDo(/^ +(- .*)/, ea, item => 
+        new Item({isItem: true, item: item}))
     
-    
-      if (!result) result = {comment: ea}
+      if (!result) result = new Comment({isComment: true, comment: ea})
       return result
     })
     
@@ -184,16 +221,38 @@ export default class Github {
     var lastStory
     
     stories.forEach(ea => {
-      if (ea.project) lastProject = ea;
-      if (ea.title) lastStory = ea
-      if (ea.title && lastProject) lastStory.project = lastProject.project
-      if (ea.item && lastStory) {
+      if (ea.isProject) {
+        lastProject = ea;
+        lastStory = null;
+      }
+      if (ea.isStory) {
+        lastStory = ea
+      }
+      if (ea.isStory && lastProject) {
+        lastProject.stories.push(ea)
+        lastStory.project = lastProject.project
+      }
+      if (ea.isItem && lastStory) {
+        ea.story = lastStory; // it is not a tree any more...
         lastStory.items.push(ea)
       }
+      if (ea.isComment && lastProject) {
+        ea.project = lastProject
+        lastProject.comments.push(ea)
+      }
       if (ea.comment == "<!--NoProject-->") {
+        ea.project = undefined;
         lastProject = undefined
       }
     })
+    if (recursive) {
+      stories = stories.filter(ea => 
+        ea.isProject ||
+          (ea.isStory && !ea.project) ||
+          (ea.isItem && !ea.story) ||
+          ea.isComment && !ea.project
+      ); // get rid of the global itmes
+    }
     return stories
   }
   
@@ -209,6 +268,7 @@ export default class Github {
         .replace(/ \(hour\)/, "")
         .replace(/ \(day\)/, "")
         .replace(/ \(week\)/, "")
+        .replace("RFC / discussion / question", "discussion")
         .replace(/comp\: /, "")
     if (tag.match(" ")) {
       tag = Strings.toUpperCaseFirst(Strings.toCamelCase(tag, " "))
@@ -248,24 +308,29 @@ export default class Github {
 
     if (label.match(/[A-Z][a-z]+[A-Z]/)) 
       return "comp: " + label.split(/(?=[A-Z])/).map(ea => ea.toLowerCase()).join(" ")
-
     return label
   }
   
-  stringifyMarkdownStories(stories) {
+  stringifyMarkdownStories(stories, recursive) {
     return stories.map(ea => {
-      if (ea.title  != undefined) 
+      if (ea.title  !== undefined) 
         return "- " + ea.title + 
           (ea.rest ? " " + ea.rest : "") + 
           (ea.labels ? " " +ea.labels
             .filter(l => l !== ("comp: " + ea.project).toLowerCase())
             .map(l => this.labelToTag(l)).join(" ")  : "") + 
           (ea.state ? " #" + ea.state : "") + 
-          (ea.number ? " #" + ea.number : "");
-      if (ea.comment != undefined) return  ea.comment;
-      if (ea.project  != undefined) return "## " + ea.project;
-      
-        
+          (ea.number ? " #" + ea.number : "") +
+          (recursive && ea.items && ea.items.length > 0 ? 
+            "\n" + this.stringifyMarkdownStories(ea.items, true) : "")
+      if (ea.comment !== undefined) return  ea.comment;
+      if (ea.project  !== undefined) 
+        return "## " + ea.project + 
+          (recursive && ea.comments && ea.comments.length > 0 ? 
+            "\n" + this.stringifyMarkdownStories(ea.comments, true) : "") + 
+          (recursive && ea.stories && ea.stories.length > 0 ? 
+            "\n" + this.stringifyMarkdownStories(ea.stories, true) : "")
+          
       if (ea.item) return "  " + ea.item;
       throw new Error("Could not stringify parsed line: " + JSON.stringify(ea))
     }).join("\n")
@@ -302,10 +367,14 @@ export default class Github {
               ea.labels.push(l.name)
             }
           })
-          var projectLabel = "comp: "+ ea.project
-          if (ea.project && !issue.labels.find(ea => ea.name == projectLabel)) {
-            var patch = {labels: issue.labels.map(ea => ea.name).concat([projectLabel])};
-            await this.patch(issue.number, patch)
+          if (ea.project) {
+            var projectLabel = "comp: "+ ea.project.trim().replace(/[^A-Za-z0-9 ]/g,"").toLowerCase()
+            if (!issue.labels.find(ea => ea.name.toLowerCase() == projectLabel)) {
+              lively.notify("labeled " + issue.number  + " as " + projectLabel )
+              var patch = {labels: issue.labels.map(ea => ea.name).concat([projectLabel])};
+              var result = await this.patch(issue.number, patch)
+              
+            }
           }
           
           // local labels are thrown away... ?

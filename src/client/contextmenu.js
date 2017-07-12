@@ -318,7 +318,10 @@ export default class ContextMenu {
           });
         }],
         ["Issues", (evt) => {
-          window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
+           this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
+            comp.followPath(lively4url + "/doc/stories.md");
+          });
+          // window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
         },, '<i class="fa fa-bug" aria-hidden="true"></i>'],
         ["Module Info", (evt) => {
           Info.showModuleInfo()

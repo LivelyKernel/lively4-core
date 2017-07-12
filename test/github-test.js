@@ -148,6 +148,7 @@ describe('Github Stories', () => {
 
     it('parses a story with no project', () => {
       var result = that.parseMarkdownStories("## a project\n<!--NoProject-->\n- a story")
+      expect(result).length(3)
       expect(result[2].project).to.equals(undefined)
     });
 
@@ -175,8 +176,29 @@ describe('Github Stories', () => {
     it('parses a story with items', () => {
       var result = that.parseMarkdownStories("- a story\n - an item")
       expect(result[0].items[0].item).to.equals("- an item")
+      expect(result).to.length(2)
+    });
+
+    it('parses a story with items recursively', () => {
+      var result = that.parseMarkdownStories("- a story\n - an item", true)
+      expect(result[0].items[0].item).to.equals("- an item")
+      expect(result, "items are only in story").to.length(1)
     });
     
+    it('parses a project with story with items recursively', () => {
+      var result = that.parseMarkdownStories("## a project\n- a story\n - an item", true)
+      expect(result, "stories are only in project").to.length(1)
+      expect(result[0].stories[0].items[0].item).to.equals("- an item")
+    });
+
+    it('parses a project with comments and story with items recursively', () => {
+      var result = that.parseMarkdownStories("## a project\na comment\n\n- a story\n - an item", true)
+      expect(result, "stories are only in project").to.length(1)
+      expect(result[0].stories[0].items[0].item).to.equals("- an item")
+      expect(result[0].comments[0].comment).to.equals("a comment")
+      expect(result[0].comments[1].comment).to.equals("")
+    });
+
     
     it("removes duplicate entries on parsing", () => {
       var result = that.parseMarkdownStories("- a story #easy #LivelyUi #LivelyUi #easy #open #115")
@@ -263,7 +285,6 @@ describe('Github Stories', () => {
       expect(result).to.equals("- a story #closed")
     });
 
-
     it('prints a story with labels', () => {
       var result = that.stringifyMarkdownStories([
         {title: "a story", state: "closed", labels: ["type: bug"]}])
@@ -277,6 +298,36 @@ describe('Github Stories', () => {
       expect(result).to.equals("- a story #bug")
     });
 
+    it('prints a story without project in label BaseSystem Bug', () => {
+      var stories = that.parseMarkdownStories("## Base System\n- Load lively from external web pages #feature #BaseSystem #open #41")
+      var result = that.stringifyMarkdownStories(stories)
+      expect(result).to.equals("## Base System\n- Load lively from external web pages #feature #open #41")
+    });
+
+    it('prints a story recursively', () => {
+      var result = that.stringifyMarkdownStories([
+        {title: "a story", project: "A Project", items: [{item: "- an item"}]}], true)
+      expect(result).to.equals("- a story\n  - an item")
+    });
+
+    it('prints a project recursively', () => {
+      var result = that.stringifyMarkdownStories([
+        {project: "A Project", stories: [
+            {title: "a story", project: "A Project", items: [{item: "- an item"}]}
+          ]
+        }], true)
+      expect(result).to.equals("## A Project\n- a story\n  - an item")
+    });
+
+    it('prints a project with comments recursively', () => {
+      var result = that.stringifyMarkdownStories([
+        { 
+          project: "A Project", 
+          stories: [{title: "a story", project: "A Project", items: [{item: "- an item"}]}],
+          comments: [{comment: "a comment"}, {comment: ""}]
+        }], true)
+      expect(result).to.equals("## A Project\na comment\n\n- a story\n  - an item")
+    });
 
 
     it('prints an item', () => {
