@@ -78,10 +78,22 @@ export default class Separator extends Morph {
   setWidth(element, w) {
     if (!element) return
     var flex = this.getOriginalFlex(element)
+
+    // console.log('set width ' +element.id + " " + w + " flex: " + flex)
+
+    if (w == 0) {
+      element.style.width = w + "px";
+      this.setFlex(element, 0)
+      return 
+    }
+
     if (flex > 0 ) {
       var newFlex = w / this.getOriginalLength(element) * flex
-      // console.log("new flex " + newFlex)
-      this.setFlex(element, newFlex)
+      if (Number.isNaN(newFlex)) {
+        this.setFlex(element, flex)
+      } else {
+        this.setFlex(element, newFlex)
+      }
     } else {
       element.style.width = w + "px";
     }
@@ -93,8 +105,9 @@ export default class Separator extends Morph {
   }
 
   setFlex(element, f) {
-    if (f  == 0) {
-      f = 0.1; // we cannot distinguish between flex and not flex otherwise...
+    // console.log("set flex " + element.id + " " + f)
+    if (f == 0) {
+      f = 0.0001; // we cannot distinguish between flex and not flex otherwise...
     }
     if (!element) return
     element.style.flex = f
@@ -126,18 +139,13 @@ export default class Separator extends Morph {
   }
   
   onDragStart(evt) {
-    this.count = 0
-    var prev = this.getPreviousElement()
-    var next = this.getNextElement()
+    if (this.lastPrevLength){
+      this.onClick()
+    }
     
-    this.setOriginalLength(prev, this.getLength(prev))
-    this.setOriginalLength(next, this.getLength(next))
-
-    this.setOriginalFlex(prev, this.getFlex(prev))
-    this.setOriginalFlex(next, this.getFlex(next))
-      
+    this.count = 0
+    this.rememberOriginals(true)
     this.dragOffset = this.getEventLength(evt);
-
     evt.dataTransfer.setDragImage(document.createElement("div"), 0, 0); 
     evt.stopPropagation();
   }
@@ -145,9 +153,32 @@ export default class Separator extends Morph {
   /*
    * (un-)collabses prev element on click
    */
+   
+  rememberOriginals(force) {
+    var prev = this.getPreviousElement()
+    var next = this.getNextElement()
+    if (force || this.getOriginalFlex(prev) === undefined) {
+      this.setOriginalFlex(prev, this.getFlex(prev))
+    }
+    if (force ||this.getOriginalFlex(next) === undefined) {
+      this.setOriginalFlex(next, this.getFlex(next))
+    }
+
+    if (force ||this.getOriginalLength(prev) === undefined) {
+      this.setOriginalLength(prev, this.getLength(prev))
+    }
+    if (force ||this.getOriginalLength(next) === undefined) {
+      this.setOriginalLength(next, this.getLength(next))
+    }
+  }
+   
+   
   onClick() {
     var prev = this.getPreviousElement()
     var next = this.getNextElement()
+    
+    this.rememberOriginals()
+    
     if (this.lastPrevLength) {
       this.setLength(prev, this.lastPrevLength);
       this.setLength(next, this.lastNextLength);
@@ -206,11 +237,13 @@ export default class Separator extends Morph {
   // replace yourself with an example showing yourself working in context
   livelyExample() {
     var a = document.createElement("div")
+    a.id = "red"
     a.style.backgroundColor = "red"
     a.textContent = "a"
     a.style.flex = 0.2
     var b = document.createElement("div")
     b.style.backgroundColor = "blue"
+    b.id = "blue"
     b.textContent = "b"
     b.style.flex = 0.8
     var c = document.createElement("div")
