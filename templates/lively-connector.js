@@ -19,8 +19,34 @@ export default class LivelyConnector extends Morph {
     this.resetBoundsDelay = new DelayedCall()
     this.resetBoundsDelay.delay = 500
 
-
+    this.withAttributeDo("stroke", (color) => {
+      this.stroke = color
+    })
+    
+    this.withAttributeDo("stroke-width", (width) => {
+     this.strokeWidth = width
+    })
   } 
+  
+  get stroke() {
+    return this.getPath().getAttribute("stroke")
+  }
+
+  // this.stroke = "blue"
+  set stroke(c) {
+    this.setAttribute("stroke", c)
+    return this.shadowRoot.querySelectorAll("path").forEach(ea => ea.setAttribute("stroke", c))
+  }
+
+  get strokeWidth() {
+    return this.getPath().getAttribute("stroke-width")
+  }
+
+  // this.strokeWidth = "3px"
+  set strokeWidth(w) {
+    this.setAttribute("stroke-width", w)
+    return this.getPath().setAttribute("stroke-width", w)
+  }
 
   livelyExample() {
     var a = document.createElement("div")
@@ -188,8 +214,6 @@ export default class LivelyConnector extends Morph {
     var v = SVG.setPathVertices(path, v)
   }
   
-  
-  
   resetBounds() {
     var svg = this.get("#svg")
     SVG.resetBounds(svg, this.getPath())
@@ -198,9 +222,6 @@ export default class LivelyConnector extends Morph {
     lively.moveBy(this, pos)
     lively.setPosition(svg, pt(0,0))
   }
-  
-  
-  
   saveVertices() {
     var vertices = this.getVertices()
     this.setAttribute("x1", vertices[0].x1)

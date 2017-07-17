@@ -93,7 +93,7 @@ class ServiceWorker {
                 redirect: request.redirect 
             }
             if (request.method == "PUT") {
-              options.body =  await request.text()
+              options.body =  await request.blob()
             }
             
             // if (request.url.toString().match("dummy")) {

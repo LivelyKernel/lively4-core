@@ -1039,6 +1039,11 @@ export default class Lively {
     comp.hide();
   }
 
+  static openIssue(number) {
+    // #TODO customize or derive github issue url, making it context cependend 
+    window.open("https://github.com/LivelyKernel/lively4-core/issues/" + number)
+  }
+
   static openHelpWindow(text) {
     this.openComponentInWindow("lively-help").then(comp => {
       comp.parentElement.style.width = "850px";

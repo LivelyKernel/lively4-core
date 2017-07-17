@@ -117,7 +117,48 @@ export default class ContextMenu {
           targetInWindow ?
             target.parentElement.embedContentInParent() :
             ContextMenu.openInWindow(target, evt);
-        }]
+        }],
+      ["save as...", async (evt) => {
+        var name = await lively.prompt("save element as: ", "element.html")
+        // var name = "foo.html"
+        var url = name
+        if (!url.matches(/https?:\/\//)) {
+          url = lively4url + "/" + url 
+        }
+        var source = ""
+        if (name.match(/\.html$/)) {
+          source = lively.html.getHtmlContent(target)  
+        } else if (name.match(/\.svg/)) {
+          var element = target.querySelector("svg")
+          if (!element) throw new Error("Could not find SVG elment in target");
+          var extent = lively.getExtent(element)
+          var tmp = document.createElement("div")
+          tmp.innerHTML = element.outerHTML
+          tmp.querySelector("svg").setAttribute("width", extent.x)
+          tmp.querySelector("svg").setAttribute("height", extent.y)
+          source = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + 
+            tmp.innerHTML  
+        } else if (name.match(/\.png/)) {
+          
+          var element
+          if (target.tagName == "IMG") 
+            element = target
+          else
+            target.querySelector("img")
+          if (!element) throw new Error("Could not find img elment in target");
+          // var extent = lively.getExtent(element)
+          // var tmp = document.createElement("div")
+          // tmp.innerHTML = element.outerHTML
+          source = await fetch(element.src).then(r => r.blob())
+        } else{
+          // fall back to text
+          source = target.outerText
+        }
+        await lively.files.saveFile (url, source)
+        lively.notify("saved ", name, 10, () => {
+          lively.openBrowser(url)
+        })
+      }]
     ];
   }
   
@@ -318,7 +359,10 @@ export default class ContextMenu {
           });
         }],
         ["Issues", (evt) => {
-          window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
+           this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
+            comp.followPath(lively4url + "/doc/stories.md");
+          });
+          // window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
         },, '<i class="fa fa-bug" aria-hidden="true"></i>'],
         ["Module Info", (evt) => {
           Info.showModuleInfo()

@@ -107,14 +107,7 @@ export default class Container extends Morph {
       this.get("#container-rightpane").style.flex = value)
 
   }
-  
-  withAttributeDo(name, func) {
-    var value = this.getAttribute(name) 
-    if (value !== undefined) {
-      func(value)
-    }
-  }
-  
+ 
   onContextMenu(evt) {
     // fall back to system context menu if shift pressed
     if (!evt.shiftKey) { 
