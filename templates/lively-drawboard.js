@@ -71,7 +71,7 @@ export default class LivelyDrawboard extends Morph {
   
 
   get svg() {
-    return this.get("#svg");
+    return this.querySelector("#svg");
   }
   
   get paper() {
@@ -217,6 +217,8 @@ export default class LivelyDrawboard extends Morph {
 
 
   onPointerDown(evt) {
+    if (!this.svg) return
+    
     var isFocused = document.activeElement == this
     if (!isFocused) {
       this.style['z-index'] = 200
@@ -242,6 +244,7 @@ export default class LivelyDrawboard extends Morph {
     evt.preventDefault();
     
     var id = evt.pointerId;   
+   
     this.offset  = this.getOffset(this.svg);
     var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
     path.setAttribute("stroke", this.color);
@@ -333,7 +336,7 @@ export default class LivelyDrawboard extends Morph {
 
     this.renderPath(path)
 
-    lively.notify("strokes: " + path.points.length )
+    // lively.notify("strokes: " + path.points.length )
     
     // path.setAttribute("d", path.getAttribute("d") + 
     //   path.points.map( ea => " L "+ ea.x +" " + ea.y ).join(""))

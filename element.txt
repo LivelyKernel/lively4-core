@@ -1,0 +1,13 @@
+## Lively UI
+- save as selection 1P #easy #open #115
+- save img/png not as html but as files (e.g. resolves data urls)  #open #112
+- fix position on grab and drop 2P #Issue #open #116
+- lively.prompt dialog missing 3P  #open #117
+- paste directly into container 2P  #open #118
+- rename halo item with inplace input field  #open #119
+- create global file/content search widget #feature #open #44
+- Properly reset overflow style attribute when maximizing multiple windows #bug #open #54
+- Distinguish between error end info popups  #open #55
+- [application-bar] make it optionally loadable  #open #83
+- [connection] implement first draft #feature #open #85
+- UI editor for web components (prototype based editing)  #open #184

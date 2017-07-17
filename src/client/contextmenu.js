@@ -117,7 +117,45 @@ export default class ContextMenu {
           targetInWindow ?
             target.parentElement.embedContentInParent() :
             ContextMenu.openInWindow(target, evt);
-        }]
+        }],
+      ["save as...", async (evt) => {
+        var name = await lively.prompt("save element as: ", "element.html")
+        // var name = "foo.html"
+        var url = lively4url + "/" + name
+        var source = ""
+        if (name.match(/\.html$/)) {
+          source = lively.html.getHtmlContent(target)  
+        } else if (name.match(/\.svg/)) {
+          var element = target.querySelector("svg")
+          if (!element) throw new Error("Could not find SVG elment in target");
+          var extent = lively.getExtent(element)
+          var tmp = document.createElement("div")
+          tmp.innerHTML = element.outerHTML
+          tmp.querySelector("svg").setAttribute("width", extent.x)
+          tmp.querySelector("svg").setAttribute("height", extent.y)
+          source = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + 
+            tmp.innerHTML  
+        } else if (name.match(/\.png/)) {
+          
+          var element
+          if (target.tagName == "IMG") 
+            element = target
+          else
+            target.querySelector("img")
+          if (!element) throw new Error("Could not find img elment in target");
+          // var extent = lively.getExtent(element)
+          // var tmp = document.createElement("div")
+          // tmp.innerHTML = element.outerHTML
+          source = await fetch(element.src).then(r => r.blob())
+        } else{
+          // fall back to text
+          source = target.outerText
+        }
+        await lively.files.saveFile (url, source)
+        lively.notify("saved ", name, 10, () => {
+          lively.openBrowser(url)
+        })
+      }]
     ];
   }
   
