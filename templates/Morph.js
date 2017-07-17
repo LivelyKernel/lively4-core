@@ -58,6 +58,13 @@ export default class Morph extends HTMLDivElement {
     });
   }
   
+  withAttributeDo(name, func) {
+    var value = this.getAttribute(name) 
+    if (value !== undefined && value !== null) {
+      func(value)
+    }
+  }
+  
   toString() {
     return "[" + this.constructor.name + "]"
   }

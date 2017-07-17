@@ -56,18 +56,18 @@ div
 - event system / bindings are missing (use lively bindings again) current: new CustomEvent(...)  #open #190
 
 ## Lively UI
-- halo scale proportional
+- halo scale proportional  #open #201
 - save as selection 1P #easy #closed #115
-- save img/png not as html but as files (e.g. resolves data urls)  #open #112
+- save img/png not as html but as files (e.g. resolves data urls)  #closed #112
 - fix position on grab and drop 2P #Issue #open #116
-- lively.prompt dialog missing 3P  #open #117
+- lively.prompt dialog missing 3P  #closed #117
 - paste directly into container 2P  #open #118
 - rename halo item with inplace input field  #open #119
 - create global file/content search widget #feature #open #44
 - Properly reset overflow style attribute when maximizing multiple windows #bug #open #54
 - Distinguish between error end info popups  #open #55
 - [application-bar] make it optionally loadable  #open #83
-- [connection] implement first draft #feature #open #85
+- [connection] implement first draft #feature #closed #85
 - UI editor for web components (prototype based editing)  #open #184
 
 ## Lively UX
@@ -98,20 +98,21 @@ div
 - Diffing and merging  (object/graph/heap vs. text/tree/document) #FutureWork #Lively #open #194
 
 ## Lively Content
-- fast rich(er) text editing  #open #127
+- fast rich(er) text editing #feature #open #127
 - change font size in halo and style editor  #open #128
-- auto-shrinking of text?  #open #129
+- auto-shrinking of text? #feature #open #129
 - refactor container  #open #130
   - extract navigation pane 3P
   - extract multple content type viewer (without editing) 3P
 - push back edits markdown files (inplace) from rendered HTML back to Markdown source  #open #131
   - fix markdown issues e.g. lists under lists
 - make halo grabbed/dropped content lively-content  #open #132
-- connectors disappear when 90deg #TODO #open #133
+- connectors disappear when 90deg #TODO #closed #133
 - write multiple "lively-scripts" in one document #BUG #open #134
 - Reimplement object editor  #open #185
 - Collaborative Lively Session (Synchronous) RW: Webstrates  #open #188
 - Annotations for classes/methods (public/private)  #open #189
+- persist connector stroke withd and color  #open #202
 
 ## Lively Chrome Extension
 - upload latest version to google app store  #open #135
