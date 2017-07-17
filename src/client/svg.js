@@ -43,7 +43,8 @@ export default class SVG {
     })
     lively.setPosition(svgElement, pos.addPt(pt(bounds.x, bounds.y)))
     this.setPathVertices(path, v)
-    lively.setExtent(svgElement, pt(bounds.width, bounds.height))
+    lively.setExtent(svgElement, pt(bounds.width + 1, bounds.height + 1))
+    // make sure the width is never 0
   }
   
   /*

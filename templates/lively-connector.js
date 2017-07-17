@@ -188,8 +188,6 @@ export default class LivelyConnector extends Morph {
     var v = SVG.setPathVertices(path, v)
   }
   
-  
-  
   resetBounds() {
     var svg = this.get("#svg")
     SVG.resetBounds(svg, this.getPath())
@@ -198,9 +196,6 @@ export default class LivelyConnector extends Morph {
     lively.moveBy(this, pos)
     lively.setPosition(svg, pt(0,0))
   }
-  
-  
-  
   saveVertices() {
     var vertices = this.getVertices()
     this.setAttribute("x1", vertices[0].x1)

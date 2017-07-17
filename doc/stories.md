@@ -56,7 +56,8 @@ div
 - event system / bindings are missing (use lively bindings again) current: new CustomEvent(...)  #open #190
 
 ## Lively UI
-- save as selection 1P #easy #open #115
+- halo scale proportional
+- save as selection 1P #easy #closed #115
 - save img/png not as html but as files (e.g. resolves data urls)  #open #112
 - fix position on grab and drop 2P #Issue #open #116
 - lively.prompt dialog missing 3P  #open #117
