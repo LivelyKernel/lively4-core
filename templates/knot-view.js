@@ -92,11 +92,14 @@ export default class KnotView extends Morph {
     graph.getUrlsByKnot(knot).forEach(url => {
       let listItem = document.createElement('li');
       listItem.innerHTML = url;
-      listItem.addEventListener("click", e => {
-        lively.openComponentInWindow('lively-iframe').then(component => {
-          component.setURL(url);
-        });
-      })
+      listItem.addEventListener("click", async e => {
+        e.preventDefault();
+        e.stopPropagation();
+        const container = await lively.openBrowser(url, false);
+        container.focus();
+        
+        return true;
+      });
       urlList.appendChild(listItem);
     });
     
