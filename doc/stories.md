@@ -56,33 +56,33 @@ div
 - event system / bindings are missing (use lively bindings again) current: new CustomEvent(...)  #open #190
 
 ## Lively UI
-- halo scale proportional  #open #201
+- halo scale proportional #feature #open #201
 - save as selection 1P #easy #closed #115
 - save img/png not as html but as files (e.g. resolves data urls)  #closed #112
 - fix position on grab and drop 2P #Issue #open #116
 - lively.prompt dialog missing 3P  #closed #117
-- paste directly into container 2P  #open #118
-- rename halo item with inplace input field  #open #119
+- paste directly into container 2P #feature #open #118
+- rename halo item with inplace input field #feature #open #119
 - create global file/content search widget #feature #open #44
 - Properly reset overflow style attribute when maximizing multiple windows #bug #open #54
-- Distinguish between error end info popups  #open #55
-- [application-bar] make it optionally loadable  #open #83
+- Distinguish between error end info popups #feature #open #55
+- [application-bar] make it optionally loadable #feature #open #83
 - [connection] implement first draft #feature #closed #85
-- UI editor for web components (prototype based editing)  #open #184
+- UI editor for web components (prototype based editing) #feature #open #184
 
 ## Lively UX
 - benchmark all startup times local storage? 1P  #open #120
 - detailed benchmark loading times incl. service worker, compilation, component loading etc  #open #121
 - benchmark lively UI .. dragging / menu open / how much content on a page etc...  #open #122
 - benchmark: 10.000 Morphs, 60fps  #open #181
-- Undo for content editing  #open #177
-- Offline first  #open #178
+- Undo for content editing #feature #open #177
+- Offline first #feature #open #178
   - be abler to load lively without internet
   - work for a while
   - synchronize with repository
   - idea: JavaScript github client | or just files... 
-- Pen-based handwriting recognition  #open #182
-- white boardf on surface hub (multiple user one device scenario) ?P  #open #183
+- Pen-based handwriting recognition #feature #open #182
+- white boardf on surface hub (multiple user one device scenario) ?P #feature #open #183
 
 ## Lively Tools
 - all tools should be opend first globally 0.5P #bug #LivelyClient #open #123
@@ -99,20 +99,20 @@ div
 
 ## Lively Content
 - fast rich(er) text editing #feature #open #127
-- change font size in halo and style editor  #open #128
+- change font size in halo and style editor #feature #open #128
 - auto-shrinking of text? #feature #open #129
-- refactor container  #open #130
+- refactor container #refactor #open #130
   - extract navigation pane 3P
   - extract multple content type viewer (without editing) 3P
-- push back edits markdown files (inplace) from rendered HTML back to Markdown source  #open #131
+- push back edits markdown files (inplace) from rendered HTML back to Markdown source #feature #open #131
   - fix markdown issues e.g. lists under lists
-- make halo grabbed/dropped content lively-content  #open #132
+- make halo grabbed/dropped content lively-content #bug #open #132
 - connectors disappear when 90deg #TODO #closed #133
-- write multiple "lively-scripts" in one document #BUG #open #134
-- Reimplement object editor  #open #185
-- Collaborative Lively Session (Synchronous) RW: Webstrates  #open #188
-- Annotations for classes/methods (public/private)  #open #189
-- persist connector stroke withd and color  #open #202
+- write multiple "lively-scripts" in one document #BUG #bug #open #134
+- Reimplement object editor #feature #open #185
+- Collaborative Lively Session (Synchronous) RW: Webstrates #feature #open #188
+- Annotations for classes/methods (public/private) #feature #open #189
+- persist connector stroke withd and color  #closed #202
 
 ## Lively Chrome Extension
 - upload latest version to google app store  #open #135
@@ -236,8 +236,8 @@ div
 - Support Circular Dependencies #hard #required #feature #open #93
 
 ## Examples
-- Lively Software Viz Current: Only Module #Examples #open #192
-- Energy Simulation #Examples #open #193
+- Lively Software Viz Current: Only Module #Examples #feature #open #192
+- Energy Simulation #Examples #feature #open #193
 
 ## Transpilation
 - bind (::) operator #transpilation #easy #FollowUp #NiceToHave #feature #open #100
