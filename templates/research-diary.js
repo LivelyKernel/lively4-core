@@ -3,251 +3,148 @@ import Morph from './Morph.js';
 import { Graph, _ } from 'src/client/triples/triples.js';
 import lively from 'src/client/lively.js';
 
+function getTodaysTitle() {
+  function toStringWithTrailingZero(number) {
+    return (number < 10 ? "0" : "") + number;
+  }
+  
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = toStringWithTrailingZero(today.getMonth() + 1);
+  const day = toStringWithTrailingZero(today.getDate());
+  
+  const title = `Research-Diary Entry ${year}.${month}.${day}`;
+  
+  return title;
+}
+
 export default class ResearchDiary extends Morph {
-  get urlString() { return this.get("#path-to-load").value; }
-  get tagURLString() { return 'https://lively4/dropbox/tag.md'; }
+  get currentEntryURL() { return this.getAttribute('data-current-entry-url'); }
+  set currentEntryURL(url) { this.setAttribute("data-current-entry-url", url); return url; }
   
   async initialize() {
     this.windowTitle = "Research Diary";
-    return;
-
-    var pathToLoad = this.get("#path-to-load");
-    pathToLoad.addEventListener('keyup',  event => {
-      if (event.keyCode == 13) { // ENTER
-        this.onPathEntered(this.urlString);
-      }
+    
+    this.prepareAce();
+    this.refreshList();
+    
+    this.get('#new').addEventListener("click", e => {
+      this.createNewEntry();
+      //lively.openInspector(knot, undefined, knot.label());
     });
     
-    let aceComp = this.get('#content-editor');
-    aceComp.editor.setOptions({maxLines:Infinity});
-
-    let urlToLoad = this.getAttribute('data-knot-url');
+    let urlToLoad = this.currentEntryURL;
     if (urlToLoad && urlToLoad !== "") {
-      this.loadKnotForURL(urlToLoad);
+      let graph = await Graph.getInstance();
+      let entryKnot = await graph.requestKnot(urlToLoad);
+      this.loadEntry(entryKnot);
+    }
+    
+    this.ace.editor.navigateFileStart()
+  }
+  
+  get ace() { return this.get('#ace'); }
+  prepareAce() {
+    // TODO: wordwrap
+    let aceComp = this.ace;
+    aceComp.editor.setOptions({
+      maxLines:Infinity,
+      wrap: true
+    });
+    aceComp.enableAutocompletion();
+    aceComp.aceRequire('ace/ext/searchbox');
+    aceComp.doSave = async text => {
+      this.save(text);
     }
   }
   
-  buildNavigatableLinkFor(knot) {
-    let ref = document.createElement('a');
-    ref.innerHTML = knot.label();
-    ref.addEventListener("click", e => {
-      this.loadKnotForURL(knot.fileName);
-    });
-    
-    return ref;
-  }
-  buildRefFor(knot) {
-    return this.buildNavigatableLinkFor(knot);
-  }
-  buildTableDataFor(knot) {
-    let tableData = document.createElement('td');
-
-    tableData.appendChild(this.buildRefFor(knot));
-    
-    let icon = document.createElement('i');
-    icon.classList.add('fa', 'fa-file-o');
-    icon.addEventListener("click", e => {
-      lively.openInspector(knot, undefined, knot.label());
-    });
-    tableData.appendChild(icon);
-
-    return tableData;
-  }
-  buildTableRowFor(triple, knot1, knot2) {
-    let tableRow = document.createElement('tr');
-    tableRow.appendChild(this.buildTableDataFor(knot1));
-    tableRow.appendChild(this.buildTableDataFor(knot2));
-    tableRow.appendChild(this.buildTableDataFor(triple));
-    return tableRow;
-  }
-  async replaceTableBodyFor(selector, s, p, o, propForFirstCell, propForSecondCell) {
+  get researchDiaryURL() { return "https://lively4/dropbox/Research_Diary.md"; }
+  get entryOfURL() { return "https://lively4/dropbox/entry_of.md"; }
+  async getEntries() {
     let graph = await Graph.getInstance();
-    let poTableBody = this.get(selector + ' tbody');
-    poTableBody.innerHTML = "";
-    graph.query(s, p, o).forEach(triple => {
-      poTableBody.appendChild(
-        this.buildTableRowFor(
-          triple,
-          triple[propForFirstCell],
-          triple[propForSecondCell]
-        )
-      );
-    });
-  }
-  
-  async loadKnotForURL(url) {
-    return this.loadKnot(url);
-  }
-  async loadKnot(url) {
-    let graph = await Graph.getInstance();
-    let knot = await graph.requestKnot(new URL(url));
-    
-    this.get("#path-to-load").value = knot.url;
-    this.get("#label").innerHTML = knot.label();
-    
-    let deleteKnot = this.get('#delete-button');
-    deleteKnot.onclick = event => this.deleteKnot(event);
+    let researchDiaryKnot = await graph.requestKnot(this.researchDiaryURL);
+    let entryOfKnot = await graph.requestKnot(this.entryOfURL);
 
-    let urlList = this.get("#url-list");
-    urlList.innerHTML = "";
-    graph.getUrlsByKnot(knot).forEach(url => {
-      let listItem = document.createElement('li');
-      listItem.innerHTML = url;
-      listItem.addEventListener("click", e => {
-        lively.openComponentInWindow('lively-iframe').then(component => {
-          component.setURL(url);
-        });
+    return graph.query(_, entryOfKnot, researchDiaryKnot).map(triple => triple.subject);
+  }
+  async refreshList() {
+    function getDateString(entry) {
+      return entry.label().split(' ').reverse()[0];
+    }
+    let entries = await this.getEntries();
+    
+    const ul = this.get('#nav ul');
+    ul.innerHTML = "";
+    
+    entries
+      .sort((a, b) => {
+        if(getDateString(a) < getDateString(b)) { return -1; }
+        if(getDateString(a) > getDateString(b)) { return 1; }
+        return 0;
       })
-      urlList.appendChild(listItem);
-    });
-    
-    // tags
-    let tag = await graph.requestKnot(new URL('https://lively4/dropbox/tag.md'));
-    let tagContainer = this.get('#tag-container');
-    tagContainer.innerHTML = "";
-    graph.query(knot, tag, _).forEach(triple => {
-      let tagElement = this.buildTagWidget(triple.object, triple);
-      tagContainer.appendChild(tagElement);
-    });
-    let addTagButton = this.get('#add-tag');
-    addTagButton.onclick = event => this.addTag(event);
-
-    // spo tables
-    this.replaceTableBodyFor('#po-table', knot, _, _, 'predicate', 'object');
-    this.replaceTableBodyFor('#so-table', _, knot, _, 'subject', 'object');
-    this.replaceTableBodyFor('#sp-table', _, _, knot, 'subject', 'predicate');
-
-    // add buttons
-    let addTripleWithKnotAsSubject = this.get('#add-triple-as-subject');
-    addTripleWithKnotAsSubject.onclick = event => this.addTripleWithKnotAsSubject(event);
-    let addTripleWithKnotAsPredicate = this.get('#add-triple-as-predicate');
-    addTripleWithKnotAsPredicate.onclick = event => this.addTripleWithKnotAsPredicate(event);
-    let addTripleWithKnotAsObject = this.get('#add-triple-as-object');
-    addTripleWithKnotAsObject.onclick = event => this.addTripleWithKnotAsObject(event);
-
-    // content
-    this.buildContentFor(knot);
-
+      .reverse()
+      .forEach(entry => {
+        let li = document.createElement('li');
+        let a = document.createElement('a');
+        let label = getDateString(entry);
+        a.innerHTML = label;
+        a.addEventListener('click', e => {
+          this.loadEntry(entry);
+        })
+        li.appendChild(a);
+        ul.appendChild(li);
+      });
   }
   
-  buildTagWidget(tag, triple) {
-    let tagElement = document.createElement('div');
-    tagElement.appendChild(this.buildNavigatableLinkFor(tag));
-    tagElement.appendChild(this.buildDeleteTagElement(triple));
+  entryTemplate() {
+    return `# ${getTodaysTitle()}
 
-    return tagElement;
+## Erkenntnisse
+
+- 
+
+## Done
+
+- 
+
+## Todo
+
+- 
+`;
   }
-  buildDeleteTagElement(triple) {
-    let ref = document.createElement('i');
-    ref.classList.add('fa', 'fa-trash');
-    ref.addEventListener("click", e => {
-      this.deleteTagTriple(triple);
-    });
+  async createNewEntry() {
+    let content = this.entryTemplate();
+    this.ace.editor.setValue(content, -1);
+    this.ace.editor.gotoLine(5);
+    this.ace.editor.navigateLineEnd();
+    this.ace.focus();
     
-    return ref;
+    let graph = await Graph.getInstance();
+    let newKnot = await graph.createKnot('https://lively4/dropbox/', getTodaysTitle(), 'md');
+    this.currentEntryURL = newKnot.url;
+
+    await newKnot.save(content);
+    await graph.createTriple(newKnot.url, this.entryOfURL, this.researchDiaryURL);
+    
+    this.refreshList();
+    lively.notify(`Created new diary entry.`);
   }
-  async deleteTagTriple(triple) {
-    const graph = await Graph.getInstance();
-    const knot = await graph.requestKnot(new URL(triple.fileName));
-    
-    if(await graph.deleteKnot(knot)) {
-      this.refresh();
+  loadEntry(entryKnot) {
+    this.currentEntryURL = entryKnot.url;
+    this.ace.editor.setValue(entryKnot.content);
+  }
+  async save(text) {
+    let graph = await Graph.getInstance();
+    let entry = graph.getKnots().find(knot => knot.url === this.currentEntryURL)
+    if(entry) {
+      await entry.save(text);
+      lively.notify('saved diary entry');
     } else {
-      lively.notify('did not delete tag ' + triple.object.fileName);
+      lively.notify(`No knot found for ${this.currentEntryURL}`);
     }
   }
 
-
-  refresh() {
-    this.loadKnot(this.urlString);
-  }
-  async deleteKnot() {
-    const graph = await Graph.getInstance();
-    const knot = await graph.requestKnot(new URL(this.urlString));
-    
-    if(await graph.deleteKnot(knot)) {
-      const elementToRemove = this.parentElement.isWindow ? this.parentElement : this;
-      elementToRemove.remove();
-    } else {
-      lively.notify('did not delete knot ' + this.urlString);
-    }
-  }
-  
-  async createAddTriple() {
-    const addTriple = await lively.openComponentInWindow("add-triple");
-    addTriple.afterSubmit = () => {
-      addTriple.parentElement.remove();
-      this.refresh();
-    }
-    return addTriple;
-  }
-  async addTag(event) {
-    const addTriple = await this.createAddTriple();
-
-    addTriple.setField('subject', this.urlString);
-    addTriple.setField('predicate', this.tagURLString);
-    addTriple.focus('object');
-  }
-  
-  async addTripleWithKnotAsSubject() {
-    const addTriple = await this.createAddTriple();
-
-    addTriple.setField('subject', this.urlString);
-    addTriple.focus('predicate');
-  }
-
-  async addTripleWithKnotAsPredicate() {
-    const addTriple = await this.createAddTriple();
-
-    addTriple.setField('predicate', this.urlString);
-    addTriple.focus('subject');
-  }
-
-  async addTripleWithKnotAsObject() {
-    const addTriple = await this.createAddTriple();
-
-    addTriple.setField('object', this.urlString);
-    addTriple.focus('subject');
-  }
-
-  buildListItemFor(knot, role) {
-    let li = document.createElement('li');
-    li.innerHTML = `${role}: `;
-    li.appendChild(this.buildRefFor(knot));
-    
-    return li;
-  }
-  buildContentFor(knot) {
-    let aceComp = this.get('#content-editor');
-    let spoList = this.get('#spo-list');
-    if(knot.isTriple()) {
-      this.hide(aceComp);
-      this.show(spoList);
-      spoList.innerHTML = '';
-      spoList.appendChild(this.buildListItemFor(knot.subject, 'Subject'));
-      spoList.appendChild(this.buildListItemFor(knot.predicate, 'Predicate'));
-      spoList.appendChild(this.buildListItemFor(knot.object, 'Object'));
-    } else {
-      this.show(aceComp);
-      this.hide(spoList);
-      aceComp.editor.setValue(knot.content);
-      aceComp.enableAutocompletion();
-      aceComp.aceRequire('ace/ext/searchbox');
-      aceComp.doSave = async text => {
-        await knot.save(text);
-        this.refresh();
-      }
-    }
-  }
-  
-  hide(element) { element.style.display = "none"; }
-  show(element) { element.style.display = "block"; }
-
-  onPathEntered(path) {
-    this.loadKnotForURL(path);
-  }
-  
   livelyPrepareSave() {
-    this.setAttribute("data-knot-url", this.urlString);
+    //this.setAttribute("data-knot-url", this.urlString);
   }
 }

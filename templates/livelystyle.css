@@ -46,3 +46,12 @@ input {
   padding: 2px;
   border-radius: 2px;
 }
+
+.todo {
+  color: #b33630;
+}
+
+.todo:hover {
+  background:  linear-gradient(#dc5f59, #b33630);
+  color: white;
+}

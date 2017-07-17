@@ -2,112 +2,74 @@
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style type="text/css">
-  #container {
-    overflow-x: auto;
-    word-wrap: break-word;
-  }
-  
-  :host {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-  }
-
-#path-to-load {
-  width: 100%;
+#content {
+  overflow-x: auto;
+  word-wrap: break-word;
 }
 
-th {
-  background-color: grey;
-}
-
-th.triple-header {
-  min-width: 10%;
-  width:20%;
-  max-width: 200px;
-}
-
-table {
-  width: 100%;
-}
-
-table, thead, tbody, tr, th, td {
-  border: 1px solid black;
-  border-collapse: collapse;
-}
-
-tr:hover {
-  background-color: lightgrey;
-}
-
-td i {
-  color: grey;
-}
-
-#content-editor {
+:host {
+  display: flex;
+  flex-direction: column;
   height: 100%;
+  width: 100%;
+}
+
+#content {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  width: 100%;
+}
+#nav {
+  background-color: green;
+  width: 150px;
+}
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+}
+#editor {
+  background-color: red;
+  flex: 1;
+}
+#ace {
+  height: 90%;
+}
+#viewer {
+  background-color: yellow;
+  flex: 0 0 25px;
 }
 
 .todo {
+  /* float: right; */
   color: #b33630;
 }
-
 .todo:hover {
   background:  linear-gradient(#dc5f59, #b33630);
   color: white;
 }
 
-#delete-button {
-  float: right;
-  color: #b33630;
-}
-
-#delete-button:hover {
-  background:  linear-gradient(#dc5f59, #b33630);
-  color: white;
-}
-
-#tag-container {
-  float: left;
-}
-
-#tag-container div {
-  margin: 5px;
-  float: left;
-}
-
 </style>
-<nav>
-  <ul id="entries"></ul>
-</nav>
-<div class="container-fluid">
-  <div class="row">
-    <main class="col-sm-9 offset-sm-3 col-md-10 offset-md-2 pt-3">
-      <h1>Dashboard</h1>
-
-      <section class="row text-center placeholders">
-        <div class="col-6 col-sm-3 placeholder">
-          <img src="data:image/gif;base64,R0lGODlhAQABAIABAAJ12AAAACwAAAAAAQABAAACAkQBADs=" width="200" height="200" class="img-fluid rounded-circle" alt="Generic placeholder thumbnail">
-          <h4>Label</h4>
-          <div class="text-muted">Something else</div>
-        </div>
-        <div class="col-6 col-sm-3 placeholder">
-          <img src="data:image/gif;base64,R0lGODlhAQABAIABAADcgwAAACwAAAAAAQABAAACAkQBADs=" width="200" height="200" class="img-fluid rounded-circle" alt="Generic placeholder thumbnail">
-          <h4>Label</h4>
-          <span class="text-muted">Something else</span>
-        </div>
-        <div class="col-6 col-sm-3 placeholder">
-          <img src="data:image/gif;base64,R0lGODlhAQABAIABAAJ12AAAACwAAAAAAQABAAACAkQBADs=" width="200" height="200" class="img-fluid rounded-circle" alt="Generic placeholder thumbnail">
-          <h4>Label</h4>
-          <span class="text-muted">Something else</span>
-        </div>
-        <div class="col-6 col-sm-3 placeholder">
-          <img src="data:image/gif;base64,R0lGODlhAQABAIABAADcgwAAACwAAAAAAQABAAACAkQBADs=" width="200" height="200" class="img-fluid rounded-circle" alt="Generic placeholder thumbnail">
-          <h4>Label</h4>
-          <span class="text-muted">Something else</span>
-        </div>
-      </section>
-    </main>
+<div id="top">
+  <button id="new" title="new">
+    <i class="fa fa-plus" aria-hidden="true"></i> Create Today's Entry
+  </button>
+</div>
+<div id="content">
+  <div id="nav">
+    <ul>
+      <li>23.30.19</li>
+      <li>23.30.19</li>
+      <li>23.30.19</li>
+    </ul>
+  </div>
+  <div id="main">
+    <div id="editor">
+      <juicy-ace-editor id="ace"></juicy-ace-editor>
+    </div>
+    <div id="viewer"></div>
   </div>
 </div>
 </template>

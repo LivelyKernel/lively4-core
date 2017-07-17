@@ -272,9 +272,7 @@ export class Graph {
     
     await invalidateFetchCache(directory);
     
-    let knot = await this.requestKnot(url);
-    let knotView = await lively.openComponentInWindow("knot-view");
-    return await knotView.loadKnotForURL(knot.url);
+    return this.requestKnot(url);
   }
   async createTriple(subjectUrlString, predicateURLString, objectURLString) {
     await this.requestKnot(subjectUrlString);
@@ -292,9 +290,7 @@ export class Graph {
     
     await invalidateFetchCache(directory);
     
-    let triple = await this.requestKnot(url);
-    let knotView = await lively.openComponentInWindow("knot-view");
-    knotView.loadKnotForURL(triple.url);
+    return this.requestKnot(url);
   }
 }
 

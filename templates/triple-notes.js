@@ -232,8 +232,23 @@ export default class TripleNotes extends Morph {
 
     lively.addEventListener("triple-notes", this, "extent-changed", e => this.setSize());
 
-    this.svg.call(this.zoomBehavior());
-    
+    //let initialTransform;
+    //if(
+    //  this.zoomScale !== "" &&
+    //  this.zoomTranslateX !== "" &&
+    //  this.zoomTranslateY !== ""
+    //) {
+    //  initialTransform = d3.zoomIdentity;
+    //    initialTransform.translate(this.zoomTranslateX, this.zoomTranslateY)
+    //    initialTransform.scale(this.zoomScale);
+    //  lively.notify(`Adapt init: ${this.zoomTranslateX},${this.zoomTranslateY}`)
+    //}
+    let zoomBehavior = this.zoomBehavior();
+    this.svg
+      //.attr("transform", initialTransform)
+      .call(zoomBehavior)
+      //.call(zoomBehavior.scaleTo(1.2).event);
+
     function drawChart({ nodes, links, hiddenLinks }) {
         
       // hidden link parts
@@ -426,11 +441,63 @@ export default class TripleNotes extends Morph {
     });
   }
 
-  zoomBehavior() {
-    return d3.zoom()
+  get zoomTranslateX() {
+    return this.getAttribute('data-zoom-translate-x');
+  }
+  set zoomTranslateX(x) {
+    this.setAttribute("data-zoom-translate-x", x);
+    return this.zoomTranslateX;
+  }
+  get zoomTranslateY() {
+    return this.getAttribute('data-zoom-translate-y');
+  }
+  set zoomTranslateY(y) {
+    this.setAttribute("data-zoom-translate-y", y);
+    return this.zoomTranslateY;
+  }
+  get zoomScale() {
+    return this.getAttribute('data-zoom-scale');
+  }
+  set zoomScale(scale) {
+    this.setAttribute("data-zoom-scale", scale);
+    return this.zoomScale;
+  }
+
+ zoomBehavior() {
+  let zoom = d3.zoom()
 			.duration(150)
     	.scaleExtent([MIN_MAGNIFICATION, MAX_MAGNIFICATION])
-      .on("zoom", () => this.graphContainer.attr("transform", d3.event.transform));
+      .on("zoom", () => {
+        //try {
+        //  this.zoomTranslateX = d3.event.transform.x;
+        //  this.zoomTranslateY = d3.event.transform.y;
+        //  this.zoomScale = d3.event.transform.k;
+        //  lively.notify(`${this.zoomTranslateX}, ${this.zoomTranslateY}, ${this.zoomScale}`);
+        //} catch (e) {
+        //  lively.notify('X', 'y', 'red')
+        //}
+        this.graphContainer.attr("transform", d3.event.transform)
+      });
+
+    //if(
+    //  this.zoomScale !== "" &&
+    //  this.zoomTranslateX !== "" &&
+    //  this.zoomTranslateY !== ""
+    //) {
+    //  let initialTransform = d3.zoomIdentity
+    //    .translate(this.zoomTranslateX, this.zoomTranslateY)
+    //    .scale(this.zoomScale);
+
+    //  zoom.scaleTo(this.graphContainer, this.zoomScale);
+    //  zoom.translateBy([
+    //    this.zoomTranslateX,
+    //    this.zoomTranslateY
+    //  ]);
+
+    //  this.graphContainer.call(zoom, initialTransform);
+    //}
+    
+    return zoom;
   }
 
   dragBehavior() {

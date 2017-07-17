@@ -54,15 +54,18 @@ export default class AddTriple extends Morph {
     const objectURLString = this.get('#object').getURLString();
     
     let graph = await Graph.getInstance();
-    await graph.createTriple(
+    let triple = await graph.createTriple(
       subjectURLString,
       predicateURLString,
       objectURLString
     );
-    
-    this.afterSubmit()
+
+    let knotView = await lively.openComponentInWindow("knot-view");
+    knotView.loadKnotForURL(triple.url);
+
+    this.afterSubmit(triple)
   }
   
   // TODO: employ nice event-based approach or AOP/COP
-  afterSubmit() {}
+  afterSubmit(triple) {}
 }
