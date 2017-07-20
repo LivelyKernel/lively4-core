@@ -122,7 +122,7 @@ export default class ContextMenu {
         var name = await lively.prompt("save element as: ", "element.html")
         // var name = "foo.html"
         var url = name
-        if (!url.matches(/https?:\/\//)) {
+        if (!url.match(/https?:\/\//)) {
           url = lively4url + "/" + url 
         }
         var source = ""

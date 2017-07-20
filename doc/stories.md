@@ -37,6 +37,9 @@ div.appendChild(button2)
 div
 </lively-script>
 
+[uncategorized github issues](https://github.com/LivelyKernel/lively4-core/issues?utf8=%E2%9C%93&q=is%3Aissue%20is%3Aopen%20-label%3A%22type%3A%20feature%22%20-label%3A%22type%3A%20refactor%22%20-label%3A%22type%3A%20performance%22%20-label%3A%22type%3A%20documentation%22%20%20-label%3A%22comp%3A%20write%20a%20paper%22%20-label%3A%22type%3A%20bug%22%20-label%3A%22type%3A%20refactor%22%20-label%3A%22type%3A%20chore%22%20)
+[estimate stories](https://github.com/LivelyKernel/lively4-core/issues?utf8=%E2%9C%93&q=is%3Aopen%20-label%3A%22effort1%3A%20easy%20%28hour%29%22%20%20-label%3A%22effort2%3A%20medium%20%28day%29%22%20-label%3A%22effort3%3A%20hard%20%28week%29%22%20)
+
 ## Lively Base System
 
 - Load lively from external web pages #feature #open #41
