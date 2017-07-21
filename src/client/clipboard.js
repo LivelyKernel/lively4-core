@@ -32,6 +32,7 @@ export default class Clipboard {
     } else {
       that.remove()
     }
+    // lively.notify("hide halos")
     Halo.hideHalos()
   }
   
@@ -141,8 +142,7 @@ export default class Clipboard {
 
   static onPaste(evt) {
     if (!this.lastClickPos) return; // we don't know where to paste it...this.lastClickPos
-    lively.notify("onPaste in " + this.lastTarget)
-    
+    // lively.notify("onPaste in " + this.lastTarget)
     
     if (!lively.hasGlobalFocus()) return
     evt.stopPropagation()
