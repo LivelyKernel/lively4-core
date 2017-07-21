@@ -53,13 +53,34 @@ export default class Selecting {
       || element === document.body.parentElement // <HTML> element
   }
 
+  static slicePathIfContainerContent(path) {
+    // Special treatment of content in lively-container
+    var isContainer  = false;
+    var containerIndex;
+    var isContent = false;
+    path.forEach((ea, index) => {
+      if (ea.tagName == "LIVELY-CONTAINER") {
+        isContainer = true
+        containerIndex = index
+      }
+      if (ea.id == "container-content") {
+        isContent = true
+      }
+    })
+    // lively.notify("container " + isContainer  + " content " + isContent)
+    // e.path.forEach(ea => lively.showElement(ea))
+    if (isContainer && isContent) {
+      // window.lastPath = e.path
+      path = path.slice(0, containerIndex)
+    }
+    return path
+  }
+  
   static handleSelect(e) {
     if (e.ctrlKey || e.metaKey) {
-
-
       var rootNode = this.findRootNode(document.body)
-
-      var path = e.path.reverse()
+      var path = this.slicePathIfContainerContent(e.path);
+      path = path.reverse()
         .filter(ea => ! this.isIgnoredOnMagnify(ea))
       
       if (e.shiftKey) {
