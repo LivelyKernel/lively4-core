@@ -66,7 +66,7 @@ export default class ViewNav {
     var delta = this.eventOffset.subPt(this.eventPos(evt))
     lively.setPosition(this.target, this.originalPos.subPt(delta))
     // lively.notify("pos " + this.originalPos.subPt(delta) + " " + this.target)
-    ViewNav.updateDocumentGrid() 
+    ViewNav.updateDocumentGrid(undefined, true) 
   }
   
   onPointerUp(evt) {
@@ -168,9 +168,12 @@ export default class ViewNav {
   		return div
   }
   
-  static updateDocumentGrid(zoomed) {
-    if (this.lastFixedScroll && (Date.now() - this.lastFixedScroll) < 1000) return
-    
+  static updateDocumentGrid(zoomed, force) {
+     // console.log("updateDocumentGrid(" + zoomed + ", " + force +")")
+    if (!force && this.lastFixedScroll && ((Date.now() - this.lastFixedScroll) < 1000)) {
+      // console.log("not update document grid " + (Date.now() -this.lastFixedScroll))
+      return
+    }
     // console.log("update document grid "  + (Date.now() - this.lastFixedScroll) )
 
     if (!this.documentGrid) return;
@@ -206,8 +209,8 @@ export default class ViewNav {
     document.body.appendChild(this.documentGrid)
 
     let gridSize = 100,
-      w = window.innerWidth + 1* gridSize,
-      h =  window.innerHeight + 1 *gridSize
+      w = window.innerWidth + 2* gridSize,
+      h =  window.innerHeight + 2 *gridSize
       
     let grid = document.createElement("div")
     grid.gridSize = gridSize

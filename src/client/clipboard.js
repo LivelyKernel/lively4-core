@@ -196,8 +196,7 @@ export default class Clipboard {
     if (target == document.body.parentElement) target = document.body
     // lively.notify('down ' + target)
 
-    if(target) {
-     
+    if(target && target.classList) {
       if (target.classList.contains("lively-no-paste")) {
         target = evt.path.find(ea => ea.tagName == "LIVELY-CONTAINER")
       } else {
