@@ -141,6 +141,8 @@ export default class Clipboard {
 
   static onPaste(evt) {
     if (!this.lastClickPos) return; // we don't know where to paste it...this.lastClickPos
+    lively.notify("onPaste in " + this.lastTarget)
+    
     
     if (!lively.hasGlobalFocus()) return
     evt.stopPropagation()
@@ -148,13 +150,13 @@ export default class Clipboard {
     
     var data = evt.clipboardData.getData('text/html')
     if (data) {
-      this.pasteHTMLDataInto(data, document.body) 
+      this.pasteHTMLDataInto(data, this.lastTarget) 
       return 
     }
 
     var data = evt.clipboardData.getData('text/plain')
     if (data) {
-       this.pasteTextDataInto(data, document.body) 
+       this.pasteTextDataInto(data, this.lastTarget) 
       return 
     }
     
@@ -182,12 +184,34 @@ export default class Clipboard {
  
   }
 
+  static highlight(element) {
+    if (this._highlight) this._highlight.remove()
+    this._highlight = lively.showElement(element)
+    this._highlight.innerHTML = ""  + element.id
+    this._highlight.style.border = "1px solid blue"
+  }
+
   static onBodyMouseDown(evt) {
-    if(document.body.parentElement ===  evt.path[0]) {
+    var target = evt.path[0]
+    if (target == document.body.parentElement) target = document.body
+    // lively.notify('down ' + target)
+
+    if(target) {
      
+      if (target.classList.contains("lively-no-paste")) {
+        target = evt.path.find(ea => ea.tagName == "LIVELY-CONTAINER")
+      } else {
+        if (evt.path.find(ea => ea.constructor.name == "ShadowRoot")) { // #TODO is there a better test for the shadow root?
+          // lively.notify("shadow")
+          this.lastTarget = null
+          this.lastClickPos = null
+          return // we are in the shadows
+        }
+      }
+      // this.highlight(target)
       lively.globalFocus()
+      this.lastTarget = target
       this.lastClickPos = pt(evt.clientX,evt.clientY)
-      // lively.showPoint(this.lastClickPos)
     }
   }
 }

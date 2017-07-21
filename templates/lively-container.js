@@ -11,6 +11,8 @@ import ScopedScripts from "./ScopedScripts.js";
 
 import DelayedCall from 'src/client/delay.js';
 
+import Clipboard from "src/client/clipboard.js" 
+
 export default class Container extends Morph {
 
   initialize() {
@@ -327,6 +329,7 @@ export default class Container extends Morph {
       halo.halo[0].onBodyMouseDown(evt, this);
     evt.stopPropagation();
     // evt.preventDefault();
+    Clipboard.onBodyMouseDown(evt)
     
   }
   
