@@ -411,8 +411,14 @@ export default class Lively {
   
   static  setGlobalPosition(node, pos) {
     if (!node.parentElement) return
-    var parentPos = this.getGlobalPosition(node.parentElement)
-    this.setPosition(node, pos.subPt(parentPos))
+    // var parentPos = this.getGlobalPosition(node.parentElement)
+    // this.setPosition(node, pos.subPt(parentPos))
+
+    // With all the parent elements, shadow roots and so on it is difficult to set a global position
+    // ususally, we would get the global position of a parent element, but this is not always correct
+    // so we use our own global position...
+    var delta = pos.subPt(lively.getGlobalPosition(node))
+    lively.moveBy(node, delta)
   }
   
   static  getGlobalCenter(node) {
