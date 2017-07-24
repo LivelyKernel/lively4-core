@@ -139,10 +139,10 @@ export default class Snapping {
       .forEach( ea => {
         this.helpers = this.helpers.concat(
           snap[ea].map(eaElement => {
-            var line;
-            var parentPos = lively.getGlobalPosition(this.target.parentElement)
+            let line = undefined,
+              offset = lively.getGlobalPosition(this.target).subPt(lively.getPosition(this.target))
             if (isHorizontal) {
-              let globalY = Number(ea) + parentPos.y 
+              let globalY = Number(ea) + offset.y 
               let minLeft = Math.min(
                   lively.getGlobalBounds(eaElement).left(),
                   lively.getGlobalBounds(this.target).left())
@@ -151,7 +151,7 @@ export default class Snapping {
                   lively.getGlobalBounds(this.target).right()) 
               line = [pt(minLeft, globalY), pt(maxRight, globalY)]
             } else {
-              let globalX = Number(ea) + parentPos.x 
+              let globalX = Number(ea) + offset.x 
               let minTop = Math.min(
                   lively.getGlobalBounds(eaElement).top(),
                   lively.getGlobalBounds(this.target).top())
