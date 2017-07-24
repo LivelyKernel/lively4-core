@@ -129,6 +129,11 @@ export default class HaloGrabItem extends HaloItem {
     }
     evt.preventDefault();
     this.isDragging = false;
+    
+    if (this.grabTarget.parentElement == document.body) {
+      this.grabTarget.classList.add("lively-content"); // "desktop content will be preserved"
+    }
+    
   }
   
   removeGrabShadow() {
