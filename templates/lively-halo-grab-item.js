@@ -17,7 +17,7 @@ export default class HaloGrabItem extends HaloItem {
  
  static get droppingBlacklist() {
       return {"*": 
-        ["button", "input", "lively-halo", "html",  "lively-selection", "lively-connector"]
+        ["h1","h2","h3","h4","h5", "lively-window", "button", "input", "lively-halo", "html",  "lively-selection", "lively-connector"]
       }
   };
  
