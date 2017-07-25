@@ -66,9 +66,20 @@ export default class HaloHandleItem extends HaloItem {
     newPos = Grid.optSnapPosition(newPos, evt) 
 
     var newBounds = this.initialBounds[Strings.prefixSelector("with", cornerOrSide)](newPos)
-    lively.setBounds(this.target, newBounds)
 
-    if(!evt.altKey) {
+    if ( this.target.style.position == "absolute") {
+      lively.setBounds(this.target, newBounds)
+    } else {
+      
+      // this.target.style.left  =  + "px"
+      // this.target.style.top  = ( newBounds.y - this.initialBounds.y) + "px"
+      lively.setPosition(this.target, 
+        newBounds.topLeft().subPt(this.initialBounds.topLeft()), "relative")
+      
+      lively.setExtent(this.target, pt(newBounds.width, newBounds.height))
+    }
+    
+    if(!evt.altKey && this.target.style.position == "absolute") {
        this.snapping.snapBounds(cornerOrSide)
     }
     

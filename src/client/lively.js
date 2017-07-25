@@ -357,8 +357,8 @@ export default class Lively {
     return {x: x, y: y};
   }
 
-  static setPosition(obj, point) {
-      obj.style.position = "absolute";
+  static setPosition(obj, point, mode) {
+      obj.style.position = mode || "absolute";
 
       // var bounds = that.getBoundingClientRect().top
       //var deltax = point.x - bounds.left
