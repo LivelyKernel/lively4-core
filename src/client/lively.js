@@ -1133,7 +1133,7 @@ export default class Lively {
 
     return containerPromise.then(comp => {
       editorComp = comp;
-      comp.parentElement.style.width = "850px";
+      comp.parentElement.style.width = "950px";
       comp.parentElement.style.height = "600px";
       
       if (lastWindow) {

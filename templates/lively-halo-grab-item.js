@@ -205,7 +205,7 @@ export default class HaloGrabItem extends HaloItem {
       // lively.showElement(this.grabTarget)
 
 
-      console.log("set global position: " + pos)
+      // console.log("set global position: " + pos)
       lively.setGlobalPosition(this.grabShadow, pos); // localize
       // lively.setGlobalPosition(this.grabShadow, pos); // localize
 

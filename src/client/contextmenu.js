@@ -206,7 +206,7 @@ export default class ContextMenu {
               comp.followPath("" + container.getURL());
             else
               comp.followPath(lively4url +"/");
-            comp.parentElement.style.width = "850px";
+            comp.parentElement.style.width = "950px";
             comp.parentElement.style.height = "600px";
             this.positionElementAtEvent(comp.parentElement, worldContext, evt)
           });
