@@ -1028,6 +1028,8 @@ export default class Lively {
     if (true) {
       this.openComponentInWindow("lively-search", undefined, undefined, worldContext).then( comp => {
          comp.searchFile(text);
+         comp.focus()
+         
       });
     } else {
       var comp = document.getElementsByTagName("lively-search-widget")[0];

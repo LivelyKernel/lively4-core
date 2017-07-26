@@ -11,7 +11,7 @@ export default class AddTriple extends Morph {
       let input = this.get(selector);
       input.setLabel(label);
       input.setPlaceholder(placeholder);
-      input.onEnter = () => this.save();
+      input.addEventListener('enter-knot', () => this.save());
     });
   }
   

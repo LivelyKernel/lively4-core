@@ -1,0 +1,89 @@
+<h1> GH-Torrent</h1>
+
+<div contenteditable="true" id="query">
+SELECT * FROM projects LIMIT 10;
+</div>
+<button id="queryButton">query</button>
+
+<lively-script><script>
+// var text  = document.createElement("div")
+// text.textContent = "Random: " + Math.random()
+// this.parentElement.parentElement.querySelector("#queryResult").appendChild(text)
+
+var query = () => {
+  let apiURL = 'https://172.16.64.132:5555/sql/';
+  let query = encodeURIComponent( this.parentElement.parentElement.querySelector("#query").textContent);
+  let isStart = true;
+  let tmpContent = "";
+  let content = "";
+  let i = 0;
+  
+  this.parentElement.parentElement.querySelector("#queryResult").innerHTML = ""
+  lively.files.fetchChunks(fetch(`${apiURL}${query}`), ea => {
+    content += ea
+    if (isStart)  {
+      ea = ea.replace(/^\[\[/, "[");
+      ea = ea.replace(/^ ?,?/, "");
+      isStart = false;
+    } 
+    ea = tmpContent + ea;
+  
+    try {
+      var tmpSrc = "[" + (ea).replace(/^( ?,? ?)/, "").replace(/(,? ?)$/, "")  + "]";
+      var tmpArray = JSON.parse(tmpSrc);
+    } catch(e) {
+      // try again... maybe we are at the end
+      try {
+        var tmpSrc = "[" +  (ea).replace(/^( ?,? ?)/, ""); // the end
+        var tmpArray = JSON.parse(tmpSrc);
+      } catch(e) {
+        // console.log("could not parse " + tmpSrc )
+        console.log("could not parse JSON with length " + tmpSrc.length );
+        window.lastSrc = tmpSrc;
+        tmpContent = ea;
+        tmpArray = null;
+      }
+    }
+    if (tmpArray) {
+      tmpContent = "";
+      tmpArray.forEach(eaObj => {
+        i++;
+        console.log('ea ' + eaObj[0] + " " + i);
+        var li = document.createElement("li");
+        li.textContent = i + " " + eaObj[1];
+        this.parentElement.parentElement.querySelector("#queryResult").appendChild(li);
+      })
+    } else {
+      // ok, not enough content to parse... lets wait a bit
+    }
+  }, () => {
+    try {
+      console.log("result: " + JSON.parse(content).length);
+      console.log("could not parse: " +  tmpContent.length);
+    } catch(e) {
+      this.parentElement.parentElement.querySelector("#queryResult").textContent = content;
+    }
+  })
+  
+  class StreamJSONParser {
+    constructor() {}
+    
+  }
+}
+
+this.parentElement.parentElement.querySelector("#query").addEventListener('keydown',  event => {
+  if (event.keyCode == 13) { // ENTER
+    if(event.shiftKey) {
+      // enter as in line break
+    } else {
+      query();
+      event.stopPropagation();
+      event.preventDefault();
+    }
+  }
+});
+this.parentElement.parentElement.querySelector("#queryButton").onclick = query;
+query()
+</script></lively-script>
+<ul id="queryResult">
+</ul>

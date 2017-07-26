@@ -189,8 +189,8 @@ export default class TripleNotes extends Morph {
 
     let margin = { top: 0, left: 0, bottom: 0, right: 0 };
 
-    this.chartWidth = this.width - (margin.left + margin.right)
-    this.chartHeight = this.height - (margin.top + margin.bottom)
+    this.chartWidth = this.width - (margin.left + margin.right);
+    this.chartHeight = this.height - (margin.top + margin.bottom);
 
     this.svg
       .attr("width", this.chartWidth)
@@ -201,36 +201,19 @@ export default class TripleNotes extends Morph {
   async initialize() {
     this.windowTitle = "Knot Explorer";
     
-    this.get('#reload').addEventListener('click', e => {
-      lively.notify(123)
-    });
+    lively.html.registerButtons(this);
     
     this.svg = d3.select(this.get('#graph'))
       .append("svg");
       
-    this.graphContainer = this.svg.append("g")
-      .classed("graphContainer", true);
+    this.graphContainer = this.svg
+      .append("g")
+        .classed("graphContainer", true);
 
     this.setSize();
-
-    let knots = await this.getKnots();
-    this.updateStatistics(knots);
-    
-    let nodes = knots.map(getNodeByKnot);
-    let links = nodes
-      .filter(node => node.isTriple())
-      .map(node => new Link(node));
-    
-    let hiddenLinks = [];
-		links.forEach(link => hiddenLinks = hiddenLinks.concat(link.linkParts()));
-
-    drawChart.call(this, {
-      nodes,
-      links,
-      hiddenLinks
-    });
-
     lively.addEventListener("triple-notes", this, "extent-changed", e => this.setSize());
+
+    this.drawChart(await this.getNodes());
 
     //let initialTransform;
     //if(
@@ -243,135 +226,159 @@ export default class TripleNotes extends Morph {
     //    initialTransform.scale(this.zoomScale);
     //  lively.notify(`Adapt init: ${this.zoomTranslateX},${this.zoomTranslateY}`)
     //}
-    let zoomBehavior = this.zoomBehavior();
     this.svg
       //.attr("transform", initialTransform)
-      .call(zoomBehavior)
+      .call(this.zoomBehavior());
       //.call(zoomBehavior.scaleTo(1.2).event);
-
-    function drawChart({ nodes, links, hiddenLinks }) {
-        
-      // hidden link parts
-      let linkPartContainer = this.graphContainer.append("g").classed("linkPartContainer", true);
-      var hiddenLinkElements = linkPartContainer.selectAll("line")
-        .data(hiddenLinks).enter()
-        .append("line")
-        .style("stroke", "black")
-        .style("stroke-opacity", 0.1)
-        .style("stroke-width", 10);
-      
-      // Curved, visible  Links
-      let linkContainer = this.graphContainer.append("g").classed("linkContainer", true);
-      let markerContainer = linkContainer.append("defs");
-      createPropertyMarker(markerContainer);
-      function createPropertyMarker(markerContainer) {
-      	var marker = appendBasicMarker(markerContainer);
-      	//marker.attr("refX", 12);
-          var m1X = -12 ;
-          var m1Y = 8 ;
-          var m2X = -12;
-          var m2Y = -8 ;
-      	marker.append("path")
-      		//.attr("d", "M0,-8L12,0L0,8Z")
-              .attr("d", "M0,0L " + m1X + "," + m1Y + "L" + m2X + "," + m2Y + "L" + 0 + "," + 0 )
-      		.classed("basic-triple-link", true);
-      }
-      
-      function appendBasicMarker(markerContainer) {
-      	return markerContainer.append("marker")
-      		.datum({})
-      		.attr("id", "triple-notes-basic-triple-link")
-      
-      		.attr("viewBox", "-14 -10 28 20")
-      		.attr("markerWidth",10)
-      		.attr("markerHeight", 10)
-      		//.attr("markerUnits", "userSpaceOnUse")
-      		.attr("orient", "auto");
-      }
-      
-  		// Draw links
-  		let linkGroups = linkContainer.selectAll(".link")
-  			.data(links).enter()
-  			.append("g")
-  			.classed("link", true);
-  
-  		linkGroups.each(function (link) {
-  		  d3.select(this).attr("marker-end", "url(#triple-notes-basic-triple-link)");
-  			link.draw(d3.select(this), markerContainer);
-  		});
-  
-  		// Select the path for direct access to receive a better performance
-      let linkPathElements = linkGroups.selectAll("path");
-      
-      let curveFunction = d3.line()
-  			.x(d => d.x)
-  			.y(d => d.y)
-        .curve(d3.curveNatural);
-
-      // Visible Knots -> Nodes
-      let nodeContainer = this.graphContainer.append("g").classed("nodeContainer", true);
-      let nodeElements = nodeContainer.selectAll(".node")
-        .data(nodes).enter()
-        .append("g")
-        .attr("class", "node")
-        .call(this.dragBehavior())
-        .on("dblclick", async node => { 
-          d3.event.stopPropagation();
-
-          let knotView = await lively.openComponentInWindow("knot-view");
-          knotView.loadKnotForURL(node.getKnot().url);
-        });
-
-      nodeElements.each(function (node) {
-  			node.draw(d3.select(this));
-      });
-
-      nodeElements.append("text")
-        .attr("class", "text")
-        .style("text-anchor", "middle")
-        .style("alignment-baseline", "middle")
-        .text(d => d.label());
-
-      this.simulation = d3.forceSimulation()
-        .force("link", d3.forceLink().id(d => d.index).distance(200))
-        //.force("collide",d3.forceCollide(d => d.r + 8).iterations(16) )
-        .force("charge", d3.forceManyBody().strength(node => node.isTriple() ? -190*0.5 : -190))
-        .force("center", d3.forceCenter(this.chartWidth / 2, this.chartHeight / 2))
-        .force("y", d3.forceY(0).strength(0.001))
-        .force("x", d3.forceX(0).strength(0.001));
-
-      // Define this.Simulation
-      this.simulation
-        .nodes(nodes)
-        .on("tick", function recalculatePositions() {
-          nodeElements.attr("transform", d => "translate(" + d.x + "," + d.y + ")");
-  
-          hiddenLinkElements
-            .attr("x1", d => d.source.x)
-            .attr("y1", d => d.source.y)
-            .attr("x2", d => d.target.x)
-            .attr("y2", d => d.target.y);
-  
-      		// Set link paths and calculate additional information
-      		linkPathElements.attr("d", function (link) {
-      			if (link.isLoop()) {
-      				return math.calculateLoopPath(link);
-      			}
-      			var curvePoint = link.triple;
-      			var pathStart = math.calculateIntersection(curvePoint, link.subject, 1);
-      			var pathEnd = math.calculateIntersection(curvePoint, link.object, 1);
-      
-      			return curveFunction([pathStart, curvePoint, pathEnd]);
-          });
-        });
-  
-      this.simulation.force("link")
-        .links(hiddenLinks);
-    }
     
     this.prepareConfig();
   }
   
+  async getNodes() {
+    let knots = await this.getKnots();
+    this.updateStatistics(knots);
+    
+    let nodes = knots.map(getNodeByKnot);
+    let links = nodes
+      .filter(node => node.isTriple())
+      .map(node => new Link(node));
+    
+    let hiddenLinks = [];
+		links.forEach(link => hiddenLinks = hiddenLinks.concat(link.linkParts()));
+
+    return {
+      nodes,
+      links,
+      hiddenLinks
+    };
+  }
+
+
+  
+  drawChart({ nodes, links, hiddenLinks }) {
+    
+    // hidden link parts
+    let linkPartContainer = this.graphContainer.append("g").classed("linkPartContainer", true);
+    var hiddenLinkElements = linkPartContainer.selectAll("line")
+      .data(hiddenLinks).enter()
+      .append("line")
+      .style("stroke", "black")
+      .style("stroke-opacity", 0.1)
+      .style("stroke-width", 10);
+    
+    // Curved, visible  Links
+    let linkContainer = this.graphContainer.append("g").classed("linkContainer", true);
+    let markerContainer = linkContainer.append("defs");
+    createPropertyMarker(markerContainer);
+    function createPropertyMarker(markerContainer) {
+    	var marker = appendBasicMarker(markerContainer);
+    	//marker.attr("refX", 12);
+        var m1X = -12 ;
+        var m1Y = 8 ;
+        var m2X = -12;
+        var m2Y = -8 ;
+    	marker.append("path")
+    		//.attr("d", "M0,-8L12,0L0,8Z")
+            .attr("d", "M0,0L " + m1X + "," + m1Y + "L" + m2X + "," + m2Y + "L" + 0 + "," + 0 )
+    		.classed("basic-triple-link", true);
+    }
+    
+    function appendBasicMarker(markerContainer) {
+    	return markerContainer.append("marker")
+    		.datum({})
+    		.attr("id", "triple-notes-basic-triple-link")
+    
+    		.attr("viewBox", "-14 -10 28 20")
+    		.attr("markerWidth",10)
+    		.attr("markerHeight", 10)
+    		//.attr("markerUnits", "userSpaceOnUse")
+    		.attr("orient", "auto");
+    }
+    
+		// Draw links
+		let linkGroups = linkContainer.selectAll(".link")
+			.data(links).enter()
+			.append("g")
+			.classed("link", true);
+
+		linkGroups.each(function (link) {
+		  d3.select(this).attr("marker-end", "url(#triple-notes-basic-triple-link)");
+			link.draw(d3.select(this), markerContainer);
+		});
+
+		// Select the path for direct access to receive a better performance
+    let linkPathElements = linkGroups.selectAll("path");
+    
+    let curveFunction = d3.line()
+			.x(d => d.x)
+			.y(d => d.y)
+      .curve(d3.curveNatural);
+
+    // Visible Knots -> Nodes
+    let nodeContainer = this.graphContainer.append("g").classed("nodeContainer", true);
+    let nodeElements = nodeContainer.selectAll(".node")
+      .data(nodes).enter()
+      .append("g")
+      .attr("class", "node")
+      .call(this.dragBehavior())
+      .on("dblclick", async node => { 
+        d3.event.stopPropagation();
+
+        let knotView = await lively.openComponentInWindow("knot-view");
+        knotView.loadKnotForURL(node.getKnot().url);
+      });
+
+    nodeElements.each(function (node) {
+			node.draw(d3.select(this));
+    });
+
+    nodeElements.append("text")
+      .attr("class", "text")
+      .style("text-anchor", "middle")
+      .style("alignment-baseline", "middle")
+      .text(d => d.label());
+
+    this.simulation = d3.forceSimulation()
+      .force("link", d3.forceLink().id(d => d.index).distance(200))
+      //.force("collide",d3.forceCollide(d => d.r + 8).iterations(16) )
+      .force("charge", d3.forceManyBody().strength(node => node.isTriple() ? -190*0.5 : -190))
+      .force("center", d3.forceCenter(this.chartWidth / 2, this.chartHeight / 2))
+      .force("y", d3.forceY(0).strength(0.001))
+      .force("x", d3.forceX(0).strength(0.001));
+
+    // Define this.Simulation
+    this.simulation
+      .nodes(nodes)
+      .on("tick", function recalculatePositions() {
+        nodeElements.attr("transform", d => "translate(" + d.x + "," + d.y + ")");
+
+        hiddenLinkElements
+          .attr("x1", d => d.source.x)
+          .attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
+
+    		// Set link paths and calculate additional information
+    		linkPathElements.attr("d", function (link) {
+    			if (link.isLoop()) {
+    				return math.calculateLoopPath(link);
+    			}
+    			var curvePoint = link.triple;
+    			var pathStart = math.calculateIntersection(curvePoint, link.subject, 1);
+    			var pathEnd = math.calculateIntersection(curvePoint, link.object, 1);
+    
+    			return curveFunction([pathStart, curvePoint, pathEnd]);
+        });
+      });
+
+    this.simulation.force("link")
+      .links(hiddenLinks);
+  }
+  
+  onReload() {
+    lively.notify(123);
+  }
+
   prepareConfig() {
     // links
     var linkDistance = this.get('#link-distance');
@@ -462,9 +469,8 @@ export default class TripleNotes extends Morph {
     this.setAttribute("data-zoom-scale", scale);
     return this.zoomScale;
   }
-
- zoomBehavior() {
-  let zoom = d3.zoom()
+  zoomBehavior() {
+    let zoom = d3.zoom()
 			.duration(150)
     	.scaleExtent([MIN_MAGNIFICATION, MAX_MAGNIFICATION])
       .on("zoom", () => {
