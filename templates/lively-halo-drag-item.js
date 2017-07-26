@@ -33,7 +33,7 @@ export default class HaloDragItem extends HaloItem {
   move(evt) {
     if (this.dragTarget && !this.isDragging && 
       events.noticableDistanceTo(evt, this.dragStartEventPosition)) {
-      this.dragTarget.style.position = 'absolute';
+      // this.dragTarget.style.position = 'absolute';
       this.isDragging = true;
     }
     if (this.isDragging) {
@@ -64,9 +64,13 @@ export default class HaloDragItem extends HaloItem {
         addPt(this.dragStartNodePosition)
         
       newPosition = newPosition.rounded()
-      lively.setPosition(this.dragTarget, Grid.optSnapPosition(newPosition, evt));
-      if(!evt.altKey) {
-        this.snapping.snap()
+      if (this.dragTarget.style.position == "absolute") {
+        lively.setPosition(this.dragTarget, Grid.optSnapPosition(newPosition, evt));
+        if(!evt.altKey) {
+          this.snapping.snap()
+        }
+      } else {
+         lively.setPosition(this.dragTarget, newPosition, "relative");
       }
       this.halo.info.innerHTML = "drag " + lively.getPosition(this.dragTarget)
     }
