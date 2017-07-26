@@ -8,14 +8,15 @@ import pdf from "src/external/pdf.js"
 export default class LivelyPDF extends Morph {
 
   initialize() {
-    this.zoom = 7;
 
-    if (this.getAttribute("src")) {
-      pdf.onLoad().then(()=> {
+    pdf.onLoad().then(()=> {
+      this.isLoaded = true
+
+      if (this.getAttribute("src")) {
         lively.notify("onload")
         this.setURL(this.getAttribute("src"));
-      })
-    }
+      }
+    })
     
     if (this.getAttribute("overflow")) {
       this.get("#container").style.overflow = this.getAttribute("overflow")
@@ -28,12 +29,14 @@ export default class LivelyPDF extends Morph {
   async setURL(url) {
     this.setAttribute("src", url)
     
+    if (!this.isLoaded) return
+    
      var container = this.get('#viewerContainer');
     // (Optionally) enable hyperlinks within PDF files.
     this.pdfLinkService = new PDFJS.PDFLinkService();
     this.pdfViewer = new PDFJS.PDFViewer({
       container: container,
-      renderer: 'canvas', //svg
+      renderer: 'canvas', //svg or canvas
       linkService: this.pdfLinkService,
       enhanceTextSelection: true
     });

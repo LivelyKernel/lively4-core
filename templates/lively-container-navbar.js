@@ -3,20 +3,17 @@ import Morph from './Morph.js';
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
     
-    
   }
   
   clear() {
     this.get("#navbar").innerHTML = ""
   }
- 
+
  
   async show(targetUrl, sourceContent) {
     this.sourceContent = sourceContent;
     this.url = "" + targetUrl;
     var filename = this.url.replace(/.*\//,"");
-
-    
 
     var root = this.url.replace(/\/[^\/]+$/,"/");
     this.currentDir = root;
