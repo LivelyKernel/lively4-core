@@ -5,12 +5,9 @@ import halo from 'templates/lively-halo.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
-
 import * as cop  from "src/external/ContextJS/src/contextjs.js";
 import ScopedScripts from "./ScopedScripts.js";
-
 import DelayedCall from 'src/client/delay.js';
-
 import Clipboard from "src/client/clipboard.js" 
 
 export default class Container extends Morph {
@@ -868,7 +865,6 @@ export default class Container extends Morph {
     }
 	  var isdir= path.match(/.\/$/);
 
-
     var url;
     if (path.match(/^https?:\/\//)) {
       url = new URL(path);
@@ -887,8 +883,6 @@ export default class Container extends Morph {
     }
     path =  path + (isdir ? "/" : "");
 
-    
-
     var container=  this.get('#container-content');
     // don't scroll away whe reloading the same url
     if (this.getPath() == path) {
@@ -901,8 +895,6 @@ export default class Container extends Morph {
     container.style.overflow = "auto";
 
     url = this.getURL();
-    
-
     
     this.showNavbar();
     // console.log("set url: " + url);
@@ -954,8 +946,6 @@ export default class Container extends Morph {
       console.log("Error: ", err);
       lively.notify("ERROR: Could not set path: " + path,  "because of: ", err);
     });
-    
-    
   }
 
   navigateToName(name) {
@@ -965,91 +955,8 @@ export default class Container extends Morph {
 
   clearNavbar() {
     var container = this.get('#container-leftpane');
-    // container.style.display = "block";
-
-    container.innerHTML= "";
-    var navbar = document.createElement("ul");
-    navbar.id = "navbar";
-    container.appendChild(navbar);
-    return navbar;
-  }
-  
-
-  showNavbarSublist(targetItem) {
-    var subList = document.createElement("ul");
-    targetItem.appendChild(subList);
-
-    if (this.getPath().match(/templates\/.*html$/)) {
-      var template = $($.parseHTML(this.sourceContent)).filter("template")[0];
-      if (!template) {
-        console.log("showNavbar: no template found");
-        return;
-      }
-      // fill navbar with list of script
-      lively.array(template.content.querySelectorAll("script")).forEach((ea) => {
-	      var element = document.createElement("li");
-	      element.innerHTML = ea.getAttribute('data-name');
-	      element.classList.add("subitem");
-	      element.onclick = () => {
-	        this.navigateToName(
-	          "data-name=\""+ea.getAttribute('data-name')+'"');
-	      };
-	      subList.appendChild(element) ;
-      });
-    } else if (this.getPath().match(/\.js$/)) {
-      // |async\\s+
-      let instMethod = "(^|\\s+)([a-zA-Z0-9$_]+)\\s*\\(\\s*[a-zA-Z0-9$_ ,]*\\s*\\)\\s*{",
-          klass = "(?:^|\\s+)class\\s+([a-zA-Z0-9$_]+)",
-          func = "(?:^|\\s+)function\\s+([a-zA-Z0-9$_]+)\\s*\\(",
-          oldProtoFunc = "[a-zA-Z0-9$_]+\.prototype\.([a-zA-Z0-9$_]+)\\s*=";
-      let defRegEx = new RegExp(`(?:(?:${instMethod})|(?:${klass})|(?:${func})|(?:${oldProtoFunc}))`);
-      let m;
-      let links = {};
-      let i = 0;
-      let lines = this.sourceContent.split("\n");
-      lines.forEach((line) => {
-        m = defRegEx.exec(line);
-        if (m) {
-          var theMatch = m[2] ||
-                        (m[3] && "class " + m[3]) ||
-                        (m[4] && "function " + m[4]) ||
-                         m[5];
-          if(!theMatch.match(/^(if|switch|for|catch|function)$/)) {
-            let name = (line.replace(/[A-Za-z].*/g,"")).replace(/\s/g, "&nbsp;") + theMatch,
-                navigateToName = m[0],
-                element = document.createElement("li");
-    	      element.innerHTML = name;
-    	      element.classList.add("link");
-    	      element.classList.add("subitem");
-    	      element.onclick = () => this.navigateToName(navigateToName);
-    	      subList.appendChild(element) ;
-          }
-        }
-      });
-    } else if (this.getPath().match(/\.md$/)) {
-      let defRegEx = /(?:^|\n)((#+) ?(.*))/g;
-      let m;
-      let links = {};
-      let i=0;
-      while (m = defRegEx.exec(this.sourceContent)) {
-        if (i++ > 1000) throw new Error("Error while showingNavbar " + this.getPath());
-  
-        links[m[3]] = {name: m[0], level: m[2].length};
-      }
-      _.keys(links).forEach( name => {
-        var item = links[name];
-        var element = document.createElement("li");
-  	    element.textContent = name.replace(/<.*?>/g,"");
-  	    element.classList.add("link");
-  	    element.classList.add("subitem");
-  	    element.classList.add("level" + item.level);
-
-  	    element.onclick = () => {
-  	        this.navigateToName(item.name);
-  	    };
-  	    subList.appendChild(element);
-      });
-    }
+    container.clear()
+    return container;
   }
   
   hideNavbar() {
@@ -1060,111 +967,15 @@ export default class Container extends Morph {
   async showNavbar() {
     // this.get('#container-leftpane').style.display = "block";
     // this.get('lively-separator').style.display = "block";
-
-
-    var filename = ("" + this.getURL()).replace(/.*\//,"");
-
-    var root =("" + this.getURL()).replace(/\/[^\/]+$/,"/");
-    this.currentDir = root;
-    var targetItem;
-    var stats = await fetch(root, {
-      method: "OPTIONS",
-    }).then(r => r.json()).catch(e => null);
     
-    if (!stats) {
-      stats = {};// fake it
-      stats.contents = [{type: "file", name: "index.html"}];
-      
-      var html = await fetch(root).then(r => r.text())
-      var div = document.createElement("div");
-      div.innerHTML = html;
-      var i=0;
-      lively.array(div.querySelectorAll("a"))
-        .filter( ea => !ea.getAttribute("href").match(/^javascript:/))
-        .forEach( ea => {
-        stats.contents.push({
-          type: 'link', 
-          name: '' + ea.getAttribute("href").replace(/\/(index.html)?$/,"").replace(/.*\//,""), // ea.textContent,
-          href: "" + ea.getAttribute("href") 
-        });
-      });
-    }
-    var navbar = this.clearNavbar();
-      
-    var names = {};
-    stats.contents.forEach(ea => names[ea.name] = ea);
+    var navbar = this.get('#container-leftpane')
+    navbar.followPath = (path) => { this.followPath(path) } 
+    navbar.navigateToName = (name) => { this.navigateToName(name) } 
     
-    var files = stats.contents
-      .sort((a, b) => {
-        if (a.type > b.type) {
-          return 1;
-        }
-        if (a.type < b.type) {
-          return -1;
-        }
-        return (a.name >= b.name) ? 1 : -1;
-      })
-      .filter(ea => ! ea.name.match(/^\./));
-
-    files.unshift({name: "..", type: "directory"});
-    files.forEach((ea) => {
-
-      // if there is an Markdown File, ignore the rest
-      var m = ea.name.match(/(.*)\.(.*)/);
-      if (m && m[2] != "md" && names[m[1]+".md"]) return;
-      if (m && m[2] != "livelymd" && names[m[1]+".livelymd"]) return;
-
-      var element = document.createElement("li");
-      var link = document.createElement("a");
-
-      if (ea.name == filename) targetItem = element;
-      if (targetItem) targetItem.classList.add("selected");
-      
-      var name = ea.name;
-      var icon;
-      if (ea.type == "directory") {
-        name += "/";
-        icon = '<i class="fa fa-folder"></i>';
-      } else if (ea.type == "link") {
-        icon = '<i class="fa fa-arrow-circle-o-right"></i>';
-      } 
-        else {
-        icon = '<i class="fa fa-file"></i>';
-      }
-      
-      // name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"")
-      link.innerHTML = icon + name;
-      var href = ea.href || ea.name;
-      link.href = href;
-
-      var url = href.match(/^https?:\/\//) ? href : root + "" + href;
-
-      link.onclick = () => {
-        this.followPath(url);
-        return false;
-      };
-      link.addEventListener('contextmenu', (evt) => {
-	        if (!evt.shiftKey) {
-            evt.preventDefault();
-            var menu = new ContextMenu(this, [
-              ["delete file", () => this.deleteFile(url)],
-              ["new file", () => this.newfile(url)],
-              ["edit", () => lively.openBrowser(url, true)],
-              ["browse", () => lively.openBrowser(url)],
-              
-            ]);
-            menu.openIn(document.body, evt, this);
-            evt.stopPropagation();
-            evt.preventDefault();
-            return true;
-          }
-      }, false);
-      element.appendChild(link);
-      navbar.appendChild(element);
-    });
-
-    if (this.isEditing() && targetItem) {
-      this.showNavbarSublist(targetItem);
+    await navbar.show(this.getURL(), this.sourceContent)
+    
+    if (this.isEditing()) {
+      this.get('#container-leftpane').showSublist()
     }
   }
   
