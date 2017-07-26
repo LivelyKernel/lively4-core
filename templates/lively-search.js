@@ -29,6 +29,9 @@ export default class Search extends Morph {
     }
   }
 
+  focus() {
+    this.get("#searchInput").focus();
+  }
   clearLog(s) {
     this.get("#searchResults").innerHTML="";
   }
@@ -78,13 +81,16 @@ export default class Search extends Morph {
       this.get("#searchInput").value = text;
     }
     // if (this.searchInProgres) return;
-    this.searchInProgres = true;
-    this.clearLog();
     var search = this.get("#searchInput").value;
-    if (search.length < 3) {
+    if (search.length < 2) {
+      this.get("#searchResults").innerHTML = "please enter a longer search string";
       this.searchInProgres = false;
       return; // this.log("not searching for " + search)
     }
+    let start = Date.now();
+    this.searchInProgres = true;
+    this.clearLog();
+    this.get("#searchResults").innerHTML = "searching ..." + JSON.stringify(search);
     fetch(this.getSearchURL(), {
       headers: { 
   	   "searchpattern": search,
@@ -93,6 +99,8 @@ export default class Search extends Morph {
     }}).then(r => r.text()).then( t => {
       this.searchInProgres = false;
       this.clearLog();
+      //this.log('found');
+      this.get("#searchResults").innerHTML = `finished in ${Date.now() - start}ms`;
       this.log(t);
     });
   }

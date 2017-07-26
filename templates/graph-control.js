@@ -37,7 +37,7 @@ export default class GraphControl extends Morph {
     let input = this.get('#open-knot-view');
     input.setLabel('Open Knot');
     input.setPlaceholder('knot');
-    input.onEnter = () => this.openKnotView();
+    input.addEventListener('enter-knot', () => this.openKnotView());
   }
   
   // TODO: does this work?

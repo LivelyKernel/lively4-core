@@ -13,7 +13,7 @@ export default class KnotInput extends Morph {
 
     this.input.addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
-        this.onEnter();
+        this.dispatchEvent(new CustomEvent('enter-knot', { detail: this.getValue() }));
       }
     });
     
@@ -70,9 +70,6 @@ export default class KnotInput extends Morph {
   setLabel(text) { this.label.innerHTML = text; }
   setPlaceholder(text) { this.input.setAttribute('placeholder', text); }
   setValue(urlString) { this.input.value = urlString; }
-  onEnter() {
-    lively.notify(123 + this.getURLString());
-  }
-  
+
   focus() { this.get('#input').focus(); }
 }
