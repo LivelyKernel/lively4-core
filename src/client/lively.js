@@ -357,8 +357,8 @@ export default class Lively {
     return {x: x, y: y};
   }
 
-  static setPosition(obj, point) {
-      obj.style.position = "absolute";
+  static setPosition(obj, point, mode) {
+      obj.style.position = mode || "absolute";
 
       // var bounds = that.getBoundingClientRect().top
       //var deltax = point.x - bounds.left
@@ -411,8 +411,14 @@ export default class Lively {
   
   static  setGlobalPosition(node, pos) {
     if (!node.parentElement) return
-    var parentPos = this.getGlobalPosition(node.parentElement)
-    this.setPosition(node, pos.subPt(parentPos))
+    // var parentPos = this.getGlobalPosition(node.parentElement)
+    // this.setPosition(node, pos.subPt(parentPos))
+
+    // With all the parent elements, shadow roots and so on it is difficult to set a global position
+    // ususally, we would get the global position of a parent element, but this is not always correct
+    // so we use our own global position...
+    var delta = pos.subPt(lively.getGlobalPosition(node))
+    lively.moveBy(node, delta)
   }
   
   static  getGlobalCenter(node) {
@@ -1129,7 +1135,7 @@ export default class Lively {
 
     return containerPromise.then(comp => {
       editorComp = comp;
-      comp.parentElement.style.width = "850px";
+      comp.parentElement.style.width = "950px";
       comp.parentElement.style.height = "600px";
       
       if (lastWindow) {
@@ -1289,7 +1295,9 @@ export default class Lively {
 
 
   static isGlobalKeyboardFocusElement(element) {
-    return element === document.body || (element && (element.id == "copy-hack-element"))
+    return element === document.body 
+      || (element && (element.id == "copy-hack-element") 
+      || (element  && element.tagName == "LIVELY-CONTAINER"))
   }
 
   static hasGlobalFocus() {

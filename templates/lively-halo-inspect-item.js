@@ -6,9 +6,10 @@ export default class HaloInspectItem extends HaloItem {
     onClick(evt) {
       var inspectTarget = window.that;
 
-
-      lively.openInspector(inspectTarget, undefined, undefined,  
-          lively.findWorldContext(inspectTarget))    
+      lively.openInspector(inspectTarget, 
+          undefined, undefined,  
+          // lively.findWorldContext(inspectTarget)
+          )    
       
       // if (evt.shiftKey) {
       // } else {

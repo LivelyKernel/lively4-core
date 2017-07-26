@@ -122,7 +122,7 @@ export default class ContextMenu {
         var name = await lively.prompt("save element as: ", "element.html")
         // var name = "foo.html"
         var url = name
-        if (!url.matches(/https?:\/\//)) {
+        if (!url.match(/https?:\/\//)) {
           url = lively4url + "/" + url 
         }
         var source = ""
@@ -206,7 +206,7 @@ export default class ContextMenu {
               comp.followPath("" + container.getURL());
             else
               comp.followPath(lively4url +"/");
-            comp.parentElement.style.width = "850px";
+            comp.parentElement.style.width = "950px";
             comp.parentElement.style.height = "600px";
             this.positionElementAtEvent(comp.parentElement, worldContext, evt)
           });

@@ -345,7 +345,7 @@ export default class AceEditor extends Morph {
       bindKey: {win: "Ctrl-Shift-F", mac: "Command-Shift-P"},
       exec: (editor) => {
           let text = editor.currentSelectionOrLine()
-          lively.openSearchWidget(text, lively.findWorldContext(this))
+          lively.openSearchWidget(text, /* lively.findWorldContext(this) */)
       }
     });
 

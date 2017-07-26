@@ -17,7 +17,7 @@ export default class HaloGrabItem extends HaloItem {
  
  static get droppingBlacklist() {
       return {"*": 
-        ["button", "input", "lively-halo", "html",  "lively-selection", "lively-connector"]
+        ["h1","h2","h3","h4","h5", "lively-window", "button", "input", "lively-halo", "html",  "lively-selection", "lively-connector"]
       }
   };
  
@@ -38,7 +38,8 @@ export default class HaloGrabItem extends HaloItem {
     this.grabTarget = window.that;
     if (this.grabTarget) {
       this.grabStartEventPosition = events.globalPosition(evt);
-      this.grabOffset =  events.globalPosition(evt).subPt(nodes.globalPosition(this.grabTarget));
+      this.grabOffset =  events.globalPosition(evt).subPt(lively.getGlobalPosition(this.grabTarget));
+
       evt.preventDefault();
     }
   }
@@ -100,10 +101,11 @@ export default class HaloGrabItem extends HaloItem {
   }
   
   moveGrabbedNodeToEvent(evt) {
-    var eventPosition = events.globalPosition(evt);
-    this.dropAtEvent(this.grabShadow, evt);
+    var eventPosition = pt(evt.clientX, evt.clientY);
     var pos = eventPosition.subPt(this.grabOffset)
-    nodes.setPosition(this.grabTarget, Grid.optSnapPosition(pos, evt))
+    
+    this.dropAtEvent(this.grabShadow, evt);
+    lively.setGlobalPosition(this.grabTarget, Grid.optSnapPosition(pos, evt))
     evt.preventDefault();
   }
   
@@ -127,15 +129,21 @@ export default class HaloGrabItem extends HaloItem {
     }
     evt.preventDefault();
     this.isDragging = false;
+    
+    if (this.grabTarget.parentElement == document.body) {
+      this.grabTarget.classList.add("lively-content"); // "desktop content will be preserved"
+    }
+    
   }
   
   removeGrabShadow() {
     this.grabShadow.parentNode.removeChild(this.grabShadow);
   }
   
-  dropAtEvent(node, evt) {
-    var droptarget = this.droptargetAtEvent(node, evt);
+  dropAtEvent(grabShadow, evt) {
+    var droptarget = this.droptargetAtEvent(grabShadow, evt);
     if (droptarget) {
+      
       this.moveGrabShadowToTargetAtEvent(droptarget, evt);
       if (this.dropIndicator) this.dropIndicator.remove()
       this.dropIndicator = lively.showElement(droptarget)
@@ -143,11 +151,13 @@ export default class HaloGrabItem extends HaloItem {
       this.dropIndicator.querySelector("pre").style.color = "green"
       
       if (this.dropTargetIndicator) this.dropTargetIndicator.remove()
-      this.dropTargetIndicator = lively.showElement(node)
+      this.dropTargetIndicator = lively.showElement(grabShadow)
       this.dropTargetIndicator.style.border = "1px solid blue"
       this.dropTargetIndicator.querySelector("pre").style.color = "blue"
-      this.dropTargetIndicator.querySelector("pre").textContent = "drop"
-      
+      this.dropTargetIndicator.querySelector("pre").textContent = "drop x"
+      // lively.showPoint(lively.getGlobalPosition(grabShadow))
+      lively.setGlobalPosition(this.dropTargetIndicator, 
+        lively.getGlobalPosition(grabShadow))
     }
   }
   
@@ -171,8 +181,8 @@ export default class HaloGrabItem extends HaloItem {
   }
   
   moveGrabShadowToTargetAtEvent(targetNode, evt) {
-    var pos = pt(evt.pageX, evt.pageY)
-
+    var pos = pt(evt.clientX, evt.clientY)
+    
     var children = targetNode.childNodes;
     var nextChild = Array.from(children).find(child => {
       return child !== this.grabShadow && child !== this.grabTarget &&
@@ -181,24 +191,29 @@ export default class HaloGrabItem extends HaloItem {
     
     targetNode.insertBefore(this.grabShadow, nextChild);
     this.grabShadow.style.position = 'relative';
-    
-    this.grabShadow.style.position = 'relative';
     this.grabShadow.style.removeProperty('top');
     this.grabShadow.style.removeProperty('left'); 
 
     if (evt.shiftKey || 
-      nodes.globalPosition(this.grabShadow).dist(nodes.globalPosition(this.grabTarget)) > 100) {
+      lively.getGlobalPosition(this.grabShadow).dist(lively.getGlobalPosition(this.grabTarget)) > 100) {
       this.grabShadow.parentElement.appendChild(this.grabShadow)
-        
       this.grabShadow.style.opacity = 0;
-      this.grabShadow.style.position = 'absolute';
-      var pos = nodes.globalPosition(this.grabTarget);
-      if (targetNode.localizePosition) {
-        pos = targetNode.localizePosition(pos);
-      } else {
-        pos = pos.subPt(nodes.globalPosition(targetNode));
-      }
-      nodes.setPosition(this.grabShadow, pos); // localize
+      lively.setPosition(this.grabShadow, pt(0,0))
+      
+      var pos = lively.getGlobalPosition(this.grabTarget);
+      // lively.showPoint(pos)
+      // lively.showElement(this.grabTarget)
+
+
+      // console.log("set global position: " + pos)
+      lively.setGlobalPosition(this.grabShadow, pos); // localize
+      // lively.setGlobalPosition(this.grabShadow, pos); // localize
+
+
+      // var mysteriousOffset = pos.subPt(lively.getGlobalPosition(this.grabShadow))
+      // lively.moveBy(this.grabShadow,mysteriousOffset )
+      
+      // lively.showPoint(lively.getGlobalPosition(this.grabShadow))
     } else {
       // drag position is near enough to relative position, so SNAP  
       this.grabShadow.style.opacity = 0.5;

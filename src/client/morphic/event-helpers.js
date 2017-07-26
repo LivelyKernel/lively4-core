@@ -10,7 +10,7 @@ Event(e).globalPosition();
 var offset = 30;
 
 export function globalPosition(e) {
-  return pt(e.pageX, e.pageY)
+  return pt(e.clientX, e.clientY)
 }
 
 export function elementsUnder(e) {

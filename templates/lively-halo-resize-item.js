@@ -42,7 +42,7 @@ export default class HaloResizeItem extends HaloItem {
     if (this.target.haloResizeStart) {
       this.target.haloResizeStart(evt, this)
     } else {
-      this.initialExtent  = nodes.getExtent(this.target)
+      this.initialExtent  = lively.getExtent(this.target)
       this.eventOffset  = events.globalPosition(evt)
       this.removeRestrictions(this.target)
     }
@@ -54,13 +54,14 @@ export default class HaloResizeItem extends HaloItem {
     if (this.target.haloResizeMove) {
       this.target.haloResizeMove(evt, this)
     } else {
-      var delta = events.globalPosition(evt).subPt(this.eventOffset)
+      var delta = pt(evt.clientX, evt.clientY).subPt(this.eventOffset)
       console.log("this.initialExtent " + this.initialExtent)
 
       var newextent =  this.initialExtent.addPt(delta);
       newextent = newextent.rounded()
-      nodes.setExtent(this.target, Grid.optSnapPosition(newextent, evt)) 
-      if(!evt.altKey) {
+
+      lively.setExtent(this.target, Grid.optSnapPosition(newextent, evt)) 
+      if(!evt.altKey && that.style.position == "absolute") {
         this.snapping.snapBounds("bottomRight")
       }
       newextent = lively.getExtent(this.target)

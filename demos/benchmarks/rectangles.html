@@ -1,0 +1,92 @@
+<html>
+<head>
+<style>
+
+</style>
+</head>  
+<body>
+  
+<h1>Rectangles</h1>
+
+<div id="benchmark">
+  <div id="info">info</div>
+  <button id="start">start</button><button id="stop">stop</button>
+  <div id="rects">GRrrr</div>
+</div>
+<lively-script>
+<script>
+var benchmark = document.body.querySelector("#benchmark")
+var content = benchmark.querySelector("#rects")
+
+content.style.position ="absolute"
+content.style.top = "150px"
+content.style.left = "50px"
+content.style.width = "1024px"
+content.style.height = "768px"
+content.style.backgroundColor = "gray"
+content.style.overflow = "hidden"
+
+
+for(var i=10; i< 1000; i++) {
+  var m = document.createElement("div")
+  m.classList.add("benchmarkMorph")
+  m.innerHTML = "" + i
+  m.style.width = "50px"
+  m.style.height = "50px"
+
+  m.style.backgroundColor  = "rgb(" + Math.round(Math.random() * 255) + "," +Math.round(Math.random() * 255) + "," +Math.round(Math.random() * 255) + ")"
+  m.style.position  = "absolute"
+  m.style.top = (Math.random() * 1000) + "px"
+  m.style.left = (Math.random() * 1000) + "px"
+  
+  content.appendChild(m)
+}
+
+benchmark.all = content.querySelectorAll(".benchmarkMorph")
+
+// benchmark.all.forEach(ea => ea.remove())
+
+benchmark.onStep = function(){
+  if (!this.all) return;
+  for (var ea of this.all) {
+  // this.all.forEach( ea => {
+    //lively.moveBy(ea, pt(Math.random() * 100 - 50, Math.random() * 100 - 50))
+    ea.style.top =  (parseInt(ea.style.top) + Math.random() * 100 - 50) + "px"
+    ea.style.left =  (parseInt(ea.style.left) + Math.random() * 100 - 50) + "px"
+  //})
+  }
+}
+
+benchmark.onStep()
+var last = performance.now()
+
+benchmark.step = function() {
+  if (!this.isStepping) return
+  window.requestAnimationFrame(() => {
+    benchmark.onStep()
+    var now = performance.now()
+    benchmark.querySelector("#info").innerHTML = "" + benchmark.all.length + "elements  " + 
+      Math.round(1000 / (now - last)) + "fps"
+    last = now
+    benchmark.step()
+  })
+}
+
+benchmark.querySelector("#start").onclick = () => {
+  benchmark.isStepping = true
+  benchmark.step()
+}
+
+benchmark.querySelector("#stop").onclick = () => {
+  benchmark.isStepping = false
+}
+
+"" // not in shadow root
+benchmark // in shadow root
+
+</script>
+</lively-script>
+
+
+
+</body>

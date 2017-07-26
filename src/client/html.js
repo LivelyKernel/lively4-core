@@ -233,6 +233,8 @@ export default class HTML {
           if (src.match(/([A-Za-z]+):\/\/.+/)) {
             // ignore FULL URLS
             // console.log("ignore "  + src);
+          } else if (src.match(/^data:.+/)) {
+            // ignore data urls
           } else if (src.match(/^\//)) {
             path = src; // ABSOLTUE paths
           } else {

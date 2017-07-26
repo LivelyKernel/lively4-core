@@ -63,5 +63,9 @@ cop.layer(window, "InteractiveLayer")
   get Preferences() {
     return Preferences
   },
+
+  get cop() {
+    return cop
+  },
   
 })
