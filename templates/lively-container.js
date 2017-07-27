@@ -969,6 +969,9 @@ export default class Container extends Morph {
     // this.get('lively-separator').style.display = "block";
     
     var navbar = this.get('#container-leftpane')
+    // implement hooks
+    navbar.deleteFile = (url) => { this.deleteFile(url) } 
+    navbar.newfile = (url) => { this.newfile(url) } 
     navbar.followPath = (path) => { this.followPath(path) } 
     navbar.navigateToName = (name) => { this.navigateToName(name) } 
     

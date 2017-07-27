@@ -1,4 +1,5 @@
 import Morph from './Morph.js';
+import ContextMenu from 'src/client/contextmenu.js';
 
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
@@ -61,9 +62,10 @@ export default class LivelyContainerNavbar extends Morph {
     files.forEach((ea) => {
 
       // if there is an Markdown File, ignore the rest
-      var m = ea.name.match(/(.*)\.(.*)/);
-      if (m && m[2] != "md" && names[m[1]+".md"]) return;
-      if (m && m[2] != "livelymd" && names[m[1]+".livelymd"]) return;
+      // #TODO should we make this an option?
+      // var m = ea.name.match(/(.*)\.(.*)/);
+      // if (m && m[2] != "md" && names[m[1]+".md"]) return;
+      // if (m && m[2] != "livelymd" && names[m[1]+".livelymd"]) return;
 
       var element = document.createElement("li");
       var link = document.createElement("a");
@@ -116,16 +118,23 @@ export default class LivelyContainerNavbar extends Morph {
 
   }
   
-  // please override this
-  followPath(path) {
-    window.open(path); 
+
+  deleteFile(url) {
+    throw new Error("please implement deleteFile()")
+  }
+
+  newfile(path) {
+    throw new Error("please implement newfile()")
   }
   
-  // please override this
   navigateToName(name) {
-    lively.notify("navigat to: " + navigateToName) 
+    throw new Error("please implement navigateToName()")
   }
-  
+
+  followPath(name) {
+    throw new Error("please implement followPath()")
+  }
+
   async showSublist() {
     if (!this.targetItem || !this.sourceContent) return 
     

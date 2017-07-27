@@ -34,7 +34,10 @@ export default class Selecting {
       e.stopPropagation();
       e.preventDefault();
     } else {
-       this.hideHalos()
+      // if (e.path[0] == document.body.parentElement) {
+        this.hideHalos()
+      // } else {
+      // }
     }
   }
   
