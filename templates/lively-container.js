@@ -256,6 +256,10 @@ export default class Container extends Morph {
     }
   }
 
+  onHome() {
+    this.followPath(lively4url)
+  }
+  
   async onSync(evt) {
     var comp = lively.components.createComponent("lively-sync");
     var compWindow;
@@ -529,14 +533,16 @@ export default class Container extends Morph {
       lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path));
       // console.log("html", html);
       var root = this.getContentRoot();
-      html.forEach((ea) => {
-        root.appendChild(ea);
-        if (ea.querySelectorAll) {
-          ea.querySelectorAll("pre code").forEach( block => {
-            highlight.highlightBlock(block);
-          });
-        }
-      });
+      if (html) {
+        html.forEach((ea) => {
+          root.appendChild(ea);
+          if (ea.querySelectorAll) {
+            ea.querySelectorAll("pre code").forEach( block => {
+              highlight.highlightBlock(block);
+            });
+          }
+        });
+      }
       components.loadUnresolved(root);
       // get around some async fun
       if (this.preserveContentScroll) {
