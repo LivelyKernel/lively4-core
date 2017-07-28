@@ -1284,9 +1284,9 @@ export default class Lively {
 
   static async onShowDocumentGridPreference(enabled) {
     if (enabled) {
-      ViewNav.showDocumentGrid()
+      ViewNav.showDocumentGrid(document.body)
     } else {
-      ViewNav.hideDocumentGrid()
+      ViewNav.hideDocumentGrid(document.body)
     }
   }
 

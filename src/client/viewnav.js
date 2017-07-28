@@ -23,12 +23,16 @@ export default class ViewNav {
   }
   
   enable() {
-    this.eventSource =  document.body.parentElement
+    this.eventSource =  this.target.parentElement
     lively.addEventListener("ViewNav", this.eventSource, "pointerdown", e => this.onPointerDown(e))
 
     lively.addEventListener("ViewNav", window, "resize", e => this.onResize(e))
     lively.addEventListener("ViewNav", window, "mousewheel", e => this.onMouseWheel(e))
-    lively.addEventListener("ViewNav", window, "scroll", () => ViewNav.updateDocumentGrid())
+    lively.addEventListener("ViewNav", window, "scroll", () => {
+      if (this.target) {
+        ViewNav.updateDocumentGrid(this.target.documentGrid, this.target)
+      }
+    })
 
   }
   
@@ -38,6 +42,10 @@ export default class ViewNav {
     lively.removeEventListener("ViewNav", window, "keydown")
     lively.removeEventListener("ViewNav", window, "keyup")
     lively.removeEventListener("ViewNav", window, "mousewheel")
+  }
+  
+  toString() {
+    return "[ViewNav on: " + this.target + "]"
   }
   
   eventPos(evt) {
@@ -66,7 +74,7 @@ export default class ViewNav {
     var delta = this.eventOffset.subPt(this.eventPos(evt))
     lively.setPosition(this.target, this.originalPos.subPt(delta))
     // lively.notify("pos " + this.originalPos.subPt(delta) + " " + this.target)
-    ViewNav.updateDocumentGrid(undefined, true) 
+    ViewNav.updateDocumentGrid(this.target.documentGrid, this.target, undefined, true) 
   }
   
   onPointerUp(evt) {
@@ -88,11 +96,11 @@ export default class ViewNav {
 
     var newPos = this.lastPoint.scaleBy(scale / this.lastScale)
     var offset = this.lastPoint.subPt(newPos)
-    lively.setPosition(document.body, lively.getPosition(document.body).subPt(offset) )
+    lively.setPosition(this.target, lively.getPosition(this.target).subPt(offset) )
 
     // lively.showPoint(newPos).style.backgroundColor = "green"
 
-    ViewNav.updateDocumentGrid(true)
+    ViewNav.updateDocumentGrid(this.target.documentGrid, this.target, true)
     
   }
   
@@ -100,7 +108,7 @@ export default class ViewNav {
     window.LastEvt = evt
     
     
-    var bounds = document.body.getBoundingClientRect()
+    var bounds = this.target.getBoundingClientRect()
     // lively.notify("wheel bounds " + pt(bounds.left, bounds.top))
 
     this.lastPoint = pt(evt.clientX, evt.clientY)
@@ -112,15 +120,15 @@ export default class ViewNav {
     
     if (evt.altKey) {
       // finder granular zoom? using non standard feature
-      var zoom = Number(getComputedStyle(document.body).zoom) + (evt.wheelDelta / 1000 / 10)
-      document.body.style.zoom= zoom
+      var zoom = Number(getComputedStyle(this.target).zoom) + (evt.wheelDelta / 1000 / 10)
+      this.target.style.zoom= zoom
 
 
       // // zoom using CSS Transform
-      // var scale = document.body._scale || 1
+      // var scale = this.target._scale || 1
       // scale = scale + (evt.wheelDelta / 1000 / 5)
-      // document.body._scale = scale
-      // document.body.style.transform= "scale(" + scale + ")"
+      // this.target._scale = scale
+      // this.target.style.transform= "scale(" + scale + ")"
       
       lively.notify("zoom " + zoom)
       evt.preventDefault()
@@ -130,25 +138,27 @@ export default class ViewNav {
 
   fixScrollAfterNavigation() {
    
+    if(!this.target) return;
+   
     // #DoesNotWork
-    // if ((document.body.scrollHeight > document.body.scrollTop + window.innerHeight) ||
-    //   (document.body.scrollWidth > document.body.scrollLeft + window.innerWith))
+    // if ((this.target.scrollHeight > this.target.scrollTop + window.innerHeight) ||
+    //   (this.target.scrollWidth > this.target.scrollLeft + window.innerWith))
     //   return; // don't fix when scrolled to bottom to let users pan into the void
     
     // console.log("fix scroll ")
     ViewNav.lastFixedScroll = Date.now()
-    var pos = lively.getGlobalPosition(document.body).scaleBy(-1)
+    var pos = lively.getGlobalPosition(this.target).scaleBy(-1)
     var topLeft = pt(0,0).minPt(pos)
     Windows.allWindows().forEach(ea => {
       topLeft = topLeft.minPt(lively.getPosition(ea))
     })
     
-    lively.setPosition(document.body, topLeft.scaleBy(-1))
+    lively.setPosition(this.target, topLeft.scaleBy(-1))
     
     var delta = topLeft.scaleBy(-1).subPt(pos.scaleBy(-1))
 
-    document.body.scrollLeft = delta.x 
-    document.body.scrollTop = delta.y
+    this.target.scrollLeft = delta.x 
+    this.target.scrollTop = delta.y
   }
 
 
@@ -168,7 +178,7 @@ export default class ViewNav {
   		return div
   }
   
-  static updateDocumentGrid(zoomed, force) {
+  static updateDocumentGrid(documentGrid, target, zoomed, force) {
      // console.log("updateDocumentGrid(" + zoomed + ", " + force +")")
     if (!force && this.lastFixedScroll && ((Date.now() - this.lastFixedScroll) < 1000)) {
       // console.log("not update document grid " + (Date.now() -this.lastFixedScroll))
@@ -176,41 +186,46 @@ export default class ViewNav {
     }
     // console.log("update document grid "  + (Date.now() - this.lastFixedScroll) )
 
-    if (!this.documentGrid) return;
+    if (!documentGrid) return;
     
     if (zoomed) {
-      this.hideDocumentGrid()
-      this.showDocumentGrid()
+      this.hideDocumentGrid(target)
+      this.showDocumentGrid(target)
     }
     
     
-    lively.setGlobalPosition(this.documentGrid, pt(0,0))
+    lively.setGlobalPosition(documentGrid, pt(0,0))
     // we make the grid a bit bigger than the actual visible browser window, so that we can scroll into the void...
-    lively.setExtent(this.documentGrid, pt(window.innerWidth + 200, window.innerHeight  + 200))
-    var pos = lively.getGlobalPosition(document.body)
-    var grid = this.documentGrid.grid
+    lively.setExtent(documentGrid, pt(window.innerWidth + 200, window.innerHeight  + 200))
+    var pos = lively.getGlobalPosition(target)
+    var grid = documentGrid.grid
     lively.setPosition(grid, pt( pos.x % grid.gridSize - 100, pos.y % grid.gridSize - 100) )
-    lively.setGlobalPosition(this.documentGrid.documentSquare, pos)
+    lively.setGlobalPosition(documentGrid.documentSquare, pos)
   }
   
-  static showDocumentGrid() {
-    this.documentGrid = document.createElement("div")
-  	this.documentGrid.style["z-index"] = -200
+  static showDocumentGrid(target) {
+    if (!target) return;
+    
+    var documentGrid = document.createElement("div")
+  	documentGrid.style["z-index"] = -200
 
-    this.documentGrid.isMetaNode = true
-    this.documentGrid.id = "DocumentGrid"
-    this.documentGrid.classList.add("document-grid")
-  	this.documentGrid.setAttribute("data-lively4-donotpersist", "all")
-  	this.documentGrid.style.overflow = "hidden"
-  	this.documentGrid.style.pointerEvents = "none"
-  	this.documentGrid.livelyAcceptsDrop = function() {}
+    documentGrid.isMetaNode = true
+    documentGrid.id = "DocumentGrid"
+    documentGrid.classList.add("document-grid")
+  	documentGrid.setAttribute("data-lively4-donotpersist", "all")
+  	documentGrid.style.overflow = "hidden"
+  	documentGrid.style.pointerEvents = "none"
+  	documentGrid.livelyAcceptsDrop = function() {}
 
-
-    document.body.appendChild(this.documentGrid)
+    target.documentGrid = documentGrid
+    target.appendChild(documentGrid)
+    
+    var width = window.innerWidth;
+    var height = window.innerHeight
 
     let gridSize = 100,
-      w = window.innerWidth + 2* gridSize,
-      h =  window.innerHeight + 2 *gridSize
+      w = width + 2* gridSize,
+      h =  height + 2 *gridSize
       
     let grid = document.createElement("div")
     grid.gridSize = gridSize
@@ -218,15 +233,15 @@ export default class ViewNav {
     grid.style.pointerEvents = "none"
     grid.livelyAcceptsDrop = function() {}
     
-    lively.setExtent(this.documentGrid, pt(window.innerWidth , window.innerHeight))
+    lively.setExtent(documentGrid, pt(width , height))
 
-    this.documentGrid.documentSquare = this.showDocumentGridItem(pt(0, 0), 
-          "white", "0.5px solid rgb(50,50,50)", 4000, 2000,  this.documentGrid )
+    documentGrid.documentSquare = this.showDocumentGridItem(pt(0, 0), 
+          "white", "0.5px solid rgb(50,50,50)", 4000, 2000, documentGrid )
 
-    this.documentGrid.documentSquare.livelyAcceptsDrop = function() {}
+    documentGrid.documentSquare.livelyAcceptsDrop = function() {}
 
-    this.documentGrid.grid = grid
-    this.documentGrid.appendChild(grid)
+    documentGrid.grid = grid
+    documentGrid.appendChild(grid)
     lively.setPosition(grid, pt(0,0))
     
     for (var k=0; k < w; k += gridSize) {
@@ -235,24 +250,30 @@ export default class ViewNav {
           undefined, "0.2px dashed rgb(190,190,190)", gridSize, gridSize, grid)
       }  
     }
-    ViewNav.updateDocumentGrid()
+    ViewNav.updateDocumentGrid(target.documentGrid, target)
   }
   
-  static hideDocumentGrid() {
-    document.body.querySelectorAll(".document-grid").forEach(ea => {
+  static hideDocumentGrid(target) {
+    if (!target) return;
+    
+    target.querySelectorAll(".document-grid").forEach(ea => {
       ea.remove()
     })
   }
   
   static resetView() {
-    lively.setPosition(document.body,pt(0,0)) 
+    lively.setPosition(this.target,pt(0,0)) 
   }
 } 
 
 if (window.lively) {
+  try {
   ViewNav.enable(document.body)
-  ViewNav.hideDocumentGrid()
-  ViewNav.showDocumentGrid()
+  ViewNav.hideDocumentGrid(document.body)
+  ViewNav.showDocumentGrid(document.body)
+  } catch(e) {
+    lively.showError(e)
+  }
 }
 
 
