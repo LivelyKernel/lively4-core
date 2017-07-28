@@ -26,7 +26,7 @@ SystemJS.config({
 )
 
 function init() {
-  return System.import(lively4swx + "./swx.js?1")
+  return System.import(lively4swx + "swx.js?2")
 }
 console.log("Base system loaded after  " + (Date.now() - startSwxTime) + "ms")
 
@@ -51,12 +51,12 @@ this.addEventListener('activate', (event) => {
 })
 
 this.addEventListener('fetch', (event) => {
-  // console.log("fetch swx-boot.js " + event.request.url)
-  // event.waitUntil(
+  console.log("fetch swx-boot.js " + event.request.url)
+  event.waitUntil(
     init()
       .then(worker => worker.fetch(event))
       .catch(error => { console.error(error); throw error })
-  // )
+  )
 })
 
 this.addEventListener('message', (event) => {
