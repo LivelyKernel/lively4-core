@@ -528,7 +528,6 @@ export default class Container extends Morph {
         .replace(/<script>/g,"<lively-script>")
         .replace(/<\/script>/g,"</lively-script>")
         
-      console.log("source: " + htmlSource)
       var html = $.parseHTML(htmlSource);
       lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path));
       // console.log("html", html);
