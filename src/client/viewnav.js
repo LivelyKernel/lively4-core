@@ -27,8 +27,8 @@ export default class ViewNav {
     lively.addEventListener("ViewNav", this.eventSource, "pointerdown", e => this.onPointerDown(e))
 
     lively.addEventListener("ViewNav", window, "resize", e => this.onResize(e))
-    lively.addEventListener("ViewNav", window, "mousewheel", e => this.onMouseWheel(e))
-    lively.addEventListener("ViewNav", window, "scroll", () => {
+    lively.addEventListener("ViewNav", this.eventSource, "mousewheel", e => this.onMouseWheel(e))
+    lively.addEventListener("ViewNav", this.eventSource, "scroll", () => {
       if (this.target) {
         ViewNav.updateDocumentGrid(this.target.documentGrid, this.target)
       }
@@ -39,9 +39,8 @@ export default class ViewNav {
   disable() {
     lively.removeEventListener("ViewNav", this.eventSource)
     lively.removeEventListener("ViewNav", window, "resize")
-    lively.removeEventListener("ViewNav", window, "keydown")
-    lively.removeEventListener("ViewNav", window, "keyup")
-    lively.removeEventListener("ViewNav", window, "mousewheel")
+    lively.removeEventListener("ViewNav", this.eventSource, "mousewheel")
+    lively.removeEventListener("ViewNav", this.eventSource, "scroll")
   }
   
   toString() {
@@ -68,6 +67,7 @@ export default class ViewNav {
       
     lively.addEventListener("ViewNav", this.eventSource, "pointermove", e => this.onPointerMove(e))
     lively.addEventListener("ViewNav", this.eventSource, "pointerup", e => this.onPointerUp(e))
+    evt.stopPropagation()
   }
   
   onPointerMove(evt) {
@@ -75,6 +75,8 @@ export default class ViewNav {
     lively.setPosition(this.target, this.originalPos.subPt(delta))
     // lively.notify("pos " + this.originalPos.subPt(delta) + " " + this.target)
     ViewNav.updateDocumentGrid(this.target.documentGrid, this.target, undefined, true) 
+    
+    evt.stopPropagation()
   }
   
   onPointerUp(evt) {
@@ -146,7 +148,12 @@ export default class ViewNav {
     //   return; // don't fix when scrolled to bottom to let users pan into the void
     
     // console.log("fix scroll ")
+
+      
     ViewNav.lastFixedScroll = Date.now()
+    
+    return // #Bug fixScrollAfterNavigation seems to make problems... 
+    
     var pos = lively.getGlobalPosition(this.target).scaleBy(-1)
     var topLeft = pt(0,0).minPt(pos)
     Windows.allWindows().forEach(ea => {
