@@ -60,10 +60,21 @@ export default class ViewNav {
     if (!evt.ctrlKey || evt.button != 0)
       return;
       
+    this.targetContainer = evt.path.find(ea => {
+      return ea.tagName == "LIVELY-CONTAINER"
+    })
+      
+      
     // if (!Preferences.isEnabled("ShowDocumentGrid", false))
     //   ViewNav.showDocumentGrid(); // 
     this.eventOffset = this.eventPos(evt)
-    this.originalPos = lively.getPosition(this.target)
+    
+    
+    if (this.targetContainer) {
+      this.originalPos = lively.getPosition(this.targetContainer.get("#container-root"))
+    } else {
+      this.originalPos = lively.getPosition(this.target)
+    }
       
     lively.addEventListener("ViewNav", this.eventSource, "pointermove", e => this.onPointerMove(e))
     lively.addEventListener("ViewNav", this.eventSource, "pointerup", e => this.onPointerUp(e))
@@ -72,10 +83,14 @@ export default class ViewNav {
   
   onPointerMove(evt) {
     var delta = this.eventOffset.subPt(this.eventPos(evt))
-    lively.setPosition(this.target, this.originalPos.subPt(delta))
-    // lively.notify("pos " + this.originalPos.subPt(delta) + " " + this.target)
-    ViewNav.updateDocumentGrid(this.target.documentGrid, this.target, undefined, true) 
     
+    if (this.targetContainer) {
+      lively.setPosition(this.targetContainer.get("#container-root"), this.originalPos.subPt(delta))
+    } else {
+      lively.setPosition(this.target, this.originalPos.subPt(delta))
+      // lively.notify("pos " + this.originalPos.subPt(delta) + " " + this.target)
+      ViewNav.updateDocumentGrid(this.target.documentGrid, this.target, undefined, true) 
+    }  
     evt.stopPropagation()
   }
   
