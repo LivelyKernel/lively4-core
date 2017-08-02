@@ -64,10 +64,13 @@ export default class ViewNav {
       return ea.tagName == "LIVELY-CONTAINER"
     })
       
-      
-    // if (!Preferences.isEnabled("ShowDocumentGrid", false))
-    //   ViewNav.showDocumentGrid(); // 
+    // if (!Preferences.isEnabled("ShowDocumentGrid", false)) {
+       // ViewNav.showDocumentGrid();
+       // return 
+    // }
+  
     this.eventOffset = this.eventPos(evt)
+  
     
     
     if (this.targetContainer) {
@@ -201,6 +204,14 @@ export default class ViewNav {
   }
   
   static updateDocumentGrid(documentGrid, target, zoomed, force) {
+    
+    if (!Preferences.isEnabled("ShowDocumentGrid", false)) {
+      this.hideDocumentGrid(target)
+
+      return 
+    }
+
+    
      // console.log("updateDocumentGrid(" + zoomed + ", " + force +")")
     if (!force && this.lastFixedScroll && ((Date.now() - this.lastFixedScroll) < 1000)) {
       // console.log("not update document grid " + (Date.now() -this.lastFixedScroll))

@@ -1,6 +1,4 @@
 import Morph from './Morph.js';
-import ContextMenu from 'src/client/contextmenu.js';
-
 
 export default class PenChooser extends Morph {
       
@@ -8,10 +6,7 @@ export default class PenChooser extends Morph {
     this.drawPens()
     this.get("#penChooser").style.display = "none"
     this.style.overflow = "hidden"
-  
-    
     this.get("#field").addEventListener("click", evt => this.onChoosePen(evt))
-    
   }
 
   drawPens() { 
@@ -51,7 +46,6 @@ export default class PenChooser extends Morph {
     this.get("#field").innerHTML = this.penSvgShape(value)
     this.dispatchEvent(new CustomEvent("value-changed", {detail: {value: value}}))
   }
-  
 }
       
 
