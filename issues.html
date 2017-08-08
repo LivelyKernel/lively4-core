@@ -1,6 +1,5 @@
 <h1>Lively4-core Issues</h1>
 
-
 <lively-script><script>
 import github from "src/client/github.js"
 new Promise(async (resolve) => {
@@ -24,7 +23,7 @@ new Promise(async (resolve) => {
     return label.replace(/.*: /,"").replace(/ \(.*/,"")
   }
   
-  issues.forEach(ea => {
+  issues.filter(ea => ea.state == "open").forEach(ea => {
     var issue = document.createElement("li")
     issue.innerHTML = "<a class='title' href='" + ea.html_ul +"'>" + ea.title + "</a> "
       + ea.labels.map(ea => "<span class='label'>" + formatLabel(ea.name) + "</span>").join(" ")

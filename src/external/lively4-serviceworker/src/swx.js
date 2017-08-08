@@ -74,7 +74,6 @@ class ServiceWorker {
         if (url.pathname.match(/\/_meta\//))  return; 
         if (url.pathname.match(/lively4-serviceworker/))  return; 
         
-        
         try {                        
           var p = new Promise(async (resolve, reject) => {
             var email = await focalStorage.getItem(storagePrefix+ "githubEmail") 

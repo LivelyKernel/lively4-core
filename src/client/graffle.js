@@ -85,6 +85,15 @@ export default class Graffle {
   static onMouseDown(evt) {
     if (!this.specialKeyDown()) return
     
+    var targetContainer = evt.path.find(ea => ea.tagName == "LIVELY-CONTAINER")
+
+    if (targetContainer) {
+      lively.notify("c " + targetContainer)
+      lively.showElement(targetContainer)
+      this.targetContainer = targetContainer
+    } else {
+      this.targetContainer = document.body
+    }
     var div
     if (this.keysDown["S"]) {
       div= document.createElement("div")
@@ -110,7 +119,7 @@ export default class Graffle {
       // div.appendChild(path)
       
       div = document.createElement("lively-connector")
-      lively.components.openIn(document.body, div).then(() => {
+      lively.components.openIn(this.targetContainer, div).then(() => {
         window.that = div
         HaloService.showHalos(div)
         HaloService.halo[0].shadowRoot.querySelectorAll(".halo").forEach(ea => {
@@ -130,9 +139,10 @@ export default class Graffle {
     // div.innerHTML = "This is a shapes"
     div.classList.add("lively-content")
     this.currentElement = div
-    document.body.appendChild(div)
+    this.targetContainer.appendChild(div)
     var pos = this.eventPosition(evt)
     lively.setGlobalPosition(div, pos)
+
     this.lastMouseDown = pos
     evt.stopPropagation()
     evt.preventDefault()

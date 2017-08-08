@@ -11,8 +11,12 @@
       }
       
       ::-webkit-scrollbar { 
-        /*display: none; */
+        /* display: none; */
       }
+
+      /*#container-content::-webkit-scrollbar { */
+      /*   display: none; */
+      /*}*/
 
       .edit {
         visibility: hidden;
@@ -46,6 +50,7 @@
         flex: 1; 
         margin: 0px;
         padding: 0px;
+        z-index: 0;
       }
     	
     	
@@ -69,87 +74,7 @@
         overflow: auto;
         overflow-x: hidden;
       }
-      
-      #container-leftpane ul {
-        margin:0;
-        list-style-type: none;
-        padding: 0;
-      }
-      
-      #container-leftpane ul li {
-        margin: 0px;
-        padding: 2px;
-        font-size: 11pt;
-      }
 
-      #container-leftpane ul li.subitem {
-        margin: 0px;
-        padding: 0px 0px 0px 25px;
-        font-size: 9pt;
-        color: gray;
-      }
-      
-      #container-leftpane ul li.subitem.level1 {
-        padding-left: 25px;
-      }
-      
-      #container-leftpane ul li.subitem.level2 {
-        padding-left: 35px;
-      }
-
-      #container-leftpane ul li.subitem.level3 {
-        padding-left: 45px;
-      }
-
-
-      #container-leftpane ul li .fa-folder {
-        color: #e99a01;
-      }
- 	
- 	    #container-leftpane {
- 	      background-color: #F5F5F5;
- 	      border-top: 1px solid #d5d5d5;
- 	      border-right: 1px solid #d5d5d5;
- 	    }
- 	    
-      #container-leftpane ul li a {
-        width: 200px;
-        display: box;
-        white-space: nowrap;
-        text-decoration: none;
-        color: #444444;
-      }
-      
-      
-      .selected {
-        background-color: lightgray;
-        color: white;
-        cursor: pointer
-      }
-      
-      #container-leftpane ul li a:hover {
-        background-color: gray;
-        color: white;
-        cursor: pointer
-      }
-      
-      #container-leftpane ul li a:hover {
-        background-color: gray;
-        color: white;
-        cursor: pointer
-      }
-      
-      #container-leftpane ul li ul li {
-        width: 400px;
-        padding-left: 10px;
-      }
-      
-      #container-leftpane ul li ul li:hover{
-        background-color: gray;
-        color: white;
-        cursor: pointer
-      }
-      
       #container-path {
         border: 1px solid #d5d5d5;
         border-radius: 2px;
@@ -237,6 +162,8 @@
       <button id="back"><i class="fa fa-arrow-left" title="Back" aria-hidden="true"></i></button>
       <button id="forward"><i class="fa fa-arrow-right" title="Forward" aria-hidden="true"></i></button>
       <button id="up"><i class="fa fa-arrow-up" title="Up" aria-hidden="true"></i></button>
+      <button id="home"><i class="fa fa-home" title="Up" aria-hidden="true"></i></button>
+      
       <input type="text" id="container-path" value="">
 
       <div class="edit" id="eval">
@@ -264,13 +191,13 @@
         <i class="fa fa-ban" aria-hidden="true"></i></button> 
       <button class="browse" id="edit" title="edit file">
         <i class="fa fa-pencil" aria-hidden="true"></i></button>
-        
       <button class="browse edit" id="fullscreen" title="fullscreen">
         <i class="fa fa-arrows-alt" aria-hidden="true"></i></button>  
     </div>
 
     <div id="layout-center">
-      <div id="container-leftpane"></div>
+      <lively-container-navbar id="container-leftpane">
+      </lively-container-navbar>
       <lively-separator></lively-separator>
       <div id="container-rightpane">
         <div id="changeIndicator"></div>

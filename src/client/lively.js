@@ -417,6 +417,7 @@ export default class Lively {
     // With all the parent elements, shadow roots and so on it is difficult to set a global position
     // ususally, we would get the global position of a parent element, but this is not always correct
     // so we use our own global position...
+    lively.setPosition(node, pt(0,0)) // #somehow one time is not enough...
     var delta = pos.subPt(lively.getGlobalPosition(node))
     lively.moveBy(node, delta)
   }
@@ -1283,9 +1284,9 @@ export default class Lively {
 
   static async onShowDocumentGridPreference(enabled) {
     if (enabled) {
-      ViewNav.showDocumentGrid()
+      ViewNav.showDocumentGrid(document.body)
     } else {
-      ViewNav.hideDocumentGrid()
+      ViewNav.hideDocumentGrid(document.body)
     }
   }
 

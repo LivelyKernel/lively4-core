@@ -1,6 +1,4 @@
-
 import Morph from "./Morph.js"
-
 
 export default class Ball extends Morph {
 
@@ -26,7 +24,6 @@ export default class Ball extends Morph {
 
     if (!this.balls) return
     this.balls.forEach(ball => {
-
         context.beginPath();
         context.fillStyle = "red";
         context.arc(ball.x, ball.y, 10, 0, Math.PI*2, true);
