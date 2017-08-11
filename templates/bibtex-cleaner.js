@@ -3,19 +3,26 @@ import Parser from 'https://raw.githubusercontent.com/ORCID/bibtexParseJs/master
 import Strings from "src/client/strings.js";
 
 export default class BibtexCleaner extends Morph {
+  get fileURL() { return "https://lively4//phdthesis/references.bib"; }
   get input() { return this.get('#input'); }
   get mismatches() { return this.get('#mismatches'); }
   async initialize() {
     this.windowTitle = "BibtexCleaner";
     lively.html.registerButtons(this);
-    
+    this.input.enableAutocompletion();
+    this.input.aceRequire('ace/ext/searchbox');
+    this.input.doSave = async text => {
+      await lively.files.saveFile(this.fileURL, text);
+      this.refresh();
+    }
+     
     await this.refresh();
   }
   
   async refresh() {
     this.mismatches.innerHTML = "";
     
-    const bibtexInput = await fetch("https://lively4//phdthesis/references.bib").then(res=>res.text());
+    const bibtexInput = await fetch(this.fileURL).then(res=>res.text());
     this.input.editor.setValue(bibtexInput);
 
     let json= Parser.toJSON(bibtexInput);
@@ -25,25 +32,26 @@ export default class BibtexCleaner extends Morph {
     //lively.openInspector(json);
     
     function generateKey(entry) {
-      const author = entry.entryTags.author || "XXX XXX and XXX XXX";
-      const year = entry.entryTags.year || 'YYYY'
+      const author = entry.entryTags.author || "YYY YYY and YYY YYY";
+      const year = entry.entryTags.year || 'XXXX'
       const title = entry.entryTags.title || "Z Z Z";
       
       let first = author
         .split(' and ')[0]
-        .replace(/[{\\}"'^`ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ´\/-]/g, "");
+        .replace(/[\$\\{}()"'^â`ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ´\/-]/g, "");
       let firstAuthorLastname;
       if(first.match(',')) {
         firstAuthorLastname= first.split(', ')[0]
       } else {
         firstAuthorLastname= _.last(first.split(' '))
       }
+      firstAuthorLastname = firstAuthorLastname.replace(/ /g, '')
       
       let cleanTitle = title
-        .replace(/[{}]/g, "")
+        .replace(/[$\\\/ââ(){}Ã¢ÂÂ]/g, "")
         .replace(/co-/g, "co");
       let titleAcronym = cleanTitle.split(/[ -]+/)
-        .filter(entry => !["the", "a", "to", "for", "an", "by", "on", "of", "with", "from", "as", "in", "and"].includes(entry.toLowerCase()))
+        .filter(entry => !["the", "a", "to", "for", "an", "by", "on", "of", "with", "from", "as", "in", "and", "und", "how", "should", "at", "do", "after", "are"].includes(entry.toLowerCase()))
         .filter(entry => !entry.match(/^[0-9]+/))
         .slice(0,3).map(entry=>entry[0].toUpperCase()).join('');
       return firstAuthorLastname + year + titleAcronym;
@@ -75,9 +83,29 @@ export default class BibtexCleaner extends Morph {
       });
   }
   
-  onRefine() {
+  async onRefine() {
+    let sourceText = await fetch(this.fileURL).then(res=>res.text());
+
     const mismatches = this.getAllSubmorphs('input.mismatch:checked');
     lively.notify(mismatches.length);
     
+    const ambiguousInput =  mismatches.find(input => +input.dataset.citationKeyOccurences !== 1);
+    if(ambiguousInput) {
+      lively.notify("Aborting operation due to ambiguity:", `Found multiple occurences of citation key '${ambiguousInput.dataset.citationKey}'`);
+      return;
+    }
+    
+    const overridingInput =  mismatches.find(input => sourceText.includes(input.dataset.generatedKey));
+    if(overridingInput) {
+      lively.notify("Aborting operation due to overriding:", `Found occurences of generated key '${overridingInput.dataset.generatedKey}'`);
+      return;
+    }
+    
+    mismatches.forEach(input => sourceText = sourceText.replace(input.dataset.citationKey, input.dataset.generatedKey));
+    
+    await lively.files.saveFile(this.fileURL, sourceText);
+    lively.notify(`replaced ${mismatches.length} citation key(s)`);
+
+    this.refresh();
   }
 }
