@@ -47,9 +47,9 @@ export default class Morph extends HTMLDivElement {
   }
 
   getAllSubmorphs(selector) {
-    var morphs = this.querySelectorAll(selector);
+    var morphs = Array.from(this.querySelectorAll(selector));
     if (this.shadowRoot) {
-      morphs = morphs.concat(this.shadowRoot.querySelectorAll(selector));
+      morphs = morphs.concat(Array.from(this.shadowRoot.querySelectorAll(selector)));
     }
 
     // morphs can contain null, if either none was found in this or this.shadowRoot

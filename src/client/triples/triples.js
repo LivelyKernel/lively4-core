@@ -292,6 +292,7 @@ export class Graph {
     
     return this.requestKnot(url);
   }
+
 }
 
 // wild card for querying

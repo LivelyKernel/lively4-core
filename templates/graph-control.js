@@ -38,6 +38,13 @@ export default class GraphControl extends Morph {
     input.setLabel('Open Knot');
     input.setPlaceholder('knot');
     input.addEventListener('enter-knot', () => this.openKnotView());
+    
+    var fullTextSearch = this.get("#full-text-search");
+    fullTextSearch.addEventListener('keyup',  event => {
+      if (event.keyCode == 13) { // ENTER
+        this.fullTextSearch(this.get('#full-text-search').value);
+      }
+    });
   }
   
   // TODO: does this work?
@@ -85,5 +92,21 @@ export default class GraphControl extends Morph {
   async onResetGraph() {
     await Graph.clearInstance();
     lively.notify('resetted graph');
+  }
+  
+    // Full-text search on object graph
+  async fullTextSearch(searchString) {
+    const searchTerms = searchString.split(' ')
+      .map(str => str.toLowerCase());
+
+    const graph = await Graph.getInstance();
+    const matchingKnots = graph.getKnots()
+      .filter(knot => !knot.isTriple())
+      .filter(knot => knot.url.endsWith('.md'))
+      .filter(knot => {
+        const content = knot.content.toLowerCase();
+        return searchTerms.every(term => content.includes(term));
+      });
+    lively.notify(matchingKnots.map(k=>k.url));
   }
 }

@@ -44,7 +44,7 @@ export default class KnotView extends Morph {
     tableData.appendChild(this.buildRefFor(knot));
     
     let icon = document.createElement('i');
-    icon.classList.add('fa', 'fa-file-o');
+    icon.classList.add('fa', 'fa-search');
     icon.addEventListener("click", e => {
       lively.openInspector(knot, undefined, knot.label());
     });
@@ -87,23 +87,37 @@ export default class KnotView extends Morph {
     let deleteKnot = this.get('#delete-button');
     deleteKnot.onclick = event => this.deleteKnot(event);
 
+    // URLs
     let urlList = this.get("#url-list");
     urlList.innerHTML = "";
     graph.getUrlsByKnot(knot).forEach(url => {
+      function isExternalLink(url) {
+        try {
+          return Graph.isExternalURL(new URL(url));
+        } catch(e) {
+          return false;
+        }
+      }
+      
       let listItem = document.createElement('li');
-      listItem.innerHTML = url;
+      listItem.innerHTML = isExternalLink(url) ?
+        url + '<i class="fa fa-external-link"></i>' :
+        url;
       listItem.addEventListener("click", async e => {
+        if(isExternalLink(url)) {
+          window.open(url);
+        } else {
+          const container = await lively.openBrowser(url, false);
+          container.focus();
+        }
         e.preventDefault();
         e.stopPropagation();
-        const container = await lively.openBrowser(url, false);
-        container.focus();
-        
         return true;
       });
       urlList.appendChild(listItem);
     });
     
-    // tags
+    // Tags
     let tag = await graph.requestKnot(new URL('https://lively4/dropbox/tag.md'));
     let tagContainer = this.get('#tag-container');
     tagContainer.innerHTML = "";

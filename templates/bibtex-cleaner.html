@@ -1,0 +1,17 @@
+<template id="bibtex-cleaner" data-class="BibtexCleaner">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  overflow-y: scroll;
+}
+#input {
+  height: 200px;
+}
+</style>
+<juicy-ace-editor id="input"></juicy-ace-editor>
+<button id="refine">Cleanup</button><span id="number-of-mismatches">_</span> mismatches with generated keys:
+<ul id="mismatches"></ul>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+
