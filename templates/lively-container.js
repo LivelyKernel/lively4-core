@@ -9,6 +9,7 @@ import * as cop  from "src/external/ContextJS/src/contextjs.js";
 import ScopedScripts from "./ScopedScripts.js";
 import DelayedCall from 'src/client/delay.js';
 import Clipboard from "src/client/clipboard.js" 
+import MarkdownIt from "src/external/markdown-it.js"
 
 export default class Container extends Morph {
 
@@ -514,16 +515,32 @@ export default class Container extends Morph {
   }
   
   appendMarkdown(content) {
-    System.import(lively4url + '/src/external/showdown.js').then((showdown) => {
-      var converter = new showdown.Converter();
-       content = content
+    var md = new MarkdownIt({
+  html:         true,        // Enable HTML tags in source
+  xhtmlOut:     false,        // Use '/' to close single tags (<br />).
+                              // This is only for full CommonMark compatibility.
+  breaks:       false,        // Convert '\n' in paragraphs into <br>
+  langPrefix:   'language-',  // CSS language prefix for fenced blocks. Can be
+                              // useful for external highlighters.
+  linkify:      false,        // Autoconvert URL-like text to links
+
+  // Enable some language-neutral replacement + quotes beautification
+  typographer:  false,
+
+  
+  // Highlighter function. Should return escaped HTML,
+  // or '' if the source string is not changed and should be escaped externaly.
+  // If result starts with <pre... internal wrapper is skipped.
+  highlight: function (/*str, lang*/) { return ''; }
+});  
+      content = content
         .replace(/<lively-script><script>/g,"<script>")
         .replace(/<\/script><\/lively-script>/g,"</script>")
         .replace(/<lively-script>/g,"<script>")
         .replace(/<\/lively-script>/g,"</script>")
 
       var enhancedMarkdown = lively.html.enhanceMarkdown(content);
-      var htmlSource = converter.makeHtml(enhancedMarkdown);
+      var htmlSource = md.render(enhancedMarkdown);
       htmlSource = htmlSource
         .replace(/<script>/g,"<lively-script>")
         .replace(/<\/script>/g,"</lively-script>")
@@ -548,7 +565,7 @@ export default class Container extends Morph {
        this.get("#container-content").scrollTop = this.preserveContentScroll
       delete this.preserveContentScroll
     }
-    });
+    // });
   }
 
   appendLivelyMD(content) {
