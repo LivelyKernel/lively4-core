@@ -52,6 +52,10 @@ lively-table .editing {
   border: 2px solid red;
 }
 
+lively-container img {
+  max-width: 800px;
+}
+
 
 .lively-text:empty:before {
   content: "<insert text here>";
