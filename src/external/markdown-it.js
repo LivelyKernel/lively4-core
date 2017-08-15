@@ -739,10 +739,10 @@ function normalizeLinkText(url) {
  * - __typographer__  - `false`. Set `true` to enable [some language-neutral
  *   replacement](https://github.com/markdown-it/markdown-it/blob/master/lib/rules_core/replacements.js) +
  *   quotes beautification (smartquotes).
- * - __quotes__ - `ââââ`, String or Array. Double + single quotes replacement
+ * - __quotes__ - `“”‘’`, String or Array. Double + single quotes replacement
  *   pairs, when typographer enabled and smartquotes on. For example, you can
- *   use `'Â«Â»ââ'` for Russian, `'ââââ'` for German, and
- *   `['Â«\xA0', '\xA0Â»', 'â¹\xA0', '\xA0âº']` for French (including nbsp).
+ *   use `'«»„“'` for Russian, `'„“‚‘'` for German, and
+ *   `['«\xA0', '\xA0»', '‹\xA0', '\xA0›']` for French (including nbsp).
  * - __highlight__ - `null`. Highlighter function for fenced code blocks.
  *   Highlighter `function (str, lang)` should return escaped HTML. It can also
  *   return empty string if the source was not changed and should be escaped
@@ -1550,9 +1550,9 @@ module.exports = {
     // Double + single quotes replacement pairs, when typographer enabled,
     // and smartquotes on. Could be either a String or an Array.
     //
-    // For example, you can use 'Â«Â»ââ' for Russian, 'ââââ' for German,
-    // and ['Â«\xA0', '\xA0Â»', 'â¹\xA0', '\xA0âº'] for French (including nbsp).
-    quotes: '\u201c\u201d\u2018\u2019', /* ââââ */
+    // For example, you can use '«»„“' for Russian, '„“‚‘' for German,
+    // and ['«\xA0', '\xA0»', '‹\xA0', '\xA0›'] for French (including nbsp).
+    quotes: '\u201c\u201d\u2018\u2019', /* “”‘’ */
 
     // Highlighter function. Should return escaped HTML,
     // or '' if the source string is not changed and should be escaped externaly.
@@ -1632,9 +1632,9 @@ module.exports = {
     // Double + single quotes replacement pairs, when typographer enabled,
     // and smartquotes on. Could be either a String or an Array.
     //
-    // For example, you can use 'Â«Â»ââ' for Russian, 'ââââ' for German,
-    // and ['Â«\xA0', '\xA0Â»', 'â¹\xA0', '\xA0âº'] for French (including nbsp).
-    quotes: '\u201c\u201d\u2018\u2019', /* ââââ */
+    // For example, you can use '«»„“' for Russian, '„“‚‘' for German,
+    // and ['«\xA0', '\xA0»', '‹\xA0', '\xA0›'] for French (including nbsp).
+    quotes: '\u201c\u201d\u2018\u2019', /* “”‘’ */
 
     // Highlighter function. Should return escaped HTML,
     // or '' if the source string is not changed and should be escaped externaly.
@@ -1676,9 +1676,9 @@ module.exports = {
     // Double + single quotes replacement pairs, when typographer enabled,
     // and smartquotes on. Could be either a String or an Array.
     //
-    // For example, you can use 'Â«Â»ââ' for Russian, 'ââââ' for German,
-    // and ['Â«\xA0', '\xA0Â»', 'â¹\xA0', '\xA0âº'] for French (including nbsp).
-    quotes: '\u201c\u201d\u2018\u2019', /* ââââ */
+    // For example, you can use '«»„“' for Russian, '„“‚‘' for German,
+    // and ['«\xA0', '\xA0»', '‹\xA0', '\xA0›'] for French (including nbsp).
+    quotes: '\u201c\u201d\u2018\u2019', /* “”‘’ */
 
     // Highlighter function. Should return escaped HTML,
     // or '' if the source string is not changed and should be escaped externaly.
@@ -4309,20 +4309,20 @@ module.exports = function inline(state) {
 },{}],34:[function(require,module,exports){
 // Simple typographyc replacements
 //
-// (c) (C) â Â©
-// (tm) (TM) â â¢
-// (r) (R) â Â®
-// +- â Â±
-// (p) (P) -> Â§
-// ... â â¦ (also ?.... â ?.., !.... â !..)
-// ???????? â ???, !!!!! â !!!, `,,` â `,`
-// -- â &ndash;, --- â &mdash;
+// (c) (C) → ©
+// (tm) (TM) → ™
+// (r) (R) → ®
+// +- → ±
+// (p) (P) -> §
+// ... → … (also ?.... → ?.., !.... → !..)
+// ???????? → ???, !!!!! → !!!, `,,` → `,`
+// -- → &ndash;, --- → &mdash;
 //
 'use strict';
 
 // TODO:
-// - fractionals 1/2, 1/4, 3/4 -> Â½, Â¼, Â¾
-// - miltiplication 2 x 4 -> 2 Ã 4
+// - fractionals 1/2, 1/4, 3/4 -> ½, ¼, ¾
+// - miltiplication 2 x 4 -> 2 × 4
 
 var RARE_RE = /\+-|\.\.|\?\?\?\?|!!!!|,,|--/;
 
@@ -4332,10 +4332,10 @@ var SCOPED_ABBR_TEST_RE = /\((c|tm|r|p)\)/i;
 
 var SCOPED_ABBR_RE = /\((c|tm|r|p)\)/ig;
 var SCOPED_ABBR = {
-  c: 'Â©',
-  r: 'Â®',
-  p: 'Â§',
-  tm: 'â¢'
+  c: '©',
+  r: '®',
+  p: '§',
+  tm: '™'
 };
 
 function replaceFn(match, name) {
@@ -4371,10 +4371,10 @@ function replace_rare(inlineTokens) {
     if (token.type === 'text' && !inside_autolink) {
       if (RARE_RE.test(token.content)) {
         token.content = token.content
-                    .replace(/\+-/g, 'Â±')
-                    // .., ..., ....... -> â¦
+                    .replace(/\+-/g, '±')
+                    // .., ..., ....... -> …
                     // but ?..... & !..... -> ?.. & !..
-                    .replace(/\.{2,}/g, 'â¦').replace(/([?!])â¦/g, '$1..')
+                    .replace(/\.{2,}/g, '…').replace(/([?!])…/g, '$1..')
                     .replace(/([?!]){4,}/g, '$1$1$1').replace(/,{2,}/g, ',')
                     // em-dash
                     .replace(/(^|[^-])---([^-]|$)/mg, '$1\u2014$2')
@@ -4427,7 +4427,7 @@ var isMdAsciiPunct = require('../common/utils').isMdAsciiPunct;
 
 var QUOTE_TEST_RE = /['"]/;
 var QUOTE_RE = /['"]/g;
-var APOSTROPHE = '\u2019'; /* â */
+var APOSTROPHE = '\u2019'; /* ’ */
 
 
 function replaceAt(str, index, ch) {
@@ -6127,7 +6127,7 @@ var defaultSchemas = {
 var tlds_2ch_src_re = 'a[cdefgilmnoqrstuwxz]|b[abdefghijmnorstvwyz]|c[acdfghiklmnoruvwxyz]|d[ejkmoz]|e[cegrstu]|f[ijkmor]|g[abdefghilmnpqrstuwy]|h[kmnrtu]|i[delmnoqrst]|j[emop]|k[eghimnprwyz]|l[abcikrstuvy]|m[acdeghklmnopqrstuvwxyz]|n[acefgilopruz]|om|p[aefghklmnrstwy]|qa|r[eosuw]|s[abcdeghijklmnortuvxyz]|t[cdfghjklmnortvwz]|u[agksyz]|v[aceginu]|w[fs]|y[et]|z[amw]';
 
 // DON'T try to make PRs with changes. Extend TLDs with LinkifyIt.tlds() instead
-var tlds_default = 'biz|com|edu|gov|net|org|pro|web|xxx|aero|asia|coop|info|museum|name|shop|ÑÑ'.split('|');
+var tlds_default = 'biz|com|edu|gov|net|org|pro|web|xxx|aero|asia|coop|info|museum|name|shop|рф'.split('|');
 
 /*eslint-enable max-len*/
 
@@ -6590,7 +6590,7 @@ LinkifyIt.prototype.match = function match(text) {
  * to avoid false positives. By default this algorythm used:
  *
  * - hostname with any 2-letter root zones are ok.
- * - biz|com|edu|gov|net|org|pro|web|xxx|aero|asia|coop|info|museum|name|shop|ÑÑ
+ * - biz|com|edu|gov|net|org|pro|web|xxx|aero|asia|coop|info|museum|name|shop|рф
  *   are ok.
  * - encoded (`xn--...`) root zones are ok.
  *
