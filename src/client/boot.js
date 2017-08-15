@@ -94,6 +94,12 @@ if (window.lively && window.lively4url) {
         'babel-plugin-locals': lively4url + '/src/external/aexpr/babel-plugin-locals/index.js',
         'stack-es2015-modules': lively4url + '/src/external/aexpr/stack-es2015-module/src/stack.js',
 
+        // stage 0 support
+        'babel-plugin-transform-do-expressions': lively4url + '/src/external/babel-plugin-transform-do-expressions.js',
+        'babel-plugin-transform-function-bind': lively4url + '/src/external/babel-plugin-transform-function-bind.js',
+        'babel-plugin-syntax-do-expressions': lively4url + '/src/external/babel-plugin-syntax-do-expressions.js',
+        'babel-plugin-syntax-function-bind': lively4url + '/src/external/babel-plugin-syntax-function-bind.js',
+
         // support for doits
         'babel-plugin-doit-result': lively4url + '/src/external/babel-plugin-doit-result.js',
         'babel-plugin-doit-this-ref': lively4url + '/src/external/babel-plugin-doit-this-ref.js',
@@ -137,6 +143,8 @@ if (window.lively && window.lively4url) {
             stage2: false,
             stage3: false,
             plugins: [
+              'babel-plugin-transform-do-expressions',
+              'babel-plugin-transform-function-bind',
               'babel-plugin-locals',
               'babel-plugin-doit-result',
               'babel-plugin-doit-this-ref',
@@ -152,6 +160,8 @@ if (window.lively && window.lively4url) {
             stage2: false,
             stage3: false,
             plugins: [
+              'babel-plugin-transform-do-expressions',
+              'babel-plugin-transform-function-bind',
               'babel-plugin-locals',
               'babel-plugin-doit-result',
               'babel-plugin-doit-this-ref',
