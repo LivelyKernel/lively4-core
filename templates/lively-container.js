@@ -10,6 +10,7 @@ import ScopedScripts from "./ScopedScripts.js";
 import DelayedCall from 'src/client/delay.js';
 import Clipboard from "src/client/clipboard.js" 
 import MarkdownIt from "src/external/markdown-it.js"
+import MarkdownItHashtag from "src/external/markdown-it-hashtag.js"
 
 export default class Container extends Morph {
 
@@ -516,56 +517,65 @@ export default class Container extends Morph {
   
   appendMarkdown(content) {
     var md = new MarkdownIt({
-  html:         true,        // Enable HTML tags in source
-  xhtmlOut:     false,        // Use '/' to close single tags (<br />).
-                              // This is only for full CommonMark compatibility.
-  breaks:       false,        // Convert '\n' in paragraphs into <br>
-  langPrefix:   'language-',  // CSS language prefix for fenced blocks. Can be
-                              // useful for external highlighters.
-  linkify:      false,        // Autoconvert URL-like text to links
+      html:         true,        // Enable HTML tags in source
+      xhtmlOut:     false,        // Use '/' to close single tags (<br />).
+                                  // This is only for full CommonMark compatibility.
+      breaks:       false,        // Convert '\n' in paragraphs into <br>
+      langPrefix:   'language-',  // CSS language prefix for fenced blocks. Can be
+                                  // useful for external highlighters.
+      linkify:      false,        // Autoconvert URL-like text to links
+    
+      // Enable some language-neutral replacement + quotes beautification
+      typographer:  false,
+    
+      
+      // Highlighter function. Should return escaped HTML,
+      // or '' if the source string is not changed and should be escaped externaly.
+      // If result starts with <pre... internal wrapper is skipped.
+      highlight: function (/*str, lang*/) { return ''; }
+    });  
+    md.use(MarkdownItHashtag)
+    md.renderer.rules.hashtag_open  = function(tokens, idx) {
+      var tagName = tokens[idx].content 
+      if(tagName.match(/^[A-Za-z][A-Za-z0-9]+/))
+        return `<a href="javascript:lively.openSearchWidget('#${tagName}')" class="tag">`;
+      else
+        return `<a href="javascript:lively.openIssue('${tagName}')" class="issue">`;
 
-  // Enable some language-neutral replacement + quotes beautification
-  typographer:  false,
+    }
+    content = content
+      .replace(/<lively-script><script>/g,"<script>")
+      .replace(/<\/script><\/lively-script>/g,"</script>")
+      .replace(/<lively-script>/g,"<script>")
+      .replace(/<\/lively-script>/g,"</script>")
 
-  
-  // Highlighter function. Should return escaped HTML,
-  // or '' if the source string is not changed and should be escaped externaly.
-  // If result starts with <pre... internal wrapper is skipped.
-  highlight: function (/*str, lang*/) { return ''; }
-});  
-      content = content
-        .replace(/<lively-script><script>/g,"<script>")
-        .replace(/<\/script><\/lively-script>/g,"</script>")
-        .replace(/<lively-script>/g,"<script>")
-        .replace(/<\/lively-script>/g,"</script>")
-
-      var enhancedMarkdown = lively.html.enhanceMarkdown(content);
-      var htmlSource = md.render(enhancedMarkdown);
-      htmlSource = htmlSource
-        .replace(/<script>/g,"<lively-script>")
-        .replace(/<\/script>/g,"</lively-script>")
-        
-      var html = $.parseHTML(htmlSource);
-      lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path));
-      // console.log("html", html);
-      var root = this.getContentRoot();
-      if (html) {
-        html.forEach((ea) => {
-          root.appendChild(ea);
-          if (ea.querySelectorAll) {
-            ea.querySelectorAll("pre code").forEach( block => {
-              highlight.highlightBlock(block);
-            });
-          }
-        });
-      }
-      components.loadUnresolved(root);
-      // get around some async fun
-      if (this.preserveContentScroll) {
-       this.get("#container-content").scrollTop = this.preserveContentScroll
+    // var enhancedMarkdown = lively.html.enhanceMarkdown(content);
+    // var htmlSource = md.render(enhancedMarkdown);
+    var htmlSource = md.render(content);
+    htmlSource = htmlSource
+      .replace(/<script>/g,"<lively-script>")
+      .replace(/<\/script>/g,"</lively-script>")
+      
+    var html = $.parseHTML(htmlSource);
+    lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path));
+    // console.log("html", html);
+    var root = this.getContentRoot();
+    if (html) {
+      html.forEach((ea) => {
+        root.appendChild(ea);
+        if (ea.querySelectorAll) {
+          ea.querySelectorAll("pre code").forEach( block => {
+            highlight.highlightBlock(block);
+          });
+        }
+      });
+    }
+    components.loadUnresolved(root);
+    // get around some async fun
+    if (this.preserveContentScroll) {
+      this.get("#container-content").scrollTop = this.preserveContentScroll
       delete this.preserveContentScroll
     }
-    // });
   }
 
   appendLivelyMD(content) {
