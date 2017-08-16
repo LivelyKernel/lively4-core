@@ -295,7 +295,7 @@ export default class ViewNav {
   }
   
   static resetView() {
-    lively.setPosition(this.target,pt(0,0)) 
+    lively.setPosition(document.body, pt(0,0));
   }
 } 
 
