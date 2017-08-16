@@ -35,9 +35,12 @@ export default class Selecting {
       e.preventDefault();
     } else {
       // if (e.path[0] == document.body.parentElement) {
+      // lively.notify("path: " + e.path)
+      if (e.path.find(ea => ea.isHaloItem)) {
+        // lively.notify("we are doing someing")
+      } else {
         this.hideHalos()
-      // } else {
-      // }
+      }
     }
   }
   
