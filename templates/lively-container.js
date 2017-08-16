@@ -597,7 +597,7 @@ export default class Container extends Morph {
     
     if (content.match("<template") && this.getPath().match("html$")) {
       
-      content = "<pre> " + content.replace(/</g,"&lt;") +"</pre>"
+      content = "<pre><code> " + content.replace(/</g,"&lt;") +"</code></pre>"
     }
     
     
