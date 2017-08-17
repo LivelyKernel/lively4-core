@@ -89,16 +89,6 @@ ${gainPrintableFullPath(path)}`, filename, path.node.loc.start.line);
 ${gainPrintableFullPath(path)}`, filename);
     },
     /**
-     * No support for JSXSpreadAttribute yet.
-     * 
-     * let obj = { id: "myObj", class: "foo"};
-     * <a {...obj}/>;
-     */
-    JSXSpreadAttribute(path, state) {
-      throw new SyntaxError(`JSXSpreadAttribute not yet supported.
-${gainPrintableFullPath(path)}`, filename, path.node.loc.start.line);
-    },
-    /**
      * No support for jSXNamespacedName yet.
      * 
      * <div ns:attr="val" />;
@@ -143,7 +133,12 @@ export default function ({ types: t, template, traverse }) {
             }
             
             let attributeValue = path.get("value");
-            if(!path.node.value) {
+            if(path.isJSXSpreadAttribute()) {
+              return t.callExpression(
+                addCustomTemplate(programState.file, "attributeSpread"),
+                [ path.get("argument").node ]
+              );
+            } else if(!path.node.value) {
               return getCallExpressionFor("attributeEmpty");
             } else if(attributeValue.isStringLiteral()) {
               return getCallExpressionFor("attributeStringLiteral", attributeValue.node);
