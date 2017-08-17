@@ -94,6 +94,10 @@ if (window.lively && window.lively4url) {
         'babel-plugin-locals': lively4url + '/src/external/aexpr/babel-plugin-locals/index.js',
         'stack-es2015-modules': lively4url + '/src/external/aexpr/stack-es2015-module/src/stack.js',
 
+        // jsx support
+        'babel-plugin-syntax-jsx': lively4url + '/src/external/babel-plugin-syntax-jsx.js',
+        'babel-plugin-jsx-lively': lively4url + '/src/external/babel-plugin-jsx-lively.js',
+        
         // stage 0 support
         'babel-plugin-transform-do-expressions': lively4url + '/src/external/babel-plugin-transform-do-expressions.js',
         'babel-plugin-transform-function-bind': lively4url + '/src/external/babel-plugin-transform-function-bind.js',
@@ -132,6 +136,8 @@ if (window.lively && window.lively4url) {
             stage2: false,
             stage3: false,
             plugins: window.__karma__ ? [] : [ // #TODO disable plugins while testing... for now
+              'babel-plugin-transform-do-expressions',
+              'babel-plugin-transform-function-bind',
               'babel-plugin-locals',
               'babel-plugin-var-recorder'
             ]
@@ -149,7 +155,7 @@ if (window.lively && window.lively4url) {
               'babel-plugin-doit-result',
               'babel-plugin-doit-this-ref',
               'babel-plugin-var-recorder',
-              'babel-plugin-aexpr-source-transformation'
+              //'babel-plugin-aexpr-source-transformation'
             ]
           },
           loader: 'workspace-loader'
