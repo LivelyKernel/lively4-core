@@ -28,6 +28,10 @@ export function attributeExpression(key, value) {
   return { [key]: value.toString() };
 }
 
+export function attributeSpread(obj) {
+  return obj;
+}
+
 export function children(...children) {
   return [].concat(...children);
 }
@@ -42,6 +46,11 @@ export function childElement(jSXElement) {
 
 export function childExpression(expression) {
   return [expression];
+}
+
+export function childSpread(array) {
+  lively.notify(array);
+  return array;
 }
 
 
@@ -168,7 +177,8 @@ export default function ({ types: t, template, traverse }) {
               return getCallExpressionFor("childExpression", child.get("expression").node);
             }
             if(child.isJSXSpreadChild()) {
-              throw new SyntaxError(`JSXSpreadChild as child of JSXElement not yet supported.`);
+              return getCallExpressionFor("childSpread", child.get("expression").node);
+              //throw new SyntaxError(`JSXSpreadChild as child of JSXElement not yet supported.`);
             }
             throw new Error('unknown node type in children of JSXElement ' + child.node.type);
           }
