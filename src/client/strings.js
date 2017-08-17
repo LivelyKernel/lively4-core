@@ -34,7 +34,7 @@ export default class Strings {
   static matchDo(regExString, s, func) {
     var m = s.match(regExString)
     if (m) {
-      return func.call(m[0],m[1],m[2],m[3],m[4],m[5],m[6],m[7],m[8])
+      return func.call(...m)
     }
   }
 
@@ -42,7 +42,7 @@ export default class Strings {
     var regEx = new RegExp(regExString, "g")
     do {
       var m = regEx.exec(s)
-      if (m)  func.call(m[0],m[1],m[2],m[3],m[4],m[5],m[6],m[7],m[8])
+      if (m)  func.call(...m)
     } while(m)
   }
 

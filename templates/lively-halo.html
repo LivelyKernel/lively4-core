@@ -26,6 +26,15 @@
       border-radius: 50%;
       background-color: #ccc;
     }
+    
+    lively-halo-name-item {
+      border-radius: 10% !important;
+      background-color: #ccc;
+      margin-top: 5px;
+      min-width: 60px;
+      height: 20px;
+    }
+    
     .halo::shadow i {
       display:inline-block;
       font-size: 16px;
@@ -70,8 +79,11 @@
         <lively-halo-inspect-item class="halo"></lively-halo-inspect-item>
       </div> 
       <div class="row" id="row3">
-        <lively-halo-export-item class="halo"></lively-halo-export-item>
-        <lively-halo-unpack-item class="halo"></lively-halo-unpack-item>
+        <lively-halo-edit-item class="halo"></lively-halo-edit-item>
+        <lively-halo-name-item class="halo"></lively-halo-name-item>
+        
+        <!--<lively-halo-export-item class="halo"></lively-halo-export-item>-->
+        <!--<lively-halo-unpack-item class="halo"></lively-halo-unpack-item>-->
         <lively-halo-resize-item class="halo"></lively-halo-resize-item>
       </div>
     </div>

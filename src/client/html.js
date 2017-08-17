@@ -78,13 +78,6 @@ export default class HTML {
     })
   }
   
-  static enhanceMarkdown(source) {
-    return source.replace(/([ ])#([A-Za-z][A-Za-z0-9]+)/g,
-       "$1[#$2](javascript:lively.openSearchWidget('#$2'))")
-       .replace(/([ ])#([0-9]+)/g,
-       "$1[#$2](javascript:lively.openIssue('$2'))");
-  }
-  
   static registerButtons(parent) {
     // Just an experiment for having to write lesser code.... which ended up in having more code here ;-) #Jens
     Array.prototype.forEach.call(parent.shadowRoot.querySelectorAll("button"), node => {

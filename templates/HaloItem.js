@@ -13,6 +13,8 @@ import Halo from './lively-halo.js';
 
 export default class HaloItem extends Morph {
   
+  get isHaloItem() { return true}
+  
   get isMetaNode() { return true}
   
   initialize() {

@@ -115,7 +115,11 @@ export default class Halo extends Morph {
     lively.globalFocus()
   
     this.alignHaloToBounds(target)
-    this.updateHandles(target) 
+    this.updateHandles(target)
+    
+    this.shadowRoot.querySelectorAll(".halo").forEach(ea => {
+      if (ea.updateTarget) ea.updateTarget(target)
+    })
   }
   
   alignHaloToBounds(target) {

@@ -29,7 +29,7 @@ but at the same time will serve our need better to jump into development and imm
 
 * [node modules](node_modules/): automatically updated, but not availablen on github.io
 * [external](src/external/): static copies, manually management needed
-* [vendor](vendor/) #Refactor
+* [vendor](vendor/): #Refactor
 
 
 

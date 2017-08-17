@@ -9,6 +9,8 @@ import * as cop  from "src/external/ContextJS/src/contextjs.js";
 import ScopedScripts from "./ScopedScripts.js";
 import DelayedCall from 'src/client/delay.js';
 import Clipboard from "src/client/clipboard.js" 
+import MarkdownIt from "src/external/markdown-it.js"
+import MarkdownItHashtag from "src/external/markdown-it-hashtag.js"
 
 export default class Container extends Morph {
 
@@ -513,42 +515,18 @@ export default class Container extends Morph {
     this.get('#container-editor').innerHTML = '';
   }
   
-  appendMarkdown(content) {
-    System.import(lively4url + '/src/external/showdown.js').then((showdown) => {
-      var converter = new showdown.Converter();
-       content = content
-        .replace(/<lively-script><script>/g,"<script>")
-        .replace(/<\/script><\/lively-script>/g,"</script>")
-        .replace(/<lively-script>/g,"<script>")
-        .replace(/<\/lively-script>/g,"</script>")
-
-      var enhancedMarkdown = lively.html.enhanceMarkdown(content);
-      var htmlSource = converter.makeHtml(enhancedMarkdown);
-      htmlSource = htmlSource
-        .replace(/<script>/g,"<lively-script>")
-        .replace(/<\/script>/g,"</lively-script>")
-        
-      var html = $.parseHTML(htmlSource);
-      lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path));
-      // console.log("html", html);
-      var root = this.getContentRoot();
-      if (html) {
-        html.forEach((ea) => {
-          root.appendChild(ea);
-          if (ea.querySelectorAll) {
-            ea.querySelectorAll("pre code").forEach( block => {
-              highlight.highlightBlock(block);
-            });
-          }
-        });
-      }
-      components.loadUnresolved(root);
-      // get around some async fun
-      if (this.preserveContentScroll) {
-       this.get("#container-content").scrollTop = this.preserveContentScroll
+  async appendMarkdown(content) {
+    var md = document.createElement("lively-markdown")
+    await components.openIn(this, md)
+    md.getDir = this.getDir.bind(this);
+    md.followPath = this.followPath.bind(this);
+    await md.setContent(content)
+    
+    // get around some async fun
+    if (this.preserveContentScroll) {
+      this.get("#container-content").scrollTop = this.preserveContentScroll
       delete this.preserveContentScroll
     }
-    });
   }
 
   appendLivelyMD(content) {
@@ -617,9 +595,9 @@ export default class Container extends Morph {
     // content = content.replace(/\<\!-- BEGIN SYSTEM\.JS(.|\n)*\<\!-- END SYSTEM.JS--\>/,"");
     // content = content.replace(/\<\!-- BEGIN LIVELY BOOT(.|\n)*\<\!-- END LIVELY BOOT --\>/,"");
     
-    if (content.match("<template")) {
+    if (content.match("<template") && this.getPath().match("html$")) {
       
-      content = "<pre> " + content.replace(/</g,"&lt;") +"</pre"
+      content = "<pre><code> " + content.replace(/</g,"&lt;") +"</code></pre>"
     }
     
     
@@ -942,7 +920,7 @@ export default class Container extends Morph {
         if (render) return this.appendLivelyMD(content);
       } else {
         this.sourceContent = content;
-        if (render) return this.appendHtml("<pre><code>" + content +"</code></pre>");
+        if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&st;") +"</code></pre>");
       }
     }).then(() => {
       this.dispatchEvent(new CustomEvent("path-changed", {url: this.getURL()}));
