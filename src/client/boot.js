@@ -136,6 +136,7 @@ if (window.lively && window.lively4url) {
             stage2: false,
             stage3: false,
             plugins: window.__karma__ ? [] : [ // #TODO disable plugins while testing... for now
+              'babel-plugin-jsx-lively',
               'babel-plugin-transform-do-expressions',
               'babel-plugin-transform-function-bind',
               'babel-plugin-locals',
@@ -149,6 +150,7 @@ if (window.lively && window.lively4url) {
             stage2: false,
             stage3: false,
             plugins: [
+              'babel-plugin-jsx-lively',
               'babel-plugin-transform-do-expressions',
               'babel-plugin-transform-function-bind',
               'babel-plugin-locals',
@@ -166,6 +168,7 @@ if (window.lively && window.lively4url) {
             stage2: false,
             stage3: false,
             plugins: [
+              'babel-plugin-jsx-lively',
               'babel-plugin-transform-do-expressions',
               'babel-plugin-transform-function-bind',
               'babel-plugin-locals',

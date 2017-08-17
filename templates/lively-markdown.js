@@ -12,6 +12,19 @@ export default class LivelyMarkdown extends Morph {
     this.updateView()
   }
 
+  ensureLivelyScriptSource(element) {
+    var scriptElements = []
+    if (element.tagName && element.tagName.toLowerCase() == "lively-script") {
+        scriptElements.push(element)
+    }
+    if (element.querySelectorAll) {
+      element.querySelectorAll("lively-script").forEach(script => scriptElements.push(script))
+    }
+    scriptElements.forEach(script => {
+      script.textContent = script.innerHTML; // do not parse HTML inside lively-script
+    })
+  }
+
   async updateView() {
     var md = new MarkdownIt({
       html:         true,        // Enable HTML tags in source
@@ -54,10 +67,10 @@ export default class LivelyMarkdown extends Morph {
     htmlSource = htmlSource
       .replace(/<script>/g,"<lively-script>")
       .replace(/<\/script>/g,"</lively-script>")
-      
-      
+
     // setting innerHTML directly will strip "script"-tags, so we parse it and append in manually
-    var html = $.parseHTML(htmlSource);
+    var html = $.parseHTML(htmlSource); // #TODO get rid of jQuery... any HTML parser we could use?
+    // We cannot use "innerHMTL = something " here directly, because it will not interpret "script" tags due to security concerns... preventing code injection
     
     var dir = this.getDir()
     if (dir) {
@@ -68,6 +81,8 @@ export default class LivelyMarkdown extends Morph {
     var root = this.get("#content")
     if (html) {
       html.forEach((ea) => {
+        this.ensureLivelyScriptSource(ea)
+        
         root.appendChild(ea); 
         if (ea.querySelectorAll) {
           ea.querySelectorAll("pre code").forEach( block => {

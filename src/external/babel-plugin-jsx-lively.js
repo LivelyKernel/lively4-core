@@ -49,7 +49,6 @@ export function childExpression(expression) {
 }
 
 export function childSpread(array) {
-  lively.notify(array);
   return array;
 }
 
@@ -108,7 +107,7 @@ export default function ({ types: t, template, traverse }) {
     let declar = file.declarations[name];
     if (declar) return declar;
 
-    let identifier = file.declarations[name] = file.addImport("https://lively-kernel.org/lively4/lively4-core/src/external/babel-plugin-jsx-lively.js", name, name);
+    let identifier = file.declarations[name] = file.addImport("babel-plugin-jsx-lively", name, name);
     identifier[GENERATED_IMPORT_IDENTIFIER] = true;
     return identifier;
   }
@@ -183,8 +182,7 @@ export default function ({ types: t, template, traverse }) {
             JSXElement(path, state) {
               const jSXAttributes = path.get("openingElement").get("attributes");
               const jSXChildren = path.get("children");
-              lively.notify(jSXChildren.length);
-              
+
               let newNode = t.callExpression(
                 addCustomTemplate(programState.file, "element"),
                 [

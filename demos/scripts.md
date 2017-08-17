@@ -34,3 +34,6 @@ console.log("I was here, too!")
 </script></lively-script>
 
 
+<script>
+<button>hello</button>
+</script>
