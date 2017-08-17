@@ -7,6 +7,8 @@ export function element(tagName, attributes, children) {
     tag.setAttribute(key, value);
   }
   
+  children.forEach(child => tag.appendChild(child));
+  
   return tag;
 }
 
@@ -26,8 +28,20 @@ export function attributeExpression(key, value) {
   return { [key]: value.toString() };
 }
 
-export function children(children) {
-  
+export function children(...children) {
+  return [].concat(...children);
+}
+
+export function childText(text) {
+  return [document.createTextNode(text)];
+}
+
+export function childElement(jSXElement) {
+  return [jSXElement];
+}
+
+export function childExpression(expression) {
+  return [expression];
 }
 
 
@@ -53,6 +67,17 @@ function detectUnsupportedNodes(path, filename) {
     JSXMemberExpression(path, state) {
       throw new SyntaxError(`JSXMemberExpression not yet supported.
 ${gainPrintableFullPath(path)}`, filename, path.node.loc.start.line);
+    },
+    /**
+     * No support for JSXEmptyExpression yet. #TODO: where is this feature even useful?
+     * 
+     * <div id={}></div>
+     * or
+     * <div>{}</div>
+     */
+    JSXEmptyExpression(path, state) {
+      throw new SyntaxError(`JSXEmptyExpression not yet supported.
+${gainPrintableFullPath(path)}`, filename);
     },
     /**
      * No support for JSXSpreadAttribute yet.
@@ -124,38 +149,28 @@ export default function ({ types: t, template, traverse }) {
           }
           
           function jSXChildrenToBuilder(child) {
-            function getCallExpressionFor(functionName, ...additionalParameters) {
+            function getCallExpressionFor(functionName, childSpec) {
               return t.callExpression(
                 addCustomTemplate(programState.file, functionName), // builder function
                 [
-                  t.stringLiteral(path.get("name").node.name), // key
-                  ...additionalParameters
+                  childSpec
                 ]
               );
             }
-            
+
             if(child.isJSXText()) {
-              return t.stringLiteral(child.node.value);
+              return getCallExpressionFor("childText", t.stringLiteral(child.node.value));
             }
             if(child.isJSXElement()) {
-              return child.node;
-            }
-            if(child.isJSXElement()) {
-              return child.node;
+              return getCallExpressionFor("childElement", child.node);
             }
             if(child.isJSXExpressionContainer()) {
-              return child.get("expression").node;
+              return getCallExpressionFor("childExpression", child.get("expression").node);
             }
-            return t.stringLiteral("Foo");
-            
-            if(child.isStringLiteral()) {
-              return getCallExpressionFor("attributeStringLiteral", child.node);
-            } else if(child.isJSXExpressionContainer()) {
-              return getCallExpressionFor("attributeExpression", child.node.expression);
-            } else if(child.isJSXSpreadChild()) {
+            if(child.isJSXSpreadChild()) {
               throw new SyntaxError(`JSXSpreadChild as child of JSXElement not yet supported.`);
             }
-            throw new Error('unknown node type in JSXAttribute value ' + child.node.type);
+            throw new Error('unknown node type in children of JSXElement ' + child.node.type);
           }
           
           
@@ -181,26 +196,14 @@ export default function ({ types: t, template, traverse }) {
               );
 
               path.replaceWith(newNode);
-            },
-            JSXExpressionContainer(path, state) {
-              //path.replaceWith(path.expression);
-            },
+            }
           })
           
           return path;
         }
-        
 
         transformPath(path, state);
-      },
-        
-      /*JSXText(path, state) {
-        path.replaceWith(t.identifier(path.node.value + "$"))
-      },
-      
-      JSXExpressionContainer(path, state) {
-        path.replaceWith(path.node.expression);
-      }*/
+      }
     }
   };
 }

@@ -30,7 +30,7 @@ export default class AstExplorer extends Morph {
 
     // try {    
     
-    var src =  this.getAttribute("src")
+    var src =  this.getAttribute('src')
     if (!src) src = "https://lively-kernel.org/lively4/lively4-jens/demos/astplugin.js"
     this.get("#plugin").setURL(src)
 
