@@ -109,7 +109,10 @@ if (window.lively && window.lively4url) {
         'babel-plugin-doit-this-ref': lively4url + '/src/external/babel-plugin-doit-this-ref.js',
         'babel-plugin-locals': lively4url + '/src/external/babel-plugin-locals.js',
         'babel-plugin-var-recorder': lively4url + '/src/external/babel-plugin-var-recorder.js',
-        'workspace-loader': lively4url + '/src/client/workspace-loader.js'
+        'workspace-loader': lively4url + '/src/client/workspace-loader.js',
+        
+        // utils
+        'utils': lively4url + '/src/client/utils.js'
       },
       trace: true,
       transpiler: 'plugin-babel'
