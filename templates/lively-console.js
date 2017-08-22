@@ -75,7 +75,7 @@ export default class Console extends Morph {
           let text = editor.getValue()
           this.logWithLeftAndRight([text], "> ")
           let result = await commandLine.tryBoundEval(text, false);
-          this.logWithLeftAndRight([result], "<⋅")
+          this.logWithLeftAndRight([result], "<â")
       },
     })
 
@@ -137,7 +137,7 @@ export default class Console extends Morph {
   
     
   log() {
-    var args = lively.array(arguments)
+    var args = Array.from(arguments)
     
     if (this.lastLog && (this.lastLog.join("") == args.join(""))) {
       this.lastLogCounter++

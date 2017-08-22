@@ -30,7 +30,7 @@ export default class LivelyContainerNavbar extends Morph {
       var div = document.createElement("div");
       div.innerHTML = html;
       var i=0;
-      lively.array(div.querySelectorAll("a"))
+      Array.from(div.querySelectorAll("a"))
         .filter( ea => !ea.getAttribute("href").match(/^javascript:/))
         .forEach( ea => {
         stats.contents.push({
@@ -148,7 +148,7 @@ export default class LivelyContainerNavbar extends Morph {
         return;
       }
       // fill navbar with list of script
-      lively.array(template.content.querySelectorAll("script")).forEach((ea) => {
+      Array.from(template.content.querySelectorAll("script")).forEach((ea) => {
 	      var element = document.createElement("li");
 	      element.innerHTML = ea.getAttribute('data-name');
 	      element.classList.add("subitem");

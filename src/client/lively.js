@@ -32,6 +32,8 @@ import Selection from 'templates/lively-selection.js'
 import windows from "templates/lively-window.js"
 import boundEval from "src/client/bound-eval.js";
 
+import { toArray } from "utils";
+
 let $ = window.$; // known global variables.
 
 // a) Special shorthands for interactive development
@@ -207,7 +209,7 @@ export default class Lively {
     // there seems to be no <link ..> tag allowed to reference css inside of templates #Jens
     var promises = [];
     var allSrc = []
-    _.each(root.querySelectorAll("style"), ea => {
+    root.querySelectorAll("style").forEach(ea => {
       var src = ea.getAttribute("data-src"); 
       if (src) {
         allSrc.push(src)
@@ -300,11 +302,6 @@ export default class Lively {
   
   static exportModules() {
     exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expectednit
-  }
-  
-
-  static array(anyList){
-    return Array.prototype.slice.call(anyList); // TODO: use Array.from
   }
 
   static asUL(anyList){
@@ -582,7 +579,7 @@ export default class Lively {
           notificationList.addNotification(title, text, timeout, cb, color);
       });
     } else {
-      var duplicateNotification = lively.array(document.querySelectorAll("lively-notification")).find(ea => {
+      var duplicateNotification = Array.from(document.querySelectorAll("lively-notification")).find(ea => {
         new LivelyNotification({ "ea title": title, text }).displayOnConsole();
 
         return ("" +ea.title == ""+title) && ("" + ea.message == "" +text)
@@ -727,7 +724,7 @@ export default class Lively {
     var tagName = await components.reloadComponent(html);
     if (!tagName) return;
 
-    _.each($(tagName), function(oldInstance) {
+    document.body.querySelectorAll(tagName).forEach(oldInstance => {
       if (oldInstance.__ingoreUpdates) return;
 
       // if (oldInstance.isMinimized && oldInstance.isMinimized()) return // ignore minimized windows
@@ -740,13 +737,14 @@ export default class Lively {
         oldInstance.livelyPreMigrate(oldInstance); 
       }
       owner.replaceChild(newInstance, oldInstance);
-      _.each(oldInstance.childNodes, function(ea) {
+      oldInstance.childNodes.forEach(ea => {
         if (ea) { // there are "undefined" elemented in childNodes... sometimes #TODO
           newInstance.appendChild(ea);
           // console.log("append old child: " + ea);
         }
       });
-      _.each(oldInstance.attributes, function(ea) {
+      
+      Array.from(oldInstance.attributes).forEach(ea => {
         // console.log("set old attribute " + ea.name + " to: " + ea.value);
         newInstance.setAttribute(ea.name, ea.value);
       });
@@ -1096,7 +1094,7 @@ export default class Lively {
   
   static findPositionForWindow(worldContext) {
      // this gets complicated: find a free spot starting top left going down right
-      var windows = lively.array(worldContext.querySelectorAll(":scope > lively-window"))
+      var windows = Array.from(worldContext.querySelectorAll(":scope > lively-window"))
       var offset = 20
       var pos
       for(var i=0; !pos; i++) {
@@ -1127,7 +1125,7 @@ export default class Lively {
       editorComp = Array.from(worldContext.querySelectorAll("lively-container")).find(ea => ea.isSearchBrowser);
     } 
  
-    var lastWindow = _.first(lively.array(worldContext.querySelectorAll("lively-window"))
+    var lastWindow = _.first(Array.from(worldContext.querySelectorAll("lively-window"))
       .filter(  ea => ea.childNodes[0] && ea.childNodes[0].isSearchBrowser));
       
     containerPromise = editorComp ? Promise.resolve(editorComp) :

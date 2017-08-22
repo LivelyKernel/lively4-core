@@ -274,7 +274,7 @@ export default class HTML {
     });
     lively.focusWithoutScroll(oldActiveElement)
 
-    lively.array(worldContext.querySelectorAll(":scope > lively-window, :scope > .lively-content")).filter(ea => {
+    Array.from(worldContext.querySelectorAll(":scope > lively-window, :scope > .lively-content")).filter(ea => {
       return !this.hasDoNotPersistTag(ea)
     }).forEach( ea => {
       source += ea.outerHTML + "\n"

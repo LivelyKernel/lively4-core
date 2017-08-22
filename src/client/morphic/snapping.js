@@ -4,7 +4,7 @@ import Strings from 'src/client/strings.js';
 export class Grid {
   static snapAllTopLevelContent() {
     var  gridSize = lively.preferences.get("gridSize") || 100;
-    lively.array(document.body.querySelectorAll(":scope > *"))
+    Array.from(document.body.querySelectorAll(":scope > *"))
       .filter(ea => ea.classList.contains("lively-content") || ea.isWindow)
       .forEach( ea => {
         var pos = lively.getPosition(ea)
@@ -127,7 +127,7 @@ export default class Snapping {
 
   get all() {
     if (!this._all) {
-      this._all = lively.array(this.target.parentElement.querySelectorAll(":scope > *"))
+      this._all = Array.from(this.target.parentElement.querySelectorAll(":scope > *"))
         .filter(ea => (ea !== this.target) && ea.classList.contains("lively-content"));
     }
     return this._all

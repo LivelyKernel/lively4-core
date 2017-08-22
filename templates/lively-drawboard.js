@@ -349,7 +349,7 @@ export default class LivelyDrawboard extends Morph {
     var paperPath =  new this.paper.Path(path.getAttribute("d"))
     
     if (path.command == "delete") {
-        lively.array(this.get("#svg").querySelectorAll("path"))
+        Array.from(this.get("#svg").querySelectorAll("path"))
           .filter( ea => {
             var eaPath = new paper.Path(ea.getAttribute("d"))
           

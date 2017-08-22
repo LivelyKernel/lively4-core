@@ -172,7 +172,7 @@ export default class Layout {
 // if (that) {
 //   Layout.randomizeContentPosition(that)
 //   setTimeout(() => {
-//     Layout.expandUntilNoIntersectionsToBottomLeft(lively.array(that.childNodes))
+//     Layout.expandUntilNoIntersectionsToBottomLeft(Array.from(that.childNodes))
 //   }, 500)
 // }
 

@@ -102,7 +102,7 @@ export default class FlowerScript extends Morph {
   }
   
   flowerNodes() {
-    return lively.array(this.world().querySelectorAll("*")).filter(ea => ea.isFlowerNode)
+    return Array.from(this.world().querySelectorAll("*")).filter(ea => ea.isFlowerNode)
   }
 
   world() {

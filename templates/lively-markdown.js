@@ -60,7 +60,6 @@ export default class LivelyMarkdown extends Morph {
 
     var dir = this.getDir()
     if (dir) {
-      lively.notify('try fixlinks')
       lively.html.fixLinks([root], this.getDir(), path => this.followPath(path));
     }
 

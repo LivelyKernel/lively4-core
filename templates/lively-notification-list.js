@@ -21,7 +21,7 @@ export default class NotificationList extends Morph {
   }
 
   clear() {
-    lively.array(this.childNodes).forEach(ea => this.removeChild(ea))
+    Array.from(this.childNodes).forEach(ea => this.removeChild(ea))
   }
   
   hideIfEmpty( ) {

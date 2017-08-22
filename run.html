@@ -12,7 +12,7 @@ document.addEventListener("livelyloaded", () => {
   lively.files.loadFile(url).then((content) => {
     var container = document.createElement("div")
     container.innerHTML = content
-    lively.array(container.childNodes).forEach(ea => {
+    container.childNodes.forEach(ea => {
       document.body.appendChild(ea)
     })
     lively.components.loadUnresolved().then(function() {
