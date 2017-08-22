@@ -4,3 +4,8 @@
 //.then
 
 export * from './lodash-bound.js';
+
+export function through(func, ...args) {
+  func(this, ...args);
+  return this;
+}

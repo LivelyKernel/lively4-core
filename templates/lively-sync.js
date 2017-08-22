@@ -275,7 +275,7 @@ export default class Sync extends Morph {
     var branches = await this.gitControl("branches", ()=>{})
     branches = branches.split("\n")
     var currentRegex = /^ *\*/
-    var currentBranch = _.detect(branches, ea => ea.match(currentRegex))
+    var currentBranch = branches.find(ea => ea.match(currentRegex));
     if(!currentBranch) {
       return
     }

@@ -1124,8 +1124,7 @@ export default class Lively {
     var editorComp;
     var containerPromise;
     if (replaceExisting) {
-      editorComp = _.detect(worldContext.querySelectorAll("lively-container"), 
-        ea => ea.isSearchBrowser);
+      editorComp = Array.from(worldContext.querySelectorAll("lively-container")).find(ea => ea.isSearchBrowser);
     } 
  
     var lastWindow = _.first(lively.array(worldContext.querySelectorAll("lively-window"))

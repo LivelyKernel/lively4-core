@@ -1,5 +1,12 @@
 import jsx from "babel-plugin-syntax-jsx";
 
+/**
+ * Resources for JSX Semantics
+ * Web components in react: https://facebook.github.io/react/docs/web-components.html
+ * Child lists and keys: https://facebook.github.io/react/docs/lists-and-keys.html
+ * JSX babel transform helpers: https://github.com/babel/babel/blob/7.0/packages/babel-helper-builder-react-jsx/src/index.js
+ */
+
 export function element(tagName, attributes, children) {
   const tag = document.createElement(tagName);
   
@@ -99,6 +106,13 @@ ${gainPrintableFullPath(path)}`, filename, path.node.loc.start.line);
   });
 }
 
+/**
+ * Resources for JSX Syntax
+ * JSX babel Preset: https://github.com/babel/babel/blob/master/packages/babel-preset-react/src/index.js
+ * JSX spec draft: https://github.com/facebook/jsx
+ * JSX Syntax definition in babel: https://github.com/babel/babel/blob/master/packages/babel-types/src/definitions/jsx.js#L10
+ * Babel nodes list: https://babeljs.io/docs/core-packages/babel-types/#apij-sxidentifier
+ */
 export default function ({ types: t, template, traverse }) {
   const GENERATED_IMPORT_IDENTIFIER = Symbol("generated import identifier");
 
