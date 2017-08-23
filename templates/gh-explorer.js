@@ -83,6 +83,9 @@ export default class GhExplorer extends Morph {
       }
     });
     
+    this.get("#visit-api").addEventListener('click', e => {
+      window.open('https://172.16.64.132:5555/sql/', "blank");
+    })
     this.doQuery();
   }
   doQuery() {
