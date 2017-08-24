@@ -5,6 +5,8 @@ import Morph from "./Morph.js"
 
 let loadPromise = undefined;
 
+
+
 export default class LivelyCodeMirror extends HTMLElement {
 
   static get codeMirrorPath() {
@@ -26,14 +28,21 @@ export default class LivelyCodeMirror extends HTMLElement {
     
     loadPromise = (async () => {
       await this.loadModule("lib/codemirror.js")
+
       await this.loadModule("mode/javascript/javascript.js")
+      await this.loadModule("mode/markdown/markdown.js")
+      await this.loadModule("mode/htmlmixed/htmlmixed.js")
+
+      await this.loadModule("addon/mode/overlay.js")
+      await this.loadModule("mode/gfm/gfm.js")
+
       await this.loadModule("addon/hint/show-hint.js")
       await this.loadModule("addon/hint/javascript-hint.js")
       await this.loadModule("addon/search/searchcursor.js")
       await this.loadModule("addon/search/search.js")
       await this.loadModule("addon/search/jump-to-line.js")
       await this.loadModule("addon/dialog/dialog.js")
-      
+      await this.loadModule("keymap/sublime.js")
       await System.import(lively4url + '/templates/lively-code-mirror-hint.js')
   
       this.loadCSS("addon/hint/show-hint.css")
@@ -56,14 +65,25 @@ export default class LivelyCodeMirror extends HTMLElement {
       
     await LivelyCodeMirror.loadModules()
 
-    var value = (text && text.textContent) || this.value || "no content";
+    var value
+    if (this.textContent) {
+      value = this.decodeHTML(this.textContent);
+    } else {
+      value = this.value || "no content 2";
+    }
 
     this.editor = CodeMirror(this.shadowRoot.querySelector("#code-mirror-container"), {
       value: value,
       lineNumbers: true,
-      gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter"],
-      mode: {name: "javascript", globalVars: true},
+      gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter"]
     });  
+    // mode: {name: "javascript", globalVars: true},
+    
+    if (this.mode) {
+      this.editor.setOption("mode", this.mode);
+    }
+    
+    this.editor.setOption("keyMap",  "sublime")
     
     this.editor.setOption("extraKeys", {
       "Alt-F": "findPersistent",
@@ -81,6 +101,11 @@ export default class LivelyCodeMirror extends HTMLElement {
         this.doSave(this.editor.getValue());
       },
     });
+    this.editor.setOption("hintOptions", {
+      container: this.shadowRoot.querySelector("#code-mirror-hints")
+    });
+    
+    
     this.editor.doc.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))
     this.isLoading = false
     this.dispatchEvent(new CustomEvent("editor-loaded"))
@@ -228,12 +253,53 @@ export default class LivelyCodeMirror extends HTMLElement {
   getCustomStyle(source) {
     return this.shadowRoot.querySelector("#customStyle").textContent
   }
+   
+  encodeHTML(s) {
+    return s.replace("&", "&amp;").replace("<", "&lt;") 
+  }
+  
+  decodeHTML(s) {
+    return s.replace("&lt;", "<").replace("&amp;", "&") 
+  }
+    
+  resize() {
+    // #ACE Component compatiblity
+  }
+    
+  enableAutocompletion() {
+    // #ACE Component compatiblity
+  }
+  
+  changeModeForFile(filename) {
+    // #ACE Component compatiblity
+    
+    if (!this.editor) return;
+    
+    var mode = "text"
+    // #TODO there must be some kind of automatching?
+    if (filename.match(/\.html$/)) {
+      mode = "htmlmixed"
+    } else if (filename.match(/\.md$/)) {
+      mode = "gfm"
+    } else if (filename.match(/\.js$/)) {
+      mode = "javascript"
+    }
+    this.mode = mode
+    this.editor.setOption("mode", mode)
+    lively.notify("change mode " + mode)
+  }
+
+  livelyPrepareSave() {
+    this.textContent = this.encodeHTML(this.editor.getValue())
+  }
 
   async livelyMigrate(other) {
-   this.addEventListener("editor-loaded", () => {
-      this.value = other.value
-   })
+    this.addEventListener("editor-loaded", () => {
+        this.value = other.value
+    })
   }
 }
 
+
+// LivelyCodeMirror.loadModules()
 

@@ -8,11 +8,23 @@
 import Morph from './Morph.js';
 import moment from "src/external/moment.js";
 import diff from 'src/external/diff-match-patch.js';
+import preferences from 'src/client/preferences.js';
 
 export default class Editor extends Morph {
 
   initialize() {
     var container = this.get(".container");
+    
+    var editor
+    if (preferences.get("UseCodeMirror")) {
+      editor = document.createElement("lively-code-mirror")
+    } else {
+      editor = document.createElement("juicy-ace-editor")
+    }
+    editor.id = "editor"
+    editor.setAttribute("wrapmode", true)
+    container.appendChild(editor)
+
     lively.html.registerButtons(this);
     var input = this.get("#filename");
     $(input).keyup(event => {
@@ -92,7 +104,7 @@ export default class Editor extends Morph {
   }
 
   currentEditor() {
-    return this.getSubmorph('juicy-ace-editor').editor;
+    return this.get('#editor').editor;
   }
 
   getURL() {
@@ -117,16 +129,24 @@ export default class Editor extends Morph {
 
   setText(text) {
     this.lastText = text;
-    this.updateChangeIndicator();
-    this.currentEditor().setValue(text);
-    this.currentEditor().resize();
-    this.updateAceMode();
+    var editor = this.currentEditor();
+    if (editor) {
+      this.updateChangeIndicator();
+      editor.setValue(text);
+      if (editor.resize) editor.resize();
+      this.updateAceMode();
+    } else {
+      // Code Mirror
+      this.get('#editor').value = text
+    }
   }
 
   updateAceMode() {
     var url = this.getURL();
-    var editorComp = this.getSubmorph("juicy-ace-editor");
-    editorComp.changeModeForFile(url.pathname);
+    var editorComp = this.get("#editor");
+    if (editorComp && editorComp.changeModeForFile) {
+      editorComp.changeModeForFile(url.pathname);
+    }
   }
 
   loadFile(version) {
@@ -144,10 +164,13 @@ export default class Editor extends Morph {
       // lively.notify("loaded version " + this.lastVersion);
       return response.text();
     }).then((text) => {
-        var oldRange = this.currentEditor().selection.getRange()
-        this.setText(text);
-        this.currentEditor().selection.setRange(oldRange)
-        
+        if (preferences.get("UseCodeMirror")) {
+          this.setText(text);
+        } else { 
+          var oldRange = this.currentEditor().selection.getRange()
+          this.setText(text);
+          this.currentEditor().selection.setRange(oldRange)
+        }  
         
       },
       (err) => {

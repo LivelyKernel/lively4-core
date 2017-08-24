@@ -115,7 +115,7 @@ export default class HaloGrabItem extends HaloItem {
       
     this.grabTarget.classList.remove("lively4-grabbed")
     if (this.grabShadow.style.position == 'absolute') {
-        lively.notify("absolute...")
+
         this.insertGrabTargetBeforeShadow();
         this.removeGrabShadow();
         lively.setPosition(this.grabTarget, lively.getPosition(this.grabShadow))

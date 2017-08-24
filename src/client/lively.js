@@ -324,6 +324,10 @@ export default class Lively {
   static openWorkspace(string, pos, worldContext) {
     string = string || "";
     var name = "juicy-ace-editor";
+    if (preferences.get("UseCodeMirror")) {
+      name = "lively-code-mirror"      
+    }
+
     return  lively.openComponentInWindow(name, null, pt(400,500), worldContext).then((comp) => {
       comp.mode = "javascript";
       comp.editor.setValue(string);

@@ -752,7 +752,7 @@ export default class Container extends Morph {
     editor.id = "editor";
     return lively.components.openIn(container, editor).then( () => {
         editor.hideToolbar();
-        var aceComp = editor.get('juicy-ace-editor');
+        var aceComp = editor.get('#editor');
         aceComp.enableAutocompletion();
         aceComp.getDoitContext = () => {
           return window.that;
@@ -760,7 +760,9 @@ export default class Container extends Morph {
         // aceComp.getDoitContextModuleUrl = () => {
         //   return this.getURL()
         // }
-        aceComp.aceRequire('ace/ext/searchbox');
+        if (aceComp.aceRequire) { 
+          aceComp.aceRequire('ace/ext/searchbox');
+        }
         aceComp.doSave = text => {
           this.onSave();
         };
@@ -1016,7 +1018,7 @@ export default class Container extends Morph {
       this.showNavbar();
       
       return this.getEditor().then(livelyEditor => {
-        var aceComp = livelyEditor.get('juicy-ace-editor');
+        var aceComp = livelyEditor.get('#editor');
         
         aceComp.addEventListener("change", evt => this.onTextChanged(evt))
         
