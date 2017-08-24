@@ -33,7 +33,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/search/search.js")
       await this.loadModule("addon/search/jump-to-line.js")
       await this.loadModule("addon/dialog/dialog.js")
-      
+      await this.loadModule("keymap/sublime.js")
       await System.import(lively4url + '/templates/lively-code-mirror-hint.js')
   
       this.loadCSS("addon/hint/show-hint.css")
@@ -64,6 +64,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter"],
       mode: {name: "javascript", globalVars: true},
     });  
+    
+    this.editor.setOption("keyMap",  "sublime")
     
     this.editor.setOption("extraKeys", {
       "Alt-F": "findPersistent",
