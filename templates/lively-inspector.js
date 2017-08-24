@@ -178,7 +178,7 @@ export default class Inspector   extends Morph {
   renderAttributes(node, obj) {
     if (obj.attributes) {
       var attrNode = node.querySelector("#attributes");
-      lively.array(obj.attributes).forEach(ea => {
+      Array.from(obj.attributes).forEach(ea => {
         var eaNode = document.createElement("span");
         eaNode.innerHTML = ` <span class='attrName'>${ea.name}=</span>${this.quoteTemplate}<span class="attrValue">${ea.value}</span>${this.quoteTemplate}`;
         var valueNode = eaNode.querySelector(".attrValue") ;

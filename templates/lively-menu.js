@@ -26,7 +26,7 @@ export default class LivelyMenu extends Morph {
     if (!this.currentItem) {
       this.selectItem(menu.childNodes[0])
     } else {
-      var items = lively.array(menu.querySelectorAll("li"))
+      var items = Array.from(menu.querySelectorAll("li"))
       var nextIdx = items.indexOf(this.currentItem)
       this.selectItem(items[nextIdx + offset])
     }
@@ -74,7 +74,7 @@ export default class LivelyMenu extends Morph {
       var icon = "<div class='icon'>"+ (ea[3] ? ea[3] : "")+"</div>"
       var right = " <label>" 
         + (ea[2] ?  ea[2].replace("CMD","Ctrl")  : "")
-        + "<span class='submenuindicator'> "+ (ea[1] instanceof Array ? "▶" : " ")+" </span>"
+        + "<span class='submenuindicator'> "+ (ea[1] instanceof Array ? "â¶" : " ")+" </span>"
         + "</label>"
 
       

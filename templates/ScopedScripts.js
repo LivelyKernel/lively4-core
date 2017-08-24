@@ -95,7 +95,7 @@ layer(ScopedScripts, "DocumentLayer").refineObject(document, {
     // console.log("BEGIN")
     var div = document.createElement("div");
     div.innerHTML = a;
-    lively.array(div.childNodes).forEach( ea => {
+    div.childNodes.forEach( ea => {
       // console.log("append child: " + ea);
       var myPromise = new Promise((resolve, reject) => {
         if (ea.tagName == "SCRIPT") {

@@ -66,7 +66,7 @@ export default class LivelyTable extends Morph {
   }
 
   rows() {
-    return lively.array(this.querySelectorAll("tr"))
+    return Array.from(this.querySelectorAll("tr"))
   }
   
   column(indexOrLabel) {
@@ -86,7 +86,7 @@ export default class LivelyTable extends Morph {
   }
 
   cellsIn(row) {
-    return lively.array(row.querySelectorAll("td,th"))
+    return Array.from(row.querySelectorAll("td,th"))
   }
 
   cellAt(columnIndex,rowIndex) {
@@ -443,8 +443,8 @@ export default class LivelyTable extends Morph {
 
 
   asArray() {
-    return lively.array(this.querySelectorAll("tr")).map(eaRow => {
-      return lively.array(eaRow.querySelectorAll("td,th")).map(eaCell => eaCell.textContent)
+    return Array.from(this.querySelectorAll("tr")).map(eaRow => {
+      return Array.from(eaRow.querySelectorAll("td,th")).map(eaCell => eaCell.textContent)
     })
   }
 

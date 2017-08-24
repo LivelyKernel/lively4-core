@@ -52,11 +52,10 @@ export default class ComponentLoader {
   static protypeToComponentName(prototype) {
     if (!prototype || !prototype.constructor) return
     var prototypeName =  prototype.constructor.name
-    return _.detect(_.keys(this.prototypes),
-      name => {
-        var otherProto = this.prototypes[name]
-        var constructor = otherProto && otherProto.constructor;
-        return constructor && (constructor.name ===  prototypeName)})
+    return _.keys(this.prototypes).find(name => {
+      var otherProto = this.prototypes[name]
+      var constructor = otherProto && otherProto.constructor;
+      return constructor && (constructor.name ===  prototypeName)});
   }
 
   static updatePrototype(prototype) {
@@ -283,7 +282,7 @@ export default class ComponentLoader {
           }
         })
         if (unfinished) {
-          resolve("timeout") // "(if) the fuel gauge breaks, call maintenance. If they’re not there in 20 minutes, fuck it."
+          resolve("timeout") // "(if) the fuel gauge breaks, call maintenance. If theyâre not there in 20 minutes, fuck it."
           lively.notify("Timout due to unresolved promises, while loading " + unfinishedPromise.name + " context: " + debuggingHint )
         }
       }, 15 * 1000)

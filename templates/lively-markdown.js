@@ -52,32 +52,23 @@ export default class LivelyMarkdown extends Morph {
     // var htmlSource = md.render(enhancedMarkdown);
     var htmlSource = md.render(content);
     htmlSource = htmlSource
-      .replace(/<script>/g,"<lively-script>")
-      .replace(/<\/script>/g,"</lively-script>")
-      
-      
-    // setting innerHTML directly will strip "script"-tags, so we parse it and append in manually
-    var html = $.parseHTML(htmlSource);
+      .replace(/<script>/g,"<lively-script><script>")
+      .replace(/<\/script>/g,"</script></lively-script>")
     
+    var root = this.get("#content")
+    root.innerHTML = htmlSource;
+
     var dir = this.getDir()
     if (dir) {
-      lively.html.fixLinks(html, this.getDir(), (path) => this.followPath(path));
+      lively.html.fixLinks([root], this.getDir(), path => this.followPath(path));
     }
-    
-    // console.log("html", html);
-    var root = this.get("#content")
-    if (html) {
-      html.forEach((ea) => {
-        root.appendChild(ea); 
-        if (ea.querySelectorAll) {
-          ea.querySelectorAll("pre code").forEach( block => {
-            highlight.highlightBlock(block);
-          });
-        }
-      });
-    }
+
+    // #TODO: fixme
+    //root.querySelectorAll("pre code").forEach( block => {
+    //  highlight.highlightBlock(block);
+    //});
+
     components.loadUnresolved(root);
- 
   }
 
   followPath(path) {

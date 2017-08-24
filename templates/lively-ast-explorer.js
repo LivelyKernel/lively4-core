@@ -30,7 +30,7 @@ export default class AstExplorer extends Morph {
 
     // try {    
     
-    var src =  this.getAttribute("src")
+    var src =  this.getAttribute('src')
     if (!src) src = "https://lively-kernel.org/lively4/lively4-jens/demos/astplugin.js"
     this.get("#plugin").setURL(src)
 
@@ -99,11 +99,21 @@ export default class AstExplorer extends Morph {
     var src = this.get("#source").editor.getValue();
     
     var filename = "tempfile.js"
-    
+
+    var pluginSrc = this.get("#plugin").currentEditor().getValue();
+    var moduleId = generateUUID();
+    //"workspace:" + Date.now();
+    console.log(moduleId)
+    setCode(moduleId, pluginSrc)
+    var plugin = await System.import('workspace:' + encodeURI(moduleId)).then(m => m.default)
+    // #HACK: we explicitly enable jsx syntax for now
+    // #TODO: how to include syntax extensions for ast generation (without the plugin to develop)?
+    var jsxSyntax = await System.import('babel-plugin-syntax-jsx').then(m => m.default)
+
     // get pure ast
     this.ast = babel.transform(src, {
         babelrc: false,
-        plugins: [],
+        plugins: [jsxSyntax],
         presets: [],
         filename: filename,
         sourceFileName: filename,
@@ -118,13 +128,6 @@ export default class AstExplorer extends Morph {
     }).ast
     this.get("#astInspector").inspect(this.ast)
 
-    var pluginSrc = this.get("#plugin").currentEditor().getValue();
-    var moduleId = generateUUID();
-    //"workspace:" + Date.now();
-    console.log(moduleId)
-    setCode(moduleId, pluginSrc)
-    var plugin = await System.import('workspace:' + encodeURI(moduleId)).then(m => m.default)
-  
     this.get("#plugin").currentEditor().getSession().setAnnotations([]);
     
     try {

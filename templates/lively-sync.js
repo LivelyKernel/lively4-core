@@ -275,7 +275,7 @@ export default class Sync extends Morph {
     var branches = await this.gitControl("branches", ()=>{})
     branches = branches.split("\n")
     var currentRegex = /^ *\*/
-    var currentBranch = _.detect(branches, ea => ea.match(currentRegex))
+    var currentBranch = branches.find(ea => ea.match(currentRegex));
     if(!currentBranch) {
       return
     }
@@ -300,7 +300,7 @@ export default class Sync extends Morph {
     
     var repository = this.get("#gitrepository").value
     var list = await this.getGitRepositoryNames()
-    var exists = _.include(list, repository)
+    var exists = list.includes(repository);
     
     // console.log("delete " + this.get("#deleteButton").disabled)
 
@@ -310,19 +310,19 @@ export default class Sync extends Morph {
       this.updateBranchesList() 
     }
 
-    _.each(this.shadowRoot.querySelectorAll(".repo"), ea => 
+    this.shadowRoot.querySelectorAll(".repo").forEach(ea => 
       ea.disabled= !this.loggedin || !exists)
 
-    _.each(this.shadowRoot.querySelectorAll(".branch"), ea => 
+    this.shadowRoot.querySelectorAll(".branch").forEach(ea => 
       ea.disabled= !this.loggedin)
       
-    _.each(this.shadowRoot.querySelectorAll(".clone"), ea => 
+    this.shadowRoot.querySelectorAll(".clone").forEach(ea => 
       ea.disabled= !this.loggedin || exists)
       
-    _.each(this.shadowRoot.querySelectorAll(".login"), ea => 
+    this.shadowRoot.querySelectorAll(".login").forEach(ea => 
       ea.disabled= this.loggedin)
 
-    if (_.include(this.repositoryBlacklist, repository))
+    if (this.repositoryBlacklist.includes(repository))
       this.get("#deleteButton").disabled = true
   }
 }

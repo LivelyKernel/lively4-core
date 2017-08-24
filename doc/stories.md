@@ -13,9 +13,11 @@ What to do with this list?
 
 <script>
 import github from "src/client/github.js"
+import { uniq } from "utils"
 var div = document.createElement("div")
 var button = document.createElement("button")
 button.textContent = "update"
+debugger
 var container = this.parentElement
 var url = container.getURL(url)
 button.onclick = async () => {
@@ -30,8 +32,9 @@ button2.onclick = async () => {
   var source  = await lively.files.loadFile(url)
   var stories = github.current().parseMarkdownStories(source, true)
   var topLevelStories = stories.filter( ea => ea.isStory)
-  var labels = _.uniq(topLevelStories.reduce((sum, ea) => 
+  var labels = (topLevelStories.reduce((sum, ea) => 
       ea.labels ? sum.concat(ea.labels) : sum, []))
+        ::uniq()
         .filter(ea => ea.match(/comp: /)).sort()
   lively.openInspector(stories)
 }

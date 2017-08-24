@@ -94,6 +94,10 @@ if (window.lively && window.lively4url) {
         'babel-plugin-locals': lively4url + '/src/external/aexpr/babel-plugin-locals/index.js',
         'stack-es2015-modules': lively4url + '/src/external/aexpr/stack-es2015-module/src/stack.js',
 
+        // jsx support
+        'babel-plugin-syntax-jsx': lively4url + '/src/external/babel-plugin-syntax-jsx.js',
+        'babel-plugin-jsx-lively': lively4url + '/src/external/babel-plugin-jsx-lively.js',
+        
         // stage 0 support
         'babel-plugin-transform-do-expressions': lively4url + '/src/external/babel-plugin-transform-do-expressions.js',
         'babel-plugin-transform-function-bind': lively4url + '/src/external/babel-plugin-transform-function-bind.js',
@@ -105,7 +109,10 @@ if (window.lively && window.lively4url) {
         'babel-plugin-doit-this-ref': lively4url + '/src/external/babel-plugin-doit-this-ref.js',
         'babel-plugin-locals': lively4url + '/src/external/babel-plugin-locals.js',
         'babel-plugin-var-recorder': lively4url + '/src/external/babel-plugin-var-recorder.js',
-        'workspace-loader': lively4url + '/src/client/workspace-loader.js'
+        'workspace-loader': lively4url + '/src/client/workspace-loader.js',
+        
+        // utils
+        'utils': lively4url + '/src/client/utils.js'
       },
       trace: true,
       transpiler: 'plugin-babel'
@@ -132,6 +139,9 @@ if (window.lively && window.lively4url) {
             stage2: false,
             stage3: false,
             plugins: window.__karma__ ? [] : [ // #TODO disable plugins while testing... for now
+              'babel-plugin-jsx-lively',
+              'babel-plugin-transform-do-expressions',
+              'babel-plugin-transform-function-bind',
               'babel-plugin-locals',
               'babel-plugin-var-recorder'
             ]
@@ -143,13 +153,14 @@ if (window.lively && window.lively4url) {
             stage2: false,
             stage3: false,
             plugins: [
+              'babel-plugin-jsx-lively',
               'babel-plugin-transform-do-expressions',
               'babel-plugin-transform-function-bind',
               'babel-plugin-locals',
               'babel-plugin-doit-result',
               'babel-plugin-doit-this-ref',
               'babel-plugin-var-recorder',
-              'babel-plugin-aexpr-source-transformation'
+              //'babel-plugin-aexpr-source-transformation'
             ]
           },
           loader: 'workspace-loader'
@@ -160,6 +171,7 @@ if (window.lively && window.lively4url) {
             stage2: false,
             stage3: false,
             plugins: [
+              'babel-plugin-jsx-lively',
               'babel-plugin-transform-do-expressions',
               'babel-plugin-transform-function-bind',
               'babel-plugin-locals',

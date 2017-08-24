@@ -74,7 +74,7 @@ export default class Clipboard {
     lively.setPosition(div, pt(0,0))
 
     // paste oriented at a shared topLeft
-    var all = lively.array(div.querySelectorAll(":scope > *"))
+    var all = Array.from(div.querySelectorAll(":scope > *"))
     all.forEach(child => {
       var id = child.getAttribute("data-lively-id")
       child.remove()

@@ -75,7 +75,7 @@ export default class Persistence {
     target = target || this.defaultTarget()
     var div = document.createElement("div")
     div.innerHTML = source
-    lively.array(div.childNodes).forEach(ea => {
+    Array.from(div.childNodes).forEach(ea => {
       target.appendChild(ea)
     })
   }
