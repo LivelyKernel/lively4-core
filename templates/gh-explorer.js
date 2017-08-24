@@ -91,7 +91,7 @@ export default class GhExplorer extends Morph {
   doQuery() {
     let onNewRow = (row, i) => {
       let li = document.createElement("li");
-      li.textContent = i + " " + row[1];
+      li.textContent = row[1];
       this.get("#queryResult").appendChild(li);
     };
     
