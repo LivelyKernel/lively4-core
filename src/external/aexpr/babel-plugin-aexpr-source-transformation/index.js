@@ -118,15 +118,22 @@ export default function(param) {
         pre(file) {
             console.log("fff", file, traverse);
 
+            function ignoreFile() {
+              console.log("IGNORED!!!");
+              file[IGNORE_INDICATOR] = true;
+            }
+
             traverse(file.ast, {
                 enter(path) {
                     if (
                         path.node.leadingComments &&
                         path.node.leadingComments.some(comment => comment.value.includes(IGNORE_STRING))
                     ) {
-                        console.log("IGNORED!!!");
-                        file[IGNORE_INDICATOR] = true;
+                      ignoreFile();
                     }
+                },
+                DirectiveLiteral(path) {
+                  if(path.node.value === IGNORE_STRING) { ignoreFile(); }
                 }
             });
         },

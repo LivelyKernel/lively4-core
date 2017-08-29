@@ -54,7 +54,7 @@ export default class AstExplorer extends Morph {
       this.updateAST()      
     };
     
-    this.pluginEditor.addEventListener("url-changed", (evt) => {
+    this.pluginEditor.addEventListener("url-changed", evt => {
       this.onPluginUrlChanged(evt.detail)      
     })
 
