@@ -352,7 +352,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   changeModeForFile(filename) {
     
-    // lively.notify("change mode for file:" + this.editor)
+    lively.notify("change mode for file:" + this.editor);
     // #ACE Component compatiblity
     
     if (!this.editor) return;

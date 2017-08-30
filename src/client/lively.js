@@ -1154,15 +1154,15 @@ export default class Lively {
     }).then(async () => {
       if (edit) {
         await editorComp.asyncGet("#editor").then(livelyEditor => {
-          var ace = livelyEditor.currentEditor();
           if(pattern) {
             // #Hack ontop #Hack, sorry... The editor has still things to do
             setTimeout(() => {
-              ace.find(pattern);
+              livelyEditor.find(pattern);
             }, 500)
             
           } else if (lineAndColumn) {
-            ace.gotoLine(lineAndColumn.line, lineAndColumn.column)
+            // #TODO ... 
+            // ace.gotoLine(lineAndColumn.line, lineAndColumn.column)
           }
         });
       }

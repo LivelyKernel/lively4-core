@@ -105,7 +105,7 @@ export default class Editor extends Morph {
   currentEditor() {
     return this.get('#editor').editor;
   }
-
+  
   getURL() {
     var filename = $(this.getSubmorph('#filename')).val();
     return new URL(filename);
@@ -274,31 +274,37 @@ export default class Editor extends Morph {
     }
   }
 
-  getScrollInfo() {
+  withEditorObjectDo(func) {
     var editor = this.currentEditor()
-    if (editor && this.isCodeMirror()) {
-    	return editor.getScrollInfo()
+    if (editor) {
+    	return func(editor)
     }    
+  }
+  
+  getScrollInfo() {
+    if (!this.isCodeMirror()) return 
+    return this.withEditorObjectDo(editor => editor.getScrollInfo())
   }
   
   setScrollInfo(info) {
-    var editor = this.currentEditor()
-    if (info && editor && this.isCodeMirror()) {
-    	editor.scrollTo(info.left, info.top)
-    }
+    if (!this.isCodeMirror()) return 
+    return this.withEditorObjectDo(editor => editor.scrollTo(info.left, info.top))
   }
   
   getCursor() {
-    var editor = this.currentEditor()
-    if (editor && this.isCodeMirror()) {
-    	return editor.getCursor()
-    }    
+    if (!this.isCodeMirror()) return 
+    return this.withEditorObjectDo(editor => editor.getCursor())
   }
   
   setCursor(cur) {
-    var editor = this.currentEditor()
-    if (cur && editor && this.isCodeMirror()) {
-    	editor.setCursor(cur)
+    if (!cur || !this.isCodeMirror()) return 
+    return this.withEditorObjectDo(editor => editor.setCursor(cur))
+  }
+  
+  find(pattern) {
+    var editor = this.get('#editor')
+    if (editor) {
+    	editor.find(pattern)
     }
   }
   
