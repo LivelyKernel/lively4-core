@@ -1,91 +1,33 @@
 import d3visualize from 'src/external/aexpr/babel-plugin-aexpr-source-transformation/visualize-ast.js';
-import { addCustomTemplate, GENERATED_IMPORT_IDENTIFIER } from 'src/external/aexpr/babel-plugin-aexpr-source-transformation/utils.js';
+import {
+  isVariable,
+  getParentWithScope
+} from 'src/external/aexpr/babel-plugin-aexpr-source-transformation/utils.js';
 
-const AEXPR_IDENTIFIER_NAME = "aexpr";
+import {
+  AEXPR_IDENTIFIER_NAME,
+  IGNORE_STRING,
+  IGNORE_INDICATOR,
+  SET_MEMBER_BY_OPERATORS,
+  FLAG_GENERATED_SCOPE_OBJECT,
+  FLAG_SHOULD_NOT_REWRITE_IDENTIFIER,
+  FLAG_SHOULD_NOT_REWRITE_MEMBER_EXPRESSION,
+  FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION,
+  GENERATED_IMPORT_IDENTIFIER
+} from 'src/external/aexpr/babel-plugin-aexpr-source-transformation/constants.js';
 
-const GET_MEMBER = "getMember";
-const GET_AND_CALL_MEMBER = "getAndCallMember";
-
-const IGNORE_STRING = "aexpr ignore";
-const IGNORE_INDICATOR = Symbol("aexpr ignore");
-
-const SET_MEMBER_BY_OPERATORS = {
-  '=': 'setMember',
-  '+=': 'setMemberAddition',
-  '-=': 'setMemberSubtraction',
-  '*=': 'setMemberMultiplication',
-  '/=': 'setMemberDivision',
-  '%=': 'setMemberRemainder',
-  //'**=': 'setMemberExponentiation',
-  '<<=': 'setMemberLeftShift',
-  '>>=': 'setMemberRightShift',
-  '>>>=': 'setMemberUnsignedRightShift',
-  '&=': 'setMemberBitwiseAND',
-  '^=': 'setMemberBitwiseXOR',
-  '|=': 'setMemberBitwiseOR'
-};
-
-const SET_LOCAL = "setLocal";
-const GET_LOCAL = "getLocal";
-
-const SET_GLOBAL = "setGlobal";
-const GET_GLOBAL = "getGlobal";
-
-// TODO: use multiple flag for indication of generated content, marking explicit scopes, etc.
-const FLAG_GENERATED_SCOPE_OBJECT = Symbol('FLAG: generated scope object');
-const FLAG_SHOULD_NOT_REWRITE_IDENTIFIER = Symbol('FLAG: should not rewrite identifier');
-const FLAG_SHOULD_NOT_REWRITE_MEMBER_EXPRESSION = Symbol('FLAG: should not rewrite member expression');
-const FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION = Symbol('FLAG: should not rewrite assignment expression');
+import * as transformator from 'src/external/aexpr/babel-plugin-aexpr-source-transformation/transformators.js';
 
 export default function(param) {
-  let { types: t, template, traverse } = param;
-  //console.log(arguments);
-
-  function getPropertyFromMemberExpression(node) {
-    // We are looking for MemberExpressions, which have two distinct incarnations:
-    // 1. we have a computed MemberExpression like a[b], with the property being an Expression
-    // 2. a non-computed MemberExpression like a.b, with the property being an Identifier
-    return node.computed ?
-      // We can easily deal with the first case by replacing the MemberExpression with a call
-      node.property :
-      // In the second case, we introduce a StringLiteral matching the Identifier
-      t.stringLiteral(node.property.name);
-  }
+  const { types: t, template, traverse } = param;
 
   const GENERATED_FUNCTION = Symbol("generated function");
   function isGenerated(path) {
     return path.findParent(p => t.isFunctionDeclaration(p.node) && p.node[GENERATED_FUNCTION])
   }
 
-  //     let customTemplates = {};
-  //     customTemplates[SET_MEMBER] = template(`
-  //   (function(obj, prop, operator, val) {
-  //     return obj[prop] = val;
-  //   });
-  // `);
-  //
-  //     customTemplates[GET_MEMBER] = template(`
-  //   (function(obj, prop) {
-  //     return obj[prop];
-  //   });
-  // `);
-  //
-  //     customTemplates[GET_AND_CALL_MEMBER] = template(`
-  //   (function(obj, prop, args) {
-  //     return obj[prop](...args)
-  //   });
-  // `);
-  //
-  //     customTemplates[AEXPR_IDENTIFIER_NAME] = template(`
-  //   (function(expr) {
-  //     return { onChange(cb) {}};
-  //   });
-  // `);
-
   return {
     pre(file) {
-      //console.log("fff", file, traverse);
-
       function ignoreFile() {
         console.log("IGNORED!!!");
         file[IGNORE_INDICATOR] = true;
@@ -105,37 +47,12 @@ export default function(param) {
         }
       });
     },
+    
     visitor: {
       Program: {
         enter(path, state) {
           if(state.file[IGNORE_INDICATOR]) { console.log("read ignored"); return; }
-          console.log("file", path, state);
-
-          function getIdentifierForExplicitScopeObject(parentWithScope) {
-            let bindings = parentWithScope.scope.bindings;
-            let scopeName = Object.keys(bindings).find(key => {
-              return bindings[key].path &&
-                bindings[key].path.node &&
-                bindings[key].path.node.id &&
-                bindings[key].path.node.id[FLAG_GENERATED_SCOPE_OBJECT] // should actually be IS_EXPLICIT_SCOPE_OBJECT
-            });
-
-            let uniqueIdentifier;
-            if(scopeName) {
-              uniqueIdentifier = t.identifier(scopeName);
-            } else {
-              uniqueIdentifier = parentWithScope.scope.generateUidIdentifier('scope');
-              uniqueIdentifier[FLAG_GENERATED_SCOPE_OBJECT] = true;
-
-              parentWithScope.scope.push({
-                kind: 'let',
-                id: uniqueIdentifier,
-                init: t.objectExpression([])
-              });
-            }
-            uniqueIdentifier[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
-            return uniqueIdentifier;
-          }
+          //console.log("file", path, state);
 
           d3visualize({ path, state, t, template, traverse });
           
@@ -161,9 +78,7 @@ export default function(param) {
                   !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)
               ) {
                   //logIdentifier("call to aexpr", path);
-                  path.replaceWith(
-                      addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
-                  );
+                  transformator.callAExpr(path, state, t);
                   return;
               }
 
@@ -175,12 +90,6 @@ export default function(param) {
                   return;
               }
 
-              function isVariable(path) {
-                if(t.isImportNamespaceSpecifier(path.parent) && path.parentKey === 'local') { return false; } // import * as foo from 'utils';
-                if(t.isLabeledStatement(path.parent) && path.parentKey === 'label') { return false; } // always: { ... }
-                if(t.isBreakStatement(path.parent) && path.parentKey === 'label') { return false; } // break: foo;
-                return true;
-              }
               if(
                 // TODO: is there a general way to exclude non-variables?
                 isVariable(path) &&
@@ -208,37 +117,14 @@ export default function(param) {
                   //logIdentifier('get local var', path)
                   path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
 
-                  let parentWithScope = path.findParent(par =>
-                    par.scope.hasOwnBinding(path.node.name)
-                  );
-                  if(parentWithScope) {
-
-                    path.replaceWith(
-                      t.sequenceExpression([
-                        t.callExpression(
-                          addCustomTemplate(state.file, GET_LOCAL),
-                          [
-                            getIdentifierForExplicitScopeObject(parentWithScope),
-                            t.stringLiteral(path.node.name)
-                          ]
-                        ),
-                        path.node
-                      ])
-                    );
+                  if(getParentWithScope(path)) {
+                    transformator.getLocal(path, state, t);
                   }
                 } else {
                   //logIdentifier('get global var', path);
                   path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
 
-                  path.replaceWith(
-                    t.sequenceExpression([
-                      t.callExpression(
-                        addCustomTemplate(state.file, GET_GLOBAL),
-                        [t.stringLiteral(path.node.name)]
-                      ),
-                      path.node
-                    ])
-                  );
+                  transformator.getGlobal(path, state, t);
                 }
                 return;
               }
@@ -310,17 +196,7 @@ export default function(param) {
                 SET_MEMBER_BY_OPERATORS[path.node.operator]
               ) {
                 //state.file.addImport
-                path.replaceWith(
-                  t.callExpression(
-                    addCustomTemplate(state.file, SET_MEMBER_BY_OPERATORS[path.node.operator]),
-                    [
-                      path.node.left.object,
-                      getPropertyFromMemberExpression(path.node.left),
-                      //t.stringLiteral(path.node.operator),
-                      path.node.right
-                    ]
-                  )
-                );
+                transformator.setMember(path, state, t);
               }
 
               if(t.isIdentifier(path.node.left) &&
@@ -329,48 +205,15 @@ export default function(param) {
                   //console.log('set local', path.node.left.name);
                   path.node[FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION] = true;
 
-                  let parentWithScope = path.findParent(par =>
-                      par.scope.hasOwnBinding(path.node.left.name)
-                  );
-                  if(parentWithScope) {
-
-                    let valueToReturn = t.identifier(path.node.left.name);
-                    valueToReturn[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
-                    path.replaceWith(
-                      t.sequenceExpression([
-                        path.node,
-                        t.callExpression(
-                          addCustomTemplate(state.file, SET_LOCAL),
-                          [
-                            getIdentifierForExplicitScopeObject(parentWithScope),
-                            t.stringLiteral(path.node.left.name)
-                          ]
-                        ),
-                        valueToReturn
-                      ])
-                    );
+                  if(getParentWithScope(path)) {
+                    transformator.setLocal(path, state, t);
                   }
                 } else {
                   // global assginment
                   //console.log('---global---', path.node.left.name);
-                  path.node[FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION] = true;
-
-                  let valueToReturn = t.identifier(path.node.left.name);
-                  valueToReturn[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
-                  path.replaceWith(
-                    t.sequenceExpression([
-                      path.node,
-                      t.callExpression(
-                        addCustomTemplate(state.file, SET_GLOBAL),
-                        [t.stringLiteral(path.node.left.name)]
-                      ),
-                      valueToReturn
-                    ])
-                  );
-
+                  transformator.setGlobal(path, state, t);
                 }
               }
-
             },
 
             MemberExpression(path) {
@@ -380,15 +223,7 @@ export default function(param) {
               if(t.isSuper(path.node.object)) { return; }
               if(isGenerated(path)) { return; }
               //FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION
-              path.replaceWith(
-                t.callExpression(
-                  addCustomTemplate(state.file, GET_MEMBER),
-                  [
-                    path.node.object,
-                    getPropertyFromMemberExpression(path.node)
-                  ]
-                )
-              );
+              transformator.getMember(path, state, t);
             },
 
             CallExpression(path) {
@@ -397,19 +232,7 @@ export default function(param) {
 
               // check whether we call a MemberExpression
               if(t.isMemberExpression(path.node.callee)) {
-                path.replaceWith(
-                  t.callExpression(
-                    addCustomTemplate(state.file, GET_AND_CALL_MEMBER),
-                    [
-                      path.node.callee.object,
-                      getPropertyFromMemberExpression(path.node.callee),
-                      t.arrayExpression(path.node.arguments)
-                    ]
-                  )
-                )
-              } else {
-                if(t.isIdentifier(path.node.callee) && true) {
-                }
+                transformator.getAndCallMember(path, state, t);
               }
             }
           });
