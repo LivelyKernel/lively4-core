@@ -1,11 +1,8 @@
 import generateUUID from './../src/client/uuid.js';
 import boundEval from './../src/client/bound-eval.js';
-
 import Morph from "./Morph.js"
 
 let loadPromise = undefined;
-
-
 
 export default class LivelyCodeMirror extends HTMLElement {
 
@@ -40,6 +37,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/hint/javascript-hint.js")
       await this.loadModule("addon/search/searchcursor.js")
       await this.loadModule("addon/search/search.js")
+      await this.loadModule("addon/comment/comment.js")
       await this.loadModule("addon/search/jump-to-line.js")
       await this.loadModule("addon/dialog/dialog.js")
       await this.loadModule("keymap/sublime.js")
@@ -52,6 +50,25 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   initialize() {
+  	this._attrObserver = new MutationObserver((mutations) => {
+	  mutations.forEach((mutation) => {  
+        if(mutation.type == "attributes") {
+          // console.log("observation", mutation.attributeName,mutation.target.getAttribute(mutation.attributeName));
+          this.attributeChangedCallback(
+            mutation.attributeName,
+            mutation.oldValue,
+            mutation.target.getAttribute(mutation.attributeName))
+        }
+      });
+    });
+    this._attrObserver.observe(this, { attributes: true });
+  }
+  
+  applyAttribute(attr) {
+    var value =this.getAttribute(attr)
+    if (value !== undefined) {
+      this.setAttribute(attr, value)
+    }
   }
   
   async attachedCallback() {
@@ -69,7 +86,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (this.textContent) {
       value = this.decodeHTML(this.textContent);
     } else {
-      value = this.value || "no content 2";
+      value = this.value || "";
     }
 
     this.editor = CodeMirror(this.shadowRoot.querySelector("#code-mirror-container"), {
@@ -84,10 +101,19 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     
     this.editor.setOption("keyMap",  "sublime")
-    
-    this.editor.setOption("extraKeys", {
+	this.editor.setOption("extraKeys", {
       "Alt-F": "findPersistent",
-      "Ctrl-F": "search",
+      // "Ctrl-F": "search",
+      "Ctrl-F": (cm) => {
+		// something immediately grabs the "focus" and we close the search dialog..
+        // #Hack... 
+        setTimeout(() => {
+            this.editor.execCommand("findPersistent") 
+            this.shadowRoot.querySelector(".CodeMirror-search-field").focus()
+        }, 10)
+        // this.editor.execCommand("find")
+      },
+      "Ctrl-/": "toggleCommentIndented",
       "Ctrl-Space": "autocomplete",
       "Ctrl-P": (cm) => {
           let text = this.getSelectionOrLine()
@@ -106,11 +132,49 @@ export default class LivelyCodeMirror extends HTMLElement {
     });
     
     
-    this.editor.doc.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))
+    this.editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))
     this.isLoading = false
     this.dispatchEvent(new CustomEvent("editor-loaded"))
+    
+	// apply attributes 
+    _.map(this.attributes, ea => ea.name).forEach(ea => this.applyAttribute(ea)) 
   };
 
+   // Fires when an attribute was added, removed, or updated
+  attributeChangedCallback(attr, oldVal, newVal) {
+    if(!this.editor){
+        return false;
+    }
+    switch(attr){
+      // case "theme":
+      //     this.editor.setTheme( newVal );
+      //     break;
+      // case "mode":
+      //     this.changeMode( newVal );
+      //     break;
+      // case "fontsize":
+      //     this.editor.setFontSize( newVal );
+      //     break;
+      // case "softtabs":
+      //     this.editor.getSession().setUseSoftTabs( newVal );
+      //     break;
+      case "tabsize":
+		this.setOption("tabSize", newVal)
+        break;
+      // case "readonly":
+      //     this.editor.setReadOnly( newVal );
+      //     break;
+      case "wrapmode":
+        this.setOption("lineWrapping", newVal)
+      	break;
+    }
+  }
+  
+  setOption(name, value) {
+	if (!this.editor) return; // we loose...
+    this.editor.setOption(name, value)
+  } 
+  
   doSave(text) {
     this.tryBoundEval(text) // just a default implementation...
   }
@@ -223,12 +287,6 @@ export default class LivelyCodeMirror extends HTMLElement {
   detachedCallback() {
     this._attached = false;
   };
-
-  attributeChangedCallback(attr, oldVal, newVal) {
-    if(!this._attached){
-        return false;
-    }
-  }
   
   get value() {
     if (this.editor) {
@@ -271,6 +329,8 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   changeModeForFile(filename) {
+    
+    // lively.notify("change mode for file:" + this.editor)
     // #ACE Component compatiblity
     
     if (!this.editor) return;
@@ -286,16 +346,33 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     this.mode = mode
     this.editor.setOption("mode", mode)
-    lively.notify("change mode " + mode)
   }
 
   livelyPrepareSave() {
     this.textContent = this.encodeHTML(this.editor.getValue())
   }
 
+  livelyPreMigrate() {
+    this.lastScrollInfo = this.editor.getScrollInfo(); // #Example #PreserveContext
+  }
+  
   async livelyMigrate(other) {
     this.addEventListener("editor-loaded", () => {
         this.value = other.value
+      	this.editor.scrollTo(other.lastScrollInfo.left, other.lastScrollInfo.top)
+    })
+  }
+  
+  find(name) {
+    // #TODO this is horrible... Why is there not a standard method for this?
+	if (!this.editor) return;
+    var found = false;
+  	this.value.split("\n").forEach((ea, index) => {
+      if (!found && (ea.indexOf(name) != -1)) {
+	    this.editor.setCursor(index, 10000);// line end ;-)
+        this.editor.focus()
+        found = ea;
+  	  }
     })
   }
 }

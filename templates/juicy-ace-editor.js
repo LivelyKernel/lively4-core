@@ -690,5 +690,8 @@ export default class AceEditor extends Morph {
     this.editor && this.editor.focus()
   }
   
+  find(name) {
+    this.editor.find(name)
+  }
   
 }

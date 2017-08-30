@@ -4,27 +4,30 @@
  * - simple load/save/navigate UI, that can be disabled to use elsewhere, e.g. container
  * - updates change indicator while when editting,loading, and saving
  */
- 
+
+
 import Morph from './Morph.js';
 import moment from "src/external/moment.js";
 import diff from 'src/external/diff-match-patch.js';
 import preferences from 'src/client/preferences.js';
+import components from "src/client/morphic/component-loader.js";
 
 export default class Editor extends Morph {
 
-  initialize() {
+  async initialize() {
     var container = this.get(".container");
-    
     var editor
     if (preferences.get("UseCodeMirror")) {
       editor = document.createElement("lively-code-mirror")
     } else {
       editor = document.createElement("juicy-ace-editor")
     }
-    editor.id = "editor"
+    editor.id = "editor"; // this is important to do before opening 
+    await components.openIn(container, editor);
     editor.setAttribute("wrapmode", true)
-    container.appendChild(editor)
+    editor.setAttribute("tabsize", 2)
 
+    // container.appendChild(editor)
     lively.html.registerButtons(this);
     var input = this.get("#filename");
     $(input).keyup(event => {
@@ -32,11 +35,8 @@ export default class Editor extends Morph {
         this.onFilenameEntered(input.value);
       }
     });
-    container.dispatchEvent(new Event("initialized"));
-    
-    var editor = this.currentEditor();
-    // check if we are not fully initialized
-    if (editor) editor.on('change', () => {
+    container.dispatchEvent(new Event("initialized"));   
+    editor.addEventListener('change', () => {
       this.onTextChanged();
     });
   }
@@ -127,10 +127,17 @@ export default class Editor extends Morph {
     this.dispatchEvent(new CustomEvent("url-changed", {detail: {url: urlString}}))
   }
 
-  setText(text) {
+  setText(text, preserveView) {
     this.lastText = text;
     var editor = this.currentEditor();
+    var cur = this.getCursor()
+    var scroll = this.getScrollInfo()
+    
     if (editor) {
+      if (!this.isCodeMirror()) {
+          var oldRange = this.currentEditor().selection.getRange()
+      }
+
       this.updateChangeIndicator();
       editor.setValue(text);
       if (editor.resize) editor.resize();
@@ -139,8 +146,18 @@ export default class Editor extends Morph {
       // Code Mirror
       this.get('#editor').value = text
     }
+    
+    if (preserveView) {
+    	this.setScrollInfo(scroll)
+    	this.setCursor(cur)
+      	if (!this.isCodeMirror()) {
+    		this.currentEditor().selection.setRange(oldRange)
+    	}
+    }
   }
 
+  
+  
   updateAceMode() {
     var url = this.getURL();
     var editorComp = this.get("#editor");
@@ -164,14 +181,7 @@ export default class Editor extends Morph {
       // lively.notify("loaded version " + this.lastVersion);
       return response.text();
     }).then((text) => {
-        if (preferences.get("UseCodeMirror")) {
-          this.setText(text);
-        } else { 
-          var oldRange = this.currentEditor().selection.getRange()
-          this.setText(text);
-          this.currentEditor().selection.setRange(oldRange)
-        }  
-        
+       this.setText(text, true); 
       },
       (err) => {
         lively.notify("Could not load file " + url +"\nMaybe next time you are more lucky?");
@@ -198,6 +208,7 @@ export default class Editor extends Morph {
         var newVersion = response.headers.get("fileversion");
         var conflictVersion = response.headers.get("conflictversion");
         if (conflictVersion) {
+          lively.notify("LAST: " + this.lastVersion + " NEW: " + newVersion + " CONFLICT:" + conflictVersion)
           return this.solveConflic(conflictVersion);
         }
         if (newVersion) {
@@ -242,7 +253,7 @@ export default class Editor extends Morph {
 
     // #TODO do something when actual conflicts occure?
     var mergedText = this.threeWayMerge(parentText, myText, otherText);
-    this.setText(mergedText);
+    this.setText(mergedText, true);
     this.lastVersion = otherVersion;
     this.saveFile();
   }
@@ -261,6 +272,38 @@ export default class Editor extends Morph {
     }
   }
 
+  getScrollInfo() {
+    var editor = this.currentEditor()
+    if (editor && this.isCodeMirror()) {
+    	return editor.getScrollInfo()
+    }    
+  }
+  
+  setScrollInfo(info) {
+    var editor = this.currentEditor()
+    if (info && editor && this.isCodeMirror()) {
+    	editor.scrollTo(info.left, info.top)
+    }
+  }
+  
+  getCursor() {
+    var editor = this.currentEditor()
+    if (editor && this.isCodeMirror()) {
+    	return editor.getCursor()
+    }    
+  }
+  
+  setCursor(cur) {
+    var editor = this.currentEditor()
+    if (cur && editor && this.isCodeMirror()) {
+    	editor.setCursor(cur)
+    }
+  }
+  
+  isCodeMirror() {
+  	return this.get("#editor").tagName == "LIVELY-CODE-MIRROR"
+  }
+  
   livelyMigrate(obj) {
     this.setURL(obj.getURL());
     this.loadFile();

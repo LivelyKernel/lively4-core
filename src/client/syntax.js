@@ -6,6 +6,11 @@ import {babel} from 'systemjs-babel-build';
 export default class SyntaxChecker {
   
   static checkForSyntaxErrors(editor) {
+    if (!editor.getSession) {
+      console.log('implement check syntax for code mirror') // #TODO
+      return; 
+    }
+    
     var Range = ace.require('ace/range').Range;
     var doc = editor.getSession().getDocument(); 
     var src = editor.getValue();

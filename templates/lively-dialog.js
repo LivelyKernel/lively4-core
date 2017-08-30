@@ -64,6 +64,7 @@ export default class Dialog extends Morph {
     return  dialog.get("#prompt").value
   }
 
+  
   static async confirm(msg) {
     var dialog = await this.dialog()
     dialog.get("#prompt").style.display = "none"
