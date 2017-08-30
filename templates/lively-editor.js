@@ -5,7 +5,6 @@
  * - updates change indicator while when editting,loading, and saving
  */
 
-
 import Morph from './Morph.js';
 import moment from "src/external/moment.js";
 import diff from 'src/external/diff-match-patch.js';
@@ -188,6 +187,7 @@ export default class Editor extends Morph {
       });
   }
 
+  
   saveFile() {
     var url = this.getURL();
     // console.log("save " + url + "!");
@@ -197,6 +197,8 @@ export default class Editor extends Morph {
     if (urlString.match(/\/$/)) {
       return fetch(urlString, {method: 'MKCOL'});
     } else {
+      window.LastData = data
+      
       return fetch(urlString, {
         method: 'PUT', 
         body: data,
@@ -207,8 +209,8 @@ export default class Editor extends Morph {
         // console.log("edited file " + url + " written.");
         var newVersion = response.headers.get("fileversion");
         var conflictVersion = response.headers.get("conflictversion");
+        // lively.notify("LAST: " + this.lastVersion + " NEW: " + newVersion + " CONFLICT:" + conflictVersion)
         if (conflictVersion) {
-          lively.notify("LAST: " + this.lastVersion + " NEW: " + newVersion + " CONFLICT:" + conflictVersion)
           return this.solveConflic(conflictVersion);
         }
         if (newVersion) {
