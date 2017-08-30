@@ -18,7 +18,12 @@ import generateUUID from './../src/client/uuid.js';
 
 import {modulesRegister} from 'systemjs-babel-build';
 
+import { debounce } from 'utils';
+
 export default class AstExplorer extends Morph {
+
+  get pluginEditor() { return this.get("#plugin"); }
+  get sourceEditor() { return this.get("#source"); }
 
   initialize() {
 
@@ -29,41 +34,45 @@ export default class AstExplorer extends Morph {
     //this.smc = smc
 
     // try {    
-    
-    var src =  this.getAttribute('src')
-    if (!src) src = "https://lively-kernel.org/lively4/lively4-jens/demos/astplugin.js"
-    this.get("#plugin").setURL(src)
 
-    this.get("#plugin").loadFile()
-
+    let initLivelyEditorFromAttribute = (editor, attributeToRead, defaultPath) => {
+      var filePath =  this.getAttribute(attributeToRead);
+      if (!filePath) {
+        filePath = defaultPath;
+      }
+      editor.setURL(filePath);
+      editor.loadFile();
+    }
+    initLivelyEditorFromAttribute(this.sourceEditor, 'source', "https://lively-kernel.org/lively4/lively4-core/demos/astsource.js");
+    initLivelyEditorFromAttribute(this.pluginEditor, 'plugin', "https://lively-kernel.org/lively4/lively4-core/demos/astplugin.js");
 
     lively.html.registerButtons(this);
 
-    this.get("#plugin").get("juicy-ace-editor").doSave = async () => {
-      await this.get("#plugin").saveFile()
-      await lively.reloadModule("" + this.get("#plugin").getURL())
+    this.pluginEditor.get("juicy-ace-editor").doSave = async () => {
+      await this.pluginEditor.saveFile()
+      await lively.reloadModule("" + this.pluginEditor.getURL())
       this.updateAST()      
     };
     
-    this.get("#plugin").addEventListener("url-changed", (evt) => {
+    this.pluginEditor.addEventListener("url-changed", evt => {
       this.onPluginUrlChanged(evt.detail)      
     })
 
-    this.get("#source").doSave = () => {
-      this.updateAST()      
+    this.sourceEditor.get("juicy-ace-editor").doSave = () => {
+      this.updateAST();
     };
-    
-    // this.get("#plugin").currentEditor().addEventListener("change", evt => 
-    //  SyntaxChecker.checkForSyntaxErrors(this.get("#plugin").currentEditor().editor));
 
-    this.get("#source").addEventListener("change", evt => 
-      SyntaxChecker.checkForSyntaxErrors(this.get("#source").editor));
+    function enableSyntaxCheckForEditor(editor) {
+      editor.currentEditor().addEventListener("change", (evt => SyntaxChecker.checkForSyntaxErrors(editor.currentEditor()))::debounce(200));
+    }
+    enableSyntaxCheckForEditor(this.pluginEditor);
+    enableSyntaxCheckForEditor(this.sourceEditor);
 
-    this.get("#source").editor.session.selection.on("changeSelection", (evt) => {
+    this.sourceEditor.currentEditor().session.selection.on("changeSelection", (evt) => {
       this.onSourceSelectionChanged(evt)
     });
     
-    this.get("#source").editor.session.selection.on("changeCursor", (evt) => {
+    this.sourceEditor.currentEditor().session.selection.on("changeCursor", (evt) => {
       this.onSourceSelectionChanged(evt)
     });
 
@@ -75,8 +84,8 @@ export default class AstExplorer extends Morph {
       this.onOutputSelectionChanged(evt)
     });
 
-    // this.get("#plugin").currentEditor()
-    [this.get("#output"), this.get("#source")].forEach(ea => ea.editor.session.setOptions({
+    // this.pluginEditor.currentEditor()
+    [this.get("#output").editor, this.sourceEditor.currentEditor()].forEach(ea => ea.session.setOptions({
 			mode: "ace/mode/javascript",
     	tabSize: 2,
     	useSoftTabs: true
@@ -91,16 +100,15 @@ export default class AstExplorer extends Morph {
   }
   
   onPluginUrlChanged(details) {
-    this.setAttribute("src", details.url)
+    this.setAttribute("plugin", details.url)
   }
   
   async updateAST() {
-
-    var src = this.get("#source").editor.getValue();
+    var src = this.sourceEditor.currentEditor().getValue();
     
     var filename = "tempfile.js"
 
-    var pluginSrc = this.get("#plugin").currentEditor().getValue();
+    var pluginSrc = this.pluginEditor.currentEditor().getValue();
     var moduleId = generateUUID();
     //"workspace:" + Date.now();
     console.log(moduleId)
@@ -128,7 +136,7 @@ export default class AstExplorer extends Morph {
     }).ast
     this.get("#astInspector").inspect(this.ast)
 
-    this.get("#plugin").currentEditor().getSession().setAnnotations([]);
+    this.pluginEditor.currentEditor().getSession().setAnnotations([]);
     
     try {
       // var plugin = eval(pluginSrc);
@@ -141,7 +149,7 @@ export default class AstExplorer extends Morph {
     }
     
     try {
-      var src = this.get("#source").editor.getValue();
+      var src = this.sourceEditor.currentEditor().getValue();
       this.result = babel.transform(src, {
         babelrc: false,
         plugins: [plugin],
@@ -160,7 +168,7 @@ export default class AstExplorer extends Morph {
     } catch(err) {
       console.error(err);
       this.get("#output").editor.setValue("Error transforming code: " + err);
-      this.get("#plugin").currentEditor().getSession().setAnnotations(err.stack.split('\n')
+      this.pluginEditor.currentEditor().getSession().setAnnotations(err.stack.split('\n')
         .filter(line => line.match('updateAST'))
         .map(line => {
           let [row, column] = line
@@ -195,19 +203,14 @@ export default class AstExplorer extends Morph {
         console.log = oldLog
       }
     }
-}
-  
-  onAcceptSource() {
-    this.updateAST()
   }
-  
+
   livelyMigrate(other) {
     this.addEventListener("initialize", () => {
-      this.get("#source").editor.setValue(other.get("#source").editor.getValue())
-      this.get("#plugin").setURL(other.get("#plugin").getURL())
-      debugger
-      this.get("#plugin").currentEditor().setValue(
-        other.get("#plugin").currentEditor().getValue())
+      this.sourceEditor.setURL(other.sourceEditor.getURL())
+      this.sourceEditor.currentEditor().setValue(other.sourceEditor.currentEditor().getValue())
+      this.pluginEditor.setURL(other.pluginEditor.getURL())
+      this.pluginEditor.currentEditor().setValue(other.pluginEditor.currentEditor().getValue())
       
       this.get("#output").editor.setValue(other.get("#output").editor.getValue()) 
     
@@ -219,7 +222,7 @@ export default class AstExplorer extends Morph {
   }
   
   livelyPrepareSave() {
-    this.setAttribute('src', this.get('#plugin').getURLString());
+    this.setAttribute('plugin', this.pluginEditor.getURLString());
   }
   
   
@@ -243,10 +246,10 @@ export default class AstExplorer extends Morph {
   
   onSourceSelectionChanged(evt) {
     setTimeout(() => {
-      if(this.get("#source").editor.isFocused()) {
+      if(this.sourceEditor.currentEditor().isFocused()) {
         this.get("#output").editor.selection.clearSelection()
         
-        var range = this.get("#source").editor.selection.getRange()
+        var range = this.sourceEditor.currentEditor().selection.getRange()
         
         var start = this.generatedPositionFor(range.start.row + 1, range.start.column)
         var end = this.generatedPositionFor(range.end.row + 1, range.end.column)
@@ -262,7 +265,7 @@ export default class AstExplorer extends Morph {
   onOutputSelectionChanged(evt) {
     setTimeout(() => {
       if(this.get("#output").editor.isFocused()) {
-        this.get("#source").editor.selection.clearSelection()
+        this.sourceEditor.currentEditor().selection.clearSelection()
         
         var range = this.get("#output").editor.selection.getRange()
         
@@ -270,8 +273,8 @@ export default class AstExplorer extends Morph {
         var end = this.originalPositionFor(range.end.row + 1, range.end.column)
         
         if (!start || !end) return;
-        this.get("#source").editor.selection.moveCursorTo(start.line - 1, start.column)
-        this.get("#source").editor.selection.selectTo(end.line -  1, end.column)
+        this.sourceEditor.currentEditor().selection.moveCursorTo(start.line - 1, start.column)
+        this.sourceEditor.currentEditor().selection.selectTo(end.line -  1, end.column)
       }
     }, 0);
   }

@@ -11,15 +11,17 @@ export default class Search extends Morph {
     lively.html.registerInputs(this);
     
     this.shadowRoot.querySelector("#rootsInput").value = lively4url.replace(/.*\//,"");
-    
-    lively.addEventListener("lively-search", this.get('#searchInput'), "keyup", (evt) => { 
-        if(evt.keyCode == 13) { 
-          try {
-            this.onSearchButton(); 
-          } catch(e) {
-            console.error(e);
+
+    ['#rootsInput', '#excludesInput', '#searchInput'].forEach(selector => {
+      lively.addEventListener("lively-search", this.get(selector), "keyup", (evt) => { 
+          if(evt.keyCode == 13) { 
+            try {
+              this.onSearchButton(); 
+            } catch(e) {
+              console.error(e);
+            }
           }
-        }
+      });
     });
       
     var search = this.getAttribute("search");

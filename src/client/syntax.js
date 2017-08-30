@@ -2,6 +2,14 @@
 
 import {babel} from 'systemjs-babel-build';
 
+import jsx from "babel-plugin-syntax-jsx";
+import doExpressions from "babel-plugin-syntax-do-expressions";
+import bind from "babel-plugin-syntax-function-bind";
+let additionalSyntaxPlugins = [
+  jsx,
+  doExpressions,
+  bind
+];
 
 export default class SyntaxChecker {
   
@@ -29,7 +37,7 @@ export default class SyntaxChecker {
     try {
         var result = babel.transform(src, {
           babelrc: false,
-          plugins: [],
+          plugins: additionalSyntaxPlugins,
           presets: [],
           filename: undefined,
           sourceFileName: undefined,
