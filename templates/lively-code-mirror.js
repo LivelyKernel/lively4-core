@@ -51,6 +51,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/scroll/annotatescrollbar.js")
       await this.loadModule("addon/comment/comment.js")
       await this.loadModule("addon/dialog/dialog.js")
+      await this.loadModule("addon/scroll/simplescrollbars.js")
 
       await this.loadModule("addon/selection/mark-selection.js")
 
@@ -121,7 +122,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.editor.setOption("styleSelectedText", true)
     this.editor.setOption("autoCloseBrackets", true)
     this.editor.setOption("autoCloseTags", true)
-
+		this.editor.setOption("scrollbarStyle", "simple")
+    
     this.editor.setOption("highlightSelectionMatches", {showToken: /\w/, annotateScrollbar: true})
     
     
