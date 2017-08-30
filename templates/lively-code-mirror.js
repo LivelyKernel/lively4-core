@@ -33,6 +33,15 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/mode/overlay.js")
       await this.loadModule("mode/gfm/gfm.js")
 
+      
+      await this.loadModule("addon/edit/matchbrackets.js")
+      await this.loadModule("addon/edit/closetag.js")
+      await this.loadModule("addon/edit/closebrackets.js")
+      await this.loadModule("addon/edit/continuelist.js")
+      await this.loadModule("addon/edit/matchtags.js")
+      await this.loadModule("addon/edit/trailingspace.js")
+      
+      
       await this.loadModule("addon/hint/show-hint.js")
       await this.loadModule("addon/hint/javascript-hint.js")
       await this.loadModule("addon/search/searchcursor.js")
@@ -99,6 +108,19 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (this.mode) {
       this.editor.setOption("mode", this.mode);
     }
+    
+    // edit addons
+    this.editor.setOption("showTrailingSpace", true)
+    // this.editor.setOption("matchTags", true)
+    this.editor.setOption("matchBrackets", true)
+
+    
+    this.editor.setOption("matchBrackets", true)
+    this.editor.setOption("autoCloseBrackets", true)
+    this.editor.setOption("autoCloseTags", true)
+
+    
+    
     
     this.editor.setOption("keyMap",  "sublime")
 	this.editor.setOption("extraKeys", {
