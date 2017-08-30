@@ -9,56 +9,54 @@ export default class LivelyCodeMirror extends HTMLElement {
   static get codeMirrorPath() {
      return  "src/external/code-mirror/"
   }
-  
+
   static async loadModule(path) {
-    return lively.loadJavaScriptThroughDOM("codemirror_"+path.replace(/[^A-Za-z]/g,""), 
-      this.codeMirrorPath + path) // 
+    return lively.loadJavaScriptThroughDOM("codemirror_"+path.replace(/[^A-Za-z]/g,""),
+      this.codeMirrorPath + path)
   }
-  
+
   static async loadCSS(path) {
-    return lively.loadCSSThroughDOM("codemirror_" + path.replace(/[^A-Za-z]/g,""), 
+    return lively.loadCSSThroughDOM("codemirror_" + path.replace(/[^A-Za-z]/g,""),
        this.codeMirrorPath + path)
   }
-  
+
   static async loadModules() {
     if (loadPromise) return loadPromise
-    
+
     loadPromise = (async () => {
       await this.loadModule("lib/codemirror.js")
 
       await this.loadModule("mode/javascript/javascript.js")
+      await this.loadModule("mode/xml/xml.js")
+      await this.loadModule("mode/css/css.js")
+
       await this.loadModule("mode/markdown/markdown.js")
       await this.loadModule("mode/htmlmixed/htmlmixed.js")
-
       await this.loadModule("addon/mode/overlay.js")
       await this.loadModule("mode/gfm/gfm.js")
 
-      
-
-      
       await this.loadModule("addon/edit/matchbrackets.js")
       await this.loadModule("addon/edit/closetag.js")
       await this.loadModule("addon/edit/closebrackets.js")
       await this.loadModule("addon/edit/continuelist.js")
       await this.loadModule("addon/edit/matchtags.js")
       await this.loadModule("addon/edit/trailingspace.js")
-      
-      
       await this.loadModule("addon/hint/show-hint.js")
       await this.loadModule("addon/hint/javascript-hint.js")
       await this.loadModule("addon/search/searchcursor.js")
       await this.loadModule("addon/search/search.js")
-      await this.loadModule("addon/comment/comment.js")
       await this.loadModule("addon/search/jump-to-line.js")
-      
-      await this.loadModule("addon/scroll/annotatescrollbar.js")
  			await this.loadModule("addon/search/matchesonscrollbar.js")
  			await this.loadModule("addon/search/match-highlighter.js")
-      
+      await this.loadModule("addon/scroll/annotatescrollbar.js")
+      await this.loadModule("addon/comment/comment.js")
       await this.loadModule("addon/dialog/dialog.js")
+
+      await this.loadModule("addon/selection/mark-selection.js")
+
       await this.loadModule("keymap/sublime.js")
       await System.import(lively4url + '/templates/lively-code-mirror-hint.js')
-  
+
       this.loadCSS("addon/hint/show-hint.css")
       this.loadCSS("../../../templates/lively-code-mirror.css")
     })()
@@ -120,8 +118,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.editor.setOption("showTrailingSpace", true)
     // this.editor.setOption("matchTags", true)
     this.editor.setOption("matchBrackets", true)
-
-    this.editor.setOption("matchBrackets", true)
+    this.editor.setOption("styleSelectedText", true)
     this.editor.setOption("autoCloseBrackets", true)
     this.editor.setOption("autoCloseTags", true)
 
@@ -357,18 +354,20 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   changeModeForFile(filename) {
-    
-    lively.notify("change mode for file:" + this.editor);
-    // #ACE Component compatiblity
-    
     if (!this.editor) return;
     
     var mode = "text"
     // #TODO there must be some kind of automatching?
     if (filename.match(/\.html$/)) {
-      mode = "htmlmixed"
+      mode = "text/html"
     } else if (filename.match(/\.md$/)) {
       mode = "gfm"
+    } else if (filename.match(/\.css$/)) {
+      mode = "css"
+    } else if (filename.match(/\.xml$/)) {
+      mode = "xml"
+    } else if (filename.match(/\.json$/)) {
+      mode = "javascript"
     } else if (filename.match(/\.js$/)) {
       mode = "javascript"
     }

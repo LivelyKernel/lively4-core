@@ -942,7 +942,7 @@ export default class Container extends Morph {
   }
 
   navigateToName(name) {
-    lively.notify("navigate to " + name);
+    // lively.notify("navigate to " + name);
     this.getAceEditor().find(name);
   }
 
