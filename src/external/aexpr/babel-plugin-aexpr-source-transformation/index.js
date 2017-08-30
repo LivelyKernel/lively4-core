@@ -57,37 +57,39 @@ export default function(param) {
           d3visualize({ path, state, t, template, traverse });
           
           const identifiers = [];
+          const members = [];
           path.traverse({
-            Identifier(path) { identifiers.push(path); }
+            Identifier(path) { identifiers.push(path); },
+            MemberExpression(path) { members.push(path); }
           });
-          
+          const variables = identifiers
+            .filter(p=>p);
+
           path.traverse({
             Identifier(path) {
-              //console.log(path.node.name)
-
               function logIdentifier(msg, path) {
-                  console.log(msg, path.node.name, path.node.loc ? path.node.loc.start.line : '');
+                console.log(msg, path.node.name, path.node.loc ? path.node.loc.start.line : '');
               }
 
               if(path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER]) { return; }
 
               // Check for a call to undeclared aexpr:
               if(
-                  t.isCallExpression(path.parent) &&
-                  path.node.name === AEXPR_IDENTIFIER_NAME &&
-                  !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)
+                t.isCallExpression(path.parent) &&
+                path.node.name === AEXPR_IDENTIFIER_NAME &&
+                !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)
               ) {
-                  //logIdentifier("call to aexpr", path);
-                  transformator.callAExpr(path, state, t);
-                  return;
+                //logIdentifier("call to aexpr", path);
+                transformator.callAExpr(path, state, t);
+                return;
               }
 
               // property local of ExportStatement
               if(
-                  t.isExportSpecifier(path.parent) &&
-                  path.parentKey === 'local'
+                t.isExportSpecifier(path.parent) &&
+                path.parentKey === 'local'
               ) {
-                  return;
+                return;
               }
 
               if(
@@ -104,7 +106,7 @@ export default function(param) {
                 !t.isClassExpression(path.parent) &&
                 !t.isClassMethod(path.parent) &&
                 !t.isImportSpecifier(path.parent) &&
-                !t.isMemberExpression(path.parent) &&
+                //!t.isMemberExpression(path.parent) &&
                 !t.isObjectMethod(path.parent) &&
                 !t.isVariableDeclarator(path.parent) &&
                 !t.isFunctionDeclaration(path.parent) &&
@@ -118,6 +120,7 @@ export default function(param) {
                   path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
 
                   if(getParentWithScope(path)) {
+                    lively.notify(path.node.name, path.parent.type)
                     transformator.getLocal(path, state, t);
                   }
                 } else {
@@ -197,6 +200,7 @@ export default function(param) {
               ) {
                 //state.file.addImport
                 transformator.setMember(path, state, t);
+                return;
               }
 
               if(t.isIdentifier(path.node.left) &&
