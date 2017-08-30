@@ -1,3 +1,6 @@
+import d3visualize from 'src/external/aexpr/babel-plugin-aexpr-source-transformation/visualize-ast.js';
+import { addCustomTemplate, GENERATED_IMPORT_IDENTIFIER } from 'src/external/aexpr/babel-plugin-aexpr-source-transformation/utils.js';
+
 const AEXPR_IDENTIFIER_NAME = "aexpr";
 
 const GET_MEMBER = "getMember";
@@ -36,7 +39,7 @@ const FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION = Symbol('FLAG: should not r
 
 export default function(param) {
   let { types: t, template, traverse } = param;
-  console.log(arguments);
+  //console.log(arguments);
 
   function getPropertyFromMemberExpression(node) {
     // We are looking for MemberExpressions, which have two distinct incarnations:
@@ -53,8 +56,6 @@ export default function(param) {
   function isGenerated(path) {
     return path.findParent(p => t.isFunctionDeclaration(p.node) && p.node[GENERATED_FUNCTION])
   }
-
-  const GENERATED_IMPORT_IDENTIFIER = Symbol("generated import identifier");
 
   //     let customTemplates = {};
   //     customTemplates[SET_MEMBER] = template(`
@@ -81,42 +82,9 @@ export default function(param) {
   //   });
   // `);
 
-  function addCustomTemplate(file, name) {
-    let declar = file.declarations[name];
-    if (declar) return declar;
-
-    let identifier = file.declarations[name] = file.addImport("aexpr-source-transformation-propagation", name, name);
-    identifier[GENERATED_IMPORT_IDENTIFIER] = true;
-    return identifier;
-
-    // let ref = customTemplates[name];
-    // console.log(file.addImport("aexpr-source-transformation-propagation", "aexpr"));
-    // let uid = file.declarations[name] = file.scope.generateUidIdentifier(name);
-    //
-    // ref = ref().expression;
-    // ref[GENERATED_FUNCTION] = true;
-    //
-    // if (t.isFunctionExpression(ref) && !ref.id) {
-    //     ref.body._compact = true;
-    //     ref._generated = true;
-    //     ref.id = uid;
-    //     ref.type = "FunctionDeclaration";
-    //     file.path.unshiftContainer("body", ref);
-    // } else {
-    //     ref._compact = true;
-    //     file.scope.push({
-    //         id: uid,
-    //         init: ref,
-    //         unique: true
-    //     });
-    // }
-    //
-    // return uid;
-  }
-
   return {
     pre(file) {
-      console.log("fff", file, traverse);
+      //console.log("fff", file, traverse);
 
       function ignoreFile() {
         console.log("IGNORED!!!");
@@ -140,8 +108,8 @@ export default function(param) {
     visitor: {
       Program: {
         enter(path, state) {
-          console.log("file", path, state);
           if(state.file[IGNORE_INDICATOR]) { console.log("read ignored"); return; }
+          console.log("file", path, state);
 
           function getIdentifierForExplicitScopeObject(parentWithScope) {
             let bindings = parentWithScope.scope.bindings;
@@ -169,6 +137,13 @@ export default function(param) {
             return uniqueIdentifier;
           }
 
+          d3visualize({ path, state, t, template, traverse });
+          
+          const identifiers = [];
+          path.traverse({
+            Identifier(path) { identifiers.push(path); }
+          });
+          
           path.traverse({
             Identifier(path) {
               //console.log(path.node.name)
@@ -200,11 +175,15 @@ export default function(param) {
                   return;
               }
 
+              function isVariable(path) {
+                if(t.isImportNamespaceSpecifier(path.parent) && path.parentKey === 'local') { return false; } // import * as foo from 'utils';
+                if(t.isLabeledStatement(path.parent) && path.parentKey === 'label') { return false; } // always: { ... }
+                if(t.isBreakStatement(path.parent) && path.parentKey === 'label') { return false; } // break: foo;
+                return true;
+              }
               if(
-                  // TODO: is there a general way to exclude non-variables?
-                !(t.isImportNamespaceSpecifier(path.parent) && path.parentKey === 'local') &&
-                !(t.isLabeledStatement(path.parent) && path.parentKey === 'label') &&
-                !(t.isBreakStatement(path.parent) && path.parentKey === 'label') &&
+                // TODO: is there a general way to exclude non-variables?
+                isVariable(path) &&
                 !(t.isForInStatement(path.parent) && path.parentKey === 'left') &&
                 !(t.isAssignmentPattern(path.parent) && path.parentKey === 'left') &&
                 !(t.isUpdateExpression(path.parent)) &&
@@ -213,6 +192,7 @@ export default function(param) {
                 !(t.isCatchClause(path.parent) && path.parentKey === 'param') &&
                 !t.isObjectProperty(path.parent) &&
                 !t.isClassDeclaration(path.parent) &&
+                !t.isClassExpression(path.parent) &&
                 !t.isClassMethod(path.parent) &&
                 !t.isImportSpecifier(path.parent) &&
                 !t.isMemberExpression(path.parent) &&
