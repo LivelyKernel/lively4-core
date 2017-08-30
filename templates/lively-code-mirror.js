@@ -34,6 +34,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("mode/gfm/gfm.js")
 
       
+
+      
       await this.loadModule("addon/edit/matchbrackets.js")
       await this.loadModule("addon/edit/closetag.js")
       await this.loadModule("addon/edit/closebrackets.js")
@@ -48,6 +50,11 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/search/search.js")
       await this.loadModule("addon/comment/comment.js")
       await this.loadModule("addon/search/jump-to-line.js")
+      
+      await this.loadModule("addon/scroll/annotatescrollbar.js")
+ 			await this.loadModule("addon/search/matchesonscrollbar.js")
+ 			await this.loadModule("addon/search/match-highlighter.js")
+      
       await this.loadModule("addon/dialog/dialog.js")
       await this.loadModule("keymap/sublime.js")
       await System.import(lively4url + '/templates/lively-code-mirror-hint.js')
@@ -114,12 +121,11 @@ export default class LivelyCodeMirror extends HTMLElement {
     // this.editor.setOption("matchTags", true)
     this.editor.setOption("matchBrackets", true)
 
-    
     this.editor.setOption("matchBrackets", true)
     this.editor.setOption("autoCloseBrackets", true)
     this.editor.setOption("autoCloseTags", true)
 
-    
+    this.editor.setOption("highlightSelectionMatches", {showToken: /\w/, annotateScrollbar: true})
     
     
     this.editor.setOption("keyMap",  "sublime")
