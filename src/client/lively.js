@@ -1215,6 +1215,12 @@ export default class Lively {
     return element
   }
 
+  static findWindow(element) {
+    if (element.isWindow) return element;
+    if (element.parentNode) return this.findWindow(element.parentNode);
+    if (element.host) return this.findWindow(element.host);
+    return document.body; // nothing found... just use the body
+  }
   
   // lively.print(document)
   static print(obj) {

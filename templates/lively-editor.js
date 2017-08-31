@@ -15,6 +15,8 @@ export default class Editor extends Morph {
 
   async initialize() {
     var container = this.get(".container");
+		this.versionControl = this.shadowRoot.querySelector("#versionControl");
+    
     var editor
     if (preferences.get("UseCodeMirror")) {
       editor = document.createElement("lively-code-mirror")
@@ -266,22 +268,31 @@ export default class Editor extends Morph {
 
   toggleVersions() {
     var editor = this.shadowRoot.querySelector("#editor");
-    var versionControl = this.shadowRoot.querySelector("#versionControl");
-    if (versionControl.style.display == "block") {
-      versionControl.style.display = "none";
+
+    if (this.versionControl.style.display == "block") {
+      this.versionControl.remove()
+      this.versionControl.style.display = "none";
       if (editor.editView) {
         editor.editView(); // go back into normal editing...
       }
     } else {
-			if (this.parentElement && this.parentElement.get) {
-      	// allow content to get outside window bounds
-      	var windowContent = this.parentElement.get(".window-content")
-        if (windowContent) {
-          windowContent.style.overflow = "visible"
-        }
+      var myWindow = lively.findWindow(this)
+      if (myWindow.isWindow) {
+        myWindow.get(".window-content").style.overflow = "visible"
       }
-      versionControl.style.display = "block";
-      versionControl.querySelector("#versions").showVersions(this.getURL());
+      myWindow.appendChild(this.versionControl)
+      lively.showElement(this.versionControl)
+
+      this.versionControl.style.display = "block";
+      this.versionControl.style.backgroundColor = "gray";
+            
+      this.versionControl.querySelector("#versions").showVersions(this.getURL());
+      lively.setGlobalPosition(this.versionControl, 
+      	lively.getGlobalPosition(this).addPt(pt(lively.getExtent(this.parentElement).x,0)));
+      // we use "parentElement" because the extent of lively-editor is broken #TODO
+      lively.setExtent(this.versionControl, pt(400, 500))
+      this.versionControl.style.zIndex = 10000;
+
     }
   }
 
@@ -329,6 +340,7 @@ export default class Editor extends Morph {
   }
   
   livelyMigrate(obj) {
+		if (obj.versionControl) obj.versionControl.remove();
     this.setURL(obj.getURL());
     this.loadFile();
   }
