@@ -35,15 +35,26 @@
         flex: 1;   /* ACE does not display right with "flex" */
     }
     #versionControl {
+      padding: 5px;
       position: absolute;
-      top: 40px;
-      right: 10px;
+      top: 0px;
+      right: -400px;
       width: 400px;
-      height: calc(100% - 100px);
-      z-index: 200;
+      height: calc(100% - 40px);
+      z-index: 800;      
+      border-radius: 10px;
+    	background-color: rgb(230,230,235);
       display: none; 
-      background: white;
     }
+
+    #versions {
+      position: absolute;
+      top: 30px;
+      left: 5px;
+      height: calc(100% - 40px);
+      width: calc(100% - 10px);
+      }
+     
     #changeIndicator {
       position: absolute;
       width: 8px;
@@ -67,7 +78,8 @@
           <input type="text" id="filename" value="https://lively4/README.md">
         </div>
         <div id="changeIndicator"></div>
-        <div id="versionControl">
+
+      	<div id="versionControl">
           <button id="loadVersionButton">load</button>
           <button id="closeVersionsButton">close</button>
           <lively-version-control id="versions"></lively-version-control>

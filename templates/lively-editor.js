@@ -25,6 +25,8 @@ export default class Editor extends Morph {
     await components.openIn(container, editor);
     editor.setAttribute("wrapmode", true)
     editor.setAttribute("tabsize", 2)
+    
+    this.get("lively-version-control").editor = editor
 
     // container.appendChild(editor)
     lively.html.registerButtons(this);
@@ -86,7 +88,7 @@ export default class Editor extends Morph {
   }
 
   onCloseVersionsButton() {
-    this.get("#versionControl").style.display = "none";
+    this.toggleVersions()
   }
 
   currentVersion() {
@@ -154,8 +156,6 @@ export default class Editor extends Morph {
     	}
     }
   }
-
-  
   
   updateAceMode() {
     var url = this.getURL();
@@ -265,10 +265,21 @@ export default class Editor extends Morph {
   }
 
   toggleVersions() {
+    var editor = this.shadowRoot.querySelector("#editor");
     var versionControl = this.shadowRoot.querySelector("#versionControl");
     if (versionControl.style.display == "block") {
       versionControl.style.display = "none";
+      if (editor.editView) {
+        editor.editView(); // go back into normal editing...
+      }
     } else {
+			if (this.parentElement && this.parentElement.get) {
+      	// allow content to get outside window bounds
+      	var windowContent = this.parentElement.get(".window-content")
+        if (windowContent) {
+          windowContent.style.overflow = "visible"
+        }
+      }
       versionControl.style.display = "block";
       versionControl.querySelector("#versions").showVersions(this.getURL());
     }
@@ -310,6 +321,11 @@ export default class Editor extends Morph {
   
   isCodeMirror() {
   	return this.get("#editor").tagName == "LIVELY-CODE-MIRROR"
+  }
+  
+  livelyExample() {
+  	this.setURL(lively4url + "/README.md");
+    this.loadFile()
   }
   
   livelyMigrate(obj) {

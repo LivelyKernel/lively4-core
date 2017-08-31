@@ -265,7 +265,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
   }
 
- async tryBoundEval(str, printResult) {
+  async tryBoundEval(str, printResult) {
     var resp;
     resp = await this.boundEval(str, this.getDoitContext())
     if (resp.isError) {
@@ -436,7 +436,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     // this.resizeMergeView(this._mergeView)
   }
   
-	resizeMergeView(mergeView) {
+  resizeMergeView(mergeView) {
     function editorHeight(editor) {
       if (!editor) return 0;
       return editor.getScrollInfo().height;
