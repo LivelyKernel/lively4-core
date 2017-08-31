@@ -7,7 +7,7 @@
   <style data-src="/src/external/code-mirror/addon/hint/show-hint.css"></style>
 	<style data-src="/src/external/code-mirror/addon/dialog/dialog.css"></style>
   <style data-src="/src/external/code-mirror/addon/scroll/simplescrollbars.css"></style>
-
+  <style data-src="/src/external/code-mirror/addon/merge/merge.css"></style>
   <style>
   :host {
     display: block;
@@ -21,6 +21,9 @@
   
   .CodeMirror {
     width: 100%;
+    height: 100% !important;
+  }
+  .CodeMirror-merge, .CodeMirror-merge-pane {
     height: 100%;
   }
   

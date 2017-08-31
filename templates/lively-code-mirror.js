@@ -1,6 +1,7 @@
 import generateUUID from './../src/client/uuid.js';
 import boundEval from './../src/client/bound-eval.js';
 import Morph from "./Morph.js"
+import diff from 'src/external/diff-match-patch.js';
 
 let loadPromise = undefined;
 
@@ -53,6 +54,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/dialog/dialog.js")
       await this.loadModule("addon/scroll/simplescrollbars.js")
 
+      await this.loadModule("addon/merge/merge.js")
       await this.loadModule("addon/selection/mark-selection.js")
 
       await this.loadModule("keymap/sublime.js")
@@ -80,7 +82,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   applyAttribute(attr) {
-    var value =this.getAttribute(attr)
+    var value = this.getAttribute(attr)
     if (value !== undefined) {
       this.setAttribute(attr, value)
     }
@@ -90,84 +92,96 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (this.isLoading || this.editor ) return;
     this.isLoading = true
     this.root = this.shadowRoot // used in code mirror to find current element
-    
-    var text = this.childNodes[0];
-    var container = this.container;
-    var element = this;
-      
-    await LivelyCodeMirror.loadModules()
+    await LivelyCodeMirror.loadModules(); // lazy load modules...
 
-    var value
     if (this.textContent) {
-      value = this.decodeHTML(this.textContent);
+      var value = this.decodeHTML(this.textContent);
     } else {
       value = this.value || "";
     }
-
-    this.editor = CodeMirror(this.shadowRoot.querySelector("#code-mirror-container"), {
+  	this.editView(value)
+    this.isLoading = false
+    this.dispatchEvent(new CustomEvent("editor-loaded"))
+  };
+  
+  editView(value) {
+    if (!value) value = this.value || "";
+    var container = this.shadowRoot.querySelector("#code-mirror-container")
+    container.innerHTML = ""
+    this.setEditor(CodeMirror(container, {
       value: value,
       lineNumbers: true,
       gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter"]
-    });  
-    // mode: {name: "javascript", globalVars: true},
-    
+    }));  
+  }
+  
+  setEditor(editor) {
+    this.editor = editor
+		this.setupEditor()
+  }
+  
+	setupEditor() {
+  	var editor = this.editor;
     if (this.mode) {
-      this.editor.setOption("mode", this.mode);
+      editor.setOption("mode", this.mode);
     }
-    
+
     // edit addons
-    this.editor.setOption("showTrailingSpace", true)
-    // this.editor.setOption("matchTags", true)
-    this.editor.setOption("matchBrackets", true)
-    this.editor.setOption("styleSelectedText", true)
-    this.editor.setOption("autoCloseBrackets", true)
-    this.editor.setOption("autoCloseTags", true)
-		this.editor.setOption("scrollbarStyle", "simple")
-    
-    this.editor.setOption("highlightSelectionMatches", {showToken: /\w/, annotateScrollbar: true})
-    
-    
-    this.editor.setOption("keyMap",  "sublime")
-	this.editor.setOption("extraKeys", {
+    // editor.setOption("showTrailingSpace", true)
+    // editor.setOption("matchTags", true)
+    editor.setOption("matchBrackets", true)
+    editor.setOption("styleSelectedText", true)
+    editor.setOption("autoCloseBrackets", true)
+    editor.setOption("autoCloseTags", true)
+		editor.setOption("scrollbarStyle", "simple")
+
+    editor.setOption("highlightSelectionMatches", {showToken: /\w/, annotateScrollbar: true})
+
+    editor.setOption("keyMap",  "sublime")
+		editor.setOption("extraKeys", {
       "Alt-F": "findPersistent",
       // "Ctrl-F": "search",
       "Ctrl-F": (cm) => {
 		// something immediately grabs the "focus" and we close the search dialog..
         // #Hack... 
         setTimeout(() => {
-            this.editor.execCommand("findPersistent") 
-            this.shadowRoot.querySelector(".CodeMirror-search-field").focus()
+            editor.execCommand("findPersistent");
+            this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
         }, 10)
-        // this.editor.execCommand("find")
+        // editor.execCommand("find")
       },
-      "Ctrl-/": "toggleCommentIndented",
       "Ctrl-Space": "autocomplete",
       "Ctrl-P": (cm) => {
           let text = this.getSelectionOrLine()
           this.tryBoundEval(text, true);
       },
+      "Ctrl-I": (cm) => {
+        let text = this.getSelectionOrLine()
+        this.inspectIt(text)
+      },
       "Ctrl-D": (cm) => {
           let text = this.getSelectionOrLine()
           this.tryBoundEval(text, false);
       },
+  		"Ctrl-Alt-Right": "selectNextOccurrence", 
+  		"Ctrl-Alt-Left": "undoSelection", 
+      "Ctrl-/": "toggleCommentIndented",
       "Ctrl-S": (cm) => {          
-        this.doSave(this.editor.getValue());
+        this.doSave(editor.getValue());
       },
     });
-    this.editor.setOption("hintOptions", {
+    editor.setOption("hintOptions", {
       container: this.shadowRoot.querySelector("#code-mirror-hints")
     });
-    
-    
-    this.editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))
-    this.isLoading = false
-    this.dispatchEvent(new CustomEvent("editor-loaded"))
-    
-	// apply attributes 
-    _.map(this.attributes, ea => ea.name).forEach(ea => this.applyAttribute(ea)) 
-  };
 
-   // Fires when an attribute was added, removed, or updated
+    editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))
+
+		// apply attributes 
+    _.map(this.attributes, ea => ea.name).forEach(ea => this.applyAttribute(ea)) 
+  }
+  
+  
+  // Fires when an attribute was added, removed, or updated
   attributeChangedCallback(attr, oldVal, newVal) {
     if(!this.editor){
         return false;
@@ -198,7 +212,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   setOption(name, value) {
-	if (!this.editor) return; // we loose...
+    if (!this.editor) return; // we loose...
     this.editor.setOption(name, value)
   } 
   
@@ -302,9 +316,14 @@ export default class LivelyCodeMirror extends HTMLElement {
   async inspectIt(str) {
     var result =  await this.boundEval(str, this.getDoitContext()) 
     if (!result.isError) {
-      lively.openInspector(result.value, null, str)
+      result = result.value 
     }
+    if (result.then) {
+      result = await result; // wait on any promise
+    }
+    lively.openInspector(result, null, str) 
   }
+  
 
   doSave(text) {
     this.tryBoundEval(text) // just a default implementation...
@@ -382,16 +401,67 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   livelyPreMigrate() {
-    this.lastScrollInfo = this.editor.getScrollInfo(); // #Example #PreserveContext
+    if (this.editor) {
+      this.lastScrollInfo = this.editor.getScrollInfo(); // #Example #PreserveContext
+    }
   }
   
   async livelyMigrate(other) {
     this.addEventListener("editor-loaded", () => {
-        this.value = other.value
-      	this.editor.scrollTo(other.lastScrollInfo.left, other.lastScrollInfo.top)
+      this.value = other.value;
+      if (other.lastScrollInfo) {
+      	this.editor.scrollTo(other.lastScrollInfo.left, other.lastScrollInfo.top)        
+      }
     })
   }
   
+  mergeView(originalText, originalLeftText) {
+    var target = this.shadowRoot.querySelector("#code-mirror-container")
+    target.innerHTML = "";
+    this._mergeView =  CodeMirror.MergeView(target, {
+      value: this.value,
+      origLeft: originalLeftText,
+      orig: originalText,
+      lineNumbers: true,
+      mode: this.editor.getOption('mode'),
+      scrollbarStyle: this.editor.getOption('scrollbarStyle'),
+      highlightDifferences: true,
+      connect: "align",
+      collapseIdentical: false
+    });
+    // if (this._mergeView.right) {
+    // this.setEditor(this._mergeView.right.edit)
+    // }
+    this.setEditor(this._mergeView.editor())
+    // this.resizeMergeView(this._mergeView)
+  }
+  
+	resizeMergeView(mergeView) {
+    function editorHeight(editor) {
+      if (!editor) return 0;
+      return editor.getScrollInfo().height;
+    }
+
+    function mergeViewHeight(mergeView) {
+      return Math.max(editorHeight(mergeView.leftOriginal()),
+                      editorHeight(mergeView.editor()),
+                      editorHeight(mergeView.rightOriginal()));
+    }  
+    var height = mergeViewHeight(mergeView);
+    for(;;) {
+      if (mergeView.leftOriginal())
+        mergeView.leftOriginal().setSize(null, height);
+      mergeView.editor().setSize(null, height);
+      if (mergeView.rightOriginal())
+        mergeView.rightOriginal().setSize(null, height);
+
+      var newHeight = mergeViewHeight(mergeView);
+      if (newHeight >= height) break;
+      else height = newHeight;
+    }
+    mergeView.wrap.style.height = height + "px";
+  }
+
   find(name) {
     // #TODO this is horrible... Why is there not a standard method for this?
 	if (!this.editor) return;
