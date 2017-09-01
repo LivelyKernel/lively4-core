@@ -26,3 +26,7 @@ export function through(func, ...args) {
     return this;
   }
 }
+
+export function executeAllTestRunners() {
+  document.querySelectorAll('lively-testrunner').forEach(runner => runner.onRunButton());
+}

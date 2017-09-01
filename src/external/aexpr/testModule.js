@@ -16,4 +16,4 @@ class B {
     super.foo()
   }
 }
-foo.get.bar
+foo.get

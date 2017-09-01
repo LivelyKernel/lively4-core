@@ -18,7 +18,7 @@ import generateUUID from './../src/client/uuid.js';
 
 import {modulesRegister} from 'systemjs-babel-build';
 
-import { debounce, flatmap } from 'utils';
+import { debounce, flatmap, executeAllTestRunners } from 'utils';
 
 export default class AstExplorer extends Morph {
 
@@ -211,6 +211,8 @@ export default class AstExplorer extends Morph {
         console.groupEnd();
       }
     }
+    
+    executeAllTestRunners();
   }
 
   livelyMigrate(other) {
