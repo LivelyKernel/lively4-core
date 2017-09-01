@@ -1,3 +1,4 @@
+var pendingRequests ;
 
 // var pendingRequests  = [];
 var startSwxTime = Date.now();
