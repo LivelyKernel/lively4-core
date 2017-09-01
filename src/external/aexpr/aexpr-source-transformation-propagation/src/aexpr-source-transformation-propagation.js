@@ -6,9 +6,9 @@ let expressionAnalysisMode = false;
 class ExpressionAnalysis {
     // Do the function execution in ExpressionAnalysisMode
     static check(aexpr) {
-        aexprStack.withElement(aexpr, () => {
-            aexpr.getCurrentValue();
-        });
+        expressionAnalysisMode = true;
+        aexprStack.withElement(aexpr, () => aexpr.getCurrentValue());
+        expressionAnalysisMode = !!aexprStack.top();
     }
 }
 
@@ -93,6 +93,7 @@ class HookStorage {
 }
 
 const aexprStorage = new HookStorage();
+const aexprStorageForLocals = new HookStorage();
 const aexprStack = new Stack();
 
 class RewritingActiveExpression extends BaseActiveExpression {
@@ -117,23 +118,20 @@ export function aexpr(func, ...params) {
  */
 export function reset() {
     aexprStorage.clear();
+    aexprStorageForLocals.clear();
     CompositeKey.clear();
 }
 
 export function getMember(obj, prop, ...params) {
-    // console.log('getMember', obj, prop);
-    let currentAExpr = aexprStack.top();
-    if(currentAExpr) {
-        aexprStorage.associate(currentAExpr, obj, prop);
+    if(expressionAnalysisMode) {
+        aexprStorage.associate(aexprStack.top(), obj, prop);
     }
     return obj[prop];
 }
 
 export function getAndCallMember(obj, prop, args = []) {
-    // console.log('getAndCallMember', obj, prop, ...args);
-    let currentAExpr = aexprStack.top();
-    if(currentAExpr) {
-        aexprStorage.associate(currentAExpr, obj, prop);
+    if(expressionAnalysisMode) {
+        aexprStorage.associate(aexprStack.top(), obj, prop);
     }
     return obj[prop](...args);
 }
@@ -142,6 +140,15 @@ function checkDependentAExprs(obj, prop) {
     let affectedAExprs = aexprStorage.getAExprsFor(obj, prop);
     affectedAExprs.forEach(aexpr => {
         aexprStorage.disconnectAll(aexpr);
+        ExpressionAnalysis.check(aexpr);
+    });
+    affectedAExprs.forEach(aexpr => aexpr.checkAndNotify());
+}
+
+function checkDependentAExprsForLocals(obj, prop) {
+    let affectedAExprs = aexprStorageForLocals.getAExprsFor(obj, prop);
+    affectedAExprs.forEach(aexpr => {
+        aexprStorageForLocals.disconnectAll(aexpr);
         ExpressionAnalysis.check(aexpr);
     });
     affectedAExprs.forEach(aexpr => aexpr.checkAndNotify());
@@ -229,13 +236,12 @@ export function setMemberBitwiseOR(obj, prop, val) {
 }
 
 export function getLocal(scope, varName) {
-    let currentAExpr = aexprStack.top();
-    if(currentAExpr) {
-        aexprStorage.associate(currentAExpr, scope, varName);
+    if(expressionAnalysisMode) {
+        aexprStorageForLocals.associate(aexprStack.top(), scope, varName);
     }
 }
 export function setLocal(scope, varName) {
-    checkDependentAExprs(scope, varName);
+    checkDependentAExprsForLocals(scope, varName);
 }
 
 const globalRef = typeof window !== "undefined" ? window : // browser tab
@@ -243,9 +249,8 @@ const globalRef = typeof window !== "undefined" ? window : // browser tab
         global); // node.js
 
 export function getGlobal(globalName) {
-    let currentAExpr = aexprStack.top();
-    if(currentAExpr) {
-        aexprStorage.associate(currentAExpr, globalRef, globalName);
+    if(expressionAnalysisMode) {
+        aexprStorage.associate(aexprStack.top(), globalRef, globalName);
     }
 }
 export function setGlobal(globalName) {

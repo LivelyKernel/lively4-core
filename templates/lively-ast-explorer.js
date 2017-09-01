@@ -11,14 +11,14 @@ import SyntaxChecker from 'src/client/syntax.js'
 
 import locals from 'babel-plugin-locals'
 
-import {setCode} from 'src/client/workspaces.js'
+//import {setCode} from 'src/client/workspaces.js'
 
 import sourcemap from 'https://raw.githubusercontent.com/mozilla/source-map/master/dist/source-map.min.js'
 import generateUUID from './../src/client/uuid.js';
 
 import {modulesRegister} from 'systemjs-babel-build';
 
-import { debounce } from 'utils';
+import { debounce, flatmap } from 'utils';
 
 export default class AstExplorer extends Morph {
 
@@ -49,16 +49,20 @@ export default class AstExplorer extends Morph {
     lively.html.registerButtons(this);
 
     this.pluginEditor.get("juicy-ace-editor").doSave = async () => {
-      await this.pluginEditor.saveFile()
-      await lively.reloadModule("" + this.pluginEditor.getURL())
-      this.updateAST()      
+      await this.pluginEditor.saveFile();
+      await lively.reloadModule("" + this.pluginEditor.getURL());
+      this.updateAST();
     };
     
     this.pluginEditor.addEventListener("url-changed", evt => {
       this.onPluginUrlChanged(evt.detail)      
-    })
+    });
+    this.sourceEditor.addEventListener("url-changed", evt => {
+      this.onSourceUrlChanged(evt.detail)      
+    });
 
-    this.sourceEditor.get("juicy-ace-editor").doSave = () => {
+    this.sourceEditor.get("juicy-ace-editor").doSave = async () => {
+      await this.sourceEditor.saveFile()
       this.updateAST();
     };
 
@@ -102,26 +106,29 @@ export default class AstExplorer extends Morph {
   onPluginUrlChanged(details) {
     this.setAttribute("plugin", details.url)
   }
+  onSourceUrlChanged(details) {
+    this.setAttribute("source", details.url)
+  }
   
   async updateAST() {
-    var src = this.sourceEditor.currentEditor().getValue();
+    const src = this.sourceEditor.currentEditor().getValue();
     
-    var filename = "tempfile.js"
+    const filename = "tempfile.js"
 
-    var pluginSrc = this.pluginEditor.currentEditor().getValue();
-    var moduleId = generateUUID();
-    //"workspace:" + Date.now();
-    console.log(moduleId)
-    setCode(moduleId, pluginSrc)
-    var plugin = await System.import('workspace:' + encodeURI(moduleId)).then(m => m.default)
-    // #HACK: we explicitly enable jsx syntax for now
+    // #HACK: we explicitly enable some syntax plugins for now
     // #TODO: how to include syntax extensions for ast generation (without the plugin to develop)?
-    var jsxSyntax = await System.import('babel-plugin-syntax-jsx').then(m => m.default)
+    const syntaxPlugins = (await Promise.all([
+      'babel-plugin-syntax-jsx',
+      'babel-plugin-syntax-do-expressions',
+      'babel-plugin-syntax-function-bind'
+    ]
+      .map(syntaxPlugin => System.import(syntaxPlugin))))
+      .map(m => m.default);
 
     // get pure ast
     this.ast = babel.transform(src, {
         babelrc: false,
-        plugins: [jsxSyntax],
+        plugins: syntaxPlugins,
         presets: [],
         filename: filename,
         sourceFileName: filename,
@@ -133,26 +140,18 @@ export default class AstExplorer extends Morph {
         code: true,
         ast: true,
         resolveModuleSource: undefined
-    }).ast
-    this.get("#astInspector").inspect(this.ast)
+    }).ast;
+    this.get("#astInspector").inspect(this.ast);
 
     this.pluginEditor.currentEditor().getSession().setAnnotations([]);
-    
+
+    const plugin = (await System.import("" + this.pluginEditor.getURL())).default;
+
     try {
-      // var plugin = eval(pluginSrc);
-    } catch(err) {
-      console.error(err);
-      this.get("#output").editor.setValue("Error evaluating Plugin: " + err);
-      // TODO: Error locations in Plugin Editor
-      lively.notify(err.name, err.message, 5, ()=>{}, 'red');
-      return
-    }
-    
-    try {
-      var src = this.sourceEditor.currentEditor().getValue();
+      console.group("PLUGIN TRANSFORMATION");
       this.result = babel.transform(src, {
         babelrc: false,
-        plugins: [plugin],
+        plugins: [...syntaxPlugins, plugin],
         presets: [],
         filename: filename,
         sourceFileName: filename,
@@ -164,7 +163,7 @@ export default class AstExplorer extends Morph {
         code: true,
         ast: true,
         resolveModuleSource: undefined
-      })
+      });
     } catch(err) {
       console.error(err);
       this.get("#output").editor.setValue("Error transforming code: " + err);
@@ -179,20 +178,28 @@ export default class AstExplorer extends Morph {
             row: parseInt(row) - 1, column: parseInt(column), text: err.message, type: "error"
           }
         }));
-      lively.notify(err.name, err.message, 5, ()=>{}, 'red');
+      lively.notify(err.name, err.message, 5, () => {}, 'red');
       return;
+    } finally {
+      console.groupEnd();
     }
     
     this.get("#output").editor.setValue(this.result.code);
     
-    this.get("#result").textContent = ""
+    this.get("#result").innerHTML = "";
     if (this.get("#live").checked) {
       var oldLog = console.log
       var logNode = this.get("#result");
       try {
-        console.log = (s, ...rest) => {
-          oldLog.call(console, s, ...rest)
-          logNode.textContent += s + "\n"
+        console.group("EXECUTE REWRITTEN FILE");
+        console.log = (...fragments) => {
+          oldLog.call(console, ...fragments)
+          //typeof fragments[i] === "string"
+          // let toPrint = fragments::flatmap((obj, i) => {
+          //   return [<p>{obj}</p>];
+          // });
+          // logNode.appendChild(<div>{toPrint[0]}</div>)
+          logNode.textContent += fragments.join(', ') + "\n"
         }
         var result ='' + (await this.get("#output").boundEval(this.get("#output").editor.getValue())).value;
         this.get("#result").textContent += "-> " + result;       
@@ -201,6 +208,7 @@ export default class AstExplorer extends Morph {
         this.get("#result").textContent += "Error: " + e
       } finally {
         console.log = oldLog
+        console.groupEnd();
       }
     }
   }
@@ -222,6 +230,7 @@ export default class AstExplorer extends Morph {
   }
   
   livelyPrepareSave() {
+    this.setAttribute('source', this.sourceEditor.getURLString());
     this.setAttribute('plugin', this.pluginEditor.getURLString());
   }
   

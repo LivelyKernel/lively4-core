@@ -62,6 +62,8 @@ export function isVariable(path) {
   if(path.parentPath.isImportNamespaceSpecifier() && path.parentKey === 'local') { return false; } // import * as foo from 'utils';
   if(path.parentPath.isLabeledStatement() && path.parentKey === 'label') { return false; } // always: { ... }
   if(path.parentPath.isBreakStatement() && path.parentKey === 'label') { return false; } // break: foo;
+  if(path.parentPath.isMemberExpression() && path.parentKey === 'property') { return false; } // super.foo
+
   return true;
 }
 

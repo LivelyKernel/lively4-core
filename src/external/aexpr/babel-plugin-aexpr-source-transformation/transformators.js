@@ -92,7 +92,7 @@ export function setLocal(path, state, t) { // AssignmentExpression
       t.callExpression(
         addCustomTemplate(state.file, constants.SET_LOCAL),
         [
-          getIdentifierForExplicitScopeObject(getParentWithScope(path), t),
+          getIdentifierForExplicitScopeObject(getParentWithScope(path.get("left")), t),
           t.stringLiteral(path.node.left.name)
         ]
       ),

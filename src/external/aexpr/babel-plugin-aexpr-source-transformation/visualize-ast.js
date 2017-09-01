@@ -2,7 +2,7 @@ import d3 from 'src/external/d3.v4.js';
 
 export default function d3visualize({ path, state, t, template, traverse }) {
   
-  if(!that || that.tagName !== "DIV") { lively.notify("no vis"); return; }
+  if(!window.that || that.tagName !== "DIV") { lively.notify("no vis"); return; }
   that.innerHTML = "";
   
   const width = that.clientWidth;

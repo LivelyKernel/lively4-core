@@ -1,8 +1,8 @@
-import d3visualize from 'src/external/aexpr/babel-plugin-aexpr-source-transformation/visualize-ast.js';
+import d3visualize from './visualize-ast.js';
 import {
   isVariable,
   getParentWithScope
-} from 'src/external/aexpr/babel-plugin-aexpr-source-transformation/utils.js';
+} from './utils.js';
 
 import {
   AEXPR_IDENTIFIER_NAME,
@@ -14,9 +14,9 @@ import {
   FLAG_SHOULD_NOT_REWRITE_MEMBER_EXPRESSION,
   FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION,
   GENERATED_IMPORT_IDENTIFIER
-} from 'src/external/aexpr/babel-plugin-aexpr-source-transformation/constants.js';
+} from './constants.js';
 
-import * as transformator from 'src/external/aexpr/babel-plugin-aexpr-source-transformation/transformators.js';
+import * as transformator from './transformators.js';
 
 export default function(param) {
   const { types: t, template, traverse } = param;
@@ -64,6 +64,33 @@ export default function(param) {
           });
           const variables = identifiers
             .filter(p=>p);
+          function isCalledMember(memberExpression) {
+            if(!memberExpression.parentPath.isCallExpression()) { return false; }
+            if(memberExpression.parentKey !== "callee") { return false; }
+
+            if(isGenerated(memberExpression.parentPath)) { return false; }
+            if(memberExpression.get("object").isSuper()) { return false; }
+
+            return true;
+          }
+          const calledMembers = members.filter(isCalledMember);
+          calledMembers.reverse().forEach(path => transformator.getAndCallMember(path.parentPath, state, t));
+
+          function isGetMember(path) {
+            // lval (left values) are ignored for now
+            //lively.notify("STUFF", path.parentKey, path.key)
+            if(isCalledMember(path)) { return false; }
+            if(t.isAssignmentExpression(path.parent) && path.parentKey === 'left') { return false; }
+            if(t.isUpdateExpression(path.parent) && path.parentKey === 'argument') { return false; }
+            if(path.get("object").isSuper()) { return false; }
+            if(isGenerated(path)) { return false; }
+            lively.notify(path.node.property.name, "");
+            return true;
+          }
+          lively.notify(members.length, "members")
+          const getMembers = members.filter(isGetMember);
+          lively.notify(getMembers.length, "getMembers")
+          getMembers.reverse().forEach(path => transformator.getMember(path, state, t));
 
           path.traverse({
             Identifier(path) {
@@ -106,7 +133,6 @@ export default function(param) {
                 !t.isClassExpression(path.parent) &&
                 !t.isClassMethod(path.parent) &&
                 !t.isImportSpecifier(path.parent) &&
-                //!t.isMemberExpression(path.parent) &&
                 !t.isObjectMethod(path.parent) &&
                 !t.isVariableDeclarator(path.parent) &&
                 !t.isFunctionDeclaration(path.parent) &&
@@ -120,7 +146,7 @@ export default function(param) {
                   path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
 
                   if(getParentWithScope(path)) {
-                    lively.notify(path.node.name, path.parent.type)
+                    //lively.notify(path.node.name, path.parent.type)
                     transformator.getLocal(path, state, t);
                   }
                 } else {
@@ -209,7 +235,7 @@ export default function(param) {
                   //console.log('set local', path.node.left.name);
                   path.node[FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION] = true;
 
-                  if(getParentWithScope(path)) {
+                  if(getParentWithScope(path.get("left"))) {
                     transformator.setLocal(path, state, t);
                   }
                 } else {
@@ -217,26 +243,6 @@ export default function(param) {
                   //console.log('---global---', path.node.left.name);
                   transformator.setGlobal(path, state, t);
                 }
-              }
-            },
-
-            MemberExpression(path) {
-              // lval (left values) are ignored for now
-              if(t.isAssignmentExpression(path.parent) && path.key === 'left') { return; }
-              if(t.isUpdateExpression(path.parent) && path.key === 'argument') { return; }
-              if(t.isSuper(path.node.object)) { return; }
-              if(isGenerated(path)) { return; }
-              //FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION
-              transformator.getMember(path, state, t);
-            },
-
-            CallExpression(path) {
-              if(isGenerated(path)) { return; }
-              if(path.node.callee && t.isSuper(path.node.callee.object)) { return; }
-
-              // check whether we call a MemberExpression
-              if(t.isMemberExpression(path.node.callee)) {
-                transformator.getAndCallMember(path, state, t);
               }
             }
           });

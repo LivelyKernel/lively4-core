@@ -160,7 +160,7 @@ if (window.lively && window.lively4url) {
               'babel-plugin-doit-result',
               'babel-plugin-doit-this-ref',
               'babel-plugin-var-recorder',
-              //'babel-plugin-aexpr-source-transformation'
+              'babel-plugin-aexpr-source-transformation'
             ]
           },
           loader: 'workspace-loader'
