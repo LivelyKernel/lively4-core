@@ -54,14 +54,14 @@ this.addEventListener('fetch', (event) => {
   if (pendingRequests) return;
   
   console.log("fetch swx-boot.js " + event.request.url)
-//   var pending = {}
-// 	event.respondWith(new Promise(resolve => {
-//     pending.resolve = resolve;
-//   }));
+  var pending = {}
+	event.respondWith(new Promise(resolve => {
+    pending.resolve = resolve;
+  }));
   
   event.waitUntil(
     init()
-      .then(worker => worker.fetch(event))
+      .then(worker => worker.fetch(event, pending))
       .catch(error => { console.error(error); throw error })
   )
 })
