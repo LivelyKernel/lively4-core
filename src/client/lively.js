@@ -1154,15 +1154,15 @@ export default class Lively {
     }).then(async () => {
       if (edit) {
         await editorComp.asyncGet("#editor").then(livelyEditor => {
-          var ace = livelyEditor.currentEditor();
           if(pattern) {
             // #Hack ontop #Hack, sorry... The editor has still things to do
             setTimeout(() => {
-              ace.find(pattern);
+              livelyEditor.find(pattern);
             }, 500)
             
           } else if (lineAndColumn) {
-            ace.gotoLine(lineAndColumn.line, lineAndColumn.column)
+            // #TODO ... 
+            // ace.gotoLine(lineAndColumn.line, lineAndColumn.column)
           }
         });
       }
@@ -1215,6 +1215,12 @@ export default class Lively {
     return element
   }
 
+  static findWindow(element) {
+    if (element.isWindow) return element;
+    if (element.parentNode) return this.findWindow(element.parentNode);
+    if (element.host) return this.findWindow(element.host);
+    return document.body; // nothing found... just use the body
+  }
   
   // lively.print(document)
   static print(obj) {

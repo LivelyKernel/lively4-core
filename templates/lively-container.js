@@ -390,6 +390,7 @@ export default class Container extends Morph {
       }
       var url = this.getURL();
       
+      
       if (this.getPath().match(/.*css/)) {
         this.updateCSS();
       }
@@ -632,7 +633,7 @@ export default class Container extends Morph {
       lively.html.fixLinks(nodes, this.getDir(),
         (path) => this.followPath(path));
       for(var ea of nodes) {
-        if (ea.tagName == "SCRIPT") {
+        if (ea && ea.tagName == "SCRIPT") {
           await this.appendScript(ea);
         } else {
           root.appendChild(ea);
@@ -659,10 +660,6 @@ export default class Container extends Morph {
     }, 0)
   }
   
-  
-  
-  
-
   appendTemplate(name) {
     try {
     	var node = lively.components.createComponent(name);
@@ -750,22 +747,33 @@ export default class Container extends Morph {
     // console.log("[container] create editor")
     editor = lively.components.createComponent("lively-editor");
     editor.id = "editor";
-    return lively.components.openIn(container, editor).then( () => {
-        editor.hideToolbar();
-        var aceComp = editor.get('#editor');
-        aceComp.enableAutocompletion();
-        aceComp.getDoitContext = () => {
-          return window.that;
-        };
-        // aceComp.getDoitContextModuleUrl = () => {
-        //   return this.getURL()
-        // }
-        if (aceComp.aceRequire) { 
-          aceComp.aceRequire('ace/ext/searchbox');
-        }
-        aceComp.doSave = text => {
-          this.onSave();
-        };
+    return lively.components.openIn(container, editor).then( async () => {
+      editor.hideToolbar();
+      var aceComp = editor.get('#editor');
+      if (!aceComp) throw new Error("Could not initialalize lively-editor");
+      if (aceComp.tagName == "LIVELY-CODE-MIRROR") {
+         await new Promise(resolve => {
+          aceComp.addEventListener("editor-loaded", () => {
+            resolve()
+          })            
+        })
+      }
+
+      aceComp.enableAutocompletion();
+      aceComp.getDoitContext = () => {
+        return window.that;
+      };
+      // aceComp.getDoitContextModuleUrl = () => {
+      //   return this.getURL()
+      // }
+      if (aceComp.aceRequire) { 
+        aceComp.aceRequire('ace/ext/searchbox');
+      }
+      aceComp.doSave = text => {
+        if (aceComp.tagName !== "LIVELY-CODE-MIRROR") {
+        	this.onSave(); // CTRL+S does not come through... 
+        } 
+      };
       return editor;
     });
   }
@@ -773,7 +781,7 @@ export default class Container extends Morph {
   getAceEditor() {
     var livelyEditor = this.get('lively-editor');
     if (!livelyEditor) return;
-    return livelyEditor.get('juicy-ace-editor');
+    return livelyEditor.get('#editor');
   }
   
   // #TODO replace this with asyncGet
@@ -934,8 +942,8 @@ export default class Container extends Morph {
   }
 
   navigateToName(name) {
-    lively.notify("navigate to " + name);
-    this.getAceEditor().editor.find(name);
+    // lively.notify("navigate to " + name);
+    this.getAceEditor().find(name);
   }
 
   clearNavbar() {
@@ -1024,8 +1032,7 @@ export default class Container extends Morph {
         
         var url = this.getURL();
         livelyEditor.setURL(url);
-        aceComp.changeModeForFile(url.pathname);
-
+      
         if (aceComp.editor && aceComp.editor.session) {
           aceComp.editor.session.setOptions({
       			mode: "ace/mode/javascript",
@@ -1033,15 +1040,18 @@ export default class Container extends Morph {
           	useSoftTabs: true
       		});
         }
+      	aceComp.changeModeForFile(url.pathname);
+
         // NOTE: we don't user loadFile directly... because we don't want to edit PNG binaries etc...
         livelyEditor.setText(this.sourceContent); // directly setting the source we got
         
         if (aceComp.editor) {
-          aceComp.editor.selection.moveCursorTo(0,0);
-          var lineWidth = 100
-          aceComp.editor.session.setWrapLimit(lineWidth);
-          aceComp.editor.renderer.setPrintMarginColumn(lineWidth)
-          
+          if (!aceComp.tagName == "LIVELY-CODE-MIRROR") {
+            aceComp.editor.selection.moveCursorTo(0,0);
+            var lineWidth = 100
+            aceComp.editor.session.setWrapLimit(lineWidth);
+            aceComp.editor.renderer.setPrintMarginColumn(lineWidth)
+          }
         }
         
         livelyEditor.lastVersion = this.lastVersion;
@@ -1281,6 +1291,12 @@ export default class Container extends Morph {
   livelyPreMigrate() {
     // do something before I got replaced  
     this.oldContentScroll = this.get("#container-content").scrollTop;
+ 	var fileEditor = this.get("#editor");
+    if (fileEditor) {
+      this.oldScrollInfo = fileEditor.getScrollInfo()
+      this.oldCursor = fileEditor.getCursor()
+      this.oldFocused = document.activeElement == this
+    }
   }
   
   livelyMigrate(other) {
@@ -1304,7 +1320,15 @@ export default class Container extends Morph {
           // jsut to be sure..
           this.isMigrating = false;
         });
-      }
+      } 
+      this.asyncGet("#editor").then( editor => { 
+        editor.setScrollInfo(other.oldScrollInfo)
+      	editor.setCursor(other.oldCursor)
+      	if (other.oldFocused) {
+      	  // lively.notify("set focus again!")
+      	  // setTimeout(() => editor.focus(), 1000)
+        }
+      })
     } else {
       this.isMigrating = false;
     }

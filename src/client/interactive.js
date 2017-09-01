@@ -68,4 +68,7 @@ cop.layer(window, "InteractiveLayer")
     return cop
   },
   
+  get $morph() {
+    return name => document.body.querySelector("#" + name)
+  },
 })

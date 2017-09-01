@@ -45,8 +45,7 @@ export default class VersionControl extends Morph {
   }
   
   selectItem(item) {
-    this.get("#preview").editor.setValue("")
-
+   
     if (this.selectedItem) 
       this.selectedItem.classList.remove("selected");
     if (this.selectedItem !== item) { 
@@ -58,7 +57,10 @@ export default class VersionControl extends Morph {
           fileversion: item.value.version
         }
       }).then( r => r.text()).then( text => {
-        this.get("#preview").editor.setValue(text)
+        if (this.editor && this.editor.mergeView) {
+         	this.editor.mergeView(text) 
+        }
+        // this.get("#preview").editor.setValue(text)
       })
       
       
@@ -68,6 +70,11 @@ export default class VersionControl extends Morph {
     }
   }
 
+  livelyExample() {
+    this.showVersions(lively4url + "/README.md")
+  }
+  
+  
   livelyMigrate(obj) {
     this.showVersions(obj.url);
   }

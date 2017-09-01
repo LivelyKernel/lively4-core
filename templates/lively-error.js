@@ -5,8 +5,7 @@ import Files from 'src/client/files.js'
 export default class LivelyError extends Morph {
   
   initialize() {
-    
-    this.update()
+    this.update() 
   }
 
   set stack(s) {
