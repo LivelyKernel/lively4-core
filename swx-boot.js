@@ -26,7 +26,7 @@ SystemJS.config({
 )
 
 function init() {
-  return System.import(lively4swx + "swx.js?2")
+  return System.import(lively4swx + "swx.js?3")
 }
 console.log("Base system loaded after  " + (Date.now() - startSwxTime) + "ms")
 
