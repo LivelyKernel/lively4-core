@@ -1,39 +1,28 @@
 'use strict';
 
 import Morph from './Morph.js';
-//import lively from './../src/client/lively.js';
-
 import {babel} from 'systemjs-babel-build';
-
 import SyntaxChecker from 'src/client/syntax.js'
-
-// import {html} from 'src/client/html.js';
-
 import locals from 'babel-plugin-locals'
-
-//import {setCode} from 'src/client/workspaces.js'
-
 import sourcemap from 'https://raw.githubusercontent.com/mozilla/source-map/master/dist/source-map.min.js'
 import generateUUID from './../src/client/uuid.js';
-
 import {modulesRegister} from 'systemjs-babel-build';
-
-import { debounce, flatmap, executeAllTestRunners } from 'utils';
+import { debounce, flatmap, executeAllTestRunners, promisedEvent } from 'utils';
+// import lively from './../src/client/lively.js';
+// import {html} from 'src/client/html.js';
+// import {setCode} from 'src/client/workspaces.js'
 
 export default class AstExplorer extends Morph {
 
   get pluginEditor() { return this.get("#plugin"); }
   get sourceEditor() { return this.get("#source"); }
 
-  initialize() {
-
+  async initialize() {
     this.windowTitle = "AST Explorer";  // #TODO why does it not work?
-
     // lets work with properties until we get access to the module state again
     this.babel = babel
     //this.smc = smc
 
-    // try {    
 
     let initLivelyEditorFromAttribute = (editor, attributeToRead, defaultPath) => {
       var filePath =  this.getAttribute(attributeToRead);
@@ -43,12 +32,15 @@ export default class AstExplorer extends Morph {
       editor.setURL(filePath);
       editor.loadFile();
     }
-    initLivelyEditorFromAttribute(this.sourceEditor, 'source', "https://lively-kernel.org/lively4/lively4-core/demos/astsource.js");
-    initLivelyEditorFromAttribute(this.pluginEditor, 'plugin', "https://lively-kernel.org/lively4/lively4-core/demos/astplugin.js");
+    initLivelyEditorFromAttribute(this.sourceEditor, 'source', 
+   		"https://lively-kernel.org/lively4/lively4-core/demos/astsource.js");
+    initLivelyEditorFromAttribute(this.pluginEditor, 'plugin', 
+    	"https://lively-kernel.org/lively4/lively4-core/demos/astplugin.js");
 
     lively.html.registerButtons(this);
 
-    this.pluginEditor.get("juicy-ace-editor").doSave = async () => {
+    
+    this.pluginEditor.get("#editor").doSave = async () => {
       await this.pluginEditor.saveFile();
       await lively.reloadModule("" + this.pluginEditor.getURL());
       this.updateAST();
@@ -61,39 +53,42 @@ export default class AstExplorer extends Morph {
       this.onSourceUrlChanged(evt.detail)      
     });
 
-    this.sourceEditor.get("juicy-ace-editor").doSave = async () => {
+    this.sourceEditor.get("#editor").doSave = async () => {
       await this.sourceEditor.saveFile()
       this.updateAST();
     };
 
     function enableSyntaxCheckForEditor(editor) {
-      editor.currentEditor().addEventListener("change", (evt => SyntaxChecker.checkForSyntaxErrors(editor.currentEditor()))::debounce(200));
+      editor.addEventListener("change", (evt => SyntaxChecker.checkForSyntaxErrors(editor.currentEditor()))::debounce(200));
     }
     enableSyntaxCheckForEditor(this.pluginEditor);
     enableSyntaxCheckForEditor(this.sourceEditor);
 
-    this.sourceEditor.currentEditor().session.selection.on("changeSelection", (evt) => {
-      this.onSourceSelectionChanged(evt)
-    });
     
-    this.sourceEditor.currentEditor().session.selection.on("changeCursor", (evt) => {
+    // #TODO refactor
+    await promisedEvent(this.sourceEditor, "editor-loaded");
+    
+  	this.sourceEditor.currentEditor().on("beforeSelectionChange", (evt) => {
       this.onSourceSelectionChanged(evt)
     });
 
-    this.get("#output").editor.session.selection.on("changeSelection", (evt) => {
+//     this.sourceEditor.currentEditor().session.selection.on("changeSelection", (evt) => {
+//       this.onSourceSelectionChanged(evt)
+//     });
+    
+//     this.sourceEditor.currentEditor().session.selection.on("changeCursor", (evt) => {
+//       this.onSourceSelectionChanged(evt)
+//     });
+
+    this.get("#output").editor.on("beforeSelectionChange", (evt) => {
       this.onOutputSelectionChanged(evt)
     });
     
-    this.get("#output").editor.session.selection.on("changeCursor", (evt) => {
-      this.onOutputSelectionChanged(evt)
-    });
+//     this.get("#output").editor.session.selection.on("changeCursor", (evt) => {
+//       this.onOutputSelectionChanged(evt)
+//     });
 
     // this.pluginEditor.currentEditor()
-    [this.get("#output").editor, this.sourceEditor.currentEditor()].forEach(ea => ea.session.setOptions({
-			mode: "ace/mode/javascript",
-    	tabSize: 2,
-    	useSoftTabs: true
-		}));
 		
     // } catch(e) {
     //  console.error(e);
@@ -143,7 +138,9 @@ export default class AstExplorer extends Morph {
     }).ast;
     this.get("#astInspector").inspect(this.ast);
 
-    this.pluginEditor.currentEditor().getSession().setAnnotations([]);
+    
+    // #TODO refactor
+    // this.pluginEditor.currentEditor().getSession().setAnnotations([]);
 
     const plugin = (await System.import("" + this.pluginEditor.getURL())).default;
 
@@ -167,17 +164,20 @@ export default class AstExplorer extends Morph {
     } catch(err) {
       console.error(err);
       this.get("#output").editor.setValue("Error transforming code: " + err);
-      this.pluginEditor.currentEditor().getSession().setAnnotations(err.stack.split('\n')
-        .filter(line => line.match('updateAST'))
-        .map(line => {
-          let [row, column] = line
-            .replace(/.*<.*>:/, '')
-            .replace(/\)/, '')
-            .split(':')
-          return {
-            row: parseInt(row) - 1, column: parseInt(column), text: err.message, type: "error"
-          }
-        }));
+   
+      // #TODO refactor
+//       this.pluginEditor.currentEditor().getSession().setAnnotations(err.stack.split('\n')
+//         .filter(line => line.match('updateAST'))
+//         .map(line => {
+//           let [row, column] = line
+//             .replace(/.*<.*>:/, '')
+//             .replace(/\)/, '')
+//             .split(':')
+//           return {
+//             row: parseInt(row) - 1, column: parseInt(column), text: err.message, type: "error"
+//           }
+//         }));
+      
       lively.notify(err.name, err.message, 5, () => {}, 'red');
       return;
     } finally {
@@ -249,43 +249,42 @@ export default class AstExplorer extends Morph {
     if (!this.result || !this.result.map) return; 
     var smc =  new sourcemap.SourceMapConsumer(this.result.map)
     return smc.generatedPositionFor({
-      source: "unknown",
+      source: "tempfile.js",
       line: line,
       column: column
     });
   }
   
+  mapEditorsFromToPosition(fromTextEditor, toTextEditor, backward) {
+    if (backward == true) {
+      var method = "originalPositionFor"
+    } else {
+      method = "generatedPositionFor"
+    }
+    var range = fromTextEditor.listSelections()[0]
+    var start = this[method](range.anchor.line + 1, range.anchor.ch + 1)
+    var end = this[method](range.head.line + 1, range.head.ch + 1)
+
+    lively.notify(`start ${range.anchor.line} ch ${range.anchor.ch} ->  ${start.line} ch ${start.column} / end ${range.head.line} ch ${range.head.ch} -> ${end.line} c ${end.column}`)
+    if (!start || !end) return;
+
+    toTextEditor.setSelection(
+      {line: start.line - 1, ch:start.column - 1}, {line: end.line -  1, ch: end.column - 1})
+  }
+  
   onSourceSelectionChanged(evt) {
     setTimeout(() => {
-      if(this.sourceEditor.currentEditor().isFocused()) {
-        this.get("#output").editor.selection.clearSelection()
-        
-        var range = this.sourceEditor.currentEditor().selection.getRange()
-        
-        var start = this.generatedPositionFor(range.start.row + 1, range.start.column)
-        var end = this.generatedPositionFor(range.end.row + 1, range.end.column)
-        
-        if (!start || !end) return;
-        this.get("#output").editor.selection.moveCursorTo(start.line - 1, start.column)
-        this.get("#output").editor.selection.selectTo(end.line -  1, end.column)
-    
-        // this.get("#output").editor.selection.selectTo(end.line, end.column)
+      if(this.sourceEditor.get("#editor").isFocused()) {
+        this.mapEditorsFromToPosition(
+          this.sourceEditor.currentEditor(), this.get("#output").editor, false)
       }
     }, 0);
   }
   onOutputSelectionChanged(evt) {
     setTimeout(() => {
-      if(this.get("#output").editor.isFocused()) {
-        this.sourceEditor.currentEditor().selection.clearSelection()
-        
-        var range = this.get("#output").editor.selection.getRange()
-        
-        var start = this.originalPositionFor(range.start.row + 1, range.start.column)
-        var end = this.originalPositionFor(range.end.row + 1, range.end.column)
-        
-        if (!start || !end) return;
-        this.sourceEditor.currentEditor().selection.moveCursorTo(start.line - 1, start.column)
-        this.sourceEditor.currentEditor().selection.selectTo(end.line -  1, end.column)
+      if(this.get("#output").isFocused()) { 
+        this.mapEditorsFromToPosition(
+          this.get("#output").editor, this.sourceEditor.currentEditor(), true)
       }
     }, 0);
   }

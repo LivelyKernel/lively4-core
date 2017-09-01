@@ -30,3 +30,10 @@ export function through(func, ...args) {
 export function executeAllTestRunners() {
   document.querySelectorAll('lively-testrunner').forEach(runner => runner.onRunButton());
 }
+
+export function promisedEvent(eventTarget, type) {
+  if (!type || !eventTarget) throw new Error("arguments missing");
+  return new Promise(resolve => eventTarget.addEventListener(type, resolve))
+}
+
+
