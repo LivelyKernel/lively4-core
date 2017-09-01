@@ -369,7 +369,7 @@ export default class ContextMenu {
           },, '<i class="fa fa-info" aria-hidden="true"></i>']
       ]],
       ["Preferences", 
-          ["ShowDocumentGrid", "InteractiveLayer", "ShowFixedBrowser", "SnapWindowsInGrid", "DisableAExpWorkspace", "UseCodeMirror"].map(ea => this.preferenceEntry(ea))
+          ["ShowDocumentGrid", "InteractiveLayer", "ShowFixedBrowser", "SnapWindowsInGrid", "DisableAExpWorkspace"].map(ea => this.preferenceEntry(ea))
       ],
       
       // ["Customize Page", (evt) => {

@@ -176,9 +176,7 @@ export default class Container extends Morph {
 
   reloadModule(url) {
     var urlString = url.toString()
-    // #Hack #issue in SystemJS babel syntax errors do not clear errors
-    System['@@registerRegistry'][System.normalizeSync(urlString)] = undefined
-    System.registry.delete(System.normalizeSync(urlString))
+    lively.unloadModule(urlString)
     return System.import(urlString).then( m => {
         this.shadowRoot.querySelector("#live").disabled =false;
         lively.notify({

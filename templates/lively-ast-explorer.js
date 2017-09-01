@@ -18,7 +18,7 @@ export default class AstExplorer extends Morph {
   get sourceEditor() { return this.get("#source"); }
 
   async initialize() {
-    this.windowTitle = "AST Explorer";  // #TODO why does it not work?
+    this.windowTitle = "AST Explorer";
     // lets work with properties until we get access to the module state again
     this.babel = babel
     //this.smc = smc
@@ -42,6 +42,7 @@ export default class AstExplorer extends Morph {
     
     this.pluginEditor.get("#editor").doSave = async () => {
       await this.pluginEditor.saveFile();
+      
       await lively.reloadModule("" + this.pluginEditor.getURL());
       this.updateAST();
     };
@@ -59,41 +60,23 @@ export default class AstExplorer extends Morph {
     };
 
     function enableSyntaxCheckForEditor(editor) {
-      editor.addEventListener("change", (evt => SyntaxChecker.checkForSyntaxErrors(editor.currentEditor()))::debounce(200));
+      editor.addEventListener("change", (evt => SyntaxChecker.checkForSyntaxErrors(
+        editor.currentEditor()))::debounce(200));
     }
     enableSyntaxCheckForEditor(this.pluginEditor);
     enableSyntaxCheckForEditor(this.sourceEditor);
-
     
-    // #TODO refactor
     await promisedEvent(this.sourceEditor, "editor-loaded");
     
   	this.sourceEditor.currentEditor().on("beforeSelectionChange", (evt) => {
       this.onSourceSelectionChanged(evt)
     });
 
-//     this.sourceEditor.currentEditor().session.selection.on("changeSelection", (evt) => {
-//       this.onSourceSelectionChanged(evt)
-//     });
-    
-//     this.sourceEditor.currentEditor().session.selection.on("changeCursor", (evt) => {
-//       this.onSourceSelectionChanged(evt)
-//     });
 
     this.get("#output").editor.on("beforeSelectionChange", (evt) => {
       this.onOutputSelectionChanged(evt)
     });
-    
-//     this.get("#output").editor.session.selection.on("changeCursor", (evt) => {
-//       this.onOutputSelectionChanged(evt)
-//     });
-
-    // this.pluginEditor.currentEditor()
-		
-    // } catch(e) {
-    //  console.error(e);
-      // throw new Error("Could not initialize AST-Explorer " + e);
-    //}
+   
     this.dispatchEvent(new CustomEvent("initialize"));
 
   }
@@ -142,8 +125,13 @@ export default class AstExplorer extends Morph {
     // #TODO refactor
     // this.pluginEditor.currentEditor().getSession().setAnnotations([]);
 
-    const plugin = (await System.import("" + this.pluginEditor.getURL())).default;
-
+    var url = "" + this.pluginEditor.getURL() 
+    // url +=  "?" + Date.now(); // #HACK, we thought we don't have this to do any more, but ran into a problem when dealing with syntax errors...
+    // assumend problem: there is a bad version of the code in either the browser or system.js cache
+    // idea: we have to find and flush it...
+    // wip: the browser does not cache it, but system.js does...
+    const plugin = (await System.import(url)).default;
+    
     try {
       console.group("PLUGIN TRANSFORMATION");
       this.result = babel.transform(src, {
@@ -166,6 +154,7 @@ export default class AstExplorer extends Morph {
       this.get("#output").editor.setValue("Error transforming code: " + err);
    
       // #TODO refactor
+      // #Feature Show Syntax errors in editor... should be generic
 //       this.pluginEditor.currentEditor().getSession().setAnnotations(err.stack.split('\n')
 //         .filter(line => line.match('updateAST'))
 //         .map(line => {

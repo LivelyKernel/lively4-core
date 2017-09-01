@@ -88,9 +88,12 @@ export default class Lively {
       .map( ea => ea.key)
   }
   
-  static async unloadModule(path) {
+  // #TODO remove code duplication lively-con
+  static unloadModule(path) {
     var normalizedPath = System.normalizeSync(path)
     System.registry.delete(normalizedPath);
+    // #Hack #issue in SystemJS babel syntax errors do not clear errors
+    System['@@registerRegistry'][normalizedPath] = undefined;
     delete System.loads[normalizedPath] 
   }
 
@@ -99,6 +102,8 @@ export default class Lively {
     var changedModule = System.normalizeSync(path);
     var load = System.loads[changedModule]
     if (!load) {
+      
+	    this.unloadModule(path) // just to be sure...
       console.log("Don't reload non-loaded module")
       return   
     }
@@ -323,11 +328,7 @@ export default class Lively {
 
   static openWorkspace(string, pos, worldContext) {
     string = string || "";
-    var name = "juicy-ace-editor";
-    if (preferences.get("UseCodeMirror")) {
-      name = "lively-code-mirror"      
-    }
-
+    var name = "lively-code-mirror"      
     return  lively.openComponentInWindow(name, null, pt(400,500), worldContext).then((comp) => {
       comp.mode = "javascript";
       comp.editor.setValue(string);
