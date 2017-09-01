@@ -122,20 +122,17 @@ class ServiceWorker {
               }
             }).catch(e => {
               console.log("fetch error: "  + e)
-              return new Response("Could not fetch " + url +", because of: " + e)
+              resolve(new Response("Could not fetch " + url +", because of: " + e))
             })) 
           })
           return p
         } catch(err) {
-          if (err.toString().match("The fetch event has already been responded to.")) {
-            console.log("How can we check for this before? ", err)
-          } else {
-            throw err
-          }
+          return  new Response("" + err, {status: 500})
         }
       } else {
         // do nothing should be fine...
         // event.respondWith(self.fetch(request));
+        return  new Response("What happend here?", {status: 500})
       }
     } else {
       // console.log("lively4 fetch " + request.url)
