@@ -51,7 +51,7 @@ this.addEventListener('activate', (event) => {
 })
 
 this.addEventListener('fetch', (event) => {
-  if (pendingRequests) return;
+  // if (pendingRequests) return;
   
   console.log("fetch swx-boot.js " + event.request.url)
   var pending = {}
