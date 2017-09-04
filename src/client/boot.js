@@ -133,6 +133,25 @@ if (window.lively && window.lively4url) {
         //['']: moduleOptionsNon,
         // blacklist all projects included for active expressions
         [lively4url + '/src/external/aexpr/*.js']: moduleOptionsNon,
+        // ... except for the tests
+        [lively4url + '/src/external/aexpr/test/*.spec.js']: {
+          babelOptions: {
+            es2015: false,
+            stage2: false,
+            stage3: false,
+            plugins: [
+              'babel-plugin-jsx-lively',
+              'babel-plugin-transform-do-expressions',
+              'babel-plugin-transform-function-bind',
+              'babel-plugin-doit-result',
+              'babel-plugin-doit-this-ref',
+              'babel-plugin-var-recorder',
+              'babel-plugin-aexpr-source-transformation'
+            ]
+          },
+          loader: 'workspace-loader'
+        },
+        // all others
         '*.js': {
           babelOptions: {
             es2015: false,
