@@ -1,6 +1,7 @@
 'use strict';
 
 import * as cop from "src/external/ContextJS/src/contextjs.js"
+import Morph from './Morph.js';
 
 
 //     Mocha.utils.parseQuery()
@@ -10,7 +11,7 @@ import * as cop from "src/external/ContextJS/src/contextjs.js"
     
 // });
 
-export default class TestRunner extends HTMLDivElement {
+export default class TestRunner extends Morph {
   initialize() {
     this.windowTitle = "Test Runner"
     lively.html.registerButtons(this)
@@ -28,6 +29,12 @@ export default class TestRunner extends HTMLDivElement {
     
     lively.loadJavaScriptThroughDOM("mochaJS", lively4url + "/src/external/mocha.js")
       .then(() => {mocha.setup("bdd")})
+    
+    var testDir =  this.getAttribute('testDir');
+    if (testDir) {
+      this.get('#testDir').value = testDir;
+    }
+    this.get('#testDir').addEventListener("input", e => this.testDirChanged(e))
   }
 
   async findTestFilesInDir(dir) {
@@ -201,8 +208,17 @@ export default class TestRunner extends HTMLDivElement {
       
       mocha.run(failures => resolve());
     });
-
-    
   }
   
+  livelyMigrate(other) {
+    this.get('#testDir').value = other.get('#testDir').value;
+  }
+  
+  livelyPrepareSave() {
+    this.setAttribute('testDir', this.get('#testDir').value);
+  }
+  
+  testDirChanged(e) {
+    this.setAttribute('testDir', this.get('#testDir').value);
+  }
 }

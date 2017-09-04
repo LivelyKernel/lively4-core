@@ -59,7 +59,7 @@ class ServiceWorker {
     pendingRequests = null; // stop listening to requests..
   }
 
-  fetch(event, pending) {
+   fetch(event) {
     // console.log("SWX.fetch " + event + ", " + pending)
     let request = event.request;
     if (!request) return
@@ -125,10 +125,7 @@ class ServiceWorker {
               return new Response("Could not fetch " + url +", because of: " + e)
             })) 
           })
-          if (pending) 
-            pending.resolve(p)
-          else
-            event.respondWith(p)
+          return p
         } catch(err) {
           if (err.toString().match("The fetch event has already been responded to.")) {
             console.log("How can we check for this before? ", err)
@@ -161,11 +158,7 @@ class ServiceWorker {
         return new Response(content, {status: 500, statusText: message})
       })
 
-      if (pending) {
-        console.log("resolve pending request: " + pending.url)
-        pending.resolve(response)
-      } else
-        event.respondWith(response)
+      return response
     }
   }
 
