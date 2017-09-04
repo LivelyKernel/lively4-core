@@ -11,6 +11,8 @@ import diff from 'src/external/diff-match-patch.js';
 import preferences from 'src/client/preferences.js';
 import components from "src/client/morphic/component-loader.js";
 
+import {pt} from "src/client/graphics.js"
+
 export default class Editor extends Morph {
 
   async initialize() {
