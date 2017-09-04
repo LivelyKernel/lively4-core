@@ -20,7 +20,7 @@ function arrayContains(arr, item) {
   return arr.indexOf(item) != -1;
 }
 
-function scriptHint(editor, keywords, getToken, options) {
+async function scriptHint(editor, keywords, getToken, options) {
   // Find the token at the cursor
   var cur = editor.getCursor(), token = getToken(editor, cur);
   if (/\b(?:string|comment)\b/.test(token.type)) return;
@@ -44,7 +44,7 @@ function scriptHint(editor, keywords, getToken, options) {
     if (!context) var context = [];
     context.push(tprop);
   }
-  return {list: getCompletions(token, context, keywords, options),
+  return {list: await getCompletions(token, context, keywords, options),
           from: Pos(cur.line, token.start),
           to: Pos(cur.line, token.end)};
 }
@@ -98,12 +98,18 @@ function forAllProps(obj, callback) {
   }
 }
 
-function getCompletions(token, context, keywords, options) {
+async function getCompletions(token, context, keywords, options) {
   var found = [], start = token.string, global = options && options.globalScope || window;
+  
+  // options.additionalContext = {
+  //   that: that,
+  //   "this": that
+  // }
+  
   function maybeAdd(str) {
     if (str.lastIndexOf(start, 0) == 0 && !arrayContains(found, str)) found.push(str);
   }
-  function gatherCompletions(obj) {
+   function gatherCompletions(obj) {
     if (typeof obj == "string") forEach(stringProps, maybeAdd);
     else if (obj instanceof Array) forEach(arrayProps, maybeAdd);
     else if (obj instanceof Function) forEach(funcProps, maybeAdd);
@@ -111,14 +117,29 @@ function getCompletions(token, context, keywords, options) {
   }
 
   if (context && context.length) {
-		debugger
-
+		lively.notify('context: ' + JSON.stringify(context))
+    
+    debugger
+    
     // If this is a property, see if it belongs to some object we can
     // find in the current environment.
     var obj = context.pop(), base;
+    
+    
+    
+    
     if (obj.type && obj.type.indexOf("variable") === 0) {
       if (options && options.additionalContext)
         base = options.additionalContext[obj.string];
+
+      if (base === undefined && obj && obj.string) {
+        // #TODO instead of doing a blackbox evaluation of a string, we could look into the various scopes... 
+        // in the module or live prgoramming data structures... e.g. from AST with trace data such as #ContinuousEditor
+        // documentation: getDoitContext() and getTargetModule()
+        var result =  (await options.codemirror.boundEval(obj.string))
+        base = result.value
+      }
+      
       if (!options || options.useGlobalScope !== false)
         base = base || global[obj.string];
     } else if (obj.type == "string") {
@@ -126,6 +147,9 @@ function getCompletions(token, context, keywords, options) {
     } else if (obj.type == "atom") {
       base = 1;
     } else if (obj.type == "function") {
+      
+      // #TODO make it work for funciton calls such as pt(10,10), too.... 
+      
       if (global.jQuery != null && (obj.string == '$' || obj.string == 'jQuery') &&
           (typeof global.jQuery == 'function'))
         base = global.jQuery();

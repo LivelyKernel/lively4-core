@@ -176,7 +176,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       },
     });
     editor.setOption("hintOptions", {
-      container: this.shadowRoot.querySelector("#code-mirror-hints")
+      container: this.shadowRoot.querySelector("#code-mirror-hints"),
+      codemirror: this
     });
 
     editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))
