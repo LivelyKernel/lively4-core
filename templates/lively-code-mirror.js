@@ -3,6 +3,10 @@ import boundEval from './../src/client/bound-eval.js';
 import Morph from "./Morph.js"
 import diff from 'src/external/diff-match-patch.js';
 
+import 'src/client/stablefocus.js';
+
+
+
 let loadPromise = undefined;
 
 export default class LivelyCodeMirror extends HTMLElement {
