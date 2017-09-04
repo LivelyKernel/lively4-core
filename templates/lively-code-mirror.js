@@ -403,6 +403,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   livelyPrepareSave() {
+    if(!this.editor) { return; }
     this.textContent = this.encodeHTML(this.editor.getValue())
   }
 

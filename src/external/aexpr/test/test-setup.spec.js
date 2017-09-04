@@ -4,7 +4,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'node_modules/sinon-chai/lib/sinon-chai.js';
 chai.use(sinonChai);
 
-describe('AExpr Test Setup', function() {
+describe('Mocha Chai Sinon Test Setup', function() {
 
     it('empty test', () => {});
 

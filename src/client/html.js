@@ -270,7 +270,11 @@ export default class HTML {
     var source = ""
     var oldActiveElement = lively.activeElement()
     worldContext.querySelectorAll("*").forEach( ea => {
-      if (ea.livelyPrepareSave) ea.livelyPrepareSave();
+      try {
+        if (ea.livelyPrepareSave) ea.livelyPrepareSave();
+      } catch(e) {
+        console.warn("Error during prepare save", e);
+      }
     });
     lively.focusWithoutScroll(oldActiveElement)
 

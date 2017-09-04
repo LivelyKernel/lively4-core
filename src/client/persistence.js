@@ -153,9 +153,8 @@ export default class Persistence {
       // console.log("mutation: ", record.target)
       this.showMutationIndicator().style.backgroundColor = "rgba(200,0,0,0.5)"
       this.saveDelay.call(() => {
-        this.saveLivelyContent()
-          this.showMutationIndicator().style.backgroundColor = "rgba(10,10,10,0.3)"
-
+        this.saveLivelyContent();
+        this.showMutationIndicator().style.backgroundColor = "rgba(10,10,10,0.3)"
       })
       // var indicator = this.get("#changeIndicator")
       // if (indicator ) {
