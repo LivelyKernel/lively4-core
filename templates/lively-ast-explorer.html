@@ -33,8 +33,8 @@
   
   #outputPane {
     flex: 0.33;
+		overflow: hidden
   }
-  
   
   #astPane {
     flex: 0.33;
@@ -43,10 +43,12 @@
   
   #pluginPane {
     flex: 0.66;
+    overflow: hidden;
   }
   
   #resultPane {
     flex: 0.33;
+    
   }
 
   #outputPane, #sourcePane, #pluginPane, #resultPane, #astPane {
@@ -54,10 +56,10 @@
     flex-direction: column;
   }
 
-  juicy-ace-editor {
+  lively-code-mirror {
     flex: 1;
   }
-
+    
   lively-editor {
     flex: 1;
   }
@@ -67,6 +69,7 @@
     height: 100%;
   }
   
+  
   #resultPane pre {
     flex: 1;
     margin-left: 15px
@@ -74,7 +77,11 @@
   #resultPane {
     overflow: scroll;
   }
-
+    
+  #plugin, #source {
+    width: 100%;
+    height: calc(100% - 30px);
+  }
   </style>
 <div id="firstRow">
   <div id="sourcePane">
@@ -93,7 +100,7 @@
           <input type="checkbox" id="live" title="continous eval" checked/> run
       </span></div>
     
-    <juicy-ace-editor  id="output"></juicy-ace-editor>
+     <lively-code-mirror  id="output"></lively-code-mirror>
   </div>   
 </div>
 <lively-separator></lively-separator>

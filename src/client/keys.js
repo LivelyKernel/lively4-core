@@ -65,6 +65,10 @@ export default class Keys {
       }
       
       if ((evt.ctrlKey || evt.metaKey) && char == "D") {
+        if (e.path.find(ea => ea.tagName == "LIVELY-CODE-MIRROR")) {
+          return; // code mirror does not stop it's propagation
+        }
+        
         let str = window.getSelection().toLocaleString();
         try {
           lively.boundEval(str);

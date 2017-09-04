@@ -135,6 +135,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     editor.setOption("autoCloseTags", true)
 		editor.setOption("scrollbarStyle", "simple")
 
+    editor.setOption("tabSize", 2)
+
     editor.setOption("highlightSelectionMatches", {showToken: /\w/, annotateScrollbar: true})
 
     editor.setOption("keyMap",  "sublime")
@@ -159,9 +161,13 @@ export default class LivelyCodeMirror extends HTMLElement {
         let text = this.getSelectionOrLine()
         this.inspectIt(text)
       },
-      "Ctrl-D": (cm) => {
+      "Ctrl-D": (cm, b, c) => {
+        	
+        	lively.notify("doit " + Date.now())
           let text = this.getSelectionOrLine()
           this.tryBoundEval(text, false);
+        	debugger
+        	return true
       },
   		"Ctrl-Alt-Right": "selectNextOccurrence", 
   		"Ctrl-Alt-Left": "undoSelection", 
@@ -210,6 +216,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       	break;
     }
   }
+  
   
   setOption(name, value) {
     if (!this.editor) return; // we loose...
@@ -404,6 +411,16 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (this.editor) {
       this.lastScrollInfo = this.editor.getScrollInfo(); // #Example #PreserveContext
     }
+  }
+  
+  isFocused(doc) {
+    doc = doc || document
+    if (doc.activeElement === this) return true
+    // search recursively in shadowDoms  
+    if (doc.activeElement && doc.activeElement.shadowRoot) {
+			return this.isFocused(doc.activeElement.shadowRoot)      
+    }
+    return false
   }
   
   async livelyMigrate(other) {

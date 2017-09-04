@@ -17,12 +17,7 @@ export default class Editor extends Morph {
     var container = this.get(".container");
 		this.versionControl = this.shadowRoot.querySelector("#versionControl");
     
-    var editor
-    if (preferences.get("UseCodeMirror")) {
-      editor = document.createElement("lively-code-mirror")
-    } else {
-      editor = document.createElement("juicy-ace-editor")
-    }
+    var editor = document.createElement("lively-code-mirror")
     editor.id = "editor"; // this is important to do before opening 
     await components.openIn(container, editor);
     editor.setAttribute("wrapmode", true)
