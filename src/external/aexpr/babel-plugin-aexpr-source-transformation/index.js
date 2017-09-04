@@ -84,12 +84,12 @@ export default function(param) {
             if(t.isUpdateExpression(path.parent) && path.parentKey === 'argument') { return false; }
             if(path.get("object").isSuper()) { return false; }
             if(isGenerated(path)) { return false; }
-            lively.notify(path.node.property.name, "");
+            //lively.notify(path.node.property.name, "");
             return true;
           }
-          lively.notify(members.length, "members")
+          //lively.notify(members.length, "members")
           const getMembers = members.filter(isGetMember);
-          lively.notify(getMembers.length, "getMembers")
+          //lively.notify(getMembers.length, "getMembers")
           getMembers.reverse().forEach(path => transformator.getMember(path, state, t));
 
           path.traverse({

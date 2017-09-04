@@ -41,7 +41,7 @@ export default class TestRunner extends Morph {
     var dir = lively4url + dir;
     var json = await lively.files.statFile(dir).then(JSON.parse)
     return json.contents.map(ea => ea.name )
-      .filter(ea => ea.match(/-test\.js$/))
+      .filter(ea => ea.match(/-test\.js$/) || ea.match(/\.test\.js$/) || ea.match(/-spec\.js$/) || ea.match(/\.spec\.js$/))
       .map(ea => dir + ea)
   }
   

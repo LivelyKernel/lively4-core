@@ -175,10 +175,11 @@ export default class AstExplorer extends Morph {
     
     this.get("#output").editor.setValue(this.result.code);
     
-    this.get("#result").innerHTML = "";
+    let logNode = this.get("#result");
+    logNode.innerHTML = "";
+    logNode.textContent = "";
     if (this.get("#live").checked) {
       var oldLog = console.log
-      var logNode = this.get("#result");
       try {
         console.group("EXECUTE REWRITTEN FILE");
         console.log = (...fragments) => {
@@ -254,7 +255,7 @@ export default class AstExplorer extends Morph {
     var start = this[method](range.anchor.line + 1, range.anchor.ch + 1)
     var end = this[method](range.head.line + 1, range.head.ch + 1)
 
-    lively.notify(`start ${range.anchor.line} ch ${range.anchor.ch} ->  ${start.line} ch ${start.column} / end ${range.head.line} ch ${range.head.ch} -> ${end.line} c ${end.column}`)
+    //lively.notify(`start ${range.anchor.line} ch ${range.anchor.ch} ->  ${start.line} ch ${start.column} / end ${range.head.line} ch ${range.head.ch} -> ${end.line} c ${end.column}`)
     if (!start || !end) return;
 
     toTextEditor.setSelection(

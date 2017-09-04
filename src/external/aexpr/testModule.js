@@ -6,14 +6,17 @@ let obj = {
 }
 
 obj.func(a)
-aexpr(()=>a).onChange(lively.notify);
+const hash = Math.random();
+aexpr(()=>a).onChange(val => lively.notify(val, hash));
 a = 42;
 a = 43;
 
-class A {}
+class A { static foo() {}}
 class B {
-  foo() {
-    super.foo()
+  static foo() {
+    //super.foo()
   }
 }
-foo.get
+
+B.foo()
+
