@@ -3,6 +3,8 @@ import boundEval from './../src/client/bound-eval.js';
 import Morph from "./Morph.js"
 import diff from 'src/external/diff-match-patch.js';
 
+import 'src/client/stablefocus.js';
+
 let loadPromise = undefined;
 
 export default class LivelyCodeMirror extends HTMLElement {
@@ -162,11 +164,8 @@ export default class LivelyCodeMirror extends HTMLElement {
         this.inspectIt(text)
       },
       "Ctrl-D": (cm, b, c) => {
-        	
-        	lively.notify("doit " + Date.now())
-          let text = this.getSelectionOrLine()
+        	let text = this.getSelectionOrLine()
           this.tryBoundEval(text, false);
-        	debugger
         	return true
       },
   		"Ctrl-Alt-Right": "selectNextOccurrence", 

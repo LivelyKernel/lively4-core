@@ -18,10 +18,13 @@ function currentStack() {
 cop.layer(window, "ShowFocusLayer").refineClass(HTMLElement, {
 
  focus(str, context) {
-  console.log("document.hasFocus() " +  document.hasFocus())
+  // console.log("document.hasFocus() " +  document.hasFocus())
  	var text = "focus" + this + " " + counter++ + ":\n"
  	console.log(text + "" + currentStack())
- 	lively.showElement(this).innerHTML = `<div style='position:relative; top: -30px; color:red'> ${text}</div> `;
+ 	// lively.showElement(this).innerHTML = `<div style='position:relative; top: -30px; color:red'> ${text}</div> `;
+		// return cop.withoutLayers([ShowFocusLayer], () => {
+		// lively.focusWithoutScroll(this)
+		// })
     return cop.proceed.apply(this, arguments)
  }
 })
