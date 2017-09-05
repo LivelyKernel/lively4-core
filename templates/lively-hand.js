@@ -5,6 +5,8 @@ import Selecting from "src/client/morphic/selecting.js"
 
 import GrabItem from "templates/lively-halo-grab-item.js"
 
+import Preferences from 'src/client/preferences.js';
+
 /*
  * Classic old Morphic-like drag and drop of graphical elements
  */
@@ -77,7 +79,7 @@ export default class LivelyHand extends Morph {
 
   onPointerDown(evt) {
     // document.body.parentElement.setPointerCapture(evt.pointerId)
-    if (evt.altKey) {
+    if (evt.altKey && !Preferences.get("DisableAltGrab")) {
     window.LastEvent2 = evt
 
       var target = this.elementUnderHand(evt)
