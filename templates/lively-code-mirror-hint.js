@@ -1,4 +1,6 @@
 
+import {uniq} from "utils"
+
 /* JavaScript Hint */
 
 var Pos = CodeMirror.Pos;
@@ -106,10 +108,13 @@ async function getCompletions(token, context, keywords, options) {
   //   "this": that
   // }
   
+  keywords.push("import") //  #TODO move to right place  
+  
   function maybeAdd(str) {
     if (str.lastIndexOf(start, 0) == 0 && !arrayContains(found, str)) found.push(str);
   }
-   function gatherCompletions(obj) {
+  
+  function gatherCompletions(obj) {
     if (typeof obj == "string") forEach(stringProps, maybeAdd);
     else if (obj instanceof Array) forEach(arrayProps, maybeAdd);
     else if (obj instanceof Function) forEach(funcProps, maybeAdd);
@@ -117,16 +122,10 @@ async function getCompletions(token, context, keywords, options) {
   }
 
   if (context && context.length) {
-		lively.notify('context: ' + JSON.stringify(context))
-    
-    debugger
     
     // If this is a property, see if it belongs to some object we can
     // find in the current environment.
     var obj = context.pop(), base;
-    
-    
-    
     
     if (obj.type && obj.type.indexOf("variable") === 0) {
       if (options && options.additionalContext)
@@ -160,16 +159,32 @@ async function getCompletions(token, context, keywords, options) {
       base = base[context.pop().string];
     if (base != null) gatherCompletions(base);
   } else {
-    // If not, just look in the global object and any local scope
-    // (reading into JS mode internals to get at the local and global variables)
-    for (var v = token.state.localVars; v; v = v.next) maybeAdd(v.name);
-    for (var v = token.state.globalVars; v; v = v.next) maybeAdd(v.name);
-    if (!options || options.useGlobalScope !== false)
-      gatherCompletions(global);
-    forEach(keywords, maybeAdd);
+    if (token.string == "import") {
+      // maybeAdd('import {debounce} from "utils"')   
+      
+      // #TODO make faster with index and caching
+      // but: #TODO what is the workflox / programming XP, we aim for?
+      var text = await fetch(lively4url + "/../_search/files",  {
+        headers: { 
+         "searchpattern": "import",
+         "rootdirs": lively4url.replace(/.*\//,""),
+         "excludes": "node_modules,src/external,vendor/,lodash-bound.js",
+      }}).then(r => r.text())
+      var imports = text.split("\n")
+        .map(ea => ea.replace(/.*:/,"").replace(/;$/,"").replace(/"/g,"'"))
+          .filter(ea => !ea.match('\'\.\.?/'))
+        .filter(ea => ea.startsWith("import ")).sort()::uniq();
+      imports.forEach(maybeAdd)
+    } else {
+      // If not, just look in the global object and any local scope
+      // (reading into JS mode internals to get at the local and global variables)
+      for (var v = token.state.localVars; v; v = v.next) maybeAdd(v.name);
+      for (var v = token.state.globalVars; v; v = v.next) maybeAdd(v.name);
+      if (!options || options.useGlobalScope !== false)
+        gatherCompletions(global);
+      forEach(keywords, maybeAdd);      
+    }
+    
   }
-  // found.push("foXXXX")
-  // found.push("foXXXX2")
-
   return found;
 }

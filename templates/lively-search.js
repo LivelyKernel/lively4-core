@@ -3,6 +3,7 @@
 import Morph from './Morph.js';
 import lively from 'src/client/lively.js';
 
+
 export default class Search extends Morph {
   initialize() {
     this.windowTitle = "File Search";
@@ -70,7 +71,7 @@ export default class Search extends Morph {
   }
   
   getSearchURL() {
-    return "https://lively-kernel.org/lively4S2/_search/files" // #DEV
+    // return "https://lively-kernel.org/lively4S2/_search/files" // #DEV
     if (document.location.host == "livelykernel.github.io")
       return "https://lively-kernel.org/lively4/_search/files";
     else
