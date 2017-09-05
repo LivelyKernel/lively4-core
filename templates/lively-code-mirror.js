@@ -471,7 +471,6 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   async enableTern() {
-    
     var code = await fetch("//ternjs.net/defs/ecmascript.json").then(r => r.json())
     this.ternServer = new CodeMirror.TernServer({defs: [code]});
     
@@ -488,6 +487,14 @@ export default class LivelyCodeMirror extends HTMLElement {
       }))
     
     this.editor.on("cursorActivity", (cm) => { this.ternServer.updateArgHints(cm); });
+  }
+  
+  
+  async addTernFile(name, url, text) {
+    if (!this.ternServer) return 
+    url = url || name; 
+    text = text || await fetch(url).then(r => r.text())
+    this.ternServer.server.addFile(name, text)  
   }
   
   mergeView(originalText, originalLeftText) {
