@@ -7,9 +7,6 @@ chai.use(sinonChai);
 import {reset} from 'aexpr-source-transformation-propagation';
 
 describe('Propagation Logic', function() {
-  describe('Propagation Logic1', function() {
-    it("foo", ()=>{})
-  });
   it('is a transparent wrapper for property accesses', () => {
     let obj = {
       prop: 42,
@@ -30,300 +27,375 @@ describe('Propagation Logic', function() {
         spy = sinon.spy();
 
     aexpr(() => obj.prop).onChange(spy);
-
     expect(spy).not.to.be.called;
 
     obj.prop = 17;
-
     expect(spy).to.be.calledOnce;
   });
 
+  it('should recalculate to recognize latest changes', () => {
+    let obj = {
+      prop: 'a',
+      a: 15,
+      b: 32
+    };
+    let spy = sinon.spy();
+
+    aexpr(() => obj[obj.prop]).onChange(spy);
+
+    obj.a = 17;
+    expect(spy.withArgs(17)).to.be.calledOnce;
+
+    obj.prop = 'b';
+    expect(spy.withArgs(32)).to.be.calledOnce;
+
+    obj.a = 42;
+    expect(spy.withArgs(42)).not.to.be.called;
+
+    obj.b = 33;
+    expect(spy.withArgs(33)).to.be.calledOnce;
+  });
+
+  it('applies the given operator', () => {
+    let obj = {
+      a: 5
+    };
+    let spy = sinon.spy();
+
+    aexpr(() => obj.a).onChange(spy);
+
+    obj.a *= 1;
+    expect(spy).not.to.be.called;
+
+    obj.a += 2;
+    expect(spy.withArgs(7)).to.be.calledOnce;
+  });
+
+  it('retain the this reference semantic', () => {
+    let obj = {
+      a: 5,
+      func() { return this.a * 3; }
+    };
+    let spy = sinon.spy();
+
+    aexpr(() => obj.func()).onChange(spy);
+
+    obj.a = 1;
+
+    expect(spy.withArgs(3)).to.be.calledOnce;
+  });
+
+  it('reset all active expressions', () => {
+    let obj = { prop: 42 },
+        spy = sinon.spy();
+
+    aexpr(() => obj.prop).onChange(spy);
+
+    reset();
+
+    obj.prop = 17;
+    expect(spy).not.to.be.called;
+  });
+
+  describe('parametrizable aexprs', () => {
+    afterEach(() => {
+      reset();
+    });
+
+    it('handles a single instance binding', () => {
+      let _scope = {};
+      let obj = { val: 17 },
+          spy = sinon.spy();
+
+      aexpr(o => o.val, obj).onChange(spy);
+
+      expect(spy).not.to.be.called;
+
+      obj.val = 42;
+
+      expect(spy).to.be.calledOnce;
+    });
+
+    it("handle aexprs with one instance binding with multiple variables", () => {
+      let obj1 = { val: 1 },
+          obj2 = { val: 2 },
+          obj3 = { val: 3 },
+          spy = sinon.spy();
+
+      aexpr((o1, o2, o3) => o1.val + o2.val + o3.val, obj1, obj2, obj3).onChange(spy);
+
+      expect(spy).not.to.be.called;
+
+      obj1.val = 10;
+
+      expect(spy.withArgs(15)).to.be.calledOnce;
+
+      obj2.val = 20;
+
+      expect(spy.withArgs(33)).to.be.calledOnce;
+    });
+
+    it("handle aexprs with multiple instance bindings", () => {
+      let obj1 = { val: 1 },
+          obj2 = { val: 2 },
+          obj3 = { val: 3 },
+          spy12 = sinon.spy(),
+          spy23 = sinon.spy(),
+          expr = (o1, o2) => o1.val + o2.val;
+
+      aexpr(expr, obj1, obj2).onChange(spy12);
+      aexpr(expr, obj2, obj3).onChange(spy23);
+
+      expect(spy12).not.to.be.called;
+      expect(spy23).not.to.be.called;
+
+      obj1.val = 10;
+
+      expect(spy12.withArgs(12)).to.be.calledOnce;
+      expect(spy23).not.to.be.called;
+
+      obj2.val = 20;
+
+      expect(spy12.withArgs(30)).to.be.calledOnce;
+      expect(spy23.withArgs(23)).to.be.calledOnce;
+
+      obj3.val = 30;
+
+      expect(spy12.withArgs(30)).to.be.calledOnce;
+      expect(spy23.withArgs(50)).to.be.calledOnce;
+    });
+  });
+
+  describe('locals', () => {
+
+    it('is a transparent wrapper for local variables', () => {
+      var x = 0, y = 1, z = 2;
+
+      let func, inc;
+      {
+        let x = 42;
+        func = function() {
+          return x;
+        };
+        inc = function() {
+          x += 1;
+        };
+      }
+
+      expect(func()).to.equal(42);
+
+      x = 17;
+
+      expect(x).to.equal(17);
+      expect(func()).to.equal(42);
+
+      inc();
+
+      expect(x).to.equal(17);
+      expect(func()).to.equal(43);
+    });
+
+    it('should be supported with proper integration', () => {
+      let value = 17,
+          spy = sinon.spy();
+
+      aexpr(() => value).onChange(spy);
+
+      expect(spy).not.to.be.called;
+
+      value = 42;
+      expect(spy).to.be.calledOnce;
+    });
+
     it('should recalculate to recognize latest changes', () => {
-        let obj = {
-                prop: 'a',
-                a: 15,
-                b: 32
-            },
-            spy = sinon.spy();
+      let obj = { a: 15 },
+          obj2 = obj,
+          spy = sinon.spy();
 
-        aexpr(() => obj[obj.prop]).onChange(spy);
+      aexpr(() => obj.a).onChange(spy);
 
-        obj.a = 17;
+      obj.a = 17;
+      expect(spy.withArgs(17)).to.be.calledOnce;
 
-        expect(spy.withArgs(17)).to.be.calledOnce;
+      obj = { a: 32 };
+      expect(spy.withArgs(32)).to.be.calledOnce;
 
-        obj.prop = 'b';
+      obj2.a = 42;
+      expect(spy.withArgs(42)).not.to.be.called;
 
-        expect(spy.withArgs(32)).to.be.calledOnce;
-
-        obj.a = 42;
-
-        expect(spy.withArgs(42)).not.to.be.called;
-
-        obj.b = 33;
-
-        expect(spy.withArgs(33)).to.be.calledOnce;
-    });
-
-    it('applies the given operator', () => {
-        let obj = {
-                a: 5
-            },
-            spy = sinon.spy();
-
-        aexpr(() => obj.a).onChange(spy);
-
-        obj.a *= 1;
-
-        expect(spy).not.to.be.called;
-
-        obj.a += 2;
-
-        expect(spy.withArgs(7)).to.be.calledOnce;
-    });
-
-    it('retain the this reference semantic', () => {
-        let obj = {
-                a: 5,
-                func() {
-                    return this.a * 3;
-                }
-            },
-            spy = sinon.spy();
-
-        aexpr(() => obj.func()).onChange(spy);
-
-        obj.a = 1;
-
-        expect(spy.withArgs(3)).to.be.calledOnce;
+      obj.a = 33;
+      expect(spy.withArgs(33)).to.be.calledOnce;
     });
 
     it('reset all active expressions', () => {
-        let obj = { prop: 42 },
-            spy = sinon.spy();
+      let value = 42,
+          spy = sinon.spy();
 
-        aexpr(() => obj.prop).onChange(spy);
+      aexpr(() => value).onChange(spy);
 
-        reset();
+      reset();
 
-        obj.prop = 17;
+      value = 17;
+      expect(spy).not.to.be.called;
+    });
+  });
 
-        expect(spy).not.to.be.called;
+  describe('globals', () => {
+    it('interacts with member accesses on global object', () => {
+      window.globalValue = 17;
+      let spy = sinon.spy();
+
+      aexpr(() => globalValue).onChange(spy);
+      expect(spy).not.to.be.called;
+
+      globalValue = 33;
+      expect(spy.withArgs(33)).to.be.calledOnce;
+
+      window.globalValue = 42;
+      expect(spy).to.be.calledWithMatch(42);
     });
 
-    describe('parametrizable aexprs', () => {
+    it('should be supported with proper integration', () => {
+      window.globalValue = 17;
+      let spy = sinon.spy();
 
-        it('handles a single instance binding', () => {
-            let _scope = {};
-            let obj = { val: 17 },
-                spy = sinon.spy();
+      aexpr(() => globalValue).onChange(spy);
+      expect(spy).not.to.be.called;
 
-            aexpr(o => o.val, obj).onChange(spy);
-
-            expect(spy).not.to.be.called;
-
-            obj.val = 42;
-
-            expect(spy).to.be.calledOnce;
-        });
-
-        it("handle aexprs with one instance binding with multiple variables", () => {
-            let obj1 = { val: 1 },
-                obj2 = { val: 2 },
-                obj3 = { val: 3 },
-                spy = sinon.spy();
-
-            aexpr((o1, o2, o3) => o1.val + o2.val + o3.val, obj1, obj2, obj3).onChange(spy);
-
-            expect(spy).not.to.be.called;
-
-            obj1.val = 10;
-
-            expect(spy.withArgs(15)).to.be.calledOnce;
-
-            obj2.val = 20;
-
-            expect(spy.withArgs(33)).to.be.calledOnce;
-        });
-
-        it("handle aexprs with multiple instance bindings", () => {
-            let obj1 = { val: 1 },
-                obj2 = { val: 2 },
-                obj3 = { val: 3 },
-                spy12 = sinon.spy(),
-                spy23 = sinon.spy(),
-                expr = (o1, o2) => o1.val + o2.val;
-
-            aexpr(expr, obj1, obj2).onChange(spy12);
-            aexpr(expr, obj2, obj3).onChange(spy23);
-
-            expect(spy12).not.to.be.called;
-            expect(spy23).not.to.be.called;
-
-            obj1.val = 10;
-
-            expect(spy12.withArgs(12)).to.be.calledOnce;
-            expect(spy23).not.to.be.called;
-
-            obj2.val = 20;
-
-            expect(spy12.withArgs(30)).to.be.calledOnce;
-            expect(spy23.withArgs(23)).to.be.calledOnce;
-
-            obj3.val = 30;
-
-            expect(spy12.withArgs(30)).to.be.calledOnce;
-            expect(spy23.withArgs(50)).to.be.calledOnce;
-        });
+      globalValue = 42;
+      expect(spy).to.be.calledOnce;
     });
 
-    describe('locals', () => {
+    it('reset all active expressions', () => {
+      globalValue = 42;
+      let spy = sinon.spy();
 
-        it('is a transparent wrapper for local variables', () => {
-            var x = 0, y = 1, z = 2;
+      aexpr(() => globalValue).onChange(spy);
 
-            let func, inc;
-            {
-                let x = 42;
-                func = function() {
-                    return x;
-                };
-                inc = function() {
-                    x += 1;
-                };
-            }
+      reset();
 
-            expect(func()).to.equal(42);
+      globalValue = 17;
+      expect(spy).not.to.be.called;
+    });
+  });
 
-            x = 17;
+  describe('members', () => {
+    it('triggers correct callbacks', () => {
+      let rect = {
+        extent: { x: 2, y: 2 },
+        width() { return this.extent.x; }
+      };
 
-            expect(x).to.equal(17);
-            expect(func()).to.equal(42);
+      let spyExtent = sinon.spy(),
+          spyWidth = sinon.spy();
 
-            inc();
+      aexpr(() => rect.width()).onChange(spyWidth);
+      aexpr(() => rect.extent).onChange(spyExtent);
 
-            expect(x).to.equal(17);
-            expect(func()).to.equal(43);
-        });
+      rect.extent = { x: 2, y: 2 };
+      expect(spyWidth).not.to.be.called;
+      expect(spyExtent).to.be.calledWithMatch({ x: 2, y: 2 });
+      spyExtent.reset();
 
-        it('should be supported with proper integration', () => {
-            let value = 17,
-                spy = sinon.spy();
-
-            aexpr(() => value).onChange(spy);
-
-            expect(spy).not.to.be.called;
-
-            value = 42;
-
-            expect(spy).to.be.calledOnce;
-        });
-
-        it('should recalculate to recognize latest changes', () => {
-            let obj = { a: 15 },
-                obj2 = obj,
-                spy = sinon.spy();
-
-            aexpr(() => obj.a).onChange(spy);
-
-            obj.a = 17;
-
-            expect(spy.withArgs(17)).to.be.calledOnce;
-
-            obj = { a: 32 };
-
-            expect(spy.withArgs(32)).to.be.calledOnce;
-
-            obj2.a = 42;
-
-            expect(spy.withArgs(42)).not.to.be.called;
-
-            obj.a = 33;
-
-            expect(spy.withArgs(33)).to.be.calledOnce;
-        });
-
-        it('reset all active expressions', () => {
-            let value = 42,
-                spy = sinon.spy();
-
-            aexpr(() => value).onChange(spy);
-
-            reset();
-
-            value = 17;
-
-            expect(spy).not.to.be.called;
-        });
+      rect.extent.x = 3;
+      expect(spyWidth).to.be.calledWithMatch(3);
+      expect(spyExtent).not.to.be.called;
     });
 
-    describe('globals', () => {
-        it('interacts with member accesses on global object', () => {
-            window.globalValue = 17;
-            let spy = sinon.spy();
+    describe('nested members', () => {
+      it('handle nested members', () => {
+        let a = { b: { c: { d: { e: { f: 1 } } } } };
+        let spy = sinon.spy();
 
-            aexpr(() => globalValue).onChange(spy);
+        aexpr(() => a.b.c.d.e.f).onChange(spy);
 
-            expect(spy).not.to.be.called;
+        a.b = { c: { d: { e: { f: 2 } } } };
+        expect(spy).to.be.calledWithMatch(2);
 
-            globalValue = 33;
+        a.b.c = { d: { e: { f: 3 } } };
+        expect(spy).to.be.calledWithMatch(3);
 
-            expect(spy.withArgs(33)).to.be.calledOnce;
+        a.b.c.d = { e: { f: 4 } };
+        expect(spy).to.be.calledWithMatch(4);
 
-            window.globalValue = 42;
+        a.b.c.d.e = { f: 5 };
+        expect(spy).to.be.calledWithMatch(5);
 
-            expect(spy).to.be.calledWithMatch(42);
-        });
+        a.b.c.d.e.f = 6;
+        expect(spy).to.be.calledWithMatch(6);
+      });
+      
+      it('handle nested member functions', () => {
+        let a = { b() { return b; } };
+        let b = { c() { return c; } };
+        let c = { d() { return d; } };
+        let d = { e() { return e; } };
+        let e = { f() { return 1; } };
+        let b2 = { c() { return c2; } };
+        let c2 = { d() { return d2; } };
+        let d2 = { e() { return e2; } };
+        let e2 = { f() { return 2; } };
+        let c3 = { d() { return d3; } };
+        let d3 = { e() { return e3; } };
+        let e3 = { f() { return 3; } };
+        let d4 = { e() { return e4; } };
+        let e4 = { f() { return 4; } };
+        let e5 = { f() { return 5; } };
+        let spy = sinon.spy();
 
-        it('should be supported with proper integration', () => {
-            window.globalValue = 17;
-            let spy = sinon.spy();
+        aexpr(() => a.b().c().d().e().f()).onChange(spy);
+        
+        a.b = () => b2;
+        expect(spy).to.be.calledWithMatch(2);
 
-            aexpr(() => globalValue).onChange(spy);
+        a.b().c = () => c3;
+        expect(spy).to.be.calledWithMatch(3);
 
-            expect(spy).not.to.be.called;
+        a.b().c().d = () => d4;
+        expect(spy).to.be.calledWithMatch(4);
 
-            globalValue = 42;
+        a.b().c().d().e = () => e5;
+        expect(spy).to.be.calledWithMatch(5);
+      });
+      
+      it('handle nested mixed members and member functions', () => {
+        let a = { b() { return b; } };
+        let b = { c: { d() { return d; } } };
+        let d = { e: { f() { return f; } } };
+        let f = 1;
+        let b2 = { get c() { return c2; } };
+        let c2 = { d() { return d2; } };
+        let d2 = { get e() { return e2; } };
+        let e2 = { f() { return f2; } };
+        let f2 = 2;
+        let c3 = { d() { return d3; } };
+        let d3 = { get e() { return e3; } };
+        let e3 = { f() { return f3; } };
+        let f3 = 3;
+        let d4 = { get e() { return e4; } };
+        let e4 = { f() { return f4; } };
+        let f4 = 4;
+        let e5 = { f() { return f5; } };
+        let f5 = 5;
+        let spy = sinon.spy();
 
-            expect(spy).to.be.calledOnce;
-        });
+        aexpr(() => a.b().c.d().e.f()).onChange(spy);
 
-        it('reset all active expressions', () => {
-            globalValue = 42;
-            let spy = sinon.spy();
+//         a.b = () => b2;
+//         expect(spy).to.be.calledWithMatch(2);
 
-            aexpr(() => globalValue).onChange(spy);
+//         a.b().c = () => c3;
+//         expect(spy).to.be.calledWithMatch(3);
 
-            reset();
+//         a.b().c().d = () => d4;
+//         expect(spy).to.be.calledWithMatch(4);
 
-            globalValue = 17;
+//         a.b().c().d().e = () => e5;
+//         expect(spy).to.be.calledWithMatch(5);
 
-            expect(spy).not.to.be.called;
-        });
+        a.b().c.d().e = { f() { return 6; }};
+        expect(spy).to.be.calledWithMatch(6);
+      });
     });
-
-    describe('visitor example', () => {
-        it('interacts with member accesses on global object', () => {
-            let rect = {
-                extent: { x: 2, y: 2 },
-                width() { return this.extent.x; }
-            };
-
-            let spyExtent = sinon.spy(),
-                spyWidth = sinon.spy();
-
-            aexpr(() => rect.width()).onChange(spyWidth);
-            aexpr(() => rect.extent).onChange(spyExtent);
-
-            rect.extent = { x: 2, y: 2 };
-            expect(spyWidth).not.to.be.called;
-            expect(spyExtent).to.be.calledWithMatch({ x: 2, y: 2 });
-            spyExtent.reset();
-
-            rect.extent.x = 3;
-            expect(spyWidth).to.be.calledWithMatch(3);
-            expect(spyExtent).not.to.be.called;
-        });
-    });
-
+  });
 });
