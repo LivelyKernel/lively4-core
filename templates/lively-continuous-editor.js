@@ -3,14 +3,13 @@ import {babel} from 'systemjs-babel-build';
 import SyntaxChecker from 'src/client/syntax.js'
 import traceBabelPlugin from "./lively-continuous-editor-plugin.js"
 import boundEval from './../src/client/bound-eval.js';
+import { debounce } from "utils";
 
 import ShowPerformance from "demos/showperformancelayer.js";
 
 // import localsBabelPlugin from 'babel-plugin-locals'
 
 //import lively from './../src/client/lively.js';
-
-import DelayedCall from 'src/client/delay.js'
 
 export default class ContinuousEditor extends Morph {
 
@@ -19,8 +18,10 @@ export default class ContinuousEditor extends Morph {
     this.get("#source").setURL("https://lively-kernel.org/lively4/lively4-jens/demos/hello.js")
     this.get("#source").loadFile()
 
-    this.sourceCodeChangedDelay = new DelayedCall()
-
+    this.sourceCodeChangedDelay = (() => {
+      SyntaxChecker.checkForSyntaxErrorsCodeMirror(this.editor());
+      this.runCode();
+    })::debounce(500);
 
     lively.html.registerButtons(this);
 
@@ -84,10 +85,7 @@ export default class ContinuousEditor extends Morph {
   }
   
   onSourceChange(evt) {
-    this.sourceCodeChangedDelay.call(() => {
-      SyntaxChecker.checkForSyntaxErrorsCodeMirror(this.editor())
-      this.runCode()
-    })
+    this.sourceCodeChangedDelay();
   }
 
   

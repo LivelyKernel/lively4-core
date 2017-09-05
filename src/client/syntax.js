@@ -68,7 +68,7 @@ export default class SyntaxChecker {
   }
   
   
-  static checkForSyntaxErrorsCodeMirror(editor) {
+  static async checkForSyntaxErrorsCodeMirror(editor) {
     var src = editor.getValue();
     
     editor.clearGutter("leftgutter")
@@ -79,10 +79,17 @@ export default class SyntaxChecker {
       .filter(ea => ea.isSyntaxError)
       .forEach(ea => ea.clear())
     
+    const syntaxPlugins = (await Promise.all([
+      'babel-plugin-syntax-jsx',
+      'babel-plugin-syntax-do-expressions',
+      'babel-plugin-syntax-function-bind'
+    ]
+      .map(syntaxPlugin => System.import(syntaxPlugin))))
+      .map(m => m.default);
     try {
         var result = babel.transform(src, {
           babelrc: false,
-          plugins: [],
+          plugins: syntaxPlugins,
           presets: [],
           filename: undefined,
           sourceFileName: undefined,

@@ -1,6 +1,7 @@
 import preferences from './preferences.js';
 import focalStorage from 'src/external/focalStorage.js'
-import DelayedCall from 'src/client/delay.js'
+import {debounce} from "utils"
+
 
 export function isCurrentlyCloning() {
     return sessionStorage["lively.persistenceCurrentlyCloning"] === 'true';
@@ -11,8 +12,10 @@ export function isCurrentlyCloning() {
 export default class Persistence {
   
   constructor() {
-    this.saveDelay = new DelayedCall()
-    this.saveDelay.delay = 3000
+    this.saveDelay = (() => {
+        this.saveLivelyContent();
+        this.showMutationIndicator().style.backgroundColor = "rgba(10,10,10,0.3)"
+    })::debounce(3000) // save the world 3seconds after a change
   }
 
   // work around non stavle module global state
@@ -150,16 +153,8 @@ export default class Persistence {
     }
     
     mutations.filter(ea => !this.isBlacklisted(ea)).forEach(record => {
-      // console.log("mutation: ", record.target)
       this.showMutationIndicator().style.backgroundColor = "rgba(200,0,0,0.5)"
-      this.saveDelay.call(() => {
-        this.saveLivelyContent();
-        this.showMutationIndicator().style.backgroundColor = "rgba(10,10,10,0.3)"
-      })
-      // var indicator = this.get("#changeIndicator")
-      // if (indicator ) {
-      //   indicator.style.backgroundColor = "rgb(250,250,0)";
-      // }
+      this.saveDelay()
     })  
   }
   

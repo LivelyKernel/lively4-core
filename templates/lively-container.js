@@ -7,10 +7,10 @@ import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/external/ContextJS/src/contextjs.js";
 import ScopedScripts from "./ScopedScripts.js";
-import DelayedCall from 'src/client/delay.js';
 import Clipboard from "src/client/clipboard.js" 
 import MarkdownIt from "src/external/markdown-it.js"
 import MarkdownItHashtag from "src/external/markdown-it-hashtag.js"
+import {debounce} from "utils"
 
 export default class Container extends Morph {
 
@@ -26,14 +26,13 @@ export default class Container extends Morph {
       this.windowTitle = "Search Browser";
     }
     
-    this.sourceCodeChangedDelay = new DelayedCall();
-    this.contentChangedDelay = new DelayedCall();
-    this.contentChangedDelay.delay = 1000;
-
+    this.contentChangedDelay = (() => {
+        this.checkForContentChanges()
+      })::debounce(1000)
+    
     // make sure the global css is there...
     lively.loadCSSThroughDOM("hightlight", lively4url + "/src/external/highlight.css");
 
-    
     lively.addEventListener("Container", this, "mousedown", evt => this.onMouseDown(evt));
 
     // #TODO continue here, halo selection and container do now work yet
@@ -1137,11 +1136,6 @@ export default class Container extends Morph {
     if (!this.getURL().pathname.match(/\.js$/)) {
       return
     }
-    
-    // this.sourceCodeChangedDelay.call(() => {
-    //   var editor = this.getAceEditor().editor;
-    //   SyntaxChecker.checkForSyntaxErrors(editor);
-    // })
   }
   
  
@@ -1159,9 +1153,7 @@ export default class Container extends Morph {
       // if (record.target.id == 'console'
       //     || record.target.id == 'editor') return;
      
-      this.contentChangedDelay.call(() => {
-        this.checkForContentChanges()
-      })
+      this.contentChangedDelay()
 
       // let shouldSave = true;
       if (record.type == 'childList') {

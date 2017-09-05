@@ -3,7 +3,7 @@ import boundEval from './../src/client/bound-eval.js';
 import Morph from "./Morph.js"
 import diff from 'src/external/diff-match-patch.js';
 import SyntaxChecker from 'src/client/syntax.js';
-import DelayedCall from 'src/client/delay.js';
+import { debounce } from "utils";
 
 import 'src/client/stablefocus.js';
 
@@ -192,9 +192,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     });
 
     editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))
-
-    this.sourceCodeChangedDelay = new DelayedCall();
-    editor.on("change", evt => this.sourceCodeChangedDelay.call(() => {this.checkSyntax()}))
+    editor.on("change", (() => this.checkSyntax())::debounce(500))
     
 		// apply attributes 
     _.map(this.attributes, ea => ea.name).forEach(ea => this.applyAttribute(ea)) 

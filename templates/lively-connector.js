@@ -1,9 +1,7 @@
 import Morph from './Morph.js';
 import SVG from "src/client/svg.js"
-import DelayedCall from 'src/client/delay.js'
 import {pt} from 'src/client/graphics.js';
-
-
+import {debounce} from "utils"
 
 export default class LivelyConnector extends Morph {
  
@@ -18,8 +16,9 @@ export default class LivelyConnector extends Morph {
     this.toElement = lively.elementByID(this.getAttribute("toElement"))
     this.connect(this.fromElement, this.toElement)
     
-    this.resetBoundsDelay = new DelayedCall()
-    this.resetBoundsDelay.delay = 500
+    this.resetBoundsDelay = (() => {
+      this.resetBounds()
+    })::debounce(500)
 
     this.withAttributeDo("stroke", (color) => {
       this.stroke = color
@@ -126,9 +125,7 @@ export default class LivelyConnector extends Morph {
     }
     
     this.updationPathConnection(path, path.fromElement, selectorA, path.toElement, selectorB)
-    this.resetBoundsDelay && this.resetBoundsDelay.call(() => {
-      this.resetBounds()
-    })
+    this.resetBoundsDelay()
   }
   
   observePositionChange(a, obervername, cb) {
