@@ -142,10 +142,19 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (this.mode) {
       editor.setOption("mode", this.mode);
     }
-
+    this.setupEditorOptions(editor)
     // edit addons
     // editor.setOption("showTrailingSpace", true)
     // editor.setOption("matchTags", true)
+
+    editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))
+    editor.on("change", (() => this.checkSyntax())::debounce(500))
+    
+		// apply attributes 
+    _.map(this.attributes, ea => ea.name).forEach(ea => this.applyAttribute(ea)) 
+  }
+  
+  setupEditorOptions(editor) {
     editor.setOption("matchBrackets", true)
     editor.setOption("styleSelectedText", true)
     editor.setOption("autoCloseBrackets", true)
@@ -203,12 +212,6 @@ export default class LivelyCodeMirror extends HTMLElement {
       container: this.shadowRoot.querySelector("#code-mirror-hints"),
       codemirror: this
     });
-
-    editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))
-    editor.on("change", (() => this.checkSyntax())::debounce(500))
-    
-		// apply attributes 
-    _.map(this.attributes, ea => ea.name).forEach(ea => this.applyAttribute(ea)) 
   }
   
   // Fires when an attribute was added, removed, or updated
@@ -229,6 +232,11 @@ export default class LivelyCodeMirror extends HTMLElement {
       // case "softtabs":
       //     this.editor.getSession().setUseSoftTabs( newVal );
       //     break;
+      case "tern":
+        if (newVal)
+				  this.enableTern()
+        break;
+      
       case "tabsize":
 				this.setOption("tabSize", newVal)
         break;
@@ -466,15 +474,19 @@ export default class LivelyCodeMirror extends HTMLElement {
     
     var code = await fetch("//ternjs.net/defs/ecmascript.json").then(r => r.json())
     this.ternServer = new CodeMirror.TernServer({defs: [code]});
-    this.editor.setOption("extraKeys", {
-      "Ctrl-Space": (cm) => { this.ternServer.complete(cm); },
-      "Ctrl-I": (cm) => { this.ternServer.showType(cm); },
-      "Ctrl-O": (cm) => { this.ternServer.showDocs(cm); },
-      "Alt-.": (cm) => { this.ternServer.jumpToDef(cm); },
-      "Alt-,": (cm) => { this.ternServer.jumpBack(cm); },
-      "Ctrl-Q": (cm) => { this.ternServer.rename(cm); },
-      "Ctrl-Alt-.": (cm) => { this.ternServer.selectName(cm); }
-    })
+    
+    this.editor.setOption("extraKeys", Object.assign({},
+      this.editor.getOption("extraKeys"), 
+      {
+        "Ctrl-Space": (cm) => { this.ternServer.complete(cm); },
+        "Ctrl-I": (cm) => { this.ternServer.showType(cm); },
+        "Ctrl-O": (cm) => { this.ternServer.showDocs(cm); },
+        "Alt-.": (cm) => { this.ternServer.jumpToDef(cm); },
+        "Alt-,": (cm) => { this.ternServer.jumpBack(cm); },
+        "Ctrl-Q": (cm) => { this.ternServer.rename(cm); },
+        "Ctrl-.": (cm) => { this.ternServer.selectName(cm); } 
+      }))
+    
     this.editor.on("cursorActivity", (cm) => { this.ternServer.updateArgHints(cm); });
   }
   
