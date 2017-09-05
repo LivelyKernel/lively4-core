@@ -1,26 +1,10 @@
+/* JavaScript Hint */
 
 import {uniq} from "utils"
 
-/* JavaScript Hint */
+import * as utils from "utils"
 
 var Pos = CodeMirror.Pos;
-
-function forEach(arr, f) {
-  for (var i = 0, e = arr.length; i < e; ++i) f(arr[i]);
-}
-
-function arrayContains(arr, item) {
-  if (!Array.prototype.indexOf) {
-    var i = arr.length;
-    while (i--) {
-      if (arr[i] === item) {
-        return true;
-      }
-    }
-    return false;
-  }
-  return arr.indexOf(item) != -1;
-}
 
 async function scriptHint(editor, keywords, getToken, options) {
   // Find the token at the cursor
@@ -111,13 +95,13 @@ async function getCompletions(token, context, keywords, options) {
   keywords.push("import") //  #TODO move to right place  
   
   function maybeAdd(str) {
-    if (str.lastIndexOf(start, 0) == 0 && !arrayContains(found, str)) found.push(str);
+    if (str.lastIndexOf(start, 0) == 0 && !found.includes(str)) found.push(str);
   }
   
   function gatherCompletions(obj) {
-    if (typeof obj == "string") forEach(stringProps, maybeAdd);
-    else if (obj instanceof Array) forEach(arrayProps, maybeAdd);
-    else if (obj instanceof Function) forEach(funcProps, maybeAdd);
+    if (typeof obj == "string") stringProps.forEach(maybeAdd);
+    else if (obj instanceof Array) arrayProps.forEach(maybeAdd);
+    else if (obj instanceof Function) funcProps.forEach(maybeAdd);
     forAllProps(obj, maybeAdd)
   }
 
@@ -158,10 +142,8 @@ async function getCompletions(token, context, keywords, options) {
     while (base != null && context.length)
       base = base[context.pop().string];
     if (base != null) gatherCompletions(base);
-  } else {
+  } else {   
     if (token.string == "import") {
-      // maybeAdd('import {debounce} from "utils"')   
-      
       // #TODO make faster with index and caching
       // but: #TODO what is the workflox / programming XP, we aim for?
       var text = await fetch(lively4url + "/../_search/files",  {
@@ -176,13 +158,23 @@ async function getCompletions(token, context, keywords, options) {
         .filter(ea => ea.startsWith("import ")).sort()::uniq();
       imports.forEach(maybeAdd)
     } else {
-      // If not, just look in the global object and any local scope
-      // (reading into JS mode internals to get at the local and global variables)
-      for (var v = token.state.localVars; v; v = v.next) maybeAdd(v.name);
-      for (var v = token.state.globalVars; v; v = v.next) maybeAdd(v.name);
-      if (!options || options.useGlobalScope !== false)
-        gatherCompletions(global);
-      forEach(keywords, maybeAdd);      
+      let editor = options.codemirror.editor,
+        cur = editor.getCursor(),
+        prevToken = editor.getTokenAt({line: cur.line, ch: token.start - 0  }),
+        prevPrevToken = editor.getTokenAt({line: cur.line, ch: token.start - 1});
+      if ( prevToken.string == ":" && prevPrevToken.string == ":") {
+        console.log("token: " + token.string)
+        Object.keys(utils).filter(ea => ea).forEach(maybeAdd)
+        
+      } else {
+        // If not, just look in the global object and any local scope
+        // (reading into JS mode internals to get at the local and global variables)
+        for (var v = token.state.localVars; v; v = v.next) maybeAdd(v.name);
+        for (var v = token.state.globalVars; v; v = v.next) maybeAdd(v.name);
+        if (!options || options.useGlobalScope !== false)
+          gatherCompletions(global);
+        keywords.forEach(maybeAdd);              
+      }
     }
     
   }
