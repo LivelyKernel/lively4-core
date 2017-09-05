@@ -264,8 +264,12 @@ export default class HTML {
   }
 
   static getGlobalSource(worldContext) {
-    worldContext= worldContext || document.body
+    worldContext= worldContext || document.body;
     Preferences.write("bodyPosition", JSON.stringify(lively.getPosition(document.body)))
+    Preferences.write("bodyScroll", JSON.stringify({
+      x: document.body.scrollLeft,
+      y: document.body.scrollTop
+    }));
     
     var source = ""
     var oldActiveElement = lively.activeElement()

@@ -685,6 +685,12 @@ export default class Lively {
         this.showMainContainer()
       } 
     }
+
+    if(this.deferredUpdateScroll) {
+      document.body.scrollLeft = this.deferredUpdateScroll.x;
+      document.body.scrollTop = this.deferredUpdateScroll.y;
+      delete this.deferredUpdateScroll;
+		}
     
     console.log("lively persistence start ")
     setTimeout(() => {persistence.current.start()}, 2000)
@@ -1300,6 +1306,10 @@ export default class Lively {
 
   static async onBodyPositionPreference(pos) {
     lively.setPosition(document.body, pos)
+  }
+
+  static async onBodyScrollPreference(pos) {
+    this.deferredUpdateScroll = pos;
   }
 
 
