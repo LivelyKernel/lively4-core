@@ -15,8 +15,8 @@ export default class SyntaxChecker {
   
   static checkForSyntaxErrors(editor) {
     if (!editor.getSession) {
-      console.log('implement check syntax for code mirror') // #TODO
-      return; 
+      // we assume we are a code mirror, what else should we be? #HACK
+      return this.checkForSyntaxErrorsCodeMirror(editor)
     }
     
     var Range = ace.require('ace/range').Range;
@@ -68,10 +68,11 @@ export default class SyntaxChecker {
   }
   
   
-   static checkForSyntaxErrorsCodeMirror(editor) {
+  static checkForSyntaxErrorsCodeMirror(editor) {
     var src = editor.getValue();
     
     editor.clearGutter("leftgutter")
+    
     
     // clear markers
     editor.getAllMarks()
@@ -95,11 +96,7 @@ export default class SyntaxChecker {
         })
         var ast = result.ast;
         return false;
-    } catch(e) {
-      
-      
-      // lively.notify("Error: " + e)
-      
+    } catch(e) {      
       var line = e.loc.line - 1;
       var errorMark = document.createElement("div")
       errorMark.style.color = "red";
@@ -114,7 +111,7 @@ export default class SyntaxChecker {
         {line: line, ch: 100},
         {
           isSyntaxError: true,
-          css: "background-color: red", 
+          css: "background-color: rgba(255,0,0,0.3)", 
           title: "" + e
         }); 
       

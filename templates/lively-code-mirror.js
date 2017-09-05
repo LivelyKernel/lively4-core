@@ -2,6 +2,8 @@ import generateUUID from './../src/client/uuid.js';
 import boundEval from './../src/client/bound-eval.js';
 import Morph from "./Morph.js"
 import diff from 'src/external/diff-match-patch.js';
+import SyntaxChecker from 'src/client/syntax.js';
+import DelayedCall from 'src/client/delay.js';
 
 import 'src/client/stablefocus.js';
 
@@ -136,8 +138,10 @@ export default class LivelyCodeMirror extends HTMLElement {
     editor.setOption("autoCloseBrackets", true)
     editor.setOption("autoCloseTags", true)
 		editor.setOption("scrollbarStyle", "simple")
+		editor.setOption("scrollbarStyle", "simple")
 
     editor.setOption("tabSize", 2)
+    editor.setOption("indentWithTabs", false)
 
     editor.setOption("highlightSelectionMatches", {showToken: /\w/, annotateScrollbar: true})
 
@@ -171,6 +175,13 @@ export default class LivelyCodeMirror extends HTMLElement {
   		"Ctrl-Alt-Right": "selectNextOccurrence", 
   		"Ctrl-Alt-Left": "undoSelection", 
       "Ctrl-/": "toggleCommentIndented",
+    	'Tab': (cm) => {
+        if (cm.somethingSelected()) {
+    			cm.indentSelection("add");
+  			} else {
+        	cm.execCommand('insertSoftTab')
+        }
+      },
       "Ctrl-S": (cm) => {          
         this.doSave(editor.getValue());
       },
@@ -182,6 +193,9 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))
 
+    this.sourceCodeChangedDelay = new DelayedCall();
+    editor.on("change", evt => this.sourceCodeChangedDelay.call(() => {this.checkSyntax()}))
+    
 		// apply attributes 
     _.map(this.attributes, ea => ea.name).forEach(ea => this.applyAttribute(ea)) 
   }
@@ -206,7 +220,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       //     this.editor.getSession().setUseSoftTabs( newVal );
       //     break;
       case "tabsize":
-		this.setOption("tabSize", newVal)
+				this.setOption("tabSize", newVal)
         break;
       // case "readonly":
       //     this.editor.setReadOnly( newVal );
@@ -381,6 +395,11 @@ export default class LivelyCodeMirror extends HTMLElement {
     // #ACE Component compatiblity
   }
   
+  get isJavaScript() {
+    if (!this.editor) return false;
+    return this.editor.getOption("mode") == "javascript";
+  }
+  
   changeModeForFile(filename) {
     if (!this.editor) return;
     
@@ -479,6 +498,13 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     mergeView.wrap.style.height = height + "px";
   }
+  
+  checkSyntax() {
+    if (this.isJavaScript) {
+       SyntaxChecker.checkForSyntaxErrors(this.editor);
+    }
+  }
+  
 
   find(name) {
     // #TODO this is horrible... Why is there not a standard method for this?

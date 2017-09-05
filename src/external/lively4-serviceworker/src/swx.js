@@ -59,7 +59,7 @@ class ServiceWorker {
     pendingRequests = null; // stop listening to requests..
   }
 
-   fetch(event) {
+  fetch(event, pending) {
     // console.log("SWX.fetch " + event + ", " + pending)
     let request = event.request;
     if (!request) return
@@ -73,6 +73,7 @@ class ServiceWorker {
         if (url.pathname.match(/\/_search\//))  return; 
         if (url.pathname.match(/\/_meta\//))  return; 
         if (url.pathname.match(/lively4-serviceworker/))  return; 
+        
         
         try {                        
           var p = new Promise(async (resolve, reject) => {
@@ -125,7 +126,10 @@ class ServiceWorker {
               return new Response("Could not fetch " + url +", because of: " + e)
             })) 
           })
-          return p
+          if (pending) 
+            pending.resolve(p)
+          else
+            event.respondWith(p)
         } catch(err) {
           if (err.toString().match("The fetch event has already been responded to.")) {
             console.log("How can we check for this before? ", err)
@@ -158,7 +162,11 @@ class ServiceWorker {
         return new Response(content, {status: 500, statusText: message})
       })
 
-      return response
+      if (pending) {
+        console.log("resolve pending request: " + pending.url)
+        pending.resolve(response)
+      } else
+        event.respondWith(response)
     }
   }
 
