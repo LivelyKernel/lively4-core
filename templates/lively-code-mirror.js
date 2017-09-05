@@ -136,8 +136,10 @@ export default class LivelyCodeMirror extends HTMLElement {
     editor.setOption("autoCloseBrackets", true)
     editor.setOption("autoCloseTags", true)
 		editor.setOption("scrollbarStyle", "simple")
+		editor.setOption("scrollbarStyle", "simple")
 
     editor.setOption("tabSize", 2)
+    editor.setOption("indentWithTabs", false)
 
     editor.setOption("highlightSelectionMatches", {showToken: /\w/, annotateScrollbar: true})
 
@@ -171,6 +173,13 @@ export default class LivelyCodeMirror extends HTMLElement {
   		"Ctrl-Alt-Right": "selectNextOccurrence", 
   		"Ctrl-Alt-Left": "undoSelection", 
       "Ctrl-/": "toggleCommentIndented",
+    	'Tab': (cm) => {
+        if (cm.somethingSelected()) {
+    			cm.indentSelection("add");
+  			} else {
+        	cm.execCommand('insertSoftTab')
+        }
+      },
       "Ctrl-S": (cm) => {          
         this.doSave(editor.getValue());
       },
@@ -206,7 +215,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       //     this.editor.getSession().setUseSoftTabs( newVal );
       //     break;
       case "tabsize":
-		this.setOption("tabSize", newVal)
+				this.setOption("tabSize", newVal)
         break;
       // case "readonly":
       //     this.editor.setReadOnly( newVal );

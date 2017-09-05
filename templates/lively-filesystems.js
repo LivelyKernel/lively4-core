@@ -12,7 +12,6 @@ export default class LivleyFilesystems extends Morph {
       this.windowTitle = "Lively Mounts";
       // #TODO refactor to "connections"
 
-
       $(this.getSubmorph('#githubLoginButton')).click(() => {
       });
         
@@ -245,12 +244,11 @@ export default class LivleyFilesystems extends Morph {
 
           let browseButton = document.createElement("button")
           browseButton.innerHTML="browse"
-          browseButton.onclick = () => {
-            var browser = lively.components.createComponent("lively-file-browser");
-            lively.components.openInWindow(browser).then(() => {
-              browser.path = ea.path
-            });
+          browseButton.onclick = async () => {
+            let browser = await lively.openComponentInWindow("lively-file-browser")
+            browser.path = ea.path
           }
+          
           browseButton.setAttribute("class","browse")
           listItem.appendChild(browseButton)
           list.appendChild(listItem)
