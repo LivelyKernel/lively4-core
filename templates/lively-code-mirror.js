@@ -2,6 +2,8 @@ import generateUUID from './../src/client/uuid.js';
 import boundEval from './../src/client/bound-eval.js';
 import Morph from "./Morph.js"
 import diff from 'src/external/diff-match-patch.js';
+import SyntaxChecker from 'src/client/syntax.js';
+import DelayedCall from 'src/client/delay.js';
 
 import 'src/client/stablefocus.js';
 
@@ -191,6 +193,9 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))
 
+    this.sourceCodeChangedDelay = new DelayedCall();
+    editor.on("change", evt => this.sourceCodeChangedDelay.call(() => {this.checkSyntax()}))
+    
 		// apply attributes 
     _.map(this.attributes, ea => ea.name).forEach(ea => this.applyAttribute(ea)) 
   }
@@ -390,6 +395,11 @@ export default class LivelyCodeMirror extends HTMLElement {
     // #ACE Component compatiblity
   }
   
+  get isJavaScript() {
+    if (!this.editor) return false;
+    return this.editor.getOption("mode") == "javascript";
+  }
+  
   changeModeForFile(filename) {
     if (!this.editor) return;
     
@@ -488,6 +498,13 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     mergeView.wrap.style.height = height + "px";
   }
+  
+  checkSyntax() {
+    if (this.isJavaScript) {
+       SyntaxChecker.checkForSyntaxErrors(this.editor);
+    }
+  }
+  
 
   find(name) {
     // #TODO this is horrible... Why is there not a standard method for this?

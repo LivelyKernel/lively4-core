@@ -400,10 +400,6 @@ export default class Container extends Morph {
       if (moduleName) {
         moduleName = moduleName[1];
         
-        if (SyntaxChecker.checkForSyntaxErrors(this.getAceEditor().editor)){
-          lively.notify("found syntax error")
-          return // don't try any further...
-        };
         if (this.lastLoadingFailed) {
           this.reloadModule(url); // use our own mechanism...
         } else if (this.getPath().match(/test\/.*js/)) {
@@ -1142,10 +1138,10 @@ export default class Container extends Morph {
       return
     }
     
-    this.sourceCodeChangedDelay.call(() => {
-      var editor = this.getAceEditor().editor;
-      SyntaxChecker.checkForSyntaxErrors(editor);
-    })
+    // this.sourceCodeChangedDelay.call(() => {
+    //   var editor = this.getAceEditor().editor;
+    //   SyntaxChecker.checkForSyntaxErrors(editor);
+    // })
   }
   
  
