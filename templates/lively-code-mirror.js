@@ -64,6 +64,19 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("keymap/sublime.js")
       await System.import(lively4url + '/templates/lively-code-mirror-hint.js')
 
+      await this.loadModule("addon/tern/tern.js")
+
+      await lively.loadJavaScriptThroughDOM("tern_acorn", '//ternjs.net/node_modules/acorn/dist/acorn.js')
+      await lively.loadJavaScriptThroughDOM("tern_acorn_loose", '//ternjs.net/node_modules/acorn/dist/acorn_loose.js')
+      await lively.loadJavaScriptThroughDOM("tern_walk",'//ternjs.net/node_modules/acorn/dist/walk.js')
+      await lively.loadJavaScriptThroughDOM("tern_polyfill",'//ternjs.net/doc/demo/polyfill.js')
+      await lively.loadJavaScriptThroughDOM("tern_signal",'//ternjs.net/lib/signal.js')
+      await lively.loadJavaScriptThroughDOM("tern_tern",'//ternjs.net/lib/tern.js')
+      await lively.loadJavaScriptThroughDOM("tern_def",'//ternjs.net/lib/def.js')
+      await lively.loadJavaScriptThroughDOM("tern_comment",'//ternjs.net/lib/comment.js')
+      await lively.loadJavaScriptThroughDOM("tern_infer",'//ternjs.net/lib/infer.js')
+      await lively.loadJavaScriptThroughDOM("tern_doc_comment",'//ternjs.net/plugin/doc_comment.js')
+
       this.loadCSS("addon/hint/show-hint.css")
       this.loadCSS("../../../templates/lively-code-mirror.css")
     })()
@@ -447,6 +460,22 @@ export default class LivelyCodeMirror extends HTMLElement {
       	this.editor.scrollTo(other.lastScrollInfo.left, other.lastScrollInfo.top)        
       }
     })
+  }
+  
+  async enableTern() {
+    
+    var code = await fetch("//ternjs.net/defs/ecmascript.json").then(r => r.json())
+    this.ternServer = new CodeMirror.TernServer({defs: [code]});
+    this.editor.setOption("extraKeys", {
+      "Ctrl-Space": (cm) => { this.ternServer.complete(cm); },
+      "Ctrl-I": (cm) => { this.ternServer.showType(cm); },
+      "Ctrl-O": (cm) => { this.ternServer.showDocs(cm); },
+      "Alt-.": (cm) => { this.ternServer.jumpToDef(cm); },
+      "Alt-,": (cm) => { this.ternServer.jumpBack(cm); },
+      "Ctrl-Q": (cm) => { this.ternServer.rename(cm); },
+      "Ctrl-Alt-.": (cm) => { this.ternServer.selectName(cm); }
+    })
+    this.editor.on("cursorActivity", (cm) => { this.ternServer.updateArgHints(cm); });
   }
   
   mergeView(originalText, originalLeftText) {
