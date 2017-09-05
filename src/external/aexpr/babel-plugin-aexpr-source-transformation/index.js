@@ -80,8 +80,8 @@ export default function(param) {
             // lval (left values) are ignored for now
             //lively.notify("STUFF", path.parentKey, path.key)
             if(isCalledMember(path)) { return false; }
-            if(t.isAssignmentExpression(path.parent) && path.parentKey === 'left') { return false; }
-            if(t.isUpdateExpression(path.parent) && path.parentKey === 'argument') { return false; }
+            if(path.parentPath.isAssignmentExpression() && path.parentKey === 'left') { return false; }
+            if(path.parentPath.isUpdateExpression() && path.parentKey === 'argument') { return false; }
             if(path.get("object").isSuper()) { return false; }
             if(isGenerated(path)) { return false; }
             //lively.notify(path.node.property.name, "");
