@@ -198,7 +198,6 @@ export default class LivelyCodeMirror extends HTMLElement {
     _.map(this.attributes, ea => ea.name).forEach(ea => this.applyAttribute(ea)) 
   }
   
-  
   // Fires when an attribute was added, removed, or updated
   attributeChangedCallback(attr, oldVal, newVal) {
     if(!this.editor){

@@ -105,6 +105,37 @@ async function getCompletions(token, context, keywords, options) {
     forAllProps(obj, maybeAdd)
   }
 
+  function completeUtilsFunctions() {
+    Object.keys(utils).filter(ea => ea.startsWith(token.string)).forEach(utilFuncName => {
+      found.push({
+        text: utilFuncName,
+        displayText:"util." +utilFuncName,
+        hint: (cm, self, data) => {
+          var offset = 0
+          cm.replaceRange(utilFuncName + "()",self.from, self.to)
+          var lines = cm.getValue().split("\n");
+          var imports = lines
+            .filter(ea => ea.match(/^import .*from ['"]utils['"];?/))
+          if (!imports.find(ea => ea.match(utilFuncName))) {
+            var utils = imports.find(ea => ea.match(/import {.*} from 'utils';/))
+            if (utils) {
+              var funcs = utils.replace(/.*{ */,"").replace(/ *}.*/,"").split(/ *, */)
+              funcs.push(utilFuncName)
+              lines = lines.map(ea => ea == utils ?  
+                  `import { ${funcs.sort().join(", ")} } from 'utils';` : ea);
+              cm.setValue(lines.join("\n"))
+            } else {
+              var prefix = `import { ${utilFuncName} } from 'utils';\n` 
+              cm.setValue(prefix+ cm.getValue())
+              offset  += 1                  
+            }
+          }
+          cm.setCursor({line: self.from.line + offset, ch: self.from.ch + utilFuncName.length + "(".length})
+        }
+      })
+    });
+  }
+  
   if (context && context.length) {
     
     // If this is a property, see if it belongs to some object we can
@@ -163,9 +194,7 @@ async function getCompletions(token, context, keywords, options) {
         prevToken = editor.getTokenAt({line: cur.line, ch: token.start - 0  }),
         prevPrevToken = editor.getTokenAt({line: cur.line, ch: token.start - 1});
       if ( prevToken.string == ":" && prevPrevToken.string == ":") {
-        console.log("token: " + token.string)
-        Object.keys(utils).filter(ea => ea).forEach(maybeAdd)
-        
+        completeUtilsFunctions()
       } else {
         // If not, just look in the global object and any local scope
         // (reading into JS mode internals to get at the local and global variables)
