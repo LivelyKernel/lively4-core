@@ -4,6 +4,7 @@ import Morph from "./Morph.js"
 import diff from 'src/external/diff-match-patch.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import { debounce } from "utils";
+import Preferences from 'src/client/preferences.js';
 
 import 'src/client/stablefocus.js';
 
@@ -137,7 +138,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 		this.setupEditor()
   }
   
-	setupEditor() {
+  setupEditor() {
   	var editor = this.editor;
     if (this.mode) {
       editor.setOption("mode", this.mode);
@@ -151,7 +152,11 @@ export default class LivelyCodeMirror extends HTMLElement {
     editor.on("change", (() => this.checkSyntax())::debounce(500))
     
 		// apply attributes 
-    _.map(this.attributes, ea => ea.name).forEach(ea => this.applyAttribute(ea)) 
+    _.map(this.attributes, ea => ea.name).forEach(ea => this.applyAttribute(ea));
+    
+    if(Preferences.get('UseTernInCodeMirror')) {
+      this.enableTern();
+    }
   }
   
   setupEditorOptions(editor) {
@@ -564,7 +569,6 @@ export default class LivelyCodeMirror extends HTMLElement {
     })
   }
 }
-
 
 // LivelyCodeMirror.loadModules()
 

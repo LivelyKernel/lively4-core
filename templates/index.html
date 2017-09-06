@@ -60,7 +60,10 @@ createUI(this.parentElement)
 
 <lively-script><script>
 (async () => {
- var container = this.parentElement
+  var container = this.parentElement
+  if(!container || !container.getPath) {
+    return "no container as parentPath";
+  }
   var path = "" + container.getPath();
   var dir = path.replace(/[^/]*$/,"")
   var opts = JSON.parse(await lively.files.statFile(dir))

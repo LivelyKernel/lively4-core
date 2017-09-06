@@ -169,7 +169,7 @@ export default class ContextMenu {
   }
   
   static preferenceEntry(preferenceKey) {
-    return Preferences.isEnabled(preferenceKey) ? [
+    return Preferences.get(preferenceKey) ? [
       Preferences.shortDescription(preferenceKey), () => {
         Preferences.disable(preferenceKey)
       },"",
@@ -369,7 +369,7 @@ export default class ContextMenu {
           },, '<i class="fa fa-info" aria-hidden="true"></i>']
       ]],
       ["Preferences", 
-          ["ShowDocumentGrid", "InteractiveLayer", "ShowFixedBrowser", "SnapWindowsInGrid", "DisableAExpWorkspace", "DisableAltGrab"].map(ea => this.preferenceEntry(ea))
+          ["ShowDocumentGrid", "InteractiveLayer", "ShowFixedBrowser", "SnapWindowsInGrid", "DisableAExpWorkspace", "DisableAltGrab", "UseTernInCodeMirror"].map(ea => this.preferenceEntry(ea))
       ],
       
       // ["Customize Page", (evt) => {

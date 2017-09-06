@@ -17,7 +17,8 @@ export default class Preferences {
       InteractiveLayer: {default: false, short: "dev methods"},
       ShowDocumentGrid: {default: false, short: "show grid"},
       DisableAExpWorkspace: {default: false, short: "disable AExp in workspace"},
-      DisableAltGrab: {default: false, short: "disable alt grab with hand"}
+      DisableAltGrab: {default: false, short: "disable alt grab with hand"},
+      UseTernInCodeMirror: {default: true, short: "enable tern autocomplete and navigation"}
     };
   }
 
@@ -28,8 +29,6 @@ export default class Preferences {
     else
       return preferenceKey
   }
-
-
   
   /* get preference, consider defaults */
   static get(preferenceKey) {
@@ -49,7 +48,7 @@ export default class Preferences {
   
   static get prefsNode() {
     if (this.node) return this.node
-    
+    // #BUG: reloading Preferences causes dataset to be not defined anymore
     this.node = document.body.querySelector('lively-preferences');
     if (!this.node) {
       this.node = document.createElement('lively-preferences')
@@ -59,20 +58,17 @@ export default class Preferences {
     return this.node
   }
   
-  static  read(preferenceKey) {
-    return this.prefsNode.dataset[preferenceKey];
+  static read(preferenceKey) {
+    return this.prefsNode && this.prefsNode.dataset ?
+      this.prefsNode.dataset[preferenceKey] :
+      undefined;
   }
   
   static write(preferenceKey, preferenceValue) {
+    if(!this.prefsNode || !this.prefsNode.dataset) { return; }
     this.prefsNode.dataset[preferenceKey] = preferenceValue;
   }
   
-  static isEnabled(preferenceKey, defaultValue) {
-    var pref =  this.read(preferenceKey);
-    if (pref === undefined) return defaultValue;
-    return pref == "true"
-  }
-
   static enable(preferenceKey) {
     Preferences.write(preferenceKey, "true")
     this.applyPreference(preferenceKey)

@@ -681,7 +681,7 @@ export default class Lively {
       document.body.style.backgroundColor = "rgb(240,240,240)"
       ViewNav.enable(document.body)
 
-      if (loadContainer && lively.preferences.isEnabled("ShowFixedBrowser", true)) {
+      if (loadContainer && lively.preferences.get("ShowFixedBrowser")) {
         this.showMainContainer()
       } 
     }

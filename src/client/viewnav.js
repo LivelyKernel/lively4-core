@@ -63,11 +63,6 @@ export default class ViewNav {
     this.targetContainer = evt.path.find(ea => {
       return ea.tagName == "LIVELY-CONTAINER"
     })
-      
-    // if (!Preferences.isEnabled("ShowDocumentGrid", false)) {
-       // ViewNav.showDocumentGrid();
-       // return 
-    // }
   
     this.eventOffset = this.eventPos(evt)
   
@@ -98,8 +93,6 @@ export default class ViewNav {
   }
   
   onPointerUp(evt) {
-    // if (!Preferences.isEnabled("ShowDocumentGrid", false))
-    //   ViewNav.hideDocumentGrid()
     lively.removeEventListener("ViewNav", this.eventSource, "pointermove")
     lively.removeEventListener("ViewNav", this.eventSource, "pointerup")
     this.fixScrollAfterNavigation()
@@ -205,10 +198,10 @@ export default class ViewNav {
   
   static updateDocumentGrid(documentGrid, target, zoomed, force) {
     
-    if (!Preferences.isEnabled("ShowDocumentGrid", false)) {
-      this.hideDocumentGrid(target)
+    if (!Preferences.get("ShowDocumentGrid")) {
+      this.hideDocumentGrid(target);
 
-      return 
+      return;
     }
 
     
