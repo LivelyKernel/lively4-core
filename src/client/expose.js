@@ -107,7 +107,9 @@ export default class Expose {
       var pos = topLeft.addPt(pt(column * (this.elementLength + 20), row * (this.elementLength + 20)))
       
       lively.setGlobalPosition(win, pos)
-
+      lively.setPosition(win, pt(100,100))
+      lively.showPoint(pos)
+      
       win.addEventListener('mouseenter', Expose.windowMouseEnter);
       win.addEventListener('mouseleave', Expose.windowMouseLeave);
       win.addEventListener('click', Expose.windowClick);
