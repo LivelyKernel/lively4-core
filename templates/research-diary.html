@@ -43,7 +43,6 @@
 }
 
 .todo {
-  /* float: right; */
   color: #b33630;
 }
 .todo:hover {
@@ -55,34 +54,21 @@
   height: 8px;
   width: 8px;
 }
-::-webkit-scrollbar-button       {
-  /* background-color: red; */
-  }
 ::-webkit-scrollbar-track {
-  position: absolute;
   background: #eee;
-  /* background-color: yellow; */
   /* -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); */
 }
-::-webkit-scrollbar-track-piece  {
-    /* background-color: blue; */
-}
+/* ::-webkit-scrollbar-track-piece {} */
 ::-webkit-scrollbar-thumb {
-  position: absolute;
-    background: #ccc;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
-    border: 1px solid #bbb;
+  background: #ccc;
+  box-sizing: border-box;
+  border: 1px solid #bbb;
   border-radius: 2px;
-/*  -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); */
+  /* -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); */
 }
-::-webkit-scrollbar-corner       { 
-  /* background-color: green; */
-}
-::-webkit-resizer                { 
-  /* background-color: purple; */
-  }
-  :horizontal {}
+::-webkit-scrollbar-corner {}
+::-webkit-resizer {}
+:horizontal {}
 :vertical {}
 :decrement {}
 :increment {}
