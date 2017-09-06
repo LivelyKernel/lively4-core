@@ -49,7 +49,8 @@ if ('serviceWorker' in navigator || window.lively4chrome) {
       //   return loadJavaScriptThroughDOM("livelyModules",
       //     lively4url + "/src/external/lively.modules-with-lively.vm.js")})
       .then( function() {
-        console.log("lively.modules loaded... now try to load lively4");
+        console.log("Load Lively4");
+        debugger
         return System.import("src/client/lively.js")})
       .then(function(module) {
        
