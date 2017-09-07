@@ -31,7 +31,7 @@ export default class Keys {
   }
 
   static handle(evt) {
-    // lively.notify("handle " + this.getChar(evt) + "" + evt.keyCode  + " "+ evt.charCode)
+    // lively.notify("handle " + this.getChar(evt) + " " + evt.keyCode  + " "+ evt.charCode, (evt.shiftKey ? " SHIFT" : "") + (evt.ctrlKey ? " CTRL" : ""))
     try {
       var char = this.getChar(evt);
       // this.logEvent(evt)
@@ -49,6 +49,8 @@ export default class Keys {
         lively.openBrowser(this.getTextSelection());
         evt.preventDefault();
       } else if (evt.shiftKey && (evt.ctrlKey || evt.metaKey) && char == "G") {
+        // this does not work up on #Jens' windows machine
+        lively.notify("open sync")
         lively.openComponentInWindow("lively-sync");
         evt.preventDefault();
       } else if ((evt.ctrlKey || evt.metaKey) && char == "O") {
@@ -65,11 +67,13 @@ export default class Keys {
       }
       
       if ((evt.ctrlKey || evt.metaKey) && char == "D") {
-        if (e.path.find(ea => ea.tagName == "LIVELY-CODE-MIRROR")) {
+        
+        if (evt.path.find(ea => ea.tagName == "LIVELY-CODE-MIRROR")) {
+          lively.notify("codemirror handles itself " + str)
           return; // code mirror does not stop it's propagation
         }
-        
         let str = window.getSelection().toLocaleString();
+        lively.notify("eval: " + str)
         try {
           lively.boundEval(str);
         } catch(e) {
