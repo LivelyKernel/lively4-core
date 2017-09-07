@@ -18,6 +18,7 @@ export default class Preferences {
       ShowDocumentGrid: {default: false, short: "show grid"},
       DisableAExpWorkspace: {default: false, short: "disable AExp in workspace"},
       DisableAltGrab: {default: false, short: "disable alt grab with hand"},
+      UseAsyncWorkspace: {default: false, short: "support await in eval"},
       UseTernInCodeMirror: {default: true, short: "enable tern autocomplete and navigation"}
     };
   }

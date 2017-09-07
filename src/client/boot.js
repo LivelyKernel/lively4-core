@@ -107,6 +107,7 @@ if (window.lively && window.lively4url) {
         // support for doits
         'babel-plugin-doit-result': lively4url + '/src/external/babel-plugin-doit-result.js',
         'babel-plugin-doit-this-ref': lively4url + '/src/external/babel-plugin-doit-this-ref.js',
+        'babel-plugin-doit-async': lively4url + '/src/external/babel-plugin-doit-async.js',
         'babel-plugin-locals': lively4url + '/src/external/babel-plugin-locals.js',
         'babel-plugin-var-recorder': lively4url + '/src/external/babel-plugin-var-recorder.js',
         'workspace-loader': lively4url + '/src/client/workspace-loader.js',
@@ -197,6 +198,24 @@ if (window.lively && window.lively4url) {
               'babel-plugin-doit-result',
               'babel-plugin-doit-this-ref',
               'babel-plugin-var-recorder'
+            ]
+          },
+          loader: 'workspace-loader'
+        },
+        'workspaceasyncjs:*': {
+          babelOptions: {
+            es2015: false,
+            stage2: false,
+            stage3: false,
+            plugins: [
+              'babel-plugin-jsx-lively',
+              'babel-plugin-transform-do-expressions',
+              'babel-plugin-transform-function-bind',
+              'babel-plugin-locals',
+              'babel-plugin-doit-result',
+              'babel-plugin-doit-this-ref',
+              'babel-plugin-var-recorder',
+              'babel-plugin-doit-async', 
             ]
           },
           loader: 'workspace-loader'

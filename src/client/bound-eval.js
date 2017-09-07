@@ -16,7 +16,9 @@ export default async function boundEval(source, thisReference, targetModule) {
     setCode(codeId, source);
     
     var path = 'workspace:' + encodeURI(codeId)
-    if (Preferences.get('DisableAExpWorkspace')) {
+    if (Preferences.get('UseAsyncWorkspace')) {
+      path = path.replace(/^workspace/, "workspaceasyncjs")
+    } else if (Preferences.get('DisableAExpWorkspace')) {
       path = path.replace(/^workspace/, "workspacejs")
     }
     return System.import(path)
