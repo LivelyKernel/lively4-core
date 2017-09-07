@@ -5,6 +5,8 @@
 :host {
   height: 100%;
   width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 #content {
@@ -12,8 +14,9 @@
   word-wrap: break-word;
   display: flex;
   flex-direction: row;
-  height: auto;
   width: 100%;
+  flex: 1;
+  overflow: visible;  
 }
 #main {
   flex: 1;
@@ -25,18 +28,21 @@
   flex: 1;
 }
 #ace {
-  height: 90%;
+  height: 100%;
 }
 #viewer {
-  background-color: yellow;
-  flex: 0 0 25px;
+  flex: 0 0 5px;
+/*   min-width: 300px; */
 }
+
   
 #nav {
   background-color: #F5F5F5;
   border-top: 1px solid #d5d5d5;
   border-right: 1px solid #d5d5d5;
+  overflow: auto;
 }
+
 ul {
   width: auto;
   margin:0;
@@ -66,7 +72,24 @@ ul li a:hover {
   color: white;
   cursor: pointer
 }
+  
+#viewer  {
+  overflow: auto;
+  min-width: 200px;
+}
 
+#clipped-viewer {
+  width: 200px;
+  height: 100px; /* I don't know why this works... */
+}
+
+  
+#scaled-viewer {
+  transform: scale(0.5);
+  transform-origin: top left;
+  width: calc(200% - 24px - 12px);
+  padding: 10px;
+}
 </style>
 <div id="top">
   <button id="new" title="new">
@@ -83,10 +106,16 @@ ul li a:hover {
   </div>
   <div id="main">
     <div id="editor">
-      <juicy-ace-editor id="ace"></juicy-ace-editor>
+      <lively-code-mirror id="ace"></lively-code-mirror>
     </div>
   </div>
-  <div id="viewer"></div>
+  <div id="viewer">
+    <div id="clipped-viewer">
+      <div id="scaled-viewer">
+        <lively-markdown id="markdown"></lively-markdown>    
+      </div>
+    </div>
+  </div>
 </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

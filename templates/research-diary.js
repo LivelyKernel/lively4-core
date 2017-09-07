@@ -2,6 +2,7 @@ import Morph from './Morph.js';
 
 import { Graph, _ } from 'src/client/triples/triples.js';
 import lively from 'src/client/lively.js';
+import {promisedEvent} from "utils";
 
 function getTodaysTitle() {
   function toStringWithTrailingZero(number) {
@@ -25,7 +26,7 @@ export default class ResearchDiary extends Morph {
   async initialize() {
     this.windowTitle = "Research Diary";
     
-    this.prepareAce();
+    this.prepareEditor();
     this.refreshList();
     
     this.get('#new').addEventListener("click", e => {
@@ -40,20 +41,27 @@ export default class ResearchDiary extends Morph {
       this.loadEntry(entryKnot);
     }
     
-    this.ace.editor.navigateFileStart()
+    // this.codeEditor.editor.navigateFileStart()
   }
   
-  get ace() { return this.get('#ace'); }
-  prepareAce() {
+  get codeEditor() { return this.get('#ace'); }
+  
+  async prepareEditor() {
     // TODO: wordwrap
-    let aceComp = this.ace;
-    aceComp.editor.setOptions({
-      maxLines:Infinity,
-      wrap: true
-    });
-    aceComp.enableAutocompletion();
-    aceComp.aceRequire('ace/ext/searchbox');
-    aceComp.doSave = async text => {
+    let editorComp = this.codeEditor;
+
+    await promisedEvent(editorComp, "editor-loaded");
+    
+    // editorComp.editor.setOptions({
+    //   maxLines:Infinity,
+    //   wrap: true
+    // });
+    // editorComp.enableAutocompletion();
+    // editorComp.aceRequire('ace/ext/searchbox')
+
+    editorComp.editor.setOption("mode", "gfm");
+    editorComp.editor.setOption("lineWrapping", true);
+    editorComp.doSave = async text => {
       this.save(text);
     }
   }
@@ -114,10 +122,10 @@ export default class ResearchDiary extends Morph {
   }
   async createNewEntry() {
     let content = this.entryTemplate();
-    this.ace.editor.setValue(content, -1);
-    this.ace.editor.gotoLine(5);
-    this.ace.editor.navigateLineEnd();
-    this.ace.focus();
+    this.codeEditor.editor.setValue(content);
+    this.codeEditor.editor.setCursor({line: 4, ch: 0});
+    this.codeEditor.editor.execCommand("goLineEnd")
+    this.codeEditor.editor.focus();
     
     let graph = await Graph.getInstance();
     let newKnot = await graph.createKnot('https://lively4/dropbox/', getTodaysTitle(), 'md');
@@ -131,12 +139,15 @@ export default class ResearchDiary extends Morph {
   }
   loadEntry(entryKnot) {
     this.currentEntryURL = entryKnot.url;
-    this.ace.editor.setValue(entryKnot.content);
+    this.codeEditor.editor.setValue(entryKnot.content);
+    this.get("#markdown").setContent(entryKnot.content)
   }
   async save(text) {
     let graph = await Graph.getInstance();
     let entry = graph.getKnots().find(knot => knot.url === this.currentEntryURL)
     if(entry) {
+      this.get("#markdown").setContent(text)
+      
       await entry.save(text);
       lively.notify('saved diary entry');
     } else {
