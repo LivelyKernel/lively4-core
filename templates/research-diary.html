@@ -2,28 +2,18 @@
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style type="text/css">
-#content {
-  overflow-x: auto;
-  word-wrap: break-word;
-}
-
 :host {
-  display: flex;
-  flex-direction: column;
   height: 100%;
   width: 100%;
 }
 
 #content {
-  flex: 1;
+  overflow: auto;
+  word-wrap: break-word;
   display: flex;
   flex-direction: row;
-  height: 100%;
+  height: auto;
   width: 100%;
-}
-#nav {
-  background-color: green;
-  width: 150px;
 }
 #main {
   flex: 1;
@@ -41,48 +31,42 @@
   background-color: yellow;
   flex: 0 0 25px;
 }
-
-.todo {
-  color: #b33630;
+  
+#nav {
+  background-color: #F5F5F5;
+  border-top: 1px solid #d5d5d5;
+  border-right: 1px solid #d5d5d5;
 }
-.todo:hover {
-  background:  linear-gradient(#dc5f59, #b33630);
+ul {
+  width: auto;
+  margin:0;
+  list-style-type: none;
+  padding: 0;
+}
+ul li {
+  margin: 0px;
+  padding: 2px;
+  font-size: 11pt;
+}
+ul li a {
+  width: 200px;
+  display: box;
+  white-space: nowrap;
+  text-decoration: none;
+  color: #444444;
+}
+ul li a:hover {
+  background-color: gray;
   color: white;
+  cursor: pointer
 }
 
-::-webkit-scrollbar {
-  height: 8px;
-  width: 8px;
+.selected {
+  background-color: lightgray;
+  color: white;
+  cursor: pointer
 }
-::-webkit-scrollbar-track {
-  background: #eee;
-  border-radius: 2px;
-  /* -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); */
-}
-/* ::-webkit-scrollbar-track-piece {} */
-::-webkit-scrollbar-thumb {
-  background: #ccc;
-  box-sizing: border-box;
-  border: 1px solid #bbb;
-  border-radius: 2px;
-  /* -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); */
-}
-/* ::-webkit-scrollbar-corner {} */
-/* ::-webkit-resizer {} */
-/*
-:horizontal {}
-:vertical {}
-:decrement {}
-:increment {}
-:start {}
-:end  {}
-:double-button {}
-:single-button {}
-:no-button {}
-:corner-present {}
-:window-inactive {}
-::selection {}
-*/
+
 </style>
 <div id="top">
   <button id="new" title="new">
@@ -101,8 +85,8 @@
     <div id="editor">
       <juicy-ace-editor id="ace"></juicy-ace-editor>
     </div>
-    <div id="viewer"></div>
   </div>
+  <div id="viewer"></div>
 </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

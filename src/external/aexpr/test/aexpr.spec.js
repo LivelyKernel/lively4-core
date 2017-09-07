@@ -279,6 +279,44 @@ describe('Propagation Logic', function() {
     });
   });
 
+  it('aexpr ordering', () => {
+    let a = 1;
+    let b = 1;
+    let spyA = sinon.spy(),
+        spyB = sinon.spy();
+
+    aexpr(() => a).onChange(spyA);
+    aexpr(() => b).onChange(spyB);
+
+    a = b = 2;
+    expect(spyA).to.be.calledAfter(spyB);
+  });
+
+  xit('support assignments in aexprs', () => {
+    let a = 1;
+    let b = 1;
+    let spy = sinon.spy();
+
+    aexpr(() => {
+      b = b + 1; // #TODO: do we even want to support this?
+      return a;
+    }).onChange(spy);
+
+    a = 2;
+    expect(spy).to.be.calledOnce;
+  });
+
+  xit('monitor collections for change', () => {
+    let arr = [1,2];
+    let spy = sinon.spy();
+    
+    monitorCollection(); // or
+    arr::monitor().onChange(spy);
+    
+    arr.push(3);
+    expect(spy).to.be.calledOnce;
+  });
+
   describe('members', () => {
     it('triggers correct callbacks', () => {
       let rect = {
@@ -300,7 +338,7 @@ describe('Propagation Logic', function() {
       rect.extent.x = 3;
       expect(spyWidth).to.be.calledWithMatch(3);
       expect(spyExtent).not.to.be.called;
-    });
+    });    
 
     describe('nested members', () => {
       it('handle nested members', () => {

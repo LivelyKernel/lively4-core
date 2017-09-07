@@ -1,5 +1,3 @@
-
-
 lively-container  h1, lively-container h2, lively-container  h3,lively-container h4 {
   color: #2B547E;
 }
@@ -8,8 +6,22 @@ a {
   color: #2B547E;
 }
 
-
 .lively4-grabbed {
 
   z-index: 1000;
+}
+
+::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #eee;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  box-sizing: border-box;
+  border: 1px solid #bbb;
+  border-radius: 2px;
 }
