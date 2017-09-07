@@ -50,7 +50,6 @@ if ('serviceWorker' in navigator || window.lively4chrome) {
       //     lively4url + "/src/external/lively.modules-with-lively.vm.js")})
       .then( function() {
         console.log("Load Lively4");
-        debugger
         return System.import("src/client/lively.js")})
       .then(function(module) {
        

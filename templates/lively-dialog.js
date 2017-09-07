@@ -14,7 +14,6 @@ export default class Dialog extends Morph {
   }
   
   onClose() {
-    debugger
     this.onCancel()
   }
   onOk() {

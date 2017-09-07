@@ -26,7 +26,7 @@ export default class ResearchDiary extends Morph {
   async initialize() {
     this.windowTitle = "Research Diary";
     
-    this.prepareEditor();
+    await this.prepareEditor();
     this.refreshList();
     
     this.get('#new').addEventListener("click", e => {
@@ -64,6 +64,11 @@ export default class ResearchDiary extends Morph {
     editorComp.doSave = async text => {
       this.save(text);
     }
+    
+    editorComp.addEventListener("change" , (evt) => {
+      // lively.notify("change " + evt)
+    })
+    
   }
   
   get researchDiaryURL() { return "https://lively4/dropbox/Research_Diary.md"; }
@@ -122,6 +127,7 @@ export default class ResearchDiary extends Morph {
   }
   async createNewEntry() {
     let content = this.entryTemplate();
+    
     this.codeEditor.editor.setValue(content);
     this.codeEditor.editor.setCursor({line: 4, ch: 0});
     this.codeEditor.editor.execCommand("goLineEnd")
@@ -139,8 +145,13 @@ export default class ResearchDiary extends Morph {
   }
   loadEntry(entryKnot) {
     this.currentEntryURL = entryKnot.url;
-    this.codeEditor.editor.setValue(entryKnot.content);
-    this.get("#markdown").setContent(entryKnot.content)
+    
+    if (this.codeEditor.editor) {
+      this.codeEditor.editor.setValue(entryKnot.content);      
+    }
+    if (this.get("#markdown").setContent) {
+      this.get("#markdown").setContent(entryKnot.content)    
+    }
   }
   async save(text) {
     let graph = await Graph.getInstance();
