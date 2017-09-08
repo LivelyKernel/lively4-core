@@ -27,6 +27,9 @@ export default function(param) {
   }
 
   return {
+    manipulateOptions(opts, parserOpts) {
+      //parserOpts.plugins.push("functionBind");
+    },
     pre(file) {
       function ignoreFile() {
         console.log("IGNORED!!!");

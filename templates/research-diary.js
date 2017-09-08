@@ -2,7 +2,7 @@ import Morph from './Morph.js';
 
 import { Graph, _ } from 'src/client/triples/triples.js';
 import lively from 'src/client/lively.js';
-import {promisedEvent} from "utils";
+import { promisedEvent, debounce, sortBy, last } from "utils";
 
 function getTodaysTitle() {
   function toStringWithTrailingZero(number) {
@@ -14,12 +14,11 @@ function getTodaysTitle() {
   const month = toStringWithTrailingZero(today.getMonth() + 1);
   const day = toStringWithTrailingZero(today.getDate());
   
-  const title = `Research-Diary Entry ${year}.${month}.${day}`;
-  
-  return title;
+  return `Research-Diary Entry ${year}.${month}.${day}`;
 }
 
 export default class ResearchDiary extends Morph {
+  get codeEditor() { return this.get('#ace'); }
   get currentEntryURL() { return this.getAttribute('data-current-entry-url'); }
   set currentEntryURL(url) { this.setAttribute("data-current-entry-url", url); return url; }
   
@@ -29,83 +28,63 @@ export default class ResearchDiary extends Morph {
     await this.prepareEditor();
     this.refreshList();
     
-    this.get('#new').addEventListener("click", e => {
-      this.createNewEntry();
-      //lively.openInspector(knot, undefined, knot.label());
-    });
+    this.get('#new').addEventListener("click", ::this.createNewEntry);
     
-    let urlToLoad = this.currentEntryURL;
+    const urlToLoad = this.currentEntryURL;
     if (urlToLoad && urlToLoad !== "") {
-      let graph = await Graph.getInstance();
-      let entryKnot = await graph.requestKnot(urlToLoad);
+      const graph = await Graph.getInstance();
+      const entryKnot = await graph.requestKnot(urlToLoad);
       this.loadEntry(entryKnot);
     }
     
     // this.codeEditor.editor.navigateFileStart()
   }
   
-  get codeEditor() { return this.get('#ace'); }
-  
   async prepareEditor() {
-    // TODO: wordwrap
-    let editorComp = this.codeEditor;
+    const editorComp = this.codeEditor;
 
     await promisedEvent(editorComp, "editor-loaded");
     
     // editorComp.editor.setOptions({
     //   maxLines:Infinity,
-    //   wrap: true
     // });
     // editorComp.enableAutocompletion();
     // editorComp.aceRequire('ace/ext/searchbox')
 
     editorComp.editor.setOption("mode", "gfm");
     editorComp.editor.setOption("lineWrapping", true);
-    editorComp.doSave = async text => {
-      this.save(text);
-    }
     
-    editorComp.addEventListener("change" , (evt) => {
-      // lively.notify("change " + evt)
-    })
-    
+    this.debouncedSetPreviewText = ::this.setPreviewText::debounce(600);
+    editorComp.addEventListener("change" , this.debouncedSetPreviewText);
+    this.debouncedSave = ::this.save::debounce(5000);
+    editorComp.addEventListener("change" , e => this.debouncedSave(this.codeEditor.value));
   }
   
   get researchDiaryURL() { return "https://lively4/dropbox/Research_Diary.md"; }
   get entryOfURL() { return "https://lively4/dropbox/entry_of.md"; }
   async getEntries() {
-    let graph = await Graph.getInstance();
-    let researchDiaryKnot = await graph.requestKnot(this.researchDiaryURL);
-    let entryOfKnot = await graph.requestKnot(this.entryOfURL);
+    const graph = await Graph.getInstance();
+    const researchDiaryKnot = await graph.requestKnot(this.researchDiaryURL);
+    const entryOfKnot = await graph.requestKnot(this.entryOfURL);
 
     return graph.query(_, entryOfKnot, researchDiaryKnot).map(triple => triple.subject);
   }
   async refreshList() {
     function getDateString(entry) {
-      return entry.label().split(' ').reverse()[0];
+      return entry.label().split(' ')::last();
     }
-    let entries = await this.getEntries();
-    
+    const entries = await this.getEntries();
     const ul = this.get('#nav ul');
     ul.innerHTML = "";
     
     entries
-      .sort((a, b) => {
-        if(getDateString(a) < getDateString(b)) { return -1; }
-        if(getDateString(a) > getDateString(b)) { return 1; }
-        return 0;
-      })
+      ::sortBy(getDateString)
       .reverse()
       .forEach(entry => {
-        let li = document.createElement('li');
-        let a = document.createElement('a');
-        let label = getDateString(entry);
-        a.innerHTML = label;
-        a.addEventListener('click', e => {
-          this.loadEntry(entry);
-        })
-        li.appendChild(a);
-        ul.appendChild(li);
+        let a = <a>{getDateString(entry)}</a>;
+        a.addEventListener('click', e => this.loadEntry(entry));
+
+        ul.appendChild(<li>{a}</li>);
       });
   }
   
@@ -113,6 +92,10 @@ export default class ResearchDiary extends Morph {
     return `# ${getTodaysTitle()}
 
 ## Erkenntnisse
+
+- 
+
+## Todos for Today
 
 - 
 
@@ -133,6 +116,8 @@ export default class ResearchDiary extends Morph {
     this.codeEditor.editor.execCommand("goLineEnd")
     this.codeEditor.editor.focus();
     
+    this.immediatePreviewNoSave();
+    
     let graph = await Graph.getInstance();
     let newKnot = await graph.createKnot('https://lively4/dropbox/', getTodaysTitle(), 'md');
     this.currentEntryURL = newKnot.url;
@@ -146,19 +131,21 @@ export default class ResearchDiary extends Morph {
   loadEntry(entryKnot) {
     this.currentEntryURL = entryKnot.url;
     
-    if (this.codeEditor.editor) {
-      this.codeEditor.editor.setValue(entryKnot.content);      
-    }
-    if (this.get("#markdown").setContent) {
-      this.get("#markdown").setContent(entryKnot.content)    
-    }
+    this.codeEditor.editor.setValue(entryKnot.content);    
+    this.immediatePreviewNoSave();
+  }
+  immediatePreviewNoSave() {
+    this.debouncedSave.cancel();
+    this.debouncedSetPreviewText.cancel();
+    this.setPreviewText();
+  }
+  setPreviewText() {
+    this.get("#markdown").setContent(this.codeEditor.value);
   }
   async save(text) {
     let graph = await Graph.getInstance();
     let entry = graph.getKnots().find(knot => knot.url === this.currentEntryURL)
-    if(entry) {
-      this.get("#markdown").setContent(text)
-      
+    if(entry) {      
       await entry.save(text);
       lively.notify('saved diary entry');
     } else {

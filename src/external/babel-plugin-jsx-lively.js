@@ -14,7 +14,12 @@ export function element(tagName, attributes, children) {
     tag.setAttribute(key, value);
   }
   
-  children.forEach(child => tag.appendChild(child));
+  children
+    .map(child => child instanceof Node ?
+      child :
+      document.createTextNode(child)
+    )
+    .forEach(child => tag.appendChild(child));
   
   return tag;
 }
