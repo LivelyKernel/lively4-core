@@ -36,7 +36,6 @@
   }
 
   CodeMirror.defineExtension("openDialog", function(template, callback, options) {
-   
     if (!options) options = {};
 
     closeNotification(this, null);

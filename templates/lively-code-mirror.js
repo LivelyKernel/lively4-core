@@ -5,7 +5,7 @@ import diff from 'src/external/diff-match-patch.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import { debounce } from "utils";
 import Preferences from 'src/client/preferences.js';
-
+import {pt, rect} from 'src/client/graphics.js';
 import 'src/client/stablefocus.js';
 
 let loadPromise = undefined;
@@ -185,7 +185,10 @@ export default class LivelyCodeMirror extends HTMLElement {
         }, 10)
         // editor.execCommand("find")
       },
-      "Ctrl-Space": "autocomplete",
+      "Ctrl-Alt-Space": cm => {
+        this.fixHintsPosition()
+        cm.execCommand("autocomplete")
+      },
       "Ctrl-P": (cm) => {
           let text = this.getSelectionOrLine()
           this.tryBoundEval(text, true);
@@ -475,6 +478,13 @@ export default class LivelyCodeMirror extends HTMLElement {
     })
   }
   
+  fixHintsPosition() {
+    lively.notify("show hints")
+    lively.setPosition(this.shadowRoot.querySelector("#code-mirror-hints"),
+      pt(-document.body.scrollLeft,-document.body.scrollTop).subPt(lively.getGlobalPosition(this)))
+  }
+  
+  
   async enableTern() {
     var code = await fetch("//ternjs.net/defs/ecmascript.json").then(r => r.json())
     this.ternServer = new CodeMirror.TernServer({defs: [code]});
@@ -482,8 +492,11 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.editor.setOption("extraKeys", Object.assign({},
       this.editor.getOption("extraKeys"), 
       {
-        "Ctrl-Space": (cm) => { this.ternServer.complete(cm); },
-        "Ctrl-I": (cm) => { this.ternServer.showType(cm); },
+        "Ctrl-Space": (cm) => { 
+          this.fixHintsPosition();
+          this.ternServer.complete(cm); 
+        },
+        "Ctrl-Alt-I": (cm) => { this.ternServer.showType(cm); },
         "Ctrl-O": (cm) => { this.ternServer.showDocs(cm); },
         "Alt-.": (cm) => { this.ternServer.jumpToDef(cm); },
         "Alt-,": (cm) => { this.ternServer.jumpBack(cm); },

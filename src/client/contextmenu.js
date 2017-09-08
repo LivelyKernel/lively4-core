@@ -182,14 +182,7 @@ export default class ContextMenu {
     ]
   }
   
-  static gotoWindow(element) {
-    console.log("gotoWindow")
-    element.focus()
-    document.body.scrollTop = 0
-    document.body.scrollLeft = 0
-    var pos = lively.getPosition(element).subPt(pt(100,100))
-    lively.setPosition(document.body, pos.scaleBy(-1))
-  }
+  
   
   static worldMenuItems(worldContext) {
     return  [
@@ -287,9 +280,8 @@ export default class ContextMenu {
       [
         "Windows", 
         Windows.allWindows().map(ea => [
-          "" + ea.getAttribute("title"), () => {
-            this.gotoWindow(ea)
-          }
+          "" + ea.getAttribute("title"),
+          () => lively.gotoWindow(ea)
         ])
       ],
       ["View", [

@@ -1339,8 +1339,6 @@ export default class Lively {
     this.focusWithoutScroll(document.body)
   }
   
-  
-  
   static focusWithoutScroll(element) {
     if (!element) return;
     var scrollTop = document.body.scrollTop
@@ -1350,7 +1348,7 @@ export default class Lively {
     document.body.scrollTop = scrollTop
     document.body.scrollLeft = scrollLeft
   }
-
+  
   static ensureID(element) {
     var id = element.getAttribute("data-lively-id")
     if (!id) {
@@ -1365,6 +1363,13 @@ export default class Lively {
     return document.querySelector('[data-lively-id="' + id + '"]');
   }
 
+  static gotoWindow(element) {
+    element.focus()
+    document.body.scrollTop = 0
+    document.body.scrollLeft = 0
+    var pos = lively.getPosition(element).subPt(pt(100,100))
+    lively.setPosition(document.body, pos.scaleBy(-1))
+  }
 
   //  lively.allPreferences()
   static allPreferences() {

@@ -246,8 +246,9 @@ export default class Expose {
   }
 
   static windowClick(e) {
-    let window = this;
-    window.focus();
+    let win = this;
+    //lively.focusAndScroll(win)
+    lively.gotoWindow(win);
     Expose.close();
   }
 
