@@ -90,8 +90,6 @@ export default class Expose {
       this.exposeScale = 0.5
       this.elementLength = 300 
       win.style.border = ""
-      
-
     
       var ext = lively.getExtent(win)
       if (ext.x > ext.y) {
@@ -106,9 +104,12 @@ export default class Expose {
       this.setScaleTransform(realScale, win, ext)
       var pos = topLeft.addPt(pt(column * (this.elementLength + 20), row * (this.elementLength + 20)))
       
-      lively.setGlobalPosition(win, pos)
-      lively.setPosition(win, pt(100,100))
-      lively.showPoint(pos)
+      var delta = lively.getGlobalPosition(document.body)
+      // lively.setPosition(win, pos.subPt(pt(600,100)))
+      lively.setPosition(win, pos.subPt(delta))
+      
+      // lively.setPosition(win, pt(100,100))
+      // lively.showPoint(pos)
       
       win.addEventListener('mouseenter', Expose.windowMouseEnter);
       win.addEventListener('mouseleave', Expose.windowMouseLeave);
@@ -119,8 +120,7 @@ export default class Expose {
   }
 
   static setScaleTransform(scale, win, ext) {
-    
-    win.style.transformOrigin = "0 0";
+    win.style.transformOrigin = "top left";
     win.style.transform = `scale(${scale})`
   }
 
@@ -236,7 +236,8 @@ export default class Expose {
 
   /* Highlights */
   static windowHighlight(w) {
-    this.setScaleTransform(w.tempScale + 0.2, w, w.tempScaledExtent)
+    this.setScaleTransform(w.tempScale + 0.05, w, w.tempScaledExtent)
+    w.style.transform = w.style.transform  + " translate(-20px,-20px)" ;
   }
 
   static windowRemoveHighlight(w) {
@@ -290,7 +291,7 @@ export default class Expose {
       console.log("Post load expose")
       // basic class configuration
       Expose.isOpen = false;
-      Expose.windowsPerRows = 5;
+      Expose.windowsPerRows = 4;
       lively.removeEventListener("ToggleExpose", document)
       lively.addEventListener("ToggleExpose",document, "keydown", evt => {
         Expose.onKeyDown(evt)
