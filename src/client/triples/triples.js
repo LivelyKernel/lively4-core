@@ -41,6 +41,7 @@ class Knot {
     }
     return this.fileName;
   }
+  get isKnot() { return true; }
   isTriple() { return false; }
   async save(newContent) {
     invalidateFetchCache(this.url);

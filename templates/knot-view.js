@@ -266,4 +266,9 @@ export default class KnotView extends Morph {
   livelyPrepareSave() {
     this.setAttribute("data-knot-url", this.urlString);
   }
+  
+  static async openURL(knotURL) {
+    const knotView = await lively.openComponentInWindow("knot-view");
+    knotView.loadKnotForURL(knotURL);
+  }
 }

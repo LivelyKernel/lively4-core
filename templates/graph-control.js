@@ -1,4 +1,5 @@
 import Morph from './Morph.js';
+import KnotView from "./knot-view.js";
 
 import { Graph, invalidateWholeCache } from 'src/client/triples/triples.js';
 import lively from 'src/client/lively.js';
@@ -66,10 +67,7 @@ export default class GraphControl extends Morph {
   }
   
   async openKnotView() {
-    const knotView = await lively.openComponentInWindow("knot-view");
-    const knotURL = this.get('#open-knot-view').getURLString();
-    
-    knotView.loadKnotForURL(knotURL);
+    return KnotView.openURL(this.get('#open-knot-view').getURLString());
   }
   
   async onAddKnot(event) {
@@ -107,6 +105,12 @@ export default class GraphControl extends Morph {
         const content = knot.content.toLowerCase();
         return searchTerms.every(term => content.includes(term));
       });
+    
+    const searchResult = await lively.openComponentInWindow("knot-search-result");
+    searchResult.setSearchTerm(searchString);
+    matchingKnots.forEach(::searchResult.addKnot);
+    searchResult.focus();
+
     lively.notify(matchingKnots.map(k=>k.url));
   }
 }
