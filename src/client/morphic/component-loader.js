@@ -3,10 +3,10 @@ import scriptManager from  "src/client/script-manager.js";
 import Morph from "templates/Morph.js";
 import {pt} from '../graphics.js';
 import * as kernel from 'kernel';
+import { through } from "utils";
 
 // store promises of loaded and currently loading templates
 export var loadingPromises = {};
-
 
 // #MetaNote #UserCase this is an example for preserving module internal state while reloading a module
 var _templates;
@@ -282,7 +282,7 @@ export default class ComponentLoader {
           }
         })
         if (unfinished) {
-          resolve("timeout") // "(if) the fuel gauge breaks, call maintenance. If theyâre not there in 20 minutes, fuck it."
+          resolve("timeout") // "(if) the fuel gauge breaks, call maintenance. If theyÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂre not there in 20 minutes, fuck it."
           lively.notify("Timout due to unresolved promises, while loading " + unfinishedPromise.name + " context: " + debuggingHint )
         }
       }, 15 * 1000)
@@ -316,6 +316,15 @@ export default class ComponentLoader {
     return comp;
   }
 
+  static async loadAndOpenComponent(componentName, immediate = () => {}) {
+    var component = this.createComponent(componentName);
+    
+    const compPromise = this.openIn(<div />, component);
+    immediate(component);
+    
+    return compPromise::through(comp => comp.remove());
+  }
+  
   static openIn(parent, component, beginning) {
     var created = false;
     var compPromise = new Promise((resolve, reject) => {

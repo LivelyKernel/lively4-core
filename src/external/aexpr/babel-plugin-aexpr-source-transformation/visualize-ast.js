@@ -31,7 +31,11 @@ export default function d3visualize({ path, state, t, template, traverse }) {
   const nodes = astNodeContainer.selectAll("g")
     .data(astNodes).enter()
       .append("g")
-      .attr("transform", d => `translate(${d.loc.start.column}, ${d.loc.start.line})`);
+      .attr("transform", d => {
+        const x = d && d.loc && d.loc.start && d.loc.start.column || 0;
+        const y = d && d.loc && d.loc.start && d.loc.start.line || 0;
+        return `translate(${x}, ${y})`;
+      });
   nodes.append("circle")
       .attr("r", 0.5)
       .style('fill', 'white')
