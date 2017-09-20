@@ -1,5 +1,6 @@
 import focalStorage from 'src/external/focalStorage.js';
-import uuid from 'src/client/uuid.js';
+import uuid from './../uuid.js';
+import ContextMenu from './../contextmenu.js';
 
 const STORAGE_PREFIX = 'triple-notes:';
 const STORAGE_PREFIX_ITEMS = STORAGE_PREFIX + 'items:';
@@ -42,12 +43,61 @@ class Knot {
     }
     return this.fileName;
   }
-  get isKnot() { return true; }
   isTriple() { return false; }
   async save(newContent) {
     invalidateFetchCache(this.url);
     this.content = newContent;
     await lively.files.saveFile(this.url, newContent);
+  }
+  async openViewInWindow() {
+    const knotView = await lively.openComponentInWindow("knot-view");
+    knotView.loadKnotForURL(this.url);
+  }
+  collectContextMenuItems() {
+    return [
+        ["Knot View", (evt) => {
+          ContextMenu.hide();
+          this.openViewInWindow();
+        }, "", '<i class="fa fa-window-maximize" aria-hidden="true"></i>'],
+        ["Danger Zone", [
+          ["Delete", async evt => {
+            ContextMenu.hide();
+            const graph = await Graph.getInstance();
+
+            const label = this.label();
+            if(await graph.deleteKnot(this)) {
+              // #TODO: use reactivity to update views and search results
+              lively.notify(`${label} deleted!`, null, 4, null, "red");
+            } else {
+              lively.notify('did not delete knot ' + label, this.url);
+            }
+          }, "Delete for good", '<i class="fa fa-trash" aria-hidden="true"></i>']
+        ]]
+      ];
+  }
+
+  toListItem() {
+    const listItem = <li tabindex="1">{this.label()}</li>;
+
+    listItem.addEventListener('keydown', event => {
+      if (event.keyCode == 13) { // ENTER
+        this.openViewInWindow();
+        event.stopPropagation();
+        event.preventDefault();
+      }
+    });
+    listItem.addEventListener("dblclick", event => {
+      this.openViewInWindow();
+      event.stopPropagation();
+      event.preventDefault();
+    });
+    listItem.addEventListener("contextmenu", event => {
+      ContextMenu.openIn(document.body, event, this, undefined, this.collectContextMenuItems());
+      event.stopPropagation();
+      event.preventDefault();
+    });
+
+    return listItem;
   }
 }
 

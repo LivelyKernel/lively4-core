@@ -67,19 +67,21 @@ export default class GraphControl extends Morph {
   }
   
   async openKnotView() {
-    return KnotView.openURL(this.get('#open-knot-view').getURLString());
+    const knotView = await lively.openComponentInWindow("knot-view");
+    knotView.loadKnotForURL(this.get('#open-knot-view').getURLString());
+    return knotView;
   }
   
   async onAddKnot(event) {
     const addKnot = await lively.openComponentInWindow("add-knot");
     addKnot.focus();
-    addKnot.afterSubmit =() => addKnot.parentElement.remove();
+    addKnot.afterSubmit = () => addKnot.parentElement.remove();
   }
   
   async onAddTriple(event) {
     const addTriple = await lively.openComponentInWindow("add-triple");
     addTriple.focus();
-    addTriple.afterSubmit =() => addTriple.parentElement.remove();
+    addTriple.afterSubmit = () => addTriple.parentElement.remove();
   }
   
   async onClearCache() {
@@ -110,7 +112,5 @@ export default class GraphControl extends Morph {
     searchResult.setSearchTerm(searchString);
     matchingKnots.forEach(::searchResult.addKnot);
     searchResult.focus();
-
-    lively.notify(matchingKnots.map(k=>k.url));
   }
 }

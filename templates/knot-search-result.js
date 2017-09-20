@@ -1,6 +1,5 @@
 import Morph from './Morph.js';
 import { Graph } from './../src/client/triples/triples.js';
-import { toListItem } from './../src/client/triples/knot-utils.js';
 
 export default class KnotSearchResult extends Morph {
   // lazy initializer for knot array
@@ -24,7 +23,7 @@ export default class KnotSearchResult extends Morph {
   async addKnot(knot) {
     this.knots.push(knot);
     const list = this.get("#result-list");
-    list.appendChild(knot::toListItem());    
+    list.appendChild(knot.toListItem());
   }
   
   livelyMigrate(other) {
