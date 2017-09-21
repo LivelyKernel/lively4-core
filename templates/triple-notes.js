@@ -1,4 +1,5 @@
 import Morph from "./Morph.js"
+import ContextMenu from 'src/client/contextmenu.js';
 
 import d3 from 'src/external/d3.v4.js';
 
@@ -323,9 +324,16 @@ export default class TripleNotes extends Morph {
       .call(this.dragBehavior())
       .on("dblclick", async node => { 
         d3.event.stopPropagation();
-
+        d3.event.preventDefault();
+        
         let knotView = await lively.openComponentInWindow("knot-view");
         knotView.loadKnotForURL(node.getKnot().url);
+      })
+      .on("contextmenu", async node => { 
+        d3.event.stopPropagation();
+        d3.event.preventDefault();
+        
+        ContextMenu.openIn(document.body, d3.event, node.getKnot(), undefined, node.getKnot().collectContextMenuItems());
       });
 
     nodeElements.each(function (node) {
