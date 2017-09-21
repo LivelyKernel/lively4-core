@@ -2,13 +2,13 @@ import d3 from 'src/external/d3.v4.js';
 
 export default function d3visualize({ path, state, t, template, traverse }) {
   
-  if(!window.that || that.tagName !== "DIV") { lively.notify("no vis"); return; }
-  that.innerHTML = "";
+  if(!window.visTarget || visTarget.tagName !== "DIV") { lively.notify("no vis"); return; }
+  visTarget.innerHTML = "";
   
-  const width = that.clientWidth;
-  const height = that.clientHeight;
+  const width = visTarget.clientWidth;
+  const height = visTarget.clientHeight;
   
-  const svg = d3.select(that).append("svg");
+  const svg = d3.select(visTarget).append("svg");
   const graphContainer = svg.append("g");
   const zoomer = graphContainer.append("g");
   svg
