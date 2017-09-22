@@ -1,0 +1,13 @@
+{
+  "presets": [
+    "es2015",
+    "stage-0"
+  ],
+  "plugins": [
+    "array-includes",
+    "transform-class-properties",
+    "transform-runtime",
+    "locals"
+  ],
+  auxiliaryCommentBefore: 'istanbul ignore next'
+}
