@@ -2,7 +2,7 @@ import { BaseActiveExpression } from 'active-expressions';
 
 const TICKING_INSTANCES = new Set();
 
-class TickingActiveExpression extends BaseActiveExpression {
+export class TickingActiveExpression extends BaseActiveExpression {
 
     // each implementation strategy ensures to track changes of the given expression
     // in the case of ticking, we add the aexpr to a collection of tracked aexpr
