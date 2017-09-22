@@ -55,7 +55,7 @@ class Knot {
   }
   collectContextMenuItems() {
     return [
-        ["Knot View", (evt) => {
+        ["Knot View", evt => {
           ContextMenu.hide();
           this.openViewInWindow();
         }, "", '<i class="fa fa-window-maximize" aria-hidden="true"></i>'],
