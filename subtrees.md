@@ -36,6 +36,11 @@ All subtrees currently in use:
   - https://github.com/active-expressions/aexpr-trigger.git
   - master
 
+- Ticking Strategy
+  - aexpr-ticking
+  - src/external/aexpr/aexpr-ticking
+  - https://github.com/active-expressions/aexpr-ticking.git
+  - master
 
 ## Update Subtrees
 
