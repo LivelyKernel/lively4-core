@@ -1,3 +1,7 @@
+// TODO: this is use to keep SystemJS from messing up scoping
+// (BaseActiveExpression would not be defined in aexpr)
+const HACK = {};
+
 export class BaseActiveExpression {
 
     /**
@@ -65,4 +69,9 @@ export class BaseActiveExpression {
     }
 }
 
+export function aexpr(func, ...params) {
+    return new BaseActiveExpression(func, ...params);
+}
+
 export default BaseActiveExpression;
+

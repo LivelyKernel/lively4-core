@@ -92,6 +92,7 @@ if (window.lively && window.lively4url) {
         'aexpr-source-transformation-propagation': lively4url + '/src/external/aexpr/aexpr-source-transformation-propagation/src/aexpr-source-transformation-propagation.js',
         'babel-plugin-aexpr-source-transformation': lively4url + '/src/external/aexpr/babel-plugin-aexpr-source-transformation/index.js',
         'aexpr-ticking': lively4url + '/src/external/aexpr/aexpr-ticking/src/aexpr-ticking.js',
+        'ui-aexpr': lively4url + '/src/external/aexpr/ui-aexpr.js',
         'babel-plugin-locals': lively4url + '/src/external/aexpr/babel-plugin-locals/index.js',
         'stack-es2015-modules': lively4url + '/src/external/aexpr/stack-es2015-module/src/stack.js',
 
