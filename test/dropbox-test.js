@@ -18,6 +18,7 @@ sut
 describe('Dropbox', function() {
   before("load", async function(done){
     // run this manually.... for now? 
+    // window.lastDropboxToken = null
     if (window.lastDropboxToken) {
         token = window.lastDropboxToken
     } else {
@@ -33,6 +34,7 @@ describe('Dropbox', function() {
       subfolder: "Lively4",
       token: token
     }) 
+    console.log("had a token, we are done: " + ("" +window.lastDropboxToken).slice(0,5))
     done()
   });
 
