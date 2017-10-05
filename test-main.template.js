@@ -2,6 +2,8 @@
 
 import { runSWTests, loadTestEnvironment } from './test/sw-test-adapter.js';
 import focalStorage from './src/external/focalStorage.js'
+ 
+window.lastDropboxToken = "INSERTDROPBOXTOKEN";
 
 focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   var allClientTestFiles = [];

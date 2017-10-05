@@ -18,24 +18,22 @@ sut
 describe('Dropbox', function() {
   before("load", async function(done){
     // run this manually.... for now? 
-    await new Promise(resolve => {
-      if (window.lastDropboxToken) {
+    if (window.lastDropboxToken) {
         token = window.lastDropboxToken
-        resolve()
-      } else {
+    } else {
+      await new Promise(resolve => {
         lively.authDropbox.challengeForAuth(Date.now(), (t) => {
           token = t;
           window.lastDropboxToken = t
           resolve()
-        })
-      }
-      done()
-    });
-
+          })
+      })
+    }                   
     sut = new dropbox("/dropbox", {
       subfolder: "Lively4",
       token: token
     }) 
+    done()
   });
 
   describe('authentification', function() {
