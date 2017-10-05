@@ -31,6 +31,7 @@ export class Filesystem {
       base = undefined,
       fs   = undefined
 
+    
     for(let [mount, fsys] of this.mounts) {
       if(path.startsWith(mount) && (typeof base === 'undefined' || mount.length > base.length)) {
         fs   = fsys
@@ -38,6 +39,8 @@ export class Filesystem {
       }
     }
 
+    // console.log("base: " + base )
+    
     if(typeof base === 'undefined') {
       return new Response(null, {status: 400})
     }
@@ -79,6 +82,7 @@ export class Filesystem {
 
     if(request.method === 'OPTIONS') {
       try {
+        // console.log("options path: " + path)
         let stat_resp = await fs.stat(path, request)
         if (stat_resp instanceof basefs.Stat)
           return stat_resp.toResponse()
