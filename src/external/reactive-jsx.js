@@ -1,4 +1,5 @@
-import {} from "./aexpr/ui-aexpr.js";
+import { toDOMNode } from "./aexpr/ui-aexpr.js";
+import { BaseActiveExpression as ActiveExpression } from "active-expressions";
 
 /**
  * Resources for JSX Semantics
@@ -36,10 +37,13 @@ function getExpressionNode(expression) {
       .catch(e => promNode.replaceWith(getErrorNode(e)));
     return promNode;
   }
-  return toDOMNode(expression);
+  if(expression instanceof ActiveExpression) {
+    return expression::toDOMNode(getExpressionNode);
+  }
+  return ensureDOMNode(expression);
 }
 
-function toDOMNode(nodeOrObject) {
+function ensureDOMNode(nodeOrObject) {
   return nodeOrObject instanceof Node ?
       nodeOrObject :
       document.createTextNode(nodeOrObject);
@@ -53,7 +57,7 @@ export function element(tagName, attributes, children) {
   }
   
   children
-    .map(toDOMNode)
+    .map(ensureDOMNode)
     .forEach(child => tag.appendChild(child));
   
   return tag;
@@ -84,7 +88,7 @@ export function children(...children) {
 }
 
 export function childText(text) {
-  return [toDOMNode(text)];
+  return [ensureDOMNode(text)];
 }
 
 export function childElement(jSXElement) {

@@ -1,1 +1,1 @@
-export { BaseActiveExpression } from './base/base-active-expressions.js';
+export { BaseActiveExpression, aexpr } from './base/base-active-expressions.js';
