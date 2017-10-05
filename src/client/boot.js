@@ -98,6 +98,7 @@ if (window.lively && window.lively4url) {
         // jsx support
         'babel-plugin-syntax-jsx': lively4url + '/src/external/babel-plugin-syntax-jsx.js',
         'babel-plugin-jsx-lively': lively4url + '/src/external/babel-plugin-jsx-lively.js',
+        'reactive-jsx': lively4url + '/src/external/reactive-jsx.js',
         
         // stage 0 support
         'babel-plugin-transform-do-expressions': lively4url + '/src/external/babel-plugin-transform-do-expressions.js',

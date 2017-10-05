@@ -1,71 +1,5 @@
 import jsx from "babel-plugin-syntax-jsx";
 
-/**
- * Resources for JSX Semantics
- * Web components in react: https://facebook.github.io/react/docs/web-components.html
- * Child lists and keys: https://facebook.github.io/react/docs/lists-and-keys.html
- * JSX babel transform helpers: https://github.com/babel/babel/blob/7.0/packages/babel-helper-builder-react-jsx/src/index.js
- */
-
-export function element(tagName, attributes, children) {
-  const tag = document.createElement(tagName);
-  
-  for (let [key, value] of Object.entries(attributes)) {
-    tag.setAttribute(key, value);
-  }
-  
-  children
-    .map(child => child instanceof Node ?
-      child :
-      document.createTextNode(child)
-    )
-    .forEach(child => tag.appendChild(child));
-  
-  return tag;
-}
-
-export function attributes(...attrs) {
-  return Object.assign({}, ...attrs);
-}
-
-export function attributeStringLiteral(key, value) {
-  return { [key]: value };
-}
-
-export function attributeEmpty(key) {
-  return { [key]: key };
-}
-
-export function attributeExpression(key, value) {
-  return { [key]: value.toString() };
-}
-
-export function attributeSpread(obj) {
-  return obj;
-}
-
-export function children(...children) {
-  return [].concat(...children);
-}
-
-export function childText(text) {
-  return [document.createTextNode(text)];
-}
-
-export function childElement(jSXElement) {
-  return [jSXElement];
-}
-
-export function childExpression(expression) {
-  return [expression];
-}
-
-export function childSpread(array) {
-  return array;
-}
-
-
-
 function detectUnsupportedNodes(path, filename) {
   function gainPrintableFullPath(path) {
     let fullPath = [];
@@ -126,7 +60,7 @@ export default function ({ types: t, template, traverse }) {
     let declar = file.declarations[name];
     if (declar) return declar;
 
-    let identifier = file.declarations[name] = file.addImport("babel-plugin-jsx-lively", name, name);
+    let identifier = file.declarations[name] = file.addImport("reactive-jsx", name, name);
     identifier[GENERATED_IMPORT_IDENTIFIER] = true;
     return identifier;
   }
