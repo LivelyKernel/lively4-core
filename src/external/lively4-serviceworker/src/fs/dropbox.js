@@ -4,11 +4,7 @@
 
 import { Base, Stat, StatNotFoundError, File, FileNotFoundError } from './base.js'
 import * as util from '../util.js'
-import * as cache from '../cache.js'
-
-/*
- * See https://www.dropbox.com/developers-v1/core/docs
- */
+// import * as cache from '../cache.js'
 
 export default class Filesystem extends Base {
   constructor(path, options) {
@@ -100,15 +96,15 @@ export default class Filesystem extends Base {
 
     let response = undefined
 
-    if (!no_cache) {
-      if (navigator.onLine) {
-        response = await cache.match(dropboxRequest, 1 * 1000 /* 1sec max cache age */)
-      } else {
-        response = await cache.match(dropboxRequest)
-      }
-    } else {
-      // cache.purge(dropboxRequest); // #DEV, caching does not support POST
-    }
+    // if (!no_cache) {
+    //   if (navigator.onLine) {
+    //     response = await cache.match(dropboxRequest, 1 * 1000 /* 1sec max cache age */)
+    //   } else {
+    //     response = await cache.match(dropboxRequest)
+    //   }
+    // } else {
+    //   cache.purge(dropboxRequest); // #DEV, caching does not support POST
+    // }
 
     if (response === undefined) {
       response = await self.fetch(dropboxRequest)
