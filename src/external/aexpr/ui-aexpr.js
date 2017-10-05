@@ -1,15 +1,15 @@
-import aexprTicking, {
-  check as checkTicking,
-  clearDefaultActiveExpressions,
-  TickingActiveExpression
-} from "aexpr-ticking";
+// import aexprTicking, {
+//   check as checkTicking,
+//   clearDefaultActiveExpressions,
+//   TickingActiveExpression
+// } from "aexpr-ticking";
 
-const UI_AEXPRS = new Set();
+// const UI_AEXPRS = new Set();
 
 // `this` is an ActiveExpression 
 export function toDOMNode(builder = x=>x, timeout = 0) {
   let initialNode = builder(this.getCurrentValue());
-  initialNode.addEventListener("DOMNodeInserted", () => {lively.notify("XXXXXXX", "YYYYY", null, null, "red")})
+
   this.onChange(val => {
     lively.notify("change aexpr result", val)
     const newNode = builder(val);
@@ -19,9 +19,13 @@ export function toDOMNode(builder = x=>x, timeout = 0) {
 
   const checkMe = () => {
     this.checkAndNotify();
-    requestAnimationFrame(checkMe);
+    // TODO: use something better to check, when this node is attached or removed from DOM!
+    if(document.body.contains(initialNode)) {
+      requestAnimationFrame(checkMe);
+    }
   };
-  checkMe();
+  requestAnimationFrame(checkMe);
+
   //UI_AEXPRS.add(this);
   
   return initialNode;

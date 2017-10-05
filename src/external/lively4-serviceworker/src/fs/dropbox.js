@@ -61,7 +61,7 @@ export default class Filesystem extends Base {
   async stat(path, request, no_cache=false) {
     no_cache = true // #DEV
     
-    debugger
+    
     
     console.log("dropbox stat: " + this.subfolder + path)
     let dropboxHeaders = new Headers()
@@ -181,7 +181,7 @@ export default class Filesystem extends Base {
 
     let blob = await response.blob()
     var file = new File(blob)  
-    debugger
+    
     file.fileversion = this.extractMetadata(response).rev
     return file
   }
@@ -238,7 +238,7 @@ export default class Filesystem extends Base {
           },
           body: JSON.stringify({ path: dropboxPath})
         }).then(r => r.json())
-      debugger
+      
       conflictversion = metainfo.rev
       console.log("found conflict with " + conflictversion )      
     } else if(response.status < 200 || response.status >= 300) {

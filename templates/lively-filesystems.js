@@ -244,11 +244,8 @@ export default class LivleyFilesystems extends Morph {
 
           let browseButton = document.createElement("button")
           browseButton.innerHTML="browse"
-          browseButton.onclick = async () => {
-            let browser = await lively.openComponentInWindow("lively-file-browser")
-            browser.path = ea.path
-          }
-          
+          browseButton.onclick = () => lively.openBrowser("https://lively4" + ea.path);
+
           browseButton.setAttribute("class","browse")
           listItem.appendChild(browseButton)
           list.appendChild(listItem)
