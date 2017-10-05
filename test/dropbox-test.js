@@ -39,11 +39,12 @@ describe('Dropbox', function() {
   });
 
   describe('authenticated test on dropbox', function() {
-    it('should have a token', () => {
+    it('should have a token: ', () => {
       expect(token, "no token defined").to.not.equal(undefined)
     })
 
     if (token) {
+      console.log("I have a token...")
       describe('stat', function() {
         this.timeout(35000);
         it('shoult get metainfo of a file', async function(done) {
