@@ -19,25 +19,34 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   onDrop(evt) {
-    evt.preventDefault();
     var data = evt.dataTransfer.getData("text");
     
-    if (data.match("^https?:\/\/")) {
-      evt.preventDefault()    
+    if (data.match("^https?:\/\/") || data.match(/^data\:image\/png;/)) {
       this.copyFromURL(data)
     } else {
       console.log('ignore data ' + data)
     }
+    evt.preventDefault();
   }
   
   async copyFromURL(fromurl) {
     debugger
     var filename = fromurl.replace(/.*\//,"")
+    var isDataURI;
+    if (fromurl.match(/^data\:image\/png;/)) {
+      isDataURI = true
+      if (fromurl.match(/^data\:image\/png;name=/)) {
+        filename = fromurl.replace(/.*?name=/,"").replace(/;.*/,"")    
+      } else {
+        filename = "dropped_" + Date.now() + ".png";
+      }
+    } else {
+      isDataURI = false
+    }
     var newurl = this.url.replace(/[^/]*$/, filename)
-
-    if (await lively.confirm("copy " + fromurl +" to " + newurl +"?")) {
-      var content = await fetch(fromurl).then(r => r.text());
-      lively.notify("copy " + fromurl + " to " + newurl + ": " + content.length)  
+    if (await lively.confirm("copy to " + newurl +"?")) {
+      var content = await fetch(fromurl).then(r => r.blob());
+      lively.notify("copy to " + newurl + ": " + content.size)  
       await fetch(newurl, {
         method: "PUT",
         body: content
@@ -46,7 +55,6 @@ export default class LivelyContainerNavbar extends Morph {
     }
   }
   
-
   async show(targetUrl, sourceContent) {
     this.sourceContent = sourceContent;
     this.url = "" + targetUrl;
