@@ -4,13 +4,49 @@ import ContextMenu from 'src/client/contextmenu.js';
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
     
+    this.addEventListener("drop", this.onDrop)
+    this.addEventListener("dragover", this.onDragOver)
+    // this.addEventListener("dragenter", this.onDragEnter)
   }
   
   clear() {
     this.get("#navbar").innerHTML = ""
   }
+  
+  onDragOver(evt) {    
+    evt.dataTransfer.dropEffect = "copy";
+    evt.preventDefault()    
+  }
 
- 
+  onDrop(evt) {
+    evt.preventDefault();
+    var data = evt.dataTransfer.getData("text");
+    
+    if (data.match("^https?:\/\/")) {
+      evt.preventDefault()    
+      this.copyFromURL(data)
+    } else {
+      console.log('ignore data ' + data)
+    }
+  }
+  
+  async copyFromURL(fromurl) {
+    debugger
+    var filename = fromurl.replace(/.*\//,"")
+    var newurl = this.url.replace(/[^/]*$/, filename)
+
+    if (await lively.confirm("copy " + fromurl +" to " + newurl +"?")) {
+      var content = await fetch(fromurl).then(r => r.text());
+      lively.notify("copy " + fromurl + " to " + newurl + ": " + content.length)  
+      await fetch(newurl, {
+        method: "PUT",
+        body: content
+      })
+      this.show(newurl, content)
+    }
+  }
+  
+
   async show(targetUrl, sourceContent) {
     this.sourceContent = sourceContent;
     this.url = "" + targetUrl;
@@ -88,9 +124,9 @@ export default class LivelyContainerNavbar extends Morph {
       // name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"")
       link.innerHTML = icon + name;
       var href = ea.href || ea.name;
-      link.href = href;
-
+      
       var otherUrl = href.match(/^https?:\/\//) ? href : root + "" + href;
+      link.href = otherUrl;
 
       link.onclick = () => {
         this.followPath(otherUrl);
@@ -215,5 +251,19 @@ export default class LivelyContainerNavbar extends Morph {
       });
     }
   }
+  
+  async livelyMigrate(other) {
+    await this.show(other.url, other.sourceContent)
+    this.showSublist()
+  }
 
+  async livelyExample() {
+    var url = lively4url + "/README.md"
+    var content = await fetch(url).then(r => r.text())
+    await this.show(url, content)
+    this.showSublist()
+    
+  }
+  
+  
 }
