@@ -307,6 +307,7 @@ export default class Lively {
     
     System.import("src/client/clipboard.js") // depends on me
     System.import("src/client/graffle.js") // depends on me
+    System.import("src/client/draganddrop.js") // depends on me
   }
   
   

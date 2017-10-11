@@ -6,12 +6,11 @@ import generateUUID from './uuid.js';
 
 export default class Clipboard {
   
-  
   static load() {
     lively.removeEventListener("Clipboard", document)
     lively.removeEventListener("Clipboard", document.body)
     lively.addEventListener("Clipboard", document, "mousedown", evt => this.onBodyMouseDown(evt))
-    lively.addEventListener("Clipboard", document.body, "paste", evt => this.onPaste(evt))
+    lively.addEventListener("Clipboard", document.body, "paste", evt => this.onPaste(evt), true)
     lively.addEventListener("Clipboard", document.body, "cut", evt => this.onCut(evt))
     lively.addEventListener("Clipboard", document.body, "copy", evt => this.onCopy(evt))
     
@@ -145,6 +144,7 @@ export default class Clipboard {
     // lively.notify("onPaste in " + this.lastTarget)
     
     if (!lively.hasGlobalFocus()) return
+    debugger
     evt.stopPropagation()
     evt.preventDefault(); 
     
