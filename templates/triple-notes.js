@@ -7,6 +7,8 @@ import { Graph } from 'src/client/triples/triples.js';
 import * as drawTools from 'src/client/triples/drawTools.js';
 import * as math from 'src/client/triples/math.js';
 
+import { aexpr } from "active-expressions";
+
 const MIN_MAGNIFICATION = 0.01;
 const MAX_MAGNIFICATION = 4;
 
@@ -237,7 +239,7 @@ export default class TripleNotes extends Morph {
   
   async getNodes() {
     let knots = await this.getKnots();
-    this.updateStatistics(knots);
+    this.setupStatistics(knots);
     
     let nodes = knots.map(getNodeByKnot);
     let links = nodes
@@ -329,7 +331,9 @@ export default class TripleNotes extends Morph {
         let knotView = await lively.openComponentInWindow("knot-view");
         knotView.loadKnotForURL(node.getKnot().url);
       })
-      .on("contextmenu", async node => { 
+      .on("mouseover", node => this.get('#knot-view').loadKnotForURL(node.getKnot().url))
+      .on("mouseout", node => {})
+      .on("contextmenu", async node => {
         d3.event.stopPropagation();
         d3.event.preventDefault();
         
@@ -532,8 +536,8 @@ export default class TripleNotes extends Morph {
       });
   }
 
-  updateStatistics(knots) {
-    this.get('#number-of-knots').innerHTML = knots.length;
-    this.get('#number-of-triples').innerHTML = knots.filter(k => k.isTriple()).length;
+  setupStatistics(knots) {
+    this.get('#number-of-knots').appendChild(<td>{aexpr(() => knots.length)}</td>);
+    this.get('#number-of-triples').appendChild(<td>{aexpr(() => knots.filter(k => k.isTriple()).length)}</td>);
   }
 }

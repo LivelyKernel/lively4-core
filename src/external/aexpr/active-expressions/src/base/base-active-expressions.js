@@ -37,6 +37,15 @@ export class BaseActiveExpression {
 
         return this;
     }
+    // #TODO: should this remove all occurences of the callback?
+    offChange(callback) {
+      var index = this.callbacks.indexOf(callback);
+      if (index > -1) {
+        this.callbacks.splice(index, 1);
+      }
+      
+      return this;
+    }
 
     /**
      * Signals the active expression that a state change might have happened.
