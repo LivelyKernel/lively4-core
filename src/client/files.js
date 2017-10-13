@@ -78,7 +78,7 @@ export default class Files {
   }
 
   static async copyURLtoURL(fromURL, toURL) {
-    var blob = fetch(fromURL, {method: 'GET'}).then(r => r.blob())
+    var blob = await fetch(fromURL, {method: 'GET'}).then(r => r.blob())
     return fetch(toURL, {method: 'PUT', body: blob})
   }
   

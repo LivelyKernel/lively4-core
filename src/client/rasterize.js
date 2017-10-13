@@ -1,49 +1,6 @@
-## 2017-10-13 Yet another attemempt at generating thumbnails
-
-
-
-```javascript
 import rasterizeHTML from "src/external/rasterizeHTML.js"
 
-class Rasterize {
-   static async elementToCanvas(element, width=512, height=512) {
-    var canvas = document.createElement("canvas")
-    canvas.height = height
-    canvas.width = width
-    await rasterizeHTML.drawHTML(element.outerHTML, canvas)
-    return canvas
-  } 
-
-  static async elementToDataURL(element) {
-    var canvas = await this.elementToCanvas(element)
-    return canvas.toDataURL("image/png")
-  } 
-
-  
-  static async elementToURL(element, url) {
-    var dataURL = await this.elementToDataURL(element)
-    return lively.files.copyURLtoURL(dataURL, url)
-  } 
-  
-  static async openAsImage(element) {
-    var dataURL = await this.elementToDataURL(element)
-    var img = document.createElement("img")
-    img.src = dataURL
-    document.body.appendChild(img)
-    return img
-  } 
-}
-
-Rasterize.openAsImage(that)
-```
-
-## The good, the bad, and the ugly
-
-- the good: we can get pixel pictures of html elements
-- the bad: this approach does only allow for simple static html
-- the ugly: we can produces this kind of html via deep cloning and getComputedStyle
-
-```javascript
+// the rasterization code expects only plain HTML and cannot deal with shadow dom, so we flatten it away
 export class CloneDeepHTML {
 
   static shallowClone(obj) {
@@ -104,21 +61,37 @@ export class CloneDeepHTML {
 // $morph("result").innerHTML = ""
 // $morph("result").appendChild(clone)
 // $morph("showResult").inspect(clone)
-```
-
-That way we finally can produce real images!
 
 
+export default class Rasterize {
+   static async elementToCanvas(element, width=512, height=512) {
+    var cloned = CloneDeepHTML.deepCopyAsHTML(element)
+     
+    var canvas = document.createElement("canvas")
+    canvas.height = height
+    canvas.width = width
+    await rasterizeHTML.drawHTML(cloned.outerHTML, canvas)
+    return canvas
+  } 
 
+  static async elementToDataURL(element) {
+    var canvas = await this.elementToCanvas(element)
+    return canvas.toDataURL("image/png")
+  } 
 
-```javascript
-import raster from "src/client/rasterize.js"
-raster.elementToURL(that, lively4url + "/doc/journal/2017-10-13_test.png")
-```
+  
+  static async elementToURL(element, url) {
+    var dataURL = await this.elementToDataURL(element)
+    return lively.files.copyURLtoURL(dataURL, url)
+  } 
+  
+  static async openAsImage(element) {
+    var dataURL = await this.elementToDataURL(element)
+    var img = document.createElement("img")
+    img.src = dataURL
+    document.body.appendChild(img)
+    return img
+  } 
+}
 
-<img src="2017-10-13_test.png">
-
-
-
-
-
+// Rasterize.openAsImage(that)
