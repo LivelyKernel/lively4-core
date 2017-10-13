@@ -13,7 +13,7 @@ let loadPromise = undefined;
 export default class LivelyCodeMirror extends HTMLElement {
 
   static get codeMirrorPath() {
-     return  "src/external/code-mirror/"
+     return  lively4url + "/src/external/code-mirror/"
   }
 
   static async loadModule(path) {
@@ -298,7 +298,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     if(MODULE_MATCHER.test(this.getTargetModule())) {
       await System.import(this.getTargetModule())
     }
-
+    
     // src, topLevelVariables, thisReference, <- finalStatement
     return boundEval(str, this.getDoitContext(), this.getTargetModule());
   }
@@ -459,6 +459,10 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
   }
   
+  focus() {
+    if(this.editor) this.editor.focus()
+  }
+  
   isFocused(doc) {
     doc = doc || document
     if (doc.activeElement === this) return true
@@ -479,7 +483,6 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   fixHintsPosition() {
-    lively.notify("show hints")
     lively.setPosition(this.shadowRoot.querySelector("#code-mirror-hints"),
       pt(-document.body.scrollLeft,-document.body.scrollTop).subPt(lively.getGlobalPosition(this)))
   }

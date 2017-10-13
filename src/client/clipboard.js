@@ -3,6 +3,7 @@
 import {pt} from 'src/client/graphics.js';
 import Halo from "templates/lively-halo.js"
 import generateUUID from './uuid.js';
+import persistence from "src/client/persistence.js"
 
 export default class Clipboard {
   
@@ -75,6 +76,8 @@ export default class Clipboard {
     // paste oriented at a shared topLeft
     var all = Array.from(div.querySelectorAll(":scope > *"))
     all.forEach(child => {
+      persistence.initLivelyObject(child)
+      
       var id = child.getAttribute("data-lively-id")
       child.remove()
       
@@ -120,6 +123,8 @@ export default class Clipboard {
       //   lively.getGlobalPosition(child).addPt(offset)
       // ])
     })
+     // attach lively4script from the instance
+   
     
     // clean up if neccesary
     if (div.childNodes.length == 0) {

@@ -18,7 +18,6 @@ export default class DragAndDrop {
 
   static onDrop(evt) {
     console.log("drop on body")
-    debugger
     evt.preventDefault();
     var target = document.body
     var files = evt.dataTransfer.files;
@@ -26,6 +25,7 @@ export default class DragAndDrop {
       Array.from(files).forEach(file => {
         var reader = new FileReader();
         reader.onload = (event) => {
+          debugger
           var img = document.createElement("img")
           img.src = event.target.result.replace(/^data\:image\/png;/,"data:image/png;name=" + file.name +";")
           img.classList.add("lively-content")

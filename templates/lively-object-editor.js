@@ -6,21 +6,12 @@ import scriptManager from  "src/client/script-manager.js";
 
 export default class ObjectEditor extends Morph {
   initialize() {
-    this.getSubmorph("#editor").changeMode("javascript");
-    var aceComp = this.shadowRoot.querySelector('juicy-ace-editor');
-    aceComp.enableAutocompletion();
+    // this.getSubmorph("#editor").changeMode("javascript");
+    var codeEditor = this.shadowRoot.querySelector('lively-code-mirror');
+    // codeEditor.enableAutocompletion();
     
-    console.log("initialize color chooser2")
-    this.backgroundColorInput = this.shadowRoot.querySelector("#background-color");
-    this.backgroundColorInput.addEventListener(
-      'change',
-      (e) => { 
-        this.updateBackgroundColor(); 
-        
-      }
-    );
       
-    aceComp.doSave = text => {
+    codeEditor.doSave = text => {
       this.onSave()
     }
     
@@ -35,9 +26,9 @@ export default class ObjectEditor extends Morph {
     this.saveElementReferences();
     this.addElementEvents();
 
-    this.render();
+    // this.render();
 
-    this.initializeAttributes();
+    // this.initializeAttributes();
   }
 
   detachedCallback() {
@@ -72,65 +63,19 @@ export default class ObjectEditor extends Morph {
    * ObjectEditor methods
    */
   saveElementReferences() {
-    this.tabView = this.shadowRoot.querySelector('#tabView');
-
-    this.propertyList = this.shadowRoot.querySelector('#property-list');
-    this.editor = this.shadowRoot.querySelector('#editor');
-
-    this.attributesMap = this.shadowRoot.querySelector('#attributesMap');
-    this.attributesContent = this.shadowRoot.querySelector('#attributesContent');
-
-    this.propertiesMap = this.shadowRoot.querySelector('#propertiesMap');
-    this.propertiesContent = this.shadowRoot.querySelector('#propertiesContent');
-
-    this.connectionsContent = this.shadowRoot.querySelector('#connectionsContent');
-
-    this.addButton = this.shadowRoot.querySelector('#add-script');
-    this.removeButton = this.shadowRoot.querySelector('#remove-script');
-    this.saveButton = this.shadowRoot.querySelector('#save-script');
-    this.runButton = this.shadowRoot.querySelector('#run-script');
-
-    this.addConnectionButton = this.shadowRoot.querySelector('#addConnectionButton');
-    this.removeConnectionButton = this.shadowRoot.querySelector('#removeConnectionButton');
-    this.connectionList = this.shadowRoot.querySelector('#connectionList');
-
-    this.addAttributeButton = this.shadowRoot.querySelector('#addAttributeButton');
-    this.addPropertyButton = this.shadowRoot.querySelector('#addPropertyButton');
+    this.propertyList = this.get('#property-list');
+    this.editor = this.get('#editor');
   }
 
   addElementEvents() {
     this.propertyList.addEventListener('change', (e) => { this.listChanged(e) });
-    this.addButton.addEventListener('click', (e) => { this.addButtonClicked(e) });
-    this.removeButton.addEventListener('click', (e) => { this.removeButtonClicked(e) });
-    this.saveButton.addEventListener('click', (e) => { this.onSave(e) });
-    this.runButton.addEventListener('click', (e) => { this.runButtonClicked(e) });
-    this.addConnectionButton.addEventListener('click', (e) => { this.addConnectionButtonClicked(e) });
-    this.removeConnectionButton.addEventListener('click', (e) => { this.removeConnectionButtonClicked(e) });
-    this.addPropertyButton.addEventListener('click', (e) => { this.addPropertyButtonClicked(e) });
-    this.addAttributeButton.addEventListener('click', (e) => { this.addAttributeButtonClicked(e) });
-
-    this.editor.addEventListener('keydown', (e) => { this.editorKeyDown(e) });
-
-    this.attributesMap.addEventListener('commit', (e) => { this.attributeChanged(e) });
-    this.propertiesMap.addEventListener('commit', (e) => { this.propertyChanged(e) });
-
-    this.tabView.addEventListener('tabChange', (e) => {
-      switch(e.detail.id) {
-        case("scriptsContent"):
-          break;
-        case("attributesContent"):
-          this.showAttributes();
-          break;
-        case("propertiesContent"):
-          this.showProperties();
-          break;
-        case("connectionsContent"):
-          this.showConnections();
-          break;
-        default:
-          //
-      }
-    });
+    this.get('#add-script').addEventListener('click', (e) => { this.addButtonClicked(e) });
+    this.get('#remove-script').addEventListener('click', (e) => { this.removeButtonClicked(e) });
+    this.get('#save-script').addEventListener('click', (e) => { this.onSave(e) });
+    this.get('#run-script').addEventListener('click', (e) => { this.runButtonClicked(e) });
+    
+    
+    // this.editor.addEventListener('keydown', (e) => { this.editorKeyDown(e) });
   }
 
   initializeAttributes() {
@@ -188,24 +133,27 @@ export default class ObjectEditor extends Morph {
    */
   createObservers() {
     // NOTE: We need to wait for Google to bring Proxy to V8
-    // this.scriptsObserver = new MutationObserver((changes) => { this.scriptsObserver(changes) });
-    // this.scriptsObserver.observe(this.targetElement.__scripts__, {
+    // if (this.targetElement.__scripts__) {
+    //   this.scriptsObserver = new MutationObserver((changes) => { this.scriptsObserver(changes) });
+    //   this.scriptsObserver.observe(this.targetElement.__scripts__, {
+    //     attributes: true
+    //   });      
+    // }
+
+    // this.domObserver = new MutationObserver((changes) => { this.attributesObserver(changes) });
+    // this.domObserver.observe(this.targetElement, {
     //   attributes: true
     // });
-
-    this.domObserver = new MutationObserver((changes) => { this.attributesObserver(changes) });
-    this.domObserver.observe(this.targetElement, {
-      attributes: true
-    });
   }
 
   destroyObservers() {
     if (this.domObserver) this.domObserver.disconnect(); // #TODO why is that sometimes not initialized ?
   }
 
-  attributesObserver(changes) {
-    this.showAttributes();
-  }
+  // attributesObserver(changes) {
+  //   this.showAttributes();
+  // }
+
   scriptsObserver(changes) {
     this.updateScripts();
   }
@@ -474,7 +422,7 @@ export default class ObjectEditor extends Morph {
       this.targetElement.__scripts__ = {};
     }
 
-    var scriptName = window.prompt('Please enter a new script name', '');
+    var scriptName = "methodName"
     if (!scriptName || scriptName.length <= 0) {
       return;
     }
@@ -484,7 +432,11 @@ export default class ObjectEditor extends Morph {
       return;
     }
 
-    this.addEmptyScript(scriptName)
+    ///this.addEmptyScript(scriptName);
+    var source = 'function ' + scriptName + '() {\n  \n}'
+    this.get("#editor").value = source
+    this.get("#editor").editor.setSelection({line: 0, ch: 9 }, {line: 0, ch: 9 + scriptName.length})
+    this.get("#editor").focus()
   }
   
   addEmptyScript(scriptName) {
@@ -607,11 +559,11 @@ export default class ObjectEditor extends Morph {
 
   updateScripts() {
     var activeLeaf = null;
-    if (this.propertyList.activeLeaf) {
-      let activeLeafData = this.propertyList.activeLeaf.dataset;
-      if(activeLeafData.scriptName)
-        activeLeaf = activeLeafData.scriptName;
-    }
+    // if (this.propertyList.activeLeaf) {
+    //   let activeLeafData = this.propertyList.activeLeaf.dataset;
+    //   if(activeLeafData.scriptName)
+    //     activeLeaf = activeLeafData.scriptName;
+    // }
 
     let scriptHtml = '';
     if (this.targetElement && typeof this.targetElement.__scripts__ !== 'undefined') {

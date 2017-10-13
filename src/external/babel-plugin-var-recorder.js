@@ -4,7 +4,7 @@ function randomModuleId() {
   return (`_module_${Math.random()}`).replace('.', '');
 }
 
-function getScopeIdForModule(moduleName) {
+export function getScopeIdForModule(moduleName) {
   if(!moduleNameToVarRecorderName.has(moduleName)) {
     moduleNameToVarRecorderName.set(moduleName, randomModuleId());
   }
