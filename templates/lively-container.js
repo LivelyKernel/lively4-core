@@ -946,8 +946,7 @@ export default class Container extends Morph {
   }
   
   hideNavbar() {
-    this.get('#container-leftpane').style.display = "none";
-    this.get('lively-separator').style.display = "none";
+    this.get('lively-separator').onClick()
   }
 
   async showNavbar() {
