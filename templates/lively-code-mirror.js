@@ -484,13 +484,23 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   fixHintsPosition() {
     lively.setPosition(this.shadowRoot.querySelector("#code-mirror-hints"),
-      pt(-document.body.parentElement.scrollLeft,-document.body.parentElement.scrollTop).subPt(lively.getGlobalPosition(this)))
+      pt(-document.scrollingElement.scrollLeft,-document.scrollingElement.scrollTop).subPt(lively.getGlobalPosition(this)))
   }
   
   
   async enableTern() {
     var code = await fetch("//ternjs.net/defs/ecmascript.json").then(r => r.json())
-    this.ternServer = new CodeMirror.TernServer({defs: [code]});
+    this.ternServer = new CodeMirror.TernServer({
+      defs: [code],
+      getFile: (name, c) => {
+        lively.notify("get file " + name)
+        c(null)
+      },
+      // responseFilter: (doc, query, request, error, data) => {
+      //  return data
+      // }
+      
+    });
     
     this.editor.setOption("extraKeys", Object.assign({},
       this.editor.getOption("extraKeys"), 

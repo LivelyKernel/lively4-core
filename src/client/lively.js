@@ -693,8 +693,8 @@ export default class Lively {
     }
 
     if(this.deferredUpdateScroll) {
-      document.body.scrollLeft = this.deferredUpdateScroll.x;
-      document.body.scrollTop = this.deferredUpdateScroll.y;
+      document.scrollingElement.scrollLeft = this.deferredUpdateScroll.x;
+      document.scrollingElement.scrollTop = this.deferredUpdateScroll.y;
       delete this.deferredUpdateScroll;
 		}
     
@@ -1354,12 +1354,12 @@ export default class Lively {
   static focusWithoutScroll(element) {
     if (!element) return;
     console.log("focusWithoutScroll " + element)
-    var scrollTop = document.body.parentElement.scrollTop
-    var scrollLeft = document.body.parentElement.scrollLeft
+    var scrollTop = document.scrollingElement.scrollTop
+    var scrollLeft = document.scrollingElement.scrollLeft
     element.focus() 
     // the focus scrolls as a side affect, but we don't want that
-    document.body.parentElement.scrollTop = scrollTop
-    document.body.parentElement.scrollLeft = scrollLeft
+    document.scrollingElement.scrollTop = scrollTop
+    document.scrollingElement.scrollLeft = scrollLeft
     console.log("scroll back " + scrollTop + " " + scrollLeft )
   }
   
@@ -1379,8 +1379,8 @@ export default class Lively {
 
   static gotoWindow(element) {
     element.focus()
-    document.body.scrollTop = 0
-    document.body.scrollLeft = 0
+    document.scrollingElement.scrollTop = 0
+    document.scrollingElement.scrollLeft = 0
     var pos = lively.getPosition(element).subPt(pt(100,100))
     lively.setPosition(document.body, pos.scaleBy(-1))
   }
