@@ -4,6 +4,10 @@ import sourcemap from 'https://raw.githubusercontent.com/mozilla/source-map/mast
 
 export default class Files {
   
+  
+  
+  
+  
   static parseSourceReference(ref) {
     if(ref.match("!")) {
       var url = ref.replace(/\!.*/,"")
@@ -73,6 +77,11 @@ export default class Files {
     })
   }
 
+  static async copyURLtoURL(fromURL, toURL) {
+    var blob = await fetch(fromURL, {method: 'GET'}).then(r => r.blob())
+    return fetch(toURL, {method: 'PUT', body: blob})
+  }
+  
   // #depricated
   static async saveFile(url, data){
     var urlString = url.toString();

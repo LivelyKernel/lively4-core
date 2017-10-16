@@ -4,13 +4,57 @@ import ContextMenu from 'src/client/contextmenu.js';
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
     
+    this.addEventListener("drop", this.onDrop)
+    this.addEventListener("dragover", this.onDragOver)
+    // this.addEventListener("dragenter", this.onDragEnter)
   }
   
   clear() {
     this.get("#navbar").innerHTML = ""
   }
+  
+  onDragOver(evt) {    
+    evt.dataTransfer.dropEffect = "copy";
+    evt.preventDefault()    
+  }
 
- 
+  onDrop(evt) {
+    var data = evt.dataTransfer.getData("text");
+    
+    if (data.match("^https?:\/\/") || data.match(/^data\:image\/png;/)) {
+      this.copyFromURL(data)
+    } else {
+      console.log('ignore data ' + data)
+    }
+    evt.preventDefault();
+  }
+  
+  async copyFromURL(fromurl) {
+    debugger
+    var filename = fromurl.replace(/.*\//,"")
+    var isDataURI;
+    if (fromurl.match(/^data\:image\/png;/)) {
+      isDataURI = true
+      if (fromurl.match(/^data\:image\/png;name=/)) {
+        filename = fromurl.replace(/.*?name=/,"").replace(/;.*/,"")    
+      } else {
+        filename = "dropped_" + Date.now() + ".png";
+      }
+    } else {
+      isDataURI = false
+    }
+    var newurl = this.url.replace(/[^/]*$/, filename)
+    if (await lively.confirm("copy to " + newurl +"?")) {
+      var content = await fetch(fromurl).then(r => r.blob());
+      lively.notify("copy to " + newurl + ": " + content.size)  
+      await fetch(newurl, {
+        method: "PUT",
+        body: content
+      })
+      this.show(newurl, content)
+    }
+  }
+  
   async show(targetUrl, sourceContent) {
     this.sourceContent = sourceContent;
     this.url = "" + targetUrl;
@@ -88,9 +132,9 @@ export default class LivelyContainerNavbar extends Morph {
       // name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"")
       link.innerHTML = icon + name;
       var href = ea.href || ea.name;
-      link.href = href;
-
+      
       var otherUrl = href.match(/^https?:\/\//) ? href : root + "" + href;
+      link.href = otherUrl;
 
       link.onclick = () => {
         this.followPath(otherUrl);
@@ -215,5 +259,19 @@ export default class LivelyContainerNavbar extends Morph {
       });
     }
   }
+  
+  async livelyMigrate(other) {
+    await this.show(other.url, other.sourceContent)
+    this.showSublist()
+  }
 
+  async livelyExample() {
+    var url = lively4url + "/README.md"
+    var content = await fetch(url).then(r => r.text())
+    await this.show(url, content)
+    this.showSublist()
+    
+  }
+  
+  
 }

@@ -307,6 +307,7 @@ export default class Lively {
     
     System.import("src/client/clipboard.js") // depends on me
     System.import("src/client/graffle.js") // depends on me
+    System.import("src/client/draganddrop.js") // depends on me
   }
   
   
@@ -870,7 +871,7 @@ export default class Lively {
     return comp
   }
 
-  static createPath(path, color, printArrow) {
+  static createPath(path, color, printArrow, label) {
     if (!path || path.length < 1) return;
     if (printArrow === undefined) printArrow = true;
 
@@ -891,12 +892,17 @@ export default class Lively {
                  orient="auto">
               <path d="M2,2 L2,11 L10,6 L2,2" style="fill: ${color};" />
           </marker>
-      </defs>`;
+       </defs>`;
+    
+    var last = _.last(path)
     
     comp.innerHTML = defs + `<path id="path" stroke='${color}' d='${dpath}' 
       style='${ 
         printArrow ? 'marker-end: url(#markerArrow);' : ""
-      }'></path>`
+      }'></path>`  + `<g font-size="12" font-family="sans-serif" fill="${color}" stroke="none"
+  text-anchor="middle">
+    <text x="${last.x}" y="${last.y}" dx="10">${label ? label : ""}</text>
+  </g>`
 
     return comp
   }
@@ -1341,17 +1347,20 @@ export default class Lively {
     //     document.body.appendChild(copyHack)
     //   }
     // lively.focusWithoutScroll(copyHack)
+    
     this.focusWithoutScroll(document.body)
   }
   
   static focusWithoutScroll(element) {
     if (!element) return;
-    var scrollTop = document.body.scrollTop
-    var scrollLeft = document.body.scrollLeft
+    console.log("focusWithoutScroll " + element)
+    var scrollTop = document.body.parentElement.scrollTop
+    var scrollLeft = document.body.parentElement.scrollLeft
     element.focus() 
     // the focus scrolls as a side affect, but we don't want that
-    document.body.scrollTop = scrollTop
-    document.body.scrollLeft = scrollLeft
+    document.body.parentElement.scrollTop = scrollTop
+    document.body.parentElement.scrollLeft = scrollLeft
+    console.log("scroll back " + scrollTop + " " + scrollLeft )
   }
   
   static ensureID(element) {

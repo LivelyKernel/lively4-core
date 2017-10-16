@@ -119,7 +119,7 @@ export default class ContextMenu {
             ContextMenu.openInWindow(target, evt);
         }],
       ["save as...", async (evt) => {
-        var name = await lively.prompt("save element as: ", "element.html")
+        var name = await lively.prompt("save element as: ", "parts/element.html")
         // var name = "foo.html"
         var url = name
         if (!url.match(/https?:\/\//)) {
@@ -127,7 +127,7 @@ export default class ContextMenu {
         }
         var source = ""
         if (name.match(/\.html$/)) {
-          source = lively.html.getHtmlContent(target)  
+          source = target.outerHTML  
         } else if (name.match(/\.svg/)) {
           var element = target.querySelector("svg")
           if (!element) throw new Error("Could not find SVG elment in target");

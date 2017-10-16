@@ -3,6 +3,7 @@ import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
 import {pt} from 'src/client/graphics.js';
 import scriptManager from  "src/client/script-manager.js";
+import persistence from  "src/client/persistence.js";
 
 var copyBlacklist = ["body", "html"];
 
@@ -32,7 +33,7 @@ export default class HaloCopyItem extends HaloGrabItem {
     
     var clone = tmp.childNodes[0];
     
-    scriptManager.findLively4Script(clone);
+    persistence.initLivelyObject(clone)
     
     window.LastClone = clone;
     clone.remove();

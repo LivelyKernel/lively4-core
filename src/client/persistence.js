@@ -1,7 +1,7 @@
 import preferences from './preferences.js';
 import focalStorage from 'src/external/focalStorage.js'
 import {debounce} from "utils"
-
+import scriptManager from  "src/client/script-manager.js";
 
 export function isCurrentlyCloning() {
     return sessionStorage["lively.persistenceCurrentlyCloning"] === 'true';
@@ -80,9 +80,24 @@ export default class Persistence {
     div.innerHTML = source
     Array.from(div.childNodes).forEach(ea => {
       target.appendChild(ea)
+      Persistence.initLivelyObject(ea)
     })
   }
   
+  static initLivelyObject(obj) {
+    if (!obj) return;
+    try {
+      scriptManager.findLively4Script(obj, false);
+      if (obj.livelyLoad) obj.livelyLoad()
+      if (!obj.querySelectorAll) return;
+      obj.querySelectorAll("*").forEach(ea => {
+        if (ea.livelyLoad) ea.livelyLoad()
+      })       
+    } catch(e) {
+      lively.showError(e)
+    }
+  }
+
   async storeLivelyContentForURL(url, target) {
     target = target || this.defaultTarget()
     this.isPersisting = true

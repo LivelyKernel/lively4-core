@@ -29,6 +29,7 @@ export default class Selecting {
   }
 
   static handleMouseUp(e) {
+    
     if (e.ctrlKey || e.metaKey) {
       // console.log("mouse up " + e.target.tagName)
       e.stopPropagation();
@@ -83,6 +84,7 @@ export default class Selecting {
   }
   
   static handleSelect(e) {
+    
     if (e.ctrlKey || e.metaKey) {
       var rootNode = this.findRootNode(document.body)
       var path = this.slicePathIfContainerContent(e.path);

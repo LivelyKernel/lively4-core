@@ -74,7 +74,7 @@ export default class LivelyMenu extends Morph {
       var icon = "<div class='icon'>"+ (ea[3] ? ea[3] : "")+"</div>"
       var right = " <label>" 
         + (ea[2] ?  ea[2].replace("CMD","Ctrl")  : "")
-        + "<span class='submenuindicator'> "+ (ea[1] instanceof Array ? "â¶" : " ")+" </span>"
+        + "<span class='submenuindicator'> "+ (ea[1] instanceof Array ? "&#9658;" : " ")+" </span>"
         + "</label>"
 
       

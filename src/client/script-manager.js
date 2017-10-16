@@ -27,7 +27,7 @@ function persistToDOM(object, funcString, data={}) {
 
 function removeFromDOM(object, name) {
     var children = $(object).children('script[type="lively4script"][data-name="' + name + '"]');
-
+  
     if (children.size() != 1) {
         throw 'multiple children detected ' + children;
     }
@@ -84,6 +84,7 @@ export default class ScriptManager {
     // if shadow is set, look for the scripts in the shadow root
     var children = shadow ? parent.shadowRoot.children : parent.children;
 
+    if (!children) return;
     for(let child of children) {
         if (isLively4Script(child)) {
             try {
