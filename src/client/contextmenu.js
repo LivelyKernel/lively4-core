@@ -11,7 +11,8 @@ import Preferences from './preferences.js';
 import Windows from "templates/lively-window.js"
 import {Grid} from "src/client/morphic/snapping.js"
 import Info from "src/client/info.js"
-    
+
+
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
 export default class ContextMenu {
@@ -253,6 +254,18 @@ export default class ContextMenu {
             morph.classList.add("lively-content")
           }
           morph.style.backgroundColor = 'rgb(255,250,205)';
+          this.hide();
+        }], 
+        ["Button", async (evt) => {
+          var clipboard = await System.import("src/client/clipboard.js").then(m => m.default)
+          var data = await fetch(lively4url + "/parts/button.html").then(t => t.text())
+          var morph  = clipboard.pasteHTMLDataInto(data, worldContext).childNodes[0];
+          this.openCenteredAt(morph, worldContext, evt)          
+          lively.hand.startGrabbing(morph, evt)
+          // morph.style.backgroundColor = "blue";
+          if (worldContext === document.body) {
+            morph.classList.add("lively-content")
+          }
           this.hide();
         }]
       ]],

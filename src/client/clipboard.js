@@ -110,11 +110,12 @@ export default class Clipboard {
     })
     var offset = this.lastClickPos.subPt(topLeft)
     
-
+    var result = div
     all.forEach(child => {
       if (child.classList.contains("lively-content") || child.tagName == "LIVELY-WINDOW") {
         container.appendChild(child)
         lively.moveBy(child, offset)
+        result = child
       } else {
         // child.classList.add("lively-content")
       }
@@ -134,6 +135,7 @@ export default class Clipboard {
       lively.setGlobalPosition(div, this.lastClickPos)
       div.style.height = "max-content"
     }
+    return result
   }
   
   static pasteTextDataInto(data, container) {

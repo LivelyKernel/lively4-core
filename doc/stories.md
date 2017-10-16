@@ -18,7 +18,7 @@ var div = document.createElement("div")
 var button = document.createElement("button")
 button.textContent = "update"
 debugger
-var container = this.parentElement
+var container = this.parentElement.parentElement
 var url = container.getURL(url)
 button.onclick = async () => {
   await github.current().updateMarkdownFile(url)
