@@ -3,7 +3,7 @@ import components from "src/client/morphic/component-loader.js";
 import MarkdownIt from "src/external/markdown-it.js"
 import MarkdownItHashtag from "src/external/markdown-it-hashtag.js"
 import highlight from 'src/external/highlight.js';
-
+import persistence from 'src/client/persistence.js';
 
 export default class LivelyMarkdown extends Morph {
   async initialize() {
@@ -67,8 +67,10 @@ export default class LivelyMarkdown extends Morph {
     //root.querySelectorAll("pre code").forEach( block => {
     //  highlight.highlightBlock(block);
     //});
-
+    
     components.loadUnresolved(root);
+    
+    persistence.initLivelyObject(root)
   }
 
   followPath(path) {
@@ -106,7 +108,13 @@ export default class LivelyMarkdown extends Morph {
     return this.getAttribute("src")
   }
 
-
+  async startPresentation() {
+    var comp = document.createElement("lively-presentation")
+    await lively.components.openIn(this.get("#content"), comp)
+    comp.convertSiblings()
+    comp.start();
+  }
+  
   livelyExample() {
  this.setDir(lively4url + "/docs/")
     this.setContent(`

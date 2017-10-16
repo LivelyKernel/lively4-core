@@ -1377,6 +1377,16 @@ export default class Lively {
     return document.querySelector('[data-lively-id="' + id + '"]');
   }
 
+  static query(element, query) {
+   // lively.showElement(element)
+   var result = element.querySelector(query)
+   if (!result && element.parentElement) result = this.query(element.parentElement, query) 
+   if (!result && element.parentNode) result = this.query(element.parentNode, query)    
+   if (!result && element.host) result = this.query(element.host, query) 
+   return result
+  }
+  
+  
   static gotoWindow(element) {
     element.focus()
     document.scrollingElement.scrollTop = 0
