@@ -1392,6 +1392,12 @@ export default class Lively {
       .filter(ea => ea.match(regexp))
       .map(ea => ea.match(regexp)[1])
   }
+  
+  static async bench(func) {
+    var s = Date.now()
+    await func()
+    return Date.now() - s  
+  }
 }
 
 if (!window.lively || window.lively.name != "Lively") {

@@ -9,6 +9,17 @@ var Pos = CodeMirror.Pos;
 async function scriptHint(editor, keywords, getToken, options) {
   // Find the token at the cursor
   var cur = editor.getCursor(), token = getToken(editor, cur);
+
+  // lively.notify('hint ' + cur.ch)
+  var firstTokenInLine = getToken(editor, Pos(cur.line, 1)) 
+  if (firstTokenInLine.string == "import") {
+    return {list: await getCompletions(
+      {start: 9, end: cur.ch, string: editor.getLine(cur.line), state: token.state, type: null}, 
+      null, keywords, options),
+          from: Pos(cur.line, 0),
+          to: Pos(cur.line, cur.ch)};
+  }
+  
   if (/\b(?:string|comment)\b/.test(token.type)) return;
   token.state = CodeMirror.innerMode(editor.getMode(), token.state).state;
 
@@ -173,16 +184,11 @@ async function getCompletions(token, context, keywords, options) {
     while (base != null && context.length)
       base = base[context.pop().string];
     if (base != null) gatherCompletions(base);
-  } else {   
-    if (token.string == "import") {
+  } else {       
+    if (token.string && (token.string == "import" || token.string.startsWith("import "))) {
       // #TODO make faster with index and caching
       // but: #TODO what is the workflox / programming XP, we aim for?
-      var text = await fetch(lively4url + "/../_search/files",  {
-        headers: { 
-         "searchpattern": "import",
-         "rootdirs": lively4url.replace(/.*\//,""),
-         "excludes": "node_modules,src/external,vendor/,lodash-bound.js",
-      }}).then(r => r.text())
+      var text = await searchImports()
       var imports = text.split("\n")
         .map(ea => ea.replace(/.*:/,"").replace(/;$/,"").replace(/"/g,"'"))
           .filter(ea => !ea.match('\'\.\.?/'))
@@ -209,3 +215,25 @@ async function getCompletions(token, context, keywords, options) {
   }
   return found;
 }
+
+
+
+var importsCache
+var importsCacheTime
+
+async function searchImports() {
+
+  if (!importsCache || (Date.now() - importsCacheTime) > 5 * 60 * 1000 ) {
+    importsCacheTime = Date.now()
+    importsCache = await fetch(lively4url + "/../_search/files",  {
+        headers: { 
+         "searchpattern": "import",
+         "rootdirs": lively4url.replace(/.*\//,""),
+         "excludes": "node_modules,src/external,vendor/,lodash-bound.js",
+      }}).then(r => r.text())   
+  }
+  return importsCache
+}
+
+// lively.bench(() => searchImports())
+

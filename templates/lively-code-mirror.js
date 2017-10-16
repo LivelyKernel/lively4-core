@@ -164,7 +164,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   setupEditorOptions(editor) {
     editor.setOption("matchBrackets", true)
     editor.setOption("styleSelectedText", true)
-    editor.setOption("autoCloseBrackets", true)
+    editor.setOption("autoCloseBrackets", false)
     editor.setOption("autoCloseTags", true)
 		editor.setOption("scrollbarStyle", "simple")
 		editor.setOption("scrollbarStyle", "simple")
@@ -224,7 +224,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     });
     editor.setOption("hintOptions", {
       container: this.shadowRoot.querySelector("#code-mirror-hints"),
-      codemirror: this
+      codemirror: this,
+      closeCharacters: /\;/ // we want to keep the hint open when typing spaces and "{" in imports...
     });
   }
   
@@ -513,8 +514,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     // * showError: A function(editor, message) that can be used to
     //   override the way errors are displayed.
     // * completionTip: Customize the content in tooltips for completions.
-    //   Is passed a single argumentÃ¢ÂÂthe completion's data as returned by
-    //   TernÃ¢ÂÂand may return a string, DOM node, or null to indicate that
+    //   Is passed a single argument the completion's data as returned by
+    //   Tern and may return a string, DOM node, or null to indicate that
     //   no tip should be shown. By default the docstring is shown.
     // * typeTip: Like completionTip, but for the tooltips shown for type
     //   queries.
