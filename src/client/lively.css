@@ -24,7 +24,7 @@ lively-table table, lively-table tr, lively-table  th, lively-table  td {
 }
  
 lively-table td {
-      white-space: nowrap;
+  white-space: nowrap;
 }
 
 lively-table td.number {
@@ -73,4 +73,12 @@ lively-container img {
   background-color: none;
 }
 
+.CodeMirror-Tern-tooltip {
+  position: fixed;
+  top: 0px !important;
+  left: 0px !important;
+  background-color: lightgray;
+  font-size: 14px;
+  z-index: 100000 !important; 
+}
 

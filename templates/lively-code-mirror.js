@@ -484,7 +484,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   fixHintsPosition() {
     lively.setPosition(this.shadowRoot.querySelector("#code-mirror-hints"),
-      pt(-document.body.scrollLeft,-document.body.scrollTop).subPt(lively.getGlobalPosition(this)))
+      pt(-document.body.parentElement.scrollLeft,-document.body.parentElement.scrollTop).subPt(lively.getGlobalPosition(this)))
   }
   
   
