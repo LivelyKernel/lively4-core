@@ -11,7 +11,8 @@ import Preferences from './preferences.js';
 import Windows from "templates/lively-window.js"
 import {Grid} from "src/client/morphic/snapping.js"
 import Info from "src/client/info.js"
-    
+
+
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
 export default class ContextMenu {
@@ -88,16 +89,25 @@ export default class ContextMenu {
          this.hide();
          lively.showClassSource(target, evt);
       }],
-      ["trace", (evt) => {
-         System.import("src/client/tracer.js").then(tracer => {
-           tracer.default.traceObject(target);
-         });
-         this.hide();
-      }],
+      // ["trace", (evt) => {
+      //    System.import("src/client/tracer.js").then(tracer => {
+      //      tracer.default.traceObject(target);
+      //    });
+      //    this.hide();
+      // }],
       ["remove", (evt) => {
          target.remove()
          this.hide();
       }],
+      ["go back", (evt) => {
+        target.parentElement.insertBefore(target, target.parentElement.childNodes[0])
+         this.hide();
+      }],
+      ["come forward", (evt) => {
+        target.parentElement.appendChild(target)
+        this.hide();
+      }],
+      
       [
         "make space", (evt) => {
           Layout.makeLocalSpace(target)
@@ -254,6 +264,18 @@ export default class ContextMenu {
           }
           morph.style.backgroundColor = 'rgb(255,250,205)';
           this.hide();
+        }], 
+        ["Button", async (evt) => {
+          var clipboard = await System.import("src/client/clipboard.js").then(m => m.default)
+          var data = await fetch(lively4url + "/parts/button.html").then(t => t.text())
+          var morph  = clipboard.pasteHTMLDataInto(data, worldContext).childNodes[0];
+          this.openCenteredAt(morph, worldContext, evt)          
+          lively.hand.startGrabbing(morph, evt)
+          // morph.style.backgroundColor = "blue";
+          if (worldContext === document.body) {
+            morph.classList.add("lively-content")
+          }
+          this.hide();
         }]
       ]],
       ["Tools", [
@@ -263,8 +285,8 @@ export default class ContextMenu {
           "CMD+J", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
         ["Search", (evt) => this.openComponentInWindow("lively-search", evt, worldContext),
           "CMD+SHIFT+F",'<i class="fa fa-search" aria-hidden="true"></i>'],
-        ['Debugger', (evt) => lively.openDebugger().then( cmp), 
-          "", '<i class="fa fa-chrome" aria-hidden="true"></i>'],
+        // ['Debugger', (evt) => lively.openDebugger().then( cmp), 
+        //   "", '<i class="fa fa-chrome" aria-hidden="true"></i>'],
         ['Inspector', (evt) => 
           lively.openInspector(worldContext, undefined, undefined, worldContext).then(comp => {
             this.positionElementAtEvent(comp.parentElement, worldContext, evt)

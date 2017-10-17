@@ -3,9 +3,9 @@
 * Sofware Architecture Group, Hasso Plattner Institute,  2015-2017 [MIT LICENSE](LICENSE)
 * Jens Lincke, Stefan Lehmann, Tim Felgentreff, Fabio Niephaus, Robert Hirschfeld, Marcel Taeumel
 * Seminars
-  * Software Design  [SWD 2015](https://lively-kernel.org/lively4/Lively4.wiki/SWD15.md) 
-   [SWD 2016](https://lively-kernel.org/lively4/Lively4.wiki/SWD16.md)
-  * Web-based Development [WebDev 2016](https://lively-kernel.org/lively4/Lively4.wiki/WebDev16.md) 
+  * Software Design  [SWD 2015](doc/SWD2015/index.md) 
+   [SWD 2016](doc/SWD2015/index.md)
+  * Web-based Development [WebDev 2016](doc/WebDev2016/index.md) 
 * [readme](README.md)
 
 ## Live Source Code
@@ -16,10 +16,8 @@
   * [keys.js](src/client/keys.js)
   * [html.js](src/client/html.js)
   * ...
-* [UI components (templates)](templates/) [UI classes](templates/classes/) 
-  * [lively-container template](templates/lively-container.html) |  [Container class](templates/classes/Container.js)
-  * ...
-* [service worker](src/swx/)
+* [UI components ](templates/) [parts](parts/) 
+ 
 
 
 ## External Code
@@ -27,9 +25,9 @@
 We hope to come up with a solution, that will be as comfortable as npm for node.js development, 
 but at the same time will serve our need better to jump into development and immediatly make local customizations. 
 
-* [node modules](node_modules/): automatically updated, but not availablen on github.io
+
 * [external](src/external/): static copies, manually management needed
-* [vendor](vendor/): #Refactor
+
 
 
 

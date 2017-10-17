@@ -76,8 +76,10 @@ export default class LivelyCodeMirror extends HTMLElement {
       await lively.loadJavaScriptThroughDOM("tern_def",'//ternjs.net/lib/def.js')
       await lively.loadJavaScriptThroughDOM("tern_comment",'//ternjs.net/lib/comment.js')
       await lively.loadJavaScriptThroughDOM("tern_infer",'//ternjs.net/lib/infer.js')
-      await lively.loadJavaScriptThroughDOM("tern_doc_comment",'//ternjs.net/plugin/doc_comment.js')
+      await lively.loadJavaScriptThroughDOM("tern_plugin_modules",'//ternjs.net/plugin/modules.js')
+      await lively.loadJavaScriptThroughDOM("tern_plugin_esmodules",'//ternjs.net/plugin/es_modules.js')
 
+      
       this.loadCSS("addon/hint/show-hint.css")
       this.loadCSS("../../../templates/lively-code-mirror.css")
     })()
@@ -162,7 +164,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   setupEditorOptions(editor) {
     editor.setOption("matchBrackets", true)
     editor.setOption("styleSelectedText", true)
-    editor.setOption("autoCloseBrackets", true)
+    editor.setOption("autoCloseBrackets", false)
     editor.setOption("autoCloseTags", true)
 		editor.setOption("scrollbarStyle", "simple")
 		editor.setOption("scrollbarStyle", "simple")
@@ -184,6 +186,10 @@ export default class LivelyCodeMirror extends HTMLElement {
             this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
         }, 10)
         // editor.execCommand("find")
+      },
+      "Ctrl-Space": cm => {
+        this.fixHintsPosition()
+        cm.execCommand("autocomplete")
       },
       "Ctrl-Alt-Space": cm => {
         this.fixHintsPosition()
@@ -218,7 +224,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     });
     editor.setOption("hintOptions", {
       container: this.shadowRoot.querySelector("#code-mirror-hints"),
-      codemirror: this
+      codemirror: this,
+      closeCharacters: /\;/ // we want to keep the hint open when typing spaces and "{" in imports...
     });
   }
   
@@ -484,13 +491,63 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   fixHintsPosition() {
     lively.setPosition(this.shadowRoot.querySelector("#code-mirror-hints"),
-      pt(-document.body.scrollLeft,-document.body.scrollTop).subPt(lively.getGlobalPosition(this)))
+      pt(-document.scrollingElement.scrollLeft,-document.scrollingElement.scrollTop).subPt(lively.getGlobalPosition(this)))
   }
   
   
   async enableTern() {
-    var code = await fetch("//ternjs.net/defs/ecmascript.json").then(r => r.json())
-    this.ternServer = new CodeMirror.TernServer({defs: [code]});
+    var ecmascriptdefs = await fetch("//ternjs.net/defs/ecmascript.json").then(r => r.json())
+    var browserdefs = await fetch("//ternjs.net/defs/browser.json").then(r => r.json())
+    // var chaidefs = await fetch("//ternjs.net/defs/chai.json").then(r => r.json())
+    
+    // Options supported (all optional):
+    // * defs: An array of JSON definition data structures.
+    // * plugins: An object mapping plugin names to configuration
+    //   options.
+    // * getFile: A function(name, c) that can be used to access files in
+    //   the project that haven't been loaded yet. Simply do c(null) to
+    //   indicate that a file is not available.
+    // * fileFilter: A function(value, docName, doc) that will be applied
+    //   to documents before passing them on to Tern.
+    // * switchToDoc: A function(name, doc) that should, when providing a
+    //   multi-file view, switch the view or focus to the named file.
+    // * showError: A function(editor, message) that can be used to
+    //   override the way errors are displayed.
+    // * completionTip: Customize the content in tooltips for completions.
+    //   Is passed a single argument the completion's data as returned by
+    //   Tern and may return a string, DOM node, or null to indicate that
+    //   no tip should be shown. By default the docstring is shown.
+    // * typeTip: Like completionTip, but for the tooltips shown for type
+    //   queries.
+    // * responseFilter: A function(doc, query, request, error, data) that
+    //   will be applied to the Tern responses before treating them
+
+    // It is possible to run the Tern server in a web worker by specifying
+    // these additional options:
+    // * useWorker: Set to true to enable web worker mode. You'll probably
+    //   want to feature detect the actual value you use here, for example
+    //   !!window.Worker.
+    // * workerScript: The main script of the worker. Point this to
+    //   wherever you are hosting worker.js from this directory.
+    // * workerDeps: An array of paths pointing (relative to workerScript)
+    //   to the Acorn and Tern libraries and any Tern plugins you want to
+    //   load. Or, if you minified those into a single script and included
+    //   them in the workerScript, simply leave this undefined.
+    
+    this.ternServer = new CodeMirror.TernServer({
+      defs: [ecmascriptdefs, browserdefs], // chaidefs  
+      plugins: {
+        es_modules: {}
+      },
+      getFile: (name, c) => {
+        lively.notify("get file " + name)
+        c(null)
+      },
+      // responseFilter: (doc, query, request, error, data) => {
+      //  return data
+      // }
+      
+    });
     
     this.editor.setOption("extraKeys", Object.assign({},
       this.editor.getOption("extraKeys"), 

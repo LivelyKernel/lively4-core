@@ -267,8 +267,8 @@ export default class HTML {
     worldContext= worldContext || document.body;
     Preferences.write("bodyPosition", JSON.stringify(lively.getPosition(document.body)))
     Preferences.write("bodyScroll", JSON.stringify({
-      x: document.body.scrollLeft,
-      y: document.body.scrollTop
+      x: document.scrollingElement.scrollLeft,
+      y: document.scrollingElement.scrollTop
     }));
     
     var source = ""

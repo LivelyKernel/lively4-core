@@ -1,7 +1,7 @@
 # Playing around with Ace editor
 
 
-```
+```javascript
 var Range = ace.require('ace/range').Range;
 
 var editor = that.get("#editor").currentEditor()

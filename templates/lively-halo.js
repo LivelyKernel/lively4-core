@@ -123,10 +123,11 @@ export default class Halo extends Morph {
   }
   
   alignHaloToBounds(target) {
-    var bounds = target.getBoundingClientRect();
+    var bounds = lively.getGlobalBounds(target)
+    
     var offset = {
-      top: bounds.top +  $(document).scrollTop(), 
-      left: bounds.left +  $(document).scrollLeft()};
+      top: bounds.top() +  $(document).scrollTop(), 
+      left: bounds.left() +  $(document).scrollLeft()};
   
     // viewport coordinates
     var scrollTop = Math.abs($(document).scrollTop());
@@ -141,8 +142,8 @@ export default class Halo extends Morph {
     offset.left = offsetLeft;
 
     // make sure halo respects right and bottom viewport boundary
-    var width = $(target).outerWidth() - offsetLeftDiff + 30;
-    var height = $(target).outerHeight() - offsetTopDiff + 30;
+    var width = bounds.width - offsetLeftDiff + 30;
+    var height = bounds.height - offsetTopDiff + 30;
     var offsetBottom = Math.min(offset.top + height, scrollTop + $(window).height());
     var offsetRight = Math.min(offset.left + width, scrollLeft + $(window).width());
     width = offsetRight - offsetLeft;
@@ -151,8 +152,7 @@ export default class Halo extends Morph {
     // set position and dimensions of halo
     $(this).offset(offset);
 
-    $(this).outerWidth(width);
-    $(this).outerHeight(height);
+    lively.setExtent(this, pt(width, height))
     
     var boundsRect = lively.getGlobalBounds(that);
     ["topLeft", "bottomLeft", "bottomRight", "topRight"].forEach(ea => {

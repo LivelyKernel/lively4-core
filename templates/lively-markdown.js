@@ -3,7 +3,7 @@ import components from "src/client/morphic/component-loader.js";
 import MarkdownIt from "src/external/markdown-it.js"
 import MarkdownItHashtag from "src/external/markdown-it-hashtag.js"
 import highlight from 'src/external/highlight.js';
-
+import persistence from 'src/client/persistence.js';
 
 export default class LivelyMarkdown extends Morph {
   async initialize() {
@@ -29,7 +29,19 @@ export default class LivelyMarkdown extends Morph {
       // Highlighter function. Should return escaped HTML,
       // or '' if the source string is not changed and should be escaped externaly.
       // If result starts with <pre... internal wrapper is skipped.
-      highlight: function (/*str, lang*/) { return ''; }
+      highlight:  function (str, lang) {
+        debugger
+        if (lang && hljs.getLanguage(lang)) {
+          try {
+            hljs.configure({tabReplace: '  '})
+            return '<pre class="hljs"><code>' +
+                   hljs.highlight(lang, str, true).value +
+                   '</code></pre>';
+          } catch (__) {}
+        }
+
+        return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
+      }
     });  
     md.use(MarkdownItHashtag)
     md.renderer.rules.hashtag_open  = function(tokens, idx) {
@@ -67,8 +79,10 @@ export default class LivelyMarkdown extends Morph {
     //root.querySelectorAll("pre code").forEach( block => {
     //  highlight.highlightBlock(block);
     //});
-
+    
     components.loadUnresolved(root);
+    
+    persistence.initLivelyObject(root)
   }
 
   followPath(path) {
@@ -106,7 +120,13 @@ export default class LivelyMarkdown extends Morph {
     return this.getAttribute("src")
   }
 
-
+  async startPresentation() {
+    var comp = document.createElement("lively-presentation")
+    await lively.components.openIn(this.get("#content"), comp)
+    comp.convertSiblings()
+    comp.start();
+  }
+  
   livelyExample() {
  this.setDir(lively4url + "/docs/")
     this.setContent(`
@@ -115,6 +135,14 @@ export default class LivelyMarkdown extends Morph {
 <script>
 lively.notify("scripts still run")
 </script>
+
+\`\`\`javascript
+function foo() {
+  var a = "hello"
+  return a + a
+}
+\`\`\`
+
 
 `)
   }

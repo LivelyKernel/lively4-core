@@ -5,8 +5,8 @@ import * as cop from "src/external/ContextJS/src/contextjs.js"
 cop.layer(window, "DebugEventsLayer").refineClass(HTMLElement, {
 	
 	addEventListener(eventName, cb, options) {
-		return cop.proceed.call(this, eventName, (e) => {
-			var msg = "DEBUG" + this + 'add event ' + eventName
+    return cop.proceed.call(this, eventName, (e) => {
+		  var msg = "DEBUG" + this + 'add event ' + eventName
 			lively.showElement(this, 1).textContent = msg
 			cb(e)
 		}, options)

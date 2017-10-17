@@ -10,6 +10,7 @@ export default class Ball extends Morph {
       this.balls =  [{dx: 1, dy: 2, y: 150, x: 10}]
     }
     this.size = 10
+    lively.html.registerButtons(this)
   }
   
   attachedCallback() {
@@ -29,7 +30,7 @@ export default class Ball extends Morph {
     if (!this.balls) return
     this.balls.forEach(ball => {
         context.beginPath();
-        context.fillStyle = "blue";
+        context.fillStyle = "red";
         context.arc(ball.x, ball.y, this.size, 0, Math.PI*2, true);
         context.closePath();
         context.fill();
@@ -62,6 +63,10 @@ export default class Ball extends Morph {
       }
     })
     
+  }
+  
+  onAddButton() {
+    this.addBall()
   }
 
   // this.addBall()
