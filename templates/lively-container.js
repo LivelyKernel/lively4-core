@@ -8,8 +8,6 @@ import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/external/ContextJS/src/contextjs.js";
 import ScopedScripts from "./ScopedScripts.js";
 import Clipboard from "src/client/clipboard.js" 
-import MarkdownIt from "src/external/markdown-it.js"
-import MarkdownItHashtag from "src/external/markdown-it-hashtag.js"
 import {debounce} from "utils"
 
 export default class Container extends Morph {

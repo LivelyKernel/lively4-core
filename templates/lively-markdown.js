@@ -29,7 +29,19 @@ export default class LivelyMarkdown extends Morph {
       // Highlighter function. Should return escaped HTML,
       // or '' if the source string is not changed and should be escaped externaly.
       // If result starts with <pre... internal wrapper is skipped.
-      highlight: function (/*str, lang*/) { return ''; }
+      highlight:  function (str, lang) {
+        debugger
+        if (lang && hljs.getLanguage(lang)) {
+          try {
+            hljs.configure({tabReplace: '  '})
+            return '<pre class="hljs"><code>' +
+                   hljs.highlight(lang, str, true).value +
+                   '</code></pre>';
+          } catch (__) {}
+        }
+
+        return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
+      }
     });  
     md.use(MarkdownItHashtag)
     md.renderer.rules.hashtag_open  = function(tokens, idx) {
@@ -123,6 +135,14 @@ export default class LivelyMarkdown extends Morph {
 <script>
 lively.notify("scripts still run")
 </script>
+
+\`\`\`javascript
+function foo() {
+  var a = "hello"
+  return a + a
+}
+\`\`\`
+
 
 `)
   }
