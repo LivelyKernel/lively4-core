@@ -285,8 +285,8 @@ export default class ContextMenu {
           "CMD+J", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
         ["Search", (evt) => this.openComponentInWindow("lively-search", evt, worldContext),
           "CMD+SHIFT+F",'<i class="fa fa-search" aria-hidden="true"></i>'],
-        ['Debugger', (evt) => lively.openDebugger().then( cmp), 
-          "", '<i class="fa fa-chrome" aria-hidden="true"></i>'],
+        // ['Debugger', (evt) => lively.openDebugger().then( cmp), 
+        //   "", '<i class="fa fa-chrome" aria-hidden="true"></i>'],
         ['Inspector', (evt) => 
           lively.openInspector(worldContext, undefined, undefined, worldContext).then(comp => {
             this.positionElementAtEvent(comp.parentElement, worldContext, evt)
