@@ -8,7 +8,7 @@ import persistence from 'src/client/persistence.js';
 export default class LivelyMarkdown extends Morph {
   async initialize() {
     this.windowTitle = "LivelyMarkdown";
-    
+    lively.html.registerButtons(this);
     this.updateView()
   }
 
@@ -120,6 +120,10 @@ export default class LivelyMarkdown extends Morph {
     return this.getAttribute("src")
   }
 
+  onPresentationButton() {
+    this.startPresentation()
+  }
+  
   async startPresentation() {
     var comp = document.createElement("lively-presentation")
     await lively.components.openIn(this.get("#content"), comp)
