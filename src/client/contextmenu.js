@@ -89,16 +89,25 @@ export default class ContextMenu {
          this.hide();
          lively.showClassSource(target, evt);
       }],
-      ["trace", (evt) => {
-         System.import("src/client/tracer.js").then(tracer => {
-           tracer.default.traceObject(target);
-         });
-         this.hide();
-      }],
+      // ["trace", (evt) => {
+      //    System.import("src/client/tracer.js").then(tracer => {
+      //      tracer.default.traceObject(target);
+      //    });
+      //    this.hide();
+      // }],
       ["remove", (evt) => {
          target.remove()
          this.hide();
       }],
+      ["go back", (evt) => {
+        target.parentElement.insertBefore(target, target.parentElement.childNodes[0])
+         this.hide();
+      }],
+      ["come forward", (evt) => {
+        target.parentElement.appendChild(target)
+        this.hide();
+      }],
+      
       [
         "make space", (evt) => {
           Layout.makeLocalSpace(target)
