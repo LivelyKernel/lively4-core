@@ -537,7 +537,11 @@ export default class TripleNotes extends Morph {
   }
 
   setupStatistics(knots) {
-    this.get('#number-of-knots').appendChild(<td>{aexpr(() => knots.length)}</td>);
-    this.get('#number-of-triples').appendChild(<td>{aexpr(() => knots.filter(k => k.isTriple()).length)}</td>);
+    const statistics = this.get('#statistics');
+    const numberOfKnots = aexpr(() => knots.length);
+    const numberOfTriples = aexpr(() => knots.filter(k => k.isTriple()).length);
+
+    statistics.appendChild(<div><span>Knots: {numberOfKnots}</span></div>);
+    statistics.appendChild(<div><span>Triple: {numberOfTriples}</span></div>);
   }
 }
