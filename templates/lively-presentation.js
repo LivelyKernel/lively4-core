@@ -34,16 +34,22 @@ export default class LivelyPresentation extends Morph {
     })
   }
 
-  nextSlide() {
+  gotoSlideAt(n) {
     var slides = this.slides()
-    this.setSlide(slides[slides.indexOf(this.slide) + 1])
+    this.setSlide(this.slides()[n])
+  }
+  
+  currentSlideNumber() {
+    return this.slides().indexOf(this.slide)
+  }
+  
+  nextSlide() {
+    this.gotoSlideAt(this.currentSlideNumber() + 1)
   }
 
   prevSlide() {
-    var slides = this.slides()
-    this.setSlide(slides[slides.indexOf(this.slide) - 1])
+    this.gotoSlideAt(this.currentSlideNumber() - 1)
   }
-
   
   slides() {
     return Array.from(this.querySelectorAll(".lively-slide"))

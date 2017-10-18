@@ -525,6 +525,13 @@ export default class Container extends Morph {
     md.getDir = this.getDir.bind(this);
     md.followPath = this.followPath.bind(this);
     await md.setContent(content)
+    if (this.getAttribute("mode") == "presentation") {
+      var presentation = await md.startPresentation()
+      if (this.lastPage) {
+        presentation.gotoSlideAt(this.lastPage)
+      }
+        
+    }
     
     // get around some async fun
     if (this.preserveContentScroll) {
@@ -884,8 +891,17 @@ export default class Container extends Morph {
     if (this.getPath() == path) {
       this.preserveContentScroll = this.get("#container-content").scrollTop;
     }
+    
+    var markdown = this.get("lively-markdown")
+    if (markdown) {      
+      var presentation = markdown.get("lively-presentation")
+      if (presentation) {
+        this.lastPage  = presentation.currentSlideNumber()
+      }
+    }
+    
+    
 	  this.setAttribute("src", path);
-
     this.clear();
     this.get('#container-path').value = path.replace(/\%20/g, " ");
     container.style.overflow = "auto";

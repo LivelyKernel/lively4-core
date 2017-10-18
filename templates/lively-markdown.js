@@ -9,7 +9,11 @@ export default class LivelyMarkdown extends Morph {
   async initialize() {
     this.windowTitle = "LivelyMarkdown";
     lively.html.registerButtons(this);
-    this.updateView()
+    this.updateView();
+    if (this.getAttribute("mode") == "presentation") {
+      this.startPresentation()
+    }
+    
   }
 
   async updateView() {
@@ -125,10 +129,17 @@ export default class LivelyMarkdown extends Morph {
   }
   
   async startPresentation() {
+    this.setAttribute("mode", "presentation")
+    if (this.parentElement.tagName == "LIVELY-CONTAINER") {
+      this.parentElement.setAttribute("mode", "presentation")
+    }
+        
+    
     var comp = document.createElement("lively-presentation")
     await lively.components.openIn(this.get("#content"), comp)
     comp.convertSiblings()
     comp.start();
+    return comp
   }
   
   livelyExample() {
