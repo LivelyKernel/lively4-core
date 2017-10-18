@@ -12,12 +12,15 @@ For faster development and other experiments we also have our very basic node.js
 - CTRL+Click opens Halo to drag, copy, edit all DOM elements directly on a web page
 - (CTRL+)RightClick opens context menu with various tools...
 
+---
+
 ## Halo
 
 <script>
 fetch(lively4url + "/doc/SWD2017/halo.html").then(t => t.text())
 </script>
 
+----
 
 ## Context Menus
 
@@ -26,6 +29,7 @@ fetch(lively4url + "/doc/SWD2017/halo.html").then(t => t.text())
 fetch(lively4url + "/doc/SWD2017/contextmenu.html").then(t => t.text())
 </script>
 
+----
 
 ## Tools
 
@@ -34,7 +38,7 @@ fetch(lively4url + "/doc/SWD2017/tools.html").then(t => t.text())
 </script>
 
 
-
+---
 
 # Getting Started
 
@@ -47,10 +51,14 @@ fetch(lively4url + "/doc/SWD2017/tools.html").then(t => t.text())
 - d) Open Sync tool and log with github account 
 - e) Press sync to update your instance and commit changes
 
+---
+
 ## Advanced Lively4: 
 
 - Work in different [branches](https://lively-kernel.org/lively4/) created with the "Sync Github"
 - Install your own lively4-server
+
+---
 
 ## Development Links
 
