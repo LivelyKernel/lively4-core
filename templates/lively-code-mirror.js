@@ -164,7 +164,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   setupEditorOptions(editor) {
     editor.setOption("matchBrackets", true)
     editor.setOption("styleSelectedText", true)
-    editor.setOption("autoCloseBrackets", false)
+    editor.setOption("autoCloseBrackets", true)
     editor.setOption("autoCloseTags", true)
 		editor.setOption("scrollbarStyle", "simple")
 		editor.setOption("scrollbarStyle", "simple")

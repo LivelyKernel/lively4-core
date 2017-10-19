@@ -177,7 +177,11 @@ export default class Container extends Morph {
   onKeyDown(evt) {
     var char = String.fromCharCode(evt.keyCode || evt.charCode);
     if (evt.ctrlKey && char == "S") {
-      this.onSave();
+      if (evt.shiftKey) {
+        this.onAccept();          
+      } else {
+        this.onSave();  
+      }
       evt.preventDefault();
       evt.stopPropagation();
     }

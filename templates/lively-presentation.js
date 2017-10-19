@@ -20,7 +20,8 @@ export default class LivelyPresentation extends Morph {
   }
   
   convertSiblings() {
-    var content = this.parentElement    
+    var content = this.parentElement 
+    if (!content) return;
     this.newSlide()
     Array.from(content.childNodes).forEach(ea => {
       if (ea.tagName == "LIVELY-PRESENTATION") return;
@@ -66,5 +67,14 @@ export default class LivelyPresentation extends Morph {
       slide.style.display = "block"  
     }
     this.slide = slide
+    this.updatePageNumber()
   }
+  
+  updatePageNumber() {
+    if (!this.slide) return;
+    var pageNumber = this.slide.querySelector(".page-number")
+    if (pageNumber) pageNumber.textContent = this.currentSlideNumber()
+  }  
+  
+  
 }
