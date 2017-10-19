@@ -1253,10 +1253,11 @@ export default class Container extends Morph {
       window.oldActiveElement = document.activeElement
       var currentSource = this.getHTMLSource()
       
-      if (!this.lastSource || this.lastSource != currentSource) 
+      if (!this.lastSource || this.lastSource != currentSource) {
         this.contentChanged = true
-      else
+      } else {
         this.contentChanged = false
+      }
       this.updateChangeIndicator()
     } finally {
       // setTimeout(() => {
