@@ -1,5 +1,5 @@
 import Morph from './Morph.js';
-import sourcemap from 'https://raw.githubusercontent.com/mozilla/source-map/master/dist/source-map.min.js'
+import sourcemap from 'src/external/source-map.min.js'
 
 import {babel, modulesRegister} from 'systemjs-babel-build';
 

@@ -4,7 +4,7 @@ import Morph from './Morph.js';
 import {babel} from 'systemjs-babel-build';
 import SyntaxChecker from 'src/client/syntax.js'
 import locals from 'babel-plugin-locals'
-import sourcemap from 'https://raw.githubusercontent.com/mozilla/source-map/master/dist/source-map.min.js'
+import sourcemap from 'src/external/source-map.min.js'
 import generateUUID from './../src/client/uuid.js';
 import {modulesRegister} from 'systemjs-babel-build';
 import { debounce, flatmap, executeAllTestRunners, promisedEvent } from 'utils';
