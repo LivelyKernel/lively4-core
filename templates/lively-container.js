@@ -130,7 +130,7 @@ export default class Container extends Morph {
         if ( this.parentElement.isMaximized()) {
           this.parentElement.get(".window-titlebar").style.display = "none"
         } else {
-          this.parentElement.get(".window-titlebar").style.display = "block"
+          this.parentElement.get(".window-titlebar").style.display = ""
         }
     }
     
