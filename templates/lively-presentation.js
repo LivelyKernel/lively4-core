@@ -2,12 +2,26 @@ import Morph from './Morph.js';
 
 export default class LivelyPresentation extends Morph {
   async initialize() {
-    lively.html.registerButtons(this)
+    lively.html.registerButtons(this);
+    lively.html.registerKeys(this);
   }
 
+  onLeftDown(evt) {
+    this.prevSlide()     
+    evt.preventDefault() 
+    evt.stopPropagation() 
+  }
+  
+  onRightDown(evt) {
+    this.nextSlide()
+    evt.preventDefault() 
+    evt.stopPropagation() 
+  }
+  
   onPrevButton() {
     this.prevSlide() 
   }
+
   onNextButton() {
     this.nextSlide() 
   }

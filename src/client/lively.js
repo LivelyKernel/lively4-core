@@ -1391,7 +1391,7 @@ export default class Lively {
     element.focus()
     document.scrollingElement.scrollTop = 0
     document.scrollingElement.scrollLeft = 0
-    var pos = lively.getPosition(element).subPt(pt(100,100))
+    var pos = lively.getPosition(element).subPt(pt(0,0))
     lively.setPosition(document.body, pos.scaleBy(-1))
   }
 
