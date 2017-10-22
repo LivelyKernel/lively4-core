@@ -6,7 +6,7 @@ export default class SoapBubble extends Ball {
   initialize() {
     lively.setExtent(this, pt(30,30)) 
     super.initialize()
-    this.a = this.a || -0.03
+    this.a = this.a || -0.003
     this.total = this.total || 0
     lively.addEventListener("soap", this, "click", evt => this.onClick(evt))
   }
@@ -18,6 +18,7 @@ export default class SoapBubble extends Ball {
   simulate(t) {
     super.simulate(t);
     this.total += t;
+    if (this.s < 10) this.remove();
   }
   
   static create(){

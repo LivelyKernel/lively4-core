@@ -133,12 +133,18 @@ export default class LivelyMarkdown extends Morph {
     if (this.parentElement.tagName == "LIVELY-CONTAINER") {
       this.parentElement.setAttribute("mode", "presentation")
     }
-        
+    if (this.get("lively-presentation")) {
+      return
+    }
     
     var comp = document.createElement("lively-presentation")
     await lively.components.openIn(this.get("#content"), comp)
     comp.convertSiblings()
     comp.start();
+
+    if (this.get("#presentationButton"))
+      this.get("#presentationButton").remove()
+
     return comp
   }
   

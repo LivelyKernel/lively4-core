@@ -124,8 +124,8 @@ export default class Container extends Morph {
   onFullscreen(evt) {
     this.toggleControls();
     if (!this.parentElement.isMaximized) return;
-    if ((this.isFullscreen()  && !this.parentElement.isMaximized()) ||
-       (!this.isFullscreen()  && this.parentElement.isMaximized()))  {
+    if ((this.isFullscreen() && !this.parentElement.isMaximized()) ||
+       (!this.isFullscreen() && this.parentElement.isMaximized()))  {
         this.parentElement.toggleMaximize();
         if ( this.parentElement.isMaximized()) {
           this.parentElement.get(".window-titlebar").style.display = "none"

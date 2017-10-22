@@ -34,8 +34,8 @@ export default class LivelyBall extends Morph {
     // if (plot) plot.remove()
     // this.parentElement.appendChild(svg)
       
-    var log = this.parentElement.querySelector("#log")
-    if (log) log.innerHTML = " s= " + Math.round(this.s) + "<br>" + " v= " + Math.round(this.v)
+    // var log = this.parentElement.querySelector("#log")
+    // if (log) log.innerHTML = " s= " + Math.round(this.s) + "<br>" + " v= " + Math.round(this.v)
   }
   
   step() {
@@ -58,16 +58,17 @@ export default class LivelyBall extends Morph {
     var container = document.createElement("div");
     container.style.position = "absolute"
     container.style.backgroundColor = "lightgray"
-    container.innerHTML = "<button id='reset'>reset</button>"
+    // container.innerHTML = "<button id='reset'>reset</button>"
     lively.setExtent(container, pt(150,400))
     var ball = this.create()
     await lively.components.openIn(container, ball)
     ball.livelyExample()
-    container.querySelector("#reset").addEventListener("click", () => { 
-      ball.s = 200;
-      ball.v = 0;
-      ball.path = []
-    })
+    // container.querySelector("#reset").addEventListener("click", () => { 
+    //   ball.s = 200;
+    //   ball.v = 0;
+    //   ball.path = [];
+    //   ball.livelyExample()
+    // })
     if (parent) parent.appendChild(container)
     return container
   }
