@@ -20,6 +20,10 @@ export default class SoapBubble extends Ball {
     this.total += t;
   }
   
+  static create(){
+    return document.createElement("lively-soapbubble")
+  }
+
   
   async livelyExample() {
     

@@ -6,7 +6,7 @@ export default class LivelyBall extends Morph {
   async initialize() {
     this.a = this.a || -1
     this.v = this.b || 0
-    this.s = this.s || 400
+    this.s = this.s || 300
     this.step()
     this.path = this.path || []
   }
@@ -16,7 +16,7 @@ export default class LivelyBall extends Morph {
     this.s = this.s + this.v * t
     if (this.s < 0) {
       this.s = 0
-      this.v = this.v * -0.8;
+      this.v = this.v * -0.9;
     }   
   }
  
@@ -28,17 +28,18 @@ export default class LivelyBall extends Morph {
     p.x  = (this.lastTime - this.startTime) * 0.01    
     this.path.push(p)
     
-//     var svg = lively.createPath(this.path, "blue", false)
-//     svg.id = "plot"
-//     var plot = this.parentElement.querySelector("#plot")
-//     if (plot) plot.remove()
-//     this.parentElement.appendChild(svg)
+    // var svg = lively.createPath(this.path, "blue", false)
+    // svg.id = "plot"
+    // var plot = this.parentElement.querySelector("#plot")
+    // if (plot) plot.remove()
+    // this.parentElement.appendChild(svg)
       
     var log = this.parentElement.querySelector("#log")
-    if (log) log.innerHTML = " s= " + this.s + "<br>" + " v= " + this.v
+    if (log) log.innerHTML = " s= " + Math.round(this.s) + "<br>" + " v= " + Math.round(this.v)
   }
   
   step() {
+    if (!this.parentElement) return;
     var time = Date.now()
     if (this.lastTime) {
       var t = (time - this.lastTime) * 0.01
@@ -49,6 +50,30 @@ export default class LivelyBall extends Morph {
     }
     window.requestAnimationFrame(() => this.step()); 
     this.lastTime = time
+  }
+  
+  
+  // LivelyBall.livelyExample(document.body)
+  static async livelyExample(parent) {
+    var container = document.createElement("div");
+    container.style.position = "absolute"
+    container.style.backgroundColor = "lightgray"
+    container.innerHTML = "<button id='reset'>reset</button>"
+    lively.setExtent(container, pt(150,400))
+    var ball = this.create()
+    await lively.components.openIn(container, ball)
+    ball.livelyExample()
+    container.querySelector("#reset").addEventListener("click", () => { 
+      ball.s = 200;
+      ball.v = 0;
+      ball.path = []
+    })
+    if (parent) parent.appendChild(container)
+    return container
+  }
+  
+  static create(){
+    return document.createElement("lively-ball")
   }
   
   livelyExample() {
