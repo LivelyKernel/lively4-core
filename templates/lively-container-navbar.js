@@ -98,9 +98,17 @@ export default class LivelyContainerNavbar extends Morph {
         if (a.type < b.type) {
           return -1;
         }
+        
+        // date based filenames are sorted so lastest are first
+        if (a.name.match(/\d\d\d\d-\d\d-\d\d/) && b.name.match(/\d\d\d\d-\d\d-\d\d/)) {
+          return (a.name >= b.name) ? -1 : 1;          
+        }
+        
         return (a.name >= b.name) ? 1 : -1;
       })
       .filter(ea => ! ea.name.match(/^\./));
+    
+      
 
     files.unshift({name: "..", type: "directory"});
     files.forEach((ea) => {
@@ -159,6 +167,8 @@ export default class LivelyContainerNavbar extends Morph {
       element.appendChild(link);
       navbar.appendChild(element);
     });
+    
+  
 
   }
   

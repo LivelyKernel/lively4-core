@@ -4,7 +4,7 @@ export default class Ball extends Morph {
 
   initialize() {
     debugger
-    this.windowTitle = "Bouncing Ball"
+    this.windowTitle = "Bouncing Atom"
     this.hits = this.hits || 0
     if (!this.balls) {
       this.balls =  [{dx: 1, dy: 2, y: 150, x: 10}]

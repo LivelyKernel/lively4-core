@@ -866,7 +866,7 @@ export default class Lively {
     comp.setAttribute("data-is-meta", "true");
     comp.isMetaNode = true;
     comp.style.pointerEvents = "none";
-    comp.style.touchAction = "none";    
+    comp.style.touchAction = "none";   
     setTimeout( () => comp.remove(), 3000);
     return comp
   }
@@ -896,7 +896,7 @@ export default class Lively {
     
     var last = _.last(path)
     
-    comp.innerHTML = defs + `<path id="path" stroke='${color}' d='${dpath}' 
+    comp.innerHTML = defs + `<path id="path" fill="none" stroke='${color}' d='${dpath}' 
       style='${ 
         printArrow ? 'marker-end: url(#markerArrow);' : ""
       }'></path>`  + `<g font-size="12" font-family="sans-serif" fill="${color}" stroke="none"
@@ -1391,7 +1391,7 @@ export default class Lively {
     element.focus()
     document.scrollingElement.scrollTop = 0
     document.scrollingElement.scrollLeft = 0
-    var pos = lively.getPosition(element).subPt(pt(100,100))
+    var pos = lively.getPosition(element).subPt(pt(0,0))
     lively.setPosition(document.body, pos.scaleBy(-1))
   }
 

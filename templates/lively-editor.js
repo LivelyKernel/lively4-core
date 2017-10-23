@@ -128,6 +128,7 @@ export default class Editor extends Morph {
   }
 
   setText(text, preserveView) {
+    text = text.replace(/\r\n/g, "\n") // code mirror changes it anyway
     this.lastText = text;
     var editor = this.currentEditor();
     var cur = this.getCursor()

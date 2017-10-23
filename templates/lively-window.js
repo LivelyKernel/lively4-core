@@ -230,7 +230,14 @@ export default class Window extends Morph {
 	}
 	
   onMinButtonClicked(evt) {
-    this.toggleMinimize()
+    if (evt.shiftKey) {
+      document.scrollingElement.scrollTop = 0
+      document.scrollingElement.scrollLeft = 0
+      lively.moveBy(document.body, lively.getGlobalPosition(this).scaleBy(-1))
+      lively.setExtent(this, lively.getExtent(this).withY(window.innerHeight - 8))
+    } else {
+      this.toggleMinimize()
+    }
     evt.stopPropagation()
   }
 
@@ -364,7 +371,6 @@ export default class Window extends Morph {
     }
   }
 
-
   onCloseButtonClicked(evt) {
     if (this.target && this.target.unsavedChanges && this.target.unsavedChanges()) {
       if(!window.confirm("Window contains unsaved changes, close anyway?"))  {
@@ -445,8 +451,6 @@ export default class Window extends Morph {
     this.toggleMaximize()
     evt.stopPropagation()
   }
-
-
 
   livelyMigrate(oldInstance) {
     // this is crucial state

@@ -2,12 +2,26 @@ import Morph from './Morph.js';
 
 export default class LivelyPresentation extends Morph {
   async initialize() {
-    lively.html.registerButtons(this)
+    lively.html.registerButtons(this);
+    lively.html.registerKeys(this);
   }
 
+  onLeftDown(evt) {
+    this.prevSlide()     
+    evt.preventDefault() 
+    evt.stopPropagation() 
+  }
+  
+  onRightDown(evt) {
+    this.nextSlide()
+    evt.preventDefault() 
+    evt.stopPropagation() 
+  }
+  
   onPrevButton() {
     this.prevSlide() 
   }
+
   onNextButton() {
     this.nextSlide() 
   }
@@ -20,7 +34,8 @@ export default class LivelyPresentation extends Morph {
   }
   
   convertSiblings() {
-    var content = this.parentElement    
+    var content = this.parentElement 
+    if (!content) return;
     this.newSlide()
     Array.from(content.childNodes).forEach(ea => {
       if (ea.tagName == "LIVELY-PRESENTATION") return;
@@ -34,16 +49,22 @@ export default class LivelyPresentation extends Morph {
     })
   }
 
-  nextSlide() {
+  gotoSlideAt(n) {
     var slides = this.slides()
-    this.setSlide(slides[slides.indexOf(this.slide) + 1])
+    this.setSlide(this.slides()[n])
+  }
+  
+  currentSlideNumber() {
+    return this.slides().indexOf(this.slide)
+  }
+  
+  nextSlide() {
+    this.gotoSlideAt(this.currentSlideNumber() + 1)
   }
 
   prevSlide() {
-    var slides = this.slides()
-    this.setSlide(slides[slides.indexOf(this.slide) - 1])
+    this.gotoSlideAt(this.currentSlideNumber() - 1)
   }
-
   
   slides() {
     return Array.from(this.querySelectorAll(".lively-slide"))
@@ -60,5 +81,14 @@ export default class LivelyPresentation extends Morph {
       slide.style.display = "block"  
     }
     this.slide = slide
+    this.updatePageNumber()
   }
+  
+  updatePageNumber() {
+    if (!this.slide) return;
+    var pageNumber = this.slide.querySelector(".page-number")
+    if (pageNumber) pageNumber.textContent = this.currentSlideNumber()
+  }  
+  
+  
 }

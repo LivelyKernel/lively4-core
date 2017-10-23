@@ -67,17 +67,18 @@ export default class LivelyCodeMirror extends HTMLElement {
 
       await this.loadModule("addon/tern/tern.js")
 
-      await lively.loadJavaScriptThroughDOM("tern_acorn", '//ternjs.net/node_modules/acorn/dist/acorn.js')
-      await lively.loadJavaScriptThroughDOM("tern_acorn_loose", '//ternjs.net/node_modules/acorn/dist/acorn_loose.js')
-      await lively.loadJavaScriptThroughDOM("tern_walk",'//ternjs.net/node_modules/acorn/dist/walk.js')
-      await lively.loadJavaScriptThroughDOM("tern_polyfill",'//ternjs.net/doc/demo/polyfill.js')
-      await lively.loadJavaScriptThroughDOM("tern_signal",'//ternjs.net/lib/signal.js')
-      await lively.loadJavaScriptThroughDOM("tern_tern",'//ternjs.net/lib/tern.js')
-      await lively.loadJavaScriptThroughDOM("tern_def",'//ternjs.net/lib/def.js')
-      await lively.loadJavaScriptThroughDOM("tern_comment",'//ternjs.net/lib/comment.js')
-      await lively.loadJavaScriptThroughDOM("tern_infer",'//ternjs.net/lib/infer.js')
-      await lively.loadJavaScriptThroughDOM("tern_plugin_modules",'//ternjs.net/plugin/modules.js')
-      await lively.loadJavaScriptThroughDOM("tern_plugin_esmodules",'//ternjs.net/plugin/es_modules.js')
+      var terndir = lively4url + '/src/external/tern/'
+      await lively.loadJavaScriptThroughDOM("tern_acorn", terndir + 'acorn.js')
+      await lively.loadJavaScriptThroughDOM("tern_acorn_loose", terndir + 'acorn_loose.js')
+      await lively.loadJavaScriptThroughDOM("tern_walk", terndir + 'walk.js')
+      await lively.loadJavaScriptThroughDOM("tern_polyfill", terndir + 'polyfill.js')
+      await lively.loadJavaScriptThroughDOM("tern_signal", terndir + 'signal.js')
+      await lively.loadJavaScriptThroughDOM("tern_tern", terndir + 'tern.js')
+      await lively.loadJavaScriptThroughDOM("tern_def", terndir + 'def.js')
+      await lively.loadJavaScriptThroughDOM("tern_comment", terndir + 'comment.js')
+      await lively.loadJavaScriptThroughDOM("tern_infer", terndir + 'infer.js')
+      await lively.loadJavaScriptThroughDOM("tern_plugin_modules", terndir + 'modules.js')
+      await lively.loadJavaScriptThroughDOM("tern_plugin_esmodules", terndir + 'es_modules.js')
 
       
       this.loadCSS("addon/hint/show-hint.css")
@@ -164,7 +165,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   setupEditorOptions(editor) {
     editor.setOption("matchBrackets", true)
     editor.setOption("styleSelectedText", true)
-    editor.setOption("autoCloseBrackets", false)
+    editor.setOption("autoCloseBrackets", true)
     editor.setOption("autoCloseTags", true)
 		editor.setOption("scrollbarStyle", "simple")
 		editor.setOption("scrollbarStyle", "simple")
@@ -496,9 +497,9 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   
   async enableTern() {
-    var ecmascriptdefs = await fetch("//ternjs.net/defs/ecmascript.json").then(r => r.json())
-    var browserdefs = await fetch("//ternjs.net/defs/browser.json").then(r => r.json())
-    // var chaidefs = await fetch("//ternjs.net/defs/chai.json").then(r => r.json())
+    var ecmascriptdefs = await fetch(lively4url + "/src/external/tern/ecmascript.json").then(r => r.json())
+    var browserdefs = await fetch(lively4url + "/src/external/tern/browser.json").then(r => r.json())
+    // var chaidefs = await fetch(lively4url + "/src/external/tern/chai.json").then(r => r.json())
     
     // Options supported (all optional):
     // * defs: An array of JSON definition data structures.

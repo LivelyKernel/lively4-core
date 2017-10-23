@@ -124,13 +124,13 @@ export default class Container extends Morph {
   onFullscreen(evt) {
     this.toggleControls();
     if (!this.parentElement.isMaximized) return;
-    if ((this.isFullscreen()  && !this.parentElement.isMaximized()) ||
-       (!this.isFullscreen()  && this.parentElement.isMaximized()))  {
+    if ((this.isFullscreen() && !this.parentElement.isMaximized()) ||
+       (!this.isFullscreen() && this.parentElement.isMaximized()))  {
         this.parentElement.toggleMaximize();
         if ( this.parentElement.isMaximized()) {
           this.parentElement.get(".window-titlebar").style.display = "none"
         } else {
-          this.parentElement.get(".window-titlebar").style.display = "block"
+          this.parentElement.get(".window-titlebar").style.display = ""
         }
     }
     
@@ -177,7 +177,11 @@ export default class Container extends Morph {
   onKeyDown(evt) {
     var char = String.fromCharCode(evt.keyCode || evt.charCode);
     if (evt.ctrlKey && char == "S") {
-      this.onSave();
+      if (evt.shiftKey) {
+        this.onAccept();          
+      } else {
+        this.onSave();  
+      }
       evt.preventDefault();
       evt.stopPropagation();
     }
@@ -525,6 +529,13 @@ export default class Container extends Morph {
     md.getDir = this.getDir.bind(this);
     md.followPath = this.followPath.bind(this);
     await md.setContent(content)
+    if (this.getAttribute("mode") == "presentation") {
+      var presentation = await md.startPresentation()
+      if (this.lastPage) {
+        presentation.gotoSlideAt(this.lastPage)
+      }
+        
+    }
     
     // get around some async fun
     if (this.preserveContentScroll) {
@@ -884,8 +895,17 @@ export default class Container extends Morph {
     if (this.getPath() == path) {
       this.preserveContentScroll = this.get("#container-content").scrollTop;
     }
+    
+    var markdown = this.get("lively-markdown")
+    if (markdown) {      
+      var presentation = markdown.get("lively-presentation")
+      if (presentation) {
+        this.lastPage  = presentation.currentSlideNumber()
+      }
+    }
+    
+    
 	  this.setAttribute("src", path);
-
     this.clear();
     this.get('#container-path').value = path.replace(/\%20/g, " ");
     container.style.overflow = "auto";
@@ -1233,10 +1253,11 @@ export default class Container extends Morph {
       window.oldActiveElement = document.activeElement
       var currentSource = this.getHTMLSource()
       
-      if (!this.lastSource || this.lastSource != currentSource) 
+      if (!this.lastSource || this.lastSource != currentSource) {
         this.contentChanged = true
-      else
+      } else {
         this.contentChanged = false
+      }
       this.updateChangeIndicator()
     } finally {
       // setTimeout(() => {
