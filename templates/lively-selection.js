@@ -38,6 +38,13 @@ export default class Selection extends Morph {
     if (lively.hand && lively.hand.childNodes.length > 0) return; // in drag
     if (this.disabled) return
     
+    // don't select with touch 
+    if (evt.sourceCapabilities && evt.sourceCapabilities.firesTouchEvents) {
+      lively.showPoint(pt(evt.clientX, evt.clientY))     
+      return
+    }
+    
+    
     this.selectionOffset = pt(evt.clientX, evt.clientY)
 
     lively.addEventListener("Selection", document.body.parentElement, "pointermove", 

@@ -397,7 +397,7 @@ export default class LivelyDrawboard extends Morph {
     this.paper.project.activeLayer.removeChildren();
     this.paper.project.importSVG(path)
     var paperPath = paper.project.getItems({class: paper.Path})[0]
-    paperPath.simplify(1)
+    paperPath.simplify(3)
     var paperSVG = paper.project.exportSVG()
     var paperSVGPath = paperSVG.querySelector("path")
     path.setAttribute("d", paperSVGPath.getAttribute("d"))
@@ -496,14 +496,16 @@ export default class LivelyDrawboard extends Morph {
   
   eventPos(evt) {
     // return pt(evt.clientX, evt.clientY)
-
+    debugger
     var scale = this.getScreenScale()
+    
+    // return pt(evt.pageX * scale, evt.pageY * scale)
     return pt(evt.clientX, evt.clientY)
     // #HACK for subpixel precision
-    // return pt(evt.screenX * scale, evt.screenY * scale)
+    /// return pt(evt.screenX * scale, evt.screenY * scale)
   }
   
-  onDragStart(evt) {
+  onDragStart(evt){ 
     if (this.fixedControls) return
     this.dragOffset = lively.getPosition(this).subPt( pt(evt.clientX, evt.clientY))
 
