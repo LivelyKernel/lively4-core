@@ -1356,7 +1356,7 @@ export default class Lively {
     console.log("focusWithoutScroll " + element)
     var scrollTop = document.scrollingElement.scrollTop
     var scrollLeft = document.scrollingElement.scrollLeft
-    element.focus() 
+    element.focus(true) 
     // the focus scrolls as a side affect, but we don't want that
     document.scrollingElement.scrollTop = scrollTop
     document.scrollingElement.scrollLeft = scrollLeft

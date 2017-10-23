@@ -1,5 +1,5 @@
 import Morph from './Morph.js';
-import {pt} from 'src/client/graphics.js';
+import {pt, rect} from 'src/client/graphics.js';
 import html from  'src/client/html.js'
 
 export default class LivelyMenu extends Morph {
@@ -7,6 +7,37 @@ export default class LivelyMenu extends Morph {
   initialize() {
   	this.setAttribute("tabindex", 0) // we want keuboard events
   	html.registerKeys(this, "Menu", this, true)
+  }
+
+  
+  moveInsideWindow() {
+    var w =  pt(window.innerWidth - 12, window.innerHeight - 12)
+    var b = lively.getGlobalBounds(this)
+    var original = b.topLeft()
+
+    if (b.bottom() > w.y) { b.y -= b.bottom() - w.y }
+    if (b.right() > w.x) { b.x -= b.right() - w.x }
+    if (b.left() < 0) { b.x -= b.left() }
+    if (b.top() < 0) { b.y -= b.top() }
+
+    var delta = b.topLeft().subPt(original)
+    // lively.moveBy(this.topLevelMenu(), delta)
+    if (this.parentMenu) {
+      if (delta.x < 0) {
+        delta.x -= lively.getExtent(this.parentMenu).x
+      }      
+    }
+    lively.moveBy(this, delta)
+    
+    return delta 
+  }
+  
+  topLevelMenu() {
+    if (!this.parentMenu) {
+      return this;
+   } else {
+      return this.parentMenu.topLevelMenu()
+    }
   }
   
   onUpDown(evt) {
@@ -34,7 +65,7 @@ export default class LivelyMenu extends Morph {
 
   onLeftDown(evt) {
     if (this.parentMenu) {
-      this.parentMenu.focus()
+      lively.focusWithoutScroll(this.parentMenu)
       this.parentMenu.sellectUpOrDown(evt, 0)
     }
   }
@@ -45,7 +76,7 @@ export default class LivelyMenu extends Morph {
   
     var entry = this.currentItem.entry
     if (entry[1] instanceof Array) {
-      this.submenu.focus()
+      lively.focusWithoutScroll(this.submenu)
       this.submenu.sellectUpOrDown(evt, 0)
     }
   }
@@ -59,7 +90,7 @@ export default class LivelyMenu extends Morph {
     }
   }
 
-  openOn(items, openEvt) {
+  openOn(items, openEvt, optPos) {
     var menu = this.get(".container");
     menu.innerHTML = "" // clear
     // create a radio button for each tool
@@ -89,6 +120,9 @@ export default class LivelyMenu extends Morph {
       })
       menu.appendChild(item);
     });
+    if (optPos) lively.setPosition(this, optPos);
+    this.moveInsideWindow();
+    
     return Promise.resolve(menu)
   }
   
@@ -110,9 +144,8 @@ export default class LivelyMenu extends Morph {
       await lively.components.openIn(menu, this.submenu)
       var bounds = item.getBoundingClientRect()
       var menuBounds = menu.getBoundingClientRect()
-      this.submenu.openOn(subitems)
-      lively.setPosition(this.submenu, 
-        pt(bounds.right, bounds.top).subPt(pt(menuBounds.left, menuBounds.top)))
+      this.submenu.openOn(subitems,  null, pt(bounds.right, bounds.top).subPt(pt(menuBounds.left, menuBounds.top)))
+      // lively.moveBy(this, delta)
     }
   }
   

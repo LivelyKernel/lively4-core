@@ -434,7 +434,8 @@ export default class ContextMenu {
       if (evt) {
         lively.setGlobalPosition(menu, pt(evt.clientX, evt.clientY))
       }
-      menu.focus()
+      // menu.focus()
+      lively.focusWithoutScroll(menu)
       menu.openOn(optItems || this.items(target, worldContext), evt).then(() => {
       });
       return menu;
