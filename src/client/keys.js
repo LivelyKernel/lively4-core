@@ -15,7 +15,6 @@ export default class Keys {
     return String.fromCharCode(evt.keyCode || evt.charCode);
   }
 
-
   static logEvent(evt) {
     console.log("key: "
       +" shift=" + evt.shiftKey
@@ -31,6 +30,12 @@ export default class Keys {
   }
 
   static handle(evt) {
+    
+    // #Hack, fix a little but in ContextMenu movement...
+    lively.lastScrollTop = document.scrollingElement.scrollTop;
+    lively.lastScrollLeft = document.scrollingElement.scrollLeft;
+    
+    // lively.showPoint(pt(0,0))
     // lively.notify("handle " + this.getChar(evt) + " " + evt.keyCode  + " "+ evt.charCode, (evt.shiftKey ? " SHIFT" : "") + (evt.ctrlKey ? " CTRL" : ""))
     try {
       var char = this.getChar(evt);

@@ -3,23 +3,9 @@ import {pt} from 'src/client/graphics.js'
 import {Grid} from 'src/client/morphic/snapping.js';
 import Preferences from 'src/client/preferences.js';
 
-// #TODO implement this again with the new AExp lib #Stefan? 
-// import { AExpr } from 'src/external/active-expressions/src/active-expressions.js';
-// import { AExpr } from 'src/external/active-expressions/src/active-view.js';
-
 export default class Window extends Morph {
   
-  get isWindow() {
-    return true
-  }
-
-  // how to move this into the template CSS? #Jens
-  get minimizedWindowWidth() { return 300 }
-  get minimizedWindowPadding() { return 10 }
-
-  /*
-   * Getters/Setters
-   */
+ 
   get title() {
     return this._title
   }
@@ -27,22 +13,18 @@ export default class Window extends Morph {
     this._title = val
     this.render();
   }
-  
-  get active() {
-    return this.hasAttribute('active');
-  }
 
-  get isFixed() {
-    return this.hasAttribute('fixed');
-  }
+  get isWindow() { return true }
+  get minimizedWindowWidth() { return 300 }
+  get minimizedWindowPadding() { return 10 }
 
-  get titleSpan() {
-    return this.shadowRoot.querySelector('.window-title span');
-  }
-
-  get target() {
-    return this.childNodes[0]
-  }
+  get active() { return this.hasAttribute('active')}
+  get isFixed() { return this.hasAttribute('fixed')}
+  get titleSpan() { return this.get('.window-title span') }
+  get target() { return this.childNodes[0]}
+  get window() { return this.get('.window') }
+  get maxButton() { return this.get('.window-max')}
+  get windowTitle() { return this.get('.window-title')}
 
   setExtent(extent) {
     lively.setExtent(this, extent)
@@ -50,9 +32,6 @@ export default class Window extends Morph {
       this.target.dispatchEvent(new CustomEvent("extent-changed"))
   }
 
-  /*
-   * HTMLElement callbacks
-   */
   initialize() {
     this.setup();
     
@@ -61,21 +40,6 @@ export default class Window extends Morph {
 
     if (this.isMinimized() || this.isMaximized())
       this.displayResizeHandle(false);
-
-    // Capture in window
-    // this._capture_expr = new AExpr(win =>
-    //   parseInt(win.style.top) < 0 || parseInt(win.style.left) < 0
-    // );
-    // this._capture_expr
-    // .applyOn(this)
-    // .onChange(win => {
-    //   if (parseInt(win.style.top) < 0) {
-    //     win.style.top = 0;
-    //   }
-    //   if (parseInt(win.style.left) < 0) {
-    //     win.style.left = 0;
-    //   }
-    // });
 
     this.setAttribute("tabindex", 0)
   }
@@ -104,36 +68,17 @@ export default class Window extends Morph {
     }
   }
 
-  /*
-   * Initialization
-   */
-  defineShortcuts() {
-    this.window = this.shadowRoot.querySelector('.window');
-
-    this.menuButton = this.shadowRoot.querySelector('.window-menu');
-    this.minButton = this.shadowRoot.querySelector('.window-min');
-    this.maxButton = this.shadowRoot.querySelector('.window-max');
-
-    this.contentBlock = this.shadowRoot.querySelector('#window-content');
-  }
-
-    
-
   bindEvents() {
     try {
       this.addEventListener('created', (evt) => this.focus());
       this.addEventListener('extent-changed', (evt) => { this.onExtentChanged(); });
-      this.shadowRoot.querySelector('.window-title')
-        .addEventListener('mousedown', (evt) => { this.onTitleMouseDown(evt); });
-      this.shadowRoot.querySelector('.window-title')
-        .addEventListener('dblclick', (evt) => { this.onTitleDoubleClick(evt); });
-    
+      this.windowTitle.addEventListener('pointerdown', (evt) => { this.onTitleMouseDown(evt) });
+      this.windowTitle.addEventListener('dblclick', (evt) => { this.onTitleDoubleClick(evt) });
       this.addEventListener('mousedown', (evt) => this.focus(), true);
-      this.menuButton.addEventListener('click', evt => { this.onMenuButtonClicked(evt); });
-      this.minButton.addEventListener('click', evt => { this.onMinButtonClicked(evt); });
+      this.get('.window-menu').addEventListener('click', evt => { this.onMenuButtonClicked(evt); });
+      this.get('.window-min').addEventListener('click', evt => { this.onMinButtonClicked(evt); });
       this.maxButton.addEventListener('click', evt => { this.onMaxButtonClicked(evt); });
       this.addEventListener('dblclick', evt => { this.onDoubleClick(evt); });
-
       this.get('.window-close').addEventListener('click', evt => { this.onCloseButtonClicked(evt); });
       this.addEventListener('keyup', evt => { this.onKeyUp(evt); });
     } catch(err) {
@@ -151,7 +96,6 @@ export default class Window extends Morph {
 
   setup() {
     this.dragging = false;
-    this.defineShortcuts();
     this.bindEvents();
   }
 
@@ -292,7 +236,7 @@ export default class Window extends Morph {
 
   displayResizeHandle(bool) {
     if (bool === undefined) bool = true;
-    this.shadowRoot.querySelector('lively-resizer').style.display =
+    this.get('lively-resizer').style.display =
       bool ? "block" : "none";
   }
 
@@ -304,7 +248,7 @@ export default class Window extends Morph {
     //   this.removeAttribute('active');
       
       
-    var content = this.shadowRoot.querySelector('#window-content');
+    var content = this.get('#window-content');
     if (this.positionBeforeMinimize) {
       this.minimizedPosition = lively.getPosition(this)
 
@@ -389,7 +333,9 @@ export default class Window extends Morph {
 
   onTitleMouseDown(evt) {
     evt.preventDefault();
-
+    evt.stopPropagation();
+    lively.focusWithoutScroll(this)
+    
     if(this.positionBeforeMaximize) return; // no dragging when maximized
 
     if (this.isFixed) {
@@ -403,19 +349,23 @@ export default class Window extends Morph {
       }
       this.dragging = pt(evt.clientX, evt.clientY)
     }
-        lively.removeEventListener('lively-window', document)
+    lively.removeEventListener('lively-window-drag', this.windowTitle)
     
-    lively.addEventListener('lively-window', document, 'mousemove', 
-      evt => this.onWindowMouseMove(evt));
-    lively.addEventListener('lively-window', document, 'mouseup', 
+    this.windowTitle.setPointerCapture(evt.pointerId)
+    lively.addEventListener('lively-window-drag', this.windowTitle, 'pointermove', 
+      evt => this.onWindowMouseMove(evt), true);
+    lively.addEventListener('lively-window-drag', this.windowTitle, 'pointerup', 
       evt => this.onWindowMouseUp(evt));
-    this.window.classList.add('dragging');
+    this.window.classList.add('dragging', true);
   }
 
   onWindowMouseMove(evt) {
+    // lively.showEvent(evt)
+
     if (this.dragging) {
       evt.preventDefault();
-
+      evt.stopPropagation();
+      
       if (this.isFixed) {
         lively.setPosition(this, pt(evt.clientX, evt.clientY).subPt(this.dragging));
       } else {
@@ -429,10 +379,10 @@ export default class Window extends Morph {
   onWindowMouseUp(evt) {
     evt.preventDefault();
     this.dragging = false;
-
+    this.windowTitle.releasePointerCapture(evt.pointerId)
     this.window.classList.remove('dragging');
     this.window.classList.remove('resizing');
-    lively.removeEventListener('lively-window', document)
+    lively.removeEventListener('lively-window-drag', this.windowTitle)
   }
 
   onExtentChanged(evt) {
