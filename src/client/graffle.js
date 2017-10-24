@@ -16,14 +16,14 @@ export default class Graffle {
       this.onKeyUp(evt)
     }, true)
 
-    lively.removeEventListener("GraffleMouse", document)
-    lively.addEventListener("GraffleMouse", document, "mousedown", (evt) => {
+    lively.removeEventListener("GraffleMouse", document.documentElement)
+    lively.addEventListener("GraffleMouse", document.documentElement, "pointerdown", (evt) => {
       this.onMouseDown(evt)
     }, true)
-    lively.addEventListener("GraffleMouse", document, "mousemove", (evt) => {
+    lively.addEventListener("GraffleMouse", document.documentElement, "pointermove", (evt) => {
       this.onMouseMove(evt)
     })
-    lively.addEventListener("GraffleMouse", document, "mouseup", (evt) => {
+    lively.addEventListener("GraffleMouse", document.documentElement, "pointerup", (evt) => {
       this.onMouseUp(evt)
     })
 
@@ -83,8 +83,11 @@ export default class Graffle {
   }
   
   static onMouseDown(evt) {
-    if (!this.specialKeyDown()) return
     
+    if (!this.specialKeyDown()) return
+
+    document.documentElement.style.touchAction = "none"
+
     var targetContainer = evt.path.find(ea => ea.tagName == "LIVELY-CONTAINER")
 
     if (targetContainer) {
@@ -174,6 +177,8 @@ export default class Graffle {
   }
 
   static onMouseUp(evt) {
+    document.documentElement.style.touchAction = ""
+
 
     if (this.currentControlPoint) {
       if (this.currentConnectFrom) { 
