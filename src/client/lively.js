@@ -656,6 +656,16 @@ export default class Lively {
     this.initializeEvents(doc);
     this.initializeHalos();
 
+    lively.addEventListener("preventDragCopy", document, "dragstart", (evt) => {
+      if ((evt.path[0] === document.body)) {
+        evt.stopPropagation()
+        evt.preventDefault()    
+      }
+    })
+
+
+    
+    
     console.log("load local lively content ")
     await persistence.current.loadLivelyContentForURL()
     preferences.loadPreferences()
