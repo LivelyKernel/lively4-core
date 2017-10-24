@@ -227,10 +227,16 @@ export default class ViewNav {
     var grid = documentGrid.grid
     lively.setPosition(grid, pt( pos.x % grid.gridSize - 100, pos.y % grid.gridSize - 100) )
     lively.setGlobalPosition(documentGrid.documentSquare, pos)
+    
+    
+    var backgroundPos = lively.getGlobalPosition(document.body).addPt(pt(document.scrollingElement.scrollLeft, document.scrollingElement.scrollTop))
+    document.body.style.backgroundPosition = "" + (backgroundPos.x % 100) +"px " + (backgroundPos.y % 100) + "px" 
   }
   
   static showDocumentGrid(target) {
     if (!target) return;
+    
+    document.body.style.backgroundImage="url(' data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAC1UlEQVR4Ae2dYacyQRiGp4noQ0RERB8iov//R/oQ0YeIiEhRpOxr1rursocoudjrIWefPWv27r7OzJzZ3ZltzOfzLPwRs9ns6Ter1SpcLpenfSkZj8eh3W6X+7fbbdjv92VebAwGg9Dr9Yo0HA6HsNlsyrzY6Ha7YTgcFmm4Xq9huVyWebHRarXCZDIp0vznYrEI9/v9aV9KptNpaDab5f71eh1Op1OZFxuj0Sh0Op0iDbvdLv+UO/5v9Pv9kD5FpLJSma+RykplFpG0JY2vkbQljY0E5NX414PNf+dA/N2pPNM7DgjkHZd+eIxAfmj2O6cSyDsu/fAYgfzQ7HdO1ciy7M9/e98pwGO+64A15Lt+flyaQD628LsFCOS7fn5cWkyXQwyOA7Hq2hRHXv2U2GTBmAtEIDAHYHKsITAgjfP5nD3eXILpq50cL53AkNtkCQTmAExOTA8kGBwHYtXTIRx59VNiHwJjLhCBwByAybGG0ICkxzsNjgOO1DksciU2WQKBOQCTE9OUAIPjQKyan8GRVz8l9iEw5gIRCMwBmBxrCA1ImmBpcBxwpM5hkSuxyRIIzAGYnJgm5RscB2LVCgkcefVTYh8CYy4QgcAcgMmxhtCApCWODI4DjtQ5LHIlNlkCgTkAk2MNoQGpWv8PprFWcmLVgpG1cgD2ZW2yBAJzACbHGiIQmAMwOY3b7ZY9rvgM01c7OV46gSG3DxEIzAGYnFi1oj9MY63kxKpXNtTKAdiXtQ8RCMwBmBxriEBgDsDkNI7HY/b4ziWYvtrJcaQOQ24fIhCYAzA5Mb2nz+A4IBAOi1yJfYhAYA7A5FhDBAJzACYnPr7xGKatlnIcqcOw24cIBOYATI63cGlAfMiBRcQ+hMUjCEQgMAdgcqwhNCDeT2cRcaTO4mGnDuMhEBwQp0WzkEQXDoABYclRjeMQ2N+AQAQCcwAmJzpHnUXEkTqLR/gHE2yk2eQIeIIAAAAASUVORK5CYII=')"
     
     var documentGrid = document.createElement("div")
   	documentGrid.style["z-index"] = -200
@@ -239,7 +245,7 @@ export default class ViewNav {
     documentGrid.id = "DocumentGrid"
     documentGrid.classList.add("document-grid")
   	documentGrid.setAttribute("data-lively4-donotpersist", "all")
-  	documentGrid.style.overflow = "hidden"
+  	// documentGrid.style.overflow = "hidden"
   	documentGrid.style.pointerEvents = "none"
   	documentGrid.livelyAcceptsDrop = function() {}
 
@@ -262,7 +268,7 @@ export default class ViewNav {
     lively.setExtent(documentGrid, pt(width , height))
 
     documentGrid.documentSquare = this.showDocumentGridItem(pt(0, 0), 
-          "white", "0.5px solid rgb(50,50,50)", 4000, 2000, documentGrid )
+          "rgba(250,250,240,0.5)", "0.5px solid rgb(50,50,50)", 4000, 2000, documentGrid )
 
     documentGrid.documentSquare.livelyAcceptsDrop = function() {}
 
@@ -270,12 +276,12 @@ export default class ViewNav {
     documentGrid.appendChild(grid)
     lively.setPosition(grid, pt(0,0))
     
-    for (var k=0; k < w; k += gridSize) {
-      for (var l=0; l < h; l += gridSize) {
-        this.showDocumentGridItem(pt(k, l), 
-          undefined, "0.2px dashed rgb(190,190,190)", gridSize, gridSize, grid)
-      }  
-    }
+    // for (var k=0; k < w; k += gridSize) {
+    //   for (var l=0; l < h; l += gridSize) {
+    //     this.showDocumentGridItem(pt(k, l), 
+    //       undefined, "0.2px dashed rgb(190,190,190)", gridSize, gridSize, grid)
+    //   }  
+    // }
     ViewNav.updateDocumentGrid(target.documentGrid, target)
   }
   
