@@ -1,9 +1,0 @@
-# foo
-
----
-
-# bar
-
-```
-layer.activate();
-```
