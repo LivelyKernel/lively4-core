@@ -20,8 +20,8 @@ export default class Selection extends Morph {
       this.current.remove()
     }
     
-    lively.removeEventListener("Selection", document.body.parentElement)
-    lively.addEventListener("Selection", document.body.parentElement, "mousedown", 
+    lively.removeEventListener("Selection", document.documentElement)
+    lively.addEventListener("Selection", document.documentElement, "mousedown", 
       e => Selection.current.onPointerDown(e))  // select in bubling phase ...
   }
  
@@ -35,6 +35,11 @@ export default class Selection extends Morph {
 
   onPointerDown(evt) {
     if (evt.ctrlKey || evt.altKey) return;
+    if (evt.path[0] !== document.body && evt.path[0] !==  document.documentElement) return
+     
+    document.documentElement.style.touchAction = "none"
+    // document.documentElement.setPointerCapture(evt.pointerId)
+    
     if (lively.hand && lively.hand.childNodes.length > 0) return; // in drag
     if (this.disabled) return
     
@@ -47,9 +52,9 @@ export default class Selection extends Morph {
     
     this.selectionOffset = pt(evt.clientX, evt.clientY)
 
-    lively.addEventListener("Selection", document.body.parentElement, "pointermove", 
+    lively.addEventListener("Selection", document.documentElement, "pointermove", 
       e => this.onPointerMove(e))
-    lively.addEventListener("Selection", document.body.parentElement, "pointerup", 
+    lively.addEventListener("Selection", document.documentElement, "pointerup", 
       e => this.onPointerUp(e))
 
     this.context = document.body;
@@ -59,7 +64,7 @@ export default class Selection extends Morph {
     //   this.context = that;
     // }
     this.nodes = [];
-    evt.preventDefault()
+    //evt.preventDefault()
   }
 
   onPointerMove(evt) {
@@ -106,9 +111,13 @@ export default class Selection extends Morph {
   }
 
   onPointerUp(evt) {
-    lively.removeEventListener("Selection", document.body.parentElement, "pointermove")
-    lively.removeEventListener("Selection", document.body.parentElement, "pointerup")
+    lively.removeEventListener("Selection", document.documentElement, "pointermove")
+    lively.removeEventListener("Selection", document.documentElement, "pointerup")
 
+    // document.documentElement.style.touchAction = ""
+
+    
+    document.documentElement.releasePointerCapture(evt.pointerId)
     
     if (this.nodes.length > 0) {
       var minP=this.selectionBounds.bottomRight(); 

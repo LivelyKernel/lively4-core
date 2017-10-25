@@ -10,11 +10,11 @@ export default class Selecting {
     // use capture to prevent the default behavior...
     lively.removeEventListener("selecting"); // in case of a reload
     // #UseCase #COP get rid of the explict "selecting" context/domain and replace it with the context of the module "Selecting.js"
-    lively.addEventListener("selecting", document.body.parentElement, 'mousedown', 
+    lively.addEventListener("selecting", document.documentElement, 'pointerdown', 
       (evt) => this.handleMouseDown(evt), true);
-    lively.addEventListener("selecting", document.body.parentElement, 'mouseup', 
+    lively.addEventListener("selecting", document.documentElement, 'pointerup', 
       (evt) => this.handleMouseUp(evt), true);
-    lively.addEventListener("selecting", document.body.parentElement, 'click', 
+    lively.addEventListener("selecting", document.documentElement, 'click', 
       (evt) => this.handleSelect(evt), true);
   }
 
@@ -29,13 +29,12 @@ export default class Selecting {
   }
 
   static handleMouseUp(e) {
-    
     if (e.ctrlKey || e.metaKey) {
       // console.log("mouse up " + e.target.tagName)
       e.stopPropagation();
       e.preventDefault();
     } else {
-      // if (e.path[0] == document.body.parentElement) {
+      // if (e.path[0] == document.documentElement) {
       // lively.notify("path: " + e.path)
       if (e.path.find(ea => ea.isHaloItem)) {
         // lively.notify("we are doing someing")
@@ -57,7 +56,7 @@ export default class Selecting {
       || element === window 
       || element === document 
       || element === document.body 
-      || element === document.body.parentElement // <HTML> element
+      || element === document.documentElement // <HTML> element
   }
 
   static slicePathIfContainerContent(path) {
@@ -84,7 +83,6 @@ export default class Selecting {
   }
   
   static handleSelect(e) {
-    
     if (e.ctrlKey || e.metaKey) {
       var rootNode = this.findRootNode(document.body)
       var path = this.slicePathIfContainerContent(e.path);
@@ -101,6 +99,8 @@ export default class Selecting {
       this.onMagnify(path[0], e, path);
       e.stopPropagation();
       e.preventDefault();
+    } else {
+      // lively.focusWithoutScroll(document.body)
     }
   }
   

@@ -496,6 +496,7 @@ export default class Lively {
   }
 
   static openContextMenu(container, evt, target, worldContext) {
+
     if (HaloService.areHalosActive() ||
       (HaloService.halosHidden && ((Date.now() - HaloService.halosHidden) < 500))) {
       target = that;
@@ -636,24 +637,35 @@ export default class Lively {
     // return selection
   }
 
+  // lively.ini
+  static initializeEvents(doc) {
+    doc = doc || document
+    this.addEventListener('lively', doc, 'mousedown', function(evt){
+      lively.onMouseDown(evt)}, false);
+    this.addEventListener('lively', doc, 'contextmenu', function(evt) {
+        lively.onContextMenu(evt)
+    }, false);
+    this.addEventListener('lively', doc, 'click', function(evt){lively.hideContextMenu(evt)}, false);
+    this.addEventListener('lively', doc, 'keydown', function(evt){lively.keys.handle(evt)}, false);
+  }
+  
   static async initializeDocument(doc, loadedAsExtension, loadContainer) {
     console.log("Lively4 initializeDocument");
 
     lively.loadCSSThroughDOM("font-awesome", lively4url + "/src/external/font-awesome/css/font-awesome.min.css");
-    
-    doc.addEventListener('contextmenu', function(evt) {
-        
-        if (!evt.shiftKey) { // evt.ctrlKey
-          evt.preventDefault();
-          lively.openContextMenu(document.body, evt);
-          return false;
-        }
-    }, false);
-    doc.addEventListener('click', function(evt){lively.hideContextMenu(evt)}, false);
-    doc.addEventListener('keydown', function(evt){lively.keys.handle(evt)}, false);
-
+    this.initializeEvents(doc);
     this.initializeHalos();
 
+    lively.addEventListener("preventDragCopy", document, "dragstart", (evt) => {
+      if ((evt.path[0] === document.body)) {
+        evt.stopPropagation()
+        evt.preventDefault()    
+      }
+    })
+
+
+    
+    
     console.log("load local lively content ")
     await persistence.current.loadLivelyContentForURL()
     preferences.loadPreferences()
@@ -1408,6 +1420,26 @@ export default class Lively {
     await func()
     return Date.now() - s  
   }
+  
+  static onMouseDown(evt) {
+    // lively.showEvent(evt)
+    lively.lastScrollTop = document.scrollingElement.scrollTop; 
+    lively.lastScrollLeft = document.scrollingElement.scrollLeft; 
+  }
+  
+  static onContextMenu(evt) {
+    if (!evt.shiftKey) { // evt.ctrlKey
+      evt.preventDefault();
+      evt.stopPropagation();
+      if (lively.lastScrollLeft) {
+        document.scrollingElement.scrollTop = lively.lastScrollTop;
+        document.scrollingElement.scrollLeft = lively.lastScrollLeft;
+      }          
+      lively.openContextMenu(document.body, evt);
+      return false;
+    }
+  }
+  
 }
 
 if (!window.lively || window.lively.name != "Lively") {

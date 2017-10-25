@@ -4,8 +4,7 @@ import svg from "src/client/svg.js"
 
 export default class Graffle {
   
-  // Graffle.keysDown
-  
+  // Graffle.keysDown 
   static load() {
     lively.notify("load graffle")
     lively.removeEventListener("Graffle", document.body)
@@ -16,16 +15,17 @@ export default class Graffle {
       this.onKeyUp(evt)
     }, true)
 
-    lively.removeEventListener("GraffleMouse", document)
-    lively.addEventListener("GraffleMouse", document, "mousedown", (evt) => {
+    lively.removeEventListener("GraffleMouse", document.documentElement)
+    lively.addEventListener("GraffleMouse", document.documentElement, "pointerdown", (evt) => {
       this.onMouseDown(evt)
     }, true)
-    lively.addEventListener("GraffleMouse", document, "mousemove", (evt) => {
+         lively.addEventListener("GraffleMouse", document.documentElement, "pointermove", (evt) => {
       this.onMouseMove(evt)
     })
-    lively.addEventListener("GraffleMouse", document, "mouseup", (evt) => {
+    lively.addEventListener("GraffleMouse", document.documentElement, "pointerup", (evt) => {
       this.onMouseUp(evt)
     })
+   
 
     this.keysDown = {}
   }
@@ -83,8 +83,18 @@ export default class Graffle {
   }
   
   static onMouseDown(evt) {
-    if (!this.specialKeyDown()) return
     
+    if (!this.specialKeyDown()) return
+
+    document.documentElement.style.touchAction = "none"
+    
+    //  lively.addEventListener("GraffleMouse", document.documentElement, "pointermove", (evt) => {
+    //   this.onMouseMove(evt)
+    // })
+    // lively.addEventListener("GraffleMouse", document.documentElement, "pointerup", (evt) => {
+    //   this.onMouseUp(evt)
+    // })
+
     var targetContainer = evt.path.find(ea => ea.tagName == "LIVELY-CONTAINER")
 
     if (targetContainer) {
@@ -175,6 +185,9 @@ export default class Graffle {
 
   static onMouseUp(evt) {
 
+    // lively.removeEventListener("GraffleMouse", document.documentElement, "pointerup")
+    // lively.removeEventListener("GraffleMouse", document.documentElement, "pointermove")
+    
     if (this.currentControlPoint) {
       if (this.currentConnectFrom) { 
         this.currentElement.connectFrom(this.currentConnectFrom)
@@ -192,6 +205,7 @@ export default class Graffle {
       this.lastMouseDown = null
       this.currentElement = null
       this.lastElement = this.currentElement
+      document.documentElement.style.touchAction = ""
 
     } else {
       this.lastElement = null
