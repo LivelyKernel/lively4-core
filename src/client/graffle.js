@@ -4,8 +4,7 @@ import svg from "src/client/svg.js"
 
 export default class Graffle {
   
-  // Graffle.keysDown
-  
+  // Graffle.keysDown 
   static load() {
     lively.notify("load graffle")
     lively.removeEventListener("Graffle", document.body)
@@ -20,12 +19,13 @@ export default class Graffle {
     lively.addEventListener("GraffleMouse", document.documentElement, "pointerdown", (evt) => {
       this.onMouseDown(evt)
     }, true)
-    lively.addEventListener("GraffleMouse", document.documentElement, "pointermove", (evt) => {
+         lively.addEventListener("GraffleMouse", document.documentElement, "pointermove", (evt) => {
       this.onMouseMove(evt)
     })
     lively.addEventListener("GraffleMouse", document.documentElement, "pointerup", (evt) => {
       this.onMouseUp(evt)
     })
+   
 
     this.keysDown = {}
   }
@@ -87,6 +87,13 @@ export default class Graffle {
     if (!this.specialKeyDown()) return
 
     document.documentElement.style.touchAction = "none"
+    
+    //  lively.addEventListener("GraffleMouse", document.documentElement, "pointermove", (evt) => {
+    //   this.onMouseMove(evt)
+    // })
+    // lively.addEventListener("GraffleMouse", document.documentElement, "pointerup", (evt) => {
+    //   this.onMouseUp(evt)
+    // })
 
     var targetContainer = evt.path.find(ea => ea.tagName == "LIVELY-CONTAINER")
 
@@ -177,9 +184,10 @@ export default class Graffle {
   }
 
   static onMouseUp(evt) {
-    document.documentElement.style.touchAction = ""
 
-
+    // lively.removeEventListener("GraffleMouse", document.documentElement, "pointerup")
+    // lively.removeEventListener("GraffleMouse", document.documentElement, "pointermove")
+    
     if (this.currentControlPoint) {
       if (this.currentConnectFrom) { 
         this.currentElement.connectFrom(this.currentConnectFrom)
@@ -197,6 +205,7 @@ export default class Graffle {
       this.lastMouseDown = null
       this.currentElement = null
       this.lastElement = this.currentElement
+      document.documentElement.style.touchAction = ""
 
     } else {
       this.lastElement = null
