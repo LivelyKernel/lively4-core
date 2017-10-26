@@ -4,6 +4,8 @@ import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
 import {pt, rect} from 'src/client/graphics.js';
 
+//   document.querySelectorAll("lively-selection").forEach(ea => ea.remove())
+
 export default class Selection extends Morph {
   
   get isMetaNode() { return true}
@@ -13,17 +15,20 @@ export default class Selection extends Morph {
     if (!window.lively) {
       return setTimeout(() => {Selection.load()}, 100) // defere
     }
+    
     if (!this.current){
       this.current = document.createElement("lively-selection")
       lively.components.openInBody(this.current)
       this.current.remove()
-    }
-    
-    lively.removeEventListener("Selection", document.documentElement)
-    lively.addEventListener("Selection", document.documentElement, "pointerdown", 
+    } 
+    this.current.registerOn(document.documentElement)
+  }
+  
+  registerOn(target) {
+    lively.removeEventListener("Selection", target)
+    lively.addEventListener("Selection", target, "pointerdown", 
       e => Selection.current.onPointerDown(e))  // select in bubling phase ...
-    
-    lively.addEventListener("Selection", document.documentElement, "pointerdown", 
+    lively.addEventListener("Selection", target, "pointerdown", 
       e => Selection.current.onPointerDownPre(e), true)  // select in bubling phase ...
   }
  
@@ -45,9 +50,17 @@ export default class Selection extends Morph {
   }
   
   onPointerDown(evt) {
+    var target;
     if (evt.ctrlKey || evt.altKey) return;
-    if (evt.path[0] !== document.body && evt.path[0] !==  document.documentElement) return 
+    if (evt.path[0] === document.body || evt.path[0] ===  document.documentElement) {
+      target = document.body
+    } 
     if (evt.pointerType == "touch") return; // no selection via touch
+    
+    if (!target)
+      target = evt.path.find(ea => ea.classList && ea.classList.contains("lively-group"))
+    // if (target) lively.showElement(target)
+    if (!target) return;
     
     document.documentElement.style.touchAction = "none"
     // document.documentElement.setPointerCapture(evt.pointerId)
@@ -68,16 +81,8 @@ export default class Selection extends Morph {
     lively.addEventListener("Selection", document.documentElement, "pointerup", 
       e => this.onPointerUp(e))
 
-    this.context = document.body;
-    // if (window.that && that !== this 
-    //     && HaloService.areHalosActive()
-    //     && !that.isMeta) {
-    //   this.context = that;
-    // }
+    this.context = target;
     this.nodes = [];
-    
-    // evt.preventDefault()
-    
   }
 
   onPointerMove(evt) {
@@ -87,38 +92,22 @@ export default class Selection extends Morph {
       document.body.appendChild(this)
       lively.setGlobalPosition(this, this.selectionOffset);
     }
-
-    // if (evtPos.eqPt(pt(0,0))) {
-    //   return; // last drag... is wiered. Is it a bug?
-    // } 
     
     var topLeft = this.selectionOffset.minPt(evtPos);
     var bottomRight = this.selectionOffset.maxPt(evtPos);
   
-    // lively.showPoint(topLeft)
-    // lively.showPoint(bottomRight)
-  
     this.selectionBounds = rect(topLeft, bottomRight);
-
     lively.setGlobalPosition(this,  topLeft);
     lively.setExtent(this, bottomRight.subPt(topLeft));
   
     this.nodes = Array.from(this.context.childNodes)
+      .filter( ea =>  !ea.isMetaNode)
       .filter( ea => {
-        return !ea.isMetaNode
-      })
-      .filter( ea => {
-      if (!ea.getBoundingClientRect || ea.isMetaNode) return false;
-      var r = ea.getBoundingClientRect();
-      var eaRect = rect(r.left, r.top,  r.width, r.height);
-      // if (this.selectionBounds.containsRect(eaRect))
-      //   console.log("ea: " + this.selectionBounds + " "  + eaRect)
-      return this.selectionBounds.containsRect(eaRect);
-    });
-
-    // lively.notify("drag " + this.context +" "+ this.nodes.length);
-    
-
+        if (!ea.getBoundingClientRect || ea.isMetaNode) return false;
+        var r = ea.getBoundingClientRect();
+        var eaRect = rect(r.left, r.top,  r.width, r.height);
+        return this.selectionBounds.containsRect(eaRect);
+      });
   }
 
   onPointerUp(evt) {
@@ -179,9 +168,6 @@ export default class Selection extends Morph {
  }
  
   haloDragTo(toPos, fromPos) {
-    lively.showPoint(toPos)    
-    lively.showPoint(fromPos).style.backgroundColor = "blue"    
-
     var delta = toPos.subPt(fromPos);
     this.nodes.concat([this]).forEach(ea => {
       debugger
@@ -192,7 +178,6 @@ export default class Selection extends Morph {
   }
  
   // cleanup:
-  //   document.querySelectorAll("lively-selection").forEach(ea => ea.remove())
   haloGrabStart(evt, haloItem, startPos) {
     if (haloItem.isCopyItem) {
       console.log("copy items...");
