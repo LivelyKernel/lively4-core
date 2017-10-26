@@ -1232,6 +1232,7 @@ export default class Lively {
   
   static findWorldContext(element) {
     if (!element) return document.body
+    if (!element.parentElement) return element.parentNode; // shadow root
     if (element.tagName == "BODY" || element.tagName == "LIVELY-CONTAINER")
       return element
     else
@@ -1240,7 +1241,7 @@ export default class Lively {
   
   static activeElement(worldContext) {
     worldContext = worldContext || document
-    var element = worldContext.activeElement  
+    var element = worldContext.activeElement
     if (element.shadowRoot && element.shadowRoot.activeElement)
       return this.activeElement(element.shadowRoot); // probe if we want to go deeper
     return element
@@ -1385,9 +1386,10 @@ export default class Lively {
     return id
   }
 
-  static elementByID(id) {
+  static elementByID(id, worldContext) {
     if (!id) return;
-    return document.querySelector('[data-lively-id="' + id + '"]');
+    worldContext = worldContext || document;
+    return worldContext.querySelector('[data-lively-id="' + id + '"]');
   }
 
   static query(element, query) {

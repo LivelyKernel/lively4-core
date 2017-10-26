@@ -9,17 +9,25 @@ export default class LivelyConnector extends Morph {
     return true
   }
  
+  
+  
   initialize() {
-    this.loadVertices() // if not connected
-    
-    this.fromElement = lively.elementByID(this.getAttribute("fromElement"))
-    this.toElement = lively.elementByID(this.getAttribute("toElement"))
-    this.connect(this.fromElement, this.toElement)
     
     this.resetBoundsDelay = (() => {
       this.resetBounds()
     })::debounce(500)
 
+    
+    this.loadVertices() // if not connected
+    
+    debugger
+    this.fromElement = lively.elementByID(this.getAttribute("fromElement"), lively.findWorldContext(this))
+    this.toElement = lively.elementByID(this.getAttribute("toElement"), lively.findWorldContext(this))
+   
+    
+    this.connect(this.fromElement, this.toElement)
+    
+    
     this.withAttributeDo("stroke", (color) => {
       this.stroke = color
     })
