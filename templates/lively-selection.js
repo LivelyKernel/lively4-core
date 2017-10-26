@@ -1,4 +1,3 @@
-
 import Morph from './Morph.js';
 
 import * as nodes from 'src/client/morphic/node-helpers.js';
@@ -101,8 +100,6 @@ export default class Selection extends Morph {
   
     this.selectionBounds = rect(topLeft, bottomRight);
 
-
-
     lively.setGlobalPosition(this,  topLeft);
     lively.setExtent(this, bottomRight.subPt(topLeft));
   
@@ -128,9 +125,7 @@ export default class Selection extends Morph {
     lively.removeEventListener("Selection", document.documentElement, "pointermove")
     lively.removeEventListener("Selection", document.documentElement, "pointerup")
 
-    document.documentElement.style.touchAction = ""
-
-    
+    document.documentElement.style.touchAction = ""    
     document.documentElement.releasePointerCapture(evt.pointerId)
     
     if (this.nodes.length > 0) {
@@ -179,38 +174,43 @@ export default class Selection extends Morph {
   haloDragStart(fromPos) {
     this.startPositions = new Map();
     this.nodes.concat([this]).forEach(ea => {
-      this.startPositions.set(ea, nodes.getPosition(ea));
+      this.startPositions.set(ea, lively.getPosition(ea));
     })
  }
  
   haloDragTo(toPos, fromPos) {
+    lively.showPoint(toPos)    
+    lively.showPoint(fromPos).style.backgroundColor = "blue"    
+
     var delta = toPos.subPt(fromPos);
     this.nodes.concat([this]).forEach(ea => {
+      debugger
       nodes.setPosition(ea, this.startPositions.get(ea).addPt(delta));
     });
     window.that = this
     HaloService.showHalos(this);
   }
  
-  haloGrabStart(evt, haloItem) {
+  // cleanup:
+  //   document.querySelectorAll("lively-selection").forEach(ea => ea.remove())
+  haloGrabStart(evt, haloItem, startPos) {
     if (haloItem.isCopyItem) {
       console.log("copy items...");
       this.haloCopyObject(haloItem);
     }
-    
-    this.startPositions.set(this, nodes.globalPosition(this));
+    this.startEventPos = startPos;
+
+    this.startPositions.set(this, lively.getPosition(this)); // #BUG this is to late, because drag is detacted later...
     this.nodes.forEach( ea => {
       ea.classList.add("lively4-grabbed")
-      var pos = nodes.globalPosition(ea);
+      var pos = lively.getPosition(ea);
       this.startPositions.set(ea, pos);
-      document.body.appendChild(ea);
-      ea.style.position = 'absolute';
-      nodes.setPosition(ea, pos);
     });
   }
   
   haloGrabMove(evt, grabHaloItem) {
-    this.haloDragTo(events.globalPosition(evt), this.startPositions.get(this));
+    
+    this.haloDragTo(events.globalPosition(evt), this.startEventPos);
   }
   
   haloGrabStop(evt, grabHaloItem) {
@@ -233,7 +233,7 @@ export default class Selection extends Morph {
       ea.style.position = "absolute";
       
       var pos = positions.get(ea);
-      if (dropTarget.localizePosition) {
+      if (dropTarget.localizePosition) {s
         pos = dropTarget.localizePosition(pos);
       } else {
         pos = pos.subPt(offset);
