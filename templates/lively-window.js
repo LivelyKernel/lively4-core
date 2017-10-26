@@ -74,7 +74,7 @@ export default class Window extends Morph {
       this.addEventListener('extent-changed', (evt) => { this.onExtentChanged(); });
       this.windowTitle.addEventListener('pointerdown', (evt) => { this.onTitleMouseDown(evt) });
       this.windowTitle.addEventListener('dblclick', (evt) => { this.onTitleDoubleClick(evt) });
-      this.addEventListener('mousedown', (evt) => this.focus(), true);
+      this.addEventListener('mousedown', (evt) => lively.focusWithoutScroll(this), true);
       this.get('.window-menu').addEventListener('click', evt => { this.onMenuButtonClicked(evt); });
       this.get('.window-min').addEventListener('click', evt => { this.onMinButtonClicked(evt); });
       this.maxButton.addEventListener('click', evt => { this.onMaxButtonClicked(evt); });

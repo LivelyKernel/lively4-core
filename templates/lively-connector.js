@@ -33,17 +33,16 @@ export default class LivelyConnector extends Morph {
     return this.getPath().getAttribute("stroke")
   }
 
-  // this.stroke = "blue"
   set stroke(c) {
     this.setAttribute("stroke", c)
-    return this.shadowRoot.querySelectorAll("path").forEach(ea => ea.setAttribute("stroke", c))
+    return this.shadowRoot.querySelectorAll("path").forEach(ea =>
+      ea.setAttribute("stroke", c))
   }
 
   get strokeWidth() {
     return this.getPath().getAttribute("stroke-width")
   }
 
-  // this.strokeWidth = "3px"
   set strokeWidth(w) {
     this.setAttribute("stroke-width", w)
     return this.getPath().setAttribute("stroke-width", w)
@@ -67,7 +66,7 @@ export default class LivelyConnector extends Morph {
     container.appendChild(a)
     container.appendChild(this)
     container.appendChild(b)
-    
+
     this.connect(a, b) 
   }
  
@@ -75,32 +74,27 @@ export default class LivelyConnector extends Morph {
   /*
    * Simple Path Based Connector.... should we make this a template? #TODO
    */
-   updationPathConnection(c, a, selectorA, b, selectorB) {
-      var p = c.shadowRoot.querySelector("path#path")
-      
-
-      var offset = lively.getGlobalPosition(c)
-      var v = SVG.getPathVertices(p)
-
-      if (a) {
-        var p1 = lively.getGlobalBounds(a).expandBy(1)[selectorA]()
-        v[0].x1 = p1.x - offset.x
-        v[0].y1 = p1.y - offset.y
-      }
-      
-      if (b) {
-        var p2 = lively.getGlobalBounds(b).expandBy(1)[selectorB]()
-        v[1].x1 = p2.x - offset.x
-        v[1].y1 = p2.y - offset.y
-      }
-      
-      SVG.setPathVertices(p,v)
-      // svg.resetBounds(c, p)
+  updationPathConnection(c, a, selectorA, b, selectorB) {
+    var p = c.shadowRoot.querySelector("path#path")
+    var offset = lively.getGlobalPosition(c)
+    var v = SVG.getPathVertices(p)
+    if (a) {
+      var p1 = lively.getGlobalBounds(a).expandBy(1)[selectorA]()
+      v[0].x1 = p1.x - offset.x
+      v[0].y1 = p1.y - offset.y
+    }
+    if (b) {
+      var p2 = lively.getGlobalBounds(b).expandBy(1)[selectorB]()
+      v[1].x1 = p2.x - offset.x
+      v[1].y1 = p2.y - offset.y
+    }
+    SVG.setPathVertices(p,v)
+    // svg.resetBounds(c, p)
   }
   
-   updateConnector() {
+  updateConnector(keepbounds) {
     var path = this
-    var b1 = lively.getGlobalBounds(path.fromElement || path); // path is fallback...
+    var b1 = lively.getGlobalBounds(path.fromElement || path);
     var b2 = lively.getGlobalBounds(path.toElement || path)
     
     var dist = b1.center().subPt(b2.center())
@@ -108,24 +102,24 @@ export default class LivelyConnector extends Morph {
     if (Math.abs(dist.x) > Math.abs(dist.y)) {
       if (b1.center().x > b2.center().x) {
         selectorA = "leftCenter"
-        selectorB = "rightCenter";
+        selectorB = "rightCenter"
       }  else {
-        selectorA = "rightCenter";
+        selectorA = "rightCenter"
         selectorB = "leftCenter"
       }
     } else {
       if (b1.center().y > b2.center().y) {
         selectorA = "topCenter"
-        selectorB = "bottomCenter";
+        selectorB = "bottomCenter"
       }  else {
         selectorA = "bottomCenter"
-        selectorB = "topCenter";
-
+        selectorB = "topCenter"
       }
     }
-    
     this.updationPathConnection(path, path.fromElement, selectorA, path.toElement, selectorB)
-    this.resetBoundsDelay()
+    if (!keepbounds) {
+      this.resetBoundsDelay()
+    }
   }
   
   observePositionChange(a, obervername, cb) {
@@ -153,23 +147,22 @@ export default class LivelyConnector extends Morph {
     this.connectTo(b)
   }
   
-  connectFrom(a, doNotUpdate) {
+  connectFrom(a, doNotUpdate, keepbounds) {
     if (!a) return
     this.setAttribute("fromElement", lively.ensureID(a))
     this.fromElement = a
     this.observePositionChange(a,  "fromObjectObserver", () => this.updateConnector())
-  
     if (!doNotUpdate)
-      this.updateConnector(); // just don't do it twice
+      this.updateConnector(keepbounds); // just don't do it twice
   }
   
-  connectTo(b, doNotUpdate) {
+  connectTo(b, doNotUpdate, keepbounds) {
     if (!b) return
     this.toElement = b
     this.setAttribute("toElement", lively.ensureID(b))
     this.observePositionChange(b,  "toObjectObserver", () => this.updateConnector())
     if (!doNotUpdate)
-      this.updateConnector(); // just don't do it twice
+      this.updateConnector(keepbounds); // just don't do it twice
   }
 
   disconnect() {
@@ -184,7 +177,7 @@ export default class LivelyConnector extends Morph {
     this.fromElement = null
   }
   
-   disconnectToElement() {
+  disconnectToElement() {
     if (this.toObjectObserver) {
       this.toObjectObserver.disconnect()
     }
@@ -202,7 +195,6 @@ export default class LivelyConnector extends Morph {
   setVertices(vertices) {
     return SVG.setPathVertices(this.getPath(), vertices)
   }
-
   
   pointTo(p) {
     this.disconnectToElement()
@@ -221,6 +213,7 @@ export default class LivelyConnector extends Morph {
     lively.moveBy(this, pos)
     lively.setPosition(svg, pt(0,0))
   }
+  
   saveVertices() {
     var vertices = this.getVertices()
     this.setAttribute("x1", vertices[0].x1)
@@ -228,7 +221,6 @@ export default class LivelyConnector extends Morph {
     this.setAttribute("x2", vertices[1].x1)
     this.setAttribute("y2", vertices[1].y1)
   }
-  
 
   loadVertices() {
     var vertices = this.getVertices()
@@ -245,17 +237,14 @@ export default class LivelyConnector extends Morph {
     
     this.setVertices(vertices)
   }
-
   
   livelyPrepareSave() {
     this.saveVertices()
   }
 
-  
   livelyMigrate(other) {
     // this.fromElement = other.fromElement
     // this.toElement = other.toElement
     // this.connect(this.fromElement, this.toElement)
   }
-
 }

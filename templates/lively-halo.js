@@ -8,7 +8,6 @@ import {Grid} from 'src/client/morphic/snapping.js';
 import DragBehavior from "src/client/morphic/dragbehavior.js"
 import svg from "src/client/svg.js"
 
-
 /*
  * Halo, the container for HaloItems
  */
@@ -26,7 +25,7 @@ export default class Halo extends Morph {
     var targetContext = document.body.parentElement
     
     lively.removeEventListener("Halo", targetContext);
-    lively.addEventListener("Halo", document.body, "mousedown", 
+    lively.addEventListener("Halo", document.body, "pointerdown", 
       evt => this.onBodyMouseDown(evt, targetContext));
 
     this.shadowRoot.querySelectorAll(".halo").forEach(ea => ea.halo = this)

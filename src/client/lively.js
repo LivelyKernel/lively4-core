@@ -837,6 +837,7 @@ export default class Lively {
   static showEvent(evt) {
     var r = lively.showPoint(pt(evt.clientX, evt.clientY))
     r.style.backgroundColor = "rgba(100,100,255,05)"
+    return r
   }
 
   static showRect(point, extent) {

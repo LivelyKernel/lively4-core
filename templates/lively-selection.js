@@ -21,8 +21,11 @@ export default class Selection extends Morph {
     }
     
     lively.removeEventListener("Selection", document.documentElement)
-    lively.addEventListener("Selection", document.documentElement, "mousedown", 
+    lively.addEventListener("Selection", document.documentElement, "pointerdown", 
       e => Selection.current.onPointerDown(e))  // select in bubling phase ...
+    
+    lively.addEventListener("Selection", document.documentElement, "pointerdown", 
+      e => Selection.current.onPointerDownPre(e), true)  // select in bubling phase ...
   }
  
   initialize() {
@@ -33,10 +36,20 @@ export default class Selection extends Morph {
     this.originalOffset = new Map();
   }
 
+  onPointerDownPre(evt) {
+    if (evt.ctrlKey || evt.altKey) return;
+    if (evt.path[0] !== document.body && evt.path[0] !==  document.documentElement) return 
+    if (evt.pointerType == "touch") return; // no selection via touch
+    
+    lively.showEvent(evt).style.display = "none"; // #HACK, weired event shit.. without it the world scrolls #TODO
+    document.documentElement.style.touchAction = "none"
+  }
+  
   onPointerDown(evt) {
     if (evt.ctrlKey || evt.altKey) return;
-    if (evt.path[0] !== document.body && evt.path[0] !==  document.documentElement) return
-     
+    if (evt.path[0] !== document.body && evt.path[0] !==  document.documentElement) return 
+    if (evt.pointerType == "touch") return; // no selection via touch
+    
     document.documentElement.style.touchAction = "none"
     // document.documentElement.setPointerCapture(evt.pointerId)
     
@@ -48,7 +61,6 @@ export default class Selection extends Morph {
       lively.showPoint(pt(evt.clientX, evt.clientY))     
       return
     }
-    
     
     this.selectionOffset = pt(evt.clientX, evt.clientY)
 
@@ -64,7 +76,9 @@ export default class Selection extends Morph {
     //   this.context = that;
     // }
     this.nodes = [];
-    //evt.preventDefault()
+    
+    // evt.preventDefault()
+    
   }
 
   onPointerMove(evt) {
@@ -114,7 +128,7 @@ export default class Selection extends Morph {
     lively.removeEventListener("Selection", document.documentElement, "pointermove")
     lively.removeEventListener("Selection", document.documentElement, "pointerup")
 
-    // document.documentElement.style.touchAction = ""
+    document.documentElement.style.touchAction = ""
 
     
     document.documentElement.releasePointerCapture(evt.pointerId)
