@@ -1,14 +1,15 @@
 //import focalStorage from './external/focalStorage.js';
+import { CacheStorage } from './cachestorage.js';
 
 /*
   This class is supposed to be a general-purpose cache for HTTP requests with different HTTP methods.
   It currently uses the builtin cache for GET requests
 */
 export class Cache {
-  
   constructor(name) {
     // Set cache name
     this._name = name;
+    this._cacheStorage = new CacheStorage();
     
     // Set up focalStorage
     /*focalStorage.settings = {
@@ -25,18 +26,26 @@ export class Cache {
     Currently always loads from the cache if possible.
   */
   fetch(request, p) {
-    // Check if the request is in the cache
-    return this._match(request).then((response) => {
-      if(response) {
-        console.log(`SWX Cache hit: ${request.method} ${request.url}`);
-        return response;
-      } else {
-        console.log(`SWX Cache miss: ${request.method} ${request.url}`);
-        return p.then((response) => {
-          return this._put(request, response);
-        });
-      }
-    })
+    if(navigator.onLine) {
+      console.log('Online');
+      return p.then((response) => {
+        return this._put(request, response);
+      });
+    } else {
+      console.log('Offline');
+      // Check if the request is in the cache
+      return this._match(request).then((response) => {
+        if(response) {
+          console.log(`SWX Cache hit: ${request.method} ${request.url}`);
+          return response;
+        } else {
+          console.log(`SWX Cache miss: ${request.method} ${request.url}`);
+          return p.then((response) => {
+            return this._put(request, response);
+          });
+        }
+      })
+    }
   }
   
   /*
@@ -44,7 +53,8 @@ export class Cache {
     @return Promise
   */
   _match(request) {
-    return caches.match(request);
+    //return caches.match(request);
+    return this._cacheStorage.match(this._buildKey(request));
     //return focalStorage.getItem(this._buildKey(request));
   }
   
@@ -53,6 +63,22 @@ export class Cache {
     @return Promise
   */
   _put(request, response) {
+    response.clone().blob().then((blob) => {
+      var serializedHeaders = {};
+      
+      for (var pair of response.headers.entries()) {
+         serializedHeaders[pair[0]] = pair[1];
+      }
+      
+      var serializedResponse = {
+        status: response.status,
+        statusText: response.statusText,
+        headers: serializedHeaders,
+        body: blob
+      };
+      this._cacheStorage.put(this._buildKey(request), serializedResponse);
+    });
+    
     return caches.open(this._name).then(function(cache) {
       // Builtin cache only supports GET requests
       if(request.method === 'GET') {
