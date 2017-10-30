@@ -4,7 +4,7 @@
   This class is supposed to be a general-purpose cache for HTTP requests with different HTTP methods.
   It currently uses the builtin cache for GET requests
 */
-export default class Cache {
+export class Cache {
   
   constructor(name) {
     // Set cache name

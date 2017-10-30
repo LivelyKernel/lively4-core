@@ -13,7 +13,7 @@ import dropboxfs from './fs/dropbox.js'
 
 import focalStorage from './external/focalStorage.js';
 
-import Cache from './cache.js';
+import { Cache } from './cache.js';
 
 const storagePrefix = "LivelySync_";
 
@@ -132,7 +132,7 @@ class ServiceWorker {
           throw err;
         }
       }
-    } else {
+    } else if (url.hostname === 'lively4') {
       let response = this.filesystem.handle(request, url);
 
       response = response.then((result) => {

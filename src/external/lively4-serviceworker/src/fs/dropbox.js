@@ -8,15 +8,15 @@ import * as util from '../util.js'
 
 export default class Filesystem extends Base {
   constructor(path, options) {
-    super('dropbox', path, options)
+    super('dropbox', path, options);
 
-    if(options.token) {
-      this.token = options.token
+    if (options.token) {
+      this.token = options.token;
     } else {
-      throw new Error("[dropbox] bearer auth token required")
+      throw new Error("[dropbox] bearer auth token required");
     }
 
-    if(options.subfolder) {
+    if (options.subfolder) {
       this.subfolder = options.subfolder
       if (this.subfolder[0] != '/') {
         this.subfolder = '/' + this.subfolder
@@ -39,13 +39,13 @@ export default class Filesystem extends Base {
       size: json['size']
     }
     
-    return result 
+    return result;
   }
 
   dropboxRequest(endpoint, path) {
-    let dropboxHeaders = new Headers()
-    dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
-    dropboxHeaders.append('content-type', "application/json")
+    let dropboxHeaders = new Headers();
+    dropboxHeaders.append('Authorization', 'Bearer ' + this.token); // Bearer
+    dropboxHeaders.append('content-type', "application/json");
     
     return new Request('https://api.dropboxapi.com/' + endpoint, {
       method: "POST",
@@ -57,9 +57,7 @@ export default class Filesystem extends Base {
   async stat(path, request, no_cache=false) {
     no_cache = true // #DEV
     
-    
-    
-    console.log("dropbox stat: " + this.subfolder + path)
+    console.log("dropbox stat: " + this.subfolder + path);
     let dropboxHeaders = new Headers()
     dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
     dropboxHeaders.append('content-type', "application/json")
@@ -179,12 +177,12 @@ export default class Filesystem extends Base {
     var file = new File(blob)  
     
     file.fileversion = this.extractMetadata(response).rev
-    return file
+    return file;
   }
 
   async write(path, fileContent, request) {
-    let fileContentFinal = await fileContent
-    let dropboxHeaders = new Headers()
+    let fileContentFinal = await fileContent;
+    let dropboxHeaders = new Headers();
     let dropboxPath = this.subfolder + path;
     var conflictversion;
 

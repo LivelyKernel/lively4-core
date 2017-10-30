@@ -98,11 +98,11 @@ export default class Filesystem extends Base {
   }
   
   async _getResponse(request, no_cache) {
-    if (!no_cache) {
+    /*if (!no_cache) {
       // Check if device is online
       if (navigator.onLine) {
         // TODO: Replace with new version
-        return await cache.match(request, 5 * 60 * 1000 /* 5 minute max cache age */);
+        return await cache.match(request, 5 * 60 * 1000);
       } else {
       // TODO: Replace with new version
         return await cache.match(request);
@@ -110,11 +110,11 @@ export default class Filesystem extends Base {
     } else {
       // TODO: Replace with new version
       cache.purge(request);
-    }
+    }*/
 
     let response = await self.fetch(request);
     // TODO: Replace with new version
-    cache.put(request, response);
+    //cache.put(request, response);
     return response.clone();
   }
 
