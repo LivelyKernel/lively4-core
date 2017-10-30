@@ -1,3 +1,80 @@
+//import focalStorage from './external/focalStorage.js';
+
+/*
+  This class is supposed to be a general-purpose cache for HTTP requests with different HTTP methods.
+  It currently uses the builtin cache for GET requests
+*/
+export default class Cache {
+  
+  constructor(name) {
+    // Set cache name
+    this._name = name;
+    
+    // Set up focalStorage
+    /*focalStorage.settings = {
+      driver: focalStorage.indexedDB,
+      name: this._name,
+      version: 1,
+      storeName: 'cache',
+    };*/
+  }
+  
+  /*
+    Fetches a request from the cache or network, according to the caching strategy.
+    To be used e.g. in `event.respondWith(...)`.
+    Currently always loads from the cache if possible.
+  */
+  fetch(request, p) {
+    // Check if the request is in the cache
+    return this._match(request).then((response) => {
+      if(response) {
+        console.log(`SWX Cache hit: ${request.method} ${request.url}`);
+        return response;
+      } else {
+        console.log(`SWX Cache miss: ${request.method} ${request.url}`);
+        return p.then((response) => {
+          return this._put(request, response);
+        });
+      }
+    })
+  }
+  
+  /*
+    Checks if a request is in the cache
+    @return Promise
+  */
+  _match(request) {
+    return caches.match(request);
+    //return focalStorage.getItem(this._buildKey(request));
+  }
+  
+  /*
+    Puts a response for a request in the cache
+    @return Promise
+  */
+  _put(request, response) {
+    return caches.open(this._name).then(function(cache) {
+      // Builtin cache only supports GET requests
+      if(request.method === 'GET') {
+        cache.put(request, response.clone());
+      }
+      return response;
+    });
+    //return focalStorage.setItem(this._buildKey(request), response.clone());
+  }
+  
+  /*
+    Builds a key for the cache from a request
+    @return String key
+  */
+  _buildKey(request) {
+    return `${request.method} ${request.url}`;
+  }
+}
+
+
+
+/* Old methods */
 function open(cache_name) {
   return caches.open(cache_name)
 }
@@ -45,3 +122,4 @@ export async function match(request, timeout=-1) {
 export function getAgeOf(request) {
   return open('lively4-cache-line-ages').then((cache) => cache.match(request))
 }
+

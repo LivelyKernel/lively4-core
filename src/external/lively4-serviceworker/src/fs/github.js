@@ -56,24 +56,7 @@ export default class Filesystem extends Base {
     }
 
     let request = new Request('https://api.github.com/repos/' + this.repo + '/contents/' + path + branchParam, {headers: githubHeaders})
-
-    let response = undefined
-
-    if (!no_cache) {
-      if (navigator.onLine) {
-        response = await cache.match(request, 5 * 60 * 1000 /* 5 minute max cache age */)
-      } else {
-        response = await cache.match(request)
-      }
-    } else {
-      cache.purge(request);
-    }
-
-    if (response === undefined) {
-      response = await self.fetch(request)
-      cache.put(request, response)
-      response = response.clone()
-    }
+    let response = this._getResponse(request, no_cache);
 
     util.responseOk(response, StatNotFoundError)
 
@@ -92,43 +75,47 @@ export default class Filesystem extends Base {
   async read(path, unused_request, no_cache=false) {
     let githubHeaders = new Headers()
     if (this.token) {
-      githubHeaders.append('Authorization', 'token ' + this.token)
+      githubHeaders.append('Authorization', 'token ' + this.token);
     }
 
-    let branchParam = ''
+    let branchParam = '';
     if (this.branch) {
-      branchParam = '?ref=' + this.branch
+      branchParam = '?ref=' + this.branch;
     }
 
-    let request = new Request('https://api.github.com/repos/' + this.repo + '/contents/' + path + branchParam, {headers: githubHeaders})
+    let request = new Request('https://api.github.com/repos/' + this.repo + '/contents/' + path + branchParam, {headers: githubHeaders});
+    let response = this._getResponse(request, no_cache);
 
-    let response = undefined
+    util.responseOk(response, FileNotFoundError);
 
+    let json = await response.json();
+
+    if(Array.isArray(json)) {
+      throw new IsDirectoryError();
+    } else {
+      return new File(atob(json['content']));
+    }
+  }
+  
+  async _getResponse(request, no_cache) {
     if (!no_cache) {
+      // Check if device is online
       if (navigator.onLine) {
-        response = await cache.match(request, 5 * 60 * 1000 /* 5 minute max cache age */)
+        // TODO: Replace with new version
+        return await cache.match(request, 5 * 60 * 1000 /* 5 minute max cache age */);
       } else {
-        response = await cache.match(request)
+      // TODO: Replace with new version
+        return await cache.match(request);
       }
     } else {
+      // TODO: Replace with new version
       cache.purge(request);
     }
 
-    if (response === undefined) {
-      response = await self.fetch(request)
-      cache.put(request, response)
-      response = response.clone()
-    }
-
-    util.responseOk(response, FileNotFoundError)
-
-    let json = await response.json()
-
-    if(Array.isArray(json)) {
-      throw new IsDirectoryError()
-    } else {
-      return new File(atob(json['content']))
-    }
+    let response = await self.fetch(request);
+    // TODO: Replace with new version
+    cache.put(request, response);
+    return response.clone();
   }
 
   async write(path, fileContent, unused_request) {
@@ -145,7 +132,7 @@ export default class Filesystem extends Base {
     let getResponse = await self.fetch('https://api.github.com/repos/' + this.repo + '/contents' + path, {headers: githubHeaders})
 
     if (getResponse.status != 200) {
-      throw new Error(getResponse.statusText)
+      throw new Error(getResponse.statusText);
     }
 
     let getJson = await getResponse.json()
