@@ -49,7 +49,7 @@ export default class HaloGrabItem extends HaloItem {
       events.noticableDistanceTo(evt, this.grabStartEventPosition)) {
       // drag detected
         if (this.grabTarget.haloGrabStart) {
-          this.grabTarget.haloGrabStart(evt, this)
+          this.grabTarget.haloGrabStart(evt, this, this.grabStartEventPosition)
         } else {
           this.initGrabShadow();
           this.prepareGrabTarget();

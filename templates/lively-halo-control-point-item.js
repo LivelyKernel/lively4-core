@@ -15,7 +15,7 @@ export default class HaloControlPointItem extends HaloItem {
   }
   
   initialize() {
-    lively.addEventListener("Morphic", this, 'mousedown',  e => this.onMouseDown(e));
+    lively.addEventListener("Morphic", this, 'pointerdown',  e => this.onMouseDown(e));
   }
   
   setup(halo, path, index) {
@@ -31,11 +31,7 @@ export default class HaloControlPointItem extends HaloItem {
     var v = svg.getPathVertices(this.path)
     var cp = v[this.index]
     lively.setPosition(this, this.offset.addPt(pt(cp.x1, cp.y1)))
-    //lively.setGlobalPosition(this, pt(0,0))
-    
-    // lively.setPosition(this, pt(0,0))
-    
-    
+    // lively.showPoint(lively.getGlobalPosition(this))
   }
 
   onMouseDown(evt) {
@@ -43,18 +39,16 @@ export default class HaloControlPointItem extends HaloItem {
     this.start(evt);
 
     // attach mousemove handler to body only after mousedown occured
-    lively.addEventListener("HaloControlPoint", document.body.parentElement, 'mousemove', (evt) => {
+    lively.addEventListener("HaloControlPoint", document.documentElement, 'pointermove', (evt) => {
       evt.preventDefault();
       this.move(evt);
     });
     // and capture the following mouse up anywere 
-    lively.addEventListener("HaloControlPoint", document.body.parentElement, 'mouseup',  e => this.onPointerUp(e));
+    lively.addEventListener("HaloControlPoint", document.documentElement, 'pointerup',  e => this.onPointerUp(e));
   }
 
   onPointerUp(evt) {
-    lively.removeEventListener("HaloControlPoint", document.body.parentElement);
-    lively.removeEventListener("HaloControlPoint", document.body.parentElement);
-
+    lively.removeEventListener("HaloControlPoint", document.documentElement);
     this.stop(evt);
   }
 
@@ -64,6 +58,8 @@ export default class HaloControlPointItem extends HaloItem {
     
     this.vertices = svg.getPathVertices(this.path)
     var cp = this.vertices[this.index]
+    
+    // #BUG we assume here that this will not change...
     this.original = pt(cp.x1, cp.y1)
     this.eventOffset = events.globalPosition(evt)
 
@@ -75,13 +71,12 @@ export default class HaloControlPointItem extends HaloItem {
     this.targetPointerEvents = this.target.style.pointerEvents
     this.target.style.pointerEvents = "none"; // disable mouse events while dragging...
     
-    
     this.findTargetAt(evt) 
   }
 
   showHighlight(element) {
-    this.highlight = lively.showElement(that,100000)
-    this.highlight.innerHTML = ""
+    this.highlight = lively.showElement(element,100000)
+    this.highlight.innerHTML = "" + element.id
     lively.moveBy(this.highlight, pt(-2,-2))
     this.highlight.style.border = "1px dashed rgba(0,0,100,0.5)"
     lively.setExtent(this.highlight, lively.getExtent(this.highlight).addPt(pt(2,2)))
@@ -94,20 +89,38 @@ export default class HaloControlPointItem extends HaloItem {
 
   findTargetAt(evt) {
     this.hideHighlight()
-    var element = evt.path.find(ea => 
-      ea.classList && ea.classList.contains("lively-content") && ea !== this)
+    
+    // does only work with "mousemove" but not with "pointermove"
+    // var element = evt.path.find(ea => {
+    //   lively.showElement(ea)
+    //   return ea.classList && ea.classList.contains("lively-content") && ea !== this 
+    // }) 
+    var p = pt(evt.clientX, evt.clientY)
+    var element
+    document.body.querySelectorAll(".lively-content").forEach(ea => {
+      if (ea.tagName !== "LIVELY-CONNECTOR" && 
+          lively.getGlobalBounds(ea).containsPoint(p)) element = ea;
+    })
+    
     if (element) {
-      this.showHighlight()
+      this.showHighlight(element)
       this.targetElement = element
     } else {
       if (this.targetElement) this.targetElement = null
     }
+    return element
   }
 
   move(evt) {
-    var delta = events.globalPosition(evt).subPt(this.eventOffset)
-    this.findTargetAt(evt) 
-    this.setVerticePosition(pt(this.original.x + delta.x, this.original.y + delta.y))
+    var element = this.findTargetAt(evt) ; 
+    var connectMethod = this.index == 0 ? "connectFrom" : "connectTo";
+    if (this.target[connectMethod]) {
+      this.target[connectMethod](this.targetElement || lively.hand); 
+      } else {
+      // non-connector path
+      var delta = events.globalPosition(evt).subPt(this.eventOffset)
+      this.setVerticePosition(pt(this.original.x + delta.x, this.original.y + delta.y))
+    } 
   }
 
   setVerticePosition(pos) {

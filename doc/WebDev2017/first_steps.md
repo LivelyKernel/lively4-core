@@ -2,7 +2,7 @@
 
 ## Generell
 
-Wenn ihr frÃÂ¼her Feedback haben wollt oder auf Show-Stopper stoÃÂt: Kommt vorbei (C.E-3, C.E-8)
+Wenn ihr fr&uuml;her Feedback haben wollt oder auf Show-Stopper sto&szlig;t: Kommt vorbei (C.E-3, C.E-8)
 
 ---
 

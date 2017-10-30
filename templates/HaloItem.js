@@ -28,8 +28,8 @@ export default class HaloItem extends Morph {
 
   registerMouseEvents() {
     this.registerEvent('click', 'onClick')
-    this.registerEvent('mousedown', 'onMouseDown')
-    this.registerEvent('mouseUp', 'onMouseUp')
+    this.registerEvent('pointerdown', 'onMouseDown')
+    this.registerEvent('pointerup', 'onMouseUp')
   }
   
   registerEvent(eventName, methodName) {
