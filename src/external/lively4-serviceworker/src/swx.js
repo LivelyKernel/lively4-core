@@ -202,11 +202,11 @@ export function activate() {
 
 export function fetch(event) {
   // console.log("fetch swx.js " + event.request.url)
-  return instancePromise().then( swx => swx.fetch(event))
+  return instancePromise().then(swx => swx.fetch(event))
 }
 
 export function message(event) {
-  return instancePromise().then( swx => swx.message(event))
+  return instancePromise().then(swx => swx.message(event))
 }
 
 export {
