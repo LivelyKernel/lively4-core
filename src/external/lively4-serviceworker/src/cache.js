@@ -1,45 +1,35 @@
-//import focalStorage from './external/focalStorage.js';
 import { CacheStorage } from './cachestorage.js';
 
-/*
-  This class is supposed to be a general-purpose cache for HTTP requests with different HTTP methods.
-  It currently uses the builtin cache for GET requests
-*/
+/**
+ * This class is supposed to be a general-purpose cache for HTTP requests with different HTTP methods.
+ * It currently uses the builtin cache for GET requests
+ */
 export class Cache {
   constructor(name) {
     // Set cache name
     this._name = name;
     this._cacheStorage = new CacheStorage();
-    
-    // Set up focalStorage
-    /*focalStorage.settings = {
-      driver: focalStorage.indexedDB,
-      name: this._name,
-      version: 1,
-      storeName: 'cache',
-    };*/
   }
   
-  /*
-    Fetches a request from the cache or network, according to the caching strategy.
-    To be used e.g. in `event.respondWith(...)`.
-    Currently always loads from the cache if possible.
-  */
+  /**
+   * Fetches a request from the cache or network, according to the caching strategy.
+   * To be used e.g. in `event.respondWith(...)`.
+   */
   fetch(request, p) {
     if(navigator.onLine) {
-      console.log('Online');
+      //console.log('Online');
       return p.then((response) => {
         return this._put(request, response);
       });
     } else {
-      console.log('Offline');
+      //console.log('Offline');
       // Check if the request is in the cache
       return this._match(request).then((response) => {
         if(response) {
-          console.log(`SWX Cache hit: ${request.method} ${request.url}`);
-          return response;
+          //console.log(`SWX Cache hit: ${request.method} ${request.url}`);
+          return this._deserializeResponse(response);
         } else {
-          console.log(`SWX Cache miss: ${request.method} ${request.url}`);
+          //console.log(`SWX Cache miss: ${request.method} ${request.url}`);
           return p.then((response) => {
             return this._put(request, response);
           });
@@ -48,59 +38,79 @@ export class Cache {
     }
   }
   
-  /*
-    Checks if a request is in the cache
-    @return Promise
-  */
+  /**
+   * Checks if a request is in the cache
+   * @return Promise
+   */
   _match(request) {
-    //return caches.match(request);
     return this._cacheStorage.match(this._buildKey(request));
-    //return focalStorage.getItem(this._buildKey(request));
   }
   
-  /*
-    Puts a response for a request in the cache
-    @return Promise
-  */
+  /**
+   * Puts a response for a request in the cache
+   * @return Response
+   */
   _put(request, response) {
-    response.clone().blob().then((blob) => {
-      var serializedHeaders = {};
-      
-      for (var pair of response.headers.entries()) {
-         serializedHeaders[pair[0]] = pair[1];
-      }
-      
-      var serializedResponse = {
-        status: response.status,
-        statusText: response.statusText,
-        headers: serializedHeaders,
-        body: blob
-      };
+    this._serializeResponse(response).then((serializedResponse) => {
       this._cacheStorage.put(this._buildKey(request), serializedResponse);
-    });
-    
-    return caches.open(this._name).then(function(cache) {
-      // Builtin cache only supports GET requests
-      if(request.method === 'GET') {
-        cache.put(request, response.clone());
-      }
-      return response;
-    });
-    //return focalStorage.setItem(this._buildKey(request), response.clone());
+    })
+    return response
   }
   
-  /*
-    Builds a key for the cache from a request
-    @return String key
-  */
+  /**
+   * Builds a key for the cache from a request
+   * @return String key
+   */
   _buildKey(request) {
     return `${request.method} ${request.url}`;
+  }
+  
+  /**
+   * Serializes a Response object to be stored in the CachStorage
+   * @param respones The Response object
+   * @return Dict A dictionary containing the serialized data
+   */
+  async _serializeResponse(response) {    
+    // Serialize headers
+    let serializedHeaders = {};
+    for (let pair of response.headers.entries()) {
+       serializedHeaders[pair[0]] = pair[1];
+    }
+    
+    // Serialize body
+    const blob = await response.clone().blob();
+
+    // Build serialized response
+    const serializedResponse = {
+      status: response.status,
+      statusText: response.statusText,
+      headers: serializedHeaders,
+      body: blob
+    };
+    
+    return serializedResponse;
+  }
+  
+  /**
+   * Deserializes a serialized response dictionary returned from the CachStorage
+   * @param serializedResponse A dictionary containing the serialized data
+   * @return Response object
+   */
+  _deserializeResponse(serializedResponse) {
+    return new Response(
+      serializedResponse.body,
+      {
+        status: serializedResponse.status,
+        statusText: serializedResponse.statusText,
+        headers: new Headers(serializedResponse.headers)
+      }
+    );
   }
 }
 
 
 
-/* Old methods */
+/* Old methods used by filesystems */
 function open(cache_name) {
   return caches.open(cache_name)
 }

@@ -133,7 +133,6 @@ class ServiceWorker {
         }
       }
     } else if (url.hostname === 'lively4') {
-      debugger;
       
       let response = this.filesystem.handle(request, url);
 
