@@ -2,12 +2,15 @@
  *
  */
 
-export function broadcast(message) {
+export function broadcast(message, command) {
   return self.clients.matchAll().then((clients) => {
     clients.forEach((client) => {
       try {
         client.postMessage({
-          meta: { type: 'broadcast' },
+          meta: {
+            type: 'broadcast',
+            command: command
+          },
           message: message
         })
       } catch(err) {

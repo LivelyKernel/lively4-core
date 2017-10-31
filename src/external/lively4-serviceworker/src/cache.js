@@ -1,4 +1,5 @@
 import { CacheStorage } from './cachestorage.js';
+import * as msg from './messaging.js'
 
 /**
  * This class is supposed to be a general-purpose cache for HTTP requests with different HTTP methods.
@@ -27,12 +28,12 @@ export class Cache {
       return this._match(request).then((response) => {
         if(response) {
           //console.log(`SWX Cache hit: ${request.method} ${request.url}`);
+          msg.broadcast('Fulfilled request from cache.', 'warning');
           return this._deserializeResponse(response);
         } else {
           //console.log(`SWX Cache miss: ${request.method} ${request.url}`);
-          return p.then((response) => {
-            return this._put(request, response);
-          });
+          msg.broadcast('Could not fulfil request from cache.', 'error');
+          return p;
         }
       })
     }
