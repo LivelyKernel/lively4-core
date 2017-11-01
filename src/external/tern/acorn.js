@@ -341,7 +341,7 @@
     // cause Acorn to call that function with object in the same
     // format as tokens returned from `tokenizer().getToken()`. Note
     // that you are not allowed to call the parser from the
-    // callbackâthat will corrupt its internal state.
+    // callbackÃ¢ÂÂthat will corrupt its internal state.
     onToken: null,
     // A function can be passed as `onComment` option, which will
     // cause Acorn to call that function with `(block, text, start,
@@ -352,7 +352,7 @@
     // When the `locations` option is on, two more parameters are
     // passed, the full `{line, column}` locations of the start and
     // end of the comments. Note that you are not allowed to call the
-    // parser from the callbackâthat will corrupt its internal state.
+    // parser from the callbackÃ¢ÂÂthat will corrupt its internal state.
     onComment: null,
     // Nodes have their start and end characters offsets recorded in
     // `start` and `end` properties (directly on the node, rather than
@@ -1460,7 +1460,7 @@
     return this.finishNode(node, "AssignmentPattern")
   }
 
-  // Verify that a node is an lval â something that can be assigned
+  // Verify that a node is an lval Ã¢ÂÂ something that can be assigned
   // to.
 
   pp$2.checkLVal = function(expr, isBinding, checkClashes) {
@@ -1513,8 +1513,8 @@
   var pp$3 = Parser.prototype
 
   // Check if property name clashes with already added.
-  // Object/class getters and setters are not allowed to clash â
-  // either with each other or with an init property â and in
+  // Object/class getters and setters are not allowed to clash Ã¢ÂÂ
+  // either with each other or with an init property Ã¢ÂÂ and in
   // strict mode, init properties are also not allowed to be repeated.
 
   pp$3.checkPropClash = function(prop, propHash) {
@@ -1751,7 +1751,7 @@
     }
   }
 
-  // Parse an atomic expression â either a single token that is an
+  // Parse an atomic expression Ã¢ÂÂ either a single token that is an
   // expression, an expression started by a keyword like `function` or
   // `new`, or an expression wrapped in punctuation like `()`, `[]`,
   // or `{}`.
@@ -1903,7 +1903,7 @@
   }
 
   // New's precedence is slightly tricky. It must allow its argument to
-  // be a `[]` or dot subscript expression, but not a call â at least,
+  // be a `[]` or dot subscript expression, but not a call Ã¢ÂÂ at least,
   // not without wrapping it in parentheses. Thus, it uses the noCalls
   // argument to parseSubscripts to prevent it from consuming the
   // argument list.
