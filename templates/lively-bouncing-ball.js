@@ -4,10 +4,10 @@ export default class Ball extends Morph {
 
   initialize() {
     debugger
-    this.windowTitle = "Bouncing Atom"
+    this.windowTitle = "Bouncing Atoms and other stuff"
     this.hits = this.hits || 0
     if (!this.balls) {
-      this.balls =  [{dx: 1, dy: 2, y: 150, x: 10}]
+      this.balls =  [{dx: 1, dy: 2, y: 180, x: 20}]
     }
     this.size = 10
     lively.html.registerButtons(this)

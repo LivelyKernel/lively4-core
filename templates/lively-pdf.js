@@ -47,7 +47,6 @@ export default class LivelyPDF extends Morph {
     });
     // Loading document.
     this.pdf = await PDFJS.getDocument(url);
-
     this.pdfViewer.setDocument(this.pdf);
     this.pdfLinkService.setDocument(this.pdf, null);
   }
