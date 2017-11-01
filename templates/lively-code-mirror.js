@@ -28,8 +28,8 @@ export default class LivelyCodeMirror extends HTMLElement {
 
   static async loadModules() {
     if (loadPromise) return loadPromise
-
     loadPromise = (async () => {
+
       await this.loadModule("lib/codemirror.js")
 
       await this.loadModule("mode/javascript/javascript.js")
@@ -65,6 +65,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("keymap/sublime.js")
       await System.import(lively4url + '/templates/lively-code-mirror-hint.js')
 
+      debugger
       await this.loadModule("addon/tern/tern.js")
 
       var terndir = lively4url + '/src/external/tern/'
