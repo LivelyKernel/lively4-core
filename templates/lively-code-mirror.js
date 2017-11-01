@@ -27,11 +27,8 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   static async loadModules() {
-    lively.notify("load modules...")
     if (loadPromise) return loadPromise
-
     loadPromise = (async () => {
-    lively.notify("... but not this")
 
       await this.loadModule("lib/codemirror.js")
 

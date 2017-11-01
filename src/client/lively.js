@@ -337,11 +337,11 @@ export default class Lively {
     var name = "lively-code-mirror"      
     return  lively.openComponentInWindow(name, null, pt(400,500), worldContext).then((comp) => {
       comp.mode = "javascript";
-      comp.editor.setValue(string);
+      comp.value = string;
       var container = comp.parentElement
       if (pos) lively.setPosition(container,pos);
       container.setAttribute("title", "Workspace");
-      comp.editor.focus();
+      comp.focus();
       return comp;
     });
   }
