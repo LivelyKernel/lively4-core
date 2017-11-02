@@ -6,26 +6,7 @@ const STORAGE_PREFIX = 'triple-notes:';
 const STORAGE_PREFIX_ITEMS = STORAGE_PREFIX + 'items:';
 
 export async function cachedFetch(url, options) {
-  const key = STORAGE_PREFIX_ITEMS + url.toString();
-  if(null === await focalStorage.getItem(key)) {
-    let text = await fetch(url, options).then(r => r.text())
-    focalStorage.setItem(key, text);
-    return text;
-  } else {
-    return focalStorage.getItem(key);
-  }
-}
-export async function invalidateFetchCache(url) {
-  const key = STORAGE_PREFIX_ITEMS + url.toString();
-  await focalStorage.removeItem(key);
-}
-export async function invalidateWholeCache() {
-  const keys = await focalStorage.keys();
-  const removeActions = keys
-    .filter(key => key.startsWith(STORAGE_PREFIX))
-    .map(key => focalStorage.removeItem(key))
-  lively.notify(removeActions.length);
-  return await Promise.all(removeActions);
+  return await fetch(url, options).then(r => r.text());
 }
 
 class Knot {
@@ -121,6 +102,12 @@ class Triple extends Knot {
   isTriple() { return true; }
 }
 
+export const DEFAULT_FOLDER_URL = 'https://localhost:8800/notes/';
+export const TAG_URL = DEFAULT_FOLDER_URL + '/tag.md';
+export const IS_A_URL = DEFAULT_FOLDER_URL + '/is_a.md';
+export const SAME_AS_URL = DEFAULT_FOLDER_URL + '/same_as.md';
+export const CONTAINS_URL = DEFAULT_FOLDER_URL + '/contains.md';
+
 export class Graph {
   constructor() {
     this.knots = [];
@@ -129,7 +116,7 @@ export class Graph {
     this.requestedKnots = new Map();
   }
   async prepare() {
-    return this.loadFromDir('https://lively4/dropbox/');
+    return this.loadFromDir(DEFAULT_FOLDER_URL);
   }
   
   getKnots() {
@@ -252,8 +239,13 @@ export class Graph {
     return this.requestedKnots.get(filePath);
   }
   
+  static isInternalURL(url) {
+    const origin = url.origin;
+    return origin === 'https://lively4' || origin === 'https://localhost:8800';
+  }
+  
   static isExternalURL(url) {
-    return url.origin !== 'https://lively4';
+    return !this.isInternalURL(url);
   }
   async loadSingleKnot(urlOrString) {
     const url = new URL(urlOrString);
@@ -331,7 +323,7 @@ export class Graph {
     await this.requestKnot(predicateURLString);
     await this.requestKnot(objectURLString);
     
-    const directory = 'https://lively4/dropbox/';
+    const directory = DEFAULT_FOLDER_URL;
     let url = await this.getNonCollidableURL(directory, 'triple-' + uuid(), 'triple.json');
     let content = JSON.stringify({
       subject: subjectUrlString,
