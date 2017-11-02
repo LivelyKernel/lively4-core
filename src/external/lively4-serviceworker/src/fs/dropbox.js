@@ -198,9 +198,24 @@ export default class Filesystem extends Base {
     var conf = {
           path: dropboxPath
         }
-    if (lastversion && lastversion != "null") {
-      console.log("put with last version: " + lastversion)
-      // parameters += "?parent_rev="+lastversion + "&" +"autorename=false"
+    
+    if (!lastversion || lastversion == "null") {
+      let dropboxVersionRequest = new Request('https://api.dropboxapi.com/2/files/get_metadata', {
+        method: "POST",
+        headers: {
+         "Authorization": 'Bearer ' + this.token,
+          'content-type': "application/json"
+        },
+        body: JSON.stringify({ path: dropboxPath})
+      })
+      var resp = await fetch(dropboxVersionRequest)
+      // if (resp.statusText == "Conflict") // 409
+      if (resp.status == 200) {
+        var meta = await resp.json()
+        lastversion = meta.rev
+      }
+    }
+    if (lastversion) {
       Object.assign(conf, {
         mode: {
           ".tag": "update",
@@ -208,23 +223,9 @@ export default class Filesystem extends Base {
         },  
         "autorename": false,
         "mute": false
-      })
-    } else {
-      let dropboxVersionRequest = new Request('https://api.dropboxapi.com/2/files/get_metadata', {
-        method: "POST",
-        headers: {
-          "Authorization": 'Bearer ' + this.token,
-        },
-        body: JSON.stringify({ path: dropboxPath})
-      })
-      var resp = await fetch(dropboxVersionRequest)
-      debugger
-      var p = resp.json()
-      debugger
-      var meta = await p
-      lastversion = meta.rev
-    }
-    
+      })      
+    } 
+
     let response = await self.fetch(new Request('https://content.dropboxapi.com/2/files/upload', {
       method: "POST",
       headers: {
@@ -289,10 +290,15 @@ export default class Filesystem extends Base {
   async del(path, request) {
     let dropboxHeaders = new Headers()
     dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
-
+    dropboxHeaders.append('content-type', "application/json")
+    
     var dropboxPath = this.subfolder + path
 
-    var deleteRequest = new Request('https://api.dropboxapi.com/1/fileops/delete?root=auto&path=' + dropboxPath, {headers: dropboxHeaders});
+    var deleteRequest = new Request('https://api.dropboxapi.com/2/files/delete', {
+      method: "POST",
+      headers: dropboxHeaders,
+      body: JSON.stringify({ path: dropboxPath})
+    });
 
     var response = await fetch(deleteRequest)
     if(response.status < 200 || response.status >= 300) {
@@ -304,6 +310,8 @@ export default class Filesystem extends Base {
       status: 200})
   }
   
+  // #TODO not implemented yet -> do it for v2
+  // promise: jens will do this if stefan helps him clean up this mess... 
   async makeDir(path, request) {
     
     let dropboxHeaders = new Headers()
