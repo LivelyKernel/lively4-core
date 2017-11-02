@@ -97,6 +97,29 @@ describe('Dropbox', function() {
         done(e)
       } 
     });
+    
+//     it('write a file without version', async function(done) {
+//       try {
+//         var content = "Hello World  " + Math.random()
+//         var filename = "/foo3.txt";
+//         var existing = await sut.read(filename, new Request("https://lively4/dropbox"))
+
+//         var request = new Request("https://lively4/dropbox", {
+//           headers: {
+//           }
+//         });
+
+//         await sut.write(filename, content, request)
+
+//         var file = await sut.read(filename, new Request("https://lively4/dropbox"))
+//         var read = await readFile(file)
+//         expect(read).to.be.equal(content)
+//         done()
+//       } catch(e) {
+//         done(e)
+//       } 
+//     });
+    
   }) 
 })
   
