@@ -3,7 +3,13 @@ import ContextMenu from 'src/client/contextmenu.js';
 
 import d3 from 'src/external/d3.v4.js';
 
-import { Graph } from 'src/client/triples/triples.js';
+import {
+  Graph,
+  TAG_URL,
+  IS_A_URL,
+  SAME_AS_URL,
+  CONTAINS_URL
+} from 'src/client/triples/triples.js';
 import * as drawTools from 'src/client/triples/drawTools.js';
 import * as math from 'src/client/triples/math.js';
 
@@ -60,10 +66,10 @@ const cssClassesByFileType = {
   'csv': ['data']
 }
 const cssClassesByTagURL = {
-  'https://lively4/dropbox/tag.md': ['tag'],
-  'https://lively4/dropbox/is_a.md': ['is-a'],
-  'https://lively4/dropbox/same_as.md': ['same-as'],
-  'https://lively4/dropbox/contains.md': ['contains'],
+  [TAG_URL]: ['tag'],
+  [IS_A_URL]: ['is-a'],
+  [SAME_AS_URL]: ['same-as'],
+  [CONTAINS_URL]: ['contains'],
 }
 class Node {
   static getCSSClassesByType(node) {

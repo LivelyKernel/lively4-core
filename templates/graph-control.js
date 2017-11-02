@@ -1,7 +1,7 @@
 import Morph from './Morph.js';
 import KnotView from "./knot-view.js";
 
-import { Graph, invalidateWholeCache } from 'src/client/triples/triples.js';
+import { Graph } from 'src/client/triples/triples.js';
 import lively from 'src/client/lively.js';
 
 export default class GraphControl extends Morph {
@@ -28,12 +28,6 @@ export default class GraphControl extends Morph {
     
     let launchGraph = this.get('#launchGraph');
     launchGraph.addEventListener('click', event => this.launchGraph());
-    
-    let clearCache = this.get('#clear-cache');
-    clearCache.addEventListener('click', event => this.onClearCache());
-    
-    let resetGraph = this.get('#reset-graph');
-    resetGraph.addEventListener('click', event => this.onResetGraph());
     
     let input = this.get('#open-knot-view');
     input.setLabel('Open Knot');
@@ -82,11 +76,6 @@ export default class GraphControl extends Morph {
     const addTriple = await lively.openComponentInWindow("add-triple");
     addTriple.focus();
     addTriple.afterSubmit = () => addTriple.parentElement.remove();
-  }
-  
-  async onClearCache() {
-    await invalidateWholeCache();
-    lively.notify('cleared graph cache');
   }
   
   async onResetGraph() {

@@ -1,6 +1,6 @@
 import Morph from './Morph.js';
 
-import { Graph, _ } from 'src/client/triples/triples.js';
+import { Graph, _, DEFAULT_FOLDER_URL } from 'src/client/triples/triples.js';
 import lively from 'src/client/lively.js';
 import { promisedEvent, debounce, sortBy, last } from "utils";
 
@@ -60,8 +60,8 @@ export default class ResearchDiary extends Morph {
     editorComp.addEventListener("change" , e => this.debouncedSave(this.codeEditor.value));
   }
   
-  get researchDiaryURL() { return "https://lively4/dropbox/Research_Diary.md"; }
-  get entryOfURL() { return "https://lively4/dropbox/entry_of.md"; }
+  get researchDiaryURL() { return DEFAULT_FOLDER_URL + "Research_Diary.md"; }
+  get entryOfURL() { return DEFAULT_FOLDER_URL + "entry_of.md"; }
   async getEntries() {
     const graph = await Graph.getInstance();
     const researchDiaryKnot = await graph.requestKnot(this.researchDiaryURL);
@@ -119,7 +119,7 @@ export default class ResearchDiary extends Morph {
     this.immediatePreviewNoSave();
     
     let graph = await Graph.getInstance();
-    let newKnot = await graph.createKnot('https://lively4/dropbox/', getTodaysTitle(), 'md');
+    let newKnot = await graph.createKnot(DEFAULT_FOLDER_URL, getTodaysTitle(), 'md');
     this.currentEntryURL = newKnot.url;
 
     await newKnot.save(content);

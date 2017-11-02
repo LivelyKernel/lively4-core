@@ -1367,14 +1367,14 @@ export default class Lively {
   
   static focusWithoutScroll(element) {
     if (!element) return;
-    console.log("focusWithoutScroll " + element)
+    //console.log("focusWithoutScroll " + element)
     var scrollTop = document.scrollingElement.scrollTop
     var scrollLeft = document.scrollingElement.scrollLeft
     element.focus(true) 
     // the focus scrolls as a side affect, but we don't want that
     document.scrollingElement.scrollTop = scrollTop
     document.scrollingElement.scrollLeft = scrollLeft
-    console.log("scroll back " + scrollTop + " " + scrollLeft )
+    //console.log("scroll back " + scrollTop + " " + scrollLeft )
   }
   
   static ensureID(element) {
