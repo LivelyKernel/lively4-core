@@ -360,13 +360,12 @@ export class Graph {
     
     return this.requestKnot(url);
   }
-  async createTriple(subjectUrlString, predicateURLString, objectURLString) {
+  async createTriple(subjectUrlString, predicateURLString, objectURLString, knowledgeBaseURLString) {
     await this.requestKnot(subjectUrlString);
     await this.requestKnot(predicateURLString);
     await this.requestKnot(objectURLString);
-    
-    const directory = DEFAULT_FOLDER_URL;
-    let url = await this.getNonCollidableURL(directory, 'triple-' + uuid(), 'triple.json');
+
+    let url = await this.getNonCollidableURL(knowledgeBaseURLString, 'triple-' + uuid(), 'triple.json');
     let content = JSON.stringify({
       subject: subjectUrlString,
       predicate: predicateURLString,
@@ -374,7 +373,7 @@ export class Graph {
     });
     await lively.files.saveFile(url, content);
     
-    //await invalidateFetchCache(directory);
+    //await invalidateFetchCache(knowledgeBaseURLString);
     
     return this.requestKnot(url);
   }
