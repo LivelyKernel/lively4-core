@@ -103,10 +103,12 @@ class Triple extends Knot {
 }
 
 export const DEFAULT_FOLDER_URL = 'https://localhost:8800/notes/';
-export const TAG_URL = DEFAULT_FOLDER_URL + '/tag.md';
-export const IS_A_URL = DEFAULT_FOLDER_URL + '/is_a.md';
-export const SAME_AS_URL = DEFAULT_FOLDER_URL + '/same_as.md';
-export const CONTAINS_URL = DEFAULT_FOLDER_URL + '/contains.md';
+export const TAG_URL = DEFAULT_FOLDER_URL + 'tag.md';
+export const IS_A_URL = DEFAULT_FOLDER_URL + 'is_a.md';
+export const SAME_AS_URL = DEFAULT_FOLDER_URL + 'same_as.md';
+export const CONTAINS_URL = DEFAULT_FOLDER_URL + 'contains.md';
+
+const ROOT_KNOWLEDGE_BASES_KEY = 'triple-notes-root-knowledge-bases';
 
 export class Graph {
   constructor() {
@@ -116,7 +118,47 @@ export class Graph {
     this.requestedKnots = new Map();
   }
   async prepare() {
-    return this.loadFromDir(DEFAULT_FOLDER_URL);
+    const rootKnowledgeBases = await this.getRootKnowledgeBases();
+    return Promise.all(rootKnowledgeBases.map(::this.loadFromDir));
+  }
+  
+  async getRootKnowledgeBases() {
+    return (await focalStorage.getItem(ROOT_KNOWLEDGE_BASES_KEY)) || [
+      DEFAULT_FOLDER_URL
+      //, "https://lively4/gamedev/"
+    ]
+  }
+  
+  async addRootKnowledgeBase(urlString) {
+    try {
+      new URL(urlString);
+      const stats = JSON.parse(await lively.files.statFile(urlString));
+      if(!stats || stats.type !== "directory") {
+        throw new Error(stats);
+      }
+    } catch (e) {
+      lively.notify(`Knowledge base ${urlString} not valid.`, e.message, undefined, undefined, "red");
+      return;
+    }
+    
+    const rootKnowledgeBases = (await this.getRootKnowledgeBases()) || [];
+    if(!rootKnowledgeBases.includes(urlString)) {
+      rootKnowledgeBases.push(urlString);
+      await focalStorage.setItem(ROOT_KNOWLEDGE_BASES_KEY, rootKnowledgeBases);
+      return await this.loadFromDir(urlString);
+    }
+  }
+  
+  async removeRootKnowledgeBase(urlString) {
+    let rootKnowledgeBases = (await this.getRootKnowledgeBases()) || [];
+    if(rootKnowledgeBases.includes(urlString)) {
+      // remove via filter
+      rootKnowledgeBases = rootKnowledgeBases.filter(rootBase => rootBase !== urlString);
+      await focalStorage.setItem(ROOT_KNOWLEDGE_BASES_KEY, rootKnowledgeBases);
+      return true;
+    } else {
+      return false;
+    }
   }
   
   getKnots() {
