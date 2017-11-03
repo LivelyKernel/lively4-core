@@ -318,6 +318,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       comp.style.display = "inline"
       comp.style.backgroundColor = "rgb(250,250,250)"
       comp.style.display = "inline-block"
+      comp.style.minWidth = "20px"
+      comp.style.minHeight = "20px"
     })
     this.editor.doc.markText(this.editor.getCursor(true), this.editor.getCursor(false), {
       replacedWith: widget
@@ -340,7 +342,7 @@ export default class LivelyCodeMirror extends HTMLElement {
           table.style.overflow = "auto"    
         })
       }
-    } else if (typeof obj == 'object') {
+    } else if ((typeof obj == 'object') && (obj !== null)) {
       this.printWidget(obj, "lively-inspector").then( inspector => {
         inspector.inspect(obj)
         inspector.hideWorkspace()   
