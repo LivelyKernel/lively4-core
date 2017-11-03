@@ -57,35 +57,35 @@ export default class Filesystem extends Base {
   async stat(path, request, no_cache=false) {
     no_cache = true // #DEV
     
-    
-    
     console.log("dropbox stat: " + this.subfolder + path)
     let dropboxHeaders = new Headers()
     dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
     dropboxHeaders.append('content-type', "application/json")
+   
     
-    var showversions  = request.headers.get("showversions")
-    if (showversions) {
-      var revisionParameters = "?rev_limit=100"
-      var revisionRequest = new Request('https://api.dropboxapi.com/1/revisions/auto/' + this.subfolder + path + revisionParameters, {headers: dropboxHeaders});
+    // #TODO refactor to v2
+//     var showversions  = request.headers.get("showversions")
+//     if (showversions) {
+//       var revisionParameters = "?rev_limit=100"
+//       var revisionRequest = new Request('https://api.dropboxapi.com/1/revisions/auto/' + this.subfolder + path + revisionParameters, {headers: dropboxHeaders});
       
-      var revisions = await fetch(revisionRequest).then(r => r.json());
-      var revisionContents = {
-        // #TODO the API we use in the lively-editor and lively4-server are currently a proof of concept and should be unified to something with better names... etc
-        versions: revisions.map(ea => {
-            return {
-              version: ea.rev,
-              date: ea.modified,
-              author: "unknown",
-              comment: "no comment",
-              size: ea.size
-            }
-        })
-      };
+//       var revisions = await fetch(revisionRequest).then(r => r.json());
+//       var revisionContents = {
+//         // #TODO the API we use in the lively-editor and lively4-server are currently a proof of concept and should be unified to something with better names... etc
+//         versions: revisions.map(ea => {
+//             return {
+//               version: ea.rev,
+//               date: ea.modified,
+//               author: "unknown",
+//               comment: "no comment",
+//               size: ea.size
+//             }
+//         })
+//       };
       
-      var isDirectory = false; // versions of a directory?
-      return new Stat(isDirectory, revisionContents, ['GET', 'OPTIONS']);
-    }
+//       var isDirectory = false; // versions of a directory?
+//       return new Stat(isDirectory, revisionContents, ['GET', 'OPTIONS']);
+//     }
 
     let dropboxPath =  this.subfolder + path;
     let dropboxRequest = new Request('https://api.dropboxapi.com/2/files/get_metadata', {
@@ -184,7 +184,6 @@ export default class Filesystem extends Base {
 
   async write(path, fileContent, request) {
     let fileContentFinal = await fileContent
-    let dropboxHeaders = new Headers()
     let dropboxPath = this.subfolder + path;
     var conflictversion;
 
@@ -194,16 +193,29 @@ export default class Filesystem extends Base {
 
     // #TODO we could fill the cache with it... with the cache.put API
 
-    
-    
     // var parameters = ""
     var lastversion = request.headers.get("lastversion")
     var conf = {
           path: dropboxPath
         }
-    if (lastversion && lastversion != "null") {
-      console.log("put with last version: " + lastversion)
-      // parameters += "?parent_rev="+lastversion + "&" +"autorename=false"
+    
+    if (!lastversion || lastversion == "null") {
+      let dropboxVersionRequest = new Request('https://api.dropboxapi.com/2/files/get_metadata', {
+        method: "POST",
+        headers: {
+         "Authorization": 'Bearer ' + this.token,
+          'content-type': "application/json"
+        },
+        body: JSON.stringify({ path: dropboxPath})
+      })
+      var resp = await fetch(dropboxVersionRequest)
+      // if (resp.statusText == "Conflict") // 409
+      if (resp.status == 200) {
+        var meta = await resp.json()
+        lastversion = meta.rev
+      }
+    }
+    if (lastversion) {
       Object.assign(conf, {
         mode: {
           ".tag": "update",
@@ -211,9 +223,9 @@ export default class Filesystem extends Base {
         },  
         "autorename": false,
         "mute": false
-      })
+      })      
     } 
-    
+
     let response = await self.fetch(new Request('https://content.dropboxapi.com/2/files/upload', {
       method: "POST",
       headers: {
@@ -278,10 +290,15 @@ export default class Filesystem extends Base {
   async del(path, request) {
     let dropboxHeaders = new Headers()
     dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
-
+    dropboxHeaders.append('content-type', "application/json")
+    
     var dropboxPath = this.subfolder + path
 
-    var deleteRequest = new Request('https://api.dropboxapi.com/1/fileops/delete?root=auto&path=' + dropboxPath, {headers: dropboxHeaders});
+    var deleteRequest = new Request('https://api.dropboxapi.com/2/files/delete', {
+      method: "POST",
+      headers: dropboxHeaders,
+      body: JSON.stringify({ path: dropboxPath})
+    });
 
     var response = await fetch(deleteRequest)
     if(response.status < 200 || response.status >= 300) {
@@ -293,6 +310,8 @@ export default class Filesystem extends Base {
       status: 200})
   }
   
+  // #TODO not implemented yet -> do it for v2
+  // promise: jens will do this if stefan helps him clean up this mess... 
   async makeDir(path, request) {
     
     let dropboxHeaders = new Headers()
