@@ -26,7 +26,7 @@ class Knot {
   }
   isTriple() { return false; }
   async save(newContent) {
-    invalidateFetchCache(this.url);
+    //invalidateFetchCache(this.url);
     this.content = newContent;
     await lively.files.saveFile(this.url, newContent);
   }
@@ -314,7 +314,7 @@ export class Graph {
 `;
     await lively.files.saveFile(url, content);
     
-    await invalidateFetchCache(directory);
+    //await invalidateFetchCache(directory);
     
     return this.requestKnot(url);
   }
@@ -332,7 +332,7 @@ export class Graph {
     });
     await lively.files.saveFile(url, content);
     
-    await invalidateFetchCache(directory);
+    //await invalidateFetchCache(directory);
     
     return this.requestKnot(url);
   }

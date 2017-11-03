@@ -34,7 +34,7 @@ export default class LivelyMarkdown extends Morph {
       // or '' if the source string is not changed and should be escaped externaly.
       // If result starts with <pre... internal wrapper is skipped.
       highlight:  function (str, lang) {
-        debugger
+        //debugger
         if (lang && hljs.getLanguage(lang)) {
           try {
             hljs.configure({tabReplace: '  '})

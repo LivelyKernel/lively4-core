@@ -33,7 +33,7 @@ export default class Filesystem extends Base {
 
     if (response === undefined) {
       response = await self.fetch(f_request)
-      cache.put(f_request, response)
+      //cache.put(f_request, response)
       response = response.clone()
     }
 
@@ -61,7 +61,7 @@ export default class Filesystem extends Base {
 
     if (typeof response === 'undefined') {
       response = await self.fetch(f_request)
-      cache.put(f_request, response)
+      //cache.put(f_request, response)
       response = response.clone()
     }
 
