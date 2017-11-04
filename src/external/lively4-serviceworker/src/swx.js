@@ -133,7 +133,10 @@ class ServiceWorker {
         }
       }
     } else if (url.hostname === 'lively4') {
-      
+      // QUESTION: When opening a folder, lively sometimes sends a OPTION request to https://lively4/
+      // This request is then handled here and forwarded to the github filesystem, which returns an error 405
+      // (there is never any actual path, the request always goes to https://lively4/)
+      // Why is this happening? Is this still necessary?
       let response = this.filesystem.handle(request, url);
 
       response = response.then((result) => {
