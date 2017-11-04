@@ -20,7 +20,11 @@ export class Cache {
     if(navigator.onLine) {
       //console.log('Online');
       return p.then((response) => {
-        return this._put(request, response);
+        // Currently, we only store OPTIONS and GET requests in the cache
+        if(['OPTIONS', 'GET'].includes(request.method)) {
+          this._put(request, response);
+        }
+        return response;
       });
     } else {
       //console.log('Offline');
@@ -52,12 +56,9 @@ export class Cache {
    * @return Response
    */
   _put(request, response) {
-    // Currently, we only store OPTIONS and GET requests in the cache
-    if(['OPTIONS', 'GET'].includes(request.method)) {
-      this._serializeResponse(response).then((serializedResponse) => {
-        this._cacheStorage.put(this._buildKey(request), serializedResponse);
-      })
-    }
+    this._serializeResponse(response).then((serializedResponse) => {
+      this._cacheStorage.put(this._buildKey(request), serializedResponse);
+    })
     return response
   }
   
