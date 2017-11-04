@@ -52,9 +52,12 @@ export class Cache {
    * @return Response
    */
   _put(request, response) {
-    this._serializeResponse(response).then((serializedResponse) => {
-      this._cacheStorage.put(this._buildKey(request), serializedResponse);
-    })
+    // Currently, we only store OPTIONS and GET requests in the cache
+    if(['OPTIONS', 'GET'].includes(request.method)) {
+      this._serializeResponse(response).then((serializedResponse) => {
+        this._cacheStorage.put(this._buildKey(request), serializedResponse);
+      })
+    }
     return response
   }
   
