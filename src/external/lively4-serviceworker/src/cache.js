@@ -1,4 +1,5 @@
 import { CacheStorage } from './cachestorage.js';
+import Serializer from './serializer.js';
 import * as msg from './messaging.js'
 
 /**
@@ -33,7 +34,7 @@ export class Cache {
         if(response) {
           //console.log(`SWX Cache hit: ${request.method} ${request.url}`);
           msg.broadcast('Fulfilled request from cache.', 'warning');
-          return this._deserializeResponse(response);
+          return Serializer.deserialize(response);
         } else {
           //console.log(`SWX Cache miss: ${request.method} ${request.url}`);
           msg.broadcast('Could not fulfil request from cache.', 'error');
@@ -56,7 +57,7 @@ export class Cache {
    * @return Response
    */
   _put(request, response) {
-    this._serializeResponse(response).then((serializedResponse) => {
+    Serializer.serialize(response).then((serializedResponse) => {
       this._cacheStorage.put(this._buildKey(request), serializedResponse);
     })
     return response
@@ -68,48 +69,6 @@ export class Cache {
    */
   _buildKey(request) {
     return `${request.method} ${request.url}`;
-  }
-  
-  /**
-   * Serializes a Response object to be stored in the CachStorage
-   * @param respones The Response object
-   * @return Dict A dictionary containing the serialized data
-   */
-  async _serializeResponse(response) {    
-    // Serialize headers
-    let serializedHeaders = {};
-    for (let pair of response.headers.entries()) {
-       serializedHeaders[pair[0]] = pair[1];
-    }
-    
-    // Serialize body
-    const blob = await response.clone().blob();
-
-    // Build serialized response
-    const serializedResponse = {
-      status: response.status,
-      statusText: response.statusText,
-      headers: serializedHeaders,
-      body: blob
-    };
-    
-    return serializedResponse;
-  }
-  
-  /**
-   * Deserializes a serialized response dictionary returned from the CachStorage
-   * @param serializedResponse A dictionary containing the serialized data
-   * @return Response object
-   */
-  _deserializeResponse(serializedResponse) {
-    return new Response(
-      serializedResponse.body,
-      {
-        status: serializedResponse.status,
-        statusText: serializedResponse.statusText,
-        headers: new Headers(serializedResponse.headers)
-      }
-    );
   }
 }
 
