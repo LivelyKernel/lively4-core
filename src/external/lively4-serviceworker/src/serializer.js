@@ -14,7 +14,7 @@ async function serialize(object) {
  * @param serializedObject A dictionary containing the serialized data
  * @return Request/Response Deserialized object
  */
-function deserialize(serializedObject) {
+async function deserialize(serializedObject) {
   switch(serializedObject.type) {
     case 'response':
       return _deserializeResponse(serializedObject);
@@ -62,7 +62,7 @@ async function _serializeResponse(response) {
  * @param serializedResponse A dictionary containing the serialized data
  * @return Response object
  */
-function _deserializeResponse(serializedResponse) {
+async function _deserializeResponse(serializedResponse) {
   return new Response(
     serializedResponse.body,
     {
