@@ -1,17 +1,19 @@
 /**
- * A key-value store used by the cache
- * Currently uses IndexedDB to store data
+ * An indexedDB-backed queue to be used by the cache
  */
-export class CacheStorage {
+export class Queue {
   constructor() {
-    this._dbName = 'lively-sw-cache',
-    this._storeName = 'cache';
+    this._dbName = 'lively-sw-queue',
+    this._storeName = 'queue';
     
     var request = indexedDB.open(this._dbName, 1);
     
     request.onupgradeneeded = (event) => {
       this.db = event.target.result;
-      this.db.createObjectStore(this._storeName);
+      this.db.createObjectStore(this._storeName, {
+        keyPath: 'id',
+        autoIncrement: true
+      });
     };
     
     request.onsuccess = (event) => {
@@ -20,21 +22,26 @@ export class CacheStorage {
   }
   
   /**
-   * Stores a new key value pair or updates an existing value
+   * Puts a new item in the queue
    */
-  put(key, value) {
-    this._getObjectStore().put(value, key);
+  enqueue(item) {
+    this._getObjectStore().put(item);
   }
   
   /**
-   * Retrieves a value for a given key, or `null` if no value was found
+   * Retrieves an item from the queue
    * @return Promise
    */
-  match(key) {
+  /*dequeue() {
     return new Promise((resolve, reject) => {
-      var request = this._getObjectStore().get(key);
+      var request = this._getObjectStore().openCursor();
       request.onsuccess = (event) => {
         if(request.result) {
+          // Copy result
+          result = {}.assign(request.result);
+          
+          // Remove from DB
+          deleteRequest = this._getObjectStore().delete(result.);
           resolve(request.result);
         } else {
           resolve(null);
@@ -44,7 +51,7 @@ export class CacheStorage {
         resolve(null);
       }
     });
-  }
+  }*/
   
   /**
    * Gets the objectStore from IndexedDB

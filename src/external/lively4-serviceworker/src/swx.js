@@ -29,7 +29,7 @@ class ServiceWorker {
     // here we should remount previous filesystem (remembered in focalStorage)
     
     // Create cache
-    this._cache = new Cache('lively4_swx_cache_v1');
+    this._cache = new Cache();
   }
 
   static instance() {

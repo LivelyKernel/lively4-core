@@ -6,6 +6,10 @@
 async function serialize(object) {
   if(object instanceof Response) {
     return _serializeResponse(object);
+  } else if(object instanceof Request) {
+    return _serializeRequest(object);
+  } else {
+    return null;
   }
 }
 
@@ -18,6 +22,12 @@ async function deserialize(serializedObject) {
   switch(serializedObject.type) {
     case 'response':
       return _deserializeResponse(serializedObject);
+      break;
+    case 'request':
+      return _deserializeRequest(serializedObject);
+      break;
+    default:
+      return null;
   }
 }
 
@@ -88,7 +98,7 @@ async function _deserializeResponse(serializedResponse) {
  * @return Dict A dictionary containing the serialized data
  */
 async function _serializeRequest(request) {    
-  const serializedHeaders = _serializeHeaders(response.headers);
+  const serializedHeaders = _serializeHeaders(request.headers);
 
   // Serialize body
   const blob = await request.clone().blob();
