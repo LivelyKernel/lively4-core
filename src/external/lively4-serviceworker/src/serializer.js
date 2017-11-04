@@ -1,5 +1,5 @@
 /**
- * Serializes an object to be stored in the CachStorage
+ * Serializes an object. Request and Response currently supported.
  * @param object The object to be serialized
  * @return Dict A dictionary containing the serialized data
  */
@@ -10,7 +10,7 @@ async function serialize(object) {
 }
 
 /**
- * Deserializes a serialized object dictionary returned from the CachStorage
+ * Deserializes a serialized object
  * @param serializedObject A dictionary containing the serialized data
  * @return Request/Response Deserialized object
  */
@@ -31,16 +31,25 @@ export default {
 /* Private functions */
 
 /**
- * Serializes a Response object to be stored in the CachStorage
+ * Serializes a Headers object
+ * @param headers The Headers object
+ * @return Dict A dictionary containing the serialized data
+ */
+function _serializeHeaders(headers) {
+  let serializedHeaders = {};
+  for (let pair of headers.entries()) {
+     serializedHeaders[pair[0]] = pair[1];
+  }
+  return serializedHeaders;
+}
+
+/**
+ * Serializes a Response object
  * @param respones The Response object
  * @return Dict A dictionary containing the serialized data
  */
 async function _serializeResponse(response) {    
-  // Serialize headers
-  let serializedHeaders = {};
-  for (let pair of response.headers.entries()) {
-     serializedHeaders[pair[0]] = pair[1];
-  }
+  const serializedHeaders = _serializeHeaders(response.headers);
 
   // Serialize body
   const blob = await response.clone().blob();
@@ -58,7 +67,7 @@ async function _serializeResponse(response) {
 }
 
 /**
- * Deserializes a serialized response dictionary returned from the CachStorage
+ * Deserializes a serialized response
  * @param serializedResponse A dictionary containing the serialized data
  * @return Response object
  */
@@ -69,6 +78,60 @@ async function _deserializeResponse(serializedResponse) {
       status: serializedResponse.status,
       statusText: serializedResponse.statusText,
       headers: new Headers(serializedResponse.headers)
+    }
+  );
+}
+
+/**
+ * Serializes a Request object
+ * @param respones The Request object
+ * @return Dict A dictionary containing the serialized data
+ */
+async function _serializeRequest(request) {    
+  const serializedHeaders = _serializeHeaders(response.headers);
+
+  // Serialize body
+  const blob = await request.clone().blob();
+
+  // Build serialized response
+  const serializedRequest = {
+    type: 'request',
+    method: request.method,
+    url: request.url,
+    headers: serializedHeaders,
+    context: request.context,
+    referrer: request.referrer,
+    referrerPolicy: request.referrerPolicy,
+    mode: request.mode,
+    credentials: request.credentials,
+    redirect: request.redirect,
+    integrity: request.integrity,
+    cache: request.cache,
+    body: blob,
+    bodyUsed: request.bodyUsed
+  };
+
+  return serializedRequest;
+}
+
+/**
+ * Deserializes a serialized request
+ * @param serializedRequest A dictionary containing the serialized data
+ * @return Request object
+ */
+async function _deserializeRequest(serializedRequest) {
+  return new Request(
+    serializedRequest.url,
+    {
+      method: serializedRequest.method,
+      headers: new Headers(serializedRequest.headers),
+      body: serializedRequest.body,
+      mode: serializedRequest.mode,
+      credentials: serializedRequest.credentials,
+      cache: serializedRequest.cache,
+      redirect: serializedRequest.redirect,
+      referrer: serializedRequest.referrer,
+      integrity: serializedRequest.integrity
     }
   );
 }
