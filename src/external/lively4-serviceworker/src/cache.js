@@ -48,7 +48,8 @@ export class Cache {
         })
       } else if(this._queueMethods.includes(request.method)) {
         this._enqueue(request);
-        return null
+        msg.broadcast('Queued write request.', 'warning');
+        return this._buildFakeResponse();
       }
     }
   }
@@ -88,6 +89,17 @@ export class Cache {
    */
   _buildKey(request) {
     return `${request.method} ${request.url}`;
+  }
+  
+  /**
+   * Builds a fake Response to return when a Request is enqueued
+   * @return Response
+   */
+  _buildFakeResponse() {
+    return new Response(null, {
+      status: 202,
+      statusText: 'Accepted'
+    });
   }
 }
 

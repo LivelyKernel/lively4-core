@@ -53,7 +53,7 @@ if ('serviceWorker' in navigator || window.lively4chrome) {
         'error': 'red'
       };
       if('lively' in window) {
-        lively.notify('ServiceWorker', data.message, 3, null, messageColors[data.meta.command]);
+        lively.notify('ServiceWorker', data.message, 5, null, messageColors[data.meta.command]);
       }
     }
     
