@@ -1094,11 +1094,8 @@ export default class Container extends Morph {
     });
     return this.getContentRoot().innerHTML
   }
-
-  saveHTML(url) {
-    this.getContentRoot()
   
-    var source  = this.getHTMLSource();
+  saveSource(url, source) {
     return this.getEditor().then( editor => {
       editor.setURL(url);
       editor.setText(source);
@@ -1109,11 +1106,32 @@ export default class Container extends Morph {
         this.updateOtherContainers()
       }).then(() => {
         this.resetContentChanges()
-
-        lively.notify("saved html world.")        
+        lively.notify("saved content!")        
       })
     });
     
+  }
+
+  saveHTML(url) {
+    this.saveSource(url, this.getHTMLSource());
+  }
+  
+  async saveMarkdown(url) {
+    var htmlSource = this.get("lively-markdown").get("#content").innerHTML
+    debugger
+    // #Draft #Refactor
+    SystemJS.config({
+      map: {
+        htmlparser2: "https://lively-kernel.org/lively4/upndown/lib/htmlparser2.bundle.js"     
+      }
+    })
+    var upndown = (await System.import("https://lively-kernel.org/lively4/upndown/src/upndown.js")).default
+    var und = new upndown()
+    var source = await new Promise(r => und.convert(htmlSource, (err, md) => {r(md || err)}, 
+                                                    {keepHtml: true}))
+    // lively.notify("would save "+ JSON.stringify(source))
+    
+    this.saveSource(url, source);
   }
   
   saveEditsInView(url) {
@@ -1122,6 +1140,12 @@ export default class Container extends Morph {
         return lively.notify("Editing templates in View not supported yet!");
     } else if (url.match(/\.html$/)) {
       this.saveHTML(new URL(url)).then( () => {
+        // lively.notify({
+        //   title: "saved HTML",
+        //   color: "green"});
+       });
+    } else if (url.match(/\.md$/)) {
+      this.saveMarkdown(new URL(url)).then( () => {
         // lively.notify({
         //   title: "saved HTML",
         //   color: "green"});
