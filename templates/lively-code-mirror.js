@@ -10,6 +10,31 @@ import 'src/client/stablefocus.js';
 
 let loadPromise = undefined;
 
+// BEGIN #copied from emacs.js
+function repeated(cmd) {
+  var f = typeof cmd == "string" ? function(cm) { cm.execCommand(cmd); } : cmd;
+  return function(cm) {
+    var prefix = getPrefix(cm);
+    f(cm);
+    for (var i = 1; i < prefix; ++i) f(cm);
+  };
+}
+
+function getPrefix(cm, precise) {
+  var digits = cm.state.emacsPrefix;
+  if (!digits) return precise ? null : 1;
+  clearPrefix(cm);
+  return digits == "-" ? -1 : Number(digits);
+}
+
+function operateOnWord(cm, op) {
+  var start = cm.getCursor(), end = cm.findPosH(start, 1, "word");
+  cm.replaceRange(op(cm.getRange(start, end)), start, end);
+  cm.setCursor(end);
+}
+// END
+
+
 export default class LivelyCodeMirror extends HTMLElement {
 
   static get codeMirrorPath() {
@@ -222,6 +247,15 @@ export default class LivelyCodeMirror extends HTMLElement {
       "Ctrl-S": (cm) => {          
         this.doSave(editor.getValue());
       },
+      
+      // #copied from keymap/emacs.js
+      "Alt-C": repeated(function(cm) {
+      operateOnWord(cm, function(w) {
+        var letter = w.search(/\w/);
+        if (letter == -1) return w;
+        return w.slice(0, letter) + w.charAt(letter).toUpperCase() + w.slice(letter + 1).toLowerCase();
+      });
+    }),
     });
     editor.setOption("hintOptions", {
       container: this.shadowRoot.querySelector("#code-mirror-hints"),
