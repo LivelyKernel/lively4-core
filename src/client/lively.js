@@ -354,7 +354,17 @@ export default class Lively {
     });
   }
 
-
+  static async create(name="lively-table", parent=document.body) {
+    var element = document.createElement(name)
+    // #TODO normal elements will not resolve this promoise #BUG
+    await lively.components.openIn(parent, element)
+    // if (document.activeElement) {
+    //   var pos = lively.getGlobalBounds(document.activeElement).bottomLeft()
+    //   lively.setGlobalPosition(element, pos)
+    // }
+    return element
+  }
+  
   static boundEval(str, ctx) {
     // #TODO refactor away
     // lively.notify("lively.boundEval is depricated")
@@ -1367,14 +1377,14 @@ export default class Lively {
   
   static focusWithoutScroll(element) {
     if (!element) return;
-    console.log("focusWithoutScroll " + element)
+    // console.log("focusWithoutScroll " + element)
     var scrollTop = document.scrollingElement.scrollTop
     var scrollLeft = document.scrollingElement.scrollLeft
     element.focus(true) 
     // the focus scrolls as a side affect, but we don't want that
     document.scrollingElement.scrollTop = scrollTop
     document.scrollingElement.scrollLeft = scrollLeft
-    console.log("scroll back " + scrollTop + " " + scrollLeft )
+    //console.log("scroll back " + scrollTop + " " + scrollLeft )
   }
   
   static ensureID(element) {

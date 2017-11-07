@@ -15,13 +15,13 @@
   color: white;
 }
 
+#root-knowledge-bases-container span {
+  margin: 5px;
+}
 </style>
 <div><knot-input id="open-knot-view"></knot-input></div>
 <div><label for="full-text-search">Google: </label><input type="text" id="full-text-search" placeholder="terms for full text search" title="search triple notes" value=""></div>
 <hr>
-<button id="setupConfigure" class="todo" title="setup/configure">
-  <i class="fa fa-cog" aria-hidden="true"></i> Setup/Configure
-</button>
 <button id="launchTripleList" title="launch triple list">
   <i class="fa fa-list-ul" aria-hidden="true"></i> Launch Triple List
 </button>
@@ -32,28 +32,23 @@
 <button id="add-knot" title="add knot">
   <i class="fa fa-circle" aria-hidden="true"></i> Add Knot
 </button>
-<button id="add-anonymous-knot" class="todo" title="add anonymous knot">
-  <i class="fa fa-question" aria-hidden="true"></i> Add Knot
-</button>
 <button id="add-triple" title="add triple">
   <i class="fa fa-link" aria-hidden="true"></i> Add Triple
 </button>
 <hr>
-<button id="clear-cache" title="clear whole triple cache">
-  <i class="fa fa-ban" aria-hidden="true"></i> Clear File Cache
+<span>Root Knowledge Bases</span>
+<div>
+<label for="inputAddDirectory">URL:</label>
+<input type="text" id="inputAddDirectory" placeholder="https://lively4/notes/">
+<button id="add-root-knowledge-base" title="load directory">
+  <i class="fa fa-plus" aria-hidden="true"></i>
+  Add as Knowledge Base
 </button>
-<button id="reset-graph" title="reset graph instance">
-  <i class="fa fa-eraser" aria-hidden="true"></i> Reset Graph Instance
-</button>
-<button class="todo" id="invalidate-cached-errors" title="invalidate cached errors">
-  <i class="fa fa-eraser" aria-hidden="true"></i> Invalidate Cached Errors
-</button>
+</div>
+<div>
+<div id ="root-knowledge-bases-container"></div>
+</div>
 <hr>
-<label for="inputAddDirectory" class="todo">Directory to load</label>
-<input type="text" class="todo" id="inputAddDirectory" placeholder="directory url">
-<button id="addDirectory" class="todo" title="load directory">
-  <i class="fa fa-check-circle" aria-hidden="true"></i> Load Directory
-</button>
 Experiencing Errors with local server? Try: chrome://flags/#allow-insecure-localhost
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

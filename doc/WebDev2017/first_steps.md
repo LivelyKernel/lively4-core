@@ -145,3 +145,12 @@ Task:
   - publish/connect data
 
 Ansprechpartner: Patrick Rein (C.E-5)
+
+----
+
+# Projectional Editing
+## Gruppe 9: Adrian Sieber
+
+- not just viewing
+
+

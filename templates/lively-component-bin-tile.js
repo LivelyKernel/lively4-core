@@ -53,7 +53,9 @@ export default class ComponentBinTile extends Morph {
     var comp  = await this.createComponent(evt);
   } 
   
-  
+  setupComponent(comp) {
+    if (comp.livelyExample) comp.livelyExample()
+  }
   
   createComponent(evt) {
     var worldContext = document.body
@@ -61,13 +63,12 @@ export default class ComponentBinTile extends Morph {
       this.component = comp;
 
     if (this.componentBin.inWindow()) {
-      return componentLoader.openInWindow(comp).then(comp => {
+      return componentLoader.openInWindow(comp).then(win => {
         var pos = lively.findPositionForWindow(worldContext)
-        lively.notify("pos" + pos)
-        lively.setPosition(comp, pos)
-        return comp
+        lively.setPosition(win, pos)
+        this.setupComponent(comp)
+        return
       })
-      
       // return componentLoader.openInWindow(comp).then(() => {
       //   return comp
       // })
@@ -76,6 +77,7 @@ export default class ComponentBinTile extends Morph {
       var pos = lively.getGlobalPosition(this)
     
       return componentLoader.openInBody(comp).then( () => {
+        this.setupComponent(comp)
         lively.setGlobalPosition(comp, pos.subPt(lively.getExtent(comp).scaleBy(0.5)))
         lively.hand.startGrabbing(comp, evt)
       })

@@ -95,6 +95,7 @@ if (window.lively && window.lively4url) {
         'ui-aexpr': lively4url + '/src/external/aexpr/ui-aexpr.js',
         'babel-plugin-locals': lively4url + '/src/external/aexpr/babel-plugin-locals/index.js',
         'stack-es2015-modules': lively4url + '/src/external/aexpr/stack-es2015-module/src/stack.js',
+        'frame-based-aexpr': lively4url + '/src/external/aexpr/frame-based-aexpr.js',
 
         // jsx support
         'babel-plugin-syntax-jsx': lively4url + '/src/external/babel-plugin-syntax-jsx.js',

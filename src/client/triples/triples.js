@@ -6,26 +6,7 @@ const STORAGE_PREFIX = 'triple-notes:';
 const STORAGE_PREFIX_ITEMS = STORAGE_PREFIX + 'items:';
 
 export async function cachedFetch(url, options) {
-  const key = STORAGE_PREFIX_ITEMS + url.toString();
-  if(null === await focalStorage.getItem(key)) {
-    let text = await fetch(url, options).then(r => r.text())
-    focalStorage.setItem(key, text);
-    return text;
-  } else {
-    return focalStorage.getItem(key);
-  }
-}
-export async function invalidateFetchCache(url) {
-  const key = STORAGE_PREFIX_ITEMS + url.toString();
-  await focalStorage.removeItem(key);
-}
-export async function invalidateWholeCache() {
-  const keys = await focalStorage.keys();
-  const removeActions = keys
-    .filter(key => key.startsWith(STORAGE_PREFIX))
-    .map(key => focalStorage.removeItem(key))
-  lively.notify(removeActions.length);
-  return await Promise.all(removeActions);
+  return await fetch(url, options).then(r => r.text());
 }
 
 class Knot {
@@ -45,7 +26,7 @@ class Knot {
   }
   isTriple() { return false; }
   async save(newContent) {
-    invalidateFetchCache(this.url);
+    //invalidateFetchCache(this.url);
     this.content = newContent;
     await lively.files.saveFile(this.url, newContent);
   }
@@ -121,6 +102,14 @@ class Triple extends Knot {
   isTriple() { return true; }
 }
 
+export const DEFAULT_FOLDER_URL = 'https://localhost:8800/notes/';
+export const TAG_URL = DEFAULT_FOLDER_URL + 'tag.md';
+export const IS_A_URL = DEFAULT_FOLDER_URL + 'is_a.md';
+export const SAME_AS_URL = DEFAULT_FOLDER_URL + 'same_as.md';
+export const CONTAINS_URL = DEFAULT_FOLDER_URL + 'contains.md';
+
+const ROOT_KNOWLEDGE_BASES_KEY = 'triple-notes-root-knowledge-bases';
+
 export class Graph {
   constructor() {
     this.knots = [];
@@ -129,7 +118,47 @@ export class Graph {
     this.requestedKnots = new Map();
   }
   async prepare() {
-    return this.loadFromDir('https://lively4/dropbox/');
+    const rootKnowledgeBases = await this.getRootKnowledgeBases();
+    return Promise.all(rootKnowledgeBases.map(::this.loadFromDir));
+  }
+  
+  async getRootKnowledgeBases() {
+    return (await focalStorage.getItem(ROOT_KNOWLEDGE_BASES_KEY)) || [
+      DEFAULT_FOLDER_URL
+      //, "https://lively4/gamedev/"
+    ]
+  }
+  
+  async addRootKnowledgeBase(urlString) {
+    try {
+      new URL(urlString);
+      const stats = JSON.parse(await lively.files.statFile(urlString));
+      if(!stats || stats.type !== "directory") {
+        throw new Error(stats);
+      }
+    } catch (e) {
+      lively.notify(`Knowledge base ${urlString} not valid.`, e.message, undefined, undefined, "red");
+      return;
+    }
+    
+    const rootKnowledgeBases = (await this.getRootKnowledgeBases()) || [];
+    if(!rootKnowledgeBases.includes(urlString)) {
+      rootKnowledgeBases.push(urlString);
+      await focalStorage.setItem(ROOT_KNOWLEDGE_BASES_KEY, rootKnowledgeBases);
+      return await this.loadFromDir(urlString);
+    }
+  }
+  
+  async removeRootKnowledgeBase(urlString) {
+    let rootKnowledgeBases = (await this.getRootKnowledgeBases()) || [];
+    if(rootKnowledgeBases.includes(urlString)) {
+      // remove via filter
+      rootKnowledgeBases = rootKnowledgeBases.filter(rootBase => rootBase !== urlString);
+      await focalStorage.setItem(ROOT_KNOWLEDGE_BASES_KEY, rootKnowledgeBases);
+      return true;
+    } else {
+      return false;
+    }
   }
   
   getKnots() {
@@ -252,8 +281,13 @@ export class Graph {
     return this.requestedKnots.get(filePath);
   }
   
+  static isInternalURL(url) {
+    const origin = url.origin;
+    return origin === 'https://lively4' || origin === 'https://localhost:8800';
+  }
+  
   static isExternalURL(url) {
-    return url.origin !== 'https://lively4';
+    return !this.isInternalURL(url);
   }
   async loadSingleKnot(urlOrString) {
     const url = new URL(urlOrString);
@@ -322,17 +356,16 @@ export class Graph {
 `;
     await lively.files.saveFile(url, content);
     
-    await invalidateFetchCache(directory);
+    //await invalidateFetchCache(directory);
     
     return this.requestKnot(url);
   }
-  async createTriple(subjectUrlString, predicateURLString, objectURLString) {
+  async createTriple(subjectUrlString, predicateURLString, objectURLString, knowledgeBaseURLString) {
     await this.requestKnot(subjectUrlString);
     await this.requestKnot(predicateURLString);
     await this.requestKnot(objectURLString);
-    
-    const directory = 'https://lively4/dropbox/';
-    let url = await this.getNonCollidableURL(directory, 'triple-' + uuid(), 'triple.json');
+
+    let url = await this.getNonCollidableURL(knowledgeBaseURLString, 'triple-' + uuid(), 'triple.json');
     let content = JSON.stringify({
       subject: subjectUrlString,
       predicate: predicateURLString,
@@ -340,7 +373,7 @@ export class Graph {
     });
     await lively.files.saveFile(url, content);
     
-    await invalidateFetchCache(directory);
+    //await invalidateFetchCache(knowledgeBaseURLString);
     
     return this.requestKnot(url);
   }
