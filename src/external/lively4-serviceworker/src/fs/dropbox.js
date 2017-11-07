@@ -54,12 +54,6 @@ export default class Filesystem extends Base {
     })
   }
   
-<<<<<<< HEAD
-  async stat(path, request) {
-    console.log("dropbox stat: " + this.subfolder + path)
-    const dropboxPath =  this.subfolder + path;
-    const dropboxRequest = new Request('https://api.dropboxapi.com/2/files/get_metadata', {
-=======
   async stat(path, request, no_cache=false) {
     no_cache = true // #DEV
     
@@ -93,33 +87,12 @@ export default class Filesystem extends Base {
 
     let dropboxPath =  this.subfolder + path;
     let dropboxRequest = new Request('https://api.dropboxapi.com/2/files/get_metadata', {
->>>>>>> e2fafe75eca04296720d2891785936087e9c102d
       method: "POST",
       headers: dropboxHeaders,
       body: JSON.stringify({ path: dropboxPath})
     })
 
-<<<<<<< HEAD
     let response = await self.fetch(dropboxRequest)
-=======
-    let response = undefined
-
-    // if (!no_cache) {
-    //   if (navigator.onLine) {
-    //     response = await cache.match(dropboxRequest, 1 * 1000 /* 1sec max cache age */)
-    //   } else {
-    //     response = await cache.match(dropboxRequest)
-    //   }
-    // } else {
-    //   cache.purge(dropboxRequest); // #DEV, caching does not support POST
-    // }
-
-    if (response === undefined) {
-      response = await self.fetch(dropboxRequest)
-      // cache.put(dropboxRequest, response); // #DEV, caching does not support POST
-      response = response.clone()
-    }
->>>>>>> e2fafe75eca04296720d2891785936087e9c102d
 
     util.responseOk(response, StatNotFoundError)
 
