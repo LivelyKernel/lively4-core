@@ -1,21 +1,12 @@
 import Morph from './Morph.js';
 import KnotView from "./knot-view.js";
 
-import { Graph, invalidateWholeCache } from 'src/client/triples/triples.js';
+import { Graph } from 'src/client/triples/triples.js';
 import lively from 'src/client/lively.js';
 
 export default class GraphControl extends Morph {
   async initialize() {
     this.windowTitle = "Graph Control";
-    
-    this.get('#inputAddDirectory').addEventListener('keyup',  event => {
-      if (event.keyCode == 13) { // ENTER
-        this.addDirectory();
-      }
-    });
-
-    let loadDirectory = this.get('#addDirectory');
-    loadDirectory.addEventListener('click', event => this.addDirectory());
 
     let addKnotButton = this.get('#add-knot');
     addKnotButton.addEventListener('click', event => this.onAddKnot(event));
@@ -29,12 +20,6 @@ export default class GraphControl extends Morph {
     let launchGraph = this.get('#launchGraph');
     launchGraph.addEventListener('click', event => this.launchGraph());
     
-    let clearCache = this.get('#clear-cache');
-    clearCache.addEventListener('click', event => this.onClearCache());
-    
-    let resetGraph = this.get('#reset-graph');
-    resetGraph.addEventListener('click', event => this.onResetGraph());
-    
     let input = this.get('#open-knot-view');
     input.setLabel('Open Knot');
     input.setPlaceholder('knot');
@@ -46,15 +31,70 @@ export default class GraphControl extends Morph {
         this.fullTextSearch(this.get('#full-text-search').value);
       }
     });
+    
+    this.initKnowledgeBases();
   }
   
-  // TODO: does this work?
-  async addDirectory() {
-    const dirString = this.get('#inputAddDirectory').value;
-    const dirURL = new URL(dirString);
+  initKnowledgeBases() {
+    this.refreshKnowledgeBasesWidget();
     
+    let addRootKnowledgeBaseButton = this.get('#add-root-knowledge-base');
+    addRootKnowledgeBaseButton.onclick = event => this.addRootKnowledgeBase(event);
+    
+    this.get('#inputAddDirectory').addEventListener('keyup',  event => {
+      if (event.keyCode == 13) { // ENTER
+        this.addRootKnowledgeBase(event);
+      }
+    });
+  }
+  
+  async addRootKnowledgeBase(event) {
+    const urlString = this.get('#inputAddDirectory').value;
     const graph = await Graph.getInstance();
-    await graph.loadFromDir(dirString);
+    await graph.addRootKnowledgeBase(urlString);
+    this.refreshKnowledgeBasesWidget();
+  }
+  async refreshKnowledgeBasesWidget() {
+    const graph = await Graph.getInstance();
+    const rootKnowledgeBases = await graph.getRootKnowledgeBases();
+
+    let rootKnowledgeBasesContainer = this.get('#root-knowledge-bases-container');
+    rootKnowledgeBasesContainer.innerHTML = "";
+    rootKnowledgeBases.forEach(urlString => {
+      let knowledgeBaseWidget = this.buildknowledgeBaseWidget(urlString);
+      rootKnowledgeBasesContainer.appendChild(knowledgeBaseWidget);
+    });
+  }
+  
+  buildknowledgeBaseWidget(urlString) {
+    return <span>
+      {this.buildNavigatableLink(urlString)}
+      {this.buildRemoveKnowledgeIcon(urlString)}
+    </span>;
+  }
+  buildNavigatableLink(urlString) {
+    let ref = <a>{urlString}</a>;
+    ref.addEventListener("click", async e => {
+      e.preventDefault();
+      e.stopPropagation();
+      const container = await lively.openBrowser(urlString, false);
+      container.focus();
+    });
+    
+    return ref;
+  }
+  buildRemoveKnowledgeIcon(urlString) {
+    let removeIcon = <i class="fa fa-trash"></i>;
+    removeIcon.addEventListener("click", async e => {
+      const graph = await Graph.getInstance();
+      if(await graph.removeRootKnowledgeBase(urlString)) {
+        this.refreshKnowledgeBasesWidget();
+      } else {
+        lively.notify('did not removed knowledge base ' + urlString);
+      }
+    });
+    
+    return removeIcon;
   }
   
   async launchTripleList() {
@@ -82,11 +122,6 @@ export default class GraphControl extends Morph {
     const addTriple = await lively.openComponentInWindow("add-triple");
     addTriple.focus();
     addTriple.afterSubmit = () => addTriple.parentElement.remove();
-  }
-  
-  async onClearCache() {
-    await invalidateWholeCache();
-    lively.notify('cleared graph cache');
   }
   
   async onResetGraph() {

@@ -4,7 +4,8 @@ import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
 import {pt, rect} from 'src/client/graphics.js';
 
-//   document.querySelectorAll("lively-selection").forEach(ea => ea.remove())
+
+// document.querySelectorAll("lively-selection").forEach(ea => ea.remove())
 
 export default class Selection extends Morph {
   
@@ -18,7 +19,7 @@ export default class Selection extends Morph {
     
     if (!this.current){
       this.current = document.createElement("lively-selection")
-      lively.components.openInBody(this.current)
+      await lively.components.openInBody(this.current)
       this.current.remove()
     } 
     this.current.registerOn(document.documentElement)

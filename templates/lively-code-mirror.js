@@ -10,6 +10,31 @@ import 'src/client/stablefocus.js';
 
 let loadPromise = undefined;
 
+// BEGIN #copied from emacs.js
+function repeated(cmd) {
+  var f = typeof cmd == "string" ? function(cm) { cm.execCommand(cmd); } : cmd;
+  return function(cm) {
+    var prefix = getPrefix(cm);
+    f(cm);
+    for (var i = 1; i < prefix; ++i) f(cm);
+  };
+}
+
+function getPrefix(cm, precise) {
+  var digits = cm.state.emacsPrefix;
+  if (!digits) return precise ? null : 1;
+  clearPrefix(cm);
+  return digits == "-" ? -1 : Number(digits);
+}
+
+function operateOnWord(cm, op) {
+  var start = cm.getCursor(), end = cm.findPosH(start, 1, "word");
+  cm.replaceRange(op(cm.getRange(start, end)), start, end);
+  cm.setCursor(end);
+}
+// END
+
+
 export default class LivelyCodeMirror extends HTMLElement {
 
   static get codeMirrorPath() {
@@ -28,8 +53,8 @@ export default class LivelyCodeMirror extends HTMLElement {
 
   static async loadModules() {
     if (loadPromise) return loadPromise
-
     loadPromise = (async () => {
+
       await this.loadModule("lib/codemirror.js")
 
       await this.loadModule("mode/javascript/javascript.js")
@@ -222,6 +247,15 @@ export default class LivelyCodeMirror extends HTMLElement {
       "Ctrl-S": (cm) => {          
         this.doSave(editor.getValue());
       },
+      
+      // #copied from keymap/emacs.js
+      "Alt-C": repeated(function(cm) {
+      operateOnWord(cm, function(w) {
+        var letter = w.search(/\w/);
+        if (letter == -1) return w;
+        return w.slice(0, letter) + w.charAt(letter).toUpperCase() + w.slice(letter + 1).toLowerCase();
+      });
+    }),
     });
     editor.setOption("hintOptions", {
       container: this.shadowRoot.querySelector("#code-mirror-hints"),
@@ -305,19 +339,49 @@ export default class LivelyCodeMirror extends HTMLElement {
     const MODULE_MATCHER = /.js$/;
     if(MODULE_MATCHER.test(this.getTargetModule())) {
       await System.import(this.getTargetModule())
-    }
-    
+    } 
     // src, topLevelVariables, thisReference, <- finalStatement
     return boundEval(str, this.getDoitContext(), this.getTargetModule());
   }
-
-  printResult(result) {
+  
+  printWidget(obj, name) {
+    var widget = document.createElement("span")
+    widget.style.whiteSpace = "normal"
+    var promise = lively.create(name, widget)
+    promise.then(comp => {
+      comp.style.display = "inline"
+      comp.style.backgroundColor = "rgb(250,250,250)"
+      comp.style.display = "inline-block"
+      comp.style.minWidth = "20px"
+      comp.style.minHeight = "20px"
+    })
+    this.editor.doc.markText(this.editor.getCursor(true), this.editor.getCursor(false), {
+      replacedWith: widget
+    }); 
+    return promise
+  }
+  
+  printResult(result, obj) {
     var editor = this.editor;
     var text = result
     this.editor.setCursor(this.editor.getCursor("end"))
     // don't replace existing selection
     this.editor.replaceSelection(result, "around")
-
+    
+    if (Array.isArray(obj)) {
+      if (typeof obj[0] == 'object') {
+        this.printWidget(obj, "lively-table").then( table => {
+          table.setFromJSO(obj)      
+          table.style.maxHeight = "300px"
+          table.style.overflow = "auto"    
+        })
+      }
+    } else if ((typeof obj == 'object') && (obj !== null)) {
+      this.printWidget(obj, "lively-inspector").then( inspector => {
+        inspector.inspect(obj)
+        inspector.hideWorkspace()   
+      })
+    }
   }
 
   async tryBoundEval(str, printResult) {
@@ -351,7 +415,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         // we will definitly return a promise on which we can wait here
         result
           .then( result => {
-            this.printResult("RESOLVED: " + obj2string(result))
+            this.printResult("RESOLVED: " + obj2string(result), result)
           })
           .catch( error => {
             console.error(error);
@@ -359,7 +423,7 @@ export default class LivelyCodeMirror extends HTMLElement {
             this.printResult("Error in Promise: \n" +error)
           })
       } else {
-        this.printResult(" " + obj2string(result))
+        this.printResult(" " + obj2string(result), result)
         if (result instanceof HTMLElement ) {
           lively.showElement(result)
         }

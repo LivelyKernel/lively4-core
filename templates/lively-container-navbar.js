@@ -153,6 +153,7 @@ export default class LivelyContainerNavbar extends Morph {
             evt.preventDefault();
             var menu = new ContextMenu(this, [
               ["delete file", () => this.deleteFile(otherUrl)],
+              ["rename file", () => this.renameFile(otherUrl)],
               ["new file", () => this.newfile(otherUrl)],
               ["edit", () => lively.openBrowser(otherUrl, true)],
               ["browse", () => lively.openBrowser(otherUrl)],
@@ -171,10 +172,13 @@ export default class LivelyContainerNavbar extends Morph {
   
 
   }
-  
 
   deleteFile(url) {
     throw new Error("please implement deleteFile()")
+  }
+
+  renameFile(url) {
+    throw new Error("please implement renameFile()")
   }
 
   newfile(path) {
@@ -215,9 +219,9 @@ export default class LivelyContainerNavbar extends Morph {
     } else if (this.url.match(/\.js$/)) {
       // |async\\s+
       
-      let instMethod = "(^|\\s+)([a-zA-Z0-9$_]+)\\s*\\(\\s*[a-zA-Z0-9$_ ,]*\\s*\\)\\s*{",
+      let instMethod = "(^|\\s+)([a-zA-Z0-9$_]+)\\s*\\(\\s*[a-zA-Z0-9$_ ,=]*\\s*\\)\\s*{",
           klass = "(?:^|\\s+)class\\s+([a-zA-Z0-9$_]+)",
-          func = "(?:^|\\s+)function\\s+([a-zA-Z0-9$_]+)\\s*\\(",
+          func = "(?:^|\\s+)function\\s+([a-zA-Z0-9$_=]+)\\s*\\(",
           oldProtoFunc = "[a-zA-Z0-9$_]+\.prototype\.([a-zA-Z0-9$_]+)\\s*=";
       let defRegEx = new RegExp(`(?:(?:${instMethod})|(?:${klass})|(?:${func})|(?:${oldProtoFunc}))`);
       let m;

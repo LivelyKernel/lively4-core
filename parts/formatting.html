@@ -1,0 +1,63 @@
+<div class="lively-content" style="width: 95.273px; height: 23.6176px; border: 1px solid gray; position: absolute; background-color: white;"><script data-name="commandButton" type="lively4script">function commandButton(label, command, parameter) {
+  var button = document.createElement("button")
+  button.textContent = label
+  button.addEventListener("click", (evt) => {
+    document.execCommand(command, true, parameter)
+    evt.preventDefault()
+    evt.stopPropagation()
+  })
+  this.shadowRoot.appendChild(button)
+}</script><script data-name="colorChooser" type="lively4script">function colorChooser(label, command, parameter) {
+  var color = document.createElement("lively-crayoncolors")
+  // color.textContent = label
+  color.addEventListener("value-changed", (evt) => {
+    var parameter = evt.detail.value
+    document.execCommand(command, true, parameter)
+    evt.preventDefault()
+    evt.stopPropagation()
+  })
+  lively.components.openIn(this.shadowRoot, color)
+}</script><script data-name="customButton" type="lively4script">function customButton(label, callback) {
+  var button = document.createElement("button")
+  button.textContent = label
+  button.addEventListener("click", (evt) => {
+    callback(evt)
+    evt.preventDefault()
+    evt.stopPropagation()
+  })
+  this.shadowRoot.appendChild(button)
+}</script><script data-name="fontSize" type="lively4script">function fontSize(element) {
+  if (!element || that.contentEditable) return ;
+  
+  if (element.tagName == "FONT") {
+    var size = element.getAttribute("size")
+    if (size !== undefined) {
+      return size
+    }
+  } 
+  return this.fontSize(element.parentElement)
+  
+}</script><script data-name="livelyLoad" type="lively4script">function livelyLoad() {
+  this.createShadowRoot();
+  
+  this.shadowRoot.innerHTML = ""
+
+  this.commandButton("b", "bold")
+  this.colorChooser("backe", "backColor") 
+  this.colorChooser("fore", "foreColor") 
+  this.commandButton("fontsize 1", "fontSize", "1") 
+  this.commandButton("fontsize 2", "fontSize", "2") 
+  this.commandButton("fontsize 3", "fontSize", "3") 
+
+  this.commandButton("fontName", "fontName", "Times") 
+  this.commandButton("removeFormat", "removeFormat")
+  
+  this.commandButton("justify", "justifyFull")
+  this.commandButton("left", "justifyLeft")
+  this.commandButton("center", "justifyCenter")
+  this.commandButton("right", "justifyRight")
+
+  this.customButton("+", evt => this.increateFontSize(evt))  
+}</script><script data-name="increateFontSize" type="lively4script">function increateFontSize(evt) {
+  
+}</script></div>

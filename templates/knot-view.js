@@ -1,11 +1,11 @@
 import Morph from "./Morph.js"
 
-import { Graph, _ } from 'src/client/triples/triples.js';
+import { Graph, _, TAG_URL } from 'src/client/triples/triples.js';
 import lively from 'src/client/lively.js';
 
 export default class KnotView extends Morph {
   get urlString() { return this.get("#path-to-load").value; }
-  get tagURLString() { return 'https://lively4/dropbox/tag.md'; }
+  get tagURLString() { return TAG_URL; }
   
   async initialize() {
     this.windowTitle = "Knot View";
@@ -118,7 +118,7 @@ export default class KnotView extends Morph {
     });
     
     // Tags
-    let tag = await graph.requestKnot(new URL('https://lively4/dropbox/tag.md'));
+    let tag = await graph.requestKnot(new URL(TAG_URL));
     let tagContainer = this.get('#tag-container');
     tagContainer.innerHTML = "";
     graph.query(knot, tag, _).forEach(triple => {

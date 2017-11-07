@@ -190,7 +190,7 @@ export function install() {
 }
 
 export function activate() {
-  return self.clients.claim()
+  return self.clients.claim();
 }
 
 export function fetch(event) {
@@ -198,7 +198,7 @@ export function fetch(event) {
 }
 
 export function message(event) {
-  return instancePromise().then((swx) => swx.message(event))
+  return instancePromise().then((swx) => swx.message(event));
 }
 
 export {
