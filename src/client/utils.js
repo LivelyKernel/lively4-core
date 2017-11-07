@@ -36,4 +36,31 @@ export function promisedEvent(eventTarget, type) {
   return new Promise(resolve => eventTarget.addEventListener(type, resolve))
 }
 
+export class PausableLoop {
+  constructor(func) {
+    this.func = func;
+    this.cancelID;
+    this.running = false;
+  }
+  
+  ensureRunning() {
+    if(!this.running) {
+      this.running = true;
+
+      const loopBody = () => {
+        this.func();
+        if(this.running) {
+          this.cancelID = requestAnimationFrame(loopBody);
+        }
+      }
+
+      this.cancelID = requestAnimationFrame(loopBody);
+    }
+  }
+
+  pause() {
+    cancelAnimationFrame(this.cancelID);
+    this.running = false;
+  }
+}
 

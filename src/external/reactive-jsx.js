@@ -99,6 +99,7 @@ export function childElement(jSXElement) {
 // - a DOM node
 // - a JavaScript object or primitive
 // - a Promise
+// - an Active Expression
 export function childExpression(expression) {
   return [getExpressionNode(expression)];
 }
