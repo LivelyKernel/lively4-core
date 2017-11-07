@@ -18,24 +18,7 @@ export default class Filesystem extends Base {
 
   async read(path, request, no_cache=false) {
     let f_request = await this.createProxyRequest(path, request)
-
-    let response = undefined
-
-    if (!no_cache) {
-      if (navigator.onLine) {
-        response = await cache.match(f_request, 5 * 60 * 1000 /* 5 minute max cache age */)
-      } else {
-        response = await cache.match(f_request)
-      }
-    } else {
-      cache.purge(f_request);
-    }
-
-    if (response === undefined) {
-      response = await self.fetch(f_request)
-      //cache.put(f_request, response)
-      response = response.clone()
-    }
+    let response = this._getResponse(f_request, no_cache);
 
     return response
   }
@@ -45,27 +28,31 @@ export default class Filesystem extends Base {
   }
 
   async stat(path, request, no_cache=false) {
-    let f_request = await this.createProxyRequest(path, request)
-
-    let response = undefined
-
-    if (!no_cache) {
-      if (navigator.onLine) {
-        response = await cache.match(f_request, 5 * 60 * 1000 /* 5 minute max cache age */)
-      } else {
-        response = await cache.match(f_request)
-      }
-    } else {
-      cache.purge(f_request);
-    }
-
-    if (typeof response === 'undefined') {
-      response = await self.fetch(f_request)
-      //cache.put(f_request, response)
-      response = response.clone()
-    }
+    let f_request = await this.createProxyRequest(path, request);
+    let response = this._getResponse(f_request, no_cache);
 
     return response
+  }
+  
+  async _getResponse(f_request, no_cache) {
+    /*if (!no_cache) {
+      // Check if device is online
+      if (navigator.onLine) {
+        // TODO: Replace with new version
+        return await cache.match(f_request, 5 * 60 * 1000 )
+      } else {
+        // TODO: Replace with new version
+        return await cache.match(f_request)
+      }
+    } else {
+        // TODO: Replace with new version
+      cache.purge(f_request);
+    }*/
+
+    let response = await self.fetch(f_request);
+    // TODO: Replace with new version
+    //cache.put(f_request, response);
+    return response.clone();
   }
 
   async createProxyRequest(path, request, content) {

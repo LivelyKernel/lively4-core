@@ -12,18 +12,18 @@ import * as basefs from './fs/base.js'
  */
 export class Filesystem {
   constructor() {
-    this.mounts = new Map()
-    this.reqcount = 0
+    this.mounts = new Map();
+    this.reqcount = 0;
   }
 
   mount(path, type, ...args) {
     path = Path.normalize(path)
-    this.mounts.set(path, new type(path, ...args))
+    this.mounts.set(path, new type(path, ...args));
   }
 
   umount(path) {
-    path = Path.normalize(path)
-    this.mounts.delete(path)
+    path = Path.normalize(path);
+    this.mounts.delete(path);
   }
 
   async handle(request, url) {
@@ -32,108 +32,106 @@ export class Filesystem {
       fs   = undefined
 
     
-    for(let [mount, fsys] of this.mounts) {
-      if(path.startsWith(mount) && (typeof base === 'undefined' || mount.length > base.length)) {
-        fs   = fsys
-        base = mount
+    for (let [mount, fsys] of this.mounts) {
+      if (path.startsWith(mount) && (typeof base === 'undefined' || mount.length > base.length)) {
+        fs   = fsys;
+        base = mount;
       }
     }
 
     // console.log("base: " + base )
     
-    if(typeof base === 'undefined') {
-      return new Response(null, {status: 400})
+    if (typeof base === 'undefined') {
+      return new Response(null, {status: 400});
     }
 
-    path = path.substring(base.length)
+    path = path.substring(base.length);
 
-    this.reqcount++
+    this.reqcount++;
 
-    if(request.method === 'GET') {
-      try {
-        let read_resp = await fs.read(path, request)
-        if (read_resp instanceof basefs.File)
-          return read_resp.toResponse()
-        return read_resp
-      }
-      catch (e) {
-        if (e.name === 'IsDirectoryError') {
-          return new Response(null, {
-            status: 405,
-            statusText: 'EISDIR',
-            headers: {'Allow': 'OPTIONS'}
-          })
-        } 
-        console.log('Error: ' + e)
-        // TODO: Do something with the information from the FileNotFoundError
-        return new Response("ERROR:" + e, {status: 405})
-      }
+    switch (request.method) {
+      case 'GET':
+        try {
+          let read_resp = await fs.read(path, request);
+          if (read_resp instanceof basefs.File) {
+            return read_resp.toResponse();
+          }
+          return read_resp;
+        }
+        catch (e) {
+          if (e.name === 'IsDirectoryError') {
+            return new Response(null, {
+              status: 405,
+              statusText: 'EISDIR',
+              headers: {'Allow': 'OPTIONS'}
+            })
+          } 
+          console.log('Error: ' + e)
+          // TODO: Do something with the information from the FileNotFoundError
+          return new Response("ERROR:" + e, {status: 405});
+        }
+        break;
+      case 'PUT':
+        return fs.write(path, request.text(), request);
+      case'DELETE': 
+        return fs.del(path, request);
+      case 'MKCOL':
+        return fs.makeDir(path, request);
+      case 'OPTIONS':
+        try {
+          // console.log("options path: " + path)
+          let stat_resp = await fs.stat(path, request)
+          if (stat_resp instanceof basefs.Stat) {
+            return stat_resp.toResponse();
+          }
+
+          return stat_resp
+        }
+        catch (e) {
+          // TODO: Do something with the information from the StatNotFoundError
+          return new Response(null, {status: 405})
+        }
+      default:
+        return new Response(null, {status: 400});
+        // TODO: respond with 400 / 404?
     }
-
-    if(request.method === 'PUT')
-      return fs.write(path, request.text(), request)
-
-    if(request.method === 'DELETE')
-      return fs.del(path, request)
-
-    if(request.method === 'MKCOL')
-      return fs.makeDir(path, request)
-
-
-    if(request.method === 'OPTIONS') {
-      try {
-        // console.log("options path: " + path)
-        let stat_resp = await fs.stat(path, request)
-        if (stat_resp instanceof basefs.Stat)
-          return stat_resp.toResponse()
-        return stat_resp
-      }
-      catch (e) {
-        // TODO: Do something with the information from the StatNotFoundError
-        return new Response(null, {status: 405})
-      }
-    }
-
-    return new Response(null, {status: 400})
-    // TODO: respond with 400 / 404?
   }
 
   mountsAsJso() {
-    let jso = []
-    for(let [path, mount] of this.mounts) {
+    let jso = [];
+    for (let [path, mount] of this.mounts) {
       jso.push({
         path: path,
         name: mount.name,
         options: mount.options
       })
     }
-    return jso
+    return jso;
   }
 
   persistMounts() {
-    var mounts = this.mountsAsJso()
-    console.log("persist mounts: " + mounts)
-    focalStorage.setItem("lively4mounts", mounts)
+    var mounts = this.mountsAsJso();
+    console.log("persist mounts: " + mounts);
+    focalStorage.setItem("lively4mounts", mounts);
   }
 
   async loadMounts() {
-    let mounts = await focalStorage.getItem("lively4mounts")
+    let mounts = await focalStorage.getItem("lively4mounts");
 
     if (!mounts) {
-      return
+      return;
     }
 
     try {
       for(let mount of mounts) {
-        
         // #TODO #Hack I though relative paths are now suported in System.js 0.20 #Fuck?
         // let fs = await System.import('./fs/' + mount.name + '.js')
-        if (mount.name == "sys") {
-          // do nothing with sys fs... is already mounted
-        } else {
-          let fs = await System.import('./src/external/lively4-serviceworker/src/fs/' + mount.name + '.js')
-          this.mount(mount.path, fs.default, mount.options)
-        }
+        
+        // do nothing with sys fs... is already mounted
+        if (mount.name != "sys") continue;
+        
+        let fs = await System.import('./src/external/lively4-serviceworker/src/fs/' + mount.name + '.js');
+        this.mount(mount.path, fs.default, mount.options);
       }
     } catch(e) {
       console.error(e)
