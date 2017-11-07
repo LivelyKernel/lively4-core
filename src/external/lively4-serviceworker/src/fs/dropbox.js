@@ -133,8 +133,16 @@ export default class Filesystem extends Base {
     if(json['.tag'] == "folder") {
       dir = true
       // contents = await Promise.all(Array.from(json['contents'], item => this.statinfo(item)))
+      function makedropboxRequest(endpoint, path) {
+        return new Request('https://api.dropboxapi.com/' + endpoint, {
+          method: "POST",
+          headers: this.getDefaultHeaders(),
+          body: JSON.stringify({ path:  path})
+        })
+      }
+
       contents = await Promise.all(Array.from(
-        (await self.fetch(this.dropboxRequest("2/files/list_folder", dropboxPath)).then(r => r.json())).entries,
+        (await self.fetch(makedropboxRequest("2/files/list_folder", dropboxPath)).then(r => r.json())).entries,
         item => this.statinfo(item))) 
       // #TODO deal with paging!
     } else {
