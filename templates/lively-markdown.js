@@ -4,7 +4,8 @@ import MarkdownIt from "src/external/markdown-it.js"
 import MarkdownItHashtag from "src/external/markdown-it-hashtag.js"
 import highlight from 'src/external/highlight.js';
 import persistence from 'src/client/persistence.js';
-import Strings from 'src/client/strings.js'
+import Strings from 'src/client/strings.js';
+import Upndown from 'src/external/upndown.js';
 
 export default class LivelyMarkdown extends Morph {
   async initialize() {
@@ -59,7 +60,7 @@ export default class LivelyMarkdown extends Morph {
         if (lang && hljs.getLanguage(lang)) {
           try {
             hljs.configure({tabReplace: '  '})
-            return '<pre class="hljs"><code>' +
+            return '<pre class="hljs" data-lang="'+lang+'"><code>' +
                    hljs.highlight(lang, str, true).value +
                    '</code></pre>';
           } catch (__) {}
@@ -143,16 +144,17 @@ export default class LivelyMarkdown extends Morph {
   
   async htmlAsMarkdownSource() {
     var htmlSource = this.get("#content").innerHTML
-    // #Draft #Refactor
-    SystemJS.config({
-      map: {
-        htmlparser2: "https://lively-kernel.org/lively4/upndown/lib/htmlparser2.bundle.js"     
-      }
+    var markdownConverter = new Upndown()
+    markdownConverter.tabindent = "  "
+    markdownConverter.bullet = "- "
+    markdownConverter.wrap_pre = function(node, markdown) { 
+      var lang = node.attribs["data-lang"] || ""
+      return '\n```'+lang+'\n' + this.allText(node) + '\n```\n'; 
+    }
+    
+    var source = await markdownConverter.convert(htmlSource, {
+      keepHtml: true,
     })
-    var upndown = (await System.import("https://lively-kernel.org/lively4/upndown/src/upndown.js")).default
-    var und = new upndown()
-    var source = await new Promise(r => und.convert(htmlSource, (err, md) => {r(md || err)}, 
-                                                    {keepHtml: true}))
     return source
   }
   
