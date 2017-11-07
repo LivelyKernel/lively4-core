@@ -1,8 +1,11 @@
+import { DbObject } from './dbobject.js';
+
 /**
  * An indexedDB-backed queue to be used by the cache
  */
-export class Queue {
+export class Queue extends DbObject {
   constructor() {
+    super();
     this._dbName = 'lively-sw-queue',
     this._storeName = 'queue';
     
@@ -52,14 +55,4 @@ export class Queue {
       }
     });
   }*/
-  
-  /**
-   * Gets the objectStore from IndexedDB
-   * @return ObjectStore
-   */
-  _getObjectStore() {
-    var transaction = this.db.transaction([this._storeName], "readwrite");
-    var objectStore = transaction.objectStore(this._storeName);
-    return objectStore;
-  }
 }
