@@ -59,19 +59,14 @@ export default class Filesystem extends Base {
   
   async stat(path, request) {
     console.log("dropbox stat: " + this.subfolder + path)
-    let dropboxPath =  this.subfolder + path;
-    let dropboxRequest = new Request('https://api.dropboxapi.com/2/files/get_metadata', {
+    const dropboxPath =  this.subfolder + path;
+    const dropboxRequest = new Request('https://api.dropboxapi.com/2/files/get_metadata', {
       method: "POST",
       headers: this.getDefaultHeaders(),
       body: JSON.stringify({ path: dropboxPath})
     })
 
-    let response = undefined
-
-    if (response === undefined) {
-      response = await self.fetch(dropboxRequest)
-      response = response.clone()
-    }
+    let response = await self.fetch(dropboxRequest)
 
     util.responseOk(response, StatNotFoundError)
 
@@ -79,12 +74,13 @@ export default class Filesystem extends Base {
     if (json['is_deleted']) {
       throw new Error('File has been deleted');
     }
+    
     let dir = false
     var contents; 
     if(json['.tag'] == "folder") {
       dir = true;
       contents = await Promise.all(Array.from(
-        (await self.fetch(this.dropboxRequest("2/files/list_folder", dropboxPath)).then(r => r.json())).entries, 
+        (await self.fetch(this.dropboxRequest("2/files/list_folder", dropboxPath)).then(r => r.json())).entries,
         item => this.statinfo(item))) 
       // #TODO deal with paging!
     } else {
@@ -194,9 +190,10 @@ export default class Filesystem extends Base {
     }
     
     var headers = {
-        fileversion: metadata.rev,
+      fileversion: metadata.rev,
     }
     if (conflictversion) headers.conflictversion = conflictversion;
+    
     return new Response(null, {
       headers: headers,
       status: 200})
@@ -217,14 +214,16 @@ export default class Filesystem extends Base {
       throw new Error(response.statusText)
     }
     
-    return new Response("deleted " + dropboxPath, {
+    return new Response(`deleted ${dropboxPath}`, {
       headers: {},
-      status: 200})
+      status: 200
+    })
   }
   
   // #TODO not implemented yet -> do it for v2
   // promise: jens will do this if stefan helps him clean up this mess... 
   async makeDir(path, request) {
+  /*
     
     let dropboxHeaders = new Headers();
     dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
@@ -241,6 +240,7 @@ export default class Filesystem extends Base {
     return new Response("created directory:  " + dropboxPath, {
       headers: {},
       status: 200})
+  */
   }
   
 }
