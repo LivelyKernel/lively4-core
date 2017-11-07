@@ -1,43 +1,21 @@
-import { checkTicking as check } from "aexpr-ticking";
+import { PausableLoop } from 'utils';
 
-const UI_AEXPRS = new Set();
-const METADATA_BY_AEXPR = new Map();
+const REMOVE_LISTENER_BY_CHECK_FUNCTION = new Map(); // nodeDetachedFromDOM -> removeListener
 
-// #TODO: refactor this mess
-function clearUnusedListenersAndAExprs() {
-  Array.from(METADATA_BY_AEXPR).forEach(([aexpr, metadata]) => {
-    // each listener handles one DOM node, check if that DOM node is detached from the DOM
-    Array.from(metadata)
-      .filter(listenerData => listenerData.nodeDetachedFromDOM())
-      // if so, remove that listener
-      .forEach(listenerData => {
-        aexpr.offChange(listenerData.updateCallback);
-        metadata.delete(listenerData);
-        //lively.notify("DETACHED CALLBACK", "no longer in DOM", undefined, undefined, "yellow");
-      });
-    // was the last ui-callback removed from the aexpr?
-    if(metadata.size === 0) {
-      //lively.notify("DELETED AEXPR", "no callbacks", undefined, undefined, "yellow");
-      UI_AEXPRS.delete(aexpr);
-      METADATA_BY_AEXPR.delete(aexpr);
+function removeObsoleteListeners() {
+  Array.from(REMOVE_LISTENER_BY_CHECK_FUNCTION).forEach(([nodeDetachedFromDOM, removeListener]) => {
+    if(nodeDetachedFromDOM()) {
+      removeListener();
+      REMOVE_LISTENER_BY_CHECK_FUNCTION.delete(nodeDetachedFromDOM);
     }
   });
+  if(REMOVE_LISTENER_BY_CHECK_FUNCTION.size === 0) {
+    removeLoop.pause();
+  }
 }
-
-// update UI once per frame
-let checkRequest;
-function checkUIAExprs() {
-  check(UI_AEXPRS);
-  clearUnusedListenersAndAExprs()
-  checkRequest = requestAnimationFrame(checkUIAExprs);
-}
-checkRequest = requestAnimationFrame(checkUIAExprs);
 
 // `this` is an ActiveExpression 
 export function toDOMNode(builder = x => x) {
-  this.enabled = true; // have to do this to enable ticking check
-  UI_AEXPRS.add(this);
-
   let currentNode = builder(this.getCurrentValue());
 
   function updateDOMNode(val) {
@@ -47,28 +25,24 @@ export function toDOMNode(builder = x => x) {
     currentNode = newNode;
   };
   
-  this.onChange(updateDOMNode);
-
-  if(!METADATA_BY_AEXPR.has(this)) {
-    METADATA_BY_AEXPR.set(this, new Set());
+  function nodeDetachedFromDOM() {
+    return currentNode.getRootNode({composed:true}) !== document;
   }
-  METADATA_BY_AEXPR.get(this).add({
-    updateCallback: updateDOMNode,
-    nodeDetachedFromDOM: () => currentNode.getRootNode({composed:true}) !== document
-  });
   
-  // () => {
-  //   if(!document.body.contains(currentNode)) { 
-  //     this.offChange(updateDOMNode);
-  //     return true;
-  //   }
-  //   return false;
-  // }
+  const removeListener = () => this.offChange(updateDOMNode);
+  
+  this.onChange(updateDOMNode);
+  
+  REMOVE_LISTENER_BY_CHECK_FUNCTION.set(nodeDetachedFromDOM, removeListener);
+  removeLoop.ensureRunning();
   
   return currentNode;
 }
 
+const removeLoop = new PausableLoop(removeObsoleteListeners);
+
 export function __unload__() {
-  cancelAnimationFrame(checkRequest);
+  removeLoop.pause();
+  //cancelAnimationFrame(checkRequest);
   // lively.notify("unload module", "UI AEXPR", undefined, null, "red");
 }
