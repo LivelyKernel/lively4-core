@@ -4,6 +4,7 @@ import MarkdownIt from "src/external/markdown-it.js"
 import MarkdownItHashtag from "src/external/markdown-it-hashtag.js"
 import highlight from 'src/external/highlight.js';
 import persistence from 'src/client/persistence.js';
+import Strings from 'src/client/strings.js'
 
 export default class LivelyMarkdown extends Morph {
   async initialize() {
@@ -13,9 +14,29 @@ export default class LivelyMarkdown extends Morph {
     if (this.getAttribute("mode") == "presentation") {
       this.startPresentation()
     }
+    this._attrObserver = new MutationObserver((mutations) => {
+	  mutations.forEach((mutation) => {  
+        if(mutation.type == "attributes") {
+          // console.log("observation", mutation.attributeName,mutation.target.getAttribute(mutation.attributeName));
+          this.attributeChangedCallback(
+            mutation.attributeName,
+            mutation.oldValue,
+            mutation.target.getAttribute(mutation.attributeName))
+        }
+      });
+    });
+    this._attrObserver.observe(this, { attributes: true });
     
   }
-
+  attributeChangedCallback(attr, oldVal, newVal) {
+    var method = "on" + Strings.toUpperCaseFirst(attr) + "Changed"
+    if (this[method]) this[method](newVal, oldVal)
+  }
+  
+  onContenteditableChanged(value, oldVal) {
+    this.get("#content").setAttribute("contenteditable", value)
+  }
+  
   async updateView() {
     var md = new MarkdownIt({
       html:         true,        // Enable HTML tags in source
