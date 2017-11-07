@@ -583,7 +583,10 @@ export default class Container extends Morph {
       if (this.lastPage) {
         presentation.gotoSlideAt(this.lastPage)
       }
-        
+    }
+    if (this.wasContentEditable) {
+      lively.notify("was content editable")
+      md.contentEditable = true  
     }
     
     // get around some async fun
@@ -951,6 +954,7 @@ export default class Container extends Morph {
       if (presentation) {
         this.lastPage  = presentation.currentSlideNumber()
       }
+      this.wasContentEditable = markdown.contentEditable
     }
     
     
@@ -1167,20 +1171,7 @@ export default class Container extends Morph {
   }
   
   async saveMarkdown(url) {
-    var htmlSource = this.get("lively-markdown").get("#content").innerHTML
-    debugger
-    // #Draft #Refactor
-    SystemJS.config({
-      map: {
-        htmlparser2: "https://lively-kernel.org/lively4/upndown/lib/htmlparser2.bundle.js"     
-      }
-    })
-    var upndown = (await System.import("https://lively-kernel.org/lively4/upndown/src/upndown.js")).default
-    var und = new upndown()
-    var source = await new Promise(r => und.convert(htmlSource, (err, md) => {r(md || err)}, 
-                                                    {keepHtml: true}))
-    // lively.notify("would save "+ JSON.stringify(source))
-    
+    var source = await this.get("lively-markdown").htmlAsMarkdownSource()
     this.saveSource(url, source);
   }
   

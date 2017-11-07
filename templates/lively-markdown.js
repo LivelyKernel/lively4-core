@@ -141,6 +141,21 @@ export default class LivelyMarkdown extends Morph {
     return this.updateView()
   }
   
+  async htmlAsMarkdownSource() {
+    var htmlSource = this.get("#content").innerHTML
+    // #Draft #Refactor
+    SystemJS.config({
+      map: {
+        htmlparser2: "https://lively-kernel.org/lively4/upndown/lib/htmlparser2.bundle.js"     
+      }
+    })
+    var upndown = (await System.import("https://lively-kernel.org/lively4/upndown/src/upndown.js")).default
+    var und = new upndown()
+    var source = await new Promise(r => und.convert(htmlSource, (err, md) => {r(md || err)}, 
+                                                    {keepHtml: true}))
+    return source
+  }
+  
   getSrc() {
     return this.getAttribute("src")
   }
