@@ -1,4 +1,4 @@
-import { CacheStorage } from './cachestorage.js';
+import { Dictionary } from './dictionary.js';
 import { Queue } from './queue.js';
 import Serializer from './serializer.js';
 import * as msg from './messaging.js'
@@ -9,7 +9,7 @@ import * as msg from './messaging.js'
  */
 export class Cache {
   constructor() {
-    this._cacheStorage = new CacheStorage();
+    this._dictionary = new Dictionary();
     this._queue = new Queue();
     
     // Define which HTTP methods need result caching, and which need request queueing
@@ -22,35 +22,47 @@ export class Cache {
    * To be used e.g. in `event.respondWith(...)`.
    */
   fetch(request, p) {
-    if(navigator.onLine) {
-      // When online, handle requests normaly and store the result
-      return p.then((response) => {
-        // Currently, we only store OPTIONS and GET requests in the cache
-        if(this._cacheMethods.includes(request.method)) {
-          this._put(request, response);
-        }
-        return response;
-      });
+    if (navigator.onLine) {
+      return this._onlineResponse(request, p);
     } else {
-      // When offline, check the cache or put request in queue
-      if(this._cacheMethods.includes(request.method)) {
-        // Check if the request is in the cache
-        return this._match(request).then((response) => {
-          if(response) {
-            //console.log(`SWX Cache hit: ${request.method} ${request.url}`);
-            msg.broadcast('Fulfilled request from cache.', 'warning');
-            return Serializer.deserialize(response);
-          } else {
-            //console.log(`SWX Cache miss: ${request.method} ${request.url}`);
-            msg.broadcast('Could not fulfil request from cache.', 'error');
-            return p;
-          }
-        })
-      } else if(this._queueMethods.includes(request.method)) {
-        this._enqueue(request);
-        msg.broadcast('Queued write request.', 'warning');
-        return this._buildFakeResponse();
+      return this._offlineResponse(request, p);
+    }
+  }
+  
+  /**
+   * Returns a response for online devices
+   */
+  _onlineResponse(request, p) {
+    // When online, handle requests normaly and store the result
+    return p.then((response) => {
+      // Currently, we only store OPTIONS and GET requests in the cache
+      if (this._cacheMethods.includes(request.method)) {
+        this._put(request, response);
       }
+      return response;
+    });
+  }
+  
+  /**
+   * Returns a response for offline devices
+   */
+  _offlineResponse(request, p) {
+    // When offline, check the cache or put request in queue
+    if (this._cacheMethods.includes(request.method)) {
+      // Check if the request is in the cache
+      return this._match(request).then((response) => {
+        if (response) {
+          msg.broadcast('Fulfilled request from cache.', 'warning');
+          return Serializer.deserialize(response);
+        } else {
+          msg.broadcast('Could not fulfil request from cache.', 'error');
+          return p;
+        }
+      })
+    } else if (this._queueMethods.includes(request.method)) {
+      this._enqueue(request);
+      msg.broadcast('Queued write request.', 'warning');
+      return this._buildFakeResponse();
     }
   }
   
@@ -59,7 +71,7 @@ export class Cache {
    * @return Promise
    */
   _match(request) {
-    return this._cacheStorage.match(this._buildKey(request));
+    return this._dictionary.match(this._buildKey(request));
   }
   
   /**
@@ -68,7 +80,7 @@ export class Cache {
    */
   _put(request, response) {
     Serializer.serialize(response).then((serializedResponse) => {
-      this._cacheStorage.put(this._buildKey(request), serializedResponse);
+      this._dictionary.put(this._buildKey(request), serializedResponse);
     })
     return response
   }

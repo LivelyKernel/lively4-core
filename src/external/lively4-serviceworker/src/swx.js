@@ -22,7 +22,7 @@ class ServiceWorker {
     this.filesystem = new fs.Filesystem();
 
     // default file system
-    this.filesystem.mount('/', githubfs, {repo: 'LivelyKernel/Lively4', branch: 'master'}) // mounting lively4-core is to irritating
+    this.filesystem.mount('/', githubfs, {repo: 'LivelyKernel/Lively4', branch: 'master'}); // mounting lively4-core is to irritating
     this.filesystem.mount('/sys', sysfs, this);
     this.filesystem.mount('/local', html5fs);
 
@@ -57,7 +57,8 @@ class ServiceWorker {
       console.log("work on pendingRequest " + ea.url);
       this.fetch(ea.event, ea);
     });
-    pendingRequests = null; // stop listening to requests..
+    // stop listening to requests..
+    pendingRequests = null; 
     
   }
 
@@ -66,8 +67,8 @@ class ServiceWorker {
     let request = event.request;
     if (!request) return;
 
-    let  url   = new URL(request.url),
-      promise = undefined
+    let  url = new URL(request.url);
+    let promise = undefined;
 
     if (url.pathname.match(/\/_git\//)) return;
     if (url.pathname.match(/\/_search\//)) return; 
@@ -89,7 +90,7 @@ class ServiceWorker {
               mode: request.mode,
               credentials: request.credentials,
               redirect: request.redirect 
-          }
+          };
           if (request.method == "PUT") {
             options.body =  await request.blob();
           }
@@ -120,9 +121,7 @@ class ServiceWorker {
           pending.resolve(p);
         } else {
           // Use the cache if possible
-          event.respondWith(
-            this._cache.fetch(event.request, p)
-          );
+          event.respondWith(this._cache.fetch(event.request, p));
         }
       } catch(err) {
         // TODO: improve the solution, matching errors by message should be done better
@@ -165,7 +164,7 @@ class ServiceWorker {
   }
 
   message(event) {
-    return msg.process(event)
+    return msg.process(event);
   }
 }
 
@@ -176,18 +175,18 @@ class ServiceWorker {
 var __instance__
 var __instancePromise__
 export async function instance() {
-  return __instance__
+  return __instance__;
 }
 
 export async function instancePromise() {
   if(typeof  __instancePromise__ === 'undefined') {
     __instancePromise__ = ServiceWorker.instance() // sets __instance__
   }
-  return  __instancePromise__
+  return  __instancePromise__;
 }
 
 export function install() {
-  return self.skipWaiting()
+  return self.skipWaiting();
 }
 
 export function activate() {
@@ -195,7 +194,6 @@ export function activate() {
 }
 
 export function fetch(event) {
-  // console.log("fetch swx.js " + event.request.url)
   return instancePromise().then((swx) => swx.fetch(event));
 }
 
@@ -208,6 +206,6 @@ export {
 }
 
 console.log("load swx");
-instancePromise(); // force constructor
+// Force constructor
+instancePromise(); 
 
-// console.log("Loaded swx.js")

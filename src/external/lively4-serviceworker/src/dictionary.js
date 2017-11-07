@@ -4,10 +4,10 @@ import { DbObject } from './dbobject.js';
  * A key-value store used by the cache
  * Currently uses IndexedDB to store data
  */
-export class CacheStorage extends DbObject {
+export class Dictionary extends DbObject {
   constructor() {
     super();
-    this._dbName = 'lively-sw-cache';
+    this._dbName = 'lively-sw-dictionary';
     this._storeName = 'cache';
     
     var request = indexedDB.open(this._dbName, 1);
