@@ -153,6 +153,7 @@ export default class LivelyContainerNavbar extends Morph {
             evt.preventDefault();
             var menu = new ContextMenu(this, [
               ["delete file", () => this.deleteFile(otherUrl)],
+              ["rename file", () => this.renameFile(otherUrl)],
               ["new file", () => this.newfile(otherUrl)],
               ["edit", () => lively.openBrowser(otherUrl, true)],
               ["browse", () => lively.openBrowser(otherUrl)],
@@ -171,10 +172,13 @@ export default class LivelyContainerNavbar extends Morph {
   
 
   }
-  
 
   deleteFile(url) {
     throw new Error("please implement deleteFile()")
+  }
+
+  renameFile(url) {
+    throw new Error("please implement renameFile()")
   }
 
   newfile(path) {
