@@ -3,7 +3,6 @@ import Morph from "./Morph.js"
 export default class Ball extends Morph {
 
   initialize() {
-    debugger
     this.windowTitle = "Bouncing Atoms and other stuff"
     this.hits = this.hits || 0
     if (!this.balls) {
@@ -79,16 +78,13 @@ export default class Ball extends Morph {
   removeBall() {
     this.balls.pop()
   }
-  
-  
+
   // lively mirgrate is executed after constructor, but before initializer #Design?
   livelyMigrate(oldInstance) {
-    debugger
     if (oldInstance.balls)
        this.balls = oldInstance.balls
     if (oldInstance.hits)
        this.hits = oldInstance.hits
 
   }
-
 }

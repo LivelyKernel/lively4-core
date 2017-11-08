@@ -19,8 +19,7 @@ export default class LivelyConnector extends Morph {
 
     
     this.loadVertices() // if not connected
-    
-    debugger
+
     this.fromElement = lively.elementByID(this.getAttribute("fromElement"), lively.findWorldContext(this))
     this.toElement = lively.elementByID(this.getAttribute("toElement"), lively.findWorldContext(this))
    

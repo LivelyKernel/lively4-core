@@ -487,7 +487,6 @@ export default class Container extends Morph {
       })
       
       if (putResponse.status !== 200) {
-        debugger
         lively.confirm("could not rename to " + newURL)
         return 
       }
@@ -500,7 +499,6 @@ export default class Container extends Morph {
 
       var getResponse = await fetch(newURL)
       if (getResponse.status !== 200) {
-        debugger
         lively.notify("save again, because we might need to...")
         var putAgainResponse = await fetch(newURL, {
           method: 'PUT',
@@ -585,7 +583,6 @@ export default class Container extends Morph {
       }
     }
     if (this.wasContentEditable) {
-      lively.notify("was content editable")
       md.contentEditable = true  
     }
     
@@ -954,7 +951,8 @@ export default class Container extends Morph {
       if (presentation) {
         this.lastPage  = presentation.currentSlideNumber()
       }
-      this.wasContentEditable = markdown.contentEditable
+      
+      this.wasContentEditable = markdown.contentEditable == "true"
     }
     
     
