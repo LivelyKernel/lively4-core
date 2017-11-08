@@ -109,7 +109,7 @@ export default class Services extends Morph {
   }
 
   editButtonClick() {
-    lively.openBrowser(servicesURL + 'mount/');
+    lively.openBrowser(servicesRootURL);
   }
 
   cloneButtonClick() {
