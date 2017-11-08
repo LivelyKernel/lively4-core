@@ -1,0 +1,25 @@
+<h1>Files</h1>
+
+
+
+
+
+
+
+<lively-script><script>
+(async (container) => { 
+  var button = document.createElement("button");
+  button.addEventListener("click", () => {
+    FileCache.current().addDirectory("https://lively-kernel.org/lively4/lively4-jens/src/client/", 5)
+    FileCache.current().addDirectory("https://lively-kernel.org/lively4/lively4-jens/templates/", 5)
+    FileCache.current().addDirectory("https://lively-kernel.org/lively4/lively4-jens/doc/", 5)
+    
+    
+    FileCache.current().addDirectory("https://lively4/thesis/notes", 5)
+    FileCache.current().addDirectory("https://lively4/Notes", 5)
+    FileCache.current().addDirectory("https://lively4/thesis/WriteFirst", 5)
+  });
+  button.innerHTML = "update file cache";
+  return button;
+})(this.parentElement)
+</script></lively-script>
