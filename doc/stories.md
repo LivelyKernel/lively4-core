@@ -1,5 +1,7 @@
 # User Stories
 
+<lively-import src="_navigation.html"></lively-import>
+
 <!-- .*#[c]losed.* -->
 
 ## Meta

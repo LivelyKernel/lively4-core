@@ -1,18 +1,12 @@
 
-
 <lively-script><script>
 var links = {
   index: "index.md", 
-  libraries: "libraries.md", 
-  application: "applications.md", 
-  notes: "notes/index.md",
-  indeas: "ideas.md", 
-  "stories": "stories.md",
-  "issues": "issues.md",
-  "related work": "relatedwork.md" 
+  tags: "tags.md",
+  todo: "todo.md"
 }
 var container = lively.query(this, "lively-container")
-var base = lively4url + "/doc/";
+var base = lively4url + "/doc/files/";
 var div = document.createElement("div")
 if (container) {
   Object.keys(links).forEach(ea => {
