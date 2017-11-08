@@ -26,9 +26,20 @@ export default class KnotView extends Morph {
     }
   }
   
+  buildMetadata(knot) {
+    const metadataTable = this.get("#metadata-table");
+    metadataTable.innerHTML = "";
+    
+    for (const [key, value] of Object.entries(knot.getMetadata())) {
+      metadataTable.appendChild(<tr>
+        <td>{key}</td>
+        <td>{value}</td>
+      </tr>);
+    }
+  }
+  
   buildNavigatableLinkFor(knot) {
-    let ref = document.createElement('a');
-    ref.innerHTML = knot.label();
+    const ref = <a>{knot.label()}</a>;
     ref.addEventListener("click", e => {
       this.loadKnotForURL(knot.fileName);
     });
@@ -39,25 +50,22 @@ export default class KnotView extends Morph {
     return this.buildNavigatableLinkFor(knot);
   }
   buildTableDataFor(knot) {
-    let tableData = document.createElement('td');
-
-    tableData.appendChild(this.buildRefFor(knot));
-    
-    let icon = document.createElement('i');
-    icon.classList.add('fa', 'fa-search');
+    let icon = <i class="fa fa-search"></i>;
     icon.addEventListener("click", e => {
       lively.openInspector(knot, undefined, knot.label());
     });
-    tableData.appendChild(icon);
 
-    return tableData;
+    return <td>
+      {this.buildRefFor(knot)}
+      {icon}
+    </td>;
   }
   buildTableRowFor(triple, knot1, knot2) {
-    let tableRow = document.createElement('tr');
-    tableRow.appendChild(this.buildTableDataFor(knot1));
-    tableRow.appendChild(this.buildTableDataFor(knot2));
-    tableRow.appendChild(this.buildTableDataFor(triple));
-    return tableRow;
+    return <tr>
+      {this.buildTableDataFor(knot1)}
+      {this.buildTableDataFor(knot2)}
+      {this.buildTableDataFor(triple)}
+    </tr>;
   }
   async replaceTableBodyFor(selector, s, p, o, propForFirstCell, propForSecondCell) {
     let graph = await Graph.getInstance();
@@ -99,10 +107,10 @@ export default class KnotView extends Morph {
         }
       }
       
-      let listItem = document.createElement('li');
-      listItem.innerHTML = isExternalLink(url) ?
+      let listItem = <li>{isExternalLink(url) ?
         url + '<i class="fa fa-external-link"></i>' :
-        url;
+        url
+      }</li>;
       listItem.addEventListener("click", async e => {
         if(isExternalLink(url)) {
           window.open(url);
@@ -141,21 +149,22 @@ export default class KnotView extends Morph {
     let addTripleWithKnotAsObject = this.get('#add-triple-as-object');
     addTripleWithKnotAsObject.onclick = event => this.addTripleWithKnotAsObject(event);
 
+    // metadata
+    this.buildMetadata(knot);
+    
     // content
     this.buildContentFor(knot);
 
   }
   
   buildTagWidget(tag, triple) {
-    let tagElement = document.createElement('div');
-    tagElement.appendChild(this.buildNavigatableLinkFor(tag));
-    tagElement.appendChild(this.buildDeleteTagElement(triple));
-
-    return tagElement;
+    return <div>
+      {this.buildNavigatableLinkFor(tag)}
+      {this.buildDeleteTagElement(triple)}
+    </div>;
   }
   buildDeleteTagElement(triple) {
-    let ref = document.createElement('i');
-    ref.classList.add('fa', 'fa-trash');
+    let ref = <i class="fa fa-trash"></i>;
     ref.addEventListener("click", e => {
       this.deleteTagTriple(triple);
     });
