@@ -1,5 +1,9 @@
 # User Stories
 
+<lively-import src="_navigation.html"></lively-import>
+
+[Issues on Github](https://github.com/LivelyKernel/lively4-core/issues/)
+
 <!-- .*#[c]losed.* -->
 
 ## Meta
@@ -17,7 +21,7 @@ import { uniq } from "utils"
 var div = document.createElement("div")
 var button = document.createElement("button")
 button.textContent = "update"
-var container = this.parentElement.parentElement
+var container = lively.query(this, "lively-container")
 var url = container.getURL(url)
 button.onclick = async () => {
   await github.current().updateMarkdownFile(url)
@@ -64,8 +68,8 @@ div
 
 ## Lively UI
 - halo scale proportional #feature #easy #open #201
-- fix position on grab and drop 2P #Issue #feature #open #116
-- rename halo item with inplace input field #feature #open #119
+- fix position on grab and drop 2P #Issue #feature #closed #116
+- rename halo item with inplace input field #feature #closed #119
 - create global file/content search widget #feature #open #44
 - Properly reset overflow style attribute when maximizing multiple windows #bug #open #54
 - Distinguish between error end info popups #feature #open #55
@@ -77,12 +81,12 @@ div
 - detailed benchmark loading times incl. service worker, compilation, component loading etc #performance #open #121
 - benchmark lively UI .. dragging / menu open / how much content on a page etc... #performance #open #122
 - Undo for content editing #feature #open #177
-- Offline first #feature #open #178
+- Offline first #feature #ServiceWorker #hard #FollowUp #required #open #178
   - be abler to load lively without internet
   - work for a while
   - synchronize with repository
   - idea: JavaScript github client | or just files... 
-- Pen-based handwriting recognition #feature #open #182
+- Pen-based handwriting recognition #feature #hard #HelpWanted #required #open #182
 - white boardf on surface hub (multiple user one device scenario) ?P #feature #open #183
 
 ## Lively Tools
@@ -106,15 +110,15 @@ div
   - extract multple content type viewer (without editing) 3P
 - push back edits markdown files (inplace) from rendered HTML back to Markdown source #feature #open #131
   - fix markdown issues e.g. lists under lists
-- make halo grabbed/dropped content lively-content #bug #open #132
-- write multiple "lively-scripts" in one document #BUG #bug #open #134
+- make halo grabbed/dropped content lively-content #bug #closed #132
+- write multiple "lively-scripts" in one document #BUG #bug #closed #134
 - Collaborative Lively Session (Synchronous) RW: Webstrates #feature #open #188
 - Annotations for classes/methods (public/private) #feature #open #189
 
 ## Lively Chrome Extension
 - upload latest version to google app store #chore #open #135
 - update stable version #chore #open #136
-- write document supporting extensions #documentation #open #137
+- write document supporting extensions #documentation #documentation #open #137
   - Disable Content-Security-Policy 1.0.6
   - Ignore X-Frame headers 1.1
 - Update browser plugin(s) #plugin #important #chore #medium #plugin #open #200
@@ -136,12 +140,12 @@ div
 
 ## Lively Component Bin 
 - Preview for Component Bin #HtmlTemplates #HelpWanted #NiceToHave #feature #medium #LivelyComponentBin #open #199
-- [lively-container] same file name, different file extension #bug #LivelyComponentBin #open #56
+- [lively-container] same file name, different file extension #bug #LivelyComponentBin #closed #56
 
 ## Student Projects
-- build a gallery 10P #documentation #open #142
-- was there anything more? #documentation #open #143
-- new topics? 8P #documentation #open #144
+- build a gallery 10P #documentation #documentation #open #142
+- was there anything more? #documentation #documentation #open #143
+- new topics? 8P #documentation #documentation #open #144
 
 ## Lively Service Worker
 - make booting it fast #performance #open #145
@@ -166,7 +170,7 @@ div
 - Blink DevTools show old source content #medium #NiceToHave #bug #open #96
 
 ## Lively Sync
-- Trasher-like splitting of commits #feature #open #155
+- Trasher-like splitting of commits #feature #hard #NiceToHave #open #155
 - [lively-sync] replace merge button with dropdown button #feature #open #46
 
 ## Lively Scripting
@@ -174,7 +178,7 @@ div
 - Import and Handling User-defined Code #feature #open #64
 
 ## Lively PDF
-- make pdf work again 3P #LivelyDebugger #bug #open #156
+- make pdf work again 3P #LivelyDebugger #bug #closed #156
 - create link that opens lively-pdf when pasting pdf urls 1P #feature #open #157
 - allow to persistently anntate pdfs (have a look at Hypothesis) ??P #feature #open #158
 - write back anntations into file ??P #feature #open #159
@@ -186,7 +190,7 @@ div
 ## Misc Issues
 - to many green helper lines : #feature #open #162
 - no backup of local lively content combined with auto-save can make an explosive mixture : #feature #open #163
-- data-urls in markdown are broken : #LivelyDebugger #bug #open #165
+- data-urls in markdown are broken : #LivelyDebugger #bug #closed #165
   - side effect of "fixing" links
   - remove absolute positioning 
 
@@ -233,8 +237,8 @@ div
 - Energy Simulation #Examples #feature #hard #open #193
 
 ## Transpilation
-- bind (::) operator #transpilation #easy #FollowUp #NiceToHave #feature #open #100
-- do expressions #transpilation #easy #NiceToHave #feature #open #99
+- bind (::) operator #transpilation #easy #FollowUp #NiceToHave #feature #closed #100
+- do expressions #transpilation #easy #NiceToHave #feature #medium #closed #99
 - fuction parsing is broken #bug #open #53
 - target.new not working #bug #open #66
 - Allow await on top level in Workspace #transpilation #hard #important #feature #open #97
@@ -243,4 +247,43 @@ div
 
 ## Stories only in Github
 <!--NoProject-->
-- changes global content in lively is slowed down due to mutation observer #open #204
+- changes global content in lively is slowed down due to mutation observer #LivelyBaseSystem #performance #open #204
+- electron dependency breaks on travis #open #259
+- dropbox does not allow overwrite #open #258
+- var recorder break module binding semantic #open #257
+- Dropbox access does not support files names that have to be url-encoded #open #255
+- Add versioning support to dropbox #open #254
+- add read, write and metadata caching #open #253
+- Add acceptance tests for googledrive #open #252
+- Clean up dropbox and googledrive code #open #251
+- Dropbox and GoogleDrive API broken #open #249
+- __unloadModule__ hook to clean up reloaded js modules #open #248
+- Context Preservation Rewriting does not allow circular dependencies #open #247
+- Web component hook before livelyMigrate #open #246
+- expose should remember order of last usage of lively-windows #open #245
+- provide and link up all files in repo for tern.js #open #244
+- tern.js should be used to navigate across files in container #open #243
+- tern.js rename variable closes too early #open #242
+- Merge tern.js autocompletion with our own #open #241
+- z-Index resets sometimes #open #240
+- Modifying Preferences.js resets your Preferences #open #239
+- Window Manager #open #238
+- Enable a set of default syntax plugins for every babel transformation #open #236
+- source code maps in ast explorer are sometimes off #open #235
+- Shortcut to close current window #open #232
+- Booting Service Worker conflicts with booting lively #open #231
+- Unicode Encoding #open #230
+- Expose feature broken #open #229
+- Subtree Configuration Tool #open #228
+- Update imports in workspaces when modules change #open #227
+- this is not bound in lively-script correctly #open #225
+- Highlighting code in .md with markdownJS does not work #open #224
+- Remove remaining underscore references #open #223
+- Better tool support for import #open #220
+- Show unused imports and variables #open #219
+- toggle fullscreen in container should do that #open #217
+- should we allow tested nepositories under https://lively-kernel.org/lively4/ #open #215
+- how can we detect indirect movement of objects #open #214
+- halo should not close when clicking into workspace #open #213
+- all scripts in markdown become lively-scripts... maybe we don't want that? #open #212
+- halo does not move with target #open #206

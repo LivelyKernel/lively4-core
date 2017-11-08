@@ -1,6 +1,6 @@
 # Lively Documentation
 
-[libraries](libraries.md) | [applications](applications.md) | [notes](notes.md)
+<lively-import src="_navigation.html"></lively-import>
 
 Lively4 is a self-supporting collaborative development environment. It runs in the browser on the client side and uses DOM elements and JavaScript as its building blocks. We use web-components and babels client side JavaScript source code transformation. It can be used and three ways:
 
@@ -9,6 +9,24 @@ Lively4 is a self-supporting collaborative development environment. It runs in t
 3. We can load lively through a chrome extension on any third party page. Currently we loose some functionality such as the unified service worker file system that way. 
 
 Lively4 is currently build using two materials: JavaScript modules and HTML Templates. 
+
+# Lively4 
+
+- Self-supporting Web-based Development Environment
+
+- Workflow of developing JavaScript on a Web-page
+  - persisted into GitHub (indirectly through lively4-server or directly through service worker)
+  - reload modules at runtime. 
+  - Models that provide prototypes for templates such as "Windows" are also updated at runtime. 
+
+- Workflow of developing components as HTML templates on a Web-page
+  - persisted into GitHub
+  - templates can be exchanged at runtime, so that new HTML elements are build with the new template
+  - old html elements are migrated by replacing them with new ones. 
+    - attributes and children are preseved
+    - all inner content (subnodes of shadowRoot) are thrown away
+    - outgoing and incoming JavaScript object references are ignored
+
 
 # Templates
 
@@ -51,3 +69,11 @@ All components are stored together with their prototype definitions (JavaScript 
 # Other Documentation
 - [Lively4 Wiki on Github](https://lively-kernel.org/lively4/Lively4.wiki/Home.md)
 - that also hosts our [developers journal](https://lively-kernel.org/lively4/Lively4.wiki/Journal.md)
+
+
+
+# Future Work
+
+- Workflow of live object based editing of templates
+- Cutting out any HTML objects as templates on the Web and reusing them later (in mashups)? #Tim 
+ 

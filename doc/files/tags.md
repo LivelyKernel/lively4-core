@@ -1,4 +1,8 @@
-<h1>tags</h1>
+# Tags
+
+<lively-import src="_navigation.html"></lively-import>
+
+Auto-generated list of tags found in (browser-local) files data-base.
 
 <lively-script><script>
 import FileCache from "src/client/filecache.js"

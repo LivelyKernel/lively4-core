@@ -1,7 +1,7 @@
 # Notes
 
-This is a piece of note taking paper waiting to be scribbled on... 
-
+<lively-import src="../_navigation.html"></lively-import>
+ 
 ## Ideas
 
 - What about a section with "cool stuff" to do in Lively4, as Dan whished it for previous versions?

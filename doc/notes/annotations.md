@@ -5,13 +5,13 @@ To be translated: #TODO ;-) #Jens
 Interessant ist:
 
 - dass Annotationen separate Objekte sind. 
-- den Inhalt meiner Annotation kann man fast lesen: „which ist o be ..“
+- den Inhalt meiner Annotation kann man fast lesen: âwhich ist o be ..â
 - Und dann ist die gehighlightete  region als box markiert. 
 - Mit dem Inhalt der Box, also dem gehighlighteten text ist die Annotation nur indirekt verbunden, ohne das man das dokument rendert und schaut welcher text in der box steht kann man nicht darauf zugreifen. 
-- Bisher kenn ich nur zwei Programme die in ihrer Annotationsvorschau auch diesen Text ausgeben können: „Apple Preview“ und „Xodo Docs“
-- Andere Programme, die wie ihr, die Annotationen selbst verwalten, speichern sich den „markierten text“ separat ab und haben geben diesen als Inhalt auch wieder aus, … aber der Inhalt ist in diesem Fall ja mein eigener Text und es kommt zu einem Konflikt… etc… 
-- d.h. früher oder später solltet ihr solche annotationen auch lessen und schreiben können… und ihr müsst dann auch an den Inhalt des markierten textes rankommen. 
-- Was ich gerne ausprobieren möchte ist, ob ich mit das mit PDF.js und einer solchen Annotation auch kann… und ich würde das dann nicht nur im Browser machen, sondern auch irgendwie für die Kommandozeile (native) zugänglich machen… vielleicht könnt ihr das ja auch gebrauche.  
+- Bisher kenn ich nur zwei Programme die in ihrer Annotationsvorschau auch diesen Text ausgeben kÃ¶nnen: âApple Previewâ und âXodo Docsâ
+- Andere Programme, die wie ihr, die Annotationen selbst verwalten, speichern sich den âmarkierten textâ separat ab und haben geben diesen als Inhalt auch wieder aus, â¦ aber der Inhalt ist in diesem Fall ja mein eigener Text und es kommt zu einem Konfliktâ¦ etcâ¦ 
+- d.h. frÃ¼her oder spÃ¤ter solltet ihr solche annotationen auch lessen und schreiben kÃ¶nnenâ¦ und ihr mÃ¼sst dann auch an den Inhalt des markierten textes rankommen. 
+- Was ich gerne ausprobieren mÃ¶chte ist, ob ich mit das mit PDF.js und einer solchen Annotation auch kannâ¦ und ich wÃ¼rde das dann nicht nur im Browser machen, sondern auch irgendwie fÃ¼r die Kommandozeile (native) zugÃ¤nglich machenâ¦ vielleicht kÃ¶nnt ihr das ja auch gebrauche.  
 
 ```
 989 0 obj

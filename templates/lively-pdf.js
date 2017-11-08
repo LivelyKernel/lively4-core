@@ -44,10 +44,11 @@ export default class LivelyPDF extends Morph {
       this.pdfViewer.currentScaleValue = 'page-width';
     });
     // Loading document.
+    var that = this;
     PDFJS.getDocument(url).then(function (pdfDocument) {
-        pdfViewer.setDocument(pdfDocument);
+        that.pdfViewer.setDocument(pdfDocument);
     
-        pdfLinkService.setDocument(pdfDocument, null);
+        that.pdfLinkService.setDocument(pdfDocument, null);
     });
   }
 

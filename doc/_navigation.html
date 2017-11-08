@@ -1,0 +1,24 @@
+
+
+<lively-script><script>
+var links = {
+  index: "index.md", 
+  libraries: "libraries.md", 
+  application: "applications.md", 
+  notes: "notes/index.md",
+  indeas: "ideas.md", 
+  "stories": "stories.md",
+  "issues": "issues.md",
+  "related work": "relatedwork.md" 
+}
+var container = lively.query(this, "lively-container")
+var base = lively4url + "/doc/";
+var div = document.createElement("div")
+if (container) {
+  Object.keys(links).forEach(ea => {
+    div.appendChild(container.createLink(base, ea, links[ea]))
+    div.appendChild(document.createTextNode(" | "))
+  })
+};
+div
+</script></lively-script>

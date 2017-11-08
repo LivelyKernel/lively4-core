@@ -4,6 +4,12 @@ Lively4--as a self-supportive development environment--is first and foremost its
 
 ## Components
 
+<style>
+lively-script {
+  display: inline-block
+}
+</style>
+
 <script>
 var b = document.createElement("button")
 b.innerHTML = "PDF Viewer"
@@ -12,7 +18,6 @@ b.onclick = () => {
 } 
 b
 </script>
-
 <script>
 var b = document.createElement("button")
 b.innerHTML = "Lively4 Services"
