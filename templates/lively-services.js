@@ -82,9 +82,8 @@ export default class Services extends Morph {
     lively.components.openInWindow(browser).then(() => {
       browser.path = servicesRootURL;
       browser.setMainAction((url) => {
-        debugger
         const relativePath = url.toString().replace(servicesRootURL + '/', '');
-
+        
         this.serviceTop.removeAttribute('data-id');
         this.entryPoint.value = relativePath;
         this.entryPoint.focus();

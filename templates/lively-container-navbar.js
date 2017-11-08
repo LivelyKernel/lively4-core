@@ -30,7 +30,6 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   async copyFromURL(fromurl) {
-    debugger
     var filename = fromurl.replace(/.*\//,"")
     var isDataURI;
     if (fromurl.match(/^data\:image\/png;/)) {
