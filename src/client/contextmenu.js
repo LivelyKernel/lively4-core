@@ -279,25 +279,27 @@ export default class ContextMenu {
         }]
       ]],
       ["Tools", [
-        // ["Services", (evt) => this.openComponentInWindow("lively-services", evt)],
-        // ["Terminal", (evt) => this.openComponentInWindow("lively-terminal", evt)],
-        ["Console", (evt) => this.openComponentInWindow("lively-console", evt, worldContext), 
+        // ["Services", evt => this.openComponentInWindow("lively-services", evt)],
+        // ["Terminal", evt => this.openComponentInWindow("lively-terminal", evt)],
+        ["Console", evt => this.openComponentInWindow("lively-console", evt, worldContext), 
           "CMD+J", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
-        ["Search", (evt) => this.openComponentInWindow("lively-search", evt, worldContext),
+        ["Search", evt => this.openComponentInWindow("lively-search", evt, worldContext),
           "CMD+SHIFT+F",'<i class="fa fa-search" aria-hidden="true"></i>'],
-        // ['Debugger', (evt) => lively.openDebugger().then( cmp), 
+        // ['Debugger', evt => lively.openDebugger().then( cmp), 
         //   "", '<i class="fa fa-chrome" aria-hidden="true"></i>'],
-        ['Inspector', (evt) => 
+        ['Inspector', evt => 
           lively.openInspector(worldContext, undefined, undefined, worldContext).then(comp => {
             this.positionElementAtEvent(comp.parentElement, worldContext, evt)
           }), 
           "", '<i class="fa fa-info-circle" aria-hidden="true"></i>'],
-        ["Test Runner", (evt) => this.openComponentInWindow("lively-testrunner", evt, worldContext),
+        ["Test Runner", evt => this.openComponentInWindow("lively-testrunner", evt, worldContext),
           "", '<i class="fa fa-check-square-o" aria-hidden="true"></i>'],
-        ["Drawboard", (evt) => this.openComponentInWindow("lively-drawboard", evt, worldContext),
+        ["Drawboard", evt => this.openComponentInWindow("lively-drawboard", evt, worldContext),
           "", '<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'],
-        ["Storage Setup", (evt) => this.openComponentInWindow("lively-filesystems", evt, worldContext),
+        ["Storage Setup", evt => this.openComponentInWindow("lively-filesystems", evt, worldContext),
           "", '<i class="fa fa-cloud" aria-hidden="true"></i>'],
+        ["Graph Control", evt => this.openComponentInWindow("graph-control", evt, worldContext),
+          "Ctrl+Alt+G", '<i class="fa fa-globe" aria-hidden="true"></i>'],
       ]],
       [
         "Windows", 
