@@ -25,7 +25,7 @@ function loadJavaScriptThroughDOM(name, src, force) {
     script.setAttribute("data-lively4-donotpersist","all");
 
     if (force) {
-      src += +"?" + Date.now();
+      src += "?" + Date.now();
     }
     script.src = src;
     script.onload = function () {
