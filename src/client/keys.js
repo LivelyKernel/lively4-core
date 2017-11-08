@@ -43,36 +43,36 @@ export default class Keys {
       
       // TODO refactor it, so that there is only a single place for shortcut definition
       // see /src/client/contextmenu.js and /templates/classes/AceEditor.js
-      if ((evt.ctrlKey || evt.metaKey) && char == "K") {
+      const ctrl = evt.ctrlKey || evt.metaKey;
+      if (ctrl && char == "K") {
         lively.openWorkspace("");
         evt.preventDefault();
-      } else if ((evt.ctrlKey || evt.metaKey) && evt.shiftKey &&char == "F") {
+      } else if (ctrl && evt.shiftKey && char == "F") {
         lively.openSearchWidget(this.getTextSelection());
         evt.preventDefault();
-      } else if (evt.shiftKey && (evt.ctrlKey || evt.metaKey) && char == "B") {
-        lively.notify("open browser")
+      } else if (evt.shiftKey && ctrl && char == "B") {
         lively.openBrowser(this.getTextSelection());
         evt.preventDefault();
-      } else if (evt.shiftKey && (evt.ctrlKey || evt.metaKey) && char == "G") {
+      } else if (evt.shiftKey && ctrl && char == "G") {
         // this does not work up on #Jens' windows machine
         lively.notify("open sync")
         lively.openComponentInWindow("lively-sync");
         evt.preventDefault();
-      } else if ((evt.ctrlKey || evt.metaKey) && char == "O") {
+      } else if (ctrl && char == "O") {
         lively.openComponentInWindow("lively-component-bin");
         evt.preventDefault();
-      } else if (!evt.shiftKey && (evt.ctrlKey || evt.metaKey) && char == "J") {
+      } else if (!evt.shiftKey && ctrl && char == "J") {
         lively.openComponentInWindow("lively-console");
         evt.preventDefault();
-      } else if ((evt.ctrlKey || evt.metaKey)  && char == "H") {
+      } else if (ctrl  && char == "H") {
         lively.openHelpWindow(this.getTextSelection());
+        evt.preventDefault();
+      } else if (ctrl && evt.altKey && char == "G") {
+        lively.openComponentInWindow("graph-control");
         evt.preventDefault();
       } else if (evt.keyCode == 27) {
         lively.hideSearchWidget();
-      }
-      
-      if ((evt.ctrlKey || evt.metaKey) && char == "D") {
-        
+      } else if (ctrl && char == "D") {
         if (evt.path.find(ea => ea.tagName == "LIVELY-CODE-MIRROR")) {
           // lively.notify("codemirror handles itself " )
           return; // code mirror does not stop it's propagation
