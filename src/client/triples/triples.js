@@ -1,22 +1,48 @@
 import focalStorage from 'src/external/focalStorage.js';
 import uuid from './../uuid.js';
 import ContextMenu from './../contextmenu.js';
+import { through } from 'utils';
 
 const STORAGE_PREFIX = 'triple-notes:';
 const STORAGE_PREFIX_ITEMS = STORAGE_PREFIX + 'items:';
 
-export async function cachedFetch(url, options) {
-  return await fetch(url, options).then(r => r.text());
+async function getJSYaml() {
+  await lively.loadJavaScriptThroughDOM("esprima", "https://lively-kernel.org/lively4/foo/src/external/esprima.js");
+  await lively.loadJavaScriptThroughDOM("js-yaml", "https://lively-kernel.org/lively4/foo/src/external/js-yaml.js");
+  return jsyaml;
+}
+
+async function parseMarkdown(markdown, filename, filenaNe) {
+  try {
+    const frontmatterSeparator = "---\r\n";
+    if(markdown.startsWith(frontmatterSeparator)) {
+      const parts = markdown.split(frontmatterSeparator);
+      if(parts.length >= 3) {
+        parts.shift(); // empty
+        const frontmatterString = parts.shift();
+        return {
+          textContent: parts.join(frontmatterSeparator),
+          metadata: (await getJSYaml()).load(frontmatterString)
+        };
+      }
+    }
+  } catch(e) {
+    lively.notify("failed frontmatter parsing", "", undefined, undefined, "red");
+  }
+  return {
+    textContent: markdown,
+    metadata: {}
+  };
 }
 
 class Knot {
-  constructor(fileName, content) {
+  constructor(fileName, content, metadata) {
     this.fileName = fileName;
     this.content = content;
+    this.metadata = metadata || {};
   }
-  get url() {
-    return this.fileName;
-  }
+  get url() { return this.fileName; }
+  getMetadata() { return this.metadata; }
   label() {
     if(this.fileName.endsWith('.md')) {
       const firstLine = this.content.split('\n')[0];
@@ -83,14 +109,14 @@ class Knot {
 }
 
 class Triple extends Knot {
-  constructor(fileName, content) {
+  constructor(fileName, content, metadata) {
     try {
       JSON.parse(content)
     } catch(e) {
       debugger
       console.log(fileName);
     }
-    super(fileName, JSON.parse(content));
+    super(fileName, JSON.parse(content), metadata);
   }
   
   label() {
@@ -109,6 +135,12 @@ export const SAME_AS_URL = DEFAULT_FOLDER_URL + 'same_as.md';
 export const CONTAINS_URL = DEFAULT_FOLDER_URL + 'contains.md';
 
 const ROOT_KNOWLEDGE_BASES_KEY = 'triple-notes-root-knowledge-bases';
+
+function isInternalURL(url) {
+  const origin = url.origin;
+  return origin === 'https://lively4' || origin === 'https://localhost:8800';
+}
+function isExternalURL(url) { return !isInternalURL(url); }
 
 export class Graph {
   constructor() {
@@ -189,7 +221,7 @@ export class Graph {
     }
     
     let urlURL = new URL(url);
-    if(!Graph.isExternalURL(urlURL)) {
+    if(!isInternalURL(urlURL)) {
       var result = await fetch(url, {method: 'DELETE'})
         .then(r => r.text());
       lively.notify(`Deleted knot ${url} in remote storage`, result);
@@ -200,24 +232,6 @@ export class Graph {
     return true;
   }
 
-  async deserializeKnot(fileName, text) {
-    function isTriple(fileName, text) {
-      return fileName.endsWith(".triple.json");
-    }
-    
-    let knot;
-    if(isTriple(fileName, text)) {
-      knot = new Triple(fileName, text);
-      await this.linkUpTriple(knot);
-    } else {
-      knot = new Knot(fileName, text);
-    }
-      
-    this.knots.push(knot);
-    
-    return knot;
-  }
-  
   async createReferree(triple, propName) {
     let subjectUrlString = triple.content[propName];
     let subjectUrl = new URL(subjectUrlString, triple.fileName);
@@ -281,47 +295,50 @@ export class Graph {
     return this.requestedKnots.get(filePath);
   }
   
-  static isInternalURL(url) {
-    const origin = url.origin;
-    return origin === 'https://lively4' || origin === 'https://localhost:8800';
-  }
-  
-  static isExternalURL(url) {
-    return !this.isInternalURL(url);
-  }
   async loadSingleKnot(urlOrString) {
     const url = new URL(urlOrString);
-    if(Graph.isExternalURL(url)) {
-      return this.deserializeKnot(url.toString(), url.hostname + url.pathname);
-    }
     
-    let text = await cachedFetch(url)
-    const fileName = url.toString();
-    return this.deserializeKnot(fileName, text);
+    let fileName = url.toString();
+    let text = isExternalURL(url) ?
+      url.hostname + url.pathname :
+      await fetch(url).then(r => r.text());
+
+    // deserializeKnot
+    const isTriple = fileName.endsWith(".triple.json");
+
+    let knot;
+    if(isTriple) {
+      knot = new Triple(fileName, text);
+      await this.linkUpTriple(knot);
+    } else {
+      const { textContent, metadata} = await parseMarkdown(text, fileName);
+      knot = new Knot(fileName, textContent, metadata);
+    }
+
+    this.knots.push(knot);
+
+    return knot;
   }
   
   async loadFromDir(directory) {
     if(!this.loadedDirectoryPromises.has(directory)) {
       this.loadedDirectoryPromises.set(directory, new Promise(async resolve => {
-        let progress = await lively.showProgress("loading dir " + directory);
+        const progress = await lively.showProgress("loading dir " + directory);
         progress.value = 0;
         
-        let directoryURL = new URL(directory);
-        let text = await cachedFetch(directory, { method: 'OPTIONS' });
-        let json = JSON.parse(text);
-        let fileDescriptors = json.contents;
-        fileDescriptors = fileDescriptors.filter(desc => desc.type === "file");
-        let fileNames = fileDescriptors.map(desc => desc.name);
+        const directoryURL = new URL(directory);
+        const json = await fetch(directory, { method: 'OPTIONS' }).then(r => r.json());
+        const fileNames = json.contents
+          .filter(desc => desc.type === "file")
+          .map(desc => desc.name);
         
-        let total = fileNames.length;
+        const total = fileNames.length;
         let i=0;
         Promise
           .all(fileNames.map(fileName => {
             let knotURL = new URL(fileName, directoryURL);
-            return this.requestKnot(knotURL).then(val => {
-              progress.value = i++ / total;
-              return val;
-            });
+            return this.requestKnot(knotURL)
+              ::through(() => progress.value = i++ / total);
           }))
           .then(resolve)
           .then(() => progress.remove());
@@ -332,7 +349,7 @@ export class Graph {
   
   async getNonCollidableURL(directory, name, fileEnding) {
     const maxTries = 10;
-    let fileName = name.replace(/\s/g, '_');
+    const fileName = name.replace(/\s/g, '_');
     let offset = 0;
     
     for(let i = 0; i < maxTries; i++) {
@@ -365,8 +382,8 @@ export class Graph {
     await this.requestKnot(predicateURLString);
     await this.requestKnot(objectURLString);
 
-    let url = await this.getNonCollidableURL(knowledgeBaseURLString, 'triple-' + uuid(), 'triple.json');
-    let content = JSON.stringify({
+    const url = await this.getNonCollidableURL(knowledgeBaseURLString, 'triple-' + uuid(), 'triple.json');
+    const content = JSON.stringify({
       subject: subjectUrlString,
       predicate: predicateURLString,
       object: objectURLString
