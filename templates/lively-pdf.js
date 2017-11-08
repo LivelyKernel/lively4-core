@@ -36,9 +36,7 @@ export default class LivelyPDF extends Morph {
     this.pdfLinkService = new PDFJS.PDFLinkService();
     this.pdfViewer = new PDFJS.PDFViewer({
       container: container,
-      renderer: 'canvas', //svg or canvas
-      linkService: this.pdfLinkService,
-      enhanceTextSelection: true
+      linkService: this.pdfLinkService
     });
     this.pdfLinkService.setViewer(this.pdfViewer);
     container.addEventListener('pagesinit',  () => {
@@ -46,9 +44,11 @@ export default class LivelyPDF extends Morph {
       this.pdfViewer.currentScaleValue = 'page-width';
     });
     // Loading document.
-    this.pdf = await PDFJS.getDocument(url);
-    this.pdfViewer.setDocument(this.pdf);
-    this.pdfLinkService.setDocument(this.pdf, null);
+    PDFJS.getDocument(url).then(function (pdfDocument) {
+        pdfViewer.setDocument(pdfDocument);
+    
+        pdfLinkService.setDocument(pdfDocument, null);
+    });
   }
 
   onExtentChanged() {
