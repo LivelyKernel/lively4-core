@@ -47,11 +47,10 @@ export default class Keys {
       if (ctrl && char == "K") {
         lively.openWorkspace("");
         evt.preventDefault();
-      } else if (ctrl && evt.shiftKey &&char == "F") {
+      } else if (ctrl && evt.shiftKey && char == "F") {
         lively.openSearchWidget(this.getTextSelection());
         evt.preventDefault();
       } else if (evt.shiftKey && ctrl && char == "B") {
-        lively.notify("open browser")
         lively.openBrowser(this.getTextSelection());
         evt.preventDefault();
       } else if (evt.shiftKey && ctrl && char == "G") {
@@ -73,10 +72,7 @@ export default class Keys {
         evt.preventDefault();
       } else if (evt.keyCode == 27) {
         lively.hideSearchWidget();
-      }
-      
-      if ((evt.ctrlKey || evt.metaKey) && char == "D") {
-        
+      } else if (ctrl && char == "D") {
         if (evt.path.find(ea => ea.tagName == "LIVELY-CODE-MIRROR")) {
           // lively.notify("codemirror handles itself " )
           return; // code mirror does not stop it's propagation

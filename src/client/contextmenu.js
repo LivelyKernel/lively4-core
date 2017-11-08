@@ -232,7 +232,7 @@ export default class ContextMenu {
             morph.classList.add("lively-content")
           }
           this.hide();
-        }],
+        }, "", '<i class="fa fa-font" aria-hidden="true"></i>'],
         ["Rectangle", (evt) => {
           var morph  = document.createElement("div");
           morph.style.width = "200px";
@@ -249,7 +249,7 @@ export default class ContextMenu {
           
 
           this.hide();
-        }],
+        }, "", '<i class="fa fa-square-o" aria-hidden="true"></i>'],
          ["Drawing", async (evt) => {
           var morph  = document.createElement("lively-drawboard");
           morph.setAttribute("width", "400px");
@@ -264,7 +264,7 @@ export default class ContextMenu {
           }
           morph.style.backgroundColor = 'rgb(255,250,205)';
           this.hide();
-        }], 
+        }, "", '<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'], 
         ["Button", async (evt) => {
           var clipboard = await System.import("src/client/clipboard.js").then(m => m.default)
           var data = await fetch(lively4url + "/parts/button.html").then(t => t.text())
