@@ -2,6 +2,8 @@
 
 <lively-import src="_navigation.html"></lively-import>
 
+[Issues on Github](https://github.com/LivelyKernel/lively4-core/issues/)
+
 <!-- .*#[c]losed.* -->
 
 ## Meta
