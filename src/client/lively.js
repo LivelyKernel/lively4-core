@@ -1409,6 +1409,7 @@ export default class Lively {
   static query(element, query) {
    // lively.showElement(element)
    var result = element.querySelector(query)
+   if (!result && element.isWindow) return; // scope that search to windows
    if (!result && element.parentElement) result = this.query(element.parentElement, query) 
    if (!result && element.parentNode) result = this.query(element.parentNode, query)    
    if (!result && element.host) result = this.query(element.host, query) 

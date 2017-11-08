@@ -1,6 +1,6 @@
 # Notes
 
-<lively-import src="_navigation.html"></lively-import>
+<lively-import src="../_navigation.html"></lively-import>
  
 ## Ideas
 

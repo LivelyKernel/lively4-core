@@ -1357,6 +1357,19 @@ export default class Container extends Morph {
     // }
   }
   
+  createLink(base, name, href) {
+    var link = document.createElement("a")
+    link.textContent = name
+    var path = base + href
+    link.href = path
+    link.addEventListener("click", (evt) => {
+        this.followPath(path); 
+        evt.preventDefault(); 
+        evt.stopPropagation()
+    }); 
+    return link  
+  }
+  
   livelyAcceptsDrop() {
     return this.contentIsEditable() && !this.isEditing()
   }

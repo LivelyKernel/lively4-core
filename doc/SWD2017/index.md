@@ -1,13 +1,4 @@
-# Software Design 2017 - HPI Seminar on evolving the Lively4 Web-based Development Environment
-
-The seminar will build upon the results of our previous [SWD](SWD15), [SWD](SWD16) and [WebDev](WebDev16) seminars.
-
-The development environment runs in the browser and uses browser local storage, GitHub, Dropbox and other Cloud APIs for persistence. 
-
-For faster development and other experiments we also have our very basic node.js service, that gives us more control during development. 
-
-
-## Quick Manual for Lively4
+# Quick Manual for Lively4
 
 - CTRL+Click opens Halo to drag, copy, edit all DOM elements directly on a web page
 - (CTRL+)RightClick opens context menu with various tools...

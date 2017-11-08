@@ -1,5 +1,7 @@
 # Libraries 
 
+<lively-import src="_navigation.html"></lively-import>
+
 __We don't want to do everything ourselves... anymore__
 
 Using powerful compontents can make live more complicated, e.g. sometimes understanding them and intergrating them can be hard or sometimes nearly imposible. And sometimes your are buying more that you actually wanted..

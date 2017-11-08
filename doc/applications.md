@@ -1,6 +1,6 @@
 # Applications
 
-This is a #Test #Link
+<lively-import src="_navigation.html"></lively-import>
 
 We started growing our new tree first by building some core development tools to build more user friendly tools. But at some point there will be some leaves at the tree and some fruits to be harvested. 
 
