@@ -1,0 +1,6 @@
+Explorative and live development environments flourish the most when they can impose restrictions. Forcing a specific programming language or framework, the environment can better enhance the experience of editing code with immediate feedback or direct manipulation. 
+Lively Kernel's user interface (UI) framework Morphic provides such a development experience when working with graphical objects in direct way giving immediate feedback during development. 
+Our new development environment Lively4 wants to achieve a similar development experience even though targeting general HTML elements.
+Web Components as a new Web standard provide a very powerful abstraction mechanism. It allows us to use plain HTML as building blocks for our tools. Unfortunately, Web Components miss proper capabilities to support run-time development.
+To address this issue, we use object migration to provide immediate feedback when editing UI code.
+The approach is evaluated by discussing known problems, resulting best practices and future work.  
