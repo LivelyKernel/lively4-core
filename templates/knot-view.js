@@ -150,7 +150,7 @@ export default class KnotView extends Morph {
     addTripleWithKnotAsObject.onclick = event => this.addTripleWithKnotAsObject(event);
 
     // metadata
-    this.buildMetadata(knot);
+    //this.buildMetadata(knot);
     
     // content
     this.buildContentFor(knot);

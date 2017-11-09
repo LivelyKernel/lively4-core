@@ -3,16 +3,14 @@ import uuid from './../uuid.js';
 import ContextMenu from './../contextmenu.js';
 import { through } from 'utils';
 
-const STORAGE_PREFIX = 'triple-notes:';
-const STORAGE_PREFIX_ITEMS = STORAGE_PREFIX + 'items:';
-
 async function getJSYaml() {
   await lively.loadJavaScriptThroughDOM("esprima", "https://lively-kernel.org/lively4/foo/src/external/esprima.js");
   await lively.loadJavaScriptThroughDOM("js-yaml", "https://lively-kernel.org/lively4/foo/src/external/js-yaml.js");
   return jsyaml;
 }
 
-async function parseMarkdown(markdown, filename, filenaNe) {
+// #TODO: unused
+async function parseMarkdown(markdown, filename) {
   try {
     const frontmatterSeparator = "---\r\n";
     if(markdown.startsWith(frontmatterSeparator)) {
@@ -36,10 +34,9 @@ async function parseMarkdown(markdown, filename, filenaNe) {
 }
 
 class Knot {
-  constructor(fileName, content, metadata) {
+  constructor(fileName, content) {
     this.fileName = fileName;
     this.content = content;
-    this.metadata = metadata || {};
   }
   get url() { return this.fileName; }
   getMetadata() { return this.metadata; }
@@ -109,14 +106,14 @@ class Knot {
 }
 
 class Triple extends Knot {
-  constructor(fileName, content, metadata) {
+  constructor(fileName, content) {
     try {
       JSON.parse(content)
     } catch(e) {
       debugger
       console.log(fileName);
     }
-    super(fileName, JSON.parse(content), metadata);
+    super(fileName, JSON.parse(content));
   }
   
   label() {
@@ -128,7 +125,7 @@ class Triple extends Knot {
   isTriple() { return true; }
 }
 
-export const DEFAULT_FOLDER_URL = 'https://localhost:8800/notes/';
+export const DEFAULT_FOLDER_URL = 'https://localhost:8800/PhD/thesis/notes/';
 export const TAG_URL = DEFAULT_FOLDER_URL + 'tag.md';
 export const IS_A_URL = DEFAULT_FOLDER_URL + 'is_a.md';
 export const SAME_AS_URL = DEFAULT_FOLDER_URL + 'same_as.md';
@@ -205,7 +202,7 @@ export class Graph {
       .concat(this.query(_, knot, _))
       .concat(this.query(_, _, knot));
     if(referingTriples.length > 0) {
-      lively.notify('Deletion aborted!', referingTriples.length + ' triples refer to this knot.');
+      lively.notify('Deletion aborted!', `${referingTriples.length} triples refer to this knot.`);
       return false;
     }
 
@@ -242,7 +239,7 @@ export class Graph {
     if(subject) {
       triple[propName] = subject;
     } else {
-      throw new Error(searchString +' '+ triple.fileName+ 'external referrees not yet implemented!');
+      throw new Error(`${searchString} ${triple.fileName} external referrees not yet implemented!`);
     }
   }
   async linkUpTriple(triple) {
@@ -267,18 +264,10 @@ export class Graph {
   }
   
   query(s, p, o) {
-    let matchingTriples = [];
-    this.triples.forEach(triple => {
-      if(s === _ || triple.subject === s) {
-        if(p === _ || triple.predicate === p) {
-          if(o === _ || triple.object === o) {
-            matchingTriples.push(triple);
-          }
-        }
-      }
-    });
-
-    return matchingTriples;
+    return this.triples
+      .filter(triple => s === _ || triple.subject === s)
+      .filter(triple => p === _ || triple.predicate === p)
+      .filter(triple => o === _ || triple.object === o);
   }
   
   getUrlsByKnot(knot) {
@@ -311,8 +300,7 @@ export class Graph {
       knot = new Triple(fileName, text);
       await this.linkUpTriple(knot);
     } else {
-      const { textContent, metadata} = await parseMarkdown(text, fileName);
-      knot = new Knot(fileName, textContent, metadata);
+      knot = new Knot(fileName, text);
     }
 
     this.knots.push(knot);
@@ -323,7 +311,7 @@ export class Graph {
   async loadFromDir(directory) {
     if(!this.loadedDirectoryPromises.has(directory)) {
       this.loadedDirectoryPromises.set(directory, new Promise(async resolve => {
-        const progress = await lively.showProgress("loading dir " + directory);
+        const progress = await lively.showProgress(`loading dir ${directory}`);
         progress.value = 0;
         
         const directoryURL = new URL(directory);
@@ -334,12 +322,11 @@ export class Graph {
         
         const total = fileNames.length;
         let i=0;
-        Promise
-          .all(fileNames.map(fileName => {
-            let knotURL = new URL(fileName, directoryURL);
-            return this.requestKnot(knotURL)
-              ::through(() => progress.value = i++ / total);
-          }))
+        Promise.all(fileNames.map(fileName => {
+          const knotURL = new URL(fileName, directoryURL);
+          return this.requestKnot(knotURL)
+            ::through(() => progress.value = i++ / total);
+        }))
           .then(resolve)
           .then(() => progress.remove());
       }));
