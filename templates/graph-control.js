@@ -2,7 +2,6 @@ import Morph from './Morph.js';
 import KnotView from "./knot-view.js";
 
 import { Graph } from 'src/client/triples/triples.js';
-import lively from 'src/client/lively.js';
 
 export default class GraphControl extends Morph {
   async initialize() {
