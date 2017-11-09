@@ -20,13 +20,15 @@ export default class LivelyContainerNavbar extends Morph {
 
   onDrop(evt) {
     var data = evt.dataTransfer.getData("text");
+    evt.preventDefault();
+    evt.stopPropagation();
+
     
     if (data.match("^https?:\/\/") || data.match(/^data\:image\/png;/)) {
       this.copyFromURL(data)
     } else {
       console.log('ignore data ' + data)
     }
-    evt.preventDefault();
   }
   
   async copyFromURL(fromurl) {
