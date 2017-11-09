@@ -28,7 +28,7 @@ export default class GraphControl extends Morph {
     var fullTextSearch = this.get("#full-text-search");
     fullTextSearch.addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
-        this.fullTextSearch(this.get('#full-text-search').value);
+        GraphControl.fullTextSearch(this.get('#full-text-search').value);
       }
     });
     
@@ -129,8 +129,8 @@ export default class GraphControl extends Morph {
     lively.notify('resetted graph');
   }
   
-    // Full-text search on object graph
-  async fullTextSearch(searchString) {
+  // Full-text search on object graph
+  static async fullTextSearch(searchString) {
     const searchTerms = searchString.split(' ')
       .map(str => str.toLowerCase());
 

@@ -9,6 +9,8 @@
 
 // import lively from "./lively.js"; #TODO does not work anymore...
 
+import GraphControl from "templates/graph-control.js";
+
 export default class Keys {
 
   static getChar(evt) {
@@ -49,6 +51,9 @@ export default class Keys {
         evt.preventDefault();
       } else if (ctrl && evt.shiftKey && char == "F") {
         lively.openSearchWidget(this.getTextSelection());
+        evt.preventDefault();
+      } else if (ctrl && evt.altKey && char == "F") {
+        GraphControl.fullTextSearch(this.getTextSelection());
         evt.preventDefault();
       } else if (evt.shiftKey && ctrl && char == "B") {
         lively.openBrowser(this.getTextSelection());

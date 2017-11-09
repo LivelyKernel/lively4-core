@@ -264,18 +264,10 @@ export class Graph {
   }
   
   query(s, p, o) {
-    let matchingTriples = [];
-    this.triples.forEach(triple => {
-      if(s === _ || triple.subject === s) {
-        if(p === _ || triple.predicate === p) {
-          if(o === _ || triple.object === o) {
-            matchingTriples.push(triple);
-          }
-        }
-      }
-    });
-
-    return matchingTriples;
+    return this.triples
+      .filter(triple => s === _ || triple.subject === s)
+      .filter(triple => p === _ || triple.predicate === p)
+      .filter(triple => o === _ || triple.object === o);
   }
   
   getUrlsByKnot(knot) {
