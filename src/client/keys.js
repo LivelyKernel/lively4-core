@@ -46,7 +46,7 @@ export default class Keys {
           lively.openWorkspace("")
         }],
         ["Search", ctrl && shiftKey && char == "F", evt => {
-          lively.openSearchWidget(this.getTextSelection());
+          lively.openSearchWidget(this.getTextSelection(), null, evt.path[0]);
         }],
         ["Search Graph", ctrl && altKey && char == "F", evt => {
           GraphControl.fullTextSearch(this.getTextSelection());
