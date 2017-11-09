@@ -1071,12 +1071,22 @@ export default class Lively {
     });
   }
 
-  static openSearchWidget(text, worldContext) {
+  static openSearchWidget(text, worldContext, searchContext) {
     // index based search is not useful at the moment
     if (true) {
+      var container = lively.query(searchContext, "lively-container")
       this.openComponentInWindow("lively-search", undefined, undefined, worldContext).then( comp => {
-         comp.searchFile(text);
-         comp.focus()
+        if (container) {
+          // search in the current repository
+          var url = container.getURL().toString()
+          var base = lively4url.replace(/[^/]*$/,"")
+          if (url.match(base)) {
+            var repo = url.replace(base,"").replace(/\/.*$/,"")
+            comp.searchRoot = repo
+          }
+        }
+        comp.searchFile(text);
+        comp.focus()
          
       });
     } else {

@@ -48,7 +48,7 @@ export default class Keys {
         lively.openWorkspace("");
         evt.preventDefault();
       } else if (ctrl && evt.shiftKey && char == "F") {
-        lively.openSearchWidget(this.getTextSelection());
+        lively.openSearchWidget(this.getTextSelection(), null, evt.path[0]);
         evt.preventDefault();
       } else if (evt.shiftKey && ctrl && char == "B") {
         lively.openBrowser(this.getTextSelection());

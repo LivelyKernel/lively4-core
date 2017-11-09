@@ -668,6 +668,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       scrollbarStyle: this.editor.getOption('scrollbarStyle'),
       highlightDifferences: true,
       connect: "align",
+      lineWrapping: true,
       collapseIdentical: false
     });
     // if (this._mergeView.right) {
