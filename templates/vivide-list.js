@@ -3,38 +3,60 @@ import Morph from './Morph.js';
 export default class VivideList extends Morph {
   async initialize() {
     this.windowTitle = "VivideList";
-    
   }
   
-  makePrefix(level) {
-    let prefix = "";
-    for(let i=0; i<level; ++i) {
-      prefix += "&nbsp;&nbsp;";
-    }
-    return prefix;
+  setTransformation(transformationFunction) {
+    this.transformation = transformationFunction;
   }
   
-  display(array, level) {
-       
-    let prefix = this.makePrefix(level);
-    
-    if(!Array.isArray(array)) {
-      this.innerHTML += prefix + array + "<br\>";
-      return;
+  setDepiction(depictionFunction) {
+    this.depiction = depictionFunction;
+  }
+  
+  elementSelect(index) {
+    return () => {
+      this.selection[index] = this.selection[index] ? false : true;
+      document.getElementById("listentry" + index).style.background = this.selection[index] ? "orange" : "white";
     }
-     
+  }
+  
+  display(array) {
     for(let i in array) {
-      if(Array.isArray(array[i])) {
-        this.display(array[i], level+1);
-      } else {
-        this.display(array[i], level);
-      }
+      let listentry = document.createElement("div");
+      listentry.addEventListener("click", this.elementSelect(i));
+      listentry.className = "listentry";
+      listentry.id = "listentry" + i;
+      listentry.innerHTML = array[i];
+      this.appendChild(listentry);
     }
+  }
+  
+  output() {
+    return this.model.filter((elem, index) => { return this.selection[index]; });
+  }
+  
+  setModel(model) {
+    this.model = this.transformation(model);
+    this.selection = this.model.map(elem => false);
   }
   
   show(model) {
-    this.display(model, 0);
+    this.setModel(model);
+    this.display(this.depiction(this.model));
   }
   
-
+  livelyExample() {
+    this.setTransformation((list) => {
+      return list.filter(elem => elem.age < 100);
+    });
+    this.setDepiction((list) => {
+      return list.map(elem => elem.name);
+    });
+    this.show([
+      {name: "John Doe", age: 25},
+      {name: "Jane Doe", age: 24},
+      {name: "Manfred Mustermann", age: 50},
+      {name: "John Wayne", age: 110},
+    ]);
+  }
 }
