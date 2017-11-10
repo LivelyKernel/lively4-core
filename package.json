@@ -52,9 +52,12 @@
     "url": "https://github.com/LivelyKernel/lively4-core.git"
   },
   "scripts": {
+    "electron": "electron electron.js",
     "test": "karma start karma.conf.js --single-run"
   },
-  "dependencies": {},
+  "dependencies": {
+    "electron": "^1.7.9"
+  },
   "devDependencies": {
     "browserify": "^11.0.0",
     "chai": "^1.9.1",

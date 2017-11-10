@@ -2,20 +2,10 @@ import Morph from './Morph.js';
 import KnotView from "./knot-view.js";
 
 import { Graph } from 'src/client/triples/triples.js';
-import lively from 'src/client/lively.js';
 
 export default class GraphControl extends Morph {
   async initialize() {
     this.windowTitle = "Graph Control";
-    
-    this.get('#inputAddDirectory').addEventListener('keyup',  event => {
-      if (event.keyCode == 13) { // ENTER
-        this.addDirectory();
-      }
-    });
-
-    let loadDirectory = this.get('#addDirectory');
-    loadDirectory.addEventListener('click', event => this.addDirectory());
 
     let addKnotButton = this.get('#add-knot');
     addKnotButton.addEventListener('click', event => this.onAddKnot(event));
@@ -37,18 +27,73 @@ export default class GraphControl extends Morph {
     var fullTextSearch = this.get("#full-text-search");
     fullTextSearch.addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
-        this.fullTextSearch(this.get('#full-text-search').value);
+        GraphControl.fullTextSearch(this.get('#full-text-search').value);
+      }
+    });
+    
+    this.initKnowledgeBases();
+  }
+  
+  initKnowledgeBases() {
+    this.refreshKnowledgeBasesWidget();
+    
+    let addRootKnowledgeBaseButton = this.get('#add-root-knowledge-base');
+    addRootKnowledgeBaseButton.onclick = event => this.addRootKnowledgeBase(event);
+    
+    this.get('#inputAddDirectory').addEventListener('keyup',  event => {
+      if (event.keyCode == 13) { // ENTER
+        this.addRootKnowledgeBase(event);
       }
     });
   }
   
-  // TODO: does this work?
-  async addDirectory() {
-    const dirString = this.get('#inputAddDirectory').value;
-    const dirURL = new URL(dirString);
-    
+  async addRootKnowledgeBase(event) {
+    const urlString = this.get('#inputAddDirectory').value;
     const graph = await Graph.getInstance();
-    await graph.loadFromDir(dirString);
+    await graph.addRootKnowledgeBase(urlString);
+    this.refreshKnowledgeBasesWidget();
+  }
+  async refreshKnowledgeBasesWidget() {
+    const graph = await Graph.getInstance();
+    const rootKnowledgeBases = await graph.getRootKnowledgeBases();
+
+    let rootKnowledgeBasesContainer = this.get('#root-knowledge-bases-container');
+    rootKnowledgeBasesContainer.innerHTML = "";
+    rootKnowledgeBases.forEach(urlString => {
+      let knowledgeBaseWidget = this.buildknowledgeBaseWidget(urlString);
+      rootKnowledgeBasesContainer.appendChild(knowledgeBaseWidget);
+    });
+  }
+  
+  buildknowledgeBaseWidget(urlString) {
+    return <span>
+      {this.buildNavigatableLink(urlString)}
+      {this.buildRemoveKnowledgeIcon(urlString)}
+    </span>;
+  }
+  buildNavigatableLink(urlString) {
+    let ref = <a>{urlString}</a>;
+    ref.addEventListener("click", async e => {
+      e.preventDefault();
+      e.stopPropagation();
+      const container = await lively.openBrowser(urlString, false);
+      container.focus();
+    });
+    
+    return ref;
+  }
+  buildRemoveKnowledgeIcon(urlString) {
+    let removeIcon = <i class="fa fa-trash"></i>;
+    removeIcon.addEventListener("click", async e => {
+      const graph = await Graph.getInstance();
+      if(await graph.removeRootKnowledgeBase(urlString)) {
+        this.refreshKnowledgeBasesWidget();
+      } else {
+        lively.notify('did not removed knowledge base ' + urlString);
+      }
+    });
+    
+    return removeIcon;
   }
   
   async launchTripleList() {
@@ -83,8 +128,8 @@ export default class GraphControl extends Morph {
     lively.notify('resetted graph');
   }
   
-    // Full-text search on object graph
-  async fullTextSearch(searchString) {
+  // Full-text search on object graph
+  static async fullTextSearch(searchString) {
     const searchTerms = searchString.split(' ')
       .map(str => str.toLowerCase());
 

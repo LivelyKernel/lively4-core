@@ -461,7 +461,7 @@ export default class Container extends Morph {
   }
   
   async deleteFile(url) {
-    if (window.confirm("delete " + url)) {
+    if (await lively.confirm("delete " + url)) {
       var result = await fetch(url, {method: 'DELETE'})
         .then(r => r.text());
         
@@ -473,6 +473,53 @@ export default class Container extends Morph {
     } 
   }
 
+  async renameFile(url) {
+    url = "" + url
+    var newURL = await lively.prompt("rename", url)
+    if (newURL != url) {
+      var content = await fetch(url).then(r => r.blob())
+
+
+      // first, save the content...
+      var putResponse = await fetch(newURL, {
+        method: 'PUT',
+        body: content
+      })
+      
+      if (putResponse.status !== 200) {
+        lively.confirm("could not rename to " + newURL)
+        return 
+      }
+
+      // ok, lets be crazy... we first delete
+      var delResponse = await fetch(url, {method: 'DELETE'})
+      if (delResponse.status !== 200) {
+        lively.notify("could not properly delete " + url, await delResponse.text())
+      }
+
+      var getResponse = await fetch(newURL)
+      if (getResponse.status !== 200) {
+        lively.notify("save again, because we might need to...")
+        var putAgainResponse = await fetch(newURL, {
+          method: 'PUT',
+          body: content
+        })
+        return 
+      }
+  
+      
+
+      
+      
+      this.setAttribute("mode", "show");
+      this.setPath(url.replace(/\/$/, "").replace(/[^/]*$/, ""));
+      this.hideCancelAndSave();
+
+      lively.notify("deleted " + url);
+    } 
+  }
+
+  
   onNewfile() {
     this.newfile(this.getPath())
   }
@@ -534,7 +581,9 @@ export default class Container extends Morph {
       if (this.lastPage) {
         presentation.gotoSlideAt(this.lastPage)
       }
-        
+    }
+    if (this.wasContentEditable) {
+      md.contentEditable = true  
     }
     
     // get around some async fun
@@ -902,6 +951,8 @@ export default class Container extends Morph {
       if (presentation) {
         this.lastPage  = presentation.currentSlideNumber()
       }
+      
+      this.wasContentEditable = markdown.contentEditable == "true"
     }
     
     
@@ -986,6 +1037,7 @@ export default class Container extends Morph {
     var navbar = this.get('#container-leftpane')
     // implement hooks
     navbar.deleteFile = (url) => { this.deleteFile(url) } 
+    navbar.renameFile = (url) => { this.renameFile(url) } 
     navbar.newfile = (url) => { this.newfile(url) } 
     navbar.followPath = (path) => { this.followPath(path) } 
     navbar.navigateToName = (name) => { this.navigateToName(name) } 
@@ -1094,11 +1146,8 @@ export default class Container extends Morph {
     });
     return this.getContentRoot().innerHTML
   }
-
-  saveHTML(url) {
-    this.getContentRoot()
   
-    var source  = this.getHTMLSource();
+  saveSource(url, source) {
     return this.getEditor().then( editor => {
       editor.setURL(url);
       editor.setText(source);
@@ -1109,11 +1158,19 @@ export default class Container extends Morph {
         this.updateOtherContainers()
       }).then(() => {
         this.resetContentChanges()
-
-        lively.notify("saved html world.")        
+        lively.notify("saved content!")        
       })
     });
     
+  }
+
+  saveHTML(url) {
+    this.saveSource(url, this.getHTMLSource());
+  }
+  
+  async saveMarkdown(url) {
+    var source = await this.get("lively-markdown").htmlAsMarkdownSource()
+    this.saveSource(url, source);
   }
   
   saveEditsInView(url) {
@@ -1122,6 +1179,12 @@ export default class Container extends Morph {
         return lively.notify("Editing templates in View not supported yet!");
     } else if (url.match(/\.html$/)) {
       this.saveHTML(new URL(url)).then( () => {
+        // lively.notify({
+        //   title: "saved HTML",
+        //   color: "green"});
+       });
+    } else if (url.match(/\.md$/)) {
+      this.saveMarkdown(new URL(url)).then( () => {
         // lively.notify({
         //   title: "saved HTML",
         //   color: "green"});
@@ -1292,6 +1355,19 @@ export default class Container extends Morph {
     // if (editor) {
     //   editor.focus()
     // }
+  }
+  
+  createLink(base, name, href) {
+    var link = document.createElement("a")
+    link.textContent = name
+    var path = base + href
+    link.href = path
+    link.addEventListener("click", (evt) => {
+        this.followPath(path); 
+        evt.preventDefault(); 
+        evt.stopPropagation()
+    }); 
+    return link  
   }
   
   livelyAcceptsDrop() {

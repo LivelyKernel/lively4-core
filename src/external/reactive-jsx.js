@@ -53,7 +53,12 @@ export function element(tagName, attributes, children) {
   const tag = document.createElement(tagName);
   
   for (let [key, value] of Object.entries(attributes)) {
-    tag.setAttribute(key, value);
+    if(value instanceof Function) {
+      // functions provided as attributes are used to create event listeners
+      tag.addEventListener(key, value);
+    } else {
+      tag.setAttribute(key, value.toString());
+    }
   }
   
   children
@@ -76,7 +81,7 @@ export function attributeEmpty(key) {
 }
 
 export function attributeExpression(key, value) {
-  return { [key]: value.toString() };
+  return { [key]: value };
 }
 
 export function attributeSpread(obj) {
@@ -99,6 +104,7 @@ export function childElement(jSXElement) {
 // - a DOM node
 // - a JavaScript object or primitive
 // - a Promise
+// - an Active Expression
 export function childExpression(expression) {
   return [getExpressionNode(expression)];
 }

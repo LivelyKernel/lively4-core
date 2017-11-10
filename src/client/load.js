@@ -25,7 +25,7 @@ function loadJavaScriptThroughDOM(name, src, force) {
     script.setAttribute("data-lively4-donotpersist","all");
 
     if (force) {
-      src += +"?" + Date.now();
+      src += "?" + Date.now();
     }
     script.src = src;
     script.onload = function () {
@@ -44,6 +44,19 @@ if ('serviceWorker' in navigator || window.lively4chrome) {
     serviceworkerReady = true;
     // Lively has all the dependencies
 
+    // Add listener for serviceWorker messages
+    navigator.serviceWorker.onmessage = (event) => {
+      const data = event.data;
+      let messageColors = {
+        'info': '',
+        'warning': 'yellow',
+        'error': 'red'
+      };
+      if('lively' in window) {
+        lively.notify('ServiceWorker', data.message, 5, null, messageColors[data.meta.command]);
+      }
+    }
+    
     Promise.resolve("")
       // .then( function() {
       //   return loadJavaScriptThroughDOM("livelyModules",

@@ -123,7 +123,7 @@ export default class ResearchDiary extends Morph {
     this.currentEntryURL = newKnot.url;
 
     await newKnot.save(content);
-    await graph.createTriple(newKnot.url, this.entryOfURL, this.researchDiaryURL);
+    await graph.createTriple(newKnot.url, this.entryOfURL, this.researchDiaryURL, DEFAULT_FOLDER_URL);
     
     this.refreshList();
     lively.notify(`Created new diary entry.`);

@@ -13,6 +13,24 @@ export default class AddTriple extends Morph {
       input.setPlaceholder(placeholder);
       input.addEventListener('enter-knot', () => this.save());
     });
+    
+    this.prepareDatalist();
+  }
+  
+  async prepareDatalist() {
+    const selection = this.get('#knowledge-base-selection');
+    const graph = await Graph.getInstance();
+    const knowledgeBases = await graph.getRootKnowledgeBases();
+
+    knowledgeBases.forEach(knowledgeBase => {
+      let option = document.createElement('option');
+      
+      option.innerHTML =  knowledgeBase;
+      option.value = knowledgeBase;
+      option.dataset.url = knowledgeBase;
+      
+      selection.appendChild(option);
+    });
   }
   
   /** subject, predicate, object */
@@ -49,6 +67,8 @@ export default class AddTriple extends Morph {
       }
     });
     
+    const knowledgeBaseURLString = this.get('#knowledge-base-selection').value;
+    
     const subjectURLString = this.get('#subject').getURLString();
     const predicateURLString = this.get('#predicate').getURLString();
     const objectURLString = this.get('#object').getURLString();
@@ -57,7 +77,8 @@ export default class AddTriple extends Morph {
     let triple = await graph.createTriple(
       subjectURLString,
       predicateURLString,
-      objectURLString
+      objectURLString,
+      knowledgeBaseURLString
     );
 
     let knotView = await lively.openComponentInWindow("knot-view");

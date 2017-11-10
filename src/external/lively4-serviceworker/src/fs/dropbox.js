@@ -4,7 +4,6 @@
 
 import { Base, Stat, StatNotFoundError, File, FileNotFoundError } from './base.js'
 import * as util from '../util.js'
-// import * as cache from '../cache.js'
 
 export default class Filesystem extends Base {
   constructor(path, options) {
@@ -25,284 +24,188 @@ export default class Filesystem extends Base {
       this.subfolder = ''
     }
   }
-
-  async statinfo(json) {
-    let type = 'file'
-    let name = json['name']
-
-    if(json['is_dir'] === true)
-      type = 'directory'
-
-    var result = {
-      type: type,
-      name: name,
-      size: json['size']
-    }
+  
+  get bearerToken() { return `Bearer ${this.token}`; }
+  
+  getDefaultHeaders() {
+    let dropboxHeaders = new Headers();
+    dropboxHeaders.append('Authorization', this.bearerToken); // Bearer
+    dropboxHeaders.append('content-type', "application/json");
     
-    return result 
-  }
-
-  dropboxRequest(endpoint, path) {
-    let dropboxHeaders = new Headers()
-    dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
-    dropboxHeaders.append('content-type', "application/json")
-    
-    return new Request('https://api.dropboxapi.com/' + endpoint, {
-      method: "POST",
-      headers: dropboxHeaders,
-      body: JSON.stringify({ path:  path})
-    })
+    return dropboxHeaders;
   }
   
-  async stat(path, request, no_cache=false) {
-    no_cache = true // #DEV
-    
-    
-    
-    console.log("dropbox stat: " + this.subfolder + path)
-    let dropboxHeaders = new Headers()
-    dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
-    dropboxHeaders.append('content-type', "application/json")
-    
-    var showversions  = request.headers.get("showversions")
-    if (showversions) {
-      var revisionParameters = "?rev_limit=100"
-      var revisionRequest = new Request('https://api.dropboxapi.com/1/revisions/auto/' + this.subfolder + path + revisionParameters, {headers: dropboxHeaders});
-      
-      var revisions = await fetch(revisionRequest).then(r => r.json());
-      var revisionContents = {
-        // #TODO the API we use in the lively-editor and lively4-server are currently a proof of concept and should be unified to something with better names... etc
-        versions: revisions.map(ea => {
-            return {
-              version: ea.rev,
-              date: ea.modified,
-              author: "unknown",
-              comment: "no comment",
-              size: ea.size
-            }
-        })
-      };
-      
-      var isDirectory = false; // versions of a directory?
-      return new Stat(isDirectory, revisionContents, ['GET', 'OPTIONS']);
-    }
-
-    let dropboxPath =  this.subfolder + path;
-    let dropboxRequest = new Request('https://api.dropboxapi.com/2/files/get_metadata', {
+  getMetaData(path) {
+    return fetch(new Request('https://api.dropboxapi.com/2/files/get_metadata', {
       method: "POST",
-      headers: dropboxHeaders,
-      body: JSON.stringify({ path: dropboxPath})
-    })
+      headers: this.getDefaultHeaders(),
+      body: JSON.stringify({ path })
+    }));
+  }
+  
+  listFolder(path) {
+    return fetch(new Request('https://api.dropboxapi.com/2/files/list_folder', {
+      method: "POST",
+      headers: this.getDefaultHeaders(),
+      body: JSON.stringify({ path })
+    })).then(r => r.json());
+  }
 
-    let response = undefined
+  downloadFile(path) {
+    return fetch(new Request('https://content.dropboxapi.com/2/files/download', {
+      method: "POST",
+      headers: {
+        "Authorization": this.bearerToken,
+        "Dropbox-API-Arg": JSON.stringify({ path })
+      }
+    }));
+  }
+  
+  deleteFile(path) {
+    return fetch(new Request('https://api.dropboxapi.com/2/files/delete', {
+      method: "POST",
+      headers: this.getDefaultHeaders(),
+      body: JSON.stringify({ path })
+    }))
+  }
 
-    // if (!no_cache) {
-    //   if (navigator.onLine) {
-    //     response = await cache.match(dropboxRequest, 1 * 1000 /* 1sec max cache age */)
-    //   } else {
-    //     response = await cache.match(dropboxRequest)
-    //   }
-    // } else {
-    //   cache.purge(dropboxRequest); // #DEV, caching does not support POST
-    // }
+  async stat(path, request) {
+    const dropboxPath = this.subfolder + path;
 
-    if (response === undefined) {
-      response = await self.fetch(dropboxRequest)
-      // cache.put(dropboxRequest, response); // #DEV, caching does not support POST
-      response = response.clone()
-    }
+    let response = await this.getMetaData(dropboxPath);
+    util.responseOk(response, StatNotFoundError);
 
-    util.responseOk(response, StatNotFoundError)
-
-    let json  = await response.json()
+    let json = await response.json();
     if (json['is_deleted']) {
       throw new Error('File has been deleted');
     }
-    let dir = false
-    var contents; 
-    if(json['.tag'] == "folder") {
-      dir = true
-      // contents = await Promise.all(Array.from(json['contents'], item => this.statinfo(item)))
-      contents = await Promise.all(Array.from(
-        (await self.fetch(this.dropboxRequest("2/files/list_folder", dropboxPath)).then(r => r.json())).entries, 
-        item => this.statinfo(item))) 
+    
+    function statinfo(json) {
+      return {
+        type: json['is_dir'] ? 'directory' : 'file',
+        name: json['name'],
+        size: json['size']
+      };
+    }
+
+    let contents;
+    const isDir = json['.tag'] == "folder";
+    if(isDir) {
+      const folderResponse = await this.listFolder(dropboxPath);
+      contents = await Promise.all(Array.from(folderResponse.entries, statinfo));
       // #TODO deal with paging!
     } else {
-      contents = await this.statinfo(json)
+      contents = statinfo(json);
     }
-    return new Stat(dir, contents, ['GET', 'OPTIONS'])
-  }
-  
-  extractMetadata(response) {
-    var metadata = response.headers.get("dropbox-api-result");
-    if (metadata) {
-      return JSON.parse(metadata)
-    } else {
-      return {}
-    }
+    return new Stat(isDir, contents, ['GET', 'OPTIONS']);
   }
 
-  async read(path, request, no_cache=false) {
-    let dropboxParameter = "";
-    let fileversion = request.headers.get("fileversion");
-    if (fileversion) dropboxParameter = "?rev=" +fileversion;
-
-    let dropboxPath = this.subfolder + path + dropboxParameter
-    let dropboxRequest = new Request('https://content.dropboxapi.com/2/files/download', {
-      method: "POST",
-      headers: {
-        "Authorization": 'Bearer ' + this.token,
-        "Dropbox-API-Arg": JSON.stringify({path: dropboxPath})
-      }
-    });
-
-    let response = undefined;
-
-    // if (!no_cache) {
-    //   if (navigator.onLine) {
-    //     response = await cache.match(dropboxRequest, 5 * 60 * 1000 /* 5 minute max cache age */)
-    //   } else {
-    //     response = await cache.match(dropboxRequest)
-    //   }
-    // } else {
-    //   cache.purge(dropboxRequest);
-    // }
-
-    if (response === undefined) {
-      response = await self.fetch(dropboxRequest)
-      // cache.put(dropboxRequest, response)
-      // response = response.clone()
-    }
-    util.responseOk(response, FileNotFoundError)
-
-    let blob = await response.blob()
-    var file = new File(blob)  
+  async read(path, request) {
+    let fileversion = request.headers.get('fileversion');
+    let dropboxParameter = fileversion ? '?rev=${fileversion}' : '';
     
-    file.fileversion = this.extractMetadata(response).rev
-    return file
+    const dropboxPath = this.subfolder + path + dropboxParameter;
+    let response = await this.downloadFile(dropboxPath);
+    util.responseOk(response, FileNotFoundError);
+
+    const file = new File(await response.blob());
+  
+    const metadata = response.headers.get("dropbox-api-result");
+    if (metadata) {
+      file.fileversion = JSON.parse(metadata).rev;
+    }
+    
+    return file;
   }
 
   async write(path, fileContent, request) {
-    let fileContentFinal = await fileContent
-    let dropboxHeaders = new Headers()
-    let dropboxPath = this.subfolder + path;
-    var conflictversion;
+    const content = await fileContent;
+    const dropboxPath = this.subfolder + path;
 
-    // clear caches
+    let lastversion = request.headers.get("lastversion");
+    if(!lastversion || lastversion == "null") {
+      let response = await this.getMetaData(dropboxPath); // dropboxVersionRequest
+      if (response.status == 200) {
+        let meta = await response.json();
+        lastversion = meta.rev;
+      }
+    }
     
-    // await cache.purge(dropboxRequest);
-
-    // #TODO we could fill the cache with it... with the cache.put API
-
-    
-    
-    // var parameters = ""
-    var lastversion = request.headers.get("lastversion")
-    var conf = {
-          path: dropboxPath
-        }
-    if (lastversion && lastversion != "null") {
-      console.log("put with last version: " + lastversion)
-      // parameters += "?parent_rev="+lastversion + "&" +"autorename=false"
-      Object.assign(conf, {
+    const conf = lastversion ?
+      {
+        path: dropboxPath,
         mode: {
           ".tag": "update",
-          "update": lastversion
-        },  
-        "autorename": false,
-        "mute": false
-      })
-    } 
-    
-    let response = await self.fetch(new Request('https://content.dropboxapi.com/2/files/upload', {
+          update: lastversion
+        },
+        autorename: false,
+        mute: false
+      } :
+      { path: dropboxPath };
+
+    let response = await fetch(new Request('https://content.dropboxapi.com/2/files/upload', {
       method: "POST",
       headers: {
-        "Authorization": 'Bearer ' + this.token,
-        "Content-Length": fileContentFinal.length.toString(),
+        "Authorization": this.bearerToken,
+        "Content-Length": content.length.toString(),
         "Content-Type": "text/plain; charset=dropbox-cors-hack", // #TODO we cannot write images...
         "Dropbox-API-Arg": JSON.stringify(conf)
       },
-      body: fileContentFinal
+      body: content
     }));
 
-    if(response.status == 409) {
-      let metainfo = await self.fetch('https://api.dropboxapi.com/2/files/get_metadata', {
-          method: "POST",
-          headers: {
-            "Authorization": 'Bearer ' + this.token,
-            'Content-Type': "application/json"
-          },
-          body: JSON.stringify({ path: dropboxPath})
-        }).then(r => r.json())
-      
-      conflictversion = metainfo.rev
-      console.log("found conflict with " + conflictversion )      
+    let conflictversion;
+    if(response.status === 409) {
+      let metainfo = await this.getMetaData(dropboxPath).then(r => r.json());
+      conflictversion = metainfo.rev;
+      console.log(`found conflict with ${conflictversion}`);
     } else if(response.status < 200 || response.status >= 300) {
-      throw new Error(response.statusText)
+      throw new Error(response.statusText);
     }
     
     // the metadata is not in the header, but now in the return value
-    let metadata = await response.text();
+    let metadata;
     try {
-      metadata = JSON.parse(metadata)
+      metadata = await response.json();
     } catch(e) {
-      throw new Error("[swx.fs.dropbox] Could not parse metadata: " + metadata)
+      throw new Error(`[swx.fs.dropbox] Could not parse metadata: ${metadata}`);
     }
     
-    /* Sample response 
-    {
-      "size": "225.4KB",
-      "rev": "35e97029684fe",
-      "thumb_exists": false,
-      "bytes": 230783,
-      "modified": "Tue, 19 Jul 2011 21:55:38 +0000",
-      "path": "/Getting_Started.pdf",
-      "is_dir": false,
-      "icon": "page_white_acrobat",
-      "root": "dropbox",
-      "mime_type": "application/pdf",
-      "revision": 220823
-    }*/   
-    
-    
-    var headers = {
-        fileversion: metadata.rev,
-    }
-    if (conflictversion) headers.conflictversion = conflictversion;
     return new Response(null, {
-      headers: headers,
-      status: 200})
+      status: 200,
+      headers: {
+        fileversion: metadata.rev,
+        conflictversion: conflictversion
+      }
+    });
   }
-  
-  
+
   async del(path, request) {
-    let dropboxHeaders = new Headers()
-    dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
-
-    var dropboxPath = this.subfolder + path
-
-    var deleteRequest = new Request('https://api.dropboxapi.com/1/fileops/delete?root=auto&path=' + dropboxPath, {headers: dropboxHeaders});
-
-    var response = await fetch(deleteRequest)
+    const dropboxPath = this.subfolder + path;
+    let response = await this.deleteFile(dropboxPath);
     if(response.status < 200 || response.status >= 300) {
       throw new Error(response.statusText)
     }
     
-    return new Response("deleted " + dropboxPath, {
+    return new Response(`deleted ${dropboxPath}`, {
       headers: {},
-      status: 200})
+      status: 200
+    })
   }
   
+  // #TODO not implemented yet -> do it for v2
+  // promise: jens will do this if stefan helps him clean up this mess... 
   async makeDir(path, request) {
+  /*
     
-    let dropboxHeaders = new Headers()
-    dropboxHeaders.append('Authorization', 'Bearer ' + this.token) // Bearer
+    let dropboxHeaders = new Headers();
+    dropboxHeaders.append('Authorization', this.bearerToken) // Bearer
 
-    var dropboxPath = this.subfolder + path
+    const dropboxPath = this.subfolder + path
 
-    var makeDirRequest = new Request('https://api.dropboxapi.com/1/fileops/create_folder?root=auto&path=' + dropboxPath, {headers: dropboxHeaders});
+    let makeDirRequest = new Request('https://api.dropboxapi.com/1/fileops/create_folder?root=auto&path=' + dropboxPath, {headers: dropboxHeaders});
 
-    var response = await fetch(makeDirRequest)
+    let response = await fetch(makeDirRequest)
     if(response.status < 200 || response.status >= 300) {
       throw new Error(response.statusText)
     }
@@ -310,6 +213,7 @@ export default class Filesystem extends Base {
     return new Response("created directory:  " + dropboxPath, {
       headers: {},
       status: 200})
+  */
   }
   
 }

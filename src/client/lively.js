@@ -181,7 +181,7 @@ export default class Lively {
       script.charset="utf-8";
       script.type="text/javascript";
       if (force) {
-        src += + "?" + Date.now();
+        src += "?" + Date.now();
       }
       script.src= src;
       script.onload = function() {
@@ -354,7 +354,21 @@ export default class Lively {
     });
   }
 
-
+  static async create(name="lively-table", parent=document.body) {
+    var element = document.createElement(name)
+    // #TODO normal elements will not resolve this promoise #BUG
+    if (name.match("-")) {
+      await lively.components.openIn(parent, element)      
+    } else {
+      parent.appendChild(element)
+    }
+    // if (document.activeElement) {
+    //   var pos = lively.getGlobalBounds(document.activeElement).bottomLeft()
+    //   lively.setGlobalPosition(element, pos)
+    // }
+    return element
+  }
+  
   static boundEval(str, ctx) {
     // #TODO refactor away
     // lively.notify("lively.boundEval is depricated")
@@ -1057,12 +1071,22 @@ export default class Lively {
     });
   }
 
-  static openSearchWidget(text, worldContext) {
+  static openSearchWidget(text, worldContext, searchContext) {
     // index based search is not useful at the moment
     if (true) {
+      var container = lively.query(searchContext, "lively-container")
       this.openComponentInWindow("lively-search", undefined, undefined, worldContext).then( comp => {
-         comp.searchFile(text);
-         comp.focus()
+        if (container) {
+          // search in the current repository
+          var url = container.getURL().toString()
+          var base = lively4url.replace(/[^/]*$/,"")
+          if (url.match(base)) {
+            var repo = url.replace(base,"").replace(/\/.*$/,"")
+            comp.searchRoot = repo
+          }
+        }
+        comp.searchFile(text);
+        comp.focus()
          
       });
     } else {
@@ -1367,7 +1391,7 @@ export default class Lively {
   
   static focusWithoutScroll(element) {
     if (!element) return;
-    //console.log("focusWithoutScroll " + element)
+    // console.log("focusWithoutScroll " + element)
     var scrollTop = document.scrollingElement.scrollTop
     var scrollLeft = document.scrollingElement.scrollLeft
     element.focus(true) 
@@ -1395,6 +1419,7 @@ export default class Lively {
   static query(element, query) {
    // lively.showElement(element)
    var result = element.querySelector(query)
+   if (!result && element.isWindow) return; // scope that search to windows
    if (!result && element.parentElement) result = this.query(element.parentElement, query) 
    if (!result && element.parentNode) result = this.query(element.parentNode, query)    
    if (!result && element.host) result = this.query(element.host, query) 

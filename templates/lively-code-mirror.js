@@ -7,8 +7,34 @@ import { debounce } from "utils";
 import Preferences from 'src/client/preferences.js';
 import {pt, rect} from 'src/client/graphics.js';
 import 'src/client/stablefocus.js';
+import Strings from 'src/client/strings.js'
 
 let loadPromise = undefined;
+
+// BEGIN #copied from emacs.js
+function repeated(cmd) {
+  var f = typeof cmd == "string" ? function(cm) { cm.execCommand(cmd); } : cmd;
+  return function(cm) {
+    var prefix = getPrefix(cm);
+    f(cm);
+    for (var i = 1; i < prefix; ++i) f(cm);
+  };
+}
+
+function getPrefix(cm, precise) {
+  var digits = cm.state.emacsPrefix;
+  if (!digits) return precise ? null : 1;
+  clearPrefix(cm);
+  return digits == "-" ? -1 : Number(digits);
+}
+
+function operateOnWord(cm, op) {
+  var start = cm.getCursor(), end = cm.findPosH(start, 1, "word");
+  cm.replaceRange(op(cm.getRange(start, end)), start, end);
+  cm.setCursor(end);
+}
+// END
+
 
 export default class LivelyCodeMirror extends HTMLElement {
 
@@ -222,6 +248,15 @@ export default class LivelyCodeMirror extends HTMLElement {
       "Ctrl-S": (cm) => {          
         this.doSave(editor.getValue());
       },
+      
+      // #copied from keymap/emacs.js
+      "Alt-C": repeated(function(cm) {
+      operateOnWord(cm, function(w) {
+        var letter = w.search(/\w/);
+        if (letter == -1) return w;
+        return w.slice(0, letter) + w.charAt(letter).toUpperCase() + w.slice(letter + 1).toLowerCase();
+      });
+    }),
     });
     editor.setOption("hintOptions", {
       container: this.shadowRoot.querySelector("#code-mirror-hints"),
@@ -305,19 +340,53 @@ export default class LivelyCodeMirror extends HTMLElement {
     const MODULE_MATCHER = /.js$/;
     if(MODULE_MATCHER.test(this.getTargetModule())) {
       await System.import(this.getTargetModule())
-    }
-    
+    } 
     // src, topLevelVariables, thisReference, <- finalStatement
     return boundEval(str, this.getDoitContext(), this.getTargetModule());
   }
-
-  printResult(result) {
+  
+  printWidget(name) {
+    return this.wrapWidget(name, this.editor.getCursor(true), this.editor.getCursor(false))
+  }
+  
+   wrapWidget(name, from, to) {
+    var widget = document.createElement("span")
+    widget.style.whiteSpace = "normal"
+    var promise = lively.create(name, widget)
+    promise.then(comp => {
+      comp.style.display = "inline"
+      comp.style.backgroundColor = "rgb(250,250,250)"
+      comp.style.display = "inline-block"
+      comp.style.minWidth = "20px"
+      comp.style.minHeight = "20px"
+    })
+    this.editor.doc.markText(from, to, {
+      replacedWith: widget
+    }); 
+    return promise
+  }
+  
+  printResult(result, obj) {
     var editor = this.editor;
     var text = result
     this.editor.setCursor(this.editor.getCursor("end"))
     // don't replace existing selection
     this.editor.replaceSelection(result, "around")
-
+    
+    if (Array.isArray(obj)) {
+      if (typeof obj[0] == 'object') {
+        this.printWidget("lively-table").then( table => {
+          table.setFromJSO(obj)      
+          table.style.maxHeight = "300px"
+          table.style.overflow = "auto"    
+        })
+      }
+    } else if ((typeof obj == 'object') && (obj !== null)) {
+      this.printWidget("lively-inspector").then( inspector => {
+        inspector.inspect(obj)
+        inspector.hideWorkspace()   
+      })
+    }
   }
 
   async tryBoundEval(str, printResult) {
@@ -351,7 +420,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         // we will definitly return a promise on which we can wait here
         result
           .then( result => {
-            this.printResult("RESOLVED: " + obj2string(result))
+            this.printResult("RESOLVED: " + obj2string(result), result)
           })
           .catch( error => {
             console.error(error);
@@ -359,7 +428,7 @@ export default class LivelyCodeMirror extends HTMLElement {
             this.printResult("Error in Promise: \n" +error)
           })
       } else {
-        this.printResult(" " + obj2string(result))
+        this.printResult(" " + obj2string(result), result)
         if (result instanceof HTMLElement ) {
           lively.showElement(result)
         }
@@ -433,6 +502,17 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (!this.editor) return false;
     return this.editor.getOption("mode") == "javascript";
   }
+  
+  get isMarkdown() {
+    if (!this.editor) return false;
+    return this.editor.getOption("mode") == "gfm";
+  }
+  
+  get isHTML() {
+    if (!this.editor) return false;
+    return this.editor.getOption("mode") == "text/html";
+  }
+  
   
   changeModeForFile(filename) {
     if (!this.editor) return;
@@ -588,6 +668,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       scrollbarStyle: this.editor.getOption('scrollbarStyle'),
       highlightDifferences: true,
       connect: "align",
+      lineWrapping: true,
       collapseIdentical: false
     });
     // if (this._mergeView.right) {
@@ -623,9 +704,41 @@ export default class LivelyCodeMirror extends HTMLElement {
     mergeView.wrap.style.height = height + "px";
   }
   
+  async hideDataURLs() {
+    var regEx = new RegExp("[\"\'](data:[^\"\']*)[\"\']", "g");
+    do {
+      var m = regEx.exec(this.value);
+      if (m) {
+        var from = m.index 
+        var to = m.index + m[0].length 
+        await this.wrapWidget("span", this.editor.posFromIndex(from), 
+                              this.editor.posFromIndex(to)).then( div => {
+          div.style.backgroundColor = "rgb(240,240,240)"
+          
+          if (m[1].match(/^data:image/)) {
+            var img = document.createElement("img")
+            img.src = m[1]
+            img.title = m[1].slice(0,50) + "..."
+            img.style.maxHeight = "100px"
+
+            div.appendChild(document.createTextNode("\""))
+            div.appendChild(img)
+            div.appendChild(document.createTextNode("\""))            
+          } else {
+            div.innerHTML = "\""+ m[1].slice(0,50) + "..." + "\""            
+          }
+        })
+
+      }
+    } while (m);    
+  }
+  
   checkSyntax() {
     if (this.isJavaScript) {
        SyntaxChecker.checkForSyntaxErrors(this.editor);
+    }
+    if (this.isMarkdown || this.isHTML) {
+      this.hideDataURLs() 
     }
   }
   

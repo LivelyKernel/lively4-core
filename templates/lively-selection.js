@@ -171,7 +171,6 @@ export default class Selection extends Morph {
   haloDragTo(toPos, fromPos) {
     var delta = toPos.subPt(fromPos);
     this.nodes.concat([this]).forEach(ea => {
-      debugger
       nodes.setPosition(ea, this.startPositions.get(ea).addPt(delta));
     });
     window.that = this

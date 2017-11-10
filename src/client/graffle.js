@@ -28,7 +28,7 @@ export default class Graffle {
     var key = String.fromCharCode(evt.keyCode)
     this.keysDown[key] = true
     // lively.notify("down: " + key)
-    if (this.specialKeyDown()) {
+    if (this.specialKeyDown() && !(evt.ctrlKey || evt.metaKey)) {
       lively.selection.disabled = true
       if (!evt.ctrlKey && !evt.altKey && !evt.altKey) {
         // console.log('disable ' + evt.keyCode)

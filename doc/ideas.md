@@ -1,5 +1,7 @@
 # Ideas
 
+<lively-import src="_navigation.html"></lively-import>
+
 ## Hash-tag Navigation
 
 Immediatly transform all Hashtags in lively-container and ace editors into active links that open a context menu with actual links to the various sites.

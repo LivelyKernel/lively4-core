@@ -5,7 +5,11 @@ const mountEndpoint = '/services';
 const isLocalHost = document.location.hostname.indexOf('localhost') > -1;
 const localBaseURL = 'http://localhost:9007/';
 const remoteBaseURL = 'https://lively-kernel.org/lively4services/';
+const servicesRootURL = 'https://lively-kernel.org/lively4/lively4-services/services';
+
 var servicesURL = isLocalHost ? localBaseURL : remoteBaseURL;
+
+
 
 export default class Services extends Morph {
 
@@ -55,7 +59,7 @@ export default class Services extends Morph {
     this.logInterval = null;
 
     this.detachedCallback = this.unload;
-    if (!this.isInTesting) this.ensureRemoteServicesMounted(); // will block with confirmation
+    // if (!this.isInTesting) this.ensureRemoteServicesMounted(); // will block with confirmation
   }
 
   unload() {
@@ -76,10 +80,10 @@ export default class Services extends Morph {
   addButtonClick(evt) {
     var browser = lively.components.createComponent('lively-file-browser');
     lively.components.openInWindow(browser).then(() => {
-      browser.path = mountEndpoint;
+      browser.path = servicesRootURL;
       browser.setMainAction((url) => {
-        const relativePath = url.pathname.replace(mountEndpoint + '/', '');
-
+        const relativePath = url.toString().replace(servicesRootURL + '/', '');
+        
         this.serviceTop.removeAttribute('data-id');
         this.entryPoint.value = relativePath;
         this.entryPoint.focus();
@@ -87,7 +91,7 @@ export default class Services extends Morph {
         this.unselectAll();
 
         this.startButtonClick(relativePath);
-        browser.parentElement.closeButtonClicked();
+        browser.parentElement.onCloseButtonClicked();
       });
     });
   }
@@ -105,7 +109,7 @@ export default class Services extends Morph {
   }
 
   editButtonClick() {
-    lively.openBrowser(servicesURL + 'mount/');
+    lively.openBrowser(servicesRootURL);
   }
 
   cloneButtonClick() {
