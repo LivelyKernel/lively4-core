@@ -7,17 +7,15 @@ export default class VivideList extends Morph {
     this.depiction = list => list;
     this.predecessor = null;
     this.successors = [];
-    
-    this.addEventListener("widget-changed", (evt) => {
-      if(this.predecessor) {
-        this.show(this.predecessor.output());
-      }
-    }, false);
   }
   
   register(anotherWidget) {
     this.successors.push(anotherWidget);
     anotherWidget.setPredecessor(this);
+  }
+  
+  trigger() {
+    this.show(this.predecessor.output());
   }
   
   setPredecessor(anotherWidget) {
@@ -37,8 +35,7 @@ export default class VivideList extends Morph {
       this.selection[index] = this.selection[index] ? false : true;
       this.display()
       for(let i in this.successors) {
-        let evt = new Event("widget-changed");
-        this.successors[i].dispatchEvent(evt);
+        this.successors[i].trigger();
       }
     }
   }
