@@ -7,6 +7,7 @@ import { debounce } from "utils";
 import Preferences from 'src/client/preferences.js';
 import {pt, rect} from 'src/client/graphics.js';
 import 'src/client/stablefocus.js';
+import Strings from 'src/client/strings.js'
 
 let loadPromise = undefined;
 
@@ -334,6 +335,8 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   async boundEval(str, context) {
+    // console.log("bound eval " + str)
+    
     // Ensure target module loaded (for .js files only)
     // TODO: duplicate with var recorder plugin
     const MODULE_MATCHER = /.js$/;
@@ -344,7 +347,11 @@ export default class LivelyCodeMirror extends HTMLElement {
     return boundEval(str, this.getDoitContext(), this.getTargetModule());
   }
   
-  printWidget(obj, name) {
+  printWidget(name) {
+    return this.wrapWidget(name, this.editor.getCursor(true), this.editor.getCursor(false))
+  }
+  
+   wrapWidget(name, from, to) {
     var widget = document.createElement("span")
     widget.style.whiteSpace = "normal"
     var promise = lively.create(name, widget)
@@ -355,7 +362,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       comp.style.minWidth = "20px"
       comp.style.minHeight = "20px"
     })
-    this.editor.doc.markText(this.editor.getCursor(true), this.editor.getCursor(false), {
+    this.editor.doc.markText(from, to, {
       replacedWith: widget
     }); 
     return promise
@@ -370,14 +377,14 @@ export default class LivelyCodeMirror extends HTMLElement {
     
     if (Array.isArray(obj)) {
       if (typeof obj[0] == 'object') {
-        this.printWidget(obj, "lively-table").then( table => {
+        this.printWidget("lively-table").then( table => {
           table.setFromJSO(obj)      
           table.style.maxHeight = "300px"
           table.style.overflow = "auto"    
         })
       }
     } else if ((typeof obj == 'object') && (obj !== null)) {
-      this.printWidget(obj, "lively-inspector").then( inspector => {
+      this.printWidget("lively-inspector").then( inspector => {
         inspector.inspect(obj)
         inspector.hideWorkspace()   
       })
@@ -497,6 +504,17 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (!this.editor) return false;
     return this.editor.getOption("mode") == "javascript";
   }
+  
+  get isMarkdown() {
+    if (!this.editor) return false;
+    return this.editor.getOption("mode") == "gfm";
+  }
+  
+  get isHTML() {
+    if (!this.editor) return false;
+    return this.editor.getOption("mode") == "text/html";
+  }
+  
   
   changeModeForFile(filename) {
     if (!this.editor) return;
@@ -652,6 +670,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       scrollbarStyle: this.editor.getOption('scrollbarStyle'),
       highlightDifferences: true,
       connect: "align",
+      lineWrapping: true,
       collapseIdentical: false
     });
     // if (this._mergeView.right) {
@@ -687,9 +706,41 @@ export default class LivelyCodeMirror extends HTMLElement {
     mergeView.wrap.style.height = height + "px";
   }
   
+  async hideDataURLs() {
+    var regEx = new RegExp("[\"\'](data:[^\"\']*)[\"\']", "g");
+    do {
+      var m = regEx.exec(this.value);
+      if (m) {
+        var from = m.index 
+        var to = m.index + m[0].length 
+        await this.wrapWidget("span", this.editor.posFromIndex(from), 
+                              this.editor.posFromIndex(to)).then( div => {
+          div.style.backgroundColor = "rgb(240,240,240)"
+          
+          if (m[1].match(/^data:image/)) {
+            var img = document.createElement("img")
+            img.src = m[1]
+            img.title = m[1].slice(0,50) + "..."
+            img.style.maxHeight = "100px"
+
+            div.appendChild(document.createTextNode("\""))
+            div.appendChild(img)
+            div.appendChild(document.createTextNode("\""))            
+          } else {
+            div.innerHTML = "\""+ m[1].slice(0,50) + "..." + "\""            
+          }
+        })
+
+      }
+    } while (m);    
+  }
+  
   checkSyntax() {
     if (this.isJavaScript) {
        SyntaxChecker.checkForSyntaxErrors(this.editor);
+    }
+    if (this.isMarkdown || this.isHTML) {
+      this.hideDataURLs() 
     }
   }
   

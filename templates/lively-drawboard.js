@@ -496,7 +496,7 @@ export default class LivelyDrawboard extends Morph {
   
   eventPos(evt) {
     // return pt(evt.clientX, evt.clientY)
-    debugger
+    
     var scale = this.getScreenScale()
     
     // return pt(evt.pageX * scale, evt.pageY * scale)

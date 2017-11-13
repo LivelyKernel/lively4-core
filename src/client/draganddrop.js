@@ -25,7 +25,6 @@ export default class DragAndDrop {
       Array.from(files).forEach(file => {
         var reader = new FileReader();
         reader.onload = (event) => {
-          debugger
           var img = document.createElement("img")
           img.src = event.target.result.replace(/^data\:image\/png;/,"data:image/png;name=" + file.name +";")
           img.classList.add("lively-content")
@@ -39,7 +38,6 @@ export default class DragAndDrop {
       var data = evt.dataTransfer.getData("text");
 
       if (data.match(/^data\:image\/png/)) {
-        debugger
         var img = document.createElement("img") 
         img.src = data
         img.classList.add("lively-content")

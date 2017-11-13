@@ -151,7 +151,7 @@ export default class Clipboard {
     // lively.notify("onPaste in " + this.lastTarget)
     
     if (!lively.hasGlobalFocus()) return
-    debugger
+    
     evt.stopPropagation()
     evt.preventDefault(); 
     

@@ -1,0 +1,41 @@
+<h1>Lively4-core Issues</h1>
+
+<lively-import src="_navigation.html"></lively-import>
+
+<lively-script><script>
+import github from "src/client/github.js"
+new Promise(async (resolve) => {
+  var issues = await github.current().issues(true)  
+  var list = document.createElement("ul")
+  var style = document.createElement("style")
+  style.textContent = `
+    .number { font-size: 10pt; color: gray }
+    .label { 
+      background-color: lightgray;
+      font-size: 10pt;
+      padding: 1px 6px 1px 6px;
+      border-radius: 6px;
+      color: white;
+      white-space: nowrap;
+    }
+  `
+  list.appendChild(style)
+  
+  function formatLabel(label) {
+    return label.replace(/.*: /,"").replace(/ \(.*/,"")
+  }
+  
+  issues.filter(ea => ea.state == "open").forEach(ea => {
+    var issue = document.createElement("li")
+    issue.innerHTML = "<a class='title' href='" + ea.html_ul +"'>" + ea.title + "</a> "
+      + ea.labels.map(ea => "<span class='label'>" + formatLabel(ea.name) + "</span>").join(" ")
+      + " <span class='number'>#" + ea.number + "</span>"
+    issue.querySelector("a").onclick = (evt) => {
+      evt.preventDefault()
+      window.open(ea.html_url)
+    }
+    list.appendChild(issue)
+  })
+  resolve(list)
+})
+</script></lively-script>

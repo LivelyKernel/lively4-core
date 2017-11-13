@@ -63,7 +63,7 @@ class ServiceWorker {
   }
 
   fetch(event, pending) {
-    console.log("SWX.fetch " + event + ", " + pending);
+    // console.log("SWX.fetch " + event + ", " + pending);
     let request = event.request;
     if (!request) return;
 
@@ -74,7 +74,10 @@ class ServiceWorker {
     if (url.pathname.match(/\/_search\//)) return; 
     if (url.pathname.match(/\/_meta\//)) return; 
     if (url.pathname.match(/lively4-serviceworker/)) return; 
-    
+    if (url.pathname.match(/lively4services/)) return; // seems to not work with SWX, req. are pending
+  
+    // if (url.pathname.match(/noserviceworker/)) return; // #Debug
+  
     if (url.hostname !== 'lively4' && url.hostname == location.hostname && request.mode != 'navigate') {
       try {                        
         var p = new Promise(async (resolve, reject) => {

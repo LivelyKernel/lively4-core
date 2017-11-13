@@ -1,5 +1,7 @@
 # Related Work
 
+<lively-import src="_navigation.html"></lively-import>
+
 * https://pancake.io/ can host static home pages through dropbox
 
 

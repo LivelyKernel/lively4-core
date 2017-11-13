@@ -1,0 +1,130 @@
+\subsection{Static vs. Run-time development in Web-technologies}
+
+%% #ModernWebDev #NotLive  #Security #EditCompileRun
+The ongoing evolution of the JavaScript language and Web-technologies in the browser make developing for the browser a rich but complex endeavor. The constant pressure to keep the Web technologies secure yield a high price when it comes to dynamic features of JavaScript and Web-development. Many of the new technologies can only be experienced in very static development work-flows of editing files and compiling them. Technologies such as babel and Web-components allow to write better JavaScript and HTML, but at the cost of having to trade in the potentially high dynamic development experience at run-time against the slow edit, compile run experience. 
+
+
+\section{Module Systems in the Browser}
+
+\section{Implementation Notes}
+
+- Enable simple "doits" 
+- Enable printits (we expect return value)
+- accessing "context variables"
+	- simple case: binding "this" 
+	- binding complete context
+
+- DevLayer and Module system... we expect modules with identity and not copies...
+
+- how to make this reflection capabilities available to other tools/modules and not just a global standard feature? E.g. constraints lib
+
+\input{problems.tex}
+
+
+\section{Modules}
+
+\begin{verbatim}
+
+import * as m from 'demos/mymodule.js'
+
+export function f() {} 
+
+f() // 1. public...   
+m.foo() // 2. libraries...
+var b = 3 // 3. module wide scope???
+
+function() {
+	var c = 4 // 4. private nested code [NO] use debugger for this or FW
+}
+\end{verbatim}
+
+
+\paragraph{Persistence of Lively Objects and Web-components}
+
+Persistence of tools and applications can be achieved if we can (de-)serialize their (object) state. We need persistence of tools and applications and active content for the following reasons:
+
+\begin{itemize}
+  \item working in a prototypical way: creating one instance of a tool, application or active object and use it later (either the same or make copies of it)
+  \item copying of objects: deep copying of complex objects comes for free when we can (de-)serialize them... 
+\end{itemize}
+
+
+%% #FutureWork
+
+%% #Figure Editing a method in a class in a module vs. editing the template of a Web-component #TODO
+
+
+\subsection{Copying of Objects}
+
+\begin{itemize}
+  \item creating a button, customizing it and then cloning it... generally, reusing anything anywhere
+  \item making experiments: being able to clone the state of a tool, application or content allows users and developers 
+  \item copying of objects is useful in interactive development of (active)-objects (tools and applications) to more freely experiment with the their object under development %% #LiveProgramming #Cloning #Patrick?
+\end{itemize}
+
+\subsection{Abstraction Levels hinder and help in Live programming}
+
+The abstraction mechanism of elements hidden under a shadow root enables use to "reload"/update/migrate partial state
+
+State we decided to preserve:
+
+\begin{itemize}
+  \item HTML Element properties
+  \item HTML Element childNodes
+  \item Custom state through implementing "livelyMigrate" API
+\end{itemize}
+
+\subsection{Web-component Templates}
+
+%% #Abstractions in #HTML #NoLoops
+Templates are a separation of the UI from the code. Since templates are themselves just declarative HTML they don't allow the use of typical programming language abstractions such as loops or function calls. Luckily, the templates are usually accompanied by scripts that can provide all kinds of abstractions since they are just JavaScript code. In Lively4 we experimented with multiple ways to describe our Web-components with HTML templates and scripts:
+
+\begin{itemize}
+  \item one template file with one huge script tag, that defines a custom HTML Element class (or prototype), and does the registering itself.
+  \item one template file with custom script tags that each only add one method to the HTML elements in the templates
+  \item one template file and a separate JavaScript file
+\end{itemize}
+
+
+\subsection{Instance Migration as Simple Replay Mechanism}
+
+In Lively Kernel as in other Smalltalk-like systems, the feedback of code change can only be observed in new behavior, because only the behavior in classes is updated. For example, changing code in Smalltalk that is executed in a "step" method gives immediate feedback. But on the other hand, the changes to code in the initialize method cannot give feedback at run-time without instantiating new instances. 
+
+Systems that allow for some form of mutable past, may be able to give feedback changes of the initialize method (and also other methods called in the past).
+
+\paragraph{Our Design in Lively4}
+
+Code in the "initialize" method can produce feedback, because we migrate all graphical objects that are affected by the change, and execute "initialize" again, before migrating their state. 
+
+Currently, in Lively4 the feedback relies on idiomatic instance migration. Classes can implement a special migrate method, which allows new instances to copy or adapt state from the old instance. 
+
+Alternatively, we could migrate all state automatically, which would lead to the problem, that the old state might shadow the new state intended by the programmer. So we leave it to the programmer to decide which state is relevant and which is only transient.
+
+For all graphical objects (DOM elements) we consider their attributes as persistent state, we want to preserve. 
+Object properties are not declared in JavaScript, we are cannot annotate transient from persist-able state. 
+
+Migrating objects without that way means (currently) Lively4 does not preserve object identity.
+
+\paragraph{Alternative more Smalltalk-ish Design}
+
+Instead of migrating instances, in Smalltalk the behavior is changed globally in the classes. Through vm-support of instance migration, objects can keep their identity, even if their memory layout changes completely. 
+
+This is not a problem we are dealing here.... 
+
+For updating a method, or complete class, we could we could:
+
+\begin{itemize}
+  \item a) modify the properties/methods of the prototype 
+  \item b) change the prototype on the instance side (deprecated \_\_proto\_\_ )
+  \item c) wrap classes in Proxies that allow changing the reference to the class
+\end{itemize}
+
+%%% #Evaluation
+\subsection{Compare Bouncing Ball (SoapBubble) development experience}
+
+\begin{itemize}
+  \item in HTML (Show the lack of abstraction and edit, and reload) cycle with lack of "preservation of context"
+  \item Lively Kernel (show development at run-time with "preservation of context" 
+  \item Web Components (nice abstraction on source code level, but lack of abstraction at run-time)
+  \item Lively4
+\end{itemize}
