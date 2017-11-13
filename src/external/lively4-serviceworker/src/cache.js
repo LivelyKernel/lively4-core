@@ -14,8 +14,13 @@ export class Cache {
     this._queue = new Queue();
     this._connectionManager = new ConnectionManager();
     
+    // Register for network status changes
     this._connectionManager.addListener('statusChanged', (status) => {
-      console.log(status);
+      if(status.isOnline) {
+        // We're back online after being online
+        // Process all queued requests
+        this._processQueued();
+      }
     });
     
     // Define which HTTP methods need result caching, and which need request queueing
@@ -110,6 +115,29 @@ export class Cache {
         }
       })
     })
+  }
+  
+  /**
+   * Processes all queued requests by sending them in the same order
+   */
+  _processQueued() {
+    let processNext = () => {
+      // Get oldest entry
+      this._queue.dequeue().then((serializedRequest) => {
+        // Check if we are done
+        if(!serializedRequest) {
+          return;
+        }
+        
+        // Send request
+        Serializer.deserialize(serializedRequest).then((request) => {
+          fetch(request).then(processNext);
+        });
+      });
+    }
+    
+    // Start processing queued requests
+    processNext();
   }
   
   /**

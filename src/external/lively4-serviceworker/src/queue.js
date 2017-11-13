@@ -35,17 +35,17 @@ export class Queue extends DbObject {
    * Retrieves an item from the queue
    * @return Promise
    */
-  /*dequeue() {
+  dequeue() {
     return new Promise((resolve, reject) => {
+      // Get oldest entry
       var request = this._getObjectStore().openCursor();
       request.onsuccess = (event) => {
         if (request.result) {
-          // Copy result
-          result = {}.assign(request.result);
-          
-          // Remove from DB
-          deleteRequest = this._getObjectStore().delete(result.);
-          resolve(request.result);
+          // Delete entry from DB
+          this._getObjectStore().delete(request.result.key).onsuccess = () => {
+            // Return value
+            resolve(request.result.value);
+          };
         } else {
           resolve(null);
         }
@@ -54,5 +54,5 @@ export class Queue extends DbObject {
         resolve(null);
       }
     });
-  }*/
+  }
 }
