@@ -63,7 +63,7 @@ class ServiceWorker {
   }
 
   fetch(event, pending) {
-    console.log("SWX.fetch " + event + ", " + pending);
+    // console.log("SWX.fetch " + event + ", " + pending);
     let request = event.request;
     if (!request) return;
 
