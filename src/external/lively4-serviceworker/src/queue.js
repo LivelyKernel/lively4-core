@@ -39,7 +39,7 @@ export class Queue extends DbObject {
     return new Promise((resolve, reject) => {
       var request = this._getObjectStore().openCursor();
       request.onsuccess = (event) => {
-        if(request.result) {
+        if (request.result) {
           // Copy result
           result = {}.assign(request.result);
           
