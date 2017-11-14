@@ -6,7 +6,7 @@ import { DbObject } from './dbobject.js';
  */
 export class Dictionary extends DbObject {
   constructor() {
-    super('lively-sw-dictionary', 'dictionary');
+    super('lively-sw-dictionary', 'cache');
     
     var request = indexedDB.open(this._dbName, 1);
     
