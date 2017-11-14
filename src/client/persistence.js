@@ -110,12 +110,12 @@ export default class Persistence {
   }
   
   async saveLivelyContent() {
-    console.log("[peristence] save after " + 
-      (Date.now() - this.lastSaved) +"ms")
+    // console.log("[peristence] save after " + 
+    //   (Date.now() - this.lastSaved) +"ms")
     this.lastSaved = Date.now()   
     await this.storeLivelyContentForURL()
-    console.log("[peristence] saved lively content into focalStorage " + 
-      (Date.now() - this.lastSaved) +"ms")
+    // console.log("[peristence] saved lively content into focalStorage " + 
+    //   (Date.now() - this.lastSaved) +"ms")
   }
   
   

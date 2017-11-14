@@ -13,5 +13,7 @@
  - [ ] displaying tree structures
  - [ ] infinite / recursive trees
  - [ ] tables
+ - [ ] connecting widgets using drag-and-drop
  - [ ] multiple data sources
+ - [ ] data streaming
  - [ ] changing data (whatever that means)
