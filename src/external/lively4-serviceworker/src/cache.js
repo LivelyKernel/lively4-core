@@ -1,6 +1,7 @@
 import { Dictionary } from './dictionary.js';
 import { Queue } from './queue.js';
 import Serializer from './serializer.js';
+import { ConnectionManager } from './connectionmanager.js';
 import * as msg from './messaging.js'
 
 /**
@@ -11,6 +12,16 @@ export class Cache {
   constructor() {
     this._dictionary = new Dictionary();
     this._queue = new Queue();
+    this._connectionManager = new ConnectionManager();
+    
+    // Register for network status changes
+    this._connectionManager.addListener('statusChanged', (status) => {
+      if(status.isOnline) {
+        // We're back online after being online
+        // Process all queued requests
+        this._processQueued();
+      }
+    });
     
     // Define which HTTP methods need result caching, and which need request queueing
     this._cacheMethods = ['OPTIONS', 'GET'];
@@ -22,7 +33,7 @@ export class Cache {
    * To be used e.g. in `event.respondWith(...)`.
    */
   fetch(request, p) {
-    if (navigator.onLine) {
+    if (this._connectionManager.isOnline) {
       return this._onlineResponse(request, p);
     } else {
       return this._offlineResponse(request, p);
@@ -90,9 +101,43 @@ export class Cache {
    * @return void
    */
   _enqueue(request) {
+    // Serialize the Request object
     Serializer.serialize(request).then((serializedRequest) => {
+      // Put the serialized request in the queue
       this._queue.enqueue(serializedRequest);
+      
+      // Update the cache content to pretend that the data has already been saved
+      const key = `GET ${serializedRequest.url}`;
+      this._dictionary.match(key).then((response) => {
+        if(response) {
+          response.body = serializedRequest.body;
+          this._dictionary.put(key, response);
+        }
+      })
     })
+  }
+  
+  /**
+   * Processes all queued requests by sending them in the same order
+   */
+  _processQueued() {
+    let processNext = () => {
+      // Get oldest entry
+      this._queue.dequeue().then((serializedRequest) => {
+        // Check if we are done
+        if(!serializedRequest) {
+          return;
+        }
+        
+        // Send request
+        Serializer.deserialize(serializedRequest).then((request) => {
+          fetch(request).then(processNext);
+        });
+      });
+    }
+    
+    // Start processing queued requests
+    processNext();
   }
   
   /**
