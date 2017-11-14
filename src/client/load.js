@@ -57,6 +57,31 @@ if ('serviceWorker' in navigator || window.lively4chrome) {
       }
     }
     
+    // Add listener for offline/online events
+    // This is currently only used in the ServiceWorker, but the ServiceWorker does not get these events
+    // So we register here and forward the events
+    window.addEventListener('online', () => {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'network',
+        message: 'online'
+      });
+      
+      if('lively' in window) {
+        lively.notify('Network Status', 'You are now online', 5, null, 'green');
+      }
+    });
+    
+    window.addEventListener('offline', () => {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'network',
+        message: 'offline'
+      });
+      
+      if('lively' in window) {
+        lively.notify('Network Status', 'You are now offline', 5, null, 'yellow');
+      }
+    });
+    
     Promise.resolve("")
       // .then( function() {
       //   return loadJavaScriptThroughDOM("livelyModules",

@@ -9,6 +9,8 @@
 
 // import lively from "./lively.js"; #TODO does not work anymore...
 
+import GraphControl from "templates/graph-control.js";
+
 export default class Keys {
 
   static getChar(evt) {
@@ -30,60 +32,66 @@ export default class Keys {
   }
 
   static handle(evt) {
-    
     // #Hack, fix a little but in ContextMenu movement...
     lively.lastScrollTop = document.scrollingElement.scrollTop;
     lively.lastScrollLeft = document.scrollingElement.scrollLeft;
     
-    // lively.showPoint(pt(0,0))
-    // lively.notify("handle " + this.getChar(evt) + " " + evt.keyCode  + " "+ evt.charCode, (evt.shiftKey ? " SHIFT" : "") + (evt.ctrlKey ? " CTRL" : ""))
     try {
-      var char = this.getChar(evt);
-      // this.logEvent(evt)
-      
-      // TODO refactor it, so that there is only a single place for shortcut definition
-      // see /src/client/contextmenu.js and /templates/classes/AceEditor.js
+      const char = this.getChar(evt);
       const ctrl = evt.ctrlKey || evt.metaKey;
-      if (ctrl && char == "K") {
-        lively.openWorkspace("");
-        evt.preventDefault();
-      } else if (ctrl && evt.shiftKey && char == "F") {
-        lively.openSearchWidget(this.getTextSelection());
-        evt.preventDefault();
-      } else if (evt.shiftKey && ctrl && char == "B") {
-        lively.openBrowser(this.getTextSelection());
-        evt.preventDefault();
-      } else if (evt.shiftKey && ctrl && char == "G") {
-        // this does not work up on #Jens' windows machine
-        lively.notify("open sync")
-        lively.openComponentInWindow("lively-sync");
-        evt.preventDefault();
-      } else if (ctrl && char == "O") {
-        lively.openComponentInWindow("lively-component-bin");
-        evt.preventDefault();
-      } else if (!evt.shiftKey && ctrl && char == "J") {
-        lively.openComponentInWindow("lively-console");
-        evt.preventDefault();
-      } else if (ctrl  && char == "H") {
-        lively.openHelpWindow(this.getTextSelection());
-        evt.preventDefault();
-      } else if (ctrl && evt.altKey && char == "G") {
-        lively.openComponentInWindow("graph-control");
-        evt.preventDefault();
-      } else if (evt.keyCode == 27) {
-        lively.hideSearchWidget();
-      } else if (ctrl && char == "D") {
-        if (evt.path.find(ea => ea.tagName == "LIVELY-CODE-MIRROR")) {
-          // lively.notify("codemirror handles itself " )
-          return; // code mirror does not stop it's propagation
-        }
-        let str = window.getSelection().toLocaleString();
-        lively.notify("eval: " + str)
-        try {
-          lively.boundEval(str);
-        } catch(e) {
-          lively.handleError(e);
-        }
+      const { shiftKey, altKey, keyCode, charCode } = evt;
+      
+      const keyHandlers = [
+        ["Open Workspace", ctrl && char == "K", evt => {
+          lively.openWorkspace("")
+        }],
+        ["Search", ctrl && shiftKey && char == "F", evt => {
+          lively.openSearchWidget(this.getTextSelection(), null, evt.path[0]);
+        }],
+        ["Search Graph", ctrl && altKey && char == "F", evt => {
+          GraphControl.fullTextSearch(this.getTextSelection());
+        }],
+        ["Open Container", shiftKey && ctrl && char == "B", evt => {
+          lively.openBrowser(this.getTextSelection());
+        }],
+        ["Open Sync Tool", shiftKey && ctrl && char == "G", evt => {
+          // this does not work up on #Jens' windows machine
+          lively.openComponentInWindow("lively-sync");
+        }],
+        ["Open Component Bin", ctrl && char == "O", evt => {
+          lively.openComponentInWindow("lively-component-bin");
+        }],
+        // #TODO: does this work?
+        ["Open Console", !shiftKey && ctrl && char == "J", evt => {
+          lively.openComponentInWindow("lively-console");
+        }],
+        ["Open DevDocs", ctrl && char == "H", evt => {
+          lively.openHelpWindow(this.getTextSelection());
+        }],
+        ["Open Graph COntrol", ctrl && altKey && char == "G", evt => {
+          lively.openComponentInWindow("graph-control");
+        }],
+        ["Hide Search Widget", keyCode == 27, evt => {
+          lively.hideSearchWidget();
+        }], 
+        ["Do It", ctrl && char == "D", evt => {
+          if (evt.path.find(ea => ea.tagName == "LIVELY-CODE-MIRROR")) {
+            // lively.notify("codemirror handles itself " )
+            return; // code mirror does not stop it's propagation
+          }
+          let str = window.getSelection().toLocaleString();
+          lively.notify("eval: " + str)
+          try {
+            lively.boundEval(str);
+          } catch(e) {
+            lively.handleError(e);
+          }
+        }],
+      ];
+      
+      const [name, match, callback] = keyHandlers.find(([name, match]) => match) || [];
+      if(callback) {
+        callback(evt);
         evt.preventDefault();
       }
     } catch (err) {

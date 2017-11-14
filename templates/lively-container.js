@@ -1164,13 +1164,13 @@ export default class Container extends Morph {
     
   }
 
-  saveHTML(url) {
-    this.saveSource(url, this.getHTMLSource());
+  async saveHTML(url) {
+    return this.saveSource(url, this.getHTMLSource());
   }
   
   async saveMarkdown(url) {
     var source = await this.get("lively-markdown").htmlAsMarkdownSource()
-    this.saveSource(url, source);
+    return this.saveSource(url, source);
   }
   
   saveEditsInView(url) {
@@ -1355,6 +1355,19 @@ export default class Container extends Morph {
     // if (editor) {
     //   editor.focus()
     // }
+  }
+  
+  createLink(base, name, href) {
+    var link = document.createElement("a")
+    link.textContent = name
+    var path = base + href
+    link.href = path
+    link.addEventListener("click", (evt) => {
+        this.followPath(path); 
+        evt.preventDefault(); 
+        evt.stopPropagation()
+    }); 
+    return link  
   }
   
   livelyAcceptsDrop() {

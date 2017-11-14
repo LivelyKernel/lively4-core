@@ -6,10 +6,15 @@ Web component [lively-pdf](https://lively-kernel.org/lively4/lively4-core/templa
 - understand API
 - edit pdf with anntotation by hand, look at the result
 
-Related work:
+## Related work:
 - [Hypothes.is](https://via.hypothes.is/http://lively-kernel.org/publications/media/KrahnIngallsHirschfeldLinckePalacz_2009_LivelyWikiADevelopmentEnvironmentForCreatingAndSharingActiveWebContent_AcmDL.pdf) with the respective [github project](https://github.com/hypothesis/via).
 
-Tasks:
+## Tasks:
 - extract annotations
 - display extern and intern annotations
 - save annotation internally
+
+
+## Info
+
+- see [doc/annotations](../../notes/annotations.md)

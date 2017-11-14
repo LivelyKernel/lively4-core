@@ -1,0 +1,18 @@
+
+<lively-script><script>
+var links = {
+  index: "index.md", 
+  tags: "tags.md",
+  todo: "todo.md"
+}
+var container = lively.query(this, "lively-container")
+var base = lively4url + "/doc/files/";
+var div = document.createElement("div")
+if (container) {
+  Object.keys(links).forEach(ea => {
+    div.appendChild(container.createLink(base, ea, links[ea]))
+    div.appendChild(document.createTextNode(" | "))
+  })
+};
+div
+</script></lively-script>

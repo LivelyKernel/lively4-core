@@ -33,9 +33,9 @@ export default class AstExplorer extends Morph {
       editor.loadFile();
     }
     initLivelyEditorFromAttribute(this.sourceEditor, 'source', 
-   		"https://lively-kernel.org/lively4/lively4-core/demos/astsource.js");
+   		"https://lively-kernel.org/lively4/lively4-core/demos/babel/astsource.js");
     initLivelyEditorFromAttribute(this.pluginEditor, 'plugin', 
-    	"https://lively-kernel.org/lively4/lively4-core/demos/astplugin.js");
+    	"https://lively-kernel.org/lively4/lively4-core/demos/babel/astplugin.js");
 
     lively.html.registerButtons(this);
 

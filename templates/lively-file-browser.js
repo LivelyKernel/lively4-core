@@ -5,25 +5,26 @@ export default class FileBrowser extends Morph {
     if (!this._path) {
       // initialize is called after the created callback was invoked, which
       // is why path might be already set
-      this.path = '/';
+      // this.path = lively4url;
     }
 
     let location = this.get('#location')
     location.addEventListener('keypress', (event) => {
-      if(event.keyCode !== 13)
-        return
-
-      this.path = event.target.value
+      if(event.keyCode !== 13) {
+        return;
+      }
+      this.path = event.target.value;
     })
 
     this.get('#up').addEventListener('click', (event) => {
-      event.preventDefault()
-      this.path = this.path + '/..'
+      if (!this.path) return;
+      event.preventDefault();
+      this.path = this.path + '/..';
     })
 
     this.get('#home').addEventListener('click', (event) => {
       event.preventDefault()
-      this.path = '/'
+      this.path = lively4url;
     })
     this.addEventListener('file-select', (event) => {
       lively.notify("file select")

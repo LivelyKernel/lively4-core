@@ -335,6 +335,8 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   async boundEval(str, context) {
+    // console.log("bound eval " + str)
+    
     // Ensure target module loaded (for .js files only)
     // TODO: duplicate with var recorder plugin
     const MODULE_MATCHER = /.js$/;
@@ -668,6 +670,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       scrollbarStyle: this.editor.getOption('scrollbarStyle'),
       highlightDifferences: true,
       connect: "align",
+      lineWrapping: true,
       collapseIdentical: false
     });
     // if (this._mergeView.right) {

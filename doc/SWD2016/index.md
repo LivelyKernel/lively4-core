@@ -17,6 +17,15 @@ We can for example navigate and edit [these wiki pages](https://github.com/Livel
 - [Project 4: Babel Projectional Editor](project4.md)
 - [Project 5: Particle-based Simulations](project5.md)
 
+# Repositories
+
+* [Blackbox Constraint Solving](https://lively-kernel.org/lively4/lively4-blackbox/solve-compound.html)
+* [Lively4 Chrome Debugger](https://lively-kernel.org/lively4/lively4-chrome-debugger/README.md)
+* [Blockly Babel Projectional Editor](https://lively-kernel.org/lively4/lively4-projectional-editor/index.html)
+* [DOM Explorer](https://lively-kernel.org/lively4/lively4-explorable-dom/README.md)
+* [Particle System](https://lively-kernel.org/lively4/lively4-particles/README.md)
+
+
 ## Quick Manual for Lively4
 
 - CTRL+Click opens Halo to drag,copy, edit all DOM elements directly on a web page

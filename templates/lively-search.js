@@ -78,6 +78,14 @@ export default class Search extends Morph {
       return lively4url + "/../_search/files";
   }
   
+  get searchRoot() {
+    return this.get("#rootsInput").value
+  }
+
+  set searchRoot(value) {
+    return this.get("#rootsInput").value = value
+  }
+
   searchFile(text) {
     if (text) {
       this.setAttribute("search", text); // #TODO how to specify data-flow / connections...
@@ -97,7 +105,7 @@ export default class Search extends Morph {
     fetch(this.getSearchURL(), {
       headers: { 
   	   "searchpattern": search,
-  	   "rootdirs": this.get("#rootsInput").value,
+  	   "rootdirs": this.searchRoot,
   	   "excludes": this.get("#excludesInput").value,
     }}).then(r => r.text()).then( t => {
       this.searchInProgres = false;
