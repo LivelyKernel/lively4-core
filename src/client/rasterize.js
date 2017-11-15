@@ -71,7 +71,7 @@ export default class Rasterize {
     var cloned = CloneDeepHTML.deepCopyAsHTML(element)
     lively.setPosition(cloned, pt(0,0))
     var canvas = document.createElement("canvas")
-    var zoom = 1.0;
+    var zoom = 1.25;
     canvas.width = extent.x * zoom;
     canvas.height = extent.y * zoom;
     lively.notify(canvas.width, canvas.height)
