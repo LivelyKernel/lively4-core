@@ -629,6 +629,14 @@ export default class Lively {
     }
   }
   
+  static warn(title, text, timeout, cb) {
+    this.notify(title, text, timeout, cb, 'yellow');
+  }
+  
+  static error(title, text, timeout, cb) {
+    this.notify(title, text, timeout, cb, 'red');
+  }
+  
   
   // we do it lazy, because a hand can be broken or gone missing... 
   static get hand() {
