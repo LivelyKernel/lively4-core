@@ -181,7 +181,7 @@ export default class Container extends Morph {
 
   onKeyDown(evt) {
     var char = String.fromCharCode(evt.keyCode || evt.charCode);
-    if (evt.ctrlKey && char == "S") {
+    if ((evt.ctrlKey || evt.metaKey /* metaKey = cmd key on Mac */) && char == "S") {
       if (evt.shiftKey) {
         this.onAccept();          
       } else {
