@@ -1,4 +1,5 @@
 import rasterizeHTML from "src/external/rasterizeHTML.js"
+import {pt} from "src/client/graphics.js"
 
 // the rasterization code expects only plain HTML and cannot deal with shadow dom, so we flatten it away
 export class CloneDeepHTML {
@@ -64,12 +65,16 @@ export class CloneDeepHTML {
 
 
 export default class Rasterize {
-   static async elementToCanvas(element, width=512, height=512) {
+   static async elementToCanvas(element) {
+    var extent = lively.getExtent(element)
+
     var cloned = CloneDeepHTML.deepCopyAsHTML(element)
-     
+    lively.setPosition(cloned, pt(0,0))
     var canvas = document.createElement("canvas")
-    canvas.height = height
-    canvas.width = width
+    var zoom = 1.25;
+    canvas.width = extent.x * zoom;
+    canvas.height = extent.y * zoom;
+    lively.notify(canvas.width, canvas.height)
     await rasterizeHTML.drawHTML(cloned.outerHTML, canvas)
     return canvas
   } 
@@ -85,10 +90,15 @@ export default class Rasterize {
     return lively.files.copyURLtoURL(dataURL, url)
   } 
   
-  static async openAsImage(element) {
+  static async asImage(element) {
     var dataURL = await this.elementToDataURL(element)
     var img = document.createElement("img")
     img.src = dataURL
+    return img
+  } 
+  
+  static async openAsImage(element) {
+    var img = await this.asImage(element)
     document.body.appendChild(img)
     return img
   } 

@@ -29,7 +29,7 @@ class ServiceWorker {
     // here we should remount previous filesystem (remembered in focalStorage)
     
     // Create cache
-    this._cache = new Cache();
+    this._cache = new Cache(this.filesystem);
   }
 
   static instance() {
@@ -108,7 +108,7 @@ class ServiceWorker {
           var req = new Request(request.url, options );
 
           // use system here to prevent recursion...
-          resolve(self.fetch(req).then(result => {
+          resolve(self.fetch(req).then((result) => {
             if (result instanceof Response) {
               return result;
             } else {
@@ -139,30 +139,30 @@ class ServiceWorker {
       // This request is then handled here and forwarded to the github filesystem, which returns an error 405
       // (there is never any actual path, the request always goes to https://lively4/)
       // Why is this happening? Is this still necessary?
-      let response = this.filesystem.handle(request, url);
+      var p = new Promise(async (resolve, reject) => {
+        resolve(this.filesystem.handle(request.clone(), url).then((result) => {
+          if (result instanceof Response) {
+            return result;
+          } else if (result && result.toResponse) {
+            return result.toResponse();
+          } else {
+            return new Response(result);
+          }
+        }).catch((err) => {
+          console.error('Error while processing fetch event:', err);
 
-      response = response.then((result) => {
-        if (result instanceof Response) {
-          return result;
-        } else if (result && result.toResponse) {
-          return result.toResponse();
-        } else {
-          return new Response(result);
-        }
-      }).catch((err) => {
-        console.error('Error while processing fetch event:', err);
+          let message = err.toString();
+          let content = JSON.stringify({message: message});
 
-        let message = err.toString();
-        let content = JSON.stringify({message: message});
-
-        return new Response(content, {status: 500, statusText: message});
-      })
+          return new Response(content, {status: 500, statusText: message});
+        }));
+      });
 
       if (pending) {
         console.log("resolve pending request: " + pending.url)
-        pending.resolve(response);
+        pending.resolve(p);
       } else
-        event.respondWith(response);
+        event.respondWith(this._cache.fetch(event.request, p));
     }
   }
 
