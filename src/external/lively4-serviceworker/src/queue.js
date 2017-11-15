@@ -5,22 +5,20 @@ import { DbObject } from './dbobject.js';
  */
 export class Queue extends DbObject {
   constructor() {
-    super();
-    this._dbName = 'lively-sw-queue',
-    this._storeName = 'queue';
+    super('lively-sw-queue', 'queue');
     
     var request = indexedDB.open(this._dbName, 1);
     
     request.onupgradeneeded = (event) => {
-      this.db = event.target.result;
-      this.db.createObjectStore(this._storeName, {
+      this._db = event.target.result;
+      this._db.createObjectStore(this._storeName, {
         keyPath: 'id',
         autoIncrement: true
       });
     };
     
     request.onsuccess = (event) => {
-      this.db = event.target.result;
+      this._db = event.target.result;
     }
   }
   

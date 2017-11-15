@@ -102,7 +102,7 @@ export default class Filesystem extends Base {
 
   async read(path, request) {
     let fileversion = request.headers.get('fileversion');
-    let dropboxParameter = fileversion ? '?rev=${fileversion}' : '';
+    let dropboxParameter = fileversion && fileversion!== 'undefined' ? `?rev=${fileversion}` : '';
     
     const dropboxPath = this.subfolder + path + dropboxParameter;
     let response = await this.downloadFile(dropboxPath);

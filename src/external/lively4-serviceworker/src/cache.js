@@ -6,13 +6,18 @@ import * as msg from './messaging.js'
 
 /**
  * This class is supposed to be a general-purpose cache for HTTP requests with different HTTP methods.
- * TODO: Rename this class to 'Proxy' and rename 'CacheStorage' to 'Cache'?
  */
 export class Cache {
-  constructor() {
+  
+  /**
+   * Constructs a new Cache object
+   * @param fileSystem A reference to the filesystem. Needed to process queued filesystem requests.
+   */
+  constructor(fileSystem) {
     this._dictionary = new Dictionary();
     this._queue = new Queue();
     this._connectionManager = new ConnectionManager();
+    this._fileSystem = fileSystem;
     
     // Register for network status changes
     this._connectionManager.addListener('statusChanged', (status) => {
@@ -131,7 +136,12 @@ export class Cache {
         
         // Send request
         Serializer.deserialize(serializedRequest).then((request) => {
-          fetch(request).then(processNext);
+          let url = new URL(request.url);
+          if(url.hostname === 'lively4') {
+            this._fileSystem.handle(request, url).then(processNext);
+          } else {
+            fetch(request).then(processNext);
+          }
         });
       });
     }
