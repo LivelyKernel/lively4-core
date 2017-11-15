@@ -1,5 +1,5 @@
 import Morph from './Morph.js';
-import {pt} from 'src/client/graphics.js'
+import {pt} from 'src/client/graphics.js';
 import {Grid} from 'src/client/morphic/snapping.js';
 import Preferences from 'src/client/preferences.js';
 
@@ -387,7 +387,7 @@ export default class Window extends Morph {
 
   onExtentChanged(evt) {
     if (this.target) {
-      this.target.dispatchEvent(new CustomEvent("extent-changed"))
+      this.target.dispatchEvent(new CustomEvent("extent-changed"));
     }
   }
 
