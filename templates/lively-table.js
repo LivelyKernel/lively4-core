@@ -43,16 +43,19 @@ export default class LivelyTable extends Morph {
     }
   }
   
-  clearSelection() {
+  clearAllSelection() {
     this.querySelectorAll("td").forEach(ea => {
       ea.classList.remove("editing")
       ea.removeAttribute("contentEditable")
+      // ea.contentEditable = false
+ 
     })
   }
   
   setFocusAndTextSelection(element) {
     if (!element) return;
-    this.clearSelection()
+    this.clearAllSelection()
+
     element.contentEditable = true
     element.focus()
     var sel = window.getSelection();
@@ -109,7 +112,7 @@ export default class LivelyTable extends Morph {
 
   clearSelection(doNotClearStart) {
     if (this.currentCell) {
-      this.currentCell.contentEditable = false
+      this.currentCell.removeAttribute("contentEditable")
       this.currentCell.classList.remove("table-selected")
     }
     if (!doNotClearStart) {
@@ -301,9 +304,7 @@ export default class LivelyTable extends Morph {
 
   onEscDown(evt) {
     if (!this.currentCell) return
-    // this.setFocusAndTextSelection(this.currentCell)
-    this.clearSelection()
-    document.selection.empty();
+    this.setFocusAndTextSelection(this.currentCell)
     evt.stopPropagation()
     evt.preventDefault()
   }
