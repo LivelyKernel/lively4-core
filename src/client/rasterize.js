@@ -1,9 +1,27 @@
 import rasterizeHTML from "src/external/rasterizeHTML.js"
 import {pt} from "src/client/graphics.js"
 
+
+
 // the rasterization code expects only plain HTML and cannot deal with shadow dom, so we flatten it away
 export class CloneDeepHTML {
 
+  // computes the styles of a and b and prints the difference CSS
+  static diffCSS(a,b) {
+    var astyle = getComputedStyle(a)
+    var bstyle = getComputedStyle(b)
+    var css = ""
+    for(var i=0; i < astyle.length; i++) {
+      var name = astyle.item(i)
+      if (!name.match("-webkit")) {
+        if (astyle.getPropertyValue(name) != bstyle.getPropertyValue(name)) {
+          css += name +": " + astyle.getPropertyValue(name) +";\n"
+        }        
+      }
+    };
+    return css
+  }
+  
   static shallowClone(obj) {
     if (!obj) return;
     var node
@@ -12,9 +30,6 @@ export class CloneDeepHTML {
     } else if (obj.tagName == "CONTENT"){
       node = document.createElement("div")
       node.id = "CONTENTNODE"
-    } else if (obj.tagName == "style"){
-      lively.notify("ignore style")
-      return 
     } else if ( obj.shadowRoot){
       node = document.createElement("div")
     } else {
@@ -22,14 +37,12 @@ export class CloneDeepHTML {
     }    
     if (obj.attributes) {
       Array.from(obj.attributes).forEach(ea => {
+        if (ea.name == "style") return;
         node[ea.name] = "" + ea.value
       })
-      node.style = getComputedStyle(obj).cssText
-      console.log("transform " + node.style.transform)
-      if (node.style.transform != "none") {
-        debugger
+      if (obj.style) {
+        node.style = this.diffCSS(obj, node)      
       }
-      
       
       var beforeElementStyle = getComputedStyle(obj, ':before')
       var beforeContent = beforeElementStyle.content
