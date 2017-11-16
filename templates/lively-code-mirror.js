@@ -447,7 +447,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (result.then) {
       result = await result; // wait on any promise
     }
-    lively.openInspector(result, null, str) 
+    lively.openInspector(result, undefined, str) 
   }
   
 

@@ -1,9 +1,39 @@
 import { pt } from 'src/client/graphics.js';
 import generateUUID from './uuid.js';
+import { debounce } from "utils";
+
+export function applyDragCSSClass() {
+  this.addEventListener('dragenter', evt => {
+    this.classList.add("drag");
+  }, false);
+  this.addEventListener('dragleave', evt => {
+    this.classList.remove("drag");
+  }, false);
+  this.addEventListener('drop', evt => {
+    this.classList.remove("drag");
+  });
+}
 
 function appendToBodyAt(node, evt) {
   document.body.appendChild(node);
   lively.setGlobalPosition(node, pt(evt.clientX, evt.clientY));
+}
+
+const TEMP_OBJECT_STORAGE = new Map();
+export function getTempKeyFor(obj) {
+  const tempKey = generateUUID();
+  TEMP_OBJECT_STORAGE.set(tempKey, obj);
+  
+  // safety net: remove the key in 10 minutes
+  setTimeout(() => removeTempKey(tempKey), 10 * 60 * 1000);
+
+  return tempKey;
+}
+export function getObjectFor(tempKey) {
+  return TEMP_OBJECT_STORAGE.get(tempKey);
+}
+export function removeTempKey(tempKey) {
+  TEMP_OBJECT_STORAGE.delete(tempKey);
 }
 
 //class DataTransferItemHandler {
@@ -14,9 +44,12 @@ function appendToBodyAt(node, evt) {
 
 export default class DragAndDrop {
   
-  static load() {
-    console.log("register body drag and drop")
+  static removeListeners() {
     lively.removeEventListener("DragAndDrop", document)
+    lively.removeEventListener("DropOnDocument", document)
+  }
+  
+  static load() {
     lively.addEventListener("DragAndDrop", document, "dragover", ::this.onDragOver)
     lively.addEventListener("DragAndDrop", document, "drop", ::this.onDrop)
     
@@ -31,6 +64,17 @@ export default class DragAndDrop {
 
         return true;
       }],
+      
+      ['javascript/object', (evt, dt) => {
+        if(!dt.types.includes("javascript/object")) { return false; }
+        const tempKey = dt.getData("javascript/object");
+        
+        lively.openInspector(getObjectFor(tempKey), pt(evt.clientX, evt.clientY));
+        removeTempKey(tempKey);
+
+        return true;
+      }],
+      
       ['text/uri-list general', (evt, dt) => {
         if(!dt.types.includes("text/uri-list")) { return false; }
         const urlString = evt.dataTransfer.getData("text/uri-list");
@@ -104,12 +148,14 @@ export default class DragAndDrop {
   static async onDrop(evt) {
     const dt = evt.dataTransfer;
     
+    /*
     console.group("Drop Event on body");
     console.log(dt);
     console.log(`#files ${dt.files.length}`);
     console.log(Array.from(dt.items));
     lively.notify(Array.from(dt.types).join(" "));
     console.groupEnd();
+    */
 
     evt.stopPropagation();
     evt.preventDefault();
@@ -124,6 +170,10 @@ export default class DragAndDrop {
     
     lively.warn("Dragged content contained neighter files nor items");
   }
+}
+
+export function __unload__() {
+  DragAndDrop.removeListeners();
 }
 
 DragAndDrop.load()
