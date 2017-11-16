@@ -7,10 +7,12 @@ import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/external/ContextJS/src/contextjs.js";
 import ScopedScripts from "./ScopedScripts.js";
-import Clipboard from "src/client/clipboard.js" 
-import {debounce} from "utils"
+import Clipboard from "src/client/clipboard.js"; 
+import {debounce} from "utils";
 
 export default class Container extends Morph {
+  
+  get target() { return this.childNodes[0] }
 
   initialize() {
     // this.shadowRoot.querySelector("livelyStyle").innerHTML = '{color: red}'
@@ -32,6 +34,9 @@ export default class Container extends Morph {
     lively.loadCSSThroughDOM("hightlight", lively4url + "/src/external/highlight.css");
 
     lively.addEventListener("Container", this, "mousedown", evt => this.onMouseDown(evt));
+    this.addEventListener("extent-changed", function(evt) {
+      this.target.dispatchEvent(new CustomEvent("extent-changed"));
+    });
 
     // #TODO continue here, halo selection and container do now work yet
     // var halos = halo.halo && halo.halo[0];
@@ -176,7 +181,7 @@ export default class Container extends Morph {
 
   onKeyDown(evt) {
     var char = String.fromCharCode(evt.keyCode || evt.charCode);
-    if (evt.ctrlKey && char == "S") {
+    if ((evt.ctrlKey || evt.metaKey /* metaKey = cmd key on Mac */) && char == "S") {
       if (evt.shiftKey) {
         this.onAccept();          
       } else {
