@@ -1,5 +1,23 @@
 import Morph from './Morph.js';
 import { Graph } from './../src/client/triples/triples.js';
+import { getTempKeyFor } from 'src/client/draganddrop.js';
+
+// #TODO: chrome does not support dataTransfer.addElement :(
+// e.g. dt.addElement(<h1>drop me</h1>);
+// Therefore, we have to perform this hack stolen from:
+// https://stackoverflow.com/questions/12766103/html5-drag-and-drop-events-and-setdragimage-browser-support
+function asDragImageFor(evt, offsetX=0, offsetY=0) {
+  const clone = this.cloneNode(true);
+  document.body.appendChild(clone);
+  clone.style["z-index"] = "-100000";
+  clone.style.top = Math.max(0, evt.clientY - offsetY) + "px";
+  clone.style.left = Math.max(0, evt.clientX - offsetX) + "px";
+  clone.style.position = "absolute";
+  clone.style.pointerEvents = "none";
+
+  setTimeout(::clone.remove);
+  evt.dataTransfer.setDragImage(clone, offsetX, offsetY);
+}
 
 export default class KnotSearchResult extends Morph {
   // lazy initializer for knot array
@@ -24,62 +42,45 @@ export default class KnotSearchResult extends Morph {
     this.knots.push(knot);
     const list = this.get("#result-list");
     const listItem = knot.toListItem();
+    
+    // events fired on drag element
     listItem.addEventListener('dragstart', evt => {
       lively.notify('dragstart');
       const dt = evt.dataTransfer;
 
       listItem.style.color = "blue";
-      lively.notify("knot.getURL()", knot.url);
       dt.setData("knot/url", knot.url);
       dt.setData("text/uri-list", knot.url);
+      dt.setData("text/plain", knot.url);
+      dt.setData("javascript/object", getTempKeyFor(knot));
       
-      function toDragImage() {}
-
-      // #TODO: chrome does not support dataTransfer.addElement :(
-      //dt.addElement(<h1>drop me</h1>);
-      // const img = <img src={lively4url + "/media/lively4_logo_smooth_100.png"}></img>
-      //const img = await Raster.asImage(that);
-      
-      const options = {
-        offsetX: -150,
-        offsetY: 50
-      };
-      const offsetX = options.offsetX || 0;
-      const offsetY = options.offsetY || 0;
-      const x = evt.clientX;
-      const y = evt.clientY;
-
-      const dragImageDiv = <div>Hello World
+      const dragInfo = <div>
+        <h1>Hello World</h1>
         <ol>
-          <li>foo</li>
-          <li>foobar</li>
-          <li>foobarblub</li>
+          <li>{knot.url}</li>
         </ol>
       </div>;
-      document.body.appendChild(dragImageDiv);
-      dragImageDiv.style["z-index"] = "-100000";
-      dragImageDiv.style.top = Math.max(0, y-offsetY)+"px";
-      dragImageDiv.style.left = Math.max(0, x-offsetX)+"px";
-      dragImageDiv.style.position = "absolute";
-      dragImageDiv.style.pointerEvents = "none";
-      
-      setTimeout(function() {
-          dragImageDiv.remove();
-      });
-      dt.setDragImage(dragImageDiv, offsetX, offsetY);
+      dragInfo::asDragImageFor(evt, -150, 50);
     }, false);
-    listItem.addEventListener('dragenter', evt => lively.notify('dragenter'), false);
-    listItem.addEventListener('dragover', evt => lively.notify('dragover'), false);
-    listItem.addEventListener('dragleave', evt => lively.notify('dragleave'), false);
-    listItem.addEventListener('drop', evt => {
-      lively.notify(":", evt.dataTransfer.getData("knot/url"));
-    }, false);
+    listItem.addEventListener('drag', evt => {}, false);
     listItem.addEventListener('dragend', evt => {
-      lively.notify('dragend');
-
-      lively.notify(".", evt.dataTransfer.getData("knot/url"));
       listItem.style.color = null;
     }, false);
+
+    // events fired on drop target
+    listItem.addEventListener('dragenter', evt => {
+      lively.notify('dragenter');
+      const dragInfo = <div width="200px" height="200px" style="background-color: blue"></div>;
+      dragInfo::asDragImageFor(evt, -150, 50);
+    }, false);
+    listItem.addEventListener('dragover', evt => lively.notify('dragover'), false);
+    listItem.addEventListener('dragleave', evt => {
+lively.notify('dragleave')}, false);
+    listItem.addEventListener('drop', evt => {
+      lively.notify('drop');
+      lively.notify(":", evt.dataTransfer.getData("knot/url"));
+    }, false);
+    
     list.appendChild(listItem);
   }
   
