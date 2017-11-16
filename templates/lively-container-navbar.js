@@ -1,5 +1,6 @@
 import Morph from './Morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
+import { applyDragCSSClass } from 'src/client/draganddrop.js';
 
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
@@ -7,6 +8,7 @@ export default class LivelyContainerNavbar extends Morph {
     this.addEventListener("drop", this.onDrop)
     this.addEventListener("dragover", this.onDragOver)
     // this.addEventListener("dragenter", this.onDragEnter)
+    this::applyDragCSSClass();
   }
   
   clear() {
@@ -18,16 +20,35 @@ export default class LivelyContainerNavbar extends Morph {
     evt.preventDefault()    
   }
 
-  onDrop(evt) {
-    var data = evt.dataTransfer.getData("text");
+  async onDrop(evt) {
     evt.preventDefault();
     evt.stopPropagation();
-
     
+    const files = evt.dataTransfer.files;
+    if(files.length > 0 &&
+      await lively.confirm(`Copy ${files.length} file(s) into directory ${this.url}?`)
+    ) {
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = async event => {
+          var newURL = this.url.replace(/[^/]*$/, file.name);
+          const content = event.target.result;
+          await fetch(newURL, {
+            method: "PUT",
+            body: content
+          });
+          this.show(newURL, content);
+        };
+        reader.readAsBinaryString(file);
+      });
+      return;
+    }
+
+    var data = evt.dataTransfer.getData("text");
     if (data.match("^https?:\/\/") || data.match(/^data\:image\/png;/)) {
-      this.copyFromURL(data)
+      this.copyFromURL(data);
     } else {
-      console.log('ignore data ' + data)
+      console.log('ignore data ' + data);
     }
   }
   

@@ -42,83 +42,86 @@ export function removeTempKey(tempKey) {
 //  }
 //}
 
-export default class DragAndDrop {
-  
-  static removeListeners() {
-    lively.removeEventListener("DragAndDrop", document)
-    lively.removeEventListener("DropOnDocument", document)
+class DropOnBodyHandler {
+  constructor(mimeType, handler) {
+    this.mimeType = mimeType;
+    this.handler = handler;
   }
   
-  static load() {
-    lively.addEventListener("DragAndDrop", document, "dragover", ::this.onDragOver)
-    lively.addEventListener("DragAndDrop", document, "drop", ::this.onDrop)
+  handle(evt) {
+    const dt = evt.dataTransfer;
+    if(!dt.types.includes(this.mimeType)) { return false; }
+    
+    const element = this.handler(dt.getData(this.mimeType));
+    if(element) {
+      appendToBodyAt(element, evt);
+      return true;
+    } else {
+      return false;
+    }
+  }
+}
+
+const dropOnDocumentBehavior = {
+  
+  removeListeners() {
+    lively.removeEventListener("dropOnDocumentBehavior", document);
+  },
+  
+  load() {
+    lively.addEventListener("dropOnDocumentBehavior", document, "dragover", ::this.onDragOver)
+    lively.addEventListener("dropOnDocumentBehavior", document, "drop", ::this.onDrop)
     
     this.handlers = [
-      ['text/uri-list image', (evt, dt) => {
-        if(!dt.types.includes("text/uri-list")) { return false; }
-        const urlString = evt.dataTransfer.getData("text/uri-list");
+      new DropOnBodyHandler('text/uri-list', urlString => {
         if (!urlString.match(/^data\:image\/png/)) { return false; }
         
-        var img = <img class="lively-content" src={urlString}></img>;
-        appendToBodyAt(img, evt);
-
-        return true;
-      }],
+        return <img class="lively-content" src={urlString}></img>;
+      }),
       
-      ['javascript/object', (evt, dt) => {
-        if(!dt.types.includes("javascript/object")) { return false; }
-        const tempKey = dt.getData("javascript/object");
-        
-        lively.openInspector(getObjectFor(tempKey), pt(evt.clientX, evt.clientY));
-        removeTempKey(tempKey);
+      {
+        handle(evt) {
+          const dt = evt.dataTransfer;
+          if(!dt.types.includes("javascript/object")) { return false; }
+          const tempKey = dt.getData("javascript/object");
 
-        return true;
-      }],
+          lively.openInspector(getObjectFor(tempKey), pt(evt.clientX, evt.clientY));
+          removeTempKey(tempKey);
+
+          return true;
+        }
+      },
       
-      ['text/uri-list general', (evt, dt) => {
-        if(!dt.types.includes("text/uri-list")) { return false; }
-        const urlString = evt.dataTransfer.getData("text/uri-list");
-
-        const link = <a class="lively-content" href={urlString} click={evt => {
+      new DropOnBodyHandler('text/uri-list', urlString => {
+        return <a class="lively-content" href={urlString} click={event => {
           // #TODO make this bevior persistent?
-          evt.preventDefault();
+          event.preventDefault();
           lively.openBrowser(urlString);
           return true;
         }}>
           {urlString.replace(/.*\//,"")}
         </a>;
-        appendToBodyAt(link, evt);
-        
-       return true;
-      }],
-      ['text/html', (evt, dt) => {
-        if(!dt.types.includes("text/html")) { return false; }
+      }),
 
-        const htmlString = evt.dataTransfer.getData("text/html");
+      new DropOnBodyHandler('text/html', htmlString => {
         const div = <div></div>;
         div.innerHTML = htmlString;
-        appendToBodyAt(div, evt);
 
-        return true;
-      }],
-      ['text/plain', (evt, dt) => {
-        if(!dt.types.includes("text/plain")) { return false; }
-        
-        const text = evt.dataTransfer.getData("text/plain");
-        const p = <p>{text}</p>;
-        appendToBodyAt(p, evt);
+        return div;
+      }),
 
-        return true;
-      }],
+      new DropOnBodyHandler('text/plain', text => {
+        return <p>{text}</p>;
+      })
     ];
-  }
+  },
   
-  static onDragOver(evt) {
+  onDragOver(evt) {
     evt.stopPropagation();
     evt.preventDefault();
-  }
+  },
 
-  static handleFiles(evt) {
+  handleFiles(evt) {
     const files = evt.dataTransfer.files;
 
     if(files.length === 0) { return false; }
@@ -143,9 +146,9 @@ export default class DragAndDrop {
         reader.readAsDataURL(file);
       });
     return true;
-  }
+  },
   
-  static async onDrop(evt) {
+  async onDrop(evt) {
     const dt = evt.dataTransfer;
     
     /*
@@ -163,17 +166,17 @@ export default class DragAndDrop {
     if(this.handleFiles(evt)) { return; }
 
     if(Array.from(dt.types).length > 0) {
-      if(this.handlers.find(([name, handler]) => handler(evt, dt))) {
+      if(this.handlers.find(handler => handler.handle(evt))) {
         return;
       }
     }
     
-    lively.warn("Dragged content contained neighter files nor items");
+    lively.warn("Dragged content contained neighter files nor handled items");
   }
 }
 
 export function __unload__() {
-  DragAndDrop.removeListeners();
+  dropOnDocumentBehavior.removeListeners();
 }
 
-DragAndDrop.load()
+dropOnDocumentBehavior.load()

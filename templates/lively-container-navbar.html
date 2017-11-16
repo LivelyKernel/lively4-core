@@ -8,6 +8,25 @@
  border-right: 1px solid #d5d5d5;
 }
 
+:host(.drag) * {
+  display: none
+}
+#dragHint, #dragHintText {
+  display: none;
+}
+:host(.drag) #dragHint {
+  display: table;
+  text-align: center;
+
+  background-color: steelblue;
+  height: 100%;
+  width: 100%;
+}
+:host(.drag) #dragHintText {
+  display: table-cell;
+  vertical-align: middle;
+}
+
 ul li a:hover {
   background-color: gray;
   color: white;
@@ -85,6 +104,11 @@ ul li a {
 
 
 </style>
+<div id="dragHint">
+  <h1 id="dragHintText">
+    Drop Files Here
+  </h1>
+</div>
 <ul id="navbar">
 </ul>
 <content></content>
