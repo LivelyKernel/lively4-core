@@ -346,8 +346,8 @@ export default class Lively {
     });
   }
   
-  static openInspector(object, pos, str, worldContext) {
-    return lively.openComponentInWindow("lively-inspector", null, pt(400,500), worldContext).then( inspector => {
+  static openInspector(object, pos=pt(400,500), str, worldContext) {
+    return lively.openComponentInWindow("lively-inspector", null, pos, worldContext).then(inspector => {
         inspector.windowTitle = "Inspect: " + str;
         inspector.inspect(object);
         return inspector
