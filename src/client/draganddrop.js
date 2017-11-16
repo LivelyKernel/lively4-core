@@ -1,5 +1,6 @@
 import { pt } from 'src/client/graphics.js';
 import generateUUID from './uuid.js';
+import { debounce } from "utils";
 
 export function applyDragCSSClass() {
   this.addEventListener('dragenter', evt => {
@@ -16,6 +17,23 @@ export function applyDragCSSClass() {
 function appendToBodyAt(node, evt) {
   document.body.appendChild(node);
   lively.setGlobalPosition(node, pt(evt.clientX, evt.clientY));
+}
+
+const TEMP_OBJECT_STORAGE = new Map();
+export function getTempKeyFor(obj) {
+  const tempKey = generateUUID();
+  TEMP_OBJECT_STORAGE.set(tempKey, obj);
+  
+  // safety net: remove the key in 10 minutes
+  setTimeout(() => removeTempKey(tempKey), 10 * 60 * 1000);
+
+  return tempKey;
+}
+export function getObjectFor(tempKey) {
+  return TEMP_OBJECT_STORAGE.get(tempKey);
+}
+export function removeTempKey(tempKey) {
+  TEMP_OBJECT_STORAGE.delete(tempKey);
 }
 
 //class DataTransferItemHandler {
@@ -46,6 +64,17 @@ export default class DragAndDrop {
 
         return true;
       }],
+      
+      ['javascript/object', (evt, dt) => {
+        if(!dt.types.includes("javascript/object")) { return false; }
+        const tempKey = dt.getData("javascript/object");
+        
+        lively.openInspector(getObjectFor(tempKey), pt(evt.clientX, evt.clientY));
+        removeTempKey(tempKey);
+
+        return true;
+      }],
+      
       ['text/uri-list general', (evt, dt) => {
         if(!dt.types.includes("text/uri-list")) { return false; }
         const urlString = evt.dataTransfer.getData("text/uri-list");

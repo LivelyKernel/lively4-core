@@ -25,6 +25,7 @@ export default class KnotInput extends Morph {
         evt.preventDefault();
         
         this.setValue(evt.dataTransfer.getData("knot/url"));
+        this.focus();
       }
     });
     
