@@ -25,7 +25,7 @@ import Dialog from 'templates/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
 
 /* expose external modules */
-import color from '../external/tinycolor.js';
+// import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
 import * as kernel from 'kernel';
 import Selection from 'templates/lively-selection.js'
@@ -47,7 +47,7 @@ var exportmodules = [
   "html",
   "components",
   "persistence",
-  "color",
+  // "color",
   "focalStorage",
   "authGithub",
   "authDropbox",
