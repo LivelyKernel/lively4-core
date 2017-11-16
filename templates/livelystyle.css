@@ -89,3 +89,7 @@ input {
 :window-inactive {}
 ::selection {}
 */
+
+.drag * {
+  pointer-events: none;
+}
