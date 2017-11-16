@@ -1,6 +1,18 @@
 import { pt } from 'src/client/graphics.js';
 import generateUUID from './uuid.js';
 
+export function applyDragCSSClass() {
+  this.addEventListener('dragenter', evt => {
+    this.classList.add("drag");
+  }, false);
+  this.addEventListener('dragleave', evt => {
+    this.classList.remove("drag");
+  }, false);
+  this.addEventListener('drop', evt => {
+    this.classList.remove("drag");
+  });
+}
+
 function appendToBodyAt(node, evt) {
   document.body.appendChild(node);
   lively.setGlobalPosition(node, pt(evt.clientX, evt.clientY));
@@ -14,9 +26,12 @@ function appendToBodyAt(node, evt) {
 
 export default class DragAndDrop {
   
-  static load() {
-    console.log("register body drag and drop")
+  static removeListeners() {
     lively.removeEventListener("DragAndDrop", document)
+    lively.removeEventListener("DropOnDocument", document)
+  }
+  
+  static load() {
     lively.addEventListener("DragAndDrop", document, "dragover", ::this.onDragOver)
     lively.addEventListener("DragAndDrop", document, "drop", ::this.onDrop)
     
@@ -104,12 +119,14 @@ export default class DragAndDrop {
   static async onDrop(evt) {
     const dt = evt.dataTransfer;
     
+    /*
     console.group("Drop Event on body");
     console.log(dt);
     console.log(`#files ${dt.files.length}`);
     console.log(Array.from(dt.items));
     lively.notify(Array.from(dt.types).join(" "));
     console.groupEnd();
+    */
 
     evt.stopPropagation();
     evt.preventDefault();
@@ -124,6 +141,10 @@ export default class DragAndDrop {
     
     lively.warn("Dragged content contained neighter files nor items");
   }
+}
+
+export function __unload__() {
+  DragAndDrop.removeListeners();
 }
 
 DragAndDrop.load()
