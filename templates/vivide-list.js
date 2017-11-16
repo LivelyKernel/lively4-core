@@ -4,7 +4,7 @@ export default class VivideList extends Morph {
   async initialize() {
     this.windowTitle = "VivideList";
     this.transformation = list => list;
-    this.depiction = list => list;
+    this.depiction = elem => elem;
     this.predecessor = null;
     this.successors = [];
   }
@@ -41,15 +41,17 @@ export default class VivideList extends Morph {
   }
   
   display() {
-    this.innerHTML = "";
+    this.textContent = this.model.map(elem => this.depiction(elem)).join('<br />');
+    let root = this.get("#content");
+    root.innerHTML = "";
     for(let i in this.model) {
       let listentry = document.createElement("div");
-      if(this.selection[i]) { listentry.style.background = "orange"; }
-      listentry.addEventListener("click", this.elementSelect(i));
-      listentry.className = "listentry";
       listentry.id = "listentry" + i;
+      listentry.className = "listentry";
+      if(this.selection[i]) { listentry.classList.add("selected"); }
+      listentry.addEventListener("click", this.elementSelect(i));
       listentry.innerHTML = this.depiction(this.model[i]);
-      this.appendChild(listentry);
+      root.appendChild(listentry);
     }
   }
   
