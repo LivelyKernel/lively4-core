@@ -1,13 +1,16 @@
 import Morph from './Morph.js';
+import {pt} from 'src/client/graphics.js';
 
 const mountURL = 'https://lively4/sys/fs/mount';
 const mountEndpoint = '/services';
 const isLocalHost = document.location.hostname.indexOf('localhost') > -1;
 const localBaseURL = 'http://localhost:9007/';
-const remoteBaseURL = 'https://lively-kernel.org/lively4services/';
-const servicesRootURL = 'https://lively-kernel.org/lively4/lively4-services/services';
+const remoteBaseURL = 'https://lively-kernel.org/lively4services';
+const servicesRootURL = remoteBaseURL + "/mount/"
 
-var servicesURL = isLocalHost ? localBaseURL : remoteBaseURL;
+      // 'https://lively-kernel.org/lively4/lively4-services/services';
+
+var servicesURL = isLocalHost ? localBaseURL : (remoteBaseURL + "/");
 
 
 
@@ -78,9 +81,9 @@ export default class Services extends Morph {
   }
 
   addButtonClick(evt) {
-    var browser = lively.components.createComponent('lively-file-browser');
-    lively.components.openInWindow(browser).then(() => {
+    lively.openComponentInWindow('lively-file-browser').then(browser => {
       browser.path = servicesRootURL;
+      lively.setGlobalPosition(browser.parentElement, lively.getGlobalPosition(this.parentElement).addPt(pt(30,30)))
       browser.setMainAction((url) => {
         const relativePath = url.toString().replace(servicesRootURL + '/', '');
         
