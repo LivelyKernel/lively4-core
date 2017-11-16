@@ -35,6 +35,7 @@ export default class Container extends Morph {
 
     lively.addEventListener("Container", this, "mousedown", evt => this.onMouseDown(evt));
     this.addEventListener("extent-changed", function(evt) {
+      if (!this.target) return;
       this.target.dispatchEvent(new CustomEvent("extent-changed"));
     });
 
