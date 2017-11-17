@@ -22,24 +22,50 @@ export class CloneDeepHTML {
     return css
   }
   
-  static shallowClone(obj) {
+  
+  static shallowClone(obj, parent, root) {
     if (!obj) return;
     var node
     if (obj.constructor.name == "Text") {
-      node = document.createTextNode(obj.textContent)
+      if (obj.parentElement && obj.parentElement.tagName == "STYLE") {
+        // #Hack hot fix font-awesome styles...
+        node = document.createTextNode(obj.textContent.replace(/url\('\.\.\/fonts\/fontawesome-webfont/g, 
+          `url('${lively4url}/src/external/font-awesome/fonts/fontawesome-webfont`)) 
+      } else {
+        node = document.createTextNode(obj.textContent) 
+      }
     } else if (obj.tagName == "CONTENT"){
       node = document.createElement("div")
       node.id = "CONTENTNODE"
+      if (root) {
+        root._shadowRootContentNode = node
+      }      
+      return node
+    } else if (obj.tagName == "STYLE"){
+      node = document.createElement("style")
+      
       return node
     } else if ( obj.shadowRoot){
       node = document.createElement("div")
     } else {
-      node = document.createElement(obj.tagName);
-    }    
+      if (!obj.tagName) {
+        // comments...
+      } else{
+        node = document.createElement(obj.tagName);
+      }
+    }
+    if (obj.tagName == "H1") {
+      lively.showElement(obj)
+    }
+    
     if (obj.attributes) {
       Array.from(obj.attributes).forEach(ea => {
         if (ea.name == "style") return;
-        node[ea.name] = "" + ea.value
+        try {
+          node[ea.name] = "" + ea.value        
+        } catch(e) {
+          console.log('rasterize: could not write attribute ' + ea.name + " from " + obj)
+        }
       })
       if (obj.style) {
         node.style = this.diffCSS(obj, node)      
@@ -49,33 +75,45 @@ export class CloneDeepHTML {
       var beforeContent = beforeElementStyle.content
       if (beforeContent && beforeContent.length > 0) {
         var text = document.createElement("span")
-        text.textContent = JSON.parse(beforeContent)
+        
+        text.textContent = "" + JSON.parse(beforeContent)
         text.style  = beforeContent.cssText
         node.appendChild(text)
       }
-      
     }
+    if (obj.tagName == "INPUT") {
+      // weired... why are they not connected?
+      node.value = obj.value
+      node.setAttribute("value", obj.value)
+    }
+    
     return node
   }
 
   static deepCopyAsHTML(obj) {
     var to = this.shallowClone(obj)
-    this.deepCopyAsHTMLFromTo(obj, to)
+    this.deepCopyAsHTMLFromTo(obj, to, undefined)
     return to
   }
 
-  static deepCopyAsHTMLFromTo(from, to) {
+  static deepCopyAsHTMLFromTo(from, to, root) {
+    var target = to;
+    
     if (from.shadowRoot) {
-      this.deepCopyAsHTMLFromTo(from.shadowRoot, to)
-      var contentNode  = to.querySelector("#CONTENTNODE")
-      if (contentNode) to = contentNode;
+      this.deepCopyAsHTMLFromTo(from.shadowRoot, to, from)
+      
+      var contentNode  = from._shadowRootContentNode
+      if (contentNode) {
+        lively.notify("found CONTENTNODE");
+        target = contentNode;
+      }
     }
     
     from.childNodes.forEach( fromChild => {
-      var toChild = this.shallowClone(fromChild);
+      var toChild = this.shallowClone(fromChild, target, root);
       if (toChild) {
-        to.appendChild(toChild);
-        this.deepCopyAsHTMLFromTo(fromChild, toChild);    
+        target.appendChild(toChild);
+        this.deepCopyAsHTMLFromTo(fromChild, toChild, root);    
       }
     })
   }
@@ -129,13 +167,25 @@ export default class Rasterize {
     var extent = lively.getExtent(element)
 
     var cloned = CloneDeepHTML.deepCopyAsHTML(element)
+    
+    
+    var h = document.createElement("html")
+    h.appendChild(document.createElement("body"))
+    // var style = document.createElement("style")
+    // style.textContent = await fetch(lively4url + "/src/external/font-awesome/css/font-awesome.css").then(r => r.text())
+    // h.appendChild(document.createElement("head"))
+    // h.querySelector("head").appendChild(style)
+    h.querySelector("body").appendChild(cloned)
+     
+     
+
     lively.setPosition(cloned, pt(0,0))
     var canvas = document.createElement("canvas")
     var zoom = 2;
     canvas.width = extent.x * zoom;
     canvas.height = extent.y * zoom;
     lively.notify(canvas.width, canvas.height)
-    await rasterizeHTML.drawHTML(cloned.outerHTML, canvas)
+    await rasterizeHTML.drawHTML(h.outerHTML, canvas)
     
     canvas = this.trimCanvas(canvas)
     return canvas
