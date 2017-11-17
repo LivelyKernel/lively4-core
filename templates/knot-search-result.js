@@ -1,6 +1,7 @@
 import Morph from './Morph.js';
 import { Graph } from './../src/client/triples/triples.js';
 import { getTempKeyFor } from 'src/client/draganddrop.js';
+import { fileName } from 'utils';
 
 // #TODO: chrome does not support dataTransfer.addElement :(
 // e.g. dt.addElement(<h1>drop me</h1>);
@@ -53,6 +54,10 @@ export default class KnotSearchResult extends Morph {
       dt.setData("text/uri-list", knot.url);
       dt.setData("text/plain", knot.url);
       dt.setData("javascript/object", getTempKeyFor(knot));
+      const mimeType = 'text/plain';
+      const filename = knot.url::fileName();
+      const url = knot.url;
+      dt.setData("DownloadURL", `${mimeType}:${filename}:${url}`);
       
       const dragInfo = <div>
         <h1>Hello World</h1>

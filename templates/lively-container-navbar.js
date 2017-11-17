@@ -1,6 +1,7 @@
 import Morph from './Morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import { applyDragCSSClass } from 'src/client/draganddrop.js';
+import { fileName } from 'utils';
 
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
@@ -53,7 +54,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   async copyFromURL(fromurl) {
-    var filename = fromurl.replace(/.*\//,"")
+    var filename = fromurl::fileName();
     var isDataURI;
     if (fromurl.match(/^data\:image\/png;/)) {
       isDataURI = true
