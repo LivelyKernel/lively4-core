@@ -1,23 +1,7 @@
 import Morph from './Morph.js';
 import { Graph } from './../src/client/triples/triples.js';
-import { getTempKeyFor } from 'src/client/draganddrop.js';
-
-// #TODO: chrome does not support dataTransfer.addElement :(
-// e.g. dt.addElement(<h1>drop me</h1>);
-// Therefore, we have to perform this hack stolen from:
-// https://stackoverflow.com/questions/12766103/html5-drag-and-drop-events-and-setdragimage-browser-support
-function asDragImageFor(evt, offsetX=0, offsetY=0) {
-  const clone = this.cloneNode(true);
-  document.body.appendChild(clone);
-  clone.style["z-index"] = "-100000";
-  clone.style.top = Math.max(0, evt.clientY - offsetY) + "px";
-  clone.style.left = Math.max(0, evt.clientX - offsetX) + "px";
-  clone.style.position = "absolute";
-  clone.style.pointerEvents = "none";
-
-  setTimeout(::clone.remove);
-  evt.dataTransfer.setDragImage(clone, offsetX, offsetY);
-}
+import { getTempKeyFor, asDragImageFor } from 'src/client/draganddrop.js';
+import { fileName } from 'utils';
 
 export default class KnotSearchResult extends Morph {
   // lazy initializer for knot array
@@ -53,6 +37,10 @@ export default class KnotSearchResult extends Morph {
       dt.setData("text/uri-list", knot.url);
       dt.setData("text/plain", knot.url);
       dt.setData("javascript/object", getTempKeyFor(knot));
+      const mimeType = 'text/plain';
+      const filename = knot.url::fileName();
+      const url = knot.url;
+      dt.setData("DownloadURL", `${mimeType}:${filename}:${url}`);
       
       const dragInfo = <div>
         <h1>Hello World</h1>
@@ -81,6 +69,17 @@ lively.notify('dragleave')}, false);
       lively.notify(":", evt.dataTransfer.getData("knot/url"));
     }, false);
     
+    listItem.addEventListener('click', evt => {
+      evt.stopPropagation();
+      evt.preventDefault();
+      
+      if(evt.ctrlKey) {
+        lively.warn("shift")
+      }
+      if(evt.shiftKey) {
+      }
+      listItem.classList.add("selected");
+    }, false);
     list.appendChild(listItem);
   }
   
