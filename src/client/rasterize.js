@@ -26,10 +26,19 @@ export class CloneDeepHTML {
     if (!obj) return;
     var node
     if (obj.constructor.name == "Text") {
-      node = document.createTextNode(obj.textContent)
+      if (obj.parentElement && obj.parentElement.tagName == "STYLE") {
+        node = document.createTextNode(obj.textContent.replace(/url\('\.\.\/fonts\/fontawesome-webfont/g, 
+                                                               `url('${lively4url}/src/external/font-awesome/fonts/fontawesome-webfont`)) 
+      } else {
+        node = document.createTextNode(obj.textContent) 
+      }
     } else if (obj.tagName == "CONTENT"){
       node = document.createElement("div")
       node.id = "CONTENTNODE"
+      return node
+    } else if (obj.tagName == "STYLE"){
+      node = document.createElement("style")
+      
       return node
     } else if ( obj.shadowRoot){
       node = document.createElement("div")
@@ -49,7 +58,8 @@ export class CloneDeepHTML {
       var beforeContent = beforeElementStyle.content
       if (beforeContent && beforeContent.length > 0) {
         var text = document.createElement("span")
-        text.textContent = JSON.parse(beforeContent)
+        
+        text.textContent = "" + JSON.parse(beforeContent)
         text.style  = beforeContent.cssText
         node.appendChild(text)
       }
@@ -129,13 +139,25 @@ export default class Rasterize {
     var extent = lively.getExtent(element)
 
     var cloned = CloneDeepHTML.deepCopyAsHTML(element)
+    
+    
+    var h = document.createElement("html")
+    h.appendChild(document.createElement("body"))
+    // var style = document.createElement("style")
+    // style.textContent = await fetch(lively4url + "/src/external/font-awesome/css/font-awesome.css").then(r => r.text())
+    // h.appendChild(document.createElement("head"))
+    // h.querySelector("head").appendChild(style)
+    h.querySelector("body").appendChild(cloned)
+     
+     
+
     lively.setPosition(cloned, pt(0,0))
     var canvas = document.createElement("canvas")
     var zoom = 2;
     canvas.width = extent.x * zoom;
     canvas.height = extent.y * zoom;
     lively.notify(canvas.width, canvas.height)
-    await rasterizeHTML.drawHTML(cloned.outerHTML, canvas)
+    await rasterizeHTML.drawHTML(h.outerHTML, canvas)
     
     canvas = this.trimCanvas(canvas)
     return canvas
