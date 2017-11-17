@@ -22,19 +22,23 @@ export class CloneDeepHTML {
     return css
   }
   
-  static shallowClone(obj) {
+  static shallowClone(obj, parent, root) {
     if (!obj) return;
     var node
     if (obj.constructor.name == "Text") {
       if (obj.parentElement && obj.parentElement.tagName == "STYLE") {
+        // #Hack hot fix font-awesome styles...
         node = document.createTextNode(obj.textContent.replace(/url\('\.\.\/fonts\/fontawesome-webfont/g, 
-                                                               `url('${lively4url}/src/external/font-awesome/fonts/fontawesome-webfont`)) 
+          `url('${lively4url}/src/external/font-awesome/fonts/fontawesome-webfont`)) 
       } else {
         node = document.createTextNode(obj.textContent) 
       }
     } else if (obj.tagName == "CONTENT"){
       node = document.createElement("div")
       node.id = "CONTENTNODE"
+      if (root) {
+        root._shadowRootContentNode = node
+      }      
       return node
     } else if (obj.tagName == "STYLE"){
       node = document.createElement("style")
@@ -43,8 +47,16 @@ export class CloneDeepHTML {
     } else if ( obj.shadowRoot){
       node = document.createElement("div")
     } else {
-      node = document.createElement(obj.tagName);
-    }    
+      if (!obj.tagName) {
+        // comments...
+      } else{
+        node = document.createElement(obj.tagName);
+      }
+    }
+    if (obj.tagName == "H1") {
+      lively.showElement(obj)
+    }
+    
     if (obj.attributes) {
       Array.from(obj.attributes).forEach(ea => {
         if (ea.name == "style") return;
@@ -70,22 +82,28 @@ export class CloneDeepHTML {
 
   static deepCopyAsHTML(obj) {
     var to = this.shallowClone(obj)
-    this.deepCopyAsHTMLFromTo(obj, to)
+    this.deepCopyAsHTMLFromTo(obj, to, undefined)
     return to
   }
 
-  static deepCopyAsHTMLFromTo(from, to) {
+  static deepCopyAsHTMLFromTo(from, to, root) {
+    var target = to;
+    
     if (from.shadowRoot) {
-      this.deepCopyAsHTMLFromTo(from.shadowRoot, to)
-      var contentNode  = to.querySelector("#CONTENTNODE")
-      if (contentNode) to = contentNode;
+      this.deepCopyAsHTMLFromTo(from.shadowRoot, to, from)
+      
+      var contentNode  = from._shadowRootContentNode
+      if (contentNode) {
+        lively.notify("found CONTENTNODE");
+        target = contentNode;
+      }
     }
     
     from.childNodes.forEach( fromChild => {
-      var toChild = this.shallowClone(fromChild);
+      var toChild = this.shallowClone(fromChild, target, root);
       if (toChild) {
-        to.appendChild(toChild);
-        this.deepCopyAsHTMLFromTo(fromChild, toChild);    
+        target.appendChild(toChild);
+        this.deepCopyAsHTMLFromTo(fromChild, toChild, root);    
       }
     })
   }
