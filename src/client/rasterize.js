@@ -104,7 +104,6 @@ export class CloneDeepHTML {
       
       var contentNode  = from._shadowRootContentNode
       if (contentNode) {
-        lively.notify("found CONTENTNODE");
         target = contentNode;
       }
     }
@@ -176,15 +175,12 @@ export default class Rasterize {
     // h.appendChild(document.createElement("head"))
     // h.querySelector("head").appendChild(style)
     h.querySelector("body").appendChild(cloned)
-     
-     
 
     lively.setPosition(cloned, pt(0,0))
     var canvas = document.createElement("canvas")
     var zoom = 2;
     canvas.width = extent.x * zoom;
     canvas.height = extent.y * zoom;
-    lively.notify(canvas.width, canvas.height)
     await rasterizeHTML.drawHTML(h.outerHTML, canvas)
     
     canvas = this.trimCanvas(canvas)
@@ -215,5 +211,59 @@ export default class Rasterize {
     return img
   } 
 }
+
+import Raster from "src/client/rasterize.js";
+
+export class TemplatePreview {
+  
+  static async generate() {
+  
+    
+  var dir;
+  var url = "https://lively-kernel.org/lively4/lively4-jens/templates/";
+  // $morph("PREVIEW").innerHTML = "";
+     dir = await fetch(url, {
+      method: "OPTIONS"
+    }).then( r => r.json())
+
+    var names = dir.contents
+      .filter(ea => ea.name.match(/\.html$/))
+      .map(ea => ea.name.replace(/.html$/,""))
+      .filter(ea => ea.match(/lively-/))    
+    for(let ea of names) {
+      console.log("PREVIEW work on:" + ea)
+      try {
+        var comp = await Promise.race([
+          lively.openComponentInWindow(ea),
+          await new Promise(r => setTimeout(r, 2000))
+        ])
+        if (!comp) {
+          console.log("could not load component in time: " + ea)
+          continue; 
+        }
+        // var a = $morph("RasterImg"); if(a) a.remove();
+        var img = await Raster.openAsImage(comp).then(img => {
+          // $morph("PREVIEW").appendChild(img)
+          // img.id = "RasterImg"
+          img.style.width = (img.width * 0.5) + "px"
+          return img
+        })
+        img.remove()
+        var imgData = await fetch(img.src).then(r => r.blob())      
+        var imgURL = url + ea + ".png";
+        await fetch(imgURL, { method: "PUT", body: imgData})
+        console.log("PREVIEW wrote " + imgURL)
+
+      } catch(e) {
+        console.log(e)
+      }
+      if (comp && comp.parentElement) {
+        comp.parentElement.remove()  
+      }
+    }
+  }
+}
+
+
 
 // Rasterize.openAsImage(that)
