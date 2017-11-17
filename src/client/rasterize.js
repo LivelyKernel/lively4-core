@@ -22,6 +22,7 @@ export class CloneDeepHTML {
     return css
   }
   
+  
   static shallowClone(obj, parent, root) {
     if (!obj) return;
     var node
