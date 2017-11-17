@@ -75,8 +75,13 @@ export class CloneDeepHTML {
         text.style  = beforeContent.cssText
         node.appendChild(text)
       }
-      
     }
+    if (obj.tagName == "INPUT") {
+      // weired... why are they not connected?
+      node.value = obj.value
+      node.setAttribute("value", obj.value)
+    }
+    
     return node
   }
 
