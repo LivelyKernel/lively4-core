@@ -14,6 +14,23 @@ export function applyDragCSSClass() {
   });
 }
 
+// #TODO: chrome does not support dataTransfer.addElement :(
+// e.g. dt.addElement(<h1>drop me</h1>);
+// Therefore, we have to perform this hack stolen from:
+// https://stackoverflow.com/questions/12766103/html5-drag-and-drop-events-and-setdragimage-browser-support
+export function asDragImageFor(evt, offsetX=0, offsetY=0) {
+  const clone = this.cloneNode(true);
+  document.body.appendChild(clone);
+  clone.style["z-index"] = "-100000";
+  clone.style.top = Math.max(0, evt.clientY - offsetY) + "px";
+  clone.style.left = Math.max(0, evt.clientX - offsetX) + "px";
+  clone.style.position = "absolute";
+  clone.style.pointerEvents = "none";
+
+  setTimeout(::clone.remove);
+  evt.dataTransfer.setDragImage(clone, offsetX, offsetY);
+}
+
 function appendToBodyAt(node, evt) {
   document.body.appendChild(node);
   lively.setGlobalPosition(node, pt(evt.clientX, evt.clientY));
