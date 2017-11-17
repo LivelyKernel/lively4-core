@@ -30,6 +30,7 @@ export class CloneDeepHTML {
     } else if (obj.tagName == "CONTENT"){
       node = document.createElement("div")
       node.id = "CONTENTNODE"
+      return node
     } else if ( obj.shadowRoot){
       node = document.createElement("div")
     } else {
