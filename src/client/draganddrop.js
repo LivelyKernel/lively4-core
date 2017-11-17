@@ -69,6 +69,8 @@ const dropOnDocumentBehavior = {
   },
   
   load() {
+    // #HACK: we remove listeners here, because this module is called three times (without unloading in between!!)
+    this.removeListeners();
     lively.addEventListener("dropOnDocumentBehavior", document, "dragover", ::this.onDragOver)
     lively.addEventListener("dropOnDocumentBehavior", document, "drop", ::this.onDrop)
     
