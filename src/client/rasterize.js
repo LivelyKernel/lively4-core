@@ -60,7 +60,11 @@ export class CloneDeepHTML {
     if (obj.attributes) {
       Array.from(obj.attributes).forEach(ea => {
         if (ea.name == "style") return;
-        node[ea.name] = "" + ea.value
+        try {
+          node[ea.name] = "" + ea.value        
+        } catch(e) {
+          console.log('rasterize: could not write attribute ' + ea.name + " from " + obj)
+        }
       })
       if (obj.style) {
         node.style = this.diffCSS(obj, node)      
