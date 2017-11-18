@@ -6,16 +6,26 @@
     overflow: auto;
   }
   search-term, li {
-  -moz-user-select: none;
-  -khtml-user-select: none;
-  -webkit-user-select: none;
-  user-select: none;
-   -khtml-user-drag: element;
-  -webkit-user-drag: element;
-  user-drag: element;
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -khtml-user-drag: element;
+    -webkit-user-drag: element;
+    user-drag: element;
+  }
+  li {
+    transition: background-color 0.2s ease-out;
+    border: 0.5px solid transparent;
+  }
+  li.selected {
+    background-color: steelblue;
+  }
+  li:hover {
+    background-color: lightblue;
   }
   li:focus {
-    color: red;
+    box-shadow: inset 0 0 8px #000000;
   }
 </style>
 Results for "<span id="search-term" draggable="true"></span>"

@@ -14,7 +14,7 @@ export default class LivelyPDF extends Morph {
       this.isLoaded = true
 
       if (this.getAttribute("src")) {
-        lively.notify("onload")
+        lively.notify("onload");
         this.setURL(this.getAttribute("src"));
       }
     })
@@ -22,7 +22,6 @@ export default class LivelyPDF extends Morph {
     if (this.getAttribute("overflow")) {
       this.get("#container").style.overflow = this.getAttribute("overflow")
     }
-    
     lively.addEventListener("pdf", this, "extent-changed", 
       (e) => this.onExtentChanged(e));
   }

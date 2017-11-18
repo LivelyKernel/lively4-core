@@ -23,10 +23,10 @@ var createEntry = async () => {
   }
   container.followPath(url)
   await container.editFile(url)
-  container.getAceEditor().focus()
-  container.getAceEditor().editor.selection.moveCursorDown()
-  container.getAceEditor().editor.selection.moveCursorDown()
-  container.getAceEditor().editor.selection.clearSelection()
+  container.focus()
+  // container.getAceEditor().editor.selection.moveCursorDown()
+  // container.getAceEditor().editor.selection.moveCursorDown()
+  // container.getAceEditor().editor.selection.clearSelection()
 
 }
 var button = document.createElement("button")

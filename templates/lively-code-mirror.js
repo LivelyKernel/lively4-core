@@ -351,7 +351,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     return this.wrapWidget(name, this.editor.getCursor(true), this.editor.getCursor(false))
   }
   
-   wrapWidget(name, from, to) {
+  wrapWidget(name, from, to) {
     var widget = document.createElement("span")
     widget.style.whiteSpace = "normal"
     var promise = lively.create(name, widget)
@@ -379,6 +379,12 @@ export default class LivelyCodeMirror extends HTMLElement {
       if (typeof obj[0] == 'object') {
         this.printWidget("lively-table").then( table => {
           table.setFromJSO(obj)      
+          table.style.maxHeight = "300px"
+          table.style.overflow = "auto"    
+        })
+      } else {
+        this.printWidget("lively-table").then( table => {
+          table.setFromJSO(obj.map((ea,index) => { return {index:index, value: ea}}))      
           table.style.maxHeight = "300px"
           table.style.overflow = "auto"    
         })
@@ -447,7 +453,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (result.then) {
       result = await result; // wait on any promise
     }
-    lively.openInspector(result, null, str) 
+    lively.openInspector(result, undefined, str) 
   }
   
 

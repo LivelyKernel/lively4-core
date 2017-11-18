@@ -7,14 +7,36 @@
 }
   
   .listentry {
-    margin: 10px;
+    margin: 0px;
+    display: block;
+    width: 100%;
+  }
+  
+  .listentry-content {
+    display: inline-block;
+    width: calc(100% - 2em)
+  }
+  
+  .listentry-unfold {
+    float: left;
+    width: 2em;
+  }
+  
+  .selected {
+    background: orange;
   }
   
   #content {
     background: white;
   }
+  
+  #raw-list {
+    display: none;
+  }
 </style>
 <div id="content">
+</div>
+<div id="raw-list">
   <content></content>
 </div>
 </template>
