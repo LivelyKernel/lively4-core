@@ -35,6 +35,22 @@ export default class KnotSearchResult extends Morph {
     
     // events fired on drag element
     listItem.addEventListener('dragstart', evt => {
+      function hintForLabel(label) {
+        return <div style="
+          margin: 0.5px 0px;
+          font-size: x-small;
+          background-color: lightgray;
+          border: 1px solid gray;
+          border-radius: 2px;
+          max-width: fit-content;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        ">
+          {label}
+        </div>
+      }
+
       const selectedItems = Array.from(this.getAllSubmorphs('li.selected'));
       if(selectedItems.length > 1 && selectedItems.includes(listItem)) {
         const dt = evt.dataTransfer;
@@ -42,34 +58,19 @@ export default class KnotSearchResult extends Morph {
         const knots = selectedItems.map(item => item.knot);
         dt.setData("javascript/object", getTempKeyFor(knots));
         
-        // #TODO: need array support for JSX
-        const dragInfo = <div style="width: 149px;"></div>;
-        function hintForLabel(label) {
-          return <div style="
-            margin: 0.5px 0px;
-            font-size: x-small;
-            background-color: lightgray;
-            border: 1px solid gray;
-            border-radius: 2px;
-            max-width: fit-content;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-          ">
-            {label}
-          </div>
-        }
         const hints = knots
           .map(knot => knot.label())
           .map(hintForLabel);
         const hintLength = hints.length;
-        const maxLength = 3;
+        const maxLength = 5;
         if(hints.length > maxLength) {
           hints.length = maxLength;
           hints.push(hintForLabel(`+ ${hintLength - maxLength} more.`))
         }
-        hints.forEach(preview => dragInfo.appendChild(preview));        
-        dragInfo::asDragImageFor(evt, 0, 2);
+        const dragInfo = <div style="width: 150px;">
+          {...hints}
+        </div>;
+        dragInfo::asDragImageFor(evt, -10, 2);
       } else {
         this.removeSelection();
         listItem.classList.add("selected");
@@ -82,11 +83,12 @@ export default class KnotSearchResult extends Morph {
         dt.setData("javascript/object", getTempKeyFor(knot));
         const mimeType = 'text/plain';
         const filename = knot.url::fileName();
-        const url = knot.url;
+        const url = "data:,Hello%2C%20World!" || knot.url;
         dt.setData("DownloadURL", `${mimeType}:${filename}:${url}`);
 
-        const dragInfo = <div style="background-color: blue;">
-            <span style="color: white;">{knot.label()}</span>
+        // #TODO: remove duplication
+        const dragInfo = <div style="width: 150px;">
+          {hintForLabel(knot.label())}
         </div>;
         dragInfo::asDragImageFor(evt, 50, 50);
       }
