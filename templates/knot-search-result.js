@@ -81,16 +81,24 @@ export default class KnotSearchResult extends Morph {
         dt.setData("text/uri-list", knot.url);
         dt.setData("text/plain", knot.url);
         dt.setData("javascript/object", getTempKeyFor(knot));
-        const mimeType = 'text/plain';
+        // #TODO: is it possible nowadays to put a data uri in a downloadurl?
+        const tryDataURIDownloadURL = true;
+        const mimeType = tryDataURIDownloadURL ?
+          'text/plain' :
+          'text/plain';
         const filename = knot.url::fileName();
-        const url = "data:,Hello%2C%20World!" || knot.url;
+        const url = tryDataURIDownloadURL ?
+          URL.createObjectURL(new Blob(["aFileParts"], {type : 'text/plain'})) ||
+              `data:application/x-javascript;base64,${btoa("helloworld")}` :
+          knot.url;
+        lively.warn(url);
         dt.setData("DownloadURL", `${mimeType}:${filename}:${url}`);
 
         // #TODO: remove duplication
         const dragInfo = <div style="width: 150px;">
           {hintForLabel(knot.label())}
         </div>;
-        dragInfo::asDragImageFor(evt, 50, 50);
+        dragInfo::asDragImageFor(evt, 50, 60);
       }
       
     }, false);
