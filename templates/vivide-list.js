@@ -113,7 +113,11 @@ export default class VivideList extends Morph {
   }
   
   output() {
-    return this.model.filter(elem => { return elem.selected; });
+    return this.model.filter(
+      elem => elem.selected
+    ).map(
+      elem => elem.object
+    );
   }
   
   wrap(object) {
