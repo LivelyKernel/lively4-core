@@ -27,7 +27,6 @@ import ViewNav from 'src/client/viewnav.js'
 /* expose external modules */
 import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
-import * as kernel from 'kernel';
 import Selection from 'templates/lively-selection.js'
 import windows from "templates/lively-window.js"
 import boundEval from "src/client/bound-eval.js";

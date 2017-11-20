@@ -2,7 +2,6 @@ import scriptManager from  "src/client/script-manager.js";
 // import * as persistence from  "src/client/persistence.js";
 import Morph from "templates/Morph.js";
 import {pt} from '../graphics.js';
-import * as kernel from 'kernel';
 import { through } from "utils";
 
 // store promises of loaded and currently loading templates
@@ -305,7 +304,7 @@ export default class ComponentLoader {
       // #TODO continue here url.exists() 
       var link = document.createElement("link");
       link.rel = "import";
-      link.href = kernel.resolve(url)
+      link.href = lively4url + url;
       link.dataset.lively4Donotpersist = "all";
       
       document.head.appendChild(link);

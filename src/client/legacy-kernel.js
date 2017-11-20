@@ -9,7 +9,3 @@
 export function resolve(name) {
   return new URL(realpath(name), window.lively4url).toString()
 }
-
-export function realpath(name) {
-  return new URL(window.lively4url + '/' + name).pathname.replace(/\/+/g, '/')
-}
