@@ -264,9 +264,11 @@ export default class Container extends Morph {
       if (comp.livelyExample) comp.livelyExample(); // fill in with example content
   }
 
-  onApply() {
+  async onApply() {
     var url = this.getURL().toString();
-    if (url.match(/templates\/.*\.(html)|(js)$/)) {
+    var filename = url.replace(/.*\//,"")
+    var foundTemplate = await lively.components.searchTemplateFilename(filename)
+    if (url == foundTemplate) {
       this.openTemplateInstance(url);
     } else if (url.match(/\.js$/))  {
       this.reloadModule(url);
@@ -387,6 +389,21 @@ export default class Container extends Morph {
     }
     lively.notify("Save as... in EditMode not implemented yet");
   }
+  
+  contentIsTemplate(sourceCode) {
+    return this.getPath().match(/.*html/) 
+      && sourceCode.match(/<template/)
+  }
+  
+  async urlInTemplate(url) {
+    var filename = url.toString().replace(/.*\//,"")
+    var foundTemplate = await lively.components.searchTemplateFilename(filename)
+    return url == foundTemplate
+  }
+
+  getSourceCode() {
+    return this.get("#editor").currentEditor().getValue()
+  }
 
   onSave(doNotQuit) {
     if (!this.isEditing()) {
@@ -401,20 +418,18 @@ export default class Container extends Morph {
     this.get("#editor").setURL(this.getURL());
     
     return this.get("#editor").saveFile().then( async () => {
-      var sourceCode = this.get("#editor").currentEditor().getValue();
-      if (this.getPath().match(/templates\/.*html/)) {
+      var sourceCode = this.getSourceCode();
+      var url = this.getURL();
+      if (await this.urlInTemplate(url)) {
         lively.updateTemplate(sourceCode);
       }
-      var url = this.getURL();
-      
-      
+
       if (this.getPath().match(/.*css/)) {
         this.updateCSS();
       }
       
       this.updateOtherContainers();
-      
-    
+
       var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/);
       if (moduleName) {
         moduleName = moduleName[1];

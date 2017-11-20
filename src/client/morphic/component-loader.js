@@ -11,6 +11,7 @@ export var loadingPromises = {};
 var _templates;
 var _prototypes;
 var _proxies;
+var _templatePaths;
 
 // for compatibility
 export function register(componentName, template, prototype) {
@@ -293,18 +294,49 @@ export default class ComponentLoader {
     })
   }
 
+  static getTemplatePaths() {
+    if (!_templatePaths) {
+      _templatePaths = [
+        lively4url + '/templates/',
+        lively4url + '/src/components/'
+      ]; // default
+    } 
+    return _templatePaths
+  }
+
+  static addTemplatePath(path) {
+    var all = this.getTemplatePaths()
+    if (!all.includes(path)) {
+      all.push(path)
+    }
+  }
+
+  static async searchTemplateFilename(filename) {
+    var templatePaths =  this.getTemplatePaths()
+    let templateDir = undefined;          
+    for(templateDir of templatePaths) {
+      var stats = await fetch(templateDir, { method: 'OPTIONS' }).then(resp => resp.json());
+      var found = stats.contents.find(ea => ea.name == filename)
+      if (found) break;  
+    }
+    if (!found) return undefined;
+    return templateDir + filename
+  }
+  
+  
   // this function loads a component by adding a link tag to the head
-   static async loadByName(name) {
-      function toTitleCase(str) {
-        return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+  static async loadByName(name) {
+      var url = await this.searchTemplateFilename(name + '.html')
+      if (!url) {
+        throw new Error("Could not find template for " + name)
       }
-    
-      // #TODO make templates path configurable... and make its search in many places
-      var url = '/templates/' + name + '.html'
+     
+      console.log("load component: " + url)
+      
       // #TODO continue here url.exists() 
       var link = document.createElement("link");
       link.rel = "import";
-      link.href = lively4url + url;
+      link.href = url;
       link.dataset.lively4Donotpersist = "all";
       
       document.head.appendChild(link);
