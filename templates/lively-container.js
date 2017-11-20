@@ -806,7 +806,7 @@ export default class Container extends Morph {
   }
 
   getPath() {
-    return this.shadowRoot.querySelector("#container-path").value;
+    return encodeURI(this.shadowRoot.querySelector("#container-path").value);
   }
 
   getEditor() {
@@ -964,7 +964,7 @@ export default class Container extends Morph {
     
 	  this.setAttribute("src", path);
     this.clear();
-    this.get('#container-path').value = path.replace(/\%20/g, " ");
+    this.get('#container-path').value = decodeURI(path);
     container.style.overflow = "auto";
 
     url = this.getURL();
