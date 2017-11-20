@@ -236,7 +236,7 @@ export default class ComponentLoader {
       // filter for unique tag names
       var name = el.nodeName.toLowerCase();
       return !unique.has(name) && unique.add(name);
-    }).map((el) => {
+    }).map(async (el) => {
       var name = el.nodeName.toLowerCase();
       if (loadingPromises[name]) {
         // the loading was already triggered
@@ -256,7 +256,7 @@ export default class ComponentLoader {
       
       loadingPromises[name].name = name + " " + Date.now()
       
-      this.loadByName(name);
+      await this.loadByName(name);
 
       return createdPromise;
     });
@@ -295,7 +295,7 @@ export default class ComponentLoader {
   }
 
   // this function loads a component by adding a link tag to the head
-  static loadByName(name) {
+   static async loadByName(name) {
       function toTitleCase(str) {
         return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
       }

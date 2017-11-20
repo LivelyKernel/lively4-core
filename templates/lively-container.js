@@ -729,11 +729,11 @@ export default class Container extends Morph {
     }, 0)
   }
   
-  appendTemplate(name) {
+  async appendTemplate(name) {
     try {
     	var node = lively.components.createComponent(name);
     	this.getContentRoot().appendChild(node);
-      lively.components.loadByName(name);
+      await lively.components.loadByName(name);
     } catch(e) {
       console.log("Could not append html:" + content);
     }
