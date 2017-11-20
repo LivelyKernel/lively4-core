@@ -104,7 +104,8 @@ const dropOnDocumentBehavior = {
           if(!dt.types.includes("javascript/object")) { return false; }
           const tempKey = dt.getData("javascript/object");
 
-          lively.openInspector(getObjectFor(tempKey), pt(evt.clientX, evt.clientY));
+          lively.openInspector(getObjectFor(tempKey), pt(evt.pageX, evt.pageY));
+          //debugger
           removeTempKey(tempKey);
 
           return true;

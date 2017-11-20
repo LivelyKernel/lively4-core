@@ -82,7 +82,7 @@ export default class KnotSearchResult extends Morph {
         dt.setData("text/plain", knot.url);
         dt.setData("javascript/object", getTempKeyFor(knot));
         // #TODO: is it possible nowadays to put a data uri in a downloadurl?
-        const tryDataURIDownloadURL = true;
+        const tryDataURIDownloadURL = false;
         const mimeType = tryDataURIDownloadURL ?
           'text/plain' :
           'text/plain';
