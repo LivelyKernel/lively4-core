@@ -1397,6 +1397,10 @@ export default class Container extends Morph {
     }
   }
   
+  async livelyExample() {
+    return this.followPath(lively4url + "/README.md")
+  }
+  
   livelyMigrate(other) {
     // other = that
     this.isMigrating = true;
