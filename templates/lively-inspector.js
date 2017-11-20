@@ -180,21 +180,29 @@ export default class Inspector   extends Morph {
       var attrNode = node.querySelector("#attributes");
       Array.from(obj.attributes).forEach(ea => {
         var eaNode = document.createElement("span");
-        eaNode.innerHTML = ` <span class='attrName'>${ea.name}=</span>${this.quoteTemplate}<span class="attrValue">${ea.value}</span>${this.quoteTemplate}`;
+        var value = "" + ea.value;
+        var maxvaluelength = 60;
+        if (value.length > maxvaluelength) {
+          var shortenValue = true
+          value = value.slice(0, maxvaluelength) + "..."
+        }
+        eaNode.innerHTML = ` <span class='attrName'>${ea.name}=</span>${this.quoteTemplate}<span class="attrValue">${value}</span>${this.quoteTemplate}`;
         var valueNode = eaNode.querySelector(".attrValue") ;
         // Editing of attribute values in inspector
-        valueNode.onclick = evt => {
-          eaNode.querySelector(".attrValue").contentEditable = true;
-          return true;
-        };
-        // accept changes in content editable attribute value
-        valueNode.onkeydown = evt => {
-          if(evt.keyCode == 13) { // on enter -> like in input fields
-           valueNode.contentEditable = false;
-            this.changeAttributeValue(obj, ea.name, valueNode.textContent);
-            evt.preventDefault();
-          }
-        };
+        if (!shortenValue) {
+          valueNode.onclick = evt => {
+            eaNode.querySelector(".attrValue").contentEditable = true;
+            return true;
+          };
+          // accept changes in content editable attribute value
+          valueNode.onkeydown = evt => {
+            if(evt.keyCode == 13) { // on enter -> like in input fields
+             valueNode.contentEditable = false;
+              this.changeAttributeValue(obj, ea.name, valueNode.textContent);
+              evt.preventDefault();
+            }
+          };          
+        }
         attrNode.appendChild(eaNode);
       });
     }
@@ -500,6 +508,10 @@ export default class Inspector   extends Morph {
     div.style.overflow = "auto"
     lively.components.openInWindow(div, undefined, "Inspect Array")
     
+  }
+  
+  livelyExample() {
+    this.inspect(document.body)
   }
   
   livelyMigrate(oldInstance) {
