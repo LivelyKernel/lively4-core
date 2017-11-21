@@ -53,7 +53,7 @@ export class Cache {
   _onlineResponse(request, p) {
     // When online, handle requests normaly and store the result
     return p.then((response) => {
-      // Store OPTIONS and GET requests in the cache
+      // Currently, we only store OPTIONS and GET requests in the cache
       if (this._cacheMethods.includes(request.method)) {
         this._put(request, response);
       }
