@@ -264,11 +264,9 @@ export default class Container extends Morph {
       if (comp.livelyExample) comp.livelyExample(); // fill in with example content
   }
 
-  async onApply() {
+  onApply() {
     var url = this.getURL().toString();
-    var filename = url.replace(/.*\//,"")
-    var foundTemplate = await lively.components.searchTemplateFilename(filename)
-    if (url == foundTemplate) {
+    if (url.match(/templates\/.*\.(html)|(js)$/)) {
       this.openTemplateInstance(url);
     } else if (url.match(/\.js$/))  {
       this.reloadModule(url);
@@ -389,21 +387,6 @@ export default class Container extends Morph {
     }
     lively.notify("Save as... in EditMode not implemented yet");
   }
-  
-  contentIsTemplate(sourceCode) {
-    return this.getPath().match(/.*html/) 
-      && sourceCode.match(/<template/)
-  }
-  
-  async urlInTemplate(url) {
-    var filename = url.toString().replace(/.*\//,"")
-    var foundTemplate = await lively.components.searchTemplateFilename(filename)
-    return url == foundTemplate
-  }
-
-  getSourceCode() {
-    return this.get("#editor").currentEditor().getValue()
-  }
 
   onSave(doNotQuit) {
     if (!this.isEditing()) {
@@ -418,18 +401,20 @@ export default class Container extends Morph {
     this.get("#editor").setURL(this.getURL());
     
     return this.get("#editor").saveFile().then( async () => {
-      var sourceCode = this.getSourceCode();
-      var url = this.getURL();
-      if (await this.urlInTemplate(url)) {
+      var sourceCode = this.get("#editor").currentEditor().getValue();
+      if (this.getPath().match(/templates\/.*html/)) {
         lively.updateTemplate(sourceCode);
       }
-
+      var url = this.getURL();
+      
+      
       if (this.getPath().match(/.*css/)) {
         this.updateCSS();
       }
       
       this.updateOtherContainers();
-
+      
+    
       var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/);
       if (moduleName) {
         moduleName = moduleName[1];
@@ -744,11 +729,11 @@ export default class Container extends Morph {
     }, 0)
   }
   
-  async appendTemplate(name) {
+  appendTemplate(name) {
     try {
     	var node = lively.components.createComponent(name);
     	this.getContentRoot().appendChild(node);
-      await lively.components.loadByName(name);
+      lively.components.loadByName(name);
     } catch(e) {
       console.log("Could not append html:" + content);
     }
@@ -821,7 +806,7 @@ export default class Container extends Morph {
   }
 
   getPath() {
-    return encodeURI(this.shadowRoot.querySelector("#container-path").value);
+    return this.shadowRoot.querySelector("#container-path").value;
   }
 
   getEditor() {
@@ -979,7 +964,7 @@ export default class Container extends Morph {
     
 	  this.setAttribute("src", path);
     this.clear();
-    this.get('#container-path').value = decodeURI(path);
+    this.get('#container-path').value = path.replace(/\%20/g, " ");
     container.style.overflow = "auto";
 
     url = this.getURL();
@@ -1410,10 +1395,6 @@ export default class Container extends Morph {
       this.oldCursor = fileEditor.getCursor()
       this.oldFocused = document.activeElement == this
     }
-  }
-  
-  async livelyExample() {
-    return this.followPath(lively4url + "/README.md")
   }
   
   livelyMigrate(other) {

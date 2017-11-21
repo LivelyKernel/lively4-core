@@ -4,7 +4,6 @@ import { getTempKeyFor, asDragImageFor } from 'src/client/draganddrop.js';
 import { fileName } from 'utils';
 import generateUUID from 'src/client/uuid.js';
 
-var x = 0;
 export default class KnotSearchResult extends Morph {
   // lazy initializer for knot array
   get knots() { return this._knots = this._knots || []; }
@@ -83,7 +82,7 @@ export default class KnotSearchResult extends Morph {
         dt.setData("text/plain", knot.url);
         dt.setData("javascript/object", getTempKeyFor(knot));
         // #TODO: is it possible nowadays to put a data uri in a downloadurl?
-        const tryDataURIDownloadURL = false;
+        const tryDataURIDownloadURL = true;
         const mimeType = tryDataURIDownloadURL ?
           'text/plain' :
           'text/plain';
@@ -103,10 +102,7 @@ export default class KnotSearchResult extends Morph {
       }
       
     }, false);
-    listItem.addEventListener('drag', evt => {
-      if(x++ % 10 !== 0) { return; }
-      //lively.showPoint(pt(evt.clientX, evt.clientY));
-    }, false);
+    listItem.addEventListener('drag', evt => {}, false);
     listItem.addEventListener('dragend', evt => {
       listItem.style.color = null;
     }, false);

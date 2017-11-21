@@ -1,6 +1,5 @@
 import { Dictionary } from './dictionary.js';
 import { Queue } from './queue.js';
-import { FavoritsTracker } from './favoritstracker.js';
 import Serializer from './serializer.js';
 import { ConnectionManager } from './connectionmanager.js';
 import * as msg from './messaging.js'
@@ -17,7 +16,6 @@ export class Cache {
   constructor(fileSystem) {
     this._dictionary = new Dictionary();
     this._queue = new Queue();
-    this._favorits = new FavoritsTracker();
     this._connectionManager = new ConnectionManager();
     this._fileSystem = fileSystem;
     
