@@ -282,7 +282,7 @@ export default class ComponentLoader {
           }
         })
         if (unfinished) {
-          resolve("timeout") // "(if) the fuel gauge breaks, call maintenance. Ifre not there in 20 minutes, fuck it."
+          resolve("timeout") // "(if) the fuel gauge breaks, call maintenance. If they are not there in 20 minutes, fuck it."
           lively.notify("Timout due to unresolved promises, while loading " + unfinishedPromise.name + " context: " + debuggingHint )
         }
       }, 15 * 1000)
