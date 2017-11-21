@@ -15,14 +15,9 @@ export class Cache {
    * @param fileSystem A reference to the filesystem. Needed to process queued filesystem requests.
    */
   constructor(fileSystem) {
-    this._managesFavorits = true;
     this._dictionary = new Dictionary();
     this._queue = new Queue();
-<<<<<<< HEAD
     this._favorits = new FavoritsTracker();
-=======
-    this._favoritsTracker = new FavoritsTracker();
->>>>>>> c51e2658fca70ffe8c953edb6c1328279f923c2c
     this._connectionManager = new ConnectionManager();
     this._fileSystem = fileSystem;
     
@@ -45,10 +40,6 @@ export class Cache {
    * To be used e.g. in `event.respondWith(...)`.
    */
   fetch(request, p) {
-    if (this._managesFavorits) {
-      this._favoritsTracker.update(request.url);
-    }
-    
     if (this._connectionManager.isOnline) {
       return this._onlineResponse(request, p);
     } else {

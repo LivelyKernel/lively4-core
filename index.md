@@ -9,7 +9,7 @@
 - [readme](README.md)
 
 
-## Live Source Code n
+## Live Source Code
 
 - [modules](src/client/) 
   - [lively.js](src/client/lively.js)

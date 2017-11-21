@@ -26,14 +26,6 @@ SystemJS.config({
 )
 
 function init() {
-  /*caches.open('lively_boot_cache').then(function(cache) {
-     return cache.addAll([
-       '/',
-       '/start.html',
-       '/index.html?homescreen=1'
-     ]);
-   })*/
-  
   return System.import(lively4swx + "swx.js?2")
 }
 console.log("Base system loaded after  " + (Date.now() - startSwxTime) + "ms")

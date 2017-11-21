@@ -8,10 +8,6 @@ export class Dictionary extends DbObject {
   constructor() {
     super('dictionary');
     this._connect();
-<<<<<<< HEAD
-=======
-    // TODO: Invalidate old objects
->>>>>>> c51e2658fca70ffe8c953edb6c1328279f923c2c
   }
   
   /**
