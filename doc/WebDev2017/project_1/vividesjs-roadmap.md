@@ -2,7 +2,7 @@
 
 ## Current Architecture
 
-![Architecture Image Missing](./architecture.png)
+![Architecture Image Missing](./architecture_v2.png)
 
 ## Roadmap
 
@@ -10,7 +10,7 @@
  - [x] scriptable data transformation
  - [x] scriptable data presentation
  - [x] data-flow between widgets
- - [ ] displaying tree structures
+ - [x] displaying tree structures
  - [ ] infinite / recursive trees
  - [ ] tables
  - [ ] connecting widgets using drag-and-drop

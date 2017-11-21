@@ -106,9 +106,9 @@ export default class LivelyMarkdown extends Morph {
     //  highlight.highlightBlock(block);
     //});
     
-    await components.loadUnresolved(root);
+    components.loadUnresolved(root);
     
-    await persistence.initLivelyObject(root)
+    persistence.initLivelyObject(root)
   }
 
   followPath(path) {
@@ -187,8 +187,8 @@ export default class LivelyMarkdown extends Morph {
   }
   
   livelyExample() {
-    this.setDir(lively4url + "/docs/")
-    return this.setContent(`
+ this.setDir(lively4url + "/docs/")
+    this.setContent(`
 # a script
 
 <script>
@@ -206,14 +206,13 @@ function foo() {
 `)
   }
   
-  async livelyExample3() {
-    await this.setSrc(lively4url + "/README.md")
-    
+  livelyExample3() {
+    this.setSrc(lively4url + "/README.md")
   }
  
   livelyExample2() {
     this.setDir(lively4url + "/docs/")
-    return this.setContent(`
+    this.setContent(`
 # Hello World
 
 - list item 1 [a link]("markdown.md")
