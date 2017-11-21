@@ -6,18 +6,8 @@ import { DbObject } from './dbobject.js';
  */
 export class Dictionary extends DbObject {
   constructor() {
-    super('lively-sw-dictionary', 'cache');
-    
-    var request = indexedDB.open(this._dbName, 1);
-    
-    request.onupgradeneeded = (event) => {
-      this._db = event.target.result;
-      this._db.createObjectStore(this._storeName);
-    }; 
-    
-    request.onsuccess = (event) => {
-      this._db = event.target.result;
-    }
+    super('dictionary');
+    this._connect();
   }
   
   /**
