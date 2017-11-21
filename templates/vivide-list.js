@@ -35,9 +35,9 @@ export default class VivideList extends Morph {
     this.childrenGeneration = generationFunction;
   }
   
-  toggleSelection(wrapper) {
+  elementSelect(index) {
     return () => {
-      wrapper.selected = wrapper.selected ? false : true;
+      this.selection[index] = this.selection[index] ? false : true;
       this.display()
       for(let i in this.successors) {
         this.successors[i].trigger();
@@ -45,21 +45,15 @@ export default class VivideList extends Morph {
     }
   }
   
-  toggleChildren(wrapper) {
+  toggleChildren(index) {
     return () => {
-      if(wrapper.hasChildren) {
-        wrapper.children = [];
-        wrapper.hasChildren = false;
-      } else {
-        wrapper.children = this.childrenGeneration(wrapper.object);
-        wrapper.hasChildren = true;
-      }
+      this.showChildren[index] = this.showChildren[index] ? false : true;
       this.display()
     }
   }
   
   display() {
-    this.textContent = this.model.map(elem => this.depiction(elem.object)).join('<br />');
+    this.textContent = this.model.map(elem => this.depiction(elem)).join('<br />');
     let root = this.get("#content");
     root.innerHTML = "";
     for(let i in this.model) {
@@ -70,41 +64,44 @@ export default class VivideList extends Morph {
       let listentryUnfold = document.createElement("div");
       listentryUnfold.id = "listentry-unfold" + i;
       listentryUnfold.className = "listentry-unfold";
-      listentryUnfold.addEventListener("click", this.toggleChildren(this.model[i]));
+      listentryUnfold.addEventListener("click", this.toggleChildren(i));
       listentryUnfold.innerHTML = "(v)";
       
       let listentryContent = document.createElement("div");
       listentryContent.id = "listentry-content" + i;
       listentryContent.className = "listentry-content";
-      if(this.model[i].selected) { listentryContent.classList.add("selected"); }
-      listentryContent.addEventListener("click", this.toggleSelection(this.model[i]));
-      listentryContent.innerHTML = this.depiction(this.model[i].object);
+      if(this.selection[i]) { listentryContent.classList.add("selected"); }
+      listentryContent.addEventListener("click", this.elementSelect(i));
+      listentryContent.innerHTML = this.depiction(this.model[i]);
       
       listentry.appendChild(listentryUnfold);
       listentry.appendChild(listentryContent);
       root.appendChild(listentry);
       
-      if(this.model[i].children) {
+      if(this.showChildren[i]) {
         // TODO: refactor this, extract concept
         // IDEA: every entry has to be treated uniformly, children and root elements
-        let children = this.model[i].children;
+        let children = this.childrenGeneration(this.model[i]);
         
-        for(let j in children) {
+        for(let i in children) {
           let listentry = document.createElement("div");
-          listentry.id = "listentry" + i + "-" + j;
+          listentry.id = "listentry" + i;
           listentry.className = "listentry";
       
-          let listentryPlaceholder = document.createElement("div");
-          listentryPlaceholder.id = "listentry-placeholder" + i + "-" + j;
-          listentryPlaceholder.className = "listentry-placeholder";
-          listentryPlaceholder.innerHTML = "&nbsp;";
+          let listentryUnfold = document.createElement("div");
+          listentryUnfold.id = "listentry-unfold" + i;
+          listentryUnfold.className = "listentry-unfold";
+          // listentryUnfold.addEventListener("click", this.toggleChildren(i));
+          listentryUnfold.innerHTML = "(v)";
       
           let listentryContent = document.createElement("div");
-          listentryContent.id = "listentry-content" + i + "-" + j;
+          listentryContent.id = "listentry-content" + i;
           listentryContent.className = "listentry-content";
-          listentryContent.innerHTML = children[j];
+          if(this.selection[i]) { listentryContent.classList.add("selected"); }
+          // listentryContent.addEventListener("click", this.elementSelect(i));
+          listentryContent.innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;" + children[i];
       
-          listentry.appendChild(listentryPlaceholder);
+          listentry.appendChild(listentryUnfold);
           listentry.appendChild(listentryContent);
           root.appendChild(listentry);
         }
@@ -113,26 +110,13 @@ export default class VivideList extends Morph {
   }
   
   output() {
-    return this.model.filter(
-      elem => elem.selected
-    ).map(
-      elem => elem.object
-    );
-  }
-  
-  wrap(object) {
-    let wrapper = {
-      object: object,
-      selected: false,
-      children: [],
-      hasChildren: false,
-    }
-    return wrapper;
+    return this.model.filter((elem, index) => { return this.selection[index]; });
   }
   
   setModel(model) {
-    model = this.transformation(model);
-    this.model = model.map(elem => this.wrap(elem));
+    this.model = this.transformation(model);
+    this.selection = this.model.map(elem => false);
+    this.showChildren = this.model.map(elem => false);
   }
   
   show(model) {

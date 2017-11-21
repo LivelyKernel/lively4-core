@@ -4,7 +4,6 @@ import { getTempKeyFor, asDragImageFor } from 'src/client/draganddrop.js';
 import { fileName } from 'utils';
 import generateUUID from 'src/client/uuid.js';
 
-var x = 0;
 export default class KnotSearchResult extends Morph {
   // lazy initializer for knot array
   get knots() { return this._knots = this._knots || []; }
@@ -82,31 +81,20 @@ export default class KnotSearchResult extends Morph {
         dt.setData("text/uri-list", knot.url);
         dt.setData("text/plain", knot.url);
         dt.setData("javascript/object", getTempKeyFor(knot));
-        // #TODO: is it possible nowadays to put a data uri in a downloadurl?
-        const tryDataURIDownloadURL = false;
-        const mimeType = tryDataURIDownloadURL ?
-          'text/plain' :
-          'text/plain';
+        const mimeType = 'text/plain';
         const filename = knot.url::fileName();
-        const url = tryDataURIDownloadURL ?
-          URL.createObjectURL(new Blob(["aFileParts"], {type : 'text/plain'})) ||
-              `data:application/x-javascript;base64,${btoa("helloworld")}` :
-          knot.url;
-        lively.warn(url);
+        const url = "data:,Hello%2C%20World!" || knot.url;
         dt.setData("DownloadURL", `${mimeType}:${filename}:${url}`);
 
         // #TODO: remove duplication
         const dragInfo = <div style="width: 150px;">
           {hintForLabel(knot.label())}
         </div>;
-        dragInfo::asDragImageFor(evt, 50, 60);
+        dragInfo::asDragImageFor(evt, 50, 50);
       }
       
     }, false);
-    listItem.addEventListener('drag', evt => {
-      if(x++ % 10 !== 0) { return; }
-      //lively.showPoint(pt(evt.clientX, evt.clientY));
-    }, false);
+    listItem.addEventListener('drag', evt => {}, false);
     listItem.addEventListener('dragend', evt => {
       listItem.style.color = null;
     }, false);

@@ -13,7 +13,7 @@ export class Dictionary extends DbObject {
     request.onupgradeneeded = (event) => {
       this._db = event.target.result;
       this._db.createObjectStore(this._storeName);
-    };
+    }; 
     
     request.onsuccess = (event) => {
       this._db = event.target.result;

@@ -85,7 +85,8 @@ if (window.lively && window.lively4url) {
         'plugin-babel': lively4url + '/src/external/babel/plugin-babel2.js',
         'systemjs-plugin-babel': lively4url + '/src/external/babel/plugin-babel.js',
         'systemjs-babel-build': lively4url + '/src/external/babel/systemjs-babel-browser.js',
-    
+        'kernel': lively4url + '/src/client/legacy-kernel.js',
+
         // aexpr support
         'active-expressions': lively4url + '/src/external/aexpr/active-expressions/src/active-expressions.js',
         'aexpr-source-transformation-propagation': lively4url + '/src/external/aexpr/aexpr-source-transformation-propagation/src/aexpr-source-transformation-propagation.js',
