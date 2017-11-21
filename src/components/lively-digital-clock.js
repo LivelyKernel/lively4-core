@@ -1,6 +1,6 @@
 'use strict';
 
-import Morph from './Morph.js';
+import Morph from 'templates/Morph.js';
 
 export default class DigitalClock extends Morph {
 
@@ -10,9 +10,6 @@ export default class DigitalClock extends Morph {
       this.start = Date.now()
   }
 
-  /*
-   * HTMLElement callbacks
-   */
   attachedCallback() {
     this.setup();
   }
@@ -27,16 +24,10 @@ export default class DigitalClock extends Morph {
     }
   }
 
-  /*
-   * Initialization
-   */
   setup() {
     this.renderLoop();
   }
 
-  /*
-   * Window methods
-   */
   render() {
     this.updateTime();
   }
@@ -60,11 +51,11 @@ export default class DigitalClock extends Morph {
   updateTime() {
     var date = new Date()
     var time = date.getTime() - this.start
-    this.shadowRoot.innerHTML = "" + this.formatTime(date) + " Timer: " + Math.round(time / 1000 / 60) +"min" ;
+    this.shadowRoot.innerHTML = "" + this.formatTime(date) + 
+      " timer: " + Math.round(time / 1000 / 60) +"min" ;
   }
   
   livelyMigrate(oldInstance) {
-    
     this.start = oldInstance.start
   }
   

@@ -12,7 +12,7 @@ export class ConnectionManager {
     this.isOnline = true;
     
     // Listeners to notify on StatusChange
-    this._listeners = []; 
+    this._listeners = [];
     
     // Add a listener to receive forwarded 'offline' and 'online' events from the window
     self.addEventListener('message', (e) => { 
@@ -27,7 +27,7 @@ export class ConnectionManager {
       }
     });
     
-    // Repeatedly check if we are really online, since the browser's 'online' status is not reliable 
+    // Repeatedly check if we are really online, since the browser's 'online' status is not reliable
     self.setInterval(this._checkOnline, CHECK_INTERVAL, this);
   }
   
