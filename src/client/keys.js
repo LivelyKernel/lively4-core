@@ -48,9 +48,6 @@ export default class Keys {
         ["Search", ctrl && shiftKey && char == "F", evt => {
           lively.openSearchWidget(this.getTextSelection(), null, evt.path[0]);
         }],
-        ["Search Graph", ctrl && altKey && char == "F", evt => {
-          GraphControl.fullTextSearch(this.getTextSelection());
-        }],
         ["Open Container", shiftKey && ctrl && char == "B", evt => {
           lively.openBrowser(this.getTextSelection());
         }],
@@ -71,8 +68,11 @@ export default class Keys {
         ["Open Graph Control", ctrl && altKey && char == "G", evt => {
           lively.openComponentInWindow("graph-control");
         }],
-        ["Open Graph Control", ctrl && altKey && char == "D", evt => {
+        ["Open Research Diary", ctrl && altKey && char == "D", evt => {
           lively.openComponentInWindow("research-diary");
+        }],
+        ["Search Graph", ctrl && altKey && char == "F", evt => {
+          GraphControl.fullTextSearch(this.getTextSelection());
         }],
         ["Hide Search Widget", keyCode == 27, evt => {
           lively.hideSearchWidget();
