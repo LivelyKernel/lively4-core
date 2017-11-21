@@ -15,11 +15,15 @@
     user-drag: element;
   }
   li {
+    transition: color 0.2s ease-out;
     transition: background-color 0.2s ease-out;
     border: 0.5px solid transparent;
   }
   li.selected {
     background-color: steelblue;
+  }
+  li.last-selected {
+    color: white;
   }
   li:hover {
     background-color: lightblue;
