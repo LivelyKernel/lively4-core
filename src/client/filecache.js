@@ -114,20 +114,25 @@ export default class FileCache {
   }
 
   parseSource(filename, source) {
-    return babel.transform(source, {
-        babelrc: false,
-        plugins: [],
-        presets: [],
-        filename: filename,
-        sourceFileName: filename,
-        moduleIds: false,
-        sourceMaps: true,
-        compact: false,
-        comments: true,
-        code: true,
-        ast: true,
-        resolveModuleSource: undefined
-    }).ast
+    try {
+      return babel.transform(source, {
+          babelrc: false,
+          plugins: [],
+          presets: [],
+          filename: filename,
+          sourceFileName: filename,
+          moduleIds: false,
+          sourceMaps: true,
+          compact: false,
+          comments: true,
+          code: true,
+          ast: true,
+          resolveModuleSource: undefined
+      }).ast
+    } catch(e) {
+      console.log('FileCache, could not parse: ' + filename)
+      return undefined
+    }
   }
   
 

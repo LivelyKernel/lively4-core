@@ -36,6 +36,12 @@ export function promisedEvent(eventTarget, type) {
   return new Promise(resolve => eventTarget.addEventListener(type, resolve))
 }
 
+// #TODO: make this more robust to urlStrings that do not contain a filename, e.g.
+// "https://goole.com"::fileName() should not "goole.com"
+export function fileName() {
+  return this.replace(/.*\//,"");
+}
+
 export class PausableLoop {
   constructor(func) {
     this.func = func;

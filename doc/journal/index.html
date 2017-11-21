@@ -23,10 +23,10 @@ var createEntry = async () => {
   }
   container.followPath(url)
   await container.editFile(url)
-  container.getAceEditor().focus()
-  container.getAceEditor().editor.selection.moveCursorDown()
-  container.getAceEditor().editor.selection.moveCursorDown()
-  container.getAceEditor().editor.selection.clearSelection()
+  container.focus()
+  // container.getAceEditor().editor.selection.moveCursorDown()
+  // container.getAceEditor().editor.selection.moveCursorDown()
+  // container.getAceEditor().editor.selection.clearSelection()
 
 }
 var button = document.createElement("button")
@@ -67,7 +67,7 @@ import FileCache from "src/client/filecache.js"
         li.appendChild(span)
         var span = document.createElement("span")
         span.style.width = "40px"
-        span.innerHTML = " " + file.title.replace(/\d\d\d\d-\d\d-\d\d,? ?/,"")
+        span.innerHTML = " " + file.title.replace(/\d\d\d\d-\d\d-\d\d,? ?/,"").replace(/</g,"&lt;")
         li.appendChild(span)
       })
       li.appendChild(a)

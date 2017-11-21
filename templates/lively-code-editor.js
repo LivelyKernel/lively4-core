@@ -1,4 +1,4 @@
-/*
+/* #Refactor use #LivelyEditor again! #TODO
  * Lively 4 Text Editor
  * - simple load/save/navigate UI, that can be disabled to use elsewhere, e.g. container
  * - updates change indicator while when editting,loading, and saving

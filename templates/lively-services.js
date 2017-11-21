@@ -1,11 +1,18 @@
 import Morph from './Morph.js';
+import {pt} from 'src/client/graphics.js';
 
 const mountURL = 'https://lively4/sys/fs/mount';
 const mountEndpoint = '/services';
 const isLocalHost = document.location.hostname.indexOf('localhost') > -1;
 const localBaseURL = 'http://localhost:9007/';
-const remoteBaseURL = 'https://lively-kernel.org/lively4services/';
-var servicesURL = isLocalHost ? localBaseURL : remoteBaseURL;
+const remoteBaseURL = 'https://lively-kernel.org/lively4services';
+const servicesRootURL = remoteBaseURL + "/mount/"
+
+      // 'https://lively-kernel.org/lively4/lively4-services/services';
+
+var servicesURL = isLocalHost ? localBaseURL : (remoteBaseURL + "/");
+
+
 
 export default class Services extends Morph {
 
@@ -55,7 +62,7 @@ export default class Services extends Morph {
     this.logInterval = null;
 
     this.detachedCallback = this.unload;
-    if (!this.isInTesting) this.ensureRemoteServicesMounted(); // will block with confirmation
+    // if (!this.isInTesting) this.ensureRemoteServicesMounted(); // will block with confirmation
   }
 
   unload() {
@@ -74,12 +81,12 @@ export default class Services extends Morph {
   }
 
   addButtonClick(evt) {
-    var browser = lively.components.createComponent('lively-file-browser');
-    lively.components.openInWindow(browser).then(() => {
-      browser.path = mountEndpoint;
+    lively.openComponentInWindow('lively-file-browser').then(browser => {
+      browser.path = servicesRootURL;
+      lively.setGlobalPosition(browser.parentElement, lively.getGlobalPosition(this.parentElement).addPt(pt(30,30)))
       browser.setMainAction((url) => {
-        const relativePath = url.pathname.replace(mountEndpoint + '/', '');
-
+        const relativePath = url.toString().replace(servicesRootURL + '/', '');
+        
         this.serviceTop.removeAttribute('data-id');
         this.entryPoint.value = relativePath;
         this.entryPoint.focus();
@@ -87,7 +94,7 @@ export default class Services extends Morph {
         this.unselectAll();
 
         this.startButtonClick(relativePath);
-        browser.parentElement.closeButtonClicked();
+        browser.parentElement.onCloseButtonClicked();
       });
     });
   }
@@ -105,7 +112,7 @@ export default class Services extends Morph {
   }
 
   editButtonClick() {
-    lively.openBrowser(servicesURL + 'mount/');
+    lively.openBrowser(servicesRootURL);
   }
 
   cloneButtonClick() {

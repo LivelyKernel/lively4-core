@@ -26,38 +26,40 @@ export default class KnotView extends Morph {
     }
   }
   
-  buildNavigatableLinkFor(knot) {
-    let ref = document.createElement('a');
-    ref.innerHTML = knot.label();
-    ref.addEventListener("click", e => {
-      this.loadKnotForURL(knot.fileName);
-    });
+  buildMetadata(knot) {
+    const metadataTable = this.get("#metadata-table");
+    metadataTable.innerHTML = "";
     
-    return ref;
+    for (const [key, value] of Object.entries(knot.getMetadata())) {
+      metadataTable.appendChild(<tr>
+        <td>{key}</td>
+        <td>{value}</td>
+      </tr>);
+    }
+  }
+  
+  buildNavigatableLinkFor(knot) {
+    return <a click={e => this.loadKnotForURL(knot.fileName)}>
+      {knot.label()}
+    </a>;
   }
   buildRefFor(knot) {
     return this.buildNavigatableLinkFor(knot);
   }
   buildTableDataFor(knot) {
-    let tableData = document.createElement('td');
-
-    tableData.appendChild(this.buildRefFor(knot));
-    
-    let icon = document.createElement('i');
-    icon.classList.add('fa', 'fa-search');
-    icon.addEventListener("click", e => {
-      lively.openInspector(knot, undefined, knot.label());
-    });
-    tableData.appendChild(icon);
-
-    return tableData;
+    return <td>
+      {this.buildRefFor(knot)}
+      <i class="fa fa-search" click={e => {
+        lively.openInspector(knot, undefined, knot.label());
+      }}></i>
+    </td>;
   }
   buildTableRowFor(triple, knot1, knot2) {
-    let tableRow = document.createElement('tr');
-    tableRow.appendChild(this.buildTableDataFor(knot1));
-    tableRow.appendChild(this.buildTableDataFor(knot2));
-    tableRow.appendChild(this.buildTableDataFor(triple));
-    return tableRow;
+    return <tr>
+      {this.buildTableDataFor(knot1)}
+      {this.buildTableDataFor(knot2)}
+      {this.buildTableDataFor(triple)}
+    </tr>;
   }
   async replaceTableBodyFor(selector, s, p, o, propForFirstCell, propForSecondCell) {
     let graph = await Graph.getInstance();
@@ -99,11 +101,7 @@ export default class KnotView extends Morph {
         }
       }
       
-      let listItem = document.createElement('li');
-      listItem.innerHTML = isExternalLink(url) ?
-        url + '<i class="fa fa-external-link"></i>' :
-        url;
-      listItem.addEventListener("click", async e => {
+      async function followURL(e) {
         if(isExternalLink(url)) {
           window.open(url);
         } else {
@@ -113,8 +111,14 @@ export default class KnotView extends Morph {
         e.preventDefault();
         e.stopPropagation();
         return true;
-      });
-      urlList.appendChild(listItem);
+      }
+
+      urlList.appendChild(<li click={followURL}>
+        {isExternalLink(url) ?
+          url + '<i class="fa fa-external-link"></i>' :
+          url
+        }
+      </li>);
     });
     
     // Tags
@@ -125,42 +129,36 @@ export default class KnotView extends Morph {
       let tagElement = this.buildTagWidget(triple.object, triple);
       tagContainer.appendChild(tagElement);
     });
-    let addTagButton = this.get('#add-tag');
-    addTagButton.onclick = event => this.addTag(event);
+    this.get('#add-tag').onclick = event => this.addTag(event);
 
     // spo tables
     this.replaceTableBodyFor('#po-table', knot, _, _, 'predicate', 'object');
     this.replaceTableBodyFor('#so-table', _, knot, _, 'subject', 'object');
     this.replaceTableBodyFor('#sp-table', _, _, knot, 'subject', 'predicate');
 
-    // add buttons
-    let addTripleWithKnotAsSubject = this.get('#add-triple-as-subject');
-    addTripleWithKnotAsSubject.onclick = event => this.addTripleWithKnotAsSubject(event);
-    let addTripleWithKnotAsPredicate = this.get('#add-triple-as-predicate');
-    addTripleWithKnotAsPredicate.onclick = event => this.addTripleWithKnotAsPredicate(event);
-    let addTripleWithKnotAsObject = this.get('#add-triple-as-object');
-    addTripleWithKnotAsObject.onclick = event => this.addTripleWithKnotAsObject(event);
+    // add button behavior
+    this.get('#add-triple-as-subject').onclick = evt => this.addTripleWithKnotAsSubject(evt);
+    this.get('#add-triple-as-predicate').onclick = evt => this.addTripleWithKnotAsPredicate(evt);
+    this.get('#add-triple-as-object').onclick = evt => this.addTripleWithKnotAsObject(evt);
 
+    // metadata
+    //this.buildMetadata(knot);
+    
     // content
     this.buildContentFor(knot);
 
   }
   
   buildTagWidget(tag, triple) {
-    let tagElement = document.createElement('div');
-    tagElement.appendChild(this.buildNavigatableLinkFor(tag));
-    tagElement.appendChild(this.buildDeleteTagElement(triple));
-
-    return tagElement;
+    return <div>
+      {this.buildNavigatableLinkFor(tag)}
+      {this.buildDeleteTagElement(triple)}
+    </div>;
   }
   buildDeleteTagElement(triple) {
-    let ref = document.createElement('i');
-    ref.classList.add('fa', 'fa-trash');
-    ref.addEventListener("click", e => {
+    return <i class="fa fa-trash" click={e => {
       this.deleteTagTriple(triple);
-    });
-    
-    return ref;
+    }}></i>;
   }
   async deleteTagTriple(triple) {
     const graph = await Graph.getInstance();
@@ -169,10 +167,9 @@ export default class KnotView extends Morph {
     if(await graph.deleteKnot(knot)) {
       this.refresh();
     } else {
-      lively.notify('did not delete tag ' + triple.object.fileName);
+      lively.notify(`did not delete tag ${triple.object.fileName}`);
     }
   }
-
 
   refresh() {
     this.loadKnot(this.urlString);
@@ -185,7 +182,7 @@ export default class KnotView extends Morph {
       const elementToRemove = this.parentElement.isWindow ? this.parentElement : this;
       elementToRemove.remove();
     } else {
-      lively.notify('did not delete knot ' + this.urlString);
+      lively.notify(`did not delete knot ${this.urlString}`);
     }
   }
   
@@ -227,11 +224,7 @@ export default class KnotView extends Morph {
   }
 
   buildListItemFor(knot, role) {
-    let li = document.createElement('li');
-    li.innerHTML = `${role}: `;
-    li.appendChild(this.buildRefFor(knot));
-    
-    return li;
+    return <li>{role}: {this.buildRefFor(knot)}</li>;
   }
   buildContentFor(knot) {
     let aceComp = this.get('#content-editor');

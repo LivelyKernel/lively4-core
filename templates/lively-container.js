@@ -7,10 +7,12 @@ import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/external/ContextJS/src/contextjs.js";
 import ScopedScripts from "./ScopedScripts.js";
-import Clipboard from "src/client/clipboard.js" 
-import {debounce} from "utils"
+import Clipboard from "src/client/clipboard.js"; 
+import {debounce} from "utils";
 
 export default class Container extends Morph {
+  
+  get target() { return this.childNodes[0] }
 
   initialize() {
     // this.shadowRoot.querySelector("livelyStyle").innerHTML = '{color: red}'
@@ -32,6 +34,10 @@ export default class Container extends Morph {
     lively.loadCSSThroughDOM("hightlight", lively4url + "/src/external/highlight.css");
 
     lively.addEventListener("Container", this, "mousedown", evt => this.onMouseDown(evt));
+    this.addEventListener("extent-changed", function(evt) {
+      if (!this.target) return;
+      this.target.dispatchEvent(new CustomEvent("extent-changed"));
+    });
 
     // #TODO continue here, halo selection and container do now work yet
     // var halos = halo.halo && halo.halo[0];
@@ -176,7 +182,7 @@ export default class Container extends Morph {
 
   onKeyDown(evt) {
     var char = String.fromCharCode(evt.keyCode || evt.charCode);
-    if (evt.ctrlKey && char == "S") {
+    if ((evt.ctrlKey || evt.metaKey /* metaKey = cmd key on Mac */) && char == "S") {
       if (evt.shiftKey) {
         this.onAccept();          
       } else {
@@ -487,7 +493,6 @@ export default class Container extends Morph {
       })
       
       if (putResponse.status !== 200) {
-        debugger
         lively.confirm("could not rename to " + newURL)
         return 
       }
@@ -500,7 +505,6 @@ export default class Container extends Morph {
 
       var getResponse = await fetch(newURL)
       if (getResponse.status !== 200) {
-        debugger
         lively.notify("save again, because we might need to...")
         var putAgainResponse = await fetch(newURL, {
           method: 'PUT',
@@ -585,7 +589,6 @@ export default class Container extends Morph {
       }
     }
     if (this.wasContentEditable) {
-      lively.notify("was content editable")
       md.contentEditable = true  
     }
     
@@ -954,7 +957,8 @@ export default class Container extends Morph {
       if (presentation) {
         this.lastPage  = presentation.currentSlideNumber()
       }
-      this.wasContentEditable = markdown.contentEditable
+      
+      this.wasContentEditable = markdown.contentEditable == "true"
     }
     
     
@@ -1166,13 +1170,13 @@ export default class Container extends Morph {
     
   }
 
-  saveHTML(url) {
-    this.saveSource(url, this.getHTMLSource());
+  async saveHTML(url) {
+    return this.saveSource(url, this.getHTMLSource());
   }
   
   async saveMarkdown(url) {
     var source = await this.get("lively-markdown").htmlAsMarkdownSource()
-    this.saveSource(url, source);
+    return this.saveSource(url, source);
   }
   
   saveEditsInView(url) {
@@ -1357,6 +1361,19 @@ export default class Container extends Morph {
     // if (editor) {
     //   editor.focus()
     // }
+  }
+  
+  createLink(base, name, href) {
+    var link = document.createElement("a")
+    link.textContent = name
+    var path = base + href
+    link.href = path
+    link.addEventListener("click", (evt) => {
+        this.followPath(path); 
+        evt.preventDefault(); 
+        evt.stopPropagation()
+    }); 
+    return link  
   }
   
   livelyAcceptsDrop() {

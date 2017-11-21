@@ -196,13 +196,13 @@ export default class ContextMenu {
   
   static worldMenuItems(worldContext) {
     return  [
-      ["Workspace", (evt) => {
+      ["Workspace", evt => {
         this.hide();
         lively.openWorkspace("", null, worldContext).then(comp => {
           this.positionElementAtEvent(comp.parentElement, worldContext, evt)
         });
       }, "CMD+K", '<i class="fa fa-window-maximize" aria-hidden="true"></i>'],
-      ["Browse/Edit", (evt) => {
+      ["Browse/Edit", evt => {
           var container = _.last(document.querySelectorAll("lively-container"));
           this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
             if (container)
@@ -215,13 +215,13 @@ export default class ContextMenu {
           });
         }, 
         "CMD+SHIFT+B", '<i class="fa fa-cogs" aria-hidden="true"></i>'],
-      // ["File Editor", (evt) => this.openComponentInWindow("lively-editor", evt)],
-      // ["File Browser", (evt) => this.openComponentInWindow("lively-file-browser", evt)],
-      ["Component Bin", (evt) => 
+      // ["File Editor", evt => this.openComponentInWindow("lively-editor", evt)],
+      // ["File Browser", evt => this.openComponentInWindow("lively-file-browser", evt)],
+      ["Component Bin", evt => 
         this.openComponentInWindow("lively-component-bin", evt, worldContext),
        "CMD+O", '<i class="fa fa-th" aria-hidden="true"></i>'],
       ["Insert", [
-        ["Text", (evt) => {
+        ["Text", evt => {
           var morph  = document.createElement("p");
           morph.innerHTML = "Hello";
           morph.contentEditable = true;
@@ -232,8 +232,8 @@ export default class ContextMenu {
             morph.classList.add("lively-content")
           }
           this.hide();
-        }],
-        ["Rectangle", (evt) => {
+        }, "", '<i class="fa fa-font" aria-hidden="true"></i>'],
+        ["Rectangle", evt => {
           var morph  = document.createElement("div");
           morph.style.width = "200px";
           morph.style.height = "100px";
@@ -249,8 +249,8 @@ export default class ContextMenu {
           
 
           this.hide();
-        }],
-         ["Drawing", async (evt) => {
+        }, "", '<i class="fa fa-square-o" aria-hidden="true"></i>'],
+         ["Drawing", async evt => {
           var morph  = document.createElement("lively-drawboard");
           morph.setAttribute("width", "400px");
           morph.setAttribute("height", "400px");
@@ -264,8 +264,8 @@ export default class ContextMenu {
           }
           morph.style.backgroundColor = 'rgb(255,250,205)';
           this.hide();
-        }], 
-        ["Button", async (evt) => {
+        }, "", '<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'], 
+        ["Button", async evt => {
           var clipboard = await System.import("src/client/clipboard.js").then(m => m.default)
           var data = await fetch(lively4url + "/parts/button.html").then(t => t.text())
           var morph  = clipboard.pasteHTMLDataInto(data, worldContext).childNodes[0];
@@ -279,25 +279,24 @@ export default class ContextMenu {
         }]
       ]],
       ["Tools", [
-        // ["Services", (evt) => this.openComponentInWindow("lively-services", evt)],
-        // ["Terminal", (evt) => this.openComponentInWindow("lively-terminal", evt)],
-        ["Console", (evt) => this.openComponentInWindow("lively-console", evt, worldContext), 
+        // ["Services", evt => this.openComponentInWindow("lively-services", evt)],
+        // ["Terminal", evt => this.openComponentInWindow("lively-terminal", evt)],
+        ["Console", evt => this.openComponentInWindow("lively-console", evt, worldContext), 
           "CMD+J", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
-        ["Search", (evt) => this.openComponentInWindow("lively-search", evt, worldContext),
+        ["Search", evt => this.openComponentInWindow("lively-search", evt, worldContext),
           "CMD+SHIFT+F",'<i class="fa fa-search" aria-hidden="true"></i>'],
-        // ['Debugger', (evt) => lively.openDebugger().then( cmp), 
+        // ['Debugger', evt => lively.openDebugger().then( cmp), 
         //   "", '<i class="fa fa-chrome" aria-hidden="true"></i>'],
-        ['Inspector', (evt) => 
-          lively.openInspector(worldContext, undefined, undefined, worldContext).then(comp => {
-            this.positionElementAtEvent(comp.parentElement, worldContext, evt)
-          }), 
-          "", '<i class="fa fa-info-circle" aria-hidden="true"></i>'],
-        ["Test Runner", (evt) => this.openComponentInWindow("lively-testrunner", evt, worldContext),
+        ["Test Runner", evt => this.openComponentInWindow("lively-testrunner", evt, worldContext),
           "", '<i class="fa fa-check-square-o" aria-hidden="true"></i>'],
-        ["Drawboard", (evt) => this.openComponentInWindow("lively-drawboard", evt, worldContext),
+        ["Drawboard", evt => this.openComponentInWindow("lively-drawboard", evt, worldContext),
           "", '<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'],
-        ["Storage Setup", (evt) => this.openComponentInWindow("lively-filesystems", evt, worldContext),
+        ["Storage Setup", evt => this.openComponentInWindow("lively-filesystems", evt, worldContext),
           "", '<i class="fa fa-cloud" aria-hidden="true"></i>'],
+        ["Graph Control", evt => this.openComponentInWindow("graph-control", evt, worldContext),
+          "Ctrl+Alt+G", '<i class="fa fa-globe" aria-hidden="true"></i>'],
+        ["Diary", evt => this.openComponentInWindow("research-diary", evt, worldContext),
+          "Ctrl+Alt+D", '<i class="fa fa-book" aria-hidden="true"></i>'],
       ]],
       [
         "Windows", 
@@ -383,7 +382,7 @@ export default class ContextMenu {
           },, '<i class="fa fa-info" aria-hidden="true"></i>']
       ]],
       ["Preferences", 
-          ["ShowDocumentGrid", "InteractiveLayer", "ShowFixedBrowser", "SnapWindowsInGrid", "DisableAExpWorkspace", "DisableAltGrab", "UseTernInCodeMirror", "UseAsyncWorkspace"].map(ea => this.preferenceEntry(ea))
+          ["ShowDocumentGrid", "InteractiveLayer", "ShowFixedBrowser", "SnapWindowsInGrid", "DisableAExpWorkspace", "DisableAltGrab", "UseTernInCodeMirror", "UseAsyncWorkspace", "CtrlAsHaloModifier"].map(ea => this.preferenceEntry(ea))
       ],
       
       // ["Customize Page", (evt) => {

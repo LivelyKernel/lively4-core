@@ -77,7 +77,7 @@ export default class upndown {
     walkNode(resolve, reject, options, lenode) {
       
         if(lenode && lenode.type == "comment") {
-          resolve("\n<!-- " + lenode.data + " -->")
+          resolve("\n<!--" + lenode.data + "-->")
         } else if(this.isText(lenode)) {
             resolve(this.text(lenode));
         } else {

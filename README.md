@@ -1,25 +1,37 @@
 [![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core) Core functionality for [Lively4](https://github.com/LivelyKernel/Lively4/wiki/).
 
-# Example Lively4 Sites
+# Lively4
+
+A self-supporting Web-based development environment. 
+
+### Example Lively4 Sites
+
+<!-- 
 
 - [https://livelykernel.github.io/lively4-core/](https://livelykernel.github.io/lively4-core/start.html)
 	- HEAD of Lively4 core repository
 	- served by github.io
 	- no CORS (not usable by [Lively4 chrome plugin](https://github.com/LivelyKernel/lively4-chrome-loader)
 	- edits go to github but take time, login to github using filesystem component
-	
-- [https://lively-kernel.org/lively4/lively4-core/](https://lively-kernel.org/lively4/lively4-core/start.html)
-	- served with lively4-server
-	- manually updated
-	- CORS support, default server for lively4 chrome extension
-	- directly edit source code in a self-supporting way
-	- A second server [https://lively-kernel.org/lively4S2/lively4-core/](https://lively-kernel.org/lively4S2/lively4-core/) is used to allow for safe self-supporting develpment even on the [lively4-server code](https://lively-kernel.org/lively4/lively4-core/start.html?edit=https://lively-kernel.org/lively4/lively4-server/httpServer.js)
 
+-->
+
+### [lively-kernel.org > lively4-core](https://lively-kernel.org/lively4/lively4-core/start.html)
+
+- served with lively4-server
+- manually updated
+- CORS support, default server for lively4 chrome extension
+- directly edit source code in a self-supporting way
+- A second server [https://lively-kernel.org/lively4S2/lively4-core/](https://lively-kernel.org/lively4S2/lively4-core/) is used to allow for safe self-supporting develpment even on the [lively4-server code](https://lively-kernel.org/lively4/lively4-core/start.html?edit=https://lively-kernel.org/lively4/lively4-server/httpServer.js)
+
+<!--
 - [Lively4 Journal](https://lively-kernel.org/lively4/lively4-core/start.html?load=https://lively-kernel.org/lively4/Lively4.wiki/Journal.md) or see the [same in Github Wiki](https://github.com/LivelyKernel/Lively4/wiki/Journal) 
+-->
+
+## Other Projects
 
 
-
-# Chrome Extension
+### Chrome Extension
 
 - install [Chrome Extension](https://chrome.google.com/webstore/detail/lively4-loader/nolpicfdelklinibcdldjhajakffhhom) to load Lively4 into any webpage and start adapting your website while you visit it.... 
 

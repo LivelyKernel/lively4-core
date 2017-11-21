@@ -43,12 +43,18 @@ export default class LivelyTable extends Morph {
     }
   }
   
-  setFocusAndTextSelection(element) {
-    if (!element) return;
+  clearAllSelection() {
     this.querySelectorAll("td").forEach(ea => {
       ea.classList.remove("editing")
-      ea.contentEditable = false
+      ea.removeAttribute("contentEditable")
+      // ea.contentEditable = false
+ 
     })
+  }
+  
+  setFocusAndTextSelection(element) {
+    if (!element) return;
+    this.clearAllSelection()
 
     element.contentEditable = true
     element.focus()
@@ -106,7 +112,7 @@ export default class LivelyTable extends Morph {
 
   clearSelection(doNotClearStart) {
     if (this.currentCell) {
-      this.currentCell.contentEditable = false
+      this.currentCell.removeAttribute("contentEditable")
       this.currentCell.classList.remove("table-selected")
     }
     if (!doNotClearStart) {
@@ -451,13 +457,14 @@ export default class LivelyTable extends Morph {
   maxColumnsIn(array) {
     return array.reduce((sum, ea) => Math.max(sum, ea.length), 0)
   }
+  
   setFromArrayClean(array) {
     var maxColumns = this.maxColumnsIn(array)
     this.innerHTML = "<table>" +
       array.map((row,rowIndex) => {
         var html = ""
         for(var i=0; i < maxColumns; i++) {
-         var ea = row[i] || "";
+        var ea = row[i] !== undefined ? row[i] : "";
          html += rowIndex == 0 ? // header 
             `<th style="width: 40px">${ea}</th>` : 
             `<td>${ea}</th>`
