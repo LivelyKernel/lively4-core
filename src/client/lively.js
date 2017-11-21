@@ -347,7 +347,7 @@ export default class Lively {
   }
   
   static openInspector(object, pos, str, worldContext) {
-    return lively.openComponentInWindow("lively-inspector", null, pt(400,500), worldContext).then( inspector => {
+    return lively.openComponentInWindow("lively-inspector", pos, pt(400,500), worldContext).then(inspector => {
         inspector.windowTitle = "Inspect: " + str;
         inspector.inspect(object);
         return inspector
@@ -627,6 +627,14 @@ export default class Lively {
     } catch(e) {
       console.log("ERROR in lively.notify: " + e)
     }
+  }
+  
+  static warn(title, text, timeout, cb) {
+    this.notify(title, text, timeout, cb, 'yellow');
+  }
+  
+  static error(title, text, timeout, cb) {
+    this.notify(title, text, timeout, cb, 'red');
   }
   
   

@@ -81,8 +81,9 @@ class Knot {
   }
 
   toListItem() {
-    const listItem = <li tabindex="1">{this.label()}</li>;
-
+    const listItem = <li tabindex="1" draggable="true">{this.label()}</li>;
+    listItem.knot = this;
+    
     listItem.addEventListener('keydown', event => {
       if (event.keyCode == 13) { // ENTER
         this.openViewInWindow();

@@ -5,22 +5,20 @@ import { DbObject } from './dbobject.js';
  */
 export class Queue extends DbObject {
   constructor() {
-    super();
-    this._dbName = 'lively-sw-queue',
-    this._storeName = 'queue';
+    super('lively-sw-queue', 'queue');
     
     var request = indexedDB.open(this._dbName, 1);
     
     request.onupgradeneeded = (event) => {
-      this.db = event.target.result;
-      this.db.createObjectStore(this._storeName, {
+      this._db = event.target.result;
+      this._db.createObjectStore(this._storeName, {
         keyPath: 'id',
         autoIncrement: true
       });
     };
     
     request.onsuccess = (event) => {
-      this.db = event.target.result;
+      this._db = event.target.result;
     }
   }
   
@@ -35,17 +33,17 @@ export class Queue extends DbObject {
    * Retrieves an item from the queue
    * @return Promise
    */
-  /*dequeue() {
+  dequeue() {
     return new Promise((resolve, reject) => {
+      // Get oldest entry
       var request = this._getObjectStore().openCursor();
       request.onsuccess = (event) => {
-        if(request.result) {
-          // Copy result
-          result = {}.assign(request.result);
-          
-          // Remove from DB
-          deleteRequest = this._getObjectStore().delete(result.);
-          resolve(request.result);
+        if (request.result) {
+          // Delete entry from DB
+          this._getObjectStore().delete(request.result.key).onsuccess = () => {
+            // Return value
+            resolve(request.result.value);
+          };
         } else {
           resolve(null);
         }
@@ -54,5 +52,5 @@ export class Queue extends DbObject {
         resolve(null);
       }
     });
-  }*/
+  }
 }

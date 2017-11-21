@@ -9,6 +9,7 @@ export default class Resizer extends Morph {
   initialize() {
     // console.log("intialize separator " )
     this.draggable = true;
+    // #TODO #Refactor, because we use drag and drop semantically now, use PointerEvents here...
     lively.addEventListener('lively', this,'dragstart', evt => this.onDragStart(evt));
     lively.addEventListener('lively', this,'drag', evt => this.onDrag(evt));
     lively.addEventListener('lively', this,'dragend', evt => this.onDragEnd(evt));
@@ -183,11 +184,13 @@ export default class Resizer extends Morph {
     this.setLength(element, newExtent)
       
     evt.stopPropagation();
+    evt.preventDefault();
   }
   
   onDragEnd(evt) {
     // Do nothing...
 	  evt.stopPropagation();
+    evt.preventDefault();
   }
 
 }

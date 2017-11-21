@@ -19,7 +19,8 @@ export default class Preferences {
       DisableAExpWorkspace: {default: false, short: "disable AExp in workspace"},
       DisableAltGrab: {default: false, short: "disable alt grab with hand"},
       UseAsyncWorkspace: {default: false, short: "support await in eval"},
-      UseTernInCodeMirror: {default: true, short: "enable tern autocomplete and navigation"}
+      UseTernInCodeMirror: {default: true, short: "enable tern autocomplete and navigation"},
+      CtrlAsHaloModifier: {default: false, short: "ctrl key as halo modifier"}
     };
   }
 

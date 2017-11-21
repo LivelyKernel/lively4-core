@@ -1,8 +1,13 @@
-
+import Preferences from "./../preferences.js";
 // import... HaloService from /templates/classes/Halo.js
 
 export default class Selecting {
 
+  static shouldHandle(e) {
+    return Preferences.get('CtrlAsHaloModifier') ?
+        e.ctrlKey || e.metaKey :
+        e.altKey;
+  }
   static load() {
      if (!window.lively) {
       return setTimeout(() => {Selecting.load()}, 100) // defere
@@ -18,10 +23,10 @@ export default class Selecting {
       (evt) => this.handleSelect(evt), true);
   }
 
-
   static handleMouseDown(e) {
     // lively.showElement(e.path[0])
-    if (e.ctrlKey || e.metaKey) {
+    
+    if (this.shouldHandle(e)) {
       // console.log("mouse down " + e.target.tagName)
       e.stopPropagation();
       e.preventDefault();
@@ -29,7 +34,7 @@ export default class Selecting {
   }
 
   static handleMouseUp(e) {
-    if (e.ctrlKey || e.metaKey) {
+    if (this.shouldHandle(e)) {
       // console.log("mouse up " + e.target.tagName)
       e.stopPropagation();
       e.preventDefault();
@@ -83,7 +88,7 @@ export default class Selecting {
   }
   
   static handleSelect(e) {
-    if (e.ctrlKey || e.metaKey) {
+    if (this.shouldHandle(e)) {
       var rootNode = this.findRootNode(document.body)
       var path = this.slicePathIfContainerContent(e.path);
       path = path.reverse()
