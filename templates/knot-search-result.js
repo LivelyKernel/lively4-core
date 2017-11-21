@@ -107,6 +107,7 @@ export default class KnotSearchResult extends Morph {
         </div>;
         dragInfo::asDragImageFor(evt, 50, 60);
       }
+      
     });
     listItem.addEventListener('drag', evt => {});
     listItem.addEventListener('dragend', evt => {

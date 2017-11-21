@@ -20,35 +20,35 @@ export default class ComponentBin extends Morph {
     
   }
 
-  loadComponentList() {
-    return new Promise((resolve, reject) => {
-      var templatesUrl = lively4url + "/templates/";
-      files.statFile(templatesUrl).then(response => {
+  async loadComponentList() {
+    var templatesUrl = lively4url + "/templates/";
+    var paths =  lively.components.getTemplatePaths()
+    var contents  = []
+    for(let templatesUrl of paths) {
+      await files.statFile(templatesUrl).then(response => {
         try {
           // depending in the content type, the response is either parsed or not,
           // github always returns text/plain
-          response = JSON.parse(response);
+          contents = contents.concat(JSON.parse(response).contents);
         } catch (e) {
           // it was already json
         }
-        if (!response) resolve([])
-
-        resolve(response.contents.filter(file => {
-            return file.type === "file" && file.name.match(/\.html$/);
-          }).map(file => {
-                    return {
-            "name": file.name.replace(/\.html$/,"")
-              .replace(/lively-/,"").replace(/-/g," "),
-            "html-tag": file.name.replace(/\.html$/,""),
-            "description": "",
-            "author": "",
-            "date-changed": "",
-            "categories": ["default"],
-            "tags": [],
-            "template": file.name}
-          }));
       })
-    });
+    }
+    return contents.filter(file => {
+        return file.type === "file" && file.name.match(/\.html$/);
+      }).map(file => {
+                return {
+        "name": file.name.replace(/\.html$/,"")
+          .replace(/lively-/,"").replace(/-/g," "),
+        "html-tag": file.name.replace(/\.html$/,""),
+        "description": "",
+        "author": "",
+        "date-changed": "",
+        "categories": ["default"],
+        "tags": [],
+        "template": file.name}
+      }); 
   }
 
   createTiles(compList) {
