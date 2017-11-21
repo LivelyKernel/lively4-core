@@ -2,11 +2,7 @@
 import Morph from './Morph.js';
 import pdf from "src/external/pdf.js"
 // see https://gist.github.com/yurydelendik/c6152fa75049d5c8f62f
-<<<<<<< HEAD
-=======
 
-
->>>>>>> a3b3ee6d7e01786dfacdad9865c6579b77740c12
 export default class LivelyPDF extends Morph {
   initialize() {
     pdf.onLoad().then(()=> {

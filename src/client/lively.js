@@ -1433,8 +1433,17 @@ export default class Lively {
    if (!result && element.host) result = this.query(element.host, query) 
    return result
   }
-  
-  
+
+  static queryAll(element, query) {    
+    var all = new Set()
+    element.querySelectorAll(query).forEach(ea => all.add(ea))
+    var containers = element.querySelectorAll("lively-container")
+    containers.forEach(ea => {
+      ea.shadowRoot.querySelectorAll(query).forEach(ea => all.add(ea))
+    })
+    return Array.from(all)
+  }
+ 
   static gotoWindow(element) {
     element.focus()
     document.scrollingElement.scrollTop = 0

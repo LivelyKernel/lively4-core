@@ -257,12 +257,15 @@ export class TemplatePreview {
       } catch(e) {
         console.log(e)
       }
+
       if (comp && comp.parentElement) {
         comp.parentElement.remove()  
       }
     }
   }
 }
+
+// TemplatePreview.generate()
 
 
 

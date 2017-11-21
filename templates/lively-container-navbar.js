@@ -17,7 +17,13 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   onDragOver(evt) {    
-    evt.dataTransfer.dropEffect = "copy";
+    if (evt.shiftKey) {
+      evt.dataTransfer.dropEffect = "move";
+      this.transferMode = "move"
+    } else {
+      evt.dataTransfer.dropEffect = "copy";
+      this.transferMode = "copy"
+    }
     evt.preventDefault()    
   }
 
@@ -37,7 +43,7 @@ export default class LivelyContainerNavbar extends Morph {
           await fetch(newURL, {
             method: "PUT",
             body: content
-          });
+          });          
           this.show(newURL, content);
         };
         reader.readAsBinaryString(file);
@@ -47,7 +53,7 @@ export default class LivelyContainerNavbar extends Morph {
 
     var data = evt.dataTransfer.getData("text");
     if (data.match("^https?:\/\/") || data.match(/^data\:image\/png;/)) {
-      this.copyFromURL(data);
+      this.copyFromURL(data);        
     } else {
       console.log('ignore data ' + data);
     }
@@ -67,23 +73,58 @@ export default class LivelyContainerNavbar extends Morph {
       isDataURI = false
     }
     var newurl = this.url.replace(/[^/]*$/, filename)
-    if (await lively.confirm("copy to " + newurl +"?")) {
+    if (await lively.confirm(`${this.transferMode} to ${newurl}?`)) {
       var content = await fetch(fromurl).then(r => r.blob());
-      lively.notify("copy to " + newurl + ": " + content.size)  
       await fetch(newurl, {
         method: "PUT",
         body: content
       })
+      if (this.transferMode == "move") {
+        await fetch(fromurl, {
+          method: "DELETE"
+        });
+        // put again... to be not delete it by accident
+        await fetch(newurl, {
+          method: "PUT",
+          body: content
+        })
+        that.updateOtherNavbars(this.getRoot(fromurl))
+        that.updateOtherNavbars(this.getRoot(newurl))
+
+        lively.notify(`${this.transferMode}d to ` + newurl + ": " + content.size)  
+      }
       this.show(newurl, content)
     }
+  }
+  
+  updateOtherNavbars(url) {  
+    lively.queryAll(document.body, "lively-container-navbar").forEach( ea => {
+      if (ea.getRoot() == url) {
+        ea.update()
+      }
+    })
+  }
+  
+  getRoot(url) {
+    url = url || this.url;
+    return url.replace(/\/[^\/]+$/,"/")
+  }
+  
+  getFilename(url) {
+    url = url || this.url;
+    return url.replace(/.*\//,"")
+  }
+  
+  async update() {
+    await this.show(this.url, this.sourceContent)
+    await this.showSublist()
   }
   
   async show(targetUrl, sourceContent) {
     this.sourceContent = sourceContent;
     this.url = "" + targetUrl;
-    var filename = this.url.replace(/.*\//,"");
-
-    var root = this.url.replace(/\/[^\/]+$/,"/");
+    var filename = this.getFilename();
+    var root = this.getRoot();
     this.currentDir = root;
     var stats = await fetch(root, {
       method: "OPTIONS",
@@ -197,23 +238,23 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   deleteFile(url) {
-    throw new Error("please implement deleteFile()")
+    lively.notify("please implement deleteFile()")
   }
 
   renameFile(url) {
-    throw new Error("please implement renameFile()")
+    lively.notify("please implement renameFile()")
   }
 
   newfile(path) {
-    throw new Error("please implement newfile()")
+    lively.notify("please implement newfile()")
   }
   
-  navigateToName(name) {
-    throw new Error("please implement navigateToName()")
+  navigateToName(url) {
+    lively.notify(`please implement navigateToName(${url})`)
   }
 
-  followPath(name) {
-    throw new Error("please implement followPath()")
+  followPath(url) {
+    this.show(new URL(url +"/"),"")
   }
 
   async showSublist() {
