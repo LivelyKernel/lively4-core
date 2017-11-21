@@ -16,7 +16,7 @@
       lively.openComponentInWindow("vivide-list").then(vl2 => {
         vl2.setDepiction(elem => elem.name + ", " + elem.age);
         // vl2.setChildrenGeneration(elem => elem.pets);
-        // vl2.setChildrenGeneration(elem => elem.pets.map(pet => pet.name));
+        vl2.setChildrenGeneration(elem => elem.pets.map(pet => pet.name));
         vl1.register(vl2);
       });
     });
