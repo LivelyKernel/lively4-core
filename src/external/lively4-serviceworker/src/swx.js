@@ -69,11 +69,13 @@ class ServiceWorker {
 
     let  url = new URL(request.url);
     let promise = undefined;
+    
+    //console.log(`fetch(${url})`);
 
     if (url.pathname.match(/\/_git\//)) return;
     if (url.pathname.match(/\/_search\//)) return; 
     if (url.pathname.match(/\/_meta\//)) return; 
-    if (url.pathname.match(/lively4-serviceworker/)) return; 
+    //if (url.pathname.match(/lively4-serviceworker/)) return; 
     if (url.pathname.match(/lively4services/)) return; // seems to not work with SWX, req. are pending
   
     // if (url.pathname.match(/noserviceworker/)) return; // #Debug
@@ -189,6 +191,31 @@ export async function instancePromise() {
 }
 
 export function install() {
+  console.log('swx.js install()');
+  
+  // Cache all files which are necessary to boot lively in the browser cache
+  // This is only needed to get the page loaded. After that, the serviceworker
+  // uses IndexedDB-based caches
+  let filesToLoad = [
+    '',
+    'start.html',
+    'swx-boot.js',
+    'swx-loader.js',
+    'swx-post.js',
+    'swx-pre.js',
+    'src/client/boot.js'
+  ];
+  
+  let directoryParts = self.location.pathname.split('/');
+  directoryParts[directoryParts.length-1] = '';
+  let directory = directoryParts.join('/');
+  
+  caches.open('lively_boot_cache').then(function(cache) {
+     return cache.addAll(filesToLoad.map((file) => {
+       return directory + file;
+     }));
+   })
+  
   return self.skipWaiting();
 }
 

@@ -3,6 +3,7 @@ import { Queue } from './queue.js';
 import Serializer from './serializer.js';
 import { ConnectionManager } from './connectionmanager.js';
 import * as msg from './messaging.js'
+import { FavoritsTracker } from './favoritstracker.js';
 
 /**
  * This class is supposed to be a general-purpose cache for HTTP requests with different HTTP methods.
