@@ -80,47 +80,59 @@ class ServiceWorker {
   
     // if (url.pathname.match(/noserviceworker/)) return; // #Debug
   
-    if (url.hostname !== 'lively4' && url.hostname == location.hostname && request.mode != 'navigate') {
-      try {                        
-        var p = new Promise(async (resolve, reject) => {
-          var email = await focalStorage.getItem(storagePrefix+ "githubEmail");
-          var username = await focalStorage.getItem(storagePrefix+ "githubUsername"); 
-          var token = await focalStorage.getItem(storagePrefix+ "githubToken");
+    if (url.hostname !== 'lively4' && url.hostname == location.hostname/* && request.mode != 'navigate'*/) {
+      try {
+        var p;
+        if(request.mode !== 'navigate') {
+          p = new Promise(async (resolve, reject) => {
+            var email = await focalStorage.getItem(storagePrefix+ "githubEmail");
+            var username = await focalStorage.getItem(storagePrefix+ "githubUsername"); 
+            var token = await focalStorage.getItem(storagePrefix+ "githubToken");
 
-           // we have to manually recreate a request, because you cannot modify the original
-           // see http://stackoverflow.com/questions/35420980/how-to-alter-the-headers-of-a-request
-           var options = {
-              method: request.method,
-              headers: new Headers(), 
-              mode: request.mode,
-              credentials: request.credentials,
-              redirect: request.redirect 
-          };
-          if (request.method == "PUT") {
-            options.body =  await request.blob();
-          }
-
-          for (var pair of request.headers.entries()) {
-            options.headers.set(pair[0], pair[1]);
-          }
-          options.headers.set("gitusername", username);
-          options.headers.set("gitemail", email);
-          options.headers.set("gitpassword", token);
-
-          var req = new Request(request.url, options );
-
-          // use system here to prevent recursion...
-          resolve(self.fetch(req).then((result) => {
-            if (result instanceof Response) {
-              return result;
-            } else {
-              return new Response(result);
+             // we have to manually recreate a request, because you cannot modify the original
+             // see http://stackoverflow.com/questions/35420980/how-to-alter-the-headers-of-a-request
+             var options = {
+                method: request.method,
+                headers: new Headers(), 
+                mode: request.mode,
+                credentials: request.credentials,
+                redirect: request.redirect 
+            };
+            if (request.method == "PUT") {
+              options.body =  await request.blob();
             }
-          }).catch(e => {
-            console.log("fetch error: "  + e);
-            return new Response("Could not fetch " + url +", because of: " + e);
-          })) 
-        });
+
+            for (var pair of request.headers.entries()) {
+              options.headers.set(pair[0], pair[1]);
+            }
+            options.headers.set("gitusername", username);
+            options.headers.set("gitemail", email);
+            options.headers.set("gitpassword", token);
+
+            var req = new Request(request.url, options );
+
+            // use system here to prevent recursion...
+            resolve(self.fetch(req).then((result) => {
+              if (result instanceof Response) {
+                return result;
+              } else {
+                return new Response(result);
+              }
+            }).catch(e => {
+              console.log("fetch error: "  + e);
+              return new Response("Could not fetch " + url +", because of: " + e);
+            })) 
+          });
+        } else {
+          p = new Promise(async (resolve, reject) => {
+            resolve(self.fetch(request).then((result) => {
+              return result;
+            }).catch(e => {
+              console.log("fetch error: "  + e);
+              return new Response("Could not fetch " + url +", because of: " + e);
+            }))
+          });
+        }
 
         if (pending) {
           pending.resolve(p);
@@ -171,6 +183,44 @@ class ServiceWorker {
   message(event) {
     return msg.process(event);
   }
+  
+  prepareOfflineBoot() {
+    console.log('Preparing offline boot');
+    
+    // Cache all files which are necessary to boot lively in the browser cache
+    let filesToLoad = [
+      '',
+      'start.html',
+      'swx-boot.js',
+      'swx-loader.js',
+      'swx-post.js',
+      'swx-pre.js',
+      'src/client/boot.js'
+    ];
+
+    let directoryParts = self.location.pathname.split('/');
+    directoryParts[directoryParts.length-1] = '';
+    let directory = directoryParts.join('/');
+    
+    filesToLoad = filesToLoad.map((file) => {return directory + file});
+
+    for(let file of filesToLoad) {
+      let request = new Request(file, {
+        method: 'GET' 
+      });
+      
+      var p = new Promise(async (resolve, reject) => {
+        resolve(self.fetch(request).then((result) => {
+          return result;
+        }).catch(e => {
+          console.log("fetch error: "  + e);
+          return new Response("Could not fetch " + url +", because of: " + e);
+        }))
+      });
+      
+      this._cache.fetch(request, p);
+    }
+  }
 }
 
 /*
@@ -191,31 +241,7 @@ export async function instancePromise() {
 }
 
 export function install() {
-  console.log('swx.js install()');
-  
-  // Cache all files which are necessary to boot lively in the browser cache
-  // This is only needed to get the page loaded. After that, the serviceworker
-  // uses IndexedDB-based caches
-  let filesToLoad = [
-    '',
-    'start.html',
-    'swx-boot.js',
-    'swx-loader.js',
-    'swx-post.js',
-    'swx-pre.js',
-    'src/client/boot.js'
-  ];
-  
-  let directoryParts = self.location.pathname.split('/');
-  directoryParts[directoryParts.length-1] = '';
-  let directory = directoryParts.join('/');
-  
-  caches.open('lively_boot_cache').then(function(cache) {
-     return cache.addAll(filesToLoad.map((file) => {
-       return directory + file;
-     }));
-   })
-  
+  instancePromise().then((swx) => { swx.prepareOfflineBoot() });
   return self.skipWaiting();
 }
 

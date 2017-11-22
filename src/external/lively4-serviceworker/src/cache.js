@@ -79,6 +79,7 @@ export class Cache {
           return Serializer.deserialize(response);
         } else {
           msg.broadcast('Could not fulfil request from cache.', 'error');
+          console.error(`Not in cache: ${request.url}`);
           return p;
         }
       })
