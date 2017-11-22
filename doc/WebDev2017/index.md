@@ -1,6 +1,6 @@
 # WebDev 2017 Seminar, HPI
 
-- [Project 1 Jonas Chromik - Vivide](project_1/index.md)
+- [Project 1 Jonas Chromik - Vivide/JS](project_1/index.md)
 - [Project 2 David Rauch, Sebastian Koall - Offline First](project_2/index.md)
 - [Project 3 Henriette Dinger, Sebastian Kliem - PDF Annotator](project_3/index.md)
 - [Project 4 Toni Stachewicz, Niklas Hoffmann - Handwriting Recognition](project_4/index.md)
