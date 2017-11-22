@@ -499,45 +499,13 @@ export default class Container extends Morph {
     url = "" + url
     var newURL = await lively.prompt("rename", url)
     if (newURL != url) {
-      var content = await fetch(url).then(r => r.blob())
-
-
-      // first, save the content...
-      var putResponse = await fetch(newURL, {
-        method: 'PUT',
-        body: content
-      })
-      
-      if (putResponse.status !== 200) {
-        lively.confirm("could not rename to " + newURL)
-        return 
-      }
-
-      // ok, lets be crazy... we first delete
-      var delResponse = await fetch(url, {method: 'DELETE'})
-      if (delResponse.status !== 200) {
-        lively.notify("could not properly delete " + url, await delResponse.text())
-      }
-
-      var getResponse = await fetch(newURL)
-      if (getResponse.status !== 200) {
-        lively.notify("save again, because we might need to...")
-        var putAgainResponse = await fetch(newURL, {
-          method: 'PUT',
-          body: content
-        })
-        return 
-      }
+      await lively.files.moveFile(url, newURL)
   
-      
-
-      
-      
       this.setAttribute("mode", "show");
       this.setPath(url.replace(/\/$/, "").replace(/[^/]*$/, ""));
       this.hideCancelAndSave();
 
-      lively.notify("deleted " + url);
+      lively.notify("moved to " + newURL);
     } 
   }
 
