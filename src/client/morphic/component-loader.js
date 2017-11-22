@@ -2,7 +2,6 @@ import scriptManager from  "src/client/script-manager.js";
 // import * as persistence from  "src/client/persistence.js";
 import Morph from "templates/Morph.js";
 import {pt} from '../graphics.js';
-import * as kernel from 'kernel';
 import { through } from "utils";
 
 // store promises of loaded and currently loading templates
@@ -12,6 +11,7 @@ export var loadingPromises = {};
 var _templates;
 var _prototypes;
 var _proxies;
+var _templatePaths;
 
 // for compatibility
 export function register(componentName, template, prototype) {
@@ -236,7 +236,7 @@ export default class ComponentLoader {
       // filter for unique tag names
       var name = el.nodeName.toLowerCase();
       return !unique.has(name) && unique.add(name);
-    }).map((el) => {
+    }).map(async (el) => {
       var name = el.nodeName.toLowerCase();
       if (loadingPromises[name]) {
         // the loading was already triggered
@@ -256,7 +256,7 @@ export default class ComponentLoader {
       
       loadingPromises[name].name = name + " " + Date.now()
       
-      this.loadByName(name);
+      await this.loadByName(name);
 
       return createdPromise;
     });
@@ -282,7 +282,7 @@ export default class ComponentLoader {
           }
         })
         if (unfinished) {
-          resolve("timeout") // "(if) the fuel gauge breaks, call maintenance. If theyÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂre not there in 20 minutes, fuck it."
+          resolve("timeout") // "(if) the fuel gauge breaks, call maintenance. If they are not there in 20 minutes, fuck it."
           lively.notify("Timout due to unresolved promises, while loading " + unfinishedPromise.name + " context: " + debuggingHint )
         }
       }, 15 * 1000)
@@ -294,18 +294,49 @@ export default class ComponentLoader {
     })
   }
 
+  static getTemplatePaths() {
+    if (!_templatePaths) {
+      _templatePaths = [
+        lively4url + '/templates/',
+        lively4url + '/src/components/'
+      ]; // default
+    } 
+    return _templatePaths
+  }
+
+  static addTemplatePath(path) {
+    var all = this.getTemplatePaths()
+    if (!all.includes(path)) {
+      all.push(path)
+    }
+  }
+
+  static async searchTemplateFilename(filename) {
+    var templatePaths =  this.getTemplatePaths()
+    let templateDir = undefined;          
+    for(templateDir of templatePaths) {
+      var stats = await fetch(templateDir, { method: 'OPTIONS' }).then(resp => resp.json());
+      var found = stats.contents.find(ea => ea.name == filename)
+      if (found) break;  
+    }
+    if (!found) return undefined;
+    return templateDir + filename
+  }
+  
+  
   // this function loads a component by adding a link tag to the head
-  static loadByName(name) {
-      function toTitleCase(str) {
-        return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+  static async loadByName(name) {
+      var url = await this.searchTemplateFilename(name + '.html')
+      if (!url) {
+        throw new Error("Could not find template for " + name)
       }
-    
-      // #TODO make templates path configurable... and make its search in many places
-      var url = '/templates/' + name + '.html'
+     
+      console.log("load component: " + url)
+      
       // #TODO continue here url.exists() 
       var link = document.createElement("link");
       link.rel = "import";
-      link.href = kernel.resolve(url)
+      link.href = url;
       link.dataset.lively4Donotpersist = "all";
       
       document.head.appendChild(link);

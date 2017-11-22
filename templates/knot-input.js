@@ -1,6 +1,7 @@
 import Morph from './Morph.js';
 
 import { Graph } from 'src/client/triples/triples.js';
+import { applyDragCSSClass } from 'src/client/draganddrop.js';
 
 export default class KnotInput extends Morph {
   get listSelector() { return '#list'}
@@ -14,6 +15,17 @@ export default class KnotInput extends Morph {
     this.input.addEventListener('keyup',  event => {
       if (event.keyCode == 13) { // ENTER
         this.dispatchEvent(new CustomEvent('enter-knot', { detail: this.getValue() }));
+      }
+    });
+    
+    this.input::applyDragCSSClass();
+    this.input.addEventListener('drop', evt => {
+      if(evt.dataTransfer.types.includes("knot/url")) {
+        evt.stopPropagation();
+        evt.preventDefault();
+        
+        this.setValue(evt.dataTransfer.getData("knot/url"));
+        this.focus();
       }
     });
     
@@ -72,4 +84,9 @@ export default class KnotInput extends Morph {
   setValue(urlString) { this.input.value = urlString; }
 
   focus() { this.get('#input').focus(); }
+  
+  livelyExample() {
+    this.setLabel("some knot:");
+    this.setPlaceholder("knot url");
+  }
 }

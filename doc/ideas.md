@@ -13,3 +13,5 @@ Means for storing the links:
 - one file in file system
 - elastic search or similar service (fulltext search possible)
 - any key value store
+
+# Foo

@@ -48,9 +48,6 @@ export default class Keys {
         ["Search", ctrl && shiftKey && char == "F", evt => {
           lively.openSearchWidget(this.getTextSelection(), null, evt.path[0]);
         }],
-        ["Search Graph", ctrl && altKey && char == "F", evt => {
-          GraphControl.fullTextSearch(this.getTextSelection());
-        }],
         ["Open Container", shiftKey && ctrl && char == "B", evt => {
           lively.openBrowser(this.getTextSelection());
         }],
@@ -68,13 +65,19 @@ export default class Keys {
         ["Open DevDocs", ctrl && char == "H", evt => {
           lively.openHelpWindow(this.getTextSelection());
         }],
-        ["Open Graph COntrol", ctrl && altKey && char == "G", evt => {
+        ["Open Graph Control", ctrl && altKey && char == "G", evt => {
           lively.openComponentInWindow("graph-control");
+        }],
+        ["Open Research Diary", ctrl && altKey && char == "D", evt => {
+          lively.openComponentInWindow("research-diary");
+        }],
+        ["Search Graph", ctrl && altKey && char == "F", evt => {
+          GraphControl.fullTextSearch(this.getTextSelection());
         }],
         ["Hide Search Widget", keyCode == 27, evt => {
           lively.hideSearchWidget();
         }], 
-        ["Do It", ctrl && char == "D", evt => {
+        ["Do It", ctrl && !altKey && char == "D", evt => {
           if (evt.path.find(ea => ea.tagName == "LIVELY-CODE-MIRROR")) {
             // lively.notify("codemirror handles itself " )
             return; // code mirror does not stop it's propagation

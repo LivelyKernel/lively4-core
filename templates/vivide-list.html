@@ -7,14 +7,41 @@
 }
   
   .listentry {
-    margin: 10px;
+    width: 100%;
+    background: #eeeeee;
+  }
+  
+  .listentry-placeholder {
+    float: left;
+    width: 4em;
+    background: #eeeeee;
+  }
+  
+  .listentry-unfold {
+    float: left;
+    padding-right: 10px;
+    background: #eeeeee;
+  }
+  
+  .listentry-content {
+    width: 100%;
+  }
+  
+  .selected {
+    background: orange;
   }
   
   #content {
     background: white;
   }
+  
+  #raw-list {
+    display: none;
+  }
 </style>
 <div id="content">
+</div>
+<div id="raw-list">
   <content></content>
 </div>
 </template>

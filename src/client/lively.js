@@ -27,7 +27,6 @@ import ViewNav from 'src/client/viewnav.js'
 /* expose external modules */
 import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
-import * as kernel from 'kernel';
 import Selection from 'templates/lively-selection.js'
 import windows from "templates/lively-window.js"
 import boundEval from "src/client/bound-eval.js";
@@ -347,7 +346,7 @@ export default class Lively {
   }
   
   static openInspector(object, pos, str, worldContext) {
-    return lively.openComponentInWindow("lively-inspector", null, pt(400,500), worldContext).then( inspector => {
+    return lively.openComponentInWindow("lively-inspector", pos, pt(400,500), worldContext).then(inspector => {
         inspector.windowTitle = "Inspect: " + str;
         inspector.inspect(object);
         return inspector
@@ -627,6 +626,14 @@ export default class Lively {
     } catch(e) {
       console.log("ERROR in lively.notify: " + e)
     }
+  }
+  
+  static warn(title, text, timeout, cb) {
+    this.notify(title, text, timeout, cb, 'yellow');
+  }
+  
+  static error(title, text, timeout, cb) {
+    this.notify(title, text, timeout, cb, 'red');
   }
   
   
@@ -935,12 +942,12 @@ export default class Lively {
   }
 
 
-  static showSource(object, evt) {
+  static async showSource(object, evt) {
     if (object instanceof HTMLElement) {
         var comp  = document.createElement("lively-container");
-        components.openInWindow(comp).then((container) => {
-          comp.editFile(lively4url +"/templates/" + object.localName + ".html");
-        });
+        components.openInWindow(comp).then((async (container) => {
+          comp.editFile(await this.components.searchTemplateFilename(object.localName + ".html"));
+        }));
     } else {
       lively.notify("Could not show source for: " + object);
     }
@@ -949,12 +956,12 @@ export default class Lively {
   static async showClassSource(object, evt) {
     // object = that
     if (object instanceof HTMLElement) {
-      let templateFile = lively4url +"/templates/" + object.localName + ".html",
+      let templateFile =await this.components.searchTemplateFilename(object.localName + ".html"),
         source = await fetch(templateFile).then( r => r.text()),
         template = $.parseHTML(source).find( ea => ea.tagName == "TEMPLATE"),
         className = template.getAttribute('data-class'),
         baseName = this.templateClassNameToTemplateName(className),
-        moduleURL = lively4url +"/templates/" + baseName + ".js";
+        moduleURL = await this.components.searchTemplateFilename(baseName + ".js");
       lively.openBrowser(moduleURL, true, className);
     } else {
       lively.notify("Could not show source for: " + object);
@@ -1022,6 +1029,13 @@ export default class Lively {
   static templateClassNameToTemplateName(className) {
     return className.replace(/[A-Z]/g, ea => "-" + ea.toLowerCase()).replace(/^-/,"");
   }
+  
+
+  // Example code for looking up templates in links: 
+  // Array.from(document.head.querySelectorAll("link"))
+  //   .filter(ea => ea.getAttribute("rel") == "import")
+  //   .map(ea => ea.href)
+  //   .find(ea => ea.endsWith("lively-digital-clock.html"))
 
   static async registerTemplate() {
     var template = document.currentScript.ownerDocument.querySelector('template');
@@ -1031,8 +1045,14 @@ export default class Lively {
     if (className) {
       // className = "LivelyFooBar"
       let baseName = this.templateClassNameToTemplateName(className);
-      var module = await System.import(lively4url +'/templates/' + baseName +".js");
-      proto =  Object.create(module.prototype || module.default.prototype);
+      var url = await this.components.searchTemplateFilename(baseName +".js")
+      if (url) {
+        console.log("Components: load module " + url)
+        var module = await System.import(url);
+        proto =  Object.create(module.prototype || module.default.prototype);        
+      } else {
+        throw new Error("Components: could not find module for " + baseName)
+      }
     }
     components.register(template.id, clone, proto);
   }
@@ -1425,8 +1445,17 @@ export default class Lively {
    if (!result && element.host) result = this.query(element.host, query) 
    return result
   }
-  
-  
+
+  static queryAll(element, query) {    
+    var all = new Set()
+    element.querySelectorAll(query).forEach(ea => all.add(ea))
+    var containers = element.querySelectorAll("lively-container")
+    containers.forEach(ea => {
+      ea.shadowRoot.querySelectorAll(query).forEach(ea => all.add(ea))
+    })
+    return Array.from(all)
+  }
+ 
   static gotoWindow(element) {
     element.focus()
     document.scrollingElement.scrollTop = 0
