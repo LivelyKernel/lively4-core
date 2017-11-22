@@ -205,7 +205,7 @@ export default class Sync extends Morph {
   }
 
   onChangelogButton() {
-   this.gitControl("log");
+   this.gitControl("graph");
   }
   
   onCommitButton() {
