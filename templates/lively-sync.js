@@ -223,7 +223,7 @@ export default class Sync extends Morph {
     if (await lively.confirm("Do you want to merge "
       + this.get("#gitrepositorybranch").value 
       +" into " + this.get("#gitrepository").value 
-      + " repository?")) {
+      + " repository?<br><b style='color:red'>DANGER: Do not 'Squash' commit before a new 'Sync'</b>")) {
       this.gitControl("merge");
     }
   }
