@@ -188,14 +188,35 @@ class ServiceWorker {
     console.log('Preparing offline boot');
     
     // Cache all files which are necessary to boot lively in the browser cache
+    // We could combine this with the favorites. Just make all these files constant favorites.
     let filesToLoad = [
+      // Essential
       '',
       'start.html',
       'swx-boot.js',
       'swx-loader.js',
       'swx-post.js',
       'swx-pre.js',
-      'src/client/boot.js'
+      'src/client/boot.js',
+      'src/client/load.js',
+      'src/client/lively.js',
+      'src/external/systemjs/system.src.js',
+      'src/external/babel/plugin-babel2.js',
+      'src/external/babel/systemjs-babel-browser.js',
+      'src/external/babel-plugin-jsx-lively.js',
+      'src/external/babel-plugin-transform-do-expressions.js',
+      'src/external/babel-plugin-transform-function-bind.js',
+      'src/external/babel-plugin-locals.js',
+      'src/external/babel-plugin-var-recorder.js',
+      'src/external/babel-plugin-syntax-jsx.js',
+      'src/external/babel-plugin-syntax-function-bind.js',
+      'src/external/babel-plugin-syntax-do-expressions.js',
+      
+      // Useful
+      '/templates/lively-notification.html',
+      '/templates/lively-notification.js',
+      '/templates/lively-notification-list.html',
+      '/templates/lively-notification-list.js',
     ];
 
     let directoryParts = self.location.pathname.split('/');
@@ -210,6 +231,7 @@ class ServiceWorker {
       });
       
       var p = new Promise(async (resolve, reject) => {
+        //console.warn(`preloading ${request.url}`);
         resolve(self.fetch(request).then((result) => {
           return result;
         }).catch(e => {
