@@ -314,12 +314,24 @@ export default class ComponentLoader {
   static async searchTemplateFilename(filename) {
     var templatePaths =  this.getTemplatePaths()
     let templateDir = undefined;          
+  
+    // #IDEA, using HTTP HEAD could be faster, but is not always implemented... as ource OPTIONS is neigher
+    // this method avoids the 404 in the console.log
     for(templateDir of templatePaths) {
       var stats = await fetch(templateDir, { method: 'OPTIONS' }).then(resp => resp.json());
       var found = stats.contents.find(ea => ea.name == filename)
       if (found) break;  
     }
-    if (!found) return undefined;
+
+    // so the server did not understand OPTIONS, so lets ask for the files directly
+    if (!found) {
+      for(templateDir of templatePaths) {
+        var found = await fetch(templateDir + filename, { method: 'GET' }) // #TODO use HEAD, after implementing it in lively4-server
+          .then(resp => resp.status == 200); 
+        if (found) break;  
+      } 
+      if (!found) return undefined;
+    }
     return templateDir + filename
   }
   
