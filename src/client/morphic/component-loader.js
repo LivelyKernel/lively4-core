@@ -298,7 +298,12 @@ export default class ComponentLoader {
     if (!_templatePaths) {
       _templatePaths = [
         lively4url + '/templates/',
-        lively4url + '/src/components/'
+        lively4url + '/src/components/',
+        lively4url + '/src/components/widgets/',
+        lively4url + '/src/components/tools/',
+        lively4url + '/src/components/halo/',
+        lively4url + '/src/components/demo/',
+        lively4url + '/src/components/draft/',
       ]; // default
     } 
     return _templatePaths
@@ -326,17 +331,18 @@ export default class ComponentLoader {
         var found = stats.contents.find(ea => ea.name == filename)
         if (found) break;  
       }
+    } else {
+      // so the server did not understand OPTIONS, so lets ask for the files directly
+      if (!found) {
+        for(templateDir of templatePaths) {
+          var found = await fetch(templateDir + filename, { method: 'GET' }) // #TODO use HEAD, after implementing it in lively4-server
+            .then(resp => resp.status == 200); 
+          if (found) break;  
+        } 
+        if (!found) return undefined;
+      }      
     }
     
-    // so the server did not understand OPTIONS, so lets ask for the files directly
-    if (!found) {
-      for(templateDir of templatePaths) {
-        var found = await fetch(templateDir + filename, { method: 'GET' }) // #TODO use HEAD, after implementing it in lively4-server
-          .then(resp => resp.status == 200); 
-        if (found) break;  
-      } 
-      if (!found) return undefined;
-    }
     return templateDir + filename
   }
   
