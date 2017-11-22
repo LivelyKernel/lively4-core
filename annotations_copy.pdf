@@ -1,0 +1,84 @@
+<lively-window class="global" tabindex="0" active="true" title="annotations.pdf" style="position: absolute; left: 91px; top: 7px; z-index: 101; width: 950px; height: 600px;"><lively-container tabindex="0" src="https://lively-kernel.org/lively4/lively4-pdf-annotator/doc/WebDev2017/project_3/annotations.pdf" leftpane-flex="" rightpane-flex="" mode="edit"></lively-container></lively-window><lively-hand data-lively4-donotpersist="all" style="display: none;"></lively-hand><lively-halo draggable="true" data-lively4-donotpersist="all" style="display: none; top: 0px; left: 0px;"></lively-halo><lively-window class="global" tabindex="0" title="lively-pdf.js" style="position: absolute; left: 36px; top: -55px; z-index: 100; width: 950px; height: 600px; transform-origin: left top 0px;" data-lively-expose-prev-position="absolute" data-lively-expose-prev-left="143px" data-lively-expose-prev-top="-7px" data-lively-expose-prev-bottom="" data-lively-expose-prev-right="" data-lively-expose-prev-width="950px" data-lively-expose-prev-height="600px" data-lively-expose-prev-cursor="" data-lively-expose-prev-transform="" data-lively-expose-prev-transition=""><lively-container tabindex="0" src="https://lively-kernel.org/lively4/lively4-pdf-annotator/templates/lively-pdf.js" leftpane-flex="" rightpane-flex=""><pre><code class="hljs javascript"><span class="hljs-meta">'use strict'</span>;
+
+<span class="hljs-keyword">import</span> Morph <span class="hljs-keyword">from</span> <span class="hljs-string">'./Morph.js'</span>;
+<span class="hljs-keyword">import</span> pdf <span class="hljs-keyword">from</span> <span class="hljs-string">"src/external/pdf.js"</span>
+
+<span class="hljs-comment">// see https://gist.github.com/yurydelendik/c6152fa75049d5c8f62f</span>
+
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">LivelyPDF</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Morph</span> </span>{
+
+  initialize() {
+
+    pdf.onLoad().then(<span class="hljs-function"><span class="hljs-params">()</span>=&gt;</span> {
+      <span class="hljs-keyword">this</span>.isLoaded = <span class="hljs-literal">true</span>
+
+      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.getAttribute(<span class="hljs-string">"src"</span>)) {
+        lively.notify(<span class="hljs-string">"onload"</span>);
+        <span class="hljs-keyword">this</span>.setURL(<span class="hljs-keyword">this</span>.getAttribute(<span class="hljs-string">"src"</span>));
+      }
+    })
+    
+    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.getAttribute(<span class="hljs-string">"overflow"</span>)) {
+      <span class="hljs-keyword">this</span>.get(<span class="hljs-string">"#container"</span>).style.overflow = <span class="hljs-keyword">this</span>.getAttribute(<span class="hljs-string">"overflow"</span>)
+    }
+    lively.addEventListener(<span class="hljs-string">"pdf"</span>, <span class="hljs-keyword">this</span>, <span class="hljs-string">"extent-changed"</span>, 
+      (e) =&gt; <span class="hljs-keyword">this</span>.onExtentChanged(e));
+  }
+
+  <span class="hljs-keyword">async</span> setURL(url) {
+    <span class="hljs-keyword">this</span>.setAttribute(<span class="hljs-string">"src"</span>, url)
+    
+    <span class="hljs-keyword">if</span> (!<span class="hljs-keyword">this</span>.isLoaded) <span class="hljs-keyword">return</span>
+    
+     <span class="hljs-keyword">var</span> container = <span class="hljs-keyword">this</span>.get(<span class="hljs-string">'#viewerContainer'</span>);
+    <span class="hljs-comment">// (Optionally) enable hyperlinks within PDF files.</span>
+    <span class="hljs-keyword">this</span>.pdfLinkService = <span class="hljs-keyword">new</span> PDFJS.PDFLinkService();
+    <span class="hljs-keyword">this</span>.pdfViewer = <span class="hljs-keyword">new</span> PDFJS.PDFViewer({
+      <span class="hljs-attr">container</span>: container,
+      <span class="hljs-attr">linkService</span>: <span class="hljs-keyword">this</span>.pdfLinkService
+    });
+    <span class="hljs-keyword">this</span>.pdfLinkService.setViewer(<span class="hljs-keyword">this</span>.pdfViewer);
+    container.addEventListener(<span class="hljs-string">'pagesinit'</span>,  () =&gt; {
+      <span class="hljs-comment">// We can use pdfViewer now, e.g. let's change default scale.</span>
+      <span class="hljs-keyword">this</span>.pdfViewer.currentScaleValue = <span class="hljs-string">'page-width'</span>;
+    });
+    <span class="hljs-comment">// Loading document.</span>
+    <span class="hljs-keyword">var</span> that = <span class="hljs-keyword">this</span>;
+    PDFJS.getDocument(url).then(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">pdfDocument</span>) </span>{
+        that.pdfViewer.setDocument(pdfDocument);
+    
+        that.pdfLinkService.setDocument(pdfDocument, <span class="hljs-literal">null</span>);
+    });
+  }
+
+  onExtentChanged() {
+    <span class="hljs-keyword">this</span>.pdfViewer.currentScaleValue = <span class="hljs-string">'page-width'</span>;
+  }
+
+  livelyExample() {
+    <span class="hljs-keyword">this</span>.setURL(<span class="hljs-string">"https://lively-kernel.org/publications/media/KrahnIngallsHirschfeldLinckePalacz_2009_LivelyWikiADevelopmentEnvironmentForCreatingAndSharingActiveWebContent_AcmDL.pdf"</span>)
+  }
+
+  livelyMigrate(other) {
+    <span class="hljs-comment">//  this.setURL(other.getURL())</span>
+  }
+
+
+}
+</code></pre></lively-container></lively-window>
+<lively-preferences class="lively-content" data-body-position="{&quot;x&quot;:9,&quot;y&quot;:53}" data-body-scroll="{&quot;x&quot;:0,&quot;y&quot;:0}"></lively-preferences>
+<a href="" class="lively-content" style="position: absolute; left: 968px; top: 507px;"></a>
+<a href="" class="lively-content" style="position: absolute; left: 476px; top: 362px;"></a>
+<a href="" class="lively-content" style="position: absolute; left: 848px; top: 524px;"></a>
+<a href="" class="lively-content" style="position: absolute; left: 1089px; top: 556px;"></a>
+<a href="" class="lively-content" style="position: absolute; left: 411px; top: 383px;"></a>
+<a href="" class="lively-content" style="position: absolute; left: 737px; top: 394px;"></a>
+<a href="" class="lively-content" style="position: absolute; left: 802px; top: 625px;"></a>
+<a href="" class="lively-content" style="position: absolute; left: 773px; top: 603px;"></a>
+<a href="" class="lively-content" style="position: absolute; left: 1159px; top: 650px;"></a>
+<a href="" class="lively-content" style="position: absolute; left: 1098px; top: 589px;"></a>
+<a href="" class="lively-content" style="position: absolute; left: 1336px; top: 604px;"></a>
+<a href="" class="lively-content" style="position: absolute; left: 1210px; top: 624px;"></a>
+<a href="" class="lively-content" style="position: absolute; left: 991px; top: 498px;"></a>
+<div id="mutationIndicator" style="position: fixed; right: 0px; top: 0px; width: 10px; height: 10px; background-color: rgba(200, 0, 0, 0.5); pointer-events: none; z-index: 2000;"></div><lively-notification-list hidden=""></lively-notification-list>

@@ -35,7 +35,9 @@ export default class Container extends Morph {
 
     lively.addEventListener("Container", this, "mousedown", evt => this.onMouseDown(evt));
     this.addEventListener("extent-changed", function(evt) {
-      this.target.dispatchEvent(new CustomEvent("extent-changed"));
+      if (this.target) {
+        this.target.dispatchEvent(new CustomEvent("extent-changed"));
+      }
     });
 
     // #TODO continue here, halo selection and container do now work yet
