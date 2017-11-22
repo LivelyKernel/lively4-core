@@ -317,12 +317,17 @@ export default class ComponentLoader {
   
     // #IDEA, using HTTP HEAD could be faster, but is not always implemented... as ource OPTIONS is neigher
     // this method avoids the 404 in the console.log
-    for(templateDir of templatePaths) {
-      var stats = await fetch(templateDir, { method: 'OPTIONS' }).then(resp => resp.json());
-      var found = stats.contents.find(ea => ea.name == filename)
-      if (found) break;  
+    
+    
+    // the OPTIONS request seems to break karma... waits to long..
+	  if (!window.__karma__) { 
+      for(templateDir of templatePaths) {
+        var stats = await fetch(templateDir, { method: 'OPTIONS' }).then(resp => resp.json());
+        var found = stats.contents.find(ea => ea.name == filename)
+        if (found) break;  
+      }
     }
-
+    
     // so the server did not understand OPTIONS, so lets ask for the files directly
     if (!found) {
       for(templateDir of templatePaths) {
