@@ -144,7 +144,8 @@ export default class Lively {
     }).then(async (mod) => {
       modulePaths.forEach(eaPath => {
         // lively.notify("update dependend: ", eaPath, 3, "blue")
-        if (eaPath.match(/templates\/.*js/)) {
+        var found = lively.components.getTemplatePaths().find(templatePath => eaPath.match(templatePath))
+        if (found) {
           var templateURL = eaPath.replace(/\.js$/,".html");
           try {
             console.log("[templates] update template " + templateURL);
