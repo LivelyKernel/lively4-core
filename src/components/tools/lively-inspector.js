@@ -2,10 +2,9 @@
  * # LivelyInspector 
  * A tool similar to the chrome "Elements" pane and the JavaScript object explorer
  */
-import Morph from './Morph.js';
+import Morph from 'templates/Morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
-
-import {sortAlphaNum} from "../src/client/sort.js"
+import {sortAlphaNum} from "src/client/sort.js"
 
 function truncateString(s, length, truncation) {
   length = length || 30;

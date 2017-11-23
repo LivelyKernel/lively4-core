@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'templates/Morph.js';
 import highlight from 'src/external/highlight.js';
 import {pt} from 'src/client/graphics.js';
 import halo from 'templates/lively-halo.js';
@@ -6,7 +6,7 @@ import ContextMenu from 'src/client/contextmenu.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/external/ContextJS/src/contextjs.js";
-import ScopedScripts from "./ScopedScripts.js";
+import ScopedScripts from "templates/ScopedScripts.js";
 import Clipboard from "src/client/clipboard.js"; 
 import {debounce} from "utils";
 

@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'templates/Morph.js';
 
 export default class LivelyImport extends Morph {
   async initialize() {

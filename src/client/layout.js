@@ -3,7 +3,7 @@
 
 
 import {pt, rect} from "src/client/graphics.js"
-import Windows from "templates/lively-window.js"
+import Windows from "src/components/widgets/lively-window.js"
 
 
 export class Intersection {

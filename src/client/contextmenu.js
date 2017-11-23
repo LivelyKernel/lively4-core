@@ -8,7 +8,7 @@ import {pt} from './graphics.js';
 import ViewNav from 'src/client/viewnav.js'
 import Layout from "src/client/layout.js"
 import Preferences from './preferences.js';
-import Windows from "templates/lively-window.js"
+import Windows from "src/components/widgets/lively-window.js"
 import {Grid} from "src/client/morphic/snapping.js"
 import Info from "src/client/info.js"
 
