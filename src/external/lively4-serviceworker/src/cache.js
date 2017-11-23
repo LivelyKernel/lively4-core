@@ -39,25 +39,29 @@ export class Cache {
   /**
    * Fetches a request from the cache or network, according to the caching strategy.
    * To be used e.g. in `event.respondWith(...)`.
+   * @param request The request to respond to
+   * @param doNetworkRequest A function to call if we need to send out a network request
    */
-  fetch(request, p) {
+  fetch(request, doNetworkRequest) {
     if (this._managesFavorits) {
       this._favoritsTracker.update(request.url);
     }
     
     if (this._connectionManager.isOnline) {
-      return this._onlineResponse(request, p);
+      return this._onlineResponse(request, doNetworkRequest);
     } else {
-      return this._offlineResponse(request, p);
+      return this._offlineResponse(request, doNetworkRequest);
     }
   }
   
   /**
    * Returns a response for online devices
+   * @param request The request to respond to
+   * @param doNetworkRequest A function to call if we need to send out a network request
    */
-  _onlineResponse(request, p) {
+  _onlineResponse(request, doNetworkRequest) {
     // When online, handle requests normaly and store the result
-    return p.then((response) => {
+    return doNetworkRequest().then((response) => {
       // Currently, we only store OPTIONS and GET requests in the cache
       if (this._cacheMethods.includes(request.method)) {
         this._put(request, response);
@@ -68,19 +72,23 @@ export class Cache {
   
   /**
    * Returns a response for offline devices
+   * @param request The request to respond to
+   * @param doNetworkRequest A function to call if we need to send out a network request
    */
-  _offlineResponse(request, p) {
+  _offlineResponse(request, doNetworkRequest) {
     // When offline, check the cache or put request in queue
     if (this._cacheMethods.includes(request.method)) {
       // Check if the request is in the cache
       return this._match(request).then((response) => {
         if (response) {
-          msg.broadcast('Fulfilled request from cache.', 'warning');
+          //msg.broadcast('Fulfilled request from cache.', 'warning');
           return Serializer.deserialize(response);
         } else {
           msg.broadcast('Could not fulfil request from cache.', 'error');
           console.error(`Not in cache: ${request.url}`);
-          return p;
+          // Todo: This request is bound to fail, causing an error message.
+          // We should probably respond in a way that will result in a better error message.
+          return doNetworkRequest();
         }
       })
     } else if (this._queueMethods.includes(request.method)) {
