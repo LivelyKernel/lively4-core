@@ -139,10 +139,12 @@ export default class ComponentBinTile extends Morph {
 
   async onMoveComponent(evt) {
     var url = await lively.components.searchTemplateFilename(this.config.template);
+    if (!url) {
+      lively.notify("could  not find url")
+    }
     var newUrl = await lively.prompt("Move component?", url);
-    if (newUrl !== url) {
-      lively.notify("would move to " + newUrl);
-      
+    if (newUrl && newUrl !== url) {
+      lively.notify("Move to " + newUrl);
       
       await lively.files.moveFile(url, newUrl)
       
