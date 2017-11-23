@@ -327,9 +327,13 @@ export default class ComponentLoader {
     // the OPTIONS request seems to break karma... waits to long..
 	  if (!window.__karma__) { 
       for(templateDir of templatePaths) {
-        var stats = await fetch(templateDir, { method: 'OPTIONS' }).then(resp => resp.json());
-        var found = stats.contents.find(ea => ea.name == filename)
-        if (found) break;  
+        try {
+          var stats = await fetch(templateDir, { method: 'OPTIONS' }).then(resp => resp.json());
+          var found = stats.contents.find(ea => ea.name == filename)
+        } catch(e) {
+          console.log("searchTemplateFilename: could not get stats of  " + filename)
+        }
+     if (found) break;  
       }
     } else {
       // so the server did not understand OPTIONS, so lets ask for the files directly
