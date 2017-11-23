@@ -1,0 +1,49 @@
+<template id="lively-version-control" data-class="LivelyVersionControl">
+    <style>
+    :host {
+    }      
+    #versions {
+      background: white;
+    }
+    
+    #versions > table {
+      font-size: 8pt;
+    }
+    
+    #container {
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+    }
+
+    td.date {
+     width: 100px;
+    }
+
+    .selected {
+      background: gray;
+      color: white
+    }
+
+    tr:hover {
+      background: lightgray;
+    }
+    
+    td {
+      border-bottom: 1px lightgray solid;
+      padding: 2px;
+      margin: 0px;
+      white-space: nowrap;
+    }
+    
+    
+    </style>
+     <div id="container">
+      <div id="versions">
+        <table id="list"></table>
+      </div>
+    </div>
+
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+
