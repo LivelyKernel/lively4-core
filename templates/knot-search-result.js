@@ -74,6 +74,7 @@ export default class KnotSearchResult extends Morph {
         
         knot.asDataForDrag(evt);
       }
+      
     });
     listItem.addEventListener('drag', evt => {});
     listItem.addEventListener('dragend', evt => {

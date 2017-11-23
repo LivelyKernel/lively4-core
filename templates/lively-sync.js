@@ -197,12 +197,15 @@ export default class Sync extends Morph {
     this.gitControl("npmtest")
   }
 
-  onResolveButton() {
-    this.gitControl("resolve")
+
+  async onResolveButton() {
+    if (await lively.confirm("DANGER! Do you want to FORCE a resolve with a hammer? Please consider, going to all files and solve the conflict through editing there! This is not the button you want to use.")) {
+        this.gitControl("resolve")
+    }
   }
 
   onChangelogButton() {
-   this.gitControl("log");
+   this.gitControl("graph");
   }
   
   onCommitButton() {
@@ -216,11 +219,11 @@ export default class Sync extends Morph {
     }
   }
   
-  onMergeButton() {
-    if (window.confirm("Do you want to merge "
+  async onMergeButton() {
+    if (await lively.confirm("Do you want to merge "
       + this.get("#gitrepositorybranch").value 
       +" into " + this.get("#gitrepository").value 
-      + " repository?")) {
+      + " repository?<br><b style='color:red'>DANGER: Do not 'Squash' commit before a new 'Sync'</b>")) {
       this.gitControl("merge");
     }
   }

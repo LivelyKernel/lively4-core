@@ -16,6 +16,7 @@ export function applyDragCSSClass() {
 
 function appendToBodyAt(node, evt) {
   document.body.appendChild(node);
+  lively.showPoint(pt(evt.clientX, evt.clientY));
   lively.setGlobalPosition(node, pt(evt.clientX, evt.clientY));
 }
 
@@ -70,7 +71,12 @@ const dropOnDocumentBehavior = {
           if(!dt.types.includes("javascript/object")) { return false; }
           const tempKey = dt.getData("javascript/object");
 
-          lively.openInspector(getObjectFor(tempKey), pt(evt.clientX, evt.clientY));
+          lively.notify();
+          
+          lively.openInspector(getObjectFor(tempKey), pt(
+            evt.clientX,
+            evt.clientY).subPt(lively.getGlobalPosition(document.body)));
+          //debugger
           removeTempKey(tempKey);
 
           return true;

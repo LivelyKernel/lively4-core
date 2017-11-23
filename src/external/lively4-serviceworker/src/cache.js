@@ -3,6 +3,7 @@ import { Queue } from './queue.js';
 import Serializer from './serializer.js';
 import { ConnectionManager } from './connectionmanager.js';
 import * as msg from './messaging.js'
+import { FavoritsTracker } from './favoritstracker.js';
 
 /**
  * This class is supposed to be a general-purpose cache for HTTP requests with different HTTP methods.
@@ -14,8 +15,10 @@ export class Cache {
    * @param fileSystem A reference to the filesystem. Needed to process queued filesystem requests.
    */
   constructor(fileSystem) {
+    this._managesFavorits = true;
     this._dictionary = new Dictionary();
     this._queue = new Queue();
+    this._favoritsTracker = new FavoritsTracker();
     this._connectionManager = new ConnectionManager();
     this._fileSystem = fileSystem;
     
@@ -38,6 +41,10 @@ export class Cache {
    * To be used e.g. in `event.respondWith(...)`.
    */
   fetch(request, p) {
+    if (this._managesFavorits) {
+      this._favoritsTracker.update(request.url);
+    }
+    
     if (this._connectionManager.isOnline) {
       return this._onlineResponse(request, p);
     } else {
@@ -72,6 +79,7 @@ export class Cache {
           return Serializer.deserialize(response);
         } else {
           msg.broadcast('Could not fulfil request from cache.', 'error');
+          console.error(`Not in cache: ${request.url}`);
           return p;
         }
       })

@@ -5,7 +5,7 @@ import { DbObject } from './dbobject.js';
  */
 export class Queue extends DbObject {
   constructor() {
-    super('lively-sw-queue', 'queue');
+    super('queue');
     
     var request = indexedDB.open(this._dbName, 1);
     

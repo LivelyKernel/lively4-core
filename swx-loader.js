@@ -11,9 +11,9 @@ if (getChromeVersion() < 60) {
 } else {
   console.log("ok, lets work on it... SWX")
 
-  importScripts('swx-pre.js?' + Date.now());
-  importScripts('swx-boot.js?' + Date.now());
+  importScripts('swx-pre.js?'/* + Date.now()*/);
+  importScripts('swx-boot.js?'/* + Date.now()*/);
   console.log("boot loaded...")
 
-  importScripts('swx-post.js?' + Date.now());
+  importScripts('swx-post.js?'/* + Date.now()*/);
 }
