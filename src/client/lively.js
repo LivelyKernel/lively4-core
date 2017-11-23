@@ -304,14 +304,18 @@ export default class Lively {
     components.loadByName("lively-window");
     components.loadByName("lively-editor");
     
-    System.import("src/client/clipboard.js") // depends on me
-    System.import("src/client/graffle.js") // depends on me
-    System.import("src/client/draganddrop.js") // depends on me
+ 
   }
   
   
   static exportModules() {
     exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expectednit
+  
+    System.import("src/client/clipboard.js").then( m => {
+      lively.clipboard = m.default
+    }) // depends on me
+    System.import("src/client/graffle.js") // depends on me
+    System.import("src/client/draganddrop.js") // depends on me
   }
 
   static asUL(anyList){

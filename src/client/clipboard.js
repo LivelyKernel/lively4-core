@@ -10,12 +10,15 @@ export default class Clipboard {
   static load() {
     lively.removeEventListener("Clipboard", document)
     lively.removeEventListener("Clipboard", document.body)
-    lively.addEventListener("Clipboard", document, "mousedown", evt => this.onBodyMouseDown(evt))
+    
+    lively.addEventListener("Clipboard", document, "mousedown", evt => this.onBodyMouseDown(evt), true)
     lively.addEventListener("Clipboard", document.body, "paste", evt => this.onPaste(evt), true)
     lively.addEventListener("Clipboard", document.body, "cut", evt => this.onCut(evt))
     lively.addEventListener("Clipboard", document.body, "copy", evt => this.onCopy(evt))
     
     document.body.setAttribute("tabindex", 0) // just ensure focusabiltity
+
+    lively.clipboard = Clipboard; // #TODO make cyclic dependencies work
   }
   
   static onCut(evt) {
@@ -108,7 +111,7 @@ export default class Clipboard {
       else
         topLeft = topLeft.minPt(lively.getGlobalPosition(ea))
     })
-    var offset = this.lastClickPos.subPt(topLeft)
+    var offset = (this.lastClickPos || pt(0,0)).subPt(topLeft)
     
     var result = div
     all.forEach(child => {
@@ -132,7 +135,7 @@ export default class Clipboard {
       div.remove() // and get rid of the tmp container
     } else {
       // ajust position and content size
-      lively.setGlobalPosition(div, this.lastClickPos)
+      lively.setGlobalPosition(div, this.lastClickPos || pt(0,0))
       div.style.height = "max-content"
     }
     return result
@@ -221,5 +224,6 @@ export default class Clipboard {
     }
   }
 }
+
 
 Clipboard.load()
