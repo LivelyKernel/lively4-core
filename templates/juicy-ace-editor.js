@@ -1,4 +1,4 @@
-import generateUUID from './../src/client/uuid.js';
+import { uuid as generateUUID } from 'utils';
 import boundEval from './../src/client/bound-eval.js';
 
 import Morph from "./Morph.js"

@@ -19,7 +19,7 @@ import authGithub from './auth-github.js';
 import authDropbox from './auth-dropbox.js';
 import authGoogledrive  from './auth-googledrive.js';
 import expose from './expose.js';
-import generateUUID from './uuid.js';
+import { toArray, uuid as generateUUID } from 'utils';
 import {pt, rect} from './graphics.js';
 import Dialog from 'templates/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
@@ -30,8 +30,6 @@ import focalStorage from '../external/focalStorage.js';
 import Selection from 'templates/lively-selection.js'
 import windows from "templates/lively-window.js"
 import boundEval from "src/client/bound-eval.js";
-
-import { toArray } from "utils";
 
 let $ = window.$; // known global variables.
 

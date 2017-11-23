@@ -4,7 +4,7 @@
 
 ```JS
 import focalStorage from './../external/focalStorage.js'
-import generateUuid from './uuid.js'
+import { uuid as generateUuid } from 'utils'
 
 export default class Files {
   static fetchChunks(fetchPromise, eachChunkCB, doneCB) {
@@ -65,7 +65,7 @@ export default class Files {
 var __lvVarRecorder = System.get("@lively-env").moduleEnv("https://lively-kernel.org/lively4/lively4-core/src/client/files.js").recorder;'use strict';
 import focalStorage from './../external/focalStorage.js';
 __lvVarRecorder.focalStorage = focalStorage;
-import generateUuid from './uuid.js';
+import { uuid as generateUuid } from 'utils'
 __lvVarRecorder.generateUuid = generateUuid;
 var Files = __lvVarRecorder['lively.capturing-declaration-wrapper']('Files', 'class', __lvVarRecorder.createOrExtendES6ClassForLively('Files', undefined, undefined, [
     {

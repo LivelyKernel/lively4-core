@@ -1,6 +1,6 @@
-import focalStorage from './../external/focalStorage.js'
-import generateUuid from './uuid.js'
-import sourcemap from 'src/external/source-map.min.js'
+import focalStorage from './../external/focalStorage.js';
+import { uuid as generateUuid } from 'utils';
+import sourcemap from 'src/external/source-map.min.js';
 
 export default class Files {
   
