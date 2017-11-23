@@ -83,7 +83,7 @@ class ServiceWorker {
     if (url.hostname !== 'lively4' && url.hostname == location.hostname/* && request.mode != 'navigate'*/) {
       try {
         // Prepare a function that performs the network request if necessary
-        let doNetworkRequest = function() {
+        let doNetworkRequest = () => {
           // If we are not navigating using the browser, inject header information
           if(request.mode !== 'navigate') {
             return new Promise(async (resolve, reject) => {
@@ -154,7 +154,7 @@ class ServiceWorker {
       }
     } else if (url.hostname === 'lively4') {
       // Prepare a function that performs the network request if necessary
-      let doNetworkRequest = function() {
+      let doNetworkRequest = () => {
         // Forward call to filesystem, which will then perform the network request
         return new Promise(async (resolve, reject) => {
           resolve(this.filesystem.handle(request.clone(), url).then((result) => {
@@ -233,7 +233,7 @@ class ServiceWorker {
         method: 'GET' 
       });
       
-      let doNetworkRequest = function() {
+      let doNetworkRequest = () => {
         return new Promise(async (resolve, reject) => {
           //console.warn(`preloading ${request.url}`);
           resolve(self.fetch(request).then((result) => {
