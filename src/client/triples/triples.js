@@ -1,7 +1,6 @@
 import focalStorage from 'src/external/focalStorage.js';
-import uuid from './../uuid.js';
 import ContextMenu from './../contextmenu.js';
-import { through } from 'utils';
+import { through, uuid, fileName, hintForLabel, getTempKeyFor, asDragImageFor } from 'utils';
 
 async function getJSYaml() {
   await lively.loadJavaScriptThroughDOM("esprima", "https://lively-kernel.org/lively4/foo/src/external/esprima.js");
@@ -103,6 +102,25 @@ class Knot {
     });
 
     return listItem;
+  }
+  
+  asDataForDrag(evt) {
+    const dt = evt.dataTransfer;
+    //listItem.style.color = "blue";
+    dt.setData("knot/url", this.url);
+    dt.setData("text/uri-list", this.url);
+    dt.setData("text/plain", this.url);
+    dt.setData("javascript/object", getTempKeyFor(this));
+    const mimeType = 'text/plain';
+    const filename = this.url::fileName();
+    const url = this.url;
+    dt.setData("DownloadURL", `${mimeType}:${filename}:${url}`);
+
+    // #TODO: remove duplication
+    const dragInfo = <div style="width: 150px;">
+      {hintForLabel(this.label())}
+    </div>;
+    dragInfo::asDragImageFor(evt, 50, 60);
   }
 }
 

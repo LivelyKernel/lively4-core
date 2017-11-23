@@ -1,4 +1,4 @@
-import generateUUID from './uuid.js';
+import { uuid as generateUUID } from 'utils';
 import { setCode } from './workspaces.js';
 import Preferences from "./preferences.js";
 
