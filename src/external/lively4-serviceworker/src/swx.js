@@ -82,63 +82,67 @@ class ServiceWorker {
   
     if (url.hostname !== 'lively4' && url.hostname == location.hostname/* && request.mode != 'navigate'*/) {
       try {
-        var p;
-        if(request.mode !== 'navigate') {
-          p = new Promise(async (resolve, reject) => {
-            var email = await focalStorage.getItem(storagePrefix+ "githubEmail");
-            var username = await focalStorage.getItem(storagePrefix+ "githubUsername"); 
-            var token = await focalStorage.getItem(storagePrefix+ "githubToken");
+        // Prepare a function that performs the network request if necessary
+        let doNetworkRequest = function() {
+          // If we are not navigating using the browser, inject header information
+          if(request.mode !== 'navigate') {
+            return new Promise(async (resolve, reject) => {
+              var email = await focalStorage.getItem(storagePrefix+ "githubEmail");
+              var username = await focalStorage.getItem(storagePrefix+ "githubUsername"); 
+              var token = await focalStorage.getItem(storagePrefix+ "githubToken");
 
-             // we have to manually recreate a request, because you cannot modify the original
-             // see http://stackoverflow.com/questions/35420980/how-to-alter-the-headers-of-a-request
-             var options = {
-                method: request.method,
-                headers: new Headers(), 
-                mode: request.mode,
-                credentials: request.credentials,
-                redirect: request.redirect 
-            };
-            if (request.method == "PUT") {
-              options.body =  await request.blob();
-            }
-
-            for (var pair of request.headers.entries()) {
-              options.headers.set(pair[0], pair[1]);
-            }
-            options.headers.set("gitusername", username);
-            options.headers.set("gitemail", email);
-            options.headers.set("gitpassword", token);
-
-            var req = new Request(request.url, options );
-
-            // use system here to prevent recursion...
-            resolve(self.fetch(req).then((result) => {
-              if (result instanceof Response) {
-                return result;
-              } else {
-                return new Response(result);
+               // we have to manually recreate a request, because you cannot modify the original
+               // see http://stackoverflow.com/questions/35420980/how-to-alter-the-headers-of-a-request
+               var options = {
+                  method: request.method,
+                  headers: new Headers(), 
+                  mode: request.mode,
+                  credentials: request.credentials,
+                  redirect: request.redirect 
+              };
+              if (request.method == "PUT") {
+                options.body =  await request.blob();
               }
-            }).catch(e => {
-              console.log("fetch error: "  + e);
-              return new Response("Could not fetch " + url +", because of: " + e);
-            })) 
-          });
-        } else {
-          p = new Promise(async (resolve, reject) => {
-            resolve(self.fetch(request).then((result) => {
-              return result;
-            }).catch(e => {
-              console.log("fetch error: "  + e);
-              return new Response("Could not fetch " + url +", because of: " + e);
-            }))
-          });
-        }
+
+              for (var pair of request.headers.entries()) {
+                options.headers.set(pair[0], pair[1]);
+              }
+              options.headers.set("gitusername", username);
+              options.headers.set("gitemail", email);
+              options.headers.set("gitpassword", token);
+
+              var req = new Request(request.url, options );
+
+              // use system here to prevent recursion...
+              resolve(self.fetch(req).then((result) => {
+                if (result instanceof Response) {
+                  return result;
+                } else {
+                  return new Response(result);
+                }
+              }).catch(e => {
+                console.log("fetch error: "  + e);
+                return new Response("Could not fetch " + url +", because of: " + e);
+              })) 
+            });
+          } else {
+            // If we are navigating in the browser, simply forward the request
+             return new Promise(async (resolve, reject) => {
+              resolve(self.fetch(request).then((result) => {
+                return result;
+              }).catch(e => {
+                console.log("fetch error: "  + e);
+                return new Response("Could not fetch " + url +", because of: " + e);
+              }))
+            });
+          }
+        };
 
         if (pending) {
-          pending.resolve(p);
+          pending.resolve(doNetworkRequest());
         } else {
           // Use the cache if possible
-          event.respondWith(this._cache.fetch(event.request, p));
+          event.respondWith(this._cache.fetch(event.request, doNetworkRequest));
         }
       } catch(err) {
         // TODO: improve the solution, matching errors by message should be done better
@@ -149,34 +153,33 @@ class ServiceWorker {
         }
       }
     } else if (url.hostname === 'lively4') {
-      // QUESTION: When opening a folder, lively sometimes sends a OPTION request to https://lively4/
-      // This request is then handled here and forwarded to the github filesystem, which returns an error 405
-      // (there is never any actual path, the request always goes to https://lively4/)
-      // Why is this happening? Is this still necessary?
-      var p = new Promise(async (resolve, reject) => {
-        resolve(this.filesystem.handle(request.clone(), url).then((result) => {
-          if (result instanceof Response) {
-            return result;
-          } else if (result && result.toResponse) {
-            return result.toResponse();
-          } else {
-            return new Response(result);
-          }
-        }).catch((err) => {
-          console.error('Error while processing fetch event:', err);
+      // Prepare a function that performs the network request if necessary
+      let doNetworkRequest = function() {
+        // Forward call to filesystem, which will then perform the network request
+        return new Promise(async (resolve, reject) => {
+          resolve(this.filesystem.handle(request.clone(), url).then((result) => {
+            if (result instanceof Response) {
+              return result;
+            } else if (result && result.toResponse) {
+              return result.toResponse();
+            } else {
+              return new Response(result);
+            }
+          }).catch((err) => {
+            console.error('Error while processing fetch event:', err);
 
-          let message = err.toString();
-          let content = JSON.stringify({message: message});
+            let message = err.toString();
+            let content = JSON.stringify({message: message});
 
-          return new Response(content, {status: 500, statusText: message});
-        }));
-      });
+            return new Response(content, {status: 500, statusText: message});
+          }));
+        });
+      };
 
       if (pending) {
-        console.log("resolve pending request: " + pending.url)
-        pending.resolve(p);
+        pending.resolve(doNetworkRequest());
       } else
-        event.respondWith(this._cache.fetch(event.request, p));
+        event.respondWith(this._cache.fetch(event.request, doNetworkRequest));
     }
   }
 
@@ -230,17 +233,21 @@ class ServiceWorker {
         method: 'GET' 
       });
       
-      var p = new Promise(async (resolve, reject) => {
-        //console.warn(`preloading ${request.url}`);
-        resolve(self.fetch(request).then((result) => {
-          return result;
-        }).catch(e => {
-          console.log("fetch error: "  + e);
-          return new Response("Could not fetch " + url +", because of: " + e);
-        }))
-      });
+      let doNetworkRequest = function() {
+        return new Promise(async (resolve, reject) => {
+          //console.warn(`preloading ${request.url}`);
+          resolve(self.fetch(request).then((result) => {
+            return result;
+          }).catch(e => {
+            console.log("fetch error: "  + e);
+            return new Response("Could not fetch " + url +", because of: " + e);
+          }))
+        });
+      };
       
-      this._cache.fetch(request, p);
+      // Just tell the cache to fetch the file
+      // This will update our cache if we are online
+      this._cache.fetch(request, doNetworkRequest);
     }
   }
 }
