@@ -1,5 +1,5 @@
 
-import Morph from './Morph.js';
+import Morph from 'templates/Morph.js';
 import moment from "src/external/moment.js";
 
 export default class VersionControl extends Morph {

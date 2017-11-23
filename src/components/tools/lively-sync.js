@@ -1,6 +1,6 @@
 'use strict';
 
-import Morph from './Morph.js';
+import Morph from 'templates/Morph.js';
 
 export default class Sync extends Morph {
   initialize() {

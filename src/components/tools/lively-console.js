@@ -1,4 +1,4 @@
-import Morph from "./Morph.js"
+import Morph from "templates/Morph.js"
 
 import * as cop from "src/external/ContextJS/src/contextjs.js"
 
