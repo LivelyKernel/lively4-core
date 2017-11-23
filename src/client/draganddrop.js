@@ -1,6 +1,6 @@
 import { pt } from 'src/client/graphics.js';
-import generateUUID from './uuid.js';
-import { debounce } from "utils";
+import { uuid as generateUUID } from 'utils';
+import { debounce, asDragImageFor, getObjectFor, removeTempKey } from "utils";
 
 export function applyDragCSSClass() {
   this.addEventListener('dragenter', evt => {
@@ -14,44 +14,10 @@ export function applyDragCSSClass() {
   });
 }
 
-// #TODO: chrome does not support dataTransfer.addElement :(
-// e.g. dt.addElement(<h1>drop me</h1>);
-// Therefore, we have to perform this hack stolen from:
-// https://stackoverflow.com/questions/12766103/html5-drag-and-drop-events-and-setdragimage-browser-support
-export function asDragImageFor(evt, offsetX=0, offsetY=0) {
-  const clone = this.cloneNode(true);
-  document.body.appendChild(clone);
-  clone.style["z-index"] = "-100000";
-  clone.style.top = Math.max(0, evt.clientY - offsetY) + "px";
-  clone.style.left = Math.max(0, evt.clientX - offsetX) + "px";
-  clone.style.position = "absolute";
-  clone.style.pointerEvents = "none";
-
-  setTimeout(::clone.remove);
-  evt.dataTransfer.setDragImage(clone, offsetX, offsetY);
-}
-
 function appendToBodyAt(node, evt) {
   document.body.appendChild(node);
   lively.showPoint(pt(evt.clientX, evt.clientY));
   lively.setGlobalPosition(node, pt(evt.clientX, evt.clientY));
-}
-
-const TEMP_OBJECT_STORAGE = new Map();
-export function getTempKeyFor(obj) {
-  const tempKey = generateUUID();
-  TEMP_OBJECT_STORAGE.set(tempKey, obj);
-  
-  // safety net: remove the key in 10 minutes
-  setTimeout(() => removeTempKey(tempKey), 10 * 60 * 1000);
-
-  return tempKey;
-}
-export function getObjectFor(tempKey) {
-  return TEMP_OBJECT_STORAGE.get(tempKey);
-}
-export function removeTempKey(tempKey) {
-  TEMP_OBJECT_STORAGE.delete(tempKey);
 }
 
 //class DataTransferItemHandler {

@@ -1,8 +1,8 @@
 // #Clipboard - Cut,Copy, and Paste for Lively4
 
 import {pt} from 'src/client/graphics.js';
-import Halo from "templates/lively-halo.js"
-import generateUUID from './uuid.js';
+import Halo from "templates/lively-halo.js";
+import { uuid as generateUUID } from 'utils';
 import persistence from "src/client/persistence.js"
 
 export default class Clipboard {
