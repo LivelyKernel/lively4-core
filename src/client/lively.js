@@ -1050,7 +1050,7 @@ export default class Lively {
       let baseName = this.templateClassNameToTemplateName(className);
       var url = await this.components.searchTemplateFilename(baseName +".js")
       if (url) {
-        console.log("Components: load module " + url)
+        // console.log("Components: load module " + url)
         var module = await System.import(url);
         proto =  Object.create(module.prototype || module.default.prototype);        
       } else {
