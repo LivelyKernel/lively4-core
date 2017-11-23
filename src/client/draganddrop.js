@@ -1,5 +1,4 @@
 import { pt } from 'src/client/graphics.js';
-import { uuid as generateUUID } from 'utils';
 import { debounce, asDragImageFor, getObjectFor, removeTempKey } from "utils";
 
 export function applyDragCSSClass() {
@@ -59,19 +58,35 @@ const dropOnDocumentBehavior = {
     lively.addEventListener("dropOnDocumentBehavior", document, "drop", ::this.onDrop)
     
     this.handlers = [
+      // knot/url to desktop item
+      {
+        handle(evt) {
+          const dt = evt.dataTransfer;
+          if(!dt.types.includes("knot/url")) { return false; }
+          const knotURL = dt.getData("knot/url");
+
+          lively.openComponentInWindow('knot-desktop-icon')
+            .then(icon => new Promise(resolve => {
+              setTimeout(() => resolve(icon), 3000);
+            }))
+            .then(icon => icon.knotURL = knotURL);
+
+          return true;
+        }
+      },
+      
       new DropOnBodyHandler('text/uri-list', urlString => {
         if (!urlString.match(/^data\:image\/png/)) { return false; }
         
         return <img class="lively-content" src={urlString}></img>;
       }),
       
+      // open javascript/object in inspector
       {
         handle(evt) {
           const dt = evt.dataTransfer;
           if(!dt.types.includes("javascript/object")) { return false; }
           const tempKey = dt.getData("javascript/object");
-
-          lively.notify();
           
           lively.openInspector(getObjectFor(tempKey), pt(
             evt.clientX,
