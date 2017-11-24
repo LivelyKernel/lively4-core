@@ -170,6 +170,13 @@ export class Cache {
    * @return String key
    */
   _buildKey(request) {
+    // Ignore params when loading start.html
+    // The file always has the same content, and we want to boot offline whenever possible
+    let requestUrl = new URL(request.url);
+    if(requestUrl.origin == self.location.origin && requestUrl.pathname.endsWith('start.html')) {
+      return `${request.method} ${requestUrl.origin}/${requestUrl.pathname}`;
+    }
+    
     return `${request.method} ${request.url}`;
   }
   
