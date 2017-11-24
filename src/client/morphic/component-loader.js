@@ -358,8 +358,7 @@ export default class ComponentLoader {
       if (!url) {
         throw new Error("Could not find template for " + name)
       }
-     
-      console.log("load component: " + url)
+      // console.log("load component: " + url)
       
       // #TODO continue here url.exists() 
       var link = document.createElement("link");
