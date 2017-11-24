@@ -82,10 +82,10 @@ export default class Services extends Morph {
 
   addButtonClick(evt) {
     lively.openComponentInWindow('lively-file-browser').then(browser => {
-      browser.path = servicesRootURL;
+      browser.path = servicesURL + 'mount/';
       lively.setGlobalPosition(browser.parentElement, lively.getGlobalPosition(this.parentElement).addPt(pt(30,30)))
       browser.setMainAction((url) => {
-        const relativePath = url.toString().replace(servicesRootURL + '/', '');
+        const relativePath = url.toString().replace(servicesURL + 'mount' + '/', '');
         
         this.serviceTop.removeAttribute('data-id');
         this.entryPoint.value = relativePath;
@@ -112,7 +112,7 @@ export default class Services extends Morph {
   }
 
   editButtonClick() {
-    lively.openBrowser(servicesRootURL);
+    lively.openBrowser(servicesURL + 'mount/');
   }
 
   cloneButtonClick() {
