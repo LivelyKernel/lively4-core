@@ -1,10 +1,8 @@
 import Morph from './Morph.js';
 import { Graph } from './../src/client/triples/triples.js';
-import { getTempKeyFor, asDragImageFor } from 'src/client/draganddrop.js';
-import { fileName } from 'utils';
-import generateUUID from 'src/client/uuid.js';
+import { uuid as generateUUID, getTempKeyFor, fileName, hintForLabel, asDragImageFor } from 'utils';
+import Keys from 'src/client/keys.js';
 
-var x = 0;
 export default class KnotSearchResult extends Morph {
   // lazy initializer for knot array
   get knots() { return this._knots = this._knots || []; }
@@ -14,19 +12,33 @@ export default class KnotSearchResult extends Morph {
   }
   
   focus() {
-    const listItem = this.get("li");
+    const listItem = this.get("li.last-selected");
     if(listItem) {
       listItem.focus();
     }
   }
-  
+  focusDefault() {
+    const listItem = this.get("li");
+    if(listItem) {
+      listItem.focus();
+      listItem.classList.toggle("selected");
+      listItem.classList.add("last-selected");
+    }
+  }
+
   setSearchTerm(term) {
     this.get("#search-term").innerHTML = term;
   }
   
   removeSelection() {
-    const selectedItems = Array.from(this.getAllSubmorphs('li.selected'));
-    selectedItems.forEach(item => item.classList.remove('selected'));
+    this.getAllSubmorphs('li.selected').forEach(item => {
+      item.classList.remove('selected');
+    });
+  }
+  removeLastSelection() {
+    this.getAllSubmorphs('li.last-selected').forEach(item => {
+      item.classList.remove('last-selected');
+    });
   }
   
   async addKnot(knot) {
@@ -36,22 +48,6 @@ export default class KnotSearchResult extends Morph {
     
     // events fired on drag element
     listItem.addEventListener('dragstart', evt => {
-      function hintForLabel(label) {
-        return <div style="
-          margin: 0.5px 0px;
-          font-size: x-small;
-          background-color: lightgray;
-          border: 1px solid gray;
-          border-radius: 2px;
-          max-width: fit-content;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        ">
-          {label}
-        </div>
-      }
-
       const selectedItems = Array.from(this.getAllSubmorphs('li.selected'));
       if(selectedItems.length > 1 && selectedItems.includes(listItem)) {
         const dt = evt.dataTransfer;
@@ -68,86 +64,141 @@ export default class KnotSearchResult extends Morph {
           hints.length = maxLength;
           hints.push(hintForLabel(`+ ${hintLength - maxLength} more.`))
         }
-        const dragInfo = <div style="width: 150px;">
+        const dragInfo = <div style="width: 151px;">
           {...hints}
         </div>;
         dragInfo::asDragImageFor(evt, -10, 2);
       } else {
         this.removeSelection();
         listItem.classList.add("selected");
-      
-        const dt = evt.dataTransfer;
-        listItem.style.color = "blue";
-        dt.setData("knot/url", knot.url);
-        dt.setData("text/uri-list", knot.url);
-        dt.setData("text/plain", knot.url);
-        dt.setData("javascript/object", getTempKeyFor(knot));
-        // #TODO: is it possible nowadays to put a data uri in a downloadurl?
-        const tryDataURIDownloadURL = false;
-        const mimeType = tryDataURIDownloadURL ?
-          'text/plain' :
-          'text/plain';
-        const filename = knot.url::fileName();
-        const url = tryDataURIDownloadURL ?
-          URL.createObjectURL(new Blob(["aFileParts"], {type : 'text/plain'})) ||
-              `data:application/x-javascript;base64,${btoa("helloworld")}` :
-          knot.url;
-        lively.warn(url);
-        dt.setData("DownloadURL", `${mimeType}:${filename}:${url}`);
-
-        // #TODO: remove duplication
-        const dragInfo = <div style="width: 150px;">
-          {hintForLabel(knot.label())}
-        </div>;
-        dragInfo::asDragImageFor(evt, 50, 60);
+        
+        knot.asDataForDrag(evt);
       }
       
-    }, false);
-    listItem.addEventListener('drag', evt => {
-      if(x++ % 10 !== 0) { return; }
-      //lively.showPoint(pt(evt.clientX, evt.clientY));
-    }, false);
+    });
+    listItem.addEventListener('drag', evt => {});
     listItem.addEventListener('dragend', evt => {
       listItem.style.color = null;
-    }, false);
+    });
 
     // events fired on drop target
     listItem.addEventListener('dragenter', evt => {
       lively.notify('dragenter');
       const dragInfo = <div width="200px" height="200px" style="background-color: blue"></div>;
       dragInfo::asDragImageFor(evt, -150, 50);
-    }, false);
-    listItem.addEventListener('dragover', evt => lively.notify('dragover'), false);
-    listItem.addEventListener('dragleave', evt => lively.notify('dragleave'), false);
+    });
+    listItem.addEventListener('dragover', evt => lively.notify('dragover'));
+    listItem.addEventListener('dragleave', evt => lively.notify('dragleave'));
     listItem.addEventListener('drop', evt => {
       lively.notify('drop');
       lively.notify(":", evt.dataTransfer.getData("knot/url"));
-    }, false);
+    });
     
+    /* ** MULTISELECTION ** */
+    const selectFromLastSelectedTo = current => {
+      const lastSelected = this.get(".last-selected") || this.get("li");
+
+      // according to Ashton French
+      // https://stackoverflow.com/questions/47398032/select-every-element-between-two-ids
+      let firstIdFound = false;
+      let applySelector = false;
+      this.getAllSubmorphs("li")
+        .filter(element => {
+          if (element === lastSelected || element === current) {
+            applySelector = firstIdFound ? false : true;
+            firstIdFound = applySelector ? true : false;
+            return true;
+          }
+          return applySelector;
+        })
+        .forEach(element => element.classList.add("selected"));
+    }
     listItem.addEventListener('click', evt => {
       evt.stopPropagation();
       evt.preventDefault();
       
-      if(!evt.ctrlKey) {
+      if(!evt.ctrlKey && !evt.shiftKey) {
         this.removeSelection();
+        this.removeLastSelection();
+        listItem.classList.add("selected");
+        listItem.classList.add("last-selected");
       }
-      if(!evt.shiftKey) {
+      if(evt.ctrlKey && !evt.shiftKey) {
+        this.removeLastSelection();
         listItem.classList.toggle("selected");
-        //listItem.classList.add("last-selected");
-      } else {
-        // const lastSelected = this.get("last-selected");
-        // const id1 = generateUUID();
-        // const id2 = generateUUID();
-        // lastSelected.classList.add('one');
-        // listItem.classList.add('two');
-        // [lastSelected, listItem]
-        //   .concat(Array.from(this.getAllSubmorphs('#one ~ p:not(#two)')))
-        //   .concat(Array.from(this.getAllSubmorphs('#two ~ p:not(#one)')))
-        //   .forEach(item => item.classList.add("selected"));
-        // lastSelected.classList.remove('one');
-        // listItem.classList.remove('two');
+        listItem.classList.add("last-selected");
       }
-    }, false);
+      if(evt.shiftKey) {
+        if(!evt.ctrlKey) { this.removeSelection(); }
+        selectFromLastSelectedTo(listItem);
+      }
+    });
+    const navigate = (current, direction, ctrl, shiftKey) => {
+      if(!ctrl) { this.removeSelection(); }
+      if(!ctrl && !shiftKey) { this.removeLastSelection(); }
+
+      const elements = this.getAllSubmorphs("li");
+      const currentIndex = elements.indexOf(listItem);
+      let nextIndex = currentIndex + direction;
+      nextIndex += elements.length; // make module of -1 lead to last element
+      nextIndex %= elements.length;
+      const nextItem = elements[nextIndex];
+      nextItem.focus();
+      if(shiftKey) {
+        selectFromLastSelectedTo(nextItem);
+      } else if(ctrl) {
+        // just change focus      
+      } else {
+        nextItem.classList.add("selected");
+        nextItem.classList.add("last-selected");
+      }
+    };
+    listItem.addEventListener('keydown', evt => {
+      const ctrl = evt.ctrlKey || evt.metaKey;
+      const { shiftKey, altKey, keyCode, charCode } = evt;
+
+      //lively.notify(`keyCode: ${keyCode}, charCode: ${charCode}`);
+      
+      // Tab
+      if(keyCode === 9) {
+        lively.warn("Tab navigation not supported.");
+        
+        evt.preventDefault();
+        evt.stopPropagation();
+        return;
+      }
+      
+      // up and down
+      if(keyCode === 38 || keyCode === 40) {
+        navigate(listItem, keyCode === 38 ? -1 : 1, ctrl, shiftKey);
+
+        evt.preventDefault();
+        evt.stopPropagation();
+        return;
+      }
+
+      // space
+      if(keyCode === 32 && ctrl) {
+        this.removeLastSelection();
+        listItem.classList.toggle("selected");
+        listItem.classList.add("last-selected");
+        
+        evt.preventDefault();
+        evt.stopPropagation();
+        return;
+      }
+      
+      // ctrl + A
+      if(keyCode === 65 && ctrl) {
+        this.getAllSubmorphs("li")
+          .forEach(element => element.classList.add("selected"));
+        
+        evt.preventDefault();
+        evt.stopPropagation();
+        return;
+      }
+    });
+    
     list.appendChild(listItem);
   }
   

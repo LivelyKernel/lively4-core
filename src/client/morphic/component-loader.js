@@ -298,7 +298,12 @@ export default class ComponentLoader {
     if (!_templatePaths) {
       _templatePaths = [
         lively4url + '/templates/',
-        lively4url + '/src/components/'
+        lively4url + '/src/components/',
+        lively4url + '/src/components/widgets/',
+        lively4url + '/src/components/tools/',
+        lively4url + '/src/components/halo/',
+        lively4url + '/src/components/demo/',
+        lively4url + '/src/components/draft/',
       ]; // default
     } 
     return _templatePaths
@@ -314,12 +319,35 @@ export default class ComponentLoader {
   static async searchTemplateFilename(filename) {
     var templatePaths =  this.getTemplatePaths()
     let templateDir = undefined;          
-    for(templateDir of templatePaths) {
-      var stats = await fetch(templateDir, { method: 'OPTIONS' }).then(resp => resp.json());
-      var found = stats.contents.find(ea => ea.name == filename)
-      if (found) break;  
+  
+    // #IDEA, using HTTP HEAD could be faster, but is not always implemented... as ource OPTIONS is neigher
+    // this method avoids the 404 in the console.log
+    
+    
+    // the OPTIONS request seems to break karma... waits to long..
+	  if (!window.__karma__) { 
+      for(templateDir of templatePaths) {
+        try {
+          var stats = await fetch(templateDir, { method: 'OPTIONS' }).then(resp => resp.json());
+          var found = stats.contents.find(ea => ea.name == filename)
+        } catch(e) {
+          console.log("searchTemplateFilename: could not get stats of  " + filename)
+          found = null
+        }
+        if (found) break;  
+      }
+    } else {
+      // so the server did not understand OPTIONS, so lets ask for the files directly
+      if (!found) {
+        for(templateDir of templatePaths) {
+          var found = await fetch(templateDir + filename, { method: 'GET' }) // #TODO use HEAD, after implementing it in lively4-server
+            .then(resp => resp.status == 200); 
+          if (found) break;  
+        } 
+        if (!found) return undefined;
+      }      
     }
-    if (!found) return undefined;
+    
     return templateDir + filename
   }
   
@@ -330,8 +358,7 @@ export default class ComponentLoader {
       if (!url) {
         throw new Error("Could not find template for " + name)
       }
-     
-      console.log("load component: " + url)
+      // console.log("load component: " + url)
       
       // #TODO continue here url.exists() 
       var link = document.createElement("link");

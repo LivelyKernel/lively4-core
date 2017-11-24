@@ -1,9 +1,9 @@
 import { Dictionary } from './dictionary.js';
 import { Queue } from './queue.js';
-import { FavoritsTracker } from './favoritstracker.js';
 import Serializer from './serializer.js';
 import { ConnectionManager } from './connectionmanager.js';
 import * as msg from './messaging.js'
+import { FavoritsTracker } from './favoritstracker.js';
 
 /**
  * This class is supposed to be a general-purpose cache for HTTP requests with different HTTP methods.
@@ -15,9 +15,10 @@ export class Cache {
    * @param fileSystem A reference to the filesystem. Needed to process queued filesystem requests.
    */
   constructor(fileSystem) {
+    this._managesFavorits = true;
     this._dictionary = new Dictionary();
     this._queue = new Queue();
-    this._favorits = new FavoritsTracker();
+    this._favoritsTracker = new FavoritsTracker();
     this._connectionManager = new ConnectionManager();
     this._fileSystem = fileSystem;
     
@@ -38,21 +39,29 @@ export class Cache {
   /**
    * Fetches a request from the cache or network, according to the caching strategy.
    * To be used e.g. in `event.respondWith(...)`.
+   * @param request The request to respond to
+   * @param doNetworkRequest A function to call if we need to send out a network request
    */
-  fetch(request, p) {
+  fetch(request, doNetworkRequest) {
+    if (this._managesFavorits) {
+      this._favoritsTracker.update(request.url);
+    }
+    
     if (this._connectionManager.isOnline) {
-      return this._onlineResponse(request, p);
+      return this._onlineResponse(request, doNetworkRequest);
     } else {
-      return this._offlineResponse(request, p);
+      return this._offlineResponse(request);
     }
   }
   
   /**
    * Returns a response for online devices
+   * @param request The request to respond to
+   * @param doNetworkRequest A function to call if we need to send out a network request
    */
-  _onlineResponse(request, p) {
+  _onlineResponse(request, doNetworkRequest) {
     // When online, handle requests normaly and store the result
-    return p.then((response) => {
+    return doNetworkRequest().then((response) => {
       // Currently, we only store OPTIONS and GET requests in the cache
       if (this._cacheMethods.includes(request.method)) {
         this._put(request, response);
@@ -63,24 +72,28 @@ export class Cache {
   
   /**
    * Returns a response for offline devices
+   * @param request The request to respond to
    */
-  _offlineResponse(request, p) {
+  _offlineResponse(request) {
     // When offline, check the cache or put request in queue
     if (this._cacheMethods.includes(request.method)) {
       // Check if the request is in the cache
       return this._match(request).then((response) => {
         if (response) {
-          msg.broadcast('Fulfilled request from cache.', 'warning');
+          //msg.broadcast('Fulfilled request from cache.', 'warning');
           return Serializer.deserialize(response);
         } else {
           msg.broadcast('Could not fulfil request from cache.', 'error');
-          return p;
+          console.error(`Not in cache: ${request.url}`);
+          // At this point we know we are offline, so sending out the request is useless
+          // Just create a fake error Response
+          return this._buildNotCachedResponse();
         }
       })
     } else if (this._queueMethods.includes(request.method)) {
       this._enqueue(request);
       msg.broadcast('Queued write request.', 'warning');
-      return this._buildFakeResponse();
+      return this._buildEnqueuedResponse();
     }
   }
   
@@ -161,13 +174,25 @@ export class Cache {
   }
   
   /**
-   * Builds a fake Response to return when a Request is enqueued
+   * Builds a fake success Response to return when a Request is enqueued
    * @return Response
    */
-  _buildFakeResponse() {
+  _buildEnqueuedResponse() {
     return new Response(null, {
       status: 202,
       statusText: 'Accepted'
+    });
+  }
+  
+  /**
+   * Builds a fake error Response to return when offline and not cached
+   * @return Response
+   */
+  _buildNotCachedResponse() {
+    let errorText = 'You are offline and the requested file was not found in the cache.';
+    return new Response(errorText, {
+      status: 503,
+      statusText: 'Service Unavailable'
     });
   }
 }

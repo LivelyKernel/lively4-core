@@ -7,14 +7,22 @@ import { DbObject } from './dbobject.js';
 export class FavoritsTracker extends DbObject {
   constructor() {
     super('favorits');
-    this._connect();
+    this._connect(); 
   }
   
   /**
    * Updates the favorit count for a given key.
    */
   update(key) {
-    var value = 0;
-    this._getObjectStore().put(value, key);
+    var objectStore = this._getObjectStore();
+    var request = objectStore.get(key);
+    
+    request.onsuccess = (event) => {
+      if(request.result) {
+        objectStore.put(request.result + 1, key);
+      } else {
+        objectStore.put(0, key);
+      }
+    }
   }
 }

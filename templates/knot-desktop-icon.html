@@ -1,0 +1,36 @@
+<template id="knot-desktop-icon" data-class="KnotDesktopIcon">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+#desktop-icon {
+  text-align: center;
+  border: 0.5px solid transparent;
+  border-radius: 5px;
+}
+#desktop-icon:hover {
+  background-color: lightgrey;
+  border: 0.5px solid grey;
+}
+#icon i {
+  color: gray;
+  font-size: 700%;
+}
+#label {
+  color: gray;
+/*  background-color: red; */
+}
+:focus{
+  border: 10px solid yellow;
+}
+.currently-dragging {
+  opacity: 0.5;
+  background-color: lightgrey;
+}
+</style>
+<div id="desktop-icon" draggable="true">
+  <span id="icon"><i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i></span>
+  <span id="label">knot label</span>
+</div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

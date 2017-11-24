@@ -165,7 +165,7 @@ button
 
 <script>
 import {pt} from "src/client/graphics.js"
-import Ball from "templates/lively-ball.js"
+import Ball from "src/components/demo/lively-ball.js"
 
 var button = document.createElement("button")
 button.textContent = "Bouncing Ball"
@@ -264,7 +264,7 @@ button
 
 <script>
 import {pt} from "src/client/graphics.js"
-import Soap from "templates/lively-soapbubble.js"
+import Soap from "src/components/demo/lively-soapbubble.js"
 
 var button = document.createElement("button")
 button.textContent = "Soapbubble"

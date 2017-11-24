@@ -19,7 +19,7 @@ import authGithub from './auth-github.js';
 import authDropbox from './auth-dropbox.js';
 import authGoogledrive  from './auth-googledrive.js';
 import expose from './expose.js';
-import generateUUID from './uuid.js';
+import { toArray, uuid as generateUUID } from 'utils';
 import {pt, rect} from './graphics.js';
 import Dialog from 'templates/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
@@ -28,10 +28,8 @@ import ViewNav from 'src/client/viewnav.js'
 import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
 import Selection from 'templates/lively-selection.js'
-import windows from "templates/lively-window.js"
+import windows from "src/components/widgets/lively-window.js"
 import boundEval from "src/client/bound-eval.js";
-
-import { toArray } from "utils";
 
 let $ = window.$; // known global variables.
 
@@ -146,7 +144,8 @@ export default class Lively {
     }).then(async (mod) => {
       modulePaths.forEach(eaPath => {
         // lively.notify("update dependend: ", eaPath, 3, "blue")
-        if (eaPath.match(/templates\/.*js/)) {
+        var found = lively.components.getTemplatePaths().find(templatePath => eaPath.match(templatePath))
+        if (found) {
           var templateURL = eaPath.replace(/\.js$/,".html");
           try {
             console.log("[templates] update template " + templateURL);
@@ -304,14 +303,18 @@ export default class Lively {
     components.loadByName("lively-window");
     components.loadByName("lively-editor");
     
-    System.import("src/client/clipboard.js") // depends on me
-    System.import("src/client/graffle.js") // depends on me
-    System.import("src/client/draganddrop.js") // depends on me
+ 
   }
   
   
   static exportModules() {
     exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expectednit
+  
+    System.import("src/client/clipboard.js").then( m => {
+      lively.clipboard = m.default
+    }) // depends on me
+    System.import("src/client/graffle.js") // depends on me
+    System.import("src/client/draganddrop.js") // depends on me
   }
 
   static asUL(anyList){
@@ -1047,7 +1050,7 @@ export default class Lively {
       let baseName = this.templateClassNameToTemplateName(className);
       var url = await this.components.searchTemplateFilename(baseName +".js")
       if (url) {
-        console.log("Components: load module " + url)
+        // console.log("Components: load module " + url)
         var module = await System.import(url);
         proto =  Object.create(module.prototype || module.default.prototype);        
       } else {
@@ -1445,8 +1448,17 @@ export default class Lively {
    if (!result && element.host) result = this.query(element.host, query) 
    return result
   }
-  
-  
+
+  static queryAll(element, query) {    
+    var all = new Set()
+    element.querySelectorAll(query).forEach(ea => all.add(ea))
+    var containers = element.querySelectorAll("lively-container")
+    containers.forEach(ea => {
+      ea.shadowRoot.querySelectorAll(query).forEach(ea => all.add(ea))
+    })
+    return Array.from(all)
+  }
+ 
   static gotoWindow(element) {
     element.focus()
     document.scrollingElement.scrollTop = 0
