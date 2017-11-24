@@ -189,7 +189,7 @@ export class Cache {
    * @return Response
    */
   _buildNotCachedResponse() {
-    let errorText = 'Error: Your are offline and the requested file was not found in the cache.';
+    let errorText = 'You are offline and the requested file was not found in the cache.';
     return new Response(errorText, {
       status: 503,
       statusText: 'Service Unavailable'
