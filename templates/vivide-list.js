@@ -1,5 +1,9 @@
 import Morph from './Morph.js';
 
+// TODO: Add children to output
+// TODO: Refactor display functions to builder pattern
+// TODO: Reference functions for infinite trees
+
 export default class VivideList extends Morph {
   async initialize() {
     this.windowTitle = "VivideList";
@@ -31,8 +35,24 @@ export default class VivideList extends Morph {
     this.transformations.push(transformationFunction);
   }
   
+  transformationAt(index) {
+    if(this.transformations.length > index) {
+      return this.transformations[index];
+    } else {
+      return this.defaultTransformation;
+    }
+  }
+  
   pushDepiction(depictionFunction) {
     this.depictions.push(depictionFunction);
+  }
+  
+  depictionAt(index) {
+    if(this.depictions.length > index) {
+      return this.depictions[index];
+    } else {
+      return this.defaultDepiction;
+    }
   }
   
   toggleSelection(wrapper) {
@@ -51,10 +71,7 @@ export default class VivideList extends Morph {
         wrapper.children = [];
         wrapper.hasChildren = false;
       } else {
-        wrapper.children =
-          this.transformations.length > level+1 ?
-          this.transformations[level+1](wrapper.object).map(object => this.wrap(object)) :
-          this.defaultTransformation(wrapper.object).map(object => this.wrap(object));
+        wrapper.children = this.transformationAt(level+1)(wrapper.object).map(object => this.wrap(object));
         wrapper.hasChildren = true;
       }
       this.display()
@@ -62,14 +79,9 @@ export default class VivideList extends Morph {
   }
   
   display() {
-    // TODO: Better algorithm for textContent
-    this.textContent = this.model.map(elem => this.depictions[0](elem.object)).join('<br />');
+    this.textContent = this.model.map(elem => this.depictionAt(0)(elem.object)).join('<br />');
     this.get("#content").innerHTML = "";
-    for(let i in this.model) {
-      
-      this.displayListEntry(0, this.model[i]);
-    
-    }
+    for(let i in this.model) { this.displayListEntry(0, this.model[i]); }
   }
   
   displayListEntry(level, wrapper) {
@@ -78,7 +90,7 @@ export default class VivideList extends Morph {
     
     let listentryPlaceholder = document.createElement("div");
     listentryPlaceholder.className = "listentry-placeholder";
-    listentryPlaceholder.style.width = (level * 4) + "em";
+    listentryPlaceholder.style.width = (level * 2) + "em";
     listentryPlaceholder.innerHTML = "&nbsp;";
       
     let listentryUnfold = document.createElement("div");
@@ -90,9 +102,7 @@ export default class VivideList extends Morph {
     listentryContent.className = "listentry-content";
     if(wrapper.selected) { listentryContent.classList.add("selected"); }
     listentryContent.addEventListener("click", this.toggleSelection(wrapper));
-    listentryContent.innerHTML =
-      this.depictions.length > level ? 
-      this.depictions[level](wrapper.object) :
+    listentryContent.innerHTML = this.depictionAt(level)(wrapper.object);
       this.defaultDepiction(wrapper.object);
       
     listentry.appendChild(listentryPlaceholder);
@@ -100,10 +110,8 @@ export default class VivideList extends Morph {
     listentry.appendChild(listentryContent);
     this.get("#content").appendChild(listentry);
     
-    if(wrapper.children) {
-      for(let i in wrapper.children) {
-        this.displayListEntry(level+1, wrapper.children[i]);
-      }
+    for(let i in wrapper.children) {
+      this.displayListEntry(level+1, wrapper.children[i]);
     }
   }
   
@@ -126,10 +134,7 @@ export default class VivideList extends Morph {
   }
   
   setModel(model) {
-    model =
-      this.transformations.length > 0 ?
-      this.transformations[0](model) :
-      this.defaultTransformation(model);
+    model = this.transformationAt(0)(model);
     this.model = model.map(elem => this.wrap(elem));
   }
   
@@ -140,15 +145,24 @@ export default class VivideList extends Morph {
   
   livelyExample() {
     this.pushTransformation((list) => {
-      return list.filter(elem => elem.age < 100);
+      return list.filter(person => person.age < 100);
     });
-    this.pushDepiction(elem => elem.name);
-    this.pushTransformation(elem => elem.pets);
-    this.pushDepiction(elem => elem.toUpperCase());
+    this.pushDepiction(person => person.name);
+    this.pushTransformation(person => person.pets);
+    this.pushDepiction(pet => pet.name + " the " + pet.type);
+    this.pushTransformation(pet => pet.eats);
+    this.pushDepiction(meal => "... eats " + meal);
     this.show([
-      {name: "John Doe", age: 25, pets: ["Waldy", "Smokie"]},
-      {name: "Jane Doe", age: 24, pets: ["Jaques-the-Bird"]},
-      {name: "Manfred Mustermann", age: 50, pets: ["Georg-Musterhund"]},
+      {name: "John Doe", age: 25, pets: [
+        {type: "Dog", name: "Waldy", eats: ["Pasta", "Pizza"]},
+        {type: "Cat", name: "Smokie", eats: ["Socks"]}
+      ]},
+      {name: "Jane Doe", age: 24, pets: [
+        {type: "Bird", name: "Jaques", eats: []}
+      ]},
+      {name: "Manfred Mustermann", age: 50, pets: [
+        {type: "Monster", name: "Georg Musterhund", eats: ["Children"]}
+      ]},
       {name: "John Wayne", age: 110, pets: []},
     ]);
   }
