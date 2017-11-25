@@ -3,9 +3,13 @@ import Morph from './Morph.js';
 export default class VivideList extends Morph {
   async initialize() {
     this.windowTitle = "VivideList";
-    this.transformation = list => list;
-    this.depiction = elem => elem;
-    this.childrenGeneration = elem => [];
+    
+    this.transformations = [];
+    this.defaultTransformation = list => [];
+    
+    this.depictions = [];
+    this.defaultDepiction = elem => elem;
+    
     this.predecessor = null;
     this.successors = [];
   }
@@ -23,16 +27,12 @@ export default class VivideList extends Morph {
     this.predecessor = anotherWidget;
   }
   
-  setTransformation(transformationFunction) {
-    this.transformation = transformationFunction;
+  pushTransformation(transformationFunction) {
+    this.transformations.push(transformationFunction);
   }
   
-  setDepiction(depictionFunction) {
-    this.depiction = depictionFunction;
-  }
-  
-  setChildrenGeneration(generationFunction) {
-    this.childrenGeneration = generationFunction;
+  pushDepiction(depictionFunction) {
+    this.depictions.push(depictionFunction);
   }
   
   toggleSelection(wrapper) {
@@ -45,13 +45,16 @@ export default class VivideList extends Morph {
     }
   }
   
-  toggleChildren(wrapper) {
+  toggleChildren(level, wrapper) {
     return () => {
       if(wrapper.hasChildren) {
         wrapper.children = [];
         wrapper.hasChildren = false;
       } else {
-        wrapper.children = this.childrenGeneration(wrapper.object);
+        wrapper.children =
+          this.transformations.length > level+1 ?
+          this.transformations[level+1](wrapper.object).map(object => this.wrap(object)) :
+          this.defaultTransformation(wrapper.object).map(object => this.wrap(object));
         wrapper.hasChildren = true;
       }
       this.display()
@@ -59,55 +62,47 @@ export default class VivideList extends Morph {
   }
   
   display() {
-    this.textContent = this.model.map(elem => this.depiction(elem.object)).join('<br />');
-    let root = this.get("#content");
-    root.innerHTML = "";
+    // TODO: Better algorithm for textContent
+    this.textContent = this.model.map(elem => this.depictions[0](elem.object)).join('<br />');
+    this.get("#content").innerHTML = "";
     for(let i in this.model) {
-      let listentry = document.createElement("div");
-      listentry.id = "listentry" + i;
-      listentry.className = "listentry";
       
-      let listentryUnfold = document.createElement("div");
-      listentryUnfold.id = "listentry-unfold" + i;
-      listentryUnfold.className = "listentry-unfold";
-      listentryUnfold.addEventListener("click", this.toggleChildren(this.model[i]));
-      listentryUnfold.innerHTML = "(v)";
+      this.displayListEntry(0, this.model[i]);
+    
+    }
+  }
+  
+  displayListEntry(level, wrapper) {
+    let listentry = document.createElement("div");
+    listentry.className = "listentry";
+    
+    let listentryPlaceholder = document.createElement("div");
+    listentryPlaceholder.className = "listentry-placeholder";
+    listentryPlaceholder.style.width = (level * 4) + "em";
+    listentryPlaceholder.innerHTML = "&nbsp;";
       
-      let listentryContent = document.createElement("div");
-      listentryContent.id = "listentry-content" + i;
-      listentryContent.className = "listentry-content";
-      if(this.model[i].selected) { listentryContent.classList.add("selected"); }
-      listentryContent.addEventListener("click", this.toggleSelection(this.model[i]));
-      listentryContent.innerHTML = this.depiction(this.model[i].object);
+    let listentryUnfold = document.createElement("div");
+    listentryUnfold.className = "listentry-unfold";
+    listentryUnfold.addEventListener("click", this.toggleChildren(level, wrapper));
+    listentryUnfold.innerHTML = "(v)";
       
-      listentry.appendChild(listentryUnfold);
-      listentry.appendChild(listentryContent);
-      root.appendChild(listentry);
+    let listentryContent = document.createElement("div");
+    listentryContent.className = "listentry-content";
+    if(wrapper.selected) { listentryContent.classList.add("selected"); }
+    listentryContent.addEventListener("click", this.toggleSelection(wrapper));
+    listentryContent.innerHTML =
+      this.depictions.length > level ? 
+      this.depictions[level](wrapper.object) :
+      this.defaultDepiction(wrapper.object);
       
-      if(this.model[i].children) {
-        // TODO: refactor this, extract concept
-        // IDEA: every entry has to be treated uniformly, children and root elements
-        let children = this.model[i].children;
-        
-        for(let j in children) {
-          let listentry = document.createElement("div");
-          listentry.id = "listentry" + i + "-" + j;
-          listentry.className = "listentry";
-      
-          let listentryPlaceholder = document.createElement("div");
-          listentryPlaceholder.id = "listentry-placeholder" + i + "-" + j;
-          listentryPlaceholder.className = "listentry-placeholder";
-          listentryPlaceholder.innerHTML = "&nbsp;";
-      
-          let listentryContent = document.createElement("div");
-          listentryContent.id = "listentry-content" + i + "-" + j;
-          listentryContent.className = "listentry-content";
-          listentryContent.innerHTML = children[j];
-      
-          listentry.appendChild(listentryPlaceholder);
-          listentry.appendChild(listentryContent);
-          root.appendChild(listentry);
-        }
+    listentry.appendChild(listentryPlaceholder);
+    listentry.appendChild(listentryUnfold);
+    listentry.appendChild(listentryContent);
+    this.get("#content").appendChild(listentry);
+    
+    if(wrapper.children) {
+      for(let i in wrapper.children) {
+        this.displayListEntry(level+1, wrapper.children[i]);
       }
     }
   }
@@ -131,7 +126,10 @@ export default class VivideList extends Morph {
   }
   
   setModel(model) {
-    model = this.transformation(model);
+    model =
+      this.transformations.length > 0 ?
+      this.transformations[0](model) :
+      this.defaultTransformation(model);
     this.model = model.map(elem => this.wrap(elem));
   }
   
@@ -141,11 +139,12 @@ export default class VivideList extends Morph {
   }
   
   livelyExample() {
-    this.setTransformation((list) => {
+    this.pushTransformation((list) => {
       return list.filter(elem => elem.age < 100);
     });
-    this.setDepiction(elem => elem.name);
-    this.setChildrenGeneration(elem => elem.pets);
+    this.pushDepiction(elem => elem.name);
+    this.pushTransformation(elem => elem.pets);
+    this.pushDepiction(elem => elem.toUpperCase());
     this.show([
       {name: "John Doe", age: 25, pets: ["Waldy", "Smokie"]},
       {name: "Jane Doe", age: 24, pets: ["Jaques-the-Bird"]},
