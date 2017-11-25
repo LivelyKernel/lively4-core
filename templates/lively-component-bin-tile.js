@@ -1,48 +1,64 @@
-'use strict'
-
 import Morph from './Morph.js';
 import componentLoader from 'src/client/morphic/component-loader.js';
 import preferences from 'src/client/preferences.js';
-
+import ContextMenu from 'src/client/contextmenu.js';
 import {pt} from 'src/client/graphics.js';
 
-
-
 export default class ComponentBinTile extends Morph {
+
   initialize() {
-    this.addEventListener('click', evt => this.onClick(evt))
+    // this.addEventListener('click', evt => this.onClick(evt))
     this.addEventListener('dragstart', evt => this.onDragStart(evt))
     this.addEventListener('drag', evt => this.onDrag(evt))
     this.addEventListener('dragend', evt => this.onDragEnd(evt))
     this.addEventListener('keyup', evt => this.onKeyUp(evt))
-    
     this.draggable = true;
-    
     this.setAttribute("tabindex", 0)
+    this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
+  }
+
+  configure(config) {
+    this.config = config; 
+    this.setComponentName(config.name);
+    var thumbnailName = config.template.replace(/html$/,"png")
+
+    lively.components.searchTemplateFilename(thumbnailName).then( url => {
+      if (url) {
+        this.setThumbnail(url)
+      }
+    })
+    
+    this.setTooltip(config.description);
+    this.htmlTag = config["html-tag"];
   }
   
-  
-  configure(config) {
-    this.setComponentName(config.name);
-    // this.setThumbnail(lively4url + "/templates/" + (config.thumbnail || "thumbnails/default-placeholder.png"));
-    this.setTooltip(config.description);
+  onContextMenu(evt) {      
+    if (!evt.shiftKey) {
+      evt.stopPropagation();
+      evt.preventDefault();
 
-    this.htmlTag = config["html-tag"];
+      var menu = new ContextMenu(this, [
+          ["move", () => this.onMoveComponent(evt) ],
+      ]);
+      menu.openIn(document.body, evt, this);
+      return true;
+    }
   }
 
   setThumbnail(path) {
-    var img = this.getSubmorph('img');
-    img.src = path;
+    this.get('img').src = path;
+  }
+
+  getThumbnailPath() {
+    return this.get('img').src
   }
 
   setTooltip(string) {
-    var img = this.getSubmorph('img');
-    img.title = string;
+    this.get('img').title = string;
   }
 
   setComponentName(name) {
-    var text = this.getSubmorph('p');
-    text.innerHTML = name;
+    this.get('p').innerHTML = name;
   }
 
   setBin(componentBin) {
@@ -56,47 +72,58 @@ export default class ComponentBinTile extends Morph {
   setupComponent(comp) {
     if (comp.livelyExample) comp.livelyExample()
   }
+
   
   createComponent(evt) {
     var worldContext = document.body
-      var comp = componentLoader.createComponent(this.htmlTag);
-      this.component = comp;
+    var comp = componentLoader.createComponent(this.htmlTag);
+    this.component = comp;
+    var pos = lively.getGlobalPosition(this)
 
-    if (this.componentBin.inWindow()) {
+    if (!this.componentBin || this.componentBin.inWindow()) {
       return componentLoader.openInWindow(comp).then(win => {
-        var pos = lively.findPositionForWindow(worldContext)
-        lively.setPosition(win, pos)
+        // var pos = lively.findPositionForWindow(worldContext)
+        lively.setGlobalPosition(comp.parentElement, pos)
+        // lively.hand.startGrabbing(win, evt)
+
         this.setupComponent(comp)
-        return
+        comp.parentElement.remove()
+
+        return comp.parentElement
       })
       // return componentLoader.openInWindow(comp).then(() => {
       //   return comp
       // })
     } else {
-    
-      var pos = lively.getGlobalPosition(this)
-    
       return componentLoader.openInBody(comp).then( () => {
         this.setupComponent(comp)
         lively.setGlobalPosition(comp, pos.subPt(lively.getExtent(comp).scaleBy(0.5)))
-        lively.hand.startGrabbing(comp, evt)
+        // lively.hand.startGrabbing(comp, evt)
       })
     }
   }
   
   async onDragStart(evt) {
     this.dragTarget = await this.createComponent()
-    evt.dataTransfer.setDragImage(document.createElement("div"), 0, 0); 
+    var img = document.createElement("img")
+    img.src = this.getThumbnailPath()    
+    evt.dataTransfer.setDragImage(img, 0, 0); 
   }
   
   onDrag(evt) {
     if (this.dragTarget && evt.clientX) {
-     lively.setPosition(this.dragTarget, {x: evt.clientX - 300, y: evt.clientY - 10})
+      lively.setGlobalPosition(this.dragTarget, pt(evt.clientX - 300, evt.clientY - 10))
     } 
   }
   
   onDragEnd(evt) {
     // Do nothing... 
+    if (this.dragTarget) {
+     document.body.appendChild(this.dragTarget) 
+     lively.setGlobalPosition(this.dragTarget, pt(evt.clientX - 300, evt.clientY - 10))
+     
+    }
+    
   }
 
   async onKeyUp(evt) {
@@ -110,4 +137,45 @@ export default class ComponentBinTile extends Morph {
     }
   } 
 
+  async onMoveComponent(evt) {
+    var url = await lively.components.searchTemplateFilename(this.config.template);
+    if (!url) {
+      lively.notify("could  not find url")
+    }
+    var newUrl = await lively.prompt("Move component?", url);
+    if (newUrl && newUrl !== url) {
+      lively.notify("Move to " + newUrl);
+      
+      await lively.files.moveFile(url, newUrl)
+      
+      var jsUrl = url.replace(/html$/, "js")
+      var newJsUrl = newUrl.replace(/html$/, "js")
+      if(await lively.files.existFile(jsUrl)) {
+        await lively.files.moveFile(jsUrl, newJsUrl)
+      }
+      
+      var pngUrl = url.replace(/html$/, "png")
+      var newPngUrl = newUrl.replace(/html$/, "png")
+      if(await lively.files.existFile(pngUrl)) {
+        await lively.files.moveFile(pngUrl, newPngUrl)
+      }
+    }
+  }
+  
+  
+  livelyExample() {
+    this.style.width = "150px"
+    this.style.height = "150px"
+    this.configure({
+      name: "ball",
+      template: "lively-ball.html",
+      "html-tag": "lively-ball"
+    }) 
+  }
+  
+  livelyMigrate(other) {
+    this.configure(other.config)
+  }
+  
+  
 }

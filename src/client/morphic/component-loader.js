@@ -2,7 +2,6 @@ import scriptManager from  "src/client/script-manager.js";
 // import * as persistence from  "src/client/persistence.js";
 import Morph from "templates/Morph.js";
 import {pt} from '../graphics.js';
-import * as kernel from 'kernel';
 import { through } from "utils";
 
 // store promises of loaded and currently loading templates
@@ -12,6 +11,7 @@ export var loadingPromises = {};
 var _templates;
 var _prototypes;
 var _proxies;
+var _templatePaths;
 
 // for compatibility
 export function register(componentName, template, prototype) {
@@ -236,7 +236,7 @@ export default class ComponentLoader {
       // filter for unique tag names
       var name = el.nodeName.toLowerCase();
       return !unique.has(name) && unique.add(name);
-    }).map((el) => {
+    }).map(async (el) => {
       var name = el.nodeName.toLowerCase();
       if (loadingPromises[name]) {
         // the loading was already triggered
@@ -256,7 +256,7 @@ export default class ComponentLoader {
       
       loadingPromises[name].name = name + " " + Date.now()
       
-      this.loadByName(name);
+      await this.loadByName(name);
 
       return createdPromise;
     });
@@ -282,7 +282,7 @@ export default class ComponentLoader {
           }
         })
         if (unfinished) {
-          resolve("timeout") // "(if) the fuel gauge breaks, call maintenance. If theyÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂre not there in 20 minutes, fuck it."
+          resolve("timeout") // "(if) the fuel gauge breaks, call maintenance. If they are not there in 20 minutes, fuck it."
           lively.notify("Timout due to unresolved promises, while loading " + unfinishedPromise.name + " context: " + debuggingHint )
         }
       }, 15 * 1000)
@@ -294,18 +294,76 @@ export default class ComponentLoader {
     })
   }
 
-  // this function loads a component by adding a link tag to the head
-  static loadByName(name) {
-      function toTitleCase(str) {
-        return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
-      }
+  static getTemplatePaths() {
+    if (!_templatePaths) {
+      _templatePaths = [
+        lively4url + '/templates/',
+        lively4url + '/src/components/',
+        lively4url + '/src/components/widgets/',
+        lively4url + '/src/components/tools/',
+        lively4url + '/src/components/halo/',
+        lively4url + '/src/components/demo/',
+        lively4url + '/src/components/draft/',
+      ]; // default
+    } 
+    return _templatePaths
+  }
+
+  static addTemplatePath(path) {
+    var all = this.getTemplatePaths()
+    if (!all.includes(path)) {
+      all.push(path)
+    }
+  }
+
+  static async searchTemplateFilename(filename) {
+    var templatePaths =  this.getTemplatePaths()
+    let templateDir = undefined;          
+  
+    // #IDEA, using HTTP HEAD could be faster, but is not always implemented... as ource OPTIONS is neigher
+    // this method avoids the 404 in the console.log
     
-      // #TODO make templates path configurable... and make its search in many places
-      var url = '/templates/' + name + '.html'
+    
+    // the OPTIONS request seems to break karma... waits to long..
+	  if (!window.__karma__) { 
+      for(templateDir of templatePaths) {
+        try {
+          var stats = await fetch(templateDir, { method: 'OPTIONS' }).then(resp => resp.json());
+          var found = stats.contents.find(ea => ea.name == filename)
+        } catch(e) {
+          console.log("searchTemplateFilename: could not get stats of  " + filename)
+          found = null
+        }
+        if (found) break;  
+      }
+    } else {
+      // so the server did not understand OPTIONS, so lets ask for the files directly
+      if (!found) {
+        for(templateDir of templatePaths) {
+          var found = await fetch(templateDir + filename, { method: 'GET' }) // #TODO use HEAD, after implementing it in lively4-server
+            .then(resp => resp.status == 200); 
+          if (found) break;  
+        } 
+        if (!found) return undefined;
+      }      
+    }
+    
+    return templateDir + filename
+  }
+  
+  
+  // this function loads a component by adding a link tag to the head
+  static async loadByName(name) {
+      var url = await this.searchTemplateFilename(name + '.html')
+      if (!url) {
+        throw new Error("Could not find template for " + name)
+      }
+      // console.log("load component: " + url)
+      
       // #TODO continue here url.exists() 
       var link = document.createElement("link");
       link.rel = "import";
-      link.href = kernel.resolve(url)
+      link.href = url;
       link.dataset.lively4Donotpersist = "all";
       
       document.head.appendChild(link);

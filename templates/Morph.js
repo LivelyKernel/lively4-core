@@ -53,9 +53,7 @@ export default class Morph extends HTMLDivElement {
     }
 
     // morphs can contain null, if either none was found in this or this.shadowRoot
-    return morphs.filter(m => {
-      return m;
-    });
+    return morphs.filter(m => m);
   }
   
   withAttributeDo(name, func) {

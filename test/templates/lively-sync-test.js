@@ -1,8 +1,6 @@
 import {expect} from '../../node_modules/chai/chai.js'
 import {testWorld, loadComponent} from './templates-fixture.js'
 
-import Sync from '../../templates/lively-sync.js'
-
 describe("Sync Tool",  function(){
   var that
  

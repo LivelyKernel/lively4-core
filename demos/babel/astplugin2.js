@@ -1,4 +1,4 @@
-import generateUUID from 'src/client/uuid.js'; 
+import { uuid as generateUUID} from 'utils'; 
 
 export default function (babel) {
   const { types: t, template, transformFromAst } = babel;

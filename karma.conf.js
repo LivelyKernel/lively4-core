@@ -37,6 +37,7 @@ module.exports = function(config) {
       {pattern: 'node_modules/mocha/mocha.js', included: false},
       {pattern: 'src/**/*.js*', included: false},
       {pattern: 'src/**/*.css*', included: false},
+      {pattern: 'src/**/*.html*', included: false},
       {pattern: 'swx-*.js', included: false},
       
       {pattern: 'test/**/*.js', included: false},

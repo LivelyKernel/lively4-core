@@ -216,54 +216,94 @@ import Raster from "src/client/rasterize.js";
 
 export class TemplatePreview {
   
-  static async generate() {
-  
+  static async createPreview(url, templateName) {
+    if (!url) throw new Error("url argument missing");
+    if (!templateName) throw new Error("templateName argument missing");
     
-  var dir;
-  var url = "https://lively-kernel.org/lively4/lively4-jens/templates/";
-  // $morph("PREVIEW").innerHTML = "";
-     dir = await fetch(url, {
-      method: "OPTIONS"
-    }).then( r => r.json())
-
-    var names = dir.contents
-      .filter(ea => ea.name.match(/\.html$/))
-      .map(ea => ea.name.replace(/.html$/,""))
-      .filter(ea => ea.match(/lively-/))    
-    for(let ea of names) {
-      console.log("PREVIEW work on:" + ea)
-      try {
-        var comp = await Promise.race([
-          lively.openComponentInWindow(ea),
-          await new Promise(r => setTimeout(r, 2000))
-        ])
-        if (!comp) {
-          console.log("could not load component in time: " + ea)
-          continue; 
-        }
-        // var a = $morph("RasterImg"); if(a) a.remove();
-        var img = await Raster.openAsImage(comp).then(img => {
-          // $morph("PREVIEW").appendChild(img)
-          // img.id = "RasterImg"
-          img.style.width = (img.width * 0.5) + "px"
-          return img
-        })
-        img.remove()
-        var imgData = await fetch(img.src).then(r => r.blob())      
-        var imgURL = url + ea + ".png";
-        await fetch(imgURL, { method: "PUT", body: imgData})
-        console.log("PREVIEW wrote " + imgURL)
-
-      } catch(e) {
-        console.log(e)
+    console.log("PREVIEW work on:" + templateName)
+    try {
+      var comp = await Promise.race([
+        lively.openComponentInWindow(templateName),
+        new Promise(r => setTimeout(r, 4000))
+      ])
+      if (!comp) {
+        console.log("could not load component in time: " + templateName)
+        return 
       }
+      
+      if (comp.livelyExample) {
+        await comp.livelyExample()
+      }
+      
+      var a = $morph("RasterImg"); if(a) a.remove();
+      var img = await Raster.openAsImage(comp.windowTitle ? comp.parentElement : comp).then(img => {
+        img.id = "RasterImg"
+        img.style.width = (img.width * 1) + "px"
+        img.style.position = "fixed"
+        img.style.top  = "0px"
+        img.style.right  = "0px"
+        
+        return img
+      })
+      // img.remove()
+
+      var imgData = await fetch(img.src).then(r => r.blob())      
+      var imgURL = url + templateName + ".png";
+      await fetch(imgURL, { method: "PUT", body: imgData})
+      console.log("PREVIEW wrote " + imgURL)
+    } catch(e) {
+      console.log(e)
+    } finally {
       if (comp && comp.parentElement) {
         comp.parentElement.remove()  
-      }
+      }  
     }
+    return imgURL
   }
+  
+  static async generate(dry) {
+    let urls = lively.components.getTemplatePaths();
+    for(let url of urls) {
+      console.log("generate preview in: " + url)
+      let dir = await fetch(url, {
+          method: "OPTIONS"
+        }).then( r => r.json())
+        let templates = dir.contents
+          .filter(ea => ea.name.match(/\.html$/))
+        for(let ea of templates) {
+          let name = ea.name.replace(/\.html$/,"")
+          let previewUrl = (url + name + ".png")
+          try {
+            console.log("next " + previewUrl)
+
+            if (! await lively.files.existFile(previewUrl)) {
+              if (TemplatePreview.stoped) return;
+              if (dry) {
+                console.log("would generate " + url)
+              } else {
+                try {
+                  await Promise.race([
+                    this.createPreview(url, name),
+                    new Promise(r => setTimeout(r, 6000))
+                  ])
+                } catch(e) {
+                  comp = 
+                  console.log("GeneratePreview Errro: " + e)
+                }
+              }
+            } else {
+              console.log("Preview exists: " + previewUrl)
+            }            
+          } catch(e) {
+            console.log("Error when generating preview: " + e)
+          }
+          
+        }
+      }      
+    }
 }
 
 
+// TemplatePreview.generate()
 
 // Rasterize.openAsImage(that)
