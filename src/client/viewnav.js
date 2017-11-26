@@ -1,6 +1,6 @@
 import {pt} from './graphics.js';
 import Preferences from './preferences.js';
-import Windows from "templates/lively-window.js"
+import Windows from "src/components/widgets/lively-window.js"
 
 
 /*

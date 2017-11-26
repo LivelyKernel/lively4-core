@@ -4,7 +4,7 @@
  * - updates change indicator while when editting,loading, and saving
  */
  
-import Morph from './Morph.js';
+import Morph from 'templates/Morph.js';
 import moment from "src/external/moment.js";
 import diff from 'src/external/diff-match-patch.js';
 

@@ -9,14 +9,21 @@
       {name: "Max Mustermann", age: 15, sex: "male", pets: [{type: "bird", name: "Foo"}, {type: "bird", name: "Bar"}]},
     ];
     lively.openComponentInWindow("vivide-list").then(vl1 => {
-      vl1.setTransformation(list => list.filter(elem => elem.sex == "male"));
-      vl1.setDepiction(elem => elem.name);
+      vl1.pushTransformation(list => list.filter(elem => elem.sex == "male"));
+      vl1.pushDepiction(elem => elem.name);
       vl1.show(data);
       
       lively.openComponentInWindow("vivide-list").then(vl2 => {
+<<<<<<< HEAD
+        vl2.pushTransformation(list => list);
+        vl2.pushDepiction(elem => elem.name + ", " + elem.age);
+        vl2.pushTransformation(elem => elem.pets);
+        vl2.pushDepiction(elem => elem.name);
+=======
         vl2.setDepiction(elem => elem.name + ", " + elem.age);
         // vl2.setChildrenGeneration(elem => elem.pets);
         vl2.setChildrenGeneration(elem => elem.pets.map(pet => pet.name));
+>>>>>>> 0975bd85b71fc381588d50b801200275274ca400
         vl1.register(vl2);
       });
     });

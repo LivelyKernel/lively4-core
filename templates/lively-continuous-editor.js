@@ -5,7 +5,7 @@ import traceBabelPlugin from "./lively-continuous-editor-plugin.js"
 import boundEval from './../src/client/bound-eval.js';
 import { debounce } from "utils";
 
-import ShowPerformance from "demos/showperformancelayer.js";
+import ShowPerformance from "demos/contextjs/showperformancelayer.js";
 
 // import localsBabelPlugin from 'babel-plugin-locals'
 

@@ -2,8 +2,6 @@ import {expect} from '../../node_modules/chai/chai.js';
 import {MockEvent, createHTML, testWorld, loadComponent} from './templates-fixture.js';
 import {pt,rect} from 'src/client/graphics.js';
 
-import LivelyTable from "templates/lively-table.js"
-
 function fillTableWithNumber(table) {
   table.innerHTML = ""
   table.setFromArray([

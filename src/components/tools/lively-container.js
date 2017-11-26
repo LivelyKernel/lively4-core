@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'templates/Morph.js';
 import highlight from 'src/external/highlight.js';
 import {pt} from 'src/client/graphics.js';
 import halo from 'templates/lively-halo.js';
@@ -6,7 +6,7 @@ import ContextMenu from 'src/client/contextmenu.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/external/ContextJS/src/contextjs.js";
-import ScopedScripts from "./ScopedScripts.js";
+import ScopedScripts from "templates/ScopedScripts.js";
 import Clipboard from "src/client/clipboard.js"; 
 import {debounce} from "utils";
 
@@ -981,6 +981,12 @@ export default class Container extends Morph {
   
     return fetch(url).then( resp => {
       this.lastVersion = resp.headers.get("fileversion");
+      
+      // Handle cache error when offline
+      if(resp.status == 503) {
+        format = 'error'
+      }
+      
       return resp.text();
     }).then((content) => {
       if (format == "html")  {
@@ -992,6 +998,13 @@ export default class Container extends Morph {
       } else if (format == "livelymd") {
         this.sourceContent = content;
         if (render) return this.appendLivelyMD(content);
+      } else if (format == "error") {
+        this.sourceCountent = content;
+        if (render) return this.appendHtml(`
+          <h2>
+            <span style="color: darkred">Error: </span>${content}
+          <h2>
+        `);
       } else {
         this.sourceContent = content;
         if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&st;") +"</code></pre>");

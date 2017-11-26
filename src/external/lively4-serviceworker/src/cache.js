@@ -50,7 +50,7 @@ export class Cache {
     if (this._connectionManager.isOnline) {
       return this._onlineResponse(request, doNetworkRequest);
     } else {
-      return this._offlineResponse(request, doNetworkRequest);
+      return this._offlineResponse(request);
     }
   }
   
@@ -73,9 +73,8 @@ export class Cache {
   /**
    * Returns a response for offline devices
    * @param request The request to respond to
-   * @param doNetworkRequest A function to call if we need to send out a network request
    */
-  _offlineResponse(request, doNetworkRequest) {
+  _offlineResponse(request) {
     // When offline, check the cache or put request in queue
     if (this._cacheMethods.includes(request.method)) {
       // Check if the request is in the cache
@@ -86,15 +85,15 @@ export class Cache {
         } else {
           msg.broadcast('Could not fulfil request from cache.', 'error');
           console.error(`Not in cache: ${request.url}`);
-          // Todo: This request is bound to fail, causing an error message.
-          // We should probably respond in a way that will result in a better error message.
-          return doNetworkRequest();
+          // At this point we know we are offline, so sending out the request is useless
+          // Just create a fake error Response
+          return this._buildNotCachedResponse();
         }
       })
     } else if (this._queueMethods.includes(request.method)) {
       this._enqueue(request);
       msg.broadcast('Queued write request.', 'warning');
-      return this._buildFakeResponse();
+      return this._buildEnqueuedResponse();
     }
   }
   
@@ -171,17 +170,36 @@ export class Cache {
    * @return String key
    */
   _buildKey(request) {
+    // Ignore params when loading start.html
+    // The file always has the same content, and we want to boot offline whenever possible
+    let requestUrl = new URL(request.url);
+    if(requestUrl.origin == self.location.origin && requestUrl.pathname.endsWith('start.html')) {
+      return `${request.method} ${requestUrl.origin}/${requestUrl.pathname}`;
+    }
+    
     return `${request.method} ${request.url}`;
   }
   
   /**
-   * Builds a fake Response to return when a Request is enqueued
+   * Builds a fake success Response to return when a Request is enqueued
    * @return Response
    */
-  _buildFakeResponse() {
+  _buildEnqueuedResponse() {
     return new Response(null, {
       status: 202,
       statusText: 'Accepted'
+    });
+  }
+  
+  /**
+   * Builds a fake error Response to return when offline and not cached
+   * @return Response
+   */
+  _buildNotCachedResponse() {
+    let errorText = 'You are offline and the requested file was not found in the cache.';
+    return new Response(errorText, {
+      status: 503,
+      statusText: 'Service Unavailable'
     });
   }
 }
