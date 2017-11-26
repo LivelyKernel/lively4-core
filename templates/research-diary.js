@@ -1,7 +1,6 @@
 import Morph from './Morph.js';
 
 import { Graph, _, DEFAULT_FOLDER_URL } from 'src/client/triples/triples.js';
-import lively from 'src/client/lively.js';
 import { promisedEvent, debounce, sortBy, last } from "utils";
 
 function getTodaysTitle() {
