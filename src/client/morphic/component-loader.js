@@ -12,6 +12,8 @@ var _templates;
 var _prototypes;
 var _proxies;
 var _templatePaths;
+var _templatePathsCache;
+var _templatePathsCacheTime;
 
 // for compatibility
 export function register(componentName, template, prototype) {
@@ -293,7 +295,37 @@ export default class ComponentLoader {
       })
     })
   }
+  
+  
+  static resetTemplatePathCache() {
+    _templatePathsCache = undefined
+    _templatePathsCacheTime = undefined
+  }
 
+  static async getTemplatePathContent(path) {
+    // return  await fetch(path, { method: 'OPTIONS' }).then(resp => resp.json());
+    
+    if (!_templatePathsCache) {
+      _templatePathsCache = {}
+      _templatePathsCacheTime = {}
+    } 
+    let cacheInvalidationTime = 60 * 5 * 1000;
+    let cached = _templatePathsCache[path]
+    let time = _templatePathsCacheTime[path]
+    if (cached && ((Date.now() - time) < cacheInvalidationTime)) return cached
+    
+    let resultPromise =  fetch(path, { method: 'OPTIONS' }).then(resp => resp.json());
+    _templatePathsCacheTime[path] = Date.now()
+    _templatePathsCache[path] = new Promise(async (resolve, reject) => {
+      let result = await resultPromise;
+      if (result) {
+          resolve({contents: result.contents});
+        return cached 
+      }
+    })
+    return resultPromise 
+  }
+  
   static getTemplatePaths() {
     if (!_templatePaths) {
       _templatePaths = [
@@ -317,6 +349,7 @@ export default class ComponentLoader {
   }
 
   static async searchTemplateFilename(filename) {
+    
     var templatePaths =  this.getTemplatePaths()
     let templateDir = undefined;          
   
@@ -328,10 +361,10 @@ export default class ComponentLoader {
 	  if (!window.__karma__) { 
       for(templateDir of templatePaths) {
         try {
-          var stats = await fetch(templateDir, { method: 'OPTIONS' }).then(resp => resp.json());
+          var stats = await this.getTemplatePathContent(templateDir);
           var found = stats.contents.find(ea => ea.name == filename)
         } catch(e) {
-          console.log("searchTemplateFilename: could not get stats of  " + filename)
+          console.log("searchTemplateFilename: could not get stats of  " + filename + " ERROR: ", e)
           found = null
         }
         if (found) break;  
@@ -474,4 +507,7 @@ export function livelyMigrate(other) {
 // Problem: we cannot look into internal "other" state, we can do this with objects but not with
 // variable declarations, therefore we let our module system automigrate the module global variable state
 }
+
+
+_templatePathsCache = null
 
