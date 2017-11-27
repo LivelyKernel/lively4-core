@@ -327,7 +327,8 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   getTargetModule() {
-    return this.targetModule;
+    // lazily initialize a target module name as fallback
+    return this.targetModule || (this.targetModule = 'unnamed_module_' + generateUUID().replace(/-/g, '_'));
   }
 
   setTargetModule(module) {
