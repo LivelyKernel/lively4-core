@@ -685,9 +685,6 @@ export default class Lively {
     // lively.selection;
 
     if (loadedAsExtension) {
-      System.import("src/client/customize.js").then(customize => {
-          customize.customizePage();
-      });
       lively.notify("Lively4 extension loaded!",
         "  CTRL+LeftClick  ... open halo\n" +
         "  CTRL+RightClick ... open menu");
