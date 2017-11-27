@@ -1,0 +1,34 @@
+<script type="text/javascript">
+  function openExample() {
+    let data = [
+      {name: "John Doe", age: 25, pets: [
+        {type: "Dog", name: "Waldy", eats: ["Pasta", "Pizza"]},
+        {type: "Cat", name: "Smokie", eats: ["Socks"]}
+      ]},
+      {name: "Jane Doe", age: 24, pets: [
+        {type: "Bird", name: "Jaques", eats: []}
+      ]},
+      {name: "Manfred Mustermann", age: 50, pets: [
+        {type: "Monster", name: "Georg Musterhund", eats: ["Children"]}
+      ]},
+      {name: "John Wayne", age: 110, pets: []},
+    ]
+    lively.openComponentInWindow("vivide-list").then(vl1 => {
+      vl1.pushTransformation(list => list.filter(person => person.pets.length > 0));
+      vl1.pushDepiction(person => person.name + ", " + person.age);
+      vl1.pushTransformation(person => person.pets);
+      vl1.pushDepiction(pet => pet.name)
+      vl1.show(data);
+      
+      lively.openComponentInWindow("vivide-list").then(vl2 => {
+        vl2.pushTransformation(list => list);
+        vl2.pushDepiction(elem => elem.name);
+        vl1.register(vl2);
+      });
+    });
+  }
+</script>
+
+<button onclick="openExample()">
+  Open Example
+</button>
