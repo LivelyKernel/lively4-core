@@ -115,12 +115,26 @@ export default class VivideList extends Morph {
     }
   }
   
+  allSelectedChildrenOf(wrapper) {
+    if(!wrapper.children) {
+      return [];
+    }
+    let children = wrapper.children.filter(child => child.selected).map(child => child.object);
+    for(let i in wrapper.children) {
+      children = children.concat(this.allSelectedChildrenOf(wrapper.children[i]))
+    }
+    return children;
+  }
+  
   output() {
-    return this.model.filter(
-      elem => elem.selected
-    ).map(
-      elem => elem.object
-    );
+    let output = [];
+    for(let i in this.model) {
+      if(this.model[i].selected) {
+        output.push(this.model[i].object);
+      }
+      output = output.concat(this.allSelectedChildrenOf(this.model[i]));
+    }
+    return output;
   }
   
   wrap(object) {
