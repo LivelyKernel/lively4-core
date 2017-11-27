@@ -1,3 +1,4 @@
+import boundEval from "src/client/bound-eval.js";
 
 'use strict';
 
@@ -19,7 +20,7 @@ export default class Customize {
     var code = localStorage["customLivelyCode"]
     if (code) {
       try {
-        lively.boundEval(code)  
+        boundEval(code)  
       } catch(e) {
         lively.notify("Error executing local code: " + code +"\n error:" + e)
       }

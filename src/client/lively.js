@@ -370,12 +370,6 @@ export default class Lively {
     // }
     return element
   }
-  
-  static boundEval(str, ctx) {
-    // #TODO refactor away
-    // lively.notify("lively.boundEval is depricated")
-    return boundEval(str, ctx)
-  }
 
   static pt(x,y) {
     return {x: x, y: y};
