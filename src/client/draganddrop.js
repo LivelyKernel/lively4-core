@@ -1,5 +1,5 @@
 import { pt } from 'src/client/graphics.js';
-import { debounce, asDragImageFor, getObjectFor, removeTempKey } from "utils";
+import { debounce, through, asDragImageFor, getObjectFor, removeTempKey } from "utils";
 
 export function applyDragCSSClass() {
   this.addEventListener('dragenter', evt => {
@@ -54,10 +54,27 @@ const dropOnDocumentBehavior = {
   load() {
     // #HACK: we remove listeners here, because this module is called three times (without unloading in between!!)
     this.removeListeners();
-    lively.addEventListener("dropOnDocumentBehavior", document, "dragover", ::this.onDragOver)
-    lively.addEventListener("dropOnDocumentBehavior", document, "drop", ::this.onDrop)
+    lively.addEventListener("dropOnDocumentBehavior", document, "dragover", ::this.onDragOver);
+    lively.addEventListener("dropOnDocumentBehavior", document, "drop", ::this.onDrop);
     
     this.handlers = [
+      // move a desktop item
+      {
+        handle(evt) {
+          const dt = evt.dataTransfer;
+          if(!dt.types.includes("desktop-icon/object")) { return false; }
+          const tempKey = dt.getData("desktop-icon/object");
+          const icon = getObjectFor(tempKey);
+          removeTempKey(tempKey);
+
+          const offset = dt.types.includes("desktop-icon/offset") ?
+            JSON.parse(dt.getData("desktop-icon/offset")) :
+            pt(0, 0);
+          lively.setGlobalPosition(icon, pt(evt.clientX, evt.clientY).subPt(offset));
+          return true;
+        }
+      },
+
       // knot/url to desktop item
       {
         handle(evt) {
@@ -65,10 +82,8 @@ const dropOnDocumentBehavior = {
           if(!dt.types.includes("knot/url")) { return false; }
           const knotURL = dt.getData("knot/url");
 
-          lively.openComponentInWindow('knot-desktop-icon')
-            .then(icon => new Promise(resolve => {
-              setTimeout(() => resolve(icon), 3000);
-            }))
+          lively.create('knot-desktop-icon')
+            ::through(icon => lively.setGlobalPosition(icon, pt(evt.clientX, evt.clientY)))
             .then(icon => icon.knotURL = knotURL);
 
           return true;
@@ -91,7 +106,6 @@ const dropOnDocumentBehavior = {
           lively.openInspector(getObjectFor(tempKey), pt(
             evt.clientX,
             evt.clientY).subPt(lively.getGlobalPosition(document.body)));
-          //debugger
           removeTempKey(tempKey);
 
           return true;

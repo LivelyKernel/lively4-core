@@ -3,8 +3,6 @@
 import Morph from './Morph.js';
 import * as search from 'src/external/lively4-search/client/search.js';
 
-import lively from "src/client/lively.js"
-
 export default class SearchWidget extends Morph {
 
   initialize() {
