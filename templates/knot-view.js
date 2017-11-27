@@ -1,7 +1,6 @@
 import Morph from "./Morph.js"
 
 import { Graph, _, TAG_URL } from 'src/client/triples/triples.js';
-import lively from 'src/client/lively.js';
 
 export default class KnotView extends Morph {
   get urlString() { return this.get("#path-to-load").value; }
