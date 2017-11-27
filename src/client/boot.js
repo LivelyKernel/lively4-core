@@ -17,8 +17,9 @@ if (window.lively && window.lively4url) {
   // for finding the baseURL...
   var script = document.currentScript
   var scriptURL = script.src;
-  window.lively4url = scriptURL.replace("/src/client/boot.js","")
-  
+  window.lively4url = scriptURL.replace("/src/client/boot.js","")  
+  window.lively4performance = {start: performance.now()}
+
   var loadContainer = script.getAttribute("data-container") // some simple configuration 
   console.log("lively4url: " + lively4url);
 

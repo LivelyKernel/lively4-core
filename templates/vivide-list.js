@@ -1,8 +1,8 @@
 import Morph from './Morph.js';
 
-// TODO: Add children to output
 // TODO: Refactor display functions to builder pattern
 // TODO: Reference functions for infinite trees
+// TODO: Testing
 
 export default class VivideList extends Morph {
   async initialize() {
@@ -59,9 +59,6 @@ export default class VivideList extends Morph {
     return () => {
       wrapper.selected = wrapper.selected ? false : true;
       this.display()
-      for(let i in this.successors) {
-        this.successors[i].trigger();
-      }
     }
   }
   
@@ -82,6 +79,7 @@ export default class VivideList extends Morph {
     this.textContent = this.model.map(elem => this.depictionAt(0)(elem.object)).join('<br />');
     this.get("#content").innerHTML = "";
     for(let i in this.model) { this.displayListEntry(0, this.model[i]); }
+    this.successors.forEach(successor => successor.trigger());
   }
   
   displayListEntry(level, wrapper) {

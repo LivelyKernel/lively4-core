@@ -267,7 +267,7 @@ export default class Lively {
     //     var nativeLog = console.log;
     //     console.log = function() {
     //         nativeLog.apply(console, arguments);
-    //         lively.log.apply(undefined, arguments);
+    //         console.log.apply(undefined, arguments);
     //     };
     //     console.log.originalFunction = nativeLog; // #TODO use generic Wrapper mechanism here
     // }
@@ -275,7 +275,7 @@ export default class Lively {
     //     var nativeError = console.error;
     //     console.error = function() {
     //         nativeError.apply(console, arguments);
-    //         lively.log.apply(undefined, arguments);
+    //         console.log.apply(undefined, arguments);
     //     };
     //     console.error.originalFunction = nativeError; // #TODO use generic Wrapper mechanism here
     // }
@@ -512,17 +512,6 @@ export default class Lively {
     }
     contextmenu.openIn(container, evt, target, worldContext);
   }
-
-  static log(/* varargs */) {
-      var args = arguments;
-      $('lively-console').each(function() {
-        try{
-          if (this.log) this.log.apply(this, args);
-        }catch(e) {
-          // ignore...
-        }
-      });
-  }
   
   static nativeNotify(title, text, timeout, cb) {
     if (!this.notifications) this.notifications = [];
@@ -666,9 +655,16 @@ export default class Lively {
     this.addEventListener('lively', doc, 'keydown', function(evt){lively.keys.handle(evt)}, false);
   }
   
+  static stamp() {
+    var newLast = performance.now()
+    var t = (newLast - (lively4performance.last || lively4performance.start)) / 1000
+    lively4performance.last = newLast
+    return (t.toFixed(3) + "s ")
+  }
+  
   static async initializeDocument(doc, loadedAsExtension, loadContainer) {
-    console.log("Lively4 initializeDocument");
-
+    console.log("Lively4 initializeDocument" );
+    
     lively.loadCSSThroughDOM("font-awesome", lively4url + "/src/external/font-awesome/css/font-awesome.min.css");
     this.initializeEvents(doc);
     this.initializeHalos();
@@ -680,10 +676,7 @@ export default class Lively {
       }
     })
 
-
-    
-    
-    console.log("load local lively content ")
+    console.log(window.lively4stamp, "load local lively content ")
     await persistence.current.loadLivelyContentForURL()
     preferences.loadPreferences()
     
@@ -727,7 +720,7 @@ export default class Lively {
       delete this.deferredUpdateScroll;
 		}
     
-    console.log("lively persistence start ")
+    console.log(window.lively4stamp, "lively persistence start ")
     setTimeout(() => {persistence.current.start()}, 2000)
 
     
@@ -1497,7 +1490,7 @@ export default class Lively {
 
 if (!window.lively || window.lively.name != "Lively") {
   window.lively = Lively;
-  console.log("loaded lively intializer");
+  console.log(window.lively4stamp, "loaded lively intializer");
   // only load once... not during development
   Lively.loaded();
 } else {
@@ -1507,6 +1500,15 @@ if (!window.lively || window.lively.name != "Lively") {
 }
 
 
+try {
+  Object.defineProperty(window, 'lively4stamp', {
+    get: function() { return lively && lively.stamp() }
+  })  
+} catch(e) {
+  console.log(e)
+}
+
 Lively.exportModules();
-  
-console.log("loaded lively");
+
+                      
+console.log(window.lively4stamp, "loaded lively");
