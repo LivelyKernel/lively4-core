@@ -334,7 +334,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     return this.targetModule = module;
   }
 
-  async boundEval(str, context) {
+  async boundEval(str) {
     // console.log("bound eval " + str)
     
     // Ensure target module loaded (for .js files only)
@@ -343,6 +343,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     if(MODULE_MATCHER.test(this.getTargetModule())) {
       await System.import(this.getTargetModule())
     } 
+    console.log("EVAL (CM)", this.getTargetModule());
     // src, topLevelVariables, thisReference, <- finalStatement
     return boundEval(str, this.getDoitContext(), this.getTargetModule());
   }
@@ -398,18 +399,17 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   async tryBoundEval(str, printResult) {
-    var resp;
-    resp = await this.boundEval(str, this.getDoitContext())
+    var resp = await this.boundEval(str);
     if (resp.isError) {
-      var e = resp.value
-      console.error(e)
+      var e = resp.value;
+      console.error(e);
       if (printResult) {
-        window.LastError = e
-        this.printResult("" +e)
+        window.LastError = e;
+        this.printResult("" + e);
       } else {
-        lively.handleError(e)
+        lively.handleError(e);
       }
-      return e
+      return e;
     }
     var result = resp.value
     var obj2string = function(obj) {
@@ -446,7 +446,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   async inspectIt(str) {
-    var result =  await this.boundEval(str, this.getDoitContext()) 
+    var result =  await this.boundEval(str);
     if (!result.isError) {
       result = result.value 
     }

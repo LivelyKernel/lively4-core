@@ -3,7 +3,9 @@ import { setCode } from './workspaces.js';
 import Preferences from "./preferences.js";
 
 function rewriteSourceWithAsyncAwaitSupport(source) {
-  return "(async secretAsyncLabel => { return {__asyncresult__: do {" +source+ "}}})()"
+  return `(async secretAsyncLabel => {
+  return { __asyncresult__: do {${source}}}
+})()`;
 }
 
 export default async function boundEval(source, thisReference, targetModule) {
