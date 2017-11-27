@@ -54,8 +54,8 @@ const dropOnDocumentBehavior = {
   load() {
     // #HACK: we remove listeners here, because this module is called three times (without unloading in between!!)
     this.removeListeners();
-    lively.addEventListener("dropOnDocumentBehavior", document, "dragover", ::this.onDragOver)
-    lively.addEventListener("dropOnDocumentBehavior", document, "drop", ::this.onDrop)
+    lively.addEventListener("dropOnDocumentBehavior", document, "dragover", ::this.onDragOver);
+    lively.addEventListener("dropOnDocumentBehavior", document, "drop", ::this.onDrop);
     
     this.handlers = [
       // move a desktop item
@@ -67,7 +67,10 @@ const dropOnDocumentBehavior = {
           const icon = getObjectFor(tempKey);
           removeTempKey(tempKey);
 
-          lively.setGlobalPosition(icon, pt(evt.clientX, evt.clientY));
+          const offset = dt.types.includes("desktop-icon/offset") ?
+            JSON.parse(dt.getData("desktop-icon/offset")) :
+            pt(0, 0);
+          lively.setGlobalPosition(icon, pt(evt.clientX, evt.clientY).subPt(offset));
           return true;
         }
       },
