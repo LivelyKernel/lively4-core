@@ -1,4 +1,4 @@
-import { uuid as generateUUID } from 'utils';
+import { uuid } from 'utils';
 import { setCode } from './workspaces.js';
 import Preferences from "./preferences.js";
 
@@ -20,7 +20,7 @@ export default async function boundEval(source, thisReference, targetModule) {
 
     // source
     // TODO: we currently use a newly generated UUID on each evaluation to trick SystemJS into actually loading it (therefore, we use codeId):
-    let codeId = generateUUID();
+    let codeId = uuid();
     setCode(codeId, source);
     
     var path = 'workspace:' + encodeURI(codeId)
