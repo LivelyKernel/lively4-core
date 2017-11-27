@@ -383,14 +383,6 @@ export default class ContextMenu {
       ["Preferences", 
           ["ShowDocumentGrid", "InteractiveLayer", "ShowFixedBrowser", "SnapWindowsInGrid", "DisableAExpWorkspace", "DisableAltGrab", "UseTernInCodeMirror", "UseAsyncWorkspace", "CtrlAsHaloModifier"].map(ea => this.preferenceEntry(ea))
       ],
-      
-      // ["Customize Page", (evt) => {
-      //     this.hide();
-      //     System.import("src/client/customize.js").then(c => c.openCustomizeWorkspace(evt))
-      //   },
-      //   "",'<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'
-      //   ],
-
       ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt, worldContext), 
         "CMD+SHIFT+G",'<i class="fa fa-github" aria-hidden="true"></i>'],
       ["save as ..", (evt) => {

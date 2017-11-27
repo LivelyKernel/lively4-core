@@ -29,7 +29,6 @@ import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
 import Selection from 'templates/lively-selection.js'
 import windows from "src/components/widgets/lively-window.js"
-import boundEval from "src/client/bound-eval.js";
 
 let $ = window.$; // known global variables.
 
@@ -686,9 +685,6 @@ export default class Lively {
     // lively.selection;
 
     if (loadedAsExtension) {
-      System.import("src/client/customize.js").then(customize => {
-          customize.customizePage();
-      });
       lively.notify("Lively4 extension loaded!",
         "  CTRL+LeftClick  ... open halo\n" +
         "  CTRL+RightClick ... open menu");
