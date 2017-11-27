@@ -18,8 +18,24 @@ if (window.lively && window.lively4url) {
   var script = document.currentScript
   var scriptURL = script.src;
   window.lively4url = scriptURL.replace("/src/client/boot.js","")  
+  
+  // some performance logging
   window.lively4performance = {start: performance.now()}
-
+  try {
+    Object.defineProperty(window, 'lively4stamp', {
+      get: function() {
+        if (!window.lively4performance) return;
+        var newLast = performance.now()
+        var t = (newLast - (lively4performance.last || lively4performance.start)) / 1000
+        lively4performance.last = newLast
+        return (t.toFixed(3) + "s ")
+      }
+    })  
+  } catch(e) {
+    console.log(e)
+  }
+  
+  
   var loadContainer = script.getAttribute("data-container") // some simple configuration 
   console.log("lively4url: " + lively4url);
 
