@@ -367,21 +367,24 @@ export default class ComponentLoader {
           console.log("searchTemplateFilename: could not get stats of  " + filename + " ERROR: ", e)
           found = null
         }
-        if (found) break;  
+        if (found) {
+          return templateDir + filename
+        }
       }
+
     } else {
       // so the server did not understand OPTIONS, so lets ask for the files directly
       if (!found) {
         for(templateDir of templatePaths) {
           var found = await fetch(templateDir + filename, { method: 'GET' }) // #TODO use HEAD, after implementing it in lively4-server
             .then(resp => resp.status == 200); 
-          if (found) break;  
+          if (found) {
+            return templateDir + filename
+          }  
         } 
-        if (!found) return undefined;
       }      
     }
-    
-    return templateDir + filename
+    return undefined
   }
   
   
