@@ -35,7 +35,6 @@ if (window.lively && window.lively4url) {
     console.log(e)
   }
   
-  
   var loadContainer = script.getAttribute("data-container"); // some simple configuration 
 
   console.log("lively4url: " + lively4url);
