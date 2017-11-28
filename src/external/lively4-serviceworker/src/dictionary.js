@@ -15,7 +15,10 @@ export class Dictionary extends DbObject {
    * Stores a new key value pair or updates an existing value
    */
   put(key, value) {
-    this._getObjectStore().put(value, key);
+    var data = new Object();
+    data.value = value;
+    data.timestamp = Date.now();
+    this._getObjectStore().put(data, key);
   }
   
   /**
@@ -26,7 +29,7 @@ export class Dictionary extends DbObject {
     return new Promise((resolve, reject) => {
       var request = this._getObjectStore().get(key);
       request.onsuccess = (event) => {
-        if(request.result) {
+        if (request.result) {
           resolve(request.result);
         } else {
           resolve(null);

@@ -81,7 +81,7 @@ export class Cache {
       return this._match(request).then((response) => {
         if (response) {
           //msg.broadcast('Fulfilled request from cache.', 'warning');
-          return Serializer.deserialize(response);
+          return Serializer.deserialize(response.value);
         } else {
           msg.broadcast('Could not fulfil request from cache.', 'error');
           console.error(`Not in cache: ${request.url}`);
@@ -113,7 +113,7 @@ export class Cache {
     Serializer.serialize(response).then((serializedResponse) => {
       this._dictionary.put(this._buildKey(request), serializedResponse);
     })
-    return response
+    return response;
   }
   
   /**
