@@ -17,7 +17,7 @@ export class DbObject {
   /**
    * Connects to the database and creates schema, if needed
    */
-  _connect() {
+  _connect(onconnect) {
     if (DbObject._db) return;
     
     var request = indexedDB.open(DbObject._dbName, 1);
@@ -26,6 +26,10 @@ export class DbObject {
     
     request.onsuccess = function (e) {
       DbObject._db = e.target.result;
+      
+      if (!onconnect) return;
+      
+      onconnect();
     }
   }
   

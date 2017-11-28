@@ -65,10 +65,6 @@ if ('serviceWorker' in navigator || window.lively4chrome) {
         type: 'network',
         message: 'online'
       });
-      
-      if('lively' in window) {
-        lively.notify('Network Status', 'You are now online', 5, null, 'green');
-      }
     });
     
     window.addEventListener('offline', () => {
@@ -76,10 +72,6 @@ if ('serviceWorker' in navigator || window.lively4chrome) {
         type: 'network',
         message: 'offline'
       });
-      
-      if('lively' in window) {
-        lively.notify('Network Status', 'You are now offline', 5, null, 'yellow');
-      }
     });
     
     Promise.resolve("")
