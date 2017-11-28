@@ -655,13 +655,6 @@ export default class Lively {
     this.addEventListener('lively', doc, 'keydown', function(evt){lively.keys.handle(evt)}, false);
   }
   
-  static stamp() {
-    var newLast = performance.now()
-    var t = (newLast - (lively4performance.last || lively4performance.start)) / 1000
-    lively4performance.last = newLast
-    return (t.toFixed(3) + "s ")
-  }
-  
   static async initializeDocument(doc, loadedAsExtension, loadContainer) {
     console.log("Lively4 initializeDocument" );
     
@@ -1496,14 +1489,6 @@ if (!window.lively || window.lively.name != "Lively") {
   window.lively = Lively;
 }
 
-
-try {
-  Object.defineProperty(window, 'lively4stamp', {
-    get: function() { return lively && lively.stamp() }
-  })  
-} catch(e) {
-  console.log(e)
-}
 
 Lively.exportModules();
 

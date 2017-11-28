@@ -18,10 +18,10 @@ export class FavoritsTracker extends DbObject {
     var request = objectStore.get(key);
     
     request.onsuccess = (event) => {
-      if(request.result) {
+      if (request.result) {
         objectStore.put(request.result + 1, key);
       } else {
-        objectStore.put(0, key);
+        objectStore.put(1, key);
       }
     }
   }

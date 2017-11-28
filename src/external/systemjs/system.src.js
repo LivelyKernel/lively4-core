@@ -1533,6 +1533,8 @@ function nsEvaluate (ns) {
  * Source loading
  */
 function fetchFetch (url, authorization, integrity, asBuffer) {
+  // console.log(window.lively4stamp, "SystemJS fetch " + url)
+  
   // fetch doesn't support file:/// urls
   if (url.substr(0, 8) === 'file:///') {
     if (hasXhr)
@@ -3468,6 +3470,7 @@ function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
 }
 
 function translateAndInstantiate (loader, key, source, metadata, processAnonRegister) {
+  //console.log(window.lively4stamp, "translateAndInstantiate " + key)
   return Promise.resolve(source)
   // translate
   .then(function (source) {
@@ -3482,6 +3485,7 @@ function translateAndInstantiate (loader, key, source, metadata, processAnonRegi
     metadata.pluginLoad.source = source;
     return Promise.resolve(metadata.pluginModule.translate.call(loader, metadata.pluginLoad, metadata.traceOpts))
     .then(function (translated) {
+
       if (metadata.load.sourceMap) {
         if (typeof metadata.load.sourceMap !== 'object')
           throw new Error('metadata.load.sourceMap must be set to an object.');
@@ -3769,7 +3773,7 @@ function transpile (loader, source, key, metadata) {
 
       if (metadata.load.format === 'esm' && detectRegisterFormat(source))
         metadata.load.format = 'register';
-
+      // console.log(window.lively4stamp, "transpiled " +key)
       return source;
     });
   }, function (err) {
