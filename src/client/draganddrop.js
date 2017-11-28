@@ -58,6 +58,31 @@ const dropOnDocumentBehavior = {
     lively.addEventListener("dropOnDocumentBehavior", document, "drop", ::this.onDrop);
     
     this.handlers = [
+      // vivide list
+      {
+        handle(evt) {
+          const dt = evt.dataTransfer;
+          if(!dt.types.includes("vivide/list-input")) { return false; }
+          const tempKey = dt.getData("vivide/list-input");
+          const data = getObjectFor(tempKey);
+          removeTempKey(tempKey);
+
+          lively.openComponentInWindow("vivide-list").then(vl1 => {
+            vl1.pushTransformation(list => list);
+            vl1.pushDepiction(knot => knot.label());
+            vl1.show(data);
+            
+            lively.openComponentInWindow("vivide-list").then(vl2 => {
+              vl2.pushTransformation(list => list);
+              vl2.pushDepiction(elem => elem.url);
+              vl1.register(vl2);
+            });
+          });
+
+          return true;
+        }
+      },
+
       // move a desktop item
       {
         handle(evt) {

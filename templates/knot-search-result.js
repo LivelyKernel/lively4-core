@@ -54,6 +54,7 @@ export default class KnotSearchResult extends Morph {
 
         const knots = selectedItems.map(item => item.knot);
         dt.setData("javascript/object", getTempKeyFor(knots));
+        dt.setData("vivide/list-input", getTempKeyFor(knots));
         
         const hints = knots
           .map(knot => knot.label())
