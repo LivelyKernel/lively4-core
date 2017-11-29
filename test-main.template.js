@@ -12,7 +12,7 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   var TEST_SW_REGEXP = /-swtest\.js$/i;
 
   // Get a list of all the test files to include
-  console.log(window.__karma__.files.join("\n\r"));
+  //console.log(window.__karma__.files.join("\n\r"));
   Object.keys(window.__karma__.files).forEach(file => {
     if (/node_modules/.test(file)) return; // ignore sub tests...
 
