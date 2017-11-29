@@ -8,10 +8,11 @@ window.lastDropboxToken = "INSERTDROPBOXTOKEN";
 focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   var allClientTestFiles = [];
   var allSWTestFiles = [];
-  var TEST_CLIENT_REGEXP = /(\.|-)(spec|test)\.js$/i;
+  var TEST_CLIENT_REGEXP = /(external\/aexpr\/test\/*\.spec|-spec|-test)\.js$/i;
   var TEST_SW_REGEXP = /-swtest\.js$/i;
 
   // Get a list of all the test files to include
+  console.log(Object.keys(window.__karma__.files).join("\r\n"));
   Object.keys(window.__karma__.files).forEach(file => {
     if (/node_modules/.test(file)) return; // ignore sub tests...
 
