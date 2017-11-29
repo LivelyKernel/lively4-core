@@ -8,13 +8,13 @@
   /* logging */
   
 function livelyLog(...rest) {
-  if (localStorage["logSystemJS"]) {
-    console.log(window.lively4stamp, ...rest)  
+  if (self.localStorage && self.localStorage["logSystemJS"]) {
+    console.log(self.lively4stamp, ...rest)  
   }
 }
 
-window.livelyGroupTimes = {} 
-window.livelyGroupTree = {} 
+var livelyGroupTimes = {} 
+var livelyGroupTree = {} 
 
 function livelyGroupPrint(entry, visited = new Set()) {
   if (visited.has(entry.key)) return
@@ -35,13 +35,13 @@ function livelyGroupStart(label, key, parentKey) {
   }
     
   
-  if (localStorage["logSystemJS"]) {
+  if (self.localStorage && self.localStorage["logSystemJS"]) {
     livelyGroupTimes[label + key] = performance.now()
   }
 }
 
 function livelyGroupEnd(label, key, parent) {
-  if (localStorage["logSystemJS"]) {
+  if (self.localStorage && self.localStorage["logSystemJS"]) {
     console.log(label + " " + key +" time: "  + ((performance.now() - livelyGroupTimes[label + key]) / 1000).toFixed(3) + "s" + " parent: " + parent)
 
     var parentEntry = livelyGroupTree[parent];
