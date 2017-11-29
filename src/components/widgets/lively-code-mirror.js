@@ -251,7 +251,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         }
       },
       "Ctrl-S": (cm) => {          
-        this.doSave(editor.getValue());
+        this.doSave(cm.getValue());
       },
       
       // #copied from keymap/emacs.js
