@@ -19,19 +19,16 @@ import authGithub from './auth-github.js';
 import authDropbox from './auth-dropbox.js';
 import authGoogledrive  from './auth-googledrive.js';
 import expose from './expose.js';
-import generateUUID from './uuid.js';
+import { toArray, uuid as generateUUID } from 'utils';
 import {pt, rect} from './graphics.js';
 import Dialog from 'templates/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
 
 /* expose external modules */
-import color from '../external/tinycolor.js';
+// import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
 import Selection from 'templates/lively-selection.js'
-import windows from "templates/lively-window.js"
-import boundEval from "src/client/bound-eval.js";
-
-import { toArray } from "utils";
+import windows from "src/components/widgets/lively-window.js"
 
 let $ = window.$; // known global variables.
 
@@ -46,7 +43,7 @@ var exportmodules = [
   "html",
   "components",
   "persistence",
-  "color",
+  // "color",
   "focalStorage",
   "authGithub",
   "authDropbox",
@@ -146,7 +143,8 @@ export default class Lively {
     }).then(async (mod) => {
       modulePaths.forEach(eaPath => {
         // lively.notify("update dependend: ", eaPath, 3, "blue")
-        if (eaPath.match(/templates\/.*js/)) {
+        var found = lively.components.getTemplatePaths().find(templatePath => eaPath.match(templatePath))
+        if (found) {
           var templateURL = eaPath.replace(/\.js$/,".html");
           try {
             console.log("[templates] update template " + templateURL);
@@ -269,7 +267,7 @@ export default class Lively {
     //     var nativeLog = console.log;
     //     console.log = function() {
     //         nativeLog.apply(console, arguments);
-    //         lively.log.apply(undefined, arguments);
+    //         console.log.apply(undefined, arguments);
     //     };
     //     console.log.originalFunction = nativeLog; // #TODO use generic Wrapper mechanism here
     // }
@@ -277,7 +275,7 @@ export default class Lively {
     //     var nativeError = console.error;
     //     console.error = function() {
     //         nativeError.apply(console, arguments);
-    //         lively.log.apply(undefined, arguments);
+    //         console.log.apply(undefined, arguments);
     //     };
     //     console.error.originalFunction = nativeError; // #TODO use generic Wrapper mechanism here
     // }
@@ -304,14 +302,18 @@ export default class Lively {
     components.loadByName("lively-window");
     components.loadByName("lively-editor");
     
-    System.import("src/client/clipboard.js") // depends on me
-    System.import("src/client/graffle.js") // depends on me
-    System.import("src/client/draganddrop.js") // depends on me
+ 
   }
   
   
   static exportModules() {
     exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expectednit
+  
+    System.import("src/client/clipboard.js").then( m => {
+      lively.clipboard = m.default
+    }) // depends on me
+    System.import("src/client/graffle.js") // depends on me
+    System.import("src/client/draganddrop.js") // depends on me
   }
 
   static asUL(anyList){
@@ -366,12 +368,6 @@ export default class Lively {
     //   lively.setGlobalPosition(element, pos)
     // }
     return element
-  }
-  
-  static boundEval(str, ctx) {
-    // #TODO refactor away
-    // lively.notify("lively.boundEval is depricated")
-    return boundEval(str, ctx)
   }
 
   static pt(x,y) {
@@ -515,17 +511,6 @@ export default class Lively {
       target = that;
     }
     contextmenu.openIn(container, evt, target, worldContext);
-  }
-
-  static log(/* varargs */) {
-      var args = arguments;
-      $('lively-console').each(function() {
-        try{
-          if (this.log) this.log.apply(this, args);
-        }catch(e) {
-          // ignore...
-        }
-      });
   }
   
   static nativeNotify(title, text, timeout, cb) {
@@ -671,8 +656,8 @@ export default class Lively {
   }
   
   static async initializeDocument(doc, loadedAsExtension, loadContainer) {
-    console.log("Lively4 initializeDocument");
-
+    console.log("Lively4 initializeDocument" );
+    
     lively.loadCSSThroughDOM("font-awesome", lively4url + "/src/external/font-awesome/css/font-awesome.min.css");
     this.initializeEvents(doc);
     this.initializeHalos();
@@ -684,10 +669,7 @@ export default class Lively {
       }
     })
 
-
-    
-    
-    console.log("load local lively content ")
+    console.log(window.lively4stamp, "load local lively content ")
     await persistence.current.loadLivelyContentForURL()
     preferences.loadPreferences()
     
@@ -696,9 +678,6 @@ export default class Lively {
     // lively.selection;
 
     if (loadedAsExtension) {
-      System.import("src/client/customize.js").then(customize => {
-          customize.customizePage();
-      });
       lively.notify("Lively4 extension loaded!",
         "  CTRL+LeftClick  ... open halo\n" +
         "  CTRL+RightClick ... open menu");
@@ -731,7 +710,7 @@ export default class Lively {
       delete this.deferredUpdateScroll;
 		}
     
-    console.log("lively persistence start ")
+    console.log(window.lively4stamp, "lively persistence start ")
     setTimeout(() => {persistence.current.start()}, 2000)
 
     
@@ -1047,7 +1026,7 @@ export default class Lively {
       let baseName = this.templateClassNameToTemplateName(className);
       var url = await this.components.searchTemplateFilename(baseName +".js")
       if (url) {
-        console.log("Components: load module " + url)
+        // console.log("Components: load module " + url)
         var module = await System.import(url);
         proto =  Object.create(module.prototype || module.default.prototype);        
       } else {
@@ -1501,7 +1480,7 @@ export default class Lively {
 
 if (!window.lively || window.lively.name != "Lively") {
   window.lively = Lively;
-  console.log("loaded lively intializer");
+  console.log(window.lively4stamp, "loaded lively intializer");
   // only load once... not during development
   Lively.loaded();
 } else {
@@ -1512,5 +1491,6 @@ if (!window.lively || window.lively.name != "Lively") {
 
 
 Lively.exportModules();
-  
-console.log("loaded lively");
+
+                      
+console.log(window.lively4stamp, "loaded lively");

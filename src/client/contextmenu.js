@@ -8,7 +8,7 @@ import {pt} from './graphics.js';
 import ViewNav from 'src/client/viewnav.js'
 import Layout from "src/client/layout.js"
 import Preferences from './preferences.js';
-import Windows from "templates/lively-window.js"
+import Windows from "src/components/widgets/lively-window.js"
 import {Grid} from "src/client/morphic/snapping.js"
 import Info from "src/client/info.js"
 
@@ -129,7 +129,7 @@ export default class ContextMenu {
             ContextMenu.openInWindow(target, evt);
         }],
       ["save as...", async (evt) => {
-        var name = await lively.prompt("save element as: ", "parts/element.html")
+        var name = await lively.prompt("save element as: ", "src/parts/element.html")
         // var name = "foo.html"
         var url = name
         if (!url.match(/https?:\/\//)) {
@@ -266,9 +266,8 @@ export default class ContextMenu {
           this.hide();
         }, "", '<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'], 
         ["Button", async evt => {
-          var clipboard = await System.import("src/client/clipboard.js").then(m => m.default)
-          var data = await fetch(lively4url + "/parts/button.html").then(t => t.text())
-          var morph  = clipboard.pasteHTMLDataInto(data, worldContext).childNodes[0];
+          var data = await fetch(lively4url + "/src/parts/button.html").then(t => t.text())
+          var morph  = lively.clipboard.pasteHTMLDataInto(data, worldContext).childNodes[0];
           this.openCenteredAt(morph, worldContext, evt)          
           lively.hand.startGrabbing(morph, evt)
           // morph.style.backgroundColor = "blue";
@@ -384,14 +383,6 @@ export default class ContextMenu {
       ["Preferences", 
           ["ShowDocumentGrid", "InteractiveLayer", "ShowFixedBrowser", "SnapWindowsInGrid", "DisableAExpWorkspace", "DisableAltGrab", "UseTernInCodeMirror", "UseAsyncWorkspace", "CtrlAsHaloModifier"].map(ea => this.preferenceEntry(ea))
       ],
-      
-      // ["Customize Page", (evt) => {
-      //     this.hide();
-      //     System.import("src/client/customize.js").then(c => c.openCustomizeWorkspace(evt))
-      //   },
-      //   "",'<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'
-      //   ],
-
       ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt, worldContext), 
         "CMD+SHIFT+G",'<i class="fa fa-github" aria-hidden="true"></i>'],
       ["save as ..", (evt) => {

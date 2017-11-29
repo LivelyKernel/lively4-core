@@ -1,6 +1,6 @@
 import {pt} from './graphics.js';
 import Preferences from './preferences.js';
-import Windows from "templates/lively-window.js"
+import Windows from "src/components/widgets/lively-window.js"
 
 
 /*
@@ -294,7 +294,7 @@ export default class ViewNav {
   }
   
   static resetView() {
-    lively.setPosition(document.body, pt(0,0));
+    lively.setGlobalPosition(document.body, pt(0,0));
   }
 } 
 

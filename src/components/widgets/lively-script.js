@@ -1,6 +1,5 @@
-import Morph from './Morph.js';
-import uuid from 'src/client/uuid.js'
-import boundEval from './../src/client/bound-eval.js';
+import Morph from 'templates/Morph.js';
+import boundEval from 'src/client/bound-eval.js';
 
 export default class LivelyScript extends Morph {
 

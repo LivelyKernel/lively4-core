@@ -1,11 +1,10 @@
-import Morph from './Morph.js';
+import Morph from 'templates/Morph.js';
 import {pt} from 'src/client/graphics.js';
 import {Grid} from 'src/client/morphic/snapping.js';
 import Preferences from 'src/client/preferences.js';
 
 export default class Window extends Morph {
-  
- 
+
   get title() {
     return this._title
   }
@@ -13,7 +12,6 @@ export default class Window extends Morph {
     this._title = val
     this.render();
   }
-
   get isWindow() { return true }
   get minimizedWindowWidth() { return 300 }
   get minimizedWindowPadding() { return 10 }
@@ -88,8 +86,8 @@ export default class Window extends Morph {
   
   onKeyUp(evt) {
     var char = String.fromCharCode(evt.keyCode || evt.charCode);
-    if (evt.altKey && char == "W") {
-      if (confirm("close window?")) this.remove()
+    if ((evt.altKey || evt.ctrlKey) && char == "W") {
+      this.onCloseButtonClicked(evt)
       evt.preventDefault();
     }
   }
@@ -315,9 +313,9 @@ export default class Window extends Morph {
     }
   }
 
-  onCloseButtonClicked(evt) {
+  async onCloseButtonClicked(evt) {
     if (this.target && this.target.unsavedChanges && this.target.unsavedChanges()) {
-      if(!window.confirm("Window contains unsaved changes, close anyway?"))  {
+      if(!await lively.confirm("Window contains unsaved changes, close anyway?"))  {
         return 
       }
     }

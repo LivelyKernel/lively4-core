@@ -1,7 +1,6 @@
 import Morph from "./Morph.js"
 
 import { Graph } from 'src/client/triples/triples.js';
-import lively from 'src/client/lively.js';
 
 export default class AddTriple extends Morph {
   async initialize() {

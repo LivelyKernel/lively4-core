@@ -9,6 +9,7 @@
 
 // import lively from "./lively.js"; #TODO does not work anymore...
 
+import boundEval from "src/client/bound-eval.js";
 import GraphControl from "templates/graph-control.js";
 
 export default class Keys {
@@ -85,7 +86,7 @@ export default class Keys {
           let str = window.getSelection().toLocaleString();
           lively.notify("eval: " + str)
           try {
-            lively.boundEval(str);
+            boundEval(str);
           } catch(e) {
             lively.handleError(e);
           }

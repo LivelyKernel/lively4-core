@@ -1,9 +1,11 @@
-import generateUUID from './uuid.js';
+import { uuid } from 'utils';
 import { setCode } from './workspaces.js';
 import Preferences from "./preferences.js";
 
 function rewriteSourceWithAsyncAwaitSupport(source) {
-  return "(async secretAsyncLabel => { return {__asyncresult__: do {" +source+ "}}})()"
+  return `(async secretAsyncLabel => {
+  return { __asyncresult__: do {${source}}}
+})()`;
 }
 
 export default async function boundEval(source, thisReference, targetModule) {
@@ -20,7 +22,7 @@ export default async function boundEval(source, thisReference, targetModule) {
 
     // source
     // TODO: we currently use a newly generated UUID on each evaluation to trick SystemJS into actually loading it (therefore, we use codeId):
-    let codeId = generateUUID();
+    let codeId = uuid();
     setCode(codeId, source);
     
     var path = 'workspace:' + encodeURI(codeId)

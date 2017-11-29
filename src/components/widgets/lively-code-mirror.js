@@ -1,6 +1,6 @@
-import generateUUID from './../src/client/uuid.js';
-import boundEval from './../src/client/bound-eval.js';
-import Morph from "./Morph.js"
+import { uuid as generateUUID } from 'utils';
+import boundEval from 'src/client/bound-eval.js';
+import Morph from "templates/Morph.js"
 import diff from 'src/external/diff-match-patch.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import { debounce } from "utils";
@@ -89,30 +89,35 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/selection/mark-selection.js")
 
       await this.loadModule("keymap/sublime.js")
-      await System.import(lively4url + '/templates/lively-code-mirror-hint.js')
-
-      await this.loadModule("addon/tern/tern.js")
-
-      var terndir = lively4url + '/src/external/tern/'
-      await lively.loadJavaScriptThroughDOM("tern_acorn", terndir + 'acorn.js')
-      await lively.loadJavaScriptThroughDOM("tern_acorn_loose", terndir + 'acorn_loose.js')
-      await lively.loadJavaScriptThroughDOM("tern_walk", terndir + 'walk.js')
-      await lively.loadJavaScriptThroughDOM("tern_polyfill", terndir + 'polyfill.js')
-      await lively.loadJavaScriptThroughDOM("tern_signal", terndir + 'signal.js')
-      await lively.loadJavaScriptThroughDOM("tern_tern", terndir + 'tern.js')
-      await lively.loadJavaScriptThroughDOM("tern_def", terndir + 'def.js')
-      await lively.loadJavaScriptThroughDOM("tern_comment", terndir + 'comment.js')
-      await lively.loadJavaScriptThroughDOM("tern_infer", terndir + 'infer.js')
-      await lively.loadJavaScriptThroughDOM("tern_plugin_modules", terndir + 'modules.js')
-      await lively.loadJavaScriptThroughDOM("tern_plugin_esmodules", terndir + 'es_modules.js')
-
+      await System.import(lively4url + '/src/components/widgets/lively-code-mirror-hint.js')
       
       this.loadCSS("addon/hint/show-hint.css")
-      this.loadCSS("../../../templates/lively-code-mirror.css")
+      this.loadCSS("../../components/widgets/lively-code-mirror.css")
     })()
     return loadPromise
   }
 
+  
+  static async loadTernModules() {
+    if (this.ternIsLoaded) return;
+
+    await this.loadModule("addon/tern/tern.js")
+
+    var terndir = lively4url + '/src/external/tern/'
+    await lively.loadJavaScriptThroughDOM("tern_acorn", terndir + 'acorn.js')
+    await lively.loadJavaScriptThroughDOM("tern_acorn_loose", terndir + 'acorn_loose.js')
+    await lively.loadJavaScriptThroughDOM("tern_walk", terndir + 'walk.js')
+    await lively.loadJavaScriptThroughDOM("tern_polyfill", terndir + 'polyfill.js')
+    await lively.loadJavaScriptThroughDOM("tern_signal", terndir + 'signal.js')
+    await lively.loadJavaScriptThroughDOM("tern_tern", terndir + 'tern.js')
+    await lively.loadJavaScriptThroughDOM("tern_def", terndir + 'def.js')
+    await lively.loadJavaScriptThroughDOM("tern_comment", terndir + 'comment.js')
+    await lively.loadJavaScriptThroughDOM("tern_infer", terndir + 'infer.js')
+    await lively.loadJavaScriptThroughDOM("tern_plugin_modules", terndir + 'modules.js')
+    await lively.loadJavaScriptThroughDOM("tern_plugin_esmodules", terndir + 'es_modules.js')
+    this.ternIsLoaded = true;
+  }
+  
   initialize() {
   	this._attrObserver = new MutationObserver((mutations) => {
 	  mutations.forEach((mutation) => {  
@@ -327,14 +332,15 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   getTargetModule() {
-    return this.targetModule;
+    // lazily initialize a target module name as fallback
+    return this.targetModule || (this.targetModule = 'unnamed_module_' + generateUUID().replace(/-/g, '_'));
   }
 
   setTargetModule(module) {
     return this.targetModule = module;
   }
 
-  async boundEval(str, context) {
+  async boundEval(str) {
     // console.log("bound eval " + str)
     
     // Ensure target module loaded (for .js files only)
@@ -343,6 +349,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     if(MODULE_MATCHER.test(this.getTargetModule())) {
       await System.import(this.getTargetModule())
     } 
+    console.log("EVAL (CM)", this.getTargetModule());
     // src, topLevelVariables, thisReference, <- finalStatement
     return boundEval(str, this.getDoitContext(), this.getTargetModule());
   }
@@ -398,18 +405,17 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   async tryBoundEval(str, printResult) {
-    var resp;
-    resp = await this.boundEval(str, this.getDoitContext())
+    var resp = await this.boundEval(str);
     if (resp.isError) {
-      var e = resp.value
-      console.error(e)
+      var e = resp.value;
+      console.error(e);
       if (printResult) {
-        window.LastError = e
-        this.printResult("" +e)
+        window.LastError = e;
+        this.printResult("" + e);
       } else {
-        lively.handleError(e)
+        lively.handleError(e);
       }
-      return e
+      return e;
     }
     var result = resp.value
     var obj2string = function(obj) {
@@ -446,7 +452,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   async inspectIt(str) {
-    var result =  await this.boundEval(str, this.getDoitContext()) 
+    var result =  await this.boundEval(str);
     if (!result.isError) {
       result = result.value 
     }
@@ -585,6 +591,8 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   
   async enableTern() {
+    await LivelyCodeMirror.loadTernModules()
+    
     var ecmascriptdefs = await fetch(lively4url + "/src/external/tern/ecmascript.json").then(r => r.json())
     var browserdefs = await fetch(lively4url + "/src/external/tern/browser.json").then(r => r.json())
     // var chaidefs = await fetch(lively4url + "/src/external/tern/chai.json").then(r => r.json())
@@ -763,6 +771,13 @@ export default class LivelyCodeMirror extends HTMLElement {
   	  }
     })
   }
+  
+  unsavedChanges() {
+    if (this.editor.getValue() === "") return false
+    return  true // workspaces should be treated carefully
+  }
+
+  
 }
 
 // LivelyCodeMirror.loadModules()

@@ -1,28 +1,24 @@
-'use strict'
-
 import Morph from './Morph.js';
 import componentLoader from 'src/client/morphic/component-loader.js';
 import preferences from 'src/client/preferences.js';
-
+import ContextMenu from 'src/client/contextmenu.js';
 import {pt} from 'src/client/graphics.js';
 
-
-
 export default class ComponentBinTile extends Morph {
+
   initialize() {
     // this.addEventListener('click', evt => this.onClick(evt))
     this.addEventListener('dragstart', evt => this.onDragStart(evt))
     this.addEventListener('drag', evt => this.onDrag(evt))
     this.addEventListener('dragend', evt => this.onDragEnd(evt))
     this.addEventListener('keyup', evt => this.onKeyUp(evt))
-    
     this.draggable = true;
-    
     this.setAttribute("tabindex", 0)
+    this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
   }
-  
-  
+
   configure(config) {
+    this.config = config; 
     this.setComponentName(config.name);
     var thumbnailName = config.template.replace(/html$/,"png")
 
@@ -34,6 +30,19 @@ export default class ComponentBinTile extends Morph {
     
     this.setTooltip(config.description);
     this.htmlTag = config["html-tag"];
+  }
+  
+  onContextMenu(evt) {      
+    if (!evt.shiftKey) {
+      evt.stopPropagation();
+      evt.preventDefault();
+
+      var menu = new ContextMenu(this, [
+          ["move", () => this.onMoveComponent(evt) ],
+      ]);
+      menu.openIn(document.body, evt, this);
+      return true;
+    }
   }
 
   setThumbnail(path) {
@@ -63,6 +72,7 @@ export default class ComponentBinTile extends Morph {
   setupComponent(comp) {
     if (comp.livelyExample) comp.livelyExample()
   }
+
   
   createComponent(evt) {
     var worldContext = document.body
@@ -70,7 +80,7 @@ export default class ComponentBinTile extends Morph {
     this.component = comp;
     var pos = lively.getGlobalPosition(this)
 
-    if (this.componentBin.inWindow()) {
+    if (!this.componentBin || this.componentBin.inWindow()) {
       return componentLoader.openInWindow(comp).then(win => {
         // var pos = lively.findPositionForWindow(worldContext)
         lively.setGlobalPosition(comp.parentElement, pos)
@@ -127,4 +137,45 @@ export default class ComponentBinTile extends Morph {
     }
   } 
 
+  async onMoveComponent(evt) {
+    var url = await lively.components.searchTemplateFilename(this.config.template);
+    if (!url) {
+      lively.notify("could  not find url")
+    }
+    var newUrl = await lively.prompt("Move component?", url);
+    if (newUrl && newUrl !== url) {
+      lively.notify("Move to " + newUrl);
+      
+      await lively.files.moveFile(url, newUrl)
+      
+      var jsUrl = url.replace(/html$/, "js")
+      var newJsUrl = newUrl.replace(/html$/, "js")
+      if(await lively.files.existFile(jsUrl)) {
+        await lively.files.moveFile(jsUrl, newJsUrl)
+      }
+      
+      var pngUrl = url.replace(/html$/, "png")
+      var newPngUrl = newUrl.replace(/html$/, "png")
+      if(await lively.files.existFile(pngUrl)) {
+        await lively.files.moveFile(pngUrl, newPngUrl)
+      }
+    }
+  }
+  
+  
+  livelyExample() {
+    this.style.width = "150px"
+    this.style.height = "150px"
+    this.configure({
+      name: "ball",
+      template: "lively-ball.html",
+      "html-tag": "lively-ball"
+    }) 
+  }
+  
+  livelyMigrate(other) {
+    this.configure(other.config)
+  }
+  
+  
 }

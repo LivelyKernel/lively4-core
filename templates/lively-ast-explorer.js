@@ -3,11 +3,9 @@
 import Morph from './Morph.js';
 import {babel} from 'systemjs-babel-build';
 import SyntaxChecker from 'src/client/syntax.js'
-import locals from 'babel-plugin-locals'
 import sourcemap from 'src/external/source-map.min.js'
-import generateUUID from './../src/client/uuid.js';
 import {modulesRegister} from 'systemjs-babel-build';
-import { debounce, flatmap, executeAllTestRunners, promisedEvent } from 'utils';
+import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promisedEvent } from 'utils';
 // import lively from './../src/client/lively.js';
 // import {html} from 'src/client/html.js';
 // import {setCode} from 'src/client/workspaces.js'

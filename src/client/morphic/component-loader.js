@@ -12,6 +12,8 @@ var _templates;
 var _prototypes;
 var _proxies;
 var _templatePaths;
+var _templatePathsCache;
+var _templatePathsCacheTime;
 
 // for compatibility
 export function register(componentName, template, prototype) {
@@ -293,12 +295,47 @@ export default class ComponentLoader {
       })
     })
   }
+  
+  
+  static resetTemplatePathCache() {
+    _templatePathsCache = undefined
+    _templatePathsCacheTime = undefined
+  }
 
+  static async getTemplatePathContent(path) {
+    // return  await fetch(path, { method: 'OPTIONS' }).then(resp => resp.json());
+    
+    if (!_templatePathsCache) {
+      _templatePathsCache = {}
+      _templatePathsCacheTime = {}
+    } 
+    let cacheInvalidationTime = 60 * 5 * 1000;
+    let cached = _templatePathsCache[path]
+    let time = _templatePathsCacheTime[path]
+    if (cached && ((Date.now() - time) < cacheInvalidationTime)) return cached
+    
+    let resultPromise =  fetch(path, { method: 'OPTIONS' }).then(resp => resp.json());
+    _templatePathsCacheTime[path] = Date.now()
+    _templatePathsCache[path] = new Promise(async (resolve, reject) => {
+      let result = await resultPromise;
+      if (result) {
+          resolve({contents: result.contents});
+        return cached 
+      }
+    })
+    return resultPromise 
+  }
+  
   static getTemplatePaths() {
     if (!_templatePaths) {
       _templatePaths = [
         lively4url + '/templates/',
-        lively4url + '/src/components/'
+        lively4url + '/src/components/',
+        lively4url + '/src/components/widgets/',
+        lively4url + '/src/components/tools/',
+        lively4url + '/src/components/halo/',
+        lively4url + '/src/components/demo/',
+        lively4url + '/src/components/draft/',
       ]; // default
     } 
     return _templatePaths
@@ -312,15 +349,42 @@ export default class ComponentLoader {
   }
 
   static async searchTemplateFilename(filename) {
+    
     var templatePaths =  this.getTemplatePaths()
     let templateDir = undefined;          
-    for(templateDir of templatePaths) {
-      var stats = await fetch(templateDir, { method: 'OPTIONS' }).then(resp => resp.json());
-      var found = stats.contents.find(ea => ea.name == filename)
-      if (found) break;  
+  
+    // #IDEA, using HTTP HEAD could be faster, but is not always implemented... as ource OPTIONS is neigher
+    // this method avoids the 404 in the console.log
+    
+    
+    // the OPTIONS request seems to break karma... waits to long..
+	  if (!window.__karma__) { 
+      for(templateDir of templatePaths) {
+        try {
+          var stats = await this.getTemplatePathContent(templateDir);
+          var found = stats.contents.find(ea => ea.name == filename)
+        } catch(e) {
+          console.log("searchTemplateFilename: could not get stats of  " + filename + " ERROR: ", e)
+          found = null
+        }
+        if (found) {
+          return templateDir + filename
+        }
+      }
+
+    } else {
+      // so the server did not understand OPTIONS, so lets ask for the files directly
+      if (!found) {
+        for(templateDir of templatePaths) {
+          var found = await fetch(templateDir + filename, { method: 'GET' }) // #TODO use HEAD, after implementing it in lively4-server
+            .then(resp => resp.status == 200); 
+          if (found) {
+            return templateDir + filename
+          }  
+        } 
+      }      
     }
-    if (!found) return undefined;
-    return templateDir + filename
+    return undefined
   }
   
   
@@ -330,8 +394,7 @@ export default class ComponentLoader {
       if (!url) {
         throw new Error("Could not find template for " + name)
       }
-     
-      console.log("load component: " + url)
+      console.log(window.lively4stamp, "load component: " + url)
       
       // #TODO continue here url.exists() 
       var link = document.createElement("link");
@@ -447,4 +510,7 @@ export function livelyMigrate(other) {
 // Problem: we cannot look into internal "other" state, we can do this with objects but not with
 // variable declarations, therefore we let our module system automigrate the module global variable state
 }
+
+
+_templatePathsCache = null
 

@@ -11,18 +11,34 @@
 if (window.lively && window.lively4url) {
   console.log("CANCEL BOOT Lively4, because it is already loaded")
 } else {
- 
   console.group("BOOT")
   
   // for finding the baseURL...
-  var script = document.currentScript
+  var script = document.currentScript;
   var scriptURL = script.src;
-  window.lively4url = scriptURL.replace("/src/client/boot.js","")
+
+  window.lively4url = scriptURL.replace("/src/client/boot.js","");
   
-  var loadContainer = script.getAttribute("data-container") // some simple configuration 
+  // some performance logging
+  window.lively4performance = {start: performance.now()}
+  try {
+    Object.defineProperty(window, 'lively4stamp', {
+      get: function() {
+        if (!window.lively4performance) return;
+        var newLast = performance.now()
+        var t = (newLast - (lively4performance.last || lively4performance.start)) / 1000
+        lively4performance.last = newLast
+        return (t.toFixed(3) + "s ")
+      }
+    })  
+  } catch(e) {
+    console.log(e)
+  }
+  
+  var loadContainer = script.getAttribute("data-container"); // some simple configuration 
+
   console.log("lively4url: " + lively4url);
 
-   
   // COPIED HERE BECAUSE resuse through libs does not work yet
   function loadJavaScriptThroughDOM(name, src, force) {
     return new Promise(function (resolve) {
@@ -46,7 +62,7 @@ if (window.lively && window.lively4url) {
     });
   }
   
-  Promise.resolve().then( () => {
+  Promise.resolve().then(() => {
     return loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/systemjs/system.src.js");
   }).then(async () => {
     // setup var recorder object
@@ -129,6 +145,27 @@ if (window.lively && window.lively4url) {
   */  //await System.import(lively4url + '/src/client/workspaces.js');
     //await System.import('workspace-loader');
     
+    const aexprsFile = {
+      babelOptions: {
+        es2015: false,
+        stage2: false,
+        stage3: false,
+        plugins: [
+          'babel-plugin-jsx-lively',
+          'babel-plugin-transform-do-expressions',
+          'babel-plugin-transform-function-bind',
+          'babel-plugin-doit-result',
+          'babel-plugin-doit-this-ref',
+          'babel-plugin-var-recorder',
+          'babel-plugin-aexpr-source-transformation'
+        ]
+      },
+      loader: 'workspace-loader'
+    };
+    
+    const aexprsWorkspace = {
+    };
+    
     SystemJS.config({
       meta: {
         // plugins are not transpiled with other plugins, except for SystemJS-internal plugins
@@ -138,23 +175,7 @@ if (window.lively && window.lively4url) {
         // blacklist all projects included for active expressions
         [lively4url + '/src/external/aexpr/*.js']: moduleOptionsNon,
         // ... except for the tests
-        [lively4url + '/src/external/aexpr/test/*.spec.js']: {
-          babelOptions: {
-            es2015: false,
-            stage2: false,
-            stage3: false,
-            plugins: [
-              'babel-plugin-jsx-lively',
-              'babel-plugin-transform-do-expressions',
-              'babel-plugin-transform-function-bind',
-              'babel-plugin-doit-result',
-              'babel-plugin-doit-this-ref',
-              'babel-plugin-var-recorder',
-              'babel-plugin-aexpr-source-transformation'
-            ]
-          },
-          loader: 'workspace-loader'
-        },
+        [lively4url + '/src/external/aexpr/test/*.spec.js']: aexprsFile,
         // all others
         '*.js': {
           babelOptions: {
@@ -227,9 +248,8 @@ if (window.lively && window.lively4url) {
     });
 
     try {
-      let { whenLoaded } = await System.import(lively4url + "/src/client/load.js")
-      
-      console.group("1/3: Wait for Service Worker...")
+      console.group("1/3: Wait for Service Worker...");
+      const { whenLoaded } = await System.import(lively4url + "/src/client/load.js");
       await new Promise(whenLoaded);
       console.groupEnd();
       
@@ -237,19 +257,19 @@ if (window.lively && window.lively4url) {
       await lively.components.loadUnresolved();
       console.groupEnd();
       
-      console.group("3/3: Initialize Document")
+      console.group("3/3: Initialize Document");
       await lively.initializeDocument(document, window.lively4chrome, loadContainer);
-            console.groupEnd();
+      console.groupEnd();
       
       console.log("Finally loaded!");
       
-      document.dispatchEvent(new Event("livelyloaded"))
-      
-      console.groupEnd(); // BOOT
+      document.dispatchEvent(new Event("livelyloaded"));
     } catch(err) {
       console.error("Lively Loading failed");
       console.error(err);
       alert("load Lively4 failed:" + err);
+    } finally {
+      console.groupEnd(); // BOOT
     }
   });
 }

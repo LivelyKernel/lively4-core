@@ -1,8 +1,6 @@
 import Morph from './Morph.js';
 import { Graph } from './../src/client/triples/triples.js';
-import { getTempKeyFor, asDragImageFor } from 'src/client/draganddrop.js';
-import { fileName } from 'utils';
-import generateUUID from 'src/client/uuid.js';
+import { uuid as generateUUID, getTempKeyFor, fileName, hintForLabel, asDragImageFor } from 'utils';
 import Keys from 'src/client/keys.js';
 
 export default class KnotSearchResult extends Morph {
@@ -50,28 +48,13 @@ export default class KnotSearchResult extends Morph {
     
     // events fired on drag element
     listItem.addEventListener('dragstart', evt => {
-      function hintForLabel(label) {
-        return <div style="
-          margin: 0.5px 0px;
-          font-size: x-small;
-          background-color: lightgray;
-          border: 1px solid gray;
-          border-radius: 2px;
-          max-width: fit-content;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        ">
-          {label}
-        </div>
-      }
-
       const selectedItems = Array.from(this.getAllSubmorphs('li.selected'));
       if(selectedItems.length > 1 && selectedItems.includes(listItem)) {
         const dt = evt.dataTransfer;
 
         const knots = selectedItems.map(item => item.knot);
         dt.setData("javascript/object", getTempKeyFor(knots));
+        dt.setData("vivide/list-input", getTempKeyFor(knots));
         
         const hints = knots
           .map(knot => knot.label())
@@ -89,23 +72,8 @@ export default class KnotSearchResult extends Morph {
       } else {
         this.removeSelection();
         listItem.classList.add("selected");
-
-        const dt = evt.dataTransfer;
-        listItem.style.color = "blue";
-        dt.setData("knot/url", knot.url);
-        dt.setData("text/uri-list", knot.url);
-        dt.setData("text/plain", knot.url);
-        dt.setData("javascript/object", getTempKeyFor(knot));
-        const mimeType = 'text/plain';
-        const filename = knot.url::fileName();
-        const url = knot.url;
-        dt.setData("DownloadURL", `${mimeType}:${filename}:${url}`);
-
-        // #TODO: remove duplication
-        const dragInfo = <div style="width: 150px;">
-          {hintForLabel(knot.label())}
-        </div>;
-        dragInfo::asDragImageFor(evt, 50, 60);
+        
+        knot.asDataForDrag(evt);
       }
       
     });

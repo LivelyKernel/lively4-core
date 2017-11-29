@@ -261,18 +261,45 @@ export class TemplatePreview {
     return imgURL
   }
   
-  static async generate() {
-    var url = "https://lively-kernel.org/lively4/lively4-jens/templates/";
-    var dir = await fetch(url, {
-        method: "OPTIONS"
-      }).then( r => r.json())
-      var names = dir.contents
-        .filter(ea => ea.name.match(/\.html$/))
-        .map(ea => ea.name.replace(/.html$/,""))
-        .filter(ea => ea.match(/lively-/))    
-      for(let ea of names) {
-        await this.createPreview(url, ea)
-      }
+  static async generate(dry) {
+    let urls = lively.components.getTemplatePaths();
+    for(let url of urls) {
+      console.log("generate preview in: " + url)
+      let dir = await fetch(url, {
+          method: "OPTIONS"
+        }).then( r => r.json())
+        let templates = dir.contents
+          .filter(ea => ea.name.match(/\.html$/))
+        for(let ea of templates) {
+          let name = ea.name.replace(/\.html$/,"")
+          let previewUrl = (url + name + ".png")
+          try {
+            console.log("next " + previewUrl)
+
+            if (! await lively.files.existFile(previewUrl)) {
+              if (TemplatePreview.stoped) return;
+              if (dry) {
+                console.log("would generate " + url)
+              } else {
+                try {
+                  await Promise.race([
+                    this.createPreview(url, name),
+                    new Promise(r => setTimeout(r, 6000))
+                  ])
+                } catch(e) {
+                  comp = 
+                  console.log("GeneratePreview Errro: " + e)
+                }
+              }
+            } else {
+              console.log("Preview exists: " + previewUrl)
+            }            
+          } catch(e) {
+            console.log("Error when generating preview: " + e)
+          }
+          
+        }
+      }      
     }
 }
 

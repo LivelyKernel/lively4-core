@@ -1,12 +1,8 @@
-import focalStorage from './../external/focalStorage.js'
-import generateUuid from './uuid.js'
-import sourcemap from 'src/external/source-map.min.js'
+import focalStorage from './../external/focalStorage.js';
+import { uuid as generateUuid } from 'utils';
+import sourcemap from 'src/external/source-map.min.js';
 
 export default class Files {
-  
-  
-  
-  
   
   static parseSourceReference(ref) {
     if(ref.match("!")) {
@@ -89,6 +85,37 @@ export default class Files {
       return fetch(urlString, {method: 'MKCOL'});
     } else {
       return fetch(urlString, {method: 'PUT', body: data});
+    }
+  }
+  
+  static async moveFile(url, newURL) {
+    var content = await fetch(url).then(r => r.blob())
+
+    // first, save the content...
+    var putResponse = await fetch(newURL, {
+      method: 'PUT',
+      body: content
+    })
+
+    if (putResponse.status !== 200) {
+      lively.confirm("could not move file to " + newURL)
+      return 
+    }
+
+    // ok, lets be crazy... we first delete
+    var delResponse = await fetch(url, {method: 'DELETE'})
+    if (delResponse.status !== 200) {
+      lively.notify("could not properly delete " + url, await delResponse.text())
+    }
+
+    var getResponse = await fetch(newURL)
+    if (getResponse.status !== 200) {
+      lively.notify("save again, because we might need to...")
+      var putAgainResponse = await fetch(newURL, {
+        method: 'PUT',
+        body: content
+      })
+      return 
     }
   }
   
