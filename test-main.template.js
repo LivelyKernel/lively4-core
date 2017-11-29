@@ -8,7 +8,9 @@ window.lastDropboxToken = "INSERTDROPBOXTOKEN";
 focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   var allClientTestFiles = [];
   var allSWTestFiles = [];
-  var TEST_CLIENT_REGEXP = /(external\/aexpr\/test\/*\.spec|-spec|-test)\.js$/i;
+  var x;
+// /external\/aexpr\/test\/.*\.spec\.js$/i.test('base/src/external/aexpr/test/aexpr.spec.js')
+  var TEST_CLIENT_REGEXP = /(external\/aexpr\/test\/aexpr\.spec|-spec|-test)\.js$/i;
   var TEST_SW_REGEXP = /-swtest\.js$/i;
 
   // Get a list of all the test files to include
