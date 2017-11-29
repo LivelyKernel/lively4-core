@@ -118,7 +118,7 @@ export default function(param) {
 
     return {
         pre(file) {
-            console.log("fff", file, traverse);
+            //console.log("fff", file, traverse);
 
             traverse(file.ast, {
                 enter(path) {
