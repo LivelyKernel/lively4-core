@@ -217,10 +217,10 @@ class ServiceWorker {
       'src/external/babel-plugin-syntax-do-expressions.js',
       
       // Useful
-      '/templates/lively-notification.html',
-      '/templates/lively-notification.js',
-      '/templates/lively-notification-list.html',
-      '/templates/lively-notification-list.js',
+      'templates/lively-notification.html',
+      'templates/lively-notification.js',
+      'templates/lively-notification-list.html',
+      'templates/lively-notification-list.js',
     ];
 
     let directoryParts = self.location.pathname.split('/');

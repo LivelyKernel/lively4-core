@@ -1,3 +1,5 @@
+import * as msg from './messaging.js'
+
 /**
  * A class to manage the status of the network connection
  * Events: statusChanged
@@ -61,6 +63,13 @@ export class ConnectionManager {
         }); 
       });
     }
+    
+    // Send message to browser window
+    if (this.isOnline) {
+      msg.broadcast('You are now online', 'info');
+    } else {
+      msg.broadcast('You are now offline', 'warning');
+    }
   }
   
   /**
@@ -71,8 +80,9 @@ export class ConnectionManager {
    *                          and therefore does not have access to 'this'
    */
   _checkBrowserOnline(connectionManager) {
-    // Simply forward the state from the browser
-    connectionManager._setIsOnline(self.navigator.onLine);
+    if (!self.navigator.onLine) {
+      connectionManager._setIsOnline(false);
+    }
   }
   
   /**
@@ -83,13 +93,10 @@ export class ConnectionManager {
    *                          and therefore does not have access to 'this'
    */
   _checkNetworkOnline(connectionManager) {
-    // Only check if we think we are online
-    if(!connectionManager.isOnline) {
-      return;
-    }
+    const checkUrl = `${location.origin}/?checkOnline=${+ new Date()}`;
     
     // Try to reach the server
-    let request = new Request(self.location.origin, {
+    let request = new Request(checkUrl, {
       method: 'HEAD',
     });
     

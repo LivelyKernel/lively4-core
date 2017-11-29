@@ -4,6 +4,54 @@
 (function () {
 'use strict';
 
+
+  /* logging */
+  
+function livelyLog(...rest) {
+  if (self.localStorage && self.localStorage["logSystemJS"]) {
+    console.log(self.lively4stamp, ...rest)  
+  }
+}
+
+var livelyGroupTimes = {} 
+var livelyGroupTree = {} 
+
+function livelyGroupPrint(entry, visited = new Set()) {
+  if (visited.has(entry.key)) return
+  visited.add(entry.key)
+  console.group(entry.label + " " + entry.key) 
+  entry.children.forEach(ea => {
+    livelyGroupPrint(ea, visited)
+  })
+  console.groupEnd() 
+}
+
+function livelyGroupStart(label, key, parentKey) {
+  var entry = {label: label, key: key, parent: parent, children: []}
+  if (key) {
+    livelyGroupTree[key] = entry
+    var parent = livelyGroupTree[parentKey]
+    if (parent) parent.children.push(entry)
+  }
+    
+  
+  if (self.localStorage && self.localStorage["logSystemJS"]) {
+    livelyGroupTimes[label + key] = performance.now()
+  }
+}
+
+function livelyGroupEnd(label, key, parent) {
+  if (self.localStorage && self.localStorage["logSystemJS"]) {
+    console.log(label + " " + key +" time: "  + ((performance.now() - livelyGroupTimes[label + key]) / 1000).toFixed(3) + "s" + " parent: " + parent)
+
+    var parentEntry = livelyGroupTree[parent];
+    if (!parentEntry) {
+      console.log("tree!!!")
+      livelyGroupPrint(livelyGroupTree[key])
+    }
+  }
+}
+  
 /*
  * Environment
  */
@@ -903,7 +951,7 @@ RegisterLoader.prototype[Loader.resolveInstantiate] = function (key, parentKey) 
   var loader = this;
   var registry = loader.registry._registry;
   var registerRegistry = loader[REGISTER_REGISTRY];
-
+  
   return resolveInstantiate(loader, key, parentKey, registry, registerRegistry)
   .then(function (instantiated) {
     if (instantiated instanceof ModuleNamespace)
@@ -912,11 +960,16 @@ RegisterLoader.prototype[Loader.resolveInstantiate] = function (key, parentKey) 
     // if already beaten to linked, return
     if (instantiated.module)
       return instantiated.module;
-
+    
+    
+    
     // resolveInstantiate always returns a load record with a link record and no module value
     if (instantiated.linkRecord.linked)
       return ensureEvaluate(loader, instantiated, instantiated.linkRecord, registry, registerRegistry, undefined);
 
+    livelyGroupStart("resolveInstantiate", loader.normalizeSync(key), loader.normalizeSync(parentKey))
+
+    
     return instantiateDeps(loader, instantiated, instantiated.linkRecord, registry, registerRegistry, [instantiated])
     .then(function () {
       return ensureEvaluate(loader, instantiated, instantiated.linkRecord, registry, registerRegistry, undefined);
@@ -924,8 +977,13 @@ RegisterLoader.prototype[Loader.resolveInstantiate] = function (key, parentKey) 
     .catch(function (err) {
       clearLoadErrors(loader, instantiated);
       throw err;
-    });
-  });
+    })
+    .then(result => {
+      livelyGroupEnd("resolveInstantiate", loader.normalizeSync(key), loader.normalizeSync(parentKey))
+      return result
+    })
+  })
+  
 };
 
 function resolveInstantiate (loader, key, parentKey, registry, registerRegistry) {
@@ -1046,6 +1104,8 @@ function instantiate (loader, load, link, registry, registerRegistry) {
 
 // like resolveInstantiate, but returning load records for linking
 function resolveInstantiateDep (loader, key, parentKey, parentMetadata, registry, registerRegistry, traceDepMap) {
+
+  livelyGroupStart("resolveInstantiateDep", loader.normalizeSync(key), loader.normalizeSync(parentKey))
   // normalization shortpaths for already-normalized key
   // DISABLED to prioritise consistent resolver calls
   // could add a plain name filter, but doesn't yet seem necessary for perf
@@ -1099,7 +1159,10 @@ function resolveInstantiateDep (loader, key, parentKey, parentMetadata, registry
       load.metadata.registered = true;
 
     return instantiate(loader, load, link, registry, registerRegistry);
-  });
+  }).then(r => {
+    livelyGroupEnd("resolveInstantiateDep", loader.normalizeSync(key), loader.normalizeSync(parentKey))
+    return r
+  })
 }
 
 function traceLoad (loader, load, link) {
@@ -1533,8 +1596,7 @@ function nsEvaluate (ns) {
  * Source loading
  */
 function fetchFetch (url, authorization, integrity, asBuffer) {
-  // console.log(window.lively4stamp, "SystemJS fetch " + url)
-  
+  livelyLog("SystemJS fetch " + url)
   // fetch doesn't support file:/// urls
   if (url.substr(0, 8) === 'file:///') {
     if (hasXhr)
@@ -3470,7 +3532,7 @@ function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
 }
 
 function translateAndInstantiate (loader, key, source, metadata, processAnonRegister) {
-  //console.log(window.lively4stamp, "translateAndInstantiate " + key)
+  livelyLog("translateAndInstantiate " + key)
   return Promise.resolve(source)
   // translate
   .then(function (source) {
@@ -3773,7 +3835,7 @@ function transpile (loader, source, key, metadata) {
 
       if (metadata.load.format === 'esm' && detectRegisterFormat(source))
         metadata.load.format = 'register';
-      // console.log(window.lively4stamp, "transpiled " +key)
+      livelyLog("transpiled " +key)
       return source;
     });
   }, function (err) {

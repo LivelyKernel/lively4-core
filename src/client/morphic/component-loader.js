@@ -314,7 +314,10 @@ export default class ComponentLoader {
     let time = _templatePathsCacheTime[path]
     if (cached && ((Date.now() - time) < cacheInvalidationTime)) return cached
     
-    let resultPromise =  fetch(path, { method: 'OPTIONS' }).then(resp => resp.json());
+    let resultPromise =  fetch(path, { method: 'OPTIONS' }).then(resp => {
+      if (resp.status !== 200) return undefined
+      return resp.json()
+    });
     _templatePathsCacheTime[path] = Date.now()
     _templatePathsCache[path] = new Promise(async (resolve, reject) => {
       let result = await resultPromise;
@@ -336,6 +339,7 @@ export default class ComponentLoader {
         lively4url + '/src/components/halo/',
         lively4url + '/src/components/demo/',
         lively4url + '/src/components/draft/',
+        lively4url + '/src/client/vivide/components/',
       ]; // default
     } 
     return _templatePaths
