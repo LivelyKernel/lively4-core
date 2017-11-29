@@ -141,7 +141,7 @@ export default class Selecting {
     
     // if (HaloService.lastIndicator) HaloService.lastIndicator.remove();
     // HaloService.lastIndicator = lively.showElement(el);
-  
+    if (!self.HaloService) return;
     
     if (HaloService.lastIndicator) {
       HaloService.lastIndicator.style.border = "1px dashed blue"
