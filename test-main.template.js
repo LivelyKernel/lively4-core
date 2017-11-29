@@ -8,13 +8,11 @@ window.lastDropboxToken = "INSERTDROPBOXTOKEN";
 focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   var allClientTestFiles = [];
   var allSWTestFiles = [];
-  var x;
-// /external\/aexpr\/test\/.*\.spec\.js$/i.test('base/src/external/aexpr/test/aexpr.spec.js')
-  var TEST_CLIENT_REGEXP = /(external\/aexpr\/test\/aexpr\.spec|-spec|-test)\.js$/i;
+  var TEST_CLIENT_REGEXP = /(-spec|-test)\.js$/i;
+  var TEST_EXTERNAL_REGEXP = /external\/aexpr\/test\/.*(\.|-)(spec|test)\.js$/i;
   var TEST_SW_REGEXP = /-swtest\.js$/i;
 
   // Get a list of all the test files to include
-  console.log(Object.keys(window.__karma__.files).join("\r\n"));
   Object.keys(window.__karma__.files).forEach(file => {
     if (/node_modules/.test(file)) return; // ignore sub tests...
 
@@ -22,6 +20,13 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
       let normalizedTestModule = file.replace(/^\/base\/|\.js$/g, '');
       allClientTestFiles.push(normalizedTestModule);
       console.log('Test to load: ' + normalizedTestModule);
+    }
+
+    if (TEST_EXTERNAL_REGEXP.test(file)) {
+      
+      let normalizedTestModule = file.replace(/^\/base\/|\.js$/g, '');
+      allClientTestFiles.push(normalizedTestModule);
+      console.log('Ext Test to load: ' + normalizedTestModule);
     }
 
     if (TEST_SW_REGEXP.test(file)) {
