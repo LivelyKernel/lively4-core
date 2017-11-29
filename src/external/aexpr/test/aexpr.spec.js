@@ -6,6 +6,8 @@ chai.use(sinonChai);
 
 import {reset} from 'aexpr-source-transformation-propagation';
 
+let moduleScopedVariable = 1;
+
 describe('Propagation Logic', function() {
   it('is a transparent wrapper for property accesses', () => {
     let obj = {
@@ -315,6 +317,18 @@ describe('Propagation Logic', function() {
     
     arr.push(3);
     expect(spy).to.be.calledOnce;
+  });
+
+  describe('module-scoped variables', () => {
+    it('track assignment to module-scoped variable', () => {
+      const spy = sinon.spy();
+
+      aexpr(() => moduleScopedVariable).onChange(spy);
+      expect(spy).not.to.be.called;
+
+      moduleScopedVariable = 2;
+      expect(spy).to.be.calledWithMatch(2);
+    })
   });
 
   describe('members', () => {

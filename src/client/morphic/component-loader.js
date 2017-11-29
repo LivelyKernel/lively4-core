@@ -336,6 +336,7 @@ export default class ComponentLoader {
         lively4url + '/src/components/halo/',
         lively4url + '/src/components/demo/',
         lively4url + '/src/components/draft/',
+        lively4url + '/src/client/vivide/components/',
       ]; // default
     } 
     return _templatePaths

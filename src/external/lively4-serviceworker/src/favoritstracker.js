@@ -7,7 +7,22 @@ import { DbObject } from './dbobject.js';
 export class FavoritsTracker extends DbObject {
   constructor() {
     super('favorits');
-    this._connect(); 
+    this._connect();
+    //this._onconnect.bind(this)
+  }
+  
+  _onconnect() {
+    var objectStore = this._getObjectStore();
+    var request = objectStore.openCursor();
+    
+    request.onsuccess = function(event) {
+      var cursor = event.target.result;
+      
+      if (cursor) {
+        // Iterate favorits and cache them
+        cursor.continue();
+      }
+    };
   }
   
   /**
