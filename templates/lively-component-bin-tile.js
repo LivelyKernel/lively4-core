@@ -104,10 +104,12 @@ export default class ComponentBinTile extends Morph {
   }
   
   async onDragStart(evt) {
-    this.dragTarget = await this.createComponent()
     var img = document.createElement("img")
     img.src = this.getThumbnailPath()    
     evt.dataTransfer.setDragImage(img, 0, 0); 
+
+    this.dragTargetPromise = this.createComponent()
+    this.dragTarget = await this.dragTargetPromise
   }
   
   onDrag(evt) {
@@ -116,11 +118,12 @@ export default class ComponentBinTile extends Morph {
     } 
   }
   
-  onDragEnd(evt) {
+  async onDragEnd(evt) {
     // Do nothing... 
-    if (this.dragTarget) {
-     document.body.appendChild(this.dragTarget) 
-     lively.setGlobalPosition(this.dragTarget, pt(evt.clientX - 300, evt.clientY - 10))
+    if (this.dragTargetPromise) {
+      var target = await this.dragTargetPromise
+      document.body.appendChild(target) 
+      lively.setGlobalPosition(target, pt(evt.clientX - 300, evt.clientY - 10))
      
     }
     
