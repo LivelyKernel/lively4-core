@@ -936,13 +936,12 @@ export default class Container extends Morph {
     }
     
     var markdown = this.get("lively-markdown")
-    if (markdown) {      
+    if (markdown && markdown.get) {  // #TODO how to dynamically test for being initialized?
       var presentation = markdown.get("lively-presentation")
-      if (presentation) {
+      if (presentation && presentation.currentSlideNumber) {
         this.lastPage  = presentation.currentSlideNumber()
       }
-      
-      this.wasContentEditable = markdown.contentEditable == "true"
+      this.wasContentEditable =   markdown.contentEditable == "true"
     }
     
     
