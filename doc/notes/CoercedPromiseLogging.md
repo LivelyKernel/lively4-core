@@ -18,7 +18,7 @@
 
 ### Basic Dynamically scoped COP
 
-```
+```javascript
 cop.withLayers([SomeLayer], () => {
   doSomething()
 })
@@ -26,10 +26,30 @@ cop.withLayers([SomeLayer], () => {
 
 ### Basic Dynamically scoped COP
 
-```
+```javascript
 cop.withLayers([SomeLayer], async () => {
   doSomethingFirst() // SomeLayer is active
   await someTime() 
   doSomething() // // SomeLayer might not be active....
 })
 ```
+
+
+
+## Workspace
+
+```javascript
+cop.withLayers([LogPromisesLayer], () => {
+
+  var p = new Promise((r,f) => {
+    r("A")
+    // f("B")
+  })
+
+
+  return p.then( r => {
+    console.log("result ")
+  })
+})
+```
+

@@ -1424,6 +1424,8 @@ export default class Lively {
    if (!result && element.host) result = this.query(element.host, query) 
    return result
   }
+  
+  
 
   static queryAll(element, query) {    
     var all = new Set()
@@ -1434,7 +1436,7 @@ export default class Lively {
     })
     return Array.from(all)
   }
- 
+  
   static gotoWindow(element) {
     element.focus()
     document.scrollingElement.scrollTop = 0

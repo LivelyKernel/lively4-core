@@ -406,6 +406,10 @@ export default class Window extends Morph {
     this.positionBeforeMinimize = oldInstance.positionBeforeMinimize;
   }
   
+  getAddOnRoot() {
+    return this.shadowRoot.querySelector("#window-global")
+  }
+  
   /* embed content in parent and remove yourself */
   embedContentInParent() {
   	var content = this.querySelector("*")

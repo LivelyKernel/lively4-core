@@ -39,15 +39,28 @@ export default class Dialog extends Morph {
   }
 
   static async dialog() {
+    var w  = lively.findWindow(document.activeElement) 
     var dialog = document.createElement("lively-dialog")
-    await lively.components.openInBody(dialog)
     
-    // center in fixed 
+    var scope = w ? w.getAddOnRoot() : document.body
+    await lively.components.openIn(scope, dialog)
+    
     var bounds = dialog.getBoundingClientRect()
-    lively.setPosition(dialog, 
-      pt(window.innerWidth / 2 - bounds.width / 2, 
-        window.innerHeight / 2 - bounds.height / 2))
-    dialog.style.position = "fixed"
+    if (!w) {
+      // center in fixed 
+      lively.setPosition(dialog, 
+        pt(window.innerWidth / 2 - bounds.width / 2, 
+          window.innerHeight / 2 - bounds.height / 2))
+      dialog.style.position = "fixed"      
+    } else {
+      var ext = lively.getExtent(w);
+      w.getAddOnRoot().appendChild(dialog)
+      lively.setPosition(dialog, 
+        pt(ext.x / 2 - bounds.width / 2, 
+           ext.y / 2 - bounds.height / 2))
+
+    }
+    
     
     return dialog
   }
