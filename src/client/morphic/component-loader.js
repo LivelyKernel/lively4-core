@@ -314,7 +314,10 @@ export default class ComponentLoader {
     let time = _templatePathsCacheTime[path]
     if (cached && ((Date.now() - time) < cacheInvalidationTime)) return cached
     
-    let resultPromise =  fetch(path, { method: 'OPTIONS' }).then(resp => resp.json());
+    let resultPromise =  fetch(path, { method: 'OPTIONS' }).then(resp => {
+      if (resp.status !== 200) return undefined
+      return resp.json()
+    });
     _templatePathsCacheTime[path] = Date.now()
     _templatePathsCache[path] = new Promise(async (resolve, reject) => {
       let result = await resultPromise;
