@@ -21,7 +21,7 @@ import authGoogledrive  from './auth-googledrive.js';
 import expose from './expose.js';
 import { toArray, uuid as generateUUID } from 'utils';
 import {pt, rect} from './graphics.js';
-import Dialog from 'templates/lively-dialog.js'
+import Dialog from 'src/components/widgets/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
 
 /* expose external modules */
