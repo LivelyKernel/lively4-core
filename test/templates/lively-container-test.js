@@ -8,13 +8,13 @@ describe("Container Tool",  function() {
 
   var that;
   before("load", function(done){
-    this.timeout(35000);
+    this.timeout(75000);
     var templateName = "lively-container"
     loadComponent(templateName).then(c => {that = c; done()}).catch(e => done(e));
   });
 
   it("should visit an url when setPath", function(done) {
-    that.setPath(lively4url +"/README.txt").then(() => {
+    that.setPath(lively4url +"/README.md").then(() => {
         // expect(that.getContentRoot().textContent).match(/\"path\": \"\/\"/);
         done();
       })
