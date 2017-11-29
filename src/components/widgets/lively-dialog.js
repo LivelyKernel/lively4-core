@@ -40,6 +40,8 @@ export default class Dialog extends Morph {
 
   static async dialog() {
     var w  = lively.findWindow(document.activeElement) 
+    if (w && !w.getAddOnRoot) w = null; // we did not find a window...
+    
     var dialog = document.createElement("lively-dialog")
     
     var scope = w ? w.getAddOnRoot() : document.body
