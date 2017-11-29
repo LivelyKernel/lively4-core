@@ -9,12 +9,12 @@
   
 function livelyLog(...rest) {
   if (localStorage["logSystemJS"]) {
-    console.log(window.lively4stamp, ...rest)  
+    console.log(self.lively4stamp, ...rest)  
   }
 }
 
-window.livelyGroupTimes = {} 
-window.livelyGroupTree = {} 
+var livelyGroupTimes = {} 
+var livelyGroupTree = {} 
 
 function livelyGroupPrint(entry, visited = new Set()) {
   if (visited.has(entry.key)) return
