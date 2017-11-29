@@ -5,10 +5,29 @@ import { DbObject } from './dbobject.js';
  * Currently uses IndexedDB to store data
  */
 export class Dictionary extends DbObject {
+  
+  
   constructor() {
+    Dictionary._maxCacheTime = 30 * 1000;
     super('dictionary');
-    this._connect();
-    // TODO: Invalidate old objects
+    this._connect(this._onconnect.bind(this));
+  }
+  
+  _onconnect() {
+    var objectStore = this._getObjectStore();
+    var request = objectStore.openCursor();
+    
+    request.onsuccess = function(event) {
+      var cursor = event.target.result;
+      
+      if (cursor) {
+        if (Date.now() - cursor.value.timestamp > Dictionary._maxCacheTime) {
+          // Delete old object
+          //this._getObjectStore().delete(cursor.key);
+        }
+        cursor.continue();
+      }
+    };
   }
   
   /**
