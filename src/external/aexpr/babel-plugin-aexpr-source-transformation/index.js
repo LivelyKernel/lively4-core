@@ -38,7 +38,7 @@ const FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION = Symbol('FLAG: should not r
 
 export default function(param) {
     let { types: t, template, traverse } = param;
-    console.log(arguments);
+    //console.log(arguments);
 
     function getPropertyFromMemberExpression(node) {
         // We are looking for MemberExpressions, which have two distinct incarnations:
@@ -135,7 +135,7 @@ export default function(param) {
         visitor: {
             Program: {
                 enter(path, state) {
-                    console.log("file", path, state);
+                    //console.log("file", path, state);
                     if(state.file[IGNORE_INDICATOR]) { console.log("read ignored"); return; }
 
                     function getIdentifierForExplicitScopeObject(parentWithScope) {
