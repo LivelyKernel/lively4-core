@@ -1,10 +1,12 @@
-const AEXPR_IDENTIFIER_NAME = "aexpr";
+import { isVariable } from './utils.js';
 
-const GET_MEMBER = "getMember";
-const GET_AND_CALL_MEMBER = "getAndCallMember";
+const AEXPR_IDENTIFIER_NAME = 'aexpr';
 
-const IGNORE_STRING = "aexpr ignore";
-const IGNORE_INDICATOR = Symbol("aexpr ignore");
+const GET_MEMBER = 'getMember';
+const GET_AND_CALL_MEMBER = 'getAndCallMember';
+
+const IGNORE_STRING = 'aexpr ignore';
+const IGNORE_INDICATOR = Symbol('aexpr ignore');
 
 const SET_MEMBER_BY_OPERATORS = {
     '=': 'setMember',
@@ -194,29 +196,27 @@ export default function(param) {
                             }
 
                             if(
-                                // TODO: is there a general way to exclude non-variables?
-                            !(t.isImportNamespaceSpecifier(path.parent) && path.parentKey === 'local') &&
-                            !(t.isLabeledStatement(path.parent) && path.parentKey === 'label') &&
-                            !(t.isBreakStatement(path.parent) && path.parentKey === 'label') &&
-                            !(t.isForInStatement(path.parent) && path.parentKey === 'left') &&
-                            !(t.isAssignmentPattern(path.parent) && path.parentKey === 'left') &&
-                            !(t.isUpdateExpression(path.parent)) &&
-                            !(t.isFunctionExpression(path.parent) && path.parentKey === 'id') &&
-                            !(t.isImportDefaultSpecifier(path.parent) && path.parentKey === 'local') &&
-                            !(t.isCatchClause(path.parent) && path.parentKey === 'param') &&
-                            !t.isObjectProperty(path.parent) &&
-                            !t.isClassDeclaration(path.parent) &&
-                            !t.isClassMethod(path.parent) &&
-                            !t.isImportSpecifier(path.parent) &&
-                            !t.isMemberExpression(path.parent) &&
-                            !t.isObjectMethod(path.parent) &&
-                            !t.isVariableDeclarator(path.parent) &&
-                            !t.isFunctionDeclaration(path.parent) &&
-                            !(t.isArrowFunctionExpression(path.parent) && path.parentKey === 'params') &&
-                            !(t.isExportSpecifier(path.parent) && path.parentKey === 'exported') &&
-                            !(t.isFunctionExpression(path.parent) && path.parentKey === 'params') &&
-                            !t.isRestElement(path.parent) &&
-                            (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
+                              // TODO: is there a general way to exclude non-variables?
+                              isVariable(path) &&
+                              !(t.isForInStatement(path.parent) && path.parentKey === 'left') &&
+                              !(t.isAssignmentPattern(path.parent) && path.parentKey === 'left') &&
+                              !(t.isUpdateExpression(path.parent)) &&
+                              !(t.isFunctionExpression(path.parent) && path.parentKey === 'id') &&
+                              !(t.isImportDefaultSpecifier(path.parent) && path.parentKey === 'local') &&
+                              !(t.isCatchClause(path.parent) && path.parentKey === 'param') &&
+                              !t.isObjectProperty(path.parent) &&
+                              !t.isClassDeclaration(path.parent) &&
+                              !t.isClassExpression(path.parent) &&
+                              !t.isClassMethod(path.parent) &&
+                              !t.isImportSpecifier(path.parent) &&
+                              !t.isObjectMethod(path.parent) &&
+                              !t.isVariableDeclarator(path.parent) &&
+                              !t.isFunctionDeclaration(path.parent) &&
+                              !(t.isArrowFunctionExpression(path.parent) && path.parentKey === 'params') &&
+                              !(t.isExportSpecifier(path.parent) && path.parentKey === 'exported') &&
+                              !(t.isFunctionExpression(path.parent) && path.parentKey === 'params') &&
+                              !t.isRestElement(path.parent) &&
+                              (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
                             ) {
                                 if(path.scope.hasBinding(path.node.name)) {
                                     //logIdentifier('get local var', path)
