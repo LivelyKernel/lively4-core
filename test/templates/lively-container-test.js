@@ -10,7 +10,7 @@ describe("Container Tool",  function() {
   before("load", function(done){
     this.timeout(75000);
     var templateName = "lively-container"
-    loadComponent(templateName).then(c => {that = c; done()}).catch(e => done(e));
+    loadComponent(templateName).then(c => {that = c; done()}).catch(e => done("Error while loading Component " +templateName + " "+ e));
   });
 
   it("should visit an url when setPath", function(done) {
