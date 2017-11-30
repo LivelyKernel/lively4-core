@@ -1,4 +1,4 @@
-import HaloItem from './HaloItem.js';
+import HaloItem from 'src/components/halo/lively-halo-item.js';
 import componentLoader from "src/client/morphic/component-loader.js";
 
 export default class HaloInspectItem extends HaloItem {

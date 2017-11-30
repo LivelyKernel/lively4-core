@@ -1,6 +1,6 @@
 'use strict';
 
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import * as search from 'src/external/lively4-search/client/search.js';
 
 export default class SearchWidget extends Morph {

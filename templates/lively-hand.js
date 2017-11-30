@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import {pt} from "src/client/graphics.js"
 
 import Selecting from "src/client/morphic/selecting.js"

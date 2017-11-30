@@ -1,4 +1,4 @@
-import Morph from 'templates/Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import { applyDragCSSClass } from 'src/client/draganddrop.js';
 import { fileName } from 'utils';

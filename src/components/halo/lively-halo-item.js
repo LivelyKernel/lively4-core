@@ -2,9 +2,9 @@
  * Abstract HaloItem class, that is used for elements/buttons in Halo
  */
 import lively from 'src/client/lively.js'
-import Morph from './Morph.js'
+import Morph from 'src/components/widgets/lively-morph.js'
 
-import Halo from './lively-halo.js';
+import Halo from 'templates/lively-halo.js';
 
 
 /*

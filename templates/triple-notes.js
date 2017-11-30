@@ -1,4 +1,4 @@
-import Morph from "./Morph.js"
+import Morph from "src/components/widgets/lively-morph.js"
 import ContextMenu from 'src/client/contextmenu.js';
 
 import d3 from 'src/external/d3.v4.js';

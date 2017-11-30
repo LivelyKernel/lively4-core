@@ -1,4 +1,4 @@
-import Morph from "./Morph.js"
+import Morph from "src/components/widgets/lively-morph.js"
 import boundEval from "src/client/bound-eval.js"
 import Window from "./lively-window.js"
 import {pt} from "src/client/graphics.js" 

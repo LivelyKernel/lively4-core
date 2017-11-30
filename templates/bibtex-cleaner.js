@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import Parser from 'https://raw.githubusercontent.com/ORCID/bibtexParseJs/master/bibtexParse.js';
 import Strings from "src/client/strings.js";
 

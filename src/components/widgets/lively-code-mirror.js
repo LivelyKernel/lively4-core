@@ -1,6 +1,6 @@
 import { uuid as generateUUID } from 'utils';
 import boundEval from 'src/client/bound-eval.js';
-import Morph from "templates/Morph.js"
+import Morph from "src/components/widgets/lively-morph.js"
 import diff from 'src/external/diff-match-patch.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import { debounce } from "utils";

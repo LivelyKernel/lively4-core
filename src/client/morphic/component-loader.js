@@ -1,6 +1,6 @@
 import scriptManager from  "src/client/script-manager.js";
 // import * as persistence from  "src/client/persistence.js";
-import Morph from "templates/Morph.js";
+import Morph from "src/components/widgets/lively-morph.js";
 import {pt} from '../graphics.js';
 import { through } from "utils";
 

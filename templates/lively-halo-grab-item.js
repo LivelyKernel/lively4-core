@@ -5,7 +5,7 @@
  * (distance or holding shift pressed) into another node. 
  */
  
-import HaloItem from './HaloItem.js';
+import HaloItem from 'src/components/halo/lively-halo-item.js';
 import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
 import {pt} from 'src/client/graphics.js';

@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 
 // TODO: Refactor display functions to builder pattern
 // TODO: Reference functions for infinite trees

@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import components from "src/client/morphic/component-loader.js";
 import MarkdownIt from "src/external/markdown-it.js"
 import MarkdownItHashtag from "src/external/markdown-it-hashtag.js"

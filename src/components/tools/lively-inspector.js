@@ -2,7 +2,7 @@
  * # LivelyInspector 
  * A tool similar to the chrome "Elements" pane and the JavaScript object explorer
  */
-import Morph from 'templates/Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import {sortAlphaNum} from "src/client/sort.js"
 

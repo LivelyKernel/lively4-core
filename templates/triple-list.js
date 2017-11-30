@@ -1,4 +1,4 @@
-import Morph from "./Morph.js"
+import Morph from "src/components/widgets/lively-morph.js"
 
 import loadDropbox, { Graph } from 'src/client/triples/triples.js';
 

@@ -1,6 +1,6 @@
 'use strict';
 
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import html from "src/client/html.js"
 
 

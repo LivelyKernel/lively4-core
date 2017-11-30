@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import componentLoader from 'src/client/morphic/component-loader.js';
 import preferences from 'src/client/preferences.js';
 import ContextMenu from 'src/client/contextmenu.js';

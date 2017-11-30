@@ -1,4 +1,4 @@
-import HaloItem from './HaloItem.js';
+import HaloItem from 'src/components/halo/lively-halo-item.js';
 
 export default class HalloEditItem extends HaloItem {
 

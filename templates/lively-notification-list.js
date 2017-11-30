@@ -1,6 +1,6 @@
 'use strict';
 
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import lively from 'src/client/lively.js'
 
 export default class NotificationList extends Morph {

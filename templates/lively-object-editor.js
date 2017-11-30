@@ -1,6 +1,6 @@
 'use strict';
 
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import { uuid as generateUUID } from 'utils';
 import scriptManager from  "src/client/script-manager.js";
 
