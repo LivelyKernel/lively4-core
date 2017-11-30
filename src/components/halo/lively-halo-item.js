@@ -4,7 +4,7 @@
 import lively from 'src/client/lively.js'
 import Morph from 'src/components/widgets/lively-morph.js'
 
-import Halo from 'templates/lively-halo.js';
+import Halo from 'src/components/halo/lively-halo.js';
 
 
 /*

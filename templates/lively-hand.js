@@ -1,10 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import {pt} from "src/client/graphics.js"
-
 import Selecting from "src/client/morphic/selecting.js"
-
-import GrabItem from "templates/lively-halo-grab-item.js"
-
+import GrabItem from "src/components/halo/lively-halo-grab-item.js"
 import Preferences from 'src/client/preferences.js';
 
 /*
