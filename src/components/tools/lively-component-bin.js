@@ -51,16 +51,15 @@ export default class ComponentBin extends Morph {
       }); 
   }
 
-  createTiles(compList) {
-    this.componentList = compList.map((compInfo) => {
-      var tile = document.createElement("lively-component-bin-tile");
+  async createTiles(compList) {
+    this.componentList = []
+    for(let compInfo of compList) {
+      var tile = await lively.create("lively-component-bin-tile", this);
       tile.setBin(this);
       tile.configure(compInfo);
-
       compInfo.tile = tile;
-
-      return compInfo;
-    });
+      this.componentList.push(compInfo)
+    }
   }
 
   showTiles(filteredCompList) {
