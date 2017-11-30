@@ -10,7 +10,7 @@ let moduleScopedVariable = 1;
 
 // #TODO: does not yet detect changes to the iterator variable itself
 describe('loop constructs', function() {
-  it('for-var-in loop support', () => {
+  it('for loop/local variable (var)', () => {
     let x = 0;
     const spy = sinon.spy();
     aexpr(() => x).onChange(spy);
@@ -22,7 +22,7 @@ describe('loop constructs', function() {
     expect(spy).to.be.calledWithMatch(1);
     expect(spy).to.be.calledWithMatch(3);
   });
-  xit('for-let-in loop support', () => {
+  xit('for loop/local variable (let)', () => {
     let x = 0;
     const spy = sinon.spy();
     aexpr(() => x).onChange(spy);
@@ -34,6 +34,71 @@ describe('loop constructs', function() {
     expect(spy).to.be.calledWithMatch(1);
     expect(spy).to.be.calledWithMatch(3);
   });
+  it('track changes on iterator variable (var)', () => {
+    const spy = sinon.spy();
+    const holder = {};
+
+    for(var i = 0; i < 3; i += 1) {
+      holder.aexpr = holder.aexpr || aexpr(() => i).onChange(spy);
+    }
+    expect(spy).to.be.calledThrice;
+    expect(spy).to.be.calledWithMatch(1);
+    expect(spy).to.be.calledWithMatch(2);
+    expect(spy).to.be.calledWithMatch(3);
+  });
+  xit('track changes on iterator variable (let)', () => {
+    const spy = sinon.spy();
+    const holder = {};
+
+    for(let i = 0; i < 3; i += 1) {
+      holder.aexpr = holder.aexpr || aexpr(() => i).onChange(spy);
+    }
+    expect(spy).to.be.calledThrice;
+    expect(spy).to.be.calledWithMatch(1);
+    expect(spy).to.be.calledWithMatch(2);
+    expect(spy).to.be.calledWithMatch(3);
+  });
+  it('for-in/local variable (var)', () => {
+    let x = 0;
+    const obj = { a: 42, b: 17 };
+    const spy = sinon.spy();
+    aexpr(() => x).onChange(spy);
+
+    for(var i in obj) {
+      lively.notify(i)
+      x += obj[i];
+    }
+    expect(spy).to.be.calledTwice;
+    expect(spy).to.be.calledWithMatch(42);
+    expect(spy).to.be.calledWithMatch(59);
+  });
+  it('for-in/local variable (let)', () => {
+    let x = 0;
+    const obj = { a: 42, b: 17 };
+    const spy = sinon.spy();
+    aexpr(() => x).onChange(spy);
+
+    for(let i in obj) {
+      lively.notify(i)
+      x += obj[i];
+    }
+    expect(spy).to.be.calledTwice;
+    expect(spy).to.be.calledWithMatch(42);
+    expect(spy).to.be.calledWithMatch(59);
+  });
+  xit('for-of/local variable (var)', () => {
+  });
+  xit('for-of/local variable (let)', () => {
+  });
+  xit('for-of/object member', () => {
+  });
+});
+
+describe('UpdateOperator', () => {
+  xit('x++', () => {});
+  xit('++x', () => {});
+  xit('obj.member++', () => {});
+  xit('++obj.member', () => {});
 });
 
 describe('Propagation Logic', function() {

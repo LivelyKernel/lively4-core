@@ -435,16 +435,17 @@ export default class Container extends Morph {
       if (moduleName) {
         moduleName = moduleName[1];
         
+        const testRegexp = /test\/.*js/;
         if (this.lastLoadingFailed) {
           this.reloadModule(url); // use our own mechanism...
-        } else if (this.getPath().match(/test\/.*js/)) {
+        } else if (this.getPath().match(testRegexp)) {
           this.loadTestModule(url); 
         } else if ((this.get("#live").checked && !this.get("#live").disabled)) {
           await this.loadModule("" + url)
           
           
           lively.findDependedModules("" + url).forEach(ea => {
-            if (ea.match(/test\/.*js/)) {
+            if (ea.match(testRegexp)) {
               this.loadTestModule(ea); 
             } 
           })
