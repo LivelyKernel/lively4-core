@@ -36,12 +36,14 @@ export default class ContextMenu {
     return this.menu && this.menu.parentElement
   }
   
-  static openComponentInWindow (name, evt, worldContext) {
+  static openComponentInWindow (name, evt, worldContext, extent) {
     this.hide();
     return lively.openComponentInWindow(name, 
       this.eventPosition(worldContext, evt), 
-      undefined, worldContext).then( comp => {
-      
+      extent, worldContext).then( comp => {
+      if(extent) {
+        lively.setExtent(comp.parentElement, extent)
+      }
       return comp
     });
   }
@@ -212,13 +214,11 @@ export default class ContextMenu {
       }, "CMD+K", '<i class="fa fa-window-maximize" aria-hidden="true"></i>'],
       ["Browse/Edit", evt => {
           var container = _.last(document.querySelectorAll("lively-container"));
-          this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
+          this.openComponentInWindow("lively-container", evt, worldContext, pt(950, 600)).then(comp => {
             if (container)
               comp.followPath("" + container.getURL());
             else
               comp.followPath(lively4url +"/");
-            comp.parentElement.style.width = "950px";
-            comp.parentElement.style.height = "600px";
             this.positionElementAtEvent(comp.parentElement, worldContext, evt)
           });
         }, 
@@ -226,7 +226,7 @@ export default class ContextMenu {
       // ["File Editor", evt => this.openComponentInWindow("lively-editor", evt)],
       // ["File Browser", evt => this.openComponentInWindow("lively-file-browser", evt)],
       ["Component Bin", evt => 
-        this.openComponentInWindow("lively-component-bin", evt, worldContext),
+        this.openComponentInWindow("lively-component-bin", evt, worldContext,  pt(850, 660)),
        "CMD+O", '<i class="fa fa-th" aria-hidden="true"></i>'],
       ["Insert", [
         ["Text", evt => {

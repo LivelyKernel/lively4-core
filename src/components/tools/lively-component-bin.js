@@ -7,8 +7,8 @@ import * as componentLoader from 'src/client/morphic/component-loader.js';
 export default class ComponentBin extends Morph {
   initialize() {
     this.windowTitle = "Component Bin"
-    this.loadComponentList().then((compList) => {
-      this.createTiles(compList);
+    this.loadComponentList().then(async (compList) => {
+      await this.createTiles(compList);
       this.showTiles(this.sortAlphabetically(this.componentList));
     });
 
@@ -21,8 +21,11 @@ export default class ComponentBin extends Morph {
   }
 
   async loadComponentList() {
-    var templatesUrl = lively4url + "/templates/";
     var paths =  lively.components.getTemplatePaths()
+      .filter(ea => !ea.match(/\/draft/))
+      .filter(ea => !ea.match(/\/halo/))
+      .filter(ea => !ea.match(/\/widgets/))
+
     var contents  = []
     for(let templatesUrl of paths) {
       await files.statFile(templatesUrl).then(response => {
