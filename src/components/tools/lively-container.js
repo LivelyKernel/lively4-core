@@ -499,6 +499,10 @@ export default class Container extends Morph {
   async renameFile(url) {
     url = "" + url
     var newURL = await lively.prompt("rename", url)
+    if (!newURL) {
+      lively.notify("cancel rename " + url)
+      return
+    }
     if (newURL != url) {
       await lively.files.moveFile(url, newURL)
   
