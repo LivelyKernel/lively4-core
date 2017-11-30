@@ -21,7 +21,7 @@ import authGoogledrive  from './auth-googledrive.js';
 import expose from './expose.js';
 import { toArray, uuid as generateUUID } from 'utils';
 import {pt, rect} from './graphics.js';
-import Dialog from 'templates/lively-dialog.js'
+import Dialog from 'src/components/widgets/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
 
 /* expose external modules */
@@ -1424,6 +1424,8 @@ export default class Lively {
    if (!result && element.host) result = this.query(element.host, query) 
    return result
   }
+  
+  
 
   static queryAll(element, query) {    
     var all = new Set()
@@ -1434,7 +1436,7 @@ export default class Lively {
     })
     return Array.from(all)
   }
- 
+  
   static gotoWindow(element) {
     element.focus()
     document.scrollingElement.scrollTop = 0
