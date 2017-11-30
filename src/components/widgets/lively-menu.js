@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'templates/Morph.js';
 import {pt, rect} from 'src/client/graphics.js';
 import html from  'src/client/html.js'
 
