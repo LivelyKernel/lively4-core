@@ -112,7 +112,7 @@ export default class LivelyMenu extends Morph {
       item.innerHTML = icon + ea[0] + right 
       if (ea[1] instanceof Function) {
         var func = ea[1];
-        item.addEventListener("click", func);
+        item.addEventListener("click", evt => func(evt, item));
       }
 
       item.addEventListener("mouseenter", async (evt) => {

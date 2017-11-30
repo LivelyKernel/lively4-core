@@ -179,16 +179,24 @@ export default class ContextMenu {
   }
   
   static preferenceEntry(preferenceKey) {
-    return Preferences.get(preferenceKey) ? [
-      Preferences.shortDescription(preferenceKey), () => {
-        Preferences.disable(preferenceKey)
-      },"",
-      '<i class="fa fa-check-square-o" aria-hidden="true"></i>'
-      ] : [
-      Preferences.shortDescription(preferenceKey), async () => {
-        Preferences.enable(preferenceKey)
-        this.hide()
-      }, "",  '<i class="fa fa-square-o" aria-hidden="true"></i>'
+    let enabledIcon = function(enabled) {
+      return enabled ? 
+        '<i class="fa fa-check-square-o" aria-hidden="true"></i>' :
+        '<i class="fa fa-square-o" aria-hidden="true"></i>'    
+    }
+    
+    return [
+      Preferences.shortDescription(preferenceKey), (evt, item) => {
+        evt.stopPropagation();
+        evt.preventDefault();
+        
+        if (Preferences.get(preferenceKey))  {
+          Preferences.disable(preferenceKey)
+        } else {
+          Preferences.enable(preferenceKey)    
+        }
+        item.querySelector(".icon").innerHTML = enabledIcon(Preferences.get(preferenceKey)); 
+      },"", enabledIcon(Preferences.get(preferenceKey))
     ]
   }
   
@@ -415,7 +423,7 @@ export default class ContextMenu {
     this.firstEvent = evt
     lively.addEventListener("contextMenu", document.documentElement, "click", () => {
       this.hide();
-    }, true);
+    });
 
     var menu = lively.components.createComponent("lively-menu");
     return lively.components.openIn(container, menu).then(() => {
