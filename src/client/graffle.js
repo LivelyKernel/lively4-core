@@ -21,7 +21,7 @@ export default class Graffle {
     this.keysDown = {}
   }
   
-  static onKeyDown(evt) {
+  static async onKeyDown(evt) {
     // console.log('down ' + evt.keyCode)
     if (!lively.isGlobalKeyboardFocusElement(evt.path[0])) 
       return; 
@@ -35,33 +35,36 @@ export default class Graffle {
         evt.stopPropagation()
         evt.preventDefault()
       }
-      lively.hand.style.display = "block"
-      var info = ""
-      if (this.keysDown["S"]) {
-        info = "shape"
+      var hand = await lively.ensureHand();
+      if (hand) {
+        hand.style.display = "block"
+        var info = ""
+        if (this.keysDown["S"]) {
+          info = "shape"
+        }
+        if (this.keysDown["C"]) {
+          info = "connect"
+        }
+        if (this.keysDown["T"]) {
+          info = "text"
+        }
+        if (hand.info)
+          hand.info.textContent = info          
       }
-      if (this.keysDown["C"]) {
-        info = "connect"
-      }
-      if (this.keysDown["T"]) {
-        info = "text"
-      }
-      if (lively.hand.info)
-        lively.hand.info.textContent = info  
     }
   }
 
-  static onKeyUp(evt) {
+  static async onKeyUp(evt) {
     var key = String.fromCharCode(evt.keyCode)
     this.keysDown[key] = false
     // lively.notify("up: " + key)
     lively.selection.disabled = false
   
-    lively.hand.style.display = "none"
-    
-    if (lively.hand.info)
-     lively.hand.info.textContent = ""
-    
+    var hand = await lively.ensureHand();
+    if (hand) {
+      hand.style.display = "none"
+      if (hand.info) hand.info.textContent = ""
+    }
     // if (this.lastElement)
     //   this.lastElement.focus(); // no, we can focus.... and continue typing
   }

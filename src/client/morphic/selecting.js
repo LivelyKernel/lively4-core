@@ -160,6 +160,7 @@ export default class Selecting {
   }
 
   static hideHalos() {
+    if (!self.HaloService) return;
     HaloService.hideHalos();
   }
 
