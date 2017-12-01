@@ -12,10 +12,11 @@ let moduleScopedVariable = 1;
 describe('simplify locals', function() {
   it('easier get', () => {
     let myIdentifier = 0;
+    let _;
 
     aexpr(() => myIdentifier).onChange(()=>{});
 
-    myIdentifier = 2;
+    _ =  myIdentifier = 2;
   });
 });
 describe('loop constructs', function() {
