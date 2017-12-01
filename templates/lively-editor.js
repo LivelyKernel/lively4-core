@@ -5,7 +5,7 @@
  * - updates change indicator while when editting,loading, and saving
  */
 
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import moment from "src/external/moment.js";
 import diff from 'src/external/diff-match-patch.js';
 import preferences from 'src/client/preferences.js';

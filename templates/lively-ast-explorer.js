@@ -1,6 +1,6 @@
 'use strict';
 
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import {babel} from 'systemjs-babel-build';
 import SyntaxChecker from 'src/client/syntax.js'
 import sourcemap from 'src/external/source-map.min.js'

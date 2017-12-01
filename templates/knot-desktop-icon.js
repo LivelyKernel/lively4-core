@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import { Graph } from './../src/client/triples/triples.js';
 import { fileName, hintForLabel, getTempKeyFor } from 'utils';
 

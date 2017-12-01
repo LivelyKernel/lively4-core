@@ -1,5 +1,5 @@
 import {pt} from 'src/client/graphics.js';
-import Halo from "templates/lively-halo.js"
+import Halo from "src/components/halo/lively-halo.js"
 import svg from "src/client/svg.js"
 
 export default class Graffle {
@@ -46,7 +46,8 @@ export default class Graffle {
       if (this.keysDown["T"]) {
         info = "text"
       }
-      lively.hand.info.textContent = info  
+      if (lively.hand.info)
+        lively.hand.info.textContent = info  
     }
   }
 
@@ -57,7 +58,9 @@ export default class Graffle {
     lively.selection.disabled = false
   
     lively.hand.style.display = "none"
-    lively.hand.info.textContent = ""
+    
+    if (lively.hand.info)
+     lively.hand.info.textContent = ""
     
     // if (this.lastElement)
     //   this.lastElement.focus(); // no, we can focus.... and continue typing

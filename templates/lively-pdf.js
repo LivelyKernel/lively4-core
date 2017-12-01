@@ -1,5 +1,5 @@
 'use strict';
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import pdf from "src/external/pdf.js"
 // see https://gist.github.com/yurydelendik/c6152fa75049d5c8f62f
 

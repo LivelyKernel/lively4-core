@@ -1,4 +1,4 @@
-import Morph from 'templates/Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 
 import Files from 'src/client/files.js'
 

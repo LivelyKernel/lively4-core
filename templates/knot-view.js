@@ -1,4 +1,4 @@
-import Morph from "./Morph.js"
+import Morph from "src/components/widgets/lively-morph.js"
 
 import { Graph, _, TAG_URL } from 'src/client/triples/triples.js';
 

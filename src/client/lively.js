@@ -27,7 +27,7 @@ import ViewNav from 'src/client/viewnav.js'
 /* expose external modules */
 // import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
-import Selection from 'templates/lively-selection.js'
+import Selection from 'src/components/halo/lively-selection.js'
 import windows from "src/components/widgets/lively-window.js"
 
 let $ = window.$; // known global variables.

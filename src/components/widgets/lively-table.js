@@ -1,4 +1,4 @@
-import Morph from 'templates/Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import DragBehavior from "src/client/morphic/dragbehavior.js"
 

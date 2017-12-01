@@ -1,7 +1,7 @@
 'use strict';
 
 import * as cop from "src/external/ContextJS/src/contextjs.js"
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 
 
 //     Mocha.utils.parseQuery()

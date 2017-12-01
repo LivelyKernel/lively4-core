@@ -1,12 +1,12 @@
-import Morph from 'templates/Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import highlight from 'src/external/highlight.js';
 import {pt} from 'src/client/graphics.js';
-import halo from 'templates/lively-halo.js';
+import halo from 'src/components/halo/lively-halo.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/external/ContextJS/src/contextjs.js";
-import ScopedScripts from "templates/ScopedScripts.js";
+import ScopedScripts from "src/client/scoped-scripts.js";
 import Clipboard from "src/client/clipboard.js"; 
 import {debounce} from "utils";
 
@@ -499,6 +499,10 @@ export default class Container extends Morph {
   async renameFile(url) {
     url = "" + url
     var newURL = await lively.prompt("rename", url)
+    if (!newURL) {
+      lively.notify("cancel rename " + url)
+      return
+    }
     if (newURL != url) {
       await lively.files.moveFile(url, newURL)
   
@@ -665,7 +669,7 @@ export default class Container extends Morph {
     
       if (!window.ScopedD3) {
         console.log("LOAD D3 Adaption Layer");
-        await System.import("templates/ContainerScopedD3.js")
+        await System.import("src/client/container-scoped-d3.js")
         ScopedD3.updateCurrentBodyAndURLFrom(this);
         // return this.appendHtml(content) // try again
       }
