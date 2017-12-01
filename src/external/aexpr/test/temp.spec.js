@@ -4,7 +4,7 @@ const obj = {
     return this.a;
   }
 }
-debugger;
+
 aexpr(()=>obj.fn()).onChange(val => lively.notify(val))
 obj.a = 17;
 lively.notify("FOO");

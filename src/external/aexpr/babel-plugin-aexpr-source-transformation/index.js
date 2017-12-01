@@ -226,19 +226,44 @@ export default function(param) {
                                         par.scope.hasOwnBinding(path.node.name)
                                     );
                                     if(parentWithScope) {
-
-                                        path.replaceWith(
-                                            t.sequenceExpression([
-                                                t.callExpression(
-                                                    addCustomTemplate(state.file, GET_LOCAL),
-                                                    [
-                                                        getIdentifierForExplicitScopeObject(parentWithScope),
-                                                        t.stringLiteral(path.node.name)
-                                                    ]
-                                                ),
-                                                path.node
-                                            ])
+                                      //function printParents(path) {
+                                      //  let result = [path.type];
+                                      //  path.findParent(p => {
+                                      //    result.push(p.type);
+                                      //    return false;
+                                      //  });
+                                      //  console.log(result.join('\n\r'))
+                                      //}
+                                      //printParents(path);
+                                      //const node = path.parentPath.parentPath;
+  //                                    const statement = path.getStatementParent();
+//                                      console.warn(statement, statement.type);
+                                      //node.unshiftContainer('body', t.expressionStatement(t.stringLiteral("HELLO!?")));
+// lively.openInspector(statement);
+//statement.insertBefore(t.expressionStatement(t.stringLiteral("WORLD")))
+                                      //printParents(path.getStatementParent())
+                                      //printParents(path.getFunctionParent())
+                                      //path.getFunctionParent().ensureBlock();
+                                      //path.insertBefore(t.expressionStatement(t.stringLiteral("Because I'm easy come, easy go.")));
+                                      
+                                      function insertHookBeforeGetLocal(path) {
+                                        path.insertBefore(
+                                          t.ifStatement(
+                                            // #TODO: add global flag for expression analysis mode
+                                            t.booleanLiteral(true),
+                                            t.expressionStatement(
+                                              t.callExpression(
+                                                addCustomTemplate(state.file, GET_LOCAL),
+                                                [
+                                                  getIdentifierForExplicitScopeObject(parentWithScope),
+                                                  t.stringLiteral(path.node.name)
+                                                ]
+                                              )
+                                            )
+                                          )
                                         );
+                                      }
+                                      insertHookBeforeGetLocal(path);
                                     }
                                 } else {
                                     //logIdentifier('get global var', path);

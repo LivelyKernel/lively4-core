@@ -9,6 +9,15 @@ import {reset} from 'aexpr-source-transformation-propagation';
 let moduleScopedVariable = 1;
 
 // #TODO: does not yet detect changes to the iterator variable itself
+describe('simplify locals', function() {
+  it('easier get', () => {
+    let myIdentifier = 0;
+
+    aexpr(() => myIdentifier).onChange(()=>{});
+
+    myIdentifier = 2;
+  });
+});
 describe('loop constructs', function() {
   it('for loop/local variable (var)', () => {
     let x = 0;
@@ -65,7 +74,6 @@ describe('loop constructs', function() {
     aexpr(() => x).onChange(spy);
 
     for(var i in obj) {
-      lively.notify(i)
       x += obj[i];
     }
     expect(spy).to.be.calledTwice;
@@ -79,7 +87,6 @@ describe('loop constructs', function() {
     aexpr(() => x).onChange(spy);
 
     for(let i in obj) {
-      lively.notify(i)
       x += obj[i];
     }
     expect(spy).to.be.calledTwice;
@@ -504,39 +511,44 @@ describe('Propagation Logic', function() {
       });
       
       it('handle nested mixed members and member functions', () => {
-        let a = { b() { return b; } };
-        let b = { c: { d() { return d; } } };
-        let d = { e: { f() { return f; } } };
         let f = 1;
-        let b2 = { get c() { return c2; } };
-        let c2 = { d() { return d2; } };
-        let d2 = { get e() { return e2; } };
-        let e2 = { f() { return f2; } };
+        let d = { e: { f() { return f; } } };
+        let b = { c: { d() { return d; } } };
+        let a = { b() { return b; } };
+
         let f2 = 2;
-        let c3 = { d() { return d3; } };
-        let d3 = { get e() { return e3; } };
-        let e3 = { f() { return f3; } };
+        let e2 = { f() { return f2; } };
+        let d2 = { e: e2 };
+        let c2 = { d() { return d2; } };
+        let b2 = { c: c2 };
+        
         let f3 = 3;
-        let d4 = { get e() { return e4; } };
-        let e4 = { f() { return f4; } };
+        let e3 = { f() { return f3; } };
+        let d3 = { e: e3 };
+        let c3 = { d() { return d3; } };
+
         let f4 = 4;
-        let e5 = { f() { return f5; } };
+        let e4 = { f() { return f4; } };
+        let d4 = { e: e4 };
+
         let f5 = 5;
+        let e5 = { f() { return f5; } };
+
         let spy = sinon.spy();
 
         aexpr(() => a.b().c.d().e.f()).onChange(spy);
 
-//         a.b = () => b2;
-//         expect(spy).to.be.calledWithMatch(2);
+        a.b = () => b2;
+        expect(spy).to.be.calledWithMatch(2);
 
-//         a.b().c = () => c3;
-//         expect(spy).to.be.calledWithMatch(3);
+        a.b().c = c3;
+        expect(spy).to.be.calledWithMatch(3);
 
-//         a.b().c().d = () => d4;
-//         expect(spy).to.be.calledWithMatch(4);
+        a.b().c.d = () => d4;
+        expect(spy).to.be.calledWithMatch(4);
 
-//         a.b().c().d().e = () => e5;
-//         expect(spy).to.be.calledWithMatch(5);
+        a.b().c.d().e = e5;
+        expect(spy).to.be.calledWithMatch(5);
 
         a.b().c.d().e = { f() { return 6; }};
         expect(spy).to.be.calledWithMatch(6);
