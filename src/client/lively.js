@@ -620,17 +620,19 @@ export default class Lively {
   static error(title, text, timeout, cb) {
     this.notify(title, text, timeout, cb, 'red');
   }
-  
+
+  static async ensureHand() {
+    var hand = lively.hand
+    if (!hand) {
+      hand = await lively.create("lively-hand", document.body)
+      hand.style.display = "none"
+    }
+    return hand
+  }
   
   // we do it lazy, because a hand can be broken or gone missing... 
   static get hand() {
-    var hand =  document.body.querySelector(":scope > lively-hand")
-    if (!hand){
-        hand = document.createElement("lively-hand")
-        lively.components.openInBody(hand); // will not be initialized ... should we always return promise?
-         hand.style.display = "none"
-    }
-    return hand
+    return document.body.querySelector(":scope > lively-hand")
   }
 
   static get selection() {
@@ -659,6 +661,9 @@ export default class Lively {
     console.log("Lively4 initializeDocument" );
     
     lively.loadCSSThroughDOM("font-awesome", lively4url + "/src/external/font-awesome/css/font-awesome.min.css");
+    lively.components.loadByName("lively-notification")
+    lively.components.loadByName("lively-notification-list")
+    
     this.initializeEvents(doc);
     this.initializeHalos();
 
@@ -673,8 +678,7 @@ export default class Lively {
     await persistence.current.loadLivelyContentForURL()
     preferences.loadPreferences()
     
-    // lazy initialize hand and selection
-    lively.hand;
+    await lively.ensureHand();
     // lively.selection;
 
     if (loadedAsExtension) {
@@ -709,7 +713,7 @@ export default class Lively {
       document.scrollingElement.scrollTop = this.deferredUpdateScroll.y;
       delete this.deferredUpdateScroll;
 		}
-    
+    console.log("FINISHED Loading in " + ((performance.now() - lively4performance.start) / 1000).toFixed(2) + "s")    
     console.log(window.lively4stamp, "lively persistence start ")
     setTimeout(() => {persistence.current.start()}, 2000)
 
