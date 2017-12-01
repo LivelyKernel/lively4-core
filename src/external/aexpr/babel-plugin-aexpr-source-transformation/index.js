@@ -373,24 +373,43 @@ export default function(param) {
                                         par.scope.hasOwnBinding(path.node.left.name)
                                     );
                                     if(parentWithScope) {
-
-                                        let valueToReturn = t.identifier(path.node.left.name);
-                                        valueToReturn[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
-                                        path.replaceWith(
-                                            t.sequenceExpression([
-                                                path.node,
-                                                t.callExpression(
-                                                    addCustomTemplate(state.file, SET_LOCAL),
-                                                    [
-                                                        getIdentifierForExplicitScopeObject(parentWithScope),
-                                                        t.stringLiteral(path.node.left.name)
-                                                    ]
-                                                ),
-                                                valueToReturn
-                                            ])
-                                        );
+                                      let valueToReturn = t.identifier(path.node.left.name);
+                                      valueToReturn[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
+                                      // #TODO: turn into .insertAfter
+                                      // caution: doing so automatically inserts a temporary variable (_temp), which is in turn rewritten!
+                                      //path.insertAfter(
+                                      //t.ifStatement(
+                                      //  t.booleanLiteral(true),
+                                      //  t.expressionStatement(
+                                      //    t.callExpression(
+                                      //      addCustomTemplate(state.file, SET_LOCAL),
+                                      //      [
+                                      //        getIdentifierForExplicitScopeObject(parentWithScope),
+                                      //        t.stringLiteral(path.node.left.name)
+                                      //      ]
+                                      //    )
+                                      //  )
+                                      //)
+                                      //);
+                                      path.replaceWith(
+                                        t.sequenceExpression([
+                                          path.node,
+                                          t.conditionalExpression(
+                                            // #TODO: add global flag for expression analysis mode
+                                            t.booleanLiteral(true),
+                                            t.callExpression(
+                                              addCustomTemplate(state.file, SET_LOCAL),
+                                              [
+                                                getIdentifierForExplicitScopeObject(parentWithScope),
+                                                t.stringLiteral(path.node.left.name)
+                                              ]
+                                            ),
+                                            t.unaryExpression('void', t.numericLiteral(0))
+                                          ),
+                                          valueToReturn
+                                        ])
+                                      );
                                     }
-
                                 } else {
                                     // global assginment
                                     //console.log('---global---', path.node.left.name);
