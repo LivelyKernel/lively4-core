@@ -16,8 +16,8 @@ export class Cache {
    */
   constructor(fileSystem) {
     this._managesFavorits = true;
-    this._dictionary = new Dictionary();
-    this._queue = new Queue();
+    this._dictionary = new Dictionary('response-cache');
+    this._queue = new Dictionary('request-cache');
     this._favoritsTracker = new FavoritsTracker();
     this._connectionManager = new ConnectionManager();
     this._fileSystem = fileSystem;
@@ -124,7 +124,7 @@ export class Cache {
     // Serialize the Request object
     Serializer.serialize(request).then((serializedRequest) => {
       // Put the serialized request in the queue
-      this._queue.enqueue(serializedRequest);
+      this._queue.put(this._buildKey(request), serializedRequest);
       
       // Update the cache content to pretend that the data has already been saved
       const key = `GET ${serializedRequest.url}`;
@@ -141,9 +141,10 @@ export class Cache {
    * Processes all queued requests by sending them in the same order
    */
   _processQueued() {
+    console.warn("Should process queued");
     let processNext = () => {
       // Get oldest entry
-      this._queue.dequeue().then((serializedRequest) => {
+      this._queue.pop().then((serializedRequest) => {
         // Check if we are done
         if(!serializedRequest) {
           return;

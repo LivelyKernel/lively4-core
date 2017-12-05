@@ -7,9 +7,9 @@ import { DbObject } from './dbobject.js';
 export class Dictionary extends DbObject {
   
   
-  constructor() {
+  constructor(storeName) {
     Dictionary._maxCacheTime = 30 * 1000;
-    super('dictionary');
+    super(storeName);
     this._connect(this._onconnect.bind(this));
   }
   
@@ -23,6 +23,7 @@ export class Dictionary extends DbObject {
       if (cursor) {
         if (Date.now() - cursor.value.timestamp > Dictionary._maxCacheTime) {
           // Delete old object
+          console.log(Date.now() - cursor.value.timestamp);
           //this._getObjectStore().delete(cursor.key);
         }
         cursor.continue();
@@ -50,6 +51,31 @@ export class Dictionary extends DbObject {
       request.onsuccess = (event) => {
         if (request.result) {
           resolve(request.result);
+        } else {
+          resolve(null);
+        }
+      }
+      request.onerror = (event) => {
+        resolve(null);
+      }
+    });
+  }
+  
+  /**
+   * Retrieves the first item
+   * @return Promise
+   */
+  pop() {
+    return new Promise((resolve, reject) => {
+      // Get oldest entry
+      var request = this._getObjectStore().openCursor();
+      request.onsuccess = (event) => {
+        if (request.result) {
+          // Delete entry from DB
+          this._getObjectStore().delete(request.result.key).onsuccess = () => {
+            // Return value
+            resolve(request.result.value.value);
+          };
         } else {
           resolve(null);
         }

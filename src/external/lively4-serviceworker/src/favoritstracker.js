@@ -6,7 +6,7 @@ import { DbObject } from './dbobject.js';
  */
 export class FavoritsTracker extends DbObject {
   constructor() {
-    super('favorits');
+    super('favorites');
     this._connect();
     //this._onconnect.bind(this)
   }

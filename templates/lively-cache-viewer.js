@@ -13,8 +13,8 @@ export default class LivelyCacheViewer extends Morph {
     
       openRequest.onsuccess = function(e) {
         var db = e.target.result;
-        var transaction = db.transaction(["dictionary"], "readonly");
-        var objectStore = transaction.objectStore("dictionary");
+        var transaction = db.transaction(["response-cache"], "readonly");
+        var objectStore = transaction.objectStore("response-cache");
         var objectStoreRequest = objectStore.get("GET " + name);
 
         objectStoreRequest.onsuccess = (event) => {
