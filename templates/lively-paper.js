@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import paper from "src/external/paperjs/paper-core.js";
 
 import ContextMenu from 'src/client/contextmenu.js';

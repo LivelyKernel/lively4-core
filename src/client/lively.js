@@ -21,15 +21,14 @@ import authGoogledrive  from './auth-googledrive.js';
 import expose from './expose.js';
 import { toArray, uuid as generateUUID } from 'utils';
 import {pt, rect} from './graphics.js';
-import Dialog from 'templates/lively-dialog.js'
+import Dialog from 'src/components/widgets/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
 
 /* expose external modules */
-import color from '../external/tinycolor.js';
+// import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
-import Selection from 'templates/lively-selection.js'
+import Selection from 'src/components/halo/lively-selection.js'
 import windows from "src/components/widgets/lively-window.js"
-import boundEval from "src/client/bound-eval.js";
 
 let $ = window.$; // known global variables.
 
@@ -44,7 +43,7 @@ var exportmodules = [
   "html",
   "components",
   "persistence",
-  "color",
+  // "color",
   "focalStorage",
   "authGithub",
   "authDropbox",
@@ -268,7 +267,7 @@ export default class Lively {
     //     var nativeLog = console.log;
     //     console.log = function() {
     //         nativeLog.apply(console, arguments);
-    //         lively.log.apply(undefined, arguments);
+    //         console.log.apply(undefined, arguments);
     //     };
     //     console.log.originalFunction = nativeLog; // #TODO use generic Wrapper mechanism here
     // }
@@ -276,7 +275,7 @@ export default class Lively {
     //     var nativeError = console.error;
     //     console.error = function() {
     //         nativeError.apply(console, arguments);
-    //         lively.log.apply(undefined, arguments);
+    //         console.log.apply(undefined, arguments);
     //     };
     //     console.error.originalFunction = nativeError; // #TODO use generic Wrapper mechanism here
     // }
@@ -513,17 +512,6 @@ export default class Lively {
     }
     contextmenu.openIn(container, evt, target, worldContext);
   }
-
-  static log(/* varargs */) {
-      var args = arguments;
-      $('lively-console').each(function() {
-        try{
-          if (this.log) this.log.apply(this, args);
-        }catch(e) {
-          // ignore...
-        }
-      });
-  }
   
   static nativeNotify(title, text, timeout, cb) {
     if (!this.notifications) this.notifications = [];
@@ -632,17 +620,19 @@ export default class Lively {
   static error(title, text, timeout, cb) {
     this.notify(title, text, timeout, cb, 'red');
   }
-  
+
+  static async ensureHand() {
+    var hand = lively.hand
+    if (!hand) {
+      hand = await lively.create("lively-hand", document.body)
+      hand.style.display = "none"
+    }
+    return hand
+  }
   
   // we do it lazy, because a hand can be broken or gone missing... 
   static get hand() {
-    var hand =  document.body.querySelector(":scope > lively-hand")
-    if (!hand){
-        hand = document.createElement("lively-hand")
-        lively.components.openInBody(hand); // will not be initialized ... should we always return promise?
-         hand.style.display = "none"
-    }
-    return hand
+    return document.body.querySelector(":scope > lively-hand")
   }
 
   static get selection() {
@@ -668,9 +658,12 @@ export default class Lively {
   }
   
   static async initializeDocument(doc, loadedAsExtension, loadContainer) {
-    console.log("Lively4 initializeDocument");
-
+    console.log("Lively4 initializeDocument" );
+    
     lively.loadCSSThroughDOM("font-awesome", lively4url + "/src/external/font-awesome/css/font-awesome.min.css");
+    lively.components.loadByName("lively-notification")
+    lively.components.loadByName("lively-notification-list")
+    
     this.initializeEvents(doc);
     this.initializeHalos();
 
@@ -681,21 +674,14 @@ export default class Lively {
       }
     })
 
-
-    
-    
-    console.log("load local lively content ")
+    console.log(window.lively4stamp, "load local lively content ")
     await persistence.current.loadLivelyContentForURL()
     preferences.loadPreferences()
     
-    // lazy initialize hand and selection
-    lively.hand;
+    await lively.ensureHand();
     // lively.selection;
 
     if (loadedAsExtension) {
-      System.import("src/client/customize.js").then(customize => {
-          customize.customizePage();
-      });
       lively.notify("Lively4 extension loaded!",
         "  CTRL+LeftClick  ... open halo\n" +
         "  CTRL+RightClick ... open menu");
@@ -727,8 +713,8 @@ export default class Lively {
       document.scrollingElement.scrollTop = this.deferredUpdateScroll.y;
       delete this.deferredUpdateScroll;
 		}
-    
-    console.log("lively persistence start ")
+    console.log("FINISHED Loading in " + ((performance.now() - lively4performance.start) / 1000).toFixed(2) + "s")    
+    console.log(window.lively4stamp, "lively persistence start ")
     setTimeout(() => {persistence.current.start()}, 2000)
 
     
@@ -1442,6 +1428,8 @@ export default class Lively {
    if (!result && element.host) result = this.query(element.host, query) 
    return result
   }
+  
+  
 
   static queryAll(element, query) {    
     var all = new Set()
@@ -1452,7 +1440,7 @@ export default class Lively {
     })
     return Array.from(all)
   }
- 
+  
   static gotoWindow(element) {
     element.focus()
     document.scrollingElement.scrollTop = 0
@@ -1498,7 +1486,7 @@ export default class Lively {
 
 if (!window.lively || window.lively.name != "Lively") {
   window.lively = Lively;
-  console.log("loaded lively intializer");
+  console.log(window.lively4stamp, "loaded lively intializer");
   // only load once... not during development
   Lively.loaded();
 } else {
@@ -1509,5 +1497,6 @@ if (!window.lively || window.lively.name != "Lively") {
 
 
 Lively.exportModules();
-  
-console.log("loaded lively");
+
+                      
+console.log(window.lively4stamp, "loaded lively");

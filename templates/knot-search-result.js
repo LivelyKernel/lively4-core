@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import { Graph } from './../src/client/triples/triples.js';
 import { uuid as generateUUID, getTempKeyFor, fileName, hintForLabel, asDragImageFor } from 'utils';
 import Keys from 'src/client/keys.js';
@@ -54,6 +54,7 @@ export default class KnotSearchResult extends Morph {
 
         const knots = selectedItems.map(item => item.knot);
         dt.setData("javascript/object", getTempKeyFor(knots));
+        dt.setData("vivide/list-input", getTempKeyFor(knots));
         
         const hints = knots
           .map(knot => knot.label())
@@ -76,7 +77,10 @@ export default class KnotSearchResult extends Morph {
       }
       
     });
-    listItem.addEventListener('drag', evt => {});
+    listItem.addEventListener('drag', evt => {
+      if(!evt.ctrlKey) return;
+      lively.notify(evt.keyCode, evt.charCode)
+    });
     listItem.addEventListener('dragend', evt => {
       listItem.style.color = null;
     });
@@ -147,7 +151,7 @@ export default class KnotSearchResult extends Morph {
       if(shiftKey) {
         selectFromLastSelectedTo(nextItem);
       } else if(ctrl) {
-        // just change focus      
+        // just change focus
       } else {
         nextItem.classList.add("selected");
         nextItem.classList.add("last-selected");

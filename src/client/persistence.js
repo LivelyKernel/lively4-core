@@ -78,10 +78,11 @@ export default class Persistence {
     target = target || this.defaultTarget()
     var div = document.createElement("div")
     div.innerHTML = source
-    Array.from(div.childNodes).forEach(ea => {
-      target.appendChild(ea)
-      Persistence.initLivelyObject(ea)
-    })
+    var objs = Array.from(div.childNodes)
+    objs.map(ea => { target.appendChild(ea)})
+    await lively.components.loadUnresolved(target)
+    objs.map(ea => { Persistence.initLivelyObject(ea)})
+    return 
   }
   
   static initLivelyObject(obj) {

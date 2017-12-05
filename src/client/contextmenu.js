@@ -36,12 +36,14 @@ export default class ContextMenu {
     return this.menu && this.menu.parentElement
   }
   
-  static openComponentInWindow (name, evt, worldContext) {
+  static openComponentInWindow (name, evt, worldContext, extent) {
     this.hide();
     return lively.openComponentInWindow(name, 
       this.eventPosition(worldContext, evt), 
-      undefined, worldContext).then( comp => {
-      
+      extent, worldContext).then( comp => {
+      if(extent) {
+        lively.setExtent(comp.parentElement, extent)
+      }
       return comp
     });
   }
@@ -179,16 +181,24 @@ export default class ContextMenu {
   }
   
   static preferenceEntry(preferenceKey) {
-    return Preferences.get(preferenceKey) ? [
-      Preferences.shortDescription(preferenceKey), () => {
-        Preferences.disable(preferenceKey)
-      },"",
-      '<i class="fa fa-check-square-o" aria-hidden="true"></i>'
-      ] : [
-      Preferences.shortDescription(preferenceKey), async () => {
-        Preferences.enable(preferenceKey)
-        this.hide()
-      }, "",  '<i class="fa fa-square-o" aria-hidden="true"></i>'
+    let enabledIcon = function(enabled) {
+      return enabled ? 
+        '<i class="fa fa-check-square-o" aria-hidden="true"></i>' :
+        '<i class="fa fa-square-o" aria-hidden="true"></i>'    
+    }
+    
+    return [
+      Preferences.shortDescription(preferenceKey), (evt, item) => {
+        evt.stopPropagation();
+        evt.preventDefault();
+        
+        if (Preferences.get(preferenceKey))  {
+          Preferences.disable(preferenceKey)
+        } else {
+          Preferences.enable(preferenceKey)    
+        }
+        item.querySelector(".icon").innerHTML = enabledIcon(Preferences.get(preferenceKey)); 
+      },"", enabledIcon(Preferences.get(preferenceKey))
     ]
   }
   
@@ -204,13 +214,11 @@ export default class ContextMenu {
       }, "CMD+K", '<i class="fa fa-window-maximize" aria-hidden="true"></i>'],
       ["Browse/Edit", evt => {
           var container = _.last(document.querySelectorAll("lively-container"));
-          this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
+          this.openComponentInWindow("lively-container", evt, worldContext, pt(950, 600)).then(comp => {
             if (container)
               comp.followPath("" + container.getURL());
             else
               comp.followPath(lively4url +"/");
-            comp.parentElement.style.width = "950px";
-            comp.parentElement.style.height = "600px";
             this.positionElementAtEvent(comp.parentElement, worldContext, evt)
           });
         }, 
@@ -218,7 +226,7 @@ export default class ContextMenu {
       // ["File Editor", evt => this.openComponentInWindow("lively-editor", evt)],
       // ["File Browser", evt => this.openComponentInWindow("lively-file-browser", evt)],
       ["Component Bin", evt => 
-        this.openComponentInWindow("lively-component-bin", evt, worldContext),
+        this.openComponentInWindow("lively-component-bin", evt, worldContext,  pt(850, 660)),
        "CMD+O", '<i class="fa fa-th" aria-hidden="true"></i>'],
       ["Insert", [
         ["Text", evt => {
@@ -383,14 +391,6 @@ export default class ContextMenu {
       ["Preferences", 
           ["ShowDocumentGrid", "InteractiveLayer", "ShowFixedBrowser", "SnapWindowsInGrid", "DisableAExpWorkspace", "DisableAltGrab", "UseTernInCodeMirror", "UseAsyncWorkspace", "CtrlAsHaloModifier"].map(ea => this.preferenceEntry(ea))
       ],
-      
-      // ["Customize Page", (evt) => {
-      //     this.hide();
-      //     System.import("src/client/customize.js").then(c => c.openCustomizeWorkspace(evt))
-      //   },
-      //   "",'<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'
-      //   ],
-
       ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt, worldContext), 
         "CMD+SHIFT+G",'<i class="fa fa-github" aria-hidden="true"></i>'],
       ["save as ..", (evt) => {
@@ -423,7 +423,7 @@ export default class ContextMenu {
     this.firstEvent = evt
     lively.addEventListener("contextMenu", document.documentElement, "click", () => {
       this.hide();
-    }, true);
+    });
 
     var menu = lively.components.createComponent("lively-menu");
     return lively.components.openIn(container, menu).then(() => {

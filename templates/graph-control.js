@@ -1,5 +1,5 @@
-import Morph from './Morph.js';
-import KnotView from "./knot-view.js";
+import Morph from 'src/components/widgets/lively-morph.js';
+import KnotView from "templates/knot-view.js";
 
 import { Graph } from 'src/client/triples/triples.js';
 

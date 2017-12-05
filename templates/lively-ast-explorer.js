@@ -1,9 +1,8 @@
 'use strict';
 
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import {babel} from 'systemjs-babel-build';
 import SyntaxChecker from 'src/client/syntax.js'
-import locals from 'babel-plugin-locals'
 import sourcemap from 'src/external/source-map.min.js'
 import {modulesRegister} from 'systemjs-babel-build';
 import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promisedEvent } from 'utils';

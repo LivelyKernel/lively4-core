@@ -1,4 +1,4 @@
-var myWorker = new Worker(lively4url + '/demos/webworker.js');
+var myWorker = new Worker(lively4url + '/demos/javascript/webworker.js');
 
 myWorker.onmessage = function(e) {
   lively.notify( e.data);

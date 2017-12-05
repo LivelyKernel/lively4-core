@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 
 // TODO: Reference functions for infinite trees
 // TODO: Testing

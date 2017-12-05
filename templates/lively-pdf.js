@@ -1,5 +1,5 @@
 'use strict';
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import pdf from "src/external/pdf.js"
 // see https://gist.github.com/yurydelendik/c6152fa75049d5c8f62f
 
@@ -38,10 +38,16 @@ export default class LivelyPDF extends Morph {
     });
     // Loading document.
     var that = this;
-    PDFJS.getDocument(url).then(function (pdfDocument) {
-        that.pdfViewer.setDocument(pdfDocument);
-    
-        that.pdfLinkService.setDocument(pdfDocument, null);
+    fetch(url).then(response => {
+      return response.blob();
+    }).then(blob => {
+      return URL.createObjectURL(blob);
+    }).then(base64pdf => {
+      PDFJS.getDocument(base64pdf).then(function (pdfDocument) {
+          that.pdfViewer.setDocument(pdfDocument);
+
+          that.pdfLinkService.setDocument(pdfDocument, null);
+      })
     });
   }
   onExtentChanged() {

@@ -33,7 +33,6 @@
   * [preferences.js](preferences.js)	#Depricated
 
 * Lively4 chrome 
- * [customize.js](customize.js)	
 
 * Network
   * [messaging.js](messaging.js)	

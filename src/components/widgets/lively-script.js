@@ -1,4 +1,4 @@
-import Morph from 'templates/Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import boundEval from 'src/client/bound-eval.js';
 
 export default class LivelyScript extends Morph {

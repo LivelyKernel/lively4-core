@@ -1,4 +1,4 @@
-import Morph from "templates/Morph.js"
+import Morph from "src/components/widgets/lively-morph.js"
 
 import * as cop from "src/external/ContextJS/src/contextjs.js"
 
