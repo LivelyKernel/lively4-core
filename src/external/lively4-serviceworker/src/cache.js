@@ -3,7 +3,7 @@ import { Queue } from './queue.js';
 import Serializer from './serializer.js';
 import { ConnectionManager } from './connectionmanager.js';
 import * as msg from './messaging.js'
-import { FavoritsTracker } from './favoritstracker.js';
+import { FavoritesTracker } from './favoritestracker.js';
 
 /**
  * This class is supposed to be a general-purpose cache for HTTP requests with different HTTP methods.
@@ -18,7 +18,7 @@ export class Cache {
     this._managesFavorits = true;
     this._dictionary = new Dictionary('response-cache');
     this._queue = new Dictionary('request-cache');
-    this._favoritsTracker = new FavoritsTracker();
+    this._favoritesTracker = new FavoritesTracker();
     this._connectionManager = new ConnectionManager();
     this._fileSystem = fileSystem;
     
@@ -33,7 +33,7 @@ export class Cache {
     
     // Define which HTTP methods need result caching, and which need request queueing
     this._cacheMethods = ['OPTIONS', 'GET'];
-    this._queueMethods = ['PUT', 'POST'];
+    this._queueMethods = ['PUT', 'POST', 'DELETE'];
   }
   
   /**
@@ -44,7 +44,7 @@ export class Cache {
    */
   fetch(request, doNetworkRequest) {
     if (this._managesFavorits) {
-      this._favoritsTracker.update(request.url);
+      this._favoritesTracker.update(request.url);
     }
     
     if (this._connectionManager.isOnline) {
@@ -127,11 +127,64 @@ export class Cache {
       this._queue.put(this._buildKey(request), serializedRequest);
       
       // Update the cache content to pretend that the data has already been saved
+      /* TODO: Directories (on PUT and DELETE)
+       * - Check if containing Directory is cached
+       * - Update cached content
+       */
+      let fileURL = new URL(serializedRequest.url)
+      let filePathParts = fileURL.pathname.split('/');
+      let fileName = filePathParts.pop();
+      let folderURL = serializedRequest.url.slice(0, -fileName.length);
+      
+      // Check if we have the folder content cached
+      const folderKey = `OPTIONS ${folderURL}`;
+      this._dictionary.match(folderKey).then((response) => {
+        if(response) {
+          // We have the folder in the cache - update it
+          let reader = new FileReader();
+          reader.onload = () => {
+            let folderJSON = JSON.parse(reader.result);
+            let folderContainsFile = folderJSON.contents.find(e => e.name === fileName);
+            if(!folderContainsFile && serializedRequest.method === 'PUT') {
+              // Prepare new directory JSON
+              folderJSON.contents.push({
+                name: fileName,
+                size: 0,
+                type: 'file'
+              });
+              let folderBlob = new Blob([JSON.stringify(folderJSON)], {type : 'text/plain'});
+              
+              // Update cached directory JSON
+              this._dictionary.match(folderKey).then((response) => {
+                if(response) {
+                  response.value.body = folderBlob;
+                  this._dictionary.put(folderKey, response.value);
+                }
+              })
+            } else if(folderContainsFile && serializedRequest.method === 'DELETE') {
+              // Prepare new directory JSON
+              folderJSON.contents = folderJSON.contents.filter(e => e.name !== fileName);
+              let folderBlob = new Blob([JSON.stringify(folderJSON)], {type : 'text/plain'});
+              
+              // Update cached directory JSON
+              this._dictionary.match(folderKey).then((response) => {
+                if(response) {
+                  response.value.body = folderBlob;
+                  this._dictionary.put(folderKey, response.value);
+                }
+              })
+            }
+          }
+          reader.readAsText(response.value.body);
+        }
+      });
+      
+      // Update file content
       const key = `GET ${serializedRequest.url}`;
       this._dictionary.match(key).then((response) => {
         if(response) {
-          response.body = serializedRequest.body;
-          this._dictionary.put(key, response);
+          response.value.body = serializedRequest.body;
+          this._dictionary.put(key, response.value);
         }
       })
     })

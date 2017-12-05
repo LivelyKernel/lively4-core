@@ -14,21 +14,7 @@ export class Dictionary extends DbObject {
   }
   
   _onconnect() {
-    var objectStore = this._getObjectStore();
-    var request = objectStore.openCursor();
     
-    request.onsuccess = function(event) {
-      var cursor = event.target.result;
-      
-      if (cursor) {
-        if (Date.now() - cursor.value.timestamp > Dictionary._maxCacheTime) {
-          // Delete old object
-          console.log(Date.now() - cursor.value.timestamp);
-          //this._getObjectStore().delete(cursor.key);
-        }
-        cursor.continue();
-      }
-    };
   }
   
   /**

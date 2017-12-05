@@ -4,23 +4,25 @@ import { DbObject } from './dbobject.js';
  * Tracks most frequently(recently?) used files.
  * Currently uses IndexedDB to store data
  */
-export class FavoritsTracker extends DbObject {
+export class FavoritesTracker extends DbObject {
   constructor() {
     super('favorites');
-    this._connect();
-    //this._onconnect.bind(this)
+    this._connect(this._onconnect.bind(this));
+    this.favorites = {};
   }
   
   _onconnect() {
     var objectStore = this._getObjectStore();
     var request = objectStore.openCursor();
     
-    request.onsuccess = function(event) {
-      var cursor = event.target.result;
+    request.onsuccess = (event) => {
+      let cursor = event.target.result;
       
       if (cursor) {
-        // Iterate favorits and cache them
+        this.favorites[cursor.key] = cursor.value
         cursor.continue();
+      } else {
+        // Traverse and load favorites 
       }
     };
   }
