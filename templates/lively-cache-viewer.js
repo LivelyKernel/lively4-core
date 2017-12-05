@@ -20,7 +20,7 @@ export default class LivelyCacheViewer extends Morph {
         objectStoreRequest.onsuccess = (event) => {
           if (!objectStoreRequest.result) return;
 
-          resolve(objectStoreRequest.result.value);
+          resolve(objectStoreRequest.result);
         };
         
         objectStoreRequest.onerror = (event) => {
@@ -38,6 +38,7 @@ export default class LivelyCacheViewer extends Morph {
     var input = this.get("#filename");
     var file = await this.getFile(input.value);
     var input = this.get("#content");
+    var date = this.get("#date");
     const reader = new FileReader();
 
     reader.addEventListener('loadend', (e) => {
@@ -45,6 +46,7 @@ export default class LivelyCacheViewer extends Morph {
       input.innerText = text;
     });
 
-    reader.readAsText(file.body);
+    reader.readAsText(file.value.body);
+    date.innerText = "Cached at: " +  new Date(file.timestamp);
   }
 }
