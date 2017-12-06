@@ -6,28 +6,9 @@ import { DbObject } from './dbobject.js';
  */
 export class Dictionary extends DbObject {
   
-  
-  constructor() {
-    Dictionary._maxCacheTime = 30 * 1000;
-    super('dictionary');
-    this._connect(this._onconnect.bind(this));
-  }
-  
-  _onconnect() {
-    var objectStore = this._getObjectStore();
-    var request = objectStore.openCursor();
-    
-    request.onsuccess = function(event) {
-      var cursor = event.target.result;
-      
-      if (cursor) {
-        if (Date.now() - cursor.value.timestamp > Dictionary._maxCacheTime) {
-          // Delete old object
-          //this._getObjectStore().delete(cursor.key);
-        }
-        cursor.continue();
-      }
-    };
+  constructor(storeName) {
+    super(storeName);
+    this._connect();
   }
   
   /**
@@ -46,7 +27,7 @@ export class Dictionary extends DbObject {
    */
   match(key) {
     return new Promise((resolve, reject) => {
-      var request = this._getObjectStore().get(key);
+      var request = this._getObjectStore("readonly").get(key);
       request.onsuccess = (event) => {
         if (request.result) {
           resolve(request.result);
@@ -58,5 +39,59 @@ export class Dictionary extends DbObject {
         resolve(null);
       }
     });
+  }
+  
+  /**
+   * Retrieves the first item
+   * @return Promise
+   */
+  pop() {
+    return new Promise((resolve, reject) => {
+      // Get oldest entry
+      var request = this._getObjectStore().openCursor();
+      request.onsuccess = (event) => {
+        if (request.result) {
+          // Delete entry from DB
+          this._getObjectStore().delete(request.result.key).onsuccess = () => {
+            // Return value
+            resolve(request.result.value.value);
+          };
+        } else {
+          resolve(null);
+        }
+      }
+      request.onerror = (event) => {
+        resolve(null);
+      }
+    });
+  }
+  
+  /**
+   * Returns all entries as array with tuples(key, object)
+   * @return [[key0, object0], [key1, object1], ...]
+   */
+  toArray() {
+    let objectStore = this._getObjectStore("readonly");
+    let request = objectStore.openCursor();
+    
+    return new Promise((resolve, reject) => {
+      let entries = [];
+      
+      request.onsuccess = (event) => {
+        let cursor = event.target.result;
+
+        if (cursor) {
+          entries.push([cursor.key, cursor.value]);
+          cursor.continue();
+        } else {
+          // All entries read, traverse and load favorites 
+          resolve(entries);
+        }
+      };
+    });
+  }
+  
+  toDictionary() {
+    
   }
 }
