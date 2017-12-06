@@ -1,6 +1,6 @@
 import scriptManager from  "src/client/script-manager.js";
 // import * as persistence from  "src/client/persistence.js";
-import Morph from "templates/Morph.js";
+import Morph from "src/components/widgets/lively-morph.js";
 import {pt} from '../graphics.js';
 import { through } from "utils";
 
@@ -14,6 +14,8 @@ var _proxies;
 var _templatePaths;
 var _templatePathsCache;
 var _templatePathsCacheTime;
+
+var _templateFirstLoadTimes = {}
 
 // for compatibility
 export function register(componentName, template, prototype) {
@@ -68,7 +70,7 @@ export default class ComponentLoader {
     }
   }
 
-  static onCreatedCallback(object, componentName) {
+  static async onCreatedCallback(object, componentName) {
     // if (persistence.isCurrentlyCloning()) {
     //   return;
     // }
@@ -95,7 +97,7 @@ export default class ComponentLoader {
     }
 
     // load any unknown elements, which this component might introduce
-    ComponentLoader.loadUnresolved(object, true, "onCreated " + componentName).then((args) => {
+    await ComponentLoader.loadUnresolved(object, true, "onCreated " + componentName).then((args) => {
       // lively.fillTemplateStyles(object.shadowRoot, "source: " + componentName).then(() => {
         // call the initialize script, if it exists
       
@@ -107,6 +109,10 @@ export default class ComponentLoader {
         
         object.dispatchEvent(new Event("created"));
       // })
+      if (_templateFirstLoadTimes[componentName]) {
+        console.log('Component first load time: ' + ((performance.now() - _templateFirstLoadTimes[componentName]) / 1000).toFixed(3) + "s " + componentName + " ")
+        _templateFirstLoadTimes[componentName] = null;
+      }
     }).catch( e => {
       console.error(e); 
       return e
@@ -236,9 +242,11 @@ export default class ComponentLoader {
 
     var promises = unresolved.filter((el) => {
       // filter for unique tag names
+      if (!el.nodeName || el.nodeName.toLowerCase() == "undefined") return false;
       var name = el.nodeName.toLowerCase();
       return !unique.has(name) && unique.add(name);
-    }).map(async (el) => {
+    })
+    .map(async (el) => {
       var name = el.nodeName.toLowerCase();
       if (loadingPromises[name]) {
         // the loading was already triggered
@@ -261,7 +269,7 @@ export default class ComponentLoader {
       await this.loadByName(name);
 
       return createdPromise;
-    });
+    })
 
     // return a promise that resolves once all unresolved elements from the unresolved-array
     // are completely created
@@ -285,9 +293,10 @@ export default class ComponentLoader {
         })
         if (unfinished) {
           resolve("timeout") // "(if) the fuel gauge breaks, call maintenance. If they are not there in 20 minutes, fuck it."
+          
           lively.notify("Timout due to unresolved promises, while loading " + unfinishedPromise.name + " context: " + debuggingHint )
         }
-      }, 15 * 1000)
+      }, 30 * 1000)
 
       Promise.all(promises).then( result => resolve(), reject => {
           console.log("ERROR loading " +reject)
@@ -394,6 +403,7 @@ export default class ComponentLoader {
   
   // this function loads a component by adding a link tag to the head
   static async loadByName(name) {
+      _templateFirstLoadTimes[name] = performance.now()
       var url = await this.searchTemplateFilename(name + '.html')
       if (!url) {
         throw new Error("Could not find template for " + name)

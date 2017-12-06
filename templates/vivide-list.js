@@ -1,6 +1,5 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 
-// TODO: Refactor display functions to builder pattern
 // TODO: Reference functions for infinite trees
 // TODO: Testing
 
@@ -16,6 +15,8 @@ export default class VivideList extends Morph {
     
     this.predecessor = null;
     this.successors = [];
+    
+    this.listItemBuilder = new ListItemBuilder(this);
   }
   
   register(anotherWidget) {
@@ -31,11 +32,11 @@ export default class VivideList extends Morph {
     this.predecessor = anotherWidget;
   }
   
-  pushTransformation(transformationFunction) {
-    this.transformations.push(transformationFunction);
+  pushTransformation(transformation) {
+    this.transformations.push(transformation);
   }
   
-  transformationAt(index) {
+  getTransformation(index) {
     if(this.transformations.length > index) {
       return this.transformations[index];
     } else {
@@ -43,15 +44,35 @@ export default class VivideList extends Morph {
     }
   }
   
-  pushDepiction(depictionFunction) {
-    this.depictions.push(depictionFunction);
+  setTransformation(index, transformation) {
+    if(this.transformations.length > index) {
+      this.transformations[index] = transformation;
+    } else if(this.transformations.length == index) {
+      this.transformations.push(transformation);
+    } else {
+      throw "Index out of bounds"
+    }
   }
   
-  depictionAt(index) {
+  pushDepiction(depiction) {
+    this.depictions.push(depiction);
+  }
+  
+  getDepiction(index) {
     if(this.depictions.length > index) {
       return this.depictions[index];
     } else {
       return this.defaultDepiction;
+    }
+  }
+  
+  setDepiction(index, depiction) {
+    if(this.depictions.length > index) {
+      this.depictions[index] = depiction;
+    } else if(this.depictions.length == index) {
+      this.depictions.push(depiction);
+    } else {
+      throw "Index out of bounds"
     }
   }
   
@@ -68,7 +89,7 @@ export default class VivideList extends Morph {
         wrapper.children = [];
         wrapper.hasChildren = false;
       } else {
-        wrapper.children = this.transformationAt(level+1)(wrapper.object).map(object => this.wrap(object));
+        wrapper.children = this.getTransformation(level+1)(wrapper.object).map(object => this.wrap(object));
         wrapper.hasChildren = true;
       }
       this.display()
@@ -76,36 +97,14 @@ export default class VivideList extends Morph {
   }
   
   display() {
-    this.textContent = this.model.map(elem => this.depictionAt(0)(elem.object)).join('<br />');
+    this.textContent = this.model.map(elem => this.getDepiction(0)(elem.object)).join('<br />');
     this.get("#content").innerHTML = "";
     for(let i in this.model) { this.displayListEntry(0, this.model[i]); }
     this.successors.forEach(successor => successor.trigger());
   }
   
   displayListEntry(level, wrapper) {
-    let listentry = document.createElement("div");
-    listentry.className = "listentry";
-    
-    let listentryPlaceholder = document.createElement("div");
-    listentryPlaceholder.className = "listentry-placeholder";
-    listentryPlaceholder.style.width = (level * 2) + "em";
-    listentryPlaceholder.innerHTML = "&nbsp;";
-      
-    let listentryUnfold = document.createElement("div");
-    listentryUnfold.className = "listentry-unfold";
-    listentryUnfold.addEventListener("click", this.toggleChildren(level, wrapper));
-    listentryUnfold.innerHTML = "(v)";
-      
-    let listentryContent = document.createElement("div");
-    listentryContent.className = "listentry-content";
-    if(wrapper.selected) { listentryContent.classList.add("selected"); }
-    listentryContent.addEventListener("click", this.toggleSelection(wrapper));
-    listentryContent.innerHTML = this.depictionAt(level)(wrapper.object);
-      this.defaultDepiction(wrapper.object);
-      
-    listentry.appendChild(listentryPlaceholder);
-    listentry.appendChild(listentryUnfold);
-    listentry.appendChild(listentryContent);
+    let listentry = this.listItemBuilder.build(level, wrapper);
     this.get("#content").appendChild(listentry);
     
     for(let i in wrapper.children) {
@@ -146,7 +145,7 @@ export default class VivideList extends Morph {
   }
   
   setModel(model) {
-    model = this.transformationAt(0)(model);
+    model = this.getTransformation(0)(model);
     this.model = model.map(elem => this.wrap(elem));
   }
   
@@ -177,5 +176,50 @@ export default class VivideList extends Morph {
       ]},
       {name: "John Wayne", age: 110, pets: []},
     ]);
+  }
+}
+
+class ListItemBuilder {
+  constructor(caller) {
+    this.caller = caller;
+  }
+  
+  build(level, wrapper) {
+    let listentry = document.createElement("div");
+    listentry.className = "listentry";
+    
+    let listentryPlaceholder = this.buildListentryPlaceholder(level);
+    let listentryUnfold = this.buildListentryUnfold(this.caller, level, wrapper);       
+    let listentryContent = this.buildListentryContent(this.caller, level, wrapper);
+      
+    listentry.appendChild(listentryPlaceholder);
+    listentry.appendChild(listentryUnfold);
+    listentry.appendChild(listentryContent);
+    return listentry;
+  }
+  
+  buildListentryPlaceholder(level) {
+    let listentryPlaceholder = document.createElement("div");
+    listentryPlaceholder.className = "listentry-placeholder";
+    listentryPlaceholder.style.width = (level * 2) + "em";
+    listentryPlaceholder.innerHTML = "&nbsp;";
+    return listentryPlaceholder;
+  }
+  
+  buildListentryUnfold(caller, level, wrapper) {
+    let listentryUnfold = document.createElement("div");
+    listentryUnfold.className = "listentry-unfold";
+    listentryUnfold.addEventListener("click", caller.toggleChildren(level, wrapper));
+    listentryUnfold.innerHTML = "(v)";
+    return listentryUnfold;
+  }
+  
+  buildListentryContent(caller, level, wrapper) {
+    let listentryContent = document.createElement("div");
+    listentryContent.className = "listentry-content";
+    if(wrapper.selected) { listentryContent.classList.add("selected"); }
+    listentryContent.addEventListener("click", caller.toggleSelection(wrapper));
+    listentryContent.innerHTML = caller.getDepiction(level)(wrapper.object);
+    return listentryContent;
   }
 }

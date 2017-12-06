@@ -1,6 +1,6 @@
 import { uuid as generateUUID } from 'utils';
 import boundEval from 'src/client/bound-eval.js';
-import Morph from "templates/Morph.js"
+import Morph from "src/components/widgets/lively-morph.js"
 import diff from 'src/external/diff-match-patch.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import { debounce } from "utils";
@@ -251,7 +251,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         }
       },
       "Ctrl-S": (cm) => {          
-        this.doSave(editor.getValue());
+        this.doSave(cm.getValue());
       },
       
       // #copied from keymap/emacs.js
@@ -375,32 +375,45 @@ export default class LivelyCodeMirror extends HTMLElement {
     return promise
   }
   
-  printResult(result, obj) {
+  async printResult(result, obj) {
     var editor = this.editor;
     var text = result
+    var isAsync = false
     this.editor.setCursor(this.editor.getCursor("end"))
     // don't replace existing selection
     this.editor.replaceSelection(result, "around")
-    
+    if (obj && obj.__asyncresult__) {
+      obj = obj.__asyncresult__; // should be handled in bound-eval.js #TODO
+      isAsync = true
+    }
+    var promisedWidget
     if (Array.isArray(obj)) {
       if (typeof obj[0] == 'object') {
-        this.printWidget("lively-table").then( table => {
+        promisedWidget = this.printWidget("lively-table").then( table => {
           table.setFromJSO(obj)      
           table.style.maxHeight = "300px"
-          table.style.overflow = "auto"    
+          table.style.overflow = "auto"
+          return table
         })
       } else {
-        this.printWidget("lively-table").then( table => {
+        promisedWidget = this.printWidget("lively-table").then( table => {
           table.setFromJSO(obj.map((ea,index) => { return {index:index, value: ea}}))      
           table.style.maxHeight = "300px"
-          table.style.overflow = "auto"    
+          table.style.overflow = "auto"
+          return table
         })
       }
     } else if ((typeof obj == 'object') && (obj !== null)) {
-      this.printWidget("lively-inspector").then( inspector => {
+      promisedWidget = this.printWidget("lively-inspector").then( inspector => {
         inspector.inspect(obj)
-        inspector.hideWorkspace()   
+        inspector.hideWorkspace()
+        return inspector
       })
+    }
+    
+    if (isAsync && promisedWidget) {
+      var widget = await promisedWidget;
+      if (widget) widget.style.border = "2px dashed blue"
     }
   }
 

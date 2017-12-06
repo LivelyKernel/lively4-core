@@ -7,6 +7,9 @@
 
   /* logging */
   
+// localStorage["logSystemJS"] = true
+// delete localStorage["logSystemJS"] 
+  
 function livelyLog(...rest) {
   if (self.localStorage && self.localStorage["logSystemJS"]) {
     console.log(self.lively4stamp, ...rest)  

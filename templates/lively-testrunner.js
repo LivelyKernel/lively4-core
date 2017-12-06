@@ -1,7 +1,7 @@
 'use strict';
 
 import * as cop from "src/external/ContextJS/src/contextjs.js"
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 
 
 //     Mocha.utils.parseQuery()
@@ -39,10 +39,11 @@ export default class TestRunner extends Morph {
 
   async findTestFilesInDir(dir) {
     var dir = lively4url + dir;
-    var json = await lively.files.statFile(dir).then(JSON.parse)
-    return json.contents.map(ea => ea.name )
-      .filter(ea => ea.match(/-test\.js$/) || ea.match(/\.test\.js$/) || ea.match(/-spec\.js$/) || ea.match(/\.spec\.js$/))
-      .map(ea => dir + ea)
+    const json = await lively.files.statFile(dir).then(JSON.parse);
+    return json.contents
+      .map(file => file.name)
+      .filter(fileName => fileName.match(/(-|\.)(spec|test)\.js$/))
+      .map(fileName => dir + fileName);
   }
   
   // [1,2,3].reduce((s,ea) => s + ea, 0 )

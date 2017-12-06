@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import Files from "src/client/files.js";
 import * as search from "src/external/lively4-search/client/search.js";
 

@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import SVG from "src/client/svg.js"
 import {pt} from 'src/client/graphics.js';
 import {debounce} from "utils"

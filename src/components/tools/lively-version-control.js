@@ -1,5 +1,5 @@
 
-import Morph from 'templates/Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import moment from "src/external/moment.js";
 
 export default class VersionControl extends Morph {
