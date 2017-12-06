@@ -1,6 +1,7 @@
 export class DbObject {
   constructor(storeName) {
-    DbObject._dbName = "lively-sw-cache";
+    const instanceName = lively4url.split("/").pop();
+    DbObject._dbName = "lively-sw-cache-" + instanceName;
     this._storeName = storeName;
   }
   
