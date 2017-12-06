@@ -228,27 +228,30 @@ class ServiceWorker {
     let directory = directoryParts.join('/');
     
     filesToLoad = filesToLoad.map((file) => {return directory + file});
-
+    const methodsToLoad = ['GET', 'OPTIONS'];
+    
     for(let file of filesToLoad) {
-      let request = new Request(file, {
-        method: 'GET' 
-      });
-      
-      let doNetworkRequest = () => {
-        return new Promise(async (resolve, reject) => {
-          //console.warn(`preloading ${request.url}`);
-          resolve(self.fetch(request).then((result) => {
-            return result;
-          }).catch(e => {
-            console.log("fetch error: "  + e);
-            return new Response("Could not fetch " + url +", because of: " + e);
-          }))
+      for(let method of methodsToLoad) {
+        let request = new Request(file, {
+          method: method 
         });
-      };
-      
-      // Just tell the cache to fetch the file
-      // This will update our cache if we are online
-      this._cache.fetch(request, doNetworkRequest);
+
+        let doNetworkRequest = () => {
+          return new Promise(async (resolve, reject) => {
+            //console.warn(`preloading ${request.url}`);
+            resolve(self.fetch(request).then((result) => {
+              return result;
+            }).catch(e => {
+              console.log("fetch error: "  + e);
+              return new Response("Could not fetch " + url +", because of: " + e);
+            }))
+          });
+        };
+
+        // Just tell the cache to fetch the file
+        // This will update our cache if we are online
+        this._cache.fetch(request, doNetworkRequest);
+      }
     }
   }
 }

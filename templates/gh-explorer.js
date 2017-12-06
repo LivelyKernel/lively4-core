@@ -1,4 +1,9 @@
 import Morph from 'src/components/widgets/lively-morph.js';
+import focalStorage from 'src/external/focalStorage.js';
+//focalStorage.keys()
+
+const GH_TORRENT_URL = 'https://172.16.64.132:5555/sql/';
+const FOCALSTORAGE_TOKEN_KEY = 'ghTorrentKey';
 
 class StreamJSONParser {
   constructor(rowsCallback) {
@@ -50,13 +55,31 @@ class StreamJSONParser {
   }
 }
 
-function ghStreamQuery(apiURL, queryString, callback) {
+async function askForUserToken() {
+  const token = window.prompt("Please specify your ghTorrentToken");
+  await focalStorage.setItem(FOCALSTORAGE_TOKEN_KEY, token);
+  return token;
+}
+
+async function ghStreamQuery(apiURL, queryString, callback) {
   let query = encodeURIComponent(queryString);
   
   const parser = new StreamJSONParser(callback);
   
+  let token = await focalStorage.getItem(FOCALSTORAGE_TOKEN_KEY);
+  if(!token) {
+    token = await askForUserToken();
+  }
+  
+  const request = new Request(`${apiURL}${query}`, {
+    method: "GET",
+    headers: {
+      "X-Auth-Token": token
+    }
+  })
+  fetch(request).then(r=>r.text()).catch(e=>e)
   lively.files.fetchChunks(
-    fetch(`${apiURL}${query}`),
+    fetch(request),
     chunk => parser.parse(chunk),
     () => parser.finish()
   );
@@ -84,19 +107,19 @@ export default class GhExplorer extends Morph {
     });
     
     this.get("#visit-api").addEventListener('click', e => {
-      window.open('https://172.16.64.132:5555/sql/', "blank");
-    })
+      window.open(GH_TORRENT_URL, "blank");
+    });
+    this.get("#set-token").addEventListener('click', askForUserToken);
+    
     this.doQuery();
   }
   doQuery() {
     let onNewRow = (row, i) => {
-      let li = document.createElement("li");
-      li.textContent = row[1];
-      this.get("#queryResult").appendChild(li);
+      this.get("#queryResult").appendChild(<li>{row[1]}</li>);
     };
     
     this.get("#queryResult").innerHTML = "";
 
-    ghStreamQuery('https://172.16.64.132:5555/sql/', this.get("#query").textContent, eachify(onNewRow));
+    ghStreamQuery(GH_TORRENT_URL, this.get("#query").textContent, eachify(onNewRow));
   }
 }

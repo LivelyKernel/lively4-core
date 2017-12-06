@@ -9,12 +9,13 @@ export default class LivelyCacheViewer extends Morph {
   
   getFile(name) {
     return new Promise((resolve, reject) => {
-      var openRequest = indexedDB.open("lively-sw-cache");
+      var instanceName = lively4url.split("/").pop();
+      var openRequest = indexedDB.open("lively-sw-cache-" + instanceName);
     
       openRequest.onsuccess = function(e) {
         var db = e.target.result;
-        var transaction = db.transaction(["dictionary"], "readonly");
-        var objectStore = transaction.objectStore("dictionary");
+        var transaction = db.transaction(["response-cache"], "readonly");
+        var objectStore = transaction.objectStore("response-cache");
         var objectStoreRequest = objectStore.get("GET " + name);
 
         objectStoreRequest.onsuccess = (event) => {
