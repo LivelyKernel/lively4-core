@@ -18,9 +18,6 @@ export default class LivelyPDF extends Morph {
     }
     lively.addEventListener("pdf", this, "extent-changed", 
       (e) => this.onExtentChanged(e));
-    
-    lively.addEventListener("pdf", this, "click", 
-      (e) => this.onClick(e));
   }
   
   async setURL(url) {
@@ -49,9 +46,16 @@ export default class LivelyPDF extends Morph {
       return URL.createObjectURL(blob);
     }).then(base64pdf => {
       PDFJS.getDocument(base64pdf).then(function (pdfDocument) {
-          that.pdfViewer.setDocument(pdfDocument);
+        that.pdfViewer.setDocument(pdfDocument);
 
-          that.pdfLinkService.setDocument(pdfDocument, null);
+        that.pdfLinkService.setDocument(pdfDocument, null);
+        that.pdfViewer.pagesPromise.then(() => {
+          let annotations = that.getAllSubmorphs(".annotationLayer section");
+          annotations.forEach((annotation) => {
+            lively.addEventListener("pdf", annotation, "click",
+                                  (e) => that.onClick(e));
+          });
+        });
       })
     });
   }
@@ -60,8 +64,8 @@ export default class LivelyPDF extends Morph {
     this.pdfViewer.currentScaleValue = 'page-width';
   }
   
-  onClick() {
-    // this.editAnnotations();
+  onClick(e) {
+    this.editAnnotations(e.path[1]);
   }
   
   livelyExample() {
@@ -72,7 +76,9 @@ export default class LivelyPDF extends Morph {
     //  this.setURL(other.getURL())
   }
   
-  editAnnotations() {
+  editAnnotations(annotationSection) {
+    let annotationId = annotationSection.dataset.annotationId;
+    annotationId = annotationId.match(/\d+/g)[0];
     let url = "https://lively-kernel.org/lively4/lively4-pdf-annotator/doc/WebDev2017/project_3/annotations.pdf";
     let newUrl = "https://lively-kernel.org/lively4/lively4-pdf-annotator/doc/WebDev2017/project_3/annotations2.pdf";
     fetch(url).then(response => {
@@ -81,25 +87,26 @@ export default class LivelyPDF extends Morph {
       let fileReader = new FileReader();
       fileReader.addEventListener('loadend', function() {
         let pdfText = atob(fileReader.result.replace("data:application/pdf;base64,", ""));
-        let annotationRegex = /^(20\s0\sobj)/mg;
+        let annotationRegex = new RegExp("^(" + annotationId + "\\s\\d\\sobj)", "mg");
         let startSubstr = pdfText.substring(pdfText.search(annotationRegex));
         let annotation = startSubstr.substring(0, startSubstr.indexOf('endobj') + 6);
-        let replaceRegex = /\/\T\s\([^\)]+\)/gm;
+        let newAnnotation = "";
+        let replaceRegex = /\/\Contents\s\([^\)]+\)/gm;
             
-        console.log(annotation.match(replaceRegex));
-        console.log(replaceRegex.exec(annotation));
+        //console.log(annotation.match(replaceRegex));
+        //console.log(replaceRegex.exec(annotation));
         
-        let newValue = window.prompt('Please enter the new Value');
+        let newValue = window.prompt('Please enter the new value');
         if(newValue !== null) {
-          annotation = annotation.replace(replaceRegex, "/T (" + newValue + ")");  
+          newAnnotation = annotation.replace(replaceRegex, "/Contents (" + newValue + ")");  
         }
         
-        console.log(annotation);
+        //console.log(annotation);
         
-        let newPdfText = pdfText.replace(annotationRegex, annotation);
+        let newPdfText = pdfText.replace(annotation, newAnnotation);
         let newPdfData = "data:application/pdf;base64," + btoa(newPdfText);
-        fetch(newPdfData).then(response => response.blob()).then(blob => {
-          fetch(newUrl, {method: 'PUT', body: blob });
+        fetch(newPdfData).then(response => response.blob()).then(newBlob => {
+          fetch(newUrl, {method: 'PUT', body: newBlob });
         });
       });
       
