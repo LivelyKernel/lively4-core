@@ -1,6 +1,8 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import focalStorage from 'src/external/focalStorage.js';
-//focalStorage.keys()
+
+// GET COLUMN NAMES:
+// SELECT 1, column_name, column_name FROM information_schema.columns WHERE table_name = 'users';
 
 const GH_TORRENT_URL = 'https://172.16.64.132:5555/sql/';
 const FOCALSTORAGE_TOKEN_KEY = 'ghTorrentKey';
@@ -77,7 +79,6 @@ async function ghStreamQuery(apiURL, queryString, callback) {
       "X-Auth-Token": token
     }
   })
-  fetch(request).then(r=>r.text()).catch(e=>e)
   lively.files.fetchChunks(
     fetch(request),
     chunk => parser.parse(chunk),
@@ -97,7 +98,7 @@ export default class GhExplorer extends Morph {
     this.get("#query").addEventListener('keydown',  event => {
       if (event.keyCode == 13) { // ENTER
         if(event.shiftKey) {
-          // enter as in line break
+          // #TODO: enter as in line break
         } else {
           this.doQuery();
           event.stopPropagation();
@@ -113,13 +114,18 @@ export default class GhExplorer extends Morph {
     
     this.doQuery();
   }
-  doQuery() {
+  async doQuery() {
+    this.get("#queryResult").innerHTML = "";
+    const table = await lively.create("lively-table");
+    table.setFromArrayClean([]);
+    this.get("#queryResult").appendChild(table);
+    
     let onNewRow = (row, i) => {
-      this.get("#queryResult").appendChild(<li>{row[1]}</li>);
+      table.get("tbody, table").appendChild(<tr>
+        {...row.map(e => <td>{e}</td>)}
+      </tr>)
     };
     
-    this.get("#queryResult").innerHTML = "";
-
     ghStreamQuery(GH_TORRENT_URL, this.get("#query").textContent, eachify(onNewRow));
   }
 }
