@@ -10,6 +10,8 @@ const GET_AND_CALL_MEMBER = 'getAndCallMember';
 const IGNORE_STRING = 'aexpr ignore';
 const IGNORE_INDICATOR = Symbol('aexpr ignore');
 
+const TRACE_MEMBER = 'traceMember';
+
 const SET_MEMBER_BY_OPERATORS = {
   '=': 'setMember',
   '+=': 'setMemberAddition',
@@ -474,16 +476,34 @@ export default function(param) {
 
               // check whether we call a MemberExpression
               if (t.isMemberExpression(path.node.callee)) {
-                path.replaceWith(
-                  t.callExpression(
-                    addCustomTemplate(state.file, GET_AND_CALL_MEMBER), [
-                      path.node.callee.object,
-                      getPropertyFromMemberExpression(path.node.callee),
-                      t.arrayExpression(path.node.arguments)
-                    ]
+                if(false && t.isIdentifier(path.node.callee.object) &&
+                  //path.node.callee.computed &&
+                  t.isIdentifier(path.node.callee.property)
+                ) {
+                  lively.notify(path.node);
+                  // Trace Member
+                  path.insertBefore(
+                    t.identifier("lively")
+/*                    t.callExpression(
+                      addCustomTemplate(state.file, TRACE_MEMBER), [
+                        t.identifier(path.node.callee.object.name),
+                        getPropertyFromMemberExpression(path.node.property.name)
+                      ]
+                    )
+  */                )
+                } else {
+                  path.replaceWith(
+                    t.callExpression(
+                      addCustomTemplate(state.file, GET_AND_CALL_MEMBER), [
+                        path.node.callee.object,
+                        getPropertyFromMemberExpression(path.node.callee),
+                        t.arrayExpression(path.node.arguments)
+                      ]
+                    )
                   )
-                )
+                }
               } else {
+                // call to a local/global variable is handled elsewhere
                 if (t.isIdentifier(path.node.callee) && true) {}
               }
             }
