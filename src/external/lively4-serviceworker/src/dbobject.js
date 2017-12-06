@@ -1,6 +1,7 @@
 export class DbObject {
   constructor(storeName) {
-    DbObject._dbName = "lively-sw-cache";
+    const instanceName = lively4url.split("/").pop();
+    DbObject._dbName = "lively-sw-cache-" + instanceName;
     this._storeName = storeName;
   }
   
@@ -20,7 +21,7 @@ export class DbObject {
   _connect(onconnect) {
     if (DbObject._db) return;
     
-    var request = indexedDB.open(DbObject._dbName, 1);
+    var request = indexedDB.open(DbObject._dbName, 2);
     
     request.onupgradeneeded = this._createDbSchema.bind(this);
     
@@ -39,11 +40,8 @@ export class DbObject {
   _createDbSchema(event) {
     DbObject._db = event.target.result;
     
-    DbObject._db.createObjectStore("dictionary");
-    DbObject._db.createObjectStore("favorits");
-    DbObject._db.createObjectStore("queue", {
-      keyPath: 'id',
-      autoIncrement: true
-    });
+    DbObject._db.createObjectStore("request-cache");
+    DbObject._db.createObjectStore("response-cache");
+    DbObject._db.createObjectStore("favorites");
   };
 }

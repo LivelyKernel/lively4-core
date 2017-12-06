@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class LivelyPresentation extends Morph {
   async initialize() {

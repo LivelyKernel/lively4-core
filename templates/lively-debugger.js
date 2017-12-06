@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import sourcemap from 'src/external/source-map.min.js'
 
 import {babel, modulesRegister} from 'systemjs-babel-build';

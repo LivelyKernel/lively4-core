@@ -38,6 +38,11 @@ export default class Strings {
     }
   }
 
+  static indent(s, level = 1, prefix = "  ") {
+    for(let i=0; i < level; i++) { s = prefix + s}
+    return s
+  }
+  
   static matchAllDo(regExString, s, func) {
     var regEx = new RegExp(regExString, "g")
     do {

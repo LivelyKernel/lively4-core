@@ -2,7 +2,7 @@ import authGithub from 'src/client/auth-github.js'
 import authDropbox from 'src/client/auth-dropbox.js'
 import authGoogledrive from 'src/client/auth-googledrive.js'
 
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class LivleyFilesystems extends Morph { 
 

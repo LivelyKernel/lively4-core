@@ -1,6 +1,6 @@
 'use strict';
 
-import Morph from 'templates/Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class Sync extends Morph {
   initialize() {
