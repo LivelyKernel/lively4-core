@@ -1,45 +1,48 @@
-import { DbObject } from './dbobject.js';
+import { Dictionary } from './dictionary.js';
 
 /**
  * Tracks most frequently(recently?) used files.
  * Currently uses IndexedDB to store data
  */
-export class FavoritesTracker extends DbObject {
+export class FavoritesTracker {
   constructor() {
-    super('favorites');
-    this._connect(this._onconnect.bind(this));
-    this.favorites = {};
+    // Wait 5 minutes before refreshing the favorites
+    FavoritesTracker._minRefreshTime = 5 * 60 * 1000;
+    this._responseDb = new Dictionary('response-cache');
+    this._favoritesDb = new Dictionary('favorites');
+    this._favoritesDb.onconnect = this._checkFavorites.bind(this);
   }
   
-  _onconnect() {
-    var objectStore = this._getObjectStore();
-    var request = objectStore.openCursor();
+  /**
+   * Load favorites by descending popularity
+   */
+  async _checkFavorites() {
+    this.favorites = await this._favoritesDb.toArray();
     
-    request.onsuccess = (event) => {
-      let cursor = event.target.result;
+    // Sort favorites by descending popularity
+    this.favorites.sort(function(first, second) {
+      return second[1].value - first[1].value;
+    });
+    
+    for (let favorit of this.favorites) {
+      let entry = await this._responseDb.match("GET " + favorit[0]);
       
-      if (cursor) {
-        this.favorites[cursor.key] = cursor.value
-        cursor.continue();
-      } else {
-        // Traverse and load favorites 
-      }
-    };
+      if (entry != null && Date.now() - entry.timestamp < FavoritesTracker._minRefreshTime) continue;
+      
+      // TODO: Fetch data      
+    }
   }
   
   /**
    * Updates the favorit count for a given key.
    */
   update(key) {
-    var objectStore = this._getObjectStore();
-    var request = objectStore.get(key);
-    
-    request.onsuccess = (event) => {
-      if (request.result) {
-        objectStore.put(request.result + 1, key);
+    this._favoritesDb.match(key).then((response) => {
+      if (response) {
+        this._favoritesDb.put(key, response.value + 1);
       } else {
-        objectStore.put(1, key);
+        this._favoritesDb.put(key, 1);
       }
-    }
+    });
   }
 }

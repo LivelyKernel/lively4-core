@@ -1,5 +1,4 @@
 import { Dictionary } from './dictionary.js';
-import { Queue } from './queue.js';
 import Serializer from './serializer.js';
 import { ConnectionManager } from './connectionmanager.js';
 import * as msg from './messaging.js'
