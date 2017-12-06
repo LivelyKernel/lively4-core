@@ -79,8 +79,9 @@ export default class LivelyPDF extends Morph {
   editAnnotations(annotationSection) {
     let annotationId = annotationSection.dataset.annotationId;
     annotationId = annotationId.match(/\d+/g)[0];
-    let url = "https://lively-kernel.org/lively4/lively4-pdf-annotator/doc/WebDev2017/project_3/annotations.pdf";
-    let newUrl = "https://lively-kernel.org/lively4/lively4-pdf-annotator/doc/WebDev2017/project_3/annotations2.pdf";
+    let url = this.getAttribute("src");
+    /*let url = "https://lively-kernel.org/lively4/lively4-pdf-annotator/doc/WebDev2017/project_3/annotations.pdf";
+    let newUrl = "https://lively-kernel.org/lively4/lively4-pdf-annotator/doc/WebDev2017/project_3/annotations2.pdf";*/
     fetch(url).then(response => {
       return response.blob();
     }).then(blob => {
@@ -106,7 +107,7 @@ export default class LivelyPDF extends Morph {
         let newPdfText = pdfText.replace(annotation, newAnnotation);
         let newPdfData = "data:application/pdf;base64," + btoa(newPdfText);
         fetch(newPdfData).then(response => response.blob()).then(newBlob => {
-          fetch(newUrl, {method: 'PUT', body: newBlob });
+          fetch(url, {method: 'PUT', body: newBlob });
         });
       });
       
