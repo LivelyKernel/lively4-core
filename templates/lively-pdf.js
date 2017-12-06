@@ -18,7 +18,11 @@ export default class LivelyPDF extends Morph {
     }
     lively.addEventListener("pdf", this, "extent-changed", 
       (e) => this.onExtentChanged(e));
+    
+    lively.addEventListener("pdf", this, "click", 
+      (e) => this.onClick(e));
   }
+  
   async setURL(url) {
     this.setAttribute("src", url)
     
@@ -31,6 +35,7 @@ export default class LivelyPDF extends Morph {
       container: container,
       linkService: this.pdfLinkService
     });
+    
     this.pdfLinkService.setViewer(this.pdfViewer);
     container.addEventListener('pagesinit',  () => {
       // We can use pdfViewer now, e.g. let's change default scale.
@@ -50,13 +55,55 @@ export default class LivelyPDF extends Morph {
       })
     });
   }
+  
   onExtentChanged() {
     this.pdfViewer.currentScaleValue = 'page-width';
   }
+  
+  onClick() {
+    // this.editAnnotations();
+  }
+  
   livelyExample() {
     this.setURL("https://lively-kernel.org/publications/media/KrahnIngallsHirschfeldLinckePalacz_2009_LivelyWikiADevelopmentEnvironmentForCreatingAndSharingActiveWebContent_AcmDL.pdf")
   }
+  
   livelyMigrate(other) {
     //  this.setURL(other.getURL())
+  }
+  
+  editAnnotations() {
+    let url = "https://lively-kernel.org/lively4/lively4-pdf-annotator/doc/WebDev2017/project_3/annotations.pdf";
+    let newUrl = "https://lively-kernel.org/lively4/lively4-pdf-annotator/doc/WebDev2017/project_3/annotations2.pdf";
+    fetch(url).then(response => {
+      return response.blob();
+    }).then(blob => {
+      let fileReader = new FileReader();
+      fileReader.addEventListener('loadend', function() {
+        let pdfText = atob(fileReader.result.replace("data:application/pdf;base64,", ""));
+        let annotationRegex = /^(20\s0\sobj)/mg;
+        let startSubstr = pdfText.substring(pdfText.search(annotationRegex));
+        let annotation = startSubstr.substring(0, startSubstr.indexOf('endobj') + 6);
+        let replaceRegex = /\/\T\s\([^\)]+\)/gm;
+            
+        console.log(annotation.match(replaceRegex));
+        console.log(replaceRegex.exec(annotation));
+        
+        let newValue = window.prompt('Please enter the new Value');
+        if(newValue !== null) {
+          annotation = annotation.replace(replaceRegex, "/T (" + newValue + ")");  
+        }
+        
+        console.log(annotation);
+        
+        let newPdfText = pdfText.replace(annotationRegex, annotation);
+        let newPdfData = "data:application/pdf;base64," + btoa(newPdfText);
+        fetch(newPdfData).then(response => response.blob()).then(blob => {
+          fetch(newUrl, {method: 'PUT', body: blob });
+        });
+      });
+      
+      fileReader.readAsDataURL(blob);
+    });
   }
 }
