@@ -9,8 +9,8 @@ export class DbObject {
    * Gets the objectStore from IndexedDB
    * @return ObjectStore
    */
-  _getObjectStore() {
-    var transaction = DbObject._db.transaction([this._storeName], "readwrite");
+  _getObjectStore(mode = "readwrite") {
+    var transaction = DbObject._db.transaction([this._storeName], mode);
     var objectStore = transaction.objectStore(this._storeName);
     return objectStore;
   }
@@ -18,20 +18,20 @@ export class DbObject {
   /**
    * Connects to the database and creates schema, if needed
    */
-  _connect(onconnect) {
+  _connect() {
     if (DbObject._db) return;
     
     var request = indexedDB.open(DbObject._dbName, 2);
     
     request.onupgradeneeded = this._createDbSchema.bind(this);
     
-    request.onsuccess = function (e) {
+    request.onsuccess = (e) => {
       DbObject._db = e.target.result;
       
-      if (!onconnect) return;
+      if (!this.onconnect) return;
       
-      onconnect();
-    }
+      this.onconnect();
+    };
   }
   
   /**

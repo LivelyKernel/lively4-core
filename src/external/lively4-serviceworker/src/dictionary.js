@@ -6,15 +6,9 @@ import { DbObject } from './dbobject.js';
  */
 export class Dictionary extends DbObject {
   
-  
   constructor(storeName) {
-    Dictionary._maxCacheTime = 30 * 1000;
     super(storeName);
-    this._connect(this._onconnect.bind(this));
-  }
-  
-  _onconnect() {
-    
+    this._connect();
   }
   
   /**
@@ -33,7 +27,7 @@ export class Dictionary extends DbObject {
    */
   match(key) {
     return new Promise((resolve, reject) => {
-      var request = this._getObjectStore().get(key);
+      var request = this._getObjectStore("readonly").get(key);
       request.onsuccess = (event) => {
         if (request.result) {
           resolve(request.result);
@@ -70,5 +64,34 @@ export class Dictionary extends DbObject {
         resolve(null);
       }
     });
+  }
+  
+  /**
+   * Returns all entries as array with tuples(key, object)
+   * @return [[key0, object0], [key1, object1], ...]
+   */
+  toArray() {
+    let objectStore = this._getObjectStore("readonly");
+    let request = objectStore.openCursor();
+    
+    return new Promise((resolve, reject) => {
+      let entries = [];
+      
+      request.onsuccess = (event) => {
+        let cursor = event.target.result;
+
+        if (cursor) {
+          entries.push([cursor.key, cursor.value]);
+          cursor.continue();
+        } else {
+          // All entries read, traverse and load favorites 
+          resolve(entries);
+        }
+      };
+    });
+  }
+  
+  toDictionary() {
+    
   }
 }
