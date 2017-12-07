@@ -18,21 +18,6 @@ describe('simplify locals', function() {
 
     _ =  myIdentifier = 2;
   });
-  it('debuggable getMember and getAndCallMember', () => {
-    const obj = {
-      x: 3,
-      fn() {
-        return this.x;
-      }
-    }
-    const spy = sinon.spy();
-    
-    obj.fn();
-    //aexpr(() => )
-    
-    expect(spy).to.be.calledOnce;
-    expect(spy).to.be.calledWithMatch(1);
-  });
 });
 describe('loop constructs', function() {
   it('for loop/local variable (var)', () => {
@@ -572,3 +557,16 @@ describe('Propagation Logic', function() {
     });
   });
 });
+
+describe("misc", () => {
+  it("rewrite call expression in sequence expression does not result in stack overflow", () => {
+    const obj = {
+      x: 3,
+      fn() {
+        return this.x;
+      }
+    };
+    
+    (obj.fn(), obj.fn());
+  })
+})

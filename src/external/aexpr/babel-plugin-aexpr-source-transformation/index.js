@@ -38,6 +38,7 @@ const GET_GLOBAL = "getGlobal";
 const FLAG_GENERATED_SCOPE_OBJECT = Symbol('FLAG: generated scope object');
 const FLAG_SHOULD_NOT_REWRITE_IDENTIFIER = Symbol('FLAG: should not rewrite identifier');
 const FLAG_SHOULD_NOT_REWRITE_MEMBER_EXPRESSION = Symbol('FLAG: should not rewrite member expression');
+const FLAG_SHOULD_NOT_REWRITE_CALL_EXPRESSION = Symbol('FLAG: should not rewrite call expression');
 const FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION = Symbol('FLAG: should not rewrite assignment expression');
 
 export default function(param) {
@@ -63,6 +64,12 @@ export default function(param) {
 
   function isGenerated(path) {
     return path.findParent(p => t.isFunctionDeclaration(p.node) && p.node[GENERATED_FUNCTION])
+  }
+
+  function nonRewritableIdentifier(name) {
+    const node = t.identifier(name);
+    node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
+    return node;
   }
 
   const GENERATED_IMPORT_IDENTIFIER = Symbol("generated import identifier");
@@ -123,6 +130,15 @@ export default function(param) {
     // }
     //
     // return uid;
+  }
+  
+  function checkExpressionAnalysisMode(node) {
+    return t.ifStatement(
+      t.booleanLiteral(true),
+      t.expressionStatement(
+        node
+      )
+    );
   }
 
   return {
@@ -443,6 +459,9 @@ export default function(param) {
             MemberExpression(path) {
               // lval (left values) are ignored for now
               // #TODO: ignore if parent is bind operator
+              if(path.parentPath.isCallExpression() && path.parentKey === "callee") {
+                return;
+              }
               if (t.isAssignmentExpression(path.parent) && path.key === 'left') {
                 return;
               }
@@ -467,30 +486,30 @@ export default function(param) {
             },
 
             CallExpression(path) {
-              if (isGenerated(path)) {
-                return;
-              }
-              if (path.node.callee && t.isSuper(path.node.callee.object)) {
-                return;
-              }
+              if(isGenerated(path)) { return; }
+              if(path.node.callee && t.isSuper(path.node.callee.object)) { return; }
+              if(path.node[FLAG_SHOULD_NOT_REWRITE_CALL_EXPRESSION]) { return; }
 
               // check whether we call a MemberExpression
-              if (t.isMemberExpression(path.node.callee)) {
-                if(false && t.isIdentifier(path.node.callee.object) &&
+              if(t.isMemberExpression(path.node.callee)) {
+                // #TODO: support "this" expression as object
+                if(t.isIdentifier(path.node.callee.object) &&
                   //path.node.callee.computed &&
                   t.isIdentifier(path.node.callee.property)
                 ) {
-                  lively.notify(path.node);
-                  // Trace Member
+                  // break a recursive call expression when doing `(obj.fn(), obj.fn());`
+                  path.node[FLAG_SHOULD_NOT_REWRITE_CALL_EXPRESSION] = true;
+                  // insert traceMember before actual call
                   path.insertBefore(
-                    t.identifier("lively")
-/*                    t.callExpression(
-                      addCustomTemplate(state.file, TRACE_MEMBER), [
-                        t.identifier(path.node.callee.object.name),
-                        getPropertyFromMemberExpression(path.node.property.name)
-                      ]
+                    checkExpressionAnalysisMode(
+                      t.callExpression(
+                        addCustomTemplate(state.file, TRACE_MEMBER), [
+                          nonRewritableIdentifier(path.node.callee.object.name),
+                          getPropertyFromMemberExpression(path.node.callee)
+                        ]
+                      )
                     )
-  */                )
+                  )
                 } else {
                   path.replaceWith(
                     t.callExpression(
