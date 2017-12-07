@@ -1,14 +1,9 @@
-import {
-  isVariable
-} from './utils.js';
+import { isVariable } from './utils.js';
 
 const AEXPR_IDENTIFIER_NAME = 'aexpr';
 
 const GET_MEMBER = 'getMember';
 const GET_AND_CALL_MEMBER = 'getAndCallMember';
-
-const IGNORE_STRING = 'aexpr ignore';
-const IGNORE_INDICATOR = Symbol('aexpr ignore');
 
 const TRACE_MEMBER = 'traceMember';
 
@@ -33,6 +28,9 @@ const GET_LOCAL = "getLocal";
 
 const SET_GLOBAL = "setGlobal";
 const GET_GLOBAL = "getGlobal";
+
+const IGNORE_STRING = 'aexpr ignore';
+const IGNORE_INDICATOR = Symbol('aexpr ignore');
 
 // TODO: use multiple flag for indication of generated content, marking explicit scopes, etc.
 const FLAG_GENERATED_SCOPE_OBJECT = Symbol('FLAG: generated scope object');
@@ -132,12 +130,11 @@ export default function(param) {
     // return uid;
   }
   
+  // #TODO: add global flag for expression analysis mode
   function checkExpressionAnalysisMode(node) {
     return t.ifStatement(
       t.booleanLiteral(true),
-      t.expressionStatement(
-        node
-      )
+      t.expressionStatement(node)
     );
   }
 
@@ -146,7 +143,11 @@ export default function(param) {
       //console.log("fff", file, traverse);
 
       traverse(file.ast, {
+        Directive(path) {
+          path.get("value").node.value === "enable aexpr";
+        },
         enter(path) {
+          
           if (
             path.node.leadingComments &&
             path.node.leadingComments.some(comment => comment.value.includes(IGNORE_STRING))
@@ -276,35 +277,27 @@ export default function(param) {
                     //path.getFunctionParent().ensureBlock();
                     //path.insertBefore(t.expressionStatement(t.stringLiteral("Because I'm easy come, easy go.")));
 
-                    function insertHookBeforeGetLocal(path) {
-                      path.insertBefore(
-                        t.ifStatement(
-                          // #TODO: add global flag for expression analysis mode
-                          t.booleanLiteral(true),
-                          t.expressionStatement(
-                            t.callExpression(
-                              addCustomTemplate(state.file, GET_LOCAL), [
-                                getIdentifierForExplicitScopeObject(parentWithScope),
-                                t.stringLiteral(path.node.name)
-                              ]
-                            )
-                          )
+                    path.insertBefore(
+                      checkExpressionAnalysisMode(
+                        t.callExpression(
+                          addCustomTemplate(state.file, GET_LOCAL), [
+                            getIdentifierForExplicitScopeObject(parentWithScope),
+                            t.stringLiteral(path.node.name)
+                          ]
                         )
-                      );
-                    }
-                    insertHookBeforeGetLocal(path);
+                      )
+                    );
                   }
                 } else {
                   //logIdentifier('get global var', path);
                   path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
 
-                  path.replaceWith(
-                    t.sequenceExpression([
+                  path.insertBefore(
+                    checkExpressionAnalysisMode(
                       t.callExpression(
                         addCustomTemplate(state.file, GET_GLOBAL), [t.stringLiteral(path.node.name)]
-                      ),
-                      path.node
-                    ])
+                      )
+                    )
                   );
                 }
                 return;
