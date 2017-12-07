@@ -458,22 +458,13 @@ export default function(param) {
 
             MemberExpression(path) {
               // lval (left values) are ignored for now
-              // #TODO: ignore if parent is bind operator
-              if(path.parentPath.isCallExpression() && path.parentKey === "callee") {
-                return;
-              }
-              if (t.isAssignmentExpression(path.parent) && path.key === 'left') {
-                return;
-              }
-              if (t.isUpdateExpression(path.parent) && path.key === 'argument') {
-                return;
-              }
-              if (t.isSuper(path.node.object)) {
-                return;
-              }
-              if (isGenerated(path)) {
-                return;
-              }
+              if(path.parentPath.isCallExpression() && path.parentKey === "callee") { return; }
+              // #TODO: BindExpressions are ignored for now; they are static anyway ;)
+              if(path.parentPath.isBindExpression() && path.parentKey === "callee") { return; }
+              if (t.isAssignmentExpression(path.parent) && path.key === 'left') { return; }
+              if (t.isUpdateExpression(path.parent) && path.key === 'argument') { return; }
+              if (t.isSuper(path.node.object)) { return; }
+              if (isGenerated(path)) { return; }
               //FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION
               path.replaceWith(
                 t.callExpression(
@@ -492,11 +483,33 @@ export default function(param) {
 
               // check whether we call a MemberExpression
               if(t.isMemberExpression(path.node.callee)) {
-                // #TODO: support "this" expression as object
-                if(t.isIdentifier(path.node.callee.object) &&
-                  //path.node.callee.computed &&
-                  t.isIdentifier(path.node.callee.property)
-                ) {
+                function isDuplicatableMemberExpression(memberPath) {
+                  const objectPath = memberPath.get('object');
+                  const isSimpleObject = objectPath.isIdentifier() || objectPath.isThisExpression();
+                  const isComputedProperty = memberPath.node.computed;
+                  const propertyPath = memberPath.get('property');
+                  let isSimpleProperty;
+                  if(isComputedProperty) {
+                    isSimpleProperty = propertyPath.isStringLiteral() ||
+                      propertyPath.isIdentifier();
+                  } else {
+                    isSimpleProperty = propertyPath.isIdentifier();
+                  }
+                  return isSimpleObject && isSimpleProperty;
+                }
+                
+                if(isDuplicatableMemberExpression(path.get("callee"))) {
+                  function getTraceIdentifierForSimpleObject(objectPath) {
+                    if(objectPath.isIdentifier()) {
+                      return nonRewritableIdentifier(objectPath.node.name);
+                    } else if(objectPath.isThisExpression()) {
+                      return t.thisExpression();
+                    } else {
+                      throw objectPath.buildCodeFrameError("Tried to trace a simple MemberExpression>object, but it is neither an Identifier nor a ThisExpression");
+                    }
+                  }
+
+                  const traceIdentifier = getTraceIdentifierForSimpleObject(path.get('callee').get('object'));
                   // break a recursive call expression when doing `(obj.fn(), obj.fn());`
                   path.node[FLAG_SHOULD_NOT_REWRITE_CALL_EXPRESSION] = true;
                   // insert traceMember before actual call
@@ -504,7 +517,7 @@ export default function(param) {
                     checkExpressionAnalysisMode(
                       t.callExpression(
                         addCustomTemplate(state.file, TRACE_MEMBER), [
-                          nonRewritableIdentifier(path.node.callee.object.name),
+                          traceIdentifier,
                           getPropertyFromMemberExpression(path.node.callee)
                         ]
                       )
