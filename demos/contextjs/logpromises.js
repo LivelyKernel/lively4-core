@@ -1,3 +1,7 @@
+/***
+ * Better Promise Logging Support Experiment 
+ */
+
 import * as cop  from "src/external/ContextJS/src/contextjs.js"
 import * as Layers  from "src/external/ContextJS/src/Layers.js"
 
@@ -226,9 +230,9 @@ cop.layer(window, "LogPromisesLayer").refineClass(Promise, {
 }).refineObject(console, {
   log(...args) {
     return cop.withoutLayers([LogPromisesLayer], () => {
-      console.log("current layer: " + LogPromises.print(LogPromises.currrentPromise));
+      // console.log("current layer: " + LogPromises.print(LogPromises.currrentPromise));
       LogPromises.promisedLog(LogPromises.currrentPromise, args)
-      return cop.proceed("PROMISED", ...args)
+      return cop.proceed(...args)
     })
   }
 })
