@@ -138,8 +138,7 @@ export default function(param) {
   }
 
   return {
-    pre(file, YYY) {
-      lively.notify(file, YYY, undefined, undefined, "green");
+    pre(file) {
       //console.log("fff", file, traverse);
     },
     visitor: {
@@ -159,7 +158,6 @@ export default function(param) {
             });
           }
           if (!shouldTransform) {
-            console.log("SHOULD NOT TRANSFORM");
             return;
           }
 
