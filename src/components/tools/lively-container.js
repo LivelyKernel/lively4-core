@@ -8,7 +8,7 @@ import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/external/ContextJS/src/contextjs.js";
 import ScopedScripts from "src/client/scoped-scripts.js";
 import Clipboard from "src/client/clipboard.js"; 
-import {debounce} from "utils";
+import { debounce, fileEnding, replaceFileEndingWith } from "utils";
 
 export default class Container extends Morph {
   
@@ -191,6 +191,26 @@ export default class Container extends Morph {
       }
       evt.preventDefault();
       evt.stopPropagation();
+    } else if(evt.keyCode === 118) {
+      this.switchBetweenJSAndHTML();
+      evt.stopPropagation();
+      evt.preventDefault();
+    }
+  }
+  
+  async switchBetweenJSAndHTML() {
+    const ending = this.getPath()::fileEnding();
+    if(ending === 'js' || ending === 'html') {
+      const targetURLString = this.getPath()::replaceFileEndingWith(ending === 'js' ? 'html' : 'js');
+      const existingContainer = Array.from(document.body.querySelectorAll('lively-container'))
+        .find(container => container.getPath() === targetURLString);
+      if(existingContainer) {
+        lively.gotoWindow(existingContainer.parentElement);
+        existingContainer.focus();
+      } else {
+        lively.openBrowser(targetURLString, true)
+          .then(browser => browser.focus());
+      }
     }
   }
 
@@ -618,14 +638,11 @@ export default class Container extends Morph {
         script.src  = scriptElement.src;
         script.onload = () => {
           // #WIP multiple activations are not covered.... through this...
-          Promise.all(ScopedScripts.openPromises).then( () => {
+          Promise.all(ScopedScripts.openPromises).then(() => {
             layers.forEach( ea => ea.beNotGlobal());
             // console.log("ScopedScripts openPromises: " + ScopedScripts.openPromises)
             resolve();
-          }, () => {
-            // error
-            reject();
-          });
+          }, reject);
         };
         script.onerror = reject; 
       }
@@ -635,14 +652,11 @@ export default class Container extends Morph {
         root.appendChild(script);  
       });
       if (!script.src) {
-        Promise.all(ScopedScripts.openPromises).then( () => {
+        Promise.all(ScopedScripts.openPromises).then(() => {
           layers.forEach( ea => ea.beNotGlobal());
           // console.log("ScopedScripts openPromises: " + ScopedScripts.openPromises)
           resolve();
-        }, () => {
-          // error
-          reject();
-        });
+        }, reject);
       }
     })
     
@@ -811,16 +825,12 @@ export default class Container extends Morph {
       if (!aceComp) throw new Error("Could not initialalize lively-editor");
       if (aceComp.tagName == "LIVELY-CODE-MIRROR") {
          await new Promise(resolve => {
-          aceComp.addEventListener("editor-loaded", () => {
-            resolve()
-          })            
+          aceComp.addEventListener("editor-loaded", resolve)            
         })
       }
 
       aceComp.enableAutocompletion();
-      aceComp.getDoitContext = () => {
-        return window.that;
-      };
+      aceComp.getDoitContext = () => window.that;
       // aceComp.getDoitContextModuleUrl = () => {
       //   return this.getURL()
       // }
@@ -1358,10 +1368,8 @@ export default class Container extends Morph {
   }
   
   focus() {
-    // var editor = this.getAceEditor();
-    // if (editor) {
-    //   editor.focus()
-    // }
+    const editor = this.getAceEditor();
+    if (editor) { editor.focus(); }
   }
   
   createLink(base, name, href) {

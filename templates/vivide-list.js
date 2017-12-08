@@ -54,6 +54,10 @@ export default class VivideList extends Morph {
     }
   }
   
+  clearTransformations() {
+    this.transformations = [];
+  }
+  
   pushDepiction(depiction) {
     this.depictions.push(depiction);
   }
@@ -74,6 +78,10 @@ export default class VivideList extends Morph {
     } else {
       throw "Index out of bounds"
     }
+  }
+  
+  clearDepictions() {
+    this.depictions = [];
   }
   
   toggleSelection(wrapper) {

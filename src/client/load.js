@@ -95,7 +95,7 @@ if ('serviceWorker' in navigator || window.lively4chrome) {
             console.log("Error running on load callback: "  + cb + " error: " + e);
           }
         });
-        if (!window.__karma__) {
+        if (!window.__karma__ && navigator.userAgent.toLowerCase().indexOf('electron/') == -1) {
           window.onbeforeunload = function(e) {
             return 'Do you really want to leave this page?'; // gets overriden by Chrome native
           };
