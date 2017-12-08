@@ -39,16 +39,13 @@ const FLAG_SHOULD_NOT_REWRITE_MEMBER_EXPRESSION = Symbol('FLAG: should not rewri
 const FLAG_SHOULD_NOT_REWRITE_CALL_EXPRESSION = Symbol('FLAG: should not rewrite call expression');
 const FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION = Symbol('FLAG: should not rewrite assignment expression');
 
-export default function(param, ...XXX) {
+export default function(param) {
   let {
     types: t,
     template,
     traverse
   } = param;
-  //console.log(arguments);
-  let x = param.options || param.opts
-  lively.warn(x ? x : "no info");
-  console.log("XXXXXXXXXXXXXXXXXXXX", x)
+
   function getPropertyFromMemberExpression(node) {
     // We are looking for MemberExpressions, which have two distinct incarnations:
     // 1. we have a computed MemberExpression like a[b], with the property being an Expression
@@ -144,25 +141,24 @@ export default function(param, ...XXX) {
     pre(file, YYY) {
       lively.notify(file, YYY, undefined, undefined, "green");
       //console.log("fff", file, traverse);
-      file.shouldTransform = true;
-      Array.from(file.opts).forEach(x => lively.notify("XXX", x));
-      if(file.opts.enableViaDirective) {
-        file.shouldTransform = false;
-        traverse(file.ast, {
-          Directive(path) {
-            if(path.get("value").node.value === "enable aexpr") {
-              file.shouldTransform = true;
-            }
-          }
-        });
-      }
     },
     visitor: {
       Program: {
         enter(path, state) {
-          state
           //console.log("file", path, state);
-          if (!state.file.shouldTransform) {
+
+          let shouldTransform = true;
+          if(state.opts.enableViaDirective) {
+            shouldTransform = false;
+            path.traverse({
+              Directive(path) {
+                if(path.get("value").node.value === "enable aexpr") {
+                  shouldTransform = true;
+                }
+              }
+            });
+          }
+          if (!shouldTransform) {
             console.log("SHOULD NOT TRANSFORM");
             return;
           }
