@@ -85,13 +85,17 @@ export default class Lively {
   }
   
   // #TODO remove code duplication lively-con
-  static unloadModule(path) {
+  static async unloadModule(path) {
     var normalizedPath = System.normalizeSync(path)
-    System.import(normalizedPath).then(module => {
-      if(module && typeof module.__unload__ === "function") {
-        module.__unload__();
-      }
-    });
+    try {
+      await System.import(normalizedPath).then(module => {
+        if(module && typeof module.__unload__ === "function") {
+          module.__unload__();
+        }
+      });
+    } catch(e) {
+      console.log("WARNING: error while trying to unload " + path)
+    }
     System.registry.delete(normalizedPath);
     // #Hack #issue in SystemJS babel syntax errors do not clear errors
     System['@@registerRegistry'][normalizedPath] = undefined;

@@ -88,12 +88,12 @@ export default class Inspector   extends Morph {
       className = obj.type
     }
     
-    node.innerHTML = `${this.expandTemplate(node)}`+
-      ` <span class='attrName expand'> ${name}</span><span class="syntax">:</span>
-      <a id='tagname' class='tagname'>${className}</a> `+
-      '<span class="syntax">{'+"</span>" +
+    node.innerHTML = this.expandTemplate(node) +
+      `<span class='attrName expand'> ${name}</span><span class="syntax">:</span>
+      <a id='tagname' class='tagname'>${className}</a> ` +
+      '<span class="syntax">{</span>' +
        this.contentTemplate() +
-      '<span class="syntax">}'+"</span>";
+      '<span class="syntax">}</span>';
   
     this.attachHandlers(node, obj, name, "renderObject");
     
@@ -112,9 +112,9 @@ export default class Inspector   extends Morph {
           console.log("[inspector] could not display " + ea + " of " + obj)
           return
         }
-        if (value == null) return  
+        if (value == null) return;  
         var childNode = this.displayObject(value, false, ea, obj)
-        if (childNode) contentNode.appendChild(childNode); // force object display
+        if (childNode) contentNode.appendChild(childNode); // force object display        
       });
     }
   }
@@ -160,9 +160,11 @@ export default class Inspector   extends Morph {
     renderCall = renderCall || "render"    
     // jqyery would make this cleaner here...
     var moreNode = node.querySelector("#more");
-    if (moreNode) moreNode.onclick = (evt) => {
-      this[renderCall](node, obj, true, name);
-    };
+    if (moreNode) {
+      moreNode.onclick = (evt) => {
+        this[renderCall](node, obj, true, name);
+      };
+    }
     node.querySelectorAll(".expand").forEach(expandNode => {
       expandNode.onclick = (evt) => {
         this[renderCall](node, obj, !node.isExpanded, name);
@@ -264,7 +266,7 @@ export default class Inspector   extends Morph {
         contentNode.innerHTML = obj.textContent.replace(/</,"&lt;").replace(/>/,"&gt;");
       }
       if (obj.shadowRoot) {
-        contentNode.appendChild(this.display(obj.shadowRoot, expandChildren, null, obj))  ;
+        contentNode.appendChild(this.display(obj.shadowRoot, expandChildren, null, obj));
       }  
       obj.childNodes.forEach( ea => { 
         contentNode.appendChild(this.display(ea, expandChildren, null, obj));
