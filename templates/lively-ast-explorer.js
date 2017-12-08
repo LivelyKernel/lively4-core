@@ -21,15 +21,23 @@ export default class AstExplorer extends Morph {
     this.babel = babel
     //this.smc = smc
 
-
     let initLivelyEditorFromAttribute = (editor, attributeToRead, defaultPath) => {
       var filePath =  this.getAttribute(attributeToRead);
       if (!filePath) {
         filePath = defaultPath;
       }
-      editor.setURL(filePath);
-      editor.loadFile();
-    }
+    
+      // #TODO get rid of this runtime check by either:
+      //   a) guaranty loaded childnodes before running initialize
+      //   b) editor that only be initialized through attributes access
+      if (editor.setURL) {
+        editor.setURL(filePath);
+        editor.loadFile();
+      } else {
+        editor.setAttribute("url", filePath)
+      }
+        
+      }
     initLivelyEditorFromAttribute(this.sourceEditor, 'source', 
    		"https://lively-kernel.org/lively4/lively4-core/demos/babel/astsource.js");
     initLivelyEditorFromAttribute(this.pluginEditor, 'plugin', 

@@ -30,6 +30,7 @@ export default class VivideList extends Morph {
   
   setPredecessor(anotherWidget) {
     this.predecessor = anotherWidget;
+    this.show(this.predecessor.output());
   }
   
   pushTransformation(transformation) {

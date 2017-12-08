@@ -239,6 +239,8 @@ export default class LivelyTable extends Morph {
         }
       }
     }
+    
+    this.dispatchEvent(new CustomEvent("selection-changed", {detail: {table: this}}));
   }
 
 
@@ -580,6 +582,25 @@ export default class LivelyTable extends Morph {
   
   getSelectionAsCSV() {
     return this.copySelectionAsTable().asCSV()
+  }
+  
+  getSelectionAsJSO() {
+    if(!this.selectedCells) return []
+    
+    let result = []
+    
+    this.selectedCells.forEach(each => {
+      let row = this.rowOfCell(each)
+      let key = this.keyForCell(each)
+      if(!result[row]) result[row] = {}
+      result[row][key] = each.textContent
+    })
+    
+    return result
+  }
+  
+  keyForCell(cell) {
+    return this.cells()[0][this.columnOfCell(cell)].textContent
   }
   
   /*
