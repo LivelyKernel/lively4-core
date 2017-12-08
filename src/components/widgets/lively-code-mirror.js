@@ -85,6 +85,10 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/dialog/dialog.js")
       await this.loadModule("addon/scroll/simplescrollbars.js")
 
+      await lively.loadJavaScriptThroughDOM("jshint"+generateUUID(), "https://ajax.aspnetcdn.com/ajax/jshint/r07/jshint.js");
+      await this.loadModule("addon/lint/lint.js");
+      await this.loadModule("addon/lint/javascript-lint.js");
+
       await this.loadModule("addon/merge/merge.js")
       await this.loadModule("addon/selection/mark-selection.js")
 
@@ -92,6 +96,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       await System.import(lively4url + '/src/components/widgets/lively-code-mirror-hint.js')
       
       this.loadCSS("addon/hint/show-hint.css")
+      this.loadCSS("addon/lint/lint.css")
+      this.loadCSS("addon/lint/javascript-lint.css")
       this.loadCSS("../../components/widgets/lively-code-mirror.css")
     })()
     return loadPromise
@@ -119,14 +125,15 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   initialize() {
-  	this._attrObserver = new MutationObserver((mutations) => {
-	  mutations.forEach((mutation) => {  
+  	this._attrObserver = new MutationObserver(mutations => {
+	    mutations.forEach(mutation => {  
         if(mutation.type == "attributes") {
           // console.log("observation", mutation.attributeName,mutation.target.getAttribute(mutation.attributeName));
           this.attributeChangedCallback(
             mutation.attributeName,
             mutation.oldValue,
-            mutation.target.getAttribute(mutation.attributeName))
+            mutation.target.getAttribute(mutation.attributeName)
+          )
         }
       });
     });
@@ -163,7 +170,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.setEditor(CodeMirror(container, {
       value: value,
       lineNumbers: true,
-      gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter"]
+      gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter", "CodeMirror-lint-markers"],
+      lint: true
     }));  
   }
   

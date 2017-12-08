@@ -222,6 +222,7 @@ export default class AstExplorer extends Morph {
   livelyPrepareSave() {
     this.setAttribute('source', this.sourceEditor.getURLString());
     this.setAttribute('plugin', this.pluginEditor.getURLString());
+    console.log("PREPARE SAVE", this.getAttribute('source'), this.getAttribute('plugin'));
   }
   
   
