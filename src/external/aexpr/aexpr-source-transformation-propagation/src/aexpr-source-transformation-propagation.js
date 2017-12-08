@@ -122,6 +122,12 @@ export function reset() {
     CompositeKey.clear();
 }
 
+export function traceMember(obj, prop) {
+  if(expressionAnalysisMode) {
+    aexprStorage.associate(aexprStack.top(), obj, prop);
+  }
+}
+
 export function getMember(obj, prop, ...params) {
     if(expressionAnalysisMode) {
         aexprStorage.associate(aexprStack.top(), obj, prop);

@@ -248,22 +248,28 @@ if (window.lively && window.lively4url) {
     });
 
     try {
-      console.group("1/3: Wait for Service Worker...");
-      const { whenLoaded } = await System.import(lively4url + "/src/client/load.js");
-      await new Promise(whenLoaded);
-      console.groupEnd();
+      var livelyloaded = new Promise(async livelyloadedResolve => {
+        console.group("1/3: Wait for Service Worker...");
+        const { whenLoaded } = await System.import(lively4url + "/src/client/load.js");
+        await new Promise(whenLoaded);
+        console.groupEnd();
+
+        console.group("2/3: Look for uninitialized instances of Web Compoments");
+        await lively.components.loadUnresolved();
+        console.groupEnd();
+
+        console.group("3/3: Initialize Document");
+        await lively.initializeDocument(document, window.lively4chrome, loadContainer);
+        console.groupEnd();
+
+        console.log("Finally loaded!");
+
+        document.dispatchEvent(new Event("livelyloaded"));
+
+        livelyloadedResolve(true);
+      })
       
-      console.group("2/3: Look for uninitialized instances of Web Compoments");
-      await lively.components.loadUnresolved();
-      console.groupEnd();
-      
-      console.group("3/3: Initialize Document");
-      await lively.initializeDocument(document, window.lively4chrome, loadContainer);
-      console.groupEnd();
-      
-      console.log("Finally loaded!");
-      
-      document.dispatchEvent(new Event("livelyloaded"));
+      await livelyloaded
     } catch(err) {
       console.error("Lively Loading failed");
       console.error(err);

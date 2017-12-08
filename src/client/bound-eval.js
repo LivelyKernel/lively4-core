@@ -31,11 +31,14 @@ export default async function boundEval(source, thisReference, targetModule) {
     } else if (Preferences.get('DisableAExpWorkspace')) {
       path = path.replace(/^workspace/, "workspacejs")
     }
-    return System.import(path)
+    return await System.import(path)
       .then(m => {
         lively.unloadModule(path)
         return ({value: m.__result__ })});
   } catch(err) {
     return Promise.resolve({ value: err, isError: true });
+  } finally {
+    // console.log("BOUND EVAL UNLOAD " + path)
+    lively.unloadModule(path)
   }
 }
