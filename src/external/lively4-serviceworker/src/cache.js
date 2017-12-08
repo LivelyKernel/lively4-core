@@ -228,9 +228,7 @@ export class Cache {
    * @param fileAddress The address of the file to preload
    */
   preloadFile(fileAddress) {
-    const methodsToLoad = ['GET', 'OPTIONS'];
-    
-    for(let method of methodsToLoad) {
+    for(let method of this._cacheMethods) {
       let request = new Request(fileAddress, {
         method: method 
       });
@@ -246,11 +244,17 @@ export class Cache {
 
 
 /* Old methods used by filesystems */
+function warnOldCacheMethod(methodName) {
+  console.warn(`Old cache method called: ${methodName}`);
+}
+
 function open(cache_name) {
+  warnOldCacheMethod(arguments.callee.name);
   return caches.open(cache_name)
 }
 
 export function put(request, response) {
+  warnOldCacheMethod(arguments.callee.name);
   let blob_text = [Date.now().toString()]
   let blob_type = {type : 'text/html'}
   let blob = new Blob(blob_text, blob_type)
@@ -260,11 +264,13 @@ export function put(request, response) {
 }
 
 export function purge(request) {
+  warnOldCacheMethod(arguments.callee.name);
   open('lively4-cache-line-ages').then((cache) => cache.delete(request))
   return open('lively4').then((cache) => cache.delete(request))
 }
 
 export async function match(request, timeout=-1) {
+  warnOldCacheMethod(arguments.callee.name);
   try {
     if (timeout != -1) {
       let age = await getAgeOf(request) 
@@ -291,6 +297,7 @@ export async function match(request, timeout=-1) {
 }
 
 export function getAgeOf(request) {
+  warnOldCacheMethod(arguments.callee.name);
   return open('lively4-cache-line-ages').then((cache) => cache.match(request))
 }
 
