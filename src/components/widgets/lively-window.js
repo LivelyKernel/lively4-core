@@ -326,7 +326,7 @@ export default class Window extends Morph {
   }
 
   onMenuButtonClicked(evt) {
-    lively.openContextMenu(document.body, evt, this.childNodes[0]);
+    lively.openContextMenu(document.body, evt, this.target);
   }
 
   onTitleMouseDown(evt) {

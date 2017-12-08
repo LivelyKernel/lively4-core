@@ -10,6 +10,115 @@ export function responseToJson(response) {
   return response.json()
 }
 
+export function buildNetworkRequestFunction(request) {
+  return () => {
+    return new Promise(async (resolve, reject) => {
+      resolve(self.fetch(request).then((result) => {
+        return result;
+      }).catch(e => {
+        console.log("fetch error: "  + e);
+        return new Response("Could not fetch " + url +", because of: " + e);
+      }))
+    });
+  };
+}
+
+/**
+ * Builds a key for the cache from a request
+ * @return String key
+ */
+export function buildKey(request) {
+  // Ignore params when loading start.html
+  // The file always has the same content, and we want to boot offline whenever possible
+  let requestUrl = new URL(request.url);
+  if(requestUrl.origin == self.location.origin && requestUrl.pathname.endsWith('start.html')) {
+    return `${request.method} ${requestUrl.origin}/${requestUrl.pathname}`;
+  }
+
+  return `${request.method} ${request.url}`;
+}
+
+/**
+ * Builds a fake success Response to return when a Request is enqueued
+ * @return Response
+ */
+export function buildEnqueuedResponse() {
+  return new Response(null, {
+    status: 202,
+    statusText: 'Accepted'
+  });
+}
+
+/**
+ * Builds a fake error Response to return when offline and not cached
+ * @return Response
+ */
+export function buildNotCachedResponse() {
+  let errorText = 'You are offline and the requested file was not found in the cache.';
+  return new Response(errorText, {
+    status: 503,
+    statusText: 'Service Unavailable'
+  });
+}
+
+/**
+ * Returns a list of file that are necessary to boot lively
+ */
+export function getBootFiles() {
+    let filesToLoad = [
+      // Essential
+      '',
+      'start.html',
+      'swx-boot.js',
+      'swx-loader.js',
+      'swx-post.js',
+      'swx-pre.js',
+      'src/client/boot.js',
+      'src/client/load.js',
+      'src/client/lively.js',
+      'src/external/systemjs/system.src.js',
+      'src/external/babel/plugin-babel2.js',
+      'src/external/babel/systemjs-babel-browser.js',
+      'src/external/babel-plugin-jsx-lively.js',
+      'src/external/babel-plugin-transform-do-expressions.js',
+      'src/external/babel-plugin-transform-function-bind.js',
+      'src/external/babel-plugin-locals.js',
+      'src/external/babel-plugin-var-recorder.js',
+      'src/external/babel-plugin-syntax-jsx.js',
+      'src/external/babel-plugin-syntax-function-bind.js',
+      'src/external/babel-plugin-syntax-do-expressions.js',
+      
+      // Useful
+      'templates/lively-notification.html',
+      'templates/lively-notification.js',
+      'templates/lively-notification-list.html',
+      'templates/lively-notification-list.js',
+    ];
+
+    let directoryParts = self.location.pathname.split('/');
+    directoryParts[directoryParts.length-1] = '';
+    let directory = directoryParts.join('/');
+    
+    return filesToLoad.map((file) => {return directory + file});
+}
+
+/**
+ * Merges two arrays, removing duplicates and keeping order
+ */
+export function mergeArrays(a, b) {
+    let merged = a.concat(b);
+
+    for (let i = 0; i < merged.length; i++) {
+        for (let j = i+1; j < merged.length; j++) {
+            if (merged[i] === merged[j]) {
+                merged.splice(j--, 1);
+            }
+        }
+    }
+
+    return merged;
+};
+
 // Store array with mappings from numerical to hex representation
 const _hexMap = Array.from(Array(0xff), (_, i) => (i + 0x100).toString(16).substr(1))
 

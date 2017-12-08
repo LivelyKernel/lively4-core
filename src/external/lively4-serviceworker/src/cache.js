@@ -3,6 +3,12 @@ import Serializer from './serializer.js';
 import { ConnectionManager } from './connectionmanager.js';
 import * as msg from './messaging.js'
 import { FavoritesTracker } from './favoritestracker.js';
+import {
+  buildKey,
+  buildEnqueuedResponse,
+  buildNotCachedResponse,
+  buildNetworkRequestFunction
+} from './util.js';
 
 /**
  * This class is supposed to be a general-purpose cache for HTTP requests with different HTTP methods.
@@ -17,7 +23,7 @@ export class Cache {
     this._managesFavorits = true;
     this._dictionary = new Dictionary('response-cache');
     this._queue = new Dictionary('request-cache');
-    this._favoritesTracker = new FavoritesTracker();
+    this._favoritesTracker = new FavoritesTracker(this);
     this._connectionManager = new ConnectionManager();
     this._fileSystem = fileSystem;
     
@@ -86,13 +92,13 @@ export class Cache {
           console.error(`Not in cache: ${request.url}`);
           // At this point we know we are offline, so sending out the request is useless
           // Just create a fake error Response
-          return this._buildNotCachedResponse();
+          return buildNotCachedResponse();
         }
       })
     } else if (this._queueMethods.includes(request.method)) {
       this._enqueue(request);
       msg.broadcast('Queued write request.', 'warning');
-      return this._buildEnqueuedResponse();
+      return buildEnqueuedResponse();
     }
   }
   
@@ -101,7 +107,7 @@ export class Cache {
    * @return Promise
    */
   _match(request) {
-    return this._dictionary.match(this._buildKey(request));
+    return this._dictionary.match(buildKey(request));
   }
   
   /**
@@ -110,7 +116,7 @@ export class Cache {
    */
   _put(request, response) {
     Serializer.serialize(response).then((serializedResponse) => {
-      this._dictionary.put(this._buildKey(request), serializedResponse);
+      this._dictionary.put(buildKey(request), serializedResponse);
     })
     return response;
   }
@@ -123,7 +129,7 @@ export class Cache {
     // Serialize the Request object
     Serializer.serialize(request).then((serializedRequest) => {
       // Put the serialized request in the queue
-      this._queue.put(this._buildKey(request), serializedRequest);
+      this._queue.put(buildKey(request), serializedRequest);
       
       // Update the cache content to pretend that the data has already been saved
       /* TODO: Directories (on PUT and DELETE)
@@ -193,7 +199,6 @@ export class Cache {
    * Processes all queued requests by sending them in the same order
    */
   _processQueued() {
-    console.warn("Should process queued");
     let processNext = () => {
       // Get oldest entry
       this._queue.pop().then((serializedRequest) => {
@@ -219,52 +224,37 @@ export class Cache {
   }
   
   /**
-   * Builds a key for the cache from a request
-   * @return String key
+   * Preloads a file into the cache
+   * @param fileAddress The address of the file to preload
    */
-  _buildKey(request) {
-    // Ignore params when loading start.html
-    // The file always has the same content, and we want to boot offline whenever possible
-    let requestUrl = new URL(request.url);
-    if(requestUrl.origin == self.location.origin && requestUrl.pathname.endsWith('start.html')) {
-      return `${request.method} ${requestUrl.origin}/${requestUrl.pathname}`;
+  preloadFile(fileAddress) {
+    for(let method of this._cacheMethods) {
+      let request = new Request(fileAddress, {
+        method: method 
+      });
+
+      // Just tell the cache to fetch the file
+      // This will update our cache if we are online
+      this.fetch(request, buildNetworkRequestFunction(request));
     }
-    
-    return `${request.method} ${request.url}`;
   }
   
-  /**
-   * Builds a fake success Response to return when a Request is enqueued
-   * @return Response
-   */
-  _buildEnqueuedResponse() {
-    return new Response(null, {
-      status: 202,
-      statusText: 'Accepted'
-    });
-  }
-  
-  /**
-   * Builds a fake error Response to return when offline and not cached
-   * @return Response
-   */
-  _buildNotCachedResponse() {
-    let errorText = 'You are offline and the requested file was not found in the cache.';
-    return new Response(errorText, {
-      status: 503,
-      statusText: 'Service Unavailable'
-    });
-  }
 }
 
 
 
 /* Old methods used by filesystems */
+function warnOldCacheMethod(methodName) {
+  console.warn(`Old cache method called: ${methodName}`);
+}
+
 function open(cache_name) {
+  warnOldCacheMethod(arguments.callee.name);
   return caches.open(cache_name)
 }
 
 export function put(request, response) {
+  warnOldCacheMethod(arguments.callee.name);
   let blob_text = [Date.now().toString()]
   let blob_type = {type : 'text/html'}
   let blob = new Blob(blob_text, blob_type)
@@ -274,11 +264,13 @@ export function put(request, response) {
 }
 
 export function purge(request) {
+  warnOldCacheMethod(arguments.callee.name);
   open('lively4-cache-line-ages').then((cache) => cache.delete(request))
   return open('lively4').then((cache) => cache.delete(request))
 }
 
 export async function match(request, timeout=-1) {
+  warnOldCacheMethod(arguments.callee.name);
   try {
     if (timeout != -1) {
       let age = await getAgeOf(request) 
@@ -305,6 +297,7 @@ export async function match(request, timeout=-1) {
 }
 
 export function getAgeOf(request) {
+  warnOldCacheMethod(arguments.callee.name);
   return open('lively4-cache-line-ages').then((cache) => cache.match(request))
 }
 

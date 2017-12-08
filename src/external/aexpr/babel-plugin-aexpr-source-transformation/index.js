@@ -1,14 +1,9 @@
-import {
-  isVariable
-} from './utils.js';
+import { isVariable } from './utils.js';
 
 const AEXPR_IDENTIFIER_NAME = 'aexpr';
 
 const GET_MEMBER = 'getMember';
 const GET_AND_CALL_MEMBER = 'getAndCallMember';
-
-const IGNORE_STRING = 'aexpr ignore';
-const IGNORE_INDICATOR = Symbol('aexpr ignore');
 
 const TRACE_MEMBER = 'traceMember';
 
@@ -34,10 +29,14 @@ const GET_LOCAL = "getLocal";
 const SET_GLOBAL = "setGlobal";
 const GET_GLOBAL = "getGlobal";
 
+const IGNORE_STRING = 'aexpr ignore';
+const IGNORE_INDICATOR = Symbol('aexpr ignore');
+
 // TODO: use multiple flag for indication of generated content, marking explicit scopes, etc.
 const FLAG_GENERATED_SCOPE_OBJECT = Symbol('FLAG: generated scope object');
 const FLAG_SHOULD_NOT_REWRITE_IDENTIFIER = Symbol('FLAG: should not rewrite identifier');
 const FLAG_SHOULD_NOT_REWRITE_MEMBER_EXPRESSION = Symbol('FLAG: should not rewrite member expression');
+const FLAG_SHOULD_NOT_REWRITE_CALL_EXPRESSION = Symbol('FLAG: should not rewrite call expression');
 const FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION = Symbol('FLAG: should not rewrite assignment expression');
 
 export default function(param) {
@@ -63,6 +62,12 @@ export default function(param) {
 
   function isGenerated(path) {
     return path.findParent(p => t.isFunctionDeclaration(p.node) && p.node[GENERATED_FUNCTION])
+  }
+
+  function nonRewritableIdentifier(name) {
+    const node = t.identifier(name);
+    node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
+    return node;
   }
 
   const GENERATED_IMPORT_IDENTIFIER = Symbol("generated import identifier");
@@ -124,13 +129,25 @@ export default function(param) {
     //
     // return uid;
   }
+  
+  // #TODO: add global flag for expression analysis mode
+  function checkExpressionAnalysisMode(node) {
+    return t.ifStatement(
+      t.booleanLiteral(true),
+      t.expressionStatement(node)
+    );
+  }
 
   return {
     pre(file) {
       //console.log("fff", file, traverse);
 
       traverse(file.ast, {
+        Directive(path) {
+          path.get("value").node.value === "enable aexpr";
+        },
         enter(path) {
+          
           if (
             path.node.leadingComments &&
             path.node.leadingComments.some(comment => comment.value.includes(IGNORE_STRING))
@@ -260,35 +277,27 @@ export default function(param) {
                     //path.getFunctionParent().ensureBlock();
                     //path.insertBefore(t.expressionStatement(t.stringLiteral("Because I'm easy come, easy go.")));
 
-                    function insertHookBeforeGetLocal(path) {
-                      path.insertBefore(
-                        t.ifStatement(
-                          // #TODO: add global flag for expression analysis mode
-                          t.booleanLiteral(true),
-                          t.expressionStatement(
-                            t.callExpression(
-                              addCustomTemplate(state.file, GET_LOCAL), [
-                                getIdentifierForExplicitScopeObject(parentWithScope),
-                                t.stringLiteral(path.node.name)
-                              ]
-                            )
-                          )
+                    path.insertBefore(
+                      checkExpressionAnalysisMode(
+                        t.callExpression(
+                          addCustomTemplate(state.file, GET_LOCAL), [
+                            getIdentifierForExplicitScopeObject(parentWithScope),
+                            t.stringLiteral(path.node.name)
+                          ]
                         )
-                      );
-                    }
-                    insertHookBeforeGetLocal(path);
+                      )
+                    );
                   }
                 } else {
                   //logIdentifier('get global var', path);
                   path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
 
-                  path.replaceWith(
-                    t.sequenceExpression([
+                  path.insertBefore(
+                    checkExpressionAnalysisMode(
                       t.callExpression(
                         addCustomTemplate(state.file, GET_GLOBAL), [t.stringLiteral(path.node.name)]
-                      ),
-                      path.node
-                    ])
+                      )
+                    )
                   );
                 }
                 return;
@@ -442,19 +451,13 @@ export default function(param) {
 
             MemberExpression(path) {
               // lval (left values) are ignored for now
-              // #TODO: ignore if parent is bind operator
-              if (t.isAssignmentExpression(path.parent) && path.key === 'left') {
-                return;
-              }
-              if (t.isUpdateExpression(path.parent) && path.key === 'argument') {
-                return;
-              }
-              if (t.isSuper(path.node.object)) {
-                return;
-              }
-              if (isGenerated(path)) {
-                return;
-              }
+              if(path.parentPath.isCallExpression() && path.parentKey === "callee") { return; }
+              // #TODO: BindExpressions are ignored for now; they are static anyway ;)
+              if(path.parentPath.isBindExpression() && path.parentKey === "callee") { return; }
+              if (t.isAssignmentExpression(path.parent) && path.key === 'left') { return; }
+              if (t.isUpdateExpression(path.parent) && path.key === 'argument') { return; }
+              if (t.isSuper(path.node.object)) { return; }
+              if (isGenerated(path)) { return; }
               //FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION
               path.replaceWith(
                 t.callExpression(
@@ -467,30 +470,52 @@ export default function(param) {
             },
 
             CallExpression(path) {
-              if (isGenerated(path)) {
-                return;
-              }
-              if (path.node.callee && t.isSuper(path.node.callee.object)) {
-                return;
-              }
+              if(isGenerated(path)) { return; }
+              if(path.node.callee && t.isSuper(path.node.callee.object)) { return; }
+              if(path.node[FLAG_SHOULD_NOT_REWRITE_CALL_EXPRESSION]) { return; }
 
               // check whether we call a MemberExpression
-              if (t.isMemberExpression(path.node.callee)) {
-                if(false && t.isIdentifier(path.node.callee.object) &&
-                  //path.node.callee.computed &&
-                  t.isIdentifier(path.node.callee.property)
-                ) {
-                  lively.notify(path.node);
-                  // Trace Member
+              if(t.isMemberExpression(path.node.callee)) {
+                function isDuplicatableMemberExpression(memberPath) {
+                  const objectPath = memberPath.get('object');
+                  const isSimpleObject = objectPath.isIdentifier() || objectPath.isThisExpression();
+                  const isComputedProperty = memberPath.node.computed;
+                  const propertyPath = memberPath.get('property');
+                  let isSimpleProperty;
+                  if(isComputedProperty) {
+                    isSimpleProperty = propertyPath.isStringLiteral() ||
+                      propertyPath.isIdentifier();
+                  } else {
+                    isSimpleProperty = propertyPath.isIdentifier();
+                  }
+                  return isSimpleObject && isSimpleProperty;
+                }
+                
+                if(isDuplicatableMemberExpression(path.get("callee"))) {
+                  function getTraceIdentifierForSimpleObject(objectPath) {
+                    if(objectPath.isIdentifier()) {
+                      return nonRewritableIdentifier(objectPath.node.name);
+                    } else if(objectPath.isThisExpression()) {
+                      return t.thisExpression();
+                    } else {
+                      throw objectPath.buildCodeFrameError("Tried to trace a simple MemberExpression>object, but it is neither an Identifier nor a ThisExpression");
+                    }
+                  }
+
+                  const traceIdentifier = getTraceIdentifierForSimpleObject(path.get('callee').get('object'));
+                  // break a recursive call expression when doing `(obj.fn(), obj.fn());`
+                  path.node[FLAG_SHOULD_NOT_REWRITE_CALL_EXPRESSION] = true;
+                  // insert traceMember before actual call
                   path.insertBefore(
-                    t.identifier("lively")
-/*                    t.callExpression(
-                      addCustomTemplate(state.file, TRACE_MEMBER), [
-                        t.identifier(path.node.callee.object.name),
-                        getPropertyFromMemberExpression(path.node.property.name)
-                      ]
+                    checkExpressionAnalysisMode(
+                      t.callExpression(
+                        addCustomTemplate(state.file, TRACE_MEMBER), [
+                          traceIdentifier,
+                          getPropertyFromMemberExpression(path.node.callee)
+                        ]
+                      )
                     )
-  */                )
+                  )
                 } else {
                   path.replaceWith(
                     t.callExpression(

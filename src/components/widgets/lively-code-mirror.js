@@ -85,6 +85,10 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/dialog/dialog.js")
       await this.loadModule("addon/scroll/simplescrollbars.js")
 
+      await lively.loadJavaScriptThroughDOM("jshint"+generateUUID(), "https://ajax.aspnetcdn.com/ajax/jshint/r07/jshint.js");
+      await this.loadModule("addon/lint/lint.js");
+      await this.loadModule("addon/lint/javascript-lint.js");
+
       await this.loadModule("addon/merge/merge.js")
       await this.loadModule("addon/selection/mark-selection.js")
 
@@ -92,6 +96,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       await System.import(lively4url + '/src/components/widgets/lively-code-mirror-hint.js')
       
       this.loadCSS("addon/hint/show-hint.css")
+      this.loadCSS("addon/lint/lint.css")
+      this.loadCSS("addon/lint/javascript-lint.css")
       this.loadCSS("../../components/widgets/lively-code-mirror.css")
     })()
     return loadPromise
@@ -119,14 +125,15 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   initialize() {
-  	this._attrObserver = new MutationObserver((mutations) => {
-	  mutations.forEach((mutation) => {  
+  	this._attrObserver = new MutationObserver(mutations => {
+	    mutations.forEach(mutation => {  
         if(mutation.type == "attributes") {
           // console.log("observation", mutation.attributeName,mutation.target.getAttribute(mutation.attributeName));
           this.attributeChangedCallback(
             mutation.attributeName,
             mutation.oldValue,
-            mutation.target.getAttribute(mutation.attributeName))
+            mutation.target.getAttribute(mutation.attributeName)
+          )
         }
       });
     });
@@ -163,7 +170,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.setEditor(CodeMirror(container, {
       value: value,
       lineNumbers: true,
-      gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter"]
+      gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter", "CodeMirror-lint-markers"],
+      lint: true
     }));  
   }
   
@@ -375,6 +383,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     return promise
   }
   
+  
   async printResult(result, obj) {
     var editor = this.editor;
     var text = result
@@ -387,6 +396,16 @@ export default class LivelyCodeMirror extends HTMLElement {
       isAsync = true
     }
     var promisedWidget
+    var objClass = (obj && obj.constructor && obj.constructor.name) || (typeof obj)
+    if (_.isSet(obj)) {
+      obj = Array.from(obj)
+    }
+
+    if (_.isMap(obj)) {
+      var mapObj = {}
+      Array.from(obj.keys()).sort().forEach(key => mapObj[key] = obj.get(key))
+      obj = mapObj
+    }
     if (Array.isArray(obj)) {
       if (typeof obj[0] == 'object') {
         promisedWidget = this.printWidget("lively-table").then( table => {
@@ -410,12 +429,19 @@ export default class LivelyCodeMirror extends HTMLElement {
         return inspector
       })
     }
-    
-    if (isAsync && promisedWidget) {
+    if (promisedWidget) {
       var widget = await promisedWidget;
-      if (widget) widget.style.border = "2px dashed blue"
+      var span = <span style="border-top:2px solid darkgray;color:darkblue"> <u>:{objClass}</u> </span>
+      widget.parentElement.insertBefore(span, widget)
+      span.appendChild(widget)
+      if (isAsync && promisedWidget) {
+        if (widget) widget.style.border = "2px dashed blue"
+      }
     }
+
+    
   }
+    
 
   async tryBoundEval(str, printResult) {
     var resp = await this.boundEval(str);
