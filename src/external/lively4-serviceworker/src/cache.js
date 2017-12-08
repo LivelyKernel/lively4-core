@@ -199,7 +199,6 @@ export class Cache {
    * Processes all queued requests by sending them in the same order
    */
   _processQueued() {
-    console.warn("Should process queued");
     let processNext = () => {
       // Get oldest entry
       this._queue.pop().then((serializedRequest) => {
