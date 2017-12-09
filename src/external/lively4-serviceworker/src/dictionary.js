@@ -47,7 +47,7 @@ export class Dictionary extends DbObject {
   }
   
   /**
-   * Retrieves the first item
+   * Retrieves and removes the first item
    * @return Promise
    */
   pop() {
@@ -68,6 +68,18 @@ export class Dictionary extends DbObject {
       request.onerror = (event) => {
         resolve(null);
       }
+    });
+  }
+  
+  /**
+   * Deletes an entry from the dictionary
+   * @param key the Key of the entry to delete
+   */
+  delete(key) {
+    return new Promise((resolve, reject) => {
+      let dbRequest = this._getObjectStore().delete(key);
+      dbRequest.onsuccess = resolve;
+      dbRequest.onerror = reject;
     });
   }
   

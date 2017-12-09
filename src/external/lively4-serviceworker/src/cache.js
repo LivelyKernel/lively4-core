@@ -218,18 +218,26 @@ export class Cache {
       return first[1].timestamp - second[1].timestamp;
     });
     
-    const serializedRequests = queueEntries.map(e => e[1].value);
+    queueEntries = queueEntries.map((e) => {
+      return {
+        key: e[0],
+        serializedRequest: e[1].value
+      }
+    });
     
     // Process requests
-    for (let serializedRequest of serializedRequests) {
+    for (let queueEntry of queueEntries) {
       // Send request
-      const request = await Serializer.deserialize(serializedRequest)
+      const request = await Serializer.deserialize(queueEntry.serializedRequest)
       let url = new URL(request.url);
       if(url.hostname === 'lively4') {
         await this._fileSystem.handle(request, url)
       } else {
         await fetch(request);
       }
+      
+      // Remove from queue
+      await this._queue.delete(queueEntry.key);
     }
   }
   
