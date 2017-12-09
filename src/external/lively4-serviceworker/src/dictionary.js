@@ -15,12 +15,14 @@ export class Dictionary extends DbObject {
    * Stores a new key value pair or updates an existing value
    */
   async put(key, value) {
+    key = this._sanitizeKey(key);
+    
     var data = new Object();
     data.value = value;
     data.timestamp = Date.now();
     // Wrap IndexedDB call into a promise
     await new Promise((resolve, reject) => {
-      let dbRequest = this._getObjectStore().put(data, key)
+      let dbRequest = this._getObjectStore().put(data, key);
       dbRequest.onsuccess = resolve;
       dbRequest.onerror = reject;
     });
@@ -31,6 +33,8 @@ export class Dictionary extends DbObject {
    * @return Promise
    */
   match(key) {
+    key = this._sanitizeKey(key);
+    
     return new Promise((resolve, reject) => {
       var request = this._getObjectStore("readonly").get(key);
       request.onsuccess = (event) => {
@@ -76,6 +80,8 @@ export class Dictionary extends DbObject {
    * @param key the Key of the entry to delete
    */
   delete(key) {
+    key = this._sanitizeKey(key);
+    
     return new Promise((resolve, reject) => {
       let dbRequest = this._getObjectStore().delete(key);
       dbRequest.onsuccess = resolve;
@@ -110,5 +116,12 @@ export class Dictionary extends DbObject {
   
   toDictionary() {
     
+  }
+  
+  /**
+   * Sanitizes a key to handle a single file having multiple names, e.g. folders with and without trainling slash
+   */
+  _sanitizeKey(key) {
+    return key.trim().replace(/\/+$/, "");
   }
 }

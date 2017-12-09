@@ -62,7 +62,7 @@ export function buildNotCachedResponse() {
 }
 
 /**
- * Builds fake GET and OPTIONS responses for a new created, empty file
+ * Builds fake GET and OPTIONS responses for a newly created, empty file
  * @param fileName The name of the new file
  */
 export function buildEmptyFileResponses(fileName) {
@@ -79,11 +79,11 @@ export function buildEmptyFileResponses(fileName) {
   
   const OPTIONSResponse = new Response(
     // Body
-    {
+    JSON.stringify({
       name: fileName,
       size: 0,
-      type: 'file' // TODO: Folders
-    },
+      type: 'file'
+    }),
     // Headers
     {
       status: 200,
@@ -102,6 +102,37 @@ export function buildEmptyFileResponses(fileName) {
     GET: GETResponse,
     OPTIONS: OPTIONSResponse
   };
+}
+
+/**
+ * Builds a fake OPTIONS response for a newly created, empty folder
+ * @param folderName The name of the new folderName
+ */
+export function buildEmptyFolderResponse(folderName) {
+  const responseHeaders = new Headers({
+      'Access-Control-Allow-Headers'  : '*',
+      'Access-Control-Allow-Methods'  : 'OPTIONS, GET, DELETE, PUT',
+      'Access-Control-Allow-Origin'   : '*',
+      'Access-Control-Request-Method' : '*',
+      'Connection'                    : 'Keep-Alive',
+      'content-type'                  : 'text/plain',
+      'Date'                          : new Date(Date.now()).toUTCString(),
+      'Keep-Alive'                    : 'timeout=15, max=93'
+    });
+  
+  return new Response(
+    // Body
+    JSON.stringify({
+      type     : 'directory',
+      contents : []
+    }),
+    // Headers
+    {
+      status: 200,
+      statusText: 'OK',
+      headers: responseHeaders
+    }
+  );
 }
 
 /**

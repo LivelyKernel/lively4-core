@@ -8,6 +8,7 @@ import {
   buildEnqueuedResponse,
   buildNotCachedResponse,
   buildEmptyFileResponses,
+  buildEmptyFolderResponse,
   buildNetworkRequestFunction
 } from './util.js';
 
@@ -39,7 +40,7 @@ export class Cache {
     
     // Define which HTTP methods need result caching, and which need request queueing
     this._cacheMethods = ['OPTIONS', 'GET'];
-    this._queueMethods = ['PUT', 'POST', 'DELETE'];
+    this._queueMethods = ['PUT', 'POST', 'DELETE', 'MKCOL'];
   }
   
   /**
@@ -155,12 +156,18 @@ export class Cache {
         reader.onload = async () => {
           let folderJSON = JSON.parse(reader.result);
           let folderContainsFile = folderJSON.contents.find(e => e.name === fileName);
-          if(!folderContainsFile && serializedRequest.method === 'PUT') {
+          if(!folderContainsFile && (serializedRequest.method === 'PUT' || serializedRequest.method === 'MKCOL')) {
+            // Newly created file/folder
+            const typeForMethod = {
+              'PUT'   : 'file',
+              'MKCOL' : 'directory'
+            };
+            
             // Prepare new directory JSON
             folderJSON.contents.push({
               name: fileName,
               size: 0,
-              type: 'file'
+              type: typeForMethod[serializedRequest.method]
             });
             let folderBlob = new Blob([JSON.stringify(folderJSON)], {type : 'text/plain'});
 
@@ -172,6 +179,7 @@ export class Cache {
               resolve();
             }
           } else if(folderContainsFile && serializedRequest.method === 'DELETE') {
+            // Deleted file
             // Prepare new directory JSON
             folderJSON.contents = folderJSON.contents.filter(e => e.name !== fileName);
             let folderBlob = new Blob([JSON.stringify(folderJSON)], {type : 'text/plain'});
@@ -192,7 +200,7 @@ export class Cache {
       });
     }
 
-    // Update file content
+    // Update file/folder content
     const key = `GET ${serializedRequest.url}`;
     response = await this._dictionary.match(key);
     if(response) {
@@ -200,12 +208,19 @@ export class Cache {
       response.value.body = serializedRequest.body;
       this._dictionary.put(key, response.value);
     } else {
-      // The file is not yet in the cache (probably newly created)
-      // Create a fake entry with an empty file
-      const responses = buildEmptyFileResponses();
-      for (let method in responses) {
-        let serializedResponse = await Serializer.serialize(responses[method])
-        await this._dictionary.put(`${method} ${serializedRequest.url}`, serializedResponse);
+      // The file/folder is not yet in the cache (probably newly created)
+      // Create a fake entry with an empty file/folder
+      if (serializedRequest.method === 'PUT') {
+        // Empty file
+        const responses = buildEmptyFileResponses();
+        for (let method in responses) {
+          let serializedResponse = await Serializer.serialize(responses[method]);
+          await this._dictionary.put(`${method} ${serializedRequest.url}`, serializedResponse);
+        }
+      } else if (serializedRequest.method === 'MKCOL') {
+        // Empyt folder
+        let serializedResponse = await Serializer.serialize(buildEmptyFolderResponse());
+        await this._dictionary.put(`OPTIONS ${serializedRequest.url}`, serializedResponse);
       }
     }
   }
@@ -215,6 +230,7 @@ export class Cache {
    */
   async _processQueued() {
     let queueEntries = await this._queue.toArray();
+    if (queueEntries.length === 0) return;
     
     // Sort queueEntries by ascending by timestamp
     queueEntries.sort(function(first, second) {

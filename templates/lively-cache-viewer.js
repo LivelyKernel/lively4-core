@@ -1,10 +1,28 @@
 import Morph from 'src/components/widgets/lively-morph.js';
+import { Dictionary } from 'src/external/lively4-serviceworker/src/dictionary.js';
 
 export default class LivelyCacheViewer extends Morph {
   async initialize() {
     this.windowTitle = "LivelyCacheViewer";
     
     lively.html.registerButtons(this);
+    this._loadCachedFiles();
+  }
+  
+  async _loadCachedFiles() {
+    let db = new Dictionary("response-cache");
+    let entries = await db.toArray();
+    let files = [];
+    var fileList = this.get("#files");
+    
+    for (let entry of entries) {
+      let value = entry[0].split(" ").pop();
+      let option = document.createElement('option');
+      
+      option.value = value;
+      option.innerHTML = value;
+      fileList.appendChild(option);
+    }
   }
   
   getFile(name) {
