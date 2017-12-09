@@ -183,6 +183,9 @@ export class Cache {
               await this._dictionary.put(folderKey, response.value);
               resolve();
             }
+          } else {
+            // Normal file change, no need to update folder
+            resolve();
           }
         }
         reader.readAsText(response.value.body);
@@ -239,6 +242,8 @@ export class Cache {
       // Remove from queue
       await this._queue.delete(queueEntry.key);
     }
+    
+    msg.broadcast('Processed all queued requests', 'info');
   }
   
   /**
