@@ -45,7 +45,6 @@ export default function(param) {
     template,
     traverse
   } = param;
-  //console.log(arguments);
 
   function getPropertyFromMemberExpression(node) {
     // We are looking for MemberExpressions, which have two distinct incarnations:
@@ -141,29 +140,24 @@ export default function(param) {
   return {
     pre(file) {
       //console.log("fff", file, traverse);
-
-      traverse(file.ast, {
-        Directive(path) {
-          path.get("value").node.value === "enable aexpr";
-        },
-        enter(path) {
-          
-          if (
-            path.node.leadingComments &&
-            path.node.leadingComments.some(comment => comment.value.includes(IGNORE_STRING))
-          ) {
-            console.log("IGNORED!!!");
-            file[IGNORE_INDICATOR] = true;
-          }
-        }
-      });
     },
     visitor: {
       Program: {
         enter(path, state) {
           //console.log("file", path, state);
-          if (state.file[IGNORE_INDICATOR]) {
-            console.log("read ignored");
+
+          let shouldTransform = true;
+          if(state.opts.enableViaDirective) {
+            shouldTransform = false;
+            path.traverse({
+              Directive(path) {
+                if(path.get("value").node.value === "enable aexpr") {
+                  shouldTransform = true;
+                }
+              }
+            });
+          }
+          if (!shouldTransform) {
             return;
           }
 
