@@ -202,7 +202,6 @@ export class Cache {
       const responses = buildEmptyFileResponses();
       for (let method in responses) {
         let serializedResponse = await Serializer.serialize(responses[method])
-        console.warn(`Put fake in cache: ${method} ${serializedRequest.url}`);
         await this._dictionary.put(`${method} ${serializedRequest.url}`, serializedResponse);
       }
     }
@@ -211,29 +210,27 @@ export class Cache {
   /**
    * Processes all queued requests by sending them in the same order
    */
-  _processQueued() {
-    let processNext = () => {
-      // Get oldest entry
-      this._queue.pop().then((serializedRequest) => {
-        // Check if we are done
-        if(!serializedRequest) {
-          return;
-        }
-        
-        // Send request
-        Serializer.deserialize(serializedRequest).then((request) => {
-          let url = new URL(request.url);
-          if(url.hostname === 'lively4') {
-            this._fileSystem.handle(request, url).then(processNext);
-          } else {
-            fetch(request).then(processNext);
-          }
-        });
-      });
-    }
+  async _processQueued() {
+    let queueEntries = await this._queue.toArray();
     
-    // Start processing queued requests
-    processNext();
+    // Sort queueEntries by ascending by timestamp
+    queueEntries.sort(function(first, second) {
+      return first[1].timestamp - second[1].timestamp;
+    });
+    
+    const serializedRequests = queueEntries.map(e => e[1].value);
+    
+    // Process requests
+    for (let serializedRequest of serializedRequests) {
+      // Send request
+      const request = await Serializer.deserialize(serializedRequest)
+      let url = new URL(request.url);
+      if(url.hostname === 'lively4') {
+        await this._fileSystem.handle(request, url)
+      } else {
+        await fetch(request);
+      }
+    }
   }
   
   /**
