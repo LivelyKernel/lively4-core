@@ -7,6 +7,7 @@ import {
   buildKey,
   buildEnqueuedResponse,
   buildNotCachedResponse,
+  buildEmptyFileResponses,
   buildNetworkRequestFunction
 } from './util.js';
 
@@ -122,7 +123,7 @@ export class Cache {
   }
   
   /**
-   * Checks if a request is in the queue
+   * Puts a request in the queue to be sent out later
    * @return void
    */
   _enqueue(request) {
@@ -188,8 +189,19 @@ export class Cache {
       const key = `GET ${serializedRequest.url}`;
       this._dictionary.match(key).then((response) => {
         if(response) {
+          // The file is already in the cache - update the value
           response.value.body = serializedRequest.body;
           this._dictionary.put(key, response.value);
+        } else {
+          // The file is not yet in the cache (probably newly created)
+          // Create a fake entry with an empty file
+          const responses = buildEmptyFileResponses();
+          for (let method in responses) {
+            Serializer.serialize(responses[method]).then((serializedResponse) => {
+              console.warn(`Put fake in cache: ${method} ${serializedRequest.url}`);
+              this._dictionary.put(`${method} ${serializedRequest.url}`, serializedResponse);
+            })
+          }
         }
       })
     })
