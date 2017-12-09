@@ -46,14 +46,19 @@ if ('serviceWorker' in navigator || window.lively4chrome) {
 
     // Add listener for serviceWorker messages
     navigator.serviceWorker.onmessage = (event) => {
-      const data = event.data;
+      const message = event.data;
+      
+      // Only handle notifications here
+      if (message.type != 'notification') return;
+      
       let messageColors = {
         'info': '',
         'warning': 'yellow',
         'error': 'red'
       };
+      
       if('lively' in window) {
-        lively.notify('ServiceWorker', data.message, 5, null, messageColors[data.meta.command]);
+        lively.notify('ServiceWorker', message.data, 5, null, messageColors[message.command]);
       }
     }
     
@@ -63,14 +68,14 @@ if ('serviceWorker' in navigator || window.lively4chrome) {
     window.addEventListener('online', () => {
       navigator.serviceWorker.controller.postMessage({
         type: 'network',
-        message: 'online'
+        command: 'online'
       });
     });
     
     window.addEventListener('offline', () => {
       navigator.serviceWorker.controller.postMessage({
         type: 'network',
-        message: 'offline'
+        command: 'offline'
       });
     });
     

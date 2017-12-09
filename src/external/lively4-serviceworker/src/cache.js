@@ -87,10 +87,9 @@ export class Cache {
       // Check if the request is in the cache
       return this._match(request).then((response) => {
         if (response) {
-          //msg.broadcast('Fulfilled request from cache.', 'warning');
           return Serializer.deserialize(response.value);
         } else {
-          msg.broadcast('Could not fulfil request from cache.', 'error');
+          msg.notify('error', 'Could not fulfil request from cache');
           console.error(`Not in cache: ${request.url}`);
           // At this point we know we are offline, so sending out the request is useless
           // Just create a fake error Response
@@ -99,7 +98,7 @@ export class Cache {
       })
     } else if (this._queueMethods.includes(request.method)) {
       return this._enqueue(request).then(() => {
-        msg.broadcast('Queued write request.', 'warning');
+        msg.notify('warning', 'Queued write request');
         return buildEnqueuedResponse();
       });
     }
@@ -259,7 +258,7 @@ export class Cache {
       await this._queue.delete(queueEntry.key);
     }
     
-    msg.broadcast('Processed all queued requests', 'info');
+    msg.notify('info', 'Processed all queued requests');
   }
   
   /**
