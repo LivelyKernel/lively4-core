@@ -289,9 +289,29 @@ export class Cache {
   /**
    * Handles a data request from a client
    */
-  _receiveFromClient(command, data) {
-    if (command == 'test')
-      this._respondToClient('testResponse', 'asdfasdf');
+  async _receiveFromClient(command, data) {
+    let responseCommand;
+    let responseData;
+    
+    switch (command) {
+      case 'cacheKeys':
+        responseCommand = command;
+        let cachedData = await this._dictionary.toArray();
+        responseData = cachedData.map(e => e[0]);
+        break;
+      case 'cacheValue':
+        if(data) {
+          responseCommand = command;
+          responseData = await this._dictionary.match(data);
+        }
+        break;
+      default:
+        console.warn(`Unknown request received from client: ${command}: ${data}`)
+    }
+    
+    if (responseCommand) {
+      this._respondToClient(responseCommand, responseData);
+    }
   }
   
   /**
