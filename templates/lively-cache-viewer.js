@@ -5,8 +5,20 @@ export default class LivelyCacheViewer extends Morph {
   async initialize() {
     this.windowTitle = "LivelyCacheViewer";
     
+    // Register listener to receive data from serviceworker
+    window.serviceWorkerMessageHandlers['cacheViewer'] = (event) => {
+      const message = event.data;
+      
+      // Only handle notifications here
+      if (message.type === 'dataResponse') {
+        this._receiveFromServiceWorker(message.command, message.data);
+      }
+    };
+    
+    this._requestFromServiceWorker('test', null);
+    
     lively.html.registerButtons(this);
-    this._loadCachedFiles();
+    //this._loadCachedFiles();
   }
   
   async _loadCachedFiles() {
@@ -67,5 +79,24 @@ export default class LivelyCacheViewer extends Morph {
 
     reader.readAsText(file.value.body);
     date.innerText = "Cached at: " +  new Date(file.timestamp);
+  }
+  
+  /**
+   * Send a request for data to the serviceworker
+   */
+  _requestFromServiceWorker(command, data) {
+    navigator.serviceWorker.controller.postMessage({
+      type: 'dataRequest',
+      command: command,
+      data: data
+    });
+  }
+  
+  /**
+   * Receive some data from the serviceworker
+   */
+  _receiveFromServiceWorker(command, data) {
+    console.log(command);
+    console.log(data);
   }
 }

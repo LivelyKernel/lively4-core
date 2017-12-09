@@ -28,8 +28,8 @@ export async function notify(level, message) {
 /**
  * Sends data to the cacheviewer
  */
-export async function sentToCacheViewer(command, data) {
-  return _send('cacheViewer', command, data);
+export async function sendData(command, data) {
+  return _send('dataResponse', command, data);
 }
 
 

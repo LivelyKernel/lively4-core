@@ -38,6 +38,15 @@ export class Cache {
       }
     });
     
+    // Register for cache data requests from the client
+    self.addEventListener('message', (e) => { 
+      let message = e.data;
+      
+      if(message.type && message.command && message.type === 'dataRequest') {
+        this._receiveFromClient(message.command, message.data);
+      }
+    });
+    
     // Define which HTTP methods need result caching, and which need request queueing
     this._cacheMethods = ['OPTIONS', 'GET'];
     this._queueMethods = ['PUT', 'POST', 'DELETE', 'MKCOL'];
@@ -275,6 +284,21 @@ export class Cache {
       // This will update our cache if we are online
       this.fetch(request, buildNetworkRequestFunction(request));
     }
+  }
+  
+  /**
+   * Handles a data request from a client
+   */
+  _receiveFromClient(command, data) {
+    if (command == 'test')
+      this._respondToClient('testResponse', 'asdfasdf');
+  }
+  
+  /**
+   * Sends a data response to the client
+   */
+  _respondToClient(command, data) {
+    msg.sendData(command, data);
   }
   
 }

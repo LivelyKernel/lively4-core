@@ -44,8 +44,16 @@ if ('serviceWorker' in navigator || window.lively4chrome) {
     serviceworkerReady = true;
     // Lively has all the dependencies
 
+    // Workaround because only one function can listen to serviceworker messages
+    window.serviceWorkerMessageHandlers = {};
+    window.navigator.serviceWorker.onmessage = function(event) {
+      for (let key in window.serviceWorkerMessageHandlers) {
+        window.serviceWorkerMessageHandlers[key](event);
+      }
+    }
+    
     // Add listener for serviceWorker messages
-    navigator.serviceWorker.onmessage = (event) => {
+    window.serviceWorkerMessageHandlers['networkNotifications'] = (event) => {
       const message = event.data;
       
       // Only handle notifications here
