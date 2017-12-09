@@ -97,9 +97,10 @@ export class Cache {
         }
       })
     } else if (this._queueMethods.includes(request.method)) {
-      this._enqueue(request);
-      msg.broadcast('Queued write request.', 'warning');
-      return buildEnqueuedResponse();
+      return this._enqueue(request).then(() => {
+        msg.broadcast('Queued write request.', 'warning');
+        return buildEnqueuedResponse();
+      });
     }
   }
   
@@ -126,85 +127,86 @@ export class Cache {
    * Puts a request in the queue to be sent out later
    * @return void
    */
-  _enqueue(request) {
+  async _enqueue(request) {
     // Serialize the Request object
-    Serializer.serialize(request).then((serializedRequest) => {
-      // Put the serialized request in the queue
-      this._queue.put(buildKey(request), serializedRequest);
+    let serializedRequest = await Serializer.serialize(request);
+   
+    // Put the serialized request in the queue
+    this._queue.put(buildKey(request), serializedRequest);
+
+    // Update the cache content to pretend that the data has already been saved
+    /* TODO: Directories (on PUT and DELETE)
+     * - Check if containing Directory is cached
+     * - Update cached content
+     */
+    let fileURL = new URL(serializedRequest.url)
+    let filePathParts = fileURL.pathname.split('/');
+    let fileName = filePathParts.pop();
+    let folderURL = serializedRequest.url.slice(0, -fileName.length);
+
+    // Check if we have the folder content cached
+    const folderKey = `OPTIONS ${folderURL}`;
+    let response = await this._dictionary.match(folderKey);
+    if(response) {
+      // We have the folder in the cache - update it
+      // FileReader does not use Promises, so we have to wrap it
       
-      // Update the cache content to pretend that the data has already been saved
-      /* TODO: Directories (on PUT and DELETE)
-       * - Check if containing Directory is cached
-       * - Update cached content
-       */
-      let fileURL = new URL(serializedRequest.url)
-      let filePathParts = fileURL.pathname.split('/');
-      let fileName = filePathParts.pop();
-      let folderURL = serializedRequest.url.slice(0, -fileName.length);
-      
-      // Check if we have the folder content cached
-      const folderKey = `OPTIONS ${folderURL}`;
-      this._dictionary.match(folderKey).then((response) => {
-        if(response) {
-          // We have the folder in the cache - update it
-          let reader = new FileReader();
-          reader.onload = () => {
-            let folderJSON = JSON.parse(reader.result);
-            let folderContainsFile = folderJSON.contents.find(e => e.name === fileName);
-            if(!folderContainsFile && serializedRequest.method === 'PUT') {
-              // Prepare new directory JSON
-              folderJSON.contents.push({
-                name: fileName,
-                size: 0,
-                type: 'file'
-              });
-              let folderBlob = new Blob([JSON.stringify(folderJSON)], {type : 'text/plain'});
-              
-              // Update cached directory JSON
-              this._dictionary.match(folderKey).then((response) => {
-                if(response) {
-                  response.value.body = folderBlob;
-                  this._dictionary.put(folderKey, response.value);
-                }
-              })
-            } else if(folderContainsFile && serializedRequest.method === 'DELETE') {
-              // Prepare new directory JSON
-              folderJSON.contents = folderJSON.contents.filter(e => e.name !== fileName);
-              let folderBlob = new Blob([JSON.stringify(folderJSON)], {type : 'text/plain'});
-              
-              // Update cached directory JSON
-              this._dictionary.match(folderKey).then((response) => {
-                if(response) {
-                  response.value.body = folderBlob;
-                  this._dictionary.put(folderKey, response.value);
-                }
-              })
+      await new Promise((resolve, reject) => {
+        let reader = new FileReader();
+        reader.onload = async () => {
+          let folderJSON = JSON.parse(reader.result);
+          let folderContainsFile = folderJSON.contents.find(e => e.name === fileName);
+          if(!folderContainsFile && serializedRequest.method === 'PUT') {
+            // Prepare new directory JSON
+            folderJSON.contents.push({
+              name: fileName,
+              size: 0,
+              type: 'file'
+            });
+            let folderBlob = new Blob([JSON.stringify(folderJSON)], {type : 'text/plain'});
+
+            // Update cached directory JSON
+            response = await this._dictionary.match(folderKey);
+            if(response) {
+              response.value.body = folderBlob;
+              this._dictionary.put(folderKey, response.value);
+              resolve();
+            }
+          } else if(folderContainsFile && serializedRequest.method === 'DELETE') {
+            // Prepare new directory JSON
+            folderJSON.contents = folderJSON.contents.filter(e => e.name !== fileName);
+            let folderBlob = new Blob([JSON.stringify(folderJSON)], {type : 'text/plain'});
+
+            // Update cached directory JSON
+            response = await this._dictionary.match(folderKey);
+            if(response) {
+              response.value.body = folderBlob;
+              this._dictionary.put(folderKey, response.value);
+              resolve();
             }
           }
-          reader.readAsText(response.value.body);
         }
+        reader.readAsText(response.value.body);
       });
-      
-      // Update file content
-      const key = `GET ${serializedRequest.url}`;
-      this._dictionary.match(key).then((response) => {
-        if(response) {
-          // The file is already in the cache - update the value
-          response.value.body = serializedRequest.body;
-          this._dictionary.put(key, response.value);
-        } else {
-          // The file is not yet in the cache (probably newly created)
-          // Create a fake entry with an empty file
-          const responses = buildEmptyFileResponses();
-          for (let method in responses) {
-            Serializer.serialize(responses[method]).then((serializedResponse) => {
-              console.warn(`Put fake in cache: ${method} ${serializedRequest.url}`);
-              this._dictionary.put(`${method} ${serializedRequest.url}`, serializedResponse);
-            })
-          }
-        }
-      })
-    })
+    }
+
+    // Update file content
+    const key = `GET ${serializedRequest.url}`;
+    response = await this._dictionary.match(key);
+    if(response) {
+      // The file is already in the cache - update the value
+      response.value.body = serializedRequest.body;
+      this._dictionary.put(key, response.value);
+    } else {
+      // The file is not yet in the cache (probably newly created)
+      // Create a fake entry with an empty file
+      const responses = buildEmptyFileResponses();
+      for (let method in responses) {
+        let serializedResponse = await Serializer.serialize(responses[method])
+        console.warn(`Put fake in cache: ${method} ${serializedRequest.url}`);
+        this._dictionary.put(`${method} ${serializedRequest.url}`, serializedResponse);
+      }
+    }
   }
   
   /**
