@@ -18,39 +18,35 @@ export default class LivelyCacheViewer extends Morph {
     this._requestFromServiceWorker('cacheKeys');
   }
   
-  /* 
-   * Button listeners
-   */
-  
-  async onLoadCacheValue() {
-    var input = this.get("#files");
-    this._requestFromServiceWorker('cacheValue', input.value);
-  }
-  
   /*
    * Methods to update UI
    */
   
   _showUpdatedCacheKeys(keys) {
-    var fileList = this.get("#files");
+    var fileList = this.get("#list");
+    fileList.innerHTML = '';
     
+    // TODO: JSX would be much nicer here...
+    let ul = document.createElement('ul');
     for (let key of keys) {
-      let option = document.createElement('option');
-      
-      option.value = key;
-      option.innerHTML = key;
-      fileList.appendChild(option);
+      let li = document.createElement('li');
+      li.innerText = key;
+      li.addEventListener("click", () => {
+        this._requestFromServiceWorker('cacheValue', key);
+      });
+      ul.appendChild(li);
     }
+    
+    fileList.appendChild(ul);
   }
   
   _showUpdatedCacheValue(data) {
-    var input = this.get("#content");
+    let editor = this.get("#content");
     var date = this.get("#date");
     const reader = new FileReader();
 
     reader.addEventListener('loadend', (e) => {
-      const text = e.srcElement.result;
-      input.innerText = text;
+      editor.value = e.srcElement.result;
     });
 
     reader.readAsText(data.value.body);
