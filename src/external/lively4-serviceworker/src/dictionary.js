@@ -14,11 +14,16 @@ export class Dictionary extends DbObject {
   /**
    * Stores a new key value pair or updates an existing value
    */
-  put(key, value) {
+  async put(key, value) {
     var data = new Object();
     data.value = value;
     data.timestamp = Date.now();
-    this._getObjectStore().put(data, key);
+    // Wrap IndexedDB call into a promise
+    await new Promise((resolve, reject) => {
+      let dbRequest = this._getObjectStore().put(data, key)
+      dbRequest.onsuccess = resolve;
+      dbRequest.onerror = reject;
+    });
   }
   
   /**

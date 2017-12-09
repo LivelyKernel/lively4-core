@@ -149,8 +149,7 @@ export class Cache {
     let response = await this._dictionary.match(folderKey);
     if(response) {
       // We have the folder in the cache - update it
-      // FileReader does not use Promises, so we have to wrap it
-      
+      // FileReader does not use Promises, so we have to wrap it   
       await new Promise((resolve, reject) => {
         let reader = new FileReader();
         reader.onload = async () => {
@@ -169,7 +168,7 @@ export class Cache {
             response = await this._dictionary.match(folderKey);
             if(response) {
               response.value.body = folderBlob;
-              this._dictionary.put(folderKey, response.value);
+              await this._dictionary.put(folderKey, response.value);
               resolve();
             }
           } else if(folderContainsFile && serializedRequest.method === 'DELETE') {
@@ -181,7 +180,7 @@ export class Cache {
             response = await this._dictionary.match(folderKey);
             if(response) {
               response.value.body = folderBlob;
-              this._dictionary.put(folderKey, response.value);
+              await this._dictionary.put(folderKey, response.value);
               resolve();
             }
           }
@@ -204,7 +203,7 @@ export class Cache {
       for (let method in responses) {
         let serializedResponse = await Serializer.serialize(responses[method])
         console.warn(`Put fake in cache: ${method} ${serializedRequest.url}`);
-        this._dictionary.put(`${method} ${serializedRequest.url}`, serializedResponse);
+        await this._dictionary.put(`${method} ${serializedRequest.url}`, serializedResponse);
       }
     }
   }
