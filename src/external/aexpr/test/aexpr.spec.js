@@ -1,3 +1,4 @@
+"enable aexpr";
 "use strict";
 import chai, {expect} from 'node_modules/chai/chai.js';
 import sinon from 'src/external/sinon-3.2.1.js';

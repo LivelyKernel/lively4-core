@@ -1,3 +1,5 @@
+"enable aexpr";
+
 const obj = {
   a: 42,
   fn() {
