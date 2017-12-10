@@ -14,3 +14,6 @@ import ComponentLoader from "src/client/morphic/component-loader.js";
 {...ComponentLoader.getTemplatePaths().map(path => <li>{path}</li>)}
 </ul>
 </script>
+
+
+Q: Können auch compile to JavaScript sprachen verwendet werden? (z.B. TypeScript, PureScript, …)
