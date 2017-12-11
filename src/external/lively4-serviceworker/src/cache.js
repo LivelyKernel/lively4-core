@@ -50,10 +50,12 @@ export class Cache {
     });
     
     // Set default cache mode
-    focalStorage.getItem("cacheMode").then(
+    const instanceName = lively4url.split("/").pop();
+    this._cacheModeKey = `${instanceName}-cacheMode`;
+    focalStorage.getItem(this._cacheModeKey).then(
       (cacheMode) => {
         if (cacheMode === null) {
-          focalStorage.setItem("cacheMode", 2);
+          focalStorage.setItem(this._cacheModeKey, 2);
         }
       }
     )
@@ -70,7 +72,7 @@ export class Cache {
    * @param doNetworkRequest A function to call if we need to send out a network request
    */
   fetch(request, doNetworkRequest) {
-    return focalStorage.getItem("cacheMode").then((cacheMode) => {
+    return focalStorage.getItem(this._cacheModeKey).then((cacheMode) => {
       if (cacheMode == 2) {
         this._favoritesTracker.update(request.url);
       }

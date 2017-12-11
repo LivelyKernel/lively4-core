@@ -25,9 +25,11 @@ export default class LivelyCacheViewer extends Morph {
       }
     });
     
-    // Set up mode selectionn
+    // Set up mode selection
+    const instanceName = lively4url.split("/").pop();
+    const cacheModeKey = `${instanceName}-cacheMode`;
     let modeSelect = this.get('#modeSelect');
-    focalStorage.getItem("cacheMode").then(
+    focalStorage.getItem(cacheModeKey).then(
       (cacheMode) => {
         if (cacheMode !== null) {
           modeSelect.selectedIndex = parseInt(cacheMode);
@@ -36,7 +38,7 @@ export default class LivelyCacheViewer extends Morph {
     )
     $(modeSelect).change((event) => {
       let value = event.target.selectedIndex;
-      focalStorage.setItem("cacheMode", value).then(() => {
+      focalStorage.setItem(cacheModeKey, value).then(() => {
         if (value == 3) {
           this._showLoadingScreen(true);
           this._requestFromServiceWorker('preloadFull');
