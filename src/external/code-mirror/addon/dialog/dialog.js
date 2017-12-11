@@ -104,7 +104,7 @@
     function close() {
       if (closed) return;
       closed = true;
-      // dialog.parentNode.removeChild(dialog);
+      dialog.parentNode.removeChild(dialog);
       me.focus();
     }
     buttons[0].focus();

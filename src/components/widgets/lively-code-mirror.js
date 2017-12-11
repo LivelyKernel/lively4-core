@@ -91,7 +91,6 @@ export default class LivelyCodeMirror extends HTMLElement {
 
       await this.loadModule("addon/merge/merge.js")
       await this.loadModule("addon/selection/mark-selection.js")
-
       await this.loadModule("keymap/sublime.js")
       await System.import(lively4url + '/src/components/widgets/lively-code-mirror-hint.js')
       
@@ -218,8 +217,14 @@ export default class LivelyCodeMirror extends HTMLElement {
 		editor.setOption("extraKeys", {
       "Alt-F": "findPersistent",
       // "Ctrl-F": "search",
+      "Ctrl-H": (cm) => {
+        setTimeout(() => {
+            editor.execCommand("replace");
+            this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
+        }, 10)
+      },
       "Ctrl-F": (cm) => {
-		// something immediately grabs the "focus" and we close the search dialog..
+		    // something immediately grabs the "focus" and we close the search dialog..
         // #Hack... 
         setTimeout(() => {
             editor.execCommand("findPersistent");
