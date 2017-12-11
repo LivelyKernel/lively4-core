@@ -18,6 +18,7 @@ export default class VivideTable extends Morph {
   }
   
   livelyExample() {
+    this.pushTransformation(list => list);
     this.show([
       {name: "Hans", age: "25"},
       {name: "Peter", age: "35"}
@@ -44,11 +45,16 @@ export default class VivideTable extends Morph {
   
   pushTransformation(transformation) {
     this.transformation = transformation;
+    this.refresh();
   }
   
   show(model) {
-    this.model = this.transformation(model);
-    this.livelyTable.setFromJSO(this.model);
+    this.model = model;
+    this.refresh();
+  }
+  
+  refresh() {
+    this.livelyTable.setFromJSO(this.transformation(this.model));
     this.successors.forEach(successor => successor.trigger());
   }
 }
