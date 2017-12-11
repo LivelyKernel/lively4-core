@@ -11,6 +11,7 @@ import {
   buildEmptyFolderResponse,
   buildNetworkRequestFunction
 } from './util.js';
+import focalStorage from '../../focalStorage.js';
 
 /**
  * This class is supposed to be a general-purpose cache for HTTP requests with different HTTP methods.
@@ -22,10 +23,10 @@ export class Cache {
    * @param fileSystem A reference to the filesystem. Needed to process queued filesystem requests.
    */
   constructor(fileSystem) {
-    this._managesFavorits = true;
     this._dictionary = new Dictionary('response-cache');
     this._queue = new Dictionary('request-cache');
     this._favoritesTracker = new FavoritesTracker(this);
+    
     this._connectionManager = new ConnectionManager();
     this._fileSystem = fileSystem;
     
@@ -47,6 +48,15 @@ export class Cache {
       }
     });
     
+    // Set default cache mode
+    focalStorage.getItem("cacheMode").then(
+      (cacheMode) => {
+        if (cacheMode === null) {
+          focalStorage.setItem("cacheMode", 2);
+        }
+      }
+    )
+    
     // Define which HTTP methods need result caching, and which need request queueing
     this._cacheMethods = ['OPTIONS', 'GET'];
     this._queueMethods = ['PUT', 'POST', 'DELETE', 'MKCOL'];
@@ -59,27 +69,30 @@ export class Cache {
    * @param doNetworkRequest A function to call if we need to send out a network request
    */
   fetch(request, doNetworkRequest) {
-    if (this._managesFavorits) {
-      this._favoritesTracker.update(request.url);
-    }
-    
-    if (this._connectionManager.isOnline) {
-      return this._onlineResponse(request, doNetworkRequest);
-    } else {
-      return this._offlineResponse(request);
-    }
+    return focalStorage.getItem("cacheMode").then((cacheMode) => {
+      if (cacheMode == 2) {
+        this._favoritesTracker.update(request.url);
+      }
+      
+      if (this._connectionManager.isOnline) {
+        return this._onlineResponse(request, doNetworkRequest, cacheMode > 0);
+      } else if (cacheMode > 0) {
+        return this._offlineResponse(request);
+      }
+    });
   }
   
   /**
    * Returns a response for online devices
    * @param request The request to respond to
    * @param doNetworkRequest A function to call if we need to send out a network request
+   * @param putInCache Whether the Response should be put into the cache
    */
-  _onlineResponse(request, doNetworkRequest) {
+  _onlineResponse(request, doNetworkRequest, putInCache) {
     // When online, handle requests normaly and store the result
     return doNetworkRequest().then((response) => {
       // Currently, we only store OPTIONS and GET requests in the cache
-      if (this._cacheMethods.includes(request.method)) {
+      if (this._cacheMethods.includes(request.method) && putInCache) {
         this._put(request, response);
       }
       return response;

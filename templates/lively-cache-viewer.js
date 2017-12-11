@@ -1,4 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
+import focalStorage from 'src/external/focalStorage.js';
 
 export default class LivelyCacheViewer extends Morph {
   async initialize() {
@@ -23,6 +24,19 @@ export default class LivelyCacheViewer extends Morph {
         this._showUpdatedCacheKeys();
       }
     });
+    
+    // Set up mode selectionn
+    let modeSelect = this.get('#modeSelect');
+    focalStorage.getItem("cacheMode").then(
+      (cacheMode) => {
+        if (cacheMode !== null) {
+          modeSelect.selectedIndex = parseInt(cacheMode);
+        }
+      }
+    )
+    $(modeSelect).change((value) => {
+      focalStorage.setItem("cacheMode", value.target.selectedIndex);
+    })
     
     // Keep a copy so we don't have to ask the serviceworker for every search
     this._cacheKeys = [];

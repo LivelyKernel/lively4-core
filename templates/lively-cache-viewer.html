@@ -49,17 +49,8 @@
   nav {
     border-bottom: 1px solid #ddd;
     padding: 2px 4px;
-  }
-  
-  nav .group {
-    display: table-cell;
-    padding: 0;
-    white-space: nowrap;
-    vertical-align: middle;
-  }
-  
-  nav .group .fluid {
-    width: 100%;
+    display: flex;
+    justify-content: space-between;
   }
   
   #search {
@@ -67,12 +58,33 @@
     border-radius: 2px;
     padding: 5px;
   }
+  
+  #settings {
+    padding: 5px;
+  }
+  
+  #settings span {
+    font-size: 85%;
+  }
 </style>
   <nav>
-    <input type="text" id="search" placeholder="Filter...">
-    <button id="refreshButton">
-      <i class="fa fa-refresh" aria-hidden="true"></i>
-    </button>
+    <div>
+      <input type="text" id="search" placeholder="Filter...">
+      <button id="refreshButton">
+        <i class="fa fa-refresh" aria-hidden="true"></i>
+      </button>
+    </div>
+    
+    <div id="settings">
+      <span>Cache mode:</span>
+      <select id="modeSelect">
+        <option value="0">Off</option>
+        <option value="1">Minimal</option>
+        <option value="2">Automatic</option>
+        <option value="3">Full</option>
+      </select>
+    </div>
+    
   </nav>
   <div id="list"></div>
   <juicy-ace-editor id="content"></juicy-ace-editor>
