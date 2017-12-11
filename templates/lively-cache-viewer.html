@@ -66,6 +66,24 @@
   #settings span {
     font-size: 85%;
   }
+  
+  #overlay {
+    display: none;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+  }
+  
+  #statusText {
+    text-align: center;
+    line-height: 2em;
+    font-size: 1.5em;
+  }
 </style>
   <nav>
     <div>
@@ -89,6 +107,12 @@
   <div id="list"></div>
   <juicy-ace-editor id="content"></juicy-ace-editor>
   <div id="status"></div>
+  <div id="overlay">
+    <div id="statusText">
+      Loading...<br />
+      This might take a few minutes
+    </div>
+  </div>
   <lively-resizer></lively-resizer>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

@@ -38,6 +38,7 @@ export default class LivelyCacheViewer extends Morph {
       let value = event.target.selectedIndex;
       focalStorage.setItem("cacheMode", value).then(() => {
         if (value == 3) {
+          this._showLoadingScreen(true);
           this._requestFromServiceWorker('preloadFull');
         }
       });
@@ -54,12 +55,22 @@ export default class LivelyCacheViewer extends Morph {
    * Component callbacks
    */
   onRefreshButton() {
+    this._showLoadingScreen(true);
     this._requestFromServiceWorker('cacheKeys');
   }
   
   /*
    * Methods to update UI
    */
+  
+  _showLoadingScreen(visible) {
+    let overlay = this.get('#overlay');
+    if (visible) {
+      overlay.style.display = 'flex';
+    } else {
+      overlay.style.display = 'none';
+    }
+  }
   
   _showUpdatedCacheKeys() {
     var fileList = this.get("#list");
@@ -126,13 +137,13 @@ export default class LivelyCacheViewer extends Morph {
         this._cacheKeys = data;
         this._showUpdatedCacheKeys();
         this._showUpdatedStatus();
+        this._showLoadingScreen(false);
         break;
       case 'cacheValue':
         this._showUpdatedCacheValue(data);
         break;
-      case 'cacheValue':
-        //this._updateCacheKeys(data);
-        console.log(data);
+      case 'fullLoadingDone':
+        this._requestFromServiceWorker('cacheKeys');
         break;
       default:
         console.warn(`Unknown data received from serviceWorker: ${command}: ${data}`)

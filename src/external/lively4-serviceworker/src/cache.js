@@ -319,7 +319,7 @@ export class Cache {
           if (file.type === 'file') {
             await this.preloadFile(newFileUrl);
           } else if ( file.type === 'directory') {
-            loadDirectory(newFileUrl);
+            await loadDirectory(newFileUrl);
           }
         }
       } catch (err) {
@@ -351,6 +351,7 @@ export class Cache {
         break;
       case 'preloadFull':
         await this._preloadFull();
+        responseCommand = 'fullLoadingDone';
         break;
       default:
         console.warn(`Unknown request received from client: ${command}: ${data}`)
