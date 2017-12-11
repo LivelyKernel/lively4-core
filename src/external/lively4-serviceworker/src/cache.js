@@ -317,7 +317,7 @@ export class Cache {
           let newFileUrl = joinUrls(directoryUrl, file.name);
 
           if (file.type === 'file') {
-            await this.preloadFile(newFileUrl);
+            this.preloadFile(newFileUrl);
           } else if ( file.type === 'directory') {
             await loadDirectory(newFileUrl);
           }
