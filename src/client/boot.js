@@ -145,7 +145,7 @@ if (window.lively && window.lively4url) {
   */  //await System.import(lively4url + '/src/client/workspaces.js');
     //await System.import('workspace-loader');
     
-    const aexprsFile = {
+    const aexprViaDirective = {
       babelOptions: {
         es2015: false,
         stage2: false,
@@ -157,7 +157,9 @@ if (window.lively && window.lively4url) {
           'babel-plugin-doit-result',
           'babel-plugin-doit-this-ref',
           'babel-plugin-var-recorder',
-          'babel-plugin-aexpr-source-transformation'
+          ['babel-plugin-aexpr-source-transformation', {
+            enableViaDirective: true
+          }]
         ]
       },
       loader: 'workspace-loader'
@@ -175,7 +177,7 @@ if (window.lively && window.lively4url) {
         // blacklist all projects included for active expressions
         [lively4url + '/src/external/aexpr/*.js']: moduleOptionsNon,
         // ... except for the tests
-        [lively4url + '/src/external/aexpr/test/*.spec.js']: aexprsFile,
+        [lively4url + '/src/external/aexpr/test/*.spec.js']: aexprViaDirective,
         // all others
         '*.js': {
           babelOptions: {

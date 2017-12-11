@@ -3,22 +3,44 @@
 <style data-src="/templates/livelystyle.css"></style>
 <style>
   :host {
-
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
   }
   
   #content {
-    height: calc(100% - 50px);
-    width: calc(100% - 2px);
+    flex: 1;
     padding: 0;
     margin: 0;
     overflow: auto;
     font-size: 85%;
   }
   
-  #status {
-    height: 20px;
-    width: calc(100% - 2px);
+  #list {
+    flex: 1;
+    overflow-x: scroll;
+  }
+  
+  #list ul {
+    margin: 0;
     padding: 0;
+    list-style: none;
+  }
+  
+  #list li {
+    padding: 2px;
+    font-family: monospace;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+  }
+  
+  #list li:hover {
+    background-color: #eee;
+  }
+  
+  #status {
+    height: 16px;
+    padding: 2px;
     margin: 0;
     font-size: 85%;
     border-top: 1px solid #ddd;
@@ -26,6 +48,7 @@
   
   nav {
     border-bottom: 1px solid #ddd;
+    padding: 2px 4px;
   }
   
   nav .group {
@@ -38,19 +61,22 @@
   nav .group .fluid {
     width: 100%;
   }
+  
+  #search {
+    border: 1px solid #d5d5d5;
+    border-radius: 2px;
+    padding: 5px;
+  }
 </style>
-  <nav id="toolbar">
-    <div class="group fluid">
-      <input name="filename" id="filename" />
-    </div>
-    <div class="group">
-      <button id="loadFile">
-        <i class="fa fa-file-o" title="Load File" aria-hidden="true"></i>
-      </button>
-    </div>
+  <nav>
+    <input type="text" id="search" placeholder="Filter...">
+    <button id="refreshButton">
+      <i class="fa fa-refresh" aria-hidden="true"></i>
+    </button>
   </nav>
-  <div id="content"></div>
-  <div id="status"><div id="date"></div></div>
+  <div id="list"></div>
+  <juicy-ace-editor id="content"></juicy-ace-editor>
+  <div id="status"></div>
   <lively-resizer></lively-resizer>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
