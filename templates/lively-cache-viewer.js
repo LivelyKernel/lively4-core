@@ -14,7 +14,27 @@ export default class LivelyCacheViewer extends Morph {
       }
     };
     
+    // Set up search
+    this._currentSearch = '';
+    var searchInput = this.get("#search");
+    $(searchInput).keyup(event => {
+      if (event.keyCode == 13) { // ENTER
+        this._currentSearch = searchInput.value;
+        this._showUpdatedCacheKeys();
+      }
+    });
+    
+    // Keep a copy so we don't have to ask the serviceworker for every search
+    this._cacheKeys = [];
+    
     lively.html.registerButtons(this);
+    this._requestFromServiceWorker('cacheKeys');
+  }
+  
+  /*
+   * Component callbacks
+   */
+  onRefreshButton() {
     this._requestFromServiceWorker('cacheKeys');
   }
   
@@ -22,13 +42,16 @@ export default class LivelyCacheViewer extends Morph {
    * Methods to update UI
    */
   
-  _showUpdatedCacheKeys(keys) {
+  _showUpdatedCacheKeys() {
     var fileList = this.get("#list");
     fileList.innerHTML = '';
     
     // TODO: JSX would be much nicer here...
     let ul = document.createElement('ul');
-    for (let key of keys) {
+    for (let key of this._cacheKeys) {
+      // Only show keys matching search
+      if (key.indexOf(this._currentSearch) === -1) continue;
+      
       let li = document.createElement('li');
       li.innerText = key;
       li.addEventListener("click", () => {
@@ -42,7 +65,6 @@ export default class LivelyCacheViewer extends Morph {
   
   _showUpdatedCacheValue(data) {
     let editor = this.get("#content");
-    var date = this.get("#date");
     const reader = new FileReader();
 
     reader.addEventListener('loadend', (e) => {
@@ -51,7 +73,18 @@ export default class LivelyCacheViewer extends Morph {
 
     reader.readAsText(data.value.body);
     
-    date.innerText = "Cached at: " +  new Date(data.timestamp);
+    this._showUpdatedStatus(new Date(data.timestamp));
+  }
+  
+  _showUpdatedStatus(dateValue) {
+    var statusField = this.get("#status");
+    
+    let statusText = `${this._cacheKeys.length} items in cache.`;
+    if (dateValue) {
+      statusText += ` Selected item cached at: ${dateValue}`;
+    }
+    
+    statusField.innerText = statusText;
   }
   
   /**
@@ -71,7 +104,9 @@ export default class LivelyCacheViewer extends Morph {
   _receiveFromServiceWorker(command, data) {
     switch (command) {
       case 'cacheKeys':
-        this._showUpdatedCacheKeys(data);
+        this._cacheKeys = data;
+        this._showUpdatedCacheKeys();
+        this._showUpdatedStatus();
         break;
       case 'cacheValue':
         this._showUpdatedCacheValue(data);
