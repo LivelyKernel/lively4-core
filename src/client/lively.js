@@ -182,7 +182,7 @@ export default class Lively {
       script.charset="utf-8";
       script.type="text/javascript";
       if (force) {
-        src += "?" + Date.now();
+        src = src + ("?" + Date.now());
       }
       script.src= src;
       script.onload = function() {

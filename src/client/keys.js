@@ -63,9 +63,9 @@ export default class Keys {
         ["Open Console", !shiftKey && ctrl && char == "J", evt => {
           lively.openComponentInWindow("lively-console");
         }],
-        ["Open DevDocs", ctrl && char == "H", evt => {
-          lively.openHelpWindow(this.getTextSelection());
-        }],
+        // ["Open DevDocs", ctrl && char == "H", evt => {
+        //   lively.openHelpWindow(this.getTextSelection());
+        // }],
         ["Open Graph Control", ctrl && altKey && char == "G", evt => {
           lively.openComponentInWindow("graph-control");
         }],
