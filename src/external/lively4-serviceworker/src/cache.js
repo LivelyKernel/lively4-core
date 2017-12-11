@@ -9,7 +9,8 @@ import {
   buildNotCachedResponse,
   buildEmptyFileResponses,
   buildEmptyFolderResponse,
-  buildNetworkRequestFunction
+  buildNetworkRequestFunction,
+  joinUrls
 } from './util.js';
 import focalStorage from '../../focalStorage.js';
 
@@ -287,7 +288,8 @@ export class Cache {
    * Preloads a file into the cache
    * @param fileAddress The address of the file to preload
    */
-  preloadFile(fileAddress) {
+  async preloadFile(fileAddress) {
+    let ret = {};
     for(let method of this._cacheMethods) {
       let request = new Request(fileAddress, {
         method: method 
@@ -295,8 +297,37 @@ export class Cache {
 
       // Just tell the cache to fetch the file
       // This will update our cache if we are online
-      this.fetch(request, buildNetworkRequestFunction(request));
+      let response = await this.fetch(request, buildNetworkRequestFunction(request));
+      ret[method] = response.clone();
     }
+    return ret;
+  }
+  
+  async _preloadFull() {
+    let loadDirectory = async (directoryUrl) => {
+      // Load directory index
+      let directoryIndex = await this.preloadFile(directoryUrl);
+      
+      try {
+        let directoryJson = await directoryIndex['OPTIONS'].json();
+        for(let file of directoryJson.contents) {
+          if (file.name[0] === '.') continue;
+
+          // Using own joinUrls() because join() in path.js assumes paths, not URLs
+          let newFileUrl = joinUrls(directoryUrl, file.name);
+
+          if (file.type === 'file') {
+            await this.preloadFile(newFileUrl);
+          } else if ( file.type === 'directory') {
+            loadDirectory(newFileUrl);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    
+    await loadDirectory(lively4url);
   }
   
   /**
@@ -317,6 +348,9 @@ export class Cache {
           responseCommand = command;
           responseData = await this._dictionary.match(data);
         }
+        break;
+      case 'preloadFull':
+        await this._preloadFull();
         break;
       default:
         console.warn(`Unknown request received from client: ${command}: ${data}`)

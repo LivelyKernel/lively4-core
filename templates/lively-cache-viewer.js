@@ -34,8 +34,13 @@ export default class LivelyCacheViewer extends Morph {
         }
       }
     )
-    $(modeSelect).change((value) => {
-      focalStorage.setItem("cacheMode", value.target.selectedIndex);
+    $(modeSelect).change((event) => {
+      let value = event.target.selectedIndex;
+      focalStorage.setItem("cacheMode", value).then(() => {
+        if (value == 3) {
+          this._requestFromServiceWorker('preloadFull');
+        }
+      });
     })
     
     // Keep a copy so we don't have to ask the serviceworker for every search

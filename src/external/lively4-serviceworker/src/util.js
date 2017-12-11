@@ -167,6 +167,12 @@ export function mergeArrays(a, b) {
   return merged;
 };
 
+export function joinUrls(a, b) {
+  a = a.replace(/\/+$/, "");
+  b = b.replace(/\/+/, "");
+  return `${a}/${b}`;
+}
+
 // Store array with mappings from numerical to hex representation
 const _hexMap = Array.from(Array(0xff), (_, i) => (i + 0x100).toString(16).substr(1))
 
