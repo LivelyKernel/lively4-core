@@ -3,7 +3,10 @@ import focalStorage from 'src/external/focalStorage.js';
 
 export default class LivelyCacheViewer extends Morph {
   async initialize() {
-    this.windowTitle = "LivelyCacheViewer";
+    this.windowTitle = "Lively Cache Viewer";
+    // Keep a copy so we don't have to ask the serviceworker for every search
+    this._cacheKeys = [];
+    lively.html.registerButtons(this);
     
     // Register listener to receive data from serviceworker
     window.serviceWorkerMessageHandlers['cacheViewer'] = (event) => {
@@ -15,17 +18,29 @@ export default class LivelyCacheViewer extends Morph {
       }
     };
     
-    // Set up search
+    this._setUpSearch();
+    this._setUpModeSelection();    
+    this._requestFromServiceWorker('cacheKeys');
+  }
+  
+  /**
+   * Set up search
+   */
+  _setUpSearch() {
     this._currentSearch = '';
     var searchInput = this.get("#search");
     $(searchInput).keyup(event => {
-      if (event.keyCode == 13) { // ENTER
-        this._currentSearch = searchInput.value;
-        this._showUpdatedCacheKeys();
-      }
+      if (event.keyCode != 13) return; // ENTER
+      
+      this._currentSearch = searchInput.value;
+      this._showUpdatedCacheKeys();
     });
-    
-    // Set up mode selection
+  }
+  
+  /**
+   * Set up mode selection
+   */
+  _setUpModeSelection() {
     const instanceName = lively4url.split("/").pop();
     const cacheModeKey = `${instanceName}-cacheMode`;
     let modeSelect = this.get('#modeSelect');
@@ -45,15 +60,9 @@ export default class LivelyCacheViewer extends Morph {
         }
       });
     })
-    
-    // Keep a copy so we don't have to ask the serviceworker for every search
-    this._cacheKeys = [];
-    
-    lively.html.registerButtons(this);
-    this._requestFromServiceWorker('cacheKeys');
   }
   
-  /*
+  /**
    * Component callbacks
    */
   onRefreshButton() {
@@ -61,10 +70,9 @@ export default class LivelyCacheViewer extends Morph {
     this._requestFromServiceWorker('cacheKeys');
   }
   
-  /*
+  /**
    * Methods to update UI
    */
-  
   _showLoadingScreen(visible) {
     let overlay = this.get('#overlay');
     if (visible) {
