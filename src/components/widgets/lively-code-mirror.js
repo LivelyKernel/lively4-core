@@ -86,9 +86,12 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/scroll/simplescrollbars.js")
 
       //await System.import("https://raw.githubusercontent.com/jshint/jshint/master/dist/jshint.js");
-      await lively.loadJavaScriptThroughDOM("jshintAjax", "https://ajax.aspnetcdn.com/ajax/jshint/r07/jshint.js");
+      //await lively.loadJavaScriptThroughDOM("jshintAjax", "https://ajax.aspnetcdn.com/ajax/jshint/r07/jshint.js");
+      //await lively.loadJavaScriptThroughDOM("eslint", "http://eslint.org/js/app/eslint.js");
       await this.loadModule("addon/lint/lint.js");
       await this.loadModule("addon/lint/javascript-lint.js");
+      await this.loadModule("../eslint.js");
+      await this.loadModule("../eslint-lint.js");
 
       await this.loadModule("addon/merge/merge.js")
       await this.loadModule("addon/selection/mark-selection.js")
