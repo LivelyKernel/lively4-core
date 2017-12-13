@@ -1,40 +1,128 @@
-import * as cop  from "src/external/ContextJS/src/contextjs.js";
+/***
+ * Better Promise Logging Support Experiment 
+ */
 
-if (!window.OriginalPromise) {
-  window.OriginalPromise = Promise;  
+import * as cop  from "src/external/ContextJS/src/contextjs.js"
+import * as Layers  from "src/external/ContextJS/src/Layers.js"
+
+// BEGIN #TODO #ContextJS cannot layer constructors
+if (!self.OriginalPromise) {
+  self.OriginalPromise = Promise;  
 }
-window.Promise = function Promise(...args) {
+self.Promise = function Promise(...args) {
+  this.is_not_a_promise = true;
   if (this.constructorHook) {
-    args = this.constructorHook(args)
+    var proceed = (...rest) => {
+      return new OriginalPromise(...rest)
+    }
+    return this.constructorHook(proceed, args)
   } 
   return new OriginalPromise(...args)
 };
-Promise.prototype = OriginalPromise.prototype;
-Promise.prototype.constructorHook = function(args) {  return args }
-Promise.__proto__ = OriginalPromise
+self.Promise.prototype = OriginalPromise.prototype;
+self.Promise.prototype.constructorHook = function(proceed, args) {  
+ return proceed(...args) 
+}
+self.Promise.__proto__ = OriginalPromise
+// END
 
+
+export function defereLogging(msg) {
+  return LogPromises.defereLogging(this)
+}
 
 export default class LogPromises {
   static resetLogs() {
     this.resolveCounter = 0
     this.dependendPromises = new Map()
+    this.dependendPromisesReplace = new Map()
     this.dependendPromisesLogs = new Map()
     this.currrentPromise = undefined
-    this.promiseRoots = new Set()    
+  }
+
+  static allDependends() {
+    var allDependends = new Set();
+    Array.from(this.dependendPromises.values()).forEach(deps => {
+      deps.forEach(ea => allDependends.add(ea))
+    })
+    return allDependends 
   }
   
+  static get promiseRoots() {
+    return LogPromises.dependendPromises.get(undefined)
+  }
+  
+  static async defereLogging(promise, msg) {
+    await promise;
+    var rootPromise = LogPromises.findRoot(promise)
+    // await this.promisedAllDependendPromises(rootPromise); // wait on sibling promises too
+    console.group(msg || ("REPLAY " + rootPromise.__promise_debug_id__))
+    LogPromises.printPromisedLogs(rootPromise)
+    console.groupEnd();
+    return promise
+  }
+
+  static currentPromiseLayer(currentPromise) {
+    // #Example #COP #DynamicVariables
+    // #Idia as the async nature of "Promises" renders global state logging useless and lexical scoping is limited, we have to actually use dynamic scoping again! We have not other option! The alternative is to implement a domain specific dynamic scope base on the domain specific object structure at hand
+    return cop.layer("CurrentPromiseLayer").refineObject(LogPromises, {
+      get currrentPromise() {
+        return  LogPromises.dependendPromisesReplace.get(currentPromise) || currentPromise
+      }
+    })
+  }  
+
+  static print(promise) {
+     return (promise && (promise.__promise_debug_id__ || promise)) || "undefined"
+  }
   
   static addDependend(oldPromise, newPromise) {
-    if (!LogPromises.currrentPromise)  {
-      LogPromises.promiseRoots.add(newPromise)
-      return 
-    }
+    oldPromise = this.dependendPromisesReplace.get(oldPromise) || oldPromise;
+    newPromise = this.dependendPromisesReplace.get(newPromise) || newPromise;
+    // console.log("addDependend " + LogPromises.print(oldPromise) + " <- "  + LogPromises.print(newPromise)) 
     var dep = this.dependendPromises.get(oldPromise)
     if (!dep) {
       dep = []
       this.dependendPromises.set(oldPromise, dep)
     }
     dep.push(newPromise)  
+  }
+  
+  static replacePlaceholder(placeholder, actualPromise) {
+    // console.log("replace " + placeholder.__promise_debug_id__ + " with " + actualPromise.__promise_debug_id__)
+    // now, we are getting ugly #TODO find a better design
+    this.dependendPromisesReplace.set(placeholder, actualPromise)
+    var dep = this.dependendPromises.get(placeholder)
+    if (dep) {
+      this.dependendPromises.delete(placeholder)
+      this.dependendPromises.set(actualPromise, dep)
+    }        
+    for(let [key, deps] of this.dependendPromises) {
+      for (let i in deps) {
+        if (deps[i] === placeholder) deps[i] = actualPromise;      
+      } 
+    }
+    
+    var prevLogs = this.dependendPromisesLogs.get(placeholder);
+    if (prevLogs) {
+      var logs = this.dependendPromisesLogs.get(actualPromise) || [];
+      this.dependendPromisesLogs.set(actualPromise, prevLogs.concat(logs));      
+    }
+    
+    
+  }
+
+  static findParent(promise) {
+    for(let [key, deps] of this.dependendPromises) {
+        if (deps.includes(promise)) return key
+    }
+    return undefined
+  }
+  
+  static findRoot(promise) {
+    var parent = this.findParent(promise)
+    if (!parent) return promise
+    return this.findParent(parent)
   }
 
   static promisedLog(promise, args) {
@@ -78,60 +166,73 @@ export default class LogPromises {
     }
     return all
   }
+  
+  static debugPrint() {
+    return Array.from(this.dependendPromises).map( pair => {
+      return (pair[0] && pair[0].__promise_debug_id__) + " => "  
+        + (pair[1].map(ea => ea.__promise_debug_id__ || ea).join(", "))
+    }).join("\n")
+  }
+
+  static ensureDebugId(promise) {
+    if (promise.__promise_debug_id__ === undefined) {
+     promise.__promise_debug_id__ =  LogPromises.resolveCounter++ 
+  }
+    return promise.__promise_debug_id__ 
+  }
 }
 
 LogPromises.resetLogs()
 
 cop.layer(window, "LogPromisesLayer").refineClass(Promise, {
-  constructorHook(args) {
+  constructorHook(proceed, args) {
     var func = args[0]
+    var oldPromise = this;
     if (func) {
       args[0] = (...rest) => {
-        LogPromises.addDependend(LogPromises.currrentPromise, this)    
-        var oldPromise = this; 
-        LogPromises.currrentPromise = oldPromise
-        var result
-        cop.withLayers([LogPromisesLayer], () => {
-          result =  func(...rest)
+        LogPromises.ensureDebugId(this)
+        if (oldPromise) {
+          LogPromises.addDependend(LogPromises.currrentPromise, oldPromise)    
+        } else {
+          console.log("no old promise")
+        }
+        var r
+        cop.withLayers([LogPromisesLayer, LogPromises.currentPromiseLayer(oldPromise)], () => {
+          r =  func(...rest)
         })
-        LogPromises.currrentPromise = undefined
-        return result
+        return r
       }  
     }
-    return cop.proceed(args)
+    var result = cop.proceed(proceed, args)
+    LogPromises.ensureDebugId(result)
+    
+    this.replace_with = result
+    LogPromises.replacePlaceholder(this, result)    
+    return result
   },
   
   then(onresolve, onerror) {
-    // outside then
-    this.__promise_debug_id__ =  LogPromises.resolveCounter++    
-    
-    LogPromises.addDependend(LogPromises.currrentPromise, this)    
     var oldPromise = this; 
+    LogPromises.ensureDebugId(oldPromise)
     var newPromise = cop.proceed(
       onresolve ? (...args) => {
-        // inside then
-        cop.withoutLayers([LogPromisesLayer], () => {
-
-          /// console.log("execute promise " + resolveCounter );
-        })
-        LogPromises.currrentPromise = oldPromise
         var result
-        cop.withLayers([LogPromisesLayer], () => {
+        cop.withLayers([LogPromisesLayer, LogPromises.currentPromiseLayer(oldPromise)], () => {
           result = onresolve(...args)        
         })
-        LogPromises.currrentPromise = undefined
         return result
       } : undefined,
       onerror);
-    LogPromises.addDependend(oldPromise, newPromise)
-    
+    LogPromises.ensureDebugId(newPromise)
+    LogPromises.addDependend(oldPromise, newPromise)    
     return newPromise
   }
 }).refineObject(console, {
   log(...args) {
     return cop.withoutLayers([LogPromisesLayer], () => {
+      // console.log("current layer: " + LogPromises.print(LogPromises.currrentPromise));
       LogPromises.promisedLog(LogPromises.currrentPromise, args)
-      return cop.proceed("PROMISED", ...args)
+      return cop.proceed(...args)
     })
   }
 })

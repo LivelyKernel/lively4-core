@@ -226,8 +226,14 @@
             cm.setSelection(cursor.from(), cursor.to());
             cm.scrollIntoView({from: cursor.from(), to: cursor.to()});
             confirmDialog(cm, doReplaceConfirm, "Replace?",
-                          [function() {doReplace(match);}, advance,
-                           function() {replaceAll(cm, query, text)}]);
+                          [function() {doReplace(match);}, 
+                           advance,
+                           function() {replaceAll(cm, query, text)},
+                           function() {
+                             console.log("stop replace...");
+                             // replacementQueryDialog.remove()
+                           } // STOP
+                          ],);
           };
           var doReplace = function(match) {
             cursor.replace(typeof query == "string" ? text :

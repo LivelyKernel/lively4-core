@@ -1,9 +1,11 @@
-import {uniq} from "utils"
+"enable aexpr";
 
-export var v = 3;
+const obj = {
+  x: 3,
+  fn() {
+    return this.x;
+  }
+},func = "fn";
 
-async () => {
-
-
-(await Promise.resolve([1,2,2,3]))::uniq()  
-}
+const cl = console.log;
+(cl(1), (cl(2), obj).x = (cl(3), obj).x + (cl(4), obj).x);

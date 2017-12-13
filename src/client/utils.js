@@ -42,6 +42,18 @@ export function fileName() {
   return this.replace(/.*\//,"");
 }
 
+// Example usage: "path/to/a.json"::fileEnding() returns "json"
+// #TODO: make this more robust to strings that do not contain a file ending
+export function fileEnding() {
+  return this.replace(/.*\./,"");
+}
+
+// Example usage: "path/to/a.json"::replaceFileEndingWith("xml") returns "path/to/a.xml"
+// #TODO: make this more robust to strings that do not contain a file ending
+export function replaceFileEndingWith(newEnding) {
+  return this.replace(/[^\.]+$/, newEnding);
+}
+
 export class PausableLoop {
   constructor(func) {
     this.func = func;

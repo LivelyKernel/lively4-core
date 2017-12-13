@@ -85,13 +85,17 @@ export default class Lively {
   }
   
   // #TODO remove code duplication lively-con
-  static unloadModule(path) {
+  static async unloadModule(path) {
     var normalizedPath = System.normalizeSync(path)
-    System.import(normalizedPath).then(module => {
-      if(module && typeof module.__unload__ === "function") {
-        module.__unload__();
-      }
-    });
+    try {
+      await System.import(normalizedPath).then(module => {
+        if(module && typeof module.__unload__ === "function") {
+          module.__unload__();
+        }
+      });
+    } catch(e) {
+      console.log("WARNING: error while trying to unload " + path)
+    }
     System.registry.delete(normalizedPath);
     // #Hack #issue in SystemJS babel syntax errors do not clear errors
     System['@@registerRegistry'][normalizedPath] = undefined;
@@ -178,7 +182,7 @@ export default class Lively {
       script.charset="utf-8";
       script.type="text/javascript";
       if (force) {
-        src += "?" + Date.now();
+        src = src + ("?" + Date.now());
       }
       script.src= src;
       script.onload = function() {
@@ -1104,8 +1108,8 @@ export default class Lively {
   }
   
   static hideSearchWidget() {
-    var comp = document.getElementsByTagName("lively-search-widget")[0];
-    comp.hide();
+    console.log('hide search widget')
+    document.body.querySelectorAll("lively-search").forEach( ea => ea.parentElement.remove());
   }
 
   static openIssue(number) {
@@ -1131,19 +1135,11 @@ export default class Lively {
       w.style.width = extent.x;
       w.style.height = extent.y;
     }
-    
-    
-    
-    // #Problem: we cannot open last window here because we can be scrolled to the other end of the world
-    // if (lastWindow) {
-    //   var lastPos = lively.getPosition(lastWindow);
-      
     if (!pos) {
       pos = this.findPositionForWindow(worldContext)
     }
     if (pos) 
       lively.setPosition(w, pos);
-
     
     return components.openIn(worldContext, w, true).then((w) => {
     	return components.openIn(w, document.createElement(name)).then((comp) => {

@@ -418,24 +418,28 @@ export default class ContextMenu {
     }
   }
   
-  static openIn(container, evt, target, worldContext, optItems) {    
+  static openIn(container, evt, target, worldContext, optItems) {
     this.hide();
     this.firstEvent = evt
-    lively.addEventListener("contextMenu", document.documentElement, "click", () => {
-      this.hide();
-    });
 
     var menu = lively.components.createComponent("lively-menu");
     return lively.components.openIn(container, menu).then(() => {
-      if (this.menu) this.menu.remove()
+      if (this.menu) this.menu.remove();
       this.menu = menu;
       if (evt) {
         lively.setGlobalPosition(menu, pt(evt.clientX, evt.clientY))
       }
       // menu.focus()
       lively.focusWithoutScroll(menu)
-      menu.openOn(optItems || this.items(target, worldContext), evt).then(() => {
-      });
+      menu.openOn(optItems || this.items(target, worldContext), evt)
+      
+      // defere event registration to prevent closing the menu as it was opened
+      setTimeout(() => {
+        lively.addEventListener("contextMenu", document.documentElement, "click", () => {
+          this.hide();
+        });        
+      }, 0)
+      
       return menu;
     });
   }

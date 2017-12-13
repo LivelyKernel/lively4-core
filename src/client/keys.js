@@ -43,38 +43,47 @@ export default class Keys {
       const { shiftKey, altKey, keyCode, charCode } = evt;
       
       const keyHandlers = [
+        // #KeyboardShortcut Ctrl-K open workspace
         ["Open Workspace", ctrl && char == "K", evt => {
           lively.openWorkspace("")
         }],
+        // #KeyboardShortcut Ctrl-Shift-F search in files
         ["Search", ctrl && shiftKey && char == "F", evt => {
           lively.openSearchWidget(this.getTextSelection(), null, evt.path[0]);
         }],
+        // #KeyboardShortcut Ctrl-Shift-B open browser
         ["Open Container", shiftKey && ctrl && char == "B", evt => {
           lively.openBrowser(this.getTextSelection());
         }],
+        // #KeyboardShortcut Ctrl-Shift-G open sync tool
         ["Open Sync Tool", shiftKey && ctrl && char == "G", evt => {
           // this does not work up on #Jens' windows machine
           lively.openComponentInWindow("lively-sync");
         }],
+        // #KeyboardShortcut Ctrl-O open component bin
         ["Open Component Bin", ctrl && char == "O", evt => {
           lively.openComponentInWindow("lively-component-bin");
         }],
-        // #TODO: does this work?
+        // #KeyboardShortcut Ctrl-J open console
         ["Open Console", !shiftKey && ctrl && char == "J", evt => {
           lively.openComponentInWindow("lively-console");
         }],
-        ["Open DevDocs", ctrl && char == "H", evt => {
-          lively.openHelpWindow(this.getTextSelection());
-        }],
+        // ["Open DevDocs", ctrl && char == "H", evt => {
+        //   lively.openHelpWindow(this.getTextSelection());
+        // }],
+        // #KeyboardShortcut Ctrl-Alt-G open graph control
         ["Open Graph Control", ctrl && altKey && char == "G", evt => {
           lively.openComponentInWindow("graph-control");
         }],
+        // #KeyboardShortcut Ctrl-Alt-D open research diary        
         ["Open Research Diary", ctrl && altKey && char == "D", evt => {
           lively.openComponentInWindow("research-diary");
         }],
+        // #KeyboardShortcut Ctrl-Alt-F search graph
         ["Search Graph", ctrl && altKey && char == "F", evt => {
           GraphControl.fullTextSearch(this.getTextSelection());
         }],
+        // #KeyboardShortcut ESC hide search widget
         ["Hide Search Widget", keyCode == 27, evt => {
           lively.hideSearchWidget();
         }], 

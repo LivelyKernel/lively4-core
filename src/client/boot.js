@@ -145,7 +145,7 @@ if (window.lively && window.lively4url) {
   */  //await System.import(lively4url + '/src/client/workspaces.js');
     //await System.import('workspace-loader');
     
-    const aexprsFile = {
+    const aexprViaDirective = {
       babelOptions: {
         es2015: false,
         stage2: false,
@@ -157,7 +157,9 @@ if (window.lively && window.lively4url) {
           'babel-plugin-doit-result',
           'babel-plugin-doit-this-ref',
           'babel-plugin-var-recorder',
-          'babel-plugin-aexpr-source-transformation'
+          ['babel-plugin-aexpr-source-transformation', {
+            enableViaDirective: true
+          }]
         ]
       },
       loader: 'workspace-loader'
@@ -175,7 +177,7 @@ if (window.lively && window.lively4url) {
         // blacklist all projects included for active expressions
         [lively4url + '/src/external/aexpr/*.js']: moduleOptionsNon,
         // ... except for the tests
-        [lively4url + '/src/external/aexpr/test/*.spec.js']: aexprsFile,
+        [lively4url + '/src/external/aexpr/test/*.spec.js']: aexprViaDirective,
         // all others
         '*.js': {
           babelOptions: {
@@ -248,22 +250,28 @@ if (window.lively && window.lively4url) {
     });
 
     try {
-      console.group("1/3: Wait for Service Worker...");
-      const { whenLoaded } = await System.import(lively4url + "/src/client/load.js");
-      await new Promise(whenLoaded);
-      console.groupEnd();
+      var livelyloaded = new Promise(async livelyloadedResolve => {
+        console.group("1/3: Wait for Service Worker...");
+        const { whenLoaded } = await System.import(lively4url + "/src/client/load.js");
+        await new Promise(whenLoaded);
+        console.groupEnd();
+
+        console.group("2/3: Look for uninitialized instances of Web Compoments");
+        await lively.components.loadUnresolved();
+        console.groupEnd();
+
+        console.group("3/3: Initialize Document");
+        await lively.initializeDocument(document, window.lively4chrome, loadContainer);
+        console.groupEnd();
+
+        console.log("Finally loaded!");
+
+        document.dispatchEvent(new Event("livelyloaded"));
+
+        livelyloadedResolve(true);
+      })
       
-      console.group("2/3: Look for uninitialized instances of Web Compoments");
-      await lively.components.loadUnresolved();
-      console.groupEnd();
-      
-      console.group("3/3: Initialize Document");
-      await lively.initializeDocument(document, window.lively4chrome, loadContainer);
-      console.groupEnd();
-      
-      console.log("Finally loaded!");
-      
-      document.dispatchEvent(new Event("livelyloaded"));
+      await livelyloaded
     } catch(err) {
       console.error("Lively Loading failed");
       console.error(err);
