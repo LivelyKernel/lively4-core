@@ -7,8 +7,12 @@ import {
   buildKey,
   buildEnqueuedResponse,
   buildNotCachedResponse,
-  buildNetworkRequestFunction
+  buildEmptyFileResponses,
+  buildEmptyFolderResponse,
+  buildNetworkRequestFunction,
+  joinUrls
 } from './util.js';
+import focalStorage from '../../focalStorage.js';
 
 /**
  * This class is supposed to be a general-purpose cache for HTTP requests with different HTTP methods.
@@ -20,10 +24,10 @@ export class Cache {
    * @param fileSystem A reference to the filesystem. Needed to process queued filesystem requests.
    */
   constructor(fileSystem) {
-    this._managesFavorits = true;
     this._dictionary = new Dictionary('response-cache');
     this._queue = new Dictionary('request-cache');
     this._favoritesTracker = new FavoritesTracker(this);
+    
     this._connectionManager = new ConnectionManager();
     this._fileSystem = fileSystem;
     
@@ -36,9 +40,29 @@ export class Cache {
       }
     });
     
+    // Register for cache data requests from the client
+    self.addEventListener('message', (e) => { 
+      let message = e.data;
+      
+      if(message.type && message.command && message.type === 'dataRequest') {
+        this._receiveFromClient(message.command, message.data);
+      }
+    });
+    
+    // Set default cache mode
+    const instanceName = lively4url.split("/").pop();
+    this._cacheModeKey = `${instanceName}-cacheMode`;
+    focalStorage.getItem(this._cacheModeKey).then(
+      (cacheMode) => {
+        if (cacheMode === null) {
+          focalStorage.setItem(this._cacheModeKey, 2);
+        }
+      }
+    )
+    
     // Define which HTTP methods need result caching, and which need request queueing
     this._cacheMethods = ['OPTIONS', 'GET'];
-    this._queueMethods = ['PUT', 'POST', 'DELETE'];
+    this._queueMethods = ['PUT', 'POST', 'DELETE', 'MKCOL'];
   }
   
   /**
@@ -48,27 +72,30 @@ export class Cache {
    * @param doNetworkRequest A function to call if we need to send out a network request
    */
   fetch(request, doNetworkRequest) {
-    if (this._managesFavorits) {
-      this._favoritesTracker.update(request.url);
-    }
-    
-    if (this._connectionManager.isOnline) {
-      return this._onlineResponse(request, doNetworkRequest);
-    } else {
-      return this._offlineResponse(request);
-    }
+    return focalStorage.getItem(this._cacheModeKey).then((cacheMode) => {
+      if (cacheMode == 2) {
+        this._favoritesTracker.update(request.url);
+      }
+      
+      if (this._connectionManager.isOnline) {
+        return this._onlineResponse(request, doNetworkRequest, cacheMode > 0);
+      } else if (cacheMode > 0) {
+        return this._offlineResponse(request);
+      }
+    });
   }
   
   /**
    * Returns a response for online devices
    * @param request The request to respond to
    * @param doNetworkRequest A function to call if we need to send out a network request
+   * @param putInCache Whether the Response should be put into the cache
    */
-  _onlineResponse(request, doNetworkRequest) {
+  _onlineResponse(request, doNetworkRequest, putInCache) {
     // When online, handle requests normaly and store the result
     return doNetworkRequest().then((response) => {
       // Currently, we only store OPTIONS and GET requests in the cache
-      if (this._cacheMethods.includes(request.method)) {
+      if (this._cacheMethods.includes(request.method) && putInCache) {
         this._put(request, response);
       }
       return response;
@@ -85,10 +112,9 @@ export class Cache {
       // Check if the request is in the cache
       return this._match(request).then((response) => {
         if (response) {
-          //msg.broadcast('Fulfilled request from cache.', 'warning');
           return Serializer.deserialize(response.value);
         } else {
-          msg.broadcast('Could not fulfil request from cache.', 'error');
+          msg.notify('error', 'Could not fulfil request from cache');
           console.error(`Not in cache: ${request.url}`);
           // At this point we know we are offline, so sending out the request is useless
           // Just create a fake error Response
@@ -96,9 +122,10 @@ export class Cache {
         }
       })
     } else if (this._queueMethods.includes(request.method)) {
-      this._enqueue(request);
-      msg.broadcast('Queued write request.', 'warning');
-      return buildEnqueuedResponse();
+      return this._enqueue(request).then(() => {
+        msg.notify('warning', 'Queued write request');
+        return buildEnqueuedResponse();
+      });
     }
   }
   
@@ -122,112 +149,149 @@ export class Cache {
   }
   
   /**
-   * Checks if a request is in the queue
+   * Puts a request in the queue to be sent out later
    * @return void
    */
-  _enqueue(request) {
+  async _enqueue(request) {
     // Serialize the Request object
-    Serializer.serialize(request).then((serializedRequest) => {
-      // Put the serialized request in the queue
-      this._queue.put(buildKey(request), serializedRequest);
-      
-      // Update the cache content to pretend that the data has already been saved
-      /* TODO: Directories (on PUT and DELETE)
-       * - Check if containing Directory is cached
-       * - Update cached content
-       */
-      let fileURL = new URL(serializedRequest.url)
-      let filePathParts = fileURL.pathname.split('/');
-      let fileName = filePathParts.pop();
-      let folderURL = serializedRequest.url.slice(0, -fileName.length);
-      
-      // Check if we have the folder content cached
-      const folderKey = `OPTIONS ${folderURL}`;
-      this._dictionary.match(folderKey).then((response) => {
-        if(response) {
-          // We have the folder in the cache - update it
-          let reader = new FileReader();
-          reader.onload = () => {
-            let folderJSON = JSON.parse(reader.result);
-            let folderContainsFile = folderJSON.contents.find(e => e.name === fileName);
-            if(!folderContainsFile && serializedRequest.method === 'PUT') {
-              // Prepare new directory JSON
-              folderJSON.contents.push({
-                name: fileName,
-                size: 0,
-                type: 'file'
-              });
-              let folderBlob = new Blob([JSON.stringify(folderJSON)], {type : 'text/plain'});
-              
-              // Update cached directory JSON
-              this._dictionary.match(folderKey).then((response) => {
-                if(response) {
-                  response.value.body = folderBlob;
-                  this._dictionary.put(folderKey, response.value);
-                }
-              })
-            } else if(folderContainsFile && serializedRequest.method === 'DELETE') {
-              // Prepare new directory JSON
-              folderJSON.contents = folderJSON.contents.filter(e => e.name !== fileName);
-              let folderBlob = new Blob([JSON.stringify(folderJSON)], {type : 'text/plain'});
-              
-              // Update cached directory JSON
-              this._dictionary.match(folderKey).then((response) => {
-                if(response) {
-                  response.value.body = folderBlob;
-                  this._dictionary.put(folderKey, response.value);
-                }
-              })
+    let serializedRequest = await Serializer.serialize(request);
+   
+    // Put the serialized request in the queue
+    this._queue.put(buildKey(request), serializedRequest);
+
+    // Update the cache content to pretend that the data has already been saved
+    /* TODO: Directories (on PUT and DELETE)
+     * - Check if containing Directory is cached
+     * - Update cached content
+     */
+    let fileURL = new URL(serializedRequest.url)
+    let filePathParts = fileURL.pathname.split('/');
+    let fileName = filePathParts.pop();
+    let folderURL = serializedRequest.url.slice(0, -fileName.length);
+
+    // Check if we have the folder content cached
+    const folderKey = `OPTIONS ${folderURL}`;
+    let response = await this._dictionary.match(folderKey);
+    if(response) {
+      // We have the folder in the cache - update it
+      // FileReader does not use Promises, so we have to wrap it   
+      await new Promise((resolve, reject) => {
+        let reader = new FileReader();
+        reader.onload = async () => {
+          let folderJSON = JSON.parse(reader.result);
+          let folderContainsFile = folderJSON.contents.find(e => e.name === fileName);
+          if(!folderContainsFile && (serializedRequest.method === 'PUT' || serializedRequest.method === 'MKCOL')) {
+            // Newly created file/folder
+            const typeForMethod = {
+              'PUT'   : 'file',
+              'MKCOL' : 'directory'
+            };
+            
+            // Prepare new directory JSON
+            folderJSON.contents.push({
+              name: fileName,
+              size: 0,
+              type: typeForMethod[serializedRequest.method]
+            });
+            let folderBlob = new Blob([JSON.stringify(folderJSON)], {type : 'text/plain'});
+
+            // Update cached directory JSON
+            response = await this._dictionary.match(folderKey);
+            if(response) {
+              response.value.body = folderBlob;
+              await this._dictionary.put(folderKey, response.value);
+              resolve();
             }
+          } else if(folderContainsFile && serializedRequest.method === 'DELETE') {
+            // Deleted file
+            // Prepare new directory JSON
+            folderJSON.contents = folderJSON.contents.filter(e => e.name !== fileName);
+            let folderBlob = new Blob([JSON.stringify(folderJSON)], {type : 'text/plain'});
+
+            // Update cached directory JSON
+            response = await this._dictionary.match(folderKey);
+            if(response) {
+              response.value.body = folderBlob;
+              await this._dictionary.put(folderKey, response.value);
+              resolve();
+            }
+          } else {
+            // Normal file change, no need to update folder
+            resolve();
           }
-          reader.readAsText(response.value.body);
         }
+        reader.readAsText(response.value.body);
       });
-      
-      // Update file content
-      const key = `GET ${serializedRequest.url}`;
-      this._dictionary.match(key).then((response) => {
-        if(response) {
-          response.value.body = serializedRequest.body;
-          this._dictionary.put(key, response.value);
+    }
+
+    // Update file/folder content
+    const key = `GET ${serializedRequest.url}`;
+    response = await this._dictionary.match(key);
+    if(response) {
+      // The file is already in the cache - update the value
+      response.value.body = serializedRequest.body;
+      this._dictionary.put(key, response.value);
+    } else {
+      // The file/folder is not yet in the cache (probably newly created)
+      // Create a fake entry with an empty file/folder
+      if (serializedRequest.method === 'PUT') {
+        // Empty file
+        const responses = buildEmptyFileResponses();
+        for (let method in responses) {
+          let serializedResponse = await Serializer.serialize(responses[method]);
+          await this._dictionary.put(`${method} ${serializedRequest.url}`, serializedResponse);
         }
-      })
-    })
+      } else if (serializedRequest.method === 'MKCOL') {
+        // Empyt folder
+        let serializedResponse = await Serializer.serialize(buildEmptyFolderResponse());
+        await this._dictionary.put(`OPTIONS ${serializedRequest.url}`, serializedResponse);
+      }
+    }
   }
   
   /**
    * Processes all queued requests by sending them in the same order
    */
-  _processQueued() {
-    let processNext = () => {
-      // Get oldest entry
-      this._queue.pop().then((serializedRequest) => {
-        // Check if we are done
-        if(!serializedRequest) {
-          return;
-        }
-        
-        // Send request
-        Serializer.deserialize(serializedRequest).then((request) => {
-          let url = new URL(request.url);
-          if(url.hostname === 'lively4') {
-            this._fileSystem.handle(request, url).then(processNext);
-          } else {
-            fetch(request).then(processNext);
-          }
-        });
-      });
+  async _processQueued() {
+    let queueEntries = await this._queue.toArray();
+    if (queueEntries.length === 0) return;
+    
+    // Sort queueEntries by ascending by timestamp
+    queueEntries.sort(function(first, second) {
+      return first[1].timestamp - second[1].timestamp;
+    });
+    
+    queueEntries = queueEntries.map((e) => {
+      return {
+        key: e[0],
+        serializedRequest: e[1].value
+      }
+    });
+    
+    // Process requests
+    for (let queueEntry of queueEntries) {
+      // Send request
+      const request = await Serializer.deserialize(queueEntry.serializedRequest)
+      let url = new URL(request.url);
+      if(url.hostname === 'lively4') {
+        await this._fileSystem.handle(request, url)
+      } else {
+        await fetch(request);
+      }
+      
+      // Remove from queue
+      await this._queue.delete(queueEntry.key);
     }
     
-    // Start processing queued requests
-    processNext();
+    msg.notify('info', 'Processed all queued requests');
   }
   
   /**
    * Preloads a file into the cache
    * @param fileAddress The address of the file to preload
    */
-  preloadFile(fileAddress) {
+  async preloadFile(fileAddress) {
+    let ret = {};
     for(let method of this._cacheMethods) {
       let request = new Request(fileAddress, {
         method: method 
@@ -235,8 +299,76 @@ export class Cache {
 
       // Just tell the cache to fetch the file
       // This will update our cache if we are online
-      this.fetch(request, buildNetworkRequestFunction(request));
+      let response = await this.fetch(request, buildNetworkRequestFunction(request));
+      ret[method] = response.clone();
     }
+    return ret;
+  }
+  
+  async _preloadFull() {
+    let loadDirectory = async (directoryUrl) => {
+      // Load directory index
+      let directoryIndex = await this.preloadFile(directoryUrl);
+      
+      try {
+        let directoryJson = await directoryIndex['OPTIONS'].json();
+        for(let file of directoryJson.contents) {
+          if (file.name[0] === '.') continue;
+
+          // Using own joinUrls() because join() in path.js assumes paths, not URLs
+          let newFileUrl = joinUrls(directoryUrl, file.name);
+
+          if (file.type === 'file') {
+            this.preloadFile(newFileUrl);
+          } else if ( file.type === 'directory') {
+            await loadDirectory(newFileUrl);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    
+    await loadDirectory(lively4url);
+  }
+  
+  /**
+   * Handles a data request from a client
+   */
+  async _receiveFromClient(command, data) {
+    let responseCommand;
+    let responseData;
+    
+    switch (command) {
+      case 'cacheKeys':
+        responseCommand = command;
+        let cachedData = await this._dictionary.toArray();
+        responseData = cachedData.map(e => e[0]);
+        break;
+      case 'cacheValue':
+        if(data) {
+          responseCommand = command;
+          responseData = await this._dictionary.match(data);
+        }
+        break;
+      case 'preloadFull':
+        await this._preloadFull();
+        responseCommand = 'fullLoadingDone';
+        break;
+      default:
+        console.warn(`Unknown request received from client: ${command}: ${data}`)
+    }
+    
+    if (responseCommand) {
+      this._respondToClient(responseCommand, responseData);
+    }
+  }
+  
+  /**
+   * Sends a data response to the client
+   */
+  _respondToClient(command, data) {
+    msg.sendData(command, data);
   }
   
 }

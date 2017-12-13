@@ -44,8 +44,8 @@ export function buildKey(request) {
  */
 export function buildEnqueuedResponse() {
   return new Response(null, {
-    status: 202,
-    statusText: 'Accepted'
+    status     : 200,
+    statusText : 'OK'
   });
 }
 
@@ -56,68 +56,122 @@ export function buildEnqueuedResponse() {
 export function buildNotCachedResponse() {
   let errorText = 'You are offline and the requested file was not found in the cache.';
   return new Response(errorText, {
-    status: 503,
-    statusText: 'Service Unavailable'
+    status     : 503,
+    statusText : 'Service Unavailable'
   });
+}
+
+/**
+ * Builds fake GET and OPTIONS responses for a newly created, empty file
+ * @param fileName The name of the new file
+ */
+export function buildEmptyFileResponses(fileName) {
+  const responseHeaders = new Headers({
+      'Access-Control-Allow-Headers'  : '*',
+      'Access-Control-Allow-Methods'  : 'OPTIONS, GET, DELETE, PUT',
+      'Access-Control-Allow-Origin'   : '*',
+      'Access-Control-Request-Method' : '*',
+      'Connection'                    : 'Keep-Alive',
+      'content-type'                  : 'text/plain',
+      'Date'                          : new Date(Date.now()).toUTCString(),
+      'Keep-Alive'                    : 'timeout=15, max=93'
+    });
+  
+  const OPTIONSResponse = new Response(
+    // Body
+    JSON.stringify({
+      name: fileName,
+      size: 0,
+      type: 'file'
+    }),
+    // Headers
+    {
+      status: 200,
+      statusText: 'OK',
+      headers: responseHeaders
+    }
+  );
+  
+  const GETResponse = new Response('', {
+    status: 200,
+    statusText: 'OK',
+    headers: responseHeaders
+  });
+  
+  return {
+    GET: GETResponse,
+    OPTIONS: OPTIONSResponse
+  };
+}
+
+/**
+ * Builds a fake OPTIONS response for a newly created, empty folder
+ * @param folderName The name of the new folderName
+ */
+export function buildEmptyFolderResponse(folderName) {
+  const responseHeaders = new Headers({
+      'Access-Control-Allow-Headers'  : '*',
+      'Access-Control-Allow-Methods'  : 'OPTIONS, GET, DELETE, PUT',
+      'Access-Control-Allow-Origin'   : '*',
+      'Access-Control-Request-Method' : '*',
+      'Connection'                    : 'Keep-Alive',
+      'content-type'                  : 'text/plain',
+      'Date'                          : new Date(Date.now()).toUTCString(),
+      'Keep-Alive'                    : 'timeout=15, max=93'
+    });
+  
+  return new Response(
+    // Body
+    JSON.stringify({
+      type     : 'directory',
+      contents : []
+    }),
+    // Headers
+    {
+      status: 200,
+      statusText: 'OK',
+      headers: responseHeaders
+    }
+  );
 }
 
 /**
  * Returns a list of file that are necessary to boot lively
  */
-export function getBootFiles() {
-    let filesToLoad = [
-      // Essential
-      '',
-      'start.html',
-      'swx-boot.js',
-      'swx-loader.js',
-      'swx-post.js',
-      'swx-pre.js',
-      'src/client/boot.js',
-      'src/client/load.js',
-      'src/client/lively.js',
-      'src/external/systemjs/system.src.js',
-      'src/external/babel/plugin-babel2.js',
-      'src/external/babel/systemjs-babel-browser.js',
-      'src/external/babel-plugin-jsx-lively.js',
-      'src/external/babel-plugin-transform-do-expressions.js',
-      'src/external/babel-plugin-transform-function-bind.js',
-      'src/external/babel-plugin-locals.js',
-      'src/external/babel-plugin-var-recorder.js',
-      'src/external/babel-plugin-syntax-jsx.js',
-      'src/external/babel-plugin-syntax-function-bind.js',
-      'src/external/babel-plugin-syntax-do-expressions.js',
-      
-      // Useful
-      'templates/lively-notification.html',
-      'templates/lively-notification.js',
-      'templates/lively-notification-list.html',
-      'templates/lively-notification-list.js',
-    ];
+export async function getBootFiles() {
+  const confUrl = self.lively4url + "/src/external/lively4-serviceworker/src/minconfig.json";
+  let file = await self.fetch(confUrl);
+  let json = await file.json();
+  let filesToLoad = json.files;
+  let directoryParts = self.location.pathname.split('/');
+  directoryParts[directoryParts.length - 1] = '';
+  let directory = directoryParts.join('/');
 
-    let directoryParts = self.location.pathname.split('/');
-    directoryParts[directoryParts.length-1] = '';
-    let directory = directoryParts.join('/');
-    
-    return filesToLoad.map((file) => {return directory + file});
+  return filesToLoad.map((file) => {return directory + file});
 }
 
 /**
  * Merges two arrays, removing duplicates and keeping order
  */
 export function mergeArrays(a, b) {
-    let merged = a.concat(b);
+  let merged = a.concat(b);
 
-    for (let i = 0; i < merged.length; i++) {
-        for (let j = i+1; j < merged.length; j++) {
-            if (merged[i] === merged[j]) {
-                merged.splice(j--, 1);
-            }
-        }
+  for (let i = 0; i < merged.length; i++) {
+    for (let j = i+1; j < merged.length; j++) {
+      if (merged[i] === merged[j]) {
+        merged.splice(j--, 1);
+      }
     }
+  }
 
-    return merged;
+  return merged;
 };
+
+export function joinUrls(a, b) {
+  a = a.replace(/\/+$/, "");
+  b = b.replace(/\/+/, "");
+  return `${a}/${b}`;
+}
 
 // Store array with mappings from numerical to hex representation
 const _hexMap = Array.from(Array(0xff), (_, i) => (i + 0x100).toString(16).substr(1))

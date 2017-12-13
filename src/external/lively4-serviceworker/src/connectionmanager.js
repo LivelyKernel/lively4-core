@@ -22,12 +22,11 @@ export class ConnectionManager {
     // Or when the window is not fully loaded, e.g. We don't get notified or changes in network
     // state while lively is loading. So we also poll the status in case we are not notified
     self.addEventListener('message', (e) => { 
-      let data = e.data;
-      if(data.type && data.message && data.type === 'network') {
-        let newIsOnline;
-        if(data.message === 'online') {
+      let message = e.data;
+      if(message.type && message.command && message.type === 'network') {
+        if(message.command === 'online') {
           this._setIsOnline(true);
-        } else if(data.message === 'offline') {
+        } else if(message.command === 'offline') {
           this._setIsOnline(false);
         }
       }
@@ -66,9 +65,9 @@ export class ConnectionManager {
     
     // Send message to browser window
     if (this.isOnline) {
-      msg.broadcast('You are now online', 'info');
+      msg.notify('info', 'You are now online');
     } else {
-      msg.broadcast('You are now offline', 'warning');
+      msg.notify('warning', 'You are now offline');
     }
   }
   

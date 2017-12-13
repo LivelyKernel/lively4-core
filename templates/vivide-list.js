@@ -7,6 +7,8 @@ export default class VivideList extends Morph {
   async initialize() {
     this.windowTitle = "VivideList";
     
+    this.raw_model = [];
+    
     this.transformations = [];
     this.defaultTransformation = list => [];
     
@@ -35,6 +37,7 @@ export default class VivideList extends Morph {
   
   pushTransformation(transformation) {
     this.transformations.push(transformation);
+    this.update();
   }
   
   getTransformation(index) {
@@ -53,14 +56,17 @@ export default class VivideList extends Morph {
     } else {
       throw "Index out of bounds"
     }
+    this.update();
   }
   
   clearTransformations() {
     this.transformations = [];
+    this.update();
   }
   
   pushDepiction(depiction) {
     this.depictions.push(depiction);
+    this.update();
   }
   
   getDepiction(index) {
@@ -79,10 +85,12 @@ export default class VivideList extends Morph {
     } else {
       throw "Index out of bounds"
     }
+    this.update();
   }
   
   clearDepictions() {
     this.depictions = [];
+    this.update();
   }
   
   toggleSelection(wrapper) {
@@ -153,13 +161,17 @@ export default class VivideList extends Morph {
     return wrapper;
   }
   
-  setModel(model) {
-    model = this.getTransformation(0)(model);
-    this.model = model.map(elem => this.wrap(elem));
+  transformModel() {
+    this.model = this.getTransformation(0)(this.raw_model).map(elem => this.wrap(elem));
   }
   
   show(model) {
-    this.setModel(model);
+    this.raw_model = model;
+    this.update();
+  }
+  
+  update() {
+    this.transformModel();
     this.display();
   }
   

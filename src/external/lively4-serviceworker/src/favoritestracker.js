@@ -3,6 +3,7 @@ import {
   getBootFiles,
   mergeArrays
 } from './util.js';
+import focalStorage from '../../focalStorage.js';
 
 /**
  * Tracks most frequently(recently?) used files.
@@ -26,6 +27,10 @@ export class FavoritesTracker {
    * Load favorites by descending popularity
    */
   async _checkFavorites() {
+    // Check if favorites should be loaded
+    let cacheMode = await focalStorage.getItem("cacheMode");
+    if (cacheMode != 2) return;
+    
     this.favorites = await this._favoritesDb.toArray();
     
     // Sort favorites by descending popularity
@@ -34,7 +39,7 @@ export class FavoritesTracker {
     });
     
     const favoriteFiles = this.favorites.map(e => e[0]);
-    const filesToLoad = mergeArrays(getBootFiles(), favoriteFiles);
+    const filesToLoad = mergeArrays(await getBootFiles(), favoriteFiles);
     
     for (let file of filesToLoad) {
       // TODO: We can probably just check the cache here instead of directly asking the DB
