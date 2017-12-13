@@ -362,6 +362,10 @@ export default class ContextMenu {
         ]
       ]],
       ["Documentation", [
+        ["Keyboard Shortcuts", (evt) => {
+          lively.openBrowser(lively4url + "/doc/manual/shortcuts.md")
+          }, 
+          "", '<i class="fa fa-file-text-o" aria-hidden="true"></i>'],
         ["Devdocs.io", (evt) => {
             this.openComponentInWindow("lively-help",  pt(evt.pageX, evt.pageY), worldContext);
           }, 
