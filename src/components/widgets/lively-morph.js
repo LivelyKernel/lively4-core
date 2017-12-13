@@ -51,7 +51,7 @@ export default class Morph extends HTMLDivElement {
     if (this.shadowRoot) {
       morphs = morphs.concat(Array.from(this.shadowRoot.querySelectorAll(selector)));
     }
-
+    
     // morphs can contain null, if either none was found in this or this.shadowRoot
     return morphs.filter(m => m);
   }
