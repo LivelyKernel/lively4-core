@@ -1,7 +1,6 @@
-'use strict';
-
-import * as messaging from './messaging.js';
+import * as messaging from "./messaging.js";
 import focalStorage from '../external/focalStorage.js';
+
 
 function parseAuthInfoFromUrl(data) {
   var authInfo = JSON.parse(
