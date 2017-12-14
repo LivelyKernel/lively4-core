@@ -18,7 +18,7 @@
         browser: true,
         node: false,
         amd: false,
-        mocha: false,
+        mocha: true,
         jasmine: false
     },
     globals: {
