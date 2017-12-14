@@ -53,6 +53,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   static async loadModules(force) {
+    console.log("loadModules", loadPromise);
     if (loadPromise && !force) return loadPromise
     loadPromise = (async () => {
 
@@ -99,6 +100,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       await System.import(lively4url + '/src/components/widgets/lively-code-mirror-hint.js')
       
       this.loadCSS("addon/hint/show-hint.css")
+      this.loadCSS("addon/lint/lint.css")
       this.loadCSS("../../components/widgets/lively-code-mirror.css")
     })()
     return loadPromise
