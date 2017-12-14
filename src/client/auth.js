@@ -86,7 +86,7 @@ export default class Auth {
     fetch(this.oauthTokenURL(uuid))
       .then(r => r.text())
       .then(data => {
-        console.log("challenge got a token, too: " + data)
+        // console.log("challenge got a token, too: " + data)      
         var authInfo = this.parseAuthInfoFromUrl(data)
         this.onAuthenticated(uuid, authInfo)
     })
