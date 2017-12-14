@@ -145,7 +145,7 @@ export default function(param) {
       Program: {
         enter(path, state) {
           //console.log("file", path, state);
-
+          lively.notify(state);
           let shouldTransform = true;
           if(state.opts.enableViaDirective) {
             shouldTransform = false;
@@ -189,7 +189,7 @@ export default function(param) {
 
           path.traverse({
             Identifier(path) {
-              //console.log(path.node.name)
+              //console.log(path.node.name);
 
               function logIdentifier(msg, path) {
                 console.log(msg, path.node.name, path.node.loc ? path.node.loc.start.line : '');

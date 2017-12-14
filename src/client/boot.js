@@ -178,6 +178,7 @@ if (window.lively && window.lively4url) {
         [lively4url + '/src/external/aexpr/*.js']: moduleOptionsNon,
         // ... except for the tests
         [lively4url + '/src/external/aexpr/test/*.spec.js']: aexprViaDirective,
+        [lively4url + '/src/external/roq/test/*.js']: aexprViaDirective,
         // all others
         '*.js': {
           babelOptions: {

@@ -1,3 +1,5 @@
+"enable aexpr";
+
 export default class Person {
   constructor() { this.initialize.apply(this, arguments); }
 

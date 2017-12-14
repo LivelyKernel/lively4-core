@@ -1,3 +1,5 @@
+"enable aexpr";
+
 export function getValueClass() {
     var ValueClass = function() { this.initialize.apply(this, arguments); };
 

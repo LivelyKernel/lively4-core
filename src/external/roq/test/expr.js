@@ -1,3 +1,5 @@
+"enable aexpr";
+
 export class NumExpr {
   constructor() { this.initialize.apply(this, arguments); }
 

@@ -23,6 +23,7 @@
     },
     globals: {
         lively: true,
+        lively4url: true,
         aexpr: false
     },
     //extends: "eslint:recommended", // seems not to work

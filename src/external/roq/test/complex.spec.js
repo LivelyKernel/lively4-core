@@ -1,6 +1,12 @@
+"enable aexpr";
+import chai, {expect} from 'node_modules/chai/chai.js';
+import sinon from 'src/external/sinon-3.2.1.js';
+import sinonChai from 'node_modules/sinon-chai/lib/sinon-chai.js';
+chai.use(sinonChai);
+
 import withLogging from '../src/withlogging.js';
 import select from '../src/select.js';
-import { AddExpr, NegExpr, NumExpr } from './fixtures/expr.js';
+import { AddExpr, NegExpr, NumExpr } from './expr.js';
 
 describe('complex example', function() {
     it('runs an empty program', function() {
@@ -19,10 +25,9 @@ describe('complex example', function() {
         var selection = select(AddExpr, function(expr) {
             return expr.result() > threshold;
         });
+        expect(selection.now()).to.have.length(1);
 
-        expect(selection.now()).to.have.lengthOf(1);
-
-        var manualSelectionSize = 0;
+      var manualSelectionSize = 0;
         selection
             .enter(function(item) {
                 manualSelectionSize++;
@@ -39,7 +44,6 @@ describe('complex example', function() {
             .enter(function(numExpr) {
                 console.log('new NumExpr through mapping', numExpr);
             });
-
 
         expect(mappedSelection.now()).to.have.lengthOf(1);
         mappedSelection.now().forEach(function(numExpr) {
@@ -62,9 +66,9 @@ describe('complex example', function() {
                 numExpr.result() === 30
             ).to.be.true;
         });
-
         five.val = -30;
         expect(expr.result()).to.equal(-5);
+        expect(selection.now()).to.not.include(expr);
         expect(selection.now()).to.have.lengthOf(1);
         expect(manualSelectionSize).to.equal(1);
 
@@ -81,9 +85,9 @@ describe('complex example', function() {
         expect(mappedSelection.now()).to.have.lengthOf(0);
 
         var eleven = new NegExpr(
-            new NegExpr(
-                new NumExpr(11)
-            )
+          new NegExpr(
+            new NumExpr(11)
+          )
         );
         var expr2 = new AddExpr(
             eleven,
