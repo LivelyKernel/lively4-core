@@ -42,9 +42,9 @@ export default class LivelyCodeMirror extends HTMLElement {
      return  lively4url + "/src/external/code-mirror/"
   }
 
-  static async loadModule(path) {
+  static async loadModule(path, force) {
     return lively.loadJavaScriptThroughDOM("codemirror_"+path.replace(/[^A-Za-z]/g,""),
-      this.codeMirrorPath + path)
+      this.codeMirrorPath + path, force)
   }
 
   static async loadCSS(path) {
@@ -52,8 +52,9 @@ export default class LivelyCodeMirror extends HTMLElement {
        this.codeMirrorPath + path)
   }
 
-  static async loadModules() {
-    if (loadPromise) return loadPromise
+  static async loadModules(force) {
+    console.log("loadModules", loadPromise);
+    if (loadPromise && !force) return loadPromise
     loadPromise = (async () => {
 
       await this.loadModule("lib/codemirror.js")
@@ -91,7 +92,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/lint/lint.js");
       await this.loadModule("addon/lint/javascript-lint.js");
       await this.loadModule("../eslint.js");
-      await this.loadModule("../eslint-lint.js");
+      await this.loadModule("../eslint-lint.js", force);
 
       await this.loadModule("addon/merge/merge.js")
       await this.loadModule("addon/selection/mark-selection.js")
