@@ -4,8 +4,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'node_modules/sinon-chai/lib/sinon-chai.js';
 chai.use(sinonChai);
 
-import withLogging from '../src/withlogging.js';
-import select from '../src/select.js';
+import select from 'roq';
 import { getValueClass } from './class-factory.js';
 var ValueClassA = getValueClass(),
     ValueClassB = getValueClass();
@@ -13,9 +12,6 @@ var ValueClassA = getValueClass(),
 describe('.cross operator', function() {
     it('Example', function() {
         this.timeout(10000);
-
-        withLogging.call(ValueClassA);
-        withLogging.call(ValueClassB);
 
         var instanceA1 = new ValueClassA(42);
         var instanceB1 = new ValueClassB(43);

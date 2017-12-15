@@ -1,11 +1,12 @@
 import View from './view.js';
 import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from './utils.js';
 import aexpr from 'aexpr-source-transformation-propagation';
-export { default as withLogging } from './withlogging.js';
+import { withAdvice } from './../lib/flight/advice.js';
 
 /**
  * #TODO: this is from withlogging.js
  */
+// #TODO: can we make this easier, e.g. automatically identifying the class to adapt from the very instance? What about superclasses?
 export function trackInstance(instance) {
   ensureBaseViewForClass(this);
   this._instances_.safeAdd(instance);
@@ -18,6 +19,18 @@ export function untrackInstance(instance) {
 
 function ensureBaseViewForClass(Class) {
   Class._instances_ = Class._instances_ || new View();
+}
+
+// #TODO: unused, maybe use cop instead of a functional mixin
+export function trackInitializeAndDestroy(Class) {
+  withAdvice.call(Class.prototype);
+
+  Class.prototype.after('initialize', function() {
+    trackInstance.call(Class, this);
+  });
+  Class.prototype.before('destroy', function() {
+    untrackInstance.call(Class, this);
+  });
 }
 
 /*

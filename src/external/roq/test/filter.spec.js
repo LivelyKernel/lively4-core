@@ -4,14 +4,12 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'node_modules/sinon-chai/lib/sinon-chai.js';
 chai.use(sinonChai);
 
-import withLogging from '../src/withlogging.js';
 import select from '../src/select.js';
 import { getValueClass } from './class-factory.js';
 
 describe('.filter operator', function() {
     it('DataHolder example', function() {
         var DataHolder = getValueClass();
-        withLogging.call(DataHolder);
         var range = {
             min: 0,
             max: 20
@@ -19,8 +17,8 @@ describe('.filter operator', function() {
         var positiveData = select(DataHolder, function(data) {
             return data.value > range.min;
         });
-        var d1 = new DataHolder(17);
-        var d2 = new DataHolder(33);
+        new DataHolder(17);
+        new DataHolder(33);
         expect(positiveData.now()).to.have.lengthOf(2);
         var smallData = positiveData.filter(function(data) {
             return data.value < range.max;
@@ -28,7 +26,7 @@ describe('.filter operator', function() {
         expect(smallData.now()).to.have.lengthOf(1);
         range.max = 50;
         expect(smallData.now()).to.have.lengthOf(2);
-        var d3 = new DataHolder(42);
+        new DataHolder(42);
         expect(smallData.now()).to.have.lengthOf(3);
         range.min = 40;
         expect(smallData.now()).to.have.lengthOf(1);

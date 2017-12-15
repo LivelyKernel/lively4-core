@@ -5,8 +5,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'node_modules/sinon-chai/lib/sinon-chai.js';
 chai.use(sinonChai);
 
-import withLogging from '../src/withlogging.js';
-import select from '../src/select.js';
+import select from 'roq';
 import { getValueClass } from './class-factory.js';
 var ValueHolder = getValueClass();
 
@@ -14,7 +13,6 @@ describe('.union operator', function() {
     it('ValueHolder example', function() {
         this.timeout(10000);
 
-        withLogging.call(ValueHolder);
         var range1 = {
             min: 0,
             max: 25

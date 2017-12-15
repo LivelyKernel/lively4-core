@@ -5,8 +5,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'node_modules/sinon-chai/lib/sinon-chai.js';
 chai.use(sinonChai);
 
-import withLogging from '../src/withlogging.js';
-import select from '../src/select.js';
+import select from 'roq';
 import { getValueClass } from './class-factory.js';
 var AValueClass = getValueClass();
 
@@ -15,21 +14,20 @@ describe('.reduce operator', function() {
     it('Example', function() {
         this.timeout(10000);
 
-        withLogging.call(AValueClass);
-
         var currentValue,
             timesCalled = 0,
             threshold = { min: 0 },
             initialValue = 3;
         var instance1 = new AValueClass(42);
-        var baseView = select(AValueClass, function(data) {
+        select(AValueClass, function(data) {
             return data.value > threshold.min;
         }).reduce(function(aggregation) {
             timesCalled++;
             currentValue = aggregation;
-        }, function(acc, instance) {
-            return acc + instance.value;
-        }, initialValue);
+        },
+          (acc, instance) => acc + instance.value,
+          initialValue
+        );
 
         expect(currentValue).to.equal(initialValue + instance1.value);
         expect(timesCalled).to.equal(1);

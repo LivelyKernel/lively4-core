@@ -4,14 +4,11 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'node_modules/sinon-chai/lib/sinon-chai.js';
 chai.use(sinonChai);
 
-import withLogging from '../src/withlogging.js';
-import select from '../src/select.js';
+import select from 'roq';
 import Person from './person.js';
 
 describe('.layer operators', function() {
     xit('Person layer example', function() {
-
-        withLogging.call(Person);
 
         var jenkinsName = 'Jenkins';
         var travisName = 'Travis';

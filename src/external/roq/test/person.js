@@ -1,12 +1,14 @@
 "enable aexpr";
 
-export default class Person {
-  constructor() { this.initialize.apply(this, arguments); }
+import { trackInstance } from 'roq';
 
-  initialize(name, title) {
+export default class Person {
+  constructor(name, title) {
     this.name = name;
     this.setTitle(title);
+    trackInstance.call(Person, this);
   }
+
   getName() {
     return this.name;
   }
