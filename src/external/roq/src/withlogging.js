@@ -1,6 +1,8 @@
 import { withAdvice } from './../lib/flight/advice.js';
 import View from './view.js';
 
+const HACK = {};
+
 export default function withLogging() {
   withAdvice.call(this.prototype);
   var Class = this;

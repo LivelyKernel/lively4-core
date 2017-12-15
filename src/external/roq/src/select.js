@@ -1,6 +1,24 @@
 import View from './view.js';
 import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from './utils.js';
 import aexpr from 'aexpr-source-transformation-propagation';
+export { default as withLogging } from './withlogging.js';
+
+/**
+ * #TODO: this is from withlogging.js
+ */
+export function trackInstance(instance) {
+  ensureBaseViewForClass(this);
+  this._instances_.safeAdd(instance);
+}
+
+export function untrackInstance(instance) {
+  ensureBaseViewForClass(this);
+  this._instances_.safeRemove(instance);
+}
+
+function ensureBaseViewForClass(Class) {
+  Class._instances_ = Class._instances_ || new View();
+}
 
 /*
     cop.create('SelectionLayer')
@@ -528,6 +546,7 @@ import aexpr from 'aexpr-source-transformation-propagation';
     export default function select(Class, predicate, context) {
         var newSelection = new View();
 
+        ensureBaseViewForClass(Class);
         new FilterOperator(Class._instances_, newSelection, predicate, context);
 
         return newSelection;
