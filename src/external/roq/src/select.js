@@ -1,5 +1,6 @@
 import View from './view.js';
 import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from './utils.js';
+import { BaseActiveExpression } from "active-expressions";
 import aexpr from 'aexpr-source-transformation-propagation';
 import { withAdvice } from './../lib/flight/advice.js';
 
@@ -384,17 +385,15 @@ export function trackInitializeAndDestroy(Class) {
     }
 
     class ReduceOperator {
-        constructor(upstream, callback, reducer, initialValue) {
-            this.callback = callback;
-            this.reducer = reducer;
-            this.initialValue = initialValue;
+        constructor(upstream, reducer, initialValue) {
             this.upstream = upstream;
             upstream.downstream.push(this);
-
-            this.newItemFromUpstream();
+            this.aexpr = new BaseActiveExpression(() =>
+              this.upstream.now().reduce(reducer, initialValue)
+            );
         }
         newItemFromUpstream() {
-            this.callback(this.upstream.now().reduce(this.reducer, this.initialValue));
+            this.aexpr.checkAndNotify();
         }
         destroyItemFromUpstream() {
             this.newItemFromUpstream();
@@ -480,9 +479,9 @@ export function trackInitializeAndDestroy(Class) {
          * @returns {View} the callee
          */
         reduce(callback, reducer, initialValue) {
-            new ReduceOperator(this, callback, reducer, initialValue);
+            const reduce = new ReduceOperator(this, callback, reducer, initialValue);
 
-            return this;
+            return reduce.aexpr;
         }
     });
 
