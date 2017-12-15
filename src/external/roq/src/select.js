@@ -471,12 +471,11 @@ export function trackInitializeAndDestroy(Class) {
         },
 
         /**
-         * Whenever the callee is modified, this calls the given callback with the reduced value.
+         * Whenever the callee is modified, the returned Active Expression gets notified.
          * @function View#reduce
-         * @param {View~reduceCallback} callback
          * @param {View~reducer} reducer
          * @param initialValue - the initial value passed to the {@View~reducer}.
-         * @returns {View} the callee
+         * @returns {ActiveExpression} changing with the callee
          */
         reduce(callback, reducer, initialValue) {
             const reduce = new ReduceOperator(this, callback, reducer, initialValue);
