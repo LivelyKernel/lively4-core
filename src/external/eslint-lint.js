@@ -23,8 +23,12 @@
     },
     globals: {
         lively: true,
+        aexpr: false,
+        Promise: true,
         lively4url: true,
-        aexpr: false
+        System: true,
+        SystemJS: true,
+        CodeMirror: true,
     },
     //extends: "eslint:recommended", // seems not to work
     rules: {
@@ -43,7 +47,7 @@
       // "no-await-in-loop": 2, // disallow await inside of loops
       "no-compare-neg-zero": 2, // disallow comparing against -0
       "no-cond-assign": 2, // disallow assignment operators in conditional expressions
-      "no-console": 1, // disallow the use of console
+      "no-console": [1, { allow: ["warn", "error"] }], // disallow the use of console
       "no-constant-condition": 2, // disallow constant expressions in conditions
       "no-control-regex": 2, // disallow control characters in regular expressions
       "no-debugger": 2, // disallow the use of debugger
@@ -128,10 +132,10 @@
       "no-throw-literal": 1, // disallow throwing literals as exceptions
       // "no-unmodified-loop-condition": 2, // disallow unmodified loop conditions
       // "no-unused-expressions": 2, // disallow unused expressions
-      "no-unused-labels": 2, // disallow unused labels
+      "no-unused-labels": 1, // disallow unused labels
       // "no-useless-call": 2, // disallow unnecessary calls to .call() and .apply()
       // "no-useless-concat": 2, // disallow unnecessary concatenation of literals or template literals
-      "no-useless-escape": 2, // disallow unnecessary escape characters
+      "no-useless-escape": 1, // disallow unnecessary escape characters
       // "no-useless-return": 2, // disallow redundant return statements
       // "no-void": 2, // disallow void operators
       // "no-warning-comments": 2, // disallow specified warning terms in comments
@@ -153,7 +157,7 @@
       "no-undef": 2, // disallow the use of undeclared variables unless mentioned in /*global */ comments
       // "no-undef-init": 2, // disallow initializing variables to undefined
       // "no-undefined": 2, // disallow the use of undefined as an identifier
-      "no-unused-vars": 2, // disallow unused variables
+      "no-unused-vars": 1, // disallow unused variables
       // "no-use-before-define": 2, // disallow the use of variables before they are defined
       // "callback-return": 2, // require return statements after callbacks
       // "global-require": 2, // require require() calls to be placed at top-level module scope

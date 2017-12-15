@@ -2,7 +2,10 @@
  * boot.js -- loads lively in any page that inserts through a script tag
  *
  **/
- 
+
+/* global lively4performance */
+/* eslint no-console: off */
+
 /*
  #TODO refactor booting/loading/init of lively4
   - currently we have different entry points we should unify
@@ -32,15 +35,15 @@ if (window.lively && window.lively4url) {
       }
     })  
   } catch(e) {
-    console.log(e)
+    console.error(e)
   }
   
   var loadContainer = script.getAttribute("data-container"); // some simple configuration 
 
   console.log("lively4url: " + lively4url);
-
-  // COPIED HERE BECAUSE resuse through libs does not work yet
-  function loadJavaScriptThroughDOM(name, src, force) {
+ 
+  // BEGIN COPIED HERE BECAUSE resuse through libs does not work yet
+  var loadJavaScriptThroughDOM = function(name, src, force) {
     return new Promise(function (resolve) {
       var scriptNode = document.querySelector(name);
       if (scriptNode) {
@@ -61,6 +64,7 @@ if (window.lively && window.lively4url) {
       document.head.appendChild(script);
     });
   }
+  // END COPIED
   
   Promise.resolve().then(() => {
     return loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/systemjs/system.src.js");
@@ -108,7 +112,7 @@ if (window.lively && window.lively4url) {
         'babel-plugin-aexpr-source-transformation': lively4url + '/src/external/aexpr/babel-plugin-aexpr-source-transformation/index.js',
         'aexpr-ticking': lively4url + '/src/external/aexpr/aexpr-ticking/src/aexpr-ticking.js',
         'ui-aexpr': lively4url + '/src/external/aexpr/ui-aexpr.js',
-        'babel-plugin-locals': lively4url + '/src/external/aexpr/babel-plugin-locals/index.js',
+        // 'babel-plugin-locals': lively4url + '/src/external/aexpr/babel-plugin-locals/index.js',
         'stack-es2015-modules': lively4url + '/src/external/aexpr/stack-es2015-module/src/stack.js',
         'frame-based-aexpr': lively4url + '/src/external/aexpr/frame-based-aexpr.js',
         'roq': lively4url + '/src/external/roq/src/select.js',
@@ -165,10 +169,7 @@ if (window.lively && window.lively4url) {
       },
       loader: 'workspace-loader'
     };
-    
-    const aexprsWorkspace = {
-    };
-    
+
     SystemJS.config({
       meta: {
         // plugins are not transpiled with other plugins, except for SystemJS-internal plugins
