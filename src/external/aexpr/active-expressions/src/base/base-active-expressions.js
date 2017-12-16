@@ -10,7 +10,6 @@ export class BaseActiveExpression {
      * @param ...params (Objects) the instances bound as parameters to the expression
      */
     constructor(func, ...params) {
-        // console.log(func);
         this.func = func;
         this.params = params;
         this.lastValue = this.getCurrentValue();
@@ -76,6 +75,37 @@ export class BaseActiveExpression {
     applyOn(...items) {
         throw new Error('Not yet implemented');
     }
+  
+  
+
+  onBecomeTrue(callback) {
+    // setup dependency
+    this.onChange(bool => {
+      if(bool) {
+        callback();
+      }
+    });
+    // check initial state
+    if(this.getCurrentValue()) {
+      callback();
+    }
+
+    return this;
+  }
+
+  onBecomeFalse(callback) {
+    this.onChange(bool => {
+      if(!bool) {
+        callback();
+      }
+    });
+    if(!this.getCurrentValue()) {
+      callback();
+    }
+
+    return this;
+  }
+
 }
 
 export function aexpr(func, ...params) {

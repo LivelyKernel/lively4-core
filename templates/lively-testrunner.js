@@ -12,29 +12,39 @@ import Morph from 'src/components/widgets/lively-morph.js';
 // });
 
 export default class TestRunner extends Morph {
+  get testDir() { return this.get('#testDir'); }
+  
   initialize() {
     this.windowTitle = "Test Runner"
-    lively.html.registerButtons(this)
+    lively.html.registerButtons(this);
     // lively.html.registerInputs(this)
+    this.testDir.addEventListener('keydown', event => {
+      if (event.keyCode == 13) { // ENTER
+        this.onRunButton();
+        event.stopPropagation();
+        event.preventDefault();
+      }
+    });
+
     if (!this.querySelector("#mocha")) {
       this.mochadiv = document.createElement("div");
-      this.mochadiv.id = "mocha"
-      this.appendChild(this.mochadiv)
+      this.mochadiv.id = "mocha";
+      this.appendChild(this.mochadiv);
     } else {
-      this.mochadiv = this.querySelector("#mocha")
+      this.mochadiv = this.querySelector("#mocha");
     }
-    this.querySelector("#mocha").innerHTML= ""
+    this.querySelector("#mocha").innerHTML = "";
     
-    lively.loadCSSThroughDOM("mochaCSS", lively4url + "/node_modules/mocha/mocha.css")
+    lively.loadCSSThroughDOM("mochaCSS", lively4url + "/node_modules/mocha/mocha.css");
     
     lively.loadJavaScriptThroughDOM("mochaJS", lively4url + "/src/external/mocha.js")
-      .then(() => {mocha.setup("bdd")})
+      .then(() => {mocha.setup("bdd")});
     
     var testDir =  this.getAttribute('testDir');
     if (testDir) {
-      this.get('#testDir').value = testDir;
+      this.testDir.value = testDir;
     }
-    this.get('#testDir').addEventListener("input", e => this.testDirChanged(e))
+    this.testDir.addEventListener("input", e => this.testDirChanged(e));
   }
 
   async findTestFilesInDir(dir) {
@@ -46,7 +56,6 @@ export default class TestRunner extends Morph {
       .map(fileName => dir + fileName);
   }
   
-  // [1,2,3].reduce((s,ea) => s + ea, 0 )
   async findTestFiles() {
     var files = []
     var list = this.shadowRoot.querySelector("#testDir").value.split(",")
@@ -77,23 +86,24 @@ export default class TestRunner extends Morph {
   // window.it
   
   clearTests() {
-    if (mocha.suite)
+    if (mocha.suite) {
       mocha.suite.suites.length = 0; // hihi #Holzhammer
+    }
     this.querySelector("#mocha").innerHTML= "";    
   }
   
   async loadTests() {
     return Promise.all(
-      (await this.findTestFiles()).map((url) => {
+      (await this.findTestFiles()).map(url => {
         var name = url.replace(/.*\//,"").replace(/\/\.[^\.]*/,"");
         
         // the code in the module has to be reexecuted!
         // var module = lively.modules.module(url)
         // if (module) module.reload()
       
-        lively.reloadModule(url)
+        lively.reloadModule(url);
       
-        return System.import(url)
+        return System.import(url);
         // mocha.addFile(url.replace(/.*\//,"").replace(/\..*/,""))
       }));
   }
@@ -212,14 +222,14 @@ export default class TestRunner extends Morph {
   }
   
   livelyMigrate(other) {
-    this.get('#testDir').value = other.get('#testDir').value;
+    this.testDir.value = other.testDir.value;
   }
   
   livelyPrepareSave() {
-    this.setAttribute('testDir', this.get('#testDir').value);
+    this.setAttribute('testDir', this.testDir.value);
   }
   
   testDirChanged(e) {
-    this.setAttribute('testDir', this.get('#testDir').value);
+    this.setAttribute('testDir', this.testDir.value);
   }
 }

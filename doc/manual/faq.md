@@ -2,7 +2,7 @@
 
 ## Web Components
 
-Q: Wo ist konfiguriert, welche Ordner zum Laden von WebComponents in Betracht gezogen werden?
+### Q: Wo ist konfiguriert, welche Ordner zum Laden von WebComponents in Betracht gezogen werden?
 
 A: Im [Componentloader](https://lively-kernel.org/lively4/lively4-core/src/client/morphic/component-loader.js) wird das durch die Methode `getTemplatePaths` spezifiziert.
 Gerade sind das:
@@ -16,4 +16,6 @@ import ComponentLoader from "src/client/morphic/component-loader.js";
 </script>
 
 
-Q: Können auch compile to JavaScript sprachen verwendet werden? (z.B. TypeScript, PureScript, …)
+## Q: Können auch compile to JavaScript sprachen verwendet werden? (z.B. TypeScript, PureScript, …)
+
+Every language can be used, as long as it can be edited in Lively4 at runtime and does not require server side compilation. 

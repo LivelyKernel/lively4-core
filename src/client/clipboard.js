@@ -1,5 +1,7 @@
 // #Clipboard - Cut,Copy, and Paste for Lively4
 
+/* global that,HaloService */
+
 import {pt} from 'src/client/graphics.js';
 import Halo from "src/components/halo/lively-halo.js";
 import { uuid as generateUUID } from 'utils';
@@ -27,7 +29,7 @@ export default class Clipboard {
     }
     this.onCopy(evt)
     if (lively.selection.nodes.length > 0) {
-      var html = lively.selection.nodes.forEach(ea => {
+      lively.selection.nodes.forEach(ea => {
         ea.remove()
       })
       lively.selection.remove()
@@ -35,13 +37,10 @@ export default class Clipboard {
     } else {
       that.remove()
     }
-    // lively.notify("hide halos")
     Halo.hideHalos()
   }
   
   static onCopy(evt) {
-    // lively.notify("on copy")
-
     if ((!HaloService.areHalosActive() || !that)) {
       return;
     }
@@ -65,7 +64,6 @@ export default class Clipboard {
     evt.clipboardData.setData('text/plain', html);
     evt.clipboardData.setData('text/html', html);
   }
-  
   
   static pasteHTMLDataInto(data, container) {
     // add everthing into a container 
@@ -164,7 +162,7 @@ export default class Clipboard {
       return 
     }
 
-    var data = evt.clipboardData.getData('text/plain')
+    data = evt.clipboardData.getData('text/plain')
     if (data) {
        this.pasteTextDataInto(data, this.lastTarget) 
       return 
@@ -191,7 +189,6 @@ export default class Clipboard {
       evt.preventDefault(); 
       return 
     }
- 
   }
 
   static highlight(element) {

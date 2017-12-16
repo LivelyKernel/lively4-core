@@ -1,8 +1,14 @@
-export class NumExpr {
-  constructor() { this.initialize.apply(this, arguments); }
+"enable aexpr";
 
-  initialize(val) {
+import { trackInstance, untrackInstance } from 'roq';
+
+export class NumExpr {
+  constructor(val) {
     this.val = val;
+    trackInstance.call(NumExpr, this);
+  }
+  destroy() {
+    untrackInstance.call(NumExpr, this);
   }
 
   toString() {
@@ -15,9 +21,12 @@ export class NumExpr {
 }
 
 export class NegExpr {
-  constructor() { this.initialize.apply(this, arguments); }
-  initialize(expr) {
+  constructor(expr) {
     this.expr = expr;
+    trackInstance.call(NegExpr, this);
+  }
+  destroy() {
+    untrackInstance.call(NegExpr, this);
   }
 
   toString() {
@@ -30,11 +39,13 @@ export class NegExpr {
 }
 
 export class AddExpr {
-  constructor() { this.initialize.apply(this, arguments); }
-
-  initialize(expr1, expr2) {
+  constructor(expr1, expr2) {
     this.expr1 = expr1;
     this.expr2 = expr2;
+    trackInstance.call(AddExpr, this);
+  }
+  destroy() {
+    untrackInstance.call(AddExpr, this);
   }
 
   toString() {
