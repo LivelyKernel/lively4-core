@@ -90,6 +90,17 @@ export class Dictionary extends DbObject {
   }
   
   /**
+   * Clears all storage data.
+   */
+  clear() {
+    return new Promise((resolve, reject) => {
+      let dbRequest = this._getObjectStore().clear();
+      dbRequest.onsuccess = resolve;
+      dbRequest.onerror = reject;
+    });
+  }
+  
+  /**
    * Returns all entries as array with tuples(key, object)
    * @return [[key0, object0], [key1, object1], ...]
    */

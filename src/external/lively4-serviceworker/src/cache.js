@@ -346,10 +346,14 @@ export class Cache {
         responseData = cachedData.map(e => e[0]);
         break;
       case 'cacheValue':
-        if(data) {
+        if (data) {
           responseCommand = command;
           responseData = await this._dictionary.match(data);
         }
+        break;
+      case 'clearCache':
+        await await this._dictionary.clear();
+        responseCommand = "clearCacheDone";
         break;
       case 'preloadFull':
         await this._preloadFull();

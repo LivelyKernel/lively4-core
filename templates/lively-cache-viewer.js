@@ -63,11 +63,19 @@ export default class LivelyCacheViewer extends Morph {
   }
   
   /**
-   * Component callbacks
+   * Reload cached keys
    */
   onRefreshButton() {
     this._showLoadingScreen(true);
     this._requestFromServiceWorker('cacheKeys');
+  }
+  
+  /**
+   * Delete cache
+   */
+  onClearButton() {
+    this._showLoadingScreen(true);
+    this._requestFromServiceWorker('clearCache');
   }
   
   /**
@@ -83,7 +91,7 @@ export default class LivelyCacheViewer extends Morph {
   }
   
   _showUpdatedCacheKeys() {
-    var fileList = this.get("#list");
+    let fileList = this.get("#list");
     fileList.innerHTML = '';
     
     // TODO: JSX would be much nicer here...
@@ -117,9 +125,9 @@ export default class LivelyCacheViewer extends Morph {
   }
   
   _showUpdatedStatus(dateValue) {
-    var statusField = this.get("#status");
-    
+    let statusField = this.get("#status");
     let statusText = `${this._cacheKeys.length} items in cache.`;
+    
     if (dateValue) {
       statusText += ` Selected item cached at: ${dateValue}`;
     }
@@ -151,6 +159,12 @@ export default class LivelyCacheViewer extends Morph {
         break;
       case 'cacheValue':
         this._showUpdatedCacheValue(data);
+        break;
+      case 'clearCacheDone':
+        this._cacheKeys = [];
+        this._showUpdatedCacheKeys();
+        this._showUpdatedStatus();
+        this._showLoadingScreen(false);
         break;
       case 'fullLoadingDone':
         this._requestFromServiceWorker('cacheKeys');
