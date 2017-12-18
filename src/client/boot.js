@@ -143,12 +143,12 @@ if (window.lively && window.lively4url) {
       transpiler: 'plugin-babel'
     })
     
-/*    await System.import('babel-plugin-doit-result');
-    await System.import('babel-plugin-doit-this-ref');
-    await System.import('babel-plugin-locals');
-    await System.import('babel-plugin-var-recorder');
-  */  //await System.import(lively4url + '/src/client/workspaces.js');
-    //await System.import('workspace-loader');
+    // await System.import('babel-plugin-doit-result');
+    // await System.import('babel-plugin-doit-this-ref');
+    // await System.import('babel-plugin-locals');
+    // await System.import('babel-plugin-var-recorder');
+    // await System.import(lively4url + '/src/client/workspaces.js');
+    // await System.import('workspace-loader');
     
     const aexprViaDirective = {
       babelOptions: {
@@ -181,6 +181,7 @@ if (window.lively && window.lively4url) {
         // ... except for the tests
         [lively4url + '/src/external/aexpr/test/*.spec.js']: aexprViaDirective,
         [lively4url + '/src/external/roq/test/*.js']: aexprViaDirective,
+        [lively4url + '/demos/trying-aexpr.js']: aexprViaDirective,
         // all others
         '*.js': {
           babelOptions: {
@@ -191,7 +192,7 @@ if (window.lively && window.lively4url) {
               'babel-plugin-jsx-lively',
               'babel-plugin-transform-do-expressions',
               'babel-plugin-transform-function-bind',
-              'babel-plugin-locals',
+              'babel-plugin-locals', // #TODO: remove this plugin from here
               'babel-plugin-var-recorder'
             ]
           }

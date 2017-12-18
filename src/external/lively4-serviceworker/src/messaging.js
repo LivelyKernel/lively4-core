@@ -10,10 +10,10 @@ export async function _send(type, command, data) {
         type: type,
         command: command,
         data: data
-      })
+      });
     } catch(err) {
-      console.log('Error during broadcast: ', err)
-      throw err
+      console.log('Error during broadcast: ', err);
+      throw err;
     }
   }
 }
@@ -34,21 +34,21 @@ export async function sendData(command, data) {
 
 
 export function hasPort(event) {
-  return e.ports
+  return e.ports;
 }
 
 export function getSource(event) {
-  return event.ports[0]
+  return event.ports[0];
 }
 
-var tasks = []
+var tasks = [];
 
 export function define(name, match, fn) {
-  tasks.push({name: name, match: match, fn: fn})
+  tasks.push({name: name, match: match, fn: fn});
 }
 
 export function process(event) {
-  return tasks.some((task) => task.match(event) && task.fn(event))
+  return tasks.some((task) => task.match(event) && task.fn(event));
 }
 
 // addMessageTask('test send back', (event) => {

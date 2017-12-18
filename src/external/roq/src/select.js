@@ -477,8 +477,8 @@ export function trackInitializeAndDestroy(Class) {
          * @param initialValue - the initial value passed to the {@View~reducer}.
          * @returns {ActiveExpression} changing with the callee
          */
-        reduce(callback, reducer, initialValue) {
-            const reduce = new ReduceOperator(this, callback, reducer, initialValue);
+        reduce(reducer, initialValue) {
+            const reduce = new ReduceOperator(this, reducer, initialValue);
 
             return reduce.aexpr;
         }
@@ -496,11 +496,6 @@ export function trackInitializeAndDestroy(Class) {
      * @callback View~mapIterator
      * @param {Object} item - item from the original {@link View}.
      * @return {Object} mapped item
-     */
-
-    /**
-     * The callback that is invoked when the {@link View} changes.
-     * @callback View~reduceCallback
      */
 
     /**

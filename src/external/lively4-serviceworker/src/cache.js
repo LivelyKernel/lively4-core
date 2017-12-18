@@ -24,8 +24,8 @@ export class Cache {
    * @param fileSystem A reference to the filesystem. Needed to process queued filesystem requests.
    */
   constructor(fileSystem) {
-    this._dictionary = new Dictionary('response-cache');
-    this._queue = new Dictionary('request-cache');
+    this._responseCache = new Dictionary('response-cache');
+    this._requestCache = new Dictionary('request-cache');
     this._favoritesTracker = new FavoritesTracker(this);
     
     this._connectionManager = new ConnectionManager();
@@ -134,7 +134,7 @@ export class Cache {
    * @return Promise
    */
   _match(request) {
-    return this._dictionary.match(buildKey(request));
+    return this._responseCache.match(buildKey(request));
   }
   
   /**
@@ -143,7 +143,7 @@ export class Cache {
    */
   _put(request, response) {
     Serializer.serialize(response).then((serializedResponse) => {
-      this._dictionary.put(buildKey(request), serializedResponse);
+      this._responseCache.put(buildKey(request), serializedResponse);
     })
     return response;
   }
@@ -157,7 +157,7 @@ export class Cache {
     let serializedRequest = await Serializer.serialize(request);
    
     // Put the serialized request in the queue
-    this._queue.put(buildKey(request), serializedRequest);
+    this._requestCache.put(buildKey(request), serializedRequest);
 
     // Update the cache content to pretend that the data has already been saved
     /* TODO: Directories (on PUT and DELETE)
@@ -171,7 +171,7 @@ export class Cache {
 
     // Check if we have the folder content cached
     const folderKey = `OPTIONS ${folderURL}`;
-    let response = await this._dictionary.match(folderKey);
+    let response = await this._responseCache.match(folderKey);
     if(response) {
       // We have the folder in the cache - update it
       // FileReader does not use Promises, so we have to wrap it   
@@ -196,10 +196,10 @@ export class Cache {
             let folderBlob = new Blob([JSON.stringify(folderJSON)], {type : 'text/plain'});
 
             // Update cached directory JSON
-            response = await this._dictionary.match(folderKey);
+            response = await this._responseCache.match(folderKey);
             if(response) {
               response.value.body = folderBlob;
-              await this._dictionary.put(folderKey, response.value);
+              await this._responseCache.put(folderKey, response.value);
               resolve();
             }
           } else if(folderContainsFile && serializedRequest.method === 'DELETE') {
@@ -209,10 +209,10 @@ export class Cache {
             let folderBlob = new Blob([JSON.stringify(folderJSON)], {type : 'text/plain'});
 
             // Update cached directory JSON
-            response = await this._dictionary.match(folderKey);
+            response = await this._responseCache.match(folderKey);
             if(response) {
               response.value.body = folderBlob;
-              await this._dictionary.put(folderKey, response.value);
+              await this._responseCache.put(folderKey, response.value);
               resolve();
             }
           } else {
@@ -226,11 +226,11 @@ export class Cache {
 
     // Update file/folder content
     const key = `GET ${serializedRequest.url}`;
-    response = await this._dictionary.match(key);
+    response = await this._responseCache.match(key);
     if(response) {
       // The file is already in the cache - update the value
       response.value.body = serializedRequest.body;
-      this._dictionary.put(key, response.value);
+      this._responseCache.put(key, response.value);
     } else {
       // The file/folder is not yet in the cache (probably newly created)
       // Create a fake entry with an empty file/folder
@@ -239,12 +239,12 @@ export class Cache {
         const responses = buildEmptyFileResponses();
         for (let method in responses) {
           let serializedResponse = await Serializer.serialize(responses[method]);
-          await this._dictionary.put(`${method} ${serializedRequest.url}`, serializedResponse);
+          await this._responseCache.put(`${method} ${serializedRequest.url}`, serializedResponse);
         }
       } else if (serializedRequest.method === 'MKCOL') {
         // Empyt folder
         let serializedResponse = await Serializer.serialize(buildEmptyFolderResponse());
-        await this._dictionary.put(`OPTIONS ${serializedRequest.url}`, serializedResponse);
+        await this._responseCache.put(`OPTIONS ${serializedRequest.url}`, serializedResponse);
       }
     }
   }
@@ -253,7 +253,7 @@ export class Cache {
    * Processes all queued requests by sending them in the same order
    */
   async _processQueued() {
-    let queueEntries = await this._queue.toArray();
+    let queueEntries = await this._requestCache.toArray();
     if (queueEntries.length === 0) return;
     
     // Sort queueEntries by ascending by timestamp
@@ -280,7 +280,7 @@ export class Cache {
       }
       
       // Remove from queue
-      await this._queue.delete(queueEntry.key);
+      await this._requestCache.delete(queueEntry.key);
     }
     
     msg.notify('info', 'Processed all queued requests');
@@ -342,14 +342,18 @@ export class Cache {
     switch (command) {
       case 'cacheKeys':
         responseCommand = command;
-        let cachedData = await this._dictionary.toArray();
+        let cachedData = await this._responseCache.toArray();
         responseData = cachedData.map(e => e[0]);
         break;
       case 'cacheValue':
-        if(data) {
+        if (data) {
           responseCommand = command;
-          responseData = await this._dictionary.match(data);
+          responseData = await this._responseCache.match(data);
         }
+        break;
+      case 'clearCache':
+        await await this._responseCache.clear();
+        responseCommand = "clearCacheDone";
         break;
       case 'preloadFull':
         await this._preloadFull();
