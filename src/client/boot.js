@@ -159,8 +159,6 @@ if (window.lively && window.lively4url) {
           'babel-plugin-jsx-lively',
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',
-          'babel-plugin-doit-result',
-          'babel-plugin-doit-this-ref',
           'babel-plugin-var-recorder',
           ['babel-plugin-aexpr-source-transformation', {
             enableViaDirective: true
@@ -175,8 +173,8 @@ if (window.lively && window.lively4url) {
         // plugins are not transpiled with other plugins, except for SystemJS-internal plugins
         [lively4url + '/src/external/babel-plugin-*.js']: moduleOptionsNon,
         [lively4url + '/src/external/ContextJS/src/*.js']: moduleOptionsNon,
-        //['']: moduleOptionsNon,
         // blacklist all projects included for active expressions
+        [lively4url + '/src/client/reactive/*.js']: moduleOptionsNon,
         [lively4url + '/src/external/aexpr/*.js']: moduleOptionsNon,
         // ... except for the tests
         [lively4url + '/src/external/aexpr/test/*.spec.js']: aexprViaDirective,
