@@ -53,7 +53,7 @@ class ServiceWorker {
   }
 
   static instance() {
-    var startTime = Date.now();
+    // var startTime = Date.now();
     var instance = new ServiceWorker();
     __instance__ = instance; // Global side effect #TODO
 
@@ -88,8 +88,7 @@ class ServiceWorker {
     if (!request) return;
 
     let  url = new URL(request.url);
-    let promise = undefined;
-
+    
     // console.log(lively4stamp(), "SWX.fetch " + request.method + " " + url + ", " + pending);
 
     //console.log(`fetch(${url})`);
@@ -148,6 +147,8 @@ class ServiceWorker {
               
               var req = new Request(request.url, options );
 
+              // console.log(lively4stamp(), "resolve...");
+
               // use system here to prevent recursion...
               resolve(self.fetch(req).then((result) => {
                 // console.log(lively4stamp(), "fetched finished");
@@ -176,9 +177,11 @@ class ServiceWorker {
         };
 
         if (pending) {
+          // console.log("answer pending")
           pending.resolve(doNetworkRequest());
         } else {
           // Use the cache if possible
+          // console.log("use cache")
           event.respondWith(this._cache.fetch(event.request, doNetworkRequest));
         }
       } catch(err) {
@@ -211,12 +214,14 @@ class ServiceWorker {
             return new Response(content, {status: 500, statusText: message});
           }));
         });
-      };
+      } 
 
       if (pending) {
         pending.resolve(doNetworkRequest());
       } else
         event.respondWith(this._cache.fetch(event.request, doNetworkRequest));
+    } else {
+        // console.log("do nothing")
     }
   }
 

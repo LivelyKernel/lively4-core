@@ -72,6 +72,7 @@ export class Cache {
    * @param doNetworkRequest A function to call if we need to send out a network request
    */
   fetch(request, doNetworkRequest) {
+    // #TODO #Refactor #Bug #Performance Get rid of focalStorage
     return focalStorage.getItem(this._cacheModeKey).then((cacheMode) => {
       if (cacheMode == 2) {
         this._favoritesTracker.update(request.url);
