@@ -150,6 +150,21 @@ if (window.lively && window.lively4url) {
     // await System.import(lively4url + '/src/client/workspaces.js');
     // await System.import('workspace-loader');
     
+    const liveES7 = {
+      babelOptions: {
+        es2015: false,
+        stage2: false,
+        stage3: false,
+        plugins: [
+          'babel-plugin-jsx-lively',
+          'babel-plugin-transform-do-expressions',
+          'babel-plugin-transform-function-bind',
+          'babel-plugin-locals', // #TODO: remove this plugin from here
+          'babel-plugin-var-recorder'
+        ]
+      }
+    };
+    
     const aexprViaDirective = {
       babelOptions: {
         es2015: false,
@@ -165,11 +180,14 @@ if (window.lively && window.lively4url) {
           }]
         ]
       },
-      loader: 'workspace-loader'
+      format: 'esm'
     };
 
     SystemJS.config({
       meta: {
+        '*.js': liveES7,
+        [lively4url + "/src/external/*.js"]: liveES7,
+        /* FILE-BASED */
         // plugins are not transpiled with other plugins, except for SystemJS-internal plugins
         [lively4url + '/src/external/babel-plugin-*.js']: moduleOptionsNon,
         [lively4url + '/src/external/ContextJS/src/*.js']: moduleOptionsNon,
@@ -179,22 +197,21 @@ if (window.lively && window.lively4url) {
         // ... except for the tests
         [lively4url + '/src/external/aexpr/test/*.spec.js']: aexprViaDirective,
         [lively4url + '/src/external/roq/test/*.js']: aexprViaDirective,
-        [lively4url + '/demos/trying-aexpr.js']: aexprViaDirective,
-        // all others
-        '*.js': {
-          babelOptions: {
-            es2015: false,
-            stage2: false,
-            stage3: false,
-            plugins: [ // window.__karma__ ? [] :  
-              'babel-plugin-jsx-lively',
-              'babel-plugin-transform-do-expressions',
-              'babel-plugin-transform-function-bind',
-              'babel-plugin-locals', // #TODO: remove this plugin from here
-              'babel-plugin-var-recorder'
-            ]
-          }
-        },
+        
+        [lively4url + '/templates/*.js']: aexprViaDirective,
+        [lively4url + '/test/*.js']: liveES7,
+        // [lively4url + '/*.js']: aexprViaDirective,
+        // default for all .js files (not just lively4)
+        [lively4url + "/src/client/*.js"]: aexprViaDirective,
+        [lively4url + "/src/components/*.js"]: aexprViaDirective,
+        // [lively4url + '/demos/*.js']: liveES7,
+        // [lively4url + '/doc/*.js']: liveES7,
+        // [lively4url + '/media/*.js']: liveES7,
+        // [lively4url + '/node_modules/*.js']: liveES7,
+        // [lively4url + '/src/client/*.js']: liveES7,
+        // [lively4url + '/src/external/*.js']: liveES7,
+        // [lively4url + '/src/*.js']: liveES7,
+        /* WORKSPACE */
         'workspace:*': {
           babelOptions: {
             es2015: false,

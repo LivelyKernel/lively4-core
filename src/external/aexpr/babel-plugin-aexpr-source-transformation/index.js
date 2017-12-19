@@ -145,7 +145,8 @@ export default function(param) {
       Program: {
         enter(path, state) {
           //console.log("file", path, state);
-          console.log("AEXPR", path, state, state && state.opts && state.opts.enableViaDirective)
+          console.log("AEXPR", state && state.file && state.file.log && state.file.log.filename);
+          //console.log("AEXPR", path, state, state && state.opts && state.opts.enableViaDirective)
           let shouldTransform = true;
           if(state.opts.enableViaDirective) {
             shouldTransform = false;
