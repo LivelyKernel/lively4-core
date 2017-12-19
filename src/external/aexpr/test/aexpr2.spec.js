@@ -1,0 +1,4 @@
+"enable aexpr";
+
+aexpr(()=>{});
+

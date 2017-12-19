@@ -14,7 +14,8 @@ export default class View {
 
     this.layersByItem = new Map();
   }
-
+  get isActiveGroup() { return true; }
+  
   safeAdd(item) {
     var wasNewItem = pushIfMissing(this.items, item);
     if(wasNewItem) {

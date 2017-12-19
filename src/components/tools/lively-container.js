@@ -94,7 +94,7 @@ export default class Container extends Morph {
     });
     this.get("#fullscreenInline").onclick = (e) => this.onFullscreen(e);
     
-    lively.html.registerButtons(this);
+    this.registerButtons();
 
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
     // this.addEventListener('keyup',   evt => this.onKeyUp(evt));

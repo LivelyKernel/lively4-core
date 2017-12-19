@@ -17,7 +17,7 @@ export function buildNetworkRequestFunction(request) {
         return result;
       }).catch(e => {
         console.log("fetch error: "  + e);
-        return new Response("Could not fetch " + url +", because of: " + e);
+        return new Response("Could not fetch " + request.url +", because of: " + e);
       }))
     });
   };
@@ -138,70 +138,40 @@ export function buildEmptyFolderResponse(folderName) {
 /**
  * Returns a list of file that are necessary to boot lively
  */
-export function getBootFiles() {
-    let filesToLoad = [
-      // Essential
-      '',
-      'start.html',
-      'swx-boot.js',
-      'swx-loader.js',
-      'swx-post.js',
-      'swx-pre.js',
-      'src/client/boot.js',
-      'src/client/load.js',
-      'src/client/lively.js',
-      'src/external/systemjs/system.src.js',
-      'src/external/babel/plugin-babel2.js',
-      'src/external/babel/systemjs-babel-browser.js',
-      'src/external/babel-plugin-jsx-lively.js',
-      'src/external/babel-plugin-transform-do-expressions.js',
-      'src/external/babel-plugin-transform-function-bind.js',
-      'src/external/babel-plugin-locals.js',
-      'src/external/babel-plugin-var-recorder.js',
-      'src/external/babel-plugin-syntax-jsx.js',
-      'src/external/babel-plugin-syntax-function-bind.js',
-      'src/external/babel-plugin-syntax-do-expressions.js',
-      
-      // Useful
-      'templates/lively-notification.html',
-      'templates/lively-notification.js',
-      'templates/lively-notification-list.html',
-      'templates/lively-notification-list.js',
-      'src/components/widgets/lively-menu.html',
-      'src/components/widgets/lively-menu.js',
-      'src/components/widgets/lively-dialog.html',
-      'src/components/widgets/lively-dialog.js',
-      'templates/lively-file-browser.html',
-      'templates/lively-file-browser.js',
-      'src/components/widgets/lively-markdown.html',
-      'src/components/widgets/lively-markdown.js',
-      'templates/lively-file-browser-item.html',
-      'templates/lively-file-browser-item.js'
-    ];
+export async function getBootFiles() {
+  const confUrl = self.lively4url + "/src/external/lively4-serviceworker/src/minconfig.json";
+  let file = await self.fetch(confUrl);
+  let json = await file.json();
+  let filesToLoad = json.files;
+  let directoryParts = self.location.pathname.split('/');
+  directoryParts[directoryParts.length - 1] = '';
+  let directory = directoryParts.join('/');
 
-    let directoryParts = self.location.pathname.split('/');
-    directoryParts[directoryParts.length-1] = '';
-    let directory = directoryParts.join('/');
-    
-    return filesToLoad.map((file) => {return directory + file});
+  return filesToLoad.map((file) => {return directory + file});
 }
 
 /**
  * Merges two arrays, removing duplicates and keeping order
  */
 export function mergeArrays(a, b) {
-    let merged = a.concat(b);
+  let merged = a.concat(b);
 
-    for (let i = 0; i < merged.length; i++) {
-        for (let j = i+1; j < merged.length; j++) {
-            if (merged[i] === merged[j]) {
-                merged.splice(j--, 1);
-            }
-        }
+  for (let i = 0; i < merged.length; i++) {
+    for (let j = i+1; j < merged.length; j++) {
+      if (merged[i] === merged[j]) {
+        merged.splice(j--, 1);
+      }
     }
+  }
 
-    return merged;
+  return merged;
 };
+
+export function joinUrls(a, b) {
+  a = a.replace(/\/+$/, "");
+  b = b.replace(/\/+/, "");
+  return `${a}/${b}`;
+}
 
 // Store array with mappings from numerical to hex representation
 const _hexMap = Array.from(Array(0xff), (_, i) => (i + 0x100).toString(16).substr(1))

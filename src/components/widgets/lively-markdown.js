@@ -10,7 +10,7 @@ import Upndown from 'src/external/upndown.js';
 export default class LivelyMarkdown extends Morph {
   async initialize() {
     this.windowTitle = "LivelyMarkdown";
-    lively.html.registerButtons(this);
+    this.registerButtons();
     this.updateView();
     if (this.getAttribute("mode") == "presentation") {
       this.startPresentation()

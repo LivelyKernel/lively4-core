@@ -1,11 +1,14 @@
-import withLogging from '../src/withlogging.js';
-import select from '../src/select.js';
-import { AddExpr, NegExpr, NumExpr } from './fixtures/expr.js';
+"enable aexpr";
+import chai, {expect} from 'node_modules/chai/chai.js';
+import sinon from 'src/external/sinon-3.2.1.js';
+import sinonChai from 'node_modules/sinon-chai/lib/sinon-chai.js';
+chai.use(sinonChai);
+
+import select from 'roq';
+import { AddExpr, NegExpr, NumExpr } from './expr.js';
 
 describe('complex example', function() {
     it('runs an empty program', function() {
-
-        withLogging.call(AddExpr);
 
         var seventeen = new NumExpr(17);
         var adExpr = new AddExpr(
@@ -19,17 +22,12 @@ describe('complex example', function() {
         var selection = select(AddExpr, function(expr) {
             return expr.result() > threshold;
         });
+        expect(selection.now()).to.have.length(1);
 
-        expect(selection.now()).to.have.lengthOf(1);
-
-        var manualSelectionSize = 0;
+      var manualSelectionSize = 0;
         selection
-            .enter(function(item) {
-                manualSelectionSize++;
-            })
-            .exit(function(item) {
-                manualSelectionSize--;
-            });
+            .enter(item => manualSelectionSize++)
+            .exit(item => manualSelectionSize--);
 
         expect(manualSelectionSize).to.equal(1);
 
@@ -39,7 +37,6 @@ describe('complex example', function() {
             .enter(function(numExpr) {
                 console.log('new NumExpr through mapping', numExpr);
             });
-
 
         expect(mappedSelection.now()).to.have.lengthOf(1);
         mappedSelection.now().forEach(function(numExpr) {
@@ -62,9 +59,9 @@ describe('complex example', function() {
                 numExpr.result() === 30
             ).to.be.true;
         });
-
         five.val = -30;
         expect(expr.result()).to.equal(-5);
+        expect(selection.now()).to.not.include(expr);
         expect(selection.now()).to.have.lengthOf(1);
         expect(manualSelectionSize).to.equal(1);
 
@@ -81,9 +78,9 @@ describe('complex example', function() {
         expect(mappedSelection.now()).to.have.lengthOf(0);
 
         var eleven = new NegExpr(
-            new NegExpr(
-                new NumExpr(11)
-            )
+          new NegExpr(
+            new NumExpr(11)
+          )
         );
         var expr2 = new AddExpr(
             eleven,
@@ -107,7 +104,6 @@ describe('complex example', function() {
         expect(mappedSelection.now()).to.have.lengthOf(0);
 
         newFive.val = -11;
-        console.log('Size of Selection', selection.size());
         expect(expr2.result()).to.equal(11);
         expect(selection.now()).to.have.lengthOf(1);
         expect(manualSelectionSize).to.equal(1);
@@ -119,7 +115,6 @@ describe('complex example', function() {
 
         expr2.destroy();
         expr2.destroy();
-        console.log('Size of Selection', selection.size());
         expect(selection.now()).to.have.lengthOf(0);
         expect(manualSelectionSize).to.equal(0);
 

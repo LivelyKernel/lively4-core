@@ -11,7 +11,7 @@ import Preferences from './preferences.js';
 import Windows from "src/components/widgets/lively-window.js"
 import {Grid} from "src/client/morphic/snapping.js"
 import Info from "src/client/info.js"
-
+import * as _ from 'src/external/lodash/lodash.js'
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
@@ -48,20 +48,16 @@ export default class ContextMenu {
     });
   }
   
-  static openInWindow(comp, worldContext, evt) {
+  static openInWindow(comp) {
     var pos = lively.getPosition(comp);
-	  lively.components.openInWindow(comp, pos).then( comp => {
-	     lively.setPosition(comp, pt(0,0));
-	  });
+    lively.components.openInWindow(comp, pos).then( comp => {
+      lively.setPosition(comp, pt(0,0));
+    });
   }
   
   static eventPosition(worldContext, evt) {
     evt = this.firstEvent || evt;
-    
-    var pos = pt(evt.clientX, evt.clientY);
-    var bodyBounds = document.body.getBoundingClientRect()
-    var offset = pt(bodyBounds.left, bodyBounds.top)
-    
+    var pos = pt(evt.clientX, evt.clientY);    
     if (worldContext.localizePosition) { 
       pos = worldContext.localizePosition(pos);
     } else {
@@ -79,7 +75,7 @@ export default class ContextMenu {
     var wasDisabled = (target.disabled == "true");
     var targetInWindow = target.parentElement && target.parentElement.tagName == 'LIVELY-WINDOW';
     return [
-      ["show", (evt) => {
+      ["show", () => {
          this.hide();
          lively.showElement(target);
       }],
@@ -97,30 +93,30 @@ export default class ContextMenu {
       //    });
       //    this.hide();
       // }],
-      ["remove", (evt) => {
+      ["remove", () => {
          target.remove()
          this.hide();
       }],
-      ["go back", (evt) => {
+      ["go back", () => {
         target.parentElement.insertBefore(target, target.parentElement.childNodes[0])
          this.hide();
       }],
-      ["come forward", (evt) => {
+      ["come forward", () => {
         target.parentElement.appendChild(target)
         this.hide();
       }],
       
       [
-        "make space", (evt) => {
+        "make space", () => {
           Layout.makeLocalSpace(target)
           this.hide()
         }
       ],
-      [wasEditable ? "make uneditable" : "make editable", (evt) => {
+      [wasEditable ? "make uneditable" : "make editable", () => {
          this.hide();
          target.contentEditable = !wasEditable;
       }],
-      [wasDisabled ? "enable" : "disable", (evt) => {
+      [wasDisabled ? "enable" : "disable", () => {
          this.hide();
          target.disabled = !wasDisabled;
       }],
@@ -130,7 +126,7 @@ export default class ContextMenu {
             target.parentElement.embedContentInParent() :
             ContextMenu.openInWindow(target, evt);
         }],
-      ["save as...", async (evt) => {
+      ["save as...", async () => {
         var name = await lively.prompt("save element as: ", "src/parts/element.html")
         // var name = "foo.html"
         var url = name
@@ -151,8 +147,6 @@ export default class ContextMenu {
           source = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + 
             tmp.innerHTML  
         } else if (name.match(/\.png/)) {
-          
-          var element
           if (target.tagName == "IMG") 
             element = target
           else
@@ -201,8 +195,6 @@ export default class ContextMenu {
       },"", enabledIcon(Preferences.get(preferenceKey))
     ]
   }
-  
-  
   
   static worldMenuItems(worldContext) {
     return  [
@@ -313,20 +305,20 @@ export default class ContextMenu {
         ])
       ],
       ["View", [
-        ["Reset View", (evt) => ViewNav.resetView(), 
+        ["Reset View", () => ViewNav.resetView(), 
           "",'<i class="fa fa-window-restore" aria-hidden="true"></i>'],
         
         !document.webkitIsFullScreen ?
-            ["Enter Fullscreen", (evt) => {
+            ["Enter Fullscreen", () => {
                 document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)
               },
               "F11", '<i class="fa fa-arrows-alt" aria-hidden="true"></i>'
             ] :
-            ["Leave Fullscreen", (evt) => document.webkitCancelFullScreen(),
+            ["Leave Fullscreen", () => document.webkitCancelFullScreen(),
               "F11", '<i class="fa fa-times-circle-o" aria-hidden="true"></i>'
           ],
 
-        ["Gather Windows", (evt) => {
+        ["Gather Windows", () => {
             var pos = pt(0,0)
             _.sortBy(worldContext.querySelectorAll(":scope > lively-window"), ea => {
               return getComputedStyle(ea).zIndex
@@ -337,12 +329,12 @@ export default class ContextMenu {
           },
           "", '<i class="fa fa-window-restore" aria-hidden="true"></i>'
         ],
-        ["Explode Windows", (evt) => {
+        ["Explode Windows", () => {
             Layout.expandUntilNoIntersectionsExplosion()
           },
           "", '<i class="fa fa-window-restore" aria-hidden="true"></i>'
         ],
-        ["Show Windows", (evt) => {
+        ["Show Windows", () => {
             var pos = pt(0,0)
             var windowsByWidth = _.groupBy(document.body.querySelectorAll("lively-window"), ea => ea.clientWidth) 
             Object.keys(windowsByWidth).forEach( width => {
@@ -355,13 +347,17 @@ export default class ContextMenu {
           },
           "", '<i class="fa fa-window-restore" aria-hidden="true"></i>',
         ],
-        ["Snap All to Grid Now", (evt) => {
+        ["Snap All to Grid Now", () => {
           Grid.snapAllTopLevelContent()
         },
         "", '<i class="fa fa-th" aria-hidden="true"></i>'
         ]
       ]],
       ["Documentation", [
+        ["Keyboard Shortcuts", () => {
+          lively.openBrowser(lively4url + "/doc/manual/shortcuts.md")
+          }, 
+          "", '<i class="fa fa-file-text-o" aria-hidden="true"></i>'],
         ["Devdocs.io", (evt) => {
             this.openComponentInWindow("lively-help",  pt(evt.pageX, evt.pageY), worldContext);
           }, 
@@ -383,23 +379,23 @@ export default class ContextMenu {
             comp.followPath(lively4url + "/doc/stories.md");
           });
           // window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
-        },, '<i class="fa fa-bug" aria-hidden="true"></i>'],
-        ["Module Info", (evt) => {
+        },undefined, '<i class="fa fa-bug" aria-hidden="true"></i>'],
+        ["Module Info", () => {
           Info.showModuleInfo()
-          },, '<i class="fa fa-info" aria-hidden="true"></i>']
+          },undefined, '<i class="fa fa-info" aria-hidden="true"></i>']
       ]],
       ["Preferences", 
           ["ShowDocumentGrid", "InteractiveLayer", "ShowFixedBrowser", "SnapWindowsInGrid", "DisableAExpWorkspace", "DisableAltGrab", "UseTernInCodeMirror", "UseAsyncWorkspace", "CtrlAsHaloModifier"].map(ea => this.preferenceEntry(ea))
       ],
       ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt, worldContext), 
         "CMD+SHIFT+G",'<i class="fa fa-github" aria-hidden="true"></i>'],
-      ["save as ..", (evt) => {
+      ["save as ..", () => {
         if (worldContext.onSaveAs)
           worldContext.onSaveAs() 
         else html.saveCurrentPageAs();
       }],
 
-      ["Save", (evt) => {
+      ["Save", () => {
           if (worldContext.onSave)
             worldContext.onSave()
           else

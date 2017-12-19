@@ -25,7 +25,7 @@ export default class LivelyPDF extends Morph {
     
     if (!this.isLoaded) return
     
-     var container = this.get('#viewerContainer');
+    var container = this.get('#viewerContainer');
     // (Optionally) enable hyperlinks within PDF files.
     this.pdfLinkService = new PDFJS.PDFLinkService();
     this.pdfViewer = new PDFJS.PDFViewer({
@@ -43,21 +43,29 @@ export default class LivelyPDF extends Morph {
     fetch(url).then(response => {
       return response.blob();
     }).then(blob => {
+      let fileReader = new FileReader();
+      fileReader.addEventListener('loadend', function() {
+        that.editedPdfText = atob(fileReader.result.replace("data:application/pdf;base64,", ""));
+        that.originalPdfText = that.editedPdfText;
+      });
+      
+      fileReader.readAsDataURL(blob);
       return URL.createObjectURL(blob);
     }).then(base64pdf => {
       PDFJS.getDocument(base64pdf).then(function (pdfDocument) {
         that.pdfViewer.setDocument(pdfDocument);
 
         that.pdfLinkService.setDocument(pdfDocument, null);
-        that.pdfViewer.pagesPromise.then(() => {
-          let annotations = that.getAllSubmorphs(".annotationLayer section");
-          annotations.forEach((annotation) => {
-            lively.addEventListener("pdf", annotation, "click",
-                                  (e) => that.onClick(e));
-          });
-        });
-      })
+  
+        lively.addEventListener("pdf", that.getSubmorph("#pdf-edit-button"), "click",
+                              (e) => that.onPdfEdit(e));
+        lively.addEventListener("pdf", that.getSubmorph("#pdf-save-button"), "click",
+                              (e) => that.onPdfSave(e));
+        lively.addEventListener("pdf", that.getSubmorph("#pdf-cancel-button"), "click",
+                              (e) => that.onPdfCancel(e));
+      });
     });
+    this.setChangeIndicator(false);    
   }
   
   onExtentChanged() {
@@ -79,39 +87,55 @@ export default class LivelyPDF extends Morph {
   editAnnotations(annotationSection) {
     let annotationId = annotationSection.dataset.annotationId;
     annotationId = annotationId.match(/\d+/g)[0];
-    let url = this.getAttribute("src");
-    /*let url = "https://lively-kernel.org/lively4/lively4-pdf-annotator/doc/WebDev2017/project_3/annotations.pdf";
-    let newUrl = "https://lively-kernel.org/lively4/lively4-pdf-annotator/doc/WebDev2017/project_3/annotations2.pdf";*/
-    fetch(url).then(response => {
-      return response.blob();
-    }).then(blob => {
-      let fileReader = new FileReader();
-      fileReader.addEventListener('loadend', function() {
-        let pdfText = atob(fileReader.result.replace("data:application/pdf;base64,", ""));
-        let annotationRegex = new RegExp("^(" + annotationId + "\\s\\d\\sobj)", "mg");
-        let startSubstr = pdfText.substring(pdfText.search(annotationRegex));
-        let annotation = startSubstr.substring(0, startSubstr.indexOf('endobj') + 6);
-        let newAnnotation = "";
-        let replaceRegex = /\/\Contents\s\([^\)]+\)/gm;
-            
-        //console.log(annotation.match(replaceRegex));
-        //console.log(replaceRegex.exec(annotation));
-        
-        let newValue = window.prompt('Please enter the new value');
-        if(newValue !== null) {
-          newAnnotation = annotation.replace(replaceRegex, "/Contents (" + newValue + ")");  
-        }
-        
-        //console.log(annotation);
-        
-        let newPdfText = pdfText.replace(annotation, newAnnotation);
-        let newPdfData = "data:application/pdf;base64," + btoa(newPdfText);
-        fetch(newPdfData).then(response => response.blob()).then(newBlob => {
-          fetch(url, {method: 'PUT', body: newBlob });
-        });
+    let annotationRegex = new RegExp("^(" + annotationId + "\\s\\d\\sobj)", "mg");
+    let startSubstr = this.editedPdfText.substring(this.editedPdfText.search(annotationRegex));
+    let annotation = startSubstr.substring(0, startSubstr.indexOf('endobj') + 6);
+    let newAnnotation = "";
+    let replaceRegex = /\/\Contents\s\([^\)]+\)/gm;
+
+    let newValue = window.prompt('Please enter the new value');
+    if(newValue !== null) {
+      this.setChangeIndicator(true);
+      newAnnotation = annotation.replace(replaceRegex, "/Contents (" + newValue + ")");  
+
+      this.editedPdfText = this.editedPdfText.replace(annotation, newAnnotation);
+      this.setChangeIndicator(true);
+    }
+  }
+  
+  setChangeIndicator(contentChanged) {
+    let livelyContainer = this.parentElement;
+    livelyContainer.contentChanged = contentChanged;
+    livelyContainer.updateChangeIndicator();
+  }
+  
+  onPdfEdit(event) {
+    let editButton = this.getSubmorph("#pdf-edit-button");
+    editButton.classList.add("active");
+    editButton.setAttribute("disabled", "true");
+    let that = this;
+    this.pdfViewer.pagesPromise.then(() => {
+      let annotations = that.getAllSubmorphs(".annotationLayer section");
+      annotations.forEach((annotation) => {
+        lively.addEventListener("pdf", annotation, "click",
+                              (e) => that.onClick(e));
       });
-      
-      fileReader.readAsDataURL(blob);
     });
+  }
+  
+  onPdfSave(event) {
+    let url = this.getAttribute("src");
+    let newPdfData = "data:application/pdf;base64," + btoa(this.editedPdfText);
+    fetch(newPdfData).then(response => response.blob()).then(newBlob => {
+      fetch(url, {method: 'PUT', body: newBlob });
+    });
+    this.setChangeIndicator(false);
+  }
+  
+  onPdfCancel(e) {
+    let editButton = this.getSubmorph("#pdf-edit-button");
+    editButton.classList.remove("active");
+    editButton.removeAttribute("disabled");
+    this.editedPdfText = this.originalPdfText;
   }
 }

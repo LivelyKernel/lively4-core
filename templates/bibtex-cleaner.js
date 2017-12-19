@@ -8,7 +8,7 @@ export default class BibtexCleaner extends Morph {
   get mismatches() { return this.get('#mismatches'); }
   async initialize() {
     this.windowTitle = "BibtexCleaner";
-    lively.html.registerButtons(this);
+    this.registerButtons();
     this.input.enableAutocompletion();
     this.input.aceRequire('ace/ext/searchbox');
     this.input.doSave = async text => {

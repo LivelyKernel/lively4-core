@@ -1,13 +1,16 @@
-import withLogging from '../../src/withlogging.js';
-import select from '../../src/select.js';
-import { getValueClass } from '../fixtures/class-factory.js';
+"enable aexpr";
+import chai, {expect} from 'node_modules/chai/chai.js';
+import sinon from 'src/external/sinon-3.2.1.js';
+import sinonChai from 'node_modules/sinon-chai/lib/sinon-chai.js';
+chai.use(sinonChai);
+
+import select from 'roq';
+import { getValueClass } from './class-factory.js';
 var OtherClass = getValueClass();
 
 describe('.delay operator', function() {
     it('OtherClass example', function(done) {
         this.timeout(10000);
-
-        withLogging.call(OtherClass);
 
         var otherInstance1 = new OtherClass(42);
         var baseView = select(OtherClass, function(data) {

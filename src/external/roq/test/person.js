@@ -1,10 +1,14 @@
-export default class Person {
-  constructor() { this.initialize.apply(this, arguments); }
+"enable aexpr";
 
-  initialize(name, title) {
+import { trackInstance } from 'roq';
+
+export default class Person {
+  constructor(name, title) {
     this.name = name;
     this.setTitle(title);
+    trackInstance.call(Person, this);
   }
+
   getName() {
     return this.name;
   }

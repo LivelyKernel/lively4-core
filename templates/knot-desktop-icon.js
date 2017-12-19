@@ -1,6 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { Graph } from './../src/client/triples/triples.js';
 import { fileName, hintForLabel, getTempKeyFor } from 'utils';
+import {pt} from "src/client/graphics.js";
 
 export default class KnotDesktopIcon extends Morph {
   get fontAwesomeClassesDefault() { return ["fa", "fa-question"]; }

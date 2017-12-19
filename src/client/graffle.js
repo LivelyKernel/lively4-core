@@ -39,12 +39,15 @@ export default class Graffle {
       if (hand) {
         hand.style.display = "block"
         var info = ""
+        // #KeyboardShortcut HOLD-S+Drag create shape
         if (this.keysDown["S"]) {
           info = "shape"
         }
+        // #KeyboardShortcut HOLD-C+Drag create connector
         if (this.keysDown["C"]) {
           info = "connect"
         }
+        // #KeyboardShortcut HOLD-T+Drag create text
         if (this.keysDown["T"]) {
           info = "text"
         }
