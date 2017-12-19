@@ -62,6 +62,22 @@ export default class Morph extends HTMLDivElement {
       func(value)
     }
   }
+
+  registerButtons() {
+    // Just an experiment for having to write lesser code.... which ended up in having more code here ;-) #Jens
+    Array.from(this.shadowRoot.querySelectorAll('button')).forEach(node => {
+      var name = node.id;
+      var funcName = name.replace(/^./, c => 'on'+ c.toUpperCase());
+      // console.log('register button ' + name)
+      $(node).click(evt => {
+        if (this[funcName] instanceof Function) {
+          this[funcName](evt);
+        } else {
+          alert('No callback: ' +  funcName);
+        }
+      });
+    });
+  }
   
   toString() {
     return "[" + this.constructor.name + "]"

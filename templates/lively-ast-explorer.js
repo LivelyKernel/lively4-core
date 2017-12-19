@@ -43,7 +43,7 @@ export default class AstExplorer extends Morph {
     initLivelyEditorFromAttribute(this.pluginEditor, 'plugin', 
     	"https://lively-kernel.org/lively4/lively4-core/demos/babel/astplugin.js");
 
-    lively.html.registerButtons(this);
+    this.registerButtons();
 
     
     this.pluginEditor.get("#editor").doSave = async () => {
