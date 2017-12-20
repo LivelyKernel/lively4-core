@@ -49,16 +49,7 @@ export class Cache {
       }
     });
     
-    // Set default cache mode
-    const instanceName = lively4url.split("/").pop();
-    this._cacheModeKey = `${instanceName}-cacheMode`;
-    focalStorage.getItem(this._cacheModeKey).then(
-      (cacheMode) => {
-        if (cacheMode === null) {
-          focalStorage.setItem(this._cacheModeKey, 2);
-        }
-      }
-    )
+    this._initCacheMode();
     
     // Define which HTTP methods need result caching, and which need request queueing
     this._cacheMethods = ['OPTIONS', 'GET'];
@@ -72,18 +63,37 @@ export class Cache {
    * @param doNetworkRequest A function to call if we need to send out a network request
    */
   fetch(request, doNetworkRequest) {
-    // #TODO #Refactor #Bug #Performance Get rid of focalStorage
-    return focalStorage.getItem(this._cacheModeKey).then((cacheMode) => {
-      if (cacheMode == 2) {
+    return new Promise(resolve => {
+      if (this._cacheMode == 2) {
         this._favoritesTracker.update(request.url);
       }
       
       if (this._connectionManager.isOnline) {
-        return this._onlineResponse(request, doNetworkRequest, cacheMode > 0);
-      } else if (cacheMode > 0) {
-        return this._offlineResponse(request);
+        resolve(this._onlineResponse(request, doNetworkRequest, this._cacheMode > 0));
+      } else if (this._cacheMode > 0) {
+        resolve(this._offlineResponse(request));
       }
     });
+  }
+  
+  getCacheMode() {
+    return this._cacheMode;
+  }
+  
+  _initCacheMode() {
+    // Set default cache mode
+    const instanceName = lively4url.split("/").pop();
+    this._cacheModeKey = `${instanceName}-cacheMode`;
+    focalStorage.getItem(this._cacheModeKey).then(
+      (cacheMode) => {
+        if (cacheMode === null) {
+          focalStorage.setItem(this._cacheModeKey, 2);
+          this._cacheMode = 2;
+        } else {
+          this._cacheMode = cacheMode;
+        }
+      }
+    )
   }
   
   /**
@@ -359,6 +369,9 @@ export class Cache {
       case 'preloadFull':
         await this._preloadFull();
         responseCommand = 'fullLoadingDone';
+        break;
+      case 'updateCacheMode':
+        this._cacheMode = data;
         break;
       default:
         console.warn(`Unknown request received from client: ${command}: ${data}`)

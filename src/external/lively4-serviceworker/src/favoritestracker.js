@@ -27,9 +27,11 @@ export class FavoritesTracker {
    * Load favorites by descending popularity
    */
   async _checkFavorites() {
+    console.error("Count favorit");
     // Check if favorites should be loaded
-    let cacheMode = await focalStorage.getItem("cacheMode");
-    if (cacheMode != 2) return;
+    if (this._cache.getCacheMode() != 2) return;
+    
+    console.error("Count favorit");
     
     this.favorites = await this._favoritesDb.toArray();
     

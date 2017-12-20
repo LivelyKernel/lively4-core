@@ -108,19 +108,14 @@ class ServiceWorker {
           // If we are not navigating using the browser, inject header information
           if(request.mode !== 'navigate') {
             return new Promise(async (resolve, reject) => {
+              var authentificationNeeded = !(request.method == "HEAD" || request.method == "GET" || request.method == "OPTIONS"); 
               
-              var athentificationNeeded = !(request.method == "HEAD" || request.method == "GET" || request.method == "OPTIONS"); 
-              // console.log(lively4stamp(), "local request, authentification: " +  athentificationNeeded);
-              
-              if (athentificationNeeded) {
+              if (authentificationNeeded) {
                 // the following 3lines take ~150ms .... damn!
                 var email = await focalStorage.getItem(storagePrefix+ "githubEmail");
                 var username = await focalStorage.getItem(storagePrefix+ "githubUsername"); 
-                var token = await focalStorage.getItem(storagePrefix+ "githubToken");               
+                var token = await focalStorage.getItem(storagePrefix+ "githubToken");
               } 
-              
- 
-              // console.log(lively4stamp(), "config loaded ");
 
                // we have to manually recreate a request, because you cannot modify the original
                // see http://stackoverflow.com/questions/35420980/how-to-alter-the-headers-of-a-request
@@ -139,7 +134,7 @@ class ServiceWorker {
                 options.headers.set(pair[0], pair[1]);
               }
               
-              if (athentificationNeeded) {
+              if (authentificationNeeded) {
                 options.headers.set("gitusername", username);
                 options.headers.set("gitemail", email);
                 options.headers.set("gitpassword", token);
@@ -147,12 +142,8 @@ class ServiceWorker {
               
               var req = new Request(request.url, options );
 
-              // console.log(lively4stamp(), "resolve...");
-
               // use system here to prevent recursion...
               resolve(self.fetch(req).then((result) => {
-                // console.log(lively4stamp(), "fetched finished");
-
                 if (result instanceof Response) {
                   return result;
                 } else {
@@ -177,11 +168,9 @@ class ServiceWorker {
         };
 
         if (pending) {
-          // console.log("answer pending")
           pending.resolve(doNetworkRequest());
         } else {
           // Use the cache if possible
-          // console.log("use cache")
           event.respondWith(this._cache.fetch(event.request, doNetworkRequest));
         }
       } catch(err) {
@@ -220,8 +209,6 @@ class ServiceWorker {
         pending.resolve(doNetworkRequest());
       } else
         event.respondWith(this._cache.fetch(event.request, doNetworkRequest));
-    } else {
-        // console.log("do nothing")
     }
   }
 
