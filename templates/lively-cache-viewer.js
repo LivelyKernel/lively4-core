@@ -59,10 +59,10 @@ export default class LivelyCacheViewer extends Morph {
         if (value == 3) {
           this._showLoadingScreen(true);
           this._sendToServiceWorker('preloadFull');
-          
-          // Message SWX
-          this._sendToServiceWorker("updateCacheMode", value);
         }
+        
+        // Message SWX
+        this._sendToServiceWorker("updateCacheMode", value);
       });
     })
   }
@@ -172,7 +172,7 @@ export default class LivelyCacheViewer extends Morph {
         this._showLoadingScreen(false);
         break;
       case 'fullLoadingDone':
-        this._requestFromServiceWorker('cacheKeys');
+        this._sendToServiceWorker('cacheKeys');
         break;
       default:
         console.warn(`Unknown data received from serviceWorker: ${command}: ${data}`)

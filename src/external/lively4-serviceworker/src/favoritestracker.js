@@ -31,8 +31,6 @@ export class FavoritesTracker {
     // Check if favorites should be loaded
     if (this._cache.getCacheMode() != 2) return;
     
-    console.error("Count favorit");
-    
     this.favorites = await this._favoritesDb.toArray();
     
     // Sort favorites by descending popularity
