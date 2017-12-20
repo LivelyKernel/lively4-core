@@ -24,7 +24,7 @@ export default class ComponentBin extends Morph {
     var paths =  lively.components.getTemplatePaths()
       .filter(ea => !ea.match(/\/draft/))
       .filter(ea => !ea.match(/\/halo/))
-      .filter(ea => !ea.match(/\/widgets/))
+      // .filter(ea => !ea.match(/\/widgets/))
 
     var contents  = []
     for(let templatesUrl of paths) {
