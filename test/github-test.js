@@ -1,6 +1,6 @@
 // #Clipboard #Test
 
-import {expect} from '../node_modules/chai/chai.js';
+import {expect} from 'src/external/chai.js';
 import Github from 'src/client/github.js'
 
 var that;
