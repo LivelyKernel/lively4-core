@@ -28,7 +28,7 @@ export default class Editor extends Morph {
     this.get("lively-version-control").editor = editor
 
     // container.appendChild(editor)
-    lively.html.registerButtons(this);
+    this.registerButtons();
     var input = this.get("#filename");
     
     

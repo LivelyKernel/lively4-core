@@ -7,6 +7,8 @@ chai.use(sinonChai);
 
 import {reset} from 'aexpr-source-transformation-propagation';
 
+aexpr(()=>{});
+
 let moduleScopedVariable = 1;
 
 // #TODO: does not yet detect changes to the iterator variable itself

@@ -12,7 +12,7 @@ export default class CodeEditor extends Morph {
 
   initialize() {
     var container = this.get(".container");
-    lively.html.registerButtons(this);
+    this.registerButtons();
     var input = this.get("#filename");
     $(input).keyup(event => {
       if (event.keyCode == 13) { // ENTER

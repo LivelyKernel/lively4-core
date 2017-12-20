@@ -114,26 +114,26 @@ export default class LivelyDrawboard extends Morph {
 
     this.initSVGInteraction();
     lively.addEventListener("drawboard", this, "extent-changed", 
-      (e) => this.onExtentChanged(e));
+      e => this.onExtentChanged(e));
     lively.addEventListener("drawboard", this, "focus", 
-      (e) => this.onFocus(e));
+      e => this.onFocus(e));
     lively.addEventListener("drawboard", this, "blur", 
-      (e) => this.onBlur(e));
+      e => this.onBlur(e));
     lively.addEventListener("drawboard", this.get('#backgroundColor'), "value-changed", 
-      (e) => this.onBackgroundColor(e.detail.value));  
+      e => this.onBackgroundColor(e.detail.value));  
     lively.addEventListener("drawboard", this.get('#penColor'), "value-changed", 
-      (e) => this.onPenColor(e.detail.value));  
+      e => this.onPenColor(e.detail.value));  
     lively.addEventListener("drawboard", this.get('#penSize'), "value-changed", 
-      (e) => this.onPenSize(e.detail.value));  
+      e => this.onPenSize(e.detail.value));  
 
     
     this.get('#controls').draggable = true
     lively.addEventListener("drawboard", this.get('#controls'), "dragstart", 
-      (e) => this.onDragStart(e));  
+      e => this.onDragStart(e));  
     lively.addEventListener("dragboard", this.get('#controls'), "drag", 
-      (e) => this.onDrag(e));  
+      e => this.onDrag(e));  
     lively.addEventListener("dragboard", this.get('#controls'), "dragend", 
-      (e) => this.onDragEnd(e));  
+      e => this.onDragEnd(e));  
 
     /*
     var input = this.get("#file-path");
@@ -155,7 +155,7 @@ export default class LivelyDrawboard extends Morph {
     this.get("#penSize").value = this.penSize;
    
     this.strokes = new CommandHistory();
-    lively.html.registerButtons(this);
+    this.registerButtons();
     
     this.get("lively-resizer").target = this; // shadow root cannot look outside
     
