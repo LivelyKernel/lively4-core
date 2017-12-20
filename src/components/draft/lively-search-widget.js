@@ -9,10 +9,10 @@ export default class SearchWidget extends Morph {
     lively.addEventListener("SearchWidget", this.getSubmorph("#searchField"), 
       "keyup", (evt) => { this.searchFieldKeyup(evt)});
     
-    lively.html.registerButtons(this)
+    this.registerButtons();
     
-    this.getSubmorph("#searchSpinner").style.display  = "none"
-    this.getSubmorph("#searchResults-github").style.display  = "none"
+    this.getSubmorph("#searchSpinner").style.display  = "none";
+    this.getSubmorph("#searchResults-github").style.display  = "none";
 
     this.hide();
   }

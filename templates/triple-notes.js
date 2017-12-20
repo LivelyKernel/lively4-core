@@ -210,7 +210,7 @@ export default class TripleNotes extends Morph {
   async initialize() {
     this.windowTitle = "Knot Explorer";
     
-    lively.html.registerButtons(this);
+    this.registerButtons();
     
     this.svg = d3.select(this.get('#graph'))
       .append("svg");

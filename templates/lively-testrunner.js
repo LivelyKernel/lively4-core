@@ -16,7 +16,7 @@ export default class TestRunner extends Morph {
   
   initialize() {
     this.windowTitle = "Test Runner"
-    lively.html.registerButtons(this);
+    this.registerButtons();
     // lively.html.registerInputs(this)
     this.testDir.addEventListener('keydown', event => {
       if (event.keyCode == 13) { // ENTER

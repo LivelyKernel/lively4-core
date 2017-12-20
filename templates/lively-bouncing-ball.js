@@ -3,13 +3,13 @@ import Morph from "src/components/widgets/lively-morph.js"
 export default class Ball extends Morph {
 
   initialize() {
-    this.windowTitle = "Bouncing Atoms and other stuff"
-    this.hits = this.hits || 0
+    this.windowTitle = "Bouncing Atoms and other stuff";
+    this.hits = this.hits || 0;
     if (!this.balls) {
-      this.balls =  [{dx: 1, dy: 2, y: 180, x: 20}]
+      this.balls =  [{dx: 1, dy: 2, y: 180, x: 20}];
     }
-    this.size = 10
-    lively.html.registerButtons(this)
+    this.size = 10;
+    this.registerButtons();
   }
   
   attachedCallback() {
@@ -17,7 +17,7 @@ export default class Ball extends Morph {
   }
   
   detachedCallback() {
-    clearInterval(this.animation)
+    clearInterval(this.animation);
   }
   
   draw() {

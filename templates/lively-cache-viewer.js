@@ -6,7 +6,7 @@ export default class LivelyCacheViewer extends Morph {
     this.windowTitle = "Lively Cache Viewer";
     // Keep a copy so we don't have to ask the serviceworker for every search
     this._cacheKeys = [];
-    lively.html.registerButtons(this);
+    this.registerButtons();
     
     // Register listener to receive data from serviceworker
     window.serviceWorkerMessageHandlers['cacheViewer'] = (event) => {
