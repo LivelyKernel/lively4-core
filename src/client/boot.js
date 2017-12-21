@@ -198,12 +198,15 @@ if (window.lively && window.lively4url) {
         [lively4url + '/src/external/aexpr/test/*.spec.js']: aexprViaDirective,
         [lively4url + '/src/external/roq/test/*.js']: aexprViaDirective,
         
+        [lively4url + '/demos/*.js']: aexprViaDirective,
         [lively4url + '/templates/*.js']: aexprViaDirective,
         [lively4url + '/test/*.js']: liveES7,
         // [lively4url + '/*.js']: aexprViaDirective,
         // default for all .js files (not just lively4)
         [lively4url + "/src/client/*.js"]: aexprViaDirective,
         [lively4url + "/src/components/*.js"]: aexprViaDirective,
+        [lively4url + "/src/client/reactive/*.js"]: moduleOptionsNon,
+        [lively4url + "/src/client/reactive/test/*.js"]: aexprViaDirective,
         // [lively4url + '/demos/*.js']: liveES7,
         // [lively4url + '/doc/*.js']: liveES7,
         // [lively4url + '/media/*.js']: liveES7,
