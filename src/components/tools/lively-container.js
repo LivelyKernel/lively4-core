@@ -28,7 +28,7 @@ export default class Container extends Morph {
     
     this.contentChangedDelay = (() => {
         this.checkForContentChanges()
-      })::debounce(1000)
+      })::debounce(1000);
     
     // make sure the global css is there...
     lively.loadCSSThroughDOM("hightlight", lively4url + "/src/external/highlight.css");
@@ -445,7 +445,7 @@ export default class Container extends Morph {
         lively.notify("update template")
         if (url.toString().match(/\.html/)) {
           // var templateSourceCode = await fetch(url.toString().replace(/\.[^.]*$/, ".html")).then( r => r.text())        
-          templateSourceCode = sourceCode
+          var templateSourceCode = sourceCode
           lively.updateTemplate(templateSourceCode);
         }
       }
