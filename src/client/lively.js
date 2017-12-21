@@ -103,17 +103,17 @@ export default class Lively {
   }
 
   static async reloadModule(path) {
+    // console.log("reload module " + path)
     path = "" + path;
     var changedModule = System.normalizeSync(path);
     var load = System.loads[changedModule]
     if (!load) {
-      
-	    this.unloadModule(path) // just to be sure...
-      console.log("Don't reload non-loaded module")
+      await this.unloadModule(path) // just to be sure...
+      console.warn("Don't reload non-loaded module")
       return   
     }
-    var modulePaths = [path]
-    this.unloadModule(path)
+    var modulePaths = [path];
+    await this.unloadModule(path);
     return System.import(path).then( m => {
       
       // #TODO how can we make the dependecy loading optional... I don't need the whole environment to relaod while developing a core module everybody depends on
@@ -127,26 +127,24 @@ export default class Lively {
       // and update them
       for(var ea of dependedModules) {
         modulePaths.push(ea)
-        console.log("reload " + path + " triggers reload of " + ea)
+        // console.log("reload " + path + " triggers reload of " + ea)
         System.registry.delete(ea)  
         System.import(ea)
         // #TODO think about if this is ennough or if we need some kind of recursion
       }
       return m
     }).then( mod => {
-      var moduleName = path.replace(/[^\/]*/,"");
-      
+      var moduleName = path.replace(/[^/]*/,"");
       var defaultClass = mod.default;
-      
       if (defaultClass) {
         console.log("update template prototype: " + moduleName);
         components.updatePrototype(defaultClass.prototype);
       }
-   
       return mod;
     }).then(async (mod) => {
-      modulePaths.forEach(eaPath => {
-        // lively.notify("update dependend: ", eaPath, 3, "blue")
+      // console.log("UPDATE TEMPLATES ");
+      [path].concat(modulePaths).forEach(eaPath => {
+        console.log("update dependend: ", eaPath, 3, "blue")
         var found = lively.components.getTemplatePaths().find(templatePath => eaPath.match(templatePath))
         if (found) {
           var templateURL = eaPath.replace(/\.js$/,".html");
