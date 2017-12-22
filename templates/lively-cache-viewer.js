@@ -18,6 +18,7 @@ export default class LivelyCacheViewer extends Morph {
       }
     };
     
+    this._checkMounts();
     this._setUpSearch();
     this._setUpModeSelection();    
     this._sendToServiceWorker('cacheKeys');
@@ -79,8 +80,37 @@ export default class LivelyCacheViewer extends Morph {
    * Delete cache
    */
   onClearButton() {
+    if (!window.confirm("Do you really want to clear the cache?")) return;
+    
     this._showLoadingScreen(true);
     this._sendToServiceWorker('clearCache');
+  }
+  
+  /**
+   * Add mount to cache
+   */
+  onAddMountButton() {
+    let name = "lively-cache-mounts"      
+    return  lively.openComponentInWindow(name).then((comp) => {
+      let container = comp.parentElement;
+      container.setAttribute("title", "Add Mount to Cache");
+      comp.loadMounts(this._mounts);
+      comp.focus();
+      
+      return comp;
+    });
+  }
+  
+  _checkMounts() {
+    focalStorage.getItem("lively4mounts").then(
+      (mounts) => {
+        if (mounts === null) return;
+
+        let addMountButton = this.get('#addMountButton');
+        addMountButton.disabled = false;
+        this._mounts = mounts;
+      }
+    )
   }
   
   /**

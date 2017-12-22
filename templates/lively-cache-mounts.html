@@ -1,0 +1,37 @@
+<template id="lively-cache-mounts" data-class="LivelyCacheMounts">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  
+}
+#content {
+  
+}
+
+#mountList {
+  flex: 1;
+  overflow-x: scroll;
+}
+
+#mountList ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#mountList li {
+  padding: 2px;
+  font-family: monospace;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+#mountList li:hover {
+  background-color: #eee;
+}
+</style>
+  <div id="mountList"></div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+
