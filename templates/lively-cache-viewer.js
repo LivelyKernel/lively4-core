@@ -59,7 +59,7 @@ export default class LivelyCacheViewer extends Morph {
       focalStorage.setItem(cacheModeKey, value).then(() => {
         if (value == 3) {
           this._showLoadingScreen(true);
-          this._sendToServiceWorker('preloadFull');
+          this._sendToServiceWorker('preloadFull', lively4url);
         }
         
         // Message SWX
