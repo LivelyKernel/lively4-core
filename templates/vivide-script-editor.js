@@ -4,10 +4,12 @@ export default class VivideScriptEditor extends Morph {
   async initialize() {
     this.windowTitle = "VivideScriptEditor";
     
-    this.get('#content').appendChild((await lively.create("lively-code-mirror")));
-    this.get('#content').appendChild((await lively.create("lively-code-mirror")));
-    this.get('#content').appendChild((await lively.create("lively-code-mirror")));
+    for(var i = 0; i < 4; i++) {
+      let cm = await lively.create("lively-code-mirror");
+      cm.setOption('viewportMargin', 7);
+      this.appendChild(cm);
+    }
     lively.notify("123")
-    this.get('#content').appendChild(<button>s</button>)
+    this.appendChild(<button>s</button>)
   }
 }
