@@ -35,7 +35,7 @@ export default class TestRunner extends Morph {
     }
     this.querySelector("#mocha").innerHTML = "";
     
-    lively.loadCSSThroughDOM("mochaCSS", lively4url + "/node_modules/mocha/mocha.css");
+    lively.loadCSSThroughDOM("mochaCSS", lively4url + "/src/external/mocha.css");
     
     lively.loadJavaScriptThroughDOM("mochaJS", lively4url + "/src/external/mocha.js")
       .then(() => {mocha.setup("bdd")});

@@ -103,17 +103,17 @@ export default class Lively {
   }
 
   static async reloadModule(path) {
+    // console.log("reload module " + path)
     path = "" + path;
     var changedModule = System.normalizeSync(path);
     var load = System.loads[changedModule]
     if (!load) {
-      
-	    this.unloadModule(path) // just to be sure...
-      console.log("Don't reload non-loaded module")
+      await this.unloadModule(path) // just to be sure...
+      console.warn("Don't reload non-loaded module")
       return   
     }
-    var modulePaths = [path]
-    this.unloadModule(path)
+    var modulePaths = [path];
+    await this.unloadModule(path);
     return System.import(path).then( m => {
       
       // #TODO how can we make the dependecy loading optional... I don't need the whole environment to relaod while developing a core module everybody depends on
@@ -127,26 +127,24 @@ export default class Lively {
       // and update them
       for(var ea of dependedModules) {
         modulePaths.push(ea)
-        console.log("reload " + path + " triggers reload of " + ea)
+        // console.log("reload " + path + " triggers reload of " + ea)
         System.registry.delete(ea)  
         System.import(ea)
         // #TODO think about if this is ennough or if we need some kind of recursion
       }
       return m
     }).then( mod => {
-      var moduleName = path.replace(/[^\/]*/,"");
-      
+      var moduleName = path.replace(/[^/]*/,"");
       var defaultClass = mod.default;
-      
       if (defaultClass) {
         console.log("update template prototype: " + moduleName);
         components.updatePrototype(defaultClass.prototype);
       }
-   
       return mod;
     }).then(async (mod) => {
-      modulePaths.forEach(eaPath => {
-        // lively.notify("update dependend: ", eaPath, 3, "blue")
+      // console.log("UPDATE TEMPLATES ");
+      [path].concat(modulePaths).forEach(eaPath => {
+        console.log("update dependend: ", eaPath, 3, "blue")
         var found = lively.components.getTemplatePaths().find(templatePath => eaPath.match(templatePath))
         if (found) {
           var templateURL = eaPath.replace(/\.js$/,".html");
@@ -562,58 +560,52 @@ export default class Lively {
    */
   static notify(titleOrOptions, text, timeout, cb, color) {
     try {
-      console.log("notify:" + titleOrOptions)
-    var title = titleOrOptions;
-    if (titleOrOptions && titleOrOptions.title) {
-      title = titleOrOptions.title;
-      text = titleOrOptions.title;
-      timeout = titleOrOptions.timeout;
-      cb = titleOrOptions.more;
-      color = titleOrOptions.color;
-      
-      // open details in a workspace
-      if (titleOrOptions.details) {
-        cb = () => {
-          lively.openWorkspace(titleOrOptions.details).then( comp => {
-            comp.parentElement.setAttribute("title", title);
-            comp.unsavedChanges = () => false; // close workspace without asking
-          });
-        };
-      }
-    }
-    // #TODO make native notifications opitional?
-    // this.nativeNotify(title, text, timeout, cb) 
-    new LivelyNotification({ title, text }).displayOnConsole();
+      // #TODO make native notifications opitional?
+      // this.nativeNotify(title, text, timeout, cb)       
+      var title = titleOrOptions;
+      new LivelyNotification({ title, text }).displayOnConsole();
+      if (titleOrOptions && titleOrOptions.title) {
+        title = titleOrOptions.title;
+        text = titleOrOptions.title;
+        timeout = titleOrOptions.timeout;
+        cb = titleOrOptions.more;
+        color = titleOrOptions.color;
 
-    var notificationList = document.querySelector("lively-notification-list")
-    if (!notificationList) {
-     notificationList = document.createElement("lively-notification-list");
-      components.openIn(document.body, notificationList).then( () => {
-        if (notificationList.addNotification)
-          notificationList.addNotification(title, text, timeout, cb, color);
-      });
-    } else {
-      var duplicateNotification = Array.from(document.querySelectorAll("lively-notification")).find(ea => {
-        new LivelyNotification({ "ea title": title, text }).displayOnConsole();
-
-        return ("" +ea.title == ""+title) && ("" + ea.message == "" +text)
-      });
-      new LivelyNotification({ title, text, " duplicate": duplicateNotification }).displayOnConsole();
-
-      if (duplicateNotification) {
-      	duplicateNotification.counter++
-      	duplicateNotification.render()
-        new LivelyNotification({ title, text }).displayOnConsole();
-      } else {
-        if(notificationList && notificationList.addNotification) {
-          notificationList.addNotification(title, text, timeout, cb, color);
-        } else {
-          console.log('%ccould not notify about', 'font-size: 9px; color: red', title, text);
+        // open details in a workspace
+        if (titleOrOptions.details) {
+          cb = () => {
+            lively.openWorkspace(titleOrOptions.details).then( comp => {
+              comp.parentElement.setAttribute("title", title);
+              comp.unsavedChanges = () => false; // close workspace without asking
+            });
+          };
         }
       }
-    }
+
+      var notificationList = document.querySelector("lively-notification-list")
+      if (!notificationList) {
+       notificationList = document.createElement("lively-notification-list");
+        components.openIn(document.body, notificationList).then(() => {
+          if (notificationList.addNotification) {
+            notificationList.addNotification(title, text, timeout, cb, color);
+          }
+        });
+      } else {
+        var duplicateNotification = Array.from(document.querySelectorAll("lively-notification")).find(ea => "" + ea.title === "" + title && "" + ea.message === "" + text);
+
+        if (duplicateNotification) {
+          duplicateNotification.counter++;
+          duplicateNotification.render();
+        } else {
+          if(notificationList && notificationList.addNotification) {
+            notificationList.addNotification(title, text, timeout, cb, color);
+          } else {
+            console.log('%ccould not notify about', 'font-size: 9px; color: red', title, text);
+          }
+        }
+      }
     } catch(e) {
-      console.log("ERROR in lively.notify: " + e)
+      console.log('%cERROR in lively.notify', 'font-size: 9px; color: red', e);
     }
   }
   
