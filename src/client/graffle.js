@@ -110,6 +110,11 @@ export default class Graffle {
       div= document.createElement("div")
       div.textContent = ""
       div.classList.add("lively-text")
+      
+      div.style.width = "auto"
+      div.style.height = "auto"
+      div.style.whiteSpace = "nowrap";
+
       div.style.padding = "3px"
       div.contentEditable = true
     }  else if (this.keysDown["C"]) {
@@ -184,7 +189,9 @@ export default class Graffle {
         // this.currentPath.resetBounds()
       }
       if (this.currentElement.classList.contains("lively-text")) {
-        // this.currentElement.focus()
+        if (!this.keysDown["T"]) {
+          this.currentElement.focus()        
+        } 
       }
       this.lastMouseDown = null
       this.currentElement = null
