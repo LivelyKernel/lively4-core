@@ -3,7 +3,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
 import {pt, rect} from 'src/client/graphics.js';
-
+import Clipboard from 'src/client/clipboard.js';
 
 // document.querySelectorAll("lively-selection").forEach(ea => ea.remove())
 
@@ -152,11 +152,18 @@ export default class Selection extends Morph {
   }
 
   haloCopyObject(haloItem) {
-    this.nodes = this.nodes.map(ea => {
-      var copy = ea.cloneNode();
-      ea.parentNode.appendChild(copy); 
-      return copy;
-    }).filter( ea => ea);
+    
+    // this.nodes = this.nodes.map(ea => {
+    //   var copy = haloItem.cloneObject(ea);
+    //   ea.parentNode.appendChild(copy); 
+    //   return copy;
+    // }).filter( ea => ea);
+    
+    var html = Clipboard.nodesToHTML(this.nodes)
+    Clipboard.lastClickPos = lively.getGlobalPosition(this) // used in pasted as offset
+    var result = Clipboard.pasteHTMLDataInto(html, this.parentElement, true)
+    debugger
+    this.nodes = result
     return this;
   }
  
