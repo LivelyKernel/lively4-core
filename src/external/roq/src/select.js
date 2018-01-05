@@ -1,6 +1,38 @@
 import View from './view.js';
 import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from './utils.js';
-import trigger from 'aexpr-trigger';
+import { BaseActiveExpression } from "active-expressions";
+import aexpr from 'aexpr-source-transformation-propagation';
+import { withAdvice } from './../lib/flight/advice.js';
+
+/**
+ * #TODO: this is from withlogging.js
+ */
+// #TODO: can we make this easier, e.g. automatically identifying the class to adapt from the very instance? What about superclasses?
+export function trackInstance(instance) {
+  ensureBaseViewForClass(this);
+  this._instances_.safeAdd(instance);
+}
+
+export function untrackInstance(instance) {
+  ensureBaseViewForClass(this);
+  this._instances_.safeRemove(instance);
+}
+
+function ensureBaseViewForClass(Class) {
+  Class._instances_ = Class._instances_ || new View();
+}
+
+// #TODO: unused, maybe use cop instead of a functional mixin
+export function trackInitializeAndDestroy(Class) {
+  withAdvice.call(Class.prototype);
+
+  Class.prototype.after('initialize', function() {
+    trackInstance.call(Class, this);
+  });
+  Class.prototype.before('destroy', function() {
+    untrackInstance.call(Class, this);
+  });
+}
 
 /*
     cop.create('SelectionLayer')
@@ -159,7 +191,7 @@ import trigger from 'aexpr-trigger';
             this.onNewInstance(item);
         }
         onNewInstance(item) {
-            trigger(aexpr(this.expression, item))
+            aexpr(this.expression, item)
                 .onBecomeTrue(() => this.add(item))
                 .onBecomeFalse(() => this.remove(item));
         }
@@ -353,17 +385,15 @@ import trigger from 'aexpr-trigger';
     }
 
     class ReduceOperator {
-        constructor(upstream, callback, reducer, initialValue) {
-            this.callback = callback;
-            this.reducer = reducer;
-            this.initialValue = initialValue;
+        constructor(upstream, reducer, initialValue) {
             this.upstream = upstream;
             upstream.downstream.push(this);
-
-            this.newItemFromUpstream();
+            this.aexpr = new BaseActiveExpression(() =>
+              this.upstream.now().reduce(reducer, initialValue)
+            );
         }
         newItemFromUpstream() {
-            this.callback(this.upstream.now().reduce(this.reducer, this.initialValue));
+            this.aexpr.checkAndNotify();
         }
         destroyItemFromUpstream() {
             this.newItemFromUpstream();
@@ -441,17 +471,16 @@ import trigger from 'aexpr-trigger';
         },
 
         /**
-         * Whenever the callee is modified, this calls the given callback with the reduced value.
+         * Whenever the callee is modified, the returned Active Expression gets notified.
          * @function View#reduce
-         * @param {View~reduceCallback} callback
          * @param {View~reducer} reducer
          * @param initialValue - the initial value passed to the {@View~reducer}.
-         * @returns {View} the callee
+         * @returns {ActiveExpression} changing with the callee
          */
-        reduce(callback, reducer, initialValue) {
-            new ReduceOperator(this, callback, reducer, initialValue);
+        reduce(reducer, initialValue) {
+            const reduce = new ReduceOperator(this, reducer, initialValue);
 
-            return this;
+            return reduce.aexpr;
         }
     });
 
@@ -467,11 +496,6 @@ import trigger from 'aexpr-trigger';
      * @callback View~mapIterator
      * @param {Object} item - item from the original {@link View}.
      * @return {Object} mapped item
-     */
-
-    /**
-     * The callback that is invoked when the {@link View} changes.
-     * @callback View~reduceCallback
      */
 
     /**
@@ -528,6 +552,7 @@ import trigger from 'aexpr-trigger';
     export default function select(Class, predicate, context) {
         var newSelection = new View();
 
+        ensureBaseViewForClass(Class);
         new FilterOperator(Class._instances_, newSelection, predicate, context);
 
         return newSelection;

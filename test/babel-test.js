@@ -1,6 +1,6 @@
 "use strict";
 
-import {expect} from '../node_modules/chai/chai.js'
+import {expect} from 'src/external/chai.js'
 
 describe('Babel', function() {
   it('should support ES7 Exponential operator', function() {

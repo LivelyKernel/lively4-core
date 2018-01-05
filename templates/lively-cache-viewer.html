@@ -88,8 +88,14 @@
   <nav>
     <div>
       <input type="text" id="search" placeholder="Filter...">
-      <button id="refreshButton">
+      <button id="refreshButton" title="Refresh">
         <i class="fa fa-refresh" aria-hidden="true"></i>
+      </button>
+      <button id="clearButton" title="Clear cache">
+        <i class="fa fa-trash-o" aria-hidden="true"></i>
+      </button>
+      <button id="addMountButton" title="Add mount to cache" disabled>
+        <i class="fa fa-plus" aria-hidden="true"></i>
       </button>
     </div>
     
@@ -97,7 +103,7 @@
       <span>Cache mode:</span>
       <select id="modeSelect">
         <option value="0">Off</option>
-        <option value="1">Preload nothing</option>
+        <option value="1">Preload minimum</option>
         <option value="2">Preload favorites</option>
         <option value="3">Preload everything</option>
       </select>

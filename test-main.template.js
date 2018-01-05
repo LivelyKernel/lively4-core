@@ -9,7 +9,7 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   var allClientTestFiles = [];
   var allSWTestFiles = [];
   var TEST_CLIENT_REGEXP = /(-spec|-test)\.js$/i;
-  var TEST_EXTERNAL_REGEXP = /external\/aexpr\/test\/.*(\.|-)(spec|test)\.js$/i;
+  var TEST_EXTERNAL_REGEXP = /external\/(aexpr|roq)\/test\/.*(\.|-)(spec|test)\.js$/i;
   var TEST_SW_REGEXP = /-swtest\.js$/i;
 
   // Get a list of all the test files to include

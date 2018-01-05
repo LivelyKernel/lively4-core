@@ -51,7 +51,7 @@ export default class Morph extends HTMLDivElement {
     if (this.shadowRoot) {
       morphs = morphs.concat(Array.from(this.shadowRoot.querySelectorAll(selector)));
     }
-
+    
     // morphs can contain null, if either none was found in this or this.shadowRoot
     return morphs.filter(m => m);
   }
@@ -61,6 +61,22 @@ export default class Morph extends HTMLDivElement {
     if (value !== undefined && value !== null) {
       func(value)
     }
+  }
+
+  registerButtons() {
+    // Just an experiment for having to write lesser code.... which ended up in having more code here ;-) #Jens
+    Array.from(this.shadowRoot.querySelectorAll('button')).forEach(node => {
+      var name = node.id;
+      var funcName = name.replace(/^./, c => 'on'+ c.toUpperCase());
+      // console.log('register button ' + name)
+      $(node).click(evt => {
+        if (this[funcName] instanceof Function) {
+          this[funcName](evt);
+        } else {
+          alert('No callback: ' +  funcName);
+        }
+      });
+    });
   }
   
   toString() {

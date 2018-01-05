@@ -6,7 +6,7 @@ export default class LivelyCacheViewer extends Morph {
     this.windowTitle = "Lively Cache Viewer";
     // Keep a copy so we don't have to ask the serviceworker for every search
     this._cacheKeys = [];
-    lively.html.registerButtons(this);
+    this.registerButtons();
     
     // Register listener to receive data from serviceworker
     window.serviceWorkerMessageHandlers['cacheViewer'] = (event) => {
@@ -18,9 +18,10 @@ export default class LivelyCacheViewer extends Morph {
       }
     };
     
+    this._checkMounts();
     this._setUpSearch();
     this._setUpModeSelection();    
-    this._requestFromServiceWorker('cacheKeys');
+    this._sendToServiceWorker('cacheKeys');
   }
   
   /**
@@ -53,21 +54,63 @@ export default class LivelyCacheViewer extends Morph {
     )
     $(modeSelect).change((event) => {
       let value = event.target.selectedIndex;
+      // Set cache mode
+      // TODO: Mode should only be changed after successful loading
       focalStorage.setItem(cacheModeKey, value).then(() => {
         if (value == 3) {
           this._showLoadingScreen(true);
-          this._requestFromServiceWorker('preloadFull');
+          this._sendToServiceWorker('preloadFull', lively4url);
         }
+        
+        // Message SWX
+        this._sendToServiceWorker("updateCacheMode", value);
       });
     })
   }
   
   /**
-   * Component callbacks
+   * Reload cached keys
    */
   onRefreshButton() {
     this._showLoadingScreen(true);
-    this._requestFromServiceWorker('cacheKeys');
+    this._sendToServiceWorker('cacheKeys');
+  }
+  
+  /**
+   * Delete cache
+   */
+  onClearButton() {
+    if (!window.confirm("Do you really want to clear the cache?")) return;
+    
+    this._showLoadingScreen(true);
+    this._sendToServiceWorker('clearCache');
+  }
+  
+  /**
+   * Add mount to cache
+   */
+  onAddMountButton() {
+    let name = "lively-cache-mounts"      
+    return  lively.openComponentInWindow(name).then((comp) => {
+      let container = comp.parentElement;
+      container.setAttribute("title", "Add Mount to Cache");
+      comp.loadMounts(this._mounts);
+      comp.focus();
+      
+      return comp;
+    });
+  }
+  
+  _checkMounts() {
+    focalStorage.getItem("lively4mounts").then(
+      (mounts) => {
+        if (mounts === null) return;
+
+        let addMountButton = this.get('#addMountButton');
+        addMountButton.disabled = false;
+        this._mounts = mounts;
+      }
+    )
   }
   
   /**
@@ -83,7 +126,7 @@ export default class LivelyCacheViewer extends Morph {
   }
   
   _showUpdatedCacheKeys() {
-    var fileList = this.get("#list");
+    let fileList = this.get("#list");
     fileList.innerHTML = '';
     
     // TODO: JSX would be much nicer here...
@@ -95,7 +138,7 @@ export default class LivelyCacheViewer extends Morph {
       let li = document.createElement('li');
       li.innerText = key;
       li.addEventListener("click", () => {
-        this._requestFromServiceWorker('cacheValue', key);
+        this._sendToServiceWorker('cacheValue', key);
       });
       ul.appendChild(li);
     }
@@ -117,9 +160,9 @@ export default class LivelyCacheViewer extends Morph {
   }
   
   _showUpdatedStatus(dateValue) {
-    var statusField = this.get("#status");
-    
+    let statusField = this.get("#status");
     let statusText = `${this._cacheKeys.length} items in cache.`;
+    
     if (dateValue) {
       statusText += ` Selected item cached at: ${dateValue}`;
     }
@@ -130,7 +173,7 @@ export default class LivelyCacheViewer extends Morph {
   /**
    * Send a request for data to the serviceworker
    */
-  _requestFromServiceWorker(command, data) {
+  _sendToServiceWorker(command, data) {
     navigator.serviceWorker.controller.postMessage({
       type: 'dataRequest',
       command: command,
@@ -152,8 +195,14 @@ export default class LivelyCacheViewer extends Morph {
       case 'cacheValue':
         this._showUpdatedCacheValue(data);
         break;
+      case 'clearCacheDone':
+        this._cacheKeys = [];
+        this._showUpdatedCacheKeys();
+        this._showUpdatedStatus();
+        this._showLoadingScreen(false);
+        break;
       case 'fullLoadingDone':
-        this._requestFromServiceWorker('cacheKeys');
+        this._sendToServiceWorker('cacheKeys');
         break;
       default:
         console.warn(`Unknown data received from serviceWorker: ${command}: ${data}`)

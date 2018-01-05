@@ -255,7 +255,9 @@ export default class Expose {
   // Single Global Event
   static onKeyDown(evt) {
     var key = String.fromCharCode(evt.keyCode)
-    if ((key === "E" && (evt.metaKey || evt.ctrlKey)) || (key === "Q" && evt.altKey)) {
+    // #KeyboardShortcut Ctrl-E toggle expose
+    if ((key === "E" && (evt.metaKey || evt.ctrlKey)) 
+        /* || (key === "Q" && evt.altKey) */) {
       Expose.toggle();
       evt.preventDefault()
       evt.stopPropagation();

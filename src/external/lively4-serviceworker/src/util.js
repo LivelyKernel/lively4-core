@@ -17,7 +17,7 @@ export function buildNetworkRequestFunction(request) {
         return result;
       }).catch(e => {
         console.log("fetch error: "  + e);
-        return new Response("Could not fetch " + url +", because of: " + e);
+        return new Response("Could not fetch " + request.url +", because of: " + e);
       }))
     });
   };

@@ -39,12 +39,15 @@ export default class Graffle {
       if (hand) {
         hand.style.display = "block"
         var info = ""
+        // #KeyboardShortcut HOLD-S+Drag create shape
         if (this.keysDown["S"]) {
           info = "shape"
         }
+        // #KeyboardShortcut HOLD-C+Drag create connector
         if (this.keysDown["C"]) {
           info = "connect"
         }
+        // #KeyboardShortcut HOLD-T+Drag create text
         if (this.keysDown["T"]) {
           info = "text"
         }
@@ -107,6 +110,11 @@ export default class Graffle {
       div= document.createElement("div")
       div.textContent = ""
       div.classList.add("lively-text")
+      
+      div.style.width = "auto"
+      div.style.height = "auto"
+      div.style.whiteSpace = "nowrap";
+
       div.style.padding = "3px"
       div.contentEditable = true
     }  else if (this.keysDown["C"]) {
@@ -181,7 +189,9 @@ export default class Graffle {
         // this.currentPath.resetBounds()
       }
       if (this.currentElement.classList.contains("lively-text")) {
-        // this.currentElement.focus()
+        if (!this.keysDown["T"]) {
+          this.currentElement.focus()        
+        } 
       }
       this.lastMouseDown = null
       this.currentElement = null
