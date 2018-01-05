@@ -38,7 +38,19 @@
       align-items: flex-end;
       border-top: 1px solid rgb(120, 118, 116);
     }
-
+    
+    .script-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-top: 1px solid rgb(120, 118, 116);
+    }
+    
+    h2, h4 {
+      display: inline-block;
+      margin: 5px 20px 5px 5px;
+    }
+    
     button {
       margin-right: 2px;
     }
@@ -49,200 +61,56 @@
       flex-direction: column;
     }
 
-    #service-top {
-      display: flex;
-      flex-direction: row;
-      border-bottom: 1px solid rgb(120, 118, 116);
-    }
-
-    #service-bottom {
-      width: 100%;
-    }
-
-    #service-bottom button {
-      border: 0;
-      border-radius: 0;
-      border-top: 1px solid rgb(120, 118, 116);
-      margin: 0;
-      padding: 5px 0 6px 0;
-      width: 50%;
-      outline: none;
-      float: left;
-    }
-
-    #service-bottom button:not(:last-child) {
-      border-right: 1px solid rgb(120, 118, 116);
-    }
-
-    #service-bottom button.active {
-      background: linear-gradient(#eee, #ddd);
-    }
-
-    input {
+/*     input {
       width: 40px;
       flex: 1;
       margin: 2px;
     }
-
+ */
+    input#name {
+      display: inline-block;
+    }
+    
     #log {
       flex: 1;
       width: 100%;
     }
-/*     :host {
-
-    }
-    
-    .column {
-      width: 50%;
-      margin: 0;  
-      overflow-y: scroll;
-    }
-    
-    .column h2 {
-      padding-left: 1em;
-    }
-    
-    .left {
-      float: left;
-    }
-    
-    .right {
-      float: right;
-    }
-    
-    li {
-      width: 80%;
-      max-width: 20em;
-    }
-    
-    .other-scripts h4 {
-      display: inline;
-    }
-    
-    .credentials-list {
-      display: none;
-    } */
     
   </style>
   
     <div class="container">
       <div class="column-left">
-        <div class="items"></div>
-        <div class="services-menu">
-          <button id="addButton" title="Add service"><i class="fa fa-fw fa-plus" aria-hidden="true"></i></button>
-          <button id="removeButton" title="Remove service"><i class="fa fa-fw fa-minus" aria-hidden="true"></i></button>
-          <button id="editButton" title="Develop services"><i class="fa fa-fw fa-code" aria-hidden="true"></i></button>
-          <button id="cloneButton" title="Clone service"><i class="fa fa-fw fa-code-fork" aria-hidden="true"></i></button>
-          <button id="settingsButton" title="Settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i></button>
+        <div class="script-heading">
+          <h4>
+            Trigger
+          </h4>
+          <button id="addTriggerButton" title="Add Trigger"><i class="fa fa-fw fa-plus" aria-hidden="true"></i></button>
         </div>
+        <div id="trigger-wrapper">
+        </div>
+        <div class="script-heading">
+          <h4>
+            Actions
+          </h4>
+          <button id="addActionsButton" title="Add Action"><i class="fa fa-fw fa-plus" aria-hidden="true"></i></button>
+        </div>
+        
+        <lively-services-item></lively-services-item>
       </div>
       <div class="column-right">
-        <div id="service-top">
-          <input id="entryPoint" type="text" value="" readonly />
-          <div class="service-actions">
-            <button id="startButton" title="Start service"><i class="fa fa-fw fa-play" aria-hidden="true"></i></button>
-            <button id="stopButton" title="Stop service"><i class="fa fa-fw fa-stop" aria-hidden="true"></i></button>
-            <button id="debugButton" title="Debug service"><i class="fa fa-fw fa-bug" aria-hidden="true"></i></button>
-          </div>
+        <div id="login-row">
+          <h2>
+            Name:
+          </h2>
+          <input id="name" type="text" value="somethin123">
+          <button id="login">
+            Login
+          </button>  
         </div>
+    
         <juicy-ace-editor id="log"></juicy-ace-editor>
-        <div id="service-bottom">
-          <button id="stdoutButton" title="Show stdout log" class="active">Stdout log</button>
-          <button id="stderrButton" title="Show stderr log">Stderr log</button>
-        </div>
       </div>
     </div>
-<!--   <div id="content">
-    <div class="login">
-      Name: <input id="login-name"> 
-      <button class="login-button">
-        Login
-      </button>
-    </div>
-    <div class="credentials">
-     <h2>
-        Credentials
-      </h2>
-      <button class="toggle-list">
-        Show
-      </button>
-      <div class="credentials-list">
-        <h4>
-          Dropbox
-        </h4>
-        Access Token: <input placeholder="ABC0123DEFG4H56J">
-        <button class="connect connected">
-          Disconnect
-        </button>
-        <hr>
-        <h4>
-          Github
-        </h4>
-        App ID: <input>
-        <button class="connect disconnected">
-          Connect
-        </button>
-      </div>
-    </div>
-    <div class="column left your-scripts">
-      <h2>
-        Your Scripts
-      </h2>
-      <h4>
-        Trigger
-      </h4>
-      <div class="scripts trigger">
-      Dropbox Paper
-      </div>
-      <div class="scripts trigger">
-      Dropbox Camera Uploads
-      </div>
-      <div class="scripts trigger">
-      Github Commit
-      </div>
-       <h4>
-        Actions
-      </h4>
-      <div class="scripts trigger">
-        Dropbox Update .bibtex
-      </div>
-      <div class="scripts trigger">
-      Dropbox E-Mail
-      </div>
-      <div class="scripts trigger">
-      Hue Lights Blink
-      </div>
-    </div>
-    <div class="column right other-scripts">
-     <h2>
-       Other Scripts
-      </h2>
-      <h4>
-        Trigger
-      </h4>
-      <input>
-      <button>
-        Suche
-      </button>
-      <hr />
-      <h4>
-        Actions
-      </h4>
-      <input>
-      <button>
-        Suche
-      </button>
-    </div>
-    <div>
-      <h2>
-        Editor
-      </h2>
-      <div>
-        Here is a code editor loaded with the content of the selected script. If you save the file, it should automatically be saved on the server. Here we need a good update strategy in order to contribute to a repository of scripts while at the same time maintaining a structure and not modifiying scripts that are running elsewhere.
-      </div>
-    </div>
-    <content></content>
-  </div> -->
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 
