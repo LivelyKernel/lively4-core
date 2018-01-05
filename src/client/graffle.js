@@ -37,7 +37,7 @@ export default class Graffle {
       }
       var hand = await lively.ensureHand();
       if (hand) {
-        hand.style.display = "block"
+        hand.style.visibility = "visible"
         var info = ""
         // #KeyboardShortcut HOLD-S+Drag create shape
         if (this.keysDown["S"]) {
@@ -65,7 +65,7 @@ export default class Graffle {
   
     var hand = await lively.ensureHand();
     if (hand) {
-      hand.style.display = "none"
+      hand.style.visibility = "hidden"
       if (hand.info) hand.info.textContent = ""
     }
     // if (this.lastElement)

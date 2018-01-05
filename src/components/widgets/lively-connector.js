@@ -77,12 +77,21 @@ export default class LivelyConnector extends Morph {
     this.connect(a, b) 
   }
  
+  indicateError() {
+    this.style.backgroundColor = "red";
+    this.style.minWidth = "50px"
+    this.style.minHeight = "50px"    
+  }
 
   /*
    * Simple Path Based Connector.... should we make this a template? #TODO
    */
   updationPathConnection(c, a, selectorA, b, selectorB) {
     var p = c.shadowRoot.querySelector("path#path")
+    if (!p) {
+      this.indicateError()
+      return 
+    }
     var offset = lively.getGlobalPosition(c)
     var v = SVG.getPathVertices(p)
     if (a) {
