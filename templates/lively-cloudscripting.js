@@ -6,7 +6,7 @@ var name;
 
 export default class LivelyCloudscripting extends Morph {
   async initialize() {
-    this.windowTitle = "Test Cloudscripting";
+    this.windowTitle = "Cloudscripting";
 //     this.loginButton = this.getSubmorph('.login-button');
 //     this.credentialsButton = this.getSubmorph('.credentials button.toggle-list');
 //     this.credentialsList = this.getSubmorph('.credentials-list');
@@ -58,19 +58,36 @@ export default class LivelyCloudscripting extends Morph {
   }
   
   reRender(res) {
-    alert("in rerender")
-    alert(JSON.stringify(res));
     var triggerWrapper = this.getSubmorph('#trigger-wrapper');
     var htmlString = '';
-    var triggers = res.triggers;
-    alert(JSON.stringify(triggers));
+    var triggers = res;
     for(var prop in triggers) {
       if(!triggers.hasOwnProperty(prop)) continue;
       
-      htmlString += '<lively-services-item>' + prop + '</lively-services-item>'
+      var item = document.createElement('lively-services-item');
+      item.setAttribute('data-id', prop);
+      if (prop == 'selected') {
+        item.getSubmorph('.item').classList.add('selected');
+      }
+      var title = prop;
+      item.getSubmorph('h1').innerHTML = title;
+
+      var status = 'unkown';
+      var statusText = 'unkown';
+      if (1 === 0) {
+        status = 'not-running';
+        var since = (now - service.kill);
+        statusText = 'not running (' + this.msToString(since) + ')';
+      } else if (1 === 1) {
+        status = 'running';
+        // var uptime = (now - service.start);
+        statusText = '...';
+      }
+
+      item.getSubmorph('.status').classList.add(status);
+      item.getSubmorph('small').innerHTML = statusText;
+      triggerWrapper.appendChild(item);
     }
-    alert(htmlString)
-    triggerWrapper.innerHTML = htmlString;
   }
   
   handleAjaxError(jqXHR, textStatus, errorThrown) {
