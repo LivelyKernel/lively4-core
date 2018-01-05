@@ -3,6 +3,7 @@ import {pt} from 'src/client/graphics.js';
 
 const endpoint = 'https://lively4-services.herokuapp.com/';
 var name;
+var filename; 
 
 export default class LivelyCloudscripting extends Morph {
   async initialize() {
@@ -17,7 +18,14 @@ export default class LivelyCloudscripting extends Morph {
     this.login = this.getSubmorph('#login');
     this.login.addEventListener('click', this.loginClick.bind(this));
     
-    this.editor = this.getSubmorph('#log');
+    this.editor = this.getSubmorph('#log').editor;
+    this.editor.commands.addCommand({
+      name: "save",
+      bindKey: {win: "Ctrl-S", mac: "Command-S"},
+      exec: (editor) => {
+        this.saveCode()
+      }
+    });
     
   }
   
@@ -38,6 +46,28 @@ export default class LivelyCloudscripting extends Morph {
   
   loginClick(evt) {
     name = this.getSubmorph('#name').value;
+    this.getTriggers();
+  }
+  
+  // functions
+  addTrigger(triggerName) {
+    triggerName = triggerName.toString();
+    alert(triggerName);
+    // set name in db
+    triggerName = triggerName.substring(triggerName.lastIndexOf('/') + 1);
+    $.ajax({
+      url: endpoint + 'assignTrigger',
+      type: 'POST',
+      data: JSON.stringify({
+        user: name,
+        triggerId: triggerName
+      }),
+      success: this.getTriggers.bind(this),
+      error: this.handleAjaxError.bind(this)
+    })
+  }
+  
+  getTriggers() {
     $.ajax({
       url: endpoint + 'getUserTriggers',
       type: 'POST',
@@ -49,22 +79,18 @@ export default class LivelyCloudscripting extends Morph {
     })
   }
   
-  // functions
-  addTrigger(name) {
-    // set name in db
-    // get all actions from db
-    // re-render
-    alert(name);
-  }
-  
   reRender(res) {
     var triggerWrapper = this.getSubmorph('#trigger-wrapper');
+    while(triggerWrapper.firstChild) {
+      triggerWrapper.removeChild(triggerWrapper.firstChild)
+    }
     var htmlString = '';
     var triggers = res;
     for(var prop in triggers) {
       if(!triggers.hasOwnProperty(prop)) continue;
       
       var item = document.createElement('lively-services-item');
+      item.addEventListener('click', this.showCode.bind(this))
       item.setAttribute('data-id', prop);
       if (prop == 'selected') {
         item.getSubmorph('.item').classList.add('selected');
@@ -94,4 +120,23 @@ export default class LivelyCloudscripting extends Morph {
     alert(errorThrown);
   }
 
+  showCode(evt) {
+    filename = evt.target.dataset.id;
+    var that = this;
+    $.get('https://lively4-services.herokuapp.com/mount/' + filename)
+      .then(function(res) {
+        that.editor.setValue(res);  
+    }); 
+  }
+  
+  saveCode() {
+    var that = this;
+    $.ajax({
+      url: endpoint + 'mount/' + filename,
+      type: 'PUT',
+      data: that.editor.getValue(),
+      success: function(){alert("Yeah")},
+      error: this.handleAjaxError.bind(this)
+    }); 
+  }
 }
