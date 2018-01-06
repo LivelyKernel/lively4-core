@@ -2,7 +2,6 @@ import {expect} from 'src/external/chai.js';
 import {MockEvent, createHTML, testWorld, loadComponent} from './templates-fixture.js';
 import {pt} from 'src/client/graphics.js';
 
-import LivelyHand from "templates/lively-hand.js"
 
 describe("Hand Component",  function() {
 

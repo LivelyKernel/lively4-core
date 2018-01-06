@@ -40,6 +40,17 @@ export default class Clipboard {
     Halo.hideHalos()
   }
   
+  static nodesToHTML(nodes) {
+    // prepare for serialization
+    nodes.forEach(node => {
+      node.querySelectorAll("*").forEach( ea => {
+        if (ea.livelyPrepareSave) ea.livelyPrepareSave();
+      });
+    })
+    
+    return nodes.map(ea => ea.outerHTML).join("\n")
+  }
+  
   static onCopy(evt) {
     if ((!HaloService.areHalosActive() || !that)) {
       return;
@@ -52,20 +63,12 @@ export default class Clipboard {
     } else if ((that !== undefined)) {
       nodes = [that]
     }
-
-    // prepare for serialization
-    nodes.forEach(node => {
-      node.querySelectorAll("*").forEach( ea => {
-        if (ea.livelyPrepareSave) ea.livelyPrepareSave();
-      });
-    })
-    
-    var html = nodes.map(ea => ea.outerHTML).join("\n")
+    var html = this.nodesToHTML(nodes)
     evt.clipboardData.setData('text/plain', html);
     evt.clipboardData.setData('text/html', html);
   }
   
-  static pasteHTMLDataInto(data, container) {
+  static pasteHTMLDataInto(data, container, flat) {
     // add everthing into a container 
     var div = document.createElement("div")
     div.classList.add("lively-content")
@@ -135,6 +138,9 @@ export default class Clipboard {
       // ajust position and content size
       lively.setGlobalPosition(div, this.lastClickPos || pt(0,0))
       div.style.height = "max-content"
+    }
+    if (flat) {
+      return all
     }
     return result
   }

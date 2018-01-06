@@ -424,6 +424,9 @@ export default class Lively {
   }
 
   static  getGlobalPosition(node) {
+    if (!node.getBoundingClientRect) {
+      return pt(0, 0)
+    }
     var bounds = node.getBoundingClientRect()
     return pt(bounds.left, bounds.top)
   }
@@ -621,7 +624,7 @@ export default class Lively {
     var hand = lively.hand
     if (!hand) {
       hand = await lively.create("lively-hand", document.body)
-      hand.style.display = "none"
+      hand.style.visibility = "hidden"
     }
     return hand
   }
