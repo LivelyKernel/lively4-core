@@ -8,6 +8,13 @@
 #content {
   
 }
+  
+nav {
+  border-bottom: 1px solid #ddd;
+  padding: 2px 4px;
+  display: flex;
+  justify-content: space-between;
+}
 
 #mountList {
   flex: 1;
@@ -31,7 +38,18 @@
   background-color: #eee;
 }
 </style>
+  <nav>
+    <div>
+      <button id="cacheMountButton" title="Cache whole mount" disabled>
+        <i class="fa fa-cloud" aria-hidden="true"></i>
+      </button>
+      <button id="cacheFileButton" title="Cache file/directory from mount" disabled>
+        <i class="fa fa-download" aria-hidden="true"></i>
+      </button>
+    </div>
+  </nav>
   <div id="mountList"></div>
+  <div id="dicTree"></div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

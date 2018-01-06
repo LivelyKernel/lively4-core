@@ -18,7 +18,6 @@ export default class LivelyCacheViewer extends Morph {
       }
     };
     
-    this._checkMounts();
     this._setUpSearch();
     this._setUpModeSelection();    
     this._sendToServiceWorker('cacheKeys');
@@ -99,18 +98,6 @@ export default class LivelyCacheViewer extends Morph {
       
       return comp;
     });
-  }
-  
-  _checkMounts() {
-    focalStorage.getItem("lively4mounts").then(
-      (mounts) => {
-        if (mounts === null) return;
-
-        let addMountButton = this.get('#addMountButton');
-        addMountButton.disabled = false;
-        this._mounts = mounts;
-      }
-    )
   }
   
   /**
