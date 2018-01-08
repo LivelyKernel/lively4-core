@@ -2,134 +2,115 @@
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
   <style>
-    :host {
-
+     .container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: row;
+        padding: 0;
+        margin: 0;
     }
-    
-    .column {
-      width: 50%;
-      margin: 0;  
+
+    .column-left {
+      width: 200px;
+      flex: 0 0 200px;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid rgb(120, 118, 116);
+    }
+
+    .items {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
       overflow-y: scroll;
     }
-    
-    .column h2 {
-      padding-left: 1em;
+
+    .items .empty {
+      margin-top: 10px;
+      font-size: 12px;
+      font-style: italic;
+      text-align: center;
+    }
+
+    .services-menu {
+      display: flex;
+      align-items: flex-end;
+      border-top: 1px solid rgb(120, 118, 116);
     }
     
-    .left {
-      float: left;
+    .script-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-top: 1px solid rgb(120, 118, 116);
     }
     
-    .right {
-      float: right;
+    h2, h4 {
+      display: inline-block;
+      margin: 5px 20px 5px 5px;
     }
     
-    li {
-      width: 80%;
-      max-width: 20em;
+    button {
+      margin-right: 2px;
+    }
+
+    .column-right {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+/*     input {
+      width: 40px;
+      flex: 1;
+      margin: 2px;
+    }
+ */
+    input#name {
+      display: inline-block;
     }
     
-    .other-scripts h4 {
-      display: inline;
-    }
-    
-    .credentials-list {
-      display: none;
+    #log {
+      flex: 1;
+      width: 100%;
     }
     
   </style>
   
-  <div id="content">
-    <div class="login">
-      Name: <input id="login-name"> 
-      <button class="login-button">
-        Login
-      </button>
-    </div>
-    <div class="credentials">
-     <h2>
-        Credentials
-      </h2>
-      <button class="toggle-list">
-        Show
-      </button>
-      <div class="credentials-list">
-        <h4>
-          Dropbox
-        </h4>
-        Access Token: <input placeholder="ABC0123DEFG4H56J">
-        <button class="connect connected">
-          Disconnect
-        </button>
-        <hr>
-        <h4>
-          Github
-        </h4>
-        App ID: <input>
-        <button class="connect disconnected">
-          Connect
-        </button>
+    <div class="container">
+      <div class="column-left">
+        <div class="script-heading">
+          <h4>
+            Trigger
+          </h4>
+          <button id="addTriggerButton" title="Add Trigger"><i class="fa fa-fw fa-plus" aria-hidden="true"></i></button>
+        </div>
+        <div id="trigger-wrapper">
+        </div>
+        <div class="script-heading">
+          <h4>
+            Actions
+          </h4>
+          <button id="addActionsButton" title="Add Action"><i class="fa fa-fw fa-plus" aria-hidden="true"></i></button>
+        </div>
+        
+        <lively-services-item></lively-services-item>
+      </div>
+      <div class="column-right">
+        <div id="login-row">
+          <h2>
+            Name:
+          </h2>
+          <input id="name" type="text" value="somethin123">
+          <button id="login">
+            Login
+          </button>  
+        </div>
+    
+        <juicy-ace-editor id="log"></juicy-ace-editor>
       </div>
     </div>
-    <div class="column left your-scripts">
-      <h2>
-        Your Scripts
-      </h2>
-      <h4>
-        Trigger
-      </h4>
-      <div class="scripts trigger">
-      Dropbox Paper
-      </div>
-      <div class="scripts trigger">
-      Dropbox Camera Uploads
-      </div>
-      <div class="scripts trigger">
-      Github Commit
-      </div>
-       <h4>
-        Actions
-      </h4>
-      <div class="scripts trigger">
-        Dropbox Update .bibtex
-      </div>
-      <div class="scripts trigger">
-      Dropbox E-Mail
-      </div>
-      <div class="scripts trigger">
-      Hue Lights Blink
-      </div>
-    </div>
-    <div class="column right other-scripts">
-     <h2>
-       Other Scripts
-      </h2>
-      <h4>
-        Trigger
-      </h4>
-      <input>
-      <button>
-        Suche
-      </button>
-      <hr />
-      <h4>
-        Actions
-      </h4>
-      <input>
-      <button>
-        Suche
-      </button>
-    </div>
-    <div>
-      <h2>
-        Editor
-      </h2>
-      <div>
-        Here is a code editor loaded with the content of the selected script. If you save the file, it should automatically be saved on the server. Here we need a good update strategy in order to contribute to a repository of scripts while at the same time maintaining a structure and not modifiying scripts that are running elsewhere.
-      </div>
-    </div>
-    <content></content>
-  </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

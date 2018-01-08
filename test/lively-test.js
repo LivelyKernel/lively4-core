@@ -1,8 +1,4 @@
-"use strict";
-import {expect} from '../node_modules/chai/chai.js'
-
-// System.import(lively4url + '/node_modules/chai/chai.js').then( m => window.expect = m.expect)
-
+import {expect} from 'src/external/chai.js'
 
 var lively = window.lively; var it = window.it
 

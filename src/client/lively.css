@@ -82,3 +82,7 @@ lively-container img {
   z-index: 100000 !important; 
 }
 
+.CodeMirror-lint-tooltip {
+  z-index: 100000 !important; 
+}
+

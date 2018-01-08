@@ -2,6 +2,8 @@
  *
  */
 
+/* globals pendingRequests:true lively4performance lively4stamp*/
+
 import * as fs from './filesystem.js'
 import * as msg from './messaging.js'
 
@@ -16,6 +18,23 @@ import focalStorage from './external/focalStorage.js';
 import { Cache } from './cache.js';
 
 const storagePrefix = "LivelySync_";
+
+
+// BEGIN copied from src/client/boot/js
+self.lively4performance = {start: performance.now()}
+try {
+  self.lively4stamp = function() {
+      if (!self.lively4performance) return;
+      var newLast = performance.now()
+      var t = (newLast - (lively4performance.last || lively4performance.start)) / 1000
+      lively4performance.last = newLast
+      return (t.toFixed(3) + "s ")
+  }
+  
+} catch(e) {
+  console.error(e)
+}
+// END
 
 class ServiceWorker {
   constructor() {
@@ -34,12 +53,12 @@ class ServiceWorker {
   }
 
   static instance() {
-    var startTime = Date.now();
+    // var startTime = Date.now();
     var instance = new ServiceWorker();
     __instance__ = instance; // Global side effect #TODO
 
     return instance.filesystem.loadMounts().then( () => {
-      console.log("mount FS in" + (Date.now() - startTime) + "ms");
+      // console.log("mount FS in" + (Date.now() - startTime) + "ms");
 
       instance.resolvePendingRequests();
       return instance;
@@ -49,13 +68,13 @@ class ServiceWorker {
   resolvePendingRequests() {
     // DR: `pendingRequests` is defined during boot, but for later requests it did not exist, so the original check caused a ReferenceError
     if (typeof pendingRequests === 'undefined' || !pendingRequests) {
-      console.log("no pending requests");
+      // console.log("no pending requests");
       return;
     }
-    console.log("resolve pending requests: " + pendingRequests);
+    // console.log("resolve pending requests: " + pendingRequests);
     // #Hack needed, because the swx-solved loads asyncronously and the service worker expects and syncronouse answer or promise. 
     pendingRequests.forEach(ea => {
-      console.log("work on pendingRequest " + ea.url);
+      // console.log("work on pendingRequest " + ea.url);
       this.fetch(ea.event, ea);
     });
     // stop listening to requests..
@@ -64,13 +83,14 @@ class ServiceWorker {
   }
 
   fetch(event, pending) {
-    // console.log("SWX.fetch " + event + ", " + pending);
+    
     let request = event.request;
     if (!request) return;
 
     let  url = new URL(request.url);
-    let promise = undefined;
     
+    // console.log(lively4stamp(), "SWX.fetch " + request.method + " " + url + ", " + pending);
+
     //console.log(`fetch(${url})`);
 
     if (url.pathname.match(/\/_git\//)) return;
@@ -89,9 +109,14 @@ class ServiceWorker {
           // If we are not navigating using the browser, inject header information
           if(request.mode !== 'navigate') {
             return new Promise(async (resolve, reject) => {
-              var email = await focalStorage.getItem(storagePrefix+ "githubEmail");
-              var username = await focalStorage.getItem(storagePrefix+ "githubUsername"); 
-              var token = await focalStorage.getItem(storagePrefix+ "githubToken");
+              var authentificationNeeded = !(request.method == "HEAD" || request.method == "GET" || request.method == "OPTIONS"); 
+              
+              if (authentificationNeeded) {
+                // the following 3lines take ~150ms .... damn!
+                var email = await focalStorage.getItem(storagePrefix+ "githubEmail");
+                var username = await focalStorage.getItem(storagePrefix+ "githubUsername"); 
+                var token = await focalStorage.getItem(storagePrefix+ "githubToken");
+              } 
 
                // we have to manually recreate a request, because you cannot modify the original
                // see http://stackoverflow.com/questions/35420980/how-to-alter-the-headers-of-a-request
@@ -109,10 +134,13 @@ class ServiceWorker {
               for (var pair of request.headers.entries()) {
                 options.headers.set(pair[0], pair[1]);
               }
-              options.headers.set("gitusername", username);
-              options.headers.set("gitemail", email);
-              options.headers.set("gitpassword", token);
-
+              
+              if (authentificationNeeded) {
+                options.headers.set("gitusername", username);
+                options.headers.set("gitemail", email);
+                options.headers.set("gitpassword", token);
+              } 
+              
               var req = new Request(request.url, options );
 
               // use system here to prevent recursion...
@@ -123,7 +151,7 @@ class ServiceWorker {
                   return new Response(result);
                 }
               }).catch(e => {
-                console.log("fetch error: "  + e);
+                console.error("fetch error: "  + e);
                 return new Response("Could not fetch " + url +", because of: " + e);
               })) 
             });
@@ -133,7 +161,7 @@ class ServiceWorker {
               resolve(self.fetch(request).then((result) => {
                 return result;
               }).catch(e => {
-                console.log("fetch error: "  + e);
+                console.error("fetch error: "  + e);
                 return new Response("Could not fetch " + url +", because of: " + e);
               }))
             });
@@ -149,7 +177,7 @@ class ServiceWorker {
       } catch(err) {
         // TODO: improve the solution, matching errors by message should be done better
         if (err.toString().match("The fetch event has already been responded to.")) {
-          console.log("How can we check for this before? ", err);
+          console.error("How can we check for this before? ", err);
         } else {
           throw err;
         }
@@ -176,7 +204,7 @@ class ServiceWorker {
             return new Response(content, {status: 500, statusText: message});
           }));
         });
-      };
+      } 
 
       if (pending) {
         pending.resolve(doNetworkRequest());
@@ -187,70 +215,6 @@ class ServiceWorker {
 
   message(event) {
     return msg.process(event);
-  }
-  
-  prepareOfflineBoot() {
-    console.log('Preparing offline boot');
-    
-    // Cache all files which are necessary to boot lively in the browser cache
-    // We could combine this with the favorites. Just make all these files constant favorites.
-    let filesToLoad = [
-      // Essential
-      '',
-      'start.html',
-      'swx-boot.js',
-      'swx-loader.js',
-      'swx-post.js',
-      'swx-pre.js',
-      'src/client/boot.js',
-      'src/client/load.js',
-      'src/client/lively.js',
-      'src/external/systemjs/system.src.js',
-      'src/external/babel/plugin-babel2.js',
-      'src/external/babel/systemjs-babel-browser.js',
-      'src/external/babel-plugin-jsx-lively.js',
-      'src/external/babel-plugin-transform-do-expressions.js',
-      'src/external/babel-plugin-transform-function-bind.js',
-      'src/external/babel-plugin-locals.js',
-      'src/external/babel-plugin-var-recorder.js',
-      'src/external/babel-plugin-syntax-jsx.js',
-      'src/external/babel-plugin-syntax-function-bind.js',
-      'src/external/babel-plugin-syntax-do-expressions.js',
-      
-      // Useful
-      'templates/lively-notification.html',
-      'templates/lively-notification.js',
-      'templates/lively-notification-list.html',
-      'templates/lively-notification-list.js',
-    ];
-
-    let directoryParts = self.location.pathname.split('/');
-    directoryParts[directoryParts.length-1] = '';
-    let directory = directoryParts.join('/');
-    
-    filesToLoad = filesToLoad.map((file) => {return directory + file});
-
-    for(let file of filesToLoad) {
-      let request = new Request(file, {
-        method: 'GET' 
-      });
-      
-      let doNetworkRequest = () => {
-        return new Promise(async (resolve, reject) => {
-          //console.warn(`preloading ${request.url}`);
-          resolve(self.fetch(request).then((result) => {
-            return result;
-          }).catch(e => {
-            console.log("fetch error: "  + e);
-            return new Response("Could not fetch " + url +", because of: " + e);
-          }))
-        });
-      };
-      
-      // Just tell the cache to fetch the file
-      // This will update our cache if we are online
-      this._cache.fetch(request, doNetworkRequest);
-    }
   }
 }
 
@@ -272,7 +236,6 @@ export async function instancePromise() {
 }
 
 export function install() {
-  instancePromise().then((swx) => { swx.prepareOfflineBoot() });
   return self.skipWaiting();
 }
 

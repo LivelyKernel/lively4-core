@@ -1,3 +1,4 @@
+"enable aexpr";
 "use strict";
 import chai, {expect} from 'node_modules/chai/chai.js';
 import sinon from 'src/external/sinon-3.2.1.js';
@@ -5,6 +6,8 @@ import sinonChai from 'node_modules/sinon-chai/lib/sinon-chai.js';
 chai.use(sinonChai);
 
 import {reset} from 'aexpr-source-transformation-propagation';
+
+aexpr(()=>{});
 
 let moduleScopedVariable = 1;
 
@@ -557,3 +560,92 @@ describe('Propagation Logic', function() {
     });
   });
 });
+
+describe("misc", () => {
+  it("rewrite call expression in sequence expression does not result in stack overflow", () => {
+    const obj = {
+      x: 3,
+      fn() {
+        return this.x;
+      }
+    };
+    
+    (obj.fn(), obj.fn());
+  });
+  it("rewrite member expression with Identifier as property", () => {
+    const obj = {
+      x: 3,
+      fn() {
+        return this.x;
+      }
+    };
+    const func = "fn";    
+    const spy = sinon.spy();
+    
+    aexpr(() => obj[func]()).onChange(spy);
+    obj.x = 2;
+    
+    expect(spy).to.be.calledOnce;
+    expect(spy).to.be.calledWithMatch(2);
+  });
+  it("rewrite member expression with StringLiteral as property", () => {
+    const obj = {
+      x: 3,
+      fn() {
+        return this.x;
+      }
+    };
+    const spy = sinon.spy();
+    
+    aexpr(() => obj["fn"]()).onChange(spy);
+    obj.x = 2;
+    
+    expect(spy).to.be.calledOnce;
+    expect(spy).to.be.calledWithMatch(2);
+  });
+  it("rewrite assignment to member expression with StringLiteral as property", () => {
+    const obj = {
+      x: 3,
+      fn() {
+        return this.x;
+      }
+    };
+    const spy = sinon.spy();
+    
+    aexpr(() => obj.fn()).onChange(spy);
+    obj["x"] = 2;
+    
+    expect(spy).to.be.calledOnce;
+    expect(spy).to.be.calledWithMatch(2);
+  });
+  // #TODO: this is not checking, whether changes to a bindExpression are detected!
+  it("bind expression as expression", () => {
+    const obj = {
+      x: 3,
+      fn() {
+        return this.x;
+      }
+    };
+    const spy = sinon.spy();
+    
+    aexpr(::obj.fn).onChange(spy);
+    obj.x = 2;
+    
+    expect(spy).to.be.calledOnce;
+    expect(spy).to.be.calledWithMatch(2);
+  });
+  it("this as object of MemberExpression", () => {
+    const obj = {
+      x: 3,
+      fn2() { return this.x; },
+      fn() { return this.fn2(); }
+    };
+    const spy = sinon.spy();
+    
+    aexpr(() => obj.fn()).onChange(spy);
+    obj.x = 2;
+    
+    expect(spy).to.be.calledOnce;
+    expect(spy).to.be.calledWithMatch(2);
+  });
+})

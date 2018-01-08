@@ -41,7 +41,7 @@ export default class LivelyPaper extends Morph {
       
     this.strokes = new CommandHistory();
     
-    lively.html.registerButtons(this);
+    this.registerButtons();
     
     this.adaptCanvasSize()
    

@@ -23,7 +23,7 @@ export default class ContinuousEditor extends Morph {
       this.runCode();
     })::debounce(500);
 
-    lively.html.registerButtons(this);
+    this.registerButtons();
 
     this.get("#traceInspector").hideWorkspace()
     // this.get("#objectInspector").hideWorkspace()

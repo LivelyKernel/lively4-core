@@ -75,11 +75,11 @@ export default class Halo extends Morph {
     this.shadowRoot.querySelectorAll("lively-halo-control-point-item")
       .forEach(ea =>  ea.remove())
     
-    target.querySelectorAll("path#path").forEach(ea => {
-      svg.getPathVertices(ea).forEach( (p, index) => {
-        this.ensureControlPoint(p, index)
-      })
-    })    
+    // target.querySelectorAll("path#path").forEach(ea => {
+    //   svg.getPathVertices(ea).forEach( (p, index) => {
+    //     this.ensureControlPoint(p, index)
+    //   })
+    // })    
 
     if (target.isConnector) {
       var path = target.getPath()

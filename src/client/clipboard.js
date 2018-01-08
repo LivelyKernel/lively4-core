@@ -1,5 +1,7 @@
 // #Clipboard - Cut,Copy, and Paste for Lively4
 
+/* global that,HaloService */
+
 import {pt} from 'src/client/graphics.js';
 import Halo from "src/components/halo/lively-halo.js";
 import { uuid as generateUUID } from 'utils';
@@ -27,7 +29,7 @@ export default class Clipboard {
     }
     this.onCopy(evt)
     if (lively.selection.nodes.length > 0) {
-      var html = lively.selection.nodes.forEach(ea => {
+      lively.selection.nodes.forEach(ea => {
         ea.remove()
       })
       lively.selection.remove()
@@ -35,13 +37,21 @@ export default class Clipboard {
     } else {
       that.remove()
     }
-    // lively.notify("hide halos")
     Halo.hideHalos()
   }
   
+  static nodesToHTML(nodes) {
+    // prepare for serialization
+    nodes.forEach(node => {
+      node.querySelectorAll("*").forEach( ea => {
+        if (ea.livelyPrepareSave) ea.livelyPrepareSave();
+      });
+    })
+    
+    return nodes.map(ea => ea.outerHTML).join("\n")
+  }
+  
   static onCopy(evt) {
-    // lively.notify("on copy")
-
     if ((!HaloService.areHalosActive() || !that)) {
       return;
     }
@@ -53,21 +63,12 @@ export default class Clipboard {
     } else if ((that !== undefined)) {
       nodes = [that]
     }
-
-    // prepare for serialization
-    nodes.forEach(node => {
-      node.querySelectorAll("*").forEach( ea => {
-        if (ea.livelyPrepareSave) ea.livelyPrepareSave();
-      });
-    })
-    
-    var html = nodes.map(ea => ea.outerHTML).join("\n")
+    var html = this.nodesToHTML(nodes)
     evt.clipboardData.setData('text/plain', html);
     evt.clipboardData.setData('text/html', html);
   }
   
-  
-  static pasteHTMLDataInto(data, container) {
+  static pasteHTMLDataInto(data, container, flat) {
     // add everthing into a container 
     var div = document.createElement("div")
     div.classList.add("lively-content")
@@ -138,6 +139,9 @@ export default class Clipboard {
       lively.setGlobalPosition(div, this.lastClickPos || pt(0,0))
       div.style.height = "max-content"
     }
+    if (flat) {
+      return all
+    }
     return result
   }
   
@@ -164,7 +168,7 @@ export default class Clipboard {
       return 
     }
 
-    var data = evt.clipboardData.getData('text/plain')
+    data = evt.clipboardData.getData('text/plain')
     if (data) {
        this.pasteTextDataInto(data, this.lastTarget) 
       return 
@@ -191,7 +195,6 @@ export default class Clipboard {
       evt.preventDefault(); 
       return 
     }
- 
   }
 
   static highlight(element) {

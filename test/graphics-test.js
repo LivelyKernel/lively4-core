@@ -1,4 +1,4 @@
-import {expect} from '../node_modules/chai/chai.js';
+import {expect} from 'src/external/chai.js';
 import {Point, rect, pt} from 'src/client/graphics.js'
 import {Grid} from 'src/client/morphic/snapping.js';
 

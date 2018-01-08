@@ -17,7 +17,7 @@ export default class Console extends Morph {
     //   mode: {name: "javascript", globalVars: true},
     // });  
     
-    lively.html.registerButtons(this)
+    this.registerButtons();
     
     this.addEventListener("focus", evt => this.onFocus(evt))
     this.setAttribute('tabindex', 0)

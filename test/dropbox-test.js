@@ -1,5 +1,5 @@
 import dropbox from "src/external/lively4-serviceworker/src/fs/dropbox.js"
-import {expect} from 'node_modules/chai/chai.js';
+import {expect} from 'src/external/chai.js';
 
 var token
 var sut

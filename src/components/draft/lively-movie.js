@@ -17,7 +17,7 @@ export default class LivelyMovie extends Morph {
       this.get("#format").textContent = this.filename
       this.updateInfo()
     }
-    lively.html.registerButtons(this);
+    this.registerButtons();
   }
 
   baseURL() {

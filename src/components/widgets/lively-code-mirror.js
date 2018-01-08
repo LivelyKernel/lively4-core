@@ -42,9 +42,9 @@ export default class LivelyCodeMirror extends HTMLElement {
      return  lively4url + "/src/external/code-mirror/"
   }
 
-  static async loadModule(path) {
+  static async loadModule(path, force) {
     return lively.loadJavaScriptThroughDOM("codemirror_"+path.replace(/[^A-Za-z]/g,""),
-      this.codeMirrorPath + path)
+      this.codeMirrorPath + path, force)
   }
 
   static async loadCSS(path) {
@@ -52,8 +52,9 @@ export default class LivelyCodeMirror extends HTMLElement {
        this.codeMirrorPath + path)
   }
 
-  static async loadModules() {
-    if (loadPromise) return loadPromise
+  static async loadModules(force) {
+    console.log("loadModules", loadPromise);
+    if (loadPromise && !force) return loadPromise
     loadPromise = (async () => {
 
       await this.loadModule("lib/codemirror.js")
@@ -85,13 +86,21 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/dialog/dialog.js")
       await this.loadModule("addon/scroll/simplescrollbars.js")
 
+      //await System.import("https://raw.githubusercontent.com/jshint/jshint/master/dist/jshint.js");
+      //await lively.loadJavaScriptThroughDOM("jshintAjax", "https://ajax.aspnetcdn.com/ajax/jshint/r07/jshint.js");
+      //await lively.loadJavaScriptThroughDOM("eslint", "http://eslint.org/js/app/eslint.js");
+      await this.loadModule("addon/lint/lint.js");
+      await this.loadModule("addon/lint/javascript-lint.js");
+      await this.loadModule("../eslint.js");
+      await this.loadModule("../eslint-lint.js", force);
+
       await this.loadModule("addon/merge/merge.js")
       await this.loadModule("addon/selection/mark-selection.js")
-
       await this.loadModule("keymap/sublime.js")
       await System.import(lively4url + '/src/components/widgets/lively-code-mirror-hint.js')
       
       this.loadCSS("addon/hint/show-hint.css")
+      this.loadCSS("addon/lint/lint.css")
       this.loadCSS("../../components/widgets/lively-code-mirror.css")
     })()
     return loadPromise
@@ -119,14 +128,15 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   initialize() {
-  	this._attrObserver = new MutationObserver((mutations) => {
-	  mutations.forEach((mutation) => {  
+  	this._attrObserver = new MutationObserver(mutations => {
+	    mutations.forEach(mutation => {  
         if(mutation.type == "attributes") {
           // console.log("observation", mutation.attributeName,mutation.target.getAttribute(mutation.attributeName));
           this.attributeChangedCallback(
             mutation.attributeName,
             mutation.oldValue,
-            mutation.target.getAttribute(mutation.attributeName))
+            mutation.target.getAttribute(mutation.attributeName)
+          )
         }
       });
     });
@@ -163,7 +173,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.setEditor(CodeMirror(container, {
       value: value,
       lineNumbers: true,
-      gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter"]
+      gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter", "CodeMirror-lint-markers"],
+      lint: true
     }));  
   }
   
@@ -210,8 +221,16 @@ export default class LivelyCodeMirror extends HTMLElement {
 		editor.setOption("extraKeys", {
       "Alt-F": "findPersistent",
       // "Ctrl-F": "search",
+      // #KeyboardShortcut Ctrl-H search and replace
+      "Ctrl-H": (cm) => {
+        setTimeout(() => {
+            editor.execCommand("replace");
+            this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
+        }, 10)
+      },
+      // #KeyboardShortcut Ctrl-F search
       "Ctrl-F": (cm) => {
-		// something immediately grabs the "focus" and we close the search dialog..
+		    // something immediately grabs the "focus" and we close the search dialog..
         // #Hack... 
         setTimeout(() => {
             editor.execCommand("findPersistent");
@@ -219,41 +238,54 @@ export default class LivelyCodeMirror extends HTMLElement {
         }, 10)
         // editor.execCommand("find")
       },
+      // #KeyboardShortcut Ctrl-Space auto complete
       "Ctrl-Space": cm => {
         this.fixHintsPosition()
         cm.execCommand("autocomplete")
       },
+      // #KeyboardShortcut Ctrl-Alt-Space auto complete
       "Ctrl-Alt-Space": cm => {
         this.fixHintsPosition()
         cm.execCommand("autocomplete")
       },
+      // #KeyboardShortcut Ctrl-P eval and print selelection or line
       "Ctrl-P": (cm) => {
           let text = this.getSelectionOrLine()
           this.tryBoundEval(text, true);
       },
+      // #KeyboardShortcut Ctrl-I eval and inspect selection or line 
       "Ctrl-I": (cm) => {
         let text = this.getSelectionOrLine()
         this.inspectIt(text)
       },
+      // #KeyboardShortcut Ctrl-I eval selection or line (do it) 
       "Ctrl-D": (cm, b, c) => {
         	let text = this.getSelectionOrLine()
           this.tryBoundEval(text, false);
         	return true
       },
-  		"Ctrl-Alt-Right": "selectNextOccurrence", 
+      // #KeyboardShortcut Ctrl-Alt-Right multiselect next 
+      "Ctrl-Alt-Right": "selectNextOccurrence", 
+      // #KeyboardShortcut Ctrl-Alt-Right undo multiselect
   		"Ctrl-Alt-Left": "undoSelection", 
+      
+      // #KeyboardShortcut Ctrl-/ indent slelection
       "Ctrl-/": "toggleCommentIndented",
-    	'Tab': (cm) => {
+      // #KeyboardShortcut Ctrl-# indent slelection
+      "Ctrl-#": "toggleCommentIndented",
+      // #KeyboardShortcut Tab insert tab or soft indent 
+      'Tab': (cm) => {
         if (cm.somethingSelected()) {
     			cm.indentSelection("add");
   			} else {
         	cm.execCommand('insertSoftTab')
         }
       },
+      // #KeyboardShortcut Ctrl-S save content
       "Ctrl-S": (cm) => {          
         this.doSave(cm.getValue());
       },
-      
+      // #KeyboardShortcut Alt-C capitalize letter      
       // #copied from keymap/emacs.js
       "Alt-C": repeated(function(cm) {
       operateOnWord(cm, function(w) {
@@ -375,6 +407,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     return promise
   }
   
+  
   async printResult(result, obj) {
     var editor = this.editor;
     var text = result
@@ -387,6 +420,16 @@ export default class LivelyCodeMirror extends HTMLElement {
       isAsync = true
     }
     var promisedWidget
+    var objClass = (obj && obj.constructor && obj.constructor.name) || (typeof obj)
+    if (_.isSet(obj)) {
+      obj = Array.from(obj)
+    }
+
+    if (_.isMap(obj)) {
+      var mapObj = {}
+      Array.from(obj.keys()).sort().forEach(key => mapObj[key] = obj.get(key))
+      obj = mapObj
+    }
     if (Array.isArray(obj)) {
       if (typeof obj[0] == 'object') {
         promisedWidget = this.printWidget("lively-table").then( table => {
@@ -410,12 +453,17 @@ export default class LivelyCodeMirror extends HTMLElement {
         return inspector
       })
     }
-    
-    if (isAsync && promisedWidget) {
+    if (promisedWidget) {
       var widget = await promisedWidget;
-      if (widget) widget.style.border = "2px dashed blue"
-    }
+      var span = <span style="border-top:2px solid darkgray;color:darkblue"> <u>:{objClass}</u> </span>
+      widget.parentElement.insertBefore(span, widget)
+      span.appendChild(widget)
+      if (isAsync && promisedWidget) {
+        if (widget) widget.style.border = "2px dashed blue"
+      }
+    } 
   }
+    
 
   async tryBoundEval(str, printResult) {
     var resp = await this.boundEval(str);

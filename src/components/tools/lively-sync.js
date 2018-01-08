@@ -6,7 +6,7 @@ export default class Sync extends Morph {
   initialize() {
     this.windowTitle = "GitHub Sync";
     var container = this.get(".container");
-    lively.html.registerButtons(this);
+    this.registerButtons();
     lively.html.registerInputs(this);
     this.updateLoginStatus();
     

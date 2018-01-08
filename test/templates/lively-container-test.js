@@ -1,8 +1,7 @@
-import {expect} from '../../node_modules/chai/chai.js';
+import {expect} from 'src/external/chai.js';
 import {loadComponent} from './templates-fixture.js';
 
 window.expect = expect;
-// System.import(lively4url + '/node_modules/chai/chai.js').then( m => window.expect = m.expect);
 
 describe("Container Tool",  function() {
 

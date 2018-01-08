@@ -1,4 +1,5 @@
 <template id="lively-pdf" data-class="LivelyPdf">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style>
     #log {
       position: absolute;
@@ -8,12 +9,32 @@
       height: 100%;
       overflow: auto;
     }
+    .pdfEditButtons {
+      position: absolute;
+      top: 0;
+      right: 25px;
+    }
+    .active {
+      background-color: red;
+    }
   </style>
   <style  data-src="/../pdfjs-dist/web/pdf_viewer.css"></style>
   <pre id="log"></pre>
 
   <div id="container">
     <div id="viewerContainer" class="pdfViewer"><div></div></div>
+  </div>
+  
+  <div class="pdfEditButtons">
+    <button id="pdf-edit-button">
+      <i class="fa fa-edit"></i>
+    </button>
+    <button id="pdf-save-button">
+      <i class="fa fa-floppy-o"></i>
+    </button>
+    <button id="pdf-cancel-button">
+      <i class="fa fa-ban"></i>
+    </button>
   </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

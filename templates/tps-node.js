@@ -125,7 +125,7 @@ export default class TpsNode extends Morph {
     this.get("#penSize").value = this.penSize
    
     this.strokes = new CommandHistory();
-    lively.html.registerButtons(this)
+    this.registerButtons();
     
     this.get("lively-resizer").target = this // shadow root cannot look outside
     
