@@ -10,6 +10,9 @@ export default class VivideTable extends Morph {
       this.successors.forEach(successor => successor.trigger());
     });
     
+    this.get("#open-workspace").addEventListener("click", () => {this.openWorkspaceOn(this)});
+    this.get("#open-inspector").addEventListener("click", () => {this.openInspectorOn(this)});
+    
     this.model = [];
     this.transformation = list => [];
     
@@ -56,5 +59,15 @@ export default class VivideTable extends Morph {
   refresh() {
     this.livelyTable.setFromJSO(this.transformation(this.model));
     this.successors.forEach(successor => successor.trigger());
+  }
+  
+  openWorkspaceOn(widget) {
+    lively.openWorkspace();
+    window.that = widget;
+  }
+  
+  openInspectorOn(widget) {
+    lively.openComponentInWindow("vivide-inspector").then(
+      inspector => inspector.inspect(widget));
   }
 }
