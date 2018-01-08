@@ -27,7 +27,6 @@ export default class Graffle {
       return; 
     var key = String.fromCharCode(evt.keyCode)
     this.keysDown[key] = true
-    // lively.notify("down: " + key)
     if (this.specialKeyDown() && !(evt.ctrlKey || evt.metaKey)) {
       lively.selection.disabled = true
       if (!evt.ctrlKey && !evt.altKey && !evt.altKey) {
@@ -86,10 +85,32 @@ export default class Graffle {
   }  
 
 
+  static changeTextColor() {
+    var color = "orange"; // #TODO make this interactive... 
+    var element = window.getSelection().getRangeAt(0).startContainer.parentElement;
+    if (element.style.color == color) {
+      color = "black"; // TODO how can we unset a color? 
+    }
+    document.execCommand("styleWithCSS", true, true)
+    document.execCommand("foreColor", true, color)
+  }  
+  
+  static changeHiliteColor() {
+    var color = "yellow"; // #TODO make this interactive... 
+    var element = window.getSelection().getRangeAt(0).startContainer.parentElement;
+    if (element.style.color == color) {
+      color = "transparent"; // TODO how can we unset a color? 
+    }
+    document.execCommand("styleWithCSS", true, true)
+    document.execCommand("hiliteColor", true, color)
+  }  
+  
+  
   static async onKeyUp(evt) {
     var key = String.fromCharCode(evt.keyCode)
     this.keysDown[key] = false
-    // lively.notify("up: " + key)
+    
+    
     lively.selection.disabled = false
   
     var hand = await lively.ensureHand();
@@ -106,6 +127,14 @@ export default class Graffle {
     
     if (evt.altKey &&  evt.keyCode == 189 /* - */) {
       this.changeCurrentFontSize(0.9)
+    }
+
+    if (evt.altKey && key == "C") {
+      this.changeTextColor()
+    }
+
+    if (evt.altKey && key == "H") {
+      this.changeHiliteColor()
     }
   }
   
