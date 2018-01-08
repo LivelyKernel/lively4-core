@@ -3,7 +3,7 @@
 <style data-src="/templates/livelystyle.css"></style>
 <style>
 :host {
-  background-color: blue;
+  background-color: lightblue;
   display: flex;
   flex-direction: column;
 }
@@ -11,6 +11,11 @@ lively-code-mirror {
   flex: 1;
   min-height: unset;
   height: auto;
+  text-indent: -9999px;
+  color:transparent;
+}
+lively-code-mirror * {
+  display: none;
 }
 
 </style>
