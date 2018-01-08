@@ -58,7 +58,7 @@ export default class LivelyCacheViewer extends Morph {
       focalStorage.setItem(cacheModeKey, value).then(() => {
         if (value == 3) {
           this._showLoadingScreen(true);
-          this._sendToServiceWorker('preloadFull');
+          this._sendToServiceWorker('preloadFull', lively4url);
         }
         
         // Message SWX
@@ -79,8 +79,28 @@ export default class LivelyCacheViewer extends Morph {
    * Delete cache
    */
   onClearButton() {
+    if (!window.confirm("Do you really want to clear the cache?")) return;
+    
     this._showLoadingScreen(true);
     this._sendToServiceWorker('clearCache');
+  }
+  
+  /**
+   * Add mount to cache
+   */
+  async onAddMountButton() {
+    let name = "lively-cache-mounts"      
+    let comp = await lively.openComponentInWindow(name);
+    let container = comp.parentElement;
+    container.setAttribute("title", "Add Mount to Cache");
+
+    //let mountsResponse = await fetch("https://lively4/sys/mounts");
+    //let mounts = await mountsResponse.json();
+    //comp.loadMounts(mounts);
+    
+    comp.focus();
+
+    return comp;
   }
   
   /**

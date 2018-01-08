@@ -11,6 +11,7 @@ describe("Lively Inspector Component",  function() {
   });
 
   it("should load", function(done) {
+    expect(that)
     done();
   });
 

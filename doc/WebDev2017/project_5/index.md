@@ -22,3 +22,5 @@ Recent student Project: [Lively Services](https://lively-kernel.org/lively4/live
 ```
 
 - Alternative: can we integrate with those meta services?
+
+![frontend](./vision.png)

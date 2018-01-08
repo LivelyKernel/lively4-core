@@ -27,7 +27,6 @@ export class FavoritesTracker {
    * Load favorites by descending popularity
    */
   async _checkFavorites() {
-    console.error("Count favorit");
     // Check if favorites should be loaded
     if (this._cache.getCacheMode() != 2) return;
     

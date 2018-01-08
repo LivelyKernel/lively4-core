@@ -310,20 +310,20 @@ export class Cache {
 
       // Just tell the cache to fetch the file
       // This will update our cache if we are online
-      let response = await this.fetch(request, buildNetworkRequestFunction(request));
+      let response = await this.fetch(request, buildNetworkRequestFunction(request, this._fileSystem));
       ret[method] = response.clone();
     }
     return ret;
   }
   
-  async _preloadFull() {
+  async _preloadFull(url) {
     let loadDirectory = async (directoryUrl) => {
       // Load directory index
       let directoryIndex = await this.preloadFile(directoryUrl);
       
       try {
         let directoryJson = await directoryIndex['OPTIONS'].json();
-        for(let file of directoryJson.contents) {
+        for (let file of directoryJson.contents) {
           if (file.name[0] === '.') continue;
 
           // Using own joinUrls() because join() in path.js assumes paths, not URLs
@@ -331,7 +331,7 @@ export class Cache {
 
           if (file.type === 'file') {
             this.preloadFile(newFileUrl);
-          } else if ( file.type === 'directory') {
+          } else if (file.type === 'directory') {
             await loadDirectory(newFileUrl);
           }
         }
@@ -340,7 +340,7 @@ export class Cache {
       }
     }
     
-    await loadDirectory(lively4url);
+    await loadDirectory(url);
   }
   
   /**
@@ -367,7 +367,7 @@ export class Cache {
         responseCommand = "clearCacheDone";
         break;
       case 'preloadFull':
-        await this._preloadFull();
+        await this._preloadFull(data);
         responseCommand = 'fullLoadingDone';
         break;
       case 'updateCacheMode':
