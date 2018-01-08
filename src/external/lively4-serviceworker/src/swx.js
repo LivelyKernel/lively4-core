@@ -78,6 +78,7 @@ class ServiceWorker {
     if (url.pathname.match(/\/_meta\//)) return; 
     //if (url.pathname.match(/lively4-serviceworker/)) return; 
     if (url.pathname.match(/lively4services/)) return; // seems to not work with SWX, req. are pending
+    if (url.pathname.match(/lively4handwriting/)) return;
   
     // if (url.pathname.match(/noserviceworker/)) return; // #Debug
   
