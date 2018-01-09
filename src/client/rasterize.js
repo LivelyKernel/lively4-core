@@ -18,7 +18,7 @@ export class CloneDeepHTML {
           css += name +": " + astyle.getPropertyValue(name) +";\n"
         }        
       }
-    };
+    }
     return css
   }
   
@@ -123,9 +123,7 @@ export class CloneDeepHTML {
 // $morph("result").appendChild(clone)
 // $morph("showResult").inspect(clone)
 
-
-export default class Rasterize {
-  
+export default class Rasterize {  
     // from: https://gist.github.com/timdown/021d9c8f2aabc7092df564996f5afbbf
     static trimCanvas(canvas) {
         function rowBlank(imageData, width, y) {
@@ -212,14 +210,11 @@ export default class Rasterize {
   } 
 }
 
-import Raster from "src/client/rasterize.js";
-
 export class TemplatePreview {
   
   static async createPreview(url, templateName) {
     if (!url) throw new Error("url argument missing");
-    if (!templateName) throw new Error("templateName argument missing");
-    
+    if (!templateName) throw new Error("templateName argument missing");    
     console.log("PREVIEW work on:" + templateName)
     try {
       var comp = await Promise.race([
@@ -236,7 +231,7 @@ export class TemplatePreview {
       }
       
       var a = $morph("RasterImg"); if(a) a.remove();
-      var img = await Raster.openAsImage(comp.windowTitle ? comp.parentElement : comp).then(img => {
+      var img = await Rasterize.openAsImage(comp.windowTitle ? comp.parentElement : comp).then(img => {
         img.id = "RasterImg"
         img.style.width = (img.width * 1) + "px"
         img.style.position = "fixed"
@@ -252,7 +247,7 @@ export class TemplatePreview {
       await fetch(imgURL, { method: "PUT", body: imgData})
       console.log("PREVIEW wrote " + imgURL)
     } catch(e) {
-      console.log(e)
+      console.error(e)
     } finally {
       if (comp && comp.parentElement) {
         comp.parentElement.remove()  
@@ -275,11 +270,10 @@ export class TemplatePreview {
           let previewUrl = (url + name + ".png")
           try {
             console.log("next " + previewUrl)
-
             if (! await lively.files.existFile(previewUrl)) {
               if (TemplatePreview.stoped) return;
               if (dry) {
-                console.log("would generate " + url)
+                console.warn("would generate " + url)
               } else {
                 try {
                   await Promise.race([
@@ -287,15 +281,14 @@ export class TemplatePreview {
                     new Promise(r => setTimeout(r, 6000))
                   ])
                 } catch(e) {
-                  comp = 
-                  console.log("GeneratePreview Errro: " + e)
+                  console.warn("GeneratePreview Errro: " + e)
                 }
               }
             } else {
-              console.log("Preview exists: " + previewUrl)
+              console.warn("Preview exists: " + previewUrl)
             }            
           } catch(e) {
-            console.log("Error when generating preview: " + e)
+            console.warn("Error when generating preview: " + e)
           }
           
         }
