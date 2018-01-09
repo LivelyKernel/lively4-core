@@ -30,9 +30,10 @@ export default class Graffle {
       return;
     }
     // console.log("show balloon " + target)
+    // lively.showElement(target)
     if (!lively.styleBalloon) {
       lively.styleBalloon = await lively.openPart("formatting")
-      lively.styleBalloon.style.zIndex = 10000
+      lively.styleBalloon.style.zIndex = 500
     }
     document.body.appendChild(lively.styleBalloon);
     // lively.showElement(lively.styleBalloon)
@@ -54,7 +55,11 @@ export default class Graffle {
   static onSelectionChange(evt) {
     var selection = window.getSelection()
     if (!document.activeElement || !document.activeElement.isContentEditable) {
-      this.hideStyleBalloon()      
+      if (document.activeElement === document.body) {
+        lively.notify("hide style...")
+        this.hideStyleBalloon() 
+      }
+      return
     }
     if (document.activeElement && document.activeElement.isContentEditable 
         && document.activeElement.shadowRoot) {
@@ -62,7 +67,11 @@ export default class Graffle {
     }
 
     if (selection.anchorNode) {
-      this.showStyleBalloon(selection.getRangeAt(0).startContainer.parentElement)
+      var element = selection.getRangeAt(0).startContainer.parentElement;
+      while(["SPAN", "FONT", "A", "B", "I"].includes(element.tagName)) {
+        element = element.parentElement
+      }
+      this.showStyleBalloon(element)
     } 
   }
   

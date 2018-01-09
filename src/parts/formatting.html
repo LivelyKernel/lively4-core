@@ -1,4 +1,4 @@
-<div class="lively-content" style="width: max-content; height: 41.625px; border: 1px solid gray; position: absolute; background-color: white; left: -333.136px; top: -471px;" data-lively-id="bde8ccbe-f96f-4fd4-be65-4f5043e075df" data-lively-part-name="formatting"><script data-name="fontSize" type="lively4script">function fontSize(element) {
+<div class="lively-content" style="width: max-content; height: 41.625px; border: 1px solid gray; position: absolute; background-color: white; left: 38.61px; top: 271.31px; z-index: 500;" data-lively-id="bde8ccbe-f96f-4fd4-be65-4f5043e075df" data-lively-part-name="formatting" tabindex="0"><script data-name="fontSize" type="lively4script">function fontSize(element) {
   if (!element || that.contentEditable) return ;
   
   if (element.tagName == "FONT") {
@@ -20,18 +20,23 @@
     evt.stopPropagation()
   })
   this.shadowRoot.appendChild(button)
-}</script><script data-name="colorChooser" type="lively4script">function colorChooser(label, command, parameter) {
-  var color = document.createElement("lively-crayoncolors")
-  color.style.position = "relative"
-  color.style.top = "7px" // #Hack the padding of buttons seems to be weirred #TODO
-  // color.textContent = label
-  color.addEventListener("value-changed", (evt) => {
-    var parameter = evt.detail.value
-    document.execCommand(command, true, parameter)
-    evt.preventDefault()
-    evt.stopPropagation()
-  })
-  lively.components.openIn(this.shadowRoot, color)
+}</script><script data-name="selectFont" type="lively4script">function selectFont(name) {
+  lively.notify("select " + name)
+  document.execCommand("styleWithCSS", true, true)
+  document.execCommand("fontName", true, name)
+}</script><script data-name="getSelection" type="lively4script">function getSelection() {
+  var selection = window.getSelection();  
+  console.log("active element: " + document.activeElement)
+  if (document.activeElement && document.activeElement.shadowRoot) {
+    var innerSelection = document.activeElement.shadowRoot.getSelection()
+    if (innerSelection.anchorNode) {
+      selection = innerSelection
+    }
+  }
+  return selection
+}</script><script data-name="rememberSelection" type="lively4script">function rememberSelection() {
+  this.selection = this.getSelection()
+  this.range = this.selection.getRangeAt(0)
 }</script><script data-name="customButton" type="lively4script">function customButton(label, callback) {
   var button = document.createElement("button")
   button.innerHTML = label
@@ -41,24 +46,20 @@
     evt.stopPropagation()
   })
   this.shadowRoot.appendChild(button)
-}</script><script data-name="selectFont" type="lively4script">function selectFont(name) {
-  lively.notify("select " + name)
-  document.execCommand("fontName", true, name)
 }</script><script data-name="chooseFont" type="lively4script">function chooseFont(evt, button) {
-  var fontlist = ["serif", "san-serif", "monospace"]
-  var selection = window.getSelection();  
-  var range = selection.getRangeAt(0)
+  var fontlist = ["serif", "sans-serif", "monospace"]
   lively.create("lively-menu").then(menu => {
     menu.openOn(fontlist.map(ea => {
       return [ea, () => {
-        selection.removeAllRanges()
-        selection.addRange(range)
+        this.selection.addRange(this.range)
         this.selectFont(ea)
         menu.remove()
       }]
     }));          
+
     lively.setGlobalPosition(menu, lively.getGlobalBounds(button).bottomLeft())
-    
+    menu.style.zIndex = 40000;
+
      // defere event registration to prevent closing the menu as it was opened
     setTimeout(() => {
       lively.addEventListener("contextMenu", document.documentElement, "click", () => {
@@ -69,13 +70,18 @@
 }</script><script data-name="livelyLoad" type="lively4script">function livelyLoad() {
   (async () => {
     this.createShadowRoot();
+    this.setAttribute("tabindex", 0)
 
     this.shadowRoot.innerHTML = "<style data-src='/src/external/font-awesome/css/font-awesome.min.css'></style>"
     await lively.fillTemplateStyles(this.shadowRoot)
-    
+
+    lively.removeEventListener("StyleBalloon", this)
+    lively.addEventListener("StyleBalloon", this,"mousedown", () => this.rememberSelection())
+
     this.customButton('<i class="fa fa-font" aria-hidden="true"></i>', (evt, button) => 
         this.chooseFont(evt, button))
-  
+    
+    
     this.commandButton('<i class="fa fa-bold" aria-hidden="true"></i>', "bold")
     this.commandButton('<i class="fa fa-italic" aria-hidden="true"></i>', "italic")
 
@@ -94,4 +100,19 @@
 
     this.style.width = "max-content"
   })()
- }</script></div>
+ }</script><script data-name="colorChooser" type="lively4script">function colorChooser(label, command, parameter) {
+  var color = document.createElement("lively-crayoncolors")
+  color.style.position = "relative"
+  color.style.top = "7px" // #Hack the padding of buttons seems to be weirred #TODO
+  // color.textContent = label
+  color.addEventListener("value-changed", (evt) => {
+    var parameter = evt.detail.value
+    this.colorChooserChoose(command, parameter)
+    evt.preventDefault()
+    evt.stopPropagation()
+  })
+  lively.components.openIn(this.shadowRoot, color)
+}</script><script data-name="colorChooserChoose" type="lively4script">function colorChooserChoose(command, color) {
+    this.selection.addRange(this.range)
+    document.execCommand(command, true, color)
+}</script></div>
