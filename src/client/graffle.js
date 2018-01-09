@@ -32,8 +32,11 @@ export default class Graffle {
     // console.log("show balloon " + target)
     if (!lively.styleBalloon) {
       lively.styleBalloon = await lively.openPart("formatting")
+      lively.styleBalloon.style.zIndex = 10000
     }
     document.body.appendChild(lively.styleBalloon);
+    // lively.showElement(lively.styleBalloon)
+
     // console.log("pos " + lively.getGlobalBounds(target).bottomLeft())
     lively.setGlobalPosition(lively.styleBalloon, lively.getGlobalBounds(target).bottomLeft())
   }
@@ -50,11 +53,17 @@ export default class Graffle {
   
   static onSelectionChange(evt) {
     var selection = window.getSelection()
-    if (selection.anchorNode && !selection.isCollapsed) {
-      this.showStyleBalloon(selection.getRangeAt(0).startContainer.parentElement)
-    } else {
-      this.hideStyleBalloon()
+    if (!document.activeElement || !document.activeElement.isContentEditable) {
+      this.hideStyleBalloon()      
     }
+    if (document.activeElement && document.activeElement.isContentEditable 
+        && document.activeElement.shadowRoot) {
+      selection = document.activeElement.shadowRoot.getSelection()
+    }
+
+    if (selection.anchorNode) {
+      this.showStyleBalloon(selection.getRangeAt(0).startContainer.parentElement)
+    } 
   }
   
   static async onKeyDown(evt) {
@@ -115,8 +124,6 @@ export default class Graffle {
     document.execCommand("fontSize", true, 1)    
     element = window.getSelection().getRangeAt(0).commonAncestorContainer.parentElement
     element.style.fontSize  = oldSize.match("%$") ? oldSize : "100%";
-        
-    
     this.changeFontSize(element, factor)
   }  
 
