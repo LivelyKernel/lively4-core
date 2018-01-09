@@ -27,7 +27,6 @@ export default class Graffle {
       return; 
     var key = String.fromCharCode(evt.keyCode)
     this.keysDown[key] = true
-    // lively.notify("down: " + key)
     if (this.specialKeyDown() && !(evt.ctrlKey || evt.metaKey)) {
       lively.selection.disabled = true
       if (!evt.ctrlKey && !evt.altKey && !evt.altKey) {
@@ -56,11 +55,62 @@ export default class Graffle {
       }
     }
   }
+  
+  static changeFontSize(element, factor) {
+      if (element) {
+        var fontSize = element.style.fontSize
+        if (!fontSize || !fontSize.match(/%$/)) {
+          fontSize = "100%"
+        }    
+        fontSize = "" + (Math.round(Number(fontSize.replace(/%/,"")) * factor)) + "%"
+        element.style.fontSize = fontSize
+        // lively.notify("font size: " +  element.style.fontSize)
+      }
+  }  
 
+  
+  static changeCurrentFontSize(factor) {
+    var range = window.getSelection().getRangeAt(0);
+    var element = range.commonAncestorContainer.parentElement
+    var oldSize = element.style.fontSize
+
+    // make a new region 
+    document.execCommand("styleWithCSS", true, true)
+    document.execCommand("fontSize", true, 1)    
+    element = window.getSelection().getRangeAt(0).commonAncestorContainer.parentElement
+    element.style.fontSize  = oldSize.match("%$") ? oldSize : "100%";
+        
+    
+    this.changeFontSize(element, factor)
+  }  
+
+
+  static changeTextColor() {
+    var color = "orange"; // #TODO make this interactive... 
+    var element = window.getSelection().getRangeAt(0).startContainer.parentElement;
+    if (element.style.color == color) {
+      color = "black"; // TODO how can we unset a color? 
+    }
+    document.execCommand("styleWithCSS", true, true)
+    document.execCommand("foreColor", true, color)
+  }  
+  
+  static changeHiliteColor() {
+    var color = "yellow"; // #TODO make this interactive... 
+    var element = window.getSelection().getRangeAt(0).startContainer.parentElement;
+    if (element.style.color == color) {
+      color = "transparent"; // TODO how can we unset a color? 
+    }
+    document.execCommand("styleWithCSS", true, true)
+    document.execCommand("hiliteColor", true, color)
+  }  
+  
+  
   static async onKeyUp(evt) {
     var key = String.fromCharCode(evt.keyCode)
     this.keysDown[key] = false
-    // lively.notify("up: " + key)
+    
+    
     lively.selection.disabled = false
   
     var hand = await lively.ensureHand();
@@ -70,6 +120,22 @@ export default class Graffle {
     }
     // if (this.lastElement)
     //   this.lastElement.focus(); // no, we can focus.... and continue typing
+
+    if (evt.altKey &&   evt.keyCode == 187 /* + */) {
+      this.changeCurrentFontSize(1.1)
+    }
+    
+    if (evt.altKey &&  evt.keyCode == 189 /* - */) {
+      this.changeCurrentFontSize(0.9)
+    }
+
+    if (evt.altKey && key == "C") {
+      this.changeTextColor()
+    }
+
+    if (evt.altKey && key == "H") {
+      this.changeHiliteColor()
+    }
   }
   
   static specialKeyDown() {
