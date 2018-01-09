@@ -56,7 +56,7 @@ export default class Graffle {
     var selection = window.getSelection()
     if (!document.activeElement || !document.activeElement.isContentEditable) {
       if (document.activeElement === document.body) {
-        lively.notify("hide style...")
+        // lively.notify("hide style...")
         this.hideStyleBalloon() 
       }
       return
