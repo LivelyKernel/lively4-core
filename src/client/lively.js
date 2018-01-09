@@ -1420,7 +1420,12 @@ export default class Lively {
    return result
   }
   
-  
+  static async openPart(partName, worldContext=document.body) {
+    var data = await fetch(`${lively4url}/src/parts/${partName}.html`).then(t => t.text())
+    var element  = lively.clipboard.pasteHTMLDataInto(data, worldContext);
+    element.setAttribute("data-lively-part-name", partName)
+    return element
+  }
 
   static queryAll(element, query) {    
     var all = new Set()

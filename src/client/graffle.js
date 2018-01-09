@@ -7,6 +7,7 @@ export default class Graffle {
   // Graffle.keysDown 
   static load() {
     lively.removeEventListener("Graffle", document.body)
+    lively.removeEventListener("Graffle", document)
     lively.addEventListener("Graffle", document.body, "keydown", 
       (evt) => { this.onKeyDown(evt)}, true)
     lively.addEventListener("Graffle", document.body, "keyup", 
@@ -18,7 +19,42 @@ export default class Graffle {
       (evt) => { this.onMouseMove(evt) })
     lively.addEventListener("GraffleMouse", document.documentElement, "pointerup", 
       (evt) => { this.onMouseUp(evt) })
+    lively.addEventListener("Graffle", document, "selectionchange", 
+      (evt) => { this.onSelectionChange(evt) })
     this.keysDown = {}
+  }
+
+  
+  static async showStyleBalloon(target) {
+    if (!target) {
+      return;
+    }
+    // console.log("show balloon " + target)
+    if (!lively.styleBalloon) {
+      lively.styleBalloon = await lively.openPart("formatting")
+    }
+    document.body.appendChild(lively.styleBalloon);
+    // console.log("pos " + lively.getGlobalBounds(target).bottomLeft())
+    lively.setGlobalPosition(lively.styleBalloon, lively.getGlobalBounds(target).bottomLeft())
+  }
+  
+    
+  static async hideStyleBalloon() {
+    // console.log("hide balloon")
+    if (lively.styleBalloon) {
+      lively.styleBalloon.remove()
+      
+      // lively.styleBalloon = null; // for developing
+    }
+  }
+  
+  static onSelectionChange(evt) {
+    var selection = window.getSelection()
+    if (selection.anchorNode && !selection.isCollapsed) {
+      this.showStyleBalloon(selection.getRangeAt(0).startContainer.parentElement)
+    } else {
+      this.hideStyleBalloon()
+    }
   }
   
   static async onKeyDown(evt) {

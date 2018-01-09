@@ -127,7 +127,9 @@ export default class ContextMenu {
             ContextMenu.openInWindow(target, evt);
         }],
       ["save as...", async () => {
-        var name = await lively.prompt("save element as: ", "src/parts/element.html")
+        var partName = target.getAttribute("data-lively-part-name") || "element"
+        var name = await lively.prompt("save element as: ", `src/parts/${partName}.html`)
+        if (!name) return;
         // var name = "foo.html"
         var url = name
         if (!url.match(/https?:\/\//)) {
@@ -266,8 +268,7 @@ export default class ContextMenu {
           this.hide();
         }, "", '<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'], 
         ["Button", async evt => {
-          var data = await fetch(lively4url + "/src/parts/button.html").then(t => t.text())
-          var morph  = lively.clipboard.pasteHTMLDataInto(data, worldContext).childNodes[0];
+          var morph  = await lively.openPart("button")
           this.openCenteredAt(morph, worldContext, evt)          
           lively.hand.startGrabbing(morph, evt)
           // morph.style.backgroundColor = "blue";

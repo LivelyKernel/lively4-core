@@ -1,32 +1,4 @@
-<div class="lively-content" style="width: 95.273px; height: 23.6176px; border: 1px solid gray; position: absolute; background-color: white;"><script data-name="commandButton" type="lively4script">function commandButton(label, command, parameter) {
-  var button = document.createElement("button")
-  button.textContent = label
-  button.addEventListener("click", (evt) => {
-    document.execCommand(command, true, parameter)
-    evt.preventDefault()
-    evt.stopPropagation()
-  })
-  this.shadowRoot.appendChild(button)
-}</script><script data-name="colorChooser" type="lively4script">function colorChooser(label, command, parameter) {
-  var color = document.createElement("lively-crayoncolors")
-  // color.textContent = label
-  color.addEventListener("value-changed", (evt) => {
-    var parameter = evt.detail.value
-    document.execCommand(command, true, parameter)
-    evt.preventDefault()
-    evt.stopPropagation()
-  })
-  lively.components.openIn(this.shadowRoot, color)
-}</script><script data-name="customButton" type="lively4script">function customButton(label, callback) {
-  var button = document.createElement("button")
-  button.textContent = label
-  button.addEventListener("click", (evt) => {
-    callback(evt)
-    evt.preventDefault()
-    evt.stopPropagation()
-  })
-  this.shadowRoot.appendChild(button)
-}</script><script data-name="fontSize" type="lively4script">function fontSize(element) {
+<div class="lively-content" style="width: max-content; height: 41.625px; border: 1px solid gray; position: absolute; background-color: white; left: -333.136px; top: -471px;" data-lively-id="bde8ccbe-f96f-4fd4-be65-4f5043e075df" data-lively-part-name="formatting"><script data-name="fontSize" type="lively4script">function fontSize(element) {
   if (!element || that.contentEditable) return ;
   
   if (element.tagName == "FONT") {
@@ -37,27 +9,89 @@
   } 
   return this.fontSize(element.parentElement)
   
-}</script><script data-name="livelyLoad" type="lively4script">function livelyLoad() {
-  this.createShadowRoot();
-  
-  this.shadowRoot.innerHTML = ""
-
-  this.commandButton("b", "bold")
-  this.colorChooser("backe", "backColor") 
-  this.colorChooser("fore", "foreColor") 
-  this.commandButton("fontsize 1", "fontSize", "1") 
-  this.commandButton("fontsize 2", "fontSize", "2") 
-  this.commandButton("fontsize 3", "fontSize", "3") 
-
-  this.commandButton("fontName", "fontName", "Times") 
-  this.commandButton("removeFormat", "removeFormat")
-  
-  this.commandButton("justify", "justifyFull")
-  this.commandButton("left", "justifyLeft")
-  this.commandButton("center", "justifyCenter")
-  this.commandButton("right", "justifyRight")
-
-  this.customButton("+", evt => this.increateFontSize(evt))  
 }</script><script data-name="increateFontSize" type="lively4script">function increateFontSize(evt) {
   
-}</script></div>
+}</script><script data-name="commandButton" type="lively4script">function commandButton(label, command, parameter) {
+  var button = document.createElement("button")
+  button.innerHTML = label
+  button.addEventListener("click", (evt) => {
+    document.execCommand(command, true, parameter)
+    evt.preventDefault()
+    evt.stopPropagation()
+  })
+  this.shadowRoot.appendChild(button)
+}</script><script data-name="colorChooser" type="lively4script">function colorChooser(label, command, parameter) {
+  var color = document.createElement("lively-crayoncolors")
+  color.style.position = "relative"
+  color.style.top = "7px" // #Hack the padding of buttons seems to be weirred #TODO
+  // color.textContent = label
+  color.addEventListener("value-changed", (evt) => {
+    var parameter = evt.detail.value
+    document.execCommand(command, true, parameter)
+    evt.preventDefault()
+    evt.stopPropagation()
+  })
+  lively.components.openIn(this.shadowRoot, color)
+}</script><script data-name="customButton" type="lively4script">function customButton(label, callback) {
+  var button = document.createElement("button")
+  button.innerHTML = label
+  button.addEventListener("click", (evt) => {
+    callback(evt, button)
+    evt.preventDefault()
+    evt.stopPropagation()
+  })
+  this.shadowRoot.appendChild(button)
+}</script><script data-name="selectFont" type="lively4script">function selectFont(name) {
+  lively.notify("select " + name)
+  document.execCommand("fontName", true, name)
+}</script><script data-name="chooseFont" type="lively4script">function chooseFont(evt, button) {
+  var fontlist = ["serif", "san-serif", "monospace"]
+  var selection = window.getSelection();  
+  var range = selection.getRangeAt(0)
+  lively.create("lively-menu").then(menu => {
+    menu.openOn(fontlist.map(ea => {
+      return [ea, () => {
+        selection.removeAllRanges()
+        selection.addRange(range)
+        this.selectFont(ea)
+        menu.remove()
+      }]
+    }));          
+    lively.setGlobalPosition(menu, lively.getGlobalBounds(button).bottomLeft())
+    
+     // defere event registration to prevent closing the menu as it was opened
+    setTimeout(() => {
+      lively.addEventListener("contextMenu", document.documentElement, "click", () => {
+        menu.remove();
+      });        
+    }, 0)
+  })
+}</script><script data-name="livelyLoad" type="lively4script">function livelyLoad() {
+  (async () => {
+    this.createShadowRoot();
+
+    this.shadowRoot.innerHTML = "<style data-src='/src/external/font-awesome/css/font-awesome.min.css'></style>"
+    await lively.fillTemplateStyles(this.shadowRoot)
+    
+    this.customButton('<i class="fa fa-font" aria-hidden="true"></i>', (evt, button) => 
+        this.chooseFont(evt, button))
+  
+    this.commandButton('<i class="fa fa-bold" aria-hidden="true"></i>', "bold")
+    this.commandButton('<i class="fa fa-italic" aria-hidden="true"></i>', "italic")
+
+    this.colorChooser("fore", "foreColor") 
+    this.colorChooser("back", "backColor") 
+
+    
+    
+    // this.commandButton("fontName", "fontName", "Times") 
+    this.commandButton('<i class="fa fa-align-left" aria-hidden="true"></i>', "justifyLeft")
+
+    this.commandButton('<i class="fa fa-align-justify" aria-hidden="true"></i>', "justifyFull")
+    this.commandButton('<i class="fa fa-align-center" aria-hidden="true"></i>', "justifyCenter")
+    this.commandButton('<i class="fa fa-align-right" aria-hidden="true"></i>', "justifyRight")
+    this.commandButton('<i class="fa fa-eraser" aria-hidden="true"></i>', "removeFormat")
+
+    this.style.width = "max-content"
+  })()
+ }</script></div>

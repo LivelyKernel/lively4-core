@@ -89,7 +89,6 @@ export default class LivelyHand extends Morph {
   }
   
   onPointerMove(evt) {
-    console.log("move..." + lively.getGlobalPosition(this))
     if (this.dropIndicator) this.dropIndicator.remove()
     this.dropTarget = this.elementUnderHand(evt)
     if (this.dropTarget) {
