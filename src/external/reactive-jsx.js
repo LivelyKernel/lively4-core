@@ -38,7 +38,7 @@ function getExpressionNode(expression) {
     return promNode;
   }
   if(expression instanceof ActiveExpression) {
-    return expression::toDOMNode(getExpressionNode);
+    return toDOMNode.call(expression, getExpressionNode);
   }
   return ensureDOMNode(expression);
 }
