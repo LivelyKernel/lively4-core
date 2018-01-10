@@ -1478,6 +1478,12 @@ export default class Lively {
     }
   }
   
+  static halt(time=1000) {
+    window.setTimeout(() => {
+      debugger
+    },time)
+  }
+  
 }
 
 if (!window.lively || window.lively.name != "Lively") {
