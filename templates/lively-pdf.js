@@ -114,11 +114,9 @@ export default class LivelyPDF extends Morph {
   }
   
   onPdfEdit() {
-    let editButton = this.getSubmorph("#pdf-edit-button");
-    editButton.classList.add("active");
-    editButton.setAttribute("disabled", "true");
-    
+    this.enableEditMode();
     let that = this;
+    
     this.pdfViewer.pagesPromise.then(() => {
       let annotations = that.getAllSubmorphs(".annotationLayer section.textAnnotation");
       annotations.forEach((annotation) => {
@@ -130,26 +128,53 @@ export default class LivelyPDF extends Morph {
   onPdfSave() {
     let url = this.getAttribute("src");
     let newPdfData = "data:application/pdf;base64," + btoa(this.editedPdfText);
+    let that = this;
     
     // Convert edited base64 back to Blob and write into PDF
     fetch(newPdfData).then(response => response.blob()).then(newBlob => {
-      fetch(url, {method: 'PUT', body: newBlob });
+      fetch(url, {method: 'PUT', body: newBlob }).then(() => {
+        PDFJS.getDocument(newPdfData).then(function (pdfDocument) {
+          that.pdfViewer.setDocument(pdfDocument);
+          that.pdfLinkService.setDocument(pdfDocument, null); 
+          that.onPdfEdit();
+        });
+        
+        that.setChangeIndicator(false);
+      });
     });
-    
-    this.setChangeIndicator(false);
   }
   
   onPdfCancel() {
-    let editButton = this.getSubmorph("#pdf-edit-button");  
-    editButton.classList.remove("active");
-    editButton.removeAttribute("disabled");
-    this.editedPdfText = this.originalPdfText;
+    this.disableEditMode(); 
     
+    this.editedPdfText = this.originalPdfText;
     // Remove event listener
     let annotations = this.getAllSubmorphs(".annotationLayer section.textAnnotation");
     annotations.forEach((annotation) => {
       lively.removeEventListener("pdf", annotation, "click", eventFunctionObject);
     });
+  }
+  
+  enableEditMode() {
+    let editButton = this.getSubmorph("#pdf-edit-button");
+    let saveButton = this.getSubmorph("#pdf-save-button");
+    let cancelButton = this.getSubmorph("#pdf-cancel-button");
+    
+    editButton.classList.add("active");
+    editButton.setAttribute("disabled", "true");
+    saveButton.removeAttribute("disabled");
+    cancelButton.removeAttribute("disabled");
+  }
+  
+  disableEditMode() {
+    let editButton = this.getSubmorph("#pdf-edit-button");  
+    let saveButton = this.getSubmorph("#pdf-save-button");
+    let cancelButton = this.getSubmorph("#pdf-cancel-button");
+    
+    editButton.classList.remove("active");
+    editButton.removeAttribute("disabled");
+    saveButton.setAttribute("disabled", "true");
+    cancelButton.setAttribute("disabled", "true");
   }
   
   livelyExample() {
