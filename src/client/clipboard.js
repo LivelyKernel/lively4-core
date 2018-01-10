@@ -78,13 +78,11 @@ export default class Clipboard {
     lively.setPosition(div, pt(0,0))
 
     // paste oriented at a shared topLeft
-    var all = Array.from(div.querySelectorAll(":scope > *"))
+    var topLevel = Array.from(div.querySelectorAll(":scope > *"))
+    var all = Array.from(div.querySelectorAll("*"))
     all.forEach(child => {
-      persistence.initLivelyObject(child)
-      
-      var id = child.getAttribute("data-lively-id")
-      child.remove()
-      
+      persistence.initLivelyObject(child)      
+      var id = child.getAttribute("data-lively-id")    
       // if we have an ID, some other me might be lying around somewhere...
       if (id) {
         var otherMe = lively.elementByID(id)
@@ -103,10 +101,12 @@ export default class Clipboard {
           })
         }
       }
-      div.appendChild(child)
      })
+    topLevel.forEach(ea => {
+      div.appendChild(ea)
+    })
     var topLeft
-    all.forEach(ea => {
+    topLevel.forEach(ea => {
       if (!topLeft) 
         topLeft = lively.getGlobalPosition(ea);
       else
@@ -115,7 +115,7 @@ export default class Clipboard {
     var offset = (this.lastClickPos || pt(0,0)).subPt(topLeft)
     
     var result = div
-    all.forEach(child => {
+    topLevel.forEach(child => {
       if (child.classList.contains("lively-content") || child.tagName == "LIVELY-WINDOW") {
         container.appendChild(child)
         lively.moveBy(child, offset)
@@ -140,7 +140,7 @@ export default class Clipboard {
       div.style.height = "max-content"
     }
     if (flat) {
-      return all
+      return topLevel
     }
     return result
   }

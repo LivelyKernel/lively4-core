@@ -1484,6 +1484,11 @@ export default class Lively {
     },time)
   }
   
+  static sleep(time=1000) {
+    return new Promise(resolve => {
+      window.setTimeout(resolve, time)
+    })
+  }
 }
 
 if (!window.lively || window.lively.name != "Lively") {

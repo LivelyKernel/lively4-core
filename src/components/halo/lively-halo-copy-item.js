@@ -26,18 +26,10 @@ export default class HaloCopyItem extends HaloGrabItem {
   }
   
   cloneObject(obj) {
-    var tmp = document.createElement("div");
-    tmp.innerHTML = obj.outerHTML;
-    console.log ("IN: " + obj.outerHTML);
-    console.log ("OUT: " + obj.innerHTML);
-    
-    var clone = tmp.childNodes[0];
-    
-    persistence.initLivelyObject(clone)
-    
-    window.LastClone = clone;
-    clone.remove();
-    return clone;
+    var html = lively.clipboard.nodesToHTML([obj])
+    lively.clipboard.lastClickPos = lively.getGlobalPosition(obj) // used in pasted as offset
+    var result = lively.clipboard.pasteHTMLDataInto(html, obj.parentElement, true)
+    return result[0];
   }
   
   copyObject(el) {

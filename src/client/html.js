@@ -1,4 +1,6 @@
 import Preferences from "src/client/preferences.js"
+import _ from 'src/external/underscore.js'
+import Rasterize from "src/client/rasterize.js"
 
 /*
  * Kitchensink for all HTML manipulation utilities
@@ -46,16 +48,16 @@ class KeyboardHandler {
 export default class HTML {
 
   static findAllNodes(visit, all) {
-  	if (!all) { all = new Set() }
-  	if (!visit) { visit = document.querySelectorAll('*') }
-  	for (var ea of visit) {
-  		all.add(ea);
-  		if (ea.shadowRoot) {
-  			var subobjects = ea.shadowRoot.querySelectorAll('*');
-  			this.findAllNodes(subobjects, all);
-  		}
-  	}
-  	return Array.from(all);
+    if (!all) { all = new Set() }
+    if (!visit) { visit = document.querySelectorAll('*') }
+    for (var ea of visit) {
+    all.add(ea);
+    if (ea.shadowRoot) {
+      var subobjects = ea.shadowRoot.querySelectorAll('*');
+      this.findAllNodes(subobjects, all);
+    }
+    }
+    return Array.from(all);
   }
   
   static getFilter(ea) {
@@ -297,7 +299,32 @@ export default class HTML {
             node.dataset.lively4Donotpersist == 'children' || node.dataset.lively4Donotpersist == 'all' :
             node.dataset.lively4Donotpersist == 'all');
   }
-
+  
+  static async loadHTMLFromURL(url) {
+    var html = await fetch(url).then(r => r.text())
+    var tmp = await lively.create("div")
+    try {
+      lively.clipboard.pasteHTMLDataInto(html, tmp)
+    } finally {
+      tmp.remove()
+    }
+    return tmp.childNodes[0]
+  }
+  
+  static async saveAsPNG(url) {
+    if (url.match(/\.html$/)) {
+      var saveAsURL = url.replace(/html$/, "png")
+      var element = await this.loadHTMLFromURL(url)
+      document.body.appendChild(element)
+      try {
+        debugger
+        await Rasterize.elementToURL(element, saveAsURL)      
+      } finally {
+        element.remove()
+      }
+    }
+    return saveAsURL
+  }
 
 }
 

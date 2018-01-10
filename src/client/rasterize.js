@@ -163,6 +163,8 @@ export default class Rasterize {
    static async elementToCanvas(element) {
     var extent = lively.getExtent(element)
 
+    await lively.sleep(1000);
+    
     var cloned = CloneDeepHTML.deepCopyAsHTML(element)
     
     
