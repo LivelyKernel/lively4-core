@@ -101,7 +101,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       
       this.loadCSS("addon/hint/show-hint.css")
       this.loadCSS("addon/lint/lint.css")
-      this.loadCSS("../../components/widgets/lively-code-mirror.css")
+      lively.loadCSSThroughDOM("CodeMirrorCSS", lively4url + "/src/components/widgets/lively-code-mirror.css")
     })()
     return loadPromise
   }
