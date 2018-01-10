@@ -1,7 +1,16 @@
 import rasterizeHTML from "src/external/rasterizeHTML.js"
 import {pt} from "src/client/graphics.js"
 
+/* ## Workspace Snipped for interactive Testing
 
+```
+  import {CloneDeepHTML} from "src/client/rasterize.js"
+
+  $morph("Cloned").innerHTML = ""
+  var cloned = CloneDeepHTML.deepCopyAsHTML($morph("Original"))
+  $morph("Cloned").appendChild(cloned)
+```
+*/
 
 // the rasterization code expects only plain HTML and cannot deal with shadow dom, so we flatten it away
 export class CloneDeepHTML {
@@ -44,6 +53,18 @@ export class CloneDeepHTML {
     } else if (obj.tagName == "STYLE"){
       node = document.createElement("style")
       
+      return node
+    } else if (obj instanceof SVGElement) {
+      // console.log("svg element " + obj)
+      node = document.createElementNS("http://www.w3.org/2000/svg", obj.tagName); 
+      Array.from(obj.attributes).forEach(ea => {
+        try {
+          // console.log("attr " + ea.name + " " + ea.value)
+          node.setAttribute(ea.name, ea.value)        
+        } catch(e) {
+          console.log('rasterize: could not write attribute ' + ea.name + " from " + obj)
+        }
+      })
       return node
     } else if ( obj.shadowRoot){
       node = document.createElement("div")
@@ -163,6 +184,8 @@ export default class Rasterize {
    static async elementToCanvas(element) {
     var extent = lively.getExtent(element)
 
+    await lively.sleep(100); // give the element some time to render...
+    
     var cloned = CloneDeepHTML.deepCopyAsHTML(element)
     
     

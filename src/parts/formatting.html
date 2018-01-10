@@ -1,4 +1,4 @@
-<div class="lively-content" style="width: max-content; height: 41.625px; border: 1px solid gray; position: absolute; background-color: white; left: 38.61px; top: 271.31px; z-index: 500;" data-lively-id="bde8ccbe-f96f-4fd4-be65-4f5043e075df" data-lively-part-name="formatting" tabindex="0"><script data-name="fontSize" type="lively4script">function fontSize(element) {
+<div class="lively-content" style="width: max-content; height: 41.625px; border: 1px solid gray; position: absolute; background-color: white; left: -433.79px; top: 400px; z-index: 500;" data-lively-id="bde8ccbe-f96f-4fd4-be65-4f5043e075df" data-lively-part-name="formatting" tabindex="0"><script data-name="fontSize" type="lively4script">function fontSize(element) {
   if (!element || that.contentEditable) return ;
   
   if (element.tagName == "FONT") {
@@ -46,27 +46,6 @@
     evt.stopPropagation()
   })
   this.shadowRoot.appendChild(button)
-}</script><script data-name="chooseFont" type="lively4script">function chooseFont(evt, button) {
-  var fontlist = ["serif", "sans-serif", "monospace"]
-  lively.create("lively-menu").then(menu => {
-    menu.openOn(fontlist.map(ea => {
-      return [ea, () => {
-        this.selection.addRange(this.range)
-        this.selectFont(ea)
-        menu.remove()
-      }]
-    }));          
-
-    lively.setGlobalPosition(menu, lively.getGlobalBounds(button).bottomLeft())
-    menu.style.zIndex = 40000;
-
-     // defere event registration to prevent closing the menu as it was opened
-    setTimeout(() => {
-      lively.addEventListener("contextMenu", document.documentElement, "click", () => {
-        menu.remove();
-      });        
-    }, 0)
-  })
 }</script><script data-name="livelyLoad" type="lively4script">function livelyLoad() {
   (async () => {
     this.createShadowRoot();
@@ -112,7 +91,31 @@
     evt.stopPropagation()
   })
   lively.components.openIn(this.shadowRoot, color)
+}</script><script data-name="chooseFont" type="lively4script">function chooseFont(evt, button) {
+  var fontlist = ["serif", "sans-serif", "monospace"]
+  lively.create("lively-menu").then(menu => {
+    menu.openOn(fontlist.map(ea => {
+      return [ea, () => {
+        console.log("range", this.range)
+        this.selection.removeAllRanges()
+        this.selection.addRange(this.range)
+        this.selectFont(ea)
+        menu.remove()
+      }]
+    }));          
+
+    lively.setGlobalPosition(menu, lively.getGlobalBounds(button).bottomLeft())
+    menu.style.zIndex = 40000;
+
+     // defere event registration to prevent closing the menu as it was opened
+    setTimeout(() => {
+      lively.addEventListener("contextMenu", document.documentElement, "click", () => {
+        menu.remove();
+      });        
+    }, 0)
+  })
 }</script><script data-name="colorChooserChoose" type="lively4script">function colorChooserChoose(command, color) {
+    this.selection.removeAllRanges()
     this.selection.addRange(this.range)
     document.execCommand(command, true, color)
 }</script></div>
