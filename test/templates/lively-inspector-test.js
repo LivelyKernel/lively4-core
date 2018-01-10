@@ -1,4 +1,4 @@
-import {expect} from '../../node_modules/chai/chai.js';
+import {expect} from 'src/external/chai.js';
 import {testWorld, loadComponent} from './templates-fixture.js';
 
 describe("Lively Inspector Component",  function() {
@@ -11,6 +11,7 @@ describe("Lively Inspector Component",  function() {
   });
 
   it("should load", function(done) {
+    expect(that)
     done();
   });
 

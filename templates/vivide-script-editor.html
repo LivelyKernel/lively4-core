@@ -1,0 +1,22 @@
+<template id="vivide-script-editor" data-class="VivideScriptEditor">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  background-color: lightblue;
+  display: flex;
+  flex-direction: column;
+}
+lively-code-mirror {
+  flex: 1;
+  min-height: unset;
+  height: auto;
+}
+
+</style>
+<div id="content">
+	<content></content>
+</div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

@@ -7,6 +7,7 @@ export default class Graffle {
   // Graffle.keysDown 
   static load() {
     lively.removeEventListener("Graffle", document.body)
+    lively.removeEventListener("Graffle", document)
     lively.addEventListener("Graffle", document.body, "keydown", 
       (evt) => { this.onKeyDown(evt)}, true)
     lively.addEventListener("Graffle", document.body, "keyup", 
@@ -18,7 +19,60 @@ export default class Graffle {
       (evt) => { this.onMouseMove(evt) })
     lively.addEventListener("GraffleMouse", document.documentElement, "pointerup", 
       (evt) => { this.onMouseUp(evt) })
+    lively.addEventListener("Graffle", document, "selectionchange", 
+      (evt) => { this.onSelectionChange(evt) })
     this.keysDown = {}
+  }
+
+  
+  static async showStyleBalloon(target) {
+    if (!target) {
+      return;
+    }
+    // console.log("show balloon " + target)
+    // lively.showElement(target)
+    if (!lively.styleBalloon) {
+      lively.styleBalloon = await lively.openPart("formatting")
+      lively.styleBalloon.style.zIndex = 500
+    }
+    document.body.appendChild(lively.styleBalloon);
+    // lively.showElement(lively.styleBalloon)
+
+    // console.log("pos " + lively.getGlobalBounds(target).bottomLeft())
+    lively.setGlobalPosition(lively.styleBalloon, lively.getGlobalBounds(target).bottomLeft())
+  }
+  
+    
+  static async hideStyleBalloon() {
+    // console.log("hide balloon")
+    if (lively.styleBalloon) {
+      lively.styleBalloon.remove()
+      
+      // lively.styleBalloon = null; // for developing
+    }
+  }
+  
+  static onSelectionChange(evt) {
+    var selection = window.getSelection()
+    if (!document.activeElement || !document.activeElement.isContentEditable) {
+      if (document.activeElement === document.body) {
+        // lively.notify("hide style...")
+        this.hideStyleBalloon() 
+      }
+      return
+    }
+    if (document.activeElement && document.activeElement.isContentEditable 
+        && document.activeElement.shadowRoot) {
+      selection = document.activeElement.shadowRoot.getSelection()
+    }
+
+    if (selection.anchorNode) {
+      var element = selection.getRangeAt(0).startContainer.parentElement;
+      while(["SPAN", "FONT", "A", "B", "I"].includes(element.tagName)) {
+        element = element.parentElement
+      }
+      this.showStyleBalloon(element)
+    } 
   }
   
   static async onKeyDown(evt) {
@@ -27,7 +81,6 @@ export default class Graffle {
       return; 
     var key = String.fromCharCode(evt.keyCode)
     this.keysDown[key] = true
-    // lively.notify("down: " + key)
     if (this.specialKeyDown() && !(evt.ctrlKey || evt.metaKey)) {
       lively.selection.disabled = true
       if (!evt.ctrlKey && !evt.altKey && !evt.altKey) {
@@ -37,7 +90,7 @@ export default class Graffle {
       }
       var hand = await lively.ensureHand();
       if (hand) {
-        hand.style.display = "block"
+        hand.style.visibility = "visible"
         var info = ""
         // #KeyboardShortcut HOLD-S+Drag create shape
         if (this.keysDown["S"]) {
@@ -56,20 +109,85 @@ export default class Graffle {
       }
     }
   }
+  
+  static changeFontSize(element, factor) {
+      if (element) {
+        var fontSize = element.style.fontSize
+        if (!fontSize || !fontSize.match(/%$/)) {
+          fontSize = "100%"
+        }    
+        fontSize = "" + (Math.round(Number(fontSize.replace(/%/,"")) * factor)) + "%"
+        element.style.fontSize = fontSize
+        // lively.notify("font size: " +  element.style.fontSize)
+      }
+  }  
 
+  
+  static changeCurrentFontSize(factor) {
+    var range = window.getSelection().getRangeAt(0);
+    var element = range.commonAncestorContainer.parentElement
+    var oldSize = element.style.fontSize
+
+    // make a new region 
+    document.execCommand("styleWithCSS", true, true)
+    document.execCommand("fontSize", true, 1)    
+    element = window.getSelection().getRangeAt(0).commonAncestorContainer.parentElement
+    element.style.fontSize  = oldSize.match("%$") ? oldSize : "100%";
+    this.changeFontSize(element, factor)
+  }  
+
+
+  static changeTextColor() {
+    var color = "orange"; // #TODO make this interactive... 
+    var element = window.getSelection().getRangeAt(0).startContainer.parentElement;
+    if (element.style.color == color) {
+      color = "black"; // TODO how can we unset a color? 
+    }
+    document.execCommand("styleWithCSS", true, true)
+    document.execCommand("foreColor", true, color)
+  }  
+  
+  static changeHiliteColor() {
+    var color = "yellow"; // #TODO make this interactive... 
+    var element = window.getSelection().getRangeAt(0).startContainer.parentElement;
+    if (element.style.color == color) {
+      color = "transparent"; // TODO how can we unset a color? 
+    }
+    document.execCommand("styleWithCSS", true, true)
+    document.execCommand("hiliteColor", true, color)
+  }  
+  
+  
   static async onKeyUp(evt) {
     var key = String.fromCharCode(evt.keyCode)
     this.keysDown[key] = false
-    // lively.notify("up: " + key)
+    
+    
     lively.selection.disabled = false
   
     var hand = await lively.ensureHand();
     if (hand) {
-      hand.style.display = "none"
+      hand.style.visibility = "hidden"
       if (hand.info) hand.info.textContent = ""
     }
     // if (this.lastElement)
     //   this.lastElement.focus(); // no, we can focus.... and continue typing
+
+    if (evt.altKey &&   evt.keyCode == 187 /* + */) {
+      this.changeCurrentFontSize(1.1)
+    }
+    
+    if (evt.altKey &&  evt.keyCode == 189 /* - */) {
+      this.changeCurrentFontSize(0.9)
+    }
+
+    if (evt.altKey && key == "C") {
+      this.changeTextColor()
+    }
+
+    if (evt.altKey && key == "H") {
+      this.changeHiliteColor()
+    }
   }
   
   static specialKeyDown() {
@@ -110,6 +228,11 @@ export default class Graffle {
       div= document.createElement("div")
       div.textContent = ""
       div.classList.add("lively-text")
+      
+      div.style.width = "auto"
+      div.style.height = "auto"
+      div.style.whiteSpace = "nowrap";
+
       div.style.padding = "3px"
       div.contentEditable = true
     }  else if (this.keysDown["C"]) {
@@ -184,7 +307,9 @@ export default class Graffle {
         // this.currentPath.resetBounds()
       }
       if (this.currentElement.classList.contains("lively-text")) {
-        // this.currentElement.focus()
+        if (!this.keysDown["T"]) {
+          this.currentElement.focus()        
+        } 
       }
       this.lastMouseDown = null
       this.currentElement = null

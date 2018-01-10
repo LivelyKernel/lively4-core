@@ -1,5 +1,5 @@
 "use strict";
-import {expect} from '../node_modules/chai/chai.js'
+import {expect} from 'src/external/chai.js'
 
 
 describe('SWX Lively4 FS API', function() {

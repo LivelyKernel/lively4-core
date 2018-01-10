@@ -28,8 +28,7 @@ export class FavoritesTracker {
    */
   async _checkFavorites() {
     // Check if favorites should be loaded
-    let cacheMode = await focalStorage.getItem("cacheMode");
-    if (cacheMode != 2) return;
+    if (this._cache.getCacheMode() != 2) return;
     
     this.favorites = await this._favoritesDb.toArray();
     

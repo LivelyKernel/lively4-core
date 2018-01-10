@@ -266,10 +266,19 @@ export default class ComponentLoader {
       
       loadingPromises[name].name = name + " " + Date.now()
       
-      await this.loadByName(name);
+      let didInsertTag = await this.loadByName(name);
+      
+      if(!didInsertTag) {
+        if(lively.notify) {
+          lively.notify("Component Loader", `Template ${name} could not be loaded.`, 3, null, "yellow");
+        }
+        delete loadingPromises[name];
+        return null;
+      }
 
       return createdPromise;
     })
+    .filter(promise => promise != null);
 
     // return a promise that resolves once all unresolved elements from the unresolved-array
     // are completely created
@@ -403,20 +412,31 @@ export default class ComponentLoader {
   
   // this function loads a component by adding a link tag to the head
   static async loadByName(name) {
-      _templateFirstLoadTimes[name] = performance.now()
-      var url = await this.searchTemplateFilename(name + '.html')
-      if (!url) {
-        throw new Error("Could not find template for " + name)
+    _templateFirstLoadTimes[name] = performance.now()
+    var url = await this.searchTemplateFilename(name + '.html')
+    if (!url) {
+      throw new Error("Could not find template for " + name)
+    }
+    console.log(window.lively4stamp, "load component: " + url)
+
+    // Check  if the template will be loadable (this would e.g. fail if we were offline without cache)
+    // We have to check this before inserting the link tag because otherwise we will have
+    // the link tag even though the template was not properly loaded
+    try {
+      let response = await fetch(url, { method: 'OPTIONS'});
+      if(response.ok) {
+        var link = document.createElement("link");
+        link.rel = "import";
+        link.href = url;
+        link.dataset.lively4Donotpersist = "all";
+        document.head.appendChild(link);
+        return true;
+      } else {
+        return false;
       }
-      console.log(window.lively4stamp, "load component: " + url)
-      
-      // #TODO continue here url.exists() 
-      var link = document.createElement("link");
-      link.rel = "import";
-      link.href = url;
-      link.dataset.lively4Donotpersist = "all";
-      
-      document.head.appendChild(link);
+    } catch (error) {
+      return false;
+    }
   }
 
   static createComponent(tagString) {

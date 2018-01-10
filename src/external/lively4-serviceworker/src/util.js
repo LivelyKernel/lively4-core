@@ -10,14 +10,23 @@ export function responseToJson(response) {
   return response.json()
 }
 
-export function buildNetworkRequestFunction(request) {
+export function buildNetworkRequestFunction(request, fileSystem) {
+  let doNetworkRequest = () => {
+    let url = new URL(request.url);
+    if(url.hostname === 'lively4') {
+      return fileSystem.handle(request, url);
+    } else {
+      return self.fetch(request);
+    }
+  };
+  
   return () => {
     return new Promise(async (resolve, reject) => {
-      resolve(self.fetch(request).then((result) => {
+      resolve(doNetworkRequest().then((result) => {
         return result;
       }).catch(e => {
         console.log("fetch error: "  + e);
-        return new Response("Could not fetch " + url +", because of: " + e);
+        return new Response("Could not fetch " + request.url +", because of: " + e);
       }))
     });
   };

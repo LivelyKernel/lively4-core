@@ -38,7 +38,7 @@ function getExpressionNode(expression) {
     return promNode;
   }
   if(expression instanceof ActiveExpression) {
-    return expression::toDOMNode(getExpressionNode);
+    return toDOMNode.call(expression, getExpressionNode);
   }
   return ensureDOMNode(expression);
 }
@@ -47,6 +47,10 @@ function ensureDOMNode(nodeOrObject) {
   return nodeOrObject instanceof Node ?
       nodeOrObject :
       document.createTextNode(nodeOrObject);
+}
+
+function isActiveGroup(obj) {
+  return obj && obj.isActiveGroup;
 }
 
 export function element(tagName, attributes, children) {
@@ -61,9 +65,33 @@ export function element(tagName, attributes, children) {
     }
   }
   
+  const roqsByReferenceNode = new WeakMap();
+  function handleActiveGroup(nodeOrActiveGroup) {
+    if(isActiveGroup(nodeOrActiveGroup)) {
+      const referenceNode = <unused></unused>;
+      roqsByReferenceNode.set(referenceNode, nodeOrActiveGroup);
+      return referenceNode; // use to insert elements of the ActiveGroup in the corresponding place
+    } else {
+      return nodeOrActiveGroup;
+    }
+  }
+  function initActiveGroup(referenceNode) {
+    if(roqsByReferenceNode.has(referenceNode)) {
+      const activeGroup = roqsByReferenceNode.get(referenceNode);
+      
+      activeGroup.map(getExpressionNode)
+        .enter(item => referenceNode.parentNode.insertBefore(item, referenceNode))
+        .exit(item => item.remove());
+    }
+  }
+
   children
+    .map(handleActiveGroup)
     .map(ensureDOMNode)
-    .forEach(child => tag.appendChild(child));
+    .forEach(child => {
+      tag.appendChild(child);
+      initActiveGroup(child);
+    });
   
   return tag;
 }
@@ -110,6 +138,11 @@ export function childExpression(expression) {
 }
 
 export function childSpread(array) {
-  return array;
+  // #TODO: <ul>{roq}</ul> also gets the reactive behavior, do we want this?
+  if(isActiveGroup(array)) {
+    return [array];
+  } else {
+    return array;
+  }
 }
 

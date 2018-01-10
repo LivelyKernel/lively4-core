@@ -64,7 +64,8 @@ export default class HaloControlPointItem extends HaloItem {
     this.eventOffset = events.globalPosition(evt)
 
     this.halo.shadowRoot.querySelectorAll(".halo").forEach(ea => {
-      if (ea !== this) ea.style.visibility = "hidden"
+      ea.style.visibility = "hidden"
+      // if (ea !== this) ea.style.visibility = "hidden"
     })
     this.style.pointerEvents = "none"
 
@@ -112,11 +113,12 @@ export default class HaloControlPointItem extends HaloItem {
   }
 
   move(evt) {
-    var element = this.findTargetAt(evt) ; 
+    this.findTargetAt(evt)
+    lively.setGlobalPosition(lively.hand, pt(evt.clientX, evt.clientY))
     var connectMethod = this.index == 0 ? "connectFrom" : "connectTo";
     if (this.target[connectMethod]) {
       this.target[connectMethod](this.targetElement || lively.hand); 
-      } else {
+    } else {
       // non-connector path
       var delta = events.globalPosition(evt).subPt(this.eventOffset)
       this.setVerticePosition(pt(this.original.x + delta.x, this.original.y + delta.y))

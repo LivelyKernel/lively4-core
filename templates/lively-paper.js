@@ -10,7 +10,7 @@ let Path = paper.Path,
 
 
 export default class LivelyPaper extends Morph {
-      
+  
   get colours() {
     return ['red', 'green', 'blue', 'yellow', 'black'];
   }
@@ -27,6 +27,7 @@ export default class LivelyPaper extends Morph {
   }
   
   initialize() {
+    this.canv_points = [];
     this.lastPath = {};
     this.initPaper();
 
@@ -40,7 +41,7 @@ export default class LivelyPaper extends Morph {
       
     this.strokes = new CommandHistory();
     
-    lively.html.registerButtons(this);
+    this.registerButtons();
     
     this.adaptCanvasSize()
    
@@ -82,6 +83,7 @@ export default class LivelyPaper extends Morph {
   }
 
   clear() {
+    this.canv_points = [];
     this.paper.project.clear();
   }
   
@@ -124,7 +126,7 @@ export default class LivelyPaper extends Morph {
       path.command = "delete";
       path.strokeColor = "red";
     } else {
-      path.strokeColor = "blue";
+      path.strokeColor = "black";
       path.strokeWidth = 2;
 
     }
@@ -133,6 +135,7 @@ export default class LivelyPaper extends Morph {
     var x = evt.clientX - this.offset.left;
     var y = evt.clientY - this.offset.top;
 
+    this.canv_points.push({"x": x, "y": y});
     path.moveTo([x, y]); 
 
     lively.addEventListener("drawboard", this.canvas, "pointermove", (e) => this.onPointerMove(e), false);
@@ -147,6 +150,7 @@ export default class LivelyPaper extends Morph {
       var x = evt.clientX - this.offset.left;
       var y = evt.clientY - this.offset.top;
       
+      this.canv_points.push({"x": x, "y": y});
       var p = {x:x, y:y};
     
       path.lineTo(p);

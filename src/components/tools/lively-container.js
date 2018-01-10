@@ -28,7 +28,7 @@ export default class Container extends Morph {
     
     this.contentChangedDelay = (() => {
         this.checkForContentChanges()
-      })::debounce(1000)
+      })::debounce(1000);
     
     // make sure the global css is there...
     lively.loadCSSThroughDOM("hightlight", lively4url + "/src/external/highlight.css");
@@ -94,7 +94,7 @@ export default class Container extends Morph {
     });
     this.get("#fullscreenInline").onclick = (e) => this.onFullscreen(e);
     
-    lively.html.registerButtons(this);
+    this.registerButtons();
 
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
     // this.addEventListener('keyup',   evt => this.onKeyUp(evt));
@@ -442,28 +442,30 @@ export default class Container extends Morph {
       var sourceCode = this.getSourceCode();
       var url = this.getURL();
       if (await this.urlInTemplate(url)) {
-        lively.updateTemplate(sourceCode);
+        lively.notify("update template")
+        if (url.toString().match(/\.html/)) {
+          // var templateSourceCode = await fetch(url.toString().replace(/\.[^.]*$/, ".html")).then( r => r.text())        
+          var templateSourceCode = sourceCode
+          lively.updateTemplate(templateSourceCode);
+        }
       }
-
       if (this.getPath().match(/.*css/)) {
         this.updateCSS();
       }
-      
       this.updateOtherContainers();
 
       var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/);
       if (moduleName) {
         moduleName = moduleName[1];
         
-        const testRegexp = /test\/.*js/;
+        const testRegexp = /((test\/.*)|([.-]test)|([.-]spec))\.js/;
         if (this.lastLoadingFailed) {
+          console.log("last loading failed... reload")
           this.reloadModule(url); // use our own mechanism...
         } else if (this.getPath().match(testRegexp)) {
           this.loadTestModule(url); 
         } else if ((this.get("#live").checked && !this.get("#live").disabled)) {
           await this.loadModule("" + url)
-          
-          
           lively.findDependedModules("" + url).forEach(ea => {
             if (ea.match(testRegexp)) {
               this.loadTestModule(ea); 

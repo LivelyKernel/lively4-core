@@ -5,7 +5,7 @@ import {pt} from 'src/client/graphics.js'
 export default class Dialog extends Morph {
 
   initialize() {
-    lively.html.registerButtons(this)
+    this.registerButtons();
     this.get("#prompt").addEventListener("keyup", (evt) => {
       if (evt.keyCode == 13) { // ENTER
         this.onPromptEntered(evt);

@@ -17,7 +17,7 @@ export class Dictionary extends DbObject {
   async put(key, value) {
     key = this._sanitizeKey(key);
     
-    var data = new Object();
+    let data = new Object();
     data.value = value;
     data.timestamp = Date.now();
     // Wrap IndexedDB call into a promise
@@ -36,7 +36,7 @@ export class Dictionary extends DbObject {
     key = this._sanitizeKey(key);
     
     return new Promise((resolve, reject) => {
-      var request = this._getObjectStore("readonly").get(key);
+      let request = this._getObjectStore("readonly").get(key);
       request.onsuccess = (event) => {
         if (request.result) {
           resolve(request.result);
@@ -57,7 +57,7 @@ export class Dictionary extends DbObject {
   pop() {
     return new Promise((resolve, reject) => {
       // Get oldest entry
-      var request = this._getObjectStore().openCursor();
+      let request = this._getObjectStore().openCursor();
       request.onsuccess = (event) => {
         if (request.result) {
           // Delete entry from DB
@@ -90,6 +90,17 @@ export class Dictionary extends DbObject {
   }
   
   /**
+   * Clears all storage data.
+   */
+  clear() {
+    return new Promise((resolve, reject) => {
+      let dbRequest = this._getObjectStore().clear();
+      dbRequest.onsuccess = resolve;
+      dbRequest.onerror = reject;
+    });
+  }
+  
+  /**
    * Returns all entries as array with tuples(key, object)
    * @return [[key0, object0], [key1, object1], ...]
    */
@@ -114,8 +125,29 @@ export class Dictionary extends DbObject {
     });
   }
   
+  /**
+   * Returns all entries as dictionary
+   * @return Dictionary containing all key-value pairs
+   */
   toDictionary() {
+    let objectStore = this._getObjectStore("readonly");
+    let request = objectStore.openCursor();
     
+    return new Promise((resolve, reject) => {
+      let entries = {};
+      
+      request.onsuccess = (event) => {
+        let cursor = event.target.result;
+
+        if (cursor) {
+          entries[cursor.key] = cursor.value;
+          cursor.continue();
+        } else {
+          // All entries read, traverse and load favorites 
+          resolve(entries);
+        }
+      };
+    });
   }
   
   /**

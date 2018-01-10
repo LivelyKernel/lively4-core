@@ -4,6 +4,7 @@ import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
 import {pt, rect} from 'src/client/graphics.js';
 
+// import Clipboard from 'src/client/clipboard.js'; // #TODO Problems with cyclic dependencies...
 
 // document.querySelectorAll("lively-selection").forEach(ea => ea.remove())
 
@@ -152,11 +153,18 @@ export default class Selection extends Morph {
   }
 
   haloCopyObject(haloItem) {
-    this.nodes = this.nodes.map(ea => {
-      var copy = ea.cloneNode();
-      ea.parentNode.appendChild(copy); 
-      return copy;
-    }).filter( ea => ea);
+    
+    // this.nodes = this.nodes.map(ea => {
+    //   var copy = haloItem.cloneObject(ea);
+    //   ea.parentNode.appendChild(copy); 
+    //   return copy;
+    // }).filter( ea => ea);
+    
+    var html = lively.clipboard.nodesToHTML(this.nodes)
+    lively.clipboard.lastClickPos = lively.getGlobalPosition(this) // used in pasted as offset
+    var result = lively.clipboard.pasteHTMLDataInto(html, this.parentElement, true)
+    debugger
+    this.nodes = result
     return this;
   }
  

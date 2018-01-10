@@ -2,7 +2,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class LivelyPresentation extends Morph {
   async initialize() {
-    lively.html.registerButtons(this);
+    this.registerButtons();
     lively.html.registerKeys(this);
   }
 
