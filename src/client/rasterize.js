@@ -45,6 +45,18 @@ export class CloneDeepHTML {
       node = document.createElement("style")
       
       return node
+    } else if (obj instanceof SVGElement) {
+      // console.log("svg element " + obj)
+      node = document.createElementNS("http://www.w3.org/2000/svg", obj.tagName); 
+      Array.from(obj.attributes).forEach(ea => {
+        try {
+          // console.log("attr " + ea.name + " " + ea.value)
+          node.setAttribute(ea.name, ea.value)        
+        } catch(e) {
+          console.log('rasterize: could not write attribute ' + ea.name + " from " + obj)
+        }
+      })
+      return node
     } else if ( obj.shadowRoot){
       node = document.createElement("div")
     } else {
@@ -163,7 +175,7 @@ export default class Rasterize {
    static async elementToCanvas(element) {
     var extent = lively.getExtent(element)
 
-    await lively.sleep(1000);
+    await lively.sleep(100); // give the element some time to render...
     
     var cloned = CloneDeepHTML.deepCopyAsHTML(element)
     
