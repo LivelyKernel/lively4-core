@@ -112,6 +112,7 @@ export default class Clipboard {
       else
         topLeft = topLeft.minPt(lively.getGlobalPosition(ea))
     })
+    if (!topLeft) topLeft = pt(0,0)
     var offset = (this.lastClickPos || pt(0,0)).subPt(topLeft)
     
     var result = div

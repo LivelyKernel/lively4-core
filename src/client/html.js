@@ -301,7 +301,13 @@ export default class HTML {
   }
   
   static async loadHTMLFromURL(url) {
-    var html = await fetch(url).then(r => r.text())
+    var html = await fetch(url).then(r => {
+      if (r.status != 200) {
+        throw new Error("Could not load HTML from " + url + " due to status " + r.status)
+      }
+      return r.text()
+    })
+    debugger
     var tmp = await lively.create("div")
     try {
       lively.clipboard.pasteHTMLDataInto(html, tmp)

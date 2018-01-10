@@ -1,7 +1,16 @@
 import rasterizeHTML from "src/external/rasterizeHTML.js"
 import {pt} from "src/client/graphics.js"
 
+/* ## Workspace Snipped for interactive Testing
 
+```
+  import {CloneDeepHTML} from "src/client/rasterize.js"
+
+  $morph("Cloned").innerHTML = ""
+  var cloned = CloneDeepHTML.deepCopyAsHTML($morph("Original"))
+  $morph("Cloned").appendChild(cloned)
+```
+*/
 
 // the rasterization code expects only plain HTML and cannot deal with shadow dom, so we flatten it away
 export class CloneDeepHTML {
