@@ -42,6 +42,7 @@ module.exports = function(config) {
       {pattern: 'swx-*.js', included: false},
       
       {pattern: 'test/**/*.js', included: false},
+      {pattern: 'test/**/*.html', included: false},
       
       {pattern: 'vendor/**/*.js', included: false},
       {pattern: 'templates/**/*', included: false},
