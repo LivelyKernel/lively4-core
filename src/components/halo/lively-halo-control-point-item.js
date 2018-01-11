@@ -67,6 +67,12 @@ export default class HaloControlPointItem extends HaloItem {
       ea.style.visibility = "hidden"
       // if (ea !== this) ea.style.visibility = "hidden"
     })
+    
+    this.halo.shadowRoot.querySelectorAll("lively-halo-control-point-item").forEach(ea => {
+     ea.style.visibility = "hidden"
+      // if (ea !== this) ea.style.visibility = "hidden"
+    })
+
     this.style.pointerEvents = "none"
 
     this.targetPointerEvents = this.target.style.pointerEvents
@@ -115,13 +121,22 @@ export default class HaloControlPointItem extends HaloItem {
   move(evt) {
     this.findTargetAt(evt)
     lively.setGlobalPosition(lively.hand, pt(evt.clientX, evt.clientY))
+    // lively.showPoint(pt(evt.clientX, evt.clientY))
+    
     var connectMethod = this.index == 0 ? "connectFrom" : "connectTo";
-    if (this.target[connectMethod]) {
-      this.target[connectMethod](this.targetElement || lively.hand); 
+    if (this.targetElement && this.target[connectMethod]) {
+      this.target[connectMethod](this.targetElement); 
+      this.style.visibility = "hidden"
     } else {
+      this.style.visibility = "visible"
+
       // non-connector path
       var delta = events.globalPosition(evt).subPt(this.eventOffset)
       this.setVerticePosition(pt(this.original.x + delta.x, this.original.y + delta.y))
+
+      if (this.target[connectMethod]) {
+        this.target[connectMethod](lively.hand); 
+      }
     } 
   }
 
