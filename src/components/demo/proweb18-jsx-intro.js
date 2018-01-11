@@ -37,7 +37,7 @@ export default class Proweb18JsxIntro extends Morph {
     // JSX
     this.content.appendChild(<button><i class="fa fa-save"></i> Save</button>)
   }
-  codeMirrorWithSaveButton() {
+  async codeMirrorWithSaveButton() {
     let content = 'Edit this File!'
     function save() { lively.notify("SAVE"); }
     
@@ -48,8 +48,9 @@ export default class Proweb18JsxIntro extends Morph {
     this.appendChild(cm);
 
     // JSX
-    this.appendChild(<div>
-      <lively-code-mirror>{content}</lively-code-mirror>
+    let editor= await (<lively-code-mirror />);
+    editor.value = content+2;
+    this.appendChild(<div>{editor}
       <button click={save}><i class="fa fa-save"></i> Save</button>
     </div>);
   }

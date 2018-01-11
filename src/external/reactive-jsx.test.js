@@ -38,13 +38,13 @@ describe('async support for WebComponents', function() {
 
     done();
   });
-  xit('support CodeMirror', async done => {
+  it('support CodeMirror', async done => {
     let prom = <lively-code-mirror>Hello</lively-code-mirror>;
     expect(prom).to.be.an.instanceof(Promise);
 
     let editor = await prom;
     expect(editor).to.have.property('tagName', 'LIVELY-CODE-MIRROR');
-    expect(editor.value).to.be('Hello');
+    expect(editor.editor.getValue()).to.equal('Hello');
 
     done();
   });
