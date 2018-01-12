@@ -94,7 +94,7 @@ export default class HaloControlPointItem extends HaloItem {
     if (this.highlight) this.highlight.remove();
   }
 
-  findTargetAt(evt) {
+  findTargetAt(evt, world=document.body) {
     this.hideHighlight()
     
     // does only work with "mousemove" but not with "pointermove"
@@ -104,7 +104,7 @@ export default class HaloControlPointItem extends HaloItem {
     // }) 
     var p = pt(evt.clientX, evt.clientY)
     var element
-    document.body.querySelectorAll(".lively-content").forEach(ea => {
+    world.querySelectorAll(".lively-content, lively-table").forEach(ea => {
       if (ea.tagName !== "LIVELY-CONNECTOR" && 
           lively.getGlobalBounds(ea).containsPoint(p)) element = ea;
     })
@@ -119,7 +119,8 @@ export default class HaloControlPointItem extends HaloItem {
   }
 
   move(evt) {
-    this.findTargetAt(evt)
+    var world = lively.findWorldContext(this.target)
+    this.findTargetAt(evt, world)
     lively.setGlobalPosition(lively.hand, pt(evt.clientX, evt.clientY))
     // lively.showPoint(pt(evt.clientX, evt.clientY))
     
