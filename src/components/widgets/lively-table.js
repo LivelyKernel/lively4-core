@@ -47,9 +47,10 @@ export default class LivelyTable extends Morph {
   }
   
   onExtentChanged() {
-    lively.notify("extent changed") 
     var table = this.get("table")
-    lively.setExtent(table, lively.getExtent(this))
+    lively.setWidth(table, lively.getExtent(this).x)
+    lively.setHeight(this, lively.getExtent(table).y, true)
+    
   }
   
   async onFocusout() {
