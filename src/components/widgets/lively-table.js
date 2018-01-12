@@ -18,6 +18,10 @@ export default class LivelyTable extends Morph {
     this.addEventListener("copy", (evt) => this.onCopy(evt))
     this.addEventListener("cut", (evt) => this.onCut(evt))
     this.addEventListener("paste", (evt) => this.onPaste(evt))
+
+    this.addEventListener("focus", (evt) => this.onFocus(evt))
+    this.addEventListener("focusout", (evt) => this.onFocusout(evt))
+    
     
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
   }
@@ -42,6 +46,21 @@ export default class LivelyTable extends Morph {
     }
   }
   
+   async onFocusout(evt) {
+     // we are about to lose our focus lets wait a bit
+    await lively.sleep(0)
+    // if we really lost our focus... 
+    if (!this.isInFocus()) {
+      this.classList.remove("active")      
+    }
+  }
+    
+  onFocus(evt) {
+    if (this.isInFocus()) {
+      this.classList.add("active")
+    }
+  }
+
   clearAllSelection() {
     this.querySelectorAll("td").forEach(ea => {
       ea.classList.remove("editing")
@@ -428,6 +447,12 @@ export default class LivelyTable extends Morph {
     })
   }
 
+  isInFocus(focusedElement=document.activeElement) {
+    if (focusedElement === this) return true
+    if (!focusedElement) return false
+    return this.isInFocus(focusedElement.parentElement)
+  }
+  
   insertRowAt(index) {
     var oldRow = this.rows()[index]
     var newRow = document.createElement("tr")
