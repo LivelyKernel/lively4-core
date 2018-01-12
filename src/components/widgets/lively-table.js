@@ -21,8 +21,8 @@ export default class LivelyTable extends Morph {
 
     this.addEventListener("focus", (evt) => this.onFocus(evt))
     this.addEventListener("focusout", (evt) => this.onFocusout(evt))
-    
-    
+
+    this.addEventListener("extent-changed", (evt) => this.onExtentChanged(evt));
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
   }
   
@@ -46,7 +46,13 @@ export default class LivelyTable extends Morph {
     }
   }
   
-   async onFocusout(evt) {
+  onExtentChanged() {
+    lively.notify("extent changed") 
+    var table = this.get("table")
+    lively.setExtent(table, lively.getExtent(this))
+  }
+  
+  async onFocusout() {
      // we are about to lose our focus lets wait a bit
     await lively.sleep(0)
     // if we really lost our focus... 
@@ -55,7 +61,7 @@ export default class LivelyTable extends Morph {
     }
   }
     
-  onFocus(evt) {
+  onFocus() {
     if (this.isInFocus()) {
       this.classList.add("active")
     }
