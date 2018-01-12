@@ -116,14 +116,14 @@ export default class GhExplorer extends Morph {
   }
   async doQuery() {
     this.get("#queryResult").innerHTML = "";
-    const table = await lively.create("lively-table");
+    const table = await (<lively-table />);
     table.setFromArrayClean([]);
     this.get("#queryResult").appendChild(table);
     
     let onNewRow = (row, i) => {
       table.get("tbody, table").appendChild(<tr>
         {...row.map(e => <td>{e}</td>)}
-      </tr>)
+      </tr>);
     };
     
     ghStreamQuery(GH_TORRENT_URL, this.get("#query").textContent, eachify(onNewRow));

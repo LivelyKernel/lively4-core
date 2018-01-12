@@ -1,0 +1,29 @@
+<template id="vivide-inspector" data-class="VivideInspector">
+<style data-src="/src/client/lively.css"></style>
+<style>
+  #model {
+    float: left;
+    width: 30%;
+  }
+  #functions {
+    float: left;
+    width: 70%;
+  }
+  table {
+    width: 100%;
+  }
+  td {
+    width: 50%;
+  }
+</style>
+  <div id="model">
+    Model:
+    <lively-inspector id="model-inspector"></lively-inspector>
+  </div>
+  <div id="functions">
+    <table id="functions-table"></table>
+  </div>
+<content>
+</content>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>

@@ -88,16 +88,19 @@ export default class LivelyCacheViewer extends Morph {
   /**
    * Add mount to cache
    */
-  onAddMountButton() {
+  async onAddMountButton() {
     let name = "lively-cache-mounts"      
-    return  lively.openComponentInWindow(name).then((comp) => {
-      let container = comp.parentElement;
-      container.setAttribute("title", "Add Mount to Cache");
-      comp.loadMounts(this._mounts);
-      comp.focus();
-      
-      return comp;
-    });
+    let comp = await lively.openComponentInWindow(name);
+    let container = comp.parentElement;
+    container.setAttribute("title", "Add Mount to Cache");
+
+    //let mountsResponse = await fetch("https://lively4/sys/mounts");
+    //let mounts = await mountsResponse.json();
+    //comp.loadMounts(mounts);
+    
+    comp.focus();
+
+    return comp;
   }
   
   /**

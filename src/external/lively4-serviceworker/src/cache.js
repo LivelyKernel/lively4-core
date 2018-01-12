@@ -310,7 +310,7 @@ export class Cache {
 
       // Just tell the cache to fetch the file
       // This will update our cache if we are online
-      let response = await this.fetch(request, buildNetworkRequestFunction(request));
+      let response = await this.fetch(request, buildNetworkRequestFunction(request, this._fileSystem));
       ret[method] = response.clone();
     }
     return ret;

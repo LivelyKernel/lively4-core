@@ -61,8 +61,8 @@ export default class LivelyHand extends Morph {
   }
 
   startGrabbing(target, evt) {
-    this.style.display = "block"
-
+    // this.style.display = "block"
+    this.style.visibility = "visible"
     if (evt) {
       lively.setGlobalPosition(this, pt(evt.clientX, evt.clientY));
     
@@ -89,7 +89,6 @@ export default class LivelyHand extends Morph {
   }
   
   onPointerMove(evt) {
-
     if (this.dropIndicator) this.dropIndicator.remove()
     this.dropTarget = this.elementUnderHand(evt)
     if (this.dropTarget) {
@@ -107,7 +106,7 @@ export default class LivelyHand extends Morph {
     lively.removeEventListener("Hand", document.body.parentElement, "pointermove")
     lively.removeEventListener("Hand", document.body.parentElement, "pointerup")
     this.drop()
-    this.style.display = "none"
+    this.style.visibility = "hidden"
   }
 
   static migrate() {
