@@ -27,6 +27,11 @@ export default class LivelyCloudscripting extends Morph {
       }
     });
     
+    this.startButton = this.getSubmorph('#startButton');
+    this.startButton.addEventListener('click', this.startButtonClick.bind(this));
+    this.stopButton = this.getSubmorph('#stopButton');
+    this.stopButton.addEventListener('click', this.stopButtonClick.bind(this));
+    
   }
   
   /*
@@ -49,10 +54,32 @@ export default class LivelyCloudscripting extends Morph {
     this.getTriggers();
   }
   
+  startButtonClick(entryPoint) {
+    var data;
+    if (this.pid !== null) {
+      data = { id: this.pid };
+    } else {
+      data = { entryPoint: entryPoint || this.entryPoint.value };
+    }
+    this.post('start', data, (res) => {
+      console.log(res);
+      this.pid = res.pid;
+      this.refreshServiceList().then(this.showService.bind(this));
+    });
+  }
+
+  stopButtonClick(evt) {
+    this.post('stop', { id: this.pid }, (res) => {
+      console.log(res);
+      this.refreshServiceList();
+      window.clearInterval(this.logInterval);
+      this.logInterval = null;
+    });
+  }
+  
   // functions
   addTrigger(triggerName) {
     triggerName = triggerName.toString();
-    alert(triggerName);
     // set name in db
     triggerName = triggerName.substring(triggerName.lastIndexOf('/') + 1);
     $.ajax({
@@ -135,8 +162,26 @@ export default class LivelyCloudscripting extends Morph {
       url: endpoint + 'mount/' + filename,
       type: 'PUT',
       data: that.editor.getValue(),
-      success: function(){alert("Yeah")},
+      success: function(){lively.notify("File saved on Heroku")},
       error: this.handleAjaxError.bind(this)
     }); 
   }
+
+// Helpers
+  post(endpoint, data, success) {
+    $.ajax({
+      url: servicesURL + endpoint,
+      type: 'POST',
+      data: JSON.stringify(data),
+      contentType: 'application/json',
+      success: (data) => {
+        console.log(data);
+        if (success) {
+          success(data);
+        }
+      },
+      error: this.handleAjaxError.bind(this)
+    });
+  }
+  
 }
