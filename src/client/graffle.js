@@ -66,13 +66,15 @@ export default class Graffle {
       selection = document.activeElement.shadowRoot.getSelection()
     }
 
-    if (selection.anchorNode) {
+    if (selection.anchorNode && !selection.isCollapsed) {
       var element = selection.getRangeAt(0).startContainer.parentElement;
       while(["SPAN", "FONT", "A", "B", "I"].includes(element.tagName)) {
         element = element.parentElement
       }
       this.showStyleBalloon(element)
-    } 
+    } else {
+      this.hideStyleBalloon() 
+    }
   }
   
   static async onKeyDown(evt) {

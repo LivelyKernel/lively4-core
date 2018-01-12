@@ -32,11 +32,10 @@ export default class LivelyTable extends Morph {
       evt.stopPropagation();
       evt.preventDefault();
       var menu = new ContextMenu(this, [
-            ["add column", (evt) => this.insertColumnAt(this.currentColumnIndex)],
-            ["remove column", (evt) => this.removeColumnAt(this.currentColumnIndex)],
-            ["add row", (evt) => this.insertRowAt(this.currentRowIndex)],
-            ["remove row", (evt) => this.removeRowAt(this.currentRowIndex)]
-
+            ["add column", () => this.insertColumnAt(this.currentColumnIndex)],
+            ["remove column", () => this.removeColumnAt(this.currentColumnIndex)],
+            ["add row", () => this.insertRowAt(this.currentRowIndex)],
+            ["remove row", () => this.removeRowAt(this.currentRowIndex)]
           ]);
       menu.openIn(document.body, evt, this);
       return true;
@@ -55,12 +54,10 @@ export default class LivelyTable extends Morph {
   setFocusAndTextSelection(element) {
     if (!element) return;
     this.clearAllSelection()
-
     element.contentEditable = true
     element.focus()
-    var sel = window.getSelection();
-    sel.selectAllChildren(element)
-    
+    var sel = window.getSelection()
+    // sel.selectAllChildren(element)
   }
 
   livelyExample() {
@@ -83,7 +80,6 @@ export default class LivelyTable extends Morph {
       index = this.header().indexOf(indexOrLabel)
       if (index == -1) return undefined;
     }
-
     return this.cells().map( row => row[index])
   }
 
@@ -273,6 +269,7 @@ export default class LivelyTable extends Morph {
         range.setStart(cell, i);
       }
     } catch(e) {
+      // do nothing..
     }
     range.collapse(true);
     sel.removeAllRanges();
@@ -388,13 +385,11 @@ export default class LivelyTable extends Morph {
   onMouseUpSelection(evt) {
     lively.removeEventListener("LivelyTable", document.body, "mousemove")
     lively.removeEventListener("LivelyTable", document.body, "mouseup")
-
      
     var cell = evt.path[0];
-    if (cell === this.currentCell) return;
+    if (cell === this.currentCell) return; 
     
-    this.setFocusAndTextSelection(this.currentCell)
-    
+    this.setFocusAndTextSelection(this.currentCell)    
     // var sel = window.getSelection();
     // sel.removeAllRanges();
     // var range = document.createRange();
