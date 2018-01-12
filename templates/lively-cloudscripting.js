@@ -1,9 +1,17 @@
+// TODO: 
+//
+//  new User Action
+//  credentials window
+//  create cloudscripting-item that allows us to connect actions to trigger
+//  show state of script (running or stopped) in cloudscriptin-item
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import {pt} from 'src/client/graphics.js';
 
 const endpoint = 'https://lively4-services.herokuapp.com/';
 var name;
 var filename; 
+var loggingId;
 
 export default class LivelyCloudscripting extends Morph {
   async initialize() {
@@ -17,15 +25,23 @@ export default class LivelyCloudscripting extends Morph {
     
     this.login = this.getSubmorph('#login');
     this.login.addEventListener('click', this.loginClick.bind(this));
+        
+    this.credentials = this.getSubmorph('#credentials');
+    this.credentials.addEventListener('click', this.credentialsClick.bind(this));
     
-    this.editor = this.getSubmorph('#log').editor;
-    this.editor.commands.addCommand({
+    this.codeEditor = this.getSubmorph('#code').editor;
+    this.codeEditor.commands.addCommand({
       name: "save",
       bindKey: {win: "Ctrl-S", mac: "Command-S"},
       exec: (editor) => {
         this.saveCode()
       }
     });
+    
+    this.logsEditor = this.getSubmorph('#logs').editor;
+    if (this.logsEditor) { // editor is not initialized during testing
+      this.logsEditor.setReadOnly(true);
+    }
     
     this.startButton = this.getSubmorph('#startButton');
     this.startButton.addEventListener('click', this.startButtonClick.bind(this));
@@ -54,27 +70,39 @@ export default class LivelyCloudscripting extends Morph {
     this.getTriggers();
   }
   
+  credentialsClick(evt) {
+    lively.notify("TODO: Should open credentials window")
+    // lively.openComponentInWindow('lively-cloudscripting-credentials').then(browser => {
+    //   lively.notify("TODO: save credentials?")
+    // });
+  }
+  
   startButtonClick(entryPoint) {
-    var data;
-    if (this.pid !== null) {
-      data = { id: this.pid };
-    } else {
-      data = { entryPoint: entryPoint || this.entryPoint.value };
-    }
-    this.post('start', data, (res) => {
-      console.log(res);
-      this.pid = res.pid;
-      this.refreshServiceList().then(this.showService.bind(this));
-    });
+    $.ajax({
+      url: endpoint + 'runTrigger',
+      type: 'POST',
+      data: JSON.stringify({
+        user: name,
+        triggerId: filename
+      }),
+      success: () => {lively.notify("start script")},
+      error: this.handleAjaxError.bind(this)
+    })
+    
   }
 
-  stopButtonClick(evt) {
-    this.post('stop', { id: this.pid }, (res) => {
-      console.log(res);
-      this.refreshServiceList();
-      window.clearInterval(this.logInterval);
-      this.logInterval = null;
-    });
+    stopButtonClick(entryPoint) {
+      clearInterval(this.loggingId); 
+      $.ajax({
+        url: endpoint + 'stopTrigger',
+        type: 'POST',
+        data: JSON.stringify({
+          user: name,
+          triggerId: filename
+        }),
+        success: () => {lively.notify("stop")},
+        error: this.handleAjaxError.bind(this)
+      })
   }
   
   // functions
@@ -106,6 +134,20 @@ export default class LivelyCloudscripting extends Morph {
     })
   }
   
+  getTriggerLogs(triggerName) {
+    var that = this;
+    $.ajax({
+      url: endpoint + 'getTriggerLogs',
+      type: 'POST',
+      data: JSON.stringify({
+        triggerId: triggerName,
+        user: name
+      }),
+      success: function(res) {that.logsEditor.setValue(res), that.logsEditor.gotoPageDown()},
+      error: this.handleAjaxError.bind(this)
+    })
+  }
+  
   reRender(res) {
     var triggerWrapper = this.getSubmorph('#trigger-wrapper');
     while(triggerWrapper.firstChild) {
@@ -116,7 +158,8 @@ export default class LivelyCloudscripting extends Morph {
     for(var prop in triggers) {
       if(!triggers.hasOwnProperty(prop)) continue;
       
-      var item = document.createElement('lively-services-item');
+      var item = document.createElement('lively-cloudscripting-item');
+      
       item.addEventListener('click', this.showCode.bind(this))
       item.setAttribute('data-id', prop);
       if (prop == 'selected') {
@@ -144,15 +187,24 @@ export default class LivelyCloudscripting extends Morph {
   }
   
   handleAjaxError(jqXHR, textStatus, errorThrown) {
-    alert(errorThrown);
+    lively.notify("ajax error: " + errorThrown);
   }
 
   showCode(evt) {
     filename = evt.target.dataset.id;
     var that = this;
-    $.get('https://lively4-services.herokuapp.com/mount/' + filename)
-      .then(function(res) {
-        that.editor.setValue(res);  
+    this.loggingId = setInterval(function() {
+      lively.notify("Trying to set logging intervall")
+      that.getTriggerLogs(filename);  
+    },2000)
+    var endpoint = 'https://lively4-services.herokuapp.com/mount/' + filename;
+    lively.notify(endpoint);
+    $.ajax({
+      url: endpoint,
+      type: 'GET',
+      success: function(){lively.notify("Success")},   
+      done: function(res){lively.notify("Done:", JSON.stringify(res))},
+      error: function(res){that.codeEditor.setValue(res.responseText)}
     }); 
   }
   
@@ -161,7 +213,7 @@ export default class LivelyCloudscripting extends Morph {
     $.ajax({
       url: endpoint + 'mount/' + filename,
       type: 'PUT',
-      data: that.editor.getValue(),
+      data: JSON.stringify({data:that.codeEditor.getValue(),user:name}),
       success: function(){lively.notify("File saved on Heroku")},
       error: this.handleAjaxError.bind(this)
     }); 
