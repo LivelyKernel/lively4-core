@@ -78,6 +78,12 @@ export default class LivelyCloudscripting extends Morph {
   }
   
   startButtonClick(entryPoint) {
+    var that = this;
+    clearInterval(this.loggingId);
+    this.loggingId = setInterval(function() {
+      lively.notify("Trying to set logging intervall")
+      that.getTriggerLogs(filename);  
+    },2000)
     $.ajax({
       url: endpoint + 'runTrigger',
       type: 'POST',
