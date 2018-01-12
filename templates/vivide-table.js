@@ -46,17 +46,17 @@ export default class VivideTable extends Morph {
     this.show(this.predecessor.output());
   }
   
-  pushTransformation(transformation) {
+  setTransformation(transformation) {
     this.transformation = transformation;
-    this.refresh();
+    this.update();
   }
   
   show(model) {
     this.raw_model = model;
-    this.refresh();
+    this.update();
   }
   
-  refresh() {
+  update() {
     this.livelyTable.setFromJSO(this.transformation(this.raw_model));
     this.successors.forEach(successor => successor.trigger());
   }
