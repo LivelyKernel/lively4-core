@@ -25,8 +25,9 @@ export default class VivideInspector extends Morph {
     transformationEditor.value = transformation;
     transformationEditor.doSave = content => {
       if(number === undefined) {
-        this.widget.transformation = eval(content);
-        this.widget.refresh();
+        this.widget.setTransformation(eval(content));
+      } else {
+        this.widget.setTransformation(number, eval(content));
       }
     }
     
@@ -42,7 +43,11 @@ export default class VivideInspector extends Morph {
     
     depictionEditor.value = depiction;
     depictionEditor.doSave = content => {
-      lively.notify(content);
+      if(number === undefined) {
+        this.widget.setDepiction(eval(content));
+      } else {
+        this.widget.setDepiction(number, eval(content));
+      }
     }
     
     depictionTd.append(number != undefined ? "Depiction #" + number + ":" : "Depiction:");
