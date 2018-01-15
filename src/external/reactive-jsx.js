@@ -38,7 +38,7 @@ function getExpressionNode(expression) {
     return promNode;
   }
   if(expression instanceof ActiveExpression) {
-    return expression::toDOMNode(getExpressionNode);
+    return toDOMNode.call(expression, getExpressionNode);
   }
   return ensureDOMNode(expression);
 }
@@ -53,15 +53,14 @@ function isActiveGroup(obj) {
   return obj && obj.isActiveGroup;
 }
 
-export function element(tagName, attributes, children) {
-  const tag = document.createElement(tagName);
+function composeElement(tagElement, attributes, children) {
   
   for (let [key, value] of Object.entries(attributes)) {
     if(value instanceof Function) {
       // functions provided as attributes are used to create event listeners
-      tag.addEventListener(key, value);
+      tagElement.addEventListener(key, value);
     } else {
-      tag.setAttribute(key, value.toString());
+      tagElement.setAttribute(key, value.toString());
     }
   }
   
@@ -89,11 +88,36 @@ export function element(tagName, attributes, children) {
     .map(handleActiveGroup)
     .map(ensureDOMNode)
     .forEach(child => {
-      tag.appendChild(child);
+      tagElement.appendChild(child);
       initActiveGroup(child);
     });
   
-  return tag;
+  return tagElement;
+}
+
+export const isPromiseForJSXElement = Symbol('isPromiseForJSXElement');
+
+export function element(tagName, attributes, children) {
+  const isWebComponent = tagName.includes('-');
+  const handleAsync = isWebComponent || children.some(child => child &&
+                                                      child instanceof Promise &&
+                                                     child[isPromiseForJSXElement]);
+  if(handleAsync) {
+    let resolvedTag;
+    const returnPromise = Promise.resolve(isWebComponent ?
+                               lively.create(tagName) :
+                               document.createElement(tagName))
+      .then(element => {
+        resolvedTag = element;
+        return Promise.all(children.map(c => Promise.resolve(c)));
+      })
+      .then(resolvedChildren => composeElement(resolvedTag, attributes, resolvedChildren));
+    returnPromise[isPromiseForJSXElement] = true;
+    return returnPromise;
+  } else {
+    const tag = document.createElement(tagName);
+    return composeElement(tag, attributes, children);
+  }
 }
 
 export function attributes(...attrs) {

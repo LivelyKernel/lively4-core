@@ -101,7 +101,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       
       this.loadCSS("addon/hint/show-hint.css")
       this.loadCSS("addon/lint/lint.css")
-      this.loadCSS("../../components/widgets/lively-code-mirror.css")
+      lively.loadCSSThroughDOM("CodeMirrorCSS", lively4url + "/src/components/widgets/lively-code-mirror.css")
     })()
     return loadPromise
   }
@@ -408,7 +408,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   
-  async printResult(result, obj) {
+  async printResult(result, obj, isPromise) {
     var editor = this.editor;
     var text = result
     var isAsync = false
@@ -455,7 +455,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     if (promisedWidget) {
       var widget = await promisedWidget;
-      var span = <span style="border-top:2px solid darkgray;color:darkblue"> <u>:{objClass}</u> </span>
+      var span = <span style="border-top:2px solid darkgray;color:darkblue">
+        {isPromise ? "PROMISED" : ""} <u>:{objClass}</u> </span>
       widget.parentElement.insertBefore(span, widget)
       span.appendChild(widget)
       if (isAsync && promisedWidget) {
@@ -495,7 +496,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         // we will definitly return a promise on which we can wait here
         result
           .then( result => {
-            this.printResult("RESOLVED: " + obj2string(result), result)
+            this.printResult("RESOLVED: " + obj2string(result), result, true)
           })
           .catch( error => {
             console.error(error);

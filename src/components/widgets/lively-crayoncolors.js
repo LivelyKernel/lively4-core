@@ -9,6 +9,8 @@ export default class CrayonColors extends Morph {
     this.drawColorTable()
     this.get("#colorChooser").style.display = "none"
     this.get("#field").addEventListener("click", evt => this.onChooseColor(evt))
+    this.get("#selectCustom").addEventListener("click", evt => this.onChooseCustomColor(evt))
+    
   }
 
   drawColorTable() { 
@@ -29,6 +31,10 @@ export default class CrayonColors extends Morph {
   }
 
   onChooseColor() {
+    this.value = this.value; // emit event
+  }
+
+  onChooseCustomColor() {
     if(this.get("#colorChooser").style.display == "block")
       this.get("#colorChooser").style.display = "none"
     else

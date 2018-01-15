@@ -27,6 +27,15 @@ export default class Selecting {
     // lively.showElement(e.path[0])
     
     if (this.shouldHandle(e)) {
+        
+      // if (e.path.find(ea => ea.tagName == "LIVELY-HALO")) {
+      //   lively.notify("clicked on halo")
+      //   this.hideHalos()
+      //   e.stopPropagation();
+      //   e.preventDefault();
+      //   return
+      // }
+      
       // console.log("mouse down " + e.target.tagName)
       e.stopPropagation();
       e.preventDefault();
@@ -88,7 +97,9 @@ export default class Selecting {
   }
   
   static handleSelect(e) {
-    if (this.shouldHandle(e)) {
+    // lively.notify("path " + e.path.map(ea => ea.tagName))
+    
+    if (this.shouldHandle(e)) { 
       var rootNode = this.findRootNode(document.body)
       var path = this.slicePathIfContainerContent(e.path);
       path = path.reverse()
@@ -101,9 +112,11 @@ export default class Selecting {
         // by default: don't go into the shadows
         path = path.filter(ea => rootNode === this.findRootNode(ea))
       }
-      this.onMagnify(path[0], e, path);
+      var target = path[0]
+      // lively.showElement(target)
+      this.onMagnify(target, e, path);     
       e.stopPropagation();
-      e.preventDefault();
+      e.preventDefault();        
     } else {
       // lively.focusWithoutScroll(document.body)
     }
@@ -121,7 +134,7 @@ export default class Selecting {
     }
     var grabTarget = target;
     var that = window.that;
-
+    
     // console.log("onMagnify " + grabTarget + " that: " + that);
     var parents = _.reject(path, 
         ea =>  this.isIgnoredOnMagnify(ea))

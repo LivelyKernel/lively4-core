@@ -8,6 +8,7 @@ export default class VivideList extends Morph {
     this.windowTitle = "VivideList";
     
     this.get("#open-workspace").addEventListener("click", () => {this.openWorkspaceOn(this)});
+    this.get("#open-inspector").addEventListener("click", () => {this.openInspectorOn(this)});
     
     this.raw_model = [];
     
@@ -178,8 +179,13 @@ export default class VivideList extends Morph {
   }
   
   openWorkspaceOn(widget) {
-    lively.openWorkspace()
+    lively.openWorkspace();
     window.that = widget;
+  }
+  
+  openInspectorOn(widget) {
+    lively.openComponentInWindow("vivide-inspector").then(
+      inspector => inspector.inspect(widget));
   }
   
   livelyExample() {
