@@ -316,10 +316,27 @@ export class Cache {
     return ret;
   }
   
+  /**
+   * Preloads a directory into the cache
+   * @param directoryAddress The address of the directory to preload
+   */
+  async preloadDirectory(directoryAddress) {
+    let ret = {};
+    let request = new Request(directoryAddress, {
+      method: "OPTIONS" 
+    });
+
+    // Just tell the cache to fetch the file
+    // This will update our cache if we are online
+    let response = await this.fetch(request, buildNetworkRequestFunction(request, this._fileSystem));
+    ret["OPTIONS"] = response.clone();
+    return ret;
+  }
+  
   async _preloadFull(url) {
     let loadDirectory = async (directoryUrl) => {
       // Load directory index
-      let directoryIndex = await this.preloadFile(directoryUrl);
+      let directoryIndex = await this.preloadDirectory(directoryUrl);
       
       try {
         let directoryJson = await directoryIndex['OPTIONS'].json();

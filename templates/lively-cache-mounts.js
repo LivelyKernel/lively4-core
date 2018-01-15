@@ -13,15 +13,14 @@ export default class LivelyCacheMounts extends Morph {
   }
   
   loadMounts(mounts) {
-    this._mounts = mounts;
-    this._filterMounts();
+    this._filterMounts(mounts);
     let mountList = this.get("#mountList");
     mountList.innerHTML = "";
     
     let ul = document.createElement("ul");
     for (let mount of this._mounts) {
       let li = document.createElement("li");
-      li.innerText = mount.path;
+      li.innerText = mount.name;
       li.addEventListener("click", () => {
         if (this.lastSelection !== null) {
           this.lastSelection.style.backgroundColor = "#fff";
@@ -62,17 +61,15 @@ export default class LivelyCacheMounts extends Morph {
     )
   }
   
-  _filterMounts() {
+  _filterMounts(mounts) {
     const filteredMounts = ["sys", "html5"];
-    let tmpMounts = [];
+    this._mounts = [];
     
-    for (let mount of this._mounts) {
+    for (let mount of mounts) {
       if (filteredMounts.includes(mount.name)) continue;
       
-      tmpMounts.push(mount);
+      this._mounts.push(mount);
     }
-    
-    this._mounts = tmpMounts;
   }
   
   async onCacheMountButton() {
@@ -87,10 +84,12 @@ export default class LivelyCacheMounts extends Morph {
       await focalStorage.setItem("lively4cachedmounts", cachedMounts);
     }
     
+    let path = this.selectedMount.path;
+    
     navigator.serviceWorker.controller.postMessage({
       type: 'dataRequest',
       command: "preloadFull",
-      data: `https://lively4${this.selectedMount.path}/`
+      data: `https://lively4${path}/`
     });
   }
 }
