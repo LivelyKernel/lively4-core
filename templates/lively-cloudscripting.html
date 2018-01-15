@@ -10,15 +10,38 @@
         padding: 0;
         margin: 0;
     }
-
+    
+    .header-row {
+      height: 40px;
+    }
+    
+    .editor {
+      flex: 1;
+    }
+    
     .column-left {
       width: 200px;
       flex: 0 0 200px;
       display: flex;
       flex-direction: column;
       border-right: 1px solid rgb(120, 118, 116);
+      overflow: scroll;
     }
 
+    .top {
+      margin: 0;
+      height: 50%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .bottom {
+      margin: 0;
+      height: 50%;
+      display: flex;
+      flex-direction: column;
+    }
+    
     .items {
       display: flex;
       flex-direction: column;
@@ -69,6 +92,7 @@
  */
     input#name {
       display: inline-block;
+      width: 8em;
     }
     
     #log {
@@ -88,35 +112,43 @@
         </div>
         <div id="trigger-wrapper">
         </div>
-        <div class="script-heading">
-          <h4>
-            Actions
-          </h4>
-          <button id="addActionsButton" title="Add Action"><i class="fa fa-fw fa-plus" aria-hidden="true"></i></button>
-        </div>
-        
-        <lively-services-item></lively-services-item>
+
       </div>
       <div class="column-right">
-        <div id="login-row">
-          <h2>
-            Name:
-          </h2>
-          <input id="name" type="text" value="somethin123">
-          <button id="login">
-            Login
-          </button>  
-        </div>
+        <div class="top">
+          <div class="header-row">
+            <h2>
+              Name:
+            </h2>
+            <input id="name" type="text" value="somethin123">
+            <button id="login">
+              Login
+            </button>  
+            <button id="newUser">
+              New User
+            </button>
+            <button id="credentials">
+              Credentials
+            </button>
+          </div>
     
-        <juicy-ace-editor id="log"></juicy-ace-editor>
-        <div class="control-elements">
-          <button id="startButton">
-            Start Trigger
-          </button>
-          <button id="stopButton">
-            Stop Trigger
-          </button>
-          
+          <juicy-ace-editor class="editor" id="code"></juicy-ace-editor>
+          <div class="control-elements">
+            <button id="startButton">
+              Start Trigger
+            </button>
+            <button id="stopButton">
+              Stop Trigger
+            </button>
+          </div>  
+        </div>
+        <div class="bottom">
+          <div class="header-row">
+            <h2>
+              Logs
+            </h2>
+          </div>
+          <juicy-ace-editor class="editor" id="logs"></juicy-ace-editor>
         </div>
       </div>
     </div>

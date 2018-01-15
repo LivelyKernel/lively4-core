@@ -1,6 +1,7 @@
 import {pt} from 'src/client/graphics.js';
 import Halo from "src/components/halo/lively-halo.js"
 import svg from "src/client/svg.js"
+import { debounce } from "utils";
 
 export default class Graffle {
   
@@ -20,7 +21,9 @@ export default class Graffle {
     lively.addEventListener("GraffleMouse", document.documentElement, "pointerup", 
       (evt) => { this.onMouseUp(evt) })
     lively.addEventListener("Graffle", document, "selectionchange", 
-      (evt) => { this.onSelectionChange(evt) })
+      (evt) => { this.onSelectionHide(evt) } )
+    lively.addEventListener("Graffle", document, "selectionchange", 
+      ((evt) => { this.onSelectionChange(evt) })::debounce(600) )
     this.keysDown = {}
   }
 
@@ -52,27 +55,32 @@ export default class Graffle {
     }
   }
   
-  static onSelectionChange(evt) {
+   static onSelectionHide(evt) {
     var selection = window.getSelection()
     if (!document.activeElement || !document.activeElement.isContentEditable) {
       if (document.activeElement === document.body) {
-        // lively.notify("hide style...")
         this.hideStyleBalloon() 
       }
+    } else if (!selection.anchorNode || !selection.isCollapsed) {
+      this.hideStyleBalloon() 
+    }
+  }
+  
+  static onSelectionChange(evt) {
+    var selection = window.getSelection()
+    if (!document.activeElement || !document.activeElement.isContentEditable) {
       return
     }
-    if (document.activeElement && document.activeElement.isContentEditable 
-        && document.activeElement.shadowRoot) {
+    if (document.activeElement.shadowRoot) {
       selection = document.activeElement.shadowRoot.getSelection()
     }
-
-    if (selection.anchorNode) {
-      var element = selection.getRangeAt(0).startContainer.parentElement;
+    if (selection.anchorNode && !selection.isCollapsed) {
+      var element = selection.getRangeAt(0).endContainer.parentElement;
       while(["SPAN", "FONT", "A", "B", "I"].includes(element.tagName)) {
         element = element.parentElement
       }
       this.showStyleBalloon(element)
-    } 
+    }
   }
   
   static async onKeyDown(evt) {
