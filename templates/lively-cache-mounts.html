@@ -16,27 +16,31 @@ nav {
   justify-content: space-between;
 }
 
-#mountList {
+#mountList, #dirTree {
   flex: 1;
   overflow-x: scroll;
 }
 
-#mountList ul {
+#mountList ul, #dirTree ul {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-#mountList li {
+#mountList li, #dirTree li {
   padding: 2px;
   font-family: monospace;
   border-bottom: 1px solid #eee;
   cursor: pointer;
 }
 
-#mountList li:hover {
+#mountList li:hover, #dirTree li:hover {
   background-color: #eee;
 }
+
+h6 {
+  margin: 10px 0 0 0;
+}  
 </style>
   <nav>
     <div>
@@ -49,7 +53,10 @@ nav {
     </div>
   </nav>
   <div id="mountList"></div>
-  <div id="dicTree"></div>
+  <h6>
+    Mount content:
+  </h6>
+  <div id="dirTree"></div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

@@ -4,6 +4,7 @@
 //  credentials window
 //  create cloudscripting-item that allows us to connect actions to trigger
 //  show state of script (running or stopped) in cloudscriptin-item
+//  Set status when script is started/stopped (addClass on item)
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import {pt} from 'src/client/graphics.js';
@@ -15,11 +16,9 @@ var loggingId;
 
 export default class LivelyCloudscripting extends Morph {
   async initialize() {
+    // alert(Date.now())
     this.windowTitle = "Cloudscripting";
-//     this.loginButton = this.getSubmorph('.login-button');
-//     this.credentialsButton = this.getSubmorph('.credentials button.toggle-list');
-//     this.credentialsList = this.getSubmorph('.credentials-list');
-//     this.isLoggedIn = false;  
+    
     this.addButton = this.getSubmorph('#addTriggerButton');
     this.addButton.addEventListener('click', this.addButtonClick.bind(this));
     
@@ -71,17 +70,18 @@ export default class LivelyCloudscripting extends Morph {
   }
   
   credentialsClick(evt) {
-    lively.notify("TODO: Should open credentials window")
-    // lively.openComponentInWindow('lively-cloudscripting-credentials').then(browser => {
-    //   lively.notify("TODO: save credentials?")
-    // });
+    // lively.notify("TODO: Should open credentials window")
+    var that = this;
+    lively.openComponentInWindow('lively-cloudscripting-credentials').then(credentialsWindow => {
+      credentialsWindow.name = that.name;
+      lively.notify("TODO: save credentials?")
+    });
   }
   
   startButtonClick(entryPoint) {
     var that = this;
     clearInterval(this.loggingId);
     this.loggingId = setInterval(function() {
-      lively.notify("Trying to set logging intervall")
       that.getTriggerLogs(filename);  
     },2000)
     $.ajax({
@@ -162,6 +162,7 @@ export default class LivelyCloudscripting extends Morph {
     var htmlString = '';
     var triggers = res;
     for(var prop in triggers) {
+      lively.notify(triggers[prop].running);
       if(!triggers.hasOwnProperty(prop)) continue;
       
       var item = document.createElement('lively-cloudscripting-item');
@@ -174,19 +175,17 @@ export default class LivelyCloudscripting extends Morph {
       var title = prop;
       item.getSubmorph('h1').innerHTML = title;
 
-      var status = 'unkown';
+      var status = triggers[prop].running === 'true' ? 1 : 0;
       var statusText = 'unkown';
-      if (1 === 0) {
-        status = 'not-running';
-        var since = (now - service.kill);
-        statusText = 'not running (' + this.msToString(since) + ')';
-      } else if (1 === 1) {
+      if (triggers[prop].running) {
         status = 'running';
-        // var uptime = (now - service.start);
-        statusText = '...';
+        statusText = 'running'
+      } else if (!triggers[prop].running) {
+        status = 'not-running';
+        statusText = 'not running';
       }
-
-      item.getSubmorph('.status').classList.add(status);
+      
+      item.getSubmorph('.status').classList.add(status); 
       item.getSubmorph('small').innerHTML = statusText;
       triggerWrapper.appendChild(item);
     }

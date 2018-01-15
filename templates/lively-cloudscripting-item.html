@@ -3,7 +3,7 @@
   <style>
     .item {
       padding: 4px;
-      cursor: pointer;
+/*       cursor: pointer; */
     }
     
     .item:hover {
@@ -30,9 +30,12 @@
     }
     
     .status {
-      float: left;
+      display: inline-block;
       font-size: 30px;
       margin-right: 8px;
+      width: calc(20% -8px);
+      margin-top: -5em;
+      padding-top: -3em;
     }
     
     .running {
@@ -50,12 +53,44 @@
     .not-running {
       color: gray;
     }
+    
+    .add-action {
+      cursor: pointer;
+    }
+    
+    .clouditem-right {
+      display: inline-block;
+      width: 80%;
+      margin: 0;
+    }
+    
+    .action-list ul {
+      list-style: none;
+      padding-left: 0;
+      margin: 2px 0;
+    }
+    
+    .delete-action {
+      cursor: pointer;
+    }
   </style>
 
 <div class="item">
+  
   <div class="status">&#9679;</div>
-  <h1>Itemname</h1>
-  <i class="fa fa-plug" aria-hidden="true"></i><small>connected to...</small>
+  
+  <div class="clouditem-right">
+    <h1>Itemname</h1>
+    <div class="action-list">
+      <ul>
+        <li>Action 1 <i class="fa fa-times delete-action" aria-hidden="true"></i></li>
+        <li>Action 2 <i class="fa fa-times delete-action" aria-hidden="true"></i></li>
+      </ul>
+    </div>
+    <div class="add-action">
+      <i class="fa fa-plus" aria-hidden="true"></i><small> Add action</small>
+    </div>  
+  </div>
 </div>
 
 </template>
