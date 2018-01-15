@@ -29,6 +29,8 @@ export default class LivelyCacheMounts extends Morph {
         this.lastSelection = li;
         this._selectMount(mount);
         li.style.backgroundColor = "#eee";
+        
+        this._showDirectory();
       });
       ul.appendChild(li);
       }
@@ -70,6 +72,22 @@ export default class LivelyCacheMounts extends Morph {
       
       this._mounts.push(mount);
     }
+  }
+  
+  async _showDirectory() {
+    let response = await fetch(`https://lively4${this.selectedMount.path}/`, { method: "OPTIONS" });
+    let dir = await response.json();
+    let dirTree = this.get("#dirTree");
+    dirTree.innerHTML = "";
+    let ul = document.createElement("ul");
+    
+    for (let dirObject of dir.contents) {
+      let li = document.createElement("li");
+      li.innerText = dirObject.name;
+      ul.appendChild(li);
+    }
+    
+    dirTree.appendChild(ul);
   }
   
   async onCacheMountButton() {
