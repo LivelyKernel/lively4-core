@@ -42,11 +42,18 @@ export default class Selection extends Morph {
     this.originalOffset = new Map();
   }
 
+  allowsSelection(element, evt) {
+    // the "evt" is important, because an element might be picky about it...
+     return (element.classList && element.classList.contains("lively-group"))
+       || (element.livelyAllowsSelection && element.livelyAllowsSelection(evt))
+       // ||(element.tagName == "LIVELY-CONTAINER")
+  }
+  
   onPointerDownPre(evt) {
     // lively.showEvent(evt)
 
     if (evt.ctrlKey || evt.altKey) return;
-    var target = evt.path.find(ea => ea.classList && ea.classList.contains("lively-group"))
+    var target = evt.path.find(ea => this.allowsSelection(ea, evt)); // start with the innermost
     // console.log('evt path:' + evt.path.map(ea => ea.classList).join("|")+ ": " + target)
     
     if (evt.path[0] !== document.body && evt.path[0] !==  document.documentElement && !target) return 
