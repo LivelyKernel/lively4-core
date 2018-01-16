@@ -492,7 +492,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     
     if (printResult) {
       // alaways wait on promises.. when interactively working...
-      if (result && result.then) { 
+      if (result && result.then && result instanceof Promise) { 
         // we will definitly return a promise on which we can wait here
         result
           .then( result => {
