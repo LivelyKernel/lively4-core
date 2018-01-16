@@ -12,6 +12,19 @@
 
 <lively-script>
 
-  var hwr = new Handwriting('drawingCanvas', 'clear_canvas' , true, this);;
+  var lively_script_context = this;
+  var hwr;
+    
+  function waitUntilReady(){
+    if(lively_script_context.parentElement != null){
+      hwr = new Handwriting('drawingCanvas', 'clear_canvas' , true, lively_script_context);
+    }
+    else{
+      setTimeout(waitUntilReady, 1000);
+    }
+  }
+  waitUntilReady();
+  
+<!--   var hwr = new Handwriting('drawingCanvas', 'clear_canvas' , true, this); -->
 
 </lively-script>
