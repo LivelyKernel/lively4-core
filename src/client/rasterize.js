@@ -182,7 +182,8 @@ export default class Rasterize {
     }
   
    static async elementToCanvas(element) {
-    var extent = lively.getExtent(element)
+    var bounds = lively.getTotalGlobalBounds(element)
+    var extent = pt(bounds.width, bounds.height)
 
     await lively.sleep(100); // give the element some time to render...
     
@@ -199,9 +200,10 @@ export default class Rasterize {
 
     lively.setPosition(cloned, pt(0,0))
     var canvas = document.createElement("canvas")
-    var zoom = 2;
-    canvas.width = extent.x * zoom;
-    canvas.height = extent.y * zoom;
+    var zoom = 2; // see   tmp.style.transform = "scale(2)" in (rc/client/html.js)
+    var minExtent = pt(1,1);
+    canvas.width = Math.max(extent.x * zoom, minExtent.x);
+    canvas.height = Math.max(extent.y * zoom, minExtent.y);
     await rasterizeHTML.drawHTML(h.outerHTML, canvas)
     
     canvas = this.trimCanvas(canvas)
