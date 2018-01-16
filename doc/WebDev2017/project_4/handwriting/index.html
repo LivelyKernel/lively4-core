@@ -1,35 +1,18 @@
-<!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script> -->
+<link rel="stylesheet" type="text/css" href="https://lively-kernel.org/lively4/lively4-handwriting/doc/WebDev2017/project_4/handwriting/style.css">
+                                             
+<h1 id="caption">WritePad Handwriting Recognition</h1>
+
+<lively-paper id="drawingCanvas"></lively-paper>
+
+<div id="dynbuttons">
+</div>
+
+<div id="result"></div>
 
 <script src="https://lively-kernel.org/lively4/lively4-handwriting/doc/WebDev2017/project_4/handwriting/script.js" type="text/javascript"></script>
 
-<!-- <div id="input_wrapper">
-  <p>
-    Server URL:
-    <input type="text" id="server_url" value="about:blank" onload="hwr_this.getServerUrl();">
-    <input id="set_url" type="button" value="Set server url" onclick="hwr_this.setServerUrl();" />
-  </p>
-	<p>
-	  Language:
-	  <select id="language_selection" onchange="hwr_this.setLanguage()">
-      <option value="eng">English</option>
-      <option value="ger">German</option>
-    </select>
-  </p>
-</div> -->
-
-<h1 id="caption">WritePad Handwriting Recognition</h1>
-
-<!-- <div id="suggestions"> -->
-<!--   <button id="suggestion0" style="visibility:hidden"></button> -->
-<!--   <button id="suggestion1" style="visibility:hidden"></button> -->
-<!--   <button id="suggestion2" style="visibility:hidden"></button> -->
-<!-- </div> -->
-
-
-<lively-paper id="canvasSimple" width="490px" height="220px"></lively-paper>
-<!-- <input id="send_image" type="button" value="Send information" onclick="hwr.sendInformation();" /> -->
-<div id="result"></div>
-
 <lively-script>
-  var hwr = new Handwriting('canvasSimple', 'clear_canvas' , true, this);
+
+  var hwr = new Handwriting('drawingCanvas', 'clear_canvas' , true, this);;
+
 </lively-script>
