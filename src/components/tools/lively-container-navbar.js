@@ -214,16 +214,7 @@ export default class LivelyContainerNavbar extends Morph {
       };
       link.addEventListener('contextmenu', (evt) => {
 	        if (!evt.shiftKey) {
-            evt.preventDefault();
-            var menu = new ContextMenu(this, [
-              ["delete file", () => this.deleteFile(otherUrl)],
-              ["rename file", () => this.renameFile(otherUrl)],
-              ["new file", () => this.newfile(otherUrl)],
-              ["edit", () => lively.openBrowser(otherUrl, true)],
-              ["browse", () => lively.openBrowser(otherUrl)],
-              
-            ]);
-            menu.openIn(document.body, evt, this);
+            this.onContextMenu(evt, otherUrl)
             evt.stopPropagation();
             evt.preventDefault();
             return true;
@@ -232,11 +223,20 @@ export default class LivelyContainerNavbar extends Morph {
       element.appendChild(link);
       navbar.appendChild(element);
     });
-    
-  
-
   }
 
+  onContextMenu(evt, otherUrl) {
+    var menu = new ContextMenu(this, [
+      ["delete file", () => this.deleteFile(otherUrl)],
+      ["rename file", () => this.renameFile(otherUrl)],
+      ["new file", () => this.newfile(otherUrl)],
+      ["edit", () => lively.openBrowser(otherUrl, true)],
+      ["browse", () => lively.openBrowser(otherUrl)],
+      ["save as png", () => lively.html.saveAsPNG(otherUrl)],
+    ]);
+    menu.openIn(document.body, evt, this);
+  }
+  
   deleteFile(url) {
     lively.notify("please implement deleteFile()")
   }

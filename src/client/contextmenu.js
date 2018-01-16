@@ -12,6 +12,7 @@ import Windows from "src/components/widgets/lively-window.js"
 import {Grid} from "src/client/morphic/snapping.js"
 import Info from "src/client/info.js"
 import * as _ from 'src/external/lodash/lodash.js'
+import Rasterize from 'src/client/rasterize.js'
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
@@ -126,8 +127,27 @@ export default class ContextMenu {
             target.parentElement.embedContentInParent() :
             ContextMenu.openInWindow(target, evt);
         }],
+      ["save as png ...", async () => {
+          var previewAttrName = "data-lively-preview-src"
+          var url = target.getAttribute(previewAttrName)
+          if (!url) {
+            var name = target.id || 
+                target.textContent.slice(0,30) || 
+                target.tagName.toLowerCase();
+            url = lively4url + "/" + name + ".png"            
+          }        
+          url = await lively.prompt("save as png", url);
+          if (url) {
+            target.setAttribute(previewAttrName, url)
+            await Rasterize.elementToURL(target, url)
+            lively.notify("save to " + url)
+          }
+        }
+      ],
       ["save as...", async () => {
-        var name = await lively.prompt("save element as: ", "src/parts/element.html")
+        var partName = target.getAttribute("data-lively-part-name") || "element"
+        var name = await lively.prompt("save element as: ", `src/parts/${partName}.html`)
+        if (!name) return;
         // var name = "foo.html"
         var url = name
         if (!url.match(/https?:\/\//)) {
@@ -266,8 +286,7 @@ export default class ContextMenu {
           this.hide();
         }, "", '<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'], 
         ["Button", async evt => {
-          var data = await fetch(lively4url + "/src/parts/button.html").then(t => t.text())
-          var morph  = lively.clipboard.pasteHTMLDataInto(data, worldContext).childNodes[0];
+          var morph  = await lively.openPart("button")
           this.openCenteredAt(morph, worldContext, evt)          
           lively.hand.startGrabbing(morph, evt)
           // morph.style.backgroundColor = "blue";

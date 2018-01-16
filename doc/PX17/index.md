@@ -160,7 +160,7 @@ button
 - Evolve tools and applications while using them 
 - Wiki-like collaboration while working on code and objects
 
-![BouncingBallDynamicSystem](../figures/bouncing_ball_dynamic_system.png "Bouncing ball: when the domain lends itself to it, a programmer can develop some parts of an application with continuous feedback, just by editing code that will patched into the system.")
+![BouncingBallDynamicSystem](./bouncing_ball_dynamic_system.png "Bouncing ball: when the domain lends itself to it, a programmer can develop some parts of an application with continuous feedback, just by editing code that will patched into the system.")
 
 
 <script>
@@ -230,7 +230,7 @@ button
 
 # Web Components in Modern Browsers
 
-![TemplateAndInstances](../figures/template_and_instances.png "Web Components: the new elements in (B) are defined in (A), but at run-time the template is copied and the structure is redundant (C).")
+![TemplateAndInstances](./template_and_instances.png "Web Components: the new elements in (B) are defined in (A), but at run-time the template is copied and the structure is redundant (C).")
 
 ---
 <img class="logo" src="./hpi_logo.png" width="50px">
@@ -260,7 +260,7 @@ button
 
 # Different Kinds of Feedback in the System
 
-![SoapBubble](../figures/soap_bubble.png "The static description of a soap bubble and its resulting behavior at run-time.")
+![SoapBubble](./soap_bubble.png "The static description of a soap bubble and its resulting behavior at run-time.")
 
 <script>
 import {pt} from "src/client/graphics.js"

@@ -458,7 +458,7 @@ export default class Container extends Morph {
       if (moduleName) {
         moduleName = moduleName[1];
         
-        const testRegexp = /test\/.*js/;
+        const testRegexp = /((test\/.*)|([.-]test)|([.-]spec))\.js/;
         if (this.lastLoadingFailed) {
           console.log("last loading failed... reload")
           this.reloadModule(url); // use our own mechanism...
@@ -1386,6 +1386,15 @@ export default class Container extends Morph {
     }); 
     return link  
   }
+  
+  livelyAllowsSelection(evt) {
+    if (!this.contentIsEditable() || this.isEditing()) return false
+    
+    if (evt.path[0].id == "container-content") return true;
+    
+    return false
+  }
+  
   
   livelyAcceptsDrop() {
     return this.contentIsEditable() && !this.isEditing()

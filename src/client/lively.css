@@ -32,7 +32,7 @@ lively-table td.number {
 }
 
  
-lively-table .table-selected {
+lively-table.active .table-selected {
   margin: -1px;
   border-collapse: collapse;
   background-color: rgba(190,190,190,0.3);
@@ -40,7 +40,7 @@ lively-table .table-selected {
   
 }
 
-lively-table .start-selection {
+lively-table.active .start-selection {
   margin: -2px;
   border: 2px solid blue;
   border-collapse: collapse;

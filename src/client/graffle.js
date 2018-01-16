@@ -1,12 +1,14 @@
 import {pt} from 'src/client/graphics.js';
 import Halo from "src/components/halo/lively-halo.js"
 import svg from "src/client/svg.js"
+import { debounce } from "utils";
 
 export default class Graffle {
   
   // Graffle.keysDown 
   static load() {
     lively.removeEventListener("Graffle", document.body)
+    lively.removeEventListener("Graffle", document)
     lively.addEventListener("Graffle", document.body, "keydown", 
       (evt) => { this.onKeyDown(evt)}, true)
     lively.addEventListener("Graffle", document.body, "keyup", 
@@ -18,7 +20,67 @@ export default class Graffle {
       (evt) => { this.onMouseMove(evt) })
     lively.addEventListener("GraffleMouse", document.documentElement, "pointerup", 
       (evt) => { this.onMouseUp(evt) })
+    lively.addEventListener("Graffle", document, "selectionchange", 
+      (evt) => { this.onSelectionHide(evt) } )
+    lively.addEventListener("Graffle", document, "selectionchange", 
+      ((evt) => { this.onSelectionChange(evt) })::debounce(600) )
     this.keysDown = {}
+  }
+
+  
+  static async showStyleBalloon(target) {
+    if (!target) {
+      return;
+    }
+    // console.log("show balloon " + target)
+    // lively.showElement(target)
+    if (!lively.styleBalloon) {
+      lively.styleBalloon = await lively.openPart("formatting")
+      lively.styleBalloon.style.zIndex = 500
+    }
+    document.body.appendChild(lively.styleBalloon);
+    // lively.showElement(lively.styleBalloon)
+
+    // console.log("pos " + lively.getGlobalBounds(target).bottomLeft())
+    lively.setGlobalPosition(lively.styleBalloon, lively.getGlobalBounds(target).bottomLeft())
+  }
+  
+    
+  static async hideStyleBalloon() {
+    // console.log("hide balloon")
+    if (lively.styleBalloon) {
+      lively.styleBalloon.remove()
+      
+      // lively.styleBalloon = null; // for developing
+    }
+  }
+  
+   static onSelectionHide(evt) {
+    var selection = window.getSelection()
+    if (!document.activeElement || !document.activeElement.isContentEditable) {
+      if (document.activeElement === document.body) {
+        this.hideStyleBalloon() 
+      }
+    } else if (!selection.anchorNode || !selection.isCollapsed) {
+      this.hideStyleBalloon() 
+    }
+  }
+  
+  static onSelectionChange(evt) {
+    var selection = window.getSelection()
+    if (!document.activeElement || !document.activeElement.isContentEditable) {
+      return
+    }
+    if (document.activeElement.shadowRoot) {
+      selection = document.activeElement.shadowRoot.getSelection()
+    }
+    if (selection.anchorNode && !selection.isCollapsed) {
+      var element = selection.getRangeAt(0).endContainer.parentElement;
+      while(["SPAN", "FONT", "A", "B", "I"].includes(element.tagName)) {
+        element = element.parentElement
+      }
+      this.showStyleBalloon(element)
+    }
   }
   
   static async onKeyDown(evt) {
@@ -79,8 +141,6 @@ export default class Graffle {
     document.execCommand("fontSize", true, 1)    
     element = window.getSelection().getRangeAt(0).commonAncestorContainer.parentElement
     element.style.fontSize  = oldSize.match("%$") ? oldSize : "100%";
-        
-    
     this.changeFontSize(element, factor)
   }  
 

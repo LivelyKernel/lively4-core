@@ -8,15 +8,8 @@ export default class VivideScriptEditor extends Morph {
       let cm = await lively.create("lively-code-mirror");
       cm.setOption('viewportMargin', Infinity);
       cm.value = `Editor(${i})`;
-      new MutationObserver(function(e) {
-        debugger;
-      }).observe(cm, {
-        characterData: true,
-        childList: true
-      });
       this.appendChild(cm);
     }
-    lively.notify("123")
     this.appendChild(<button>s</button>)
   }
 }
