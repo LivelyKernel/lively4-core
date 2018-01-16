@@ -106,6 +106,16 @@ export class BaseActiveExpression {
     return this;
   }
 
+  /**
+   * #TODO: implement
+   * disposeOnLastCallbackDetached
+   * chainable
+   * for some auto-cleanup
+   * (only triggers, when a callback is detached; not initially, if there are no callbacks)
+   */
+  disposeOnLastCallbackDetached() {
+    throw new Error('Not yet implemented.')
+  }
 }
 
 export function aexpr(func, ...params) {

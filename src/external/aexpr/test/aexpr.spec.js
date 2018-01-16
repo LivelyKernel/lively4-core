@@ -1,5 +1,4 @@
 "enable aexpr";
-"use strict";
 import chai, {expect} from 'node_modules/chai/chai.js';
 import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'node_modules/sinon-chai/lib/sinon-chai.js';
@@ -20,6 +19,20 @@ describe('simplify locals', function() {
     aexpr(() => myIdentifier).onChange(()=>{});
 
     _ =  myIdentifier = 2;
+  });
+});
+describe('disposeOnLastCallbackDetached', function() {
+  it('is defined', () => {
+    let exp = aexpr(() => {});
+    expect(exp).to.respondTo('disposeOnLastCallbackDetached');
+  });
+  xit('is chainable', () => {
+    let exp = aexpr(() => {})
+    let exp2 = exp.disposeOnLastCallbackDetached();
+    expect(exp2).to.equal(exp);
+  });
+  xit('works', () => {
+    // #TODO: proper test first
   });
 });
 describe('loop constructs', function() {
