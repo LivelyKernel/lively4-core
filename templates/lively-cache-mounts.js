@@ -13,15 +13,14 @@ export default class LivelyCacheMounts extends Morph {
   }
   
   loadMounts(mounts) {
-    this._mounts = mounts;
-    this._filterMounts();
+    this._filterMounts(mounts);
     let mountList = this.get("#mountList");
     mountList.innerHTML = "";
     
     let ul = document.createElement("ul");
     for (let mount of this._mounts) {
       let li = document.createElement("li");
-      li.innerText = mount.path;
+      li.innerText = mount.name;
       li.addEventListener("click", () => {
         if (this.lastSelection !== null) {
           this.lastSelection.style.backgroundColor = "#fff";
@@ -30,6 +29,8 @@ export default class LivelyCacheMounts extends Morph {
         this.lastSelection = li;
         this._selectMount(mount);
         li.style.backgroundColor = "#eee";
+        
+        this._showDirectory();
       });
       ul.appendChild(li);
       }
@@ -62,17 +63,31 @@ export default class LivelyCacheMounts extends Morph {
     )
   }
   
-  _filterMounts() {
+  _filterMounts(mounts) {
     const filteredMounts = ["sys", "html5"];
-    let tmpMounts = [];
+    this._mounts = [];
     
-    for (let mount of this._mounts) {
+    for (let mount of mounts) {
       if (filteredMounts.includes(mount.name)) continue;
       
-      tmpMounts.push(mount);
+      this._mounts.push(mount);
+    }
+  }
+  
+  async _showDirectory() {
+    let response = await fetch(`https://lively4${this.selectedMount.path}/`, { method: "OPTIONS" });
+    let dir = await response.json();
+    let dirTree = this.get("#dirTree");
+    dirTree.innerHTML = "";
+    let ul = document.createElement("ul");
+    
+    for (let dirObject of dir.contents) {
+      let li = document.createElement("li");
+      li.innerText = dirObject.name;
+      ul.appendChild(li);
     }
     
-    this._mounts = tmpMounts;
+    dirTree.appendChild(ul);
   }
   
   async onCacheMountButton() {
@@ -87,10 +102,12 @@ export default class LivelyCacheMounts extends Morph {
       await focalStorage.setItem("lively4cachedmounts", cachedMounts);
     }
     
+    let path = this.selectedMount.path;
+    
     navigator.serviceWorker.controller.postMessage({
       type: 'dataRequest',
       command: "preloadFull",
-      data: `https://lively4${this.selectedMount.path}/`
+      data: `https://lively4${path}/`
     });
   }
 }

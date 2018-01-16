@@ -31,7 +31,7 @@ export default class Selection extends Morph {
     lively.addEventListener("Selection", target, "pointerdown", 
       e => Selection.current.onPointerDown(e))  // select in bubling phase ...
     lively.addEventListener("Selection", target, "pointerdown", 
-      e => Selection.current.onPointerDownPre(e), true)  // select in bubling phase ...
+      e => Selection.current.onPointerDownPre(e), true)  // pre select in capturing phase ...
   }
  
   initialize() {
@@ -42,13 +42,31 @@ export default class Selection extends Morph {
     this.originalOffset = new Map();
   }
 
+  allowsSelection(element, evt) {
+    // the "evt" is important, because an element might be picky about it...
+     return (element.classList && element.classList.contains("lively-group"))
+       || (element.livelyAllowsSelection && element.livelyAllowsSelection(evt))
+       // ||(element.tagName == "LIVELY-CONTAINER")
+  }
+  
   onPointerDownPre(evt) {
+    // lively.showEvent(evt)
+
     if (evt.ctrlKey || evt.altKey) return;
-    if (evt.path[0] !== document.body && evt.path[0] !==  document.documentElement) return 
+    var target = evt.path.find(ea => this.allowsSelection(ea, evt)); // start with the innermost
+    // console.log('evt path:' + evt.path.map(ea => ea.classList).join("|")+ ": " + target)
+    
+    if (evt.path[0] !== document.body && evt.path[0] !==  document.documentElement && !target) return 
     if (evt.pointerType == "touch") return; // no selection via touch
     
     lively.showEvent(evt).style.display = "none"; // #HACK, weired event shit.. without it the world scrolls #TODO
     document.documentElement.style.touchAction = "none"
+
+    if (target) {
+      // we won't be called in the bubbling, so we do it now
+      this.startSelection(target, evt)
+    }
+    
   }
   
   onPointerDown(evt) {
@@ -75,18 +93,21 @@ export default class Selection extends Morph {
       lively.showPoint(pt(evt.clientX, evt.clientY))     
       return
     }
-    
-    this.selectionOffset = pt(evt.clientX, evt.clientY)
+    this.startSelection(target, evt)
+  }
 
+  startSelection(target, evt) {
     lively.addEventListener("Selection", document.documentElement, "pointermove", 
       e => this.onPointerMove(e))
     lively.addEventListener("Selection", document.documentElement, "pointerup", 
       e => this.onPointerUp(e))
 
+    this.selectionOffset = pt(evt.clientX, evt.clientY)
     this.context = target;
     this.nodes = [];
   }
-
+  
+  
   onPointerMove(evt) {
     var evtPos =  pt(evt.clientX, evt.clientY);
 
