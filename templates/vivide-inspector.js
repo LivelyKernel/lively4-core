@@ -4,25 +4,25 @@ export default class VivideInspector extends Morph {
   async initialize() {
   }
   
-  inspect(widget) {
+  async inspect(widget) {
     this.widget = widget;
     this.get("#model-inspector").inspect(widget.raw_model);
     
     if(this.widget.transformations) {
-      this.fillFunctionsTableMultiple();
+       await this.fillFunctionsTableMultiple();
       return;
     }
     
     if(this.widget.transformation) {
-      this.fillFunctionsTableSingle(this.widget.transformation);
+      await this.fillFunctionsTableSingle(this.widget.transformation);
     }
   }
   
-  buildTransformationCell(transformation, number) {
-    let transformationTd = document.createElement("td");
-    let transformationEditor = document.createElement("juicy-ace-editor");
+  async buildTransformationCell(transformation, number) {
+    let transformationDiv = document.createElement("div");
+    let transformationEditor = await lively.create("lively-code-mirror");
     
-    transformationEditor.value = transformation;
+    transformationEditor.value = transformation.toString().replace(/  +/g, '');
     transformationEditor.doSave = content => {
       if(number === undefined) {
         this.widget.setTransformation(eval(content));
@@ -31,17 +31,17 @@ export default class VivideInspector extends Morph {
       }
     }
     
-    transformationTd.append(number != undefined ? "Transformation #" + number + ":" : "Transformation:");
-    transformationTd.append(transformationEditor);
+    transformationDiv.append(number != undefined ? "Transformation #" + number + ":" : "Transformation:");
+    transformationDiv.append(transformationEditor);
     
-    return transformationTd;
+    return transformationDiv;
   }
   
-  buildDepictionCell(depiction, number) {
-    let depictionTd = document.createElement("td");
-    let depictionEditor = document.createElement("juicy-ace-editor");
+   async buildDepictionCell(depiction, number) {
+    let depictionDiv = document.createElement("div");
+    let depictionEditor = await lively.create("lively-code-mirror");
     
-    depictionEditor.value = depiction;
+    depictionEditor.value = depiction.toString().replace(/  +/g, '');;
     depictionEditor.doSave = content => {
       if(number === undefined) {
         this.widget.setDepiction(eval(content));
@@ -50,30 +50,30 @@ export default class VivideInspector extends Morph {
       }
     }
     
-    depictionTd.append(number != undefined ? "Depiction #" + number + ":" : "Depiction:");
-    depictionTd.append(depictionEditor);
+    depictionDiv.append(number != undefined ? "Depiction #" + number + ":" : "Depiction:");
+    depictionDiv.append(depictionEditor);
     
-    return depictionTd;
+    return depictionDiv;
   }
   
-  fillFunctionsTableSingle(transformation, depiction=undefined, number=undefined) {
-    let tr = document.createElement("tr");
-    
-    tr.append(this.buildTransformationCell(transformation, number));
+  async fillFunctionsTableSingle(transformation, depiction=undefined, number=undefined) {
+    this.get("#transformations").append(
+      await this.buildTransformationCell(transformation, number)
+    );
     
     if(depiction) {
-      tr.append(this.buildDepictionCell(depiction, number));
+      this.get("#depictions").append(
+        await this.buildDepictionCell(depiction, number)
+      );
     }
-
-    this.get("#functions-table").append(tr);
   }
   
-  fillFunctionsTableMultiple() {
+  async fillFunctionsTableMultiple() {
     for(let i=0; i<this.widget.transformations.length; ++i) {
       if(this.widget.depictions.length > i) {
-        this.fillFunctionsTableSingle(this.widget.transformations[i], this.widget.depictions[i], i);
+        await this.fillFunctionsTableSingle(this.widget.transformations[i], this.widget.depictions[i], i);
       } else {
-        this.fillFunctionsTableSingle(this.widget.transformations[i], undefined, i);
+        await this.fillFunctionsTableSingle(this.widget.transformations[i], undefined, i);
       }
     }
   }
