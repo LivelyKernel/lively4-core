@@ -4,15 +4,27 @@
 
 <lively-paper id="drawingCanvas"></lively-paper>
 
-<div id="dynbuttons">
-</div>
-
+<div id="dynbuttons"></div>
+<div id="control"></div>
 <div id="result"></div>
 
 <script src="https://lively-kernel.org/lively4/lively4-handwriting/doc/WebDev2017/project_4/handwriting/script.js" type="text/javascript"></script>
 
 <lively-script>
 
-  var hwr = new Handwriting('drawingCanvas', 'clear_canvas' , true, this);;
+  var lively_script_context = this;
+  var hwr;
+    
+  function waitUntilReady(){
+    if(lively_script_context.parentElement != null){
+      hwr = new Handwriting('drawingCanvas', 'clear_canvas' , true, lively_script_context);
+    }
+    else{
+      setTimeout(waitUntilReady, 1000);
+    }
+  }
+  waitUntilReady();
+  
+<!--   var hwr = new Handwriting('drawingCanvas', 'clear_canvas' , true, this); -->
 
 </lively-script>

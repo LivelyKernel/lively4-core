@@ -1,0 +1,20 @@
+<template id="trello-viewer" data-class="TrelloViewer">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  
+}
+#content {
+  background-color: blue;
+}
+</style>
+<div id="content">
+	<content></content>
+</div>
+  <lively-code-mirror id="editor"></lively-code-mirror>
+  <button id="execute">Execute</button>
+  <lively-code-mirror id="result"></lively-code-mirror>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+
