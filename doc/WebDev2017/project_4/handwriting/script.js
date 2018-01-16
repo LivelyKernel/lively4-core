@@ -45,19 +45,7 @@ var Handwriting = function Handwriting(canvas_id, clear_button, lively_environme
               } else {
                 suggestions = [" ", ".", ",", "!", "?"];
               }
-               
-//               for (var i = 0; i < suggestions.length; i++) {
-//                 dynbuttons.innerHTML += "<button id=\"suggestion" + i + "\">" + suggestions[i] + "</button>";
-//               }
-              
-//               for (var j = 0; j < suggestions.length; j++) {
-//                 var button_name = "#suggestion" + j;                
-//                 var dynbutton = dynbuttons.querySelector(button_name);
-//                 dynbutton.textContent = suggestions[j];
-//                 dynbutton.style.display = "unset";
-//                 dynbutton.onclick = function() {acceptSuggestion(this.textContent, self)};
-//              }
-              
+
               for (var k = 0; k < suggestions.length; k++) {
                 var dynButton = document.createElement("BUTTON");
                 dynButton.id = "#suggestion" + k;
