@@ -9,7 +9,7 @@
   flex-direction: column;
 }
 
-.navigation {
+.navigation, .content-viewer {
   overflow: auto;
   word-wrap: break-word;
   display: flex;
@@ -17,6 +17,9 @@
   width: 100%;
   flex: 1;
   overflow: visible;  
+}
+.content-viewer lively-code-mirror {
+  width: 100%;
 }
 .list {
   flex: 1;
@@ -86,6 +89,5 @@ ul li:hover {
   <div class="content-viewer">
     <lively-code-mirror id="editor"></lively-code-mirror>
   </div>
-  <button id="execute">Execute</button>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
