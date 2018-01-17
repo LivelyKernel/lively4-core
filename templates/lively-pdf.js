@@ -82,7 +82,7 @@ export default class LivelyPDF extends Morph {
   }  
   
   onAnnotationClick(e) {
-    this.editAnnotation(e.path[1]);
+    this.editAnnotation(e.path[0]);
   }
   
   editAnnotation(annotationSection) {
@@ -118,7 +118,7 @@ export default class LivelyPDF extends Morph {
     let that = this;
     
     this.pdfViewer.pagesPromise.then(() => {
-      let annotations = that.getAllSubmorphs(".annotationLayer section.textAnnotation");
+      let annotations = that.getAllSubmorphs(".annotationLayer section.highlightAnnotation");
       annotations.forEach((annotation) => {
         lively.addEventListener("pdf", annotation, "click", eventFunctionObject);
       });
