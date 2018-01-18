@@ -243,8 +243,8 @@ export default class HaloControlPointItem extends HaloItem {
       // nearPoints.forEach(ea => lively.showPoint(ea))
       if (nearPoints[0]) {
         // lively.showPoint(nearPoints[0])
-        var delta = nearPoints[0].subPt(this.eventOffset)
-        this.setVerticePosition(pt(this.original.x + delta.x, this.original.y + delta.y))
+        var p = nearPoints[0].subPt(lively.getGlobalPosition(this.path.parentElement))
+        this.setVerticePosition(p)
     
       }
       
