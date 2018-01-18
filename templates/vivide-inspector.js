@@ -20,6 +20,7 @@ export default class VivideInspector extends Morph {
   
   async buildTransformationCell(transformation, number) {
     let transformationDiv = document.createElement("div");
+    transformationDiv.classList.add("transformation");
     let transformationEditor = await lively.create("lively-code-mirror");
     
     transformationEditor.value = transformation.toString().replace(/  +/g, '');
@@ -39,9 +40,10 @@ export default class VivideInspector extends Morph {
   
    async buildDepictionCell(depiction, number) {
     let depictionDiv = document.createElement("div");
+    depictionDiv.classList.add("depiction");
     let depictionEditor = await lively.create("lively-code-mirror");
     
-    depictionEditor.value = depiction.toString().replace(/  +/g, '');;
+    depictionEditor.value = depiction.toString().replace(/  +/g, '');
     depictionEditor.doSave = content => {
       if(number === undefined) {
         this.widget.setDepiction(eval(content));
@@ -57,12 +59,12 @@ export default class VivideInspector extends Morph {
   }
   
   async fillFunctionsTableSingle(transformation, depiction=undefined, number=undefined) {
-    this.get("#transformations").append(
+    this.get("#functions").append(
       await this.buildTransformationCell(transformation, number)
     );
     
     if(depiction) {
-      this.get("#depictions").append(
+      this.get("#functions").append(
         await this.buildDepictionCell(depiction, number)
       );
     }
