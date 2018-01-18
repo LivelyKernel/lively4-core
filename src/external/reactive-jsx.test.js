@@ -38,7 +38,7 @@ describe('async support for WebComponents', function() {
 
     done();
   });
-  it('support CodeMirror', async done => {
+  xit('support CodeMirror', async done => {
     let prom = <lively-code-mirror>Hello</lively-code-mirror>;
     expect(prom).to.be.an.instanceof(Promise);
 

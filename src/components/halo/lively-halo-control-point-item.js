@@ -6,7 +6,7 @@ import Preferences from 'src/client/preferences.js';
 import Snapping from "src/client/morphic/snapping.js"
 import {Grid} from 'src/client/morphic/snapping.js';
 import Strings from 'src/client/strings.js';
-import svg from "src/client/svg.js"
+import SVG from "src/client/svg.js"
 
 export default class HaloControlPointItem extends HaloItem {
   
@@ -23,14 +23,34 @@ export default class HaloControlPointItem extends HaloItem {
     this.path = path
     this.index = index
     lively.setPosition(this, pt(0,0))
-    this.offset = lively.getGlobalPosition(this.path).subPt(lively.getGlobalPosition(this))
-    this.updatePositon()
+    this.offset = lively.getGlobalPosition(this.path.parentElement).subPt(lively.getGlobalPosition(this))
+    this.updatePosition()
+    if (this.isConnector) {
+      this.get("#shape").classList.add("connector")
+    } 
+    if (this.curveIndex > 1) {
+      this.get("#shape").classList.add("curve")
+    }
+
   }
   
-  updatePositon() {
-    var v = svg.getPathVertices(this.path)
+  getCurvePoint(cp, curveIndex) {
+    if (curveIndex === undefined) curveIndex = 1;
+    return pt(cp["x" + curveIndex],cp["y" + curveIndex])
+  }
+  
+ 
+  setCurvePoint(cp, curveIndex, pos) {
+    if (curveIndex === undefined) curveIndex = 1;
+    cp["x" + curveIndex] = pos.x 
+    cp["y" + curveIndex] = pos.y  
+  }
+  
+  updatePosition() {
+    var v = SVG.getPathVertices(this.path)
     var cp = v[this.index]
-    lively.setPosition(this, this.offset.addPt(pt(cp.x1, cp.y1)))
+    let cpPos = this.getCurvePoint(cp, this.curveIndex)
+    lively.setPosition(this, this.offset.addPt(cpPos))
     // lively.showPoint(lively.getGlobalPosition(this))
   }
 
@@ -55,12 +75,20 @@ export default class HaloControlPointItem extends HaloItem {
   start(evt, target) {
     this.target = target || window.that
     // this.snapping = new Snapping(this.target) 
+    if (evt.shiftKey && evt.ctrlKey) {
+      this.addCurvePoint(evt)
+    } else if (evt.shiftKey) {
+      this.addControlPoint(evt)
+    } else if (evt.ctrlKey) {
+      this.removeControlPoint(evt)     
+    }
     
-    this.vertices = svg.getPathVertices(this.path)
+    this.vertices = SVG.getPathVertices(this.path)
     var cp = this.vertices[this.index]
+    if (!cp) return
     
-    // #BUG we assume here that this will not change...
-    this.original = pt(cp.x1, cp.y1)
+    this.original = this.getCurvePoint(cp, this.curveIndex)
+    
     this.eventOffset = events.globalPosition(evt)
 
     this.halo.shadowRoot.querySelectorAll(".halo").forEach(ea => {
@@ -68,19 +96,65 @@ export default class HaloControlPointItem extends HaloItem {
       // if (ea !== this) ea.style.visibility = "hidden"
     })
     
-    this.halo.shadowRoot.querySelectorAll("lively-halo-control-point-item").forEach(ea => {
-     ea.style.visibility = "hidden"
-      // if (ea !== this) ea.style.visibility = "hidden"
-    })
+    // this.halo.shadowRoot.querySelectorAll("lively-halo-control-point-item").forEach(ea => {
+    //  ea.style.visibility = "hidden"
+    //   // if (ea !== this) ea.style.visibility = "hidden"
+    // })
 
     this.style.pointerEvents = "none"
 
     this.targetPointerEvents = this.target.style.pointerEvents
     this.target.style.pointerEvents = "none"; // disable mouse events while dragging...
     
-    this.findTargetAt(evt) 
+    if (this.isConnector) {
+      this.findTargetAt(evt)
+    }
+  }
+  
+  addCurvePoint() {
+    this.vertices = SVG.getPathVertices(this.path)
+    var cp = this.vertices[this.index]
+    var curvePoint = Object.assign({}, cp)
+    curvePoint.c = "Q"
+    curvePoint.x2 = cp.x1
+    curvePoint.x2 = cp.x2
+    this.curveIndex = 2
+    this.vertices.splice(this.index, 0, curvePoint) 
+    SVG.setPathVertices(this.path, this.vertices)
+  }
+  
+  
+  addControlPoint() {
+    this.vertices = SVG.getPathVertices(this.path)
+    var cp = this.vertices[this.index]
+    var cp2 = Object.assign({}, cp)
+    cp2.c = "L"
+    this.vertices.splice(this.index + 1, 0, cp2) 
+    SVG.setPathVertices(this.path, this.vertices)
+    this.index++
   }
 
+  removeControlPoint() {
+    this.vertices = SVG.getPathVertices(this.path)
+    if (this.index == 0) {
+      this.vertices[1].c = "M" // the first one has to be M
+    }
+    
+    if (this.curveIndex > 1) {
+      var cp = this.vertices[this.index]
+      cp.c = "L"
+      delete cp.x2
+      delete cp.y2
+      delete cp.x3
+      delete cp.y2
+    } else {
+      this.vertices.splice(this.index, 1)     
+    }
+    SVG.setPathVertices(this.path, this.vertices)
+    this.remove()
+  }
+
+  
   showHighlight(element) {
     this.highlight = lively.showElement(element,100000)
     this.highlight.innerHTML = "" + element.id
@@ -118,38 +192,73 @@ export default class HaloControlPointItem extends HaloItem {
     return element
   }
 
-  move(evt) {
-    var world = lively.findWorldContext(this.target)
-    this.findTargetAt(evt, world)
-    lively.setGlobalPosition(lively.hand, pt(evt.clientX, evt.clientY))
-    // lively.showPoint(pt(evt.clientX, evt.clientY))
+  findControlPoints(evt, world=document.body) {
+    var controlPoints = []
     
-    var connectMethod = this.index == 0 ? "connectFrom" : "connectTo";
-    if (this.targetElement && this.target[connectMethod]) {
-      this.target[connectMethod](this.targetElement); 
-      this.style.visibility = "hidden"
-    } else {
-      this.style.visibility = "visible"
+    world.querySelectorAll(":not(marker) > path").forEach(eaPath => {
+      var offset = lively.getGlobalPosition(eaPath.parentElement)
+      SVG.getPathVertices(eaPath).forEach((ea, index) => {
+        if (this.path == eaPath && index == this.index) {
+           // ignore me
+        } else {
+          controlPoints.push(offset.addPt(pt(ea.x1, ea.y1)))
+        }
+        
+      })
+    })
+    return controlPoints
+  }
+  
+  
+  move(evt) {
+    const snapRange = 20; // #TODO make preference
+    
+    var world = lively.findWorldContext(this.target)
+    if (!this.original) return
+    
+    lively.setGlobalPosition(lively.hand, pt(evt.clientX, evt.clientY))
+    
+    // non-connector path
+    var delta = events.globalPosition(evt).subPt(this.eventOffset)
+    this.setVerticePosition(pt(this.original.x + delta.x, this.original.y + delta.y))
+    
+    if (this.isConnector) {
+      this.findTargetAt(evt, world)
+      // lively.showPoint(pt(evt.clientX, evt.clientY))
 
-      // non-connector path
-      var delta = events.globalPosition(evt).subPt(this.eventOffset)
-      this.setVerticePosition(pt(this.original.x + delta.x, this.original.y + delta.y))
-
-      if (this.target[connectMethod]) {
+      var connectMethod = this.index == 0 ? "connectFrom" : "connectTo";
+      if (this.targetElement) {
+        this.target[connectMethod](this.targetElement); 
+        this.style.visibility = "hidden"
+      } else {
+        this.style.visibility = "visible"
         this.target[connectMethod](lively.hand); 
+      } 
+    } else {
+      var points = this.findControlPoints(world)
+      var myPos = lively.getGlobalPosition(this)
+      var pointsDist = points.map(ea => {return {point: ea, dist: ea.dist(myPos)}})
+      var nearPoints = _.sortBy(pointsDist.filter(ea => ea.dist < snapRange), ea => ea.dist).map(ea => ea.point)
+
+      // nearPoints.forEach(ea => lively.showPoint(ea))
+      if (nearPoints[0]) {
+        // lively.showPoint(nearPoints[0])
+        var delta = nearPoints[0].subPt(this.eventOffset)
+        this.setVerticePosition(pt(this.original.x + delta.x, this.original.y + delta.y))
+    
       }
-    } 
+      
+    }
   }
 
   setVerticePosition(pos) {
     if (!this.vertices)
-      this.vertices = svg.getPathVertices(this.path);
-    
+      this.vertices = SVG.getPathVertices(this.path);
     var cp = this.vertices[this.index]
-    cp.x1 = pos.x 
-    cp.y1 = pos.y
-    svg.setPathVertices(this.path, this.vertices)
-    this.updatePositon()
+    if (!cp) return;
+    this.setCurvePoint(cp, this.curveIndex, pos)
+    SVG.setPathVertices(this.path, this.vertices)
+    this.updatePosition()
   }
 
   stop(evt) {
@@ -158,20 +267,22 @@ export default class HaloControlPointItem extends HaloItem {
     this.target.style.pointerEvents = this.targetPointerEvents; // receive mouse events again
     
     if (this.targetElement) {
-      if (this.index == 0) {
-        this.target.connectFrom(this.targetElement)
-      } else {
-        this.target.connectTo(this.targetElement)
-      } 
+        var connectMethod = this.index == 0 ? "connectFrom" : "connectTo";
+        if (this.target[connectMethod]) {
+          this.target[connectMethod](this.targetElement) 
+        }
     } else {
-      if (this.index == 0) {
-        this.target.disconnectFromElement()
-      } else {
-        this.target.disconnectToElement()
-      } 
+        var disconnectMethod = this.index == 0 ? 
+            "disconnectFromElement" : "disconnectToElement";
+        if (this.target[disconnectMethod]) {
+          this.target[disconnectMethod](this.targetElement) 
+        }
     }
-    
-    this.target.resetBounds()
+    if (this.isConnector) {
+      this.target.resetBounds()
+    } else {
+      this.resetBounds(this.path)
+    }
     this.halo.shadowRoot.querySelectorAll(".halo").forEach(ea => {
       if (ea !== this) ea.style.visibility = null
     })
@@ -183,5 +294,17 @@ export default class HaloControlPointItem extends HaloItem {
     evt.stopPropagation()
   }
 
+  resetBounds(path) {
+    // assuming `svg.style.overflow == "visible"` during move
+    var svg = path.parentElement
+    // lively.showElement(svg)
+
+    SVG.resetBounds(svg, path)
+    lively.setExtent(this, lively.getExtent(svg))
+    var pos = lively.getPosition(svg)
+    lively.moveBy(this, pos)
+    // lively.setPosition(svg, pt(0,0))
+  }
+  
     
 }

@@ -12,6 +12,9 @@ export default class LivelyCacheMounts extends Morph {
     this._checkMounts();
   }
   
+  /**
+   *
+   */
   loadMounts(mounts) {
     this._filterMounts(mounts);
     let mountList = this.get("#mountList");
@@ -22,7 +25,7 @@ export default class LivelyCacheMounts extends Morph {
       let li = document.createElement("li");
       li.innerText = mount.name;
       li.addEventListener("click", () => {
-        if (this.lastSelection !== null) {
+        if (this.lastSelection != null) {
           this.lastSelection.style.backgroundColor = "#fff";
         }
         
@@ -38,11 +41,17 @@ export default class LivelyCacheMounts extends Morph {
     mountList.appendChild(ul);
   }
   
+  /**
+   *
+   */
   _selectMount(mount) {
     this.selectedMount = mount;
     this.get("#cacheMountButton").disabled = (this.selectedMount == null);
   }
   
+  /**
+   *
+   */
   _checkMounts() {
     focalStorage.getItem("lively4mounts").then(
       (mounts) => {
@@ -63,6 +72,9 @@ export default class LivelyCacheMounts extends Morph {
     )
   }
   
+  /**
+   *
+   */
   _filterMounts(mounts) {
     const filteredMounts = ["sys", "html5"];
     this._mounts = [];
@@ -74,6 +86,9 @@ export default class LivelyCacheMounts extends Morph {
     }
   }
   
+  /**
+   *
+   */
   async _showDirectory() {
     let response = await fetch(`https://lively4${this.selectedMount.path}/`, { method: "OPTIONS" });
     let dir = await response.json();
@@ -83,11 +98,57 @@ export default class LivelyCacheMounts extends Morph {
     
     for (let dirObject of dir.contents) {
       let li = document.createElement("li");
-      li.innerText = dirObject.name;
+      li.innerText = dirObject.type == "directory" ? "(D) " : "(F) ";
+      li.innerText += dirObject.name;
+      
+      li.addEventListener("click", () => {
+        if (this._lastSelectedObject != null) {
+          this._lastSelectedObject.style.backgroundColor = "#fff";
+        }
+        
+        this._lastSelectedObject = li;
+        li.style.backgroundColor = "#eee";
+        this._selectMountObject(dirObject);
+      });
+      
       ul.appendChild(li);
     }
     
     dirTree.appendChild(ul);
+  }
+  
+  /**
+   *
+   */
+  _selectMountObject(mountObject) {
+    if (this._objectPath == null) {
+      this._objectPath = `https://lively4${this.selectedMount.path}`;
+    }
+    
+    this._selectedMountObject = mountObject;
+    this.get("#cacheObjectButton").disabled = (this.selectedMount == null);
+  }
+  
+  /**
+   *
+   */
+  _cacheMountObject(mountObject) {
+    let url = `${this._objectPath}/${mountObject.name}`;
+    
+    if (mountObject.type === "directory") {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'dataRequest',
+        command: "preloadFull",
+        data: `https://lively4${url}/`
+      });
+    } else if (mountObject.type === "file") {
+      fetch(url, { method: "GET" });
+      fetch(url, { method: "OPTIONS" });
+    }
+  }
+  
+  async onCacheObjectButton() {
+    this._cacheMountObject(this._selectedMountObject);
   }
   
   async onCacheMountButton() {

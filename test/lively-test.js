@@ -1,4 +1,5 @@
 import {expect} from 'src/external/chai.js'
+import {pt}  from 'src/client/graphics.js'
 
 var lively = window.lively; var it = window.it
 
@@ -88,6 +89,31 @@ describe('Position API', function() {
     expect(lively.getPosition(document.querySelector('body')).x).to.be.a('number')
   })
 })
+ 
+
+describe('getTotalGlobalBounds', function() {
   
+  it('return global bounds of an element', () => {
+    var element = document.createElement("div")
+    lively.setGlobalPosition(element, pt(0,0))
+    this.sut = element
+    document.body.appendChild(this.sut)
+    var element2 = document.createElement("div")
+    element.appendChild(element2)
+        
+    lively.setPosition(element2, pt(200,300))
+    lively.setExtent(element2, pt(300,400))
+    
+    var result= lively.getTotalGlobalBounds(element)
+    expect(result.bottomRight().toString()).to.equal(lively.getGlobalBounds(element2).bottomRight().toString())
+  })
+    
+  after("cleanup", () => {
+    this.sut && this.sut.remove()
+  });
+})
+ 
+
+
   
   
