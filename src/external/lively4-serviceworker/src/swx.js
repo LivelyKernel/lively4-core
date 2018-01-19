@@ -19,7 +19,6 @@ import { Cache } from './cache.js';
 
 const storagePrefix = "LivelySync_";
 
-
 // BEGIN copied from src/client/boot/js
 self.lively4performance = {start: performance.now()}
 try {
