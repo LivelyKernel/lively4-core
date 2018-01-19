@@ -1,0 +1,93 @@
+<template id="trello-viewer" data-class="TrelloViewer">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.navigation, .content-viewer {
+  overflow: auto;
+  word-wrap: break-word;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  flex: 1;
+  overflow: visible;  
+}
+.content-viewer lively-code-mirror {
+  width: 100%;
+}
+.list {
+  flex: 1;
+  border: 1px lightgrey solid;
+  margin: 1px;
+}
+.list {
+  background-color: #F5F5F5;
+  border-top: 1px solid #d5d5d5;
+  border-right: 1px solid #d5d5d5;
+  overflow: auto;
+}
+ul {
+  width: auto;
+  margin:0;
+  list-style-type: none;
+  padding: 0;
+}
+ul li {
+  margin: 0px;
+  padding: 2px;
+  font-size: 11pt;
+}
+ul li a {
+  width: 100%;
+  display: box;
+  white-space: nowrap;
+  text-decoration: none;
+  color: #444444;
+}
+ul li:hover a {
+  background-color: gray;
+  color: white;
+  cursor: pointer
+}
+ul li:hover {
+  background-color: lightgray;
+  color: white;
+  cursor: pointer
+}
+
+.selected {
+  background-color: lightgray;
+  color: white;
+  cursor: pointer
+}
+</style>
+  <button id="init">Init Viewer</button>
+  <div class="navigation">
+    <div class="list">
+      Organizations
+      <ul id="organizations"></ul>
+    </div>
+    <div class="list">
+      Boards
+      <ul id="boards"></ul>
+    </div>
+    <div class="list">
+      Lists
+      <ul id="lists"></ul>
+    </div>
+    <div class="list">
+      Cards
+      <ul id="cards"></ul>
+    </div>
+  </div>
+  <div class="content-viewer">
+    <lively-code-mirror id="editor"></lively-code-mirror>
+  </div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>

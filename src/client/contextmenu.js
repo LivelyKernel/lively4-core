@@ -294,6 +294,13 @@ export default class ContextMenu {
             morph.classList.add("lively-content")
           }
           this.hide();
+        }],
+        ["Path", async evt => {
+          var morph  = await lively.openPart("path")
+          this.openCenteredAt(morph, worldContext, evt)          
+          lively.hand.startGrabbing(morph, evt)
+          morph.classList.add("lively-content")
+          this.hide();
         }]
       ]],
       ["Tools", [

@@ -1387,6 +1387,15 @@ export default class Container extends Morph {
     return link  
   }
   
+  livelyAllowsSelection(evt) {
+    if (!this.contentIsEditable() || this.isEditing()) return false
+    
+    if (evt.path[0].id == "container-content") return true;
+    
+    return false
+  }
+  
+  
   livelyAcceptsDrop() {
     return this.contentIsEditable() && !this.isEditing()
   }

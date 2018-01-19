@@ -82,7 +82,7 @@ export default class LivelyPDF extends Morph {
   }  
   
   onAnnotationClick(e) {
-    this.editAnnotation(e.path[1]);
+    this.editAnnotation(e.path[0]);
   }
   
   editAnnotation(annotationSection) {
@@ -118,7 +118,7 @@ export default class LivelyPDF extends Morph {
     let that = this;
     
     this.pdfViewer.pagesPromise.then(() => {
-      let annotations = that.getAllSubmorphs(".annotationLayer section.textAnnotation");
+      let annotations = that.getAllSubmorphs(".annotationLayer section.highlightAnnotation");
       annotations.forEach((annotation) => {
         lively.addEventListener("pdf", annotation, "click", eventFunctionObject);
       });
@@ -149,7 +149,7 @@ export default class LivelyPDF extends Morph {
     
     this.editedPdfText = this.originalPdfText;
     // Remove event listener
-    let annotations = this.getAllSubmorphs(".annotationLayer section.textAnnotation");
+    let annotations = this.getAllSubmorphs(".annotationLayer section.highlightAnnotation");
     annotations.forEach((annotation) => {
       lively.removeEventListener("pdf", annotation, "click", eventFunctionObject);
     });
@@ -160,7 +160,7 @@ export default class LivelyPDF extends Morph {
     let saveButton = this.getSubmorph("#pdf-save-button");
     let cancelButton = this.getSubmorph("#pdf-cancel-button");
     
-    editButton.classList.add("active");
+    editButton.classList.add("-edit--active");
     editButton.setAttribute("disabled", "true");
     saveButton.removeAttribute("disabled");
     cancelButton.removeAttribute("disabled");
@@ -171,7 +171,7 @@ export default class LivelyPDF extends Morph {
     let saveButton = this.getSubmorph("#pdf-save-button");
     let cancelButton = this.getSubmorph("#pdf-cancel-button");
     
-    editButton.classList.remove("active");
+    editButton.classList.remove("-edit--active");
     editButton.removeAttribute("disabled");
     saveButton.setAttribute("disabled", "true");
     cancelButton.setAttribute("disabled", "true");
