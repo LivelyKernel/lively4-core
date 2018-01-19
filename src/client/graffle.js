@@ -112,6 +112,11 @@ export default class Graffle {
         if (this.keysDown["T"]) {
           info = "text"
         }
+        // #KeyboardShortcut HOLD-D+Drag create svg path
+        if (this.keysDown["D"]) {
+          info = "draw"
+        }
+
         if (hand.info)
           hand.info.textContent = info          
       }
@@ -199,7 +204,7 @@ export default class Graffle {
   }
   
   static specialKeyDown() {
-    return this.keysDown["S"] || this.keysDown["T"] || this.keysDown["C"]
+    return this.keysDown["S"] || this.keysDown["T"] || this.keysDown["C"] || this.keysDown["D"]
   }
   
   static eventPosition(evt) {
@@ -252,6 +257,17 @@ export default class Graffle {
         // ea.style.visibility = "hidden"
       })
       this.currentControlPoint  = HaloService.halo[0].ensureControlPoint(div.getPath(), 1)
+      this.currentControlPoint.setVerticePosition(pt(0,0))
+      this.currentControlPoint.start(evt, div)
+      if (this.currentControlPoint.targetElement) {
+        this.currentConnectFrom = this.currentControlPoint.targetElement
+      }
+      this.currentPath = div
+    }  else if (this.keysDown["D"]) {
+      div = await lively.openPart("path", this.targetContainer)
+      window.that = div
+      HaloService.showHalos(div)
+      this.currentControlPoint  = HaloService.halo[0].ensureControlPoint(div.querySelector("path"), 1)
       this.currentControlPoint.setVerticePosition(pt(0,0))
       this.currentControlPoint.start(evt, div)
       if (this.currentControlPoint.targetElement) {

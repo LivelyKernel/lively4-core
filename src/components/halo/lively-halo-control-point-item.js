@@ -192,7 +192,27 @@ export default class HaloControlPointItem extends HaloItem {
     return element
   }
 
+  findControlPoints(evt, world=document.body) {
+    var controlPoints = []
+    
+    world.querySelectorAll(":not(marker) > path").forEach(eaPath => {
+      var offset = lively.getGlobalPosition(eaPath.parentElement)
+      SVG.getPathVertices(eaPath).forEach((ea, index) => {
+        if (this.path == eaPath && index == this.index) {
+           // ignore me
+        } else {
+          controlPoints.push(offset.addPt(pt(ea.x1, ea.y1)))
+        }
+        
+      })
+    })
+    return controlPoints
+  }
+  
+  
   move(evt) {
+    const snapRange = 20; // #TODO make preference
+    
     var world = lively.findWorldContext(this.target)
     if (!this.original) return
     
@@ -214,6 +234,20 @@ export default class HaloControlPointItem extends HaloItem {
         this.style.visibility = "visible"
         this.target[connectMethod](lively.hand); 
       } 
+    } else {
+      var points = this.findControlPoints(world)
+      var myPos = lively.getGlobalPosition(this)
+      var pointsDist = points.map(ea => {return {point: ea, dist: ea.dist(myPos)}})
+      var nearPoints = _.sortBy(pointsDist.filter(ea => ea.dist < snapRange), ea => ea.dist).map(ea => ea.point)
+
+      // nearPoints.forEach(ea => lively.showPoint(ea))
+      if (nearPoints[0]) {
+        // lively.showPoint(nearPoints[0])
+        var p = nearPoints[0].subPt(lively.getGlobalPosition(this.path.parentElement))
+        this.setVerticePosition(p)
+    
+      }
+      
     }
   }
 

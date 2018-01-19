@@ -163,7 +163,19 @@ export default class HaloGrabItem extends HaloItem {
   
   insertGrabTargetBeforeShadow() {
     if (this.grabShadow && this.grabTarget) {
-      this.grabShadow.parentNode.insertBefore(this.grabTarget, this.grabShadow);
+      
+      if (this.grabShadow.parentNode instanceof SVGElement) {
+        var element = this.grabTarget
+        var foreignObject = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject")
+        foreignObject.appendChild(element)
+        lively.setPosition(foreignObject, pt(0,0))
+        this.grabShadow.parentNode.insertBefore(foreignObject, this.grabShadow);        
+      } else {
+        this.grabShadow.parentNode.insertBefore(this.grabTarget, this.grabShadow);
+      }
+      
+      
+      
     }
   }
   
