@@ -9,6 +9,7 @@ import {pt, rect} from 'src/client/graphics.js';
 import 'src/client/stablefocus.js';
 import Strings from 'src/client/strings.js';
 import { letsScript } from 'src/client/vivide/vivide.js';
+import { TernCodeMirrorWrapper } from 'src/client/reactive/tern-spike/tern-wrapper.js';
 
 let loadPromise = undefined;
 
@@ -291,6 +292,9 @@ export default class LivelyCodeMirror extends HTMLElement {
         let text = this.getSelectionOrLine();
         let result = await this.tryBoundEval(text, false);
         letsScript(result);
+      },
+      "Ctrl-Alt-I": cm => {
+        TernCodeMirrorWrapper.showType(cm, this);
       },
       // #KeyboardShortcut Alt-C capitalize letter      
       // #copied from keymap/emacs.js
