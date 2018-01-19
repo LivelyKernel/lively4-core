@@ -2,27 +2,54 @@
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style>
-:host {
-  
-}
-#source {
-  width: 600px;
-  height: 200px;
-  
-}
-  
+  :host {
+    overflow: visible;
+    z-index: 2000;
+    background-color: lightgray; 
+    border: 2px solid gray;
+    border-radius: 6px;
+    width: 230px;
+    height: 55px;
+ 
+  }  
+  #main {
+    padding-left: 10px;
+  }
+
+  .section .label {
+    font-size: 8pt;
+  }
+
+  .section {
+    display: inline-block;
+    margin-right: 10px;
+  }
+  .chooser {
+    display: inline-block;
+    height: 20px;
+    margin-top: 4px;
+    padding: 0px;
+    vertical-align: bottom;
+/*     border: 1px solid red;*/
+  }
 </style>
-<lively-target-button id="target-button"></lively-target-button>
+<div id="main">  
+  <lively-target-button id="target-button"></lively-target-button>
+  <div class="section">
+    <span class="label">Fill</span><br>
+    <lively-crayoncolors id="fillChooser"  class="chooser"></lively-crayoncolors>  
+  </div>
 
-<div>
-  fill
-  <lively-crayoncolors id="fillChooser"></lively-crayoncolors>  
-</div>
-
-<div>
-  stroke
-  <lively-crayoncolors id="strokeColorChooser"></lively-crayoncolors>  
-  <lively-penchooser id="strokeWidthChooser"></lively-penchooser>
+  <div class="section">
+    <span class="label">Border / Stroke</span><br>
+    <lively-crayoncolors id="strokeColorChooser" class="chooser"></lively-crayoncolors>  
+    <lively-penchooser id="strokeWidthChooser" class="chooser"></lively-penchooser>
+    <select id="strokeStyleChooser" class="chooser">
+      <option value="solid">solid</option>
+      <option value="dashed">dashed</option>
+      <option value="none">none</option>
+    </select>  
+  </div>
 </div>
 
 </template>
