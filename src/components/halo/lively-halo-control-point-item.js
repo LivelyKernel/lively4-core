@@ -107,6 +107,7 @@ export default class HaloControlPointItem extends HaloItem {
     this.target.style.pointerEvents = "none"; // disable mouse events while dragging...
     
     if (this.isConnector) {
+      lively.notify("find target")
       this.findTargetAt(evt)
     }
   }

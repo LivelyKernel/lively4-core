@@ -110,7 +110,10 @@ export default class Halo extends Morph {
     controlPoint.style.visibility= ""
     return controlPoint
   }
+  
 
+
+  
   showHalo(target, path) {
     // console.log("show Halo")
     document.body.appendChild(this);
@@ -187,6 +190,19 @@ export default class Halo extends Morph {
     this.halo.hide();
   }
   
+  
+  static hideHaloItems() {
+    HaloService.halo[0].shadowRoot.querySelectorAll(".halo").forEach(ea => {
+      ea.style.visibility = "hidden"
+    })
+  }
+
+  static showHaloItems() {
+    HaloService.halo[0].shadowRoot.querySelectorAll(".halo").forEach(ea => {
+      ea.style.visibility = null
+    })
+  }
+  
   // 
   // Positioning of Elments with arrow keys
   //
@@ -249,12 +265,16 @@ export default class Halo extends Morph {
   
   // Override defdault DragBehavior
   dragBehaviorStart(evt, pos) {
+    if (!that || that instanceof SVGElement) {
+      evt.preventDefault()
+      evt.stopPropagation()
+    }
     this.dragOffset = lively.getPosition(that).subPt(pos)
     this.alignHaloToBounds(that)
   }
   
   dragBehaviorMove(evt, pos) {
-    if (!that || that.isConnector) return;
+    if (!that || that.isConnector || that instanceof SVGElement) return;
     lively.setPosition(that, pos.addPt(this.dragOffset));
     this.alignHaloToBounds(that)
   }
