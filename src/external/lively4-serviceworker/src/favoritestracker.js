@@ -42,11 +42,17 @@ export class FavoritesTracker {
     
     for (let file of filesToLoad) {
       // TODO: We can probably just check the cache here instead of directly asking the DB
-      let entry = await this._responseDb.match("GET " + file);
+      let GETentry = await this._responseDb.match("GET " + file);
+      let OPTIONSentry = await this._responseDb.match("OPTIONS " + file);
       
       // Check if entry is old enough
       // console.log(`Checking ${file}`);
-      if (entry != null && Date.now() - entry.timestamp < FavoritesTracker._minRefreshTime) continue;
+      if (GETentry != null &&
+          OPTIONSentry != null &&
+          Date.now() - GETentry.timestamp < FavoritesTracker._minRefreshTime &&
+          Date.now() - OPTIONSentry.timestamp < FavoritesTracker._minRefreshTime) {
+        continue;
+      }
       
       // Fetch data
       // console.log(`Preloading ${file}`);
