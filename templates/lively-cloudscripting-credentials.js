@@ -1,8 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import {pt} from 'src/client/graphics.js';
 
-const endpoint = 'https://lively4-services.herokuapp.com/';
-var name;
 
 export default class LivelyCloudscriptingCredentials extends Morph {
   async initialize() {
@@ -13,6 +10,15 @@ export default class LivelyCloudscriptingCredentials extends Morph {
     var nameElement = this.getSubmorph('#name');
     alert(nameElement.toString());
     
+    this.saveCredentialsButton = this.getSubmorph("#saveCredentials");
+    this.saveCredentialsButton.on('click', this.saveCredentialsClick.bind(this));
+    
+  }
+  
+  saveCredentialsClick() {
+    var github = this.getSubmorph('#githubCredentials');
+    var dropbox = this.getSubmorph('#dropboxCredentials');
+    lively.warning("TODO: Send credentials to backend");
   }
   
 }

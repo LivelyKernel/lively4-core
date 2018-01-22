@@ -8,6 +8,8 @@ import {Grid} from 'src/client/morphic/snapping.js';
 import DragBehavior from "src/client/morphic/dragbehavior.js"
 import svg from "src/client/svg.js"
 
+/* globals $, Halo, that, HaloService */
+
 /*
  * Halo, the container for HaloItems
  */
@@ -75,33 +77,43 @@ export default class Halo extends Morph {
     this.shadowRoot.querySelectorAll("lively-halo-control-point-item")
       .forEach(ea =>  ea.remove())
     
-    // target.querySelectorAll("path#path").forEach(ea => {
-    //   svg.getPathVertices(ea).forEach( (p, index) => {
-    //     this.ensureControlPoint(p, index)
-    //   })
-    // })    
+    target.querySelectorAll(":not(marker)>path").forEach(ea => {
+      svg.getPathVertices(ea).forEach( (p, index) => {
+        this.ensureControlPoint(ea, index)
+        if (p.c == "Q") {
+          this.ensureControlPoint(ea, index, false, 2)          
+        }
+
+
+      })
+    })    
 
     if (target.isConnector) {
       var path = target.getPath()
       // this.get("lively-halo-drag-item").style.visibility= "hidden"
-      this.ensureControlPoint(path, 0)
-      this.ensureControlPoint(path, 1)
+      this.ensureControlPoint(path, 0, true)
+      this.ensureControlPoint(path, 1, true)
     }
   }
 
-  ensureControlPoint(path, index) {
-    var id = "controlPoint" + index
+  ensureControlPoint(path, index, isConnector, curveIndex) {
+    var id = "controlPoint" + index+ (curveIndex ? "-" + curveIndex : "")
     var controlPoint = this.shadowRoot.querySelector('#' +id)
     if (!controlPoint) {
       controlPoint = document.createElement("lively-halo-control-point-item")
       controlPoint.id = id
       this.shadowRoot.appendChild(controlPoint)
     }
+    controlPoint.isConnector = isConnector
+    controlPoint.curveIndex = curveIndex 
     controlPoint.setup(this, path, index)
     controlPoint.style.visibility= ""
     return controlPoint
   }
+  
 
+
+  
   showHalo(target, path) {
     // console.log("show Halo")
     document.body.appendChild(this);
@@ -178,6 +190,19 @@ export default class Halo extends Morph {
     this.halo.hide();
   }
   
+  
+  static hideHaloItems() {
+    HaloService.halo[0].shadowRoot.querySelectorAll(".halo").forEach(ea => {
+      ea.style.visibility = "hidden"
+    })
+  }
+
+  static showHaloItems() {
+    HaloService.halo[0].shadowRoot.querySelectorAll(".halo").forEach(ea => {
+      ea.style.visibility = null
+    })
+  }
+  
   // 
   // Positioning of Elments with arrow keys
   //
@@ -240,12 +265,16 @@ export default class Halo extends Morph {
   
   // Override defdault DragBehavior
   dragBehaviorStart(evt, pos) {
+    if (!that || that instanceof SVGElement) {
+      evt.preventDefault()
+      evt.stopPropagation()
+    }
     this.dragOffset = lively.getPosition(that).subPt(pos)
     this.alignHaloToBounds(that)
   }
   
   dragBehaviorMove(evt, pos) {
-    if (!that || that.isConnector) return;
+    if (!that || that.isConnector || that instanceof SVGElement) return;
     lively.setPosition(that, pos.addPt(this.dragOffset));
     this.alignHaloToBounds(that)
   }

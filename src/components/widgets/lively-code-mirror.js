@@ -7,7 +7,9 @@ import { debounce } from "utils";
 import Preferences from 'src/client/preferences.js';
 import {pt, rect} from 'src/client/graphics.js';
 import 'src/client/stablefocus.js';
-import Strings from 'src/client/strings.js'
+import Strings from 'src/client/strings.js';
+import { letsScript } from 'src/client/vivide/vivide.js';
+import { TernCodeMirrorWrapper } from 'src/client/reactive/tern-spike/tern-wrapper.js';
 
 let loadPromise = undefined;
 
@@ -260,7 +262,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       },
       // #KeyboardShortcut Ctrl-I eval selection or line (do it) 
       "Ctrl-D": (cm, b, c) => {
-        	let text = this.getSelectionOrLine()
+        	let text = this.getSelectionOrLine();
           this.tryBoundEval(text, false);
         	return true
       },
@@ -284,6 +286,15 @@ export default class LivelyCodeMirror extends HTMLElement {
       // #KeyboardShortcut Ctrl-S save content
       "Ctrl-S": (cm) => {          
         this.doSave(cm.getValue());
+      },
+      // #KeyboardShortcut Ctrl-Alt-V eval and open in vivide
+      "Ctrl-Alt-V": async cm => {          
+        let text = this.getSelectionOrLine();
+        let result = await this.tryBoundEval(text, false);
+        letsScript(result);
+      },
+      "Ctrl-Alt-I": cm => {
+        TernCodeMirrorWrapper.showType(cm, this);
       },
       // #KeyboardShortcut Alt-C capitalize letter      
       // #copied from keymap/emacs.js
@@ -492,7 +503,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     
     if (printResult) {
       // alaways wait on promises.. when interactively working...
-      if (result && result.then) { 
+      if (result && result.then && result instanceof Promise) { 
         // we will definitly return a promise on which we can wait here
         result
           .then( result => {

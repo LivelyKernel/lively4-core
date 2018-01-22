@@ -3,6 +3,7 @@
   <style>
     .item {
       padding: 4px;
+      display: flex;
 /*       cursor: pointer; */
     }
     
@@ -30,12 +31,8 @@
     }
     
     .status {
-      display: inline-block;
       font-size: 30px;
       margin-right: 8px;
-      width: calc(20% -8px);
-      margin-top: -5em;
-      padding-top: -3em;
     }
     
     .running {
@@ -56,12 +53,11 @@
     
     .add-action {
       cursor: pointer;
+      text-align: center;
     }
     
     .clouditem-right {
-      display: inline-block;
-      width: 80%;
-      margin: 0;
+      width: 100%;
     }
     
     .action-list ul {
@@ -73,6 +69,7 @@
     .delete-action {
       cursor: pointer;
     }
+    
   </style>
 
 <div class="item">
@@ -82,15 +79,17 @@
   <div class="clouditem-right">
     <h1>Itemname</h1>
     <div class="action-list">
-      <ul>
-        <li>Action 1 <i class="fa fa-times delete-action" aria-hidden="true"></i></li>
-        <li>Action 2 <i class="fa fa-times delete-action" aria-hidden="true"></i></li>
+      <ul id="action-ul">
+<!--         <li>Action 1 <i class="fa fa-times delete-action" aria-hidden="true"></i></li>
+        <li>Action 2 <i class="fa fa-times delete-action" aria-hidden="true"></i></li> -->
       </ul>
     </div>
     <div class="add-action">
-      <i class="fa fa-plus" aria-hidden="true"></i><small> Add action</small>
+      <i class="fa fa-plus" aria-hidden="true"></i>
+<!--       <small> Add action</small> -->
     </div>  
   </div>
+<!--   <div class="clear"></div> -->
 </div>
 
 </template>

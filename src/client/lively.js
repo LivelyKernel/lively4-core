@@ -486,6 +486,24 @@ export default class Lively {
     return rect(bounds.left, bounds.top, bounds.width, bounds.height)
   }
 
+  // compute the global bounds of an element and all absolute positioned elements
+  static getTotalGlobalBounds(element) {
+    
+    var all = Array.from(element.querySelectorAll("*")).concat([element])
+      .filter(ea => ea.style.position == "absolute" || ea.style.position == "relative")
+      .map(ea => lively.getGlobalBounds(ea))
+    var max 
+    var min 
+    all.forEach(ea => {
+      var topLeft = ea.topLeft()
+      var bottomRight = ea.bottomRight()
+      // console.log("ea " + topLeft + " " + bottomRight)
+      min = topLeft.minPt(min || topLeft)
+      max = bottomRight.maxPt(max || bottomRight)
+    })
+    // console.log("min " + min + " max " + max)
+    return rect(min, max)
+  }
 
   static getScroll() {
     return pt(
@@ -1502,6 +1520,7 @@ export default class Lively {
       window.setTimeout(resolve, time)
     })
   }
+  
 }
 
 if (!window.lively || window.lively.name != "Lively") {

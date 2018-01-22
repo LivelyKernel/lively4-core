@@ -21,7 +21,7 @@ export default class VivideTable extends Morph {
   }
   
   livelyExample() {
-    this.pushTransformation(list => list);
+    this.setTransformation(list => list);
     this.show([
       {name: "Hans", age: "25"},
       {name: "Peter", age: "35"}
