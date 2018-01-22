@@ -80,14 +80,13 @@ class ServiceWorker {
     pendingRequests = null; 
     
   }
-
+  
   fetch(event, pending) {
-    
     let request = event.request;
     if (!request) return;
 
     let  url = new URL(request.url);
-    
+
     // console.log(lively4stamp(), "SWX.fetch " + request.method + " " + url + ", " + pending);
 
     //console.log(`fetch(${url})`);
@@ -98,9 +97,9 @@ class ServiceWorker {
     //if (url.pathname.match(/lively4-serviceworker/)) return; 
     if (url.pathname.match(/lively4services/)) return; // seems to not work with SWX, req. are pending
     if (url.pathname.match(/lively4handwriting/)) return;
-  
+
     // if (url.pathname.match(/noserviceworker/)) return; // #Debug
-  
+
     if (url.hostname !== 'lively4' && url.hostname == location.hostname/* && request.mode != 'navigate'*/) {
       try {
         // Prepare a function that performs the network request if necessary
@@ -109,7 +108,7 @@ class ServiceWorker {
           if(request.mode !== 'navigate') {
             return new Promise(async (resolve, reject) => {
               var authentificationNeeded = !(request.method == "HEAD" || request.method == "GET" || request.method == "OPTIONS"); 
-              
+
               if (authentificationNeeded) {
                 // the following 3lines take ~150ms .... damn!
                 var email = await focalStorage.getItem(storagePrefix+ "githubEmail");
@@ -133,13 +132,13 @@ class ServiceWorker {
               for (var pair of request.headers.entries()) {
                 options.headers.set(pair[0], pair[1]);
               }
-              
+
               if (authentificationNeeded) {
                 options.headers.set("gitusername", username);
                 options.headers.set("gitemail", email);
                 options.headers.set("gitpassword", token);
               } 
-              
+
               var req = new Request(request.url, options );
 
               // use system here to prevent recursion...
