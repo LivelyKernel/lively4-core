@@ -2,6 +2,11 @@
                                              
 <h1 id="caption">WritePad Handwriting Recognition</h1>
 
+<select id="language">
+  <option value="en">English</option>
+  <option value="de">Deutsch</option>
+</select>
+
 <lively-paper id="drawingCanvas"></lively-paper>
 
 <div id="dynbuttons"></div>
@@ -20,7 +25,7 @@
       hwr = new Handwriting('drawingCanvas', 'clear_canvas' , true, lively_script_context);
     }
     else{
-      setTimeout(waitUntilReady, 1000);
+      setTimeout(waitUntilReady, 100);
     }
   }
   waitUntilReady();
