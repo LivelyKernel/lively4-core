@@ -123,14 +123,16 @@ export default class Halo extends Morph {
       return;
     }
     $(this).show();
-    lively.globalFocus()
+    lively.globalFocus();
   
-    this.alignHaloToBounds(target)
-    this.updateHandles(target)
+    this.alignHaloToBounds(target);
+    this.updateHandles(target);
     
     this.shadowRoot.querySelectorAll(".halo").forEach(ea => {
-      if (ea.updateTarget) ea.updateTarget(target)
-    })
+      if (ea.updateTarget) {
+        ea.updateTarget(target);
+      }
+    });
   }
   
   alignHaloToBounds(target) {
