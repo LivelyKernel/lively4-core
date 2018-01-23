@@ -1,6 +1,7 @@
 import Preferences from "src/client/preferences.js"
 import _ from 'src/external/underscore.js'
 import Rasterize from "src/client/rasterize.js"
+import {pt} from 'src/client/graphics.js'
 
 /*
  * Kitchensink for all HTML manipulation utilities
@@ -307,14 +308,15 @@ export default class HTML {
       }
       return r.text()
     })
-    debugger
     var tmp = await lively.create("div")
+    tmp.style.transform = "scale(2)"
+    lively.setGlobalPosition(tmp, pt(0,0))
     try {
       lively.clipboard.pasteHTMLDataInto(html, tmp)
     } finally {
       tmp.remove()
     }
-    return tmp.childNodes[0]
+    return tmp
   }
   
   static async saveAsPNG(url) {
@@ -322,8 +324,8 @@ export default class HTML {
       var saveAsURL = url.replace(/html$/, "png")
       var element = await this.loadHTMLFromURL(url)
       document.body.appendChild(element)
+      // await lively.sleep(100)
       try {
-        debugger
         await Rasterize.elementToURL(element, saveAsURL)      
       } finally {
         element.remove()

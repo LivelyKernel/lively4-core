@@ -22,7 +22,10 @@ export default class LivelyHand extends Morph {
     return this.get("#info")
   }
 
-
+  get isMetaNode() {
+    return true
+  }
+  
   outerWorldContext() {
     var world = this.worldContext()
     return world.isWorld ? 

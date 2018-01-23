@@ -5,25 +5,38 @@
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
+    font-family: Monaco, monospace;
+    color: DimGray;
+    font-size: 10pt;
   }
   
   #model {
     flex-grow: 1;
     width: 0;
+    border-style: dashed;
+    border-width: 2px 0px 0px 0px;
+    border-color: LightGray;
+    margin: 5px 0px 0px 0px;
+    padding: 5px 0px 0px 0px;
   }
   
-  #transformations {
+  #functions {
     flex-grow: 2;
     display: flex;
     flex-direction: column;
     width: 0;
   }
   
-  #depictions {
-    flex-grow: 2;
-    display: flex;
-    flex-direction: column;
-    width: 0;
+  .transformation {
+    border-style: dashed;
+    border-width: 2px 0px 0px 0px;
+    border-color: LightGray;
+    margin: 5px 0px 0px 0px;
+    padding: 5px 0px 0px 0px;
+  }
+  
+  .depiction {
+    padding: 5px 0px 0px 0px;
   }
   
 </style>
@@ -32,10 +45,7 @@
     Model:
     <lively-inspector id="model-inspector"></lively-inspector>
   </div>
-  <div id="transformations">
-
-  </div>
-  <div id="depictions">
+  <div id="functions">
 
   </div>
 </div>

@@ -30,8 +30,17 @@ export default class CrayonColors extends Morph {
     })
   }
 
+  useAlwaysCustom() {
+    this.forceAlwaysCustom = true;
+    this.get("#selectCustom").style.visibility = "hidden"
+  }
+  
   onChooseColor() {
-    this.value = this.value; // emit event
+    if (this.forceAlwaysCustom) {
+      this.onChooseCustomColor()
+    } else {
+      this.value = this.value; // emit event
+    }
   }
 
   onChooseCustomColor() {
