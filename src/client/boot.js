@@ -207,6 +207,7 @@ if (window.lively && window.lively4url) {
         [lively4url + "/src/components/*.js"]: aexprViaDirective,
         [lively4url + "/src/client/reactive/*.js"]: moduleOptionsNon,
         [lively4url + "/src/client/reactive/test/*.js"]: aexprViaDirective,
+        [lively4url + "/src/client/reactive/tern-spike/*.js"]: aexprViaDirective,
         // [lively4url + '/demos/*.js']: liveES7,
         // [lively4url + '/doc/*.js']: liveES7,
         // [lively4url + '/media/*.js']: liveES7,

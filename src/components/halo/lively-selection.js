@@ -184,7 +184,7 @@ export default class Selection extends Morph {
     var html = lively.clipboard.nodesToHTML(this.nodes)
     lively.clipboard.lastClickPos = lively.getGlobalPosition(this) // used in pasted as offset
     var result = lively.clipboard.pasteHTMLDataInto(html, this.parentElement, true)
-    debugger
+    
     this.nodes = result
     return this;
   }

@@ -110,7 +110,10 @@ export default class Halo extends Morph {
     controlPoint.style.visibility= ""
     return controlPoint
   }
+  
 
+
+  
   showHalo(target, path) {
     // console.log("show Halo")
     document.body.appendChild(this);
@@ -120,14 +123,16 @@ export default class Halo extends Morph {
       return;
     }
     $(this).show();
-    lively.globalFocus()
+    lively.globalFocus();
   
-    this.alignHaloToBounds(target)
-    this.updateHandles(target)
+    this.alignHaloToBounds(target);
+    this.updateHandles(target);
     
     this.shadowRoot.querySelectorAll(".halo").forEach(ea => {
-      if (ea.updateTarget) ea.updateTarget(target)
-    })
+      if (ea.updateTarget) {
+        ea.updateTarget(target);
+      }
+    });
   }
   
   alignHaloToBounds(target) {
@@ -185,6 +190,19 @@ export default class Halo extends Morph {
       this.halosHidden = Date.now();
     this.halo.offset({left:0, top: 0});
     this.halo.hide();
+  }
+  
+  
+  static hideHaloItems() {
+    HaloService.halo[0].shadowRoot.querySelectorAll(".halo").forEach(ea => {
+      ea.style.visibility = "hidden"
+    })
+  }
+
+  static showHaloItems() {
+    HaloService.halo[0].shadowRoot.querySelectorAll(".halo").forEach(ea => {
+      ea.style.visibility = null
+    })
   }
   
   // 
@@ -249,12 +267,16 @@ export default class Halo extends Morph {
   
   // Override defdault DragBehavior
   dragBehaviorStart(evt, pos) {
+    if (!that || that instanceof SVGElement) {
+      evt.preventDefault()
+      evt.stopPropagation()
+    }
     this.dragOffset = lively.getPosition(that).subPt(pos)
     this.alignHaloToBounds(that)
   }
   
   dragBehaviorMove(evt, pos) {
-    if (!that || that.isConnector) return;
+    if (!that || that.isConnector || that instanceof SVGElement) return;
     lively.setPosition(that, pos.addPt(this.dragOffset));
     this.alignHaloToBounds(that)
   }

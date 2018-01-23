@@ -13,7 +13,10 @@
     this.modules = Object.create(null)
     this.nonRelative = Object.create(null)
     this.knownModules = Object.create(null)
-    this.resolvers = []
+    this.resolvers = [(name, parent) => {
+      // #TODO: extract this, somehow?
+      return System.normalizeSync(name, parent);
+    }] || [];
     this.modNameTests = []
     this.importTests = []
     this.completableTypes = Object.create(null)
