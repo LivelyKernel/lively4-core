@@ -1,5 +1,5 @@
 /*
- * 
+ * Style Editor
  *
  */
 import Morph from 'src/components/widgets/lively-morph.js';
