@@ -6,6 +6,8 @@ import 'src/external/aexpr/tern/modules.js';
 import 'src/external/aexpr/tern/es_modules.js';
 t;
 
+import { fileName } from 'utils';
+
 export class TernCodeMirrorWrapper {
   static loadDefinition(fileName) {
     return fetch(`src/external/aexpr/tern/${fileName}`).then(res => res.json());
@@ -81,7 +83,40 @@ export class TernCodeMirrorWrapper {
   static get jumpStack() {
     return this._jumpStack || (this._jumpStack = []);
   }
-  static async inner(cmEditor, livelyCodeMirror, varName) {
+  static async inner(cmEditor, livelyCodeMirror) {
+  }
+  static async moveTo(cmEditor, livelyCodeMirror, data) {
+    let targetCM = cmEditor;
+
+    // in same doc?
+    if(livelyCodeMirror.getTargetModule() !== data.file) {
+      let existingEditor = Array.from(document.querySelectorAll("body /deep/ lively-code-mirror"))
+        .find(livelyCodeMirror => livelyCodeMirror.getTargetModule() === data.file);
+      // jump to data.file
+      if(existingEditor) {
+        targetCM = existingEditor.editor;
+      } else {
+        let livelyEditor = await lively.openBrowser(data.file, true)
+          .then(container => container.getEditor());
+        targetCM = livelyEditor.currentEditor() //.editor;
+      }
+    }
+
+    let enclosingWindow = lively.findWindow(targetCM.getWrapperElement());
+    if(enclosingWindow && enclosingWindow.tagName === 'LIVELY-WINDOW') {
+      lively.gotoWindow(enclosingWindow, true);
+    }
+    targetCM.focus();
+
+    // go to correct location
+    targetCM.setSelection(data.start, data.end);
+  }
+  static async jumpToDefinition(cmEditor, livelyCodeMirror) {
+    if(!atInterestingExpression(cmEditor)) {
+      showError(cmEditor, 'No interesting variable found');
+      return;
+    }
+    
     let cursorPosition = cmEditor.getCursor();
     
     try {
@@ -99,17 +134,9 @@ export class TernCodeMirrorWrapper {
           text: livelyCodeMirror.value
         }]
       });
-      // lively.warn("start: " + data.start);
-      // lively.warn("end: " + data.end);
-      // lively.warn("file: " + data.file);
-      // lively.warn("context: " + data.context);
-      // lively.warn("contextOffset: " + data.contextOffset);
-      // lively.warn("doc: " + data.doc);
-      // lively.warn("url: " + data.url);
-      // lively.warn("origin: " + data.origin);
-
-      // #Whatever
-      // if (!data.file && data.url) { window.open(data.url); return; }
+      
+      // properties of response data
+      // [start, end, file, context, contextOffset, doc, url, origin]
 
       if (data.file) {
         this.jumpStack.push({
@@ -118,61 +145,76 @@ export class TernCodeMirrorWrapper {
           end: cmEditor.getCursor("to")
         });
         // ### Stackpush, then moveTo
-        this.moveTo(cmEditor, livelyCodeMirror, data, false);
+        this.moveTo(cmEditor, livelyCodeMirror, data);
       } else {
-        showError(cmEditor, "Could not find a definition.");
+        showError(cmEditor, `Could not find a definition.`);
       }
     } catch(error) {
       showError(cmEditor, error);
     }
   }
-  static async moveTo(cmEditor, livelyCodeMirror, data, useDataDirectly) {
-    let targetCM = cmEditor;
-
-    // in same doc?
-    if(livelyCodeMirror.getTargetModule() !== data.file) {
-      let existingEditor = Array.from(document.querySelectorAll("body /deep/ lively-code-mirror"))
-        .find(livelyCodeMirror => livelyCodeMirror.getTargetModule() === data.file);
-      // jump to data.file
-      if(existingEditor) {
-        targetCM = existingEditor.editor;
-      } else {
-        let livelyEditor = await lively.openBrowser(data.file, true)
-          .then(container => container.getEditor());
-        targetCM = livelyEditor.currentEditor() //.editor;
-      }
-    }
-
-    // #TODO: this does not break out of the shadowroot
-    function findEnclosingWindow(element) {
-      if(!element) { return undefined; }
-      if(element.tagName === 'LIVELY-WINDOW') {
-        return element;
-      }
-      if(element.tagName === 'BODY') {
-        return undefined;
-      }
-      return findEnclosingWindow(element.parentElement);
-    }
-    let enclosingWindow = findEnclosingWindow(targetCM);
-    if(enclosingWindow) {
-      enclosingWindow.focus();
-    }
-    targetCM.focus();
-
-    // go to correct location
-    targetCM.setSelection(data.start, data.end);
-  }
-  static async jumpToDefinition(cmEditor, livelyCodeMirror) {
-    if(!atInterestingExpression(cmEditor)) {
-      showError(cmEditor, 'No interesting variable found');
-    } else {
-      this.inner(cmEditor, livelyCodeMirror);
-    }
-  }
   static async jumpBack(cmEditor, livelyCodeMirror) {
     jumpBack(cmEditor, livelyCodeMirror, this);
   }
+  static async showReferences(cmEditor, livelyCodeMirror) {
+    let cursorPosition = cmEditor.getCursor();
+    let me = this;
+    
+    try {
+      let response = await this.request({
+        query: {
+          type: "refs",
+          file: livelyCodeMirror.getTargetModule(),
+          end: cursorPosition,
+          start: undefined, // #TODO: improve by checking for selections first
+          lineCharPositions: true
+        },
+        files: [{
+          type: 'full',
+          name: livelyCodeMirror.getTargetModule(),
+          text: livelyCodeMirror.value
+        }],
+        //timeout: 10 * 1000
+      });
+      lively.success(response.name)
+      if(response.refs.length === 0) {
+        showError(cmEditor, 'No reference found.');
+        return;
+      }
+
+      if(response.type) {
+        lively.success(response.type, "Variable Scope");
+      }
+      cmEditor.showHint({
+        hint() {
+          return {
+            list: response.refs.map(ref => {
+              return {
+                text: '',
+                displayText: fileName.call(ref.file),
+                render(Element, self, data) {
+                  //console.warn(data, self);
+                  Element.appendChild(<span><strong>{ref.file}</strong>{
+                    response.type ? ' ('+response.type+') ' : ''}({
+                    ref.start.line}:{ref.start.ch}-{
+                    ref.end.line}:{ref.end.ch})</span>);
+                },
+                hint: () => me.moveTo(cmEditor, livelyCodeMirror, ref),
+                anwser: 42
+              };
+            }),
+            from: cursorPosition,
+            to: cursorPosition
+          };
+        },
+        alignWithWord: false
+      });
+    } catch(error) {
+      showError(cmEditor, error);
+    }
+
+  }
+  
   
   static async __temp__(cm) {
     let ts = await this.ternServer();
@@ -290,7 +332,7 @@ function remove(node) {
 function jumpBack(cmEditor, livelyCodeMirror, ternServerWrapper) {
   let target = ternServerWrapper.jumpStack.pop();
   if(target) {
-    ternServerWrapper.moveTo(cmEditor, livelyCodeMirror, target, true);
+    ternServerWrapper.moveTo(cmEditor, livelyCodeMirror, target);
   }
 }
 
