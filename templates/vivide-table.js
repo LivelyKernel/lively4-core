@@ -14,14 +14,14 @@ export default class VivideTable extends Morph {
     this.get("#open-inspector").addEventListener("click", () => {this.openInspectorOn(this)});
     
     this.raw_model = [];
-    this.transformation = list => [];
+    this.transformation = list => list;
     
     this.predecessor = null;
     this.successors = [];
   }
   
   livelyExample() {
-    this.pushTransformation(list => list);
+    this.setTransformation(list => list);
     this.show([
       {name: "Hans", age: "25"},
       {name: "Peter", age: "35"}
@@ -49,6 +49,10 @@ export default class VivideTable extends Morph {
   setTransformation(transformation) {
     this.transformation = transformation;
     this.update();
+  }
+  
+  getTransformation() {
+    return this.transformation;
   }
   
   show(model) {
