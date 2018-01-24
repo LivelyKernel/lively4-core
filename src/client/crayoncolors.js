@@ -11,7 +11,9 @@ export default class CrayonColors {
 			"maraschino lemon spring turquoise blueberry magenta iron magnesium",
 			"tangerine lime seafoam aqua grape strawberry tungsten silver",
 			"salmon banana flora ice orchid bubblegum lead mercury",
-			"cantaloupe honeydew spindrift sky lavender carnation licorice snow"]
+			"cantaloupe honeydew spindrift sky lavender carnation licorice snow",
+			"transparent transparent transparent transparent transparent transparent transparent transparent"
+      ]
 	}
 	
   static colorTable() {
@@ -98,4 +100,9 @@ export default class CrayonColors {
   static get tin() { return this.color(0.568, 0.568, 0.568)}
   static get tungsten() { return this.color(0.258, 0.258, 0.258)}
   static get turquoise() { return this.color(0, 1.0, 1.0)}
+
+  /* meta colors */
+  static get none() { return "transparent"}
+  static get transparent() { return "transparent"}
+
 }

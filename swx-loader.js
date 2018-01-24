@@ -15,7 +15,13 @@ if (getChromeVersion() < 60) {
   console.log("ok, lets work on it... SWX")
 
   importScripts('swx-pre.js?' + postfix);
-  importScripts('swx-boot.js?'+ postfix);
+  
+  try {
+    importScripts('swx-boot.js?'+ postfix);
+  } catch(e) {
+    debugger
+  }
+  
   console.log("boot loaded...")
   importScripts('swx-post.js?' + postfix);
 }

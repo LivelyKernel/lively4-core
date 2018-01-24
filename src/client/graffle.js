@@ -1,7 +1,8 @@
 import {pt} from 'src/client/graphics.js';
 import Halo from "src/components/halo/lively-halo.js"
-import svg from "src/client/svg.js"
+import SVG from "src/client/svg.js"
 import { debounce } from "utils";
+import * as events from 'src/client/morphic/event-helpers.js'
 
 export default class Graffle {
   
@@ -118,7 +119,8 @@ export default class Graffle {
         }
 
         if (hand.info)
-          hand.info.textContent = info          
+          hand.info.textContent = info;
+          hand.info.style.userSelect = "none"
       }
     }
   }
@@ -175,6 +177,11 @@ export default class Graffle {
     var key = String.fromCharCode(evt.keyCode)
     this.keysDown[key] = false
     
+    
+    if (key == "D" || key == "C") {
+      this.currentPath = null;
+      HaloService.showHaloItems()
+    }
     
     lively.selection.disabled = false
   
@@ -251,29 +258,43 @@ export default class Graffle {
     }  else if (this.keysDown["C"]) {
       div = document.createElement("lively-connector")
       await lively.components.openIn(this.targetContainer, div)
+      lively.setGlobalPosition(div, pt(evt.clientX, evt.clientY))
       window.that = div
       HaloService.showHalos(div)
-      HaloService.halo[0].shadowRoot.querySelectorAll(".halo").forEach(ea => {
-        // ea.style.visibility = "hidden"
-      })
-      this.currentControlPoint  = HaloService.halo[0].ensureControlPoint(div.getPath(), 1)
+      this.currentControlPoint  = HaloService.halo[0].ensureControlPoint(div.getPath(), 1, true)
       this.currentControlPoint.setVerticePosition(pt(0,0))
       this.currentControlPoint.start(evt, div)
+    
+      
       if (this.currentControlPoint.targetElement) {
         this.currentConnectFrom = this.currentControlPoint.targetElement
       }
       this.currentPath = div
     }  else if (this.keysDown["D"]) {
-      div = await lively.openPart("path", this.targetContainer)
-      window.that = div
-      HaloService.showHalos(div)
-      this.currentControlPoint  = HaloService.halo[0].ensureControlPoint(div.querySelector("path"), 1)
-      this.currentControlPoint.setVerticePosition(pt(0,0))
-      this.currentControlPoint.start(evt, div)
+      var continueDrawing = true && this.currentPath;
+      if (!this.currentPath) {
+        div = await lively.openPart("path", this.targetContainer)
+        this.currentPath = div
+        window.that = div
+      } 
+      // HaloService.showHalos(this.currentPath)
+      var svgPath = this.currentPath.querySelector("path")
+      var vertices = SVG.getPathVertices(svgPath)
+      this.currentControlPoint  = HaloService.halo[0].ensureControlPoint(svgPath, vertices.length - 1)
+      if (continueDrawing) {
+        var pos = lively.getGlobalPosition(this.currentControlPoint)
+        this.currentControlPoint.addControlPoint()        
+      } else {
+        this.currentControlPoint.setVerticePosition(pt(0,0))
+      }
+      
+      this.currentControlPoint.start(evt, this.currentPath)
+      if (continueDrawing) {
+        this.currentControlPoint.eventOffset = pos
+      }
       if (this.currentControlPoint.targetElement) {
         this.currentConnectFrom = this.currentControlPoint.targetElement
       }
-      this.currentPath = div
     }
     
     if (!div) return
@@ -289,14 +310,17 @@ export default class Graffle {
       div.connectTo(lively.hand)
     }
 
+  
+    
     this.lastMouseDown = pos;
     evt.stopPropagation()
     evt.preventDefault()
   }
   
   static onMouseMove(evt) {
+    console.log("path " + this.currentPath)
     if (this.specialKeyDown()) {
-        lively.setGlobalPosition(lively.hand, pt(evt.clientX, evt.clientY))    
+        lively.setGlobalPosition(lively.hand, pt(evt.clientX - 2, evt.clientY -2))    
     }
     if (this.currentControlPoint) {
       this.currentControlPoint.move(evt)
@@ -324,11 +348,18 @@ export default class Graffle {
         // div.connectFrom(this.currentConnectFrom)
       }
       this.currentControlPoint.stop(evt)
+      
+      if (this.keysDown["D"]) {
+        HaloService.hideHaloItems()
+      }
     }
 
     if(this.currentElement) {
       if (this.currentPath) {
-        // this.currentPath.resetBounds()
+        // if (this.currentPath.resetBounds) {
+        //   this.currentPath.resetBounds()
+        //   HaloService.showHalos(that)
+        // }
       }
       if (this.currentElement.classList.contains("lively-text")) {
         if (!this.keysDown["T"]) {
@@ -343,7 +374,6 @@ export default class Graffle {
     } else {
       this.lastElement = null
     }
-    this.currentPath = null
     this.currentControlPoint = null
     this.currentConnectFrom = null
   }
