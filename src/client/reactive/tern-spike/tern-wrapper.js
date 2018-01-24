@@ -13,7 +13,6 @@ export class TernCodeMirrorWrapper {
   static async initTernServer() {
     return new tern.Server({
       getFile(fileName, callback) {
-        //lively.notify(`tern.Server get ${fileName}`, undefined, undefined, undefined, 'gray');
         fetch(fileName)
           .then(res => res.text())
           .then(text => callback(null, text))
@@ -58,13 +57,14 @@ export class TernCodeMirrorWrapper {
           type: "type",
           file: livelyCodeMirror.getTargetModule(),
           end: cursorPosition,
-          start: undefined,
+          start: undefined, // #TODO: improve by checking for selections first
           lineCharPositions: true
         },
         files: [{
           type: 'full',
           name: livelyCodeMirror.getTargetModule(),
           text: livelyCodeMirror.value
+          
         }],
         //timeout: 10 * 1000
       });
@@ -72,6 +72,106 @@ export class TernCodeMirrorWrapper {
     } catch(error) {
       showError(cmEditor, error);
     }
+  }
+  static updateArgHints(cmEditor, livelyCodeMirror) {
+    // #TODO: implement efficiently
+    //updateArgHints(cmEditor, livelyCodeMirror, this)
+  }
+  
+  static get jumpStack() {
+    return this._jumpStack || (this._jumpStack = []);
+  }
+  static async inner(cmEditor, livelyCodeMirror, varName) {
+    let cursorPosition = cmEditor.getCursor();
+    
+    try {
+      let data = await this.request({
+        query: {
+          type: "definition",
+          file: livelyCodeMirror.getTargetModule(),
+          end: cursorPosition,
+          start: undefined, // #TODO: improve by checking for selections first
+          lineCharPositions: true
+        },
+        files: [{
+          type: 'full',
+          name: livelyCodeMirror.getTargetModule(),
+          text: livelyCodeMirror.value
+        }]
+      });
+      // lively.warn("start: " + data.start);
+      // lively.warn("end: " + data.end);
+      // lively.warn("file: " + data.file);
+      // lively.warn("context: " + data.context);
+      // lively.warn("contextOffset: " + data.contextOffset);
+      // lively.warn("doc: " + data.doc);
+      // lively.warn("url: " + data.url);
+      // lively.warn("origin: " + data.origin);
+
+      // #Whatever
+      // if (!data.file && data.url) { window.open(data.url); return; }
+
+      if (data.file) {
+        this.jumpStack.push({
+          file: livelyCodeMirror.getTargetModule(),
+          start: cmEditor.getCursor("from"),
+          end: cmEditor.getCursor("to")
+        });
+        // ### Stackpush, then moveTo
+        this.moveTo(cmEditor, livelyCodeMirror, data, false);
+      } else {
+        showError(cmEditor, "Could not find a definition.");
+      }
+    } catch(error) {
+      showError(cmEditor, error);
+    }
+  }
+  static async moveTo(cmEditor, livelyCodeMirror, data, useDataDirectly) {
+    let targetCM = cmEditor;
+
+    // in same doc?
+    if(livelyCodeMirror.getTargetModule() !== data.file) {
+      let existingEditor = Array.from(document.querySelectorAll("body /deep/ lively-code-mirror"))
+        .find(livelyCodeMirror => livelyCodeMirror.getTargetModule() === data.file);
+      // jump to data.file
+      if(existingEditor) {
+        targetCM = existingEditor.editor;
+      } else {
+        let livelyEditor = await lively.openBrowser(data.file, true)
+          .then(container => container.getEditor());
+        targetCM = livelyEditor.currentEditor() //.editor;
+      }
+    }
+
+    // #TODO: this does not break out of the shadowroot
+    function findEnclosingWindow(element) {
+      if(!element) { return undefined; }
+      if(element.tagName === 'LIVELY-WINDOW') {
+        return element;
+      }
+      if(element.tagName === 'BODY') {
+        return undefined;
+      }
+      return findEnclosingWindow(element.parentElement);
+    }
+    let enclosingWindow = findEnclosingWindow(targetCM);
+    if(enclosingWindow) {
+      enclosingWindow.focus();
+    }
+    targetCM.focus();
+
+    // go to correct location
+    targetCM.setSelection(data.start, data.end);
+  }
+  static async jumpToDefinition(cmEditor, livelyCodeMirror) {
+    if(!atInterestingExpression(cmEditor)) {
+      showError(cmEditor, 'No interesting variable found');
+    } else {
+      this.inner(cmEditor, livelyCodeMirror);
+    }
+  }
+  static async jumpBack(cmEditor, livelyCodeMirror) {
+    jumpBack(cmEditor, livelyCodeMirror, this);
   }
   
   static async __temp__(cm) {
@@ -110,6 +210,10 @@ export class TernCodeMirrorWrapper {
     });
   }
 }
+
+// ###############
+// Show Type Query
+// ###############
 
 function showContextInfo(cm, data) {
   var tip = <span><strong>{data.type || 'not found'}</strong></span>;
@@ -177,4 +281,21 @@ function fadeOut(tooltip) {
 function remove(node) {
   var parent = node && node.parentNode;
   if (parent) parent.removeChild(node);
+}
+
+// #####################################
+// Moving to the definition of something
+// #####################################
+
+function jumpBack(cmEditor, livelyCodeMirror, ternServerWrapper) {
+  let target = ternServerWrapper.jumpStack.pop();
+  if(target) {
+    ternServerWrapper.moveTo(cmEditor, livelyCodeMirror, target, true);
+  }
+}
+
+function atInterestingExpression(cm) {
+  var pos = cm.getCursor("end"), tok = cm.getTokenAt(pos);
+  if (tok.start < pos.ch && tok.type == "comment") return false;
+  return /[\w)\]]/.test(cm.getLine(pos.line).slice(Math.max(pos.ch - 1, 0), pos.ch + 1));
 }
