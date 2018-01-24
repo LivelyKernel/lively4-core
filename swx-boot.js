@@ -3,7 +3,6 @@ console.log("hello again!")
 
 self.lively4url = self.location.toString().replace(/\/[^/]*$/,"")
 
-
 importScripts("./src/external/systemjs/system.src.js");
 
 self.lively4swx = new URL('./src/external/lively4-serviceworker/src/', self.location.href).toString()
@@ -46,12 +45,65 @@ SystemJS.config({
   transpiler: 'plugin-babel' }
 )
 
+var originalFetch = fetch;
+
+function isOnline() {
+  const checkUrl = `${location.origin}/?checkOnline=${+ new Date()}`;
+    
+    // Try to reach the server
+    let request = new Request(checkUrl, {
+      method: 'HEAD',
+    });
+
+    return originalFetch(request)
+      .then(() => {
+        // We are really online
+        return true;
+      })
+      .catch(() => {
+        // Request was unsuccessful, so we are most likely offline
+        return false;
+      });
+}
+
+var initPending = true;
+fetch = function(request, ...args) {
+  // Ensure request is of type Request and not only a string URL
+  request = new Request(request);
+  
+  if (initPending) {  
+    return new Promise(async (resolve, reject) => {
+      let cache = await caches.open("lively4-swx-cache");
+      
+      if (navigator.onLine && await isOnline()) {
+        let response = await originalFetch(request, ...args);
+        
+        cache.put(request, response.clone());
+        resolve(response);
+        return;
+      }
+      
+      let response = await cache.match(request);
+      
+      if (response) {
+        resolve(response);
+      } else {
+        reject("Not in cache");
+      }
+    });
+  } else {
+    return originalFetch(request, ...args);
+  }  
+}
+
 function init() {
-  return System.import(lively4swx + "swx.js")
+  let promise = System.import(lively4swx + "swx.js");
+  promise.then(() => initPending = false);
+  return promise;
 }
 console.log("Base system loaded after  " + (Date.now() - startSwxTime) + "ms")
 
-init().then(() => {
+init().then(worker => {
   console.log("SWX loaded after  " + (Date.now() - startSwxTime) + "ms")
 })
 

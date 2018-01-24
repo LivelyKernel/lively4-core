@@ -61,6 +61,12 @@ var Handwriting = function Handwriting(canvas_id, clear_button, lively_environme
     }
   }
   
+  function getLanguageToUse() {
+    var languageDropdown = _lively_this.parentElement.querySelector("#language");
+    var languageToUse = languageDropdown.options[languageDropdown.selectedIndex].value;
+    return languageToUse;
+  }
+  
   function handleServerResponse(response) {
     console.log(response);
       response.json().then(data => {
@@ -83,7 +89,7 @@ var Handwriting = function Handwriting(canvas_id, clear_button, lively_environme
         'Content-Type': 'application/json'
       },
       method: "POST",
-      body: JSON.stringify({points: hwr_this.lively_paper.canv_points, language: "en"})
+      body: JSON.stringify({points: hwr_this.lively_paper.canv_points, language: getLanguageToUse()})
     })
     .then(handleServerResponse)
     .catch(function(res){ console.log(res) });
