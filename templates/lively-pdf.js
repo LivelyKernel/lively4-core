@@ -66,6 +66,8 @@ export default class LivelyPDF extends Morph {
         // Register event handlers for edit mode for annotations
         lively.addEventListener("pdf", that.getSubmorph("#pdf-edit-button"), "click",
                               () => that.onPdfEdit());
+        lively.addEventListener("pdf", that.getSubmorph("#pdf-add-button"), "click",
+                              () => that.onPdfAdd());
         lively.addEventListener("pdf", that.getSubmorph("#pdf-save-button"), "click",
                               () => that.onPdfSave());
         lively.addEventListener("pdf", that.getSubmorph("#pdf-cancel-button"), "click",
@@ -125,6 +127,62 @@ export default class LivelyPDF extends Morph {
     });
   }
   
+  onPdfAdd() {
+    if (this.shadowRoot.getSelection().rangeCount > 0) {
+      let scale = this.pdfViewer._pages[0].viewport.scale;
+      let selectionCoords = this.shadowRoot.getSelection().getRangeAt(0).getBoundingClientRect();
+      let pageCoords = this.shadowRoot.querySelector('.page:first-child').getBoundingClientRect();
+      
+      // Get coords of the selection depending on the PDF scale 
+      let scaledSelectionCoords = {
+        topLeftX: (selectionCoords.x - pageCoords.x) / scale,
+        topLeftY: (selectionCoords.y - pageCoords.y) / scale,
+        topRightX: (selectionCoords.x - pageCoords.x + selectionCoords.width) / scale,
+        topRightY: (selectionCoords.y - pageCoords.y) / scale,
+        bottomLeftX: (selectionCoords.x - pageCoords.x) / scale,
+        bottomLeftY: (selectionCoords.y - pageCoords.y + selectionCoords.height) / scale,
+        bottomRightX: (selectionCoords.x - pageCoords.x + selectionCoords.width) / scale,
+        bottomRightY: (selectionCoords.y - pageCoords.y + selectionCoords.height) / scale
+      };
+      
+      let [newAnnotationId, newPopupId] = this.getNewAnnoationIds();
+      
+      let rawAnnotation = newAnnotationId + " 0 obj\n\
+<< /Type /Annot /Popup " + newPopupId + " 0 R /Rect [ " 
+          + scaledSelectionCoords.topLeftX + " " 
+          + scaledSelectionCoords.topLeftY + " " 
+          + scaledSelectionCoords.bottomRightX + " " 
+          + scaledSelectionCoords.bottomRightY 
+        + " ] /Contents (much wow) /F 4 /QuadPoints [ " 
+          + scaledSelectionCoords.bottomLeftX + " " 
+          + scaledSelectionCoords.bottomLeftY + " " 
+          + scaledSelectionCoords.bottomRightX + " " 
+          + scaledSelectionCoords.bottomRightY + " " 
+          + scaledSelectionCoords.topRightX + " " 
+          + scaledSelectionCoords.topRightY + " " 
+          + scaledSelectionCoords.topLeftX + " " 
+          + scaledSelectionCoords.topLeftY 
+        + " ] /Subtype /Highlight >>\n\
+endobj\n";
+      
+      let rawPopupAnnotation = newPopupId + " 0 obj\n\
+<< /Parent " + newAnnotationId + " 0 R /Type /Annot /Open true /Subtype /Popup /Rect [" 
+      + (scaledSelectionCoords.topRightX + 4) + " " 
+      + scaledSelectionCoords.topRightY + " " 
+      + (scaledSelectionCoords.bottomRightX + 132) + " " 
+      + (scaledSelectionCoords.topRightY + 72) 
+      + " ] >>\n\
+endobj\n";     
+      
+    
+      console.log("huhu");
+      this.editedPdfText = this.editedPdfText.replace('xref', rawPopupAnnotation + rawAnnotation + "xref");
+      this.setChangeIndicator(true);
+      this.onPdfSave();
+      
+    }
+  }
+  
   onPdfSave() {
     let url = this.getAttribute("src");
     let newPdfData = "data:application/pdf;base64," + btoa(this.editedPdfText);
@@ -157,24 +215,41 @@ export default class LivelyPDF extends Morph {
   
   enableEditMode() {
     let editButton = this.getSubmorph("#pdf-edit-button");
+    let addButton = this.getSubmorph("#pdf-add-button");
     let saveButton = this.getSubmorph("#pdf-save-button");
     let cancelButton = this.getSubmorph("#pdf-cancel-button");
     
     editButton.classList.add("-edit--active");
     editButton.setAttribute("disabled", "true");
+    addButton.removeAttribute('disabled');
     saveButton.removeAttribute("disabled");
     cancelButton.removeAttribute("disabled");
   }
   
   disableEditMode() {
-    let editButton = this.getSubmorph("#pdf-edit-button");  
+    let editButton = this.getSubmorph("#pdf-edit-button");
+    let addButton = this.getSubmorph("#pdf-add-button");
     let saveButton = this.getSubmorph("#pdf-save-button");
     let cancelButton = this.getSubmorph("#pdf-cancel-button");
     
     editButton.classList.remove("-edit--active");
     editButton.removeAttribute("disabled");
+    addButton.setAttribute('disabled', 'true');
     saveButton.setAttribute("disabled", "true");
     cancelButton.setAttribute("disabled", "true");
+  }
+  
+  getNewAnnoationIds() {
+    let id1 = 1000;
+    while(this.editedPdfText.indexOf(id1 + ' 0 obj') !== -1) {
+      id1++;
+    }
+    let id2 = id1 + 1;
+    while(this.editedPdfText.indexOf(id2 + ' 0 obj') !== -1) {
+      id2++;
+    }
+    
+    return new Array(id1, id2);
   }
   
   livelyExample() {
