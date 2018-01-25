@@ -643,6 +643,10 @@ export default class Lively {
     }
   }
   
+  static success(title, text, timeout, cb) {
+    this.notify(title, text, timeout, cb, 'green');
+  }
+  
   static warn(title, text, timeout, cb) {
     this.notify(title, text, timeout, cb, 'yellow');
   }
