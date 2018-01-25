@@ -89,7 +89,7 @@ var Handwriting = function Handwriting(canvas_id, clear_button, lively_environme
         'Content-Type': 'application/json'
       },
       method: "POST",
-      body: JSON.stringify({points: hwr_this.lively_paper.canv_points, language: getLanguageToUse()})
+      body: JSON.stringify({points: [].concat.apply([], hwr_this.lively_paper.canv_points), language: getLanguageToUse()})
     })
     .then(handleServerResponse)
     .catch(function(res){ console.log(res) });
