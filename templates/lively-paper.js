@@ -38,6 +38,9 @@ export default class LivelyPaper extends Morph {
 
     lively.addEventListener("drawboard", this.canvas, "pointerup", 
       (e) => this.onPointerUp(e));
+    
+    lively.addEventListener("drawboard", this.canvas, "pointerleave",
+      (e) => this.onPointerUp(e));
       
     this.strokes = new CommandHistory();
     
