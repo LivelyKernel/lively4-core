@@ -106,6 +106,17 @@ export class BaseActiveExpression {
     return this;
   }
 
+  nowAndOnChange(callback) {
+    // setup dependency
+    this.onChange(callback);
+
+    // call immediately
+    // #TODO: duplicated code: we should extract this call
+    this.notify(this.getCurrentValue(), {});
+
+    return this;
+  }
+
   /**
    * #TODO: implement
    * disposeOnLastCallbackDetached
