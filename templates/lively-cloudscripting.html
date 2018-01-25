@@ -1,4 +1,5 @@
 <link rel="import" href="./lively-cloudscripting-item.html" />
+<link rel="import" href="./lively-cloudscripting-action-item.html" />
 
 <template id="lively-cloudscripting" data-class="LivelyCloudscripting">
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
@@ -108,9 +109,9 @@
       <div class="column-left">
         <div class="script-heading">
           <h4>
-            Trigger
+            Watcher
           </h4>
-          <button id="addTriggerButton" title="Add Trigger"><i class="fa fa-fw fa-plus" aria-hidden="true"></i></button>
+          <button id="addTriggerButton" title="Add Watcher"><i class="fa fa-fw fa-plus" aria-hidden="true"></i></button>
         </div>
         <div id="trigger-wrapper">
         </div>
@@ -133,15 +134,16 @@
             <button id="credentials">
               Credentials
             </button>
+            <span id="loginIndicator"></span>
           </div>
     
           <juicy-ace-editor class="editor" id="code"></juicy-ace-editor>
           <div class="control-elements">
             <button id="startButton">
-              Start Trigger
+              Start Watcher
             </button>
             <button id="stopButton">
-              Stop Trigger
+              Stop Watcher
             </button>
           </div>  
         </div>

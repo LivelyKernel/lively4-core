@@ -643,6 +643,10 @@ export default class Lively {
     }
   }
   
+  static success(title, text, timeout, cb) {
+    this.notify(title, text, timeout, cb, 'green');
+  }
+  
   static warn(title, text, timeout, cb) {
     this.notify(title, text, timeout, cb, 'yellow');
   }
@@ -1468,12 +1472,15 @@ export default class Lively {
     return Array.from(all)
   }
   
-  static gotoWindow(element) {
+  static gotoWindow(element, justFocuWhenInBounds) {
     element.focus()
-    document.scrollingElement.scrollTop = 0
-    document.scrollingElement.scrollLeft = 0
-    var pos = lively.getPosition(element).subPt(pt(0,0))
-    lively.setPosition(document.body, pos.scaleBy(-1))
+
+    if (!justFocuWhenInBounds) {
+      document.scrollingElement.scrollTop = 0
+      document.scrollingElement.scrollLeft = 0
+      var pos = lively.getPosition(element).subPt(pt(0,0))
+      lively.setPosition(document.body, pos.scaleBy(-1))      
+    } 
   }
 
   //  lively.allPreferences()
@@ -1488,6 +1495,10 @@ export default class Lively {
     var s = Date.now()
     await func()
     return Date.now() - s  
+  }
+  
+  static get halo() {
+    return HaloService.halo[0]
   }
   
   static onMouseDown(evt) {

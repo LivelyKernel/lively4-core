@@ -293,8 +293,22 @@ export default class LivelyCodeMirror extends HTMLElement {
         let result = await this.tryBoundEval(text, false);
         letsScript(result);
       },
+      // #KeyboardShortcut Ctrl-Alt-C show type using tern      
       "Ctrl-Alt-I": cm => {
         TernCodeMirrorWrapper.showType(cm, this);
+      },
+      // #KeyboardShortcut Alt-. jump to definition using tern
+      "Alt-.": cm => {
+        lively.error("JUMP TO DEFINITION")
+        TernCodeMirrorWrapper.jumpToDefinition(cm, this);
+      },
+      // #KeyboardShortcut Alt-, jump back from definition using tern
+      "Alt-,": cm => {
+        TernCodeMirrorWrapper.jumpBack(cm, this);
+      },
+      // #KeyboardShortcut Shift-Alt-. show references using tern
+      "Shift-Alt-.": cm => {
+        TernCodeMirrorWrapper.showReferences(cm, this);
       },
       // #KeyboardShortcut Alt-C capitalize letter      
       // #copied from keymap/emacs.js
@@ -306,6 +320,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       });
     }),
     });
+    editor.on("cursorActivity", cm => TernCodeMirrorWrapper.updateArgHints(cm, this));
     editor.setOption("hintOptions", {
       container: this.shadowRoot.querySelector("#code-mirror-hints"),
       codemirror: this,

@@ -19,7 +19,7 @@
       vl.show(data);
       
       lively.openComponentInWindow("vivide-table").then(vt => {
-        vt.pushTransformation(list => flatten(list.map(person => person.pets)));
+        vt.setTransformation(list => flatten(list.map(person => person.pets)));
         vl.register(vt);
       });
     });
