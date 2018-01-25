@@ -1,0 +1,7 @@
+<svg 
+x="0px" y="0px"
+	 width="100px" height="100px" viewBox="0 0 100 100" 
+xmlns="http://www.w3.org/2000/svg"  
+style="overflow: visible; position: absolute; height: 100px; left: 0px; top: 0px; width: 100px;" data-lively-part-name="path">
+  <path stroke="lightgray" d="M 0 100 L 0 0 L 100 0" fill="none" stroke-dasharray="3,2"></path>
+</svg>
