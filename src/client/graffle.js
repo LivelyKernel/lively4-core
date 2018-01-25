@@ -2,6 +2,7 @@ import {pt} from 'src/client/graphics.js';
 import Halo from "src/components/halo/lively-halo.js"
 import SVG from "src/client/svg.js"
 import { debounce } from "utils";
+import {Grid} from 'src/client/morphic/snapping.js';
 import * as events from 'src/client/morphic/event-helpers.js'
 
 export default class Graffle {
@@ -43,7 +44,8 @@ export default class Graffle {
     // lively.showElement(lively.styleBalloon)
 
     // console.log("pos " + lively.getGlobalBounds(target).bottomLeft())
-    lively.setGlobalPosition(lively.styleBalloon, lively.getGlobalBounds(target).bottomLeft())
+    lively.setGlobalPosition(lively.styleBalloon,
+      lively.getGlobalBounds(target).bottomLeft())
   }
   
     
@@ -84,11 +86,13 @@ export default class Graffle {
     }
   }
   
-  static async onKeyDown(evt) {
-    // console.log('down ' + evt.keyCode)
+  static async onKeyDown(evt) {        
     if (!lively.isGlobalKeyboardFocusElement(evt.path[0])) 
       return; 
     var key = String.fromCharCode(evt.keyCode)
+
+    // console.log("" + Date.now() + " down " + key + " " +  evt.altKey)
+
     this.keysDown[key] = true
     if (this.specialKeyDown() && !(evt.ctrlKey || evt.metaKey)) {
       lively.selection.disabled = true
@@ -177,6 +181,7 @@ export default class Graffle {
     var key = String.fromCharCode(evt.keyCode)
     this.keysDown[key] = false
     
+    // console.log("" + Date.now() + " up " + key + " " +  evt.altKey)
     
     if (key == "D" || key == "C") {
       this.currentPath = null;
@@ -218,149 +223,144 @@ export default class Graffle {
      return pt(evt.clientX, evt.clientY)
   }
   
-  static async onMouseDown(evt) {    
-    if (!this.specialKeyDown()) return
-
-    document.documentElement.style.touchAction = "none"
+  static async startShapeDrawing(evt) {
+    var shape = document.createElement("div")
+    shape.style.backgroundColor = "lightgray"
+    shape.style.border = "1px solid gray"    
+    this.openAsLivelyContent(shape, evt)
+    return shape
+  }
+  
+  static async startTextDrawing(evt) {
+    var text = document.createElement("div")
+    text.textContent = ""
+    text.classList.add("lively-text")
     
-    //  lively.addEventListener("GraffleMouse", document.documentElement, "pointermove", (evt) => {
-    //   this.onMouseMove(evt)
-    // })
-    // lively.addEventListener("GraffleMouse", document.documentElement, "pointerup", (evt) => {
-    //   this.onMouseUp(evt)
-    // })
-
+    // #TODO move this to CSS as defaults?
+    text.style.width = "auto"
+    text.style.height = "auto"
+    text.style.whiteSpace = "nowrap";
+    text.style.padding = "3px"
+    
+    text.contentEditable = true
+    this.openAsLivelyContent(text, evt)
+    return text
+  }
+  
+  
+  static async startConnectorDrawing(evt) {
+    var connector = document.createElement("lively-connector")
+    await lively.components.openIn(this.targetContainer, connector)
+    lively.setGlobalPosition(connector, pt(evt.clientX, evt.clientY))
+    window.that = connector
+    HaloService.showHalos(connector)
+    let cp = lively.halo.ensureControlPoint(connector.getPath(), 1, true)
+    this.currentControlPoint = cp
+    cp.setVerticePosition(pt(0,0))
+    cp.start(evt, connector)
+    this.currentPath = connector        
+    this.openAsLivelyContent(connector, evt)
+    if (cp.targetElement) {
+      connector.connectFrom(cp.targetElement)
+    }   
+    connector.connectTo(lively.hand)
+    return connector
+  }
+  
+  static async startPathDrawing(evt) {
+    var continueDrawing = true && this.currentPath;
+    if (!this.currentPath) {
+      var path = await lively.openPart("path", this.targetContainer)
+      this.currentPath = path
+      window.that = path
+      this.openAsLivelyContent(path, evt) 
+      // split position in global and local part to snap locally...
+      var offset = lively.getGlobalPosition(path.parentElement)
+      var pos = pt(evt.clientX, evt.clientY).subPt(offset)
+      
+      if (!evt.ctrlKey) {
+        pos = Grid.snapPt(pos, 10, 5) 
+      }
+      HaloService.showHalos(path)
+      lively.setPosition(path, pos)
+    } 
+    var svgPath = this.currentPath.querySelector("path")
+    var vertices = SVG.getPathVertices(svgPath)
+    let cp = lively.halo.ensureControlPoint(svgPath, vertices.length - 1)
+    this.currentControlPoint = cp
+    if (continueDrawing) {
+      cp.addControlPoint()        
+    } else {
+      cp.setVerticePosition(pt(0,0))
+    }
+    cp.start(evt, this.currentPath)
+    if (continueDrawing) {
+      cp.eventOffset = this.lastMouseUpPos // #ContinueHere 
+    }
+    return path
+  }
+  
+  static openAsLivelyContent(div, evt) {
+    div.classList.add("lively-content")
+    this.currentElement = div
+    this.targetContainer.appendChild(div)
+    var pos = this.eventPosition(evt)    
+    
+    lively.setGlobalPosition(div, pos)
+    this.lastMouseDown = pos;
+    return div
+  }
+  
+  static ensureTargetContainer(evt) {
     var targetContainer = evt.path.find(ea => ea.tagName == "LIVELY-CONTAINER")
-
     if (targetContainer) {
-      lively.notify("c " + targetContainer)
       lively.showElement(targetContainer)
       this.targetContainer = targetContainer
     } else {
       this.targetContainer = document.body
     }
-    var div
-    if (this.keysDown["S"]) {
-      div= document.createElement("div")
-      div.style.backgroundColor = "lightgray"
-      div.style.border = "1px solid gray"    
-    } else if (this.keysDown["T"]) {
-      div= document.createElement("div")
-      div.textContent = ""
-      div.classList.add("lively-text")
-      
-      div.style.width = "auto"
-      div.style.height = "auto"
-      div.style.whiteSpace = "nowrap";
-
-      div.style.padding = "3px"
-      div.contentEditable = true
-    }  else if (this.keysDown["C"]) {
-      div = document.createElement("lively-connector")
-      await lively.components.openIn(this.targetContainer, div)
-      lively.setGlobalPosition(div, pt(evt.clientX, evt.clientY))
-      window.that = div
-      HaloService.showHalos(div)
-      this.currentControlPoint  = HaloService.halo[0].ensureControlPoint(div.getPath(), 1, true)
-      this.currentControlPoint.setVerticePosition(pt(0,0))
-      this.currentControlPoint.start(evt, div)
-    
-      
-      if (this.currentControlPoint.targetElement) {
-        this.currentConnectFrom = this.currentControlPoint.targetElement
-      }
-      this.currentPath = div
-    }  else if (this.keysDown["D"]) {
-      var continueDrawing = true && this.currentPath;
-      if (!this.currentPath) {
-        div = await lively.openPart("path", this.targetContainer)
-        this.currentPath = div
-        window.that = div
-      } 
-      // HaloService.showHalos(this.currentPath)
-      var svgPath = this.currentPath.querySelector("path")
-      var vertices = SVG.getPathVertices(svgPath)
-      this.currentControlPoint  = HaloService.halo[0].ensureControlPoint(svgPath, vertices.length - 1)
-      if (continueDrawing) {
-        var pos = lively.getGlobalPosition(this.currentControlPoint)
-        this.currentControlPoint.addControlPoint()        
-      } else {
-        this.currentControlPoint.setVerticePosition(pt(0,0))
-      }
-      
-      this.currentControlPoint.start(evt, this.currentPath)
-      if (continueDrawing) {
-        this.currentControlPoint.eventOffset = pos
-      }
-      if (this.currentControlPoint.targetElement) {
-        this.currentConnectFrom = this.currentControlPoint.targetElement
-      }
-    }
-    
-    if (!div) return
-    // div.innerHTML = "This is a shapes"
-    div.classList.add("lively-content")
-    this.currentElement = div
-    this.targetContainer.appendChild(div)
-    var pos = this.eventPosition(evt)
-    lively.setGlobalPosition(div, pos)
-
-    if (this.currentConnectFrom) {    
-      div.connectFrom(this.currentConnectFrom)
-      div.connectTo(lively.hand)
-    }
-
+  }
   
-    
-    this.lastMouseDown = pos;
+  static async onMouseDown(evt) {    
+    if (!this.specialKeyDown()) return
     evt.stopPropagation()
     evt.preventDefault()
+    document.documentElement.style.touchAction = "none"    
+    this.ensureTargetContainer(evt)
+    if (this.keysDown["S"]) {
+      await this.startShapeDrawing(evt)
+    } else if (this.keysDown["T"]) {
+      await this.startTextDrawing(evt)
+    }  else if (this.keysDown["C"]) {
+      await this.startConnectorDrawing(evt)
+    }  else if (this.keysDown["D"]) {
+      await this.startPathDrawing(evt)
+    }
   }
   
   static onMouseMove(evt) {
-    console.log("path " + this.currentPath)
     if (this.specialKeyDown()) {
         lively.setGlobalPosition(lively.hand, pt(evt.clientX - 2, evt.clientY -2))    
     }
     if (this.currentControlPoint) {
       this.currentControlPoint.move(evt)
     }
-    var pos = pt(evt.clientX, evt.clientY)
-    // lively.showPoint(pos)
-    
     if (!this.lastMouseDown) return;
     var extent = this.eventPosition(evt).subPt(this.lastMouseDown)
-
-    if (this.currentPath) {
-      // if (this.currentPath.pointTo)
-      // this.currentPath.pointTo(extent)
-    } else {
+    if (!this.currentPath) {
       lively.setExtent(this.currentElement, extent)
     }
   }
 
   static onMouseUp(evt) {
-    // lively.removeEventListener("GraffleMouse", document.documentElement, "pointerup")
-    // lively.removeEventListener("GraffleMouse", document.documentElement, "pointermove")
-    
+    this.lastMouseUpPos = lively.getPosition(evt)
     if (this.currentControlPoint) {
-      if (this.currentConnectFrom) { 
-        // div.connectFrom(this.currentConnectFrom)
-      }
       this.currentControlPoint.stop(evt)
-      
-      if (this.keysDown["D"]) {
-        HaloService.hideHaloItems()
-      }
+       if (!this.keysDown["T"]) {
+          HaloService.hideHaloItems()        
+        } 
     }
-
     if(this.currentElement) {
-      if (this.currentPath) {
-        // if (this.currentPath.resetBounds) {
-        //   this.currentPath.resetBounds()
-        //   HaloService.showHalos(that)
-        // }
-      }
       if (this.currentElement.classList.contains("lively-text")) {
         if (!this.keysDown["T"]) {
           this.currentElement.focus()        
@@ -370,7 +370,6 @@ export default class Graffle {
       this.currentElement = null
       this.lastElement = this.currentElement
       document.documentElement.style.touchAction = ""
-
     } else {
       this.lastElement = null
     }
