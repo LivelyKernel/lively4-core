@@ -85,9 +85,68 @@ describe('Register Event Listeners', function() {
 
 describe('Position API', function() {
   
-  it('should return plain numbers in getter', () => {
-    expect(lively.getPosition(document.querySelector('body')).x).to.be.a('number')
+  describe('getPosition', function() {
+
+    it('should return plain numbers in getter', () => {
+      expect(lively.getPosition(document.querySelector('body')).x).to.be.a('number')
+    })
+
+
+    it('should return transform of a svg path', () => {
+      var div = document.createElement("div")
+      div.innerHTML = `<svg>
+    <path transform='translate(100 200)' d='M 0 0 L 100 100'></path>
+  </svg>`
+      var path = div.querySelector("path")
+      expect(lively.getPosition(path).x).to.equal(100)
+    })
+    
+    it('should return 0,0 of a svg path with no transform', () => {
+      var div = document.createElement("div")
+      div.innerHTML = `<svg>
+    <path transform='' d='M 0 0 L 100 100'></path>
+  </svg>`
+      var path = div.querySelector("path")
+      expect(lively.getPosition(path).x).to.equal(0)
+    })
   })
+  
+  describe('setPosition', function() {
+
+    it('should set transform of a svg path', () => {
+      var div = document.createElement("div")
+      div.innerHTML = `<svg>
+    <path transform="translate(0 0)" d='M 0 0 L 100 100'></path>
+  </svg>`
+      var path = div.querySelector("path")
+      lively.setPosition(path, pt(100,200))
+      expect(lively.getPosition(path).x).to.equal(100)
+    })
+    
+    
+    it('should set transform of a svg path with no transform', () => {
+      var div = document.createElement("div")
+      div.innerHTML = `<svg>
+    <path d='M 0 0 L 100 100'></path>
+  </svg>`
+      var path = div.querySelector("path")
+      // var t = path.transform.baseVal.consolidate()
+      
+      // t.setTranslate(100,300)
+      
+      // path.getAttribute("transform")
+      // var p = new DOMPoint(0, 0)
+      // p.matrixTransform(t)
+      // t = path.transform.baseVal.consolidate().matrix
+      
+      
+      lively.setPosition(path, pt(100,200))
+      
+      expect(lively.getPosition(path).x).to.equal(100)
+    })
+  })
+  
+  
 })
  
 

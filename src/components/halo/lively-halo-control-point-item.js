@@ -24,7 +24,9 @@ export default class HaloControlPointItem extends HaloItem {
     this.path = path
     this.index = index
     lively.setPosition(this, pt(0,0))
-    this.offset = lively.getGlobalPosition(this.path.parentElement).subPt(lively.getGlobalPosition(this))
+//    this.offset = lively.getGlobalPosition(this.path.parentElement).subPt(lively.getGlobalPosition(this))
+    this.offset = lively.getGlobalPosition(this.path)
+      .subPt(lively.getGlobalPosition(this))
     this.updatePosition()
     if (this.isConnector) {
       this.get("#shape").classList.add("connector")
