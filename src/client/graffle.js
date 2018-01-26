@@ -393,11 +393,9 @@ export default class Graffle {
       lively.moveBy(path, delta.scaleBy(-1))
       lively.setExtent(this.currentFreehand, pt(bounds.width, bounds.height))
       
-      
       this.currentFreehand = null
       this.currentElement = null
-      
-      lively.showElement(svg)
+      // lively.showElement(svg)
   
       // lively.setGlobalPosition(this.currentFreehand, bounds.topLeft())
       // lively.setExtent(this.currentFreehand, pt(bounds.width, bounds.height))
