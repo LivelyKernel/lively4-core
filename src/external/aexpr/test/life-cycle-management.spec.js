@@ -7,6 +7,51 @@ chai.use(sinonChai);
 import * as frameBasedAExpr from "frame-based-aexpr";
 
 describe("life-cycle management", function() {
+  describe("(de)activate", function() {
+    it("aexprs define activate and deactivate", () => {
+      let axp = aexpr(() => {});
+      expect(axp).to.respondTo('activate');
+      expect(axp).to.respondTo('deactivate');
+    });
+    
+    xit("temporarily deactivate an aexpr", function() {
+      let value = 0;
+      let spy = sinon.spy();
+      let axp = aexpr(() => value);
+      axp.onChange(spy);
+
+      value = 1;
+      expect(spy).to.be.calledOnce;
+      expect(spy).to.be.calledWithMatch(1);
+      spy.reset();
+
+      axp.deactivate();
+
+      value = 2;
+      expect(spy).not.to.be.called;
+
+      value = 3;
+      expect(spy).not.to.be.called;
+
+      axp.activate();
+      expect(spy).to.be.calledOnce;
+      expect(spy).to.be.calledWithMatch(3);
+      spy.reset();
+
+      axp.deactivate();
+
+      value = 4;
+      expect(spy).not.to.be.called;
+
+      value = 5;
+      expect(spy).not.to.be.called;
+
+      axp.activate();
+      expect(spy).to.be.calledOnce;
+      expect(spy).to.be.calledWithMatch(5);
+    });
+  });
+
   describe("dispose", function() {
     function wait(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
@@ -83,8 +128,7 @@ describe("life-cycle management", function() {
       expect(spy).not.to.be.called;
     });
   });
-  
-  
+
   describe('disposeOnLastCallbackDetached', function() {
     it('is defined', () => {
       let exp = aexpr(() => {});
