@@ -14,6 +14,7 @@ export class BaseActiveExpression {
     this.params = params;
     this.lastValue = this.getCurrentValue();
     this.callbacks = [];
+    this._isDisposed = false;
   }
 
   /**
@@ -115,6 +116,10 @@ export class BaseActiveExpression {
     this.notify(this.getCurrentValue(), {});
 
     return this;
+  }
+  
+  dispose() {
+    this._isDisposed = true;
   }
 
   /**
