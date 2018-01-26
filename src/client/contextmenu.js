@@ -80,6 +80,16 @@ export default class ContextMenu {
          this.hide();
          lively.showElement(target);
       }],
+      ["open halo",
+        [
+          ["parents", lively.allParents(target).map(
+            ea => [ea, () => {lively.showHalo(ea)}])
+          ],
+          ["children",  Array.from(target.childNodes).map( 
+            ea => [ea, () => {lively.showHalo(ea)}])
+          ],
+        ]
+      ],
       ["browse template source", (evt) => {
          this.hide();
          lively.showSource(target, evt);

@@ -1,4 +1,4 @@
-import {pt} from 'src/client/graphics.js';
+import {pt, rect} from 'src/client/graphics.js';
 
 /*
  * Kitchensink for all SVG manipulation utilities
@@ -34,119 +34,38 @@ export default class SVG {
   
   static resetBounds(svgElement, path) {
     var pos = lively.getPosition(svgElement)
-    var bounds = svgElement.getBoundingClientRect()
     var bounds = svgElement.getBBox()
     var v = this.getPathVertices(path) 
+    var pathPos = lively.getPosition(path)
     v.forEach(ea => {
-      ea.x1 -= bounds.x
-      ea.y1 -= bounds.y
+      ea.x1 -= bounds.x - pathPos.x
+      ea.y1 -= bounds.y - pathPos.y
     })
     lively.setPosition(svgElement, pos.addPt(pt(bounds.x, bounds.y)))
     this.setPathVertices(path, v)
     lively.setExtent(svgElement, pt(bounds.width + 1, bounds.height + 1))
+    lively.setPosition(path, pt(0,0))
+
     // make sure the width is never 0
-  }
-  
-  /*
-   * Simple Path Based Connector.... should we make this a template? #TODO
-   */
-  static updationPathConnection(c, a, selectorA, b, selectorB) {
-      var p = c.querySelector("path#path")
 
-
-      var offset = lively.getGlobalPosition(c)
-      var v = this.getPathVertices(p)
-
-      if (a) {
-        var p1 = lively.getGlobalBounds(a)[selectorA]()
-        v[0].x1 = p1.x - offset.x
-        v[0].y1 = p1.y - offset.y
-      }
-      
-      if (b) {
-        var p2 = lively.getGlobalBounds(b)[selectorB]()
-        v[1].x1 = p2.x - offset.x
-        v[1].y1 = p2.y - offset.y
-      }
-      
-      this.setPathVertices(p,v)
-      this.resetBounds(c, p)
   }
   
-  static updateConnector(path) {
-    
-    var b1 = lively.getGlobalBounds(path.fromElement || path); // path is fallback...
-    var b2 = lively.getGlobalBounds(path.toElement || path)
-    
-    var dist = b1.center().subPt(b2.center())
-    var selectorA, selectorB;
-    if (Math.abs(dist.x) > Math.abs(dist.y)) {
-      if (b1.center().x > b2.center().x) {
-        selectorA = "leftCenter"
-        selectorB = "rightCenter";
-      }  else {
-        selectorA = "rightCenter";
-        selectorB = "leftCenter"
-      }
-    } else {
-      if (b1.center().y > b2.center().y) {
-        selectorA = "topCenter"
-        selectorB = "bottomCenter";
-      }  else {
-        selectorA = "bottomCenter"
-        selectorB = "topCenter";
-
-      }
-    }
-    
-    this.updationPathConnection(path, path.fromElement, selectorA, path.toElement, selectorB)
-  }
-  
-  static observePositionChange(a, c, obervername, cb) {
-    
-    if (c[obervername]) c[obervername].disconnect()
-      c[obervername] = new MutationObserver((mutations, observer) => {
-        mutations.forEach(record => {
-          if (record.target == a && record.attributeName == "style") {
-            cb()
-          }
-        })
-    });
-    c[obervername].observe(a, {
-      childList: false, 
-      subtree: false, 
-      characterData: false, 
-      attributes: true});
-  }
-  
-  static connect(a, b, path) {
-    this.connectFrom(path, a)
-    this.connectTo(path, b)
-    this.updateConnector(path)
-  }
-  
-  static connectFrom(path, a) {
-    path.fromElement = a
-    this.observePositionChange(a, path, "fromObjectObserver", () => this.updateConnector(path))
-  }
-  
-  static connectTo(path, b) {
-    path.toElement = b
-    this.observePositionChange(b, path, "toObjectObserver", () => this.updateConnector(path))
+  /* 
+   * ## Computes the bounds of the children of an svg element
+   * ``
+   * lively.showRect(SVG.childBounds(that.get("svg")))
+   * ``
+   */ 
+  static childBounds(svgElement) {
+    var result 
+    svgElement.childNodes.forEach(ea => {
+        var r = ea.getBoundingClientRect()   
+        var b = rect(r.x, r.y, r.width, r.height)
+        result = (result || b).union(b)
+    })
+    return result
   }
 
-  static disconnect(path) {
-    if (path.fromObjectObserver) {
-      path.fromObjectObserver.disconnect()
-    }
-    if (path.toObjectObserver) {
-      path.toObjectObserver.disconnect()
-    }
-    path.fromElement = null
-    path.toElement = null
-  }
-  
-  
-  
 }
+
 

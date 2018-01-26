@@ -215,7 +215,15 @@ export default class LivelyDrawboard extends Morph {
       attributes: true});
   }
 
-
+  freehand() {
+    this.classList.add("freehand")
+    this.get("#svg").style.overflow = "visible";
+    
+    // this.style.backgroundColor = "transparent"
+    // this.style.border = "0pxffffff"        
+    // this.get("svg").style.overflow = "visible"
+  }
+    
   onPointerDown(evt) {
     if (!this.svg) return
     
