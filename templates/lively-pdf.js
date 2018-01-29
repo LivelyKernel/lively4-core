@@ -261,7 +261,7 @@ endobj\n";
   }
   
   getNewAnnoationIds() {
-    let id1 = 1;
+    let id1 = 1000;
     while(this.editedPdfText.indexOf(id1 + ' 0 obj') !== -1) {
       id1++;
     }
