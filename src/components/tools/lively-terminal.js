@@ -27,25 +27,43 @@ export default class LivelyTerminal extends Morph {
     this.input.focus();
   }
   
+  getPort() {
+    let port = 5000;
+    return port;
+  }
+  
   httpGet(url, callback)
   {
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.open( "GET", url );
-    xmlHttp.onload = () => {
-      callback(xmlHttp.responseText);
+    xmlHttp.onreadystatechange = () => {
+      if (xmlHttp.readyState === 4) {
+        if(xmlHttp.status === 200){
+          callback(xmlHttp.responseText);
+        } else {
+          callback(false);
+        }
+      }
     }
     xmlHttp.send(null);
   }
 
   runCommand() {
-    console.log("running" + this.input.value);
-    this.output.innerHTML += "> " + this.input.value + "<br>";
-    this.inLine.style.visibility = "hidden";
-    this.httpGet("http://localhost:5000/new/" + this.input.value, (processId) => {
-      this.runningProcess = processId;
-      console.log("starting new process: " + processId);
-      this.runLoop();
-    });
+    let port = this.getPort();
+    this.httpGet("http://localhost:"+ port +"/terminalserver/", (data) => {
+      if (data && data === "running terminalserver") {
+        console.log("running: " + this.input.value);
+        this.output.innerHTML += "> " + this.input.value + "<br>";
+        this.inLine.style.visibility = "hidden";
+        this.httpGet("http://localhost:5000/new/" + this.input.value, (processId) => {
+          this.runningProcess = processId;
+          console.log("starting new process: " + processId);
+          this.runLoop();
+        });
+      } else {
+        this.output.innerHTML += "No terminal server running: check https://github.com/LivelyKernel/lively4-app for more information <br>";
+      }
+    })  
   }
   
   addToOutput(list) {
@@ -67,7 +85,6 @@ export default class LivelyTerminal extends Morph {
   runLoop() {
     if (this.runningProcess !== "") {
       this.httpGet("http://localhost:5000/stdout/" + this.runningProcess, (output) => {
-        console.log(output);
         this.addToOutput(output);
         this.httpGet("http://localhost:5000/stderr/" + this.runningProcess, (error) => {
           this.addToOutput(error);
