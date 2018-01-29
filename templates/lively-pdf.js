@@ -149,10 +149,10 @@ export default class LivelyPDF extends Morph {
       
       let rawAnnotation = newAnnotationId + " 0 obj\n\
 << /Type /Annot /Popup " + newPopupId + " 0 R /Rect [ " 
-          + scaledSelectionCoords.topLeftX + " " 
-          + scaledSelectionCoords.topLeftY + " " 
-          + scaledSelectionCoords.bottomRightX + " " 
-          + scaledSelectionCoords.bottomRightY 
+          + scaledSelectionCoords.bottomLeftX + " " 
+          + scaledSelectionCoords.bottomLeftY + " "
+          + scaledSelectionCoords.topRightX + " " 
+          + scaledSelectionCoords.topRightY
         + " ] /Contents (much wow) /C [ 0.3455441 0.6214520 0.9300745 ] /F 4 /QuadPoints [ " 
           + scaledSelectionCoords.topLeftX + " " 
           + scaledSelectionCoords.topLeftY + " "
