@@ -131,18 +131,18 @@ export default class LivelyPDF extends Morph {
     if (this.shadowRoot.getSelection().rangeCount > 0) {
       let scale = this.pdfViewer._pages[0].viewport.scale;
       let selectionCoords = this.shadowRoot.getSelection().getRangeAt(0).getBoundingClientRect();
-      let pageCoords = this.shadowRoot.querySelector('.page:first-child').getBoundingClientRect();
+      let pageCoords = this.shadowRoot.querySelector('.page:first-child .canvasWrapper').getBoundingClientRect();
       
       // Get coords of the selection depending on the PDF scale 
       let scaledSelectionCoords = {
         topLeftX: (selectionCoords.x - pageCoords.x) / scale,
-        topLeftY: (selectionCoords.y - pageCoords.y) / scale,
+        topLeftY: (pageCoords.bottom - selectionCoords.y) / scale,
         topRightX: (selectionCoords.x - pageCoords.x + selectionCoords.width) / scale,
-        topRightY: (selectionCoords.y - pageCoords.y) / scale,
+        topRightY: (pageCoords.bottom - selectionCoords.y) / scale,
         bottomLeftX: (selectionCoords.x - pageCoords.x) / scale,
-        bottomLeftY: (selectionCoords.y - pageCoords.y + selectionCoords.height) / scale,
+        bottomLeftY: (pageCoords.bottom - selectionCoords.y + selectionCoords.height) / scale,
         bottomRightX: (selectionCoords.x - pageCoords.x + selectionCoords.width) / scale,
-        bottomRightY: (selectionCoords.y - pageCoords.y + selectionCoords.height) / scale
+        bottomRightY: (pageCoords.bottom - selectionCoords.y + selectionCoords.height) / scale
       };
       
       let [newAnnotationId, newPopupId] = this.getNewAnnoationIds();
@@ -153,15 +153,15 @@ export default class LivelyPDF extends Morph {
           + scaledSelectionCoords.topLeftY + " " 
           + scaledSelectionCoords.bottomRightX + " " 
           + scaledSelectionCoords.bottomRightY 
-        + " ] /Contents (much wow) /F 4 /QuadPoints [ " 
+        + " ] /Contents (much wow) /C [ 0.3455441 0.6214520 0.9300745 ] /F 4 /QuadPoints [ " 
           + scaledSelectionCoords.bottomLeftX + " " 
           + scaledSelectionCoords.bottomLeftY + " " 
           + scaledSelectionCoords.bottomRightX + " " 
-          + scaledSelectionCoords.bottomRightY + " " 
-          + scaledSelectionCoords.topRightX + " " 
-          + scaledSelectionCoords.topRightY + " " 
+          + scaledSelectionCoords.bottomRightY + " "
           + scaledSelectionCoords.topLeftX + " " 
-          + scaledSelectionCoords.topLeftY 
+          + scaledSelectionCoords.topLeftY + " "
+          + scaledSelectionCoords.topRightX + " " 
+          + scaledSelectionCoords.topRightY 
         + " ] /Subtype /Highlight >>\n\
 endobj\n";
       
@@ -174,16 +174,48 @@ endobj\n";
       + " ] >>\n\
 endobj\n";     
       
-    
-      console.log("huhu");
+      let currentPageNumber = this.shadowRoot.getSelection().anchorNode.parentNode.parentNode.parentNode.dataset.pageNumber;
+      
+      let currentPageRegex = new RegExp("^<<\\s\\/Type\\s\\/Page\\s.*\\n*.*>>$", 'gm');
+      let currentPageString = this.editedPdfText.match(currentPageRegex)[currentPageNumber - 1];
+      
+      if (currentPageString.indexOf('/Annots') === -1) {
+        // TODO: implement this. Have fun! :-P
+      }
+      else {
+        let annotationsArrayReferenceRegEx = new RegExp("/Annots\\s(\\d+)\\s\\d+", "gm");
+        let annotationsArrayReference = annotationsArrayReferenceRegEx.exec(currentPageString)[1];
+        
+        let annotationsArrayRegEx = new RegExp("^(" + annotationsArrayReference + "\\s\\d\\sobj\\n*.*\\n*endobj)", "mg");
+        let annotationsArray = this.editedPdfText.match(annotationsArrayRegEx)[0];
+        let newAnnoationsArray = annotationsArray.replace(" ]", " " + newAnnotationId + " 0 R " + newPopupId + " 0 R ]");
+        this.editedPdfText = this.editedPdfText.replace(annotationsArray, newAnnoationsArray);
+      }
+            
+      
       this.editedPdfText = this.editedPdfText.replace('xref', rawPopupAnnotation + rawAnnotation + "xref");
       this.setChangeIndicator(true);
-      this.onPdfSave();
+      this.savePdf();
       
     }
   }
   
   onPdfSave() {
+    this.savePdf();
+  }
+  
+  onPdfCancel() {
+    this.disableEditMode(); 
+    
+    this.editedPdfText = this.originalPdfText;
+    // Remove event listener
+    let annotations = this.getAllSubmorphs(".annotationLayer section.highlightAnnotation");
+    annotations.forEach((annotation) => {
+      lively.removeEventListener("pdf", annotation, "click", eventFunctionObject);
+    });
+  }
+  
+  savePdf() {
     let url = this.getAttribute("src");
     let newPdfData = "data:application/pdf;base64," + btoa(this.editedPdfText);
     let that = this;
@@ -199,17 +231,6 @@ endobj\n";
         
         that.setChangeIndicator(false);
       });
-    });
-  }
-  
-  onPdfCancel() {
-    this.disableEditMode(); 
-    
-    this.editedPdfText = this.originalPdfText;
-    // Remove event listener
-    let annotations = this.getAllSubmorphs(".annotationLayer section.highlightAnnotation");
-    annotations.forEach((annotation) => {
-      lively.removeEventListener("pdf", annotation, "click", eventFunctionObject);
     });
   }
   
