@@ -157,11 +157,11 @@ export default class LivelyPDF extends Morph {
           + scaledSelectionCoords.bottomLeftX + " " 
           + scaledSelectionCoords.bottomLeftY + " " 
           + scaledSelectionCoords.bottomRightX + " " 
-          + scaledSelectionCoords.bottomRightY + " " 
-          + scaledSelectionCoords.topRightX + " " 
-          + scaledSelectionCoords.topRightY + " " 
+          + scaledSelectionCoords.bottomRightY + " "
           + scaledSelectionCoords.topLeftX + " " 
-          + scaledSelectionCoords.topLeftY 
+          + scaledSelectionCoords.topLeftY + " "
+          + scaledSelectionCoords.topRightX + " " 
+          + scaledSelectionCoords.topRightY 
         + " ] /Subtype /Highlight >>\n\
 endobj\n";
       
