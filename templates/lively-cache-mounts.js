@@ -6,6 +6,16 @@ export default class LivelyCacheMounts extends Morph {
     this.windowTitle = "Lively Cache Mounts";
     this.registerButtons();
     
+    // Register listener to receive data from serviceworker
+    window.serviceWorkerMessageHandlers['cacheViewer'] = (event) => {
+      const message = event.data;
+      
+      // Only handle notifications here
+      if (message.type === 'dataResponse') {
+        this._receiveFromServiceWorker(message.command, message.data);
+      }
+    };
+    
     this.selectedMount = null;
     this.lastSelection = null;
     
@@ -42,7 +52,7 @@ export default class LivelyCacheMounts extends Morph {
   }
   
   /**
-   *
+   * Selects a mount and updates UI
    */
   _selectMount(mount) {
     this.selectedMount = mount;
@@ -50,7 +60,7 @@ export default class LivelyCacheMounts extends Morph {
   }
   
   /**
-   *
+   * Looks up mounted file storages
    */
   _checkMounts() {
     focalStorage.getItem("lively4mounts").then(
@@ -73,7 +83,19 @@ export default class LivelyCacheMounts extends Morph {
   }
   
   /**
-   *
+   * Methods to update UI
+   */
+  _showLoadingScreen(visible) {
+    let overlay = this.get('#overlay');
+    if (visible) {
+      overlay.style.display = 'flex';
+    } else {
+      overlay.style.display = 'none';
+    }
+  }
+  
+  /**
+   * Filters mounts have nothing to cache
    */
   _filterMounts(mounts) {
     const filteredMounts = ["sys", "html5"];
@@ -87,7 +109,7 @@ export default class LivelyCacheMounts extends Morph {
   }
   
   /**
-   *
+   * Displays the chosen directory
    */
   async _showDirectory() {
     let response = await fetch(`https://lively4${this.selectedMount.path}/`, { method: "OPTIONS" });
@@ -98,6 +120,7 @@ export default class LivelyCacheMounts extends Morph {
     
     for (let dirObject of dir.contents) {
       let li = document.createElement("li");
+      // Temporary solution the lively4 dropbox API does not provide directory as attribute value yet
       li.innerText = dirObject.type == "directory" ? "(D) " : "(F) ";
       li.innerText += dirObject.name;
       
@@ -136,14 +159,31 @@ export default class LivelyCacheMounts extends Morph {
     let url = `${this._objectPath}/${mountObject.name}`;
     
     if (mountObject.type === "directory") {
+      this._showLoadingScreen(true);
       navigator.serviceWorker.controller.postMessage({
         type: 'dataRequest',
         command: "preloadFull",
         data: `https://lively4${url}/`
       });
     } else if (mountObject.type === "file") {
-      fetch(url, { method: "GET" });
+      this._showLoadingScreen(true);
+      fetch(url, { method: "GET" }).then(() => {
+        this._showLoadingScreen(false);
+      });
       fetch(url, { method: "OPTIONS" });
+    }
+  }
+  
+  /**
+   * Receive some data from the serviceworker
+   */
+  _receiveFromServiceWorker(command, data) {
+    switch (command) {
+      case 'fullLoadingDone':
+        this._showLoadingScreen(false);
+        break;
+      default:
+        console.warn(`Unknown data received from serviceWorker: ${command}: ${data}`)
     }
   }
   

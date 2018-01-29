@@ -46,6 +46,7 @@ export default class HaloItem extends Morph {
   }
  
   startCustomDrag(evt) {
+    HaloService.isDragging = true 
     lively.removeEventListener("Drag", document, 'mouseup');
     lively.addEventListener("Drag", document, 'mouseup', e => this.stopCustomDrag(e) );
 
@@ -61,17 +62,18 @@ export default class HaloItem extends Morph {
   }
   
   stopCustomDrag(evt) {
-      lively.removeEventListener("Drag", document, 'mouseup');
-      // save this as dragging.stop will overwrite the current value
-      var wasDragging = this.isDragging;
-      this.stop(evt);
-      // detach mousemove handler from body
-      lively.removeEventListener("Drag", document.body.parentElement, 'mousemove')
-    
-      if (wasDragging) {
-        HaloService.showHalos(window.that);
-        evt.stopPropagation();
-      }
+    lively.removeEventListener("Drag", document, 'mouseup');
+    // save this as dragging.stop will overwrite the current value
+    var wasDragging = this.isDragging;
+    this.stop(evt);
+    // detach mousemove handler from body
+    lively.removeEventListener("Drag", document.body.parentElement, 'mousemove')
+
+    if (wasDragging) {
+      HaloService.showHalos(window.that);
+      evt.stopPropagation();
+    }
+    HaloService.isDragging  = false 
   }
 
   
