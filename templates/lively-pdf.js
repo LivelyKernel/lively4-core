@@ -136,13 +136,13 @@ export default class LivelyPDF extends Morph {
       // Get coords of the selection depending on the PDF scale 
       let scaledSelectionCoords = {
         topLeftX: (selectionCoords.x - pageCoords.x) / scale,
-        topLeftY: (pageCoords.bottom - selectionCoords.y - selectionCoords.height) / scale,
+        topLeftY: (pageCoords.bottom - selectionCoords.y) / scale,
         topRightX: (selectionCoords.x - pageCoords.x + selectionCoords.width) / scale,
-        topRightY: (pageCoords.bottom - selectionCoords.y - selectionCoords.height) / scale,
+        topRightY: (pageCoords.bottom - selectionCoords.y) / scale,
         bottomLeftX: (selectionCoords.x - pageCoords.x) / scale,
-        bottomLeftY: (pageCoords.bottom - selectionCoords.y) / scale,
+        bottomLeftY: (pageCoords.bottom - selectionCoords.y - selectionCoords.height) / scale,
         bottomRightX: (selectionCoords.x - pageCoords.x + selectionCoords.width) / scale,
-        bottomRightY: (pageCoords.bottom - selectionCoords.y) / scale 
+        bottomRightY: (pageCoords.bottom - selectionCoords.y - selectionCoords.height) / scale 
       };
       
       let [newAnnotationId, newPopupId] = this.getNewAnnoationIds();
@@ -154,14 +154,14 @@ export default class LivelyPDF extends Morph {
           + scaledSelectionCoords.bottomRightX + " " 
           + scaledSelectionCoords.bottomRightY 
         + " ] /Contents (much wow) /C [ 0.3455441 0.6214520 0.9300745 ] /F 4 /QuadPoints [ " 
-          + scaledSelectionCoords.bottomLeftX + " " 
-          + scaledSelectionCoords.bottomLeftY + " " 
-          + scaledSelectionCoords.bottomRightX + " " 
-          + scaledSelectionCoords.bottomRightY + " "
           + scaledSelectionCoords.topLeftX + " " 
           + scaledSelectionCoords.topLeftY + " "
           + scaledSelectionCoords.topRightX + " " 
-          + scaledSelectionCoords.topRightY 
+          + scaledSelectionCoords.topRightY +
+          + scaledSelectionCoords.bottomLeftX + " " 
+          + scaledSelectionCoords.bottomLeftY + " " 
+          + scaledSelectionCoords.bottomRightX + " " 
+          + scaledSelectionCoords.bottomRightY
         + " ] /Subtype /Highlight >>\n\
 endobj\n";
       
