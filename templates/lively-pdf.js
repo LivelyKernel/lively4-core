@@ -131,18 +131,18 @@ export default class LivelyPDF extends Morph {
     if (this.shadowRoot.getSelection().rangeCount > 0) {
       let scale = this.pdfViewer._pages[0].viewport.scale;
       let selectionCoords = this.shadowRoot.getSelection().getRangeAt(0).getBoundingClientRect();
-      let pageCoords = this.shadowRoot.querySelector('.page:first-child').getBoundingClientRect();
+      let pageCoords = this.shadowRoot.querySelector('.page:first-child .canvasWrapper').getBoundingClientRect();
       
       // Get coords of the selection depending on the PDF scale 
       let scaledSelectionCoords = {
         topLeftX: (selectionCoords.x - pageCoords.x) / scale,
-        topLeftY: (selectionCoords.y - pageCoords.y) / scale,
+        topLeftY: (pageCoords.bottom - selectionCoords.y) / scale,
         topRightX: (selectionCoords.x - pageCoords.x + selectionCoords.width) / scale,
-        topRightY: (selectionCoords.y - pageCoords.y) / scale,
+        topRightY: (pageCoords.bottom - selectionCoords.y) / scale,
         bottomLeftX: (selectionCoords.x - pageCoords.x) / scale,
-        bottomLeftY: (selectionCoords.y - pageCoords.y + selectionCoords.height) / scale,
+        bottomLeftY: (pageCoords.bottom - selectionCoords.y + selectionCoords.height) / scale,
         bottomRightX: (selectionCoords.x - pageCoords.x + selectionCoords.width) / scale,
-        bottomRightY: (selectionCoords.y - pageCoords.y + selectionCoords.height) / scale
+        bottomRightY: (pageCoords.bottom - selectionCoords.y + selectionCoords.height) / scale
       };
       
       let [newAnnotationId, newPopupId] = this.getNewAnnoationIds();
@@ -153,7 +153,7 @@ export default class LivelyPDF extends Morph {
           + scaledSelectionCoords.topLeftY + " " 
           + scaledSelectionCoords.bottomRightX + " " 
           + scaledSelectionCoords.bottomRightY 
-        + " ] /Contents (much wow) /F 4 /QuadPoints [ " 
+        + " ] /Contents (much wow) /C [ 0.3455441 0.6214520 0.9300745 ] /F 4 /QuadPoints [ " 
           + scaledSelectionCoords.bottomLeftX + " " 
           + scaledSelectionCoords.bottomLeftY + " " 
           + scaledSelectionCoords.bottomRightX + " " 
