@@ -377,17 +377,25 @@ export default class Lively {
   }
 
   static setPosition(obj, point, mode) {
+    if (obj instanceof SVGElement && !(obj instanceof SVGSVGElement)) {
+      if (obj.transform && obj.transform.baseVal) {
+        // get the position of an svg element
+        var t = obj.transform.baseVal.consolidate()
+        if (t) {
+          t.setTranslate(point.x,point.y)
+        } else {
+          obj.setAttribute("transform", `translate(${point.x}, ${point.y})`)
+        }
+      } else {
+        throw new Error("path has no transformation")
+      }
+    } else {
+      // normal DOM Element
       obj.style.position = mode || "absolute";
-
-      // var bounds = that.getBoundingClientRect().top
-      //var deltax = point.x - bounds.left
-      // var deltay = point.y - bounds.top
-
-      // obj.style.left = ""+  ((obj.style.left || 0) - deltax) + "px";
-      // obj.style.top = "" + ((obj.style.top || 0) - deltay) + "px";
       obj.style.left = ""+  point.x + "px";
       obj.style.top = "" +  point.y + "px";
-      obj.dispatchEvent(new CustomEvent("position-changed"))
+      obj.dispatchEvent(new CustomEvent("position-changed"))      
+    }
   }
   
   
@@ -395,6 +403,20 @@ export default class Lively {
   
   static getPosition(obj) {
     var pos;
+    if (obj instanceof SVGElement && !(obj instanceof SVGSVGElement)) {
+      if (obj.transform && obj.transform.baseVal) {
+        // get the position of an svg element
+        var t = obj.transform.baseVal.consolidate()
+        if (!t) return pt(0,0)
+        var m = t.matrix
+        var p = new DOMPoint(0, 0)    
+        var r = p.matrixTransform(m)
+        return pt(r.x / r.w, r.y / r.w)      
+      } else {
+        throw new Error("path has no transformation")
+      }
+    }
+    
     if (obj.clientX)
       return pt(obj.clientX, obj.clientY);
     if (obj.style) {
@@ -641,6 +663,10 @@ export default class Lively {
     } catch(e) {
       console.log('%cERROR in lively.notify', 'font-size: 9px; color: red', e);
     }
+  }
+  
+  static success(title, text, timeout, cb) {
+    this.notify(title, text, timeout, cb, 'green');
   }
   
   static warn(title, text, timeout, cb) {
@@ -1468,12 +1494,15 @@ export default class Lively {
     return Array.from(all)
   }
   
-  static gotoWindow(element) {
+  static gotoWindow(element, justFocuWhenInBounds) {
     element.focus()
-    document.scrollingElement.scrollTop = 0
-    document.scrollingElement.scrollLeft = 0
-    var pos = lively.getPosition(element).subPt(pt(0,0))
-    lively.setPosition(document.body, pos.scaleBy(-1))
+
+    if (!justFocuWhenInBounds) {
+      document.scrollingElement.scrollTop = 0
+      document.scrollingElement.scrollLeft = 0
+      var pos = lively.getPosition(element).subPt(pt(0,0))
+      lively.setPosition(document.body, pos.scaleBy(-1))      
+    } 
   }
 
   //  lively.allPreferences()
@@ -1488,6 +1517,10 @@ export default class Lively {
     var s = Date.now()
     await func()
     return Date.now() - s  
+  }
+  
+  static get halo() {
+    return HaloService.halo[0]
   }
   
   static onMouseDown(evt) {
@@ -1519,6 +1552,30 @@ export default class Lively {
     return new Promise(resolve => {
       window.setTimeout(resolve, time)
     })
+  }
+  
+  static allElements(deep=false, root=document.body, all=new Set()) {
+    root.querySelectorAll("*").forEach(ea => {    
+      all.add(ea)
+      if (deep && ea.shadowRoot) {
+        this.allElements(deep, ea.shadowRoot, all)
+      }        
+    })
+    return all
+  }
+  
+  static allParents(element, parents=[]) {
+    if (!element.parentElement) {
+      return parents
+    }
+    parents.push(element.parentElement)
+    this.allParents(element.parentElement, parents)
+    return parents
+  }
+  
+  static showHalo(element) {
+    window.that = element
+    HaloService.showHalos(element)
   }
   
 }

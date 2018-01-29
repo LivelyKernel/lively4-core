@@ -4,9 +4,9 @@ import Preferences from "./../preferences.js";
 export default class Selecting {
 
   static shouldHandle(e) {
-    return Preferences.get('CtrlAsHaloModifier') ?
+    return (Preferences.get('CtrlAsHaloModifier') ?
         e.ctrlKey || e.metaKey :
-        e.altKey;
+        e.altKey) && !HaloService.isDragging;
   }
   static load() {
      if (!window.lively) {
@@ -27,7 +27,9 @@ export default class Selecting {
     // lively.showElement(e.path[0])
     
     if (this.shouldHandle(e)) {
-    
+  
+   
+      
       // lively.showElement(e.path[0])
     
       
@@ -47,7 +49,7 @@ export default class Selecting {
 
   static handleMouseUp(e) {
     if (this.shouldHandle(e)) {
-      // console.log("mouse up " + e.target.tagName)
+      console.log("mouse up " + e.target.tagName)
       e.stopPropagation();
       e.preventDefault();
     } else {
@@ -110,6 +112,7 @@ export default class Selecting {
       var rootNode = this.findRootNode(document.body)
       var path = this.slicePathIfContainerContent(e.path);
       // workaround weird toplevel event issues... the halo should not get the event
+      // lively.notify("path " + e.path.map(ea => ea.tagName))
       if (e.path.find(ea => ea.tagName == "LIVELY-HALO")) {
         path = this.lastPath || e.path
       }      

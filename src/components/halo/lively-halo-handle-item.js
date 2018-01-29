@@ -18,6 +18,7 @@ export default class HaloHandleItem extends HaloItem {
   }
 
   onMouseDown(evt) {
+    HaloService.isDragging  =true
     this.start(evt);
 
     // attach mousemove handler to body only after mousedown occured
@@ -89,6 +90,7 @@ export default class HaloHandleItem extends HaloItem {
   }
 
   stop(evt) {
+    HaloService.isDragging = false
     this.halo.info.stop()
     evt.preventDefault();
   }

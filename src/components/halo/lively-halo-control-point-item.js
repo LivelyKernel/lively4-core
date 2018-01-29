@@ -7,6 +7,7 @@ import Snapping from "src/client/morphic/snapping.js"
 import {Grid} from 'src/client/morphic/snapping.js';
 import Strings from 'src/client/strings.js';
 import SVG from "src/client/svg.js"
+import _ from 'src/external/underscore.js'
 
 export default class HaloControlPointItem extends HaloItem {
   
@@ -23,7 +24,9 @@ export default class HaloControlPointItem extends HaloItem {
     this.path = path
     this.index = index
     lively.setPosition(this, pt(0,0))
-    this.offset = lively.getGlobalPosition(this.path.parentElement).subPt(lively.getGlobalPosition(this))
+//    this.offset = lively.getGlobalPosition(this.path.parentElement).subPt(lively.getGlobalPosition(this))
+    this.offset = lively.getGlobalPosition(this.path)
+      .subPt(lively.getGlobalPosition(this))
     this.updatePosition()
     if (this.isConnector) {
       this.get("#shape").classList.add("connector")
@@ -72,8 +75,10 @@ export default class HaloControlPointItem extends HaloItem {
     this.stop(evt);
   }
 
-  start(evt, target) {
+  start(evt, target) {    
     this.target = target || window.that
+    // lively.notify("svg start " + lively.getPosition(this.target))
+
     // this.snapping = new Snapping(this.target) 
     if (evt.shiftKey && evt.ctrlKey) {
       this.addCurvePoint(evt)
@@ -88,8 +93,10 @@ export default class HaloControlPointItem extends HaloItem {
     if (!cp) return
     
     this.original = this.getCurvePoint(cp, this.curveIndex)
+    // lively.notify("original " + this.original)
     
     this.eventOffset = events.globalPosition(evt)
+    // lively.notify("eventOffset " + this.eventOffset)
 
     this.halo.shadowRoot.querySelectorAll(".halo").forEach(ea => {
       ea.style.visibility = "hidden"
@@ -107,7 +114,7 @@ export default class HaloControlPointItem extends HaloItem {
     this.target.style.pointerEvents = "none"; // disable mouse events while dragging...
     
     if (this.isConnector) {
-      lively.notify("find target")
+      // lively.notify("find target")
       this.findTargetAt(evt)
     }
   }
@@ -209,9 +216,10 @@ export default class HaloControlPointItem extends HaloItem {
     })
     return controlPoints
   }
-  
-  
+
   move(evt) {
+    // lively.notify("svg " + lively.getPosition(this.target))
+
     const snapRange = 20; // #TODO make preference
     
     var world = lively.findWorldContext(this.target)
@@ -221,7 +229,14 @@ export default class HaloControlPointItem extends HaloItem {
     
     // non-connector path
     var delta = events.globalPosition(evt).subPt(this.eventOffset)
-    this.setVerticePosition(pt(this.original.x + delta.x, this.original.y + delta.y))
+
+    var newPos = pt(this.original.x + delta.x, this.original.y + delta.y)
+    if (!evt.ctrlKey) { // #TODO alt does not work with pointer events
+      newPos = Grid.snapPt(newPos, 10, 5) 
+    }
+    
+   //  lively.notify("newPos " + newPos)
+    this.setVerticePosition(newPos)
     
     if (this.isConnector) {
       this.findTargetAt(evt, world)
@@ -239,14 +254,18 @@ export default class HaloControlPointItem extends HaloItem {
       var points = this.findControlPoints(world)
       var myPos = lively.getGlobalPosition(this)
       var pointsDist = points.map(ea => {return {point: ea, dist: ea.dist(myPos)}})
-      var nearPoints = _.sortBy(pointsDist.filter(ea => ea.dist < snapRange), ea => ea.dist).map(ea => ea.point)
+      
+      
+      if (!evt.ctrlKey) {
+        var nearPoints = _.sortBy(pointsDist.filter(ea => ea.dist < snapRange), ea => ea.dist).map(ea => ea.point)
 
-      // nearPoints.forEach(ea => lively.showPoint(ea))
-      if (nearPoints[0]) {
-        // lively.showPoint(nearPoints[0])
-        var p = nearPoints[0].subPt(lively.getGlobalPosition(this.path.parentElement))
-        this.setVerticePosition(p)
-    
+        // nearPoints.forEach(ea => lively.showPoint(ea))
+        if (nearPoints[0]) {
+          // lively.showPoint(nearPoints[0])
+          var p = nearPoints[0].subPt(lively.getGlobalPosition(this.path.parentElement))
+          this.setVerticePosition(p)
+
+        }        
       }
       
     }
