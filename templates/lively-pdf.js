@@ -174,16 +174,48 @@ endobj\n";
       + " ] >>\n\
 endobj\n";     
       
-    
-      console.log("huhu");
+      let currentPageNumber = this.shadowRoot.getSelection().anchorNode.parentNode.parentNode.parentNode.dataset.pageNumber;
+      
+      let currentPageRegex = new RegExp("^<<\\s\\/Type\\s\\/Page\\s.*\\n*.*>>$", 'gm');
+      let currentPageString = this.editedPdfText.match(currentPageRegex)[currentPageNumber - 1];
+      
+      if (currentPageString.indexOf('/Annots') === -1) {
+        // TODO: implement this. Have fun! :-P
+      }
+      else {
+        let annotationsArrayReferenceRegEx = new RegExp("/Annots\\s(\\d+)\\s\\d+", "gm");
+        let annotationsArrayReference = annotationsArrayReferenceRegEx.exec(currentPageString)[1];
+        
+        let annotationsArrayRegEx = new RegExp("^(" + annotationsArrayReference + "\\s\\d\\sobj\\n*.*\\n*endobj)", "mg");
+        let annotationsArray = this.editedPdfText.match(annotationsArrayRegEx)[0];
+        let newAnnoationsArray = annotationsArray.replace(" ]", " " + newAnnotationId + " 0 R " + newPopupId + " 0 R ]");
+        this.editedPdfText = this.editedPdfText.replace(annotationsArray, newAnnoationsArray);
+      }
+            
+      
       this.editedPdfText = this.editedPdfText.replace('xref', rawPopupAnnotation + rawAnnotation + "xref");
       this.setChangeIndicator(true);
-      this.onPdfSave();
+      this.savePdf();
       
     }
   }
   
   onPdfSave() {
+    this.savePdf();
+  }
+  
+  onPdfCancel() {
+    this.disableEditMode(); 
+    
+    this.editedPdfText = this.originalPdfText;
+    // Remove event listener
+    let annotations = this.getAllSubmorphs(".annotationLayer section.highlightAnnotation");
+    annotations.forEach((annotation) => {
+      lively.removeEventListener("pdf", annotation, "click", eventFunctionObject);
+    });
+  }
+  
+  savePdf() {
     let url = this.getAttribute("src");
     let newPdfData = "data:application/pdf;base64," + btoa(this.editedPdfText);
     let that = this;
@@ -199,17 +231,6 @@ endobj\n";
         
         that.setChangeIndicator(false);
       });
-    });
-  }
-  
-  onPdfCancel() {
-    this.disableEditMode(); 
-    
-    this.editedPdfText = this.originalPdfText;
-    // Remove event listener
-    let annotations = this.getAllSubmorphs(".annotationLayer section.highlightAnnotation");
-    annotations.forEach((annotation) => {
-      lively.removeEventListener("pdf", annotation, "click", eventFunctionObject);
     });
   }
   
