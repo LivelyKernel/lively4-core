@@ -63,11 +63,12 @@ export default class Halo extends Morph {
   }
 
   updateHandles(target) {
+    if (!target) return;
     // console.log("update handles")
     this.shadowRoot.querySelectorAll("lively-halo-handle-item").forEach(ea => {
       ea.style.visibility = null
     })  
-    if (target instanceof SVGSVGElement || target.isConnector) {
+    if (target && (target instanceof SVGSVGElement || target.isConnector)) {
       this.shadowRoot.querySelectorAll("lively-halo-handle-item").forEach(ea => {
         // lively.notify("hide handles" + ea)
         ea.style.visibility = "hidden"
@@ -123,14 +124,16 @@ export default class Halo extends Morph {
       return;
     }
     $(this).show();
-    lively.globalFocus()
+    lively.globalFocus();
   
-    this.alignHaloToBounds(target)
-    this.updateHandles(target)
+    this.alignHaloToBounds(target);
+    this.updateHandles(target);
     
     this.shadowRoot.querySelectorAll(".halo").forEach(ea => {
-      if (ea.updateTarget) ea.updateTarget(target)
-    })
+      if (ea.updateTarget) {
+        ea.updateTarget(target);
+      }
+    });
   }
   
   alignHaloToBounds(target) {
@@ -201,6 +204,8 @@ export default class Halo extends Morph {
     HaloService.halo[0].shadowRoot.querySelectorAll(".halo").forEach(ea => {
       ea.style.visibility = null
     })
+    
+    HaloService.halo[0].updateHandles(window.that)
   }
   
   // 

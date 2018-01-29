@@ -1,5 +1,6 @@
 import { pt } from 'src/client/graphics.js';
 import { debounce, through, asDragImageFor, getObjectFor, removeTempKey } from "utils";
+import { letsScript } from 'src/client/vivide/vivide.js';
 
 export function applyDragCSSClass() {
   this.addEventListener('dragenter', evt => {
@@ -66,19 +67,7 @@ const dropOnDocumentBehavior = {
           const tempKey = dt.getData("vivide/list-input");
           const data = getObjectFor(tempKey);
           removeTempKey(tempKey);
-
-          lively.openComponentInWindow("vivide-list").then(vl1 => {
-            vl1.pushTransformation(list => list);
-            vl1.pushDepiction(knot => knot.label());
-            vl1.show(data);
-            
-            lively.openComponentInWindow("vivide-list").then(vl2 => {
-              vl2.pushTransformation(list => list);
-              vl2.pushDepiction(elem => elem.url);
-              vl1.register(vl2);
-            });
-          });
-
+          letsScript(data, evt);
           return true;
         }
       },

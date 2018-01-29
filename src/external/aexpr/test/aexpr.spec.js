@@ -5,6 +5,7 @@ import sinonChai from 'node_modules/sinon-chai/lib/sinon-chai.js';
 chai.use(sinonChai);
 
 import {reset} from 'aexpr-source-transformation-propagation';
+import * as frameBasedAExpr from "frame-based-aexpr";
 
 aexpr(()=>{});
 
@@ -19,20 +20,6 @@ describe('simplify locals', function() {
     aexpr(() => myIdentifier).onChange(()=>{});
 
     _ =  myIdentifier = 2;
-  });
-});
-describe('disposeOnLastCallbackDetached', function() {
-  it('is defined', () => {
-    let exp = aexpr(() => {});
-    expect(exp).to.respondTo('disposeOnLastCallbackDetached');
-  });
-  xit('is chainable', () => {
-    let exp = aexpr(() => {})
-    let exp2 = exp.disposeOnLastCallbackDetached();
-    expect(exp2).to.equal(exp);
-  });
-  xit('works', () => {
-    // #TODO: proper test first
   });
 });
 describe('loop constructs', function() {

@@ -20,7 +20,7 @@
       color: #000;
     }
     
-    .item h1 {
+    .item h4 {
       font-size: 14px;
       margin: 0;
     }
@@ -54,22 +54,61 @@
     .add-action {
       cursor: pointer;
       text-align: center;
-    }
-    
-    .clouditem-right {
-      width: 100%;
-    }
-    
-    .action-list ul {
-      list-style: none;
-      padding-left: 0;
-      margin: 2px 0;
+      height: 100%;
     }
     
     .delete-action {
       cursor: pointer;
     }
     
+    .clouditem-right {
+      width: 100%;
+    }
+    
+    .watcher-wrapper {
+      border: 1px solid #aaa;
+      padding: 2px;
+      background-color: #997987;
+    }
+    
+    .action-list {
+/*       list-style: none; */
+      padding-left: 0;
+      margin: 2px 0 0 5px;
+      border: 1px solid #aaa;
+      background-color: #879979;
+    }
+    
+    .delete-action {
+      cursor: pointer;
+    }
+    
+    button {
+      font-size: 75%;
+      margin-left: 1em;
+    }
+    
+    h6 {
+      position: relative;
+/*       font-size: 30px; */
+      z-index: 1;
+      overflow: hidden;
+      text-align: center;
+      margin: 0;
+    }
+    h6:before, h1:after {
+      position: absolute;
+      top: 51%;
+      overflow: hidden;
+      width: 50%;
+      height: 1px;
+      content: '\a0';
+      background-color: black;
+    }
+    h6:before {
+      margin-left: -50%;
+      text-align: right;
+    }
   </style>
 
 <div class="item">
@@ -77,19 +116,24 @@
   <div class="status">&#9679;</div>
   
   <div class="clouditem-right">
-    <h1>Itemname</h1>
+    <div class="watcher-wrapper">
+      <h6>
+        Watcher
+      </h6>
+      <h4>Itemname</h4>
+      <button id="modify-configuration">
+        Modify config
+      </button>      
+    </div>
     <div class="action-list">
-      <ul id="action-ul">
-<!--         <li>Action 1 <i class="fa fa-times delete-action" aria-hidden="true"></i></li>
-        <li>Action 2 <i class="fa fa-times delete-action" aria-hidden="true"></i></li> -->
-      </ul>
+      <h6>
+        Actions
+      </h6>
     </div>
     <div class="add-action">
       <i class="fa fa-plus" aria-hidden="true"></i>
-<!--       <small> Add action</small> -->
     </div>  
   </div>
-<!--   <div class="clear"></div> -->
 </div>
 
 </template>

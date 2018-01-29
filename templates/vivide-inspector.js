@@ -2,6 +2,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class VivideInspector extends Morph {
   async initialize() {
+    this.windowTitle = "VivideInspector";
   }
   
   async inspect(widget) {
@@ -14,7 +15,7 @@ export default class VivideInspector extends Morph {
     }
     
     if(this.widget.transformation) {
-      await this.fillFunctionsTableSingle(this.widget.transformation);
+      await this.fillFunctionsTableSingle(this.widget.transformation, this.widget.depiction);
     }
   }
   
@@ -58,7 +59,7 @@ export default class VivideInspector extends Morph {
     return depictionDiv;
   }
   
-  async fillFunctionsTableSingle(transformation, depiction=undefined, number=undefined) {
+  async fillFunctionsTableSingle(transformation, depiction, number=undefined) {
     this.get("#functions").append(
       await this.buildTransformationCell(transformation, number)
     );
@@ -72,11 +73,7 @@ export default class VivideInspector extends Morph {
   
   async fillFunctionsTableMultiple() {
     for(let i=0; i<this.widget.transformations.length; ++i) {
-      if(this.widget.depictions.length > i) {
-        await this.fillFunctionsTableSingle(this.widget.transformations[i], this.widget.depictions[i], i);
-      } else {
-        await this.fillFunctionsTableSingle(this.widget.transformations[i], undefined, i);
-      }
+      await this.fillFunctionsTableSingle(this.widget.getTransformation(i), this.widget.getDepiction(i), i);
     }
   }
   

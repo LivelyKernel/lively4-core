@@ -48,7 +48,7 @@
     
     .handle {
       position: absolute;
-      z-index: 9999;
+      z-index: 199;
     }
         
     .control-point {
@@ -56,9 +56,15 @@
       z-index: 9999;
     }
     
+    #style {
+      z-index: 11000;
+    }
+      
     </style>
     <div class="container">
       <div class="row" id="row1">
+        <lively-halo-menu-item class="halo"></lively-halo-menu-item>
+        <lively-halo-style-item id="style" class="halo"></lively-halo-style-item>
         <lively-halo-grab-item class="halo"></lively-halo-grab-item>
         <lively-halo-drag-item class="halo"></lively-halo-drag-item>
         <lively-halo-remove-item class="halo"></lively-halo-remove-item>
@@ -68,10 +74,6 @@
         <lively-halo-inspect-item class="halo"></lively-halo-inspect-item>
       </div> 
       <div class="row" id="row3">
-        <lively-halo-menu-item class="halo"></lively-halo-menu-item>
-        <lively-halo-style-item class="halo"></lively-halo-style-item>
-      </div> 
-      <div class="row" id="row4">
         <lively-halo-edit-item class="halo"></lively-halo-edit-item>
         <lively-halo-name-item class="halo"></lively-halo-name-item>        
         <lively-halo-resize-item class="halo"></lively-halo-resize-item>

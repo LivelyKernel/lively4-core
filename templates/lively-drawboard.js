@@ -215,7 +215,15 @@ export default class LivelyDrawboard extends Morph {
       attributes: true});
   }
 
-
+  freehand() {
+    this.classList.add("freehand")
+    this.get("#svg").style.overflow = "visible";
+    
+    // this.style.backgroundColor = "transparent"
+    // this.style.border = "0pxffffff"        
+    // this.get("svg").style.overflow = "visible"
+  }
+    
   onPointerDown(evt) {
     if (!this.svg) return
     
@@ -291,13 +299,14 @@ export default class LivelyDrawboard extends Morph {
   // Event handler called for each pointerdown event:
   onPointerMove(evt) {
     
-    if (evt.getCoalescedEvents) {
-      var missedEvents = evt.getCoalescedEvents()
-      // lively.showPath(missedEvents.map( ea => pt(ea.clientX, ea.clientY)))
-      missedEvents.forEach(ea => {
-        this.onPointerMove(ea)
-      })
-    }
+    // #BUG seems to jump back...
+    // if (evt.getCoalescedEvents) {
+    //   var missedEvents = evt.getCoalescedEvents()
+    //   // lively.showPath(missedEvents.map( ea => pt(ea.clientX, ea.clientY)))
+    //   missedEvents.forEach(ea => {
+    //     this.onPointerMove(ea)
+    //   })
+    // }
     
     // console.log("move " + (Date.now() - this.lastMove))
     // this.lastMove = Date.now()
@@ -394,6 +403,14 @@ export default class LivelyDrawboard extends Morph {
   }
   
   simplifyPath(path) {
+    // if (true) {
+    //   var tmp = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+    //   tmp.innerHTML = path.outerHTML
+    //   var debugPath = tmp.querySelector("path")
+    //   debugPath.setAttribute("stroke", "red")
+    //   path.parentElement.appendChild(debugPath)            
+    // }
+    
     this.paper.project.activeLayer.removeChildren();
     this.paper.project.importSVG(path)
     var paperPath = paper.project.getItems({class: paper.Path})[0]

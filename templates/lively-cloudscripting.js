@@ -64,8 +64,7 @@ export default class LivelyCloudscripting extends Morph {
   credentialsClick(evt) {
     var that = this;
     lively.openComponentInWindow('lively-cloudscripting-credentials').then(credentialsWindow => {
-      credentialsWindow.name = that.name;
-      lively.notify("TODO: save credentials?")
+      credentialsWindow.setName(name);
     });
   }
   
@@ -151,7 +150,7 @@ export default class LivelyCloudscripting extends Morph {
     }
     
     for(var prop in triggers) {
-      lively.notify(triggers[prop].running);
+      var that = this;
       if(!triggers.hasOwnProperty(prop)) continue;
       
       var item = document.createElement('lively-cloudscripting-item');
@@ -162,19 +161,26 @@ export default class LivelyCloudscripting extends Morph {
         item.getSubmorph('.item').classList.add('selected');
       }
       var title = prop;
-      item.getSubmorph('h1').innerHTML = title;
+      item.getSubmorph('h4').innerHTML = title;
       
       // Only show active actions
-      var ul = item.getSubmorph('#action-ul');
+      var actionList = item.getSubmorph('.action-list');
       var length = triggers[prop]['actions'] ? triggers[prop]['actions'].length : 0;
       for(var i=0; i<length; i++) {
-        var li = document.createElement('li');
-        li.innerHTML = "<li>" + triggers[prop]['actions'][i] + "<i class=\"fa fa-times delete-action\" aria-hidden=\"true\"></i></li>";
-        ul.appendChild(li);
+        var actionName = triggers[prop]['actions'][i];
+        var action = document.createElement('lively-cloudscripting-action-item');
+        action.addEventListener('click', this.showCode.bind(this))
+        action.setAttribute('data-id', actionName);
+        action.getSubmorph('h5').innerHTML = actionName;
+        var icon = action.getSubmorph('i')
+        icon.addEventListener('click', function(event) {
+          event.stopPropagation();
+          that.unassignAction();
+        })
+        action.appendChild(icon);
+        actionList.appendChild(action);
       }
       
-      
-      var that = this;
       item.getSubmorph('.add-action').addEventListener('click', function(event){
         event.stopPropagation();
         var triggerName = event.target.parentNode.parentNode.children[0].innerHTML;
@@ -222,9 +228,13 @@ export default class LivelyCloudscripting extends Morph {
       url: endpoint + 'mount/' + filename,
       type: 'PUT',
       data: JSON.stringify({data:that.codeEditor.getValue(),user:name}),
-      success: function(){lively.notify("File saved on Heroku")},
+      success: function(){lively.notify("File saved on Heroku", undefined, undefined, undefined, "green")},
       error: this.handleAjaxError.bind(this)
     }); 
+  }
+  
+  unassignAction(triggerName, actionName) {
+    lively.warn("TODO: unassign " + actionName + "for trigger" + triggerName + " and user " + name);
   }
   
   assignAction(triggerName) {
@@ -242,7 +252,6 @@ export default class LivelyCloudscripting extends Morph {
   assignActionUrl(url, triggerName, that) {
     url = url.toString();
     url = url.substring(url.lastIndexOf('/') + 1);
-    alert("assignAction " + url + " for trigger " + triggerName)
     $.ajax({
       url: endpoint + 'assignAction',
       type: 'POST',

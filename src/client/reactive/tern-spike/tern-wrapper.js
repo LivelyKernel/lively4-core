@@ -6,6 +6,8 @@ import 'src/external/aexpr/tern/modules.js';
 import 'src/external/aexpr/tern/es_modules.js';
 t;
 
+import { fileName } from 'utils';
+
 export class TernCodeMirrorWrapper {
   static loadDefinition(fileName) {
     return fetch(`src/external/aexpr/tern/${fileName}`).then(res => res.json());
@@ -13,7 +15,6 @@ export class TernCodeMirrorWrapper {
   static async initTernServer() {
     return new tern.Server({
       getFile(fileName, callback) {
-        //lively.notify(`tern.Server get ${fileName}`, undefined, undefined, undefined, 'gray');
         fetch(fileName)
           .then(res => res.text())
           .then(text => callback(null, text))
@@ -58,7 +59,114 @@ export class TernCodeMirrorWrapper {
           type: "type",
           file: livelyCodeMirror.getTargetModule(),
           end: cursorPosition,
-          start: undefined,
+          start: undefined, // #TODO: improve by checking for selections first
+          lineCharPositions: true
+        },
+        files: [{
+          type: 'full',
+          name: livelyCodeMirror.getTargetModule(),
+          text: livelyCodeMirror.value
+          
+        }],
+        //timeout: 10 * 1000
+      });
+      showContextInfo(cmEditor, response);
+    } catch(error) {
+      showError(cmEditor, error);
+    }
+  }
+  static updateArgHints(cmEditor, livelyCodeMirror) {
+    // #TODO: implement efficiently
+    //updateArgHints(cmEditor, livelyCodeMirror, this)
+  }
+  
+  static get jumpStack() {
+    return this._jumpStack || (this._jumpStack = []);
+  }
+  static async inner(cmEditor, livelyCodeMirror) {
+  }
+  static async moveTo(cmEditor, livelyCodeMirror, data) {
+    let targetCM = cmEditor;
+
+    // in same doc?
+    if(livelyCodeMirror.getTargetModule() !== data.file) {
+      let existingEditor = Array.from(document.querySelectorAll("body /deep/ lively-code-mirror"))
+        .find(livelyCodeMirror => livelyCodeMirror.getTargetModule() === data.file);
+      // jump to data.file
+      if(existingEditor) {
+        targetCM = existingEditor.editor;
+      } else {
+        let livelyEditor = await lively.openBrowser(data.file, true)
+          .then(container => container.getEditor());
+        targetCM = livelyEditor.currentEditor() //.editor;
+      }
+    }
+
+    let enclosingWindow = lively.findWindow(targetCM.getWrapperElement());
+    if(enclosingWindow && enclosingWindow.tagName === 'LIVELY-WINDOW') {
+      lively.gotoWindow(enclosingWindow, true);
+    }
+    targetCM.focus();
+
+    // go to correct location
+    targetCM.setSelection(data.start, data.end);
+  }
+  static async jumpToDefinition(cmEditor, livelyCodeMirror) {
+    if(!atInterestingExpression(cmEditor)) {
+      showError(cmEditor, 'No interesting variable found');
+      return;
+    }
+    
+    let cursorPosition = cmEditor.getCursor();
+    
+    try {
+      let data = await this.request({
+        query: {
+          type: "definition",
+          file: livelyCodeMirror.getTargetModule(),
+          end: cursorPosition,
+          start: undefined, // #TODO: improve by checking for selections first
+          lineCharPositions: true
+        },
+        files: [{
+          type: 'full',
+          name: livelyCodeMirror.getTargetModule(),
+          text: livelyCodeMirror.value
+        }]
+      });
+      
+      // properties of response data
+      // [start, end, file, context, contextOffset, doc, url, origin]
+
+      if (data.file) {
+        this.jumpStack.push({
+          file: livelyCodeMirror.getTargetModule(),
+          start: cmEditor.getCursor("from"),
+          end: cmEditor.getCursor("to")
+        });
+        // ### Stackpush, then moveTo
+        this.moveTo(cmEditor, livelyCodeMirror, data);
+      } else {
+        showError(cmEditor, `Could not find a definition.`);
+      }
+    } catch(error) {
+      showError(cmEditor, error);
+    }
+  }
+  static async jumpBack(cmEditor, livelyCodeMirror) {
+    jumpBack(cmEditor, livelyCodeMirror, this);
+  }
+  static async showReferences(cmEditor, livelyCodeMirror) {
+    let cursorPosition = cmEditor.getCursor();
+    let me = this;
+    
+    try {
+      let response = await this.request({
+        query: {
+          type: "refs",
+          file: livelyCodeMirror.getTargetModule(),
+          end: cursorPosition,
+          start: undefined, // #TODO: improve by checking for selections first
           lineCharPositions: true
         },
         files: [{
@@ -68,11 +176,45 @@ export class TernCodeMirrorWrapper {
         }],
         //timeout: 10 * 1000
       });
-      showContextInfo(cmEditor, response);
+      lively.success(response.name)
+      if(response.refs.length === 0) {
+        showError(cmEditor, 'No reference found.');
+        return;
+      }
+
+      if(response.type) {
+        lively.success(response.type, "Variable Scope");
+      }
+      cmEditor.showHint({
+        hint() {
+          return {
+            list: response.refs.map(ref => {
+              return {
+                text: '',
+                displayText: fileName.call(ref.file),
+                render(Element, self, data) {
+                  //console.warn(data, self);
+                  Element.appendChild(<span><strong>{ref.file}</strong>{
+                    response.type ? ' ('+response.type+') ' : ''}({
+                    ref.start.line}:{ref.start.ch}-{
+                    ref.end.line}:{ref.end.ch})</span>);
+                },
+                hint: () => me.moveTo(cmEditor, livelyCodeMirror, ref),
+                anwser: 42
+              };
+            }),
+            from: cursorPosition,
+            to: cursorPosition
+          };
+        },
+        alignWithWord: false
+      });
     } catch(error) {
       showError(cmEditor, error);
     }
+
   }
+  
   
   static async __temp__(cm) {
     let ts = await this.ternServer();
@@ -110,6 +252,10 @@ export class TernCodeMirrorWrapper {
     });
   }
 }
+
+// ###############
+// Show Type Query
+// ###############
 
 function showContextInfo(cm, data) {
   var tip = <span><strong>{data.type || 'not found'}</strong></span>;
@@ -177,4 +323,21 @@ function fadeOut(tooltip) {
 function remove(node) {
   var parent = node && node.parentNode;
   if (parent) parent.removeChild(node);
+}
+
+// #####################################
+// Moving to the definition of something
+// #####################################
+
+function jumpBack(cmEditor, livelyCodeMirror, ternServerWrapper) {
+  let target = ternServerWrapper.jumpStack.pop();
+  if(target) {
+    ternServerWrapper.moveTo(cmEditor, livelyCodeMirror, target);
+  }
+}
+
+function atInterestingExpression(cm) {
+  var pos = cm.getCursor("end"), tok = cm.getTokenAt(pos);
+  if (tok.start < pos.ch && tok.type == "comment") return false;
+  return /[\w)\]]/.test(cm.getLine(pos.line).slice(Math.max(pos.ch - 1, 0), pos.ch + 1));
 }

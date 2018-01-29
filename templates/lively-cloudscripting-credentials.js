@@ -4,21 +4,23 @@ import Morph from 'src/components/widgets/lively-morph.js';
 export default class LivelyCloudscriptingCredentials extends Morph {
   async initialize() {
     this.windowTitle = "Credentials for Cloudscripting";
-    lively.notify("Credentials are notifying lskdjfhsdlkfjsdklfjsdlkjf")
-    this.name;
-    
-    var nameElement = this.getSubmorph('#name');
-    alert(nameElement.toString());
-    
+    this.username;
+    this.nameElement = this.getSubmorph('#name');
     this.saveCredentialsButton = this.getSubmorph("#saveCredentials");
-    this.saveCredentialsButton.on('click', this.saveCredentialsClick.bind(this));
+    this.saveCredentialsButton.addEventListener('click', this.saveCredentialsClick.bind(this));
     
   }
   
   saveCredentialsClick() {
     var github = this.getSubmorph('#githubCredentials');
     var dropbox = this.getSubmorph('#dropboxCredentials');
-    lively.warning("TODO: Send credentials to backend");
+    lively.warn("TODO: Send credentials to backend");
+  }
+  
+  setName(name) {
+    alert(name + " inside credentials")
+    this.username = name;
+    this.nameElement.innerHTML = this.username;
   }
   
 }

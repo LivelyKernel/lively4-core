@@ -205,7 +205,7 @@ export default class Container extends Morph {
       const existingContainer = Array.from(document.body.querySelectorAll('lively-container'))
         .find(container => container.getPath() === targetURLString);
       if(existingContainer) {
-        lively.gotoWindow(existingContainer.parentElement);
+        lively.gotoWindow(existingContainer.parentElement, true);
         existingContainer.focus();
       } else {
         lively.openBrowser(targetURLString, true)
