@@ -136,13 +136,13 @@ export default class LivelyPDF extends Morph {
       // Get coords of the selection depending on the PDF scale 
       let scaledSelectionCoords = {
         topLeftX: (selectionCoords.x - pageCoords.x) / scale,
-        topLeftY: (pageCoords.bottom - selectionCoords.y) / scale,
+        topLeftY: (pageCoords.bottom - selectionCoords.y - selectionCoords.height) / scale,
         topRightX: (selectionCoords.x - pageCoords.x + selectionCoords.width) / scale,
-        topRightY: (pageCoords.bottom - selectionCoords.y) / scale,
+        topRightY: (pageCoords.bottom - selectionCoords.y - selectionCoords.height) / scale,
         bottomLeftX: (selectionCoords.x - pageCoords.x) / scale,
-        bottomLeftY: (pageCoords.bottom - selectionCoords.y + selectionCoords.height) / scale,
+        bottomLeftY: (pageCoords.bottom - selectionCoords.y) / scale,
         bottomRightX: (selectionCoords.x - pageCoords.x + selectionCoords.width) / scale,
-        bottomRightY: (pageCoords.bottom - selectionCoords.y + selectionCoords.height) / scale
+        bottomRightY: (pageCoords.bottom - selectionCoords.y) / scale 
       };
       
       let [newAnnotationId, newPopupId] = this.getNewAnnoationIds();
