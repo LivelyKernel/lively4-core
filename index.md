@@ -8,7 +8,7 @@
   - Web-based Development [WebDev 2016](doc/WebDev2016/index.md), [WebDev 2017/18](doc/WebDev2017/index.md)
 - [readme](README.md)
 
-- Lively funktioniert auch offline!
+- Lively funktioniert auch offline
 
 ## Live Source Code
 
