@@ -565,7 +565,14 @@ export default class LivelyTable extends Morph {
   
   splitIntoRows(csv, separator= /[;\t,]/) {
     return csv.split("\n").map(line => {
-      return line.split(separator)
+      return line.split(separator).map(ea => {
+        var m = ea.match(/^"(.*)"$/)
+        if (m) {
+          return m[1]
+        } else {
+          return ea
+        }
+      })
     })
   }
   
@@ -575,14 +582,6 @@ export default class LivelyTable extends Morph {
   setFromCSVat(csv, column, row, separator) {
     this.setFromArrayAt(this.splitIntoRows(csv, separator), column, row)
   }
-  setFromCSVAt(csv, separator = /[;\t,]/) {
-    var rows = csv.split("\n").map(line => {
-      
-      return line.split(separator)
-    })
-    this.setFromArray(rows)
-  }
-
   
   asJSO() {
     var all = this.asArray()
