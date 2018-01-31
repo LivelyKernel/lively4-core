@@ -734,6 +734,14 @@ export default class Container extends Morph {
     }, 0)
   }
   
+  async appendCSV(content) {
+    var container=  this.get('#container-content');
+    var table = await lively.create("lively-table")
+    table.setFromCSV(content)
+    container.appendChild(table)
+  }
+  
+  
   async appendTemplate(name) {
     try {
     	var node = lively.components.createComponent(name);
@@ -993,7 +1001,8 @@ export default class Container extends Morph {
       if (render) return this.appendHtml('<lively-pdf overflow="visible" src="'
         + url +'"></lively-pdf>');
       else return;
-    }
+    } 
+    
   
     return fetch(url).then( resp => {
       this.lastVersion = resp.headers.get("fileversion");
@@ -1014,6 +1023,9 @@ export default class Container extends Morph {
       } else if (format == "livelymd") {
         this.sourceContent = content;
         if (render) return this.appendLivelyMD(content);
+      } else if (format == "csv") {
+        this.sourceContent = content;
+        if (render) return this.appendCSV(content);
       } else if (format == "error") {
         this.sourceCountent = content;
         if (render) return this.appendHtml(`

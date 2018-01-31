@@ -127,6 +127,14 @@ export default class Files {
   	return fetch(urlString, {method: 'OPTIONS'}).then(resp => resp.status == 200)
   }
 
+  static isURL(urlString) {
+    return urlString.match(/^([a-z]+:)?\/\//) ? true : false;
+  }
 
+  static resolve(string) {
+    if (this.isURL(string)) return string
+    return lively.location.href.replace(/[^/]*$/, string)
+  }
 
+  
 }
