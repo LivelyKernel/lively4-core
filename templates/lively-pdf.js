@@ -154,7 +154,7 @@ export default class LivelyPDF extends Morph {
           + scaledSelectionCoords.bottomLeftY + " "
           + scaledSelectionCoords.topRightX + " " 
           + scaledSelectionCoords.topRightY
-        + " ] /Contents (" + content + ") /C [ 0.3455441 0.6214520 0.9300745 ] /F 4 /QuadPoints [ " 
+        + " ] /Contents (" + content + ") /C [ 0.9709861 0.7674150 0.2850983 ] /F 4 /QuadPoints [ " 
           + scaledSelectionCoords.topLeftX + " " 
           + scaledSelectionCoords.topLeftY + " "
           + scaledSelectionCoords.topRightX + " " 
