@@ -129,6 +129,7 @@ export default class LivelyPDF extends Morph {
   
   onPdfAdd() {
     if (this.shadowRoot.getSelection().rangeCount > 0) {
+      let content = window.prompt('Please enter the content');
       let scale = this.pdfViewer._pages[0].viewport.scale;
       let selectionCoords = this.shadowRoot.getSelection().getRangeAt(0).getBoundingClientRect();
       let pageCoords = this.shadowRoot.querySelector('.page:first-child .canvasWrapper').getBoundingClientRect();
@@ -153,7 +154,7 @@ export default class LivelyPDF extends Morph {
           + scaledSelectionCoords.bottomLeftY + " "
           + scaledSelectionCoords.topRightX + " " 
           + scaledSelectionCoords.topRightY
-        + " ] /Contents (much wow) /C [ 0.3455441 0.6214520 0.9300745 ] /F 4 /QuadPoints [ " 
+        + " ] /Contents (" + content + ") /C [ 0.3455441 0.6214520 0.9300745 ] /F 4 /QuadPoints [ " 
           + scaledSelectionCoords.topLeftX + " " 
           + scaledSelectionCoords.topLeftY + " "
           + scaledSelectionCoords.topRightX + " " 
