@@ -301,9 +301,11 @@ export default class LivelyDrawboard extends Morph {
     
     // #BUG seems to jump back...
     // if (evt.getCoalescedEvents) {
+    //   var i=1
     //   var missedEvents = evt.getCoalescedEvents()
     //   // lively.showPath(missedEvents.map( ea => pt(ea.clientX, ea.clientY)))
     //   missedEvents.forEach(ea => {
+    //     lively.showPoint(lively.getPosition(evt), 10000).innerHTML = "" + i++      
     //     this.onPointerMove(ea)
     //   })
     // }

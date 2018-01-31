@@ -411,6 +411,7 @@ export default class Lively {
         var m = t.matrix
         var p = new DOMPoint(0, 0)    
         var r = p.matrixTransform(m)
+        if (!r || !r.x ) return pt(0,0)
         return pt(r.x / r.w, r.y / r.w)      
       } else {
         throw new Error("path has no transformation")
@@ -890,17 +891,17 @@ export default class Lively {
   }
 
 
-  static showPoint(point) {
-    return this.showRect(point, pt(5,5))
+  static showPoint(point, removeAfterTime) {
+    return this.showRect(point, pt(5,5), removeAfterTime)
   }
 
-  static showEvent(evt) {
-    var r = lively.showPoint(pt(evt.clientX, evt.clientY))
+  static showEvent(evt, removeAfterTime) {
+    var r = lively.showPoint(pt(evt.clientX, evt.clientY), removeAfterTime)
     r.style.backgroundColor = "rgba(100,100,255,05)"
     return r
   }
 
-  static showRect(point, extent) {
+  static showRect(point, extent, removeAfterTime=3000) {
     // check for alternative args
     if (point && !extent) {
       extent = point.extent()
@@ -924,7 +925,9 @@ export default class Lively {
     lively.setPosition(comp, point.subPt(pt(bodyBounds.left, bodyBounds.top)));
     comp.setAttribute("data-is-meta", "true");
 
-    setTimeout( () => $(comp).remove(), 3000);
+    if (removeAfterTime) {
+      setTimeout( () => comp.remove(), removeAfterTime);
+    }
     // ea.getBoundingClientRect
     return comp
   }
