@@ -124,9 +124,10 @@ export default class LivelyPDF extends Morph {
   onPdfAdd() {
     if (this.shadowRoot.getSelection().rangeCount > 0) {
       let content = window.prompt('Please enter the content');
+      let currentPageNumber = this.shadowRoot.getSelection().anchorNode.parentNode.parentNode.parentNode.dataset.pageNumber;
       let scale = this.pdfViewer._pages[0].viewport.scale;
       let selectionCoords = this.shadowRoot.getSelection().getRangeAt(0).getBoundingClientRect();
-      let pageCoords = this.shadowRoot.querySelector('.page:first-child .canvasWrapper').getBoundingClientRect();
+      let pageCoords = this.shadowRoot.querySelector('.page:nth-child(' + currentPageNumber + ') .canvasWrapper').getBoundingClientRect();
       
       // Calculate coords of the selection depending on the PDF scale 
       let scaledSelectionCoords = {
@@ -145,7 +146,6 @@ export default class LivelyPDF extends Morph {
       let [rawAnnotation, rawPopupAnnotation] = this.createAnnotationObjects(scaledSelectionCoords, newAnnotationId, newPopupId, content);
       
       // Get currentPage object in PDF 
-      let currentPageNumber = this.shadowRoot.getSelection().anchorNode.parentNode.parentNode.parentNode.dataset.pageNumber;
       let currentPageRegex = new RegExp("^<<\\s\\/Type\\s\\/Page\\s.*\\n*.*>>$", 'gm');
       let currentPageString = this.editedPdfText.match(currentPageRegex)[currentPageNumber - 1];
       
