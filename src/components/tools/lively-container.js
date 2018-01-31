@@ -441,6 +441,8 @@ export default class Container extends Morph {
     return this.get("#editor").saveFile().then( async () => {
       var sourceCode = this.getSourceCode();
       var url = this.getURL();
+      lively.notify("!!!saved " + url)
+      window.LastURL = url
       if (await this.urlInTemplate(url)) {
         lively.notify("update template")
         if (url.toString().match(/\.html/)) {
