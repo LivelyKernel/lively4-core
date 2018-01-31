@@ -152,11 +152,9 @@ export default class LivelyPDF extends Morph {
       // Check for an existing annotations array
       if (currentPageString.indexOf('/Annots') === -1) {
         // Since there are no annotations we have to create a new annotations array
-        let lastWhiteSpaceRegEx = new RegExp("(\\s)>>", "gm");
-        let lastWhiteSpace = lastWhiteSpaceRegEx.exec(currentPageString)[1];
         let newAnnoationsArray = " /Annots [ " + newAnnotationId + " 0 R " + newPopupId + " 0 R ] ";
-      
-        this.editedPdfText = this.editedPdfText.replace(lastWhiteSpace, newAnnoationsArray);
+        let newPageString = currentPageString.replace(">>", newAnnoationsArray + ">>");
+        this.editedPdfText = this.editedPdfText.replace(currentPageString, newPageString); 
       }
       else {
         // Get annotations array
