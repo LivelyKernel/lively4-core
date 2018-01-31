@@ -1,6 +1,9 @@
 import focalStorage from './../external/focalStorage.js';
 import { uuid as generateUuid } from 'utils';
 import sourcemap from 'src/external/source-map.min.js';
+import Strings from 'src/client/strings.js'
+
+
 
 export default class Files {
   
@@ -135,9 +138,22 @@ export default class Files {
   }
 
   static resolve(string) {
-    if (this.isURL(string)) return string
-    return lively.location.href.replace(/[^/]*$/, string)
+    if (!this.isURL(string)) {
+      var result = lively.location.href.replace(/[^/]*$/, string)
+    } else {
+      result = string.toString()
+    }
+    // get rid of ..
+    result = result.replace(/[^/]+\/\.\.\//g,"")
+    // and .
+    result = result.replace(/\/\.\//g,"/")
+    
+    return result
   }
 
+  static directory(string) {
+    string = string.toString()
+    return string.replace(/([^/]+|\/)$/,"")
+  }
   
 }
