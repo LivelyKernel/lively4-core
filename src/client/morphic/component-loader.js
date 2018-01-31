@@ -364,6 +364,9 @@ export default class ComponentLoader {
   }
 
   static addTemplatePath(path) {
+    if (!lively.files.isURL(path)) {
+      path = lively.location.href.replace(/[^/]*$/, path)
+    }
     var all = this.getTemplatePaths()
     if (!all.includes(path)) {
       all.push(path)
