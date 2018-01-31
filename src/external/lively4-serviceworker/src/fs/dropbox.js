@@ -82,7 +82,7 @@ export default class Filesystem extends Base {
     
     function statinfo(json) {
       return {
-        type: json['is_dir'] ? 'directory' : 'file',
+        type: json['.tag'] == 'folder' ? 'directory' : 'file',
         name: json['name'],
         size: json['size']
       };
