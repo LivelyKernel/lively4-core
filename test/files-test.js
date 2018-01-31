@@ -25,7 +25,7 @@ describe('Files', () => {
       expect(lively.files.resolve(url)).to.be.equal(url)
     });
     it('resolve relative url', () => {
-      expect(lively.files.resolve("bar.html")).to.match(lively.location.host)
+      expect(lively.files.resolve("bar.html")).to.match(new RegExp(lively.location.host))
     });    
   })
   
