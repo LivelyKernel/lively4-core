@@ -8,9 +8,12 @@ import components from './morphic/component-loader.js';
 export default class Preferences {
   
   static load() {
-    this.defaults = {
-      gridSize: {default: 100, short: "grid size"},
-      snapSize: {default: 20, short: "snap size"},
+    console.info('Load preferences')
+    
+    // Keys must be upper case
+    const defaults = {
+      GridSize: {default: 100, short: "grid size"},
+      SnapSize: {default: 20, short: "snap size"},
       SnapPaddingSize: {default: 20, short: "padding while snapping size"},
       SnapWindowsInGrid: {default: false, short: "snap windows in grid"},
       ShowFixedBrowser: {default: true, short: "show fixed browser"},
@@ -23,10 +26,27 @@ export default class Preferences {
       CtrlAsHaloModifier: {default: false, short: "ctrl key as halo modifier"},
       EnableSyvisEditor: {default: false, short: 'Enable syvis editor'},
     }
+    
+    // Make defaults immutable
+    Object.freeze(defaults)
+    
+    this.defaults = defaults
+    
+    Object
+      .entries(defaults)
+      .forEach(([key, obj]) => {
+        this.set(key, obj.default)
+      })
+  }
+  
+  // List all avaiable preferences
+  static list () {
+    return Object
+      .keys(this.defaults)
   }
 
   static shortDescription(preferenceKey) {
-    var pref =  this.defaults[preferenceKey]
+    var pref = this.defaults[preferenceKey]
     if (pref && pref.short) 
       return pref.short
     else
@@ -34,13 +54,25 @@ export default class Preferences {
   }
   
   /* get preference, consider defaults */
-  static get(preferenceKey) {
-    var pref = this.read(preferenceKey)     
-    if (pref === undefined) {
-      var pref =  this.defaults[preferenceKey]
-      if (pref) return pref.default
-    } else  {
+  static get (preferenceKey) {
+    if (!preferenceKey) {
+      console.error('No preference key was specified')
+      return
+    }
+    
+    let pref = this.read(preferenceKey)
+    if (typeof pref === 'string') {
       return JSON.parse(pref)
+    }
+    
+    pref = this.defaults[preferenceKey]
+    if (!pref) {
+      console.error(`Preference "${preferenceKey}" does not exist`)
+      return
+    }
+    
+    if(pref.hasOwnProperty('default')) {
+      return pref.default
     }
   }
   
@@ -82,19 +114,25 @@ export default class Preferences {
     this.applyPreference(preferenceKey)
   }
   
-  static applyPreference(preferenceKey) {
-    var msg = "on" +  preferenceKey[0].toUpperCase() + preferenceKey.slice(1) + "Preference"
-    if (lively[msg]) {
-      try {
-        var json = this.read(preferenceKey)
-        var config = JSON.parse(json)
-        lively[msg](config)
-      } catch(e) {
-        console.log("[preference] could not parse json: " + json)
-      }
-    } else {
-      console.log("[preference] lively does not understand: " + msg)
+  static applyPreference (preferenceKey) {
+    if (!preferenceKey) {
+      console.error('No preference key was specified')
+      return
     }
+    
+    const config = this.get(preferenceKey)
+    if (!config) {
+      console.warn(`[preference] No config for "${preferenceKey}"`)
+      return
+    }
+    
+    const msg = `on${preferenceKey}Preferences`
+    if (!lively[msg]) { 
+      console.warn(`[preference] No event handler registered for "${preferenceKey}"`)
+      return
+    }
+    
+    lively[msg](config)
   }
   
   static loadPreferences() {

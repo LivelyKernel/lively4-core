@@ -218,7 +218,7 @@ export default class Halo extends Morph {
    * holding ALT    .... align to in bigger steps to grid (resize and move)
    */
   moveTargetOnEventWithKey(evt, delta) {
-   var gridSize = lively.preferences.get("gridSize") * 0.25;
+   var gridSize = lively.preferences.get("GridSize") * 0.25;
     if (evt.altKey) {
       delta = delta.scaleBy(gridSize)
     }
