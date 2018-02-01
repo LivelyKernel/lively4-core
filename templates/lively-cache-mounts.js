@@ -43,11 +43,11 @@ export default class LivelyCacheMounts extends Morph {
         this._selectMount(mount);
         li.style.backgroundColor = "#eee";
         
-        this._showDirectory();
+        this._showDirectory(this.selectedMount.path);
       });
       ul.appendChild(li);
       }
-    
+
     mountList.appendChild(ul);
   }
   
@@ -111,17 +111,32 @@ export default class LivelyCacheMounts extends Morph {
   /**
    * Displays the chosen directory
    */
-  async _showDirectory() {
-    let response = await fetch(`https://lively4${this.selectedMount.path}/`, { method: "OPTIONS" });
+  async _showDirectory(path, parentPath) {
+    let response = await fetch(`https://lively4${path}/`, { method: "OPTIONS" });
     let dir = await response.json();
     let dirTree = this.get("#dirTree");
     dirTree.innerHTML = "";
     let ul = document.createElement("ul");
     
+    // Add parent
+    if(path != this.selectedMount.path) {
+      let parentPath = path.split('/');
+      parentPath.pop();
+      parentPath = parentPath.join('/');
+      
+      let li = document.createElement("li");
+      li.innerText = "(D) ..";
+      li.addEventListener("dblclick", async () => {
+        await this._showDirectory(parentPath);
+      });
+      ul.appendChild(li);
+    }
+    
     for (let dirObject of dir.contents) {
       let li = document.createElement("li");
       // Temporary solution the lively4 dropbox API does not provide directory as attribute value yet
-      li.innerText = dirObject.type == "directory" ? "(D) " : "(F) ";
+      const isDirectory = dirObject.type == "directory";
+      li.innerText = isDirectory ? "(D) " : "(F) ";
       li.innerText += dirObject.name;
       
       li.addEventListener("click", () => {
@@ -134,8 +149,18 @@ export default class LivelyCacheMounts extends Morph {
         this._selectMountObject(dirObject);
       });
       
+      if(isDirectory) {
+        li.addEventListener("dblclick", async () => {
+          this._selectMountObject(dirObject);
+          await this._showDirectory(path + '/' + dirObject.name);
+        })
+      }
+      
       ul.appendChild(li);
     }
+    
+    let breadcrumbs = this.get("#breadcrumbs");
+    breadcrumbs.innerHTML = `(${path})`;
     
     dirTree.appendChild(ul);
   }
