@@ -20,8 +20,9 @@ export default class Preferences {
       DisableAltGrab: {default: false, short: "disable alt grab with hand"},
       UseAsyncWorkspace: {default: false, short: "support await in eval"},
       UseTernInCodeMirror: {default: false, short: "enable tern autocomplete and navigation"},
-      CtrlAsHaloModifier: {default: false, short: "ctrl key as halo modifier"}
-    };
+      CtrlAsHaloModifier: {default: false, short: "ctrl key as halo modifier"},
+      EnableSyvisEditor: {default: false, short: 'Enable syvis editor'},
+    }
   }
 
   static shortDescription(preferenceKey) {

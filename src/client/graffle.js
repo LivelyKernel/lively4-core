@@ -318,7 +318,6 @@ export default class Graffle {
   }
   
   static onMouseMove(evt) {
-    console.log("path " + this.currentPath)
     if (this.specialKeyDown()) {
         lively.setGlobalPosition(lively.hand, pt(evt.clientX - 2, evt.clientY -2))    
     }
