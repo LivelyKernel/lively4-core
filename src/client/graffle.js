@@ -59,15 +59,16 @@ export default class Graffle {
   }
   
    static onSelectionHide(evt) {
-    var selection = window.getSelection()
-    if (!document.activeElement || !document.activeElement.isContentEditable) {
-      if (document.activeElement === document.body) {
-        this.hideStyleBalloon() 
-      }
-    } else if (!selection.anchorNode || !selection.isCollapsed) {
-      this.hideStyleBalloon() 
-    }
-  }
+    // var selection = window.getSelection()
+    // if (!document.activeElement || !document.activeElement.isContentEditable) {
+    //   if (document.activeElement === document.body) {
+    //     this.hideStyleBalloon() 
+    //   }
+    // } else if (!selection.anchorNode || !selection.isCollapsed) {
+    //   this.hideStyleBalloon() 
+    // }
+    this.hideStyleBalloon() 
+   }
   
   static onSelectionChange(evt) {
     var selection = window.getSelection()
