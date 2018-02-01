@@ -512,8 +512,9 @@ export default class Lively {
   // compute the global bounds of an element and all absolute positioned elements
   static getTotalGlobalBounds(element) {
     
-    var all = Array.from(element.querySelectorAll("*")).concat([element])
+    var all = Array.from(element.querySelectorAll("*"))
       .filter(ea => ea.style.position == "absolute" || ea.style.position == "relative")
+      .concat([element])  
       .map(ea => lively.getGlobalBounds(ea))
     var max 
     var min 
