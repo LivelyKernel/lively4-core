@@ -153,18 +153,20 @@ describe('Position API', function() {
 describe('getTotalGlobalBounds', function() {
   
   it('return global bounds of an element', () => {
-    var element = document.createElement("div")
-    lively.setGlobalPosition(element, pt(0,0))
-    this.sut = element
-    document.body.appendChild(this.sut)
-    var element2 = document.createElement("div")
-    element.appendChild(element2)
-        
-    lively.setPosition(element2, pt(200,300))
-    lively.setExtent(element2, pt(300,400))
-    
-    var result= lively.getTotalGlobalBounds(element)
-    expect(result.bottomRight().toString()).to.equal(lively.getGlobalBounds(element2).bottomRight().toString())
+    var element = document.createElement("div");
+    lively.setGlobalPosition(element, pt(0,0));
+    //lively.setExtent(element, pt(100,100))
+    this.sut = element;
+    document.body.appendChild(this.sut);
+    var child = document.createElement("div");
+    element.appendChild(child);
+
+    lively.setPosition(child, pt(200,300));
+    lively.setExtent(child, pt(300,400));
+
+    var result= lively.getTotalGlobalBounds(element);
+
+expect(result.bottomRight().toString()).to.equal(lively.getGlobalBounds(child).bottomRight().toString());
   })
     
   after("cleanup", () => {
