@@ -165,8 +165,7 @@ describe('getTotalGlobalBounds', function() {
     lively.setExtent(child, pt(300,400));
 
     var result= lively.getTotalGlobalBounds(element);
-    expect(result.width).to.gt(100)
-    
+    expect(result.width).to.gt(100) // #TODO this is weired in #Travis 901 vs 500
   })
     
   after("cleanup", () => {
