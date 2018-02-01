@@ -17,7 +17,7 @@
       ];
     
     lively.openComponentInWindow("vivide-list").then(vividelist => {
-      vividelist.pushTransformation(list => list)
+      vividelist.pushTransformation(list => list.filter(person => person.age < 65));
       vividelist.pushDepiction(person => person.name);
       vividelist.show(data);
     });

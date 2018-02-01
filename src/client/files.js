@@ -1,6 +1,9 @@
 import focalStorage from './../external/focalStorage.js';
 import { uuid as generateUuid } from 'utils';
 import sourcemap from 'src/external/source-map.min.js';
+import Strings from 'src/client/strings.js'
+
+
 
 export default class Files {
   
@@ -60,9 +63,9 @@ export default class Files {
         })()
       })
   }
-
-  // #depricated, use fetch directly
+  
   static async loadFile(url, version) {
+    url = this.resolve(url.toString())
     return fetch(url, {
       headers: {
         fileversion: version
@@ -78,9 +81,9 @@ export default class Files {
     return fetch(toURL, {method: 'PUT', body: blob})
   }
   
-  // #depricated
   static async saveFile(url, data){
     var urlString = url.toString();
+    urlString = this.resolve(urlString)
     if (urlString.match(/\/$/)) {
       return fetch(urlString, {method: 'MKCOL'});
     } else {
@@ -120,13 +123,37 @@ export default class Files {
   }
   
   static async statFile(urlString){
+    urlString = this.resolve(urlString)
   	return fetch(urlString, {method: 'OPTIONS'}).then(resp => resp.text())
   }
 
   static async existFile(urlString){
+    urlString = this.resolve(urlString)
+
   	return fetch(urlString, {method: 'OPTIONS'}).then(resp => resp.status == 200)
   }
 
+  static isURL(urlString) {
+    return ("" + urlString).match(/^([a-z]+:)?\/\//) ? true : false;
+  }
 
+  static resolve(string) {
+    if (!this.isURL(string)) {
+      var result = lively.location.href.replace(/[^/]*$/, string)
+    } else {
+      result = string.toString()
+    }
+    // get rid of ..
+    result = result.replace(/[^/]+\/\.\.\//g,"")
+    // and .
+    result = result.replace(/\/\.\//g,"/")
+    
+    return result
+  }
 
+  static directory(string) {
+    string = string.toString()
+    return string.replace(/([^/]+|\/)$/,"")
+  }
+  
 }

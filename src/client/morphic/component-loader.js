@@ -307,9 +307,8 @@ export default class ComponentLoader {
         }
       }, 30 * 1000)
 
-      Promise.all(promises).then( result => resolve(), reject => {
-          console.log("ERROR loading " +reject)
-          reject()
+      Promise.all(promises).then( result => resolve(), err => {
+          console.log("ERROR loading component ", err)
       })
     })
   }
@@ -364,6 +363,9 @@ export default class ComponentLoader {
   }
 
   static addTemplatePath(path) {
+    if (!lively.files.isURL(path)) {
+      path = lively.location.href.replace(/[^/]*$/, path)
+    }
     var all = this.getTemplatePaths()
     if (!all.includes(path)) {
       all.push(path)

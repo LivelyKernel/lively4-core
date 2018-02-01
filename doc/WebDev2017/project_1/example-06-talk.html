@@ -17,10 +17,16 @@
       ];
     
     lively.openComponentInWindow("vivide-list").then(vividelist => {
-      vividelist.pushTransformation(list => list)
+      vividelist.pushTransformation(list => list);
       vividelist.pushDepiction(person => person.name);
       vividelist.show(data);
+      lively.openComponentInWindow("vivide-list").then(vividelist2 => {
+        vividelist2.pushTransformation(list => list);
+        vividelist2.pushDepiction(person => person.name + ", " + person.sex + ", " + person.age);
+        vividelist.register(vividelist2);
+      });
     });
+    
   }
 </script>
 

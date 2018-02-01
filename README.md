@@ -4,7 +4,6 @@
 
 A self-supporting Web-based development environment. 
 
-
 ### Example Lively4 Sites
 
 <!-- 
