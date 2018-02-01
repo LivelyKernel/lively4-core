@@ -1444,15 +1444,17 @@ export default class Lively {
     this.focusWithoutScroll(document.body)
   }
   
+  // #TODO: feature is under development and will ship in Chrome 64
+  // same as element.focus({ preventScroll : true}); ?
   static focusWithoutScroll(element) {
     if (!element) return;
     // console.log("focusWithoutScroll " + element)
-    var scrollTop = document.scrollingElement.scrollTop
-    var scrollLeft = document.scrollingElement.scrollLeft
-    element.focus(true) 
+    var scrollTop = document.scrollingElement.scrollTop;
+    var scrollLeft = document.scrollingElement.scrollLeft;
+    element.focus({ preventScroll : true});
     // the focus scrolls as a side affect, but we don't want that
-    document.scrollingElement.scrollTop = scrollTop
-    document.scrollingElement.scrollLeft = scrollLeft
+    document.scrollingElement.scrollTop = scrollTop;
+    document.scrollingElement.scrollLeft = scrollLeft;
     //console.log("scroll back " + scrollTop + " " + scrollLeft )
   }
   

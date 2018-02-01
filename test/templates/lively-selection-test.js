@@ -43,16 +43,15 @@ describe("LivelySelectionTest",  function() {
   });
 
   it("should drag select elements", (done) => {
-    that.nodes = [a,b]
+    that.nodes = [a,b];
     
-    lively.setPosition(a, pt(100,100))
-    lively.setPosition(b, pt(300,150))
+    lively.setPosition(a, pt(100,100));
+    lively.setPosition(b, pt(300,150));
 
-    var old = lively.getPosition(a)
-    that.haloDragStart(pt(100,100))
-    that.haloDragTo(pt(100,200),pt(100,100))
-    expect(lively.getPosition(a).y).to.equal(200)
-    expect(lively.getPosition(b).y).to.equal(250)
+    that.haloDragStart(pt(100,100));
+    that.haloDragTo(pt(100,200),pt(100,100));
+    expect(lively.getPosition(a).y).to.equal(200);
+    expect(lively.getPosition(b).y).to.equal(250);
     done();
   })
 
