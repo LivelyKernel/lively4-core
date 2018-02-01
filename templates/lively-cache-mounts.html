@@ -6,7 +6,7 @@
   
 }
 #content {
-  
+
 }
   
 nav {
@@ -41,6 +41,20 @@ nav {
 h6 {
   margin: 10px 0 0 0;
 }  
+
+#overlay {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
 </style>
   <nav>
     <div>
@@ -54,9 +68,14 @@ h6 {
   </nav>
   <div id="mountList"></div>
   <h6>
-    Mount content:
+    Mount content: <span id="breadcrumbs"></span>
   </h6>
   <div id="dirTree"></div>
+  <div id="overlay">
+    <div id="statusText">
+      Downloading file(s)...
+    </div>
+  </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

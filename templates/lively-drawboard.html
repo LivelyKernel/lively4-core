@@ -14,6 +14,17 @@
     /*     touch-action: none; */
 
   }
+    
+  :host(.freehand) #controls {
+    display: none;
+  }
+
+  :host(.freehand) {
+    border: 0px;
+    background-color: transparent;
+    overflow: visible;
+
+  }
 
   #canvas {
     position: absolute;
@@ -34,7 +45,7 @@
     border: 1px gray solid;
     width: 100%;
   }
-  
+
   #close {
     float: right;
   }

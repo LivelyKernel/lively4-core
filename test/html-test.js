@@ -11,7 +11,6 @@ describe('HTML', () => {
       expect(element.tagName).equal("DIV")
       done()
     });
-  
   })
   
   describe('saveAsPNG', () => {

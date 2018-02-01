@@ -7,8 +7,7 @@ export default class HaloInspectItem extends HaloItem {
       var inspectTarget = window.that;
 
       if (evt.shiftKey) {
-        lively.openComponentInWindow('lively-object-editor', undefined, undefined, 
-        lively.findWorldContext(inspectTarget)).then((editor) => {
+        lively.openComponentInWindow('lively-object-editor').then((editor) => {
          editor.targetElement    = inspectTarget;   
         });
       } else {
