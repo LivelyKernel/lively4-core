@@ -165,8 +165,7 @@ describe('getTotalGlobalBounds', function() {
     lively.setExtent(child, pt(300,400));
 
     var result= lively.getTotalGlobalBounds(element);
-
-expect(result.bottomRight().toString()).to.equal(lively.getGlobalBounds(child).bottomRight().toString());
+    expect(result.width).to.equal(500)
   })
     
   after("cleanup", () => {
