@@ -372,6 +372,7 @@ export default class Graffle {
   }
 
   static onMouseUp(evt) {
+    if (!evt) return;
     this.lastMouseUpPos = lively.getPosition(evt)
     if (this.currentControlPoint) {
       this.currentControlPoint.stop(evt)

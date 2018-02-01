@@ -418,7 +418,7 @@ export default class Lively {
       }
     }
     
-    if (obj.clientX)
+    if (obj.clientX !== undefined)
       return pt(obj.clientX, obj.clientY);
     if (obj.style) {
       pos = pt(parseFloat(obj.style.left), parseFloat(obj.style.top));
