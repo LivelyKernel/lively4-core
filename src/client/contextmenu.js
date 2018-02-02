@@ -420,8 +420,10 @@ export default class ContextMenu {
           Info.showModuleInfo()
           },undefined, '<i class="fa fa-info" aria-hidden="true"></i>']
       ]],
-      ["Preferences", 
-          ["ShowDocumentGrid", "InteractiveLayer", "ShowFixedBrowser", "SnapWindowsInGrid", "DisableAExpWorkspace", "DisableAltGrab", "UseTernInCodeMirror", "UseAsyncWorkspace", "CtrlAsHaloModifier"].map(ea => this.preferenceEntry(ea))
+      ["Preferences",
+        Preferences
+          .list()
+          .map(ea => this.preferenceEntry(ea))
       ],
       ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt, worldContext), 
         "CMD+SHIFT+G",'<i class="fa fa-github" aria-hidden="true"></i>'],

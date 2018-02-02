@@ -12,7 +12,9 @@ import {pt} from 'src/client/graphics.js';
 const endpoint = 'https://lively4-services.herokuapp.com/';
 var name;
 var filename; 
+var type;
 var loggingId;
+var currentlyShownConfig=null;
 
 export default class LivelyCloudscripting extends Morph {
   async initialize() {
@@ -28,6 +30,7 @@ export default class LivelyCloudscripting extends Morph {
       name: "save",
       bindKey: {win: "Ctrl-S", mac: "Command-S"},
       exec: (editor) => {
+        lively.warn("try to save")
         this.saveCode()
       }
     });
@@ -39,17 +42,19 @@ export default class LivelyCloudscripting extends Morph {
     this.startButton.addEventListener('click', this.startButtonClick.bind(this));
     this.stopButton = this.getSubmorph('#stopButton');
     this.stopButton.addEventListener('click', this.stopButtonClick.bind(this));
+    this.config=null;
   }
   
   /*
    * Event handlers
    */
+  
   addButtonClick(evt) {
-    lively.openComponentInWindow('lively-file-browser').then(browser => {
-      browser.path = endpoint + 'mount/';
+    lively.openComponentInWindow('lively-cloudscripting-file-browser').then(browser => {
+      browser.path = endpoint + 'mount/watcher';
+      browser.urlExtension="getWatcherDescription"
       lively.setGlobalPosition(browser.parentElement, lively.getGlobalPosition(this.parentElement).addPt(pt(30,30)))
       browser.setMainAction((url) => {
-
         this.addTrigger(url);
         browser.parentElement.onCloseButtonClicked();
       });
@@ -65,36 +70,38 @@ export default class LivelyCloudscripting extends Morph {
     var that = this;
     lively.openComponentInWindow('lively-cloudscripting-credentials').then(credentialsWindow => {
       credentialsWindow.setName(name);
+      credentialsWindow.getCredentials(name);
     });
   }
   
   startButtonClick(entryPoint) {
     var that = this;
-    clearInterval(this.loggingId);
-    this.loggingId = setInterval(function() {
-      that.getTriggerLogs(filename);  
+    clearInterval(loggingId);
+    loggingId = setInterval(function() {
+      that.getTriggerLogs(that.filename);  
     },2000)
     $.ajax({
       url: endpoint + 'runTrigger',
       type: 'POST',
       data: JSON.stringify({
         user: name,
-        triggerId: filename
+        triggerId: that.filename
       }),
       success: () => {lively.notify("start script")},
-      error: this.handleAjaxError.bind(this)
+      error: function(res){console.log(res)}
     })
     
   }
 
   stopButtonClick(entryPoint) {
-    clearInterval(this.loggingId); 
+    var that=this
+    clearInterval(loggingId); 
     $.ajax({
       url: endpoint + 'stopTrigger',
       type: 'POST',
       data: JSON.stringify({
         user: name,
-        triggerId: filename
+        triggerId: that.filename
       }),
       success: () => {lively.notify("stop")},
       error: this.handleAjaxError.bind(this)
@@ -105,6 +112,7 @@ export default class LivelyCloudscripting extends Morph {
   addTrigger(triggerName) {
     triggerName = triggerName.toString();
     triggerName = triggerName.substring(triggerName.lastIndexOf('/') + 1);
+    lively.warn("assignTrigger at " + endpoint + "assignTrigger" + "for user" + name + "and trigger " + triggerName )
     $.ajax({
       url: endpoint + 'assignTrigger',
       type: 'POST',
@@ -125,12 +133,14 @@ export default class LivelyCloudscripting extends Morph {
         user: name
       }),
       success: this.reRender.bind(this),
-      error: function(res){lively.notify(JSON.stringify(res)); lively.notify("user doesn't exist? Trying again."); this.getTriggers(); } //this.handleAjaxError.bind(this)
+      error: function(res){lively.notify(JSON.stringify(res)); lively.notify("user doesn't exist? "); }
     })
   }
   
   getTriggerLogs(triggerName) {
     var that = this;
+    console.log("triggerName "+triggerName)
+    console.log("name "+name)
     $.ajax({
       url: endpoint + 'getTriggerLogs',
       type: 'POST',
@@ -138,7 +148,7 @@ export default class LivelyCloudscripting extends Morph {
         triggerId: triggerName,
         user: name
       }),
-      success: function(res) {that.logsEditor.setValue(res), that.logsEditor.gotoPageDown()},
+      success: function(res) {console.log(res);that.logsEditor.setValue(res), that.logsEditor.gotoPageDown()},
       error: this.handleAjaxError.bind(this)
     })
   }
@@ -153,66 +163,256 @@ export default class LivelyCloudscripting extends Morph {
       var that = this;
       if(!triggers.hasOwnProperty(prop)) continue;
       
-      var item = document.createElement('lively-cloudscripting-item');
-      
-      item.addEventListener('click', this.showCode.bind(this))
-      item.setAttribute('data-id', prop);
-      if (prop == 'selected') {
-        item.getSubmorph('.item').classList.add('selected');
-      }
-      var title = prop;
-      item.getSubmorph('h4').innerHTML = title;
-      
-      // Only show active actions
+      var item = this.createItem(prop);
       var actionList = item.getSubmorph('.action-list');
-      var length = triggers[prop]['actions'] ? triggers[prop]['actions'].length : 0;
-      for(var i=0; i<length; i++) {
-        var actionName = triggers[prop]['actions'][i];
-        var action = document.createElement('lively-cloudscripting-action-item');
-        action.addEventListener('click', this.showCode.bind(this))
-        action.setAttribute('data-id', actionName);
-        action.getSubmorph('h5').innerHTML = actionName;
-        var icon = action.getSubmorph('i')
-        icon.addEventListener('click', function(event) {
-          event.stopPropagation();
-          that.unassignAction();
-        })
-        action.appendChild(icon);
-        actionList.appendChild(action);
-      }
+      this.addActionsToItem(triggers, prop, triggers[prop]['actions'] ? triggers[prop]['actions'].length : 0, that, actionList);
       
       item.getSubmorph('.add-action').addEventListener('click', function(event){
         event.stopPropagation();
-        var triggerName = event.target.parentNode.parentNode.children[0].innerHTML;
+        var triggerName = event.target.parentNode.parentNode.children[0].children[1].innerHTML;
         that.assignAction.bind(that);
         that.assignAction(triggerName);
       });
-
-      var status = triggers[prop].running === 'true' ? 1 : 0;
-      var statusText = 'unkown';
-      if (triggers[prop].running) {
-        status = 'running';
-      } else if (!triggers[prop].running) {
-        status = 'not-running';
-      }
-      
-      item.getSubmorph('.status').classList.add(status); 
+    
+      item.getSubmorph('.status').classList.add(this.getStatusForTrigger(triggers, prop)); 
       triggerWrapper.appendChild(item);
     }
   }
   
+  getStatusForTrigger(triggers, prop) {
+    var status = triggers[prop].running === 'true' ? 1 : 0;
+    if (triggers[prop].running) {
+      status = 'running';
+    } else if (!triggers[prop].running) {
+      status = 'not-running';
+    }
+  }
+  
+  addActionsToItem(triggers, prop, length, that, actionList) {
+    for(var i=0; i<length; i++) {
+        var actionName = triggers[prop]['actions'][i].name;
+        var action = document.createElement('lively-cloudscripting-action-item');
+        action.getSubmorph(".deleteWatcher").addEventListener('click',function(){
+          console.log(prop)
+           $.ajax({
+          url: endpoint+"removeAction",
+          type: 'POST',
+          data:JSON.stringify({
+            user:name,
+            triggerId:prop.replace(/\s/g, ""),
+            actionId:actionName
+          }),
+          success: function(res){
+           lively.notify("Successfully remove action.")
+            that.reRender(that.getTriggers())
+          },   
+          done: function(res){lively.notify("done")},
+          error: function(res){console.log(res)}
+        }); 
+        })
+        action.addEventListener('click', function(evt) {
+          evt.stopPropagation();
+          that.showCode.bind(that)
+          that.showCode(evt)
+        })
+        action.setAttribute('data-id', actionName);
+        action.setAttribute('data-type', 'actions')
+        action.setAttribute('data-parent',prop);
+        action.getSubmorph('.itemname').innerHTML = actionName;
+        var icon = action.getSubmorph('.addAction')
+        icon.addEventListener('click', function(event) {
+          event.stopPropagation();
+          that.unassignAction();
+        })
+        this.setUpConfigButton(action,"getActionConfig","updateActionConfig",prop,this,actionName)
+        action.appendChild(icon);
+        actionList.appendChild(action);
+      }
+  }
+  setUpConfigButton(item,url,saveurl,triggerId,that,actionId){
+    
+    item.getSubmorph('#modify-configuration').addEventListener('click', function(){
+      console.log(that.config)
+      var table=item.getSubmorph(".config-table");
+      if(currentlyShownConfig===table){
+        console.log(that.config)
+        that.saveConfig(saveurl,triggerId,actionId)
+        currentlyShownConfig.parentElement.removeChild(currentlyShownConfig.previousElementSibling)
+        currentlyShownConfig.previousElementSibling.childNodes[1].className="chevron fa fa-chevron-down"
+        currentlyShownConfig.previousElementSibling.childNodes[0].textContent="Modify config"
+        currentlyShownConfig.nextElementSibling.className+=" hide"
+        for(var i=0;i<table.childElementCount;i++){
+          table.removeChild(table.lastChild);
+        }
+        currentlyShownConfig=null
+        
+      }else{
+        if(currentlyShownConfig!=null){
+          currentlyShownConfig.parentElement.removeChild(currentlyShownConfig.previousElementSibling)
+          currentlyShownConfig.previousElementSibling.childNodes[0].textContent="Modify config"
+          currentlyShownConfig.previousElementSibling.childNodes[1].className="chevron fa fa-chevron-down"
+          currentlyShownConfig.nextElementSibling.className+=" hide"
+          for(var i=0;i<currentlyShownConfig.childElementCount;i++){
+            currentlyShownConfig.removeChild(currentlyShownConfig.lastChild);
+          }
+        }
+        $.ajax({
+          url: endpoint+url,
+          type: 'POST',
+          data:JSON.stringify({
+            user:name,
+            triggerId:triggerId,
+            actionId:actionId
+          }),
+          success: function(res){
+           console.log(res)
+            that.config=res;
+            currentlyShownConfig=table;
+            that.renderConfig(table)
+          },   
+          done: function(res){lively.notify("done")},
+          error: function(res){console.log(res)}
+        }); 
+      }
+    });
+  }
+  
+  createItem(prop) {
+    var item = document.createElement('lively-cloudscripting-item');
+    item.addEventListener('click', this.showCode.bind(this))
+    item.setAttribute('data-id', prop);
+    item.setAttribute('data-type', 'watcher');
+    if (prop == 'selected') {
+      item.getSubmorph('.item').classList.add('selected');
+    }
+    var that=this
+    this.setUpConfigButton(item,"getWatcherConfig","updateWatcherConfig",prop,this,null)
+    var title = prop;
+    item.getSubmorph('h4').innerHTML = title;
+    item.getSubmorph('.deleteWatcher').addEventListener('click',function(){
+      $.ajax({
+          url: endpoint+"removeTrigger",
+          type: 'POST',
+          data:JSON.stringify({
+            user:name,
+            triggerId:prop.replace(/\s/g, "")
+          }),
+          success: function(res){
+           lively.notify("Successfully remove action.")
+            that.reRender(that.getTriggers())
+          },   
+          done: function(res){lively.notify("done")},
+          error: function(res){console.log(res)}
+        }); 
+    })
+    return item;
+  }
+  
+  renderConfig(table){
+    var that=this
+    var cross = document.createElement("i")
+    cross.className="chevron-cross fa fa-times"
+    table.parentElement.insertBefore(cross, table);
+    cross.addEventListener('click',function(e){
+      currentlyShownConfig.parentElement.removeChild(currentlyShownConfig.previousElementSibling)
+      currentlyShownConfig.previousElementSibling.childNodes[1].className="chevron fa fa-chevron-down"
+      currentlyShownConfig.previousElementSibling.childNodes[0].textContent="Modify config"
+      currentlyShownConfig.nextElementSibling.className+=" hide"
+      for(var i=0;i<table.childElementCount;i++){
+        table.removeChild(table.lastChild);
+      }
+      currentlyShownConfig=null
+    })
+    
+    for(var key in that.config){
+      if(key!=="description"){
+        var row = table.insertRow(0)
+        row.className="row"
+        var cell1 = row.insertCell(0)
+        cell1.className ="keyEntry"
+        var cell2 = row.insertCell(1)
+        cell2.className ="valueEntry"
+        var input = document.createElement("INPUT");
+        input.addEventListener("focusout",function(e){
+          that.config[e.target.parentNode.previousElementSibling.innerHTML]=e.target.value
+        })
+        input.className ="valueInput"
+        input.value=that.config[key]
+        cell1.innerHTML= key
+        cell2.appendChild(input)
+      }
+    }
+    currentlyShownConfig.previousElementSibling.previousElementSibling.childNodes[0].textContent="Save changes"
+    currentlyShownConfig.previousElementSibling.previousElementSibling.childNodes[1].className="chevron fa fa-chevron-up"
+    currentlyShownConfig.nextElementSibling.className=currentlyShownConfig.nextElementSibling.className.replace("hide","")
+    currentlyShownConfig.nextElementSibling.addEventListener('click',function(e){
+      that.createConfigField(table)
+    })
+  }
+  
+  saveConfig(url,triggerId,actionId){
+    console.log(this.config)
+    var that =this
+    $.ajax({
+        url: endpoint+url,
+        type: 'POST',
+        data:JSON.stringify({
+          user:name,
+          triggerId:triggerId,
+          config:that.config,
+          actionId:actionId
+        }),
+        success: function(res){lively.notify("Config change successfull")},   
+        done: function(res){lively.notify("done")},
+        error: function(res){console.log(res)}
+    }); 
+  }
+  
+  createConfigField(table){
+    var row = table.insertRow(-1)
+        row.className="row"
+        var cell1 = row.insertCell(0)
+        cell1.className ="keyEntry"
+        var cell2 = row.insertCell(1)
+        cell2.className ="valueEntry"
+        var inputKey = document.createElement("INPUT");
+        inputKey.placeholder="New Key..."
+        var inputValue = document.createElement("INPUT");
+        inputValue.placeholder="New Value..."
+        var that=this
+        inputKey.addEventListener("focusout",function(e){
+          if(inputKey.value!=""){
+           that.config[inputKey.value]=inputValue.value
+          }
+        })
+        inputValue.addEventListener("focusout",function(e){
+          if(inputKey.value!=""){
+           that.config[inputKey.value]=inputValue.value
+          }
+        })
+        inputKey.className ="newConfInput"
+        inputValue.className ="newConfInput"
+        cell1.appendChild(inputKey)
+        cell2.appendChild(inputValue)
+  }
+  
   handleAjaxError(jqXHR, textStatus, errorThrown) {
-    lively.notify("ajax error: " + errorThrown);
+    lively.notify("ajax error: " + JSON.stringify(errorThrown));
   }
 
   showCode(evt) {
-    filename = evt.target.dataset.id;
+    if(evt.target.dataset.type=="actions"){
+      this.filename=evt.target.dataset.parent
+    }else{
+      this.filename=evt.target.dataset.id
+    }
+    this.type = evt.target.dataset.type;
     var that = this;
-    this.loggingId = setInterval(function() {
-      that.getTriggerLogs(filename);  
-    },2000)
-    var endpoint = 'https://lively4-services.herokuapp.com/mount/' + filename;
-    lively.notify(endpoint);
+    that.getTriggerLogs(that.filename)
+    // this.loggingId = setInterval(function() {
+    //   that.getTriggerLogs(that.filename);  
+    // },2000)
+    var endpoint = 'https://lively4-services.herokuapp.com/mount/' + that.type + "/" + evt.target.dataset.id;
     $.ajax({
       url: endpoint,
       type: 'GET',
@@ -224,12 +424,13 @@ export default class LivelyCloudscripting extends Morph {
   
   saveCode() {
     var that = this;
+    console.log(endpoint + 'mount/' + that.type + '/' + that.filename)
     $.ajax({
-      url: endpoint + 'mount/' + filename,
+      url: endpoint + 'mount/' + that.type + '/' + that.filename,
       type: 'PUT',
       data: JSON.stringify({data:that.codeEditor.getValue(),user:name}),
       success: function(){lively.notify("File saved on Heroku", undefined, undefined, undefined, "green")},
-      error: this.handleAjaxError.bind(this)
+      error: function(res){console.log(res)}
     }); 
   }
   
@@ -239,8 +440,9 @@ export default class LivelyCloudscripting extends Morph {
   
   assignAction(triggerName) {
     var that = this;
-    lively.openComponentInWindow('lively-file-browser').then(browser => {
-      browser.path = endpoint + 'mount/';
+    lively.openComponentInWindow('lively-cloudscripting-file-browser').then(browser => {
+      browser.path = endpoint + 'mount/actions/';
+      browser.urlExtension="getActionDescription"
       lively.setGlobalPosition(browser.parentElement, lively.getGlobalPosition(this.parentElement).addPt(pt(30,30)))
       browser.setMainAction((url) => {
         that.assignActionUrl(url, triggerName, that);
