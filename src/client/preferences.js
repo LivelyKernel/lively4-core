@@ -120,18 +120,13 @@ export default class Preferences {
       return
     }
     
-    const config = this.get(preferenceKey)
-    if (!config) {
-      console.warn(`[preference] No config for "${preferenceKey}"`)
-      return
-    }
-    
-    const msg = `on${preferenceKey}Preferences`
+    const msg = `on${preferenceKey}Preference`
     if (!lively[msg]) { 
       console.warn(`[preference] No event handler registered for "${preferenceKey}"`)
       return
     }
     
+    const config = this.get(preferenceKey)
     lively[msg](config)
   }
   
