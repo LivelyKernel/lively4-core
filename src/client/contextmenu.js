@@ -7,7 +7,6 @@ import html from './html.js';
 import {pt} from './graphics.js';
 import ViewNav from 'src/client/viewnav.js'
 import Layout from "src/client/layout.js"
-import Preferences from './preferences.js';
 import Windows from "src/components/widgets/lively-window.js"
 import {Grid} from "src/client/morphic/snapping.js"
 import Info from "src/client/info.js"
@@ -212,17 +211,17 @@ export default class ContextMenu {
     }
     
     return [
-      Preferences.shortDescription(preferenceKey), (evt, item) => {
+      lively.preferences.shortDescription(preferenceKey), (evt, item) => {
         evt.stopPropagation();
         evt.preventDefault();
         
-        if (Preferences.get(preferenceKey))  {
-          Preferences.disable(preferenceKey)
+        if (lively.preferences.get(preferenceKey))  {
+          lively.preferences.disable(preferenceKey)
         } else {
-          Preferences.enable(preferenceKey)    
+          lively.preferences.enable(preferenceKey)    
         }
-        item.querySelector(".icon").innerHTML = enabledIcon(Preferences.get(preferenceKey)); 
-      },"", enabledIcon(Preferences.get(preferenceKey))
+        item.querySelector(".icon").innerHTML = enabledIcon(lively.preferences.get(preferenceKey)); 
+      },"", enabledIcon(lively.preferences.get(preferenceKey))
     ]
   }
   
@@ -421,8 +420,7 @@ export default class ContextMenu {
           },undefined, '<i class="fa fa-info" aria-hidden="true"></i>']
       ]],
       ["Preferences",
-        Preferences
-          .list()
+        lively.preferences.listBooleans()
           .map(ea => this.preferenceEntry(ea))
       ],
       ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt, worldContext), 

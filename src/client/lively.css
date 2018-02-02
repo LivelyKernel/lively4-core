@@ -78,6 +78,10 @@ lively-container img {
 }
 
 
+.lively-preferences {
+  display: none;
+}
+
 .lively-text:empty:before {
   content: "<insert text here>";
   color: lightgray;
