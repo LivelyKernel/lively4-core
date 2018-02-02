@@ -139,7 +139,13 @@ class ServiceWorker {
                 options.headers.set("gitpassword", token);
               } 
 
-              var req = new Request(request.url, options );
+              
+              // #Hack #Chrome 64 issue
+              var url = request.url.toString() 
+              if (url.match(/^https:\/\/null:null@/)) {
+                url = request.url.toString().replace(/^https:\/\/null:null@/,"https://")
+              }
+              var req = new Request(url, options );
 
               // use system here to prevent recursion...
               resolve(self.fetch(req).then((result) => {
