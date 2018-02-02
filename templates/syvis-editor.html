@@ -1,3 +1,5 @@
+<script src="../src/external/stylus.min.js"></script>
+
 <template id="syvis-editor" data-class="SyvisEditor">
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
@@ -9,14 +11,16 @@
       background-color: blue;
     }
   </style>
+  
   <div id="content">
-    <div class="toolbar" id="toolbar">
-      <button id="versionsButton">versions</button>
-      <button id="loadButton">load</button>
-      <button id="saveButton">save</button>
-      <input type="text" id="filename" value="">
-    </div>
-    <content></content>
+    <!--
+      <div class="toolbar" id="toolbar">
+        <button id="versionsButton">versions</button>
+        <button id="loadButton">load</button>
+        <button id="saveButton">save</button>
+        <input type="text" id="filename" value="">
+      </div> 
+    -->
   </div>
 </template>
 
