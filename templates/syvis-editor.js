@@ -1,17 +1,17 @@
 /* global stylus */
 
 import Morph from 'src/components/widgets/lively-morph.js'
-import syvis from './syvis-editor/walkTree.js'
+import syvis from 'src/external/syvis-editor/syvis.js'
+import shaven from 'src/external/shaven/index.js'
+
 // Not working with minifed file
 // import stylus from 'src/external/stylus.min.js'
-
-console.warn(syvis, Morph)
 
 export default class SyvisEditor extends Morph {
   async initialize() {
     console.info('Syvis editor was initialized')
     
-    const filePath = `${lively4url}/templates/syvis-editor/neo.styl`
+    const filePath = `${lively4url}/src/external/syvis-editor/neo.styl`
     console.info(`Try to load "${filePath}"`)
   
     const response = await fetch(filePath)
@@ -41,12 +41,16 @@ export default class SyvisEditor extends Morph {
       console.info(`Syvis: Loaded file content "${
         fileContent.slice(0, 50).replace(/\n/g, '')}…"`)
       const fileData = {
-        url: url,
+        url: new URL(url),
         path: url,
         content: fileContent,
       }
-      console.log(syvis)
-      syvis.renderSyntax(fileData)
+      const vDom = syvis(fileData)
+      console.log(vDom)
+      const obj = shaven(vDom)
+      console.log(obj)
+      // this.appendChild(obj.rootElement)
+      // shaven.default([this, vDom])[0]
     }
     catch (error) {
       console.error(error)

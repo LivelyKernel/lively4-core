@@ -2,15 +2,15 @@
 // const URL = require('whatwg-url').URL
 
 // import shaven from 'src/external/shaven.min.js'
-// import esprima from 'src/external/esprima.js'
-// import esprimaDefaults from './esprima-defaults.js'
+import esprima from 'src/external/esprima.js'
+import esprimaDefaults from './esprima-defaults.js'
 
-// import walkTree from './walkTree.js'
+import walkTree from './walkTree.js'
 // import toHtmlError from './toHtmlError.js'
 
 
 // :: String -> Result Error ShavenArray
-export function renderSyntax (fileData) {
+export default function (fileData) {
   // Workaround to render JSON
   if (fileData.url.pathname.endsWith('.json')) {
     fileData.content = '(' + fileData.content + ')'
@@ -36,10 +36,6 @@ export function renderSyntax (fileData) {
   catch (error) {
     return error
   }
-}
-
-export function likeWhat () {
-  return 'test'
 }
 
 

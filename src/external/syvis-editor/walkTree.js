@@ -1,4 +1,4 @@
-import shaven from 'src/external/shaven.min.js'
+// import shaven from 'src/external/shaven/index.js'
 import esprima from 'src/external/esprima.js'
 import esprimaDefaults from './esprima-defaults.js'
 import toHtmlError from './toHtmlError.js'
@@ -69,50 +69,50 @@ import whileStatement from './visualizers/while-statement.js'
 
 
 
-function onEdit (fileData, editEvent) {
-  editEvent.target.textContent = 'visualize'
-  editEvent.target.removeEventListener('click', onEdit)
-  const fileContainer = editEvent.target.parentNode.parentNode
-  const renderingContainer = fileContainer.querySelector('.body')
-  renderingContainer.style.display = 'none'
+// function onEdit (fileData, editEvent) {
+//   editEvent.target.textContent = 'visualize'
+//   editEvent.target.removeEventListener('click', onEdit)
+//   const fileContainer = editEvent.target.parentNode.parentNode
+//   const renderingContainer = fileContainer.querySelector('.body')
+//   renderingContainer.style.display = 'none'
 
-  const editorContainer = document.createElement('div')
-  editorContainer.className = 'editor'
-  fileContainer.append(editorContainer)
+//   const editorContainer = document.createElement('div')
+//   editorContainer.className = 'editor'
+//   fileContainer.append(editorContainer)
 
-  const editor = codemirror(
-    editorContainer,
-    {
-      value: fileData.content,
-      mode: 'javascript',
-      lineNumbers: true,
-    }
-  )
+//   const editor = codemirror(
+//     editorContainer,
+//     {
+//       value: fileData.content,
+//       mode: 'javascript',
+//       lineNumbers: true,
+//     }
+//   )
 
-  function reVisualize (event) {
-    fileData.content = editor.getValue()
-    const outputElement = document.getElementById('output')
+//   function reVisualize (event) {
+//     fileData.content = editor.getValue()
+//     const outputElement = document.getElementById('output')
 
-    try {
-      event.target.removeEventListener('click', reVisualize)
-      const ast = esprima.parse(fileData.content, esprimaDefaults)
-      const rendering = [walkTree(ast, fileData)]
+//     try {
+//       event.target.removeEventListener('click', reVisualize)
+//       const ast = esprima.parse(fileData.content, esprimaDefaults)
+//       const rendering = [walkTree(ast, fileData)]
 
-      outputElement.innerHTML = ''
-      // renderingContainer.style.display = 'initial'
-      // editorContainer.style.display = 'initial'
+//       outputElement.innerHTML = ''
+//       // renderingContainer.style.display = 'initial'
+//       // editorContainer.style.display = 'initial'
 
-      shaven([outputElement, rendering])
-    }
-    catch (error) {
-      const div = document.createElement('div')
-      div.innerHTML = toHtmlError(error)
-      fileContainer.prepend(div)
-    }
-  }
+//       shaven([outputElement, rendering])
+//     }
+//     catch (error) {
+//       const div = document.createElement('div')
+//       div.innerHTML = toHtmlError(error)
+//       fileContainer.prepend(div)
+//     }
+//   }
 
-  editEvent.target.addEventListener('click', reVisualize)
-}
+//   editEvent.target.addEventListener('click', reVisualize)
+// }
 
 
 // visualizerNames
@@ -245,9 +245,10 @@ function walkTree (node, fileData) {
         ['button.edit',
           'edit',
           element => {
-            element.addEventListener('click', clickEvent =>
-              onEdit(fileData, clickEvent)
-            )
+            console.log('clicked button')
+            // element.addEventListener('click', clickEvent =>
+            //   onEdit(fileData, clickEvent)
+            // )
           },
         ],
       ],
