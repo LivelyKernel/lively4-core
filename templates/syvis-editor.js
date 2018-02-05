@@ -6,15 +6,23 @@ export default class SyvisEditor extends Morph {
   async initialize() {
     console.info('Syvis editor was initialized')
     
-    this.windowTitle = "SyvisEditor"
+    const filePath = `${lively4url}/templates/syvis-editor/neo.styl`
+    console.info(`Try to load "${filePath}"`)
+  
+    const response = await fetch(filePath)
+    const fileContent = await response.text()
     
-    stylus('body\n  color: blue')
+    const rootEl = this.shadowRoot
+    
+    stylus(fileContent)
       .render((error, css) => {
         if (error) {
           console.error(error)
           return
         }
-        console.info(css)
+        const styleEl = rootEl.querySelector('#syvis-style')
+        const styleText = document.createTextNode(css)
+        styleEl.appendChild(styleText)
       })
   }
 }

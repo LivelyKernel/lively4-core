@@ -165,7 +165,10 @@ export default class LivelyCloudscriptingFileBrowser extends Morph {
               type: 'POST',
               data: JSON.stringify({triggerId:event.target.dataset.name}),
              success: (result) => {that.get('#descriptionContent').innerHTML=JSON.parse(result)},
-              error: (err)=>{lively.notify("error: "+ JSON.stringify(err))}
+              error: (err)=>{
+                lively.notify("error: "+ JSON.stringify(err));
+                that.get('#descriptionContent').innerHTML="This file has no description yet.";
+              }
             })
           }else{
             $.ajax({
@@ -173,7 +176,10 @@ export default class LivelyCloudscriptingFileBrowser extends Morph {
             type: 'POST',
             data: JSON.stringify({actionId:event.target.dataset.name}),
            success: (result) => {that.get('#descriptionContent').innerHTML=JSON.parse(result)},
-            error: (err)=>{lively.notify("error: "+ JSON.stringify(err))}
+            error: (err)=>{
+            lively.notify("error: "+ JSON.stringify(err));
+                that.get('#descriptionContent').innerHTML="This file has no description yet.";
+            }
           })
           }
           

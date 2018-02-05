@@ -71,13 +71,20 @@
     .itemname{
       display:inline-block;
     }
+    .editTemplate{
+      float:right;
+      cursor:pointer;
+    }
+    .editTemplate:hover{
+      opacity:.7;
+    }
   </style>
 
 <div class="action-item">
   <h5 class="itemname">
     Action name 
   </h5>
-  <i class=" deleteWatcher fa fa-times"></i>
+  <i class=" deleteWatcher fa fa-times"></i><i class=" editTemplate fa fa-edit"></i>
       <br/>
   <div id="modify-configuration">
       Modify config 

@@ -1,11 +1,3 @@
-// TODO: 
-//
-//  new User Action
-//  credentials window
-//  create cloudscripting-item that allows us to connect actions to trigger
-//  show state of script (running or stopped) in cloudscriptin-item
-//  Set status when script is started/stopped (addClass on item)
-
 import Morph from 'src/components/widgets/lively-morph.js';
 import {pt} from 'src/client/graphics.js';
 
@@ -26,11 +18,48 @@ export default class LivelyCloudscripting extends Morph {
     this.credentials = this.getSubmorph('#credentials');
     this.credentials.addEventListener('click', this.credentialsClick.bind(this));
     this.codeEditor = this.getSubmorph('#code').editor;
+    var that = this
+    this.getSubmorph("#createWatcher").addEventListener('click',function(){
+      
+      var newFilename=prompt("Enter the name of the new watcher","");
+      if(newFilename){
+        $.ajax({
+          url: endpoint+"createTrigger",
+          type: 'POST',
+          data:JSON.stringify({
+            name:newFilename
+          }),
+          success: function(res){
+            lively.notify("Successfully created new watcher.",undefined, undefined, undefined, "green")
+          },   
+          done: function(res){lively.notify("done")},
+          error: function(res){lively.notify(res,"red")}
+        });
+      }
+    })
+    this.getSubmorph("#createAction").addEventListener('click',function(){
+      
+      var newFilename=prompt("Enter the name of the new action","");
+      if(newFilename){
+        $.ajax({
+          url: endpoint+"createAction",
+          type: 'POST',
+          data:JSON.stringify({
+            name:newFilename
+          }),
+          success: function(res){
+           lively.notify("Successfully created new action.", undefined, undefined, undefined, "green")
+          },   
+          done: function(res){lively.notify("done")},
+          error: function(res){lively.notify(res,"red")}
+        });
+      }
+    })
+    this.codeEditor.doSave = function() {lively.warn("Don't evaluate code...")};
     this.codeEditor.commands.addCommand({
       name: "save",
       bindKey: {win: "Ctrl-S", mac: "Command-S"},
       exec: (editor) => {
-        lively.warn("try to save")
         this.saveCode()
       }
     });
@@ -154,6 +183,11 @@ export default class LivelyCloudscripting extends Morph {
   }
   
   reRender(triggers) {
+    if( typeof triggers === 'string') {
+      lively.notify("New user created", undefined, undefined, undefined, "green");
+      return;
+    }
+    lively.notify("Successfully logged in", undefined, undefined, undefined, "green");
     var triggerWrapper = this.getSubmorph('#trigger-wrapper');
     while(triggerWrapper.firstChild) {
       triggerWrapper.removeChild(triggerWrapper.firstChild)
@@ -192,6 +226,22 @@ export default class LivelyCloudscripting extends Morph {
     for(var i=0; i<length; i++) {
         var actionName = triggers[prop]['actions'][i].name;
         var action = document.createElement('lively-cloudscripting-action-item');
+        action.getSubmorph(".editTemplate").addEventListener('click',function(){
+          $.ajax({
+          url: endpoint+"getActionConfigTemplate",
+          type: 'POST',
+          data:JSON.stringify({
+            actionId:actionName
+          }),
+          success: function(res){
+           lively.notify("Successfully remove action.")
+            console.log(res);
+            that.showConfig(res,null,actionName);
+          },   
+          done: function(res){lively.notify("done")},
+          error: function(res){console.log(res)}
+        }); 
+        })
         action.getSubmorph(".deleteWatcher").addEventListener('click',function(){
           console.log(prop)
            $.ajax({
@@ -256,6 +306,11 @@ export default class LivelyCloudscripting extends Morph {
             currentlyShownConfig.removeChild(currentlyShownConfig.lastChild);
           }
         }
+        
+        // if(table.rows.length === 0) {
+        //   url += "Template"
+        // }
+        
         $.ajax({
           url: endpoint+url,
           type: 'POST',
@@ -278,14 +333,48 @@ export default class LivelyCloudscripting extends Morph {
   }
   
   createItem(prop) {
+//     create new file
+    // var newFilename=prompt("Enter the name of the new watcher","");
+    //   if(newFilename){
+    //     $.ajax({
+    //       url: endpoint+"createTrigger",
+    //       type: 'POST',
+    //       data:JSON.stringify({
+    //         name:newFilename
+    //       }),
+    //       success: function(res){
+    //        lively.notify("Successfully remove action.")
+    //         that.reRender(that.getTriggers())
+    //       },   
+    //       done: function(res){lively.notify("done")},
+    //       error: function(res){console.log(res)}
+    //     }); 
+    var that=this
     var item = document.createElement('lively-cloudscripting-item');
+    item.getSubmorph('.editTemplate').addEventListener('click',function(evt){
+      lively.notify(evt.target.previousElementSibling.previousElementSibling.innerHTML)
+      var triggerId=evt.target.previousElementSibling.previousElementSibling.innerHTML
+      $.ajax({
+          url: endpoint+"getWatcherConfigTemplate",
+          type: 'POST',
+          data:JSON.stringify({
+            triggerId:triggerId
+          }),
+          success: function(res){
+           lively.notify("Successfully remove action.")
+            console.log(res);
+            that.showConfig(res,triggerId,null);
+          },   
+          done: function(res){lively.notify("done")},
+          error: function(res){console.log(res)}
+        }); 
+    })
     item.addEventListener('click', this.showCode.bind(this))
     item.setAttribute('data-id', prop);
     item.setAttribute('data-type', 'watcher');
     if (prop == 'selected') {
       item.getSubmorph('.item').classList.add('selected');
     }
-    var that=this
     this.setUpConfigButton(item,"getWatcherConfig","updateWatcherConfig",prop,this,null)
     var title = prop;
     item.getSubmorph('h4').innerHTML = title;
@@ -306,6 +395,46 @@ export default class LivelyCloudscripting extends Morph {
         }); 
     })
     return item;
+  }
+  
+  showConfig(data,triggerId,actionId){
+    lively.notify("showconfig")
+    lively.openComponentInWindow('juicy-ace-editor').then(configEditor => {
+      // configEditor.getSubmorph("content").innerHTML=data
+      configEditor.value=data
+      configEditor.unsavedChanges=function(){return false}
+      configEditor.doSave=function(){
+        if(triggerId){
+        $.ajax({
+          url: endpoint+"updateWatcherConfigTemplate",
+          type: 'POST',
+          data:JSON.stringify({
+            triggerId:triggerId.replace(/\s/g, ""),
+            data:configEditor.value
+          }),
+          success: function(res){
+           lively.notify("Successfully update config.")
+          },   
+          done: function(res){lively.notify("done")},
+          error: function(res){console.log(res)}
+        });
+        }else{
+          $.ajax({
+          url: endpoint+"updateActionConfigTemplate",
+          type: 'POST',
+          data:JSON.stringify({
+            actionId:actionId.replace(/\s/g, ""),
+            data:configEditor.value
+          }),
+          success: function(res){
+           lively.notify("Successfully update config.")
+          },   
+          done: function(res){lively.notify("done")},
+          error: function(res){console.log(res)}
+        });
+        }
+      }
+      });
   }
   
   renderConfig(table){
@@ -406,6 +535,7 @@ export default class LivelyCloudscripting extends Morph {
     }else{
       this.filename=evt.target.dataset.id
     }
+    this.file2beSaved=evt.target.dataset.id
     this.type = evt.target.dataset.type;
     var that = this;
     that.getTriggerLogs(that.filename)
@@ -424,9 +554,9 @@ export default class LivelyCloudscripting extends Morph {
   
   saveCode() {
     var that = this;
-    console.log(endpoint + 'mount/' + that.type + '/' + that.filename)
+    console.log(endpoint + 'mount/' + that.type + '/' + that.file2beSaved)
     $.ajax({
-      url: endpoint + 'mount/' + that.type + '/' + that.filename,
+      url: endpoint + 'mount/' + that.type + '/' + that.file2beSaved,
       type: 'PUT',
       data: JSON.stringify({data:that.codeEditor.getValue(),user:name}),
       success: function(){lively.notify("File saved on Heroku", undefined, undefined, undefined, "green")},
