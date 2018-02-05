@@ -1,4 +1,4 @@
 // :: Error -> HtmlString
-module.exports = function toHtmlError (error) {
+export default function toHtmlError (error) {
   return `<p class=error>${error.message}</p>`
 }

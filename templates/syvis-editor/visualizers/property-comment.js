@@ -1,4 +1,4 @@
-module.exports = node => [
+export default node => [
   'span.propertyComment',
   node.value,
 ]

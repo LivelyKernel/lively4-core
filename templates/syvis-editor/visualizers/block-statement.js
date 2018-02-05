@@ -1,6 +1,6 @@
-const walkTree = require('../walkTree')
+import walkTree from '../walkTree'
 
-module.exports = node => {
+export default node => {
   return [
     'section.code.blockStatement',
     ['.body', node.body ? walkTree(node.body) : null],

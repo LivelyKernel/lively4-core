@@ -1,6 +1,7 @@
 /* global stylus */
 
 import Morph from 'src/components/widgets/lively-morph.js'
+import syvis from 'templates/syvis-editor/syvis.js'
 
 export default class SyvisEditor extends Morph {
   async initialize() {
@@ -24,5 +25,24 @@ export default class SyvisEditor extends Morph {
         const styleText = document.createTextNode(css)
         styleEl.appendChild(styleText)
       })
+  }
+  
+  async loadUrl (url) {
+    console.info(`<b>Syvis</b>: Load ${url}`)
+    
+    console.info(`WTFFFFFFFFFFFFFFFFFFFFF`)
+    
+    try {
+      const response = await fetch(url)
+      console.log('response', response)
+      const fileContent = await response.text()
+      console.log('HEEELLO', fileContent)
+      syvis.loadAndRender(fileContent)
+    }
+    catch (error) {
+      console.error(error)
+    }
+    
+    
   }
 }

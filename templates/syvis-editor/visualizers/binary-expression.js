@@ -1,7 +1,7 @@
-const walkTree = require('../walkTree')
 const operatorMap = require('../operatorMap.js')
+import walkTree from '../walkTree'
 
-module.exports = (node) => {
+export default (node) => {
   const classes = [
     'binaryExpression',
     'operator-' + (operatorMap.binary[node.operator] || ''),

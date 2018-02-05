@@ -1,6 +1,6 @@
-const walkTree = require('../walkTree')
+import walkTree from '../walkTree'
 
-module.exports = (node) => {
+export default node => {
   const classes = ['memberExpression']
   if (node.computed) classes.push('computed')
   if (node.object.type === 'ThisExpression') {

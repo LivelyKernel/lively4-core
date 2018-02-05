@@ -1,4 +1,4 @@
-const walkTree = require('../walkTree')
+import walkTree from '../walkTree'
 
 function zipExpressions (quasis, expressions) {
   const combined = []
@@ -11,7 +11,7 @@ function zipExpressions (quasis, expressions) {
   return combined
 }
 
-module.exports = node => [
+export default node => [
   'span.templateLiteral',
   walkTree(zipExpressions(node.quasis, node.expressions)),
 ]

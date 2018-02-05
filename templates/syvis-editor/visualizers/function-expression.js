@@ -1,6 +1,6 @@
-const arrowFunctionExpression = require('./arrow-function-expression')
+import arrowFunctionExpression from './arrow-function-expression'
 
-module.exports = node => {
+export default node => {
   const shavenArray = arrowFunctionExpression(node)
   shavenArray[1].class = shavenArray[1].class
     .replace('arrowFunctionExpression', 'functionExpression')

@@ -1,4 +1,4 @@
-module.exports = (node) => {
+export default node => {
   let nodeType = typeof node.value
   const classes = ['literal']
 

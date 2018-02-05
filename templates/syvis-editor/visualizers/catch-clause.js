@@ -1,6 +1,6 @@
-const walkTree = require('../walkTree')
+import walkTree from '../walkTree'
 
-module.exports = (node) => [
+export default (node) => [
   '.catchClause',
   ['span.param', walkTree(node.param)],
   ['span.body', walkTree(node.body)],

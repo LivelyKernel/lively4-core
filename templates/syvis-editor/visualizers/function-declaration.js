@@ -1,5 +1,4 @@
-const walkTree = require('../walkTree')
-
+import walkTree from '../walkTree'
 
 function markAsFunctionParameter (objects) {
   return objects.map(param => {
@@ -8,7 +7,7 @@ function markAsFunctionParameter (objects) {
   })
 }
 
-module.exports = (node) => {
+export default node => {
   return [
     'section.code.function',
     ['header',

@@ -1,6 +1,6 @@
-const walkTree = require('../walkTree')
+import walkTree from '../walkTree'
 
-module.exports = (node) => [
+export default (node) => [
   'section.classDeclaration',
   ['header',
     ['span.name', walkTree(node.id)],

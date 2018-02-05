@@ -1,8 +1,7 @@
-const walkTree = require('../walkTree')
-const operatorMap = require('../operatorMap.js')
+import walkTree from '../walkTree'
+import operatorMap from '../operatorMap.js'
 
-
-module.exports = (node) => {
+export default node => {
   const classes = ['logicalExpression']
   if (node.operator) {
     classes.push('operator-' + operatorMap.binary[node.operator])

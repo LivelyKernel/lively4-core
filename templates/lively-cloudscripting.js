@@ -18,6 +18,7 @@ export default class LivelyCloudscripting extends Morph {
     this.credentials = this.getSubmorph('#credentials');
     this.credentials.addEventListener('click', this.credentialsClick.bind(this));
     this.codeEditor = this.getSubmorph('#code').editor;
+    this.codeEditor.doSave=function(){}
     var that = this
     this.getSubmorph("#createWatcher").addEventListener('click',function(){
       
@@ -546,7 +547,7 @@ export default class LivelyCloudscripting extends Morph {
     $.ajax({
       url: endpoint,
       type: 'GET',
-      success: function(res){that.codeEditor.setValue(res)},   
+      success: function(res){that.codeEditor.setValue(res), that.codeEditor.doSave=function(){}},   
       done: function(res){that.codeEditor.setValue(res.responseText)},
       error: function(res){that.codeEditor.setValue(res.responseText)}
     }); 

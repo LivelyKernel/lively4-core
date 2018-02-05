@@ -1,6 +1,6 @@
-const walkTree = require('../walkTree.js')
+import walkTree from '../walkTree'
 
-module.exports = (node) => [
+export default node => [
   'span.expressionStatement',
   walkTree(node.expression),
 ]

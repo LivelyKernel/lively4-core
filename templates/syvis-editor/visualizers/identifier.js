@@ -4,7 +4,8 @@ const specialClassMap = {
   NaN: 'nan',
 }
 
-module.exports = (node) => {
+
+export default node => {
   const classes = ['identifier']
 
   if (specialClassMap.hasOwnProperty(node.name)) {

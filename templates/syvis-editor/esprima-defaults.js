@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   loc: true,
   range: false,
   attachComment: true,

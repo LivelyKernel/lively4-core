@@ -1,4 +1,6 @@
-module.exports = (node) => {
+import walkTree from '../walkTree'
+
+export default node => {
   const classes = ['templateElement', 'string']
 
   if (node.tail) classes.push('tail')

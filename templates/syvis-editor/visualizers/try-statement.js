@@ -1,6 +1,6 @@
-const walkTree = require('../walkTree')
+import walkTree from '../walkTree'
 
-module.exports = (node) => [
+export default node => [
   '.tryStatement',
   ['.block', walkTree(node.block)],
   ['.handler', walkTree(node.handler)],

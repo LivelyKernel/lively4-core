@@ -1,6 +1,6 @@
-const walkTree = require('../walkTree')
+import walkTree from '../walkTree'
 
-module.exports = node => {
+export default node => {
   const classes = ['arrowFunctionExpression']
   if (node.async) classes.push('async')
   if (node.generator) classes.push('generator')

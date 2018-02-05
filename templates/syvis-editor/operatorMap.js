@@ -1,5 +1,5 @@
 /* eslint-disable indent */
-module.exports.binary = {
+const binary = {
     ',': 'comma',
     '...': 'spread',
 
@@ -52,7 +52,7 @@ module.exports.binary = {
 }
 
 
-module.exports.unary = {
+const unary = {
    '!': 'not',
 
    '+': 'plus',
@@ -69,3 +69,5 @@ module.exports.unary = {
   void: 'void',
   yield: 'yield',
 }
+
+export {unary, binary}

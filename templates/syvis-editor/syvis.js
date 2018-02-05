@@ -1,12 +1,12 @@
 // TODO: Use native URL module when browserify supports it
-const URL = require('whatwg-url').URL
+// const URL = require('whatwg-url').URL
 
-const shaven = require('shaven').default
-const esprima = require('esprima')
-const esprimaDefaults = require('./esprima-defaults')
+import shaven from 'src/external/shaven.min.js'
+import esprima from 'src/external/esprima.js'
+import esprimaDefaults from './esprima-defaults.js'
 
-const walkTree = require('./walkTree')
-const toHtmlError = require('./toHtmlError')
+import walkTree from './walkTree.js'
+import toHtmlError from './toHtmlError.js'
 
 
 // :: String -> Result Error ShavenArray
@@ -128,11 +128,9 @@ async function main () {
 }
 
 
-try {
-  main()
-}
-catch (error) {
-  document
-    .getElementById('output')
-    .innerHTML = toHtmlError(error)
+export {
+  loadAndRender,
+  loadFile,
+  toNormalizedUrl,
+  renderSyntax,
 }
