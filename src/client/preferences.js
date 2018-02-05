@@ -4,7 +4,6 @@ import components from './morphic/component-loader.js';
  * Stores page-specific preferences in the body, so it gets saved/loaded with other content
  */
 
-
 export default class Preferences {
   
   static load() {
@@ -29,14 +28,8 @@ export default class Preferences {
     
     // Make defaults immutable
     Object.freeze(defaults)
-    
     this.defaults = defaults
     
-    Object
-      .entries(defaults)
-      .forEach(([key, obj]) => {
-        this.set(key, obj.default)
-      })
   }
   
   // List all avaiable preferences
@@ -45,6 +38,12 @@ export default class Preferences {
       .keys(this.defaults)
   }
 
+  static listBooleans () {
+    return Object
+      .keys(this.defaults).filter(ea => _.isBoolean(this.defaults[ea].default))
+  }
+
+  
   static shortDescription(preferenceKey) {
     var pref = this.defaults[preferenceKey]
     if (pref && pref.short) 
@@ -84,9 +83,11 @@ export default class Preferences {
   static get prefsNode() {
     if (this.node) return this.node
     // #BUG: reloading Preferences causes dataset to be not defined anymore
-    this.node = document.body.querySelector('lively-preferences');
+    this.node = document.body.querySelector('.lively-preferences');
     if (!this.node) {
-      this.node = document.createElement('lively-preferences')
+      lively.notify("create preferneces")
+      this.node = document.createElement('div'); // we cannot use custom comps they are async
+      this.node.classList.add("lively-preferences")
       this.node.classList.add("lively-content")
       components.openInBody(this.node)
     }
@@ -100,7 +101,10 @@ export default class Preferences {
   }
   
   static write(preferenceKey, preferenceValue) {
-    if(!this.prefsNode || !this.prefsNode.dataset) { return; }
+    if(!this.prefsNode) { return; }
+    if (!this.prefsNode.dataset) {
+      this.prefsNode.setAttribute("data-foo", true); // force dataset
+    }
     this.prefsNode.dataset[preferenceKey] = preferenceValue;
   }
   
@@ -120,18 +124,13 @@ export default class Preferences {
       return
     }
     
-    const config = this.get(preferenceKey)
-    if (!config) {
-      console.warn(`[preference] No config for "${preferenceKey}"`)
-      return
-    }
-    
-    const msg = `on${preferenceKey}Preferences`
+    const msg = `on${preferenceKey}Preference`
     if (!lively[msg]) { 
       console.warn(`[preference] No event handler registered for "${preferenceKey}"`)
       return
     }
     
+    const config = this.get(preferenceKey)
     lively[msg](config)
   }
   
