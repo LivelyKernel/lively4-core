@@ -18,7 +18,8 @@ export default class LivelyCloudscripting extends Morph {
     this.credentials = this.getSubmorph('#credentials');
     this.credentials.addEventListener('click', this.credentialsClick.bind(this));
     this.codeEditor = this.getSubmorph('#code').editor;
-    this.codeEditor.doSave=function(){}
+    this.codeEditor.tryBoundEval=function(){console.log("something")}
+    this.codeEditor.boundEval=function(){console.log("something")}
     var that = this
     this.getSubmorph("#createWatcher").addEventListener('click',function(){
       
@@ -56,7 +57,6 @@ export default class LivelyCloudscripting extends Morph {
         });
       }
     })
-    this.codeEditor.doSave = function() {lively.warn("Don't evaluate code...")};
     this.codeEditor.commands.addCommand({
       name: "save",
       bindKey: {win: "Ctrl-S", mac: "Command-S"},
@@ -334,22 +334,6 @@ export default class LivelyCloudscripting extends Morph {
   }
   
   createItem(prop) {
-//     create new file
-    // var newFilename=prompt("Enter the name of the new watcher","");
-    //   if(newFilename){
-    //     $.ajax({
-    //       url: endpoint+"createTrigger",
-    //       type: 'POST',
-    //       data:JSON.stringify({
-    //         name:newFilename
-    //       }),
-    //       success: function(res){
-    //        lively.notify("Successfully remove action.")
-    //         that.reRender(that.getTriggers())
-    //       },   
-    //       done: function(res){lively.notify("done")},
-    //       error: function(res){console.log(res)}
-    //     }); 
     var that=this
     var item = document.createElement('lively-cloudscripting-item');
     item.getSubmorph('.editTemplate').addEventListener('click',function(evt){
@@ -482,6 +466,7 @@ export default class LivelyCloudscripting extends Morph {
   
   saveConfig(url,triggerId,actionId){
     console.log(this.config)
+    console.log("actionId: "+actionId)
     var that =this
     $.ajax({
         url: endpoint+url,
@@ -547,7 +532,7 @@ export default class LivelyCloudscripting extends Morph {
     $.ajax({
       url: endpoint,
       type: 'GET',
-      success: function(res){that.codeEditor.setValue(res), that.codeEditor.doSave=function(){}},   
+      success: function(res){that.codeEditor.setValue(res)},   
       done: function(res){that.codeEditor.setValue(res.responseText)},
       error: function(res){that.codeEditor.setValue(res.responseText)}
     }); 

@@ -1,5 +1,5 @@
-import operatorMap from '../operatorMap'
-import walkTree from '../walkTree'
+import operatorMap from '../operatorMap.js'
+import walkTree from '../walkTree.js'
 
 export default (expression) => {
   const classes = ['assignmentExpression']

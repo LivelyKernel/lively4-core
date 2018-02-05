@@ -1,5 +1,5 @@
 import operatorMap from '../operatorMap.js'
-import walkTree from '../walkTree'
+import walkTree from '../walkTree.js'
 
 export default node => [
   'span.unaryExpression',

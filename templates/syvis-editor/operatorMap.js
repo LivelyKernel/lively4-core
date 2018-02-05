@@ -70,4 +70,7 @@ const unary = {
   yield: 'yield',
 }
 
-export {unary, binary}
+export default {
+  unary: unary,
+  binary: binary,
+}

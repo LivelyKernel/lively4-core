@@ -1,7 +1,11 @@
 /* global stylus */
 
 import Morph from 'src/components/widgets/lively-morph.js'
-import syvis from 'templates/syvis-editor/syvis.js'
+import syvis from './syvis-editor/walkTree.js'
+// Not working with minifed file
+// import stylus from 'src/external/stylus.min.js'
+
+console.warn(syvis, Morph)
 
 export default class SyvisEditor extends Morph {
   async initialize() {
@@ -21,6 +25,7 @@ export default class SyvisEditor extends Morph {
           console.error(error)
           return
         }
+        console.info(`Syvis: Loaded CSS "${css.slice(0, 50).replace(/\n/g, '')}…"`)
         const styleEl = rootEl.querySelector('#syvis-style')
         const styleText = document.createTextNode(css)
         styleEl.appendChild(styleText)
@@ -28,21 +33,23 @@ export default class SyvisEditor extends Morph {
   }
   
   async loadUrl (url) {
-    console.info(`<b>Syvis</b>: Load ${url}`)
-    
-    console.info(`WTFFFFFFFFFFFFFFFFFFFFF`)
-    
+    console.info(`Syvis: Load ${url}`)
+  
     try {
       const response = await fetch(url)
-      console.log('response', response)
       const fileContent = await response.text()
-      console.log('HEEELLO', fileContent)
-      syvis.loadAndRender(fileContent)
+      console.info(`Syvis: Loaded file content "${
+        fileContent.slice(0, 50).replace(/\n/g, '')}…"`)
+      const fileData = {
+        url: url,
+        path: url,
+        content: fileContent,
+      }
+      console.log(syvis)
+      syvis.renderSyntax(fileData)
     }
     catch (error) {
       console.error(error)
     }
-    
-    
   }
 }

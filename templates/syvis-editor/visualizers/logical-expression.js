@@ -1,4 +1,4 @@
-import walkTree from '../walkTree'
+import walkTree from '../walkTree.js'
 import operatorMap from '../operatorMap.js'
 
 export default node => {

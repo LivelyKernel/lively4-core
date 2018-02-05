@@ -1,4 +1,4 @@
-import walkTree from '../walkTree'
+import walkTree from '../walkTree.js'
 
 function zipExpressions (quasis, expressions) {
   const combined = []

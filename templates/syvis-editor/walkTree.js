@@ -115,24 +115,21 @@ function onEdit (fileData, editEvent) {
 }
 
 
+// visualizerNames
+//   .filter(name => /.+\.js$/i.test(name))
+//   .forEach(name => {
 
+//     const nameInCamelCase = name
+//       .replace('.js', '')
+//       .split('-')
+//       .map(capitalize)
+//       .join('')
 
-const visualizers = {}
-visualizerNames
-  .filter(name => /.+\.js$/i.test(name))
-  .forEach(name => {
-
-    const nameInCamelCase = name
-      .replace('.js', '')
-      .split('-')
-      .map(capitalize)
-      .join('')
-
-    visualizers[nameInCamelCase] = path.join(
-      path.join(__dirname, 'visualizers'),
-      name
-    )
-  })
+//     visualizers[nameInCamelCase] = path.join(
+//       path.join(__dirname, 'visualizers'),
+//       name
+//     )
+//   })
 
 
 function capitalize (word) {

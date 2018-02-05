@@ -1,4 +1,4 @@
-import arrowFunctionExpression from './arrow-function-expression'
+import arrowFunctionExpression from './arrow-function-expression.js'
 
 export default node => {
   const shavenArray = arrowFunctionExpression(node)
