@@ -59,15 +59,16 @@ export default class Graffle {
   }
   
    static onSelectionHide(evt) {
-    var selection = window.getSelection()
-    if (!document.activeElement || !document.activeElement.isContentEditable) {
-      if (document.activeElement === document.body) {
-        this.hideStyleBalloon() 
-      }
-    } else if (!selection.anchorNode || !selection.isCollapsed) {
-      this.hideStyleBalloon() 
-    }
-  }
+    // var selection = window.getSelection()
+    // if (!document.activeElement || !document.activeElement.isContentEditable) {
+    //   if (document.activeElement === document.body) {
+    //     this.hideStyleBalloon() 
+    //   }
+    // } else if (!selection.anchorNode || !selection.isCollapsed) {
+    //   this.hideStyleBalloon() 
+    // }
+    this.hideStyleBalloon() 
+   }
   
   static onSelectionChange(evt) {
     var selection = window.getSelection()
@@ -120,6 +121,10 @@ export default class Graffle {
         // #KeyboardShortcut HOLD-D+Drag create svg path
         if (this.keysDown["D"]) {
           info = "draw"
+        }
+        // #KeyboardShortcut HOLD-F+Drag create freehand drawing
+        if (this.keysDown["F"]) {
+          info = "freehand"
         }
 
         if (hand.info)
@@ -216,7 +221,7 @@ export default class Graffle {
   }
   
   static specialKeyDown() {
-    return this.keysDown["S"] || this.keysDown["T"] || this.keysDown["C"] || this.keysDown["D"]
+    return this.keysDown["S"] || this.keysDown["T"] || this.keysDown["C"] || this.keysDown["D"] || this.keysDown["F"]
   }
   
   static eventPosition(evt) {
@@ -246,8 +251,7 @@ export default class Graffle {
     this.openAsLivelyContent(text, evt)
     return text
   }
-  
-  
+
   static async startConnectorDrawing(evt) {
     var connector = document.createElement("lively-connector")
     await lively.components.openIn(this.targetContainer, connector)
@@ -265,6 +269,16 @@ export default class Graffle {
     }   
     connector.connectTo(lively.hand)
     return connector
+  }
+  
+  static async startFreehandDrawing(evt) {
+    var freehand = await lively.create("lively-drawboard")
+    freehand.freehand()
+    this.currentFreehand = freehand
+    this.openAsLivelyContent(freehand, evt)
+    lively.setExtent(freehand, pt(100,100))
+    freehand.onPointerDown(evt)
+    return freehand
   }
   
   static async startPathDrawing(evt) {
@@ -335,6 +349,8 @@ export default class Graffle {
       await this.startConnectorDrawing(evt)
     }  else if (this.keysDown["D"]) {
       await this.startPathDrawing(evt)
+    } else if (this.keysDown["F"]) {
+      await this.startFreehandDrawing(evt)
     }
   }
   
@@ -345,14 +361,19 @@ export default class Graffle {
     if (this.currentControlPoint) {
       this.currentControlPoint.move(evt)
     }
-    if (!this.lastMouseDown) return;
+    if (this.currentFreehand) {
+      this.currentFreehand.onPointerMove(evt)
+    }
+    
+    if (!this.lastMouseDown || !this.currentElement) return;
     var extent = this.eventPosition(evt).subPt(this.lastMouseDown)
-    if (!this.currentPath) {
+    if (!this.currentPath && !this.currentFreehand) {
       lively.setExtent(this.currentElement, extent)
     }
   }
 
   static onMouseUp(evt) {
+    if (!evt) return;
     this.lastMouseUpPos = lively.getPosition(evt)
     if (this.currentControlPoint) {
       this.currentControlPoint.stop(evt)
@@ -360,7 +381,27 @@ export default class Graffle {
           HaloService.hideHaloItems()        
         } 
     }
-    if(this.currentElement) {
+    if (this.currentFreehand) {
+      this.currentFreehand.onPointerUp(evt)      
+      var svg = this.currentFreehand.get("#svg")
+      var path = svg.querySelector("path")
+
+      var bounds = SVG.childBounds(svg)
+      var p1 = lively.getGlobalPosition(this.currentFreehand)
+      var p2 = pt(bounds.x, bounds.y)
+      var delta = p2.subPt(p1)
+
+      lively.moveBy(this.currentFreehand, delta)
+      lively.moveBy(path, delta.scaleBy(-1))
+      lively.setExtent(this.currentFreehand, pt(bounds.width, bounds.height))
+      
+      this.currentFreehand = null
+      this.currentElement = null
+      // lively.showElement(svg)
+  
+      // lively.setGlobalPosition(this.currentFreehand, bounds.topLeft())
+      // lively.setExtent(this.currentFreehand, pt(bounds.width, bounds.height))
+    } else if(this.currentElement) {
       if (this.currentElement.classList.contains("lively-text")) {
         if (!this.keysDown["T"]) {
           this.currentElement.focus()        

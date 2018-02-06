@@ -111,6 +111,15 @@ describe("LivelyTable Component",  () => {
       expect(a[2][1]).to.equal("zwei")
       done()
     });
+    it("shouuld set CSV contents and remove quotes", done => {
+      that.setFromCSV('"a"\t"b"\t"c"\n"1"\t"2"\t"3"\n"eins"\t"zwei"')
+      var a = that.asArray()
+      expect(a[0][0]).to.equal("a")
+      expect(a[1][0]).to.equal("1")
+      expect(a[2][1]).to.equal("zwei")
+      done()
+    });
+
     it("should get contents as csv", done => {
       that.setFromArray([["hello", "world"],["one", "two"]])
       var s = that.asCSV()

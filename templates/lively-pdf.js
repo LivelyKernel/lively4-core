@@ -109,12 +109,6 @@ export default class LivelyPDF extends Morph {
     }
   }
   
-  setChangeIndicator(contentChanged) {
-    let livelyContainer = this.parentElement;
-    livelyContainer.contentChanged = contentChanged;
-    livelyContainer.updateChangeIndicator();
-  }
-  
   onPdfEdit() {
     this.enableEditMode();
     let that = this;
@@ -129,61 +123,74 @@ export default class LivelyPDF extends Morph {
   
   onPdfAdd() {
     if (this.shadowRoot.getSelection().rangeCount > 0) {
+      let currentPageNumber = this.shadowRoot.getSelection().anchorNode.parentNode.parentNode.parentNode.dataset.pageNumber;
       let scale = this.pdfViewer._pages[0].viewport.scale;
       let selectionCoords = this.shadowRoot.getSelection().getRangeAt(0).getBoundingClientRect();
-      let pageCoords = this.shadowRoot.querySelector('.page:first-child').getBoundingClientRect();
+      let pageCoords = this.shadowRoot.querySelector('.page:nth-child(' + currentPageNumber + ') .canvasWrapper').getBoundingClientRect();
       
-      // Get coords of the selection depending on the PDF scale 
+      // Calculate coords of the selection depending on the PDF scale 
       let scaledSelectionCoords = {
         topLeftX: (selectionCoords.x - pageCoords.x) / scale,
-        topLeftY: (selectionCoords.y - pageCoords.y) / scale,
+        topLeftY: (pageCoords.bottom - selectionCoords.y) / scale,
         topRightX: (selectionCoords.x - pageCoords.x + selectionCoords.width) / scale,
-        topRightY: (selectionCoords.y - pageCoords.y) / scale,
+        topRightY: (pageCoords.bottom - selectionCoords.y) / scale,
         bottomLeftX: (selectionCoords.x - pageCoords.x) / scale,
-        bottomLeftY: (selectionCoords.y - pageCoords.y + selectionCoords.height) / scale,
+        bottomLeftY: (pageCoords.bottom - selectionCoords.y - selectionCoords.height) / scale,
         bottomRightX: (selectionCoords.x - pageCoords.x + selectionCoords.width) / scale,
-        bottomRightY: (selectionCoords.y - pageCoords.y + selectionCoords.height) / scale
+        bottomRightY: (pageCoords.bottom - selectionCoords.y - selectionCoords.height) / scale 
       };
+      let content = window.prompt('Please enter the content');
       
+      // Create new anntotaion string which can later be inserted
       let [newAnnotationId, newPopupId] = this.getNewAnnoationIds();
+      let [rawAnnotation, rawPopupAnnotation] = this.createAnnotationObjects(scaledSelectionCoords, newAnnotationId, newPopupId, content);
       
-      let rawAnnotation = newAnnotationId + " 0 obj\n\
-<< /Type /Annot /Popup " + newPopupId + " 0 R /Rect [ " 
-          + scaledSelectionCoords.topLeftX + " " 
-          + scaledSelectionCoords.topLeftY + " " 
-          + scaledSelectionCoords.bottomRightX + " " 
-          + scaledSelectionCoords.bottomRightY 
-        + " ] /Contents (much wow) /F 4 /QuadPoints [ " 
-          + scaledSelectionCoords.bottomLeftX + " " 
-          + scaledSelectionCoords.bottomLeftY + " " 
-          + scaledSelectionCoords.bottomRightX + " " 
-          + scaledSelectionCoords.bottomRightY + " " 
-          + scaledSelectionCoords.topRightX + " " 
-          + scaledSelectionCoords.topRightY + " " 
-          + scaledSelectionCoords.topLeftX + " " 
-          + scaledSelectionCoords.topLeftY 
-        + " ] /Subtype /Highlight >>\n\
-endobj\n";
+      // Get currentPage object in PDF 
+      let currentPageRegex = new RegExp("^<<\\s\\/Type\\s\\/Page\\s.*\\n*.*>>$", 'gm');
+      let currentPageString = this.editedPdfText.match(currentPageRegex)[currentPageNumber - 1];
       
-      let rawPopupAnnotation = newPopupId + " 0 obj\n\
-<< /Parent " + newAnnotationId + " 0 R /Type /Annot /Open true /Subtype /Popup /Rect [" 
-      + (scaledSelectionCoords.topRightX + 4) + " " 
-      + scaledSelectionCoords.topRightY + " " 
-      + (scaledSelectionCoords.bottomRightX + 132) + " " 
-      + (scaledSelectionCoords.topRightY + 72) 
-      + " ] >>\n\
-endobj\n";     
-      
-    
-      console.log("huhu");
+      // Check for an existing annotations array
+      if (currentPageString.indexOf('/Annots') === -1) {
+        // Since there are no annotations we have to create a new annotations array
+        let newAnnoationsArray = " /Annots [ " + newAnnotationId + " 0 R " + newPopupId + " 0 R ] ";
+        let newPageString = currentPageString.replace(">>", newAnnoationsArray + ">>");
+        this.editedPdfText = this.editedPdfText.replace(currentPageString, newPageString); 
+      }
+      else {
+        // Get annotations array
+        let annotationsArrayReferenceRegEx = new RegExp("/Annots\\s(\\d+)\\s\\d+", "gm");
+        let annotationsArrayReference = annotationsArrayReferenceRegEx.exec(currentPageString)[1];
+        
+        let annotationsArrayRegEx = new RegExp("^(" + annotationsArrayReference + "\\s\\d\\sobj\\n*.*\\n*endobj)", "mg");
+        let annotationsArray = this.editedPdfText.match(annotationsArrayRegEx)[0];
+        
+        // Insert the new IDs into the array
+        let newAnnoationsArray = annotationsArray.replace(" ]", " " + newAnnotationId + " 0 R " + newPopupId + " 0 R ]");
+        this.editedPdfText = this.editedPdfText.replace(annotationsArray, newAnnoationsArray); 
+      }
+               
       this.editedPdfText = this.editedPdfText.replace('xref', rawPopupAnnotation + rawAnnotation + "xref");
       this.setChangeIndicator(true);
-      this.onPdfSave();
-      
+      this.savePdf();      
     }
   }
   
   onPdfSave() {
+    this.savePdf();
+  }
+  
+  onPdfCancel() {
+    this.disableEditMode(); 
+    
+    this.editedPdfText = this.originalPdfText;
+    // Remove event listener
+    let annotations = this.getAllSubmorphs(".annotationLayer section.highlightAnnotation");
+    annotations.forEach((annotation) => {
+      lively.removeEventListener("pdf", annotation, "click", eventFunctionObject);
+    });
+  }
+  
+  savePdf() {
     let url = this.getAttribute("src");
     let newPdfData = "data:application/pdf;base64," + btoa(this.editedPdfText);
     let that = this;
@@ -201,16 +208,42 @@ endobj\n";
       });
     });
   }
-  
-  onPdfCancel() {
-    this.disableEditMode(); 
     
-    this.editedPdfText = this.originalPdfText;
-    // Remove event listener
-    let annotations = this.getAllSubmorphs(".annotationLayer section.highlightAnnotation");
-    annotations.forEach((annotation) => {
-      lively.removeEventListener("pdf", annotation, "click", eventFunctionObject);
-    });
+  setChangeIndicator(contentChanged) {
+    let livelyContainer = this.parentElement;
+    livelyContainer.contentChanged = contentChanged;
+    livelyContainer.updateChangeIndicator();
+  }
+  
+  createAnnotationObjects(scaledSelectionCoords, newAnnotationId, newPopupId, content) {
+      let rawAnnotation = newAnnotationId + " 0 obj\n\
+<< /Type /Annot /Popup " + newPopupId + " 0 R /Rect [ " 
+          + scaledSelectionCoords.bottomLeftX + " " 
+          + scaledSelectionCoords.bottomLeftY + " "
+          + scaledSelectionCoords.topRightX + " " 
+          + scaledSelectionCoords.topRightY
+        + " ] /Contents (" + content + ") /C [ 0.9709861 0.7674150 0.2850983 ] /F 4 /QuadPoints [ " 
+          + scaledSelectionCoords.topLeftX + " " 
+          + scaledSelectionCoords.topLeftY + " "
+          + scaledSelectionCoords.topRightX + " " 
+          + scaledSelectionCoords.topRightY + " "
+          + scaledSelectionCoords.bottomLeftX + " " 
+          + scaledSelectionCoords.bottomLeftY + " " 
+          + scaledSelectionCoords.bottomRightX + " " 
+          + scaledSelectionCoords.bottomRightY
+        + " ] /Subtype /Highlight >>\n\
+endobj\n";
+      
+      let rawPopupAnnotation = newPopupId + " 0 obj\n\
+<< /Parent " + newAnnotationId + " 0 R /Type /Annot /Open true /Subtype /Popup /Rect [" 
+      + (scaledSelectionCoords.topRightX + 4) + " " 
+      + scaledSelectionCoords.topRightY + " " 
+      + (scaledSelectionCoords.bottomRightX + 132) + " " 
+      + (scaledSelectionCoords.topRightY + 72) 
+      + " ] >>\n\
+endobj\n";  
+    
+    return new Array(rawAnnotation, rawPopupAnnotation);
   }
   
   enableEditMode() {
@@ -240,6 +273,8 @@ endobj\n";
   }
   
   getNewAnnoationIds() {
+    // Optimization based on the assumption that 
+    // there are no 1000 annotations within the PDF
     let id1 = 1000;
     while(this.editedPdfText.indexOf(id1 + ' 0 obj') !== -1) {
       id1++;

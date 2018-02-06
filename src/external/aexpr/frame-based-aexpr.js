@@ -5,31 +5,39 @@ import { PausableLoop } from 'utils';
 export class FrameBasedActiveExpression extends BaseActiveExpression {
   constructor(func, ...params) {
     super(func, ...params);
-    
+  
+    // needed for check function for aexpr-ticking
     this.enabled = true;
   }
 
   onChange(...args) {
     super.onChange(...args);
 
-    FRAME_BASED_AEXPRS.add(this);
-    checkLoop.ensureRunning();
+    if(!this._isDisposed) {
+      FRAME_BASED_AEXPRS.add(this);
+      checkLoop.ensureRunning();
+    }
   }
 
   offChange(...args) {
     super.offChange(...args);
     
     if(this.callbacks.length === 0) {
-      FRAME_BASED_AEXPRS.delete(this);
-      if(FRAME_BASED_AEXPRS.size === 0) {
-        checkLoop.pause();
-      }
+      this.revoke();
     }
+  }
+  
+  dispose() {
+    super.dispose();
+    this.revoke();
   }
   
   // #TODO: unused!
   revoke() {
     FRAME_BASED_AEXPRS.delete(this);
+    if(FRAME_BASED_AEXPRS.size === 0) {
+      checkLoop.pause();
+    }
   }
 }
 

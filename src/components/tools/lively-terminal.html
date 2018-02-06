@@ -1,0 +1,28 @@
+<template id="lively-terminal" data-class="LivelyTerminal">
+<style type="text/css">
+  #terminal { 
+    background:grey; 
+    border:1px solid #cbcbcb;
+    height:100%;
+    width:100%;
+    padding:10px;
+    overflow-y: scroll;
+  }
+  #terminalIn {
+    background:grey;
+    border:grey;
+    width:95%;
+    height:20px;
+  }
+</style>
+<div id="terminal">
+  <div id= "terminalOut">
+  </div>
+  <div id="inputLine">> <input type="text" id="terminalIn"></div>
+  <br><br>
+  
+  
+</div>
+
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>

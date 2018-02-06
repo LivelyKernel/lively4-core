@@ -377,17 +377,25 @@ export default class Lively {
   }
 
   static setPosition(obj, point, mode) {
+    if (obj instanceof SVGElement && !(obj instanceof SVGSVGElement)) {
+      if (obj.transform && obj.transform.baseVal) {
+        // get the position of an svg element
+        var t = obj.transform.baseVal.consolidate()
+        if (t) {
+          t.setTranslate(point.x,point.y)
+        } else {
+          obj.setAttribute("transform", `translate(${point.x}, ${point.y})`)
+        }
+      } else {
+        throw new Error("path has no transformation")
+      }
+    } else {
+      // normal DOM Element
       obj.style.position = mode || "absolute";
-
-      // var bounds = that.getBoundingClientRect().top
-      //var deltax = point.x - bounds.left
-      // var deltay = point.y - bounds.top
-
-      // obj.style.left = ""+  ((obj.style.left || 0) - deltax) + "px";
-      // obj.style.top = "" + ((obj.style.top || 0) - deltay) + "px";
       obj.style.left = ""+  point.x + "px";
       obj.style.top = "" +  point.y + "px";
-      obj.dispatchEvent(new CustomEvent("position-changed"))
+      obj.dispatchEvent(new CustomEvent("position-changed"))      
+    }
   }
   
   
@@ -395,7 +403,22 @@ export default class Lively {
   
   static getPosition(obj) {
     var pos;
-    if (obj.clientX)
+    if (obj instanceof SVGElement && !(obj instanceof SVGSVGElement)) {
+      if (obj.transform && obj.transform.baseVal) {
+        // get the position of an svg element
+        var t = obj.transform.baseVal.consolidate()
+        if (!t) return pt(0,0)
+        var m = t.matrix
+        var p = new DOMPoint(0, 0)    
+        var r = p.matrixTransform(m)
+        if (!r || !r.x ) return pt(0,0)
+        return pt(r.x / r.w, r.y / r.w)      
+      } else {
+        throw new Error("path has no transformation")
+      }
+    }
+    
+    if (obj.clientX !== undefined)
       return pt(obj.clientX, obj.clientY);
     if (obj.style) {
       pos = pt(parseFloat(obj.style.left), parseFloat(obj.style.top));
@@ -489,8 +512,9 @@ export default class Lively {
   // compute the global bounds of an element and all absolute positioned elements
   static getTotalGlobalBounds(element) {
     
-    var all = Array.from(element.querySelectorAll("*")).concat([element])
+    var all = Array.from(element.querySelectorAll("*"))
       .filter(ea => ea.style.position == "absolute" || ea.style.position == "relative")
+      .concat([element])  
       .map(ea => lively.getGlobalBounds(ea))
     var max 
     var min 
@@ -868,17 +892,17 @@ export default class Lively {
   }
 
 
-  static showPoint(point) {
-    return this.showRect(point, pt(5,5))
+  static showPoint(point, removeAfterTime) {
+    return this.showRect(point, pt(5,5), removeAfterTime)
   }
 
-  static showEvent(evt) {
-    var r = lively.showPoint(pt(evt.clientX, evt.clientY))
+  static showEvent(evt, removeAfterTime) {
+    var r = lively.showPoint(pt(evt.clientX, evt.clientY), removeAfterTime)
     r.style.backgroundColor = "rgba(100,100,255,05)"
     return r
   }
 
-  static showRect(point, extent) {
+  static showRect(point, extent, removeAfterTime=3000) {
     // check for alternative args
     if (point && !extent) {
       extent = point.extent()
@@ -902,7 +926,9 @@ export default class Lively {
     lively.setPosition(comp, point.subPt(pt(bodyBounds.left, bodyBounds.top)));
     comp.setAttribute("data-is-meta", "true");
 
-    setTimeout( () => $(comp).remove(), 3000);
+    if (removeAfterTime) {
+      setTimeout( () => comp.remove(), removeAfterTime);
+    }
     // ea.getBoundingClientRect
     return comp
   }
@@ -1418,15 +1444,17 @@ export default class Lively {
     this.focusWithoutScroll(document.body)
   }
   
+  // #TODO: feature is under development and will ship in Chrome 64
+  // same as element.focus({ preventScroll : true}); ?
   static focusWithoutScroll(element) {
     if (!element) return;
     // console.log("focusWithoutScroll " + element)
-    var scrollTop = document.scrollingElement.scrollTop
-    var scrollLeft = document.scrollingElement.scrollLeft
-    element.focus(true) 
+    var scrollTop = document.scrollingElement.scrollTop;
+    var scrollLeft = document.scrollingElement.scrollLeft;
+    element.focus({ preventScroll : true});
     // the focus scrolls as a side affect, but we don't want that
-    document.scrollingElement.scrollTop = scrollTop
-    document.scrollingElement.scrollLeft = scrollLeft
+    document.scrollingElement.scrollTop = scrollTop;
+    document.scrollingElement.scrollLeft = scrollLeft;
     //console.log("scroll back " + scrollTop + " " + scrollLeft )
   }
   
@@ -1530,6 +1558,30 @@ export default class Lively {
     return new Promise(resolve => {
       window.setTimeout(resolve, time)
     })
+  }
+  
+  static allElements(deep=false, root=document.body, all=new Set()) {
+    root.querySelectorAll("*").forEach(ea => {    
+      all.add(ea)
+      if (deep && ea.shadowRoot) {
+        this.allElements(deep, ea.shadowRoot, all)
+      }        
+    })
+    return all
+  }
+  
+  static allParents(element, parents=[]) {
+    if (!element.parentElement) {
+      return parents
+    }
+    parents.push(element.parentElement)
+    this.allParents(element.parentElement, parents)
+    return parents
+  }
+  
+  static showHalo(element) {
+    window.that = element
+    HaloService.showHalos(element)
   }
   
 }

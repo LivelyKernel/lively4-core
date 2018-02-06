@@ -109,9 +109,80 @@
       margin-left: -50%;
       text-align: right;
     }
+    .show{
+      height:auto;
+      transition: all 2s ease-in-out;
+    }
+    .config-table{
+      width:100%;
+    }
+    .valueEntry{
+      width:50%;
+    }
+    .keyEntry{
+      width:50%;
+    }
+    .valueInput{
+      width:100%;
+    }
+    #modify-configuration{
+      display:inline-block;
+      width:110px;
+      font-size:80%;
+      color:lightgrey;
+      border:solid 1px lightgrey;
+      cursor:pointer;
+    }
+    #modify-configuration:hover{
+      opacity:.5;
+    }
+    .chevron{
+      float:right;
+      padding-right:5px;
+      padding-top:2px;
+    }
+    .chevron-cross:hover{
+      opacity:.5;
+      cursor:pointer;
+    }
+    .add-config{
+      width:90%;
+      border-top:1px solid lightgrey;
+      margin:0 auto;
+      margin-top:5px;
+      padding-top:3px;
+      text-align:center;
+    }
+    .add-config:hover{
+      opacity:.5;
+      cursor:pointer;
+    }
+    .hide{
+      display:none;
+    }
+    .newConfInput{
+      width:100%;
+    }
+    .deleteWatcher{
+      margin-left:5px;
+    }
+    .deleteWatcher:hover{
+      cursor:pointer;
+      opacity:.5;
+    }
+    .Itemname{
+      display:inline-block;
+    }
+    .editTemplate{
+      float:right;
+      cursor:pointer;
+    }
+    .editTemplate:hover{
+      opacity:.7;
+    }
   </style>
 
-<div class="item">
+<div class="item show">
   
   <div class="status">&#9679;</div>
   
@@ -120,10 +191,19 @@
       <h6>
         Watcher
       </h6>
-      <h4>Itemname</h4>
-      <button id="modify-configuration">
-        Modify config
-      </button>      
+      <h4 class="Itemname">Itemname</h4><i class=" deleteWatcher fa fa-times"></i>
+      <i class=" editTemplate fa fa-edit"></i>
+      <br/>
+      <div id="modify-configuration">
+        Modify config 
+        <i class=" chevron fa fa-chevron-down" aria-hidden="true"></i>
+      </div>
+      <table class="config-table">
+        
+      </table>
+      <div class="add-config hide">
+        <i class="fa fa-plus" aria-hidden="true"></i>
+      </div>
     </div>
     <div class="action-list">
       <h6>

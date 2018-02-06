@@ -1,0 +1,1041 @@
+.file
+  border-width 1px
+  border-style solid
+  border-color fileColor
+  border-radius 0.5em
+  padding 1em 1em
+  position relative
+  font-family 'Source Code Pro', 'Courier New', monospace
+
+  > .blockLabel
+    margin-bottom 1em
+    color rgba(primaryColor, 0.8)
+
+  header
+    // border-bottom-color rgba(0, 0, 0, 0.1)
+    // border-bottom-style solid
+    // border-bottom-width 1px
+    margin-bottom 0.3em
+    padding-bottom 0.2em
+
+
+// Interaction
+button.edit
+  border-radius 0.2em
+  margin 0.2em 0.4em
+  padding 0.2em 0.4em
+
+.CodeMirror
+  height: auto
+
+
+.string
+  font-style italic
+  color stringColor
+  &:not(.templateElement):empty
+    &::before
+      content "'"
+    &::after
+      content "'"
+
+
+// Overwrite keys in objects
+.key > .string
+  color inherit
+  font-style inherit
+
+
+.templateLiteral
+  > .templateElement
+    &:not(:last-of-type)
+      &::after
+        color transSilentColor
+        content "${\a0"
+        font-weight 600
+
+    &:not(:first-of-type)
+      &::before
+        color transSilentColor
+        content "\a0}"
+        font-weight 600
+
+  // TODO: Use box for expressions (complicated to implement)
+  // > .templateExpression
+  //   border-width 1px
+  //   border-style solid
+  //   border-color transSilentColor
+  //   border-radius 2px
+
+.tag::after
+  content ' '
+
+
+.number
+  color numberColor
+
+.regex
+  color regexColor
+
+.blockLabel
+  labelStyling()
+
+
+// Boxed syntax elements
+.arrowFunctionExpression,
+.blockStatement,
+.labeledStatement,
+.functionExpression,
+.classDeclaration,
+.classExpression,
+.declarations,
+.for,
+.forIn,
+.forOf,
+.function,
+.method,
+.if,
+.return,
+.while,
+.doWhile,
+.arrayExpression,
+.arrayPattern,
+.objectExpression,
+.tryStatement,
+.switchStatement,
+.expressionStatement
+  // background-color white !important
+  // box-shadow 1px 1px 1px rgba(0, 0, 0, 0.08)
+  border-style solid !important
+  border-width 1px !important
+  // border-width 0px !important
+  border-radius 3px !important
+  display block !important
+
+
+// Padded boxed elements
+.arrowFunctionExpression,
+.blockStatement,
+.labeledStatement,
+.functionExpression,
+.classDeclaration,
+.classExpression,
+.for,
+.forIn,
+.forOf,
+.function,
+.method,
+.if,
+.while,
+.doWhile,
+.tryStatement,
+.switchStatement
+  padding 0.5em 0.4em 0.4em 1em
+  margin-bottom 0.4em
+
+  > header
+    > div
+      display inline-block
+      vertical-align middle
+
+    &::before
+      display inline-block
+      font-weight 600
+
+  > .body > .blockStatement
+    background-color transparent
+    border-color transparent
+
+
+.importDeclaration
+  .specifiers::before
+    color silentColor
+    content 'import '
+
+  > .source::before
+    color silentColor
+    content ' from '
+
+
+.importNamespaceSpecifier
+  &::before
+    color silentColor
+    content ' * as '
+
+
+.importSpecifier
+  &::before
+    color silentColor
+    content ' { '
+  &::after
+    color silentColor
+    content ' } '
+
+  > .local
+    &::before
+      color silentColor
+      content ' as '
+
+
+.exportNamedDeclaration
+  .specifiers::before
+    color silentColor
+    content 'export '
+
+  .source::before
+    color silentColor
+    content ' from '
+
+
+.exportDefaultDeclaration
+  &::before
+    color silentColor
+    content 'export default '
+
+
+.exportAllDeclaration
+  &::before
+    color silentColor
+    content 'export default '
+
+
+.exportNamespaceSpecifier
+  &::before
+    color silentColor
+    content ' * as '
+
+
+.exportSpecifier
+  &::before
+    color silentColor
+    content ' { '
+  &::after
+    color silentColor
+    content ' } '
+
+  > .exported
+    &::before
+      color silentColor
+      content ' as '
+
+
+.switchStatement
+  background-color ifColor
+  border-color darken(ifColor, 20%)
+
+  > .discriminant
+    &::before
+      color darken(ifColor, 50%)
+      content 'switch '
+
+  > .test
+    &::after
+      color darken(ifColor, 50%)
+      content ' -> '
+
+
+.if
+  background-color ifColor
+  border-color darken(ifColor, 20%)
+  display flex
+  flex-wrap wrap
+
+  > header
+    &::before
+      content 'if\a0'
+      color darken(ifColor, 50%)
+      font-weight 600
+
+  > .consequent
+    margin 0 1em 0.2em 0
+    &::before
+      color darken(ifColor, 50%)
+      content 'then'
+      display block
+      font-weight 600
+
+  > .alternate
+    &::before
+      color darken(ifColor, 50%)
+      content 'else\a0'
+      font-weight 600
+
+
+.tryStatement
+  background-color tryColor
+  border-color darken(tryColor, 10%)
+  display flex
+  flex-wrap wrap
+
+  > .block
+    margin-right 1em
+    &::before
+      color darken(tryColor, 50%)
+      content 'try\a0'
+      font-weight 600
+
+  > .handler
+    margin-right 1em
+    &::before
+      color darken(tryColor, 50%)
+      content 'catch\a0'
+      font-weight 600
+
+    > .catchClause > .param::after
+      color primaryColor
+      content: '\a0⇒'
+      font-weight 600
+
+  > .finalizer
+    &::before
+      color darken(tryColor, 50%)
+      content 'finally\a0'
+      font-weight 600
+
+
+.throwStatement
+  &::before
+    color primaryColor
+    content 'throw\a0'
+    font-weight 600
+
+.breakStatement
+  &::before
+    color primaryColor
+    content 'break\a0'
+    font-weight 600
+
+
+.for
+  background-color forColor
+  border-color darken(forColor, 10%)
+
+  > header
+    > .init
+      display block
+      > .declarations
+        display inline-block
+      &::before
+        color darken(forColor, 50%)
+        content 'set'
+        margin-right 0.5em
+        font-weight 600
+
+    > .test
+      display block
+      &::before
+        color darken(forColor, 50%)
+        content 'for'
+        margin-right 1em
+        font-weight 600
+
+  > .update
+    font-weight 600
+
+  > .body
+    padding 0 0 0 1em
+
+
+.forIn,
+.forOf
+  background-color forColor
+  border-color darken(forColor, 10%)
+  > header
+    > .left
+      &::before
+        color darken(forColor, 50%)
+        content '\0000a0for\a0'
+
+    > .right
+      &::before
+        color darken(forColor, 50%)
+
+.forIn
+  > header
+    > .right::before
+      content '\a0in\a0'
+
+.forOf
+  > header
+    > .right::before
+      content '\a0of\a0'
+
+
+.while,
+.doWhile
+  background-color whileColor
+  border-color darken(whileColor, 10%)
+
+.while
+  > header
+    &::before
+      color darken(whileColor, 50%)
+      content 'while\a0'
+
+  > .body
+    padding 0.5em 1em
+
+
+.doWhile
+  paddingY = 0.5em
+  paddingX = 1em
+
+  > .body,
+  > footer
+    padding paddingY paddingX
+    &::before
+      color darken(whileColor, 50%)
+      font-weight 600
+      position relative
+      right paddingX
+      bottom paddingY
+
+  > .body::before
+    content 'do\a0'
+
+  > footer::before
+    content 'while\a0'
+
+
+.method
+  background-color methodColor
+  border-color darken(methodColor, 10%)
+  position relative
+  margin-bottom 2em
+
+  &::before
+    content 'method'
+    labelStyling()
+
+  .name
+    color darken(methodColor, 50%)
+    font-weight 600
+    margin-right 0.5em
+
+  > .functionExpression
+    border none !important
+    background none
+
+    > div > .paramsWrapper > .params
+      color darken(methodColor, 50%) !important
+
+
+.function
+  background-color functionColor
+  border-color darken(functionColor, 10%)
+  position relative
+  margin-bottom 2em
+
+  &::before
+    content 'function'
+    labelStyling()
+
+  > header
+    > .name
+      color darken(functionColor, 50%)
+      font-weight 600
+      margin-right 0.5em
+
+    > .params
+      color gray
+      &::before
+        content '('
+      &::after
+        content ')'
+
+      > .parameter:not(:last-of-type)
+        &::after
+          content ', '
+
+
+.arguments
+  &:empty
+    &::before
+      color transSilentColor
+      content '()'
+
+  &:not(:empty)
+    &::before
+      color transSilentColor
+      content '( '
+      vertical-align top
+
+    &::after
+      color transSilentColor
+      content ' )'
+      vertical-align top
+
+    & > span:not(:last-of-type)
+      margin-right 0.6em
+
+  > span
+    display inline-block
+    border-bottom 1px solid transShadowColor
+    margin-bottom 0.1em
+    padding 0 0.2em
+
+
+.arrowFunctionExpression,
+.functionExpression
+  background-color arrowFuncColor
+  border-color darken(arrowFuncColor, 10%)
+  display inline-block
+  vertical-align middle
+
+  &.async
+    &::before
+      content 'async'
+      margin-right 0.5em
+
+  > div
+    display flex
+    align-items center
+    flex-wrap wrap
+
+    > div
+      display flex
+      align-items center
+      flex-wrap wrap
+
+      > .params
+        color darken(arrowFuncColor, 50%)
+        display flex
+        flex-direction column
+
+        &:empty::after
+          content '()'
+
+    > .paramsWrapper::after
+      color transSilentColor
+      content '=>'
+      display block
+      margin 0 1em
+
+
+.classDeclaration,
+.classExpression
+  background-color classColor
+  border-color darken(classColor, 10%)
+  position relative
+  margin-bottom 2em
+
+  &::before
+    content 'class'
+    labelStyling()
+
+  > header
+    > .name,
+    > .superClass
+      color darken(classColor, 50%)
+      font-weight 600
+
+  .superClass
+    &::before
+      color silentColor
+      content '\0000a0extends\a0'
+
+.super
+  &::before
+    color primaryColor
+    content '\a0super\a0'
+
+.emptyStatement
+  &::before
+    color darken(errorRed, 50%)
+    content '<empty statement>\a0'
+
+
+
+.blockStatement
+  background-color blockColor
+  border-color darken(blockColor, 10%)
+  display block
+  padding 0.1em 0.2em
+  margin 0 0.2em 0.2em 0
+
+
+.labeledStatement
+  background-color blockColor
+  border-color darken(blockColor, 10%)
+  > header > .label
+    &::after
+      content ':\a0'
+
+
+.continueStatement
+  &::before
+    color primaryColor
+    content 'continue\a0'
+    font-weight 600
+
+
+.expressionStatement
+  background-color expressionColor
+  border-color darken(expressionColor, 10%)
+  display block
+  padding 0.1em 0.2em
+  margin 0 0.2em 0.2em 0
+
+
+.memberExpression
+  > .property
+    &::before
+      content '.'
+
+  &.computed
+    > .property
+      &::before
+        content '['
+      &::after
+        content ']'
+
+
+.callee
+  vertical-align top
+
+  > .memberExpression > .property
+    color hsl(190, 60%, 50%) !important
+    &::before
+      white-space pre
+      content '\A   .'
+      color  transSilentColor
+
+
+// TODO: Design wrapper for arguments first
+// .callExpression
+//   > span
+//     display inline-block
+//     vertical-align middle
+
+
+.logicalExpression
+  border-color transSilentColor
+  border-radius 1em
+  border-style solid
+  border-width 1px
+  display inline-block
+  vertical-align middle
+  padding 0.1em 0.8em
+
+  > .left,
+  > .right
+    display inline-block
+    vertical-align middle
+
+    > .logicalExpression
+      margin-right -0.7em
+
+
+.awaitExpression
+  &::before
+    content ' await '
+    font-weight 600
+
+
+.declarations
+  background-color declarationsColor
+  border-color darken(declarationsColor, 5%)
+  display inline-block !important
+  margin 0 0.4em 0.4em 0
+  padding 0.2em 0.5em
+
+  &.const
+    .declaration.hasInit > .identifier::after
+      content '\a0:=\a0'
+      color  transSilentColor
+
+  &.let,
+  &.var
+    .declaration.hasInit > .identifier::after
+      content '\a0:\a0'
+      color  transSilentColor
+
+  &.var
+    padding 0.2em 1.5em 0.2em 0.5em
+    &::before
+      color transSilentColor
+      content 'var'
+      float right
+      font-size 0.8em
+      position relative
+      right -1.5em
+
+  + .function
+    margin-top 2em
+
+
+.declaration
+  display flex
+  flex-wrap wrap
+  align-items center
+
+  > .identifier
+    color darken(declarationsColor, 50%)
+    flex-grow 2
+
+  > .init
+    flex-grow 3
+
+
+.return
+  display block
+  background-color returnColor
+  border-color darken(returnColor, 20%)
+  padding 0em 2em 0.6em 1em
+
+  &::before
+    content '↵'
+    margin-right -2em
+    margin-top 0.5em
+    font-size 2em
+    labelStyling()
+
+.comment,
+.propertyComment
+  display inline-block
+  border-left 4px solid hsl(0, 0, 80%)
+  padding-left 1em
+  color hsl(0, 0, 50%)
+  font-size 0.9em
+  margin 0.5em 0
+  &::first-letter
+    text-transform uppercase
+
+.commentedSection
+  margin-top 1em
+
+.blockLabel + .commentedSection,
+.body > .commentedSection:first-child
+  margin-top 0 !important
+
+.withTrailingComment
+  display flex
+
+  :first-child
+    flex-grow 9
+
+  .trailing.comment
+    border-width 2px
+    padding-left 0.5em
+    margin-left 1em
+    flex-grow 1
+
+
+.objectExpression,
+.identifier > .objectPattern
+  display inline-table
+  background-color objectColor
+  border-width 1px
+  border-style solid
+  border-color darken(objectColor, 10%)
+  padding 0.2em 0.5em
+
+  &:empty
+    &::before
+      color transSilentColor
+      content '{'
+
+    &::after
+      color transSilentColor
+      content '}'
+
+  > .property
+    display table-row
+
+    > .key
+      display table-cell
+      text-align right
+
+    > .separator
+      display table-cell
+      color transSilentColor
+      &::after
+        content ':\a0'
+
+    > .value
+      display table-cell
+
+      // Increase distance between sub objects
+      > .objectExpression
+        margin 0.2em 0
+
+
+.identifier > .objectPattern
+  background-color transparent
+  border-color transparent
+
+
+.objectPattern
+  vertical-align middle
+  > .property
+    &.shorthand:not(:last-of-type)
+      > .key::after
+        content ',\a0'
+
+    &.shorthand
+      > .key
+        display inline-block
+        visibility hidden
+        width 0
+
+
+.arrayExpression,
+.arrayPattern
+  border-color transSilentColor
+  display inline-block
+  vertical-align middle
+
+  &:empty
+    border none
+
+    &::before
+      content '['
+
+    &::after
+      content ']'
+
+
+.arrayElement,
+.arrayPattern > *
+  border-width 0
+  border-radius 0
+  border-style solid
+  border-bottom-width 1px
+  border-color transSilentColor
+  display block
+  padding 0.2em 0.5em
+
+  &:last-of-type
+    border-bottom none
+
+  > .arrayExpression
+    margin-left -0.3em
+
+
+
+.assignment
+  font-size 0.8em
+  padding 0 0.2em
+  &::before
+    color transSilentColor
+    content '\a0=\a0'
+
+.assignmentExpression,
+.assignmentPattern
+  > .left::after
+    color transSilentColor
+    content '\a0=\a0'
+
+  // Make unusual assignment expression more visibile
+  &[class*="assign-"]
+    > .left::after
+      color transQuietColor !important
+
+.assign-add
+  > .left::after
+    content '\a0+=\a0'
+
+.assign-subtract
+  > .left::after
+    content '\a0-=\a0'
+
+.assign-multiply
+  > .left::after
+    content '\a0*=\a0'
+
+.assign-divide
+  > .left::after
+    content '\a0/=\a0'
+
+.assign-remainder
+  > .left::after
+    content '\a0%=\a0'
+
+.assign-shift-left
+  > .left::after
+    content '\a0<<=\a0'
+
+.assign-shift-right
+  > .left::after
+    content '\a0>>=\a0'
+
+.assign-shift-right-unsigned
+  > .left::after
+    content '\a0>>>=\a0'
+
+.assign-bit-and
+  > .left::after
+    content '\a0&=\a0'
+
+.assign-bit-or
+  > .left::after
+    content '\a0|=\a0'
+
+.assign-bit-xor
+  > .left::after
+    content '\a0^=\a0'
+
+// Literals
+
+.infinity
+  font-size 1.4em
+  vertical-align -10%
+  &::before
+    content '∞'
+
+.true::before
+  font-weight 600
+  content 'Yes'
+
+.false::before
+  font-weight 600
+  content 'No'
+
+.null::before
+  font-weight 600
+  content '∅'
+
+.undefined::before
+  font-weight 600
+  content 'undef'
+
+.nan::before
+  font-weight 600
+  content '🚫'
+
+
+// Operators
+// Check out /source/operatorMap.js for complete list
+
+// Add parentheses to clarify precedence
+
+.binaryExpression
+  > .left::before
+    content '('
+    color transSilentColor
+
+  > .right::after
+    content ')'
+    color transSilentColor
+
+
+
+.binaryExpression
+  > .left::after
+    font-weight 600
+    content '\a0<operator missing>\a0'
+
+.operator-and
+  > .left::after
+    content '\a0∧\a0'
+
+.operator-or
+  > .left::after
+    content '\a0∨\a0'
+
+.operator-not::before
+  content '¬\a0'
+  font-weight 600
+
+.operator-add
+  > .left::after
+    content '\a0+\a0'
+
+.operator-subtract
+  > .left::after
+    content '\a0-\a0'
+
+.operator-multiply
+  > .left::after
+    content '\a0×\a0'
+
+.operator-divide
+  > .left::after
+    content '\a0/\a0'
+
+.operator-remainder
+  > .left::after
+    content '\a0%\a0'
+
+.operator-exponent
+  > .left::after
+    content '\a0**\a0'
+
+.operator-equals
+  width 1.5em
+  > .left::after
+    content '\a0≔\a0'
+
+.operator-equals-not
+  > .left::after
+    content '\a0≠\a0'
+
+.operator-equals-strict
+  > .left::after
+    content '\a0≡\a0'
+
+.operator-equals-strict-not
+  > .left::after
+    content '\a0≢\a0'
+
+.operator-shift-left
+  > .left::after
+    content '\a0≪\a0'
+
+.operator-shift-right
+  > .left::after
+    content '\a0≫\a0'
+
+.operator-less-than
+  > .left::after
+    content '\a0<\a0'
+
+.operator-less-than-equals
+  > .left::after
+    content '\a0≤\a0'
+
+.operator-greater-than
+  > .left::after
+    content '\a0>\a0'
+
+.operator-greater-than-equals
+  > .left::after
+    content '\a0≥\a0'
+
+.operator-spread::before
+  content '\a0…\a0'
+
+.operator-delete::before
+  content '\a0⌦\a0'
+
+.operator-typeof::before
+  content '\a0typeof\a0'
+  font-weight 600
+
+.operator-void::before
+  font-weight 600
+  content '\a0void\a0'
+
+
+.containsThisExpression
+  > .property::before
+    content ''
+
+.thisExpression
+  &::after
+    content '@'
+
+.shebang
+  color gray
+  margin-bottom 1em
+
+
+
+.error
+  color darken(errorRed, 50%)
+  background-color errorRed
+  border-width 1px
+  border-style solid
+  border-color darken(errorRed, 50%)
+  border-radius 3px
+  font-size 1rem
+  padding 1em 2em

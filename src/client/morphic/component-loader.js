@@ -214,9 +214,18 @@ export default class ComponentLoader {
     lookupRoot = lookupRoot || document.body;
 
     var selector = ":unresolved";
-
+    var unresolved = []
+    
+    // check if lookupRoot is unresolved
+    if (lookupRoot.parentElement) {
+      var unresolvedSiblingsAndMe =  lookupRoot.parentElement.querySelectorAll(selector);
+      if (_.includes(unresolvedSiblingsAndMe, lookupRoot )) {
+        unresolved.push(lookupRoot)
+      }
+    }
+    
     // find all unresolved elements looking downwards from lookupRoot
-    var unresolved = Array.from(lookupRoot.querySelectorAll(selector));
+    var unresolved = unresolved.concat(Array.from(lookupRoot.querySelectorAll(selector)));
     if (deep) {
       var deepUnresolved = findUnresolvedDeep(lookupRoot);
       unresolved = unresolved.concat(deepUnresolved);
@@ -305,11 +314,10 @@ export default class ComponentLoader {
           
           lively.notify("Timout due to unresolved promises, while loading " + unfinishedPromise.name + " context: " + debuggingHint )
         }
-      }, 30 * 1000)
+      }, 10 * 1000)
 
-      Promise.all(promises).then( result => resolve(), reject => {
-          console.log("ERROR loading " +reject)
-          reject()
+      Promise.all(promises).then( result => resolve(), err => {
+          console.log("ERROR loading component ", err)
       })
     })
   }
@@ -364,6 +372,9 @@ export default class ComponentLoader {
   }
 
   static addTemplatePath(path) {
+    if (!lively.files.isURL(path)) {
+      path = lively.location.href.replace(/[^/]*$/, path)
+    }
     var all = this.getTemplatePaths()
     if (!all.includes(path)) {
       all.push(path)
@@ -478,7 +489,8 @@ export default class ComponentLoader {
     } else {
       parent.appendChild(component);
     }
-    this.loadUnresolved(parent, true, "openIn " + component);
+    // this.loadUnresolved(parent, true, "openIn " + component);
+    this.loadUnresolved(component, true, "openIn " + component);
 
     return compPromise;
   }

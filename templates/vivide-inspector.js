@@ -53,7 +53,7 @@ export default class VivideInspector extends Morph {
       }
     }
     
-    depictionDiv.append(number != undefined ? "Depiction #" + number + ":" : "Depiction:");
+    depictionDiv.append(number != undefined ? "Projection #" + number + ":" : "Projection:");
     depictionDiv.append(depictionEditor);
     
     return depictionDiv;

@@ -1,0 +1,29 @@
+<script type="text/javascript">
+  function openExample() {
+    let data =
+      [
+        {name: "John Doe", age: 25, sex: "male", address: "New York",
+          orders: [
+            {item: "Pax", price: 210},
+            {item: "Komplement", price: 14}
+        ]},
+        {name: "Jane Doe", age: 24, sex: "female", address: "New York",
+          orders: [
+            {item: "Skubb", price: 9},
+            {item: "Fjälla", price: 4}
+        ]},
+        {name: "Chuck Norris", age: 77, sex: "male", address: "Everywhere",
+          orders: []}
+      ];
+    
+    lively.openComponentInWindow("vivide-list").then(vividelist => {
+      vividelist.pushTransformation(list => list)
+      vividelist.pushDepiction(person => person.name);
+      vividelist.show(data);
+    });
+  }
+</script>
+
+<button onclick="openExample()">
+  Open Example
+</button>

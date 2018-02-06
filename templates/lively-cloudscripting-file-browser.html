@@ -1,0 +1,205 @@
+<link rel="import" href="../templates/lively-file-browser-item.html" />
+<template id="lively-cloudscripting-file-browser" data-class="LivelyCloudscriptingFileBrowser">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+    * {
+      box-sizing: border-box;
+    }
+
+    #container {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    nav {
+      display: table;
+      width: 100%;
+      border-bottom: 1px solid #ddd;
+      height: 39px;
+      padding: 2px;
+    }
+
+    nav .group {
+      display: table-cell;
+      padding: 0;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    nav .group:not(:first-child) {
+      padding-left: 10px;
+    }
+
+    nav .group.fluid {
+      width: 100%;
+    }
+
+    nav button {
+      border: 1px solid transparent;
+      background: transparent;
+      padding: 4px;
+      margin: 0;
+      display: inline-block;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    nav button .fa {
+      color: #777;
+      font-size: 16px;
+    }
+
+    nav button:focus {
+      border-color: #cde6f7;
+      outline: none;
+    }
+
+    nav button:hover {
+      background: #cde6f7;
+      border-color: #cde6f7;
+      outline: none;
+    }
+
+    nav button:active {
+      background: #2a8dd4;
+      border-color: #2a8dd4;
+      outline: none;
+    }
+
+    nav button:hover svg path {
+      fill: #2a8dd4;
+    }
+
+    nav button:active svg path {
+      fill: #FFF;
+    }
+
+    nav input {
+      padding: 4px 5px;
+      border: 1px solid #aaa;
+      border-radius: 2px
+    }
+
+    nav input:focus {
+      border-color: #86A9C1;
+      background: #F0F9FF;
+      outline: none;
+    }
+
+    #location {
+      width: 100%;
+    }
+
+    #contents {
+      display:inline-block;
+      height: calc(100% - 40px);
+      width: calc(70% - 2px);
+      padding: 0;
+      margin: 0;
+      overflow: auto;
+
+      font-size: 85%;
+    }
+
+    #contents::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #contents::-webkit-scrollbar-thumb {
+      border-radius: 3px;
+      background-color: #aaa;
+    }
+
+    #contents::-webkit-scrollbar-button {
+      height: 2px;
+    }
+
+    #contents lively-file-browser-item {
+      display: block;
+      float: left;
+      width: 84px;
+      height: 64px;
+      margin: 4px;
+      border-radius: 4px;
+      padding: 5px;
+      cursor: default;
+    }
+
+    #contents lively-file-browser-item:hover {
+      background-color: #cde6f7;
+    }
+
+    #contents lively-file-browser-item:active {
+      background: #2a8dd4;
+      color: white;
+    }
+
+    #error {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: none;
+
+      font-size: 0.9rem;
+    }
+
+    #error.visible {
+      display: block;
+      padding: 4px;
+      background-color: #FFC8C8;
+    }
+  #descriptionWrapper{
+    float:right;
+    top:0;
+    border-left:1px solid lightgrey;
+    height:100%;
+    width:30%;
+    
+  }
+  #descriptionHeader{
+    padding:10px;
+    font-weight:700;
+  }
+  #descriptionContent{
+    padding: 0 10px;
+    font-size:90%;
+  }
+
+  </style>
+  <div id="container">
+    <nav id="toolbar">
+      <div class="group">
+        <button id="up">
+          <i class="fa fa-arrow-up" aria-hidden="true"></i>
+        </button>
+        <button id="home">
+          <i class="fa fa-home" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="group fluid">
+        <input name="location" id="location" />
+      </div>
+      <!--
+      <div class="group">
+        <button id="prefs">
+          <i class="fa fa-cog" aria-hidden="true"></i>
+        </button>
+      </div>
+      -->
+    </nav>
+    <div id="contents"></div>
+    <div id="descriptionWrapper">
+      <div id="descriptionHeader">
+        Description
+      </div>
+      <div id="descriptionContent">
+        Hover over one item to see its description.
+      </div>
+    </div>
+    <div id="error"></div>
+  </div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

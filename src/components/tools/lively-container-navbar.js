@@ -2,10 +2,12 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import { applyDragCSSClass } from 'src/client/draganddrop.js';
 import { fileName } from 'utils';
+import components from 'src/client/morphic/component-loader.js'
+import Preferences from 'src/client/preferences.js'
+
 
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
-    
     this.addEventListener("drop", this.onDrop)
     this.addEventListener("dragover", this.onDragOver)
     // this.addEventListener("dragenter", this.onDragEnter)
@@ -15,7 +17,7 @@ export default class LivelyContainerNavbar extends Morph {
   clear() {
     this.get("#navbar").innerHTML = ""
   }
-  
+
   onDragOver(evt) {    
     if (evt.shiftKey) {
       evt.dataTransfer.dropEffect = "move";
@@ -52,7 +54,7 @@ export default class LivelyContainerNavbar extends Morph {
     }
 
     var data = evt.dataTransfer.getData("text");
-    if (data.match("^https?:\/\/") || data.match(/^data\:image\/png;/)) {
+    if (data.match("^https?://") || data.match(/^data\:image\/png;/)) {
       this.copyFromURL(data);        
     } else {
       console.log('ignore data ' + data);
@@ -213,7 +215,7 @@ export default class LivelyContainerNavbar extends Morph {
         return false;
       };
       link.addEventListener('contextmenu', (evt) => {
-	        if (!evt.shiftKey) {
+          if (!evt.shiftKey) {
             this.onContextMenu(evt, otherUrl)
             evt.stopPropagation();
             evt.preventDefault();
@@ -224,17 +226,29 @@ export default class LivelyContainerNavbar extends Morph {
       navbar.appendChild(element);
     });
   }
+  
+  async editWithSyvis (url) {
+    const editor = await components.createComponent('syvis-editor')
+    await editor.loadUrl(url)
+    await components.openInWindow(editor)
+  }
 
   onContextMenu(evt, otherUrl) {
-    var menu = new ContextMenu(this, [
+    const menuElements = [
       ["delete file", () => this.deleteFile(otherUrl)],
       ["rename file", () => this.renameFile(otherUrl)],
       ["new file", () => this.newfile(otherUrl)],
       ["edit", () => lively.openBrowser(otherUrl, true)],
       ["browse", () => lively.openBrowser(otherUrl)],
       ["save as png", () => lively.html.saveAsPNG(otherUrl)],
-    ]);
-    menu.openIn(document.body, evt, this);
+    ]
+    
+    if (Preferences.get('EnableSyvisEditor')) {
+      menuElements.push(['edit with syvis', () => this.editWithSyvis(otherUrl)])
+    }
+    
+    const menu = new ContextMenu(this, menuElements)
+    menu.openIn(document.body, evt, this)
   }
   
   deleteFile(url) {
@@ -271,14 +285,14 @@ export default class LivelyContainerNavbar extends Morph {
       }
       // fill navbar with list of script
       Array.from(template.content.querySelectorAll("script")).forEach((ea) => {
-	      var element = document.createElement("li");
-	      element.innerHTML = ea.getAttribute('data-name');
-	      element.classList.add("subitem");
-	      element.onclick = () => {
-	        this.navigateToName(
-	          "data-name=\""+ea.getAttribute('data-name')+'"');
-	      };
-	      subList.appendChild(element) ;
+        var element = document.createElement("li");
+        element.innerHTML = ea.getAttribute('data-name');
+        element.classList.add("subitem");
+        element.onclick = () => {
+          this.navigateToName(
+            "data-name=\""+ea.getAttribute('data-name')+'"');
+        };
+        subList.appendChild(element) ;
       });
     } else if (this.url.match(/\.js$/)) {
       // |async\\s+
@@ -304,11 +318,11 @@ export default class LivelyContainerNavbar extends Morph {
             let name = (line.replace(/[A-Za-z].*/g,"")).replace(/\s/g, "&nbsp;") + theMatch,
                 navigateToName = m[0],
                 element = document.createElement("li");
-    	      element.innerHTML = name;
-    	      element.classList.add("link");
-    	      element.classList.add("subitem");
-    	      element.onclick = () => this.navigateToName(navigateToName);
-    	      subList.appendChild(element) ;
+            element.innerHTML = name;
+            element.classList.add("link");
+            element.classList.add("subitem");
+            element.onclick = () => this.navigateToName(navigateToName);
+            subList.appendChild(element) ;
           }
         }
       });
@@ -325,15 +339,15 @@ export default class LivelyContainerNavbar extends Morph {
       _.keys(links).forEach( name => {
         var item = links[name];
         var element = document.createElement("li");
-  	    element.textContent = name.replace(/<.*?>/g,"");
-  	    element.classList.add("link");
-  	    element.classList.add("subitem");
-  	    element.classList.add("level" + item.level);
+        element.textContent = name.replace(/<.*?>/g,"");
+        element.classList.add("link");
+        element.classList.add("subitem");
+        element.classList.add("level" + item.level);
 
-  	    element.onclick = () => {
-  	        this.navigateToName(item.name);
-  	    };
-  	    subList.appendChild(element);
+        element.onclick = () => {
+          this.navigateToName(item.name);
+        };
+        subList.appendChild(element);
       });
     }
   }

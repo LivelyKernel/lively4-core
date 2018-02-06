@@ -255,13 +255,15 @@ export default class Expose {
   // Single Global Event
   static onKeyDown(evt) {
     var key = String.fromCharCode(evt.keyCode)
-    // #KeyboardShortcut Ctrl-E toggle expose
-    if ((key === "E" && (evt.metaKey || evt.ctrlKey)) 
-        /* || (key === "Q" && evt.altKey) */) {
-      Expose.toggle();
-      evt.preventDefault()
-      evt.stopPropagation();
-    }
+    // TODO: Replace or disable for editor.
+    //   Ctrl-E is "jump to end of line" in every other editor
+    //  (#KeyboardShortcut Ctrl-E toggle expose)
+    // if ((key === "E" && (evt.metaKey || evt.ctrlKey)) 
+    //     /* || (key === "Q" && evt.altKey) */) {
+    //   Expose.toggle();
+    //   evt.preventDefault()
+    //   evt.stopPropagation();
+    // }
   }
 
   onLeftDown(evt) {

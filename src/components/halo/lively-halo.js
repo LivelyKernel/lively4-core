@@ -78,6 +78,9 @@ export default class Halo extends Morph {
     this.shadowRoot.querySelectorAll("lively-halo-control-point-item")
       .forEach(ea =>  ea.remove())
     
+    if (!target) {
+      return
+    }
     target.querySelectorAll(":not(marker)>path").forEach(ea => {
       svg.getPathVertices(ea).forEach( (p, index) => {
         this.ensureControlPoint(ea, index)
@@ -218,7 +221,7 @@ export default class Halo extends Morph {
    * holding ALT    .... align to in bigger steps to grid (resize and move)
    */
   moveTargetOnEventWithKey(evt, delta) {
-   var gridSize = lively.preferences.get("gridSize") * 0.25;
+   var gridSize = lively.preferences.get("GridSize") * 0.25;
     if (evt.altKey) {
       delta = delta.scaleBy(gridSize)
     }

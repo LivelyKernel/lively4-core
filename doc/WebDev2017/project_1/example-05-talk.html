@@ -12,13 +12,13 @@
             {item: 0815, price: 20},
             {item: 7723, price: 80}
         ]},
-        {name: "Chuck Norris", age: 77, sex: "male", address: "Everywhere"
+        {name: "Chuck Norris", age: 77, sex: "male", address: "Everywhere",
           orders: []}
       ];
     
     lively.openComponentInWindow("vivide-list").then(vividelist => {
-      vividelist.pushTransformation(list => list.filter(elem => elem.orders.length > 0));
-      vividelist.pushDepiction(elem => elem.name);
+      vividelist.pushTransformation(list => list)
+      vividelist.pushDepiction(person => person.name);
       vividelist.show(data);
     });
   }
