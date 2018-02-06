@@ -8,6 +8,8 @@ html, body {
   margin: 0;
   padding: 0;
   font-family: sans-serif;
+  /* Needed for PDF selection */
+  user-select: auto;
 }
 /* 
 body {

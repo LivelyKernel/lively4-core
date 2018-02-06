@@ -228,9 +228,8 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   async editWithSyvis (url) {
-    console.info(`Open "${url}" with syvis editor`)
-    const editor = components.createComponent('syvis-editor')
-    // await editor.loadUrl(url)
+    const editor = await components.createComponent('syvis-editor')
+    await editor.loadUrl(url)
     await components.openInWindow(editor)
   }
 

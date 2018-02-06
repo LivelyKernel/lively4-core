@@ -156,11 +156,11 @@ export default class Editor extends Morph {
     }
     
     if (preserveView) {
-    	this.setScrollInfo(scroll)
-    	this.setCursor(cur)
-      	if (!this.isCodeMirror()) {
-    		this.currentEditor().selection.setRange(oldRange)
-    	}
+      this.setScrollInfo(scroll)
+      this.setCursor(cur)
+      if (!this.isCodeMirror()) {
+        this.currentEditor().selection.setRange(oldRange)
+      }
     }
   }
   
