@@ -46,6 +46,7 @@ export default class SyvisEditor extends Morph {
         content: fileContent,
       }
       const vDom = syvis(fileData)
+      console.log(vDom)
       const obj = shaven(vDom)
       this.shadowRoot
         .querySelector('#syvis-content')

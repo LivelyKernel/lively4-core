@@ -78,6 +78,7 @@ export default function shaven (arrayOrObject) {
     
     if (!array) {
       console.warn('Arguments is not an array, but ' + typeof array)
+      array = []
     }
 
     let index = 1
