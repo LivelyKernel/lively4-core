@@ -123,7 +123,6 @@ export default class LivelyPDF extends Morph {
   
   onPdfAdd() {
     if (this.shadowRoot.getSelection().rangeCount > 0) {
-      let content = window.prompt('Please enter the content');
       let currentPageNumber = this.shadowRoot.getSelection().anchorNode.parentNode.parentNode.parentNode.dataset.pageNumber;
       let scale = this.pdfViewer._pages[0].viewport.scale;
       let selectionCoords = this.shadowRoot.getSelection().getRangeAt(0).getBoundingClientRect();
@@ -140,6 +139,7 @@ export default class LivelyPDF extends Morph {
         bottomRightX: (selectionCoords.x - pageCoords.x + selectionCoords.width) / scale,
         bottomRightY: (pageCoords.bottom - selectionCoords.y - selectionCoords.height) / scale 
       };
+      let content = window.prompt('Please enter the content');
       
       // Create new anntotaion string which can later be inserted
       let [newAnnotationId, newPopupId] = this.getNewAnnoationIds();
