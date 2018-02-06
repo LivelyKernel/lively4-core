@@ -6,66 +6,131 @@ import toHtmlError from './toHtmlError.js'
 // import codemirror from 'src/external/code-mirror/src/edit/main.js'
 // import 'src/external/code-mirror/mode/javascript/javascript.js'
 
-import arrayExpression from './visualizers/array-expression.js'
-import arrayPattern from './visualizers/array-pattern.js'
-import arrowFunctionExpression from './visualizers/arrow-function-expression.js'
-import assignmentExpression from './visualizers/assignment-expression.js'
-import assignmentPattern from './visualizers/assignment-pattern.js'
-import awaitExpression from './visualizers/await-expression.js'
-import binaryExpression from './visualizers/binary-expression.js'
-import blockStatement from './visualizers/block-statement.js'
-import breakStatement from './visualizers/break-statement.js'
-import callExpression from './visualizers/call-expression.js'
-import catchClause from './visualizers/catch-clause.js'
-import classBody from './visualizers/class-body.js'
-import classDeclaration from './visualizers/class-declaration.js'
-import classExpression from './visualizers/class-expression.js'
-import conditionalExpression from './visualizers/conditional-expression.js'
-import continueStatement from './visualizers/continue-statement.js'
-import doWhileStatement from './visualizers/do-while-statement.js'
-import emptyStatement from './visualizers/empty-statement.js'
-import exportAllDeclaration from './visualizers/export-all-declaration.js'
-import exportDefaultDeclaration from './visualizers/export-default-declaration.js'
-import exportNamedDeclaration from './visualizers/export-named-declaration.js'
-import exportSpecifier from './visualizers/export-specifier.js'
-import expressionStatement from './visualizers/expression-statement.js'
-import forInStatement from './visualizers/for-in-statement.js'
-import forOfStatement from './visualizers/for-of-statement.js'
-import forStatement from './visualizers/for-statement.js'
-import functionDeclaration from './visualizers/function-declaration.js'
-import functionExpression from './visualizers/function-expression.js'
-import identifier from './visualizers/identifier.js'
-import ifStatement from './visualizers/if-statement.js'
-import importDeclaration from './visualizers/import-declaration.js'
-import importDefaultSpecifier from './visualizers/import-default-specifier.js'
-import importNamespaceSpecifier from './visualizers/import-namespace-specifier.js'
-import importSpecifier from './visualizers/import-specifier.js'
-import labeledStatement from './visualizers/labeled-statement.js'
-import literal from './visualizers/literal.js'
-import logicalExpression from './visualizers/logical-expression.js'
-import memberExpression from './visualizers/member-expression.js'
-import methodDefinition from './visualizers/method-definition.js'
-import newExpression from './visualizers/new-expression.js'
-import objectExpression from './visualizers/object-expression.js'
-import objectPattern from './visualizers/object-pattern.js'
-import propertyComment from './visualizers/property-comment.js'
-import property from './visualizers/property.js'
-import returnStatement from './visualizers/return-statement.js'
-import spreadElement from './visualizers/spread-element.js'
-import superElement from './visualizers/super.js'
-import switchCase from './visualizers/switch-case.js'
-import switchStatement from './visualizers/switch-statement.js'
-import taggedTemplateExpression from './visualizers/tagged-template-expression.js'
-import templateElement from './visualizers/template-element.js'
-import templateLiteral from './visualizers/template-literal.js'
-import thisExpression from './visualizers/this-expression.js'
-import throwStatement from './visualizers/throw-statement.js'
-import tryStatement from './visualizers/try-statement.js'
-import unaryExpression from './visualizers/unary-expression.js'
-import updateExpression from './visualizers/update-expression.js'
-import variableDeclaration from './visualizers/variable-declaration.js'
-import variableDeclarator from './visualizers/variable-declarator.js'
-import whileStatement from './visualizers/while-statement.js'
+import ArrayExpression from './visualizers/array-expression.js'
+import ArrayPattern from './visualizers/array-pattern.js'
+import ArrowFunctionExpression from './visualizers/arrow-function-expression.js'
+import AssignmentExpression from './visualizers/assignment-expression.js'
+import AssignmentPattern from './visualizers/assignment-pattern.js'
+import AwaitExpression from './visualizers/await-expression.js'
+import BinaryExpression from './visualizers/binary-expression.js'
+import BlockStatement from './visualizers/block-statement.js'
+import BreakStatement from './visualizers/break-statement.js'
+import CallExpression from './visualizers/call-expression.js'
+import CatchClause from './visualizers/catch-clause.js'
+import ClassBody from './visualizers/class-body.js'
+import ClassDeclaration from './visualizers/class-declaration.js'
+import ClassExpression from './visualizers/class-expression.js'
+import ConditionalExpression from './visualizers/conditional-expression.js'
+import ContinueStatement from './visualizers/continue-statement.js'
+import DoWhileStatement from './visualizers/do-while-statement.js'
+import EmptyStatement from './visualizers/empty-statement.js'
+import ExportAllDeclaration from './visualizers/export-all-declaration.js'
+import ExportDefaultDeclaration from './visualizers/export-default-declaration.js'
+import ExportNamedDeclaration from './visualizers/export-named-declaration.js'
+import ExportSpecifier from './visualizers/export-specifier.js'
+import ExpressionStatement from './visualizers/expression-statement.js'
+import ForInStatement from './visualizers/for-in-statement.js'
+import ForOfStatement from './visualizers/for-of-statement.js'
+import ForStatement from './visualizers/for-statement.js'
+import FunctionDeclaration from './visualizers/function-declaration.js'
+import FunctionExpression from './visualizers/function-expression.js'
+import Identifier from './visualizers/identifier.js'
+import IfStatement from './visualizers/if-statement.js'
+import ImportDeclaration from './visualizers/import-declaration.js'
+import ImportDefaultSpecifier from './visualizers/import-default-specifier.js'
+import ImportNamespaceSpecifier from './visualizers/import-namespace-specifier.js'
+import ImportSpecifier from './visualizers/import-specifier.js'
+import LabeledStatement from './visualizers/labeled-statement.js'
+import Literal from './visualizers/literal.js'
+import LogicalExpression from './visualizers/logical-expression.js'
+import MemberExpression from './visualizers/member-expression.js'
+import MethodDefinition from './visualizers/method-definition.js'
+import NewExpression from './visualizers/new-expression.js'
+import ObjectExpression from './visualizers/object-expression.js'
+import ObjectPattern from './visualizers/object-pattern.js'
+import PropertyComment from './visualizers/property-comment.js'
+import Property from './visualizers/property.js'
+import ReturnStatement from './visualizers/return-statement.js'
+import SpreadElement from './visualizers/spread-element.js'
+import Super from './visualizers/super.js'
+import SwitchCase from './visualizers/switch-case.js'
+import SwitchStatement from './visualizers/switch-statement.js'
+import TaggedTemplateExpression from './visualizers/tagged-template-expression.js'
+import TemplateElement from './visualizers/template-element.js'
+import TemplateLiteral from './visualizers/template-literal.js'
+import ThisExpression from './visualizers/this-expression.js'
+import ThrowStatement from './visualizers/throw-statement.js'
+import TryStatement from './visualizers/try-statement.js'
+import UnaryExpression from './visualizers/unary-expression.js'
+import UpdateExpression from './visualizers/update-expression.js'
+import VariableDeclaration from './visualizers/variable-declaration.js'
+import VariableDeclarator from './visualizers/variable-declarator.js'
+import WhileStatement from './visualizers/while-statement.js'
+
+
+const visualizers = {
+  ArrayExpression,
+  ArrayPattern,
+  ArrowFunctionExpression,
+  AssignmentExpression,
+  AssignmentPattern,
+  AwaitExpression,
+  BinaryExpression,
+  BlockStatement,
+  BreakStatement,
+  CallExpression,
+  CatchClause,
+  ClassBody,
+  ClassDeclaration,
+  ClassExpression,
+  ConditionalExpression,
+  ContinueStatement,
+  DoWhileStatement,
+  EmptyStatement,
+  ExportAllDeclaration,
+  ExportDefaultDeclaration,
+  ExportNamedDeclaration,
+  ExportSpecifier,
+  ExpressionStatement,
+  ForInStatement,
+  ForOfStatement,
+  ForStatement,
+  FunctionDeclaration,
+  FunctionExpression,
+  Identifier,
+  IfStatement,
+  ImportDeclaration,
+  ImportDefaultSpecifier,
+  ImportNamespaceSpecifier,
+  ImportSpecifier,
+  LabeledStatement,
+  Literal,
+  LogicalExpression,
+  MemberExpression,
+  MethodDefinition,
+  NewExpression,
+  ObjectExpression,
+  ObjectPattern,
+  PropertyComment,
+  Property,
+  ReturnStatement,
+  SpreadElement,
+  Super,
+  SwitchCase,
+  SwitchStatement,
+  TaggedTemplateExpression,
+  TemplateElement,
+  TemplateLiteral,
+  ThisExpression,
+  ThrowStatement,
+  TryStatement,
+  UnaryExpression,
+  UpdateExpression,
+  VariableDeclaration,
+  VariableDeclarator,
+  WhileStatement,
+}
+
 
 
 
@@ -267,9 +332,9 @@ function walkTree (node, fileData) {
       ],
     ]
   }
-
-  if (window[node.type]) {
-    const visualizer = window[node.type]
+  
+  if (visualizers[node.type]) {
+    const visualizer = visualizers[node.type]
     return visualizer(node)
   }
   else {

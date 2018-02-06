@@ -75,6 +75,10 @@ export default function shaven (arrayOrObject) {
 
 
   function buildDom (array) {
+    
+    if (!array) {
+      console.warn('Arguments is not an array, but ' + typeof array)
+    }
 
     let index = 1
     let createdCallback

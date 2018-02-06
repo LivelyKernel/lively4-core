@@ -1,8 +1,8 @@
 /* global stylus */
 
 import Morph from 'src/components/widgets/lively-morph.js'
-import syvis from 'src/external/syvis-editor/syvis.js'
 import shaven from 'src/external/shaven/index.js'
+import syvis from 'src/external/syvis-editor/syvis.js'
 
 // Not working with minifed file
 // import stylus from 'src/external/stylus.min.js'
@@ -18,7 +18,7 @@ export default class SyvisEditor extends Morph {
     const fileContent = await response.text()
     
     const rootEl = this.shadowRoot
-    
+        
     stylus(fileContent)
       .render((error, css) => {
         if (error) {
@@ -46,11 +46,10 @@ export default class SyvisEditor extends Morph {
         content: fileContent,
       }
       const vDom = syvis(fileData)
-      console.log(vDom)
       const obj = shaven(vDom)
-      console.log(obj)
-      // this.appendChild(obj.rootElement)
-      // shaven.default([this, vDom])[0]
+      this.shadowRoot
+        .querySelector('#syvis-content')
+        .innerHTML = obj.rootElement
     }
     catch (error) {
       console.error(error)

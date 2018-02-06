@@ -25,12 +25,13 @@ export default function (fileData) {
 
   try {
     const syntaxTree = esprima.parse(fileData.content, esprimaDefaults)
-
+    
     if (esprimaDefaults.errors) {
       return esprimaDefaults.errors
     }
     else {
-      return [walkTree(syntaxTree, fileData)]
+      const vDom = walkTree(syntaxTree, fileData)
+      return vDom
     }
   }
   catch (error) {
