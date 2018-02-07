@@ -92,6 +92,7 @@ export default class LivelyPaper extends Morph {
     this.canv_points_current_stroke = [];
     this.undone_canv_points = [];
     this.paper.project.clear();
+    this.dispatchExecHandwritingRecognition();
   }
   
   undoStroke() {
@@ -100,6 +101,7 @@ export default class LivelyPaper extends Morph {
     if (this.canv_points.length > 0) {
       this.undone_canv_points.push(this.canv_points.pop());
     }
+    this.dispatchExecHandwritingRecognition();
   }
 
   redoStroke() {
@@ -108,6 +110,7 @@ export default class LivelyPaper extends Morph {
     if (this.undone_canv_points.length > 0) {
       this.canv_points.push(this.undone_canv_points.pop())
     }
+    this.dispatchExecHandwritingRecognition();
   }
   
   onUndoStroke() {
@@ -176,6 +179,7 @@ export default class LivelyPaper extends Morph {
     if (this.canv_points_current_stroke.length > 0) {
       this.canv_points.push(this.canv_points_current_stroke);
       this.canv_points_current_stroke = [];
+      this.dispatchExecHandwritingRecognition();
     }
     
     this.setAttribute("last-changed", Date.now())
@@ -266,6 +270,10 @@ export default class LivelyPaper extends Morph {
     var svg = other.paper.project.exportSVG();
     this.initPaper();
     this.paper.project.importSVG(svg);
+  }
+  
+  dispatchExecHandwritingRecognition() {
+    this.dispatchEvent(new Event("execHandwritingRecognition"));
   }
   
 }
