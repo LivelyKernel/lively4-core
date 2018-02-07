@@ -155,7 +155,7 @@ export default class LivelyPDF extends Morph {
         // Since there are no annotations we have to create a new annotations array
         let newAnnotationsArrayId = this.getNewId(newPopupId);
         let newAnnoationsArrayRef = " /Annots " + newAnnotationsArrayId + " 0 R";
-        let newPageString = currentPageString.replace(">>", newAnnoationsArrayRef + ">>");
+        let newPageString = currentPageString.replace(">>", newAnnoationsArrayRef + " >>");
         let newAnnotationsArray = newAnnotationsArrayId + " 0 obj\n [ "
             + newAnnotationId + " 0 R " + newPopupId + " 0 R ]\nendobj\n";
         this.editedPdfText = this.editedPdfText.replace(currentPageString, newPageString);
@@ -277,10 +277,10 @@ endobj\n";
     cancelButton.setAttribute("disabled", "true");
   }
   
-  getNewId(lastUsedId = 1000) {
+  getNewId(lastUsedId) {
     // Optimization based on the assumption that 
     // there are no 1000 annotations within the PDF
-    let id = lastUsedId;
+    let id = (lastUsedId === undefined) ? 1000 : lastUsedId + 1;
     while(this.editedPdfText.indexOf(id + ' 0 obj') !== -1) {
       id++;
     }
