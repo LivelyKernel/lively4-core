@@ -142,7 +142,8 @@ export default class LivelyPDF extends Morph {
       let content = window.prompt('Please enter the content');
       
       // Create new anntotaion string which can later be inserted
-      let [newAnnotationId, newPopupId] = this.getNewAnnoationIds();
+      let newAnnotationId = this.getNewId();
+      let newPopupId = this.getNewId(newAnnotationId);
       let [rawAnnotation, rawPopupAnnotation] = this.createAnnotationObjects(scaledSelectionCoords, newAnnotationId, newPopupId, content);
       
       // Get currentPage object in PDF 
@@ -152,9 +153,13 @@ export default class LivelyPDF extends Morph {
       // Check for an existing annotations array
       if (currentPageString.indexOf('/Annots') === -1) {
         // Since there are no annotations we have to create a new annotations array
-        let newAnnoationsArray = " /Annots [ " + newAnnotationId + " 0 R " + newPopupId + " 0 R ] ";
-        let newPageString = currentPageString.replace(">>", newAnnoationsArray + ">>");
-        this.editedPdfText = this.editedPdfText.replace(currentPageString, newPageString); 
+        let newAnnotationsArrayId = this.getNewId(newPopupId);
+        let newAnnoationsArrayRef = " /Annots " + newAnnotationsArrayId + " 0 R";
+        let newPageString = currentPageString.replace(">>", newAnnoationsArrayRef + ">>");
+        let newAnnotationsArray = newAnnotationsArrayId + " 0 obj\n [ "
+            + newAnnotationId + " 0 R " + newPopupId + " 0 R ]\nendobj\n";
+        this.editedPdfText = this.editedPdfText.replace(currentPageString, newPageString);
+        this.editedPdfText = this.editedPdfText.replace('xref', newAnnotationsArray + "xref");
       }
       else {
         // Get annotations array
@@ -272,19 +277,15 @@ endobj\n";
     cancelButton.setAttribute("disabled", "true");
   }
   
-  getNewAnnoationIds() {
+  getNewId(lastUsedId = 1000) {
     // Optimization based on the assumption that 
     // there are no 1000 annotations within the PDF
-    let id1 = 1000;
-    while(this.editedPdfText.indexOf(id1 + ' 0 obj') !== -1) {
-      id1++;
-    }
-    let id2 = id1 + 1;
-    while(this.editedPdfText.indexOf(id2 + ' 0 obj') !== -1) {
-      id2++;
+    let id = lastUsedId;
+    while(this.editedPdfText.indexOf(id + ' 0 obj') !== -1) {
+      id++;
     }
     
-    return new Array(id1, id2);
+    return id;
   }
   
   livelyExample() {
