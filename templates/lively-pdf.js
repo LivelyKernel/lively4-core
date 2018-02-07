@@ -92,19 +92,12 @@ export default class LivelyPDF extends Morph {
   }   
   
   onPdfEdit() {
-    this.enableEditMode();
     this.setDeleteMode(false);
-    let that = this;
-    
-    this.pdfViewer.pagesPromise.then(() => {
-      let annotations = that.getAllSubmorphs(".annotationLayer section.highlightAnnotation");
-      annotations.forEach((annotation) => {
-        lively.addEventListener("pdf", annotation, "click", eventFunctionObject);
-      });
-    });
+    this.enableEditMode();
   }
   
-  onPdfDelete() {    
+  onPdfDelete() {   
+    this.disableEditMode(); 
     this.setDeleteMode(!this.deleteMode);
   }
   
@@ -152,13 +145,6 @@ export default class LivelyPDF extends Morph {
   
   onPdfCancel() {
     this.disableEditMode(); 
-    
-    this.editedPdfText = this.originalPdfText;
-    // Remove event listener
-    let annotations = this.getAllSubmorphs(".annotationLayer section.highlightAnnotation");
-    annotations.forEach((annotation) => {
-      lively.removeEventListener("pdf", annotation, "click", eventFunctionObject);
-    });
   }
   
   
@@ -238,6 +224,7 @@ export default class LivelyPDF extends Morph {
           that.pdfLinkService.setDocument(pdfDocument, null); 
         });
         
+        that.originalPdfText = that.editedPdfText;
         that.setChangeIndicator(false);
       });
     });
@@ -359,11 +346,19 @@ endobj\n";
     let editButton = this.getSubmorph("#pdf-edit-button");
     let saveButton = this.getSubmorph("#pdf-save-button");
     let cancelButton = this.getSubmorph("#pdf-cancel-button");
+    let that = this;
     
     editButton.classList.add("-edit--active");
     editButton.setAttribute("disabled", "true");
     saveButton.removeAttribute("disabled");
     cancelButton.removeAttribute("disabled");
+    
+    this.pdfViewer.pagesPromise.then(() => {
+      let annotations = that.getAllSubmorphs(".annotationLayer section.highlightAnnotation");
+      annotations.forEach((annotation) => {
+        lively.addEventListener("pdf", annotation, "click", eventFunctionObject);
+      });
+    });
   }
   
   disableEditMode() {
@@ -375,6 +370,13 @@ endobj\n";
     editButton.removeAttribute("disabled");
     saveButton.setAttribute("disabled", "true");
     cancelButton.setAttribute("disabled", "true");
+    
+    this.editedPdfText = this.originalPdfText;
+    // Remove event listener
+    let annotations = this.getAllSubmorphs(".annotationLayer section.highlightAnnotation");
+    annotations.forEach((annotation) => {
+      lively.removeEventListener("pdf", annotation, "click", eventFunctionObject);
+    });
   }
   
   setDeleteMode(bool) {
@@ -389,7 +391,7 @@ endobj\n";
         });
       });
       
-      deleteButton.classList.add('-delete--active');
+      deleteButton.classList.add('-delete--active');   
     } else {      
       // Remove event listener
       let annotations = this.getAllSubmorphs(".annotationLayer section.highlightAnnotation");
@@ -397,7 +399,7 @@ endobj\n";
         lively.removeEventListener("pdf", annotation, "click", eventFunctionObject);
       });
       
-      deleteButton.classList.remove('-delete--active');
+      deleteButton.classList.remove('-delete--active');   
     }  
     
     this.deleteMode = bool;
