@@ -72,45 +72,28 @@ export default class LivelyPDF extends Morph {
                               () => that.onPdfSave());
         lively.addEventListener("pdf", that.getSubmorph("#pdf-cancel-button"), "click",
                               () => that.onPdfCancel());
+        lively.addEventListener("pdf", that.getSubmorph("#pdf-delete-button"), "click",
+                              () => that.onPdfDelete());
       });
     });
     
     // Update change indicator
-    this.setChangeIndicator(false);    
+    this.setChangeIndicator(false); 
+    this.deleteMode = false;
   }
+  
+  
+// --------------------------------------------------------------
+// Event functions 
+// --------------------------------------------------------------
   
   onExtentChanged() {
     this.pdfViewer.currentScaleValue = 'page-width';
-  }  
-  
-  onAnnotationClick(e) {
-    this.editAnnotation(e.path[0]);
-  }
-  
-  editAnnotation(annotationSection) {
-    let annotationId = annotationSection.dataset.annotationId.match(/\d+/g)[0];
-    
-    // Get annotation in PDF by ID
-    let annotationRegex = new RegExp("^(" + annotationId + "\\s\\d\\sobj)", "mg");
-    let startSubstr = this.editedPdfText.substring(this.editedPdfText.search(annotationRegex));
-    let annotation = startSubstr.substring(0, startSubstr.indexOf('endobj') + 6);
-    let replaceRegex = new RegExp("\\/Contents\\s\\([^\\)]+\\)", "gm");
-
-    let newValue = window.prompt('Please enter the new value');
-    let newAnnotation = "";
-    
-    if(newValue !== null) {
-      // Replace annotation with new text
-      this.setChangeIndicator(true);
-      newAnnotation = annotation.replace(replaceRegex, "/Contents (" + newValue + ")");  
-
-      this.editedPdfText = this.editedPdfText.replace(annotation, newAnnotation);
-      this.setChangeIndicator(true);
-    }
-  }
+  }   
   
   onPdfEdit() {
     this.enableEditMode();
+    this.setDeleteMode(false);
     let that = this;
     
     this.pdfViewer.pagesPromise.then(() => {
@@ -121,9 +104,13 @@ export default class LivelyPDF extends Morph {
     });
   }
   
+  onPdfDelete() {    
+    this.setDeleteMode(!this.deleteMode);
+  }
+  
   onPdfAdd() {
     if (this.shadowRoot.getSelection().rangeCount > 0) {
-      let currentPageNumber = this.shadowRoot.getSelection().anchorNode.parentNode.parentNode.parentNode.dataset.pageNumber;
+      let currentPageNumber = this.getPageNumber(this.shadowRoot.getSelection());
       let scale = this.pdfViewer._pages[0].viewport.scale;
       let selectionCoords = this.shadowRoot.getSelection().getRangeAt(0).getBoundingClientRect();
       let pageCoords = this.shadowRoot.querySelector('.page:nth-child(' + currentPageNumber + ') .canvasWrapper').getBoundingClientRect();
@@ -146,33 +133,12 @@ export default class LivelyPDF extends Morph {
       let newPopupId = this.getNewId(newAnnotationId);
       let [rawAnnotation, rawPopupAnnotation] = this.createAnnotationObjects(scaledSelectionCoords, newAnnotationId, newPopupId, content);
       
-      // Get currentPage object in PDF 
-      let currentPageRegex = new RegExp("^<<\\s\\/Type\\s\\/Page\\s.*\\n*.*>>$", 'gm');
-      let currentPageString = this.editedPdfText.match(currentPageRegex)[currentPageNumber - 1];
+      // Get the string of the current page object
+      let currentPageString = this.getPageString(currentPageNumber);
       
-      // Check for an existing annotations array
-      if (currentPageString.indexOf('/Annots') === -1) {
-        // Since there are no annotations we have to create a new annotations array
-        let newAnnotationsArrayId = this.getNewId(newPopupId);
-        let newAnnoationsArrayRef = " /Annots " + newAnnotationsArrayId + " 0 R";
-        let newPageString = currentPageString.replace(">>", newAnnoationsArrayRef + " >>");
-        let newAnnotationsArray = newAnnotationsArrayId + " 0 obj\n [ "
-            + newAnnotationId + " 0 R " + newPopupId + " 0 R ]\nendobj\n";
-        this.editedPdfText = this.editedPdfText.replace(currentPageString, newPageString);
-        this.editedPdfText = this.editedPdfText.replace('xref', newAnnotationsArray + "xref");
-      }
-      else {
-        // Get annotations array
-        let annotationsArrayReferenceRegEx = new RegExp("/Annots\\s(\\d+)\\s\\d+", "gm");
-        let annotationsArrayReference = annotationsArrayReferenceRegEx.exec(currentPageString)[1];
-        
-        let annotationsArrayRegEx = new RegExp("^(" + annotationsArrayReference + "\\s\\d\\sobj\\n*.*\\n*endobj)", "mg");
-        let annotationsArray = this.editedPdfText.match(annotationsArrayRegEx)[0];
-        
-        // Insert the new IDs into the array
-        let newAnnoationsArray = annotationsArray.replace(" ]", " " + newAnnotationId + " 0 R " + newPopupId + " 0 R ]");
-        this.editedPdfText = this.editedPdfText.replace(annotationsArray, newAnnoationsArray); 
-      }
+      // New annotations need to be written into the annotations array of a page
+      // Create or update the existing annotations array
+      this.setAnnotationsArray(currentPageString, newAnnotationId, newPopupId);
                
       this.editedPdfText = this.editedPdfText.replace('xref', rawPopupAnnotation + rawAnnotation + "xref");
       this.setChangeIndicator(true);
@@ -195,6 +161,70 @@ export default class LivelyPDF extends Morph {
     });
   }
   
+  
+// --------------------------------------------------------------
+// PDF manipulation functions
+// -------------------------------------------------------------- 
+  
+  onAnnotationClick(e) {
+    if(this.deleteMode) {
+      this.deleteAnnotation(e.path[0]);
+    } else {
+      this.editAnnotation(e.path[0]);
+    }
+  }
+  
+  editAnnotation(annotationSection) {
+    let annotationId = annotationSection.dataset.annotationId.match(/\d+/g)[0];
+    
+    // Get annotation in PDF by ID
+    let annotation = this.getObjectString(annotationId);
+    
+    let replaceRegex = new RegExp("\\/Contents\\s\\([^\\)]+\\)", "gm");
+
+    let newValue = window.prompt('Please enter the new value');
+    let newAnnotation = "";
+    
+    if(newValue !== null) {
+      // Replace annotation with new text
+      newAnnotation = annotation.replace(replaceRegex, "/Contents (" + newValue + ")");  
+
+      this.editedPdfText = this.editedPdfText.replace(annotation, newAnnotation);
+      this.setChangeIndicator(true);
+    }
+  }
+  
+   
+  deleteAnnotation(annotationSection) {
+    let annotationId = annotationSection.dataset.annotationId.match(/\d+/g)[0];
+    let popupId = annotationSection.nextSibling.dataset.annotationId.match(/\d+/g)[0];
+    
+    // Get objects in PDF by ID
+    let annotation = this.getObjectString(annotationId);
+    let popup = this.getObjectString(popupId);
+    
+    // Remove actual annotation
+    this.editedPdfText = this.editedPdfText.replace(annotation, "");
+    this.editedPdfText = this.editedPdfText.replace(popup, "");
+    
+    this.setChangeIndicator(true);
+    
+    // Get the annotations array to remove the reference
+    let currentPageNumber = annotationSection.parentElement.parentElement.dataset.pageNumber;
+    let currentPageString = this.getPageString(currentPageNumber);
+    let annotationsArray = this.getAnnotationsArray(currentPageString);
+    
+    // Remove the reference
+    let newAnnotationsArray = annotationsArray.replace(" " + annotationId + " 0 R", "");
+    newAnnotationsArray = newAnnotationsArray.replace(" " + popupId + " 0 R", "");
+    this.editedPdfText = this.editedPdfText.replace(annotationsArray, newAnnotationsArray);
+    
+    this.savePdf();
+    
+    this.setDeleteMode(false);
+  }
+  
+  
   savePdf() {
     let url = this.getAttribute("src");
     let newPdfData = "data:application/pdf;base64," + btoa(this.editedPdfText);
@@ -206,7 +236,6 @@ export default class LivelyPDF extends Morph {
         PDFJS.getDocument(newPdfData).then(function (pdfDocument) {
           that.pdfViewer.setDocument(pdfDocument);
           that.pdfLinkService.setDocument(pdfDocument, null); 
-          that.onPdfEdit();
         });
         
         that.setChangeIndicator(false);
@@ -214,6 +243,12 @@ export default class LivelyPDF extends Morph {
     });
   }
     
+  
+// --------------------------------------------------------------
+// HELPER METHODS for PDF
+// --------------------------------------------------------------
+  
+  
   setChangeIndicator(contentChanged) {
     let livelyContainer = this.parentElement;
     livelyContainer.contentChanged = contentChanged;
@@ -251,30 +286,56 @@ endobj\n";
     return new Array(rawAnnotation, rawPopupAnnotation);
   }
   
-  enableEditMode() {
-    let editButton = this.getSubmorph("#pdf-edit-button");
-    let addButton = this.getSubmorph("#pdf-add-button");
-    let saveButton = this.getSubmorph("#pdf-save-button");
-    let cancelButton = this.getSubmorph("#pdf-cancel-button");
-    
-    editButton.classList.add("-edit--active");
-    editButton.setAttribute("disabled", "true");
-    addButton.removeAttribute('disabled');
-    saveButton.removeAttribute("disabled");
-    cancelButton.removeAttribute("disabled");
+  setAnnotationsArray(currentPageString, annotationId, popupId) {
+    // Check for an existing annotations array
+    if (currentPageString.indexOf('/Annots') === -1) {
+      // Since there are no annotations we have to create a new annotations array
+      let annotationsArrayId = this.getNewId(popupId);
+      let annoationsArrayRef = " /Annots " + annotationsArrayId + " 0 R";
+      
+      let newPageString = currentPageString.replace(">>", annoationsArrayRef + " >>");
+      let newAnnotationsArray = annotationsArrayId + " 0 obj\n [ "
+          + annotationId + " 0 R " + popupId + " 0 R ]\nendobj\n";
+      
+      this.editedPdfText = this.editedPdfText.replace(currentPageString, newPageString);
+      this.editedPdfText = this.editedPdfText.replace('xref', newAnnotationsArray + "xref");
+    }
+    else {
+      let annotationsArray = this.getAnnotationsArray(currentPageString);
+      
+      // Insert the new IDs into the array
+      let newAnnoationsArray = annotationsArray.replace(" ]", " " +annotationId + " 0 R " + popupId + " 0 R ]");
+      this.editedPdfText = this.editedPdfText.replace(annotationsArray, newAnnoationsArray); 
+    }
   }
   
-  disableEditMode() {
-    let editButton = this.getSubmorph("#pdf-edit-button");
-    let addButton = this.getSubmorph("#pdf-add-button");
-    let saveButton = this.getSubmorph("#pdf-save-button");
-    let cancelButton = this.getSubmorph("#pdf-cancel-button");
+  getAnnotationsArray(currentPageString) {
+    let annotationsArrayReferenceRegEx = new RegExp("/Annots\\s(\\d+)\\s\\d+", "gm");
+    let annotationsArrayReference = annotationsArrayReferenceRegEx.exec(currentPageString)[1];
+
+    let annotationsArrayRegEx = new RegExp("^(" + annotationsArrayReference + "\\s\\d\\sobj\\n*.*\\n*endobj)", "mg");
+    let annotationsArray = this.editedPdfText.match(annotationsArrayRegEx)[0];
     
-    editButton.classList.remove("-edit--active");
-    editButton.removeAttribute("disabled");
-    addButton.setAttribute('disabled', 'true');
-    saveButton.setAttribute("disabled", "true");
-    cancelButton.setAttribute("disabled", "true");
+    return annotationsArray;
+  }
+  
+  getObjectString(id) {
+    let regex = new RegExp("^(" + id + "\\s\\d\\sobj)", "mg");
+    let startSubstr = this.editedPdfText.substring(this.editedPdfText.search(regex));
+    let object = startSubstr.substring(0, startSubstr.indexOf('endobj') + 6);
+    return object;
+  }
+  
+  getPageString(pageNumber) {    
+    // Get currentPage object (as string) in PDF 
+    let pageRegex = new RegExp("^<<\\s\\/Type\\s\\/Page\\s.*\\n*.*>>$", 'gm');
+    let pageString = this.editedPdfText.match(pageRegex)[pageNumber - 1];
+    
+    return pageString;
+  }
+  
+  getPageNumber(selection) {
+    return selection.anchorNode.parentNode.parentNode.parentNode.dataset.pageNumber;
   }
   
   getNewId(lastUsedId) {
@@ -286,6 +347,60 @@ endobj\n";
     }
     
     return id;
+  } 
+        
+  
+// --------------------------------------------------------------
+// HELPER METHODS for general use
+// --------------------------------------------------------------
+  
+  
+  enableEditMode() {
+    let editButton = this.getSubmorph("#pdf-edit-button");
+    let saveButton = this.getSubmorph("#pdf-save-button");
+    let cancelButton = this.getSubmorph("#pdf-cancel-button");
+    
+    editButton.classList.add("-edit--active");
+    editButton.setAttribute("disabled", "true");
+    saveButton.removeAttribute("disabled");
+    cancelButton.removeAttribute("disabled");
+  }
+  
+  disableEditMode() {
+    let editButton = this.getSubmorph("#pdf-edit-button");
+    let saveButton = this.getSubmorph("#pdf-save-button");
+    let cancelButton = this.getSubmorph("#pdf-cancel-button");
+    
+    editButton.classList.remove("-edit--active");
+    editButton.removeAttribute("disabled");
+    saveButton.setAttribute("disabled", "true");
+    cancelButton.setAttribute("disabled", "true");
+  }
+  
+  setDeleteMode(bool) {
+    let deleteButton = this.getSubmorph("#pdf-delete-button");
+    let that = this;
+    
+    if(bool) {
+      this.pdfViewer.pagesPromise.then(() => {
+        let annotations = that.getAllSubmorphs(".annotationLayer section.highlightAnnotation");
+        annotations.forEach((annotation) => {
+          lively.addEventListener("pdf", annotation, "click", eventFunctionObject);
+        });
+      });
+      
+      deleteButton.classList.add('-delete--active');
+    } else {      
+      // Remove event listener
+      let annotations = this.getAllSubmorphs(".annotationLayer section.highlightAnnotation");
+      annotations.forEach((annotation) => {
+        lively.removeEventListener("pdf", annotation, "click", eventFunctionObject);
+      });
+      
+      deleteButton.classList.remove('-delete--active');
+    }  
+    
+    this.deleteMode = bool;
   }
   
   livelyExample() {
