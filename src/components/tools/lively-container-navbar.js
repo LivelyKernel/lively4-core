@@ -32,7 +32,7 @@ export default class LivelyContainerNavbar extends Morph {
   async onDrop(evt) {
     evt.preventDefault();
     evt.stopPropagation();
-    
+    debugger
     const files = evt.dataTransfer.files;
     if(files.length > 0 &&
       await lively.confirm(`Copy ${files.length} file(s) into directory ${this.url}?`)
@@ -41,14 +41,16 @@ export default class LivelyContainerNavbar extends Morph {
         const reader = new FileReader();
         reader.onload = async event => {
           var newURL = this.url.replace(/[^/]*$/, file.name);
-          const content = event.target.result;
+          const dataURL = event.target.result; // we have to get through that indirection, because of encoding
+          var blob = await fetch(dataURL).then(r => r.blob())
+          
           await fetch(newURL, {
             method: "PUT",
-            body: content
+            body: blob
           });          
-          this.show(newURL, content);
+          this.show(newURL, ""); // #TODO blob -> text
         };
-        reader.readAsBinaryString(file);
+        reader.readAsDataURL(file);
       });
       return;
     }
