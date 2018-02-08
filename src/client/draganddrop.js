@@ -161,23 +161,23 @@ const dropOnDocumentBehavior = {
     if(files.length === 0) { return false; }
 
     lively.notify(`Dropped ${files.length} file(s).`);
-    Array.from(files)
-      // handle only .png files for now
-      .filter(file => {
-        const isPNG = file.name.toLowerCase().endsWith(".png");
-        if(!isPNG) {
+    Array.from(files).forEach(async (file) => {
+        const extension = lively.files.extension(file.name)
+        if (extension == "png") {
+            // #Refactor #TODO use lively.files.readBlobAsDataURL
+            const reader = new FileReader();
+            reader.onload = event => {
+              const dataURL = event.target.result.replace(/^data\:image\/png;/, `data:image/png;name=${file.name};`);
+              const img = <img class="lively-content" src={dataURL}></img>;
+              appendToBodyAt(img, evt);
+            };
+            reader.readAsDataURL(file); 
+        } else if (extension == "html") {
+          var source = await lively.files.readBlobAsText(file)
+          lively.clipboard.pasteHTMLDataInto(source, document.body, false, lively.getPosition(evt));
+        } else {
           lively.warn(`Did not handle file ${file.name}`);
         }
-        return isPNG;
-      })
-      .forEach(file => {
-        const reader = new FileReader();
-        reader.onload = event => {
-          const dataURL = event.target.result.replace(/^data\:image\/png;/, `data:image/png;name=${file.name};`);
-          const img = <img class="lively-content" src={dataURL}></img>;
-          appendToBodyAt(img, evt);
-        };
-        reader.readAsDataURL(file);
       });
     return true;
   },

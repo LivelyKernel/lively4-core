@@ -68,7 +68,10 @@ export default class Clipboard {
     evt.clipboardData.setData('text/html', html);
   }
   
-  static pasteHTMLDataInto(data, container, flat) {
+  static pasteHTMLDataInto(data, container, flat, offset) {
+    if (offset) {
+      this.lastClickPos = offset
+    }
     // add everthing into a container 
     var div = document.createElement("div")
     div.classList.add("lively-content")
