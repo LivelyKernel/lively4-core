@@ -15,7 +15,11 @@
       right: 25px;
     }
     .-edit--active {
-      background-color: #dd1100;
+      background-color: #cc7314;
+    }
+    
+    .-delete--active {
+      background-color: #891010;
     }
     
     .highlightAnnotation {
@@ -32,11 +36,14 @@
   </div>
   
   <div class="pdfEditButtons">
+    <button id="pdf-add-button">
+      <i class="fa fa-plus"></i>
+    </button>
+    <button id="pdf-delete-button">
+      <i class="fa fa-trash"></i>
+    </button>
     <button id="pdf-edit-button">
       <i class="fa fa-edit"></i>
-    </button>
-    <button id="pdf-add-button" disabled>
-      <i class="fa fa-plus"></i>
     </button>
     <button id="pdf-save-button" disabled>
       <i class="fa fa-floppy-o"></i>
