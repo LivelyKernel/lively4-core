@@ -156,4 +156,26 @@ export default class Files {
     return string.replace(/([^/]+|\/)$/,"")
   }
   
+  static resolve(string) {
+    if (!this.isURL(string)) {
+      var result = lively.location.href.replace(/[^/]*$/, string)
+    } else {
+      result = string.toString()
+    }
+    // get rid of ..
+    result = result.replace(/[^/]+\/\.\.\//g,"")
+    // and .
+    result = result.replace(/\/\.\//g,"/")
+    
+    return result
+  }
+
+  /* 
+    lively.files.name("https://foo/bar/bla.txt") == "bla.txt" 
+  */
+  static name(urlString) {
+    var urlString = urlString.toString()
+    return urlString.replace(/.*\//,"")
+  }
+  
 }
