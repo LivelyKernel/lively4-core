@@ -94,6 +94,7 @@ export default class LivelyCloudscripting extends Morph {
   loginClick(evt) {
     name = this.getSubmorph('#name').value;
     this.getTriggers();
+    //setInterval(() => {this.getTriggers()}, 2000);
   }
   
   credentialsClick(evt) {
@@ -221,18 +222,21 @@ export default class LivelyCloudscripting extends Morph {
     } else if (!triggers[prop].running) {
       status = 'not-running';
     }
+    return status;
   }
   
   addActionsToItem(triggers, prop, length, that, actionList) {
     for(var i=0; i<length; i++) {
         var actionName = triggers[prop]['actions'][i].name;
         var action = document.createElement('lively-cloudscripting-action-item');
-        action.getSubmorph(".editTemplate").addEventListener('click',function(){
+        
+        action.getSubmorph(".editTemplate").addEventListener('click',function(evt){
+          var elementName =evt.target.previousElementSibling.previousElementSibling.innerHTML
           $.ajax({
           url: endpoint+"getActionConfigTemplate",
           type: 'POST',
           data:JSON.stringify({
-            actionId:actionName
+            actionId:elementName
           }),
           success: function(res){
            lively.notify("Successfully remove action.")
@@ -243,7 +247,8 @@ export default class LivelyCloudscripting extends Morph {
           error: function(res){console.log(res)}
         }); 
         })
-        action.getSubmorph(".deleteWatcher").addEventListener('click',function(){
+        action.getSubmorph(".deleteWatcher").addEventListener('click',function(evt){
+          var elementName =evt.target.previousElementSibling.innerHTML
           console.log(prop)
            $.ajax({
           url: endpoint+"removeAction",
@@ -251,7 +256,7 @@ export default class LivelyCloudscripting extends Morph {
           data:JSON.stringify({
             user:name,
             triggerId:prop.replace(/\s/g, ""),
-            actionId:actionName
+            actionId:elementName
           }),
           success: function(res){
            lively.notify("Successfully remove action.")
@@ -321,13 +326,12 @@ export default class LivelyCloudscripting extends Morph {
             actionId:actionId
           }),
           success: function(res){
-           console.log(res)
             that.config=res;
             currentlyShownConfig=table;
             that.renderConfig(table)
           },   
           done: function(res){lively.notify("done")},
-          error: function(res){console.log(res)}
+          error: function(res){console.log("hello world");console.log(res)}
         }); 
       }
     });
@@ -465,9 +469,10 @@ export default class LivelyCloudscripting extends Morph {
   }
   
   saveConfig(url,triggerId,actionId){
-    console.log(this.config)
+    lively.notify("im saving the config")
+    console.log(actionId)
     console.log("actionId: "+actionId)
-    var that =this
+    var that =this;
     $.ajax({
         url: endpoint+url,
         type: 'POST',

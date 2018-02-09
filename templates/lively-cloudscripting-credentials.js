@@ -15,7 +15,7 @@ export default class LivelyCloudscriptingCredentials extends Morph {
   saveCredentialsClick() {
     var github = this.getSubmorph('#githubCredentials').value;
     var dropbox = this.getSubmorph('#dropboxCredentials').value;
-    var slack = this.getSubmorph('#slackCredentials').value;
+    var sendGrid = this.getSubmorph('#sendGridCredentials').value;
     $.ajax({
       url: endpoint + 'setCredentials',
       type: 'POST',
@@ -45,8 +45,8 @@ export default class LivelyCloudscriptingCredentials extends Morph {
       type: 'POST',
       data: JSON.stringify({
         user: this.username,
-        type: 'slack',
-        key: slack
+        type: 'sendgrid',
+        key: sendGrid
       }),
       success: (res) => {lively.notify("successfully called setCredentials")},
       error: (res) => {alert("error:" + JSON.stringify(res)); lively.notify("error with credentials")}
@@ -69,7 +69,7 @@ export default class LivelyCloudscriptingCredentials extends Morph {
       data: JSON.stringify({
         user: name
       }),
-      success: (res) => {that.getSubmorph('#dropboxCredentials').value = res.dropbox; that.getSubmorph('#githubCredentials').value = res.github},
+      success: (res) => {that.getSubmorph('#dropboxCredentials').value = res.dropbox; that.getSubmorph('#githubCredentials').value = res.github; that.getSubmorph('#sendGridCredentials').value = res.sendgrid},
       error: (res) => {alert("error:", res, res.dropbox); lively.notify("error with credentials")}
     })
   } 
