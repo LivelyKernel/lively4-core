@@ -214,9 +214,11 @@ export default class LivelyContainerNavbar extends Morph {
       }
       
       // name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"")
-      link.innerHTML = icon + name;
+      link.innerHTML =  icon + name;
       var href = ea.href || ea.name;
-      
+      if (ea.type == "directory" && !href.endsWith("/")) {
+        href += "/"
+      }
       var otherUrl = href.match(/^https?:\/\//) ? href : root + "" + href;
       link.href = otherUrl;
 
@@ -279,7 +281,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   followPath(url) {
-    this.show(new URL(url +"/"),"")
+    this.show(new URL(url),"")
   }
 
   async showSublist() {
@@ -373,8 +375,5 @@ export default class LivelyContainerNavbar extends Morph {
     var content = await fetch(url).then(r => r.text())
     await this.show(url, content)
     this.showSublist()
-    
   }
-  
-  
 }
