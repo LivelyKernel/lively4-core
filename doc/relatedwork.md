@@ -18,3 +18,17 @@
 
 
 - [Meemoo](https://app.meemoo.org/#gist/4029543)
+
+
+## Active Essays
+
+### observable
+
+- "Discover insights faster and communicate more effectively with interactive notebooks for data analysis, visualization, and exploration." [observable](https://beta.observablehq.com/)
+- https://beta.observablehq.com/@mbostock/five-minute-introduction
+
+- "An Observable notebook is a sequence of cells."
+- cells are javascript code and evaluate to a value
+- they have names and can reference each other
+- this depencies are automatically reevaluated when the references cells changes
+- code and text is unified, since text fields are just code fields that return HTML or markdown code / objects #Contribution

@@ -4,7 +4,7 @@ import { applyDragCSSClass } from 'src/client/draganddrop.js';
 import { fileName } from 'utils';
 import components from 'src/client/morphic/component-loader.js'
 import Preferences from 'src/client/preferences.js'
-
+import Mimetypes from "src/client/mimetypes.js"
 
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
@@ -17,7 +17,15 @@ export default class LivelyContainerNavbar extends Morph {
   clear() {
     this.get("#navbar").innerHTML = ""
   }
-
+  
+  onItemDragStart(link, evt) {
+    lively.notify("drag start")
+    let url = link.href,
+      name = lively.files.name(url)
+    var mimetype = Mimetypes.mimetype("md") || "text/plain";
+    evt.dataTransfer.setData("DownloadURL", `${mimetype}:${name}:${url}`);
+  }
+  
   onDragOver(evt) {    
     if (evt.shiftKey) {
       evt.dataTransfer.dropEffect = "move";
@@ -32,7 +40,7 @@ export default class LivelyContainerNavbar extends Morph {
   async onDrop(evt) {
     evt.preventDefault();
     evt.stopPropagation();
-    
+    debugger
     const files = evt.dataTransfer.files;
     if(files.length > 0 &&
       await lively.confirm(`Copy ${files.length} file(s) into directory ${this.url}?`)
@@ -41,14 +49,16 @@ export default class LivelyContainerNavbar extends Morph {
         const reader = new FileReader();
         reader.onload = async event => {
           var newURL = this.url.replace(/[^/]*$/, file.name);
-          const content = event.target.result;
+          const dataURL = event.target.result; // we have to get through that indirection, because of encoding
+          var blob = await fetch(dataURL).then(r => r.blob())
+          
           await fetch(newURL, {
             method: "PUT",
-            body: content
+            body: blob
           });          
-          this.show(newURL, content);
+          this.show(newURL, ""); // #TODO blob -> text
         };
-        reader.readAsBinaryString(file);
+        reader.readAsDataURL(file);
       });
       return;
     }
@@ -214,6 +224,7 @@ export default class LivelyContainerNavbar extends Morph {
         this.followPath(otherUrl);
         return false;
       };
+      link.addEventListener('dragstart', evt => this.onItemDragStart(link, evt))
       link.addEventListener('contextmenu', (evt) => {
           if (!evt.shiftKey) {
             this.onContextMenu(evt, otherUrl)

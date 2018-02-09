@@ -24,8 +24,6 @@ export default class HaloGrabItem extends HaloItem {
   initialize() {
     this.registerMouseEvents()
     this.startCustomDragging();
-    
-    
   }
 
   // DRAG API
@@ -44,6 +42,7 @@ export default class HaloGrabItem extends HaloItem {
     }
   }
 
+  
   move(evt) {
     if (this.grabTarget && !this.isDragging && 
       events.noticableDistanceTo(evt, this.grabStartEventPosition)) {
