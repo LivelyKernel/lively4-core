@@ -1,17 +1,12 @@
 import Morph from "src/components/widgets/lively-morph.js"
-
 import * as cop from "src/external/ContextJS/src/contextjs.js"
-
-
 import Files from "src/client/files.js"
-
 
 export default class Console extends Morph {
 
   initialize() {
     this.windowTitle = "Console"
 
-    
     // lineNumbers: true,
     //   gutters: ["rightgutter", "CodeMirror-linenumbers", "rightgutter"],
     //   mode: {name: "javascript", globalVars: true},
@@ -23,23 +18,21 @@ export default class Console extends Morph {
     this.setAttribute('tabindex', 0)
     this.get("#console").addEventListener("editor-loaded", () => this.onEditorLoaded())
     this.get("#commandline").addEventListener("editor-loaded", () => this.onCommandLineLoaded())
-    
-    
-    
-    this.get("#console").setCustomStyle(`.CodeMirror pre { 
-      border-bottom: 1px solid lightgrey;
-      padding: 2px;
-      padding-left: 20px
-    }
-     
-    .leftgutter {
-      width: 0px;
-      background-color: white;
-    }
-    .rightgutter {
-      width: 300px;
-    }
-    
+        
+    this.get("#console").setCustomStyle(`
+      .CodeMirror pre { 
+        border-bottom: 1px solid lightgrey;
+        padding: 2px;
+        padding-left: 20px
+      }
+
+      .leftgutter {
+        width: 0px;
+        background-color: white;
+      }
+      .rightgutter {
+        width: 300px;
+      }
     `)
     
   }
@@ -75,7 +68,7 @@ export default class Console extends Morph {
           let text = editor.getValue()
           this.logWithLeftAndRight([text], "> ")
           let result = await commandLine.tryBoundEval(text, false);
-          this.logWithLeftAndRight([result], "<â")
+          this.logWithLeftAndRight([result], "< ")
       },
     })
 

@@ -20,14 +20,18 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   onItemDragStart(link, evt) {
-    lively.notify("drag start")
+    let urls = this.getSelection();
+    
     let url = link.href,
       name = lively.files.name(url)
-    var mimetype = Mimetypes.mimetype("md") || "text/plain";
+    var mimetype = Mimetypes.mimetype(lively.files.extension(name)) || "text/plain";
     evt.dataTransfer.setData("DownloadURL", `${mimetype}:${name}:${url}`);
+    evt.dataTransfer.setData("text/plain", urls.join("\n"));
+    
   }
   
-  onDragOver(evt) {    
+  onDragOver(evt) {   
+    debugger
     if (evt.shiftKey) {
       evt.dataTransfer.dropEffect = "move";
       this.transferMode = "move"
@@ -41,25 +45,17 @@ export default class LivelyContainerNavbar extends Morph {
   async onDrop(evt) {
     evt.preventDefault();
     evt.stopPropagation();
-    debugger
     const files = evt.dataTransfer.files;
+    let dir = lively.files.directory(this.url);
     if(files.length > 0 &&
-      await lively.confirm(`Copy ${files.length} file(s) into directory ${this.url}?`)
+      await lively.confirm(`Copy ${files.length} file(s) into directory ${dir}?`)
     ) {
-      Array.from(files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = async event => {
-          var newURL = this.url.replace(/[^/]*$/, file.name);
-          const dataURL = event.target.result; // we have to get through that indirection, because of encoding
-          var blob = await fetch(dataURL).then(r => r.blob())
-          
-          await fetch(newURL, {
-            method: "PUT",
-            body: blob
-          });          
-          this.show(newURL, ""); // #TODO blob -> text
-        };
-        reader.readAsDataURL(file);
+      Array.from(files).forEach(async (file) => {
+        var newURL = dir + "/" + file.name;
+        var dataURL = await lively.files.readBlobAsDataURL(file)  
+        var blob = await fetch(dataURL).then(r => r.blob())
+        await lively.files.saveFile(newURL, blob)
+        this.show(newURL, ""); // #TODO blob -> text
       });
       return;
     }
@@ -72,42 +68,47 @@ export default class LivelyContainerNavbar extends Morph {
     }
   }
   
-  async copyFromURL(fromurl) {
-    var filename = fromurl::fileName();
-    var isDataURI;
-    if (fromurl.match(/^data\:image\/png;/)) {
-      isDataURI = true
-      if (fromurl.match(/^data\:image\/png;name=/)) {
-        filename = fromurl.replace(/.*?name=/,"").replace(/;.*/,"")    
-      } else {
-        filename = "dropped_" + Date.now() + ".png";
-      }
-    } else {
-      isDataURI = false
-    }
-    var newurl = this.url.replace(/[^/]*$/, filename)
-    if (await lively.confirm(`${this.transferMode} to ${newurl}?`)) {
-      var content = await fetch(fromurl).then(r => r.blob());
-      await fetch(newurl, {
-        method: "PUT",
-        body: content
-      })
-      if (this.transferMode == "move") {
-        await fetch(fromurl, {
-          method: "DELETE"
-        });
-        // put again... to be not delete it by accident
+  async copyFromURL(data) {
+    var urls = data.split("\n")
+    var targetDir = lively.files.directory(this.url)
+    if (await lively.confirm(`${this.transferMode} ${urls.length} files to ${targetDir}?`)) {
+      for(var fromurl of urls) {
+        var filename = fromurl::fileName();
+        var isDataURI;
+        if (fromurl.match(/^data\:image\/png;/)) {
+          isDataURI = true
+          if (fromurl.match(/^data\:image\/png;name=/)) {
+            filename = fromurl.replace(/.*?name=/,"").replace(/;.*/,"")    
+          } else {
+            filename = "dropped_" + Date.now() + ".png";
+          }
+        } else {
+          isDataURI = false
+        }
+
+        var newurl = this.url.replace(/[^/]*$/, filename)
+        var content = await fetch(fromurl).then(r => r.blob());
         await fetch(newurl, {
           method: "PUT",
           body: content
         })
-        that.updateOtherNavbars(this.getRoot(fromurl))
-        that.updateOtherNavbars(this.getRoot(newurl))
+        if (this.transferMode == "move") {
+          await fetch(fromurl, {
+            method: "DELETE"
+          });
+          // put again... to be not delete it by accident
+          await fetch(newurl, {
+            method: "PUT",
+            body: content
+          })
+          that.updateOtherNavbars(this.getRoot(fromurl))
+          that.updateOtherNavbars(this.getRoot(newurl))
 
-        lively.notify(`${this.transferMode}d to ` + newurl + ": " + content.size)  
+          lively.notify(`${this.transferMode}d to ` + newurl + ": " + content.size)  
+        }
+        this.show(newurl, content)
       }
-      this.show(newurl, content)
-    }
+    }  
   }
   
   updateOtherNavbars(url) {  
