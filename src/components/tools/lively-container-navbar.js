@@ -5,6 +5,7 @@ import { fileName } from 'utils';
 import components from 'src/client/morphic/component-loader.js'
 import Preferences from 'src/client/preferences.js'
 import Mimetypes from "src/client/mimetypes.js"
+import JSZip from "src/external/jszip.js"
 
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
@@ -19,19 +20,49 @@ export default class LivelyContainerNavbar extends Morph {
     this.get("#navbar").innerHTML = ""
   }
   
+  async dragFilesAsZip(urls, evt) {
+    // working around issue https://bugs.chromium.org/p/chromium/issues/detail?id=438479
+    // to achieve https://html.spec.whatwg.org/multipage/dnd.html#dom-datatransferitemlist-add
+    let url = lively.files.tempfile() + ".zip", 
+    name = `${lively.files.name(urls[0])} and more.zip`,
+    mimetype = "application/zip";
+    evt.dataTransfer.setData("DownloadURL", `${mimetype}:${name}:${url}`);
+
+    // and now... we download, zip, and upload the files during the user drags them... 
+    // #Hack and will definitely not work well all the time!
+    // #Idea, #Solution, we could make it stable if the lively4-serv will wait on the first "GET" request
+    // if the upload is not finished yet, but if it knows about a new tempFile
+    
+    
+    // Oh, my god! Now we are getting crazy!
+    // first fownload the files, then zip them, then upload then again, so that they can be dropped...?
+    // Yeah! :-)
+    var zip = new JSZip();
+    for(var ea of urls) {
+      zip.file(lively.files.name(ea), await lively.files.loadFile(ea));
+    }
+    lively.files.saveFile(url, await zip.generateAsync({type:"blob"})) 
+  }
+  
+  
   onItemDragStart(link, evt) {
     let urls = this.getSelection();
-    
-    let url = link.href,
-      name = lively.files.name(url)
-    var mimetype = Mimetypes.mimetype(lively.files.extension(name)) || "text/plain";
-    evt.dataTransfer.setData("DownloadURL", `${mimetype}:${name}:${url}`);
+    if (urls.length > 1) {
+      lively.notify("hehe... ")
+      this.dragFilesAsZip(urls, evt)
+    } else {
+      let url = link.href,
+        name = lively.files.name(url)
+      var mimetype = Mimetypes.mimetype(lively.files.extension(name)) || "text/plain";
+      evt.dataTransfer.setData("DownloadURL", `${mimetype}:${name}:${url}`);  
+    }
     evt.dataTransfer.setData("text/plain", urls.join("\n"));
+    
+    
     
   }
   
   onDragOver(evt) {   
-    debugger
     if (evt.shiftKey) {
       evt.dataTransfer.dropEffect = "move";
       this.transferMode = "move"

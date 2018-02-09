@@ -5,6 +5,7 @@
   
 }</script><script data-name="onDrop" type="lively4script">function onDrop(evt) {
   var dataList = evt.dataTransfer.items;
+  debugger
   lively.notify("drop " + evt.dataTransfer.items)
   console.log("effect", evt.dataTransfer.effectAllowed)
   console.log("files", dataList.files)
