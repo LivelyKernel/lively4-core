@@ -75,8 +75,11 @@ export default class ComponentLoader {
     //   return;
     // }
 
+    // #Depricated
     var shadow = object.createShadowRoot();
-
+    // #NotWorkingYet as expected...
+    // var shadow = object.attachShadow({mode: 'open'});
+    
     // clone the template again, so when more elements are created,
     // they get their own copy of elements
     var clone = document.importNode(ComponentLoader.templates[componentName], true);
