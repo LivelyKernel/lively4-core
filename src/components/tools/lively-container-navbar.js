@@ -12,6 +12,7 @@ export default class LivelyContainerNavbar extends Morph {
     this.addEventListener("dragover", this.onDragOver)
     // this.addEventListener("dragenter", this.onDragEnter)
     this::applyDragCSSClass();
+    this.lastSelection = []
   }
   
   clear() {
@@ -132,7 +133,12 @@ export default class LivelyContainerNavbar extends Morph {
     await this.showSublist()
   }
   
+  getSelection() {
+    return _.map(this.shadowRoot.querySelectorAll(".selected a"), ea => ea.href)
+  }
+  
   async show(targetUrl, sourceContent) {
+    
     this.sourceContent = sourceContent;
     this.url = "" + targetUrl;
     var filename = this.getFilename();
@@ -199,6 +205,7 @@ export default class LivelyContainerNavbar extends Morph {
       var link = document.createElement("a");
 
       if (ea.name == filename) this.targetItem = element;
+      
       if (this.targetItem) this.targetItem.classList.add("selected");
       
       var name = ea.name;
@@ -222,9 +229,13 @@ export default class LivelyContainerNavbar extends Morph {
       var otherUrl = href.match(/^https?:\/\//) ? href : root + "" + href;
       link.href = otherUrl;
 
-      link.onclick = () => {
-        this.followPath(otherUrl);
-        return false;
+      if (this.lastSelection && this.lastSelection.includes(otherUrl)) {
+        element.classList.add("selected")
+      }
+      
+      link.onclick = (evt) => { 
+        this.onItemClick(link, evt); 
+        return false
       };
       link.addEventListener('dragstart', evt => this.onItemDragStart(link, evt))
       link.addEventListener('contextmenu', (evt) => {
@@ -238,6 +249,15 @@ export default class LivelyContainerNavbar extends Morph {
       element.appendChild(link);
       navbar.appendChild(element);
     });
+  }
+  
+  onItemClick(link, evt) {
+    if (evt.shiftKey) {
+      this.lastSelection = this.getSelection()     
+    } else {
+      this.lastSelection = []
+    }
+    this.followPath(link.href );
   }
   
   async editWithSyvis (url) {

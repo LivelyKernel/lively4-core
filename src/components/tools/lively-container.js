@@ -719,8 +719,9 @@ export default class Container extends Morph {
             }
           }
         }
-        components.loadUnresolved(root);
       }
+      components.loadUnresolved(root);
+      lively.clipboard.initializeElements(root.querySelectorAll("*"))        
     } catch(e) {
       console.log("Could not append html:" + content.slice(0,200) +"..." +" ERROR:", e);
     }

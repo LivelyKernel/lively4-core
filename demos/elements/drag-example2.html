@@ -1,0 +1,28 @@
+<div class="lively-content" style="background-color: lightgray; border: 1px solid gray; width: 269px; height: 89px; " draggable="true" id="drag-example2"><p contenteditable="true" class="lively-content" style="position: absolute; left: 42.1875px; top: 1.6125px;">Drag Example2</p><script data-name="loadLively" type="lively4script">function loadLively() {
+  lively.removeEventListener("Drag", this)
+  this.draggable = true
+  lively.addEventListener("Drag", this, "dragstart", 
+    evt => this.onDragStart(evt))
+  
+}</script><script data-name="onDragStart" type="lively4script">function onDragStart(evt) {
+  // working around issue https://bugs.chromium.org/p/chromium/issues/detail?id=438479
+  // to achieve https://html.spec.whatwg.org/multipage/dnd.html#dom-datatransferitemlist-add
+  
+  lively.notify("start")
+    var dataList = evt.dataTransfer.items;
+  // dataList.add(ev.target.id, "text/plain");
+  // Add some other items to the drag payload
+  var file = new File(["hello"], "filename.txt", {type: "text/plain", lastModified: ""})
+  // var item = dataList.add(file)
+  var item = dataList.add(file)
+  
+//   "image/png"
+  dataList.types = Object.freeze(["Files"])
+  dataList.files = [file]
+  
+  console.log("effect", evt.dataTransfer.effectAllowed)
+  console.log("files", dataList.files)
+  console.log("types", dataList.types)
+  
+  // dataList.add("http://www.example.org","text/uri-list");
+}</script></div>

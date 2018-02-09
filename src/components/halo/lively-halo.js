@@ -63,7 +63,7 @@ export default class Halo extends Morph {
   }
 
   updateHandles(target) {
-    if (!target) return;
+    if (!target | !this.shadowRoot) return;
     // console.log("update handles")
     this.shadowRoot.querySelectorAll("lively-halo-handle-item").forEach(ea => {
       ea.style.visibility = null

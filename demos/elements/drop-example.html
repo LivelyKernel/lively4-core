@@ -1,0 +1,14 @@
+<div class="lively-content" style="background-color: lightgray; border: 1px solid gray; width: 269px; height: 89px;" draggable="true" id="drop-example"><p contenteditable="true" class="lively-content" style="position: absolute; left: 42.1875px; top: 1.6125px;">Drop Example</p><script data-name="loadLively" type="lively4script">function loadLively() {
+  lively.removeEventListener("Drag", this)
+  lively.addEventListener("Drag", this, "drop", 
+    evt => this.onDrop(evt))
+  
+}</script><script data-name="onDrop" type="lively4script">function onDrop(evt) {
+  var dataList = evt.dataTransfer.items;
+  lively.notify("drop " + evt.dataTransfer.items)
+  console.log("effect", evt.dataTransfer.effectAllowed)
+  console.log("files", dataList.files)
+  console.log("types", dataList.types)
+  
+  // dataList.add("http://www.example.org","text/uri-list");
+}</script></div>

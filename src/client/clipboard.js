@@ -68,21 +68,7 @@ export default class Clipboard {
     evt.clipboardData.setData('text/html', html);
   }
   
-  static pasteHTMLDataInto(data, container, flat, offset) {
-    if (offset) {
-      this.lastClickPos = offset
-    }
-    // add everthing into a container 
-    var div = document.createElement("div")
-    div.classList.add("lively-content")
-    lively.setExtent(div, pt(800,10))
-    div.innerHTML = data
-    container.appendChild(div)
-    lively.setPosition(div, pt(0,0))
-
-    // paste oriented at a shared topLeft
-    var topLevel = Array.from(div.querySelectorAll(":scope > *"))
-    var all = Array.from(div.querySelectorAll("*"))
+  static initializeElements(all) {
     all.forEach(child => {
       persistence.initLivelyObject(child)      
       var id = child.getAttribute("data-lively-id")    
@@ -105,42 +91,50 @@ export default class Clipboard {
         }
       }
      })
-    topLevel.forEach(ea => {
-      div.appendChild(ea)
-    })
+  }
+  
+  static getTopLeft(elements) {
     var topLeft
-    topLevel.forEach(ea => {
+    elements.forEach(ea => {
       if (!topLeft) 
         topLeft = lively.getGlobalPosition(ea);
       else
         topLeft = topLeft.minPt(lively.getGlobalPosition(ea))
     })
-    if (!topLeft) topLeft = pt(0,0)
-    var offset = (this.lastClickPos || pt(0,0)).subPt(topLeft)
-    
+    return topLeft || pt(0,0)
+  }
+  
+  static pasteHTMLDataInto(data, container, flat, pos=this.lastClickPos) {
+    // add everthing into a container 
+    var div = document.createElement("div")
+    div.classList.add("lively-content")
+    lively.setExtent(div, pt(800,10))
+    div.innerHTML = data
+    container.appendChild(div)
+    lively.setPosition(div, pt(0,0))
+
+    // paste oriented at a shared topLeft
+    var topLevel = Array.from(div.querySelectorAll(":scope > *"))
+    var all = Array.from(div.querySelectorAll("*"))
+    this.initializeElements(all)
+    topLevel.forEach(ea => div.appendChild(ea))
+    var offset = (pos || pt(0,0)).subPt(this.getTopLeft(topLevel))
     var result = div
+    
+    // #TODO #CleanUp
     topLevel.forEach(child => {
       if (child.classList.contains("lively-content") || child.tagName == "LIVELY-WINDOW") {
         container.appendChild(child)
         lively.moveBy(child, offset)
-        result = child
-      } else {
-        // child.classList.add("lively-content")
+        result = child; // return last result?
       }
-      // lively.showPath([
-      //   lively.getGlobalPosition(child,),
-      //   lively.getGlobalPosition(child).addPt(offset)
-      // ])
-    })
-     // attach lively4script from the instance
-   
-    
+    })   
     // clean up if neccesary
     if (div.childNodes.length == 0) {
       div.remove() // and get rid of the tmp container
     } else {
       // ajust position and content size
-      lively.setGlobalPosition(div, this.lastClickPos || pt(0,0))
+      lively.setGlobalPosition(div, pos || pt(0,0))
       div.style.height = "max-content"
     }
     if (flat) {
