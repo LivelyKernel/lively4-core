@@ -176,7 +176,19 @@ const dropOnDocumentBehavior = {
           var source = await lively.files.readBlobAsText(file)
           lively.clipboard.pasteHTMLDataInto(source, document.body, false, lively.getPosition(evt));
         } else {
-          lively.warn(`Did not handle file ${file.name}`);
+//           var div = <div class="lively-file">
+//             <i class="fa fa-file-o" style="font-size: 30px" aria-hidden="true"></i>
+//             <div id="name"><a>{file.name}</a></div>
+//           </div>
+//           appendToBodyAt(div, evt);
+//           div.querySelector("#name a").setAttribute("href", await lively.files.readBlobAsDataURL(file))
+          
+          var item = await lively.create("lively-file")
+          item.classList.add("lively-content") // for persistence
+          // #TODO check for existing "file"
+          item.name = file.name
+          appendToBodyAt(item, evt);
+          item.url = await lively.files.readBlobAsDataURL(file) 
         }
       });
     return true;

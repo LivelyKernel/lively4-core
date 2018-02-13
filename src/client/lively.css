@@ -11,6 +11,18 @@ html, body {
   /* Needed for PDF selection */
   user-select: auto;
 }
+
+
+.lively-file  {
+  user-select: none;
+} 
+
+
+lively-menu, lively-navbar  {
+  user-select: none;
+} 
+
+
 /* 
 body {
   user-select: none; 
