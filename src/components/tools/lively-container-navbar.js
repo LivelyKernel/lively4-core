@@ -6,6 +6,7 @@ import components from 'src/client/morphic/component-loader.js'
 import Preferences from 'src/client/preferences.js'
 import Mimetypes from "src/client/mimetypes.js"
 import JSZip from "src/external/jszip.js"
+import {DropElementHandler} from "src/client/draganddrop.js"
 
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
@@ -43,8 +44,7 @@ export default class LivelyContainerNavbar extends Morph {
     }
     lively.files.saveFile(url, await zip.generateAsync({type:"blob"})) 
   }
-  
-  
+
   onItemDragStart(link, evt) {
     let urls = this.getSelection();
     if (urls.length > 1) {
@@ -57,9 +57,6 @@ export default class LivelyContainerNavbar extends Morph {
       evt.dataTransfer.setData("DownloadURL", `${mimetype}:${name}:${url}`);  
     }
     evt.dataTransfer.setData("text/plain", urls.join("\n"));
-    
-    
-    
   }
   
   onDragOver(evt) {   
@@ -76,6 +73,7 @@ export default class LivelyContainerNavbar extends Morph {
   async onDrop(evt) {
     evt.preventDefault();
     evt.stopPropagation();
+        
     const files = evt.dataTransfer.files;
     let dir = lively.files.directory(this.url);
     if(files.length > 0 &&
@@ -90,7 +88,11 @@ export default class LivelyContainerNavbar extends Morph {
       });
       return;
     }
-
+    
+    if (DropElementHandler.handle(evt, this, (element, evt) => {
+      lively.notify("handle " + element)
+    })) return;
+    
     var data = evt.dataTransfer.getData("text");
     if (data.match("^https?://") || data.match(/^data\:image\/png;/)) {
       this.copyFromURL(data);        
