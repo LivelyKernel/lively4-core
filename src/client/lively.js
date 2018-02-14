@@ -1231,7 +1231,7 @@ export default class Lively {
     else 
       var pattern = patternOrPostion
 
-    if (!url || !url.match(/^http/))
+    if (!url || !url.match(/^[a-z]+:\/\//))
       url = lively4url
     var editorComp;
     var containerPromise;
