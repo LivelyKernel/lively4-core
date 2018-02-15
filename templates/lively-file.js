@@ -1,4 +1,4 @@
-import Morph from "src/components/widgets/lively-morph.js"
+ import Morph from "src/components/widgets/lively-morph.js"
 import ContextMenu from 'src/client/contextmenu.js'
 import Mimetypes from 'src/client/mimetypes.js'
 import {getTempKeyFor} from 'utils'
@@ -23,7 +23,10 @@ export default class File extends Morph {
     
     this.lastDragOffset  = lively.getGlobalPosition(this).subPt(lively.getPosition(evt))
     
-    let url = lively.files.tempfile(),
+    
+    let url = lively.files.tempfile(), // #Problem, we need to tell the server syncronously about that temp file...
+        // because, this does not work (no sync web requests allowed...) we have to find another solution
+        // #Idea all GET requests on temp files will block wait on an actual file (maybe with a timeout)
       name = this.name,
       mimetype = Mimetypes.mimetype(lively.files.extension(this.name));
     evt.dataTransfer.setData("DownloadURL", `${mimetype}:${name}:${url}`); // #TODO or make other drop places aware of DownloadURL

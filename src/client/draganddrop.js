@@ -236,7 +236,7 @@ const dropOnDocumentBehavior = {
 //           appendToBodyAt(div, evt);
 //           div.querySelector("#name a").setAttribute("href", await lively.files.readBlobAsDataURL(file))
           
-          var item = await lively.create("lively-file")
+          var item = await (<lively-file></lively-file>)
           item.classList.add("lively-content") // for persistence
           // #TODO check for existing "file"
           item.name = file.name

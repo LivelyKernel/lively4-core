@@ -950,8 +950,12 @@ export default class Container extends Morph {
     return path.match(/element:\/\//)
   }
   
+  // #TODO extract this "polymorphic identifiers" into a general usable mechanism in lively4
+  // #Problem fetch(polyIdentifier) will throw an error
+  // #Idea, we could layer fetch() to force a soliution?
   pathToElement(elementURL) {
     var selector = elementURL.replace("element:\/\/","").replace(/\./,"\\.")
+    selector = decodeURI(selector)
     var element = document.body.querySelector(selector)
     if (!element) {
       throw new Error("Could not find element at " + selector)

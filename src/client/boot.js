@@ -31,8 +31,8 @@ if (window.lively && window.lively4url) {
       boxShadow: '0px 0px 3px 0px rgba(40, 40, 40,0.66)'
     });
     livelyBooting.innerHTML = `<img alt="Lively 4" style="display:block; margin:auto;" src="media/lively4_logo_smooth_100.png" />
-<span style="font-size: large;">Booting:</span>
-<div id="lively-booting-message"></div>`;
+<span style="font-size: large;font-family:arial">Booting:</span>
+<div style="font-family:arial" id="lively-booting-message"></div>`;
     document.body.appendChild(livelyBooting);
     
     function groupedMessage(part, numberOfSteps, message) {
