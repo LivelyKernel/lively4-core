@@ -434,19 +434,8 @@ export default class Container extends Morph {
       
       return;
     }
-    if (this.isElementURL(this.getPath())) {
-      // because we cannot handle this url as an url... we do it here
-      var element = this.pathToElement(this.getPath())
-      var source = this.getSourceCode()
-      element.setContent(source)
-      this.get("#editor").lastText = source
-      this.get("#editor").updateChangeIndicator()
-      var promisedSaved = Promise.resolve(); 
-    } else {
-      this.get("#editor").setURL(this.getURL());
-      promisedSaved = this.get("#editor").saveFile()
-    }
-    return promisedSaved.then( async () => {
+    this.get("#editor").setURL(this.getURL());
+    this.get("#editor").saveFile().then( async () => {
       var sourceCode = this.getSourceCode();
       var url = this.getURL();
       lively.notify("!!!saved " + url)
@@ -827,11 +816,6 @@ export default class Container extends Morph {
   getURL() {
     var path = this.getPath();
     if (!path) return;
-    if (this.isElementURL(path)) {
-      var element = this.pathToElement(path)
-      if (!element || !element.url) return;
-      return new URL(element.url);
-    }
     if (path.match(/^https?:\/\//)) {
       return new URL(path);
     } if (path.match(/^[a-zA-Z]+:\/\//)) {
@@ -950,23 +934,6 @@ export default class Container extends Morph {
     });
   }
   
-  isElementURL(path) {
-    return path.match(/element:\/\//)
-  }
-  
-  // #TODO extract this "polymorphic identifiers" into a general usable mechanism in lively4
-  // #Problem fetch(polyIdentifier) will throw an error
-  // #Idea, we could layer fetch() to force a soliution?
-  pathToElement(elementURL) {
-    var selector = elementURL.replace("element:\/\/","").replace(/\./,"\\.")
-    selector = decodeURI(selector)
-    var element = document.body.querySelector(selector)
-    if (!element) {
-      throw new Error("Could not find element at " + selector)
-    }
-    return element
-  }
-  
   async setPath(path, donotrender) {
     this.get('#container-content').style.display = "block";
     this.get('#container-editor').style.display = "none";
@@ -977,9 +944,7 @@ export default class Container extends Morph {
 	  var isdir= path.match(/.\/$/);
 
     var url;
-    if (this.isElementURL(path)) {
-      var element = this.pathToElement(path)
-    } else if (path.match(/^https?:\/\//)) {
+    if (path.match(/^https?:\/\//)) {
       url = new URL(path);
       url.pathname = lively.paths.normalize(url.pathname);
       path = "" + url;
@@ -991,7 +956,7 @@ export default class Container extends Morph {
       path = lively.paths.normalize(path);
       url = "https://lively4" + path
     }
-    if (!isdir && !element && !other) {
+    if (!isdir && !other) {
       // check if our file is a directory
       var options = await fetch(url, {method: "OPTIONS"}).then(r =>  r.json()).catch(e => {})
       if (options && options.type == "directory") {
@@ -1119,9 +1084,6 @@ export default class Container extends Morph {
     navbar.followPath = (path) => { this.followPath(path) } 
     navbar.navigateToName = (name) => { this.navigateToName(name) } 
     
-    if (this.isElementURL(this.getPath())) {
-      return 
-    }
     
     
     

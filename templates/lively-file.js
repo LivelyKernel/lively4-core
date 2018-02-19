@@ -42,7 +42,7 @@ export default class File extends Morph {
       evt.preventDefault();
       var menu = new ContextMenu(this, [
           ...(["browse", "edit"].map(ea => [ea, async () => {
-            var comp = await lively.openBrowser("element://#" + this.name, ea == "edit")
+            var comp = await lively.openBrowser("livelyfile://#" + this.name, ea == "edit")
             comp.hideNavbar() 
           }])),
           ["foo"]
