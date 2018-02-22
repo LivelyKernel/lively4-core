@@ -1,20 +1,19 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
-import { applyDragCSSClass } from 'src/client/draganddrop.js';
-import { fileName } from 'utils';
-import components from 'src/client/morphic/component-loader.js'
-import Preferences from 'src/client/preferences.js'
-import Mimetypes from "src/client/mimetypes.js"
-import JSZip from "src/external/jszip.js"
-import {DropElementHandler} from "src/client/draganddrop.js"
+import { applyDragCSSClass, DropElementHandler } from 'src/client/draganddrop.js';
+import { fileName, copyTextToClipboard } from 'utils';
+import components from 'src/client/morphic/component-loader.js';
+import Preferences from 'src/client/preferences.js';
+import Mimetypes from 'src/client/mimetypes.js';
+import JSZip from 'src/external/jszip.js';
 
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
-    this.addEventListener("drop", this.onDrop)
-    this.addEventListener("dragover", this.onDragOver)
+    this.addEventListener("drop", this.onDrop);
+    this.addEventListener("dragover", this.onDragOver);
     // this.addEventListener("dragenter", this.onDragEnter)
     this::applyDragCSSClass();
-    this.lastSelection = []
+    this.lastSelection = [];
   }
   
   clear() {
@@ -295,9 +294,9 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   async editWithSyvis (url) {
-    const editor = await components.createComponent('syvis-editor')
-    await editor.loadUrl(url)
-    await components.openInWindow(editor)
+    const editor = await components.createComponent('syvis-editor');
+    await editor.loadUrl(url);
+    await components.openInWindow(editor);
   }
 
   onContextMenu(evt, otherUrl) {
@@ -308,10 +307,12 @@ export default class LivelyContainerNavbar extends Morph {
       ["edit", () => lively.openBrowser(otherUrl, true)],
       ["browse", () => lively.openBrowser(otherUrl)],
       ["save as png", () => lively.html.saveAsPNG(otherUrl)],
-    ]
+      ["copy path to clipboard", () => copyTextToClipboard(otherUrl)],
+      ["copy file name to clipboard", () => copyTextToClipboard(otherUrl::fileName())],
+    ];
     
     if (Preferences.get('EnableSyvisEditor')) {
-      menuElements.push(['edit with syvis', () => this.editWithSyvis(otherUrl)])
+      menuElements.push(['edit with syvis', () => this.editWithSyvis(otherUrl)]);
     }
     
     const menu = new ContextMenu(this, menuElements)
@@ -351,13 +352,13 @@ export default class LivelyContainerNavbar extends Morph {
         return;
       }
       // fill navbar with list of script
-      Array.from(template.content.querySelectorAll("script")).forEach((ea) => {
+      Array.from(template.content.querySelectorAll("script")).forEach(ea => {
         var element = document.createElement("li");
         element.innerHTML = ea.getAttribute('data-name');
         element.classList.add("subitem");
         element.onclick = () => {
           this.navigateToName(
-            "data-name=\""+ea.getAttribute('data-name')+'"');
+            `data-name="${ea.getAttribute('data-name')}"`);
         };
         subList.appendChild(element) ;
       });
