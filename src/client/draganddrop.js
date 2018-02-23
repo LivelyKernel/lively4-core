@@ -3,15 +3,9 @@ import { debounce, through, asDragImageFor, getObjectFor, removeTempKey } from "
 import { letsScript } from 'src/client/vivide/vivide.js';
 
 export function applyDragCSSClass() {
-  this.addEventListener('dragenter', evt => {
-    this.classList.add("drag");
-  }, false);
-  this.addEventListener('dragleave', evt => {
-    this.classList.remove("drag");
-  }, false);
-  this.addEventListener('drop', evt => {
-    this.classList.remove("drag");
-  });
+  this.addEventListener('dragenter', evt => this.classList.add("drag"), false);
+  this.addEventListener('dragleave', evt => this.classList.remove("drag"), false);
+  this.addEventListener('drop', evt => this.classList.remove("drag"));
 }
 
 function appendToBodyAt(node, evt) {
@@ -199,7 +193,14 @@ const dropOnDocumentBehavior = {
 
       new DropOnBodyHandler('text/plain', text => {
         return <p>{text}</p>;
-      })
+      }),
+
+      // just an ui interaction, no data
+      {
+        handle(evt) {
+          return evt.dataTransfer.types.includes("ui/interaction");
+        }
+      }
     ];
   },
   

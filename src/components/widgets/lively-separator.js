@@ -139,14 +139,14 @@ export default class Separator extends Morph {
   }
   
   onDragStart(evt) {
-    if (this.lastPrevLength){
-      this.onClick()
-    }
+    if (this.lastPrevLength) { this.onClick(); }
     
-    this.count = 0
-    this.rememberOriginals(true)
+    this.count = 0;
+    this.rememberOriginals(true);
     this.dragOffset = this.getEventLength(evt);
-    evt.dataTransfer.setDragImage(document.createElement("div"), 0, 0); 
+    evt.dataTransfer.setDragImage(document.createElement('div'), 0, 0);
+    evt.dataTransfer.setData('ui/interaction', '');
+    
     evt.stopPropagation();
   }
   
