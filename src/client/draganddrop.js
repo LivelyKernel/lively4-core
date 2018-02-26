@@ -3,15 +3,9 @@ import { debounce, through, asDragImageFor, getObjectFor, removeTempKey } from "
 import { letsScript } from 'src/client/vivide/vivide.js';
 
 export function applyDragCSSClass() {
-  this.addEventListener('dragenter', evt => {
-    this.classList.add("drag");
-  }, false);
-  this.addEventListener('dragleave', evt => {
-    this.classList.remove("drag");
-  }, false);
-  this.addEventListener('drop', evt => {
-    this.classList.remove("drag");
-  });
+  this.addEventListener('dragenter', evt => this.classList.add("drag"), false);
+  this.addEventListener('dragleave', evt => this.classList.remove("drag"), false);
+  this.addEventListener('drop', evt => this.classList.remove("drag"));
 }
 
 function appendToBodyAt(node, evt) {
@@ -46,6 +40,41 @@ class DropOnBodyHandler {
   }
 }
 
+// drop and a dragged html element into a container
+export class DropElementHandler {
+  constructor(container, customHandler) {
+    this.container = container;
+    if (customHandler) {
+      this.handleElement = customHandler
+    }
+  }
+  
+  handleElement(element, evt) {
+    this.container.appendChild(element)
+    lively.setGlobalPosition(element, lively.getPosition(evt))
+    if (element.lastDragOffset) {
+      lively.moveBy(element, element.lastDragOffset)
+    }
+  }
+  
+  handle(evt) {
+    const dt = evt.dataTransfer
+    if(!dt.types.includes("lively/element")) { return false }
+    const tempKey = dt.getData("lively/element")
+    const element = getObjectFor(tempKey)
+    if (!element) return false
+    
+    this.handleElement(element, evt)
+    
+    removeTempKey(tempKey)
+    return true
+  }
+  
+  static handle(evt, container, cb) {
+    new this(container, cb).handle(evt)
+  }
+}
+
 const dropOnDocumentBehavior = {
   
   removeListeners() {
@@ -59,6 +88,24 @@ const dropOnDocumentBehavior = {
     lively.addEventListener("dropOnDocumentBehavior", document, "drop", ::this.onDrop);
     
     this.handlers = [
+      // lively elements
+      new DropElementHandler(document.body),
+      // {
+      //   handle(evt) {
+      //     const dt = evt.dataTransfer;
+      //     if(!dt.types.includes("lively/element")) { return false; }
+      //     const tempKey = dt.getData("lively/element");
+      //     const element = getObjectFor(tempKey);
+      //     if (!element) return false;
+      //     document.body.appendChild(element)
+      //     lively.setGlobalPosition(element, lively.getPosition(evt))
+      //     if (element.lastDragOffset) {
+      //       lively.moveBy(element, element.lastDragOffset)
+      //     }
+      //     removeTempKey(tempKey);
+      //     return true;
+      //   }
+      // },
       // vivide list
       {
         handle(evt) {
@@ -146,7 +193,14 @@ const dropOnDocumentBehavior = {
 
       new DropOnBodyHandler('text/plain', text => {
         return <p>{text}</p>;
-      })
+      }),
+
+      // just an ui interaction, no data
+      {
+        handle(evt) {
+          return evt.dataTransfer.types.includes("ui/interaction");
+        }
+      }
     ];
   },
   
@@ -183,7 +237,7 @@ const dropOnDocumentBehavior = {
 //           appendToBodyAt(div, evt);
 //           div.querySelector("#name a").setAttribute("href", await lively.files.readBlobAsDataURL(file))
           
-          var item = await lively.create("lively-file")
+          var item = await (<lively-file></lively-file>)
           item.classList.add("lively-content") // for persistence
           // #TODO check for existing "file"
           item.name = file.name

@@ -434,19 +434,8 @@ export default class Container extends Morph {
       
       return;
     }
-    if (this.isElementURL(this.getPath())) {
-      // because we cannot handle this url as an url... we do it here
-      var element = this.pathToElement(this.getPath())
-      var source = this.getSourceCode()
-      element.setContent(source)
-      this.get("#editor").lastText = source
-      this.get("#editor").updateChangeIndicator()
-      var promisedSaved = Promise.resolve(); 
-    } else {
-      this.get("#editor").setURL(this.getURL());
-      promisedSaved = this.get("#editor").saveFile()
-    }
-    return promisedSaved.then( async () => {
+    this.get("#editor").setURL(this.getURL());
+    this.get("#editor").saveFile().then( async () => {
       var sourceCode = this.getSourceCode();
       var url = this.getURL();
       lively.notify("!!!saved " + url)
@@ -778,7 +767,7 @@ export default class Container extends Morph {
     // this check could happen later
     if (!path.match("https://lively4") 
         && !path.match(window.location.host) 
-        && !path.match(/element:\/\//)) {
+        && path.match(/https?:\/\//)) {
       // lively.notify("follow foreign url: " + path);
       var startTime = Date.now();
       if (!await fetch(path, {method: "OPTIONS"}).catch(e => false)) {
@@ -796,11 +785,13 @@ export default class Container extends Morph {
     
     if (this.isEditing() && !path.match(/\/$/)) {
       if (this.useBrowserHistory())
-        window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?edit="+path  + opts);
+        window.history.pushState({ followInline: true, path: path }, 
+          'view ' + path, window.location.pathname + "?edit="+path  + opts);
       return this.setPath(path, true).then(() => this.editFile());
     } else {
       if (this.useBrowserHistory())
-        window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?load="+path  + opts);
+        window.history.pushState({ followInline: true, path: path }, 
+          'view ' + path, window.location.pathname + "?load="+path  + opts);
       // #TODO replace this with a dynamic fetch
       return this.setPath(path);
     }
@@ -825,12 +816,9 @@ export default class Container extends Morph {
   getURL() {
     var path = this.getPath();
     if (!path) return;
-    if (this.isElementURL(path)) {
-      var element = this.pathToElement(path)
-      if (!element || !element.url) return;
-      return new URL(element.url);
-    }
     if (path.match(/^https?:\/\//)) {
+      return new URL(path);
+    } if (path.match(/^[a-zA-Z]+:\/\//)) {
       return new URL(path);
     } else {
       return new URL("https://lively4/" + path);
@@ -946,19 +934,6 @@ export default class Container extends Morph {
     });
   }
   
-  isElementURL(path) {
-    return path.match(/element:\/\//)
-  }
-  
-  pathToElement(elementURL) {
-    var selector = elementURL.replace("element:\/\/","").replace(/\./,"\\.")
-    var element = document.body.querySelector(selector)
-    if (!element) {
-      throw new Error("Could not find element at " + selector)
-    }
-    return element
-  }
-  
   async setPath(path, donotrender) {
     this.get('#container-content').style.display = "block";
     this.get('#container-editor').style.display = "none";
@@ -969,17 +944,19 @@ export default class Container extends Morph {
 	  var isdir= path.match(/.\/$/);
 
     var url;
-    if (this.isElementURL(path)) {
-      var element = this.pathToElement(path)
-    } else if (path.match(/^https?:\/\//)) {
+    if (path.match(/^https?:\/\//)) {
       url = new URL(path);
       url.pathname = lively.paths.normalize(url.pathname);
       path = "" + url;
+    } else if (path.match(/^[a-zA-Z]+:\/\//)) {
+      lively.notify("it other url : " + path)
+      url = new URL(path)
+      var other = true
     } else {
       path = lively.paths.normalize(path);
       url = "https://lively4" + path
     }
-    if (!isdir && !element) {
+    if (!isdir && !other) {
       // check if our file is a directory
       var options = await fetch(url, {method: "OPTIONS"}).then(r =>  r.json()).catch(e => {})
       if (options && options.type == "directory") {
@@ -1107,9 +1084,9 @@ export default class Container extends Morph {
     navbar.followPath = (path) => { this.followPath(path) } 
     navbar.navigateToName = (name) => { this.navigateToName(name) } 
     
-    if (this.isElementURL(this.getPath())) {
-      return 
-    }
+    
+    
+    
     await navbar.show(this.getURL(), this.sourceContent)
     
     if (this.isEditing()) {

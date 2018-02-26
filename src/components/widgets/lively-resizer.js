@@ -124,7 +124,8 @@ export default class Resizer extends Morph {
       
     this.dragOffset = this.getEventLength(evt);
 
-    evt.dataTransfer.setDragImage(document.createElement("div"), 0, 0); 
+    evt.dataTransfer.setDragImage(document.createElement("div"), 0, 0);
+    evt.dataTransfer.setData("ui/interaction", '');
     evt.stopPropagation();
   }
   

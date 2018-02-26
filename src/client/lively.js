@@ -30,6 +30,8 @@ import focalStorage from '../external/focalStorage.js';
 import Selection from 'src/components/halo/lively-selection.js'
 import windows from "src/components/widgets/lively-window.js"
 
+import "src/client/poid.js"; // custom fetch
+
 let $ = window.$; // known global variables.
 
 // a) Special shorthands for interactive development
