@@ -1,0 +1,222 @@
+import Dexie from "https://unpkg.com/dexie@2.0.0-beta.11/dist/dexie.js";
+import {babel} from 'systemjs-babel-build';
+import plugin from 'https://lively-kernel.org/lively4/foo/src/external/babel-plugin-syntax-all.js';
+
+export default class SignatureManipulator {
+
+  async parseAndExtractFile(name) {
+    var file = await fetch(name).then( r => r);
+    var text = await file.text();
+    var versionNum = file.headers.get('fileversion');
+    var ast =  this.astFromText(text);
+    return {ast: ast, sigs: await this.getTopLevelSigs(ast, versionNum, name), content: text};
+  }
+
+  astFromText(text) {
+    return babel.transform(text, {
+        plugins: plugin
+      }).ast.program;
+  }
+
+  astFromMethod(text) {
+    var wrappedText = `class Dummy { ${text} }`;
+    return this.astFromText(wrappedText).body[0].body.body[0];
+  }
+  
+  async setNewContent(filename, type, id, content, parentID='') {
+    
+    function replaceOrAppendChild(parent, newNode, childType='other') {
+      var existing = false;
+      for(var childIndex in parent) {
+        var child = parent[childIndex];
+        var replaceCondition;
+        if(childType === 'method')
+          replaceCondition = (child.key.name === id);
+        else if(childType === 'variable')
+          replaceCondition = (child.hasOwnProperty('declarations') && child.declarations[0].id.name === id);
+        else
+          replaceCondition = (child.hasOwnProperty('id') && child.id.name === id);
+        if(replaceCondition) {
+          parent[childIndex] = newNode;
+          existing = true;
+          break;
+        }
+      }
+      if(!existing) {
+          parent.push(newNode);
+      }
+    }
+    
+    var rootNode = await this.parseAndExtractFile(filename);
+    rootNode = rootNode.ast;
+    if(type === 'method') {
+      var newNode = this.astFromMethod(content);
+      var parentClass = false;
+      for (var declaration of rootNode.body) {
+        if(declaration.hasOwnProperty('id') && declaration.id.name === parentID) {
+          parentClass = declaration;
+          break;
+        }
+      }
+      if(!parentClass) 
+        console.log('Could not find parent element, saving won\'t work!');
+      else
+        replaceOrAppendChild(parentClass.body.body, newNode, 'method')
+    } else if(type === 'variable') {
+      var newNode = this.astFromText(content);
+      replaceOrAppendChild(rootNode.body, newNode, 'variable')
+    } else {
+      var newNode = this.astFromText(content);
+      replaceOrAppendChild(rootNode.body, newNode)
+    }
+    var code = this.getNodeContent(rootNode);
+    lively.files.saveFile(filename, code);
+  }
+
+  getNodeContent(node) {
+    var wrapper = {
+      directives: [],
+      start: 0,
+      end: 0,
+      type: 'Program',
+      sourceType: 'module',
+      body: [node]
+    };
+    return babel.transformFromAst(wrapper, {sourceType: 'module'}).code;
+  }
+
+  /**
+  Output of top-level signatures from file:
+  {
+    classes: [ {
+      sig: 'class ExampleClass {',
+      methods: ['static sampleMethods()']
+      }],
+     functions: ['function sampleTopLevelFunc()'],
+     vars: ['var sampleVar']
+  }
+  **/
+  async getTopLevelSigs(ast, versionNum, fileName) {
+    var classes = [];
+    var funcs = [];
+    var variables = [];
+    for (var declaration of ast.body) {
+      if (declaration.type.includes('Class')) {
+        classes.push(await this.extractClassAndMethods(declaration, versionNum,
+                                                       fileName, this.getNodeContent(declaration)))
+      }
+      if (declaration.type.includes('ExportDefault') && declaration.declaration.type.includes('Class')) {
+        classes.push(await this.extractClassAndMethods(declaration.declaration, versionNum,
+                                                       fileName, this.getNodeContent(declaration)))
+      }
+      if (declaration.type.includes('Variable')) {
+        for(var dec of declaration.declarations) {
+          variables.push(await this.extractVariableSig(declaration.kind, dec, versionNum,
+                                                       fileName, this.getNodeContent(declaration)));
+        }
+      }
+      if (declaration.type.includes('Function')) {
+        funcs.push(await this.extractFunctionSig(declaration, versionNum,
+                                                 fileName, this.getNodeContent(declaration)));
+      }
+    }
+    return {'classes': classes, 'functions': funcs, 'variables': variables};
+  }
+  
+  /**
+  Output of class and method signatures from file:
+  {
+    sig: 'class ExampleClass {',
+    methods: ['static sampleMethods()']
+  }
+  **/
+  async extractClassAndMethods(classDeclaration, versionNum, fileName, content) {
+    var res = {'sig': '', 'methods': []};
+    res['sig'] = await this.extractClassSig(classDeclaration, versionNum,
+                                            fileName, this.getNodeContent(classDeclaration));
+    if(classDeclaration.body) {
+      var childDeclarations = classDeclaration.body.body;
+      for(var child of childDeclarations) {
+        if(child.type.includes('Method')) {
+          res['methods'].push(await this.extractMethodSig(child, versionNum,
+                                                          fileName, this.getNodeContent(child)));
+        }
+      }
+    }
+    return res;
+  }
+
+  async extractClassSig(declaration, versionNum, fileName, content) {
+    return {
+          declaration: `class ${declaration.id.name}`,
+          id: declaration.id.name,
+          version: versionNum,
+          file: fileName,
+          content: content
+        }
+  }
+
+  async extractVariableSig(kind, declaration, versionNum, fileName, content) {
+    return {
+          declaration: `${kind} ${declaration.id.name}`,
+          id: declaration.id.name,
+          version: versionNum,
+          file: fileName,
+          content: content
+    }
+  }
+
+  async extractMethodSig(declaration, versionNum, fileName, content) {
+    return {
+          declaration: `${declaration.async ? 'async ' : ''} ` + 
+               `${declaration.key.name} ` + 
+               `(${declaration.params.map(t => t.name).join(',')})`,
+          id: declaration.key.name,
+          version: versionNum,
+          file: fileName,
+          content: content
+    }
+  }
+
+  async extractFunctionSig(declaration, versionNum, fileName, content) {
+    return {
+          declaration: `${declaration.async ? 'async ' : ''} ` + 
+               `${declaration.id.name} ` + 
+               `(${declaration.params.map(t => t.name).join(',')})`,
+          id: declaration.id.name,
+          version: versionNum,
+          file: fileName,
+          content: content
+    }
+  }
+  
+}
+
+class DBWrapper {
+  // Simple Wrapper for IndexedDB, usage:
+  // var obj = {
+  //   sig: 'async function getAST(name)',
+  //   version: 1.0,
+  //   file: 'src/client/signature-db.js',
+  //   content: '<Content here>'
+  // };
+  // new DBWrapper().insertObject(obj);
+  // new DBWrapper().getObject('async', (v => console.log(v)));
+  constructor() {
+    this.db = new Dexie('signatures');
+    this.db.version('1').stores({
+      signatures: 'sig, version, file, content'
+    });
+  }
+  
+  async insertObject(object) {  
+    this.db.signatures.put(object).catch(function(error) {
+       alert ('Storing did not work: ' + error);
+    });
+  }
+  
+  getObject(signature, callback) {
+    this.db.signatures.where('sig').startsWithIgnoreCase(signature).each(sig => callback(sig));
+  }
+  
+}
