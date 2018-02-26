@@ -1,12 +1,12 @@
 'use strict';
 
-import Morph from 'templates/Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class Sync extends Morph {
   initialize() {
     this.windowTitle = "GitHub Sync";
     var container = this.get(".container");
-    lively.html.registerButtons(this);
+    this.registerButtons();
     lively.html.registerInputs(this);
     this.updateLoginStatus();
     

@@ -1,0 +1,81 @@
+<template id="lively-cache-mounts" data-class="LivelyCacheMounts">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  
+}
+#content {
+
+}
+  
+nav {
+  border-bottom: 1px solid #ddd;
+  padding: 2px 4px;
+  display: flex;
+  justify-content: space-between;
+}
+
+#mountList, #dirTree {
+  flex: 1;
+  overflow-x: scroll;
+}
+
+#mountList ul, #dirTree ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#mountList li, #dirTree li {
+  padding: 2px;
+  font-family: monospace;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+#mountList li:hover, #dirTree li:hover {
+  background-color: #eee;
+}
+
+h6 {
+  margin: 10px 0 0 0;
+}  
+
+#overlay {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+</style>
+  <nav>
+    <div>
+      <button id="cacheMountButton" title="Cache whole mount" disabled>
+        <i class="fa fa-cloud" aria-hidden="true"></i>
+      </button>
+      <button id="cacheObjectButton" title="Cache file/directory from mount" disabled>
+        <i class="fa fa-download" aria-hidden="true"></i>
+      </button>
+    </div>
+  </nav>
+  <div id="mountList"></div>
+  <h6>
+    Mount content: <span id="breadcrumbs"></span>
+  </h6>
+  <div id="dirTree"></div>
+  <div id="overlay">
+    <div id="statusText">
+      Downloading file(s)...
+    </div>
+  </div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

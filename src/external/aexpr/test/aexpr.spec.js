@@ -1,10 +1,116 @@
-"use strict";
+"enable aexpr";
 import chai, {expect} from 'node_modules/chai/chai.js';
 import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'node_modules/sinon-chai/lib/sinon-chai.js';
 chai.use(sinonChai);
 
 import {reset} from 'aexpr-source-transformation-propagation';
+import * as frameBasedAExpr from "frame-based-aexpr";
+
+aexpr(()=>{});
+
+let moduleScopedVariable = 1;
+
+// #TODO: does not yet detect changes to the iterator variable itself
+describe('simplify locals', function() {
+  it('easier get', () => {
+    let myIdentifier = 0;
+    let _;
+
+    aexpr(() => myIdentifier).onChange(()=>{});
+
+    _ =  myIdentifier = 2;
+  });
+});
+describe('loop constructs', function() {
+  it('for loop/local variable (var)', () => {
+    let x = 0;
+    const spy = sinon.spy();
+    aexpr(() => x).onChange(spy);
+
+    for(var i = 0; i < 3; i += 1) {
+      x += i;
+    }
+    expect(spy).to.be.calledTwice;
+    expect(spy).to.be.calledWithMatch(1);
+    expect(spy).to.be.calledWithMatch(3);
+  });
+  xit('for loop/local variable (let)', () => {
+    let x = 0;
+    const spy = sinon.spy();
+    aexpr(() => x).onChange(spy);
+
+    for(let i = 0; i < 3; i += 1) {
+      x += i;
+    }
+    expect(spy).to.be.calledTwice;
+    expect(spy).to.be.calledWithMatch(1);
+    expect(spy).to.be.calledWithMatch(3);
+  });
+  it('track changes on iterator variable (var)', () => {
+    const spy = sinon.spy();
+    const holder = {};
+
+    for(var i = 0; i < 3; i += 1) {
+      holder.aexpr = holder.aexpr || aexpr(() => i).onChange(spy);
+    }
+    expect(spy).to.be.calledThrice;
+    expect(spy).to.be.calledWithMatch(1);
+    expect(spy).to.be.calledWithMatch(2);
+    expect(spy).to.be.calledWithMatch(3);
+  });
+  xit('track changes on iterator variable (let)', () => {
+    const spy = sinon.spy();
+    const holder = {};
+
+    for(let i = 0; i < 3; i += 1) {
+      holder.aexpr = holder.aexpr || aexpr(() => i).onChange(spy);
+    }
+    expect(spy).to.be.calledThrice;
+    expect(spy).to.be.calledWithMatch(1);
+    expect(spy).to.be.calledWithMatch(2);
+    expect(spy).to.be.calledWithMatch(3);
+  });
+  it('for-in/local variable (var)', () => {
+    let x = 0;
+    const obj = { a: 42, b: 17 };
+    const spy = sinon.spy();
+    aexpr(() => x).onChange(spy);
+
+    for(var i in obj) {
+      x += obj[i];
+    }
+    expect(spy).to.be.calledTwice;
+    expect(spy).to.be.calledWithMatch(42);
+    expect(spy).to.be.calledWithMatch(59);
+  });
+  it('for-in/local variable (let)', () => {
+    let x = 0;
+    const obj = { a: 42, b: 17 };
+    const spy = sinon.spy();
+    aexpr(() => x).onChange(spy);
+
+    for(let i in obj) {
+      x += obj[i];
+    }
+    expect(spy).to.be.calledTwice;
+    expect(spy).to.be.calledWithMatch(42);
+    expect(spy).to.be.calledWithMatch(59);
+  });
+  xit('for-of/local variable (var)', () => {
+  });
+  xit('for-of/local variable (let)', () => {
+  });
+  xit('for-of/object member', () => {
+  });
+});
+
+describe('UpdateOperator', () => {
+  xit('x++', () => {});
+  xit('++x', () => {});
+  xit('obj.member++', () => {});
+  xit('++obj.member', () => {});
+});
 
 describe('Propagation Logic', function() {
   it('is a transparent wrapper for property accesses', () => {
@@ -317,6 +423,18 @@ describe('Propagation Logic', function() {
     expect(spy).to.be.calledOnce;
   });
 
+  describe('module-scoped variables', () => {
+    it('track assignment to module-scoped variable', () => {
+      const spy = sinon.spy();
+
+      aexpr(() => moduleScopedVariable).onChange(spy);
+      expect(spy).not.to.be.called;
+
+      moduleScopedVariable = 2;
+      expect(spy).to.be.calledWithMatch(2);
+    })
+  });
+
   describe('members', () => {
     it('triggers correct callbacks', () => {
       let rect = {
@@ -397,39 +515,44 @@ describe('Propagation Logic', function() {
       });
       
       it('handle nested mixed members and member functions', () => {
-        let a = { b() { return b; } };
-        let b = { c: { d() { return d; } } };
-        let d = { e: { f() { return f; } } };
         let f = 1;
-        let b2 = { get c() { return c2; } };
-        let c2 = { d() { return d2; } };
-        let d2 = { get e() { return e2; } };
-        let e2 = { f() { return f2; } };
+        let d = { e: { f() { return f; } } };
+        let b = { c: { d() { return d; } } };
+        let a = { b() { return b; } };
+
         let f2 = 2;
-        let c3 = { d() { return d3; } };
-        let d3 = { get e() { return e3; } };
-        let e3 = { f() { return f3; } };
+        let e2 = { f() { return f2; } };
+        let d2 = { e: e2 };
+        let c2 = { d() { return d2; } };
+        let b2 = { c: c2 };
+        
         let f3 = 3;
-        let d4 = { get e() { return e4; } };
-        let e4 = { f() { return f4; } };
+        let e3 = { f() { return f3; } };
+        let d3 = { e: e3 };
+        let c3 = { d() { return d3; } };
+
         let f4 = 4;
-        let e5 = { f() { return f5; } };
+        let e4 = { f() { return f4; } };
+        let d4 = { e: e4 };
+
         let f5 = 5;
+        let e5 = { f() { return f5; } };
+
         let spy = sinon.spy();
 
         aexpr(() => a.b().c.d().e.f()).onChange(spy);
 
-//         a.b = () => b2;
-//         expect(spy).to.be.calledWithMatch(2);
+        a.b = () => b2;
+        expect(spy).to.be.calledWithMatch(2);
 
-//         a.b().c = () => c3;
-//         expect(spy).to.be.calledWithMatch(3);
+        a.b().c = c3;
+        expect(spy).to.be.calledWithMatch(3);
 
-//         a.b().c().d = () => d4;
-//         expect(spy).to.be.calledWithMatch(4);
+        a.b().c.d = () => d4;
+        expect(spy).to.be.calledWithMatch(4);
 
-//         a.b().c().d().e = () => e5;
-//         expect(spy).to.be.calledWithMatch(5);
+        a.b().c.d().e = e5;
+        expect(spy).to.be.calledWithMatch(5);
 
         a.b().c.d().e = { f() { return 6; }};
         expect(spy).to.be.calledWithMatch(6);
@@ -437,3 +560,92 @@ describe('Propagation Logic', function() {
     });
   });
 });
+
+describe("misc", () => {
+  it("rewrite call expression in sequence expression does not result in stack overflow", () => {
+    const obj = {
+      x: 3,
+      fn() {
+        return this.x;
+      }
+    };
+    
+    (obj.fn(), obj.fn());
+  });
+  it("rewrite member expression with Identifier as property", () => {
+    const obj = {
+      x: 3,
+      fn() {
+        return this.x;
+      }
+    };
+    const func = "fn";    
+    const spy = sinon.spy();
+    
+    aexpr(() => obj[func]()).onChange(spy);
+    obj.x = 2;
+    
+    expect(spy).to.be.calledOnce;
+    expect(spy).to.be.calledWithMatch(2);
+  });
+  it("rewrite member expression with StringLiteral as property", () => {
+    const obj = {
+      x: 3,
+      fn() {
+        return this.x;
+      }
+    };
+    const spy = sinon.spy();
+    
+    aexpr(() => obj["fn"]()).onChange(spy);
+    obj.x = 2;
+    
+    expect(spy).to.be.calledOnce;
+    expect(spy).to.be.calledWithMatch(2);
+  });
+  it("rewrite assignment to member expression with StringLiteral as property", () => {
+    const obj = {
+      x: 3,
+      fn() {
+        return this.x;
+      }
+    };
+    const spy = sinon.spy();
+    
+    aexpr(() => obj.fn()).onChange(spy);
+    obj["x"] = 2;
+    
+    expect(spy).to.be.calledOnce;
+    expect(spy).to.be.calledWithMatch(2);
+  });
+  // #TODO: this is not checking, whether changes to a bindExpression are detected!
+  it("bind expression as expression", () => {
+    const obj = {
+      x: 3,
+      fn() {
+        return this.x;
+      }
+    };
+    const spy = sinon.spy();
+    
+    aexpr(::obj.fn).onChange(spy);
+    obj.x = 2;
+    
+    expect(spy).to.be.calledOnce;
+    expect(spy).to.be.calledWithMatch(2);
+  });
+  it("this as object of MemberExpression", () => {
+    const obj = {
+      x: 3,
+      fn2() { return this.x; },
+      fn() { return this.fn2(); }
+    };
+    const spy = sinon.spy();
+    
+    aexpr(() => obj.fn()).onChange(spy);
+    obj.x = 2;
+    
+    expect(spy).to.be.calledOnce;
+    expect(spy).to.be.calledWithMatch(2);
+  });
+})

@@ -1,0 +1,34 @@
+<template id="lively-halo-name-item" data-class="LivelyHaloNameItem">
+    <style data-src="/src/external/font-awesome/css/font-awesome.min.css"></style>
+    <style data-src="/src/components/halo/lively-halo-item.css"></style>
+    <style>
+      .disabled {
+        color: gray;
+      }
+      #name:empty:before {
+        content: "no id";
+        color: gray;
+        border: none;
+      }
+      #name {
+        padding: 2px;
+        color: black;
+        text-align: right;
+      }
+      #classname:before {
+        content: ":";
+        color: gray;
+        border: none;
+      }
+      #classname {
+        padding: 2px;
+        color: gray;
+        font-size: 10pt;
+      }
+    </style>
+    <span id="name" contenteditable="true"></span>
+    <span id="classname"></span>
+</template>
+<script class="registrationScript">
+  lively.registerTemplate()
+</script>

@@ -1,6 +1,7 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import { Graph } from './../src/client/triples/triples.js';
 import { fileName, hintForLabel, getTempKeyFor } from 'utils';
+import {pt} from "src/client/graphics.js";
 
 export default class KnotDesktopIcon extends Morph {
   get fontAwesomeClassesDefault() { return ["fa", "fa-question"]; }
@@ -51,6 +52,8 @@ export default class KnotDesktopIcon extends Morph {
       this.desktopIcon.classList.add("currently-dragging");
       this.knot && this.knot.asDataForDrag(evt);
       evt.dataTransfer.setData("desktop-icon/object", getTempKeyFor(this));
+      const { x, y } = pt(evt.clientX, evt.clientY).subPt(lively.getGlobalPosition(this));
+      evt.dataTransfer.setData("desktop-icon/offset", JSON.stringify({ x, y }));
     });
     this.addEventListener('drag', evt => {});
     this.addEventListener('dragend', evt => {

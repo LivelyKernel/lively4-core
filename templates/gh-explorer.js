@@ -1,4 +1,11 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
+import focalStorage from 'src/external/focalStorage.js';
+
+// GET COLUMN NAMES:
+// SELECT 1, column_name, column_name FROM information_schema.columns WHERE table_name = 'users';
+
+const GH_TORRENT_URL = 'https://172.16.64.132:5555/sql/';
+const FOCALSTORAGE_TOKEN_KEY = 'ghTorrentKey';
 
 class StreamJSONParser {
   constructor(rowsCallback) {
@@ -50,13 +57,30 @@ class StreamJSONParser {
   }
 }
 
-function ghStreamQuery(apiURL, queryString, callback) {
+async function askForUserToken() {
+  const token = window.prompt("Please specify your ghTorrentToken");
+  await focalStorage.setItem(FOCALSTORAGE_TOKEN_KEY, token);
+  return token;
+}
+
+async function ghStreamQuery(apiURL, queryString, callback) {
   let query = encodeURIComponent(queryString);
   
   const parser = new StreamJSONParser(callback);
   
+  let token = await focalStorage.getItem(FOCALSTORAGE_TOKEN_KEY);
+  if(!token) {
+    token = await askForUserToken();
+  }
+  
+  const request = new Request(`${apiURL}${query}`, {
+    method: "GET",
+    headers: {
+      "X-Auth-Token": token
+    }
+  })
   lively.files.fetchChunks(
-    fetch(`${apiURL}${query}`),
+    fetch(request),
     chunk => parser.parse(chunk),
     () => parser.finish()
   );
@@ -74,7 +98,7 @@ export default class GhExplorer extends Morph {
     this.get("#query").addEventListener('keydown',  event => {
       if (event.keyCode == 13) { // ENTER
         if(event.shiftKey) {
-          // enter as in line break
+          // #TODO: enter as in line break
         } else {
           this.doQuery();
           event.stopPropagation();
@@ -84,19 +108,24 @@ export default class GhExplorer extends Morph {
     });
     
     this.get("#visit-api").addEventListener('click', e => {
-      window.open('https://172.16.64.132:5555/sql/', "blank");
-    })
+      window.open(GH_TORRENT_URL, "blank");
+    });
+    this.get("#set-token").addEventListener('click', askForUserToken);
+    
     this.doQuery();
   }
-  doQuery() {
+  async doQuery() {
+    this.get("#queryResult").innerHTML = "";
+    const table = await (<lively-table />);
+    table.setFromArrayClean([]);
+    this.get("#queryResult").appendChild(table);
+    
     let onNewRow = (row, i) => {
-      let li = document.createElement("li");
-      li.textContent = row[1];
-      this.get("#queryResult").appendChild(li);
+      table.get("tbody, table").appendChild(<tr>
+        {...row.map(e => <td>{e}</td>)}
+      </tr>);
     };
     
-    this.get("#queryResult").innerHTML = "";
-
-    ghStreamQuery('https://172.16.64.132:5555/sql/', this.get("#query").textContent, eachify(onNewRow));
+    ghStreamQuery(GH_TORRENT_URL, this.get("#query").textContent, eachify(onNewRow));
   }
 }

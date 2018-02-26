@@ -1,0 +1,37 @@
+<div class="lively-content" style="background-color: lightgray; border: 1px solid gray; width: 285px; height: 123px; position: relative;" draggable="true" id="drag-example3" data-lively-id="2c011b1f-7109-4f5f-b0e2-d606d3af709e"><p contenteditable="true" class="lively-content" style="position: relative; left: 8px; top: -10px; width: 142px; height: 30px;">Drag Example 4</p><a class="lively-content" href="https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-console.js" style="position: absolute; left: 39px; top: 45px; width: 180.876px; height: 16.1px;">
+          lively-console.js
+        </a><a class="lively-content" href="https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-console.html" style="position: absolute; left: 45.4577px; top: 88.75px; width: 211.026px; height: 16.1px;">
+          lively-console.html
+        </a><script data-name="loadLively" type="lively4script">function loadLively() {
+  lively.removeEventListener("Drag", this)
+  this.draggable = true
+  lively.addEventListener("Drag", this, "dragstart", 
+    evt => this.onDragStart(evt))
+  
+}</script><script data-name="onDragStart" type="lively4script">function onDragStart(evt) {
+  
+  lively.notify("start")
+  // working around issue https://bugs.chromium.org/p/chromium/issues/detail?id=438479
+  // to achieve https://html.spec.whatwg.org/multipage/dnd.html#dom-datatransferitemlist-add
+  let urls = _.map(this.querySelectorAll("a"), ea => ea.href)
+  // let url = lively.files.tempfile() + ".zip", 
+  let url = "https://lively-kernel.org/lively4/testdir/foo.zip", 
+    name = "contents.zip",
+    mimetype = "application/zip";
+  evt.dataTransfer.setData("DownloadURL", `${mimetype}:${name}:${url}`);
+
+  // Oh, my god! Now we are getting crazy!
+  // first fownload the files, then zip them, then upload then again, so that they can be dropped...?
+  // Yeah! :-)
+  lively.notify("drag...")
+  System.import("src/external/jszip.js").then(async (mod) => {
+    var JSZip = mod.default
+    var zip = new JSZip();
+    for(var ea of urls) {
+      zip.file(lively.files.name(ea), await lively.files.loadFile(ea));
+    }
+    lively.files.saveFile(url, await zip.generateAsync({type:"blob"})) 
+    console.log(url)
+    this
+  })  
+}</script></div>

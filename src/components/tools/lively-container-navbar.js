@@ -1,22 +1,64 @@
-import Morph from 'templates/Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
-import { applyDragCSSClass } from 'src/client/draganddrop.js';
-import { fileName } from 'utils';
+import { applyDragCSSClass, DropElementHandler } from 'src/client/draganddrop.js';
+import { fileName, copyTextToClipboard } from 'utils';
+import components from 'src/client/morphic/component-loader.js';
+import Preferences from 'src/client/preferences.js';
+import Mimetypes from 'src/client/mimetypes.js';
+import JSZip from 'src/external/jszip.js';
 
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
-    
-    this.addEventListener("drop", this.onDrop)
-    this.addEventListener("dragover", this.onDragOver)
+    this.addEventListener("drop", this.onDrop);
+    this.addEventListener("dragover", this.onDragOver);
     // this.addEventListener("dragenter", this.onDragEnter)
     this::applyDragCSSClass();
+    this.lastSelection = [];
   }
   
   clear() {
     this.get("#navbar").innerHTML = ""
   }
   
-  onDragOver(evt) {    
+  async dragFilesAsZip(urls, evt) {
+    // working around issue https://bugs.chromium.org/p/chromium/issues/detail?id=438479
+    // to achieve https://html.spec.whatwg.org/multipage/dnd.html#dom-datatransferitemlist-add
+    let url = lively.files.tempfile() + ".zip", 
+    name = `${lively.files.name(urls[0])} and more.zip`,
+    mimetype = "application/zip";
+    evt.dataTransfer.setData("DownloadURL", `${mimetype}:${name}:${url}`);
+
+    // and now... we download, zip, and upload the files during the user drags them... 
+    // #Hack and will definitely not work well all the time!
+    // #Idea, #Solution, we could make it stable if the lively4-serv will wait on the first "GET" request
+    // if the upload is not finished yet, but if it knows about a new tempFile
+    
+    
+    // Oh, my god! Now we are getting crazy!
+    // first fownload the files, then zip them, then upload then again, so that they can be dropped...?
+    // Yeah! :-)
+    var zip = new JSZip();
+    for(var ea of urls) {
+      zip.file(lively.files.name(ea), await lively.files.loadFile(ea));
+    }
+    lively.files.saveFile(url, await zip.generateAsync({type:"blob"})) 
+  }
+
+  onItemDragStart(link, evt) {
+    let urls = this.getSelection();
+    if (urls.length > 1) {
+      lively.notify("hehe... ")
+      this.dragFilesAsZip(urls, evt)
+    } else {
+      let url = link.href,
+        name = lively.files.name(url)
+      var mimetype = Mimetypes.mimetype(lively.files.extension(name)) || "text/plain";
+      evt.dataTransfer.setData("DownloadURL", `${mimetype}:${name}:${url}`);  
+    }
+    evt.dataTransfer.setData("text/plain", urls.join("\n"));
+  }
+  
+  onDragOver(evt) {   
     if (evt.shiftKey) {
       evt.dataTransfer.dropEffect = "move";
       this.transferMode = "move"
@@ -30,71 +72,75 @@ export default class LivelyContainerNavbar extends Morph {
   async onDrop(evt) {
     evt.preventDefault();
     evt.stopPropagation();
-    
+        
     const files = evt.dataTransfer.files;
+    let dir = lively.files.directory(this.url);
     if(files.length > 0 &&
-      await lively.confirm(`Copy ${files.length} file(s) into directory ${this.url}?`)
+      await lively.confirm(`Copy ${files.length} file(s) into directory ${dir}?`)
     ) {
-      Array.from(files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = async event => {
-          var newURL = this.url.replace(/[^/]*$/, file.name);
-          const content = event.target.result;
-          await fetch(newURL, {
-            method: "PUT",
-            body: content
-          });          
-          this.show(newURL, content);
-        };
-        reader.readAsBinaryString(file);
+      Array.from(files).forEach(async (file) => {
+        var newURL = dir + "/" + file.name;
+        var dataURL = await lively.files.readBlobAsDataURL(file)  
+        var blob = await fetch(dataURL).then(r => r.blob())
+        await lively.files.saveFile(newURL, blob)
+        this.show(newURL, ""); // #TODO blob -> text
       });
       return;
     }
-
+    
+    if (DropElementHandler.handle(evt, this, (element, evt) => {
+      lively.notify("handle " + element)
+    })) return;
+    
     var data = evt.dataTransfer.getData("text");
-    if (data.match("^https?:\/\/") || data.match(/^data\:image\/png;/)) {
+    if (data.match("^https?://") || data.match(/^data\:image\/png;/)) {
       this.copyFromURL(data);        
     } else {
       console.log('ignore data ' + data);
     }
   }
   
-  async copyFromURL(fromurl) {
-    var filename = fromurl::fileName();
-    var isDataURI;
-    if (fromurl.match(/^data\:image\/png;/)) {
-      isDataURI = true
-      if (fromurl.match(/^data\:image\/png;name=/)) {
-        filename = fromurl.replace(/.*?name=/,"").replace(/;.*/,"")    
-      } else {
-        filename = "dropped_" + Date.now() + ".png";
-      }
-    } else {
-      isDataURI = false
-    }
-    var newurl = this.url.replace(/[^/]*$/, filename)
-    if (await lively.confirm(`${this.transferMode} to ${newurl}?`)) {
-      var content = await fetch(fromurl).then(r => r.blob());
-      await fetch(newurl, {
-        method: "PUT",
-        body: content
-      })
-      if (this.transferMode == "move") {
-        await fetch(fromurl, {
-          method: "DELETE"
-        });
-        // put again... to be not delete it by accident
+  async copyFromURL(data) {
+    var urls = data.split("\n")
+    var targetDir = lively.files.directory(this.url)
+    if (await lively.confirm(`${this.transferMode} ${urls.length} files to ${targetDir}?`)) {
+      for(var fromurl of urls) {
+        var filename = fromurl::fileName();
+        var isDataURI;
+        if (fromurl.match(/^data\:image\/png;/)) {
+          isDataURI = true
+          if (fromurl.match(/^data\:image\/png;name=/)) {
+            filename = fromurl.replace(/.*?name=/,"").replace(/;.*/,"")    
+          } else {
+            filename = "dropped_" + Date.now() + ".png";
+          }
+        } else {
+          isDataURI = false
+        }
+
+        var newurl = this.url.replace(/[^/]*$/, filename)
+        var content = await fetch(fromurl).then(r => r.blob());
         await fetch(newurl, {
           method: "PUT",
           body: content
         })
-        that.updateOtherNavbars(this.getRoot(fromurl))
-        that.updateOtherNavbars(this.getRoot(newurl))
+        if (this.transferMode == "move") {
+          await fetch(fromurl, {
+            method: "DELETE"
+          });
+          // put again... to be not delete it by accident
+          await fetch(newurl, {
+            method: "PUT",
+            body: content
+          })
+          that.updateOtherNavbars(this.getRoot(fromurl))
+          that.updateOtherNavbars(this.getRoot(newurl))
 
-        lively.notify(`${this.transferMode}d to ` + newurl + ": " + content.size)  
+          lively.notify(`${this.transferMode}d to ` + newurl + ": " + content.size)  
+        }
+        this.show(newurl, content)
       }
-      this.show(newurl, content)
-    }
+    }  
   }
   
   updateOtherNavbars(url) {  
@@ -120,7 +166,12 @@ export default class LivelyContainerNavbar extends Morph {
     await this.showSublist()
   }
   
+  getSelection() {
+    return _.map(this.shadowRoot.querySelectorAll(".selected a"), ea => ea.href)
+  }
+  
   async show(targetUrl, sourceContent) {
+    
     this.sourceContent = sourceContent;
     this.url = "" + targetUrl;
     var filename = this.getFilename();
@@ -187,6 +238,7 @@ export default class LivelyContainerNavbar extends Morph {
       var link = document.createElement("a");
 
       if (ea.name == filename) this.targetItem = element;
+      
       if (this.targetItem) this.targetItem.classList.add("selected");
       
       var name = ea.name;
@@ -202,28 +254,26 @@ export default class LivelyContainerNavbar extends Morph {
       }
       
       // name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"")
-      link.innerHTML = icon + name;
+      link.innerHTML =  icon + name;
       var href = ea.href || ea.name;
-      
+      if (ea.type == "directory" && !href.endsWith("/")) {
+        href += "/"
+      }
       var otherUrl = href.match(/^https?:\/\//) ? href : root + "" + href;
       link.href = otherUrl;
 
-      link.onclick = () => {
-        this.followPath(otherUrl);
-        return false;
+      if (this.lastSelection && this.lastSelection.includes(otherUrl)) {
+        element.classList.add("selected")
+      }
+      
+      link.onclick = (evt) => { 
+        this.onItemClick(link, evt); 
+        return false
       };
+      link.addEventListener('dragstart', evt => this.onItemDragStart(link, evt))
       link.addEventListener('contextmenu', (evt) => {
-	        if (!evt.shiftKey) {
-            evt.preventDefault();
-            var menu = new ContextMenu(this, [
-              ["delete file", () => this.deleteFile(otherUrl)],
-              ["rename file", () => this.renameFile(otherUrl)],
-              ["new file", () => this.newfile(otherUrl)],
-              ["edit", () => lively.openBrowser(otherUrl, true)],
-              ["browse", () => lively.openBrowser(otherUrl)],
-              
-            ]);
-            menu.openIn(document.body, evt, this);
+          if (!evt.shiftKey) {
+            this.onContextMenu(evt, otherUrl)
             evt.stopPropagation();
             evt.preventDefault();
             return true;
@@ -232,11 +282,43 @@ export default class LivelyContainerNavbar extends Morph {
       element.appendChild(link);
       navbar.appendChild(element);
     });
-    
+  }
   
-
+  onItemClick(link, evt) {
+    if (evt.shiftKey) {
+      this.lastSelection = this.getSelection()     
+    } else {
+      this.lastSelection = []
+    }
+    this.followPath(link.href );
+  }
+  
+  async editWithSyvis (url) {
+    const editor = await components.createComponent('syvis-editor');
+    await editor.loadUrl(url);
+    await components.openInWindow(editor);
   }
 
+  onContextMenu(evt, otherUrl) {
+    const menuElements = [
+      ["delete file", () => this.deleteFile(otherUrl)],
+      ["rename file", () => this.renameFile(otherUrl)],
+      ["new file", () => this.newfile(otherUrl)],
+      ["edit", () => lively.openBrowser(otherUrl, true)],
+      ["browse", () => lively.openBrowser(otherUrl)],
+      ["save as png", () => lively.html.saveAsPNG(otherUrl)],
+      ["copy path to clipboard", () => copyTextToClipboard(otherUrl)],
+      ["copy file name to clipboard", () => copyTextToClipboard(otherUrl::fileName())],
+    ];
+    
+    if (Preferences.get('EnableSyvisEditor')) {
+      menuElements.push(['edit with syvis', () => this.editWithSyvis(otherUrl)]);
+    }
+    
+    const menu = new ContextMenu(this, menuElements)
+    menu.openIn(document.body, evt, this)
+  }
+  
   deleteFile(url) {
     lively.notify("please implement deleteFile()")
   }
@@ -254,7 +336,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   followPath(url) {
-    this.show(new URL(url +"/"),"")
+    this.show(new URL(url),"")
   }
 
   async showSublist() {
@@ -270,15 +352,15 @@ export default class LivelyContainerNavbar extends Morph {
         return;
       }
       // fill navbar with list of script
-      Array.from(template.content.querySelectorAll("script")).forEach((ea) => {
-	      var element = document.createElement("li");
-	      element.innerHTML = ea.getAttribute('data-name');
-	      element.classList.add("subitem");
-	      element.onclick = () => {
-	        this.navigateToName(
-	          "data-name=\""+ea.getAttribute('data-name')+'"');
-	      };
-	      subList.appendChild(element) ;
+      Array.from(template.content.querySelectorAll("script")).forEach(ea => {
+        var element = document.createElement("li");
+        element.innerHTML = ea.getAttribute('data-name');
+        element.classList.add("subitem");
+        element.onclick = () => {
+          this.navigateToName(
+            `data-name="${ea.getAttribute('data-name')}"`);
+        };
+        subList.appendChild(element) ;
       });
     } else if (this.url.match(/\.js$/)) {
       // |async\\s+
@@ -304,11 +386,11 @@ export default class LivelyContainerNavbar extends Morph {
             let name = (line.replace(/[A-Za-z].*/g,"")).replace(/\s/g, "&nbsp;") + theMatch,
                 navigateToName = m[0],
                 element = document.createElement("li");
-    	      element.innerHTML = name;
-    	      element.classList.add("link");
-    	      element.classList.add("subitem");
-    	      element.onclick = () => this.navigateToName(navigateToName);
-    	      subList.appendChild(element) ;
+            element.innerHTML = name;
+            element.classList.add("link");
+            element.classList.add("subitem");
+            element.onclick = () => this.navigateToName(navigateToName);
+            subList.appendChild(element) ;
           }
         }
       });
@@ -325,15 +407,15 @@ export default class LivelyContainerNavbar extends Morph {
       _.keys(links).forEach( name => {
         var item = links[name];
         var element = document.createElement("li");
-  	    element.textContent = name.replace(/<.*?>/g,"");
-  	    element.classList.add("link");
-  	    element.classList.add("subitem");
-  	    element.classList.add("level" + item.level);
+        element.textContent = name.replace(/<.*?>/g,"");
+        element.classList.add("link");
+        element.classList.add("subitem");
+        element.classList.add("level" + item.level);
 
-  	    element.onclick = () => {
-  	        this.navigateToName(item.name);
-  	    };
-  	    subList.appendChild(element);
+        element.onclick = () => {
+          this.navigateToName(item.name);
+        };
+        subList.appendChild(element);
       });
     }
   }
@@ -348,8 +430,5 @@ export default class LivelyContainerNavbar extends Morph {
     var content = await fetch(url).then(r => r.text())
     await this.show(url, content)
     this.showSublist()
-    
   }
-  
-  
 }

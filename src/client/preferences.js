@@ -4,13 +4,15 @@ import components from './morphic/component-loader.js';
  * Stores page-specific preferences in the body, so it gets saved/loaded with other content
  */
 
-
 export default class Preferences {
   
   static load() {
-    this.defaults = {
-      gridSize: {default: 100, short: "grid size"},
-      snapSize: {default: 20, short: "snap size"},
+    console.info('Load preferences')
+    
+    // Keys must be upper case
+    const defaults = {
+      GridSize: {default: 100, short: "grid size"},
+      SnapSize: {default: 20, short: "snap size"},
       SnapPaddingSize: {default: 20, short: "padding while snapping size"},
       SnapWindowsInGrid: {default: false, short: "snap windows in grid"},
       ShowFixedBrowser: {default: true, short: "show fixed browser"},
@@ -19,13 +21,31 @@ export default class Preferences {
       DisableAExpWorkspace: {default: false, short: "disable AExp in workspace"},
       DisableAltGrab: {default: false, short: "disable alt grab with hand"},
       UseAsyncWorkspace: {default: false, short: "support await in eval"},
-      UseTernInCodeMirror: {default: true, short: "enable tern autocomplete and navigation"},
-      CtrlAsHaloModifier: {default: false, short: "ctrl key as halo modifier"}
-    };
+      UseTernInCodeMirror: {default: false, short: "enable tern autocomplete and navigation"},
+      CtrlAsHaloModifier: {default: false, short: "ctrl key as halo modifier"},
+      EnableSyvisEditor: {default: false, short: 'Enable syvis editor'},
+    }
+    
+    // Make defaults immutable
+    Object.freeze(defaults)
+    this.defaults = defaults
+    
+  }
+  
+  // List all avaiable preferences
+  static list () {
+    return Object
+      .keys(this.defaults)
   }
 
+  static listBooleans () {
+    return Object
+      .keys(this.defaults).filter(ea => _.isBoolean(this.defaults[ea].default))
+  }
+
+  
   static shortDescription(preferenceKey) {
-    var pref =  this.defaults[preferenceKey]
+    var pref = this.defaults[preferenceKey]
     if (pref && pref.short) 
       return pref.short
     else
@@ -33,13 +53,25 @@ export default class Preferences {
   }
   
   /* get preference, consider defaults */
-  static get(preferenceKey) {
-    var pref = this.read(preferenceKey)     
-    if (pref === undefined) {
-      var pref =  this.defaults[preferenceKey]
-      if (pref) return pref.default
-    } else  {
+  static get (preferenceKey) {
+    if (!preferenceKey) {
+      console.error('No preference key was specified')
+      return
+    }
+    
+    let pref = this.read(preferenceKey)
+    if (typeof pref === 'string') {
       return JSON.parse(pref)
+    }
+    
+    pref = this.defaults[preferenceKey]
+    if (!pref) {
+      console.error(`Preference "${preferenceKey}" does not exist`)
+      return
+    }
+    
+    if(pref.hasOwnProperty('default')) {
+      return pref.default
     }
   }
   
@@ -51,9 +83,11 @@ export default class Preferences {
   static get prefsNode() {
     if (this.node) return this.node
     // #BUG: reloading Preferences causes dataset to be not defined anymore
-    this.node = document.body.querySelector('lively-preferences');
+    this.node = document.body.querySelector('.lively-preferences');
     if (!this.node) {
-      this.node = document.createElement('lively-preferences')
+      lively.notify("create preferneces")
+      this.node = document.createElement('div'); // we cannot use custom comps they are async
+      this.node.classList.add("lively-preferences")
       this.node.classList.add("lively-content")
       components.openInBody(this.node)
     }
@@ -67,7 +101,10 @@ export default class Preferences {
   }
   
   static write(preferenceKey, preferenceValue) {
-    if(!this.prefsNode || !this.prefsNode.dataset) { return; }
+    if(!this.prefsNode) { return; }
+    if (!this.prefsNode.dataset) {
+      this.prefsNode.setAttribute("data-foo", true); // force dataset
+    }
     this.prefsNode.dataset[preferenceKey] = preferenceValue;
   }
   
@@ -81,19 +118,20 @@ export default class Preferences {
     this.applyPreference(preferenceKey)
   }
   
-  static applyPreference(preferenceKey) {
-    var msg = "on" +  preferenceKey[0].toUpperCase() + preferenceKey.slice(1) + "Preference"
-    if (lively[msg]) {
-      try {
-        var json = this.read(preferenceKey)
-        var config = JSON.parse(json)
-        lively[msg](config)
-      } catch(e) {
-        console.log("[preference] could not parse json: " + json)
-      }
-    } else {
-      console.log("[preference] lively does not understand: " + msg)
+  static applyPreference (preferenceKey) {
+    if (!preferenceKey) {
+      console.error('No preference key was specified')
+      return
     }
+    
+    const msg = `on${preferenceKey}Preference`
+    if (!lively[msg]) { 
+      console.warn(`[preference] No event handler registered for "${preferenceKey}"`)
+      return
+    }
+    
+    const config = this.get(preferenceKey)
+    lively[msg](config)
   }
   
   static loadPreferences() {

@@ -1,13 +1,15 @@
 import { uuid as generateUUID } from 'utils';
 import boundEval from 'src/client/bound-eval.js';
-import Morph from "templates/Morph.js"
+import Morph from "src/components/widgets/lively-morph.js"
 import diff from 'src/external/diff-match-patch.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import { debounce } from "utils";
 import Preferences from 'src/client/preferences.js';
 import {pt, rect} from 'src/client/graphics.js';
 import 'src/client/stablefocus.js';
-import Strings from 'src/client/strings.js'
+import Strings from 'src/client/strings.js';
+import { letsScript } from 'src/client/vivide/vivide.js';
+import { TernCodeMirrorWrapper } from 'src/client/reactive/tern-spike/tern-wrapper.js';
 
 let loadPromise = undefined;
 
@@ -42,9 +44,9 @@ export default class LivelyCodeMirror extends HTMLElement {
      return  lively4url + "/src/external/code-mirror/"
   }
 
-  static async loadModule(path) {
+  static async loadModule(path, force) {
     return lively.loadJavaScriptThroughDOM("codemirror_"+path.replace(/[^A-Za-z]/g,""),
-      this.codeMirrorPath + path)
+      this.codeMirrorPath + path, force)
   }
 
   static async loadCSS(path) {
@@ -52,8 +54,9 @@ export default class LivelyCodeMirror extends HTMLElement {
        this.codeMirrorPath + path)
   }
 
-  static async loadModules() {
-    if (loadPromise) return loadPromise
+  static async loadModules(force) {
+    console.log("loadModules", loadPromise);
+    if (loadPromise && !force) return loadPromise
     loadPromise = (async () => {
 
       await this.loadModule("lib/codemirror.js")
@@ -85,43 +88,57 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/dialog/dialog.js")
       await this.loadModule("addon/scroll/simplescrollbars.js")
 
+      //await System.import("https://raw.githubusercontent.com/jshint/jshint/master/dist/jshint.js");
+      //await lively.loadJavaScriptThroughDOM("jshintAjax", "https://ajax.aspnetcdn.com/ajax/jshint/r07/jshint.js");
+      //await lively.loadJavaScriptThroughDOM("eslint", "http://eslint.org/js/app/eslint.js");
+      await this.loadModule("addon/lint/lint.js");
+      await this.loadModule("addon/lint/javascript-lint.js");
+      await this.loadModule("../eslint.js");
+      await this.loadModule("../eslint-lint.js", force);
+
       await this.loadModule("addon/merge/merge.js")
       await this.loadModule("addon/selection/mark-selection.js")
-
       await this.loadModule("keymap/sublime.js")
-      await System.import(lively4url + '/templates/lively-code-mirror-hint.js')
-
-      await this.loadModule("addon/tern/tern.js")
-
-      var terndir = lively4url + '/src/external/tern/'
-      await lively.loadJavaScriptThroughDOM("tern_acorn", terndir + 'acorn.js')
-      await lively.loadJavaScriptThroughDOM("tern_acorn_loose", terndir + 'acorn_loose.js')
-      await lively.loadJavaScriptThroughDOM("tern_walk", terndir + 'walk.js')
-      await lively.loadJavaScriptThroughDOM("tern_polyfill", terndir + 'polyfill.js')
-      await lively.loadJavaScriptThroughDOM("tern_signal", terndir + 'signal.js')
-      await lively.loadJavaScriptThroughDOM("tern_tern", terndir + 'tern.js')
-      await lively.loadJavaScriptThroughDOM("tern_def", terndir + 'def.js')
-      await lively.loadJavaScriptThroughDOM("tern_comment", terndir + 'comment.js')
-      await lively.loadJavaScriptThroughDOM("tern_infer", terndir + 'infer.js')
-      await lively.loadJavaScriptThroughDOM("tern_plugin_modules", terndir + 'modules.js')
-      await lively.loadJavaScriptThroughDOM("tern_plugin_esmodules", terndir + 'es_modules.js')
-
+      await System.import(lively4url + '/src/components/widgets/lively-code-mirror-hint.js')
       
       this.loadCSS("addon/hint/show-hint.css")
-      this.loadCSS("../../../templates/lively-code-mirror.css")
+      this.loadCSS("addon/lint/lint.css")
+      lively.loadCSSThroughDOM("CodeMirrorCSS", lively4url + "/src/components/widgets/lively-code-mirror.css")
     })()
     return loadPromise
   }
 
+  
+  static async loadTernModules() {
+    if (this.ternIsLoaded) return;
+
+    await this.loadModule("addon/tern/tern.js")
+
+    var terndir = lively4url + '/src/external/tern/'
+    await lively.loadJavaScriptThroughDOM("tern_acorn", terndir + 'acorn.js')
+    await lively.loadJavaScriptThroughDOM("tern_acorn_loose", terndir + 'acorn_loose.js')
+    await lively.loadJavaScriptThroughDOM("tern_walk", terndir + 'walk.js')
+    await lively.loadJavaScriptThroughDOM("tern_polyfill", terndir + 'polyfill.js')
+    await lively.loadJavaScriptThroughDOM("tern_signal", terndir + 'signal.js')
+    await lively.loadJavaScriptThroughDOM("tern_tern", terndir + 'tern.js')
+    await lively.loadJavaScriptThroughDOM("tern_def", terndir + 'def.js')
+    await lively.loadJavaScriptThroughDOM("tern_comment", terndir + 'comment.js')
+    await lively.loadJavaScriptThroughDOM("tern_infer", terndir + 'infer.js')
+    await lively.loadJavaScriptThroughDOM("tern_plugin_modules", terndir + 'modules.js')
+    await lively.loadJavaScriptThroughDOM("tern_plugin_esmodules", terndir + 'es_modules.js')
+    this.ternIsLoaded = true;
+  }
+  
   initialize() {
-  	this._attrObserver = new MutationObserver((mutations) => {
-	  mutations.forEach((mutation) => {  
+  	this._attrObserver = new MutationObserver(mutations => {
+	    mutations.forEach(mutation => {  
         if(mutation.type == "attributes") {
           // console.log("observation", mutation.attributeName,mutation.target.getAttribute(mutation.attributeName));
           this.attributeChangedCallback(
             mutation.attributeName,
             mutation.oldValue,
-            mutation.target.getAttribute(mutation.attributeName))
+            mutation.target.getAttribute(mutation.attributeName)
+          )
         }
       });
     });
@@ -158,7 +175,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.setEditor(CodeMirror(container, {
       value: value,
       lineNumbers: true,
-      gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter"]
+      gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter", "CodeMirror-lint-markers"],
+      lint: true
     }));  
   }
   
@@ -205,8 +223,16 @@ export default class LivelyCodeMirror extends HTMLElement {
 		editor.setOption("extraKeys", {
       "Alt-F": "findPersistent",
       // "Ctrl-F": "search",
+      // #KeyboardShortcut Ctrl-H search and replace
+      "Ctrl-H": (cm) => {
+        setTimeout(() => {
+            editor.execCommand("replace");
+            this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
+        }, 10)
+      },
+      // #KeyboardShortcut Ctrl-F search
       "Ctrl-F": (cm) => {
-		// something immediately grabs the "focus" and we close the search dialog..
+		    // something immediately grabs the "focus" and we close the search dialog..
         // #Hack... 
         setTimeout(() => {
             editor.execCommand("findPersistent");
@@ -214,41 +240,77 @@ export default class LivelyCodeMirror extends HTMLElement {
         }, 10)
         // editor.execCommand("find")
       },
+      // #KeyboardShortcut Ctrl-Space auto complete
       "Ctrl-Space": cm => {
         this.fixHintsPosition()
         cm.execCommand("autocomplete")
       },
+      // #KeyboardShortcut Ctrl-Alt-Space auto complete
       "Ctrl-Alt-Space": cm => {
         this.fixHintsPosition()
         cm.execCommand("autocomplete")
       },
+      // #KeyboardShortcut Ctrl-P eval and print selelection or line
       "Ctrl-P": (cm) => {
           let text = this.getSelectionOrLine()
           this.tryBoundEval(text, true);
       },
+      // #KeyboardShortcut Ctrl-I eval and inspect selection or line 
       "Ctrl-I": (cm) => {
         let text = this.getSelectionOrLine()
         this.inspectIt(text)
       },
+      // #KeyboardShortcut Ctrl-I eval selection or line (do it) 
       "Ctrl-D": (cm, b, c) => {
-        	let text = this.getSelectionOrLine()
+        	let text = this.getSelectionOrLine();
           this.tryBoundEval(text, false);
         	return true
       },
-  		"Ctrl-Alt-Right": "selectNextOccurrence", 
+      // #KeyboardShortcut Ctrl-Alt-Right multiselect next 
+      "Ctrl-Alt-Right": "selectNextOccurrence", 
+      // #KeyboardShortcut Ctrl-Alt-Right undo multiselect
   		"Ctrl-Alt-Left": "undoSelection", 
+      
+      // #KeyboardShortcut Ctrl-/ indent slelection
       "Ctrl-/": "toggleCommentIndented",
-    	'Tab': (cm) => {
+      // #KeyboardShortcut Ctrl-# indent slelection
+      "Ctrl-#": "toggleCommentIndented",
+      // #KeyboardShortcut Tab insert tab or soft indent 
+      'Tab': (cm) => {
         if (cm.somethingSelected()) {
     			cm.indentSelection("add");
   			} else {
         	cm.execCommand('insertSoftTab')
         }
       },
+      // #KeyboardShortcut Ctrl-S save content
       "Ctrl-S": (cm) => {          
-        this.doSave(editor.getValue());
+        this.doSave(cm.getValue());
       },
-      
+      // #KeyboardShortcut Ctrl-Alt-V eval and open in vivide
+      "Ctrl-Alt-V": async cm => {          
+        let text = this.getSelectionOrLine();
+        let result = await this.tryBoundEval(text, false);
+        letsScript(result);
+      },
+      // #KeyboardShortcut Ctrl-Alt-C show type using tern      
+      "Ctrl-Alt-I": cm => {
+        TernCodeMirrorWrapper.showType(cm, this);
+      },
+      // #KeyboardShortcut Alt-. jump to definition using tern
+      "Alt-.": cm => {
+        lively.error("JUMP TO DEFINITION")
+        TernCodeMirrorWrapper.jumpToDefinition(cm, this);
+      },
+      // #KeyboardShortcut Alt-, jump back from definition using tern
+      "Alt-,": cm => {
+        TernCodeMirrorWrapper.jumpBack(cm, this);
+      },
+      // #KeyboardShortcut Shift-Alt-. show references using tern
+      "Shift-Alt-.": cm => {
+        TernCodeMirrorWrapper.showReferences(cm, this);
+      },
+      // #KeyboardShortcut Alt-C capitalize letter      
       // #copied from keymap/emacs.js
       "Alt-C": repeated(function(cm) {
       operateOnWord(cm, function(w) {
@@ -258,6 +320,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       });
     }),
     });
+    editor.on("cursorActivity", cm => TernCodeMirrorWrapper.updateArgHints(cm, this));
     editor.setOption("hintOptions", {
       container: this.shadowRoot.querySelector("#code-mirror-hints"),
       codemirror: this,
@@ -327,14 +390,15 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   getTargetModule() {
-    return this.targetModule;
+    // lazily initialize a target module name as fallback
+    return this.targetModule || (this.targetModule = 'unnamed_module_' + generateUUID().replace(/-/g, '_'));
   }
 
   setTargetModule(module) {
     return this.targetModule = module;
   }
 
-  async boundEval(str, context) {
+  async boundEval(str) {
     // console.log("bound eval " + str)
     
     // Ensure target module loaded (for .js files only)
@@ -343,6 +407,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     if(MODULE_MATCHER.test(this.getTargetModule())) {
       await System.import(this.getTargetModule())
     } 
+    console.log("EVAL (CM)", this.getTargetModule());
     // src, topLevelVariables, thisReference, <- finalStatement
     return boundEval(str, this.getDoitContext(), this.getTargetModule());
   }
@@ -368,48 +433,77 @@ export default class LivelyCodeMirror extends HTMLElement {
     return promise
   }
   
-  printResult(result, obj) {
+  
+  async printResult(result, obj, isPromise) {
     var editor = this.editor;
     var text = result
+    var isAsync = false
     this.editor.setCursor(this.editor.getCursor("end"))
     // don't replace existing selection
     this.editor.replaceSelection(result, "around")
-    
+    if (obj && obj.__asyncresult__) {
+      obj = obj.__asyncresult__; // should be handled in bound-eval.js #TODO
+      isAsync = true
+    }
+    var promisedWidget
+    var objClass = (obj && obj.constructor && obj.constructor.name) || (typeof obj)
+    if (_.isSet(obj)) {
+      obj = Array.from(obj)
+    }
+
+    if (_.isMap(obj)) {
+      var mapObj = {}
+      Array.from(obj.keys()).sort().forEach(key => mapObj[key] = obj.get(key))
+      obj = mapObj
+    }
     if (Array.isArray(obj)) {
       if (typeof obj[0] == 'object') {
-        this.printWidget("lively-table").then( table => {
+        promisedWidget = this.printWidget("lively-table").then( table => {
           table.setFromJSO(obj)      
           table.style.maxHeight = "300px"
-          table.style.overflow = "auto"    
+          table.style.overflow = "auto"
+          return table
         })
       } else {
-        this.printWidget("lively-table").then( table => {
+        promisedWidget = this.printWidget("lively-table").then( table => {
           table.setFromJSO(obj.map((ea,index) => { return {index:index, value: ea}}))      
           table.style.maxHeight = "300px"
-          table.style.overflow = "auto"    
+          table.style.overflow = "auto"
+          return table
         })
       }
     } else if ((typeof obj == 'object') && (obj !== null)) {
-      this.printWidget("lively-inspector").then( inspector => {
+      promisedWidget = this.printWidget("lively-inspector").then( inspector => {
         inspector.inspect(obj)
-        inspector.hideWorkspace()   
+        inspector.hideWorkspace()
+        return inspector
       })
     }
+    if (promisedWidget) {
+      var widget = await promisedWidget;
+      var span = <span style="border-top:2px solid darkgray;color:darkblue">
+        {isPromise ? "PROMISED" : ""} <u>:{objClass}</u> </span>
+      widget.parentElement.insertBefore(span, widget)
+      span.appendChild(widget)
+      if (isAsync && promisedWidget) {
+        if (widget) widget.style.border = "2px dashed blue"
+      }
+    } 
   }
+    
 
   async tryBoundEval(str, printResult) {
-    var resp;
-    resp = await this.boundEval(str, this.getDoitContext())
+    var resp = await this.boundEval(str);
     if (resp.isError) {
-      var e = resp.value
-      console.error(e)
+      var e = resp.value;
+      console.error(e);
       if (printResult) {
-        window.LastError = e
-        this.printResult("" +e)
+        window.LastError = e;
+        this.printResult("" + e);
       } else {
-        lively.handleError(e)
+        lively.handleError(e);
       }
-      return e
+      return e;
     }
     var result = resp.value
     var obj2string = function(obj) {
@@ -424,11 +518,11 @@ export default class LivelyCodeMirror extends HTMLElement {
     
     if (printResult) {
       // alaways wait on promises.. when interactively working...
-      if (result && result.then) { 
+      if (result && result.then && result instanceof Promise) { 
         // we will definitly return a promise on which we can wait here
         result
           .then( result => {
-            this.printResult("RESOLVED: " + obj2string(result), result)
+            this.printResult("RESOLVED: " + obj2string(result), result, true)
           })
           .catch( error => {
             console.error(error);
@@ -446,7 +540,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   async inspectIt(str) {
-    var result =  await this.boundEval(str, this.getDoitContext()) 
+    var result =  await this.boundEval(str);
     if (!result.isError) {
       result = result.value 
     }
@@ -585,6 +679,8 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   
   async enableTern() {
+    await LivelyCodeMirror.loadTernModules()
+    
     var ecmascriptdefs = await fetch(lively4url + "/src/external/tern/ecmascript.json").then(r => r.json())
     var browserdefs = await fetch(lively4url + "/src/external/tern/browser.json").then(r => r.json())
     // var chaidefs = await fetch(lively4url + "/src/external/tern/chai.json").then(r => r.json())

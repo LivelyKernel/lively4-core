@@ -1,7 +1,9 @@
 // #Clipboard - Cut,Copy, and Paste for Lively4
 
+/* global that,HaloService */
+
 import {pt} from 'src/client/graphics.js';
-import Halo from "templates/lively-halo.js";
+import Halo from "src/components/halo/lively-halo.js";
 import { uuid as generateUUID } from 'utils';
 import persistence from "src/client/persistence.js"
 
@@ -27,7 +29,7 @@ export default class Clipboard {
     }
     this.onCopy(evt)
     if (lively.selection.nodes.length > 0) {
-      var html = lively.selection.nodes.forEach(ea => {
+      lively.selection.nodes.forEach(ea => {
         ea.remove()
       })
       lively.selection.remove()
@@ -35,13 +37,21 @@ export default class Clipboard {
     } else {
       that.remove()
     }
-    // lively.notify("hide halos")
     Halo.hideHalos()
   }
   
+  static nodesToHTML(nodes) {
+    // prepare for serialization
+    nodes.forEach(node => {
+      node.querySelectorAll("*").forEach( ea => {
+        if (ea.livelyPrepareSave) ea.livelyPrepareSave();
+      });
+    })
+    
+    return nodes.map(ea => ea.outerHTML).join("\n")
+  }
+  
   static onCopy(evt) {
-    // lively.notify("on copy")
-
     if ((!HaloService.areHalosActive() || !that)) {
       return;
     }
@@ -53,37 +63,15 @@ export default class Clipboard {
     } else if ((that !== undefined)) {
       nodes = [that]
     }
-
-    // prepare for serialization
-    nodes.forEach(node => {
-      node.querySelectorAll("*").forEach( ea => {
-        if (ea.livelyPrepareSave) ea.livelyPrepareSave();
-      });
-    })
-    
-    var html = nodes.map(ea => ea.outerHTML).join("\n")
+    var html = this.nodesToHTML(nodes)
     evt.clipboardData.setData('text/plain', html);
     evt.clipboardData.setData('text/html', html);
   }
   
-  
-  static pasteHTMLDataInto(data, container) {
-    // add everthing into a container 
-    var div = document.createElement("div")
-    div.classList.add("lively-content")
-    lively.setExtent(div, pt(800,10))
-    div.innerHTML = data
-    container.appendChild(div)
-    lively.setPosition(div, pt(0,0))
-
-    // paste oriented at a shared topLeft
-    var all = Array.from(div.querySelectorAll(":scope > *"))
+  static initializeElements(all) {
     all.forEach(child => {
-      persistence.initLivelyObject(child)
-      
-      var id = child.getAttribute("data-lively-id")
-      child.remove()
-      
+      persistence.initLivelyObject(child)      
+      var id = child.getAttribute("data-lively-id")    
       // if we have an ID, some other me might be lying around somewhere...
       if (id) {
         var otherMe = lively.elementByID(id)
@@ -102,41 +90,55 @@ export default class Clipboard {
           })
         }
       }
-      div.appendChild(child)
      })
+  }
+  
+  static getTopLeft(elements) {
     var topLeft
-    all.forEach(ea => {
+    elements.forEach(ea => {
       if (!topLeft) 
         topLeft = lively.getGlobalPosition(ea);
       else
         topLeft = topLeft.minPt(lively.getGlobalPosition(ea))
     })
-    var offset = (this.lastClickPos || pt(0,0)).subPt(topLeft)
-    
+    return topLeft || pt(0,0)
+  }
+  
+  static pasteHTMLDataInto(data, container, flat, pos=this.lastClickPos) {
+    // add everthing into a container 
+    var div = document.createElement("div")
+    div.classList.add("lively-content")
+    lively.setExtent(div, pt(800,10))
+    div.innerHTML = data
+    container.appendChild(div)
+    lively.setPosition(div, pt(0,0))
+
+    // paste oriented at a shared topLeft
+    var topLevel = Array.from(div.querySelectorAll(":scope > *"))
+    var all = Array.from(div.querySelectorAll("*"))
+    this.initializeElements(all)
+    topLevel.forEach(ea => div.appendChild(ea))
+    var offset = (pos || pt(0,0)).subPt(this.getTopLeft(topLevel))
     var result = div
-    all.forEach(child => {
+    
+    // #TODO #CleanUp
+    topLevel.forEach(child => {
       if (child.classList.contains("lively-content") || child.tagName == "LIVELY-WINDOW") {
         container.appendChild(child)
         lively.moveBy(child, offset)
-        result = child
-      } else {
-        // child.classList.add("lively-content")
+        result = child; // return last result?
       }
-      // lively.showPath([
-      //   lively.getGlobalPosition(child,),
-      //   lively.getGlobalPosition(child).addPt(offset)
-      // ])
-    })
-     // attach lively4script from the instance
-   
-    
+    })   
     // clean up if neccesary
     if (div.childNodes.length == 0) {
       div.remove() // and get rid of the tmp container
     } else {
       // ajust position and content size
-      lively.setGlobalPosition(div, this.lastClickPos || pt(0,0))
+      lively.setGlobalPosition(div, pos || pt(0,0))
       div.style.height = "max-content"
+    }
+    if (flat) {
+      return topLevel
     }
     return result
   }
@@ -164,7 +166,7 @@ export default class Clipboard {
       return 
     }
 
-    var data = evt.clipboardData.getData('text/plain')
+    data = evt.clipboardData.getData('text/plain')
     if (data) {
        this.pasteTextDataInto(data, this.lastTarget) 
       return 
@@ -191,7 +193,6 @@ export default class Clipboard {
       evt.preventDefault(); 
       return 
     }
- 
   }
 
   static highlight(element) {

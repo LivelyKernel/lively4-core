@@ -2,9 +2,10 @@
  * # LivelyInspector 
  * A tool similar to the chrome "Elements" pane and the JavaScript object explorer
  */
-import Morph from 'templates/Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import {sortAlphaNum} from "src/client/sort.js"
+import { getTempKeyFor } from 'utils';
 
 function truncateString(s, length, truncation) {
   length = length || 30;
@@ -28,8 +29,7 @@ export default class Inspector   extends Morph {
 
   displayValue(value, expand, name) {
     if (name) {
-      var node = document.createElement("div");
-      node.classList.add("element");
+      var node = <div class="element"></div>;
       node.innerHTML = "<span class='attrName'>"+ name +":</span> <span class='attrValue'>"+ JSON.stringify(value).replace(/</g,"&lt;")+"</span>";
       return node;
     } else {
@@ -42,20 +42,23 @@ export default class Inspector   extends Morph {
   onContextMenu(evt) {
     if (this.targetObject && !evt.shiftKey) { 
       evt.preventDefault();
+      evt.stopPropagation();
       if (this.targetObject instanceof Array) {
         var menu = new ContextMenu(this, [
               ["inspect as table", () => Inspector.inspectArrayAsTable(this.targetObject)],
             ]);
         menu.openIn(document.body, evt, this);
-      } else if (this.tagName) {
-  	    lively.openContextMenu(document.body, evt, this.selection || this.targetObject);
+      } else if (this.targetObject.tagName) {
+        // for all html elements
+        lively.openContextMenu(document.body, evt, this.selection || this.targetObject);
+        return true
       }
 	    return false;
     } 
   }
 
   displayFunction(value, expand, name) {
-    var node = document.createElement("div");
+    var node = <div></div>;;
     node.classList.add("element");
     node.innerHTML =  "<span class='attrName'>"+ name +":</span> <span class='attrValue'>" + ("" +value).replace(/</g,"&lt;") + "</span>";
     return node;
@@ -88,12 +91,12 @@ export default class Inspector   extends Morph {
       className = obj.type
     }
     
-    node.innerHTML = `${this.expandTemplate(node)}`+
-      ` <span class='attrName expand'> ${name}</span><span class="syntax">:</span>
-      <a id='tagname' class='tagname'>${className}</a> `+
-      '<span class="syntax">{'+"</span>" +
+    node.innerHTML = this.expandTemplate(node) +
+      `<span class='attrName expand'> ${name}</span><span class="syntax">:</span>
+      <a id='tagname' class='tagname'>${className}</a> ` +
+      '<span class="syntax">{</span>' +
        this.contentTemplate() +
-      '<span class="syntax">}'+"</span>";
+      '<span class="syntax">}</span>';
   
     this.attachHandlers(node, obj, name, "renderObject");
     
@@ -112,9 +115,9 @@ export default class Inspector   extends Morph {
           console.log("[inspector] could not display " + ea + " of " + obj)
           return
         }
-        if (value == null) return  
+        if (value == null) return;  
         var childNode = this.displayObject(value, false, ea, obj)
-        if (childNode) contentNode.appendChild(childNode); // force object display
+        if (childNode) contentNode.appendChild(childNode); // force object display        
       });
     }
   }
@@ -127,8 +130,7 @@ export default class Inspector   extends Morph {
       return this.displayFunction(obj, expand, name); // even when displaying objects.
     }
     
-    var node = document.createElement("div");
-    node.classList.add("element");
+    var node = <div class="element"></div>;
     node.pattern = "NAME " + name
     node.name = name
     this.renderObject(node, obj, expand, name);
@@ -155,21 +157,27 @@ export default class Inspector   extends Morph {
     return `<span class='syntax'>"</span>`;
   }
   
-  attachHandlers(node, obj, name, renderCall) {
-    node.target = obj
-    renderCall = renderCall || "render"    
+  attachHandlers(node, obj, name, renderCall = "render") {
+    node.target = obj;
     // jqyery would make this cleaner here...
     var moreNode = node.querySelector("#more");
-    if (moreNode) moreNode.onclick = (evt) => {
-      this[renderCall](node, obj, true, name);
+    if (moreNode) {
+      moreNode.onclick = evt => {
+        this[renderCall](node, obj, true, name);
+      };
+      // #TODO: does not work, ... yet
+      moreNode.draggable="true";
+      moreNode.addEventListener('dragstart', evt => {
+        evt.dataTransfer.setData("javascript/object", getTempKeyFor(obj));
+      });
     };
     node.querySelectorAll(".expand").forEach(expandNode => {
-      expandNode.onclick = (evt) => {
+      expandNode.onclick = evt => {
         this[renderCall](node, obj, !node.isExpanded, name);
       }
-    })
-    var tagNode = node.querySelector("#tagname");
-    if (tagNode) tagNode.addEventListener('click',(evt) => {
+    });
+    const tagNode = node.querySelector("#tagname");
+    if (tagNode) tagNode.addEventListener('click', evt => {
       this.onSelect(node, obj);
     });
   }
@@ -264,7 +272,7 @@ export default class Inspector   extends Morph {
         contentNode.innerHTML = obj.textContent.replace(/</,"&lt;").replace(/>/,"&gt;");
       }
       if (obj.shadowRoot) {
-        contentNode.appendChild(this.display(obj.shadowRoot, expandChildren, null, obj))  ;
+        contentNode.appendChild(this.display(obj.shadowRoot, expandChildren, null, obj));
       }  
       obj.childNodes.forEach( ea => { 
         contentNode.appendChild(this.display(ea, expandChildren, null, obj));
@@ -313,17 +321,17 @@ export default class Inspector   extends Morph {
       };
       return node;
     } else if (obj.tagName) {
-      node = document.createElement("div");
-      node.setAttribute("class","element tag");
+      node = <div></div>;
+      node.setAttribute("class", "element tag");
     } else if (obj instanceof ShadowRoot) {
-      node = document.createElement("div");
-      node.setAttribute("class","element shadowroot");
+      node = <div></div>;
+      node.setAttribute("class", "element shadowroot");
     } else if (obj instanceof Comment) {
-      node = document.createElement("div");
-      node.setAttribute("class","element comment");
+      node = <div></div>;
+      node.setAttribute("class", "element comment");
     } else if (obj instanceof Node) {
-      node = document.createElement("div");
-      node.setAttribute("class","element");
+      node = <div></div>;
+      node.setAttribute("class", "element");
     } else {
       // Fallback... 
       node = document.createElement("span");
@@ -411,17 +419,15 @@ export default class Inspector   extends Morph {
   }
   
   hideWorkspace() {
-    this.get("#container").style.flex = 1
-    this.get("#editor").style.display = "none"
-    this.get("lively-separator").style.display = "none"
-
+    this.get("#container").style.flex = 1;
+    this.get("#editor").style.display = "none";
+    this.get("lively-separator").style.display = "none";
   }
 
   showWorkspace() {
-    this.get("#container").style.flex = 0.66
-    this.get("#editor").style.display = "block"
-    this.get("lively-separator").style.display = "block"
-
+    this.get("#container").style.flex = 0.66;
+    this.get("#editor").style.display = "block";
+    this.get("lively-separator").style.display = "block";
   }
   
   
@@ -500,13 +506,12 @@ export default class Inspector   extends Morph {
   }
   
   static inspectArrayAsTable(array) {
-    var div = document.createElement("div")
+    var div = <div></div>;
     div.innerHTML = "<table>" +lively.allKeys(array[0]).map( key => {
     	return "<tr><td><b>" + key +"</b></td>" + array.map( ea =>  "<td>" + (ea[key] + "").slice(0, 50) +"</td>").join("")+"</tr>"
-    }).join("\n") + "</table>"
-    div.style.overflow = "auto"
-    lively.components.openInWindow(div, undefined, "Inspect Array")
-    
+    }).join("\n") + "</table>";
+    div.style.overflow = "auto";
+    lively.components.openInWindow(div, undefined, "Inspect Array");
   }
   
   livelyExample() {

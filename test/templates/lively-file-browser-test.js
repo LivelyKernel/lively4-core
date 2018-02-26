@@ -1,8 +1,5 @@
-import {expect} from '../../node_modules/chai/chai.js';
+import {expect} from 'src/external/chai.js';
 import {testWorld, loadComponent} from './templates-fixture.js';
-
-window.expect = expect;
-System.import(lively4url + '/node_modules/chai/chai.js').then( m => window.expect = m.expect);
 
 describe("File Browser Tool",  function() {
 

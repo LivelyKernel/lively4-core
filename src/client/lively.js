@@ -21,15 +21,16 @@ import authGoogledrive  from './auth-googledrive.js';
 import expose from './expose.js';
 import { toArray, uuid as generateUUID } from 'utils';
 import {pt, rect} from './graphics.js';
-import Dialog from 'templates/lively-dialog.js'
+import Dialog from 'src/components/widgets/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
 
 /* expose external modules */
-import color from '../external/tinycolor.js';
+// import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
-import Selection from 'templates/lively-selection.js'
+import Selection from 'src/components/halo/lively-selection.js'
 import windows from "src/components/widgets/lively-window.js"
-import boundEval from "src/client/bound-eval.js";
+
+import "src/client/poid.js"; // custom fetch
 
 let $ = window.$; // known global variables.
 
@@ -44,7 +45,7 @@ var exportmodules = [
   "html",
   "components",
   "persistence",
-  "color",
+  // "color",
   "focalStorage",
   "authGithub",
   "authDropbox",
@@ -86,13 +87,17 @@ export default class Lively {
   }
   
   // #TODO remove code duplication lively-con
-  static unloadModule(path) {
+  static async unloadModule(path) {
     var normalizedPath = System.normalizeSync(path)
-    System.import(normalizedPath).then(module => {
-      if(module && typeof module.__unload__ === "function") {
-        module.__unload__();
-      }
-    });
+    try {
+      await System.import(normalizedPath).then(module => {
+        if(module && typeof module.__unload__ === "function") {
+          module.__unload__();
+        }
+      });
+    } catch(e) {
+      console.log("WARNING: error while trying to unload " + path)
+    }
     System.registry.delete(normalizedPath);
     // #Hack #issue in SystemJS babel syntax errors do not clear errors
     System['@@registerRegistry'][normalizedPath] = undefined;
@@ -100,17 +105,17 @@ export default class Lively {
   }
 
   static async reloadModule(path) {
+    // console.log("reload module " + path)
     path = "" + path;
     var changedModule = System.normalizeSync(path);
     var load = System.loads[changedModule]
     if (!load) {
-      
-	    this.unloadModule(path) // just to be sure...
-      console.log("Don't reload non-loaded module")
+      await this.unloadModule(path) // just to be sure...
+      console.warn("Don't reload non-loaded module")
       return   
     }
-    var modulePaths = [path]
-    this.unloadModule(path)
+    var modulePaths = [path];
+    await this.unloadModule(path);
     return System.import(path).then( m => {
       
       // #TODO how can we make the dependecy loading optional... I don't need the whole environment to relaod while developing a core module everybody depends on
@@ -124,26 +129,24 @@ export default class Lively {
       // and update them
       for(var ea of dependedModules) {
         modulePaths.push(ea)
-        console.log("reload " + path + " triggers reload of " + ea)
+        // console.log("reload " + path + " triggers reload of " + ea)
         System.registry.delete(ea)  
         System.import(ea)
         // #TODO think about if this is ennough or if we need some kind of recursion
       }
       return m
     }).then( mod => {
-      var moduleName = path.replace(/[^\/]*/,"");
-      
+      var moduleName = path.replace(/[^/]*/,"");
       var defaultClass = mod.default;
-      
       if (defaultClass) {
         console.log("update template prototype: " + moduleName);
         components.updatePrototype(defaultClass.prototype);
       }
-   
       return mod;
     }).then(async (mod) => {
-      modulePaths.forEach(eaPath => {
-        // lively.notify("update dependend: ", eaPath, 3, "blue")
+      // console.log("UPDATE TEMPLATES ");
+      [path].concat(modulePaths).forEach(eaPath => {
+        console.log("update dependend: ", eaPath, 3, "blue")
         var found = lively.components.getTemplatePaths().find(templatePath => eaPath.match(templatePath))
         if (found) {
           var templateURL = eaPath.replace(/\.js$/,".html");
@@ -179,7 +182,7 @@ export default class Lively {
       script.charset="utf-8";
       script.type="text/javascript";
       if (force) {
-        src += "?" + Date.now();
+        src = src + ("?" + Date.now());
       }
       script.src= src;
       script.onload = function() {
@@ -268,7 +271,7 @@ export default class Lively {
     //     var nativeLog = console.log;
     //     console.log = function() {
     //         nativeLog.apply(console, arguments);
-    //         lively.log.apply(undefined, arguments);
+    //         console.log.apply(undefined, arguments);
     //     };
     //     console.log.originalFunction = nativeLog; // #TODO use generic Wrapper mechanism here
     // }
@@ -276,7 +279,7 @@ export default class Lively {
     //     var nativeError = console.error;
     //     console.error = function() {
     //         nativeError.apply(console, arguments);
-    //         lively.log.apply(undefined, arguments);
+    //         console.log.apply(undefined, arguments);
     //     };
     //     console.error.originalFunction = nativeError; // #TODO use generic Wrapper mechanism here
     // }
@@ -370,29 +373,31 @@ export default class Lively {
     // }
     return element
   }
-  
-  static boundEval(str, ctx) {
-    // #TODO refactor away
-    // lively.notify("lively.boundEval is depricated")
-    return boundEval(str, ctx)
-  }
 
   static pt(x,y) {
     return {x: x, y: y};
   }
 
   static setPosition(obj, point, mode) {
+    if (obj instanceof SVGElement && !(obj instanceof SVGSVGElement)) {
+      if (obj.transform && obj.transform.baseVal) {
+        // get the position of an svg element
+        var t = obj.transform.baseVal.consolidate()
+        if (t) {
+          t.setTranslate(point.x,point.y)
+        } else {
+          obj.setAttribute("transform", `translate(${point.x}, ${point.y})`)
+        }
+      } else {
+        throw new Error("path has no transformation")
+      }
+    } else {
+      // normal DOM Element
       obj.style.position = mode || "absolute";
-
-      // var bounds = that.getBoundingClientRect().top
-      //var deltax = point.x - bounds.left
-      // var deltay = point.y - bounds.top
-
-      // obj.style.left = ""+  ((obj.style.left || 0) - deltax) + "px";
-      // obj.style.top = "" + ((obj.style.top || 0) - deltay) + "px";
       obj.style.left = ""+  point.x + "px";
       obj.style.top = "" +  point.y + "px";
-      obj.dispatchEvent(new CustomEvent("position-changed"))
+      obj.dispatchEvent(new CustomEvent("position-changed"))      
+    }
   }
   
   
@@ -400,7 +405,22 @@ export default class Lively {
   
   static getPosition(obj) {
     var pos;
-    if (obj.clientX)
+    if (obj instanceof SVGElement && !(obj instanceof SVGSVGElement)) {
+      if (obj.transform && obj.transform.baseVal) {
+        // get the position of an svg element
+        var t = obj.transform.baseVal.consolidate()
+        if (!t) return pt(0,0)
+        var m = t.matrix
+        var p = new DOMPoint(0, 0)    
+        var r = p.matrixTransform(m)
+        if (!r || !r.x ) return pt(0,0)
+        return pt(r.x / r.w, r.y / r.w)      
+      } else {
+        throw new Error("path has no transformation")
+      }
+    }
+    
+    if (obj.clientX !== undefined)
       return pt(obj.clientX, obj.clientY);
     if (obj.style) {
       pos = pt(parseFloat(obj.style.left), parseFloat(obj.style.top));
@@ -423,12 +443,28 @@ export default class Lively {
   }
   
   static  setExtent(node, extent) {
-    node.style.width = '' + extent.x + 'px';
-    node.style.height = '' + extent.y + 'px';
-    node.dispatchEvent(new CustomEvent("extent-changed"))
+    // node.style.width = '' + extent.x + 'px';
+    // node.style.height = '' + extent.y + 'px';
+    // node.dispatchEvent(new CustomEvent("extent-changed"))
+    this.setWidth(node, extent.x, true)
+    this.setHeight(node, extent.y) 
   }
 
+  static setWidth(node, x, noevent) {
+    node.style.width = '' + x + 'px';
+    if (!noevent) node.dispatchEvent(new CustomEvent("extent-changed"))
+  }
+
+  static setHeight(node, y, noevent) {
+    node.style.height = '' + y + 'px';
+    if (!noevent) node.dispatchEvent(new CustomEvent("extent-changed"))
+  }
+
+
   static  getGlobalPosition(node) {
+    if (!node.getBoundingClientRect) {
+      return pt(0, 0)
+    }
     var bounds = node.getBoundingClientRect()
     return pt(bounds.left, bounds.top)
   }
@@ -475,6 +511,25 @@ export default class Lively {
     return rect(bounds.left, bounds.top, bounds.width, bounds.height)
   }
 
+  // compute the global bounds of an element and all absolute positioned elements
+  static getTotalGlobalBounds(element) {
+    
+    var all = Array.from(element.querySelectorAll("*"))
+      .filter(ea => ea.style.position == "absolute" || ea.style.position == "relative")
+      .concat([element])  
+      .map(ea => lively.getGlobalBounds(ea))
+    var max 
+    var min 
+    all.forEach(ea => {
+      var topLeft = ea.topLeft()
+      var bottomRight = ea.bottomRight()
+      // console.log("ea " + topLeft + " " + bottomRight)
+      min = topLeft.minPt(min || topLeft)
+      max = bottomRight.maxPt(max || bottomRight)
+    })
+    // console.log("min " + min + " max " + max)
+    return rect(min, max)
+  }
 
   static getScroll() {
     return pt(
@@ -518,17 +573,6 @@ export default class Lively {
       target = that;
     }
     contextmenu.openIn(container, evt, target, worldContext);
-  }
-
-  static log(/* varargs */) {
-      var args = arguments;
-      $('lively-console').each(function() {
-        try{
-          if (this.log) this.log.apply(this, args);
-        }catch(e) {
-          // ignore...
-        }
-      });
   }
   
   static nativeNotify(title, text, timeout, cb) {
@@ -576,59 +620,57 @@ export default class Lively {
    */
   static notify(titleOrOptions, text, timeout, cb, color) {
     try {
-      console.log("notify:" + titleOrOptions)
-    var title = titleOrOptions;
-    if (titleOrOptions && titleOrOptions.title) {
-      title = titleOrOptions.title;
-      text = titleOrOptions.title;
-      timeout = titleOrOptions.timeout;
-      cb = titleOrOptions.more;
-      color = titleOrOptions.color;
-      
-      // open details in a workspace
-      if (titleOrOptions.details) {
-        cb = () => {
-          lively.openWorkspace(titleOrOptions.details).then( comp => {
-            comp.parentElement.setAttribute("title", title);
-            comp.unsavedChanges = () => false; // close workspace without asking
-          });
-        };
-      }
-    }
-    // #TODO make native notifications opitional?
-    // this.nativeNotify(title, text, timeout, cb) 
-    new LivelyNotification({ title, text }).displayOnConsole();
+      // #TODO make native notifications opitional?
+      // this.nativeNotify(title, text, timeout, cb)       
+      var title = titleOrOptions;
+      new LivelyNotification({ title, text }).displayOnConsole();
+      if (titleOrOptions && titleOrOptions.title) {
+        title = titleOrOptions.title;
+        text = titleOrOptions.title;
+        timeout = titleOrOptions.timeout;
+        cb = titleOrOptions.more;
+        color = titleOrOptions.color;
 
-    var notificationList = document.querySelector("lively-notification-list")
-    if (!notificationList) {
-     notificationList = document.createElement("lively-notification-list");
-      components.openIn(document.body, notificationList).then( () => {
-        if (notificationList.addNotification)
-          notificationList.addNotification(title, text, timeout, cb, color);
-      });
-    } else {
-      var duplicateNotification = Array.from(document.querySelectorAll("lively-notification")).find(ea => {
-        new LivelyNotification({ "ea title": title, text }).displayOnConsole();
-
-        return ("" +ea.title == ""+title) && ("" + ea.message == "" +text)
-      });
-      new LivelyNotification({ title, text, " duplicate": duplicateNotification }).displayOnConsole();
-
-      if (duplicateNotification) {
-      	duplicateNotification.counter++
-      	duplicateNotification.render()
-        new LivelyNotification({ title, text }).displayOnConsole();
-      } else {
-        if(notificationList && notificationList.addNotification) {
-          notificationList.addNotification(title, text, timeout, cb, color);
-        } else {
-          console.log('%ccould not notify about', 'font-size: 9px; color: red', title, text);
+        // open details in a workspace
+        if (titleOrOptions.details) {
+          cb = () => {
+            lively.openWorkspace(titleOrOptions.details).then( comp => {
+              comp.parentElement.setAttribute("title", title);
+              comp.unsavedChanges = () => false; // close workspace without asking
+            });
+          };
         }
       }
-    }
+
+      var notificationList = document.querySelector("lively-notification-list")
+      if (!notificationList) {
+       notificationList = document.createElement("lively-notification-list");
+        components.openIn(document.body, notificationList).then(() => {
+          if (notificationList.addNotification) {
+            notificationList.addNotification(title, text, timeout, cb, color);
+          }
+        });
+      } else {
+        var duplicateNotification = Array.from(document.querySelectorAll("lively-notification")).find(ea => "" + ea.title === "" + title && "" + ea.message === "" + text);
+
+        if (duplicateNotification) {
+          duplicateNotification.counter++;
+          duplicateNotification.render();
+        } else {
+          if(notificationList && notificationList.addNotification) {
+            notificationList.addNotification(title, text, timeout, cb, color);
+          } else {
+            console.log('%ccould not notify about', 'font-size: 9px; color: red', title, text);
+          }
+        }
+      }
     } catch(e) {
-      console.log("ERROR in lively.notify: " + e)
+      console.log('%cERROR in lively.notify', 'font-size: 9px; color: red', e);
     }
+  }
+  
+  static success(title, text, timeout, cb) {
+    this.notify(title, text, timeout, cb, 'green');
   }
   
   static warn(title, text, timeout, cb) {
@@ -638,17 +680,19 @@ export default class Lively {
   static error(title, text, timeout, cb) {
     this.notify(title, text, timeout, cb, 'red');
   }
-  
+
+  static async ensureHand() {
+    var hand = lively.hand
+    if (!hand) {
+      hand = await lively.create("lively-hand", document.body)
+      hand.style.visibility = "hidden"
+    }
+    return hand
+  }
   
   // we do it lazy, because a hand can be broken or gone missing... 
   static get hand() {
-    var hand =  document.body.querySelector(":scope > lively-hand")
-    if (!hand){
-        hand = document.createElement("lively-hand")
-        lively.components.openInBody(hand); // will not be initialized ... should we always return promise?
-         hand.style.display = "none"
-    }
-    return hand
+    return document.body.querySelector(":scope > lively-hand")
   }
 
   static get selection() {
@@ -674,9 +718,12 @@ export default class Lively {
   }
   
   static async initializeDocument(doc, loadedAsExtension, loadContainer) {
-    console.log("Lively4 initializeDocument");
-
+    console.log("Lively4 initializeDocument" );
+    
     lively.loadCSSThroughDOM("font-awesome", lively4url + "/src/external/font-awesome/css/font-awesome.min.css");
+    lively.components.loadByName("lively-notification")
+    lively.components.loadByName("lively-notification-list")
+    
     this.initializeEvents(doc);
     this.initializeHalos();
 
@@ -687,21 +734,14 @@ export default class Lively {
       }
     })
 
-
-    
-    
-    console.log("load local lively content ")
+    console.log(window.lively4stamp, "load local lively content ")
     await persistence.current.loadLivelyContentForURL()
     preferences.loadPreferences()
     
-    // lazy initialize hand and selection
-    lively.hand;
+    await lively.ensureHand();
     // lively.selection;
 
     if (loadedAsExtension) {
-      System.import("src/client/customize.js").then(customize => {
-          customize.customizePage();
-      });
       lively.notify("Lively4 extension loaded!",
         "  CTRL+LeftClick  ... open halo\n" +
         "  CTRL+RightClick ... open menu");
@@ -733,8 +773,8 @@ export default class Lively {
       document.scrollingElement.scrollTop = this.deferredUpdateScroll.y;
       delete this.deferredUpdateScroll;
 		}
-    
-    console.log("lively persistence start ")
+    console.log("FINISHED Loading in " + ((performance.now() - lively4performance.start) / 1000).toFixed(2) + "s")    
+    console.log(window.lively4stamp, "lively persistence start ")
     setTimeout(() => {persistence.current.start()}, 2000)
 
     
@@ -854,17 +894,17 @@ export default class Lively {
   }
 
 
-  static showPoint(point) {
-    return this.showRect(point, pt(5,5))
+  static showPoint(point, removeAfterTime) {
+    return this.showRect(point, pt(5,5), removeAfterTime)
   }
 
-  static showEvent(evt) {
-    var r = lively.showPoint(pt(evt.clientX, evt.clientY))
+  static showEvent(evt, removeAfterTime) {
+    var r = lively.showPoint(pt(evt.clientX, evt.clientY), removeAfterTime)
     r.style.backgroundColor = "rgba(100,100,255,05)"
     return r
   }
 
-  static showRect(point, extent) {
+  static showRect(point, extent, removeAfterTime=3000) {
     // check for alternative args
     if (point && !extent) {
       extent = point.extent()
@@ -888,7 +928,9 @@ export default class Lively {
     lively.setPosition(comp, point.subPt(pt(bodyBounds.left, bodyBounds.top)));
     comp.setAttribute("data-is-meta", "true");
 
-    setTimeout( () => $(comp).remove(), 3000);
+    if (removeAfterTime) {
+      setTimeout( () => comp.remove(), removeAfterTime);
+    }
     // ea.getBoundingClientRect
     return comp
   }
@@ -1124,8 +1166,8 @@ export default class Lively {
   }
   
   static hideSearchWidget() {
-    var comp = document.getElementsByTagName("lively-search-widget")[0];
-    comp.hide();
+    console.log('hide search widget')
+    document.body.querySelectorAll("lively-search").forEach( ea => ea.parentElement.remove());
   }
 
   static openIssue(number) {
@@ -1151,19 +1193,11 @@ export default class Lively {
       w.style.width = extent.x;
       w.style.height = extent.y;
     }
-    
-    
-    
-    // #Problem: we cannot open last window here because we can be scrolled to the other end of the world
-    // if (lastWindow) {
-    //   var lastPos = lively.getPosition(lastWindow);
-      
     if (!pos) {
       pos = this.findPositionForWindow(worldContext)
     }
     if (pos) 
       lively.setPosition(w, pos);
-
     
     return components.openIn(worldContext, w, true).then((w) => {
     	return components.openIn(w, document.createElement(name)).then((comp) => {
@@ -1199,7 +1233,7 @@ export default class Lively {
     else 
       var pattern = patternOrPostion
 
-    if (!url || !url.match(/^http/))
+    if (!url || !url.match(/^[a-z]+:\/\//))
       url = lively4url
     var editorComp;
     var containerPromise;
@@ -1412,15 +1446,17 @@ export default class Lively {
     this.focusWithoutScroll(document.body)
   }
   
+  // #TODO: feature is under development and will ship in Chrome 64
+  // same as element.focus({ preventScroll : true}); ?
   static focusWithoutScroll(element) {
     if (!element) return;
     // console.log("focusWithoutScroll " + element)
-    var scrollTop = document.scrollingElement.scrollTop
-    var scrollLeft = document.scrollingElement.scrollLeft
-    element.focus(true) 
+    var scrollTop = document.scrollingElement.scrollTop;
+    var scrollLeft = document.scrollingElement.scrollLeft;
+    element.focus({ preventScroll : true});
     // the focus scrolls as a side affect, but we don't want that
-    document.scrollingElement.scrollTop = scrollTop
-    document.scrollingElement.scrollLeft = scrollLeft
+    document.scrollingElement.scrollTop = scrollTop;
+    document.scrollingElement.scrollLeft = scrollLeft;
     //console.log("scroll back " + scrollTop + " " + scrollLeft )
   }
   
@@ -1448,6 +1484,13 @@ export default class Lively {
    if (!result && element.host) result = this.query(element.host, query) 
    return result
   }
+  
+  static async openPart(partName, worldContext=document.body) {
+    var data = await fetch(`${lively4url}/src/parts/${partName}.html`).then(t => t.text())
+    var element  = lively.clipboard.pasteHTMLDataInto(data, worldContext);
+    element.setAttribute("data-lively-part-name", partName)
+    return element
+  }
 
   static queryAll(element, query) {    
     var all = new Set()
@@ -1458,13 +1501,16 @@ export default class Lively {
     })
     return Array.from(all)
   }
- 
-  static gotoWindow(element) {
+  
+  static gotoWindow(element, justFocuWhenInBounds) {
     element.focus()
-    document.scrollingElement.scrollTop = 0
-    document.scrollingElement.scrollLeft = 0
-    var pos = lively.getPosition(element).subPt(pt(0,0))
-    lively.setPosition(document.body, pos.scaleBy(-1))
+
+    if (!justFocuWhenInBounds) {
+      document.scrollingElement.scrollTop = 0
+      document.scrollingElement.scrollLeft = 0
+      var pos = lively.getPosition(element).subPt(pt(0,0))
+      lively.setPosition(document.body, pos.scaleBy(-1))      
+    } 
   }
 
   //  lively.allPreferences()
@@ -1479,6 +1525,10 @@ export default class Lively {
     var s = Date.now()
     await func()
     return Date.now() - s  
+  }
+  
+  static get halo() {
+    return HaloService.halo[0]
   }
   
   static onMouseDown(evt) {
@@ -1500,11 +1550,47 @@ export default class Lively {
     }
   }
   
+  static halt(time=1000) {
+    window.setTimeout(() => {
+      debugger
+    },time)
+  }
+  
+  static sleep(time=1000) {
+    return new Promise(resolve => {
+      window.setTimeout(resolve, time)
+    })
+  }
+  
+  static allElements(deep=false, root=document.body, all=new Set()) {
+    root.querySelectorAll("*").forEach(ea => {    
+      all.add(ea)
+      if (deep && ea.shadowRoot) {
+        this.allElements(deep, ea.shadowRoot, all)
+      }        
+    })
+    return all
+  }
+  
+  static allParents(element, parents=[]) {
+    if (!element.parentElement) {
+      return parents
+    }
+    parents.push(element.parentElement)
+    this.allParents(element.parentElement, parents)
+    return parents
+  }
+  
+  static showHalo(element) {
+    window.that = element
+    HaloService.showHalos(element)
+  }
+  
 }
 
 if (!window.lively || window.lively.name != "Lively") {
   window.lively = Lively;
-  console.log("loaded lively intializer");
+  console.log(window.lively4stamp, "loaded lively intializer");
   // only load once... not during development
   Lively.loaded();
 } else {
@@ -1515,5 +1601,6 @@ if (!window.lively || window.lively.name != "Lively") {
 
 
 Lively.exportModules();
-  
-console.log("loaded lively");
+
+                      
+console.log(window.lively4stamp, "loaded lively");

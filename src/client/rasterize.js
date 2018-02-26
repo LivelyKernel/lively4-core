@@ -1,7 +1,16 @@
 import rasterizeHTML from "src/external/rasterizeHTML.js"
 import {pt} from "src/client/graphics.js"
 
+/* ## Workspace Snipped for interactive Testing
 
+```
+  import {CloneDeepHTML} from "src/client/rasterize.js"
+
+  $morph("Cloned").innerHTML = ""
+  var cloned = CloneDeepHTML.deepCopyAsHTML($morph("Original"))
+  $morph("Cloned").appendChild(cloned)
+```
+*/
 
 // the rasterization code expects only plain HTML and cannot deal with shadow dom, so we flatten it away
 export class CloneDeepHTML {
@@ -18,7 +27,7 @@ export class CloneDeepHTML {
           css += name +": " + astyle.getPropertyValue(name) +";\n"
         }        
       }
-    };
+    }
     return css
   }
   
@@ -44,6 +53,18 @@ export class CloneDeepHTML {
     } else if (obj.tagName == "STYLE"){
       node = document.createElement("style")
       
+      return node
+    } else if (obj instanceof SVGElement) {
+      // console.log("svg element " + obj)
+      node = document.createElementNS("http://www.w3.org/2000/svg", obj.tagName); 
+      Array.from(obj.attributes).forEach(ea => {
+        try {
+          // console.log("attr " + ea.name + " " + ea.value)
+          node.setAttribute(ea.name, ea.value)        
+        } catch(e) {
+          console.log('rasterize: could not write attribute ' + ea.name + " from " + obj)
+        }
+      })
       return node
     } else if ( obj.shadowRoot){
       node = document.createElement("div")
@@ -123,9 +144,7 @@ export class CloneDeepHTML {
 // $morph("result").appendChild(clone)
 // $morph("showResult").inspect(clone)
 
-
-export default class Rasterize {
-  
+export default class Rasterize {  
     // from: https://gist.github.com/timdown/021d9c8f2aabc7092df564996f5afbbf
     static trimCanvas(canvas) {
         function rowBlank(imageData, width, y) {
@@ -163,8 +182,11 @@ export default class Rasterize {
     }
   
    static async elementToCanvas(element) {
-    var extent = lively.getExtent(element)
+    var bounds = lively.getTotalGlobalBounds(element)
+    var extent = pt(bounds.width, bounds.height)
 
+    await lively.sleep(100); // give the element some time to render...
+    
     var cloned = CloneDeepHTML.deepCopyAsHTML(element)
     
     
@@ -178,9 +200,10 @@ export default class Rasterize {
 
     lively.setPosition(cloned, pt(0,0))
     var canvas = document.createElement("canvas")
-    var zoom = 2;
-    canvas.width = extent.x * zoom;
-    canvas.height = extent.y * zoom;
+    var zoom = 2; // see   tmp.style.transform = "scale(2)" in (rc/client/html.js)
+    var minExtent = pt(1,1);
+    canvas.width = Math.max(extent.x * zoom, minExtent.x);
+    canvas.height = Math.max(extent.y * zoom, minExtent.y);
     await rasterizeHTML.drawHTML(h.outerHTML, canvas)
     
     canvas = this.trimCanvas(canvas)
@@ -212,14 +235,11 @@ export default class Rasterize {
   } 
 }
 
-import Raster from "src/client/rasterize.js";
-
 export class TemplatePreview {
   
   static async createPreview(url, templateName) {
     if (!url) throw new Error("url argument missing");
-    if (!templateName) throw new Error("templateName argument missing");
-    
+    if (!templateName) throw new Error("templateName argument missing");    
     console.log("PREVIEW work on:" + templateName)
     try {
       var comp = await Promise.race([
@@ -236,7 +256,7 @@ export class TemplatePreview {
       }
       
       var a = $morph("RasterImg"); if(a) a.remove();
-      var img = await Raster.openAsImage(comp.windowTitle ? comp.parentElement : comp).then(img => {
+      var img = await Rasterize.openAsImage(comp.windowTitle ? comp.parentElement : comp).then(img => {
         img.id = "RasterImg"
         img.style.width = (img.width * 1) + "px"
         img.style.position = "fixed"
@@ -252,7 +272,7 @@ export class TemplatePreview {
       await fetch(imgURL, { method: "PUT", body: imgData})
       console.log("PREVIEW wrote " + imgURL)
     } catch(e) {
-      console.log(e)
+      console.error(e)
     } finally {
       if (comp && comp.parentElement) {
         comp.parentElement.remove()  
@@ -275,11 +295,10 @@ export class TemplatePreview {
           let previewUrl = (url + name + ".png")
           try {
             console.log("next " + previewUrl)
-
             if (! await lively.files.existFile(previewUrl)) {
               if (TemplatePreview.stoped) return;
               if (dry) {
-                console.log("would generate " + url)
+                console.warn("would generate " + url)
               } else {
                 try {
                   await Promise.race([
@@ -287,15 +306,14 @@ export class TemplatePreview {
                     new Promise(r => setTimeout(r, 6000))
                   ])
                 } catch(e) {
-                  comp = 
-                  console.log("GeneratePreview Errro: " + e)
+                  console.warn("GeneratePreview Errro: " + e)
                 }
               }
             } else {
-              console.log("Preview exists: " + previewUrl)
+              console.warn("Preview exists: " + previewUrl)
             }            
           } catch(e) {
-            console.log("Error when generating preview: " + e)
+            console.warn("Error when generating preview: " + e)
           }
           
         }

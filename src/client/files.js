@@ -1,6 +1,8 @@
 import focalStorage from './../external/focalStorage.js';
 import { uuid as generateUuid } from 'utils';
 import sourcemap from 'src/external/source-map.min.js';
+import Strings from 'src/client/strings.js'
+
 
 export default class Files {
   
@@ -60,9 +62,9 @@ export default class Files {
         })()
       })
   }
-
-  // #depricated, use fetch directly
+  
   static async loadFile(url, version) {
+    url = this.resolve(url.toString())
     return fetch(url, {
       headers: {
         fileversion: version
@@ -78,9 +80,9 @@ export default class Files {
     return fetch(toURL, {method: 'PUT', body: blob})
   }
   
-  // #depricated
   static async saveFile(url, data){
     var urlString = url.toString();
+    urlString = this.resolve(urlString)
     if (urlString.match(/\/$/)) {
       return fetch(urlString, {method: 'MKCOL'});
     } else {
@@ -120,13 +122,115 @@ export default class Files {
   }
   
   static async statFile(urlString){
+    urlString = this.resolve(urlString)
   	return fetch(urlString, {method: 'OPTIONS'}).then(resp => resp.text())
   }
 
   static async existFile(urlString){
+    urlString = this.resolve(urlString)
+
   	return fetch(urlString, {method: 'OPTIONS'}).then(resp => resp.status == 200)
   }
 
+  static isURL(urlString) {
+    return ("" + urlString).match(/^([a-z]+:)?\/\//) ? true : false;
+  }
 
+  static resolve(string) {
+    if (!this.isURL(string)) {
+      var result = lively.location.href.replace(/[^/]*$/, string)
+    } else {
+      result = string.toString()
+    }
+    // get rid of ..
+    result = result.replace(/[^/]+\/\.\.\//g,"")
+    // and .
+    result = result.replace(/\/\.\//g,"/")
+    
+    return result
+  }
 
+  static directory(string) {
+    string = string.toString()
+    return string.replace(/([^/]+|\/)$/,"")
+  }
+  
+  static resolve(string) {
+    if (!this.isURL(string)) {
+      var result = lively.location.href.replace(/[^/]*$/, string)
+    } else {
+      result = string.toString()
+    }
+    // get rid of ..
+    result = result.replace(/[^/]+\/\.\.\//g,"")
+    // and .
+    result = result.replace(/\/\.\//g,"/")
+    
+    return result
+  }
+
+  /* 
+   * #Meta An inline test is a line that evaluates to true?
+   * #Meta We coould parse those lines, and generate better feedback, e.g. not just that it does not evaluate to true, but what are the values that are not equal?
+   * #Meta Could we run those inline tests in #Travis, too? 
+   TESTS:
+      lively.files.name("https://foo/bar/bla.txt") == "bla.txt" 
+  */
+  static name(url) {
+    return url.toString().replace(/.*\//,"")
+  }
+  
+ /* 
+  TESTS:
+      lively.files.extension("https://foo/bar/bla.txt") == "txt" 
+      lively.files.extension("https://foo/bar/bla.PNG") == "png"
+      lively.files.extension("https://foo/bar/bla") === undefined
+   */  
+  static extension(url) {
+    var name = this.name(url)
+    if (!name.match(/\./)) return undefined
+    return name.toLowerCase().replace(/.*\./,"")    
+  }
+  
+  
+  /*# Generate tmpfile url for lively4 server
+   *
+   * lively.files.tempfile() // e.g. https://lively-kernel.org/lively4/_tmp/3b8a7fcc-11dd-463e-8d32-dcc46575a4fd
+   *
+   */
+  static tempfile() {
+    // #Dependency to #Lively4Server 
+    return  lively.files.directory(lively4url) + "_tmp/" + generateUuid()  
+  }
+
+  /*
+    lively.files.stringToBlob("hello world")
+   */
+  static stringToBlob(string) {
+    var encoded = encodeURIComponent(string)
+    return fetch(`data:text/plain;charset=utf-8,${encoded}`).then(r => r.blob())
+  }
+  
+  /* 
+    lively.files.stringToBlob("hello world").then(b => lively.files.readBlobAsText(b))
+   */ 
+  static readBlobAsText(fileOrBlob) {
+    return new Promise(resolve => {        
+      const reader = new FileReader();
+      reader.onload = event => {
+        resolve(event.target.result)
+      }
+      reader.readAsText(fileOrBlob); 
+    })
+  }
+
+  static readBlobAsDataURL(fileOrBlob) {
+    return new Promise(resolve => {        
+      const reader = new FileReader();
+      reader.onload = event => {
+        resolve(event.target.result)
+      }
+      reader.readAsDataURL(fileOrBlob); 
+    })
+  }  
 }

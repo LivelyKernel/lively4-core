@@ -97,11 +97,17 @@ const aexprStorageForLocals = new HookStorage();
 const aexprStack = new Stack();
 
 class RewritingActiveExpression extends BaseActiveExpression {
+  constructor(func, ...params){
+    super(func, ...params);
+    ExpressionAnalysis.check(this);
+  }
 
-    constructor(func, ...params){
-        super(func, ...params);
-        ExpressionAnalysis.check(this);
-    }
+  dispose() {
+    super.dispose();
+    lively.success("dispose")
+    aexprStorage.disconnectAll(this);
+    aexprStorageForLocals.disconnectAll(this);
+  }
 }
 
 export function aexpr(func, ...params) {
@@ -120,6 +126,12 @@ export function reset() {
     aexprStorage.clear();
     aexprStorageForLocals.clear();
     CompositeKey.clear();
+}
+
+export function traceMember(obj, prop) {
+  if(expressionAnalysisMode) {
+    aexprStorage.associate(aexprStack.top(), obj, prop);
+  }
 }
 
 export function getMember(obj, prop, ...params) {

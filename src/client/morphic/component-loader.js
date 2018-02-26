@@ -1,6 +1,6 @@
 import scriptManager from  "src/client/script-manager.js";
 // import * as persistence from  "src/client/persistence.js";
-import Morph from "templates/Morph.js";
+import Morph from "src/components/widgets/lively-morph.js";
 import {pt} from '../graphics.js';
 import { through } from "utils";
 
@@ -12,6 +12,10 @@ var _templates;
 var _prototypes;
 var _proxies;
 var _templatePaths;
+var _templatePathsCache;
+var _templatePathsCacheTime;
+
+var _templateFirstLoadTimes = {}
 
 // for compatibility
 export function register(componentName, template, prototype) {
@@ -66,13 +70,16 @@ export default class ComponentLoader {
     }
   }
 
-  static onCreatedCallback(object, componentName) {
+  static async onCreatedCallback(object, componentName) {
     // if (persistence.isCurrentlyCloning()) {
     //   return;
     // }
 
+    // #Depricated
     var shadow = object.createShadowRoot();
-
+    // #NotWorkingYet as expected...
+    // var shadow = object.attachShadow({mode: 'open'});
+    
     // clone the template again, so when more elements are created,
     // they get their own copy of elements
     var clone = document.importNode(ComponentLoader.templates[componentName], true);
@@ -93,7 +100,7 @@ export default class ComponentLoader {
     }
 
     // load any unknown elements, which this component might introduce
-    ComponentLoader.loadUnresolved(object, true, "onCreated " + componentName).then((args) => {
+    await ComponentLoader.loadUnresolved(object, true, "onCreated " + componentName).then((args) => {
       // lively.fillTemplateStyles(object.shadowRoot, "source: " + componentName).then(() => {
         // call the initialize script, if it exists
       
@@ -105,6 +112,10 @@ export default class ComponentLoader {
         
         object.dispatchEvent(new Event("created"));
       // })
+      if (_templateFirstLoadTimes[componentName]) {
+        console.log('Component first load time: ' + ((performance.now() - _templateFirstLoadTimes[componentName]) / 1000).toFixed(3) + "s " + componentName + " ")
+        _templateFirstLoadTimes[componentName] = null;
+      }
     }).catch( e => {
       console.error(e); 
       return e
@@ -206,9 +217,18 @@ export default class ComponentLoader {
     lookupRoot = lookupRoot || document.body;
 
     var selector = ":unresolved";
-
+    var unresolved = []
+    
+    // check if lookupRoot is unresolved
+    if (lookupRoot.parentElement) {
+      var unresolvedSiblingsAndMe =  lookupRoot.parentElement.querySelectorAll(selector);
+      if (_.includes(unresolvedSiblingsAndMe, lookupRoot )) {
+        unresolved.push(lookupRoot)
+      }
+    }
+    
     // find all unresolved elements looking downwards from lookupRoot
-    var unresolved = Array.from(lookupRoot.querySelectorAll(selector));
+    var unresolved = unresolved.concat(Array.from(lookupRoot.querySelectorAll(selector)));
     if (deep) {
       var deepUnresolved = findUnresolvedDeep(lookupRoot);
       unresolved = unresolved.concat(deepUnresolved);
@@ -234,9 +254,11 @@ export default class ComponentLoader {
 
     var promises = unresolved.filter((el) => {
       // filter for unique tag names
+      if (!el.nodeName || el.nodeName.toLowerCase() == "undefined") return false;
       var name = el.nodeName.toLowerCase();
       return !unique.has(name) && unique.add(name);
-    }).map(async (el) => {
+    })
+    .map(async (el) => {
       var name = el.nodeName.toLowerCase();
       if (loadingPromises[name]) {
         // the loading was already triggered
@@ -256,10 +278,19 @@ export default class ComponentLoader {
       
       loadingPromises[name].name = name + " " + Date.now()
       
-      await this.loadByName(name);
+      let didInsertTag = await this.loadByName(name);
+      
+      if(!didInsertTag) {
+        if(lively.notify) {
+          lively.notify("Component Loader", `Template ${name} could not be loaded.`, 3, null, "yellow");
+        }
+        delete loadingPromises[name];
+        return null;
+      }
 
       return createdPromise;
-    });
+    })
+    .filter(promise => promise != null);
 
     // return a promise that resolves once all unresolved elements from the unresolved-array
     // are completely created
@@ -283,17 +314,50 @@ export default class ComponentLoader {
         })
         if (unfinished) {
           resolve("timeout") // "(if) the fuel gauge breaks, call maintenance. If they are not there in 20 minutes, fuck it."
+          
           lively.notify("Timout due to unresolved promises, while loading " + unfinishedPromise.name + " context: " + debuggingHint )
         }
-      }, 15 * 1000)
+      }, 10 * 1000)
 
-      Promise.all(promises).then( result => resolve(), reject => {
-          console.log("ERROR loading " +reject)
-          reject()
+      Promise.all(promises).then( result => resolve(), err => {
+          console.log("ERROR loading component ", err)
       })
     })
   }
+  
+  
+  static resetTemplatePathCache() {
+    _templatePathsCache = undefined
+    _templatePathsCacheTime = undefined
+  }
 
+  static async getTemplatePathContent(path) {
+    // return  await fetch(path, { method: 'OPTIONS' }).then(resp => resp.json());
+    
+    if (!_templatePathsCache) {
+      _templatePathsCache = {}
+      _templatePathsCacheTime = {}
+    } 
+    let cacheInvalidationTime = 60 * 5 * 1000;
+    let cached = _templatePathsCache[path]
+    let time = _templatePathsCacheTime[path]
+    if (cached && ((Date.now() - time) < cacheInvalidationTime)) return cached
+    
+    let resultPromise =  fetch(path, { method: 'OPTIONS' }).then(resp => {
+      if (resp.status !== 200) return undefined
+      return resp.json()
+    });
+    _templatePathsCacheTime[path] = Date.now()
+    _templatePathsCache[path] = new Promise(async (resolve, reject) => {
+      let result = await resultPromise;
+      if (result) {
+          resolve({contents: result.contents});
+        return cached 
+      }
+    })
+    return resultPromise 
+  }
+  
   static getTemplatePaths() {
     if (!_templatePaths) {
       _templatePaths = [
@@ -304,12 +368,16 @@ export default class ComponentLoader {
         lively4url + '/src/components/halo/',
         lively4url + '/src/components/demo/',
         lively4url + '/src/components/draft/',
+        lively4url + '/src/client/vivide/components/',
       ]; // default
     } 
     return _templatePaths
   }
 
   static addTemplatePath(path) {
+    if (!lively.files.isURL(path)) {
+      path = lively.location.href.replace(/[^/]*$/, path)
+    }
     var all = this.getTemplatePaths()
     if (!all.includes(path)) {
       all.push(path)
@@ -317,6 +385,7 @@ export default class ComponentLoader {
   }
 
   static async searchTemplateFilename(filename) {
+    
     var templatePaths =  this.getTemplatePaths()
     let templateDir = undefined;          
   
@@ -328,45 +397,60 @@ export default class ComponentLoader {
 	  if (!window.__karma__) { 
       for(templateDir of templatePaths) {
         try {
-          var stats = await fetch(templateDir, { method: 'OPTIONS' }).then(resp => resp.json());
+          var stats = await this.getTemplatePathContent(templateDir);
           var found = stats.contents.find(ea => ea.name == filename)
         } catch(e) {
-          console.log("searchTemplateFilename: could not get stats of  " + filename)
+          console.log("searchTemplateFilename: could not get stats of  " + filename + " ERROR: ", e)
           found = null
         }
-        if (found) break;  
+        if (found) {
+          return templateDir + filename
+        }
       }
+
     } else {
       // so the server did not understand OPTIONS, so lets ask for the files directly
       if (!found) {
         for(templateDir of templatePaths) {
           var found = await fetch(templateDir + filename, { method: 'GET' }) // #TODO use HEAD, after implementing it in lively4-server
             .then(resp => resp.status == 200); 
-          if (found) break;  
+          if (found) {
+            return templateDir + filename
+          }  
         } 
-        if (!found) return undefined;
       }      
     }
-    
-    return templateDir + filename
+    return undefined
   }
   
   
   // this function loads a component by adding a link tag to the head
   static async loadByName(name) {
-      var url = await this.searchTemplateFilename(name + '.html')
-      if (!url) {
-        throw new Error("Could not find template for " + name)
+    _templateFirstLoadTimes[name] = performance.now()
+    var url = await this.searchTemplateFilename(name + '.html')
+    if (!url) {
+      throw new Error("Could not find template for " + name)
+    }
+    console.log(window.lively4stamp, "load component: " + url)
+
+    // Check  if the template will be loadable (this would e.g. fail if we were offline without cache)
+    // We have to check this before inserting the link tag because otherwise we will have
+    // the link tag even though the template was not properly loaded
+    try {
+      let response = await fetch(url, { method: 'OPTIONS'});
+      if(response.ok) {
+        var link = document.createElement("link");
+        link.rel = "import";
+        link.href = url;
+        link.dataset.lively4Donotpersist = "all";
+        document.head.appendChild(link);
+        return true;
+      } else {
+        return false;
       }
-      // console.log("load component: " + url)
-      
-      // #TODO continue here url.exists() 
-      var link = document.createElement("link");
-      link.rel = "import";
-      link.href = url;
-      link.dataset.lively4Donotpersist = "all";
-      
-      document.head.appendChild(link);
+    } catch (error) {
+      return false;
+    }
   }
 
   static createComponent(tagString) {
@@ -408,7 +492,8 @@ export default class ComponentLoader {
     } else {
       parent.appendChild(component);
     }
-    this.loadUnresolved(parent, true, "openIn " + component);
+    // this.loadUnresolved(parent, true, "openIn " + component);
+    this.loadUnresolved(component, true, "openIn " + component);
 
     return compPromise;
   }
@@ -474,4 +559,7 @@ export function livelyMigrate(other) {
 // Problem: we cannot look into internal "other" state, we can do this with objects but not with
 // variable declarations, therefore we let our module system automigrate the module global variable state
 }
+
+
+_templatePathsCache = null
 

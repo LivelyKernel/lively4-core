@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import {babel} from 'systemjs-babel-build';
 import SyntaxChecker from 'src/client/syntax.js'
 import traceBabelPlugin from "./lively-continuous-editor-plugin.js"
@@ -23,7 +23,7 @@ export default class ContinuousEditor extends Morph {
       this.runCode();
     })::debounce(500);
 
-    lively.html.registerButtons(this);
+    this.registerButtons();
 
     this.get("#traceInspector").hideWorkspace()
     // this.get("#objectInspector").hideWorkspace()

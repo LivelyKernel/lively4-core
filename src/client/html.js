@@ -1,4 +1,7 @@
 import Preferences from "src/client/preferences.js"
+import _ from 'src/external/underscore.js'
+import Rasterize from "src/client/rasterize.js"
+import {pt} from 'src/client/graphics.js'
 
 /*
  * Kitchensink for all HTML manipulation utilities
@@ -46,16 +49,16 @@ class KeyboardHandler {
 export default class HTML {
 
   static findAllNodes(visit, all) {
-  	if (!all) { all = new Set() }
-  	if (!visit) { visit = document.querySelectorAll('*') }
-  	for (var ea of visit) {
-  		all.add(ea);
-  		if (ea.shadowRoot) {
-  			var subobjects = ea.shadowRoot.querySelectorAll('*');
-  			this.findAllNodes(subobjects, all);
-  		}
-  	}
-  	return Array.from(all);
+    if (!all) { all = new Set() }
+    if (!visit) { visit = document.querySelectorAll('*') }
+    for (var ea of visit) {
+    all.add(ea);
+    if (ea.shadowRoot) {
+      var subobjects = ea.shadowRoot.querySelectorAll('*');
+      this.findAllNodes(subobjects, all);
+    }
+    }
+    return Array.from(all);
   }
   
   static getFilter(ea) {
@@ -297,7 +300,39 @@ export default class HTML {
             node.dataset.lively4Donotpersist == 'children' || node.dataset.lively4Donotpersist == 'all' :
             node.dataset.lively4Donotpersist == 'all');
   }
-
+  
+  static async loadHTMLFromURL(url) {
+    var html = await fetch(url).then(r => {
+      if (r.status != 200) {
+        throw new Error("Could not load HTML from " + url + " due to status " + r.status)
+      }
+      return r.text()
+    })
+    var tmp = await lively.create("div")
+    tmp.style.transform = "scale(2)"
+    lively.setGlobalPosition(tmp, pt(0,0))
+    try {
+      lively.clipboard.pasteHTMLDataInto(html, tmp)
+    } finally {
+      tmp.remove()
+    }
+    return tmp
+  }
+  
+  static async saveAsPNG(url) {
+    if (url.match(/\.html$/)) {
+      var saveAsURL = url.replace(/html$/, "png")
+      var element = await this.loadHTMLFromURL(url)
+      document.body.appendChild(element)
+      // await lively.sleep(100)
+      try {
+        await Rasterize.elementToURL(element, saveAsURL)      
+      } finally {
+        element.remove()
+      }
+    }
+    return saveAsURL
+  }
 
 }
 

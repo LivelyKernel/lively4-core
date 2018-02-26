@@ -1,6 +1,7 @@
 export class DbObject {
   constructor(storeName) {
-    DbObject._dbName = "lively-sw-cache";
+    const instanceName = lively4url.split("/").pop();
+    DbObject._dbName = "lively-sw-cache-" + instanceName;
     this._storeName = storeName;
   }
   
@@ -8,8 +9,8 @@ export class DbObject {
    * Gets the objectStore from IndexedDB
    * @return ObjectStore
    */
-  _getObjectStore() {
-    var transaction = DbObject._db.transaction([this._storeName], "readwrite");
+  _getObjectStore(mode = "readwrite") {
+    var transaction = DbObject._db.transaction([this._storeName], mode);
     var objectStore = transaction.objectStore(this._storeName);
     return objectStore;
   }
@@ -20,13 +21,17 @@ export class DbObject {
   _connect() {
     if (DbObject._db) return;
     
-    var request = indexedDB.open(DbObject._dbName, 1);
+    var request = indexedDB.open(DbObject._dbName, 2);
     
     request.onupgradeneeded = this._createDbSchema.bind(this);
     
-    request.onsuccess = function (e) {
+    request.onsuccess = (e) => {
       DbObject._db = e.target.result;
-    }
+      
+      if (!this.onconnect) return;
+      
+      this.onconnect();
+    };
   }
   
   /**
@@ -35,11 +40,8 @@ export class DbObject {
   _createDbSchema(event) {
     DbObject._db = event.target.result;
     
-    DbObject._db.createObjectStore("dictionary");
-    DbObject._db.createObjectStore("favorits");
-    DbObject._db.createObjectStore("queue", {
-      keyPath: 'id',
-      autoIncrement: true
-    });
+    DbObject._db.createObjectStore("request-cache");
+    DbObject._db.createObjectStore("response-cache");
+    DbObject._db.createObjectStore("favorites");
   };
 }

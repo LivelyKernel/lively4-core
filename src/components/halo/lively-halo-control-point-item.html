@@ -1,0 +1,33 @@
+<template id="lively-halo-control-point-item" data-class="LivelyHaloControlPointItem">
+<style data-src="/src/components/halo/lively-halo-item.css"></style>
+<style>  
+  
+  #shape {
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    width: 8px;
+    height: 8px;
+    background-color: rgba(0,0,0,0.2);
+    border: solid 1px black;
+    z-index: 19999;
+  }
+
+  .connector#shape {
+    background-color: rgba(0,100,0,0.3);
+    border-radius: 4px;
+  }
+
+  .curve#shape {
+    background-color: rgba(0,0,200,0.3);
+  }
+    
+</style>
+<div id="shape">
+  
+</div>
+
+</template>
+<script class="registrationScript">
+  lively.registerTemplate()
+</script>

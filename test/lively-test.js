@@ -1,8 +1,5 @@
-"use strict";
-import {expect} from '../node_modules/chai/chai.js'
-
-// System.import(lively4url + '/node_modules/chai/chai.js').then( m => window.expect = m.expect)
-
+import {expect} from 'src/external/chai.js'
+import {pt}  from 'src/client/graphics.js'
 
 var lively = window.lively; var it = window.it
 
@@ -88,10 +85,95 @@ describe('Register Event Listeners', function() {
 
 describe('Position API', function() {
   
-  it('should return plain numbers in getter', () => {
-    expect(lively.getPosition(document.querySelector('body')).x).to.be.a('number')
+  describe('getPosition', function() {
+
+    it('should return plain numbers in getter', () => {
+      expect(lively.getPosition(document.querySelector('body')).x).to.be.a('number')
+    })
+
+
+    it('should return transform of a svg path', () => {
+      var div = document.createElement("div")
+      div.innerHTML = `<svg>
+    <path transform='translate(100 200)' d='M 0 0 L 100 100'></path>
+  </svg>`
+      var path = div.querySelector("path")
+      expect(lively.getPosition(path).x).to.equal(100)
+    })
+    
+    it('should return 0,0 of a svg path with no transform', () => {
+      var div = document.createElement("div")
+      div.innerHTML = `<svg>
+    <path transform='' d='M 0 0 L 100 100'></path>
+  </svg>`
+      var path = div.querySelector("path")
+      expect(lively.getPosition(path).x).to.equal(0)
+    })
   })
-})
   
+  describe('setPosition', function() {
+
+    it('should set transform of a svg path', () => {
+      var div = document.createElement("div")
+      div.innerHTML = `<svg>
+    <path transform="translate(0 0)" d='M 0 0 L 100 100'></path>
+  </svg>`
+      var path = div.querySelector("path")
+      lively.setPosition(path, pt(100,200))
+      expect(lively.getPosition(path).x).to.equal(100)
+    })
+    
+    
+    it('should set transform of a svg path with no transform', () => {
+      var div = document.createElement("div")
+      div.innerHTML = `<svg>
+    <path d='M 0 0 L 100 100'></path>
+  </svg>`
+      var path = div.querySelector("path")
+      // var t = path.transform.baseVal.consolidate()
+      
+      // t.setTranslate(100,300)
+      
+      // path.getAttribute("transform")
+      // var p = new DOMPoint(0, 0)
+      // p.matrixTransform(t)
+      // t = path.transform.baseVal.consolidate().matrix
+      
+      
+      lively.setPosition(path, pt(100,200))
+      
+      expect(lively.getPosition(path).x).to.equal(100)
+    })
+  })
+  
+  
+})
+ 
+
+describe('getTotalGlobalBounds', function() {
+  
+  it('return global bounds of an element', () => {
+    var element = document.createElement("div");
+    lively.setGlobalPosition(element, pt(0,0));
+    lively.setExtent(element, pt(100,100))
+    this.sut = element;
+    document.body.appendChild(this.sut);
+    var child = document.createElement("div");
+    element.appendChild(child);
+
+    lively.setPosition(child, pt(200,300));
+    lively.setExtent(child, pt(300,400));
+
+    var result= lively.getTotalGlobalBounds(element);
+    expect(result.width).to.gt(100) // #TODO this is weired in #Travis 901 vs 500
+  })
+    
+  after("cleanup", () => {
+    this.sut && this.sut.remove()
+  });
+})
+ 
+
+
   
   

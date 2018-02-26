@@ -3,7 +3,7 @@ import Strings from 'src/client/strings.js';
 
 export class Grid {
   static snapAllTopLevelContent() {
-    var  gridSize = lively.preferences.get("gridSize") || 100;
+    var  gridSize = lively.preferences.get("GridSize") || 100;
     Array.from(document.body.querySelectorAll(":scope > *"))
       .filter(ea => ea.classList.contains("lively-content") || ea.isWindow)
       .forEach( ea => {
@@ -15,9 +15,9 @@ export class Grid {
   
   static snap(value, gridSize, snapSize) {
     if (gridSize === undefined)
-      gridSize = lively.preferences.get("gridSize");
+      gridSize = lively.preferences.get("GridSize")
     if (snapSize === undefined)
-      snapSize = lively.preferences.get("snapSize");
+      snapSize = lively.preferences.get("SnapSize")
   
   
     // #TODO make treatment of negative numbers easier while keping the [tests](test/graphics-test.js) green

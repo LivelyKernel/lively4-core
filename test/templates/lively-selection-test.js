@@ -1,4 +1,4 @@
-import {expect} from '../../node_modules/chai/chai.js';
+import {expect} from 'src/external/chai.js';
 import {MockEvent, createHTML, testWorld, loadComponent} from './templates-fixture.js';
 import {pt,rect} from 'src/client/graphics.js';
 
@@ -43,16 +43,15 @@ describe("LivelySelectionTest",  function() {
   });
 
   it("should drag select elements", (done) => {
-    that.nodes = [a,b]
+    that.nodes = [a,b];
     
-    lively.setPosition(a, pt(100,100))
-    lively.setPosition(b, pt(300,150))
+    lively.setPosition(a, pt(100,100));
+    lively.setPosition(b, pt(300,150));
 
-    var old = lively.getPosition(a)
-    that.haloDragStart(pt(100,100))
-    that.haloDragTo(pt(100,200),pt(100,100))
-    expect(lively.getPosition(a).y).to.equal(200)
-    expect(lively.getPosition(b).y).to.equal(250)
+    that.haloDragStart(pt(100,100));
+    that.haloDragTo(pt(100,200),pt(100,100));
+    expect(lively.getPosition(a).y).to.equal(200);
+    expect(lively.getPosition(b).y).to.equal(250);
     done();
   })
 

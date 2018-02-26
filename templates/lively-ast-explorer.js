@@ -1,9 +1,8 @@
 'use strict';
 
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import {babel} from 'systemjs-babel-build';
 import SyntaxChecker from 'src/client/syntax.js'
-import locals from 'babel-plugin-locals'
 import sourcemap from 'src/external/source-map.min.js'
 import {modulesRegister} from 'systemjs-babel-build';
 import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promisedEvent } from 'utils';
@@ -22,21 +21,29 @@ export default class AstExplorer extends Morph {
     this.babel = babel
     //this.smc = smc
 
-
     let initLivelyEditorFromAttribute = (editor, attributeToRead, defaultPath) => {
       var filePath =  this.getAttribute(attributeToRead);
       if (!filePath) {
         filePath = defaultPath;
       }
-      editor.setURL(filePath);
-      editor.loadFile();
-    }
+    
+      // #TODO get rid of this runtime check by either:
+      //   a) guaranty loaded childnodes before running initialize
+      //   b) editor that only be initialized through attributes access
+      if (editor.setURL) {
+        editor.setURL(filePath);
+        editor.loadFile();
+      } else {
+        editor.setAttribute("url", filePath)
+      }
+        
+      }
     initLivelyEditorFromAttribute(this.sourceEditor, 'source', 
    		"https://lively-kernel.org/lively4/lively4-core/demos/babel/astsource.js");
     initLivelyEditorFromAttribute(this.pluginEditor, 'plugin', 
     	"https://lively-kernel.org/lively4/lively4-core/demos/babel/astplugin.js");
 
-    lively.html.registerButtons(this);
+    this.registerButtons();
 
     
     this.pluginEditor.get("#editor").doSave = async () => {
@@ -223,6 +230,7 @@ export default class AstExplorer extends Morph {
   livelyPrepareSave() {
     this.setAttribute('source', this.sourceEditor.getURLString());
     this.setAttribute('plugin', this.pluginEditor.getURLString());
+    console.log("PREPARE SAVE", this.getAttribute('source'), this.getAttribute('plugin'));
   }
   
   

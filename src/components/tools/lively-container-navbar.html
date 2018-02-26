@@ -8,23 +8,24 @@
  border-right: 1px solid #d5d5d5;
 }
 
-:host(.drag) * {
-  display: none
-}
-#dragHint, #dragHintText {
+#dragHint {
   display: none;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
 }
 :host(.drag) #dragHint {
-  display: table;
-  text-align: center;
-
-  background-color: steelblue;
-  height: 100%;
-  width: 100%;
+  display: flex;
 }
-:host(.drag) #dragHintText {
-  display: table-cell;
-  vertical-align: middle;
+#dragHintText {
+  text-align: center;
+  line-height: 2em;
+  font-size: 1.5em;
+  color: white;
 }
 
 ul li a:hover {
@@ -95,13 +96,12 @@ ul li a {
   color: #444444;
 }
 
-
 .selected {
   background-color: lightgray;
   color: white;
   cursor: pointer
 }
-
+  
 
 </style>
 <div id="dragHint">

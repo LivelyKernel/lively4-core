@@ -1,0 +1,125 @@
+<template id="lively-cache-viewer" data-class="LivelyCacheViewer">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+  :host {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  #content {
+    flex: 1;
+    padding: 0;
+    margin: 0;
+    overflow: auto;
+    font-size: 85%;
+  }
+  
+  #list {
+    flex: 1;
+    overflow-x: scroll;
+  }
+  
+  #list ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  
+  #list li {
+    padding: 2px;
+    font-family: monospace;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+  }
+  
+  #list li:hover {
+    background-color: #eee;
+  }
+  
+  #status {
+    height: 16px;
+    padding: 2px;
+    margin: 0;
+    font-size: 85%;
+    border-top: 1px solid #ddd;
+  }
+  
+  nav {
+    border-bottom: 1px solid #ddd;
+    padding: 2px 4px;
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  #search {
+    border: 1px solid #d5d5d5;
+    border-radius: 2px;
+    padding: 5px;
+  }
+  
+  #settings {
+    padding: 5px;
+  }
+  
+  #settings span {
+    font-size: 85%;
+  }
+  
+  #overlay {
+    display: none;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+  }
+  
+  #statusText {
+    text-align: center;
+    line-height: 2em;
+    font-size: 1.5em;
+  }
+</style>
+  <nav>
+    <div>
+      <input type="text" id="search" placeholder="Filter...">
+      <button id="refreshButton" title="Refresh">
+        <i class="fa fa-refresh" aria-hidden="true"></i>
+      </button>
+      <button id="clearButton" title="Clear cache">
+        <i class="fa fa-trash-o" aria-hidden="true"></i>
+      </button>
+      <button id="addMountButton" title="Add mount to cache">
+        <i class="fa fa-cloud" aria-hidden="true"></i>
+      </button>
+    </div>
+    
+    <div id="settings">
+      <span>Cache mode:</span>
+      <select id="modeSelect">
+        <option value="0">Off</option>
+        <option value="1">Preload minimum</option>
+        <option value="2">Preload favorites</option>
+        <option value="3">Preload everything</option>
+      </select>
+    </div>
+    
+  </nav>
+  <div id="list"></div>
+  <juicy-ace-editor id="content"></juicy-ace-editor>
+  <div id="status"></div>
+  <div id="overlay">
+    <div id="statusText">
+      Loading...<br />
+      This might take a few minutes
+    </div>
+  </div>
+  <lively-resizer></lively-resizer>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

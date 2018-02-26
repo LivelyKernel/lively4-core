@@ -1,4 +1,4 @@
-import Morph from 'templates/Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import {pt} from 'src/client/graphics.js';
 import {Grid} from 'src/client/morphic/snapping.js';
 import Preferences from 'src/client/preferences.js';
@@ -326,7 +326,7 @@ export default class Window extends Morph {
   }
 
   onMenuButtonClicked(evt) {
-    lively.openContextMenu(document.body, evt, this.childNodes[0]);
+    lively.openContextMenu(document.body, evt, this.target);
   }
 
   onTitleMouseDown(evt) {
@@ -404,6 +404,10 @@ export default class Window extends Morph {
     // this is crucial state
     this.positionBeforeMaximize = oldInstance.positionBeforeMaximize;
     this.positionBeforeMinimize = oldInstance.positionBeforeMinimize;
+  }
+  
+  getAddOnRoot() {
+    return this.shadowRoot.querySelector("#window-global")
   }
   
   /* embed content in parent and remove yourself */

@@ -1,14 +1,14 @@
-import Morph from 'templates/Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import highlight from 'src/external/highlight.js';
 import {pt} from 'src/client/graphics.js';
-import halo from 'templates/lively-halo.js';
+import halo from 'src/components/halo/lively-halo.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/external/ContextJS/src/contextjs.js";
-import ScopedScripts from "templates/ScopedScripts.js";
+import ScopedScripts from "src/client/scoped-scripts.js";
 import Clipboard from "src/client/clipboard.js"; 
-import {debounce} from "utils";
+import { debounce, fileEnding, replaceFileEndingWith } from "utils";
 
 export default class Container extends Morph {
   
@@ -28,7 +28,7 @@ export default class Container extends Morph {
     
     this.contentChangedDelay = (() => {
         this.checkForContentChanges()
-      })::debounce(1000)
+      })::debounce(1000);
     
     // make sure the global css is there...
     lively.loadCSSThroughDOM("hightlight", lively4url + "/src/external/highlight.css");
@@ -94,7 +94,7 @@ export default class Container extends Morph {
     });
     this.get("#fullscreenInline").onclick = (e) => this.onFullscreen(e);
     
-    lively.html.registerButtons(this);
+    this.registerButtons();
 
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
     // this.addEventListener('keyup',   evt => this.onKeyUp(evt));
@@ -191,6 +191,26 @@ export default class Container extends Morph {
       }
       evt.preventDefault();
       evt.stopPropagation();
+    } else if(evt.keyCode === 118) {
+      this.switchBetweenJSAndHTML();
+      evt.stopPropagation();
+      evt.preventDefault();
+    }
+  }
+  
+  async switchBetweenJSAndHTML() {
+    const ending = this.getPath()::fileEnding();
+    if(ending === 'js' || ending === 'html') {
+      const targetURLString = this.getPath()::replaceFileEndingWith(ending === 'js' ? 'html' : 'js');
+      const existingContainer = Array.from(document.body.querySelectorAll('lively-container'))
+        .find(container => container.getPath() === targetURLString);
+      if(existingContainer) {
+        lively.gotoWindow(existingContainer.parentElement, true);
+        existingContainer.focus();
+      } else {
+        lively.openBrowser(targetURLString, true)
+          .then(browser => browser.focus());
+      }
     }
   }
 
@@ -381,10 +401,7 @@ export default class Container extends Morph {
         method: "get"
       })
       this.lastVersion = result.headers.get("fileversion")
-      
       this.saveEditsInView(newPath);
-      
-      
       this.get("#container-path").value = newPath
       return; 
     }
@@ -414,37 +431,42 @@ export default class Container extends Morph {
     
     if (this.getPath().match(/\/$/)) {
       lively.files.saveFile(this.getURL(),"");
+      
       return;
     }
     this.get("#editor").setURL(this.getURL());
-    
-    return this.get("#editor").saveFile().then( async () => {
+    this.get("#editor").saveFile().then( async () => {
       var sourceCode = this.getSourceCode();
       var url = this.getURL();
+      lively.notify("!!!saved " + url)
+      window.LastURL = url
       if (await this.urlInTemplate(url)) {
-        lively.updateTemplate(sourceCode);
+        lively.notify("update template")
+        if (url.toString().match(/\.html/)) {
+          // var templateSourceCode = await fetch(url.toString().replace(/\.[^.]*$/, ".html")).then( r => r.text())        
+          var templateSourceCode = sourceCode
+          lively.updateTemplate(templateSourceCode);
+        }
       }
-
       if (this.getPath().match(/.*css/)) {
         this.updateCSS();
       }
-      
       this.updateOtherContainers();
 
       var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/);
       if (moduleName) {
         moduleName = moduleName[1];
         
+        const testRegexp = /((test\/.*)|([.-]test)|([.-]spec))\.js/;
         if (this.lastLoadingFailed) {
+          console.log("last loading failed... reload")
           this.reloadModule(url); // use our own mechanism...
-        } else if (this.getPath().match(/test\/.*js/)) {
+        } else if (this.getPath().match(testRegexp)) {
           this.loadTestModule(url); 
         } else if ((this.get("#live").checked && !this.get("#live").disabled)) {
           await this.loadModule("" + url)
-          
-          
           lively.findDependedModules("" + url).forEach(ea => {
-            if (ea.match(/test\/.*js/)) {
+            if (ea.match(testRegexp)) {
               this.loadTestModule(ea); 
             } 
           })
@@ -498,6 +520,10 @@ export default class Container extends Morph {
   async renameFile(url) {
     url = "" + url
     var newURL = await lively.prompt("rename", url)
+    if (!newURL) {
+      lively.notify("cancel rename " + url)
+      return
+    }
     if (newURL != url) {
       await lively.files.moveFile(url, newURL)
   
@@ -613,14 +639,11 @@ export default class Container extends Morph {
         script.src  = scriptElement.src;
         script.onload = () => {
           // #WIP multiple activations are not covered.... through this...
-          Promise.all(ScopedScripts.openPromises).then( () => {
+          Promise.all(ScopedScripts.openPromises).then(() => {
             layers.forEach( ea => ea.beNotGlobal());
             // console.log("ScopedScripts openPromises: " + ScopedScripts.openPromises)
             resolve();
-          }, () => {
-            // error
-            reject();
-          });
+          }, reject);
         };
         script.onerror = reject; 
       }
@@ -630,14 +653,11 @@ export default class Container extends Morph {
         root.appendChild(script);  
       });
       if (!script.src) {
-        Promise.all(ScopedScripts.openPromises).then( () => {
+        Promise.all(ScopedScripts.openPromises).then(() => {
           layers.forEach( ea => ea.beNotGlobal());
           // console.log("ScopedScripts openPromises: " + ScopedScripts.openPromises)
           resolve();
-        }, () => {
-          // error
-          reject();
-        });
+        }, reject);
       }
     })
     
@@ -664,7 +684,7 @@ export default class Container extends Morph {
     
       if (!window.ScopedD3) {
         console.log("LOAD D3 Adaption Layer");
-        await System.import("templates/ContainerScopedD3.js")
+        await System.import("src/client/container-scoped-d3.js")
         ScopedD3.updateCurrentBodyAndURLFrom(this);
         // return this.appendHtml(content) // try again
       }
@@ -696,8 +716,9 @@ export default class Container extends Morph {
             }
           }
         }
-        components.loadUnresolved(root);
       }
+      components.loadUnresolved(root);
+      lively.clipboard.initializeElements(root.querySelectorAll("*"))        
     } catch(e) {
       console.log("Could not append html:" + content.slice(0,200) +"..." +" ERROR:", e);
     }
@@ -712,6 +733,14 @@ export default class Container extends Morph {
       this.observeHTMLChanges()
     }, 0)
   }
+  
+  async appendCSV(content) {
+    var container=  this.get('#container-content');
+    var table = await lively.create("lively-table")
+    table.setFromCSV(content)
+    container.appendChild(table)
+  }
+  
   
   async appendTemplate(name) {
     try {
@@ -736,7 +765,9 @@ export default class Container extends Morph {
     }
   
     // this check could happen later
-    if (!path.match("https://lively4") && !path.match(window.location.host)) {
+    if (!path.match("https://lively4") 
+        && !path.match(window.location.host) 
+        && path.match(/https?:\/\//)) {
       // lively.notify("follow foreign url: " + path);
       var startTime = Date.now();
       if (!await fetch(path, {method: "OPTIONS"}).catch(e => false)) {
@@ -754,11 +785,13 @@ export default class Container extends Morph {
     
     if (this.isEditing() && !path.match(/\/$/)) {
       if (this.useBrowserHistory())
-        window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?edit="+path  + opts);
+        window.history.pushState({ followInline: true, path: path }, 
+          'view ' + path, window.location.pathname + "?edit="+path  + opts);
       return this.setPath(path, true).then(() => this.editFile());
     } else {
       if (this.useBrowserHistory())
-        window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?load="+path  + opts);
+        window.history.pushState({ followInline: true, path: path }, 
+          'view ' + path, window.location.pathname + "?load="+path  + opts);
       // #TODO replace this with a dynamic fetch
       return this.setPath(path);
     }
@@ -782,7 +815,10 @@ export default class Container extends Morph {
 
   getURL() {
     var path = this.getPath();
-    if (path && path.match(/^https?:\/\//)) {
+    if (!path) return;
+    if (path.match(/^https?:\/\//)) {
+      return new URL(path);
+    } if (path.match(/^[a-zA-Z]+:\/\//)) {
       return new URL(path);
     } else {
       return new URL("https://lively4/" + path);
@@ -806,16 +842,12 @@ export default class Container extends Morph {
       if (!aceComp) throw new Error("Could not initialalize lively-editor");
       if (aceComp.tagName == "LIVELY-CODE-MIRROR") {
          await new Promise(resolve => {
-          aceComp.addEventListener("editor-loaded", () => {
-            resolve()
-          })            
+          aceComp.addEventListener("editor-loaded", resolve)            
         })
       }
 
       aceComp.enableAutocompletion();
-      aceComp.getDoitContext = () => {
-        return window.that;
-      };
+      aceComp.getDoitContext = () => window.that;
       // aceComp.getDoitContextModuleUrl = () => {
       //   return this.getURL()
       // }
@@ -916,11 +948,15 @@ export default class Container extends Morph {
       url = new URL(path);
       url.pathname = lively.paths.normalize(url.pathname);
       path = "" + url;
+    } else if (path.match(/^[a-zA-Z]+:\/\//)) {
+      lively.notify("it other url : " + path)
+      url = new URL(path)
+      var other = true
     } else {
       path = lively.paths.normalize(path);
       url = "https://lively4" + path
     }
-    if (!isdir) {
+    if (!isdir && !other) {
       // check if our file is a directory
       var options = await fetch(url, {method: "OPTIONS"}).then(r =>  r.json()).catch(e => {})
       if (options && options.type == "directory") {
@@ -936,13 +972,12 @@ export default class Container extends Morph {
     }
     
     var markdown = this.get("lively-markdown")
-    if (markdown) {      
+    if (markdown && markdown.get) {  // #TODO how to dynamically test for being initialized?
       var presentation = markdown.get("lively-presentation")
-      if (presentation) {
+      if (presentation && presentation.currentSlideNumber) {
         this.lastPage  = presentation.currentSlideNumber()
       }
-      
-      this.wasContentEditable = markdown.contentEditable == "true"
+      this.wasContentEditable =   markdown.contentEditable == "true"
     }
     
     
@@ -977,7 +1012,8 @@ export default class Container extends Morph {
       if (render) return this.appendHtml('<lively-pdf overflow="visible" src="'
         + url +'"></lively-pdf>');
       else return;
-    }
+    } 
+    
   
     return fetch(url).then( resp => {
       this.lastVersion = resp.headers.get("fileversion");
@@ -998,6 +1034,9 @@ export default class Container extends Morph {
       } else if (format == "livelymd") {
         this.sourceContent = content;
         if (render) return this.appendLivelyMD(content);
+      } else if (format == "csv") {
+        this.sourceContent = content;
+        if (render) return this.appendCSV(content);
       } else if (format == "error") {
         this.sourceCountent = content;
         if (render) return this.appendHtml(`
@@ -1044,6 +1083,9 @@ export default class Container extends Morph {
     navbar.newfile = (url) => { this.newfile(url) } 
     navbar.followPath = (path) => { this.followPath(path) } 
     navbar.navigateToName = (name) => { this.navigateToName(name) } 
+    
+    
+    
     
     await navbar.show(this.getURL(), this.sourceContent)
     
@@ -1354,10 +1396,8 @@ export default class Container extends Morph {
   }
   
   focus() {
-    // var editor = this.getAceEditor();
-    // if (editor) {
-    //   editor.focus()
-    // }
+    const editor = this.getAceEditor();
+    if (editor) { editor.focus(); }
   }
   
   createLink(base, name, href) {
@@ -1372,6 +1412,15 @@ export default class Container extends Morph {
     }); 
     return link  
   }
+  
+  livelyAllowsSelection(evt) {
+    if (!this.contentIsEditable() || this.isEditing()) return false
+    
+    if (evt.path[0].id == "container-content") return true;
+    
+    return false
+  }
+  
   
   livelyAcceptsDrop() {
     return this.contentIsEditable() && !this.isEditing()

@@ -1,0 +1,24 @@
+<script type="text/javascript">
+  function openExample() {
+    let data = [
+      {name: "John Doe", age: 25},
+      {name: "Jane Doe", age: 24},
+      {name: "Manfred Mustermann", age: 50},
+      {name: "John Wayne", age: 110},
+    ]
+    lively.openComponentInWindow("vivide-table").then(vt => {
+      vt.pushTransformation(list => list);
+      vt.show(data);
+      
+      lively.openComponentInWindow("vivide-list").then(vl => {
+        vl.pushTransformation(list => list);
+        vl.pushDepiction(person => person.name + ", " + person.age);
+        vt.register(vl);
+      });
+    });
+  }
+</script>
+
+<button onclick="openExample()">
+  Open Example
+</button

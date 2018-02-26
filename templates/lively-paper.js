@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import paper from "src/external/paperjs/paper-core.js";
 
 import ContextMenu from 'src/client/contextmenu.js';
@@ -10,7 +10,7 @@ let Path = paper.Path,
 
 
 export default class LivelyPaper extends Morph {
-      
+  
   get colours() {
     return ['red', 'green', 'blue', 'yellow', 'black'];
   }
@@ -27,6 +27,9 @@ export default class LivelyPaper extends Morph {
   }
   
   initialize() {
+    this.canv_points = [];
+    this.canv_points_current_stroke = [];
+    this.undone_canv_points = [];
     this.lastPath = {};
     this.initPaper();
 
@@ -37,10 +40,13 @@ export default class LivelyPaper extends Morph {
 
     lively.addEventListener("drawboard", this.canvas, "pointerup", 
       (e) => this.onPointerUp(e));
+    
+    lively.addEventListener("drawboard", this.canvas, "pointerleave",
+      (e) => this.onPointerUp(e));
       
     this.strokes = new CommandHistory();
     
-    lively.html.registerButtons(this);
+    this.registerButtons();
     
     this.adaptCanvasSize()
    
@@ -82,15 +88,29 @@ export default class LivelyPaper extends Morph {
   }
 
   clear() {
+    this.canv_points = [];
+    this.canv_points_current_stroke = [];
+    this.undone_canv_points = [];
     this.paper.project.clear();
+    this.dispatchExecHandwritingRecognition();
   }
   
   undoStroke() {
     this.strokes.undo();
+    
+    if (this.canv_points.length > 0) {
+      this.undone_canv_points.push(this.canv_points.pop());
+    }
+    this.dispatchExecHandwritingRecognition();
   }
 
   redoStroke() {
     this.strokes.redo();
+    
+    if (this.undone_canv_points.length > 0) {
+      this.canv_points.push(this.undone_canv_points.pop())
+    }
+    this.dispatchExecHandwritingRecognition();
   }
   
   onUndoStroke() {
@@ -124,7 +144,7 @@ export default class LivelyPaper extends Morph {
       path.command = "delete";
       path.strokeColor = "red";
     } else {
-      path.strokeColor = "blue";
+      path.strokeColor = "black";
       path.strokeWidth = 2;
 
     }
@@ -133,6 +153,7 @@ export default class LivelyPaper extends Morph {
     var x = evt.clientX - this.offset.left;
     var y = evt.clientY - this.offset.top;
 
+    this.canv_points_current_stroke.push({"x": x, "y": y});
     path.moveTo([x, y]); 
 
     lively.addEventListener("drawboard", this.canvas, "pointermove", (e) => this.onPointerMove(e), false);
@@ -147,6 +168,7 @@ export default class LivelyPaper extends Morph {
       var x = evt.clientX - this.offset.left;
       var y = evt.clientY - this.offset.top;
       
+      this.canv_points_current_stroke.push({"x": x, "y": y});
       var p = {x:x, y:y};
     
       path.lineTo(p);
@@ -154,6 +176,12 @@ export default class LivelyPaper extends Morph {
   }
 
   onPointerUp(evt) {
+    if (this.canv_points_current_stroke.length > 0) {
+      this.canv_points.push(this.canv_points_current_stroke);
+      this.canv_points_current_stroke = [];
+      this.dispatchExecHandwritingRecognition();
+    }
+    
     this.setAttribute("last-changed", Date.now())
     this.lastPointerUp = Date.now(); // #Hack custom prevent default
     evt.stopPropagation();
@@ -242,6 +270,10 @@ export default class LivelyPaper extends Morph {
     var svg = other.paper.project.exportSVG();
     this.initPaper();
     this.paper.project.importSVG(svg);
+  }
+  
+  dispatchExecHandwritingRecognition() {
+    this.dispatchEvent(new Event("execHandwritingRecognition"));
   }
   
 }

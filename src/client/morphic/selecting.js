@@ -4,9 +4,9 @@ import Preferences from "./../preferences.js";
 export default class Selecting {
 
   static shouldHandle(e) {
-    return Preferences.get('CtrlAsHaloModifier') ?
+    return (Preferences.get('CtrlAsHaloModifier') ?
         e.ctrlKey || e.metaKey :
-        e.altKey;
+        e.altKey) && !HaloService.isDragging;
   }
   static load() {
      if (!window.lively) {
@@ -27,6 +27,20 @@ export default class Selecting {
     // lively.showElement(e.path[0])
     
     if (this.shouldHandle(e)) {
+  
+   
+      
+      // lively.showElement(e.path[0])
+    
+      
+      // if (e.path.find(ea => ea.tagName == "LIVELY-HALO")) {
+      //   lively.notify("clicked on halo")
+      //   this.hideHalos()
+      //   e.stopPropagation();
+      //   e.preventDefault();
+      //   return
+      // }
+      
       // console.log("mouse down " + e.target.tagName)
       e.stopPropagation();
       e.preventDefault();
@@ -35,7 +49,7 @@ export default class Selecting {
 
   static handleMouseUp(e) {
     if (this.shouldHandle(e)) {
-      // console.log("mouse up " + e.target.tagName)
+      console.log("mouse up " + e.target.tagName)
       e.stopPropagation();
       e.preventDefault();
     } else {
@@ -88,22 +102,36 @@ export default class Selecting {
   }
   
   static handleSelect(e) {
-    if (this.shouldHandle(e)) {
+    // lively.notify("path " + e.path.map(ea => ea.tagName))
+
+    
+    if (this.shouldHandle(e)) { 
+    // lively.showElement(e.path[0],1300).textContent = "path: " + e.path.map(ea => ea.tagName).join(",")
+
+      
       var rootNode = this.findRootNode(document.body)
       var path = this.slicePathIfContainerContent(e.path);
-      path = path.reverse()
+      // workaround weird toplevel event issues... the halo should not get the event
+      // lively.notify("path " + e.path.map(ea => ea.tagName))
+      if (e.path.find(ea => ea.tagName == "LIVELY-HALO")) {
+        path = this.lastPath || e.path
+      }      
+      this.lastPath = path
+      path = path
+        // .reverse()
         .filter(ea => ! this.isIgnoredOnMagnify(ea))
       
       if (e.shiftKey) {
         var idx = e.path.indexOf(document.body);
-        path= path.reverse();
+        path= path
       } else {
         // by default: don't go into the shadows
         path = path.filter(ea => rootNode === this.findRootNode(ea))
       }
-      this.onMagnify(path[0], e, path);
+      var target = path[0]
+      this.onMagnify(target, e, path);     
       e.stopPropagation();
-      e.preventDefault();
+      e.preventDefault();        
     } else {
       // lively.focusWithoutScroll(document.body)
     }
@@ -121,7 +149,7 @@ export default class Selecting {
     }
     var grabTarget = target;
     var that = window.that;
-
+    
     // console.log("onMagnify " + grabTarget + " that: " + that);
     var parents = _.reject(path, 
         ea =>  this.isIgnoredOnMagnify(ea))
@@ -141,7 +169,7 @@ export default class Selecting {
     
     // if (HaloService.lastIndicator) HaloService.lastIndicator.remove();
     // HaloService.lastIndicator = lively.showElement(el);
-  
+    if (!self.HaloService) return;
     
     if (HaloService.lastIndicator) {
       HaloService.lastIndicator.style.border = "1px dashed blue"
@@ -160,6 +188,7 @@ export default class Selecting {
   }
 
   static hideHalos() {
+    if (!self.HaloService) return;
     HaloService.hideHalos();
   }
 

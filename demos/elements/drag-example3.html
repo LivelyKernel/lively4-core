@@ -1,0 +1,25 @@
+<div class="lively-content" style="background-color: lightgray; border: 1px solid gray; width: 285px; height: 123px;" draggable="true" id="drag-example3"><script data-name="loadLively" type="lively4script">function loadLively() {
+  lively.removeEventListener("Drag", this)
+  this.draggable = true
+  lively.addEventListener("Drag", this, "dragstart", 
+    evt => this.onDragStart(evt))
+  
+}</script><p contenteditable="true" class="lively-content" style="position: relative; left: 8px; top: -10px;">Drag Example 3</p><a class="lively-content" href="https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-console.js" style="position: absolute; left: 39px; top: 45px; width: 180.876px; height: 16.1px;">
+          lively-console.js
+        </a><a class="lively-content" href="https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-console.html" style="position: absolute; left: 45.4577px; top: 88.75px; width: 211.026px; height: 16.1px;">
+          lively-console.html
+        </a><script data-name="onDragStart" type="lively4script">function onDragStart(evt) {
+  // working around issue https://bugs.chromium.org/p/chromium/issues/detail?id=438479
+  // to achieve https://html.spec.whatwg.org/multipage/dnd.html#dom-datatransferitemlist-add
+  let urls = _.map(this.querySelectorAll("a"), ea => ea.href)
+  var dataList = evt.dataTransfer.items;
+  lively.notify("drag start " + urls.join("\n"))
+
+  evt.dataTransfer.setData("text/plain", urls.join("\n"))
+
+//   urls.forEach(ea => {
+//     var item = dataList.add(ea, "text/plain")
+//     // "text/uri-list"
+//   })
+  
+}</script></div>

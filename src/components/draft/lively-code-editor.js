@@ -4,7 +4,7 @@
  * - updates change indicator while when editting,loading, and saving
  */
  
-import Morph from 'templates/Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import moment from "src/external/moment.js";
 import diff from 'src/external/diff-match-patch.js';
 
@@ -12,7 +12,7 @@ export default class CodeEditor extends Morph {
 
   initialize() {
     var container = this.get(".container");
-    lively.html.registerButtons(this);
+    this.registerButtons();
     var input = this.get("#filename");
     $(input).keyup(event => {
       if (event.keyCode == 13) { // ENTER

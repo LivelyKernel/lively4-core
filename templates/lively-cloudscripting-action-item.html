@@ -1,0 +1,101 @@
+<template id="lively-cloudscripting-action-item">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style>  
+    button {
+      font-size: 75%;
+      margin-left: 1.5em;
+      margin-bottom: 5px;
+    }
+    
+    h5 {
+      margin: 0;
+      margin-left: 5px;
+    }
+    .config-table{
+      width:100%;
+    }
+    .valueEntry{
+      width:50%;
+    }
+    .keyEntry{
+      width:50%;
+    }
+    .valueInput{
+      width:100%;
+    }
+    #modify-configuration{
+      display:inline-block;
+      width:110px;
+      font-size:80%;
+      color:lightgrey;
+      border:solid 1px lightgrey;
+      cursor:pointer;
+    }
+    #modify-configuration:hover{
+      opacity:.5;
+    }
+    .chevron{
+      float:right;
+      padding-right:5px;
+      padding-top:2px;
+    }
+    .chevron-cross:hover{
+      opacity:.5;
+      cursor:pointer;
+    }
+    .add-config{
+      width:90%;
+      border-top:1px solid lightgrey;
+      margin:0 auto;
+      margin-top:5px;
+      padding-top:3px;
+      text-align:center;
+    }
+    .add-config:hover{
+      opacity:.5;
+      cursor:pointer;
+    }
+    .hide{
+      display:none;
+    }
+    .newConfInput{
+      width:100%;
+    }
+    .deleteWatcher{
+      margin-left:5px;
+    }
+    .deleteWatcher:hover{
+      cursor:pointer;
+      opacity:.5;
+    }
+    .itemname{
+      display:inline-block;
+    }
+    .editTemplate{
+      float:right;
+      cursor:pointer;
+    }
+    .editTemplate:hover{
+      opacity:.7;
+    }
+  </style>
+
+<div class="action-item">
+  <h5 class="itemname">
+    Action name 
+  </h5>
+  <i class=" deleteWatcher fa fa-times"></i><i class=" editTemplate fa fa-edit"></i>
+      <br/>
+  <div id="modify-configuration">
+      Modify config 
+      <i class=" chevron fa fa-chevron-down" aria-hidden="true"></i>
+  </div>
+  <table class="config-table">      
+  </table>
+  <div class="add-config hide">
+    <i class="addAction fa fa-plus" aria-hidden="true"></i>
+  </div>
+</div>
+
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>

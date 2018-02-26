@@ -1,4 +1,4 @@
-import {expect} from '../node_modules/chai/chai.js';
+import {expect} from 'src/external/chai.js';
 import Strings from 'src/client/strings.js';
 
 

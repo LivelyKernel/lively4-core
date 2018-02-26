@@ -1,0 +1,55 @@
+<template id="vivide-inspector" data-class="VivideInspector">
+<style data-src="/src/client/lively.css"></style>
+<style>
+  #content {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    font-family: Monaco, monospace;
+    color: DimGray;
+    font-size: 10pt;
+  }
+  
+  #model {
+    flex-grow: 1;
+    width: 0;
+    border-style: dashed;
+    border-width: 2px 0px 0px 0px;
+    border-color: LightGray;
+    margin: 5px 0px 0px 0px;
+    padding: 5px 0px 0px 0px;
+  }
+  
+  #functions {
+    flex-grow: 2;
+    display: flex;
+    flex-direction: column;
+    width: 0;
+  }
+  
+  .transformation {
+    border-style: dashed;
+    border-width: 2px 0px 0px 0px;
+    border-color: LightGray;
+    margin: 5px 0px 0px 0px;
+    padding: 5px 0px 0px 0px;
+  }
+  
+  .depiction {
+    padding: 5px 0px 0px 0px;
+  }
+  
+</style>
+<div id="content">
+  <div id="model">
+    Model:
+    <lively-inspector id="model-inspector"></lively-inspector>
+  </div>
+  <div id="functions">
+
+  </div>
+</div>
+<content>
+</content>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>

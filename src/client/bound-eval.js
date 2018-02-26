@@ -1,9 +1,11 @@
-import { uuid as generateUUID } from 'utils';
+import { uuid } from 'utils';
 import { setCode } from './workspaces.js';
 import Preferences from "./preferences.js";
 
 function rewriteSourceWithAsyncAwaitSupport(source) {
-  return "(async secretAsyncLabel => { return {__asyncresult__: do {" +source+ "}}})()"
+  return `(async secretAsyncLabel => {
+  return { __asyncresult__: do {${source}}}
+})()`;
 }
 
 export default async function boundEval(source, thisReference, targetModule) {
@@ -20,7 +22,7 @@ export default async function boundEval(source, thisReference, targetModule) {
 
     // source
     // TODO: we currently use a newly generated UUID on each evaluation to trick SystemJS into actually loading it (therefore, we use codeId):
-    let codeId = generateUUID();
+    let codeId = uuid();
     setCode(codeId, source);
     
     var path = 'workspace:' + encodeURI(codeId)
@@ -29,11 +31,14 @@ export default async function boundEval(source, thisReference, targetModule) {
     } else if (Preferences.get('DisableAExpWorkspace')) {
       path = path.replace(/^workspace/, "workspacejs")
     }
-    return System.import(path)
+    return await System.import(path)
       .then(m => {
         lively.unloadModule(path)
         return ({value: m.__result__ })});
   } catch(err) {
     return Promise.resolve({ value: err, isError: true });
+  } finally {
+    // console.log("BOUND EVAL UNLOAD " + path)
+    lively.unloadModule(path)
   }
 }

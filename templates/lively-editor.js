@@ -5,7 +5,7 @@
  * - updates change indicator while when editting,loading, and saving
  */
 
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import moment from "src/external/moment.js";
 import diff from 'src/external/diff-match-patch.js';
 import preferences from 'src/client/preferences.js';
@@ -28,13 +28,20 @@ export default class Editor extends Morph {
     this.get("lively-version-control").editor = editor
 
     // container.appendChild(editor)
-    lively.html.registerButtons(this);
+    this.registerButtons();
     var input = this.get("#filename");
-    $(input).keyup(event => {
+    
+    
+    input.addEventListener("keyup", event => {
       if (event.keyCode == 13) { // ENTER
         this.onFilenameEntered(input.value);
       }
     });
+    var url = this.getAttribute("url") 
+    if (url) {
+      this.setURL(url)
+    }
+    
     container.dispatchEvent(new Event("initialized"));   
     editor.addEventListener('change', () => {
       this.onTextChanged();
@@ -62,7 +69,7 @@ export default class Editor extends Morph {
     var editors = Array.from(document.querySelectorAll("lively-container::shadow lively-editor, lively-editor"));
 
     var editorsToUpdate = editors.filter( ea => 
-      ea.getURL().toString() == url && !ea.textChanged && ea !== this);
+      ea.getURLString() == url && !ea.textChanged && ea !== this);
           
     editorsToUpdate.forEach( ea => {
       // lively.showElement(ea);
@@ -96,6 +103,7 @@ export default class Editor extends Morph {
   }
   
   onFilenameEntered() {
+    this.setAttribute("url", this.getURLString())
     this.loadFile();
   }
 
@@ -108,12 +116,11 @@ export default class Editor extends Morph {
   }
   
   getURL() {
-    var filename = $(this.getSubmorph('#filename')).val();
-    return new URL(filename);
+    return new URL(this.getURLString());
   }
 
   getURLString() {
-    return $(this.getSubmorph('#filename')).val();
+    return this.getSubmorph('#filename').value;
   }
 
   setURL(urlString) {
@@ -149,11 +156,11 @@ export default class Editor extends Morph {
     }
     
     if (preserveView) {
-    	this.setScrollInfo(scroll)
-    	this.setCursor(cur)
-      	if (!this.isCodeMirror()) {
-    		this.currentEditor().selection.setRange(oldRange)
-    	}
+      this.setScrollInfo(scroll)
+      this.setCursor(cur)
+      if (!this.isCodeMirror()) {
+        this.currentEditor().selection.setRange(oldRange)
+      }
     }
   }
   

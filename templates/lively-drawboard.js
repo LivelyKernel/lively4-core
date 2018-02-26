@@ -1,4 +1,4 @@
-import Morph from './Morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import CommandHistory  from "src/client/command-history.js";
 import paper from "src/external/paperjs/paper-core.js";
@@ -114,26 +114,26 @@ export default class LivelyDrawboard extends Morph {
 
     this.initSVGInteraction();
     lively.addEventListener("drawboard", this, "extent-changed", 
-      (e) => this.onExtentChanged(e));
+      e => this.onExtentChanged(e));
     lively.addEventListener("drawboard", this, "focus", 
-      (e) => this.onFocus(e));
+      e => this.onFocus(e));
     lively.addEventListener("drawboard", this, "blur", 
-      (e) => this.onBlur(e));
+      e => this.onBlur(e));
     lively.addEventListener("drawboard", this.get('#backgroundColor'), "value-changed", 
-      (e) => this.onBackgroundColor(e.detail.value));  
+      e => this.onBackgroundColor(e.detail.value));  
     lively.addEventListener("drawboard", this.get('#penColor'), "value-changed", 
-      (e) => this.onPenColor(e.detail.value));  
+      e => this.onPenColor(e.detail.value));  
     lively.addEventListener("drawboard", this.get('#penSize'), "value-changed", 
-      (e) => this.onPenSize(e.detail.value));  
+      e => this.onPenSize(e.detail.value));  
 
     
     this.get('#controls').draggable = true
     lively.addEventListener("drawboard", this.get('#controls'), "dragstart", 
-      (e) => this.onDragStart(e));  
+      e => this.onDragStart(e));  
     lively.addEventListener("dragboard", this.get('#controls'), "drag", 
-      (e) => this.onDrag(e));  
+      e => this.onDrag(e));  
     lively.addEventListener("dragboard", this.get('#controls'), "dragend", 
-      (e) => this.onDragEnd(e));  
+      e => this.onDragEnd(e));  
 
     /*
     var input = this.get("#file-path");
@@ -155,7 +155,7 @@ export default class LivelyDrawboard extends Morph {
     this.get("#penSize").value = this.penSize;
    
     this.strokes = new CommandHistory();
-    lively.html.registerButtons(this);
+    this.registerButtons();
     
     this.get("lively-resizer").target = this; // shadow root cannot look outside
     
@@ -215,7 +215,15 @@ export default class LivelyDrawboard extends Morph {
       attributes: true});
   }
 
-
+  freehand() {
+    this.classList.add("freehand")
+    this.get("#svg").style.overflow = "visible";
+    
+    // this.style.backgroundColor = "transparent"
+    // this.style.border = "0pxffffff"        
+    // this.get("svg").style.overflow = "visible"
+  }
+    
   onPointerDown(evt) {
     if (!this.svg) return
     
@@ -291,13 +299,16 @@ export default class LivelyDrawboard extends Morph {
   // Event handler called for each pointerdown event:
   onPointerMove(evt) {
     
-    if (evt.getCoalescedEvents) {
-      var missedEvents = evt.getCoalescedEvents()
-      // lively.showPath(missedEvents.map( ea => pt(ea.clientX, ea.clientY)))
-      missedEvents.forEach(ea => {
-        this.onPointerMove(ea)
-      })
-    }
+    // #BUG seems to jump back...
+    // if (evt.getCoalescedEvents) {
+    //   var i=1
+    //   var missedEvents = evt.getCoalescedEvents()
+    //   // lively.showPath(missedEvents.map( ea => pt(ea.clientX, ea.clientY)))
+    //   missedEvents.forEach(ea => {
+    //     lively.showPoint(lively.getPosition(evt), 10000).innerHTML = "" + i++      
+    //     this.onPointerMove(ea)
+    //   })
+    // }
     
     // console.log("move " + (Date.now() - this.lastMove))
     // this.lastMove = Date.now()
@@ -394,6 +405,14 @@ export default class LivelyDrawboard extends Morph {
   }
   
   simplifyPath(path) {
+    // if (true) {
+    //   var tmp = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+    //   tmp.innerHTML = path.outerHTML
+    //   var debugPath = tmp.querySelector("path")
+    //   debugPath.setAttribute("stroke", "red")
+    //   path.parentElement.appendChild(debugPath)            
+    // }
+    
     this.paper.project.activeLayer.removeChildren();
     this.paper.project.importSVG(path)
     var paperPath = paper.project.getItems({class: paper.Path})[0]

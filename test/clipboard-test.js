@@ -1,6 +1,6 @@
 // #Clipboard #Test
 
-import {expect} from '../node_modules/chai/chai.js';
+import {expect} from 'src/external/chai.js';
 import Clipboard from 'src/client/clipboard.js'
 import {pt} from 'src/client/graphics.js';
 

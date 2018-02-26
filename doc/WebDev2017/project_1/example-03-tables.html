@@ -1,0 +1,35 @@
+<script type="text/javascript">
+  function openExample() {
+    let data = [
+      {name: "John Doe", age: 25, pets: [
+        {type: "Dog", name: "Waldy", eats: ["Pasta", "Pizza"]},
+        {type: "Cat", name: "Smokie", eats: ["Socks"]}
+      ]},
+      {name: "Jane Doe", age: 24, pets: [
+        {type: "Bird", name: "Jaques", eats: []}
+      ]},
+      {name: "Manfred Mustermann", age: 50, pets: [
+        {type: "Monster", name: "Georg Musterhund", eats: ["Children"]}
+      ]},
+      {name: "John Wayne", age: 110, pets: []},
+    ]
+    lively.openComponentInWindow("vivide-list").then(vl => {
+      vl.pushTransformation(list => list);
+      vl.pushDepiction(person => person.name + ", " + person.age);
+      vl.show(data);
+      
+      lively.openComponentInWindow("vivide-table").then(vt => {
+        vt.setTransformation(list => flatten(list.map(person => person.pets)));
+        vl.register(vt);
+      });
+    });
+  }
+  
+  function flatten(list) {
+    return [].concat.apply([], list);
+  }
+</script>
+
+<button onclick="openExample()">
+  Open Example
+</button
