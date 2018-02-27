@@ -115,21 +115,21 @@ export class SignatureManipulator {
     for (var declaration of ast.body) {
       if (declaration.type.includes('Class')) {
         classes.push(await this.extractClassAndMethods(declaration, versionNum,
-                                                       fileName, this.getNodeContent(declaration)))
+                                                       fileName))
       }
       if (declaration.type.includes('ExportDefault') && declaration.declaration.type.includes('Class')) {
         classes.push(await this.extractClassAndMethods(declaration.declaration, versionNum,
-                                                       fileName, this.getNodeContent(declaration)))
+                                                       fileName))
       }
       if (declaration.type.includes('Variable')) {
-        for(var dec of declaration.declarations) {
-          variables.push(await this.extractVariableSig(declaration.kind, dec, versionNum,
-                                                       fileName, this.getNodeContent(declaration)));
-        }
+          variables.push.apply(variables, await this.extractSignature(declaration, versionNum,
+                                                                      fileName, this.getNodeContent(declaration),
+                                                                      NodeTypes.VAR));
       }
       if (declaration.type.includes('Function')) {
-        funcs.push(await this.extractFunctionSig(declaration, versionNum,
-                                                 fileName, this.getNodeContent(declaration)));
+        funcs.push.apply(funcs, await this.extractSignature(declaration, versionNum,
+                                                            fileName, this.getNodeContent(declaration),
+                                                            NodeTypes.FUNCTION));
       }
     }
     return {'classes': classes, 'functions': funcs, 'variables': variables};
@@ -142,64 +142,52 @@ export class SignatureManipulator {
     methods: ['static sampleMethods()']
   }
   **/
-  async extractClassAndMethods(classDeclaration, versionNum, fileName, content) {
+  async extractClassAndMethods(classDeclaration, versionNum, fileName) {
     var res = {'sig': '', 'methods': []};
-    res['sig'] = await this.extractClassSig(classDeclaration, versionNum,
-                                            fileName, this.getNodeContent(classDeclaration));
+    res['sig'] = (await this.extractSignature(classDeclaration, versionNum,
+                                            fileName, this.getNodeContent(classDeclaration),
+                                            NodeTypes.CLASS))[0];
     if(classDeclaration.body) {
       var childDeclarations = classDeclaration.body.body;
       for(var child of childDeclarations) {
         if(child.type.includes('Method')) {
-          res['methods'].push(await this.extractMethodSig(child, versionNum,
-                                                          fileName, this.getNodeContent(child)));
+          res['methods'].push.apply(res['methods'], await this.extractSignature(child, versionNum,
+                                                                                fileName,
+                                                                                this.getNodeContent(child),
+                                                                                NodeTypes.METHOD));
         }
       }
     }
     return res;
   }
-
-  async extractClassSig(declaration, versionNum, fileName, content) {
-    return {
-          declaration: `class ${declaration.id.name}`,
-          id: declaration.id.name,
-          version: versionNum,
-          file: fileName,
-          content: content
-        }
-  }
-
-  async extractVariableSig(kind, declaration, versionNum, fileName, content) {
-    return {
-          declaration: `${kind} ${declaration.id.name}`,
-          id: declaration.id.name,
-          version: versionNum,
-          file: fileName,
-          content: content
+  
+  async extractSignature(declaration, versionNum, fileName, content, type) {
+    var sigs = [];
+    var decls = type === NodeTypes.VAR ? declaration.declarations : [declaration];
+    for(var decl of decls) {
+      var sig = {
+        version: versionNum,
+        file: fileName,
+        content: content};
+      var identifier = type === NodeTypes.METHOD ? decl.key : decl.id;
+      var stringDecl;
+      switch (type) {
+        case NodeTypes.METHOD:
+        case NodeTypes.FUNCTION:
+          stringDecl = `${decl.async ? 'async ' : ''}` + 
+               `${identifier.name} ` + 
+               `(${decl.params.map(t => t.name).join(',')})`;
+          break;
+        case NodeTypes.CLASS:
+        case NodeTypes.VAR:
+          stringDecl = `${type === NodeTypes.CLASS ? 'class' : declaration.kind} ${identifier.name}`;
+          break;
+      }
+      sig.id = identifier.name;
+      sig.declaration = stringDecl;
+      sigs.push(sig);
     }
-  }
-
-  async extractMethodSig(declaration, versionNum, fileName, content) {
-    return {
-          declaration: `${declaration.async ? 'async ' : ''} ` + 
-               `${declaration.key.name} ` + 
-               `(${declaration.params.map(t => t.name).join(',')})`,
-          id: declaration.key.name,
-          version: versionNum,
-          file: fileName,
-          content: content
-    }
-  }
-
-  async extractFunctionSig(declaration, versionNum, fileName, content) {
-    return {
-          declaration: `${declaration.async ? 'async ' : ''} ` + 
-               `${declaration.id.name} ` + 
-               `(${declaration.params.map(t => t.name).join(',')})`,
-          id: declaration.id.name,
-          version: versionNum,
-          file: fileName,
-          content: content
-    }
+    return sigs;
   }
   
 }
