@@ -79,7 +79,7 @@ export class SignatureManipulator {
         code = this.getNodeContent(rootNode);
         break;
       case NodeTypes.FILE:
-        code = content
+        code = content;
         break;
     }
     lively.files.saveFile(filename, code);
@@ -113,12 +113,10 @@ export class SignatureManipulator {
     var funcs = [];
     var variables = [];
     for (var declaration of ast.body) {
+      if (declaration.type.includes('Export'))
+        declaration = declaration.declaration
       if (declaration.type.includes('Class')) {
         classes.push(await this.extractClassAndMethods(declaration, versionNum,
-                                                       fileName))
-      }
-      if (declaration.type.includes('ExportDefault') && declaration.declaration.type.includes('Class')) {
-        classes.push(await this.extractClassAndMethods(declaration.declaration, versionNum,
                                                        fileName))
       }
       if (declaration.type.includes('Variable')) {
@@ -132,7 +130,9 @@ export class SignatureManipulator {
                                                             NodeTypes.FUNCTION));
       }
     }
-    return {'classes': classes, 'functions': funcs, 'variables': variables};
+    return {[NodeTypes.CLASS]: classes, 
+            [NodeTypes.FUNCTION]: funcs, 
+            [NodeTypes.VAR]: variables};
   }
   
   /**

@@ -85,13 +85,13 @@ export default class SemanticSourceCodeNavigator extends Morph {
         this.codeEditor.editor.setValue(extraction.content); 
         this.root = extraction.ast;
         this.components = extraction.sigs;
-        this.components.classes.forEach((cls, i) => {
+        this.components[NodeTypes.CLASS].forEach((cls, i) => {
            this.addListElement('#class-list', cls.sig.declaration, i);
         });
-        this.components.variables.forEach((topLvlVar, i) => {
+        this.components[NodeTypes.VAR].forEach((topLvlVar, i) => {
            this.addListElement('#class-list', topLvlVar.declaration, i);  
         });
-        this.components.functions.forEach((func, i) => {
+        this.components[NodeTypes.FUNCTION].forEach((func, i) => {
            this.addListElement('#class-list', func.declaration, i);    
         });
       });
@@ -179,7 +179,7 @@ export default class SemanticSourceCodeNavigator extends Morph {
   the new content `content` (valid JS as string)
   */
   saveFile(content, type, id) {
-    var parent = (type === 'method')? this.currentTopLvl.sig.id : '';
+    var parent = (type === NodeTypes.METHOD)? this.currentTopLvl.sig.id : '';
     this.sig.setNewContent(this.currentFile,
                   type,
                   id, 
