@@ -1,8 +1,13 @@
-import Dexie from "https://unpkg.com/dexie@2.0.0-beta.11/dist/dexie.js";
 import {babel} from 'systemjs-babel-build';
 import plugin from 'https://lively-kernel.org/lively4/foo/src/external/babel-plugin-syntax-all.js';
 
-export default class SignatureManipulator {
+export const NodeTypes = Object.freeze({'FILE': 1,
+                                        'VAR': 2,
+                                        'FUNCTION': 3,
+                                        'CLASS': 4,
+                                        'METHOD': 5});
+
+export class SignatureManipulator {
 
   async parseAndExtractFile(name) {
     var file = await fetch(name).then( r => r);
@@ -30,9 +35,9 @@ export default class SignatureManipulator {
       for(var childIndex in parent) {
         var child = parent[childIndex];
         var replaceCondition;
-        if(childType === 'method')
+        if(childType === NodeTypes.METHOD)
           replaceCondition = (child.key.name === id);
-        else if(childType === 'variable')
+        else if(childType === NodeTypes.VAR)
           replaceCondition = (child.hasOwnProperty('declarations') && child.declarations[0].id.name === id);
         else
           replaceCondition = (child.hasOwnProperty('id') && child.id.name === id);
@@ -49,27 +54,34 @@ export default class SignatureManipulator {
     
     var rootNode = await this.parseAndExtractFile(filename);
     rootNode = rootNode.ast;
-    if(type === 'method') {
-      var newNode = this.astFromMethod(content);
-      var parentClass = false;
-      for (var declaration of rootNode.body) {
-        if(declaration.hasOwnProperty('id') && declaration.id.name === parentID) {
-          parentClass = declaration;
-          break;
+    var code;
+    switch (type) {
+      case NodeTypes.METHOD:
+        var newNode = this.astFromMethod(content);
+        var parentClass = false;
+        for (var declaration of rootNode.body) {
+          if(declaration.hasOwnProperty('id') && declaration.id.name === parentID) {
+            parentClass = declaration;
+            break;
+          }
         }
-      }
-      if(!parentClass) 
-        console.log('Could not find parent element, saving won\'t work!');
-      else
-        replaceOrAppendChild(parentClass.body.body, newNode, 'method')
-    } else if(type === 'variable') {
-      var newNode = this.astFromText(content);
-      replaceOrAppendChild(rootNode.body, newNode, 'variable')
-    } else {
-      var newNode = this.astFromText(content);
-      replaceOrAppendChild(rootNode.body, newNode)
+        if(!parentClass) 
+          lively.notify('[Semantic Navigator] Could not find parent element, saving won\'t work!');
+        else
+          replaceOrAppendChild(parentClass.body.body, newNode, NodeTypes.METHOD)
+        code = this.getNodeContent(rootNode);
+        break;
+      case NodeTypes.VAR:
+      case NodeTypes.CLASS:
+      case NodeTypes.FUNCTION:
+        newNode = this.astFromText(content);
+        replaceOrAppendChild(rootNode.body, newNode, type)
+        code = this.getNodeContent(rootNode);
+        break;
+      case NodeTypes.FILE:
+        code = content
+        break;
     }
-    var code = this.getNodeContent(rootNode);
     lively.files.saveFile(filename, code);
   }
 
@@ -188,35 +200,6 @@ export default class SignatureManipulator {
           file: fileName,
           content: content
     }
-  }
-  
-}
-
-class DBWrapper {
-  // Simple Wrapper for IndexedDB, usage:
-  // var obj = {
-  //   sig: 'async function getAST(name)',
-  //   version: 1.0,
-  //   file: 'src/client/signature-db.js',
-  //   content: '<Content here>'
-  // };
-  // new DBWrapper().insertObject(obj);
-  // new DBWrapper().getObject('async', (v => console.log(v)));
-  constructor() {
-    this.db = new Dexie('signatures');
-    this.db.version('1').stores({
-      signatures: 'sig, version, file, content'
-    });
-  }
-  
-  async insertObject(object) {  
-    this.db.signatures.put(object).catch(function(error) {
-       alert ('Storing did not work: ' + error);
-    });
-  }
-  
-  getObject(signature, callback) {
-    this.db.signatures.where('sig').startsWithIgnoreCase(signature).each(sig => callback(sig));
   }
   
 }

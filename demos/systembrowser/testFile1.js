@@ -8,7 +8,7 @@ class TestClass {
   }
 
   static print() {
-    console.log("somethingelse");
+    console.log("someeething");
   }
 
 }
@@ -21,7 +21,7 @@ class TestClass2 {
   }
 
   static print2() {
-    console.log('print');
+    console.log('printtttttt');
   }
 
 }
