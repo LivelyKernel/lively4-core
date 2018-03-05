@@ -26,7 +26,7 @@ export default class ResearchDiary extends Morph {
     
     await this.prepareEditor();
     this.refreshList();
-    
+
     this.get('#new').addEventListener("click", ::this.createNewEntry);
     
     const urlToLoad = this.currentEntryURL;
@@ -55,7 +55,7 @@ export default class ResearchDiary extends Morph {
     
     this.debouncedSetPreviewText = ::this.setPreviewText::debounce(600);
     editorComp.addEventListener("change" , this.debouncedSetPreviewText);
-    this.debouncedSave = ::this.save::debounce(5000);
+    this.debouncedSave = ::this.save::debounce(2000);
     editorComp.addEventListener("change" , e => this.debouncedSave(this.codeEditor.value));
   }
   

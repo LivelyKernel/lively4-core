@@ -1,0 +1,85 @@
+<template id="semantic-source-code-navigator" data-class="SemanticSourceCodeNavigator">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  
+}
+#content {
+/*   background-color: blue; */
+}
+  span {
+    color:red;
+  }
+  table {
+    font-family: arial, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  td, th {
+    border: 1px solid #dddddd;
+    text-align: left;
+    padding: 8px;
+  }
+
+  tr:nth-child(even) {
+    background-color: #dddddd;
+  }
+  ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  }
+  ul li a {
+    display: block;
+    width: 100%;
+    text-decoration: none;
+    padding: 5px;
+  }
+  ul li a:hover {
+    background-color: #ccc;
+  }
+  ul li.checked {
+    background: #888;
+    color: #fff;
+  }
+  
+  #class-list, #function-list {
+    display: none;
+  }
+</style>
+<div id="content">
+<!--   <lively-editor></lively-editor>
+  <span>BAR</span>FOOO
+	<content></content> -->
+  <table>
+    <tr>
+      <th>Files</th>
+      <th>Top Level Functions</th>
+      <th>Methods</th>
+    </tr>
+    <tr>
+      <td>
+        <ul id="file-list">
+        </ul>
+      </td>
+      <td>
+        <ul id="class-list">
+        </ul>
+      </td>
+      <td>
+        <ul id="function-list">
+        </ul>
+      </td>
+    </tr>
+  </table>
+  <div id="main">
+    <div id="editor">
+      <lively-code-mirror id="code-mirror"></lively-code-mirror>
+    </div>
+  </div>
+</div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+
