@@ -14,7 +14,7 @@ export class ObjectResponse {
   }
 
   async json() {
-    throw new Error("json not supported")
+    return this.text().then(t => JSON.parse(t))  
   }
 
   async blob() {
@@ -22,7 +22,7 @@ export class ObjectResponse {
   }
 }
 
-export class Schema {  
+export class Scheme {  
   constructor(url) {
     this.url = url
   }
@@ -45,11 +45,9 @@ export class Schema {
     }  
     if (this.GET && (!options || options.method == "GET")) { // GET is default
       return this.GET(options)
-    } 
-    if (this.PUT && options.method == "PUT") {
+    } else if (this.PUT && options.method == "PUT") {
       return this.PUT(options)
-    }    
-    if (this.OPTIONS && options.method == "OPTIONS") {
+    } else if (this.OPTIONS && options.method == "OPTIONS") {
       return this.OPTIONS(options)
     }
     return new Response("Request not supported", {status: 400})    
@@ -62,7 +60,7 @@ export class Schema {
     fetch("livelyfile://#README2.md", {method: "PUT", body: "heyho"})
 */
 
-export class LivelyFile extends Schema {
+export class LivelyFile extends Scheme {
   
   resolve() {
     this.element = ElementQuery.pathToElement(this.url)
@@ -110,17 +108,27 @@ export class LivelyFile extends Schema {
     // fetch("query://#haha", {method: "PUT", body: "<h1>foo</h1>heyho"})
     fetch("query://#haha")
 */
-export class ElementQuery extends Schema {
+export class ElementQuery extends Scheme {
   
   static pathToElement(elementURL) {
-    var selector = elementURL.replace(/^[a-zA-Z]+:\/\//,"").replace(/\./,"\\.")
+    var selector = elementURL.replace(/^[a-zA-Z]+:\/\//,"") // .replace(/\./,"\\.")
     selector = decodeURI(selector)
-    if (selector  == "") return document
-    try {
-      var element = document.querySelector(selector)
-    } catch(e) {
-      console.warn("query error " + e)
-      return undefined
+    var element = document.body
+    for(var subSelector of selector.split("/")) {
+      console.log("subselector " + subSelector)
+      if (subSelector == "") break;
+      if (subSelector == "..") {
+        if (element) {
+          element = element.parentElement          
+        }
+      } else {
+        try {
+          element = element.querySelector(subSelector)
+        } catch(e) {
+          console.warn("query error " + e)
+          return undefined
+        }              
+      }
     }
     return element
   }
@@ -137,6 +145,23 @@ export class ElementQuery extends Schema {
     }
     return super.GET(options)
   }
+  
+  elementToStat(element, withChildren) {
+    return {
+      name: element.id ? "#" + element.id.replace(/\./g, "\\.") : element.tagName, // quote points, because they are SYNTAX
+      type: "element",
+      contents: withChildren ? (Array.from(element.childNodes)
+        .filter(ea => ea.id)
+        .map(ea => this.elementToStat(ea, false))) : undefined
+    }
+  }
+  
+  OPTIONS() {
+    if (this.element) {
+      return new Response(JSON.stringify(this.elementToStat(this.element, true)))
+    }
+    return new Response("We cannot do that", {status: 400})
+  }
 }
 
 
@@ -144,7 +169,7 @@ export class ElementQuery extends Schema {
   EXAMPLES:
     fetch("queryall://div")
 */
-export class ElementQueryAll extends Schema {
+export class ElementQueryAll extends Scheme {
   
   static pathToElements(elementURL) {
     var selector = elementURL.replace(/^[a-zA-Z]+:\/\//,"").replace(/\./,"\\.")
@@ -170,6 +195,7 @@ export class ElementQueryAll extends Schema {
     }
     return super.GET(options)
   }
+  
 }
 
 /* 
@@ -195,6 +221,8 @@ export class InnerHTMLElementQuery extends ElementQuery {
     }
     return super.PUT(options)
   }
+  
+ 
 }
 
 
@@ -215,6 +243,7 @@ export default class PolymorphicIdentifier {
     }
   }
   
+  // #Refactor schemeFor
   static schemaFor(url) {
     var m = url.match(/^([A-Za-z0-9]+):\/\//)
     if (!m || !this.schemas) return

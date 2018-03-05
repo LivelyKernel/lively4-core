@@ -233,4 +233,5 @@ export default class Files {
       reader.readAsDataURL(fileOrBlob); 
     })
   }  
+ 
 }

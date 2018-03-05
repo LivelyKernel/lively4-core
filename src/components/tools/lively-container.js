@@ -420,10 +420,12 @@ export default class Container extends Morph {
   }
 
   getSourceCode() {
-    return this.get("#editor").currentEditor().getValue()
+    var editor = this.get("#editor")
+    if (!editor) return ""
+    return editor.currentEditor().getValue()
   }
 
-  onSave(doNotQuit) {
+  async onSave(doNotQuit) {
     if (!this.isEditing()) {
       this.saveEditsInView();
       return; 
@@ -816,7 +818,7 @@ export default class Container extends Morph {
   getURL() {
     var path = this.getPath();
     if (!path) return;
-    if (path.match(/^https?:\/\//)) {
+    if (lively.files.isURL(path)) {
       return new URL(path);
     } if (path.match(/^[a-zA-Z]+:\/\//)) {
       return new URL(path);
@@ -963,7 +965,9 @@ export default class Container extends Morph {
         isdir = true
       }
     }
-    path =  path + (isdir ? "/" : "");
+    if (!path.match(/\/$/) && isdir) {
+      path =  path + "/"
+    }
 
     var container=  this.get('#container-content');
     // don't scroll away whe reloading the same url
