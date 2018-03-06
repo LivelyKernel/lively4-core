@@ -27,6 +27,14 @@ export class Scheme {
     this.url = url
   }
   
+  get scheme() {
+    throw new Error("subcluss responsibility")
+  }
+
+  static get scheme() {
+    return (new this()).scheme
+  } 
+  
   GET() {
     return new Response("not supported yet", {status: 300})
   }  
@@ -61,6 +69,11 @@ export class Scheme {
 */
 
 export class LivelyFile extends Scheme {
+  
+  get scheme() {
+    return "livelyfile"
+  }
+
   
   resolve() {
     this.element = ElementQuery.pathToElement(this.url)
@@ -110,14 +123,20 @@ export class LivelyFile extends Scheme {
 */
 export class ElementQuery extends Scheme {
   
+  get scheme() {
+    return "query"
+  }
+  
   static pathToElement(elementURL) {
     var selector = elementURL.replace(/^[a-zA-Z]+:\/\//,"") // .replace(/\./,"\\.")
     selector = decodeURI(selector)
     var element = document.body
+    console.log("selector " + JSON.stringify(selector))
     for(var subSelector of selector.split("/")) {
-      console.log("subselector " + subSelector)
-      if (subSelector == "") break;
-      if (subSelector == "..") {
+      console.log("subselector " + JSON.stringify(subSelector))
+      if (subSelector == "") {
+        // nothing
+      } else if (subSelector == "..") {
         if (element) {
           element = element.parentElement          
         }
@@ -146,10 +165,27 @@ export class ElementQuery extends Scheme {
     return super.GET(options)
   }
   
+  elementToURI(element) {
+    if (!element.parentElement) {
+      return this.scheme + "://"
+    }
+    var url = this.elementToURI(element.parentElement) 
+    if (element.id) {
+      url += "/" + this.elementIdQuery(element) 
+    }
+    return url
+  }
+  
+  elementIdQuery(element) {
+    return "#" + element.id.replace(/\./g, "\\.")
+  }
+  
+  
   elementToStat(element, withChildren) {
     return {
-      name: element.id ? "#" + element.id.replace(/\./g, "\\.") : element.tagName, // quote points, because they are SYNTAX
+      name: element.id ? this.elementIdQuery(element) : element.tagName, // quote points, because they are SYNTAX
       type: "element",
+      parent: this.elementToURI(element.parentElement), // URI to parent element / file / for navigation...
       contents: withChildren ? (Array.from(element.childNodes)
         .filter(ea => ea.id)
         .map(ea => this.elementToStat(ea, false))) : undefined
@@ -170,6 +206,11 @@ export class ElementQuery extends Scheme {
     fetch("queryall://div")
 */
 export class ElementQueryAll extends Scheme {
+  
+  get scheme() {
+    return "queryall"
+  }
+
   
   static pathToElements(elementURL) {
     var selector = elementURL.replace(/^[a-zA-Z]+:\/\//,"").replace(/\./,"\\.")
@@ -204,6 +245,10 @@ export class ElementQueryAll extends Scheme {
     fetch("innerhtml://#haha").then(t => t.text())
 */
 export class InnerHTMLElementQuery extends ElementQuery {
+  get scheme() {
+    return "innerhtml"
+  }
+
   GET(options) {
     var element = this.element
     if (element) {
@@ -229,10 +274,10 @@ export class InnerHTMLElementQuery extends ElementQuery {
 export default class PolymorphicIdentifier {
   
   static load() {
-    this.register("livelyfile", LivelyFile) 
-    this.register("query", ElementQuery) 
-    this.register("queryall", ElementQueryAll) 
-    this.register("innerhtml", InnerHTMLElementQuery) 
+    this.register(LivelyFile) 
+    this.register(ElementQuery) 
+    this.register(ElementQueryAll) 
+    this.register(InnerHTMLElementQuery) 
   }
   
   static url(request) {
@@ -250,9 +295,9 @@ export default class PolymorphicIdentifier {
     return this.schemas[m[1]]  
   }
   
-  static register(prefix, schema) {
+  static register(scheme) {
     if (!this.schemas) this.schemas = {};
-    this.schemas[prefix] = schema
+    this.schemas[scheme.scheme] = scheme
   }
   
   static handle(request, options) {

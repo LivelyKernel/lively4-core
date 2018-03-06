@@ -1092,10 +1092,6 @@ export default class Container extends Morph {
     
     
     await navbar.show(this.getURL(), this.sourceContent)
-    
-    if (this.isEditing()) {
-      this.get('#container-leftpane').showSublist()
-    }
   }
   
   isFullscreen() {

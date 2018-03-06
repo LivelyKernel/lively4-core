@@ -163,7 +163,6 @@ export default class LivelyContainerNavbar extends Morph {
   
   async update() {
     await this.show(this.url, this.sourceContent)
-    await this.showSublist()
   }
   
   getSelection() {
@@ -180,6 +179,13 @@ export default class LivelyContainerNavbar extends Morph {
     var stats = await fetch(root, {
       method: "OPTIONS",
     }).then(r => r.json()).catch(e => null);
+
+    var mystats = await fetch(targetUrl, {
+      method: "OPTIONS",
+    }).then(r => r.json()).catch(e => null);
+    if (!mystats) {
+      mystats = {}
+    }
     
     if (!stats) {
       stats = {};// fake it
@@ -260,8 +266,13 @@ export default class LivelyContainerNavbar extends Morph {
         href += "/"
       }
       var otherUrl = href.match(/^https?:\/\//) ? href : root + "" + href;
+      if (mystats.parent && ea.name == "..") {        
+        otherUrl = mystats.parent
+        lively.notify("other " + otherUrl)
+      }
       link.href = otherUrl;
-
+      
+      
       if (this.lastSelection && this.lastSelection.includes(otherUrl)) {
         element.classList.add("selected")
       }
@@ -282,6 +293,7 @@ export default class LivelyContainerNavbar extends Morph {
       element.appendChild(link);
       navbar.appendChild(element);
     });
+    this.showSublist()
   }
   
   onItemClick(link, evt) {
@@ -426,12 +438,11 @@ export default class LivelyContainerNavbar extends Morph {
         lively.notify("follow " + ea.name)
         this.followPath(this.url + "/" + ea.name)
       }
-    
     }
   }
   
   async showSublist() {
-    if (!this.targetItem || !this.sourceContent) return 
+    if (!this.targetItem) return 
     var subList = document.createElement("ul");
     this.targetItem.appendChild(subList);
     if (this.url.match(/templates\/.*html$/)) {
@@ -451,9 +462,9 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   async livelyExample() {
-    var url = lively4url + "/README.md"
+    // var url = lively4url + "/README.md"
+    var url = "innerhtml://"
     var content = await fetch(url).then(r => r.text())
     await this.show(url, content)
-    this.showSublist()
   }
 }
