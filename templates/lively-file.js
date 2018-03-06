@@ -1,9 +1,8 @@
- import Morph from "src/components/widgets/lively-morph.js"
+import Morph from "src/components/widgets/lively-morph.js"
 import ContextMenu from 'src/client/contextmenu.js'
 import Mimetypes from 'src/client/mimetypes.js'
 import {getTempKeyFor} from 'utils'
-
-
+import {LivelyFile} from "src/client/poid.js"
 
 export default class File extends Morph {
   initialize() {
@@ -11,10 +10,21 @@ export default class File extends Morph {
     this.updateView(this.name)
     this.draggable = true;
     this.addEventListener("dragstart", evt => this.onDragStart(evt))
+    this.addEventListener("click", evt => this.onClick(evt))
+    this.addEventListener("dblclick", evt => this.onDoubleClick(evt))    
   }
   
   onClick() {
-    
+    if (this.classList.contains("selected")) {
+      this.classList.remove("selected")        
+    } else {
+      this.classList.add("selected")  
+    }
+  }
+  
+  async onDoubleClick() {
+    var comp = await lively.openBrowser(LivelyFile.fileToURI(this), false)
+    comp.hideNavbar() 
   }
   
   async onDragStart(evt) {

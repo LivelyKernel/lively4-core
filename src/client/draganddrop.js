@@ -241,10 +241,12 @@ const dropOnDocumentBehavior = {
               appendToBodyAt(img, evt);
             };
             reader.readAsDataURL(file); 
-        } else if (extension == "html") {
-          var source = await lively.files.readBlobAsText(file)
-          lively.clipboard.pasteHTMLDataInto(source, document.body, false, lively.getPosition(evt));
-        } else {          
+        } 
+        // else if (extension == "html") {
+        //   var source = await lively.files.readBlobAsText(file)
+        //   lively.clipboard.pasteHTMLDataInto(source, document.body, false, lively.getPosition(evt));
+        // } 
+        else {          
           var item = await (<lively-file></lively-file>)
           item.classList.add("lively-content") // for persistence
           // #TODO check for existing "file"

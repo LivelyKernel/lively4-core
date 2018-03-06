@@ -349,6 +349,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   showSublistHTML(subList) {
+    if (!this.sourceContent) return;
     var template = $($.parseHTML(this.sourceContent)).filter("template")[0];
       if (!template) {
         console.log("showNavbar: no template found");
@@ -368,6 +369,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   showSublistJS(subList) {
+    if (!this.sourceContent) return;
     let instMethod = "(^|\\s+)([a-zA-Z0-9$_]+)\\s*\\(\\s*[a-zA-Z0-9$_ ,=]*\\s*\\)\\s*{",
         klass = "(?:^|\\s+)class\\s+([a-zA-Z0-9$_]+)",
         func = "(?:^|\\s+)function\\s+([a-zA-Z0-9$_=]+)\\s*\\(",
@@ -400,6 +402,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   showSublistMD(subList) {
+    if (!this.sourceContent) return;
     let defRegEx = /(?:^|\n)((#+) ?(.*))/g;
     let m;
     let links = {};

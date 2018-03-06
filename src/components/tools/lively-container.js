@@ -1063,7 +1063,8 @@ export default class Container extends Morph {
 
   navigateToName(name) {
     // lively.notify("navigate to " + name);
-    this.getAceEditor().find(name);
+    var editor = this.getAceEditor()
+    if (editor) editor.find(name);
   }
 
   clearNavbar() {
