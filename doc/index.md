@@ -8,7 +8,7 @@ Lively4 is a self-supporting collaborative development environment. It runs in t
 2. We also developed a thin node.js server that can clone github projects, serve their content and allow to edit them using each developers private github credentials.
 3. We can load lively through a chrome extension on any third party page. Currently we loose some functionality such as the unified service worker file system that way. 
 
-Lively4 is currently build using two materials: JavaScript modules and HTML Templates. 
+Lively4 is currently build using two materials: JavaScript modules and HTML templates. 
 
 # Lively4 
 

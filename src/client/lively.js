@@ -1136,7 +1136,7 @@ export default class Lively {
     });
   }
 
-  static openSearchWidget(text, worldContext, searchContext) {
+  static openSearchWidget(text, worldContext, searchContext=document.body) {
     // index based search is not useful at the moment
     if (true) {
       var container = lively.query(searchContext, "lively-container")

@@ -37,7 +37,7 @@ export default class FileBrowser extends Morph {
   }
 
   set path(value) {
-    if (value.match(/^https?:\/\//)) {
+    if (lively.files.isURL(value)) {
       // lively.notify("set path: " + value)
       this._path = [value];
       this.updateURL(value);
@@ -74,7 +74,7 @@ export default class FileBrowser extends Morph {
   /** Path  API */
   get path() {
     if (!this._path) return "/";
-    return (this._path && this._path[0] && this._path[0].match(/^https?:\/\//) ? "" : '/') 
+    return (this._path && this._path[0] && lively.files.isURL(this._path[0]) ? "" : '/') 
       + this._path.join('/');
   }
 
@@ -123,7 +123,7 @@ export default class FileBrowser extends Morph {
           });
       }
     }).then((json) => {
-      if(Array.isArray(json.contents) && json.type === 'directory') {
+      if(Array.isArray(json.contents) /* && json.type === 'directory' */) {
         return json;
       } else {
         console.log(json);
@@ -151,7 +151,7 @@ export default class FileBrowser extends Morph {
 
         item.addEventListener('click', (event) => {
           var newPath = path + '/' + file.name;
-          var baseURL = newPath.match(/https?:\/\//) ? "" : 'https://lively4'; 
+          var baseURL = lively.files.isURL(newPath)? "" : 'https://lively4'; 
           var newURL = new URL(baseURL + newPath);
 
           if(file.type === 'directory') {

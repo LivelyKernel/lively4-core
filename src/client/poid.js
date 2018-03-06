@@ -14,7 +14,7 @@ export class ObjectResponse {
   }
 
   async json() {
-    throw new Error("json not supported")
+    return this.text().then(t => JSON.parse(t))  
   }
 
   async blob() {
@@ -22,10 +22,18 @@ export class ObjectResponse {
   }
 }
 
-export class Schema {  
+export class Scheme {  
   constructor(url) {
     this.url = url
   }
+  
+  get scheme() {
+    throw new Error("subcluss responsibility")
+  }
+
+  static get scheme() {
+    return (new this()).scheme
+  } 
   
   GET() {
     return new Response("not supported yet", {status: 300})
@@ -45,11 +53,9 @@ export class Schema {
     }  
     if (this.GET && (!options || options.method == "GET")) { // GET is default
       return this.GET(options)
-    } 
-    if (this.PUT && options.method == "PUT") {
+    } else if (this.PUT && options.method == "PUT") {
       return this.PUT(options)
-    }    
-    if (this.OPTIONS && options.method == "OPTIONS") {
+    } else if (this.OPTIONS && options.method == "OPTIONS") {
       return this.OPTIONS(options)
     }
     return new Response("Request not supported", {status: 400})    
@@ -62,10 +68,38 @@ export class Schema {
     fetch("livelyfile://#README2.md", {method: "PUT", body: "heyho"})
 */
 
-export class LivelyFile extends Schema {
+export class LivelyFile extends Scheme {
+  
+  get scheme() {
+    return "livelyfile"
+  }
+
+  static pathToFile(fileURL) {
+    var selector = fileURL.replace(/^[a-zA-Z]+:\/\//,"") // .replace(/\./,"\\.")
+    selector = decodeURI(selector)
+    var element = document.body
+    for(var subSelector of selector.split("/")) {
+      if (subSelector == "") {
+        // nothing
+      } else if (subSelector == "..") {
+        if (element) {
+          element = element.parentElement          
+        }
+      } else {
+        try {
+          element = element.querySelector(":scope > #" + subSelector.replace(/\./,"\\."))
+        } catch(e) {
+          console.warn("query error " + e)
+          return undefined
+        }              
+      }
+    }
+    return element
+  }
+  
   
   resolve() {
-    this.element = ElementQuery.pathToElement(this.url)
+    this.element = LivelyFile.pathToFile(this.url)
     console.log("found " + this.element, this.url)
     return this.element 
   }  
@@ -91,14 +125,34 @@ export class LivelyFile extends Schema {
     return super.PUT(options)
   }
   
+  fileToStat(element, withChildren) {
+    return {
+      name: element.id,
+      parent: this.fileToURI(element.parentElement),
+      type: element.tagName == "LIVELY-FILE" ? "file" : "directory",
+      contents: withChildren ? (Array.from(element.childNodes)
+        .filter(ea => ea.id && ea.classList && ea.classList.contains("lively-content"))
+        .map(ea => this.fileToStat(ea, false))) : undefined
+    }
+  }
+  
+  fileToURI(file) {
+    if (!file.parentElement) {
+      return this.scheme + "://"
+    }
+    var url = this.fileToURI(file.parentElement) 
+    if (file.id) {
+      url += "/" + file.id 
+    } else {
+      // we should not allow this?
+    }
+    return url
+  }
+  
   OPTIONS() {
     var element = this.element
-    if (element.tagName == "LIVELY-FILE") {
-      return new Response(JSON.stringify({
-        name: element.name,
-        // size: xxx?
-        type: "file"
-      }))
+    if (element) {
+      return new Response(JSON.stringify(this.fileToStat(element, true)))
     }
     return new Response("We cannot do that", {status: 400})
   }
@@ -110,17 +164,31 @@ export class LivelyFile extends Schema {
     // fetch("query://#haha", {method: "PUT", body: "<h1>foo</h1>heyho"})
     fetch("query://#haha")
 */
-export class ElementQuery extends Schema {
+export class ElementQuery extends Scheme {
+  
+  get scheme() {
+    return "query"
+  }
   
   static pathToElement(elementURL) {
-    var selector = elementURL.replace(/^[a-zA-Z]+:\/\//,"").replace(/\./,"\\.")
+    var selector = elementURL.replace(/^[a-zA-Z]+:\/\//,"") // .replace(/\./,"\\.")
     selector = decodeURI(selector)
-    if (selector  == "") return document
-    try {
-      var element = document.querySelector(selector)
-    } catch(e) {
-      console.warn("query error " + e)
-      return undefined
+    var element = document.body
+    for(var subSelector of selector.split("/")) {
+      if (subSelector == "") {
+        // nothing
+      } else if (subSelector == "..") {
+        if (element) {
+          element = element.parentElement          
+        }
+      } else {
+        try {
+          element = element.querySelector(subSelector)
+        } catch(e) {
+          console.warn("query error " + e)
+          return undefined
+        }              
+      }
     }
     return element
   }
@@ -137,6 +205,40 @@ export class ElementQuery extends Schema {
     }
     return super.GET(options)
   }
+  
+  elementToURI(element) {
+    if (!element.parentElement) {
+      return this.scheme + "://"
+    }
+    var url = this.elementToURI(element.parentElement) 
+    if (element.id) {
+      url += "/" + this.elementIdQuery(element) 
+    }
+    return url
+  }
+  
+  elementIdQuery(element) {
+    return "#" + element.id.replace(/\./g, "\\.")
+  }
+  
+  
+  elementToStat(element, withChildren) {
+    return {
+      name: element.id ? this.elementIdQuery(element) : element.tagName, // quote points, because they are SYNTAX
+      type: "element",
+      parent: this.elementToURI(element.parentElement), // URI to parent element / file / for navigation...
+      contents: withChildren ? (Array.from(element.childNodes)
+        .filter(ea => ea.id)
+        .map(ea => this.elementToStat(ea, false))) : undefined
+    }
+  }
+  
+  OPTIONS() {
+    if (this.element) {
+      return new Response(JSON.stringify(this.elementToStat(this.element, true)))
+    }
+    return new Response("We cannot do that", {status: 400})
+  }
 }
 
 
@@ -144,7 +246,12 @@ export class ElementQuery extends Schema {
   EXAMPLES:
     fetch("queryall://div")
 */
-export class ElementQueryAll extends Schema {
+export class ElementQueryAll extends Scheme {
+  
+  get scheme() {
+    return "queryall"
+  }
+
   
   static pathToElements(elementURL) {
     var selector = elementURL.replace(/^[a-zA-Z]+:\/\//,"").replace(/\./,"\\.")
@@ -170,6 +277,7 @@ export class ElementQueryAll extends Schema {
     }
     return super.GET(options)
   }
+  
 }
 
 /* 
@@ -178,6 +286,10 @@ export class ElementQueryAll extends Schema {
     fetch("innerhtml://#haha").then(t => t.text())
 */
 export class InnerHTMLElementQuery extends ElementQuery {
+  get scheme() {
+    return "innerhtml"
+  }
+
   GET(options) {
     var element = this.element
     if (element) {
@@ -195,16 +307,18 @@ export class InnerHTMLElementQuery extends ElementQuery {
     }
     return super.PUT(options)
   }
+  
+ 
 }
 
 
 export default class PolymorphicIdentifier {
   
   static load() {
-    this.register("livelyfile", LivelyFile) 
-    this.register("query", ElementQuery) 
-    this.register("queryall", ElementQueryAll) 
-    this.register("innerhtml", InnerHTMLElementQuery) 
+    this.register(LivelyFile) 
+    this.register(ElementQuery) 
+    this.register(ElementQueryAll) 
+    this.register(InnerHTMLElementQuery) 
   }
   
   static url(request) {
@@ -215,15 +329,16 @@ export default class PolymorphicIdentifier {
     }
   }
   
+  // #Refactor schemeFor
   static schemaFor(url) {
     var m = url.match(/^([A-Za-z0-9]+):\/\//)
     if (!m || !this.schemas) return
     return this.schemas[m[1]]  
   }
   
-  static register(prefix, schema) {
+  static register(scheme) {
     if (!this.schemas) this.schemas = {};
-    this.schemas[prefix] = schema
+    this.schemas[scheme.scheme] = scheme
   }
   
   static handle(request, options) {

@@ -6,7 +6,7 @@ We started growing our new tree first by building some core development tools to
 
 Here are some initial results:
 
-- Calibribe book visualization (d3 and drobbox) 
+- Calibri book visualization (d3 and drobbox) 
 
 
 # Applications we want to work together
