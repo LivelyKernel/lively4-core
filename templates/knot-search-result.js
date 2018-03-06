@@ -3,42 +3,179 @@ import { Graph } from './../src/client/triples/triples.js';
 import { uuid as generateUUID, getTempKeyFor, fileName, hintForLabel, asDragImageFor } from 'utils';
 import Keys from 'src/client/keys.js';
 
+const classSelected = 'selected';
+const selectorSelected = '.' + classSelected;
+const classLastSelected = 'last-selected';
+const selectorLastSelected = '.' + classLastSelected;
+
+class MultiSection {
+  getAllSubmorphs(...args) { return this.morph.getAllSubmorphs(...args); }
+  get(...args) { return this.morph.get(...args); }
+  
+  constructor(morph, selector) {
+    this.morph = morph;
+    this.selector = selector;
+  }
+  
+  focusLastSelected() {
+    const listItem = this.get(this.selector + selectorLastSelected);
+    if(listItem) {
+      listItem.focus();
+    }
+  }
+  focusDefault() {
+    const listItem = this.get(this.selector);
+    if(listItem) {
+      listItem.focus();
+      listItem.classList.toggle(classSelected);
+      listItem.classList.add(classLastSelected);
+    }
+  }
+  
+  removeSelection() {
+    this.getAllSubmorphs(this.selector + selectorSelected).forEach(item => {
+      item.classList.remove(classSelected);
+    });
+  }
+  removeLastSelection() {
+    this.getAllSubmorphs(this.selector + selectorLastSelected).forEach(item => {
+      item.classList.remove(classLastSelected);
+    });
+  }
+  
+  selectFromLastSelectedTo(current) {
+    const lastSelected = this.get(selectorLastSelected) || this.get(this.selector);
+
+    // according to Ashton French
+    // https://stackoverflow.com/questions/47398032/select-every-element-between-two-ids
+    let firstIdFound = false;
+    let applySelector = false;
+    this.getAllSubmorphs(this.selector)
+      .filter(element => {
+        if (element === lastSelected || element === current) {
+          applySelector = firstIdFound ? false : true;
+          firstIdFound = applySelector ? true : false;
+          return true;
+        }
+        return applySelector;
+      })
+      .forEach(element => element.classList.add(classSelected));
+  }
+
+  addItem(item) {
+    item.addEventListener('click', evt => {
+      evt.stopPropagation();
+      evt.preventDefault();
+      
+      if(!evt.ctrlKey && !evt.shiftKey) {
+        this.removeSelection();
+        this.removeLastSelection();
+        item.classList.add(classSelected, classLastSelected);
+      }
+      if(evt.ctrlKey && !evt.shiftKey) {
+        this.removeLastSelection();
+        item.classList.toggle(classSelected);
+        item.classList.add(classLastSelected);
+      }
+      if(evt.shiftKey) {
+        if(!evt.ctrlKey) { this.removeSelection(); }
+        this.selectFromLastSelectedTo(item);
+      }
+    });
+    const navigate = (current, direction, ctrl, shiftKey) => {
+      if(!ctrl) { this.removeSelection(); }
+      if(!ctrl && !shiftKey) { this.removeLastSelection(); }
+
+      const elements = this.getAllSubmorphs(this.selector);
+      const currentIndex = elements.indexOf(item);
+      let nextIndex = currentIndex + direction;
+      nextIndex += elements.length; // make module of -1 lead to last element
+      nextIndex %= elements.length;
+      const nextItem = elements[nextIndex];
+      nextItem.focus();
+      if(shiftKey) {
+        this.selectFromLastSelectedTo(nextItem);
+      } else if(ctrl) {
+        // just change focus
+      } else {
+        nextItem.classList.add(classSelected, classLastSelected);
+      }
+    };
+    item.addEventListener('keydown', evt => {
+      const ctrl = evt.ctrlKey || evt.metaKey;
+      const { shiftKey, altKey, keyCode, charCode } = evt;
+
+      //lively.notify(`keyCode: ${keyCode}, charCode: ${charCode}`);
+      
+      // Tab
+      if(keyCode === 9) {
+        lively.warn("Tab navigation not supported.");
+        
+        evt.preventDefault();
+        evt.stopPropagation();
+        return;
+      }
+      
+      // up and down
+      if(keyCode === 38 || keyCode === 40) {
+        navigate(item, keyCode === 38 ? -1 : 1, ctrl, shiftKey);
+
+        evt.preventDefault();
+        evt.stopPropagation();
+        return;
+      }
+
+      // space
+      if(keyCode === 32 && ctrl) {
+        this.removeLastSelection();
+        item.classList.toggle(classSelected);
+        item.classList.add(classLastSelected);
+        
+        evt.preventDefault();
+        evt.stopPropagation();
+        return;
+      }
+      
+      // ctrl + A
+      if(keyCode === 65 && ctrl) {
+        this.getAllSubmorphs(this.selector)
+          .forEach(element => element.classList.add(classSelected));
+        
+        evt.preventDefault();
+        evt.stopPropagation();
+        return;
+      }
+    });
+  }
+  
+  getSelectedItems() {
+    return this.getAllSubmorphs(this.selector + selectorSelected);
+  }
+}
+
 export default class KnotSearchResult extends Morph {
   // lazy initializer for knot array
   get knots() { return this._knots = this._knots || []; }
+  get multiSelection() {
+    return this._multiSelection = this._multiSelection ||
+      new MultiSection(this, 'li');
+  }
+  
+  get searchTerm() { return this.get("#search-term");}
   
   async initialize() {
     this.windowTitle = "KnotSearchResult";
   }
   
   focus() {
-    const listItem = this.get("li.last-selected");
-    if(listItem) {
-      listItem.focus();
-    }
+    this.multiSelection.focusLastSelected();
   }
   focusDefault() {
-    const listItem = this.get("li");
-    if(listItem) {
-      listItem.focus();
-      listItem.classList.toggle("selected");
-      listItem.classList.add("last-selected");
-    }
+    this.multiSelection.focusDefault();
   }
 
   setSearchTerm(term) {
-    this.get("#search-term").innerHTML = term;
-  }
-  
-  removeSelection() {
-    this.getAllSubmorphs('li.selected').forEach(item => {
-      item.classList.remove('selected');
-    });
-  }
-  removeLastSelection() {
-    this.getAllSubmorphs('li.last-selected').forEach(item => {
-      item.classList.remove('last-selected');
-    });
+    this.searchTerm.innerHTML = term;
   }
   
   async addKnot(knot) {
@@ -48,7 +185,7 @@ export default class KnotSearchResult extends Morph {
     
     // events fired on drag element
     listItem.addEventListener('dragstart', evt => {
-      const selectedItems = Array.from(this.getAllSubmorphs('li.selected'));
+      const selectedItems = this.multiSelection.getSelectedItems();
       if(selectedItems.length > 1 && selectedItems.includes(listItem)) {
         const dt = evt.dataTransfer;
 
@@ -70,8 +207,8 @@ export default class KnotSearchResult extends Morph {
         </div>;
         dragInfo::asDragImageFor(evt, -10, 2);
       } else {
-        this.removeSelection();
-        listItem.classList.add("selected");
+        this.multiSelection.removeSelection();
+        listItem.classList.add(classSelected);
         
         knot.asDataForDrag(evt);
       }
@@ -79,7 +216,7 @@ export default class KnotSearchResult extends Morph {
     });
     listItem.addEventListener('drag', evt => {
       if(!evt.ctrlKey) return;
-      lively.notify(evt.keyCode, evt.charCode)
+      lively.notify(evt.keyCode, evt.charCode);
     });
     listItem.addEventListener('dragend', evt => {
       listItem.style.color = null;
@@ -98,116 +235,13 @@ export default class KnotSearchResult extends Morph {
       lively.notify(":", evt.dataTransfer.getData("knot/url"));
     });
     
-    /* ** MULTISELECTION ** */
-    const selectFromLastSelectedTo = current => {
-      const lastSelected = this.get(".last-selected") || this.get("li");
-
-      // according to Ashton French
-      // https://stackoverflow.com/questions/47398032/select-every-element-between-two-ids
-      let firstIdFound = false;
-      let applySelector = false;
-      this.getAllSubmorphs("li")
-        .filter(element => {
-          if (element === lastSelected || element === current) {
-            applySelector = firstIdFound ? false : true;
-            firstIdFound = applySelector ? true : false;
-            return true;
-          }
-          return applySelector;
-        })
-        .forEach(element => element.classList.add("selected"));
-    }
-    listItem.addEventListener('click', evt => {
-      evt.stopPropagation();
-      evt.preventDefault();
-      
-      if(!evt.ctrlKey && !evt.shiftKey) {
-        this.removeSelection();
-        this.removeLastSelection();
-        listItem.classList.add("selected");
-        listItem.classList.add("last-selected");
-      }
-      if(evt.ctrlKey && !evt.shiftKey) {
-        this.removeLastSelection();
-        listItem.classList.toggle("selected");
-        listItem.classList.add("last-selected");
-      }
-      if(evt.shiftKey) {
-        if(!evt.ctrlKey) { this.removeSelection(); }
-        selectFromLastSelectedTo(listItem);
-      }
-    });
-    const navigate = (current, direction, ctrl, shiftKey) => {
-      if(!ctrl) { this.removeSelection(); }
-      if(!ctrl && !shiftKey) { this.removeLastSelection(); }
-
-      const elements = this.getAllSubmorphs("li");
-      const currentIndex = elements.indexOf(listItem);
-      let nextIndex = currentIndex + direction;
-      nextIndex += elements.length; // make module of -1 lead to last element
-      nextIndex %= elements.length;
-      const nextItem = elements[nextIndex];
-      nextItem.focus();
-      if(shiftKey) {
-        selectFromLastSelectedTo(nextItem);
-      } else if(ctrl) {
-        // just change focus
-      } else {
-        nextItem.classList.add("selected");
-        nextItem.classList.add("last-selected");
-      }
-    };
-    listItem.addEventListener('keydown', evt => {
-      const ctrl = evt.ctrlKey || evt.metaKey;
-      const { shiftKey, altKey, keyCode, charCode } = evt;
-
-      //lively.notify(`keyCode: ${keyCode}, charCode: ${charCode}`);
-      
-      // Tab
-      if(keyCode === 9) {
-        lively.warn("Tab navigation not supported.");
-        
-        evt.preventDefault();
-        evt.stopPropagation();
-        return;
-      }
-      
-      // up and down
-      if(keyCode === 38 || keyCode === 40) {
-        navigate(listItem, keyCode === 38 ? -1 : 1, ctrl, shiftKey);
-
-        evt.preventDefault();
-        evt.stopPropagation();
-        return;
-      }
-
-      // space
-      if(keyCode === 32 && ctrl) {
-        this.removeLastSelection();
-        listItem.classList.toggle("selected");
-        listItem.classList.add("last-selected");
-        
-        evt.preventDefault();
-        evt.stopPropagation();
-        return;
-      }
-      
-      // ctrl + A
-      if(keyCode === 65 && ctrl) {
-        this.getAllSubmorphs("li")
-          .forEach(element => element.classList.add("selected"));
-        
-        evt.preventDefault();
-        evt.stopPropagation();
-        return;
-      }
-    });
+    this.multiSelection.addItem(listItem);
     
     list.appendChild(listItem);
   }
-  
+    
   livelyMigrate(other) {
-    this.setSearchTerm(other.get("#search-term").innerHTML);
+    this.setSearchTerm(other.searchTerm.innerHTML);
     other.knots.forEach(::this.addKnot);
   }
 }

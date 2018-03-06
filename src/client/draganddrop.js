@@ -279,7 +279,7 @@ const dropOnDocumentBehavior = {
       }
     }
     
-    lively.warn("Dragged content contained neighter files nor handled items");
+    lively.warn("Dragged content contained neither files nor handled items");
   }
 }
 
