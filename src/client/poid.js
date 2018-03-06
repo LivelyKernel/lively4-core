@@ -74,9 +74,32 @@ export class LivelyFile extends Scheme {
     return "livelyfile"
   }
 
+  static pathToFile(fileURL) {
+    var selector = fileURL.replace(/^[a-zA-Z]+:\/\//,"") // .replace(/\./,"\\.")
+    selector = decodeURI(selector)
+    var element = document.body
+    for(var subSelector of selector.split("/")) {
+      if (subSelector == "") {
+        // nothing
+      } else if (subSelector == "..") {
+        if (element) {
+          element = element.parentElement          
+        }
+      } else {
+        try {
+          element = element.querySelector(":scope > #" + subSelector.replace(/\./,"\\."))
+        } catch(e) {
+          console.warn("query error " + e)
+          return undefined
+        }              
+      }
+    }
+    return element
+  }
+  
   
   resolve() {
-    this.element = ElementQuery.pathToElement(this.url)
+    this.element = LivelyFile.pathToFile(this.url)
     console.log("found " + this.element, this.url)
     return this.element 
   }  
@@ -131,9 +154,7 @@ export class ElementQuery extends Scheme {
     var selector = elementURL.replace(/^[a-zA-Z]+:\/\//,"") // .replace(/\./,"\\.")
     selector = decodeURI(selector)
     var element = document.body
-    console.log("selector " + JSON.stringify(selector))
     for(var subSelector of selector.split("/")) {
-      console.log("subselector " + JSON.stringify(subSelector))
       if (subSelector == "") {
         // nothing
       } else if (subSelector == "..") {
