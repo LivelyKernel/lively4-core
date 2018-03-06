@@ -178,16 +178,13 @@ export default class LivelyContainerNavbar extends Morph {
     this.currentDir = root;
     var stats = await fetch(root, {
       method: "OPTIONS",
-    }).then(r => r.json()).catch(e => null);
-
+    }).then(r => r.status == 200 ? r.json() : {})
+    
     var mystats = await fetch(targetUrl, {
       method: "OPTIONS",
-    }).then(r => r.json()).catch(e => null);
-    if (!mystats) {
-      mystats = {}
-    }
+    }).then(r => r.status == 200 ? r.json() : {})
     
-    if (!stats) {
+    if (!stats || !stats.type) {
       stats = {};// fake it
       stats.contents = [{type: "file", name: "index.html"}];
       
@@ -428,7 +425,8 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   async showSublistOptions(subList) {
-    var options = await fetch(this.url, {method: "OPTIONS"}).then(r => r.json())
+    var options = await fetch(this.url, {method: "OPTIONS"})
+      .then(r => r.status == 200 ? r.json() : {})
     if (!options.contents) return;
     for(var ea of options.contents) {
       var element = <li 

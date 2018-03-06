@@ -125,14 +125,34 @@ export class LivelyFile extends Scheme {
     return super.PUT(options)
   }
   
+  fileToStat(element, withChildren) {
+    return {
+      name: element.id,
+      parent: this.fileToURI(element.parentElement),
+      type: element.tagName == "LIVELY-FILE" ? "file" : "directory",
+      contents: withChildren ? (Array.from(element.childNodes)
+        .filter(ea => ea.id && ea.classList && ea.classList.contains("lively-content"))
+        .map(ea => this.fileToStat(ea, false))) : undefined
+    }
+  }
+  
+  fileToURI(file) {
+    if (!file.parentElement) {
+      return this.scheme + "://"
+    }
+    var url = this.fileToURI(file.parentElement) 
+    if (file.id) {
+      url += "/" + file.id 
+    } else {
+      // we should not allow this?
+    }
+    return url
+  }
+  
   OPTIONS() {
     var element = this.element
-    if (element.tagName == "LIVELY-FILE") {
-      return new Response(JSON.stringify({
-        name: element.name,
-        // size: xxx?
-        type: "file"
-      }))
+    if (element) {
+      return new Response(JSON.stringify(this.fileToStat(element, true)))
     }
     return new Response("We cannot do that", {status: 400})
   }
