@@ -218,3 +218,8 @@ export function copyTextToClipboard(text) {
 
   document.body.removeChild(textArea);
 }
+
+// taken from https://stackoverflow.com/questions/5999998/how-can-i-check-if-a-javascript-variable-is-function-type
+export function isFunction(functionToCheck) {
+  return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
+}

@@ -144,7 +144,7 @@ class Triple extends Knot {
   isTriple() { return true; }
 }
 
-export const DEFAULT_FOLDER_URL = 'https://localhost:8800/PhD/thesis/notes/';
+export const DEFAULT_FOLDER_URL = 'https://lively4/notes/';
 export const TAG_URL = DEFAULT_FOLDER_URL + 'tag.md';
 export const IS_A_URL = DEFAULT_FOLDER_URL + 'is_a.md';
 export const SAME_AS_URL = DEFAULT_FOLDER_URL + 'same_as.md';
