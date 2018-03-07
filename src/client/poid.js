@@ -1,3 +1,7 @@
+/* Polymorphic Identifier */
+
+import FileCache from 'src/client/filecache.js'
+
 export class ObjectResponse {
  
   constructor(result, options) {
@@ -159,6 +163,71 @@ export class LivelyFile extends Scheme {
 }
 
 
+export class LivelyFilenameSearch extends Scheme {
+  
+  get scheme() {
+    return "searchfilename"
+  }
+
+  resolve() {
+    return true
+  }  
+
+  async GET(options) {
+    var filename = this.url.toString().replace(/.*\//g,"")
+    var result = ""
+    
+    
+    
+    
+    await FileCache.current().db.files.where("name").equals(filename).each(ea => {
+      result += `<li><a href="${ea.url}">${ea.name}: ${ea.title.replace(/</g,"&lt;")}</a></li>`
+    })
+    // #Hack, if we are in a "browser" just... go forward
+    result += `
+<div>
+<script data-name="livelyLoad" type="lively4script">
+function livelyLoad() {
+var links = this.parentElement.querySelectorAll("a")
+
+if (links.length == 1) {
+
+  if (lively.lastBackButtonClicked && (Date.now() - lively.lastBackButtonClicked < 2000)) {
+    lively.notify("Prevent auto navigation... we just clicked back...")
+    return
+  } 
+  lively.notify("only one link? Click on it!")
+  links[0].dispatchEvent( new MouseEvent('click', {
+     view: window,
+     bubbles: true,
+     cancelable: true
+  }))
+}
+}
+</script>
+</div>
+`
+    
+    return new Response(`<h1>FileCache search for ${filename}</h1>\n${result}`, {status: 200})
+    
+    
+    // return new Response("<h1>Nothing found</h1>", {status: 200})
+  }
+
+  PUT(options) {
+    return new Response("Does not make sense, to PUT a search...", {status: 400})
+  }
+    
+  OPTIONS() {
+    var result = {
+      name: "Search",
+      type: "directory",
+      contents: []
+    }
+    return new Response(JSON.stringify(result), {status: 200})
+  }
+}
+
 /* 
   EXAMPLES:
     // fetch("query://#haha", {method: "PUT", body: "<h1>foo</h1>heyho"})
@@ -220,7 +289,6 @@ export class ElementQuery extends Scheme {
   elementIdQuery(element) {
     return "#" + element.id.replace(/\./g, "\\.")
   }
-  
   
   elementToStat(element, withChildren) {
     return {
@@ -319,6 +387,7 @@ export default class PolymorphicIdentifier {
     this.register(ElementQuery) 
     this.register(ElementQueryAll) 
     this.register(InnerHTMLElementQuery) 
+    this.register(LivelyFilenameSearch)
   }
   
   static url(request) {

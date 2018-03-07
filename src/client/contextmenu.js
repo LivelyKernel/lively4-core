@@ -173,7 +173,7 @@ export default class ContextMenu {
         "", '<i class="fa fa-file-image-o" aria-hidden="true"></i>'
       ],
       ["save as...", async () => {
-        var partName = target.getAttribute("data-lively-part-name") || "element"
+        var partName = target.getAttribute("data-lively-part-name") || target.id ||  "element"
         var name = await lively.prompt("save element as: ", `src/parts/${partName}.html`)
         if (!name) return;
         // var name = "foo.html"

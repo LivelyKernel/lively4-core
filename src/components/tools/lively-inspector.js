@@ -287,13 +287,13 @@ export default class Inspector   extends Morph {
         
       }
       
-      // #TODO object specific inspection code... implement livelyHooks? 
-      if (obj.tagName == "LIVELY-SELECTION") {
-        var selection = <div class="element"><i>selection</i></div>
-        contentNode.appendChild(selection)
-        obj.nodes.forEach(ea => {
-          selection.appendChild(this.display(ea, false, null, obj));
-        })
+      if (obj.livelyInspect) {
+        try {
+          obj.livelyInspect(contentNode, this)
+        } catch(e) {
+          var selection = <div class="element" style="color:red"><b>Error in livleyInspect:</b> {e}</div>
+          contentNode.appendChild(selection)
+        }
       }
 
     }
