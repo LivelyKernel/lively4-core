@@ -10,7 +10,6 @@ export function applyDragCSSClass() {
 
 function appendToBodyAt(node, evt) {
   document.body.appendChild(node);
-  lively.showPoint(pt(evt.clientX, evt.clientY));
   lively.setGlobalPosition(node, pt(evt.clientX, evt.clientY));
 }
 
