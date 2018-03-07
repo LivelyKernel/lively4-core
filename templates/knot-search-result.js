@@ -41,7 +41,6 @@ class MultiSection {
     if(listItem) {
       listItem.focus();
     }
-    // this.selectionChanged('focusLastSelected');
   }
   focusDefault() {
     const listItem = this.get(this.selector);
@@ -50,20 +49,18 @@ class MultiSection {
       listItem.classList.toggle(this.classSelected);
       listItem.classList.add(this.classLastSelected);
     }
-    this.selectionChanged('focusDefault');
+    this.selectionChanged();
   }
   
   _removeSelection() {
     this.getAllSubmorphs(this.selectorSelected).forEach(item => {
       item.classList.remove(this.classSelected);
     });
-    // this.selectionChanged('_removeSelection');
   }
   _removeLastSelection() {
     this.getAllSubmorphs(this.selectorLastSelected).forEach(item => {
       item.classList.remove(this.classLastSelected);
     });
-    // this.selectionChanged('_removeLastSelection');
   }
   
   _selectFromLastSelectedTo(current) {
@@ -88,7 +85,6 @@ class MultiSection {
         return applySelector;
       })
       .forEach(element => element.classList.add(this.classSelected));
-    // this.selectionChanged('_selectFromLastSelectedTo');
   }
 
   addItem(item) {
@@ -98,18 +94,18 @@ class MultiSection {
       
       if(!evt.ctrlKey && !evt.shiftKey) {
         this.selectItem(item);
-        this.selectionChanged('click');
+        this.selectionChanged();
       }
       if(evt.ctrlKey && !evt.shiftKey) {
         this._removeLastSelection();
         item.classList.toggle(this.classSelected);
         item.classList.add(this.classLastSelected);
-        this.selectionChanged('click ctrl');
+        this.selectionChanged();
       }
       if(evt.shiftKey) {
         if(!evt.ctrlKey) { this._removeSelection(); }
         this._selectFromLastSelectedTo(item);
-        this.selectionChanged('click shift');
+        this.selectionChanged();
       }
     });
     const _navigate = (current, direction, ctrl, shiftKey) => {
@@ -125,13 +121,10 @@ class MultiSection {
       nextItem.focus();
       if(shiftKey) {
         this._selectFromLastSelectedTo(nextItem);
-        // this.selectionChanged('_navigate shift');
       } else if(ctrl) {
         // just change focus
-        // this.selectionChanged('_navigate ctrl');
       } else {
         nextItem.classList.add(this.classSelected, this.classLastSelected);
-        // this.selectionChanged('_navigate');
       }
     };
     item.addEventListener('keydown', evt => {
@@ -152,7 +145,19 @@ class MultiSection {
       // up and down
       if(keyCode === 38 || keyCode === 40) {
         _navigate(item, keyCode === 38 ? -1 : 1, ctrl, shiftKey);
-        this.selectionChanged('prev/next');
+        this.selectionChanged();
+
+        evt.preventDefault();
+        evt.stopPropagation();
+        return;
+      }
+
+      // space
+      if(keyCode === 32 && ctrl) {
+        this._removeLastSelection();
+        item.classList.toggle(this.classSelected);
+        item.classList.add(this.classLastSelected);
+        this.selectionChanged();
 
         evt.preventDefault();
         evt.stopPropagation();
@@ -160,12 +165,15 @@ class MultiSection {
       }
       
       // escape
-      if(keyCode === 23 && ctrl) {
-        this.removeSelection();
+      if(keyCode === 27) {
+        this._removeSelection();
+        this._removeLastSelection();
         
-        this.getAllSubmorphs(this.selector)
-          .forEach(element => element.classList.add(this.classSelected));
-        this.selectionChanged('strg A');
+        const focussedItem = this.get(this.selector + ':focus');
+        if(focussedItem) {
+          focussedItem.classList.add(this.classSelected, this.classLastSelected);
+        }
+        this.selectionChanged();
 
         evt.preventDefault();
         evt.stopPropagation();
@@ -176,7 +184,7 @@ class MultiSection {
       if(keyCode === 65 && ctrl) {
         this.getAllSubmorphs(this.selector)
           .forEach(element => element.classList.add(this.classSelected));
-        this.selectionChanged('strg A');
+        this.selectionChanged();
 
         evt.preventDefault();
         evt.stopPropagation();
@@ -189,7 +197,6 @@ class MultiSection {
     this._removeSelection();
     this._removeLastSelection();
     item.classList.add(this.classSelected, this.classLastSelected);
-    //this.selectionChanged('selectItem');
   }
   
   getSelectedItems() {
