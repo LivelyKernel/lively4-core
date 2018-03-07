@@ -2,163 +2,14 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import { Graph } from './../src/client/triples/triples.js';
 import { uuid as generateUUID, getTempKeyFor, fileName, hintForLabel, asDragImageFor } from 'utils';
 import Keys from 'src/client/keys.js';
-
-const classSelected = 'selected';
-const selectorSelected = '.' + classSelected;
-const classLastSelected = 'last-selected';
-const selectorLastSelected = '.' + classLastSelected;
-
-class MultiSection {
-  getAllSubmorphs(...args) { return this.morph.getAllSubmorphs(...args); }
-  get(...args) { return this.morph.get(...args); }
-  
-  constructor(morph, selector) {
-    this.morph = morph;
-    this.selector = selector;
-  }
-  
-  focusLastSelected() {
-    const listItem = this.get(this.selector + selectorLastSelected);
-    if(listItem) {
-      listItem.focus();
-    }
-  }
-  focusDefault() {
-    const listItem = this.get(this.selector);
-    if(listItem) {
-      listItem.focus();
-      listItem.classList.toggle(classSelected);
-      listItem.classList.add(classLastSelected);
-    }
-  }
-  
-  removeSelection() {
-    this.getAllSubmorphs(this.selector + selectorSelected).forEach(item => {
-      item.classList.remove(classSelected);
-    });
-  }
-  removeLastSelection() {
-    this.getAllSubmorphs(this.selector + selectorLastSelected).forEach(item => {
-      item.classList.remove(classLastSelected);
-    });
-  }
-  
-  selectFromLastSelectedTo(current) {
-    const lastSelected = this.get(selectorLastSelected) || this.get(this.selector);
-
-    // according to Ashton French
-    // https://stackoverflow.com/questions/47398032/select-every-element-between-two-ids
-    let firstIdFound = false;
-    let applySelector = false;
-    this.getAllSubmorphs(this.selector)
-      .filter(element => {
-        if (element === lastSelected || element === current) {
-          applySelector = firstIdFound ? false : true;
-          firstIdFound = applySelector ? true : false;
-          return true;
-        }
-        return applySelector;
-      })
-      .forEach(element => element.classList.add(classSelected));
-  }
-
-  addItem(item) {
-    item.addEventListener('click', evt => {
-      evt.stopPropagation();
-      evt.preventDefault();
-      
-      if(!evt.ctrlKey && !evt.shiftKey) {
-        this.removeSelection();
-        this.removeLastSelection();
-        item.classList.add(classSelected, classLastSelected);
-      }
-      if(evt.ctrlKey && !evt.shiftKey) {
-        this.removeLastSelection();
-        item.classList.toggle(classSelected);
-        item.classList.add(classLastSelected);
-      }
-      if(evt.shiftKey) {
-        if(!evt.ctrlKey) { this.removeSelection(); }
-        this.selectFromLastSelectedTo(item);
-      }
-    });
-    const navigate = (current, direction, ctrl, shiftKey) => {
-      if(!ctrl) { this.removeSelection(); }
-      if(!ctrl && !shiftKey) { this.removeLastSelection(); }
-
-      const elements = this.getAllSubmorphs(this.selector);
-      const currentIndex = elements.indexOf(item);
-      let nextIndex = currentIndex + direction;
-      nextIndex += elements.length; // make module of -1 lead to last element
-      nextIndex %= elements.length;
-      const nextItem = elements[nextIndex];
-      nextItem.focus();
-      if(shiftKey) {
-        this.selectFromLastSelectedTo(nextItem);
-      } else if(ctrl) {
-        // just change focus
-      } else {
-        nextItem.classList.add(classSelected, classLastSelected);
-      }
-    };
-    item.addEventListener('keydown', evt => {
-      const ctrl = evt.ctrlKey || evt.metaKey;
-      const { shiftKey, altKey, keyCode, charCode } = evt;
-
-      //lively.notify(`keyCode: ${keyCode}, charCode: ${charCode}`);
-      
-      // Tab
-      if(keyCode === 9) {
-        lively.warn("Tab navigation not supported.");
-        
-        evt.preventDefault();
-        evt.stopPropagation();
-        return;
-      }
-      
-      // up and down
-      if(keyCode === 38 || keyCode === 40) {
-        navigate(item, keyCode === 38 ? -1 : 1, ctrl, shiftKey);
-
-        evt.preventDefault();
-        evt.stopPropagation();
-        return;
-      }
-
-      // space
-      if(keyCode === 32 && ctrl) {
-        this.removeLastSelection();
-        item.classList.toggle(classSelected);
-        item.classList.add(classLastSelected);
-        
-        evt.preventDefault();
-        evt.stopPropagation();
-        return;
-      }
-      
-      // ctrl + A
-      if(keyCode === 65 && ctrl) {
-        this.getAllSubmorphs(this.selector)
-          .forEach(element => element.classList.add(classSelected));
-        
-        evt.preventDefault();
-        evt.stopPropagation();
-        return;
-      }
-    });
-  }
-  
-  getSelectedItems() {
-    return this.getAllSubmorphs(this.selector + selectorSelected);
-  }
-}
+import MultiSelection from 'src/client/vivide/multiselection.js';
 
 export default class KnotSearchResult extends Morph {
   // lazy initializer for knot array
   get knots() { return this._knots = this._knots || []; }
   get multiSelection() {
     return this._multiSelection = this._multiSelection ||
-      new MultiSection(this, 'li');
+      new MultiSelection(this);
   }
   
   get searchTerm() { return this.get("#search-term");}
@@ -168,10 +19,7 @@ export default class KnotSearchResult extends Morph {
   }
   
   focus() {
-    this.multiSelection.focusLastSelected();
-  }
-  focusDefault() {
-    this.multiSelection.focusDefault();
+    this.multiSelection.focus();
   }
 
   setSearchTerm(term) {
@@ -207,8 +55,7 @@ export default class KnotSearchResult extends Morph {
         </div>;
         dragInfo::asDragImageFor(evt, -10, 2);
       } else {
-        this.multiSelection.removeSelection();
-        listItem.classList.add(classSelected);
+        this.multiSelection.selectItem(listItem);
         
         knot.asDataForDrag(evt);
       }
