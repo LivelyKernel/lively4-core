@@ -3,12 +3,19 @@ import { Graph } from './../src/client/triples/triples.js';
 import { uuid as generateUUID, getTempKeyFor, fileName, hintForLabel, asDragImageFor } from 'utils';
 import Keys from 'src/client/keys.js';
 
+function eqSet(as, bs) {
+    if (as.size !== bs.size) return false;
+    for (var a of as) if (!bs.has(a)) return false;
+    return true;
+}
+
 class MultiSection {
   static defaultOptions() {
     return {
       selector: 'li',
       classSelected: 'selected',
-      classLastSelected: 'last-selected'
+      classLastSelected: 'last-selected',
+      onSelectionChanged: selection => {}
     };
   }
   
@@ -25,6 +32,8 @@ class MultiSection {
   constructor(morph, options = {}) {
     this.morph = morph;
     Object.assign(this, MultiSection.defaultOptions(), options);
+    
+    this.lastSelection = [];
   }
   
   focusLastSelected() {
@@ -32,6 +41,7 @@ class MultiSection {
     if(listItem) {
       listItem.focus();
     }
+    // this.selectionChanged('focusLastSelected');
   }
   focusDefault() {
     const listItem = this.get(this.selector);
@@ -40,21 +50,29 @@ class MultiSection {
       listItem.classList.toggle(this.classSelected);
       listItem.classList.add(this.classLastSelected);
     }
+    this.selectionChanged('focusDefault');
   }
   
-  removeSelection() {
+  _removeSelection() {
     this.getAllSubmorphs(this.selectorSelected).forEach(item => {
       item.classList.remove(this.classSelected);
     });
+    // this.selectionChanged('_removeSelection');
   }
-  removeLastSelection() {
+  _removeLastSelection() {
     this.getAllSubmorphs(this.selectorLastSelected).forEach(item => {
       item.classList.remove(this.classLastSelected);
     });
+    // this.selectionChanged('_removeLastSelection');
   }
   
-  selectFromLastSelectedTo(current) {
+  _selectFromLastSelectedTo(current) {
     const lastSelected = this.get(this.selectorLastSelected) || this.get(this.selector);
+    
+    if(current === lastSelected) {
+      current.classList.add(this.classSelected);
+      return;
+    }
 
     // according to Ashton French
     // https://stackoverflow.com/questions/47398032/select-every-element-between-two-ids
@@ -70,6 +88,7 @@ class MultiSection {
         return applySelector;
       })
       .forEach(element => element.classList.add(this.classSelected));
+    // this.selectionChanged('_selectFromLastSelectedTo');
   }
 
   addItem(item) {
@@ -78,23 +97,24 @@ class MultiSection {
       evt.preventDefault();
       
       if(!evt.ctrlKey && !evt.shiftKey) {
-        this.removeSelection();
-        this.removeLastSelection();
-        item.classList.add(this.classSelected, this.classLastSelected);
+        this.selectItem(item);
+        this.selectionChanged('click');
       }
       if(evt.ctrlKey && !evt.shiftKey) {
-        this.removeLastSelection();
+        this._removeLastSelection();
         item.classList.toggle(this.classSelected);
         item.classList.add(this.classLastSelected);
+        this.selectionChanged('click ctrl');
       }
       if(evt.shiftKey) {
-        if(!evt.ctrlKey) { this.removeSelection(); }
-        this.selectFromLastSelectedTo(item);
+        if(!evt.ctrlKey) { this._removeSelection(); }
+        this._selectFromLastSelectedTo(item);
+        this.selectionChanged('click shift');
       }
     });
-    const navigate = (current, direction, ctrl, shiftKey) => {
-      if(!ctrl) { this.removeSelection(); }
-      if(!ctrl && !shiftKey) { this.removeLastSelection(); }
+    const _navigate = (current, direction, ctrl, shiftKey) => {
+      if(!ctrl) { this._removeSelection(); }
+      if(!ctrl && !shiftKey) { this._removeLastSelection(); }
 
       const elements = this.getAllSubmorphs(this.selector);
       const currentIndex = elements.indexOf(item);
@@ -104,11 +124,14 @@ class MultiSection {
       const nextItem = elements[nextIndex];
       nextItem.focus();
       if(shiftKey) {
-        this.selectFromLastSelectedTo(nextItem);
+        this._selectFromLastSelectedTo(nextItem);
+        // this.selectionChanged('_navigate shift');
       } else if(ctrl) {
         // just change focus
+        // this.selectionChanged('_navigate ctrl');
       } else {
         nextItem.classList.add(this.classSelected, this.classLastSelected);
+        // this.selectionChanged('_navigate');
       }
     };
     item.addEventListener('keydown', evt => {
@@ -128,19 +151,22 @@ class MultiSection {
       
       // up and down
       if(keyCode === 38 || keyCode === 40) {
-        navigate(item, keyCode === 38 ? -1 : 1, ctrl, shiftKey);
+        _navigate(item, keyCode === 38 ? -1 : 1, ctrl, shiftKey);
+        this.selectionChanged('prev/next');
 
         evt.preventDefault();
         evt.stopPropagation();
         return;
       }
-
-      // space
-      if(keyCode === 32 && ctrl) {
-        this.removeLastSelection();
-        item.classList.toggle(this.classSelected);
-        item.classList.add(this.classLastSelected);
+      
+      // escape
+      if(keyCode === 23 && ctrl) {
+        this.removeSelection();
         
+        this.getAllSubmorphs(this.selector)
+          .forEach(element => element.classList.add(this.classSelected));
+        this.selectionChanged('strg A');
+
         evt.preventDefault();
         evt.stopPropagation();
         return;
@@ -150,7 +176,8 @@ class MultiSection {
       if(keyCode === 65 && ctrl) {
         this.getAllSubmorphs(this.selector)
           .forEach(element => element.classList.add(this.classSelected));
-        
+        this.selectionChanged('strg A');
+
         evt.preventDefault();
         evt.stopPropagation();
         return;
@@ -158,8 +185,26 @@ class MultiSection {
     });
   }
   
+  selectItem(item) {
+    this._removeSelection();
+    this._removeLastSelection();
+    item.classList.add(this.classSelected, this.classLastSelected);
+    //this.selectionChanged('selectItem');
+  }
+  
   getSelectedItems() {
     return this.getAllSubmorphs(this.selectorSelected);
+  }
+  
+  selectionChanged(from) {
+    let newSelection = this.getSelectedItems();
+    if(!eqSet(new Set(newSelection), new Set(this.lastSelection))) {
+      // lively.success(from, 'new selection', 2);
+      this.lastSelection = newSelection;
+      this.onSelectionChanged(newSelection);
+    } else {
+      // lively.error(from, 'selection was the same/unnecessary call', 2);
+    }
   }
 }
 
@@ -168,7 +213,7 @@ export default class KnotSearchResult extends Morph {
   get knots() { return this._knots = this._knots || []; }
   get multiSelection() {
     return this._multiSelection = this._multiSelection ||
-      new MultiSection(this, { selector: 'li' });
+      new MultiSection(this, { selector: 'li', onSelectionChanged: selection => lively.notify(selection.length, 'selection changed') });
   }
   
   get searchTerm() { return this.get("#search-term");}
@@ -217,8 +262,7 @@ export default class KnotSearchResult extends Morph {
         </div>;
         dragInfo::asDragImageFor(evt, -10, 2);
       } else {
-        this.multiSelection.removeSelection();
-        listItem.classList.add(this.multiSelection.classSelected);
+        this.multiSelection.selectItem(listItem);
         
         knot.asDataForDrag(evt);
       }
