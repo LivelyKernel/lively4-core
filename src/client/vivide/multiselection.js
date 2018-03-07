@@ -10,7 +10,9 @@ export default class MultiSection {
       selector: 'li',
       classSelected: 'selected',
       classLastSelected: 'last-selected',
-      onSelectionChanged: selection => {}
+      onSelectionChanged: selection => {},
+      keyCodePrev: 38,
+      keyCodeNext: 40
     };
   }
   
@@ -31,20 +33,20 @@ export default class MultiSection {
     this.lastSelection = [];
   }
   
-  focusLastSelected() {
-    const listItem = this.get(this.selectorLastSelected);
-    if(listItem) {
-      listItem.focus();
+  focus() {
+    const lastSelectedItem = this.get(this.selectorLastSelected);
+    if(lastSelectedItem) {
+      lastSelectedItem.focus();
+      return;
     }
-  }
-  focusDefault() {
-    const listItem = this.get(this.selector);
-    if(listItem) {
-      listItem.focus();
-      listItem.classList.toggle(this.classSelected);
-      listItem.classList.add(this.classLastSelected);
+    
+    const fallbackItem = this.get(this.selector);
+    if(fallbackItem) {
+      fallbackItem.focus();
+      fallbackItem.classList.toggle(this.classSelected);
+      fallbackItem.classList.add(this.classLastSelected);
+      this.selectionChanged();
     }
-    this.selectionChanged();
   }
   
   _removeSelection() {
@@ -103,6 +105,7 @@ export default class MultiSection {
         this.selectionChanged();
       }
     });
+    
     const _navigate = (current, direction, ctrl, shiftKey) => {
       if(!ctrl) { this._removeSelection(); }
       if(!ctrl && !shiftKey) { this._removeLastSelection(); }
@@ -122,9 +125,16 @@ export default class MultiSection {
         nextItem.classList.add(this.classSelected, this.classLastSelected);
       }
     };
+
+    // ensure to accept keyboard events
+    if(!item.hasAttribute('tabindex')) {
+      item.setAttribute('tabindex', 1);
+    }
+
     item.addEventListener('keydown', evt => {
       const ctrl = evt.ctrlKey || evt.metaKey;
       const { shiftKey, altKey, keyCode, charCode } = evt;
+      lively.warn("keydown event", keyCode)
 
       //lively.notify(`keyCode: ${keyCode}, charCode: ${charCode}`);
       
@@ -138,8 +148,8 @@ export default class MultiSection {
       }
       
       // up and down
-      if(keyCode === 38 || keyCode === 40) {
-        _navigate(item, keyCode === 38 ? -1 : 1, ctrl, shiftKey);
+      if(keyCode === this.keyCodePrev || keyCode === this.keyCodeNext) {
+        _navigate(item, keyCode === this.keyCodePrev ? -1 : 1, ctrl, shiftKey);
         this.selectionChanged();
 
         evt.preventDefault();

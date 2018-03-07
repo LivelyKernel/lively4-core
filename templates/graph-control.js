@@ -145,6 +145,6 @@ export default class GraphControl extends Morph {
     const searchResult = await lively.openComponentInWindow("knot-search-result");
     searchResult.setSearchTerm(searchString);
     matchingKnots.forEach(::searchResult.addKnot);
-    searchResult.focusDefault();
+    searchResult.focus();
   }
 }

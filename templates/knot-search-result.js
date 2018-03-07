@@ -9,7 +9,7 @@ export default class KnotSearchResult extends Morph {
   get knots() { return this._knots = this._knots || []; }
   get multiSelection() {
     return this._multiSelection = this._multiSelection ||
-      new MultiSection(this, { selector: 'li', onSelectionChanged: selection => lively.notify(selection.length, 'selection changed') });
+      new MultiSelection(this);
   }
   
   get searchTerm() { return this.get("#search-term");}
@@ -19,10 +19,7 @@ export default class KnotSearchResult extends Morph {
   }
   
   focus() {
-    this.multiSelection.focusLastSelected();
-  }
-  focusDefault() {
-    this.multiSelection.focusDefault();
+    this.multiSelection.focus();
   }
 
   setSearchTerm(term) {
