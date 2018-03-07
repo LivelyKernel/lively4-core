@@ -1,5 +1,6 @@
 import { uuid } from 'utils';
 import { scriptFolder } from './utils.js';
+import { pt } from 'src/client/graphics.js'
 
 async function newScriptFromTemplate() {
   let newScriptURL = new URL(uuid() + '.js', scriptFolder());
@@ -14,24 +15,19 @@ export async function letsScript(object, evt) {
   async function createSideBySideViewAndEditor(evt) {
     let pos;
     if(evt) {
-      pos = {
-        x: evt.clientX,
-        y: evt.clientY
-      };
+      pos = lively.getPosition(evt)
     }
 
     let vivideView = await lively.openComponentInWindow('vivide-view', pos);
     let vivideViewWindow = lively.findWindow(vivideView);
     if(vivideViewWindow && vivideViewWindow.tagName === "LIVELY-WINDOW") {
-      pos = {
-        x: vivideViewWindow.getBoundingClientRect().right,
-        y: vivideViewWindow.getBoundingClientRect().top
-      }
+      pos = lively.getGlobalBounds(vivideViewWindow).topRight();
     }
 
+    let scriptEditor = await lively.openComponentInWindow('vivide-script-editor', pos);
     return {
       view: vivideView,
-      scriptEditor: await lively.openComponentInWindow('vivide-script-editor', pos)
+      scriptEditor
     }
   }
   

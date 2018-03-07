@@ -3,22 +3,32 @@ import { Graph } from './../src/client/triples/triples.js';
 import { uuid as generateUUID, getTempKeyFor, fileName, hintForLabel, asDragImageFor } from 'utils';
 import Keys from 'src/client/keys.js';
 
-const classSelected = 'selected';
-const selectorSelected = '.' + classSelected;
-const classLastSelected = 'last-selected';
-const selectorLastSelected = '.' + classLastSelected;
-
 class MultiSection {
+  static defaultOptions() {
+    return {
+      selector: 'li',
+      classSelected: 'selected',
+      classLastSelected: 'last-selected'
+    };
+  }
+  
   getAllSubmorphs(...args) { return this.morph.getAllSubmorphs(...args); }
   get(...args) { return this.morph.get(...args); }
   
-  constructor(morph, selector) {
+  get selectorSelected() {
+    return this.selector + '.' + this.classSelected;
+  }
+  get selectorLastSelected() {
+    return this.selector + '.' + this.classLastSelected;
+  }
+  
+  constructor(morph, options = {}) {
     this.morph = morph;
-    this.selector = selector;
+    Object.assign(this, MultiSection.defaultOptions(), options);
   }
   
   focusLastSelected() {
-    const listItem = this.get(this.selector + selectorLastSelected);
+    const listItem = this.get(this.selectorLastSelected);
     if(listItem) {
       listItem.focus();
     }
@@ -27,24 +37,24 @@ class MultiSection {
     const listItem = this.get(this.selector);
     if(listItem) {
       listItem.focus();
-      listItem.classList.toggle(classSelected);
-      listItem.classList.add(classLastSelected);
+      listItem.classList.toggle(this.classSelected);
+      listItem.classList.add(this.classLastSelected);
     }
   }
   
   removeSelection() {
-    this.getAllSubmorphs(this.selector + selectorSelected).forEach(item => {
-      item.classList.remove(classSelected);
+    this.getAllSubmorphs(this.selectorSelected).forEach(item => {
+      item.classList.remove(this.classSelected);
     });
   }
   removeLastSelection() {
-    this.getAllSubmorphs(this.selector + selectorLastSelected).forEach(item => {
-      item.classList.remove(classLastSelected);
+    this.getAllSubmorphs(this.selectorLastSelected).forEach(item => {
+      item.classList.remove(this.classLastSelected);
     });
   }
   
   selectFromLastSelectedTo(current) {
-    const lastSelected = this.get(selectorLastSelected) || this.get(this.selector);
+    const lastSelected = this.get(this.selectorLastSelected) || this.get(this.selector);
 
     // according to Ashton French
     // https://stackoverflow.com/questions/47398032/select-every-element-between-two-ids
@@ -59,7 +69,7 @@ class MultiSection {
         }
         return applySelector;
       })
-      .forEach(element => element.classList.add(classSelected));
+      .forEach(element => element.classList.add(this.classSelected));
   }
 
   addItem(item) {
@@ -70,12 +80,12 @@ class MultiSection {
       if(!evt.ctrlKey && !evt.shiftKey) {
         this.removeSelection();
         this.removeLastSelection();
-        item.classList.add(classSelected, classLastSelected);
+        item.classList.add(this.classSelected, this.classLastSelected);
       }
       if(evt.ctrlKey && !evt.shiftKey) {
         this.removeLastSelection();
-        item.classList.toggle(classSelected);
-        item.classList.add(classLastSelected);
+        item.classList.toggle(this.classSelected);
+        item.classList.add(this.classLastSelected);
       }
       if(evt.shiftKey) {
         if(!evt.ctrlKey) { this.removeSelection(); }
@@ -98,7 +108,7 @@ class MultiSection {
       } else if(ctrl) {
         // just change focus
       } else {
-        nextItem.classList.add(classSelected, classLastSelected);
+        nextItem.classList.add(this.classSelected, this.classLastSelected);
       }
     };
     item.addEventListener('keydown', evt => {
@@ -128,8 +138,8 @@ class MultiSection {
       // space
       if(keyCode === 32 && ctrl) {
         this.removeLastSelection();
-        item.classList.toggle(classSelected);
-        item.classList.add(classLastSelected);
+        item.classList.toggle(this.classSelected);
+        item.classList.add(this.classLastSelected);
         
         evt.preventDefault();
         evt.stopPropagation();
@@ -139,7 +149,7 @@ class MultiSection {
       // ctrl + A
       if(keyCode === 65 && ctrl) {
         this.getAllSubmorphs(this.selector)
-          .forEach(element => element.classList.add(classSelected));
+          .forEach(element => element.classList.add(this.classSelected));
         
         evt.preventDefault();
         evt.stopPropagation();
@@ -149,7 +159,7 @@ class MultiSection {
   }
   
   getSelectedItems() {
-    return this.getAllSubmorphs(this.selector + selectorSelected);
+    return this.getAllSubmorphs(this.selectorSelected);
   }
 }
 
@@ -158,7 +168,7 @@ export default class KnotSearchResult extends Morph {
   get knots() { return this._knots = this._knots || []; }
   get multiSelection() {
     return this._multiSelection = this._multiSelection ||
-      new MultiSection(this, 'li');
+      new MultiSection(this, { selector: 'li' });
   }
   
   get searchTerm() { return this.get("#search-term");}
@@ -208,7 +218,7 @@ export default class KnotSearchResult extends Morph {
         dragInfo::asDragImageFor(evt, -10, 2);
       } else {
         this.multiSelection.removeSelection();
-        listItem.classList.add(classSelected);
+        listItem.classList.add(this.multiSelection.classSelected);
         
         knot.asDataForDrag(evt);
       }

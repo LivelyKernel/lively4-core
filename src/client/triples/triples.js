@@ -309,7 +309,7 @@ export class Graph {
     let fileName = url.toString();
     let text = isExternalURL(url) ?
       url.hostname + url.pathname :
-      await fetch(url).then(r => r.text());
+      await fetch(url).then(r => r.text()).catch(err => `ERROR loading this knot: ${err}`);
 
     // deserializeKnot
     const isTriple = fileName.endsWith(".triple.json");
@@ -340,7 +340,7 @@ export class Graph {
           .map(desc => desc.name);
         
         const total = fileNames.length;
-        let i=0;
+        let i = 0;
         Promise.all(fileNames.map(fileName => {
           const knotURL = new URL(fileName, directoryURL);
           return this.requestKnot(knotURL)

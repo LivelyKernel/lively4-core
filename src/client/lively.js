@@ -1185,7 +1185,7 @@ export default class Lively {
   
   
   
-  static openComponentInWindow(name, pos, extent, worldContext) {
+  static openComponentInWindow(name, globalPos, extent, worldContext) {
     worldContext = worldContext || document.body
   
     var w = document.createElement("lively-window");
@@ -1193,19 +1193,19 @@ export default class Lively {
       w.style.width = extent.x;
       w.style.height = extent.y;
     }
-    if (!pos) {
-      pos = this.findPositionForWindow(worldContext)
+    if (!globalPos) {
+      let pos = lively.findPositionForWindow(worldContext);
+      globalPos = lively.getGlobalPosition(worldContext).addPt(pos);
     }
-    if (pos) 
-      lively.setPosition(w, pos);
-    
-    return components.openIn(worldContext, w, true).then((w) => {
-    	return components.openIn(w, document.createElement(name)).then((comp) => {
-        
-        if (comp.windowTitle) w.setAttribute("title", "" + comp.windowTitle);
-        return comp
-    	})
-    })
+
+    return components.openIn(worldContext, w, true).then(w => {
+      lively.setGlobalPosition(w, globalPos);
+      
+      return components.openIn(w, document.createElement(name)).then(comp => {
+        if (comp.windowTitle) w.setAttribute('title', '' + comp.windowTitle);
+        return comp;
+      });
+    });
   }
   
   static findPositionForWindow(worldContext) {
