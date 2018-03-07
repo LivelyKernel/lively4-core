@@ -344,7 +344,7 @@ export default class Lively {
       comp.mode = "javascript";
       comp.value = string;
       var container = comp.parentElement
-      if (pos) lively.setPosition(container,pos);
+      if (pos) lively.setGlobalPosition(container,pos);
       container.setAttribute("title", "Workspace");
       comp.focus();
       return comp;
