@@ -128,7 +128,7 @@ export class LivelyFile extends Scheme {
   fileToStat(element, withChildren) {
     return {
       name: element.id,
-      parent: this.fileToURI(element.parentElement),
+      parent: LivelyFile.fileToURI(element.parentElement),
       type: element.tagName == "LIVELY-FILE" ? "file" : "directory",
       contents: withChildren ? (Array.from(element.childNodes)
         .filter(ea => ea.id && ea.classList && ea.classList.contains("lively-content"))
@@ -136,7 +136,7 @@ export class LivelyFile extends Scheme {
     }
   }
   
-  fileToURI(file) {
+  static fileToURI(file) {
     if (!file.parentElement) {
       return this.scheme + "://"
     }
