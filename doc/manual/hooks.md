@@ -4,7 +4,7 @@ Lively components (HTML elements) can implement hooks to better integrate into t
 
 ## livelyInspect
 
-Allows to customize the [lively-inspector](searchfilename://lively-inspector.js).
+Allows to customize the [lively-inspector](search://name=lively-inspector.js).
 
 ```javascript
 class Selection {

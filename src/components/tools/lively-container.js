@@ -1007,7 +1007,7 @@ export default class Container extends Morph {
     this.lastVersion = null; // just to be sure
     
     var format = path.replace(/.*\./,"");
-    if (url.protocol == "searchfilename:") {
+    if (url.protocol == "search:") {
       format = "html"
     }
     

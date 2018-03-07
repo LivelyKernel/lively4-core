@@ -163,26 +163,44 @@ export class LivelyFile extends Scheme {
 }
 
 
-export class LivelyFilenameSearch extends Scheme {
+export class LivelySearch extends Scheme {
   
   get scheme() {
-    return "searchfilename"
+    return "search"
   }
 
   resolve() {
     return true
   }  
 
-  async GET(options) {
-    var filename = this.url.toString().replace(/.*\//g,"")
+  async generateResult(dbQuery) {
     var result = ""
-    
-    
-    
-    
-    await FileCache.current().db.files.where("name").equals(filename).each(ea => {
-      result += `<li><a href="${ea.url}">${ea.name}: ${ea.title.replace(/</g,"&lt;")}</a></li>`
+    var count = 0
+    await dbQuery.each(ea => {
+        result += `<li>${++count}. <a href="${ea.url}">${ea.name}: ${
+          ea.title.replace(/</g,"&lt;")}</a></li>`
     })
+    if (count == 0) {
+      result += "<b>no files found</b>"
+    }
+    return result
+  }
+  
+  async GET(options) {
+    var searchString = this.url.toString().replace(/^search:\/\//,"") 
+    var result = ""
+    if (searchString.match("name=")) {
+      var filename = searchString.replace(/name=/g,"")
+      result += await this.generateResult(
+        FileCache.current().db.files.where("name").equals(filename))
+    } else if (searchString.match(/^#/)) {
+      var tag = searchString
+      result += await this.generateResult(
+        FileCache.current().db.files.where("tags").notEqual([]).filter(ea => ea.tags.indexOf(tag) != -1))
+    } else {
+      result = "<b>nothing found</b>"  
+    }
+    
     // #Hack, if we are in a "browser" just... go forward
     result += `
 <div>
@@ -207,8 +225,7 @@ if (links.length == 1) {
 </script>
 </div>
 `
-    
-    return new Response(`<h1>FileCache search for ${filename}</h1>\n${result}`, {status: 200})
+    return new Response(`<h1>Search: ${searchString}</h1>\n${result}`, {status: 200})
     
     
     // return new Response("<h1>Nothing found</h1>", {status: 200})
@@ -387,7 +404,7 @@ export default class PolymorphicIdentifier {
     this.register(ElementQuery) 
     this.register(ElementQueryAll) 
     this.register(InnerHTMLElementQuery) 
-    this.register(LivelyFilenameSearch)
+    this.register(LivelySearch)
   }
   
   static url(request) {

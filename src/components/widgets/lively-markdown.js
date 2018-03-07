@@ -16,7 +16,7 @@ export default class LivelyMarkdown extends Morph {
       this.startPresentation()
     }
     this._attrObserver = new MutationObserver((mutations) => {
-	  mutations.forEach((mutation) => {  
+    mutations.forEach((mutation) => {  
         if(mutation.type == "attributes") {
           // console.log("observation", mutation.attributeName,mutation.target.getAttribute(mutation.attributeName));
           this.attributeChangedCallback(
@@ -73,7 +73,8 @@ export default class LivelyMarkdown extends Morph {
     md.renderer.rules.hashtag_open  = function(tokens, idx) {
       var tagName = tokens[idx].content 
       if(tagName.match(/^[A-Za-z][A-Za-z0-9]+/))
-        return `<a href="javascript:lively.openSearchWidget('#${tagName}')" class="tag">`;
+        // return `<a href="javascript:lively.openSearchWidget('#${tagName}')" class="tag">`;
+        return `<a href="search://#${tagName}" class="tag">`;
       else
         return `<a href="javascript:lively.openIssue('${tagName}')" class="issue">`;
 
