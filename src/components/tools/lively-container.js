@@ -438,7 +438,7 @@ export default class Container extends Morph {
       return;
     }
     this.get("#editor").setURL(this.getURL());
-    this.get("#editor").saveFile().then( async () => {
+    return this.get("#editor").saveFile().then( async () => {
       var sourceCode = this.getSourceCode();
       var url = this.getURL();
       lively.notify("!!!saved " + url)
