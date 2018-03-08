@@ -1,13 +1,11 @@
-<div class="lively-content" style="background-color: rgba(200, 200, 0, 0.3); border: 20px none transparent; position: fixed; width: 156.15px; height: 371.9px; z-index: 1000; padding: 10px; left: 0px; top: 0px;" id="quicklinks"><button style="position: absolute; left: 8px; top: 346px;" class="lively-content" data-lively-part-name="button" contenteditable="null">sort<script data-name="onClick" type="lively4script">function onClick() {  
+<div class="lively-content" style="background-color: rgba(200, 200, 0, 0.3); border: 20px none transparent; position: absolute; width: 156.15px; height: 371.9px; z-index: 1000; padding: 10px; left: 0px; top: 0px;" id="quicklinks" data-lively-part-name="quicklinks" data-lively-id="d10e6853-5944-4b52-b31d-63d8a47969dd"><button style="position: absolute; left: 8px; top: 346px;" class="lively-content" data-lively-part-name="button" contenteditable="null">sort<script data-name="onClick" type="lively4script">function onClick() {  
  this.parentElement.sort()
  
   
 }</script><script data-name="livelyLoad" type="lively4script">function livelyLoad() {
   lively.removeEventListener("me", this)
   lively.addEventListener("me", this, "click", evt => this.onClick(evt)) 
-}</script></button><button style="position: absolute; left: 173px; top: -3px; width: 27px; height: 25px;" class="lively-content" data-lively-part-name="button" contenteditable="null">▶<script data-name="livelyLoad" type="lively4script">function livelyLoad() {
-  lively.addEventListener("me", this, "click", evt => this.onClick(evt)) 
-}</script><script data-name="onClick" type="lively4script">function onClick() {  
+}</script></button><button style="position: absolute; left: 173px; top: -3px; width: 27px; height: 25px;" class="lively-content" data-lively-part-name="button" contenteditable="null">▶<script data-name="onClick" type="lively4script">function onClick() {  
   // lively.setPosition(this.parentElement, pt(0,0))
   
   var target = this.parentElement
@@ -20,20 +18,10 @@
     lively.setPosition(target, lively.pt(-offset, 0), "fixed")
     label.textContent = "◀"
   }
-}</script></button><script data-name="livelyLoad" type="lively4script">function livelyLoad() {
-  this.sort()
- // this.style.padding = "10px"
-}</script><div class="lively-content" style="position: static; left: 60px; top: 146px;"><a href="https://lively-kernel.org/lively4/lively4-jens/src/client/contextmenu.js">
-          contextmenu.js
-        </a></div><div class="lively-content" style="position: static; left: 17px; top: 29px;"><a href="https://lively-kernel.org/lively4/lively4-jens/src/client/draganddrop.js">
-          draganddrop.js
-        </a></div><div class="lively-content" style="position: static; left: 122px; top: 150px;"><a href="https://lively-kernel.org/lively4/lively4-jens/doc/manual/hooks.md">
-          hooks.md
-        </a></div><div class="lively-content" style="position: static; left: 14px; top: 104px;"><a href="https://lively-kernel.org/lively4/lively4-jens/src/client/lively.js">
-          lively.js
-        </a></div><div class="lively-content" style="position: static; left: 51px; top: 119px;"><a href="https://lively-kernel.org/lively4/lively4-jens/src/client/poid.js">
-          poid.js
-        </a></div><script data-name="sort" type="lively4script">function sort() {
+}</script><script data-name="livelyLoad" type="lively4script">function livelyLoad() {
+  lively.removeEventListener("me", this)
+  lively.addEventListener("me", this, "click", evt => this.onClick(evt)) 
+}</script></button><script data-name="sort" type="lively4script">function sort() {
   // this.style.zIndex = 1000
   // this.style.backgroundColor = "rgba(200,200,0,0.3)"
   var target = this
@@ -49,4 +37,19 @@
         return true
       })
     })
-}</script></div>
+}</script><script data-name="livelyLoad" type="lively4script">function livelyLoad() {
+  this.sort()
+  lively.notify("lively load!!!")
+  lively.setPosition(this, lively.pt(0,0), "fixed")
+ // this.style.padding = "10px"
+}</script><div class="lively-content" style="position: static; left: 60px; top: 146px;"><a href="https://lively-kernel.org/lively4/lively4-jens/src/client/contextmenu.js">
+          contextmenu.js
+        </a></div><div class="lively-content" style="position: static; left: 17px; top: 29px;"><a href="https://lively-kernel.org/lively4/lively4-jens/src/client/draganddrop.js">
+          draganddrop.js
+        </a></div><div class="lively-content" style="position: static; left: 122px; top: 150px;"><a href="https://lively-kernel.org/lively4/lively4-jens/doc/manual/hooks.md">
+          hooks.md
+        </a></div><div class="lively-content" style="position: static; left: 14px; top: 104px;"><a href="https://lively-kernel.org/lively4/lively4-jens/src/client/lively.js">
+          lively.js
+        </a></div><div class="lively-content" style="position: static; left: 51px; top: 119px;"><a href="https://lively-kernel.org/lively4/lively4-jens/src/client/poid.js">
+          poid.js
+        </a></div></div>

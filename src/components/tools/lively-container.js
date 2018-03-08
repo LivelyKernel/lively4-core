@@ -771,17 +771,22 @@ export default class Container extends Morph {
       return this.followPath(m[1]);
     }
   
+    var options = await fetch(path, {method: "OPTIONS"}).then(r => r.status == 200 ? r.json() : false).catch(e => false)
     // this check could happen later
     if (!path.match("https://lively4") 
         && !path.match(window.location.host) 
         && path.match(/https?:\/\//)) {
-      // lively.notify("follow foreign url: " + path);
-      var startTime = Date.now();
-      if (!await fetch(path, {method: "OPTIONS"}).catch(e => false)) {
+      if (!options) {
         return window.open(path);
       }
     }
-
+    lively.notify("options " + options)
+      
+    if (options && options.donotfollowpath) {
+      fetch(path) // e.g. open://my-component
+      return ;
+    }
+    
     if (_.last(this.history()) !== path)
       this.history().push(path);
       
