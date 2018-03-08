@@ -69,6 +69,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("mode/htmlmixed/htmlmixed.js")
       await this.loadModule("addon/mode/overlay.js")
       await this.loadModule("mode/gfm/gfm.js")
+      await this.loadModule("mode/stex/stex.js")
+      await this.loadModule("mode/jsx/jsx.js")
 
       await this.loadModule("addon/edit/matchbrackets.js")
       await this.loadModule("addon/edit/closetag.js")
@@ -625,6 +627,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       mode = "text/html"
     } else if (filename.match(/\.md$/)) {
       mode = "gfm"
+    } else if (filename.match(/\.tex$/)) {
+      mode = "text/x-stex"
     } else if (filename.match(/\.css$/)) {
       mode = "css"
     } else if (filename.match(/\.xml$/)) {
@@ -632,7 +636,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     } else if (filename.match(/\.json$/)) {
       mode = "javascript"
     } else if (filename.match(/\.js$/)) {
-      mode = "javascript"
+      mode = "text/jsx"
     }
     this.mode = mode
     this.editor.setOption("mode", mode)
