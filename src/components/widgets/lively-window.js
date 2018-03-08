@@ -139,6 +139,15 @@ export default class Window extends Morph {
     return Array.from(document.querySelectorAll('*')).filter(ea => ea.isWindow);
 	}
 
+  hideTitlebar() {
+    this.get(".window-titlebar").style.display = "none"
+  }
+
+  showTitlebar() {
+    this.get(".window-titlebar").style.display = ""
+  }
+
+  
   isFullscreen() {
     return this.get(".window-titlebar").style.display == "none"
   }
