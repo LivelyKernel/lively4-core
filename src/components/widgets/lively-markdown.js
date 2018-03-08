@@ -164,7 +164,13 @@ export default class LivelyMarkdown extends Morph {
   }
 
   onPresentationButton() {
-    this.startPresentation()
+    lively.notify("presentation: " + this.getAttribute("mode"))
+    if (this.getAttribute("mode") == "presentation") {
+      this.stopPresentation()      
+    } else {
+      this.startPresentation()
+    }
+    
   }
   
   async startPresentation() {
@@ -181,11 +187,21 @@ export default class LivelyMarkdown extends Morph {
     comp.convertSiblings()
     comp.start();
 
-    if (this.get("#presentationButton"))
-      this.get("#presentationButton").remove()
+    // if (this.get("#presentationButton"))
+    //   this.get("#presentationButton").remove()
 
     return comp
   }
+
+  async stopPresentation() {
+    this.setAttribute("mode", "")
+    if (this.parentElement.tagName == "LIVELY-CONTAINER") {
+      this.parentElement.setAttribute("mode", "")
+    }
+    this.updateView()
+    
+  }
+
   
   livelyExample() {
     this.setDir(lively4url + "/docs/")

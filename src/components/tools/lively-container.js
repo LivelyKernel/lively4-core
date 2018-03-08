@@ -137,6 +137,7 @@ export default class Container extends Morph {
         this.parentElement.toggleMaximize();
         if ( this.parentElement.isMaximized()) {
           this.parentElement.get(".window-titlebar").style.display = "none"
+          this.parentElement.style.zIndex = 0
         } else {
           this.parentElement.get(".window-titlebar").style.display = ""
         }
@@ -591,8 +592,8 @@ export default class Container extends Morph {
   }
   
   async appendMarkdown(content) {
-    var md = document.createElement("lively-markdown")
-    await components.openIn(this, md)
+    var md = await lively.create("lively-markdown", this)
+    md.classList.add("presentation") // for the presentation button 
     md.getDir = this.getDir.bind(this);
     md.followPath = this.followPath.bind(this);
     await md.setContent(content)

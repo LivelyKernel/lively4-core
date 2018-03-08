@@ -139,6 +139,10 @@ export default class Window extends Morph {
     return Array.from(document.querySelectorAll('*')).filter(ea => ea.isWindow);
 	}
 
+  isFullscreen() {
+    return this.get(".window-titlebar").style.display == "none"
+  }
+  
   focus(evt) {
     let allWindows = this.allWindows();
     let thisIdx = allWindows.indexOf(this);
@@ -155,7 +159,14 @@ export default class Window extends Morph {
       win.removeAttribute('active');
     });
     
-    this.style['z-index'] = this.minZIndex + allWindowsButThis.length;
+    if (this.isFullscreen()) {
+      // fullscreen and everything is in front of me...
+      this.style['z-index'] = 0;
+    } else {
+      this.style['z-index'] = this.minZIndex + allWindowsButThis.length;
+    
+    }
+    
     this.window.classList.add('focused');
     this.setAttribute('active', true);
     
