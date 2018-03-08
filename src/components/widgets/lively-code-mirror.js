@@ -40,6 +40,13 @@ function operateOnWord(cm, op) {
 
 export default class LivelyCodeMirror extends HTMLElement {
 
+  get mode() {
+    return this.getAttribute('mode');
+  }
+  set mode(val) {
+    return this.setAttribute('mode', val);
+  }
+
   static get codeMirrorPath() {
      return  lively4url + "/src/external/code-mirror/"
   }
@@ -339,9 +346,9 @@ export default class LivelyCodeMirror extends HTMLElement {
       // case "theme":
       //     this.editor.setTheme( newVal );
       //     break;
-      // case "mode":
-      //     this.changeMode( newVal );
-      //     break;
+      case "mode":
+          this.editor.setOption('mode', newVal);
+          break;
       // case "fontsize":
       //     this.editor.setFontSize( newVal );
       //     break;
@@ -604,7 +611,8 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   get isJavaScript() {
     if (!this.editor) return false;
-    return this.editor.getOption("mode") == "javascript";
+    let mode = this.editor.getOption("mode");
+    return mode === "javascript" || mode === 'text/jsx';
   }
   
   get isMarkdown() {
