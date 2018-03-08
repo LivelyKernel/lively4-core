@@ -291,6 +291,14 @@ export default class Selection extends Morph {
     
   }
   
+  livelyInspect(contentNode, inspector) {
+    var selection = <div class="element"><i>selection</i></div>
+    contentNode.appendChild(selection)
+    this.nodes.forEach(ea => {
+      selection.appendChild(inspector.display(ea, false, null, this));
+    })
+  }
+  
   
 }  
 

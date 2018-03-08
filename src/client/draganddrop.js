@@ -9,8 +9,9 @@ export function applyDragCSSClass() {
 }
 
 function appendToBodyAt(node, evt) {
-  document.body.appendChild(node);
-  lively.setGlobalPosition(node, pt(evt.clientX, evt.clientY));
+  dropOnDocumentBehavior.openAt(node, evt)
+  // document.body.appendChild(node);
+  // lively.setGlobalPosition(node, pt(evt.clientX, evt.clientY));
 }
 
 
@@ -174,14 +175,18 @@ const dropOnDocumentBehavior = {
       },
       
       new DropOnBodyHandler('text/uri-list', urlString => {
-        return <a class="lively-content" href={urlString} click={event => {
+        var link = <div class="lively-content"><a  href={urlString}>
+          {urlString.replace(/.*\//,"")}
+        </a></div>;
+        // register the event... to be able to remove it again...
+        lively.addEventListener("link", link, "click", evt => {
           // #TODO make this bevior persistent?
-          event.preventDefault();
+          evt.preventDefault();
+          evt.stopPropagation();
           lively.openBrowser(urlString);
           return true;
-        }}>
-          {urlString.replace(/.*\//,"")}
-        </a>;
+        })
+        return link
       }),
 
       new DropOnBodyHandler('text/html', htmlString => {

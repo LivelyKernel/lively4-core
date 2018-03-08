@@ -1,0 +1,18 @@
+<button style="position: absolute; left: 2px; top: 350px;" class="lively-content" data-lively-part-name="button" contenteditable="null" data-lively-id="3ec255ac-9849-48fd-bac3-25a2fab718cf">fixed<script data-name="livelyLoad" type="lively4script">function livelyLoad() {
+  lively.addEventListener("me", this, "click", evt => this.onClick(evt)) 
+}</script><script data-name="onClick" type="lively4script">function onClick() {  
+  var label = this.childNodes[0]
+  var target = this.parentElement
+  if (label.textContent == "fixed") {
+    label.textContent = "open"
+    target.style.zIndex = 1000
+    var pos = lively.getGlobalPosition(target)
+    lively.setGlobalPosition(target, pos)
+  } else {
+    label.textContent = "fixed"    
+    var pos = lively.getGlobalPosition(target)
+    target.style.position = "fixed"
+    target.style.left = pos.x + "px"
+    target.style.top = pos.y + "px"    
+  }
+}</script></button>

@@ -360,6 +360,7 @@ export default class Container extends Morph {
       lively.notify("No history to go back!");
       return;
     }
+    lively.lastBackButtonClicked = Date.now(); // can be used by scripts to prevent autoforwarding
     var url = this.history().pop();
     var last = _.last(this.history());
     // lively.notify("follow " + url)
@@ -437,7 +438,7 @@ export default class Container extends Morph {
       return;
     }
     this.get("#editor").setURL(this.getURL());
-    this.get("#editor").saveFile().then( async () => {
+    return this.get("#editor").saveFile().then( async () => {
       var sourceCode = this.getSourceCode();
       var url = this.getURL();
       lively.notify("!!!saved " + url)
@@ -1006,6 +1007,10 @@ export default class Container extends Morph {
     this.lastVersion = null; // just to be sure
     
     var format = path.replace(/.*\./,"");
+    if (url.protocol == "search:") {
+      format = "html"
+    }
+    
     if (format.match(/(png)|(jpe?g)/)) {
       if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + url +"'>");
       else return;

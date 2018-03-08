@@ -14,7 +14,12 @@ import FileCache from "src/client/filecache.js"
   button.addEventListener("click", () => {
     FileCache.current().addDirectory(lively4url + "/src/client/", 5)
     FileCache.current().addDirectory(lively4url + "/templates/", 5)
+    FileCache.current().addDirectory(lively4url + "/src/components/", 5)
+    FileCache.current().addDirectory(lively4url + "/src/parts/", 5)
     FileCache.current().addDirectory(lively4url + "/doc/", 5)    
+    FileCache.current().addDirectory(lively4url + "/demos", 5)    
+    FileCache.current().addDirectory(lively4url + "/tests", 5)    
+
     // FileCache.current().addDirectory("https://lively4/thesis/notes", 5)
     // FileCache.current().addDirectory("https://lively4/Notes", 5)
     // FileCache.current().addDirectory("https://lively4/thesis/WriteFirst", 5)

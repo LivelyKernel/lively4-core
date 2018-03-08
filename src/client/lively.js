@@ -344,7 +344,7 @@ export default class Lively {
       comp.mode = "javascript";
       comp.value = string;
       var container = comp.parentElement
-      if (pos) lively.setPosition(container,pos);
+      if (pos) lively.setGlobalPosition(container,pos);
       container.setAttribute("title", "Workspace");
       comp.focus();
       return comp;
@@ -375,7 +375,7 @@ export default class Lively {
   }
 
   static pt(x,y) {
-    return {x: x, y: y};
+    return pt(x,y)
   }
 
   static setPosition(obj, point, mode) {
@@ -1213,14 +1213,19 @@ export default class Lively {
       var windows = Array.from(worldContext.querySelectorAll(":scope > lively-window"))
       var offset = 20
       var pos
+      var topLeft = pt(200,100)
+      
       for(var i=0; !pos; i++) {
+        let p1 = pt(i * offset, i * offset)
+        let p2 = pt((i + 1) * offset, (i + 1) * offset)
         var found = windows.find( ea => {
           // var ea = that; var i =0 
-          var eaPos = lively.getGlobalPosition(ea)
-          // find free space in direction bottom right
-          return (i * offset <= eaPos.x) && (eaPos.x < (i + 1) * offset ) && (i * offset <= eaPos.y) && (eaPos.y < (i + 1) * offset)
+          var eaPos = lively.getGlobalPosition(ea).subPt(topLeft)
+          // check if there is a window in direction bottom right
+          return (p1.lessPt(eaPos) || p1.eqPt(eaPos)) && eaPos.lessPt(p2)
         });
-        if (!found) pos = pt(i * offset,i* offset)
+        // no window is found... so place the next there
+        if (!found) pos = topLeft.addPt(pt(i * offset, i* offset))
       }
       return pos.subPt(lively.getGlobalPosition(worldContext))
   }
