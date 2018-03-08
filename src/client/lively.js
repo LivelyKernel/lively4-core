@@ -341,7 +341,7 @@ export default class Lively {
     string = string || "";
     var name = "lively-code-mirror"      
     return  lively.openComponentInWindow(name, null, pt(400,500), worldContext).then((comp) => {
-      comp.mode = "javascript";
+      comp.mode = "text/jsx";
       comp.value = string;
       var container = comp.parentElement
       if (pos) lively.setGlobalPosition(container,pos);
