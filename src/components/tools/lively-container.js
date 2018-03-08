@@ -9,6 +9,7 @@ import * as cop  from "src/external/ContextJS/src/contextjs.js";
 import ScopedScripts from "src/client/scoped-scripts.js";
 import Clipboard from "src/client/clipboard.js"; 
 import { debounce, fileEnding, replaceFileEndingWith } from "utils";
+import ViewNav from "src/client/viewnav.js"
 
 export default class Container extends Morph {
   
@@ -731,6 +732,9 @@ export default class Container extends Morph {
        this.get("#container-content").scrollTop = this.preserveContentScroll
       delete this.preserveContentScroll
     }
+    
+    ViewNav.enable(this)
+    
     setTimeout(() => {
       this.resetContentChanges()
       this.observeHTMLChanges()
@@ -940,12 +944,19 @@ export default class Container extends Morph {
   async setPath(path, donotrender) {
     this.get('#container-content').style.display = "block";
     this.get('#container-editor').style.display = "none";
+    
+    
+    if (this.viewNav) {
+      lively.setPosition(this.get("#container-root"), pt(0,0))
+      this.viewNav.disable()
+    }
+    
     this.windowTitle = path.replace(/.*\//,"")
     if (!path) {
         path = "";
     }
 	  var isdir= path.match(/.\/$/);
-
+    
     var url;
     if (path.match(/^https?:\/\//)) {
       url = new URL(path);
