@@ -16,8 +16,14 @@ img {
   max-width: 800px;
 }
 
+  
 #presentationButton {
+  display: none
+}
+  
+:host(.presentation) #presentationButton {
   position: absolute;
+  display: block;
   top: 0px;
   left: 0px;
   font-size: 8pt;
@@ -28,14 +34,15 @@ img {
   transform: rotate(270deg) translate(-30px,-30px);
 }
 
+
+  
 </style>
-<button id="presentationButton">presentation</button>
 <div id="content">
 </div>
 <div id="source">
 	<content></content>
 </div>
-
+<button id="presentationButton">presentation</button>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

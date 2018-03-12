@@ -763,9 +763,9 @@ export default class Lively {
       document.body.style.backgroundColor = "rgb(240,240,240)"
       ViewNav.enable(document.body)
 
-      if (loadContainer && lively.preferences.get("ShowFixedBrowser")) {
-        this.showMainContainer()
-      } 
+      // if (loadContainer && lively.preferences.get("ShowFixedBrowser")) {
+      //   this.showMainContainer()
+      // } 
     }
 
     if(this.deferredUpdateScroll) {
@@ -787,11 +787,15 @@ export default class Lively {
     container = document.createElement("lively-container");
     container.id = 'main-content';
     container.setAttribute("load", "auto");
-
+    
+    
+    
     await components.openInWindow(container).then( () => {
       container.__ingoreUpdates = true; // a hack... since I am missing DevLayers...
       container.get('#container-content').style.overflow = "visible";
       container.parentElement.toggleMaximize()
+      container.parentElement.hideTitlebar()
+      container.parentElement.style.zIndex = 0
       container.parentElement.setAttribute("data-lively4-donotpersist","all");
     });
     return container
