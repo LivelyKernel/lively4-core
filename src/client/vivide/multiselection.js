@@ -134,9 +134,6 @@ export default class MultiSection {
     item.addEventListener('keydown', evt => {
       const ctrl = evt.ctrlKey || evt.metaKey;
       const { shiftKey, altKey, keyCode, charCode } = evt;
-      lively.warn("keydown event", keyCode)
-
-      //lively.notify(`keyCode: ${keyCode}, charCode: ${charCode}`);
       
       // Tab
       if(keyCode === 9) {

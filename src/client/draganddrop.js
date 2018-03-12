@@ -111,10 +111,10 @@ const dropOnDocumentBehavior = {
       {
         handle(evt) {
           const dt = evt.dataTransfer;
-          if(!dt.types.includes("vivide/list-input")) { return false; }
-          const tempKey = dt.getData("vivide/list-input");
+          if(!dt.types.includes("vivide")) { return false; }
+          if(!dt.types.includes("javascript/object")) { return false; }
+          const tempKey = dt.getData("javascript/object");
           const data = getObjectFor(tempKey);
-          removeTempKey(tempKey);
           letsScript(data, evt);
           return true;
         }
