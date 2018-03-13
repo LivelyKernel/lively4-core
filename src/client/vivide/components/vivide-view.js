@@ -1,8 +1,67 @@
 import Morph from 'src/components/widgets/lively-morph.js';
+import { uuid, without } from 'utils';
 
 export default class VivideView extends Morph {
+  static findViewWithId(id) {
+    return document.body.querySelector(`vivide-view[vivide-view-id=${id}]`);
+  }
+  
   get input() { return this._input || (this._input = []); }
   set input(val) { return this._input = val; }
+  
+  get id() {
+    let id = this.getAttribute('vivide-view-id');
+    if(id) {
+      return id;
+    }
+    
+    // ensure uuid begins with a letter to match the requirements for a css selector
+    let newId = 'vivide-view-' + uuid();
+    this.setAttribute('vivide-view-id', newId);
+    return newId;
+  }
+  get outportTargets() {
+    let targets = this.getAttribute('outport-target');
+    if(targets) {
+      return JSON.parse(targets);
+    }
+    
+    return this.outportTargets = [];
+  }
+  set outportTargets(targets) {
+    this.setAttribute('outport-target', JSON.stringify(targets));
+    return targets;
+  }
+  addOutportTarget(target) {
+    return this.outportTargets = this.outportTargets.concat(target);
+  }
+  removeOutportTarget(target) {
+    return this.outportTargets = without.call(this.outportTargets, target);
+  }
+  
+  connectTo(target) {
+    // #TODO: cycle detection
+    this.addOutportTarget(target.id);
+  }
+  
+  notifyOutportTargets() {
+    lively.warn('explicitly notify outport targets', this.outportTargets);
+    this.outportTargets
+      .map(VivideView.findViewWithId)
+      .forEach(target => {
+        target.newDataFromUpstream(this.displayedData);
+      });
+  }
+  
+  selectionChanged(widget) {
+    lively.warn('selection changed', 'notify outport targets')
+    let data = widget.getSelectedData();
+    this.outportTargets
+      .map(VivideView.findViewWithId)
+      .forEach(target => {
+        target.newDataFromUpstream(data);
+      });
+  }
 
   async initialize() {
     this.windowTitle = "VivideView";
@@ -22,6 +81,7 @@ export default class VivideView extends Morph {
     }
     
     await this.updateWidget();
+    this.notifyOutportTargets();
   }
   
   async calculateDisplayData() {

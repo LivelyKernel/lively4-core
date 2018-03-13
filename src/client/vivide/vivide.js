@@ -11,7 +11,7 @@ async function newScriptFromTemplate() {
   return newScriptURL;
 }
 
-export async function letsScript(object, evt) {
+export async function letsScript(object, evt, sourceView) {
   async function createSideBySideViewAndEditor(evt) {
     let pos;
     if(evt) {
@@ -39,4 +39,8 @@ export async function letsScript(object, evt) {
   view.newDataFromUpstream(object);
   
   scriptEditor.setScriptURL(scriptURL);
+  
+  if(sourceView) {
+    sourceView.connectTo(view);
+  }
 }

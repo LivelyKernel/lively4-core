@@ -20,7 +20,9 @@ export default class VivideListWidget extends Morph {
   get list() { return this.get('#list'); }
   get multiSelection() {
     return this._multiSelection = this._multiSelection ||
-      new MultiSelection(this);
+      new MultiSelection(this, {
+        onSelectionChanged: selection => this.selectionChanged(selection)
+      });
   }
   async initialize() {
     this.windowTitle = "VivideListWidget";
@@ -28,6 +30,19 @@ export default class VivideListWidget extends Morph {
 
   focus() {
     this.multiSelection.focus();
+  }
+  
+  selectionChanged(selection) {
+    lively.warn(selection.length)
+    let viewParent = this.getViewParent();
+    if(viewParent) {
+      viewParent.selectionChanged(this);
+    }
+  }
+  
+  getSelectedData() {
+    return this.multiSelection.getSelectedItems()
+      .map(selectedItem => this.dataByListItem.get(selectedItem));
   }
 
   display(data, config) {
@@ -49,7 +64,6 @@ export default class VivideListWidget extends Morph {
           selectedItems = [listItem];
         }
         
-        lively.warn(evt.ctrlKey);
         let selectedData = selectedItems.map(selectedItem => this.dataByListItem.get(selectedItem));
         
         const dt = evt.dataTransfer;

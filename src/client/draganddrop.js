@@ -113,9 +113,12 @@ const dropOnDocumentBehavior = {
           const dt = evt.dataTransfer;
           if(!dt.types.includes("vivide")) { return false; }
           if(!dt.types.includes("javascript/object")) { return false; }
-          const tempKey = dt.getData("javascript/object");
-          const data = getObjectFor(tempKey);
-          letsScript(data, evt);
+          const dataTempKey = dt.getData("javascript/object");
+          const data = getObjectFor(dataTempKey);
+          const viewTempKey = dt.getData("vivide/source-view");
+          const sourceView = getObjectFor(viewTempKey);
+          getObjectFor
+          letsScript(data, evt, sourceView);
           return true;
         }
       },
