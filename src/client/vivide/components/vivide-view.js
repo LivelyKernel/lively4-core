@@ -2,34 +2,41 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import { uuid, without } from 'utils';
 
 export default class VivideView extends Morph {
+  static get idAttribute() { return 'vivide-view-id'; }
+  static get outportAttribute() { return 'outport-target'; }
+  
   static findViewWithId(id) {
     return document.body.querySelector(`vivide-view[vivide-view-id=${id}]`);
+  }
+  static getIdForView(view) {
+    return view.id;
   }
   
   get input() { return this._input || (this._input = []); }
   set input(val) { return this._input = val; }
   
   get id() {
-    let id = this.getAttribute('vivide-view-id');
+    let id = this.getAttribute(VivideView.idAttribute);
     if(id) {
       return id;
     }
     
     // ensure uuid begins with a letter to match the requirements for a css selector
     let newId = 'vivide-view-' + uuid();
-    this.setAttribute('vivide-view-id', newId);
+    this.setAttribute(VivideView.idAttribute, newId);
     return newId;
   }
   get outportTargets() {
-    let targets = this.getAttribute('outport-target');
-    if(targets) {
-      return JSON.parse(targets);
+    let ids = this.getAttribute(VivideView.outportAttribute);
+    if(ids) {
+      return JSON.parse(ids).map(VivideView.findViewWithId);
     }
     
     return this.outportTargets = [];
   }
   set outportTargets(targets) {
-    this.setAttribute('outport-target', JSON.stringify(targets));
+    this.setAttribute(VivideView.outportAttribute, JSON.stringify(targets.map(VivideView.getIdForView)));
+    
     return targets;
   }
   addOutportTarget(target) {
@@ -41,13 +48,12 @@ export default class VivideView extends Morph {
   
   connectTo(target) {
     // #TODO: cycle detection
-    this.addOutportTarget(target.id);
+    this.addOutportTarget(target);
   }
   
   notifyOutportTargets() {
     lively.warn('explicitly notify outport targets', this.outportTargets);
     this.outportTargets
-      .map(VivideView.findViewWithId)
       .forEach(target => {
         target.newDataFromUpstream(this.displayedData);
       });
@@ -57,7 +63,6 @@ export default class VivideView extends Morph {
     lively.warn('selection changed', 'notify outport targets')
     let data = widget.getSelectedData();
     this.outportTargets
-      .map(VivideView.findViewWithId)
       .forEach(target => {
         target.newDataFromUpstream(data);
       });

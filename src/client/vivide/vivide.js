@@ -18,17 +18,14 @@ export async function letsScript(object, evt, sourceView) {
       pos = lively.getPosition(evt)
     }
 
-    let vivideView = await lively.openComponentInWindow('vivide-view', pos);
-    let vivideViewWindow = lively.findWindow(vivideView);
-    if(vivideViewWindow && vivideViewWindow.tagName === "LIVELY-WINDOW") {
-      pos = lively.getGlobalBounds(vivideViewWindow).topRight();
+    let view = await lively.openComponentInWindow('vivide-view', pos);
+    let viewWindow = lively.findWindow(view);
+    if(viewWindow && viewWindow.tagName === "LIVELY-WINDOW") {
+      pos = lively.getGlobalBounds(viewWindow).topRight();
     }
 
     let scriptEditor = await lively.openComponentInWindow('vivide-script-editor', pos);
-    return {
-      view: vivideView,
-      scriptEditor
-    }
+    return { view, scriptEditor }
   }
   
   let { view, scriptEditor } = await createSideBySideViewAndEditor(evt);
