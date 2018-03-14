@@ -1,6 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { promisedEvent } from "utils";
-import {NodeTypes, SignatureManipulator} from 'https://lively-kernel.org/lively4/lively4-theresa/src/client/signature-db.js';
+import {NodeTypes, SignatureManipulator} from 'src/client/signature-db.js';
 
   
 var DEMO_DIRECTORY = 'demos/systembrowser/';
@@ -124,7 +124,7 @@ export default class SemanticSourceCodeNavigator extends Morph {
     editorComp.editor.setOption("lineWrapping", true);
     editorComp.doSave = text => {
       var type, id;
-      //TODO: add type to the signatures object
+      // #TODO: add type to the signatures object
       if(this.currentMethod.hasOwnProperty('id')) {
         type = NodeTypes.METHOD;
         id = this.currentMethod.id;
