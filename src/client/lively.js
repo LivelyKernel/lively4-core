@@ -1537,7 +1537,7 @@ export default class Lively {
   }
   
   static get halo() {
-    return HaloService.halo[0]
+    return HaloService.instance;
   }
   
   static onMouseDown(evt) {

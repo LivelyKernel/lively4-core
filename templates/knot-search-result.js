@@ -1,6 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { Graph } from './../src/client/triples/triples.js';
-import { uuid as generateUUID, getTempKeyFor, fileName, hintForLabel, asDragImageFor } from 'utils';
+import { getTempKeyFor, fileName, hintForLabel, asDragImageFor } from 'utils';
 import Keys from 'src/client/keys.js';
 import MultiSelection from 'src/client/vivide/multiselection.js';
 
@@ -38,8 +38,8 @@ export default class KnotSearchResult extends Morph {
         const dt = evt.dataTransfer;
 
         const knots = selectedItems.map(item => item.knot);
+        dt.setData("vivide", "");
         dt.setData("javascript/object", getTempKeyFor(knots));
-        dt.setData("vivide/list-input", getTempKeyFor(knots));
         
         const hints = knots
           .map(knot => knot.label())
@@ -81,9 +81,9 @@ export default class KnotSearchResult extends Morph {
       lively.notify('drop');
       lively.notify(":", evt.dataTransfer.getData("knot/url"));
     });
-    
+
     this.multiSelection.addItem(listItem);
-    
+
     list.appendChild(listItem);
   }
     

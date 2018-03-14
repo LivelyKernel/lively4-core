@@ -16,6 +16,9 @@
       justify-content: space-between;
       flex-direction: column;
     }
+    #vivide-items {
+      display: none;
+    }
     .row {
       display: flex;
       justify-content: space-between;
@@ -34,7 +37,7 @@
       min-width: 60px;
       height: 20px;
     }
-    
+
     #handles {
       position: absolute;
       top: 0px;
@@ -61,7 +64,7 @@
     }
       
     </style>
-    <div class="container">
+    <div id="default-items" class="container">
       <div class="row" id="row1">
         <lively-halo-menu-item class="halo"></lively-halo-menu-item>
         <lively-halo-style-item id="style" class="halo"></lively-halo-style-item>
@@ -79,6 +82,16 @@
         <lively-halo-resize-item class="halo"></lively-halo-resize-item>
       </div>
     </div>
+    <div id="vivide-items" class="container">
+      <div class="row">
+        <lively-halo-vivide-open-script-editor-item class="halo" ></lively-halo-vivide-open-script-editor-item>
+        <span>Bar</span>
+      </div>
+      <div class="row">
+        <span>Baz</span>
+        <span>Blub</span>
+      </div>
+    </div>
     <div id="handles">
       <lively-halo-handle-item id="topLeft" class="halo handle"></lively-halo-handle-item>
       <lively-halo-handle-item id="bottomLeft" class="halo handle"></lively-halo-handle-item>
@@ -90,6 +103,3 @@
     <lively-halo-control-point-item id="controlPoint1" class="control-point"></lively-halo-control-point-item>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
-
-
-
