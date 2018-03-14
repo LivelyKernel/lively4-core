@@ -17,3 +17,8 @@ class Selection {
   }
 }
 ```
+
+## livelyHalo
+
+To customize the 
+<script><a href={lively4url + '/src/components/halo/lively-halo.js'}>lively halo tool</a></script>.

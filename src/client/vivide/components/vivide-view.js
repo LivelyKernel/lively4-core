@@ -123,4 +123,21 @@ export default class VivideView extends Morph {
   livelyMigrate(other) {
     this.newDataFromUpstream(other.input);
   }
+  
+  livelyHalo() {
+    return {
+      showHalo(halo) {
+        lively.success('customized halo');
+
+        halo.shadowRoot.querySelectorAll(".halo").forEach(ea => {
+          if (ea.updateTarget) {
+            ea.updateTarget(this);
+          }
+        });    
+      },
+      x() {
+        
+      }
+    };
+  }
 }
