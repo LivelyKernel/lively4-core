@@ -126,17 +126,9 @@ export default class VivideView extends Morph {
   
   livelyHalo() {
     return {
-      showHalo(halo) {
-        lively.success('customized halo');
-
-        halo.shadowRoot.querySelectorAll(".halo").forEach(ea => {
-          if (ea.updateTarget) {
-            ea.updateTarget(this);
-          }
-        });    
-      },
-      x() {
-        
+      configureHalo(halo) {
+        halo.get('#default-items').style.display = 'none';
+        halo.get('#vivide-items').style.display = 'flex';
       }
     };
   }

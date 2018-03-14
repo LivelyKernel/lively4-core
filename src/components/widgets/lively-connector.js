@@ -246,10 +246,10 @@ export default class LivelyConnector extends Morph {
     if (x2 !== null) { vertices[1].x1 = x2}
     var y2 = this.getAttribute("y2")
     if (y2 !== null) { vertices[1].y1 = y2}
-    
+
     this.setVertices(vertices)
   }
-  
+
   livelyPrepareSave() {
     this.saveVertices()
   }
@@ -259,22 +259,16 @@ export default class LivelyConnector extends Morph {
     // this.toElement = other.toElement
     // this.connect(this.fromElement, this.toElement)
   }
-  
+
   livelyHalo() {
     return {
-      showHalo(halo) {
-        lively.success('connector halo');
-
+      configureHalo(halo) {
+        halo.setHandleVisibility(true);
+        
         let path = this.getPath();
         // halo.get("lively-halo-drag-item").style.visibility= "hidden"
         halo.ensureControlPoint(path, 0, true);
         halo.ensureControlPoint(path, 1, true);
-
-        halo.shadowRoot.querySelectorAll(".halo").forEach(ea => {
-          if (ea.updateTarget) {
-            ea.updateTarget(this);
-          }
-        });   
       },
       dragBehaviorMove(halo, evt, pos) {}
     };

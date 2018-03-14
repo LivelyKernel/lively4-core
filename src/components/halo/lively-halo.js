@@ -5,21 +5,31 @@ import selecting from 'src/client/morphic/selecting.js';
 import {pt, rect, Rectangle} from 'src/client/graphics.js';
 import preferences from 'src/client/preferences.js';
 import {Grid} from 'src/client/morphic/snapping.js';
-import DragBehavior from "src/client/morphic/dragbehavior.js"
-import svg from "src/client/svg.js"
+import DragBehavior from 'src/client/morphic/dragbehavior.js'
+import svg from 'src/client/svg.js'
 import { isFunction } from 'utils';
 
 /* globals $, Halo, that, HaloService */
 
 let svgStrategy = {
   match(target) {
-    return target instanceof SVGSVGElement;
+    return target instanceof SVGSVGElement || target instanceof SVGElement;
   },
   
-  dragBehaviorMove(halo, evt, pos) {},
-  x() {
+  configureHalo(halo) {
+    halo.setHandleVisibility(true);
 
-  }
+    this.querySelectorAll(':not(marker)>path').forEach(ea => {
+      svg.getPathVertices(ea).forEach((p, index) => {
+        halo.ensureControlPoint(ea, index);
+        if (p.c == 'Q') {
+          halo.ensureControlPoint(ea, index, false, 2);
+        }
+      });
+    });
+  },
+  
+  dragBehaviorMove(halo, evt, pos) {}
 }
 
 let defaultStrategy = {
@@ -27,15 +37,8 @@ let defaultStrategy = {
     return true;
   },
   
-  showHalo(halo) {
-    lively.success('default halo');
-
-    halo.shadowRoot.querySelectorAll(".halo").forEach(ea => {
-      if (ea.updateTarget) {
-        ea.updateTarget(this);
-      }
-    });
-  },
+  configureHalo(halo) {},
+  
   dragBehaviorMove(halo, evt, pos) {
     lively.setPosition(this, pos.addPt(halo.dragOffset));
     halo.alignHaloToBounds(this);
@@ -50,33 +53,33 @@ let fallbackStrategies = [svgStrategy, defaultStrategy];
 export default class Halo extends Morph {
   
   get isMetaNode() { return true; }
-
+  get haloItems() { return this.shadowRoot.querySelectorAll('.halo'); }
+  
   initialize() {
-    this.shadowRoot.querySelectorAll("*").forEach(ea => {
-      if (ea.isMetaNode === undefined) ea.isMetaNode = true
+    this.shadowRoot.querySelectorAll('*').forEach(ea => {
+      if (ea.isMetaNode === undefined) ea.isMetaNode = true;
     })
-    Halo.halo = $(this); // #TODO Refeactor away jQuery in Halo
-    Halo.halo.hide();
+    // #TODO Refeactor away jQuery in Halo
+    Halo.instance = this;
+    $(this).hide();
     window.HaloService = Halo;
     var targetContext = document.body.parentElement;
     
-    lively.removeEventListener("Halo", targetContext);
-    lively.addEventListener("Halo", document.body, "pointerdown", 
+    lively.removeEventListener('Halo', targetContext);
+    lively.addEventListener('Halo', document.body, 'pointerdown', 
       evt => this.onBodyMouseDown(evt, targetContext));
 
-    this.shadowRoot.querySelectorAll(".halo").forEach(ea => ea.halo = this);
+    this.haloItems.forEach(ea => ea.halo = this);
     DragBehavior.on(this);
   }
   
   onBodyMouseDown(evt, targetContext) {
-    // lively.notify("down " + targetContext);
     this.targetContext = targetContext;
     evt.stopPropagation();
-    // lively.notify("mouse down " + targetContext)
     var whitelistNodes = lively.html.findAllNodes() // #TODO only find nodes of subelement
         .filter (ea => ea.tagName == 'INPUT' || 
-          ea.tagName == "LI" || ea.tagName == "TD" ||
-          ea.tagName == "P" ||  ea.tagName == "PRE")
+          ea.tagName == 'LI' || ea.tagName == 'TD' ||
+          ea.tagName == 'P' ||  ea.tagName == 'PRE')
         .filter (ea => {
           var b = ea.getBoundingClientRect();
           var bounds = new Rectangle(b.left, b.top, b.width, b.height) ;
@@ -96,54 +99,44 @@ export default class Halo extends Morph {
   }
   
   setHandleVisibility(shouldHide) {
-    let visibility = shouldHide ? "hidden" : null;
-    this.shadowRoot.querySelectorAll("lively-halo-handle-item").forEach(ea => {
+    let visibility = shouldHide ? 'hidden' : null;
+    this.shadowRoot.querySelectorAll('lively-halo-handle-item').forEach(ea => {
       ea.style.visibility = visibility;
     });
   }
 
-  updateHandles(target) {
-    if (!target) { return; }
-    if (!this.shadowRoot) { return; }
-    // console.log("update handles");
-
-    this.setHandleVisibility(target instanceof SVGSVGElement || target.isConnector);
-
-    this.updateSVGControlPoints(target);
+  resetHaloControlPointItem() {
+    this.shadowRoot.querySelectorAll('lively-halo-control-point-item')
+      .forEach(ea => ea.remove());
   }
   
-  updateSVGControlPoints(target) {
-    this.shadowRoot.querySelectorAll("lively-halo-control-point-item")
-      .forEach(ea => ea.remove());
+  resetHaloConfig() {
+    this.resetHaloControlPointItem();
     
-    target.querySelectorAll(":not(marker)>path").forEach(ea => {
-      svg.getPathVertices(ea).forEach((p, index) => {
-        this.ensureControlPoint(ea, index);
-        if (p.c == "Q") {
-          this.ensureControlPoint(ea, index, false, 2);
-        }
-      });
-    });
+    this.get('#default-items').style.display = null;
+    this.get('#vivide-items').style.display = null;
+
+    this.setHandleVisibility(false);
   }
 
   ensureControlPoint(path, index, isConnector, curveIndex) {
-    var id = "controlPoint" + index+ (curveIndex ? "-" + curveIndex : "");
+    var id = 'controlPoint' + index+ (curveIndex ? '-' + curveIndex : '');
     var controlPoint = this.shadowRoot.querySelector('#' +id);
     if (!controlPoint) {
-      controlPoint = document.createElement("lively-halo-control-point-item");
+      controlPoint = document.createElement('lively-halo-control-point-item');
       controlPoint.id = id;
       this.shadowRoot.appendChild(controlPoint);
     }
     controlPoint.isConnector = isConnector;
     controlPoint.curveIndex = curveIndex;
     controlPoint.setup(this, path, index);
-    controlPoint.style.visibility= "";
+    controlPoint.style.visibility= '';
     return controlPoint;
   }
   
   showHalo(target, path) {
     document.body.appendChild(this);
-    lively.html.registerKeys(document.body, "HaloKeys", this);
+    lively.html.registerKeys(document.body, 'HaloKeys', this);
     if (!target || !target.getBoundingClientRect) {
       $(this).show();
       return;
@@ -152,9 +145,14 @@ export default class Halo extends Morph {
     lively.globalFocus();
   
     this.alignHaloToBounds(target);
-    this.updateHandles(target);
     
-    this.dispatch(target, 'showHalo');
+    this.resetHaloConfig();
+    this.dispatch(target, 'configureHalo');
+    this.haloItems.forEach(ea => {
+      if (ea.updateTarget) {
+        ea.updateTarget(target);
+      }
+    });
   }
   
   dispatch(target, methodName, ...args) {
@@ -212,43 +210,38 @@ export default class Halo extends Morph {
     lively.setExtent(this, pt(width, height))
     
     var boundsRect = lively.getGlobalBounds(that);
-    ["topLeft", "bottomLeft", "bottomRight", "topRight"].forEach(ea => {
-      lively.setGlobalPosition(this.get("#" + ea), boundsRect[ea]())  
-    })
-    
+    ['topLeft', 'bottomLeft', 'bottomRight', 'topRight'].forEach(ea => {
+      lively.setGlobalPosition(this.get('#' + ea), boundsRect[ea]());
+    });
   }
   
   static showHalos(target, path) {
     this.target = $(target);
-    this.halo[0].showHalo(target, path);
+    this.instance.showHalo(target, path);
   }
   
   static hideHalos() {
-    if(this.halo[0].info) {
-      this.halo[0].info.stop()
+    if(this.instance.info) {
+      this.instance.info.stop()
     }
-    lively.removeEventListener("HaloKeys", document.body)
+    lively.removeEventListener('HaloKeys', document.body)
     if (HaloService.lastIndicator)
       HaloService.lastIndicator.remove()
     if (this.areHalosActive())
       this.halosHidden = Date.now();
-    this.halo.offset({left:0, top: 0});
-    this.halo.hide();
+    $(this.instance).offset({left:0, top: 0});
+    $(this.instance).hide();
   }
   
-  
   static hideHaloItems() {
-    HaloService.halo[0].shadowRoot.querySelectorAll(".halo").forEach(ea => {
-      ea.style.visibility = "hidden"
-    })
+    this.instance.haloItems.forEach(ea => ea.style.visibility = 'hidden');
   }
 
   static showHaloItems() {
-    HaloService.halo[0].shadowRoot.querySelectorAll(".halo").forEach(ea => {
-      ea.style.visibility = null
-    })
+    this.instance.haloItems.forEach(ea => ea.style.visibility = null);
     
-    HaloService.halo[0].updateHandles(window.that)
+    // #TODO: this usually called updateHandles
+    //this.instance.showHalo(window.that);
   }
   
   // 
@@ -261,50 +254,52 @@ export default class Halo extends Morph {
    * holding ALT    .... align to in bigger steps to grid (resize and move)
    */
   moveTargetOnEventWithKey(evt, delta) {
-   var gridSize = lively.preferences.get("GridSize") * 0.25;
+   var gridSize = lively.preferences.get('GridSize') * 0.25;
     if (evt.altKey) {
-      delta = delta.scaleBy(gridSize)
+      delta = delta.scaleBy(gridSize);
     }
     
     if (evt.shiftKey) {
-      var newExtent =lively.getExtent(that).addPt(delta)
-      lively.setExtent(that, newExtent)
+      var newExtent =lively.getExtent(that).addPt(delta);
+      lively.setExtent(that, newExtent);
 
       if (evt.altKey) {
-        lively.setExtent(that, Grid.snapPt(lively.getExtent(that), gridSize, gridSize / 2))
+        lively.setExtent(that, Grid.snapPt(lively.getExtent(that), gridSize, gridSize / 2));
       }
     } else {
-      lively.moveBy(that, delta)
+      lively.moveBy(that, delta);
       if (evt.altKey) {
-        lively.setPosition(that, Grid.snapPt(lively.getPosition(that), gridSize, gridSize * 0.5))
+        lively.setPosition(that, Grid.snapPt(lively.getPosition(that), gridSize, gridSize * 0.5));
       }
-      
     }
-    evt.preventDefault()
-    evt.stopPropagation()
-    this.alignHaloToBounds(that)
+    evt.preventDefault();
+    evt.stopPropagation();
+    this.alignHaloToBounds(that);
     
-    if(this.info) this.info.stop()
-    this.info = lively.showInfoBox(that)
+    if(this.info) {
+      this.info.stop();
+    }
+    this.info = lively.showInfoBox(that);
 
-    if (that)
-      this.info.innerHTML=`x=${lively.getPosition(that).x} y=${lively.getPosition(that).y} w=${lively.getExtent(that).x} h=${lively.getExtent(that).y}`
+    if(that) {
+      this.info.innerHTML = `x=${lively.getPosition(that).x} y=${lively.getPosition(that).y} w=${lively.getExtent(that).x} h=${lively.getExtent(that).y}`;
+    }
   }
   
   onLeftDown(evt) {
-    this.moveTargetOnEventWithKey(evt, pt(-1,0))
+    this.moveTargetOnEventWithKey(evt, pt(-1,0));
   }
 
   onRightDown(evt) {
-    this.moveTargetOnEventWithKey(evt, pt(1,0))
+    this.moveTargetOnEventWithKey(evt, pt(1,0));
   }
 
   onUpDown(evt) {
-    this.moveTargetOnEventWithKey(evt, pt(0,-1))
+    this.moveTargetOnEventWithKey(evt, pt(0,-1));
   }
   
   onDownDown(evt) {
-    this.moveTargetOnEventWithKey(evt, pt(0,1))
+    this.moveTargetOnEventWithKey(evt, pt(0,1));
   }
 
   // onKeyUp(evt) {
@@ -313,10 +308,12 @@ export default class Halo extends Morph {
   
   // Override defdault DragBehavior
   dragBehaviorStart(evt, pos) {
-    if (!that || that instanceof SVGElement) {
-      evt.preventDefault();
-      evt.stopPropagation();
-    }
+    if (!that) { return; }
+    // if (!that || that instanceof SVGElement || that instanceof Element) {
+    evt.preventDefault();
+    evt.stopPropagation();
+    // }
+    
     this.dragOffset = lively.getPosition(that).subPt(pos);
     this.alignHaloToBounds(that);
   }
@@ -328,11 +325,11 @@ export default class Halo extends Morph {
   }
 
   static areHalosActive() {
-    return Halo.halo && this.halo.is(":visible");
+    return Halo.instance && $(Halo.instance).is(':visible');
   }
   
   static migrate() {
-    var old = document.querySelector("lively-halo");
+    var old = document.querySelector('lively-halo');
     if (old) {
       old.remove();
       lively.initializeHalos();

@@ -16,6 +16,9 @@
       justify-content: space-between;
       flex-direction: column;
     }
+    #vivide-items {
+      display: none;
+    }
     .row {
       display: flex;
       justify-content: space-between;
@@ -35,18 +38,6 @@
       height: 20px;
     }
 
-    .vivide-container {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      top: 0px;
-      left: 0px;
-      min-width: 90px;
-      min-height: 90px;
-      display: flex;
-      justify-content: space-between;
-      flex-direction: column;
-    }
     #handles {
       position: absolute;
       top: 0px;
@@ -73,7 +64,7 @@
     }
       
     </style>
-    <div class="container">
+    <div id="default-items" class="container">
       <div class="row" id="row1">
         <lively-halo-menu-item class="halo"></lively-halo-menu-item>
         <lively-halo-style-item id="style" class="halo"></lively-halo-style-item>
@@ -91,11 +82,15 @@
         <lively-halo-resize-item class="halo"></lively-halo-resize-item>
       </div>
     </div>
-    <div class="vivide-container">
-      <span>Foo</span>
-      <span>Bar</span>
-      <span>Baz</span>
-      <span>Blub</span>
+    <div id="vivide-items" class="container">
+      <div class="row">
+        <lively-halo-vivide-open-script-editor-item class="halo" ></lively-halo-vivide-open-script-editor-item>
+        <span>Bar</span>
+      </div>
+      <div class="row">
+        <span>Baz</span>
+        <span>Blub</span>
+      </div>
     </div>
     <div id="handles">
       <lively-halo-handle-item id="topLeft" class="halo handle"></lively-halo-handle-item>
