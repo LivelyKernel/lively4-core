@@ -46,7 +46,7 @@ export default class HaloItem extends Morph {
   }
  
   startCustomDrag(evt) {
-    HaloService.isDragging = true 
+    HaloService.isDragging = true;
     lively.removeEventListener("Drag", document, 'mouseup');
     lively.addEventListener("Drag", document, 'mouseup', e => this.stopCustomDrag(e) );
 

@@ -821,13 +821,17 @@ export default class Lively {
     var tagName = await components.reloadComponent(html);
     if (!tagName) return;
 
-    document.body.querySelectorAll(tagName).forEach(oldInstance => {
+    let objectToMigrate = Array.from(document.body.querySelectorAll(tagName));
+    if(lively.halo) {
+      objectToMigrate.push(...lively.halo.shadowRoot.querySelectorAll(tagName));
+    }
+    objectToMigrate.forEach(oldInstance => {
       if (oldInstance.__ingoreUpdates) return;
 
       // if (oldInstance.isMinimized && oldInstance.isMinimized()) return // ignore minimized windows
       // if (oldInstance.isMaximized && oldInstance.isMaximized()) return // ignore isMaximized windows
 
-      var owner = oldInstance.parentElement;
+      var owner = oldInstance.parentElement || oldInstance.parentNode;
       var newInstance = document.createElement(tagName);
       
       if (oldInstance.livelyPreMigrate) {

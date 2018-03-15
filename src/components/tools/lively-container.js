@@ -1,7 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import highlight from 'src/external/highlight.js';
 import {pt} from 'src/client/graphics.js';
-import halo from 'src/components/halo/lively-halo.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
@@ -371,12 +370,13 @@ export default class Container extends Morph {
   }
   
   onMouseDown(evt) {
-    if (halo.halo && halo.halo[0])
-      halo.halo[0].onBodyMouseDown(evt, this);
+    if (lively.halo) {
+      // close halo
+      lively.halo.onBodyMouseDown(evt, this);
+    }
     evt.stopPropagation();
     // evt.preventDefault();
     Clipboard.onBodyMouseDown(evt)
-    
   }
   
   onForward() {

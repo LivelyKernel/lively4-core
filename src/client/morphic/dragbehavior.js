@@ -16,6 +16,7 @@ export default class DragBehavior {
   onDragStart(evt) {
     this.originalPosition = lively.getPosition(this.target)
     this.offset = this.originalPosition.subPt(pt(evt.clientX, evt.clientY))
+    lively.error('onDragStart');
     evt.dataTransfer.setDragImage(document.createElement("div"), 0, 0); 
 
     lively.addEventListener("DragBehavior", this.target, "drag", 

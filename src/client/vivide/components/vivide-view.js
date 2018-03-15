@@ -70,6 +70,8 @@ export default class VivideView extends Morph {
 
   async initialize() {
     this.windowTitle = "VivideView";
+    
+    this.input = [];
   }
   
   async setScript(scriptURL) {
@@ -129,6 +131,16 @@ export default class VivideView extends Morph {
       configureHalo(halo) {
         halo.get('#default-items').style.display = 'none';
         halo.get('#vivide-items').style.display = 'flex';
+
+        // dynamically create outport connection visualizations
+        let container = halo.get('#vivide-outport-connection-items');
+        this.outportTargets.forEach(target => {
+          //lively.success(target.id)
+          let item = document.createElement('lively-halo-vivide-outport-connection-item')
+          item.classList.add('halo');
+          item.setTarget(target);
+          container.appendChild(item);
+        });
       }
     };
   }

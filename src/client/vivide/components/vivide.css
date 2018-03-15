@@ -66,5 +66,19 @@
 }
 
 i {
-  color: red;
+  color: steelblue;
+}
+
+.align-vertically {
+  display:flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.align-horizontally {
+  display:flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
 }
