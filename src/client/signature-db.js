@@ -1,11 +1,11 @@
 import {babel} from 'systemjs-babel-build';
-import plugin from 'https://lively-kernel.org/lively4/foo/src/external/babel-plugin-syntax-all.js';
+import plugin from 'src/external/babel-plugin-syntax-all.js';
 
-export const NodeTypes = Object.freeze({'FILE': 1,
-                                        'VAR': 2,
-                                        'FUNCTION': 3,
-                                        'CLASS': 4,
-                                        'METHOD': 5});
+export const NodeTypes = Object.freeze({'FILE': "File",
+                                        'VAR': "Var",
+                                        'FUNCTION': "Function",
+                                        'CLASS': "Class",
+                                        'METHOD': "Method"});
 
 export class SignatureManipulator {
 

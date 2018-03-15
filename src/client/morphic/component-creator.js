@@ -1,5 +1,7 @@
 import * as componentLoader from "./component-loader.js";
 import preferences from '../preferences.js';
+import moment from "src/external/moment.js";
+import Strings from "src/client/strings.js"
 
 var htmlBeautify;
 System.import(lively4url + "/src/external/beautify-html.js").then(function(obj){
@@ -188,3 +190,125 @@ function selectorMatchesTree(selector, rootElement) {
   // if we reach this, none of the tree nodes matches the selector
   return false;
 }
+
+export default class ComponentCreator {
+
+  static async visitURL(container, url) {
+    container.followPath(url)
+    await container.editFile(url)
+    container.focus()
+  }
+
+  static async copyTemplate(dir, component, type) {
+    var filename = component + "." + type
+    var classname = component.split(/-/).map(ea => Strings.toUpperCaseFirst(ea)).join("")
+    var url = dir  + "/" + filename
+    if (await lively.files.existFile(url)) {
+      lively.notify("Could not create " + url + ", beacuse it already exists!")
+    } else {
+      var templatejs_src = await lively.files.loadFile(lively4url + "/templates/template." + type)
+      templatejs_src = templatejs_src.replace(/\$\$TEMPLATE_CLASS/g, classname)
+      templatejs_src = templatejs_src.replace(/\$\$TEMPLATE_ID/g, component)
+      await lively.files.saveFile(url, templatejs_src)
+    }
+  }
+
+  static async createEntry(container, input) {
+    var path = "" + container.getPath();
+    var dir = path.replace(/[^/]*$/,"");
+    var component = input.value
+
+    await this.copyTemplate(dir, component, "js")
+    await this.copyTemplate(dir, component, "html")
+    lively.components.resetTemplatePathCache()
+
+    this.visitURL(container, dir + "/" + component + ".js")
+  }
+
+  static  async createUI(container) { 
+    var div  = document.createElement("div");
+    var input = document.createElement("input");
+    input.placeholder = "lively-new-component";
+    div.appendChild(input);
+    var button = document.createElement("button");
+    button.addEventListener("click", () => {
+      this.createEntry(container, input)
+    });
+    button.innerHTML = "create";
+    div.appendChild(button);
+    input.focus();
+    input.select();
+    return div;
+  }
+  
+  static async listComponentsUI(container) {
+    if(!container || !container.getPath) {
+      return "no container as parentPath";
+    }
+    var path = "" + container.getPath();
+    var dir = path.replace(/[^/]*$/,"")
+    var opts = JSON.parse(await lively.files.statFile(dir))
+    var testdir = lively4url + "/test/templates/"
+    var tests = JSON.parse(await lively.files.statFile(testdir)).contents.map(ea => ea.name)
+
+    var list = document.createElement("ul")
+    _.sortBy(opts.contents, ea => ea.name)
+      .filter(ea => ea.name.match(/html$/) && ea.name !== "index.html")
+      .forEach(ea => {
+        var li = document.createElement("li")
+
+        var span = document.createElement("span")
+        span.textContent = ea.name.replace(/\.html/," ")
+        li.appendChild(span)
+
+        var a = document.createElement("a")
+        a.innerHTML = "html"
+        a.href = ea.name
+        a.onclick = (evt) => {
+          evt.preventDefault()
+          container.followPath(dir + "/" + ea.name)
+          return true
+        }
+        li.appendChild(a)
+
+        var span = document.createElement("span")
+        span.textContent = " "
+        li.appendChild(span)
+
+        var classFile =  ea.name.replace(/\.html/,".js")
+        if (opts.contents.find(ea => ea.name == classFile)) {
+          var classLink = document.createElement("a")
+          classLink.innerHTML = "js"
+          classLink.href = classFile
+          classLink.onclick = (evt) => {
+            evt.preventDefault()
+            container.followPath(dir + "/" + classFile)
+            return true
+          }
+          li.appendChild(classLink)
+        }
+
+        var span = document.createElement("span")
+        span.textContent = " "
+        li.appendChild(span)
+
+        var testFile =  ea.name.replace(/\.html/,"-test.js")
+        if (tests.indexOf(testFile) !== -1) {
+          var testLink = document.createElement("a")
+          testLink.innerHTML = "test"
+          testLink.href = testFile
+          testLink.onclick = (evt) => {
+            evt.preventDefault()
+            container.followPath(testdir + "/" + testFile)
+            return true
+          }
+          li.appendChild(testLink)
+        }
+
+        list.appendChild(li)
+      })
+    return list
+  }
+
+}
+
