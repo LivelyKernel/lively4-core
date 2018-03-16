@@ -1,4 +1,4 @@
-<template id="lively-math">
+<template id="lively-math" data-class="LivelyMath">
     <style>
 
   .container {
@@ -18,7 +18,7 @@
 
     </style>
       <!-- <pre id="console"></pre> -->
-<juicy-ace-editor id="workspace" wrapmode="true"># http://mathjs.org/docs/datatypes/units.html 
+<lively-code-mirror id="workspace" wrapmode="true"># http://mathjs.org/docs/datatypes/units.html 
 
 0 degC in degF == 31.999999999999943 degF
 100 degF in degC == 37.77777777777783 degC
@@ -26,53 +26,10 @@
 f(x) = x^2;
 f(2)
 
-[[1],[2],[3]] * [[1,2,3]] ==  [[1, 2, 3], [2, 4, 6], [3, 6, 9]]</juicy-ace-editor>
-    
-    <script type="lively4script" data-name="initialize">
-() => {
-    var aceComp = this.shadowRoot.querySelector('#workspace')
-    System.import("src/external/math.js").then(m => {
-      aceComp.boundEval = function (str) {
-        return Promise.resolve({value: m.eval(str)})
-      } 
-    })
-    
-    aceComp.enableAutocompletion = function(filename) {
-      return this.aceRequire("ace/ext/language_tools").then( module => {
-        if (!this.editor) return
-        
-        this.editor.setOptions({
-            enableBasicAutocompletion: true,
-            enableSnippets: true,
-            enableLiveAutocompletion: false
-        });
-        this.editor.completers[3] =  {
-          getCompletions: function(editor, session, pos, prefix, callback) {
-              // console.log("getCompletions: " + pos + " prefix " + prefix)
-              var curLine = session.getDocument().getLine(pos.row);
-              var curTokens = curLine.slice(0, pos.column).split(/\s+/);
-              var curCmd = _.last(curTokens);
-              // console.log("line : " + curLine + " curTokens: " + curTokens + " curCmd:" + curCmd)
-              if (!curCmd) return;
-              try {
-                var wordList = [];
-              wordList = lively.allProperties(lively.math);
-              // console.log("complete: " + curCmd +"\n" + wordList)
-                callback(null, _.keys(wordList).map(function(ea) {
-                  return {name: ea, value: ea, score: 300, meta: wordList[ea]};
-                  }));
-              } catch(err) {
-                console.log("Could not complete: " + curCmd +", because of:" + err)
-              }
-            }
-          }
-      })
-    }
-     aceComp.enableAutocompletion()
-     
-    }
-    </script>
-
+[[1],[2],[3]] * [[1,2,3]] ==  [[1, 2, 3], [2, 4, 6], [3, 6, 9]]
+ 
+    </lively-code-mirror>
+   
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

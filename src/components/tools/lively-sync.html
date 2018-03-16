@@ -35,9 +35,10 @@
       width: 300px; 
     }
     
-    #log {
+    #logContainer {
       flex: 1;
       width: 100%;
+      overflow: scroll;
     }
     
     #travisLink {
@@ -133,9 +134,10 @@
            <a id="travisLink" href="https://travis-ci.org/LivelyKernel/lively4-core">
             <img src='https://travis-ci.org/LivelyKernel/lively4-core.svg'>
           </a>  
-        </p>
-       
-        <juicy-ace-editor id="log"></juicy-ace-editor>  
+      </p>
+      <div id="logContainer">
+        <lively-code-mirror id="log"></lively-code-mirror>          
+      </div>
     </div>
 </template>
 

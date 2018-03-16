@@ -1,4 +1,4 @@
-<div class="lively-content" style="background-color: rgba(200, 200, 0, 0.3); border: 20px none transparent; position: absolute; width: 156.15px; height: 371.9px; z-index: 1000; padding: 10px; left: 0px; top: 0px;" id="quicklinks" data-lively-part-name="quicklinks" data-lively-id="d10e6853-5944-4b52-b31d-63d8a47969dd"><button style="position: absolute; left: 8px; top: 346px;" class="lively-content" data-lively-part-name="button" contenteditable="null">sort<script data-name="onClick" type="lively4script">function onClick() {  
+<div class="lively-content" style="background-color: rgba(200, 200, 0, 0.3); border: 20px none transparent; position: fixed; width: 156.15px; height: 371.9px; z-index: 1000; padding: 10px; left: 0px; top: 0px;" id="quicklinks" data-lively-part-name="quicklinks"><button style="position: absolute; left: 8px; top: 346px;" class="lively-content" data-lively-part-name="button" contenteditable="null">sort<script data-name="onClick" type="lively4script">function onClick() {  
  this.parentElement.sort()
  
   
@@ -37,11 +37,6 @@
         return true
       })
     })
-}</script><script data-name="livelyLoad" type="lively4script">function livelyLoad() {
-  this.sort()
-  lively.notify("lively load!!!")
-  lively.setPosition(this, lively.pt(0,0), "fixed")
- // this.style.padding = "10px"
 }</script><div class="lively-content" style="position: static; left: 60px; top: 146px;"><a href="https://lively-kernel.org/lively4/lively4-jens/src/client/contextmenu.js">
           contextmenu.js
         </a></div><div class="lively-content" style="position: static; left: 17px; top: 29px;"><a href="https://lively-kernel.org/lively4/lively4-jens/src/client/draganddrop.js">
@@ -52,4 +47,8 @@
           lively.js
         </a></div><div class="lively-content" style="position: static; left: 51px; top: 119px;"><a href="https://lively-kernel.org/lively4/lively4-jens/src/client/poid.js">
           poid.js
-        </a></div></div>
+        </a></div><script data-name="livelyLoad" type="lively4script">function livelyLoad() {
+  this.sort()
+  // lively.setPosition(this, lively.pt(0,0), "fixed")
+ // this.style.padding = "10px"
+}</script></div>
