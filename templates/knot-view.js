@@ -225,7 +225,7 @@ export default class KnotView extends Morph {
   buildListItemFor(knot, role) {
     return <li>{role}: {this.buildRefFor(knot)}</li>;
   }
-  buildContentFor(knot) {
+  async buildContentFor(knot) {
     let editorComp = this.get('#content-editor');
     let spoList = this.get('#spo-list');
     if(knot.isTriple()) {
@@ -240,6 +240,14 @@ export default class KnotView extends Morph {
       this.hide(spoList);
       editorComp.value = knot.content;
       editorComp.enableAutocompletion();
+
+      let graph = await Graph.getInstance();
+      let urls = graph.getUrlsByKnot(knot);
+      if(urls.length >= 1) {
+        editorComp.changeModeForFile(urls[0]);
+      } else {
+        lively.error('no url found for ' + knot.label());
+      }
       editorComp.doSave = async text => {
         await knot.save(text);
         this.refresh();
