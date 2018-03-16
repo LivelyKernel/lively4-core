@@ -26,8 +26,17 @@
     .halo {
       pointer-events: all;
       z-index: 9999;
+    }
+    .bubble {
       border-radius: 50%;
       background-color: #ccc;
+    }
+    .rounded-rect {
+      background-color: lightgray;
+      box-sizing: border-box;
+      border: 1px gray solid;
+      border-radius: 5px;
+      color: darkslategrey;
     }
     
     lively-halo-name-item {
@@ -84,31 +93,31 @@
 
     <div id="default-items" class="container">
       <div class="row">
-        <lively-halo-menu-item class="halo"></lively-halo-menu-item>
-        <lively-halo-style-item id="style" class="halo"></lively-halo-style-item>
-        <lively-halo-grab-item class="halo"></lively-halo-grab-item>
-        <lively-halo-drag-item class="halo"></lively-halo-drag-item>
-        <lively-halo-remove-item class="halo"></lively-halo-remove-item>
+        <lively-halo-menu-item class="bubble halo"></lively-halo-menu-item>
+        <lively-halo-style-item id="style" class="bubble halo"></lively-halo-style-item>
+        <lively-halo-grab-item class="bubble halo"></lively-halo-grab-item>
+        <lively-halo-drag-item class="bubble halo"></lively-halo-drag-item>
+        <lively-halo-remove-item class="bubble halo"></lively-halo-remove-item>
       </div>
       <div class="row">
-        <lively-halo-copy-item class="halo"></lively-halo-copy-item>
-        <lively-halo-inspect-item class="halo"></lively-halo-inspect-item>
+        <lively-halo-copy-item class="bubble halo"></lively-halo-copy-item>
+        <lively-halo-inspect-item class="bubble halo"></lively-halo-inspect-item>
       </div> 
       <div class="row">
-        <lively-halo-edit-item class="halo"></lively-halo-edit-item>
-        <lively-halo-name-item class="halo"></lively-halo-name-item>        
-        <lively-halo-resize-item class="halo"></lively-halo-resize-item>
+        <lively-halo-edit-item class="bubble halo"></lively-halo-edit-item>
+        <lively-halo-name-item class="bubble halo"></lively-halo-name-item>        
+        <lively-halo-resize-item class="bubble halo"></lively-halo-resize-item>
       </div>
     </div>
 
     <div id="vivide-items" class="container">
       <div class="row">
-        <lively-halo-drag-item class="halo"></lively-halo-drag-item>
+        <lively-halo-drag-item class="rounded-rect halo"></lively-halo-drag-item>
         <div class="align-horizontally">
-          <lively-halo-inspect-item class="halo"></lively-halo-inspect-item>
+          <lively-halo-inspect-item class="rounded-rect halo"></lively-halo-inspect-item>
           Hierarchy
         </div>
-        <span>Close</span>
+        <lively-halo-remove-item class="rounded-rect halo"></lively-halo-remove-item>
       </div>
       <div class="row">
         <div class="align-vertically">
@@ -124,9 +133,9 @@
         </div>
       </div>
       <div class="row">
-        <span>Copy Tool</span>
+        <lively-halo-copy-item class="rounded-rect halo"></lively-halo-copy-item>
         <lively-halo-vivide-open-script-editor-item class="halo" ></lively-halo-vivide-open-script-editor-item>
-        <lively-halo-resize-item class="halo"></lively-halo-resize-item>
+        <lively-halo-resize-item class="rounded-rect halo"></lively-halo-resize-item>
       </div>
     </div>
 

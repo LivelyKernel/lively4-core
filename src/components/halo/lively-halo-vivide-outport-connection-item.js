@@ -43,7 +43,7 @@ export default class HaloVivideOutportConnectionItem extends HaloItem {
   
   onClick(evt) {
     if(this._view && this._target) {
-      this._view.removeOutportTarget(this._target);
+      this._view.removeConnectionTo(this._target);
       HaloService.showHalos(window.that);
     }
   }

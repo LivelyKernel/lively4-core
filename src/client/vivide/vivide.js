@@ -12,19 +12,25 @@ async function newScriptFromTemplate() {
 }
 
 export async function letsScript(object, evt, sourceView) {
-  async function createSideBySideViewAndEditor(evt) {
-    let pos;
-    if(evt) {
-      pos = lively.getPosition(evt)
-    }
-
-    let view = await lively.openComponentInWindow('vivide-view', pos);
+  async function createScriptEditorNextTo(view) {
     let viewWindow = lively.findWindow(view);
     if(viewWindow && viewWindow.tagName === "LIVELY-WINDOW") {
-      pos = lively.getGlobalBounds(viewWindow).topRight();
+      var pos = lively.getGlobalBounds(viewWindow).topRight();
     }
 
     let scriptEditor = await lively.openComponentInWindow('vivide-script-editor', pos);
+    return scriptEditor;
+  }
+
+  async function createSideBySideViewAndEditor(evt) {
+    let pos;
+    if(evt) {
+      pos = lively.getPosition(evt);
+    }
+
+    let view = await lively.openComponentInWindow('vivide-view', pos);
+
+    let scriptEditor = await createScriptEditorNextTo(view);
     return { view, scriptEditor }
   }
   
@@ -32,9 +38,10 @@ export async function letsScript(object, evt, sourceView) {
   
   let scriptURL = await newScriptFromTemplate();
   
-  view.setScript(scriptURL);
+  view.setScriptURL(scriptURL);
   view.newDataFromUpstream(object);
   
+  view.getScriptURL(scriptURL);
   scriptEditor.setScriptURL(scriptURL);
   
   if(sourceView) {
