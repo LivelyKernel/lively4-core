@@ -34,7 +34,7 @@ export default class Sync extends Morph {
     var editor = this.get("#log").editor;
     if (editor) {
       editor.setValue(editor.getValue() + "\n" + s);
-      editor.session.setScrollTop(1000000); // #TODO find scroll to bottom method in ace
+      // editor.session.setScrollTop(1000000); // #TODO find scroll to bottom method in ace
     }
   }
 

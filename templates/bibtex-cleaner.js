@@ -3,14 +3,12 @@ import Parser from 'https://raw.githubusercontent.com/ORCID/bibtexParseJs/master
 import Strings from "src/client/strings.js";
 
 export default class BibtexCleaner extends Morph {
-  get fileURL() { return "https://lively4//phdthesis/references.bib"; }
+  get fileURL() { return "https://lively4//phdthesis/references.bib"; } // @Stefan, should we refactor this out?
   get input() { return this.get('#input'); }
   get mismatches() { return this.get('#mismatches'); }
   async initialize() {
     this.windowTitle = "BibtexCleaner";
     this.registerButtons();
-    this.input.enableAutocompletion();
-    this.input.aceRequire('ace/ext/searchbox');
     this.input.doSave = async text => {
       await lively.files.saveFile(this.fileURL, text);
       this.refresh();
@@ -38,17 +36,17 @@ export default class BibtexCleaner extends Morph {
       
       let first = author
         .split(' and ')[0]
-        .replace(/[\$\\{}()"'^â`ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ´\/-]/g, "");
+        .replace(/[\$\\{}()"'^â´\/-]/g, "");
       let firstAuthorLastname;
       if(first.match(',')) {
         firstAuthorLastname= first.split(', ')[0]
-      } else {
+      } else { 
         firstAuthorLastname= _.last(first.split(' '))
       }
       firstAuthorLastname = firstAuthorLastname.replace(/ /g, '')
       
       let cleanTitle = title
-        .replace(/[$\\\/ââ(){}Ã¢ÂÂ]/g, "")
+        .replace(/[$\\\/ââ(){}Ã¢ÂÂ]/g, "") // #TODO are those #TOFU correct here? #CodingIssue?
         .replace(/co-/g, "co");
       let titleAcronym = cleanTitle.split(/[ -]+/)
         .filter(entry => !["the", "a", "to", "for", "an", "by", "on", "of", "with", "from", "as", "in", "and", "und", "how", "should", "at", "do", "after", "are"].includes(entry.toLowerCase()))
