@@ -126,6 +126,7 @@ export default class Halo extends Morph {
     this.setHandleVisibility(false);
     
     this.get('#vivide-outport-connection-items').innerHTML = '';
+    this.get('#vivide-inport-connection-items').innerHTML = '';
   }
 
   ensureControlPoint(path, index, isConnector, curveIndex) {

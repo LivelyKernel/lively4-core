@@ -10,7 +10,7 @@ import { getTempKeyFor, asDragImageFor } from 'utils';
 export default class HaloVivideAddOutportItem extends HaloItem {
 
   initialize() {
-    lively.warn('initialize3')
+    lively.warn('initialize4')
     
     this.style['user-select'] = 'none';
     this.setAttribute('draggable', "true");
@@ -20,89 +20,92 @@ export default class HaloVivideAddOutportItem extends HaloItem {
       lively.success('drag');
     });
     this.addEventListener('dragend', evt => {
-      lively.success('drag end');
+      HaloService.hideHalos();
     });
   }
   
   startMyDrag(evt) {
+    if(!this._view) {
+      lively.warn('No view given to add a connection.')
+      return;
+    }
     evt.stopPropagation();
     // preventDefault is harmful here: it prevents drag data and images
     
-    const dt = evt.dataTransfer;
-    dt.setData("vivide", "");
-    // lively.success('drag start2');
-    dt.setData("text/plain", 'getTempKeyFor([1,2,3,4,5,6])');
-    //dt.setData("javascript/object", getTempKeyFor([1,2,3,4,5,6]));
-    // dt.setData("vivide/source-view", getTempKeyFor(this.getViewParent()));
+    this._view.addDragInfoTo(evt);
     const { x, y } = pt(evt.clientX, evt.clientY).subPt(lively.getGlobalPosition(this));
     this::asDragImageFor(evt, x, y);
   }
 
-  // Drag API
-  start(evt) {
-    return lively.warn('start')
-    this.dragTarget = window.that;
-    if (this.dragTarget) {
-      this.dragStartNodePosition = lively.getPosition(this.dragTarget);
-      this.dragStartEventPosition = events.globalPosition(evt);
-      evt.preventDefault();
+//   // Drag API
+//   start(evt) {
+//     return lively.warn('start')
+//     this.dragTarget = window.that;
+//     if (this.dragTarget) {
+//       this.dragStartNodePosition = lively.getPosition(this.dragTarget);
+//       this.dragStartEventPosition = events.globalPosition(evt);
+//       evt.preventDefault();
     
-      this.snapping = new Snapping(this.dragTarget) 
-      this.halo.info =  lively.showInfoBox(this.dragTarget)
+//       this.snapping = new Snapping(this.dragTarget) 
+//       this.halo.info =  lively.showInfoBox(this.dragTarget)
      
-      if (this.dragTarget.haloDragStart) {
-        this.dragTarget.haloDragStart(this.dragStartEventPosition)
-      }
-    }
-  }
+//       if (this.dragTarget.haloDragStart) {
+//         this.dragTarget.haloDragStart(this.dragStartEventPosition)
+//       }
+//     }
+//   }
   
-  move(evt) {
-    return lively.warn('move')
-    if (this.dragTarget && !this.isDragging && 
-      events.noticableDistanceTo(evt, this.dragStartEventPosition)) {
-      // this.dragTarget.style.position = 'absolute';
-      this.isDragging = true;
-    }
-    if (this.isDragging) {
-      this.dragTo(evt);
-    }
-  }
+//   move(evt) {
+//     return lively.warn('move')
+//     if (this.dragTarget && !this.isDragging && 
+//       events.noticableDistanceTo(evt, this.dragStartEventPosition)) {
+//       // this.dragTarget.style.position = 'absolute';
+//       this.isDragging = true;
+//     }
+//     if (this.isDragging) {
+//       this.dragTo(evt);
+//     }
+//   }
    
-  stop(evt) {
-    return lively.warn('stop')
-    this.halo.info.stop()
-    //  STOP DRAGGING
-    if (this.isDragging) {    
-      this.isDragging = false;
-      evt.preventDefault();
-    }
-    this.dragTarget = null;
-    this.dragStartEventPosition = null;
-    this.dragStartNodePosition = null;
-    this.snapping.clearHelpers()
-    this.snapping = null
-  }
+//   stop(evt) {
+//     return lively.warn('stop')
+//     this.halo.info.stop()
+//     //  STOP DRAGGING
+//     if (this.isDragging) {    
+//       this.isDragging = false;
+//       evt.preventDefault();
+//     }
+//     this.dragTarget = null;
+//     this.dragStartEventPosition = null;
+//     this.dragStartNodePosition = null;
+//     this.snapping.clearHelpers()
+//     this.snapping = null
+//   }
 
-  dragTo(evt) {
-    return lively.warn('dragTo')
-    if (this.dragTarget.haloDragTo) {
-      this.dragTarget.haloDragTo(events.globalPosition(evt), this.dragStartEventPosition)
-    } else {
-      var eventPos = events.globalPosition(evt);
-      var newPosition = eventPos.subPt(this.dragStartEventPosition).
-        addPt(this.dragStartNodePosition)
+//   dragTo(evt) {
+//     return lively.warn('dragTo')
+//     if (this.dragTarget.haloDragTo) {
+//       this.dragTarget.haloDragTo(events.globalPosition(evt), this.dragStartEventPosition)
+//     } else {
+//       var eventPos = events.globalPosition(evt);
+//       var newPosition = eventPos.subPt(this.dragStartEventPosition).
+//         addPt(this.dragStartNodePosition)
         
-      newPosition = newPosition.rounded()
-      if (this.dragTarget.style.position == "absolute") {
-        lively.setPosition(this.dragTarget, Grid.optSnapPosition(newPosition, evt));
-        if(!evt.altKey) {
-          this.snapping.snap()
-        }
-      } else {
-         lively.setPosition(this.dragTarget, newPosition, "relative");
-      }
-      this.halo.info.innerHTML = "drag " + lively.getPosition(this.dragTarget)
-    }
-    evt.preventDefault();
+//       newPosition = newPosition.rounded()
+//       if (this.dragTarget.style.position == "absolute") {
+//         lively.setPosition(this.dragTarget, Grid.optSnapPosition(newPosition, evt));
+//         if(!evt.altKey) {
+//           this.snapping.snap()
+//         }
+//       } else {
+//          lively.setPosition(this.dragTarget, newPosition, "relative");
+//       }
+//       this.halo.info.innerHTML = "drag " + lively.getPosition(this.dragTarget)
+//     }
+//     evt.preventDefault();
+//   }
+  
+  updateTarget(view) {
+    this._view = view;
   }
 }

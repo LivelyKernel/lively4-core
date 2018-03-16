@@ -33,10 +33,10 @@ export default class VivideListWidget extends Morph {
   }
   
   selectionChanged(selection) {
-    lively.warn(selection.length)
+    lively.success(`selected ${selection.length} item(s)`);
     let viewParent = this.getViewParent();
     if(viewParent) {
-      viewParent.selectionChanged(this);
+      viewParent.selectionChanged();
     }
   }
   
@@ -55,23 +55,18 @@ export default class VivideListWidget extends Morph {
       let listItem = <li>{d.label ? d.label() : d + 1}</li>;
       this.multiSelection.addItem(listItem);
       
-      // events fired on drag element
+      // event fired on drag element
       listItem.addEventListener('dragstart', evt => {
         let selectedItems = this.multiSelection.getSelectedItems();
         if(selectedItems.length > 1 && selectedItems.includes(listItem)) {
         } else {
           this.multiSelection.selectItem(listItem);
+          // #TODO: selectedItems manually managed here,
+          // instead of calling this.multiSelection.getSelectedItems() a second time 
           selectedItems = [listItem];
         }
         
-        let selectedData = selectedItems.map(selectedItem => this.dataByListItem.get(selectedItem));
-        
-        const dt = evt.dataTransfer;
-
-        const knots = selectedItems.map(item => item.knot);
-        dt.setData("vivide", "");
-        dt.setData("javascript/object", getTempKeyFor(selectedData));
-        dt.setData("vivide/source-view", getTempKeyFor(this.getViewParent()));
+        this.getViewParent().addDragInfoTo(evt);
         
         listAsDragImage(selectedItems.map(li => li.innerHTML), evt, -10, 2);
       });

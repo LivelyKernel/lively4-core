@@ -80,6 +80,7 @@
     </style>
     <!-- just to load this component with the halo -->
   <lively-halo-vivide-outport-connection-item style="display: none;"></lively-halo-vivide-outport-connection-item>
+  <lively-halo-vivide-inport-connection-item style="display: none;"></lively-halo-vivide-inport-connection-item>
 
     <div id="default-items" class="container">
       <div class="row">
@@ -110,7 +111,11 @@
         <span>Close</span>
       </div>
       <div class="row">
-        <span>Inport</span>
+        <div class="align-vertically">
+          <lively-halo-vivide-inport-item class="halo"></lively-halo-vivide-inport-item>
+          <div id="vivide-inport-connection-items" class="align-vertically">
+          </div>
+        </div>
         <div class="align-vertically">
           <lively-halo-vivide-outport-item class="halo"></lively-halo-vivide-outport-item>
           <div id="vivide-outport-connection-items" class="align-vertically">

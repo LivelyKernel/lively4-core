@@ -1,10 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import { uuid, without } from 'utils';
+import { uuid, without, getTempKeyFor } from 'utils';
 
 export default class VivideView extends Morph {
-  static get idAttribute() { return 'vivide-view-id'; }
-  static get outportAttribute() { return 'outport-target'; }
-  
   static findViewWithId(id) {
     return document.body.querySelector(`vivide-view[vivide-view-id=${id}]`);
   }
@@ -12,14 +9,19 @@ export default class VivideView extends Morph {
     return view.id;
   }
   
+  static get idAttribute() { return 'vivide-view-id'; }
+  static get outportAttribute() { return 'outport-target'; }
+  static get widgetId() { return 'widget'; }
+  static get widgetSelector() { return '#' + this.widgetId; }
+
+  get widget() { return this.get(VivideView.widgetSelector); }
+  
   get input() { return this._input || (this._input = []); }
   set input(val) { return this._input = val; }
   
   get id() {
     let id = this.getAttribute(VivideView.idAttribute);
-    if(id) {
-      return id;
-    }
+    if(id) { return id; }
     
     // ensure uuid begins with a letter to match the requirements for a css selector
     let newId = 'vivide-view-' + uuid();
@@ -46,6 +48,10 @@ export default class VivideView extends Morph {
     return this.outportTargets = without.call(this.outportTargets, target);
   }
   
+  get inportSources() {
+    return Array.from(document.body.querySelectorAll(`vivide-view[${VivideView.outportAttribute}*=${this.id}]`));
+  }
+  
   connectTo(target) {
     // #TODO: cycle detection
     this.addOutportTarget(target);
@@ -59,13 +65,36 @@ export default class VivideView extends Morph {
       });
   }
   
-  selectionChanged(widget) {
-    lively.warn('selection changed', 'notify outport targets')
-    let data = widget.getSelectedData();
-    this.outportTargets
-      .forEach(target => {
-        target.newDataFromUpstream(data);
-      });
+  getSelectedData() {
+    let widget = this.widget;
+    if(widget) {
+      return widget.getSelectedData();
+    }
+    return undefined;
+  }
+
+  selectionChanged() {
+    let data = this.getSelectedData();
+    if(data) {
+      lively.success('selection changed', 'notify outport targets');
+      this.outportTargets.forEach(target => target.newDataFromUpstream(data));
+    } else {
+      lively.error('selection changed, but no widget to retrieve data from');
+    }
+  }
+  
+  addDragInfoTo(evt) {
+    const dt = evt.dataTransfer;
+
+    let data = this.getSelectedData();
+    if(data) {
+      dt.setData("javascript/object", getTempKeyFor(data));
+    } else {
+      lively.error('could not add drag data');
+    }
+
+    dt.setData("vivide", "");
+    dt.setData("vivide/source-view", getTempKeyFor(this));
   }
 
   async initialize() {
@@ -108,6 +137,7 @@ export default class VivideView extends Morph {
   async updateWidget() {
     this.innerHTML = '';
     let list = await lively.create('vivide-list-widget');
+    list.setAttribute('id', VivideView.widgetId);
     this.appendChild(list);
     list.display(this.displayedData, {});
   }
@@ -133,13 +163,20 @@ export default class VivideView extends Morph {
         halo.get('#vivide-items').style.display = 'flex';
 
         // dynamically create outport connection visualizations
-        let container = halo.get('#vivide-outport-connection-items');
+        let outportContainer = halo.get('#vivide-outport-connection-items');
         this.outportTargets.forEach(target => {
-          //lively.success(target.id)
           let item = document.createElement('lively-halo-vivide-outport-connection-item')
           item.classList.add('halo');
           item.setTarget(target);
-          container.appendChild(item);
+          outportContainer.appendChild(item);
+        });
+        
+        let inportContainer = halo.get('#vivide-inport-connection-items');
+        this.inportSources.forEach(source => {
+          let item = document.createElement('lively-halo-vivide-inport-connection-item')
+          item.classList.add('halo');
+          item.setSource(source);
+          inportContainer.appendChild(item);
         });
       }
     };
