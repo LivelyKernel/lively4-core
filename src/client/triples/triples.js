@@ -144,7 +144,7 @@ class Triple extends Knot {
   isTriple() { return true; }
 }
 
-export const DEFAULT_FOLDER_URL = 'https://localhost:8800/PhD/thesis/notes/';
+export const DEFAULT_FOLDER_URL = 'https://lively4/notes/';
 export const TAG_URL = DEFAULT_FOLDER_URL + 'tag.md';
 export const IS_A_URL = DEFAULT_FOLDER_URL + 'is_a.md';
 export const SAME_AS_URL = DEFAULT_FOLDER_URL + 'same_as.md';
@@ -309,7 +309,7 @@ export class Graph {
     let fileName = url.toString();
     let text = isExternalURL(url) ?
       url.hostname + url.pathname :
-      await fetch(url).then(r => r.text());
+      await fetch(url).then(r => r.text()).catch(err => `ERROR loading this knot: ${err}`);
 
     // deserializeKnot
     const isTriple = fileName.endsWith(".triple.json");
@@ -340,7 +340,7 @@ export class Graph {
           .map(desc => desc.name);
         
         const total = fileNames.length;
-        let i=0;
+        let i = 0;
         Promise.all(fileNames.map(fileName => {
           const knotURL = new URL(fileName, directoryURL);
           return this.requestKnot(knotURL)

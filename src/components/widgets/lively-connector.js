@@ -5,12 +5,8 @@ import {debounce} from "utils"
 
 export default class LivelyConnector extends Morph {
  
-  get isConnector() {
-    return true
-  }
- 
-  
-  
+  get isConnector() { return true; }
+
   initialize() {
     
     this.resetBoundsDelay = (() => {
@@ -250,10 +246,10 @@ export default class LivelyConnector extends Morph {
     if (x2 !== null) { vertices[1].x1 = x2}
     var y2 = this.getAttribute("y2")
     if (y2 !== null) { vertices[1].y1 = y2}
-    
+
     this.setVertices(vertices)
   }
-  
+
   livelyPrepareSave() {
     this.saveVertices()
   }
@@ -262,5 +258,19 @@ export default class LivelyConnector extends Morph {
     // this.fromElement = other.fromElement
     // this.toElement = other.toElement
     // this.connect(this.fromElement, this.toElement)
+  }
+
+  livelyHalo() {
+    return {
+      configureHalo(halo) {
+        halo.setHandleVisibility(true);
+        
+        let path = this.getPath();
+        // halo.get("lively-halo-drag-item").style.visibility= "hidden"
+        halo.ensureControlPoint(path, 0, true);
+        halo.ensureControlPoint(path, 1, true);
+      },
+      dragBehaviorMove(halo, evt, pos) {}
+    };
   }
 }

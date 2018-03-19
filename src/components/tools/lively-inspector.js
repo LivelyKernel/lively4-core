@@ -277,6 +277,7 @@ export default class Inspector   extends Morph {
       obj.childNodes.forEach( ea => { 
         contentNode.appendChild(this.display(ea, expandChildren, null, obj));
       });
+            
 
       var hasProperties = this.allKeys(obj).length > 0;
       if (hasProperties && !obj.livelyIsParentPlaceholder) {
@@ -285,6 +286,16 @@ export default class Inspector   extends Morph {
         if (props.childNodes.length == 0) props.remove() // clean up 
         
       }
+      
+      if (obj.livelyInspect) {
+        try {
+          obj.livelyInspect(contentNode, this)
+        } catch(e) {
+          var selection = <div class="element" style="color:red"><b>Error in livleyInspect:</b> {e}</div>
+          contentNode.appendChild(selection)
+        }
+      }
+
     }
   }
   

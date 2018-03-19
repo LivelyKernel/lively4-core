@@ -3,18 +3,26 @@
 <style data-src="/templates/livelystyle.css"></style>
 <style>
 :host {
+  overflow: visible;
+  box-sizing: border-box;
+  margin: 0px;
+  padding: 0px;
   width: 100%;
   height: 100%;
+  
+  background-color: lightgray;
+  border: 2px transparent solid;
 }
-#foo {
-  background-color: blue;
-  width: 100%;
-  height: 100%;
+:host(.over.accept-drop) {
+  background-color: lightgreen;
+  border: 2px green solid;
+}
+:host(.over.reject-drop) {
+  background-color: lightpink;
+  border: 2px red solid;
 }
 </style>
-<div id="foo">
-  sds<content></content>ses
-</div>
+<content></content>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

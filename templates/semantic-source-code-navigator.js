@@ -1,10 +1,9 @@
-import Morph from './Morph.js';
-import { promisedEvent, debounce, sortBy, last } from "utils";
-import SignatureManipulator from 'https://lively-kernel.org/lively4/lively4-theresa/src/client/signature-db.js';
+import Morph from 'src/components/widgets/lively-morph.js';
+import { promisedEvent } from "utils";
+import {NodeTypes, SignatureManipulator} from 'src/client/signature-db.js';
+
   
 var DEMO_DIRECTORY = 'demos/systembrowser/';
-
-// TODO: Set Focus in Editor for whole code
 
 export default class SemanticSourceCodeNavigator extends Morph {
 
@@ -49,11 +48,11 @@ export default class SemanticSourceCodeNavigator extends Morph {
         var text = ev.path[0].innerText;
         var type = '';
         if(text.toLowerCase().includes('class')) {
-          type = 'classes';
+          type = NodeTypes.CLASS;
         } else if(text.toLowerCase().includes('var')) {
-          type = 'variables'
+          type = NodeTypes.VAR;
         } else {
-          type = 'functions';
+          type = NodeTypes.FUNCTION;
         }
         this.removeCheckedClass('#class-list');
         ev.target.classList.toggle('checked');
@@ -71,7 +70,7 @@ export default class SemanticSourceCodeNavigator extends Morph {
   }
   
   removeCheckedClass(list) {
-    var list = this.get(list).children;
+    list = this.get(list).children;
       for(var i = 0; i < list.length; i++) {
         list[i].classList.remove('checked');
       }
@@ -86,13 +85,13 @@ export default class SemanticSourceCodeNavigator extends Morph {
         this.codeEditor.editor.setValue(extraction.content); 
         this.root = extraction.ast;
         this.components = extraction.sigs;
-        this.components.classes.forEach((cls, i) => {
+        this.components[NodeTypes.CLASS].forEach((cls, i) => {
            this.addListElement('#class-list', cls.sig.declaration, i);
         });
-        this.components.variables.forEach((topLvlVar, i) => {
+        this.components[NodeTypes.VAR].forEach((topLvlVar, i) => {
            this.addListElement('#class-list', topLvlVar.declaration, i);  
         });
-        this.components.functions.forEach((func, i) => {
+        this.components[NodeTypes.FUNCTION].forEach((func, i) => {
            this.addListElement('#class-list', func.declaration, i);    
         });
       });
@@ -105,7 +104,7 @@ export default class SemanticSourceCodeNavigator extends Morph {
     functionList.style.display = style;
     functionList.innerHTML = '';
     if(style != 'none') {
-      if(type == 'classes') {
+      if(type === NodeTypes.CLASS) {
         this.currentTopLvl.methods.forEach((func, i) => {
           this.addListElement('#function-list', func.declaration, i);
         });  
@@ -125,17 +124,21 @@ export default class SemanticSourceCodeNavigator extends Morph {
     editorComp.editor.setOption("lineWrapping", true);
     editorComp.doSave = text => {
       var type, id;
-      //TODO: add type to the signatures object
+      // #TODO: add type to the signatures object
       if(this.currentMethod.hasOwnProperty('id')) {
-        type = 'method';
+        type = NodeTypes.METHOD;
         id = this.currentMethod.id;
       }
       else if(this.currentTopLvl.hasOwnProperty('sig')) {
-        type = 'class';
+        type = NodeTypes.CLASS;
         id = this.currentTopLvl.sig.id;
       } else if(this.currentTopLvl.hasOwnProperty('id')) {
-        type = this.currentTopLvl.declaration.includes('var') ? 'variable' : 'function';
+        type = this.currentTopLvl.declaration.includes('var') ? 
+               NodeTypes.VAR : NodeTypes.FUNCTION;
         id = this.currentTopLvl.id;
+      } else {
+        type = NodeTypes.FILE;
+        id = '';
       }
       this.saveFile(text, type, id);
     }
@@ -149,7 +152,7 @@ export default class SemanticSourceCodeNavigator extends Morph {
         this.addListElement('#file-list', path + obj.name);
       }
       else if (obj.type === 'directory') {
-        loadFiles(path + obj.name + '/')
+        this.loadFiles(path + obj.name + '/')
       }
     }
   }
@@ -176,7 +179,7 @@ export default class SemanticSourceCodeNavigator extends Morph {
   the new content `content` (valid JS as string)
   */
   saveFile(content, type, id) {
-    var parent = (type === 'method')? this.currentTopLvl.sig.id : '';
+    var parent = (type === NodeTypes.METHOD)? this.currentTopLvl.sig.id : '';
     this.sig.setNewContent(this.currentFile,
                   type,
                   id, 

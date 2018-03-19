@@ -1,8 +1,10 @@
-function someTopLevelFunction(withArgs) {
-  console.log('Doing nothing, really');
-  var money = 0;
-}
+function someTopLevelFunction(withArgs) {}
 
 function yetAnother() {}
 
-var alsoATopLevelVariable = 999999;
+var alsoATopLevelVariable = 900000;
+
+class TestClass {
+  static print(someArgs) {}
+
+}

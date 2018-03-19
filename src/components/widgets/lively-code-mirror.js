@@ -40,6 +40,13 @@ function operateOnWord(cm, op) {
 
 export default class LivelyCodeMirror extends HTMLElement {
 
+  get mode() {
+    return this.getAttribute('mode');
+  }
+  set mode(val) {
+    return this.setAttribute('mode', val);
+  }
+
   static get codeMirrorPath() {
      return  lively4url + "/src/external/code-mirror/"
   }
@@ -69,6 +76,10 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("mode/htmlmixed/htmlmixed.js")
       await this.loadModule("addon/mode/overlay.js")
       await this.loadModule("mode/gfm/gfm.js")
+      await this.loadModule("mode/stex/stex.js")
+      await this.loadModule("mode/jsx/jsx.js")
+      await this.loadModule("mode/python/python.js")
+      await this.loadModule("mode/clike/clike.js")
 
       await this.loadModule("addon/edit/matchbrackets.js")
       await this.loadModule("addon/edit/closetag.js")
@@ -337,9 +348,9 @@ export default class LivelyCodeMirror extends HTMLElement {
       // case "theme":
       //     this.editor.setTheme( newVal );
       //     break;
-      // case "mode":
-      //     this.changeMode( newVal );
-      //     break;
+      case "mode":
+          this.editor.setOption('mode', newVal);
+          break;
       // case "fontsize":
       //     this.editor.setFontSize( newVal );
       //     break;
@@ -602,7 +613,8 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   get isJavaScript() {
     if (!this.editor) return false;
-    return this.editor.getOption("mode") == "javascript";
+    let mode = this.editor.getOption("mode");
+    return mode === "javascript" || mode === 'text/jsx';
   }
   
   get isMarkdown() {
@@ -625,6 +637,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       mode = "text/html"
     } else if (filename.match(/\.md$/)) {
       mode = "gfm"
+    } else if (filename.match(/\.tex$/)) {
+      mode = "text/x-stex"
     } else if (filename.match(/\.css$/)) {
       mode = "css"
     } else if (filename.match(/\.xml$/)) {
@@ -632,7 +646,15 @@ export default class LivelyCodeMirror extends HTMLElement {
     } else if (filename.match(/\.json$/)) {
       mode = "javascript"
     } else if (filename.match(/\.js$/)) {
-      mode = "javascript"
+      mode = "text/jsx"
+    } else if (filename.match(/\.py$/)) {
+      mode = "text/x-python"
+    } else if (filename.match(/\.c$/)) {
+      mode = "text/x-csrc"
+    } else if (filename.match(/\.cpp$/)) {
+      mode = "text/x-c++src"
+    } else if (filename.match(/\.h$/)) {
+      mode = "text/x-c++src"
     }
     this.mode = mode
     this.editor.setOption("mode", mode)

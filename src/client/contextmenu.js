@@ -39,7 +39,7 @@ export default class ContextMenu {
   static openComponentInWindow (name, evt, worldContext, extent) {
     this.hide();
     return lively.openComponentInWindow(name, 
-      this.eventPosition(worldContext, evt), 
+      lively.getPosition(evt), 
       extent, worldContext).then( comp => {
       if(extent) {
         lively.setExtent(comp.parentElement, extent)
@@ -54,22 +54,7 @@ export default class ContextMenu {
       lively.setPosition(comp, pt(0,0));
     });
   }
-  
-  static eventPosition(worldContext, evt) {
-    evt = this.firstEvent || evt;
-    var pos = pt(evt.clientX, evt.clientY);    
-    if (worldContext.localizePosition) { 
-      pos = worldContext.localizePosition(pos);
-    } else {
-      pos = pos.subPt(lively.getGlobalPosition(worldContext))
-    }
-    return pos
-  }
-  
-  static positionElementAtEvent(element, worldContext, evt) {
-    lively.setPosition(element, this.eventPosition(worldContext, evt));
-  }
-  
+
   static targetMenuItems(target) {
     var wasEditable = (target.contentEditable == "true");
     var wasDisabled = (target.disabled == "true");
@@ -173,7 +158,7 @@ export default class ContextMenu {
         "", '<i class="fa fa-file-image-o" aria-hidden="true"></i>'
       ],
       ["save as...", async () => {
-        var partName = target.getAttribute("data-lively-part-name") || "element"
+        var partName = target.getAttribute("data-lively-part-name") || target.id ||  "element"
         var name = await lively.prompt("save element as: ", `src/parts/${partName}.html`)
         if (!name) return;
         // var name = "foo.html"
@@ -250,9 +235,7 @@ export default class ContextMenu {
     return  [
       ["Workspace", evt => {
         this.hide();
-        lively.openWorkspace("", null, worldContext).then(comp => {
-          this.positionElementAtEvent(comp.parentElement, worldContext, evt)
-        });
+        lively.openWorkspace("", lively.getPosition(evt), worldContext)
       }, "CMD+K", '<i class="fa fa-window-maximize" aria-hidden="true"></i>'],
       ["Browse/Edit", evt => {
           var container = _.last(document.querySelectorAll("lively-container"));
@@ -261,7 +244,6 @@ export default class ContextMenu {
               comp.followPath("" + container.getURL());
             else
               comp.followPath(lively4url +"/");
-            this.positionElementAtEvent(comp.parentElement, worldContext, evt)
           });
         }, 
         "CMD+SHIFT+B", '<i class="fa fa-cogs" aria-hidden="true"></i>'],
@@ -352,6 +334,13 @@ export default class ContextMenu {
           "Ctrl+Alt+G", '<i class="fa fa-globe" aria-hidden="true"></i>'],
         ["Diary", evt => this.openComponentInWindow("research-diary", evt, worldContext),
           "Ctrl+Alt+D", '<i class="fa fa-book" aria-hidden="true"></i>'],
+        ["Quicklinks", async evt => {
+          var morph  = await lively.openPart("quicklinks")
+          
+          lively.setPosition(morph, lively.pt(0,0), "fixed")
+  
+          this.hide();
+        }],
       ]],
       [
         "Windows", 

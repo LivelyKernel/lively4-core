@@ -1,7 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import highlight from 'src/external/highlight.js';
 import {pt} from 'src/client/graphics.js';
-import halo from 'src/components/halo/lively-halo.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
@@ -9,6 +8,7 @@ import * as cop  from "src/external/ContextJS/src/contextjs.js";
 import ScopedScripts from "src/client/scoped-scripts.js";
 import Clipboard from "src/client/clipboard.js"; 
 import { debounce, fileEnding, replaceFileEndingWith } from "utils";
+import ViewNav from "src/client/viewnav.js"
 
 export default class Container extends Morph {
   
@@ -136,6 +136,7 @@ export default class Container extends Morph {
         this.parentElement.toggleMaximize();
         if ( this.parentElement.isMaximized()) {
           this.parentElement.get(".window-titlebar").style.display = "none"
+          this.parentElement.style.zIndex = 0
         } else {
           this.parentElement.get(".window-titlebar").style.display = ""
         }
@@ -360,6 +361,7 @@ export default class Container extends Morph {
       lively.notify("No history to go back!");
       return;
     }
+    lively.lastBackButtonClicked = Date.now(); // can be used by scripts to prevent autoforwarding
     var url = this.history().pop();
     var last = _.last(this.history());
     // lively.notify("follow " + url)
@@ -368,12 +370,13 @@ export default class Container extends Morph {
   }
   
   onMouseDown(evt) {
-    if (halo.halo && halo.halo[0])
-      halo.halo[0].onBodyMouseDown(evt, this);
+    if (lively.halo) {
+      // close halo
+      lively.halo.onBodyMouseDown(evt, this);
+    }
     evt.stopPropagation();
     // evt.preventDefault();
     Clipboard.onBodyMouseDown(evt)
-    
   }
   
   onForward() {
@@ -420,10 +423,12 @@ export default class Container extends Morph {
   }
 
   getSourceCode() {
-    return this.get("#editor").currentEditor().getValue()
+    var editor = this.get("#editor")
+    if (!editor) return ""
+    return editor.currentEditor().getValue()
   }
 
-  onSave(doNotQuit) {
+  async onSave(doNotQuit) {
     if (!this.isEditing()) {
       this.saveEditsInView();
       return; 
@@ -435,7 +440,7 @@ export default class Container extends Morph {
       return;
     }
     this.get("#editor").setURL(this.getURL());
-    this.get("#editor").saveFile().then( async () => {
+    return this.get("#editor").saveFile().then( async () => {
       var sourceCode = this.getSourceCode();
       var url = this.getURL();
       lively.notify("!!!saved " + url)
@@ -587,8 +592,8 @@ export default class Container extends Morph {
   }
   
   async appendMarkdown(content) {
-    var md = document.createElement("lively-markdown")
-    await components.openIn(this, md)
+    var md = await lively.create("lively-markdown", this)
+    md.classList.add("presentation") // for the presentation button 
     md.getDir = this.getDir.bind(this);
     md.followPath = this.followPath.bind(this);
     await md.setContent(content)
@@ -728,6 +733,9 @@ export default class Container extends Morph {
        this.get("#container-content").scrollTop = this.preserveContentScroll
       delete this.preserveContentScroll
     }
+    
+    ViewNav.enable(this)
+    
     setTimeout(() => {
       this.resetContentChanges()
       this.observeHTMLChanges()
@@ -764,17 +772,22 @@ export default class Container extends Morph {
       return this.followPath(m[1]);
     }
   
+    var options = await fetch(path, {method: "OPTIONS"}).then(r => r.status == 200 ? r.json() : false).catch(e => false)
     // this check could happen later
     if (!path.match("https://lively4") 
         && !path.match(window.location.host) 
         && path.match(/https?:\/\//)) {
-      // lively.notify("follow foreign url: " + path);
-      var startTime = Date.now();
-      if (!await fetch(path, {method: "OPTIONS"}).catch(e => false)) {
+      if (!options) {
         return window.open(path);
       }
     }
-
+    lively.notify("options " + options)
+      
+    if (options && options.donotfollowpath) {
+      fetch(path) // e.g. open://my-component
+      return ;
+    }
+    
     if (_.last(this.history()) !== path)
       this.history().push(path);
       
@@ -816,7 +829,7 @@ export default class Container extends Morph {
   getURL() {
     var path = this.getPath();
     if (!path) return;
-    if (path.match(/^https?:\/\//)) {
+    if (lively.files.isURL(path)) {
       return new URL(path);
     } if (path.match(/^[a-zA-Z]+:\/\//)) {
       return new URL(path);
@@ -937,12 +950,19 @@ export default class Container extends Morph {
   async setPath(path, donotrender) {
     this.get('#container-content').style.display = "block";
     this.get('#container-editor').style.display = "none";
+    
+    
+    if (this.viewNav) {
+      lively.setPosition(this.get("#container-root"), pt(0,0))
+      this.viewNav.disable()
+    }
+    
     this.windowTitle = path.replace(/.*\//,"")
     if (!path) {
         path = "";
     }
 	  var isdir= path.match(/.\/$/);
-
+    
     var url;
     if (path.match(/^https?:\/\//)) {
       url = new URL(path);
@@ -963,7 +983,9 @@ export default class Container extends Morph {
         isdir = true
       }
     }
-    path =  path + (isdir ? "/" : "");
+    if (!path.match(/\/$/) && isdir) {
+      path =  path + "/"
+    }
 
     var container=  this.get('#container-content');
     // don't scroll away whe reloading the same url
@@ -1002,6 +1024,10 @@ export default class Container extends Morph {
     this.lastVersion = null; // just to be sure
     
     var format = path.replace(/.*\./,"");
+    if (url.protocol == "search:") {
+      format = "html"
+    }
+    
     if (format.match(/(png)|(jpe?g)/)) {
       if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + url +"'>");
       else return;
@@ -1059,7 +1085,8 @@ export default class Container extends Morph {
 
   navigateToName(name) {
     // lively.notify("navigate to " + name);
-    this.getAceEditor().find(name);
+    var editor = this.getAceEditor()
+    if (editor) editor.find(name);
   }
 
   clearNavbar() {
@@ -1088,10 +1115,6 @@ export default class Container extends Morph {
     
     
     await navbar.show(this.getURL(), this.sourceContent)
-    
-    if (this.isEditing()) {
-      this.get('#container-leftpane').showSublist()
-    }
   }
   
   isFullscreen() {

@@ -10,19 +10,11 @@ lively-script {
 }
 </style>
 
+<button onclick='lively.openComponentInWindow("lively-pdf")'>PDF Viewer</button>
+
 <script>
-var b = document.createElement("button")
-b.innerHTML = "PDF Viewer"
-b.onclick = () => {
-  lively.openComponentInWindow("lively-pdf")
-} 
-b
+  <button click={() => lively.openComponentInWindow("lively-services")} >Lively4 Services</button>
 </script>
-<script>
-var b = document.createElement("button")
-b.innerHTML = "Lively4 Services"
-b.onclick = () => {
-  lively.openComponentInWindow("lively-services")
-} 
-b
-</script>
+
+
+

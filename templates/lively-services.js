@@ -51,7 +51,7 @@ export default class Services extends Morph {
 
     this.logEditor = this.getSubmorph('#log').editor;
     if (this.logEditor) { // editor is not initialized during testing
-      this.logEditor.setReadOnly(true);
+      // this.logEditor.setReadOnly(true);
     }
 
     this.refreshServiceList();
@@ -90,7 +90,7 @@ export default class Services extends Morph {
         this.serviceTop.removeAttribute('data-id');
         this.entryPoint.value = relativePath;
         this.entryPoint.focus();
-        this.logEditor.setValue('');
+        this.logEditor.value = '';
         this.unselectAll();
 
         this.startButtonClick(relativePath);
@@ -347,13 +347,13 @@ export default class Services extends Morph {
 
   refreshLog() {
     if (this.pid === null) {
-      this.logEditor.setValue('');
+      this.logEditor.value = '';
       this.entryPoint.value = '';
       return;
     }
     this.post('get', { id: this.pid }, (res) => {
-      this.logEditor.setValue(res[this.logType]);
-      this.logEditor.gotoPageDown();
+      this.logEditor.value = res[this.logType];
+      // this.logEditor.gotoPageDown();
     });
   }
 }

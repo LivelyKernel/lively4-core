@@ -341,10 +341,10 @@ export default class Lively {
     string = string || "";
     var name = "lively-code-mirror"      
     return  lively.openComponentInWindow(name, null, pt(400,500), worldContext).then((comp) => {
-      comp.mode = "javascript";
+      comp.mode = "text/jsx";
       comp.value = string;
       var container = comp.parentElement
-      if (pos) lively.setPosition(container,pos);
+      if (pos) lively.setGlobalPosition(container,pos);
       container.setAttribute("title", "Workspace");
       comp.focus();
       return comp;
@@ -375,7 +375,7 @@ export default class Lively {
   }
 
   static pt(x,y) {
-    return {x: x, y: y};
+    return pt(x,y)
   }
 
   static setPosition(obj, point, mode) {
@@ -763,9 +763,9 @@ export default class Lively {
       document.body.style.backgroundColor = "rgb(240,240,240)"
       ViewNav.enable(document.body)
 
-      if (loadContainer && lively.preferences.get("ShowFixedBrowser")) {
-        this.showMainContainer()
-      } 
+      // if (loadContainer && lively.preferences.get("ShowFixedBrowser")) {
+      //   this.showMainContainer()
+      // } 
     }
 
     if(this.deferredUpdateScroll) {
@@ -787,11 +787,15 @@ export default class Lively {
     container = document.createElement("lively-container");
     container.id = 'main-content';
     container.setAttribute("load", "auto");
-
+    
+    
+    
     await components.openInWindow(container).then( () => {
       container.__ingoreUpdates = true; // a hack... since I am missing DevLayers...
       container.get('#container-content').style.overflow = "visible";
       container.parentElement.toggleMaximize()
+      container.parentElement.hideTitlebar()
+      container.parentElement.style.zIndex = 0
       container.parentElement.setAttribute("data-lively4-donotpersist","all");
     });
     return container
@@ -817,13 +821,17 @@ export default class Lively {
     var tagName = await components.reloadComponent(html);
     if (!tagName) return;
 
-    document.body.querySelectorAll(tagName).forEach(oldInstance => {
+    let objectToMigrate = Array.from(document.body.querySelectorAll(tagName));
+    if(lively.halo) {
+      objectToMigrate.push(...lively.halo.shadowRoot.querySelectorAll(tagName));
+    }
+    objectToMigrate.forEach(oldInstance => {
       if (oldInstance.__ingoreUpdates) return;
 
       // if (oldInstance.isMinimized && oldInstance.isMinimized()) return // ignore minimized windows
       // if (oldInstance.isMaximized && oldInstance.isMaximized()) return // ignore isMaximized windows
 
-      var owner = oldInstance.parentElement;
+      var owner = oldInstance.parentElement || oldInstance.parentNode;
       var newInstance = document.createElement(tagName);
       
       if (oldInstance.livelyPreMigrate) {
@@ -1136,7 +1144,7 @@ export default class Lively {
     });
   }
 
-  static openSearchWidget(text, worldContext, searchContext) {
+  static openSearchWidget(text, worldContext, searchContext=document.body) {
     // index based search is not useful at the moment
     if (true) {
       var container = lively.query(searchContext, "lively-container")
@@ -1185,7 +1193,7 @@ export default class Lively {
   
   
   
-  static openComponentInWindow(name, pos, extent, worldContext) {
+  static openComponentInWindow(name, globalPos, extent, worldContext) {
     worldContext = worldContext || document.body
   
     var w = document.createElement("lively-window");
@@ -1193,19 +1201,19 @@ export default class Lively {
       w.style.width = extent.x;
       w.style.height = extent.y;
     }
-    if (!pos) {
-      pos = this.findPositionForWindow(worldContext)
+    if (!globalPos) {
+      let pos = lively.findPositionForWindow(worldContext);
+      globalPos = lively.getGlobalPosition(worldContext).addPt(pos);
     }
-    if (pos) 
-      lively.setPosition(w, pos);
-    
-    return components.openIn(worldContext, w, true).then((w) => {
-    	return components.openIn(w, document.createElement(name)).then((comp) => {
-        
-        if (comp.windowTitle) w.setAttribute("title", "" + comp.windowTitle);
-        return comp
-    	})
-    })
+
+    return components.openIn(worldContext, w, true).then(w => {
+      lively.setGlobalPosition(w, globalPos);
+      
+      return components.openIn(w, document.createElement(name)).then(comp => {
+        if (comp.windowTitle) w.setAttribute('title', '' + comp.windowTitle);
+        return comp;
+      });
+    });
   }
   
   static findPositionForWindow(worldContext) {
@@ -1213,14 +1221,19 @@ export default class Lively {
       var windows = Array.from(worldContext.querySelectorAll(":scope > lively-window"))
       var offset = 20
       var pos
+      var topLeft = pt(200,100)
+      
       for(var i=0; !pos; i++) {
+        let p1 = pt(i * offset, i * offset)
+        let p2 = pt((i + 1) * offset, (i + 1) * offset)
         var found = windows.find( ea => {
           // var ea = that; var i =0 
-          var eaPos = lively.getGlobalPosition(ea)
-          // find free space in direction bottom right
-          return (i * offset <= eaPos.x) && (eaPos.x < (i + 1) * offset ) && (i * offset <= eaPos.y) && (eaPos.y < (i + 1) * offset)
+          var eaPos = lively.getGlobalPosition(ea).subPt(topLeft)
+          // check if there is a window in direction bottom right
+          return (p1.lessPt(eaPos) || p1.eqPt(eaPos)) && eaPos.lessPt(p2)
         });
-        if (!found) pos = pt(i * offset,i* offset)
+        // no window is found... so place the next there
+        if (!found) pos = topLeft.addPt(pt(i * offset, i* offset))
       }
       return pos.subPt(lively.getGlobalPosition(worldContext))
   }
@@ -1528,7 +1541,7 @@ export default class Lively {
   }
   
   static get halo() {
-    return HaloService.halo[0]
+    return HaloService.instance;
   }
   
   static onMouseDown(evt) {

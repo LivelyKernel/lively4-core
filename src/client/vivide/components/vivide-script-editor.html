@@ -3,7 +3,10 @@
 <style data-src="/templates/livelystyle.css"></style>
 <style>
 :host {
-  background-color: lightblue;
+  background-color: lightgreen;
+  margin: 100%
+  padding: 100%
+  
   display: flex;
   flex-direction: column;
 }
@@ -14,9 +17,13 @@ lively-code-mirror {
 }
 
 </style>
+<div id="editor-list">
+  
+  </div>
 <div id="content">
 	<content></content>
 </div>
+  <button id="add-script">+ Add Script</button>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

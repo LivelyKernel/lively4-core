@@ -16,6 +16,9 @@
       justify-content: space-between;
       flex-direction: column;
     }
+    #vivide-items {
+      display: none;
+    }
     .row {
       display: flex;
       justify-content: space-between;
@@ -23,8 +26,17 @@
     .halo {
       pointer-events: all;
       z-index: 9999;
+    }
+    .bubble {
       border-radius: 50%;
       background-color: #ccc;
+    }
+    .rounded-rect {
+      background-color: lightgray;
+      box-sizing: border-box;
+      border: 1px gray solid;
+      border-radius: 5px;
+      color: darkslategrey;
     }
     
     lively-halo-name-item {
@@ -34,7 +46,7 @@
       min-width: 60px;
       height: 20px;
     }
-    
+
     #handles {
       position: absolute;
       top: 0px;
@@ -59,37 +71,83 @@
     #style {
       z-index: 11000;
     }
+
+    .align-vertically {
+      display:flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+      
+    .align-horizontally {
+      display:flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+    }
       
     </style>
-    <div class="container">
-      <div class="row" id="row1">
-        <lively-halo-menu-item class="halo"></lively-halo-menu-item>
-        <lively-halo-style-item id="style" class="halo"></lively-halo-style-item>
-        <lively-halo-grab-item class="halo"></lively-halo-grab-item>
-        <lively-halo-drag-item class="halo"></lively-halo-drag-item>
-        <lively-halo-remove-item class="halo"></lively-halo-remove-item>
+    <!-- just to load this component with the halo -->
+  <lively-halo-vivide-outport-connection-item style="display: none;"></lively-halo-vivide-outport-connection-item>
+  <lively-halo-vivide-inport-connection-item style="display: none;"></lively-halo-vivide-inport-connection-item>
+
+    <div id="default-items" class="container">
+      <div class="row">
+        <lively-halo-menu-item class="bubble halo"></lively-halo-menu-item>
+        <lively-halo-style-item id="style" class="bubble halo"></lively-halo-style-item>
+        <lively-halo-grab-item class="bubble halo"></lively-halo-grab-item>
+        <lively-halo-drag-item class="bubble halo"></lively-halo-drag-item>
+        <lively-halo-remove-item class="bubble halo"></lively-halo-remove-item>
       </div>
-      <div class="row" id="row2">
-        <lively-halo-copy-item class="halo"></lively-halo-copy-item>
-        <lively-halo-inspect-item class="halo"></lively-halo-inspect-item>
+      <div class="row">
+        <lively-halo-copy-item class="bubble halo"></lively-halo-copy-item>
+        <lively-halo-inspect-item class="bubble halo"></lively-halo-inspect-item>
       </div> 
-      <div class="row" id="row3">
-        <lively-halo-edit-item class="halo"></lively-halo-edit-item>
-        <lively-halo-name-item class="halo"></lively-halo-name-item>        
-        <lively-halo-resize-item class="halo"></lively-halo-resize-item>
+      <div class="row">
+        <lively-halo-edit-item class="bubble halo"></lively-halo-edit-item>
+        <lively-halo-name-item class="bubble halo"></lively-halo-name-item>        
+        <lively-halo-resize-item class="bubble halo"></lively-halo-resize-item>
       </div>
     </div>
+
+    <div id="vivide-items" class="container">
+      <div class="row">
+        <lively-halo-drag-item class="rounded-rect halo"></lively-halo-drag-item>
+        <div class="align-horizontally">
+          <lively-halo-inspect-item class="rounded-rect halo"></lively-halo-inspect-item>
+          Hierarchy
+        </div>
+        <lively-halo-remove-item class="rounded-rect halo"></lively-halo-remove-item>
+      </div>
+      <div class="row">
+        <div class="align-vertically">
+          <lively-halo-vivide-inport-item class="halo"></lively-halo-vivide-inport-item>
+          <div id="vivide-inport-connection-items" class="align-vertically">
+          </div>
+        </div>
+        <div class="align-vertically">
+          <lively-halo-vivide-outport-item class="halo"></lively-halo-vivide-outport-item>
+          <div id="vivide-outport-connection-items" class="align-vertically">
+          </div>
+          <lively-halo-vivide-add-outport-item class="halo"></lively-halo-vivide-add-outport-item>
+        </div>
+      </div>
+      <div class="row">
+        <lively-halo-copy-item class="rounded-rect halo"></lively-halo-copy-item>
+        <lively-halo-vivide-open-script-editor-item class="halo" ></lively-halo-vivide-open-script-editor-item>
+        <lively-halo-resize-item class="rounded-rect halo"></lively-halo-resize-item>
+      </div>
+    </div>
+
     <div id="handles">
       <lively-halo-handle-item id="topLeft" class="halo handle"></lively-halo-handle-item>
       <lively-halo-handle-item id="bottomLeft" class="halo handle"></lively-halo-handle-item>
       <lively-halo-handle-item id="bottomRight" class="halo handle"></lively-halo-handle-item>
       <lively-halo-handle-item id="topRight" class="halo handle"></lively-halo-handle-item>
     </div>
+
     <!-- load the control point... already #TODO use a link to make it explicit?-->
     <lively-halo-control-point-item id="controlPoint0" class="control-point"></lively-halo-control-point-item>
     <lively-halo-control-point-item id="controlPoint1" class="control-point"></lively-halo-control-point-item>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
-
-
-

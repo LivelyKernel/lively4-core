@@ -3,12 +3,12 @@ import { getScopeIdForModule } from "src/external/babel-plugin-var-recorder.js";
 class TestClass {
   static update() {
     console.log('something');
-    var a = 5;
+    var a = 7;
     var b = 5;
   }
 
   static print() {
-    console.log("somethingelse");
+    console.log("someething");
   }
 
 }
@@ -21,7 +21,7 @@ class TestClass2 {
   }
 
   static print2() {
-    console.log('print');
+    console.log('printtttttt');
   }
 
 }

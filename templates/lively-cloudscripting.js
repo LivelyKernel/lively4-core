@@ -11,17 +11,17 @@ var currentlyShownConfig=null;
 export default class LivelyCloudscripting extends Morph {
   async initialize() {
     this.windowTitle = "Cloudscripting";
-    this.addButton = this.getSubmorph('#addTriggerButton');
+    this.addButton = this.get('#addTriggerButton');
     this.addButton.addEventListener('click', this.addButtonClick.bind(this));
-    this.login = this.getSubmorph('#login');
+    this.login = this.get('#login');
     this.login.addEventListener('click', this.loginClick.bind(this));
-    this.credentials = this.getSubmorph('#credentials');
+    this.credentials = this.get('#credentials');
     this.credentials.addEventListener('click', this.credentialsClick.bind(this));
-    this.codeEditor = this.getSubmorph('#code').editor;
+    this.codeEditor = this.get('#code');
     this.codeEditor.tryBoundEval=function(){console.log("something")}
     this.codeEditor.boundEval=function(){console.log("something")}
     var that = this
-    this.getSubmorph("#createWatcher").addEventListener('click',function(){
+    this.get("#createWatcher").addEventListener('click',function(){
       
       var newFilename=prompt("Enter the name of the new watcher","");
       if(newFilename){
@@ -39,7 +39,7 @@ export default class LivelyCloudscripting extends Morph {
         });
       }
     })
-    this.getSubmorph("#createAction").addEventListener('click',function(){
+    this.get("#createAction").addEventListener('click',function(){
       
       var newFilename=prompt("Enter the name of the new action","");
       if(newFilename){
@@ -57,20 +57,20 @@ export default class LivelyCloudscripting extends Morph {
         });
       }
     })
-    this.codeEditor.commands.addCommand({
-      name: "save",
-      bindKey: {win: "Ctrl-S", mac: "Command-S"},
-      exec: (editor) => {
-        this.saveCode()
-      }
-    });
-    this.logsEditor = this.getSubmorph('#logs').editor;
+    // this.codeEditor.commands.addCommand({
+    //   name: "save",
+    //   bindKey: {win: "Ctrl-S", mac: "Command-S"},
+    //   exec: (editor) => {
+    //     this.saveCode()
+    //   }
+    // });
+    this.logsEditor = this.get('#logs').editor;
     if (this.logsEditor) { // editor is not initialized during testing
       this.logsEditor.setReadOnly(true);
     }
-    this.startButton = this.getSubmorph('#startButton');
+    this.startButton = this.get('#startButton');
     this.startButton.addEventListener('click', this.startButtonClick.bind(this));
-    this.stopButton = this.getSubmorph('#stopButton');
+    this.stopButton = this.get('#stopButton');
     this.stopButton.addEventListener('click', this.stopButtonClick.bind(this));
     this.config=null;
   }
@@ -92,7 +92,7 @@ export default class LivelyCloudscripting extends Morph {
   }
   
   loginClick(evt) {
-    name = this.getSubmorph('#name').value;
+    name = this.get('#name').value;
     this.getTriggers();
     //setInterval(() => {this.getTriggers()}, 2000);
   }
@@ -190,7 +190,7 @@ export default class LivelyCloudscripting extends Morph {
       return;
     }
     lively.notify("Successfully logged in", undefined, undefined, undefined, "green");
-    var triggerWrapper = this.getSubmorph('#trigger-wrapper');
+    var triggerWrapper = this.get('#trigger-wrapper');
     while(triggerWrapper.firstChild) {
       triggerWrapper.removeChild(triggerWrapper.firstChild)
     }
@@ -200,17 +200,17 @@ export default class LivelyCloudscripting extends Morph {
       if(!triggers.hasOwnProperty(prop)) continue;
       
       var item = this.createItem(prop);
-      var actionList = item.getSubmorph('.action-list');
+      var actionList = item.get('.action-list');
       this.addActionsToItem(triggers, prop, triggers[prop]['actions'] ? triggers[prop]['actions'].length : 0, that, actionList);
       
-      item.getSubmorph('.add-action').addEventListener('click', function(event){
+      item.get('.add-action').addEventListener('click', function(event){
         event.stopPropagation();
         var triggerName = event.target.parentNode.parentNode.children[0].children[1].innerHTML;
         that.assignAction.bind(that);
         that.assignAction(triggerName);
       });
     
-      item.getSubmorph('.status').classList.add(this.getStatusForTrigger(triggers, prop)); 
+      item.get('.status').classList.add(this.getStatusForTrigger(triggers, prop)); 
       triggerWrapper.appendChild(item);
     }
   }
@@ -230,7 +230,7 @@ export default class LivelyCloudscripting extends Morph {
         var actionName = triggers[prop]['actions'][i].name;
         var action = document.createElement('lively-cloudscripting-action-item');
         
-        action.getSubmorph(".editTemplate").addEventListener('click',function(evt){
+        action.get(".editTemplate").addEventListener('click',function(evt){
           var elementName =evt.target.previousElementSibling.previousElementSibling.innerHTML
           $.ajax({
           url: endpoint+"getActionConfigTemplate",
@@ -247,7 +247,7 @@ export default class LivelyCloudscripting extends Morph {
           error: function(res){console.log(res)}
         }); 
         })
-        action.getSubmorph(".deleteWatcher").addEventListener('click',function(evt){
+        action.get(".deleteWatcher").addEventListener('click',function(evt){
           var elementName =evt.target.previousElementSibling.innerHTML
           console.log(prop)
            $.ajax({
@@ -274,8 +274,8 @@ export default class LivelyCloudscripting extends Morph {
         action.setAttribute('data-id', actionName);
         action.setAttribute('data-type', 'actions')
         action.setAttribute('data-parent',prop);
-        action.getSubmorph('.itemname').innerHTML = actionName;
-        var icon = action.getSubmorph('.addAction')
+        action.get('.itemname').innerHTML = actionName;
+        var icon = action.get('.addAction')
         icon.addEventListener('click', function(event) {
           event.stopPropagation();
           that.unassignAction();
@@ -287,9 +287,9 @@ export default class LivelyCloudscripting extends Morph {
   }
   setUpConfigButton(item,url,saveurl,triggerId,that,actionId){
     
-    item.getSubmorph('#modify-configuration').addEventListener('click', function(){
+    item.get('#modify-configuration').addEventListener('click', function(){
       console.log(that.config)
-      var table=item.getSubmorph(".config-table");
+      var table=item.get(".config-table");
       if(currentlyShownConfig===table){
         console.log(that.config)
         that.saveConfig(saveurl,triggerId,actionId)
@@ -340,7 +340,7 @@ export default class LivelyCloudscripting extends Morph {
   createItem(prop) {
     var that=this
     var item = document.createElement('lively-cloudscripting-item');
-    item.getSubmorph('.editTemplate').addEventListener('click',function(evt){
+    item.get('.editTemplate').addEventListener('click',function(evt){
       lively.notify(evt.target.previousElementSibling.previousElementSibling.innerHTML)
       var triggerId=evt.target.previousElementSibling.previousElementSibling.innerHTML
       $.ajax({
@@ -362,12 +362,12 @@ export default class LivelyCloudscripting extends Morph {
     item.setAttribute('data-id', prop);
     item.setAttribute('data-type', 'watcher');
     if (prop == 'selected') {
-      item.getSubmorph('.item').classList.add('selected');
+      item.get('.item').classList.add('selected');
     }
     this.setUpConfigButton(item,"getWatcherConfig","updateWatcherConfig",prop,this,null)
     var title = prop;
-    item.getSubmorph('h4').innerHTML = title;
-    item.getSubmorph('.deleteWatcher').addEventListener('click',function(){
+    item.get('h4').innerHTML = title;
+    item.get('.deleteWatcher').addEventListener('click',function(){
       $.ajax({
           url: endpoint+"removeTrigger",
           type: 'POST',
@@ -388,8 +388,8 @@ export default class LivelyCloudscripting extends Morph {
   
   showConfig(data,triggerId,actionId){
     lively.notify("showconfig")
-    lively.openComponentInWindow('juicy-ace-editor').then(configEditor => {
-      // configEditor.getSubmorph("content").innerHTML=data
+    lively.openComponentInWindow('lively-code-mirror').then(configEditor => {
+      // configEditor.get("content").innerHTML=data
       configEditor.value=data
       configEditor.unsavedChanges=function(){return false}
       configEditor.doSave=function(){
@@ -537,9 +537,9 @@ export default class LivelyCloudscripting extends Morph {
     $.ajax({
       url: endpoint,
       type: 'GET',
-      success: function(res){that.codeEditor.setValue(res)},   
-      done: function(res){that.codeEditor.setValue(res.responseText)},
-      error: function(res){that.codeEditor.setValue(res.responseText)}
+      success: function(res){that.codeEditor.value = res},   
+      done: function(res){that.codeEditor.value = res.responseText},
+      error: function(res){that.codeEditor.value = res.responseText}
     }); 
   }
   

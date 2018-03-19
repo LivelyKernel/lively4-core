@@ -12,37 +12,21 @@ export default class LivleyFilesystems extends Morph {
       this.windowTitle = "Lively Mounts";
       // #TODO refactor to "connections"
 
-      $(this.getSubmorph('#githubLoginButton')).click(() => {
-      });
-        
-      $(this.getSubmorph('#githubLogoutButton')).click(() => {
-        this.logoutGitHub()});
+      this.get('#githubLoginButton').addEventListener('click', () => {});
+      this.get('#githubLogoutButton').addEventListener('click', () => this.logoutGitHub());
+      this.get('#dropboxLoginButton').addEventListener('click', () => this.loginDropbox());
+      this.get('#dropboxLogoutButton').addEventListener('click', () => this.logoutDropbox());
+      this.get('#googledriveLoginButton').addEventListener('click', () => this.loginGoogledrive());
+      this.get('#googledriveLogoutButton').addEventListener('click', () => this.logoutGoogledrive());
+      this.get('#httpMountButton').addEventListener('click', () => this.mountHttp());
+      this.get('#updateMountList').addEventListener('click', () => this.updateMountList());
 
-      $(this.getSubmorph('#dropboxLoginButton')).click(() => {
-        this.loginDropbox()});
-        
-      $(this.getSubmorph('#dropboxLogoutButton')).click(() => {
-        this.logoutDropbox()});
+      this.updateMountList();
 
-      $(this.getSubmorph('#googledriveLoginButton')).click(() => {
-        this.loginGoogledrive()})
-      $(this.getSubmorph('#googledriveLogoutButton')).click(() => {
-        this.logoutGoogledrive()})
-
-      $(this.getSubmorph('#httpMountButton')).click(() => {
-        this.mountHttp()})
-
-      $(this.getSubmorph('#updateMountList')).click(() => {
-        this.updateMountList()})
-
-      this.updateMountList()
-
-      container.dispatchEvent(new Event("initialized"))
+      container.dispatchEvent(new Event("initialized"));
   }
   
-  getMountURL() {
-    return "https://lively4/sys/fs/mount"
-  }
+  getMountURL() { return "https://lively4/sys/fs/mount"; }
     
   loginGitHub() {
     console.log("login")
@@ -195,11 +179,11 @@ export default class LivleyFilesystems extends Morph {
       url: this.getMountURL(),
       type: 'PUT',
       data: JSON.stringify(mount),
-      success: (text) => {
+      success: text => {
         console.log("mounted http")
         this.updateMountList()
       },
-      error: function(xhr, status, error) {
+      error: (xhr, status, error) => {
         console.log("could not mount http " + error)
       }
     });
@@ -231,27 +215,22 @@ export default class LivleyFilesystems extends Morph {
         var mounts = JSON.parse(text)
         console.log(mounts)
 
-        list.innerHTML = ""
+        list.innerHTML = "";
         mounts.forEach(ea => {
-          let listItem = document.createElement("li")
-          listItem.innerHTML = ea.path + " (" + ea.name +") "
-
-          let button = document.createElement("button")
-          button.innerHTML="unmount"
-          button.onclick = () => { this.unmountPath(ea.path)}
-          button.setAttribute("class","unmount")
-          listItem.appendChild(button)
-
-          let browseButton = document.createElement("button")
-          browseButton.innerHTML="browse"
-          browseButton.onclick = () => lively.openBrowser("https://lively4" + ea.path);
-
-          browseButton.setAttribute("class","browse")
-          listItem.appendChild(browseButton)
-          list.appendChild(listItem)
-        })
+          let remotePoint = ea.options ? '> ' + (ea.options.base || ea.options.branch || ea.options.subfolder || '') : '';
+          
+          list.appendChild(<li>
+            {ea.path} {remotePoint} ({ea.name})
+            <button class="unmount" click={() => {
+              this.unmountPath(ea.path);
+            }}>unmount</button>
+            <button class="browse" click={() => {
+              lively.openBrowser("https://lively4" + ea.path);
+            }}>browse</button>
+           </li>);
+        });
       },
-      error: function(xhr, status, error) {
+      error: (xhr, status, error) => {
         console.log("could not get list of mounts: " + error)
       }
     });

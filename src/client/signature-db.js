@@ -1,8 +1,13 @@
-import Dexie from "https://unpkg.com/dexie@2.0.0-beta.11/dist/dexie.js";
 import {babel} from 'systemjs-babel-build';
-import plugin from 'https://lively-kernel.org/lively4/foo/src/external/babel-plugin-syntax-all.js';
+import plugin from 'src/external/babel-plugin-syntax-all.js';
 
-export default class SignatureManipulator {
+export const NodeTypes = Object.freeze({'FILE': "File",
+                                        'VAR': "Var",
+                                        'FUNCTION': "Function",
+                                        'CLASS': "Class",
+                                        'METHOD': "Method"});
+
+export class SignatureManipulator {
 
   async parseAndExtractFile(name) {
     var file = await fetch(name).then( r => r);
@@ -30,9 +35,9 @@ export default class SignatureManipulator {
       for(var childIndex in parent) {
         var child = parent[childIndex];
         var replaceCondition;
-        if(childType === 'method')
+        if(childType === NodeTypes.METHOD)
           replaceCondition = (child.key.name === id);
-        else if(childType === 'variable')
+        else if(childType === NodeTypes.VAR)
           replaceCondition = (child.hasOwnProperty('declarations') && child.declarations[0].id.name === id);
         else
           replaceCondition = (child.hasOwnProperty('id') && child.id.name === id);
@@ -49,27 +54,34 @@ export default class SignatureManipulator {
     
     var rootNode = await this.parseAndExtractFile(filename);
     rootNode = rootNode.ast;
-    if(type === 'method') {
-      var newNode = this.astFromMethod(content);
-      var parentClass = false;
-      for (var declaration of rootNode.body) {
-        if(declaration.hasOwnProperty('id') && declaration.id.name === parentID) {
-          parentClass = declaration;
-          break;
+    var code;
+    switch (type) {
+      case NodeTypes.METHOD:
+        var newNode = this.astFromMethod(content);
+        var parentClass = false;
+        for (var declaration of rootNode.body) {
+          if(declaration.hasOwnProperty('id') && declaration.id.name === parentID) {
+            parentClass = declaration;
+            break;
+          }
         }
-      }
-      if(!parentClass) 
-        console.log('Could not find parent element, saving won\'t work!');
-      else
-        replaceOrAppendChild(parentClass.body.body, newNode, 'method')
-    } else if(type === 'variable') {
-      var newNode = this.astFromText(content);
-      replaceOrAppendChild(rootNode.body, newNode, 'variable')
-    } else {
-      var newNode = this.astFromText(content);
-      replaceOrAppendChild(rootNode.body, newNode)
+        if(!parentClass) 
+          lively.notify('[Semantic Navigator] Could not find parent element, saving won\'t work!');
+        else
+          replaceOrAppendChild(parentClass.body.body, newNode, NodeTypes.METHOD)
+        code = this.getNodeContent(rootNode);
+        break;
+      case NodeTypes.VAR:
+      case NodeTypes.CLASS:
+      case NodeTypes.FUNCTION:
+        newNode = this.astFromText(content);
+        replaceOrAppendChild(rootNode.body, newNode, type)
+        code = this.getNodeContent(rootNode);
+        break;
+      case NodeTypes.FILE:
+        code = content;
+        break;
     }
-    var code = this.getNodeContent(rootNode);
     lively.files.saveFile(filename, code);
   }
 
@@ -101,26 +113,26 @@ export default class SignatureManipulator {
     var funcs = [];
     var variables = [];
     for (var declaration of ast.body) {
+      if (declaration.type.includes('Export'))
+        declaration = declaration.declaration
       if (declaration.type.includes('Class')) {
         classes.push(await this.extractClassAndMethods(declaration, versionNum,
-                                                       fileName, this.getNodeContent(declaration)))
-      }
-      if (declaration.type.includes('ExportDefault') && declaration.declaration.type.includes('Class')) {
-        classes.push(await this.extractClassAndMethods(declaration.declaration, versionNum,
-                                                       fileName, this.getNodeContent(declaration)))
+                                                       fileName))
       }
       if (declaration.type.includes('Variable')) {
-        for(var dec of declaration.declarations) {
-          variables.push(await this.extractVariableSig(declaration.kind, dec, versionNum,
-                                                       fileName, this.getNodeContent(declaration)));
-        }
+          variables.push.apply(variables, await this.extractSignature(declaration, versionNum,
+                                                                      fileName, this.getNodeContent(declaration),
+                                                                      NodeTypes.VAR));
       }
       if (declaration.type.includes('Function')) {
-        funcs.push(await this.extractFunctionSig(declaration, versionNum,
-                                                 fileName, this.getNodeContent(declaration)));
+        funcs.push.apply(funcs, await this.extractSignature(declaration, versionNum,
+                                                            fileName, this.getNodeContent(declaration),
+                                                            NodeTypes.FUNCTION));
       }
     }
-    return {'classes': classes, 'functions': funcs, 'variables': variables};
+    return {[NodeTypes.CLASS]: classes, 
+            [NodeTypes.FUNCTION]: funcs, 
+            [NodeTypes.VAR]: variables};
   }
   
   /**
@@ -130,93 +142,52 @@ export default class SignatureManipulator {
     methods: ['static sampleMethods()']
   }
   **/
-  async extractClassAndMethods(classDeclaration, versionNum, fileName, content) {
+  async extractClassAndMethods(classDeclaration, versionNum, fileName) {
     var res = {'sig': '', 'methods': []};
-    res['sig'] = await this.extractClassSig(classDeclaration, versionNum,
-                                            fileName, this.getNodeContent(classDeclaration));
+    res['sig'] = (await this.extractSignature(classDeclaration, versionNum,
+                                            fileName, this.getNodeContent(classDeclaration),
+                                            NodeTypes.CLASS))[0];
     if(classDeclaration.body) {
       var childDeclarations = classDeclaration.body.body;
       for(var child of childDeclarations) {
         if(child.type.includes('Method')) {
-          res['methods'].push(await this.extractMethodSig(child, versionNum,
-                                                          fileName, this.getNodeContent(child)));
+          res['methods'].push.apply(res['methods'], await this.extractSignature(child, versionNum,
+                                                                                fileName,
+                                                                                this.getNodeContent(child),
+                                                                                NodeTypes.METHOD));
         }
       }
     }
     return res;
   }
-
-  async extractClassSig(declaration, versionNum, fileName, content) {
-    return {
-          declaration: `class ${declaration.id.name}`,
-          id: declaration.id.name,
-          version: versionNum,
-          file: fileName,
-          content: content
-        }
-  }
-
-  async extractVariableSig(kind, declaration, versionNum, fileName, content) {
-    return {
-          declaration: `${kind} ${declaration.id.name}`,
-          id: declaration.id.name,
-          version: versionNum,
-          file: fileName,
-          content: content
-    }
-  }
-
-  async extractMethodSig(declaration, versionNum, fileName, content) {
-    return {
-          declaration: `${declaration.async ? 'async ' : ''} ` + 
-               `${declaration.key.name} ` + 
-               `(${declaration.params.map(t => t.name).join(',')})`,
-          id: declaration.key.name,
-          version: versionNum,
-          file: fileName,
-          content: content
-    }
-  }
-
-  async extractFunctionSig(declaration, versionNum, fileName, content) {
-    return {
-          declaration: `${declaration.async ? 'async ' : ''} ` + 
-               `${declaration.id.name} ` + 
-               `(${declaration.params.map(t => t.name).join(',')})`,
-          id: declaration.id.name,
-          version: versionNum,
-          file: fileName,
-          content: content
-    }
-  }
   
-}
-
-class DBWrapper {
-  // Simple Wrapper for IndexedDB, usage:
-  // var obj = {
-  //   sig: 'async function getAST(name)',
-  //   version: 1.0,
-  //   file: 'src/client/signature-db.js',
-  //   content: '<Content here>'
-  // };
-  // new DBWrapper().insertObject(obj);
-  // new DBWrapper().getObject('async', (v => console.log(v)));
-  constructor() {
-    this.db = new Dexie('signatures');
-    this.db.version('1').stores({
-      signatures: 'sig, version, file, content'
-    });
-  }
-  
-  async insertObject(object) {  
-    this.db.signatures.put(object).catch(function(error) {
-       alert ('Storing did not work: ' + error);
-    });
-  }
-  
-  getObject(signature, callback) {
-    this.db.signatures.where('sig').startsWithIgnoreCase(signature).each(sig => callback(sig));
+  async extractSignature(declaration, versionNum, fileName, content, type) {
+    var sigs = [];
+    var decls = type === NodeTypes.VAR ? declaration.declarations : [declaration];
+    for(var decl of decls) {
+      var sig = {
+        version: versionNum,
+        file: fileName,
+        content: content};
+      var identifier = type === NodeTypes.METHOD ? decl.key : decl.id;
+      var stringDecl;
+      switch (type) {
+        case NodeTypes.METHOD:
+        case NodeTypes.FUNCTION:
+          stringDecl = `${decl.async ? 'async ' : ''}` + 
+               `${identifier.name} ` + 
+               `(${decl.params.map(t => t.name).join(',')})`;
+          break;
+        case NodeTypes.CLASS:
+        case NodeTypes.VAR:
+          stringDecl = `${type === NodeTypes.CLASS ? 'class' : declaration.kind} ${identifier.name}`;
+          break;
+      }
+      sig.id = identifier.name;
+      sig.declaration = stringDecl;
+      sigs.push(sig);
+    }
+    return sigs;
   }
   
 }

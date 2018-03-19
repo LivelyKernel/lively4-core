@@ -1,12 +1,10 @@
-import LivelyPaper from './lively-paper.js';
+import LivelyPaper from 'templates/lively-paper.js';
 
 import Grail from 'src/external/grail.js'
 
 export default class LivelyGrail extends LivelyPaper {
   
-  
-  
-  
+
   initialize() {
     super.initialize();
     this.grail = new Grail();

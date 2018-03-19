@@ -105,7 +105,7 @@ export function hintForLabel(label) {
 export function asDragImageFor(evt, offsetX=0, offsetY=0) {
   const clone = this.cloneNode(true);
   document.body.appendChild(clone);
-  clone.style["z-index"] = "-100000";
+  clone.style["z-index"] = "10000000";
   clone.style.top = Math.max(0, evt.clientY - offsetY) + "px";
   clone.style.left = Math.max(0, evt.clientX - offsetX) + "px";
   clone.style.position = "absolute";
@@ -217,4 +217,9 @@ export function copyTextToClipboard(text) {
   }
 
   document.body.removeChild(textArea);
+}
+
+// taken from https://stackoverflow.com/questions/5999998/how-can-i-check-if-a-javascript-variable-is-function-type
+export function isFunction(functionToCheck) {
+  return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
 }

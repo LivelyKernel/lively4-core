@@ -9,10 +9,11 @@ export function applyDragCSSClass() {
 }
 
 function appendToBodyAt(node, evt) {
-  document.body.appendChild(node);
-  lively.showPoint(pt(evt.clientX, evt.clientY));
-  lively.setGlobalPosition(node, pt(evt.clientX, evt.clientY));
+  dropOnDocumentBehavior.openAt(node, evt)
+  // document.body.appendChild(node);
+  // lively.setGlobalPosition(node, pt(evt.clientX, evt.clientY));
 }
+
 
 //class DataTransferItemHandler {
 //  handle() {
@@ -110,11 +111,14 @@ const dropOnDocumentBehavior = {
       {
         handle(evt) {
           const dt = evt.dataTransfer;
-          if(!dt.types.includes("vivide/list-input")) { return false; }
-          const tempKey = dt.getData("vivide/list-input");
-          const data = getObjectFor(tempKey);
-          removeTempKey(tempKey);
-          letsScript(data, evt);
+          if(!dt.types.includes("vivide")) { return false; }
+          if(!dt.types.includes("javascript/object")) { return false; }
+          const dataTempKey = dt.getData("javascript/object");
+          const data = getObjectFor(dataTempKey);
+          const viewTempKey = dt.getData("vivide/source-view");
+          const sourceView = getObjectFor(viewTempKey);
+          getObjectFor
+          letsScript(data, evt, sourceView);
           return true;
         }
       },
@@ -174,14 +178,18 @@ const dropOnDocumentBehavior = {
       },
       
       new DropOnBodyHandler('text/uri-list', urlString => {
-        return <a class="lively-content" href={urlString} click={event => {
+        var link = <div class="lively-content"><a  href={urlString}>
+          {urlString.replace(/.*\//,"")}
+        </a></div>;
+        // register the event... to be able to remove it again...
+        lively.addEventListener("link", link, "click", evt => {
           // #TODO make this bevior persistent?
-          event.preventDefault();
+          evt.preventDefault();
+          evt.stopPropagation();
           lively.openBrowser(urlString);
           return true;
-        }}>
-          {urlString.replace(/.*\//,"")}
-        </a>;
+        })
+        return link
       }),
 
       new DropOnBodyHandler('text/html', htmlString => {
@@ -204,7 +212,21 @@ const dropOnDocumentBehavior = {
     ];
   },
   
+  openAt(node, evt) {  
+    var target = this.lastDropTarget || document.body
+    target.appendChild(node);
+    lively.setGlobalPosition(node, pt(evt.clientX, evt.clientY));
+    if (this.lastDropTargetHighlight) this.lastDropTargetHighlight.remove()
+  },
+
+
+  
+  
   onDragOver(evt) {
+    this.lastDropTarget = Array.from(evt.path).filter(ea => ea && ea.classList && ea.classList.contains("lively-content"))[0]
+    if (this.lastDropTargetHighlight) this.lastDropTargetHighlight.remove()
+    this.lastDropTargetHighlight = lively.showElement(this.lastDropTarget)
+    
     evt.stopPropagation();
     evt.preventDefault();
   },
@@ -226,22 +248,17 @@ const dropOnDocumentBehavior = {
               appendToBodyAt(img, evt);
             };
             reader.readAsDataURL(file); 
-        } else if (extension == "html") {
-          var source = await lively.files.readBlobAsText(file)
-          lively.clipboard.pasteHTMLDataInto(source, document.body, false, lively.getPosition(evt));
-        } else {
-//           var div = <div class="lively-file">
-//             <i class="fa fa-file-o" style="font-size: 30px" aria-hidden="true"></i>
-//             <div id="name"><a>{file.name}</a></div>
-//           </div>
-//           appendToBodyAt(div, evt);
-//           div.querySelector("#name a").setAttribute("href", await lively.files.readBlobAsDataURL(file))
-          
+        } 
+        // else if (extension == "html") {
+        //   var source = await lively.files.readBlobAsText(file)
+        //   lively.clipboard.pasteHTMLDataInto(source, document.body, false, lively.getPosition(evt));
+        // } 
+        else {          
           var item = await (<lively-file></lively-file>)
           item.classList.add("lively-content") // for persistence
           // #TODO check for existing "file"
           item.name = file.name
-          appendToBodyAt(item, evt);
+          this.openAt(item, evt);
           item.url = await lively.files.readBlobAsDataURL(file) 
         }
       });
@@ -271,7 +288,7 @@ const dropOnDocumentBehavior = {
       }
     }
     
-    lively.warn("Dragged content contained neighter files nor handled items");
+    lively.warn("Dragged content contained neither files nor handled items");
   }
 }
 

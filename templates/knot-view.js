@@ -16,8 +16,8 @@ export default class KnotView extends Morph {
       }
     });
     
-    let aceComp = this.get('#content-editor');
-    aceComp.editor.setOptions({maxLines:Infinity});
+    let editorComp = this.get('#content-editor');
+    // editorComp.editor.setOptions({maxLines:Infinity});
 
     let urlToLoad = this.getAttribute('data-knot-url');
     if (urlToLoad && urlToLoad !== "") {
@@ -225,23 +225,30 @@ export default class KnotView extends Morph {
   buildListItemFor(knot, role) {
     return <li>{role}: {this.buildRefFor(knot)}</li>;
   }
-  buildContentFor(knot) {
-    let aceComp = this.get('#content-editor');
+  async buildContentFor(knot) {
+    let editorComp = this.get('#content-editor');
     let spoList = this.get('#spo-list');
     if(knot.isTriple()) {
-      this.hide(aceComp);
+      this.hide(editorComp);
       this.show(spoList);
       spoList.innerHTML = '';
       spoList.appendChild(this.buildListItemFor(knot.subject, 'Subject'));
       spoList.appendChild(this.buildListItemFor(knot.predicate, 'Predicate'));
       spoList.appendChild(this.buildListItemFor(knot.object, 'Object'));
     } else {
-      this.show(aceComp);
+      this.show(editorComp);
       this.hide(spoList);
-      aceComp.editor.setValue(knot.content);
-      aceComp.enableAutocompletion();
-      aceComp.aceRequire('ace/ext/searchbox');
-      aceComp.doSave = async text => {
+      editorComp.value = knot.content;
+      editorComp.enableAutocompletion();
+
+      let graph = await Graph.getInstance();
+      let urls = graph.getUrlsByKnot(knot);
+      if(urls.length >= 1) {
+        editorComp.changeModeForFile(urls[0]);
+      } else {
+        lively.error('no url found for ' + knot.label());
+      }
+      editorComp.doSave = async text => {
         await knot.save(text);
         this.refresh();
       }
