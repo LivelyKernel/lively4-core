@@ -1,8 +1,14 @@
-[![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core) Core functionality for [Lively4](https://github.com/LivelyKernel/Lively4/wiki/).
+Core functionality for [Lively4](https://github.com/LivelyKernel/Lively4/wiki/).
 
 # Lively4
 
+[![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
+
 A self-supporting Web-based development environment. 
+
+## Getting Started
+
+[Getting Started Guide](./doc/tutorial/index.md)
 
 ### Example Lively4 Sites
 
@@ -63,5 +69,31 @@ https://livelykernel.github.io/lively4-core/start.html?edit=/README.md
 git subtree add -P src/external/lively4-search https://github.com/LivelyKernel/lively4-search.git master
 ```
 
+# Welcome to <img alt="Lively 4" style="position:relative; top: 25px" src="media/lively4_logo_smooth_100.png" />
 
+- Sofware Architecture Group, Hasso Plattner Institute,  2015-2018 [MIT LICENSE](LICENSE)
+- Jens Lincke, Stefan Ramson, Tim Felgentreff, Fabio Niephaus, Robert Hirschfeld, Marcel Taeumel
+- Seminars
+  - Software Design  [SWD 2015](doc/SWD2015/index.md) 
+   [SWD 2016](doc/SWD2015/index.md)
+  - Web-based Development [WebDev 2016](doc/WebDev2016/index.md), [WebDev 2017/18](doc/WebDev2017/index.md)
+- [readme](README.md)
+- Lively funktioniert auch offline
+
+## Live Source Code
+
+- [modules](src/client/) 
+  - [lively.js](src/client/lively.js)
+  - [contextmenu.js](src/client/contextmenu.js)
+  - [keys.js](src/client/keys.js)
+  - [html.js](src/client/html.js)
+  - ...
+- [UI components ](templates/) [parts](parts/) 
+
+## External Code
+
+We hope to come up with a solution, that will be as comfortable as npm for node.js development, 
+but at the same time will serve our need better to jump into development and immediatly make local customizations. 
+
+- [external](src/external/): static copies, manually management needed
 
