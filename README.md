@@ -1,5 +1,3 @@
-Core functionality for [Lively4](https://github.com/LivelyKernel/Lively4/wiki/).
-
 # Lively4
 
 [![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
