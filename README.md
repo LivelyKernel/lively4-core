@@ -1,4 +1,4 @@
-# Lively4
+# The **Lively4** Web-based Development Environment
 
 [![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
 
