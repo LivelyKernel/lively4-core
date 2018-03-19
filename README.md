@@ -44,7 +44,7 @@ A self-supporting Web-based development environment.
 
 # start.html
 
-Innitially, we were not clear on how to navigate from lively page to lively page. To not "boot" Lively4 on every page load and to access all the files the service worker makes available to us, we now use an initial "jump" page.
+Initially, we were not clear on how to navigate from lively page to lively page. To not "boot" Lively4 on every page load and to access all the files the service worker makes available to us, we now use an initial "jump" page.
 
 One can be able to browse all kind of content:
 
@@ -88,7 +88,7 @@ git subtree add -P src/external/lively4-search https://github.com/LivelyKernel/l
   - [keys.js](src/client/keys.js)
   - [html.js](src/client/html.js)
   - ...
-- [UI components ](templates/) [parts](parts/) 
+- [UI components ](templates/) [parts](parts/)
 
 ## External Code
 
