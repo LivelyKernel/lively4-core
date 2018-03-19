@@ -911,6 +911,7 @@ export default class Container extends Morph {
       var files = JSON.parse(content).contents;
       var index = _.find(files, (ea) => ea.name.match(/^index\.md$/i));
       if (!index) index = _.find(files, (ea) => ea.name.match(/^index\.html$/i));
+      if (!index) index = _.find(files, (ea) => ea.name.match(/^README\.md$/i));
       if (index) { 
         return this.setPath(url + "/" + index.name) ;
       }
