@@ -10,8 +10,7 @@
 * Barista
 * https://github.com/harc/moonchild
 
-
-"Ext JS helps you build data-intensive, cross-platform web apps for desktops, tablets, and smartphones. Take advantage of powerful features in Ext JS Premium including Pivot Grid, D3 Adapter, Calendar, and Exporter." [Sencha Ext JS](https://www.sencha.com/products/extjs/)
+  "Ext JS helps you build data-intensive, cross-platform web apps for desktops, tablets, and smartphones. Take advantage of powerful features in Ext JS Premium including Pivot Grid, D3 Adapter, Calendar, and Exporter." [Sencha Ext JS](https://www.sencha.com/products/extjs/)
 
 
 ## Web-based Development Environments
@@ -26,7 +25,6 @@
 
 - "Discover insights faster and communicate more effectively with interactive notebooks for data analysis, visualization, and exploration." [observable](https://beta.observablehq.com/)
 - https://beta.observablehq.com/@mbostock/five-minute-introduction
-
 - "An Observable notebook is a sequence of cells."
 - cells are javascript code and evaluate to a value
 - they have names and can reference each other

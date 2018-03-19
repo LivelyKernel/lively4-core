@@ -451,8 +451,7 @@ export default class ContextMenu {
     ];
   }
   
-  static items (target, worldContext) {
-    if (!worldContext) worldContext = document.body;
+  static items (target, worldContext = document.body) {
     if (target) {
       return this.targetMenuItems(target);
     } else {

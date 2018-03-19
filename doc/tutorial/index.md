@@ -23,3 +23,6 @@ So lets start:
   a) a html file containing a template
   b) a js file containing a module exporting a subclass of ``HTMLElement``
 
+# Things we should say somewhere:
+
+Ctrl-Shift-F - search throughout whole repository.
