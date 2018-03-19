@@ -13,9 +13,13 @@ export default class VivideScriptEditor extends Morph {
     this.editorList.appendChild(this.cm);
   }
   
-  async setScriptURL(url) {
-    this.urlString = url.href;
-    let txt = await fetch(url).then(res => res.text());
+  initialFocus() {
+    lively.error('#TODO: implement this');
+  }
+  
+  async setScriptURLString(urlString) {
+    this.urlString = urlString;
+    let txt = await fetch(urlString).then(res => res.text());
     
     this.cm.value = txt;
   }

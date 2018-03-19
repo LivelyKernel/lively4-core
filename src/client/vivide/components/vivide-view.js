@@ -11,6 +11,7 @@ export default class VivideView extends Morph {
   
   static get idAttribute() { return 'vivide-view-id'; }
   static get outportAttribute() { return 'outport-target'; }
+  static get scriptAttribute() { return 'vivide-script-url'; }
   static get widgetId() { return 'widget'; }
   static get widgetSelector() { return '#' + this.widgetId; }
 
@@ -203,17 +204,18 @@ export default class VivideView extends Morph {
     }
   }
   
-  setScriptURL(scriptURL) {
-    return this.scriptURL = scriptURL;
+  setScriptURLString(scriptURLString) {
+    this.setAttribute(VivideView.scriptAttribute, scriptURLString);
+    return scriptURLString;
   }
-  getScriptURL() {
-    return this.scriptURL;
+  getScriptURLString() {
+    return this.getAttribute(VivideView.scriptAttribute);
   }
   
   async newDataFromUpstream(data) {
     this.input = data;
     
-    if(this.scriptURL) {
+    if(this.getScriptURLString()) {
       await this.calculateDisplayData();
     } else {
       this.displayedData = this.input;
@@ -224,14 +226,15 @@ export default class VivideView extends Morph {
   }
   
   async calculateDisplayData() {
-    let m = await System.import(this.scriptURL.href);
+    let m = await System.import(this.getScriptURLString());
 
     this.displayedData = [];
-    m.default(this.input, this.displayedData)
+    m.default(this.input, this.displayedData);
   }
   async scriptGotUpdated(urlString) {
-    lively.warn(`received script updated`, urlString);
-    if(this.scriptURL && this.scriptURL.href === urlString) {
+    lively.notify(`received script updated`, urlString);
+    let ownScriptURLString = this.getScriptURLString();
+    if(ownScriptURLString === urlString) {
       await this.calculateDisplayData();
       await this.updateWidget();
     }

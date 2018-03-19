@@ -8,41 +8,37 @@ async function newScriptFromTemplate() {
   
   await lively.files.copyURLtoURL(scriptTemplateURL, newScriptURL);
   
-  return newScriptURL;
+  return newScriptURL.href;
+}
+
+export async function createScriptEditorFor(view) {
+  let viewWindow = lively.findWindow(view);
+  let reference = viewWindow && viewWindow.tagName === "LIVELY-WINDOW" ?
+      viewWindow : view;
+  let pos = lively.getGlobalBounds(reference).topRight();
+
+  let scriptEditor = await lively.openComponentInWindow('vivide-script-editor', pos);
+
+  let scriptURLString = view.getScriptURLString();
+  scriptEditor.setScriptURLString(scriptURLString);
+
+  return scriptEditor;
 }
 
 export async function letsScript(object, evt, sourceView) {
-  async function createScriptEditorNextTo(view) {
-    let viewWindow = lively.findWindow(view);
-    if(viewWindow && viewWindow.tagName === "LIVELY-WINDOW") {
-      var pos = lively.getGlobalBounds(viewWindow).topRight();
-    }
 
-    let scriptEditor = await lively.openComponentInWindow('vivide-script-editor', pos);
-    return scriptEditor;
+  let pos;
+  if(evt) {
+    pos = lively.getPosition(evt);
   }
 
-  async function createSideBySideViewAndEditor(evt) {
-    let pos;
-    if(evt) {
-      pos = lively.getPosition(evt);
-    }
+  let view = await lively.openComponentInWindow('vivide-view', pos);
 
-    let view = await lively.openComponentInWindow('vivide-view', pos);
-
-    let scriptEditor = await createScriptEditorNextTo(view);
-    return { view, scriptEditor }
-  }
-  
-  let { view, scriptEditor } = await createSideBySideViewAndEditor(evt);
-  
-  let scriptURL = await newScriptFromTemplate();
-  
-  view.setScriptURL(scriptURL);
+  let scriptURLString = await newScriptFromTemplate();
+  view.setScriptURLString(scriptURLString);
   view.newDataFromUpstream(object);
-  
-  view.getScriptURL(scriptURL);
-  scriptEditor.setScriptURL(scriptURL);
+
+  await createScriptEditorFor(view);
   
   if(sourceView) {
     sourceView.connectTo(view);

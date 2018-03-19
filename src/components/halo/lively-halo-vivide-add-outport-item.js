@@ -10,8 +10,6 @@ import { getTempKeyFor, asDragImageFor } from 'utils';
 export default class HaloVivideAddOutportItem extends HaloItem {
 
   initialize() {
-    lively.warn('initialize4')
-    
     this.style['user-select'] = 'none';
     this.setAttribute('draggable', "true");
     this.style['user-drag'] = 'element';
