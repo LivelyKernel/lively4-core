@@ -1,6 +1,34 @@
 # Tutorial
 
-- Goal: Beeing able to create and work together on a lively4 web component
+
+## Goals?
+
+- Open applications and tools?
+  - Workspace
+  - Browser
+- Where to start? Source code in files or working with objects?
+
+- Create and edit a text element? #Objects
+  - #ContextMenu > Insert > Text | Rectangle | Drawing | Button
+  - in the body... only locally persisted?
+  - in a file
+
+- Edit elements with #Halo
+  - grab | drag | copy | inspect | ..
+
+- Edit a text file #Files
+  - markdown, html, JavaScript
+
+- create and work together on a lively4 web component
+- create and work on a JavaScript module
+
+
+
+
+## ...
+
+
+
 - What is a "Web Component"
 
 ```html
@@ -25,4 +53,6 @@ So lets start:
 
 # Things we should say somewhere:
 
-Ctrl-Shift-F - search throughout whole repository.
+- Ctrl-Shift-F - search throughout whole repository.
+
+- Persistence indicator, when explaining persistence of objects/html elements
