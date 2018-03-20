@@ -223,3 +223,8 @@ export function copyTextToClipboard(text) {
 export function isFunction(functionToCheck) {
   return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
 }
+
+export function cancelEvent(evt) {
+  evt.stopPropagation();
+  evt.preventDefault();
+}

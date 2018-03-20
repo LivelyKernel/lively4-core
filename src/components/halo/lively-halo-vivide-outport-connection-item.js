@@ -8,11 +8,18 @@ import Snapping from "src/client/morphic/snapping.js"
 import {Grid} from 'src/client/morphic/snapping.js';
 import VivideView from 'src/client/vivide/components/vivide-view.js';
 import svg from "src/client/svg.js"
+import { cancelEvent } from 'utils';
 
 export default class HaloVivideOutportConnectionItem extends HaloItem {
 
   get path() { return this.get('#path-to-target'); }
   get overlay() { return this.get('#overlay-target'); }
+
+  initialize() {
+    this.addEventListener('click', evt => this.removeConnection(evt));
+    this.path.addEventListener('click', cancelEvent);
+    this.overlay.addEventListener('click', cancelEvent);
+  }
 
   setTarget(target) {
     this._target = target;
@@ -41,10 +48,11 @@ export default class HaloVivideOutportConnectionItem extends HaloItem {
     lively.setExtent(this.overlay, lively.getGlobalBounds(this._target).extent());
   }
   
-  onClick(evt) {
+  removeConnection(evt) {
     if(this._view && this._target) {
       this._view.removeConnectionTo(this._target);
       HaloService.showHalos(window.that);
+      cancelEvent(evt);
     }
   }
 }
