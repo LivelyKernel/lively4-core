@@ -1,6 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import { uuid, without, getTempKeyFor, getObjectFor, flatMap } from 'utils';
+import { uuid, without, getTempKeyFor, getObjectFor, flatMap, fileEnding } from 'utils';
 
+Array.from(document.body.querySelectorAll("*"))
 export default class VivideView extends Morph {
   static findViewWithId(id) {
     return document.body.querySelector(`vivide-view[vivide-view-id=${id}]`);
@@ -14,6 +15,13 @@ export default class VivideView extends Morph {
   static get scriptAttribute() { return 'vivide-script-url'; }
   static get widgetId() { return 'widget'; }
   static get widgetSelector() { return '#' + this.widgetId; }
+  
+  // static modelToData(model) {
+  //   return model.map(m => m.object);
+  // }
+  // static dataToModel(data) {
+  //   return data.map(d => ({ object: d }));
+  // }
 
   get widget() { return this.get(VivideView.widgetSelector); }
   
@@ -132,11 +140,6 @@ export default class VivideView extends Morph {
   }
   
   dragenter(evt) {}
-  _resetDropOverEffects() {
-    this.classList.remove('over');
-    this.classList.remove('reject-drop');
-    this.classList.remove('accept-drop');
-  }
   dragover(evt) {
     evt.preventDefault();
 
@@ -169,7 +172,11 @@ export default class VivideView extends Morph {
   dragleave(evt) {
     this._resetDropOverEffects();
   }
-  
+  _resetDropOverEffects() {
+    this.classList.remove('over');
+    this.classList.remove('reject-drop');
+    this.classList.remove('accept-drop');
+  }
   drop(evt) {
     this._resetDropOverEffects();
 
@@ -226,10 +233,16 @@ export default class VivideView extends Morph {
   }
   
   async calculateDisplayData() {
-    let m = await System.import(this.getScriptURLString());
+    let scriptDescription = await fetch(this.getScriptURLString()).then(r => r.json());
+    
+    let stepURLs = scriptDescription[0].transform
+    let transforms = await Promise.all(stepURLs.map(url => System.import(url)))
 
-    this.displayedData = [];
-    m.default(this.input, this.displayedData);
+    this.displayedData = transforms.reduce((data, transform) => {
+      let output = [];
+      transform.default(data, output);
+      return output;
+    }, this.input);
   }
   async scriptGotUpdated(urlString) {
     lively.notify(`received script updated`, urlString);

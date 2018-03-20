@@ -1,0 +1,9 @@
+[{
+  "transform": ["https://lively-kernel.org/lively4/foo/src/client/vivide/scripts/steps/95297a99-52b0-4a83-a0dc-f724a89ff5f8.js", "https://lively-kernel.org/lively4/foo/src/client/vivide/scripts/steps/e2894a6d-ff4f-4a0c-8e2a-e3fe3ba30018.js"],
+  "extract": ["https://lively-kernel.org/lively4/foo/src/client/vivide/scripts/steps/90bca4b5-80e7-4941-a963-fe0758bec1db.js"],
+  "descent": "https://lively-kernel.org/lively4/foo/src/client/vivide/scripts/steps/53573659-0027-4c21-aee2-6c74b6d692ef.js"
+}, {
+  "transform": ["https://lively-kernel.org/lively4/foo/src/client/vivide/scripts/steps/9a329e1e-6549-4207-8852-09801ee9a906.js", "https://lively-kernel.org/lively4/foo/src/client/vivide/scripts/steps/097ce99a-a2bb-4bee-9cf8-f78f61b52108.js"],
+  "extract": ["https://lively-kernel.org/lively4/foo/src/client/vivide/scripts/steps/29c68c85-a070-4f83-a6a7-949ad66e2311.js"],
+  "descent": "https://lively-kernel.org/lively4/foo/src/client/vivide/scripts/steps/f284624e-2153-43db-8475-cd8c41416e49.js"
+}]

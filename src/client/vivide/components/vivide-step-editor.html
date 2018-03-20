@@ -1,4 +1,4 @@
-<template id="vivide-script-editor" data-class="VivideScriptEditor">
+<template id="vivide-step-editor" data-class="VivideStepEditor">
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style>
@@ -9,7 +9,6 @@
   
   display: flex;
   flex-direction: column;
-  overflow-y: scroll;
 }
 lively-code-mirror {
   flex: 1;
@@ -18,17 +17,7 @@ lively-code-mirror {
 }
 
 </style>
-  <div style="display: none;">
-    <vivide-step-editor></vivide-step-editor>
-  </div>
-<!--   <lively-inspector></lively-inspector> -->
-<div id="editor-list">
-  
-  </div>
-<div id="content">
-	<content></content>
-</div>
-  <button id="add-script">+ Add Script</button>
+<lively-code-mirror id="editor"></lively-code-mirror>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 
