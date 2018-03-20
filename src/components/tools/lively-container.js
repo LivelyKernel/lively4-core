@@ -1029,7 +1029,7 @@ export default class Container extends Morph {
       format = "html"
     }
     
-    if (format.match(/(png)|(jpe?g)/)) {
+    if (format.match(/(svg)|(png)|(jpe?g)/)) {
       if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + url +"'>");
       else return;
     } else if (format.match(/(ogm)|(m4v)|(mp4)|(avi)|(mpe?g)|(mkv)/)) {
