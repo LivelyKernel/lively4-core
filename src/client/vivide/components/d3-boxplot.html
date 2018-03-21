@@ -1,0 +1,81 @@
+<template id="d3-boxplot" data-class="D3Boxplot">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+    font-family: xcharter;
+  overflow-y: auto;
+}
+  
+  #chart {
+    width: 100%;
+    height: 100%;
+  }
+/*   svg {
+    background-color: lightyellow;
+  } */
+
+.box {
+    font: 14px xcharter;
+}
+
+.box line,
+.box rect,
+.box circle {
+    fill: white;
+    stroke: #000;
+    stroke-width: 1px;
+}
+
+.box .center {
+    stroke-dasharray: 3,3;
+}
+
+.box .outlier {
+    fill: none;
+    stroke: #000;
+}
+
+.box .separator line {
+    stroke: #afafaf;
+    stroke-width: 1;
+    stroke-linecap: round;
+    stroke-dasharray: 1, 5;
+    shape-rendering: crispEdges;
+}
+
+.box .tickLines line {
+    stroke: #afafaf;
+    stroke-width: 1;
+    stroke-linecap: round;
+/*    stroke-dasharray: 1, 5;
+    shape-rendering: crispEdges;
+*/}
+
+line.median {
+    stroke: red;
+    stroke-width: 2px;
+    stroke-linecap: round;
+}
+
+.axis {
+    font: 16px xcharter;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+
+.x.axis path {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+  </style>
+<div id="charts"></div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

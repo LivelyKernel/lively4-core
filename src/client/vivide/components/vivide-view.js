@@ -1,7 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { uuid, without, getTempKeyFor, getObjectFor, flatMap, fileEnding } from 'utils';
 
-Array.from(document.body.querySelectorAll("*"))
 export default class VivideView extends Morph {
   static findViewWithId(id) {
     return document.body.querySelector(`vivide-view[vivide-view-id=${id}]`);
@@ -16,12 +15,12 @@ export default class VivideView extends Morph {
   static get widgetId() { return 'widget'; }
   static get widgetSelector() { return '#' + this.widgetId; }
   
-  // static modelToData(model) {
-  //   return model.map(m => m.object);
-  // }
-  // static dataToModel(data) {
-  //   return data.map(d => ({ object: d }));
-  // }
+  static modelToData(model) {
+    return model.map(m => m.object);
+  }
+  static dataToModel(data) {
+    return data.map(d => ({ object: d }));
+  }
 
   get widget() { return this.get(VivideView.widgetSelector); }
   
@@ -92,7 +91,7 @@ export default class VivideView extends Morph {
     lively.warn('explicitly notify outport targets', this.outportTargets);
     this.outportTargets
       .forEach(target => {
-        target.newDataFromUpstream(this.displayedData);
+        target.newDataFromUpstream(VivideView.modelToData(this.modelToDisplay));
       });
   }
   
@@ -136,7 +135,7 @@ export default class VivideView extends Morph {
     this.addEventListener('dragleave', evt => this.dragleave(evt), false);
     this.addEventListener('drop', evt => this.drop(evt), false);
 
-    this.input = [];
+    this.input = this.input || [];
   }
   
   dragenter(evt) {}
@@ -223,42 +222,53 @@ export default class VivideView extends Morph {
     this.input = data;
     
     if(this.getScriptURLString()) {
-      await this.calculateDisplayData();
+      await this.calculateOutputModel();
     } else {
-      this.displayedData = this.input;
+      this.modelToDisplay = VivideView.dataToModel(this.input);
     }
     
     await this.updateWidget();
     this.notifyOutportTargets();
   }
   
-  async calculateDisplayData() {
+  async calculateOutputModel() {
     let scriptDescription = await fetch(this.getScriptURLString()).then(r => r.json());
     
     let stepURLs = scriptDescription[0].transform
-    let transforms = await Promise.all(stepURLs.map(url => System.import(url)))
+    let transforms = await Promise.all(stepURLs.map(url => System.import(url)));
 
-    this.displayedData = transforms.reduce((data, transform) => {
+    let transformedData = transforms.reduce((data, transform) => {
       let output = [];
       transform.default(data, output);
       return output;
     }, this.input);
+    this.modelToDisplay = VivideView.dataToModel(transformedData);
   }
   async scriptGotUpdated(urlString) {
     lively.notify(`received script updated`, urlString);
     let ownScriptURLString = this.getScriptURLString();
     if(ownScriptURLString === urlString) {
-      await this.calculateDisplayData();
+      await this.calculateOutputModel();
       await this.updateWidget();
     }
   }
   
+  findAppropriateWidget(model) {
+    let data = VivideView.modelToData(model);
+    if(data && data.length > 0) {
+      let firstItem = data[0];
+      if(firstItem && firstItem.dataPoints instanceof Array && typeof firstItem.label === 'string') {
+        return 'vivide-boxplot-widget';
+      }
+    }
+    return 'vivide-list-widget';
+  }
   async updateWidget() {
     this.innerHTML = '';
-    let list = await lively.create('vivide-list-widget');
+    let list = await lively.create(this.findAppropriateWidget(this.modelToDisplay));
     list.setAttribute('id', VivideView.widgetId);
     this.appendChild(list);
-    list.display(this.displayedData, {});
+    list.display(VivideView.modelToData(this.modelToDisplay), {});
   }
   
   livelyExample() {
