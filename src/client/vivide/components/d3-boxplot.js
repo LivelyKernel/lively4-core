@@ -105,6 +105,9 @@ export default class D3Boxplot extends Morph {
         // .style("height", "100px")
         // .style("background-color", "blue")
         .attr("transform", d => `translate(${x(d[labelAccessor])},${margin.top})`)
+        .each(function(d) {
+          this.__vivideObjectAccessor__ = d.__vivideObjectAccessor__;
+        })
         .call(chart.width(x.rangeBand()));
 
       // add a title
