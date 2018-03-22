@@ -12,7 +12,8 @@ d3.box = function() {
       showLabels = true, // whether or not to show text labels
       numBars = 4,
       curBar = 1,
-      tickFormat = null;
+      tickFormat = null,
+      dataPointsAccessor = 1;
 
   // For each small multiple…
   function box(g) {
@@ -20,7 +21,7 @@ d3.box = function() {
       //d = d.map(value).sort(d3.ascending);
 	  //var boxIndex = data[0];
 	  //var boxIndex = 1;
-	  var d = data[1].sort(d3.ascending);
+	  var d = data[dataPointsAccessor].sort(d3.ascending);
 	  
 	 // console.log(boxIndex); 
 	  //console.log(d); 
@@ -62,12 +63,37 @@ d3.box = function() {
       // and other elements are variable, so we need to exit them! Variable
       // elements also fade in and out.
 
+      /*
+       * ####################################################################
+       * ####################################################################
+       * ####################################################################
+       */
+      
+      var background = g.selectAll("rect.selectable-background")
+          .data([0]);
+
+      background.enter().append("rect")
+          .attr("class", "selectable-background")
+          .attr("x", 0)
+          .attr("y", function(d) { return x0(d[2]); })
+          .attr("width", width)
+          .attr("height", 0)
+        .transition()
+          .duration(duration)
+          .attr("y", function(d) { return x1(d[2]); })
+          .attr("height", function(d) { return x1(d[0]) - x1(d[2]); });
+
+      background.transition()
+          .duration(duration)
+          .attr("y", 0)
+          .attr("height", x0(100));
+
       // Update center line: the vertical line spanning the whiskers.
       var center = g.selectAll("line.center")
           .data(whiskerData ? [whiskerData] : []);
 
-	 //vertical line
-      center.enter().insert("line", "rect")
+	    //vertical line
+      center.enter().append("line")
           .attr("class", "center")
           .attr("x1", width / 2)
           .attr("y1", function(d) { return x0(d[0]); })
@@ -169,7 +195,7 @@ d3.box = function() {
           .style("opacity", 1e-6)
           .remove();
 
-      var aboveOutliers = outlierIndices.filter(i => data[1][i] > domain()[1]);
+      var aboveOutliers = outlierIndices.filter(i => data[dataPointsAccessor][i] > domain()[1]);
       var numAboveOutliers = aboveOutliers.length;
       if(aboveOutliers.length > 0) {
         var aboveOutlier = g.selectAll("text.aboveOutlier")
@@ -315,6 +341,12 @@ d3.box = function() {
   box.quartiles = function(x) {
     if (!arguments.length) return quartiles;
     quartiles = x;
+    return box;
+  };
+  
+  box.dataPointsAccessor = function(x) {
+    if (!arguments.length) return dataPointsAccessor;
+    dataPointsAccessor = x;
     return box;
   };
 
