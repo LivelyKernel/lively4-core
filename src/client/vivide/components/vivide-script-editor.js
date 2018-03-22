@@ -1,7 +1,17 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class VivideScriptEditor extends Morph {
+  static get vivideScriptId() { return 'vivide_script_id'; }
+  
   get editorList() { return this.get('#editor-list'); }
+  get inspector() { return this.get('#inspector'); }
+  get scriptURLString() {
+    return this.getAttribute(VivideScriptEditor.vivideScriptId);
+  }
+  set scriptURLString(scriptURLString) {
+    this.setAttribute(VivideScriptEditor.vivideScriptId, scriptURLString);
+    return scriptURLString;
+  }
   
   async initialize() {
     this.windowTitle = "VivideScriptEditor";
@@ -12,6 +22,7 @@ export default class VivideScriptEditor extends Morph {
     // this.cm.doSave = text => this.scriptSaved(text)
     // this.editorList.appendChild(this.cm);
     //this.setScriptURLString('src/client/vivide/scripts/scripts/test.json');
+    this.inspector.hideWorkspace()
   }
   
   initialFocus() {
@@ -19,7 +30,7 @@ export default class VivideScriptEditor extends Morph {
   }
   
   async setScriptURLString(urlString) {
-    this._urlString = urlString;
+    this.scriptURLString = urlString;
     let json = await fetch(urlString).then(res => res.json());
     
     let createStepEditorFor = url => {
@@ -45,15 +56,15 @@ export default class VivideScriptEditor extends Morph {
   }
   
   async scriptSaved(text) {
-    if(!this._urlString) {
+    if(!this.scriptURLString) {
       lively.warn('No file set for this editor.');
       return;
     }
     
-    await lively.unloadModule(this._urlString);
-    await lively.files.saveFile(this._urlString, text);    
+    await lively.unloadModule(this.scriptURLString);
+    await lively.files.saveFile(this.scriptURLString, text);    
     
-    this.broadcastChange(this._urlString);
+    this.broadcastChange(this.scriptURLString);
   }
   broadcastChange(urlString) {
     Array.from(document.querySelectorAll('vivide-view'))
@@ -62,10 +73,14 @@ export default class VivideScriptEditor extends Morph {
       });
   }
   stepChanged(editor, stepURLString) {
-    if(this._urlString) {
-      this.broadcastChange(this._urlString);
+    if(this.scriptURLString) {
+      this.broadcastChange(this.scriptURLString);
     } else {
       lively.warn('No url for script editor given.');
     }
+  }
+  
+  livelyMigrate(other) {
+    this.setScriptURLString(other.scriptURLString);
   }
 }

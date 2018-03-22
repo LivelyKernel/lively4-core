@@ -75,7 +75,7 @@ d3.box = function() {
       background.enter().append("rect")
           .attr("class", "selectable-background")
           .attr("x", 0)
-          .attr("y", function(d) { return x0(d[2]); })
+          .attr("y", 0)
           .attr("width", width)
           .attr("height", 0)
         .transition()

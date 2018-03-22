@@ -40,10 +40,8 @@ export default class VivideBoxplotWidget extends VivideMultiSelectionWidget {
       }
     })
     
-    this.innerPlot.display(preparedData, {
-      labelAccessor: 'label',
-      dataPointsAccessor: 'dataPoints'
-    });
+    lively.success(config, 'BLUB')
+    this.innerPlot.display(preparedData, Object.assign({}, ...config));
     let groups = this.innerPlot.getAllSubmorphs('g.selectable-group');
     groups.forEach(g => this.multiSelection.addItem(g));
     groups.forEach(g => this.addDragEventTo(g));

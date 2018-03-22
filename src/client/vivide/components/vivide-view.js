@@ -252,6 +252,7 @@ export default class VivideView extends Morph {
       };
     });
     this.modelToDisplay = annotatedModel;
+    this.viewConfig = transforms.concat(extracts).map(step => step.default.__vivideStepConfig__);
   }
   async scriptGotUpdated(urlString) {
     lively.notify(`received script updated`, urlString);
@@ -279,7 +280,7 @@ export default class VivideView extends Morph {
     let widget = await lively.create(this.findAppropriateWidget(this.modelToDisplay));
     widget.setAttribute('id', VivideView.widgetId);
     this.appendChild(widget);
-    widget.display(this.modelToDisplay, {});
+    widget.display(this.modelToDisplay, this.viewConfig || []);
   }
   
   livelyExample() {
