@@ -1,6 +1,6 @@
 import VivideMultiSelectionWidget from 'src/client/vivide/components/vivide-multi-selection-widget.js';
 import MultiSelection from 'src/client/vivide/multiselection.js';
-import { uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage } from 'utils';
+import { uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage, textualRepresentation } from 'utils';
 
 export default class VivideBoxplotWidget extends VivideMultiSelectionWidget {
   get multiSelectionConfig() {
@@ -22,14 +22,21 @@ export default class VivideBoxplotWidget extends VivideMultiSelectionWidget {
     return group.__vivideObjectAccessor__;
   }
 
-  display(data, config) {
-    super.display(data, config);
+  display(model, config) {
+    super.display(model, config);
 
-    let preparedData = data.map(d => {
+    let preparedData = model.map(m => {
+      let label = m.properties.map(prop => prop.label).find(label => label) || textualRepresentation(m.object);
+      let dataPoints = m.properties.map(prop => prop.dataPoints).find(dataPoints => dataPoints) || [];
+      
+      if(!dataPoints) {
+        lively.error('No dataPoints property given for ' + label);
+      }
+
       return {
-        label: d.label,
-        dataPoints: d.dataPoints,
-        __vivideObjectAccessor__: d
+        label,
+        dataPoints,
+        __vivideObjectAccessor__: m.object
       }
     })
     

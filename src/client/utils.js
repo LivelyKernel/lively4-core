@@ -116,7 +116,9 @@ export function asDragImageFor(evt, offsetX=0, offsetY=0) {
 }
 
 export function listAsDragImage(labels, evt, offsetX, offsetY) {
-  const hints = labels.map(hintForLabel);
+  const hints = labels
+    .map(textualRepresentation)
+    .map(hintForLabel);
   const hintLength = hints.length;
   const maxLength = 5;
   if(hints.length > maxLength) {
@@ -241,4 +243,21 @@ export function isFunction(functionToCheck) {
 export function cancelEvent(evt) {
   evt.stopPropagation();
   evt.preventDefault();
+}
+
+export function textualRepresentation(thing) {
+  // primitive falsy value?
+  if(!thing) { return '' + thing}
+  
+  // toString method different from Object?
+  if(thing.toString && thing.toString !== Object.prototype.toString) {
+    return thing.toString();
+  }
+  
+  // instance of a named class?
+  if(thing.constructor && thing.constructor.name) {
+    return 'a ' + thing.constructor.name;
+  }
+  
+  return 'unprintable object';
 }

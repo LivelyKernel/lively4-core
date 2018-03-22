@@ -47,14 +47,17 @@ export default class D3Boxplot extends Morph {
 
       // the x-axis
       let x = d3.scale.ordinal()
-        .domain(data.map(d => d[labelAccessor]))
+        .domain(data.map((d, i) => i))
         .rangeRoundBands([0, width], 0.7, 0.3);
+      let xAxisLabels = x.copy()
+        .range(data.map(d => d[labelAccessor]));
       let xAxisLabelScale = x.copy()
         .rangeRoundBands([0, width], 0.1, 0.05);
 
       let xAxis = d3.svg.axis()
         .scale(x)
-        .orient("bottom");
+        .orient("bottom")
+        .tickFormat(d => xAxisLabels(d));
 
       // the y-axis
       let y = d3.scale.linear()
@@ -104,7 +107,7 @@ export default class D3Boxplot extends Morph {
         // .style("width", "100px")
         // .style("height", "100px")
         // .style("background-color", "blue")
-        .attr("transform", d => `translate(${x(d[labelAccessor])},${margin.top})`)
+        .attr("transform", (d, i) => `translate(${x(i)},${margin.top})`)
         .each(function(d) {
           this.__vivideObjectAccessor__ = d.__vivideObjectAccessor__;
         })

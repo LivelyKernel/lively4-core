@@ -3,9 +3,9 @@ import { stepFolder, scriptFolder } from './utils.js';
 import { pt } from 'src/client/graphics.js'
 
 async function newScriptFromTemplate() {
-  async function copyStep() {
+  async function copyStep(type) {
     let transformStepURL = new URL(uuid() + '.js', stepFolder);
-    let stepTemplateURL = new URL('step-template.js', stepFolder);
+    let stepTemplateURL = new URL(type + '-step-template.js', stepFolder);
 
     await lively.files.copyURLtoURL(stepTemplateURL, transformStepURL);
     
@@ -14,8 +14,8 @@ async function newScriptFromTemplate() {
   
   let scriptURL = new URL(uuid() + '.json', scriptFolder);
   await lively.files.saveFile(scriptURL, JSON.stringify([{
-    transform: [(await copyStep()).href, (await copyStep()).href],
-    extract: []
+    transform: [(await copyStep('transform')).href],
+    extract: [(await copyStep('extract')).href]
   }]));
   
   return scriptURL.href;

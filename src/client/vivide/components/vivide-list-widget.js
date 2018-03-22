@@ -1,6 +1,6 @@
 import VivideMultiSelectionWidget from 'src/client/vivide/components/vivide-multi-selection-widget.js';
 import MultiSelection from 'src/client/vivide/multiselection.js';
-import { uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage } from 'utils';
+import { uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage, textualRepresentation } from 'utils';
 
 export default class VivideListWidget extends VivideMultiSelectionWidget {
   get multiSelectionConfig() {
@@ -19,18 +19,20 @@ export default class VivideListWidget extends VivideMultiSelectionWidget {
     return this.dataByListItem.get(listItem);
   }
 
-  display(data, config) {
-    super.display(data, config);
+  display(model, config) {
+    super.display(model, config);
 
     this.dataByListItem = new Map();
     
     this.list.innerHTML = '';
-    data.forEach(d => {
-      let listItem = <li>{d}</li>;
+    model.forEach(m => {
+      let label = m.properties.map(prop => prop.label).find(label => label) || textualRepresentation(m.object);
+      
+      let listItem = <li>{label}</li>;
       this.multiSelection.addItem(listItem);
       
       this.addDragEventTo(listItem);
-      this.dataByListItem.set(listItem, d);
+      this.dataByListItem.set(listItem, m.object);
       this.list.appendChild(listItem);
     });
   }
