@@ -8,6 +8,13 @@ var stage3 = require('systemjs-babel-build').pluginsStage3;
 var stage2 = require('systemjs-babel-build').pluginsStage2;
 var stage1 = require('systemjs-babel-build').pluginsStage1;
 
+// var diff = require('src/external/diff-match-patch.js').default;
+
+// import {getScopeIdForModule} from "./../babel-plugin-var-recorder.js" 
+function getScopeIdForModule(moduleName) {
+  return moduleName.replace(/[^a-zA-Z0-9]/g,"_") 
+}
+
 var externalHelpers = require('systemjs-babel-build').externalHelpers;
 var runtimeTransform = require('systemjs-babel-build').runtimeTransform;
 
@@ -64,6 +71,7 @@ var defaultBabelOptions = {
 };
 
 exports.translate = function(load, traceOpts) {
+  
   // we don't transpile anything other than CommonJS or ESM
   if (load.metadata.format == 'global' || load.metadata.format == 'amd' || load.metadata.format == 'json')
     throw new TypeError('plugin-babel cannot transpile ' + load.metadata.format + ' modules. Ensure "' + load.name + '" is configured not to use this loader.');
@@ -168,6 +176,37 @@ exports.translate = function(load, traceOpts) {
       });
 
     // console.log(`load: ${load.address}`, plugins);
+    
+    // #Experiment with caching.... 
+    var startTransform = performance.now()
+    var key = "pluginBabelTransfrom_" + load.name
+    var cachedOutputCode = self.localStorage && self.localStorage[key]
+    var excludes = {
+      
+    }
+    if (self.lively4plugincache && cachedOutputCode && !excludes[load.name]) {
+      console.log("plugin babel use cache: " + load.name)
+      try {
+        
+        output = {
+          code: cachedOutputCode,
+          map: JSON.parse(self.localStorage[key+"_map"])
+        }      
+        
+        // side effects of using the transformation
+        var moduleURL = SystemJS.normalizeSync(load.name)
+        // a) var recorder
+        _recorder_[getScopeIdForModule(moduleURL)] = {}
+        
+      } catch(e) {
+        console.log("something went wrong... while loading cache " + e)
+        output = undefined
+      }
+      cachedOutput = output
+    } 
+    
+    if (!output) {
+    
     var output = babel.transform(load.source, {
       babelrc: false,
       plugins: plugins,
@@ -203,7 +242,35 @@ exports.translate = function(load, traceOpts) {
         return m;
       }
     });
+    
+    if (self.localStorage && self.lively4plugincache) {
+      // update cache      
+      self.localStorage[key] = output.code
+      self.localStorage[key +"_source"] = load.source
+      self.localStorage[key +"_map"] = JSON.stringify(output.map)
+      console.log("map", output.map)
+    }
+      
+    if (!self.babelTransformTimer) self.babelTransformTimer = []
+    self.babelTransformTimer.push({
+      name: load.name,
+      size: load.source.length,
+      time: (performance.now() - startTransform)
+    })
+    
+      
+//       if (cachedOutput) {
+//          if (output.code != cachedOutput.code) {
+//            console.log("ERROR cached source is not similar! " + load.name)
+//            console.log("CODE", output.code)
+//            console.log("CACHED", cachedOutput.code)
 
+//          }
+//       }
+      
+    }
+    
+    
     // add babelHelpers as a dependency for non-modular runtime
     if (!babelOptions.modularRuntime)
       load.metadata.deps.push(externalHelpersPath);
