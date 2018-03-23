@@ -2,27 +2,33 @@
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style>
-:host {
-  background-color: lightgreen;
-  margin: 100%
-  padding: 100%
+  :host {
+    background-color: lightyellow;
+    margin: 100%
+    padding: 100%
+
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  lively-code-mirror {
+    flex: 1;
+    min-height: unset;
+    height: auto;
+  }
   
-  display: flex;
-  flex-direction: column;
-}
-lively-code-mirror {
-  flex: 1;
-  min-height: unset;
-  height: auto;
-}
+
+  :host(:focus-within), :host(:hover) {
+    background-color: lightgreen;
+  }
 
 </style>
-<div id="editor-list">
-  
+  <div style="display: none;">
+    <vivide-step-editor></vivide-step-editor>
   </div>
-<div id="content">
-	<content></content>
-</div>
+  <lively-inspector id="inspector" style="display: none;"></lively-inspector>
+  <div id="editor-list"></div>
+
   <button id="add-script">+ Add Script</button>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

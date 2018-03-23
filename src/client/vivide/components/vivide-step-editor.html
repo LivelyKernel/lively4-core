@@ -1,0 +1,23 @@
+<template id="vivide-step-editor" data-class="VivideStepEditor">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  background-color: lightgreen;
+  margin: 100%
+  padding: 100%
+  
+  display: flex;
+  flex-direction: column;
+}
+lively-code-mirror {
+  flex: 1;
+  min-height: unset;
+  height: auto;
+}
+
+</style>
+<lively-code-mirror id="editor"></lively-code-mirror>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

@@ -1,14 +1,24 @@
 import { uuid } from 'utils';
-import { scriptFolder } from './utils.js';
+import { stepFolder, scriptFolder } from './utils.js';
 import { pt } from 'src/client/graphics.js'
 
 async function newScriptFromTemplate() {
-  let newScriptURL = new URL(uuid() + '.js', scriptFolder());
-  let scriptTemplateURL = new URL('script-template.js', scriptFolder());
+  async function copyStep(type) {
+    let transformStepURL = new URL(uuid() + '.js', stepFolder);
+    let stepTemplateURL = new URL(type + '-step-template.js', stepFolder);
+
+    await lively.files.copyURLtoURL(stepTemplateURL, transformStepURL);
+    
+    return transformStepURL;
+  }
   
-  await lively.files.copyURLtoURL(scriptTemplateURL, newScriptURL);
+  let scriptURL = new URL(uuid() + '.json', scriptFolder);
+  await lively.files.saveFile(scriptURL, JSON.stringify([{
+    transform: [(await copyStep('transform')).href],
+    extract: [(await copyStep('extract')).href]
+  }]));
   
-  return newScriptURL.href;
+  return scriptURL.href;
 }
 
 export async function createScriptEditorFor(view) {
@@ -38,7 +48,9 @@ export async function letsScript(object, evt, sourceView) {
   view.setScriptURLString(scriptURLString);
   view.newDataFromUpstream(object);
 
-  await createScriptEditorFor(view);
+  if(evt && evt.shiftKey) {
+    await createScriptEditorFor(view);
+  }
   
   if(sourceView) {
     sourceView.connectTo(view);
