@@ -1,7 +1,7 @@
 "use strict";
-import chai, {expect} from 'node_modules/chai/chai.js';
+import chai, {expect} from 'src/external/chai.js';
 import sinon from 'src/external/sinon-3.2.1.js';
-import sinonChai from 'node_modules/sinon-chai/lib/sinon-chai.js';
+import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
 describe('simple', function() {
