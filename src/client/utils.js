@@ -115,6 +115,22 @@ export function asDragImageFor(evt, offsetX=0, offsetY=0) {
   evt.dataTransfer.setDragImage(clone, offsetX, offsetY);
 }
 
+export function listAsDragImage(labels, evt, offsetX, offsetY) {
+  const hints = labels
+    .map(textualRepresentation)
+    .map(hintForLabel);
+  const hintLength = hints.length;
+  const maxLength = 5;
+  if(hints.length > maxLength) {
+    hints.length = maxLength;
+    hints.push(hintForLabel(`+ ${hintLength - maxLength} more.`))
+  }
+  const dragInfo = <div style="width: 151px;">
+    {...hints}
+  </div>;
+  dragInfo::asDragImageFor(evt, offsetX, offsetY);
+}
+
 const TEMP_OBJECT_STORAGE = new Map();
 export function getTempKeyFor(obj) {
   const tempKey = uuid();
@@ -227,4 +243,21 @@ export function isFunction(functionToCheck) {
 export function cancelEvent(evt) {
   evt.stopPropagation();
   evt.preventDefault();
+}
+
+export function textualRepresentation(thing) {
+  // primitive falsy value?
+  if(!thing) { return '' + thing}
+  
+  // toString method different from Object?
+  if(thing.toString && thing.toString !== Object.prototype.toString) {
+    return thing.toString();
+  }
+  
+  // instance of a named class?
+  if(thing.constructor && thing.constructor.name) {
+    return 'a ' + thing.constructor.name;
+  }
+  
+  return 'unprintable object';
 }

@@ -1,13 +1,16 @@
 import { isFunction } from 'utils';
 
-export function scriptFolder() {
-  return lively4url + '/src/client/vivide/scripts/';
-}
+export const contentFolder = lively4url + '/src/client/vivide/scripts/';
+export const scriptFolder = contentFolder + 'scripts/';
+export const stepFolder = contentFolder + 'steps/';
 
 export function config(conf) {
   if(!isFunction(this)) {
     throw new TypeError('config of vivide script can only be called on objects.');
   }
+  
+  lively.warn([this, conf]);
+  this.__vivideStepConfig__ = conf;
   
   return this;
 }
