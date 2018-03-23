@@ -233,6 +233,13 @@ export default class VivideView extends Morph {
     this.notifyOutportTargets();
   }
   
+  getInputData() {
+    return this.input;
+  }
+  getModelToDisplay() {
+    return this.modelToDisplay;
+  }
+  
   async calculateOutputModel() {
     let scriptDescription = await fetch(this.getScriptURLString()).then(r => r.json());
     
