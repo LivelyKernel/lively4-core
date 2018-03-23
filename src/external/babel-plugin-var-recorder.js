@@ -7,7 +7,7 @@ function randomModuleId() {
 export function getScopeIdForModule(moduleName) {
   // console.log("XXX", moduleName);
   if(!moduleNameToVarRecorderName.has(moduleName)) {
-    moduleNameToVarRecorderName.set(moduleName, moduleName.replace(/[^a-zA-Z0-9]/g,"_") /* randomModuleId() */);
+    moduleNameToVarRecorderName.set(moduleName, (moduleName || "undefined").replace(/[^a-zA-Z0-9]/g,"_") /* randomModuleId() */);
   }
 
   return moduleNameToVarRecorderName.get(moduleName);

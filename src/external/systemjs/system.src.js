@@ -3489,9 +3489,8 @@ function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
         return cachedSourceCode
      }
     }
-    console.log('default fetch ' + key)
-    
-    
+    // console.log('default fetch ' + key)
+
     if (!metadata.pluginModule)
       return fetch$1(key, metadata.load.authorization, metadata.load.integrity, wasm);
 

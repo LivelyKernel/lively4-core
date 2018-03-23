@@ -34,11 +34,12 @@ export class Dictionary extends DbObject {
    */
   match(key) {
     key = this._sanitizeKey(key);
-    
+    // var lookupStart = performance.now()
     return new Promise((resolve, reject) => {
       let request = this._getObjectStore("readonly").get(key);
       request.onsuccess = (event) => {
         if (request.result) {
+          // console.log("dictionary lookup " + key + " took " + (performance.now() - lookupStart) + "ms")
           resolve(request.result);
         } else {
           resolve(null);
