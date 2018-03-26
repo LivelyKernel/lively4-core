@@ -57,7 +57,6 @@ module.exports = function(config) {
       '/src/': '/base/src/',
       '/test/': '/base/test/',
       '/templates/': '/base/templates/',
-      '/vendor/': '/base/vendor/',
       '/package.json': '/base/package.json',
       '/swx-boot.js': '/base/swx-boot.js',
       '/swx-loader.js': '/base/swx-loader.js',

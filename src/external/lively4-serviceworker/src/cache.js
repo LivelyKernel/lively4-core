@@ -63,6 +63,8 @@ export class Cache {
    * @param doNetworkRequest A function to call if we need to send out a network request
    */
   fetch(request, doNetworkRequest) {
+    // console.log("request " + request.url)
+    var start = performance.now()
     return new Promise(resolve => {
       if (this._cacheMode == 2) {
         this._favoritesTracker.update(request.url);
@@ -73,7 +75,10 @@ export class Cache {
       } else if (this._cacheMode > 0) {
         resolve(this._offlineResponse(request));
       }
-    });
+    }).then(r => {
+      // console.log("resolved " + request.url + " in " + (performance.now() - start) +"ms")
+      return r
+    })
   }
   
   getCacheMode() {
@@ -121,7 +126,9 @@ export class Cache {
     // When offline, check the cache or put request in queue
     if (this._cacheMethods.includes(request.method)) {
       // Check if the request is in the cache
+      // var timeMatchStart = performance.now()
       return this._match(request).then((response) => {
+        // console.log("match " +request.url + " took " + (performance.now() - timeMatchStart) + "ms" )
         if (response) {
           return Serializer.deserialize(response.value);
         } else {

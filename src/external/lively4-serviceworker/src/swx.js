@@ -47,6 +47,11 @@ class ServiceWorker {
 
     // here we should remount previous filesystem (remembered in focalStorage)
     
+    // doing this on every request is very expensive
+    this.promisedEmail = focalStorage.getItem(storagePrefix+ "githubEmail")
+    this.promisedUsername = focalStorage.getItem(storagePrefix+ "githubUsername")
+    this.promisedToken = focalStorage.getItem(storagePrefix+ "githubToken")
+    
     // Create cache
     this._cache = new Cache(this.filesystem);
   }
@@ -109,12 +114,7 @@ class ServiceWorker {
             return new Promise(async (resolve, reject) => {
               var authentificationNeeded = !(request.method == "HEAD" || request.method == "GET" || request.method == "OPTIONS"); 
 
-              if (authentificationNeeded) {
-                // the following 3lines take ~150ms .... damn!
-                var email = await focalStorage.getItem(storagePrefix+ "githubEmail");
-                var username = await focalStorage.getItem(storagePrefix+ "githubUsername"); 
-                var token = await focalStorage.getItem(storagePrefix+ "githubToken");
-              } 
+      
 
                // we have to manually recreate a request, because you cannot modify the original
                // see http://stackoverflow.com/questions/35420980/how-to-alter-the-headers-of-a-request
@@ -134,13 +134,14 @@ class ServiceWorker {
               }
 
               if (authentificationNeeded) {
-                options.headers.set("gitusername", username);
-                options.headers.set("gitemail", email);
-                options.headers.set("gitpassword", token);
+                await this.authentificationLoaded
+                options.headers.set("gitusername", await this.promisedUsername);
+                options.headers.set("gitemail", await this.promisedEmail);
+                options.headers.set("gitpassword", await this.promisedToken);
               } 
 
               
-              // #Hack #Chrome 64 issue
+              // #Hack #Chrome 64 issue #D3
               var url = request.url.toString() 
               if (url.match(/^https:\/\/null:null@/)) {
                 url = request.url.toString().replace(/^https:\/\/null:null@/,"https://")
