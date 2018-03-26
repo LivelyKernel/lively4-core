@@ -3,7 +3,7 @@
 <script src="https://unpkg.com/dexie@2.0.0-beta.11/dist/dexie.js"></script>
 Result: <div id="result">running</div>
 
-<script type="module">
+<script> // type="module"
 var db = new Dexie("foo1");
 db.version("1").stores({
     files: 'key,value'
@@ -12,11 +12,11 @@ db.version("1").stores({
 })
 db.files.put({key: "abc", value: new Array(1000).join(" ")});
 
-
 (async () => {
   var all = []
   var start = performance.now()
-  for(var i=0; i < 20; i++) {
+  // #Bug #ContextJS #Promises, increasing the loop to 1000 will result in a stackOverflow 
+  for(var i=0; i < 100; i++) {
     all.push(db.files.get({key: "abc"}).then( entry => entry.value))
   }
   var time =  await Promise.all(all).then(p => performance.now() - start)
