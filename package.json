@@ -1,6 +1,6 @@
 {
   "name": "lively4-core",
-  "version": "0.9",
+  "version": "0.9.0",
   "description": "A browsers-based self supporting Morphic and JavaScript development and runtime environment.",
   "keywords": [
     "lively",
