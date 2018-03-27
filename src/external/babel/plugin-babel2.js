@@ -184,6 +184,7 @@ exports.translate = function(load, traceOpts) {
     var excludes = {
       
     }
+    // #Idea we could compare the ole input source with the actual input source and only use the cached output when they match
     if (self.lively4plugincache && cachedOutputCode && !excludes[load.name]) {
       console.log("plugin babel use cache: " + load.name)
       try {
@@ -196,7 +197,7 @@ exports.translate = function(load, traceOpts) {
         // side effects of using the transformation
         var moduleURL = SystemJS.normalizeSync(load.name)
         // a) var recorder
-        _recorder_[getScopeIdForModule(moduleURL)] = {}
+        _recorder_[getScopeIdForModule(moduleURL)] = {} // #Idea maybe this should go lazy into the module? @Stefan
         
       } catch(e) {
         console.log("something went wrong... while loading cache " + e)
