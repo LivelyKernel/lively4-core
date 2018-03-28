@@ -8,7 +8,19 @@ var stage3 = require('systemjs-babel-build').pluginsStage3;
 var stage2 = require('systemjs-babel-build').pluginsStage2;
 var stage1 = require('systemjs-babel-build').pluginsStage1;
 
+
+var Dexie = require('../dexie.js').Dexie;
+
+var pluginBabelCache = new Dexie("pluginBabelCache");
+pluginBabelCache.version("1").stores({
+    files: 'url, source, output, map'
+}).upgrade(function () {
+})
+
 // var diff = require('src/external/diff-match-patch.js').default;
+
+
+
 
 // import {getScopeIdForModule} from "./../babel-plugin-var-recorder.js" 
 function getScopeIdForModule(moduleName) {
@@ -70,7 +82,7 @@ var defaultBabelOptions = {
   comments: true
 };
 
-exports.translate = function(load, traceOpts) {
+exports.translate = async function(load, traceOpts) {
   
   // we don't transpile anything other than CommonJS or ESM
   if (load.metadata.format == 'global' || load.metadata.format == 'amd' || load.metadata.format == 'json')
@@ -118,7 +130,7 @@ exports.translate = function(load, traceOpts) {
     });
 
   return Promise.all(pluginAndPresetModuleLoads)
-  .then(function(pluginAndPresetModules) {
+  .then(async function(pluginAndPresetModules) {
     var curPluginOrPresetModule = 0;
 
     var presets = [];
@@ -179,32 +191,51 @@ exports.translate = function(load, traceOpts) {
     
     // #Experiment with caching.... 
     var startTransform = performance.now()
-    var key = "pluginBabelTransfrom_" + load.name
-    var cachedOutputCode = self.localStorage && self.localStorage[key]
-    var excludes = {
+    if(self.lively4plugincache) {
+      var key = "pluginBabelTransfrom_" + load.name
       
-    }
-    // #Idea we could compare the ole input source with the actual input source and only use the cached output when they match
-    if (self.lively4plugincache && cachedOutputCode && !excludes[load.name]) {
-      console.log("plugin babel use cache: " + load.name)
-      try {
-        
-        output = {
-          code: cachedOutputCode,
-          map: JSON.parse(self.localStorage[key+"_map"])
-        }      
-        
-        // side effects of using the transformation
-        var moduleURL = SystemJS.normalizeSync(load.name)
-        // a) var recorder
-        _recorder_[getScopeIdForModule(moduleURL)] = {} // #Idea maybe this should go lazy into the module? @Stefan
-        
-      } catch(e) {
-        console.log("something went wrong... while loading cache " + e)
-        output = undefined
+      var loadCacheStart = performance.now()
+      var cached = await pluginBabelCache.files.get(key)
+      console.log("cache loaded in " + (performance.now() -loadCacheStart ) + "ms")
+      if (cached) {
+        var cachedInputCode = cached.source
+        var cachedOutputCode = cached.output 
       }
-      cachedOutput = output
+      //       var cachedInputCode = self.localStorage && self.localStorage[key+"_source"]
+      //       var cachedOutputCode = self.localStorage && self.localStorage[key]
+      
+      
+      
+      var excludes = {
+
+      }
+      // #Idea we could compare the ole input source with the actual input source and only use the cached output when they match
+      // if (self.lively4plugincache && cachedOutputCode && !excludes[load.name]) {
+      if (cached && (cachedInputCode == load.source) && cachedOutputCode && !excludes[load.name]) {
+
+        console.log("plugin babel use cache: " + load.name)
+        try {
+
+          output = {
+            code: cachedOutputCode,
+            map: JSON.parse(self.localStorage[key+"_map"])
+          }      
+
+          // side effects of using the transformation
+          var moduleURL = SystemJS.normalizeSync(load.name)
+          // a) var recorder
+          _recorder_[getScopeIdForModule(moduleURL)] = {} // #Idea maybe this should go lazy into the module? @Stefan
+
+        } catch(e) {
+          console.log("something went wrong... while loading cache " + e)
+          output = undefined
+        }
+        cachedOutput = output
+        
+      } 
+
     } 
+    
     
     if (!output) {
     
@@ -244,12 +275,18 @@ exports.translate = function(load, traceOpts) {
       }
     });
     
-    if (self.localStorage && self.lively4plugincache) {
-      // update cache      
-      self.localStorage[key] = output.code
-      self.localStorage[key +"_source"] = load.source
-      self.localStorage[key +"_map"] = JSON.stringify(output.map)
-      console.log("map", output.map)
+    if (self.lively4plugincache) {
+      
+      pluginBabelCache.files.put({
+        url: key,
+        source: output.code,
+        output: output.code,
+        map: JSON.stringify(output.map)
+      })
+      // // update cache      
+      // self.localStorage[key] = output.code
+      // self.localStorage[key +"_source"] = load.source
+      // self.localStorage[key +"_map"] = JSON.stringify(output.map)
     }
       
     if (!self.babelTransformTimer) self.babelTransformTimer = []
@@ -259,6 +296,11 @@ exports.translate = function(load, traceOpts) {
       time: (performance.now() - startTransform)
     })
     
+    if (cachedOutputCode) {
+      console.log("used cached output " + (performance.now() - startTransform) + "ms")
+    } else {
+      console.log("transformed in " + (performance.now() - startTransform) + "ms")
+    }
       
 //       if (cachedOutput) {
 //          if (output.code != cachedOutput.code) {

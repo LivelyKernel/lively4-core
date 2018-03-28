@@ -3479,16 +3479,16 @@ function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
   // fetch
   .then(function () {
     
-   if (self.localStorage && self.lively4plugincache) {
-      var load = metadata.load
-      var cachekey = "pluginBabelTransfrom_" + load.name
-      cachedOutputCode = self.localStorage[cachekey]
-      cachedSourceCode = self.localStorage[cachekey +"_source"]
-     if (cachedSourceCode) {
-        console.log("return cached source code: " + key)
-        return cachedSourceCode
-     }
-    }
+   // if (self.localStorage && self.lively4plugincache) {
+   //    var load = metadata.load
+   //    var cachekey = "pluginBabelTransfrom_" + load.name
+   //    cachedOutputCode = self.localStorage[cachekey]
+   //    cachedSourceCode = self.localStorage[cachekey +"_source"]
+   //   if (cachedSourceCode) {
+   //      console.log("return cached source code: " + key)
+   //      return cachedSourceCode
+   //   }
+   //  }
     // console.log('default fetch ' + key)
 
     if (!metadata.pluginModule)
@@ -3508,10 +3508,10 @@ function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
       debugger
     }
     
-    if (cachedOutputCode ) {
-        console.log("no fetch " + key)
-        return translateAndInstantiate(loader, key, fetched, metadata, processAnonRegister);
-    }
+    // if (cachedOutputCode ) {
+    //     console.log("no fetch " + key)
+    //     return translateAndInstantiate(loader, key, fetched, metadata, processAnonRegister);
+    // }
     
     // fetch is already a utf-8 string if not doing wasm detection
     if (!wasm)
