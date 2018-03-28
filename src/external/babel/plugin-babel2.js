@@ -8,17 +8,21 @@ var stage3 = require('systemjs-babel-build').pluginsStage3;
 var stage2 = require('systemjs-babel-build').pluginsStage2;
 var stage1 = require('systemjs-babel-build').pluginsStage1;
 
-
+// Caching the transformation results seems to be problematic..
+// storage 1: localStorage ... fast, but has storage limitations
+// storage 2: indexdb 
 var Dexie = require('../dexie.js').Dexie;
-
 var pluginBabelCache = new Dexie("pluginBabelCache");
 pluginBabelCache.version("1").stores({
     files: 'url, source, output, map'
 }).upgrade(function () {
 })
+// storage 3: cache API... here we go
+let transformCache
+
+var useCacheAPI = true // #TODO refactor when we found a fast solution... 
 
 // var diff = require('src/external/diff-match-patch.js').default;
-
 
 
 
@@ -83,6 +87,8 @@ var defaultBabelOptions = {
 };
 
 exports.translate = async function(load, traceOpts) {
+  
+  if (!transformCache) transformCache = await caches.open("plugin-babel")
   
   // we don't transpile anything other than CommonJS or ESM
   if (load.metadata.format == 'global' || load.metadata.format == 'amd' || load.metadata.format == 'json')
@@ -191,34 +197,40 @@ exports.translate = async function(load, traceOpts) {
     
     // #Experiment with caching.... 
     var startTransform = performance.now()
+    let cachedInputCode, cachedOutputCode, cachedOutputMap
     if(self.lively4plugincache) {
       var key = "pluginBabelTransfrom_" + load.name
-      
-      var loadCacheStart = performance.now()
-      var cached = await pluginBabelCache.files.get(key)
-      console.log("cache loaded in " + (performance.now() -loadCacheStart ) + "ms")
-      if (cached) {
-        var cachedInputCode = cached.source
-        var cachedOutputCode = cached.output 
-      }
+
+      // storage 1
       //       var cachedInputCode = self.localStorage && self.localStorage[key+"_source"]
       //       var cachedOutputCode = self.localStorage && self.localStorage[key]
+      // cachedOutputMap = JSON.parse(self.localStorage[key+"_map"]
       
-      
-      
-      var excludes = {
-
+      if (!useCacheAPI) {
+        // storage 2
+        var loadCacheStart = performance.now()
+        let cached = await pluginBabelCache.files.get(key)
+        console.log("cache loaded in " + (performance.now() -loadCacheStart ) + "ms")
+        if (cached) {
+          cachedInputCode = cached.source
+          cachedOutputCode = cached.output 
+          cachedOutputMap = JSON.parse(cached.map)           
+        }
+      } else {
+        // storage 3
+        await Promise.all([
+          transformCache.match(key + "_source").then(r => r && r.text()).then( t => cachedInputCode = t),
+          transformCache.match(key + "_output").then(r => r && r.text()).then( t => cachedOutputCode = t),
+          transformCache.match(key + "_map").then(r => r && r.text())
+            .then( t => cachedOutputMap = t && JSON.parse(t))])
       }
-      // #Idea we could compare the ole input source with the actual input source and only use the cached output when they match
-      // if (self.lively4plugincache && cachedOutputCode && !excludes[load.name]) {
-      if (cached && (cachedInputCode == load.source) && cachedOutputCode && !excludes[load.name]) {
-
+      if (cachedOutputCode && (cachedInputCode == load.source)) {
         console.log("plugin babel use cache: " + load.name)
         try {
 
           output = {
             code: cachedOutputCode,
-            map: JSON.parse(self.localStorage[key+"_map"])
+            map: cachedOutputMap
           }      
 
           // side effects of using the transformation
@@ -231,7 +243,6 @@ exports.translate = async function(load, traceOpts) {
           output = undefined
         }
         cachedOutput = output
-        
       } 
 
     } 
@@ -276,17 +287,25 @@ exports.translate = async function(load, traceOpts) {
     });
     
     if (self.lively4plugincache) {
-      
-      pluginBabelCache.files.put({
-        url: key,
-        source: output.code,
-        output: output.code,
-        map: JSON.stringify(output.map)
-      })
-      // // update cache      
+
+      // storage 1      
       // self.localStorage[key] = output.code
       // self.localStorage[key +"_source"] = load.source
       // self.localStorage[key +"_map"] = JSON.stringify(output.map)
+
+      if (!useCacheAPI) {
+        pluginBabelCache.files.put({
+          url: key,
+          source: load.source,
+          output: output.code,
+          map: JSON.stringify(output.map)
+        })        
+      } else {
+          transformCache.put(key + "_source", new Response(load.source))
+          transformCache.put(key + "_output", new Response(output.code))
+          transformCache.put(key + "_map", new Response(JSON.stringify(output.map)))
+      }
+      
     }
       
     if (!self.babelTransformTimer) self.babelTransformTimer = []
