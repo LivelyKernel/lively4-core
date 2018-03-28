@@ -25,7 +25,6 @@ if (useCacheDictionary) {
   Dictionary = IndexDBDictionary
 }
 
-
 /**
  * This class is supposed to be a general-purpose cache for HTTP requests with different HTTP methods.
  */
@@ -66,6 +65,26 @@ export class Cache {
     // Define which HTTP methods need result caching, and which need request queueing
     this._cacheMethods = ['OPTIONS', 'GET'];
     this._queueMethods = ['PUT', 'POST', 'DELETE', 'MKCOL'];
+    
+    // #OfflineFirst
+    this.offlineFirstReady = (async () => {
+      this.offlineFirstCache = await caches.open("offlineFirstCache")
+    })()
+  }
+  
+  async fetchOfflineFirst(request, doNetworkRequest) {
+    await this.offlineFirstReady;
+    var resp = await this.offlineFirstCache.match(request)
+    if (resp) {
+      console.log("offlineFirst cached " + request.url)
+      return resp.clone()
+    } else {
+      console.log("offlineFirst update " + request.url)
+
+      var newResp = await doNetworkRequest()
+      this.offlineFirstCache.put(request, newResp.clone())
+      return newResp
+    }  
   }
   
   /**
@@ -75,6 +94,10 @@ export class Cache {
    * @param doNetworkRequest A function to call if we need to send out a network request
    */
   fetch(request, doNetworkRequest) {
+    if (request.method == "GET" && request.url.match(/offlineFirst/)) {
+      return this.fetchOfflineFirst(request, doNetworkRequest) // #Hack to be able to develo it....
+    }
+      
     // console.log("request " + request.url)
     var start = performance.now()
     return new Promise(resolve => {
