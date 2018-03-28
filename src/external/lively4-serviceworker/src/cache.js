@@ -36,8 +36,8 @@ export class Cache {
    * @param fileSystem A reference to the filesystem. Needed to process queued filesystem requests.
    */
   constructor(fileSystem) {
-    this._responseCache = new Dictionary('response-cache');
-    this._requestCache = new Dictionary('request-cache');
+    this._responseCache = new Dictionary('response-cache'); // GET
+    this._requestCache = new Dictionary('request-cache'); // outgoing PUT that have to be queued 
     this._favoritesTracker = new FavoritesTracker(this);
     
     this._connectionManager = new ConnectionManager();
