@@ -81,6 +81,12 @@ export default class Inspector   extends Morph {
   }
   
   renderObject(node, obj, expanded, name) {
+    // handle system objects... 
+    var handlerMethod = "render" +obj.constructor.name + "Object"
+    console.log("render " +handlerMethod)
+    
+    
+    
     node.type = "Object"
     node.isExpanded = expanded;
     if (!name) {
@@ -119,6 +125,10 @@ export default class Inspector   extends Morph {
         var childNode = this.displayObject(value, false, ea, obj)
         if (childNode) contentNode.appendChild(childNode); // force object display        
       });
+    }
+        
+    if (this[handlerMethod]) {
+      return this[handlerMethod](contentNode, obj)
     }
   }
   
@@ -294,10 +304,12 @@ export default class Inspector   extends Morph {
           var selection = <div class="element" style="color:red"><b>Error in livleyInspect:</b> {e}</div>
           contentNode.appendChild(selection)
         }
-      }
-
+      } 
+      
+      
     }
   }
+  
   
   renderText(node, obj, expanded) {
     if (obj.textContent.match(/^[ \n]*$/)) 
@@ -357,6 +369,8 @@ export default class Inspector   extends Morph {
   }
   
   render(node, obj, expanded) {
+    
+    
     if (obj instanceof Text) {
       return this.renderText(node, obj, expanded);
     } else if (this.isNode(obj) && node.type != "Object") {
@@ -514,6 +528,14 @@ export default class Inspector   extends Morph {
       })
     }
     return result
+  }
+
+  // callbacks for system objects...
+  renderHeadersObject(contentNode, obj) {
+    contentNode.innerHTML = ""  
+    for(var ea of obj.keys()) {
+      contentNode.appendChild(this.displayObject(obj.get(ea), true, ea));   
+    }
   }
   
   static inspectArrayAsTable(array) {
