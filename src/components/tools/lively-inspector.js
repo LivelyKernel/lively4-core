@@ -127,7 +127,7 @@ export default class Inspector   extends Morph {
       });
     }
         
-    if (this[handlerMethod]) {
+    if (this[handlerMethod] &&  node.isExpanded ) {
       return this[handlerMethod](contentNode, obj)
     }
   }
@@ -532,9 +532,15 @@ export default class Inspector   extends Morph {
 
   // callbacks for system objects...
   renderHeadersObject(contentNode, obj) {
-    contentNode.innerHTML = ""  
-    for(var ea of obj.keys()) {
-      contentNode.appendChild(this.displayObject(obj.get(ea), true, ea));   
+    if (!contentNode) return
+    contentNode.innerHTML = ""
+    var keys = []
+    try {
+      keys = obj.keys() // illegal invocation?
+    } catch(e) {}
+    for(var ea of keys) {
+      var node = this.displayObject(obj.get(ea), true, ea)
+      if (node) contentNode.appendChild(node);   
     }
   }
   
