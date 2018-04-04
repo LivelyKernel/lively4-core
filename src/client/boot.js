@@ -11,6 +11,8 @@
   - currently we have different entry points we should unify
  */
  
+window.lively4plugincache = window.localStorage["livel4systemjscache"] == "true";
+
 if (window.lively && window.lively4url) {
   console.log("CANCEL BOOT Lively4, because it is already loaded")
 } else {
@@ -138,7 +140,7 @@ if (window.lively && window.lively4url) {
         map: {
           // #Discussion have to use absolute paths here, because it is not clear what the baseURL is
           'plugin-babel': lively4url + '/src/external/babel/plugin-babel2.js',
-          'systemjs-plugin-babel': lively4url + '/src/external/babel/plugin-babel.js',
+          'systemjs-plugin-babel': lively4url + '/src/external/babel/plugin-babel.js', // seems not to be loaded
           'systemjs-babel-build': lively4url + '/src/external/babel/systemjs-babel-browser.js',
 
           // aexpr support

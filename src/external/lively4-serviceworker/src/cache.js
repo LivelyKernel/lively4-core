@@ -1,4 +1,7 @@
-import { Dictionary } from './dictionary.js';
+// This could be a really good COP example... if "import" would not be so magical... #Research #COP #COPWorkshop
+import { Dictionary as IndexDBDictionary} from './dictionary.js';
+import { Dictionary as CacheDictionary } from './cache-dictionary.js'; 
+
 import Serializer from './serializer.js';
 import { ConnectionManager } from './connectionmanager.js';
 import * as msg from './messaging.js'
@@ -14,6 +17,14 @@ import {
 } from './util.js';
 import focalStorage from '../../focalStorage.js';
 
+let useCacheDictionary = false; // #Dev #Experimental
+
+if (useCacheDictionary) {
+  var Dictionary = CacheDictionary
+} else {
+  Dictionary = IndexDBDictionary
+}
+
 /**
  * This class is supposed to be a general-purpose cache for HTTP requests with different HTTP methods.
  */
@@ -24,8 +35,8 @@ export class Cache {
    * @param fileSystem A reference to the filesystem. Needed to process queued filesystem requests.
    */
   constructor(fileSystem) {
-    this._responseCache = new Dictionary('response-cache');
-    this._requestCache = new Dictionary('request-cache');
+    this._responseCache = new Dictionary('response-cache'); // GET
+    this._requestCache = new Dictionary('request-cache'); // outgoing PUT that have to be queued 
     this._favoritesTracker = new FavoritesTracker(this);
     
     this._connectionManager = new ConnectionManager();
@@ -54,6 +65,26 @@ export class Cache {
     // Define which HTTP methods need result caching, and which need request queueing
     this._cacheMethods = ['OPTIONS', 'GET'];
     this._queueMethods = ['PUT', 'POST', 'DELETE', 'MKCOL'];
+    
+    // #OfflineFirst
+    this.offlineFirstReady = (async () => {
+      this.offlineFirstCache = await caches.open("offlineFirstCache")
+    })()
+  }
+  
+  async fetchOfflineFirst(request, doNetworkRequest) {
+    await this.offlineFirstReady;
+    var resp = await this.offlineFirstCache.match(request)
+    if (resp) {
+      console.log("offlineFirst cached " + request.url)
+      return resp.clone()
+    } else {
+      console.log("offlineFirst update " + request.url)
+
+      var newResp = await doNetworkRequest()
+      this.offlineFirstCache.put(request, newResp.clone())
+      return newResp
+    }  
   }
   
   /**
@@ -63,6 +94,12 @@ export class Cache {
    * @param doNetworkRequest A function to call if we need to send out a network request
    */
   fetch(request, doNetworkRequest) {
+    if (request.method == "GET" && request.url.match(/offlineFirst/)) {
+      return this.fetchOfflineFirst(request, doNetworkRequest) // #Hack to be able to develo it....
+    }
+      
+    // console.log("request " + request.url)
+    var start = performance.now()
     return new Promise(resolve => {
       if (this._cacheMode == 2) {
         this._favoritesTracker.update(request.url);
@@ -73,7 +110,10 @@ export class Cache {
       } else if (this._cacheMode > 0) {
         resolve(this._offlineResponse(request));
       }
-    });
+    }).then(r => {
+      // console.log("resolved " + request.url + " in " + (performance.now() - start) +"ms")
+      return r
+    })
   }
   
   getCacheMode() {
@@ -107,7 +147,7 @@ export class Cache {
     return doNetworkRequest().then((response) => {
       // Currently, we only store OPTIONS and GET requests in the cache
       if (this._cacheMethods.includes(request.method) && putInCache) {
-        this._put(request, response);
+        this._put(request, response.clone());
       }
       return response;
     });
@@ -121,9 +161,15 @@ export class Cache {
     // When offline, check the cache or put request in queue
     if (this._cacheMethods.includes(request.method)) {
       // Check if the request is in the cache
+      // var timeMatchStart = performance.now()
       return this._match(request).then((response) => {
+        // console.log("match " +request.url + " took " + (performance.now() - timeMatchStart) + "ms" )
         if (response) {
-          return Serializer.deserialize(response.value);
+          if (useCacheDictionary) {
+            return response.clone()
+          } else {
+            return Serializer.deserialize(response.value);
+          }
         } else {
           msg.notify('error', 'Could not fulfil request from cache');
           console.error(`Not in cache: ${request.url}`);
@@ -153,9 +199,14 @@ export class Cache {
    * @return Response
    */
   _put(request, response) {
-    Serializer.serialize(response).then((serializedResponse) => {
-      this._responseCache.put(buildKey(request), serializedResponse);
-    })
+    if (useCacheDictionary) {
+      this._responseCache.put(buildKey(request), response);
+    } else {
+      Serializer.serialize(response).then((serializedResponse) => {
+        this._responseCache.put(buildKey(request), serializedResponse);
+      })
+    }
+    
     return response;
   }
   
@@ -165,8 +216,11 @@ export class Cache {
    */
   async _enqueue(request) {
     // Serialize the Request object
-    let serializedRequest = await Serializer.serialize(request);
-   
+    
+    let serializedRequest = request
+    if (!useCacheDictionary) {
+      serializedRequest = await Serializer.serialize(request);
+    }
     // Put the serialized request in the queue
     this._requestCache.put(buildKey(request), serializedRequest);
 

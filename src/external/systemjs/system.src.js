@@ -11,7 +11,7 @@
 // delete localStorage["logSystemJS"] 
   
 function livelyLog(...rest) {
-  if (self.localStorage && self.localStorage["logSystemJS"]) {
+  if (self.localStorage && self.localStorage["logSystemJS"] == "true") {
     console.log(self.lively4stamp, ...rest)  
   }
 }
@@ -44,7 +44,7 @@ function livelyGroupStart(label, key, parentKey) {
 }
 
 function livelyGroupEnd(label, key, parent) {
-  if (self.localStorage && self.localStorage["logSystemJS"]) {
+  if (self.localStorage && self.localStorage["logSystemJS"] == "true") {
     console.log(label + " " + key +" time: "  + ((performance.now() - livelyGroupTimes[label + key]) / 1000).toFixed(3) + "s" + " parent: " + parent)
 
     var parentEntry = livelyGroupTree[parent];
@@ -3460,6 +3460,9 @@ function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
   if (metadata.load.exports && !metadata.load.format)
     metadata.load.format = 'global';
 
+  var cachedOutputCode
+  var cachedSourceCode
+  
   return Promise.resolve()
 
   // locate
@@ -3473,9 +3476,21 @@ function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
         metadata.pluginLoad.address = address;
     });
   })
-
   // fetch
   .then(function () {
+    
+   // if (self.localStorage && self.lively4plugincache) {
+   //    var load = metadata.load
+   //    var cachekey = "pluginBabelTransfrom_" + load.name
+   //    cachedOutputCode = self.localStorage[cachekey]
+   //    cachedSourceCode = self.localStorage[cachekey +"_source"]
+   //   if (cachedSourceCode) {
+   //      console.log("return cached source code: " + key)
+   //      return cachedSourceCode
+   //   }
+   //  }
+    // console.log('default fetch ' + key)
+
     if (!metadata.pluginModule)
       return fetch$1(key, metadata.load.authorization, metadata.load.integrity, wasm);
 
@@ -3489,6 +3504,15 @@ function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
   })
 
   .then(function (fetched) {
+    if (!fetched) {
+      debugger
+    }
+    
+    // if (cachedOutputCode ) {
+    //     console.log("no fetch " + key)
+    //     return translateAndInstantiate(loader, key, fetched, metadata, processAnonRegister);
+    // }
+    
     // fetch is already a utf-8 string if not doing wasm detection
     if (!wasm)
       return translateAndInstantiate(loader, key, fetched, metadata, processAnonRegister);

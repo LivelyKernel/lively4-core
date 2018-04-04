@@ -29,11 +29,11 @@ layer(ScopedScripts, "PropagateLayerActicationLayer").refineClass(Promise, {
 	  // return cop.proceed(onresolve, onerror)
 
     var layers = Layers.currentLayers();
-    console.log("Promise.then ... ");
+    // console.log("Promise.then ... ");
 		var newResolve = function(){
 		
 		    var args = arguments;
-		    console.log("replay layers..." + layers);
+		    // console.log("replay layers..." + layers);
 		    return cop.withLayers(layers, () => onresolve.apply(window, args));
 		  };
 		var newError = function() {

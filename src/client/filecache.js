@@ -1,5 +1,5 @@
 // File Cache for Static Analys and Searching 
-import Dexie from "https://unpkg.com/dexie@2.0.0-beta.11/dist/dexie.js"
+import Dexie from "src/external/dexie.js"
 import Strings from "src/client/strings.js"
 import {babel} from 'systemjs-babel-build';
 

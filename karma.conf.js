@@ -33,9 +33,7 @@ module.exports = function(config) {
       
       // {pattern: 'node_modules/**/*.js', included: false},
       // {pattern: 'node_modules/**/*.json', included: false},
-      {pattern: 'node_modules/chai/chai.js', included: false},
       {pattern: 'node_modules/mocha/mocha.js', included: false},
-      {pattern: 'node_modules/sinon-chai/lib/sinon-chai.js', included: false},
       {pattern: 'src/**/*.js*', included: false},
       {pattern: 'src/**/*.css*', included: false},
       {pattern: 'src/**/*.html*', included: false},
@@ -55,20 +53,16 @@ module.exports = function(config) {
 
     proxies: {
       '/node_modules/': '/base/node_modules/',
-      '/node_modules/chai/chai.js': '/base/node_modules/chai/chai.js',
       '/node_modules/mocha/mocha.js': '/base/node_modules/mocha/mocha.js',
-      '/node_modules/sinon-chai/lib/sinon-chai.js': '/base/node_modules/sinon-chai/lib/sinon-chai.js',
       '/src/': '/base/src/',
       '/test/': '/base/test/',
       '/templates/': '/base/templates/',
-      '/vendor/': '/base/vendor/',
       '/package.json': '/base/package.json',
       '/swx-boot.js': '/base/swx-boot.js',
       '/swx-loader.js': '/base/swx-loader.js',
       '/swx-post.js': '/base/swx-post.js',
       '/swx-pre.js': '/base/swx-pre.js',
     },
-
 
     // list of files to exclude
     // TODO: call github api from travis ci

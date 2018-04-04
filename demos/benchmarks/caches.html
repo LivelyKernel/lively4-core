@@ -1,0 +1,25 @@
+<h1> Cache Benchmarks</h1>
+
+<script src="https://unpkg.com/dexie@2.0.0-beta.11/dist/dexie.js"></script>
+Result: <div id="result">running</div>
+
+<script type="module"> 
+
+
+(async () => {
+  var start = performance.now()
+  var cache = await caches.open("foo")
+  var all = []
+  
+  
+  await cache.put("abc", new Response( new Array(1000).join(" ")))
+  
+  for(var i=0; i < 100; i++) {
+    all.push(cache.match("abc").then(r => r.text()))
+  }
+  var time =  await Promise.all(all).then(p => performance.now() - start)
+  document.body.querySelector("#result").innerHTML  = time + "ms"
+})()
+
+
+</script>
