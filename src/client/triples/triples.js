@@ -1,6 +1,7 @@
 import focalStorage from 'src/external/focalStorage.js';
 import ContextMenu from './../contextmenu.js';
 import { through, uuid, fileName, hintForLabel, getTempKeyFor, asDragImageFor } from 'utils';
+import { trackInstance } from 'roq';
 
 async function getJSYaml() {
   await lively.loadJavaScriptThroughDOM("esprima", "https://lively-kernel.org/lively4/foo/src/external/esprima.js");
@@ -32,10 +33,12 @@ async function parseMarkdown(markdown, filename) {
   };
 }
 
-class Knot {
+export class Knot {
   constructor(fileName, content) {
     this.fileName = fileName;
     this.content = content;
+    
+    trackInstance.call(Knot, this);
   }
   get url() { return this.fileName; }
   getMetadata() { return this.metadata; }

@@ -18,7 +18,7 @@ export default class HaloVivideOutportItem extends HaloItem {
   onClick(evt) {
     if(this._view) {
       HaloService.hideHalos();
-      lively.openInspector(this._view.getModelToDisplay(), pt(evt.clientX, evt.clientY));
+      lively.openInspector('WOOHOO', pt(evt.clientX, evt.clientY));
     }
   }
 }
