@@ -157,7 +157,7 @@ if (window.lively && window.lively4url) {
           // jsx support
           'babel-plugin-syntax-jsx': lively4url + '/src/external/babel-plugin-syntax-jsx.js',
           'babel-plugin-jsx-lively': lively4url + '/src/external/babel-plugin-jsx-lively.js',
-          'reactive-jsx': lively4url + '/src/external/reactive-jsx.js',
+          'reactive-jsx': lively4url + '/src/client/reactive/reactive-jsx/reactive-jsx.js',
 
           // stage 0 support
           'babel-plugin-transform-do-expressions': lively4url + '/src/external/babel-plugin-transform-do-expressions.js',
@@ -242,7 +242,9 @@ if (window.lively && window.lively4url) {
           // default for all .js files (not just lively4)
           [lively4url + "/src/client/*.js"]: aexprViaDirective,
           [lively4url + "/src/components/*.js"]: aexprViaDirective,
+          
           [lively4url + "/src/client/reactive/*.js"]: moduleOptionsNon,
+          [lively4url + "/src/client/reactive/reactive-jsx/*.js"]: liveES7,
           [lively4url + "/src/client/reactive/test/*.js"]: aexprViaDirective,
           [lively4url + "/src/client/reactive/tern-spike/*.js"]: aexprViaDirective,
           // [lively4url + '/demos/*.js']: liveES7,
