@@ -144,15 +144,15 @@ if (window.lively && window.lively4url) {
           'systemjs-babel-build': lively4url + '/src/external/babel/systemjs-babel-browser.js',
 
           // aexpr support
-          'active-expressions': lively4url + '/src/external/aexpr/active-expressions/src/active-expressions.js',
-          'aexpr-source-transformation-propagation': lively4url + '/src/external/aexpr/aexpr-source-transformation-propagation/src/aexpr-source-transformation-propagation.js',
-          'babel-plugin-aexpr-source-transformation': lively4url + '/src/external/aexpr/babel-plugin-aexpr-source-transformation/index.js',
-          'aexpr-ticking': lively4url + '/src/external/aexpr/aexpr-ticking/src/aexpr-ticking.js',
-          'ui-aexpr': lively4url + '/src/external/aexpr/ui-aexpr.js',
-          // 'babel-plugin-locals': lively4url + '/src/external/aexpr/babel-plugin-locals/index.js',
-          'stack-es2015-modules': lively4url + '/src/external/aexpr/stack-es2015-module/src/stack.js',
-          'frame-based-aexpr': lively4url + '/src/external/aexpr/frame-based-aexpr.js',
-          'roq': lively4url + '/src/external/roq/src/select.js',
+          'active-expressions': lively4url + '/src/client/reactive/active-expressions/active-expressions/src/active-expressions.js',
+          'aexpr-source-transformation-propagation': lively4url + '/src/client/reactive/active-expressions/aexpr-source-transformation-propagation/src/aexpr-source-transformation-propagation.js',
+          'babel-plugin-aexpr-source-transformation': lively4url + '/src/client/reactive/active-expressions/babel-plugin-aexpr-source-transformation/index.js',
+          'aexpr-ticking': lively4url + '/src/client/reactive/active-expressions/aexpr-ticking/src/aexpr-ticking.js',
+          'ui-aexpr': lively4url + '/src/client/reactive/active-expressions/ui-aexpr.js',
+          // 'babel-plugin-locals': lively4url + '/src/client/reactive/active-expressions/babel-plugin-locals/index.js',
+          'stack-es2015-modules': lively4url + '/src/client/reactive/active-expressions/stack-es2015-module/src/stack.js',
+          'frame-based-aexpr': lively4url + '/src/client/reactive/active-expressions/frame-based-aexpr.js',
+          'roq': lively4url + '/src/client/reactive/active-groups/src/select.js',
 
           // jsx support
           'babel-plugin-syntax-jsx': lively4url + '/src/external/babel-plugin-syntax-jsx.js',
