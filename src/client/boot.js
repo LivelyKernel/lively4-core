@@ -152,7 +152,9 @@ if (window.lively && window.lively4url) {
           // 'babel-plugin-locals': lively4url + '/src/client/reactive/active-expressions/babel-plugin-locals/index.js',
           'stack-es2015-modules': lively4url + '/src/client/reactive/active-expressions/stack-es2015-module/src/stack.js',
           'frame-based-aexpr': lively4url + '/src/client/reactive/active-expressions/frame-based-aexpr.js',
+          // #TODO: duplicated, remove roq in imports
           'roq': lively4url + '/src/client/reactive/active-groups/src/select.js',
+          'active-groups': lively4url + '/src/client/reactive/active-groups/src/select.js',
 
           // jsx support
           'babel-plugin-syntax-jsx': lively4url + '/src/external/babel-plugin-syntax-jsx.js',
@@ -232,8 +234,8 @@ if (window.lively && window.lively4url) {
           [lively4url + '/src/client/reactive/*.js']: moduleOptionsNon,
           [lively4url + '/src/external/aexpr/*.js']: moduleOptionsNon,
           // ... except for the tests
-          [lively4url + '/src/external/aexpr/test/*.spec.js']: aexprViaDirective,
-          [lively4url + '/src/external/roq/test/*.js']: aexprViaDirective,
+          // [lively4url + '/src/external/aexpr/test/*.spec.js']: aexprViaDirective,
+          // [lively4url + '/src/external/roq/test/*.js']: aexprViaDirective,
 
           [lively4url + '/demos/*.js']: aexprViaDirective,
           [lively4url + '/templates/*.js']: aexprViaDirective,
@@ -243,10 +245,13 @@ if (window.lively && window.lively4url) {
           [lively4url + "/src/client/*.js"]: aexprViaDirective,
           [lively4url + "/src/components/*.js"]: aexprViaDirective,
           
+          // blacklist all projects included for active expressions
           [lively4url + "/src/client/reactive/*.js"]: moduleOptionsNon,
           [lively4url + "/src/client/reactive/reactive-jsx/*.js"]: liveES7,
-          [lively4url + "/src/client/reactive/test/*.js"]: aexprViaDirective,
           [lively4url + "/src/client/reactive/tern-spike/*.js"]: aexprViaDirective,
+          // ... except for the tests
+          [lively4url + '/src/client/reactive/active-expressions/test/*.spec.js']: aexprViaDirective,
+          [lively4url + '/src/client/reactive/active-groups/test/*.js']: aexprViaDirective,
           // [lively4url + '/demos/*.js']: liveES7,
           // [lively4url + '/doc/*.js']: liveES7,
           // [lively4url + '/media/*.js']: liveES7,
