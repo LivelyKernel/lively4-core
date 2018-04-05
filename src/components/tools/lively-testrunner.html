@@ -5,16 +5,12 @@
       height: 100%;
       display: flex;
       flex-direction: column;
-      padding-left: 5px;
     }
     p {
-      display: flex;
-      flex-direction: row;
-      margin-top: 2px;
-      margin-bottom: 2px;      
+      margin: 2px;
     }
-    p input {
-      flex: 1;
+    p #testDir {
+      width: 90%;
     }
     #content {
       overflow: auto;
@@ -26,7 +22,7 @@
     <div class="container">
         <p>
           <button id="runButton">run</button>
-          <input id="testDir" value="/test/,/test/templates/">
+          <input id="testDir" value="/test,/src/client/reactive" placeholder="path to folder relative to lively4url">
         </p>
         <div id="content">
         <content></content>

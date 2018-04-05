@@ -123,8 +123,30 @@ export default class Files {
   
   static async statFile(urlString){
     urlString = this.resolve(urlString)
-  	return fetch(urlString, {method: 'OPTIONS'}).then(resp => resp.text())
+    return fetch(urlString, {method: 'OPTIONS'}).then(resp => resp.text())
   }
+
+  static async walkDir(dir) {
+    if(dir.endsWith('/')) { dir = dir.slice(0, -1); }
+    const json = await lively.files.statFile(dir).then(JSON.parse);
+    if(json.type !== 'directory') {
+      throw new Error('Cannot walkDir. Given path is not a directory.')
+    }
+
+    let files = json.contents
+      .filter(entry => entry.type === 'file')
+      .map(entry => dir + '/' + entry.name);
+
+    let folders = json.contents
+      .filter(entry => entry.type === 'directory')
+      .map(entry => dir + '/' + entry.name);
+
+    let subfolderResults = await Promise.all(folders.map(folder => this.walkDir(folder)));
+    subfolderResults.forEach(filesInSubfolder => files.push(...filesInSubfolder));
+
+    return files;
+  }
+
 
   static async existFile(urlString){
     urlString = this.resolve(urlString)
