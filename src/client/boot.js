@@ -286,6 +286,7 @@ if (window.lively && window.lively4url) {
           [lively4url + "/src/client/reactive/tern-spike/*.js"]: aexprViaDirective,
           // ... except for the tests
           [lively4url + '/src/client/reactive/active-expressions/test/*.spec.js']: aexprViaDirective,
+          [lively4url + '/src/client/reactive/active-expressions/stack-es2015-module/test/*.spec.js']: aexprViaDirective,
           [lively4url + '/src/client/reactive/active-groups/test/*.js']: aexprViaDirective,
           // [lively4url + '/demos/*.js']: liveES7,
           // [lively4url + '/doc/*.js']: liveES7,

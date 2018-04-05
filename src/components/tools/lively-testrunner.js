@@ -48,17 +48,14 @@ export default class TestRunner extends Morph {
   }
 
   async findTestFilesInDir(dir) {
-    var dir = lively4url + dir;
-    const json = await lively.files.statFile(dir).then(JSON.parse);
-    return json.contents
-      .map(file => file.name)
-      .filter(fileName => fileName.match(/(-|\.)(spec|test)\.js$/))
-      .map(fileName => dir + fileName);
+    const files = await lively.files.walkDir(lively4url + dir);
+    return files
+      .filter(fileName => fileName.match(/(-|\.)(spec|test)\.js$/));
   }
   
   async findTestFiles() {
     var files = []
-    var list = this.shadowRoot.querySelector("#testDir").value.split(",")
+    var list = this.testDir.value.split(",")
     console.log("list: " + list)
 
     // await Promise.all(list.map((dir) => {
@@ -80,10 +77,6 @@ export default class TestRunner extends Morph {
     // }, [])
   }
   // await that.findTestFilesInDir( "/test/templates/")
-  
-  // debugger
-  // it('sds',()=>{})
-  // window.it
   
   clearTests() {
     if (mocha.suite) {
