@@ -9,8 +9,7 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   var allClientTestFiles = [];
   var allSWTestFiles = [];
   var TEST_CLIENT_REGEXP = /(-spec|-test)\.js$/i;
-  var TEST_REACTIVE_REGEXP = /src\/client\/reactive\/.*(\.|-)(spec|test)\.js$/i;
-  var TEST_EXTERNAL_REGEXP = /external\/(aexpr|roq)\/test\/.*(\.|-)(spec|test)\.js$/i;
+  var TEST_REACTIVE_REGEXP = /src\/client\/reactive\/(aexpr|roq)\/test\/.*(\.|-)(spec|test)\.js$/i;
   var TEST_SW_REGEXP = /-swtest\.js$/i;
 
   // Get a list of all the test files to include
@@ -24,20 +23,10 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
     }
 
     if (TEST_REACTIVE_REGEXP.test(file)) {
-      
       let normalizedTestModule = file.replace(/^\/base\/|\.js$/g, '');
       allClientTestFiles.push(normalizedTestModule);
       console.log('Reactive Test to load: ' + normalizedTestModule);
     }
-    
-    if (TEST_EXTERNAL_REGEXP.test(file)) {
-      
-      let normalizedTestModule = file.replace(/^\/base\/|\.js$/g, '');
-      allClientTestFiles.push(normalizedTestModule);
-      console.log('Ext Test to load: ' + normalizedTestModule);
-    }
-    
-    TEST_REACTIVE_REGEXP
 
     if (TEST_SW_REGEXP.test(file)) {
       let normalizedTestModule = file;
