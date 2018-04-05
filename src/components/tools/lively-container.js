@@ -5,7 +5,10 @@ import ContextMenu from 'src/client/contextmenu.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/external/ContextJS/src/contextjs.js";
-import ScopedScripts from "src/client/scoped-scripts.js";
+
+// import ScopedScripts from "src/client/scoped-scripts.js";
+let ScopedScript; // lazy load this... #TODO fix #ContextJS #Bug actual stack overflow
+
 import Clipboard from "src/client/clipboard.js"; 
 import { debounce, fileEnding, replaceFileEndingWith } from "utils";
 import ViewNav from "src/client/viewnav.js"
@@ -626,11 +629,14 @@ export default class Container extends Morph {
     this.appendMarkdown(content);
   }
   
-  appendScript(scriptElement) {
+  async appendScript(scriptElement) {
     // #IDEA by instanciating we can avoid global (de-)activation collisions
     // Scenario (A) There should be no activation conflict in this case, because appendScript wait on each other...
     // Scenario (B)  #TODO opening a page on two licely-containers at the same time will produce such a conflict. 
     // #DRAFT instead of using ScopedScripts as a singleton, we should instanciate it. 
+    if (!ScopedScripts) {
+      ScopedScripts = await System.import("src/client/scoped-scripts.js")
+    }
     var layers = ScopedScripts.layers(this.getURL(), this.getContentRoot());
     ScopedScripts.openPromises = [];  
     return new Promise((resolve, reject)=> {

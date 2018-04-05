@@ -1422,6 +1422,23 @@ export default class Lively {
       ViewNav.hideDocumentGrid(document.body)
     }
   }
+  
+  static async onOfflineFirstPreference(enabled) {
+    // store it where the service worker can see it... before we are loaded
+    lively.focalStorage.setItem("swxOfflineFirst", enabled)
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'config',
+        option: "offlineFirst",
+        value: enabled
+      });      
+    } else {
+      console.log("onOfflineFirstPreference: navigator.serviceWorker.controller not there?")
+    }
+    
+    
+  }
+  
 
   static async onBodyPositionPreference(pos) {
     lively.setPosition(document.body, pos)

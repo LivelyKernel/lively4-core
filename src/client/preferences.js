@@ -23,7 +23,7 @@ export default class Preferences {
       UseAsyncWorkspace: {default: false, short: "support await in eval"},
       UseTernInCodeMirror: {default: false, short: "enable tern autocomplete and navigation"},
       CtrlAsHaloModifier: {default: false, short: "ctrl key as halo modifier"},
-      EnableSyvisEditor: {default: false, short: 'Enable syvis editor'},
+      OfflineFirst: {default: false, short: "use offline first swx cache"},
     }
     
     // Make defaults immutable

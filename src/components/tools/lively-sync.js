@@ -154,8 +154,10 @@ export default class Sync extends Morph {
     })
   }
 
-  sync() {
-    return this.gitControl("sync")  
+  async sync() {
+    await this.gitControl("sync");
+    this.log("invalidate local caches")
+    lively4invalidateFileCaches()
   }
 
   async onLoginButton() {
