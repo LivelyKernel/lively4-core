@@ -4,6 +4,10 @@ import { BaseActiveExpression } from "active-expressions";
 import aexpr from 'aexpr-source-transformation-propagation';
 import { withAdvice } from './../lib/flight/advice.js';
 
+// TODO: this is use to keep SystemJS from messing up scoping
+// (FilterOperation would not be defined in select)
+const HACK = {};
+
 /**
  * #TODO: this is from withlogging.js
  */
