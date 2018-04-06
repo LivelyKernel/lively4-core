@@ -48,6 +48,8 @@ SystemJS.config({
 var originalFetch = fetch;
 
 function isOnline() {
+  if((location.origin + "").match(/localhost/)) return true;
+  
   const checkUrl = `${location.origin}/?checkOnline=${+ new Date()}`;
     
     // Try to reach the server
@@ -88,7 +90,8 @@ fetch = function(request, ...args) {
       if (response) {
         resolve(response);
       } else {
-        reject("Not in cache");
+        console.log("not in cache")
+        resolve(originalFetch(originalFetch(request, ...args)))
       }
     });
   } else {

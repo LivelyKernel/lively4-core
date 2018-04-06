@@ -89,7 +89,7 @@ export class Cache {
   }
   
   async fetchOfflineFirst(request, doNetworkRequest) {
-    console.log("offline first " + request.url)
+    // console.log("offline first " + request.url)
     if (request.method == "GET") {
       var resp = await this.offlineFirstCache.match(request)
       if (resp) {
@@ -126,9 +126,10 @@ export class Cache {
    * @param doNetworkRequest A function to call if we need to send out a network request
    */
   async fetch(request, doNetworkRequest) {
+    // console.log("[cache] fetch " + request.url )
     await this.offlineFirstReady;
 
-    if (lively4offlineFirst || request.url.match(/offlineFirst/)) {
+    if (lively4offlineFirst || (request.url || request).match(/offlineFirst/)) {
       return this.fetchOfflineFirst(request, doNetworkRequest) // #Hack to be able to develop it....
     }
       
@@ -139,10 +140,11 @@ export class Cache {
         this._favoritesTracker.update(request.url);
       }
       
-      if (this._connectionManager.isOnline) {
+      // #TODO force online! 
+      if (true || this._connectionManager.isOnline) {
         resolve(this._onlineResponse(request, doNetworkRequest, this._cacheMode > 0));
       } else if (this._cacheMode > 0) {
-        resolve(this._offlineResponse(request));
+        resolve(this._offlineResponse(request, doNetworkRequest));
       }
     }).then(r => {
       // console.log("resolved " + request.url + " in " + (performance.now() - start) +"ms")
@@ -191,7 +193,7 @@ export class Cache {
    * Returns a response for offline devices
    * @param request The request to respond to
    */
-  _offlineResponse(request) {
+  _offlineResponse(request, doNetworkRequest) {
     // When offline, check the cache or put request in queue
     if (this._cacheMethods.includes(request.method)) {
       // Check if the request is in the cache
@@ -206,7 +208,11 @@ export class Cache {
           }
         } else {
           msg.notify('error', 'Could not fulfil request from cache');
-          console.error(`Not in cache: ${request.url}`);
+          console.log(`Not in cache: ${request.url}`);
+          
+          console.log("#TODO online/offline check does not play well with bootstrapping cold? So fetch anyway")
+          return doNetworkRequest()
+          
           // At this point we know we are offline, so sending out the request is useless
           // Just create a fake error Response
           return buildNotCachedResponse();
