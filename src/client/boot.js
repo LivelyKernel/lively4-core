@@ -19,7 +19,7 @@ async function invalidateFileCaches()  {
   
   var json = await Promise.race([
     new Promise(r => {
-      setTimeout(() => r(false), 0) // give the server 5secs ... might be an old one or somthing, anyway keep going!
+      setTimeout(() => r(false), 5000) // give the server 5secs ... might be an old one or somthing, anyway keep going!
     })
     ,fetch(url, {
       method: "OPTIONS",
