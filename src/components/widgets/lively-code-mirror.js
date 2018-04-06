@@ -176,7 +176,9 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
   	this.editView(value)
     this.isLoading = false
+    console.log("[editor] #dispatch editor-loaded")   
     this.dispatchEvent(new CustomEvent("editor-loaded"))
+    this["editor-loaded"] = true // event can sometimes already be fired
   };
   
   editView(value) {
