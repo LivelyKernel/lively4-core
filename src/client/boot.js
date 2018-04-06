@@ -16,19 +16,32 @@ window.lively4plugincache = window.localStorage["livel4systemjscache"] == "true"
 async function invalidateFileCaches()  {
   var offlineFirstCache = await caches.open("offlineFirstCache")
   var url = lively4url + "/" 
-  var resp = await fetch(url, {
-    method: "OPTIONS",
-    headers: {
-      filelist  : true
-    }
-  })
-  if (resp.status != 200) {
-    console.log("PROBLEM invalidateFileCaches " + resp.status)
+  
+  var json = await Promise.race([
+    new Promise(r => {
+      setTimeout(() => r(false), 0) // give the server 5secs ... might be an old one or somthing, anyway keep going!
+    })
+    ,fetch(url, {
+      method: "OPTIONS",
+      headers: {
+        filelist  : true
+      }
+    }).then(resp => {
+      if (resp.status != 200) {
+        console.log("PROBLEM invalidateFileCaches " + resp.status)
+        return resp.json()
+      } else {
+        return false
+      }
+    })
+  ])
+  if (!json) {
+    console.log('[boot] invalidateFileCaches: could not invalidate flash... should we clean it all?')
     return
   }
-  var list = await resp.json()
+  var list = json.contents
   
-  for(let ea of list.contents) {
+  for(let ea of list) {
     if (!ea.name) continue; 
     var fileURL = url + ea.name.replace(/^.\//,"")
     var cached  = await offlineFirstCache.match(fileURL)
