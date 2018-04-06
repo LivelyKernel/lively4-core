@@ -29,9 +29,9 @@ async function invalidateFileCaches()  {
     }).then(resp => {
       if (resp.status != 200) {
         console.log("PROBLEM invalidateFileCaches " + resp.status)
-        return resp.json()
-      } else {
         return false
+      } else {
+        return resp.json()
       }
     })
   ])
