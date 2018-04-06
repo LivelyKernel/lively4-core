@@ -19,8 +19,8 @@ import focalStorage from '../../focalStorage.js';
 
 let useCacheDictionary = false; // #Dev #Experimental
 
+// OfflineFirst Preference
 export var lively4offlineFirst = false;
-
 self.addEventListener('message', (e) => { 
   let message = e.data;
   if(message.type === 'config' && message.option === 'offlineFirst') {
@@ -36,17 +36,20 @@ if (useCacheDictionary) {
 }
 
 /**
- * This class is supposed to be a general-purpose cache for HTTP requests with different HTTP methods.
+ * This class is supposed to be a general-purpose cache for HTTP requests
+ * with different HTTP methods.
  */
 export class Cache {
   
   /**
-   * Constructs a new Cache object
-   * @param fileSystem A reference to the filesystem. Needed to process queued filesystem requests.
+   * @param fileSystem A reference to the filesystem. Needed to process 
+   *        queued filesystem requests.
    */
   constructor(fileSystem) {
     this._responseCache = new Dictionary('response-cache'); // GET
-    this._requestCache = new Dictionary('request-cache'); // outgoing PUT that have to be queued 
+    
+    // outgoing PUT that have to be queued 
+    this._requestCache = new Dictionary('request-cache'); 
     this._favoritesTracker = new FavoritesTracker(this);
     
     this._connectionManager = new ConnectionManager();
@@ -63,8 +66,7 @@ export class Cache {
     
     // Register for cache data requests from the client
     self.addEventListener('message', (e) => { 
-      let message = e.data;
-      
+      let message = e.data;      
       if(message.type && message.command && message.type === 'dataRequest') {
         this._receiveFromClient(message.command, message.data);
       }
@@ -87,6 +89,7 @@ export class Cache {
   }
   
   async fetchOfflineFirst(request, doNetworkRequest) {
+    console.log("offline first " + request.url)
     if (request.method == "GET") {
       var resp = await this.offlineFirstCache.match(request)
       if (resp) {
