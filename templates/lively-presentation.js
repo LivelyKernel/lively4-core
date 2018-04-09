@@ -1,4 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
+import {pt}  from 'src/client/graphics.js'
 
 export default class LivelyPresentation extends Morph {
   async initialize() {
@@ -25,7 +26,6 @@ export default class LivelyPresentation extends Morph {
   onNextButton() {
     this.nextSlide() 
   }
-
   
   newSlide() {
     this.slide = document.createElement("div")
@@ -83,6 +83,26 @@ export default class LivelyPresentation extends Morph {
     this.slide = slide
     this.updatePageNumber()
   }
+  
+  async exportPrint() {
+    var i=1;
+    this.slides().forEach(ea => {
+      ea.style.display = "block"
+      lively.setPosition(ea, pt(0,0), "relative") 
+      var pageNumber = ea.querySelector(".page-number")
+      if (pageNumber) pageNumber.textContent = i++
+    })
+    var printurl = lively.query(this, "lively-container").getURL().toString().replace(/\.md/,"_print.html")
+    await fetch(
+      printurl,
+      {
+      method: "PUT",
+      body: this.innerHTML
+    })
+    if (await lively.confirm("visit " + printurl)) {
+      window.open(printurl)
+    }
+  }  
   
   updatePageNumber() {
     if (!this.slide) return;

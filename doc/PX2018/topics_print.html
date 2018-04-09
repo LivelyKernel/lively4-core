@@ -1,0 +1,122 @@
+<div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;"><!-- #TODO make style links in container content relative to url -->
+<link rel="stylesheet" type="text/css" href="style.css">
+<link rel="stylesheet" type="text/css" href="doc/PX2018/style.css">
+<link rel="stylesheet" type="text/css" href="../../src/client/lively.css">
+<link rel="stylesheet" type="text/css" href="../../templates/livelystyle.css">
+<div class="title">
+  PX 2018: Seminar on Programming Experience
+</div>
+<div class="authors">
+  Jens Lincke, Stefan Ramson, Patrick Rein, Marcel Taeumel, Robert Hirschfeld
+</div>
+<div class="credentials">
+  Software Architecture Group <br>Hasso Plattner Institute<br> University of Potsdam, Germany
+</div>
+<style>
+.lively-slide {
+  border: 1px solid rgb(220,220,220)
+}
+
+</style>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">1</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Abstract</h1>
+<p>Active Essays and Explorable Explanations is a form of interactive media that can help understand complex systems for many relevant domains.
+In particular, the domain of software design is filled with challenging algorithms, patterns, and systems that are hard to understand and master.&nbsp;
+In this seminar, the participants will create demos, tools, and applications based on the idea of Explorable Explanations to improve the programming experience when developing such systems.
+By using our live collaborative development environment, Lively4, they will share, explore, and adapt the created tools and explanations --- even in unanticipated ways.</p>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">2</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topics</h1>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">3</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h2>Entity Component System</h2>
+<ul>
+<li>links/resources</li>
+<li><a href="http://www.chris-granger.com/2012/12/11/anatomy-of-a-knockout/">Anatomy of a Knockout</a></li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">4</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<ul>
+<li>Material Point Method</li>
+<li>Parser Combinators</li>
+<li><a href="https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type">Conflict-free replicated data type</a></li>
+<li>Blockchain
+<ul>
+<li>...</li>
+</ul>
+</li>
+<li>Neuronale Netze
+<ul>
+<li>Deep Learning</li>
+</ul>
+</li>
+<li>Support Vector Machine</li>
+<li>Monte Carlo Tree Search
+<ul>
+<li>Anwendungsfall: Alpha Go KI</li>
+<li><a href="https://pdfs.semanticscholar.org/1740/eb993cc8ca81f1e46ddaadce1f917e8000b5.pdf"><em>Silver, David, et al.</em> "Mastering the game of Go with deep neural networks and tree search" </a></li>
+</ul>
+</li>
+<li>Z3 (Complex Constraint Solver, SMT)</li>
+<li>Constraint Solver (Vergleich)
+<ul>
+<li>Cassowary</li>
+<li>Gradient Descent</li>
+<li>Backtracking/Backtalk</li>
+</ul>
+</li>
+<li>Prolog</li>
+<li>Path finding Algorithm (Comparison, Dijstra, A*)</li>
+<li>Compression (Zip, ...)</li>
+<li>Regular Expressions
+<ul>
+<li>NFA- and DFA vs. Backtracking</li>
+</ul>
+</li>
+<li>Easy Topics:
+<ul>
+<li>Levenshtein distance</li>
+<li>Epidemic Change Propagation (Techniques for suppressing duplicate operations)</li>
+</ul>
+</li>
+<li>Alpha-beta pruning (AI, Treesearch)</li>
+<li>Learnable Programming
+<ol>
+<li>Follow the flow</li>
+<li>See the state</li>
+<li>Create by reacting</li>
+<li>Create by abstracting</li>
+</ol>
+</li>
+<li>Stable Treemap Algorithm</li>
+<li>Graph Layout Vergleich (Simulated Annealing vs force Layout)</li>
+<li>GPU Graph Base Search</li>
+<li>Your Topic!</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">5</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<lively-script><script>
+// poor men's slide master
+var presentation = lively.query(this, "lively-presentation")
+if (presentation) {
+  presentation.slides().forEach(ea => {
+    var img = document.createElement("img")
+    img.classList.add("logo")
+    img.src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" 
+    img.setAttribute("width", "50px")
+    ea.appendChild(img)
+
+    var div = document.createElement("div")
+    div.classList.add("page-number")
+    ea.appendChild(div)
+  });
+}
+
+""
+
+</script></lively-script>
+<lively-script><script>
+  var button = document.createElement("button")
+  button.textContent = "print"
+  button.onclick = async () => {
+   var presentation = lively.query(this, "lively-presentation")
+   presentation.exportPrint()
+  }
+  button
+</script></lively-script><img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">6</div></div>
