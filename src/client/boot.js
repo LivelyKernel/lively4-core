@@ -26,12 +26,18 @@ async function invalidateFileCaches()  {
         headers: {
           filelist  : true
         }
-      }).then(resp => {
+      }).then(async resp => {
         if (resp.status != 200) {
           console.log("PROBLEM invalidateFileCaches " + resp.status)
           return false
         } else {
-          return resp.json()
+          try {
+            var text = await resp.text()
+            return JSON.parse(text)
+          } catch(e) {
+            console.log("could not parse: " + text)
+            return undefined
+          }
         }
       })
     ])
