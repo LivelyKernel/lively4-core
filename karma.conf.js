@@ -14,7 +14,7 @@ module.exports = function(config) {
     // frameworks: ['mocha', 'requirejs', 'chai'],
     // frameworks: [],
     // 'requirejs' ... !!!! THIS BREAKS Lively Modules
-    frameworks: ['mocha','chai'],
+    frameworks: ['mocha'], // ,'chai'
 
     // frameworks: [],
     

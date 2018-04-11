@@ -369,7 +369,10 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   showSublistJS(subList) {
-    if (!this.sourceContent) return;
+    if (!this.sourceContent || !this.sourceContent.split) {
+      // undefined or Blob
+      return;
+    }
     let instMethod = "(^|\\s+)([a-zA-Z0-9$_]+)\\s*\\(\\s*[a-zA-Z0-9$_ ,=]*\\s*\\)\\s*{",
         klass = "(?:^|\\s+)class\\s+([a-zA-Z0-9$_]+)",
         func = "(?:^|\\s+)function\\s+([a-zA-Z0-9$_=]+)\\s*\\(",

@@ -32,11 +32,13 @@ export class ConnectionManager {
       }
     });
     
+    
+    // #Hack #TODO Disable active online checking for now, because it wreck havoc on slow "localhost" connections...
     // Repeatedly check if the browser thinks we are online
-    self.setInterval(this._checkBrowserOnline, CHECK_BROWSER_INTERVAL, this);
+    // self.setInterval(this._checkBrowserOnline, CHECK_BROWSER_INTERVAL, this);
     
     // Repeatedly check if we are really online, since the browser's 'online' status is not reliable
-    self.setInterval(this._checkNetworkOnline, CHECK_NETWORK_INTERVAL, this);
+    // self.setInterval(this._checkNetworkOnline, CHECK_NETWORK_INTERVAL, this);
   }
   
   /**

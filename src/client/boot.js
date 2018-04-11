@@ -13,6 +13,65 @@
  
 window.lively4plugincache = window.localStorage["livel4systemjscache"] == "true";
 
+async function invalidateFileCaches()  {
+  try {
+    var offlineFirstCache = await caches.open("offlineFirstCache")
+    var url = lively4url + "/" 
+    var json = await Promise.race([
+      new Promise(r => {
+        setTimeout(() => r(false), 5000) // give the server 5secs ... might be an old one or somthing, anyway keep going!
+      })
+      ,fetch(url, {
+        method: "OPTIONS",
+        headers: {
+          filelist  : true
+        }
+      }).then(async resp => {
+        if (resp.status != 200) {
+          console.log("PROBLEM invalidateFileCaches " + resp.status)
+          return false
+        } else {
+          try {
+            var text = await resp.text()
+            return JSON.parse(text)
+          } catch(e) {
+            console.log("could not parse: " + text)
+            return undefined
+          }
+        }
+      })
+    ])
+  } catch(e) {
+    console.log("PROBLEM invalidateFileCaches " + e)
+    return
+  } 
+
+  if (!json) {
+    console.log('[boot] invalidateFileCaches: could not invalidate flash... should we clean it all?')
+    return
+  }
+  var list = json.contents
+  
+  for(let ea of list) {
+    if (!ea.name) continue; 
+    var fileURL = url + ea.name.replace(/^.\//,"")
+    var cached  = await offlineFirstCache.match(fileURL)
+    
+    if (cached) {
+      var cachedModified = cached.headers.get("modified")
+      if (ea.modified > cachedModified) {
+        console.log("invalidate cache " + fileURL + `${ea.modified} > ${cachedModified}`)
+        offlineFirstCache.delete(fileURL) // we could start loading it again?
+      } else {
+        // console.log("keep " + ea.modified)
+      }   
+    }
+  }
+}
+
+window.lively4invalidateFileCaches = invalidateFileCaches
+
+
 if (window.lively && window.lively4url) {
   console.log("CANCEL BOOT Lively4, because it is already loaded")
 } else {
@@ -320,6 +379,11 @@ if (window.lively && window.lively4url) {
       groupedMessageEnd();
       try {
         var livelyloaded = new Promise(async livelyloadedResolve => {
+
+          groupedMessage(1, 4, 'Invalidate Caches');
+          await invalidateFileCaches()
+          groupedMessageEnd();
+          
           groupedMessage(2, 4, 'Wait for Service Worker');
           const { whenLoaded } = await System.import(lively4url + "/src/client/load.js");
           await new Promise(whenLoaded);

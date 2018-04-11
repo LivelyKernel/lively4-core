@@ -5,7 +5,10 @@ import ContextMenu from 'src/client/contextmenu.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/external/ContextJS/src/contextjs.js";
-import ScopedScripts from "src/client/scoped-scripts.js";
+
+// import ScopedScripts from "src/client/scoped-scripts.js";
+let ScopedScript; // lazy load this... #TODO fix #ContextJS #Bug actual stack overflow
+
 import Clipboard from "src/client/clipboard.js"; 
 import { debounce, fileEnding, replaceFileEndingWith } from "utils";
 import ViewNav from "src/client/viewnav.js"
@@ -626,11 +629,14 @@ export default class Container extends Morph {
     this.appendMarkdown(content);
   }
   
-  appendScript(scriptElement) {
+  async appendScript(scriptElement) {
     // #IDEA by instanciating we can avoid global (de-)activation collisions
     // Scenario (A) There should be no activation conflict in this case, because appendScript wait on each other...
     // Scenario (B)  #TODO opening a page on two licely-containers at the same time will produce such a conflict. 
     // #DRAFT instead of using ScopedScripts as a singleton, we should instanciate it. 
+    if (!ScopedScripts) {
+      ScopedScripts = await System.import("src/client/scoped-scripts.js")
+    }
     var layers = ScopedScripts.layers(this.getURL(), this.getContentRoot());
     ScopedScripts.openPromises = [];  
     return new Promise((resolve, reject)=> {
@@ -850,13 +856,20 @@ export default class Container extends Morph {
     editor = lively.components.createComponent("lively-editor");
     editor.id = "editor";
     return lively.components.openIn(container, editor).then( async () => {
+      // console.log("[container] opened editor")
       editor.hideToolbar();
       var aceComp = editor.get('#editor');
       if (!aceComp) throw new Error("Could not initialalize lively-editor");
       if (aceComp.tagName == "LIVELY-CODE-MIRROR") {
-         await new Promise(resolve => {
-          aceComp.addEventListener("editor-loaded", resolve)            
+        await new Promise(resolve => {
+          if (aceComp["editor-loaded"]) {
+            resolve() // the editor was very quick and the event was fired in the past
+          } else {
+            aceComp.addEventListener("editor-loaded", resolve)            
+          }
         })
+        // console.log("[container] editor loaded")
+
       }
 
       aceComp.enableAutocompletion();
@@ -962,7 +975,7 @@ export default class Container extends Morph {
     if (!path) {
         path = "";
     }
-	  var isdir= path.match(/.\/$/);
+	  var isdir = path.match(/.\/$/);
     
     var url;
     if (path.match(/^https?:\/\//)) {
@@ -979,10 +992,12 @@ export default class Container extends Morph {
     }
     if (!isdir && !other) {
       // check if our file is a directory
+      
       var options = await fetch(url, {method: "OPTIONS"}).then(r =>  r.json()).catch(e => {})
       if (options && options.type == "directory") {
         isdir = true
       }
+      // console.log("[container] isdir " + isdir)
     }
     if (!path.match(/\/$/) && isdir) {
       path =  path + "/"
@@ -1044,6 +1059,10 @@ export default class Container extends Morph {
   
     return fetch(url).then( resp => {
       this.lastVersion = resp.headers.get("fileversion");
+
+      // console.log("[container] lastVersion " +  this.lastVersion)
+
+      
       
       // Handle cache error when offline
       if(resp.status == 503) {
@@ -1154,7 +1173,7 @@ export default class Container extends Morph {
   
   
   editFile(path) {
-    // console.log("[container ] editFile " + path)
+    // console.log("[container] editFile " + path)
     this.setAttribute("mode","edit"); // make it persistent
     return (path ? this.setPath(path, true /* do not render */) : Promise.resolve()).then( () => {
       this.clear();
@@ -1168,14 +1187,17 @@ export default class Container extends Morph {
 
       this.showNavbar();
       
+      // console.log("[container] editFile befor getEditor")
       return this.getEditor().then(livelyEditor => {
+        // console.log("[container] editFile got editor ")
+
         var aceComp = livelyEditor.get('#editor');
         
         aceComp.addEventListener("change", evt => this.onTextChanged(evt))
         
         var url = this.getURL();
         livelyEditor.setURL(url);
-      
+        // console.log("[container] editFile setURL " + url)
         if (aceComp.editor && aceComp.editor.session) {
           aceComp.editor.session.setOptions({
       			mode: "ace/mode/javascript",

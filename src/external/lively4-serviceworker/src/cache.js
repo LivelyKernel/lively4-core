@@ -19,6 +19,16 @@ import focalStorage from '../../focalStorage.js';
 
 let useCacheDictionary = false; // #Dev #Experimental
 
+// OfflineFirst Preference
+export var lively4offlineFirst = false;
+self.addEventListener('message', (e) => { 
+  let message = e.data;
+  if(message.type === 'config' && message.option === 'offlineFirst') {
+    lively4offlineFirst = message.value
+    console.log("change option " + message.option + " to " + message.value) 
+  }
+});
+
 if (useCacheDictionary) {
   var Dictionary = CacheDictionary
 } else {
@@ -26,17 +36,20 @@ if (useCacheDictionary) {
 }
 
 /**
- * This class is supposed to be a general-purpose cache for HTTP requests with different HTTP methods.
+ * This class is supposed to be a general-purpose cache for HTTP requests
+ * with different HTTP methods.
  */
 export class Cache {
   
   /**
-   * Constructs a new Cache object
-   * @param fileSystem A reference to the filesystem. Needed to process queued filesystem requests.
+   * @param fileSystem A reference to the filesystem. Needed to process 
+   *        queued filesystem requests.
    */
   constructor(fileSystem) {
     this._responseCache = new Dictionary('response-cache'); // GET
-    this._requestCache = new Dictionary('request-cache'); // outgoing PUT that have to be queued 
+    
+    // outgoing PUT that have to be queued 
+    this._requestCache = new Dictionary('request-cache'); 
     this._favoritesTracker = new FavoritesTracker(this);
     
     this._connectionManager = new ConnectionManager();
@@ -53,8 +66,7 @@ export class Cache {
     
     // Register for cache data requests from the client
     self.addEventListener('message', (e) => { 
-      let message = e.data;
-      
+      let message = e.data;      
       if(message.type && message.command && message.type === 'dataRequest') {
         this._receiveFromClient(message.command, message.data);
       }
@@ -69,22 +81,42 @@ export class Cache {
     // #OfflineFirst
     this.offlineFirstReady = (async () => {
       this.offlineFirstCache = await caches.open("offlineFirstCache")
+      lively4offlineFirst = await focalStorage.getItem("swxOfflineFirst")
+      if (this.offlineFirst) {
+        console.log("offlineFirst Cache enabled")
+      }
     })()
   }
   
   async fetchOfflineFirst(request, doNetworkRequest) {
-    await this.offlineFirstReady;
-    var resp = await this.offlineFirstCache.match(request)
-    if (resp) {
-      console.log("offlineFirst cached " + request.url)
-      return resp.clone()
-    } else {
-      console.log("offlineFirst update " + request.url)
-
-      var newResp = await doNetworkRequest()
-      this.offlineFirstCache.put(request, newResp.clone())
+    // console.log("offline first " + request.url)
+    if (request.method == "GET") {
+      var resp = await this.offlineFirstCache.match(request)
+      if (resp) {
+        var lastModified = resp.headers.get("modified") 
+        if (lastModified) {
+          // console.log("offlineFirst cached " + request.url)
+          return resp.clone()
+        } else {
+          // console.log("modified missing ")
+          // this.offlineFirstCache.delete(request)
+          // we have it in cache, but modification date is missing... so we fetch it again
+        }
+      }
+      // console.log("offlineFirst update " + request.url)
+      var newResp = await doNetworkRequest()    
+      this.offlineFirstCache.put(request, newResp.clone())      
       return newResp
-    }  
+    } 
+    
+    if (request.method == "PUT") {
+      // console.log("cache delete " + request.url)
+      this.offlineFirstCache.delete(request.url)
+      return doNetworkRequest()    
+    }
+    
+    // anything else
+    return doNetworkRequest()
   }
   
   /**
@@ -93,9 +125,12 @@ export class Cache {
    * @param request The request to respond to
    * @param doNetworkRequest A function to call if we need to send out a network request
    */
-  fetch(request, doNetworkRequest) {
-    if (request.method == "GET" && request.url.match(/offlineFirst/)) {
-      return this.fetchOfflineFirst(request, doNetworkRequest) // #Hack to be able to develo it....
+  async fetch(request, doNetworkRequest) {
+    // console.log("[cache] fetch " + request.url )
+    await this.offlineFirstReady;
+
+    if (lively4offlineFirst || (request.url || request).match(/offlineFirst/)) {
+      return this.fetchOfflineFirst(request, doNetworkRequest) // #Hack to be able to develop it....
     }
       
     // console.log("request " + request.url)
@@ -105,10 +140,11 @@ export class Cache {
         this._favoritesTracker.update(request.url);
       }
       
-      if (this._connectionManager.isOnline) {
+      // #TODO force online! 
+      if (true || this._connectionManager.isOnline) {
         resolve(this._onlineResponse(request, doNetworkRequest, this._cacheMode > 0));
       } else if (this._cacheMode > 0) {
-        resolve(this._offlineResponse(request));
+        resolve(this._offlineResponse(request, doNetworkRequest));
       }
     }).then(r => {
       // console.log("resolved " + request.url + " in " + (performance.now() - start) +"ms")
@@ -157,7 +193,7 @@ export class Cache {
    * Returns a response for offline devices
    * @param request The request to respond to
    */
-  _offlineResponse(request) {
+  _offlineResponse(request, doNetworkRequest) {
     // When offline, check the cache or put request in queue
     if (this._cacheMethods.includes(request.method)) {
       // Check if the request is in the cache
@@ -172,7 +208,11 @@ export class Cache {
           }
         } else {
           msg.notify('error', 'Could not fulfil request from cache');
-          console.error(`Not in cache: ${request.url}`);
+          console.log(`Not in cache: ${request.url}`);
+          
+          console.log("#TODO online/offline check does not play well with bootstrapping cold? So fetch anyway")
+          return doNetworkRequest()
+          
           // At this point we know we are offline, so sending out the request is useless
           // Just create a fake error Response
           return buildNotCachedResponse();

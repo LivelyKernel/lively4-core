@@ -225,7 +225,7 @@ exports.translate = async function(load, traceOpts) {
             .then( t => cachedOutputMap = t && JSON.parse(t))])
       }
       if (cachedOutputCode && (cachedInputCode == load.source)) {
-        console.log("plugin babel use cache: " + load.name)
+        // console.log("plugin babel use cache: " + load.name)
         try {
 
           output = {

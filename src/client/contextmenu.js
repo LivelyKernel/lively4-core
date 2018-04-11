@@ -341,6 +341,9 @@ export default class ContextMenu {
   
           this.hide();
         }],
+        ["Invalidate caches", async evt => {
+          lively4invalidateFileCaches ()
+        }],
       ]],
       [
         "Windows", 
