@@ -93,6 +93,10 @@ ul li ul li {
     border: 0px solid white;
   }  
 
+  .lively-presentation {
+    transform-origin: top left;
+    transform: scale(1)
+  }
 }
 
 /* ul, li {

@@ -1,8 +1,23 @@
-<div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;"><!-- #TODO make style links in container content relative to url -->
+<div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;"><!-- markdown-config presentation=true -->
+<!-- #TODO make style links in container content relative to url -->
 <link rel="stylesheet" type="text/css" href="style.css">
 <link rel="stylesheet" type="text/css" href="doc/PX2018/style.css">
 <link rel="stylesheet" type="text/css" href="../../src/client/lively.css">
 <link rel="stylesheet" type="text/css" href="../../templates/livelystyle.css">
+<style>
+  .lively-slide {
+    border: 1px solid rgb(220,220,220)
+  }
+  p {
+    font-size: 18pt
+  }
+  @media print {
+    .lively-slide {
+      border: 0px solid white
+    }      
+  }
+  
+</style>
 <div class="title">
   PX 2018: Seminar on Programming Experience
 </div>
@@ -12,14 +27,16 @@
 <div class="credentials">
   Software Architecture Group <br>Hasso Plattner Institute<br> University of Potsdam, Germany
 </div>
-<style>
-  .lively-slide {
-    border: 1px solid rgb(220,220,220)
+<lively-script><script>
+  var button = document.createElement("button")
+  button.textContent = "print"
+  button.onclick = async () => {
+   var presentation = lively.query(this, "lively-presentation")
+   presentation.exportPrint()
   }
-  p {
-    font-size: 18pt
-  }
-</style>
+  button.style = "position: absolute; bottom: 10px; left: 10px"
+  button
+</script></lively-script>
 <img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">1</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
 <h1>Abstract</h1>
 <!-- #TODO get rid of this formatting #Hack -->
@@ -474,12 +491,4 @@ if (presentation) {
 }
 ""
 </script></lively-script>
-<lively-script><script>
-  var button = document.createElement("button")
-  button.textContent = "print"
-  button.onclick = async () => {
-   var presentation = lively.query(this, "lively-presentation")
-   presentation.exportPrint()
-  }
-  button
-</script></lively-script><img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">33</div></div>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">33</div></div>

@@ -1,8 +1,25 @@
+<!-- markdown-config presentation=true -->
+
 <!-- #TODO make style links in container content relative to url -->
 <link rel="stylesheet" type="text/css" href="style.css" />
 <link rel="stylesheet" type="text/css" href="doc/PX2018/style.css"  />
 <link rel="stylesheet" type="text/css" href="../../src/client/lively.css"  />
 <link rel="stylesheet" type="text/css" href="../../templates/livelystyle.css"  />
+
+<style>
+  .lively-slide {
+    border: 1px solid rgb(220,220,220)
+  }
+  p {
+    font-size: 18pt
+  }
+  @media print {
+    .lively-slide {
+      border: 0px solid white
+    }      
+  }
+  
+</style>
 
 <div class="title">
   PX 2018: Seminar on Programming Experience
@@ -16,14 +33,17 @@
   Software Architecture Group <br>Hasso Plattner Institute<br> University of Potsdam, Germany
 </div>
 
-<style>
-  .lively-slide {
-    border: 1px solid rgb(220,220,220)
+<script>
+  var button = document.createElement("button")
+  button.textContent = "print"
+  button.onclick = async () => {
+   var presentation = lively.query(this, "lively-presentation")
+   presentation.exportPrint()
   }
-  p {
-    font-size: 18pt
-  }
-</style>
+  button.style = "position: absolute; bottom: 10px; left: 10px"
+  button
+</script>
+
 
 --- 
 
@@ -446,13 +466,3 @@ if (presentation) {
 ""
 </script>
 
-
-<script>
-  var button = document.createElement("button")
-  button.textContent = "print"
-  button.onclick = async () => {
-   var presentation = lively.query(this, "lively-presentation")
-   presentation.exportPrint()
-  }
-  button
-</script>
