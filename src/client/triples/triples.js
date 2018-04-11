@@ -1,3 +1,5 @@
+"enable aexpr";
+
 import focalStorage from 'src/external/focalStorage.js';
 import ContextMenu from './../contextmenu.js';
 import { through, uuid, fileName, hintForLabel, getTempKeyFor, asDragImageFor } from 'utils';
@@ -360,8 +362,9 @@ export class Graph {
     const maxTries = 10;
     const fileName = name.replace(/\s/g, '_');
     let offset = 0;
+    let i = 0;
     
-    for(let i = 0; i < maxTries; i++) {
+    for(; i < maxTries; i++) {
       let bust = offset === 0 ? '' : offset;
       let url = new URL(`${fileName}${bust}.${fileEnding}`, directory);
       let fileExists = (await fetch(url)).status === 200;

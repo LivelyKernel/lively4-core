@@ -126,6 +126,10 @@ export default class Files {
     return fetch(urlString, {method: 'OPTIONS'}).then(resp => resp.text())
   }
 
+  /**
+   * Recursively walks a directory path given as string.
+   * @returns an array of files
+   */
   static async walkDir(dir) {
     if(dir.endsWith('/')) { dir = dir.slice(0, -1); }
     const json = await lively.files.statFile(dir).then(JSON.parse);

@@ -349,7 +349,7 @@ export default class Container extends Morph {
 
   onUp() {
     var path = this.getPath();
-    if (path.match(/index\.((html)|(md))/))
+    if (path.match(/(README|index)\.((html)|(md))/))
       // one level more
       this.followPath(path.replace(/(\/[^/]+\/[^/]+$)|([^/]+\/$)/,"/"));
     else

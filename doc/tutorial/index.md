@@ -1,5 +1,8 @@
-# Tutorial
+# Lively Onboarding
 
+## Guides
+
+- [TDD for Active Expressions](./reactive/tdd_for_aexprs.md)
 
 ## Goals?
 
@@ -54,5 +57,7 @@ So lets start:
 # Things we should say somewhere:
 
 - Ctrl-Shift-F - search throughout whole repository.
+- F7 switches between .js and .html file of a web component
+- `Strg-Drag` on body/background to navigate the lively world
 
-- Persistence indicator, when explaining persistence of objects/html elements
+- Persistence indicator, top right corner, when explaining persistence of objects/html elements

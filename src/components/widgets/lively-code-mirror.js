@@ -10,6 +10,7 @@ import 'src/client/stablefocus.js';
 import Strings from 'src/client/strings.js';
 import { letsScript } from 'src/client/vivide/vivide.js';
 import { TernCodeMirrorWrapper } from 'src/client/reactive/tern-spike/tern-wrapper.js';
+import {isSet} from 'utils'
 
 let loadPromise = undefined;
 
@@ -458,7 +459,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     var promisedWidget
     var objClass = (obj && obj.constructor && obj.constructor.name) || (typeof obj)
-    if (_.isSet(obj)) {
+    if (isSet.call(obj)) {
       obj = Array.from(obj)
     }
 
