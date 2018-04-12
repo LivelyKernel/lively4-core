@@ -1,6 +1,6 @@
 "enable aexpr";
 
-import { trackInstance } from 'roq';
+import { trackInstance } from 'active-groups';
 
 export function getValueClass() {
   return class ValueClass {
