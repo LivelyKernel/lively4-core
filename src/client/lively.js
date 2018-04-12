@@ -116,54 +116,60 @@ export default class Lively {
     }
     var modulePaths = [path];
     await this.unloadModule(path);
-    return System.import(path).then( m => {
-      
-      // #TODO how can we make the dependecy loading optional... I don't need the whole environment to relaod while developing a core module everybody depends on
-      // if (path.match("graphics.js")) {
-      //   console.log("[reloadModule] don't load dependencies of " + path)
-      //   return m
-      // }
-      
-      // Find all modules that depend on me
-      var dependedModules = lively.findDependedModules(path)
-      // and update them
-      for(var ea of dependedModules) {
-        modulePaths.push(ea)
-        // console.log("reload " + path + " triggers reload of " + ea)
-        System.registry.delete(ea)  
-        System.import(ea)
-        // #TODO think about if this is ennough or if we need some kind of recursion
-      }
-      return m
-    }).then( mod => {
-      var moduleName = path.replace(/[^/]*/,"");
-      var defaultClass = mod.default;
-      if (defaultClass) {
-        console.log("update template prototype: " + moduleName);
-        components.updatePrototype(defaultClass.prototype);
-      }
-      return mod;
-    }).then(async (mod) => {
-      // console.log("UPDATE TEMPLATES ");
-      [path].concat(modulePaths).forEach(eaPath => {
-        console.log("update dependend: ", eaPath, 3, "blue")
-        var found = lively.components.getTemplatePaths().find(templatePath => eaPath.match(templatePath))
-        if (found) {
-          var templateURL = eaPath.replace(/\.js$/,".html");
-          try {
-            console.log("[templates] update template " + templateURL);
-            setTimeout(() => {
-              lively.files.loadFile(templateURL).then( sourceCode => 
-                lively.updateTemplate(sourceCode));
-            },100)
-            
-          } catch(e) {
-            lively.notify("[templates] could not update template " + templateURL, ""+e);
-          }
+    let mod = await System.import(path);
+    
+    /**
+     * Reload dependent modules
+     */
+    // #TODO how can we make the dependecy loading optional... I don't need the whole environment to relaod while developing a core module everybody depends on
+    // if (path.match("graphics.js")) {
+    //   console.log("[reloadModule] don't load dependencies of " + path)
+    //   return mod
+    // }
+
+    // Find all modules that depend on me
+    let dependedModules = lively.findDependedModules(path)
+    // and update them
+    for(let ea of dependedModules) {
+      modulePaths.push(ea)
+      // console.log("reload " + path + " triggers reload of " + ea)
+      System.registry.delete(ea)  
+      System.import(ea)
+      // #TODO think about if this is ennough or if we need some kind of recursion
+    }
+    
+    /**
+     * Update a templates prototype
+     */
+    let moduleName = path.replace(/[^/]*/,"");
+    let defaultClass = mod.default;
+    if (defaultClass) {
+      console.log("update template prototype: " + moduleName);
+      components.updatePrototype(defaultClass.prototype);
+    }
+    
+    /**
+     * Update Templates: Reload a template's .html file
+     */
+    [path].concat(modulePaths).forEach(eaPath => {
+      console.log("update dependend: ", eaPath, 3, "blue")
+      let found = lively.components.getTemplatePaths().find(templatePath => eaPath.match(templatePath))
+      if (found) {
+        let templateURL = eaPath.replace(/\.js$/,".html");
+        try {
+          console.log("[templates] update template " + templateURL);
+          setTimeout(() => {
+            lively.files.loadFile(templateURL).then( sourceCode => 
+              lively.updateTemplate(sourceCode));
+          },100)
+
+        } catch(e) {
+          lively.notify("[templates] could not update template " + templateURL, ""+e);
         }
-      })
-      return mod
-    })
+      }
+    });
+    
+    return mod;
   }
 
   static loadJavaScriptThroughDOM(name, src, force) {
