@@ -9,10 +9,27 @@ import select, { trackInitializeAndDestroy } from 'roq';
 import { getValueClass } from './class-factory.js';
 const AValueClass = getValueClass();
 
-describe('track initialize and destroy utility', function() {
+describe('instance tracking', function() {
 
-  it('wraps the methods', function() {
+  it('track initialize and destroy utility', function() {
     this.timeout(10000);
+
+    class ValueHolder {
+      constructor(val) { this.initialize(val); }
+      initialize(val) {
+        this.val = val
+      }
+      destroy() {}
+    }
+    
+    let neverTracked = new ValueHolder(10);
+    let beforeTracking = select(ValueHolder, v => v.val >= 5);
+    new ValueHolder(10);
+    
+    trackInitializeAndDestroy(ValueHolder);
+    
+    let afterTracking = select(ValueHolder, v => v.val >= 5);
+    
     let spy = sinon.spy();
 
     var threshold = { min: 0 },

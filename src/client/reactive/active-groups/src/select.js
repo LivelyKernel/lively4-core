@@ -27,6 +27,7 @@ function ensureBaseViewForClass(Class) {
   Class._instances_ = Class._instances_ || new View();
 }
 
+// #TODO: ideally, we would track the constructor, maybe with **decorators**?
 // #TODO: unused, maybe use cop instead of a functional mixin
 // #TODO: use cop here
 export function trackInitializeAndDestroy(Class) {

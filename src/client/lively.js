@@ -77,13 +77,50 @@ export default class Lively {
   static set location(url) {
     return window.location = url;
   }
-
-  static findDependedModules(path) {
+  
+  static findDirectDependentModules(path) {
      var mod = System.normalizeSync(path);
      return Object.values(System.loads)
       .filter( ea => 
         ea.dependencies.find(dep => System.normalizeSync(dep, ea.key) == mod))
       .map( ea => ea.key)
+  }
+
+  static findDependedModules(path, recursive, all = []) {
+    let dependentModules = this.findDirectDependentModules(path);
+    if(recursive) {
+      dependentModules.forEach(module => {
+        if(!all.includes(module)) {
+          all.push(module);
+          this.findDependedModules(module, true, all);
+        }
+      });
+      return all;
+    } else {
+      return dependentModules;
+    }
+  }
+  
+  static findDependedModulesGraph(path, all = []) {
+    
+    let tree = {
+      
+    }
+    tree.name = path;
+    let dependentModules = this.findDirectDependentModules(path);
+    tree.children = [];
+
+    dependentModules.forEach(module => {
+      if(!all.includes(module)) {
+        all.push(module);
+        tree.children.push(this.findDependedModulesGraph(module, all));
+      } else {
+        tree.children.push({
+          name: module
+        });
+      }
+    });
+    return tree;
   }
   
   // #TODO remove code duplication lively-con
@@ -128,14 +165,16 @@ export default class Lively {
     // }
 
     // Find all modules that depend on me
-    let dependedModules = lively.findDependedModules(path)
+    let dependedModules = lively.findDependedModules(path);
     // and update them
     for(let ea of dependedModules) {
       modulePaths.push(ea)
       // console.log("reload " + path + " triggers reload of " + ea)
-      System.registry.delete(ea)  
-      System.import(ea)
-      // #TODO think about if this is ennough or if we need some kind of recursion
+      System.registry.delete(ea);
+    }
+    // now the system may build up a cache again
+    for(let ea of dependedModules) {
+      System.import(ea);
     }
     
     /**

@@ -5,14 +5,15 @@
 
 import {foo, FooClass} from 'test/a.js'
 
-
-function bar3() {
+export function bar3() {
   return "b does somthing with a's:" + foo() + " and" + FooClass.foo()
 }
 
 var c = 3
 
 
+
 bar3
 
+lively.notify('LOADED B')
 
