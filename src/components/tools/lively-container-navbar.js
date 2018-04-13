@@ -251,8 +251,9 @@ export default class LivelyContainerNavbar extends Morph {
         icon = '<i class="fa fa-folder"></i>';
       } else if (ea.type == "link") {
         icon = '<i class="fa fa-arrow-circle-o-right"></i>';
-      } 
-        else {
+      } else if (/(\.|-)(spec|test)\.js$/i.test(name)) {
+        icon = '<i class="fa fa-check-square-o"></i>'
+      } else {
         icon = '<i class="fa fa-file"></i>';
       }
       
