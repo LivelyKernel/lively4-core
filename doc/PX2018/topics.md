@@ -1,21 +1,26 @@
 <!-- markdown-config presentation=true -->
 
 <!-- #TODO make style links in container content relative to url -->
-<link rel="stylesheet" type="text/css" href="style.css" />
+<!-- <link rel="stylesheet" type="text/css" href="style.css" /> -->
 <link rel="stylesheet" type="text/css" href="doc/PX2018/style.css"  />
-<link rel="stylesheet" type="text/css" href="../../src/client/lively.css"  />
-<link rel="stylesheet" type="text/css" href="../../templates/livelystyle.css"  />
+<link rel="stylesheet" type="text/css" href="src/client/lively.css"  />
+<link rel="stylesheet" type="text/css" href="templates/livelystyle.css"  />
 
 <style>
   .lively-slide {
     border: 1px solid rgb(220,220,220)
+    page-break-before: always;
+/*     border: 2px solid red
+ */
   }
   p {
     font-size: 18pt
   }
   @media print {
     .lively-slide {
-      border: 0px solid white
+      page-break-before: always;
+      border: 0px solid white;
+/*       border: 2px solid blue; */
     }      
   }
   
@@ -38,7 +43,7 @@
   button.textContent = "print"
   button.onclick = async () => {
    var presentation = lively.query(this, "lively-presentation")
-   presentation.exportPrint()
+   presentation.print()
   }
   button.style = "position: absolute; bottom: 10px; left: 10px"
   button
@@ -450,7 +455,7 @@ Propose your own topic!
 <script>
 // poor men's slide master
 var presentation = lively.query(this, "lively-presentation")
-if (presentation) {
+if (presentation && presentation.slides) {
   presentation.slides().forEach(ea => {
     var img = document.createElement("img")
     img.classList.add("logo")

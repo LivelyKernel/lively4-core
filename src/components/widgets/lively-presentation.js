@@ -51,7 +51,10 @@ export default class LivelyPresentation extends Morph {
 
   gotoSlideAt(n) {
     var slides = this.slides()
-    this.setSlide(this.slides()[n])
+    if (n < 0) {
+      n = slides.length - 1
+    }
+    this.setSlide(slides[n])
   }
   
   currentSlideNumber() {
@@ -84,7 +87,7 @@ export default class LivelyPresentation extends Morph {
     this.updatePageNumber()
   }
   
-  async exportPrint() {
+  showAllSlides() {
     var i=1;
     this.slides().forEach(ea => {
       ea.style.display = "block"
@@ -92,6 +95,10 @@ export default class LivelyPresentation extends Morph {
       var pageNumber = ea.querySelector(".page-number")
       if (pageNumber) pageNumber.textContent = i++
     })
+  }
+  
+  async exportPrint() {
+    this.showAllSlides()
     var printurl = lively.query(this, "lively-container").getURL().toString().replace(/\.md/,"_print.html")
     await fetch(
       printurl,
@@ -103,6 +110,36 @@ export default class LivelyPresentation extends Morph {
       window.open(printurl)
     }
   }  
+
+  async print() {
+    var currentSlideNumber = this.currentSlideNumber() 
+    this.showAllSlides()
+
+    window.oldBody = Array.from(document.body.childNodes)
+
+
+    document.body.innerHTML = this.innerHTML
+    var bodyCSS = document.body.style.cssText
+    document.body.style = ""
+    
+    await lively.sleep(1000)
+
+    window.print()
+
+    // await lively.sleep(1000)
+
+    // await lively.confirm("finished printing?")
+
+    
+    
+    // I'll be back
+    document.body.innerHTML = "" // tabula raza
+    document.body.style = bodyCSS
+    window.oldBody.forEach(ea => document.body.appendChild(ea))
+    this.gotoSlideAt(currentSlideNumber)
+    
+  }  
+  
   
   updatePageNumber() {
     if (!this.slide) return;

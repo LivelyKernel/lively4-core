@@ -80,7 +80,16 @@ fetch = function(request, ...args) {
       if (navigator.onLine && await isOnline()) {
         let response = await originalFetch(request, ...args);
         
-        cache.put(request, response.clone());
+        
+        // var clone =  response.clone()
+        try {
+          cache.put(request, response.clone());
+        } catch(e) {
+          // #TODO #FUCK  the cache.put seems to evaluatute the javascript and hickups on "import *" etc.. Why?
+          console.error("fetch error " + e)
+        }
+        
+        
         resolve(response);
         return;
       }
