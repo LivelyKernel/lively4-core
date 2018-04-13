@@ -476,7 +476,7 @@ Propose your own topic!
 <lively-script><script>
 // poor men's slide master
 var presentation = lively.query(this, "lively-presentation")
-if (presentation) {
+if (presentation && presentation.slides) {
   presentation.slides().forEach(ea => {
     var img = document.createElement("img")
     img.classList.add("logo")

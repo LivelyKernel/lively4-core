@@ -5,9 +5,9 @@ img {
   max-width: 900px;
 }
 
-.lively-presentation {
+.lively-slide {
   transform-origin: top left;
-  transform: scale(0.3)
+  transform: scale(1);
 }
 
 
@@ -20,6 +20,8 @@ img {
   
   border: solid 2px rgb(240,240,240);
   padding: 20px;
+  
+
 }
 
 .title, .authors, .credentials, .conference {
@@ -90,7 +92,9 @@ ul li ul li {
   }  
   .lively-slide {
     page-break-before: always;
-    border: 0px solid white;
+/*     border: 0px solid white; */
+    border: 2px solid red;
+
   }  
 
   .lively-presentation {
