@@ -317,13 +317,9 @@ export default class LivelyContainerNavbar extends Morph {
       ["edit", () => lively.openBrowser(otherUrl, true)],
       ["browse", () => lively.openBrowser(otherUrl)],
       ["save as png", () => lively.html.saveAsPNG(otherUrl)],
-      ["copy path to clipboard", () => copyTextToClipboard(otherUrl)],
-      ["copy file name to clipboard", () => copyTextToClipboard(otherUrl::fileName())],
+      ["copy path to clipboard", () => copyTextToClipboard(otherUrl), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
+      ["copy file name to clipboard", () => copyTextToClipboard(otherUrl::fileName()), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
     ];
-    
-    if (Preferences.get('EnableSyvisEditor')) {
-      menuElements.push(['edit with syvis', () => this.editWithSyvis(otherUrl)]);
-    }
     
     const menu = new ContextMenu(this, menuElements)
     menu.openIn(document.body, evt, this)

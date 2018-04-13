@@ -29,11 +29,19 @@ export default class Inspector   extends Morph {
 
   displayValue(value, expand, name) {
     if (name) {
-      var node = <div class="element"></div>;
-      node.innerHTML = "<span class='attrName'>"+ name +":</span> <span class='attrValue'>"+ JSON.stringify(value).replace(/</g,"&lt;")+"</span>";
+      let attrValue;
+      if (value && typeof value === 'symbol') {
+        attrValue = value.toString();
+      } else {
+        attrValue = JSON.stringify(value).replace(/</g,"&lt;");
+      }
+      let node = <div class="element">
+        <span class='attrName'>{name}:</span>
+        <span class='attrValue'>{attrValue}</span>
+      </div>;
       return node;
     } else {
-      var node = document.createElement("pre");
+      let node = document.createElement("pre");
       node.innerHTML = JSON.stringify(value);
       return node;
     }
