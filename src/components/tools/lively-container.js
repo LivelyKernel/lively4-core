@@ -397,6 +397,17 @@ export default class Container extends Morph {
     comp.editFile("" + url);
   }
 
+  async onDependencies() {
+    lively.openComponentInWindow("lively-d3-tree").then(tree => {
+      tree.dataName = function(d) { 
+        return d.name.replace(/.*\//,"").replace(/\.js/,"")
+      }
+      tree.setTreeData([lively.findDependedModulesGraph(this.getURL().toString())])    
+      lively.setExtent(tree.parentElement, pt(1200,800))
+      tree.parentElement.setAttribute("title", "Dependency Graph: " + this.getURL().toString().replace(/.*\//,""))
+    })
+  }
+  
   async onSaveAs() {
     var newPath = await lively.prompt("Save as..", this.getPath())
     if (newPath === undefined) return;
