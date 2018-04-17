@@ -8,7 +8,7 @@ export default class LivelyModuleGraph extends Morph {
       if (!window.d3 || !window.cola || !window.ScopedD3) {
         console.log("LOAD D3");
         await lively.loadJavaScriptThroughDOM("d3", "src/external/d3.v3.js");
-        await System.import("templates/ContainerScopedD3.js");
+        await System.import("src/client/container-scoped-d3.js");
         await lively.loadJavaScriptThroughDOM("cola", "src/external/cola.js");
         await lively.loadJavaScriptThroughDOM("cola-layout", "src/external/cola-layout.js");
         await lively.loadJavaScriptThroughDOM("cola-shortestpaths", "src/external/cola-shortestpaths.js");

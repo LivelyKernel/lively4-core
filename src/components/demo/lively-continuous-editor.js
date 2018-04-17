@@ -2,7 +2,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import {babel} from 'systemjs-babel-build';
 import SyntaxChecker from 'src/client/syntax.js'
 import traceBabelPlugin from "./lively-continuous-editor-plugin.js"
-import boundEval from './../src/client/bound-eval.js';
+import boundEval from 'src/client/bound-eval.js';
 import { debounce } from "utils";
 
 import ShowPerformance from "demos/contextjs/showperformancelayer.js";
