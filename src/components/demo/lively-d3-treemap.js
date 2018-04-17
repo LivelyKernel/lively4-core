@@ -54,8 +54,8 @@ export default class LivelyD3Treemap extends Morph {
     this.svg  = svg
 
     var  
-      color = d3.scaleOrdinal(d3.schemeAccent),
-      // color = d3.scaleOrdinal(d3.schemeBlues[9]),
+      // color = d3.scaleOrdinal(d3.schemeAccent),
+      color = d3.scaleOrdinal(d3.schemeBlues[9]),
       format = d3.format(",d");
 
     var treemap = d3.treemap()
