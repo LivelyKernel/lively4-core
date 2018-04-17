@@ -10,7 +10,7 @@
  #TODO refactor booting/loading/init of lively4
   - currently we have different entry points we should unify
  */
- 
+
 window.lively4plugincache = window.localStorage["livel4systemjscache"] == "true";
 
 async function invalidateFileCaches()  {
