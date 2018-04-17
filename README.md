@@ -1,3 +1,5 @@
+Yoshi was here!
+Yoshi was here!
 
 <lively-import src="doc/_navigation.html"></lively-import>
 

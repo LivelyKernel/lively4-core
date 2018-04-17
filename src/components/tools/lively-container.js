@@ -791,7 +791,7 @@ export default class Container extends Morph {
   
     var options = await fetch(path, {method: "OPTIONS"}).then(r => r.status == 200 ? r.json() : false).catch(e => false)
     // this check could happen later
-    if (!path.match("https://lively4") 
+    if (!path.match("https://lively4") && !path.match(/http:?\/\/localhost/) 
         && !path.match(window.location.host) 
         && path.match(/https?:\/\//)) {
       if (!options) {
