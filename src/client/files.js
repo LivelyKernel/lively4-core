@@ -322,5 +322,16 @@ export default class Files {
     return tree
   }
   
+  // Files.visualizeFileTreeMap(lively4url )
+  static async visualizeFileTreeMap(url) {
+    var tree = await lively.files.fileTree(url)
+    if (tree) {
+      lively.openComponentInWindow("lively-d3-treemap").then( async tm => {
+        tm.setTreeData(tree)
+      })
+    } else {
+      lively.notify("Could not create tree for " + url)
+    }
+  }
   
 }
