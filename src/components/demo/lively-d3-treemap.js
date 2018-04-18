@@ -13,11 +13,15 @@ export default class LivelyD3Treemap extends Morph {
             { 
               "name": "Level 2: A",
               "children": [
-                { "name": "Son of A" },
-                { "name": "Daughter of A" }
+                { "name": "Son of A",
+                  size: 50},
+                { 
+                  "name": "Daughter of A",
+                  size: 30}
               ]
             },
-            { "name": "Level 2: B" }
+            { "name": "Level 2: B",
+            size: 20}
           ]
         };
     }
@@ -105,7 +109,7 @@ export default class LivelyD3Treemap extends Morph {
   }
   
   async livelyExample() {
-    this.setTreeData(await d3.json(lively4url + "/src/components/demo/flare.json"))
+    // this.setTreeData(await d3.json(lively4url + "/src/components/demo/flare.json"))
   }
  
   livelyMigrate(other) {
