@@ -1626,9 +1626,6 @@ async function fetchFetch (url, authorization, integrity, asBuffer) {
   }
 
   livelyLog("fetch " + url)
-  if (url.match("swx.js")) {
-    debugger
-  }
   try {
     var res = await fetch(url, opts)
     .then(function(res) {

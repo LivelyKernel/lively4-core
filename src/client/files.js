@@ -259,5 +259,79 @@ export default class Files {
       reader.readAsDataURL(fileOrBlob); 
     })
   }  
- 
+  
+  static async loadVersions(url) {
+    var versionscache = await caches.open("file_versions")
+    var resp = await versionscache.match(url)
+    if (resp) return resp
+    resp = await fetch(url, {
+      method: "OPTIONS",
+      headers: {
+         showversions: true   
+      }      
+    })
+    versionscache.put(url, resp)
+    return resp
+  }
+  
+  
+  static async _sortIntoFileTree(root, path, element) {
+    console.log("sort into " + path + " " + element.name )
+    var next = path.shift()
+    if (!next) {      
+      root.children.push(element)
+      return
+    }
+    var dir = root.children.find(ea => ea.name == next)
+    if (!dir) {
+      dir = {
+        name: next,
+        children: []
+      }
+      root.children.push(dir)
+    }
+    this._sortIntoFileTree(dir, path, element)
+  }
+  
+  static async fileTree(url) {
+    var tree = {
+      name: url,
+      children: []
+    }
+    var list = (await fetch(url, {
+      method: "OPTIONS",
+      headers: {
+        filelist: true
+      }
+    }).then(r => r.json())).contents
+    if (!list) return;
+    
+    for(var ea of list) {
+      if (ea.name !== ".") {
+        var path = ea.name.replace(/^\.\//,"").replace(/[^/]*$/,"").split("/").filter(ea => ea)
+        var element = {
+            name: ea.name.replace(/.*\//,""),
+            modified: ea.modified,
+            size: ea.size,
+            type: ea.type
+          }
+        if (element.type == "directory") element.children = [];
+        this._sortIntoFileTree(tree, path, element)        
+      }
+    }
+    return tree
+  }
+  
+  // Files.visualizeFileTreeMap(lively4url )
+  static async visualizeFileTreeMap(url) {
+    var tree = await lively.files.fileTree(url)
+    if (tree) {
+      lively.openComponentInWindow("lively-d3-treemap").then( async tm => {
+        tm.setTreeData(tree)
+      })
+    } else {
+      lively.notify("Could not create tree for " + url)
+    }
+  }
+  
 }

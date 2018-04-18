@@ -252,6 +252,11 @@ export default class Editor extends Morph {
    * use three-way-merge
    */ 
   async solveConflic(otherVersion) {
+    if (this.solvingConflict) {
+      lively.notify("Sovling conflict stopped, due to recursion1")
+      return 
+    }
+    
     lively.notify("Solve Conflict: " + otherVersion);
     var parentText = this.lastText; // 
     var myText = this.currentEditor().getValue(); // data
@@ -264,7 +269,12 @@ export default class Editor extends Morph {
     var mergedText = this.threeWayMerge(parentText, myText, otherText);
     this.setText(mergedText, true);
     this.lastVersion = otherVersion;
-    this.saveFile();
+    this.solvingConflict = true // here it can come to infinite recursion....
+    try {
+      await this.saveFile(); 
+    } finally {
+      this.solvingConflict = false
+    }
   }
 
   hideToolbar() {
