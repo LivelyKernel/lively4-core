@@ -833,8 +833,6 @@ export default class Lively {
     container.id = 'main-content';
     container.setAttribute("load", "auto");
     
-    
-    
     await components.openInWindow(container).then( () => {
       container.__ingoreUpdates = true; // a hack... since I am missing DevLayers...
       container.get('#container-content').style.overflow = "visible";

@@ -8,6 +8,7 @@ A Self-supporting, Web-based Development Environment
 [![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
 
 
+
 ## Getting Started
 
 Directly start developing in your Chrome by visiting [lively4](https://lively-kernel.org/lively4/lively4-core/start.html) and follow the [Getting Started Guide](./doc/tutorial/index.md). Through checking out and serving git repositories with the [lively4-server](doc/lively4-server.md), we can directly edit and use the environment in a self-supporting way. 
