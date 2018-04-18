@@ -59,8 +59,8 @@ export default class LivelyD3Treemap extends Morph {
     this.svg  = svg
 
     var  
-      color = d3.scaleOrdinal(d3.schemeAccent),
-      // color = d3.scaleOrdinal(d3.schemeBlues[9]),
+      // color = d3.scaleOrdinal(d3.schemeAccent),
+      color = d3.scaleOrdinal(d3.schemeBlues[9]),
       format = d3.format(",d");
 
     var treemap = d3.treemap()
@@ -82,10 +82,10 @@ export default class LivelyD3Treemap extends Morph {
         .attr("transform", function(d) { return "translate(" + d.x0 + "," + d.y0 + ")"; });
 
     cell.append("rect")
-        .attr("id", function(d) { return d.data.id; })
-        .attr("width", function(d) { return d.x1 - d.x0; })
-        .attr("height", function(d) { return d.y1 - d.y0; })
-        .attr("fill", function(d) { return color(d.parent.data.id); });
+        .attr("id", d => d.data.id)
+        .attr("width", d => d.x1 - d.x0)
+        .attr("height", d => d.y1 - d.y0)
+        .attr("fill", d => this.dataColor ? this.dataColor(d.data) : color(d.parent.data.id));
 
     cell.append("clipPath")
         .attr("id", function(d) { return "clip-" + d.data.id; })
@@ -102,7 +102,7 @@ export default class LivelyD3Treemap extends Morph {
         .text(function(d) { return d; });
 
     cell.append("title")
-        .text(function(d) { return d.data.id + "\n" + format(d.value); });
+        .text(d => this.dataTitle ? this.dataTitle(d.data) : d.data.id + "\n" + format(d.value) );
   }
   
   onExtentChanged() {
@@ -116,6 +116,8 @@ export default class LivelyD3Treemap extends Morph {
   livelyMigrate(other) {
     this.treeData = other.treeData
     this.dataName = other.dataName
+    this.dataColor = other.dataColor
+
   }
   
 }
