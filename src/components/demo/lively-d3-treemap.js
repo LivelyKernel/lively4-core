@@ -5,6 +5,7 @@ import { debounce } from "utils";
 
 export default class LivelyD3Treemap extends Morph {
 
+  
   getTreeData() {
     if (!this.treeData) {
       this.treeData = {
