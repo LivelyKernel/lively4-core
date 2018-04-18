@@ -80,6 +80,7 @@ export class Cache {
     
     // #OfflineFirst
     this.offlineFirstReady = (async () => {
+      if (self.caches) return; // #MacCachesBug
       this.offlineFirstCache = await caches.open("offlineFirstCache")
       lively4offlineFirst = await focalStorage.getItem("swxOfflineFirst")
       if (this.offlineFirst) {

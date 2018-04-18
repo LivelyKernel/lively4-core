@@ -15,6 +15,10 @@ window.lively4plugincache = window.localStorage["livel4systemjscache"] == "true"
 
 async function invalidateFileCaches()  {
   try {
+    if (!window.caches) {
+      console.warn("window.caches not defined")
+      return
+    }
     var offlineFirstCache = await caches.open("offlineFirstCache")
     var url = lively4url + "/" 
     var json = await Promise.race([

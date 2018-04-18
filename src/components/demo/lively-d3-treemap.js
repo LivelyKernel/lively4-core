@@ -59,8 +59,8 @@ export default class LivelyD3Treemap extends Morph {
     this.svg  = svg
 
     var  
-      // color = d3.scaleOrdinal(d3.schemeAccent),
-      color = d3.scaleOrdinal(d3.schemeBlues[9]),
+      color = d3.scaleOrdinal(d3.schemeAccent),
+      // color = d3.scaleOrdinal(d3.schemeBlues[9]),
       format = d3.format(",d");
 
     var treemap = d3.treemap()
@@ -110,7 +110,7 @@ export default class LivelyD3Treemap extends Morph {
   }
   
   async livelyExample() {
-    // this.setTreeData(await d3.json(lively4url + "/src/components/demo/flare.json"))
+    this.setTreeData(await d3.json(lively4url + "/src/components/demo/flare.json"))
   }
  
   livelyMigrate(other) {
