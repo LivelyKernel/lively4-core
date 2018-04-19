@@ -55,6 +55,10 @@ export default class LivelyD3RadialRree extends Morph {
       .attr("width", width )
       .attr("height", height)
     
+    var  
+      // color = d3.scaleOrdinal(d3.schemeAccent),
+      color = d3.scaleOrdinal(d3.schemeBlues[9]);
+    
     // Zoom and Pan - Behavior
     svg.append("rect") // the "additional rect" captures events
       .attr("width", width)
@@ -88,17 +92,19 @@ export default class LivelyD3RadialRree extends Morph {
       .data(root.descendants())
       .enter().append("g")
         .attr("class", d  => "node" + (d.children ? " node--internal" : " node--leaf"))
-        .attr("transform", d => "translate(" + radialPoint(d.x, d.y) + ")");
-
+        .attr("fill", d => this.dataColor ? this.dataColor(d.data) : undefined)
+        .attr("transform", d => "translate(" + radialPoint(d.x, d.y) + ")")
+        
+        
     node.append("circle")
-        .attr("r", 2.5);
+        .attr("r", d => this.dataSize ? this.dataSize(d.data) : 2.5)
 
     node.append("text")
         .attr("dy", "0.31em")
         .attr("x", d => d.x < Math.PI === !d.children ? 6 : -6)
         .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
         .attr("transform", d => "rotate(" + (d.x < Math.PI ? d.x - Math.PI / 2 : d.x + Math.PI / 2) * 180 / Math.PI + ")")
-        .text(d => d.data.id.substring(d.data.id.lastIndexOf(".") + 1))
+        .text(d => d.data.name)
   }
   
   
@@ -107,13 +113,25 @@ export default class LivelyD3RadialRree extends Morph {
   }
   
   async livelyExample() {
+    var colorScale =  d3.scaleSequential(d3.interpolatePiYG)
+    this.dataSize = data =>  Math.sqrt(data.size) * 0.1 
+    this.dataColor = (data) => {
+      return colorScale(data.size * 0.0001)
+    }
+    this.dataTitle = (d) => {
+      return d.id
+    }
     this.setTreeData(await d3.json(lively4url + "/src/components/demo/flare.json"))
+    
+    
   }
  
   livelyMigrate(other) {
     this.treeData = other.treeData
     this.dataName = other.dataName
     this.dataColor = other.dataColor
+    this.dataSize = other.dataSize
+
   }
   
 }
