@@ -41,4 +41,9 @@ export default class FileBrowserItem extends Morph {
   _setIcon(iconClass) {
     this.get('#item-icon').classList.add(iconClass);
   }
+  
+  livelyExample() {
+    this.name = "foo.txt"
+  }
+  
 }

@@ -88,7 +88,7 @@ var defaultBabelOptions = {
 
 exports.translate = async function(load, traceOpts) {
   
-  if (!transformCache) transformCache = await caches.open("plugin-babel")
+  if (!transformCache && self.caches) transformCache = await caches.open("plugin-babel")
   
   // we don't transpile anything other than CommonJS or ESM
   if (load.metadata.format == 'global' || load.metadata.format == 'amd' || load.metadata.format == 'json')
@@ -198,7 +198,7 @@ exports.translate = async function(load, traceOpts) {
     // #Experiment with caching.... 
     var startTransform = performance.now()
     let cachedInputCode, cachedOutputCode, cachedOutputMap
-    if(self.lively4plugincache) {
+    if(self.lively4plugincache && transformCache) {
       var key = "pluginBabelTransfrom_" + load.name
 
       // storage 1
@@ -286,14 +286,14 @@ exports.translate = async function(load, traceOpts) {
       }
     });
     
-    if (self.lively4plugincache) {
+    if (self.lively4plugincache && transformCache) {
 
       // storage 1      
       // self.localStorage[key] = output.code
       // self.localStorage[key +"_source"] = load.source
       // self.localStorage[key +"_map"] = JSON.stringify(output.map)
 
-      if (!useCacheAPI) {
+      if (!useCacheAPI && transformCache) {
         pluginBabelCache.files.put({
           url: key,
           source: load.source,

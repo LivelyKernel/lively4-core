@@ -101,8 +101,8 @@ By using our live collaborative development environment, [Lively4](https://livel
 
 <table style="margin-left: 10px; margin-top: 100px; text-align: center; font-size: 20pt;" > 
   <tr >
-    <td width="40%"><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/logo_squeak.png" height="200px"></td>
-    <td width="40%"><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/lively4_logo.png" height="200px"></td>
+    <td width="40%"><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/logo_squeak.png" height="200px"></td>
+    <td width="40%"><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/lively4_logo.png" height="200px"></td>
   </tr>
   <tr>
     <td><a href="http://squeak.org">Squeak (Smalltalk)</a></td>
@@ -137,7 +137,7 @@ By using our live collaborative development environment, [Lively4](https://livel
   - Simulated Annealing
   - Force Layout
   
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_graphlayout.png" width="60%" style="position:absolute; top:90px; right:20px;z-index:-1"></img>
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_graphlayout.png" width="60%" style="position:absolute; top:90px; right:20px;z-index:-1"></img>
 <div style="height:30%"></div>
 
 - Literature
@@ -152,7 +152,7 @@ By using our live collaborative development environment, [Lively4](https://livel
 - Domain: Visualization Algorithms
 - e.g. Voronoi tree maps
 
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_treemaps.png" width="40%" style="position:absolute; top:290px; right:50px;z-index:-1"></img>
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_treemaps.png" width="40%" style="position:absolute; top:290px; right:50px;z-index:-1"></img>
 <div style="height:50%"></div>
 
 
@@ -165,7 +165,7 @@ By using our live collaborative development environment, [Lively4](https://livel
 - Domain: Software Engineering 
 - Links/Resources
 
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_ecs_entity.png" width="40%" style="position:absolute; top:240px; right:50px;z-index:-1"></img>
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_ecs_entity.png" width="40%" style="position:absolute; top:240px; right:50px;z-index:-1"></img>
 <div style="height:30%"></div>
 
 
@@ -180,7 +180,7 @@ By using our live collaborative development environment, [Lively4](https://livel
 
 - Domain: Software Engineering / Distributed Computing
 
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_distributed-computing.png" width="50%" style="position:absolute; top:190px;right:60px;z-index:-1"></img>
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_distributed-computing.png" width="50%" style="position:absolute; top:190px;right:60px;z-index:-1"></img>
 <div style="height:60%"></div>
 
 - Literature
@@ -196,7 +196,7 @@ By using our live collaborative development environment, [Lively4](https://livel
   - Nondeterministic Finite Automatons (NFAs) 
   - Backtracking
 
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_regex.png" width="30%" style="position:absolute; top:190px;right:60px;z-index:-1"></img>
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_regex.png" width="30%" style="position:absolute; top:190px;right:60px;z-index:-1"></img>
 <div style="height:30%"></div>
 
 
@@ -210,7 +210,7 @@ By using our live collaborative development environment, [Lively4](https://livel
 
 - Domain: Software Engineering 
 
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_parser_combinator.png" width="60%" style="position:absolute; top:190px;right:60px;z-index:-1"></img>
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_parser_combinator.png" width="60%" style="position:absolute; top:190px;right:60px;z-index:-1"></img>
 <div style="height:50%"></div>
 
 
@@ -224,7 +224,7 @@ By using our live collaborative development environment, [Lively4](https://livel
 - Domain: Simulation Algorithms
 - [Example](http://onsetsu.github.io/floom/example.html)
 
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_material_method.jpg" width="70%" style="position:absolute; top:290px;right:60px;z-index:-1"></img>
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_material_method.jpg" width="70%" style="position:absolute; top:290px;right:60px;z-index:-1"></img>
 <div style="height:50%"></div>
 
 
@@ -238,7 +238,7 @@ By using our live collaborative development environment, [Lively4](https://livel
 
 - Domain: Artificial Intelligence / Search Algorithm
 
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_alpha_betta.png" width="60%" style="position:absolute; top:200px; right:50px;z-index:-1"></img>
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_alpha_betta.png" width="60%" style="position:absolute; top:200px; right:50px;z-index:-1"></img>
 <div style="height:50%"></div>
 
 - Literature
@@ -253,7 +253,7 @@ By using our live collaborative development environment, [Lively4](https://livel
 - Example Application: Alpha Go KI 
 
 
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_game_structure.png" width="40%" style="position:absolute; top:50px; right:50px;z-index:-1"></img>
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_game_structure.png" width="40%" style="position:absolute; top:50px; right:50px;z-index:-1"></img>
 <div style="height:50%"></div>
 
 
@@ -267,7 +267,7 @@ By using our live collaborative development environment, [Lively4](https://livel
 
 - Domain: Artificial Intelligence
 
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_support_vector_machines.png" width="50%" style="position:absolute; top:220px; right:50px;z-index:-1"></img>
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_support_vector_machines.png" width="50%" style="position:absolute; top:220px; right:50px;z-index:-1"></img>
 <div style="height:50%"></div>
 
 - Literature
@@ -278,7 +278,7 @@ By using our live collaborative development environment, [Lively4](https://livel
 
 - Domain: Artificial Intelligence
 
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_multi-layer-neural-network.png" width="60%" style="position:absolute; top:220px; right:50px;z-index:-1"></img>
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_multi-layer-neural-network.png" width="60%" style="position:absolute; top:220px; right:50px;z-index:-1"></img>
 <div style="height:50%"></div>
 
 - Literature
@@ -292,7 +292,7 @@ By using our live collaborative development environment, [Lively4](https://livel
 
 
 
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_prolog.png" width="60%" style="position:absolute; top:220px; right:50px;z-index:-1"></img>
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_prolog.png" width="60%" style="position:absolute; top:220px; right:50px;z-index:-1"></img>
 <div style="height:50%"></div>
 
 
@@ -310,7 +310,7 @@ By using our live collaborative development environment, [Lively4](https://livel
   - Gradient Descent
   - Back tracking
 
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_gradient_ascent.png" width="50%" style="position:absolute; top:120px; right:50px;z-index:-1"></img>
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_gradient_ascent.png" width="50%" style="position:absolute; top:120px; right:50px;z-index:-1"></img>
 <div style="height:30%"></div>
 
 - Literature
@@ -324,7 +324,7 @@ By using our live collaborative development environment, [Lively4](https://livel
 - Theorem prover 
 - Satisfiability modulo theories (SMT) 
 
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_smt_solver.png" width="50%" style="position:absolute; top:220px; right:50px;z-index:-1" 
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_smt_solver.png" width="50%" style="position:absolute; top:220px; right:50px;z-index:-1" 
    alt="image source:David Déharbe, Pascal Fontaine, Yoann Guyot, and Laurent Voisin. 2012. SMT solvers for rodin"></img>
 <div style="height:40%"></div>
 
@@ -339,7 +339,7 @@ By using our live collaborative development environment, [Lively4](https://livel
 - Domain: Programming Experience
 - [lively4 continous editor prototype](open://lively-continuous-editor)
 
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_learnable_programming_1.png" width="100%" style="position:absolute; top:270px; right:50px;z-index:-1"></img>
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_learnable_programming_1.png" width="100%" style="position:absolute; top:270px; right:50px;z-index:-1"></img>
 <div style="height:40%"></div>
 
 - Literature 
@@ -349,7 +349,7 @@ By using our live collaborative development environment, [Lively4](https://livel
 ---
 # Topic 16: Learnable Programming <br> 2. See the state
 
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_learnable_programming_2.png" width="100%" style="position:absolute; top:230px; right:50px;z-index:-1"></img>
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_learnable_programming_2.png" width="100%" style="position:absolute; top:230px; right:50px;z-index:-1"></img>
 <div style="height:55%"></div>
 
 - Literature 
@@ -360,7 +360,7 @@ By using our live collaborative development environment, [Lively4](https://livel
 # Topic 17: Learnable Programming <br> 3. Create by reacting
 
 
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_learnable_programming_3.png"  width="100%" style="position:absolute; top:200px; right:50px;z-index:-1"></img>
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_learnable_programming_3.png"  width="100%" style="position:absolute; top:200px; right:50px;z-index:-1"></img>
 <div style="height:55%"></div>
 
 - Literature 
@@ -372,7 +372,7 @@ By using our live collaborative development environment, [Lively4](https://livel
 # Topic 18: Learnable Programming <br>4. Create by abstracting
 
 
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_learnable_programming_4.png"   width="100%" style="position:absolute; top:200px; right:50px;z-index:-1"></img>
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_learnable_programming_4.png"   width="100%" style="position:absolute; top:200px; right:50px;z-index:-1"></img>
 <div style="height:55%"></div>
 
 - Literature 
@@ -385,7 +385,7 @@ By using our live collaborative development environment, [Lively4](https://livel
 
 - Domain: Cryptography Algorithm
 
-<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_blockchain.png"    width="20%" style="position:absolute; top:50px; right:50px;z-index:-1"></img>
+<img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/topic_blockchain.png"    width="20%" style="position:absolute; top:50px; right:50px;z-index:-1"></img>
 <div style="height:55%"></div>
 
 - Literature
@@ -459,7 +459,7 @@ if (presentation && presentation.slides) {
   presentation.slides().forEach(ea => {
     var img = document.createElement("img")
     img.classList.add("logo")
-    img.src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" 
+    img.src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/hpi_logo.png" 
     img.setAttribute("width", "50px")
     ea.appendChild(img)
 

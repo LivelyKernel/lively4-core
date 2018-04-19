@@ -1,4 +1,3 @@
-
 <lively-import src="doc/_navigation.html"></lively-import>
 
 # <img alt="Lively 4" style="position:relative; top: 25px" src="media/lively4_logo_smooth_100.png" />
@@ -6,6 +5,7 @@
 A Self-supporting, Web-based Development Environment
 
 [![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
+
 
 
 ## Getting Started

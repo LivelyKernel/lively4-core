@@ -325,7 +325,23 @@ export default class Inspector   extends Morph {
     if (obj.textContent && obj.textContent.length > 100)
       node.innerHTML = "<pre>" +  obj.textContent + "</pre>";
     else {
+      console.log("renderText " + obj)
       node.innerHTML =  obj.textContent;
+      if (obj instanceof Text) {
+        node.onclick = evt => {
+          node.contentEditable = true;
+          return true;
+        };
+        // accept changes in content editable attribute value
+        node.onkeydown = evt => {
+          if(evt.keyCode == 13) { // on enter -> like in input fields
+           node.contentEditable = false;
+            obj.textContent =  node.textContent;
+            evt.preventDefault();
+          }
+        };          
+      }
+      
     }
   }
   
@@ -494,7 +510,7 @@ export default class Inspector   extends Morph {
   
   // JSON.stringify(this.getViewState())
   getViewState() {
-    return this.caputureViewState(this.get("#container").childNodes[0])
+    return this.captureViewState(this.get("#container").childNodes[0])
   }
   
   /*
@@ -506,6 +522,9 @@ export default class Inspector   extends Morph {
   
   applyViewState(node, state) {
     // lively.showElement(node).textContent = "P=" + state.pattern
+
+    if (!node.querySelector) return; // text node
+    
     this.expandNode(node)
     var content = node.querySelector("#content")
     if (content) {
@@ -523,16 +542,17 @@ export default class Inspector   extends Morph {
     this.render(node, node.target, true)
   }
   
-  caputureViewState(node) {
+  captureViewState(node) {
     var result =  { 
       pattern: node.pattern,
       children: []}
       
-  
+    if (!node.querySelector) return result; // text node
+
     var content = node.querySelector("#content")
     if (content) {
       _.filter(content.childNodes, ea => ea.isExpanded).forEach(ea => {
-        result.children.push(this.caputureViewState(ea))        
+        result.children.push(this.captureViewState(ea))        
       })
     }
     return result

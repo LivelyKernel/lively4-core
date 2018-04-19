@@ -75,11 +75,11 @@ fetch = function(request, ...args) {
   
   if (initPending) {  
     return new Promise(async (resolve, reject) => {
-      let cache = await caches.open("lively4-swx-cache");
+      
+      let cache = window.caches && await caches.open("lively4-swx-cache");
       
       if (navigator.onLine && await isOnline()) {
         let response = await originalFetch(request, ...args);
-        
         
         // var clone =  response.clone()
         try {
