@@ -1,6 +1,7 @@
 import Morph from "src/components/widgets/lively-morph.js"
 import d3 from "src/external/d3.v5.js"
 import { debounce } from "utils";
+import scriptManager from  "src/client/script-manager.js";
 
 // #TODO use lib
 function radialPoint(x, y) {
@@ -11,23 +12,16 @@ export default class LivelyD3RadialRree extends Morph {
 
   getTreeData() {
     if (!this.treeData) {
-      this.treeData = {
-          "name": "Top Level",
-          "children": [
-            { 
-              "name": "Level 2: A",
-              "children": [
-                { "name": "Son of A",
-                  size: 50},
-                { 
-                  "name": "Daughter of A",
-                  size: 30}
-              ]
-            },
-            { "name": "Level 2: B",
-            size: 20}
-          ]
-        };
+      var data = this.getAttribute("tree-data")
+      if (data) {
+        try {
+          this.treeData = JSON.parse(data)
+        } catch(e) {
+          console.warn(this.constructor.name + ": could not parse tree-data: " + e)
+        }
+      } else {
+        this.treeData = {}
+      }
     }
     return this.treeData
   }
@@ -38,6 +32,7 @@ export default class LivelyD3RadialRree extends Morph {
   }
   
   async initialize() {   
+    this.d3 = d3 // for scripts... that cannot use modules
     this.updateViz()
     this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); })::debounce(500));
     // window.d3 = d3
@@ -73,7 +68,7 @@ export default class LivelyD3RadialRree extends Morph {
     var g = zoom.append("g")
       .attr("transform", "translate(" + (width / 2 + 40) + "," + (height / 2 + 90) + ")");
     var tree = d3.tree()
-        .size([2 * Math.PI, 500])
+        .size([2 * Math.PI, 500 ])
         .separation((a, b) => (a.parent == b.parent ? 1 : 2) / a.depth);
      
     var data = this.getTreeData()
@@ -113,19 +108,39 @@ export default class LivelyD3RadialRree extends Morph {
   }
   
   async livelyExample() {
-    var colorScale =  d3.scaleSequential(d3.interpolatePiYG)
-    this.dataSize = data =>  Math.sqrt(data.size) * 0.1 
-    this.dataColor = (data) => {
-      return colorScale(data.size * 0.0001)
-    }
-    this.dataTitle = (d) => {
+    
+    scriptManager.addScript(this, function(data) { return Math.sqrt(data.size) * 0.1 }, {name: "dataSize"});    
+    scriptManager.addScript(this, function(data) { 
+      if (this.colorScale) {
+        
+      }
+      this.colorScale = this.d3.scaleSequential(d3.interpolatePiYG)
+      return this.colorScale(data.size * 0.0001) 
+    }, {name: "dataColor"});
+    
+    scriptManager.addScript(this, (d) => {
       return d.id
-    }
+    } , {name: "dataTitle"});
+    
+    
     this.setTreeData(await d3.json(lively4url + "/src/components/demo/flare.json"))
     
     
   }
  
+  livelyPrepareSave() {
+    if (this.treeData) {
+      var data = JSON.stringify(this.treeData)
+      this.setAttribute("tree-data", data)
+    }    
+  }
+  
+  livelyInspect(contentNode, inspector) {
+    if (this.treeData) {
+      contentNode.appendChild(inspector.display(this.treeData, false, "#tree-data", this));
+    }
+  }
+  
   livelyMigrate(other) {
     this.treeData = other.treeData
     this.dataName = other.dataName
