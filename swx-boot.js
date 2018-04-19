@@ -77,8 +77,14 @@ fetch = function(request, ...args) {
     return new Promise(async (resolve, reject) => {
       
       // #TODO: window is not defined here so checking for window.caches throws an error
-      let cache = await caches.open("lively4-swx-cache");
       
+      
+      let cache = self.caches && await caches.open("lively4-swx-cache");
+      
+      if (!cache){
+        return resolve(originalFetch(request, ...args)) // #MacCacheBug #Hack
+      }  
+
       if (navigator.onLine && await isOnline()) {
         let response = await originalFetch(request, ...args);
         
@@ -88,20 +94,17 @@ fetch = function(request, ...args) {
         } catch(e) {
           // #TODO #FUCK  the cache.put seems to evaluatute the javascript and hickups on "import *" etc.. Why?
           console.error("fetch error " + e)
-        }
-        
-        
+        } 
         resolve(response);
         return;
       }
       
       let response = await cache.match(request);
-      
       if (response) {
         resolve(response);
       } else {
         console.log("not in cache")
-        resolve(originalFetch(originalFetch(request, ...args)))
+        resolve(originalFetch(request, ...args))
       }
     });
   } else {
