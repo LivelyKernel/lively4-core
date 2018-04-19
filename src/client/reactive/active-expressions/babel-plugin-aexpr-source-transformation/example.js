@@ -1,4 +1,9 @@
-
+window.glob = "";
+window.glob2 = "2";
+window.glob3 = "3";
+window.xGlobal = "3";
+window.func = function func() {}
+window.i = 2;
 
 function funcA() {
     var x;
