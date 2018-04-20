@@ -21,3 +21,9 @@
   - **Regular Expressions**
   - Entity Component System
   - Alpha Beta Pruning
+- Project 6: Theresa Zobel, Siegfried Horschig
+  - **Graph Drawing**
+  - Material Point Method
+  - Blockchain
+  
+   
