@@ -217,7 +217,15 @@ export default class ComponentCreator {
     var path = "" + container.getPath();
     var dir = path.replace(/[^/]*$/,"");
     var component = input.value
-
+    if (!component || component.leght == 0) {
+      throw new Error("please specify a web component name")      
+      return
+    }
+    if (!component.match(/-/)) {
+      throw new Error("we components must have a '-' (dash) in it's name")
+    }
+  
+    
     await this.copyTemplate(dir, component, "js")
     await this.copyTemplate(dir, component, "html")
     lively.components.resetTemplatePathCache()
@@ -231,11 +239,20 @@ export default class ComponentCreator {
     input.placeholder = "lively-new-component";
     div.appendChild(input);
     var button = document.createElement("button");
-    button.addEventListener("click", () => {
-      this.createEntry(container, input)
+    button.addEventListener("click", async () => {
+      try {
+        await this.createEntry(container, input)
+      } catch(e) {
+        errorMsg.innerHTML = "" + e.message
+      }
     });
     button.innerHTML = "create";
     div.appendChild(button);
+
+    var errorMsg = document.createElement("div")
+    errorMsg.style.color = "red"
+    div.appendChild(errorMsg)
+    
     input.focus();
     input.select();
     return div;
