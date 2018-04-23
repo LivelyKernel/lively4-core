@@ -105,7 +105,7 @@ export function element(tagName, attributes, children) {
   if(handleAsync) {
     let resolvedTag;
     const returnPromise = Promise.resolve(isWebComponent ?
-                               lively.create(tagName) :
+                               lively.components.loadAndOpenComponent(tagName) :
                                document.createElement(tagName))
       .then(element => {
         resolvedTag = element;

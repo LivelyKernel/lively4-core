@@ -133,8 +133,8 @@ export default class LivelyContainerNavbar extends Morph {
             method: "PUT",
             body: content
           })
-          that.updateOtherNavbars(this.getRoot(fromurl))
-          that.updateOtherNavbars(this.getRoot(newurl))
+          this.updateOtherNavbars(this.getRoot(fromurl))
+          this.updateOtherNavbars(this.getRoot(newurl))
 
           lively.notify(`${this.transferMode}d to ` + newurl + ": " + content.size)  
         }
@@ -251,8 +251,9 @@ export default class LivelyContainerNavbar extends Morph {
         icon = '<i class="fa fa-folder"></i>';
       } else if (ea.type == "link") {
         icon = '<i class="fa fa-arrow-circle-o-right"></i>';
-      } 
-        else {
+      } else if (/(\.|-)(spec|test)\.js$/i.test(name)) {
+        icon = '<i class="fa fa-check-square-o"></i>'
+      } else {
         icon = '<i class="fa fa-file"></i>';
       }
       
@@ -316,13 +317,9 @@ export default class LivelyContainerNavbar extends Morph {
       ["edit", () => lively.openBrowser(otherUrl, true)],
       ["browse", () => lively.openBrowser(otherUrl)],
       ["save as png", () => lively.html.saveAsPNG(otherUrl)],
-      ["copy path to clipboard", () => copyTextToClipboard(otherUrl)],
-      ["copy file name to clipboard", () => copyTextToClipboard(otherUrl::fileName())],
+      ["copy path to clipboard", () => copyTextToClipboard(otherUrl), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
+      ["copy file name to clipboard", () => copyTextToClipboard(otherUrl::fileName()), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
     ];
-    
-    if (Preferences.get('EnableSyvisEditor')) {
-      menuElements.push(['edit with syvis', () => this.editWithSyvis(otherUrl)]);
-    }
     
     const menu = new ContextMenu(this, menuElements)
     menu.openIn(document.body, evt, this)

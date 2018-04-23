@@ -4,9 +4,7 @@ import Preferences from "./../preferences.js";
 export default class Selecting {
 
   static shouldHandle(e) {
-    return (Preferences.get('CtrlAsHaloModifier') ?
-        e.ctrlKey || e.metaKey :
-        e.altKey) && !HaloService.isDragging;
+    return e.altKey && !HaloService.isDragging;
   }
   static load() {
      if (!window.lively) {

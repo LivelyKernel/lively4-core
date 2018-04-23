@@ -24,7 +24,7 @@ export default class Morph extends HTMLDivElement {
 
   set windowTitle(string){
     this._windowTitle = string;
-    // #TOTO replace with connections
+    // #TODO replace with connections
     if (this.parentElement && this.parentElement.titleSpan) { // check for window?
       this.parentElement.setAttribute("title", string);
     }
@@ -36,7 +36,7 @@ export default class Morph extends HTMLDivElement {
 
   set windowIcon(string){
     this._windowIcon = string;
-    // #TOTO replace with connections
+    // #TODO replace with connections
     if (this.parentElement && this.parentElement.titleSpan) { // check for window?
       this.parentElement.setAttribute("icon", string);
     }

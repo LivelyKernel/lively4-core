@@ -6,11 +6,8 @@ import components from './morphic/component-loader.js';
 
 export default class Preferences {
   
-  static load() {
-    console.info('Load preferences')
-    
-    // Keys must be upper case
-    const defaults = {
+  static get defaults() {
+    return  {
       GridSize: {default: 100, short: "grid size"},
       SnapSize: {default: 20, short: "snap size"},
       SnapPaddingSize: {default: 20, short: "padding while snapping size"},
@@ -21,15 +18,13 @@ export default class Preferences {
       DisableAExpWorkspace: {default: false, short: "disable AExp in workspace"},
       DisableAltGrab: {default: false, short: "disable alt grab with hand"},
       UseAsyncWorkspace: {default: false, short: "support await in eval"},
-      UseTernInCodeMirror: {default: false, short: "enable tern autocomplete and navigation"},
-      CtrlAsHaloModifier: {default: false, short: "ctrl key as halo modifier"},
       OfflineFirst: {default: false, short: "use offline first swx cache"},
     }
-    
-    // Make defaults immutable
-    Object.freeze(defaults)
-    this.defaults = defaults
-    
+  }
+  
+  
+  static load() {
+    console.info('Load preferences')
   }
   
   // List all avaiable preferences
@@ -135,7 +130,7 @@ export default class Preferences {
   }
   
   static loadPreferences() {
-    Object.keys(this.prefsNode.dataset).forEach(preferenceKey => {
+    Object.keys(Preferences.defaults).forEach(preferenceKey => {
       this.applyPreference(preferenceKey)
     })
   }

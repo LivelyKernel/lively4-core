@@ -369,6 +369,8 @@ export default class ComponentLoader {
         lively4url + '/src/components/demo/',
         lively4url + '/src/components/draft/',
         lively4url + '/src/client/vivide/components/',
+        lively4url + '/src/client/reactive/components/',
+        lively4url + '/src/client/triples/components/',
       ]; // default
     } 
     return _templatePaths

@@ -2,8 +2,7 @@
 
 <lively-import src="_navigation.html"></lively-import>
 
-* https://pancake.io/ can host static home pages through dropbox
-
+* [pancake.io](https://pancake.io/) can host static home pages through dropbox
 
 ## Augmented Editor 
 
@@ -15,9 +14,9 @@
 
 ## Web-based Development Environments
 
-
 - [Meemoo](https://app.meemoo.org/#gist/4029543)
-
+- [WebAssembly Studio](https://webassembly.studio)
+- [fizzygum](http://fizzygum.org): "Fizzygum is a new web framework, an entire platform really, designed from the ground up to do complex things easily. Things like: live documents, complex apps, complex sets of apps, or even entire custom environments. Get the power of an entire Operating System at your fingertips: …make dashboards and visualise data (plots, maps, …)" (from intro)
 
 ## Active Essays
 

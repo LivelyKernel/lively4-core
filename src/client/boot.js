@@ -10,11 +10,15 @@
  #TODO refactor booting/loading/init of lively4
   - currently we have different entry points we should unify
  */
- 
+
 window.lively4plugincache = window.localStorage["livel4systemjscache"] == "true";
 
 async function invalidateFileCaches()  {
   try {
+    if (!window.caches) {
+      console.warn("window.caches not defined")
+      return
+    }
     var offlineFirstCache = await caches.open("offlineFirstCache")
     var url = lively4url + "/" 
     var json = await Promise.race([
@@ -26,12 +30,18 @@ async function invalidateFileCaches()  {
         headers: {
           filelist  : true
         }
-      }).then(resp => {
+      }).then(async resp => {
         if (resp.status != 200) {
           console.log("PROBLEM invalidateFileCaches " + resp.status)
           return false
         } else {
-          return resp.json()
+          try {
+            var text = await resp.text()
+            return JSON.parse(text)
+          } catch(e) {
+            console.log("could not parse: " + text)
+            return undefined
+          }
         }
       })
     ])

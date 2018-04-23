@@ -29,11 +29,19 @@ export default class Inspector   extends Morph {
 
   displayValue(value, expand, name) {
     if (name) {
-      var node = <div class="element"></div>;
-      node.innerHTML = "<span class='attrName'>"+ name +":</span> <span class='attrValue'>"+ JSON.stringify(value).replace(/</g,"&lt;")+"</span>";
+      let attrValue;
+      if (value && typeof value === 'symbol') {
+        attrValue = value.toString();
+      } else {
+        attrValue = JSON.stringify(value).replace(/</g,"&lt;");
+      }
+      let node = <div class="element">
+        <span class='attrName'>{name}:</span>
+        <span class='attrValue'>{attrValue}</span>
+      </div>;
       return node;
     } else {
-      var node = document.createElement("pre");
+      let node = document.createElement("pre");
       node.innerHTML = JSON.stringify(value);
       return node;
     }
@@ -317,7 +325,23 @@ export default class Inspector   extends Morph {
     if (obj.textContent && obj.textContent.length > 100)
       node.innerHTML = "<pre>" +  obj.textContent + "</pre>";
     else {
+      console.log("renderText " + obj)
       node.innerHTML =  obj.textContent;
+      if (obj instanceof Text) {
+        node.onclick = evt => {
+          node.contentEditable = true;
+          return true;
+        };
+        // accept changes in content editable attribute value
+        node.onkeydown = evt => {
+          if(evt.keyCode == 13) { // on enter -> like in input fields
+           node.contentEditable = false;
+            obj.textContent =  node.textContent;
+            evt.preventDefault();
+          }
+        };          
+      }
+      
     }
   }
   
@@ -486,7 +510,7 @@ export default class Inspector   extends Morph {
   
   // JSON.stringify(this.getViewState())
   getViewState() {
-    return this.caputureViewState(this.get("#container").childNodes[0])
+    return this.captureViewState(this.get("#container").childNodes[0])
   }
   
   /*
@@ -498,6 +522,9 @@ export default class Inspector   extends Morph {
   
   applyViewState(node, state) {
     // lively.showElement(node).textContent = "P=" + state.pattern
+
+    if (!node.querySelector) return; // text node
+    
     this.expandNode(node)
     var content = node.querySelector("#content")
     if (content) {
@@ -515,16 +542,17 @@ export default class Inspector   extends Morph {
     this.render(node, node.target, true)
   }
   
-  caputureViewState(node) {
+  captureViewState(node) {
     var result =  { 
       pattern: node.pattern,
       children: []}
       
-  
+    if (!node.querySelector) return result; // text node
+
     var content = node.querySelector("#content")
     if (content) {
       _.filter(content.childNodes, ea => ea.isExpanded).forEach(ea => {
-        result.children.push(this.caputureViewState(ea))        
+        result.children.push(this.captureViewState(ea))        
       })
     }
     return result

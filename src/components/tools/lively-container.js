@@ -352,7 +352,7 @@ export default class Container extends Morph {
 
   onUp() {
     var path = this.getPath();
-    if (path.match(/index\.((html)|(md))/))
+    if (path.match(/(README|index)\.((html)|(md))/))
       // one level more
       this.followPath(path.replace(/(\/[^/]+\/[^/]+$)|([^/]+\/$)/,"/"));
     else
@@ -397,6 +397,17 @@ export default class Container extends Morph {
     comp.editFile("" + url);
   }
 
+  async onDependencies() {
+    lively.openComponentInWindow("lively-d3-tree").then(tree => {
+      tree.dataName = function(d) { 
+        return d.name.replace(/.*\//,"").replace(/\.js/,"")
+      }
+      tree.setTreeData(lively.findDependedModulesGraph(this.getURL().toString()))    
+      lively.setExtent(tree.parentElement, pt(1200,800))
+      tree.parentElement.setAttribute("title", "Dependency Graph: " + this.getURL().toString().replace(/.*\//,""))
+    })
+  }
+  
   async onSaveAs() {
     var newPath = await lively.prompt("Save as..", this.getPath())
     if (newPath === undefined) return;
@@ -780,7 +791,7 @@ export default class Container extends Morph {
   
     var options = await fetch(path, {method: "OPTIONS"}).then(r => r.status == 200 ? r.json() : false).catch(e => false)
     // this check could happen later
-    if (!path.match("https://lively4") 
+    if (!path.match("https://lively4") && !path.match(/http:?\/\/localhost/) 
         && !path.match(window.location.host) 
         && path.match(/https?:\/\//)) {
       if (!options) {

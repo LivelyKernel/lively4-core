@@ -1598,7 +1598,7 @@ function nsEvaluate (ns) {
 /*
  * Source loading
  */
-function fetchFetch (url, authorization, integrity, asBuffer) {
+async function fetchFetch (url, authorization, integrity, asBuffer) {
   livelyLog("SystemJS fetch " + url)
   // fetch doesn't support file:/// urls
   if (url.substr(0, 8) === 'file:///') {
@@ -1625,13 +1625,25 @@ function fetchFetch (url, authorization, integrity, asBuffer) {
     opts.credentials = 'include';
   }
 
-  return fetch(url, opts)
-  .then(function(res) {
-    if (res.ok)
-      return asBuffer ? res.arrayBuffer() : res.text();
-    else
-      throw new Error('Fetch error: ' + res.status + ' ' + res.statusText);
-  });
+  livelyLog("fetch " + url)
+  try {
+    var res = await fetch(url, opts)
+    .then(function(res) {
+
+      livelyLog("res " + res.statusText)
+
+      if (res.ok)
+        return asBuffer ? res.arrayBuffer() : res.text();
+      else
+        throw new Error('Fetch error: ' + res.status + ' ' + res.statusText);
+    }).catch(e => {
+      livelyLog("fetch error " + e)
+    })    
+  } catch(e) {
+    console.log("fetch try catch " + e)
+  }
+  
+  return res
 }
 
 function xhrFetch (url, authorization, integrity, asBuffer) {
@@ -3457,6 +3469,8 @@ function loadBundlesAndDepCache (config, loader, key) {
 }
 
 function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
+  livelyLog("runFetchPipeline " + key)
+  
   if (metadata.load.exports && !metadata.load.format)
     metadata.load.format = 'global';
 
@@ -3467,6 +3481,8 @@ function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
 
   // locate
   .then(function () {
+    livelyLog("fetch locate")
+
     if (!metadata.pluginModule || !metadata.pluginModule.locate)
       return;
 
@@ -3478,6 +3494,7 @@ function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
   })
   // fetch
   .then(function () {
+    livelyLog("fetchy")
     
    // if (self.localStorage && self.lively4plugincache) {
    //    var load = metadata.load
@@ -3491,19 +3508,26 @@ function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
    //  }
     // console.log('default fetch ' + key)
 
-    if (!metadata.pluginModule)
+    if (!metadata.pluginModule) {
+      livelyLog("fetch$1.1")
       return fetch$1(key, metadata.load.authorization, metadata.load.integrity, wasm);
+    } 
 
-    if (!metadata.pluginModule.fetch)
+    if (!metadata.pluginModule.fetch) {
+      livelyLog("fetch$1.2")
+
       return fetch$1(metadata.pluginArgument, metadata.load.authorization, metadata.load.integrity, wasm);
+    }
 
     wasm = false;
     return metadata.pluginModule.fetch.call(loader, metadata.pluginLoad, function (load) {
+      livelyLog("fetch$1.3")
       return fetch$1(load.address, metadata.load.authorization, metadata.load.integrity, false);
     });
   })
 
   .then(function (fetched) {
+    livelyLog("fetched")
     if (!fetched) {
       debugger
     }

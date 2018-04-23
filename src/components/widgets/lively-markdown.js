@@ -11,7 +11,8 @@ export default class LivelyMarkdown extends Morph {
   async initialize() {
     this.windowTitle = "LivelyMarkdown";
     this.registerButtons();
-    this.updateView();
+    await this.updateView();
+
     if (this.getAttribute("mode") == "presentation") {
       this.startPresentation()
     }
@@ -81,6 +82,10 @@ export default class LivelyMarkdown extends Morph {
     }
     var content = await this.getContent()
     if (!content) return;
+    if (content.match(/markdown-config .*presentation=true/)) {
+      var configPresentation = true 
+    }
+    
     content = content
       .replace(/<lively-script><script>/g,"<script>")
       .replace(/<\/script><\/lively-script>/g,"</script>")
@@ -101,6 +106,8 @@ export default class LivelyMarkdown extends Morph {
     if (dir) {
       lively.html.fixLinks([root], this.getDir(), path => this.followPath(path));
     }
+    if (configPresentation)
+      this.startPresentation()
 
     // #TODO: fixme
     //root.querySelectorAll("pre code").forEach( block => {
