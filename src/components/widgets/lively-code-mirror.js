@@ -10,6 +10,9 @@ import 'src/client/stablefocus.js';
 import Strings from 'src/client/strings.js';
 import { letsScript } from 'src/client/vivide/vivide.js';
 import { TernCodeMirrorWrapper } from 'src/client/reactive/tern-spike/tern-wrapper.js';
+
+import * as spellCheck from "src/external/codemirror-spellcheck.js"
+
 import {isSet} from 'utils'
 
 let loadPromise = undefined;
@@ -662,6 +665,12 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     this.mode = mode
     this.editor.setOption("mode", mode)
+    
+    if (mode == "gfm" && spellCheck.current) {
+      // #TODO make language customizable
+      spellCheck.startSpellCheck(this.editor, spellCheck.current)
+    }
+    
   }
 
   livelyPrepareSave() {
