@@ -13,6 +13,7 @@ import { TernCodeMirrorWrapper } from 'src/client/reactive/tern-spike/tern-wrapp
 
 import * as spellCheck from "src/external/codemirror-spellcheck.js"
 
+
 import {isSet} from 'utils'
 
 let loadPromise = undefined;
@@ -635,7 +636,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   
-  changeModeForFile(filename) {
+  async changeModeForFile(filename) {
     if (!this.editor) return;
     
     var mode = "text"
@@ -666,9 +667,9 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.mode = mode
     this.editor.setOption("mode", mode)
     
-    if (mode == "gfm" && spellCheck.current) {
+    if (mode == "gfm") {
       // #TODO make language customizable
-      spellCheck.startSpellCheck(this.editor, spellCheck.current)
+      spellCheck.startSpellCheck(this.editor, await spellCheck.current())
     }
     
   }
