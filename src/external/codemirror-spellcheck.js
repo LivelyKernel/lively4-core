@@ -1,7 +1,7 @@
 import Typo from "src/external/typo.js"
+import focalStorage from "src/external/focalStorage.js"
 
 export var dictionaries = {}
-export var current
 
 export async function loadDict(name, aff, dic) {
   if (!dictionaries[name]) {
@@ -9,27 +9,43 @@ export async function loadDict(name, aff, dic) {
       var affData = await fetch(aff).then(r => r.text())
       var wordsData = await fetch(dic).then(r => r.text())
       var dictionary = new Typo( name, affData, wordsData);	
-      current = dictionary
       resolve(dictionary)
     })
-  } 
+  }   
   return dictionaries[name]
 }
 
+export function current() {
+  return loadDict(
+    "en_US",
+    lively4url + '/src/external/dicts/en_US.aff',
+    lively4url + '/src/external/dicts/en_US.dic')  
+}
 
-loadDict(
-  "en_US",
-  lively4url + '/src/external/dicts/en_US.aff',
-  lively4url + '/src/external/dicts/en_US.dic')
+current()
 
 // copied from kofifus/ Codemirror spellchecker with typo corrections
 // https://gist.github.com/kofifus/4b2f79cadc871a29439d919692099406
 
-export function startSpellCheck(cm, typo) {
+
+var spellCheckKey = "SpellcheckIngoreWords"
+async function loadIgnoreDict() {
+  return (await focalStorage.getItem(spellCheckKey)) || {};
+}
+
+async function saveIgnoreDict(dict) {
+  return (await focalStorage.setItem(spellCheckKey), dict);
+}
+
+
+export async  function startSpellCheck(cm, typo) {
 	if (!cm || !typo) return; // sanity
 
-	startSpellCheck.ignoreDict = {}; // dictionary of ignored words
-
+	// startSpellCheck.ignoreDict = {}; // dictionary of ignored words
+  if (!startSpellCheck.ignoreDict ) {
+    startSpellCheck.ignoreDict = await loadIgnoreDict()
+  }
+  
 	// Define what separates a word
 	var rx_word = '!\'\"#$%&()*+,-./:;<=>?@[\\]^_`{|}~ ';
 
@@ -37,7 +53,8 @@ export function startSpellCheck(cm, typo) {
 		token: function(stream) {
 			var ch = stream.peek();
 			var word = "";
-
+      
+      
 			if (rx_word.includes(ch) || ch === '\uE000' || ch === '\uE001') {
 				stream.next();
 				return null;
@@ -47,9 +64,10 @@ export function startSpellCheck(cm, typo) {
 				word += ch;
 				stream.next();
 			}
-
+      // console.log("w", word)
+      
 			if (!/[a-z]/i.test(word)) return null; // no letters
-			if (startSpellCheck.ignoreDict[word]) return null;
+			if (startSpellCheck.ignoreDict && startSpellCheck.ignoreDict[word]) return null;
 			if (!typo.check(word)) return "spell-error"; // CSS class: cm-spell-error
 		}
 	}
@@ -116,7 +134,7 @@ export function getSuggestionBox(typo) {
 		selwidget.multiple = 'yes';
 		sbox.appendChild(selwidget);
 
-		sbox.suggest = ((cm, e) => { // e is the event from cm contextmenu event
+		sbox.suggest = (async (cm, e) => { // e is the event from cm contextmenu event
 			if (!e.target.classList.contains('cm-spell-error')) return false; // not on typo
 
 			let token = e.target.innerText;
@@ -133,7 +151,7 @@ export function getSuggestionBox(typo) {
 
 			// show hourglass
 			sboxShow(cm, sbox, [], e.pageX, e.pageY, true);
-
+      
 			var results = [];
 			// async 
 			typo.suggest(token, null, all => {
@@ -163,6 +181,7 @@ export function getSuggestionBox(typo) {
 			let cm = sbox.codeMirror, correction = e.target.value;
 			if (correction == '##ignoreall##') {
 				startSpellCheck.ignoreDict[sbox.token] = true;
+        saveIgnoreDict(startSpellCheck.ignoreDict);
 				cm.setOption('maxHighlightLength', (--cm.options.maxHighlightLength) + 1); // ugly hack to rerun overlays
 			} else {
 				cm.replaceRange(correction, { line: sbox.cmpos.line, ch: sbox.cmpos.start}, { line: sbox.cmpos.line, ch: sbox.cmpos.end});
