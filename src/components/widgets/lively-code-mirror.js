@@ -318,7 +318,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       },
       // #KeyboardShortcut Alt-. jump to definition using tern
       "Alt-.": cm => {
-        lively.error("JUMP TO DEFINITION")
+        lively.notify("try to JUMP TO DEFINITION")
         TernCodeMirrorWrapper.jumpToDefinition(cm, this);
       },
       // #KeyboardShortcut Alt-, jump back from definition using tern
