@@ -33,8 +33,7 @@ async function loadIgnoreDict() {
   return (await focalStorage.getItem(spellCheckKey)) || {};
 }
 
-async function saveIgnoreDict(dict) {
-  return (await focalStorage.setItem(spellCheckKey), dict);
+async function saveIgnoreDict(dict) { return (await focalStorage.setItem(spellCheckKey), dict);
 }
 
 
@@ -50,11 +49,9 @@ export async  function startSpellCheck(cm, typo) {
 	var rx_word = '!\'\"#$%&()*+,-./:;<=>?@[\\]^_`{|}~ ';
 
 	cm.spellcheckOverlay = {
-		token: function(stream) {
+		token: function(stream, state) {
 			var ch = stream.peek();
 			var word = "";
-      
-      
 			if (rx_word.includes(ch) || ch === '\uE000' || ch === '\uE001') {
 				stream.next();
 				return null;
