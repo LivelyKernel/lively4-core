@@ -59,15 +59,23 @@ export async  function startSpellCheck(cm, typo) {
 				stream.next();
 				return null;
 			}
-
-			while ((ch = stream.peek()) && !rx_word.includes(ch)) {
+      
+      while ((ch = stream.peek()) && !rx_word.includes(ch)) {
 				word += ch;
 				stream.next();
 			}
-      // console.log("w", word)
+      // cm.doc.findMarksAt(
+      // var cm = that.editor
+      
       
 			if (!/[a-z]/i.test(word)) return null; // no letters
-			if (startSpellCheck.ignoreDict && startSpellCheck.ignoreDict[word]) return null;
+			
+      // console.log("w", word, "stream ", stream)
+      // var token = cm.getTokenAt(cm.doc.posFromIndex(stream.pos))
+      // console.log("w", word, "type ", token.type)
+      // if (token.type && token.type.match("url")) return null; 
+
+      if (startSpellCheck.ignoreDict && startSpellCheck.ignoreDict[word]) return null;
 			if (!typo.check(word)) return "spell-error"; // CSS class: cm-spell-error
 		}
 	}

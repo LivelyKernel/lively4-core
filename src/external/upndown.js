@@ -11,7 +11,7 @@ export default class upndown {
 
     init() {
         this.olstack = [];
-        this.inlineelements = ['strong', 'b', 'i', 'em', 'u', 'a', 'img', 'code'];
+        this.inlineelements = ['strong', 'b', 'i', 'em', 'u', 'a', 'img', 'code', 'input', 'label'];
         this.htmlblocklevelelement = ['div', 'iframe', 'script'];
         this.tabindent = '    ';
         this.nbsp = '\u0000';
@@ -206,7 +206,10 @@ export default class upndown {
     wrap_h6(node, markdown) { return '\n###### ' + markdown + '\n'; }
 
     wrap_blockquote(node, markdown) { return '\n' + markdown.trim().replace(/^/gm, '> ') + '\n'; }
-    wrap_pre(node, markdown) { return '\n' + markdown.trim().replace(/^/gm, this.tabindent).replace(/ /g, this.nbsp) + '\n'; }
+    wrap_pre(node, markdown) { 
+      var lang = node.attribs["data-lang"] || ""
+      return '\n```'+lang+'\n' + this.allText(node) + '```\n'; 
+    }
 
     wrap_code(node, markdown) {
         if(this.hasAncestorOfType(node, ['pre'])) {
@@ -256,6 +259,21 @@ export default class upndown {
 
     wrap_p(node, markdown) { return '\n' + markdown + '\n'; }
 
+    wrap_input(node, markdown) { 
+      if (node.attribs.type == "checkbox" ) {
+        return `[${node.attribs.checked ? "x" : " "}]`; 
+      } else {
+        return "<" + node.name + " " + Object.keys(node.attribs).map(ea => 
+          ea + "="+ '"' + node.attribs[ea] + '"').join(" ") +">" + 
+          "</" + node.name  +">"; 
+      }
+    }
+
+    wrap_label(node, markdown) { 
+      // #TODO should we keep labels? 
+      return markdown; 
+    }
+  
     wrap_br(/*node, markdown*/) { return '  \n'; }
 
     wrap_hr(/*node, markdown*/) { return '\n* * *\n'; }
@@ -280,7 +298,9 @@ export default class upndown {
         } else if ((url === markdown || url.replace(/^mailto:/, '') === markdown) && (!title || title === '')) {
             return '<' + url.replace(/^mailto:/, '') + '>';
         }
-
+        if (markdown.match(/^#/)) {
+          return markdown // we don't need the generated URL
+        }
         return '[' + markdown + '](' + (url ? url : '') + (title ? ' "' + title + '"' : '') + ')';
     }
 
