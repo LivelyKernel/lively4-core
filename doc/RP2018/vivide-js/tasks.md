@@ -2,9 +2,11 @@
 
 - [ ] [Save scripts to view's local storage](https://github.com/LivelyKernel/lively4-core/issues/312)
 - [ ] [Implement a vivide tree view](https://github.com/LivelyKernel/lively4-core/issues/309) 
-  - [ ] Models containing a "children" variable show their children's data
+  - [x] Models containing a "children" variable show their children's data on click
   - [ ] Children are can be made visible or hidden by clicking
-  - [ ] Per default data are shown as tree view
+  - [x] Per default data are shown as tree view
+  - [ ] Tree elements show a visual clue whether they are expanded (arrow pointing to the right or bottom)
+  - [ ] 3 or more levels are supported
 - [ ] [Handle missing/lost connections](https://github.com/LivelyKernel/lively4-core/issues/311)
 
 ## Misc

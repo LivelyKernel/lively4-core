@@ -29,21 +29,36 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
     model.forEach(m => this.processModel(m, this.tree));
   }
   
-  toggleTree(treeItem) {
-    if (treeItem.childElementCount == 0) {
-      let sub = <ul></ul>;
-      let children = this.childrenByTreeItem.get(treeItem);
+  toggleTree(treeItem, expander) {
+    let children = this.childrenByTreeItem.get(treeItem);
+    
+    if (!children.length) return;
+    
+    let sub = treeItem.querySelector("#child");
+    if (sub.innerHTML.length == 0) {
+      treeItem.className += " expanded"
       children.forEach(c => this.processModel(c, sub));
-      
       treeItem.appendChild(sub);
+      expander.classList.remove("fa-caret-right");
+      expander.classList += " fa-caret-down";
+    } else if (treeItem.classList.contains("expanded")) {
+      treeItem.classList.remove("expanded");
+      expander.classList.remove("fa-caret-down");
+      expander.classList += " fa-caret-right";
+    } else {
+      treeItem.classList += " expanded";
+      expander.classList.remove("fa-caret-right");
+      expander.classList += " fa-caret-down";
     }
   }
   
   processModel(model, parent) {
     let label = model.properties.map(prop => prop.label).find(label => label) || textualRepresentation(model.object);
-    let treeItem = <li>{label}</li>;
+    let treeItem = <li>{label}<ul id="child"></ul></li>;
+    let expander = <span id="expander" class="expander fa fa-caret-right"></span>;
     
-    treeItem.addEventListener("click", this.toggleTree.bind(this, treeItem));
+    treeItem.prepend(expander);
+    expander.addEventListener("click", this.toggleTree.bind(this, treeItem, expander));
     this.multiSelection.addItem(treeItem);
     this.addDragEventTo(treeItem);
     this.dataByTreeItem.set(treeItem, model.object);
