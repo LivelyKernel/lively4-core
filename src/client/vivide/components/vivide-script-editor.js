@@ -50,7 +50,7 @@ export default class VivideScriptEditor extends Morph {
       level.extract.forEach(createStepEditorFor);
       if(level.descent) {
         this.editorList.appendChild(<span>-- descent --</span>);
-        createStepEditorFor(level.descent);
+        level.descent.forEach(createStepEditorFor);
       }
     });
   }

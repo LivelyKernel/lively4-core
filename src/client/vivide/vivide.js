@@ -15,7 +15,8 @@ async function newScriptFromTemplate() {
   let scriptURL = new URL(uuid() + '.json', scriptFolder);
   await lively.files.saveFile(scriptURL, JSON.stringify([{
     transform: [(await copyStep('transform')).href],
-    extract: [(await copyStep('extract')).href]
+    extract: [(await copyStep('extract')).href],
+    descent: [(await copyStep('descent')).href]
   }]));
   
   return scriptURL.href;
